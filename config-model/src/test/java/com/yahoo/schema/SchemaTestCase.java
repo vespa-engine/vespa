@@ -887,6 +887,25 @@ public class SchemaTestCase {
     }
 
     @Test
+    void testInnerProfilesWithDuplicateNamesAreAllowed() throws ParseException {
+        String schema =
+                """
+                schema doc {
+                    document doc {}
+                    rank-profile ranking_a {
+                        rank-profile debug inherits ranking_a {}
+                    }
+                    rank-profile ranking_b {
+                        rank-profile debug inherits ranking_b {}
+                    }
+                }""";
+        ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+        builder.addSchema(schema);
+        var application = builder.build(true);
+        new DerivedConfiguration(application.schemas().get("doc"), application.rankProfileRegistry());
+    }
+
+    @Test
     void testRankSettingsToSchemaInfo() throws Exception {
         String schema =
                 """

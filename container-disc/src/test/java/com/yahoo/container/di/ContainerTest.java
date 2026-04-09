@@ -11,17 +11,22 @@ import com.yahoo.container.di.componentgraph.core.ComponentGraph;
 import com.yahoo.container.di.componentgraph.core.ComponentGraphTest.SimpleComponent;
 import com.yahoo.container.di.componentgraph.core.ComponentNode.ComponentConstructorException;
 import com.yahoo.container.di.config.Subscriber;
+import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.vespa.config.ConfigKey;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.TimeoutException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -158,7 +163,8 @@ public class ContainerTest extends ContainerTestBase {
         container.shutdownConfigRetriever();
     }
 
-    // Failure in component construction phase
+    /** Verifies that the active graph is retained when component construction fails, and that
+     *  recovery succeeds on the next deployment. */
     @Test
     void previous_graph_is_retained_when_new_graph_contains_component_that_throws_exception_in_ctor() {
         ComponentEntry simpleComponentEntry = new ComponentEntry("simpleComponent", SimpleComponent.class);
@@ -215,7 +221,8 @@ public class ContainerTest extends ContainerTestBase {
         container.shutdown(currentGraph);
     }
 
-    // Failure in graph creation phase
+    /** Verifies that the active graph is retained when graph creation fails (component class
+     *  cannot be resolved or its required config key is missing). */
     @Test
     void previous_graph_is_retained_when_new_graph_throws_exception_for_missing_config() {
         ComponentEntry simpleComponentEntry = new ComponentEntry("simpleComponent", SimpleComponent.class);
@@ -399,6 +406,13 @@ public class ContainerTest extends ContainerTestBase {
         }
     }
 
+    public static class ComponentThrowingOnConfigValue extends AbstractComponent {
+        public ComponentThrowingOnConfigValue(TestConfig config) {
+            if (config.stringVal().equals("throw"))
+                throw new RuntimeException("Configured to throw");
+        }
+    }
+
     public static class DestructableComponent extends AbstractComponent {
         private boolean deconstructed = false;
 
@@ -410,6 +424,221 @@ public class ContainerTest extends ContainerTestBase {
 
     private ComponentTakingConfig createComponentTakingConfig(ComponentGraph componentGraph) {
         return componentGraph.getInstance(ComponentTakingConfig.class);
+    }
+
+    /**
+     * Verifies that recovery after a construction failure does not subscribe to the old (active)
+     * graph's config keys. If the failed generation introduces a component with no config, those
+     * keys are empty in recovery, so subscribing to the previous component's now-removed config
+     * key would cause a deadlock.
+     */
+    @Test
+    void stale_config_keys_from_failed_construction_do_not_block_recovery() throws Exception {
+        // Gen 1: ComponentTakingConfig (needs TestConfig) — succeeds
+        writeBootstrapConfigs("componentTakingConfig", ComponentTakingConfig.class);
+        dirConfigSource.writeConfig("test", "stringVal \"initial\"");
+
+        var banningFactory = new BanningSubscriberFactory(dirConfigSource.configSource());
+        Container container = new Container(
+                banningFactory,
+                new com.yahoo.container.Container(),
+                dirConfigSource.configId(),
+                new TestDeconstructor(osgi),
+                osgi
+        );
+
+        ComponentGraph gen1Graph = getNewComponentGraph(container);
+        assertEquals(1, gen1Graph.generation());
+        assertNotNull(gen1Graph.getInstance(ComponentTakingConfig.class));
+
+        // Gen 2: ComponentThrowingExceptionInConstructor — constructComponents fails, currentGraph stays at gen 1
+        writeBootstrapConfigs("thrower", ComponentThrowingExceptionInConstructor.class);
+        container.reloadConfig(2);
+        assertNewComponentGraphFails(container, gen1Graph, ComponentConstructorException.class);
+        assertEquals(1, gen1Graph.generation());
+
+        // Ban the TestConfig key — simulates config server no longer having this config
+        banningFactory.banKeys(Set.of(new ConfigKey<>(TestConfig.class, dirConfigSource.configId())));
+
+        // Gen 3: SimpleComponent (no config) — should recover if configKeys are correct
+        writeBootstrapConfigs("simpleComponent", SimpleComponent.class);
+        container.reloadConfig(3);
+
+        ExecutorService exec = Executors.newFixedThreadPool(1);
+        Future<ComponentGraph> future = exec.submit(() -> getNewComponentGraph(container, gen1Graph));
+        try {
+            ComponentGraph gen3Graph = future.get(3, TimeUnit.SECONDS);
+            assertEquals(3, gen3Graph.generation());
+            assertNotNull(gen3Graph.getInstance(SimpleComponent.class));
+            container.shutdownConfigRetriever();
+            container.shutdown(gen3Graph);
+        } catch (ExecutionException e) {
+            container.shutdownConfigRetriever();
+            fail("Stale config keys from failed generation caused error: " + e.getCause().getMessage() +
+                    ". The old graph's configKeys were used to subscribe after a failed constructComponents, " +
+                    "but those keys no longer exist in the config server.");
+        } catch (TimeoutException e) {
+            container.shutdownConfigRetriever();
+            fail("Container got stuck waiting for recovery — stale config keys may have caused a subscription " +
+                    "deadlock");
+        } finally {
+            exec.shutdownNow();
+        }
+    }
+
+    /**
+     * Verifies that the container recovers when the same component is redeployed with a fixed
+     * config value after a construction failure. Bootstrap config (ComponentsConfig) is unchanged
+     * across all generations — only the component-specific config value changes. Without tracking
+     * failedGraphConfigKeys, the container would get stuck waiting for a bootstrap generation
+     * that never comes, because in recovery mode it would only watch bootstrap keys and miss
+     * the component-config-only change.
+     */
+    @Test
+    void reconfig_with_unchanged_bootstrap_works_after_failed_construction() throws Exception {
+        // Gen 1: ComponentThrowingOnConfigValue with stringVal="ok" — success
+        writeBootstrapConfigs("comp", ComponentThrowingOnConfigValue.class);
+        dirConfigSource.writeConfig("test", "stringVal \"ok\"");
+        Container container = newContainer(dirConfigSource);
+        ComponentGraph gen1Graph = getNewComponentGraph(container);
+        assertEquals(1, gen1Graph.generation());
+
+        // Gen 2: same component, stringVal="throw" — construction fails, bootstrap UNCHANGED
+        dirConfigSource.writeConfig("test", "stringVal \"throw\"");
+        container.reloadConfig(2);
+        assertNewComponentGraphFails(container, gen1Graph, ComponentConstructorException.class);
+        assertEquals(1, gen1Graph.generation());
+
+        // Gen 3: same component, stringVal="ok" — should recover, bootstrap UNCHANGED
+        dirConfigSource.writeConfig("test", "stringVal \"ok\"");
+        container.reloadConfig(3);
+
+        ExecutorService exec = Executors.newFixedThreadPool(1);
+        Future<ComponentGraph> future = exec.submit(() -> getNewComponentGraph(container, gen1Graph));
+        try {
+            ComponentGraph gen3Graph = future.get(3, TimeUnit.SECONDS);
+            assertEquals(3, gen3Graph.generation());
+            assertNotNull(gen3Graph.getInstance(ComponentThrowingOnConfigValue.class));
+            container.shutdownConfigRetriever();
+            container.shutdown(gen3Graph);
+        } catch (TimeoutException e) {
+            container.shutdownConfigRetriever();
+            fail("Container got stuck after failed construction with unchanged bootstrap config");
+        } finally {
+            exec.shutdownNow();
+        }
+    }
+
+    /**
+     * Verifies that a bootstrap change is correctly detected during recovery when the failed
+     * generation had a component with config (failedGraphConfigKeys is non-empty). The fix
+     * deployment replaces the component entirely, so the bootstrap subscriber must fire and
+     * drive recovery rather than waiting for the old component's config key to change.
+     */
+    @Test
+    void reconfig_with_bootstrap_change_works_after_failed_construction_with_config() throws Exception {
+        // Gen 1: ComponentThrowingOnConfigValue with stringVal="ok" — success
+        writeBootstrapConfigs("comp", ComponentThrowingOnConfigValue.class);
+        dirConfigSource.writeConfig("test", "stringVal \"ok\"");
+        Container container = newContainer(dirConfigSource);
+        ComponentGraph gen1Graph = getNewComponentGraph(container);
+        assertEquals(1, gen1Graph.generation());
+
+        // Gen 2: same component, stringVal="throw" — construction fails, failedGraphConfigKeys = {TestConfig key}
+        dirConfigSource.writeConfig("test", "stringVal \"throw\"");
+        container.reloadConfig(2);
+        assertNewComponentGraphFails(container, gen1Graph, ComponentConstructorException.class);
+        assertEquals(1, gen1Graph.generation());
+
+        // Gen 3: completely different component (bootstrap change: TestConfig no longer needed)
+        writeBootstrapConfigs("simpleComponent", SimpleComponent.class);
+        container.reloadConfig(3);
+
+        ExecutorService exec = Executors.newFixedThreadPool(1);
+        Future<ComponentGraph> future = exec.submit(() -> getNewComponentGraph(container, gen1Graph));
+        try {
+            ComponentGraph gen3Graph = future.get(3, TimeUnit.SECONDS);
+            assertEquals(3, gen3Graph.generation());
+            assertNotNull(gen3Graph.getInstance(SimpleComponent.class));
+            container.shutdownConfigRetriever();
+            container.shutdown(gen3Graph);
+        } catch (TimeoutException e) {
+            container.shutdownConfigRetriever();
+            fail("Container got stuck after failed construction with config when bootstrap changed in recovery");
+        } finally {
+            exec.shutdownNow();
+        }
+    }
+
+    /**
+     * A SubscriberFactory that wraps CloudSubscriberFactory and can ban specific config keys.
+     * After banKeys() is called, any newly-created Subscriber whose key set intersects the
+     * banned set will throw IllegalArgumentException from waitNextGeneration(), simulating
+     * the config server rejecting subscriptions to non-existent config keys.
+     */
+    private static class BanningSubscriberFactory implements SubscriberFactory {
+        private final CloudSubscriberFactory delegate;
+        private volatile Set<ConfigKey<?>> bannedKeys = Set.of();
+
+        BanningSubscriberFactory(ConfigSource configSource) {
+            this.delegate = new CloudSubscriberFactory(configSource);
+        }
+
+        void banKeys(Set<ConfigKey<?>> keys) {
+            this.bannedKeys = Set.copyOf(keys);
+        }
+
+        @Override
+        public Subscriber getSubscriber(Set<? extends ConfigKey<?>> configKeys, String name) {
+            Subscriber sub = delegate.getSubscriber(configKeys, name);
+            if (bannedKeys.isEmpty() || Collections.disjoint(configKeys, bannedKeys)) {
+                return sub;
+            }
+            Set<ConfigKey<?>> offending = new HashSet<>(configKeys);
+            offending.retainAll(bannedKeys);
+            return new Subscriber() {
+                @Override
+                public long waitNextGeneration(boolean isInitializing) {
+                    throw new IllegalArgumentException(
+                            "Config server does not have keys: " + offending);
+                }
+
+                @Override
+                public long generation() {
+                    return sub.generation();
+                }
+
+                @Override
+                public boolean configChanged() {
+                    return sub.configChanged();
+                }
+
+                @Override
+                public Map<ConfigKey<ConfigInstance>, ConfigInstance> config() {
+                    return sub.config();
+                }
+
+                @Override
+                public void close() {
+                    sub.close();
+                }
+
+                @Override
+                public boolean applyOnRestart() {
+                    return sub.applyOnRestart();
+                }
+            };
+        }
+
+        @Override
+        public void reloadActiveSubscribers(long generation) {
+            delegate.reloadActiveSubscribers(generation);
+        }
+
+        @Override
+        public void close() {
+            delegate.close();
+        }
     }
 
     /**

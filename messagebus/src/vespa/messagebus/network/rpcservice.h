@@ -2,6 +2,7 @@
 #pragma once
 
 #include "rpcserviceaddress.h"
+
 #include <vespa/slobrok/imirrorapi.h>
 
 namespace mbus {
@@ -15,15 +16,15 @@ class RPCNetwork;
  */
 class RPCService {
 private:
-    using Mirror = slobrok::api::IMirrorAPI ;
+    using Mirror = slobrok::api::IMirrorAPI;
 
-    string        _serviceName;
-    string        _connectionSpec;
+    string _serviceName;
+    string _connectionSpec;
 
 public:
     using UP = std::unique_ptr<RPCService>;
-    RPCService(const RPCService &) = delete;
-    RPCService & operator = (const RPCService &) = delete;
+    RPCService(const RPCService&) = delete;
+    RPCService& operator=(const RPCService&) = delete;
     /**
      * Create a new RPCService backed by the given network and using
      * the given service pattern.
@@ -31,7 +32,7 @@ public:
      * @param mirror  The naming server to send queries to.
      * @param pattern The pattern to use when querying.
      */
-    RPCService(const Mirror &mirror, const string &pattern);
+    RPCService(const Mirror& mirror, const string& pattern);
     ~RPCService();
 
     /**
@@ -42,7 +43,7 @@ public:
      */
     RPCServiceAddress::UP make_address();
 
-    bool isValid() const { return ! _connectionSpec.empty(); }
+    bool isValid() const { return !_connectionSpec.empty(); }
 };
 
 } // namespace mbus

@@ -2,6 +2,7 @@
 #pragma once
 
 #include "routable.h"
+
 #include <vector>
 
 namespace mbus {
@@ -18,9 +19,9 @@ class Error;
 class Reply : public Routable {
 private:
     using MessageUP = std::unique_ptr<Message>;
-    std::vector<Error>  _errors;     // A list of errors that have occured during the lifetime of this reply.
-    MessageUP           _msg;        // The message to which this is a reply.
-    double              _retryDelay; // How to perform resending of this.
+    std::vector<Error> _errors;     // A list of errors that have occured during the lifetime of this reply.
+    MessageUP          _msg;        // The message to which this is a reply.
+    double             _retryDelay; // How to perform resending of this.
 
 public:
     /**
@@ -42,7 +43,7 @@ public:
      */
     ~Reply() override;
 
-    void swapState(Routable &rhs) override;
+    void swapState(Routable& rhs) override;
     bool isReply() const override { return true; }
 
     /**
@@ -50,14 +51,14 @@ public:
      *
      * @param error the error to add
      */
-    void addError(const Error &error);
+    void addError(const Error& error);
 
     /**
      * Returns whether or not this reply contains at least one error.
      *
      * @return True if this contains errors.
      */
-    bool hasErrors() const { return ! _errors.empty(); }
+    bool hasErrors() const { return !_errors.empty(); }
 
     /**
      * Returns whether or not this reply contains any fatal errors.
@@ -72,7 +73,7 @@ public:
      * @param i The index of the error to return.
      * @return The error at the given index.
      */
-    const Error &getError(uint32_t i) const;
+    const Error& getError(uint32_t i) const;
 
     /**
      * Returns the number of errors that this reply contains.
@@ -120,4 +121,3 @@ public:
 };
 
 } // namespace mbus
-

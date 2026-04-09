@@ -58,8 +58,8 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
                     if (pathPrefix.isBlank())
                         throw new IllegalArgumentException("Path prefix must not be blank");
                     var sampleRate = Double.parseDouble(parts[1]);
-                    if (sampleRate < 0 || sampleRate > 1)
-                        throw new IllegalArgumentException(Text.format("Sample rate must be in range [0, 1], got '%s'", sampleRate));
+                    if (sampleRate < 0)
+                        throw new IllegalArgumentException(Text.format("Sample rate must be non-negative, got '%s'", sampleRate));
                     var maxEntitySize = BytesQuantity.fromString(parts[2]);
                     return new EntityLoggingEntry(pathPrefix, sampleRate, maxEntitySize);
                 })

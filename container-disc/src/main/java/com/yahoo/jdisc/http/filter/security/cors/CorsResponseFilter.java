@@ -14,6 +14,7 @@ import com.yahoo.yolean.chain.Provides;
  * @author Tony Vaagenes
  * @author bjorncs
  */
+@SuppressWarnings("removal")
 @Provides("CorsResponseFilter")
 public class CorsResponseFilter extends AbstractResource implements SecurityResponseFilter {
 

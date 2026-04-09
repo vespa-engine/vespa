@@ -32,6 +32,7 @@ const std::string doc_id_limit_tag = "docIdLimit";
 const std::string enumerated_tag = "enumerated";
 const std::string unique_value_count_tag = "uniqueValueCount";
 const std::string total_value_count_tag = "totalValueCount";
+const std::string memory_usage_tag = "memory_usage";
 
 }
 
@@ -53,6 +54,7 @@ AttributeHeader::AttributeHeader(std::string fileName)
       _numDocs(0),
       _uniqueValueCount(0),
       _totalValueCount(0),
+      _memory_usage(0),
       _createSerialNum(0u),
       _version(0),
       _extra_tags()
@@ -69,6 +71,7 @@ AttributeHeader::AttributeHeader(std::string fileName,
                                  uint32_t numDocs,
                                  uint64_t uniqueValueCount,
                                  uint64_t totalValueCount,
+                                 uint64_t memory_usage,
                                  uint64_t createSerialNum,
                                  uint32_t version)
     : _fileName(std::move(fileName)),
@@ -83,6 +86,7 @@ AttributeHeader::AttributeHeader(std::string fileName,
       _numDocs(numDocs),
       _uniqueValueCount(uniqueValueCount),
       _totalValueCount(totalValueCount),
+      _memory_usage(memory_usage),
       _createSerialNum(createSerialNum),
       _version(version),
       _flush_duration(std::chrono::steady_clock::duration::zero())
@@ -151,6 +155,9 @@ AttributeHeader::internalExtractTags(const vespalib::GenericHeader &header)
     if (header.hasTag(unique_value_count_tag)) {
         _uniqueValueCount = header.getTag(unique_value_count_tag).asInteger();
     }
+    if (header.hasTag(memory_usage_tag)) {
+        _memory_usage = header.getTag(memory_usage_tag).asInteger();
+    }
     if (header.hasTag(versionTag)) {
         _version = header.getTag(versionTag).asInteger();
     }
@@ -177,6 +184,7 @@ AttributeHeader::addTags(vespalib::GenericHeader &header) const
     }
     header.putTag(Tag(unique_value_count_tag, _uniqueValueCount));
     header.putTag(Tag(total_value_count_tag, _totalValueCount));
+    header.putTag(Tag(memory_usage_tag, _memory_usage));
     header.putTag(Tag(doc_id_limit_tag, _numDocs));
     header.putTag(Tag("frozen", 0));
     header.putTag(Tag("fileBitSize", 0));

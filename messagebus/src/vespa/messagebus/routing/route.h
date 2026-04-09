@@ -26,8 +26,8 @@ public:
     using UP = std::unique_ptr<Route>;
 
     /**
-     * Parses the given string as a list of space-separated hops. The {@link this#toString()} method is compatible with
-     * this parser.
+     * Parses the given string as a list of space-separated hops. The {@link this#toString()} method is compatible
+     * with this parser.
      *
      * @param route The string to parse.
      * @return A route that corresponds to the string.
@@ -38,10 +38,10 @@ public:
      * Create a Route that contains no hops
      */
     Route();
-    Route(const Route &) = default;
-    Route & operator = (const Route &) = default;
-    Route(Route &&) noexcept = default;
-    Route & operator = (Route && ) noexcept = default;
+    Route(const Route&) = default;
+    Route& operator=(const Route&) = default;
+    Route(Route&&) noexcept = default;
+    Route& operator=(Route&&) noexcept = default;
     ~Route();
 
     /**
@@ -71,7 +71,7 @@ public:
      * @param i The index of the hop to return.
      * @return The hop.
      */
-    Hop &getHop(uint32_t i) { return _hops[i]; }
+    Hop& getHop(uint32_t i) { return _hops[i]; }
 
     /**
      * Returns a const reference to the hop at the given index.
@@ -79,7 +79,7 @@ public:
      * @param i The index of the hop to return.
      * @return The hop.
      */
-    [[nodiscard]] const Hop &getHop(uint32_t i) const { return _hops[i]; }
+    [[nodiscard]] const Hop& getHop(uint32_t i) const { return _hops[i]; }
 
     /**
      * Adds a hop to the list of hops that make up this route.
@@ -87,7 +87,7 @@ public:
      * @param hop The hop to add.
      * @return This, to allow chaining.
      */
-    Route &addHop(Hop hop);
+    Route& addHop(Hop hop);
 
     /**
      * Sets the hop at a given index.
@@ -96,7 +96,7 @@ public:
      * @param hop The hop to set.
      * @return This, to allow chaining.
      */
-    Route &setHop(uint32_t i, Hop hop);
+    Route& setHop(uint32_t i, Hop hop);
 
     /**
      * Removes the hop at a given index.
@@ -122,4 +122,3 @@ public:
 };
 
 } // namespace mbus
-

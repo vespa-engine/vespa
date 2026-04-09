@@ -19,6 +19,7 @@ import com.yahoo.document.update.MapValueUpdate;
 import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.vespa.indexinglanguage.FieldValuesFactory;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
+import com.yahoo.vespa.indexinglanguage.expressions.InvalidInputException;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 
 import java.time.Instant;
@@ -73,7 +74,7 @@ class DocumentScript {
 
     private void requireThatFieldIsDeclaredInDocument(Field field) {
         if (field != null && !inputFields.contains(field.getName()))
-            throw new IllegalArgumentException("Field '" + field.getName() + "' is not part of the declared " + documentType);
+            throw new InvalidInputException("Field '" + field.getName() + "' is not part of the declared " + documentType);
     }
 
     private void removeAnyLinguisticsSpanTree(ValueUpdate<?> valueUpdate) {

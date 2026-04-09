@@ -32,6 +32,7 @@ private:
     uint32_t    _numDocs;
     uint64_t    _uniqueValueCount;
     uint64_t    _totalValueCount;
+    uint64_t    _memory_usage;
     uint64_t    _createSerialNum;
     uint32_t    _version;
     std::chrono::steady_clock::duration _flush_duration;
@@ -51,6 +52,7 @@ public:
                     uint32_t numDocs,
                     uint64_t uniqueValueCount,
                     uint64_t totalValueCount,
+                    uint64_t memory_usage,
                     uint64_t createSerialNum,
                     uint32_t version);
     ~AttributeHeader();
@@ -76,6 +78,7 @@ public:
     void addTags(vespalib::GenericHeader &header) const;
     vespalib::GenericHeader& get_extra_tags() noexcept { return _extra_tags; }
     std::chrono::steady_clock::duration get_flush_duration() const noexcept { return _flush_duration; }
+    uint64_t get_memory_usage() const noexcept { return _memory_usage; }
 };
 
 }

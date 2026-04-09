@@ -3,15 +3,16 @@
 
 #include "hopspec.h"
 #include "routespec.h"
+
 #include <string>
 #include <vector>
 
 namespace mbus {
 
 /**
- * Along with the {@link RoutingSpec}, {@link RouteSpec} and {@link HopSpec}, this holds the routing specifications for
- * all protocols. The only way a client can configure or alter the settings of a message bus instance is through these
- * classes.
+ * Along with the {@link RoutingSpec}, {@link RouteSpec} and {@link HopSpec}, this holds the routing specifications
+ * for all protocols. The only way a client can configure or alter the settings of a message bus instance is through
+ * these classes.
  *
  * This class contains the spec for a single routing table, which corresponds to exactly one protocol.
  *
@@ -30,19 +31,19 @@ public:
      *
      * @param protocol The name of the protocol that this belongs to.
      */
-    explicit RoutingTableSpec(const string &protocol);
+    explicit RoutingTableSpec(const string& protocol);
     RoutingTableSpec(const RoutingTableSpec&);
     RoutingTableSpec(RoutingTableSpec&&) noexcept = default;
     ~RoutingTableSpec();
-    RoutingTableSpec &operator=(const RoutingTableSpec&);
-    RoutingTableSpec &operator=(RoutingTableSpec&&) noexcept = default;
+    RoutingTableSpec& operator=(const RoutingTableSpec&);
+    RoutingTableSpec& operator=(RoutingTableSpec&&) noexcept = default;
 
     /**
      * Returns the name of the protocol that this is the routing table for.
      *
      * @return The protocol name.
      */
-    [[nodiscard]] const string &getProtocol() const { return _protocol; }
+    [[nodiscard]] const string& getProtocol() const { return _protocol; }
 
     /**
      * Returns the number of hops that are contained in this table.
@@ -57,7 +58,7 @@ public:
      * @param i The index of the hop to return.
      * @return The hop at the given position.
      */
-    HopSpec &getHop(uint32_t i) { return _hops[i]; }
+    HopSpec& getHop(uint32_t i) { return _hops[i]; }
 
     /**
      * Returns a const reference to the hop spec at the given index.
@@ -65,7 +66,7 @@ public:
      * @param i The index of the hop to return.
      * @return The hop at the given position.
      */
-    [[nodiscard]] const HopSpec &getHop(uint32_t i) const { return _hops[i]; }
+    [[nodiscard]] const HopSpec& getHop(uint32_t i) const { return _hops[i]; }
 
     /**
      * Adds the given hop spec to this.
@@ -73,8 +74,8 @@ public:
      * @param hop The hop to add.
      * @return This, to allow chaining.
      */
-    RoutingTableSpec & addHop(HopSpec && hop) &;
-    RoutingTableSpec && addHop(HopSpec && hop) &&;
+    RoutingTableSpec& addHop(HopSpec&& hop) &;
+    RoutingTableSpec&& addHop(HopSpec&& hop) &&;
 
     /**
      * Sets the hop spec at the given index.
@@ -83,7 +84,7 @@ public:
      * @param hop The hop to set.
      * @return This, to allow chaining.
      */
-    RoutingTableSpec &setHop(uint32_t i, HopSpec &&hop);
+    RoutingTableSpec& setHop(uint32_t i, HopSpec&& hop);
 
     /**
      * Returns the number of route specs contained in this.
@@ -98,7 +99,7 @@ public:
      * @param i The index of the route to return.
      * @return The route at the given index.
      */
-    RouteSpec &getRoute(uint32_t i) { return _routes[i]; }
+    RouteSpec& getRoute(uint32_t i) { return _routes[i]; }
 
     /**
      * Returns a const reference to the route spec at the given index.
@@ -106,7 +107,7 @@ public:
      * @param i The index of the route to return.
      * @return The route at the given index.
      */
-    [[nodiscard]] const RouteSpec &getRoute(uint32_t i) const { return _routes[i]; }
+    [[nodiscard]] const RouteSpec& getRoute(uint32_t i) const { return _routes[i]; }
 
     /**
      * Adds a route spec to this.
@@ -114,8 +115,8 @@ public:
      * @param route The route to add.
      * @return This, to allow chaining.
      */
-    RoutingTableSpec && addRoute(RouteSpec &&route) &&;
-    RoutingTableSpec & addRoute(RouteSpec &&route) &;
+    RoutingTableSpec&& addRoute(RouteSpec&& route) &&;
+    RoutingTableSpec& addRoute(RouteSpec&& route) &;
 
     /**
      * Sets the route spec at the given index.
@@ -124,7 +125,10 @@ public:
      * @param route The route to set.
      * @return This, to allow chaining.
      */
-    RoutingTableSpec &setRoute(uint32_t i, RouteSpec && route) { _routes[i] = std::move(route); return *this; }
+    RoutingTableSpec& setRoute(uint32_t i, RouteSpec&& route) {
+        _routes[i] = std::move(route);
+        return *this;
+    }
 
     /**
      * Appends the content of this to the given config string.
@@ -132,7 +136,7 @@ public:
      * @param cfg    The config to add to.
      * @param prefix The prefix to use for each add.
      */
-    void toConfig(string &cfg, const string &prefix) const;
+    void toConfig(string& cfg, const string& prefix) const;
 
     /**
      * Returns a string representation of this.
@@ -147,7 +151,7 @@ public:
      * @param rhs The object to compare to.
      * @return True if this equals the other.
      */
-    bool operator==(const RoutingTableSpec &rhs) const;
+    bool operator==(const RoutingTableSpec& rhs) const;
 
     /**
      * Implements the inequality operator.
@@ -155,8 +159,7 @@ public:
      * @param rhs The object to compare to.
      * @return True if this does not equals the other.
      */
-    bool operator!=(const RoutingTableSpec &rhs) const { return !(*this == rhs); }
+    bool operator!=(const RoutingTableSpec& rhs) const { return !(*this == rhs); }
 };
 
 } // namespace mbus
-

@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "custompolicy.h"
+
 #include "simpleprotocol.h"
+
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/routing/routingcontext.h>
@@ -11,20 +13,13 @@ LOG_SETUP(".custompolicy");
 
 namespace mbus {
 
-CustomPolicy::CustomPolicy(bool selectOnRetry,
-                           std::vector<uint32_t> consumableErrors,
-                           std::vector<Route> routes) :
-    _selectOnRetry(selectOnRetry),
-    _consumableErrors(std::move(consumableErrors)),
-    _routes(std::move(routes))
-{
+CustomPolicy::CustomPolicy(bool selectOnRetry, std::vector<uint32_t> consumableErrors, std::vector<Route> routes)
+    : _selectOnRetry(selectOnRetry), _consumableErrors(std::move(consumableErrors)), _routes(std::move(routes)) {
 }
 
 CustomPolicy::~CustomPolicy() = default;
 
-void
-CustomPolicy::select(RoutingContext &context)
-{
+void CustomPolicy::select(RoutingContext& context) {
     string str = "Selecting { ";
     for (uint32_t i = 0; i < _routes.size(); ++i) {
         str.append("'");
@@ -43,16 +38,12 @@ CustomPolicy::select(RoutingContext &context)
     context.addChildren(_routes);
 }
 
-void
-CustomPolicy::merge(RoutingContext &context)
-{
-    Reply::UP ret(new EmptyReply());
+void CustomPolicy::merge(RoutingContext& context) {
+    Reply::UP           ret(new EmptyReply());
     std::vector<string> routes;
-    for (RoutingNodeIterator it = context.getChildIterator();
-         it.isValid(); it.next())
-    {
+    for (RoutingNodeIterator it = context.getChildIterator(); it.isValid(); it.next()) {
         routes.push_back(it.getRoute().toString());
-        const Reply &reply = it.getReplyRef();
+        const Reply& reply = it.getReplyRef();
         for (uint32_t i = 0; i < reply.getNumErrors(); ++i) {
             ret->addError(reply.getError(i));
         }
@@ -71,30 +62,22 @@ CustomPolicy::merge(RoutingContext &context)
     context.trace(1, str);
 }
 
-CustomPolicyFactory::CustomPolicyFactory(bool selectOnRetry) noexcept :
-    _selectOnRetry(selectOnRetry),
-    _consumableErrors()
-{
+CustomPolicyFactory::CustomPolicyFactory(bool selectOnRetry) noexcept
+    : _selectOnRetry(selectOnRetry), _consumableErrors() {
 }
 
-CustomPolicyFactory::CustomPolicyFactory(bool selectOnRetry, uint32_t consumableError) :
-    _selectOnRetry(selectOnRetry),
-    _consumableErrors()
-{
+CustomPolicyFactory::CustomPolicyFactory(bool selectOnRetry, uint32_t consumableError)
+    : _selectOnRetry(selectOnRetry), _consumableErrors() {
     _consumableErrors.push_back(consumableError);
 }
 
-CustomPolicyFactory::CustomPolicyFactory(bool selectOnRetry, std::vector<uint32_t> consumableErrors) :
-    _selectOnRetry(selectOnRetry),
-    _consumableErrors(std::move(consumableErrors))
-{
+CustomPolicyFactory::CustomPolicyFactory(bool selectOnRetry, std::vector<uint32_t> consumableErrors)
+    : _selectOnRetry(selectOnRetry), _consumableErrors(std::move(consumableErrors)) {
 }
 
 CustomPolicyFactory::~CustomPolicyFactory() = default;
 
-IRoutingPolicy::UP
-CustomPolicyFactory::create(const string &param)
-{
+IRoutingPolicy::UP CustomPolicyFactory::create(const string& param) {
     string str = "{ ";
     for (uint32_t i = 0; i < _consumableErrors.size(); ++i) {
         str.append(ErrorCode::getName(_consumableErrors[i]));
@@ -104,18 +87,15 @@ CustomPolicyFactory::create(const string &param)
     }
     str.append(" }");
 
-    LOG(info, "Creating custom policy; selectOnRetry = %d, consumableErrors = %s, param = '%s'.",
-        _selectOnRetry, str.c_str(), param.c_str());
+    LOG(info, "Creating custom policy; selectOnRetry = %d, consumableErrors = %s, param = '%s'.", _selectOnRetry,
+        str.c_str(), param.c_str());
     return std::make_unique<CustomPolicy>(_selectOnRetry, _consumableErrors, parseRoutes(param));
 }
 
-
-std::vector<Route>
-CustomPolicyFactory::parseRoutes(const string &str)
-{
-    std::vector<Route> routes;
+std::vector<Route> CustomPolicyFactory::parseRoutes(const string& str) {
+    std::vector<Route>        routes;
     vespalib::StringTokenizer tokenizer(str, ",", "");
-    for (const auto & token : tokenizer) {
+    for (const auto& token : tokenizer) {
         routes.emplace_back(Route::parse(token));
     }
     return routes;

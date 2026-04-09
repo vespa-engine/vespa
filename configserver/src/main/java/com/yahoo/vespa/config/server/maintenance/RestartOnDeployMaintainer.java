@@ -34,7 +34,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
-import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.LOGSERVER_CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
 
@@ -43,7 +42,7 @@ import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_
  * Implements restart conditions to ensure that services converge to the same config generation before restart.
  * Removes restarted nodes from ZooKeeper.
  * This is an experimental replacement for {@link PendingRestartsMaintainer}, enabled by
- * {@link Flags#WAIT_FOR_APPLY_ON_RESTART} feature flag.
+ * {@link Flags#RESTART_ON_DEPLOY_MAINTAINER} feature flag.
  *
  * @author glebashnik
  */
@@ -58,13 +57,13 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
             "distributor");
 
     private final Clock clock;
-    private final BooleanFlag waitForApplyOnRestart;
+    private final BooleanFlag restartOnDeployMaintainer;
 
     public RestartOnDeployMaintainer(
             ApplicationRepository applicationRepository, Curator curator, Clock clock, Duration interval) {
         super(applicationRepository, curator, applicationRepository.flagSource(), clock, interval, true);
         this.clock = clock;
-        this.waitForApplyOnRestart = Flags.WAIT_FOR_APPLY_ON_RESTART.bindTo(applicationRepository.flagSource());
+        this.restartOnDeployMaintainer = Flags.RESTART_ON_DEPLOY_MAINTAINER.bindTo(applicationRepository.flagSource());
     }
 
     @Override
@@ -77,10 +76,7 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
             for (ApplicationId id : database.activeApplications()) {
                 // Controls whether to use this maintainer for a specific instance with the feature flag.
                 // Alternatively, the older PendingRestartsMaintainer will be used.
-                boolean shouldWaitForApplyOnRestart =
-                        waitForApplyOnRestart.with(id).value();
-
-                if (shouldWaitForApplyOnRestart) {
+                if (restartOnDeployMaintainer.with(id).value()) {
                     applicationRepository
                             .getActiveApplicationVersions(id)
                             .map(application -> application.getForVersionOrLatest(Optional.empty(), clock.instant()))
@@ -208,9 +204,9 @@ public class RestartOnDeployMaintainer extends ConfigServerMaintainer {
                     id.toFullString(), String.join(", ", restarts.hostnames()), configStatesToString(configStates)));
         }
 
-        // Minimum observed config generation for all services without applyOnRestart across all pending restart nodes.
-        // Services with applyOnRestart set to {@code true} are excluded because they are waiting for restart to apply a
-        // new config, while still reporting the old config.
+        // Minimum observed config generation for all services across all pending restart nodes.
+        // Services with {@code applyOnRestart} set to {@code true} are excluded 
+        // because they are waiting for restart to apply a new config while reporting older {@code currentGeneration}.
         OptionalLong minObservedGeneration = configStates.values().stream()
                 .flatMap(List::stream)
                 .filter(state -> !state.applyOnRestart().orElse(false))

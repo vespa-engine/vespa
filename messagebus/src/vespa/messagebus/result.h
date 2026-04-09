@@ -4,6 +4,7 @@
 
 #include "error.h"
 #include "message.h"
+
 #include <memory>
 
 namespace mbus {
@@ -20,11 +21,10 @@ namespace mbus {
  * of the pointer to the Message that is handed back to the
  * application.
  **/
-class Result
-{
+class Result {
 private:
-    bool        _accepted;
-    Error       _error;
+    bool                     _accepted;
+    Error                    _error;
     std::unique_ptr<Message> _msg;
 
 public:
@@ -41,11 +41,10 @@ public:
      * @param err the reason for not accepting the Message
      * @param msg the message that did not get accepted
      **/
-    Result(const Error &err, std::unique_ptr<Message> msg);
+    Result(const Error& err, std::unique_ptr<Message> msg);
 
-
-    Result(Result &&rhs) = default;
-    Result &operator=(Result &&rhs) = default;
+    Result(Result&& rhs) = default;
+    Result& operator=(Result&& rhs) = default;
     ~Result();
 
     /**
@@ -60,7 +59,7 @@ public:
      *
      * @return error
      **/
-    const Error &getError() const { return _error; }
+    const Error& getError() const { return _error; }
 
     /**
      * If the message was not accepted, this method may be used to get
@@ -74,4 +73,3 @@ public:
 };
 
 } // namespace mbus
-

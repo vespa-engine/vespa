@@ -305,6 +305,7 @@ AttributeVector::createAttributeHeader(std::string_view fileName) const {
                                       getCommittedDocIdLimit(),
                                       getUniqueValueCount(),
                                       getTotalValueCount(),
+                                      getStatus().get_used_minus_dead_and_onhold(),
                                       getCreateSerialNum(),
                                       getVersion());
 }
@@ -544,7 +545,7 @@ void AttributeVector::setInterlock(const std::shared_ptr<attribute::Interlock> &
 std::unique_ptr<AttributeSaver>
 AttributeVector::initSave(std::string_view fileName)
 {
-    commit();
+    commit(CommitParam::UpdateStats::FORCE);
     return onInitSave(fileName);
 }
 

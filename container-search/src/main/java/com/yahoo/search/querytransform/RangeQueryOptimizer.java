@@ -29,6 +29,7 @@ import java.util.Optional;
  *
  * @author bratseth
  */
+@SuppressWarnings("removal")
 @Before(QueryCanonicalizer.queryCanonicalization)
 @After(PhaseNames.TRANSFORMED_QUERY)
 public class RangeQueryOptimizer extends Searcher {

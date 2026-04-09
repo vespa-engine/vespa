@@ -13,12 +13,11 @@ namespace mbus {
  * An Error contains an error code (@ref ErrorCode) combined with an
  * error message.
  **/
-class Error
-{
+class Error {
 private:
-    uint32_t  _code;
-    string    _msg;
-    string    _service;
+    uint32_t _code;
+    string   _msg;
+    string   _service;
 
 public:
     /**
@@ -50,14 +49,14 @@ public:
      *
      * @return error message
      **/
-    const string &getMessage() const { return _msg; }
+    const string& getMessage() const { return _msg; }
 
     /**
      * Obtain the service string of this error.
      *
      * @return service string
      **/
-    const string &getService() const { return _service; }
+    const string& getService() const { return _service; }
 
     /**
      * Obtain a string representation of this error.
@@ -68,4 +67,3 @@ public:
 };
 
 } // namespace mbus
-

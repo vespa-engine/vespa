@@ -1,16 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "routingspec.h"
+
 #include <vespa/vespalib/util/stringfmt.h>
 
 using vespalib::make_string;
 
 namespace mbus {
 
-RoutingTableSpec::RoutingTableSpec(const string &protocol) :
-    _protocol(protocol),
-    _hops(),
-    _routes()
-{ }
+RoutingTableSpec::RoutingTableSpec(const string& protocol) : _protocol(protocol), _hops(), _routes() {
+}
 
 RoutingTableSpec::RoutingTableSpec(const RoutingTableSpec&) = default;
 
@@ -18,38 +16,31 @@ RoutingTableSpec::~RoutingTableSpec() = default;
 
 RoutingTableSpec& RoutingTableSpec::operator=(const RoutingTableSpec&) = default;
 
-RoutingTableSpec &
-RoutingTableSpec::addHop(HopSpec && hop) & {
+RoutingTableSpec& RoutingTableSpec::addHop(HopSpec&& hop) & {
     _hops.emplace_back(std::move(hop));
     return *this;
 }
-RoutingTableSpec &&
-RoutingTableSpec::addHop(HopSpec && hop) && {
+RoutingTableSpec&& RoutingTableSpec::addHop(HopSpec&& hop) && {
     _hops.emplace_back(std::move(hop));
     return std::move(*this);
 }
 
-RoutingTableSpec &
-RoutingTableSpec::setHop(uint32_t i, HopSpec &&hop) {
+RoutingTableSpec& RoutingTableSpec::setHop(uint32_t i, HopSpec&& hop) {
     _hops[i] = std::move(hop);
     return *this;
 }
 
-RoutingTableSpec &
-RoutingTableSpec::addRoute(RouteSpec &&route) & {
+RoutingTableSpec& RoutingTableSpec::addRoute(RouteSpec&& route) & {
     _routes.emplace_back(std::move(route));
     return *this;
 }
 
-RoutingTableSpec &&
-RoutingTableSpec::addRoute(RouteSpec &&route) && {
+RoutingTableSpec&& RoutingTableSpec::addRoute(RouteSpec&& route) && {
     _routes.emplace_back(std::move(route));
     return std::move(*this);
 }
 
-void
-RoutingTableSpec::toConfig(string &cfg, const string &prefix) const
-{
+void RoutingTableSpec::toConfig(string& cfg, const string& prefix) const {
     cfg.append(prefix).append("protocol ").append(RoutingSpec::toConfigString(_protocol)).append("\n");
     uint32_t numHops = _hops.size();
     if (numHops > 0) {
@@ -67,17 +58,13 @@ RoutingTableSpec::toConfig(string &cfg, const string &prefix) const
     }
 }
 
-string
-RoutingTableSpec::toString() const
-{
+string RoutingTableSpec::toString() const {
     string ret = "";
     toConfig(ret, "");
     return ret;
 }
 
-bool
-RoutingTableSpec::operator==(const RoutingTableSpec &rhs) const
-{
+bool RoutingTableSpec::operator==(const RoutingTableSpec& rhs) const {
     if (_protocol != rhs._protocol) {
         return false;
     }
@@ -99,6 +86,5 @@ RoutingTableSpec::operator==(const RoutingTableSpec &rhs) const
     }
     return true;
 }
-
 
 } // namespace mbus

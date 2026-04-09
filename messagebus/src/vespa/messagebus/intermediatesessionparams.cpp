@@ -3,11 +3,8 @@
 
 namespace mbus {
 
-IntermediateSessionParams::IntermediateSessionParams() :
-    _name("intermediate"),
-    _broadcastName(true),
-    _msgHandler(nullptr),
-    _replyHandler(nullptr)
-{ }
+IntermediateSessionParams::IntermediateSessionParams()
+    : _name("intermediate"), _broadcastName(true), _msgHandler(nullptr), _replyHandler(nullptr) {
+}
 
 } // namespace mbus
