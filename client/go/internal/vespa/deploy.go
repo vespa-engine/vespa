@@ -74,6 +74,16 @@ type PrepareResult struct {
 	LogLines []LogLinePrepareResponse
 }
 
+func (a ApplicationID) WithDefaults() ApplicationID {
+	if a.Application == "" {
+		a.Application = DefaultApplication.Application
+	}
+	if a.Instance == "" {
+		a.Instance = DefaultApplication.Instance
+	}
+	return a
+}
+
 func (a ApplicationID) String() string {
 	return fmt.Sprintf("%s.%s.%s", a.Tenant, a.Application, a.Instance)
 }
@@ -181,18 +191,11 @@ func fetchFromConfigServer(deployment DeploymentOptions, path string) error {
 		return err
 	}
 	defer os.RemoveAll(tmpDir)
-	applicationName := deployment.Target.Deployment().Application.Application
-	if applicationName == "" {
-		applicationName = DefaultApplication.Application
-	}
-	instanceName := deployment.Target.Deployment().Application.Instance
-	if instanceName == "" {
-		instanceName = DefaultApplication.Instance
-	}
+	app := deployment.Target.Deployment().Application.WithDefaults()
 	endpoint := fmt.Sprintf(
 		"/application/v2/tenant/default/application/%s/environment/prod/region/default/instance/%s/content",
-		applicationName,
-		instanceName)
+		app.Application,
+		app.Instance)
 	u, err := deployment.url(endpoint)
 	if err != nil {
 		return err
@@ -378,19 +381,16 @@ func Deploy(deployment DeploymentOptions) (PrepareResult, error) {
 		}
 		u, err = url.Parse(deployment.Target.Deployment().System.DeployURL(deployment.Target.Deployment()))
 	} else {
-		instance := deployment.Target.Deployment().Application.Instance
-		applicationName := deployment.Target.Deployment().Application.Application
-		params := url.Values{}
-		path := "/application/v2/tenant/default/prepareandactivate"
-		if applicationName != "" && applicationName != DefaultApplication.Application {
-			params.Set("applicationName", applicationName)
+		app := deployment.Target.Deployment().Application.WithDefaults()
+		u, err = deployment.url("/application/v2/tenant/default/prepareandactivate")
+		if err != nil {
+			return PrepareResult{}, err
 		}
-		if instance != "" && instance != DefaultApplication.Instance {
-			params.Set("instance", instance)
-		}
-		u, err = deployment.url(path)
-		if u != nil {
-			u.RawQuery = params.Encode()
+		if app != DefaultApplication {
+			q := u.Query()
+			q.Set("applicationName", app.Application)
+			q.Set("instance", app.Instance)
+			u.RawQuery = q.Encode()
 		}
 	}
 	if err != nil {
