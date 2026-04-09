@@ -10,7 +10,6 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-	"reflect"
 	"strings"
 	"time"
 
@@ -541,7 +540,7 @@ func (c *CLI) createCustomTarget(targetType, customURL string) (vespa.Target, er
 	deployment := vespa.DefaultDeployment
 	if app, err := c.config.application(); err == nil {
 		deployment.Application = app
-	} else if reflect.DeepEqual(err, ErrNoApplicationSpecified) {
+	} else if err.Error() == ErrNoApplicationSpecified.Error() {
 		// fall back to DefaultDeployment when the --application was not set
 		deployment.Application = vespa.DefaultApplication
 	} else {

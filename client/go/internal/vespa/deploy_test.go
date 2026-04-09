@@ -207,7 +207,7 @@ func TestDeactivate(t *testing.T) {
 	assert.Equal(t, 1, len(httpClient.Requests))
 	req := httpClient.LastRequest
 	assert.Equal(t, "DELETE", req.Method)
-	assert.Equal(t, "http://127.0.0.1:19071/application/v2/tenant/default/application/default", req.URL.String())
+	assert.Equal(t, "http://127.0.0.1:19071/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default", req.URL.String())
 }
 
 func TestDeactivateCustomApplication(t *testing.T) {
