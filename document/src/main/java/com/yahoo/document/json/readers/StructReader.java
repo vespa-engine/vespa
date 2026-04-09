@@ -27,9 +27,8 @@ public class StructReader {
             Field field = parent.getField(buffer.currentName());
             if (field == null) {
                 if (! ignoreUndefinedFields)
-                    throw new IllegalArgumentException("No field '" + buffer.currentName() + "' in the structure of type '" +
-                                                       parent.getDataType().getDataTypeName() +
-                                                       "', which has the fields: " + parent.getDataType().getFields());
+                    throw new IllegalArgumentException("Field '" + buffer.currentName() +
+                                                       "' is not defined in " + parent.getDataType());
                 buffer.skipToRelativeNesting(1);
                 fullyApplied = false;
                 continue;

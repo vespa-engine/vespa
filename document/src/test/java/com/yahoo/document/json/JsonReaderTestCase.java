@@ -1472,7 +1472,7 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public void nonExistingFieldCausesException() throws IOException {
+    public void nonExistingFieldCausesException() {
         Exception expected = assertThrows(IllegalArgumentException.class,
                                           () -> docFromJson("""
                                                             {
@@ -1483,7 +1483,7 @@ public class JsonReaderTestCase {
                                                               }
                                                             }
                                                             """));
-        assertTrue(expected.getMessage().startsWith("No field 'smething' in the structure of type 'smoke'"));
+        assertEquals("Field 'smething' is not defined in document type 'smoke'", expected.getMessage());
     }
 
     @Test
