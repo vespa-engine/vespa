@@ -540,7 +540,7 @@ func (c *CLI) createCustomTarget(targetType, customURL string) (vespa.Target, er
 	deployment := vespa.DefaultDeployment
 	if app, err := c.config.application(); err == nil {
 		deployment.Application = app
-	} else if err.Error() == ErrNoApplicationSpecified.Error() {
+	} else if errors.As(err, &ErrNoApplicationSpecified) {
 		// fall back to DefaultDeployment when the --application was not set
 		deployment.Application = vespa.DefaultApplication
 	} else {
