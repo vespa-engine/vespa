@@ -153,6 +153,7 @@ ProtoConverter::search_reply_to_proto(const SearchReply &reply, ProtoSearchReply
     proto.set_active_docs(reply.coverage.getActive());
     proto.set_target_active_docs(reply.coverage.getTargetActive());
     proto.set_degraded_by_match_phase(reply.coverage.wasDegradedByMatchPhase());
+    proto.set_degraded_by_ann_timeout(reply.coverage.was_degraded_by_ann_timeout());
     proto.set_degraded_by_soft_timeout(reply.coverage.wasDegradedByTimeout());
     bool has_sort_data = ! reply.sortIndex.empty();
     assert(!has_sort_data || (reply.sortIndex.size() == (reply.hits.size() + 1)));

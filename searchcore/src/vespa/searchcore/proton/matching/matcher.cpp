@@ -204,6 +204,7 @@ traceQuery(uint32_t traceLevel, Trace & trace, const Query & query) {
 
 void
 updateCoverage(Coverage & coverage, const MaybeMatchPhaseLimiter & limiter, const MatchingStats & my_stats,
+               const search::queryeval::QueryEvalStats& eval_stats,
                const search::IDocumentMetaStore &metaStore, const bucketdb::BucketDBOwner & bucketdb)
 {
     size_t spaceEstimate = (my_stats.softDoomed())
@@ -224,6 +225,11 @@ updateCoverage(Coverage & coverage, const MaybeMatchPhaseLimiter & limiter, cons
     if (limiter.was_limited()) {
         coverage.degradeMatchPhase();
         LOG(debug, "was limited, degraded from match phase");
+    }
+    // ann_timeout_hit not added to my_stats yet
+    if (eval_stats.ann_timeout_hit()) {
+        coverage.degrade_ann_timeout();
+        LOG(debug, "ann timeout, degraded from %" PRIu64 " ann timeouts", eval_stats.ann_timeout_hit());
     }
     if (my_stats.softDoomed()) {
         coverage.degradeTimeout();
@@ -336,7 +342,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
                                                           _distributionKey, numParts);
         my_stats = MatchMaster::getStats(std::move(master));
         reply = std::move(result->_reply);
-        updateCoverage(reply->coverage, mtf->match_limiter(), my_stats, metaStore, bucketdb);
+        updateCoverage(reply->coverage, mtf->match_limiter(), my_stats, *queryeval_stats, metaStore, bucketdb);
 
         LOG(debug, "numThreadsPerSearch = %zu. Configured = %d, estimated hits=%d, totalHits=%" PRIu64 ", rankprofile=%s",
             numThreadsPerSearch, _rankSetup->getNumThreadsPerSearch(), mtf->estimate().estHits, reply->totalHitCount,

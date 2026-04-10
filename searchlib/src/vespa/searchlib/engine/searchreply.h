@@ -25,6 +25,7 @@ public:
     uint64_t getTargetActive() const { return _targetActive; }
 
     bool wasDegradedByMatchPhase() const { return ((_degradeReason & MATCH_PHASE) != 0); }
+    bool was_degraded_by_ann_timeout() const { return ((_degradeReason & ANN_TIMEOUT) != 0); }
     bool wasDegradedByTimeout() const { return ((_degradeReason & TIMEOUT) != 0); }
 
     Coverage & setCovered(uint64_t v) { _covered = v; return *this; }
@@ -32,8 +33,9 @@ public:
     Coverage & setTargetActive(uint64_t v) { _targetActive = v; return *this; }
 
     Coverage & degradeMatchPhase() { _degradeReason |= MATCH_PHASE; return *this; }
+    Coverage & degrade_ann_timeout() { _degradeReason |= ANN_TIMEOUT; return *this; }
     Coverage & degradeTimeout() { _degradeReason |= TIMEOUT; return *this; }
-    enum DegradeReason {MATCH_PHASE=0x01, TIMEOUT=0x02};
+    enum DegradeReason {MATCH_PHASE=0x01, TIMEOUT=0x02, ANN_TIMEOUT=0x04};
 private:
     uint64_t _covered;
     uint64_t _active;
