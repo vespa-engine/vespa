@@ -115,6 +115,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
         metrics::LongCountMetric queries;
         metrics::LongCountMetric softDoomedQueries;
         metrics::DoubleAverageMetric querySetupTime;
+        metrics::DoubleAverageMetric query_ann_time;
         metrics::DoubleAverageMetric queryLatency;
 
         struct RankProfileMetrics : metrics::MetricSet {
@@ -148,6 +149,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
             metrics::DoubleAverageMetric groupingTime;
             metrics::DoubleAverageMetric rerankTime;
             metrics::DoubleAverageMetric querySetupTime;
+            metrics::DoubleAverageMetric query_ann_time;
             metrics::DoubleAverageMetric queryLatency;
             DocIdPartitions              partitions;
 
