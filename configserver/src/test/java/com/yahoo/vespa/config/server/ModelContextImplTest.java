@@ -16,6 +16,7 @@ import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Test;
@@ -73,6 +74,7 @@ public class ModelContextImplTest {
                         List.of(),
                         List.of(),
                         Optional.empty(),
+                        CloudResourceTags.empty(),
                         List.of()),
                 Optional.empty(),
                 OnnxModelCost.disabled(),

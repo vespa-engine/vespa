@@ -644,6 +644,7 @@ public class SessionRepository {
                                 existingSession.getTenantSecretStores(),
                                 existingSession.getOperatorCertificates(),
                                 existingSession.getCloudAccount(),
+                                existingSession.getCloudResourceTags(),
                                 existingSession.getDataplaneTokens(),
                                 ActivationTriggers.empty(),
                                 writeSessionData);

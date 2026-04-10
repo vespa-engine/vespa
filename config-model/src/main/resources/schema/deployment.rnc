@@ -11,6 +11,7 @@ start = element deployment {
    attribute athenz-service { xsd:string }? &
    attribute cloud-account { xsd:string }? &
    attribute empty-host-ttl { xsd:string }? &
+   CloudResourceTags? &
    Step &
    Dev?
 }
@@ -43,6 +44,7 @@ Instance = element instance {
    attribute athenz-service { xsd:string }? &
    attribute cloud-account { xsd:string }? &
    attribute empty-host-ttl { xsd:string }? &
+   CloudResourceTags? &
    StepExceptInstance
 }
 
@@ -106,6 +108,7 @@ Test = element test {
    attribute athenz-service { xsd:string }? &
    attribute cloud-account { xsd:string }? &
    attribute empty-host-ttl { xsd:string }? &
+   CloudResourceTags? &
    Tester?
 }
 
@@ -113,6 +116,7 @@ Staging = element staging {
    attribute athenz-service { xsd:string }? &
    attribute cloud-account { xsd:string }? &
    attribute empty-host-ttl { xsd:string }? &
+   CloudResourceTags? &
    Tester?
 }
 
@@ -121,6 +125,7 @@ Dev = element dev {
    attribute empty-host-ttl { xsd:string }? &
    attribute athenz-service { xsd:string }? &
    attribute tags { xsd:string }? &
+   CloudResourceTags? &
    Endpoints?
 }
 
@@ -128,6 +133,7 @@ Prod = element prod {
    attribute athenz-service { xsd:string }? &
    attribute cloud-account { xsd:string }? &
    attribute empty-host-ttl { xsd:string }? &
+   CloudResourceTags? &
    Region* &
    Delay* &
    ProdTest* &
@@ -145,6 +151,7 @@ Region = element region {
    attribute athenz-service { xsd:string }? &
    attribute cloud-account { xsd:string }? &
    attribute empty-host-ttl { xsd:string }? &
+   CloudResourceTags? &
    text
 }
 
@@ -200,6 +207,15 @@ Group = element group {
 MemberRegion = element region {
     attribute fraction { xsd:double }? &
     text
+}
+
+CloudResourceTags = element resource-tags {
+    CloudResourceTag*
+}
+
+CloudResourceTag = element tag {
+    attribute key { xsd:string } &
+    attribute value { xsd:string }
 }
 
 Tester = element tester {

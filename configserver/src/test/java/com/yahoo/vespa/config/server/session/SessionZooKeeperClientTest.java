@@ -8,6 +8,7 @@ import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.model.api.TenantVault;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
@@ -189,6 +190,7 @@ public class SessionZooKeeperClientTest {
                                              List.of(),
                                              List.of(),
                                              Optional.empty(),
+                                             CloudResourceTags.empty(),
                                              List.of(),
                                              ActivationTriggers.empty()));
         Path path = sessionPath(sessionId).append(SESSION_DATA_PATH);
