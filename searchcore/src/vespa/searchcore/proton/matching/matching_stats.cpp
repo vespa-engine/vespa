@@ -68,6 +68,7 @@ MatchingStats::add_queryeval_stats(const search::queryeval::QueryEvalStats &stat
     _approximate_nns_distances_computed += stats.approximate_nns_distances_computed();
     _approximate_nns_nodes_visited +=  stats.approximate_nns_nodes_visited();
     _total_ann_time.set(vespalib::to_s(stats.total_ann_time()));
+    _ann_timeout_hit += stats.ann_timeout_hit();
 
     return *this;
 }

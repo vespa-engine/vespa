@@ -239,6 +239,9 @@ void NearestNeighborBlueprint::flush_stats() {
         _stats->add_to_approximate_nns_distances_computed(_nni_stats.distances_computed());
         _stats->add_to_approximate_nns_nodes_visited(_nni_stats.nodes_visited());
         _stats->add_to_total_ann_time(_ann_time_used);
+        _stats->add_to_ann_timeout_hit(_ann_timeout_hit);
+
+        // Reset stats
         _ann_time_until_doom = vespalib::duration::zero();
         _ann_time_used = vespalib::duration::zero();
         _ann_timeout_hit = false;
