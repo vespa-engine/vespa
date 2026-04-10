@@ -827,6 +827,9 @@ public class YqlParserTestCase {
         assertParse("select foo from bar where {scoreThreshold : 13.3, targetHits: 7, " +
                 "thresholdBoostFactor: 2.3} wand(description, {\"a\":1, \"b\":2})",
                 "WAND(7) {scoreThreshold=13.3, thresholdBoostFactor=2.3} description{[1]:\"a\",[2]:\"b\"}");
+        assertParse("select foo from bar where {scoreThreshold : 13, targetHits: 7, " +
+                "thresholdBoostFactor: 2} wand(description, {\"a\":1, \"b\":2})",
+                "WAND(7) {scoreThreshold=13.0, thresholdBoostFactor=2.0} description{[1]:\"a\",[2]:\"b\"}");
     }
 
     @Test
@@ -924,6 +927,19 @@ public class YqlParserTestCase {
                 "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=10,hnsw.targetHitsMaxAdjustmentFactor=20.0}");
         assertParse("select foo from bar where {targetHits: 10, hnsw.filterFirstThreshold: 0.1, hnsw.filterFirstExploration: 0.25, hnsw.postFilterThreshold: 0.9} nearestNeighbor(semantic_embedding, my_vector)",
                 "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=10,hnsw.filterFirstExploration=0.25,hnsw.filterFirstThreshold=0.1,hnsw.postFilterThreshold=0.9}");
+        // Integer values for HNSW tuning parameters should be accepted and coerced to double
+        assertParse("select foo from bar where {targetHits: 10, hnsw.approximateThreshold: 1} nearestNeighbor(semantic_embedding, my_vector)",
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=10,hnsw.approximateThreshold=1.0}");
+        assertParse("select foo from bar where {targetHits: 10, hnsw.explorationSlack: 2} nearestNeighbor(semantic_embedding, my_vector)",
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=10,hnsw.explorationSlack=2.0}");
+        assertParse("select foo from bar where {targetHits: 10, hnsw.filterFirstExploration: 3} nearestNeighbor(semantic_embedding, my_vector)",
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=10,hnsw.filterFirstExploration=3.0}");
+        assertParse("select foo from bar where {targetHits: 10, hnsw.filterFirstThreshold: 4} nearestNeighbor(semantic_embedding, my_vector)",
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=10,hnsw.filterFirstThreshold=4.0}");
+        assertParse("select foo from bar where {targetHits: 10, hnsw.postFilterThreshold: 5} nearestNeighbor(semantic_embedding, my_vector)",
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=10,hnsw.postFilterThreshold=5.0}");
+        assertParse("select foo from bar where {targetHits: 10, hnsw.targetHitsMaxAdjustmentFactor: 20} nearestNeighbor(semantic_embedding, my_vector)",
+                "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetHits=10,hnsw.targetHitsMaxAdjustmentFactor=20.0}");
     }
 
     @Test
