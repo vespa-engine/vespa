@@ -83,9 +83,9 @@ public class ProtobufSerialization {
         return convertFromQuery(query, hits, nodeId, contentShare, requestTimeout, qrSearchersConfig).toByteArray();
     }
 
-    private static void convertSearchReplyErrors(Result target, List<SearchProtocol.Error> errors, boolean softTimeout) {
+    private static void convertSearchReplyErrors(Result target, List<SearchProtocol.Error> errors, boolean softTimeout, boolean annTimeout) {
         for (var error : errors) {
-            target.hits().addError(softTimeout
+            target.hits().addError(annTimeout || softTimeout
                     ? ErrorMessage.createTimeout(error.getMessage())
                     : ErrorMessage.createSearchReplyError(error.getMessage()));
         }
@@ -298,7 +298,7 @@ public class ProtobufSerialization {
         result.getResult().setTotalHitCount(protobuf.getTotalHitCount());
         result.getResult().setCoverage(convertToCoverage(protobuf));
 
-        convertSearchReplyErrors(result.getResult(), protobuf.getErrorsList(), protobuf.getDegradedBySoftTimeout());
+        convertSearchReplyErrors(result.getResult(), protobuf.getErrorsList(), protobuf.getDegradedBySoftTimeout(), protobuf.getDegradedByAnnTimeout());
         List<String> featureNames = protobuf.getMatchFeatureNamesList();
         var haveMatchFeatures = ! featureNames.isEmpty();
         MatchFeatureData matchFeatures = haveMatchFeatures ? new MatchFeatureData(featureNames) : null;
@@ -359,6 +359,8 @@ public class ProtobufSerialization {
             degradedReason |= Coverage.DEGRADED_BY_MATCH_PHASE;
         if (protobuf.getDegradedBySoftTimeout())
             degradedReason |= Coverage.DEGRADED_BY_TIMEOUT;
+        if (protobuf.getDegradedByAnnTimeout())
+            degradedReason |= Coverage.DEGRADED_BY_ANN_TIMEOUT;
         coverage.setDegradedReason(degradedReason);
 
         return coverage;
@@ -370,7 +372,8 @@ public class ProtobufSerialization {
         var coverage = result.getCoverage(false);
         if (coverage != null) {
             builder.setCoverageDocs(coverage.getDocs()).setActiveDocs(coverage.getActive()).setTargetActiveDocs(coverage.getTargetActive())
-                    .setDegradedBySoftTimeout(coverage.isDegradedByTimeout()).setDegradedByMatchPhase(coverage.isDegradedByMatchPhase());
+                    .setDegradedBySoftTimeout(coverage.isDegradedByTimeout()).setDegradedByMatchPhase(coverage.isDegradedByMatchPhase())
+                    .setDegradedByAnnTimeout(coverage.isDegradedByAnnTimeout());
         }
 
         result.hits().iterator().forEachRemaining(hit -> {

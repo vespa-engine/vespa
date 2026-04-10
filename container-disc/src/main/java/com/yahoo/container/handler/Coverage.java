@@ -28,6 +28,7 @@ public class Coverage {
     public final static int DEGRADED_BY_MATCH_PHASE = 1;
     public final static int DEGRADED_BY_TIMEOUT = 2;
     public final static int DEGRADED_BY_ADAPTIVE_TIMEOUT = 4;
+    public final static int DEGRADED_BY_ANN_TIMEOUT = 8;
 
     protected Coverage(long docs, long active, int nodes, int resultSets) {
         this(docs, active, nodes, resultSets, FullCoverageDefinition.DOCUMENT_COUNT);
@@ -103,6 +104,7 @@ public class Coverage {
     public boolean isDegradedByMatchPhase() { return (degradedReason & DEGRADED_BY_MATCH_PHASE) != 0; }
     public boolean isDegradedByTimeout() { return (degradedReason & DEGRADED_BY_TIMEOUT) != 0; }
     public boolean isDegradedByAdapativeTimeout() { return (degradedReason & DEGRADED_BY_ADAPTIVE_TIMEOUT) != 0; }
+    public boolean isDegradedByAnnTimeout() { return (degradedReason & DEGRADED_BY_ANN_TIMEOUT) != 0; }
     public boolean isDegradedByNonIdealState() { return (degradedReason == 0) && (getResultPercentage() != 100);}
 
     /** Returns whether the search had full coverage or not */
@@ -172,7 +174,8 @@ public class Coverage {
     public com.yahoo.container.logging.Coverage toLoggingCoverage() {
         int degradation = com.yahoo.container.logging.Coverage.toDegradation(isDegradedByMatchPhase(),
                 isDegradedByTimeout(),
-                isDegradedByAdapativeTimeout());
+                isDegradedByAdapativeTimeout(),
+                isDegradedByAnnTimeout());
         return new com.yahoo.container.logging.Coverage(getDocs(), getActive(), getTargetActive(), degradation);
     }
 

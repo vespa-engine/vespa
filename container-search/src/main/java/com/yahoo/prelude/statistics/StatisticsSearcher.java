@@ -77,7 +77,7 @@ public class StatisticsSearcher extends Searcher {
     private final PeakQpsReporter peakQpsReporter;
 
     // Naming of enums are reflected directly in metric dimensions and should not be changed as they are public API
-    private enum DegradedReason { match_phase, adaptive_timeout, timeout, non_ideal_state }
+    private enum DegradedReason { match_phase, adaptive_timeout, timeout, non_ideal_state, ann_timeout }
 
     private final Metric metric;
     private final Map<String, Metric.Context> chainContexts = new CopyOnWriteHashMap<>();
@@ -216,6 +216,9 @@ public class StatisticsSearcher extends Searcher {
         }
         if (coverage.isDegradedByAdapativeTimeout()) {
             return DegradedReason.adaptive_timeout;
+        }
+        if (coverage.isDegradedByAnnTimeout()) {
+            return DegradedReason.ann_timeout;
         }
         return DegradedReason.non_ideal_state;
     }

@@ -12,6 +12,7 @@ public class Coverage {
     private final static int DEGRADED_BY_MATCH_PHASE = 1;
     private final static int DEGRADED_BY_TIMEOUT = 2;
     private final static int DEGRADED_BY_ADAPTIVE_TIMEOUT = 4;
+    private final static int DEGRADED_BY_ANN_TIMEOUT = 8;
     public Coverage(long docs, long active, long targetActive, int degradedReason) {
         this.docs = docs;
         this.active = active;
@@ -27,7 +28,7 @@ public class Coverage {
         return active;
     }
 
-    public static int toDegradation(boolean degradeByMatchPhase, boolean degradedByTimeout, boolean degradedByAdaptiveTimeout) {
+    public static int toDegradation(boolean degradeByMatchPhase, boolean degradedByTimeout, boolean degradedByAdaptiveTimeout, boolean degradedByAnnTimeout) {
         int v = 0;
         if (degradeByMatchPhase) {
             v |= DEGRADED_BY_MATCH_PHASE;
@@ -37,6 +38,9 @@ public class Coverage {
         }
         if (degradedByAdaptiveTimeout) {
             v |= DEGRADED_BY_ADAPTIVE_TIMEOUT;
+        }
+        if (degradedByAnnTimeout) {
+            v |= DEGRADED_BY_ANN_TIMEOUT;
         }
         return v;
     }
@@ -48,6 +52,7 @@ public class Coverage {
     public boolean isDegradedByTimeout() { return (degradedReason & DEGRADED_BY_TIMEOUT) != 0; }
     public boolean isDegradedByAdapativeTimeout() { return (degradedReason & DEGRADED_BY_ADAPTIVE_TIMEOUT) != 0; }
     public boolean isDegradedByNonIdealState() { return (degradedReason == 0) && (getResultPercentage() != 100);}
+    public boolean isDegradedByAnnTimeout() { return (degradedReason & DEGRADED_BY_ANN_TIMEOUT) != 0; }
 
     /**
      * An int between 0 (inclusive) and 100 (inclusive) representing how many
