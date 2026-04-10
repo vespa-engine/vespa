@@ -223,6 +223,10 @@ void updateCoverage(Coverage& coverage, const MaybeMatchPhaseLimiter& limiter, c
         coverage.degradeMatchPhase();
         LOG(debug, "was limited, degraded from match phase");
     }
+    if (my_stats.approximate_nns_timed_out_queries() > 0) {
+        coverage.degrade_ann_timeout();
+        LOG(debug, "ann timeout, degraded from timed-out ann search");
+    }
     if (my_stats.softDoomed()) {
         coverage.degradeTimeout();
         LOG(debug, "soft doomed, degraded from timeout covered = %" PRIu64, coverage.getCovered());
