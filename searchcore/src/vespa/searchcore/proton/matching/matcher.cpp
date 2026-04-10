@@ -225,6 +225,10 @@ updateCoverage(Coverage & coverage, const MaybeMatchPhaseLimiter & limiter, cons
         coverage.degradeMatchPhase();
         LOG(debug, "was limited, degraded from match phase");
     }
+    if (my_stats.ann_timeout_hit()) {
+        coverage.degrade_ann_timeout();
+        LOG(debug, "ann timeout, degraded from %" PRIu64 " ann timeouts", my_stats.ann_timeout_hit());
+    }
     if (my_stats.softDoomed()) {
         coverage.degradeTimeout();
         LOG(debug, "soft doomed, degraded from timeout covered = %" PRIu64, coverage.getCovered());
