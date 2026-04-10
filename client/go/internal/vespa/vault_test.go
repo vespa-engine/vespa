@@ -15,7 +15,7 @@ import (
 func TestEnsureVaultAccessForDevNonCloud(t *testing.T) {
 	// Non-cloud targets are a no-op
 	client := &mock.HTTPClient{}
-	lt := LocalTarget(client, TLSOptions{}, 0)
+	lt := LocalTarget(client, TLSOptions{}, 0, DefaultDeployment)
 	err := EnsureVaultAccessForDev(lt, []string{"my-vault"})
 	assert.Nil(t, err)
 	assert.Empty(t, client.Requests)
