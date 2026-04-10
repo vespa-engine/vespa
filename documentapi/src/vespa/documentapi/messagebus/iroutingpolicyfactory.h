@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/messagebus/routing/iroutingpolicy.h>
 #include <vespa/documentapi/common.h>
+#include <vespa/messagebus/routing/iroutingpolicy.h>
 
 namespace documentapi {
 
@@ -38,8 +38,7 @@ public:
      * @param param The parameter to use when creating the policy.
      * @return The created routing policy.
      */
-    virtual mbus::IRoutingPolicy::UP createPolicy(const string &param) const = 0;
+    virtual mbus::IRoutingPolicy::UP createPolicy(const string& param) const = 0;
 };
 
-}
-
+} // namespace documentapi

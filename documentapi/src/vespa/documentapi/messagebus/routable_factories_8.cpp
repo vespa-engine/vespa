@@ -1,23 +1,24 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "routable_factories_8.h"
+
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/util/serializableexceptions.h>
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/documentapi/messagebus/docapi_common.pb.h>
 #include <vespa/documentapi/messagebus/docapi_feed.pb.h>
-#include <vespa/documentapi/messagebus/docapi_visiting.pb.h>
 #include <vespa/documentapi/messagebus/docapi_inspect.pb.h>
+#include <vespa/documentapi/messagebus/docapi_visiting.pb.h>
+#include <vespa/log/bufferedlogger.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
+
 #include <optional>
 #include <string_view>
-
-#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".documentapi.messagebus.routable_factories_8");
 
 namespace documentapi::messagebus {
@@ -80,8 +81,8 @@ void set_global_id(protobuf::GlobalId& dest, const document::GlobalId& src) {
 document::GlobalId get_global_id(const protobuf::GlobalId& src) {
     if (src.raw_gid().size() != document::GlobalId::LENGTH) [[unlikely]] {
         throw document::DeserializeException(
-                vespalib::make_string("Unexpected serialized protobuf GlobalId size (expected %u, was %zu)",
-                                      document::GlobalId::LENGTH, src.raw_gid().size()));
+            vespalib::make_string("Unexpected serialized protobuf GlobalId size (expected %u, was %zu)",
+                                  document::GlobalId::LENGTH, src.raw_gid().size()));
     }
     return document::GlobalId(src.raw_gid().data()); // By copy
 }
@@ -107,9 +108,8 @@ void set_tas_condition(protobuf::TestAndSetCondition& dest, const TestAndSetCond
     }
 }
 
-std::shared_ptr<document::Document> get_document(const protobuf::Document& src_doc,
-                                                 const document::DocumentTypeRepo& type_repo)
-{
+std::shared_ptr<document::Document> get_document(const protobuf::Document&         src_doc,
+                                                 const document::DocumentTypeRepo& type_repo) {
     if (!src_doc.payload().empty()) {
         vespalib::nbostream doc_buf(src_doc.payload().data(), src_doc.payload().size());
         return std::make_shared<document::Document>(type_repo, doc_buf);
@@ -117,9 +117,8 @@ std::shared_ptr<document::Document> get_document(const protobuf::Document& src_d
     return {};
 }
 
-std::shared_ptr<document::Document> get_document_or_throw(const protobuf::Document& src_doc,
-                                                          const document::DocumentTypeRepo& type_repo)
-{
+std::shared_ptr<document::Document> get_document_or_throw(const protobuf::Document&         src_doc,
+                                                          const document::DocumentTypeRepo& type_repo) {
     auto doc = get_document(src_doc, type_repo);
     if (!doc) [[unlikely]] {
         throw document::DeserializeException("Message does not contain a required document object", VESPA_STRLOC);
@@ -139,22 +138,21 @@ void set_update(protobuf::DocumentUpdate& dest, const document::DocumentUpdate& 
     dest.set_payload(stream.peek(), stream.size());
 }
 
-std::shared_ptr<document::DocumentUpdate> get_update(const protobuf::DocumentUpdate& src,
-                                                     const document::DocumentTypeRepo& type_repo)
-{
+std::shared_ptr<document::DocumentUpdate> get_update(const protobuf::DocumentUpdate&   src,
+                                                     const document::DocumentTypeRepo& type_repo) {
     if (!src.payload().empty()) {
-        return document::DocumentUpdate::createHEAD(
-                type_repo, vespalib::nbostream(src.payload().data(), src.payload().size()));
+        return document::DocumentUpdate::createHEAD(type_repo,
+                                                    vespalib::nbostream(src.payload().data(), src.payload().size()));
     }
     return {};
 }
 
-std::shared_ptr<document::DocumentUpdate> get_update_or_throw(const protobuf::DocumentUpdate& src,
-                                                              const document::DocumentTypeRepo& type_repo)
-{
+std::shared_ptr<document::DocumentUpdate> get_update_or_throw(const protobuf::DocumentUpdate&   src,
+                                                              const document::DocumentTypeRepo& type_repo) {
     auto upd = get_update(src, type_repo);
     if (!upd) [[unlikely]] {
-        throw document::DeserializeException("Message does not contain a required document update object", VESPA_STRLOC);
+        throw document::DeserializeException("Message does not contain a required document update object",
+                                             VESPA_STRLOC);
     }
     return upd;
 }
@@ -165,29 +163,31 @@ void log_codec_error(const char* op, std::string_view type, const char* msg) noe
     LOGBM(error, "Error during Protobuf %s for message type %s: %s", op, type_copy.c_str(), msg);
 }
 
-[[noreturn]] void rethrow_as_decorated_exception(std::string_view type, const std::string& msg) __attribute((noinline));
+[[noreturn]] void rethrow_as_decorated_exception(std::string_view type, const std::string& msg)
+    __attribute((noinline));
 [[noreturn]] void rethrow_as_decorated_exception(std::string_view type, const std::string& msg) {
     std::string type_copy(type);
-    throw vespalib::IllegalArgumentException(vespalib::make_string("Failed decoding message of type %s: %s", type_copy.c_str(), msg.c_str()), VESPA_STRLOC);
+    throw vespalib::IllegalArgumentException(
+        vespalib::make_string("Failed decoding message of type %s: %s", type_copy.c_str(), msg.c_str()),
+        VESPA_STRLOC);
 }
 
 template <typename DocApiType, typename ProtobufType, typename EncodeFn, typename DecodeFn>
-requires std::is_invocable_r_v<void, EncodeFn, const DocApiType&, ProtobufType&> &&
-         std::is_invocable_r_v<std::unique_ptr<DocApiType>, DecodeFn, const ProtobufType&>
+    requires std::is_invocable_r_v<void, EncodeFn, const DocApiType&, ProtobufType&> &&
+             std::is_invocable_r_v<std::unique_ptr<DocApiType>, DecodeFn, const ProtobufType&>
 class ProtobufRoutableFactory final : public IRoutableFactory {
     EncodeFn _encode_fn;
     DecodeFn _decode_fn;
+
 public:
     template <typename EncFn, typename DecFn>
     ProtobufRoutableFactory(EncFn&& enc_fn, DecFn&& dec_fn) noexcept
-        : _encode_fn(std::forward<EncFn>(enc_fn)),
-          _decode_fn(std::forward<DecFn>(dec_fn))
-    {}
+        : _encode_fn(std::forward<EncFn>(enc_fn)), _decode_fn(std::forward<DecFn>(dec_fn)) {}
     ~ProtobufRoutableFactory() override = default;
 
     bool encode(const mbus::Routable& obj, vespalib::GrowableByteBuffer& out) const override {
         ::google::protobuf::Arena arena;
-        auto* proto_obj = ::google::protobuf::Arena::Create<ProtobufType>(&arena);
+        auto*                     proto_obj = ::google::protobuf::Arena::Create<ProtobufType>(&arena);
 
         try {
             _encode_fn(dynamic_cast<const DocApiType&>(obj), *proto_obj);
@@ -204,8 +204,8 @@ public:
 
     mbus::Routable::UP decode(document::ByteBuffer& in) const override {
         ::google::protobuf::Arena arena;
-        auto* proto_obj = ::google::protobuf::Arena::Create<ProtobufType>(&arena);
-        const auto buf_size = in.getRemaining();
+        auto*                     proto_obj = ::google::protobuf::Arena::Create<ProtobufType>(&arena);
+        const auto                buf_size = in.getRemaining();
         assert(buf_size <= INT_MAX);
         bool ok = proto_obj->ParseFromArray(in.getBufferAtPos(), buf_size);
         if (!ok) [[unlikely]] {
@@ -233,10 +233,10 @@ public:
 template <typename DocApiType, typename ProtobufType, typename EncodeFn, typename DecodeFn>
 auto make_codec(EncodeFn&& enc_fn, DecodeFn&& dec_fn) {
     return std::make_shared<ProtobufRoutableFactory<DocApiType, ProtobufType, EncodeFn, DecodeFn>>(
-            std::forward<EncodeFn>(enc_fn), std::forward<DecodeFn>(dec_fn));
+        std::forward<EncodeFn>(enc_fn), std::forward<DecodeFn>(dec_fn));
 }
 
-} // anon ns
+} // namespace
 
 // ---------------------------------------------
 // Get request and response
@@ -252,16 +252,17 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::get_document_message_fact
             }
         },
         [](const protobuf::GetDocumentRequest& src) {
-            auto msg = std::make_unique<GetDocumentMessage>(get_document_id(src.document_id()), get_raw_field_set(src.field_set()));
+            auto msg = std::make_unique<GetDocumentMessage>(get_document_id(src.document_id()),
+                                                            get_raw_field_set(src.field_set()));
             if (src.has_debug_replica_node_id()) {
                 msg->set_debug_replica_node_id(src.debug_replica_node_id());
             }
             return msg;
-        }
-    );
+        });
 }
 
-std::shared_ptr<IRoutableFactory> RoutableFactories80::get_document_reply_factory(std::shared_ptr<const document::DocumentTypeRepo> repo) {
+std::shared_ptr<IRoutableFactory>
+RoutableFactories80::get_document_reply_factory(std::shared_ptr<const document::DocumentTypeRepo> repo) {
     return make_codec<GetDocumentReply, protobuf::GetDocumentResponse>(
         [](const GetDocumentReply& src, protobuf::GetDocumentResponse& dest) {
             if (src.hasDocument()) {
@@ -278,15 +279,15 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::get_document_reply_factor
             }
             msg->setLastModified(src.last_modified());
             return msg;
-        }
-    );
+        });
 }
 
 // ---------------------------------------------
 // Put request and response
 // ---------------------------------------------
 
-std::shared_ptr<IRoutableFactory> RoutableFactories80::put_document_message_factory(std::shared_ptr<const document::DocumentTypeRepo> repo) {
+std::shared_ptr<IRoutableFactory>
+RoutableFactories80::put_document_message_factory(std::shared_ptr<const document::DocumentTypeRepo> repo) {
     return make_codec<PutDocumentMessage, protobuf::PutDocumentRequest>(
         [](const PutDocumentMessage& src, protobuf::PutDocumentRequest& dest) {
             dest.set_force_assign_timestamp(src.getTimestamp());
@@ -309,8 +310,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::put_document_message_fact
             msg->set_persisted_timestamp(src.persisted_timestamp());
             msg->set_create_if_non_existent(src.create_if_missing());
             return msg;
-        }
-    );
+        });
 }
 
 std::shared_ptr<IRoutableFactory> RoutableFactories80::put_document_reply_factory() {
@@ -322,15 +322,15 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::put_document_reply_factor
             auto msg = std::make_unique<WriteDocumentReply>(DocumentProtocol::REPLY_PUTDOCUMENT);
             msg->setHighestModificationTimestamp(src.modification_timestamp());
             return msg;
-        }
-    );
+        });
 }
 
 // ---------------------------------------------
 // Update request and response
 // ---------------------------------------------
 
-std::shared_ptr<IRoutableFactory> RoutableFactories80::update_document_message_factory(std::shared_ptr<const document::DocumentTypeRepo> repo) {
+std::shared_ptr<IRoutableFactory>
+RoutableFactories80::update_document_message_factory(std::shared_ptr<const document::DocumentTypeRepo> repo) {
     return make_codec<UpdateDocumentMessage, protobuf::UpdateDocumentRequest>(
         [](const UpdateDocumentMessage& src, protobuf::UpdateDocumentRequest& dest) {
             set_update(*dest.mutable_update(), src.getDocumentUpdate());
@@ -340,8 +340,9 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::update_document_message_f
             dest.set_expected_old_timestamp(src.getOldTimestamp());
             dest.set_force_assign_timestamp(src.getNewTimestamp());
             if (src.has_cached_create_if_missing()) {
-                dest.set_create_if_missing(src.create_if_missing() ? protobuf::UpdateDocumentRequest_CreateIfMissing_TRUE
-                                                                   : protobuf::UpdateDocumentRequest_CreateIfMissing_FALSE);
+                dest.set_create_if_missing(src.create_if_missing()
+                                               ? protobuf::UpdateDocumentRequest_CreateIfMissing_TRUE
+                                               : protobuf::UpdateDocumentRequest_CreateIfMissing_FALSE);
             }
         },
         [type_repo = std::move(repo)](const protobuf::UpdateDocumentRequest& src) {
@@ -353,11 +354,11 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::update_document_message_f
             msg->setOldTimestamp(src.expected_old_timestamp());
             msg->setNewTimestamp(src.force_assign_timestamp());
             if (src.create_if_missing() != protobuf::UpdateDocumentRequest_CreateIfMissing_UNSPECIFIED) {
-                msg->set_cached_create_if_missing(src.create_if_missing() == protobuf::UpdateDocumentRequest_CreateIfMissing_TRUE);
+                msg->set_cached_create_if_missing(src.create_if_missing() ==
+                                                  protobuf::UpdateDocumentRequest_CreateIfMissing_TRUE);
             }
             return msg;
-        }
-    );
+        });
 }
 
 std::shared_ptr<IRoutableFactory> RoutableFactories80::update_document_reply_factory() {
@@ -371,8 +372,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::update_document_reply_fac
             msg->setWasFound(src.was_found());
             msg->setHighestModificationTimestamp(src.modification_timestamp());
             return msg;
-        }
-    );
+        });
 }
 
 // ---------------------------------------------
@@ -396,8 +396,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::remove_document_message_f
             }
             msg->set_persisted_timestamp(src.persisted_timestamp());
             return msg;
-        }
-    );
+        });
 }
 
 std::shared_ptr<IRoutableFactory> RoutableFactories80::remove_document_reply_factory() {
@@ -411,8 +410,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::remove_document_reply_fac
             msg->setWasFound(src.was_found());
             msg->setHighestModificationTimestamp(src.modification_timestamp());
             return msg;
-        }
-    );
+        });
 }
 
 // ---------------------------------------------
@@ -428,12 +426,12 @@ RoutableFactories80::remove_location_message_factory(std::shared_ptr<const docum
         },
         [type_repo = std::move(repo)](const protobuf::RemoveLocationRequest& src) {
             document::BucketIdFactory factory;
-            document::select::Parser parser(*type_repo, factory);
-            auto msg = std::make_unique<RemoveLocationMessage>(factory, parser, string(get_raw_selection(src.selection())));
+            document::select::Parser  parser(*type_repo, factory);
+            auto                      msg =
+                std::make_unique<RemoveLocationMessage>(factory, parser, string(get_raw_selection(src.selection())));
             msg->setBucketSpace(std::string(get_bucket_space(src.bucket_space())));
             return msg;
-        }
-    );
+        });
 }
 
 std::shared_ptr<IRoutableFactory> RoutableFactories80::remove_location_reply_factory() {
@@ -444,8 +442,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::remove_location_reply_fac
         []([[maybe_unused]] const protobuf::RemoveLocationResponse& src) {
             // The lack of 1-1 type mapping is pretty awkward :I
             return std::make_unique<DocumentReply>(DocumentProtocol::REPLY_REMOVELOCATION);
-        }
-    );
+        });
 }
 
 // ---------------------------------------------
@@ -455,8 +452,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::remove_location_reply_fac
 namespace {
 
 void set_bucket_id_vector(::google::protobuf::RepeatedPtrField<protobuf::BucketId>& dest,
-                          const std::vector<document::BucketId>& src)
-{
+                          const std::vector<document::BucketId>&                    src) {
     assert(src.size() <= INT_MAX);
     dest.Reserve(static_cast<int>(src.size()));
     for (const auto& bucket_id : src) {
@@ -464,7 +460,8 @@ void set_bucket_id_vector(::google::protobuf::RepeatedPtrField<protobuf::BucketI
     }
 }
 
-std::vector<document::BucketId> get_bucket_id_vector(const ::google::protobuf::RepeatedPtrField<protobuf::BucketId>& src) {
+std::vector<document::BucketId>
+get_bucket_id_vector(const ::google::protobuf::RepeatedPtrField<protobuf::BucketId>& src) {
     std::vector<document::BucketId> ids;
     ids.reserve(src.size());
     for (const auto& proto_bucket : src) {
@@ -474,8 +471,7 @@ std::vector<document::BucketId> get_bucket_id_vector(const ::google::protobuf::R
 }
 
 void set_visitor_params(::google::protobuf::RepeatedPtrField<protobuf::VisitorParameter>& dest,
-                        const vdslib::Parameters& src)
-{
+                        const vdslib::Parameters&                                         src) {
     assert(src.size() <= INT_MAX);
     dest.Reserve(static_cast<int>(src.size()));
     for (const auto& kv : src) {
@@ -493,7 +489,7 @@ vdslib::Parameters get_visitor_params(const ::google::protobuf::RepeatedPtrField
     return params;
 }
 
-}
+} // namespace
 
 std::shared_ptr<IRoutableFactory> RoutableFactories80::create_visitor_message_factory() {
     return make_codec<CreateVisitorMessage, protobuf::CreateVisitorRequest>(
@@ -536,8 +532,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::create_visitor_message_fa
             msg->setVisitorDispatcherVersion(50); // Hard-coded; same as for v6 serialization
             msg->setParameters(get_visitor_params(src.parameters()));
             return msg;
-        }
-    );
+        });
 }
 
 std::shared_ptr<IRoutableFactory> RoutableFactories80::create_visitor_reply_factory() {
@@ -545,7 +540,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::create_visitor_reply_fact
         [](const CreateVisitorReply& src, protobuf::CreateVisitorResponse& dest) {
             set_bucket_id(*dest.mutable_last_bucket(), src.getLastBucket());
             const auto& vs = src.getVisitorStatistics();
-            auto* stats = dest.mutable_statistics();
+            auto*       stats = dest.mutable_statistics();
             stats->set_buckets_visited(vs.getBucketsVisited());
             stats->set_documents_visited(vs.getDocumentsVisited());
             stats->set_bytes_visited(vs.getBytesVisited());
@@ -555,7 +550,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::create_visitor_reply_fact
         [](const protobuf::CreateVisitorResponse& src) {
             auto reply = std::make_unique<CreateVisitorReply>(DocumentProtocol::REPLY_CREATEVISITOR);
             reply->setLastBucket(get_bucket_id(src.last_bucket()));
-            const auto& vs = src.statistics();
+            const auto&               vs = src.statistics();
             vdslib::VisitorStatistics stats;
             stats.setBucketsVisited(vs.buckets_visited());
             stats.setDocumentsVisited(vs.documents_visited());
@@ -564,8 +559,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::create_visitor_reply_fact
             stats.setBytesReturned(vs.bytes_returned());
             reply->setVisitorStatistics(stats);
             return reply;
-        }
-    );
+        });
 }
 
 // ---------------------------------------------
@@ -581,8 +575,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::destroy_visitor_message_f
             auto msg = std::make_unique<DestroyVisitorMessage>();
             msg->setInstanceId(src.instance_id());
             return msg;
-        }
-    );
+        });
 }
 
 std::shared_ptr<IRoutableFactory> RoutableFactories80::destroy_visitor_reply_factory() {
@@ -592,8 +585,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::destroy_visitor_reply_fac
         },
         []([[maybe_unused]] const protobuf::DestroyVisitorResponse& src) {
             return std::make_unique<VisitorReply>(DocumentProtocol::REPLY_DESTROYVISITOR);
-        }
-    );
+        });
 }
 
 // ---------------------------------------------
@@ -609,8 +601,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::map_visitor_message_facto
             auto msg = std::make_unique<MapVisitorMessage>();
             msg->setData(get_visitor_params(src.data()));
             return msg;
-        }
-    );
+        });
 }
 
 std::shared_ptr<IRoutableFactory> RoutableFactories80::map_visitor_reply_factory() {
@@ -620,8 +611,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::map_visitor_reply_factory
         },
         []([[maybe_unused]] const protobuf::MapVisitorResponse& src) {
             return std::make_unique<VisitorReply>(DocumentProtocol::REPLY_MAPVISITOR);
-        }
-    );
+        });
 }
 
 // ---------------------------------------------
@@ -651,7 +641,7 @@ document::ByteBuffer wrap_as_buffer(std::string_view buf) {
     return {buf.data(), static_cast<uint32_t>(buf.size())};
 }
 
-}
+} // namespace
 
 std::shared_ptr<IRoutableFactory> RoutableFactories80::query_result_message_factory() {
     return make_codec<QueryResultMessage, protobuf::QueryResultRequest>(
@@ -664,7 +654,8 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::query_result_message_fact
             // Explicitly enforce presence of result/summary fields, as our object is not necessarily
             // well-defined if these have not been initialized.
             if (!src.has_search_result() || !src.has_document_summary()) [[unlikely]] {
-                throw document::DeserializeException("Query result does not have all required fields set", VESPA_STRLOC);
+                throw document::DeserializeException("Query result does not have all required fields set",
+                                                     VESPA_STRLOC);
             }
             {
                 auto buf_view = wrap_as_buffer(src.search_result().payload()); // Must be lvalue
@@ -675,8 +666,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::query_result_message_fact
                 msg->getDocumentSummary().deserialize(buf_view);
             }
             return msg;
-        }
-    );
+        });
 }
 
 std::shared_ptr<IRoutableFactory> RoutableFactories80::query_result_reply_factory() {
@@ -686,8 +676,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::query_result_reply_factor
         },
         []([[maybe_unused]] const protobuf::QueryResultResponse& src) {
             return std::make_unique<VisitorReply>(DocumentProtocol::REPLY_QUERYRESULT);
-        }
-    );
+        });
 }
 
 // ---------------------------------------------
@@ -705,8 +694,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::visitor_info_message_fact
             msg->setFinishedBuckets(get_bucket_id_vector(src.finished_buckets()));
             msg->setErrorMessage(src.error_message());
             return msg;
-        }
-    );
+        });
 }
 
 std::shared_ptr<IRoutableFactory> RoutableFactories80::visitor_info_reply_factory() {
@@ -716,8 +704,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::visitor_info_reply_factor
         },
         []([[maybe_unused]] const protobuf::VisitorInfoResponse& src) {
             return std::make_unique<VisitorReply>(DocumentProtocol::REPLY_VISITORINFO);
-        }
-    );
+        });
 }
 
 // ---------------------------------------------
@@ -745,8 +732,7 @@ RoutableFactories80::document_list_message_factory(std::shared_ptr<const documen
                 msg->getDocuments().emplace_back(proto_entry.timestamp(), std::move(doc), proto_entry.is_tombstone());
             }
             return msg;
-        }
-    );
+        });
 }
 
 std::shared_ptr<IRoutableFactory> RoutableFactories80::document_list_reply_factory() {
@@ -756,8 +742,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::document_list_reply_facto
         },
         []([[maybe_unused]] const protobuf::DocumentListResponse& src) {
             return std::make_unique<VisitorReply>(DocumentProtocol::REPLY_DOCUMENTLIST);
-        }
-    );
+        });
 }
 
 // ---------------------------------------------
@@ -774,8 +759,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::empty_buckets_message_fac
             auto msg = std::make_unique<EmptyBucketsMessage>();
             msg->setBucketIds(get_bucket_id_vector(src.bucket_ids()));
             return msg;
-        }
-    );
+        });
 }
 
 std::shared_ptr<IRoutableFactory> RoutableFactories80::empty_buckets_reply_factory() {
@@ -785,8 +769,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::empty_buckets_reply_facto
         },
         []([[maybe_unused]] const protobuf::EmptyBucketsResponse& src) {
             return std::make_unique<VisitorReply>(DocumentProtocol::REPLY_EMPTYBUCKETS); // ugh
-        }
-    );
+        });
 }
 
 // ---------------------------------------------
@@ -803,8 +786,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::get_bucket_list_message_f
             auto msg = std::make_unique<GetBucketListMessage>(get_bucket_id(src.bucket_id()));
             msg->setBucketSpace(string(get_bucket_space(src.bucket_space())));
             return msg;
-        }
-    );
+        });
 }
 
 std::shared_ptr<IRoutableFactory> RoutableFactories80::get_bucket_list_reply_factory() {
@@ -829,8 +811,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::get_bucket_list_reply_fac
                 reply->getBuckets().emplace_back(std::move(info));
             }
             return reply;
-        }
-    );
+        });
 }
 
 // ---------------------------------------------
@@ -845,8 +826,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::get_bucket_state_message_
         },
         [](const protobuf::GetBucketStateRequest& src) {
             return std::make_unique<GetBucketStateMessage>(get_bucket_id(src.bucket_id()));
-        }
-    );
+        });
 }
 
 std::shared_ptr<IRoutableFactory> RoutableFactories80::get_bucket_state_reply_factory() {
@@ -879,8 +859,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::get_bucket_state_reply_fa
                 }
             }
             return reply;
-        }
-    );
+        });
 }
 
 // ---------------------------------------------
@@ -900,21 +879,17 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::stat_bucket_message_facto
             msg->setDocumentSelection(string(get_raw_selection(src.selection())));
             msg->setBucketSpace(string(get_bucket_space(src.bucket_space())));
             return msg;
-        }
-    );
+        });
 }
 
 std::shared_ptr<IRoutableFactory> RoutableFactories80::stat_bucket_reply_factory() {
     return make_codec<StatBucketReply, protobuf::StatBucketResponse>(
-        [](const StatBucketReply& src, protobuf::StatBucketResponse& dest) {
-            dest.set_results(src.getResults());
-        },
+        [](const StatBucketReply& src, protobuf::StatBucketResponse& dest) { dest.set_results(src.getResults()); },
         [](const protobuf::StatBucketResponse& src) {
             auto reply = std::make_unique<StatBucketReply>();
             reply->setResults(src.results());
             return reply;
-        }
-    );
+        });
 }
 
 // ---------------------------------------------
@@ -930,8 +905,7 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::wrong_distribution_reply_
             auto reply = std::make_unique<WrongDistributionReply>();
             reply->setSystemState(src.cluster_state().state_string());
             return reply;
-        }
-    );
+        });
 }
 
 // ---------------------------------------------
@@ -940,13 +914,13 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::wrong_distribution_reply_
 
 std::shared_ptr<IRoutableFactory> RoutableFactories80::document_ignored_reply_factory() {
     return make_codec<DocumentIgnoredReply, protobuf::DocumentIgnoredResponse>(
-        []([[maybe_unused]] const DocumentIgnoredReply& src, [[maybe_unused]] protobuf::DocumentIgnoredResponse& dest) {
+        []([[maybe_unused]] const DocumentIgnoredReply&        src,
+           [[maybe_unused]] protobuf::DocumentIgnoredResponse& dest) {
             // no-op
         },
         []([[maybe_unused]] const protobuf::DocumentIgnoredResponse& src) {
             return std::make_unique<DocumentIgnoredReply>();
-        }
-    );
+        });
 }
 
-} // documentapi::messagebus
+} // namespace documentapi::messagebus

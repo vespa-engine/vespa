@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/messagebus/reply.h>
 #include <vespa/documentapi/messagebus/priority.h>
+#include <vespa/messagebus/reply.h>
 
 namespace documentapi {
 
@@ -12,7 +12,7 @@ namespace documentapi {
  */
 class DocumentReply : public mbus::Reply {
 private:
-    uint32_t _type;
+    uint32_t        _type;
     Priority::Value _priority;
 
 public:
@@ -53,4 +53,4 @@ public:
     uint32_t getType() const override { return _type; }
 };
 
-}
+} // namespace documentapi

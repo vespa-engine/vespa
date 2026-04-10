@@ -2,17 +2,16 @@
 
 #include "mirror_with_all.h"
 
-#include <vespa/slobrok/sbmirror.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/transport.h>
+#include <vespa/slobrok/sbmirror.h>
 
 namespace documentapi {
 
-MirrorAndStuff::MirrorAndStuff(const slobrok::ConfiguratorFactory & config)
-  : _transport(std::make_unique<FNET_Transport>()),
-    _orb(std::make_unique<FRT_Supervisor>(_transport.get())),
-    _mirror()
-{
+MirrorAndStuff::MirrorAndStuff(const slobrok::ConfiguratorFactory& config)
+    : _transport(std::make_unique<FNET_Transport>()),
+      _orb(std::make_unique<FRT_Supervisor>(_transport.get())),
+      _mirror() {
     _transport->Start();
     try {
         // If the configuration refers to a remote cluster that is unavailable, or if the
@@ -31,4 +30,4 @@ MirrorAndStuff::~MirrorAndStuff() {
     _transport->ShutDown(true);
 }
 
-}
+} // namespace documentapi

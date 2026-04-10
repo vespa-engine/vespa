@@ -1,61 +1,44 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "removedocumentmessage.h"
+
 #include "removedocumentreply.h"
+
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/vespalib/util/memory.h>
 
 namespace documentapi {
 
-RemoveDocumentMessage::RemoveDocumentMessage()
-    : TestAndSetMessage(),
-      _documentId(),
-      _persisted_timestamp(0)
-{
+RemoveDocumentMessage::RemoveDocumentMessage() : TestAndSetMessage(), _documentId(), _persisted_timestamp(0) {
 }
 
 RemoveDocumentMessage::RemoveDocumentMessage(const document::DocumentId& documentId)
-    :  TestAndSetMessage(),
-      _documentId(documentId),
-      _persisted_timestamp(0)
-{
+    : TestAndSetMessage(), _documentId(documentId), _persisted_timestamp(0) {
 }
 
 RemoveDocumentMessage::~RemoveDocumentMessage() = default;
 
-DocumentReply::UP
-RemoveDocumentMessage::doCreateReply() const
-{
+DocumentReply::UP RemoveDocumentMessage::doCreateReply() const {
     return DocumentReply::UP(new RemoveDocumentReply());
 }
 
-bool
-RemoveDocumentMessage::hasSequenceId() const
-{
+bool RemoveDocumentMessage::hasSequenceId() const {
     return true;
 }
 
-uint64_t
-RemoveDocumentMessage::getSequenceId() const
-{
+uint64_t RemoveDocumentMessage::getSequenceId() const {
     return vespalib::Unaligned<uint64_t>::at(_documentId.getGlobalId().get()).read();
 }
 
-uint32_t
-RemoveDocumentMessage::getType() const
-{
+uint32_t RemoveDocumentMessage::getType() const {
     return DocumentProtocol::MESSAGE_REMOVEDOCUMENT;
 }
 
-const document::DocumentId&
-RemoveDocumentMessage::getDocumentId() const
-{
+const document::DocumentId& RemoveDocumentMessage::getDocumentId() const {
     return _documentId;
 }
 
-void
-RemoveDocumentMessage::setDocumentId(const document::DocumentId& documentId)
-{
+void RemoveDocumentMessage::setDocumentId(const document::DocumentId& documentId) {
     _documentId = documentId;
 }
 
-}
+} // namespace documentapi

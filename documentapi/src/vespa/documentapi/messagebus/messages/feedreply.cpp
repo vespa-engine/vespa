@@ -4,18 +4,13 @@
 
 namespace documentapi {
 
-FeedReply::FeedReply(uint32_t type) :
-    DocumentReply(type),
-    _feedAnswers()
-{
+FeedReply::FeedReply(uint32_t type) : DocumentReply(type), _feedAnswers() {
     // empty
 }
 
-FeedReply::FeedReply(uint32_t type, const std::vector<FeedAnswer> &feedAnswers) :
-    DocumentReply(type),
-    _feedAnswers(feedAnswers)
-{
+FeedReply::FeedReply(uint32_t type, const std::vector<FeedAnswer>& feedAnswers)
+    : DocumentReply(type), _feedAnswers(feedAnswers) {
     // empty
 }
 
-}
+} // namespace documentapi

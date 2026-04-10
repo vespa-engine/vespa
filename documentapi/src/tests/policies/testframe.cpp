@@ -1,14 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "testframe.h"
+
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/network/rpcnetwork.h>
+#include <vespa/messagebus/network/rpcnetworkparams.h>
 #include <vespa/messagebus/sendproxy.h>
 #include <vespa/messagebus/testlib/simplemessage.h>
 #include <vespa/messagebus/testlib/simpleprotocol.h>
 #include <vespa/messagebus/testlib/simplereply.h>
-#include <vespa/messagebus/network/rpcnetworkparams.h>
 #include <vespa/vespalib/util/time.h>
+
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -22,9 +24,9 @@ private:
     string _address;
 
 public:
-    explicit MyServiceAddress(const string &address) : _address(address) {}
+    explicit MyServiceAddress(const string& address) : _address(address) {}
 
-    const string &getAddress() { return _address; }
+    const string& getAddress() { return _address; }
 };
 
 class MyNetwork : public mbus::RPCNetwork {
@@ -32,69 +34,63 @@ private:
     std::vector<mbus::RoutingNode*> _nodes;
 
 public:
-    explicit MyNetwork(const mbus::RPCNetworkParams &params) :
-        mbus::RPCNetwork(params),
-        _nodes()
-    { }
+    explicit MyNetwork(const mbus::RPCNetworkParams& params) : mbus::RPCNetwork(params), _nodes() {}
 
-    bool allocServiceAddress(mbus::RoutingNode &recipient) override {
+    bool allocServiceAddress(mbus::RoutingNode& recipient) override {
         string hop = recipient.getRoute().getHop(0).toString();
         recipient.setServiceAddress(std::make_unique<MyServiceAddress>(hop));
         return true;
     }
 
-    void freeServiceAddress(mbus::RoutingNode &recipient) override {
+    void freeServiceAddress(mbus::RoutingNode& recipient) override {
         recipient.setServiceAddress(mbus::IServiceAddress::UP());
     }
 
-    void send(const mbus::Message &, const std::vector<mbus::RoutingNode*> &nodes) override {
+    void send(const mbus::Message&, const std::vector<mbus::RoutingNode*>& nodes) override {
         _nodes.insert(_nodes.begin(), nodes.begin(), nodes.end());
     }
 
-    void removeNodes(std::vector<mbus::RoutingNode*> &nodes) {
+    void removeNodes(std::vector<mbus::RoutingNode*>& nodes) {
         nodes.insert(nodes.begin(), _nodes.begin(), _nodes.end());
         _nodes.clear();
     }
 };
 
-TestFrame::TestFrame(const std::shared_ptr<const DocumentTypeRepo> &repo, const string &ident) :
-    _identity(ident),
-    _slobrok(std::make_shared<mbus::Slobrok>()),
-    _net(std::make_shared<MyNetwork>(mbus::RPCNetworkParams(_slobrok->config()).setIdentity(mbus::Identity(ident)))),
-    _mbus(std::make_shared<mbus::MessageBus>(*_net, mbus::MessageBusParams().addProtocol(std::make_shared<DocumentProtocol>(repo)))),
-    _msg(),
-    _hop(mbus::HopSpec("foo", "bar")),
-    _handler()
-{
+TestFrame::TestFrame(const std::shared_ptr<const DocumentTypeRepo>& repo, const string& ident)
+    : _identity(ident),
+      _slobrok(std::make_shared<mbus::Slobrok>()),
+      _net(
+          std::make_shared<MyNetwork>(mbus::RPCNetworkParams(_slobrok->config()).setIdentity(mbus::Identity(ident)))),
+      _mbus(std::make_shared<mbus::MessageBus>(
+          *_net, mbus::MessageBusParams().addProtocol(std::make_shared<DocumentProtocol>(repo)))),
+      _msg(),
+      _hop(mbus::HopSpec("foo", "bar")),
+      _handler() {
 }
 
-TestFrame::TestFrame(TestFrame &frame) :
-    mbus::IReplyHandler(),
-    _identity(frame._identity),
-    _slobrok(frame._slobrok),
-    _net(frame._net),
-    _mbus(frame._mbus),
-    _msg(),
-    _hop(mbus::HopSpec("baz", "cox")),
-    _handler()
-{
+TestFrame::TestFrame(TestFrame& frame)
+    : mbus::IReplyHandler(),
+      _identity(frame._identity),
+      _slobrok(frame._slobrok),
+      _net(frame._net),
+      _mbus(frame._mbus),
+      _msg(),
+      _hop(mbus::HopSpec("baz", "cox")),
+      _handler() {
 }
 
 TestFrame::~TestFrame() = default;
 
-void
-TestFrame::setHop(const mbus::HopSpec &hop)
-{
+void TestFrame::setHop(const mbus::HopSpec& hop) {
     _hop = hop;
-    _mbus->setupRouting(mbus::RoutingSpec().addTable(mbus::RoutingTableSpec(DocumentProtocol::NAME).addHop(mbus::HopSpec(_hop))));
+    _mbus->setupRouting(
+        mbus::RoutingSpec().addTable(mbus::RoutingTableSpec(DocumentProtocol::NAME).addHop(mbus::HopSpec(_hop))));
 }
 
-bool
-TestFrame::select(std::vector<mbus::RoutingNode*> &selected, uint32_t numExpected)
-{
+bool TestFrame::select(std::vector<mbus::RoutingNode*>& selected, uint32_t numExpected) {
     _msg->setRoute(mbus::Route::parse(_hop.getName()));
     _msg->pushHandler(*this);
-    mbus::SendProxy &proxy = *(new mbus::SendProxy(*_mbus, *_net, nullptr)); // deletes self
+    mbus::SendProxy& proxy = *(new mbus::SendProxy(*_mbus, *_net, nullptr)); // deletes self
     proxy.handleMessage(std::move(_msg));
 
     static_cast<MyNetwork&>(*_net).removeNodes(selected);
@@ -105,13 +101,11 @@ TestFrame::select(std::vector<mbus::RoutingNode*> &selected, uint32_t numExpecte
     return true;
 }
 
-bool
-TestFrame::testSelect(const std::vector<string> &expected)
-{
+bool TestFrame::testSelect(const std::vector<string>& expected) {
     std::vector<mbus::RoutingNode*> selected;
     if (!select(selected, expected.size())) {
         LOG(error, "Failed to select recipients.");
-        for (auto & node : selected) {
+        for (auto& node : selected) {
             LOG(error, "Selected: %s", node->getRoute().toString().c_str());
         }
         return false;
@@ -130,23 +124,16 @@ TestFrame::testSelect(const std::vector<string> &expected)
     return true;
 }
 
-bool
-TestFrame::testMergeError(const ReplyMap &replies, const std::vector<uint32_t> &expectedErrors)
-{
+bool TestFrame::testMergeError(const ReplyMap& replies, const std::vector<uint32_t>& expectedErrors) {
     return testMerge(replies, expectedErrors, StringList());
 }
 
-bool
-TestFrame::testMergeOk(const ReplyMap &replies, const std::vector<string> &allowedValues)
-{
+bool TestFrame::testMergeOk(const ReplyMap& replies, const std::vector<string>& allowedValues) {
     return testMerge(replies, UIntList(), allowedValues);
 }
 
-bool
-TestFrame::testMerge(const ReplyMap &replies,
-                     const std::vector<uint32_t> &expectedErrors,
-                     const std::vector<string> &allowedValues)
-{
+bool TestFrame::testMerge(const ReplyMap& replies, const std::vector<uint32_t>& expectedErrors,
+                          const std::vector<string>& allowedValues) {
     std::vector<mbus::RoutingNode*> selected;
     if (!select(selected, replies.size())) {
         return false;
@@ -154,7 +141,7 @@ TestFrame::testMerge(const ReplyMap &replies,
 
     for (mbus::RoutingNode* node : selected) {
         string route = node->getRoute().toString();
-        auto mip = replies.find(route);
+        auto   mip = replies.find(route);
         if (mip == replies.end()) {
             LOG(error, "Recipient '%s' not expected.", route.c_str());
             return false;
@@ -186,7 +173,7 @@ TestFrame::testMerge(const ReplyMap &replies,
         }
     } else if (reply->hasErrors()) {
         LOG(error, "Got %d unexpected error(s):", reply->getNumErrors());
-        for(uint32_t i = 0; i < reply->getNumErrors(); ++i) {
+        for (uint32_t i = 0; i < reply->getNumErrors(); ++i) {
             LOG(error, "%d. %s", i + 1, reply->getError(i).toString().c_str());
         }
         return false;
@@ -210,9 +197,7 @@ TestFrame::testMerge(const ReplyMap &replies,
     return true;
 }
 
-bool
-TestFrame::testMergeOneReply(const string &recipient)
-{
+bool TestFrame::testMergeOneReply(const string& recipient) {
     if (!testSelect(StringList().add(recipient))) {
         return false;
     }
@@ -233,9 +218,7 @@ TestFrame::testMergeOneReply(const string &recipient)
     return true;
 }
 
-bool
-TestFrame::testMergeTwoReplies(const string &recipientOne, const string &recipientTwo)
-{
+bool TestFrame::testMergeTwoReplies(const string& recipientOne, const string& recipientTwo) {
     if (!testSelect(StringList().add(recipientOne).add(recipientTwo))) {
         return false;
     }
@@ -257,9 +240,9 @@ TestFrame::testMergeTwoReplies(const string &recipientOne, const string &recipie
 
     replies[recipientOne] = mbus::ErrorCode::TRANSIENT_ERROR;
     replies[recipientTwo] = mbus::ErrorCode::TRANSIENT_ERROR;
-    if (!testMergeError(replies, UIntList()
-                        .add(mbus::ErrorCode::TRANSIENT_ERROR)
-                        .add(mbus::ErrorCode::TRANSIENT_ERROR))) {
+    if (!testMergeError(replies,
+                        UIntList().add(mbus::ErrorCode::TRANSIENT_ERROR).add(mbus::ErrorCode::TRANSIENT_ERROR)))
+    {
         LOG(error, "Failed to merge two replies where both have transient errors.");
         return false;
     }
@@ -280,9 +263,10 @@ TestFrame::testMergeTwoReplies(const string &recipientOne, const string &recipie
 
     replies[recipientOne] = DocumentProtocol::ERROR_MESSAGE_IGNORED;
     replies[recipientTwo] = DocumentProtocol::ERROR_MESSAGE_IGNORED;
-    if (!testMergeError(replies, UIntList()
-                        .add(DocumentProtocol::ERROR_MESSAGE_IGNORED)
-                        .add(DocumentProtocol::ERROR_MESSAGE_IGNORED))) {
+    if (!testMergeError(
+            replies,
+            UIntList().add(DocumentProtocol::ERROR_MESSAGE_IGNORED).add(DocumentProtocol::ERROR_MESSAGE_IGNORED)))
+    {
         LOG(error, "Failed to merge two replies where both can be ignored.");
         return false;
     }
@@ -290,9 +274,7 @@ TestFrame::testMergeTwoReplies(const string &recipientOne, const string &recipie
     return true;
 }
 
-bool
-TestFrame::waitSlobrok(const string &pattern, uint32_t cnt)
-{
+bool TestFrame::waitSlobrok(const string& pattern, uint32_t cnt) {
     for (uint32_t i = 0; i < 1000; ++i) {
         slobrok::api::IMirrorAPI::SpecList res = _net->getMirror().lookup(pattern);
         if (res.size() == cnt) {
@@ -304,9 +286,7 @@ TestFrame::waitSlobrok(const string &pattern, uint32_t cnt)
     return false;
 }
 
-void
-TestFrame::handleReply(mbus::Reply::UP reply)
-{
+void TestFrame::handleReply(mbus::Reply::UP reply) {
     _msg = reply->getMessage();
     _handler.handleReply(std::move(reply));
 }

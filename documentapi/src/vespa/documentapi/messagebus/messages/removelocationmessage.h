@@ -2,10 +2,15 @@
 #pragma once
 
 #include "documentmessage.h"
+
 #include <vespa/document/bucket/bucketid.h>
 
-namespace document::select { class Parser; }
-namespace document { class BucketIdFactory; }
+namespace document::select {
+class Parser;
+}
+namespace document {
+class BucketIdFactory;
+}
 
 namespace documentapi {
 
@@ -15,23 +20,24 @@ namespace documentapi {
  */
 class RemoveLocationMessage : public DocumentMessage {
 public:
-    RemoveLocationMessage(const document::BucketIdFactory& factory, document::select::Parser& parser, string documentSelection);
+    RemoveLocationMessage(const document::BucketIdFactory& factory, document::select::Parser& parser,
+                          string documentSelection);
     ~RemoveLocationMessage() override;
 
     const string& getDocumentSelection() const { return _documentSelection; }
     const document::BucketId& getBucketId() const { return _bucketId; };
-    const string &getBucketSpace() const { return _bucketSpace; }
+    const string& getBucketSpace() const { return _bucketSpace; }
     void setBucketSpace(string value) { _bucketSpace = std::move(value); }
     uint32_t getType() const override;
     string toString() const override { return "removelocationmessage"; }
+
 protected:
     DocumentReply::UP doCreateReply() const override;
 
 private:
-    string _documentSelection;
+    string             _documentSelection;
     document::BucketId _bucketId;
-    string _bucketSpace;
+    string             _bucketSpace;
 };
 
-}
-
+} // namespace documentapi
