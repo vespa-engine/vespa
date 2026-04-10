@@ -374,8 +374,8 @@ Query::perform_ann_searches(Blueprint& blueprint, const vespalib::Doom& doom, se
     if (num_ann_searches > 0) {
         blueprint.each_node_post_order([num_ann_searches, &doom](Blueprint& bp) {
             if (auto nearest_neighbor = bp.asNearestNeighbor()) {
-                doom.arm_ann_doom(num_ann_searches);
-                nearest_neighbor->perform_index_top_k();
+                const vespalib::ANNDoom ann_doom = doom.make_ann_doom(num_ann_searches);
+                nearest_neighbor->perform_index_top_k(ann_doom);
             }
         });
     }
