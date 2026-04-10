@@ -533,7 +533,13 @@ func (c *CLI) targetFromURL(customURL string) (string, error) {
 }
 
 func (c *CLI) createCustomTarget(targetType, customURL string) (vespa.Target, error) {
-	tlsOptions, err := c.config.readTLSOptions(vespa.DefaultApplication, targetType)
+
+	// The old default for application ID (with "application" name) is still used for TLS options.
+	// Changing this can break existing pipelines/automations relying on this location for certificates. This only applies here,
+	// the config server still receives the correct default and uses that elsewhere.
+	deprecatedDefaultApplication := vespa.ApplicationID{Tenant: "default", Application: "application", Instance: "default"}
+	tlsOptions, err := c.config.readTLSOptions(deprecatedDefaultApplication, targetType)
+
 	if err != nil {
 		return nil, err
 	}
