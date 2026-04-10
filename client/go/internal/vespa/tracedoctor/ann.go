@@ -47,8 +47,17 @@ func (n annNode) makeRows(tab *table) {
 	if top_k_hits := n.root.Field("top_k_hits"); top_k_hits.Valid() {
 		tab.str("found hits").str(fmt.Sprintf("%d", top_k_hits.AsLong())).commit()
 	}
-	if time := n.root.Field("time"); time.Valid() {
-		tab.str("time").str(fmt.Sprintf("%.3f ms", time.AsDouble())).commit()
+	if time_used := n.root.Field("time_used"); time_used.Valid() {
+		tab.str("time_used").str(fmt.Sprintf("%.3f ms", time_used.AsDouble())).commit()
+	}
+	if time_until_doom := n.root.Field("time_until_doom"); time_until_doom.Valid() {
+		tab.str("time_until_doom").str(fmt.Sprintf("%.3f ms", time_until_doom.AsDouble())).commit()
+	}
+	if terminated_early := n.root.Field("terminated_early"); terminated_early.Valid() {
+		tab.str("terminated_early").str(fmt.Sprintf("%t", terminated_early.AsBool())).commit()
+	}
+	if timeout_hit := n.root.Field("timeout_hit"); timeout_hit.Valid() {
+		tab.str("timeout_hit").str(fmt.Sprintf("%t", timeout_hit.AsBool())).commit()
 	}
 }
 
