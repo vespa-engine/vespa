@@ -8,6 +8,7 @@ import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
@@ -185,6 +186,8 @@ public interface ModelContext {
         List<String> environmentVariables();
 
         default Optional<CloudAccount> cloudAccount() { return Optional.empty(); }
+
+        default CloudResourceTags cloudResourceTags() { return CloudResourceTags.empty(); }
 
         default boolean allowUserFilters() { return true; }
 

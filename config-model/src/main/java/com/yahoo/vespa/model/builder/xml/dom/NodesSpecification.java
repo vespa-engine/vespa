@@ -7,6 +7,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.ClusterInfo;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterResources;
@@ -60,6 +61,9 @@ public class NodesSpecification {
     /** The cloud account to use for nodes in this spec, if any */
     private final Optional<CloudAccount> cloudAccount;
 
+    /** The cloud resource tags to apply to nodes in this spec */
+    private final CloudResourceTags cloudResourceTags;
+
     /* Whether the count attribute was present on the nodes element. */
     private final boolean hasCountAttribute;
 
@@ -70,6 +74,7 @@ public class NodesSpecification {
                                boolean required, boolean canFail, boolean exclusive,
                                Optional<DockerImage> dockerImageRepo,
                                Optional<CloudAccount> cloudAccount,
+                               CloudResourceTags cloudResourceTags,
                                boolean hasCountAttribute) {
         if (max.smallerThan(min))
             throw new IllegalArgumentException("Max resources must be larger or equal to min resources, but " +
@@ -95,12 +100,14 @@ public class NodesSpecification {
         this.exclusive = exclusive;
         this.dockerImageRepo = dockerImageRepo;
         this.cloudAccount = cloudAccount;
+        this.cloudResourceTags = cloudResourceTags;
         this.hasCountAttribute = hasCountAttribute;
     }
 
     static NodesSpecification create(boolean dedicated, boolean canFail, Version version,
                                      ModelElement nodesElement, Optional<DockerImage> dockerImageRepo,
-                                     Optional<CloudAccount> cloudAccount) {
+                                     Optional<CloudAccount> cloudAccount,
+                                     CloudResourceTags cloudResourceTags) {
         var resolvedElement = resolveElement(nodesElement);
         var resourceConstraints = toResourceConstraints(resolvedElement);
         boolean hasCountAttribute = resolvedElement.stringAttribute("count") != null;
@@ -114,6 +121,7 @@ public class NodesSpecification {
                                       resolvedElement.booleanAttribute("exclusive", false),
                                       dockerImageToUse(resolvedElement, dockerImageRepo),
                                       cloudAccount,
+                                      cloudResourceTags,
                                       hasCountAttribute);
     }
 
@@ -161,7 +169,8 @@ public class NodesSpecification {
                       context.getDeployState().getWantedNodeVespaVersion(),
                       nodesElement,
                       context.getDeployState().getWantedDockerImageRepo(),
-                      context.getDeployState().getProperties().cloudAccount());
+                      context.getDeployState().getProperties().cloudAccount(),
+                      context.getDeployState().getProperties().cloudResourceTags());
     }
 
     /**
@@ -179,7 +188,8 @@ public class NodesSpecification {
                                   context.getDeployState().getWantedNodeVespaVersion(),
                                   nodesElement,
                                   context.getDeployState().getWantedDockerImageRepo(),
-                                  context.getDeployState().getProperties().cloudAccount()));
+                                  context.getDeployState().getProperties().cloudAccount(),
+                                  context.getDeployState().getProperties().cloudResourceTags()));
     }
 
     /**
@@ -196,6 +206,7 @@ public class NodesSpecification {
                                       false,
                                       context.getDeployState().getWantedDockerImageRepo(),
                                       context.getDeployState().getProperties().cloudAccount(),
+                                      context.getDeployState().getProperties().cloudResourceTags(),
                                       false);
     }
 
@@ -211,6 +222,7 @@ public class NodesSpecification {
                                       false,
                                       context.getDeployState().getWantedDockerImageRepo(),
                                       context.getDeployState().getProperties().cloudAccount(),
+                                      context.getDeployState().getProperties().cloudResourceTags(),
                                       false);
     }
 
@@ -237,6 +249,7 @@ public class NodesSpecification {
                                       false,
                                       context.getDeployState().getWantedDockerImageRepo(),
                                       context.getDeployState().getProperties().cloudAccount(),
+                                      context.getDeployState().getProperties().cloudResourceTags(),
                                       false);
     }
 
@@ -288,7 +301,7 @@ public class NodesSpecification {
                 .sidecars(sidecars)
                 .build();
 
-        return hostSystem.allocateHosts(cluster, Capacity.from(min, max, groupSize, required, canFail, cloudAccount, info), logger);
+        return hostSystem.allocateHosts(cluster, Capacity.from(min, max, groupSize, required, canFail, cloudAccount, cloudResourceTags, info), logger);
     }
 
     private static Pair<NodeResources, NodeResources> nodeResources(ModelElement nodesElement) {
