@@ -4,6 +4,7 @@ package com.yahoo.config.application.api;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
+import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
@@ -60,6 +61,7 @@ public final class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     private final Optional<AthenzService> athenzService;
     private final Map<CloudName, CloudAccount> cloudAccounts;
     private final Optional<Duration> hostTTL;
+    private final CloudResourceTags cloudResourceTags;
     private final Notifications notifications;
     private final List<Endpoint> endpoints;
     private final Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> zoneEndpoints;
@@ -78,6 +80,7 @@ public final class DeploymentInstanceSpec extends DeploymentSpec.Steps {
                                   Optional<AthenzService> athenzService,
                                   Map<CloudName, CloudAccount> cloudAccounts,
                                   Optional<Duration> hostTTL,
+                                  CloudResourceTags cloudResourceTags,
                                   Notifications notifications,
                                   List<Endpoint> endpoints,
                                   Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> zoneEndpoints,
@@ -102,6 +105,7 @@ public final class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         this.athenzService = Objects.requireNonNull(athenzService);
         this.cloudAccounts = Map.copyOf(cloudAccounts);
         this.hostTTL = Objects.requireNonNull(hostTTL);
+        this.cloudResourceTags = Objects.requireNonNull(cloudResourceTags);
         this.notifications = Objects.requireNonNull(notifications);
         this.endpoints = List.copyOf(Objects.requireNonNull(endpoints));
         Map<ClusterSpec.Id, Map<ZoneId, ZoneEndpoint>> zoneEndpointsCopy =  new HashMap<>();
@@ -266,6 +270,19 @@ public final class DeploymentInstanceSpec extends DeploymentSpec.Steps {
                       .findFirst()
                       .map(DeploymentSpec.DeclaredZone::cloudAccounts)
                       .orElse(cloudAccounts);
+    }
+
+    /** Returns the cloud resource tags for this instance. */
+    public CloudResourceTags cloudResourceTags() { return cloudResourceTags; }
+
+    /** Returns the cloud resource tags for the given environment and region, merged with zone-specific tags. */
+    public CloudResourceTags cloudResourceTags(Environment environment, RegionName region) {
+        CloudResourceTags zoneTags = zones().stream()
+                                            .filter(zone -> zone.concerns(environment, Optional.of(region)))
+                                            .findFirst()
+                                            .map(DeploymentSpec.DeclaredZone::cloudResourceTags)
+                                            .orElse(CloudResourceTags.empty());
+        return cloudResourceTags.mergedWith(zoneTags);
     }
 
     /** Returns the host TTL to use for given environment and region, if any */

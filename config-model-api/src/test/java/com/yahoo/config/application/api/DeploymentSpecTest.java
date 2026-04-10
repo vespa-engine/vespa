@@ -7,6 +7,7 @@ import com.yahoo.config.application.api.Endpoint.Target;
 import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
+import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
@@ -2102,6 +2103,154 @@ public class DeploymentSpecTest {
     private void assertCloudAccount(String expected, DeploymentSpec spec, CloudName cloud, String instance, Environment environment, String region) {
         assertEquals(CloudAccount.from(expected),
                      spec.cloudAccount(cloud, InstanceName.from(instance), com.yahoo.config.provision.zone.ZoneId.from(environment, RegionName.from(region))));
+    }
+
+    @Test
+    public void cloudResourceTags() {
+        String r =
+                """
+                <deployment version='1.0'>
+                    <resource-tags>
+                        <tag key='env' value='production'/>
+                        <tag key='team' value='search'/>
+                    </resource-tags>
+                    <instance id='alpha'>
+                        <resource-tags>
+                            <tag key='team' value='alpha-team'/>
+                            <tag key='cost-center' value='123'/>
+                        </resource-tags>
+                        <prod>
+                            <region>us-east-1</region>
+                            <region>us-west-1</region>
+                        </prod>
+                    </instance>
+                    <instance id='beta'>
+                        <prod>
+                            <region>us-east-1</region>
+                        </prod>
+                    </instance>
+                    <instance id='gamma'>
+                        <resource-tags>
+                            <tag key='team' value='gamma-team'/>
+                        </resource-tags>
+                        <staging/>
+                        <prod>
+                            <region>eu-west-1</region>
+                        </prod>
+                    </instance>
+                    <dev>
+                        <resource-tags>
+                            <tag key='env' value='dev'/>
+                            <tag key='dev-owner' value='tester'/>
+                        </resource-tags>
+                    </dev>
+                </deployment>
+                """;
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+
+        // Root-level tags
+        assertEquals(CloudResourceTags.from(Map.of("env", "production", "team", "search")),
+                     spec.cloudResourceTags());
+
+        // Alpha instance: root tags merged with instance tags (instance overrides root)
+        assertCloudResourceTags(Map.of("env", "production", "team", "alpha-team", "cost-center", "123"),
+                                spec, "alpha", prod, "us-east-1");
+        assertCloudResourceTags(Map.of("env", "production", "team", "alpha-team", "cost-center", "123"),
+                                spec, "alpha", prod, "us-west-1");
+
+        // Beta instance: only root tags (no instance-level override)
+        assertCloudResourceTags(Map.of("env", "production", "team", "search"),
+                                spec, "beta", prod, "us-east-1");
+
+        // Gamma instance: root merged with instance tags
+        assertCloudResourceTags(Map.of("env", "production", "team", "gamma-team"),
+                                spec, "gamma", prod, "eu-west-1");
+        assertCloudResourceTags(Map.of("env", "production", "team", "gamma-team"),
+                                spec, "gamma", staging, "default");
+
+        // Dev environment uses DevSpec tags merged with root
+        assertCloudResourceTags(Map.of("env", "dev", "team", "search", "dev-owner", "tester"),
+                                spec, "alpha", dev, "default");
+        assertCloudResourceTags(Map.of("env", "dev", "team", "search", "dev-owner", "tester"),
+                                spec, "beta", dev, "default");
+
+        // Unknown instance in dev still uses dev tags merged with root
+        assertCloudResourceTags(Map.of("env", "dev", "team", "search", "dev-owner", "tester"),
+                                spec, "unknown", dev, "default");
+    }
+
+    @Test
+    public void cloudResourceTagsWithZoneLevelOverride() {
+        String r =
+                """
+                <deployment version='1.0'>
+                    <resource-tags>
+                        <tag key='env' value='production'/>
+                    </resource-tags>
+                    <instance id='default'>
+                        <resource-tags>
+                            <tag key='team' value='my-team'/>
+                        </resource-tags>
+                        <staging>
+                            <resource-tags>
+                                <tag key='env' value='staging'/>
+                                <tag key='staging-only' value='true'/>
+                            </resource-tags>
+                        </staging>
+                        <prod>
+                            <region>us-east-1</region>
+                        </prod>
+                    </instance>
+                </deployment>
+                """;
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+
+        // Staging zone: root + instance + zone-level tags (zone overrides instance and root)
+        assertCloudResourceTags(Map.of("env", "staging", "team", "my-team", "staging-only", "true"),
+                                spec, "default", staging, "default");
+
+        // Prod region: root + instance tags only
+        assertCloudResourceTags(Map.of("env", "production", "team", "my-team"),
+                                spec, "default", prod, "us-east-1");
+    }
+
+    @Test
+    public void cloudResourceTagsEmpty() {
+        String r = "<deployment version='1.0'><instance id='default'><prod><region>us-east-1</region></prod></instance></deployment>";
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertTrue(spec.cloudResourceTags().isEmpty());
+        assertTrue(spec.cloudResourceTags(InstanceName.from("default"),
+                                          com.yahoo.config.provision.zone.ZoneId.from(prod, RegionName.from("us-east-1"))).isEmpty());
+    }
+
+    @Test
+    public void cloudResourceTagsWithEmptyValue() {
+        String r =
+                """
+                <deployment version='1.0'>
+                    <resource-tags>
+                        <tag key='marker' value=''/>
+                        <tag key='no-value'/>
+                    </resource-tags>
+                    <instance id='default'>
+                        <prod>
+                            <region>us-east-1</region>
+                        </prod>
+                    </instance>
+                </deployment>
+                """;
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        Map<String, String> tags = spec.cloudResourceTags(InstanceName.from("default"),
+                                                          com.yahoo.config.provision.zone.ZoneId.from(prod, RegionName.from("us-east-1"))).asMap();
+        assertEquals("", tags.get("marker"));
+        assertEquals("", tags.get("no-value"));
+    }
+
+    private void assertCloudResourceTags(Map<String, String> expected, DeploymentSpec spec,
+                                          String instance, Environment environment, String region) {
+        assertEquals(CloudResourceTags.from(expected),
+                     spec.cloudResourceTags(InstanceName.from(instance),
+                                            com.yahoo.config.provision.zone.ZoneId.from(environment, RegionName.from(region))));
     }
 
     private void assertHostTTL(Duration expected, DeploymentSpec spec, String instance, Environment environment, String region) {
