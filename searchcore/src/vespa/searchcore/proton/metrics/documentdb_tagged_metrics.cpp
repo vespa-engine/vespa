@@ -110,10 +110,13 @@ DocumentDBTaggedMetrics::MatchingMetrics::update(const MatchingStats &stats)
     exact_nns_distances_computed.inc(stats.exact_nns_distances_computed());
     approximate_nns_distances_computed.inc(stats.approximate_nns_distances_computed());
     approximate_nns_nodes_visited.inc(stats.approximate_nns_nodes_visited());
+    ann_timeout_hit.inc(stats.ann_timeout_hit());
     softDoomedQueries.inc(stats.softDoomed());
     queries.inc(stats.queries());
     querySetupTime.addValueBatch(stats.querySetupTimeAvg(), stats.querySetupTimeCount(),
                                       stats.querySetupTimeMin(), stats.querySetupTimeMax());
+    query_ann_time.addValueBatch(stats.total_ann_time_avg(), stats.total_ann_time_count(),
+                                      stats.total_ann_time_min(), stats.total_ann_time_max());
     queryLatency.addValueBatch(stats.queryLatencyAvg(), stats.queryLatencyCount(),
                                stats.queryLatencyMin(), stats.queryLatencyMax());
 }
@@ -127,8 +130,10 @@ DocumentDBTaggedMetrics::MatchingMetrics::MatchingMetrics(MetricSet *parent)
       approximate_nns_distances_computed("approximate_nns_distances_computed", {}, "Number of distance computations in approximate nearest-neighbor search", this),
       approximate_nns_nodes_visited("approximate_nns_nodes_visited", {}, "Number of nodes visited in approximate nearest-neighbor search", this),
       queries("queries", {}, "Number of queries executed", this),
+      ann_timeout_hit("ann_timeout_hit", {}, "Number of queries hitting the approximate nearest-neighbor search timeout", this),
       softDoomedQueries("soft_doomed_queries", {}, "Number of queries hitting the soft timeout", this),
       querySetupTime("query_setup_time", {}, "Average time (sec) spent setting up and tearing down queries", this),
+      query_ann_time("query_ann_time", {}, "Average time (sec) spent on approximate nearest-neighbor search in queries", this),
       queryLatency("query_latency", {}, "Total average latency (sec) when matching and ranking a query", this)
 {
 }
@@ -147,12 +152,14 @@ DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::RankProfileMetrics
       approximate_nns_nodes_visited("approximate_nns_nodes_visited", {}, "Number of nodes visited in approximate nearest-neighbor search", this),
       queries("queries", {}, "Number of queries executed", this),
       limitedQueries("limited_queries", {}, "Number of queries limited in match phase", this),
+      ann_timeout_hit("ann_timeout_hit", {}, "Number of queries hitting the approximate nearest-neighbor search timeout", this),
       softDoomedQueries("soft_doomed_queries", {}, "Number of queries hitting the soft timeout", this),
       softDoomFactor("soft_doom_factor", {}, "Factor used to compute soft-timeout", this),
       matchTime("match_time", {}, "Average time (sec) for matching a query (1st phase)", this),
       groupingTime("grouping_time", {}, "Average time (sec) spent on grouping", this),
       rerankTime("rerank_time", {}, "Average time (sec) spent on 2nd phase ranking", this),
       querySetupTime("query_setup_time", {}, "Average time (sec) spent setting up and tearing down queries", this),
+      query_ann_time("query_ann_time", {}, "Average time (sec) spent on approximate nearest-neighbor search in queries", this),
       queryLatency("query_latency", {}, "Total average latency (sec) when matching and ranking a query", this)
 {
     softDoomFactor.set(MatchingStats::INITIAL_SOFT_DOOM_FACTOR);
@@ -199,6 +206,7 @@ DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::update(const metri
     approximate_nns_nodes_visited.inc(stats.approximate_nns_nodes_visited());
     queries.inc(stats.queries());
     limitedQueries.inc(stats.limited_queries());
+    ann_timeout_hit.inc(stats.ann_timeout_hit());
     softDoomedQueries.inc(stats.softDoomed());
     softDoomFactor.set(stats.softDoomFactor());
     matchTime.addValueBatch(stats.matchTimeAvg(), stats.matchTimeCount(),
@@ -209,6 +217,8 @@ DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::update(const metri
                              stats.rerankTimeMin(), stats.rerankTimeMax());
     querySetupTime.addValueBatch(stats.querySetupTimeAvg(), stats.querySetupTimeCount(),
                                       stats.querySetupTimeMin(), stats.querySetupTimeMax());
+    query_ann_time.addValueBatch(stats.total_ann_time_avg(), stats.total_ann_time_count(),
+                                      stats.total_ann_time_min(), stats.total_ann_time_max());
     queryLatency.addValueBatch(stats.queryLatencyAvg(), stats.queryLatencyCount(),
                                stats.queryLatencyMin(), stats.queryLatencyMax());
     if (stats.getNumPartitions() > 0) {
