@@ -21,6 +21,7 @@
 #include <vespa/vespalib/util/thread_bundle.h>
 #include <vespa/searchlib/query/proto_tree_converter.h>
 #include <vespa/searchlib/query/tree/querytreecreator.h>
+#include <queue>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.query");
@@ -365,19 +366,18 @@ Query::handle_global_filter(Blueprint& blueprint, const vespalib::Doom& doom, ui
 void
 Query::perform_ann_searches(Blueprint& blueprint, const vespalib::Doom& doom, search::engine::Trace* /*trace*/)
 {
-    uint32_t num_ann_searches = 0;
-    blueprint.each_node_post_order([&num_ann_searches](Blueprint& bp) {
+    std::queue<search::queryeval::NearestNeighborBlueprint*> ann_blueprints;
+    blueprint.each_node_post_order([&ann_blueprints](Blueprint& bp) {
         if (auto nearest_neighbor = bp.asNearestNeighbor()) {
-            num_ann_searches += nearest_neighbor->will_perform_index_top_k();
+            if (nearest_neighbor->will_perform_index_top_k()) {
+                ann_blueprints.push(nearest_neighbor);
+            }
         }
     });
-    if (num_ann_searches > 0) {
-        blueprint.each_node_post_order([num_ann_searches, &doom](Blueprint& bp) {
-            if (auto nearest_neighbor = bp.asNearestNeighbor()) {
-                const vespalib::ANNDoom ann_doom = doom.make_ann_doom(num_ann_searches);
-                nearest_neighbor->perform_index_top_k(ann_doom);
-            }
-        });
+    while (!ann_blueprints.empty()) {
+        const vespalib::ANNDoom ann_doom = doom.make_ann_doom(ann_blueprints.size());
+        ann_blueprints.front()->perform_index_top_k(ann_doom);
+        ann_blueprints.pop();
     }
 }
 
