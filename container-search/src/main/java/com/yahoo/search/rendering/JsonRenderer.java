@@ -98,6 +98,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     private static final String COVERAGE_DEGRADE_MATCHPHASE = "match-phase";
     private static final String COVERAGE_DEGRADE_TIMEOUT = "timeout";
     private static final String COVERAGE_DEGRADE_ADAPTIVE_TIMEOUT = "adaptive-timeout";
+    private static final String COVERAGE_DEGRADE_ANN_TIMEOUT = "anntimeout";
     private static final String COVERAGE_DEGRADED_NON_IDEAL_STATE = "non-ideal-state";
     private static final String COVERAGE_FULL = "full";
     private static final String COVERAGE_NODES = "nodes";
@@ -386,6 +387,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             generator.writeBooleanField(COVERAGE_DEGRADE_MATCHPHASE, c.isDegradedByMatchPhase());
             generator.writeBooleanField(COVERAGE_DEGRADE_TIMEOUT, c.isDegradedByTimeout());
             generator.writeBooleanField(COVERAGE_DEGRADE_ADAPTIVE_TIMEOUT, c.isDegradedByAdapativeTimeout());
+            generator.writeBooleanField(COVERAGE_DEGRADE_ANN_TIMEOUT, c.isDegradedByAnnTimeout());
             generator.writeBooleanField(COVERAGE_DEGRADED_NON_IDEAL_STATE, c.isDegradedByNonIdealState());
             generator.writeEndObject();
         }

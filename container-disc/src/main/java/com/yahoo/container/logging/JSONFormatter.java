@@ -29,6 +29,7 @@ public class JSONFormatter implements LogWriter<RequestLogEntry> {
     private static final String COVERAGE_DEGRADE_MATCHPHASE = "match-phase";
     private static final String COVERAGE_DEGRADE_TIMEOUT = "timeout";
     private static final String COVERAGE_DEGRADE_ADAPTIVE_TIMEOUT = "adaptive-timeout";
+    private static final String COVERAGE_DEGRADE_ANN_TIMEOUT = "anntimeout";
     private static final String COVERAGE_DEGRADED_NON_IDEAL_STATE = "non-ideal-state";
 
     private final JsonFactory generatorFactory;
@@ -131,6 +132,8 @@ public class JSONFormatter implements LogWriter<RequestLogEntry> {
                             generator.writeBooleanField(COVERAGE_DEGRADE_TIMEOUT, c.isDegradedByTimeout());
                         if (c.isDegradedByAdapativeTimeout())
                             generator.writeBooleanField(COVERAGE_DEGRADE_ADAPTIVE_TIMEOUT, c.isDegradedByAdapativeTimeout());
+                        if (c.isDegradedByAnnTimeout())
+                            generator.writeBooleanField(COVERAGE_DEGRADE_ANN_TIMEOUT, c.isDegradedByAnnTimeout());
                         if (c.isDegradedByNonIdealState())
                             generator.writeBooleanField(COVERAGE_DEGRADED_NON_IDEAL_STATE, c.isDegradedByNonIdealState());
                         generator.writeEndObject();
