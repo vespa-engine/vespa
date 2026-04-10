@@ -164,7 +164,7 @@ Matcher::create_match_tools_factory(const search::engine::Request &request, ISea
         LOG(debug, "Soft-timeout computed factor=%1.3f, used factor=%1.3f, userSupplied=%d, softTimeout=%" PRId64,
                    _stats.softDoomFactor(), factor, hasFactorOverride, vespalib::count_ns(safeLeft));
     }
-    bool ann_timeout_enabled = anntimeout::Enabled::lookup(rankProperties);
+    bool ann_timeout_enabled = softTimeoutEnabled && anntimeout::Enabled::lookup(rankProperties);
     double ann_timeout_factor = ann_timeout_enabled ? anntimeout::Factor::lookup(rankProperties) : 1.0;
     vespalib::duration ann_left = std::chrono::duration_cast<vespalib::duration>(safeLeft * ann_timeout_factor);
     vespalib::steady_time ann_timeout(now + ann_left);
