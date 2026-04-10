@@ -1472,25 +1472,25 @@ public class YqlParser implements Parser {
         NotItem notItem = new NotItem();
         convertVarArgsAnd(ast, 0, andItem, notItem, currentField);
         if (notItem.getItemCount() == 0) {
-            return andItem;
+            return itemAnnotations(ast, andItem);
         }
         if (andItem.getItemCount() == 1) {
             notItem.setPositiveItem(andItem.getItem(0));
         } else if (andItem.getItemCount() > 1) {
             notItem.setPositiveItem(andItem);
         } // else no positives, which is ok
-        return notItem;
+        return itemAnnotations(ast, notItem);
     }
 
     /** Build a "pure" not, without any positive terms. */
     private CompositeItem buildNot(OperatorNode<ExpressionOperator> ast) {
         NotItem notItem = new NotItem();
         notItem.addNegativeItem(convertExpression(ast.getArgument(0), null));
-        return notItem;
+        return itemAnnotations(ast, notItem);
     }
 
     private CompositeItem buildOr(OperatorNode<ExpressionOperator> spec, String currentField) {
-        return convertVarArgs(spec, 0, new OrItem(), currentField);
+        return itemAnnotations(spec, convertVarArgs(spec, 0, new OrItem(), currentField));
     }
 
     private Integer buildTargetHits(OperatorNode<ExpressionOperator> spec) {
@@ -1504,11 +1504,11 @@ public class YqlParser implements Parser {
         WeakAndItem weakAnd = new WeakAndItem();
         weakAnd.setTargetHits(buildTargetHits(spec));
         weakAnd.setTotalTargetHits(getAnnotation(spec, TOTAL_TARGET_HITS, Integer.class, null, "total hits to produce across all nodes"));
-        return convertVarArgs(spec, 1, weakAnd, null);
+        return itemAnnotations(spec, convertVarArgs(spec, 1, weakAnd, null));
     }
 
     private CompositeItem buildRank(OperatorNode<ExpressionOperator> spec, String currentField) {
-        return convertVarArgs(spec, 1, new RankItem(), currentField);
+        return itemAnnotations(spec, convertVarArgs(spec, 1, new RankItem(), currentField));
     }
 
     private CompositeItem convertVarArgs(OperatorNode<ExpressionOperator> ast, int argIdx, CompositeItem out,
@@ -1988,7 +1988,7 @@ public class YqlParser implements Parser {
         wordStyleSettings(ast, wordItem);
     }
 
-    private <T extends Item> T nonTaggableLeafStyleSettings(OperatorNode<?> ast, T leaf) {
+    private <T extends Item> T itemAnnotations(OperatorNode<?> ast, T item) {
         Map<?, ?> itemAnnotations = getAnnotation(ast, ANNOTATIONS,
                                                   Map.class, Map.of(), "item annotation map");
         for (Map.Entry<?, ?> entry : itemAnnotations.entrySet()) {
@@ -1996,8 +1996,13 @@ public class YqlParser implements Parser {
                                         "Expected String annotation key, got %s.", entry.getKey().getClass());
             Preconditions.checkArgument(entry.getValue() instanceof String,
                                         "Expected String annotation value, got %s.", entry.getValue().getClass());
-            leaf.addAnnotation((String) entry.getKey(), entry.getValue());
+            item.addAnnotation((String) entry.getKey(), entry.getValue());
         }
+        return item;
+    }
+
+    private <T extends Item> T nonTaggableLeafStyleSettings(OperatorNode<?> ast, T leaf) {
+        itemAnnotations(ast, leaf);
         Boolean filter = getAnnotation(ast, FILTER, Boolean.class, null, FILTER_DESCRIPTION);
         if (filter != null) {
             leaf.setFilter(filter);

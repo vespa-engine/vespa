@@ -409,6 +409,20 @@ public class YqlParserTestCase {
     }
 
     @Test
+    void testCompoundItemAnnotations() {
+        assertEquals("and", parse("select foo from bar where ({annotations: {scope: \"and\"}}(a contains \"A\" and b contains \"B\"))")
+            .getRoot().getAnnotation("scope"));
+        assertEquals("not", parse("select foo from bar where ({annotations: {scope: \"not\"}}!(a contains \"A\"))")
+            .getRoot().getAnnotation("scope"));
+        assertEquals("or", parse("select foo from bar where ({annotations: {scope: \"or\"}}(a contains \"A\" or b contains \"B\"))")
+            .getRoot().getAnnotation("scope"));
+        assertEquals("rank", parse("select foo from bar where ({annotations: {scope: \"rank\"}}rank(a contains \"A\", b contains \"B\"))")
+            .getRoot().getAnnotation("scope"));
+        assertEquals("weakAnd", parse("select foo from bar where ({annotations: {scope: \"weakAnd\"}}weakAnd(a contains \"A\", b contains \"B\"))")
+            .getRoot().getAnnotation("scope"));
+    }
+
+    @Test
     void testAnnotationsCanBeInBrackets() {
         assertEquals("merkelapp",
                 getRootWord("select foo from bar where baz contains " +
