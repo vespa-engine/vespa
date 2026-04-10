@@ -302,11 +302,41 @@ public:
         return true;
     }
 
+    TermFieldMatchDataPositionKey max_window_end(const TermFieldMatchDataPosition& window_end,
+                                                 const TermFieldMatchDataPositionKey& last_allowed);
+
     // no-op window filter for when there are no negative terms
     struct None {
         static constexpr bool check_window(const TermFieldMatchDataPosition&, const TermFieldMatchDataPosition&) noexcept { return true; }
+        static TermFieldMatchDataPositionKey max_window_end(const TermFieldMatchDataPosition&,
+                                                            const TermFieldMatchDataPositionKey& last_allowed) noexcept
+        { return last_allowed; }
     };
 };
+
+TermFieldMatchDataPositionKey
+NegativeTermChecker::max_window_end(const TermFieldMatchDataPosition& window_end,
+                                    const TermFieldMatchDataPositionKey& last_allowed) {
+    // This function is only called if check_window has succeeded for same window_end.
+    if (_queue.empty()) {
+        return last_allowed;
+    }
+    const auto& pos = *_queue.front().curPos;
+    if (pos.getElementId() > window_end.getElementId() + 1) {
+        return last_allowed;
+    }
+    if (pos.getPosition() > _exclusion_distance) {
+        TermFieldMatchDataPositionKey avoid_negative_term_window_end(pos.getElementId(),
+                                                                     pos.getPosition() - _exclusion_distance - 1);
+        return std::min(avoid_negative_term_window_end, last_allowed);
+    }
+    if (_element_gap.has_value() && pos.getElementId() == window_end.getElementId() + 1) {
+        TermFieldMatchDataPositionKey avoid_negative_term_window_end(window_end.getElementId(),
+            pos.getPosition() + window_end.getElementLen() + _element_gap.value() - _exclusion_distance - 1);
+        return std::min(avoid_negative_term_window_end, last_allowed);
+    }
+    return last_allowed;
+}
 
 struct Iterators
 {
@@ -347,11 +377,12 @@ struct Iterators
             if (!(lastAllowed < _maxOcc)) {
                 if (filter.check_window(*front.curPos, _maxOcc)) {
                     if constexpr (MatchResult::collect_spans) {
+                        auto adjusted_last_allowed = filter.max_window_end(_maxOcc, lastAllowed);
                         auto& backing_vector = _queue.backing_vector();
                         auto extended_max_pos = _maxOcc;
                         for (auto& itr : backing_vector) {
                             if (&itr != &front) {
-                                extended_max_pos = std::max(extended_max_pos, itr.get_max_pos(lastAllowed));
+                                extended_max_pos = std::max(extended_max_pos, itr.get_max_pos(adjusted_last_allowed));
                             }
                         }
                         match_result.register_match(MatchSpan(_field_id, *front.curPos, extended_max_pos));
@@ -552,10 +583,11 @@ ONearSearch::Matcher::match_impl(uint32_t docId, MatchResult& match_result, Filt
                     LOG(debug, "ONEAR match found for document %d.", docId);
                     // OK for all terms
                     if constexpr (MatchResult::collect_spans) {
+                        auto adjusted_last_allowed = filter.max_window_end(*pos[i], lastAllowed);
                         if (lookahead < pos[i]) {
                             lookahead = pos[i];
                         }
-                        while (lookahead != inputs()[i]->end() && !(lastAllowed < lookahead->key())) {
+                        while (lookahead != inputs()[i]->end() && !(adjusted_last_allowed < lookahead->key())) {
                             ++lookahead;
                         }
                         --lookahead;

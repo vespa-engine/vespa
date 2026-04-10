@@ -76,6 +76,8 @@ protected:
             }
             return true;
         }
+
+        HitKey max_window_end(const Hit& window_end, const HitKey& last_allowed);
     };
 public:
     explicit NearQueryNode(const search::queryeval::IElementGapInspector& element_gap_inspector) noexcept;

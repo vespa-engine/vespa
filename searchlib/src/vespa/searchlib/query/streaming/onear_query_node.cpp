@@ -76,7 +76,8 @@ ONearQueryNode::evaluate_helper(MatchResult& match_result) const
         if (match) {
             if (filter.check_window(*front, *others.back())) {
                 if constexpr (MatchResult::collect_spans) {
-                    match_result.register_match(MatchSpan(*front, others.back().get_max_pos(last_allowed)));
+                    auto adjusted_last_allowed = filter.max_window_end(*others.back(), last_allowed);
+                    match_result.register_match(MatchSpan(*front, others.back().get_max_pos(adjusted_last_allowed)));
                 } else {
                     match_result.register_match(front->element_id());
                 }
