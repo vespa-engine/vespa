@@ -74,16 +74,6 @@ type PrepareResult struct {
 	LogLines []LogLinePrepareResponse
 }
 
-func (a ApplicationID) WithDefaults() ApplicationID {
-	if a.Application == "" {
-		a.Application = DefaultApplication.Application
-	}
-	if a.Instance == "" {
-		a.Instance = DefaultApplication.Instance
-	}
-	return a
-}
-
 func (a ApplicationID) String() string {
 	return fmt.Sprintf("%s.%s.%s", a.Tenant, a.Application, a.Instance)
 }
@@ -191,7 +181,7 @@ func fetchFromConfigServer(deployment DeploymentOptions, path string) error {
 		return err
 	}
 	defer os.RemoveAll(tmpDir)
-	app := deployment.Target.Deployment().Application.WithDefaults()
+	app := deployment.Target.Deployment().Application
 	endpoint := fmt.Sprintf(
 		"/application/v2/tenant/default/application/%s/environment/prod/region/default/instance/%s/content",
 		app.Application,
@@ -381,7 +371,7 @@ func Deploy(deployment DeploymentOptions) (PrepareResult, error) {
 		}
 		u, err = url.Parse(deployment.Target.Deployment().System.DeployURL(deployment.Target.Deployment()))
 	} else {
-		app := deployment.Target.Deployment().Application.WithDefaults()
+		app := deployment.Target.Deployment().Application
 		u, err = deployment.url("/application/v2/tenant/default/prepareandactivate")
 		if err != nil {
 			return PrepareResult{}, err

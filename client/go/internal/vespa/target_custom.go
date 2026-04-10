@@ -71,7 +71,7 @@ func (t *customTarget) PrintLog(options LogOptions) error {
 	if err != nil {
 		return err
 	}
-	app := t.deployment.Application.WithDefaults()
+	app := t.deployment.Application
 	endpoint := fmt.Sprintf(
 		"/application/v2/tenant/default/application/%s/environment/prod/region/default/instance/%s/logs",
 		app.Application,
@@ -194,7 +194,7 @@ func (t *customTarget) serviceStatus(wantedGeneration int64, timeout time.Durati
 	if err != nil {
 		return serviceStatus{}, err
 	}
-	app := t.deployment.Application.WithDefaults()
+	app := t.deployment.Application
 	url := fmt.Sprintf(
 		"%s/application/v2/tenant/default/application/%s/environment/prod/region/default/instance/%s/serviceconverge",
 		deployService.BaseURL,
