@@ -19,13 +19,15 @@ private:
     std::atomic<size_t> _approximate_nns_distances_computed;
     std::atomic<size_t> _approximate_nns_nodes_visited;
     vespalib::duration  _total_ann_time;
+    size_t              _ann_timeout_hit;
 public:
     // Constructor is only usable by this class
     QueryEvalStats(Private) noexcept
         : _exact_nns_distances_computed(0),
           _approximate_nns_distances_computed(0),
           _approximate_nns_nodes_visited(0),
-          _total_ann_time(vespalib::duration::zero()) {}
+          _total_ann_time(vespalib::duration::zero()),
+          _ann_timeout_hit(0) {}
     // This factory function has to be used to create objects, meaning that all such objects will be in a shared_ptr
     static std::shared_ptr<QueryEvalStats> create() { return std::make_shared<QueryEvalStats>(Private()); }
 
@@ -43,6 +45,9 @@ public:
 
     vespalib::duration total_ann_time() const noexcept { return _total_ann_time; }
     void add_to_total_ann_time(vespalib::duration ann_time) noexcept { _total_ann_time += ann_time; }
+
+    size_t ann_timeout_hit() const noexcept { return _ann_timeout_hit; }
+    void add_to_ann_timeout_hit(bool value) noexcept { _ann_timeout_hit += value ? 1 : 0; }
 };
 
 }
