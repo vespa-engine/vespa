@@ -32,6 +32,7 @@ MatchingStats::MatchingStats(double prev_soft_doom_factor) noexcept
       _exact_nns_distances_computed(0),
       _approximate_nns_distances_computed(0),
       _approximate_nns_nodes_visited(0),
+      _approximate_nns_timed_out_queries(0),
       _softDoomed(0),
       _doomOvertime(),
       _softDoomFactor(prev_soft_doom_factor),
@@ -85,6 +86,7 @@ MatchingStats& MatchingStats::add(const MatchingStats& rhs) noexcept {
     _exact_nns_distances_computed += rhs._exact_nns_distances_computed;
     _approximate_nns_distances_computed += rhs._approximate_nns_distances_computed;
     _approximate_nns_nodes_visited += rhs._approximate_nns_nodes_visited;
+    _approximate_nns_timed_out_queries += rhs._approximate_nns_timed_out_queries;
     _softDoomed += rhs.softDoomed();
     _doomOvertime.add(rhs._doomOvertime);
 

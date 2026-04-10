@@ -154,6 +154,7 @@ private:
     size_t _exact_nns_distances_computed;
     size_t _approximate_nns_distances_computed;
     size_t _approximate_nns_nodes_visited;
+    size_t _approximate_nns_timed_out_queries;
     size_t _softDoomed;
     Avg    _doomOvertime;
     using SoftDoomFactor = vespalib::datastore::AtomicValueWrapper<double>;
@@ -235,6 +236,12 @@ public:
         return *this;
     }
     size_t softDoomed() const { return _softDoomed; }
+
+    MatchingStats& approximate_nns_timed_out_queries(size_t value) {
+        _approximate_nns_timed_out_queries = value;
+        return *this;
+    }
+    size_t approximate_nns_timed_out_queries() const { return _approximate_nns_timed_out_queries; }
 
     vespalib::duration doomOvertime() const { return vespalib::from_s(_doomOvertime.max()); }
 
