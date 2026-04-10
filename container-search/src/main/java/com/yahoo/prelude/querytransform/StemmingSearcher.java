@@ -344,10 +344,7 @@ public class StemmingSearcher extends Searcher {
 
     private Item maybeDropTerm(BlockItem current, StemContext context) {
         Item item = (Item) current;
-        CompositeItem parent = item.getParent();
-        if (parent != null && mayDropTerm(parent, item, context)) {
-            return null;
-        }
+        if (mayDropTerm(item.getParent(), item, context)) return null;
         return item;
     }
 
@@ -356,18 +353,14 @@ public class StemmingSearcher extends Searcher {
     }
 
     private boolean mayDropTerm(CompositeItem parent, Item child, StemContext context) {
-        if (!shouldDropTerm(child, context)) return false;
+        if (context.insidePhrase) return false;
+        if (!(child instanceof BlockItem)) return false;
+        if (child.getParent() == null) return false;
+        if (child.getParent() instanceof PhraseItem || child.getParent() instanceof PhraseSegmentItem) return false;
+        if (child instanceof TaggableItem t && t.getConnectedItem() != null) return false;
+        if (context.reverseConnectivity != null && context.reverseConnectivity.containsKey(child)) return false;
         if (parent.getItemCount() <= 1) return false;
         return parent instanceof AndItem || parent instanceof WeakAndItem;
-    }
-
-    private boolean shouldDropTerm(Item item, StemContext context) {
-        if (context.insidePhrase) return false;
-        if (!(item instanceof BlockItem)) return false;
-        if (item.getParent() == null) return false;
-        if (item.getParent() instanceof PhraseItem || item.getParent() instanceof PhraseSegmentItem) return false;
-        if (item instanceof TaggableItem t && t.getConnectedItem() != null) return false;
-        return context.reverseConnectivity == null || !context.reverseConnectivity.containsKey(item);
     }
 
     private void setMetaData(BlockItem current, Map<Item, TaggableItem> reverseConnectivity, TaggableItem replacement) {
