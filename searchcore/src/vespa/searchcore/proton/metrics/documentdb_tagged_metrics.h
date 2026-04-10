@@ -111,8 +111,8 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
         metrics::LongCountMetric exact_nns_distances_computed;
         metrics::LongCountMetric approximate_nns_distances_computed;
         metrics::LongCountMetric approximate_nns_nodes_visited;
-        metrics::LongCountMetric ann_timeout_hit;
         metrics::LongCountMetric queries;
+        metrics::LongCountMetric ann_timeout_hit;
         metrics::LongCountMetric softDoomedQueries;
         metrics::DoubleAverageMetric querySetupTime;
         metrics::DoubleAverageMetric query_ann_time;
@@ -140,9 +140,9 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
             metrics::LongCountMetric     exact_nns_distances_computed;
             metrics::LongCountMetric     approximate_nns_distances_computed;
             metrics::LongCountMetric     approximate_nns_nodes_visited;
-            metrics::LongCountMetric     ann_timeout_hit;
             metrics::LongCountMetric     queries;
             metrics::LongCountMetric     limitedQueries;
+            metrics::LongCountMetric     ann_timeout_hit;
             metrics::LongCountMetric     softDoomedQueries;
             metrics::DoubleValueMetric   softDoomFactor;
             metrics::DoubleAverageMetric matchTime;
