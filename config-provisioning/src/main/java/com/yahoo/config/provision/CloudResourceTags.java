@@ -25,8 +25,12 @@ public class CloudResourceTags {
     /** Keys and values may only contain lowercase alphanumeric characters, hyphens and underscores. */
     private static final Pattern VALID_PATTERN = Pattern.compile("[a-z0-9_-]+");
 
+    /** Pattern for template variables, e.g. ${environment}, ${region}. */
+    private static final Pattern TEMPLATE_VARIABLE = Pattern.compile("\\$\\{[^}]+\\}");
+
     /** System tag names reserved by the platform. */
-    private static final List<String> RESERVED_TAG_NAMES = List.of("applicationid", "athenzservice");
+    private static final List<String> RESERVED_TAG_NAMES = List.of(
+            "applicationid", "athenz", "athenz-domain", "athenzservice", "fqdn", "name", "owner", "zone");
 
     /** Key prefixes reserved by the platform. */
     private static final List<String> RESERVED_KEY_PREFIXES = List.of("vai-", "corp_", "bastion_");
@@ -98,9 +102,10 @@ public class CloudResourceTags {
             if ( ! VALID_PATTERN.matcher(key).matches())
                 throw new IllegalArgumentException("Tag key contains invalid characters: '" + key +
                                                    "'. Only [a-z0-9_-] is allowed");
-            if ( ! VALID_PATTERN.matcher(value).matches())
+            String strippedValue = TEMPLATE_VARIABLE.matcher(value).replaceAll("");
+            if ( ! strippedValue.isEmpty() && ! VALID_PATTERN.matcher(strippedValue).matches())
                 throw new IllegalArgumentException("Tag value contains invalid characters for key '" + key +
-                                                   "'. Only [a-z0-9_-] is allowed");
+                                                   "'. Only [a-z0-9_-] and template variables like ${environment} are allowed");
             for (String reserved : RESERVED_TAG_NAMES) {
                 if (key.equals(reserved))
                     throw new IllegalArgumentException("Tag key '" + key + "' is reserved by the platform");

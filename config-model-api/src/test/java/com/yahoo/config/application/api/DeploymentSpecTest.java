@@ -2259,6 +2259,27 @@ public class DeploymentSpecTest {
         assertThrows(IllegalArgumentException.class, () -> DeploymentSpec.fromXml(r));
     }
 
+    @Test
+    public void cloudResourceTagsWithTemplateVariables() {
+        String r =
+                """
+                <deployment version='1.0'>
+                    <resource-tags>
+                        <tag key='env' value='${environment}'/>
+                        <tag key='location' value='prefix-${region}'/>
+                    </resource-tags>
+                    <instance id='default'>
+                        <prod>
+                            <region>us-east-1</region>
+                        </prod>
+                    </instance>
+                </deployment>
+                """;
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals("${environment}", spec.cloudResourceTags().asMap().get("env"));
+        assertEquals("prefix-${region}", spec.cloudResourceTags().asMap().get("location"));
+    }
+
     private void assertCloudResourceTags(Map<String, String> expected, DeploymentSpec spec,
                                           String instance, Environment environment, String region) {
         assertEquals(CloudResourceTags.from(expected),

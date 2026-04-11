@@ -142,13 +142,42 @@ class CloudResourceTagsTest {
     @Test
     void reserved_tag_names_rejected() {
         assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("applicationid", "value")));
+        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("athenz", "value")));
+        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("athenz-domain", "value")));
         assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("athenzservice", "value")));
+        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("fqdn", "value")));
+        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("name", "value")));
+        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("owner", "value")));
+        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("zone", "value")));
     }
 
     @Test
     void reserved_key_prefixes_rejected() {
         assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("corp_tag", "value")));
         assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("bastion_tag", "value")));
+    }
+
+    @Test
+    void template_variables_in_values_accepted() {
+        // Pure template variable
+        var tags1 = CloudResourceTags.from(Map.of("env", "${environment}"));
+        assertEquals("${environment}", tags1.asMap().get("env"));
+
+        // Template variable mixed with literal text
+        var tags2 = CloudResourceTags.from(Map.of("env", "prefix-${region}"));
+        assertEquals("prefix-${region}", tags2.asMap().get("env"));
+
+        // Multiple template variables
+        var tags3 = CloudResourceTags.from(Map.of("env", "${environment}-${region}"));
+        assertEquals("${environment}-${region}", tags3.asMap().get("env"));
+    }
+
+    @Test
+    void template_variables_with_invalid_literal_parts_rejected() {
+        assertThrows(IllegalArgumentException.class,
+                     () -> CloudResourceTags.from(Map.of("env", "UPPER${environment}")));
+        assertThrows(IllegalArgumentException.class,
+                     () -> CloudResourceTags.from(Map.of("env", "${environment} space")));
     }
 
     @Test
