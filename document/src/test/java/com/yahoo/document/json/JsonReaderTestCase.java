@@ -178,8 +178,8 @@ public class JsonReaderTestCase {
                     new TensorDataType(TensorType.fromSpec("tensor<int8>(x[2],y[3])"))));
             x.addField(new Field("dense_float_tensor",
                     new TensorDataType(TensorType.fromSpec("tensor<float>(y[3])"))));
-                x.addField(new Field("dense_bfloat16_tensor",
-                  new TensorDataType(TensorType.fromSpec("tensor<bfloat16>(x[1])"))));
+            x.addField(new Field("dense_bfloat16_tensor",
+                    new TensorDataType(TensorType.fromSpec("tensor<bfloat16>(x[1])"))));
             x.addField(new Field("dense_unbound_tensor",
                     new TensorDataType(new TensorType.Builder().indexed("x").indexed("y").build())));
             x.addField(new Field("mixed_tensor",
