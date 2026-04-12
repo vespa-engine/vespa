@@ -44,9 +44,10 @@ public class TensorReader {
         if (buffer.current() == JsonToken.VALUE_STRING
             && builder instanceof IndexedTensor.BoundBuilder indexedBuilder)
         {
-            double[] decoded = decodeHexString(buffer.currentText(), builder.type().valueType());
-            if (decoded.length == 0)
+            if (buffer.currentText().isEmpty())
                 throw new IllegalArgumentException("Bad string input for tensor with type " + builder.type());
+            double[] decoded = decodeHexStringWithTypeConversion(buffer.currentText(), builder.type().valueType(),
+                                                                  denseValueCount(indexedBuilder.type()));
             for (int i = 0; i < decoded.length; i++) {
                 indexedBuilder.cellByDirectIndex(i, decoded[i]);
             }
@@ -140,9 +141,10 @@ public class TensorReader {
             throw new IllegalArgumentException("The 'values' field can only be used with dense tensors. " +
                                                "Use 'cells' or 'blocks' instead");
         if (buffer.current() == JsonToken.VALUE_STRING) {
-            double[] decoded = decodeHexString(buffer.currentText(), builder.type().valueType());
-            if (decoded.length == 0)
+            if (buffer.currentText().isEmpty())
                 throw new IllegalArgumentException("The 'values' string does not contain any values");
+            double[] decoded = decodeHexStringWithTypeConversion(buffer.currentText(), builder.type().valueType(),
+                                                                  denseValueCount(indexedBuilder.type()));
             for (int i = 0; i < decoded.length; i++) {
                 indexedBuilder.cellByDirectIndex(i, decoded[i]);
             }
@@ -252,7 +254,7 @@ public class TensorReader {
         int index = 0;
         double[] values = new double[size];
         if (buffer.current() == JsonToken.VALUE_STRING) {
-            values = decodeHexString(buffer.currentText(), type.valueType());
+            values = decodeHexStringWithTypeConversion(buffer.currentText(), type.valueType(), size);
             index = values.length;
         } else {
             expectArrayStart(buffer.current());
@@ -285,6 +287,55 @@ public class TensorReader {
         if (type.dimensions().size() != 1)
             throw new IllegalArgumentException("Expected a tensor with a single dimension but got '" + type + "'");
         return new TensorAddress.Builder(type).add(type.dimensions().get(0).name(), label).build();
+    }
+
+    private static int denseValueCount(TensorType type) {
+        long valueCount = 1;
+        for (var dimension : type.dimensions()) {
+            valueCount *= dimension.size().orElseThrow(() ->
+                    new IllegalArgumentException("Hex values can only be used with bound dimensions in " + type));
+        }
+        return Math.toIntExact(valueCount);
+    }
+
+    private static double[] decodeHexStringWithTypeConversion(String input,
+                                                               TensorType.Value targetValueType,
+                                                               int expectedValueCount) {
+        int expectedHexDigits = expectedHexDigitCount(expectedValueCount, targetValueType);
+        if (input.length() == expectedHexDigits) {
+            return decodeHexString(input, targetValueType);
+        }
+
+        if (expectedValueCount > 0 && input.length() % expectedValueCount == 0) {
+            TensorType.Value sourceValueType = inferHexValueType(input.length() / expectedValueCount);
+            if (sourceValueType != null) {
+                return decodeHexString(input, sourceValueType);
+            }
+        }
+
+        throw new IllegalArgumentException("Expected " + expectedHexDigits + " hex digits for " +
+                                           expectedValueCount + " " + targetValueType +
+                                           " values, but got " + input.length());
+    }
+
+    private static int expectedHexDigitCount(int expectedValueCount, TensorType.Value valueType) {
+        int hexDigitsPerCell = switch (valueType) {
+            case INT8 -> 2;
+            case BFLOAT16 -> 4;
+            case FLOAT -> 8;
+            case DOUBLE -> 16;
+        };
+        return expectedValueCount * hexDigitsPerCell;
+    }
+
+    private static TensorType.Value inferHexValueType(int hexDigitsPerCell) {
+        return switch (hexDigitsPerCell) {
+            case 2 -> TensorType.Value.INT8;
+            case 4 -> TensorType.Value.BFLOAT16;
+            case 8 -> TensorType.Value.FLOAT;
+            case 16 -> TensorType.Value.DOUBLE;
+            default -> null;
+        };
     }
 
 }

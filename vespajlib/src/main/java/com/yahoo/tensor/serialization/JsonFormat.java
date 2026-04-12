@@ -340,9 +340,10 @@ public class JsonFormat {
         if ( ! (builder instanceof IndexedTensor.BoundBuilder indexedBuilder))
             throw new IllegalArgumentException("An array of values can only be used with a dense tensor. Use a map instead");
         if (values.type() == Type.STRING) {
-            double[] decoded = decodeHexString(values.asString(), builder.type().valueType());
-            if (decoded.length == 0)
+            if (values.asString().isEmpty())
                 throw new IllegalArgumentException("The values string does not contain any values");
+            double[] decoded = decodeHexStringToExpectedValueCount(values.asString(), builder.type().valueType(),
+                                                                    denseValueCount(indexedBuilder.type()));
             for (int i = 0; i < decoded.length; i++) {
                 indexedBuilder.cellByDirectIndex(i, decoded[i]);
             }
@@ -421,6 +422,37 @@ public class JsonFormat {
         return (byte)d;
     }
 
+    private static int denseValueCount(TensorType type) {
+        long valueCount = 1;
+        for (var dimension : type.dimensions()) {
+            if (dimension.size().isEmpty()) {
+                throw new IllegalArgumentException("Hex values can only be used with bound dimensions in " + type);
+            }
+            valueCount *= dimension.size().get();
+        }
+        return Math.toIntExact(valueCount);
+    }
+
+    private static int expectedHexDigitCount(int expectedValueCount, TensorType.Value valueType) {
+        int hexDigitsPerCell = switch (valueType) {
+            case INT8 -> 2;
+            case BFLOAT16 -> 4;
+            case FLOAT -> 8;
+            case DOUBLE -> 16;
+        };
+        return expectedValueCount * hexDigitsPerCell;
+    }
+
+    private static TensorType.Value inferHexValueType(int hexDigitsPerCell) {
+        return switch (hexDigitsPerCell) {
+            case 2 -> TensorType.Value.INT8;
+            case 4 -> TensorType.Value.BFLOAT16;
+            case 8 -> TensorType.Value.FLOAT;
+            case 16 -> TensorType.Value.DOUBLE;
+            default -> null;
+        };
+    }
+
     private static double[] decodeHexStringAsBytes(String input) {
         int l = input.length() / 2;
         double[] result = new double[l];
@@ -488,6 +520,29 @@ public class JsonFormat {
         };
     }
 
+    /**
+     * Decodes hex encoded values, inferring an alternate source cell type when the input length does not match
+     * the target type but still matches the expected number of values.
+     */
+    private static double[] decodeHexStringToExpectedValueCount(String input, TensorType.Value targetValueType,
+                                                                 int expectedValueCount) {
+        int expectedHexDigits = expectedHexDigitCount(expectedValueCount, targetValueType);
+        if (input.length() == expectedHexDigits) {
+            return decodeHexString(input, targetValueType);
+        }
+
+        if (expectedValueCount > 0 && input.length() % expectedValueCount == 0) {
+            TensorType.Value sourceValueType = inferHexValueType(input.length() / expectedValueCount);
+            if (sourceValueType != null) {
+                return decodeHexString(input, sourceValueType);
+            }
+        }
+
+        throw new IllegalArgumentException("Expected " + expectedHexDigits + " hex digits for " +
+                                           expectedValueCount + " " + targetValueType +
+                                           " values, but got " + input.length());
+    }
+
     private static void decodeMaybeNestedValuesInBlock(Inspector arrayField, double[] target, MutableInteger index) {
         if (arrayField.entries() == 0) {
             throw new IllegalArgumentException("The block value array does not contain any values");
@@ -506,11 +561,12 @@ public class JsonFormat {
         if (valuesField.type() == Type.ARRAY) {
             decodeMaybeNestedValuesInBlock(valuesField, values, new MutableInteger(0));
         } else if (valuesField.type() == Type.STRING) {
-            double[] decoded = decodeHexString(valuesField.asString(), mixedBuilder.type().valueType());
-            if (decoded.length == 0) {
+            if (valuesField.asString().isEmpty()) {
                 throw new IllegalArgumentException("The block value string does not contain any values");
             }
-            System.arraycopy(decoded, 0, values, 0, decoded.length);
+            double[] decoded = decodeHexStringToExpectedValueCount(valuesField.asString(), mixedBuilder.type().valueType(),
+                                                                   values.length);
+            System.arraycopy(decoded, 0, values, 0, values.length);
         } else {
             throw new IllegalArgumentException("Expected a block to contain an array of values");
         }

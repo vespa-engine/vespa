@@ -515,6 +515,34 @@ public class JsonFormatTestCase {
     }
 
     @Test
+    public void testFloatHexCanBeDecodedAsBFloat16DenseValues() {
+        var type = TensorType.fromSpec("tensor<bfloat16>(x[1])");
+        var expected = Tensor.from("tensor<bfloat16>(x[1]):[1.0]");
+
+        String wrappedJson = "{\"values\":\"3F800000\"}";
+        Tensor decoded = JsonFormat.decode(type, wrappedJson.getBytes(StandardCharsets.UTF_8));
+        assertEquals(expected, decoded);
+
+        String directJson = "\"3F800000\"";
+        decoded = JsonFormat.decode(type, directJson.getBytes(StandardCharsets.UTF_8));
+        assertEquals(expected, decoded);
+    }
+
+    @Test
+    public void testFloatHexCanBeDecodedAsBFloat16BlockValues() {
+        var type = TensorType.fromSpec("tensor<bfloat16>(x{},y[1])");
+        var expected = Tensor.from("tensor<bfloat16>(x{},y[1]):{{x:foo,y:0}:1.0}");
+
+        String mixedJson = "{\"blocks\":[{\"address\":{\"x\":\"foo\"},\"values\":\"3F800000\"}]}";
+        Tensor decoded = JsonFormat.decode(type, mixedJson.getBytes(StandardCharsets.UTF_8));
+        assertEquals(expected, decoded);
+
+        String shortJson = "{\"blocks\":{\"foo\":\"3F800000\"}}";
+        decoded = JsonFormat.decode(type, shortJson.getBytes(StandardCharsets.UTF_8));
+        assertEquals(expected, decoded);
+    }
+
+    @Test
     public void testFloatVectorInHexForm() {
         var builder = Tensor.Builder.of(TensorType.fromSpec("tensor<float>(x[3],y[4])"));
         builder.cell().label("x", 0).label("y", 0).value(42.0);
