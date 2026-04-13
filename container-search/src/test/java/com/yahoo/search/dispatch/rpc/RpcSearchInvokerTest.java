@@ -331,11 +331,15 @@ public class RpcSearchInvokerTest {
         wandItem.addToken(10L, 37);
         root.addItem(wandItem);
 
+        var nn1 = new NearestNeighborItem("myField", "myQueryTensor");
+        nn1.setTotalTargetHits(100);
+        root.addItem(nn1);
+
         var minTargetHits = 2;
-        var nn = new NearestNeighborItem("myField", "myQueryTensor");
-        nn.setTotalTargetHits(100);
-        nn.setMinTargetHits(minTargetHits);
-        root.addItem(nn);
+        var nn2 = new NearestNeighborItem("myField", "myQueryTensor");
+        nn2.setTotalTargetHits(100);
+        nn2.setMinTargetHits(minTargetHits);
+        root.addItem(nn2);
 
         query.getModel().getQueryTree().setRoot(root);
 
@@ -349,9 +353,12 @@ public class RpcSearchInvokerTest {
                          "WeakAnd in node " + i);
             assertEquals(expected.get(i), or.getChildren(1).getItemLongWand().getTargetNumHits(),
                          "Wand in node " + i);
-            assertEquals(Math.max(minTargetHits, expected.get(i)),
+            assertEquals(Math.max(100, expected.get(i)),
                          or.getChildren(2).getItemNearestNeighbor().getTargetNumHits(),
                          "NearestNeighbor in node " + i);
+            assertEquals(Math.max(minTargetHits, expected.get(i)),
+                         or.getChildren(3).getItemNearestNeighbor().getTargetNumHits(),
+                         "NearestNeighbor in node " + i + " (overriding minTargetHits)");
         }
     }
 
