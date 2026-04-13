@@ -63,6 +63,7 @@ using vespalib::btree::BTreeNoLeafData;
 using vespalib::make_string;
 
 namespace proton {
+
 namespace documentmetastore {
 
 std::string DOCID_LIMIT("docIdLimit");
