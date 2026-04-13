@@ -180,9 +180,21 @@ public class YqlJsonQueryFeatureParityTest {
     }
 
     @Test
+    void testWeakAndWithAnnotations() {
+        assertWhereParity("{scoreThreshold: 41, totalTargetHits: 7}weakAnd(a contains 'A', b contains 'B')",
+                "{ 'weakAnd' : { 'children' : [ { 'contains' : ['a', 'A'] }, { 'contains' : ['b', 'B'] } ], 'attributes' : { 'scoreThreshold': 41, 'totalTargetHits': 7 } } }");
+    }
+
+    @Test
     void testWand() {
         assertWhereParity("wand(description, {'a': 1, 'b': 2})",
                 "{ 'wand' : ['description', { 'a': 1, 'b': 2 }] }");
+    }
+
+    @Test
+    void testWandWithAnnotations() {
+        assertWhereParity("[{'scoreThreshold': 13, 'totalTargetHits': 7}]wand(description, {'a': 1, 'b': 2})",
+                "{ 'wand' : { 'children' : ['description', { 'a': 1, 'b': 2 }], 'attributes' : { 'scoreThreshold': 13, 'totalTargetHits': 7 } } }");
     }
 
     @Test
