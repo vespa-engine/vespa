@@ -82,6 +82,10 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
       _pending_index_search(false),
       _doom(doom),
       _matching_phase(MatchingPhase::FIRST_PHASE),
+      _ann_time_until_doom(vespalib::duration::zero()),
+      _ann_time_used(vespalib::duration::zero()),
+      _ann_terminated_early(false),
+      _ann_timeout_hit(false),
       _nni_stats(),
       _stats()
 {
@@ -152,15 +156,24 @@ NearestNeighborBlueprint::pending_index_search() const {
 }
 
 void
-NearestNeighborBlueprint::perform_index_search() {
+NearestNeighborBlueprint::perform_index_search(const vespalib::ANNDoom &doom) {
     if (_pending_index_search) {
-        perform_top_k(_attr_tensor.nearest_neighbor_index());
+        _ann_time_until_doom = doom.ann_left();
+
+        vespalib::Timer timer;
+        perform_top_k(_attr_tensor.nearest_neighbor_index(), doom);
+        _ann_time_used = timer.elapsed();
+
+        if (doom.ann_doom()) {
+            _ann_terminated_early = true;
+        }
+        _ann_timeout_hit = doom.is_timeout() && _ann_terminated_early;
         _pending_index_search = false;
     }
 }
 
 void
-NearestNeighborBlueprint::perform_top_k(const search::tensor::NearestNeighborIndex* nns_index)
+NearestNeighborBlueprint::perform_top_k(const search::tensor::NearestNeighborIndex* nns_index, const vespalib::ANNDoom &doom)
 {
     uint32_t k = _adjusted_target_hits;
     const auto &df = _distance_calc->function();
@@ -173,15 +186,15 @@ NearestNeighborBlueprint::perform_top_k(const search::tensor::NearestNeighborInd
         _lazy_filter_hit_ratio = static_cast<double>(_lazy_filter_hits.value()) / _attr_tensor.get_num_docs();
         _low_hit_ratio = _lazy_filter_hit_ratio.value() < _hnsw_params.filter_first_upper_limit;
         _found_hits = nns_index->find_top_k_with_filter(_nni_stats, k, df, *use_filter, _low_hit_ratio, _hnsw_params.filter_first_exploration,
-                                                        k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _hnsw_params.prefetch_tensors, _doom, _hnsw_params.distance_threshold);
+                                                        k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _hnsw_params.prefetch_tensors, doom, _hnsw_params.distance_threshold);
         _algorithm = Algorithm::INDEX_TOP_K_WITH_FILTER;
     } else if (_global_filter->is_active()) {
         _low_hit_ratio = _global_filter_hit_ratio.value() < _hnsw_params.filter_first_upper_limit;
         _found_hits = nns_index->find_top_k_with_filter(_nni_stats, k, df, *_global_filter, _low_hit_ratio, _hnsw_params.filter_first_exploration,
-                                                        k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _hnsw_params.prefetch_tensors, _doom, _hnsw_params.distance_threshold);
+                                                        k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _hnsw_params.prefetch_tensors, doom, _hnsw_params.distance_threshold);
         _algorithm = Algorithm::INDEX_TOP_K_WITH_FILTER;
     } else {
-        _found_hits = nns_index->find_top_k(_nni_stats, k, df, k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _hnsw_params.prefetch_tensors, _doom, _hnsw_params.distance_threshold);
+        _found_hits = nns_index->find_top_k(_nni_stats, k, df, k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _hnsw_params.prefetch_tensors, doom, _hnsw_params.distance_threshold);
         _algorithm = Algorithm::INDEX_TOP_K;
     }
 
@@ -225,6 +238,10 @@ void NearestNeighborBlueprint::flush_stats() {
     if (_stats) {
         _stats->add_to_approximate_nns_distances_computed(_nni_stats.distances_computed());
         _stats->add_to_approximate_nns_nodes_visited(_nni_stats.nodes_visited());
+        _stats->add_to_total_ann_time(_ann_time_used);
+        _ann_time_until_doom = vespalib::duration::zero();
+        _ann_time_used = vespalib::duration::zero();
+        _ann_timeout_hit = false;
         _nni_stats.reset();
     }
 }
@@ -245,6 +262,10 @@ NearestNeighborBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) const
         visitor.visitBool("filter_first_heuristic_used", _low_hit_ratio);
     }
     if (_algorithm == Algorithm::INDEX_TOP_K || _algorithm == Algorithm::INDEX_TOP_K_WITH_FILTER) {
+        visitor.visitFloat("time_until_doom", vespalib::count_ns(_ann_time_until_doom) / 1000000.0);
+        visitor.visitFloat("time_used", vespalib::count_ns(_ann_time_used) / 1000000.0);
+        visitor.visitBool("terminated_early", _ann_terminated_early);
+        visitor.visitBool("timeout_hit", _ann_timeout_hit);
         visitor.visitInt("distances_computed", _nni_stats.distances_computed());
         visitor.visitInt("nodes_visited", _nni_stats.nodes_visited());
         visitor.visitInt("top_k_hits", _found_hits.size());

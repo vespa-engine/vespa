@@ -277,7 +277,7 @@ Query::handle_global_filter(const IRequestContext & requestContext, uint32_t doc
                             double global_filter_lower_limit, double global_filter_upper_limit,
                             search::engine::Trace& trace, bool sort_by_cost, bool use_lazy_filter)
 {
-    if (!handle_global_filter(*_blueprint, docid_limit, global_filter_lower_limit, global_filter_upper_limit,
+    if (!handle_global_filter(*_blueprint, requestContext.getDoom(), docid_limit, global_filter_lower_limit, global_filter_upper_limit,
                               requestContext.thread_bundle(), &trace, use_lazy_filter))
     {
         return;
@@ -292,7 +292,7 @@ Query::handle_global_filter(const IRequestContext & requestContext, uint32_t doc
 }
 
 bool
-Query::handle_global_filter(Blueprint& blueprint, uint32_t docid_limit,
+Query::handle_global_filter(Blueprint& blueprint, const vespalib::Doom& doom, uint32_t docid_limit,
                             double global_filter_lower_limit, double global_filter_upper_limit,
                             vespalib::ThreadBundle &thread_bundle, search::engine::Trace* trace, bool use_lazy_filter)
 {
@@ -359,23 +359,25 @@ Query::handle_global_filter(Blueprint& blueprint, uint32_t docid_limit,
         trace->addEvent(5, "Handle global filter in query execution plan");
     }
     blueprint.set_global_filter(*global_filter, estimated_hit_ratio);
-    perform_ann_searches(blueprint);
+    perform_ann_searches(blueprint, doom, trace);
     return true;
 }
 
 void
-Query::perform_ann_searches(Blueprint& blueprint)
+Query::perform_ann_searches(Blueprint& blueprint, const vespalib::Doom& doom, search::engine::Trace* /*trace*/)
 {
     std::queue<search::queryeval::NearestNeighborBlueprint*> ann_blueprints;
     blueprint.each_node_post_order([&ann_blueprints](Blueprint& bp) {
         if (auto nearest_neighbor = bp.asNearestNeighbor()) {
-            if (nearest_neighbor->pending_index_search()) {
+            if (nearest_neighbor->will_perform_index_top_k()) {
                 ann_blueprints.push(nearest_neighbor);
             }
         }
     });
     while (!ann_blueprints.empty()) {
-        ann_blueprints.front()->perform_index_search();
+        const vespalib::ANNDoom ann_doom = doom.make_ann_doom(ann_blueprints.size());
+        ann_blueprints.front()->perform_index_top_k(ann_doom);
+        ann_blueprints.pop();
     }
 }
 

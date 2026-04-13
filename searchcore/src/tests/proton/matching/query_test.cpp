@@ -1156,21 +1156,21 @@ TEST(QueryTest, global_filter_is_calculated_and_handled)
     uint32_t docid_limit = 10;
     { // global filter is not wanted
         GlobalFilterBlueprint bp(result, false);
-        auto res = Query::handle_global_filter(bp, docid_limit, 0, 1, ttb(), nullptr);
+        auto res = Query::handle_global_filter(bp, vespalib::Doom::never(), docid_limit, 0, 1, ttb(), nullptr);
         EXPECT_FALSE(res);
         EXPECT_FALSE(bp.filter);
         EXPECT_EQ(-1.0, bp.estimated_hit_ratio);
     }
     { // estimated_hit_ratio < global_filter_lower_limit
         GlobalFilterBlueprint bp(result, true);
-        auto res = Query::handle_global_filter(bp, docid_limit, 0.31, 1, ttb(), nullptr);
+        auto res = Query::handle_global_filter(bp, vespalib::Doom::never(), docid_limit, 0.31, 1, ttb(), nullptr);
         EXPECT_FALSE(res);
         EXPECT_FALSE(bp.filter);
         EXPECT_EQ(-1.0, bp.estimated_hit_ratio);
     }
     { // estimated_hit_ratio <= global_filter_upper_limit
         GlobalFilterBlueprint bp(result, true);
-        auto res = Query::handle_global_filter(bp, docid_limit, 0, 0.3, ttb(), nullptr);
+        auto res = Query::handle_global_filter(bp, vespalib::Doom::never(), docid_limit, 0, 0.3, ttb(), nullptr);
         EXPECT_TRUE(res);
         EXPECT_TRUE(bp.filter);
         EXPECT_TRUE(bp.filter->is_active());
@@ -1183,7 +1183,7 @@ TEST(QueryTest, global_filter_is_calculated_and_handled)
     }
     { // estimated_hit_ratio > global_filter_upper_limit
         GlobalFilterBlueprint bp(result, true);
-        auto res = Query::handle_global_filter(bp, docid_limit, 0, 0.29, ttb(), nullptr);
+        auto res = Query::handle_global_filter(bp, vespalib::Doom::never(), docid_limit, 0, 0.29, ttb(), nullptr);
         EXPECT_TRUE(res);
         EXPECT_TRUE(bp.filter);
         EXPECT_FALSE(bp.filter->is_active());
