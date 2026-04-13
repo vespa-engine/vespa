@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import com.yahoo.api.annotations.Beta;
@@ -2277,7 +2278,7 @@ public class YqlParser implements Parser {
      * Uses Number to support both integer and double values.
      */
     private void assignAnnotationAsDoubleIfNotNull(OperatorNode<?> ast, String key, String description,
-                                                   java.util.function.Consumer<Double> setter) {
+                                                   Consumer<Double> setter) {
         Number number = getAnnotation(ast, key, Number.class, null, description, true);
         if (number != null) {
             setter.accept(number.doubleValue());
