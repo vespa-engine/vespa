@@ -1375,6 +1375,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if (documentApiElement == null) return ContainerDocumentApi.createDummyApi(cluster);
 
         ContainerDocumentApi.HandlerOptions documentApiOptions = DocumentApiOptionsBuilder.build(documentApiElement);
+        DocumentApiOptionsBuilder.parseMaxDocumentSizeMib(documentApiElement, deployState.getDeployLogger())
+                .ifPresent(cluster::setMaxDocumentOperationRequestSizeMib);
         Element ignoreUndefinedFields = XML.getChild(documentApiElement, "ignore-undefined-fields");
         return new ContainerDocumentApi(deployState, cluster, documentApiOptions,
                                         "true".equals(XML.getValue(ignoreUndefinedFields)), portBindingOverride(deployState, context, cluster));

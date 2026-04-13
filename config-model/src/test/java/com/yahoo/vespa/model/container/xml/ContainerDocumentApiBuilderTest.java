@@ -6,6 +6,7 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.container.handler.threadpool.ContainerThreadpoolConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
+import com.yahoo.document.restapi.DocumentOperationExecutorConfig;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.component.Handler;
@@ -22,6 +23,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -121,6 +123,52 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
                 ContainerThreadpoolConfig.class, "cluster1/component/com.yahoo.vespa.http.server.FeedHandler/threadpool@feedapi-handler");
         assertEquals(4, config.relativeMaxThreads());
         assertEquals(4, config.relativeMinThreads());
+    }
+
+    @Test
+    void max_document_size_is_parsed() {
+        Element elem = DomBuilderTest.parse(
+                "<container id='cluster1' version='1.0'>",
+                "  <document-api>",
+                "    <max-document-size>100Mb</max-document-size>",
+                "  </document-api>",
+                nodesXml,
+                "</container>");
+        ContainerModel model = createModel(root, elem).get(0);
+
+        var builder = new DocumentOperationExecutorConfig.Builder();
+        ((com.yahoo.vespa.model.container.ApplicationContainerCluster) model.getCluster()).getConfig(builder);
+        assertEquals(100, builder.build().maxDocumentOperationRequestSizeMib());
+    }
+
+    @Test
+    void max_document_size_above_2048_is_rejected() {
+        Element elem = DomBuilderTest.parse(
+                "<container id='cluster1' version='1.0'>",
+                "  <document-api>",
+                "    <max-document-size>3gb</max-document-size>",
+                "  </document-api>",
+                nodesXml,
+                "</container>");
+        var ex = assertThrows(IllegalArgumentException.class, () -> createModel(root, elem));
+        assertTrue(ex.getMessage().contains("Invalid max-document-size value '3gb'"),
+                () -> "Unexpected message: " + ex.getMessage());
+    }
+
+    @Test
+    void max_document_size_omitted_keeps_feature_flag_default() {
+        Element elem = DomBuilderTest.parse(
+                "<container id='cluster1' version='1.0'>",
+                "  <document-api />",
+                nodesXml,
+                "</container>");
+        ContainerModel model = createModel(root, elem).get(0);
+
+        var builder = new DocumentOperationExecutorConfig.Builder();
+        ((com.yahoo.vespa.model.container.ApplicationContainerCluster) model.getCluster()).getConfig(builder);
+        // Feature-flag default in tests; just assert it was not overridden to our test value.
+        assertFalse(builder.build().maxDocumentOperationRequestSizeMib() == 100,
+                "Expected feature-flag default, not the value tested above");
     }
 
     @Test
