@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Optional;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.yahoo.tensor.serialization.HexEncoding;
 import com.yahoo.tensor.serialization.JsonFormat;
-import static com.yahoo.tensor.serialization.JsonFormat.decodeHexString;
 
 /**
  * @author bratseth
@@ -82,7 +82,7 @@ class TensorParser {
                 }
             }
             else {
-                var invalidHexStringReason = invalidHexString(type.get(), valueString);
+                var invalidHexStringReason = HexEncoding.validateHex(valueString, type.get());
                 if (invalidHexStringReason.isPresent())
                     throw new IllegalArgumentException(invalidHexStringReason.get());
                 else
@@ -142,25 +142,6 @@ class TensorParser {
             throw new IllegalArgumentException("Expected a number or a string starting by '{' or 'tensor('");
         }
     }
-
-    /** Returns the reason this isn't a valid hex string, or empoty if it is valid. */
-    private static Optional<String> invalidHexString(TensorType type, String valueString) {
-        long size = 1;
-        for (var d : type.dimensions())
-            size *= d.size().orElse(0L);
-
-        int numHexDigits = (int)(size * 2 * type.valueType().sizeOfCell());
-        if (size == 0 || type.dimensions().isEmpty()) return Optional.of("Tensor type has zero values");
-
-        // Use a generic message as the user may not have meant to end up here when supplying non-hex characters
-        if (valueString.chars().anyMatch(ch -> (Character.digit(ch, 16) == -1)))
-            return Optional.of("Expected a number, hex string, or a string starting by {, [ or tensor(...)");
-
-        if (valueString.length() != numHexDigits)
-            return Optional.of("Expected " + numHexDigits + " hex digits, but got " + valueString.length());
-        return Optional.empty();
-    }
-
     private static Tensor tensorFromDenseValueString(String valueString,
                                                      Optional<TensorType> type,
                                                      List<String> dimensionOrder) {
@@ -326,8 +307,8 @@ class TensorParser {
             if (string.charAt(position) != '[') {
                 int stopPos = stopCharIndex(position);
                 String hexToken = string.substring(position, stopPos);
-                if (invalidHexString(builder.type(), hexToken).isEmpty()) {
-                    double[] values = decodeHexString(hexToken, builder.type().valueType());
+                if (HexEncoding.validateHex(hexToken, builder.type()).isEmpty()) {
+                    double[] values = HexEncoding.decodeHex(hexToken, builder.type());
                     int i = 0;
                     while (indexes.hasNext()) {
                         indexes.next();
