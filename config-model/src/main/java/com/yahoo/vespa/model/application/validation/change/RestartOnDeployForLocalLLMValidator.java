@@ -24,7 +24,7 @@ import static java.util.stream.Collectors.toUnmodifiableSet;
  * configs for this cluster.
  *
  * @author Lester Solbakken
- * @author glabashnik
+ * @author glebashnik
  */
 public class RestartOnDeployForLocalLLMValidator implements ChangeValidator {
 

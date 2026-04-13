@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Lester Solbakken
- * @author glabashnik
+ * @author glebashnik
  */
 public class RestartOnDeployForLocalLLMValidatorTest {
 
