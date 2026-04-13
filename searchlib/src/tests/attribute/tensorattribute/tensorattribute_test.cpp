@@ -1550,7 +1550,11 @@ TEST(TensorAttributeTest, NN_blueprint_handles_empty_filter_for_post_filtering)
     NearestNeighborBlueprintFixture f;
     auto bp = f.make_blueprint();
     auto empty_filter = GlobalFilter::create();
+    EXPECT_FALSE(bp->pending_index_search());
     bp->set_global_filter(*empty_filter, 0.6);
+    EXPECT_TRUE(bp->pending_index_search());
+    bp->perform_index_search();
+    EXPECT_FALSE(bp->pending_index_search());
     // targetHits is adjusted based on the estimated hit ratio of the query.
     EXPECT_EQ(3u, bp->get_target_hits());
     EXPECT_EQ(5u, bp->get_adjusted_target_hits());
@@ -1563,7 +1567,11 @@ TEST(TensorAttributeTest, NN_blueprint_adjustment_of_targetHits_is_bound_for_pos
     NearestNeighborBlueprintFixture f;
     auto bp = f.make_blueprint(true, 0.05, 3.5);
     auto empty_filter = GlobalFilter::create();
+    EXPECT_FALSE(bp->pending_index_search());
     bp->set_global_filter(*empty_filter, 0.2);
+    EXPECT_TRUE(bp->pending_index_search());
+    bp->perform_index_search();
+    EXPECT_FALSE(bp->pending_index_search());
     // targetHits is adjusted based on the estimated hit ratio of the query,
     // but bound by target-hits-max-adjustment-factor
     EXPECT_EQ(3u, bp->get_target_hits());
@@ -1580,7 +1588,11 @@ TEST(TensorAttributeTest, NN_blueprint_handles_strong_filter_for_pre_filtering)
     filter->setBit(3);
     filter->invalidateCachedCount();
     auto strong_filter = GlobalFilter::create(std::move(filter));
+    EXPECT_FALSE(bp->pending_index_search());
     bp->set_global_filter(*strong_filter, 0.25);
+    EXPECT_TRUE(bp->pending_index_search());
+    bp->perform_index_search();
+    EXPECT_FALSE(bp->pending_index_search());
     EXPECT_EQ(3u, bp->get_target_hits());
     EXPECT_EQ(3u, bp->get_adjusted_target_hits());
     EXPECT_EQ(1u, bp->getState().estimate().estHits);
@@ -1599,7 +1611,11 @@ TEST(TensorAttributeTest, NN_blueprint_handles_weak_filter_for_pre_filtering)
     filter->setBit(9);
     filter->invalidateCachedCount();
     auto weak_filter = GlobalFilter::create(std::move(filter));
+    EXPECT_FALSE(bp->pending_index_search());
     bp->set_global_filter(*weak_filter, 0.6);
+    EXPECT_TRUE(bp->pending_index_search());
+    bp->perform_index_search();
+    EXPECT_FALSE(bp->pending_index_search());
     EXPECT_EQ(3u, bp->get_target_hits());
     EXPECT_EQ(3u, bp->get_adjusted_target_hits());
     EXPECT_EQ(3u, bp->getState().estimate().estHits);
@@ -1614,7 +1630,9 @@ TEST(TensorAttributeTest, NN_blueprint_handles_strong_filter_triggering_exact_se
     filter->setBit(3);
     filter->invalidateCachedCount();
     auto strong_filter = GlobalFilter::create(std::move(filter));
+    EXPECT_FALSE(bp->pending_index_search());
     bp->set_global_filter(*strong_filter, 0.6);
+    EXPECT_FALSE(bp->pending_index_search());
     EXPECT_EQ(3u, bp->get_target_hits());
     EXPECT_EQ(3u, bp->get_adjusted_target_hits());
     EXPECT_EQ(1u, bp->getState().estimate().estHits);
@@ -1654,7 +1672,11 @@ TEST(TensorAttributeTest, NN_blueprint_collects_stats)
         auto bp = f.make_blueprint(true);
         bp->install_stats(*stats);
         auto inactive_filter = GlobalFilter::create();
+        EXPECT_FALSE(bp->pending_index_search());
         bp->set_global_filter(*inactive_filter, 0.6);
+        EXPECT_TRUE(bp->pending_index_search());
+        bp->perform_index_search();
+        EXPECT_FALSE(bp->pending_index_search());
     }
     EXPECT_EQ(1, stats->approximate_nns_distances_computed());
     EXPECT_EQ(2, stats->approximate_nns_nodes_visited());
@@ -1671,7 +1693,11 @@ TEST(TensorAttributeTest, NN_blueprint_collects_stats)
         filter->setBit(9);
         filter->invalidateCachedCount();
         auto weak_filter = GlobalFilter::create(std::move(filter));
+        EXPECT_FALSE(bp->pending_index_search());
         bp->set_global_filter(*weak_filter, 0.6);
+        EXPECT_TRUE(bp->pending_index_search());
+        bp->perform_index_search();
+        EXPECT_FALSE(bp->pending_index_search());
     }
     EXPECT_EQ(2, stats->approximate_nns_distances_computed());
     EXPECT_EQ(4, stats->approximate_nns_nodes_visited());
@@ -1684,7 +1710,9 @@ TEST(TensorAttributeTest, NN_blueprint_collects_stats)
         filter->setBit(3);
         filter->invalidateCachedCount();
         auto strong_filter = GlobalFilter::create(std::move(filter));
+        EXPECT_FALSE(bp->pending_index_search());
         bp->set_global_filter(*strong_filter, 0.6);
+        EXPECT_FALSE(bp->pending_index_search());
     }
     EXPECT_EQ(2, stats->approximate_nns_distances_computed());
     EXPECT_EQ(4, stats->approximate_nns_nodes_visited());
@@ -1694,7 +1722,9 @@ TEST(TensorAttributeTest, NN_blueprint_collects_stats)
         auto bp = f.make_blueprint(false);
         bp->install_stats(*stats);
         auto inactive_filter = GlobalFilter::create();
+        EXPECT_FALSE(bp->pending_index_search());
         bp->set_global_filter(*inactive_filter, 0.6);
+        EXPECT_FALSE(bp->pending_index_search());
     }
     EXPECT_EQ(2, stats->approximate_nns_distances_computed());
     EXPECT_EQ(4, stats->approximate_nns_nodes_visited());
