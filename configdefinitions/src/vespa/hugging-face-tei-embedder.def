@@ -1,0 +1,40 @@
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+package=ai.vespa.embedding.config
+
+# Hugging Face Text Embeddings Inference endpoint URL.
+endpoint string default="http://localhost:8080/embed"
+
+# Optional secret reference in Vespa's secret store containing Bearer token.
+apiKeySecretRef string default=""
+
+# Optional output dimension to request from the endpoint. 0 means infer from tensor type.
+dimensions int default=0
+
+# Whether to normalize embeddings server-side.
+normalize bool default=true
+
+# Truncate input if it exceeds the model token limit.
+truncate bool default=false
+
+# Truncation direction when truncation is enabled.
+truncationDirection enum { LEFT, RIGHT } default=RIGHT
+
+# Optional prompt name configured in sentence-transformers prompts.
+promptName string default=""
+
+# Optional prompt name for query destination.
+queryPromptName string default=""
+
+# Optional prompt name for document destination.
+documentPromptName string default=""
+
+# Maximum retry attempts on transient server errors.
+maxRetries int default=3
+
+# HTTP client timeout in milliseconds for read/write operations.
+timeout int default=60000
+
+# Dynamic batching configuration.
+batching.maxSize int default=0
+batching.maxDelayMillis long default=0

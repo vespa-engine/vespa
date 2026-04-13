@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<services version="1.0">
+    <container id="container" version="1.0">
+        <search />
+        <document-api />
+
+        <component id="hf-tei-full" type="hugging-face-tei-embedder">
+            <endpoint>http://tei.local:8080/embed</endpoint>
+            <api-key-secret-ref>hf_tei_api_key</api-key-secret-ref>
+            <dimensions>768</dimensions>
+            <normalize>true</normalize>
+            <truncate>true</truncate>
+            <truncation-direction>left</truncation-direction>
+            <prompt-name>default_prompt</prompt-name>
+            <query-prompt-name>query_prompt</query-prompt-name>
+            <document-prompt-name>document_prompt</document-prompt-name>
+            <max-retries>5</max-retries>
+            <timeout>45000</timeout>
+            <batching max-size="32" max-delay="50ms"/>
+        </component>
+
+        <component id="hf-tei-minimal" type="hugging-face-tei-embedder"/>
+    </container>
+</services>

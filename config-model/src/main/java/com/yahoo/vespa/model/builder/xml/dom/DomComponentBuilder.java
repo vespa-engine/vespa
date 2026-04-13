@@ -14,6 +14,7 @@ import com.yahoo.vespa.model.container.component.ColBertEmbedder;
 import com.yahoo.vespa.model.container.component.SpladeEmbedder;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.HuggingFaceEmbedder;
+import com.yahoo.vespa.model.container.component.HuggingFaceTEIEmbedder;
 import com.yahoo.vespa.model.container.component.HuggingFaceTokenizer;
 import com.yahoo.vespa.model.container.component.VoyageAIEmbedder;
 import com.yahoo.vespa.model.container.xml.BundleInstantiationSpecificationBuilder;
@@ -50,6 +51,7 @@ public class DomComponentBuilder extends VespaDomBuilder.DomConfigProducerBuilde
             var type = spec.getAttribute("type");
             return switch (type) {
                 case "hugging-face-embedder" -> new HuggingFaceEmbedder((ApplicationContainerCluster)ancestor, spec, state);
+                case "hugging-face-tei-embedder" -> new HuggingFaceTEIEmbedder((ApplicationContainerCluster)ancestor, spec, state);
                 case "hugging-face-tokenizer" -> new HuggingFaceTokenizer(spec, state);
                 case "colbert-embedder" -> new ColBertEmbedder((ApplicationContainerCluster)ancestor, spec, state);
                 case "bert-embedder" -> new BertEmbedder((ApplicationContainerCluster)ancestor, spec, state);
