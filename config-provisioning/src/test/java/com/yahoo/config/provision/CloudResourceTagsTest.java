@@ -126,6 +126,9 @@ class CloudResourceTagsTest {
         assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("My Key", "value")));
         assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("KEY", "value")));
         assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("key.name", "value")));
+        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("123key", "value")));
+        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("_key", "value")));
+        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("-key", "value")));
     }
 
     @Test
@@ -182,7 +185,7 @@ class CloudResourceTagsTest {
 
     @Test
     void valid_key_patterns_accepted() {
-        var tags = CloudResourceTags.from(Map.of("my-key", "value", "my_key2", "value2", "123", "456"));
+        var tags = CloudResourceTags.from(Map.of("my-key", "value", "my-key2", "value2", "k123", "v456"));
         assertEquals(3, tags.size());
     }
 

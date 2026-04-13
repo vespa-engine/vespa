@@ -22,8 +22,11 @@ public class CloudResourceTags {
     private static final int MAX_VALUE_LENGTH = 63;
     private static final int MAX_TAGS = 20;
 
-    /** Keys and values may only contain lowercase alphanumeric characters, hyphens and underscores. */
-    private static final Pattern VALID_PATTERN = Pattern.compile("[a-z0-9_-]+");
+    /** Keys must start with a lowercase letter (GCP requirement) and contain only [a-z0-9_-]. */
+    private static final Pattern VALID_KEY_PATTERN = Pattern.compile("[a-z][a-z0-9_-]*");
+
+    /** Values may only contain lowercase alphanumeric characters, hyphens and underscores. */
+    private static final Pattern VALID_VALUE_PATTERN = Pattern.compile("[a-z0-9_-]+");
 
     /** Pattern for template variables, e.g. ${environment}, ${region}. */
     private static final Pattern TEMPLATE_VARIABLE = Pattern.compile("\\$\\{[^}]+\\}");
@@ -99,11 +102,11 @@ public class CloudResourceTags {
             if (value.length() > MAX_VALUE_LENGTH)
                 throw new IllegalArgumentException("Tag value exceeds " + MAX_VALUE_LENGTH +
                                                    " characters for key '" + key + "'");
-            if ( ! VALID_PATTERN.matcher(key).matches())
+            if ( ! VALID_KEY_PATTERN.matcher(key).matches())
                 throw new IllegalArgumentException("Tag key contains invalid characters: '" + key +
-                                                   "'. Only [a-z0-9_-] is allowed");
+                                                   "'. Must start with a lowercase letter and contain only [a-z0-9_-]");
             String strippedValue = TEMPLATE_VARIABLE.matcher(value).replaceAll("");
-            if ( ! strippedValue.isEmpty() && ! VALID_PATTERN.matcher(strippedValue).matches())
+            if ( ! strippedValue.isEmpty() && ! VALID_VALUE_PATTERN.matcher(strippedValue).matches())
                 throw new IllegalArgumentException("Tag value contains invalid characters for key '" + key +
                                                    "'. Only [a-z0-9_-] and template variables like ${environment} are allowed");
             for (String reserved : RESERVED_TAG_NAMES) {
