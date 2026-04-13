@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.application.validation.change;
 import ai.vespa.llm.clients.LlmLocalClientConfig;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.text.Text;
+import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
@@ -83,26 +84,13 @@ public class RestartOnDeployForLocalLLMValidator implements ChangeValidator {
     }
 
     /**
-     * Custom field-by-field comparison is needed because LlmLocalClientConfig.equals() delegates to
-     * LeafNode.equals(), which compares the resolved Path value. For model references that have not yet
-     * been resolved (e.g. during deployment validation), the resolved value is null regardless of the
-     * configured path, so two components with different model paths would incorrectly appear equal.
-     * ModelReference.equals() compares the configured path directly and is correct for unresolved refs.
+     * Compares configs via their serialized payload. ConfigPayload serializes ModelNode using
+     * ModelNode.getValue(), which returns the configured reference string rather than the resolved
+     * Path — correctly detecting model path changes even before model references are resolved.
      */
     private boolean configChanged(LlmLocalClientConfig previous, LlmLocalClientConfig next) {
-        return !previous.modelReference().equals(next.modelReference())
-                || previous.parallelRequests() != next.parallelRequests()
-                || previous.maxQueueSize() != next.maxQueueSize()
-                || previous.maxQueueWait() != next.maxQueueWait()
-                || previous.maxEnqueueWait() != next.maxEnqueueWait()
-                || previous.useGpu() != next.useGpu()
-                || previous.gpuLayers() != next.gpuLayers()
-                || previous.threads() != next.threads()
-                || previous.contextSize() != next.contextSize()
-                || previous.maxTokens() != next.maxTokens()
-                || previous.maxPromptTokens() != next.maxPromptTokens()
-                || previous.contextOverflowPolicy() != next.contextOverflowPolicy()
-                || previous.seed() != next.seed();
+        return !ConfigPayload.fromInstance(previous).toString(true)
+                .equals(ConfigPayload.fromInstance(next).toString(true));
     }
 
     private Map<String, Component<?, ?>> findLocalLLMComponents(ApplicationContainerCluster cluster) {
