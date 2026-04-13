@@ -26,6 +26,7 @@
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
 #include <vespa/vespalib/btree/btreenodestore.hpp>
 #include <vespa/vespalib/btree/btreeroot.hpp>
+#include <vespa/vespalib/datastore/array_store.hpp>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/rcuvector.hpp>
@@ -61,7 +62,6 @@ using vespalib::btree::BTreeNoLeafData;
 using vespalib::make_string;
 
 namespace proton {
-
 namespace documentmetastore {
 
 std::string DOCID_LIMIT("docIdLimit");
@@ -454,6 +454,7 @@ DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB,
                                      SubDbType subDbType)
     : DocumentMetaStoreAttribute(name),
       _metaDataStore(grow, getGenerationHolder()),
+      _docid_store(make_default_docid_array_store_config(), {}),
       _gidToLidMap(),
       _gid_to_lid_map_write_itr(vespalib::datastore::EntryRef(), _gidToLidMap.getAllocator()),
       _gid_to_lid_map_write_itr_prepare_serial_num(0u),
@@ -1180,6 +1181,17 @@ DocumentMetaStore::make_sort_blob_writer(bool ascending, const search::common::B
     } else {
         return std::make_unique<DocumentMetaStoreSortBlobWriter<false>>(*this);
     }
+}
+
+vespalib::datastore::ArrayStoreConfig
+DocumentMetaStore::make_default_docid_array_store_config()
+{
+    return DocumentIdStore::optimizedConfigForHugePage(193,
+                                                       vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
+                                                       vespalib::alloc::MemoryAllocator::PAGE_SIZE,
+                                                       vespalib::datastore::ArrayStoreConfig::default_max_buffer_size,
+                                                       512_Ki,
+                                                       0.3).enable_free_lists(true);
 }
 
 }  // namespace proton
