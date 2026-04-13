@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.application.validation.change;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestDeployState;
-import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.ValidationTester;
@@ -14,10 +13,12 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * @author lesters
+ * @author Lester Solbakken
+ * @author glabashnik
  */
 public class RestartOnDeployForLocalLLMValidatorTest {
 
@@ -26,38 +27,68 @@ public class RestartOnDeployForLocalLLMValidatorTest {
     @Test
     void validate_no_restart_on_deploy() {
         VespaModel current = createModel();
-        VespaModel next = createModel(withComponent(LOCAL_LLM_COMPONENT));
+        VespaModel next = createModel(withLocalLLMComponent("models/model.gguf", 1));
         List<ConfigChangeAction> result = validateModel(current, next);
         assertEquals(0, result.size());
     }
 
     @Test
-    void validate_restart_on_deploy() {
-        VespaModel current = createModel(withComponent(LOCAL_LLM_COMPONENT));
-        VespaModel next = createModel(withComponent(LOCAL_LLM_COMPONENT));
+    void validate_restart_on_deploy_llm_config_unchanged() {
+        VespaModel current = createModel(withLocalLLMComponent("models/model.gguf", 1));
+        VespaModel next = createModel(withLocalLLMComponent("models/model.gguf", 1));
         List<ConfigChangeAction> result = validateModel(current, next);
         assertEquals(1, result.size());
         assertTrue(result.get(0).validationId().isEmpty());
-        assertEquals("Need to restart services in cluster 'cluster1' due to use of local LLM", result.get(0).getMessage());
+        assertEquals(
+                "Need to restart services in cluster 'cluster1' due to use of local LLM", result.get(0).getMessage());
+        assertTrue(
+                result.get(0).ignoreForInternalRedeploy(),
+                "Restart must be ignored for internal redeployment when LLM config is unchanged"
+        );
+    }
+
+    @Test
+    void validate_restart_on_deploy_llm_config_changed() {
+        VespaModel current = createModel(withLocalLLMComponent("models/model.gguf", 1));
+        VespaModel next = createModel(withLocalLLMComponent("models/model.gguf", 2));
+        List<ConfigChangeAction> result = validateModel(current, next);
+        assertEquals(1, result.size());
+        assertFalse(
+                result.get(0).ignoreForInternalRedeploy(),
+                "Restart must not be ignored for internal redeployment when LLM config changed"
+        );
+    }
+
+    @Test
+    void validate_restart_on_deploy_model_path_changed() {
+        VespaModel current = createModel(withLocalLLMComponent("models/model-a.gguf", 1));
+        VespaModel next = createModel(withLocalLLMComponent("models/model-b.gguf", 1));
+        List<ConfigChangeAction> result = validateModel(current, next);
+        assertEquals(1, result.size());
+        assertFalse(result.get(0).ignoreForInternalRedeploy(), "Restart must not be ignored when model path changed");
     }
 
     private static List<ConfigChangeAction> validateModel(VespaModel current, VespaModel next) {
-        return ValidationTester.validateChanges(new RestartOnDeployForLocalLLMValidator(),
-                                                next,
-                                                deployStateBuilder().previousModel(current).build());
+        return ValidationTester.validateChanges(
+                new RestartOnDeployForLocalLLMValidator(),
+                next,
+                deployStateBuilder().previousModel(current).build()
+        );
     }
 
     private static VespaModel createModel(String component) {
-        var xml = Text.format("""
-                <services version='1.0'>
-                  <container id='cluster1' version='1.0'>
-                    <http>
-                      <server id='server1' port='8080'/>
-                    </http>
-                    %s
-                  </container>
-                </services>
-                """, component);
+        var xml = Text.format(
+                """
+                        <services version='1.0'>
+                          <container id='cluster1' version='1.0'>
+                            <http>
+                              <server id='server1' port='8080'/>
+                            </http>
+                            %s
+                          </container>
+                        </services>
+                        """, component
+        );
         DeployState.Builder builder = deployStateBuilder();
         return new VespaModelCreatorWithMockPkg(null, xml).create(builder);
     }
@@ -66,16 +97,21 @@ public class RestartOnDeployForLocalLLMValidatorTest {
         return createModel("");
     }
 
-    private static String withComponent(String componentClass) {
-        return Text.format("<component id='llm' class='%s' />", componentClass);
+    private static String withLocalLLMComponent(String modelPath, int parallelRequests) {
+        return Text.format(
+                """
+                        <component id='llm' class='%s'>
+                          <config name="ai.vespa.llm.clients.llm-local-client">
+                            <model path="%s"/>
+                            <parallelRequests>%d</parallelRequests>
+                          </config>
+                        </component>""", RestartOnDeployForLocalLLMValidatorTest.LOCAL_LLM_COMPONENT, modelPath,
+                parallelRequests
+        );
     }
 
     private static DeployState.Builder deployStateBuilder() {
         return TestDeployState.createBuilder();
-    }
-
-    private static void assertStartsWith(String expected, List<ConfigChangeAction> result) {
-        assertTrue(result.get(0).getMessage().startsWith(expected));
     }
 
 }
