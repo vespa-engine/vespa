@@ -3,6 +3,7 @@ package cmd
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -19,12 +20,20 @@ type inspectProfileOptions struct {
 }
 
 func inspectProfile(cli *CLI, opts *inspectProfileOptions) error {
-	file, err := os.Open(opts.profileFile)
-	if err != nil {
-		return fmt.Errorf("failed to open profile file '%s': %w", opts.profileFile, err)
+	var r io.ReadCloser
+	switch opts.profileFile {
+	case "-":
+		r = io.NopCloser(cli.Stdin)
+	default:
+		f, err := os.Open(opts.profileFile)
+		if err != nil {
+			return fmt.Errorf("failed to open profile file '%s': %w", opts.profileFile, err)
+		}
+		r = f
 	}
-	defer file.Close()
-	root := slime.DecodeJson(bufio.NewReaderSize(file, 64*1024))
+	defer r.Close()
+
+	root := slime.DecodeJson(bufio.NewReaderSize(r, 64*1024))
 	if !root.Valid() {
 		return fmt.Errorf("profile file '%s' does not contain valid JSON", opts.profileFile)
 	}
@@ -57,7 +66,7 @@ func newInspectProfileCmd(cli *CLI) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&opts.profileFile, "profile-file", "f", "vespa_query_profile_result.json", "Name of the profile file to inspect")
+	cmd.Flags().StringVarP(&opts.profileFile, "profile-file", "f", "vespa_query_profile_result.json", "Name of the profile file to inspect. Use '-' for stdin.")
 	cmd.Flags().BoolVar(&opts.showMedianNode, "show-median-node", false, "Show median node analysis")
 	cmd.Flags().BoolVar(&opts.showDispatchedQuery, "show-dispatched-query", false, "Show query sent to search nodes")
 	cmd.Flags().BoolVar(&opts.makePrompt, "make-prompt", false, "Output an LLM prompt instead of human-readable analysis")
