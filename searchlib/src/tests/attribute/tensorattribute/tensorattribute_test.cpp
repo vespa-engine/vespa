@@ -1639,6 +1639,36 @@ TEST(TensorAttributeTest, NN_blueprint_handles_strong_filter_triggering_exact_se
     EXPECT_EQ(NNBA::EXACT_FALLBACK, bp->get_algorithm());
 }
 
+TEST(TensorAttributeTest, NN_blueprint_updates_pending_index_search_after_filter_change)
+{
+    NearestNeighborBlueprintFixture f;
+    auto bp = f.make_blueprint(true, 0.2);
+
+    auto weak_bv = search::BitVector::create(1,11);
+    weak_bv->setBit(1);
+    weak_bv->setBit(3);
+    weak_bv->setBit(5);
+    weak_bv->setBit(7);
+    weak_bv->setBit(9);
+    weak_bv->invalidateCachedCount();
+    auto weak_filter = GlobalFilter::create(std::move(weak_bv));
+
+    auto strong_bv= search::BitVector::create(1,11);
+    strong_bv->setBit(3);
+    strong_bv->invalidateCachedCount();
+    auto strong_filter = GlobalFilter::create(std::move(strong_bv));
+
+    EXPECT_FALSE(bp->pending_index_search());
+    bp->set_global_filter(*weak_filter, 0.6);
+    EXPECT_TRUE(bp->pending_index_search());
+    bp->set_global_filter(*strong_filter, 0.6);
+    EXPECT_FALSE(bp->pending_index_search());
+    bp->set_global_filter(*weak_filter, 0.6);
+    EXPECT_TRUE(bp->pending_index_search());
+    bp->perform_index_search();
+    EXPECT_FALSE(bp->pending_index_search());
+}
+
 TEST(TensorAttributeTest, NN_blueprint_wants_global_filter_when_having_index)
 {
     NearestNeighborBlueprintFixture f;
