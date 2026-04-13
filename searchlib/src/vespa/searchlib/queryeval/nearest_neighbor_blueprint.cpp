@@ -109,6 +109,8 @@ NearestNeighborBlueprint::want_global_filter(GlobalFilterLimits& limits) const
 void
 NearestNeighborBlueprint::set_global_filter(const GlobalFilter &global_filter, double estimated_hit_ratio)
 {
+    _algorithm = Algorithm::EXACT;
+    _pending_index_search = false;
     _global_filter = global_filter.shared_from_this();
     _global_filter_set = true;
     auto nns_index = _attr_tensor.nearest_neighbor_index();
