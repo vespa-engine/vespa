@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import com.yahoo.api.annotations.Beta;
@@ -614,11 +615,8 @@ public class YqlParser implements Parser {
         item.setTargetHits(buildTargetHits(ast));
         item.setTotalTargetHits(getAnnotation(ast, TOTAL_TARGET_HITS, Integer.class, null, "total hits to produce across all nodes"));
         item.setMinTargetHits(getAnnotation(ast, MIN_TARGET_HITS, Integer.class, null, "min hits to produce on a node"));
+        assignAnnotationAsDoubleIfNotNull(ast, DISTANCE_THRESHOLD, "maximum distance allowed from query point", item::setDistanceThreshold);
 
-        Number distanceThreshold = getAnnotation(ast, DISTANCE_THRESHOLD, Number.class, null, "maximum distance allowed from query point");
-        if (distanceThreshold != null) {
-            item.setDistanceThreshold(distanceThreshold.doubleValue());
-        }
         Integer hnswExploreAdditionalHits = getAnnotation(ast, HNSW_EXPLORE_ADDITIONAL_HITS,
                                                           Integer.class, null, "number of extra hits to explore for HNSW algorithm");
         if (hnswExploreAdditionalHits != null) {
@@ -630,12 +628,12 @@ public class YqlParser implements Parser {
             item.setAllowApproximate(allowApproximate);
         }
 
-        item.setHnswApproximateThreshold(getAnnotation(ast, HNSW_APPROXIMATE_THRESHOLD, Double.class, null, "force brute-force NN when filter keeps less than threshold"));
-        item.setHnswExplorationSlack(getAnnotation(ast, HNSW_EXPLORATION_SLACK, Double.class, null, "slack for adaptive beam search"));
-        item.setHnswFilterFirstExploration(getAnnotation(ast, HNSW_FILTER_FIRST_EXPLORATION, Double.class, null, "tune how aggressively the filter-first heuristic explores the graph"));
-        item.setHnswFilterFirstThreshold(getAnnotation(ast, HNSW_FILTER_FIRST_THRESHOLD, Double.class, null, "enable filter-first heuristic when filter keeps less than threshold"));
-        item.setHnswPostFilterThreshold(getAnnotation(ast, HNSW_POST_FILTER_THRESHOLD, Double.class, null, "enable post-filter when filter keeps more than threshold"));
-        item.setHnswTargetHitsMaxAdjustmentFactor(getAnnotation(ast, HNSW_TARGET_HITS_MAX_ADJUSTMENT_FACTOR, Double.class, null, "max expansion for post-filter strategy"));
+        assignAnnotationAsDoubleIfNotNull(ast, HNSW_APPROXIMATE_THRESHOLD, "force brute-force NN when filter keeps less than threshold", item::setHnswApproximateThreshold);
+        assignAnnotationAsDoubleIfNotNull(ast, HNSW_EXPLORATION_SLACK, "slack for adaptive beam search", item::setHnswExplorationSlack);
+        assignAnnotationAsDoubleIfNotNull(ast, HNSW_FILTER_FIRST_EXPLORATION, "tune how aggressively the filter-first heuristic explores the graph", item::setHnswFilterFirstExploration);
+        assignAnnotationAsDoubleIfNotNull(ast, HNSW_FILTER_FIRST_THRESHOLD, "enable filter-first heuristic when filter keeps less than threshold", item::setHnswFilterFirstThreshold);
+        assignAnnotationAsDoubleIfNotNull(ast, HNSW_POST_FILTER_THRESHOLD, "enable post-filter when filter keeps more than threshold", item::setHnswPostFilterThreshold);
+        assignAnnotationAsDoubleIfNotNull(ast, HNSW_TARGET_HITS_MAX_ADJUSTMENT_FACTOR, "max expansion for post-filter strategy", item::setHnswTargetHitsMaxAdjustmentFactor);
 
         String label = getAnnotation(ast, LABEL, String.class, null, "item label");
         if (label != null) {
@@ -713,16 +711,8 @@ public class YqlParser implements Parser {
         WandItem out = new WandItem(getIndex(args.get(0)));
         out.setTargetHits(buildTargetHits(ast));
         out.setTotalTargetHits(getAnnotation(ast, TOTAL_TARGET_HITS, Integer.class, null, "total hits to produce across all nodes"));
-        Double scoreThreshold = getAnnotation(ast, SCORE_THRESHOLD, Double.class, null,
-                                              "score must be above this threshold for hit inclusion");
-        if (scoreThreshold != null) {
-            out.setScoreThreshold(scoreThreshold);
-        }
-        Double thresholdBoostFactor = getAnnotation(ast, THRESHOLD_BOOST_FACTOR, Double.class, null,
-                                                    "boost factor used to boost threshold before comparing against upper bound score");
-        if (thresholdBoostFactor != null) {
-            out.setThresholdBoostFactor(thresholdBoostFactor);
-        }
+        assignAnnotationAsDoubleIfNotNull(ast, SCORE_THRESHOLD, "score must be above this threshold for hit inclusion", out::setScoreThreshold);
+        assignAnnotationAsDoubleIfNotNull(ast, THRESHOLD_BOOST_FACTOR, "boost factor used to boost threshold before comparing against upper bound score", out::setThresholdBoostFactor);
         return fillWeightedSet(ast, args.get(1), out);
     }
 
@@ -2034,10 +2024,8 @@ public class YqlParser implements Parser {
                                                                                          CONNECTION_WEIGHT,
                                                                                          Number.class).doubleValue()));
         }
-        Number significance = getAnnotation(ast, SIGNIFICANCE, Number.class, null, "term significance");
-        if (significance != null) {
-            leaf.setSignificance(significance.doubleValue());
-        }
+
+        assignAnnotationAsDoubleIfNotNull(ast, SIGNIFICANCE, "term significance", leaf::setSignificance);
         Map < ?, ?> documentFrequency = getAnnotation(ast, DOCUMENT_FREQUENCY, Map.class, null, "document frequency");
         if (documentFrequency != null) {
             leaf.setDocumentFrequency(new DocumentFrequency(getLongMapValue(DOCUMENT_FREQUENCY, documentFrequency, FREQUENCY),
@@ -2287,6 +2275,19 @@ public class YqlParser implements Parser {
     private <T> T getAnnotation(OperatorNode<?> ast, String key, Class<T> expectedClass,
                                 T defaultValue, String description) {
         return getAnnotation(ast, key, expectedClass, defaultValue, description, true);
+    }
+
+    /**
+     * Assigns the number to the setter only if it is not null.
+     *
+     * Uses Number to support both integer and double values.
+     */
+    private void assignAnnotationAsDoubleIfNotNull(OperatorNode<?> ast, String key, String description,
+                                                   Consumer<Double> setter) {
+        Number number = getAnnotation(ast, key, Number.class, null, description, true);
+        if (number != null) {
+            setter.accept(number.doubleValue());
+        }
     }
 
     private <T> T getAnnotation(OperatorNode<?> ast, String key, Class<T> expectedClass, T defaultValue,
