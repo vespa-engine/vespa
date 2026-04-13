@@ -162,4 +162,20 @@ public class IndexingInputsTestCase {
         }
     }
 
+    @Test
+    void testFloatTensorInputCanBeAssignedToBfloat16TensorAttribute() throws ParseException {
+        var schema = """
+                schema test {
+                    document test {
+                        field embedding type tensor<float>(x[384]) {
+                        }
+                    }
+                    field embedding_bfloat16 type tensor<bfloat16>(x[384]) {
+                        indexing: input embedding | attribute
+                    }
+                }
+                """;
+        ApplicationBuilder.createFromString(schema);
+    }
+
 }
