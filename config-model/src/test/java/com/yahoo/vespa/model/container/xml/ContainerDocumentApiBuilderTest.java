@@ -166,9 +166,8 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
 
         var builder = new DocumentOperationExecutorConfig.Builder();
         ((com.yahoo.vespa.model.container.ApplicationContainerCluster) model.getCluster()).getConfig(builder);
-        // Feature-flag default in tests; just assert it was not overridden to our test value.
-        assertFalse(builder.build().maxDocumentOperationRequestSizeMib() == 100,
-                "Expected feature-flag default, not the value tested above");
+        assertEquals(128, builder.build().maxDocumentOperationRequestSizeMib(),
+                "Expected omitted max-document-size to keep the feature-flag default");
     }
 
     @Test
