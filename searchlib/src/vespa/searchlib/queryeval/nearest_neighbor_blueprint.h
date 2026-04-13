@@ -58,6 +58,7 @@ private:
     std::optional<uint32_t> _lazy_filter_hits;
     std::optional<double> _lazy_filter_hit_ratio;
     bool _low_hit_ratio;
+    bool _pending_index_search;
     const vespalib::Doom& _doom;
     MatchingPhase _matching_phase;
     search::tensor::NearestNeighborIndex::Stats _nni_stats;
@@ -80,8 +81,15 @@ public:
     uint32_t get_target_hits() const { return _target_hits; }
     uint32_t get_adjusted_target_hits() const { return _adjusted_target_hits; }
     bool want_global_filter(GlobalFilterLimits& limits) const override;
+    // Offers the GlobalFilter to the blueprint, which then decides whether to search the index or fall back to an exact search.
+    // After calling this method, pending_index_search() has to be called to check if the blueprint decided on an index search
+    // and perform_index_search() has to be called to perform the search.
     void set_global_filter(const GlobalFilter &global_filter, double estimated_hit_ratio) override;
     void set_lazy_filter(const GlobalFilter &lazy_filter) override;
+    // Whether the last call to want_global_filter() resulted in the decision to search the index.
+    bool pending_index_search() const;
+    // Perform the index search scheduled by the last call to set_global_filter().
+    void perform_index_search();
     Algorithm get_algorithm() const { return _algorithm; }
     double get_distance_threshold() const { return _hnsw_params.distance_threshold; }
     const HnswParams& get_hnsw_params() const { return _hnsw_params; }
