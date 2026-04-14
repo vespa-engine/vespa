@@ -51,7 +51,7 @@ GenerationHandler::~GenerationHandler()
     delete _first;
 }
 
-GenerationHandler::Guard
+GenerationGuard
 GenerationHandler::takeGuard() const
 {
     Guard guard(_last.load(std::memory_order_acquire));
