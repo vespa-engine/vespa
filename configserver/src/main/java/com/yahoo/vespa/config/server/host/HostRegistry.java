@@ -7,7 +7,9 @@ import com.yahoo.config.provision.TenantName;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -66,6 +68,11 @@ public class HostRegistry implements HostValidator {
 
     public synchronized Collection<String> getAllHosts() {
         return Collections.unmodifiableCollection(new ArrayList<>(host2ApplicationId.keySet()));
+    }
+
+    /** Returns a snapshot of all unique ApplicationIds currently in the registry. */
+    public synchronized Set<ApplicationId> getApplicationIds() {
+        return Set.copyOf(new HashSet<>(host2ApplicationId.values()));
     }
 
     public synchronized Collection<String> getHosts(ApplicationId key) {

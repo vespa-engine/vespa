@@ -104,6 +104,7 @@ import com.yahoo.vespa.curator.stats.ThreadLockStats;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
@@ -828,32 +829,86 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public void removeStaleHostRegistryEntries() {
+        Duration lockTimeout = Duration.ofSeconds(2);
+
         for (var tenant : tenantRepository.getAllTenants()) {
             TenantApplications tenantApplications = tenant.getApplicationRepo();
             SessionRepository sessionRepository = tenant.getSessionRepository();
             HostRegistry hostRegistry = tenantApplications.hostRegistry();
 
-            // Collect all hosts that belong to active applications (from their active sessions' AllocatedHosts)
-            Set<String> hostsInActiveApplications = new HashSet<>();
-            for (ApplicationId appId : tenantApplications.activeApplications()) {
-                tenantApplications.activeSessionOf(appId).ifPresent(sessionId -> {
-                    Session session = sessionRepository.getRemoteSession(sessionId);
-                    if (session != null) {
-                        session.getAllocatedHosts().getHosts()
-                                .forEach(hostSpec -> hostsInActiveApplications.add(hostSpec.hostname()));
-                    }
-                });
+            // Phase A: Optimistic (lock-free) comparison of ApplicationId sets
+            Set<ApplicationId> registryApps = hostRegistry.getApplicationIds();
+            Set<ApplicationId> activeApps = Set.copyOf(tenantApplications.activeApplications());
+
+            Set<ApplicationId> inRegistryOnly = new HashSet<>(registryApps);
+            inRegistryOnly.removeAll(activeApps);
+
+            Set<ApplicationId> inActiveOnly = new HashSet<>(activeApps);
+            inActiveOnly.removeAll(registryApps);
+
+            Set<ApplicationId> inBoth = new HashSet<>(registryApps);
+            inBoth.retainAll(activeApps);
+
+            // Phase B: Re-verify ApplicationId mismatches under lock
+            for (ApplicationId app : inRegistryOnly) {
+                try (var lock = tenantApplications.lock(app, lockTimeout)) {
+                    if (hostRegistry.getHosts(app).isEmpty()) continue;
+                    if (tenantApplications.activeApplications().contains(app)) continue;
+                    log.log(INFO, "Host registry has hosts for " + app + " but application is not active" +
+                            " (tenant " + tenant.getName() + ")");
+                } catch (UncheckedTimeoutException e) {
+                    log.log(Level.FINE, "Could not acquire lock for " + app + ", skipping");
+                } catch (RuntimeException e) {
+                    log.log(Level.WARNING, "Error checking host registry for " + app + ": " +
+                            Exceptions.toMessageString(e));
+                }
             }
 
-            // Find hosts in the registry that are not in any active application's allocated hosts
-            var staleHosts = hostRegistry.getAllHosts().stream()
-                    .filter(host -> !hostsInActiveApplications.contains(host))
-                    .toList();
+            for (ApplicationId app : inActiveOnly) {
+                try (var lock = tenantApplications.lock(app, lockTimeout)) {
+                    if (!tenantApplications.activeApplications().contains(app)) continue;
+                    if (!hostRegistry.getHosts(app).isEmpty()) continue;
+                    log.log(INFO, "Application " + app + " is active but has no hosts in host registry" +
+                            " (tenant " + tenant.getName() + ")");
+                } catch (UncheckedTimeoutException e) {
+                    log.log(Level.FINE, "Could not acquire lock for " + app + ", skipping");
+                } catch (RuntimeException e) {
+                    log.log(Level.WARNING, "Error checking host registry for " + app + ": " +
+                            Exceptions.toMessageString(e));
+                }
+            }
 
-            if (!staleHosts.isEmpty()) {
-                log.log(INFO, "Found " + staleHosts.size() + " stale hosts in host registry for tenant " +
-                        tenant.getName() + ", removing: " + staleHosts);
-                //hostRegistry.removeHosts(staleHosts);
+            // Phase C: Per-application host diff under lock
+            for (ApplicationId app : inBoth) {
+                try (var lock = tenantApplications.lock(app, lockTimeout)) {
+                    Set<String> registryHosts = new HashSet<>(hostRegistry.getHosts(app));
+
+                    Set<String> sessionHosts = new HashSet<>();
+                    tenantApplications.activeSessionOf(app).ifPresent(sessionId -> {
+                        Session session = sessionRepository.getRemoteSession(sessionId);
+                        if (session != null) {
+                            session.getAllocatedHosts().getHosts()
+                                    .forEach(hostSpec -> sessionHosts.add(hostSpec.hostname()));
+                        }
+                    });
+
+                    Set<String> inRegistryNotSession = new HashSet<>(registryHosts);
+                    inRegistryNotSession.removeAll(sessionHosts);
+
+                    Set<String> inSessionNotRegistry = new HashSet<>(sessionHosts);
+                    inSessionNotRegistry.removeAll(registryHosts);
+
+                    if (!inRegistryNotSession.isEmpty() || !inSessionNotRegistry.isEmpty()) {
+                        log.log(INFO, "Host diff for " + app + " (tenant " + tenant.getName() + "): " +
+                                "in registry but not session=" + inRegistryNotSession +
+                                ", in session but not registry=" + inSessionNotRegistry);
+                    }
+                } catch (UncheckedTimeoutException e) {
+                    log.log(Level.FINE, "Could not acquire lock for " + app + ", skipping");
+                } catch (RuntimeException e) {
+                    log.log(Level.WARNING, "Error checking host registry for " + app + ": " +
+                            Exceptions.toMessageString(e));
+                }
             }
         }
     }
