@@ -854,7 +854,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 try (var lock = tenantApplications.lock(app, lockTimeout)) {
                     if (hostRegistry.getHosts(app).isEmpty()) continue;
                     if (tenantApplications.activeApplications().contains(app)) continue;
-                    log.log(INFO, "Host registry has hosts for " + app + " but application is not active" +
+                    log.log(INFO, "Host registry has hosts " + hostRegistry.getHosts(app) +
+                            " for " + app + " but application is not active" +
                             " (tenant " + tenant.getName() + ")");
                 } catch (UncheckedTimeoutException e) {
                     log.log(Level.FINE, "Could not acquire lock for " + app + ", skipping");
@@ -868,8 +869,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 try (var lock = tenantApplications.lock(app, lockTimeout)) {
                     if (!tenantApplications.activeApplications().contains(app)) continue;
                     if (!hostRegistry.getHosts(app).isEmpty()) continue;
-                    log.log(INFO, "Application " + app + " is active but has no hosts in host registry" +
-                            " (tenant " + tenant.getName() + ")");
+                    log.log(INFO, "Application " + app + " is active with hosts " +
+                            getSessionHosts(app, tenantApplications, sessionRepository) +
+                            " but has no hosts in host registry (tenant " + tenant.getName() + ")");
                 } catch (UncheckedTimeoutException e) {
                     log.log(Level.FINE, "Could not acquire lock for " + app + ", skipping");
                 } catch (RuntimeException e) {
@@ -882,15 +884,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             for (ApplicationId app : inBoth) {
                 try (var lock = tenantApplications.lock(app, lockTimeout)) {
                     Set<String> registryHosts = new HashSet<>(hostRegistry.getHosts(app));
-
-                    Set<String> sessionHosts = new HashSet<>();
-                    tenantApplications.activeSessionOf(app).ifPresent(sessionId -> {
-                        Session session = sessionRepository.getRemoteSession(sessionId);
-                        if (session != null) {
-                            session.getAllocatedHosts().getHosts()
-                                    .forEach(hostSpec -> sessionHosts.add(hostSpec.hostname()));
-                        }
-                    });
+                    Set<String> sessionHosts = getSessionHosts(app, tenantApplications, sessionRepository);
 
                     Set<String> inRegistryNotSession = new HashSet<>(registryHosts);
                     inRegistryNotSession.removeAll(sessionHosts);
@@ -911,6 +905,18 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 }
             }
         }
+    }
+
+    private static Set<String> getSessionHosts(ApplicationId app, TenantApplications tenantApplications, SessionRepository sessionRepository) {
+        Set<String> sessionHosts = new HashSet<>();
+        tenantApplications.activeSessionOf(app).ifPresent(sessionId -> {
+            Session session = sessionRepository.getRemoteSession(sessionId);
+            if (session != null) {
+                session.getAllocatedHosts().getHosts()
+                        .forEach(hostSpec -> sessionHosts.add(hostSpec.hostname()));
+            }
+        });
+        return sessionHosts;
     }
 
     // ---------------- Convergence ----------------------------------------------------------------
