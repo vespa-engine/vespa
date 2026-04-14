@@ -638,6 +638,9 @@ DocumentMetaStore::remove(DocId lid, uint64_t prepare_serial_num)
         return false;
     }
     RawDocumentMetaData meta = removeInternal(lid, prepare_serial_num);
+    if (_store_full_document_id) {
+        _docid_store.remove(meta._docid_ref);
+    }
     _bucketDB->takeGuard()->remove(meta.getGid(), meta.getBucketId().stripUnused(),
                                    meta.getTimestamp(), meta.getDocSize(), _subDbType);
     _changesSinceCommit++;
