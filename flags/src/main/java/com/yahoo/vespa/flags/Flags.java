@@ -413,14 +413,6 @@ public class Flags {
             INSTANCE_ID
     );
 
-    public static final UnboundBooleanFlag PARTIAL_RESOLVE_FLAG_DATA = defineFeatureFlag(
-            "partially-resolve-flag-data", false,
-            List.of("olaa"), "2026-03-16", "2026-04-16",
-            "Whether host-admin should retrieve partially resolved flag data",
-            "Takes effect on the next host-admin tick.",
-            HOSTNAME
-    );
-
     public static final UnboundBooleanFlag HONOR_DISK_SPEED_AND_STORAGE_TYPE_IN_DEV = defineFeatureFlag(
             "honor-disk-speed-and-storage-type-in-dev", false,
             List.of("hmusum"), "2026-03-25", "2026-05-25",
