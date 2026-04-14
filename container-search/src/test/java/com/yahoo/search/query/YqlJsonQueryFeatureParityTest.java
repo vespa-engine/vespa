@@ -107,9 +107,21 @@ public class YqlJsonQueryFeatureParityTest {
     }
 
     @Test
+    void testNearWithDistance() {
+        assertWhereParity("description contains ({distance: 5}near({implicitTransforms: false}'a', {implicitTransforms: false}'b'))",
+                "{ 'contains' : ['description', { 'near' : { 'children' : ['a', 'b'], 'attributes' : { 'distance' : 5 } } }] }");
+    }
+
+    @Test
     void testOnear() {
         assertWhereParity("description contains onear({implicitTransforms: false}'a', {implicitTransforms: false}'b')",
                 "{ 'contains' : ['description', { 'onear' : ['a', 'b'] }] }");
+    }
+
+    @Test
+    void testOnearWithDistance() {
+        assertWhereParity("description contains ({distance: 100}onear({implicitTransforms: false}'a', {implicitTransforms: false}'b'))",
+                "{ 'contains' : ['description', { 'onear' : { 'children' : ['a', 'b'], 'attributes' : { 'distance' : 100 } } }] }");
     }
 
     @Test
