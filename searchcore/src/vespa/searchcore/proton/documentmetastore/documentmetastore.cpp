@@ -826,6 +826,18 @@ DocumentMetaStore::getMetaData(const BucketId &bucketId,
     }
 }
 
+std::string_view
+DocumentMetaStore::get_docid_string(const GlobalId &gid) const
+{
+    DocId lid = 0;
+    if (!getLid(gid, lid) || !validLid(lid)) {
+        return {};
+    }
+    const RawDocumentMetaData &raw = getRawMetaData(lid);
+    auto span = _docid_store.get(raw.get_docid_ref());
+    return {span.data(), span.size()};
+}
+
 LidUsageStats
 DocumentMetaStore::getLidUsageStats() const
 {
