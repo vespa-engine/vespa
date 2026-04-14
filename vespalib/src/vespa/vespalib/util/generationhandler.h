@@ -2,8 +2,7 @@
 
 #pragma once
 
-#include <cstdint>
-#include <atomic>
+#include "generation_guard.h"
 
 namespace vespalib {
 
@@ -15,72 +14,10 @@ namespace vespalib {
  **/
 class GenerationHandler {
 public:
-    using generation_t = uint64_t;
-    using sgeneration_t = int64_t ;
+    using generation_t = GenerationHold::generation_t;
+    using sgeneration_t = GenerationHold::sgeneration_t;
 
-    /*
-     * This must be type stable memory, and cannot be freed before the
-     * GenerationHandler is freed (i.e. when external methods ensure that
-     * no readers are still active).
-     */
-    class GenerationHold
-    {
-        // least significant bit is invalid flag
-        std::atomic<uint32_t> _refCount;
-
-        static bool valid(uint32_t refCount) noexcept { return (refCount & 1) == 0u; }
-    public:
-        std::atomic<generation_t> _generation;
-        GenerationHold *_next;	// next free element or next newer element.
-
-        GenerationHold() noexcept;
-        ~GenerationHold();
-
-        void setValid() noexcept;
-        bool setInvalid() noexcept;
-        void release() noexcept {
-            _refCount.fetch_sub(2, std::memory_order_release);
-        }
-        GenerationHold *acquire() noexcept;
-        static GenerationHold *copy(GenerationHold *self) noexcept;
-        uint32_t getRefCount() const noexcept {
-            return _refCount.load(std::memory_order_relaxed) / 2;
-        }
-        uint32_t getRefCountAcqRel() noexcept {
-            return _refCount.fetch_add(0, std::memory_order_acq_rel) / 2;
-        }
-    };
-
-    /**
-     * Class that keeps a reference to a generation until destroyed.
-     **/
-    class Guard {
-    private:
-        GenerationHold *_hold;
-        void cleanup() noexcept {
-            if (_hold != nullptr) {
-                _hold->release();
-                _hold = nullptr;
-            }
-        }
-    public:
-        Guard() noexcept : _hold(nullptr) { }
-        Guard(GenerationHold *hold) noexcept : _hold(hold->acquire()) { } // hold is never nullptr
-        ~Guard() { cleanup(); }
-        Guard(const Guard & rhs) noexcept : _hold(GenerationHold::copy(rhs._hold)) { }
-        Guard(Guard &&rhs) noexcept
-            : _hold(rhs._hold)
-        {
-            rhs._hold = nullptr;
-        }
-        Guard & operator=(const Guard & rhs) noexcept;
-        Guard & operator=(Guard &&rhs) noexcept;
-
-        bool valid() const noexcept {
-            return _hold != nullptr;
-        }
-        generation_t getGeneration() const { return _hold->_generation.load(std::memory_order_relaxed); }
-    };
+    using Guard = GenerationGuard;
 
 private:
     std::atomic<generation_t>     _generation;
@@ -103,7 +40,7 @@ public:
      * Take a generation guard on the current generation.
      * Should be called by reader threads.
      **/
-    Guard takeGuard() const;
+    GenerationGuard takeGuard() const;
 
     /**
      * Increases the current generation by 1.
