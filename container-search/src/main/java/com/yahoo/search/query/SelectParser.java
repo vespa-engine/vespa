@@ -793,14 +793,16 @@ public class SelectParser implements Parser {
     private Item buildSameElementWithElementFilter(EqualsParams params) {
         int elementIndex = YqlParser.convertToElementId(params.index.asLong());
         var value = params.value;
-        Item valueItem = switch (value.type()) {
-            case BOOL -> new BoolItem(value.asBool(), "");
-            case LONG -> new IntItem(value.asLong(), "");
-            case DOUBLE -> new IntItem(new Limit(value.asDouble(), true), new Limit(value.asDouble(), true), "");
-            case STRING -> new WordItem(value.asString(), "");
+        // Convert value to string — sameElement only supports string children (consistent with YqlParser).
+        String stringValue = switch (value.type()) {
+            case BOOL -> String.valueOf(value.asBool());
+            case LONG -> String.valueOf(value.asLong());
+            case DOUBLE -> String.valueOf(value.asDouble());
+            case STRING -> value.asString();
             default -> throw new IllegalArgumentException("'value' in 'equals' should be a boolean, integer, double, " +
                                                           "or string but was " + value.type());
         };
+        Item valueItem = new WordItem(stringValue, "", true);
 
         SameElementItem sameElement = new SameElementItem(params.field.asString());
         sameElement.setElementFilter(List.of(elementIndex));

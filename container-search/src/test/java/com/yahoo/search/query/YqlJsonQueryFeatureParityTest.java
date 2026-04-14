@@ -63,6 +63,12 @@ public class YqlJsonQueryFeatureParityTest {
     }
 
     @Test
+    void testEqualsWithArrayIndex() {
+        assertWhereParity("my_numbers[2] = 42",
+                "{ 'equals' : { 'field' : 'my_numbers', 'index' : 2, 'value' : 42 } }");
+    }
+
+    @Test
     void testNot() {
         assertWhereParity("!(title contains 'madonna')",
                 "{ 'not' : { 'contains' : ['title', 'madonna'] } }");
@@ -78,6 +84,16 @@ public class YqlJsonQueryFeatureParityTest {
     void testRange() {
         assertWhereParity("range(price, 0L, 500L)",
                 "{ 'range' : ['price', { '>=': 0, '<=': 500 }] }");
+    }
+
+    @Test
+    void testRangeOpenBounds() {
+        assertWhereParity("price > 0L",
+                "{ 'range' : ['price', { '>': 0 }] }");
+        assertWhereParity("price < 500L",
+                "{ 'range' : ['price', { '<': 500 }] }");
+        assertWhereParity("price > 0L and price < 500L",
+                "{ 'and' : [ { 'range' : ['price', { '>': 0 }] }, { 'range' : ['price', { '<': 500 }] } ] }");
     }
 
     @Test
@@ -279,6 +295,9 @@ public class YqlJsonQueryFeatureParityTest {
         var string = new Index("string");
         string.setString(true);
         sd.addIndex(string);
+        var myNumbers = new Index("my_numbers");
+        myNumbers.setInteger(true);
+        sd.addIndex(myNumbers);
         return new IndexFacts(new IndexModel(sd));
     }
 
