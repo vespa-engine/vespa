@@ -22,6 +22,7 @@ import com.yahoo.config.model.api.TenantVault;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
@@ -287,6 +288,7 @@ public class ModelContextImpl implements ModelContext {
         private final List<TenantSecretStore> tenantSecretStores;
         private final List<X509Certificate> operatorCertificates;
         private final Optional<CloudAccount> cloudAccount;
+        private final CloudResourceTags cloudResourceTags;
         private final List<DataplaneToken> dataplaneTokens;
 
         public Properties(ApplicationId applicationId,
@@ -303,6 +305,7 @@ public class ModelContextImpl implements ModelContext {
                           List<TenantSecretStore> tenantSecretStores,
                           List<X509Certificate> operatorCertificates,
                           Optional<CloudAccount> cloudAccount,
+                          CloudResourceTags cloudResourceTags,
                           List<DataplaneToken> dataplaneTokens) {
             this.featureFlags = new FeatureFlags(flagSource, applicationId, modelVersion);
             this.applicationId = applicationId;
@@ -325,6 +328,7 @@ public class ModelContextImpl implements ModelContext {
             this.tenantSecretStores = tenantSecretStores;
             this.operatorCertificates = operatorCertificates;
             this.cloudAccount = cloudAccount;
+            this.cloudResourceTags = cloudResourceTags;
             this.dataplaneTokens = dataplaneTokens;
         }
 
@@ -346,6 +350,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public List<TenantSecretStore> tenantSecretStores() { return tenantSecretStores; }
         @Override public List<X509Certificate> operatorCertificates() { return operatorCertificates; }
         @Override public Optional<CloudAccount> cloudAccount() { return cloudAccount; }
+        @Override public CloudResourceTags cloudResourceTags() { return cloudResourceTags; }
         @Override public List<DataplaneToken> dataplaneTokens() { return dataplaneTokens; }
         @Override public boolean allowDisableMtls() { return flag(PermanentFlags.ALLOW_DISABLE_MTLS).value(); }
         @Override public List<String> tlsCiphersOverride() { return flag(PermanentFlags.TLS_CIPHERS_OVERRIDE).value(); }

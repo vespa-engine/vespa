@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
+import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.NodeResources.Architecture;
 import com.yahoo.config.provision.NodeResources.DiskSpeed;
 import com.yahoo.config.provision.NodeResources.StorageType;
@@ -228,7 +229,8 @@ public class NodesSpecificationTest {
         Document nodesXml = XML.getDocument(nodesElement);
         return NodesSpecification.create(false, false, Version.emptyVersion,
                                          new ModelElement(nodesXml.getDocumentElement()),
-                                         Optional.empty(), Optional.empty());
+                                         Optional.empty(), Optional.empty(),
+                                         CloudResourceTags.empty());
 
     }
 

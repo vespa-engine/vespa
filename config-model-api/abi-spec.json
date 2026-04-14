@@ -252,7 +252,7 @@
       "final"
     ],
     "methods" : [
-      "public void <init>(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Tags, java.util.List, com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy, com.yahoo.config.application.api.DeploymentSpec$RevisionTarget, com.yahoo.config.application.api.DeploymentSpec$RevisionChange, com.yahoo.config.application.api.DeploymentSpec$UpgradeRollout, int, int, int, java.util.List, java.util.Optional, java.util.Map, java.util.Optional, com.yahoo.config.application.api.Notifications, java.util.List, java.util.Map, com.yahoo.config.application.api.Bcp, java.util.Optional, java.time.Instant)",
+      "public void <init>(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Tags, java.util.List, com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy, com.yahoo.config.application.api.DeploymentSpec$RevisionTarget, com.yahoo.config.application.api.DeploymentSpec$RevisionChange, com.yahoo.config.application.api.DeploymentSpec$UpgradeRollout, int, int, int, java.util.List, java.util.Optional, java.util.Map, java.util.Optional, com.yahoo.config.provision.CloudResourceTags, com.yahoo.config.application.api.Notifications, java.util.List, java.util.Map, com.yahoo.config.application.api.Bcp, java.util.Optional, java.time.Instant)",
       "public com.yahoo.config.provision.InstanceName name()",
       "public com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy upgradePolicy()",
       "public com.yahoo.config.application.api.DeploymentSpec$RevisionTarget revisionTarget()",
@@ -266,6 +266,8 @@
       "public boolean canChangeRevisionAt(java.time.Instant)",
       "public java.util.Optional athenzService(com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
       "public java.util.Map cloudAccounts(com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
+      "public com.yahoo.config.provision.CloudResourceTags cloudResourceTags()",
+      "public com.yahoo.config.provision.CloudResourceTags cloudResourceTags(com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
       "public java.util.Optional hostTTL(com.yahoo.config.provision.Environment, java.util.Optional)",
       "public com.yahoo.config.application.api.Notifications notifications()",
       "public java.util.List endpoints()",
@@ -353,7 +355,7 @@
     ],
     "methods" : [
       "public void <init>(com.yahoo.config.provision.Environment)",
-      "public void <init>(com.yahoo.config.provision.Environment, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Map, java.util.Optional)",
+      "public void <init>(com.yahoo.config.provision.Environment, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Map, java.util.Optional, com.yahoo.config.provision.CloudResourceTags)",
       "public com.yahoo.config.provision.Environment environment()",
       "public java.util.Optional region()",
       "public java.util.Optional testerNodes()",
@@ -402,7 +404,7 @@
       "public"
     ],
     "methods" : [
-      "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional, com.yahoo.config.provision.Tags, java.util.Map)",
+      "public void <init>(java.util.Optional, java.util.Optional, java.util.Optional, com.yahoo.config.provision.Tags, com.yahoo.config.provision.CloudResourceTags, java.util.Map)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()"
@@ -544,7 +546,7 @@
       "final"
     ],
     "methods" : [
-      "public void <init>(java.util.List, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Map, java.util.Optional, java.util.List, java.lang.String, java.util.List, com.yahoo.config.application.api.DeploymentSpec$DevSpec)",
+      "public void <init>(java.util.List, java.util.Optional, java.util.Optional, java.util.Optional, java.util.Map, java.util.Optional, com.yahoo.config.provision.CloudResourceTags, java.util.List, java.lang.String, java.util.List, com.yahoo.config.application.api.DeploymentSpec$DevSpec)",
       "public boolean isEmpty()",
       "public java.util.Optional majorVersion()",
       "public java.util.List steps()",
@@ -554,6 +556,8 @@
       "public java.util.Optional athenzService(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
       "public com.yahoo.config.provision.CloudAccount cloudAccount(com.yahoo.config.provision.CloudName, com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.zone.ZoneId)",
       "public java.util.Map cloudAccounts()",
+      "public com.yahoo.config.provision.CloudResourceTags cloudResourceTags()",
+      "public com.yahoo.config.provision.CloudResourceTags cloudResourceTags(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.zone.ZoneId)",
       "public com.yahoo.config.provision.Tags tags(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Environment)",
       "public java.util.Optional hostTTL(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
       "public com.yahoo.config.provision.ZoneEndpoint zoneEndpoint(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Zone, com.yahoo.config.provision.ClusterSpec$Id, boolean)",
@@ -1495,6 +1499,7 @@
       "public java.util.List tlsCiphersOverride()",
       "public abstract java.util.List environmentVariables()",
       "public java.util.Optional cloudAccount()",
+      "public com.yahoo.config.provision.CloudResourceTags cloudResourceTags()",
       "public boolean allowUserFilters()",
       "public java.time.Duration endpointConnectionTtl()",
       "public java.util.List dataplaneTokens()",
