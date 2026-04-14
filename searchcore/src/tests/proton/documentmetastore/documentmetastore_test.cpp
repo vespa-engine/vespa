@@ -388,6 +388,29 @@ TEST(DocumentMetaStoreTest, full_docids_can_be_inserted_and_retrieved)
     EXPECT_EQ(docid2.toString(), dms.get_docid_string(gid2));
 }
 
+TEST(DocumentMetaStoreTest, full_docids_are_removed)
+{
+    DocumentMetaStore dms(createBucketDB(), "[documentmetastore]", search::GrowStrategy(), true, SubDbType::READY);
+    dms.constructFreeList();
+
+    // Add document and get gid
+    addDoc(dms, docid1, bucketId1, time1);
+    EXPECT_EQ(docid1.toString(), dms.get_docid_string(gid1));
+    // Remove and check that full string is also removed
+    EXPECT_TRUE(dms.remove(1, 0u));
+    dms.commit();
+    EXPECT_EQ("", dms.get_docid_string(gid1));
+    dms.removes_complete({ 1 });
+
+    // With reused lid
+    addDoc(dms, docid2, bucketId2, time2);
+    EXPECT_EQ(docid2.toString(), dms.get_docid_string(gid2));
+    EXPECT_TRUE(dms.remove(1, 0u));
+    dms.commit();
+    EXPECT_EQ("", dms.get_docid_string(gid2));
+    dms.removes_complete({ 1 });
+}
+
 TEST(DocumentMetaStore, generation_handling_is_working)
 {
     auto dms = std::make_shared<DocumentMetaStore>(createBucketDB());
