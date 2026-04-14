@@ -308,7 +308,7 @@ public class Flags {
             INSTANCE_ID);
 
     public static final UnboundIntFlag MAX_DOCUMENT_OPERATION_REQUEST_SIZE_MIB = defineIntFlag(
-            "max-document-operation-request-size-mib", 2048,
+            "max-document-operation-request-size-mib", 128,
             List.of("glebashnik"), "2025-09-04", "2026-06-01",
             "Sets the maximum size in MiB of a document operation request (POST or PUT). " +
             "This is the size of a serialized request, which can be several times larger than " +
