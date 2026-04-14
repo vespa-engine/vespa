@@ -2050,6 +2050,31 @@ TEST(DocumentMetaStoreTest, multiple_lids_can_be_removed_with_removeBatch)
     dms.removes_complete({1, 3});
 }
 
+TEST(DocumentMetaStoreTest, removeBatch_removes_full_document_ids)
+{
+    DocumentMetaStore dms(createBucketDB(), "[documentmetastore]", search::GrowStrategy(), true, SubDbType::READY);
+    dms.constructFreeList();
+    addLid(dms, 1);
+    addLid(dms, 2);
+    addLid(dms, 3);
+    addLid(dms, 4);
+
+    dms.removeBatch({1, 3}, 5);
+    dms.commit();
+
+    DocumentId id1, id2, id3, id4;
+    id1 = createDocId(1);
+    id2 = createDocId(2);
+    id3 = createDocId(3);
+    id4 = createDocId(4);
+
+    EXPECT_EQ("", dms.get_docid_string(id1.getGlobalId()));
+    EXPECT_EQ(id2.toString(), dms.get_docid_string(id2.getGlobalId()));
+    EXPECT_EQ("", dms.get_docid_string(id3.getGlobalId()));
+    EXPECT_EQ(id4.toString(), dms.get_docid_string(id4.getGlobalId()));
+    dms.removes_complete({1, 3});
+}
+
 TEST(DocumentMetaStoreTest, serialize_for_sort)
 {
     DocumentMetaStore dms(createBucketDB());
