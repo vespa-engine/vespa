@@ -661,7 +661,7 @@ TEST_P(NearTest, merged_match_spans)
 TEST_P(NearTest, extended_match_spans)
 {
     {
-        SCOPED_TRACE("docs");
+        SCOPED_TRACE("span and negative term in same element");
         auto docs = index().doc(69).elem(0, "AABAA.C");
         if (GetParam().ordered()) {
             near("AB", 1).verify_spans(docs, 69, {match_span(0, 0, 1, 0, 2)});
@@ -679,7 +679,7 @@ TEST_P(NearTest, extended_match_spans)
         }
     }
     {
-        SCOPED_TRACE("docs2");
+        SCOPED_TRACE("span in one element, negative term in next element");
         auto docs2 = index().doc(69).elem(0, "AABAA").elem(1, ".C");
         {
             SCOPED_TRACE("no element gap");
@@ -713,7 +713,7 @@ TEST_P(NearTest, extended_match_spans)
         }
     }
     {
-        SCOPED_TRACE("docs3");
+        SCOPED_TRACE("span extending into next element");
         auto docs3 = index().doc(69).elem(0, "AABAA").elem(1, "A.C");
         {
             SCOPED_TRACE("no element gap");
