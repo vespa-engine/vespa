@@ -252,6 +252,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public int maxDocumentOperationRequestSizeMib() { return flag(Flags.MAX_DOCUMENT_OPERATION_REQUEST_SIZE_MIB).value(); }
         @Override public Object sidecarsForTest() { return flag(Flags.SIDECARS_FOR_TEST).value(); }
         @Override public boolean useTriton() { return flag(Flags.USE_TRITON).value(); }
+        @Override public boolean scaleMetricsproxyHeapByNodeCount() { return flag(Flags.SCALE_METRICSPROXY_HEAP_BY_NODE_COUNT).value(); }
         @Override public boolean ignoreConnectivityChecksAtStartup() { return flag(PermanentFlags.IGNORE_CONNECTIVITY_CHECKS_AT_STARTUP).value(); }
         @Override public int searchCoreMaxOutstandingMoveOps() { return flag(Flags.SEARCH_CORE_MAX_OUTSTANDING_MOVE_OPS).value(); }
         @Override public double docprocHandlerThreadpool() { return flag(Flags.DOCPROC_HANDLER_THREADPOOL).value(); }
