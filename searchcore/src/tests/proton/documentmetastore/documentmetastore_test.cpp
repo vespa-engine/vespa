@@ -282,7 +282,7 @@ putDoc(DocumentMetaStore &dms, const DocumentId& docid, uint32_t lid, Timestamp 
 }
 
 TEST(DocumentMetaStoreTest, control_meta_data_sizeof) {
-    EXPECT_EQ(24u, sizeof(RawDocumentMetaData));
+    EXPECT_EQ(32u, sizeof(RawDocumentMetaData));
     EXPECT_EQ(40u, sizeof(search::DocumentMetaData));
 }
  TEST(DocumentMetaStoreTest, removed_documents_are_bucketized_to_bucket_0)

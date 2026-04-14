@@ -10,6 +10,8 @@
 #include <vespa/searchcore/proton/common/subdbtype.h>
 #include <vespa/searchlib/docstore/ibucketizer.h>
 #include <vespa/searchcommon/common/growstrategy.h>
+#include <vespa/vespalib/datastore/array_store.h>
+#include <vespa/vespalib/datastore/array_store_dynamic_type_mapper.h>
 #include <vespa/vespalib/util/rcuvector.h>
 
 namespace proton::bucketdb {
@@ -58,6 +60,13 @@ private:
     using KeyComp = documentmetastore::LidGidKeyComparator;
     using OperationListenerSP = std::shared_ptr<documentmetastore::OperationListener>;
     using BucketDBOwnerSP = std::shared_ptr<bucketdb::BucketDBOwner>;
+    using TypeMapper = vespalib::datastore::ArrayStoreDynamicTypeMapper<char>;
+    using DocumentIdStore = vespalib::datastore::ArrayStore<char, RawDocumentMetaData::DocumentIdEntryRef, TypeMapper>;
+
+    static constexpr float array_store_alloc_grow_factor = 0.2;
+    static constexpr double array_store_grow_factor = 1.03;
+    static constexpr uint32_t array_store_max_type_id = 400;
+    static constexpr size_t array_store_max_buffer_size = vespalib::datastore::ArrayStoreConfig::default_max_buffer_size;
 
     // Lids are stored as keys in the tree, sorted by their gid
     // counterpart.  The LidGidKeyComparator class maps from lids -> metadata by
@@ -67,6 +76,7 @@ private:
     using LidAndRawDocumentMetaData = std::pair<uint32_t, RawDocumentMetaData>;
 
     MetaDataStore       _metaDataStore;
+    DocumentIdStore     _docid_store;
     TreeType            _gidToLidMap;
     Iterator            _gid_to_lid_map_write_itr; // Iterator used for all updates of _gidToLidMap
     SerialNum           _gid_to_lid_map_write_itr_prepare_serial_num;
@@ -285,6 +295,8 @@ public:
     make_sort_blob_writer(bool ascending, const search::common::BlobConverter* converter,
                           search::common::sortspec::MissingPolicy policy,
                           std::string_view missing_value) const override;
+
+    static vespalib::datastore::ArrayStoreConfig make_default_docid_array_store_config();
 };
 
 }

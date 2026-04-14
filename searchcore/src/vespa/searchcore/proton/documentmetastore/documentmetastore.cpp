@@ -26,6 +26,8 @@
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
 #include <vespa/vespalib/btree/btreenodestore.hpp>
 #include <vespa/vespalib/btree/btreeroot.hpp>
+#include <vespa/vespalib/datastore/array_store.hpp>
+#include <vespa/vespalib/datastore/dynamic_array_buffer_type.h>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/rcuvector.hpp>
@@ -454,6 +456,7 @@ DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB,
                                      SubDbType subDbType)
     : DocumentMetaStoreAttribute(name),
       _metaDataStore(grow, getGenerationHolder()),
+      _docid_store(make_default_docid_array_store_config(), get_memory_allocator(), TypeMapper(array_store_max_type_id, array_store_grow_factor, array_store_max_buffer_size)),
       _gidToLidMap(),
       _gid_to_lid_map_write_itr(vespalib::datastore::EntryRef(), _gidToLidMap.getAllocator()),
       _gid_to_lid_map_write_itr_prepare_serial_num(0u),
@@ -1180,6 +1183,18 @@ DocumentMetaStore::make_sort_blob_writer(bool ascending, const search::common::B
     } else {
         return std::make_unique<DocumentMetaStoreSortBlobWriter<false>>(*this);
     }
+}
+
+vespalib::datastore::ArrayStoreConfig
+DocumentMetaStore::make_default_docid_array_store_config()
+{
+    return DocumentIdStore::optimizedConfigForHugePage(array_store_max_type_id,
+                                                       TypeMapper(array_store_max_type_id, array_store_grow_factor, array_store_max_buffer_size),
+                                                       vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
+                                                       vespalib::alloc::MemoryAllocator::PAGE_SIZE,
+                                                       array_store_max_buffer_size,
+                                                       8_Ki,
+                                                       array_store_alloc_grow_factor);
 }
 
 }  // namespace proton

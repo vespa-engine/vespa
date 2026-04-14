@@ -5,6 +5,7 @@
 #include <vespa/document/base/globalid.h>
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/persistence/spi/types.h>
+#include <vespa/vespalib/datastore/entryref.h>
 #include <algorithm>
 #include <atomic>
 #include <cassert>
@@ -19,7 +20,9 @@ struct RawDocumentMetaData
     using GlobalId = document::GlobalId;
     using BucketId = document::BucketId;
     using Timestamp = storage::spi::Timestamp;
-    GlobalId  _gid;
+    using DocumentIdEntryRef = vespalib::datastore::EntryRefT<19>;
+    GlobalId              _gid;
+    DocumentIdEntryRef    _docid_ref;
     std::atomic<uint32_t> _bucket_used_bits_and_doc_size;
     std::atomic<uint64_t> _timestamp;
 
@@ -27,12 +30,14 @@ struct RawDocumentMetaData
 
     RawDocumentMetaData() noexcept
         : _gid(),
+          _docid_ref(),
           _bucket_used_bits_and_doc_size(BucketId::minNumBits),
           _timestamp(0)
     { }
 
     RawDocumentMetaData(const GlobalId &gid, const BucketId &bucketId, const Timestamp &timestamp, uint32_t docSize) noexcept
         : _gid(gid),
+          _docid_ref(),
           _bucket_used_bits_and_doc_size(bucketId.getUsedBits() | (capped_doc_size(docSize) << 8)),
           _timestamp(timestamp)
     {
@@ -45,6 +50,7 @@ struct RawDocumentMetaData
 
     RawDocumentMetaData(const RawDocumentMetaData& rhs)
         : _gid(rhs._gid),
+          _docid_ref(rhs._docid_ref),
           _bucket_used_bits_and_doc_size(rhs._bucket_used_bits_and_doc_size.load(std::memory_order_relaxed)),
           _timestamp(rhs._timestamp.load(std::memory_order_relaxed))
     {
@@ -52,6 +58,7 @@ struct RawDocumentMetaData
 
     RawDocumentMetaData& operator=(const RawDocumentMetaData& rhs) {
         _gid = rhs._gid;
+        _docid_ref = rhs._docid_ref;
         _bucket_used_bits_and_doc_size.store(rhs._bucket_used_bits_and_doc_size.load(std::memory_order_relaxed), std::memory_order_relaxed);
         _timestamp.store(rhs._timestamp.load(std::memory_order_relaxed), std::memory_order_relaxed);
         return *this;
