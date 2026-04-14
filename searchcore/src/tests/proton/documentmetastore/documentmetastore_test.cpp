@@ -472,6 +472,27 @@ TEST(DocumentMetaStoreTest, can_store_bucket_id_and_timestamp)
     }
 }
 
+TEST(DocumentMetaStoreTest, can_store_full_document_id)
+{
+    DocumentMetaStore dms(createBucketDB(), "[documentmetastore]", search::GrowStrategy(), true, SubDbType::READY);
+    uint32_t numLids = 1000;
+
+    dms.constructFreeList();
+    for (uint32_t lid = 1; lid <= numLids; ++lid) {
+        const auto docid = createDocId(lid);
+        auto& gid = docid.getGlobalId();
+        BucketId bucketId(gid.convertToBucketId());
+        bucketId.setUsedBits(numBucketBits);
+        uint32_t addLid = addDoc(dms, docid, bucketId, Timestamp(lid + timestampBias));
+        EXPECT_EQ(lid, addLid);
+    }
+    for (uint32_t lid = 1; lid <= numLids; ++lid) {
+        const auto docid = createDocId(lid);
+        auto& gid = docid.getGlobalId();
+        EXPECT_EQ(docid.toString(), dms.get_docid_string(gid));
+    }
+}
+
 TEST(DocumentMetaStoreTest, gids_can_be_saved_and_loaded)
 {
     DocumentMetaStore dms1(createBucketDB());
