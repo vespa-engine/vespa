@@ -367,6 +367,27 @@ TEST(DocumentMetaStore, gids_can_be_cleared)
     EXPECT_TRUE(!dms.remove(2, 0u)); // outside range
 }
 
+TEST(DocumentMetaStoreTest, full_docids_can_be_inserted_and_retrieved)
+{
+    DocumentMetaStore dms(createBucketDB(), "[documentmetastore]", search::GrowStrategy(), true, SubDbType::READY);
+    dms.constructFreeList();
+    // put()
+    assertPut(bucketId1, time1, 1, docid1, dms);
+    assertPut(bucketId2, time2, 2, docid2, dms);
+
+    // get_docid_string()
+    EXPECT_EQ(docid1.toString(), dms.get_docid_string(gid1));
+    EXPECT_EQ(docid2.toString(), dms.get_docid_string(gid2));
+
+    // already inserted
+    assertPut(bucketId1, time1, 1, docid1, dms);
+    assertPut(bucketId2, time2, 2, docid2, dms);
+
+    // get_docid_string()
+    EXPECT_EQ(docid1.toString(), dms.get_docid_string(gid1));
+    EXPECT_EQ(docid2.toString(), dms.get_docid_string(gid2));
+}
+
 TEST(DocumentMetaStore, generation_handling_is_working)
 {
     auto dms = std::make_shared<DocumentMetaStore>(createBucketDB());
