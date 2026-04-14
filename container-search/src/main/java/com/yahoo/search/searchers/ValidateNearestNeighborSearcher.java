@@ -28,6 +28,7 @@ import java.util.Optional;
  *
  * @author arnej
  */
+@SuppressWarnings("removal")
 @Before(GroupingExecutor.COMPONENT_NAME) // Must happen before query.prepare()
 public class ValidateNearestNeighborSearcher extends Searcher {
 
@@ -122,17 +123,21 @@ public class ValidateNearestNeighborSearcher extends Searcher {
             if (item.getTotalTargetHits() != null && item.getTotalTargetHits() < 1)
                 return item + " has invalid totalTargetHits " + item.getTotalTargetHits() + ": Must be >= 1";
 
+            if (item.getTotalTargetHits() != null && item.getMinTargetHits() != null
+                && item.getTotalTargetHits() < item.getMinTargetHits())
+                return item + " has invalid parameters: minTargetHits cannot be larger than totalTargetHits";
+
             String queryFeatureName = "query(" + item.getQueryTensorName() + ")";
             Optional<Tensor> queryTensor = query.getRanking().getFeatures().getTensor(queryFeatureName);
             if (queryTensor.isEmpty())
                 return item + " requires a tensor rank feature named '" + queryFeatureName + "' but this is not present";
 
-            if (badQueryTensorType(queryTensor.get().type())) {
+            if (badQueryTensorType(queryTensor.get().type()))
                 return item + " tensor " + queryFeatureName + " must have exactly 1, indexed dimension, but was: " + queryTensor.get().type();
-            }
-            if ( ! validAttributes.containsKey(item.getIndexName())) {
+
+            if ( ! validAttributes.containsKey(item.getIndexName()))
                 return item + " field is not an attribute";
-            }
+
             List<TensorType> allTensorTypes = validAttributes.get(item.getIndexName());
             for (TensorType fieldType : allTensorTypes) {
                 if (isTensorTypeThatSupportsHnswIndex(fieldType) && isCompatible(fieldType, queryTensor.get().type())) {

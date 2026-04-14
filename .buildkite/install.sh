@@ -11,7 +11,8 @@ set -o pipefail
 if [[ -n "${DEBUG:-}" ]]; then
     set -o xtrace
 fi
-
+: "${NUM_CPU_LIMIT:?Environment variable NUM_CPU_LIMIT must be set (CPU limit)}"
+: "${WORKDIR:?Environment variable WORKDIR must be set (working directory)}"
 echo "--- 📦 Installing Vespa components"
 echo "Running make install with $NUM_CPU_LIMIT parallel jobs..."
 make -j "$NUM_CPU_LIMIT" install DESTDIR="$WORKDIR/vespa-install"

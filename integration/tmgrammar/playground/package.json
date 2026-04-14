@@ -1,0 +1,13 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite"
+  },
+  "dependencies": {
+    "shiki": "^3.0.0"
+  },
+  "devDependencies": {
+    "vite": "^6.4.2"
+  }
+}

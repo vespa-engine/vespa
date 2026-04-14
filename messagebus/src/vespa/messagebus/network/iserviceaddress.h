@@ -26,4 +26,3 @@ public:
 };
 
 } // namespace mbus
-

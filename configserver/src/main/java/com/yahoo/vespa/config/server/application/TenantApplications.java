@@ -209,6 +209,11 @@ public class TenantApplications implements RequestHandler, HostValidator {
         return database().lock(id);
     }
 
+    /** Returns the lock for changing the session status of the given application. */
+    public Lock lock(ApplicationId id, Duration lockTimeout) {
+        return database().lock(id, lockTimeout);
+    }
+
     private void childEvent(CuratorFramework ignored, PathChildrenCacheEvent event) {
         zkWatcherExecutor.execute(() -> {
             // Note: event.getData() might return null on types not handled here (CONNECTION_*, INITIALIZED, see javadoc)

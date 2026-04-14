@@ -22,10 +22,9 @@ public:
      *
      * @param msg The message of the error to assign.
      */
-    ErrorPolicy(const string &msg);
-    void select(mbus::RoutingContext &context) override;
-    void merge(mbus::RoutingContext &context) override;
+    ErrorPolicy(const string& msg);
+    void select(mbus::RoutingContext& context) override;
+    void merge(mbus::RoutingContext& context) override;
 };
 
-}
-
+} // namespace documentapi

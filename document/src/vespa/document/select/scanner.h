@@ -2,11 +2,12 @@
 #pragma once
 
 #if !defined(yyFlexLexerOnce)
-#  include <FlexLexer.h>
+#include <FlexLexer.h>
 #endif
 
-#include "parser.hxx"
 #include "location.hh"
+#include "parser.hxx"
+
 #include <iosfwd>
 
 namespace document::select {
@@ -18,4 +19,4 @@ public:
     int yylex(DocSelParser::semantic_type* yylval, DocSelParser::location_type* yyloc);
 };
 
-}
+} // namespace document::select

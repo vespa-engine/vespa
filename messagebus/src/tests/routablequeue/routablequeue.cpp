@@ -9,8 +9,9 @@ using namespace mbus;
 
 class TestMessage : public SimpleMessage {
 private:
-    uint32_t _id;
+    uint32_t        _id;
     static uint32_t _cnt;
+
 public:
     TestMessage(uint32_t id) : SimpleMessage(""), _id(id) { ++_cnt; }
     ~TestMessage() override;
@@ -19,15 +20,15 @@ public:
 };
 uint32_t TestMessage::_cnt = 0;
 
-TestMessage::~TestMessage()
-{
+TestMessage::~TestMessage() {
     --_cnt;
 }
 
 class TestReply : public SimpleReply {
 private:
-    uint32_t _id;
+    uint32_t        _id;
     static uint32_t _cnt;
+
 public:
     TestReply(uint32_t id) : SimpleReply(""), _id(id) { ++_cnt; }
     ~TestReply() override;
@@ -36,8 +37,7 @@ public:
 };
 uint32_t TestReply::_cnt = 0;
 
-TestReply::~TestReply()
-{
+TestReply::~TestReply() {
     --_cnt;
 }
 

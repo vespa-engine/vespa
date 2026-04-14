@@ -1,35 +1,33 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "simpleprotocol.h"
+
 #include "simplemessage.h"
 #include "simplereply.h"
+
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/routing/routingcontext.h>
 
 namespace mbus {
 
-const string SimpleProtocol::NAME("Simple");
+const string   SimpleProtocol::NAME("Simple");
 const uint32_t SimpleProtocol::MESSAGE(1);
 const uint32_t SimpleProtocol::REPLY(2);
 
 class AllPolicy : public IRoutingPolicy {
 public:
-    void select(RoutingContext &ctx) override {
+    void select(RoutingContext& ctx) override {
         std::vector<Route> recipients;
         ctx.getMatchedRecipients(recipients);
         ctx.addChildren(recipients);
     }
 
-    void merge(RoutingContext &ctx) override {
-        SimpleProtocol::simpleMerge(ctx);
-    }
+    void merge(RoutingContext& ctx) override { SimpleProtocol::simpleMerge(ctx); }
 };
 
 class AllPolicyFactory : public SimpleProtocol::IPolicyFactory {
 public:
-    IRoutingPolicy::UP create(const string &) override {
-        return std::make_unique<AllPolicy>();
-    }
+    IRoutingPolicy::UP create(const string&) override { return std::make_unique<AllPolicy>(); }
     ~AllPolicyFactory() override;
 };
 
@@ -37,7 +35,7 @@ AllPolicyFactory::~AllPolicyFactory() = default;
 
 class HashPolicy : public IRoutingPolicy {
 public:
-    void select(RoutingContext &ctx) override {
+    void select(RoutingContext& ctx) override {
         std::vector<Route> recipients;
         ctx.getMatchedRecipients(recipients);
         if (!recipients.empty()) {
@@ -46,45 +44,33 @@ public:
         }
     }
 
-    void merge(RoutingContext &ctx) override {
-        SimpleProtocol::simpleMerge(ctx);
-    }
+    void merge(RoutingContext& ctx) override { SimpleProtocol::simpleMerge(ctx); }
 };
 
 class HashPolicyFactory : public SimpleProtocol::IPolicyFactory {
 public:
-    IRoutingPolicy::UP create(const string &) override {
-        return std::make_unique<HashPolicy>();
-    }
+    IRoutingPolicy::UP create(const string&) override { return std::make_unique<HashPolicy>(); }
     ~HashPolicyFactory() override;
 };
 
 HashPolicyFactory::~HashPolicyFactory() = default;
 
-SimpleProtocol::SimpleProtocol() :
-    _policies()
-{
+SimpleProtocol::SimpleProtocol() : _policies() {
     addPolicyFactory("All", std::make_unique<AllPolicyFactory>());
     addPolicyFactory("Hash", std::make_unique<HashPolicyFactory>());
 }
 
 SimpleProtocol::~SimpleProtocol() = default;
 
-void
-SimpleProtocol::addPolicyFactory(const string &name, IPolicyFactory::SP factory)
-{
+void SimpleProtocol::addPolicyFactory(const string& name, IPolicyFactory::SP factory) {
     _policies.emplace(name, std::move(factory));
 }
 
-const string &
-SimpleProtocol::getName() const
-{
+const string& SimpleProtocol::getName() const {
     return NAME;
 }
 
-IRoutingPolicy::UP
-SimpleProtocol::createPolicy(const string &name, const string &param) const
-{
+IRoutingPolicy::UP SimpleProtocol::createPolicy(const string& name, const string& param) const {
     auto it = _policies.find(name);
     if (it != _policies.end()) {
         return it->second->create(param);
@@ -92,9 +78,7 @@ SimpleProtocol::createPolicy(const string &name, const string &param) const
     return {};
 }
 
-Blob
-SimpleProtocol::encode(const vespalib::Version &version, const Routable &routable) const
-{
+Blob SimpleProtocol::encode(const vespalib::Version& version, const Routable& routable) const {
     (void)version;
     if (routable.getType() == MESSAGE) {
         string str = "M";
@@ -113,13 +97,11 @@ SimpleProtocol::encode(const vespalib::Version &version, const Routable &routabl
     }
 }
 
-Routable::UP
-SimpleProtocol::decode(const vespalib::Version &version, BlobRef data) const
-{
+Routable::UP SimpleProtocol::decode(const vespalib::Version& version, BlobRef data) const {
     (void)version;
 
-    const char *d = data.data();
-    uint32_t s = data.size();
+    const char* d = data.data();
+    uint32_t    s = data.size();
     if (s < 1) {
         return {}; // too short
     }
@@ -133,14 +115,10 @@ SimpleProtocol::decode(const vespalib::Version &version, BlobRef data) const
     }
 }
 
-void
-SimpleProtocol::simpleMerge(RoutingContext &ctx)
-{
+void SimpleProtocol::simpleMerge(RoutingContext& ctx) {
     auto ret = std::make_unique<EmptyReply>();
-    for (RoutingNodeIterator it = ctx.getChildIterator();
-         it.isValid(); it.next())
-    {
-        const Reply &reply = it.getReplyRef();
+    for (RoutingNodeIterator it = ctx.getChildIterator(); it.isValid(); it.next()) {
+        const Reply& reply = it.getReplyRef();
         for (uint32_t i = 0; i < reply.getNumErrors(); ++i) {
             ret->addError(reply.getError(i));
         }

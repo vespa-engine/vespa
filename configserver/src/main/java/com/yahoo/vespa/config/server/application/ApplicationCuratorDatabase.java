@@ -60,7 +60,7 @@ public class ApplicationCuratorDatabase {
         this.lockTimeout = Duration.ofSeconds(configserverConfig.applicationLockTimeoutSeconds());
     }
 
-    /** Returns the lock for changing the session status of the given application. */
+    /** Returns the lock for changes to the given application. */
     public Lock lock(ApplicationId id) {
         return lock(lockPath(id));
     }
@@ -93,22 +93,6 @@ public class ApplicationCuratorDatabase {
     }
 
     /**
-     * Creates a node for the given application, marking its existence.
-     */
-    // TODO: Remove in Vespa 9
-    public void createApplicationInOldFormat(ApplicationId id) {
-        if (! id.tenant().equals(tenant))
-            throw new IllegalArgumentException("Cannot write application id '" + id + "' for tenant '" + tenant + "'");
-
-        try (Lock lock = lock(id)) {
-            if (curator.exists(applicationPath(id))) return;
-
-            curator.create(applicationPath(id));
-            modifyReindexing(id, ApplicationReindexing.empty(), UnaryOperator.identity());
-        }
-    }
-
-    /**
      * Returns a transaction which writes the given session id as the currently active for the given application.
      *
      * @param applicationId An {@link ApplicationId} that represents an active application.
@@ -117,18 +101,6 @@ public class ApplicationCuratorDatabase {
     public Transaction createWriteActiveTransaction(Transaction transaction, ApplicationId applicationId, long sessionId) {
         String path = applicationPath(applicationId).getAbsolute();
         return transaction.add(setData(path, new ApplicationData(applicationId, OptionalLong.of(sessionId), OptionalLong.of(sessionId)).toJson()));
-    }
-
-    /**
-     * Returns a transaction which writes the given session id as the currently active for the given application.
-     *
-     * @param applicationId An {@link ApplicationId} that represents an active application.
-     * @param sessionId session id belonging to the application package for this application id.
-     */
-    // TODO: Remove in Vespa 9
-    public Transaction createWriteActiveTransactionInOldFormat(Transaction transaction, ApplicationId applicationId, long sessionId) {
-        String path = applicationPath(applicationId).getAbsolute();
-        return transaction.add(setData(path, Utf8.toAsciiBytes(sessionId)));
     }
 
     /**
@@ -237,10 +209,20 @@ public class ApplicationCuratorDatabase {
         return curator.createDirectoryCache(applicationsPath.getAbsolute(), false, false, zkCacheExecutor);
     }
 
+    /** Returns the lock for changes to the given application, with the given timeout. */
+    public Lock lock(ApplicationId id, Duration lockTimeout) {
+        return lock(lockPath(id),  lockTimeout);
+    }
+
     /**
      * Returns the lock for the given lock path.
      */
-    private Lock lock(Path lockPath) { return curator.lock(lockPath, lockTimeout); }
+    private Lock lock(Path lockPath) { return lock(lockPath, lockTimeout); }
+
+    /**
+     * Returns the lock for the given lock path.
+     */
+    private Lock lock(Path lockPath, Duration lockTimeout) { return curator.lock(lockPath, lockTimeout); }
 
     private Path restartsLockPath(ApplicationId id) {
         return locksPath.append(id.serializedForm() + "::restarts");

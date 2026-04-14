@@ -4,26 +4,19 @@
 
 namespace mbus {
 
-SlobrokState::SlobrokState()
-    : _data()
-{ }
+SlobrokState::SlobrokState() : _data() {
+}
 
-SlobrokState &
-SlobrokState::add(const string &pattern, uint32_t cnt)
-{
+SlobrokState& SlobrokState::add(const string& pattern, uint32_t cnt) {
     _data.push_back(std::make_pair(pattern, cnt));
     return *this;
 }
 
-SlobrokState::ITR
-SlobrokState::begin() const
-{
+SlobrokState::ITR SlobrokState::begin() const {
     return _data.begin();
 }
 
-SlobrokState::ITR
-SlobrokState::end() const
-{
+SlobrokState::ITR SlobrokState::end() const {
     return _data.end();
 }
 

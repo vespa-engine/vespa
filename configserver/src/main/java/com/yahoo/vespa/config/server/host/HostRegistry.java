@@ -53,7 +53,11 @@ public class HostRegistry implements HostValidator {
     }
 
     public synchronized void removeHosts(ApplicationId key) {
-        host2ApplicationId.entrySet().removeIf(entry -> entry.getValue().equals(key));
+        if (host2ApplicationId.entrySet().removeIf(entry -> entry.getValue().equals(key))) {
+            log.log(Level.INFO, "Hosts were removed for '" + key + "'");
+        } else {
+            log.log(Level.INFO, "Tried removing hosts for '" + key + "', but none were found");
+        }
     }
 
     public synchronized void removeHosts(TenantName key) {

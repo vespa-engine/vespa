@@ -18,7 +18,6 @@ private:
     string _param;
 
 public:
-
     /**
      * Constructs a new policy selector item.
      *
@@ -33,20 +32,19 @@ public:
      *
      * @return The name name.
      */
-    const string &getName() const { return _name; }
+    const string& getName() const { return _name; }
 
     /**
      * Returns the parameter string for this policy directive.
      *
      * @return The parameter.
      */
-    const string &getParam() const { return _param; }
+    const string& getParam() const { return _param; }
 
     Type getType() const override { return TYPE_POLICY; }
-    bool matches(const IHopDirective &) const override { return true; }
+    bool matches(const IHopDirective&) const override { return true; }
     string toString() const override;
     string toDebugString() const override;
 };
 
-} // mbus
-
+} // namespace mbus

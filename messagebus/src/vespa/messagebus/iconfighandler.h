@@ -12,8 +12,7 @@ class RoutingSpec;
  * the ConfigAgent and MessageBus to simplify testing of the config
  * agent.
  **/
-class IConfigHandler
-{
+class IConfigHandler {
 public:
     virtual ~IConfigHandler() = default;
 
@@ -30,4 +29,3 @@ public:
 };
 
 } // namespace mbus
-

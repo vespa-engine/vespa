@@ -169,6 +169,9 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
         return parent.getName();
     }
 
+    /** Returns the configured {@code max-document-size} in MiB, or 0 if not set. */
+    public int getMaxDocumentOperationSizeMib() { return maxDocumentOperationSizeMib; }
+
     private static int maxDocumentSizeInMib(ModelElement clusterElement, DeployLogger deployLogger) {
         var tuning = clusterElement.child("tuning");
         if (tuning == null) return 0;

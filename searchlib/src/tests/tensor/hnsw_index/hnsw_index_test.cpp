@@ -182,7 +182,6 @@ public:
     FloatVectors vectors;
     std::shared_ptr<GlobalFilter> global_filter;
     LevelGenerator* level_generator;
-    GenerationHandler gen_handler;
     std::unique_ptr<IndexType> index;
     std::unique_ptr<vespalib::FakeDoom> _doom;
 
@@ -190,7 +189,6 @@ public:
         : vectors(),
           global_filter(GlobalFilter::create()),
           level_generator(),
-          gen_handler(),
           index(),
           _doom(std::make_unique<vespalib::FakeDoom>())
     {
@@ -228,16 +226,15 @@ public:
         commit();
     }
     void commit() {
-        index->assign_generation(gen_handler.getCurrentGeneration());
-        gen_handler.incGeneration();
-        index->reclaim_memory(gen_handler.get_oldest_used_generation());
+        index->inc_generation();
+        index->reclaim_unused_memory();
     }
     void set_filter(const std::vector<uint32_t>& docids) {
         uint32_t sz = 10;
         global_filter = GlobalFilter::create(docids, sz);
     }
     GenerationHandler::Guard take_read_guard() {
-        return gen_handler.takeGuard();
+        return index->make_generation_read_guard();
     }
     MemoryUsage memory_usage() const {
         return index->memory_usage();

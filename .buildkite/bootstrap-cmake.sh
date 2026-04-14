@@ -5,8 +5,15 @@
 # Configures the CMake build environment based on provided arguments and environment variables.
 
 set -o errexit
-set -o nounset
 set -o pipefail
+
+: "${SOURCE_DIR:?Environment variable SOURCE_DIR must be set (path to source code)}"
+if [[ ! -d "${SOURCE_DIR}" ]]; then
+    echo "Error: SOURCE_DIR '${SOURCE_DIR}' is not a directory." >&2
+    exit 1
+fi
+
+set -o nounset
 
 if [[ -n "${DEBUG:-}" ]]; then
     set -o xtrace

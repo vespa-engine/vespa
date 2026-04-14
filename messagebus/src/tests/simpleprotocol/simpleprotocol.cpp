@@ -1,25 +1,25 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/messagebus/testlib/simpleprotocol.h>
+#include <vespa/messagebus/ireplyhandler.h>
+#include <vespa/messagebus/routing/routingcontext.h>
 #include <vespa/messagebus/testlib/simplemessage.h>
+#include <vespa/messagebus/testlib/simpleprotocol.h>
 #include <vespa/messagebus/testlib/simplereply.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
-#include <vespa/messagebus/ireplyhandler.h>
-#include <vespa/messagebus/routing/routingcontext.h>
-#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/component/vtag.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace mbus;
 
 TEST(SimpleProtocolTest, simpleprotocol_test) {
 
     vespalib::Version version = vespalib::Vtag::currentVersion;
-    SimpleProtocol protocol;
+    SimpleProtocol    protocol;
     EXPECT_TRUE(protocol.getName() == "Simple");
 
-    EXPECT_EQ(24u + 2 *sizeof(std::string), sizeof(Result));
-    EXPECT_EQ(8u + 2 *sizeof(std::string), sizeof(Error));
+    EXPECT_EQ(24u + 2 * sizeof(std::string), sizeof(Result));
+    EXPECT_EQ(8u + 2 * sizeof(std::string), sizeof(Error));
     EXPECT_EQ(56u, sizeof(Routable));
     {
         // test protocol

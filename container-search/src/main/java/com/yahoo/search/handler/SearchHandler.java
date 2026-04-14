@@ -235,13 +235,18 @@ public class SearchHandler extends LoggingRequestHandler {
         String queryProfileName = requestMap.getOrDefault("queryProfile", null);
         CompiledQueryProfile queryProfile = queryProfileRegistry.findQueryProfile(queryProfileName);
 
-        Query query = new Query.Builder().setRequest(request)
-                                         .setRequestMap(requestMap)
-                                         .setQueryProfile(queryProfile)
-                                         .setEmbedders(embedders)
-                                         .setZoneInfo(zoneInfo)
-                                         .setSchemaInfo(executionFactory.schemaInfo())
-                                         .build();
+        Query query;
+        try {
+            query = new Query.Builder().setRequest(request)
+                                       .setRequestMap(requestMap)
+                                       .setQueryProfile(queryProfile)
+                                       .setEmbedders(embedders)
+                                       .setZoneInfo(zoneInfo)
+                                       .setSchemaInfo(executionFactory.schemaInfo())
+                                       .build();
+        } catch (IllegalArgumentException e) {
+            throw new IllegalInputException(e);
+        }
         query.getHttpRequest().context().put("search.handlerStartTime", executionStart);
 
         // If format not explicitly set, use Accept header to determine response format
@@ -286,7 +291,11 @@ public class SearchHandler extends LoggingRequestHandler {
 
         // Transform result to response
         Renderer<Result> renderer = toRendererCopy(query.getPresentation().getRenderer());
-        HttpSearchResponse response = new HttpSearchResponse(getHttpResponseStatus(request, result),
+        int status = getHttpResponseStatus(request, result);
+        if (status == 500 && result.hits().getError() != null) {
+            log.log(Level.FINE, () -> "Search request returning %d: %s".formatted(status, result.hits().getError().getDetailedMessage()));
+        }
+        HttpSearchResponse response = new HttpSearchResponse(status,
                                                              result, query, renderer,
                                                              extractTraceNode(query),
                                                              metric);

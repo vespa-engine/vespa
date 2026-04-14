@@ -5,25 +5,18 @@
 
 namespace mbus {
 
-Routable::Routable() :
-    _context(),
-    _stack(),
-    _trace()
-{ }
+Routable::Routable() : _context(), _stack(), _trace() {
+}
 
 Routable::~Routable() = default;
 
-void
-Routable::discard()
-{
+void Routable::discard() {
     _context = Context();
     _stack.discard();
     _trace.clear();
 }
 
-void
-Routable::swapState(Routable &rhs)
-{
+void Routable::swapState(Routable& rhs) {
     std::swap(_context, rhs._context);
     _stack.swap(rhs._stack);
     _trace.swap(rhs._trace);

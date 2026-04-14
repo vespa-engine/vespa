@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/messagebus/common.h>
 #include <vespa/fnet/frt/invoker.h>
 #include <vespa/fnet/frt/target.h>
+#include <vespa/messagebus/common.h>
 #include <vespa/vespalib/component/version.h>
 
 namespace mbus {
@@ -35,7 +35,7 @@ public:
          *
          * @param ver The version of corresponding target, or null.
          */
-        virtual void handleVersion(const vespalib::Version *ver) = 0;
+        virtual void handleVersion(const vespalib::Version* ver) = 0;
     };
 
 private:
@@ -49,16 +49,17 @@ private:
     };
     using Version_UP = std::unique_ptr<vespalib::Version>;
 
-    std::mutex                 _lock;
-    std::condition_variable    _cond;
-    FRT_Supervisor            &_orb;
-    string                     _name;
-    FRT_Target                &_target;
-    std::atomic<ResolveState>  _state;
-    Version_UP                 _version;
-    HandlerList                _versionHandlers;
+    std::mutex                _lock;
+    std::condition_variable   _cond;
+    FRT_Supervisor&           _orb;
+    string                    _name;
+    FRT_Target&               _target;
+    std::atomic<ResolveState> _state;
+    Version_UP                _version;
+    HandlerList               _versionHandlers;
 
     struct ctor_tag {};
+
 public:
     /**
      * Convenience typedefs.
@@ -73,8 +74,8 @@ public:
      * @param spec The connection spec of this target.
      * @param orb  The FRT supervisor to use when connecting to target.
      */
-    RPCTarget(const string &name, FRT_Supervisor &orb, ctor_tag);
-    static SP create(const string &name, FRT_Supervisor &orb) {
+    RPCTarget(const string& name, FRT_Supervisor& orb, ctor_tag);
+    static SP create(const string& name, FRT_Supervisor& orb) {
         return std::make_shared<RPCTarget>(name, orb, ctor_tag{});
     }
 
@@ -92,7 +93,7 @@ public:
      * @param timeout The timeout for the request in milliseconds.
      * @param handler The handler to be called once the version is available.
      */
-    void resolveVersion(duration timeout, IVersionHandler &handler);
+    void resolveVersion(duration timeout, IVersionHandler& handler);
 
     /**
      * @return true if the FRT target is valid or has been invoked (which
@@ -105,7 +106,7 @@ public:
      *
      * @return The target.
      */
-    FRT_Target &getFRTTarget() { return _target; }
+    FRT_Target& getFRTTarget() { return _target; }
 
     /**
      * Returns the version to use when communicating with this target.
@@ -114,11 +115,10 @@ public:
      *
      * @return The negotiated version.
      */
-    const vespalib::Version &getVersion() const { return *_version; }
+    const vespalib::Version& getVersion() const { return *_version; }
 
     // Implements FRT_IRequestWait.
-    void RequestDone(FRT_RPCRequest *req) override;
+    void RequestDone(FRT_RPCRequest* req) override;
 };
 
 } // namespace mbus
-

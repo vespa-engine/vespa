@@ -11,10 +11,7 @@ namespace documentapi {
  */
 class DocumentAcceptedReply : public DocumentReply {
 public:
-    DocumentAcceptedReply(uint32_t type)
-        : DocumentReply(type)
-    {}
+    DocumentAcceptedReply(uint32_t type) : DocumentReply(type) {}
 };
 
-} // ns documentapi
-
+} // namespace documentapi

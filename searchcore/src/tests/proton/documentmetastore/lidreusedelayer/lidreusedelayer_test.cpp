@@ -14,6 +14,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP("lidreusedelayer_test");
 
+using document::DocumentId;
 using vespalib::makeLambdaTask;
 
 namespace proton {
@@ -65,7 +66,7 @@ public:
         return Result();
     }
 
-    Result put(const GlobalId &, const BucketId &, Timestamp , uint32_t, DocId, uint64_t) override {
+    Result put(const DocumentId &, const BucketId &, Timestamp , uint32_t, DocId, uint64_t) override {
         return Result();
     }
 

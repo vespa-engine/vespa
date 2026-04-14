@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/messagebus/testlib/slobrok.h>
-#include <vespa/messagebus/testlib/testserver.h>
+#include <vespa/messagebus/messagebus.h>
 #include <vespa/messagebus/testlib/receptor.h>
 #include <vespa/messagebus/testlib/simplemessage.h>
-#include <vespa/messagebus/testlib/simplereply.h>
 #include <vespa/messagebus/testlib/simpleprotocol.h>
-#include <vespa/messagebus/messagebus.h>
+#include <vespa/messagebus/testlib/simplereply.h>
+#include <vespa/messagebus/testlib/slobrok.h>
+#include <vespa/messagebus/testlib/testserver.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace ::testing;
@@ -14,22 +14,21 @@ using namespace ::testing;
 namespace mbus {
 
 RoutingSpec getRouting() {
-    return RoutingSpec()
-        .addTable(RoutingTableSpec("Simple")
-                  .addHop(HopSpec("pxy", "test/pxy/session"))
-                  .addHop(HopSpec("dst", "test/dst/session"))
-                  .addRoute(RouteSpec("test").addHop("pxy").addHop("dst")));
+    return RoutingSpec().addTable(RoutingTableSpec("Simple")
+                                      .addHop(HopSpec("pxy", "test/pxy/session"))
+                                      .addHop(HopSpec("dst", "test/dst/session"))
+                                      .addRoute(RouteSpec("test").addHop("pxy").addHop("dst")));
 }
 
 struct SimpleRoundtripTest : Test {
-    Slobrok     slobrok;
-    TestServer  srcNet{Identity("test/src"), getRouting(), slobrok};
-    TestServer  pxyNet{Identity("test/pxy"), getRouting(), slobrok};
-    TestServer  dstNet{Identity("test/dst"), getRouting(), slobrok};
+    Slobrok    slobrok;
+    TestServer srcNet{Identity("test/src"), getRouting(), slobrok};
+    TestServer pxyNet{Identity("test/pxy"), getRouting(), slobrok};
+    TestServer dstNet{Identity("test/dst"), getRouting(), slobrok};
 
-    Receptor    src;
-    Receptor    pxy;
-    Receptor    dst;
+    Receptor src;
+    Receptor pxy;
+    Receptor dst;
 
     SourceSession::UP       ss = srcNet.mb.createSourceSession(src, SourceSessionParams());
     IntermediateSession::UP is = pxyNet.mb.createIntermediateSession("session", true, pxy, pxy);
@@ -49,7 +48,7 @@ struct SimpleRoundtripTest : Test {
                                            const std::optional<std::string>& bar_meta);
 };
 
-SimpleRoundtripTest::SimpleRoundtripTest()  = default;
+SimpleRoundtripTest::SimpleRoundtripTest() = default;
 SimpleRoundtripTest::~SimpleRoundtripTest() = default;
 
 TEST_F(SimpleRoundtripTest, simple_roundtrip_test) {
@@ -113,7 +112,7 @@ void SimpleRoundtripTest::do_test_header_kvs_are_propagated(const std::optional<
     ss->send(std::move(msg_to_send), "test");
 
     Message::UP msg = pxy.getMessage();
-    auto* as_simple_msg = dynamic_cast<SimpleMessage*>(msg.get());
+    auto*       as_simple_msg = dynamic_cast<SimpleMessage*>(msg.get());
     ASSERT_TRUE(as_simple_msg);
     EXPECT_EQ(as_simple_msg->hasMetadata(), has_meta);
     EXPECT_EQ(as_simple_msg->foo_meta(), foo_meta);
@@ -152,6 +151,6 @@ TEST_F(SimpleRoundtripTest, multiple_header_kvs_are_propagated) {
     do_test_header_kvs_are_propagated("marve", "fleksnes");
 }
 
-} // mbus
+} // namespace mbus
 
 GTEST_MAIN_RUN_ALL_TESTS()

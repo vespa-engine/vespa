@@ -1,44 +1,36 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tcpdirective.h"
+
 #include <vespa/vespalib/stllike/asciistream.h>
 
 namespace mbus {
 
-TcpDirective::TcpDirective(std::string_view host, uint32_t port, std::string_view session) :
-    _host(host),
-    _port(port),
-    _session(session)
-{
+TcpDirective::TcpDirective(std::string_view host, uint32_t port, std::string_view session)
+    : _host(host), _port(port), _session(session) {
     // empty
 }
 
 TcpDirective::~TcpDirective() = default;
 
-bool
-TcpDirective::matches(const IHopDirective &dir) const
-{
+bool TcpDirective::matches(const IHopDirective& dir) const {
     if (dir.getType() != TYPE_TCP) {
         return false;
     }
-    const TcpDirective &rhs = static_cast<const TcpDirective&>(dir);
+    const TcpDirective& rhs = static_cast<const TcpDirective&>(dir);
     return _host == rhs._host && _port == rhs._port && _session == rhs._session;
 }
 
-string
-TcpDirective::toString() const
-{
+string TcpDirective::toString() const {
     vespalib::asciistream os;
     os << "tcp/" << _host << ':' << _port << '/' << _session;
     return os.str();
 }
 
-string
-TcpDirective::toDebugString() const
-{
+string TcpDirective::toDebugString() const {
     vespalib::asciistream os;
     os << "TcpDirective(host = '" << _host << "', port = " << _port << ", session = '" << _session << "')";
     return os.str();
 }
 
-} // mbus
+} // namespace mbus

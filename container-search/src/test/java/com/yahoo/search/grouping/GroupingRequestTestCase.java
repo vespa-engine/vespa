@@ -162,6 +162,6 @@ public class GroupingRequestTestCase {
             public Continuation copy() {
                 return null;
             }
-        });
+        }, new Query());
     }
 }

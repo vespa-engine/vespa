@@ -47,6 +47,7 @@ import com.yahoo.searchlib.expression.RawResultNode;
 import com.yahoo.searchlib.expression.ResultNode;
 import com.yahoo.searchlib.expression.StringBucketResultNode;
 import com.yahoo.searchlib.expression.StringResultNode;
+import com.yahoo.search.Query;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -63,10 +64,15 @@ import java.util.Map;
 class ResultBuilder {
 
     private final CompositeContinuation continuation = new CompositeContinuation();
+    private final Query query;
     private RootGroup root;
     private GroupListBuilder rootBuilder;
     private HitConverter hitConverter;
     private GroupingTransform transform;
+
+    ResultBuilder(Query query) {
+        this.query = query;
+    }
 
     /**
      * Sets the id of the {@link GroupingRequest} that this builder is creating the result for.
@@ -75,8 +81,7 @@ class ResultBuilder {
      * @return this, to allow chaining
      */
     public ResultBuilder setRequestId(int requestId) {
-        // TODO: Assign query to this RootGroup in case it becomes the top-level group in a result
-        root = new RootGroup(requestId, continuation);
+        root = new RootGroup(requestId, continuation, query);
         rootBuilder = new GroupListBuilder(ResultId.valueOf(requestId), 0, true, true);
         return this;
     }
@@ -163,8 +168,7 @@ class ResultBuilder {
         }
 
         Group build(double relevance) {
-            // TODO: Assign query to this Group in case it becomes the top-level group in a result
-            return fill(new Group(newGroupId(group), new Relevance(relevance)));
+            return fill(new Group(newGroupId(group), new Relevance(relevance), query));
         }
 
         Group fill(Group group) {

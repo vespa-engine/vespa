@@ -130,7 +130,7 @@ public class ParsedSchema extends ParsedBlock {
     }
 
     public void addRankProfile(ParsedRankProfile profile) {
-        String rpName = profile.name();
+        String rpName = profile.fullName();
         verifyThat(! rankProfiles.containsKey(rpName), "already has rank-profile", rpName);
         rankProfiles.put(rpName, profile);
     }

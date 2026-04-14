@@ -32,6 +32,7 @@ import java.util.Set;
 // Query.prepare is done at the same time as canonicalization (by GroupingExecutor), so use that constraint.
 // (we're not adding another constraint at this point because all this preparation and encoding business
 // should be fixed when we move to Slime for serialization. - Jon, in the spring of the year of 2014)
+@SuppressWarnings("removal")
 @Before(QueryCanonicalizer.queryCanonicalization)
 
 // We are checking if there is a grouping expression, not if there is a raw grouping instruction property,

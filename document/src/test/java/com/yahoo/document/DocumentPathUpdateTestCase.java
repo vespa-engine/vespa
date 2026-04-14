@@ -129,6 +129,24 @@ public class DocumentPathUpdateTestCase {
     }
 
     @Test
+    public void can_remove_array_element_by_index() {
+        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("id:ns:foobar::foooo"));
+        Array<StringFieldValue> strArray = new Array<>(doc.getField("strarray").getDataType());
+        strArray.add(new StringFieldValue("one"));
+        strArray.add(new StringFieldValue("two"));
+        strArray.add(new StringFieldValue("three"));
+        doc.setFieldValue("strarray", strArray);
+
+        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("id:ns:foobar::foooo"));
+        docUp.addFieldPathUpdate(new RemoveFieldPathUpdate(doc.getDataType(), "strarray[1]"));
+        docUp.applyTo(doc);
+        var docList = (List)doc.getFieldValue("strarray");
+        assertEquals(2, docList.size());
+        assertEquals(new StringFieldValue("one"), docList.get(0));
+        assertEquals(new StringFieldValue("three"), docList.get(1));
+    }
+
+    @Test
     public void testApplyRemoveEntireListField() {
         Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("id:ns:foobar::foooo"));
         assertNull(doc.getFieldValue("strarray"));

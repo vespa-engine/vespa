@@ -12,6 +12,8 @@ if [[ -n "${DEBUG:-}" ]]; then
     set -o xtrace
 fi
 
+: "${SOURCE_DIR:?Environment variable SOURCE_DIR must be set (path to source code)}"
+
 if [[ $VESPA_USE_SANITIZER != null ]]; then
     echo "Skipping quick start guide test for sanitizer builds."
     exit 0

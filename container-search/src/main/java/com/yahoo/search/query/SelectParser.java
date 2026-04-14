@@ -96,7 +96,6 @@ import static com.yahoo.search.yql.YqlParser.ASCENDING_HITS_ORDER;
 import static com.yahoo.search.yql.YqlParser.CONNECTION_ID;
 import static com.yahoo.search.yql.YqlParser.CONNECTION_WEIGHT;
 import static com.yahoo.search.yql.YqlParser.CONNECTIVITY;
-import static com.yahoo.search.yql.YqlParser.DEFAULT_WAND_TARGET_HITS;
 import static com.yahoo.search.yql.YqlParser.DESCENDING_HITS_ORDER;
 import static com.yahoo.search.yql.YqlParser.DISTANCE;
 import static com.yahoo.search.yql.YqlParser.DISTANCE_THRESHOLD;
@@ -134,6 +133,7 @@ import static com.yahoo.search.yql.YqlParser.SUFFIX;
 import static com.yahoo.search.yql.YqlParser.TARGET_HITS;
 import static com.yahoo.search.yql.YqlParser.TARGET_NUM_HITS;
 import static com.yahoo.search.yql.YqlParser.TOTAL_TARGET_HITS;
+import static com.yahoo.search.yql.YqlParser.MIN_TARGET_HITS;
 import static com.yahoo.search.yql.YqlParser.THRESHOLD_BOOST_FACTOR;
 import static com.yahoo.search.yql.YqlParser.UNIQUE_ID;
 import static com.yahoo.search.yql.YqlParser.USE_POSITION_DATA;
@@ -557,6 +557,7 @@ public class SelectParser implements Parser {
         return item;
     }
 
+    @SuppressWarnings("deprecation")
     private Item buildNearestNeighbor(String key, Inspector value) {
         HashMap<Integer, Inspector> children = childMap(value);
         Preconditions.checkArgument(children.size() == 2, "Expected 2 arguments, got %s.", children.size());
@@ -574,6 +575,9 @@ public class SelectParser implements Parser {
                 }
                 if (TOTAL_TARGET_HITS.equals(annotation_name)){
                     item.setTotalTargetHits((int)(annotation_value.asDouble()));
+                }
+                if (MIN_TARGET_HITS.equals(annotation_name)){
+                    item.setMinTargetHits((int)(annotation_value.asDouble()));
                 }
                 if (DISTANCE_THRESHOLD.equals(annotation_name)) {
                     double distanceThreshold = annotation_value.asDouble();
@@ -954,12 +958,13 @@ public class SelectParser implements Parser {
         HashMap<Integer, Inspector> children = childMap(value);
 
         Preconditions.checkArgument(children.size() == 2, "Expected 2 arguments, got %s.", children.size());
-        Integer target_num_hits= getIntegerAnnotation(TARGET_HITS, annotations, null);
-        if (target_num_hits == null) {
-            target_num_hits= getIntegerAnnotation(TARGET_NUM_HITS, annotations, DEFAULT_WAND_TARGET_HITS);
-        }
+        Integer targetHits = getIntegerAnnotation(TARGET_HITS, annotations, null);
+        if (targetHits == null)
+            targetHits = getIntegerAnnotation(TARGET_NUM_HITS, annotations, null);
 
-        WandItem out = new WandItem(children.get(0).asString(), target_num_hits);
+        WandItem out = new WandItem(children.get(0).asString());
+        out.setTargetHits(targetHits);
+        out.setTotalTargetHits(getIntegerAnnotation(TOTAL_TARGET_HITS, annotations, null));
 
         Double scoreThreshold = getDoubleAnnotation(SCORE_THRESHOLD, annotations, null);
 

@@ -17,5 +17,4 @@ public:
     ForceLink();
 };
 
-} // document
-
+} // namespace document

@@ -32,11 +32,7 @@ func (w *Waiter) DeployService(target vespa.Target) (*vespa.Service, error) {
 	return s, nil
 }
 
-// Service returns the service identified by cluster ID, available on target.
-func (w *Waiter) Service(target vespa.Target, cluster string) (*vespa.Service, error) {
-	return w.ServiceWithAuthMethod(target, cluster, "mtls")
-}
-
+// ServiceWithAuthMethod returns the service identified by cluster ID and authentication method, available on target.
 func (w *Waiter) ServiceWithAuthMethod(target vespa.Target, cluster string, authMethod string) (*vespa.Service, error) {
 	targetType, err := w.cli.targetType(anyTarget)
 	if err != nil {
@@ -67,16 +63,27 @@ func (w *Waiter) ServiceWithAuthMethod(target vespa.Target, cluster string, auth
 
 // Services returns all container services available on target.
 func (w *Waiter) Services(target vespa.Target) ([]*vespa.Service, error) {
+	return w.NamedServices("", target)
+}
+
+// NamedServices returns services matching the given name on target, or all services if name is empty.
+func (w *Waiter) NamedServices(name string, target vespa.Target) ([]*vespa.Service, error) {
 	services, err := w.services(target)
 	if err != nil {
 		return nil, err
 	}
+	result := make([]*vespa.Service, 0, len(services))
 	for _, s := range services {
+		if name == "" || name == s.Name {
+			result = append(result, s)
+		}
+	}
+	for _, s := range result {
 		if err := w.maybeWaitFor(s); err != nil {
 			return nil, err
 		}
 	}
-	return services, nil
+	return result, nil
 }
 
 func (w *Waiter) maybeWaitFor(service *vespa.Service) error {

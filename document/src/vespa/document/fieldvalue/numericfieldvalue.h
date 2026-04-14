@@ -11,30 +11,31 @@
 #pragma once
 
 #include "fieldvalue.h"
+
 #include <vespa/vespalib/stllike/hash_fun.h>
 
 namespace document {
 
-class NumericFieldValueBase : public FieldValue
-{
+class NumericFieldValueBase : public FieldValue {
 public:
     void printXml(XmlOutputStream& out) const override;
+
 protected:
     NumericFieldValueBase(Type type) : FieldValue(type) {}
 };
 
-template<typename Number>
-class NumericFieldValue : public NumericFieldValueBase {
+template <typename Number> class NumericFieldValue : public NumericFieldValueBase {
 protected:
-    explicit NumericFieldValue(Type type, Number value=0) : NumericFieldValueBase(type), _value(value) { }
+    explicit NumericFieldValue(Type type, Number value = 0) : NumericFieldValueBase(type), _value(value) {}
     Number _value;
+
 public:
     using value_type = Number;
 
     value_type getValue() const { return _value; }
     void setValue(Number newValue) { _value = newValue; }
 
-    FieldValue& assign(const FieldValue&) override ;
+    FieldValue& assign(const FieldValue&) override;
     int compare(const FieldValue& other) const override;
     int fastCompare(const FieldValue& other) const override final;
 
@@ -58,5 +59,4 @@ extern template class NumericFieldValue<int16_t>;
 extern template class NumericFieldValue<int32_t>;
 extern template class NumericFieldValue<int64_t>;
 
-} // document
-
+} // namespace document

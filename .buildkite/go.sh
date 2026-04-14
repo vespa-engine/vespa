@@ -11,7 +11,8 @@ set -o pipefail
 if [[ -n "${DEBUG:-}" ]]; then
     set -o xtrace
 fi
-
+: "${SOURCE_DIR:?Environment variable SOURCE_DIR must be set (path to source code)}"
+: "${WORKDIR:?Environment variable WORKDIR must be set (working directory)}"
 echo "--- 🐹 Building Go components"
 cd "$SOURCE_DIR"
 

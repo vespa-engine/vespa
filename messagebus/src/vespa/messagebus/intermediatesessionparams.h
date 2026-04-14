@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "common.h"
 #include "imessagehandler.h"
 #include "ireplyhandler.h"
-#include "common.h"
 
 namespace mbus {
 
@@ -19,8 +19,8 @@ class IntermediateSessionParams {
 private:
     string           _name;
     bool             _broadcastName;
-    IMessageHandler *_msgHandler;
-    IReplyHandler   *_replyHandler;
+    IMessageHandler* _msgHandler;
+    IReplyHandler*   _replyHandler;
 
 public:
     /**
@@ -33,7 +33,7 @@ public:
      *
      * @return The name.
      */
-    const string &getName() const { return _name; }
+    const string& getName() const { return _name; }
 
     /**
      * Sets the name to register with message bus.
@@ -41,7 +41,10 @@ public:
      * @param name The name to set.
      * @return This, to allow chaining.
      */
-    IntermediateSessionParams &setName(const string &name) { _name = name; return *this; }
+    IntermediateSessionParams& setName(const string& name) {
+        _name = name;
+        return *this;
+    }
 
     /**
      * Returns whether or not to broadcast the name of this session on the network.
@@ -56,7 +59,10 @@ public:
      * @param broadcastName True to broadcast, false otherwise.
      * @return This, to allow chaining.
      */
-    IntermediateSessionParams &setBroadcastName(bool broadcastName) { _broadcastName = broadcastName; return *this; }
+    IntermediateSessionParams& setBroadcastName(bool broadcastName) {
+        _broadcastName = broadcastName;
+        return *this;
+    }
 
     /**
      * Returns the handler to receive incoming replies. If you call this method without first assigning a
@@ -64,7 +70,7 @@ public:
      *
      * @return The handler.
      */
-    IReplyHandler &getReplyHandler() const { return *_replyHandler; }
+    IReplyHandler& getReplyHandler() const { return *_replyHandler; }
 
     /**
      * Sets the handler to receive incoming replies.
@@ -72,7 +78,10 @@ public:
      * @param handler The handler to set.
      * @return This, to allow chaining.
      */
-    IntermediateSessionParams &setReplyHandler(IReplyHandler &handler) { _replyHandler = &handler; return *this; }
+    IntermediateSessionParams& setReplyHandler(IReplyHandler& handler) {
+        _replyHandler = &handler;
+        return *this;
+    }
 
     /**
      * Returns the handler to receive incoming messages. If you call this method without first assigning a
@@ -80,7 +89,7 @@ public:
      *
      * @return The handler.
      */
-    IMessageHandler &getMessageHandler() const { return *_msgHandler; }
+    IMessageHandler& getMessageHandler() const { return *_msgHandler; }
 
     /**
      * Sets the handler to receive incoming messages.
@@ -88,8 +97,10 @@ public:
      * @param handler The handler to set.
      * @return This, to allow chaining.
      */
-    IntermediateSessionParams &setMessageHandler(IMessageHandler &handler) { _msgHandler = &handler; return *this; }
+    IntermediateSessionParams& setMessageHandler(IMessageHandler& handler) {
+        _msgHandler = &handler;
+        return *this;
+    }
 };
 
 } // namespace mbus
-

@@ -6,13 +6,11 @@
 
 namespace mbus {
 
-    using Trace = vespalib::Trace;
-    using TraceNode = vespalib::TraceNode;
+using Trace = vespalib::Trace;
+using TraceNode = vespalib::TraceNode;
 
-#define MBUS_TRACE2(ttrace, level, note, addTime) \
-    VESPALIB_TRACE2(ttrace, level, note, addTime)
+#define MBUS_TRACE2(ttrace, level, note, addTime) VESPALIB_TRACE2(ttrace, level, note, addTime)
 
 #define MBUS_TRACE(trace, level, note) VESPALIB_TRACE2(trace, level, note, true)
 
 } // namespace mbus
-

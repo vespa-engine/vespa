@@ -248,7 +248,7 @@ struct FixtureBase {
         Result inspect = metaStore->inspect(id.getGlobalId(), 0u);
         uint32_t docSize = 1;
         EXPECT_EQ(expected_lid,
-                     metaStore->put(id.getGlobalId(),
+                     metaStore->put(id,
                                      id.getGlobalId().convertToBucketId(),
                                      Timestamp(10), docSize, inspect.getLid(), 0u).getLid());
     }
@@ -391,12 +391,12 @@ TEST(StoreOnlyFeedViewTest, require_that_handleMove_handles_move_within_same_sub
     DocumentId doc1id("id:test:foo:g=foo:1");
     uint32_t docSize = 1;
     f.runInMasterAndSync([&]() {
-        f.metaStore->put(doc1id.getGlobalId(),
+        f.metaStore->put(doc1id,
                          doc1id.getGlobalId().convertToBucketId(),
                          Timestamp(9), docSize, 1, 0u);
     });
     f.runInMasterAndSync([&]() {
-        f.metaStore->put(doc->getId().getGlobalId(),
+        f.metaStore->put(doc->getId(),
                          doc->getId().getGlobalId().convertToBucketId(),
                          Timestamp(10), docSize, 2, 0u);
     });

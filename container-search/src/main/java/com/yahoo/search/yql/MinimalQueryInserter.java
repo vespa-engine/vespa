@@ -32,6 +32,7 @@ import java.util.logging.Logger;
  */
 // TODO: The query model should do this
 @Beta
+@SuppressWarnings("removal")
 @Provides(MinimalQueryInserter.EXTERNAL_YQL)
 @Before(PhaseNames.TRANSFORMED_QUERY)
 @After("com.yahoo.prelude.statistics.StatisticsSearcher")

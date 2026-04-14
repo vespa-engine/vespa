@@ -2,8 +2,8 @@
 #pragma once
 
 #include "callstack.h"
-#include "trace.h"
 #include "common.h"
+#include "trace.h"
 
 namespace mbus {
 
@@ -24,17 +24,17 @@ namespace mbus {
  */
 class Routable {
 private:
-    Context    _context;
-    CallStack  _stack;
-    Trace      _trace;
+    Context   _context;
+    CallStack _stack;
+    Trace     _trace;
 
 public:
     /**
      * Convenience typedef for an auto pointer to a Routable object.
      */
     using UP = std::unique_ptr<Routable>;
-    Routable(const Routable &) = delete;
-    Routable & operator = (const Routable &) = delete;
+    Routable(const Routable&) = delete;
+    Routable& operator=(const Routable&) = delete;
 
     /**
      * Constructs a new instance of this class.
@@ -60,7 +60,7 @@ public:
      *
      * @return reference to internal CallStack
      */
-    CallStack &getCallStack() { return _stack; }
+    CallStack& getCallStack() { return _stack; }
 
     /**
      * Pushes the given reply handler onto the call stack of this routable, also
@@ -68,7 +68,7 @@ public:
      *
      * @param handler The handler to push.
      */
-    void pushHandler(IReplyHandler &handler) { _stack.push(handler, _context); }
+    void pushHandler(IReplyHandler& handler) { _stack.push(handler, _context); }
 
     /**
      * Pushes the given reply- and discard handler onto the call stack of this
@@ -77,7 +77,7 @@ public:
      * @param replyHandler   The handler called if the reply arrives.
      * @param discardHandler The handler called if the reply is dicarded.
      */
-    void pushHandler(IReplyHandler &replyHandler, IDiscardHandler &discardHandler) {
+    void pushHandler(IReplyHandler& replyHandler, IDiscardHandler& discardHandler) {
         _stack.push(replyHandler, _context, &discardHandler);
     }
 
@@ -89,8 +89,8 @@ public:
      *
      * @return Trace object
      */
-    Trace &getTrace() { return _trace; }
-    Trace && steal_trace() { return std::move(_trace); }
+    Trace& getTrace() { return _trace; }
+    Trace&& steal_trace() { return std::move(_trace); }
 
     /**
      * Access the Trace object for this Routable. The Trace is part of the
@@ -100,14 +100,14 @@ public:
      *
      * @return Trace object
      */
-    const Trace &getTrace() const { return _trace; }
+    const Trace& getTrace() const { return _trace; }
 
     /**
      * Sets the Trace object for this Routable.
      *
      * @param trace The trace to set.
      */
-    void setTrace(Trace &&trace) { _trace = std::move(trace); }
+    void setTrace(Trace&& trace) { _trace = std::move(trace); }
 
     /**
      * Swaps the state that makes this routable unique to another routable. The
@@ -117,7 +117,7 @@ public:
      *
      * @param rhs The routable to swap state with.
      */
-    virtual void swapState(Routable &rhs);
+    virtual void swapState(Routable& rhs);
 
     /**
      * Get the context of this routable.
@@ -146,7 +146,7 @@ public:
      * Obtain the name of the protocol for this routable. This method must be
      * implemented by all routable classes part of a protocol.
      */
-    virtual const string &getProtocol() const = 0;
+    virtual const string& getProtocol() const = 0;
 
     /**
      * Return the type of this routable. The type is protocol specific with the

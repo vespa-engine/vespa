@@ -7,6 +7,7 @@
 #include "serialized_tensor_ref.h"
 #include "tensor_attribute_constants.h"
 #include "tensor_attribute_explorer.h"
+#include "tensor_attribute_flags.h"
 #include "tensor_attribute_loader.h"
 #include "tensor_attribute_saver.h"
 #include <vespa/document/base/exceptions.h>
@@ -27,6 +28,7 @@ using document::TensorDataType;
 using document::TensorUpdate;
 using document::WrongTensorTypeException;
 using search::AddressSpaceComponents;
+using vespalib::GenerationHandler;
 using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
@@ -143,9 +145,6 @@ TensorAttribute::reclaim_memory(generation_t oldest_used_gen)
 {
     _tensorStore.reclaim_memory(oldest_used_gen);
     getGenerationHolder().reclaim(oldest_used_gen);
-    if (_index) {
-        _index->reclaim_memory(oldest_used_gen);
-    }
 }
 
 void
@@ -153,9 +152,6 @@ TensorAttribute::before_inc_generation(generation_t current_gen)
 {
     getGenerationHolder().assign_generation(current_gen);
     _tensorStore.assign_generation(current_gen);
-    if (_index) {
-        _index->assign_generation(current_gen);
-    }
 }
 
 bool
@@ -349,7 +345,6 @@ TensorAttribute::onLoad(vespalib::Executor* executor)
 std::unique_ptr<AttributeSaver>
 TensorAttribute::onInitSave(std::string_view fileName)
 {
-    updateStat(CommitParam::UpdateStats::FORCE);
     set_memory_usage_at_save_start(getStatus().get_used_minus_dead_and_onhold());
     vespalib::GenerationHandler::Guard guard(getGenerationHandler().
                                              takeGuard());
@@ -503,6 +498,43 @@ TensorAttribute::getEstimatedSaveByteSize() const
      */
     double estimate = size_on_disk_factor * dynamic_memory_usage + headerSize;
     return estimate;
+}
+
+void
+TensorAttribute::incGeneration()
+{
+    auto& generation_handler = getGenerationHandler();
+    auto current_gen = generation_handler.getCurrentGeneration();
+    before_inc_generation(current_gen);
+    if constexpr (!TensorAttributeFlags::use_nearest_neighbor_index_generation_manager) {
+        if (_index) {
+            _index->assign_generation(current_gen);
+        }
+    }
+    generation_handler.incGeneration();
+    if constexpr (TensorAttributeFlags::use_nearest_neighbor_index_generation_manager) {
+        if (_index) {
+            _index->inc_generation();
+        }
+    }
+    // Remove old data on hold lists that can no longer be reached by readers
+    reclaim_unused_memory();
+}
+
+void
+TensorAttribute::reclaim_unused_memory()
+{
+    auto& generation_handler = getGenerationHandler();
+    generation_handler.update_oldest_used_generation();
+    auto oldest_used_gen = generation_handler.get_oldest_used_generation();
+    reclaim_memory(oldest_used_gen);
+    if (_index) {
+        if constexpr (TensorAttributeFlags::use_nearest_neighbor_index_generation_manager) {
+            _index->reclaim_unused_memory();
+        } else {
+            _index->reclaim_memory(oldest_used_gen);
+        }
+    }
 }
 
 }

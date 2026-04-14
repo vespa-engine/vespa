@@ -11,6 +11,7 @@
 #include "vector_bundle.h"
 #include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/searchlib/attribute/address_space_usage.h>
+#include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/vespalib/datastore/array_store.hpp>
 #include <vespa/vespalib/util/doom.h>
@@ -24,10 +25,12 @@ LOG_SETUP(".searchlib.tensor.hnsw_index");
 namespace search::tensor {
 
 using search::AddressSpaceComponents;
+using search::common::FileHeaderContext;
 using search::queryeval::GlobalFilter;
 using vespalib::datastore::ArrayStoreConfig;
 using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryRef;
+using vespalib::GenerationHandler;
 using vespalib::GenericHeader;
 
 namespace {
@@ -109,13 +112,17 @@ PreparedAddNode::PreparedAddNode(std::vector<Links>&& connections_in) noexcept
 PreparedAddNode::~PreparedAddNode() = default;
 PreparedAddNode::PreparedAddNode(PreparedAddNode&& other) noexcept = default;
 
-PreparedAddDoc::PreparedAddDoc(uint32_t docid_in, ReadGuard read_guard_in) noexcept
+PreparedAddDoc::PreparedAddDoc(uint32_t docid_in, ReadGuard read_guard_in, ReadGuard hnsw_graph_read_guard_in) noexcept
     : docid(docid_in),
       read_guard(std::move(read_guard_in)),
+      hnsw_graph_read_guard(std::move(hnsw_graph_read_guard_in)),
       nodes()
 {}
+
 PreparedAddDoc::~PreparedAddDoc() = default;
+
 PreparedAddDoc::PreparedAddDoc(PreparedAddDoc&& other) noexcept = default;
+
 }
 
 SelectResult::SelectResult() noexcept = default;
@@ -688,7 +695,8 @@ void
 HnswIndex<type>::add_document(uint32_t docid)
 {
     vespalib::GenerationHandler::Guard no_guard_needed;
-    PreparedAddDoc op(docid, std::move(no_guard_needed));
+    vespalib::GenerationHandler::Guard no_hnsw_graph_guard_needed;
+    PreparedAddDoc op(docid, std::move(no_guard_needed), std::move(no_hnsw_graph_guard_needed));
     auto input_vectors = get_vectors(docid);
     auto subspaces = input_vectors.subspaces();
     op.nodes.reserve(subspaces);
@@ -705,7 +713,7 @@ template <HnswIndexType type>
 PreparedAddDoc
 HnswIndex<type>::internal_prepare_add(uint32_t docid, VectorBundle input_vectors, vespalib::GenerationHandler::Guard read_guard) const
 {
-    PreparedAddDoc op(docid, std::move(read_guard));
+    PreparedAddDoc op(docid, std::move(read_guard), _graph.make_guard());
     auto entry = _graph.get_entry_node();
     auto subspaces = input_vectors.subspaces();
     op.nodes.reserve(subspaces);
@@ -944,6 +952,31 @@ HnswIndex<type>::reclaim_memory(generation_t oldest_used_gen)
 }
 
 template <HnswIndexType type>
+GenerationHandler::Guard
+HnswIndex<type>::make_generation_read_guard() const
+{
+    return _graph._generation_handler.takeGuard();
+};
+
+template <HnswIndexType type>
+void
+HnswIndex<type>::inc_generation()
+{
+    auto current_gen = _graph._generation_handler.getCurrentGeneration();
+    assign_generation(current_gen);
+    _graph._generation_handler.incGeneration();
+}
+
+template <HnswIndexType type>
+void
+HnswIndex<type>::reclaim_unused_memory()
+{
+    _graph._generation_handler.update_oldest_used_generation();
+    auto oldest_used_gen = _graph._generation_handler.get_oldest_used_generation();
+    reclaim_memory(oldest_used_gen);
+}
+
+template <HnswIndexType type>
 void
 HnswIndex<type>::compact_level_arrays(const CompactionStrategy& compaction_strategy)
 {
@@ -1067,6 +1100,7 @@ HnswIndex<type>::make_loader(FastOS_FileInterface& file, const vespalib::Generic
 {
     assert(get_entry_nodeid() == 0); // cannot load after index has data
     load_mips_max_distance(header, distance_function_factory());
+    _graph.set_last_flush_duration(FileHeaderContext::get_flush_duration(header));
     using ReaderType = FileReader<uint32_t>;
     using LoaderType = HnswIndexLoader<ReaderType, type>;
     return std::make_unique<LoaderType>(_graph, _id_mapping, std::make_unique<ReaderType>(&file));
@@ -1096,6 +1130,7 @@ std::vector<NearestNeighborIndex::Neighbor>
 HnswIndex<type>::find_top_k(Stats &stats, uint32_t k, const BoundDistanceFunction &df, uint32_t explore_k, double exploration_slack, bool prefetch_tensors,
                             const vespalib::Doom& doom, double distance_threshold) const
 {
+    auto guard = _graph.make_guard();
     return top_k_by_docid(stats, k, df, nullptr, false, 0.0, explore_k, exploration_slack, prefetch_tensors, doom, distance_threshold);
 }
 
@@ -1104,6 +1139,7 @@ std::vector<NearestNeighborIndex::Neighbor>
 HnswIndex<type>::find_top_k_with_filter(Stats &stats, uint32_t k, const BoundDistanceFunction &df, const GlobalFilter &filter, bool low_hit_ratio, double exploration,
                                         uint32_t explore_k, double exploration_slack, bool prefetch_tensors, const vespalib::Doom& doom, double distance_threshold) const
 {
+    auto guard = _graph.make_guard();
     return top_k_by_docid(stats, k, df, &filter, low_hit_ratio, exploration, explore_k, exploration_slack, prefetch_tensors, doom, distance_threshold);
 }
 

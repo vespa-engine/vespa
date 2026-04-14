@@ -12,6 +12,9 @@ if [[ -n "${DEBUG:-}" ]]; then
     set -o xtrace
 fi
 
+: "${SOURCE_DIR:?Environment variable SOURCE_DIR must be set (path to source code)}"
+: "${VESPA_CPP_TEST_JARS:?Environment variable VESPA_CPP_TEST_JARS must be set (path for C++ test JARs)}"
+
 echo "--- 🔧 Running Vespa bootstrap"
 cd "$SOURCE_DIR"
 ./bootstrap.sh full

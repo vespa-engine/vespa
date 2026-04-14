@@ -14,6 +14,7 @@
 #pragma once
 
 #include "valueupdate.h"
+
 #include <vespa/document/base/field.h>
 
 namespace document {
@@ -21,18 +22,17 @@ namespace document {
 class Document;
 class DocumentType;
 
-class FieldUpdate
-{
+class FieldUpdate {
 public:
     using nbostream = vespalib::nbostream;
     using ValueUpdates = std::vector<std::unique_ptr<ValueUpdate>>;
     using XmlOutputStream = vespalib::xml::XmlOutputStream;
 
     FieldUpdate(const Field& field);
-    FieldUpdate(const FieldUpdate &) = delete;
-    FieldUpdate & operator = (const FieldUpdate &) = delete;
-    FieldUpdate(FieldUpdate &&) = default;
-    FieldUpdate & operator = (FieldUpdate &&) = default;
+    FieldUpdate(const FieldUpdate&) = delete;
+    FieldUpdate& operator=(const FieldUpdate&) = delete;
+    FieldUpdate(FieldUpdate&&) = default;
+    FieldUpdate& operator=(FieldUpdate&&) = default;
     ~FieldUpdate();
 
     /**
@@ -42,10 +42,10 @@ public:
      * @param type A document type that describes the stream content.
      * @param stream A stream that contains a serialized field update.
      */
-    FieldUpdate(const DocumentTypeRepo& repo, const DataType & type, nbostream & stream);
+    FieldUpdate(const DocumentTypeRepo& repo, const DataType& type, nbostream& stream);
 
     bool operator==(const FieldUpdate&) const;
-    bool operator!=(const FieldUpdate & rhs) const { return ! (*this == rhs); }
+    bool operator!=(const FieldUpdate& rhs) const { return !(*this == rhs); }
 
     /**
      * Add a value update to this field update.
@@ -61,7 +61,7 @@ public:
     size_t size() const { return _updates.size(); }
 
     /** @return The non-modifieable list of value updates to perform. */
-    const ValueUpdates & getUpdates() const { return _updates; }
+    const ValueUpdates& getUpdates() const { return _updates; }
 
     const Field& getField() const { return _field; }
     void applyTo(Document& doc) const;
@@ -76,10 +76,10 @@ public:
      * @param buffer The stream that contains the serialized update object.
      */
     void deserialize(const DocumentTypeRepo& repo, const DocumentType& type, nbostream& stream);
+
 private:
-    Field _field;
+    Field        _field;
     ValueUpdates _updates;
 };
 
-} // document
-
+} // namespace document

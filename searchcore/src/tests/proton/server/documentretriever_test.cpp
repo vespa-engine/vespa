@@ -381,7 +381,7 @@ struct Fixture {
         meta_store.constructFreeList();
         IStore::Result inspect = meta_store.get().inspect(gid, 0u);
         uint32_t docSize = 1;
-        IStore::Result putRes(meta_store.get().put(gid, bucket_id, timestamp, docSize, inspect.getLid(), 0u));
+        IStore::Result putRes(meta_store.get().put(doc_id, bucket_id, timestamp, docSize, inspect.getLid(), 0u));
         meta_store.get().commit(search::CommitParam(0, search::CommitParam::UpdateStats::SKIP));
         lid = putRes.getLid();
         ASSERT_TRUE(putRes.ok());

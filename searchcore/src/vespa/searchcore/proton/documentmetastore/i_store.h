@@ -68,7 +68,7 @@ struct IStore
      * This function should assert that the given lid is the same
      * as returned from inspect().
      **/
-    virtual Result put(const GlobalId &gid,
+    virtual Result put(const document::DocumentId& docid,
                        const BucketId &bucketId,
                        Timestamp timestamp,
                        uint32_t docSize,

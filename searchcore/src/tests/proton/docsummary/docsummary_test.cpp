@@ -306,7 +306,7 @@ public:
         using PutRes = DocumentMetaStore::Result;
         IDocumentMetaStore &dms = _ddb->getReadySubDB()->getDocumentMetaStoreContext().get();
         uint32_t docSize = 1;
-        PutRes putRes(dms.put(docId.getGlobalId(), BucketFactory::getBucketId(docId),
+        PutRes putRes(dms.put(docId, BucketFactory::getBucketId(docId),
                               Timestamp(0u), docSize, lid, 0u));
         LOG_ASSERT(putRes.ok());
         uint64_t serialNum = _ddb->getFeedHandler().inc_serial_num();

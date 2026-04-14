@@ -811,3 +811,60 @@
    fun:_ZN4llvm5MCJIT14finalizeObjectEv
    ...
 }
+{
+   for RE2 (AlmaLinux 10) 1A
+   Memcheck:Cond
+   ...
+   fun:_ZN3re24Prog9IsOnePassEv
+   fun:_ZN3re23RE24InitESt17basic_string_viewIcSt11char_traitsIcEERKNS0_7OptionsE
+   fun:_ZN3re23RE2C1ESt17basic_string_viewIcSt11char_traitsIcEERKNS0_7OptionsE
+   ...
+}
+{
+   for RE2 (AlmaLinux 10) 1B
+   Memcheck:Value8
+   ...
+   fun:_ZN3re24Prog9IsOnePassEv
+   fun:_ZN3re23RE24InitESt17basic_string_viewIcSt11char_traitsIcEERKNS0_7OptionsE
+   fun:_ZN3re23RE2C1ESt17basic_string_viewIcSt11char_traitsIcEERKNS0_7OptionsE
+   ...
+}
+{
+   for RE2 (AlmaLinux 10) 2A
+   Memcheck:Cond
+   ...
+   fun:_ZN3re23DFA6SearchESt17basic_string_viewIcSt11char_traitsIcEES4_bbbPbPPKcPNS_10SparseSetTIvEE
+   fun:_ZN3re24Prog9SearchDFAESt17basic_string_viewIcSt11char_traitsIcEES4_NS0_6AnchorENS0_9MatchKindEPS4_PbPNS_10SparseSetTIvEE
+   fun:_ZNK3re23RE25MatchESt17basic_string_viewIcSt11char_traitsIcEEmmNS0_6AnchorEPS4_i
+   fun:_ZNK3re23RE27DoMatchESt17basic_string_viewIcSt11char_traitsIcEENS0_6AnchorEPmPKPKNS0_3ArgEi
+   ...
+}
+{
+   for RE2 (AlmaLinux 10) 2B
+   Memcheck:Value8
+   ...
+   fun:_ZN3re23DFA6SearchESt17basic_string_viewIcSt11char_traitsIcEES4_bbbPbPPKcPNS_10SparseSetTIvEE
+   fun:_ZN3re24Prog9SearchDFAESt17basic_string_viewIcSt11char_traitsIcEES4_NS0_6AnchorENS0_9MatchKindEPS4_PbPNS_10SparseSetTIvEE
+   fun:_ZNK3re23RE25MatchESt17basic_string_viewIcSt11char_traitsIcEEmmNS0_6AnchorEPS4_i
+   fun:_ZNK3re23RE27DoMatchESt17basic_string_viewIcSt11char_traitsIcEENS0_6AnchorEPmPKPKNS0_3ArgEi
+   ...
+}
+{
+   for onnxruntime CPUIDInfo on ARM
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:calloc
+   fun:cpuinfo_arm_linux_init
+   ...
+   fun:_ZN11onnxruntime9CPUIDInfoC2Ev.constprop.0
+   ...
+}
+{
+   for GCC 15 optimized string scanning in pagedict4
+   Memcheck:Cond
+   fun:getLCP
+   ...
+   fun:_Z9testWordsRKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEERN8vespalib6Rand48ESt8optionalIjEmjjjjjbbb
+   fun:_ZN16PageDict4TestApp9testWordsEv
+   ...
+}

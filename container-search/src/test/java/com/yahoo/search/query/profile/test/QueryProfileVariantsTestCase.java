@@ -1383,6 +1383,52 @@ public class QueryProfileVariantsTestCase {
     }
 
     @Test
+    void testApplicationInZoneContext() {
+        QueryProfileRegistry registry = new QueryProfileRegistry();
+        QueryProfile profile = new QueryProfile("test");
+        profile.setDimensions(new String[]{"application", "environment", "region", "instance"});
+        profile.set("value", "default", registry);
+        profile.set("value", "for-myapp",
+                toMap("application=myapp"),
+                registry);
+        profile.set("value", "for-myapp-prod",
+                toMap("application=myapp", "environment=prod"),
+                registry);
+        profile.set("value", "for-otherapp",
+                toMap("application=otherapp"),
+                registry);
+        registry.register(profile);
+
+        CompiledQueryProfileRegistry cRegistry = registry.compile();
+        CompiledQueryProfile cTest = cRegistry.findQueryProfile("test");
+
+        // application=myapp in dev -> matches "for-myapp"
+        assertValueForZone("for-myapp",
+                new ZoneInfo(new ApplicationId("tenant1", "myapp", "default"),
+                        new Zone(Environment.dev, "region1")),
+                null,
+                cTest);
+        // application=myapp in prod -> matches more specific "for-myapp-prod"
+        assertValueForZone("for-myapp-prod",
+                new ZoneInfo(new ApplicationId("tenant1", "myapp", "default"),
+                        new Zone(Environment.prod, "region1")),
+                null,
+                cTest);
+        // application=otherapp -> matches "for-otherapp"
+        assertValueForZone("for-otherapp",
+                new ZoneInfo(new ApplicationId("tenant1", "otherapp", "default"),
+                        new Zone(Environment.prod, "region1")),
+                null,
+                cTest);
+        // unknown application -> matches "default"
+        assertValueForZone("default",
+                new ZoneInfo(new ApplicationId("tenant1", "unknownapp", "default"),
+                        new Zone(Environment.prod, "region1")),
+                null,
+                cTest);
+    }
+
+    @Test
     void testZoneInfoInContextWithUnoverridability() {
         QueryProfileRegistry registry = new QueryProfileRegistry();
         QueryProfile profile = new QueryProfile("test");

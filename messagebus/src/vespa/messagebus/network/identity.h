@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/messagebus/common.h>
+
 #include <vector>
 
 namespace mbus {
@@ -13,8 +14,7 @@ namespace mbus {
  * sessions. This class also has some static utility methods for
  * general service name manipulation.
  **/
-class Identity
-{
+class Identity {
 private:
     string _hostname;
     string _servicePrefix;
@@ -29,7 +29,7 @@ public:
      * @return identity for the given config id
      * @param configId application config id
      **/
-    Identity(const string &configId);
+    Identity(const string& configId);
     ~Identity();
 
     /**
@@ -37,14 +37,14 @@ public:
      *
      * @return hostname
      **/
-    const string &getHostname() const { return _hostname; }
+    const string& getHostname() const { return _hostname; }
 
     /**
      * Obtain the service prefix held by this object.
      *
      * @return service prefix
      **/
-    const string &getServicePrefix() const { return _servicePrefix; }
+    const string& getServicePrefix() const { return _servicePrefix; }
 
     /**
      * Split a service name into its path elements.
@@ -52,7 +52,7 @@ public:
      * @return service name path elements
      * @param name the service name
      **/
-    static std::vector<string> split(const string &name);
+    static std::vector<string> split(const string& name);
 };
 
 } // namespace mbus

@@ -295,6 +295,7 @@ DocumentApi = element document-api {
    element route { text }? &
    element maxpendingdocs { xsd:positiveInteger }? &
    element maxpendingbytes { xsd:positiveInteger }? &
+   element max-document-size { xsd:string }? &
    element retrydelay { xsd:double { minInclusive = "0.0" } }? &
    element timeout { xsd:double { minInclusive = "0.0" } }? &
    element tracelevel { xsd:positiveInteger }? &

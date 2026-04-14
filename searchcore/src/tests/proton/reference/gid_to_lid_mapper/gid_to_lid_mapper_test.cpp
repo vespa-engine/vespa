@@ -22,13 +22,9 @@ namespace proton {
 
 namespace {
 
-GlobalId toGid(std::string_view docId) {
-    return DocumentId(docId).getGlobalId();
-}
-
-std::string doc1("id:test:music::1");
-std::string doc2("id:test:music::2");
-std::string doc3("id:test:music::3");
+DocumentId doc1("id:test:music::1");
+DocumentId doc2("id:test:music::2");
+DocumentId doc3("id:test:music::3");
 
 static constexpr uint32_t numBucketBits = UINT32_C(20);
 
@@ -58,9 +54,9 @@ GidMap collectGids(const std::unique_ptr<search::IGidToLidMapper> &mapper)
     return result;
 }
 
-void assertLid(const std::unique_ptr<search::IGidToLidMapper> &mapper, std::string_view docId, uint32_t lid) {
+void assertLid(const std::unique_ptr<search::IGidToLidMapper> &mapper, const DocumentId& docId, uint32_t lid) {
     auto gids = collectGids(mapper);
-    auto itr = gids.find(toGid(docId));
+    auto itr = gids.find(docId.getGlobalId());
     uint32_t foundLid = (itr != gids.end()) ? itr->second : 0u;
     EXPECT_EQ(lid, foundLid);
 }
@@ -90,16 +86,16 @@ protected:
         _timestamp = Timestamp(_timestamp.getValue() + 1);
     }
 
-    void put(std::string_view docId, uint32_t lid) {
+    void put(const DocumentId& docId, uint32_t lid) {
         bumpTimeStamp();
-        const GlobalId gid(toGid(docId));
+        auto gid = docId.getGlobalId();
         uint32_t docSize = 1;
-        _dms->put(gid, toBucketId(gid), _timestamp, docSize, lid, 0u);
+        _dms->put(docId, toBucketId(gid), _timestamp, docSize, lid, 0u);
         _dms->commit();
     }
 
-    uint32_t put(std::string_view docId) {
-        auto inspectRes = _dms->inspect(toGid(docId), 0u);
+    uint32_t put(const DocumentId& docId) {
+        auto inspectRes = _dms->inspect(docId.getGlobalId(), 0u);
         uint32_t lid = inspectRes.getLid();
         put(docId, lid);
         return lid;
@@ -132,7 +128,7 @@ protected:
     }
 
     template <typename Function>
-    void assertPut(std::string_view docId, uint32_t expLid,
+    void assertPut(const DocumentId& docId, uint32_t expLid,
                    generation_t currentGeneration, generation_t firstUsedGeneration,
                    Function &&func, std::string_view label)
     {
@@ -164,11 +160,11 @@ TEST_F(GidToLidMapperTest, Test_that_gid_mapper_can_iterate_over_known_gids)
 {
     auto factory = getGidToLidMapperFactory();
     auto mapper = factory->getMapper();
-    EXPECT_EQ((GidMap{{toGid(doc1), 4}, {toGid(doc2), 7}}), collectGids(mapper));
+    EXPECT_EQ((GidMap{{doc1.getGlobalId(), 4}, {doc2.getGlobalId(), 7}}), collectGids(mapper));
     put(doc3);
-    EXPECT_EQ((GidMap{{toGid(doc1), 4}, {toGid(doc2), 7}, {toGid(doc3), 1}}), collectGids(mapper));
+    EXPECT_EQ((GidMap{{doc1.getGlobalId(), 4}, {doc2.getGlobalId(), 7}, {doc3.getGlobalId(), 1}}), collectGids(mapper));
     remove(4);
-    EXPECT_EQ((GidMap{{toGid(doc2), 7}, {toGid(doc3), 1}}), collectGids(mapper));
+    EXPECT_EQ((GidMap{{doc2.getGlobalId(), 7}, {doc3.getGlobalId(), 1}}), collectGids(mapper));
 }
 
 }

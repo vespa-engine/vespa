@@ -2,10 +2,12 @@
 #pragma once
 
 #include "iroutablefactory.h"
+
 #include <vespa/messagebus/blobref.h>
 #include <vespa/vespalib/component/versionspecification.h>
-#include <mutex>
+
 #include <map>
+#include <mutex>
 
 namespace documentapi {
 
@@ -28,8 +30,8 @@ private:
     public:
         VersionMap();
         ~VersionMap();
-        [[nodiscard]] bool putFactory(const vespalib::VersionSpecification &version, IRoutableFactory::SP factory);
-        [[nodiscard]] IRoutableFactory::SP getFactory(const vespalib::Version &version) const;
+        [[nodiscard]] bool putFactory(const vespalib::VersionSpecification& version, IRoutableFactory::SP factory);
+        [[nodiscard]] IRoutableFactory::SP getFactory(const vespalib::Version& version) const;
     };
 
     using CacheKey = std::pair<vespalib::Version, uint32_t>;
@@ -41,8 +43,8 @@ private:
     mutable FactoryCache _cache;
 
 public:
-    RoutableRepository(const RoutableRepository &) = delete;
-    RoutableRepository & operator = (const RoutableRepository &) = delete;
+    RoutableRepository(const RoutableRepository&) = delete;
+    RoutableRepository& operator=(const RoutableRepository&) = delete;
     /**
      * Constructs a new routable repository.
      */
@@ -58,7 +60,7 @@ public:
      * @param data    The byte array containing the encoded routable.
      * @return The decoded routable.
      */
-    mbus::Routable::UP decode(const vespalib::Version &version, mbus::BlobRef data) const;
+    mbus::Routable::UP decode(const vespalib::Version& version, mbus::BlobRef data) const;
 
     /**
      * Encodes a {@link Routable} into a byte array. This dispatches the encode request to the appropriate
@@ -70,7 +72,7 @@ public:
      * @param obj     The routable to encode.
      * @return The byte array containing the encoded routable.
      */
-    mbus::Blob encode(const vespalib::Version &version, const mbus::Routable &obj) const;
+    mbus::Blob encode(const vespalib::Version& version, const mbus::Routable& obj) const;
 
     /**
      * Registers a routable factory for a given version and routable type.
@@ -79,8 +81,7 @@ public:
      * @param type    The routable type that the given factory supports.
      * @param factory The routable factory to register.
      */
-    void putFactory(const vespalib::VersionSpecification &version,
-                    uint32_t type, IRoutableFactory::SP factory);
+    void putFactory(const vespalib::VersionSpecification& version, uint32_t type, IRoutableFactory::SP factory);
 
     /**
      * Returns the routable factory for a given version and routable type.
@@ -89,7 +90,7 @@ public:
      * @param type    The routable type that the factory must support.
      * @return The routable factory matching the criteria, or null.
      */
-    IRoutableFactory::SP getFactory(const vespalib::Version &version, uint32_t type) const;
+    IRoutableFactory::SP getFactory(const vespalib::Version& version, uint32_t type) const;
 
     /**
      * Returns a list of routable types that support the given version.
@@ -98,8 +99,7 @@ public:
      * @param out     The list to write to.
      * @return The number of supported types.
      */
-    uint32_t getRoutableTypes(const vespalib::Version &version, std::vector<uint32_t> &out) const;
+    uint32_t getRoutableTypes(const vespalib::Version& version, std::vector<uint32_t>& out) const;
 };
 
-}
-
+} // namespace documentapi
