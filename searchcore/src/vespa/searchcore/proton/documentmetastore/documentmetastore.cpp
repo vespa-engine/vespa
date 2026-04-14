@@ -724,6 +724,9 @@ DocumentMetaStore::removeBatch(const std::vector<DocId> &lidsToRemove, const uin
 
         assert(validLid(lid));
         removed.emplace_back(lid, _metaDataStore[lid]);
+        if (_store_full_document_id) {
+            _docid_store.remove(removed.back().second._docid_ref);
+        }
     }
     remove_batch_internal_btree(removed);
     _lidAlloc.unregister_lids(lidsToRemove);
