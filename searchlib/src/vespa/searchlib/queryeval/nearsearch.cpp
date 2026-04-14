@@ -317,12 +317,16 @@ public:
 TermFieldMatchDataPositionKey
 NegativeTermChecker::max_window_end(const TermFieldMatchDataPosition& window_end,
                                     const TermFieldMatchDataPositionKey& last_allowed) {
-    // This function is only called if check_window has succeeded for same window_end.
+    // This function is only called if check_window has succeeded for same window_end. Any negative terms that limits
+    // the expansion of the match span is at least (exclusion distance + 1) positions after window_end.
     if (_queue.empty()) {
         return last_allowed;
     }
     const auto& pos = *_queue.front().curPos;
     if (pos.getElementId() > window_end.getElementId() + 1) {
+        // This is an approximation. last_allowed might be in the element following window_end, while pos might be
+        // in the next element. Without information about the length of the middle element, this might lead to
+        // a too high value for last_allowed when element gap is specified to have a finite value.
         return last_allowed;
     }
     if (pos.getPosition() > _exclusion_distance) {
