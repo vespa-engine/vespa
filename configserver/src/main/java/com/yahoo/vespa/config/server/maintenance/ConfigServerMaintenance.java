@@ -63,6 +63,7 @@ public class ConfigServerMaintenance {
                     applicationRepository, curator, Clock.systemUTC(), Duration.ofSeconds(30)));
             maintainers.add(new RestartOnDeployMaintainer(
                     applicationRepository, curator, Clock.systemUTC(), Duration.ofSeconds(30)));
+            maintainers.add(new HostRegistryMaintainer(applicationRepository, curator, Duration.ofSeconds(30)));
         }
     }
 

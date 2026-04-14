@@ -424,6 +424,8 @@ public class TenantApplications implements RequestHandler, HostValidator {
         hostRegistry.verifyHosts(applicationId, newHosts);
     }
 
+    public HostRegistry hostRegistry() { return hostRegistry; }
+
     public TenantFileSystemDirs getTenantFileSystemDirs() { return tenantFileSystemDirs; }
 
     public CompletionWaiter createRemoveApplicationWaiter(ApplicationId applicationId) {

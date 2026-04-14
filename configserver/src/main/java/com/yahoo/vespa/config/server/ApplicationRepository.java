@@ -70,6 +70,7 @@ import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.deploy.Deployment;
 import com.yahoo.vespa.config.server.deploy.InfraDeployerProvider;
 import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
+import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.LogRetriever;
@@ -103,15 +104,14 @@ import com.yahoo.vespa.curator.stats.ThreadLockStats;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Clock;
 import java.time.Duration;
@@ -141,6 +141,7 @@ import static com.yahoo.vespa.config.server.tenant.TenantRepository.HOSTED_VESPA
 import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static java.nio.file.Files.readAttributes;
+import static java.util.logging.Level.INFO;
 
 /**
  * The API for managing applications.
@@ -825,6 +826,97 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public HttpResponse validateSecretStore(ApplicationId applicationId, SystemName systemName, Slime slime) {
         Application application = getApplication(applicationId);
         return secretStoreValidator.validateSecretStore(application, systemName, slime);
+    }
+
+    public void removeStaleHostRegistryEntries() {
+        Duration lockTimeout = Duration.ofSeconds(2);
+
+        for (var tenant : tenantRepository.getAllTenants()) {
+            TenantApplications tenantApplications = tenant.getApplicationRepo();
+            SessionRepository sessionRepository = tenant.getSessionRepository();
+            HostRegistry hostRegistry = tenantApplications.hostRegistry();
+
+            // Phase A: Optimistic (lock-free) comparison of ApplicationId sets
+            Set<ApplicationId> registryApps = hostRegistry.getApplicationIds();
+            Set<ApplicationId> activeApps = Set.copyOf(tenantApplications.activeApplications());
+
+            Set<ApplicationId> inRegistryOnly = new HashSet<>(registryApps);
+            inRegistryOnly.removeAll(activeApps);
+
+            Set<ApplicationId> inActiveOnly = new HashSet<>(activeApps);
+            inActiveOnly.removeAll(registryApps);
+
+            Set<ApplicationId> inBoth = new HashSet<>(registryApps);
+            inBoth.retainAll(activeApps);
+
+            // Phase B: Re-verify ApplicationId mismatches under lock
+            for (ApplicationId app : inRegistryOnly) {
+                try (var lock = tenantApplications.lock(app, lockTimeout)) {
+                    if (hostRegistry.getHosts(app).isEmpty()) continue;
+                    if (tenantApplications.activeApplications().contains(app)) continue;
+                    log.log(INFO, "Host registry has hosts " + hostRegistry.getHosts(app) +
+                            " for " + app + " but application is not active" +
+                            " (tenant " + tenant.getName() + ")");
+                } catch (UncheckedTimeoutException e) {
+                    log.log(Level.FINE, "Could not acquire lock for " + app + ", skipping");
+                } catch (RuntimeException e) {
+                    log.log(Level.WARNING, "Error checking host registry for " + app + ": " +
+                            Exceptions.toMessageString(e));
+                }
+            }
+
+            for (ApplicationId app : inActiveOnly) {
+                try (var lock = tenantApplications.lock(app, lockTimeout)) {
+                    if (!tenantApplications.activeApplications().contains(app)) continue;
+                    if (!hostRegistry.getHosts(app).isEmpty()) continue;
+                    log.log(INFO, "Application " + app + " is active with hosts " +
+                            getSessionHosts(app, tenantApplications, sessionRepository) +
+                            " but has no hosts in host registry (tenant " + tenant.getName() + ")");
+                } catch (UncheckedTimeoutException e) {
+                    log.log(Level.FINE, "Could not acquire lock for " + app + ", skipping");
+                } catch (RuntimeException e) {
+                    log.log(Level.WARNING, "Error checking host registry for " + app + ": " +
+                            Exceptions.toMessageString(e));
+                }
+            }
+
+            // Phase C: Per-application host diff under lock
+            for (ApplicationId app : inBoth) {
+                try (var lock = tenantApplications.lock(app, lockTimeout)) {
+                    Set<String> registryHosts = new HashSet<>(hostRegistry.getHosts(app));
+                    Set<String> sessionHosts = getSessionHosts(app, tenantApplications, sessionRepository);
+
+                    Set<String> inRegistryNotSession = new HashSet<>(registryHosts);
+                    inRegistryNotSession.removeAll(sessionHosts);
+
+                    Set<String> inSessionNotRegistry = new HashSet<>(sessionHosts);
+                    inSessionNotRegistry.removeAll(registryHosts);
+
+                    if (!inRegistryNotSession.isEmpty() || !inSessionNotRegistry.isEmpty()) {
+                        log.log(INFO, "Host diff for " + app + " (tenant " + tenant.getName() + "): " +
+                                "in registry but not session=" + inRegistryNotSession +
+                                ", in session but not registry=" + inSessionNotRegistry);
+                    }
+                } catch (UncheckedTimeoutException e) {
+                    log.log(Level.FINE, "Could not acquire lock for " + app + ", skipping");
+                } catch (RuntimeException e) {
+                    log.log(Level.WARNING, "Error checking host registry for " + app + ": " +
+                            Exceptions.toMessageString(e));
+                }
+            }
+        }
+    }
+
+    private static Set<String> getSessionHosts(ApplicationId app, TenantApplications tenantApplications, SessionRepository sessionRepository) {
+        Set<String> sessionHosts = new HashSet<>();
+        tenantApplications.activeSessionOf(app).ifPresent(sessionId -> {
+            Session session = sessionRepository.getRemoteSession(sessionId);
+            if (session != null) {
+                session.getAllocatedHosts().getHosts()
+                        .forEach(hostSpec -> sessionHosts.add(hostSpec.hostname()));
+            }
+        });
+        return sessionHosts;
     }
 
     // ---------------- Convergence ----------------------------------------------------------------
