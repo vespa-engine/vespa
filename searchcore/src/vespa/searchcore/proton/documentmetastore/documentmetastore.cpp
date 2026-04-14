@@ -561,6 +561,10 @@ DocumentMetaStore::put(const DocumentId& docid, const BucketId &bucketId, Timest
             assert(freeLid == lid);
             (void) freeLid;
         }
+        if (_store_full_document_id) {
+            const auto ref = _docid_store.add(docid.getScheme().toString());
+            metaData.set_docid_ref(ref);
+        }
         insert(GidToLidMapKey(lid, find_key.get_gid_key()), metaData);
         res.setLid(lid);
         res.markSuccess();
