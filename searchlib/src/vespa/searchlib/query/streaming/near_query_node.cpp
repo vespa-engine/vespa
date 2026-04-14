@@ -15,6 +15,34 @@ using vespalib::PriorityQueue;
 
 namespace search::streaming {
 
+HitKey
+NearQueryNode::NegativeTermChecker::max_window_end(const Hit& window_end, const HitKey& last_allowed) {
+    // This function is only called if check_window has succeeded for same window_end. Any negative terms that limits
+    // the expansion of the match span is at least (exclusion distance + 1) positions after window_end.
+    if (_queue.empty()) {
+        return last_allowed;
+    }
+    const auto& pos = *_queue.front();
+    if (pos.field_id() != window_end.field_id() || pos.element_id() > window_end.element_id() + 1) {
+        // This is an approximation. last_allowed might be in the element following window_end, while pos might be
+        // in the next element. Without information about the length of the middle element, this might lead to
+        // a too high value for last_allowed when element gap is specified to have a finite value.
+        return last_allowed;
+    }
+    if (pos.position() > _parent.exclusion_distance()) {
+        HitKey avoid_negative_term_window_end(pos.field_id(), pos.element_id(),
+                                              pos.position() - _parent.exclusion_distance() - 1);
+        return std::min(avoid_negative_term_window_end, last_allowed);
+    }
+    auto element_gap = _parent.get_element_gap(window_end.field_id());
+    if (element_gap.has_value() && pos.element_id() == window_end.element_id() + 1) {
+        HitKey avoid_negative_term_window_end(window_end.field_id(), window_end.element_id(),
+            pos.position() + window_end.element_length() + element_gap.value() - _parent.exclusion_distance() - 1);
+        return std::min(avoid_negative_term_window_end, last_allowed);
+    }
+    return last_allowed;
+}
+
 NearQueryNode::NearQueryNode(const search::queryeval::IElementGapInspector& element_gap_inspector) noexcept
     : AndQueryNode("NEAR"),
       _distance(0),
@@ -71,7 +99,15 @@ NearQueryNode::evaluate_helper(MatchResult& match_result) const
         if (!(last_allowed < max_pos.key())) {
             if (filter.check_window(*front, max_pos)) {
                 if constexpr (MatchResult::collect_spans) {
-                    match_result.register_match(MatchSpan(*front, max_pos));
+                    auto adjusted_last_allowed = filter.max_window_end(max_pos, last_allowed);
+                    auto& backing_vector = queue.backing_vector();
+                    auto extended_max_pos = max_pos;
+                    for (auto& itr : backing_vector) {
+                        if (&itr != &front) {
+                            extended_max_pos = std::max(extended_max_pos, itr.get_max_pos(adjusted_last_allowed));
+                        }
+                    }
+                    match_result.register_match(MatchSpan(*front, extended_max_pos));
                 } else {
                     match_result.register_match(front.get_field_element().second);
                 }

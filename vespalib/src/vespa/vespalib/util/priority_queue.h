@@ -55,6 +55,7 @@ public:
     T &any() { return _data.back(); }
     void pop_any() { _data.pop_back(); }
     void reserve(size_t sz) { _data.reserve(sz); }
+    std::vector<T> &backing_vector() noexcept { return _data; }
 };
 
 } // namespace vespalib

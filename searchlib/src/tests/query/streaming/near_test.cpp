@@ -299,6 +299,9 @@ std::string
 NearTest::NearSpec::to_string() const
 {
     std::ostringstream os;
+    if (_test->GetParam().ordered()) {
+        os << "o";
+    }
     os << "near(\"" << _terms << "\"," << _window;
     if (!_negative_terms.empty()) {
         os << ", -\"" << _negative_terms << "\"," << _exclusion_distance;
@@ -652,6 +655,112 @@ TEST_P(NearTest, merged_match_spans)
         near("AB", 2).verify_spans(docs, 69, {match_span(0, 1, 2, 1, 8), match_span(0, 2, 0, 2, 2)});
         _element_gap_setting.emplace(0);
         near("AB", 2).verify_spans(docs, 69, {match_span(0, 1, 2, 2, 2)});
+    }
+}
+
+TEST_P(NearTest, extended_match_spans)
+{
+    {
+        SCOPED_TRACE("span and negative term in same element");
+        auto docs = index().doc(69).elem(0, "AABAA.C");
+        if (GetParam().ordered()) {
+            near("AB", 1).verify_spans(docs, 69, {match_span(0, 0, 1, 0, 2)});
+            near("BA", 1).verify_spans(docs, 69, {match_span(0, 0, 2, 0, 3)});
+            near("AB", 10).verify_spans(docs, 69, {match_span(0, 0, 0, 0, 2)});
+            near("BA", 10).verify_spans(docs, 69, {match_span(0, 0, 2, 0, 4)});
+        } else {
+            near("AB", 1).verify_spans(docs, 69, {match_span(0, 0, 1, 0, 3)});
+            near("BA", 1).verify_spans(docs, 69, {match_span(0, 0, 1, 0, 3)});
+            near("AB", 10).verify_spans(docs, 69, {match_span(0, 0, 0, 0, 4)});
+            near("BA", 10).verify_spans(docs, 69, {match_span(0, 0, 0, 0, 4)});
+            near("AB", 10).avoid("C", 2).verify_spans(docs, 69, {match_span(0, 0, 0, 0, 3)});
+            near("AB", 10).avoid("C", 1).verify_spans(docs, 69, {match_span(0, 0, 0, 0, 4)});
+            near("AB", 10).avoid("C", 0).verify_spans(docs, 69, {match_span(0, 0, 0, 0, 4)});
+        }
+    }
+    {
+        SCOPED_TRACE("span in one element, negative term in next element");
+        auto docs2 = index().doc(69).elem(0, "AABAA").elem(1, ".C");
+        {
+            SCOPED_TRACE("no element gap");
+            if (GetParam().ordered()) {
+                near("AB", 10).avoid("C", 4).verify_spans(docs2, 69, {match_span(0, 0, 0, 0, 2)});
+                near("BA", 10).avoid("C", 4).verify_spans(docs2, 69, {match_span(0, 0, 2, 0, 4)});
+            } else {
+                near("AB", 10).avoid("C", 4).verify_spans(docs2, 69, {match_span(0, 0, 0, 0, 4)});
+                near("BA", 10).avoid("C", 4).verify_spans(docs2, 69, {match_span(0, 0, 0, 0, 4)});
+            }
+        }
+        {
+            SCOPED_TRACE("element gap");
+            _element_gap_setting.emplace(2);
+            if (GetParam().ordered()) {
+                near("AB", 10).avoid("C", 4).verify_spans(docs2, 69, {match_span(0, 0, 0, 0, 2)});
+                near("BA", 10).avoid("C", 4).verify_spans(docs2, 69, {match_span(0, 0, 2, 0, 3)});
+                near("AB", 10).avoid("C", 3).verify_spans(docs2, 69, {match_span(0, 0, 0, 0, 2)});
+                near("BA", 10).avoid("C", 3).verify_spans(docs2, 69, {match_span(0, 0, 2, 0, 4)});
+                near("AB", 10).avoid("C", 2).verify_spans(docs2, 69, {match_span(0, 0, 0, 0, 2)});
+                near("BA", 10).avoid("C", 2).verify_spans(docs2, 69, {match_span(0, 0, 2, 0, 4)});
+            } else {
+                near("AB", 10).avoid("C", 4).verify_spans(docs2, 69, {match_span(0, 0, 0, 0, 3)});
+                near("BA", 10).avoid("C", 4).verify_spans(docs2, 69, {match_span(0, 0, 0, 0, 3)});
+                near("AB", 10).avoid("C", 3).verify_spans(docs2, 69, {match_span(0, 0, 0, 0, 4)});
+                near("BA", 10).avoid("C", 3).verify_spans(docs2, 69, {match_span(0, 0, 0, 0, 4)});
+                near("AB", 10).avoid("C", 2).verify_spans(docs2, 69, {match_span(0, 0, 0, 0, 4)});
+                near("BA", 10).avoid("C", 2).verify_spans(docs2, 69, {match_span(0, 0, 0, 0, 4)});
+            }
+            _element_gap_setting.reset();
+        }
+    }
+    {
+        SCOPED_TRACE("span extending into next element");
+        auto docs3 = index().doc(69).elem(0, "AABAA").elem(1, "A.C");
+        {
+            SCOPED_TRACE("no element gap");
+            if (GetParam().ordered()) {
+                near("AB", 10).verify_spans(docs3, 69, {match_span(0, 0, 0, 0, 2)});
+                near("BA", 10).verify_spans(docs3, 69, {match_span(0, 0, 2, 0, 4)});
+                near("AB", 10).avoid("C", 5).verify_spans(docs3, 69, {match_span(0, 0, 0, 0, 2)});
+                near("BA", 10).avoid("C", 5).verify_spans(docs3, 69, {match_span(0, 0, 2, 0, 4)});
+            } else {
+                near("AB", 10).verify_spans(docs3, 69, {match_span(0, 0, 0, 0, 4)});
+                near("BA", 10).verify_spans(docs3, 69, {match_span(0, 0, 0, 0, 4)});
+                near("AB", 10).avoid("C", 5).verify_spans(docs3, 69, {match_span(0, 0, 0, 0, 4)});
+                near("BA", 10).avoid("C", 5).verify_spans(docs3, 69, {match_span(0, 0, 0, 0, 4)});
+            }
+        }
+        {
+            SCOPED_TRACE("element gap");
+            _element_gap_setting.emplace(2);
+            if (GetParam().ordered()) {
+                near("AB", 10).verify_spans(docs3, 69, {match_span(0, 0, 0, 0, 2)});
+                near("BA", 10).verify_spans(docs3, 69, {match_span(0, 0, 2, 1, 0)});
+                near("AB", 10).avoid("C", 5).verify_spans(docs3, 69, {match_span(0, 0, 0, 0, 2)});
+                near("BA", 10).avoid("C", 5).verify_spans(docs3, 69, {match_span(0, 0, 2, 0, 3)});
+                near("AB", 10).avoid("C", 4).verify_spans(docs3, 69, {match_span(0, 0, 0, 0, 2)});
+                near("BA", 10).avoid("C", 4).verify_spans(docs3, 69, {match_span(0, 0, 2, 0, 4)});
+                near("AB", 10).avoid("C", 2).verify_spans(docs3, 69, {match_span(0, 0, 0, 0, 2)});
+                near("BA", 10).avoid("C", 2).verify_spans(docs3, 69, {match_span(0, 0, 2, 0, 4)});
+                near("AB", 10).avoid("C", 1).verify_spans(docs3, 69, {match_span(0, 0, 0, 0, 2)});
+                near("BA", 10).avoid("C", 1).verify_spans(docs3, 69, {match_span(0, 0, 2, 1, 0)});
+                near("AB", 10).avoid("C", 0).verify_spans(docs3, 69, {match_span(0, 0, 0, 0, 2)});
+                near("BA", 10).avoid("C", 0).verify_spans(docs3, 69, {match_span(0, 0, 2, 1, 0)});
+            } else {
+                near("AB", 10).verify_spans(docs3, 69, {match_span(0, 0, 0, 1, 0)});
+                near("BA", 10).verify_spans(docs3, 69, {match_span(0, 0, 0, 1, 0)});
+                near("AB", 10).avoid("C", 5).verify_spans(docs3, 69, {match_span(0, 0, 0, 0, 3)});
+                near("BA", 10).avoid("C", 5).verify_spans(docs3, 69, {match_span(0, 0, 0, 0, 3)});
+                near("AB", 10).avoid("C", 4).verify_spans(docs3, 69, {match_span(0, 0, 0, 0, 4)});
+                near("BA", 10).avoid("C", 4).verify_spans(docs3, 69, {match_span(0, 0, 0, 0, 4)});
+                near("AB", 10).avoid("C", 2).verify_spans(docs3, 69, {match_span(0, 0, 0, 0, 4)});
+                near("BA", 10).avoid("C", 2).verify_spans(docs3, 69, {match_span(0, 0, 0, 0, 4)});
+                near("AB", 10).avoid("C", 1).verify_spans(docs3, 69, {match_span(0, 0, 0, 1, 0)});
+                near("BA", 10).avoid("C", 1).verify_spans(docs3, 69, {match_span(0, 0, 0, 1, 0)});
+                near("AB", 10).avoid("C", 0).verify_spans(docs3, 69, {match_span(0, 0, 0, 1, 0)});
+                near("BA", 10).avoid("C", 0).verify_spans(docs3, 69, {match_span(0, 0, 0, 1, 0)});
+            }
+            _element_gap_setting.reset();
+        }
     }
 }
 
