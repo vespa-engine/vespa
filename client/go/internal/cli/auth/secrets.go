@@ -9,8 +9,12 @@ import (
 )
 
 type (
-	realKeyring  struct{}
-	dummyKeyring struct{}
+	realKeyring     struct{}
+	dummyKeyring    struct{}
+	fallbackKeyring struct {
+		primary   SecretStore
+		secondary SecretStore
+	}
 )
 
 func NewKeyring() SecretStore {
@@ -21,7 +25,10 @@ func NewKeyringWithOptions(useDummy bool) SecretStore {
 	if useDummy || os.Getenv("VESPA_CLI_DUMMY_KEYRING") != "" {
 		return &dummyKeyring{}
 	}
-	return &realKeyring{}
+	return &fallbackKeyring{
+		primary:   &realKeyring{},
+		secondary: &dummyKeyring{},
+	}
 }
 
 // Set sets the given key/value pair with the given namespace.
@@ -57,6 +64,9 @@ func (k *dummyKeyring) Set(namespace, key, value string) error {
 	if err != nil {
 		return err
 	}
+	// Remove any existing file first. The file is created with mode 0o400
+	// (read-only), so os.WriteFile cannot truncate it on subsequent writes.
+	_ = os.Remove(fn)
 	return os.WriteFile(fn, []byte(value), 0o400)
 }
 
@@ -77,4 +87,31 @@ func (k *dummyKeyring) Delete(namespace, key string) error {
 		return err
 	}
 	return os.Remove(fn)
+}
+
+// Set tries the primary store and falls back to the secondary on failure.
+func (k *fallbackKeyring) Set(namespace, key, value string) error {
+	if err := k.primary.Set(namespace, key, value); err != nil {
+		return k.secondary.Set(namespace, key, value)
+	}
+	return nil
+}
+
+// Get tries the primary store and falls back to the secondary on failure.
+func (k *fallbackKeyring) Get(namespace, key string) (string, error) {
+	val, err := k.primary.Get(namespace, key)
+	if err == nil && val != "" {
+		return val, nil
+	}
+	return k.secondary.Get(namespace, key)
+}
+
+// Delete tries to delete from both stores, returning an error only if both fail.
+func (k *fallbackKeyring) Delete(namespace, key string) error {
+	err1 := k.primary.Delete(namespace, key)
+	err2 := k.secondary.Delete(namespace, key)
+	if err1 != nil && err2 != nil {
+		return err1
+	}
+	return nil
 }
