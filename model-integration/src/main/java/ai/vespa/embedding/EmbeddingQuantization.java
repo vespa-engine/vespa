@@ -73,6 +73,9 @@ class EmbeddingQuantization {
                 if (valueType != TensorType.Value.INT8)
                     throw new IllegalArgumentException(
                             "Quantization 'binary' is incompatible with tensor type " + targetType + ".");
+                if (configuredDimensions % 8 != 0)
+                    throw new IllegalArgumentException(
+                            Text.format("Configured dimension %d must be divisible by 8 for quantization 'binary'.", configuredDimensions));
                 if (tensorDim != configuredDimensions / 8)
                     throw new IllegalArgumentException(
                             Text.format("Tensor dimension %d does not match required dimension %d.", tensorDim, configuredDimensions / 8));
