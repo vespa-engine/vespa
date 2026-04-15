@@ -16,7 +16,7 @@ protected:
     virtual void doCommit(const CommitParam & param) = 0;
     virtual DocId doGetCommittedDocIdLimit() const = 0;
     virtual void doRemoveAllOldGenerations() = 0;
-    virtual uint64_t doGetCurrentGeneration() const = 0;
+    virtual vespalib::Generation doGetCurrentGeneration() const = 0;
 public:
     void commit(const CommitParam & param) override {
         doCommit(param);
@@ -27,7 +27,7 @@ public:
     void reclaim_unused_memory() override {
         doRemoveAllOldGenerations();
     }
-    uint64_t getCurrentGeneration() const override {
+    vespalib::Generation getCurrentGeneration() const override {
         return doGetCurrentGeneration();
     }
 };

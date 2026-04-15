@@ -14,6 +14,7 @@ using search::fef::MatchData;
 using search::queryeval::Blueprint;
 using search::queryeval::SearchIterator;
 using search::queryeval::SimpleResult;
+using vespalib::Generation;
 using vespalib::GenerationHolder;
 using vespalib::Timer;
 using vespalib::Trinary;
@@ -69,11 +70,11 @@ protected:
     }
 
     void hold_lids(const std::vector<uint32_t>& lids) {
-        _allocator.holdLids(lids, get_size(), 0);
+        _allocator.holdLids(lids, get_size(), Generation(0));
     }
 
     void reclaim_memory() {
-        _allocator.reclaim_memory(1);
+        _allocator.reclaim_memory(Generation(1));
     }
     
     std::vector<uint32_t> get_valid_lids() {

@@ -50,7 +50,7 @@ struct DocumentMetaStoreObserver : public IDocumentMetaStore
     search::queryeval::Blueprint::UP createWhiteListBlueprint() const override {
         return _store.createWhiteListBlueprint();
     }
-    uint64_t getCurrentGeneration() const override {
+    vespalib::Generation getCurrentGeneration() const override {
         return _store.getCurrentGeneration();
     }
     const search::BitVector & getValidLids() const override {

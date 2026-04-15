@@ -36,6 +36,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     foregroundtaskexecutor.cpp
     gate.cpp
     gencnt.cpp
+    generation.cpp
     generation_guard.cpp
     generation_hold.cpp
     generationhandler.cpp

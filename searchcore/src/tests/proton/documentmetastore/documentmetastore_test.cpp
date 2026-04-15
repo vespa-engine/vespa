@@ -58,6 +58,7 @@ using searchcorespi::IFlushTarget;
 using storage::spi::BucketChecksum;
 using storage::spi::BucketInfo;
 using storage::spi::Timestamp;
+using vespalib::Generation;
 using vespalib::GenerationHandler;
 using vespalib::GenerationHolder;
 using vespalib::HwInfo;
@@ -416,9 +417,9 @@ TEST(DocumentMetaStore, generation_handling_is_working)
     auto dms = std::make_shared<DocumentMetaStore>(createBucketDB());
     dms->constructFreeList();
     const GenerationHandler & gh = dms->getGenerationHandler();
-    EXPECT_EQ(1u, gh.getCurrentGeneration());
+    EXPECT_EQ(Generation(1u), gh.getCurrentGeneration());
     addDoc(*dms, docid1, bucketId1, time1);
-    EXPECT_EQ(2u, gh.getCurrentGeneration());
+    EXPECT_EQ(Generation(2u), gh.getCurrentGeneration());
     EXPECT_EQ(0u, gh.getGenerationRefCount());
     {
         AttributeGuard g1(dms);
@@ -432,7 +433,7 @@ TEST(DocumentMetaStore, generation_handling_is_working)
     EXPECT_EQ(0u, gh.getGenerationRefCount());
     dms->remove(1, 0u);
     dms->removes_complete({ 1 });
-    EXPECT_EQ(3u, gh.getCurrentGeneration());
+    EXPECT_EQ(Generation(3u), gh.getCurrentGeneration());
 }
 
 TEST(DocumentMetaStore, generation_handling_is_working_for_full_document_ids)

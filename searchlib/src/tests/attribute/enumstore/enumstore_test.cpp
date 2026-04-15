@@ -329,7 +329,7 @@ TEST(EnumStoreTest, test_hold_lists_and_generation)
 {
     StringEnumStore ses(false, DictionaryConfig::Type::BTREE);
     StringVector uniques;
-    generation_t sesGen = 0u;
+    generation_t sesGen(0u);
     uniques.reserve(100);
     for (uint32_t i = 0; i < 100; ++i) {
         char tmp[16];
@@ -366,8 +366,8 @@ TEST(EnumStoreTest, test_hold_lists_and_generation)
             }
             EXPECT_TRUE(indices.size() == 10);
             EXPECT_TRUE(expected.size() == 10);
-            sesGen = generation++;
-            readers.emplace_back(sesGen, indices, expected);
+            sesGen = generation_t(generation++);
+            readers.emplace_back(sesGen.value(), indices, expected);
             checkReaders(ses, readers);
         }
     }
@@ -396,7 +396,7 @@ dec_ref_count(NumericEnumStore& store, NumericEnumStore::Index idx)
     updater.dec_ref_count(idx);
     updater.commit();
 
-    generation_t gen = 5;
+    generation_t gen(5);
     store.assign_generation(gen);
     store.reclaim_memory(gen + 1);
 }
@@ -940,7 +940,7 @@ TYPED_TEST(EnumStoreDictionaryTest, compact_worst_works)
         }
     }
     updater.commit();
-    generation_t gen = 3;
+    generation_t gen(3);
     inc_generation(gen, this->store);
     // Compact dictionary
     auto& dict = this->store.get_dictionary();

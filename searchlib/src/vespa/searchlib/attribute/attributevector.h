@@ -430,7 +430,7 @@ private:
     std::atomic<uint32_t>                 _committedDocIdLimit; // docid limit for search
     uint32_t                              _uncommittedDocIdLimit; // based on queued changes
     uint64_t                              _createSerialNum;
-    std::atomic<uint64_t>                 _compactLidSpaceGeneration;
+    std::atomic<generation_t>             _compactLidSpaceGeneration;
     bool                                  _hasEnum;
     bool                                  _loaded;
     bool                                  _isUpdateableInMemoryOnly;

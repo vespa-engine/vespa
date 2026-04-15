@@ -133,7 +133,7 @@ private:
     void doRemoveAllOldGenerations() override {
         reclaim_unused_memory();
     }
-    uint64_t doGetCurrentGeneration() const override {
+    generation_t doGetCurrentGeneration() const override {
         return getCurrentGeneration();
     }
 
