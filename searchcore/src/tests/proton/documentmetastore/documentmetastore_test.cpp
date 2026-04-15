@@ -435,6 +435,31 @@ TEST(DocumentMetaStore, generation_handling_is_working)
     EXPECT_EQ(3u, gh.getCurrentGeneration());
 }
 
+TEST(DocumentMetaStore, generation_handling_is_working_for_full_document_ids)
+{
+    auto dms = std::make_shared<DocumentMetaStore>(createBucketDB(), "[documentmetastore]", search::GrowStrategy(), true, SubDbType::READY);
+    dms->constructFreeList();
+
+    assertPut(bucketId1, time1, 1u, docid1, *dms);
+    EXPECT_EQ(docid1.toString(), dms->get_docid_string(gid1));
+    vespalib::MemoryUsage memory_usage;
+    {
+        AttributeGuard g1(dms);
+        auto str_view = dms->get_docid_string(gid1);
+        EXPECT_EQ(docid1.toString(), str_view);
+        dms->remove(1u, 0u);
+        EXPECT_EQ("", dms->get_docid_string(gid1));
+        dms->incGeneration();
+        memory_usage = dms->get_docid_memory_usage();
+        dms->reclaim_unused_memory(); // Nothing to reclaim yet
+        EXPECT_EQ(docid1.toString(), str_view); // Check that str_view still contains the docid
+        EXPECT_EQ(memory_usage, dms->get_docid_memory_usage());
+    }
+    dms->reclaim_unused_memory(); // Reclaim now
+    EXPECT_NE(memory_usage, dms->get_docid_memory_usage());
+    dms->removes_complete({ 1 });
+}
+
 TEST(DocumentMetaStoreTest, lid_and_gid_space_is_reused)
 {
     auto dms = std::make_shared<DocumentMetaStore>(createBucketDB());

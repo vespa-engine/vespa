@@ -297,6 +297,7 @@ public:
                           search::common::sortspec::MissingPolicy policy,
                           std::string_view missing_value) const override;
 
+    vespalib::MemoryUsage get_docid_memory_usage() const { return _docid_store.getMemoryUsage(); };
     static vespalib::datastore::ArrayStoreConfig make_default_docid_array_store_config();
 };
 
