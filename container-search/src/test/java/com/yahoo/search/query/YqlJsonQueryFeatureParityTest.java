@@ -159,6 +159,30 @@ public class YqlJsonQueryFeatureParityTest {
     }
 
     @Test
+    void testText() {
+        assertWhereParity("title contains text('madonna')",
+                "{ 'contains' : ['title', { 'text' : 'madonna' }] }");
+    }
+
+    @Test
+    void testTextWithLanguage() {
+        assertWhereParity("title contains ({language: 'en'}text('hello world'))",
+                "{ 'contains' : ['title', { 'text' : { 'query' : 'hello world', 'attributes' : { 'language' : 'en' } } }] }");
+    }
+
+    @Test
+    void testTextWithWeightFilterRanked() {
+        assertWhereParity("title contains ({weight: 200, filter: true, ranked: false}text('madonna'))",
+                "{ 'contains' : ['title', { 'text' : { 'query' : 'madonna', 'attributes' : { 'weight' : 200, 'filter' : true, 'ranked' : false } } }] }");
+    }
+
+    @Test
+    void testTextWithStemNormalizeCaseAccentDrop() {
+        assertWhereParity("title contains ({stem: false, normalizeCase: false, accentDrop: false}text('madonna'))",
+                "{ 'contains' : ['title', { 'text' : { 'query' : 'madonna', 'attributes' : { 'stem' : false, 'normalizeCase' : false, 'accentDrop' : false } } }] }");
+    }
+
+    @Test
     void testSameElement() {
         // Struct field with explicit contains
         assertWhereParity("baz contains sameElement(f1 contains 'a', f2 contains 'b')",
