@@ -3,7 +3,7 @@
 package=ai.vespa.embedding.config
 
 # Reference to the secret in Vespa's secret store containing the VoyageAI API key
-apiKeySecretRef          string default=""
+apiKeySecretRef          string
 
 # VoyageAI API endpoint URL (auto-selected between text, multimodal, and contextualized endpoints based on model)
 endpoint                 string default="https://api.voyageai.com/v1/embeddings"
