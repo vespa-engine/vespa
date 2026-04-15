@@ -293,6 +293,27 @@ public class YqlJsonQueryFeatureParityTest {
                 "{ 'or' : [ { 'and' : [ { 'contains' : ['a', 'A'] }, { 'contains' : ['b', 'B'] } ] }, { 'and' : [ { 'contains' : ['c', 'C'] }, { 'contains' : ['title', 'D'] } ] } ] }");
     }
 
+    @Test
+    void testGrouping() {
+        assertGroupingParity(
+                "all(group(a) each(output(count())))",
+                "[ { 'all' : { 'group' : 'a', 'each' : { 'output' : 'count()' } } } ]");
+    }
+
+    @Test
+    void testGroupingWithMultipleOutputs() {
+        assertGroupingParity(
+                "all(group(b) each(output(count(), avg(price))))",
+                "[ { 'all' : { 'group' : 'b', 'each' : { 'output' : [ 'count()', 'avg(price)' ] } } } ]");
+    }
+
+    @Test
+    void testGroupingWithPredefinedBuckets() {
+        assertGroupingParity(
+                "all(group(predefined(price, bucket[1, 2>, bucket[3, 4>)))",
+                "[ { 'all' : { 'group' : { 'predefined' : [ 'price', { 'bucket' : [1, 2] }, { 'bucket' : [3, 4] } ] } } } ]");
+    }
+
     /** Asserts parity using a where-clause; automatically wraps the YQL in {@code select * from sources * where ...} */
     private void assertWhereParity(String yqlWhereClause, String jsonWhere) {
         assertParity("select * from sources * where " + yqlWhereClause, jsonWhere);
@@ -311,6 +332,22 @@ public class YqlJsonQueryFeatureParityTest {
 
         assertEquals(VespaSerializer.serialize(yqlQuery), VespaSerializer.serialize(selectQuery),
                 "YQL and JSON select should produce the same query tree");
+    }
+
+    /** Asserts that YQL grouping and JSON select grouping produce the same grouping operations. */
+    private void assertGroupingParity(String yqlGrouping, String jsonGrouping) {
+        yqlParser.parse(new Parsable().setQuery("select * from sources * where true | " + yqlGrouping));
+        var yqlSteps = yqlParser.getGroupingSteps();
+
+        var normalizedJson = SlimeUtils.toJson(SlimeUtils.jsonToSlime(jsonGrouping));
+        var selectSteps = selectParser.getGroupingSteps(new String(normalizedJson));
+
+        assertEquals(yqlSteps.size(), selectSteps.size(),
+                "YQL and JSON select should produce the same number of grouping steps");
+        for (int i = 0; i < yqlSteps.size(); i++) {
+            assertEquals(yqlSteps.get(i).getOperation().toString(), selectSteps.get(i).getOperation().toString(),
+                    "Grouping step " + i + " should be the same");
+        }
     }
 
     private static IndexFacts createIndexFacts() {
