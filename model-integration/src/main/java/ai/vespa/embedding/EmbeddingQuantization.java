@@ -40,9 +40,14 @@ class EmbeddingQuantization {
                         throw new IllegalArgumentException(
                                 Text.format("Tensor dimension %d does not match configured dimension %d.", tensorDim, configuredDimensions));
                 } else if (valueType == TensorType.Value.INT8) {
-                    if (tensorDim != configuredDimensions && tensorDim != configuredDimensions / 8)
+                    long packedBinaryDimensions = configuredDimensions / 8;
+                    if (tensorDim == packedBinaryDimensions && configuredDimensions % 8 != 0)
                         throw new IllegalArgumentException(
-                                Text.format("Tensor dimension %d does not match configured dimension. Expected %d or %d.", tensorDim, configuredDimensions, configuredDimensions / 8));
+                                Text.format("Configured dimension %d must be divisible by 8 to allow packed-binary tensor dimension %d in quantization 'auto'.",
+                                            configuredDimensions, packedBinaryDimensions));
+                    if (tensorDim != configuredDimensions && tensorDim != packedBinaryDimensions)
+                        throw new IllegalArgumentException(
+                                Text.format("Tensor dimension %d does not match configured dimension. Expected %d or %d.", tensorDim, configuredDimensions, packedBinaryDimensions));
                 } else {
                     throw new IllegalArgumentException(
                             "Quantization 'auto' is incompatible with tensor type " + targetType + ".");
