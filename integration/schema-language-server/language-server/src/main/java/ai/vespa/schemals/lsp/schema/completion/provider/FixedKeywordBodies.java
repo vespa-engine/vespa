@@ -188,6 +188,8 @@ public class FixedKeywordBodies {
         CompletionUtils.constructBasic("euclidean"),
         CompletionUtils.constructBasic("angular"),
         CompletionUtils.constructBasic("dotproduct"),
+        CompletionUtils.constructBasic("innerproduct"),
+        CompletionUtils.constructBasic("turboquant"),
         CompletionUtils.constructBasic("prenormalized-angular"),
         CompletionUtils.constructBasic("geodegrees"),
         CompletionUtils.constructBasic("hamming")

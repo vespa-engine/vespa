@@ -274,6 +274,7 @@ TEST(AttributeManagerTest, require_that_config_can_be_converted)
         expect_distance_metric(AttributesConfig::Attribute::Distancemetric::INNERPRODUCT, DistanceMetric::InnerProduct);
         expect_distance_metric(AttributesConfig::Attribute::Distancemetric::PRENORMALIZED_ANGULAR, DistanceMetric::PrenormalizedAngular);
         expect_distance_metric(AttributesConfig::Attribute::Distancemetric::DOTPRODUCT, DistanceMetric::Dotproduct);
+        expect_distance_metric(AttributesConfig::Attribute::Distancemetric::TURBOQUANT, DistanceMetric::TurboQuant);
     }
     { // hnsw index default params (enabled)
         CACA a;

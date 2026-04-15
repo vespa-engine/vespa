@@ -408,6 +408,8 @@ const std::string test_dir = "test_data/";
 const std::string attr_name = test_dir + "my_attr";
 
 const std::string hnsw_max_squared_norm = "hnsw.max_squared_norm";
+const std::string hnsw_turbo_quant_version = "hnsw.turbo_quant.version";
+const std::string hnsw_turbo_quant_levels = "hnsw.turbo_quant.levels";
 
 struct FixtureTraits {
     bool use_dense_tensor_attribute = false;
@@ -416,6 +418,7 @@ struct FixtureTraits {
     bool use_mock_index = false;
     bool use_mmap_file_allocator = false;
     bool use_mips_distance = false;
+    bool use_turbo_quant_distance = false;
 
     FixtureTraits dense() && {
         use_dense_tensor_attribute = true;
@@ -454,6 +457,14 @@ struct FixtureTraits {
         enable_hnsw_index = true;
         use_mock_index = false;
         use_mips_distance = true;
+        return *this;
+    }
+
+    FixtureTraits turbo_quant_hnsw() && {
+        use_dense_tensor_attribute = true;
+        enable_hnsw_index = true;
+        use_mock_index = false;
+        use_turbo_quant_distance = true;
         return *this;
     }
 
@@ -718,7 +729,12 @@ Fixture::Fixture(const std::string &typeSpec, FixtureTraits traits)
       _mmap_allocator_base_dir("mmap-file-allocator-factory-dir")
 {
     if (traits.enable_hnsw_index) {
-        auto dm = traits.use_mips_distance ? DistanceMetric::Dotproduct : DistanceMetric::Euclidean;
+        auto dm = DistanceMetric::Euclidean;
+        if (traits.use_turbo_quant_distance) {
+            dm = DistanceMetric::TurboQuant;
+        } else if (traits.use_mips_distance) {
+            dm = DistanceMetric::Dotproduct;
+        }
         _cfg.set_distance_metric(dm);
         _cfg.set_hnsw_index_params(HnswIndexParams(4, 20, dm));
     }
@@ -1459,6 +1475,11 @@ public:
     DenseTensorAttributeMipsIndex() : Fixture(vec_2d_spec, FixtureTraits().mips_hnsw()) {}
 };
 
+class DenseTensorAttributeTurboQuantIndex : public Fixture {
+public:
+    DenseTensorAttributeTurboQuantIndex() : Fixture(vec_2d_spec, FixtureTraits().turbo_quant_hnsw()) {}
+};
+
 TEST(TensorAttributeTest, Nearest_neighbor_index_with_mips_distance_metrics_stores_square_of_max_distance)
 {
     DenseTensorAttributeMipsIndex f;
@@ -1467,6 +1488,23 @@ TEST(TensorAttributeTest, Nearest_neighbor_index_with_mips_distance_metrics_stor
     auto header = f.get_file_header();
     EXPECT_TRUE(header.hasTag(hnsw_max_squared_norm));
     EXPECT_EQ(130.0, header.getTag(hnsw_max_squared_norm).asFloat());
+    EXPECT_TRUE(f.load());
+    auto& norm_store = dynamic_cast<MipsDistanceFunctionFactoryBase&>(f.hnsw_index().distance_function_factory()).get_max_squared_norm_store();
+    EXPECT_EQ(130.0, norm_store.get_max());
+}
+
+TEST(TensorAttributeTest, Nearest_neighbor_index_with_turboquant_distance_metric_stores_square_of_max_distance)
+{
+    DenseTensorAttributeTurboQuantIndex f;
+    f.set_example_tensors();
+    EXPECT_TRUE(f.save());
+    auto header = f.get_file_header();
+    EXPECT_TRUE(header.hasTag(hnsw_max_squared_norm));
+    EXPECT_EQ(130.0, header.getTag(hnsw_max_squared_norm).asFloat());
+    EXPECT_TRUE(header.hasTag(hnsw_turbo_quant_version));
+    EXPECT_EQ(1, header.getTag(hnsw_turbo_quant_version).asInteger());
+    EXPECT_TRUE(header.hasTag(hnsw_turbo_quant_levels));
+    EXPECT_EQ(4, header.getTag(hnsw_turbo_quant_levels).asInteger());
     EXPECT_TRUE(f.load());
     auto& norm_store = dynamic_cast<MipsDistanceFunctionFactoryBase&>(f.hnsw_index().distance_function_factory()).get_max_squared_norm_store();
     EXPECT_EQ(130.0, norm_store.get_max());

@@ -179,6 +179,7 @@ TEST_F(NearestNeighborSearcherTest, distance_metric_from_string)
     EXPECT_EQ(DistanceMetric::GeoDegrees,   NNFS::distance_metric_from_string("GEODEGREES"));
     EXPECT_EQ(DistanceMetric::InnerProduct, NNFS::distance_metric_from_string("INNERPRODUCT"));
     EXPECT_EQ(DistanceMetric::Hamming,      NNFS::distance_metric_from_string("HAMMING"));
+    EXPECT_EQ(DistanceMetric::TurboQuant,   NNFS::distance_metric_from_string("TURBOQUANT"));
     EXPECT_EQ(DistanceMetric::Euclidean,    NNFS::distance_metric_from_string("not_available"));
 }
 

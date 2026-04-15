@@ -5,6 +5,7 @@
 #include "distance_function.h"
 #include "distance_function_factory.h"
 #include <vespa/eval/eval/typed_cells.h>
+#include <vespa/vespalib/data/fileheader.h>
 #include <mutex>
 #include <memory>
 
@@ -47,6 +48,8 @@ public:
     }
     ~MipsDistanceFunctionFactoryBase() override = default;
     MaximumSquaredNormStore& get_max_squared_norm_store() noexcept { return *_sq_norm_store; }
+    void save_state(vespalib::GenericHeader& header) const override;
+    void load_state(const vespalib::GenericHeader& header) override;
 };
 
 /**

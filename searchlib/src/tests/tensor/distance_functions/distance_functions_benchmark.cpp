@@ -5,6 +5,7 @@
 #include <vespa/searchlib/tensor/distance_functions.h>
 #include <vespa/searchlib/tensor/distance_function_factory.h>
 #include <vespa/searchlib/tensor/mips_distance_transform.h>
+#include <vespa/searchlib/tensor/turbo_quant_distance.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/classname.h>
 
@@ -86,6 +87,9 @@ void benchmark(size_t iterations, size_t elems, const std::string & dist_functio
     if (dist_functions.find("mips") != npos) {
         benchmark<T>(iterations, elems, MipsDistanceFunctionFactory<T>());
     }
+    if (dist_functions.find("turboquant") != npos) {
+        benchmark<T>(iterations, elems, TurboQuantDistanceFunctionFactory<T>());
+    }
 }
 
 void
@@ -108,7 +112,7 @@ int
 main(int argc, char *argv[]) {
     size_t num_iterations = 10000000;
     size_t num_elems = 1024;
-    std::string dist_functions = "angular euclid prenorm mips";
+    std::string dist_functions = "angular euclid prenorm mips turboquant";
     std::string data_types = "double float32 bfloat16 float8";
     if (argc > 1) { num_iterations = atol(argv[1]); }
     if (argc > 2) { num_elems = atol(argv[2]); }

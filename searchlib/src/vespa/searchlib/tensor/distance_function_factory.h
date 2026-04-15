@@ -6,6 +6,8 @@
 #include "bound_distance_function.h"
 #include <vespa/searchcommon/attribute/distance_metric.h>
 
+namespace vespalib { class GenericHeader; }
+
 namespace search::tensor {
 
 /**
@@ -19,6 +21,8 @@ struct DistanceFunctionFactory {
     virtual ~DistanceFunctionFactory() = default;
     virtual BoundDistanceFunction::UP for_query_vector(TypedCells lhs) const = 0;
     virtual BoundDistanceFunction::UP for_insertion_vector(TypedCells lhs) const = 0;
+    virtual void save_state(vespalib::GenericHeader&) const {}
+    virtual void load_state(const vespalib::GenericHeader&) {}
     using UP = std::unique_ptr<DistanceFunctionFactory>;
 };
 
