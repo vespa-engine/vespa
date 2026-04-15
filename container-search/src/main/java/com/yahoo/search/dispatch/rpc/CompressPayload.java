@@ -10,6 +10,9 @@ import com.yahoo.search.Query;
  * @author baldersheim
  */
 public interface CompressPayload {
+
     Compressor.Compression compress(Query query, byte[] payload);
+
     byte[] decompress(Client.ProtobufResponse response);
+
 }

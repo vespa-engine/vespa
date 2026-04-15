@@ -70,6 +70,10 @@ public class RpcProtobufFillInvoker extends FillInvoker {
     private int numOkFilledHits = 0;
     private int numHitsToFill = 0;
 
+    private static final AtomicInteger retryCounter = new AtomicInteger();
+    private static final AtomicInteger noRetryCounter = new AtomicInteger();
+    private static final AtomicInteger retryTimeoutCounter = new AtomicInteger();
+
     RpcProtobufFillInvoker(RpcConnectionPool resourcePool, CompressPayload compressor, DocumentDatabase documentDb,
                            String serverId, DecodePolicy decodePolicy, boolean summaryNeedsQuery,
                            QrSearchersConfig qrSearchersConfig) {
@@ -202,7 +206,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
                 if (responseAndHits == null) {
                     throwTimeout();
                 }
-                skippedHits.addAll(processOneResponse(result, responseAndHits, summaryClass, false));
+                skippedHits.addAll(processOneResponse(result, responseAndHits, false));
                 outstandingResponses--;
             }
             if (skippedHits.isEmpty()) {
@@ -219,12 +223,9 @@ public class RpcProtobufFillInvoker extends FillInvoker {
         }
     }
 
-    private List<FastHit> processOneResponse(
-            Result result,
-            ResponseAndHits responseAndHits,
-            String summaryClass,
-            boolean isRetry)
-    {
+    private List<FastHit> processOneResponse(Result result,
+                                             ResponseAndHits responseAndHits,
+                                             boolean isRetry) {
         var responseOrError = responseAndHits.response();
         if (responseOrError.error().isPresent()) {
             if (hasReportedError || isRetry) {
@@ -237,7 +238,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
         } else {
             Client.ProtobufResponse response = responseOrError.response().get();
             byte[] responseBytes = compressor.decompress(response);
-            return fill(result, responseAndHits.hits(), summaryClass, responseBytes, isRetry);
+            return fill(result, responseAndHits.hits(), responseBytes, isRetry);
         }
         return List.of();
     }
@@ -255,7 +256,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
         }
     }
 
-    private List<FastHit> fill(Result result, List<FastHit> hits, String summaryClass, byte[] payload, boolean isRetry) {
+    private List<FastHit> fill(Result result, List<FastHit> hits, byte[] payload, boolean isRetry) {
         try {
             var protobuf = SearchProtocol.DocsumReply.parseFrom(payload);
             var root = (decodePolicy == DecodePolicy.ONDEMAND)
@@ -341,7 +342,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
                         }
                         break;
                     }
-                    processOneResponse(result, responseAndHits, summaryClass, true);
+                    processOneResponse(result, responseAndHits, true);
                     outstandingResponses--;
                 }
                 skippedHits.removeIf(hit -> !partialSummaryHandler.needFill(hit));
@@ -360,17 +361,17 @@ public class RpcProtobufFillInvoker extends FillInvoker {
         if (count < 100000) return (count % 1000) == 0;
         return (count % 10000) == 0;
     }
-    private static final AtomicInteger retryCounter = new AtomicInteger();
-    private static final AtomicInteger noRetryCounter = new AtomicInteger();
-    private static final AtomicInteger retryTimeoutCounter = new AtomicInteger();
+
     private static boolean shouldLogRetry() {
         int count = retryCounter.getAndAdd(1);
         return shouldLogForCount(count);
     }
+
     private static boolean shouldLogNoRetry() {
         int count = noRetryCounter.getAndAdd(1);
         return shouldLogForCount(count);
     }
+
     private static boolean shouldLogRetryTimeout() {
         int count = retryTimeoutCounter.getAndAdd(1);
         return shouldLogForCount(count);
