@@ -298,7 +298,7 @@ TensorAttribute::getTensor(DocId docId) const
 std::unique_ptr<vespalib::StateExplorer>
 TensorAttribute::make_state_explorer() const
 {
-    return std::make_unique<TensorAttributeExplorer>(_compactGeneration, _refVector, _tensorStore, _index.get());
+    return std::make_unique<TensorAttributeExplorer>(_compactGeneration.value(), _refVector, _tensorStore, _index.get());
 }
 
 void

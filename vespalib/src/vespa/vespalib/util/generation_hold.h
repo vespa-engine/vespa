@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <cstdint>
+#include "generation.h"
 #include <atomic>
 
 namespace vespalib {
@@ -22,8 +22,8 @@ class GenerationHold {
     static bool valid(uint32_t refCount) noexcept { return (refCount & 1) == 0u; }
 
 public:
-    using generation_t = uint64_t;
-    using sgeneration_t = int64_t;
+    static_assert(std::atomic<Generation>::is_always_lock_free);
+    using generation_t = Generation;
 
     std::atomic<generation_t> _generation;
     GenerationHold*           _next; // next free element or next newer element.

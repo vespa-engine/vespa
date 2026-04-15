@@ -40,6 +40,7 @@ using search::common::FileHeaderContext;
 using search::index::DummyFileHeaderContext;
 using search::attribute::BasicType;
 using search::attribute::IAttributeVector;
+using vespalib::Generation;
 using std::string;
 namespace fs = std::filesystem;
 
@@ -1875,13 +1876,13 @@ AttributeTest::testGeneration(const AttributePtr & attr, bool exactStatus)
     auto & ia = static_cast<IntegerAttribute &>(*attr.get());
     // add docs to trigger inc generation when data vector is full
     AttributeVector::DocId docId;
-    EXPECT_EQ(0u, ia.getCurrentGeneration());
+    EXPECT_EQ(Generation(0u), ia.getCurrentGeneration());
     EXPECT_TRUE(ia.addDoc(docId));
-    EXPECT_EQ(0u, ia.getCurrentGeneration());
+    EXPECT_EQ(Generation(0u), ia.getCurrentGeneration());
     EXPECT_TRUE(ia.addDoc(docId));
-    EXPECT_EQ(0u, ia.getCurrentGeneration());
+    EXPECT_EQ(Generation(0u), ia.getCurrentGeneration());
     ia.commit(CommitParam::UpdateStats::FORCE);
-    EXPECT_EQ(1u, ia.getCurrentGeneration());
+    EXPECT_EQ(Generation(1u), ia.getCurrentGeneration());
     uint64_t lastAllocated;
     uint64_t lastOnHold;
     vespalib::MemoryUsage changeVectorMemoryUsage(attr->getChangeVectorMemoryUsage());
@@ -1898,9 +1899,9 @@ AttributeTest::testGeneration(const AttributePtr & attr, bool exactStatus)
     {
         AttributeGuard ag(attr); // guard on generation 1
         EXPECT_TRUE(ia.addDoc(docId)); // inc gen
-        EXPECT_EQ(2u, ia.getCurrentGeneration());
+        EXPECT_EQ(Generation(2u), ia.getCurrentGeneration());
         ia.commit(CommitParam::UpdateStats::FORCE);
-        EXPECT_EQ(3u, ia.getCurrentGeneration());
+        EXPECT_EQ(Generation(3u), ia.getCurrentGeneration());
         if (exactStatus) {
             EXPECT_EQ(6u + changeVectorAllocated, ia.getStatus().getAllocated());
             EXPECT_EQ(2u, ia.getStatus().getOnHold()); // no cleanup due to guard
@@ -1912,11 +1913,11 @@ AttributeTest::testGeneration(const AttributePtr & attr, bool exactStatus)
         }
     }
     EXPECT_TRUE(ia.addDoc(docId));
-    EXPECT_EQ(3u, ia.getCurrentGeneration());
+    EXPECT_EQ(Generation(3u), ia.getCurrentGeneration());
     {
         AttributeGuard ag(attr); // guard on generation 3
         ia.commit(CommitParam::UpdateStats::FORCE);
-        EXPECT_EQ(4u, ia.getCurrentGeneration());
+        EXPECT_EQ(Generation(4u), ia.getCurrentGeneration());
         if (exactStatus) {
             EXPECT_EQ(4u + changeVectorAllocated, ia.getStatus().getAllocated());
             EXPECT_EQ(0u, ia.getStatus().getOnHold()); // cleanup at end of addDoc()
@@ -1930,9 +1931,9 @@ AttributeTest::testGeneration(const AttributePtr & attr, bool exactStatus)
     {
         AttributeGuard ag(attr); // guard on generation 4
         EXPECT_TRUE(ia.addDoc(docId)); // inc gen
-        EXPECT_EQ(5u, ia.getCurrentGeneration());
+        EXPECT_EQ(Generation(5u), ia.getCurrentGeneration());
         ia.commit(CommitParam::UpdateStats::FORCE);
-        EXPECT_EQ(6u, ia.getCurrentGeneration());
+        EXPECT_EQ(Generation(6u), ia.getCurrentGeneration());
         if (exactStatus) {
             EXPECT_EQ(10u + changeVectorAllocated, ia.getStatus().getAllocated());
             EXPECT_EQ(4u, ia.getStatus().getOnHold()); // no cleanup due to guard
@@ -1944,7 +1945,7 @@ AttributeTest::testGeneration(const AttributePtr & attr, bool exactStatus)
         }
     }
     ia.commit(CommitParam::UpdateStats::FORCE);
-    EXPECT_EQ(7u, ia.getCurrentGeneration());
+    EXPECT_EQ(Generation(7u), ia.getCurrentGeneration());
     if (exactStatus) {
         EXPECT_EQ(6u + changeVectorAllocated, ia.getStatus().getAllocated());
         EXPECT_EQ(0u, ia.getStatus().getOnHold()); // cleanup at end of commit()

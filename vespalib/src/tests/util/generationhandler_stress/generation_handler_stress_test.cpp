@@ -12,6 +12,7 @@
 LOG_SETUP("generation_handler_stress_test");
 
 using vespalib::Executor;
+using vespalib::Generation;
 using vespalib::GenerationHandler;
 using vespalib::makeLambdaTask;
 using vespalib::ThreadStackExecutor;
@@ -37,22 +38,22 @@ public:
 
 struct WorkContext
 {
-    std::atomic<uint64_t> _generation;
+    std::atomic<Generation> _generation;
 
     WorkContext() noexcept
-        : _generation(0)
+        : _generation(Generation(0))
     {
     }
 };
 
 struct IndirectContext {
-    std::atomic<uint64_t *> _value_ptr;
+    std::atomic<Generation*> _value_ptr;
     char _pad[256];
     static constexpr size_t values_size = 65536;
-    uint64_t _values[values_size];
+    Generation _values[values_size];
 
     IndirectContext() noexcept;
-    uint64_t* calc_value_ptr(uint64_t idx) { return &_values[(idx & (values_size - 1))]; }
+    Generation* calc_value_ptr(Generation idx) { return &_values[(idx.value() & (values_size - 1))]; }
 };
 
 IndirectContext::IndirectContext() noexcept
@@ -222,7 +223,7 @@ Fixture::read_indirect_work(const IndirectContext& context)
 {
     uint64_t i;
     uint64_t cnt = std::numeric_limits<uint32_t>::max();
-    uint64_t old_value = 0;
+    Generation old_value(0);
     for (i = 0; i < cnt && !_stopRead.load(); ++i) {
         auto guard = _generationHandler.takeGuard();
         // Data referenced by pointer is protected by guard
@@ -240,24 +241,24 @@ Fixture::write_indirect_work(uint64_t cnt, IndirectContext& context)
 {
     ReadStopper read_stopper(_stopRead);
     uint32_t sleep_cnt = 0;
-    ASSERT_EQ(0, _generationHandler.getCurrentGeneration());
+    ASSERT_EQ(Generation(0), _generationHandler.getCurrentGeneration());
     auto oldest_gen = _generationHandler.get_oldest_used_generation();
     for (uint64_t i = 0; i < cnt; ++i) {
         auto gen = _generationHandler.getCurrentGeneration();
         // Hold data for gen, write new data for next_gen
         auto next_gen = gen + 1;
         auto *v_ptr = context.calc_value_ptr(next_gen);
-        ASSERT_EQ(0u, *v_ptr);
+        ASSERT_EQ(Generation(0u), *v_ptr);
         *v_ptr = next_gen;
         context._value_ptr.store(v_ptr, std::memory_order_release);
         _generationHandler.incGeneration();
         auto first_used_gen = _generationHandler.get_oldest_used_generation();
         while (oldest_gen < first_used_gen) {
             // Clear data that readers should no longer have access to.
-            *context.calc_value_ptr(oldest_gen) = 0;
+            *context.calc_value_ptr(oldest_gen) = Generation(0);
             ++oldest_gen;
         }
-        while ((next_gen - first_used_gen) >= context.values_size - 2) {
+        while ((next_gen.value() - first_used_gen.value()) >= context.values_size - 2) {
             // Sleep if writer gets too much ahead of readers.
             std::this_thread::sleep_for(1ms);
             ++sleep_cnt;

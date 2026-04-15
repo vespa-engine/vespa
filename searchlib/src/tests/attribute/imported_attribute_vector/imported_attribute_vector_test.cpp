@@ -16,6 +16,7 @@
 using search::attribute::IAttributeVector;
 using search::tensor::ITensorAttribute;
 using search::tensor::TensorAttribute;
+using vespalib::Generation;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 using vespalib::eval::TensorSpec;
@@ -86,17 +87,17 @@ TEST(ImportedAttributeVectorTest, makeReadGuard_false_acquires_guards_on_both_ta
         add_n_docs_with_undefined_values(*f.reference_attr, 1);
         add_n_docs_with_undefined_values(*f.target_attr, 1);
         
-        EXPECT_EQ(2u, f.target_attr->getCurrentGeneration());
-        EXPECT_EQ(2u, f.reference_attr->getCurrentGeneration());
+        EXPECT_EQ(Generation(2u), f.target_attr->getCurrentGeneration());
+        EXPECT_EQ(Generation(2u), f.reference_attr->getCurrentGeneration());
         // Should still be holding guard for first generation of writes for both attributes
-        EXPECT_EQ(1u, f.target_attr->get_oldest_used_generation());
-        EXPECT_EQ(1u, f.reference_attr->get_oldest_used_generation());
+        EXPECT_EQ(Generation(1u), f.target_attr->get_oldest_used_generation());
+        EXPECT_EQ(Generation(1u), f.reference_attr->get_oldest_used_generation());
     }
     // Force a generation handler update
     add_n_docs_with_undefined_values(*f.reference_attr, 1);
     add_n_docs_with_undefined_values(*f.target_attr, 1);
-    EXPECT_EQ(3u, f.target_attr->get_oldest_used_generation());
-    EXPECT_EQ(3u, f.reference_attr->get_oldest_used_generation());
+    EXPECT_EQ(Generation(3u), f.target_attr->get_oldest_used_generation());
+    EXPECT_EQ(Generation(3u), f.reference_attr->get_oldest_used_generation());
 }
 
 TEST(ImportedAttributeVectorTest, makeReadGuard_true_acquires_enum_guard_on_target_and_regular_guard_on_reference_attribute)
@@ -110,18 +111,18 @@ TEST(ImportedAttributeVectorTest, makeReadGuard_true_acquires_enum_guard_on_targ
         add_n_docs_with_undefined_values(*f.target_attr, 1);
         add_n_docs_with_undefined_values(*f.reference_attr, 1);
 
-        EXPECT_EQ(5u, f.target_attr->getCurrentGeneration());
-        EXPECT_EQ(2u, f.reference_attr->getCurrentGeneration());
+        EXPECT_EQ(Generation(5u), f.target_attr->getCurrentGeneration());
+        EXPECT_EQ(Generation(2u), f.reference_attr->getCurrentGeneration());
 
-        EXPECT_EQ(3u, f.target_attr->get_oldest_used_generation());
-        EXPECT_EQ(1u, f.reference_attr->get_oldest_used_generation());
+        EXPECT_EQ(Generation(3u), f.target_attr->get_oldest_used_generation());
+        EXPECT_EQ(Generation(1u), f.reference_attr->get_oldest_used_generation());
         EXPECT_TRUE(has_active_enum_guards(*f.target_attr));
     }
     // Force a generation handler update
     add_n_docs_with_undefined_values(*f.reference_attr, 1);
     add_n_docs_with_undefined_values(*f.target_attr, 1);
-    EXPECT_EQ(7u, f.target_attr->get_oldest_used_generation());
-    EXPECT_EQ(3u, f.reference_attr->get_oldest_used_generation());
+    EXPECT_EQ(Generation(7u), f.target_attr->get_oldest_used_generation());
+    EXPECT_EQ(Generation(3u), f.reference_attr->get_oldest_used_generation());
     EXPECT_FALSE(has_active_enum_guards(*f.target_attr));
 }
 

@@ -16,6 +16,7 @@ using document::GlobalId;
 using document::BucketId;
 using document::DocumentId;
 using storage::spi::Timestamp;
+using vespalib::Generation;
 using vespalib::GenerationHandler;
 
 namespace proton {
@@ -144,16 +145,16 @@ GidToLidMapperTest::~GidToLidMapperTest() = default;
 
 TEST_F(GidToLidMapperTest, test_that_mapper_holds_read_guard)
 {
-    assertGenerations(3, 3, "initial");
+    assertGenerations(Generation(3), Generation(3), "initial");
     auto factory = getGidToLidMapperFactory();
-    assertPut(doc3, 1, 4, 4, [&]() { return factory->getMapper(); }, "put1");
+    assertPut(doc3, 1, Generation(4), Generation(4), [&]() { return factory->getMapper(); }, "put1");
     // Remove and readd withoug guard, old docid can be reused
     remove(1);
-    assertPut(doc3, 1, 7, 7, [&]() { return factory->getMapper(); }, "put2");
+    assertPut(doc3, 1, Generation(7), Generation(7), [&]() { return factory->getMapper(); }, "put2");
     // Remove and readd withoug guard, old docid cannot be reused
     auto mapper = factory->getMapper();
     remove(1);
-    assertPut(doc3, 2, 10, 7, [&]() -> auto & { return mapper; }, "put3");
+    assertPut(doc3, 2, Generation(10), Generation(7), [&]() -> auto & { return mapper; }, "put3");
 }
 
 TEST_F(GidToLidMapperTest, Test_that_gid_mapper_can_iterate_over_known_gids)

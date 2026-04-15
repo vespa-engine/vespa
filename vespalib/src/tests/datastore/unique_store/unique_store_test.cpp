@@ -112,8 +112,8 @@ struct TestBase : public ::testing::Test {
     }
     void reclaim_memory() {
         store.freeze();
-        store.assign_generation(generation++);
-        store.reclaim_memory(generation);
+        store.assign_generation(generation);
+        store.reclaim_memory(++generation);
     }
     void compactWorst() {
         CompactionSpec compaction_spec(true, true);

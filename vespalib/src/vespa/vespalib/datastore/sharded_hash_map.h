@@ -36,7 +36,6 @@ class ShardedHashMap {
 public:
     using KvType = std::pair<AtomicEntryRef, AtomicEntryRef>;
     using generation_t = GenerationHandler::generation_t;
-    using sgeneration_t = GenerationHandler::sgeneration_t;
 private:
     GenerationHolder _gen_holder;
     static constexpr size_t num_shards = 3;

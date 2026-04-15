@@ -266,7 +266,7 @@ private:
     transactionlog::SyncProxy               &_tlSyncer;
     IBucketizer::SP                          _bucketizer;
     NameIdSet                                _currentlyCompacting;
-    uint64_t                                 _compactLidSpaceGeneration;
+    vespalib::Generation                     _compactLidSpaceGeneration;
     NameId                                   _last_name_id;
 };
 

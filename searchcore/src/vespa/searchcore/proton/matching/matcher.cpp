@@ -68,7 +68,7 @@ struct StupidMetaStore : search::IDocumentMetaStore {
     DocId getCommittedDocIdLimit() const override { return 1; }
     DocId getNumUsedLids() const override { return 0; }
     DocId getNumActiveLids() const override { return 0; }
-    uint64_t getCurrentGeneration() const override { return 0; }
+    vespalib::Generation getCurrentGeneration() const override { return vespalib::Generation(0); }
     LidUsageStats getLidUsageStats() const override { return {}; }
     Blueprint::UP createWhiteListBlueprint() const override { return {}; }
     void foreach(const search::IGidToLidMapperVisitor &) const override { }

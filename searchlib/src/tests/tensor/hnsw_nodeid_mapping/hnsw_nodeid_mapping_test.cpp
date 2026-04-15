@@ -6,6 +6,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace search::tensor;
+using vespalib::Generation;
 using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryRef;
 
@@ -18,7 +19,7 @@ public:
     HnswNodeidMappingTest()
         : mapping()
     {
-        mapping.assign_generation(10);
+        mapping.assign_generation(Generation(10));
     }
     void expect_allocate_get(const NodeidVector& exp_ids, uint32_t docid) {
         auto ids = mapping.allocate_ids(docid, exp_ids.size());
@@ -48,8 +49,8 @@ public:
         }
     }
     void drop_held_memory() {
-        mapping.assign_generation(1);
-        mapping.reclaim_memory(2);
+        mapping.assign_generation(Generation(1));
+        mapping.reclaim_memory(Generation(2));
     }
 };
 
@@ -81,22 +82,22 @@ TEST_F(HnswNodeidMappingTest, free_ids_puts_nodeids_on_hold_list_and_then_free_l
     expect_allocate_get({4, 5, 6}, 2);
 
     mapping.free_ids(1); // {1, 2, 3} are inserted into hold list
-    mapping.assign_generation(11);
+    mapping.assign_generation(Generation(11));
 
     expect_allocate_get({7, 8}, 3); // Free list is NOT used
-    mapping.reclaim_memory(12); // {1, 2, 3} are moved to free list
+    mapping.reclaim_memory(Generation(12)); // {1, 2, 3} are moved to free list
     expect_allocate_get({3, 2}, 4); // Free list is used
 
     mapping.free_ids(2); // {4, 5, 6} are inserted into hold list
-    mapping.assign_generation(12);
+    mapping.assign_generation(Generation(12));
     mapping.free_ids(3); // {7, 8} are inserted into hold list
-    mapping.assign_generation(13);
+    mapping.assign_generation(Generation(13));
 
-    mapping.reclaim_memory(13); // {4, 5, 6} are moved to free list
+    mapping.reclaim_memory(Generation(13)); // {4, 5, 6} are moved to free list
     expect_allocate_get({6, 5}, 5); // Free list is used
     expect_allocate_get({4, 1, 9}, 6); // Free list is first used, then new nodeid is allocated
 
-    mapping.reclaim_memory(14); // {7, 8} are moved to free list
+    mapping.reclaim_memory(Generation(14)); // {7, 8} are moved to free list
     expect_allocate_get({8, 7, 10}, 7); // Free list is first used, then new nodeid is allocated
 }
 

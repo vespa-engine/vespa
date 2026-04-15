@@ -99,7 +99,7 @@ AttributeVector::AttributeVector(std::string_view baseFileName, const Config &c)
       _committedDocIdLimit(0u),
       _uncommittedDocIdLimit(0u),
       _createSerialNum(0u),
-      _compactLidSpaceGeneration(0u),
+      _compactLidSpaceGeneration(generation_t(0u)),
       _hasEnum(false),
       _loaded(false),
       _isUpdateableInMemoryOnly(attribute::isUpdateableInMemoryOnly(getName(), getConfig())),

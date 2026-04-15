@@ -115,15 +115,15 @@ TEST(RcuVectorTest, resize)
         RcuVectorBase<int8_t> v(growStrategy(16, 1.0, 0), g);
         v.push_back(1);
         v.push_back(2);
-        g.assign_generation(0);
-        g.reclaim(1);
+        g.assign_generation(Generation(0));
+        g.reclaim(Generation(1));
         const int8_t *old = &v[0];
         EXPECT_EQ(16u, v.capacity());
         EXPECT_EQ(2u, v.size());
         v.ensure_size(32, 3);
         v[0] = 3;
         v[1] = 3;
-        g.assign_generation(1);
+        g.assign_generation(Generation(1));
         EXPECT_EQ(1, old[0]);
         EXPECT_EQ(2, old[1]);
         EXPECT_EQ(3, v[0]);
@@ -132,7 +132,7 @@ TEST(RcuVectorTest, resize)
         EXPECT_EQ(3, v[31]);
         EXPECT_EQ(64u, v.capacity());
         EXPECT_EQ(32u, v.size());
-        g.reclaim(2);
+        g.reclaim(Generation(2));
     }
 }
 
@@ -145,15 +145,15 @@ TEST(RcuVectorTest, generation_handling)
     v.push_back(20); // new array
     EXPECT_EQ(8u, v.getMemoryUsage().allocatedBytesOnHold());
 
-    v.setGeneration(1);
+    v.setGeneration(Generation(1));
     v.push_back(30);
     EXPECT_EQ(8u, v.getMemoryUsage().allocatedBytesOnHold());
     v.push_back(40); // new array
     EXPECT_EQ(24u, v.getMemoryUsage().allocatedBytesOnHold());
 
-    v.setGeneration(2);
+    v.setGeneration(Generation(2));
     v.push_back(50);
-    v.reclaim_memory(3);
+    v.reclaim_memory(Generation(3));
     EXPECT_EQ(0u, v.getMemoryUsage().allocatedBytesOnHold());
     v.push_back(60); // new array
     EXPECT_EQ(24u, v.getMemoryUsage().allocatedBytesOnHold());
@@ -197,7 +197,7 @@ TEST(RcuVectorTest, memory_usage)
     EXPECT_TRUE(assertUsage(MemoryUsage(6,6,0,2), v.getMemoryUsage()));
     v.push_back(4);
     EXPECT_TRUE(assertUsage(MemoryUsage(12,11,0,6), v.getMemoryUsage()));
-    v.reclaim_memory(1);
+    v.reclaim_memory(Generation(1));
     EXPECT_TRUE(assertUsage(MemoryUsage(6,5,0,0), v.getMemoryUsage()));
 }
 
@@ -210,8 +210,8 @@ void verify_shrink_with_buffer_copying(size_t initial_size, size_t absolute_mini
     v.push_back(2);
     v.push_back(3);
     v.push_back(4);
-    g.assign_generation(0);
-    g.reclaim(1);
+    g.assign_generation(Generation(0));
+    g.reclaim(Generation(1));
     MemoryUsage mu;
     mu = v.getMemoryUsage();
     mu.incAllocatedBytesOnHold(g.get_held_bytes());
@@ -224,14 +224,14 @@ void verify_shrink_with_buffer_copying(size_t initial_size, size_t absolute_mini
     EXPECT_EQ(4, v[3]);
     const int8_t *old = &v[0];
     v.shrink(2);
-    g.assign_generation(1);
+    g.assign_generation(Generation(1));
     EXPECT_EQ(2u, v.size());
     EXPECT_EQ(minimal_capacity, v.capacity());
     EXPECT_EQ(1, v[0]);
     EXPECT_EQ(2, v[1]);
     EXPECT_EQ(1, old[0]);
     EXPECT_EQ(2, old[1]);
-    g.reclaim(2);
+    g.reclaim(Generation(2));
     EXPECT_EQ(1, v[0]);
     EXPECT_EQ(2, v[1]);
     mu = v.getMemoryUsage();
@@ -307,8 +307,8 @@ TEST(RcuVectorTest, small_expand)
     v.push_back(2);
     EXPECT_EQ(2u, v.capacity());
     EXPECT_EQ(2u, v.size());
-    g.assign_generation(1);
-    g.reclaim(2);
+    g.assign_generation(Generation(1));
+    g.reclaim(Generation(2));
 }
 
 struct FixtureBase {
@@ -358,7 +358,7 @@ TEST(RcuVectorTest, memory_allocator_can_be_set)
 {
     Fixture f;
     EXPECT_EQ(AllocStats(2, 0), f.stats);
-    f.assign_and_reclaim(1, 2);
+    f.assign_and_reclaim(Generation(1), Generation(2));
     EXPECT_EQ(AllocStats(2, 1), f.stats);
 }
 
@@ -368,7 +368,7 @@ TEST(RcuVectorTest, memory_allocator_is_preserved_across_reset)
     f.arr.reset();
     f.arr.reserve(100);
     EXPECT_EQ(AllocStats(4, 1), f.stats);
-    f.assign_and_reclaim(1, 2);
+    f.assign_and_reclaim(Generation(1), Generation(2));
     EXPECT_EQ(AllocStats(4, 3), f.stats);
 }
 
@@ -379,7 +379,7 @@ TEST(RcuVectorTest, created_replacement_vector_uses_same_memory_allocator)
     EXPECT_EQ(AllocStats(2, 0), f.stats);
     arr2.reserve(100);
     EXPECT_EQ(AllocStats(3, 0), f.stats);
-    f.assign_and_reclaim(1, 2);
+    f.assign_and_reclaim(Generation(1), Generation(2));
     EXPECT_EQ(AllocStats(3, 1), f.stats);
 }
 
@@ -390,7 +390,7 @@ TEST(RcuVectorTest, ensure_size_and_shrink_use_same_memory_allocator)
     EXPECT_EQ(AllocStats(3, 0), f.stats);
     f.arr.shrink(1000);
     EXPECT_EQ(AllocStats(4, 0), f.stats);
-    f.assign_and_reclaim(1, 2);
+    f.assign_and_reclaim(Generation(1), Generation(2));
     EXPECT_EQ(AllocStats(4, 3), f.stats);
 }
 

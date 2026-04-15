@@ -1331,7 +1331,7 @@ TEST(TensorAttributeTest, commit_ensures_transfer_and_trim_hold_lists_on_nearest
     EXPECT_EQ(gen_1 - 1, index.get_transfer_gen());
     EXPECT_EQ(gen_1, index.get_trim_gen());
 
-    generation_t gen_2 = 0;
+    generation_t gen_2(0);
     {
         // Takes guard on gen_1 if TensorAttributeFlags::use_nearest_neighbor_index_generation_manager is false.
         auto guard = f._attr->makeReadGuard(false);

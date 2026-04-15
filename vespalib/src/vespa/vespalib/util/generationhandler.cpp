@@ -24,8 +24,8 @@ GenerationHandler::update_oldest_used_generation()
 }
 
 GenerationHandler::GenerationHandler()
-    : _generation(0),
-      _oldest_used_generation(0),
+    : _generation(Generation(0)),
+      _oldest_used_generation(Generation(0)),
       _last(nullptr),
       _first(nullptr),
       _free(nullptr),
@@ -103,10 +103,9 @@ GenerationHandler::incGeneration()
 uint32_t
 GenerationHandler::getGenerationRefCount(generation_t gen) const
 {
-    if (static_cast<sgeneration_t>(gen - getCurrentGeneration()) > 0)
+    if (gen > getCurrentGeneration() || get_oldest_used_generation() > gen) {
         return 0u;
-    if (static_cast<sgeneration_t>(get_oldest_used_generation() - gen) > 0)
-        return 0u;
+    }
     for (GenerationHold *hold = _first; hold != nullptr; hold = hold->_next) {
         if (hold->_generation.load(std::memory_order_relaxed) == gen)
             return hold->getRefCount();

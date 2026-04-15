@@ -34,6 +34,7 @@ using document::BucketId;
 using namespace std::literals;
 using std::runtime_error;
 using vespalib::CpuUsage;
+using vespalib::Generation;
 using vespalib::GenerationHandler;
 using vespalib::IllegalStateException;
 using vespalib::getErrorString;
@@ -507,7 +508,7 @@ void LogDataStore::compactFile(FileId fileId)
     compacter.reset();
 
     std::this_thread::sleep_for(1s);
-    uint64_t currentGeneration;
+    Generation currentGeneration;
     {
         MonitorGuard guard(_updateLock);
         currentGeneration = _genHandler.getCurrentGeneration();

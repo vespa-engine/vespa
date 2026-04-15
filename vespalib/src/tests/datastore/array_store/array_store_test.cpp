@@ -159,8 +159,8 @@ struct ArrayStoreTest : public TestT
         return EntryRef();
     }
     void reclaim_memory() {
-        store.assign_generation(generation++);
-        store.reclaim_memory(generation);
+        store.assign_generation(generation);
+        store.reclaim_memory(++generation);
     }
     void compactWorst(bool compactMemory, bool compactAddressSpace) {
         CompactionSpec compaction_spec(compactMemory, compactAddressSpace);
