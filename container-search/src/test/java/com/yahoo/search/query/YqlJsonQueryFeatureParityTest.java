@@ -153,6 +153,12 @@ public class YqlJsonQueryFeatureParityTest {
     }
 
     @Test
+    void testFuzzyWithAnnotations() {
+        assertWhereParity("baz contains ({maxEditDistance: 3, prefixLength: 10}fuzzy('a b'))",
+                "{ 'contains' : ['baz', { 'fuzzy' : { 'children' : ['a b'], 'attributes' : { 'maxEditDistance' : 3, 'prefixLength' : 10 } } }] }");
+    }
+
+    @Test
     void testSameElement() {
         // Struct field with explicit contains
         assertWhereParity("baz contains sameElement(f1 contains 'a', f2 contains 'b')",
@@ -259,6 +265,12 @@ public class YqlJsonQueryFeatureParityTest {
     void testNearestNeighbor() {
         assertWhereParity("nearestNeighbor(f1field, q2prop)",
                 "{ 'nearestNeighbor' : ['f1field', 'q2prop'] }");
+    }
+
+    @Test
+    void testNearestNeighborWithAnnotations() {
+        assertWhereParity("{targetHits: 37, approximate: false, distanceThreshold: 100.5}nearestNeighbor(f1field, q2prop)",
+                "{ 'nearestNeighbor' : { 'children' : ['f1field', 'q2prop'], 'attributes' : { 'targetHits' : 37, 'approximate' : false, 'distanceThreshold' : 100.5 } } }");
     }
 
     /** Asserts parity using a where-clause; automatically wraps the YQL in {@code select * from sources * where ...} */
