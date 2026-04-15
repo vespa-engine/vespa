@@ -90,8 +90,10 @@ public abstract class AbstractHttpEmbedder extends AbstractComponent {
                         "Embedding API request failed with status %d: %s".formatted(response.code(), body));
             };
         } catch (InterruptedIOException e) {
+            runtime.sampleRequestFailure(context, 0);
             throw new TimeoutException("Embedding API call timed out after %dms".formatted(timeoutMs), e);
         } catch (IOException e) {
+            runtime.sampleRequestFailure(context, 0);
             throw new RuntimeException("Embedding API call failed: " + e.getMessage(), e);
         }
     }
