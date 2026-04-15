@@ -19,7 +19,7 @@ public:
     constexpr Generation() noexcept : _value(0) { }
     constexpr explicit Generation(value_type value_) noexcept : _value(value_) { }
     [[nodiscard]] constexpr value_type value() const noexcept { return _value; }
-    auto operator<=>(const Generation& rhs) const noexcept = default;
+    [[nodiscard]] constexpr auto operator<=>(const Generation& rhs) const noexcept = default;
     constexpr Generation& operator++() noexcept { ++_value; return *this; }
     [[nodiscard]] constexpr Generation operator+(value_type delta) const noexcept { return Generation(value() + delta); }
     [[nodiscard]] constexpr Generation operator-(value_type delta) const noexcept { return Generation(value() - delta); }
