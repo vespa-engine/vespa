@@ -267,6 +267,7 @@ DocumentMetaStore::before_inc_generation(generation_t current_gen)
 {
     _gidToLidMap.getAllocator().freeze();
     _gidToLidMap.getAllocator().assign_generation(current_gen);
+    _docid_store.assign_generation(current_gen);
     getGenerationHolder().assign_generation(current_gen);
     updateStat(CommitParam::UpdateStats::SKIP);
 }
@@ -275,6 +276,7 @@ void
 DocumentMetaStore::reclaim_memory(generation_t oldest_used_gen)
 {
     _gidToLidMap.getAllocator().reclaim_memory(oldest_used_gen);
+    _docid_store.reclaim_memory(oldest_used_gen);
     _lidAlloc.reclaim_memory(oldest_used_gen);
     getGenerationHolder().reclaim(oldest_used_gen);
 }
