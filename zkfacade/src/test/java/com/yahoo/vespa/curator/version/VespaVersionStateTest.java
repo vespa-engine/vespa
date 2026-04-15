@@ -12,44 +12,44 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author hmusum
  */
-public class CuratorVersionStateTest {
+public class VespaVersionStateTest {
 
     private final MockCurator curator = new MockCurator();
 
     @Test
     public void storedVersion() {
-        CuratorVersionState state = new CuratorVersionState(curator, new Version(8, 100, 1));
+        VespaVersionState state = new VespaVersionState(curator, new Version(8, 100, 1));
         assertEquals(Version.emptyVersion, state.storedVersion());
 
-        curator.set(CuratorVersionState.versionPath, "8.99.0".getBytes());
+        curator.set(VespaVersionState.versionPath, "8.99.0".getBytes());
         assertEquals(new Version(8, 99, 0), state.storedVersion());
     }
 
     @Test
     public void storedVersionWithInvalidData() {
-        curator.set(CuratorVersionState.versionPath, "not-a-version".getBytes());
-        CuratorVersionState state = new CuratorVersionState(curator, new Version(8, 100, 1));
+        curator.set(VespaVersionState.versionPath, "not-a-version".getBytes());
+        VespaVersionState state = new VespaVersionState(curator, new Version(8, 100, 1));
         assertEquals(Version.emptyVersion, state.storedVersion());
     }
 
     @Test
-    public void isUpgraded() {
-        CuratorVersionState state = new CuratorVersionState(curator, new Version(8, 100, 1));
+    public void isUpgrading() {
+        VespaVersionState state = new VespaVersionState(curator, new Version(8, 100, 1));
 
         // No stored version => upgraded
-        assertTrue(state.isUpgraded());
+        assertTrue(state.isUpgrading());
 
         // Stored version < current => upgraded
-        curator.set(CuratorVersionState.versionPath, "8.99.0".getBytes());
-        assertTrue(state.isUpgraded());
+        curator.set(VespaVersionState.versionPath, "8.99.0".getBytes());
+        assertTrue(state.isUpgrading());
 
         // Stored version == current => not upgraded
-        curator.set(CuratorVersionState.versionPath, "8.100.1".getBytes());
-        assertFalse(state.isUpgraded());
+        curator.set(VespaVersionState.versionPath, "8.100.1".getBytes());
+        assertFalse(state.isUpgrading());
 
         // Stored version > current => not upgraded
-        curator.set(CuratorVersionState.versionPath, "8.200.0".getBytes());
-        assertFalse(state.isUpgraded());
+        curator.set(VespaVersionState.versionPath, "8.200.0".getBytes());
+        assertFalse(state.isUpgrading());
     }
 
 }

@@ -7,7 +7,7 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.io.IOUtils;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.curator.version.CuratorVersionState;
+import com.yahoo.vespa.curator.version.VespaVersionState;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.text.Text;
 
@@ -28,7 +28,7 @@ import static java.util.logging.Level.WARNING;
  * @author Ulf Lilleengen
  * @author hmusum
  */
-public class VersionState extends CuratorVersionState {
+public class VersionState extends VespaVersionState {
 
     private static final Logger log = Logger.getLogger(VersionState.class.getName());
     private static final int allowedMinorVersionInterval = 30; // (2 months of releases => ~30 releases)
@@ -63,7 +63,7 @@ public class VersionState extends CuratorVersionState {
     }
 
     @Override
-    public boolean isUpgraded() {
+    public boolean isUpgrading() {
         Version storedVersion = storedVersion();
         if (storedVersion.equals(Version.emptyVersion)) return true;
 

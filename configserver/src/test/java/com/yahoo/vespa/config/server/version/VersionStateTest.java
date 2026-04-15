@@ -32,32 +32,32 @@ public class VersionStateTest {
 
         VersionState state = createVersionState();
         assertEquals(unknownVersion, state.storedVersion());
-        assertTrue(state.isUpgraded());
+        assertTrue(state.isUpgrading());
         state.storeCurrentVersion();
-        assertFalse(state.isUpgraded());
+        assertFalse(state.isUpgrading());
 
         state.storeVersion("badversion");
         assertEquals(unknownVersion, state.storedVersion());
-        assertTrue(state.isUpgraded());
+        assertTrue(state.isUpgrading());
 
         state.storeVersion("5.0.0");
         assertEquals(new Version(5, 0, 0), state.storedVersion());
-        assertTrue(state.isUpgraded());
+        assertTrue(state.isUpgrading());
 
         // Remove zk node, should find version in ZooKeeper
         curator.delete(VersionState.versionPath);
         assertEquals(new Version(5, 0, 0), state.storedVersion());
-        assertTrue(state.isUpgraded());
+        assertTrue(state.isUpgrading());
 
         // Save new version, remove version in file, should find version in ZooKeeper
         state.storeVersion("6.0.0");
         Files.delete(state.versionFile().toPath());
         assertEquals(new Version(6, 0, 0), state.storedVersion());
-        assertTrue(state.isUpgraded());
+        assertTrue(state.isUpgrading());
 
         state.storeCurrentVersion();
         assertEquals(state.currentVersion(), state.storedVersion());
-        assertFalse(state.isUpgraded());
+        assertFalse(state.isUpgrading());
     }
 
     @Test

@@ -15,18 +15,18 @@ import java.util.Optional;
  *
  * @author hmusum
  */
-public class CuratorVersionState {
+public class VespaVersionState {
 
     public static final Path versionPath = Path.fromString("/config/v2/vespa_version");
 
     private final Curator curator;
     private final Version currentVersion;
 
-    public CuratorVersionState(Curator curator) {
+    public VespaVersionState(Curator curator) {
         this(curator, Vtag.currentVersion);
     }
 
-    public CuratorVersionState(Curator curator, Version currentVersion) {
+    public VespaVersionState(Curator curator, Version currentVersion) {
         this.curator = curator;
         this.currentVersion = currentVersion;
     }
@@ -50,11 +50,19 @@ public class CuratorVersionState {
     }
 
     /** Returns whether the current version is newer than the stored version */
-    public boolean isUpgraded() {
+    public boolean isUpgrading() {
         Version storedVersion = storedVersion();
         if (storedVersion.equals(Version.emptyVersion)) return true;
         return currentVersion().compareTo(storedVersion) > 0;
     }
+
+    /** Returns whether the current version is different than the stored version */
+    public boolean isUpgradingOrDowngrading() {
+        Version storedVersion = storedVersion();
+        if (storedVersion.equals(Version.emptyVersion)) return true;
+        return currentVersion().compareTo(storedVersion) != 0;
+    }
+
 
     @Override
     public String toString() {
