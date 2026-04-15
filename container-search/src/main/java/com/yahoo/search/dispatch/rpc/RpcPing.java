@@ -98,4 +98,5 @@ public class RpcPing implements Pinger, Client.ResponseReceiver {
                      " with hostname " + node.hostname() + " received too late, latest is " + node.getLastReceivedPongId());
         }
     }
+
 }
