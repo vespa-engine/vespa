@@ -16,7 +16,7 @@ struct TensorAttributeFlags
      * false => use generations from attribute vector.
      * true  => use generation manager owned by nearest neighbor index.
      */
-    static constexpr bool use_nearest_neighbor_index_generation_manager = false;
+    static constexpr bool use_nearest_neighbor_index_generation_manager = true;
 };
 
 }
