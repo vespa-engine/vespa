@@ -72,7 +72,7 @@ public class TenantApplications implements RequestHandler, HostValidator {
     private final TenantName tenant;
     private final ConfigActivationListener configActivationListener;
     private final ConfigResponseFactory responseFactory;
-    private final HostRegistry hostRegistry;
+    private final HostRegistry hostRegistry; // global host registry, hosts for all apps for all tenants
     private final ApplicationMapper applicationMapper = new ApplicationMapper();
     private final MetricUpdater tenantMetricUpdater;
     private final Clock clock;

@@ -836,8 +836,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             SessionRepository sessionRepository = tenant.getSessionRepository();
             HostRegistry hostRegistry = tenantApplications.hostRegistry();
 
-            // Phase A: Optimistic (lock-free) comparison of ApplicationId sets
-            Set<ApplicationId> registryApps = hostRegistry.getApplicationIds();
+            // Phase A: Optimistic (lock-free) comparison of ApplicationId sets.
+            // hostRegistry is global (hosts for all apps for all tenants), so scope to the current tenant.
+            Set<ApplicationId> registryApps = hostRegistry.getApplicationIds().stream()
+                    .filter(app -> app.tenant().equals(tenant.getName()))
+                    .collect(Collectors.toSet());
             Set<ApplicationId> activeApps = Set.copyOf(tenantApplications.activeApplications());
 
             Set<ApplicationId> inRegistryOnly = new HashSet<>(registryApps);
