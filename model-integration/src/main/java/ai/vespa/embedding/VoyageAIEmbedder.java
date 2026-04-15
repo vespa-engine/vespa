@@ -52,6 +52,8 @@ public class VoyageAIEmbedder extends AbstractHttpEmbedder implements Embedder {
         super(httpConfig);
         this.config = config;
         this.runtime = runtime;
+        if (config.apiKeySecretRef().isBlank())
+            throw new IllegalArgumentException("'api-key-secret-ref' must be configured for VoyageAI embedder");
         this.apiKey = secrets.get(config.apiKeySecretRef());
         this.batching = Embedder.Batching.of(
                 config.batching().maxSize(), Duration.ofMillis(config.batching().maxDelayMillis()));

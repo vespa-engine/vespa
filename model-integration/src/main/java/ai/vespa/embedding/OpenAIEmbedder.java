@@ -85,7 +85,12 @@ public class OpenAIEmbedder extends AbstractHttpEmbedder implements Embedder {
         var dimensionName = targetType.dimensions().get(0).name();
         return response.data.stream()
                 .sorted(Comparator.comparingInt(EmbeddingData::index))
-                .map(d -> EmbeddingQuantization.decodeBase64FloatTensor(d.embedding(), dimensionName, targetType.valueType()))
+                .map(d -> {
+                    if (d.embedding() == null)
+                        throw new IllegalStateException(
+                                "Embedding at index %d is null in API response — the provider may not support base64 encoding.".formatted(d.index()));
+                    return EmbeddingQuantization.decodeBase64FloatTensor(d.embedding(), dimensionName, targetType.valueType());
+                })
                 .toList();
     }
 
