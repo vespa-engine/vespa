@@ -1796,6 +1796,35 @@ TEST(DocumentMetaStoreTest, move_works)
     EXPECT_EQ(1u, lid);
 }
 
+TEST(DocumentMetaStoreTest, getting_full_document_id_works_after_move)
+{
+    DocumentMetaStore dms(createBucketDB(), "[documentmetastore]", search::GrowStrategy(), true, SubDbType::READY);
+    dms.constructFreeList();
+
+    assertPut(bucketId1, time1, 1u, docid1, dms);
+    assertPut(bucketId2, time2, 2u, docid2, dms);
+    EXPECT_EQ(docid1.toString(), dms.get_docid_string(gid1));
+    EXPECT_EQ(docid2.toString(), dms.get_docid_string(gid2));
+    EXPECT_TRUE(dms.remove(1u, 0u));
+    dms.commit();
+    EXPECT_EQ("", dms.get_docid_string(gid1));
+    EXPECT_EQ(docid2.toString(), dms.get_docid_string(gid2));
+    dms.removes_complete({ 1u });
+    EXPECT_EQ("", dms.get_docid_string(gid1));
+    EXPECT_EQ(docid2.toString(), dms.get_docid_string(gid2));
+    dms.move(2u, 1u, 0u);
+    dms.commit();
+    EXPECT_EQ("", dms.get_docid_string(gid1));
+    EXPECT_EQ(docid2.toString(), dms.get_docid_string(gid2));
+    dms.removes_complete({ 2u });
+    // Make sure that the lid of gid2 is 1, i.e., that the lid was moved
+    uint32_t lid = 0;
+    EXPECT_TRUE(dms.getLid(gid2, lid));
+    EXPECT_EQ(1u, lid);
+    EXPECT_EQ("", dms.get_docid_string(gid1));
+    EXPECT_EQ(docid2.toString(), dms.get_docid_string(gid2));
+}
+
 void
 assertLidSpace(uint32_t numDocs,
                uint32_t committedDocIdLimit,
