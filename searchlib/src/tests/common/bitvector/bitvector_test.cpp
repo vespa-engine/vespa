@@ -24,6 +24,7 @@
 
 using namespace search;
 
+using vespalib::Generation;
 using vespalib::alloc::Alloc;
 using vespalib::alloc::test::MemoryAllocatorObserver;
 using vespalib::datastore::Aligner;
@@ -795,8 +796,8 @@ TEST_F(BitVectorTest, requireThatGrowWorks)
     EXPECT_EQ(6144u - BitVector::num_guard_bits, v.writer().capacity());
     EXPECT_EQ(3u, v.writer().countTrueBits());
 
-    g.assign_generation(1);
-    g.reclaim(2);
+    g.assign_generation(Generation(1));
+    g.reclaim(Generation(2));
 }
 
 TEST_F(BitVectorTest, require_that_growable_bit_vectors_keeps_memory_allocator)
@@ -817,8 +818,8 @@ TEST_F(BitVectorTest, require_that_growable_bit_vectors_keeps_memory_allocator)
     EXPECT_EQ(AllocStats(4, 1), stats);
     v.writer().resize(1); // DO NOT TRY THIS AT HOME
     EXPECT_EQ(AllocStats(5, 2), stats);
-    g.assign_generation(1);
-    g.reclaim(2);
+    g.assign_generation(Generation(1));
+    g.reclaim(Generation(2));
 }
 
 TEST_F(BitVectorTest, require_that_creating_partial_nonoverlapping_vector_is_cleared) {
@@ -1008,8 +1009,8 @@ TEST_F(BitVectorTest, dynamic_guard_bits)
         bv.shrink(255);
         EXPECT_EQ(single_guard_bit ? 258 : 255, bv.reader().getFirstFalseBit(0));
     }
-    g.assign_generation(1);
-    g.reclaim(2);
+    g.assign_generation(Generation(1));
+    g.reclaim(Generation(2));
 }
 
 TEST_F(BitVectorTest, read_from_attribute_vector_file_with_1_guard_bit_in_stored_bitvector)
@@ -1029,8 +1030,8 @@ TEST_F(BitVectorTest, read_from_attribute_vector_file_with_1_guard_bit_in_stored
     bv.fixup_after_load();
     auto bv_snap = bv.make_snapshot(bv.writer().size());
     EXPECT_TRUE(*bv_snap == *_file_bv);
-    g.assign_generation(1);
-    g.reclaim(2);
+    g.assign_generation(Generation(1));
+    g.reclaim(Generation(2));
 }
 
 class BitVectorGuardBitsCompatibilityTest : public BitVectorTest,

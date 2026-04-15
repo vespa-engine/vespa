@@ -3,7 +3,9 @@
 
 #include "testandsetmessage.h"
 
-namespace document { class Document; }
+namespace document {
+class Document;
+}
 namespace documentapi {
 
 class PutDocumentMessage : public TestAndSetMessage {
@@ -39,9 +41,9 @@ public:
      *
      * @return The document.
      */
-    const DocumentSP & getDocumentSP() const { return _document; }
+    const DocumentSP& getDocumentSP() const { return _document; }
     [[nodiscard]] DocumentSP stealDocument() { return std::move(_document); }
-    const document::Document & getDocument() const { return *_document; }
+    const document::Document& getDocument() const { return *_document; }
 
     /**
      * Sets the document to put.
@@ -78,4 +80,4 @@ public:
     [[nodiscard]] bool get_create_if_non_existent() const noexcept { return _create_if_non_existent; }
 };
 
-}
+} // namespace documentapi

@@ -3,11 +3,8 @@
 
 namespace mbus {
 
-DestinationSessionParams::DestinationSessionParams() :
-    _name("destination"),
-    _broadcastName(true),
-    _defer_registration(false),
-    _handler(nullptr)
-{ }
+DestinationSessionParams::DestinationSessionParams()
+    : _name("destination"), _broadcastName(true), _defer_registration(false), _handler(nullptr) {
+}
 
 } // namespace mbus

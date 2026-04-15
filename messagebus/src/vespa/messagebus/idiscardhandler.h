@@ -9,8 +9,7 @@ namespace mbus {
  * This interface is implemented by application components that require special
  * handling when discarding a message with a non-empty callstack.
  */
-class IDiscardHandler
-{
+class IDiscardHandler {
 public:
     /**
      * Virtual destructor required for inheritance.
@@ -28,4 +27,3 @@ public:
 };
 
 } // namespace mbus
-

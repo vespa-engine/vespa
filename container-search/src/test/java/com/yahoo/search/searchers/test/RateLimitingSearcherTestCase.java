@@ -136,6 +136,7 @@ public class RateLimitingSearcherTestCase {
     }
 
     /** The purpose of this test is simply to verify that cost is picked up after executing the query */
+    @SuppressWarnings("removal")
     @After(RateLimitingSearcher.RATE_LIMITING)
     private static class CostSettingSearcher extends Searcher {
 

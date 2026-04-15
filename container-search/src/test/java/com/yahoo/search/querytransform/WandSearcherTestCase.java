@@ -204,7 +204,7 @@ public class WandSearcherTestCase {
 
         WandItem root = (WandItem) TestUtils.getQueryTreeRoot(r);
         assertEquals(VESPA_FIELD, root.getIndexName());
-        assertEquals(100, root.getTargetNumHits());
+        assertEquals(100, root.getTargetHits());
         assertEquals(0.0, root.getScoreThreshold(), delta);
         assertEquals(1.0, root.getThresholdBoostFactor(), delta);
         assertWeightedSetItem(root);
@@ -217,7 +217,7 @@ public class WandSearcherTestCase {
 
         WandItem root = (WandItem) TestUtils.getQueryTreeRoot(r);
         assertEquals(VESPA_FIELD, root.getIndexName());
-        assertEquals(50, root.getTargetNumHits());
+        assertEquals(50, root.getTargetHits());
         assertEquals(70.5, root.getScoreThreshold(), delta);
         assertEquals(2.3, root.getThresholdBoostFactor(), delta);
         assertWeightedSetItem(root);

@@ -56,13 +56,14 @@ public class ConfigServerMaintenance {
                                                  Duration.ofMinutes(3), convergenceChecker, Clock.systemUTC()));
         if (applicationRepository.configserverConfig().hostedVespa()) {
             // Only one of these maintainers is used per application controlled by
-            // {@code Flags.WAIT_FOR_APPLY_ON_RESTART} feature flag.
+            // {@code Flags.RESTART_ON_DEPLOY_MAINTAINER} feature flag.
             // {@code PendingRestartsMaintainer} is active when the flag is {@code false} - default.
             // {@code RestartOnDeployMaintainer} is active when the flag is {@code true} - experimental.
             maintainers.add(new PendingRestartsMaintainer(
                     applicationRepository, curator, Clock.systemUTC(), Duration.ofSeconds(30)));
             maintainers.add(new RestartOnDeployMaintainer(
                     applicationRepository, curator, Clock.systemUTC(), Duration.ofSeconds(30)));
+            maintainers.add(new HostRegistryMaintainer(applicationRepository, curator, Duration.ofSeconds(30)));
         }
     }
 

@@ -1025,6 +1025,7 @@
       "public int getTargetNumHits()",
       "public java.lang.Integer getTargetHits()",
       "public java.lang.Integer getTotalTargetHits()",
+      "public java.lang.Integer getMinTargetHits()",
       "public java.lang.String getIndexName()",
       "public double getDistanceThreshold()",
       "public int getHnswExploreAdditionalHits()",
@@ -1039,6 +1040,7 @@
       "public void setTargetNumHits(int)",
       "public void setTargetHits(java.lang.Integer)",
       "public void setTotalTargetHits(java.lang.Integer)",
+      "public void setMinTargetHits(java.lang.Integer)",
       "public void setDistanceThreshold(double)",
       "public void setHnswExploreAdditionalHits(int)",
       "public void setAllowApproximate(boolean)",
@@ -1931,10 +1933,18 @@
       "public"
     ],
     "methods" : [
+      "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, int)",
+      "public void <init>(java.lang.String, java.lang.Integer)",
+      "public void <init>(java.lang.String, java.util.Map)",
+      "public void <init>(java.lang.String, java.lang.Integer, java.util.Map)",
       "public void <init>(java.lang.String, int, java.util.Map)",
       "public void setScoreThreshold(double)",
       "public void setThresholdBoostFactor(double)",
+      "public java.lang.Integer getTargetHits()",
+      "public java.lang.Integer getTotalTargetHits()",
+      "public void setTargetHits(java.lang.Integer)",
+      "public void setTotalTargetHits(java.lang.Integer)",
       "public int getTargetNumHits()",
       "public double getScoreThreshold()",
       "public double getThresholdBoostFactor()",
@@ -4539,6 +4549,7 @@
       "public"
     ],
     "methods" : [
+      "public void <init>(com.yahoo.search.grouping.result.GroupId, com.yahoo.search.result.Relevance, com.yahoo.search.Query)",
       "public void <init>(com.yahoo.search.grouping.result.GroupId, com.yahoo.search.result.Relevance)",
       "public com.yahoo.search.grouping.result.GroupId getGroupId()",
       "public com.yahoo.search.grouping.result.HitList getHitList(java.lang.String)",
@@ -4657,6 +4668,7 @@
       "public"
     ],
     "methods" : [
+      "public void <init>(int, com.yahoo.search.grouping.Continuation, com.yahoo.search.Query)",
       "public void <init>(int, com.yahoo.search.grouping.Continuation)",
       "public com.yahoo.search.grouping.Continuation continuation()"
     ],
@@ -8628,6 +8640,7 @@
       "public void setCached(boolean)",
       "public boolean isCached()",
       "public void setFillable()",
+      "public void setUnfillable()",
       "public void setFilled(java.lang.String)",
       "public boolean isFillable()",
       "public java.util.Set getFilled()",
@@ -8734,6 +8747,7 @@
       "public void analyze()",
       "public com.yahoo.search.result.HitGroup clone()",
       "public void setFillable()",
+      "public void setUnfillable()",
       "public void setFilled(java.lang.String)",
       "public boolean isFillable()",
       "public java.util.Set getFilled()",

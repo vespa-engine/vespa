@@ -24,7 +24,7 @@
 
 namespace document {
 namespace select {
-    class Node;
+class Node;
 }
 class BucketId;
 class BucketIdFactory;
@@ -48,4 +48,4 @@ public:
     std::unique_ptr<BucketVector> select(const select::Node& expression) const;
 };
 
-} // document
+} // namespace document

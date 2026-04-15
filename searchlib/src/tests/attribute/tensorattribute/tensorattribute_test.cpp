@@ -16,6 +16,7 @@
 #include <vespa/searchlib/tensor/nearest_neighbor_index_saver.h>
 #include <vespa/searchlib/tensor/serialized_fast_value_attribute.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
+#include <vespa/searchlib/tensor/tensor_attribute_flags.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/searchcommon/attribute/config.h>
@@ -65,10 +66,12 @@ using search::tensor::NearestNeighborIndexSaver;
 using search::tensor::PrepareResult;
 using search::tensor::SerializedFastValueAttribute;
 using search::tensor::TensorAttribute;
+using search::tensor::TensorAttributeFlags;
 using search::tensor::VectorBundle;
 using testing::AllOf;
 using testing::Le;
 using testing::Ge;
+using vespalib::GenerationHandler;
 using vespalib::SharedStringRepo;
 using vespalib::datastore::CompactionStrategy;
 using vespalib::eval::FastValueBuilderFactory;
@@ -190,6 +193,7 @@ private:
     generation_t _trim_gen;
     mutable size_t _memory_usage_cnt;
     int _index_value;
+    GenerationHandler _generation_handler;
 
 public:
     explicit MockNearestNeighborIndex(const DocVectorAccess& vectors)
@@ -201,7 +205,8 @@ public:
           _transfer_gen(std::numeric_limits<generation_t>::max()),
           _trim_gen(std::numeric_limits<generation_t>::max()),
           _memory_usage_cnt(0),
-          _index_value(0)
+          _index_value(0),
+          _generation_handler()
     {
     }
     void clear() {
@@ -290,6 +295,17 @@ public:
     }
     void reclaim_memory(generation_t oldest_used_gen) override {
         _trim_gen = oldest_used_gen;
+    }
+    GenerationHandler::Guard make_generation_read_guard() const override { return _generation_handler.takeGuard(); }
+    void inc_generation() override {
+        auto current_gen = _generation_handler.getCurrentGeneration();
+        assign_generation(current_gen);
+        _generation_handler.incGeneration();
+    }
+    void reclaim_unused_memory() override {
+        _generation_handler.update_oldest_used_generation();
+        auto oldest_used_gen = _generation_handler.get_oldest_used_generation();
+        reclaim_memory(oldest_used_gen);
     }
     bool consider_compact(const CompactionStrategy&) override {
         return false;
@@ -606,8 +622,12 @@ struct Fixture {
         _attr->commit();
     }
 
-    generation_t get_current_gen() const {
-        return _attr->getCurrentGeneration();
+    generation_t get_current_index_gen() const {
+        if constexpr (TensorAttributeFlags::use_nearest_neighbor_index_generation_manager) {
+            return _tensorAttr->nearest_neighbor_index()->make_generation_read_guard().getGeneration();
+        } else {
+            return _attr->getCurrentGeneration();
+        }
     }
 
     search::attribute::Status getStatus() {
@@ -1307,23 +1327,34 @@ TEST(TensorAttributeTest, commit_ensures_transfer_and_trim_hold_lists_on_nearest
     TensorSpec spec = vec_2d(3, 5);
 
     f.set_tensor(1, spec);
-    generation_t gen_1 = f.get_current_gen();
+    generation_t gen_1 = f.get_current_index_gen();
     EXPECT_EQ(gen_1 - 1, index.get_transfer_gen());
     EXPECT_EQ(gen_1, index.get_trim_gen());
 
-    generation_t gen_2 = 0;
+    generation_t gen_2(0);
     {
-        // Takes guard on gen_1
+        // Takes guard on gen_1 if TensorAttributeFlags::use_nearest_neighbor_index_generation_manager is false.
         auto guard = f._attr->makeReadGuard(false);
+        // Takes guard on gen_1 if TensorAttributeFlags::use_nearest_neighbor_index_generation_manager is true.
+        auto index_guard = index.make_generation_read_guard();
         f.set_tensor(2, spec);
-        gen_2 = f.get_current_gen();
+        gen_2 = f.get_current_index_gen();
         EXPECT_GT(gen_2, gen_1);
         EXPECT_EQ(gen_2 - 1, index.get_transfer_gen());
         EXPECT_EQ(gen_1, index.get_trim_gen());
+        index_guard = GenerationHandler::Guard();
+        f._attr->reclaim_unused_memory();
+        if constexpr (TensorAttributeFlags::use_nearest_neighbor_index_generation_manager) {
+            // index_guard no longer held
+            EXPECT_EQ(gen_2, index.get_trim_gen());
+        } else {
+            // guard still held
+            EXPECT_EQ(gen_1, index.get_trim_gen());
+        }
     }
 
     f.set_tensor(3, spec);
-    generation_t gen_3 = f.get_current_gen();
+    generation_t gen_3 = f.get_current_index_gen();
     EXPECT_GT(gen_3, gen_2);
     EXPECT_EQ(gen_3 - 1, index.get_transfer_gen());
     EXPECT_EQ(gen_3, index.get_trim_gen());

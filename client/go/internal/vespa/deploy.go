@@ -25,7 +25,7 @@ import (
 )
 
 var (
-	DefaultApplication = ApplicationID{Tenant: "default", Application: "application", Instance: "default"}
+	DefaultApplication = ApplicationID{Tenant: "default", Application: "default", Instance: "default"}
 	DefaultZone        = ZoneID{Environment: "prod", Region: "default"}
 	DefaultDeployment  = Deployment{Application: DefaultApplication, Zone: DefaultZone}
 	ErrUnauthorized    = errors.New("unauthorized")
@@ -181,7 +181,12 @@ func fetchFromConfigServer(deployment DeploymentOptions, path string) error {
 		return err
 	}
 	defer os.RemoveAll(tmpDir)
-	u, err := deployment.url("/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/content")
+	app := deployment.Target.Deployment().Application
+	endpoint := fmt.Sprintf(
+		"/application/v2/tenant/default/application/%s/environment/prod/region/default/instance/%s/content",
+		app.Application,
+		app.Instance)
+	u, err := deployment.url(endpoint)
 	if err != nil {
 		return err
 	}
@@ -327,19 +332,18 @@ func Activate(sessionID int64, deployment DeploymentOptions, timeout time.Durati
 
 // Deactivate given deployment
 func Deactivate(deployment DeploymentOptions) error {
+	if !deployment.Target.IsCloud() {
+		return fmt.Errorf("%s: deactivate is unsupported by %s target", deployment, deployment.Target.Type())
+	}
 	var (
 		u   *url.URL
 		err error
 	)
-	if deployment.Target.IsCloud() {
-		if deployment.Target.Deployment().Zone.Environment == "" || deployment.Target.Deployment().Zone.Region == "" {
-			return fmt.Errorf("%s: missing zone", deployment)
-		}
-		deploymentURL := deployment.Target.Deployment().System.DeploymentURL(deployment.Target.Deployment())
-		u, err = url.Parse(deploymentURL)
-	} else {
-		u, err = deployment.url("/application/v2/tenant/default/application/default")
+	if deployment.Target.Deployment().Zone.Environment == "" || deployment.Target.Deployment().Zone.Region == "" {
+		return fmt.Errorf("%s: missing zone", deployment)
 	}
+	deploymentURL := deployment.Target.Deployment().System.DeploymentURL(deployment.Target.Deployment())
+	u, err = url.Parse(deploymentURL)
 	if err != nil {
 		return err
 	}
@@ -367,7 +371,17 @@ func Deploy(deployment DeploymentOptions) (PrepareResult, error) {
 		}
 		u, err = url.Parse(deployment.Target.Deployment().System.DeployURL(deployment.Target.Deployment()))
 	} else {
+		app := deployment.Target.Deployment().Application
 		u, err = deployment.url("/application/v2/tenant/default/prepareandactivate")
+		if err != nil {
+			return PrepareResult{}, err
+		}
+		if app != DefaultApplication {
+			q := u.Query()
+			q.Set("applicationName", app.Application)
+			q.Set("instance", app.Instance)
+			u.RawQuery = q.Encode()
+		}
 	}
 	if err != nil {
 		return PrepareResult{}, err

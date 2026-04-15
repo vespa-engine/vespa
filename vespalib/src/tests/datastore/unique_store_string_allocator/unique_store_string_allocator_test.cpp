@@ -67,8 +67,8 @@ struct TestBase : public ::testing::Test {
         EXPECT_EQ(expStats._extra_hold, stats.extra_hold_bytes());
     }
     void reclaim_memory() {
-        allocator.get_data_store().assign_generation(generation++);
-        allocator.get_data_store().reclaim_memory(generation);
+        allocator.get_data_store().assign_generation(generation);
+        allocator.get_data_store().reclaim_memory(++generation);
     }
 };
 

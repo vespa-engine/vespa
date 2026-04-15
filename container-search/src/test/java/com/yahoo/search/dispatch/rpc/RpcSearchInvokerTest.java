@@ -12,6 +12,7 @@ import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.VespaBackend;
 import com.yahoo.prelude.query.NearestNeighborItem;
 import com.yahoo.prelude.query.OrItem;
+import com.yahoo.prelude.query.WandItem;
 import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
@@ -45,11 +46,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * @author ollivir
+ * @author Olli Virtanen
  */
 public class RpcSearchInvokerTest {
 
@@ -326,9 +326,20 @@ public class RpcSearchInvokerTest {
         weakAnd.addItem(new WordItem("bar", "myindex"));
         root.addItem(weakAnd);
 
-        var nn = new NearestNeighborItem("myField", "myQueryTensor");
-        nn.setTotalTargetHits(100);
-        root.addItem(nn);
+        var wandItem = new WandItem("myField");
+        wandItem.setTotalTargetHits(100);
+        wandItem.addToken(10L, 37);
+        root.addItem(wandItem);
+
+        var nn1 = new NearestNeighborItem("myField", "myQueryTensor");
+        nn1.setTotalTargetHits(100);
+        root.addItem(nn1);
+
+        var minTargetHits = 2;
+        var nn2 = new NearestNeighborItem("myField", "myQueryTensor");
+        nn2.setTotalTargetHits(100);
+        nn2.setMinTargetHits(minTargetHits);
+        root.addItem(nn2);
 
         query.getModel().getQueryTree().setRoot(root);
 
@@ -340,8 +351,14 @@ public class RpcSearchInvokerTest {
             var or = requests.get(i).getQueryTree().getRoot().getItemOr();
             assertEquals(expected.get(i), or.getChildren(0).getItemWeakAnd().getTargetNumHits(),
                          "WeakAnd in node " + i);
-            assertEquals(expected.get(i), or.getChildren(1).getItemNearestNeighbor().getTargetNumHits(),
+            assertEquals(expected.get(i), or.getChildren(1).getItemLongWand().getTargetNumHits(),
+                         "Wand in node " + i);
+            assertEquals(Math.max(100, expected.get(i)),
+                         or.getChildren(2).getItemNearestNeighbor().getTargetNumHits(),
                          "NearestNeighbor in node " + i);
+            assertEquals(Math.max(minTargetHits, expected.get(i)),
+                         or.getChildren(3).getItemNearestNeighbor().getTargetNumHits(),
+                         "NearestNeighbor in node " + i + " (overriding minTargetHits)");
         }
     }
 
@@ -389,10 +406,7 @@ public class RpcSearchInvokerTest {
         DispatchConfig dispatchConfig = new DispatchConfig.Builder().build();
         TopKEstimator hitEstimator = new TopKEstimator(30, dispatchConfig.topKProbability(), 0.05);
         List<SearchInvoker> invokers = new ArrayList<>(nodeInvokers);
-        InterleavedSearchInvoker invoker = new InterleavedSearchInvoker(Timer.monotonic, invokers, hitEstimator, dispatchConfig, group, Set.of());
-        invoker.responseAvailable(invokers.get(0));
-        invoker.responseAvailable(invokers.get(1));
-        return invoker;
+        return new InterleavedSearchInvoker(Timer.monotonic, invokers, hitEstimator, dispatchConfig, group, Set.of());
     }
 
     RpcSearchInvoker createRpcInvoker(Node node, int maxHits, Holders holders) {
@@ -427,6 +441,7 @@ public class RpcSearchInvokerTest {
                         holders.compressionType.set(compression);
                         holders.payload.set(compressedPayload);
                         holders.length.set(uncompressedLength);
+                        responseReceiver.receive(Client.ResponseOrError.fromError("mock"));
                     }
 
                     @Override

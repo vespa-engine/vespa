@@ -178,6 +178,8 @@ public class JsonReaderTestCase {
                     new TensorDataType(TensorType.fromSpec("tensor<int8>(x[2],y[3])"))));
             x.addField(new Field("dense_float_tensor",
                     new TensorDataType(TensorType.fromSpec("tensor<float>(y[3])"))));
+            x.addField(new Field("dense_bfloat16_tensor",
+                    new TensorDataType(TensorType.fromSpec("tensor<bfloat16>(x[1])"))));
             x.addField(new Field("dense_unbound_tensor",
                     new TensorDataType(new TensorType.Builder().indexed("x").indexed("y").build())));
             x.addField(new Field("mixed_tensor",
@@ -1472,7 +1474,7 @@ public class JsonReaderTestCase {
     }
 
     @Test
-    public void nonExistingFieldCausesException() throws IOException {
+    public void nonExistingFieldCausesException() {
         Exception expected = assertThrows(IllegalArgumentException.class,
                                           () -> docFromJson("""
                                                             {
@@ -1483,7 +1485,7 @@ public class JsonReaderTestCase {
                                                               }
                                                             }
                                                             """));
-        assertTrue(expected.getMessage().startsWith("No field 'smething' in the structure of type 'smoke'"));
+        assertEquals("Field 'smething' is not defined in document type 'smoke'", expected.getMessage());
     }
 
     @Test
@@ -2013,6 +2015,18 @@ public class JsonReaderTestCase {
                                    createPutWithTensor("""
                                                        "42280000be0000007f800000"
                                                        """, "dense_float_tensor"), "dense_float_tensor");
+        expected = Tensor.from("tensor<bfloat16>(x[1]):[1.0]");
+        tensor = assertTensorField(expected,
+                                   createPutWithTensor("""
+                                                       {
+                                                         "values": "3F800000"
+                                                       }""", "dense_bfloat16_tensor"), "dense_bfloat16_tensor");
+        assertTrue(tensor instanceof IndexedTensor); // this matters for performance
+        tensor = assertTensorField(expected,
+                                   createPutWithTensor("""
+                                                       "3F800000"
+                                                       """, "dense_bfloat16_tensor"), "dense_bfloat16_tensor");
+        assertTrue(tensor instanceof IndexedTensor); // this matters for performance
         try {
             assertTensorField(expected,
                               createPutWithTensor("""
@@ -2050,6 +2064,17 @@ public class JsonReaderTestCase {
                              "blocks":{"foo":"400040404080", "bar":"40A040C040E0"}
                            }
                     """;
+        put = createPutWithTensor(inputJson(mixedJson), "mixed_bfloat16_tensor");
+        tensor = assertTensorField(expected, put, "mixed_bfloat16_tensor");
+
+        mixedJson = """
+                           {
+                             "blocks":[
+                               {"address":{"x":"foo"},"values":"400000004040000040800000"},
+                               {"address":{"x":"bar"},"values":"40A0000040C0000040E00000"}
+                             ]
+                           }
+                           """;
         put = createPutWithTensor(inputJson(mixedJson), "mixed_bfloat16_tensor");
         tensor = assertTensorField(expected, put, "mixed_bfloat16_tensor");
     }

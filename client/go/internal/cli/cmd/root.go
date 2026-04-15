@@ -303,8 +303,8 @@ func (c *CLI) configureFlags() map[string]*pflag.Flag {
 		debugMode   bool
 	)
 	c.cmd.PersistentFlags().StringVarP(&target, targetFlag, "t", "local", `The target platform to use. Must be "local", "cloud", "hosted" or an URL`)
-	c.cmd.PersistentFlags().StringVarP(&application, applicationFlag, "a", "", `The application to use (cloud only). Format "tenant.application.instance" - instance is optional`)
-	c.cmd.PersistentFlags().StringVarP(&instance, instanceFlag, "i", "", "The instance of the application to use (cloud only)")
+	c.cmd.PersistentFlags().StringVarP(&application, applicationFlag, "a", "", `The application to use. Format "tenant.application.instance" - instance is optional (tenant required for cloud targets)`)
+	c.cmd.PersistentFlags().StringVarP(&instance, instanceFlag, "i", "", "The instance of the application to use")
 	c.cmd.PersistentFlags().StringVarP(&cluster, clusterFlag, "C", "", "The container cluster to use. This is only required for applications with multiple clusters")
 	c.cmd.PersistentFlags().StringVarP(&zone, zoneFlag, "z", "", "The zone to use. This defaults to a dev zone (cloud only)")
 	c.cmd.PersistentFlags().StringVarP(&color, colorFlag, "c", "auto", `Whether to use colors in output. Must be "auto", "never", or "always"`)
@@ -533,15 +533,32 @@ func (c *CLI) targetFromURL(customURL string) (string, error) {
 }
 
 func (c *CLI) createCustomTarget(targetType, customURL string) (vespa.Target, error) {
-	tlsOptions, err := c.config.readTLSOptions(vespa.DefaultApplication, targetType)
+
+	// The old default for application ID (with "application" name) is still used for TLS options.
+	// Changing this can break existing pipelines/automations relying on this location for certificates. This only applies here,
+	// the config server still receives the correct default and uses that elsewhere.
+	deprecatedDefaultApplication := vespa.ApplicationID{Tenant: "default", Application: "application", Instance: "default"}
+	tlsOptions, err := c.config.readTLSOptions(deprecatedDefaultApplication, targetType)
+
 	if err != nil {
 		return nil, err
 	}
+	deployment := vespa.DefaultDeployment
+
+	// Set deployment application or keep default if config is not set
+	if _, ok := c.config.get(applicationFlag); ok {
+		if app, err := c.config.application(); err == nil {
+			deployment.Application = app
+		} else {
+			return nil, err
+		}
+	}
+
 	switch targetType {
 	case vespa.TargetLocal:
-		return vespa.LocalTarget(c.httpClient, tlsOptions, c.retryInterval), nil
+		return vespa.LocalTarget(c.httpClient, tlsOptions, c.retryInterval, deployment), nil
 	case vespa.TargetCustom:
-		return vespa.CustomTarget(c.httpClient, customURL, tlsOptions, c.retryInterval), nil
+		return vespa.CustomTarget(c.httpClient, customURL, tlsOptions, c.retryInterval, deployment), nil
 	default:
 		return nil, fmt.Errorf("invalid custom target: %s", targetType)
 	}

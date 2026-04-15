@@ -119,7 +119,8 @@ void encode_header_into_rpc_params(HeaderType& hdr, FRT_Values& params) {
     assert(header_size <= UINT32_MAX);
     params.AddInt32(static_cast<uint32_t>(header_size));
     auto* header_buf = reinterpret_cast<uint8_t*>(params.AddData(header_size));
-    hdr.SerializeWithCachedSizesToArray(header_buf);
+    auto* header_end = hdr.SerializeWithCachedSizesToArray(header_buf);
+    assert(header_buf + header_size == header_end);
 }
 
 void compress_and_add_payload_to_rpc_params(mbus::BlobRef payload,

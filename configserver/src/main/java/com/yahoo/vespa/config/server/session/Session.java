@@ -13,6 +13,7 @@ import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.TenantName;
@@ -160,6 +161,10 @@ public abstract class Session implements Comparable<Session>  {
 
     public Optional<CloudAccount> getCloudAccount() {
         return sessionZooKeeperClient.readCloudAccount();
+    }
+
+    public CloudResourceTags getCloudResourceTags() {
+        return sessionZooKeeperClient.readCloudResourceTags();
     }
 
     public List<DataplaneToken> getDataplaneTokens() {

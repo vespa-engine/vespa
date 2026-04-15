@@ -37,8 +37,8 @@ namespace {
 void
 convertGenerationToSlime(const AttributeVector &attr, Cursor &object)
 {
-    object.setLong("oldest_used", attr.get_oldest_used_generation());
-    object.setLong("current", attr.getCurrentGeneration());
+    object.setLong("oldest_used", attr.get_oldest_used_generation().value());
+    object.setLong("current", attr.getCurrentGeneration().value());
 }
 
 void

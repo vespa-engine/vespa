@@ -131,12 +131,12 @@ public class SemanticSearcherTestCase extends RuleBaseAbstractTestCase {
 
     @Test
     void testTypeChange() {
-        assertSemantics("RANK default:typechange doors", "typechange doors");
+        assertSemantics("RANK doors default:typechange", "typechange doors");
     }
 
     @Test
     void testTypeChangeWithSingularToPluralButNonReplaceWillNotSingularify() {
-        assertSemantics("RANK default:typechange door", "typechange door");
+        assertSemantics("RANK door default:typechange", "typechange door");
     }
 
     @Test
@@ -147,11 +147,12 @@ public class SemanticSearcherTestCase extends RuleBaseAbstractTestCase {
     @Test
     void testOrProduction() {
         assertSemantics("OR something somethingelse", "something");
+
         // I did not expect this:
         assertSemantics("OR (AND foo1 something bar2) somethingelse", "foo1 something bar2");
-        // Nor this; we should fix documentation to emphasize that "+>" adding terms
-        // always happens at the root of the query:
-        assertSemantics("OR (RANK (AND foo1 (OR foo2 something bar1) bar2) bar3) somethingelse",
+
+        // but at least works like expected:
+        assertSemantics("RANK (AND foo1 (OR foo2 something somethingelse bar1) bar2) bar3",
                         "foo1 AND (foo2 OR something OR bar1) AND bar2 RANK bar3",
                         0, Query.Type.ADVANCED);
     }
@@ -160,7 +161,7 @@ public class SemanticSearcherTestCase extends RuleBaseAbstractTestCase {
     void testDoubleOrProduction() {
         assertSemantics("OR more evenmore", "somethingmore");
         // Strange ordering:
-        assertSemantics("OR more (AND foo1 bar2) evenmore", "foo1 somethingmore bar2");
+        assertSemantics("OR (AND foo1 bar2) more evenmore", "foo1 somethingmore bar2");
     }
 
     // This test is order dependent. Fix it!!
@@ -186,8 +187,8 @@ public class SemanticSearcherTestCase extends RuleBaseAbstractTestCase {
         assertSemantics("brand:smashtogether", "\"smash together\"");
         assertSemantics("brand:smashtogether", "smash-together");
         assertSemantics("AND foo1 brand:smashtogether bar2", "foo1 \"smash together\" bar2");
-        assertSemantics("AND brand:smashtogether \"foo1 bar2\"", "\"foo1 smash together bar2\"");
-        assertSemantics("OR brand:smashtogether \"foo1 bar2\"", "\"foo1 smash together bar2\"", 0, Query.Type.ANY);
+        assertSemantics("AND \"foo1 bar2\" brand:smashtogether", "\"foo1 smash together bar2\"");
+        assertSemantics("OR \"foo1 bar2\" brand:smashtogether", "\"foo1 smash together bar2\"", 0, Query.Type.ANY);
         // the difference in ordering here is because the parsed query already has a WEAKAND root (with 1 child):
         assertSemantics("WEAKAND \"foo1 bar2\" brand:smashtogether", "\"foo1 smash together bar2\"", 0, Query.Type.WEAKAND);
     }
@@ -205,11 +206,10 @@ public class SemanticSearcherTestCase extends RuleBaseAbstractTestCase {
     @Test
     void testWandReplacement() {
         assertSemantics("WEAKAND greatest", "goat");
-        assertSemantics("WEAKAND greatest dazed", "dazed goat");
-        assertSemantics("WEAKAND greatest (AND dazed disoriented)", "dazed goat disoriented");
+        assertSemantics("WEAKAND dazed greatest", "dazed goat");
+        assertSemantics("WEAKAND (AND dazed disoriented) greatest", "dazed goat disoriented");
         assertSemantics("WEAKAND the greatest of all time", "thegoat");
-        // Strange ordering again:
-        assertSemantics("WEAKAND the (AND dazed disoriented) greatest of all time", "dazed thegoat disoriented");
+        assertSemantics("WEAKAND (AND dazed disoriented) the greatest of all time", "dazed thegoat disoriented");
     }
 
     private Result doSearch(Searcher searcher, Query query, int offset, int hits) {

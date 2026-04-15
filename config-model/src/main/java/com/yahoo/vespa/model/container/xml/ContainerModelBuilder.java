@@ -28,9 +28,9 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DataplaneToken;
-import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.SidecarImages;
 import com.yahoo.config.provision.SidecarProbe;
 import com.yahoo.config.provision.SidecarSpec;
 import com.yahoo.config.provision.Zone;
@@ -114,7 +114,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Reader;
 import java.net.URI;
 import java.security.cert.X509Certificate;
@@ -124,11 +123,9 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.Properties;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -266,17 +263,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         if (shouldUseTriton(cluster, deployState)) {
             var hasGpu = !nodesSpecification.minResources().nodeResources().gpuResources().isZero();
-            var sidecarImages = readSidecarImages();
-            var image = sidecarImages.get("triton");
-
-            if (image == null) {
-                throw new IllegalStateException("Triton sidecar image is not configured in sidecar-images.properties");
-            }
+            var sidecarImage = SidecarImages.readFromPropertiesFile().getOrThrow("triton");
 
             var spec = SidecarSpec.builder()
                     .id(0)
                     .name("triton")
-                    .image(image)
+                    .image(sidecarImage)
                     .hasImageMirror(true)
                     .minCpu(1) // Must have at least one CPU
                     .hasGpu(hasGpu)
@@ -289,26 +281,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
 
         return sidecars;
-    }
-
-    static Map<String, DockerImage> readSidecarImages() {
-        var props = new Properties();
-
-        try (InputStream inputStream = ContainerModelBuilder.class.getResourceAsStream("/sidecar-images.properties")) {
-            if (inputStream == null) {
-                throw new IllegalStateException("sidecar-images.properties not found");
-            }
-
-            props.load(inputStream);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to load sidecar-images.properties", e);
-        }
-
-        return props.entrySet().stream()
-                .collect(Collectors.toMap(
-                        e -> e.getKey().toString(),
-                        e -> DockerImage.fromString(e.getValue().toString())
-                ));
     }
 
     private void addParameterStoreValidationHandler(ApplicationContainerCluster cluster, DeployState deployState) {
@@ -1081,6 +1053,20 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return new JvmGcOptions(context.getDeployState(), cluster.getName(), jvmGCOptions).build();
     }
 
+    private static void applyPerContainerGCOptions(List<ApplicationContainer> containers, ConfigModelContext context,
+                                                   ApplicationContainerCluster cluster, String xmlGcOptions) {
+        if (xmlGcOptions != null) return; // XML-specified gc-options apply uniformly (set on cluster)
+        var flag = context.getDeployState().getProperties().jvmGCOptionsFlag()
+                .withClusterType(ClusterSpec.Type.container)
+                .withClusterId(ClusterSpec.Id.from(cluster.getName()));
+        for (var container : containers) {
+            var resolved = flag.withHostname(container.getHostName()).value();
+            if (resolved != null && !resolved.isEmpty()) {
+                container.setJvmGCOptions(resolved);
+            }
+        }
+    }
+
     private static String getJvmOptions(Element nodesElement,
                                         DeployState deployState,
                                         boolean legacyOptions) {
@@ -1091,24 +1077,27 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return element.hasAttribute(attrName) ? element.getAttribute(attrName) : null;
     }
 
-    private void extractJvmOptions(List<ApplicationContainer> nodes,
-                                   ApplicationContainerCluster cluster,
-                                   Element nodesElement,
-                                   ConfigModelContext context) {
+    /** Returns the XML-specified gc-options, or null if not specified in XML. */
+    private String extractJvmOptions(List<ApplicationContainer> nodes,
+                                     ApplicationContainerCluster cluster,
+                                     Element nodesElement,
+                                     ConfigModelContext context) {
         Element jvmElement = XML.getChild(nodesElement, "jvm");
         if (jvmElement == null) {
-            extractJvmFromLegacyNodesTag(nodes, cluster, nodesElement, context);
+            return extractJvmFromLegacyNodesTag(nodes, cluster, nodesElement, context);
         } else {
-            extractJvmTag(nodes, cluster, nodesElement, jvmElement, context);
+            return extractJvmTag(nodes, cluster, nodesElement, jvmElement, context);
         }
     }
 
-    private void extractJvmFromLegacyNodesTag(List<ApplicationContainer> nodes, ApplicationContainerCluster cluster,
-                                              Element nodesElement, ConfigModelContext context) {
+    /** Returns the XML-specified gc-options, or null if not specified in XML. */
+    private String extractJvmFromLegacyNodesTag(List<ApplicationContainer> nodes, ApplicationContainerCluster cluster,
+                                                Element nodesElement, ConfigModelContext context) {
         applyNodesTagJvmArgs(nodes, getJvmOptions(nodesElement, context.getDeployState(), true));
 
+        String jvmGCOptions = null;
         if (cluster.getJvmGCOptions().isEmpty()) {
-            String jvmGCOptions = extractAttribute(nodesElement, VespaDomBuilder.JVM_GC_OPTIONS);
+            jvmGCOptions = extractAttribute(nodesElement, VespaDomBuilder.JVM_GC_OPTIONS);
 
             if (jvmGCOptions != null && !jvmGCOptions.isEmpty()) {
                 DeployLogger logger = context.getDeployState().getDeployLogger();
@@ -1125,14 +1114,17 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                    .logApplicationPackage(WARNING, "'allocated-memory' is deprecated and will be removed in Vespa 9." +
                            " Please merge into 'allocated-memory' in 'jvm' element." +
                            " See https://docs.vespa.ai/en/reference/services/container.html#jvm");
+        return jvmGCOptions;
     }
 
-    private void extractJvmTag(List<ApplicationContainer> nodes, ApplicationContainerCluster cluster,
-                               Element nodesElement, Element jvmElement, ConfigModelContext context) {
+    /** Returns the XML-specified gc-options, or null if not specified in XML. */
+    private String extractJvmTag(List<ApplicationContainer> nodes, ApplicationContainerCluster cluster,
+                                 Element nodesElement, Element jvmElement, ConfigModelContext context) {
         applyNodesTagJvmArgs(nodes, getJvmOptions(nodesElement, context.getDeployState(), false));
         applyMemoryPercentage(cluster, jvmElement.getAttribute(VespaDomBuilder.Allocated_MEMORY_ATTRIB_NAME));
-        String jvmGCOptions = extractAttribute(jvmElement, VespaDomBuilder.GC_OPTIONS);
+        var jvmGCOptions = extractAttribute(jvmElement, VespaDomBuilder.GC_OPTIONS);
         cluster.setJvmGCOptions(buildJvmGCOptions(context, cluster, jvmGCOptions));
+        return jvmGCOptions;
     }
 
     /**
@@ -1145,12 +1137,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private void addNodesFromXml(ApplicationContainerCluster cluster, Element containerElement, ConfigModelContext context) {
         Element nodesElement = XML.getChild(containerElement, "nodes");
         if (nodesElement == null) {
-            cluster.addContainers(allocateWithoutNodesTag(cluster, context));
+            var nodes = allocateWithoutNodesTag(cluster, context);
+            cluster.addContainers(nodes);
             cluster.setJvmGCOptions(buildJvmGCOptions(context, cluster, null));
+            applyPerContainerGCOptions(nodes, context, cluster, null);
         } else {
             List<ApplicationContainer> nodes = createNodes(cluster, containerElement, nodesElement, context);
 
-            extractJvmOptions(nodes, cluster, nodesElement, context);
+            var xmlGcOptions = extractJvmOptions(nodes, cluster, nodesElement, context);
             applyDefaultPreload(nodes, nodesElement);
             var envVars = getEnvironmentVariables(XML.getChild(nodesElement, ENVIRONMENT_VARIABLES_ELEMENT)).entrySet();
             for (var container : nodes) {
@@ -1161,6 +1155,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             if (useCpuSocketAffinity(nodesElement))
                 AbstractService.distributeCpuSocketAffinity(nodes);
             cluster.addContainers(nodes);
+            applyPerContainerGCOptions(nodes, context, cluster, xmlGcOptions);
         }
     }
 
@@ -1380,6 +1375,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if (documentApiElement == null) return ContainerDocumentApi.createDummyApi(cluster);
 
         ContainerDocumentApi.HandlerOptions documentApiOptions = DocumentApiOptionsBuilder.build(documentApiElement);
+        DocumentApiOptionsBuilder.parseMaxDocumentSizeMib(documentApiElement, deployState.getDeployLogger())
+                .ifPresent(cluster::setMaxDocumentOperationRequestSizeMib);
         Element ignoreUndefinedFields = XML.getChild(documentApiElement, "ignore-undefined-fields");
         return new ContainerDocumentApi(deployState, cluster, documentApiOptions,
                                         "true".equals(XML.getValue(ignoreUndefinedFields)), portBindingOverride(deployState, context, cluster));
@@ -1609,8 +1606,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
 
         private String build() {
-            String options = deployState.getProperties().jvmGCOptions(Optional.of(ClusterSpec.Type.container),
-                                                                     Optional.of(ClusterSpec.Id.from(clusterName)));
+            var options = deployState.getProperties().jvmGCOptionsFlag()
+                    .withClusterType(ClusterSpec.Type.container)
+                    .withClusterId(ClusterSpec.Id.from(clusterName))
+                    .value();
             if (jvmGcOptions != null) {
                 options = jvmGcOptions;
                 String[] optionList = options.split(" ");

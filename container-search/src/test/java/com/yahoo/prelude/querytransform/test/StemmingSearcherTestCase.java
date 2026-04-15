@@ -22,8 +22,10 @@ import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.NullItem;
+import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.PhraseSegmentItem;
 import com.yahoo.prelude.query.DocumentFrequency;
+import com.yahoo.prelude.query.PrefixItem;
 import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WordAlternativesItem;
@@ -43,6 +45,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -111,6 +114,102 @@ public class StemmingSearcherTestCase {
     @Test
     void testDontStemPrefixes() {
         assertStemmed("WEAKAND ist*", "/search?query=ist*&language=de");
+    }
+
+    @Test
+    void testQueryAndDropsTermsWithEmptyStems() {
+        var linguistics = new StopwordDroppingLinguistics("dropme");
+        var indexFacts = new IndexFacts(createDefaultIndexModelWithStemming());
+
+        Query query = new Query(QueryTestCase.httpEncode("/search?language=en"));
+        AndItem root = new AndItem();
+        root.addItem(new WordItem("dropme", "default", true));
+        root.addItem(new WordItem("document", "default", true));
+        query.getModel().getQueryTree().setRoot(root);
+
+        executeStemming(query, linguistics, indexFacts);
+
+        AndItem transformedRoot = (AndItem) query.getModel().getQueryTree().getRoot();
+        assertEquals(1, transformedRoot.getItemCount());
+        assertEquals("document", ((WordItem) transformedRoot.getItem(0)).getWord());
+    }
+
+    @Test
+    void testQueryAndDoesNotCollapseToEmpty() {
+        var linguistics = new StopwordDroppingLinguistics("dropme");
+        var indexFacts = new IndexFacts(createDefaultIndexModelWithStemming());
+
+        Query query = new Query(QueryTestCase.httpEncode("/search?language=en"));
+        AndItem root = new AndItem();
+        root.addItem(new WordItem("dropme", "default", true));
+        query.getModel().getQueryTree().setRoot(root);
+
+        executeStemming(query, linguistics, indexFacts);
+
+        assertTrue(query.getModel().getQueryTree().toString().contains("dropme"));
+    }
+
+    @Test
+    void testUserInputDropsTermsWithEmptyStems() {
+        var linguistics = new StopwordDroppingLinguistics("dropme");
+        var indexModel = createDefaultIndexModelWithStemming();
+        var yql = "select * from sources * where ({grammar: 'all'}userInput(@query))";
+        var query = new Query("?yql=" + QueryTestCase.httpEncode(yql) +
+                              "&query=" + QueryTestCase.httpEncode("dropme document"));
+
+        var result = search(linguistics, indexModel, query);
+        if (result.hits().getError() != null)
+            throw new RuntimeException(result.hits().getError().toString());
+
+        var tree = query.getModel().getQueryTree().toString();
+        assertTrue(tree.contains("document"), "Expected remaining term after stopword removal: " + tree);
+        assertFalse(tree.contains("dropme"), "Expected stopword to be removed from query tree: " + tree);
+    }
+
+    @Test
+    void testUserInputDoesNotCollapseToEmpty() {
+        var linguistics = new StopwordDroppingLinguistics("dropme");
+        var indexModel = createDefaultIndexModelWithStemming();
+        var yql = "select * from sources * where ({grammar: 'all'}userInput(@query))";
+        var query = new Query("?yql=" + QueryTestCase.httpEncode(yql) +
+                              "&query=" + QueryTestCase.httpEncode("dropme"));
+
+        var result = search(linguistics, indexModel, query);
+        if (result.hits().getError() != null)
+            throw new RuntimeException(result.hits().getError().toString());
+
+        assertTrue(query.getModel().getQueryTree().toString().contains("dropme"));
+    }
+
+    @Test
+    void testPhraseTermsAreKeptWhenStemIsEmpty() {
+        var linguistics = new StopwordDroppingLinguistics("dropme");
+        var indexFacts = new IndexFacts(createDefaultIndexModelWithStemming());
+
+        Query query = new Query(QueryTestCase.httpEncode("/search?language=en"));
+        PhraseItem phrase = new PhraseItem();
+        phrase.addItem(new WordItem("dropme", "default", true));
+        phrase.addItem(new WordItem("document", "default", true));
+        query.getModel().getQueryTree().setRoot(phrase);
+
+        executeStemming(query, linguistics, indexFacts);
+
+        String tree = query.getModel().getQueryTree().toString();
+        assertTrue(tree.contains("dropme"), "Phrase terms should remain untouched: " + tree);
+        assertTrue(tree.contains("document"), "Phrase terms should remain untouched: " + tree);
+    }
+
+    @Test
+    void testNonTextOperatorsAreUnchangedWhenStemIsEmpty() {
+        var linguistics = new StopwordDroppingLinguistics("dropme");
+        var indexFacts = new IndexFacts(createDefaultIndexModelWithStemming());
+
+        Query query = new Query(QueryTestCase.httpEncode("/search?language=en"));
+        query.getModel().getQueryTree().setRoot(new PrefixItem("dropme", "default"));
+
+        executeStemming(query, linguistics, indexFacts);
+
+        assertEquals("default:dropme*", query.getModel().getQueryTree().toString());
     }
 
     @Test
@@ -253,6 +352,14 @@ public class StemmingSearcherTestCase {
 
     }
 
+    private IndexModel createDefaultIndexModelWithStemming() {
+        var schema = new SearchDefinition("test");
+        var index = new Index("default");
+        index.setStemMode("BEST");
+        schema.addIndex(index);
+        return new IndexModel(schema);
+    }
+
     private static Optional<WordItem> getFirstWord(Query query) {
         var item = query.getModel().getQueryTree().getRoot();
         if (item instanceof WeakAndItem weakAndItem) {
@@ -274,6 +381,11 @@ public class StemmingSearcherTestCase {
 
     private void executeStemming(Query query) {
         new Execution(new Chain<Searcher>(new StemmingSearcher(linguistics)), newExecutionContext()).search(query);
+    }
+
+    private void executeStemming(Query query, Linguistics linguistics, IndexFacts indexFacts) {
+        new Execution(new Chain<Searcher>(new StemmingSearcher(linguistics)),
+                      Execution.Context.createContextStub(indexFacts, linguistics)).search(query);
     }
 
     private void assertStemmed(String expectedQueryTree, String queryString) {
@@ -494,6 +606,37 @@ public class StemmingSearcherTestCase {
             @Override
             public List<StemList> stem(String input, LinguisticsParameters parameters) {
                 lastLinguisticsProfile = parameters.profile();
+                return super.stem(input, parameters);
+            }
+
+        }
+
+    }
+
+    private static class StopwordDroppingLinguistics extends SimpleLinguistics {
+
+        private final String stopword;
+
+        StopwordDroppingLinguistics(String stopword) {
+            this.stopword = stopword;
+        }
+
+        @Override
+        public Stemmer getStemmer() {
+            return new StopwordDroppingStemmer(getTokenizer());
+        }
+
+        private class StopwordDroppingStemmer extends StemmerImpl {
+
+            StopwordDroppingStemmer(Tokenizer tokenizer) {
+                super(tokenizer);
+            }
+
+            @Override
+            public List<StemList> stem(String input, LinguisticsParameters parameters) {
+                if (input.equalsIgnoreCase(stopword)) {
+                    return List.of(new StemList(""));
+                }
                 return super.stem(input, parameters);
             }
 

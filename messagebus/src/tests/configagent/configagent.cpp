@@ -1,11 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/messagebus/config-messagebus.h>
 #include <vespa/messagebus/configagent.h>
 #include <vespa/messagebus/iconfighandler.h>
 #include <vespa/messagebus/routing/routingspec.h>
-#include <vespa/messagebus/config-messagebus.h>
-#include <vespa/config/print/fileconfigreader.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/test_path.h>
+
+#include <vespa/config/print/fileconfigreader.hpp>
 
 using namespace mbus;
 using namespace messagebus;
@@ -22,25 +23,17 @@ protected:
     bool setupRouting(RoutingSpec spec) override;
 };
 
-ConfigAgentTest::ConfigAgentTest()
-    : testing::Test(),
-      IConfigHandler(),
-      _spec()
-{
+ConfigAgentTest::ConfigAgentTest() : testing::Test(), IConfigHandler(), _spec() {
 }
 
 ConfigAgentTest::~ConfigAgentTest() = default;
 
-bool
-ConfigAgentTest::setupRouting(RoutingSpec spec)
-{
+bool ConfigAgentTest::setupRouting(RoutingSpec spec) {
     _spec = std::move(spec);
     return true;
 }
 
-void
-ConfigAgentTest::checkTables(uint32_t numTables, bool& success)
-{
+void ConfigAgentTest::checkTables(uint32_t numTables, bool& success) {
     ASSERT_EQ(numTables, _spec.getNumTables());
     if (numTables > 0) {
         ASSERT_EQ("foo", _spec.getTable(0).getProtocol());
@@ -92,22 +85,17 @@ ConfigAgentTest::checkTables(uint32_t numTables, bool& success)
     success = true;
 }
 
-bool
-ConfigAgentTest::checkHalf()
-{
+bool ConfigAgentTest::checkHalf() {
     bool success = false;
     return _spec.getNumTables() == 1 && (checkTables(1, success), success);
 }
 
-bool
-ConfigAgentTest::checkFull()
-{
+bool ConfigAgentTest::checkFull() {
     bool success = false;
     return _spec.getNumTables() == 2 && (checkTables(2, success), success);
 }
 
-TEST_F(ConfigAgentTest, test_config_agent)
-{
+TEST_F(ConfigAgentTest, test_config_agent) {
     EXPECT_TRUE(!checkHalf());
     EXPECT_TRUE(!checkFull());
     ConfigAgent agent(*this);

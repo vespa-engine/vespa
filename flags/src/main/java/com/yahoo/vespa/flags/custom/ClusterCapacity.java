@@ -56,7 +56,7 @@ public class ClusterCapacity {
         this.diskSpeed = validateEnum("diskSpeed", validDiskSpeeds, diskSpeed == null ? "fast" : diskSpeed);
         this.storageType = validateEnum("storageType", validStorageTypes, storageType == null ? "any" : storageType);
         this.architecture = validateEnum("architecture", validArchitectures, architecture == null ? "x86_64" : architecture);
-        this.clusterType = clusterType == null ? null : validateEnum("clusterType", validClusterTypes, clusterType);
+        this.clusterType = validateEnum("clusterType", validClusterTypes, clusterType);
         this.cloudAccount = Optional.ofNullable(cloudAccount);
         this.tenant = Optional.ofNullable(tenant);
         validate(this.tenant, this.cloudAccount);

@@ -5,6 +5,7 @@
 #include "lid_usage_stats.h"
 #include <vespa/document/base/globalid.h>
 #include <vespa/document/bucket/bucketid.h>
+#include <vespa/vespalib/util/generation.h>
 #include <vector>
 #include <memory>
 
@@ -149,7 +150,7 @@ struct IDocumentMetaStore {
     /**
      * Give read access to the current generation of the metastore.
      **/
-    virtual uint64_t getCurrentGeneration() const = 0;
+    virtual vespalib::Generation getCurrentGeneration() const = 0;
 
     virtual void foreach(const IGidToLidMapperVisitor &visitor) const = 0;
 };

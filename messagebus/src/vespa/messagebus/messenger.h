@@ -5,8 +5,11 @@
 #include "ireplyhandler.h"
 #include "message.h"
 #include "reply.h"
+
 #include <vespa/vespalib/util/executor.h>
+
 #include <vespa/vespalib/util/arrayqueue.hpp>
+
 #include <condition_variable>
 #include <mutex>
 #include <thread>
@@ -26,9 +29,10 @@ public:
     class ITask : public vespalib::Executor::Task {
     protected:
         ITask() = default;
+
     public:
-        ITask(const ITask &) = delete;
-        ITask & operator = (const ITask &) = delete;
+        ITask(const ITask&) = delete;
+        ITask& operator=(const ITask&) = delete;
         /**
          * Convenience typedefs.
          */
@@ -47,7 +51,7 @@ private:
     vespalib::ArrayQueue<ITask*> _queue;
     bool                         _closed;
     std::thread                  _thread;
-    
+
 protected:
     void run();
 
@@ -96,7 +100,7 @@ public:
      * @param msg     The message to send.
      * @param handler The handler to send to.
      */
-    void deliverMessage(Message::UP msg, IMessageHandler &handler);
+    void deliverMessage(Message::UP msg, IMessageHandler& handler);
 
     /**
      * Convenience method to post a {@link ReplyTask} to the queue of tasks to
@@ -105,7 +109,7 @@ public:
      * @param reply   The reply to return.
      * @param handler The handler to return to.
      */
-    void deliverReply(Reply::UP reply, IReplyHandler &handler);
+    void deliverReply(Reply::UP reply, IReplyHandler& handler);
 
     /**
      * Enqueues the given task in the list of tasks that this worker is to
@@ -125,4 +129,3 @@ public:
 };
 
 } // namespace mbus
-

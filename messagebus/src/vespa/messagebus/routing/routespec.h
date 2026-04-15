@@ -8,8 +8,8 @@ namespace mbus {
 
 /**
  * Along with the {@link RoutingSpec}, {@link RoutingTableSpec} and {@link HopSpec}, this holds the routing
- * specifications for all protocols. The only way a client can configure or alter the settings of a message bus instance
- * is through these classes.
+ * specifications for all protocols. The only way a client can configure or alter the settings of a message bus
+ * instance is through these classes.
  *
  * This class contains the spec for a single route.
  *
@@ -27,11 +27,11 @@ public:
      *
      * @param name A protocol-unique name for this route.
      */
-    explicit RouteSpec(const string &name) noexcept;
-    RouteSpec(const RouteSpec &);
-    RouteSpec & operator = (const RouteSpec &);
-    RouteSpec(RouteSpec &&) noexcept;
-    RouteSpec & operator = (RouteSpec &&) noexcept;
+    explicit RouteSpec(const string& name) noexcept;
+    RouteSpec(const RouteSpec&);
+    RouteSpec& operator=(const RouteSpec&);
+    RouteSpec(RouteSpec&&) noexcept;
+    RouteSpec& operator=(RouteSpec&&) noexcept;
     ~RouteSpec();
 
     /**
@@ -39,7 +39,7 @@ public:
      *
      * @return The name.
      */
-    [[nodiscard]] const string &getName() const { return _name; }
+    [[nodiscard]] const string& getName() const { return _name; }
 
     /**
      * Returns the hop name at the given index.
@@ -47,7 +47,7 @@ public:
      * @param i The index of the hop to return.
      * @return The hop at the given index.
      */
-    [[nodiscard]] const string &getHop(uint32_t i) const { return _hops[i]; }
+    [[nodiscard]] const string& getHop(uint32_t i) const { return _hops[i]; }
 
     /**
      * Returns the number of hops that make up this route.
@@ -62,8 +62,8 @@ public:
      * @param hop The hop to add.
      * @return This, to allow chaining.
      */
-    RouteSpec & addHop(const string &hop) &;
-    RouteSpec && addHop(const string &hop) &&;
+    RouteSpec& addHop(const string& hop) &;
+    RouteSpec&& addHop(const string& hop) &&;
 
     /**
      * Sets the hop name for a given index.
@@ -72,7 +72,7 @@ public:
      * @param hop The hop to set.
      * @return This, to allow chaining.
      */
-    RouteSpec &setHop(uint32_t i, const string &hop);
+    RouteSpec& setHop(uint32_t i, const string& hop);
 
     /**
      * Appends the content of this to the given config string.
@@ -80,7 +80,7 @@ public:
      * @param cfg    The config to add to.
      * @param prefix The prefix to use for each add.
      */
-    void toConfig(string &cfg, const string &prefix) const;
+    void toConfig(string& cfg, const string& prefix) const;
 
     /**
      * Returns a string representation of this route specification.
@@ -95,7 +95,7 @@ public:
      * @param rhs The object to compare to.
      * @return True if this equals the other.
      */
-    bool operator==(const RouteSpec &rhs) const;
+    bool operator==(const RouteSpec& rhs) const;
 
     /**
      * Implements the inequality operator.
@@ -103,8 +103,7 @@ public:
      * @param rhs The object to compare to.
      * @return True if this does not equals the other.
      */
-    bool operator!=(const RouteSpec &rhs) const { return !(*this == rhs); }
+    bool operator!=(const RouteSpec& rhs) const { return !(*this == rhs); }
 };
 
 } // namespace mbus
-

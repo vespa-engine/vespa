@@ -242,7 +242,8 @@ private:
     SerialNum getMinLastPersistedSerialNum() const {
         return (_fileChunks.empty() ? 0 : _fileChunks.back()->getLastPersistedSerialNum());
     }
-    bool shouldCompactToActiveFile(size_t compactedSize) const;
+    bool must_compact_to_the_active_file(const MonitorGuard & guard, NameId compacting_name_id,
+                                         size_t compactedSize) const;
     std::pair<bool, FileId> findNextToCompact(bool compactDiskBloat);
     void incGeneration();
     bool canShrinkLidSpace(const MonitorGuard &guard) const;
@@ -254,6 +255,7 @@ private:
     mutable vespalib::GenerationHandler      _genHandler;
     LidInfoVector                            _lidInfo;
     FileChunkVector                          _fileChunks;
+    NameIdSet                                _current_nameids;
     vespalib::hash_map<uint32_t, uint32_t>   _holdFileChunks;
     FileId                                   _active;
     FileId                                   _prevActive;
@@ -264,7 +266,7 @@ private:
     transactionlog::SyncProxy               &_tlSyncer;
     IBucketizer::SP                          _bucketizer;
     NameIdSet                                _currentlyCompacting;
-    uint64_t                                 _compactLidSpaceGeneration;
+    vespalib::Generation                     _compactLidSpaceGeneration;
     NameId                                   _last_name_id;
 };
 

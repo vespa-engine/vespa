@@ -7,24 +7,17 @@ LOG_SETUP(".routingpolicyrepository");
 
 namespace documentapi {
 
-RoutingPolicyRepository::RoutingPolicyRepository() :
-    _lock(),
-    _factories()
-{
+RoutingPolicyRepository::RoutingPolicyRepository() : _lock(), _factories() {
     // empty
 }
 
-void
-RoutingPolicyRepository::putFactory(const string &name, IRoutingPolicyFactory::SP factory)
-{
+void RoutingPolicyRepository::putFactory(const string& name, IRoutingPolicyFactory::SP factory) {
     std::lock_guard guard(_lock);
     _factories[name] = factory;
 }
 
-IRoutingPolicyFactory::SP
-RoutingPolicyRepository::getFactory(const string &name) const
-{
-    std::lock_guard guard(_lock);
+IRoutingPolicyFactory::SP RoutingPolicyRepository::getFactory(const string& name) const {
+    std::lock_guard            guard(_lock);
     FactoryMap::const_iterator it = _factories.find(name);
     if (it != _factories.end()) {
         return it->second;
@@ -32,9 +25,7 @@ RoutingPolicyRepository::getFactory(const string &name) const
     return IRoutingPolicyFactory::SP();
 }
 
-mbus::IRoutingPolicy::UP
-RoutingPolicyRepository::createPolicy(const string &name, const string &param) const
-{
+mbus::IRoutingPolicy::UP RoutingPolicyRepository::createPolicy(const string& name, const string& param) const {
     IRoutingPolicyFactory::SP factory = getFactory(name);
     if (factory.get() == nullptr) {
         LOG(error, "No routing policy factory found for name '%s'.", name.c_str());
@@ -42,11 +33,10 @@ RoutingPolicyRepository::createPolicy(const string &name, const string &param) c
     }
     mbus::IRoutingPolicy::UP ret = factory->createPolicy(param);
     if (ret.get() == nullptr) {
-        LOG(error, "Routing policy factory failed to create a routing policy for parameter '%s'.",
-            param.c_str());
+        LOG(error, "Routing policy factory failed to create a routing policy for parameter '%s'.", param.c_str());
         return mbus::IRoutingPolicy::UP();
     }
     return ret;
 }
 
-}
+} // namespace documentapi

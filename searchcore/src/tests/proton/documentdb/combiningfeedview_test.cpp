@@ -94,7 +94,7 @@ struct MySubDb
     void insertDocs(const test::BucketDocuments &docs) {
         for (size_t i = 0; i < docs.getDocs().size(); ++i) {
             const test::Document &testDoc = docs.getDocs()[i];
-            _view->_metaStore.put(testDoc.getGid(), testDoc.getBucket(),
+            _view->_metaStore.put(testDoc.getDocId(), testDoc.getBucket(),
                                   testDoc.getTimestamp(), testDoc.getDocSize(), testDoc.getLid(), 0u);
         }
     }

@@ -18,6 +18,7 @@ import (
 type customTarget struct {
 	targetType    string
 	baseURL       string
+	deployment    Deployment
 	httpClient    httputil.Client
 	tlsOptions    TLSOptions
 	retryInterval time.Duration
@@ -36,10 +37,11 @@ type serviceInfo struct {
 }
 
 // LocalTarget creates a target for a Vespa platform running locally.
-func LocalTarget(httpClient httputil.Client, tlsOptions TLSOptions, retryInterval time.Duration) Target {
+func LocalTarget(httpClient httputil.Client, tlsOptions TLSOptions, retryInterval time.Duration, deployment Deployment) Target {
 	return &customTarget{
 		targetType:    TargetLocal,
 		baseURL:       "http://127.0.0.1",
+		deployment:    deployment,
 		httpClient:    httpClient,
 		tlsOptions:    tlsOptions,
 		retryInterval: retryInterval,
@@ -47,10 +49,11 @@ func LocalTarget(httpClient httputil.Client, tlsOptions TLSOptions, retryInterva
 }
 
 // CustomTarget creates a Target for a Vespa platform running at baseURL.
-func CustomTarget(httpClient httputil.Client, baseURL string, tlsOptions TLSOptions, retryInterval time.Duration) Target {
+func CustomTarget(httpClient httputil.Client, baseURL string, tlsOptions TLSOptions, retryInterval time.Duration, deployment Deployment) Target {
 	return &customTarget{
 		targetType:    TargetCustom,
 		baseURL:       baseURL,
+		deployment:    deployment,
 		httpClient:    httpClient,
 		tlsOptions:    tlsOptions,
 		retryInterval: retryInterval,
@@ -61,14 +64,19 @@ func (t *customTarget) Type() string { return t.targetType }
 
 func (t *customTarget) IsCloud() bool { return false }
 
-func (t *customTarget) Deployment() Deployment { return DefaultDeployment }
+func (t *customTarget) Deployment() Deployment { return t.deployment }
 
 func (t *customTarget) PrintLog(options LogOptions) error {
 	deployService, err := t.DeployService()
 	if err != nil {
 		return err
 	}
-	logsURL := deployService.BaseURL + "/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/logs"
+	app := t.deployment.Application
+	endpoint := fmt.Sprintf(
+		"/application/v2/tenant/default/application/%s/environment/prod/region/default/instance/%s/logs",
+		app.Application,
+		app.Instance)
+	logsURL := deployService.BaseURL + endpoint
 	return pollLogs(t, logsURL, options, t.retryInterval)
 }
 
@@ -186,7 +194,12 @@ func (t *customTarget) serviceStatus(wantedGeneration int64, timeout time.Durati
 	if err != nil {
 		return serviceStatus{}, err
 	}
-	url := fmt.Sprintf("%s/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/serviceconverge", deployService.BaseURL)
+	app := t.deployment.Application
+	url := fmt.Sprintf(
+		"%s/application/v2/tenant/default/application/%s/environment/prod/region/default/instance/%s/serviceconverge",
+		deployService.BaseURL,
+		app.Application,
+		app.Instance)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return serviceStatus{}, err

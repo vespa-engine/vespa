@@ -24,8 +24,10 @@ import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.model.api.TenantVault;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.InstanceName;
@@ -320,9 +322,11 @@ public class SessionPreparer {
 
         void vespaPreprocess(File appDir, File inputXml, ApplicationMetaData metaData, Tags tags) {
             try {
+                ApplicationName application = metaData.getApplicationId().application();
                 InstanceName instance = metaData.getApplicationId().instance();
                 new XmlPreProcessor(appDir,
                                     inputXml,
+                                    application,
                                     instance,
                                     zone.environment(),
                                     zone.region(),
@@ -368,6 +372,7 @@ public class SessionPreparer {
                                   params.tenantSecretStores(),
                                   params.operatorCertificates(),
                                   params.cloudAccount(),
+                                  params.cloudResourceTags(),
                                   params.dataplaneTokens(),
                                   ActivationTriggers.from(prepareResult.getConfigChangeActions(), params.isInternalRedeployment()));
             checkTimeout("write state to zookeeper");
@@ -414,6 +419,7 @@ public class SessionPreparer {
                                        List<TenantSecretStore> tenantSecretStores,
                                        List<X509Certificate> operatorCertificates,
                                        Optional<CloudAccount> cloudAccount,
+                                       CloudResourceTags cloudResourceTags,
                                        List<DataplaneToken> dataplaneTokens,
                                        ActivationTriggers activationTriggers) {
         var zooKeeperDeployer = new ZooKeeperDeployer(curator, deployLogger, applicationId, zooKeeperClient.sessionId());
@@ -432,6 +438,7 @@ public class SessionPreparer {
                                           tenantSecretStores,
                                           operatorCertificates,
                                           cloudAccount,
+                                          cloudResourceTags,
                                           dataplaneTokens,
                                           activationTriggers,
                                           writeSessionData);

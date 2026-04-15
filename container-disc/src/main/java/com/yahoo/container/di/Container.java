@@ -37,7 +37,8 @@ import static java.util.logging.Level.FINE;
 /**
  * @author gjoranv
  * @author Tony Vaagenes
- * @author ollivir
+ * @author Olli Virtanen
+ * @author glebashnik
  */
 public class Container {
 
@@ -54,6 +55,12 @@ public class Container {
     private List<String> platformBundles;  // Used to verify that platform bundles don't change.
     private long previousConfigGeneration = -1L;
     private long leastGeneration = -1L;
+    
+    // Config keys from the most recently failed graph construction.
+    // Set to the failed graph's keys when constructComponents fails (component class exists, keys are valid);
+    // set to empty when graph creation itself fails (keys may be stale/missing after bootstrap change).
+    // Used in recovery mode to subscribe to the right set of configs.
+    private Set<ConfigKey<? extends ConfigInstance>> failedGraphConfigKeys = Set.of();
 
     public Container(SubscriberFactory subscriberFactory,
                      com.yahoo.container.Container vespaContainer,
@@ -86,16 +93,28 @@ public class Container {
                 }
                 Collection<Bundle> newBundlesFromFailedGen = osgi.completeBundleGeneration(Osgi.GenerationStatus.FAILURE);
                 deconstructComponentsAndBundles(getBootstrapGeneration(), newBundlesFromFailedGen, List.of());
+                
+                // Graph creation failed: config keys may be stale (bootstrap changed, component class missing).
+                // Use empty keys to force bootstrap-first retrieval on next attempt.
+                failedGraphConfigKeys = Set.of();
+                
                 throw t;
             }
+            
             try {
                 constructComponents(newGraph);
             } catch (Throwable e) {
                 log.warning("Failed to construct components for generation '" + newGraph.generation() + "' - scheduling partial graph for deconstruction");
                 Collection<Bundle> newBundlesFromFailedGen = osgi.completeBundleGeneration(Osgi.GenerationStatus.FAILURE);
                 deconstructFailedGraph(oldGraph, newGraph, newBundlesFromFailedGen);
+                
+                // Construction failed: the component class exists, so its config keys are valid and can be
+                // reused in recovery mode to detect config-only changes without needing a bootstrap reload.
+                failedGraphConfigKeys = newGraph.configKeys();
+                
                 throw e;
             }
+            failedGraphConfigKeys = Set.of();
             Collection<Bundle> unusedBundlesFromPreviousGen = osgi.completeBundleGeneration(Osgi.GenerationStatus.SUCCESS);
             Runnable cleanupTask = createPreviousGraphDeconstructionTask(oldGraph, newGraph, unusedBundlesFromPreviousGen);
             return new ComponentGraphResult(newGraph, cleanupTask);
@@ -118,11 +137,19 @@ public class Container {
     {
         ConfigSnapshot snapshot;
         while (true) {
-            snapshot = retriever.getConfigs(graph.configKeys(), leastGeneration, isInitializing);
+            // In recovery mode (leastGeneration > graph.generation()), use the config keys from the
+            // most recently failed graph rather than the old graph's keys. If construction failed,
+            // failedGraphConfigKeys has the failed graph's keys (valid: component class exists).
+            // If graph creation failed, failedGraphConfigKeys is empty (forces bootstrap-first retrieval
+            // to avoid subscribing to stale keys that no longer exist after a bootstrap change).
+            var configKeys = leastGeneration > graph.generation()
+                    ? failedGraphConfigKeys
+                    : graph.configKeys();
+            snapshot = retriever.getConfigs(configKeys, leastGeneration, isInitializing);
 
             if (log.isLoggable(FINE))
-                log.log(FINE, Text.format("getConfigAndCreateGraph:\n" + "graph.configKeys = %s\n" + "graph.generation = %s\n" + "snapshot = %s\n",
-                                            graph.configKeys(), graph.generation(), snapshot));
+                log.log(FINE, Text.format("getConfigAndCreateGraph:\n" + "configKeys = %s\n" + "graph.generation = %s\n" + "snapshot = %s\n",
+                                            configKeys, graph.generation(), snapshot));
 
             if (snapshot instanceof BootstrapConfigs) {
                 if (getBootstrapGeneration() <= previousConfigGeneration) {
@@ -145,6 +172,14 @@ public class Container {
                 // Continues loop
 
             } else if (snapshot instanceof ComponentsConfigs) {
+                if (leastGeneration > graph.generation() && failedGraphConfigKeys.isEmpty()) {
+                    // Recovery with empty config keys: snapshot contains only bootstrap configs.
+                    // Rebuild graph to discover actual component config keys for next iteration.
+                    throwIfPlatformBundlesChanged(snapshot);
+                    installApplicationBundles(snapshot.configs());
+                    graph = createComponentGraph(snapshot.configs(), getComponentsGeneration(), fallbackInjector);
+                    continue;
+                }
                 break;
             }
         }

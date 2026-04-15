@@ -9,6 +9,7 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationMetaData;
@@ -32,6 +33,7 @@ import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.NodeSuspensionProvider;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.exception.ActivationConflictException;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -68,6 +70,7 @@ import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.deploy.Deployment;
 import com.yahoo.vespa.config.server.deploy.InfraDeployerProvider;
 import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
+import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.LogRetriever;
@@ -78,6 +81,7 @@ import com.yahoo.vespa.config.server.http.v2.PrepareAndActivateResult;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.http.v2.response.DeploymentMetricsResponse;
 import com.yahoo.vespa.config.server.http.v2.response.SearchNodeMetricsResponse;
+import com.yahoo.vespa.config.server.metrics.ClusterDeploymentMetricsRetriever;
 import com.yahoo.vespa.config.server.metrics.DeploymentMetricsRetriever;
 import com.yahoo.vespa.config.server.metrics.SearchNodeMetricsRetriever;
 import com.yahoo.vespa.config.server.provision.DeploymentConfigStoreProvider;
@@ -100,15 +104,14 @@ import com.yahoo.vespa.curator.stats.ThreadLockStats;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Clock;
 import java.time.Duration;
@@ -138,6 +141,7 @@ import static com.yahoo.vespa.config.server.tenant.TenantRepository.HOSTED_VESPA
 import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static java.nio.file.Files.readAttributes;
+import static java.util.logging.Level.INFO;
 
 /**
  * The API for managing applications.
@@ -170,6 +174,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final ClusterReindexingStatusClient clusterReindexingStatusClient;
     private final ActiveTokenFingerprints activeTokenFingerprints;
     private final FlagSource flagSource;
+    private final DeploymentMetricsRetriever deploymentMetricsRetriever;
 
     @Inject
     public ApplicationRepository(TenantRepository tenantRepository,
@@ -183,7 +188,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                  TesterClient testerClient,
                                  HealthCheckerProvider healthCheckers,
                                  Metric metric,
-                                 FlagSource flagSource) {
+                                 FlagSource flagSource,
+                                 ComponentRegistry<NodeSuspensionProvider> nodeSuspensionProviders) {
         this(tenantRepository,
              hostProvisionerProvider.getHostProvisioner(),
              deploymentConfigStoreProvider.getStore(),
@@ -200,7 +206,20 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
              new SecretStoreValidator(),
              new DefaultClusterReindexingStatusClient(),
              new ActiveTokenFingerprintsClient(),
-             flagSource);
+             flagSource,
+             new DeploymentMetricsRetriever(new ClusterDeploymentMetricsRetriever(),
+                     nodeSuspensionProvider(nodeSuspensionProviders)));
+    }
+
+    private static NodeSuspensionProvider nodeSuspensionProvider(ComponentRegistry<NodeSuspensionProvider> registry) {
+        var providers = registry.allComponents();
+        if (providers.size() > 1) {
+            String providerDescriptions = providers.stream()
+                    .map(provider -> provider.getClass().getName())
+                    .collect(Collectors.joining(", "));
+            throw new IllegalArgumentException("Multiple NodeSuspensionProvider components registered: " + providerDescriptions);
+        }
+        return providers.isEmpty() ? NodeSuspensionProvider.EMPTY : providers.get(0);
     }
 
     private ApplicationRepository(TenantRepository tenantRepository,
@@ -219,7 +238,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                   SecretStoreValidator secretStoreValidator,
                                   ClusterReindexingStatusClient clusterReindexingStatusClient,
                                   ActiveTokenFingerprints activeTokenFingerprints,
-                                  FlagSource flagSource) {
+                                  FlagSource flagSource,
+                                  DeploymentMetricsRetriever deploymentMetricsRetriever) {
         this.tenantRepository = Objects.requireNonNull(tenantRepository);
         this.hostProvisioner = Objects.requireNonNull(hostProvisioner);
         this.deploymentConfigStore = Objects.requireNonNull(deploymentConfigStore);
@@ -237,6 +257,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         this.clusterReindexingStatusClient = Objects.requireNonNull(clusterReindexingStatusClient);
         this.activeTokenFingerprints = Objects.requireNonNull(activeTokenFingerprints);
         this.flagSource = flagSource;
+        this.deploymentMetricsRetriever = Objects.requireNonNull(deploymentMetricsRetriever);
     }
 
     // Should be used by tests only (first constructor in this class makes sure we use injectable components where possible)
@@ -343,7 +364,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                              secretStoreValidator,
                                              ClusterReindexingStatusClient.DUMMY_INSTANCE,
                                              __ -> activeTokens,
-                                             flagSource);
+                                             flagSource,
+                                             new DeploymentMetricsRetriever());
         }
 
     }
@@ -806,6 +828,100 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return secretStoreValidator.validateSecretStore(application, systemName, slime);
     }
 
+    public void removeStaleHostRegistryEntries() {
+        Duration lockTimeout = Duration.ofSeconds(2);
+
+        for (var tenant : tenantRepository.getAllTenants()) {
+            TenantApplications tenantApplications = tenant.getApplicationRepo();
+            SessionRepository sessionRepository = tenant.getSessionRepository();
+            HostRegistry hostRegistry = tenantApplications.hostRegistry();
+
+            // Phase A: Optimistic (lock-free) comparison of ApplicationId sets.
+            // hostRegistry is global (hosts for all apps for all tenants), so scope to the current tenant.
+            Set<ApplicationId> registryApps = hostRegistry.getApplicationIds().stream()
+                    .filter(app -> app.tenant().equals(tenant.getName()))
+                    .collect(Collectors.toSet());
+            Set<ApplicationId> activeApps = Set.copyOf(tenantApplications.activeApplications());
+
+            Set<ApplicationId> inRegistryOnly = new HashSet<>(registryApps);
+            inRegistryOnly.removeAll(activeApps);
+
+            Set<ApplicationId> inActiveOnly = new HashSet<>(activeApps);
+            inActiveOnly.removeAll(registryApps);
+
+            Set<ApplicationId> inBoth = new HashSet<>(registryApps);
+            inBoth.retainAll(activeApps);
+
+            // Phase B: Re-verify ApplicationId mismatches under lock
+            for (ApplicationId app : inRegistryOnly) {
+                try (var lock = tenantApplications.lock(app, lockTimeout)) {
+                    if (hostRegistry.getHosts(app).isEmpty()) continue;
+                    if (tenantApplications.activeApplications().contains(app)) continue;
+                    log.log(INFO, "Host registry has hosts " + hostRegistry.getHosts(app) +
+                            " for " + app + " but application is not active" +
+                            " (tenant " + tenant.getName() + ")");
+                } catch (UncheckedTimeoutException e) {
+                    log.log(Level.FINE, "Could not acquire lock for " + app + ", skipping");
+                } catch (RuntimeException e) {
+                    log.log(Level.WARNING, "Error checking host registry for " + app + ": " +
+                            Exceptions.toMessageString(e));
+                }
+            }
+
+            for (ApplicationId app : inActiveOnly) {
+                try (var lock = tenantApplications.lock(app, lockTimeout)) {
+                    if (!tenantApplications.activeApplications().contains(app)) continue;
+                    if (!hostRegistry.getHosts(app).isEmpty()) continue;
+                    log.log(INFO, "Application " + app + " is active with hosts " +
+                            getSessionHosts(app, tenantApplications, sessionRepository) +
+                            " but has no hosts in host registry (tenant " + tenant.getName() + ")");
+                } catch (UncheckedTimeoutException e) {
+                    log.log(Level.FINE, "Could not acquire lock for " + app + ", skipping");
+                } catch (RuntimeException e) {
+                    log.log(Level.WARNING, "Error checking host registry for " + app + ": " +
+                            Exceptions.toMessageString(e));
+                }
+            }
+
+            // Phase C: Per-application host diff under lock
+            for (ApplicationId app : inBoth) {
+                try (var lock = tenantApplications.lock(app, lockTimeout)) {
+                    Set<String> registryHosts = new HashSet<>(hostRegistry.getHosts(app));
+                    Set<String> sessionHosts = getSessionHosts(app, tenantApplications, sessionRepository);
+
+                    Set<String> inRegistryNotSession = new HashSet<>(registryHosts);
+                    inRegistryNotSession.removeAll(sessionHosts);
+
+                    Set<String> inSessionNotRegistry = new HashSet<>(sessionHosts);
+                    inSessionNotRegistry.removeAll(registryHosts);
+
+                    if (!inRegistryNotSession.isEmpty() || !inSessionNotRegistry.isEmpty()) {
+                        log.log(INFO, "Host diff for " + app + " (tenant " + tenant.getName() + "): " +
+                                "in registry but not session=" + inRegistryNotSession +
+                                ", in session but not registry=" + inSessionNotRegistry);
+                    }
+                } catch (UncheckedTimeoutException e) {
+                    log.log(Level.FINE, "Could not acquire lock for " + app + ", skipping");
+                } catch (RuntimeException e) {
+                    log.log(Level.WARNING, "Error checking host registry for " + app + ": " +
+                            Exceptions.toMessageString(e));
+                }
+            }
+        }
+    }
+
+    private static Set<String> getSessionHosts(ApplicationId app, TenantApplications tenantApplications, SessionRepository sessionRepository) {
+        Set<String> sessionHosts = new HashSet<>();
+        tenantApplications.activeSessionOf(app).ifPresent(sessionId -> {
+            Session session = sessionRepository.getRemoteSession(sessionId);
+            if (session != null) {
+                session.getAllocatedHosts().getHosts()
+                        .forEach(hostSpec -> sessionHosts.add(hostSpec.hostname()));
+            }
+        });
+        return sessionHosts;
+    }
+
     // ---------------- Convergence ----------------------------------------------------------------
 
     public ServiceResponse checkServiceForConfigConvergence(ApplicationId applicationId,
@@ -1008,7 +1124,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public DeploymentMetricsResponse getDeploymentMetrics(ApplicationId applicationId) {
         Application application = getApplication(applicationId);
-        DeploymentMetricsRetriever deploymentMetricsRetriever = new DeploymentMetricsRetriever();
         return deploymentMetricsRetriever.getMetrics(application);
     }
 

@@ -41,8 +41,8 @@ export VESPA_CONTAINER_IMAGE_VERSION_TAG_SUFFIX ?= -dev-only
 
 .DEFAULT_GOAL := pr
 
-main: build-rpms cpp-test quick-start-guide publish-container publish-artifacts
-pr: build-rpms cpp-test basic-search-test
+main: cpp-test java-test quick-start-guide publish-container publish-artifacts
+pr: basic-search-test
 
 check:
 	@shellcheck -x $(TOP)/*.sh
@@ -59,19 +59,22 @@ bootstrap-cmake: bootstrap
 java: bootstrap
 	@$(TOP)/execute.sh $@
 
+java-test: install
+	@$(TOP)/execute.sh $@
+
 cpp: bootstrap-cmake
 	@$(TOP)/execute.sh $@
 
-cpp-test: cpp
+cpp-test: install
 	@$(TOP)/execute.sh $@
 
-install: cpp java cpp-test
+install: cpp java
 	@$(TOP)/execute.sh $@
 
 build-rpms: install
 	@$(TOP)/execute.sh $@
 
-basic-search-test: build-rpms
+basic-search-test: build-rpms cpp-test java-test
 	@$(TOP)/execute.sh $@
 
 build-container: build-rpms
@@ -83,10 +86,10 @@ quick-start-guide: build-container
 publish-container: build-container
 	@$(TOP)/execute.sh $@
 
-publish-artifacts: java build-rpms
+publish-artifacts: build-rpms
 	@$(TOP)/execute.sh $@
 
-upload-test-results: java cpp-test
+upload-test-results: java-test cpp-test
 	@$(TOP)/execute.sh $@
 
 .PHONY: \
@@ -96,6 +99,7 @@ upload-test-results: java cpp-test
 	bootstrap \
 	bootstrap-cmake \
 	java \
+	java-test \
 	cpp \
 	cpp-test \
 	install \

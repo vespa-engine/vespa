@@ -17,6 +17,7 @@
 LOG_SETUP("multivaluemapping_test");
 
 using search::CommitParam;
+using vespalib::Generation;
 using vespalib::datastore::ArrayStoreConfig;
 using vespalib::datastore::CompactionSpec;
 using vespalib::datastore::CompactionStrategy;
@@ -250,12 +251,12 @@ TEST_F(IntMappingTest, test_that_old_value_is_not_overwritten_while_held)
     auto old3 = get(3);
     assertArray({5}, old3);
     set(3, {7});
-    assign_generation(10);
+    assign_generation(Generation(10));
     assertArray({5}, old3);
     assertGet(3, {7});
-    reclaim_memory(10);
+    reclaim_memory(Generation(10));
     assertArray({5}, old3);
-    reclaim_memory(11);
+    reclaim_memory(Generation(11));
     assertArray({0}, old3);
 }
 

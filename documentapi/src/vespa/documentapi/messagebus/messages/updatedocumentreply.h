@@ -46,5 +46,4 @@ public:
     string toString() const override { return "updatedocumentreply"; }
 };
 
-}
-
+} // namespace documentapi

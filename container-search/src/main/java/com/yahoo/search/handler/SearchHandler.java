@@ -235,13 +235,18 @@ public class SearchHandler extends LoggingRequestHandler {
         String queryProfileName = requestMap.getOrDefault("queryProfile", null);
         CompiledQueryProfile queryProfile = queryProfileRegistry.findQueryProfile(queryProfileName);
 
-        Query query = new Query.Builder().setRequest(request)
-                                         .setRequestMap(requestMap)
-                                         .setQueryProfile(queryProfile)
-                                         .setEmbedders(embedders)
-                                         .setZoneInfo(zoneInfo)
-                                         .setSchemaInfo(executionFactory.schemaInfo())
-                                         .build();
+        Query query;
+        try {
+            query = new Query.Builder().setRequest(request)
+                                       .setRequestMap(requestMap)
+                                       .setQueryProfile(queryProfile)
+                                       .setEmbedders(embedders)
+                                       .setZoneInfo(zoneInfo)
+                                       .setSchemaInfo(executionFactory.schemaInfo())
+                                       .build();
+        } catch (IllegalArgumentException e) {
+            throw new IllegalInputException(e);
+        }
         query.getHttpRequest().context().put("search.handlerStartTime", executionStart);
 
         // If format not explicitly set, use Accept header to determine response format
@@ -286,7 +291,11 @@ public class SearchHandler extends LoggingRequestHandler {
 
         // Transform result to response
         Renderer<Result> renderer = toRendererCopy(query.getPresentation().getRenderer());
-        HttpSearchResponse response = new HttpSearchResponse(getHttpResponseStatus(request, result),
+        int status = getHttpResponseStatus(request, result);
+        if (status == 500 && result.hits().getError() != null) {
+            log.log(Level.FINE, () -> "Search request returning %d: %s".formatted(status, result.hits().getError().getDetailedMessage()));
+        }
+        HttpSearchResponse response = new HttpSearchResponse(status,
                                                              result, query, renderer,
                                                              extractTraceNode(query),
                                                              metric);
@@ -361,7 +370,8 @@ public class SearchHandler extends LoggingRequestHandler {
             execution.context().setDetailedDiagnostics(true);
         }
         Result result = execution.search(query);
-        ensureQuerySet(result, query);
+        if (result.getQuery() == null)
+            result.setQuery(query);
 
         // StatisticsSearcher does fill, so we can skip the fill here for performance if it is the first in the chain
         if ( ! searchChain.components().isEmpty() && ! (searchChain.components().get(0) instanceof StatisticsSearcher))
@@ -390,13 +400,6 @@ public class SearchHandler extends LoggingRequestHandler {
         Renderer<Result> copy = renderer.clone();
         copy.init();
         return copy;
-    }
-
-    private void ensureQuerySet(Result result, Query fallbackQuery) {
-        Query query = result.getQuery();
-        if (query == null) {
-            result.setQuery(fallbackQuery);
-        }
     }
 
     private Result search(String request, Query query, Chain<Searcher> searchChain) {

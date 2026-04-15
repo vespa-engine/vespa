@@ -121,6 +121,7 @@ public class Validation {
         new TenantSecretValidator().validate(execution);
         new HnswValidator().validate(execution);
         new EmbedExpressionValidator().validate(execution);
+        new MaxDocumentSizeValidator().validate(execution);
     }
 
     private static void validateFirstTimeDeployment(Execution execution) {

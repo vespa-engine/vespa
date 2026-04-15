@@ -215,7 +215,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                                Set.copyOf(containerEndpoints),
                                                params.isBootstrap(),
                                                activeApplicationVersions.isEmpty(),
-                                               LegacyFlags.from(applicationPackage, flagSource),
+                                               LegacyFlags.from(applicationPackage, flagSource.snapshot()),
                                                endpointCertificateSecrets,
                                                params.athenzDomain(),
                                                params.quota(),
@@ -223,6 +223,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                                params.tenantSecretStores(),
                                                params.operatorCertificates(),
                                                params.cloudAccount(),
+                                               params.cloudResourceTags(),
                                                params.dataplaneTokens());
     }
 

@@ -61,4 +61,75 @@ public class ExpansionTestCase extends RuleBaseAbstractTestCase {
         assertSemantics("AND foo (EQUIV cascade1 cascade2 cascade3) bar", "foo cascade1 bar");
     }
 
+    // Multi-word condition with unquoted target
+    @Test
+    void testEquivMultiWordCondition() {
+        assertSemantics("EQUIV \"multi1 multi2\" expanded", "multi1 multi2");
+    }
+
+    @Test
+    void testEquivMultiWordConditionInLongerQuery() {
+        assertSemantics("AND foo (EQUIV \"multi1 multi2\" expanded) bar", "foo multi1 multi2 bar");
+    }
+
+    @Test
+    void testEquivMultiWordConditionMultipleTargets() {
+        assertSemantics("AND foo (EQUIV \"multi3 multi4\" expanded3 expanded4) bar", "foo multi3 multi4 bar");
+    }
+
+    @Test
+    void testEquivMultiWordConditionQuotedTarget() {
+        assertSemantics("EQUIV \"multi5 multi6\" quotedexpanded", "multi5 multi6");
+    }
+
+    @Test
+    void testEquivMultiWordConditionQuotedTargetInLongerQuery() {
+        assertSemantics("AND foo (EQUIV \"multi5 multi6\" quotedexpanded) bar", "foo multi5 multi6 bar");
+    }
+
+    // Multi-word condition with quoted multi-word (phrase) target
+    @Test
+    void testEquivMultiWordConditionQuotedPhraseTarget() {
+        assertSemantics("EQUIV \"multi7 multi8\" \"quoted two words\"", "multi7 multi8");
+    }
+
+    @Test
+    void testEquivMultiWordConditionQuotedPhraseTargetInLongerQuery() {
+        assertSemantics("AND foo (EQUIV \"multi7 multi8\" \"quoted two words\") bar", "foo multi7 multi8 bar");
+    }
+
+    // Mixed quoted and unquoted targets from a multi-word condition
+    @Test
+    void testEquivMultiWordConditionMixedTargets() {
+        assertSemantics("AND foo (EQUIV \"mw1 mw2\" single1 single2) bar", "foo mw1 mw2 bar");
+    }
+
+    // Single-word condition with mixed quoted phrase + unquoted targets
+    @Test
+    void testEquivMixedQuotedAndUnquotedTargets() {
+        assertSemantics("AND foo (EQUIV single1 \"mw1 mw2\" single2) bar", "foo single1 bar");
+    }
+
+    @Test
+    void testEquivMixedQuotedAndUnquotedTargetsReverse() {
+        assertSemantics("AND foo (EQUIV single2 \"mw1 mw2\" single1) bar", "foo single2 bar");
+    }
+
+    // Multiple quoted targets in a single rule
+    @Test
+    void testEquivMultipleQuotedTargets() {
+        assertSemantics("EQUIV phrase1 \"target one\" \"target two\"", "phrase1");
+    }
+
+    @Test
+    void testEquivMultipleQuotedTargetsInLongerQuery() {
+        assertSemantics("AND foo (EQUIV phrase1 \"target one\" \"target two\") bar", "foo phrase1 bar");
+    }
+
+    // Mixed unquoted and quoted targets in a single rule
+    @Test
+    void testEquivUnquotedThenQuotedTarget() {
+        assertSemantics("AND foo (EQUIV phrase2 unquoted \"quoted phrase\") bar", "foo phrase2 bar");
+    }
+
 }

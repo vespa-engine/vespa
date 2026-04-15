@@ -16,15 +16,15 @@ class RPCNetwork;
  * outgoing RPC sends. The {@link RPCNetwork} maintains a list of supported RPC
  * signatures, and dispatches sends to the corresponding adapter.
  */
-class RPCSendAdapter
-{
+class RPCSendAdapter {
 protected:
     RPCSendAdapter() = default;
+
 public:
     using CapabilitySet = vespalib::net::tls::CapabilitySet;
 
-    RPCSendAdapter(const RPCSendAdapter &) = delete;
-    RPCSendAdapter & operator = (const RPCSendAdapter &) = delete;
+    RPCSendAdapter(const RPCSendAdapter&) = delete;
+    RPCSendAdapter& operator=(const RPCSendAdapter&) = delete;
     /**
      * Required for inheritance.
      */
@@ -36,7 +36,7 @@ public:
      * @param net The network to attach to.
      * @param required_capabilities capabilities required to invoke mbus on this server
      */
-    virtual void attach(RPCNetwork &net, CapabilitySet required_capabilities) = 0;
+    virtual void attach(RPCNetwork& net, CapabilitySet required_capabilities) = 0;
 
     /**
      * Performs the actual sending to the given recipient.
@@ -46,8 +46,8 @@ public:
      * @param payload       The already serialized payload of the message to send.
      * @param timeRemaining The time remaining until the message expires.
      */
-    virtual void send(RoutingNode &recipient, const vespalib::Version &version,
-                      BlobRef payload, duration timeRemaining) = 0;
+    virtual void send(RoutingNode& recipient, const vespalib::Version& version, BlobRef payload,
+                      duration timeRemaining) = 0;
 
     /**
      * Performs the actual sending to the given recipient.
@@ -57,9 +57,8 @@ public:
      * @param payload       The already serialized payload of the message to send.
      * @param timeRemaining The time remaining until the message expires.
      */
-    virtual void sendByHandover(RoutingNode &recipient, const vespalib::Version &version,
-                      Blob payload, duration timeRemaining) = 0;
+    virtual void sendByHandover(RoutingNode& recipient, const vespalib::Version& version, Blob payload,
+                                duration timeRemaining) = 0;
 };
 
 } // namespace mbus
-

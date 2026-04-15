@@ -96,7 +96,6 @@ import static com.yahoo.search.yql.YqlParser.ASCENDING_HITS_ORDER;
 import static com.yahoo.search.yql.YqlParser.CONNECTION_ID;
 import static com.yahoo.search.yql.YqlParser.CONNECTION_WEIGHT;
 import static com.yahoo.search.yql.YqlParser.CONNECTIVITY;
-import static com.yahoo.search.yql.YqlParser.DEFAULT_WAND_TARGET_HITS;
 import static com.yahoo.search.yql.YqlParser.DESCENDING_HITS_ORDER;
 import static com.yahoo.search.yql.YqlParser.DISTANCE;
 import static com.yahoo.search.yql.YqlParser.DISTANCE_THRESHOLD;
@@ -134,6 +133,7 @@ import static com.yahoo.search.yql.YqlParser.SUFFIX;
 import static com.yahoo.search.yql.YqlParser.TARGET_HITS;
 import static com.yahoo.search.yql.YqlParser.TARGET_NUM_HITS;
 import static com.yahoo.search.yql.YqlParser.TOTAL_TARGET_HITS;
+import static com.yahoo.search.yql.YqlParser.MIN_TARGET_HITS;
 import static com.yahoo.search.yql.YqlParser.THRESHOLD_BOOST_FACTOR;
 import static com.yahoo.search.yql.YqlParser.UNIQUE_ID;
 import static com.yahoo.search.yql.YqlParser.USE_POSITION_DATA;
@@ -183,9 +183,44 @@ public class SelectParser implements Parser {
     private final Segmenter segmenter;
     private final Detector detector;
     private IndexFacts.Session indexFactsSession;
+    private IndexNameExpander indexNameExpander = new IndexNameExpander();
+    private boolean insideSameElement = false;
 
     private static final List<String> FUNCTION_CALLS = List.of(WAND, WEIGHTED_SET, DOT_PRODUCT, GEO_BOUNDING_BOX, GEO_LOCATION, NEAREST_NEIGHBOR, PREDICATE, RANK, WEAK_AND);
     private static final Set<String> OPERATOR_KEYS = Set.of(AND, AND_NOT, CONTAINS, EQ, IN, MATCHES, NOT, OR, RANGE);
+    private static final Set<String> COMPOSITE_LEAF_KEYS = Set.of(PHRASE, NEAR, ONEAR, EQUIV, FUZZY, ALTERNATIVES);
+
+    /**
+     * Used by {@link #getIndex} to expand field names.
+     */
+    private static class IndexNameExpander {
+        public String expand(String leaf) { return leaf; }
+    }
+
+    /**
+     * Transforms `leaf` to `prefix.leaf` for a given `prefix`.
+     */
+    private static class PrefixExpander extends IndexNameExpander {
+        private final String prefix;
+
+        public PrefixExpander(String prefix) {
+            this.prefix = prefix + ".";
+        }
+
+        @Override
+        public String expand(String leaf) {
+            return prefix + leaf;
+        }
+    }
+
+    /**
+     * Swaps the current index expander strategy.
+     */
+    private IndexNameExpander swapIndexCreator(IndexNameExpander newExpander) {
+        IndexNameExpander old = indexNameExpander;
+        indexNameExpander = newExpander;
+        return old;
+    }
 
     public SelectParser(ParserEnvironment environment) {
         this.environment = environment;
@@ -226,9 +261,21 @@ public class SelectParser implements Parser {
         if (inspector.type() == BOOL)
             return inspector.asBool() ? new TrueItem() : new FalseItem();
 
+        if (inspector.type() == STRING && insideSameElement) {
+            // Inside sameElement: bare string is a word item with empty field (field comes from sameElement parent)
+            return instantiateWordItem("", inspector.asString(), inspector, false);
+        }
+
         Item[] item = {null};
         inspector.traverse((ObjectTraverser) (key, value) -> {
-            item[0] = buildOperator(key, value);
+            if (insideSameElement && !isOperator(key) && !COMPOSITE_LEAF_KEYS.contains(key)) {
+                // Inside an operator within a sameElement.
+                // e.g. {"sameElement": [{"and": [{"f1": "a"}, {"f2": "b"}]}]} where key="f1" and value="a".
+                // This is the same as in instantiateSameElement.
+                item[0] = instantiateWordItem(getIndex(key), value.asString(), value, false);
+            } else {
+                item[0] = buildOperator(key, value);
+            }
         });
         return item[0];
     }
@@ -510,6 +557,7 @@ public class SelectParser implements Parser {
         return item;
     }
 
+    @SuppressWarnings("deprecation")
     private Item buildNearestNeighbor(String key, Inspector value) {
         HashMap<Integer, Inspector> children = childMap(value);
         Preconditions.checkArgument(children.size() == 2, "Expected 2 arguments, got %s.", children.size());
@@ -527,6 +575,9 @@ public class SelectParser implements Parser {
                 }
                 if (TOTAL_TARGET_HITS.equals(annotation_name)){
                     item.setTotalTargetHits((int)(annotation_value.asDouble()));
+                }
+                if (MIN_TARGET_HITS.equals(annotation_name)){
+                    item.setMinTargetHits((int)(annotation_value.asDouble()));
                 }
                 if (DISTANCE_THRESHOLD.equals(annotation_name)) {
                     double distanceThreshold = annotation_value.asDouble();
@@ -742,14 +793,16 @@ public class SelectParser implements Parser {
     private Item buildSameElementWithElementFilter(EqualsParams params) {
         int elementIndex = YqlParser.convertToElementId(params.index.asLong());
         var value = params.value;
-        Item valueItem = switch (value.type()) {
-            case BOOL -> new BoolItem(value.asBool(), "");
-            case LONG -> new IntItem(value.asLong(), "");
-            case DOUBLE -> new IntItem(new Limit(value.asDouble(), true), new Limit(value.asDouble(), true), "");
-            case STRING -> new WordItem(value.asString(), "");
+        // Convert value to string — sameElement only supports string children (consistent with YqlParser).
+        String stringValue = switch (value.type()) {
+            case BOOL -> String.valueOf(value.asBool());
+            case LONG -> String.valueOf(value.asLong());
+            case DOUBLE -> String.valueOf(value.asDouble());
+            case STRING -> value.asString();
             default -> throw new IllegalArgumentException("'value' in 'equals' should be a boolean, integer, double, " +
                                                           "or string but was " + value.type());
         };
+        Item valueItem = new WordItem(stringValue, "", true);
 
         SameElementItem sameElement = new SameElementItem(params.field.asString());
         sameElement.setElementFilter(List.of(elementIndex));
@@ -815,10 +868,10 @@ public class SelectParser implements Parser {
         String field;
         Inspector boundInspector;
         if (children.get(0).type() == STRING){
-            field = children.get(0).asString();
+            field = getIndex(children.get(0).asString());
             boundInspector = children.get(1);
         } else {
-            field = children.get(1).asString();
+            field = getIndex(children.get(1).asString());
             boundInspector = children.get(0);
         }
         Number[] bounds = {null, null};
@@ -907,12 +960,13 @@ public class SelectParser implements Parser {
         HashMap<Integer, Inspector> children = childMap(value);
 
         Preconditions.checkArgument(children.size() == 2, "Expected 2 arguments, got %s.", children.size());
-        Integer target_num_hits= getIntegerAnnotation(TARGET_HITS, annotations, null);
-        if (target_num_hits == null) {
-            target_num_hits= getIntegerAnnotation(TARGET_NUM_HITS, annotations, DEFAULT_WAND_TARGET_HITS);
-        }
+        Integer targetHits = getIntegerAnnotation(TARGET_HITS, annotations, null);
+        if (targetHits == null)
+            targetHits = getIntegerAnnotation(TARGET_NUM_HITS, annotations, null);
 
-        WandItem out = new WandItem(children.get(0).asString(), target_num_hits);
+        WandItem out = new WandItem(children.get(0).asString());
+        out.setTargetHits(targetHits);
+        out.setTotalTargetHits(getIntegerAnnotation(TOTAL_TARGET_HITS, annotations, null));
 
         Double scoreThreshold = getDoubleAnnotation(SCORE_THRESHOLD, annotations, null);
 
@@ -973,7 +1027,7 @@ public class SelectParser implements Parser {
     private Item buildRegExpSearch(String key, Inspector value) {
         assertHasOperator(key, MATCHES);
         HashMap<Integer, Inspector> children = childMap(value);
-        String field = children.get(0).asString();
+        String field = getIndex(children.get(0).asString());
         String wordData = children.get(1).asString();
         RegExpItem regExp = new RegExpItem(field, true, wordData);
         return leafStyleSettings(getAnnotations(value), regExp);
@@ -1029,7 +1083,7 @@ public class SelectParser implements Parser {
 
     private Item buildTermSearch(String key, Inspector value) {
         HashMap<Integer, Inspector> children = childMap(value);
-        String field = children.get(0).asString();
+        String field = getIndex(children.get(0).asString());
 
         return instantiateLeafItem(field, key, value);
     }
@@ -1435,25 +1489,35 @@ public class SelectParser implements Parser {
         return null;
     }
 
+    /** Builds same element item. */
     private Item instantiateSameElementItem(String field, String key, Inspector value) {
         assertHasOperator(key, SAME_ELEMENT);
 
         SameElementItem sameElement = new SameElementItem(field);
-        // All terms below sameElement are relative to this.
+        IndexNameExpander prev = swapIndexCreator(new PrefixExpander(field));
+        boolean prevInsideSameElement = insideSameElement;
+        insideSameElement = true;
         getChildren(value).traverse((ArrayTraverser) (index, term) -> {
             if (term.type() == OBJECT) {
                 term.traverse((ObjectTraverser) (childKey, childValue) -> {
                     if (isOperator(childKey)) {
                         sameElement.addItem(buildOperator(childKey, childValue));
+                    } else if (COMPOSITE_LEAF_KEYS.contains(childKey)) {
+                        // Composite leaf directly in sameElement, e.g. {"phrase": ["a", "b"]}
+                        // Uses empty field name since the sameElement parent provides the field context.
+                        sameElement.addItem(instantiateCompositeLeaf("", childKey, childValue));
                     } else {
-                        // Shorthand: {"fieldName": "value"} is equivalent to {"contains": ["fieldName", "value"]}
-                        sameElement.addItem(instantiateWordItem(childKey, childValue.asString(), childValue, false));
+                        // Any JSON object that is not operator or composite leaf, treated as shorthand.
+                        // e.g. {"sameElement": [{"f1": "a"}]} means sameElement(f1 contains a)
+                        sameElement.addItem(instantiateWordItem(getIndex(childKey), childValue.asString(), childValue, false));
                     }
                 });
             } else {
                 sameElement.addItem(walkJson(term));
             }
         });
+        insideSameElement = prevInsideSameElement;
+        swapIndexCreator(prev);
 
         return sameElement;
     }
@@ -1573,11 +1637,13 @@ public class SelectParser implements Parser {
         return leafStyleSettings(getAnnotations(value), new WordAlternativesItem(field, Boolean.TRUE, null, terms));
     }
 
-    //  Not in use yet
+    /**
+     * Expands the field and checks if it exists.
+     */
     private String getIndex(String field) {
-        Preconditions.checkArgument(indexFactsSession.isIndex(field), "Field '%s' does not exist.", field);
-        //return indexFactsSession.getCanonicName(field);
-        return field;
+        String expanded = indexNameExpander.expand(field);
+        Preconditions.checkArgument(indexFactsSession.isIndex(expanded), "Field '%s' does not exist.", expanded);
+        return indexFactsSession.getCanonicName(field);
     }
 
     private static void assertHasOperator(String key, String expectedKey) {

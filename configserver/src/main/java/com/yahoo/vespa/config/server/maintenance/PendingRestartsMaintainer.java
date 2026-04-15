@@ -26,7 +26,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static com.yahoo.vespa.flags.Dimension.INSTANCE_ID;
 
 /**
  * @author Jon Marius Venstad
@@ -34,12 +33,12 @@ import static com.yahoo.vespa.flags.Dimension.INSTANCE_ID;
 public class PendingRestartsMaintainer extends ConfigServerMaintainer {
 
     private final Clock clock;
-    private final BooleanFlag waitForApplyOnRestart;
+    private final BooleanFlag restartOnDeployMaintainer;
 
     public PendingRestartsMaintainer(ApplicationRepository applicationRepository, Curator curator, Clock clock, Duration interval) {
         super(applicationRepository, curator, applicationRepository.flagSource(), clock, interval, true);
         this.clock = clock;
-        this.waitForApplyOnRestart = Flags.WAIT_FOR_APPLY_ON_RESTART.bindTo(applicationRepository.flagSource());
+        this.restartOnDeployMaintainer = Flags.RESTART_ON_DEPLOY_MAINTAINER.bindTo(applicationRepository.flagSource());
     }
 
     @Override
@@ -49,11 +48,7 @@ public class PendingRestartsMaintainer extends ConfigServerMaintainer {
         for (Tenant tenant : tenantRepository.getAllTenants()) {
             ApplicationCuratorDatabase database = tenant.getApplicationRepo().database();
             for (ApplicationId id : database.activeApplications()) {
-                boolean shouldWaitForApplyOnRestart = waitForApplyOnRestart
-                        .with(id)
-                        .value();
-
-                if (!shouldWaitForApplyOnRestart) {
+                if (!restartOnDeployMaintainer.with(id).value()) {
                     applicationRepository.getActiveApplicationVersions(id)
                             .map(application -> application.getForVersionOrLatest(Optional.empty(), clock.instant()))
                             .ifPresent(application -> {

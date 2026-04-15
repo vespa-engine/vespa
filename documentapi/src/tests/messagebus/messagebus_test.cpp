@@ -13,8 +13,8 @@ using document::DocumentTypeRepo;
 using document::readDocumenttypesConfig;
 using namespace documentapi;
 using mbus::Blob;
-using mbus::Routable;
 using mbus::IRoutingPolicy;
+using mbus::Routable;
 
 class MessageBusTest : public testing::Test {
 protected:
@@ -30,82 +30,70 @@ MessageBusTest::~MessageBusTest() = default;
 
 std::shared_ptr<const DocumentTypeRepo> MessageBusTest::_repo;
 
-void
-MessageBusTest::SetUpTestSuite()
-{
+void MessageBusTest::SetUpTestSuite() {
     auto path = TEST_PATH("../../../test/cfg/testdoctypes.cfg");
     _repo = std::make_shared<const DocumentTypeRepo>(readDocumenttypesConfig(path));
 }
 
-void
-MessageBusTest::TearDownTestSuite()
-{
+void MessageBusTest::TearDownTestSuite() {
     _repo.reset();
 }
 
-TEST_F(MessageBusTest, test_message)
-{
-    const document::DataType *testdoc_type = _repo->getDocumentType("testdoc");
+TEST_F(MessageBusTest, test_message) {
+    const document::DataType* testdoc_type = _repo->getDocumentType("testdoc");
 
     // Test one update.
-    UpdateDocumentMessage upd1(
-            document::DocumentUpdate::SP(
-                    new document::DocumentUpdate(*_repo, *testdoc_type,
-                            document::DocumentId("id:ns:testdoc::testme1"))));
+    UpdateDocumentMessage upd1(document::DocumentUpdate::SP(
+        new document::DocumentUpdate(*_repo, *testdoc_type, document::DocumentId("id:ns:testdoc::testme1"))));
 
     EXPECT_TRUE(upd1.getType() == DocumentProtocol::MESSAGE_UPDATEDOCUMENT);
     EXPECT_TRUE(upd1.getProtocol() == "document");
 
     DocumentProtocol protocol(_repo);
 
-    Blob blob = protocol.encode(vespalib::Version(6,221), upd1);
+    Blob blob = protocol.encode(vespalib::Version(6, 221), upd1);
     EXPECT_TRUE(blob.size() > 0);
 
-    Routable::UP dec1 = protocol.decode(vespalib::Version(6,221), blob);
+    Routable::UP dec1 = protocol.decode(vespalib::Version(6, 221), blob);
     EXPECT_TRUE(dec1.get() != nullptr);
     EXPECT_TRUE(dec1->isReply() == false);
     EXPECT_TRUE(dec1->getType() == DocumentProtocol::MESSAGE_UPDATEDOCUMENT);
 
     // Compare to another.
-    UpdateDocumentMessage upd2(
-            document::DocumentUpdate::SP(
-                    new document::DocumentUpdate(*_repo, *testdoc_type,
-                            document::DocumentId("id:ns:testdoc::testme2"))));
+    UpdateDocumentMessage upd2(document::DocumentUpdate::SP(
+        new document::DocumentUpdate(*_repo, *testdoc_type, document::DocumentId("id:ns:testdoc::testme2"))));
     EXPECT_TRUE(!(upd1.getDocumentUpdate().getId() == upd2.getDocumentUpdate().getId()));
 
     DocumentMessage& msg2 = static_cast<DocumentMessage&>(upd2);
     EXPECT_TRUE(msg2.getType() == DocumentProtocol::MESSAGE_UPDATEDOCUMENT);
 }
 
-TEST_F(MessageBusTest, test_protocol)
-{
+TEST_F(MessageBusTest, test_protocol) {
     DocumentProtocol protocol(_repo);
     EXPECT_TRUE(protocol.getName() == "document");
 
-    IRoutingPolicy::UP policy = protocol.createPolicy(string("DocumentRouteSelector"), string("file:documentrouteselectorpolicy.cfg"));
+    IRoutingPolicy::UP policy =
+        protocol.createPolicy(string("DocumentRouteSelector"), string("file:documentrouteselectorpolicy.cfg"));
     EXPECT_TRUE(policy.get() != nullptr);
 
-    policy = protocol.createPolicy(string(""),string(""));
+    policy = protocol.createPolicy(string(""), string(""));
     EXPECT_TRUE(policy.get() == nullptr);
 
-    policy = protocol.createPolicy(string("Balle"),string(""));
+    policy = protocol.createPolicy(string("Balle"), string(""));
     EXPECT_TRUE(policy.get() == nullptr);
 }
 
-TEST_F(MessageBusTest, get_document_message_is_not_sequenced)
-{
+TEST_F(MessageBusTest, get_document_message_is_not_sequenced) {
     GetDocumentMessage message(document::DocumentId("id:foo:bar::baz"));
     EXPECT_FALSE(message.hasSequenceId());
 }
 
-TEST_F(MessageBusTest, stat_bucket_message_is_not_sequenced)
-{
+TEST_F(MessageBusTest, stat_bucket_message_is_not_sequenced) {
     StatBucketMessage message(document::BucketId(16, 1), "");
     EXPECT_FALSE(message.hasSequenceId());
 }
 
-TEST_F(MessageBusTest, get_bucket_list_message_is_not_sequenced)
-{
+TEST_F(MessageBusTest, get_bucket_list_message_is_not_sequenced) {
     GetBucketListMessage message(document::BucketId(16, 1));
     EXPECT_FALSE(message.hasSequenceId());
 }

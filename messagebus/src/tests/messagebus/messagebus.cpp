@@ -11,8 +11,9 @@
 #include <vespa/messagebus/testlib/simpleprotocol.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/stringfmt.h>
+
 #include <thread>
 
 using namespace mbus;
@@ -27,17 +28,16 @@ struct Base {
         }
     }
     RoutingSpec getRouting() {
-        return RoutingSpec()
-            .addTable(RoutingTableSpec("Simple")
-                      .addHop(HopSpec("DocProc", "docproc/*/session"))
-                      .addHop(HopSpec("Search", "search/[All]/[Hash]/session")
-                              .addRecipient("search/r.0/c.0/session")
-                              .addRecipient("search/r.0/c.1/session")
-                              .addRecipient("search/r.1/c.0/session")
-                              .addRecipient("search/r.1/c.1/session"))
-                      .addRoute(RouteSpec("Index").addHop("DocProc").addHop("Search"))
-                      .addRoute(RouteSpec("DocProc").addHop("DocProc"))
-                      .addRoute(RouteSpec("Search").addHop("Search")));
+        return RoutingSpec().addTable(RoutingTableSpec("Simple")
+                                          .addHop(HopSpec("DocProc", "docproc/*/session"))
+                                          .addHop(HopSpec("Search", "search/[All]/[Hash]/session")
+                                                      .addRecipient("search/r.0/c.0/session")
+                                                      .addRecipient("search/r.0/c.1/session")
+                                                      .addRecipient("search/r.1/c.0/session")
+                                                      .addRecipient("search/r.1/c.1/session"))
+                                          .addRoute(RouteSpec("Index").addHop("DocProc").addHop("Search"))
+                                          .addRoute(RouteSpec("DocProc").addHop("DocProc"))
+                                          .addRoute(RouteSpec("Search").addHop("Search")));
     }
     bool waitQueueSize(uint32_t size) {
         for (uint32_t i = 0; i < 1000; ++i) {
@@ -54,21 +54,16 @@ struct Client : public Base {
     using UP = std::unique_ptr<Client>;
     TestServer        server;
     SourceSession::UP session;
-    Client(Slobrok &slobrok)
-        : Base(), server(Identity(""), getRouting(), slobrok), session()
-    {
+    Client(Slobrok& slobrok) : Base(), server(Identity(""), getRouting(), slobrok), session() {
         SourceSessionParams params;
         params.setThrottlePolicy(IThrottlePolicy::SP());
         session = server.mb.createSourceSession(queue, params);
-
     }
 };
 
 struct Server : public Base {
-    TestServer    server;
-    Server(const string &name, Slobrok &slobrok)
-        : Base(), server(Identity(name), getRouting(), slobrok)
-    {
+    TestServer server;
+    Server(const string& name, Slobrok& slobrok) : Base(), server(Identity(name), getRouting(), slobrok) {
         // empty
     }
     ~Server() override;
@@ -79,9 +74,7 @@ Server::~Server() = default;
 struct DocProc : public Server {
     using UP = std::unique_ptr<DocProc>;
     IntermediateSession::UP session;
-    DocProc(const string &name, Slobrok &slobrok)
-        : Server(name, slobrok), session()
-    {
+    DocProc(const string& name, Slobrok& slobrok) : Server(name, slobrok), session() {
         session = server.mb.createIntermediateSession("session", true, queue, queue);
     }
 };
@@ -89,9 +82,7 @@ struct DocProc : public Server {
 struct Search : public Server {
     using UP = std::unique_ptr<Search>;
     DestinationSession::UP session;
-    Search(const string &name, Slobrok &slobrok)
-        : Server(name, slobrok), session()
-    {
+    Search(const string& name, Slobrok& slobrok) : Server(name, slobrok), session() {
         session = server.mb.createDestinationSession("session", true, queue);
     }
 };
@@ -100,15 +91,15 @@ struct Search : public Server {
 
 class MessageBusTest : public testing::Test {
 protected:
-    Slobrok::UP  slobrok;
-    Client::UP   client;
-    DocProc::UP  dp0;
-    DocProc::UP  dp1;
-    DocProc::UP  dp2;
-    Search::UP   search00;
-    Search::UP   search01;
-    Search::UP   search10;
-    Search::UP   search11;
+    Slobrok::UP           slobrok;
+    Client::UP            client;
+    DocProc::UP           dp0;
+    DocProc::UP           dp1;
+    DocProc::UP           dp2;
+    Search::UP            search00;
+    Search::UP            search01;
+    Search::UP            search10;
+    Search::UP            search11;
     std::vector<DocProc*> dpVec;
     std::vector<Search*>  searchVec;
 
@@ -125,9 +116,7 @@ protected:
 MessageBusTest::MessageBusTest() = default;
 MessageBusTest::~MessageBusTest() = default;
 
-void
-MessageBusTest::SetUp()
-{
+void MessageBusTest::SetUp() {
     slobrok.reset(new Slobrok());
     client.reset(new Client(*slobrok));
     dp0.reset(new DocProc("docproc/0", *slobrok));
@@ -165,9 +154,7 @@ MessageBusTest::SetUp()
     ASSERT_TRUE(dp2->server.waitSlobrok("search/r.1/c.1/session"));
 }
 
-void
-MessageBusTest::TearDown()
-{
+void MessageBusTest::TearDown() {
     dpVec.clear();
     searchVec.clear();
     search11.reset();
@@ -181,8 +168,7 @@ MessageBusTest::TearDown()
     slobrok.reset();
 }
 
-TEST_F(MessageBusTest, test_send_to_col)
-{
+TEST_F(MessageBusTest, test_send_to_col) {
     ASSERT_TRUE(SimpleMessage("msg").getHash() % 2 == 0);
     for (uint32_t i = 0; i < 150; ++i) {
         Message::UP msg(new SimpleMessage("msg"));
@@ -202,7 +188,7 @@ TEST_F(MessageBusTest, test_send_to_col)
     EXPECT_TRUE(search10->waitQueueSize(150));
     EXPECT_TRUE(search11->waitQueueSize(150));
     for (uint32_t i = 0; i < searchVec.size(); ++i) {
-        Search *s = searchVec[i];
+        Search* s = searchVec[i];
         while (s->queue.size() > 0) {
             Routable::UP msg = s->queue.dequeue();
             ASSERT_TRUE(msg);
@@ -222,44 +208,42 @@ TEST_F(MessageBusTest, test_send_to_col)
     }
 }
 
-TEST_F(MessageBusTest, test_direct_hop)
-{
+TEST_F(MessageBusTest, test_direct_hop) {
     for (int row = 0; row < 2; row++) {
         for (int col = 0; col < 2; col++) {
             Search* dst = searchVec[row * 2 + col];
 
             // Send using name.
-            ASSERT_TRUE(client->session->send(
-                            Message::UP(new SimpleMessage("empty")),
-                            Route().addHop(vespalib::make_string("search/r.%d/c.%d/session", row, col)))
-                        .isAccepted());
+            ASSERT_TRUE(client->session
+                            ->send(Message::UP(new SimpleMessage("empty")),
+                                   Route().addHop(vespalib::make_string("search/r.%d/c.%d/session", row, col)))
+                            .isAccepted());
             ASSERT_NO_FATAL_FAILURE(assertDst(*dst));
             ASSERT_NO_FATAL_FAILURE(assertSrc(*client));
 
             // Send using address.
-            ASSERT_TRUE(client->session->send(
-                            Message::UP(new SimpleMessage("empty")),
-                            Route().addHop(Hop(dst->session->getConnectionSpec().c_str())))
-                        .isAccepted());
+            ASSERT_TRUE(client->session
+                            ->send(Message::UP(new SimpleMessage("empty")),
+                                   Route().addHop(Hop(dst->session->getConnectionSpec().c_str())))
+                            .isAccepted());
             ASSERT_NO_FATAL_FAILURE(assertDst(*dst));
             ASSERT_NO_FATAL_FAILURE(assertSrc(*client));
         }
     }
 }
 
-TEST_F(MessageBusTest, test_direct_route)
-{
-    ASSERT_TRUE(client->session->send(
-                    Message::UP(new SimpleMessage("empty")),
-                    Route()
-                    .addHop(Hop("docproc/0/session"))
-                    .addHop(Hop(dp0->session->getConnectionSpec()))
-                    .addHop(Hop("docproc/1/session"))
-                    .addHop(Hop(dp1->session->getConnectionSpec()))
-                    .addHop(Hop("docproc/2/session"))
-                    .addHop(Hop(dp2->session->getConnectionSpec()))
-                    .addHop(Hop("search/r.0/c.0/session")))
-                .isAccepted());
+TEST_F(MessageBusTest, test_direct_route) {
+    ASSERT_TRUE(
+        client->session
+            ->send(Message::UP(new SimpleMessage("empty")), Route()
+                                                                .addHop(Hop("docproc/0/session"))
+                                                                .addHop(Hop(dp0->session->getConnectionSpec()))
+                                                                .addHop(Hop("docproc/1/session"))
+                                                                .addHop(Hop(dp1->session->getConnectionSpec()))
+                                                                .addHop(Hop("docproc/2/session"))
+                                                                .addHop(Hop(dp2->session->getConnectionSpec()))
+                                                                .addHop(Hop("search/r.0/c.0/session")))
+            .isAccepted());
     ASSERT_NO_FATAL_FAILURE(assertItr(*dp0));
     ASSERT_NO_FATAL_FAILURE(assertItr(*dp0));
     ASSERT_NO_FATAL_FAILURE(assertItr(*dp1));
@@ -276,35 +260,28 @@ TEST_F(MessageBusTest, test_direct_route)
     ASSERT_NO_FATAL_FAILURE(assertSrc(*client));
 }
 
-void
-MessageBusTest::assertDst(Search& dst)
-{
+void MessageBusTest::assertDst(Search& dst) {
     ASSERT_TRUE(dst.waitQueueSize(1));
     Routable::UP msg = dst.queue.dequeue();
     ASSERT_TRUE(msg);
     dst.session->acknowledge(Message::UP(static_cast<Message*>(msg.release())));
 }
 
-void
-MessageBusTest::assertItr(DocProc& itr)
-{
+void MessageBusTest::assertItr(DocProc& itr) {
     ASSERT_TRUE(itr.waitQueueSize(1));
     Routable::UP msg = itr.queue.dequeue();
     ASSERT_TRUE(msg);
     itr.session->forward(std::move(msg));
 }
 
-void
-MessageBusTest::assertSrc(Client& src)
-{
+void MessageBusTest::assertSrc(Client& src) {
     ASSERT_TRUE(src.waitQueueSize(1));
     Routable::UP msg = src.queue.dequeue();
     ASSERT_TRUE(msg);
 }
 
-TEST_F(MessageBusTest, test_routing_policy_cache)
-{
-    MessageBus &bus = client->server.mb;
+TEST_F(MessageBusTest, test_routing_policy_cache) {
+    MessageBus& bus = client->server.mb;
 
     IRoutingPolicy::SP all = bus.getRoutingPolicy(SimpleProtocol::NAME, "All", "");
     ASSERT_TRUE(all.get() != nullptr);

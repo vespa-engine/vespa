@@ -10,4 +10,4 @@ namespace document::test {
 
 Bucket makeDocumentBucket(BucketId bucketId);
 
-}
+} // namespace document::test

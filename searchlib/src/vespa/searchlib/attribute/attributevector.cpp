@@ -99,7 +99,7 @@ AttributeVector::AttributeVector(std::string_view baseFileName, const Config &c)
       _committedDocIdLimit(0u),
       _uncommittedDocIdLimit(0u),
       _createSerialNum(0u),
-      _compactLidSpaceGeneration(0u),
+      _compactLidSpaceGeneration(generation_t(0u)),
       _hasEnum(false),
       _loaded(false),
       _isUpdateableInMemoryOnly(attribute::isUpdateableInMemoryOnly(getName(), getConfig())),
@@ -305,6 +305,7 @@ AttributeVector::createAttributeHeader(std::string_view fileName) const {
                                       getCommittedDocIdLimit(),
                                       getUniqueValueCount(),
                                       getTotalValueCount(),
+                                      getStatus().get_used_minus_dead_and_onhold(),
                                       getCreateSerialNum(),
                                       getVersion());
 }
@@ -544,7 +545,7 @@ void AttributeVector::setInterlock(const std::shared_ptr<attribute::Interlock> &
 std::unique_ptr<AttributeSaver>
 AttributeVector::initSave(std::string_view fileName)
 {
-    commit();
+    commit(CommitParam::UpdateStats::FORCE);
     return onInitSave(fileName);
 }
 

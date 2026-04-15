@@ -6,6 +6,7 @@ import com.google.common.collect.Multiset;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.concurrent.StripedExecutor;
+import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
@@ -643,6 +644,7 @@ public class SessionRepository {
                                 existingSession.getTenantSecretStores(),
                                 existingSession.getOperatorCertificates(),
                                 existingSession.getCloudAccount(),
+                                existingSession.getCloudResourceTags(),
                                 existingSession.getDataplaneTokens(),
                                 ActivationTriggers.empty(),
                                 writeSessionData);
@@ -694,7 +696,7 @@ public class SessionRepository {
                 }
 
                 Optional<ApplicationId> applicationId = session.getOptionalApplicationId();
-                try (var ignored = lockApplication(applicationId)) {
+                try (var ignored = lockApplication(applicationId, Duration.ofSeconds(1))) {
                     Session.Status status = session.getStatus();
                     boolean activeForApplication = sessionIsActiveForApplication.test(session);
                     if (status == ACTIVATE && activeForApplication) continue;
@@ -719,6 +721,9 @@ public class SessionRepository {
                     }
                     if (deletedRemoteSessions + deletedLocalSessions >= deleteMax)
                         break;
+                } catch (UncheckedTimeoutException e) {
+                    // ignore exception, will be retried, just log at info level
+                    log.log(Level.INFO, Exceptions.toMessageString(e));
                 }
             } catch (Throwable e) { // Make sure to catch here, to avoid executor just dying in case of issues ...
                 log.log(Level.WARNING, "Error when deleting expired sessions ", e);
@@ -747,6 +752,11 @@ public class SessionRepository {
     private ApplicationLock lockApplication(Optional<ApplicationId> applicationId) {
         return applicationId.map(id -> new ApplicationLock(Optional.of(tenantApplications.lock(id))))
                 .orElseGet(() -> new ApplicationLock(Optional.empty()));
+    }
+
+    private ApplicationLock lockApplication(Optional<ApplicationId> applicationId, Duration lockTimeout) {
+        return applicationId.map(id -> new ApplicationLock(Optional.of(tenantApplications.lock(id, lockTimeout))))
+                            .orElseGet(() -> new ApplicationLock(Optional.empty()));
     }
 
     private Optional<LocalSession> getOptionalSessionFromFileSystem(long sessionId) {

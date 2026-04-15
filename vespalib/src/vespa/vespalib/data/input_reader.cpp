@@ -44,6 +44,26 @@ InputReader::read_slow(size_t bytes)
     return Memory();
 }
 
+bool
+InputReader::read_into_slow(void *buf, const size_t bytes)
+{
+    char *out = static_cast<char*>(buf);
+    size_t read = 0;
+    while ((read < bytes) && (obtain() > 0)) {
+        const size_t copy_now = std::min(size(), bytes - read);
+        memcpy(out + read, data(), copy_now);
+        read += copy_now;
+        _pos += copy_now;
+    }
+    if (read == bytes) [[likely]] {
+        return true;
+    }
+    if (!failed()) {
+        fail("input underflow");
+    }
+    return false;
+}
+
 InputReader::~InputReader()
 {
     _input.evict(_pos);

@@ -505,12 +505,12 @@ FieldMerger::merge_field_finish()
         merge_postings_failed();
         return;
     }
-    vespalib::File::sync(_field_dir);
-
     if (!clean_tmp_dirs()) {
         _failed = true;
         return;
     }
+
+    vespalib::File::sync(_field_dir);
 
     LOG(debug, "Finished merge_field for field %s dir %s", _field_name.c_str(), _field_dir.c_str());
 

@@ -1,14 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.semantics.rule;
 
-import com.yahoo.prelude.query.CompositeItem;
-import com.yahoo.prelude.query.EquivItem;
 import com.yahoo.prelude.query.TermType;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.prelude.semantics.engine.Match;
 import com.yahoo.prelude.semantics.engine.RuleEvaluation;
 import com.yahoo.protect.Validator;
-import com.yahoo.search.query.QueryTree;
 
 import java.util.List;
 
@@ -76,29 +73,17 @@ public class LiteralTermProduction extends TermProduction {
                 e.trace(6, "Adding '" + newItem + "'");
             if (getTermType() == TermType.EQUIV && e.getNonreferencedMatchCount() > 0
                     && e.getNonreferencedMatch(0).getParent() != null) {
-                // If an EQUIV already exists at the match position
-                // (from a previous EQUIV production), add to it.
-                Match matched = e.getNonreferencedMatch(0);
-                CompositeItem matchParent = matched.getParent();
-                int matchIndex = matched.getPosition();
-                if (matchParent instanceof EquivItem parentEquiv) {
-                    // Matched term is inside an existing EQUIV (cascading from a previous rule)
-                    parentEquiv.addItem(newItem);
-                } else if (matchIndex < matchParent.getItemCount()
-                        && matchParent.getItem(matchIndex) instanceof EquivItem existingEquiv) {
-                    existingEquiv.addItem(newItem);
-                } else if (matchIndex < matchParent.getItemCount()) {
-                    EquivItem equiv = new EquivItem(matchParent.getItem(matchIndex));
-                    equiv.addItem(newItem);
-                    matchParent.setItem(matchIndex, equiv);
-                } else {
-                    e.addItems(List.of(newItem), getTermType());
-                }
+                addEquivItem(e, newItem);
             }
             else if (shouldInsertAtMatch(e)) {
                 // Add to the match's parent when it's a nested composite with default type
                 Match matched = e.getNonreferencedMatch(0);
                 insertMatch(e, matched, List.of(newItem), offset);
+            }
+            else if (e.getNonreferencedMatchCount() > 0 && parentHasCompatibleType(e.getNonreferencedMatch(0))) {
+                // Parent already has the right type (e.g., OR inside OR) - insert after match
+                Match matched = e.getNonreferencedMatch(0);
+                insertMatch(e, matched, List.of(newItem), offset + 1);
             }
             else {
                 // Use root-level combining for specific types (RANK, OR, etc.) and non-nested cases

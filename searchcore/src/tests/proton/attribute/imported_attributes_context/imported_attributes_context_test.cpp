@@ -26,6 +26,7 @@ using search::attribute::ImportedAttributeVector;
 using search::attribute::ImportedAttributeVectorFactory;
 using search::attribute::ReferenceAttribute;
 using search::attribute::test::MockGidToLidMapperFactory;
+using vespalib::Generation;
 using generation_t = AttributeVector::generation_t;
 
 std::shared_ptr<ReferenceAttribute>
@@ -145,39 +146,39 @@ TEST_F(ImportedAttributesContextTest, require_that_guards_are_cached)
 {
     addAttribute("foo");
     auto targetAttr = getTargetAttribute("foo");
-    addDocAndAssertGuards("first", *targetAttr, 2, 2, false);
+    addDocAndAssertGuards("first", *targetAttr, Generation(2), Generation(2), false);
 
     ctx->getAttribute("foo"); // guard is taken and cached
-    addDocAndAssertGuards("second", *targetAttr, 4, 2, false);
+    addDocAndAssertGuards("second", *targetAttr, Generation(4), Generation(2), false);
 
     clearContext(); // guard is released
-    addDocAndAssertGuards("third", *targetAttr, 6, 6, false);
+    addDocAndAssertGuards("third", *targetAttr, Generation(6), Generation(6), false);
 }
 
 TEST_F(ImportedAttributesContextTest, require_that_stable_enum_guards_are_cached)
 {
     addAttribute("foo");
     auto targetAttr = getTargetAttribute("foo");
-    addDocAndAssertGuards("first", *targetAttr, 2, 2, false);
+    addDocAndAssertGuards("first", *targetAttr, Generation(2), Generation(2), false);
 
     ctx->getAttributeStableEnum("foo"); // enum guard is taken and cached
-    addDocAndAssertGuards("second", *targetAttr, 4, 2, true);
+    addDocAndAssertGuards("second", *targetAttr, Generation(4), Generation(2), true);
 
     clearContext(); // guard is released
-    addDocAndAssertGuards("third", *targetAttr, 6, 6, false);
+    addDocAndAssertGuards("third", *targetAttr, Generation(6), Generation(6), false);
 }
 
 TEST_F(ImportedAttributesContextTest, require_that_stable_enum_guards_can_be_released)
 {
     addAttribute("foo");
     auto targetAttr = getTargetAttribute("foo");
-    addDocAndAssertGuards("first", *targetAttr, 2, 2, false);
+    addDocAndAssertGuards("first", *targetAttr, Generation(2), Generation(2), false);
 
     ctx->getAttributeStableEnum("foo"); // enum guard is taken and cached
-    addDocAndAssertGuards("second", *targetAttr, 4, 2, true);
+    addDocAndAssertGuards("second", *targetAttr, Generation(4), Generation(2), true);
 
     ctx->releaseEnumGuards();
-    addDocAndAssertGuards("third", *targetAttr, 6, 6, false);
+    addDocAndAssertGuards("third", *targetAttr, Generation(6), Generation(6), false);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

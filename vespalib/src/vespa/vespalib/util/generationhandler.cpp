@@ -5,79 +5,6 @@
 
 namespace vespalib {
 
-GenerationHandler::GenerationHold::GenerationHold() noexcept
-    : _refCount(1),
-      _generation(0),
-      _next(nullptr)
-{ }
-
-GenerationHandler::GenerationHold::~GenerationHold() {
-    assert(getRefCount() == 0);
-}
-
-void
-GenerationHandler::GenerationHold::setValid() noexcept {
-    auto old = _refCount.fetch_sub(1, std::memory_order_release);
-    assert(!valid(old));
-}
-
-bool
-GenerationHandler::GenerationHold::setInvalid() noexcept {
-    uint32_t refs = 0;
-    if (_refCount.compare_exchange_strong(refs, 1,
-                                          std::memory_order_acq_rel,
-                                          std::memory_order_relaxed))
-    {
-        return true;
-    } else {
-        assert(valid(refs));
-        return false;
-    }
-}
-
-GenerationHandler::GenerationHold *
-GenerationHandler::GenerationHold::acquire() noexcept {
-    if (valid(_refCount.fetch_add(2, std::memory_order_acq_rel))) {
-        return this;
-    } else {
-        release();
-        return nullptr;
-    }
-}
-
-GenerationHandler::GenerationHold *
-GenerationHandler::GenerationHold::copy(GenerationHold *self) noexcept {
-    if (self == nullptr) {
-        return nullptr;
-    } else {
-        uint32_t oldRefCount = self->_refCount.fetch_add(2, std::memory_order_relaxed);
-        (void) oldRefCount;
-        assert(valid(oldRefCount));
-        return self;
-    }
-}
-
-GenerationHandler::Guard &
-GenerationHandler::Guard::operator=(const Guard & rhs) noexcept
-{
-    if (&rhs != this) {
-        cleanup();
-        _hold = GenerationHold::copy(rhs._hold);
-    }
-    return *this;
-}
-
-GenerationHandler::Guard &
-GenerationHandler::Guard::operator=(Guard &&rhs) noexcept
-{
-    if (&rhs != this) {
-        cleanup();
-        _hold = rhs._hold;
-        rhs._hold = nullptr;
-    }
-    return *this;
-}
-
 void
 GenerationHandler::update_oldest_used_generation()
 {
@@ -97,8 +24,8 @@ GenerationHandler::update_oldest_used_generation()
 }
 
 GenerationHandler::GenerationHandler()
-    : _generation(0),
-      _oldest_used_generation(0),
+    : _generation(Generation(0)),
+      _oldest_used_generation(Generation(0)),
       _last(nullptr),
       _first(nullptr),
       _free(nullptr),
@@ -124,7 +51,7 @@ GenerationHandler::~GenerationHandler()
     delete _first;
 }
 
-GenerationHandler::Guard
+GenerationGuard
 GenerationHandler::takeGuard() const
 {
     Guard guard(_last.load(std::memory_order_acquire));
@@ -176,10 +103,9 @@ GenerationHandler::incGeneration()
 uint32_t
 GenerationHandler::getGenerationRefCount(generation_t gen) const
 {
-    if (static_cast<sgeneration_t>(gen - getCurrentGeneration()) > 0)
+    if (gen > getCurrentGeneration() || get_oldest_used_generation() > gen) {
         return 0u;
-    if (static_cast<sgeneration_t>(get_oldest_used_generation() - gen) > 0)
-        return 0u;
+    }
     for (GenerationHold *hold = _first; hold != nullptr; hold = hold->_next) {
         if (hold->_generation.load(std::memory_order_relaxed) == gen)
             return hold->getRefCount();

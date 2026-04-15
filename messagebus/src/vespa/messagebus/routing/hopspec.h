@@ -2,14 +2,15 @@
 #pragma once
 
 #include <vespa/messagebus/common.h>
+
 #include <vector>
 
 namespace mbus {
 
 /**
  * Along with the {@link RoutingSpec}, {@link RoutingTableSpec} and {@link RouteSpec}, this holds the routing
- * specifications for all protocols. The only way a client can configure or alter the settings of a message bus instance
- * is through these classes.
+ * specifications for all protocols. The only way a client can configure or alter the settings of a message bus
+ * instance is through these classes.
  *
  * This class contains the spec for a single hop.
  *
@@ -30,11 +31,11 @@ public:
      * @param name     A protocol unique name for this hop.
      * @param selector A string that represents the selector for this hop.
      */
-    HopSpec(const string &name, const string &selector);
-    HopSpec(const HopSpec & rhs);
-    HopSpec & operator=(const HopSpec & rhs);
-    HopSpec(HopSpec && rhs) noexcept;
-    HopSpec & operator=(HopSpec && rhs) noexcept;
+    HopSpec(const string& name, const string& selector);
+    HopSpec(const HopSpec& rhs);
+    HopSpec& operator=(const HopSpec& rhs);
+    HopSpec(HopSpec&& rhs) noexcept;
+    HopSpec& operator=(HopSpec&& rhs) noexcept;
     ~HopSpec();
 
     /**
@@ -42,14 +43,14 @@ public:
      *
      * @return The name.
      */
-    [[nodiscard]] const string &getName() const { return _name; }
+    [[nodiscard]] const string& getName() const { return _name; }
 
     /**
      * Returns the string selector that resolves the recipients of this hop.
      *
      * @return The selector.
      */
-    [[nodiscard]] const string &getSelector() const { return _selector; }
+    [[nodiscard]] const string& getSelector() const { return _selector; }
 
     /**
      * Returns the number of recipients that the selector can choose from.
@@ -64,7 +65,7 @@ public:
      * @param i The index of the recipient to return.
      * @return The recipient at the given index.
      */
-    [[nodiscard]] const string &getRecipient(uint32_t i) const { return _recipients[i]; }
+    [[nodiscard]] const string& getRecipient(uint32_t i) const { return _recipients[i]; }
 
     /**
      * Adds the given recipient to this.
@@ -72,8 +73,8 @@ public:
      * @param recipient The recipient to add.
      * @return This, to allow chaining.
      */
-    HopSpec & addRecipient(const string &recipient) &;
-    HopSpec && addRecipient(const string &recipient) &&;
+    HopSpec& addRecipient(const string& recipient) &;
+    HopSpec&& addRecipient(const string& recipient) &&;
 
     /**
      * Returns whether or not to ignore the result when routing through this hop.
@@ -88,7 +89,7 @@ public:
      * @param ignoreResult Whether or not to ignore the result.
      * @return This, to allow chaining.
      */
-    HopSpec &setIgnoreResult(bool ignoreResult) {
+    HopSpec& setIgnoreResult(bool ignoreResult) {
         _ignoreResult = ignoreResult;
         return *this;
     }
@@ -99,7 +100,7 @@ public:
      * @param cfg    The config to add to.
      * @param prefix The prefix to use for each add.
      */
-    void toConfig(string &cfg, const string &prefix) const;
+    void toConfig(string& cfg, const string& prefix) const;
 
     /**
      * Returns a string representation of this.
@@ -114,7 +115,7 @@ public:
      * @param rhs The object to compare to.
      * @return True if this equals the other.
      */
-    bool operator==(const HopSpec &rhs) const;
+    bool operator==(const HopSpec& rhs) const;
 
     /**
      * Implements the inequality operator.
@@ -122,8 +123,7 @@ public:
      * @param rhs The object to compare to.
      * @return True if this does not equals the other.
      */
-    bool operator!=(const HopSpec &rhs) const { return !(*this == rhs); }
+    bool operator!=(const HopSpec& rhs) const { return !(*this == rhs); }
 };
 
 } // namespace mbus
-

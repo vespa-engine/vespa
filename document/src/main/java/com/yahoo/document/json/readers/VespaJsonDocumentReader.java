@@ -54,7 +54,7 @@ public class VespaJsonDocumentReader {
     }
 
     public ParsedDocumentOperation createDocumentOperation(DocumentType documentType, DocumentParseInfo documentParseInfo) {
-        final DocumentOperation documentOperation;
+        DocumentOperation documentOperation;
         boolean fullyApplied = true;
         try {
             switch (documentParseInfo.operationType) {

@@ -2,6 +2,7 @@
 #pragma once
 
 #include "iretrypolicy.h"
+
 #include <atomic>
 
 namespace mbus {
@@ -16,7 +17,6 @@ private:
     std::atomic<double> _baseDelay;
 
 public:
-
     using SP = std::shared_ptr<RetryTransientErrorsPolicy>;
     /**
      * Constructs a new instance of this policy. By default retries are enabled with a 1.0 second base delay.
@@ -30,7 +30,7 @@ public:
      * @param enabled True to allow retries.
      * @return This, to allow chaining.
      */
-    RetryTransientErrorsPolicy &setEnabled(bool enabled);
+    RetryTransientErrorsPolicy& setEnabled(bool enabled);
 
     /**
      * Sets the base delay in seconds to wait between retries. This amount is multiplied by the retry number.
@@ -38,11 +38,10 @@ public:
      * @param baseDelay The time in seconds.
      * @return This, to allow chaining.
      */
-    RetryTransientErrorsPolicy &setBaseDelay(double baseDelay);
+    RetryTransientErrorsPolicy& setBaseDelay(double baseDelay);
 
     bool canRetry(uint32_t errorCode) const override;
     double getRetryDelay(uint32_t retry) const override;
 };
 
 } // namespace mbus
-

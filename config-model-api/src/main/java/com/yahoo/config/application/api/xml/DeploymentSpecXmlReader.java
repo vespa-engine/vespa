@@ -27,6 +27,7 @@ import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
+import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
@@ -98,6 +99,7 @@ public class DeploymentSpecXmlReader {
     private static final String majorVersionAttribute = "major-version";
     private static final String cloudAccountAttribute = "cloud-account";
     private static final String hostTTLAttribute = "empty-host-ttl";
+    private static final String cloudResourceTagsTag = "resource-tags";
 
     private final boolean validate;
     private final Clock clock;
@@ -171,6 +173,7 @@ public class DeploymentSpecXmlReader {
                                   stringAttribute(athenzServiceAttribute, root).map(AthenzService::from),
                                   readCloudAccounts(root),
                                   readHostTTL(root),
+                                  readCloudResourceTags(root),
                                   applicationEndpoints,
                                   xmlForm,
                                   deprecatedElements,
@@ -213,6 +216,7 @@ public class DeploymentSpecXmlReader {
         Optional<AthenzService> athenzService = mostSpecificAttribute(instanceElement, athenzServiceAttribute).map(AthenzService::from);
         Map<CloudName, CloudAccount> cloudAccounts = readCloudAccounts(instanceElement);
         Optional<Duration> hostTTL = readHostTTL(instanceElement);
+        CloudResourceTags cloudResourceTags = readCloudResourceTags(instanceElement);
         Notifications notifications = readNotifications(instanceElement, parentTag);
 
         // Values where there is no default
@@ -242,6 +246,7 @@ public class DeploymentSpecXmlReader {
                                                              athenzService,
                                                              cloudAccounts,
                                                              hostTTL,
+                                                             cloudResourceTags,
                                                              notifications,
                                                              endpoints,
                                                              zoneEndpoints,
@@ -280,7 +285,7 @@ public class DeploymentSpecXmlReader {
                     return List.of(new DeclaredTest(RegionName.from(XML.getValue(stepTag).trim()), readHostTTL(stepTag))); // A production test
                 }
             case stagingTag: // Intentional fallthrough from test tag.
-                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), athenzService, testerNodes, readCloudAccounts(stepTag), readHostTTL(stepTag)));
+                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), athenzService, testerNodes, readCloudAccounts(stepTag), readHostTTL(stepTag), readCloudResourceTags(stepTag)));
             case prodTag: // regions, delay and parallel may be nested within, but we can flatten them
                 return XML.getChildren(stepTag).stream()
                                                .flatMap(child -> readNonInstanceSteps(child, prodAttributes, stepTag, defaultBcp).stream())
@@ -714,7 +719,7 @@ public class DeploymentSpecXmlReader {
                                           Optional<String> testerNodes, Element regionTag) {
         return new DeclaredZone(environment, Optional.of(RegionName.from(XML.getValue(regionTag).trim())),
                                 athenzService, testerNodes,
-                                readCloudAccounts(regionTag), readHostTTL(regionTag));
+                                readCloudAccounts(regionTag), readHostTTL(regionTag), readCloudResourceTags(regionTag));
     }
 
     private Map<CloudName, CloudAccount> readCloudAccounts(Element tag) {
@@ -735,6 +740,20 @@ public class DeploymentSpecXmlReader {
 
     private Optional<Duration> readHostTTL(Element tag) {
         return mostSpecificAttribute(tag, hostTTLAttribute).map(s -> toDuration(s, "empty host TTL"));
+    }
+
+    private CloudResourceTags readCloudResourceTags(Element tag) {
+        return mostSpecificSibling(tag, cloudResourceTagsTag)
+                .map(element -> {
+                    Map<String, String> tags = new LinkedHashMap<>();
+                    for (Element tagChild : XML.getChildren(element, "tag")) {
+                        String key = requireStringAttribute("key", tagChild);
+                        String value = requireStringAttribute("value", tagChild);
+                        tags.put(key, value);
+                    }
+                    return CloudResourceTags.from(tags);
+                })
+                .orElse(CloudResourceTags.empty());
     }
 
     private List<DeploymentSpec.ChangeBlocker> readChangeBlockers(Element parent, Element globalBlockersParent) {
@@ -854,6 +873,7 @@ public class DeploymentSpecXmlReader {
         Map<CloudName, CloudAccount> cloudAccounts = readCloudAccounts(devElement);
         Optional<Duration> hostTTL = XML.attribute(hostTTLAttribute, devElement).map(s -> toDuration(s, "host TTL"));
         Tags tags = XML.attribute(tagsTag, devElement).map(Tags::fromString).orElse(Tags.empty());
+        CloudResourceTags cloudResourceTags = readCloudResourceTags(devElement);
 
         Map<ClusterSpec.Id, ZoneEndpoint> endpoints = new LinkedHashMap<>();
         Element endpointsElement = XML.getChild(devElement, endpointsTag);
@@ -862,7 +882,7 @@ public class DeploymentSpecXmlReader {
                 readDevZoneEndpoint(endpointElement, endpoints);
             }
         }
-        return new DevSpec(athenzService, Optional.of(cloudAccounts), hostTTL, tags, endpoints);
+        return new DevSpec(athenzService, Optional.of(cloudAccounts), hostTTL, tags, cloudResourceTags, endpoints);
     }
 
     // TODO: if the other readEndpoints is ever refactored, factor in this, too.

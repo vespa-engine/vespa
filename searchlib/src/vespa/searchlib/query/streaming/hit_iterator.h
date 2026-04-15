@@ -14,11 +14,13 @@ class HitIterator
 {
     HitList::const_iterator _cur;
     HitList::const_iterator _end;
+    HitList::const_iterator _lookahead;
 public:
     using FieldElement = std::pair<uint32_t, uint32_t>;
     HitIterator(const HitList& hl) noexcept
         : _cur(hl.begin()),
-          _end(hl.end())
+          _end(hl.end()),
+          _lookahead(_cur)
     { }
     bool valid() const noexcept { return _cur != _end; }
     const Hit* operator->() const noexcept { return _cur.operator->(); }
@@ -71,6 +73,16 @@ public:
 
     // Note: this operator assumes that both iterators are still valid.
     bool operator<(const HitIterator& rhs) const noexcept { return _cur->key() < rhs->key(); }
+    Hit get_max_pos(const HitKey& last_allowed) {
+        if (_lookahead < _cur) {
+            _lookahead = _cur;
+        }
+        while (_lookahead != _end && _lookahead->key() <= last_allowed) {
+            ++_lookahead;
+        }
+        --_lookahead;
+        return *_lookahead;
+    }
 };
 
 }

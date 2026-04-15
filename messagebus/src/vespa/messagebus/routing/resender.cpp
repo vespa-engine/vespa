@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "resender.h"
+
 #include "routingnode.h"
+
 #include <vespa/messagebus/error.h>
 #include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/tracelevel.h>
@@ -10,23 +12,17 @@ using namespace std::chrono;
 
 namespace mbus {
 
-Resender::Resender(IRetryPolicy::SP retryPolicy)
-    : _queue_mutex(),
-      _queue(),
-      _retryPolicy(retryPolicy)
-{ }
+Resender::Resender(IRetryPolicy::SP retryPolicy) : _queue_mutex(), _queue(), _retryPolicy(retryPolicy) {
+}
 
-Resender::~Resender()
-{
+Resender::~Resender() {
     while (!_queue.empty()) {
         _queue.top().second->discard();
         _queue.pop();
     }
 }
 
-void
-Resender::resendScheduled()
-{
+void Resender::resendScheduled() {
     using NodeList = std::vector<RoutingNode*>;
     NodeList sendList;
 
@@ -39,21 +35,17 @@ Resender::resendScheduled()
         }
     }
 
-    for (RoutingNode *node : sendList) {
+    for (RoutingNode* node : sendList) {
         node->getTrace().trace(mbus::TraceLevel::COMPONENT, "Resender resending message.");
         node->send();
     }
 }
 
-bool
-Resender::canRetry(uint32_t errorCode) const
-{
+bool Resender::canRetry(uint32_t errorCode) const {
     return _retryPolicy->canRetry(errorCode);
 }
 
-bool
-Resender::shouldRetry(const Reply &reply) const
-{
+bool Resender::shouldRetry(const Reply& reply) const {
     uint32_t numErrors = reply.getNumErrors();
     if (numErrors == 0) {
         return false;
@@ -66,15 +58,13 @@ Resender::shouldRetry(const Reply &reply) const
     return true;
 }
 
-bool
-Resender::scheduleRetry(RoutingNode &node)
-{
-    Message &msg = node.getMessage();
+bool Resender::scheduleRetry(RoutingNode& node) {
+    Message& msg = node.getMessage();
     if (!msg.getRetryEnabled()) {
         return false;
     }
     uint32_t retry = msg.getRetry() + 1;
-    double delay = node.getReplyRef().getRetryDelay();
+    double   delay = node.getReplyRef().getRetryDelay();
     if (delay < 0) {
         delay = _retryPolicy->getRetryDelay(retry);
     }
@@ -84,9 +74,8 @@ Resender::scheduleRetry(RoutingNode &node)
         return false;
     }
     node.prepareForRetry(); // consumes the reply
-    node.getTrace().trace(
-        TraceLevel::COMPONENT,
-        vespalib::make_string("Message scheduled for retry %u in %.3f seconds.", retry, delay));
+    node.getTrace().trace(TraceLevel::COMPONENT,
+                          vespalib::make_string("Message scheduled for retry %u in %.3f seconds.", retry, delay));
     msg.setRetry(retry);
     std::lock_guard guard(_queue_mutex);
     _queue.push(Entry(steady_clock::now() + delayMS, &node));

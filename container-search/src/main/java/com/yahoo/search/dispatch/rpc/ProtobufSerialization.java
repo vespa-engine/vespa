@@ -83,9 +83,11 @@ public class ProtobufSerialization {
         return convertFromQuery(query, hits, nodeId, contentShare, requestTimeout, qrSearchersConfig).toByteArray();
     }
 
-    private static void convertSearchReplyErrors(Result target, List<SearchProtocol.Error> errors) {
+    private static void convertSearchReplyErrors(Result target, List<SearchProtocol.Error> errors, boolean softTimeout) {
         for (var error : errors) {
-            target.hits().addError(ErrorMessage.createSearchReplyError(error.getMessage()));
+            target.hits().addError(softTimeout
+                    ? ErrorMessage.createTimeout(error.getMessage())
+                    : ErrorMessage.createSearchReplyError(error.getMessage()));
         }
     }
 
@@ -296,7 +298,7 @@ public class ProtobufSerialization {
         result.getResult().setTotalHitCount(protobuf.getTotalHitCount());
         result.getResult().setCoverage(convertToCoverage(protobuf));
 
-        convertSearchReplyErrors(result.getResult(), protobuf.getErrorsList());
+        convertSearchReplyErrors(result.getResult(), protobuf.getErrorsList(), protobuf.getDegradedBySoftTimeout());
         List<String> featureNames = protobuf.getMatchFeatureNamesList();
         var haveMatchFeatures = ! featureNames.isEmpty();
         MatchFeatureData matchFeatures = haveMatchFeatures ? new MatchFeatureData(featureNames) : null;

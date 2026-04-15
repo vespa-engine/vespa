@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/documentapi/common.h>
 #include <vespa/messagebus/routing/iroutingpolicy.h>
 #include <vespa/vespalib/util/executor.h>
-#include <vespa/documentapi/common.h>
+
 #include <map>
 #include <mutex>
 
@@ -24,13 +25,11 @@ public:
      */
     virtual string init() = 0;
 
-    void select(mbus::RoutingContext &context) override;
+    void select(mbus::RoutingContext& context) override;
 
     virtual void doSelect(mbus::RoutingContext& context) = 0;
 
-    const string& getError() {
-        return _error;
-    }
+    const string& getError() { return _error; }
 
     void initSynchronous();
 
@@ -41,13 +40,9 @@ public:
     void needAsynchronousInit() { _syncInit = false; }
 
 private:
-    class Task : public vespalib::Executor::Task
-    {
+    class Task : public vespalib::Executor::Task {
     public:
-        Task(AsyncInitializationPolicy& owner)
-            : _owner(owner)
-        {
-        }
+        Task(AsyncInitializationPolicy& owner) : _owner(owner) {}
 
         Task(const Task&) = delete;
         Task& operator=(const Task&) = delete;
@@ -61,22 +56,15 @@ private:
     friend class Task;
 
     std::unique_ptr<vespalib::Executor> _executor;
-    std::mutex _lock;
+    std::mutex                          _lock;
 
-    enum class State {
-        NOT_STARTED,
-        RUNNING,
-        FAILED,
-        DONE
-    };
+    enum class State { NOT_STARTED, RUNNING, FAILED, DONE };
 
     State _state;
 
 protected:
     string _error;
-    bool _syncInit;
+    bool   _syncInit;
 };
 
-}
-
-
+} // namespace documentapi

@@ -136,6 +136,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
 
     /**
      * Prune away any field update that will not modify any field in the document.
+     *
      * @param doc document to check against
      * @return a reference to itself
      * @throws IllegalArgumentException if the document does not have the same document type as this update

@@ -631,7 +631,7 @@ GenericBTreeBucketDatabase<DataStoreTraitsT>::ReadSnapshot::create_iterator() co
 
 template <typename DataStoreTraitsT>
 uint64_t GenericBTreeBucketDatabase<DataStoreTraitsT>::ReadSnapshot::generation() const noexcept {
-    return _guard.getGeneration();
+    return _guard.getGeneration().value();
 }
 
 }

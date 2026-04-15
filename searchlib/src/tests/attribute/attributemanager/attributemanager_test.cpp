@@ -17,6 +17,7 @@ using namespace search;
 using namespace search::attribute;
 using std::shared_ptr;
 using std::string_view;
+using vespalib::Generation;
 
 using BT = BasicType;
 using CT = CollectionType;
@@ -43,58 +44,58 @@ public:
 TEST(AttributeManagerTest, Test_attribute_guards)
 {
     auto v = std::make_shared<TestAttribute>("mvint");
-    EXPECT_EQ(v->getGen(), unsigned(0));
-    EXPECT_EQ(v->getRefCount(0), unsigned(0));
-    EXPECT_EQ(v->oldest_used_gen(), unsigned(0));
+    EXPECT_EQ(v->getGen(), Generation(0));
+    EXPECT_EQ(v->getRefCount(Generation(0)), unsigned(0));
+    EXPECT_EQ(v->oldest_used_gen(), Generation(0));
     {
         AttributeGuard g0(v);
-        EXPECT_EQ(v->getGen(), unsigned(0));
-        EXPECT_EQ(v->getRefCount(0), unsigned(1));
-        EXPECT_EQ(v->oldest_used_gen(), unsigned(0));
+        EXPECT_EQ(v->getGen(), Generation(0));
+        EXPECT_EQ(v->getRefCount(Generation(0)), unsigned(1));
+        EXPECT_EQ(v->oldest_used_gen(), Generation(0));
         {
             AttributeGuard g1(v);
-            EXPECT_EQ(v->getGen(), unsigned(0));
-            EXPECT_EQ(v->getRefCount(0), unsigned(2));
-            EXPECT_EQ(v->oldest_used_gen(), unsigned(0));
+            EXPECT_EQ(v->getGen(), Generation(0));
+            EXPECT_EQ(v->getRefCount(Generation(0)), unsigned(2));
+            EXPECT_EQ(v->oldest_used_gen(), Generation(0));
         }
-        EXPECT_EQ(v->getRefCount(0), unsigned(1));
-        EXPECT_EQ(v->oldest_used_gen(), unsigned(0));
+        EXPECT_EQ(v->getRefCount(Generation(0)), unsigned(1));
+        EXPECT_EQ(v->oldest_used_gen(), Generation(0));
     }
-    EXPECT_EQ(v->getRefCount(0), unsigned(0));
-    EXPECT_EQ(v->oldest_used_gen(), unsigned(0));
+    EXPECT_EQ(v->getRefCount(Generation(0)), unsigned(0));
+    EXPECT_EQ(v->oldest_used_gen(), Generation(0));
 
     v->incGen();
-    EXPECT_EQ(v->getGen(), unsigned(1));
-    EXPECT_EQ(v->getRefCount(0), unsigned(0));
-    EXPECT_EQ(v->getRefCount(1), unsigned(0));
-    EXPECT_EQ(v->oldest_used_gen(), unsigned(1));
+    EXPECT_EQ(v->getGen(), Generation(1));
+    EXPECT_EQ(v->getRefCount(Generation(0)), unsigned(0));
+    EXPECT_EQ(v->getRefCount(Generation(1)), unsigned(0));
+    EXPECT_EQ(v->oldest_used_gen(), Generation(1));
     {
         AttributeGuard g0(v);
-        EXPECT_EQ(v->getGen(), unsigned(1));
-        EXPECT_EQ(v->getRefCount(0), unsigned(0));
-        EXPECT_EQ(v->getRefCount(1), unsigned(1));
-        EXPECT_EQ(v->oldest_used_gen(), unsigned(1));
+        EXPECT_EQ(v->getGen(), Generation(1));
+        EXPECT_EQ(v->getRefCount(Generation(0)), unsigned(0));
+        EXPECT_EQ(v->getRefCount(Generation(1)), unsigned(1));
+        EXPECT_EQ(v->oldest_used_gen(), Generation(1));
         {
             v->incGen();
             AttributeGuard g1(v);
-            EXPECT_EQ(v->getGen(), unsigned(2));
-            EXPECT_EQ(v->getRefCount(0), unsigned(0));
-            EXPECT_EQ(v->getRefCount(1), unsigned(1));
-            EXPECT_EQ(v->getRefCount(2), unsigned(1));
-            EXPECT_EQ(v->oldest_used_gen(), unsigned(1));
+            EXPECT_EQ(v->getGen(), Generation(2));
+            EXPECT_EQ(v->getRefCount(Generation(0)), unsigned(0));
+            EXPECT_EQ(v->getRefCount(Generation(1)), unsigned(1));
+            EXPECT_EQ(v->getRefCount(Generation(2)), unsigned(1));
+            EXPECT_EQ(v->oldest_used_gen(), Generation(1));
         }
-        EXPECT_EQ(v->getRefCount(0), unsigned(0));
-        EXPECT_EQ(v->getRefCount(1), unsigned(1));
-        EXPECT_EQ(v->getRefCount(2), unsigned(0));
-        EXPECT_EQ(v->oldest_used_gen(), unsigned(1));
+        EXPECT_EQ(v->getRefCount(Generation(0)), unsigned(0));
+        EXPECT_EQ(v->getRefCount(Generation(1)), unsigned(1));
+        EXPECT_EQ(v->getRefCount(Generation(2)), unsigned(0));
+        EXPECT_EQ(v->oldest_used_gen(), Generation(1));
     }
-    EXPECT_EQ(v->getRefCount(0), unsigned(0));
-    EXPECT_EQ(v->getRefCount(1), unsigned(0));
-    EXPECT_EQ(v->getRefCount(2), unsigned(0));
-    EXPECT_EQ(v->oldest_used_gen(), unsigned(1));
+    EXPECT_EQ(v->getRefCount(Generation(0)), unsigned(0));
+    EXPECT_EQ(v->getRefCount(Generation(1)), unsigned(0));
+    EXPECT_EQ(v->getRefCount(Generation(2)), unsigned(0));
+    EXPECT_EQ(v->oldest_used_gen(), Generation(1));
     v->update_oldest_used_generation();
-    EXPECT_EQ(v->oldest_used_gen(), unsigned(2));
-    EXPECT_EQ(v->getGen(), unsigned(2));
+    EXPECT_EQ(v->oldest_used_gen(), Generation(2));
+    EXPECT_EQ(v->getGen(), Generation(2));
 }
 
 
@@ -344,8 +345,8 @@ TEST(AttributeManagerTest, test_the_attribute_context)
 
         // no generation guards taken yet
         for (uint32_t i = 0; i < attrs.size(); ++i) {
-            EXPECT_EQ(attrs[i]->getCurrentGeneration(), 1u);
-            EXPECT_EQ(attrs[i]->getGenerationRefCount(1u), 0u);
+            EXPECT_EQ(attrs[i]->getCurrentGeneration(), Generation(1u));
+            EXPECT_EQ(attrs[i]->getGenerationRefCount(Generation(1u)), 0u);
         }
 
         for (uint32_t i = 0; i < 2; ++i) {
@@ -359,8 +360,8 @@ TEST(AttributeManagerTest, test_the_attribute_context)
 
         // one generation guard taken per attribute asked for
         for (uint32_t i = 0; i < attrs.size(); ++i) {
-            EXPECT_EQ(attrs[i]->getCurrentGeneration(), 1u);
-            EXPECT_EQ(attrs[i]->getGenerationRefCount(1u),
+            EXPECT_EQ(attrs[i]->getCurrentGeneration(), Generation(1u));
+            EXPECT_EQ(attrs[i]->getGenerationRefCount(Generation(1u)),
                        (i < 3) ? (i == 2 ? 2u : 1u) : 0u);
         }
 
@@ -374,24 +375,24 @@ TEST(AttributeManagerTest, test_the_attribute_context)
 
             // two generation guards taken per attribute asked for
             for (uint32_t i = 0; i < attrs.size(); ++i) {
-                EXPECT_EQ(attrs[i]->getCurrentGeneration(), 1u);
-                EXPECT_EQ(attrs[i]->getGenerationRefCount(1u),
+                EXPECT_EQ(attrs[i]->getCurrentGeneration(), Generation(1u));
+                EXPECT_EQ(attrs[i]->getGenerationRefCount(Generation(1u)),
                            (i < 3) ? (i == 2 ? 4u : 2u) : 0u);
             }
         }
 
         // one generation guard taken per attribute asked for
         for (uint32_t i = 0; i < attrs.size(); ++i) {
-            EXPECT_EQ(attrs[i]->getCurrentGeneration(), 1u);
-            EXPECT_EQ(attrs[i]->getGenerationRefCount(1u),
+            EXPECT_EQ(attrs[i]->getCurrentGeneration(), Generation(1u));
+            EXPECT_EQ(attrs[i]->getGenerationRefCount(Generation(1u)),
                        (i < 3) ? (i == 2 ? 2u : 1u) : 0u);
         }
     }
 
     // no generation guards taken
     for (uint32_t i = 0; i < attrs.size(); ++i) {
-        EXPECT_EQ(attrs[i]->getCurrentGeneration(), 1u);
-        EXPECT_EQ(attrs[i]->getGenerationRefCount(1u), 0u);
+        EXPECT_EQ(attrs[i]->getCurrentGeneration(), Generation(1u));
+        EXPECT_EQ(attrs[i]->getGenerationRefCount(Generation(1u)), 0u);
     }
 
     {

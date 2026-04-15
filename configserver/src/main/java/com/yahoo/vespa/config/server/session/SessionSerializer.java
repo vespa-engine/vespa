@@ -9,6 +9,7 @@ import com.yahoo.config.model.api.TenantVault;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.vespa.flags.BooleanFlag;
@@ -36,6 +37,7 @@ public class SessionSerializer {
                Optional<AthenzDomain> athenzDomain, Optional<Quota> quota,
                List<TenantVault> tenantVaults, List<TenantSecretStore> tenantSecretStores,
                List<X509Certificate> operatorCertificates, Optional<CloudAccount> cloudAccount,
+               CloudResourceTags cloudResourceTags,
                List<DataplaneToken> dataplaneTokens, ActivationTriggers activationTriggers,
                BooleanFlag writeSessionData) {
 
@@ -52,6 +54,7 @@ public class SessionSerializer {
         zooKeeperClient.writeTenantSecretStores(tenantSecretStores);
         zooKeeperClient.writeOperatorCertificates(operatorCertificates);
         zooKeeperClient.writeCloudAccount(cloudAccount);
+        zooKeeperClient.writeCloudResourceTags(cloudResourceTags);
         zooKeeperClient.writeDataplaneTokens(dataplaneTokens);
         zooKeeperClient.writeActivationTriggers(activationTriggers);
 
@@ -68,6 +71,7 @@ public class SessionSerializer {
                                                              tenantSecretStores,
                                                              operatorCertificates,
                                                              cloudAccount,
+                                                             cloudResourceTags,
                                                              dataplaneTokens,
                                                              activationTriggers));
     }
@@ -97,6 +101,7 @@ public class SessionSerializer {
                                zooKeeperClient.readTenantSecretStores(),
                                zooKeeperClient.readOperatorCertificates(),
                                zooKeeperClient.readCloudAccount(),
+                               zooKeeperClient.readCloudResourceTags(),
                                zooKeeperClient.readDataplaneTokens(),
                                zooKeeperClient.readActivationTriggers());
     }

@@ -16,6 +16,7 @@ import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Test;
@@ -73,6 +74,7 @@ public class ModelContextImplTest {
                         List.of(),
                         List.of(),
                         Optional.empty(),
+                        CloudResourceTags.empty(),
                         List.of()),
                 Optional.empty(),
                 OnnxModelCost.disabled(),
@@ -96,7 +98,7 @@ public class ModelContextImplTest {
         assertEquals(new Version(8), context.wantedNodeVespaVersion());
         assertTrue(context.properties().featureFlags().useAsyncMessageHandlingOnSchedule());
         assertEquals(0.5, context.properties().featureFlags().feedConcurrency(), 0.0);
-        assertEquals(0.0, context.properties().featureFlags().searchNodeReservedDiskSpaceFactor(), 0.5);
+        assertEquals(1.0, context.properties().featureFlags().searchNodeReservedDiskSpaceFactor(), 0.0);
     }
 
 }

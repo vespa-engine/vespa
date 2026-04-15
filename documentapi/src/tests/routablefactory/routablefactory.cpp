@@ -18,47 +18,37 @@ using namespace documentapi;
 
 class MyReply : public DocumentReply {
 public:
-    enum {
-        TYPE = 777
-    };
+    enum { TYPE = 777 };
 
-    MyReply() :
-        DocumentReply(TYPE) {
+    MyReply() : DocumentReply(TYPE) {
         // empty
     }
 };
 
 class MyMessage : public DocumentMessage {
 public:
-    enum {
-        TYPE = 666
-    };
+    enum { TYPE = 666 };
 
-    MyMessage() {
-        getTrace().setLevel(9);
-    }
+    MyMessage() { getTrace().setLevel(9); }
 
-    DocumentReply::UP doCreateReply() const override {
-        return DocumentReply::UP(new MyReply());
-    }
+    DocumentReply::UP doCreateReply() const override { return DocumentReply::UP(new MyReply()); }
 
-    uint32_t getType() const override {
-        return TYPE;
-    }
+    uint32_t getType() const override { return TYPE; }
 };
 
 class MyMessageFactory : public RoutableFactories60::DocumentMessageFactory {
 protected:
-    DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override {
+    DocumentMessage::UP doDecode(document::ByteBuffer& buf) const override {
         (void)buf;
         return DocumentMessage::UP(new MyMessage());
     }
 
-    bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override {
+    bool doEncode(const DocumentMessage& msg, vespalib::GrowableByteBuffer& buf) const override {
         (void)msg;
         (void)buf;
         return true;
     }
+
 public:
     ~MyMessageFactory() override;
 };
@@ -67,16 +57,17 @@ MyMessageFactory::~MyMessageFactory() = default;
 
 class MyReplyFactory : public RoutableFactories60::DocumentReplyFactory {
 protected:
-    DocumentReply::UP doDecode(document::ByteBuffer &buf) const override {
+    DocumentReply::UP doDecode(document::ByteBuffer& buf) const override {
         (void)buf;
         return DocumentReply::UP(new MyReply());
     }
 
-    bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override {
+    bool doEncode(const DocumentReply& reply, vespalib::GrowableByteBuffer& buf) const override {
         (void)reply;
         (void)buf;
         return true;
     }
+
 public:
     ~MyReplyFactory() override;
 };
@@ -109,32 +100,30 @@ public:
     bool start();
 };
 
-TestData::TestData() :
-    _repo(std::make_shared<DocumentTypeRepo>()),
-    _slobrok(),
-    _srcProtocol(std::make_shared<DocumentProtocol>(_repo)),
-    _srcServer(mbus::MessageBusParams().addProtocol(_srcProtocol),
-               mbus::RPCNetworkParams(_slobrok.config())),
-    _srcSession(),
-    _srcHandler(),
-    _dstProtocol(std::make_shared<DocumentProtocol>(_repo)),
-    _dstServer(mbus::MessageBusParams().addProtocol(_dstProtocol),
-               mbus::RPCNetworkParams(_slobrok.config()).setIdentity(mbus::Identity("dst"))),
-    _dstSession(),
-    _dstHandler()
-{ }
+TestData::TestData()
+    : _repo(std::make_shared<DocumentTypeRepo>()),
+      _slobrok(),
+      _srcProtocol(std::make_shared<DocumentProtocol>(_repo)),
+      _srcServer(mbus::MessageBusParams().addProtocol(_srcProtocol), mbus::RPCNetworkParams(_slobrok.config())),
+      _srcSession(),
+      _srcHandler(),
+      _dstProtocol(std::make_shared<DocumentProtocol>(_repo)),
+      _dstServer(mbus::MessageBusParams().addProtocol(_dstProtocol),
+                 mbus::RPCNetworkParams(_slobrok.config()).setIdentity(mbus::Identity("dst"))),
+      _dstSession(),
+      _dstHandler() {
+}
 
 TestData::~TestData() = default;
 
-bool
-TestData::start()
-{
+bool TestData::start() {
     _srcSession = _srcServer.mb.createSourceSession(mbus::SourceSessionParams().setReplyHandler(_srcHandler));
-    if ( ! _srcSession) {
+    if (!_srcSession) {
         return false;
     }
-    _dstSession = _dstServer.mb.createDestinationSession(mbus::DestinationSessionParams().setName("session").setMessageHandler(_dstHandler));
-    if ( ! _dstSession) {
+    _dstSession = _dstServer.mb.createDestinationSession(
+        mbus::DestinationSessionParams().setName("session").setMessageHandler(_dstHandler));
+    if (!_dstSession) {
         return false;
     }
     if (!_srcServer.waitSlobrok("dst/session", 1u)) {
@@ -151,8 +140,7 @@ TestData::start()
 
 const vespalib::duration TIMEOUT = 600s;
 
-TEST(RoutableFactoryTest, test_factory)
-{
+TEST(RoutableFactoryTest, test_factory) {
     TestData data;
     ASSERT_TRUE(data.start());
 

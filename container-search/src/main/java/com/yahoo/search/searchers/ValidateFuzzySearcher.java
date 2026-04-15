@@ -26,6 +26,7 @@ import java.util.Set;
  *
  * @author alexeyche
  */
+@SuppressWarnings("removal")
 @Before(GroupingExecutor.COMPONENT_NAME) // Must happen before query.prepare()
 public class ValidateFuzzySearcher extends Searcher {
 

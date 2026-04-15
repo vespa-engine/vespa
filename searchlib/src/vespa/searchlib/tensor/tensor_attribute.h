@@ -33,7 +33,7 @@ protected:
     std::unique_ptr<NearestNeighborIndex> _index;
     bool _is_dense;
     std::unique_ptr<vespalib::eval::Value> _emptyTensor;
-    uint64_t    _compactGeneration; // Generation when last compact occurred
+    generation_t         _compactGeneration; // Generation when last compact occurred
     SubspaceType         _subspace_type;
     TypedCellsComparator _comp;
     uint64_t             _memory_usage_empty;
@@ -105,6 +105,8 @@ public:
     void set_memory_usage_at_save_start(uint64_t memory_usage) noexcept;
     void set_size_on_disk(uint64_t value) noexcept override;
     uint64_t getEstimatedSaveByteSize() const override;
+    void incGeneration() override;
+    void reclaim_unused_memory() override;
 };
 
 }

@@ -2,6 +2,7 @@
 #pragma once
 
 #include "identity.h"
+
 #include <vespa/slobrok/cfg.h>
 #include <vespa/vespalib/net/tls/capability_set.h>
 #include <vespa/vespalib/util/compressionconfig.h>
@@ -15,7 +16,7 @@ namespace mbus {
 class RPCNetworkParams {
 private:
     using CompressionConfig = vespalib::compression::CompressionConfig;
-    using CapabilitySet     = vespalib::net::tls::CapabilitySet;
+    using CapabilitySet = vespalib::net::tls::CapabilitySet;
     Identity          _identity;
     config::ConfigUri _slobrokConfig;
     int               _listenPort;
@@ -40,14 +41,14 @@ public:
      * @param numNetworkThreads number of threads for the network
      * @return This, to allow chaining.
      */
-     RPCNetworkParams &setNumNetworkThreads(uint32_t numNetworkThreads) {
-         _numNetworkThreads = numNetworkThreads;
-         return *this;
-     }
+    RPCNetworkParams& setNumNetworkThreads(uint32_t numNetworkThreads) {
+        _numNetworkThreads = numNetworkThreads;
+        return *this;
+    }
 
     uint32_t getNumNetworkThreads() const { return _numNetworkThreads; }
 
-    RPCNetworkParams &setNumRpcTargets(uint32_t numRpcTargets) {
+    RPCNetworkParams& setNumRpcTargets(uint32_t numRpcTargets) {
         _numRpcTargets = numRpcTargets;
         return *this;
     }
@@ -59,9 +60,7 @@ public:
      *
      * @return The identity.
      */
-    const Identity &getIdentity() const {
-        return _identity;
-    }
+    const Identity& getIdentity() const { return _identity; }
 
     /**
      * Sets the identity to use for the network.
@@ -69,7 +68,7 @@ public:
      * @param identity The new identity.
      * @return This, to allow chaining.
      */
-    RPCNetworkParams &setIdentity(const Identity &identity) {
+    RPCNetworkParams& setIdentity(const Identity& identity) {
         _identity = identity;
         return *this;
     }
@@ -80,27 +79,21 @@ public:
      * @param identity A string representation of the identity.
      * @return This, to allow chaining.
      */
-    RPCNetworkParams &setIdentity(const string &identity) {
-        return setIdentity(Identity(identity));
-    }
+    RPCNetworkParams& setIdentity(const string& identity) { return setIdentity(Identity(identity)); }
 
     /**
      * Returns the config id of the slobrok config.
      *
      * @return The config id.
      */
-    const config::ConfigUri & getSlobrokConfig() const {
-        return _slobrokConfig;
-    }
+    const config::ConfigUri& getSlobrokConfig() const { return _slobrokConfig; }
 
     /**
      * Returns the port to listen to.
      *
      * @return The port.
      */
-    int getListenPort() const {
-        return _listenPort;
-    }
+    int getListenPort() const { return _listenPort; }
 
     /**
      * Sets the port to listen to.
@@ -108,12 +101,12 @@ public:
      * @param listenPort The new port.
      * @return This, to allow chaining.
      */
-    RPCNetworkParams &setListenPort(int listenPort) {
+    RPCNetworkParams& setListenPort(int listenPort) {
         _listenPort = listenPort;
         return *this;
     }
 
-    RPCNetworkParams &setTcpNoDelay(bool tcpNoDelay) {
+    RPCNetworkParams& setTcpNoDelay(bool tcpNoDelay) {
         _tcpNoDelay = tcpNoDelay;
         return *this;
     }
@@ -125,9 +118,7 @@ public:
      *
      * @return The number of seconds.
      */
-    double getConnectionExpireSecs() const{
-        return _connectionExpireSecs;
-    }
+    double getConnectionExpireSecs() const { return _connectionExpireSecs; }
 
     /**
      * Sets the number of seconds before an idle network connection expires.
@@ -135,7 +126,7 @@ public:
      * @param secs The number of seconds.
      * @return This, to allow chaining.
      */
-    RPCNetworkParams &setConnectionExpireSecs(double secs) {
+    RPCNetworkParams& setConnectionExpireSecs(double secs) {
         _connectionExpireSecs = secs;
         return *this;
     }
@@ -145,26 +136,22 @@ public:
      *
      * @return The maximum number of bytes.
      */
-    uint32_t getMaxInputBufferSize() const {
-        return _maxInputBufferSize;
-    }
+    uint32_t getMaxInputBufferSize() const { return _maxInputBufferSize; }
 
     /**
      * Returns the maximum output buffer size allowed for the underlying FNET connection.
      *
      * @return The maximum number of bytes.
      */
-    uint32_t getMaxOutputBufferSize() const {
-        return _maxOutputBufferSize;
-    }
+    uint32_t getMaxOutputBufferSize() const { return _maxOutputBufferSize; }
 
-    RPCNetworkParams &setCompressionConfig(CompressionConfig compressionConfig) {
+    RPCNetworkParams& setCompressionConfig(CompressionConfig compressionConfig) {
         _compressionConfig = compressionConfig;
         return *this;
     }
     CompressionConfig getCompressionConfig() const { return _compressionConfig; }
 
-    RPCNetworkParams &events_before_wakeup(uint32_t value) {
+    RPCNetworkParams& events_before_wakeup(uint32_t value) {
         _events_before_wakeup = value;
         return *this;
     }
@@ -174,10 +161,7 @@ public:
         _required_capabilities = capabilities;
         return *this;
     }
-    [[nodiscard]] CapabilitySet required_capabilities() const noexcept {
-        return _required_capabilities;
-    }
+    [[nodiscard]] CapabilitySet required_capabilities() const noexcept { return _required_capabilities; }
 };
 
-}
-
+} // namespace mbus

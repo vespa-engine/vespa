@@ -36,6 +36,9 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     foregroundtaskexecutor.cpp
     gate.cpp
     gencnt.cpp
+    generation.cpp
+    generation_guard.cpp
+    generation_hold.cpp
     generationhandler.cpp
     generationholder.cpp
     growablebytebuffer.cpp
@@ -100,6 +103,8 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     threadstackexecutor.cpp
     threadstackexecutorbase.cpp
     time.cpp
+    unordered_u32_set.cpp
+    typed_data_layout.cpp
     unwind_message.cpp
     valgrind.cpp
     xmlserializable.cpp

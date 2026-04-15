@@ -41,7 +41,7 @@ struct Fixture
         DMSResult res = _metaStore.inspect(gid, 0u);
         EXPECT_EQ(lid, res._lid);
         uint32_t docSize = 1;
-        _metaStore.put(gid, gid.convertToBucketId(), Timestamp(lid), docSize, lid, 0u);
+        _metaStore.put(docId, gid.convertToBucketId(), Timestamp(lid), docSize, lid, 0u);
         return *this;
     }
     LidSet scan(uint32_t count, uint32_t compactLidLimit) {

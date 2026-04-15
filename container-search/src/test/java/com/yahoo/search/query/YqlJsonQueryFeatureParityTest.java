@@ -12,7 +12,6 @@ import com.yahoo.search.yql.VespaSerializer;
 import com.yahoo.search.yql.YqlParser;
 import com.yahoo.slime.SlimeUtils;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -64,6 +63,12 @@ public class YqlJsonQueryFeatureParityTest {
     }
 
     @Test
+    void testEqualsWithArrayIndex() {
+        assertWhereParity("my_numbers[2] = 42",
+                "{ 'equals' : { 'field' : 'my_numbers', 'index' : 2, 'value' : 42 } }");
+    }
+
+    @Test
     void testNot() {
         assertWhereParity("!(title contains 'madonna')",
                 "{ 'not' : { 'contains' : ['title', 'madonna'] } }");
@@ -79,6 +84,16 @@ public class YqlJsonQueryFeatureParityTest {
     void testRange() {
         assertWhereParity("range(price, 0L, 500L)",
                 "{ 'range' : ['price', { '>=': 0, '<=': 500 }] }");
+    }
+
+    @Test
+    void testRangeOpenBounds() {
+        assertWhereParity("price > 0L",
+                "{ 'range' : ['price', { '>': 0 }] }");
+        assertWhereParity("price < 500L",
+                "{ 'range' : ['price', { '<': 500 }] }");
+        assertWhereParity("price > 0L and price < 500L",
+                "{ 'and' : [ { 'range' : ['price', { '>': 0 }] }, { 'range' : ['price', { '<': 500 }] } ] }");
     }
 
     @Test
@@ -103,16 +118,26 @@ public class YqlJsonQueryFeatureParityTest {
 
     @Test
     void testNear() {
-        // NOTE: SelectParser sets implicitTransforms:false on near children, YqlParser does not
         assertWhereParity("description contains near({implicitTransforms: false}'a', {implicitTransforms: false}'b')",
                 "{ 'contains' : ['description', { 'near' : ['a', 'b'] }] }");
     }
 
     @Test
+    void testNearWithDistance() {
+        assertWhereParity("description contains ({distance: 5}near({implicitTransforms: false}'a', {implicitTransforms: false}'b'))",
+                "{ 'contains' : ['description', { 'near' : { 'children' : ['a', 'b'], 'attributes' : { 'distance' : 5 } } }] }");
+    }
+
+    @Test
     void testOnear() {
-        // NOTE: SelectParser sets implicitTransforms:false on onear children, YqlParser does not
         assertWhereParity("description contains onear({implicitTransforms: false}'a', {implicitTransforms: false}'b')",
                 "{ 'contains' : ['description', { 'onear' : ['a', 'b'] }] }");
+    }
+
+    @Test
+    void testOnearWithDistance() {
+        assertWhereParity("description contains ({distance: 100}onear({implicitTransforms: false}'a', {implicitTransforms: false}'b'))",
+                "{ 'contains' : ['description', { 'onear' : { 'children' : ['a', 'b'], 'attributes' : { 'distance' : 100 } } }] }");
     }
 
     @Test
@@ -125,6 +150,36 @@ public class YqlJsonQueryFeatureParityTest {
     void testFuzzy() {
         assertWhereParity("baz contains fuzzy('a b')",
                 "{ 'contains' : ['baz', { 'fuzzy' : ['a b'] }] }");
+    }
+
+    @Test
+    void testFuzzyWithAnnotations() {
+        assertWhereParity("baz contains ({maxEditDistance: 3, prefixLength: 10}fuzzy('a b'))",
+                "{ 'contains' : ['baz', { 'fuzzy' : { 'children' : ['a b'], 'attributes' : { 'maxEditDistance' : 3, 'prefixLength' : 10 } } }] }");
+    }
+
+    @Test
+    void testText() {
+        assertWhereParity("title contains text('madonna')",
+                "{ 'contains' : ['title', { 'text' : 'madonna' }] }");
+    }
+
+    @Test
+    void testTextWithLanguage() {
+        assertWhereParity("title contains ({language: 'en'}text('hello world'))",
+                "{ 'contains' : ['title', { 'text' : { 'query' : 'hello world', 'attributes' : { 'language' : 'en' } } }] }");
+    }
+
+    @Test
+    void testTextWithWeightFilterRanked() {
+        assertWhereParity("title contains ({weight: 200, filter: true, ranked: false}text('madonna'))",
+                "{ 'contains' : ['title', { 'text' : { 'query' : 'madonna', 'attributes' : { 'weight' : 200, 'filter' : true, 'ranked' : false } } }] }");
+    }
+
+    @Test
+    void testTextWithStemNormalizeCaseAccentDrop() {
+        assertWhereParity("title contains ({stem: false, normalizeCase: false, accentDrop: false}text('madonna'))",
+                "{ 'contains' : ['title', { 'text' : { 'query' : 'madonna', 'attributes' : { 'stem' : false, 'normalizeCase' : false, 'accentDrop' : false } } }] }");
     }
 
     @Test
@@ -144,36 +199,30 @@ public class YqlJsonQueryFeatureParityTest {
                 "{ 'contains' : ['baz', { 'sameElement' : [ { 'f1' : 'a', 'f2' : 'b' } ] }] }");
     }
 
-    @Disabled("SelectParser does not strip field prefix inside sameElement on string arrays — parity bug")
     @Test
     void testSameElementWithAndOrChildren() {
-        // AND inside sameElement (string array)
         assertWhereParity("description contains sameElement('a' and 'b')",
-                "{ 'contains' : ['description', { 'sameElement' : [ { 'and' : [ { 'contains' : ['description', 'a'] }, { 'contains' : ['description', 'b'] } ] } ] }] }");
-        // OR inside sameElement (string array)
+                "{ 'contains' : ['description', { 'sameElement' : [ { 'and' : [ 'a', 'b' ] } ] }] }");
         assertWhereParity("description contains sameElement('a' or 'b')",
-                "{ 'contains' : ['description', { 'sameElement' : [ { 'or' : [ { 'contains' : ['description', 'a'] }, { 'contains' : ['description', 'b'] } ] } ] }] }");
+                "{ 'contains' : ['description', { 'sameElement' : [ { 'or' : [ 'a', 'b' ] } ] }] }");
     }
 
-    @Disabled("SelectParser does not strip field prefix inside sameElement on string arrays — parity bug")
     @Test
     void testSameElementWithNear() {
-        assertWhereParity("description contains sameElement({distance: 3}near('a', 'b'))",
-                "{ 'contains' : ['description', { 'sameElement' : [ { 'contains' : ['description', { 'near' : { 'children' : ['a', 'b'], 'attributes' : { 'distance' : 3 } } }] } ] }] }");
+        assertWhereParity("description contains sameElement({distance: 3}near({implicitTransforms: false}'a', {implicitTransforms: false}'b'))",
+                "{ 'contains' : ['description', { 'sameElement' : [ { 'near' : { 'children' : ['a', 'b'], 'attributes' : { 'distance' : 3 } } } ] }] }");
     }
 
-    @Disabled("SelectParser does not strip field prefix inside sameElement on string arrays — parity bug")
     @Test
     void testSameElementWithPhrase() {
         assertWhereParity("description contains sameElement(phrase('a', 'b'))",
-                "{ 'contains' : ['description', { 'sameElement' : [ { 'contains' : ['description', { 'phrase' : ['a', 'b'] }] } ] }] }");
+                "{ 'contains' : ['description', { 'sameElement' : [ { 'phrase' : ['a', 'b'] } ] }] }");
     }
 
-    @Disabled("SelectParser does not strip field prefix inside sameElement on string arrays — parity bug")
     @Test
     void testSameElementWithRank() {
         assertWhereParity("description contains sameElement(rank('a', 'b'))",
-                "{ 'contains' : ['description', { 'sameElement' : [ { 'rank' : [ { 'contains' : ['description', 'a'] }, { 'contains' : ['description', 'b'] } ] } ] }] }");
+                "{ 'contains' : ['description', { 'sameElement' : [ { 'rank' : [ 'a', 'b' ] } ] }] }");
     }
 
     @Test
@@ -189,9 +238,21 @@ public class YqlJsonQueryFeatureParityTest {
     }
 
     @Test
+    void testWeakAndWithAnnotations() {
+        assertWhereParity("{scoreThreshold: 41, totalTargetHits: 7}weakAnd(a contains 'A', b contains 'B')",
+                "{ 'weakAnd' : { 'children' : [ { 'contains' : ['a', 'A'] }, { 'contains' : ['b', 'B'] } ], 'attributes' : { 'scoreThreshold': 41, 'totalTargetHits': 7 } } }");
+    }
+
+    @Test
     void testWand() {
         assertWhereParity("wand(description, {'a': 1, 'b': 2})",
                 "{ 'wand' : ['description', { 'a': 1, 'b': 2 }] }");
+    }
+
+    @Test
+    void testWandWithAnnotations() {
+        assertWhereParity("[{'scoreThreshold': 13, 'totalTargetHits': 7}]wand(description, {'a': 1, 'b': 2})",
+                "{ 'wand' : { 'children' : ['description', { 'a': 1, 'b': 2 }], 'attributes' : { 'scoreThreshold': 13, 'totalTargetHits': 7 } } }");
     }
 
     @Test
@@ -230,6 +291,53 @@ public class YqlJsonQueryFeatureParityTest {
                 "{ 'nearestNeighbor' : ['f1field', 'q2prop'] }");
     }
 
+    @Test
+    void testNearestNeighborWithAnnotations() {
+        assertWhereParity("{targetHits: 37, approximate: false, distanceThreshold: 100.5}nearestNeighbor(f1field, q2prop)",
+                "{ 'nearestNeighbor' : { 'children' : ['f1field', 'q2prop'], 'attributes' : { 'targetHits' : 37, 'approximate' : false, 'distanceThreshold' : 100.5 } } }");
+    }
+
+    @Test
+    void testTrueClause() {
+        assertWhereParity("true", "true");
+    }
+
+    @Test
+    void testFalseClause() {
+        assertWhereParity("false", "false");
+    }
+
+    @Test
+    void testNestedBooleans() {
+        assertWhereParity("(a contains 'A' or b contains 'B') and c contains 'C'",
+                "{ 'and' : [ { 'or' : [ { 'contains' : ['a', 'A'] }, { 'contains' : ['b', 'B'] } ] }, { 'contains' : ['c', 'C'] } ] }");
+        assertWhereParity("a contains 'A' and (b contains 'B' or c contains 'C')",
+                "{ 'and' : [ { 'contains' : ['a', 'A'] }, { 'or' : [ { 'contains' : ['b', 'B'] }, { 'contains' : ['c', 'C'] } ] } ] }");
+        assertWhereParity("(a contains 'A' and b contains 'B') or (c contains 'C' and title contains 'D')",
+                "{ 'or' : [ { 'and' : [ { 'contains' : ['a', 'A'] }, { 'contains' : ['b', 'B'] } ] }, { 'and' : [ { 'contains' : ['c', 'C'] }, { 'contains' : ['title', 'D'] } ] } ] }");
+    }
+
+    @Test
+    void testGrouping() {
+        assertGroupingParity(
+                "all(group(a) each(output(count())))",
+                "[ { 'all' : { 'group' : 'a', 'each' : { 'output' : 'count()' } } } ]");
+    }
+
+    @Test
+    void testGroupingWithMultipleOutputs() {
+        assertGroupingParity(
+                "all(group(b) each(output(count(), avg(price))))",
+                "[ { 'all' : { 'group' : 'b', 'each' : { 'output' : [ 'count()', 'avg(price)' ] } } } ]");
+    }
+
+    @Test
+    void testGroupingWithPredefinedBuckets() {
+        assertGroupingParity(
+                "all(group(predefined(price, bucket[1, 2>, bucket[3, 4>)))",
+                "[ { 'all' : { 'group' : { 'predefined' : [ 'price', { 'bucket' : [1, 2] }, { 'bucket' : [3, 4] } ] } } } ]");
+    }
+
     /** Asserts parity using a where-clause; automatically wraps the YQL in {@code select * from sources * where ...} */
     private void assertWhereParity(String yqlWhereClause, String jsonWhere) {
         assertParity("select * from sources * where " + yqlWhereClause, jsonWhere);
@@ -248,6 +356,22 @@ public class YqlJsonQueryFeatureParityTest {
 
         assertEquals(VespaSerializer.serialize(yqlQuery), VespaSerializer.serialize(selectQuery),
                 "YQL and JSON select should produce the same query tree");
+    }
+
+    /** Asserts that YQL grouping and JSON select grouping produce the same grouping operations. */
+    private void assertGroupingParity(String yqlGrouping, String jsonGrouping) {
+        yqlParser.parse(new Parsable().setQuery("select * from sources * where true | " + yqlGrouping));
+        var yqlSteps = yqlParser.getGroupingSteps();
+
+        var normalizedJson = SlimeUtils.toJson(SlimeUtils.jsonToSlime(jsonGrouping));
+        var selectSteps = selectParser.getGroupingSteps(new String(normalizedJson));
+
+        assertEquals(yqlSteps.size(), selectSteps.size(),
+                "YQL and JSON select should produce the same number of grouping steps");
+        for (int i = 0; i < yqlSteps.size(); i++) {
+            assertEquals(yqlSteps.get(i).getOperation().toString(), selectSteps.get(i).getOperation().toString(),
+                    "Grouping step " + i + " should be the same");
+        }
     }
 
     private static IndexFacts createIndexFacts() {
@@ -276,6 +400,9 @@ public class YqlJsonQueryFeatureParityTest {
         var string = new Index("string");
         string.setString(true);
         sd.addIndex(string);
+        var myNumbers = new Index("my_numbers");
+        myNumbers.setInteger(true);
+        sd.addIndex(myNumbers);
         return new IndexFacts(new IndexModel(sd));
     }
 

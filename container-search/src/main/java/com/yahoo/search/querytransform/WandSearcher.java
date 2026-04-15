@@ -173,8 +173,10 @@ public class WandSearcher extends Searcher {
         } else if (inputs.getWandType().equals(WandType.OR)) {
             return populate(new OrItem(), inputs.getFieldName(), inputs.getTokens());
         } else if (inputs.getWandType().equals(WandType.PARALLEL)) {
-            return populate(new WandItem(inputs.getFieldName(), inputs.getHeapSize(), inputs.getTokens()),
-                            inputs.getScoreThreshold(), inputs.getThresholdBoostFactor());
+            var wand = populate(new WandItem(inputs.getFieldName(), inputs.getTokens()),
+                                inputs.getScoreThreshold(), inputs.getThresholdBoostFactor());
+            wand.setTargetHits(inputs.getHeapSize());
+            return wand;
         } else if (inputs.getWandType().equals(WandType.DOT_PRODUCT)) {
             return new DotProductItem(inputs.getFieldName(), inputs.getTokens());
         }

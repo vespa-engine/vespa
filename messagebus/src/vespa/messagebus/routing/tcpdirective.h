@@ -6,8 +6,8 @@
 namespace mbus {
 
 /**
- * This class represents a tcp directive within a {@link Hop}'s selector. This is a connection string used to establish
- * a direct connection to a host, bypassing service lookups through Slobrok.
+ * This class represents a tcp directive within a {@link Hop}'s selector. This is a connection string used to
+ * establish a direct connection to a host, bypassing service lookups through Slobrok.
  *
  * @author Simon Thoresen Hult
  * @version $Id$
@@ -35,7 +35,7 @@ public:
      *
      * @return The host.
      */
-    const string &getHost() const { return _host; }
+    const string& getHost() const { return _host; }
 
     /**
      * Returns the port to connect to on the remove host.
@@ -49,13 +49,12 @@ public:
      *
      * @return The session name.
      */
-    const string &getSession() const { return _session; }
+    const string& getSession() const { return _session; }
 
     Type getType() const override { return TYPE_TCP; }
-    bool matches(const IHopDirective &dir) const override;
+    bool matches(const IHopDirective& dir) const override;
     string toString() const override;
     string toDebugString() const override;
 };
 
-} // mbus
-
+} // namespace mbus

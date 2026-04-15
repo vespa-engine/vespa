@@ -121,7 +121,7 @@ SearchView::getDocsumsInternal(const DocsumRequest & req)
     auto readGuard = _matchView->getDocumentMetaStore()->getReadGuard();
     const search::IDocumentMetaStore & metaStore = readGuard->get();
     uint32_t numUsedLids = metaStore.getNumUsedLids();
-    uint64_t startGeneration = readGuard->get().getCurrentGeneration();
+    auto startGeneration = readGuard->get().getCurrentGeneration();
 
     convertGidsToLids(req, metaStore, _matchView->getDocIdLimit().get());
     auto store(_summarySetup->createDocsumStore());
@@ -130,7 +130,7 @@ SearchView::getDocsumsInternal(const DocsumRequest & req)
                                                mctx.getSearchContext(), mctx.getAttributeContext(),
                                                *_summarySetup->getAttributeManager(), getSessionManager());
     SearchView::InternalDocsumReply reply(ctx->getDocsums(), true);
-    uint64_t endGeneration = readGuard->get().getCurrentGeneration();
+    auto endGeneration = readGuard->get().getCurrentGeneration();
     if (startGeneration != endGeneration) {
         if (requestHasLidAbove(req, std::min(numUsedLids, metaStore.getNumUsedLids()))) {
             if (hasAnyLidsMoved(req, metaStore)) {

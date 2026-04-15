@@ -44,7 +44,7 @@ public:
     void writeBuf(Buffer buf) override;
     std::unique_ptr<BufferWriter> allocBufferWriter() override;
     bool open(const std::string &fileName);
-    void close();
+    void close() override;
     uint64_t size_on_disk() const noexcept { return _size_on_disk; }
 };
 

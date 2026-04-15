@@ -7,7 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * @author humbe
+ * @author Haakon Humberset
  */
 public abstract class BaseStructDataType extends StructuredDataType {
 

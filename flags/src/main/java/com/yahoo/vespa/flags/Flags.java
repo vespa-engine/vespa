@@ -61,14 +61,14 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_NON_PUBLIC_ENDPOINT_FOR_TEST = defineFeatureFlag(
             "use-non-public-endpoint-for-test", false,
-            List.of("hakonhall"), "2025-03-19", "2026-04-10",
+            List.of("hakonhall"), "2025-03-19", "2026-05-10",
             "Whether to use non-public endpoint in test and staging environments (except Azure since it's not supported yet)",
             "Takes effect on next deployment of the application",
             INSTANCE_ID, VESPA_VERSION);
 
     public static final UnboundBooleanFlag LOCKED_GCP_PROVISION = defineFeatureFlag(
             "locked-gcp-provision", true,
-            List.of("hakonhall"), "2025-08-05", "2026-04-15",
+            List.of("hakonhall"), "2025-08-05", "2026-05-15",
             "Whether to provision GCP hosts under the application- and unallocated- locks, even though it takes ~1m.",
             "Takes effect on next host being provisioned");
 
@@ -139,7 +139,7 @@ public class Flags {
 
     public static final UnboundIntFlag MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS = defineIntFlag(
             "max-activation-inhibited-out-of-sync-groups", 0,
-            List.of("vekterli"), "2021-02-19", "2026-04-01",
+            List.of("vekterli"), "2021-02-19", "2026-05-01",
             "Allows replicas in up to N content groups to not be activated " +
             "for query visibility if they are out of sync with a majority of other replicas",
             "Takes effect at redeployment",
@@ -177,6 +177,13 @@ public class Flags {
             "Whether to read config server session data from session data blob or from individual paths",
             "Takes effect immediately");
 
+    public static final UnboundBooleanFlag SCALE_METRICSPROXY_HEAP_BY_NODE_COUNT = defineFeatureFlag(
+            "scale-metricsproxy-heap-by-node-count", false,
+            List.of("hmusum"), "2026-02-15", "2026-08-15",
+            "Whether to scale metrics proxy container heap based on total number of nodes in the application",
+            "Takes effect at redeployment",
+            INSTANCE_ID);
+
     public static final UnboundDoubleFlag AUTOSCALER_TARGET_WRITE_CPU_PERCENTAGE = defineDoubleFlag(
             "autoscaler-target-write-cpu-percentage", 0.95,
             List.of("hmusum"), "2026-02-15", "2026-08-15",
@@ -186,36 +193,28 @@ public class Flags {
 
     public static final UnboundBooleanFlag MORE_WIREGUARD = defineFeatureFlag(
             "more-wireguard", false,
-            List.of("andreer"), "2023-08-21", "2026-04-01",
+            List.of("andreer"), "2023-08-21", "2026-05-01",
             "Use wireguard in INternal enCLAVES",
             "Takes effect on next host-admin run",
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundBooleanFlag IPV6_AWS_TARGET_GROUPS = defineFeatureFlag(
             "ipv6-aws-target-groups", false,
-            List.of("andreer"), "2023-08-28", "2026-04-01",
+            List.of("andreer"), "2023-08-28", "2026-05-01",
             "Always use IPv6 target groups for load balancers in aws",
             "Takes effect on next load-balancer provisioning",
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundBooleanFlag PROVISION_IPV6_ONLY_AWS = defineFeatureFlag(
             "provision-ipv6-only", false,
-            List.of("andreer"), "2023-08-28", "2026-04-01",
+            List.of("andreer"), "2023-08-28", "2026-05-01",
             "Provision without private IPv4 addresses in INternal enCLAVES in AWS",
             "Takes effect on next host provisioning / run of host-admin",
             HOSTNAME, CLOUD_ACCOUNT);
 
-    public static final UnboundIntFlag CONTENT_LAYER_METADATA_FEATURE_LEVEL = defineIntFlag(
-            "content-layer-metadata-feature-level", 1,
-            List.of("vekterli"), "2022-09-12", "2026-04-01",
-            "Value semantics: 0) legacy behavior, 1) operation cancellation, 2) operation " +
-            "cancellation and ephemeral content node sequence numbers for bucket replicas",
-            "Takes effect at redeployment",
-            INSTANCE_ID);
-
     public static final UnboundDoubleFlag DOCPROC_HANDLER_THREADPOOL = defineDoubleFlag(
             "docproc-handler-threadpool", 1.0,
-            List.of("johsol"), "2025-10-17", "2026-04-01",
+            List.of("johsol"), "2025-10-17", "2026-05-01",
             "Adjust document processor handler threadpool size (scale the number of threads with cpu cores, 1 means same number of threads as cpu cores))",
             "Takes effect at redeployment",
             APPLICATION);
@@ -267,7 +266,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag SEND_PROTOBUF_QUERYTREE = defineFeatureFlag(
             "send-protobuf-querytree", true,
-            List.of("arnej"), "2025-10-06", "2026-03-31",
+            List.of("arnej"), "2025-10-06", "2026-04-30",
             "If true, send query tree as protobuf in addition to legacy format",
             "Takes effect at redeployment",
             INSTANCE_ID);
@@ -280,7 +279,7 @@ public class Flags {
 
     public static final UnboundLongFlag ZOOKEEPER_PRE_ALLOC_SIZE_KIB = defineLongFlag(
             "zookeeper-pre-alloc-size", 65536,
-            List.of("hmusum"), "2024-11-11", "2026-04-01",
+            List.of("hmusum"), "2024-11-11", "2026-05-01",
             "Setting for zookeeper.preAllocSize flag in KiB, can be reduced from default value "
             + "e.g. when running tests to avoid writing a large, sparse, mostly unused file",
             "Takes effect on restart of Docker container");
@@ -301,7 +300,7 @@ public class Flags {
 
     public static final UnboundIntFlag MAX_CONTENT_NODE_MAINTENANCE_OP_CONCURRENCY = defineIntFlag(
             "max-content-node-maintenance-op-concurrency", -1,
-            List.of("vekterli"), "2025-03-07", "2026-04-01",
+            List.of("vekterli"), "2025-03-07", "2026-05-01",
             "Sets the maximum concurrency for maintenance-related operations on content nodes. " +
             "Only intended as a manual emergency brake feature if a system is suddenly incapable of handling " +
             "regular maintenance pressure.",
@@ -309,7 +308,7 @@ public class Flags {
             INSTANCE_ID);
 
     public static final UnboundIntFlag MAX_DOCUMENT_OPERATION_REQUEST_SIZE_MIB = defineIntFlag(
-            "max-document-operation-request-size-mib", 2048,
+            "max-document-operation-request-size-mib", 128,
             List.of("glebashnik"), "2025-09-04", "2026-06-01",
             "Sets the maximum size in MiB of a document operation request (POST or PUT). " +
             "This is the size of a serialized request, which can be several times larger than " +
@@ -322,7 +321,7 @@ public class Flags {
 
     public static final UnboundJacksonFlag<Sidecars> SIDECARS_FOR_TEST = defineJacksonFlag(
             "sidecars-for-test", Sidecars.DEFAULT, Sidecars.class,
-            List.of("glebashnik"), "2025-04-25", "2026-04-01",
+            List.of("glebashnik"), "2025-04-25", "2026-05-01",
             "Specifies configuration for sidecars to testing provisioning",
             "Takes effect at redeployment",
             __ -> true,
@@ -331,7 +330,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag CREATE_TENANT_ROLES = defineFeatureFlag(
             "create-tenant-roles", true,
-            List.of("andreer"), "2025-04-28", "2026-04-01",
+            List.of("andreer"), "2025-04-28", "2026-05-01",
             "Whether to create tenant specific roles",
             "Takes effect immediately",
             TENANT_ID
@@ -346,7 +345,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag DELETE_TENANT_ROLES = defineFeatureFlag(
             "delete-tenant-roles", false,
-            List.of("andreer"), "2025-05-05", "2026-04-01",
+            List.of("andreer"), "2025-05-05", "2026-05-01",
             "Whether to delete tenant specific roles",
             "Role deletion happens when tenant is next processed by TenantRoleMaintainer",
             TENANT_ID
@@ -377,12 +376,20 @@ public class Flags {
             TENANT_ID, APPLICATION, INSTANCE_ID, HOSTNAME, CLUSTER_TYPE
     );
 
+    public static final UnboundBooleanFlag RESTART_ON_DEPLOY_MAINTAINER = defineFeatureFlag(
+            "restart-on-deploy-maintainer", false,
+            List.of("glebashnik"), "2026-04-07", "2026-10-07",
+            "When enabled, RestartOnDeployMaintainer is used instead of PendingRestartsMaintainer " +
+                    "to trigger pending restarts.",
+            "Takes effect at next run of RestartOnDeployMaintainer and PendingRestartsMaintainer.",
+            INSTANCE_ID
+    );
+
     public static final UnboundBooleanFlag WAIT_FOR_APPLY_ON_RESTART = defineFeatureFlag(
             "wait-for-apply-on-restart", false,
             List.of("glebashnik"), "2026-02-01", "2026-08-01",
             "Determines whether triggering of a pending restart waits for `applyOnRestart` to be set to `true` " +
-                    "in the observed config state. In addition, changes service convergence condition bounded to a " +
-                    "current node instead of across multiple nodes, see `RestartOnDeployMaintainer`.",
+                    "in the observed config state.",
             "Takes effect at next run of RestartOnDeployMaintainer.",
             INSTANCE_ID
     );
@@ -397,7 +404,7 @@ public class Flags {
     );
 
     public static final UnboundDoubleFlag SEARCHNODE_RESERVED_DISK_SPACE_FACTOR = defineDoubleFlag(
-            "searchnode-reserved-disk-space-factor", 0.5,
+            "searchnode-reserved-disk-space-factor", 1.0,
             List.of("toregge"), "2026-01-17", "2026-10-16",
             "How much of the calculated reserved disk space should be added to the used disk space when " +
                     "reporting disk space usage. " +
@@ -406,12 +413,12 @@ public class Flags {
             INSTANCE_ID
     );
 
-    public static final UnboundBooleanFlag PARTIAL_RESOLVE_FLAG_DATA = defineFeatureFlag(
-            "partially-resolve-flag-data", false,
-            List.of("olaa"), "2026-03-16", "2026-04-16",
-            "Whether host-admin should retrieve partially resolved flag data",
-            "Takes effect on the next host-admin tick.",
-            HOSTNAME
+    public static final UnboundBooleanFlag HONOR_DISK_SPEED_AND_STORAGE_TYPE_IN_DEV = defineFeatureFlag(
+            "honor-disk-speed-and-storage-type-in-dev", false,
+            List.of("hmusum"), "2026-03-25", "2026-05-25",
+            "Whether to honor disk speed and storage type in dev",
+            "Takes effect on the deployment.",
+            INSTANCE_ID
     );
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */

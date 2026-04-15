@@ -7,7 +7,9 @@ import com.yahoo.config.provision.TenantName;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -53,7 +55,11 @@ public class HostRegistry implements HostValidator {
     }
 
     public synchronized void removeHosts(ApplicationId key) {
-        host2ApplicationId.entrySet().removeIf(entry -> entry.getValue().equals(key));
+        if (host2ApplicationId.entrySet().removeIf(entry -> entry.getValue().equals(key))) {
+            log.log(Level.INFO, "Hosts were removed for '" + key + "'");
+        } else {
+            log.log(Level.INFO, "Tried removing hosts for '" + key + "', but none were found");
+        }
     }
 
     public synchronized void removeHosts(TenantName key) {
@@ -62,6 +68,11 @@ public class HostRegistry implements HostValidator {
 
     public synchronized Collection<String> getAllHosts() {
         return Collections.unmodifiableCollection(new ArrayList<>(host2ApplicationId.keySet()));
+    }
+
+    /** Returns a snapshot of all unique ApplicationIds currently in the registry. */
+    public synchronized Set<ApplicationId> getApplicationIds() {
+        return Set.copyOf(new HashSet<>(host2ApplicationId.values()));
     }
 
     public synchronized Collection<String> getHosts(ApplicationId key) {
@@ -79,7 +90,7 @@ public class HostRegistry implements HostValidator {
         return Collections2.filter(previousHosts, host -> !newHosts.contains(host));
     }
 
-    private void removeHosts(Collection<String> removedHosts) {
+    public synchronized void removeHosts(Collection<String> removedHosts) {
         for (String host : removedHosts) {
             log.log(Level.FINE, () -> "Removing " + host);
             host2ApplicationId.remove(host);

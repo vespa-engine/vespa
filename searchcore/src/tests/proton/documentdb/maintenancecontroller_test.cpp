@@ -328,7 +328,7 @@ MyDocumentSubDB::handleRemove(RemoveOperationWithDocId &op)
     if (op.getValidDbdId(_subDBId)) {
         using PutRes = DocumentMetaStore::Result;
 
-        PutRes putRes(_metaStore.put(gid,
+        PutRes putRes(_metaStore.put(docId,
                                      op.getBucketId(),
                                      op.getTimestamp(),
                                      op.getSerializedDocSize(),
@@ -385,7 +385,7 @@ MyDocumentSubDB::handleMove(const MoveOperation &op)
     if (op.getValidDbdId(_subDBId)) {
         using PutRes = DocumentMetaStore::Result;
 
-        PutRes putRes(_metaStore.put(gid,
+        PutRes putRes(_metaStore.put(docId,
                                      op.getBucketId(),
                                      op.getTimestamp(),
                                      op.getSerializedDocSize(),

@@ -5,6 +5,7 @@
 #include <vespa/vespalib/util/generationholder.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
+using vespalib::Generation;
 using vespalib::GenerationHolder;
 
 namespace proton {
@@ -36,18 +37,18 @@ TEST_F(LidStateVectorTest, basic_free_list_is_working)
     EXPECT_EQ(0u, freeLids.count());
     EXPECT_EQ(0u, list.size());
 
-    list.add(10, 10);
+    list.add(10, Generation(10));
     EXPECT_TRUE(freeLids.empty());
     EXPECT_EQ(0u, freeLids.count());
     EXPECT_EQ(1u, list.size());
 
-    list.add(20, 20);
-    list.add(30, 30);
+    list.add(20, Generation(20));
+    list.add(30, Generation(30));
     EXPECT_TRUE(freeLids.empty());
     EXPECT_EQ(0u, freeLids.count());
     EXPECT_EQ(3u, list.size());
 
-    list.reclaim_memory(20, freeLids);
+    list.reclaim_memory(Generation(20), freeLids);
     EXPECT_FALSE(freeLids.empty());
     EXPECT_EQ(1u, freeLids.count());
 
@@ -57,7 +58,7 @@ TEST_F(LidStateVectorTest, basic_free_list_is_working)
     EXPECT_EQ(0u, freeLids.count());
     EXPECT_EQ(2u, list.size());
 
-    list.reclaim_memory(31, freeLids);
+    list.reclaim_memory(Generation(31), freeLids);
     EXPECT_FALSE(freeLids.empty());
     EXPECT_EQ(2u, freeLids.count());
 

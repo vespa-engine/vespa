@@ -104,7 +104,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private int zookeeperSessionTimeoutSeconds = 30;
     private final int transport_events_before_wakeup;
     private final int transport_connections_per_target;
-    private final int maxDocumentOperationRequestSizeMib;
+    private int maxDocumentOperationRequestSizeMib;
 
     /** The heap size % of total memory available to the JVM process. */
     private final int heapSizePercentageOfAvailableMemory;
@@ -220,6 +220,11 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     }
 
     public void setMemoryPercentage(Integer memoryPercentage) { this.memoryPercentage = memoryPercentage; }
+
+    /** Overrides the feature-flag-derived default for the document API max request size. */
+    public void setMaxDocumentOperationRequestSizeMib(int mib) { this.maxDocumentOperationRequestSizeMib = mib; }
+
+    public int getMaxDocumentOperationRequestSizeMib() { return maxDocumentOperationRequestSizeMib; }
 
     public void setInferenceMemory(long bytes) { this.inferenceMemoryBytes = Optional.of(bytes); }
 

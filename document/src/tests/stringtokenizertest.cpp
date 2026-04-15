@@ -1,19 +1,19 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <iostream>
-#include <set>
-#include <sstream>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 
-using vespalib::StringTokenizer;
-using std::string;
+#include <iostream>
+#include <set>
+#include <sstream>
 
-TEST(StringTokenizerTest, testSimpleUsage)
-{
+using std::string;
+using vespalib::StringTokenizer;
+
+TEST(StringTokenizerTest, testSimpleUsage) {
     {
-        string s("This,is ,a,,list ,\tof,,sepa rated\n, \rtokens,");
-        StringTokenizer tokenizer(s);
+        string                     s("This,is ,a,,list ,\tof,,sepa rated\n, \rtokens,");
+        StringTokenizer            tokenizer(s);
         StringTokenizer::TokenList result;
         result.push_back("This");
         result.push_back("is");
@@ -27,7 +27,7 @@ TEST(StringTokenizerTest, testSimpleUsage)
         result.push_back("");
 
         ASSERT_EQ(result.size(), static_cast<size_t>(tokenizer.size()));
-        for (unsigned int i=0; i<result.size(); i++) {
+        for (unsigned int i = 0; i < result.size(); i++) {
             EXPECT_EQ(result[i], tokenizer[i]);
         }
         std::set<string> sorted(tokenizer.begin(), tokenizer.end());
@@ -37,8 +37,8 @@ TEST(StringTokenizerTest, testSimpleUsage)
         EXPECT_EQ(7u, tokenizer.size());
     }
     {
-        string s("\tAnother list with some \ntokens, and stuff.");
-        StringTokenizer tokenizer(s, " \t\n", ",.");
+        string                     s("\tAnother list with some \ntokens, and stuff.");
+        StringTokenizer            tokenizer(s, " \t\n", ",.");
         StringTokenizer::TokenList result;
         result.push_back("");
         result.push_back("Another");
@@ -51,7 +51,7 @@ TEST(StringTokenizerTest, testSimpleUsage)
         result.push_back("stuff");
 
         ASSERT_EQ(result.size(), static_cast<size_t>(tokenizer.size()));
-        for (unsigned int i=0; i<result.size(); i++) {
+        for (unsigned int i = 0; i < result.size(); i++) {
             EXPECT_EQ(result[i], tokenizer[i]);
         }
         std::set<string> sorted(tokenizer.begin(), tokenizer.end());
@@ -61,20 +61,20 @@ TEST(StringTokenizerTest, testSimpleUsage)
         EXPECT_EQ(7u, tokenizer.size());
     }
     {
-        string s(" ");
+        string          s(" ");
         StringTokenizer tokenizer(s);
         EXPECT_EQ(0u, tokenizer.size());
     }
 
     {
-        string s("");
+        string          s("");
         StringTokenizer tokenizer(s);
         EXPECT_EQ(0u, tokenizer.size());
     }
     {
         // Test that there aren't any problems with using signed chars.
-        string s("Here\x01\xff be\xff\xfe dragons\xff");
-        StringTokenizer tokenizer(s, "\xff", "\x01 \xfe");
+        string                     s("Here\x01\xff be\xff\xfe dragons\xff");
+        StringTokenizer            tokenizer(s, "\xff", "\x01 \xfe");
         StringTokenizer::TokenList result;
         result.push_back("Here");
         result.push_back("be");
@@ -82,7 +82,7 @@ TEST(StringTokenizerTest, testSimpleUsage)
         result.push_back("");
 
         ASSERT_EQ(result.size(), static_cast<size_t>(tokenizer.size()));
-        for (unsigned int i=0; i<result.size(); i++) {
+        for (unsigned int i = 0; i < result.size(); i++) {
             EXPECT_EQ(result[i], tokenizer[i]);
         }
         std::set<string> sorted(tokenizer.begin(), tokenizer.end());

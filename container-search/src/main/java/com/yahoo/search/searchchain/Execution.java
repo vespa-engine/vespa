@@ -541,6 +541,9 @@ public class Execution extends com.yahoo.processing.execution.Execution {
      * @param result the result to fill
      */
     public void fill(Result result) {
+        if (result.getQuery() == null) {
+            throw new IllegalArgumentException("Result without query cannot be used with 'fill(result)'");
+        }
         fill(result, PartialSummaryHandler.resolveSummaryClass(result));
     }
 

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "result.h"
+
 #include <ostream>
 
 namespace document::select {
@@ -11,24 +12,21 @@ Result Result::True;
 
 Result::Result() = default;
 
-const Result&
-Result::operator!() const {
+const Result& Result::operator!() const {
     if (this == &Invalid) {
         return Invalid;
     }
     return (this == &True ? False : True);
 }
 
-const Result&
-Result::operator&&(const Result& r) const {
+const Result& Result::operator&&(const Result& r) const {
     if (this == &False || &r == &False) {
         return False;
     }
     return (this == &True && &r == &True ? True : Invalid);
 }
 
-const Result&
-Result::operator||(const Result& r) const {
+const Result& Result::operator||(const Result& r) const {
     if (this == &True || &r == &True) {
         return True;
     }
@@ -38,13 +36,13 @@ Result::operator||(const Result& r) const {
     return False;
 }
 
-void
-Result::print(std::ostream& out, bool,
-              const std::string&) const
-{
-    if (this == &Invalid) out << "Invalid";
-    else if (this == &True) out << "True";
-    else out << "False";
+void Result::print(std::ostream& out, bool, const std::string&) const {
+    if (this == &Invalid)
+        out << "Invalid";
+    else if (this == &True)
+        out << "True";
+    else
+        out << "False";
 }
 
-}
+} // namespace document::select

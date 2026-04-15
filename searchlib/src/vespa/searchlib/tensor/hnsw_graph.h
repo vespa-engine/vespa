@@ -8,7 +8,9 @@
 #include <vespa/vespalib/datastore/array_store.h>
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
 #include <vespa/vespalib/datastore/entryref.h>
+#include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/rcuvector.h>
+#include <chrono>
 
 namespace search::tensor {
 
@@ -52,6 +54,9 @@ struct HnswGraph {
     LinkArrayStore links_store;
 
     std::atomic<uint64_t> entry_nodeid_and_level;
+
+    vespalib::GenerationHandler                         _generation_handler;
+    mutable std::atomic<std::chrono::steady_clock::rep> _last_flush_duration;
 
     HnswGraph();
     ~HnswGraph();
@@ -172,12 +177,19 @@ struct HnswGraph {
     size_t size() const { return nodes_size.load(std::memory_order_acquire); }
     uint32_t get_active_nodes() const noexcept { return active_nodes.load(std::memory_order_relaxed); }
     void set_active_nodes(uint32_t value) noexcept { active_nodes.store(value, std::memory_order_relaxed); }
+    vespalib::GenerationHandler::Guard make_guard() const noexcept { return _generation_handler.takeGuard(); }
 
     struct Histograms {
         std::vector<uint32_t> level_histogram;
         std::vector<uint32_t> links_histogram;
     };
     Histograms histograms() const;
+    std::chrono::steady_clock::duration last_flush_duration() const noexcept {
+        return std::chrono::steady_clock::duration(_last_flush_duration.load(std::memory_order_relaxed));
+    }
+    void set_last_flush_duration(std::chrono::steady_clock::duration value) const noexcept {
+        _last_flush_duration.store(value.count(), std::memory_order_relaxed);
+    }
 };
 
 }

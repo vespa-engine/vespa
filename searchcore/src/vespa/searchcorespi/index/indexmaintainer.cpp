@@ -572,7 +572,9 @@ IndexMaintainer::doneFlush(FlushArgs *args, std::shared_ptr<IDiskIndex> *disk_in
     }
     set_flush_serial_num(std::max(flush_serial_num(), args->flush_serial_num));
     vespalib::system_time timeStamp = search::FileKit::getModificationTime((*disk_index)->getIndexDir());
-    _lastFlushTime = timeStamp > _lastFlushTime ? timeStamp : _lastFlushTime;
+    if (timeStamp > getLastFlushTime()) {
+        set_last_flush_time(timeStamp);
+    }
     const uint32_t old_id = args->old_absolute_id - _last_fusion_id;
     replaceSource(old_id, *disk_index);
     return true;
@@ -786,7 +788,7 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
       _flush_empty_current_index(false),
       _current_serial_num(0),
       _flush_serial_num(0),
-      _lastFlushTime(),
+      _last_flush_time(0),
       _frozenMemoryIndexes(),
       _state_lock(),
       _index_update_lock(),
@@ -815,7 +817,7 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
                                   : getFlushDir(_next_id - 1);
 
         set_flush_serial_num(IndexReadUtilities::readSerialNum(latest_index_dir));
-        _lastFlushTime = search::FileKit::getModificationTime(latest_index_dir);
+        set_last_flush_time(search::FileKit::getModificationTime(latest_index_dir));
         set_current_serial_num(flush_serial_num());
         const string selector = IndexDiskLayout::getSelectorFileName(latest_index_dir);
         _selector = FixedSourceSelector::load(selector, _next_id - 1);
@@ -880,10 +882,10 @@ IndexMaintainer::initFlush(SerialNum serialNum, searchcorespi::FlushStats * stat
         // No memory index to flush, it was empty
         LockGuard lock(_state_lock);
         set_flush_serial_num(current_serial_num());
-        _lastFlushTime = vespalib::system_clock::now();
+        set_last_flush_time(vespalib::system_clock::now());
         LOG(debug, "No memory index to flush. Update serial number and flush time to current: "
             "flushSerialNum(%" PRIu64 "), lastFlushTime(%f)",
-            flush_serial_num(), vespalib::to_s(_lastFlushTime.time_since_epoch()));
+            flush_serial_num(), vespalib::to_s(getLastFlushTime().time_since_epoch()));
         return {};
     }
     SerialNum realSerialNum = args.flush_serial_num;

@@ -249,7 +249,7 @@ DataStoreBase::reclaim_memory(generation_t oldest_used_gen)
 void
 DataStoreBase::reclaim_all_memory()
 {
-    _entry_ref_hold_list.assign_generation(0);
+    _entry_ref_hold_list.assign_generation(Generation(0));
     reclaim_all_entry_refs();
     _genHolder.reclaim_all();
 }

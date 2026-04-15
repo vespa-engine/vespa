@@ -52,7 +52,7 @@ public class PermanentFlags {
             "jvm-gc-options", "",
             "Sets default jvm gc options",
             "Takes effect at redeployment",
-            TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_TYPE, CLUSTER_ID);
+            TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_TYPE, CLUSTER_ID, HOSTNAME);
 
     public static final UnboundIntFlag HEAP_SIZE_PERCENTAGE = defineIntFlag(
             "heap-size-percentage", 69,
@@ -281,7 +281,7 @@ public class PermanentFlags {
             INSTANCE_ID);
 
     public static final UnboundDoubleFlag RESOURCE_LIMIT_DISK = defineDoubleFlag(
-            "resource-limit-disk", 0.775,
+            "resource-limit-disk", 0.8,
             "Resource limit (between 0.0 and 1.0) for disk usage on content nodes, used by cluster controller for when to block feed",
             "Takes effect on next deployment",
             INSTANCE_ID
@@ -494,7 +494,7 @@ public class PermanentFlags {
             INSTANCE_ID);
 
     public static final UnboundIntFlag MAX_HOSTS_PER_HOUR = defineIntFlag(
-            "max-hosts-per-hour", 40,
+            "max-hosts-per-hour", 125,
             "The number of hosts that can be provisioned per hour in a zone, before throttling is " +
             "triggered",
             "Takes effect immediately");

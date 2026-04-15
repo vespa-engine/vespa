@@ -1,19 +1,22 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "sourcesession.h"
+
 #include "errorcode.h"
 #include "messagebus.h"
 #include "replygate.h"
 #include "tracelevel.h"
+
 #include <vespa/messagebus/routing/routingtable.h>
 #include <vespa/vespalib/util/stringfmt.h>
+
 #include <cassert>
 
-using vespalib::make_string;
 using vespalib::make_ref_counted;
+using vespalib::make_string;
 
 namespace mbus {
 
-SourceSession::SourceSession(MessageBus &mbus, const SourceSessionParams &params)
+SourceSession::SourceSession(MessageBus& mbus, const SourceSessionParams& params)
     : _lock(),
       _mbus(mbus),
       _gate(make_ref_counted<ReplyGate>(_mbus)),
@@ -23,25 +26,21 @@ SourceSession::SourceSession(MessageBus &mbus, const SourceSessionParams &params
       _timeout(params.getTimeout()),
       _pendingCount(0),
       _closed(false),
-      _done(false)
-{
+      _done(false) {
     assert(params.hasReplyHandler());
 }
 
-SourceSession::~SourceSession()
-{
+SourceSession::~SourceSession() {
     // Ensure that no more replies propagate from mbus.
     _gate->close();
     _mbus.sync();
 }
 
-Result
-SourceSession::send(Message::UP msg, const string &routeName, bool parseIfNotFound)
-{
-    bool found = false;
+Result SourceSession::send(Message::UP msg, const string& routeName, bool parseIfNotFound) {
+    bool             found = false;
     RoutingTable::SP rt = _mbus.getRoutingTable(msg->getProtocol());
     if (rt) {
-        const Route *route = rt->getRoute(routeName);
+        const Route* route = rt->getRoute(routeName);
         if (route != nullptr) {
             msg->setRoute(*route);
             found = true;
@@ -59,16 +58,12 @@ SourceSession::send(Message::UP msg, const string &routeName, bool parseIfNotFou
     return send(std::move(msg));
 }
 
-Result
-SourceSession::send(Message::UP msg, const Route &route)
-{
+Result SourceSession::send(Message::UP msg, const Route& route) {
     msg->setRoute(route);
     return send(std::move(msg));
 }
 
-Result
-SourceSession::send(Message::UP msg)
-{
+Result SourceSession::send(Message::UP msg) {
     msg->setTimeReceivedNow();
     if (msg->getTimeRemaining() == 0ms) {
         msg->setTimeRemaining(_timeout);
@@ -102,10 +97,8 @@ SourceSession::send(Message::UP msg)
     return Result();
 }
 
-void
-SourceSession::handleReply(Reply::UP reply)
-{
-    bool done;
+void SourceSession::handleReply(Reply::UP reply) {
+    bool     done;
     uint32_t my_pending_count = 0;
     {
         std::lock_guard guard(_lock);
@@ -119,10 +112,11 @@ SourceSession::handleReply(Reply::UP reply)
         done = (_closed && my_pending_count == 0);
     }
     if (reply->getTrace().shouldTrace(TraceLevel::COMPONENT)) {
-        reply->getTrace().trace(TraceLevel::COMPONENT,
-                                make_string("Source session received reply. %d message(s) now pending.", my_pending_count));
+        reply->getTrace().trace(
+            TraceLevel::COMPONENT,
+            make_string("Source session received reply. %d message(s) now pending.", my_pending_count));
     }
-    IReplyHandler &handler = reply->getCallStack().pop(*reply);
+    IReplyHandler& handler = reply->getCallStack().pop(*reply);
     handler.handleReply(std::move(reply));
     if (done) {
         {
@@ -135,9 +129,7 @@ SourceSession::handleReply(Reply::UP reply)
     }
 }
 
-void
-SourceSession::close()
-{
+void SourceSession::close() {
     std::unique_lock guard(_lock);
     _closed = true;
     if (getPendingCount() == 0) {
@@ -148,9 +140,7 @@ SourceSession::close()
     }
 }
 
-SourceSession &
-SourceSession::setTimeout(duration timeout)
-{
+SourceSession& SourceSession::setTimeout(duration timeout) {
     std::lock_guard guard(_lock);
     _timeout = timeout;
     return *this;

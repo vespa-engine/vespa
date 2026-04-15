@@ -36,7 +36,7 @@ struct MySubDb
         for (const auto & _doc : _docs) {
             const test::BucketDocuments &bucketDocs = _doc.second;
             for (const auto & testDoc : bucketDocs.getDocs()) {
-                _metaStore.put(testDoc.getGid(), testDoc.getBucket(),
+                _metaStore.put(testDoc.getDocId(), testDoc.getBucket(),
                                testDoc.getTimestamp(), testDoc.getDocSize(), testDoc.getLid(), 0u);
             }
         }

@@ -1832,6 +1832,7 @@
       "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$Http2)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Http2$Builder streamIdleTimeout(double)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Http2$Builder maxConcurrentStreams(int)",
+      "public com.yahoo.jdisc.http.ConnectorConfig$Http2$Builder maxRateControlEvents(int)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Http2 build()"
     ],
     "fields" : [ ]
@@ -1846,7 +1847,8 @@
     "methods" : [
       "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$Http2$Builder)",
       "public double streamIdleTimeout()",
-      "public int maxConcurrentStreams()"
+      "public int maxConcurrentStreams()",
+      "public int maxRateControlEvents()"
     ],
     "fields" : [ ]
   },

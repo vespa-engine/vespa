@@ -130,8 +130,12 @@ public class ReferenceTermProduction extends TermProduction {
             insertMatch(e, match, items, offset);
         }
         else if (shouldInsertAtMatch(match)) {
-            // Add to the match's parent when it's a nested composite (handles WeakAnd correctly)
+            // Add to the match's parent when it's a nested composite with default type
             insertMatch(e, match, items, offset);
+        }
+        else if (parentHasCompatibleType(match)) {
+            // Parent already has the right type - insert after match
+            insertMatch(e, match, items, offset + 1);
         }
         else {
             // Use root-level combining for other cases
