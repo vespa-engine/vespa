@@ -202,7 +202,9 @@ public abstract class AbstractHttpEmbedder extends AbstractComponent {
                     }
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    throw new IOException("Retry interrupted", e);
+                    var ioe = new InterruptedIOException("Retry interrupted");
+                    ioe.initCause(e);
+                    throw ioe;
                 }
             }
 
