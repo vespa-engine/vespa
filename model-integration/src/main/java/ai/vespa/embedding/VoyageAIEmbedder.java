@@ -121,14 +121,14 @@ public class VoyageAIEmbedder extends AbstractHttpEmbedder implements Embedder {
         int totalTokens;
         if (isContextual) {
             var response = fromJson(body, ContextualResponse.class);
-            totalTokens = response.usage.totalTokens();
+            totalTokens = response.usage != null ? response.usage.totalTokens() : 0;
             encoded = response.data.get(0).data.stream()
                     .sorted(Comparator.comparingInt(TextEmbeddingData::index))
                     .map(TextEmbeddingData::embedding)
                     .toList();
         } else {
             var response = fromJson(body, TextResponse.class);
-            totalTokens = response.usage.totalTokens();
+            totalTokens = response.usage != null ? response.usage.totalTokens() : 0;
             encoded = response.data.stream()
                     .sorted(Comparator.comparingInt(TextEmbeddingData::index))
                     .map(TextEmbeddingData::embedding)
