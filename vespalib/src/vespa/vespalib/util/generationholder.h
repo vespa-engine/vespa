@@ -3,7 +3,6 @@
 #pragma once
 
 #include "generation_hold_list.h"
-#include "generationhandler.h"
 #include <memory>
 
 namespace vespalib {
@@ -11,7 +10,6 @@ namespace vespalib {
 class GenerationHeldBase
 {
 public:
-    using generation_t = GenerationHandler::generation_t;
     using UP = std::unique_ptr<GenerationHeldBase>;
     using SP = std::shared_ptr<GenerationHeldBase>;
 

@@ -4,6 +4,7 @@
 #include <vespa/vespalib/datastore/unique_store_allocator.h>
 #include <vespa/vespalib/datastore/unique_store_comparator.h>
 #include <vespa/vespalib/stllike/hash_map.h>
+#include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/rand48.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -21,8 +22,9 @@ using RefT = vespalib::datastore::EntryRefT<22>;
 using MyAllocator = vespalib::datastore::UniqueStoreAllocator<uint32_t, RefT>;
 using MyDataStore = vespalib::datastore::DataStoreT<RefT>;
 using MyComparator = vespalib::datastore::UniqueStoreComparator<uint32_t, RefT>;
-using GenerationHandler = vespalib::GenerationHandler;
+using vespalib::GenerationHandler;
 using vespalib::makeLambdaTask;
+using vespalib::GenerationGuard;
 using vespalib::GenerationHolder;
 using vespalib::datastore::FixedSizeHashMap;
 
@@ -199,7 +201,7 @@ TEST_F(DataStoreFixedSizeHashTest, free_list_works)
     remove(1);
     remove(2);
     EXPECT_TRUE(_hash_map->full());
-    guard = GenerationHandler::Guard();
+    guard = GenerationGuard();
     commit();
     EXPECT_FALSE(_hash_map->full());
     insert(4);
@@ -293,7 +295,7 @@ TEST_F(DataStoreFixedSizeHashTest, memory_usage_is_reported)
     EXPECT_LT(usage1.usedBytes(), usage1.allocatedBytes());
     EXPECT_EQ(0, usage1.deadBytes());
     EXPECT_LT(0, usage1.allocatedBytesOnHold());
-    guard = GenerationHandler::Guard();
+    guard = GenerationGuard();
     commit();
     auto usage2 = _hash_map->get_memory_usage();
     EXPECT_EQ(initial_usage.allocatedBytes(), usage2.allocatedBytes());

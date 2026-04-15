@@ -27,7 +27,7 @@ class ReferenceMappings
                                              std::less<uint32_t>,
                                              vespalib::btree::BTreeDefaultTraits,
                                              vespalib::btree::NoAggrCalc>;
-    using generation_t = vespalib::GenerationHandler::generation_t;
+    using generation_t = vespalib::Generation;
 
     // Vector containing references to trees of lids referencing given
     // target lid.

@@ -189,7 +189,7 @@ UniqueStore<EntryT, RefT, Comparator, Allocator>::bufferState(EntryRef ref) cons
 
 template <typename EntryT, typename RefT, typename Comparator, typename Allocator>
 void
-UniqueStore<EntryT, RefT, Comparator, Allocator>::assign_generation(generation_t current_gen)
+UniqueStore<EntryT, RefT, Comparator, Allocator>::assign_generation(Generation current_gen)
 {
     _dict->assign_generation(current_gen);
     _store.assign_generation(current_gen);
@@ -197,7 +197,7 @@ UniqueStore<EntryT, RefT, Comparator, Allocator>::assign_generation(generation_t
 
 template <typename EntryT, typename RefT, typename Comparator, typename Allocator>
 void
-UniqueStore<EntryT, RefT, Comparator, Allocator>::reclaim_memory(generation_t oldest_used_gen)
+UniqueStore<EntryT, RefT, Comparator, Allocator>::reclaim_memory(Generation oldest_used_gen)
 {
     _dict->reclaim_memory(oldest_used_gen);
     _store.reclaim_memory(oldest_used_gen);

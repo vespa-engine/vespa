@@ -4,6 +4,7 @@
 #include <vespa/searchlib/predicate/predicate_zero_constraint_posting_list.h>
 #include <vespa/searchlib/predicate/predicate_index.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/generationhandler.h>
 
 using namespace search;
 using namespace search::predicate;

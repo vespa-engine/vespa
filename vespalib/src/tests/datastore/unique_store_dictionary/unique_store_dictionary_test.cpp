@@ -5,6 +5,7 @@
 #include <vespa/vespalib/datastore/unique_store_dictionary.hpp>
 #include <vespa/vespalib/datastore/sharded_hash_map.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/generationhandler.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("unique_store_dictionary_test");

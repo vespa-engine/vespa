@@ -19,7 +19,7 @@ public:
     using RefType = DataStoreType::RefType;
     using EncodeContext = bitcompression::EG2PosOccEncodeContext<true>;
     using DecodeContextCooked = bitcompression::EG2PosOccDecodeContextCooked<true>;
-    using generation_t = vespalib::GenerationHandler::generation_t;
+    using generation_t = vespalib::Generation;
     static constexpr uint32_t buffer_array_size = 4u; // Must be a power of 2
     using Aligner = vespalib::datastore::Aligner<buffer_array_size>;
 

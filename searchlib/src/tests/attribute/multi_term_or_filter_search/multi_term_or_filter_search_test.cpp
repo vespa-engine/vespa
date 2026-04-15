@@ -6,6 +6,7 @@
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/searchlib/test/searchiteratorverifier.h>
 
 using PostingList = search::attribute::PostingListTraits<int32_t>::PostingStoreBase;

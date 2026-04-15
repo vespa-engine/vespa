@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "generationhandler.h"
+#include "generation.h"
 #include <atomic>
 #include <deque>
 #include <vector>
@@ -17,12 +17,10 @@ namespace vespalib {
 template <typename T, bool track_bytes_held, bool use_deque>
 class GenerationHoldList {
 private:
-    using generation_t = vespalib::GenerationHandler::generation_t;
-
     struct ElemWithGen {
         T elem;
-        generation_t gen;
-        ElemWithGen(T elem_in, generation_t gen_in) noexcept
+        Generation gen;
+        ElemWithGen(T elem_in, Generation gen_in) noexcept
             : elem(std::move(elem_in)),
               gen(gen_in)
         {}
@@ -48,10 +46,10 @@ private:
     /**
      * Transfer elements from phase 1 to phase 2 list, assigning the current generation.
      */
-    void assign_generation_internal(generation_t current_gen);
+    void assign_generation_internal(Generation current_gen);
 
     template<typename Func>
-    void reclaim_internal(generation_t oldest_used_gen, Func callback);
+    void reclaim_internal(Generation oldest_used_gen, Func callback);
 
 public:
     GenerationHoldList() noexcept;
@@ -66,7 +64,7 @@ public:
      * Assign the current generation to all data elements inserted on the hold list
      * since the last time this function was called.
      */
-    void assign_generation(generation_t current_gen) {
+    void assign_generation(Generation current_gen) {
         if (!_phase_1_list.empty()) {
             assign_generation_internal(current_gen);
         }
@@ -77,13 +75,13 @@ public:
      * The callback function is called for each data element reclaimed.
      **/
     template<typename Func>
-    void reclaim(generation_t oldest_used_gen, Func callback) {
+    void reclaim(Generation oldest_used_gen, Func callback) {
         if (!_phase_2_list.empty() && (_phase_2_list.front().gen < oldest_used_gen)) {
             reclaim_internal(oldest_used_gen, callback);
         }
     }
 
-    void reclaim(generation_t oldest_used_gen) {
+    void reclaim(Generation oldest_used_gen) {
         reclaim(oldest_used_gen, NoopFunc());
     }
 

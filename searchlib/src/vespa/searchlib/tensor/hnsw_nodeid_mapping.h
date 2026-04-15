@@ -26,7 +26,7 @@ class HnswNode;
  */
 class HnswNodeidMapping {
 private:
-    using generation_t = vespalib::GenerationHandler::generation_t;
+    using generation_t = vespalib::Generation;
     using NodeidStore = vespalib::datastore::ArrayStore<uint32_t>;
     using NodeidHoldList = vespalib::GenerationHoldList<uint32_t, false, true>;
     using NodeidFreeList = std::vector<uint32_t>;

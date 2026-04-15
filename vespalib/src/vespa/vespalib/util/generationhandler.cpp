@@ -72,7 +72,7 @@ GenerationHandler::takeGuard() const
 void
 GenerationHandler::incGeneration()
 {
-    generation_t ngen = getNextGeneration();
+    Generation ngen = getNextGeneration();
 
     auto last = _last.load(std::memory_order_relaxed);
     if (last->getRefCountAcqRel() == 0) {
@@ -101,7 +101,7 @@ GenerationHandler::incGeneration()
 }
 
 uint32_t
-GenerationHandler::getGenerationRefCount(generation_t gen) const
+GenerationHandler::getGenerationRefCount(Generation gen) const
 {
     if (gen > getCurrentGeneration() || get_oldest_used_generation() > gen) {
         return 0u;

@@ -18,7 +18,7 @@ class RawBufferStore
     using RefType = vespalib::datastore::EntryRefT<19>;
     using TypeMapper = vespalib::datastore::ArrayStoreDynamicTypeMapper<char>;
     using ArrayStoreType = vespalib::datastore::ArrayStore<char, RefType, TypeMapper>;
-    using generation_t = vespalib::GenerationHandler::generation_t;
+    using generation_t = vespalib::Generation;
 
     ArrayStoreType                      _array_store;
     uint64_t                            _raw_bytes;

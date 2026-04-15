@@ -8,7 +8,7 @@
 
 using namespace vespalib::datastore;
 using vespalib::MemoryUsage;
-using generation_t = vespalib::GenerationHandler::generation_t;
+using vespalib::Generation;
 using TestBufferStats = vespalib::datastore::test::BufferStats;
 using vespalib::alloc::MemoryAllocator;
 using vespalib::alloc::test::MemoryAllocatorObserver;
@@ -29,7 +29,7 @@ struct TestBase : public ::testing::Test {
 
     AllocStats allocStats;
     UniqueStoreStringAllocator<EntryRefType> allocator;
-    generation_t generation;
+    Generation generation;
     TestBase()
         : allocStats(),
           allocator(std::make_unique<MemoryAllocatorObserver>(allocStats)),

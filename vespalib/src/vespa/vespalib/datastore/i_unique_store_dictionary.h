@@ -3,7 +3,7 @@
 #pragma once
 
 #include "entryref.h"
-#include <vespa/vespalib/util/generationhandler.h>
+#include <vespa/vespalib/util/generation.h>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <functional>
 #include <memory>
@@ -23,11 +23,10 @@ class UniqueStoreAddResult;
  */
 class IUniqueStoreDictionary {
 public:
-    using generation_t = vespalib::GenerationHandler::generation_t;
     virtual ~IUniqueStoreDictionary() = default;
     virtual void freeze() = 0;
-    virtual void assign_generation(generation_t current_gen) = 0;
-    virtual void reclaim_memory(generation_t oldest_used_gen) = 0;
+    virtual void assign_generation(Generation current_gen) = 0;
+    virtual void reclaim_memory(Generation oldest_used_gen) = 0;
     virtual UniqueStoreAddResult add(const EntryComparator& comp, std::function<EntryRef()> insertEntry) = 0;
     virtual EntryRef find(const EntryComparator& comp) = 0;
     virtual void remove(const EntryComparator& comp, EntryRef ref) = 0;

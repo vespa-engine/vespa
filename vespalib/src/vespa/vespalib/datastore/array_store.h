@@ -85,7 +85,6 @@ private:
     [[no_unique_address]] DynamicBufferTypeVector _dynamicArrayTypes;
     LargeBufferType              _largeArrayType;
     CompactionSpec               _compaction_spec;
-    using generation_t = vespalib::GenerationHandler::generation_t;
 
     BufferTypeBase* initArrayType(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator, uint32_t type_id);
     void initArrayTypes(const ArrayStoreConfig &cfg, std::shared_ptr<alloc::MemoryAllocator> memory_allocator);
@@ -176,8 +175,8 @@ public:
     vespalib::AddressSpace addressSpaceUsage() const;
 
     // Pass on hold list management to underlying store
-    void assign_generation(generation_t current_gen) { _store.assign_generation(current_gen); }
-    void reclaim_memory(generation_t oldest_used_gen) { _store.reclaim_memory(oldest_used_gen); }
+    void assign_generation(Generation current_gen) { _store.assign_generation(current_gen); }
+    void reclaim_memory(Generation oldest_used_gen) { _store.reclaim_memory(oldest_used_gen); }
     vespalib::GenerationHolder &getGenerationHolder() { return _store.getGenerationHolder(); }
     void setInitializing(bool initializing) { _store.setInitializing(initializing); }
 

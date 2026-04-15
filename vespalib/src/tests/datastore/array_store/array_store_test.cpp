@@ -15,7 +15,7 @@
 #include <vector>
 
 using namespace vespalib::datastore;
-using generation_t = vespalib::GenerationHandler::generation_t;
+using vespalib::Generation;
 using vespalib::MemoryUsage;
 using vespalib::alloc::MemoryAllocator;
 using vespalib::alloc::test::MemoryAllocatorObserver;
@@ -57,7 +57,7 @@ struct ArrayStoreTest : public TestT
     TypeMapperWrappedType type_mapper;
     ArrayStoreType store;
     ReferenceStore refStore;
-    generation_t generation;
+    Generation generation;
     bool add_using_allocate;
     double type_mapper_grow_factor;
     ArrayStoreTest(uint32_t max_type_id = 3, bool enable_free_lists = true, bool add_using_allocate_in = false, double type_mapper_grow_factor_in = 2.0)

@@ -26,8 +26,6 @@ class CompactionStrategy;
 class DataStoreBase
 {
 public:
-    using generation_t = vespalib::GenerationHandler::generation_t;
-
     DataStoreBase(const DataStoreBase &) = delete;
     DataStoreBase &operator=(const DataStoreBase &) = delete;
 
@@ -94,14 +92,14 @@ public:
     /**
      * Assign generation on data elements on hold lists added since the last time this function was called.
      */
-    void assign_generation(generation_t current_gen);
+    void assign_generation(Generation current_gen);
 
     /**
      * Reclaim memory from hold lists, freeing buffers and entry refs that no longer needs to be held.
      *
      * @param oldest_used_gen oldest generation that is still used.
      */
-    void reclaim_memory(generation_t oldest_used_gen);
+    void reclaim_memory(Generation oldest_used_gen);
 
     void reclaim_all_memory();
 
@@ -183,7 +181,7 @@ public:
      *
      * @param oldest_used_gen the oldest generation that is still used.
      */
-    virtual void reclaim_entry_refs(generation_t oldest_used_gen) = 0;
+    virtual void reclaim_entry_refs(Generation oldest_used_gen) = 0;
 
     uint32_t get_entry_size(uint32_t type_id) noexcept { return _typeHandlers[type_id]->entry_size(); }
 

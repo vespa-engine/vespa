@@ -6,7 +6,6 @@
 #include "entry_comparator.h"
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/generation_hold_list.h>
-#include <vespa/vespalib/util/generationhandler.h>
 #include <atomic>
 #include <deque>
 #include <functional>
@@ -53,7 +52,7 @@ private:
  *
  * This structure supports one writer and many readers.
  *
- * A reader must own an appropriate GenerationHandler::Guard to ensure
+ * A reader must own an appropriate GenerationGuard to ensure
  * that memory is held while it can be accessed by reader.
  *
  * The writer must update generation and call assign_generation and
@@ -64,7 +63,6 @@ class FixedSizeHashMap {
 public:
     static constexpr uint32_t no_node_idx = std::numeric_limits<uint32_t>::max();
     using KvType = std::pair<AtomicEntryRef, AtomicEntryRef>;
-    using generation_t = GenerationHandler::generation_t;
 private:
     class ChainHead {
         std::atomic<uint32_t> _node_idx;
@@ -141,11 +139,11 @@ public:
         return nullptr;
     }
 
-    void assign_generation(generation_t current_gen) {
+    void assign_generation(Generation current_gen) {
         _hold_list.assign_generation(current_gen);
     }
 
-    void reclaim_memory(generation_t oldest_used_gen);
+    void reclaim_memory(Generation oldest_used_gen);
 
     bool full() const noexcept { return _nodes.size() == _nodes.capacity() && _free_count == 0u; }
     size_t size() const noexcept { return _count; }

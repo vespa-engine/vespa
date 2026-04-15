@@ -225,7 +225,7 @@ DataStoreBase::addType(BufferTypeBase *typeHandler)
 }
 
 void
-DataStoreBase::assign_generation(generation_t current_gen)
+DataStoreBase::assign_generation(Generation current_gen)
 {
     _genHolder.assign_generation(current_gen);
     _entry_ref_hold_list.assign_generation(current_gen);
@@ -240,7 +240,7 @@ DataStoreBase::doneHoldBuffer(uint32_t bufferId)
 }
 
 void
-DataStoreBase::reclaim_memory(generation_t oldest_used_gen)
+DataStoreBase::reclaim_memory(Generation oldest_used_gen)
 {
     reclaim_entry_refs(oldest_used_gen);  // Trim entries before trimming buffers
     _genHolder.reclaim(oldest_used_gen);

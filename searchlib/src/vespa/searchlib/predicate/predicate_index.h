@@ -28,13 +28,12 @@ class PredicateIndex : public PopulateInterface {
     using BoundsIndex = SimpleIndex<vespalib::datastore::EntryRef>;
     template <typename IntervalT>
     using FeatureMap = std::unordered_map<uint64_t, std::vector<IntervalT>>;
-    using generation_t = vespalib::GenerationHandler::generation_t;
+    using generation_t = vespalib::Generation;
     template <typename T>
     using optional = std::optional<T>;
 
 public:
     using UP = std::unique_ptr<PredicateIndex>;
-    using GenerationHandler = vespalib::GenerationHandler;
     using GenerationHolder = vespalib::GenerationHolder;
     using BTreeIterator = SimpleIndex<vespalib::datastore::EntryRef>::BTreeIterator;
     using VectorIterator = SimpleIndex<vespalib::datastore::EntryRef>::VectorIterator;

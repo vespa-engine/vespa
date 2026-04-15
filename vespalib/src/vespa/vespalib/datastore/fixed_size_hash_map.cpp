@@ -131,7 +131,7 @@ FixedSizeHashMap::remove(const ShardedHashComparator & comp)
 }
 
 void
-FixedSizeHashMap::reclaim_memory(generation_t oldest_used_gen)
+FixedSizeHashMap::reclaim_memory(Generation oldest_used_gen)
 {
     _hold_list.reclaim(oldest_used_gen, [this](uint32_t node_idx) {
         auto& node = _nodes[node_idx];

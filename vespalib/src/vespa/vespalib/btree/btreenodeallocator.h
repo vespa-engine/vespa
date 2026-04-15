@@ -5,7 +5,6 @@
 #include "btreenode.h"
 #include "btreenodestore.h"
 #include <vespa/vespalib/util/array.h>
-#include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <string>
 #include <vector>
@@ -27,7 +26,6 @@ public:
     using InternalNodeTypeRefPair = typename InternalNodeType::RefPair;
     using LeafNodeTypeRefPair = typename LeafNodeType::RefPair;
     using BTreeRootBaseType = BTreeRootBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>;
-    using generation_t = vespalib::GenerationHandler::generation_t;
     using NodeStore = BTreeNodeStore<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>;
     using CompactionStrategy = datastore::CompactionStrategy;
     using EntryRef = datastore::EntryRef;
@@ -99,7 +97,7 @@ public:
     /**
      * Try to free held nodes if nobody can be referencing them.
      */
-    void reclaim_memory(generation_t oldest_used_gen);
+    void reclaim_memory(Generation oldest_used_gen);
 
     /**
      * Transfer nodes from hold1 lists to hold2 lists, they are no
@@ -107,7 +105,7 @@ public:
      * older versions of the frozen structure must leave before elements
      * can be unheld.
      */
-    void assign_generation(generation_t current_gen);
+    void assign_generation(Generation current_gen);
 
     void reclaim_all_memory();
 

@@ -19,7 +19,7 @@ class PredicateIntervalStore {
     using RefCacheType = PredicateRefCache<DataStoreAdapter, 8>;
     using DataStoreType = vespalib::datastore::DataStoreT<vespalib::datastore::EntryRefT<18, 6>>;
     using RefType =  DataStoreType::RefType;
-    using generation_t = vespalib::GenerationHandler::generation_t;
+    using generation_t = vespalib::Generation;
 
     DataStoreType _store;
     vespalib::datastore::BufferType<uint32_t> _size1Type;

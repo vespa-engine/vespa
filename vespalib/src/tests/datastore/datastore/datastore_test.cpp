@@ -28,10 +28,10 @@ public:
     void hold_entry(EntryRef ref) {
         ParentType::hold_entry(ref);
     }
-    void assign_generation(generation_t current_gen) {
+    void assign_generation(Generation current_gen) {
         ParentType::assign_generation(current_gen);
     }
-    void reclaim_entry_refs(generation_t oldest_used_gen) override {
+    void reclaim_entry_refs(Generation oldest_used_gen) override {
         ParentType::reclaim_entry_refs(oldest_used_gen);
     }
     void ensure_buffer_capacity(size_t entries_needed) {

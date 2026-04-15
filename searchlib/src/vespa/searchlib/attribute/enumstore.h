@@ -50,7 +50,7 @@ public:
     using EnumStoreType = EnumStoreT<EntryT>;
     using EntryRef = vespalib::datastore::EntryRef;
     using EntryComparator = vespalib::datastore::EntryComparator;
-    using generation_t = vespalib::GenerationHandler::generation_t;
+    using generation_t = vespalib::Generation;
 
 private:
     UniqueStoreType        _store;
