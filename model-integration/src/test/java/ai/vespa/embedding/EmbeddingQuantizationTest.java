@@ -80,9 +80,23 @@ public class EmbeddingQuantizationTest {
     }
 
     @Test
+    public void testBinaryQuantizationRejectsNonMultipleOfEightConfiguredDimension() {
+        assertThrows(IllegalArgumentException.class, () ->
+                EmbeddingQuantization.validateTensorType(
+                        TensorType.fromSpec("tensor<int8>(x[128])"), 1025, Quantization.BINARY));
+    }
+
+    @Test
     public void testBinaryQuantizationAcceptsCorrectDimension() {
         EmbeddingQuantization.validateTensorType(
                 TensorType.fromSpec("tensor<int8>(x[128])"), 1024, Quantization.BINARY);
+    }
+
+    @Test
+    public void testAutoQuantizationRejectsBinaryShapeWhenConfiguredDimensionIsNotMultipleOfEight() {
+        assertThrows(IllegalArgumentException.class, () ->
+                EmbeddingQuantization.validateTensorType(
+                        TensorType.fromSpec("tensor<int8>(x[128])"), 1025, Quantization.AUTO));
     }
 
     @Test
