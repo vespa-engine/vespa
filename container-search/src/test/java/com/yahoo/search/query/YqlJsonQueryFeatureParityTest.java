@@ -273,6 +273,26 @@ public class YqlJsonQueryFeatureParityTest {
                 "{ 'nearestNeighbor' : { 'children' : ['f1field', 'q2prop'], 'attributes' : { 'targetHits' : 37, 'approximate' : false, 'distanceThreshold' : 100.5 } } }");
     }
 
+    @Test
+    void testTrueClause() {
+        assertWhereParity("true", "true");
+    }
+
+    @Test
+    void testFalseClause() {
+        assertWhereParity("false", "false");
+    }
+
+    @Test
+    void testNestedBooleans() {
+        assertWhereParity("(a contains 'A' or b contains 'B') and c contains 'C'",
+                "{ 'and' : [ { 'or' : [ { 'contains' : ['a', 'A'] }, { 'contains' : ['b', 'B'] } ] }, { 'contains' : ['c', 'C'] } ] }");
+        assertWhereParity("a contains 'A' and (b contains 'B' or c contains 'C')",
+                "{ 'and' : [ { 'contains' : ['a', 'A'] }, { 'or' : [ { 'contains' : ['b', 'B'] }, { 'contains' : ['c', 'C'] } ] } ] }");
+        assertWhereParity("(a contains 'A' and b contains 'B') or (c contains 'C' and title contains 'D')",
+                "{ 'or' : [ { 'and' : [ { 'contains' : ['a', 'A'] }, { 'contains' : ['b', 'B'] } ] }, { 'and' : [ { 'contains' : ['c', 'C'] }, { 'contains' : ['title', 'D'] } ] } ] }");
+    }
+
     /** Asserts parity using a where-clause; automatically wraps the YQL in {@code select * from sources * where ...} */
     private void assertWhereParity(String yqlWhereClause, String jsonWhere) {
         assertParity("select * from sources * where " + yqlWhereClause, jsonWhere);
