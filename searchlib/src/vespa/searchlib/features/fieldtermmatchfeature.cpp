@@ -90,7 +90,14 @@ FieldTermMatchBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironment 
         const search::fef::FieldInfo& field = *env.getField(i);
         if (field.type() == search::fef::FieldType::INDEX) {
             const std::string &fieldName = field.name();
-            const search::fef::Property &prop = props.lookup(baseName, "numTerms", fieldName);
+            std::string alt_name = search::fef::FeatureNameBuilder()
+                    .baseName(getBaseName())
+                    .parameter(fieldName)
+                    .buildName();
+            search::fef::Property prop = props.lookup(alt_name, "numTerms");
+            if (! prop.found()) {
+                prop = props.lookup(baseName, "numTerms", fieldName);
+            }
             int numTerms = prop.found() ? atoi(prop.get().c_str()) : baseNumTerms;
             for (int term = 0; term < numTerms; ++term) {
                 search::fef::FeatureNameBuilder fnb;
