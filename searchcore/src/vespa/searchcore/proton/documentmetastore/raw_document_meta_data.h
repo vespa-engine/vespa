@@ -72,6 +72,10 @@ struct RawDocumentMetaData
     const GlobalId &getGid() const { return _gid; }
     GlobalId &getGid() { return _gid; }
     void setGid(const GlobalId &rhs) { _gid = rhs; }
+
+    DocumentIdEntryRef get_docid_ref() const { return _docid_ref; }
+    void set_docid_ref(DocumentIdEntryRef ref) { _docid_ref = ref; }
+
     uint8_t getBucketUsedBits() const { return _bucket_used_bits_and_doc_size.load(std::memory_order_relaxed) & 0xffu; }
 
     BucketId getBucketId() const {

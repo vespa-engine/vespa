@@ -267,6 +267,7 @@ DocumentMetaStore::before_inc_generation(generation_t current_gen)
 {
     _gidToLidMap.getAllocator().freeze();
     _gidToLidMap.getAllocator().assign_generation(current_gen);
+    _docid_store.assign_generation(current_gen);
     getGenerationHolder().assign_generation(current_gen);
     updateStat(CommitParam::UpdateStats::SKIP);
 }
@@ -275,6 +276,7 @@ void
 DocumentMetaStore::reclaim_memory(generation_t oldest_used_gen)
 {
     _gidToLidMap.getAllocator().reclaim_memory(oldest_used_gen);
+    _docid_store.reclaim_memory(oldest_used_gen);
     _lidAlloc.reclaim_memory(oldest_used_gen);
     getGenerationHolder().reclaim(oldest_used_gen);
 }
@@ -561,6 +563,10 @@ DocumentMetaStore::put(const DocumentId& docid, const BucketId &bucketId, Timest
             assert(freeLid == lid);
             (void) freeLid;
         }
+        if (_store_full_document_id) {
+            const auto ref = _docid_store.add(docid.getScheme().toString());
+            metaData.set_docid_ref(ref);
+        }
         insert(GidToLidMapKey(lid, find_key.get_gid_key()), metaData);
         res.setLid(lid);
         res.markSuccess();
@@ -634,6 +640,9 @@ DocumentMetaStore::remove(DocId lid, uint64_t prepare_serial_num)
         return false;
     }
     RawDocumentMetaData meta = removeInternal(lid, prepare_serial_num);
+    if (_store_full_document_id) {
+        _docid_store.remove(meta._docid_ref);
+    }
     _bucketDB->takeGuard()->remove(meta.getGid(), meta.getBucketId().stripUnused(),
                                    meta.getTimestamp(), meta.getDocSize(), _subDbType);
     _changesSinceCommit++;
@@ -717,6 +726,9 @@ DocumentMetaStore::removeBatch(const std::vector<DocId> &lidsToRemove, const uin
 
         assert(validLid(lid));
         removed.emplace_back(lid, _metaDataStore[lid]);
+        if (_store_full_document_id) {
+            _docid_store.remove(removed.back().second._docid_ref);
+        }
     }
     remove_batch_internal_btree(removed);
     _lidAlloc.unregister_lids(lidsToRemove);
@@ -820,6 +832,18 @@ DocumentMetaStore::getMetaData(const BucketId &bucketId,
             result.emplace_back(lid, timestamp, rawData.getBucketId(), rawData.getGid(),_subDbType == SubDbType::REMOVED);
         }
     }
+}
+
+std::string_view
+DocumentMetaStore::get_docid_string(const GlobalId &gid) const
+{
+    DocId lid = 0;
+    if (!getLid(gid, lid) || !validLid(lid)) {
+        return {};
+    }
+    const RawDocumentMetaData &raw = getRawMetaData(lid);
+    auto span = _docid_store.get(raw.get_docid_ref());
+    return {span.data(), span.size()};
 }
 
 LidUsageStats

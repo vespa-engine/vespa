@@ -217,6 +217,7 @@ public:
     bool getLid(const GlobalId & gid, DocId &lid) const override;
     search::DocumentMetaData getMetaData(const GlobalId &gid) const override;
     void getMetaData(const BucketId &bucketId, search::DocumentMetaData::Vector &result) const override;
+    std::string_view get_docid_string(const GlobalId &gid) const;
     DocId   getNumUsedLids() const override { return _lidAlloc.getNumUsedLids(); }
     DocId getNumActiveLids() const override { return _lidAlloc.getNumActiveLids(); }
     search::LidUsageStats getLidUsageStats() const override;
@@ -296,6 +297,7 @@ public:
                           search::common::sortspec::MissingPolicy policy,
                           std::string_view missing_value) const override;
 
+    vespalib::MemoryUsage get_docid_memory_usage() const { return _docid_store.getMemoryUsage(); };
     static vespalib::datastore::ArrayStoreConfig make_default_docid_array_store_config();
 };
 

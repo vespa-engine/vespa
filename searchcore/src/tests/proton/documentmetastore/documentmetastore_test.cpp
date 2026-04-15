@@ -367,6 +367,50 @@ TEST(DocumentMetaStore, gids_can_be_cleared)
     EXPECT_TRUE(!dms.remove(2, 0u)); // outside range
 }
 
+TEST(DocumentMetaStoreTest, full_docids_can_be_inserted_and_retrieved)
+{
+    DocumentMetaStore dms(createBucketDB(), "[documentmetastore]", search::GrowStrategy(), true, SubDbType::READY);
+    dms.constructFreeList();
+    // put()
+    assertPut(bucketId1, time1, 1, docid1, dms);
+    assertPut(bucketId2, time2, 2, docid2, dms);
+
+    // get_docid_string()
+    EXPECT_EQ(docid1.toString(), dms.get_docid_string(gid1));
+    EXPECT_EQ(docid2.toString(), dms.get_docid_string(gid2));
+
+    // already inserted
+    assertPut(bucketId1, time1, 1, docid1, dms);
+    assertPut(bucketId2, time2, 2, docid2, dms);
+
+    // get_docid_string()
+    EXPECT_EQ(docid1.toString(), dms.get_docid_string(gid1));
+    EXPECT_EQ(docid2.toString(), dms.get_docid_string(gid2));
+}
+
+TEST(DocumentMetaStoreTest, full_docids_are_removed)
+{
+    DocumentMetaStore dms(createBucketDB(), "[documentmetastore]", search::GrowStrategy(), true, SubDbType::READY);
+    dms.constructFreeList();
+
+    // Add document and get gid
+    addDoc(dms, docid1, bucketId1, time1);
+    EXPECT_EQ(docid1.toString(), dms.get_docid_string(gid1));
+    // Remove and check that full string is also removed
+    EXPECT_TRUE(dms.remove(1, 0u));
+    dms.commit();
+    EXPECT_EQ("", dms.get_docid_string(gid1));
+    dms.removes_complete({ 1 });
+
+    // With reused lid
+    addDoc(dms, docid2, bucketId2, time2);
+    EXPECT_EQ(docid2.toString(), dms.get_docid_string(gid2));
+    EXPECT_TRUE(dms.remove(1, 0u));
+    dms.commit();
+    EXPECT_EQ("", dms.get_docid_string(gid2));
+    dms.removes_complete({ 1 });
+}
+
 TEST(DocumentMetaStore, generation_handling_is_working)
 {
     auto dms = std::make_shared<DocumentMetaStore>(createBucketDB());
@@ -389,6 +433,31 @@ TEST(DocumentMetaStore, generation_handling_is_working)
     dms->remove(1, 0u);
     dms->removes_complete({ 1 });
     EXPECT_EQ(3u, gh.getCurrentGeneration());
+}
+
+TEST(DocumentMetaStore, generation_handling_is_working_for_full_document_ids)
+{
+    auto dms = std::make_shared<DocumentMetaStore>(createBucketDB(), "[documentmetastore]", search::GrowStrategy(), true, SubDbType::READY);
+    dms->constructFreeList();
+
+    assertPut(bucketId1, time1, 1u, docid1, *dms);
+    EXPECT_EQ(docid1.toString(), dms->get_docid_string(gid1));
+    vespalib::MemoryUsage memory_usage;
+    {
+        AttributeGuard g1(dms);
+        auto str_view = dms->get_docid_string(gid1);
+        EXPECT_EQ(docid1.toString(), str_view);
+        dms->remove(1u, 0u);
+        EXPECT_EQ("", dms->get_docid_string(gid1));
+        dms->incGeneration();
+        memory_usage = dms->get_docid_memory_usage();
+        dms->reclaim_unused_memory(); // Nothing to reclaim yet
+        EXPECT_EQ(docid1.toString(), str_view); // Check that str_view still contains the docid
+        EXPECT_EQ(memory_usage, dms->get_docid_memory_usage());
+    }
+    dms->reclaim_unused_memory(); // Reclaim now
+    EXPECT_NE(memory_usage, dms->get_docid_memory_usage());
+    dms->removes_complete({ 1 });
 }
 
 TEST(DocumentMetaStoreTest, lid_and_gid_space_is_reused)
@@ -469,6 +538,27 @@ TEST(DocumentMetaStoreTest, can_store_bucket_id_and_timestamp)
         assertGid(gid, lid, dms, bucketId,
                   Timestamp(lid + timestampBias));
         assertLid(lid, gid, dms);
+    }
+}
+
+TEST(DocumentMetaStoreTest, can_store_full_document_id)
+{
+    DocumentMetaStore dms(createBucketDB(), "[documentmetastore]", search::GrowStrategy(), true, SubDbType::READY);
+    uint32_t numLids = 1000;
+
+    dms.constructFreeList();
+    for (uint32_t lid = 1; lid <= numLids; ++lid) {
+        const auto docid = createDocId(lid);
+        auto& gid = docid.getGlobalId();
+        BucketId bucketId(gid.convertToBucketId());
+        bucketId.setUsedBits(numBucketBits);
+        uint32_t addLid = addDoc(dms, docid, bucketId, Timestamp(lid + timestampBias));
+        EXPECT_EQ(lid, addLid);
+    }
+    for (uint32_t lid = 1; lid <= numLids; ++lid) {
+        const auto docid = createDocId(lid);
+        auto& gid = docid.getGlobalId();
+        EXPECT_EQ(docid.toString(), dms.get_docid_string(gid));
     }
 }
 
@@ -1731,6 +1821,35 @@ TEST(DocumentMetaStoreTest, move_works)
     EXPECT_EQ(1u, lid);
 }
 
+TEST(DocumentMetaStoreTest, getting_full_document_id_works_after_move)
+{
+    DocumentMetaStore dms(createBucketDB(), "[documentmetastore]", search::GrowStrategy(), true, SubDbType::READY);
+    dms.constructFreeList();
+
+    assertPut(bucketId1, time1, 1u, docid1, dms);
+    assertPut(bucketId2, time2, 2u, docid2, dms);
+    EXPECT_EQ(docid1.toString(), dms.get_docid_string(gid1));
+    EXPECT_EQ(docid2.toString(), dms.get_docid_string(gid2));
+    EXPECT_TRUE(dms.remove(1u, 0u));
+    dms.commit();
+    EXPECT_EQ("", dms.get_docid_string(gid1));
+    EXPECT_EQ(docid2.toString(), dms.get_docid_string(gid2));
+    dms.removes_complete({ 1u });
+    EXPECT_EQ("", dms.get_docid_string(gid1));
+    EXPECT_EQ(docid2.toString(), dms.get_docid_string(gid2));
+    dms.move(2u, 1u, 0u);
+    dms.commit();
+    EXPECT_EQ("", dms.get_docid_string(gid1));
+    EXPECT_EQ(docid2.toString(), dms.get_docid_string(gid2));
+    dms.removes_complete({ 2u });
+    // Make sure that the lid of gid2 is 1, i.e., that the lid was moved
+    uint32_t lid = 0;
+    EXPECT_TRUE(dms.getLid(gid2, lid));
+    EXPECT_EQ(1u, lid);
+    EXPECT_EQ("", dms.get_docid_string(gid1));
+    EXPECT_EQ(docid2.toString(), dms.get_docid_string(gid2));
+}
+
 void
 assertLidSpace(uint32_t numDocs,
                uint32_t committedDocIdLimit,
@@ -1982,6 +2101,31 @@ TEST(DocumentMetaStoreTest, multiple_lids_can_be_removed_with_removeBatch)
     assertLidGidFound(2, dms);
     assertLidGidNotFound(3, dms);
     assertLidGidFound(4, dms);
+    dms.removes_complete({1, 3});
+}
+
+TEST(DocumentMetaStoreTest, removeBatch_removes_full_document_ids)
+{
+    DocumentMetaStore dms(createBucketDB(), "[documentmetastore]", search::GrowStrategy(), true, SubDbType::READY);
+    dms.constructFreeList();
+    addLid(dms, 1);
+    addLid(dms, 2);
+    addLid(dms, 3);
+    addLid(dms, 4);
+
+    dms.removeBatch({1, 3}, 5);
+    dms.commit();
+
+    DocumentId id1, id2, id3, id4;
+    id1 = createDocId(1);
+    id2 = createDocId(2);
+    id3 = createDocId(3);
+    id4 = createDocId(4);
+
+    EXPECT_EQ("", dms.get_docid_string(id1.getGlobalId()));
+    EXPECT_EQ(id2.toString(), dms.get_docid_string(id2.getGlobalId()));
+    EXPECT_EQ("", dms.get_docid_string(id3.getGlobalId()));
+    EXPECT_EQ(id4.toString(), dms.get_docid_string(id4.getGlobalId()));
     dms.removes_complete({1, 3});
 }
 
