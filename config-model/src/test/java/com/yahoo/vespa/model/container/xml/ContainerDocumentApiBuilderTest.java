@@ -166,7 +166,7 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
 
         var builder = new DocumentOperationExecutorConfig.Builder();
         ((com.yahoo.vespa.model.container.ApplicationContainerCluster) model.getCluster()).getConfig(builder);
-        assertEquals(128, builder.build().maxDocumentOperationRequestSizeMib(),
+        assertEquals(100, builder.build().maxDocumentOperationRequestSizeMib(),
                 "Expected omitted max-document-size to keep the feature-flag default");
     }
 
