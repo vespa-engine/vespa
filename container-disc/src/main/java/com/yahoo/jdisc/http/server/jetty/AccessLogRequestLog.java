@@ -10,6 +10,7 @@ import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.io.EndPoint;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Response;
+import org.eclipse.jetty.util.NanoTime;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
 
 import java.time.Duration;
@@ -51,13 +52,13 @@ class AccessLogRequestLog extends AbstractLifeCycle implements org.eclipse.jetty
             String peerAddress = Request.getRemoteAddr(request);
             int peerPort = Request.getRemotePort(request);
             long startTime = Request.getTimeStamp(request);
-            long endTime = System.currentTimeMillis();
+            long durationMillis = NanoTime.millisSince(request.getHeadersNanoTime());
             Integer statusCodeOverride = (Integer) request.getAttribute(JdiscDispatchingHandler.ACCESS_LOG_STATUS_CODE_OVERRIDE);
             builder.peerAddress(peerAddress)
                     .peerPort(peerPort)
                     .localPort(getLocalPort(request))
                     .timestamp(Instant.ofEpochMilli(startTime))
-                    .duration(Duration.ofMillis(Math.max(0, endTime - startTime)))
+                    .duration(Duration.ofMillis(durationMillis))
                     .responseSize(Response.getContentBytesWritten(response))
                     .requestSize(Request.getContentBytesRead(request))
                     .statusCode(statusCodeOverride != null ? statusCodeOverride : response.getStatus());
