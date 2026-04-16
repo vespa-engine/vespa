@@ -88,12 +88,13 @@ public class MistralEmbedder extends AbstractHttpEmbedder implements Embedder {
     }
 
     private static List<Tensor> toTensors(EmbeddingResponse response, TensorType targetType, String outputDataType) {
-        var dimensionName = targetType.dimensions().get(0).name();
+        var dim = targetType.dimensions().get(0);
+        long expectedDimensions = dim.size().orElseThrow();
         return response.data.stream()
                 .sorted(Comparator.comparingInt(EmbeddingData::index))
                 .map(d -> switch (outputDataType) {
-                    case "float" -> EmbeddingQuantization.decodeJsonArrayFloatTensor(d.embedding(), dimensionName, targetType.valueType());
-                    case "int8", "binary" -> EmbeddingQuantization.decodeJsonArrayInt8Tensor(d.embedding(), dimensionName);
+                    case "float" -> EmbeddingQuantization.decodeJsonArrayFloatTensor(d.embedding(), dim.name(), targetType.valueType(), expectedDimensions);
+                    case "int8", "binary" -> EmbeddingQuantization.decodeJsonArrayInt8Tensor(d.embedding(), dim.name(), expectedDimensions);
                     default -> throw new IllegalArgumentException("Unsupported output_dtype: " + outputDataType);
                 })
                 .toList();

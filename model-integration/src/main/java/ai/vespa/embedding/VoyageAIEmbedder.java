@@ -149,11 +149,12 @@ public class VoyageAIEmbedder extends AbstractHttpEmbedder implements Embedder {
     }
 
     private static List<Tensor> toTensors(VoyageResponse response, TensorType targetType, String outputDataType) {
-        var dimensionName = targetType.dimensions().get(0).name();
+        var dim = targetType.dimensions().get(0);
+        long expectedDimensions = dim.size().orElseThrow();
         return response.encodedEmbeddings().stream()
                 .map(encoded -> switch (outputDataType) {
-                    case "float" -> EmbeddingQuantization.decodeBase64FloatTensor(encoded, dimensionName, targetType.valueType());
-                    case "int8", "binary" -> EmbeddingQuantization.decodeBase64Int8Tensor(encoded, dimensionName);
+                    case "float" -> EmbeddingQuantization.decodeBase64FloatTensor(encoded, dim.name(), targetType.valueType(), expectedDimensions);
+                    case "int8", "binary" -> EmbeddingQuantization.decodeBase64Int8Tensor(encoded, dim.name(), expectedDimensions);
                     default -> throw new IllegalArgumentException("Unsupported output_dtype: " + outputDataType);
                 })
                 .toList();

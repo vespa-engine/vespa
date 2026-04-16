@@ -101,16 +101,18 @@ class EmbeddingQuantization {
         };
     }
 
-    static Tensor decodeBase64FloatTensor(String base64, String dimensionName, TensorType.Value valueType) {
+    static Tensor decodeBase64FloatTensor(String base64, String dimensionName, TensorType.Value valueType, long expectedDimensions) {
         var buffer = ByteBuffer.wrap(Base64.getDecoder().decode(base64)).order(ByteOrder.LITTLE_ENDIAN).asFloatBuffer();
         var values = new float[buffer.remaining()];
         buffer.get(values);
+        validateDimensions(expectedDimensions, values.length);
         var type = new TensorType.Builder(valueType).indexed(dimensionName, values.length).build();
         return IndexedTensor.Builder.of(type, values).build();
     }
 
-    static Tensor decodeBase64Int8Tensor(String base64, String dimensionName) {
+    static Tensor decodeBase64Int8Tensor(String base64, String dimensionName, long expectedDimensions) {
         var bytes = Base64.getDecoder().decode(base64);
+        validateDimensions(expectedDimensions, bytes.length);
         var type = new TensorType.Builder(TensorType.Value.INT8).indexed(dimensionName, bytes.length).build();
         var builder = IndexedTensor.Builder.of(type);
         for (int i = 0; i < bytes.length; i++) {
@@ -119,18 +121,26 @@ class EmbeddingQuantization {
         return builder.build();
     }
 
-    static Tensor decodeJsonArrayFloatTensor(JsonNode array, String dimensionName, TensorType.Value valueType) {
+    static Tensor decodeJsonArrayFloatTensor(JsonNode array, String dimensionName, TensorType.Value valueType, long expectedDimensions) {
         var values = new float[array.size()];
         for (int i = 0; i < array.size(); i++) values[i] = array.get(i).floatValue();
+        validateDimensions(expectedDimensions, values.length);
         var type = new TensorType.Builder(valueType).indexed(dimensionName, values.length).build();
         return IndexedTensor.Builder.of(type, values).build();
     }
 
-    static Tensor decodeJsonArrayInt8Tensor(JsonNode array, String dimensionName) {
+    static Tensor decodeJsonArrayInt8Tensor(JsonNode array, String dimensionName, long expectedDimensions) {
+        validateDimensions(expectedDimensions, array.size());
         var type = new TensorType.Builder(TensorType.Value.INT8).indexed(dimensionName, array.size()).build();
         var builder = IndexedTensor.Builder.of(type);
         for (int i = 0; i < array.size(); i++) builder.cell((byte) array.get(i).intValue(), i);
         return builder.build();
+    }
+
+    private static void validateDimensions(long expected, long actual) {
+        if (actual != expected)
+            throw new IllegalArgumentException(
+                    "Expected %d dimensions from API response, but got %d.".formatted(expected, actual));
     }
 
 }

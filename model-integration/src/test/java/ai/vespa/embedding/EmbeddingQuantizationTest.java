@@ -137,11 +137,14 @@ public class EmbeddingQuantizationTest {
         for (float v : expected) buffer.putFloat(v);
         var base64 = Base64.getEncoder().encodeToString(buffer.array());
 
-        var result = (IndexedTensor) EmbeddingQuantization.decodeBase64FloatTensor(base64, "x", TensorType.Value.FLOAT);
+        var result = (IndexedTensor) EmbeddingQuantization.decodeBase64FloatTensor(base64, "x", TensorType.Value.FLOAT, expected.length);
         assertEquals(expected.length, result.size());
         for (int i = 0; i < expected.length; i++) {
             assertEquals(expected[i], result.getFloat(i), 0.0f, "Mismatch at index " + i);
         }
+
+        assertThrows(IllegalArgumentException.class,
+                () -> EmbeddingQuantization.decodeBase64FloatTensor(base64, "x", TensorType.Value.FLOAT, expected.length + 1));
     }
 
     @Test
@@ -149,11 +152,14 @@ public class EmbeddingQuantizationTest {
         byte[] expected = {0, 1, -1, 127, -128, 42};
         var base64 = Base64.getEncoder().encodeToString(expected);
 
-        var result = (IndexedTensor) EmbeddingQuantization.decodeBase64Int8Tensor(base64, "x");
+        var result = (IndexedTensor) EmbeddingQuantization.decodeBase64Int8Tensor(base64, "x", expected.length);
         assertEquals(expected.length, result.size());
         for (int i = 0; i < expected.length; i++) {
             assertEquals(expected[i], (byte) result.getFloat(i), "Mismatch at index " + i);
         }
+
+        assertThrows(IllegalArgumentException.class,
+                () -> EmbeddingQuantization.decodeBase64Int8Tensor(base64, "x", expected.length + 1));
     }
 
     // ===== JSON array decoding =====
@@ -163,11 +169,14 @@ public class EmbeddingQuantizationTest {
         float[] expected = {1.0f, -0.5f, 0.0f, 3.14f};
         var array = new ObjectMapper().readTree("[1.0,-0.5,0.0,3.14]");
 
-        var result = (IndexedTensor) EmbeddingQuantization.decodeJsonArrayFloatTensor(array, "x", TensorType.Value.FLOAT);
+        var result = (IndexedTensor) EmbeddingQuantization.decodeJsonArrayFloatTensor(array, "x", TensorType.Value.FLOAT, expected.length);
         assertEquals(expected.length, result.size());
         for (int i = 0; i < expected.length; i++) {
             assertEquals(expected[i], result.getFloat(i), 0.0f, "Mismatch at index " + i);
         }
+
+        assertThrows(IllegalArgumentException.class,
+                () -> EmbeddingQuantization.decodeJsonArrayFloatTensor(array, "x", TensorType.Value.FLOAT, expected.length + 1));
     }
 
     @Test
@@ -175,10 +184,13 @@ public class EmbeddingQuantizationTest {
         byte[] expected = {0, 1, -1, 127, -128, 42};
         var array = new ObjectMapper().readTree("[0,1,-1,127,-128,42]");
 
-        var result = (IndexedTensor) EmbeddingQuantization.decodeJsonArrayInt8Tensor(array, "x");
+        var result = (IndexedTensor) EmbeddingQuantization.decodeJsonArrayInt8Tensor(array, "x", expected.length);
         assertEquals(expected.length, result.size());
         for (int i = 0; i < expected.length; i++) {
             assertEquals(expected[i], (byte) result.getFloat(i), "Mismatch at index " + i);
         }
+
+        assertThrows(IllegalArgumentException.class,
+                () -> EmbeddingQuantization.decodeJsonArrayInt8Tensor(array, "x", expected.length + 1));
     }
 }
