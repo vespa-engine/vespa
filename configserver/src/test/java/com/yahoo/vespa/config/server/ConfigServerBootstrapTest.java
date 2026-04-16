@@ -391,7 +391,7 @@ public class ConfigServerBootstrapTest {
 
         public VersionState versionState() { return versionState; }
 
-        public boolean isUpgraded() { return versionState.isUpgraded(); }
+        public boolean isUpgraded() { return versionState.isUpgrading(); }
 
     }
 

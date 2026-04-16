@@ -128,7 +128,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
 
     public void start() {
         startRpcServerWithFileDistribution(); // No config requests allowed yet, will be allowed after bootstrapping done
-        if (versionState.isUpgraded()) {
+        if (versionState.isUpgrading()) {
             if ( ! versionState.storedVersion().equals(Version.emptyVersion))
                 log.log(Level.INFO, "Config server upgrading from " + versionState.storedVersion() + " to "
                         + versionState.currentVersion() + ". Redeploying all applications");
