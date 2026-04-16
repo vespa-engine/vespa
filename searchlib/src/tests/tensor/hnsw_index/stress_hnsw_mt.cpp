@@ -30,6 +30,7 @@ using namespace vespalib::slime;
 using search::BitVector;
 using vespalib::eval::CellType;
 using vespalib::eval::ValueType;
+using vespalib::GenerationGuard;
 using vespalib::GenerationHandler;
 using vespalib::MemoryUsage;
 using vespalib::Slime;
@@ -155,7 +156,7 @@ public:
     vespalib::BlockingThreadStackExecutor write_thread;
 
     using PrepUP = std::unique_ptr<PrepareResult>;
-    using ReadGuard = GenerationHandler::Guard;
+    using ReadGuard = GenerationGuard;
     using PrepareFuture = std::future<PrepUP>;
 
     // union of data required by tasks
@@ -327,7 +328,7 @@ public:
             add_document(docid);
         }
     }
-    GenerationHandler::Guard take_read_guard() {
+    GenerationGuard take_read_guard() {
         return gen_handler.takeGuard();
     }
     MemoryUsage memory_usage() const {

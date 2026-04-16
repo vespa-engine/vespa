@@ -86,7 +86,7 @@ public:
      */
     virtual std::unique_ptr<PrepareResult> prepare_add_document(uint32_t docid,
                                                                 VectorBundle vectors,
-                                                                vespalib::GenerationHandler::Guard read_guard) const = 0;
+                                                                vespalib::GenerationGuard read_guard) const = 0;
     /**
      * Performs the complete step in a two-phase operation to add a document to the index.
      *
@@ -98,7 +98,7 @@ public:
     virtual void remove_document(uint32_t docid) = 0;
     virtual void assign_generation(vespalib::Generation current_gen) = 0;
     virtual void reclaim_memory(vespalib::Generation first_used_gen) = 0;
-    virtual vespalib::GenerationHandler::Guard make_generation_read_guard() const = 0;
+    virtual vespalib::GenerationGuard make_generation_read_guard() const = 0;
     virtual void inc_generation() = 0;
     virtual void reclaim_unused_memory() = 0;
     virtual bool consider_compact(const CompactionStrategy& compaction_strategy) = 0;

@@ -5,12 +5,12 @@
 #include <vespa/searchlib/util/bufferwriter.h>
 
 using search::attribute::EntryRefVector;
-using vespalib::GenerationHandler;
+using vespalib::GenerationGuard;
 
 namespace search {
 
 SingleValueEnumAttributeSaver::
-SingleValueEnumAttributeSaver(GenerationHandler::Guard &&guard,
+SingleValueEnumAttributeSaver(GenerationGuard &&guard,
                               const attribute::AttributeHeader &header,
                               EntryRefVector &&indices,
                               IEnumStore &enumStore)

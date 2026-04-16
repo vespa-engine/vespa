@@ -18,12 +18,11 @@ class IAttributeSaveTarget;
 class AttributeSaver
 {
 private:
-    vespalib::GenerationHandler::Guard _guard;
+    vespalib::GenerationGuard  _guard;
     attribute::AttributeHeader _header;
 
 protected:
-    AttributeSaver(vespalib::GenerationHandler::Guard &&guard,
-                   const attribute::AttributeHeader &header);
+    AttributeSaver(vespalib::GenerationGuard&& guard, const attribute::AttributeHeader& header);
 
     virtual bool onSave(IAttributeSaveTarget &saveTarget) = 0;
 

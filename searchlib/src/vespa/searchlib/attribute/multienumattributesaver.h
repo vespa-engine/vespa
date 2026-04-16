@@ -21,7 +21,6 @@ class MultiValueEnumAttributeSaver : public MultiValueAttributeSaver
     using Parent = MultiValueAttributeSaver;
     using MultiValueType = MultiValueT;
     using ValueType = multivalue::ValueType_t<MultiValueType>;
-    using GenerationHandler = vespalib::GenerationHandler;
     using Parent::_frozenIndices;
     using MultiValueMapping = attribute::MultiValueMapping<MultiValueType>;
 
@@ -32,7 +31,7 @@ class MultiValueEnumAttributeSaver : public MultiValueAttributeSaver
     bool compaction_interferred() const;
 public:
     bool onSave(IAttributeSaveTarget &saveTarget) override;
-    MultiValueEnumAttributeSaver(GenerationHandler::Guard &&guard,
+    MultiValueEnumAttributeSaver(vespalib::GenerationGuard&& guard,
                                  const attribute::AttributeHeader &header,
                                  const MultiValueMapping &mvMapping,
                                  IEnumStore &enumStore);

@@ -33,7 +33,7 @@ using search::queryeval::SearchIterator;
 using search::queryeval::SimpleLeafBlueprint;
 using search::queryeval::flow::btree_cost;
 using search::queryeval::flow::btree_strict_cost;
-using vespalib::GenerationHandler;
+using vespalib::GenerationGuard;
 
 namespace search::memoryindex {
 
@@ -239,7 +239,7 @@ class MemoryTermBlueprint : public SimpleLeafBlueprint {
 private:
     using FieldIndexType = FieldIndex<interleaved_features>;
     using PostingListIteratorType = typename FieldIndexType::PostingList::ConstIterator;
-    GenerationHandler::Guard _guard;
+    GenerationGuard _guard;
     const queryeval::FieldSpec _field;
     PostingListIteratorType _posting_itr;
     const FeatureStore& _feature_store;
@@ -248,7 +248,7 @@ private:
     const bool _use_bit_vector;
 
 public:
-    MemoryTermBlueprint(GenerationHandler::Guard&& guard,
+    MemoryTermBlueprint(GenerationGuard&& guard,
                         PostingListIteratorType posting_itr,
                         const FeatureStore& feature_store,
                         const queryeval::FieldSpec& field,

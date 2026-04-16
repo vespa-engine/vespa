@@ -5,12 +5,13 @@
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <cassert>
 
+using vespalib::GenerationGuard;
 namespace search::attribute {
 
 SingleSmallNumericAttributeSaver::SingleSmallNumericAttributeSaver(const attribute::AttributeHeader& header,
                                                                    uint32_t num_docs,
                                                                    std::vector<uint32_t> word_data)
-    : AttributeSaver(vespalib::GenerationHandler::Guard(), header),
+    : AttributeSaver(GenerationGuard(), header),
       _num_docs(num_docs),
       _word_data(std::move(word_data))
 {

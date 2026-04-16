@@ -34,6 +34,7 @@ using namespace search::docstore;
 using namespace search;
 using namespace vespalib::alloc;
 using vespalib::CacheStats;
+using vespalib::GenerationGuard;
 using search::SummaryException;
 using search::index::DummyFileHeaderContext;
 using search::test::DirectoryHandler;
@@ -920,11 +921,11 @@ class DummyBucketizer : public IBucketizer
 {
 public:
     DummyBucketizer(uint32_t mod) : _mod(mod) { }
-    BucketId getBucketOf(const vespalib::GenerationHandler::Guard &, uint32_t lid) const override {
+    BucketId getBucketOf(const GenerationGuard &, uint32_t lid) const override {
         return BucketId(58, lid%_mod);
     }
-    vespalib::GenerationHandler::Guard getGuard() const override {
-        return vespalib::GenerationHandler::Guard();
+    GenerationGuard getGuard() const override {
+        return GenerationGuard();
     }
 private:
     uint32_t _mod;
@@ -934,7 +935,7 @@ TEST_F(LogDataStoreTest, testBucketDensityComputer)
 {
     DummyBucketizer bucketizer(100);
     BucketDensityComputer bdc(&bucketizer);
-    vespalib::GenerationHandler::Guard guard = bdc.getGuard();
+    auto guard = bdc.getGuard();
     EXPECT_EQ(0u, bdc.getNumBuckets());
     bdc.recordLid(guard, 1, 1);
     EXPECT_EQ(1u, bdc.getNumBuckets());
@@ -1136,7 +1137,7 @@ TEST_F(LogDataStoreTest, require_that_getLid_is_protected_by_docIdLimit)
     auto tmp4 = build_testdata() + "/tmp4";
     Fixture f(tmp4);
     f.write(1);
-    vespalib::GenerationHandler::Guard guard = f.store.getLidReadGuard();
+    auto guard = f.store.getLidReadGuard();
     EXPECT_TRUE(f.store.getLid(guard, 1).valid());
     EXPECT_FALSE(f.store.getLid(guard, 2).valid());
 }
@@ -1189,7 +1190,7 @@ TEST_F(LogDataStoreTest, require_that_lid_space_can_be_shrunk_only_after_read_gu
     f.write(1).write(2);
     EXPECT_FALSE(f.store.canShrinkLidSpace());
     {
-        vespalib::GenerationHandler::Guard guard = f.store.getLidReadGuard();
+        auto guard = f.store.getLidReadGuard();
         f.compactLidSpace(2, "compactLidSpace 2");
         f.write(1); // trigger remove of old generations
         EXPECT_FALSE(f.store.canShrinkLidSpace());

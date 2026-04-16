@@ -75,7 +75,6 @@ public:
     void close() override;
 private:
     static constexpr size_t NUM_PARTITIONS = 256;
-    using GenerationHandler = vespalib::GenerationHandler;
     using Partitions = std::array<std::unique_ptr<StoreByBucket>, NUM_PARTITIONS>;
     FileId getDestinationId(const LockGuard & guard) const;
     FileId                                 _sourceFileId;
@@ -86,7 +85,7 @@ private:
     vespalib::MemoryDataStore              _backingMemory;
     BucketIndexStore                       _bucketIndexStore;
     Partitions                             _tmpStore;
-    GenerationHandler::Guard               _lidGuard;
+    vespalib::GenerationGuard              _lidGuard;
     vespalib::hash_map<uint64_t, uint32_t> _stat;
 };
 

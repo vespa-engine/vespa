@@ -38,7 +38,7 @@ private:
 
     bool onSave(IAttributeSaveTarget &saveTarget) override;
 public:
-    ReferenceAttributeSaver(vespalib::GenerationHandler::Guard &&guard,
+    ReferenceAttributeSaver(vespalib::GenerationGuard&& guard,
                             const AttributeHeader &header,
                             EntryRefVector&& indices,
                             Store &store);

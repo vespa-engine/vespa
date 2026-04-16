@@ -54,7 +54,7 @@ GenerationHandler::~GenerationHandler()
 GenerationGuard
 GenerationHandler::takeGuard() const
 {
-    Guard guard(_last.load(std::memory_order_acquire));
+    GenerationGuard guard(_last.load(std::memory_order_acquire));
     for (;;) {
         // Must check valid() after increasing refcount
         if (guard.valid())
@@ -63,7 +63,7 @@ GenerationHandler::takeGuard() const
          * Clashed with writer freeing entry.  Must abandon current
          * guard and try again.
          */
-        guard = Guard(_last.load(std::memory_order_acquire));
+        guard = GenerationGuard(_last.load(std::memory_order_acquire));
     }
     // Guard has been valid after bumping refCount
     return guard;

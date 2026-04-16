@@ -36,6 +36,7 @@ using namespace vespalib::slime;
 using vespalib::Slime;
 using search::BitVector;
 using search::BufferWriter;
+using vespalib::GenerationGuard;
 using vespalib::eval::get_cell_type;
 using vespalib::eval::ValueType;
 using vespalib::datastore::CompactionSpec;
@@ -233,7 +234,7 @@ public:
         uint32_t sz = 10;
         global_filter = GlobalFilter::create(docids, sz);
     }
-    GenerationHandler::Guard take_read_guard() {
+    GenerationGuard take_read_guard() {
         return index->make_generation_read_guard();
     }
     MemoryUsage memory_usage() const {
@@ -1257,7 +1258,7 @@ public:
     using UP = std::unique_ptr<PrepareResult>;
     UP prepare_add(uint32_t docid, uint32_t max_level = 0) {
         this->level_generator->level = max_level;
-        vespalib::GenerationHandler::Guard dummy;
+        GenerationGuard dummy;
         auto vectors_to_add = this->vectors.get_vectors(docid);
         return this->index->prepare_add_document(docid, vectors_to_add, dummy);
     }

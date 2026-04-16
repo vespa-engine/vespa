@@ -16,7 +16,6 @@ namespace search {
 class PredicateAttributeSaver : public AttributeSaver
 {
 public:
-    using GenerationHandler = vespalib::GenerationHandler;
     using MinFeatureVector = std::vector<uint8_t, vespalib::allocator_large<uint8_t>>;
     using IntervalRangeVector = std::vector<uint16_t, vespalib::allocator_large<uint16_t>>;
 
@@ -27,7 +26,7 @@ private:
     IntervalRangeVector                _interval_range_vector;
     uint16_t                           _max_interval_range;
 public:
-    PredicateAttributeSaver(GenerationHandler::Guard&& guard,
+    PredicateAttributeSaver(vespalib::GenerationGuard&& guard,
                             const attribute::AttributeHeader& header,
                             uint32_t version,
                             std::unique_ptr<predicate::ISaver> index_saver,

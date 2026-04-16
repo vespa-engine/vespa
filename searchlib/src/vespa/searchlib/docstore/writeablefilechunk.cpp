@@ -19,7 +19,7 @@ LOG_SETUP(".search.writeablefilechunk");
 using search::common::FileHeaderContext;
 using vespalib::CpuUsage;
 using vespalib::FileHeader;
-using vespalib::GenerationHandler;
+using vespalib::GenerationGuard;
 using vespalib::IllegalHeaderException;
 using vespalib::getLastErrorString;
 using vespalib::makeLambdaTask;
@@ -423,7 +423,7 @@ WriteableFileChunk::fetchNextChain(ProcessedChunkMap & orderedChunks, const uint
 
 ChunkMeta
 WriteableFileChunk::computeChunkMeta(const unique_lock & guard,
-                                     const GenerationHandler::Guard & bucketizerGuard,
+                                     const GenerationGuard & bucketizerGuard,
                                      size_t offset, const ProcessedChunk & tmp, const Chunk & active)
 {
     assert((guard.mutex() == &_lock) && guard.owns_lock());
@@ -465,7 +465,7 @@ WriteableFileChunk::computeChunkMeta(ProcessedChunkQ & chunks, size_t startPos, 
         lastSerial = pc.getLastSerial();
     }
 
-    GenerationHandler::Guard bucketizerGuard = _bucketMap.getGuard();
+    auto bucketizerGuard = _bucketMap.getGuard();
     for (size_t i(0), m(chunks.size()); i < m; i++) {
         if (chunks[i]) {
             const ProcessedChunk & chunk = *chunks[i];

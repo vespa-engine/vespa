@@ -11,7 +11,7 @@ ComponentGuard<T>::ComponentGuard()  = default;
 template <typename T>
 ComponentGuard<T>::ComponentGuard(const Component & component) :
     _component(component),
-    _generationGuard(valid() ? _component->takeGenerationGuard() : Guard())
+    _generationGuard(valid() ? _component->takeGenerationGuard() : vespalib::GenerationGuard())
 { }
 
 template <typename T>

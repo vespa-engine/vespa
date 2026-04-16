@@ -96,7 +96,7 @@ private:
     static void insertChunks(ProcessedChunkMap & orderedChunks, ProcessedChunkQ & newChunks, uint32_t nextChunkId);
     static ProcessedChunkQ fetchNextChain(ProcessedChunkMap & orderedChunks, uint32_t firstChunkId);
     ChunkMeta computeChunkMeta(const unique_lock & guard,
-                               const vespalib::GenerationHandler::Guard & bucketizerGuard,
+                               const vespalib::GenerationGuard & bucketizerGuard,
                                size_t offset, const ProcessedChunk & tmp, const Chunk & active);
     ChunkMetaV computeChunkMeta(ProcessedChunkQ & chunks, size_t startPos, size_t & sz, bool & done);
     void writeData(const ProcessedChunkQ & chunks, size_t sz);

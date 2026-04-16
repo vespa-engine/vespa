@@ -6,10 +6,12 @@
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <cassert>
 
+using vespalib::GenerationGuard;
+
 namespace search::attribute {
 
 SingleBoolAttributeSaver::SingleBoolAttributeSaver(const AttributeHeader &header, std::unique_ptr<const BitVector> bv)
-    : AttributeSaver(vespalib::GenerationHandler::Guard(), header),
+    : AttributeSaver(GenerationGuard(), header),
       _bv(std::move(bv))
 {
 }

@@ -22,7 +22,7 @@ class SingleRawAttributeSaver : public AttributeSaver
     void save_raw_store(BufferWriter& writer) const;
     bool onSave(IAttributeSaveTarget &saveTarget) override;
 public:
-    SingleRawAttributeSaver(vespalib::GenerationHandler::Guard &&guard,
+    SingleRawAttributeSaver(vespalib::GenerationGuard &&guard,
                             const attribute::AttributeHeader &header,
                             EntryRefVector&& ref_vector,
                             const RawBufferStore& raw_store);

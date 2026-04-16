@@ -29,6 +29,7 @@ using document::TensorUpdate;
 using document::WrongTensorTypeException;
 using search::AddressSpaceComponents;
 using vespalib::Generation;
+using vespalib::GenerationGuard;
 using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
@@ -346,8 +347,7 @@ std::unique_ptr<AttributeSaver>
 TensorAttribute::onInitSave(std::string_view fileName)
 {
     set_memory_usage_at_save_start(getStatus().get_used_minus_dead_and_onhold());
-    vespalib::GenerationHandler::Guard guard(getGenerationHandler().
-                                             takeGuard());
+    auto guard(getGenerationHandler().takeGuard());
     auto header = this->createAttributeHeader(fileName);
     auto index_saver = (_index ? _index->make_saver(header.get_extra_tags()) : std::unique_ptr<NearestNeighborIndexSaver>());
     return std::make_unique<TensorAttributeSaver>

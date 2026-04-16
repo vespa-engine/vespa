@@ -7,7 +7,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.multi_enum_attribute_saver");
 
-using vespalib::GenerationHandler;
+using vespalib::GenerationGuard;
 using search::multivalueattributesaver::CountWriter;
 using search::multivalueattributesaver::WeightWriter;
 
@@ -77,7 +77,7 @@ public:
 
 template <typename MultiValueT>
 MultiValueEnumAttributeSaver<MultiValueT>::
-MultiValueEnumAttributeSaver(GenerationHandler::Guard &&guard,
+MultiValueEnumAttributeSaver(GenerationGuard&& guard,
                              const attribute::AttributeHeader &header,
                              const MultiValueMapping &mvMapping,
                              IEnumStore &enumStore)

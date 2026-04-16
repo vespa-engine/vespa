@@ -72,6 +72,7 @@ using testing::AllOf;
 using testing::Le;
 using testing::Ge;
 using vespalib::Generation;
+using vespalib::GenerationGuard;
 using vespalib::GenerationHandler;
 using vespalib::SharedStringRepo;
 using vespalib::datastore::CompactionStrategy;
@@ -271,7 +272,7 @@ public:
     }
     std::unique_ptr<PrepareResult> prepare_add_document(uint32_t docid,
                                                         VectorBundle vectors,
-                                                        vespalib::GenerationHandler::Guard guard) const override {
+                                                        GenerationGuard guard) const override {
         (void) guard;
         assert(vectors.subspaces() == 1);
         auto d_vector = vectors.cells(0).typify<double>();
@@ -296,7 +297,7 @@ public:
     void reclaim_memory(Generation oldest_used_gen) override {
         _trim_gen = oldest_used_gen;
     }
-    GenerationHandler::Guard make_generation_read_guard() const override { return _generation_handler.takeGuard(); }
+    GenerationGuard make_generation_read_guard() const override { return _generation_handler.takeGuard(); }
     void inc_generation() override {
         auto current_gen = _generation_handler.getCurrentGeneration();
         assign_generation(current_gen);
@@ -1342,7 +1343,7 @@ TEST(TensorAttributeTest, commit_ensures_transfer_and_trim_hold_lists_on_nearest
         EXPECT_GT(gen_2, gen_1);
         EXPECT_EQ(gen_2 - 1, index.get_transfer_gen());
         EXPECT_EQ(gen_1, index.get_trim_gen());
-        index_guard = GenerationHandler::Guard();
+        index_guard = GenerationGuard();
         f._attr->reclaim_unused_memory();
         if constexpr (TensorAttributeFlags::use_nearest_neighbor_index_generation_manager) {
             // index_guard no longer held

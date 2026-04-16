@@ -41,7 +41,7 @@ private:
     using LinkArrayStore = typename HnswGraph<type>::LinkArrayStore;
     const LinkArrayStore&                 _graph_links;
     MetaData                              _meta_data;
-    vespalib::GenerationHandler::Guard    _guard;
+    vespalib::GenerationGuard             _guard;
     std::chrono::steady_clock::time_point _index_flush_start_time;
     const HnswGraph<type>&                _graph;
 };

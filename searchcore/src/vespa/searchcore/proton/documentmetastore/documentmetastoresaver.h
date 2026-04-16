@@ -36,9 +36,9 @@ private:
 
     bool onSave(search::IAttributeSaveTarget &saveTarget) override;
 public:
-    DocumentMetaStoreSaver(vespalib::GenerationHandler::Guard &&guard,
-                           const search::attribute::AttributeHeader &header,
-                           const GidIterator &gidIterator,
+    DocumentMetaStoreSaver(vespalib::GenerationGuard&& guard,
+                           const search::attribute::AttributeHeader& header,
+                           const GidIterator& gidIterator,
                            MetaDataView metaDataView);
 
     ~DocumentMetaStoreSaver() override;

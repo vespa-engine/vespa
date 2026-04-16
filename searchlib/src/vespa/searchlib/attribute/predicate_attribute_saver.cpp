@@ -10,10 +10,11 @@
 LOG_SETUP(".searchlib.attribute.predicate_attribute_saver");
 
 using search::predicate::nbo_write;
+using vespalib::GenerationGuard;
 
 namespace search {
 
-PredicateAttributeSaver::PredicateAttributeSaver(GenerationHandler::Guard &&guard,
+PredicateAttributeSaver::PredicateAttributeSaver(GenerationGuard &&guard,
                                                  const attribute::AttributeHeader &header,
                                                  uint32_t version,
                                                  std::unique_ptr<predicate::ISaver> index_saver,

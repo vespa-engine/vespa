@@ -150,7 +150,7 @@ void
 LogDataStore::read(const LidVector & lids, IBufferVisitor & visitor) const
 {
     LidInfoWithLidV orderedLids;
-    GenerationHandler::Guard guard(_genHandler.takeGuard());
+    auto guard(_genHandler.takeGuard());
     for (uint32_t lid : lids) {
         if (lid < getDocIdLimit()) {
             LidInfo li = vespalib::atomic::load_ref_acquire(_lidInfo.acquire_elem_ref(lid));
@@ -184,7 +184,7 @@ LogDataStore::read(uint32_t lid, vespalib::DataBuffer& buffer) const
     if (lid < getDocIdLimit()) {
         LidInfo li(0);
         {
-            GenerationHandler::Guard guard(_genHandler.takeGuard());
+            auto guard(_genHandler.takeGuard());
             li = vespalib::atomic::load_ref_acquire(_lidInfo.acquire_elem_ref(lid));
         }
         if (!li.empty() && li.valid()) {
@@ -1036,7 +1036,7 @@ LogDataStore::computeNumberOfSignificantBucketIdBits(const IBucketizer & bucketi
     memset(msbHistogram, 0, sizeof(msbHistogram));
     timer.before();
     auto bucketizerGuard = bucketizer.getGuard();
-    GenerationHandler::Guard lidGuard(_genHandler.takeGuard());
+    auto lidGuard(_genHandler.takeGuard());
     for (size_t i(0), m(getDocIdLimit()); i < m; i++) {
         LidInfo lid(vespalib::atomic::load_ref_acquire(_lidInfo.acquire_elem_ref(i)));
         if (lid.valid() && (lid.getFileId() == fileId.getId())) {

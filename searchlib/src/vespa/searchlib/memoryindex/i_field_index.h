@@ -44,7 +44,7 @@ public:
                                                                                 uint32_t field_id) = 0;
 
     // Should only be directly used by unit tests
-    virtual vespalib::GenerationHandler::Guard takeGenerationGuard() = 0;
+    virtual vespalib::GenerationGuard takeGenerationGuard() = 0;
     virtual void commit() = 0;
 };
 

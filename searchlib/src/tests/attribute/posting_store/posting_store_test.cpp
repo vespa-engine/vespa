@@ -11,6 +11,7 @@
 #include <vespa/vespalib/util/generationhandler.h>
 #include <ostream>
 
+using vespalib::GenerationGuard;
 using vespalib::GenerationHandler;
 using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryRef;
@@ -174,7 +175,7 @@ PostingStoreTest::test_compact_sequence(uint32_t sequence_length)
         }
         inc_generation();
         EXPECT_FALSE(store.consider_compact_worst_buffers(compaction_strategy));
-        guard = GenerationHandler::Guard();
+        guard = GenerationGuard();
         inc_generation();
     }
     EXPECT_TRUE(compaction_done);
@@ -207,7 +208,7 @@ PostingStoreTest::test_compact_btree_nodes(uint32_t sequence_length)
         }
         inc_generation();
         EXPECT_FALSE(store.consider_compact_worst_btree_nodes(compaction_strategy));
-        guard = GenerationHandler::Guard();
+        guard = GenerationGuard();
         inc_generation();
     }
     EXPECT_TRUE(compaction_done);

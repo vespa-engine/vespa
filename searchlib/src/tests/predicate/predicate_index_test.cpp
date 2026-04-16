@@ -18,6 +18,7 @@ using std::make_pair;
 using std::pair;
 using std::vector;
 using vespalib::DataBuffer;
+using vespalib::GenerationGuard;
 
 namespace {
 
@@ -41,10 +42,10 @@ save_predicate_index(PredicateIndex& index, DataBuffer& buffer)
 }
 
 class GuardedSaver {
-    vespalib::GenerationHandler::Guard _guard;
-    std::unique_ptr<ISaver>            _saver;
+    GenerationGuard          _guard;
+    std::unique_ptr<ISaver>  _saver;
 public:
-    GuardedSaver(vespalib::GenerationHandler::Guard guard, std::unique_ptr<ISaver> saver)
+    GuardedSaver(GenerationGuard guard, std::unique_ptr<ISaver> saver)
         : _guard(std::move(guard)),
           _saver(std::move(saver))
     {

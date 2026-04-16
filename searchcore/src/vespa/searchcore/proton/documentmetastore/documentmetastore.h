@@ -191,8 +191,8 @@ public:
     bool updateMetaData(DocId lid, const BucketId &bucketId, Timestamp timestamp) override;
     bool remove(DocId lid, uint64_t prepare_serial_num) override;
 
-    BucketId getBucketOf(const vespalib::GenerationHandler::Guard & guard, uint32_t lid) const override;
-    vespalib::GenerationHandler::Guard getGuard() const override;
+    BucketId getBucketOf(const vespalib::GenerationGuard & guard, uint32_t lid) const override;
+    vespalib::GenerationGuard getGuard() const override;
 
     /**
      * Put lids on a hold list, for later reuse.  Typically called

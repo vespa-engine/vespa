@@ -19,6 +19,7 @@ using namespace search;
 
 using common::FileHeaderContext;
 using vespalib::CpuUsage;
+using vespalib::GenerationGuard;
 using vespalib::ThreadStackExecutor;
 
 struct MyFileHeaderContext : public FileHeaderContext {
@@ -39,12 +40,12 @@ struct SetLidObserver : public ISetLid {
 
 struct BucketizerObserver : public IBucketizer {
     mutable std::vector<uint32_t> lids;
-    document::BucketId getBucketOf(const vespalib::GenerationHandler::Guard &guard, uint32_t lid) const override {
+    document::BucketId getBucketOf(const GenerationGuard &guard, uint32_t lid) const override {
         (void) guard;
         lids.push_back(lid);
         return {};
     }
-    vespalib::GenerationHandler::Guard getGuard() const override {
+    GenerationGuard getGuard() const override {
         return {};
     }
 };

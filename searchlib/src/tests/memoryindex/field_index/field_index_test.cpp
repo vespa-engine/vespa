@@ -54,6 +54,7 @@ using search::index::test::MockFieldLengthInspector;
 using search::test::DocBuilder;
 using search::test::SchemaBuilder;
 using search::test::StringFieldBuilder;
+using vespalib::GenerationGuard;
 using vespalib::GenerationHandler;
 using vespalib::ISequencedTaskExecutor;
 using vespalib::SequencedTaskExecutor;
@@ -1044,10 +1045,9 @@ TEST_F(BasicInverterTest, require_that_inversion_is_working)
         beforeStats._activeBuffers,
         beforeStats._holdBuffers);
     myCompactFeatures(_fic, *_pushThreads);
-    std::vector<std::unique_ptr<GenerationHandler::Guard>> guards;
+    std::vector<std::unique_ptr<GenerationGuard>> guards;
     for (auto &fieldIndex : _fic.getFieldIndexes()) {
-        guards.push_back(std::make_unique<GenerationHandler::Guard>
-                         (fieldIndex->takeGenerationGuard()));
+        guards.push_back(std::make_unique<GenerationGuard>(fieldIndex->takeGenerationGuard()));
     }
     myCommit(_fic, *_pushThreads);
     auto duringStats = getFeatureStoreMemStats(_fic);

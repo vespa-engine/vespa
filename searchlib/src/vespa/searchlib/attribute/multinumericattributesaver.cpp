@@ -5,7 +5,7 @@
 #include <vespa/searchcommon/attribute/multivalue.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 
-using vespalib::GenerationHandler;
+using vespalib::GenerationGuard;
 using search::multivalueattributesaver::CountWriter;
 using search::multivalueattributesaver::WeightWriter;
 
@@ -40,7 +40,7 @@ public:
 
 template <typename MultiValueT>
 MultiValueNumericAttributeSaver<MultiValueT>::
-MultiValueNumericAttributeSaver(GenerationHandler::Guard &&guard,
+MultiValueNumericAttributeSaver(GenerationGuard &&guard,
                                 const attribute::AttributeHeader &header,
                                 const MultiValueMapping &mvMapping)
     : Parent(std::move(guard), header, mvMapping),

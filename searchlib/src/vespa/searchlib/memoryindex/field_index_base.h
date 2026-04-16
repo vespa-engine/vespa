@@ -110,7 +110,7 @@ public:
     IOrderedFieldIndexInserter& getInserter() override { return *_inserter; }
     index::FieldLengthCalculator& get_calculator() override { return _calculator; }
 
-    GenerationHandler::Guard takeGenerationGuard() override {
+    vespalib::GenerationGuard takeGenerationGuard() override {
         return _generationHandler.takeGuard();
     }
 
