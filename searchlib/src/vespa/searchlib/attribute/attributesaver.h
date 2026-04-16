@@ -3,7 +3,7 @@
 #pragma once
 
 #include "attribute_header.h"
-#include <vespa/vespalib/util/generationhandler.h>
+#include <vespa/vespalib/util/generation_guard.h>
 
 namespace search {
 

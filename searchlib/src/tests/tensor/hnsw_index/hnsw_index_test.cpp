@@ -20,7 +20,6 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/net/http/state_explorer.h>
 #include <vespa/vespalib/util/fake_doom.h>
-#include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <type_traits>
@@ -29,7 +28,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP("hnsw_index_test");
 
-using vespalib::GenerationHandler;
 using vespalib::MemoryUsage;
 using namespace search::tensor;
 using namespace vespalib::slime;

@@ -55,7 +55,6 @@ using search::test::DocBuilder;
 using search::test::SchemaBuilder;
 using search::test::StringFieldBuilder;
 using vespalib::GenerationGuard;
-using vespalib::GenerationHandler;
 using vespalib::ISequencedTaskExecutor;
 using vespalib::SequencedTaskExecutor;
 

@@ -30,7 +30,6 @@ using search::queryeval::GlobalFilter;
 using vespalib::datastore::ArrayStoreConfig;
 using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryRef;
-using vespalib::GenerationHandler;
 using vespalib::Generation;
 using vespalib::GenerationGuard;
 using vespalib::GenericHeader;
