@@ -189,7 +189,6 @@ public:
     std::vector<T> find_parents_self_and_children(const document::BucketId& bucket) const override;
     void for_each(std::function<void(uint64_t, const T&)> func) const override;
     std::unique_ptr<ConstIterator<const T&>> create_iterator() const override;
-    [[nodiscard]] uint64_t generation() const noexcept override { return 0; /*TODO*/ }
 };
 
 template <typename T>

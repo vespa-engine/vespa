@@ -629,9 +629,4 @@ GenericBTreeBucketDatabase<DataStoreTraitsT>::ReadSnapshot::create_iterator() co
     return std::make_unique<ConstIteratorImpl>(*this);
 }
 
-template <typename DataStoreTraitsT>
-uint64_t GenericBTreeBucketDatabase<DataStoreTraitsT>::ReadSnapshot::generation() const noexcept {
-    return _guard.getGeneration().value();
-}
-
 }
