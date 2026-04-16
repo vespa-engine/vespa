@@ -71,6 +71,7 @@ using search::tensor::VectorBundle;
 using testing::AllOf;
 using testing::Le;
 using testing::Ge;
+using vespalib::Generation;
 using vespalib::GenerationHandler;
 using vespalib::SharedStringRepo;
 using vespalib::datastore::CompactionStrategy;
@@ -82,7 +83,6 @@ using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 
 using DoubleVector = std::vector<double>;
-using generation_t = vespalib::GenerationHandler::generation_t;
 
 std::string sparseSpec("tensor(x{},y{})");
 std::string denseSpec("tensor(x[2],y[3])");
@@ -189,8 +189,8 @@ private:
     EntryVector _removes;
     mutable EntryVector _prepare_adds;
     EntryVector _complete_adds;
-    generation_t _transfer_gen;
-    generation_t _trim_gen;
+    Generation _transfer_gen;
+    Generation _trim_gen;
     mutable size_t _memory_usage_cnt;
     int _index_value;
     GenerationHandler _generation_handler;
@@ -202,8 +202,8 @@ public:
           _removes(),
           _prepare_adds(),
           _complete_adds(),
-          _transfer_gen(std::numeric_limits<generation_t>::max()),
-          _trim_gen(std::numeric_limits<generation_t>::max()),
+          _transfer_gen(Generation::make_invalid()),
+          _trim_gen(Generation::make_invalid()),
           _memory_usage_cnt(0),
           _index_value(0),
           _generation_handler()
@@ -261,8 +261,8 @@ public:
     void expect_complete_add(uint32_t exp_docid, const DoubleVector& exp_vector) const {
         expect_entry(exp_docid, exp_vector, _complete_adds);
     }
-    generation_t get_transfer_gen() const { return _transfer_gen; }
-    generation_t get_trim_gen() const { return _trim_gen; }
+    Generation get_transfer_gen() const { return _transfer_gen; }
+    Generation get_trim_gen() const { return _trim_gen; }
     size_t memory_usage_cnt() const { return _memory_usage_cnt; }
 
     void add_document(uint32_t docid) override {
@@ -290,10 +290,10 @@ public:
         auto vector = _vectors.get_vector(docid, 0).typify<double>();
         _removes.emplace_back(docid, DoubleVector(vector.begin(), vector.end()));
     }
-    void assign_generation(generation_t current_gen) override {
+    void assign_generation(Generation current_gen) override {
         _transfer_gen = current_gen;
     }
-    void reclaim_memory(generation_t oldest_used_gen) override {
+    void reclaim_memory(Generation oldest_used_gen) override {
         _trim_gen = oldest_used_gen;
     }
     GenerationHandler::Guard make_generation_read_guard() const override { return _generation_handler.takeGuard(); }
@@ -622,7 +622,7 @@ struct Fixture {
         _attr->commit();
     }
 
-    generation_t get_current_index_gen() const {
+    Generation get_current_index_gen() const {
         if constexpr (TensorAttributeFlags::use_nearest_neighbor_index_generation_manager) {
             return _tensorAttr->nearest_neighbor_index()->make_generation_read_guard().getGeneration();
         } else {
@@ -1327,11 +1327,11 @@ TEST(TensorAttributeTest, commit_ensures_transfer_and_trim_hold_lists_on_nearest
     TensorSpec spec = vec_2d(3, 5);
 
     f.set_tensor(1, spec);
-    generation_t gen_1 = f.get_current_index_gen();
+    Generation gen_1 = f.get_current_index_gen();
     EXPECT_EQ(gen_1 - 1, index.get_transfer_gen());
     EXPECT_EQ(gen_1, index.get_trim_gen());
 
-    generation_t gen_2(0);
+    Generation gen_2(0);
     {
         // Takes guard on gen_1 if TensorAttributeFlags::use_nearest_neighbor_index_generation_manager is false.
         auto guard = f._attr->makeReadGuard(false);
@@ -1354,7 +1354,7 @@ TEST(TensorAttributeTest, commit_ensures_transfer_and_trim_hold_lists_on_nearest
     }
 
     f.set_tensor(3, spec);
-    generation_t gen_3 = f.get_current_index_gen();
+    Generation gen_3 = f.get_current_index_gen();
     EXPECT_GT(gen_3, gen_2);
     EXPECT_EQ(gen_3 - 1, index.get_transfer_gen());
     EXPECT_EQ(gen_3, index.get_trim_gen());

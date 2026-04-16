@@ -75,7 +75,7 @@ MultiValueStringPostingAttributeT<B, T>::mergeMemoryStats(vespalib::MemoryUsage 
 
 template <typename B, typename T>
 void
-MultiValueStringPostingAttributeT<B, T>::reclaim_memory(generation_t oldest_used_gen)
+MultiValueStringPostingAttributeT<B, T>::reclaim_memory(vespalib::Generation oldest_used_gen)
 {
     MultiValueStringAttributeT<B, T>::reclaim_memory(oldest_used_gen);
     _posting_store.reclaim_memory(oldest_used_gen);
@@ -83,7 +83,7 @@ MultiValueStringPostingAttributeT<B, T>::reclaim_memory(generation_t oldest_used
 
 template <typename B, typename T>
 void
-MultiValueStringPostingAttributeT<B, T>::before_inc_generation(generation_t current_gen)
+MultiValueStringPostingAttributeT<B, T>::before_inc_generation(vespalib::Generation current_gen)
 {
     _posting_store.freeze();
     MultiValueStringAttributeT<B, T>::before_inc_generation(current_gen);

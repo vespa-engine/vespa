@@ -23,6 +23,7 @@
 
 namespace search {
 
+using vespalib::Generation;
 using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryComparator;
 
@@ -118,14 +119,14 @@ EnumStoreT<EntryT>::get_values_address_space_usage() const
 
 template <typename EntryT>
 void
-EnumStoreT<EntryT>::assign_generation(generation_t current_gen)
+EnumStoreT<EntryT>::assign_generation(Generation current_gen)
 {
     _store.assign_generation(current_gen);
 }
 
 template <typename EntryT>
 void
-EnumStoreT<EntryT>::reclaim_memory(generation_t oldest_used_gen)
+EnumStoreT<EntryT>::reclaim_memory(Generation oldest_used_gen)
 {
     // remove generations in the range [0, firstUsed>
     _store.reclaim_memory(oldest_used_gen);

@@ -279,8 +279,8 @@ public:
     void complete_add_document(uint32_t docid, std::unique_ptr<PrepareResult> prepare_result) override;
     void remove_node(uint32_t nodeid);
     void remove_document(uint32_t docid) override;
-    void assign_generation(generation_t current_gen) override;
-    void reclaim_memory(generation_t oldest_used_gen) override;
+    void assign_generation(vespalib::Generation current_gen) override;
+    void reclaim_memory(vespalib::Generation oldest_used_gen) override;
     vespalib::GenerationHandler::Guard make_generation_read_guard() const override;
     void inc_generation() override;
     void reclaim_unused_memory() override;

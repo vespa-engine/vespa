@@ -102,8 +102,8 @@ private:
     void onUpdateStat(CommitParam::UpdateStats updateStats) override;
 
     // Implements AttributeVector
-    void before_inc_generation(generation_t current_gen) override;
-    void reclaim_memory(generation_t oldest_used_gen) override;
+    void before_inc_generation(vespalib::Generation current_gen) override;
+    void reclaim_memory(vespalib::Generation oldest_used_gen) override;
     std::unique_ptr<search::AttributeSaver> onInitSave(std::string_view fileName) override;
     bool onLoad(vespalib::Executor *executor) override;
 
@@ -133,7 +133,7 @@ private:
     void doRemoveAllOldGenerations() override {
         reclaim_unused_memory();
     }
-    generation_t doGetCurrentGeneration() const override {
+    vespalib::Generation doGetCurrentGeneration() const override {
         return getCurrentGeneration();
     }
 

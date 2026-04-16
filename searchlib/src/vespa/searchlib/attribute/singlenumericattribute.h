@@ -22,7 +22,6 @@ private:
     using WeightedEnum = typename B::WeightedEnum;
     using WeightedFloat = typename B::WeightedFloat;
     using WeightedInt = typename B::WeightedInt;
-    using generation_t = typename B::generation_t;
     using largeint_t = typename B::largeint_t;
 
     using B::getGenerationHolder;
@@ -55,8 +54,8 @@ public:
     void onCommit() override;
     void onAddDocs(DocId lidLimit) override;
     void onUpdateStat(CommitParam::UpdateStats updateStats) override;
-    void reclaim_memory(generation_t oldest_used_gen) override;
-    void before_inc_generation(generation_t current_gen) override;
+    void reclaim_memory(vespalib::Generation oldest_used_gen) override;
+    void before_inc_generation(vespalib::Generation current_gen) override;
     bool addDoc(DocId & doc) override;
     bool onLoad(vespalib::Executor *executor) override;
 

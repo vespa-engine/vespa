@@ -48,7 +48,6 @@ private:
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
     using SelfType = MultiValueStringPostingAttributeT<B, T>;
     using WeightedIndex = typename MultiValueStringAttributeT<B, T>::WeightedIndex;
-    using generation_t = typename MultiValueStringAttributeT<B, T>::generation_t;
 
     using DirectPostingStoreAdapterType = attribute::StringDirectPostingStoreAdapter<IDocidWithWeightPostingStore,
                                                                                      PostingStore, EnumStore>;
@@ -72,8 +71,8 @@ public:
     MultiValueStringPostingAttributeT(const std::string & name);
     ~MultiValueStringPostingAttributeT();
 
-    void reclaim_memory(generation_t oldest_used_gen) override;
-    void before_inc_generation(generation_t current_gen) override;
+    void reclaim_memory(vespalib::Generation oldest_used_gen) override;
+    void before_inc_generation(vespalib::Generation current_gen) override;
 
     std::unique_ptr<attribute::SearchContext>
     getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;

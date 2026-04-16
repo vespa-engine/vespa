@@ -144,9 +144,8 @@ FieldIndex<interleaved_features>::compactFeatures()
             }
         }
     }
-    using generation_t = GenerationHandler::generation_t;
     compacting_buffers->finish();
-    generation_t generation = _generationHandler.getCurrentGeneration();
+    auto generation = _generationHandler.getCurrentGeneration();
     _featureStore.assign_generation(generation);
 }
 

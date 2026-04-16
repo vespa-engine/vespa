@@ -14,6 +14,7 @@
 #include <vespa/vespalib/util/size_literals.h>
 
 using search::attribute::SingleSmallNumericAttributeSaver;
+using vespalib::Generation;
 
 namespace search {
 
@@ -116,14 +117,14 @@ SingleValueSmallNumericAttribute::onUpdateStat(CommitParam::UpdateStats updateSt
 
 
 void
-SingleValueSmallNumericAttribute::reclaim_memory(generation_t oldest_used_gen)
+SingleValueSmallNumericAttribute::reclaim_memory(Generation oldest_used_gen)
 {
     getGenerationHolder().reclaim(oldest_used_gen);
 }
 
 
 void
-SingleValueSmallNumericAttribute::before_inc_generation(generation_t current_gen)
+SingleValueSmallNumericAttribute::before_inc_generation(Generation current_gen)
 {
     getGenerationHolder().assign_generation(current_gen);
 }

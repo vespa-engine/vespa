@@ -7,6 +7,7 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <cassert>
 
+using vespalib::Generation;
 using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryRef;
 
@@ -108,14 +109,14 @@ HnswNodeidMapping::free_ids(uint32_t docid)
 }
 
 void
-HnswNodeidMapping::assign_generation(generation_t current_gen)
+HnswNodeidMapping::assign_generation(Generation current_gen)
 {
     _nodeids.assign_generation(current_gen);
     _hold_list.assign_generation(current_gen);
 }
 
 void
-HnswNodeidMapping::reclaim_memory(generation_t oldest_used_gen)
+HnswNodeidMapping::reclaim_memory(Generation oldest_used_gen)
 {
     _nodeids.reclaim_memory(oldest_used_gen);
     _hold_list.reclaim(oldest_used_gen, [this](uint32_t nodeid) {

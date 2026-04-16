@@ -19,7 +19,6 @@ public:
     using RefType = DataStoreType::RefType;
     using EncodeContext = bitcompression::EG2PosOccEncodeContext<true>;
     using DecodeContextCooked = bitcompression::EG2PosOccDecodeContextCooked<true>;
-    using generation_t = vespalib::Generation;
     static constexpr uint32_t buffer_array_size = 4u; // Must be a power of 2
     using Aligner = vespalib::datastore::Aligner<buffer_array_size>;
 
@@ -202,8 +201,8 @@ public:
 
     const std::vector<PosOccFieldsParams> &getFieldsParams() const { return _fieldsParams; }
 
-    void reclaim_memory(generation_t oldest_used_gen) { _store.reclaim_memory(oldest_used_gen); }
-    void assign_generation(generation_t current_gen) { _store.assign_generation(current_gen); }
+    void reclaim_memory(vespalib::Generation oldest_used_gen) { _store.reclaim_memory(oldest_used_gen); }
+    void assign_generation(vespalib::Generation current_gen) { _store.assign_generation(current_gen); }
     void reclaim_all_memory() { _store.reclaim_all_memory();}
     std::unique_ptr<vespalib::datastore::CompactingBuffers> start_compact();
     vespalib::MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }

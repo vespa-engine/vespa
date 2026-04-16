@@ -68,7 +68,6 @@ class DocumentFeaturesStore {
         vespalib::datastore::EntryRef _ranges;
     };
     using RefsVector = std::vector<Refs, vespalib::allocator_large<Refs>>;
-    using generation_t = vespalib::Generation;
 
     RefsVector          _refs;
     FeaturesStore       _features;
@@ -92,8 +91,8 @@ public:
     FeatureSet get(uint32_t docId) const;
     void remove(uint32_t docId);
     void commit() { }
-    void reclaim_memory(generation_t oldest_used_gen);
-    void assign_generation(generation_t current_gen);
+    void reclaim_memory(vespalib::Generation oldest_used_gen);
+    void assign_generation(vespalib::Generation current_gen);
     vespalib::MemoryUsage getMemoryUsage() const;
 
     std::unique_ptr<ISaver> make_saver() const;

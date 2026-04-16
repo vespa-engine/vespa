@@ -123,7 +123,7 @@ SingleValueNumericPostingAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& 
 
 template <typename B>
 void
-SingleValueNumericPostingAttribute<B>::reclaim_memory(generation_t oldest_used_gen)
+SingleValueNumericPostingAttribute<B>::reclaim_memory(vespalib::Generation oldest_used_gen)
 {
     SingleValueNumericEnumAttribute<B>::reclaim_memory(oldest_used_gen);
     _posting_store.reclaim_memory(oldest_used_gen);
@@ -131,7 +131,7 @@ SingleValueNumericPostingAttribute<B>::reclaim_memory(generation_t oldest_used_g
 
 template <typename B>
 void
-SingleValueNumericPostingAttribute<B>::before_inc_generation(generation_t current_gen)
+SingleValueNumericPostingAttribute<B>::before_inc_generation(vespalib::Generation current_gen)
 {
     _posting_store.freeze();
     SingleValueNumericEnumAttribute<B>::before_inc_generation(current_gen);

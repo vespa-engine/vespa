@@ -31,6 +31,7 @@ using vespalib::datastore::ArrayStoreConfig;
 using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryRef;
 using vespalib::GenerationHandler;
+using vespalib::Generation;
 using vespalib::GenericHeader;
 
 namespace {
@@ -931,7 +932,7 @@ HnswIndex<type>::remove_document(uint32_t docid)
 
 template <HnswIndexType type>
 void
-HnswIndex<type>::assign_generation(generation_t current_gen)
+HnswIndex<type>::assign_generation(Generation current_gen)
 {
     // Note: RcuVector transfers hold lists as part of reallocation based on current generation.
     //       We need to set the next generation here, as it is incremented on a higher level right after this call.
@@ -943,7 +944,7 @@ HnswIndex<type>::assign_generation(generation_t current_gen)
 
 template <HnswIndexType type>
 void
-HnswIndex<type>::reclaim_memory(generation_t oldest_used_gen)
+HnswIndex<type>::reclaim_memory(Generation oldest_used_gen)
 {
     _graph.nodes.reclaim_memory(oldest_used_gen);
     _graph.levels_store.reclaim_memory(oldest_used_gen);

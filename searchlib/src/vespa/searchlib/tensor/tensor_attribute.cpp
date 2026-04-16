@@ -28,7 +28,7 @@ using document::TensorDataType;
 using document::TensorUpdate;
 using document::WrongTensorTypeException;
 using search::AddressSpaceComponents;
-using vespalib::GenerationHandler;
+using vespalib::Generation;
 using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
@@ -141,14 +141,14 @@ TensorAttribute::onUpdateStat(CommitParam::UpdateStats updateStats)
 }
 
 void
-TensorAttribute::reclaim_memory(generation_t oldest_used_gen)
+TensorAttribute::reclaim_memory(Generation oldest_used_gen)
 {
     _tensorStore.reclaim_memory(oldest_used_gen);
     getGenerationHolder().reclaim(oldest_used_gen);
 }
 
 void
-TensorAttribute::before_inc_generation(generation_t current_gen)
+TensorAttribute::before_inc_generation(Generation current_gen)
 {
     getGenerationHolder().assign_generation(current_gen);
     _tensorStore.assign_generation(current_gen);

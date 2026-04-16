@@ -23,6 +23,7 @@ public:
     constexpr Generation& operator++() noexcept { ++_value; return *this; }
     [[nodiscard]] constexpr Generation operator+(value_type delta) const noexcept { return Generation(value() + delta); }
     [[nodiscard]] constexpr Generation operator-(value_type delta) const noexcept { return Generation(value() - delta); }
+    [[nodiscard]] static constexpr Generation make_invalid() noexcept { return Generation() - 1; }
 };
 
 std::ostream& operator<<(std::ostream& os, const Generation& generation);

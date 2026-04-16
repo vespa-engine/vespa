@@ -14,6 +14,7 @@ LOG_SETUP(".searchlib.attribute.flag_attribute");
 namespace search {
 
 using queryeval::SearchIterator;
+using vespalib::Generation;
 
 namespace {
 
@@ -231,7 +232,7 @@ FlagAttributeT<B>::resizeBitVectors(uint32_t neededSize)
 
 template <typename B>
 void
-FlagAttributeT<B>::reclaim_memory(vespalib::GenerationHandler::generation_t oldest_used_gen)
+FlagAttributeT<B>::reclaim_memory(Generation oldest_used_gen)
 {
     B::reclaim_memory(oldest_used_gen);
     _bitVectorHolder.reclaim(oldest_used_gen);

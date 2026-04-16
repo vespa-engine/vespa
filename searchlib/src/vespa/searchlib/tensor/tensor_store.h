@@ -30,7 +30,6 @@ class TensorStore : public vespalib::datastore::ICompactable
 {
 public:
     using EntryRef = vespalib::datastore::EntryRef;
-    using generation_t = vespalib::GenerationHandler::generation_t;
 
 protected:
     vespalib::datastore::DataStoreBase& _store;
@@ -55,12 +54,12 @@ public:
     virtual DenseTensorStore* as_dense();
 
     // Inherit doc from DataStoreBase
-    void reclaim_memory(generation_t oldest_used_gen) {
+    void reclaim_memory(vespalib::Generation oldest_used_gen) {
         _store.reclaim_memory(oldest_used_gen);
     }
 
     // Inherit doc from DataStoreBase
-    void assign_generation(generation_t current_gen) {
+    void assign_generation(vespalib::Generation current_gen) {
         _store.assign_generation(current_gen);
     }
 

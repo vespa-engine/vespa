@@ -62,7 +62,6 @@ public:
     using GlobalFilter = search::queryeval::GlobalFilter;
     using CompactionSpec = vespalib::datastore::CompactionSpec;
     using CompactionStrategy = vespalib::datastore::CompactionStrategy;
-    using generation_t = vespalib::GenerationHandler::generation_t;
     struct Neighbor {
         uint32_t docid;
         double distance;
@@ -97,8 +96,8 @@ public:
     virtual void complete_add_document(uint32_t docid, std::unique_ptr<PrepareResult> prepare_result) = 0;
 
     virtual void remove_document(uint32_t docid) = 0;
-    virtual void assign_generation(generation_t current_gen) = 0;
-    virtual void reclaim_memory(generation_t first_used_gen) = 0;
+    virtual void assign_generation(vespalib::Generation current_gen) = 0;
+    virtual void reclaim_memory(vespalib::Generation first_used_gen) = 0;
     virtual vespalib::GenerationHandler::Guard make_generation_read_guard() const = 0;
     virtual void inc_generation() = 0;
     virtual void reclaim_unused_memory() = 0;

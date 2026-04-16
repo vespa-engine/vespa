@@ -24,6 +24,7 @@ LOG_SETUP(".searchlib.attribute.predicate_attribute");
 using document::Predicate;
 using document::PredicateFieldValue;
 using vespalib::DataBuffer;
+using vespalib::Generation;
 using vespalib::IllegalStateException;
 using vespalib::make_string;
 using namespace search::predicate;
@@ -140,14 +141,14 @@ PredicateAttribute::onUpdateStat(CommitParam::UpdateStats updateStats)
 }
 
 void
-PredicateAttribute::reclaim_memory(generation_t oldest_used_gen)
+PredicateAttribute::reclaim_memory(Generation oldest_used_gen)
 {
     getGenerationHolder().reclaim(oldest_used_gen);
     _index->reclaim_memory(oldest_used_gen);
 }
 
 void
-PredicateAttribute::before_inc_generation(generation_t current_gen)
+PredicateAttribute::before_inc_generation(Generation current_gen)
 {
     getGenerationHolder().assign_generation(current_gen);
     _index->assign_generation(current_gen);

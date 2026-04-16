@@ -265,7 +265,7 @@ SingleValueEnumAttribute<B>::load_enumerated_data(ReaderBase& attrReader,
 
 template <typename B>
 void
-SingleValueEnumAttribute<B>::reclaim_memory(generation_t oldest_used_gen)
+SingleValueEnumAttribute<B>::reclaim_memory(vespalib::Generation oldest_used_gen)
 {
     this->_enumStore.reclaim_memory(oldest_used_gen);
     getGenerationHolder().reclaim(oldest_used_gen);
@@ -273,7 +273,7 @@ SingleValueEnumAttribute<B>::reclaim_memory(generation_t oldest_used_gen)
 
 template <typename B>
 void
-SingleValueEnumAttribute<B>::before_inc_generation(generation_t current_gen)
+SingleValueEnumAttribute<B>::before_inc_generation(vespalib::Generation current_gen)
 {
     /*
      * Freeze tree before generation is increased in attribute vector

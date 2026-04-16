@@ -50,8 +50,8 @@ private:
     ReferenceMappings _referenceMappings;
 
     void onAddDocs(DocId docIdLimit) override;
-    void reclaim_memory(generation_t oldest_used_gen) override;
-    void before_inc_generation(generation_t current_gen) override;
+    void reclaim_memory(vespalib::Generation oldest_used_gen) override;
+    void before_inc_generation(vespalib::Generation current_gen) override;
     void onCommit() override;
     void onUpdateStat(CommitParam::UpdateStats updateStats) override;
     std::unique_ptr<AttributeSaver> onInitSave(std::string_view fileName) override;

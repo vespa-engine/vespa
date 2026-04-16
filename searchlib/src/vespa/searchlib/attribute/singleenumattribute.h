@@ -51,7 +51,6 @@ protected:
     using LoadedVector = typename B::LoadedVector;
     using ValueModifier = typename B::ValueModifier;
     using WeightedEnum = typename B::WeightedEnum;
-    using generation_t = typename B::generation_t;
 
     using B::getGenerationHolder;
 
@@ -108,8 +107,8 @@ public:
     uint32_t getValueCount(DocId doc) const override;
     void onCommit() override;
     void onUpdateStat(CommitParam::UpdateStats updateStats) override;
-    void reclaim_memory(generation_t oldest_used_gen) override;
-    void before_inc_generation(generation_t current_gen) override;
+    void reclaim_memory(vespalib::Generation oldest_used_gen) override;
+    void before_inc_generation(vespalib::Generation current_gen) override;
     EnumHandle getEnum(DocId doc) const override {
        return getE(doc);
     }

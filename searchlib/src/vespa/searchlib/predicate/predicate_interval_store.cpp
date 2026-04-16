@@ -4,6 +4,7 @@
 #include "predicate_interval.h"
 #include <vespa/vespalib/datastore/datastore.hpp>
 
+using vespalib::Generation;
 using vespalib::datastore::BufferState;
 using vespalib::datastore::EntryRef;
 using std::vector;
@@ -100,12 +101,12 @@ PredicateIntervalStore::remove(EntryRef ref) {
 }
 
 void
-PredicateIntervalStore::reclaim_memory(generation_t oldest_used_gen) {
+PredicateIntervalStore::reclaim_memory(Generation oldest_used_gen) {
     _store.reclaim_memory(oldest_used_gen);
 }
 
 void
-PredicateIntervalStore::assign_generation(generation_t current_gen) {
+PredicateIntervalStore::assign_generation(Generation current_gen) {
     _store.assign_generation(current_gen);
 }
 

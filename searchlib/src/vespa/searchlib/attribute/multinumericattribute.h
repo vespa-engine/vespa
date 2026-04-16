@@ -46,7 +46,6 @@ private:
     bool findEnum(T value, EnumHandle & e) const override;
 
 protected:
-    using generation_t = typename B::generation_t;
     using WType = MultiValueType;
     uint32_t get(DocId doc, const WType * & values) const {
         MultiValueArrayRef array(this->_mvMapping.get(doc));
@@ -66,9 +65,9 @@ public:
     uint32_t getValueCount(DocId doc) const override;
     void onCommit() override;
     void onUpdateStat(CommitParam::UpdateStats updateStats) override;
-    void reclaim_memory(generation_t oldest_used_gen) override;
+    void reclaim_memory(vespalib::Generation oldest_used_gen) override;
 
-    void before_inc_generation(generation_t current_gen) override;
+    void before_inc_generation(vespalib::Generation current_gen) override;
     bool onLoad(vespalib::Executor *executor) override;
     virtual bool onLoadEnumerated(ReaderBase &attrReader);
 

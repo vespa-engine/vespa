@@ -41,7 +41,6 @@ protected:
     using WeightedConstChar = StringAttribute::WeightedConstChar;
     using WeightedEnum = StringAttribute::WeightedEnum;
     using WeightedString = StringAttribute::WeightedString;
-    using generation_t = StringAttribute::generation_t;
 
     std::unique_ptr<attribute::ISortBlobWriter> make_sort_blob_writer(bool ascending, const common::BlobConverter* converter,
                                                                       common::sortspec::MissingPolicy policy,

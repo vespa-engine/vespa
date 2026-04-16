@@ -19,7 +19,6 @@ class HnswSimpleNode;
  * (one node per document).
  */
 class HnswIdentityMapping {
-    using generation_t = vespalib::GenerationHandler::generation_t;
     uint32_t _nodeid;
 public:
     HnswIdentityMapping()
@@ -36,8 +35,8 @@ public:
         return {&_nodeid, 1};
     }
     void free_ids(uint32_t docid) { (void) docid; }
-    void assign_generation(generation_t current_gen) { (void) current_gen; };
-    void reclaim_memory(generation_t oldest_used_gen) { (void) oldest_used_gen; };
+    void assign_generation(vespalib::Generation current_gen) { (void) current_gen; };
+    void reclaim_memory(vespalib::Generation oldest_used_gen) { (void) oldest_used_gen; };
     void on_load(std::span<const HnswSimpleNode> nodes) { (void) nodes; }
     vespalib::MemoryUsage memory_usage() const { return vespalib::MemoryUsage(); }
     vespalib::MemoryUsage update_stat(const vespalib::datastore::CompactionStrategy&) { return vespalib::MemoryUsage(); }

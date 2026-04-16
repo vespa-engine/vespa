@@ -28,7 +28,6 @@ private:
     using ArrayRef = std::span<ElemT>;
     using ArrayStoreTypeMapper = vespalib::datastore::ArrayStoreDynamicTypeMapper<ElemT>;
     using ArrayStore = vespalib::datastore::ArrayStore<ElemT, RefT, ArrayStoreTypeMapper>;
-    using generation_t = vespalib::Generation;
     using ConstArrayRef = std::span<const ElemT>;
 
     ArrayStore _store;
@@ -55,8 +54,8 @@ public:
      */
     ReadView make_read_view(size_t read_size) const { return ReadView(_indices.make_read_view(read_size), &_store); }
     // Pass on hold list management to underlying store
-    void assign_generation(generation_t current_gen) { _store.assign_generation(current_gen); }
-    void reclaim_memory(generation_t oldest_used_gen) { _store.reclaim_memory(oldest_used_gen); }
+    void assign_generation(vespalib::Generation current_gen) { _store.assign_generation(current_gen); }
+    void reclaim_memory(vespalib::Generation oldest_used_gen) { _store.reclaim_memory(oldest_used_gen); }
     void prepareLoadFromMultiValue() { _store.setInitializing(true); }
 
     void doneLoadFromMultiValue() { _store.setInitializing(false); }

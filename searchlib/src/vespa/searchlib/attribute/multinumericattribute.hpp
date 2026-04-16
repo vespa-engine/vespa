@@ -106,14 +106,14 @@ void MultiValueNumericAttribute<B, M>::setNewValues(DocId doc, const std::vector
 }
 
 template <typename B, typename M>
-void MultiValueNumericAttribute<B, M>::reclaim_memory(generation_t oldest_used_gen)
+void MultiValueNumericAttribute<B, M>::reclaim_memory(vespalib::Generation oldest_used_gen)
 {
     this->_mvMapping.reclaim_memory(oldest_used_gen);
 }
 
 
 template <typename B, typename M>
-void MultiValueNumericAttribute<B, M>::before_inc_generation(generation_t current_gen)
+void MultiValueNumericAttribute<B, M>::before_inc_generation(vespalib::Generation current_gen)
 {
     this->_mvMapping.assign_generation(current_gen);
 }
