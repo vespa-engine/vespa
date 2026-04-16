@@ -233,7 +233,7 @@ ArrayBoolAttribute::make_read_view(ArrayBoolTag, vespalib::Stash& stash) const
 std::unique_ptr<AttributeSaver>
 ArrayBoolAttribute::onInitSave(std::string_view fileName)
 {
-    vespalib::GenerationHandler::Guard guard(getGenerationHandler().takeGuard());
+    auto guard(getGenerationHandler().takeGuard());
     return std::make_unique<SingleRawAttributeSaver>
         (std::move(guard),
          this->createAttributeHeader(fileName),

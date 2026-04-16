@@ -293,7 +293,7 @@ TEST(DocumentMetaStoreTest, control_meta_data_sizeof) {
     EXPECT_EQ(1u, dms.getNumDocs());
     EXPECT_EQ(0u, dms.getNumUsedLids());
 
-    vespalib::GenerationHandler::Guard guard = dms.getGuard();
+    auto guard(dms.getGuard());
     EXPECT_EQ(BucketId(), dms.getBucketOf(guard, 1));
     assertPut(bucketId1, time1, 1, docid1, dms);
     EXPECT_EQ(bucketId1, dms.getBucketOf(guard, 1));

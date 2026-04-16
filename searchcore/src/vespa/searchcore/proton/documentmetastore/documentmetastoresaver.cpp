@@ -6,7 +6,7 @@
 #include <vespa/searchlib/attribute/iattributesavetarget.h>
 #include <vespa/vespalib/btree/btreenode.hpp>
 
-using vespalib::GenerationHandler;
+using vespalib::GenerationGuard;
 using search::IAttributeSaveTarget;
 
 namespace proton {
@@ -67,9 +67,9 @@ public:
 
 
 DocumentMetaStoreSaver::
-DocumentMetaStoreSaver(vespalib::GenerationHandler::Guard &&guard,
-                       const search::attribute::AttributeHeader &header,
-                       const GidIterator &gidIterator,
+DocumentMetaStoreSaver(GenerationGuard&& guard,
+                       const search::attribute::AttributeHeader& header,
+                       const GidIterator& gidIterator,
                        MetaDataView metaDataView)
     : AttributeSaver(std::move(guard), header),
       _gidIterator(gidIterator),

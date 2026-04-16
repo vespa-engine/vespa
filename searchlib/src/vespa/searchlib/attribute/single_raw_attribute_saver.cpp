@@ -6,9 +6,11 @@
 #include <vespa/searchlib/attribute/iattributesavetarget.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 
+using vespalib::GenerationGuard;
+
 namespace search::attribute {
 
-SingleRawAttributeSaver::SingleRawAttributeSaver(vespalib::GenerationHandler::Guard &&guard,
+SingleRawAttributeSaver::SingleRawAttributeSaver(GenerationGuard&& guard,
                                                  const attribute::AttributeHeader &header,
                                                  EntryRefVector&& ref_vector,
                                                  const RawBufferStore& raw_store)

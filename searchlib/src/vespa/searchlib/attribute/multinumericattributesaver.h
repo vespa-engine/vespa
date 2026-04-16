@@ -20,14 +20,13 @@ class MultiValueNumericAttributeSaver : public MultiValueAttributeSaver
     using Parent = MultiValueAttributeSaver;
     using MultiValueType = MultiValueT;
     using ValueType = multivalue::ValueType_t<MultiValueType>;
-    using GenerationHandler = vespalib::GenerationHandler;
     using Parent::_frozenIndices;
     using MultiValueMapping = attribute::MultiValueMapping<MultiValueType>;
 
     const MultiValueMapping &_mvMapping;
 public:
     bool onSave(IAttributeSaveTarget &saveTarget) override;
-    MultiValueNumericAttributeSaver(GenerationHandler::Guard &&guard,
+    MultiValueNumericAttributeSaver(vespalib::GenerationGuard &&guard,
                                     const attribute::AttributeHeader &header,
                                     const MultiValueMapping &mvMapping);
 

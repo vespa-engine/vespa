@@ -41,6 +41,7 @@ using search::common::FileHeaderContext;
 using search::index::DummyFileHeaderContext;
 using search::queryeval::SearchIterator;
 using vespalib::Generation;
+using vespalib::GenerationGuard;
 using vespalib::alloc::MmapFileAllocator;
 using vespalib::alloc::MmapFileAllocatorFactory;
 using namespace vespalib::make_string_short;
@@ -658,12 +659,11 @@ namespace {
 
 class ReadGuard : public attribute::AttributeReadGuard
 {
-    using GenerationHandler = vespalib::GenerationHandler;
-    GenerationHandler::Guard _generationGuard;
+    GenerationGuard _generationGuard;
     using EnumGuard = std::shared_lock<std::shared_mutex>;
     EnumGuard _enumGuard;
 public:
-    ReadGuard(const attribute::IAttributeVector *attr, GenerationHandler::Guard &&generationGuard, std::shared_mutex *enumLock)
+    ReadGuard(const attribute::IAttributeVector *attr, GenerationGuard&& generationGuard, std::shared_mutex *enumLock)
         : attribute::AttributeReadGuard(attr),
           _generationGuard(std::move(generationGuard)),
           _enumGuard(enumLock != nullptr ? EnumGuard(*enumLock) : EnumGuard())

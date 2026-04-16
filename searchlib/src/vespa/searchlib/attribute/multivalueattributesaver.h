@@ -15,12 +15,11 @@ namespace search {
 class MultiValueAttributeSaver : public AttributeSaver
 {
 protected:
-    using GenerationHandler = vespalib::GenerationHandler;
     using MvMappingBase = attribute::MultiValueMappingBase;
     attribute::EntryRefVector _frozenIndices;
 
 public:
-    MultiValueAttributeSaver(GenerationHandler::Guard &&guard,
+    MultiValueAttributeSaver(vespalib::GenerationGuard &&guard,
                              const attribute::AttributeHeader &header,
                              const MvMappingBase &mvMapping);
 

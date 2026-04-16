@@ -74,7 +74,7 @@ struct PreparedAddNode {
 struct PreparedFirstAddDoc : public PrepareResult {};
 
 struct PreparedAddDoc final : public PrepareResult {
-    using ReadGuard = vespalib::GenerationHandler::Guard;
+    using ReadGuard = vespalib::GenerationGuard;
     uint32_t docid;
     ReadGuard read_guard;
     ReadGuard hnsw_graph_read_guard;
@@ -257,7 +257,7 @@ protected:
                                          uint32_t explore_k, double exploration_slack, bool prefetch_tensors, const vespalib::Doom& doom, double distance_threshold) const;
 
     internal::PreparedAddDoc internal_prepare_add(uint32_t docid, VectorBundle input_vectors,
-                                                  vespalib::GenerationHandler::Guard read_guard) const;
+                                                  vespalib::GenerationGuard read_guard) const;
     void internal_prepare_add_node(internal::PreparedAddDoc& op, TypedCells input_vector, const typename GraphType::EntryNode& entry) const;
     LinkArray filter_valid_nodeids(uint32_t level, const internal::PreparedAddNode::Links &neighbors, uint32_t self_nodeid);
     void internal_complete_add(uint32_t docid, internal::PreparedAddDoc &op);
@@ -275,13 +275,13 @@ public:
     // Implements NearestNeighborIndex
     void add_document(uint32_t docid) override;
     std::unique_ptr<PrepareResult> prepare_add_document(uint32_t docid, VectorBundle vectors,
-                                                        vespalib::GenerationHandler::Guard read_guard) const override;
+                                                        vespalib::GenerationGuard read_guard) const override;
     void complete_add_document(uint32_t docid, std::unique_ptr<PrepareResult> prepare_result) override;
     void remove_node(uint32_t nodeid);
     void remove_document(uint32_t docid) override;
     void assign_generation(vespalib::Generation current_gen) override;
     void reclaim_memory(vespalib::Generation oldest_used_gen) override;
-    vespalib::GenerationHandler::Guard make_generation_read_guard() const override;
+    vespalib::GenerationGuard make_generation_read_guard() const override;
     void inc_generation() override;
     void reclaim_unused_memory() override;
     void compact_level_arrays(const CompactionStrategy& compaction_strategy);

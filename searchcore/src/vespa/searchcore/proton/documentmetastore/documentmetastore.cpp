@@ -56,6 +56,7 @@ using search::queryeval::Blueprint;
 using search::queryeval::SearchIterator;
 using storage::spi::Timestamp;
 using vespalib::Generation;
+using vespalib::GenerationGuard;
 using vespalib::GenerationHandler;
 using vespalib::GenerationHeldBase;
 using vespalib::IllegalStateException;
@@ -285,7 +286,7 @@ DocumentMetaStore::reclaim_memory(Generation oldest_used_gen)
 std::unique_ptr<search::AttributeSaver>
 DocumentMetaStore::onInitSave(std::string_view fileName)
 {
-    GenerationHandler::Guard guard(getGuard());
+    auto guard(getGuard());
     return std::make_unique<DocumentMetaStoreSaver>
         (std::move(guard), createAttributeHeader(fileName),
          _gidToLidMap.getFrozenView().begin(),
@@ -1123,7 +1124,7 @@ DocumentMetaStore::getEstimatedShrinkLidSpaceGain() const
 }
 
 BucketId
-DocumentMetaStore::getBucketOf(const vespalib::GenerationHandler::Guard &, uint32_t lid) const
+DocumentMetaStore::getBucketOf(const GenerationGuard &, uint32_t lid) const
 {
     if (__builtin_expect(validLidFast(lid, getCommittedDocIdLimit()), true)) {
         return getRawMetaData(lid).getBucketId();
@@ -1131,7 +1132,7 @@ DocumentMetaStore::getBucketOf(const vespalib::GenerationHandler::Guard &, uint3
     return {};
 }
 
-vespalib::GenerationHandler::Guard
+GenerationGuard
 DocumentMetaStore::getGuard() const
 {
     return getGenerationHandler().takeGuard();

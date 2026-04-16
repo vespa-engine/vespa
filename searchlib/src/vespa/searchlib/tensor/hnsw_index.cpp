@@ -32,6 +32,7 @@ using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryRef;
 using vespalib::GenerationHandler;
 using vespalib::Generation;
+using vespalib::GenerationGuard;
 using vespalib::GenericHeader;
 
 namespace {
@@ -695,8 +696,8 @@ template <HnswIndexType type>
 void
 HnswIndex<type>::add_document(uint32_t docid)
 {
-    vespalib::GenerationHandler::Guard no_guard_needed;
-    vespalib::GenerationHandler::Guard no_hnsw_graph_guard_needed;
+    GenerationGuard no_guard_needed;
+    GenerationGuard no_hnsw_graph_guard_needed;
     PreparedAddDoc op(docid, std::move(no_guard_needed), std::move(no_hnsw_graph_guard_needed));
     auto input_vectors = get_vectors(docid);
     auto subspaces = input_vectors.subspaces();
@@ -712,7 +713,7 @@ HnswIndex<type>::add_document(uint32_t docid)
 
 template <HnswIndexType type>
 PreparedAddDoc
-HnswIndex<type>::internal_prepare_add(uint32_t docid, VectorBundle input_vectors, vespalib::GenerationHandler::Guard read_guard) const
+HnswIndex<type>::internal_prepare_add(uint32_t docid, VectorBundle input_vectors, GenerationGuard read_guard) const
 {
     PreparedAddDoc op(docid, std::move(read_guard), _graph.make_guard());
     auto entry = _graph.get_entry_node();
@@ -820,7 +821,7 @@ HnswIndex<type>::internal_complete_add_node(uint32_t nodeid, uint32_t docid, uin
 
 template <HnswIndexType type>
 std::unique_ptr<PrepareResult>
-HnswIndex<type>::prepare_add_document(uint32_t docid, VectorBundle vectors, vespalib::GenerationHandler::Guard read_guard) const
+HnswIndex<type>::prepare_add_document(uint32_t docid, VectorBundle vectors, GenerationGuard read_guard) const
 {
     uint32_t active_nodes = _graph.get_active_nodes();
     if (active_nodes < _cfg.min_size_before_two_phase()) {
@@ -953,7 +954,7 @@ HnswIndex<type>::reclaim_memory(Generation oldest_used_gen)
 }
 
 template <HnswIndexType type>
-GenerationHandler::Guard
+GenerationGuard
 HnswIndex<type>::make_generation_read_guard() const
 {
     return _graph._generation_handler.takeGuard();

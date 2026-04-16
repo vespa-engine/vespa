@@ -13,10 +13,9 @@ template <typename T>
 class ComponentGuard
 {
 private:
-    using Guard = vespalib::GenerationHandler::Guard;
     using Component = std::shared_ptr<T>;
-    Component  _component;
-    Guard      _generationGuard;
+    Component                 _component;
+    vespalib::GenerationGuard _generationGuard;
 public:
     ComponentGuard();
     ComponentGuard(ComponentGuard &&);

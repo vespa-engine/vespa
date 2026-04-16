@@ -18,7 +18,6 @@ class NearestNeighborIndexSaver;
  * Will also save the nearest neighbor index if existing.
  */
 class TensorAttributeSaver : public AttributeSaver {
-    using GenerationHandler = vespalib::GenerationHandler;
     using IndexSaverUP = std::unique_ptr<NearestNeighborIndexSaver>;
 
     attribute::EntryRefVector _refs;
@@ -30,7 +29,7 @@ class TensorAttributeSaver : public AttributeSaver {
     void save_tensor_store(BufferWriter& writer) const;
 
 public:
-    TensorAttributeSaver(GenerationHandler::Guard &&guard,
+    TensorAttributeSaver(vespalib::GenerationGuard&& guard,
                          const attribute::AttributeHeader &header,
                          attribute::EntryRefVector&& refs,
                          const TensorStore &tensor_store,

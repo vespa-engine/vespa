@@ -135,7 +135,7 @@ public:
     // See ReadGuard class comments for semantics.
     class ReadSnapshot {
         const GenericBTreeBucketDatabase*  _db;
-        vespalib::GenerationHandler::Guard _guard;
+        vespalib::GenerationGuard          _guard;
         typename BTree::FrozenView         _frozen_view;
 
         class ConstIteratorImpl;

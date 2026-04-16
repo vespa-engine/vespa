@@ -3,11 +3,11 @@
 #include "attributesaver.h"
 #include "iattributesavetarget.h"
 
-using vespalib::GenerationHandler;
+using vespalib::GenerationGuard;
 
 namespace search {
 
-AttributeSaver::AttributeSaver(GenerationHandler::Guard &&guard,
+AttributeSaver::AttributeSaver(GenerationGuard &&guard,
                                const attribute::AttributeHeader &header)
     : _guard(std::move(guard)),
       _header(header)

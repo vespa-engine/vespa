@@ -14,8 +14,8 @@ class IBucketizer
 public:
     using SP = std::shared_ptr<IBucketizer>;
     virtual ~IBucketizer() = default;
-    virtual document::BucketId getBucketOf(const vespalib::GenerationHandler::Guard & guard, uint32_t lid) const = 0;
-    virtual vespalib::GenerationHandler::Guard getGuard() const = 0;
+    virtual document::BucketId getBucketOf(const vespalib::GenerationGuard & guard, uint32_t lid) const = 0;
+    virtual vespalib::GenerationGuard getGuard() const = 0;
 };
 
 class IBufferVisitor {

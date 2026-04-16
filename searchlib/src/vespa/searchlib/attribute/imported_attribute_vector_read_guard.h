@@ -99,7 +99,7 @@ private:
     const ImportedAttributeVector       &_imported_attribute;
     TargetLids                           _targetLids;
     uint32_t                             _target_docid_limit;
-    vespalib::GenerationHandler::Guard   _reference_attribute_guard;
+    vespalib::GenerationGuard            _reference_attribute_guard;
     std::unique_ptr<attribute::AttributeReadGuard> _target_attribute_guard;
     const ReferenceAttribute            &_reference_attribute;
 protected:

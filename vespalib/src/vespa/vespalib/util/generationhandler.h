@@ -13,10 +13,6 @@ namespace vespalib {
  * by calling takeGuard().
  **/
 class GenerationHandler {
-public:
-    using Guard = GenerationGuard;
-
-private:
     std::atomic<Generation>       _generation;
     std::atomic<Generation>       _oldest_used_generation;
     std::atomic<GenerationHold *> _last;      // Points to "current generation" entry

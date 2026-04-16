@@ -177,7 +177,7 @@ struct HnswGraph {
     size_t size() const { return nodes_size.load(std::memory_order_acquire); }
     uint32_t get_active_nodes() const noexcept { return active_nodes.load(std::memory_order_relaxed); }
     void set_active_nodes(uint32_t value) noexcept { active_nodes.store(value, std::memory_order_relaxed); }
-    vespalib::GenerationHandler::Guard make_guard() const noexcept { return _generation_handler.takeGuard(); }
+    vespalib::GenerationGuard make_guard() const noexcept { return _generation_handler.takeGuard(); }
 
     struct Histograms {
         std::vector<uint32_t> level_histogram;

@@ -144,7 +144,7 @@ SingleRawAttribute::clearDoc(DocId docId)
 std::unique_ptr<AttributeSaver>
 SingleRawAttribute::onInitSave(std::string_view fileName)
 {
-    vespalib::GenerationHandler::Guard guard(getGenerationHandler().takeGuard());
+    auto guard(getGenerationHandler().takeGuard());
     return std::make_unique<SingleRawAttributeSaver>
         (std::move(guard),
          this->createAttributeHeader(fileName),

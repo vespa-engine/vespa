@@ -6,14 +6,14 @@
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/size_literals.h>
 
-using vespalib::GenerationHandler;
+using vespalib::GenerationGuard;
 
 namespace search {
 
 SingleValueNumericAttributeSaver::
 SingleValueNumericAttributeSaver(const attribute::AttributeHeader &header,
                                  const void *data, size_t size)
-  : AttributeSaver(vespalib::GenerationHandler::Guard(), header),
+  : AttributeSaver(GenerationGuard(), header),
     _buf()
 {
     _buf = std::make_unique<BufferBuf>(size, FileSettings::DIRECTIO_ALIGNMENT);

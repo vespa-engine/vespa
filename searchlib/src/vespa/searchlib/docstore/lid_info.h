@@ -76,7 +76,7 @@ public:
 class IGetLid
 {
 public:
-    using Guard = vespalib::GenerationHandler::Guard;
+    using Guard = vespalib::GenerationGuard;
     using unique_lock = std::unique_lock<std::mutex>;
     virtual ~IGetLid() = default;
 

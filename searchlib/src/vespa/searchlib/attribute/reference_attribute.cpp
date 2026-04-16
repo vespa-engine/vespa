@@ -27,6 +27,7 @@ using document::DocumentId;
 using document::GlobalId;
 using document::IdParseException;
 using vespalib::Generation;
+using vespalib::GenerationGuard;
 using vespalib::datastore::CompactionSpec;
 
 namespace {
@@ -222,7 +223,7 @@ ReferenceAttribute::onUpdateStat(CommitParam::UpdateStats updateStats)
 std::unique_ptr<AttributeSaver>
 ReferenceAttribute::onInitSave(std::string_view fileName)
 {
-    vespalib::GenerationHandler::Guard guard(this->getGenerationHandler().takeGuard());
+    GenerationGuard guard(this->getGenerationHandler().takeGuard());
     return std::make_unique<ReferenceAttributeSaver>
         (std::move(guard),
          createAttributeHeader(fileName),

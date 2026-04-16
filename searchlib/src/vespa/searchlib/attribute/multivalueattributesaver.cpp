@@ -3,12 +3,12 @@
 #include "multivalueattributesaver.h"
 #include "multi_value_mapping_base.h"
 
-using vespalib::GenerationHandler;
+using vespalib::GenerationGuard;
 
 namespace search {
 
 MultiValueAttributeSaver::
-MultiValueAttributeSaver(GenerationHandler::Guard &&guard,
+MultiValueAttributeSaver(GenerationGuard&& guard,
                          const attribute::AttributeHeader &header,
                          const MvMappingBase &mvMapping)
     : AttributeSaver(std::move(guard), header),

@@ -19,7 +19,7 @@ private:
 
     bool onSave(IAttributeSaveTarget &saveTarget) override;
 public:
-    SingleValueEnumAttributeSaver(vespalib::GenerationHandler::Guard &&guard,
+    SingleValueEnumAttributeSaver(vespalib::GenerationGuard&& guard,
                                   const attribute::AttributeHeader &header,
                                   attribute::EntryRefVector &&indices,
                                   IEnumStore &enumStore);

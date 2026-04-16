@@ -9,11 +9,11 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <cassert>
 
-using vespalib::GenerationHandler;
+using vespalib::GenerationGuard;
 
 namespace search::tensor {
 
-TensorAttributeSaver::TensorAttributeSaver(GenerationHandler::Guard &&guard,
+TensorAttributeSaver::TensorAttributeSaver(GenerationGuard &&guard,
                                            const attribute::AttributeHeader &header,
                                            attribute::EntryRefVector&& refs,
                                            const TensorStore &tensor_store,

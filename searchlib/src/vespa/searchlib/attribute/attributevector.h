@@ -454,7 +454,7 @@ public:
      * be a value for that document.  The guarantee holds as long as
      * the guard is alive.
     */
-    GenerationHandler::Guard takeGenerationGuard() { return _genHandler.takeGuard(); }
+    vespalib::GenerationGuard takeGenerationGuard() { return _genHandler.takeGuard(); }
     bool headerTypeOK(const vespalib::GenericHeader &header) const;
     bool hasMultiValue() const override final;
     bool hasWeightedSetType() const override final;

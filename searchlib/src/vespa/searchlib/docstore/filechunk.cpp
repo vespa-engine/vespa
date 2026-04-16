@@ -24,6 +24,7 @@
 LOG_SETUP(".search.filechunk");
 
 using vespalib::CpuUsage;
+using vespalib::GenerationGuard;
 using vespalib::GenericHeader;
 using vespalib::getErrorString;
 
@@ -174,7 +175,7 @@ FileChunk::updateLidMap(const unique_lock &guard, ISetLid &ds, uint64_t serialNu
     BucketDensityComputer globalBucketMap(_bucketizer);
     // Guard comes from the same bucketizer so the same guard can be used
     // for both local and global BucketDensityComputer
-    vespalib::GenerationHandler::Guard bucketizerGuard = globalBucketMap.getGuard();
+    auto bucketizerGuard = globalBucketMap.getGuard();
     vespalib::nbostream is(static_cast<const char *>(idxFile.MemoryMapPtr(0)) + _idxHeaderLen,
                            fileSize - _idxHeaderLen);
     for (size_t count=0; ! is.empty() && is.good(); count++) {
@@ -214,7 +215,7 @@ FileChunk::updateLidMap(const unique_lock &guard, ISetLid &ds, uint64_t serialNu
 
 uint64_t
 FileChunk::handleChunk(const unique_lock &guard, ISetLid &ds, uint32_t docIdLimit,
-                       const vespalib::GenerationHandler::Guard & bucketizerGuard, BucketDensityComputer &globalBucketMap,
+                       const GenerationGuard & bucketizerGuard, BucketDensityComputer &globalBucketMap,
                        const TmpChunkMeta & chunkMeta) {
     BucketDensityComputer bucketMap(_bucketizer);
     for (size_t i(0), m(chunkMeta.getNumEntries()); i < m; i++) {
@@ -293,7 +294,7 @@ namespace {
 struct FixedParams {
     const IGetLid & db;
     IWriteData & dest;
-    const vespalib::GenerationHandler::Guard & lidReadGuard;
+    const GenerationGuard & lidReadGuard;
     uint32_t fileId;
     IFileChunkVisitorProgress *visitorProgress;
 };
@@ -347,7 +348,7 @@ FileChunk::appendTo(vespalib::Executor & executor, const IGetLid & db, IWriteDat
                     vespalib::CpuUsage::Category cpu_category)
 {
     assert(frozen() || visitorProgress);
-    vespalib::GenerationHandler::Guard lidReadGuard(db.getLidReadGuard());
+    auto lidReadGuard(db.getLidReadGuard());
     assert(numChunks <= getNumChunks());
     FixedParams fixedParams = {db, dest, lidReadGuard, getFileId().getId(), visitorProgress};
     size_t limit = std::thread::hardware_concurrency();

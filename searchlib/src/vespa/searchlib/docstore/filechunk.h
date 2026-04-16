@@ -49,7 +49,7 @@ class BucketDensityComputer
 {
 public:
     explicit BucketDensityComputer(const IBucketizer * bucketizer) : _bucketizer(bucketizer), _count(0) { }
-    void recordLid(const vespalib::GenerationHandler::Guard & guard, uint32_t lid, uint32_t dataSize) {
+    void recordLid(const vespalib::GenerationGuard & guard, uint32_t lid, uint32_t dataSize) {
         if (_bucketizer && (dataSize > 0)) {
             recordLid(_bucketizer->getBucketOf(guard, lid));
         }
@@ -59,10 +59,10 @@ public:
         _bucketSet[bucketId.getId()]++;
     }
     size_t getNumBuckets() const { return _bucketSet.size(); }
-    vespalib::GenerationHandler::Guard getGuard() const {
+    vespalib::GenerationGuard getGuard() const {
         return _bucketizer
                ? _bucketizer->getGuard()
-               : vespalib::GenerationHandler::Guard();
+               : vespalib::GenerationGuard();
     }
 private:
     const IBucketizer * _bucketizer;
@@ -209,7 +209,7 @@ private:
     public:
         void fill(vespalib::nbostream & is);
     };
-    using BucketizerGuard = vespalib::GenerationHandler::Guard;
+    using BucketizerGuard = vespalib::GenerationGuard;
     uint64_t handleChunk(const unique_lock &guard, ISetLid &lidMap, uint32_t docIdLimit,
                          const BucketizerGuard & bucketizerGuard, BucketDensityComputer & global,
                          const TmpChunkMeta & chunkMeta);

@@ -6,14 +6,14 @@
 #include "iattributesavetarget.h"
 
 
-using vespalib::GenerationHandler;
+using vespalib::GenerationGuard;
 using document::GlobalId;
 using vespalib::datastore::AtomicEntryRef;
 using vespalib::datastore::EntryRef;
 
 namespace search::attribute {
 
-ReferenceAttributeSaver::ReferenceAttributeSaver(GenerationHandler::Guard &&guard,
+ReferenceAttributeSaver::ReferenceAttributeSaver(GenerationGuard &&guard,
                                                  const AttributeHeader &header,
                                                  EntryRefVector&& indices,
                                                  Store &store)

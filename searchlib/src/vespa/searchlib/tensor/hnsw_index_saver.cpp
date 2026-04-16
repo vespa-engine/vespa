@@ -8,6 +8,7 @@
 #include <cassert>
 
 using search::common::FileHeaderContext;
+using vespalib::GenerationGuard;
 using vespalib::GenerationHandler;
 
 namespace search::tensor {
@@ -44,7 +45,7 @@ HnswIndexSaver<type>::MetaData::~MetaData() = default;
 template <HnswIndexType type>
 HnswIndexSaver<type>::~HnswIndexSaver()
 {
-    _guard = GenerationHandler::Guard();
+    _guard = GenerationGuard();
     _graph.set_last_flush_duration(FileHeaderContext::make_flush_duration(_index_flush_start_time));
 }
 

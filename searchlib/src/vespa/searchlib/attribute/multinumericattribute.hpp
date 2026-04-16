@@ -192,7 +192,7 @@ template <typename B, typename M>
 std::unique_ptr<AttributeSaver>
 MultiValueNumericAttribute<B, M>::onInitSave(std::string_view fileName)
 {
-    vespalib::GenerationHandler::Guard guard(this->getGenerationHandler().takeGuard());
+    auto guard(this->getGenerationHandler().takeGuard());
     return std::make_unique<MultiValueNumericAttributeSaver<MultiValueType>>
         (std::move(guard), this->createAttributeHeader(fileName), this->_mvMapping);
 }
