@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "documentmetastoresaver.h"
-#include <vespa/searchlib/util/bufferwriter.h>
+#include "documentidsaver.h"
 #include "document_meta_store_versions.h"
 #include <vespa/searchlib/attribute/iattributesavetarget.h>
+#include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/vespalib/btree/btreenode.hpp>
 
 using vespalib::GenerationGuard;
@@ -68,13 +69,15 @@ public:
 
 DocumentMetaStoreSaver::
 DocumentMetaStoreSaver(GenerationGuard&& guard,
-                       const search::attribute::AttributeHeader& header,
+                       const search::attribute::AttributeHeader &header,
                        const GidIterator& gidIterator,
-                       MetadataView metadataView)
+                       MetadataView metadataView,
+                       std::unique_ptr<DocumentIdSaver> docid_saver)
     : AttributeSaver(std::move(guard), header),
       _gidIterator(gidIterator),
       _metadataView(metadataView),
-      _writeDocSize(true)
+      _writeDocSize(true),
+      _docid_saver(std::move(docid_saver))
 {
     if (header.getVersion() == documentmetastore::NO_DOCUMENT_SIZE_TRACKING_VERSION) {
         _writeDocSize = false;
@@ -88,6 +91,18 @@ DocumentMetaStoreSaver::~DocumentMetaStoreSaver() = default;
 bool
 DocumentMetaStoreSaver::onSave(IAttributeSaveTarget &saveTarget)
 {
+    if (_docid_saver) {
+        if (!saveTarget.setup_writer(docid_file_suffix(), "Binary data file for document id strings")) {
+            return false;
+        }
+
+        auto& docid_file_writer = saveTarget.get_writer(docid_file_suffix());
+        auto docid_writer = docid_file_writer.allocBufferWriter();
+        // Note: Implementation of save() is responsible to call BufferWriter::flush().
+        _docid_saver->save(*docid_writer);
+        docid_file_writer.close();
+        _docid_saver.reset();
+    }
     // write <lid,gid> pairs, sorted on gid
     std::unique_ptr<search::BufferWriter>
         datWriter(saveTarget.datWriter().allocBufferWriter());
@@ -96,5 +111,11 @@ DocumentMetaStoreSaver::onSave(IAttributeSaveTarget &saveTarget)
     return true;
 }
 
+
+std::string
+DocumentMetaStoreSaver::docid_file_suffix()
+{
+    return "docids.dat";
+}
 
 }  // namespace proton

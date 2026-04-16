@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "documentmetastore.h"
+#include "documentidsaver.h"
 #include "documentmetastoresaver.h"
 #include "operation_listener.h"
 #include "search_context.h"
@@ -287,10 +288,19 @@ std::unique_ptr<search::AttributeSaver>
 DocumentMetaStore::onInitSave(std::string_view fileName)
 {
     auto guard(getGuard());
+    auto gid_view = _gidToLidMap.getFrozenView();
+    auto metadata_view = make_metadata_view();
+    auto docid_saver = _store_full_document_id
+                     ? std::make_unique<DocumentIdSaver>(
+                        gid_view.begin(),
+                        metadata_view,
+                        _docid_store)
+                     : std::unique_ptr<DocumentIdSaver>();
     return std::make_unique<DocumentMetaStoreSaver>
         (std::move(guard), createAttributeHeader(fileName),
-         _gidToLidMap.getFrozenView().begin(),
-         make_metadata_view());
+         gid_view.begin(),
+         metadata_view,
+         std::move(docid_saver));
 }
 
 DocumentMetaStore::DocId
