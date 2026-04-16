@@ -71,7 +71,6 @@ protected:
     std::shared_ptr<DocumentMetaStore> _dms;
     std::shared_ptr<const DocumentMetaStoreContext> _dmsContext;
     Timestamp _timestamp;
-    using generation_t = GenerationHandler::generation_t;
 
     GidToLidMapperTest()
         : _bucketDB(std::make_shared<bucketdb::BucketDBOwner>()),
@@ -120,7 +119,7 @@ protected:
         return std::make_shared<GidToLidMapperFactory>(_dmsContext);
     }
 
-    void assertGenerations(generation_t currentGeneration, generation_t oldest_used_generation, std::string_view label)
+    void assertGenerations(Generation currentGeneration, Generation oldest_used_generation, std::string_view label)
     {
         SCOPED_TRACE(label);
         const GenerationHandler &handler = _dms->getGenerationHandler();
@@ -130,7 +129,7 @@ protected:
 
     template <typename Function>
     void assertPut(const DocumentId& docId, uint32_t expLid,
-                   generation_t currentGeneration, generation_t firstUsedGeneration,
+                   Generation currentGeneration, Generation firstUsedGeneration,
                    Function &&func, std::string_view label)
     {
         SCOPED_TRACE(label);

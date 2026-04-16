@@ -14,8 +14,6 @@ namespace vespalib {
  **/
 class GenerationHandler {
 public:
-    using generation_t = Generation;
-
     using Guard = GenerationGuard;
 
 private:

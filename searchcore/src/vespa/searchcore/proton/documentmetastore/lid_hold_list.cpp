@@ -4,13 +4,15 @@
 #include "lidstatevector.h"
 #include <cassert>
 
+using vespalib::Generation;
+
 namespace proton {
 
 LidHoldList::LidHoldList() = default;
 LidHoldList::~LidHoldList() = default;
 
 void
-LidHoldList::add(const uint32_t data, generation_t generation) {
+LidHoldList::add(const uint32_t data, Generation generation) {
     if (!_holdList.empty()) {
         assert(generation >= _holdList.back().second);
     }
@@ -23,7 +25,7 @@ LidHoldList::clear() {
 }
 
 void
-LidHoldList::reclaim_memory(generation_t oldest_used_gen, LidStateVector &freeLids)
+LidHoldList::reclaim_memory(Generation oldest_used_gen, LidStateVector &freeLids)
 {
     while (!_holdList.empty() && _holdList.front().second < oldest_used_gen) {
         uint32_t lid = _holdList.front().first;

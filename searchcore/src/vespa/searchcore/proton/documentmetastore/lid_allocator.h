@@ -21,7 +21,6 @@ class LidAllocator
 {
 private:
     using DocId = uint32_t;
-    using generation_t = vespalib::GenerationHandler::generation_t;
 
     LidHoldList                 _holdLids;
     LidStateVector              _freeLids;
@@ -44,13 +43,13 @@ public:
     void unregisterLid(DocId lid);
     void unregister_lids(const std::vector<DocId>& lids);
     vespalib::MemoryUsage getMemoryUsage() const;
-    void reclaim_memory(generation_t oldest_used_gen) {
+    void reclaim_memory(vespalib::Generation oldest_used_gen) {
         _holdLids.reclaim_memory(oldest_used_gen, _freeLids);
     }
     void moveLidBegin(DocId fromLid, DocId toLid);
     void moveLidEnd(DocId fromLid, DocId toLid);
     void holdLids(const std::vector<DocId> &lids, DocId lidLimit,
-                  generation_t currentGeneration);
+                  vespalib::Generation currentGeneration);
     bool holdLidOK(DocId lid, DocId lidLimit) const;
     void constructFreeList(DocId lidLimit);
     std::unique_ptr<search::queryeval::Blueprint> createWhiteListBlueprint() const;

@@ -18,6 +18,7 @@ using search::queryeval::FlowStats;
 using search::queryeval::FullSearch;
 using search::queryeval::SearchIterator;
 using search::queryeval::SimpleLeafBlueprint;
+using vespalib::Generation;
 using vespalib::GenerationHolder;
 
 using namespace search::queryeval::flow;
@@ -136,9 +137,7 @@ LidAllocator::moveLidEnd(DocId fromLid, DocId toLid)
 }
 
 void
-LidAllocator::holdLids(const std::vector<DocId> &lids,
-                       DocId lidLimit,
-                       generation_t currentGeneration)
+LidAllocator::holdLids(const std::vector<DocId> &lids, DocId lidLimit, Generation currentGeneration)
 {
     (void) lidLimit;
     for (const auto &lid : lids) {
