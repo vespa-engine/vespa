@@ -1,248 +1,248 @@
 {
-  "cluster-state" : "distributor:10",
-  "distribution" : "redundancy 6\ninitial_redundancy 0\nensure_primary_persisted true\nready_copies 0\nactive_per_leaf_group false\ngroup[0].index \"invalid\"\ngroup[0].name \"invalid\"\ngroup[0].capacity 1.0\ngroup[0].partitions \"1|2|*\"\ngroup[1].index \"0\"\ngroup[1].name \"top.0\"\ngroup[1].capacity 1.0\ngroup[1].partitions \"\"\ngroup[1].nodes[0].index 8\ngroup[1].nodes[0].retired false\ngroup[1].nodes[1].index 1\ngroup[1].nodes[1].retired false\ngroup[1].nodes[2].index 6\ngroup[1].nodes[2].retired false\ngroup[2].index \"1\"\ngroup[2].name \"top.1\"\ngroup[2].capacity 1.0\ngroup[2].partitions \"\"\ngroup[2].nodes[0].index 5\ngroup[2].nodes[0].retired false\ngroup[2].nodes[1].index 0\ngroup[2].nodes[1].retired false\ngroup[2].nodes[2].index 2\ngroup[2].nodes[2].retired false\ngroup[3].index \"2\"\ngroup[3].name \"top.2\"\ngroup[3].capacity 1.0\ngroup[3].partitions \"\"\ngroup[3].nodes[0].index 4\ngroup[3].nodes[0].retired false\ngroup[3].nodes[1].index 3\ngroup[3].nodes[1].retired false\ngroup[3].nodes[2].index 7\ngroup[3].nodes[2].retired false\nrelative_node_order_scoring false",
+  "cluster-state" : "version:1 distributor:12 .1.s:d .2.s:d .5.s:d .7.s:d storage:12",
+  "distribution" : "redundancy 6\ninitial_redundancy 0\nensure_primary_persisted true\nready_copies 0\nactive_per_leaf_group false\ngroup[0].index \"invalid\"\ngroup[0].name \"invalid\"\ngroup[0].capacity 1.0\ngroup[0].partitions \"*|*|*\"\ngroup[1].index \"0\"\ngroup[1].name \"top.0\"\ngroup[1].capacity 1.0\ngroup[1].partitions \"\"\ngroup[1].nodes[0].index 2\ngroup[1].nodes[0].retired false\ngroup[1].nodes[1].index 9\ngroup[1].nodes[1].retired false\ngroup[1].nodes[2].index 6\ngroup[1].nodes[2].retired false\ngroup[1].nodes[3].index 8\ngroup[1].nodes[3].retired false\ngroup[2].index \"1\"\ngroup[2].name \"top.1\"\ngroup[2].capacity 1.0\ngroup[2].partitions \"\"\ngroup[2].nodes[0].index 11\ngroup[2].nodes[0].retired false\ngroup[2].nodes[1].index 4\ngroup[2].nodes[1].retired false\ngroup[2].nodes[2].index 0\ngroup[2].nodes[2].retired false\ngroup[2].nodes[3].index 7\ngroup[2].nodes[3].retired false\ngroup[3].index \"2\"\ngroup[3].name \"top.2\"\ngroup[3].capacity 1.0\ngroup[3].partitions \"\"\ngroup[3].nodes[0].index 3\ngroup[3].nodes[0].retired false\ngroup[3].nodes[1].index 1\ngroup[3].nodes[1].retired false\ngroup[3].nodes[2].index 10\ngroup[3].nodes[2].retired false\ngroup[3].nodes[3].index 5\ngroup[3].nodes[3].retired false\nrelative_node_order_scoring true",
   "node-type" : "distributor",
-  "redundancy" : 3,
-  "node-count" : 10,
+  "redundancy" : 6,
+  "node-count" : 12,
   "up-states" : "uim",
   "result" : [ {
-    "nodes" : [ 2 ],
+    "nodes" : [ 4 ],
     "bucket" : "4000000000000000",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 6 ],
+    "nodes" : [ 8 ],
     "bucket" : "4000000000000001",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 8 ],
+    "nodes" : [ 6 ],
     "bucket" : "4000000000000002",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 7 ],
+    "nodes" : [ 10 ],
     "bucket" : "4000000000000003",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 0 ],
+    "nodes" : [ 11 ],
     "bucket" : "4000000000000004",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 2 ],
+    "nodes" : [ 4 ],
     "bucket" : "4000000000000005",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 8 ],
+    "nodes" : [ 9 ],
     "bucket" : "4000000000000006",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 8 ],
+    "nodes" : [ 6 ],
     "bucket" : "4000000000000007",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 8 ],
+    "nodes" : [ 6 ],
     "bucket" : "4000000000000008",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 0 ],
+    "nodes" : [ 4 ],
     "bucket" : "4000000000000009",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 5 ],
+    "nodes" : [ 11 ],
     "bucket" : "400000000000000a",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 5 ],
+    "nodes" : [ 4 ],
     "bucket" : "400000000000000b",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 7 ],
+    "nodes" : [ 10 ],
     "bucket" : "400000000000000c",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 7 ],
+    "nodes" : [ 10 ],
     "bucket" : "400000000000000d",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 8 ],
+    "nodes" : [ 6 ],
     "bucket" : "400000000000000e",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 4 ],
+    "nodes" : [ 10 ],
     "bucket" : "400000000000000f",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 0 ],
+    "nodes" : [ 11 ],
     "bucket" : "4000000000000010",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 7 ],
+    "nodes" : [ 10 ],
     "bucket" : "4000000000000011",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 5 ],
+    "nodes" : [ 0 ],
     "bucket" : "4000000000000012",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 9 ],
     "bucket" : "4000000000000013",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 2 ],
+    "nodes" : [ 4 ],
     "bucket" : "4400000000000000",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 6 ],
+    "nodes" : [ 8 ],
     "bucket" : "4400000000000001",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 8 ],
+    "nodes" : [ 6 ],
     "bucket" : "4400000000000002",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 7 ],
+    "nodes" : [ 10 ],
     "bucket" : "4400000000000003",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 0 ],
+    "nodes" : [ 11 ],
     "bucket" : "4400000000000004",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 2 ],
+    "nodes" : [ 4 ],
     "bucket" : "4400000000000005",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 8 ],
+    "nodes" : [ 9 ],
     "bucket" : "4400000000000006",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 8 ],
+    "nodes" : [ 6 ],
     "bucket" : "4400000000000007",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 8 ],
+    "nodes" : [ 6 ],
     "bucket" : "4400000000000008",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 0 ],
+    "nodes" : [ 4 ],
     "bucket" : "4400000000000009",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 5 ],
+    "nodes" : [ 11 ],
     "bucket" : "440000000000000a",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 5 ],
+    "nodes" : [ 4 ],
     "bucket" : "440000000000000b",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 7 ],
+    "nodes" : [ 10 ],
     "bucket" : "440000000000000c",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 7 ],
+    "nodes" : [ 10 ],
     "bucket" : "440000000000000d",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 8 ],
+    "nodes" : [ 6 ],
     "bucket" : "440000000000000e",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 4 ],
+    "nodes" : [ 10 ],
     "bucket" : "440000000000000f",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 0 ],
+    "nodes" : [ 11 ],
     "bucket" : "4400000000000010",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 7 ],
+    "nodes" : [ 10 ],
     "bucket" : "4400000000000011",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 5 ],
+    "nodes" : [ 0 ],
     "bucket" : "4400000000000012",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 9 ],
     "bucket" : "4400000000000013",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 2 ],
+    "nodes" : [ 4 ],
     "bucket" : "4800000000000000",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 6 ],
+    "nodes" : [ 8 ],
     "bucket" : "4800000000000001",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 8 ],
+    "nodes" : [ 6 ],
     "bucket" : "4800000000000002",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 7 ],
+    "nodes" : [ 10 ],
     "bucket" : "4800000000000003",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 0 ],
+    "nodes" : [ 11 ],
     "bucket" : "4800000000000004",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 2 ],
+    "nodes" : [ 4 ],
     "bucket" : "4800000000000005",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 8 ],
+    "nodes" : [ 9 ],
     "bucket" : "4800000000000006",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 8 ],
+    "nodes" : [ 6 ],
     "bucket" : "4800000000000007",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 8 ],
+    "nodes" : [ 6 ],
     "bucket" : "4800000000000008",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 0 ],
+    "nodes" : [ 4 ],
     "bucket" : "4800000000000009",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 5 ],
+    "nodes" : [ 11 ],
     "bucket" : "480000000000000a",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 5 ],
+    "nodes" : [ 4 ],
     "bucket" : "480000000000000b",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 7 ],
+    "nodes" : [ 10 ],
     "bucket" : "480000000000000c",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 7 ],
+    "nodes" : [ 10 ],
     "bucket" : "480000000000000d",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 8 ],
+    "nodes" : [ 6 ],
     "bucket" : "480000000000000e",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 4 ],
+    "nodes" : [ 10 ],
     "bucket" : "480000000000000f",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 0 ],
+    "nodes" : [ 11 ],
     "bucket" : "4800000000000010",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 7 ],
+    "nodes" : [ 10 ],
     "bucket" : "4800000000000011",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 5 ],
+    "nodes" : [ 0 ],
     "bucket" : "4800000000000012",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 9 ],
     "bucket" : "4800000000000013",
     "failure" : "NONE"
   }, {
@@ -414,171 +414,171 @@
     "bucket" : "e400b47fb749fe68",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "40000000000098d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "44000000000098d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "48000000000298d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "4c000000000698d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "50000000000e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "54000000000e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "58000000002e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "5c000000002e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "60000000002e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "64000000012e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "68000000012e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "6c000000052e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "70000000052e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "74000000152e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "78000000152e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "7c000000152e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "80000000952e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "84000001952e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "88000001952e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "8c000001952e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "90000001952e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "94000001952e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "98000001952e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "9c000041952e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "a00000c1952e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "a40000c1952e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "a80002c1952e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "ac0002c1952e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "b00002c1952e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "b40012c1952e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "b80012c1952e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "bc0012c1952e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "c00092c1952e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "c40192c1952e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "c80192c1952e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "cc0192c1952e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "d00992c1952e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "d41992c1952e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "d83992c1952e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "dc7992c1952e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "e07992c1952e98d2",
     "failure" : "NONE"
   }, {
-    "nodes" : [ 1 ],
+    "nodes" : [ 6 ],
     "bucket" : "e47992c1952e98d2",
     "failure" : "NONE"
   } ]

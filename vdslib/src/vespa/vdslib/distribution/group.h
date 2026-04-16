@@ -83,7 +83,10 @@ public:
 
     void addSubGroup(Group::UP);
     void setCapacity(vespalib::Double capacity);
-    void setNodes(const std::vector<uint16_t>& nodes);
+    void setNodes(const std::vector<uint16_t>& nodes, bool normalize_order);
+    void setNodes(const std::vector<uint16_t>& nodes) {
+        setNodes(nodes, true);
+    }
 
     /**
      * Returns the hierarchical group the given node is in.
