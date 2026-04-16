@@ -61,17 +61,22 @@ public interface ModelContext {
     /**
      * How to remove a temporary feature flags:
      * 1)
-     * - Remove flag definition from Flags
-     * - Remove method implementation from ModelContextImpl.FeatureFlags
-     * - Modify default implementation of below method to return the new default value
-     * - Remove all usage of below method from config-model
+     * - Roll out an override of the feature flag to the new value everywhere
      *
      * 2)
-     * - (optional) Track Vespa version that introduced changes from 1) in annotation field 'removeAfter'
+     * - Update the default flag value to match the override, and roll that out everywhere
      *
      * 3)
-     *  - Remove below method once all config-model versions in hosted production include changes from 1)
-     *  - Remove all flag data files from hosted-feature-flag repository
+     * - Remove the flag overrides as they are covered by the new default value
+     * - Modify the implementation to assume the new default value.  This includes
+     *     * Remove references to the FeatureFlags method in the config model
+     *     * Remove FeatureFlags method overrides in ModelContextImpl and TestProperties
+     *     * Remove the flag definition
+     *   HOWEVER, keep and update the default method in FeatureFlags return the new default value.  Annotate the
+     *   default method with the `removeAfter` set beyond the Vespa version to be released.
+     *
+     * 3)
+     *  - Remove the default method in FeatureFlags once the oldest config model in use are beyond the `removeAfter` 
      */
     interface FeatureFlags {
         @ModelFeatureFlag(owners = {"hakonhall"}) default boolean useNonPublicEndpointForTest() { return false; }
@@ -114,7 +119,8 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"vekterli"}) default int maxContentNodeMaintenanceOpConcurrency() { return -1; }
         @ModelFeatureFlag(owners = {"glebashnik"}) default int maxDocumentOperationRequestSizeMib() { return 128; }
         @ModelFeatureFlag(owners = {"glebashnik"}) default Object sidecarsForTest() { return null; }
-        @ModelFeatureFlag(owners = {"bjorncs"}) default boolean useTriton() { return false; }
+        @ModelFeatureFlag(owners = {"bjorncs"}, removeAfter = "8.677.1", comment = "Use useTritonFlag instead") default boolean useTriton() { return false; }
+        @ModelFeatureFlag(owners = {"glebashnik"}) default FeatureFlag<Boolean> useTritonFlag() { return () -> false; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean ignoreConnectivityChecksAtStartup() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int searchCoreMaxOutstandingMoveOps() { return 100; }
         @ModelFeatureFlag(owners = {"johsol"}) default double docprocHandlerThreadpool() { return 1.0; }
@@ -201,6 +207,7 @@ public interface ModelContext {
     }
 
     /** A flag value that can be refined with additional dimensions before resolving. */
+    @FunctionalInterface
     interface FeatureFlag<T> {
         default FeatureFlag<T> withClusterType(ClusterSpec.Type clusterType) { return this; }
         default FeatureFlag<T> withClusterId(ClusterSpec.Id clusterId) { return this; }

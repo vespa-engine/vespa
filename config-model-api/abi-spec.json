@@ -1432,6 +1432,7 @@
       "public int maxDocumentOperationRequestSizeMib()",
       "public java.lang.Object sidecarsForTest()",
       "public boolean useTriton()",
+      "public com.yahoo.config.model.api.ModelContext$FeatureFlag useTritonFlag()",
       "public boolean ignoreConnectivityChecksAtStartup()",
       "public int searchCoreMaxOutstandingMoveOps()",
       "public double docprocHandlerThreadpool()",

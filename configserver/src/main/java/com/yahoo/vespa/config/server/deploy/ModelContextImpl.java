@@ -173,7 +173,7 @@ public class ModelContextImpl implements ModelContext {
             implements ModelContext.FeatureFlag<T> {
 
         FeatureFlag(U unboundFlag, FlagSource source, ApplicationId appId, Version version) {
-            this(unboundFlag.bindTo(source).with(appId).with(version));
+            this(unboundFlag.bindTo(source).with(appId).with(version).);
         }
 
         @Override
@@ -253,6 +253,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public int maxDocumentOperationRequestSizeMib() { return flag(Flags.MAX_DOCUMENT_OPERATION_REQUEST_SIZE_MIB).value(); }
         @Override public Object sidecarsForTest() { return flag(Flags.SIDECARS_FOR_TEST).value(); }
         @Override public boolean useTriton() { return flag(Flags.USE_TRITON).value(); }
+        @Override public ModelContext.FeatureFlag<Boolean> useTritonFlag() { return flag(Flags.USE_TRITON); }
         @Override public boolean scaleMetricsproxyHeapByNodeCount() { return flag(Flags.SCALE_METRICSPROXY_HEAP_BY_NODE_COUNT).value(); }
         @Override public boolean ignoreConnectivityChecksAtStartup() { return flag(PermanentFlags.IGNORE_CONNECTIVITY_CHECKS_AT_STARTUP).value(); }
         @Override public int searchCoreMaxOutstandingMoveOps() { return flag(Flags.SEARCH_CORE_MAX_OUTSTANDING_MOVE_OPS).value(); }

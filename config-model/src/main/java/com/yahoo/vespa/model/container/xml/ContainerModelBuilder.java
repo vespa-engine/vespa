@@ -254,7 +254,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private boolean shouldUseTriton(ApplicationContainerCluster cluster, DeployState deployState) {
         var isPublicCloud = deployState.zone().system().isPublicCloudLike();
         var hasOnnxModels =  !cluster.onnxModelCostCalculator().models().isEmpty();
-        var useTritonFeatureFlagValue = deployState.featureFlags().useTriton();
+        var useTritonFeatureFlagValue = deployState.featureFlags()
+                                                   .useTritonFlag()
+                                                   .withClusterType(ClusterSpec.Type.container)
+                                                   .withClusterId(cluster.id())
+                                                   .value();
         return useTritonFeatureFlagValue && isPublicCloud && hasOnnxModels;
     }
 

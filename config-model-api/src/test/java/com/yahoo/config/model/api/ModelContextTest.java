@@ -17,6 +17,7 @@ public class ModelContextTest {
     @Test
     public void verify_all_feature_flag_methods_have_annotation() {
         for (Method method : ModelContext.FeatureFlags.class.getDeclaredMethods()) {
+            if (ignoreMethod(method)) continue;
             assertNotNull(
                     Text.format(
                             "Method '%s' is not annotated with '%s'",
@@ -28,10 +29,17 @@ public class ModelContextTest {
     @Test
     public void verify_all_feature_flag_methods_have_default_implementation() {
         for (Method method : ModelContext.FeatureFlags.class.getDeclaredMethods()) {
+            if (ignoreMethod(method)) continue;
             assertTrue(
                     Text.format("Method '%s' has no default implementation", method.getName()),
                     method.isDefault());
         }
+    }
+
+    private static boolean ignoreMethod(Method method) {
+        // If a default interface method "foo" has a lambda, e.g. `() -> false`, then OpenJDK 17 appears to create
+        // a synthetic method in the interface called "lambda$foo$0".
+        return method.isSynthetic();
     }
 
 }
