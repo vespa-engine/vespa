@@ -71,7 +71,7 @@ can be set by the syntax [parameter-name]=[value].`,
 	cmd.Flags().StringSliceVarP(&opts.headers, "header", "", nil, "Add a header to the HTTP request, on the format 'Header: Value'. This can be specified multiple times")
 	cmd.Flags().IntVarP(&opts.queryTimeoutSecs, "timeout", "T", 10, "Timeout for the query in seconds")
 	cmd.Flags().BoolVarP(&opts.profile, "profile", "", false, "Enable profiling mode (Note: this feature is experimental)")
-	cmd.Flags().StringVarP(&opts.profileFile, "profile-file", "", "vespa_query_profile_result.json", "Profiling result file")
+	cmd.Flags().StringVarP(&opts.profileFile, "profile-file", "", "vespa_query_profile_result.json", "Profiling result file. Use '-' for stdout.")
 	cmd.Flags().MarkHidden("profile")
 	cmd.Flags().MarkHidden("profile-file")
 	cli.bindWaitFlag(cmd, 0, &opts.waitSecs)
@@ -207,13 +207,17 @@ func query(cli *CLI, arguments []string, opts *queryOptions, waiter *Waiter) err
 	case response.StatusCode == 200:
 		var output io.Writer = cli.Stdout
 		if opts.profile {
-			profileFile, err := os.Create(opts.profileFile)
-			if err != nil {
-				return fmt.Errorf("failed to create profile file %s: %w", opts.profileFile, err)
+			if opts.profileFile == "-" {
+				output = cli.Stdout
+			} else {
+				profileFile, err := os.Create(opts.profileFile)
+				if err != nil {
+					return fmt.Errorf("failed to create profile file %s: %w", opts.profileFile, err)
+				}
+				defer profileFile.Close()
+				fmt.Fprintf(cli.Stderr, "writing profiling results to: %s\n", opts.profileFile)
+				output = profileFile
 			}
-			defer profileFile.Close()
-			fmt.Fprintf(cli.Stderr, "writing profiling results to: %s\n", opts.profileFile)
-			output = profileFile
 		}
 		if err := printResponse(response.Body, response.Header.Get("Content-Type"), opts.format, output); err != nil {
 			return err
