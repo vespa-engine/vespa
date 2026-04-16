@@ -11,6 +11,7 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.RequestLog;
 import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.util.NanoTime;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -73,7 +74,7 @@ class MetricAggregatingRequestLog implements RequestLog {
 
         Dimensions dimensions = Dimensions.of(request, status, monitoringHandlerPaths, searchHandlerPaths);
         StatusCodeMetric.of(status, dimensions).forEach(metric -> statistics.computeIfAbsent(metric, __ -> new LongAdder()).increment());
-        metric.set(MetricDefinitions.LATENCY, System.currentTimeMillis() - Request.getTimeStamp(request), metric.createContext(dimensions.asMap()));
+        metric.set(MetricDefinitions.LATENCY, NanoTime.millisSince(request.getHeadersNanoTime()), metric.createContext(dimensions.asMap()));
     }
 
     /** For testing */
