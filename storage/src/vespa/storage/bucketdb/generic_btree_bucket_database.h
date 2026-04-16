@@ -153,7 +153,6 @@ public:
         template <typename IterValueExtractor, typename Func>
         void for_each(Func func) const;
         std::unique_ptr<ConstIterator<ConstValueRef>> create_iterator() const;
-        [[nodiscard]] uint64_t generation() const noexcept;
     };
 private:
     // Functor is called for each found element in key order, with raw u64 keys and values.

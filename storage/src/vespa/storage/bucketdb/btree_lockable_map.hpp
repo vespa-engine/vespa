@@ -317,7 +317,6 @@ public:
     std::vector<T> find_parents_self_and_children(const document::BucketId& bucket) const override;
     void for_each(std::function<void(uint64_t, const T&)> func) const override;
     std::unique_ptr<ConstIterator<const T&>> create_iterator() const override;
-    [[nodiscard]] uint64_t generation() const noexcept override;
 };
 
 template <typename T>
@@ -361,11 +360,6 @@ template <typename T>
 std::unique_ptr<ConstIterator<const T&>>
 BTreeLockableMap<T>::ReadGuardImpl::create_iterator() const {
     return _snapshot.create_iterator(); // TODO test
-}
-
-template <typename T>
-uint64_t BTreeLockableMap<T>::ReadGuardImpl::generation() const noexcept {
-    return _snapshot.generation();
 }
 
 template <typename T>
