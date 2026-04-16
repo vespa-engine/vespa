@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/generationhandler.h>
+#include <vespa/vespalib/util/generation.h>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <cassert>
 #include <cstdint>

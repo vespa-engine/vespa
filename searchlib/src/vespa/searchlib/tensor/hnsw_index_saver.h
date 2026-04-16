@@ -7,7 +7,7 @@
 #include "hnsw_index_saver_metadata_node.h"
 #include <vespa/vespalib/datastore/entryref.h>
 #include <vespa/vespalib/stllike/allocator.h>
-#include <vespa/vespalib/util/generationhandler.h>
+#include <vespa/vespalib/util/generation_guard.h>
 #include <chrono>
 #include <vector>
 

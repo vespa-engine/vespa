@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/generationhandler.h>
+#include <vespa/vespalib/util/generation_guard.h>
 #include <limits>
 #include <vector>
 #include <mutex>

@@ -27,8 +27,6 @@ class FieldInverter;
  */
 class FieldIndexCollection : public IFieldIndexCollection {
 private:
-    using GenerationHandler = vespalib::GenerationHandler;
-
     std::vector<std::unique_ptr<IFieldIndex>> _fieldIndexes;
     const uint32_t                _numFields;
 

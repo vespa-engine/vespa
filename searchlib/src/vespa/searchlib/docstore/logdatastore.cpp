@@ -35,7 +35,6 @@ using namespace std::literals;
 using std::runtime_error;
 using vespalib::CpuUsage;
 using vespalib::Generation;
-using vespalib::GenerationHandler;
 using vespalib::IllegalStateException;
 using vespalib::getErrorString;
 using vespalib::getLastErrorString;

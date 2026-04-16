@@ -57,7 +57,6 @@ using search::queryeval::SearchIterator;
 using storage::spi::Timestamp;
 using vespalib::Generation;
 using vespalib::GenerationGuard;
-using vespalib::GenerationHandler;
 using vespalib::GenerationHeldBase;
 using vespalib::IllegalStateException;
 using vespalib::MemoryUsage;

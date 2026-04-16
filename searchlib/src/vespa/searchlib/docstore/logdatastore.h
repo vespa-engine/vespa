@@ -13,6 +13,7 @@
 #include <vespa/vespalib/util/compressionconfig.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/executor.h>
+#include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/rcuvector.h>
 
 #include <set>

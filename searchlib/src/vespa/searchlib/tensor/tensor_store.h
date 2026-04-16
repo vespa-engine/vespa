@@ -6,7 +6,7 @@
 #include <vespa/vespalib/datastore/datastorebase.h>
 #include <vespa/vespalib/datastore/entryref.h>
 #include <vespa/vespalib/datastore/i_compactable.h>
-#include <vespa/vespalib/util/generationhandler.h>
+#include <vespa/vespalib/util/generation.h>
 
 namespace vespalib {
 struct StateExplorer;

@@ -9,7 +9,6 @@
 
 using search::common::FileHeaderContext;
 using vespalib::GenerationGuard;
-using vespalib::GenerationHandler;
 
 namespace search::tensor {
 

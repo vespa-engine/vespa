@@ -6,7 +6,7 @@
 #include "distance_function_factory.h"
 #include "prepare_result.h"
 #include "vector_bundle.h"
-#include <vespa/vespalib/util/generationhandler.h>
+#include <vespa/vespalib/util/generation_guard.h>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <cstdint>
 #include <memory>

@@ -24,7 +24,6 @@ using search::attribute::Reference;
 using search::attribute::ReferenceAttribute;
 using search::attribute::test::MockGidToLidMapperFactory;
 using vespalib::MonitoredRefCount;
-using vespalib::GenerationHandler;
 
 namespace proton {
 
