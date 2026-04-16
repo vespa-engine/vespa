@@ -173,7 +173,7 @@ public class ModelContextImpl implements ModelContext {
             implements ModelContext.FeatureFlag<T> {
 
         FeatureFlag(U unboundFlag, FlagSource source, ApplicationId appId, Version version) {
-            this(unboundFlag.bindTo(source).with(appId).with(version).);
+            this(unboundFlag.bindTo(source).with(appId).with(version));
         }
 
         @Override
