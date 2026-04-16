@@ -7,6 +7,7 @@
 #include <vespa/vespalib/btree/btreeiterator.hpp>
 #include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/generationhandler.h>
 
 using namespace search;
 using namespace search::predicate;

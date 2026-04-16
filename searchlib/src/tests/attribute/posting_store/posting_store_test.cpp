@@ -8,6 +8,7 @@
 #include <vespa/searchlib/attribute/postingstore.hpp>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/generationhandler.h>
 #include <ostream>
 
 using vespalib::GenerationHandler;

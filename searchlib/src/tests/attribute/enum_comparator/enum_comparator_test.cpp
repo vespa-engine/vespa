@@ -6,6 +6,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/text/utf8.h>
+#include <vespa/vespalib/util/generationhandler.h>
 
 #include <vespa/searchlib/attribute/enumstore.hpp>
 

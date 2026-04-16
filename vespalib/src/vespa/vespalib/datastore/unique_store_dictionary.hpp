@@ -41,7 +41,7 @@ UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::freeze()
 
 template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 void
-UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::assign_generation(generation_t current_gen)
+UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::assign_generation(Generation current_gen)
 {
     if constexpr (has_btree_dictionary) {
         this->_btree_dict.getAllocator().assign_generation(current_gen);
@@ -53,7 +53,7 @@ UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::assign_genera
 
 template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 void
-UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::reclaim_memory(generation_t oldest_used_gen)
+UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::reclaim_memory(Generation oldest_used_gen)
 {
     if constexpr (has_btree_dictionary) {
         this->_btree_dict.getAllocator().reclaim_memory(oldest_used_gen);

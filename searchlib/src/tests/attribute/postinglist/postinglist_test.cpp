@@ -7,6 +7,7 @@
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/datastore/datastore.h>
+#include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/rand48.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <set>

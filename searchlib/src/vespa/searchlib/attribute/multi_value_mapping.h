@@ -28,7 +28,7 @@ private:
     using ArrayRef = std::span<ElemT>;
     using ArrayStoreTypeMapper = vespalib::datastore::ArrayStoreDynamicTypeMapper<ElemT>;
     using ArrayStore = vespalib::datastore::ArrayStore<ElemT, RefT, ArrayStoreTypeMapper>;
-    using generation_t = vespalib::GenerationHandler::generation_t;
+    using generation_t = vespalib::Generation;
     using ConstArrayRef = std::span<const ElemT>;
 
     ArrayStore _store;

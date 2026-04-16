@@ -8,7 +8,6 @@
 using namespace vespalib;
 
 using MyElem = GenerationHeldBase;
-using generation_t = GenerationHandler::generation_t;
 
 TEST(GenerationHolderTest, holding_of_unique_ptr_elements_with_tracking_of_held_bytes)
 {
@@ -58,7 +57,7 @@ using IntHoldList = GenerationHoldList<int32_t, false, true>;
 struct IntHoldListTest : public testing::Test {
     IntHoldList h;
     IntHoldListTest() : h() {}
-    void assert_reclaim(const IntVector& exp, generation_t oldest_used_gen) {
+    void assert_reclaim(const IntVector& exp, Generation oldest_used_gen) {
         IntVector act;
         h.reclaim(oldest_used_gen, [&](int elem){ act.push_back(elem); });
         EXPECT_EQ(exp, act);

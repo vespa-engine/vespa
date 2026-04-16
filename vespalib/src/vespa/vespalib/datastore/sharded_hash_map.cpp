@@ -107,7 +107,7 @@ ShardedHashMap::find(const EntryComparator& comp, EntryRef key_ref) const
 }
 
 void
-ShardedHashMap::assign_generation(generation_t current_gen)
+ShardedHashMap::assign_generation(Generation current_gen)
 {
     for (size_t i = 0; i < num_shards; ++i) {
         auto map = _maps[i].load(std::memory_order_relaxed);
@@ -119,7 +119,7 @@ ShardedHashMap::assign_generation(generation_t current_gen)
 }
 
 void
-ShardedHashMap::reclaim_memory(generation_t oldest_used_gen)
+ShardedHashMap::reclaim_memory(Generation oldest_used_gen)
 {
     for (size_t i = 0; i < num_shards; ++i) {
         auto map = _maps[i].load(std::memory_order_relaxed);

@@ -56,7 +56,6 @@ public:
     using LeafNodeType = BTreeLeafNode<KeyT, DataT, AggrT, LEAF_SLOTS>;
     using InternalNodeTypeRefPair = typename InternalNodeType::RefPair;
     using LeafNodeTypeRefPair = typename LeafNodeType::RefPair;
-    using generation_t = vespalib::GenerationHandler::generation_t;
     using EntryRef = datastore::EntryRef;
     using CompactionStrategy = datastore::CompactionStrategy;
 
@@ -158,7 +157,7 @@ public:
 
     std::unique_ptr<vespalib::datastore::CompactingBuffers> start_compact_worst(const CompactionStrategy& compaction_strategy);
 
-    void assign_generation(generation_t current_gen) {
+    void assign_generation(Generation current_gen) {
         _store.assign_generation(current_gen);
     }
 
@@ -168,7 +167,7 @@ public:
     }
 
     // Inherit doc from DataStoreBase
-    void reclaim_memory(generation_t oldest_used_gen) {
+    void reclaim_memory(Generation oldest_used_gen) {
         _store.reclaim_memory(oldest_used_gen);
     }
 

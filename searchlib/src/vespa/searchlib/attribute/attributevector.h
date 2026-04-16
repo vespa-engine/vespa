@@ -16,6 +16,7 @@
 #include <vespa/searchlib/common/i_compactable_lid_space.h>
 #include <vespa/searchlib/common/commit_param.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
+#include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/generationholder.h>
 #include <vespa/vespalib/util/time.h>
 #include <cmath>

@@ -20,7 +20,6 @@ private:
         }
     }
 public:
-    using generation_t = GenerationHold::generation_t;
     GenerationGuard() noexcept : _hold(nullptr) { }
     GenerationGuard(GenerationHold *hold) noexcept : _hold(hold->acquire()) { } // hold is never nullptr
     GenerationGuard(const GenerationGuard& rhs) noexcept : _hold(GenerationHold::copy(rhs._hold)) { }
@@ -29,7 +28,7 @@ public:
     GenerationGuard& operator=(const GenerationGuard& rhs) noexcept;
     GenerationGuard& operator=(GenerationGuard&& rhs) noexcept;
     bool valid() const noexcept { return _hold != nullptr; }
-    generation_t getGeneration() const { return _hold->_generation.load(std::memory_order_relaxed); }
+    Generation getGeneration() const { return _hold->_generation.load(std::memory_order_relaxed); }
 };
 
 }

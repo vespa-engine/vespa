@@ -25,7 +25,7 @@ struct ICompactable;
  *
  * This structure supports one writer and many readers.
  *
- * A reader must own an appropriate GenerationHandler::Guard to ensure
+ * A reader must own an appropriate GenerationGuard to ensure
  * that memory is held while it can be accessed by reader.
  *
  * The writer must update generation and call assign_generation and
@@ -35,7 +35,6 @@ struct ICompactable;
 class ShardedHashMap {
 public:
     using KvType = std::pair<AtomicEntryRef, AtomicEntryRef>;
-    using generation_t = GenerationHandler::generation_t;
 private:
     GenerationHolder _gen_holder;
     static constexpr size_t num_shards = 3;
@@ -51,8 +50,8 @@ public:
     KvType* remove(const EntryComparator& comp, EntryRef key_ref);
     KvType* find(const EntryComparator& comp, EntryRef key_ref);
     const KvType* find(const EntryComparator& comp, EntryRef key_ref) const;
-    void assign_generation(generation_t current_gen);
-    void reclaim_memory(generation_t oldest_used_gen);
+    void assign_generation(Generation current_gen);
+    void reclaim_memory(Generation oldest_used_gen);
     size_t size() const noexcept;
     const EntryComparator &get_default_comparator() const noexcept { return *_comp; }
     MemoryUsage get_memory_usage() const;

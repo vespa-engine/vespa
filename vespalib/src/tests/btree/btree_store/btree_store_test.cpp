@@ -9,6 +9,7 @@
 #include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/datastore/entry_ref_filter.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/generationhandler.h>
 
 using vespalib::GenerationHandler;
 using vespalib::datastore::CompactionSpec;

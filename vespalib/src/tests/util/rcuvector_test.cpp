@@ -3,6 +3,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/memory_allocator_observer.h>
 #include <vespa/vespalib/datastore/atomic_value_wrapper.h>
+#include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/rcuvector.h>
 #include <vespa/vespalib/util/rcuvector.hpp>
@@ -312,8 +313,6 @@ TEST(RcuVectorTest, small_expand)
 }
 
 struct FixtureBase {
-    using generation_t = GenerationHandler::generation_t;
-
     AllocStats stats;
     std::unique_ptr<MemoryAllocator> allocator;
     Alloc initial_alloc;
@@ -338,7 +337,7 @@ struct Fixture : public FixtureBase {
 
     Fixture();
     ~Fixture();
-    void assign_and_reclaim(generation_t assign_gen, generation_t reclaim_gen)
+    void assign_and_reclaim(Generation assign_gen, Generation reclaim_gen)
     {
         g.assign_generation(assign_gen);
         g.reclaim(reclaim_gen);

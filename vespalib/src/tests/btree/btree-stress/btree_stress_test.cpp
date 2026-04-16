@@ -22,11 +22,13 @@
 #include <vespa/vespalib/datastore/compaction_spec.h>
 #include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/datastore/entry_ref_filter.h>
+#include <vespa/vespalib/util/generationhandler.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("btree_stress_test");
 
-using GenerationHandler = vespalib::GenerationHandler;
+using vespalib::Generation;
+using vespalib::GenerationHandler;
 using RefType = vespalib::datastore::EntryRefT<22>;
 using vespalib::btree::NoAggregated;
 using vespalib::datastore::AtomicEntryRef;
@@ -35,7 +37,6 @@ using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryRef;
 using vespalib::datastore::EntryRefFilter;
 using vespalib::makeLambdaTask;
-using generation_t = GenerationHandler::generation_t;
 
 namespace {
 
@@ -55,8 +56,8 @@ public:
     AtomicEntryRef add_relaxed(uint32_t value) { return AtomicEntryRef(add(value)); }
     void hold(const AtomicEntryRef& ref) { _store.hold_entry(ref.load_relaxed()); }
     EntryRef move(EntryRef ref);
-    void assign_generation(generation_t current_gen) { _store.assign_generation(current_gen); }
-    void reclaim_memory(generation_t gen) { _store.reclaim_memory(gen); }
+    void assign_generation(Generation current_gen) { _store.assign_generation(current_gen); }
+    void reclaim_memory(Generation gen) { _store.reclaim_memory(gen); }
     uint32_t get(EntryRef ref) const { return _store.getEntry(ref); }
     uint32_t get_acquire(const AtomicEntryRef& ref) const { return get(ref.load_acquire()); }
     uint32_t get_relaxed(const AtomicEntryRef& ref) const { return get(ref.load_relaxed()); }
@@ -114,8 +115,8 @@ public:
     static uint32_t add(uint32_t value) noexcept { return value; }
     static uint32_t add_relaxed(uint32_t value) noexcept { return value; }
     static void hold(uint32_t) noexcept { }
-    static void assign_generation(generation_t) noexcept { }
-    static void reclaim_memory(generation_t) noexcept { }
+    static void assign_generation(Generation) noexcept { }
+    static void reclaim_memory(Generation) noexcept { }
     static uint32_t get(uint32_t value) noexcept { return value; }
     static uint32_t get_acquire(uint32_t value) noexcept { return value; }
     static uint32_t get_relaxed(uint32_t value) noexcept { return value; }

@@ -14,6 +14,7 @@
 #include <vespa/vespalib/btree/btree.hpp>
 #include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
+#include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/time.h>
 #include <vector>
 

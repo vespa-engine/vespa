@@ -18,6 +18,7 @@
 #include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/btree/btree_printer.h>
+#include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/rand48.h>
 
 #include <iostream>

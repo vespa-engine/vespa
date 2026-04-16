@@ -40,7 +40,6 @@ private:
     using ArrayType = Array<T>;
     using Alloc = alloc::Alloc;
 protected:
-    using generation_t = GenerationHandler::generation_t;
     using GenerationHolderType = GenerationHolder;
 private:
     ArrayType             _data;
@@ -157,9 +156,8 @@ template <typename T>
 class RcuVector final : public RcuVectorBase<T>
 {
 private:
-    using generation_t         = typename RcuVectorBase<T>::generation_t;
     using GenerationHolderType = typename RcuVectorBase<T>::GenerationHolderType;
-    generation_t         _generation;
+    Generation           _generation;
     GenerationHolderType _genHolderStore;
 
     void onReallocation() override;
@@ -177,13 +175,13 @@ public:
     explicit RcuVector(GrowStrategy growStrategy);
     ~RcuVector() override;
 
-    generation_t getGeneration() const noexcept { return _generation; }
-    void setGeneration(generation_t generation) noexcept { _generation = generation; }
+    Generation getGeneration() const noexcept { return _generation; }
+    void setGeneration(Generation generation) noexcept { _generation = generation; }
 
     /**
      * Remove all old data vectors where generation < firstUsed.
      **/
-    void reclaim_memory(generation_t oldest_used_gen);
+    void reclaim_memory(Generation oldest_used_gen);
 
     MemoryUsage getMemoryUsage() const noexcept override;
 };

@@ -143,7 +143,7 @@ public:
 
 private:
     using GenerationHolder = vespalib::GenerationHolder;
-    using generation_t = vespalib::GenerationHandler::generation_t;
+    using generation_t = vespalib::Generation;
     template <typename T>
     using optional = std::optional<T>;
 

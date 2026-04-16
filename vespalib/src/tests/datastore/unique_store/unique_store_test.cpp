@@ -18,7 +18,7 @@ LOG_SETUP("unique_store_test");
 enum class DictionaryType { BTREE, HASH, BTREE_AND_HASH };
 
 using namespace vespalib::datastore;
-using generation_t = vespalib::GenerationHandler::generation_t;
+using vespalib::Generation;
 using vespalib::alloc::MemoryAllocator;
 using vespalib::alloc::test::MemoryAllocatorObserver;
 using AllocStats = MemoryAllocatorObserver::Stats;
@@ -44,7 +44,7 @@ struct TestBase : public ::testing::Test {
     AllocStats stats;
     UniqueStoreType store;
     ReferenceStore refStore;
-    generation_t generation;
+    Generation generation;
 
     TestBase();
     ~TestBase() override;

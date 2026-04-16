@@ -45,7 +45,7 @@ public:
     void hold_entries(EntryRef ref, size_t num_entries) { hold_entries(ref, num_entries, 0); }
     void hold_entries(EntryRef ref, size_t num_entries, size_t extraBytes);
 
-    void reclaim_entry_refs(generation_t oldest_used_gen) override;
+    void reclaim_entry_refs(Generation oldest_used_gen) override;
 
     void reclaim_all_entry_refs() override;
 

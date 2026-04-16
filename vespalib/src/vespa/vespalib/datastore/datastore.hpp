@@ -42,7 +42,7 @@ DataStoreT<RefT>::hold_entries(EntryRef ref, size_t num_entries, size_t extraByt
 
 template <typename RefT>
 void
-DataStoreT<RefT>::reclaim_entry_refs(generation_t oldest_used_gen)
+DataStoreT<RefT>::reclaim_entry_refs(Generation oldest_used_gen)
 {
     _entry_ref_hold_list.reclaim(oldest_used_gen, [this](const auto& elem) {
         free_entry_internal(elem.ref, elem.num_entries);

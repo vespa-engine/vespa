@@ -9,7 +9,7 @@ namespace vespalib {
 
 template <typename T, bool track_bytes_held, bool use_deque>
 void
-GenerationHoldList<T, track_bytes_held, use_deque>::assign_generation_internal(generation_t current_gen)
+GenerationHoldList<T, track_bytes_held, use_deque>::assign_generation_internal(Generation current_gen)
 {
     for (auto& elem : _phase_1_list) {
         _phase_2_list.emplace_back(std::move(elem), current_gen);
@@ -20,7 +20,7 @@ GenerationHoldList<T, track_bytes_held, use_deque>::assign_generation_internal(g
 template <typename T, bool track_bytes_held, bool use_deque>
 template <typename Func>
 void
-GenerationHoldList<T, track_bytes_held, use_deque>::reclaim_internal(generation_t oldest_used_gen, Func func)
+GenerationHoldList<T, track_bytes_held, use_deque>::reclaim_internal(Generation oldest_used_gen, Func func)
 {
     auto itr = _phase_2_list.begin();
     auto ite = _phase_2_list.end();

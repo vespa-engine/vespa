@@ -66,7 +66,6 @@ template <typename BTreeDictionaryT, typename ParentT = IUniqueStoreDictionary, 
 class UniqueStoreDictionary : public ParentT, public UniqueStoreBTreeDictionaryBase<BTreeDictionaryT>, public UniqueStoreHashDictionaryBase<HashDictionaryT> {
 protected:
     using BTreeDictionaryType = BTreeDictionaryT;
-    using generation_t = typename ParentT::generation_t;
 
 public:
     using UniqueStoreBTreeDictionaryBase<BTreeDictionaryT>::has_btree_dictionary;
@@ -74,8 +73,8 @@ public:
     UniqueStoreDictionary(std::unique_ptr<EntryComparator> compare);
     ~UniqueStoreDictionary() override;
     void freeze() override;
-    void assign_generation(generation_t current_gen) override;
-    void reclaim_memory(generation_t oldest_used_gen) override;
+    void assign_generation(Generation current_gen) override;
+    void reclaim_memory(Generation oldest_used_gen) override;
     UniqueStoreAddResult add(const EntryComparator& comp, std::function<EntryRef()> insertEntry) override;
     EntryRef find(const EntryComparator& comp) override;
     void remove(const EntryComparator& comp, EntryRef ref) override;

@@ -131,7 +131,7 @@ struct HashCasedStringEnumStore {
 };
 
 using StringVector = std::vector<std::string>;
-using generation_t = vespalib::GenerationHandler::generation_t;
+using generation_t = vespalib::Generation;
 
 struct StringEntry {
     uint32_t _refCount;

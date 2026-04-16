@@ -4,7 +4,6 @@
 
 #include "btreeroot.h"
 #include "noaggrcalc.h"
-#include <vespa/vespalib/util/generationhandler.h>
 
 namespace vespalib::datastore { class CompactionStrategy; }
 

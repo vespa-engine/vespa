@@ -6,6 +6,7 @@
 #include <vespa/vespalib/datastore/unique_store_allocator.h>
 #include <vespa/vespalib/datastore/unique_store_comparator.h>
 
+#include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/rand48.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -27,7 +28,7 @@ using MyAllocator = vespalib::datastore::UniqueStoreAllocator<uint32_t, RefT>;
 using MyDataStore = vespalib::datastore::DataStoreT<RefT>;
 using MyComparator = vespalib::datastore::UniqueStoreComparator<uint32_t, RefT>;
 using MyHashMap = vespalib::datastore::ShardedHashMap;
-using GenerationHandler = vespalib::GenerationHandler;
+using vespalib::GenerationHandler;
 using vespalib::makeLambdaTask;
 
 constexpr uint32_t small_population = 50;

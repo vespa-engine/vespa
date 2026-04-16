@@ -36,7 +36,7 @@ public:
     using Index = IEnumStore::Index;
     using IndexList = IEnumStore::IndexList;
     using IndexVector = IEnumStore::IndexVector;
-    using generation_t = vespalib::GenerationHandler::generation_t;
+    using generation_t = vespalib::Generation;
 
 public:
     virtual ~IEnumStoreDictionary() = default;

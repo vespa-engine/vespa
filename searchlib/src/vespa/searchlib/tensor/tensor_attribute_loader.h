@@ -7,7 +7,12 @@
 
 namespace search::attribute { class BlobSequenceReader; }
 
-namespace vespalib { class Executor; }
+namespace vespalib {
+
+class Executor;
+class GenerationHandler;
+
+}
 
 namespace search::tensor {
 

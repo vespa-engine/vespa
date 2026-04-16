@@ -36,7 +36,6 @@ public:
     using KeyDataTypeRefPair = datastore::Handle<KeyDataType>;
     using InternalNodeTypeRefPair = typename InternalNodeType::RefPair;
     using LeafNodeTypeRefPair = typename LeafNodeType::RefPair;
-    using generation_t = vespalib::GenerationHandler::generation_t;
     using NodeAllocatorType = BTreeNodeAllocator<KeyT, DataT, AggrT,
                                                  TraitsT::INTERNAL_SLOTS,
                                                  TraitsT::LEAF_SLOTS>;
@@ -208,13 +207,13 @@ public:
     }
 
     // Inherit doc from DataStoreBase
-    void reclaim_memory(generation_t oldest_used_gen) {
+    void reclaim_memory(Generation oldest_used_gen) {
         _allocator.reclaim_memory(oldest_used_gen);
         _store.reclaim_memory(oldest_used_gen);
     }
 
     // Inherit doc from DataStoreBase
-    void assign_generation(generation_t current_gen) {
+    void assign_generation(Generation current_gen) {
         _allocator.assign_generation(current_gen);
         _store.assign_generation(current_gen);
     }

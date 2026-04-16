@@ -6,7 +6,6 @@
 #include "buffer_stats.h"
 #include "buffer_type.h"
 #include "entryref.h"
-#include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/alloc.h>
 
 namespace vespalib::datastore {

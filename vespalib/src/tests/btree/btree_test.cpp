@@ -4,6 +4,7 @@
 #include <vespa/vespalib/btree/btreenodeallocator.h>
 #include <vespa/vespalib/btree/btree.h>
 #include <vespa/vespalib/btree/btreestore.h>
+#include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/rand48.h>
 
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>

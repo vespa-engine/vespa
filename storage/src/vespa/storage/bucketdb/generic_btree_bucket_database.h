@@ -8,6 +8,7 @@
 #include <vespa/vespalib/btree/minmaxaggregated.h>
 #include <vespa/vespalib/btree/minmaxaggrcalc.h>
 #include <vespa/vespalib/datastore/atomic_value_wrapper.h>
+#include <vespa/vespalib/util/generationhandler.h>
 
 namespace storage::bucketdb {
 

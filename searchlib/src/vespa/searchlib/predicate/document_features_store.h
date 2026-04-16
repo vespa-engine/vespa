@@ -68,7 +68,7 @@ class DocumentFeaturesStore {
         vespalib::datastore::EntryRef _ranges;
     };
     using RefsVector = std::vector<Refs, vespalib::allocator_large<Refs>>;
-    using generation_t = vespalib::GenerationHandler::generation_t;
+    using generation_t = vespalib::Generation;
 
     RefsVector          _refs;
     FeaturesStore       _features;
