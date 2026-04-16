@@ -181,35 +181,52 @@ public abstract class AbstractHttpEmbedder extends AbstractComponent {
             var request = chain.request();
             int lastStatusCode = 0;
             var lastResponseBody = "";
+            IOException lastException = null;
 
             for (int attempt = 0; attempt <= maxRetries; attempt++) {
                 try {
                     var response = chain.proceed(request);
                     int code = response.code();
-                    boolean shouldRetry = code == 500 || code == 502 || code == 503 || code == 504;
-                    if (response.isSuccessful() || !shouldRetry) return response;
+                    boolean retryable = code == 500 || code == 502 || code == 503 || code == 504;
+                    if (response.isSuccessful() || !retryable) return response;
 
                     lastStatusCode = code;
-                    if (attempt < maxRetries) {
-                        response.close();
-                        int retryNumber = attempt + 1;
-                        log.fine(() -> "Embedding API server error (%d). Retry %d of %d after %dms"
-                                .formatted(code, retryNumber, maxRetries, RETRY_DELAY_MS));
-                        Thread.sleep(RETRY_DELAY_MS);
-                    } else {
-                        if (response.body() != null) lastResponseBody = response.body().string();
-                        response.close();
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    var ioe = new InterruptedIOException("Retry interrupted");
-                    ioe.initCause(e);
-                    throw ioe;
+                    lastException = null;
+                    if (attempt == maxRetries && response.body() != null)
+                        lastResponseBody = response.body().string();
+                    response.close();
+                } catch (InterruptedIOException e) {
+                    throw e;
+                } catch (IOException e) {
+                    lastException = e;
                 }
+                // Both 5xx and IOException paths fall through here for retry
+                if (attempt < maxRetries)
+                    sleepBeforeRetry(chain, attempt + 1);
             }
-
+            if (lastException != null)
+                throw new IOException("Max retries exceeded for embedding API (%d). Last error: %s"
+                        .formatted(maxRetries, lastException.getMessage()), lastException);
             throw new IOException("Max retries exceeded for embedding API (%d). Last response: %d - %s"
                     .formatted(maxRetries, lastStatusCode, lastResponseBody));
+        }
+
+        private void sleepBeforeRetry(Chain chain, int retryNumber) throws IOException {
+            var timeout = chain.call().timeout();
+            if (timeout.hasDeadline()) {
+                long remainingNanos = timeout.deadlineNanoTime() - System.nanoTime();
+                if (remainingNanos <= TimeUnit.MILLISECONDS.toNanos(RETRY_DELAY_MS))
+                    throw new InterruptedIOException("Insufficient time remaining for retry");
+            }
+            log.fine(() -> "Retrying embedding API request (%d of %d) after %dms"
+                    .formatted(retryNumber, maxRetries, RETRY_DELAY_MS));
+            try { Thread.sleep(RETRY_DELAY_MS); }
+            catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                var ioe = new InterruptedIOException("Retry interrupted");
+                ioe.initCause(e);
+                throw ioe;
+            }
         }
     }
 }
