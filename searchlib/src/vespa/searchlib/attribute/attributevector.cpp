@@ -40,6 +40,7 @@ using search::attribute::SearchContextParams;
 using search::common::FileHeaderContext;
 using search::index::DummyFileHeaderContext;
 using search::queryeval::SearchIterator;
+using vespalib::Generation;
 using vespalib::alloc::MmapFileAllocator;
 using vespalib::alloc::MmapFileAllocatorFactory;
 using namespace vespalib::make_string_short;
@@ -99,7 +100,7 @@ AttributeVector::AttributeVector(std::string_view baseFileName, const Config &c)
       _committedDocIdLimit(0u),
       _uncommittedDocIdLimit(0u),
       _createSerialNum(0u),
-      _compactLidSpaceGeneration(generation_t(0u)),
+      _compactLidSpaceGeneration(Generation(0u)),
       _hasEnum(false),
       _loaded(false),
       _isUpdateableInMemoryOnly(attribute::isUpdateableInMemoryOnly(getName(), getConfig())),
@@ -253,8 +254,8 @@ AttributeVector::headerTypeOK(const vespalib::GenericHeader &header) const
         getConfig().collectionType().asString();
 }
 
-void AttributeVector::reclaim_memory(generation_t oldest_used_gen) { (void) oldest_used_gen; }
-void AttributeVector::before_inc_generation(generation_t current_gen) { (void) current_gen; }
+void AttributeVector::reclaim_memory(Generation oldest_used_gen) { (void) oldest_used_gen; }
+void AttributeVector::before_inc_generation(Generation current_gen) { (void) current_gen; }
 const IEnumStore* AttributeVector::getEnumStoreBase() const { return nullptr; }
 IEnumStore* AttributeVector::getEnumStoreBase() { return nullptr; }
 const attribute::MultiValueMappingBase * AttributeVector::getMultiValueBase() const { return nullptr; }

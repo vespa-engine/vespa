@@ -33,7 +33,7 @@ protected:
     std::unique_ptr<NearestNeighborIndex> _index;
     bool _is_dense;
     std::unique_ptr<vespalib::eval::Value> _emptyTensor;
-    generation_t         _compactGeneration; // Generation when last compact occurred
+    vespalib::Generation _compactGeneration; // Generation when last compact occurred
     SubspaceType         _subspace_type;
     TypedCellsComparator _comp;
     uint64_t             _memory_usage_empty;
@@ -62,8 +62,8 @@ public:
     uint32_t clearDoc(DocId docId) override;
     void onCommit() override;
     void onUpdateStat(CommitParam::UpdateStats updateStats) override;
-    void reclaim_memory(generation_t oldest_used_gen) override;
-    void before_inc_generation(generation_t current_gen) override;
+    void reclaim_memory(vespalib::Generation oldest_used_gen) override;
+    void before_inc_generation(vespalib::Generation current_gen) override;
     bool addDoc(DocId &docId) override;
     std::unique_ptr<vespalib::eval::Value> getTensor(DocId docId) const override;
     std::unique_ptr<vespalib::eval::Value> getEmptyTensor() const override;

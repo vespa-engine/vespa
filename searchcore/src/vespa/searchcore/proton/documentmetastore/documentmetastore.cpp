@@ -55,6 +55,7 @@ using search::fef::TermFieldMatchData;
 using search::queryeval::Blueprint;
 using search::queryeval::SearchIterator;
 using storage::spi::Timestamp;
+using vespalib::Generation;
 using vespalib::GenerationHandler;
 using vespalib::GenerationHeldBase;
 using vespalib::IllegalStateException;
@@ -263,7 +264,7 @@ DocumentMetaStore::onUpdateStat(CommitParam::UpdateStats updateStats)
 }
 
 void
-DocumentMetaStore::before_inc_generation(generation_t current_gen)
+DocumentMetaStore::before_inc_generation(Generation current_gen)
 {
     _gidToLidMap.getAllocator().freeze();
     _gidToLidMap.getAllocator().assign_generation(current_gen);
@@ -273,7 +274,7 @@ DocumentMetaStore::before_inc_generation(generation_t current_gen)
 }
 
 void
-DocumentMetaStore::reclaim_memory(generation_t oldest_used_gen)
+DocumentMetaStore::reclaim_memory(Generation oldest_used_gen)
 {
     _gidToLidMap.getAllocator().reclaim_memory(oldest_used_gen);
     _docid_store.reclaim_memory(oldest_used_gen);
@@ -341,7 +342,7 @@ DocumentMetaStore::onLoad(vespalib::Executor *)
     }
     _gidToLidMap.assign(treeBuilder);
     _gidToLidMap.getAllocator().freeze(); // create initial frozen tree
-    generation_t generation = getGenerationHandler().getCurrentGeneration();
+    auto generation = getGenerationHandler().getCurrentGeneration();
     _gidToLidMap.getAllocator().assign_generation(generation);
 
     setNumDocs(_metaDataStore.size());
@@ -475,7 +476,7 @@ DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB,
     ensureSpace(0);         // lid 0 is reserved
     setCommittedDocIdLimit(1u);         // lid 0 is reserved
     _gidToLidMap.getAllocator().freeze(); // create initial frozen tree
-    generation_t generation = getGenerationHandler().getCurrentGeneration();
+    auto generation = getGenerationHandler().getCurrentGeneration();
     _gidToLidMap.getAllocator().assign_generation(generation);
     updateStat(CommitParam::UpdateStats::FORCE);
 }

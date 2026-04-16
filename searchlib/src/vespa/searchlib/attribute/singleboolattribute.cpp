@@ -21,6 +21,7 @@ namespace search {
 using attribute::Config;
 using attribute::HitEstimate;
 using attribute::SingleBoolAttributeSaver;
+using vespalib::Generation;
 
 SingleBoolAttribute::
 SingleBoolAttribute(const std::string &baseFileName, const GrowStrategy & grow, bool paged)
@@ -262,12 +263,12 @@ SingleBoolAttribute::getEstimatedSaveByteSize() const
 }
 
 void
-SingleBoolAttribute::reclaim_memory(generation_t oldest_used_gen) {
+SingleBoolAttribute::reclaim_memory(Generation oldest_used_gen) {
     getGenerationHolder().reclaim(oldest_used_gen);
 }
 
 void
-SingleBoolAttribute::before_inc_generation(generation_t current_gen) {
+SingleBoolAttribute::before_inc_generation(Generation current_gen) {
     getGenerationHolder().assign_generation(current_gen);
 }
 

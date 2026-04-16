@@ -27,7 +27,6 @@ using search::attribute::ImportedAttributeVectorFactory;
 using search::attribute::ReferenceAttribute;
 using search::attribute::test::MockGidToLidMapperFactory;
 using vespalib::Generation;
-using generation_t = AttributeVector::generation_t;
 
 std::shared_ptr<ReferenceAttribute>
 createReferenceAttribute(const std::string &name)
@@ -57,7 +56,7 @@ hasActiveEnumGuards(AttributeVector &attr)
 }
 
 void
-assertGuards(AttributeVector &attr, generation_t expCurrentGeneration, generation_t exp_oldest_used_generation,
+assertGuards(AttributeVector &attr, Generation expCurrentGeneration, Generation exp_oldest_used_generation,
              bool expHasActiveEnumGuards)
 {
     EXPECT_EQ(expCurrentGeneration, attr.getCurrentGeneration());
@@ -66,7 +65,7 @@ assertGuards(AttributeVector &attr, generation_t expCurrentGeneration, generatio
 }
 
 void
-addDocAndAssertGuards(std::string_view label, AttributeVector &attr, generation_t expCurrentGeneration, generation_t expFirstUsedGeneration, bool expHasActiveEnumGuards)
+addDocAndAssertGuards(std::string_view label, AttributeVector &attr, Generation expCurrentGeneration, Generation expFirstUsedGeneration, bool expHasActiveEnumGuards)
 {
     SCOPED_TRACE(label);
     addDoc(attr);

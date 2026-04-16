@@ -11,6 +11,7 @@
 #include <vespa/vespalib/datastore/array_store.hpp>
 #include <vespa/vespalib/util/stash.h>
 
+using vespalib::Generation;
 using vespalib::datastore::EntryRef;
 
 namespace search::attribute {
@@ -176,14 +177,14 @@ ArrayBoolAttribute::update_stat()
 }
 
 void
-ArrayBoolAttribute::reclaim_memory(generation_t oldest_used_gen)
+ArrayBoolAttribute::reclaim_memory(Generation oldest_used_gen)
 {
     _raw_store.reclaim_memory(oldest_used_gen);
     getGenerationHolder().reclaim(oldest_used_gen);
 }
 
 void
-ArrayBoolAttribute::before_inc_generation(generation_t current_gen)
+ArrayBoolAttribute::before_inc_generation(Generation current_gen)
 {
     getGenerationHolder().assign_generation(current_gen);
     _raw_store.assign_generation(current_gen);

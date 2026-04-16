@@ -43,7 +43,6 @@ private:
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
     using SelfType = SingleValueStringPostingAttributeT<B>;
     using ValueModifier = typename SingleValueStringAttributeT<B>::ValueModifier;
-    using generation_t = typename SingleValueStringAttributeT<B>::generation_t;
 
     using PostingParent::_posting_store;
     using PostingParent::clearAllPostings;
@@ -78,8 +77,8 @@ public:
     SingleValueStringPostingAttributeT(const std::string & name);
     ~SingleValueStringPostingAttributeT();
 
-    void reclaim_memory(generation_t oldest_used_gen) override;
-    void before_inc_generation(generation_t current_gen) override;
+    void reclaim_memory(vespalib::Generation oldest_used_gen) override;
+    void before_inc_generation(vespalib::Generation current_gen) override;
 
     std::unique_ptr<attribute::SearchContext>
     getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;

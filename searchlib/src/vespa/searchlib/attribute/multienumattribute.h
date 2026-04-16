@@ -30,7 +30,6 @@ protected:
     using LoadedVector = typename B::BaseClass::LoadedVector;
     using ValueModifier = typename B::BaseClass::ValueModifier;
     using WeightedEnum = typename B::BaseClass::WeightedEnum;
-    using generation_t = typename B::BaseClass::generation_t;
 
     using DocIndices = typename MultiValueAttribute<B, M>::DocumentValues;
     using EnumIndex = IEnumStore::Index;
@@ -65,8 +64,8 @@ public:
     void onCommit() override;
     void onUpdateStat(CommitParam::UpdateStats updateStats) override;
 
-    void reclaim_memory(generation_t oldest_used_gen) override;
-    void before_inc_generation(generation_t current_gen) override;
+    void reclaim_memory(vespalib::Generation oldest_used_gen) override;
+    void before_inc_generation(vespalib::Generation current_gen) override;
 
     //-----------------------------------------------------------------------------------------------------------------
     // Attribute read API

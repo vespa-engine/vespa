@@ -50,7 +50,6 @@ public:
     using EnumStoreType = EnumStoreT<EntryT>;
     using EntryRef = vespalib::datastore::EntryRef;
     using EntryComparator = vespalib::datastore::EntryComparator;
-    using generation_t = vespalib::Generation;
 
 private:
     UniqueStoreType        _store;
@@ -100,8 +99,8 @@ public:
 
     vespalib::AddressSpace get_values_address_space_usage() const override;
 
-    void assign_generation(generation_t current_gen);
-    void reclaim_memory(generation_t first_used);
+    void assign_generation(vespalib::Generation current_gen);
+    void reclaim_memory(vespalib::Generation first_used);
 
     ssize_t load_unique_values(const void* src, size_t available, IndexVector& idx) override;
 

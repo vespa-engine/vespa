@@ -19,6 +19,7 @@ LOG_SETUP("postinglist_test");
 
 namespace search {
 
+using vespalib::Generation;
 using vespalib::GenerationHandler;
 
 /*
@@ -598,12 +599,11 @@ AttributePostingListTest::doCompactEnumStore(Tree &tree,
         std::atomic_thread_fence(std::memory_order_release);
         i.writeKey(nv);
     }
-    using generation_t = GenerationHandler::generation_t;
     for (std::vector<uint32_t>::const_iterator
              it = toHold.begin(), ite = toHold.end(); it != ite; ++it) {
         valueHandle.holdBuffer(*it);
     }
-    generation_t generation = _handler.getCurrentGeneration();
+    Generation generation = _handler.getCurrentGeneration();
     valueHandle.assign_generation(generation);
     _handler.incGeneration();
     valueHandle.reclaim_memory(_handler.get_oldest_used_generation());

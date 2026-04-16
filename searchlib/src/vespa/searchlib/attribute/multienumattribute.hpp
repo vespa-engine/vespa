@@ -201,7 +201,7 @@ MultiValueEnumAttribute<B, M>::onUpdateStat(CommitParam::UpdateStats updateStats
 
 template <typename B, typename M>
 void
-MultiValueEnumAttribute<B, M>::reclaim_memory(generation_t oldest_used_gen)
+MultiValueEnumAttribute<B, M>::reclaim_memory(vespalib::Generation oldest_used_gen)
 {
     this->_enumStore.reclaim_memory(oldest_used_gen);
     this->_mvMapping.reclaim_memory(oldest_used_gen);
@@ -209,7 +209,7 @@ MultiValueEnumAttribute<B, M>::reclaim_memory(generation_t oldest_used_gen)
 
 template <typename B, typename M>
 void
-MultiValueEnumAttribute<B, M>::before_inc_generation(generation_t current_gen)
+MultiValueEnumAttribute<B, M>::before_inc_generation(vespalib::Generation current_gen)
 {
     /*
      * Freeze tree before generation is increased in attribute vector

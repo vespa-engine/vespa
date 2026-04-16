@@ -24,7 +24,6 @@ private:
     using WeightedInt = B::WeightedInt;
     using WeightedFloat = B::WeightedFloat;
     using WeightedEnum = B::WeightedEnum;
-    using generation_t = B::generation_t;
 
 protected:
     using Word = uint32_t;  // Large enough to contain numDocs.
@@ -72,8 +71,8 @@ public:
     void onCommit() override;
     void onAddDocs(DocId docIdLimit) override;
     void onUpdateStat(CommitParam::UpdateStats updateStats) override;
-    void reclaim_memory(generation_t oldest_used_gen) override;
-    void before_inc_generation(generation_t current_gen) override;
+    void reclaim_memory(vespalib::Generation oldest_used_gen) override;
+    void before_inc_generation(vespalib::Generation current_gen) override;
     bool addDoc(DocId & doc) override;
     bool onLoad(vespalib::Executor *executor) override;
     std::unique_ptr<AttributeSaver> onInitSave(std::string_view fileName) override;

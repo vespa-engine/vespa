@@ -22,7 +22,6 @@ LOG_SETUP("reference_attribute_test");
 
 using document::DocumentId;
 using document::GlobalId;
-using generation_t = vespalib::GenerationHandler::generation_t;
 using search::AttributeGuard;
 using search::AttributeVector;
 using search::CommitParam;

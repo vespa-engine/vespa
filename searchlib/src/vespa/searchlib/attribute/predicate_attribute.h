@@ -48,8 +48,8 @@ public:
     std::unique_ptr<AttributeSaver> onInitSave(std::string_view fileName) override;
     bool onLoad(vespalib::Executor *executor) override;
     void onCommit() override;
-    void reclaim_memory(generation_t oldest_used_gen) override;
-    void before_inc_generation(generation_t current_gen) override;
+    void reclaim_memory(vespalib::Generation oldest_used_gen) override;
+    void before_inc_generation(vespalib::Generation current_gen) override;
     void onUpdateStat(CommitParam::UpdateStats updateStats) override;
     bool addDoc(DocId &doc_id) override;
     uint32_t clearDoc(DocId doc_id) override;

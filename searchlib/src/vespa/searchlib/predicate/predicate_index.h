@@ -28,7 +28,6 @@ class PredicateIndex : public PopulateInterface {
     using BoundsIndex = SimpleIndex<vespalib::datastore::EntryRef>;
     template <typename IntervalT>
     using FeatureMap = std::unordered_map<uint64_t, std::vector<IntervalT>>;
-    using generation_t = vespalib::Generation;
     template <typename T>
     using optional = std::optional<T>;
 
@@ -73,8 +72,8 @@ public:
     void indexDocument(uint32_t doc_id, const PredicateTreeAnnotations &annotations);
     void removeDocument(uint32_t doc_id);
     void commit();
-    void reclaim_memory(generation_t oldest_used_gen);
-    void assign_generation(generation_t current_gen);
+    void reclaim_memory(vespalib::Generation oldest_used_gen);
+    void assign_generation(vespalib::Generation current_gen);
     vespalib::MemoryUsage getMemoryUsage() const;
 
     int getArity() const { return _arity; }

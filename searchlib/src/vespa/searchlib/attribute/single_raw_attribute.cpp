@@ -8,6 +8,7 @@
 #include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/datastore/array_store.hpp>
 
+using vespalib::Generation;
 using vespalib::alloc::MemoryAllocator;
 using vespalib::datastore::EntryRef;
 
@@ -27,14 +28,14 @@ SingleRawAttribute::~SingleRawAttribute()
 }
 
 void
-SingleRawAttribute::reclaim_memory(generation_t oldest_used_gen)
+SingleRawAttribute::reclaim_memory(Generation oldest_used_gen)
 {
     _raw_store.reclaim_memory(oldest_used_gen);
     getGenerationHolder().reclaim(oldest_used_gen);
 }
 
 void
-SingleRawAttribute::before_inc_generation(generation_t current_gen)
+SingleRawAttribute::before_inc_generation(Generation current_gen)
 {
     getGenerationHolder().assign_generation(current_gen);
     _raw_store.assign_generation(current_gen);

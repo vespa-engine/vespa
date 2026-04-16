@@ -26,7 +26,6 @@ public:
     using LoadedVector = typename B::LoadedVector;
 
 protected:
-    using generation_t = typename B::generation_t;
     using B::getGenerationHolder;
 
 public:

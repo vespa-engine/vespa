@@ -50,7 +50,6 @@ private:
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
     using SelfType = SingleValueNumericPostingAttribute<B>;
     using ValueModifier = typename B::BaseClass::ValueModifier;
-    using generation_t = typename SingleValueNumericEnumAttribute<B>::generation_t;
 
     using PostingParent::_posting_store;
     using PostingParent::clearAllPostings;
@@ -76,8 +75,8 @@ public:
     SingleValueNumericPostingAttribute(const std::string & name, const AttributeVector::Config & cfg);
     ~SingleValueNumericPostingAttribute();
 
-    void reclaim_memory(generation_t oldest_used_gen) override;
-    void before_inc_generation(generation_t current_gen) override;
+    void reclaim_memory(vespalib::Generation oldest_used_gen) override;
+    void before_inc_generation(vespalib::Generation current_gen) override;
 
     std::unique_ptr<attribute::SearchContext>
     getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;

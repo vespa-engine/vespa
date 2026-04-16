@@ -26,6 +26,7 @@ namespace search::attribute {
 using document::DocumentId;
 using document::GlobalId;
 using document::IdParseException;
+using vespalib::Generation;
 using vespalib::datastore::CompactionSpec;
 
 namespace {
@@ -161,7 +162,7 @@ ReferenceAttribute::clearDoc(DocId doc)
 }
 
 void
-ReferenceAttribute::reclaim_memory(generation_t oldest_used_gen)
+ReferenceAttribute::reclaim_memory(Generation oldest_used_gen)
 {
     _referenceMappings.reclaim_memory(oldest_used_gen);
     _store.reclaim_memory(oldest_used_gen);
@@ -169,7 +170,7 @@ ReferenceAttribute::reclaim_memory(generation_t oldest_used_gen)
 }
 
 void
-ReferenceAttribute::before_inc_generation(generation_t current_gen)
+ReferenceAttribute::before_inc_generation(Generation current_gen)
 {
     _referenceMappings.freeze();
     _store.freeze();

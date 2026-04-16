@@ -143,7 +143,6 @@ public:
 
 private:
     using GenerationHolder = vespalib::GenerationHolder;
-    using generation_t = vespalib::Generation;
     template <typename T>
     using optional = std::optional<T>;
 
@@ -190,8 +189,8 @@ public:
     // (and after doc id limits values are determined) to promote posting lists to vectors.
     void promoteOverThresholdVectors();
     void commit();
-    void reclaim_memory(generation_t oldest_used_gen);
-    void assign_generation(generation_t current_gen);
+    void reclaim_memory(vespalib::Generation oldest_used_gen);
+    void assign_generation(vespalib::Generation current_gen);
     vespalib::MemoryUsage getMemoryUsage() const;
     template <typename FunctionType>
     void foreach_frozen_key(vespalib::datastore::EntryRef ref, Key key, FunctionType func) const;

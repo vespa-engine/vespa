@@ -280,7 +280,7 @@ SimpleIndex<Posting, Key, DocId>::commit() {
 
 template <typename Posting, typename Key, typename DocId>
 void
-SimpleIndex<Posting, Key, DocId>::reclaim_memory(generation_t oldest_used_gen) {
+SimpleIndex<Posting, Key, DocId>::reclaim_memory(vespalib::Generation oldest_used_gen) {
     _btree_posting_lists.reclaim_memory(oldest_used_gen);
     _dictionary.getAllocator().reclaim_memory(oldest_used_gen);
     _vector_posting_lists.getAllocator().reclaim_memory(oldest_used_gen);
@@ -289,7 +289,7 @@ SimpleIndex<Posting, Key, DocId>::reclaim_memory(generation_t oldest_used_gen) {
 
 template <typename Posting, typename Key, typename DocId>
 void
-SimpleIndex<Posting, Key, DocId>::assign_generation(generation_t current_gen) {
+SimpleIndex<Posting, Key, DocId>::assign_generation(vespalib::Generation current_gen) {
     _dictionary.getAllocator().assign_generation(current_gen);
     _btree_posting_lists.assign_generation(current_gen);
     _vector_posting_lists.getAllocator().assign_generation(current_gen);

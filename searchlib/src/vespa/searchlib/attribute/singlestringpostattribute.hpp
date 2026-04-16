@@ -124,7 +124,7 @@ SingleValueStringPostingAttributeT<B>::applyValueChanges(EnumStoreBatchUpdater& 
 
 template <typename B>
 void
-SingleValueStringPostingAttributeT<B>::reclaim_memory(generation_t oldest_used_gen)
+SingleValueStringPostingAttributeT<B>::reclaim_memory(vespalib::Generation oldest_used_gen)
 {
     SingleValueStringAttributeT<B>::reclaim_memory(oldest_used_gen);
     _posting_store.reclaim_memory(oldest_used_gen);
@@ -132,7 +132,7 @@ SingleValueStringPostingAttributeT<B>::reclaim_memory(generation_t oldest_used_g
 
 template <typename B>
 void
-SingleValueStringPostingAttributeT<B>::before_inc_generation(generation_t current_gen)
+SingleValueStringPostingAttributeT<B>::before_inc_generation(vespalib::Generation current_gen)
 {
     _posting_store.freeze();
     SingleValueStringAttributeT<B>::before_inc_generation(current_gen);

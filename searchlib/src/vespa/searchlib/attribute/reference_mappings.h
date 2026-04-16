@@ -27,7 +27,6 @@ class ReferenceMappings
                                              std::less<uint32_t>,
                                              vespalib::btree::BTreeDefaultTraits,
                                              vespalib::btree::NoAggrCalc>;
-    using generation_t = vespalib::Generation;
 
     // Vector containing references to trees of lids referencing given
     // target lid.
@@ -59,9 +58,9 @@ public:
     void clearMapping(const Reference &entry);
 
     // Hold list management & freezing
-    void reclaim_memory(generation_t oldest_used_gen) { _reverseMapping.reclaim_memory(oldest_used_gen); }
+    void reclaim_memory(vespalib::Generation oldest_used_gen) { _reverseMapping.reclaim_memory(oldest_used_gen); }
     void freeze() { _reverseMapping.freeze(); }
-    void assign_generation(generation_t current_gen) { _reverseMapping.assign_generation(current_gen); }
+    void assign_generation(vespalib::Generation current_gen) { _reverseMapping.assign_generation(current_gen); }
 
     // Handle mapping changes
     void notifyReferencedPut(const Reference &entry, uint32_t targetLid);

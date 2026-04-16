@@ -33,7 +33,6 @@ protected:
     using Weighted = typename B::BaseClass::Weighted;
     using WeightedFloat = typename B::BaseClass::WeightedFloat;
     using WeightedInt = typename B::BaseClass::WeightedInt;
-    using generation_t = typename B::BaseClass::generation_t;
     using largeint_t = typename B::BaseClass::largeint_t;
 
 private:

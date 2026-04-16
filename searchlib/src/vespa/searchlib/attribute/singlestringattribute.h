@@ -29,7 +29,6 @@ protected:
     using WeightedConstChar = StringAttribute::WeightedConstChar;
     using WeightedEnum = StringAttribute::WeightedEnum;
     using WeightedString = StringAttribute::WeightedString;
-    using generation_t = StringAttribute::generation_t;
 
 public:
     SingleValueStringAttributeT(const std::string & name, const AttributeVector::Config & c);

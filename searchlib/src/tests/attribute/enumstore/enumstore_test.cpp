@@ -11,6 +11,7 @@ LOG_SETUP("enumstore_test");
 using DictionaryConfig = search::DictionaryConfig;
 using Type = DictionaryConfig::Type;
 using Match = DictionaryConfig::Match;
+using vespalib::Generation;
 using vespalib::datastore::AtomicEntryRef;
 using vespalib::datastore::CompactionStrategy;
 using vespalib::datastore::EntryRef;
@@ -131,7 +132,6 @@ struct HashCasedStringEnumStore {
 };
 
 using StringVector = std::vector<std::string>;
-using generation_t = vespalib::Generation;
 
 struct StringEntry {
     uint32_t _refCount;
@@ -329,7 +329,7 @@ TEST(EnumStoreTest, test_hold_lists_and_generation)
 {
     StringEnumStore ses(false, DictionaryConfig::Type::BTREE);
     StringVector uniques;
-    generation_t sesGen(0u);
+    Generation sesGen(0u);
     uniques.reserve(100);
     for (uint32_t i = 0; i < 100; ++i) {
         char tmp[16];
@@ -366,7 +366,7 @@ TEST(EnumStoreTest, test_hold_lists_and_generation)
             }
             EXPECT_TRUE(indices.size() == 10);
             EXPECT_TRUE(expected.size() == 10);
-            sesGen = generation_t(generation++);
+            sesGen = Generation(generation++);
             readers.emplace_back(sesGen.value(), indices, expected);
             checkReaders(ses, readers);
         }
@@ -396,7 +396,7 @@ dec_ref_count(NumericEnumStore& store, NumericEnumStore::Index idx)
     updater.dec_ref_count(idx);
     updater.commit();
 
-    generation_t gen(5);
+    Generation gen(5);
     store.assign_generation(gen);
     store.reclaim_memory(gen + 1);
 }
@@ -919,7 +919,7 @@ TYPED_TEST(EnumStoreDictionaryTest, foreach_posting_list_with_one_filter_works)
 
 namespace {
 
-void inc_generation(generation_t &gen, NumericEnumStore &store)
+void inc_generation(Generation &gen, NumericEnumStore &store)
 {
     store.freeze_dictionary();
     store.assign_generation(gen);
@@ -940,7 +940,7 @@ TYPED_TEST(EnumStoreDictionaryTest, compact_worst_works)
         }
     }
     updater.commit();
-    generation_t gen(3);
+    Generation gen(3);
     inc_generation(gen, this->store);
     // Compact dictionary
     auto& dict = this->store.get_dictionary();

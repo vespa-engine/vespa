@@ -44,10 +44,10 @@ class MyAttribute : public search::NotImplementedAttribute
         _mvMapping.shrink(committedDocIdLimit);
         setNumDocs(committedDocIdLimit);
     }
-    void reclaim_memory(generation_t oldest_used_gen) override {
+    void reclaim_memory(Generation oldest_used_gen) override {
         _mvMapping.reclaim_memory(oldest_used_gen);
     }
-    void before_inc_generation(generation_t current_gen) override {
+    void before_inc_generation(Generation current_gen) override {
         _mvMapping.assign_generation(current_gen);
     }
 
@@ -81,7 +81,6 @@ protected:
     std::unique_ptr<AttributeType> _attr;
     uint32_t _maxSmallArraySize;
     using RefType = typename MvMapping::RefType;
-    using generation_t = vespalib::GenerationHandler::generation_t;
 
 public:
     using ArrayRef = std::span<ElemT>;
@@ -118,8 +117,8 @@ public:
         ConstArrayRef act = get(docId);
         EXPECT_EQ(exp, std::vector<ElemT>(act.begin(), act.end()));
     }
-    void assign_generation(generation_t current_gen) { _mvMapping->assign_generation(current_gen); }
-    void reclaim_memory(generation_t oldest_used_gen) { _mvMapping->reclaim_memory(oldest_used_gen); }
+    void assign_generation(Generation current_gen) { _mvMapping->assign_generation(current_gen); }
+    void reclaim_memory(Generation oldest_used_gen) { _mvMapping->reclaim_memory(oldest_used_gen); }
     void addDocs(uint32_t numDocs) {
         for (uint32_t i = 0; i < numDocs; ++i) {
             uint32_t doc = 0;

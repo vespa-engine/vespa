@@ -17,6 +17,7 @@ using vespalib::datastore::ArrayStore;
 using vespalib::datastore::ArrayStoreConfig;
 using vespalib::datastore::EntryRef;
 using vespalib::DataBuffer;
+using vespalib::Generation;
 using std::unordered_map;
 using std::vector;
 
@@ -248,14 +249,14 @@ DocumentFeaturesStore::remove(uint32_t doc_id) {
 }
 
 void
-DocumentFeaturesStore::reclaim_memory(generation_t oldest_used_gen)
+DocumentFeaturesStore::reclaim_memory(Generation oldest_used_gen)
 {
     _features.reclaim_memory(oldest_used_gen);
     _ranges.reclaim_memory(oldest_used_gen);
 }
 
 void
-DocumentFeaturesStore::assign_generation(generation_t current_gen)
+DocumentFeaturesStore::assign_generation(Generation current_gen)
 {
     _features.assign_generation(current_gen);
     _ranges.assign_generation(current_gen);

@@ -51,8 +51,8 @@ public:
     bool addDoc(DocId& docId) override;
     void onCommit() override;
     void onUpdateStat(CommitParam::UpdateStats updateStats) override;
-    void reclaim_memory(generation_t oldest_used_gen) override;
-    void before_inc_generation(generation_t current_gen) override;
+    void reclaim_memory(vespalib::Generation oldest_used_gen) override;
+    void before_inc_generation(vespalib::Generation current_gen) override;
     uint32_t clearDoc(DocId docId) override;
     void onAddDocs(DocId lidLimit) override;
     void onShrinkLidSpace() override;

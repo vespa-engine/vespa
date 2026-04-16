@@ -31,8 +31,8 @@ public:
     ~SingleRawAttribute() override;
     void onCommit() override;
     void onUpdateStat(CommitParam::UpdateStats updateStats) override;
-    void reclaim_memory(generation_t oldest_used_gen) override;
-    void before_inc_generation(generation_t current_gen) override;
+    void reclaim_memory(vespalib::Generation oldest_used_gen) override;
+    void before_inc_generation(vespalib::Generation current_gen) override;
     bool addDoc(DocId &docId) override;
     std::span<const char> get_raw(DocId docid) const override;
     void set_raw(DocId docid, std::span<const char> raw);

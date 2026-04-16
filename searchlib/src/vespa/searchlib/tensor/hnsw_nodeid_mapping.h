@@ -26,7 +26,6 @@ class HnswNode;
  */
 class HnswNodeidMapping {
 private:
-    using generation_t = vespalib::Generation;
     using NodeidStore = vespalib::datastore::ArrayStore<uint32_t>;
     using NodeidHoldList = vespalib::GenerationHoldList<uint32_t, false, true>;
     using NodeidFreeList = std::vector<uint32_t>;
@@ -52,8 +51,8 @@ public:
     std::span<const uint32_t> get_ids(uint32_t docid) const;
     void free_ids(uint32_t docid);
 
-    void assign_generation(generation_t current_gen);
-    void reclaim_memory(generation_t oldest_used_gen);
+    void assign_generation(vespalib::Generation current_gen);
+    void reclaim_memory(vespalib::Generation oldest_used_gen);
     void on_load(std::span<const HnswNode> nodes);
     vespalib::AddressSpace address_space_usage() const { return _nodeids.addressSpaceUsage(); }
     vespalib::MemoryUsage memory_usage() const;

@@ -113,7 +113,6 @@ public:
 
     using GenerationHandler = vespalib::GenerationHandler;
     using GenerationHolder = vespalib::GenerationHolder;
-    using generation_t = GenerationHandler::generation_t;
 
     ~AttributeVector() override;
 protected:
@@ -158,11 +157,11 @@ public:
     virtual void incGeneration();
     virtual void reclaim_unused_memory();
 
-    generation_t get_oldest_used_generation() const {
+    vespalib::Generation get_oldest_used_generation() const {
         return _genHandler.get_oldest_used_generation();
     }
 
-    generation_t getCurrentGeneration() const {
+    vespalib::Generation getCurrentGeneration() const {
         return _genHandler.getCurrentGeneration();
     }
 
@@ -177,7 +176,7 @@ public:
      * Returns the number of readers holding a generation guard.
      * Should be called by the writer thread.
      **/
-    uint32_t getGenerationRefCount(generation_t gen) const {
+    uint32_t getGenerationRefCount(vespalib::Generation gen) const {
         return _genHandler.getGenerationRefCount(gen);
     }
 
@@ -431,7 +430,7 @@ private:
     std::atomic<uint32_t>                 _committedDocIdLimit; // docid limit for search
     uint32_t                              _uncommittedDocIdLimit; // based on queued changes
     uint64_t                              _createSerialNum;
-    std::atomic<generation_t>             _compactLidSpaceGeneration;
+    std::atomic<vespalib::Generation>     _compactLidSpaceGeneration;
     bool                                  _hasEnum;
     bool                                  _loaded;
     bool                                  _isUpdateableInMemoryOnly;
@@ -442,8 +441,8 @@ private:
     std::shared_ptr<search::attribute::AttributeInitializationStatus> _initialization_status;
 
     /// Clean up [0, firstUsed>
-    virtual void reclaim_memory(generation_t oldest_used_gen);
-    virtual void before_inc_generation(generation_t current_gen);
+    virtual void reclaim_memory(vespalib::Generation oldest_used_gen);
+    virtual void before_inc_generation(vespalib::Generation current_gen);
     virtual void onUpdateStat(CommitParam::UpdateStats updateStats) = 0;
     friend class AttributeTest;
 

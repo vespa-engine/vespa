@@ -34,10 +34,10 @@ public:
         : TestAttributeBase(name)
     {}
 
-    generation_t getGen() const { return getCurrentGeneration(); }
-    uint32_t getRefCount(generation_t gen) const { return getGenerationRefCount(gen); }
+    Generation getGen() const { return getCurrentGeneration(); }
+    uint32_t getRefCount(Generation gen) const { return getGenerationRefCount(gen); }
     void incGen() { incGeneration(); }
-    generation_t oldest_used_gen() const { return get_oldest_used_generation(); }
+    Generation oldest_used_gen() const { return get_oldest_used_generation(); }
 };
 
 

@@ -58,7 +58,7 @@ MultiValueNumericPostingAttribute<B, M>::~MultiValueNumericPostingAttribute()
 
 template <typename B, typename M>
 void
-MultiValueNumericPostingAttribute<B, M>::reclaim_memory(generation_t oldest_used_gen)
+MultiValueNumericPostingAttribute<B, M>::reclaim_memory(vespalib::Generation oldest_used_gen)
 {
     MultiValueNumericEnumAttribute<B, M>::reclaim_memory(oldest_used_gen);
     _posting_store.reclaim_memory(oldest_used_gen);
@@ -66,7 +66,7 @@ MultiValueNumericPostingAttribute<B, M>::reclaim_memory(generation_t oldest_used
 
 template <typename B, typename M>
 void
-MultiValueNumericPostingAttribute<B, M>::before_inc_generation(generation_t current_gen)
+MultiValueNumericPostingAttribute<B, M>::before_inc_generation(vespalib::Generation current_gen)
 {
     _posting_store.freeze();
     MultiValueNumericEnumAttribute<B, M>::before_inc_generation(current_gen);

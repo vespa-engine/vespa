@@ -53,16 +53,14 @@ private:
     }
 
     void reclaim_memory() {
-        GenerationHandler::generation_t oldest_used_gen =
-                _generationHandler.get_oldest_used_generation();
+        auto oldest_used_gen = _generationHandler.get_oldest_used_generation();
         _postingListStore.reclaim_memory(oldest_used_gen);
         _dict.getAllocator().reclaim_memory(oldest_used_gen);
         _featureStore.reclaim_memory(oldest_used_gen);
     }
 
     void assign_generation() {
-        GenerationHandler::generation_t generation =
-            _generationHandler.getCurrentGeneration();
+        auto generation = _generationHandler.getCurrentGeneration();
         _postingListStore.assign_generation(generation);
         _dict.getAllocator().assign_generation(generation);
         _featureStore.assign_generation(generation);

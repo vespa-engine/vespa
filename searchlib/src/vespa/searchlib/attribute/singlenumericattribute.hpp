@@ -99,14 +99,14 @@ SingleValueNumericAttribute<B>::addDoc(DocId & doc) {
 
 template <typename B>
 void
-SingleValueNumericAttribute<B>::reclaim_memory(generation_t oldest_used_gen)
+SingleValueNumericAttribute<B>::reclaim_memory(vespalib::Generation oldest_used_gen)
 {
     getGenerationHolder().reclaim(oldest_used_gen);
 }
 
 template <typename B>
 void
-SingleValueNumericAttribute<B>::before_inc_generation(generation_t current_gen)
+SingleValueNumericAttribute<B>::before_inc_generation(vespalib::Generation current_gen)
 {
     getGenerationHolder().assign_generation(current_gen);
 }

@@ -14,6 +14,7 @@
 #include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
 
+using vespalib::Generation;
 using vespalib::datastore::EntryRef;
 using vespalib::DataBuffer;
 
@@ -214,7 +215,7 @@ PredicateIndex::commit() {
 }
 
 void
-PredicateIndex::reclaim_memory(generation_t oldest_used_gen) {
+PredicateIndex::reclaim_memory(Generation oldest_used_gen) {
     _interval_index.reclaim_memory(oldest_used_gen);
     _bounds_index.reclaim_memory(oldest_used_gen);
     _interval_store.reclaim_memory(oldest_used_gen);
@@ -223,7 +224,7 @@ PredicateIndex::reclaim_memory(generation_t oldest_used_gen) {
 }
 
 void
-PredicateIndex::assign_generation(generation_t current_gen) {
+PredicateIndex::assign_generation(Generation current_gen) {
     _interval_index.assign_generation(current_gen);
     _bounds_index.assign_generation(current_gen);
     _interval_store.assign_generation(current_gen);
