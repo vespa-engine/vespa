@@ -262,7 +262,6 @@ public class ModelContextImpl implements ModelContext {
             var flag = flag(Flags.AUTOSCALER_TARGET_WRITE_CPU_PERCENTAGE);
             return clusterId.map(id -> flag.withClusterId(ClusterSpec.Id.from(id)).value()).orElseGet(flag::value);
         }
-        @Override public double searchNodeReservedDiskSpaceFactor() { return flag(Flags.SEARCHNODE_RESERVED_DISK_SPACE_FACTOR).value(); }
     }
 
     public static class Properties implements ModelContext.Properties {
