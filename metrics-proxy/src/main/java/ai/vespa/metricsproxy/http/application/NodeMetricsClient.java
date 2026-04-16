@@ -63,6 +63,7 @@ public class NodeMetricsClient {
         var snapshot = snapshots.get(consumer);
         if ((snapshot != null) && snapshot.isValid(clock.instant(), ttl)) return Optional.empty();
 
+        snapshots.remove(consumer);
         return Optional.of(retrieveMetrics(consumer));
     }
 
