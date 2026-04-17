@@ -59,7 +59,7 @@ struct MyScanIterator : public IDocumentScanIterator {
     explicit MyScanIterator(const MyHandler & handler, const LidVector &lids);
     ~MyScanIterator() override;
     bool valid() const override;
-    search::DocumentMetaData next(uint32_t compactLidLimit) override;
+    search::DocumentMetadata next(uint32_t compactLidLimit) override;
 };
 
 struct MyHandler : public ILidSpaceCompactionHandler {
@@ -76,7 +76,7 @@ struct MyHandler : public ILidSpaceCompactionHandler {
     std::vector<IDestructorCallback::SP> _moveDoneContexts;
     documentmetastore::OperationListener::SP _op_listener;
     RemoveOperationsRateTracker* _rm_listener;
-    std::vector<std::pair<search::DocumentMetaData, std::shared_ptr<Document>>> _docs;
+    std::vector<std::pair<search::DocumentMetadata, std::shared_ptr<Document>>> _docs;
 
     explicit MyHandler(bool storeMoveDoneContexts, bool _bucketIdEqualLid);
     ~MyHandler() override;
@@ -88,8 +88,8 @@ struct MyHandler : public ILidSpaceCompactionHandler {
     uint32_t getSubDbId() const override { return 2; }
     LidUsageStats getLidStatus() const override;
     IDocumentScanIterator::UP getIterator() const override;
-    search::DocumentMetaData getMetaData(uint32_t lid) const override;
-    MoveOperation::UP createMoveOperation(const search::DocumentMetaData &document,
+    search::DocumentMetadata getMetaData(uint32_t lid) const override;
+    MoveOperation::UP createMoveOperation(const search::DocumentMetadata &document,
                                           uint32_t moveToLid) const override;
     void handleMove(const MoveOperation &, IDestructorCallback::SP moveDoneCtx) override;
     void handleCompactLidSpace(const CompactLidSpaceOperation &op, std::shared_ptr<IDestructorCallback>) override;
@@ -128,8 +128,8 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
     MyDocumentRetriever(std::shared_ptr<const DocumentTypeRepo> repo_in, const MyDocumentStore& store_in) noexcept;
     ~MyDocumentRetriever();
     const document::DocumentTypeRepo& getDocumentTypeRepo() const override;
-    void getBucketMetaData(const storage::spi::Bucket&, DocumentMetaData::Vector&) const override;
-    DocumentMetaData getDocumentMetaData(const DocumentId&) const override;
+    void getBucketMetaData(const storage::spi::Bucket&, DocumentMetadata::Vector&) const override;
+    DocumentMetadata getDocumentMetaData(const DocumentId&) const override;
     Document::UP getFullDocument(DocumentIdT lid) const override;
     CachedSelect::SP parseSelect(const std::string&) const override;
 };

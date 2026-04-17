@@ -58,12 +58,12 @@ private:
     void compactLidSpace(const search::LidUsageStats &stats);
     bool remove_batch_is_ongoing() const;
     bool remove_is_ongoing() const;
-    search::DocumentMetaData getNextDocument(const search::LidUsageStats &stats);
+    search::DocumentMetadata getNextDocument(const search::LidUsageStats &stats);
 
     bool scanDocuments(const search::LidUsageStats &stats);
-    static void moveDocument(std::shared_ptr<CompactionJob> job, const search::DocumentMetaData & metaThen,
+    static void moveDocument(std::shared_ptr<CompactionJob> job, const search::DocumentMetadata & metaThen,
                              std::shared_ptr<IDestructorCallback> onDone);
-    void completeMove(const search::DocumentMetaData & metaThen, std::unique_ptr<MoveOperation> moveOp,
+    void completeMove(const search::DocumentMetadata & metaThen, std::unique_ptr<MoveOperation> moveOp,
                       std::shared_ptr<IDestructorCallback> onDone);
     class MoveTask;
 

@@ -73,7 +73,7 @@ using search::AttributeFactory;
 using search::AttributeGuard;
 using search::AttributeVector;
 using search::DocumentIdT;
-using search::DocumentMetaData;
+using search::DocumentMetadata;
 using search::FloatingPointAttribute;
 using search::IDocumentStore;
 using search::IntegerAttribute;
@@ -426,7 +426,7 @@ Fixture::~Fixture() = default;
 TEST(DocumentRetrieverTest, require_that_document_retriever_can_retrieve_document_meta_data)
 {
     Fixture f;
-    DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
+    DocumentMetadata meta_data = f._retriever->getDocumentMetaData(doc_id);
     EXPECT_EQ(f.lid, meta_data.lid);
     EXPECT_EQ(f.timestamp, meta_data.timestamp);
 }
@@ -434,7 +434,7 @@ TEST(DocumentRetrieverTest, require_that_document_retriever_can_retrieve_documen
 TEST(DocumentRetrieverTest, require_that_document_retriever_can_retrieve_bucket_meta_data)
 {
     Fixture f;
-    DocumentMetaData::Vector result;
+    DocumentMetadata::Vector result;
     f._retriever->getBucketMetaData(makeSpiBucket(f.bucket_id), result);
     ASSERT_EQ(1u, result.size());
     EXPECT_EQ(f.lid, result[0].lid);
@@ -447,7 +447,7 @@ TEST(DocumentRetrieverTest, require_that_document_retriever_can_retrieve_bucket_
 TEST(DocumentRetrieverTest, require_that_document_retriever_can_retrieve_document)
 {
     Fixture f;
-    DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
+    DocumentMetadata meta_data = f._retriever->getDocumentMetaData(doc_id);
     Document::UP doc = f._retriever->getDocument(meta_data.lid, doc_id);
     ASSERT_TRUE(doc);
     EXPECT_EQ(doc_id, doc->getId());
@@ -492,7 +492,7 @@ void checkWset(FieldValue::UP wset, T v) {
 TEST(DocumentRetrieverTest, require_that_attributes_are_patched_into_stored_document)
 {
     Fixture f;
-    DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
+    DocumentMetadata meta_data = f._retriever->getDocumentMetaData(doc_id);
     Document::UP doc = f._retriever->getDocument(meta_data.lid, doc_id);
     ASSERT_TRUE(doc);
 
@@ -524,7 +524,7 @@ TEST(DocumentRetrieverTest, require_that_attributes_are_patched_into_stored_docu
 TEST(DocumentRetrieverTest, require_that_we_can_look_up_NONE_and_DOCIDONLY_field_sets)
 {
     Fixture f;
-    DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
+    DocumentMetadata meta_data = f._retriever->getDocumentMetaData(doc_id);
     Document::UP doc = f._retriever->getPartialDocument(meta_data.lid, doc_id, document::NoFields());
     ASSERT_TRUE(doc);
     EXPECT_TRUE(doc->getFields().empty());
@@ -537,14 +537,14 @@ TEST(DocumentRetrieverTest, require_that_attributes_are_patched_into_stored_docu
 {
     Fixture f;
     f.addIndexField(Schema::IndexField(dyn_field_s, DataType::STRING)).build();
-    DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
+    DocumentMetadata meta_data = f._retriever->getDocumentMetaData(doc_id);
     Document::UP doc = f._retriever->getDocument(meta_data.lid, doc_id);
     ASSERT_TRUE(doc);
     checkFieldValue<StringFieldValue>(doc->getValue(dyn_field_s), static_value_s);
 }
 
 void verify_position_field_has_expected_values(Fixture& f) {
-    DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
+    DocumentMetadata meta_data = f._retriever->getDocumentMetaData(doc_id);
     Document::UP doc = f._retriever->getDocument(meta_data.lid, doc_id);
     ASSERT_TRUE(doc);
 
@@ -576,7 +576,7 @@ TEST(DocumentRetrieverTest, zcurve_attribute_is_authoritative_for_single_value_p
 TEST(DocumentRetrieverTest, require_that_array_position_field_value_is_generated_from_zcurve_array_attribute)
 {
     Fixture f;
-    DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
+    DocumentMetadata meta_data = f._retriever->getDocumentMetaData(doc_id);
     Document::UP doc = f._retriever->getDocument(meta_data.lid, doc_id);
     ASSERT_TRUE(doc);
     FieldValue::UP value = doc->getValue(position_array_field);
@@ -611,7 +611,7 @@ TEST(DocumentRetrieverTest, require_that_non_existing_lid_returns_null_pointer)
 TEST(DocumentRetrieverTest, require_that_predicate_attributes_can_be_retrieved)
 {
     Fixture f;
-    DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
+    DocumentMetadata meta_data = f._retriever->getDocumentMetaData(doc_id);
     Document::UP doc = f._retriever->getDocument(meta_data.lid, doc_id);
     ASSERT_TRUE(doc);
 
@@ -641,7 +641,7 @@ TEST(DocumentRetrieverTest, require_that_zero_values_in_multivalue_attribute_rem
 TEST(DocumentRetrieverTest, require_that_tensor_attribute_can_be_retrieved)
 {
     Fixture f;
-    DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
+    DocumentMetadata meta_data = f._retriever->getDocumentMetaData(doc_id);
     Document::UP doc = f._retriever->getDocument(meta_data.lid, doc_id);
     ASSERT_TRUE(doc);
 
@@ -654,7 +654,7 @@ TEST(DocumentRetrieverTest, require_that_tensor_attribute_can_be_retrieved)
 TEST(DocumentRetrieverTest, require_that_raw_attribute_can_be_retrieved)
 {
     Fixture f;
-    DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
+    DocumentMetadata meta_data = f._retriever->getDocumentMetaData(doc_id);
     Document::UP doc = f._retriever->getDocument(meta_data.lid, doc_id);
     ASSERT_TRUE(doc);
 

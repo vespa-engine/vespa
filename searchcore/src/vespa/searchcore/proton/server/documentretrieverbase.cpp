@@ -30,14 +30,14 @@ DocumentRetrieverBase::~DocumentRetrieverBase() = default;
 
 void
 DocumentRetrieverBase::getBucketMetaData(const storage::spi::Bucket &bucket,
-                                         search::DocumentMetaData::Vector &result) const
+                                         search::DocumentMetadata::Vector &result) const
 {
-    _meta_store.getReadGuard()->get().getMetaData(bucket, result);
+    _meta_store.getReadGuard()->get().getMetadata(bucket, result);
 }
 
-search::DocumentMetaData
+search::DocumentMetadata
 DocumentRetrieverBase::getDocumentMetaData(const DocumentId &id) const {
-    return _meta_store.getReadGuard()->get().getMetaData(id.getGlobalId());
+    return _meta_store.getReadGuard()->get().getMetadata(id.getGlobalId());
 }
     
 CachedSelect::SP

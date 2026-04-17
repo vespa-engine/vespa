@@ -215,8 +215,8 @@ public:
     bool getGid(DocId lid, GlobalId &gid) const override;
     bool getGidEvenIfMoved(DocId lid, GlobalId &gid) const override;
     bool getLid(const GlobalId & gid, DocId &lid) const override;
-    search::DocumentMetaData getMetaData(const GlobalId &gid) const override;
-    void getMetaData(const BucketId &bucketId, search::DocumentMetaData::Vector &result) const override;
+    search::DocumentMetadata getMetadata(const GlobalId &gid) const override;
+    void getMetadata(const BucketId &bucketId, search::DocumentMetadata::Vector &result) const override;
     std::string_view get_docid_string(const GlobalId &gid) const;
     DocId   getNumUsedLids() const override { return _lidAlloc.getNumUsedLids(); }
     DocId getNumActiveLids() const override { return _lidAlloc.getNumActiveLids(); }

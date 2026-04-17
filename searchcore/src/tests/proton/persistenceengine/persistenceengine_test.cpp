@@ -29,7 +29,7 @@ using document::DocumentTypeRepo;
 using document::DocumentUpdate;
 using document::GlobalId;
 using document::test::makeBucketSpace;
-using search::DocumentMetaData;
+using search::DocumentMetadata;
 using storage::spi::Bucket;
 using storage::spi::BucketChecksum;
 using storage::spi::BucketIdListResult;
@@ -118,17 +118,17 @@ struct MyDocumentRetriever : DocumentRetrieverBaseForTest {
     const DocumentTypeRepo &getDocumentTypeRepo() const override {
         return repo;
     }
-    void getBucketMetaData(const storage::spi::Bucket &, search::DocumentMetaData::Vector &v) const override {
+    void getBucketMetaData(const storage::spi::Bucket &, search::DocumentMetadata::Vector &v) const override {
         if (document != nullptr) {
             v.push_back(getDocumentMetaData(document->getId()));
         }
     }
-    DocumentMetaData getDocumentMetaData(const DocumentId &id) const override {
+    DocumentMetadata getDocumentMetaData(const DocumentId &id) const override {
         last_doc_id = id;
         if (document != nullptr) {
-            return DocumentMetaData(1, timestamp, BucketId(1), document->getId().getGlobalId());
+            return DocumentMetadata(1, timestamp, BucketId(1), document->getId().getGlobalId());
         }
-        return DocumentMetaData();
+        return DocumentMetadata();
     }
     Document::UP getFullDocument(search::DocumentIdT) const override {
         if (document != nullptr) {

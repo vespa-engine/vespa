@@ -802,8 +802,8 @@ DocumentMetaStore::constructFreeList()
     _lidAlloc.setFreeListConstructed();
 }
 
-search::DocumentMetaData
-DocumentMetaStore::getMetaData(const GlobalId &gid) const
+search::DocumentMetadata
+DocumentMetaStore::getMetadata(const GlobalId &gid) const
 {
     DocId lid = 0;
     if (!getLid(gid, lid) || !validLid(lid)) {
@@ -816,8 +816,8 @@ DocumentMetaStore::getMetaData(const GlobalId &gid) const
 }
 
 void
-DocumentMetaStore::getMetaData(const BucketId &bucketId,
-                               search::DocumentMetaData::Vector &result) const
+DocumentMetaStore::getMetadata(const BucketId &bucketId,
+                               search::DocumentMetadata::Vector &result) const
 {
     TreeType::FrozenView frozenTreeView = _gidToLidMap.getFrozenView();
     TreeType::ConstIterator itr = lowerBound(bucketId, frozenTreeView);

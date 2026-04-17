@@ -32,7 +32,7 @@ using namespace search::fef::indexproperties::matching;
 using namespace search::fef::indexproperties;
 using namespace search::engine;
 using namespace search::grouping;
-using search::DocumentMetaData;
+using search::DocumentMetadata;
 using search::LidUsageStats;
 using search::MatchingElementsFields;
 using search::MatchingElements;
@@ -63,8 +63,8 @@ struct StupidMetaStore : search::IDocumentMetaStore {
     bool getGid(DocId, GlobalId &) const override { return false; }
     bool getGidEvenIfMoved(DocId, GlobalId &) const override { return false; }
     bool getLid(const GlobalId &, DocId &) const override { return false; }
-    DocumentMetaData getMetaData(const GlobalId &) const override { return {}; }
-    void getMetaData(const BucketId &, DocumentMetaData::Vector &) const override { }
+    DocumentMetadata getMetadata(const GlobalId &) const override { return {}; }
+    void getMetadata(const BucketId &, DocumentMetadata::Vector &) const override { }
     DocId getCommittedDocIdLimit() const override { return 1; }
     DocId getNumUsedLids() const override { return 0; }
     DocId getNumActiveLids() const override { return 0; }

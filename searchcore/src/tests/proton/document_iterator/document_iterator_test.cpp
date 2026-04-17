@@ -38,7 +38,7 @@ using search::AttributeContext;
 using search::AttributeGuard;
 using search::AttributeVector;
 using search::DocumentIdT;
-using search::DocumentMetaData;
+using search::DocumentMetadata;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::attribute::Config;
@@ -126,17 +126,17 @@ struct UnitDR : DocumentRetrieverBaseForTest {
     const document::DocumentTypeRepo &getDocumentTypeRepo() const override {
         return repo;
     }
-    void getBucketMetaData(const Bucket &b, DocumentMetaData::Vector &result) const override
+    void getBucketMetaData(const Bucket &b, DocumentMetadata::Vector &result) const override
     {
         if (b == bucket) {
-            result.push_back(DocumentMetaData(docid, timestamp, bucket, document->getId().getGlobalId(), removed));
+            result.push_back(DocumentMetadata(docid, timestamp, bucket, document->getId().getGlobalId(), removed));
         }
     }
-    DocumentMetaData getDocumentMetaData(const document::DocumentId &id) const override {
+    DocumentMetadata getDocumentMetaData(const document::DocumentId &id) const override {
         if (document->getId() == id) {
-            return DocumentMetaData(docid, timestamp, bucket, document->getId().getGlobalId(), removed);
+            return DocumentMetadata(docid, timestamp, bucket, document->getId().getGlobalId(), removed);
         }
-        return DocumentMetaData();
+        return DocumentMetadata();
     }
     document::Document::UP getFullDocument(DocumentIdT lid) const override {
         return Document::UP((lid == docid) ? document->clone() : nullptr);
@@ -262,12 +262,12 @@ struct PairDR : DocumentRetrieverBaseForTest {
     const document::DocumentTypeRepo &getDocumentTypeRepo() const override {
         return first->getDocumentTypeRepo();
     }
-    void getBucketMetaData(const Bucket &b, DocumentMetaData::Vector &result) const override {
+    void getBucketMetaData(const Bucket &b, DocumentMetadata::Vector &result) const override {
         first->getBucketMetaData(b, result);
         second->getBucketMetaData(b, result);
     }
-    DocumentMetaData getDocumentMetaData(const document::DocumentId &id) const override {
-        DocumentMetaData ret = first->getDocumentMetaData(id);
+    DocumentMetadata getDocumentMetaData(const document::DocumentId &id) const override {
+        DocumentMetadata ret = first->getDocumentMetaData(id);
         return (ret.valid()) ? ret : second->getDocumentMetaData(id);
     }
     document::Document::UP getFullDocument(DocumentIdT lid) const override {
@@ -380,7 +380,7 @@ void checkDoc(const IDocumentRetriever &dr, const std::string &id,
 {
     SCOPED_TRACE(id);
     DocumentId documentId(id);
-    DocumentMetaData dmd = dr.getDocumentMetaData(documentId);
+    DocumentMetadata dmd = dr.getDocumentMetaData(documentId);
     EXPECT_TRUE(dmd.valid());
     EXPECT_EQ(timestamp, dmd.timestamp);
     EXPECT_EQ(bucket, dmd.bucketId.getId());
@@ -451,8 +451,8 @@ TEST(DocumentIteratorTest, require_that_custom_retrievers_work_as_expected)
     checkDoc(*dr, "id:ns:document::1", 2, 5, false);
     checkDoc(*dr, "id:ns:document::2", 3, 5, true);
     checkDoc(*dr, "id:ns:document::3", 7, 6, false);
-    DocumentMetaData::Vector b5;
-    DocumentMetaData::Vector b6;
+    DocumentMetadata::Vector b5;
+    DocumentMetadata::Vector b6;
     dr->getBucketMetaData(bucket(5), b5);
     dr->getBucketMetaData(bucket(6), b6);
     ASSERT_EQ(2u, b5.size());

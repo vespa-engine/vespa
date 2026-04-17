@@ -14,7 +14,7 @@ using document::BucketId;
 using document::Document;
 using vespalib::IDestructorCallback;
 using search::LidUsageStats;
-using search::DocumentMetaData;
+using search::DocumentMetadata;
 using search::CommitParam;
 using storage::spi::Timestamp;
 
@@ -57,18 +57,18 @@ LidSpaceCompactionHandler::getIterator() const
     return std::make_unique<DocumentScanIterator>(*_subDb.meta_store());
 }
 
-DocumentMetaData
+DocumentMetadata
 LidSpaceCompactionHandler::getMetaData(uint32_t lid) const {
     if (_subDb.meta_store()->validLid(lid)) {
         const RawDocumentMetaData &metaData = _subDb.meta_store()->getRawMetaData(lid);
-        return DocumentMetaData(lid, metaData.getTimestamp(),
+        return DocumentMetadata(lid, metaData.getTimestamp(),
                                 metaData.getBucketId(), metaData.getGid());
     }
-    return DocumentMetaData();
+    return DocumentMetadata();
 }
 
 MoveOperation::UP
-LidSpaceCompactionHandler::createMoveOperation(const search::DocumentMetaData &document, uint32_t moveToLid) const
+LidSpaceCompactionHandler::createMoveOperation(const search::DocumentMetadata &document, uint32_t moveToLid) const
 {
     const uint32_t moveFromLid = document.lid;
     if (_subDb.lidNeedsCommit(moveFromLid)) {
