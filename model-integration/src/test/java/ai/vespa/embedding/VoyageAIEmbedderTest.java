@@ -321,6 +321,29 @@ public class VoyageAIEmbedderTest {
     }
 
     @Test
+    public void testBatchingConfigDisabledForContextualModel() {
+        var configBuilder = voyageConfigBuilder(1024).model("voyage-context-3");
+        configBuilder.batching.maxSize(16);
+        embedder = new VoyageAIEmbedder(configBuilder.build(), runtime, createMockSecrets());
+
+        assertEquals(Embedder.Batching.DISABLED, embedder.batchingConfig());
+    }
+
+    @Test
+    public void testContextualModelRejectsMultiTextBatch() {
+        var config = voyageConfigBuilder(1024).model("voyage-context-3").build();
+        embedder = new VoyageAIEmbedder(config, runtime, createMockSecrets());
+
+        var targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
+        var context = new Embedder.Context("test-embedder");
+        var texts = List.of("doc1", "doc2");
+
+        var exception = assertThrows(IllegalArgumentException.class,
+                () -> embedder.embed(texts, context, targetType));
+        assertTrue(exception.getMessage().contains("Contextual models do not support batching"));
+    }
+
+    @Test
     public void testBase64FloatRoundTrip() {
         float[] expected = {1.0f, -0.5f, 0.0f, Float.MAX_VALUE};
         var buffer = ByteBuffer.allocate(expected.length * 4).order(ByteOrder.LITTLE_ENDIAN);

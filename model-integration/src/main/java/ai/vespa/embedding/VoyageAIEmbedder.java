@@ -63,7 +63,7 @@ public class VoyageAIEmbedder extends AbstractHttpEmbedder implements Embedder {
         this.resolvedEndpoint = resolveEndpoint(config.endpoint(), isMultimodal, isContextual);
     }
 
-    @Override public Batching batchingConfig() { return isMultimodal ? Batching.DISABLED : batching; }
+    @Override public Batching batchingConfig() { return (isMultimodal || isContextual) ? Batching.DISABLED : batching; }
 
     @Override
     public List<Integer> embed(String text, Context context) {
@@ -111,6 +111,11 @@ public class VoyageAIEmbedder extends AbstractHttpEmbedder implements Embedder {
             request = MultimodalRequest.of(
                     texts.get(0), config.model(), inputType, config.truncate(), config.dimensions(), outputDataType);
         } else if (isContextual) {
+            // Contextual API treats the text list as chunks of a single document; batching is
+            // disabled to prevent cross-document context contamination from independent embed()
+            // calls being combined by the framework
+            if (texts.size() != 1)
+                throw new IllegalArgumentException("Contextual models do not support batching");
             request = ContextualRequest.of(
                     texts, config.model(), inputType, config.dimensions(), outputDataType);
         } else {
