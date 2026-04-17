@@ -366,8 +366,14 @@ func runVisit(vArgs *visitArgs, service *vespa.Service) (res OperationResult) {
 		vArgs.dumpDocuments(vvo.Documents)
 		vArgs.debugPrint(fmt.Sprintf("got %d documents", len(vvo.Documents)))
 		totalDocuments += len(vvo.Documents)
-		continuationToken = vvo.Continuation
-		if continuationToken == "" {
+		if vvo.Continuation != "" {
+			continuationToken = vvo.Continuation
+		}
+		if vvo.Truncated {
+			vArgs.cli.printWarning("Response truncated: retrying from last continuation token (may produce duplicates)")
+			continue
+		}
+		if vvo.Continuation == "" {
 			break
 		}
 	}
@@ -429,10 +435,19 @@ func runOneVisit(vArgs *visitArgs, service *vespa.Service, contToken string) (*V
 	if urlParseError != nil {
 		return nil, Failure("Invalid request path: '" + urlPath + "': " + urlParseError.Error())
 	}
+	reqHeader := vArgs.header
+	if vArgs.stream && vArgs.jsonLines && !vArgs.makeFeed && reqHeader.Get("Accept") == "" {
+		if vArgs.header != nil {
+			reqHeader = vArgs.header.Clone()
+		} else {
+			reqHeader = make(http.Header)
+		}
+		reqHeader.Set("Accept", "application/jsonl")
+	}
 	request := &http.Request{
 		URL:    url,
 		Method: "GET",
-		Header: vArgs.header,
+		Header: reqHeader,
 	}
 	timeout := time.Duration(900) * time.Second
 	response, err := service.Do(request, timeout)
@@ -440,9 +455,17 @@ func runOneVisit(vArgs *visitArgs, service *vespa.Service, contToken string) (*V
 		return nil, Failure("Request failed: " + err.Error())
 	}
 	defer response.Body.Close()
-	vvo, err := parseVisitOutput(response.Body)
-	switch {
-	case response.StatusCode == 200:
+
+	if response.StatusCode == 200 {
+		if strings.Contains(response.Header.Get("Content-Type"), "application/jsonl") {
+			vvo, err := parseVisitOutputJSONL(response.Body, vArgs.cli.Stdout)
+			if err != nil {
+				return nil, Failure("error reading JSONL response: " + err.Error())
+			}
+			totalDocCount += vvo.DocumentCount
+			return vvo, Success("visited " + vArgs.contentCluster)
+		}
+		vvo, err := parseVisitOutput(response.Body)
 		if err == nil {
 			totalDocCount += vvo.DocumentCount
 			if vvo.DocumentCount != len(vvo.Documents) {
@@ -452,9 +475,11 @@ func runOneVisit(vArgs *visitArgs, service *vespa.Service, contToken string) (*V
 				return nil, Failure("Inconsistent contents from document API")
 			}
 			return vvo, Success("visited " + vArgs.contentCluster)
-		} else {
-			return nil, Failure("error reading response: " + err.Error())
 		}
+		return nil, Failure("error reading response: " + err.Error())
+	}
+	vvo, _ := parseVisitOutput(response.Body)
+	switch {
 	case response.StatusCode == 429:
 		return nil, Success("Transient overload")
 	case response.StatusCode/100 == 4:
@@ -484,6 +509,21 @@ type VespaVisitOutput struct {
 	DocumentCount int            `json:"documentCount"`
 	Continuation  string         `json:"continuation"`
 	ErrorMsg      string         `json:"message"`
+	Truncated     bool           // true when a JSONL response ended without a final newline
+}
+
+type jsonlLine struct {
+	Put          string          `json:"put,omitempty"`
+	Remove       string          `json:"remove,omitempty"`
+	Fields       json.RawMessage `json:"fields,omitempty"`
+	Continuation *struct {
+		Token           string  `json:"token,omitempty"`
+		PercentFinished float64 `json:"percentFinished"`
+	} `json:"continuation,omitempty"`
+	SessionStats *struct {
+		DocumentCount int `json:"documentCount"`
+	} `json:"sessionStats,omitempty"`
+	Message string `json:"message,omitempty"`
 }
 
 func parseVisitOutput(r io.Reader) (*VespaVisitOutput, error) {
@@ -494,4 +534,51 @@ func parseVisitOutput(r io.Reader) (*VespaVisitOutput, error) {
 		return nil, fmt.Errorf("could not decode JSON, error: %s", err.Error())
 	}
 	return &parsedJson, nil
+}
+
+func parseVisitOutputJSONL(r io.Reader, w io.Writer) (*VespaVisitOutput, error) {
+	dec := json.NewDecoder(r)
+	var result VespaVisitOutput
+	done := false
+	for {
+		var raw json.RawMessage
+		err := dec.Decode(&raw)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return &result, fmt.Errorf("error reading JSONL response: %s", err)
+		}
+		var line jsonlLine
+		if err := json.Unmarshal(raw, &line); err != nil {
+			continue
+		}
+		switch {
+		case line.Put != "" || line.Remove != "":
+			id := line.Put
+			if id == "" {
+				id = line.Remove
+			}
+			type docOut struct {
+				ID     string          `json:"id"`
+				Fields json.RawMessage `json:"fields,omitempty"`
+			}
+			outBytes, err := json.Marshal(docOut{ID: id, Fields: line.Fields})
+			if err != nil {
+				continue
+			}
+			w.Write(outBytes)
+			w.Write([]byte("\n"))
+			result.DocumentCount++
+		case line.Continuation != nil:
+			result.Continuation = line.Continuation.Token
+			done = line.Continuation.Token == ""
+		case line.SessionStats != nil:
+			result.DocumentCount = line.SessionStats.DocumentCount
+		case line.Message != "":
+			result.ErrorMsg = line.Message
+		}
+	}
+	result.Truncated = !done
+	return &result, nil
 }
