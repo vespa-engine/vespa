@@ -18,7 +18,7 @@ public:
     Cmd(FRT_RPCRequest* req, CmdType cmdType, const char* service = "")
         : _req(req), _cmdType(cmdType), _serviceName(service) {}
 
-    CmdType     type() const { return _cmdType; }
+    CmdType type() const { return _cmdType; }
     const char* serviceName() const { return _serviceName; }
 
     void retError(const char* errorString) const;

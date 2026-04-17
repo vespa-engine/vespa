@@ -31,13 +31,13 @@ public:
     virtual void listServices();
     virtual void listClusters();
     virtual void listConfigIds();
-    virtual int  listHost(const std::string host);
-    virtual int  listCluster(const std::string cluster);
-    virtual int  listAllPorts();
-    virtual int  listService(const std::string svctype);
-    virtual int  listService(const std::string cluster, const std::string svctype);
-    virtual int  listConfigId(const std::string configid);
-    virtual int  getIndexOf(const std::string service, const std::string host);
+    virtual int listHost(const std::string host);
+    virtual int listCluster(const std::string cluster);
+    virtual int listAllPorts();
+    virtual int listService(const std::string svctype);
+    virtual int listService(const std::string cluster, const std::string svctype);
+    virtual int listConfigId(const std::string configid);
+    virtual int getIndexOf(const std::string service, const std::string host);
 
 private:
     std::unique_ptr<cloud::config::ModelConfig> _cfg;

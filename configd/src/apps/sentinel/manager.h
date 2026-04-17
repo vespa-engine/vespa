@@ -11,10 +11,11 @@
 #include <vespa/config-sentinel.h>
 #include <vespa/vespalib/net/http/state_server.h>
 
-#include <list>
 #include <poll.h>
 #include <sys/select.h>
 #include <sys/types.h>
+
+#include <list>
 
 using cloud::config::SentinelConfig;
 using config::ConfigHandle;
@@ -43,11 +44,11 @@ private:
 
     Service* serviceByPid(pid_t pid);
     Service* serviceByName(const std::string& name);
-    void     handleCommands();
-    void     handleCmd(const Cmd& cmd);
-    void     handleOutputs();
-    void     handleChildDeaths();
-    void     handleRestarts();
+    void handleCommands();
+    void handleCmd(const Cmd& cmd);
+    void handleOutputs();
+    void handleChildDeaths();
+    void handleRestarts();
 
     void terminateServices(bool catchable, bool printDebug = false);
     void doConfigure();

@@ -5,13 +5,15 @@
 #include "tags.h"
 
 #include <vespa/config/common/exceptions.h>
-#include <vespa/config/subscription/configsubscriber.hpp>
 #include <vespa/vespalib/data/slime/slime.h>
 
-#include <iostream>
+#include <vespa/config/subscription/configsubscriber.hpp>
+
 #include <vbench/http/http_client.h>
 #include <vbench/http/http_result_handler.h>
 #include <vbench/http/server_spec.h>
+
+#include <iostream>
 
 using configdefinitions::tagsContain;
 

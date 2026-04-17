@@ -23,8 +23,8 @@ public:
     Env();
     ~Env();
 
-    ConfigOwner&  configOwner() { return _cfgOwner; }
-    ModelOwner&   modelOwner() { return _modelOwner; }
+    ConfigOwner& configOwner() { return _cfgOwner; }
+    ModelOwner& modelOwner() { return _modelOwner; }
     CommandQueue& commandQueue() { return _rpcCommandQueue; }
     StartMetrics& metrics() { return _startMetrics; }
 
@@ -35,7 +35,7 @@ public:
     void notifyConfigUpdated();
 
 private:
-    void                                   respondAsEmpty();
+    void respondAsEmpty();
     ConfigOwner                            _cfgOwner;
     ModelOwner                             _modelOwner;
     CommandQueue                           _rpcCommandQueue;

@@ -2,12 +2,13 @@
 
 #include "logctl.h"
 
-#include <cerrno>
-#include <cstring>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+
+#include <cerrno>
+#include <cstring>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".sentinel.logctl");

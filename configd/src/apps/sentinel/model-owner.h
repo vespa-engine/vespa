@@ -26,8 +26,8 @@ private:
 public:
     ModelOwner(const std::string& configId);
     ~ModelOwner();
-    void                       start(std::chrono::milliseconds timeout, bool firstTime);
-    void                       checkForUpdates();
+    void start(std::chrono::milliseconds timeout, bool firstTime);
+    void checkForUpdates();
     std::optional<ModelConfig> getModelConfig();
 };
 

@@ -25,7 +25,7 @@ public:
     ~OutputConnection();
     bool isFinished() const;
     void handleOutput();
-    int  fd() const { return _fd; }
+    int fd() const { return _fd; }
 };
 
 } // namespace config::sentinel

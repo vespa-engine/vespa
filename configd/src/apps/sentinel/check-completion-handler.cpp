@@ -4,7 +4,8 @@
 
 namespace config::sentinel {
 
-CheckCompletionHandler::CheckCompletionHandler(FRT_RPCRequest* parent) : _parentRequest(parent) {}
+CheckCompletionHandler::CheckCompletionHandler(FRT_RPCRequest* parent) : _parentRequest(parent) {
+}
 
 CheckCompletionHandler::~CheckCompletionHandler() = default;
 

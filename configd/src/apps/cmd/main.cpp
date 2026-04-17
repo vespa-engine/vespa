@@ -36,7 +36,7 @@ private:
 public:
     Cmd() : _server(), _target(nullptr) {}
     ~Cmd();
-    int  run(const Method& cmd, const char* arg);
+    int run(const Method& cmd, const char* arg);
     void initRPC(const char* spec);
     void finiRPC();
 };

@@ -28,8 +28,8 @@ class ProxyCmd {
 private:
     std::unique_ptr<fnet::frt::StandaloneFRT> _server;
 
-    FRT_Target     *_target;
-    FRT_RPCRequest *_req;
+    FRT_Target*     _target;
+    FRT_RPCRequest* _req;
     Flags           _flags;
 
     void        initRPC();
