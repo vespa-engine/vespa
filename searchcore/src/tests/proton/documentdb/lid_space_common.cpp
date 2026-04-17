@@ -27,7 +27,7 @@ search::DocumentMetadata MyScanIterator::next(uint32_t compactLidLimit) {
     if (_itr != _lids.end()) {
         uint32_t lid = *_itr;
         if (lid > compactLidLimit) {
-            return _handler.getMetaData(lid);
+            return _handler.getMetadata(lid);
         }
     } else {
         _validItr = false;
@@ -94,7 +94,7 @@ MyHandler::getIterator() const {
 }
 
 search::DocumentMetadata
-MyHandler::getMetaData(uint32_t lid) const {
+MyHandler::getMetadata(uint32_t lid) const {
     if (lid < _docs.size()) {
         return _docs[lid].first;
     }
@@ -189,12 +189,12 @@ MyDocumentRetriever::getDocumentTypeRepo() const {
 }
 
 void
-MyDocumentRetriever::getBucketMetaData(const storage::spi::Bucket&, DocumentMetadata::Vector&) const {
+MyDocumentRetriever::getBucketMetadata(const storage::spi::Bucket&, DocumentMetadata::Vector&) const {
     abort();
 }
 
 DocumentMetadata
-MyDocumentRetriever::getDocumentMetaData(const DocumentId&) const {
+MyDocumentRetriever::getDocumentMetadata(const DocumentId&) const {
     abort();
 }
 

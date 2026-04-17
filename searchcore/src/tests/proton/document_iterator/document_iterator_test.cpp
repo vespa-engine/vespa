@@ -126,13 +126,13 @@ struct UnitDR : DocumentRetrieverBaseForTest {
     const document::DocumentTypeRepo &getDocumentTypeRepo() const override {
         return repo;
     }
-    void getBucketMetaData(const Bucket &b, DocumentMetadata::Vector &result) const override
+    void getBucketMetadata(const Bucket &b, DocumentMetadata::Vector &result) const override
     {
         if (b == bucket) {
             result.push_back(DocumentMetadata(docid, timestamp, bucket, document->getId().getGlobalId(), removed));
         }
     }
-    DocumentMetadata getDocumentMetaData(const document::DocumentId &id) const override {
+    DocumentMetadata getDocumentMetadata(const document::DocumentId &id) const override {
         if (document->getId() == id) {
             return DocumentMetadata(docid, timestamp, bucket, document->getId().getGlobalId(), removed);
         }
@@ -262,13 +262,13 @@ struct PairDR : DocumentRetrieverBaseForTest {
     const document::DocumentTypeRepo &getDocumentTypeRepo() const override {
         return first->getDocumentTypeRepo();
     }
-    void getBucketMetaData(const Bucket &b, DocumentMetadata::Vector &result) const override {
-        first->getBucketMetaData(b, result);
-        second->getBucketMetaData(b, result);
+    void getBucketMetadata(const Bucket &b, DocumentMetadata::Vector &result) const override {
+        first->getBucketMetadata(b, result);
+        second->getBucketMetadata(b, result);
     }
-    DocumentMetadata getDocumentMetaData(const document::DocumentId &id) const override {
-        DocumentMetadata ret = first->getDocumentMetaData(id);
-        return (ret.valid()) ? ret : second->getDocumentMetaData(id);
+    DocumentMetadata getDocumentMetadata(const document::DocumentId &id) const override {
+        DocumentMetadata ret = first->getDocumentMetadata(id);
+        return (ret.valid()) ? ret : second->getDocumentMetadata(id);
     }
     document::Document::UP getFullDocument(DocumentIdT lid) const override {
         Document::UP ret = first->getFullDocument(lid);
@@ -380,7 +380,7 @@ void checkDoc(const IDocumentRetriever &dr, const std::string &id,
 {
     SCOPED_TRACE(id);
     DocumentId documentId(id);
-    DocumentMetadata dmd = dr.getDocumentMetaData(documentId);
+    DocumentMetadata dmd = dr.getDocumentMetadata(documentId);
     EXPECT_TRUE(dmd.valid());
     EXPECT_EQ(timestamp, dmd.timestamp);
     EXPECT_EQ(bucket, dmd.bucketId.getId());
@@ -444,7 +444,7 @@ TEST(DocumentIteratorTest, require_that_custom_retrievers_work_as_expected)
                 rem(id2, Timestamp(3), bucket(5))),
             cat(doc(id3, Timestamp(7), bucket(6)),
                 nil()));
-    EXPECT_FALSE(dr->getDocumentMetaData(DocumentId("id:ns:document::bogus")).valid());
+    EXPECT_FALSE(dr->getDocumentMetadata(DocumentId("id:ns:document::bogus")).valid());
     EXPECT_FALSE(dr->getDocument(1, id1));
     EXPECT_FALSE(dr->getDocument(2, id2));
     EXPECT_TRUE(dr->getDocument(3, id3));
@@ -453,8 +453,8 @@ TEST(DocumentIteratorTest, require_that_custom_retrievers_work_as_expected)
     checkDoc(*dr, "id:ns:document::3", 7, 6, false);
     DocumentMetadata::Vector b5;
     DocumentMetadata::Vector b6;
-    dr->getBucketMetaData(bucket(5), b5);
-    dr->getBucketMetaData(bucket(6), b6);
+    dr->getBucketMetadata(bucket(5), b5);
+    dr->getBucketMetadata(bucket(6), b6);
     ASSERT_EQ(2u, b5.size());
     ASSERT_EQ(1u, b6.size());
     EXPECT_EQ(5u, b5[0].timestamp + b5[1].timestamp);
@@ -633,7 +633,7 @@ TEST(DocumentIteratorTest, require_that_iterating_all_versions_returns_both_docu
     checkEntry(res, 2, DocumentId("id:ns:document::3"), Timestamp(4));
 }
 
-TEST(DocumentIteratorTest, require_that_using_an_empty_field_set_returns_meta_data_only)
+TEST(DocumentIteratorTest, require_that_using_an_empty_field_set_returns_metadata_only)
 {
     DocumentIterator itr(bucket(5), std::make_shared<document::NoFields>(), selectAll(), newestV(), -1, false);
     itr.add(DocTypeName("foo"), doc_with_fields("id:ns:foo::1", Timestamp(2), bucket(5)));
@@ -687,7 +687,7 @@ TEST(DocumentIteratorTest, require_that_maxBytes_splits_iteration_results)
     EXPECT_EQ(0u, res3.getEntries().size());
 }
 
-TEST(DocumentIteratorTest, require_that_maxBytes_splits_iteration_results_for_meta_data_only_iteration)
+TEST(DocumentIteratorTest, require_that_maxBytes_splits_iteration_results_for_metadata_only_iteration)
 {
     DocumentIterator itr(bucket(5), std::make_shared<document::NoFields>(), selectAll(), newestV(), -1, false);
     itr.add(doc("id:ns:document::1", Timestamp(2), bucket(5)));

@@ -142,9 +142,9 @@ private:
     RawDocumentMetadata removeInternal(DocId lid, uint64_t cached_iterator_sequence_id);
     void remove_batch_internal_btree(std::vector<LidAndRawDocumentMetadata>& removed);
 
-    MetadataView make_meta_data_view() { return {&_metadataStore[0], getCommittedDocIdLimit()}; }
-    UnboundMetadataView acquire_unbound_meta_data_view() const noexcept { return &_metadataStore.acquire_elem_ref(0); }
-    UnboundMetadataView get_unbound_meta_data_view() const noexcept { return &_metadataStore.get_elem_ref(0); } // Called from writer only
+    MetadataView make_metadata_view() { return {&_metadataStore[0], getCommittedDocIdLimit()}; }
+    UnboundMetadataView acquire_unbound_metadata_view() const noexcept { return &_metadataStore.acquire_elem_ref(0); }
+    UnboundMetadataView get_unbound_metadata_view() const noexcept { return &_metadataStore.get_elem_ref(0); } // Called from writer only
 
     uint32_t get_shrink_lid_space_blockers() const noexcept { return _shrinkLidSpaceBlockers.load(std::memory_order_relaxed); }
     void set_shrink_lid_space_blockers(uint32_t value) noexcept { _shrinkLidSpaceBlockers.store(value, std::memory_order_relaxed); }

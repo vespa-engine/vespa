@@ -9,13 +9,13 @@
 namespace search::tensor {
 
 /*
- * Meta data for node during save of hnsw graph.
+ * Metadata for node during save of hnsw graph.
  */
 template <HnswIndexType type>
 class HnswIndexSaverMetadataNode;
 
 /*
- * Meta data for node during save of hnsw graph with one node per document and
+ * Metadata for node during save of hnsw graph with one node per document and
  * identity mapping between nodeid and docid.
  */
 template <>
@@ -37,7 +37,7 @@ public:
 };
 
 /*
- * Meta data for node during save of hnsw graph with multiple nodes per document and
+ * Metadata for node during save of hnsw graph with multiple nodes per document and
  * managed mapping between nodeid and docid.
  */
 template <>

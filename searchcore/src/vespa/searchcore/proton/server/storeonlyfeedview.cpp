@@ -102,7 +102,7 @@ getGidsToRemove(const IDocumentMetaStore &metaStore, const LidVectorContext::Lid
 }
 
 void
-putMetaData(documentmetastore::IStore &meta_store, const DocumentId & doc_id,
+putMetadata(documentmetastore::IStore &meta_store, const DocumentId & doc_id,
             const DocumentOperation &op, bool is_removed_doc)
 {
     documentmetastore::IStore::Result putRes(
@@ -117,7 +117,7 @@ putMetaData(documentmetastore::IStore &meta_store, const DocumentId & doc_id,
 }
 
 void
-removeMetaData(documentmetastore::IStore &meta_store, const GlobalId & gid, const DocumentId &doc_id,
+removeMetadata(documentmetastore::IStore &meta_store, const GlobalId & gid, const DocumentId &doc_id,
                const DocumentOperation &op, bool is_removed_doc)
 {
     assert(meta_store.validLid(op.getPrevLid()));
@@ -133,7 +133,7 @@ removeMetaData(documentmetastore::IStore &meta_store, const GlobalId & gid, cons
 }
 
 void
-moveMetaData(documentmetastore::IStore &meta_store, const DocumentId & doc_id, const DocumentOperation &op)
+moveMetadata(documentmetastore::IStore &meta_store, const DocumentId & doc_id, const DocumentOperation &op)
 {
     (void) doc_id;
     assert(op.getLid() != op.getPrevLid());
@@ -634,15 +634,15 @@ StoreOnlyFeedView::adjustMetaStore(const DocumentOperation &op, const GlobalId &
                 op.getValidPrevDbdId(_params._subDbId) &&
                 op.getLid() != op.getPrevLid())
             {
-                moveMetaData(_metaStore, docId, op);
+                moveMetadata(_metaStore, docId, op);
             } else {
-                putMetaData(_metaStore, docId, op, _params._subDbType == SubDbType::REMOVED);
+                putMetadata(_metaStore, docId, op, _params._subDbType == SubDbType::REMOVED);
             }
         } else if (op.getValidPrevDbdId(_params._subDbId)) {
             vespalib::Gate gate;
             _gidToLidChangeHandler.notifyRemove(std::make_shared<vespalib::GateCallback>(gate), gid, serialNum);
             gate.await();
-            removeMetaData(_metaStore, gid, docId, op, _params._subDbType == SubDbType::REMOVED);
+            removeMetadata(_metaStore, gid, docId, op, _params._subDbType == SubDbType::REMOVED);
         }
     }
 }

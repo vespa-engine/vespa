@@ -30,7 +30,7 @@ public:
     std::unique_ptr<MoveOperation> createMoveOperation(const search::DocumentMetadata &document, uint32_t moveToLid) const override;
     void handleMove(const MoveOperation &op, std::shared_ptr<vespalib::IDestructorCallback> doneCtx) override;
     void handleCompactLidSpace(const CompactLidSpaceOperation &op, std::shared_ptr<vespalib::IDestructorCallback> compact_done_context) override;
-    search::DocumentMetadata getMetaData(uint32_t lid) const override;
+    search::DocumentMetadata getMetadata(uint32_t lid) const override;
 };
 
 } // namespace proton

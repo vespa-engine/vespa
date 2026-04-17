@@ -10,7 +10,7 @@
 namespace proton::bucketdb {
 
 /*
- * Class containing meta data for a single document being removed from
+ * Class containing metadata for a single document being removed from
  * bucket db.
  */
 class RemoveBatchEntry {

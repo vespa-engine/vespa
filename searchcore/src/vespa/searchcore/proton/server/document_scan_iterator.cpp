@@ -27,9 +27,9 @@ DocumentScanIterator::next(uint32_t compactLidLimit)
 {
     for (--_lastLid; _lastLid > compactLidLimit; --_lastLid) {
         if (_metaStore.validLid(_lastLid)) {
-            const RawDocumentMetadata &metaData = _metaStore.getRawMetadata(_lastLid);
-            return DocumentMetadata(_lastLid, metaData.getTimestamp(),
-                                    metaData.getBucketId(), metaData.getGid());
+            const RawDocumentMetadata &metadata = _metaStore.getRawMetadata(_lastLid);
+            return DocumentMetadata(_lastLid, metadata.getTimestamp(),
+                                    metadata.getBucketId(), metadata.getGid());
         }
     }
     _itrValid = (_lastLid > compactLidLimit) ;

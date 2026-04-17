@@ -149,8 +149,8 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest
     explicit MyDocumentRetriever(MyDocumentSubDB &subDB) noexcept : _subDB(subDB) { }
 
     const document::DocumentTypeRepo & getDocumentTypeRepo() const override { abort(); }
-    void getBucketMetaData(const storage::spi::Bucket &, DocumentMetadata::Vector &) const override { abort(); }
-    DocumentMetadata getDocumentMetaData(const DocumentId &) const override { return {}; }
+    void getBucketMetadata(const storage::spi::Bucket &, DocumentMetadata::Vector &) const override { abort(); }
+    DocumentMetadata getDocumentMetadata(const DocumentId &) const override { return {}; }
     Document::UP getFullDocument(DocumentIdT lid) const override { return _subDB.getDocument(lid); }
     CachedSelect::SP parseSelect(const std::string &) const override { return {}; }
 };

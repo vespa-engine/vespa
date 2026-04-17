@@ -167,7 +167,7 @@ assertLid(uint32_t exp, const GlobalId &gid, const DocumentMetaStore &dms)
 }
 
 void
-assertMetaData(const DocumentMetadata &exp, const DocumentMetadata &act)
+assertMetadata(const DocumentMetadata &exp, const DocumentMetadata &act)
 {
     EXPECT_EQ(exp.lid, act.lid);
     EXPECT_EQ(exp.timestamp, act.timestamp);
@@ -282,7 +282,7 @@ putDoc(DocumentMetaStore &dms, const DocumentId& docid, uint32_t lid, Timestamp 
     dms.commit();
 }
 
-TEST(DocumentMetaStoreTest, control_meta_data_sizeof) {
+TEST(DocumentMetaStoreTest, control_metadata_sizeof) {
     EXPECT_EQ(32u, sizeof(RawDocumentMetadata));
     EXPECT_EQ(40u, sizeof(search::DocumentMetadata));
 }
@@ -918,7 +918,7 @@ UserDocFixture::addDocumentIds(size_t numGids) {
     }
 }
 
-TEST(DocumentMetaStoreTest, can_retrieve_list_of_meta_data_from_bucket_id)
+TEST(DocumentMetaStoreTest, can_retrieve_list_of_metadata_from_bucket_id)
 {
     UserDocFixture f;
     { // empty bucket
@@ -933,13 +933,13 @@ TEST(DocumentMetaStoreTest, can_retrieve_list_of_meta_data_from_bucket_id)
         f.dms.getMetadata(f.bid1, result);
         std::sort(result.begin(), result.end(), Comparator());
         EXPECT_EQ(4u, result.size());
-        assertMetaData(DocumentMetadata(1, Timestamp(101), f.bid1,
+        assertMetadata(DocumentMetadata(1, Timestamp(101), f.bid1,
                                         f.docids[0].getGlobalId()), result[0]);
-        assertMetaData(DocumentMetadata(2, Timestamp(102), f.bid1,
+        assertMetadata(DocumentMetadata(2, Timestamp(102), f.bid1,
                                         f.docids[1].getGlobalId()), result[1]);
-        assertMetaData(DocumentMetadata(4, Timestamp(104), f.bid1,
+        assertMetadata(DocumentMetadata(4, Timestamp(104), f.bid1,
                                         f.docids[3].getGlobalId()), result[2]);
-        assertMetaData(DocumentMetadata(5, Timestamp(105), f.bid1,
+        assertMetadata(DocumentMetadata(5, Timestamp(105), f.bid1,
                                         f.docids[4].getGlobalId()), result[3]);
     }
     { // verify bucket 2
@@ -947,11 +947,11 @@ TEST(DocumentMetaStoreTest, can_retrieve_list_of_meta_data_from_bucket_id)
         f.dms.getMetadata(f.bid2, result);
         std::sort(result.begin(), result.end(), Comparator());
         EXPECT_EQ(3u, result.size());
-        assertMetaData(DocumentMetadata(3, Timestamp(103), f.bid2,
+        assertMetadata(DocumentMetadata(3, Timestamp(103), f.bid2,
                                         f.docids[2].getGlobalId()), result[0]);
-        assertMetaData(DocumentMetadata(6, Timestamp(106), f.bid2,
+        assertMetadata(DocumentMetadata(6, Timestamp(106), f.bid2,
                                         f.docids[5].getGlobalId()), result[1]);
-        assertMetaData(DocumentMetadata(7, Timestamp(107), f.bid2,
+        assertMetadata(DocumentMetadata(7, Timestamp(107), f.bid2,
                                         f.docids[6].getGlobalId()), result[2]);
     }
 }
@@ -1971,8 +1971,8 @@ void
 assertSize(DocumentMetaStore &dms, uint32_t lid, uint32_t expSize)
 {
     EXPECT_TRUE(dms.validLid(lid));
-    const auto &metaData = dms.getRawMetadata(lid);
-    EXPECT_EQ(expSize, metaData.getDocSize());
+    const auto &metadata = dms.getRawMetadata(lid);
+    EXPECT_EQ(expSize, metadata.getDocSize());
 }
 
 void

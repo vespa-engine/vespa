@@ -88,7 +88,7 @@ struct MyHandler : public ILidSpaceCompactionHandler {
     uint32_t getSubDbId() const override { return 2; }
     LidUsageStats getLidStatus() const override;
     IDocumentScanIterator::UP getIterator() const override;
-    search::DocumentMetadata getMetaData(uint32_t lid) const override;
+    search::DocumentMetadata getMetadata(uint32_t lid) const override;
     MoveOperation::UP createMoveOperation(const search::DocumentMetadata &document,
                                           uint32_t moveToLid) const override;
     void handleMove(const MoveOperation &, IDestructorCallback::SP moveDoneCtx) override;
@@ -128,8 +128,8 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
     MyDocumentRetriever(std::shared_ptr<const DocumentTypeRepo> repo_in, const MyDocumentStore& store_in) noexcept;
     ~MyDocumentRetriever();
     const document::DocumentTypeRepo& getDocumentTypeRepo() const override;
-    void getBucketMetaData(const storage::spi::Bucket&, DocumentMetadata::Vector&) const override;
-    DocumentMetadata getDocumentMetaData(const DocumentId&) const override;
+    void getBucketMetadata(const storage::spi::Bucket&, DocumentMetadata::Vector&) const override;
+    DocumentMetadata getDocumentMetadata(const DocumentId&) const override;
     Document::UP getFullDocument(DocumentIdT lid) const override;
     CachedSelect::SP parseSelect(const std::string&) const override;
 };

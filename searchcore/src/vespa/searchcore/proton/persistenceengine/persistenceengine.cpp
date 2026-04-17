@@ -513,7 +513,7 @@ PersistenceEngine::get(const Bucket& b, const document::FieldSet& fields, const 
         IPersistenceHandler::RetrieversSP retrievers = snap.handlers().get()->getDocumentRetrievers(context.getReadConsistency());
         for (size_t i = 0; i < retrievers->size(); ++i) {
             IDocumentRetriever &retriever = *(*retrievers)[i];
-            search::DocumentMetadata meta = retriever.getDocumentMetaData(did);
+            search::DocumentMetadata meta = retriever.getDocumentMetadata(did);
             storage::spi::Timestamp timestamp(meta.timestamp);
             if (timestamp != 0 && meta.bucketId == b.getBucketId()) {
                 if (meta.removed) {

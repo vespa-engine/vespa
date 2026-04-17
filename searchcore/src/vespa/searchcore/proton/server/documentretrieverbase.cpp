@@ -29,14 +29,14 @@ DocumentRetrieverBase::DocumentRetrieverBase(const DocTypeName &docTypeName, con
 DocumentRetrieverBase::~DocumentRetrieverBase() = default;
 
 void
-DocumentRetrieverBase::getBucketMetaData(const storage::spi::Bucket &bucket,
+DocumentRetrieverBase::getBucketMetadata(const storage::spi::Bucket &bucket,
                                          search::DocumentMetadata::Vector &result) const
 {
     _meta_store.getReadGuard()->get().getMetadata(bucket, result);
 }
 
 search::DocumentMetadata
-DocumentRetrieverBase::getDocumentMetaData(const DocumentId &id) const {
+DocumentRetrieverBase::getDocumentMetadata(const DocumentId &id) const {
     return _meta_store.getReadGuard()->get().getMetadata(id.getGlobalId());
 }
     

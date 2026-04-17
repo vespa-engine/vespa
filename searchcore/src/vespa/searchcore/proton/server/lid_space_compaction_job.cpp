@@ -109,9 +109,9 @@ void
 CompactionJob::completeMove(const search::DocumentMetadata & metaThen, std::unique_ptr<MoveOperation> moveOp,
                             std::shared_ptr<IDestructorCallback> onDone)
 {
-    // Reread meta data as document might have been altered after move was initiated
+    // Reread metadata as document might have been altered after move was initiated
     // If so it will fail the timestamp sanity check later on.
-    search::DocumentMetadata metaNow = _handler->getMetaData(metaThen.lid);
+    search::DocumentMetadata metaNow = _handler->getMetadata(metaThen.lid);
     if ( ! isSameDocument(metaThen, metaNow)) return;
     if (metaNow.gid != moveOp->getDocument()->getId().getGlobalId()) return;
 
