@@ -14,7 +14,7 @@ namespace proton {
 
 struct IDocumentMetaStore;
 class IPruneRemovedDocumentsHandler;
-struct RawDocumentMetaData;
+struct RawDocumentMetadata;
 
 /**
  * Job that regularly checks whether old removed documents should be
@@ -42,7 +42,7 @@ private:
 
     DocId                          _nextLid;
 
-    void remove(uint32_t lid, const RawDocumentMetaData & meta);
+    void remove(uint32_t lid, const RawDocumentMetadata & meta);
 
     PruneRemovedDocumentsJob(const DocumentDBPruneConfig &config, vespalib::RetainGuard dbRetainer, const IDocumentMetaStore &metaStore,
                              uint32_t subDbId, document::BucketSpace bucketSpace, const std::string &docTypeName,

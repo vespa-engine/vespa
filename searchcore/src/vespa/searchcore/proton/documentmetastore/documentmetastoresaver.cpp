@@ -14,23 +14,23 @@ namespace proton {
 namespace {
 
 /*
- * Functor class to write meta data for a single lid. Note that during
+ * Functor class to write metadata for a single lid. Note that during
  * a background save with active feeding, timestamp, bucket used bits
  * and size might reflect future values due to missing snapshot
  * properties in RcuVector. Size might also reflect a mix between
  * current and future value due to non-atomic access.
  */
-class WriteMetaData
+class WriteMetadata
 {
-    using MetaDataView = DocumentMetaStoreSaver::MetaDataView;
+    using MetadataView = DocumentMetaStoreSaver::MetadataView;
     using GlobalId = documentmetastore::IStore::GlobalId;
     using BucketId = documentmetastore::IStore::BucketId;
     using Timestamp = documentmetastore::IStore::Timestamp;
     search::BufferWriter &_datWriter;
-    MetaDataView _metaDataView;
+    MetadataView _metaDataView;
     bool _writeDocSize;
 public:
-    WriteMetaData(search::BufferWriter &datWriter, MetaDataView metaDataView, bool writeDocSize)
+    WriteMetadata(search::BufferWriter &datWriter, MetadataView metaDataView, bool writeDocSize)
         : _datWriter(datWriter),
           _metaDataView(metaDataView),
           _writeDocSize(writeDocSize)
@@ -39,7 +39,7 @@ public:
     void operator()(documentmetastore::GidToLidMapKey key) {
         auto lid = key.get_lid();
         assert(lid < _metaDataView.size());
-        const RawDocumentMetaData &metaData = _metaDataView[lid];
+        const RawDocumentMetadata &metaData = _metaDataView[lid];
         const GlobalId &gid = metaData.getGid();
         // 6 bits used for bucket bits
         uint8_t bucketUsedBits = metaData.getBucketUsedBits();
@@ -70,7 +70,7 @@ DocumentMetaStoreSaver::
 DocumentMetaStoreSaver(GenerationGuard&& guard,
                        const search::attribute::AttributeHeader& header,
                        const GidIterator& gidIterator,
-                       MetaDataView metaDataView)
+                       MetadataView metaDataView)
     : AttributeSaver(std::move(guard), header),
       _gidIterator(gidIterator),
       _metaDataView(metaDataView),
@@ -91,7 +91,7 @@ DocumentMetaStoreSaver::onSave(IAttributeSaveTarget &saveTarget)
     // write <lid,gid> pairs, sorted on gid
     std::unique_ptr<search::BufferWriter>
         datWriter(saveTarget.datWriter().allocBufferWriter());
-    _gidIterator.foreach_key(WriteMetaData(*datWriter, _metaDataView, _writeDocSize));
+    _gidIterator.foreach_key(WriteMetadata(*datWriter, _metaDataView, _writeDocSize));
     datWriter->flush();
     return true;
 }

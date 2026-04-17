@@ -43,7 +43,7 @@ PruneRemovedDocumentsJob(const DocumentDBPruneConfig &config, RetainGuard dbReta
 
 class PruneRemovedDocumentsJob::PruneTask : public storage::spi::BucketTask {
 public:
-    PruneTask(std::shared_ptr<PruneRemovedDocumentsJob> job, uint32_t lid, const RawDocumentMetaData & meta, IDestructorCallback::SP opsTracker)
+    PruneTask(std::shared_ptr<PruneRemovedDocumentsJob> job, uint32_t lid, const RawDocumentMetadata & meta, IDestructorCallback::SP opsTracker)
         : _job(std::move(job)),
           _lid(lid),
           _meta(meta),
@@ -56,7 +56,7 @@ public:
 private:
     std::shared_ptr<PruneRemovedDocumentsJob> _job;
     uint32_t                                    _lid;
-    const RawDocumentMetaData                   _meta;
+    const RawDocumentMetadata                   _meta;
     IDestructorCallback::SP                     _opsTracker;
 };
 
@@ -74,10 +74,10 @@ PruneRemovedDocumentsJob::PruneTask::run(const Bucket & bucket, IDestructorCallb
 }
 
 void
-PruneRemovedDocumentsJob::remove(uint32_t lid, const RawDocumentMetaData & oldMeta) {
+PruneRemovedDocumentsJob::remove(uint32_t lid, const RawDocumentMetadata & oldMeta) {
     if (stopped()) return;
     if ( ! _metaStore.validLid(lid)) return;
-    const RawDocumentMetaData &meta = _metaStore.getRawMetaData(lid);
+    const RawDocumentMetadata &meta = _metaStore.getRawMetadata(lid);
     if (meta.getBucketId() != oldMeta.getBucketId()) return;
     if (meta.getTimestamp() != oldMeta.getTimestamp()) return;
     if (meta.getGid() != oldMeta.getGid()) return;
@@ -97,7 +97,7 @@ PruneRemovedDocumentsJob::run()
     const DocId lidLimit = std::min(_nextLid + 1000000u, docIdLimit);
     for (; ! isBlocked() && _nextLid < lidLimit; _nextLid++) {
         if ( ! _metaStore.validLid(_nextLid)) continue;
-        const RawDocumentMetaData &meta = _metaStore.getRawMetaData(_nextLid);
+        const RawDocumentMetadata &meta = _metaStore.getRawMetadata(_nextLid);
         if (meta.getTimestamp() >= ageLimit) continue;
 
         _bucketExecutor.execute(Bucket(document::Bucket(_bucketSpace, meta.getBucketId())),

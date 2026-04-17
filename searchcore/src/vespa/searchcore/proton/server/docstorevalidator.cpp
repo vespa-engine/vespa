@@ -43,7 +43,7 @@ DocStoreValidator::visit(uint32_t lid, const std::shared_ptr<document::Document>
     }
     const document::DocumentId &docId(doc->getId());
     const document::GlobalId &gid = docId.getGlobalId();
-    const RawDocumentMetaData &meta = _dms.getRawMetaData(lid);
+    const RawDocumentMetadata &meta = _dms.getRawMetadata(lid);
     const document::GlobalId &dmsGid = meta.getGid();
     if (gid == dmsGid) {
         _invalid->clearBit(lid);

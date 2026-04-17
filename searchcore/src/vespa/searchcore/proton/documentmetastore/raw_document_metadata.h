@@ -15,7 +15,7 @@ namespace proton {
 /**
  * The raw data that is stored for a single document in the DocumentMetaStore.
  */
-struct RawDocumentMetaData
+struct RawDocumentMetadata
 {
     using GlobalId = document::GlobalId;
     using BucketId = document::BucketId;
@@ -28,14 +28,14 @@ struct RawDocumentMetaData
 
     static uint32_t capped_doc_size(uint32_t doc_size) { return std::min(0xffffffu, doc_size); }
 
-    RawDocumentMetaData() noexcept
+    RawDocumentMetadata() noexcept
         : _gid(),
           _docid_ref(),
           _bucket_used_bits_and_doc_size(BucketId::minNumBits),
           _timestamp(0)
     { }
 
-    RawDocumentMetaData(const GlobalId &gid, const BucketId &bucketId, const Timestamp &timestamp, uint32_t docSize) noexcept
+    RawDocumentMetadata(const GlobalId &gid, const BucketId &bucketId, const Timestamp &timestamp, uint32_t docSize) noexcept
         : _gid(gid),
           _docid_ref(),
           _bucket_used_bits_and_doc_size(bucketId.getUsedBits() | (capped_doc_size(docSize) << 8)),
@@ -48,7 +48,7 @@ struct RawDocumentMetaData
                bucketId.getRawId() == verId.getId());
     }
 
-    RawDocumentMetaData(const RawDocumentMetaData& rhs)
+    RawDocumentMetadata(const RawDocumentMetadata& rhs)
         : _gid(rhs._gid),
           _docid_ref(rhs._docid_ref),
           _bucket_used_bits_and_doc_size(rhs._bucket_used_bits_and_doc_size.load(std::memory_order_relaxed)),
@@ -56,7 +56,7 @@ struct RawDocumentMetaData
     {
     }
 
-    RawDocumentMetaData& operator=(const RawDocumentMetaData& rhs) {
+    RawDocumentMetadata& operator=(const RawDocumentMetadata& rhs) {
         _gid = rhs._gid;
         _docid_ref = rhs._docid_ref;
         _bucket_used_bits_and_doc_size.store(rhs._bucket_used_bits_and_doc_size.load(std::memory_order_relaxed), std::memory_order_relaxed);
@@ -66,8 +66,8 @@ struct RawDocumentMetaData
 
     bool operator<(const GlobalId &rhs) const noexcept { return _gid < rhs; }
     bool operator==(const GlobalId &rhs) const noexcept { return _gid == rhs; }
-    bool operator<(const RawDocumentMetaData &rhs) const noexcept { return _gid < rhs._gid; }
-    bool operator==(const RawDocumentMetaData &rhs) const noexcept { return _gid == rhs._gid; }
+    bool operator<(const RawDocumentMetadata &rhs) const noexcept { return _gid < rhs._gid; }
+    bool operator==(const RawDocumentMetadata &rhs) const noexcept { return _gid == rhs._gid; }
 
     const GlobalId &getGid() const { return _gid; }
     GlobalId &getGid() { return _gid; }

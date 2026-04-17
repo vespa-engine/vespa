@@ -70,7 +70,7 @@ public:
         return Result();
     }
 
-    bool updateMetaData(DocId, const BucketId &, Timestamp ) override {
+    bool updateMetadata(DocId, const BucketId &, Timestamp ) override {
         return true;
     }
 
@@ -92,7 +92,7 @@ public:
 
     void removeBatch(const std::vector<DocId> &, const DocId) override {}
 
-    const RawDocumentMetaData &getRawMetaData(DocId) const override {
+    const RawDocumentMetadata &getRawMetadata(DocId) const override {
         LOG_ABORT("should not be reached");
     }
 
