@@ -1,427 +1,182 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.embedding;
 
+import ai.vespa.embedding.config.HttpEmbedderConfig;
 import ai.vespa.embedding.config.VoyageAiEmbedderConfig;
 import ai.vespa.secret.Secret;
 import ai.vespa.secret.Secrets;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.api.annotations.Beta;
-import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.language.process.Embedder;
-import com.yahoo.language.process.InvalidInputException;
-import com.yahoo.language.process.OverloadException;
-import com.yahoo.language.process.TimeoutException;
-import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
-import com.yahoo.text.Text;
-import okhttp3.ConnectionPool;
-import okhttp3.Interceptor;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
 
-import java.io.IOException;
-import java.io.InterruptedIOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.time.Duration;
-import java.util.Base64;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
+import java.util.Map;
 
 /**
- * VoyageAI embedder that uses the VoyageAI Embeddings API.
+ * Embedder using the VoyageAI embeddings API. Auto-selects between the text, multimodal,
+ * and contextualized endpoints based on the configured model name.
  *
  * @see <a href="https://docs.voyageai.com/">VoyageAI Documentation</a>
- * @author VoyageAI team
  * @author bjorncs
  */
 @Beta
-public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
+public class VoyageAIEmbedder extends AbstractHttpEmbedder implements Embedder {
 
-    private static final Logger log = Logger.getLogger(VoyageAIEmbedder.class.getName());
-    private static final ObjectMapper objectMapper = new ObjectMapper();
-
-    // VoyageAI API endpoints - auto-selected based on model name
     private static final String EMBEDDINGS_ENDPOINT = "https://api.voyageai.com/v1/embeddings";
     private static final String MULTIMODAL_EMBEDDINGS_ENDPOINT = "https://api.voyageai.com/v1/multimodalembeddings";
     private static final String CONTEXTUALIZED_EMBEDDINGS_ENDPOINT = "https://api.voyageai.com/v1/contextualizedembeddings";
 
-    // Configuration
     private final VoyageAiEmbedderConfig config;
     private final Embedder.Runtime runtime;
-    private final Embedder.Batching batching;
     private final Secret apiKey;
-    private final OkHttpClient httpClient;
+    private final Embedder.Batching batching;
+    private final EmbeddingQuantization.Quantization quantization;
     private final String resolvedEndpoint;
+    private final boolean isMultimodal;
+    private final boolean isContextual;
 
     @Inject
-    public VoyageAIEmbedder(VoyageAiEmbedderConfig config, Embedder.Runtime runtime, Secrets secretStore) {
+    public VoyageAIEmbedder(VoyageAiEmbedderConfig config, Embedder.Runtime runtime, Secrets secrets) {
+        this(config, new HttpEmbedderConfig.Builder().build(), runtime, secrets);
+    }
+
+    VoyageAIEmbedder(VoyageAiEmbedderConfig config, HttpEmbedderConfig httpConfig,
+                     Embedder.Runtime runtime, Secrets secrets) {
+        super(httpConfig);
         this.config = config;
         this.runtime = runtime;
-        this.batching = Embedder.Batching.of(config.batching().maxSize(), Duration.ofMillis(config.batching().maxDelayMillis()));
-        this.apiKey = secretStore.get(config.apiKeySecretRef());
-        this.httpClient = createHttpClient(config);
-        this.resolvedEndpoint = resolveEndpoint(config);
-
-        log.fine(() -> Text.format("VoyageAI embedder initialized with model: %s, endpoint: %s", config.model(), resolvedEndpoint));
+        if (config.apiKeySecretRef().isBlank())
+            throw new IllegalArgumentException("'api-key-secret-ref' must be configured for VoyageAI embedder");
+        this.apiKey = secrets.get(config.apiKeySecretRef());
+        this.batching = Embedder.Batching.of(
+                config.batching().maxSize(), Duration.ofMillis(config.batching().maxDelayMillis()));
+        this.quantization = EmbeddingQuantization.Quantization.valueOf(config.quantization().name());
+        this.isMultimodal = config.model().startsWith("voyage-multimodal-");
+        this.isContextual = config.model().startsWith("voyage-context-");
+        this.resolvedEndpoint = resolveEndpoint(config.endpoint(), isMultimodal, isContextual);
     }
 
-    private String resolveEndpoint(VoyageAiEmbedderConfig config) {
-        // If user explicitly configured an endpoint, use it
-        String configuredEndpoint = config.endpoint();
-        if (configuredEndpoint != null && !configuredEndpoint.equals(EMBEDDINGS_ENDPOINT)) {
-            return configuredEndpoint;
-        }
-
-        // Auto-select endpoint based on model name
-        String model = config.model();
-        if (model != null) {
-            if (model.startsWith("voyage-multimodal-")) {
-                return MULTIMODAL_EMBEDDINGS_ENDPOINT;
-            }
-            if (model.startsWith("voyage-context-")) {
-                return CONTEXTUALIZED_EMBEDDINGS_ENDPOINT;
-            }
-        }
-
-        return EMBEDDINGS_ENDPOINT;
-    }
-
-    private OkHttpClient createHttpClient(VoyageAiEmbedderConfig config) {
-        return new OkHttpClient.Builder()
-                .addInterceptor(new RetryInterceptor(config.maxRetries()))
-                .retryOnConnectionFailure(true)
-                .connectTimeout(Duration.ofSeconds(10))
-                .readTimeout(Duration.ofMillis(config.timeout()))
-                .writeTimeout(Duration.ofMillis(config.timeout()))
-                .connectionPool(new ConnectionPool(10, 1, TimeUnit.MINUTES))
-                .build();
-    }
-
-    @Override
-    public Batching batchingConfig() { return batching; }
+    @Override public Batching batchingConfig() { return (isMultimodal || isContextual) ? Batching.DISABLED : batching; }
 
     @Override
     public List<Integer> embed(String text, Context context) {
         throw new UnsupportedOperationException(
-            "VoyageAI embedder only supports embed() with TensorType. " +
-            "Use embed(String text, Context context, TensorType targetType) instead."
-        );
+                "VoyageAI embedder only supports embed() with TensorType. Use embed(String, Context, TensorType) instead.");
     }
 
     @Override
     public Tensor embed(String text, Context context, TensorType targetType) {
-        return invokeVoyageAI(List.of(text), context, targetType)
-                .get(0);
+        return embed(List.of(text), context, targetType).get(0);
     }
 
     @Override
     public List<Tensor> embed(List<String> texts, Context context, TensorType targetType) {
-        return invokeVoyageAI(texts, context, targetType);
-    }
-
-    private void validateTensorType(TensorType targetTensorType) {
-        if (targetTensorType.dimensions().size() != 1)
-            throw new IllegalArgumentException(
-                    "Error in embedding to type '" + targetTensorType + "': should only have one dimension.");
-        var tensorDimension = targetTensorType.dimensions().get(0);
-        if (!tensorDimension.isIndexed())
-            throw new IllegalArgumentException(
-                    "Error in embedding to type '" + targetTensorType + "': dimension should be indexed.");
-        var valueType = targetTensorType.valueType();
-
-        int configuredDim = config.dimensions();
-        long tensorDim = tensorDimension.size().orElseThrow();
-
-        switch (config.quantization()) {
-            case AUTO:
-                if (valueType == TensorType.Value.FLOAT || valueType == TensorType.Value.BFLOAT16) {
-                    if (tensorDim != configuredDim)
-                        throw new IllegalArgumentException(Text.format("Tensor dimension %d does not match configured dimension %d.", tensorDim, configuredDim));
-                } else if (valueType == TensorType.Value.INT8) {
-                    if (tensorDim != configuredDim && tensorDim != configuredDim / 8)
-                        throw new IllegalArgumentException(Text.format("Tensor dimension %d does not match configured dimension. Expected %d or %d.", tensorDim, configuredDim, configuredDim / 8));
-                } else {
-                    throw new IllegalArgumentException(
-                            "Quantization 'auto' is incompatible with tensor type " + targetTensorType + ".");
-                }
-                break;
-            case FLOAT:
-                if (valueType != TensorType.Value.FLOAT && valueType != TensorType.Value.BFLOAT16)
-                    throw new IllegalArgumentException(
-                            "Quantization 'float' is incompatible with tensor type " + targetTensorType + ".");
-                if (tensorDim != configuredDim)
-                    throw new IllegalArgumentException(Text.format("Tensor dimension %d does not match configured dimension %d.", tensorDim, configuredDim));
-                break;
-            case INT8:
-                if (valueType != TensorType.Value.INT8)
-                    throw new IllegalArgumentException(
-                            "Quantization 'int8' is incompatible with tensor type " + targetTensorType + ".");
-                if (tensorDim != configuredDim)
-                    throw new IllegalArgumentException(Text.format("Tensor dimension %d does not match configured dimension %d.", tensorDim, configuredDim));
-                break;
-            case BINARY:
-                if (valueType != TensorType.Value.INT8)
-                    throw new IllegalArgumentException(
-                            "Quantization 'binary' is incompatible with tensor type " + targetTensorType + ".");
-                if (tensorDim != configuredDim / 8)
-                    throw new IllegalArgumentException(Text.format("Tensor dimension %d does not match required dimension %d.", tensorDim, configuredDim / 8));
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported quantization: " + config.quantization());
-        }
-    }
-
-    private boolean isMultimodalModel() { return config.model().startsWith("voyage-multimodal-"); }
-    private boolean isContextualModel() { return config.model().startsWith("voyage-context-"); }
-
-    private String resolveOutputDataType(TensorType targetType) {
-        return switch (config.quantization()) {
-            case AUTO -> {
-                if (targetType.valueType() == TensorType.Value.FLOAT || targetType.valueType() == TensorType.Value.BFLOAT16) {
-                    yield "float";
-                } else if (targetType.valueType() == TensorType.Value.INT8) {
-                    long tensorDim = targetType.dimensions().get(0).size().orElseThrow();
-                    yield (tensorDim == config.dimensions()) ? "int8" : "binary";
-                } else {
-                    throw new IllegalStateException();
-                }
-            }
-            case FLOAT -> "float";
-            case INT8 -> "int8";
-            case BINARY -> "binary";
-        };
-    }
-
-    private List<Tensor> invokeVoyageAI(List<String> texts, Context context, TensorType targetType) {
         long startTime = System.nanoTime();
-        validateTensorType(targetType);
+        EmbeddingQuantization.validateTensorType(targetType, config.dimensions(), quantization);
         var inputType = context.getDestinationType() == Context.DestinationType.QUERY ? "query" : "document";
-        var outputDataType = resolveOutputDataType(targetType);
-        var timeoutMs = calculateTimeoutMs(context);
+        var outputDataType = EmbeddingQuantization.resolveOutputDataType(targetType, config.dimensions(), quantization);
 
+        record CacheKey(String embedderId, List<String> texts, String inputType, String outputDataType) {}
         var cacheKey = new CacheKey(context.getEmbedderId(), texts, inputType, outputDataType);
-        var responseBody = context.computeCachedValueIfAbsent(cacheKey, () -> {
-            var jsonRequest = createJsonRequest(texts, inputType, outputDataType);
-            log.fine(() -> "VoyageAI request: " + jsonRequest);
-            return doRequest(jsonRequest, timeoutMs, context);
-        });
+        var response = context.computeCachedValueIfAbsent(
+                cacheKey, () -> sendRequest(texts, inputType, outputDataType, context));
 
-        var tensors = toTensors(responseBody, targetType, outputDataType, context);
-        var latency = Duration.ofNanos(System.nanoTime() - startTime);
-        runtime.sampleEmbeddingLatency(latency.toMillis(), context);
+        if (response.totalTokens() > 0)
+            runtime.sampleSequenceLength(response.totalTokens(), context);
+        var tensors = toTensors(response, targetType, outputDataType);
+        runtime.sampleEmbeddingLatency(Duration.ofNanos(System.nanoTime() - startTime).toMillis(), context);
         return tensors;
     }
 
-    private List<Tensor> toTensors(String responseBody, TensorType targetType, String outputDtype, Context context) {
-        try {
-            Response response;
-            List<String> encodedEmbeddings;
-            if (isContextualModel()) {
-                var contextualResponse = objectMapper.readValue(responseBody, ContextualResponse.class);
-                response = contextualResponse;
-                encodedEmbeddings = contextualResponse.data.get(0).data.stream()
-                        .map(TextEmbeddingData::embedding)
-                        .toList();
-            } else {
-                var voyageResponse = objectMapper.readValue(responseBody, TextResponse.class);
-                response = voyageResponse;
-                encodedEmbeddings = voyageResponse.data.stream()
-                        .map(TextEmbeddingData::embedding)
-                        .toList();
-            }
-            runtime.sampleSequenceLength(response.usage().totalTokens(), context);
-            String dimensionName = targetType.dimensions().get(0).name();
-            return encodedEmbeddings.stream()
-                    .map(encoded -> switch (outputDtype) {
-                        case "float" -> decodeBase64FloatTensor(encoded, dimensionName, targetType.valueType());
-                        case "int8", "binary" -> decodeBase64Int8Tensor(encoded, dimensionName);
-                        default -> throw new IllegalArgumentException("Unsupported output_dtype: " + outputDtype);
-                    })
-                    .toList();
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Failed to parse VoyageAI response", e);
-        }
+    private VoyageResponse sendRequest(List<String> texts, String inputType, String outputDataType, Context context) {
+        var json = buildRequestJson(texts, inputType, outputDataType);
+        runtime.sampleRequestCount(context);
+        var body = doHttpRequest(resolvedEndpoint, json, authHeaders(), context, runtime);
+        return parseSuccess(body);
     }
 
-    private String createJsonRequest(List<String> texts, String inputType, String outputDataType) {
+    private String buildRequestJson(List<String> texts, String inputType, String outputDataType) {
         Object request;
-        if (isMultimodalModel()) {
+        if (isMultimodal) {
+            // Multimodal API uses a different input structure (content items with type+text/image);
+            // batching is disabled so only a single text is expected here
+            if (texts.size() != 1)
+                throw new IllegalArgumentException("Multimodal models do not support batching");
             request = MultimodalRequest.of(
                     texts.get(0), config.model(), inputType, config.truncate(), config.dimensions(), outputDataType);
-        } else if (isContextualModel()) {
+        } else if (isContextual) {
+            // Contextual API treats the text list as chunks of a single document; batching is
+            // disabled to prevent cross-document context contamination from independent embed()
+            // calls being combined by the framework
             request = ContextualRequest.of(
                     texts, config.model(), inputType, config.dimensions(), outputDataType);
         } else {
             request = TextRequest.of(
                     texts, config.model(), inputType, config.truncate(), config.dimensions(), outputDataType);
         }
-        try {
-            return objectMapper.writeValueAsString(request);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Failed to serialize VoyageAI request", e);
+        return toJson(request);
+    }
+
+    private VoyageResponse parseSuccess(String body) {
+        List<String> encoded;
+        int totalTokens;
+        if (isContextual) {
+            var response = fromJson(body, ContextualResponse.class);
+            totalTokens = response.usage != null ? response.usage.totalTokens() : 0;
+            encoded = response.data.get(0).data.stream()
+                    .sorted(Comparator.comparingInt(TextEmbeddingData::index))
+                    .map(TextEmbeddingData::embedding)
+                    .toList();
+        } else {
+            var response = fromJson(body, TextResponse.class);
+            totalTokens = response.usage != null ? response.usage.totalTokens() : 0;
+            encoded = response.data.stream()
+                    .sorted(Comparator.comparingInt(TextEmbeddingData::index))
+                    .map(TextEmbeddingData::embedding)
+                    .toList();
         }
+        return new VoyageResponse(encoded, totalTokens);
     }
 
-    private String doRequest(String jsonRequest, long timeoutMs, Context context) {
-        var httpRequest = new Request.Builder()
-                .url(resolvedEndpoint)
-                .header("Authorization", "Bearer " + apiKey.current())
-                .header("Content-Type", "application/json")
-                .post(RequestBody.create(jsonRequest, MediaType.get("application/json; charset=utf-8")))
-                .build();
-
-        runtime.sampleRequestCount(context);
-        var call = httpClient.newCall(httpRequest);
-        call.timeout().timeout(timeoutMs, TimeUnit.MILLISECONDS);
-
-        try (var response = call.execute()) {
-            var responseBody = response.body() != null ? response.body().string() : "";
-            log.fine(() -> "VoyageAI response with code " + response.code() + ": " + responseBody);
-            if (response.isSuccessful()) {
-                return responseBody;
-            } else if (response.code() == 429) {
-                runtime.sampleRequestFailure(context, response.code());
-                throw new OverloadException("VoyageAI API rate limited (429)");
-            } else if (response.code() == 401) {
-                runtime.sampleRequestFailure(context, response.code());
-                throw new RuntimeException("VoyageAI API authentication failed. Please check your API key: " + responseBody);
-            } else if (response.code() == 400) {
-                runtime.sampleRequestFailure(context, response.code());
-                String errorMessage = parseErrorDetail(responseBody).orElse(responseBody);
-                throw new InvalidInputException("VoyageAI API bad request (400): " + errorMessage);
-            } else {
-                runtime.sampleRequestFailure(context, response.code());
-                throw new RuntimeException("VoyageAI API request failed with status " + response.code() + ": " + responseBody);
-            }
-        } catch (InterruptedIOException e) {
-            // Covers both OkHttp timeout (InterruptedIOException) and socket timeout (SocketTimeoutException extends InterruptedIOException)
-            runtime.sampleRequestFailure(context, 0);
-            throw new TimeoutException(
-                    "VoyageAI API call timed out after " + timeoutMs + "ms", e);
-        } catch (IOException e) {
-            runtime.sampleRequestFailure(context, 0);
-            throw new RuntimeException("VoyageAI API call failed: " + e.getMessage(), e);
-        }
+    private static String resolveEndpoint(String configured, boolean isMultimodal, boolean isContextual) {
+        if (!configured.equals(EMBEDDINGS_ENDPOINT)) return configured;
+        if (isMultimodal) return MULTIMODAL_EMBEDDINGS_ENDPOINT;
+        if (isContextual) return CONTEXTUALIZED_EMBEDDINGS_ENDPOINT;
+        return EMBEDDINGS_ENDPOINT;
     }
 
-    private Optional<String> parseErrorDetail(String responseBody) {
-        try {
-            ErrorResponse errorResponse = objectMapper.readValue(responseBody, ErrorResponse.class);
-            if (errorResponse.detail != null && !errorResponse.detail.isEmpty()) {
-                return Optional.of(errorResponse.detail);
-            }
-        } catch (JsonProcessingException e) {
-            log.fine(() -> "Failed to parse error response as JSON: " + e.getMessage());
-        }
-        return Optional.empty();
+    private Map<String, String> authHeaders() {
+        return Map.of("Authorization", "Bearer " + apiKey.current());
     }
 
-    private long calculateTimeoutMs(Context context) {
-        long remainingMs = context.getDeadline()
-                .map(d -> d.timeRemaining().toMillis())
-                .orElse((long) config.timeout());
-        if (remainingMs <= 0)
-            throw new TimeoutException("Request deadline exceeded before VoyageAI API call");
-        return remainingMs;
+    private static List<Tensor> toTensors(VoyageResponse response, TensorType targetType, String outputDataType) {
+        var dim = targetType.dimensions().get(0);
+        long expectedDimensions = dim.size().orElseThrow();
+        return response.encodedEmbeddings().stream()
+                .map(encoded -> switch (outputDataType) {
+                    case "float" -> EmbeddingQuantization.decodeBase64FloatTensor(encoded, dim.name(), targetType.valueType(), expectedDimensions);
+                    case "int8", "binary" -> EmbeddingQuantization.decodeBase64Int8Tensor(encoded, dim.name(), expectedDimensions);
+                    default -> throw new IllegalArgumentException("Unsupported output_dtype: " + outputDataType);
+                })
+                .toList();
     }
 
-    private static Tensor decodeBase64FloatTensor(String base64, String dimensionName, TensorType.Value valueType) {
-        var buffer = ByteBuffer.wrap(Base64.getDecoder().decode(base64)).order(ByteOrder.LITTLE_ENDIAN).asFloatBuffer();
-        var values = new float[buffer.remaining()];
-        buffer.get(values);
-        var type = new TensorType.Builder(valueType).indexed(dimensionName, values.length).build();
-        return IndexedTensor.Builder.of(type, values).build();
-    }
 
-    private static Tensor decodeBase64Int8Tensor(String base64, String dimensionName) {
-        var bytes = Base64.getDecoder().decode(base64);
-        var type = new TensorType.Builder(TensorType.Value.INT8).indexed(dimensionName, bytes.length).build();
-        var builder = IndexedTensor.Builder.of(type);
-        for (int i = 0; i < bytes.length; i++) {
-            builder.cell(bytes[i], i);
-        }
-        return builder.build();
-    }
+    // ===== Normalized internal response =====
 
-    @Override
-    public void deconstruct() {
-        httpClient.dispatcher().executorService().shutdown();
-        httpClient.connectionPool().evictAll();
-        super.deconstruct();
-    }
+    private record VoyageResponse(List<String> encodedEmbeddings, int totalTokens) {}
 
-    private static class RetryInterceptor implements Interceptor {
-        static final long RETRY_DELAY_MS = 100;
-        private final int maxRetries;
-
-        RetryInterceptor(int maxRetries) {
-            this.maxRetries = maxRetries;
-        }
-
-        @Override
-        public okhttp3.Response intercept(Chain chain) throws IOException {
-            var request = chain.request();
-            int lastStatusCode = 0;
-            String lastResponseBody = "";
-
-            for (int attempt = 0; attempt <= maxRetries; attempt++) {
-                try {
-                    var response = chain.proceed(request);
-
-                    int code = response.code();
-                    boolean shouldRetry = code == 500 || code == 502 || code == 503 || code == 504;
-                    if (response.isSuccessful() || !shouldRetry) return response;
-
-                    // Capture response details before closing
-                    lastStatusCode = code;
-                    if (response.body() != null) {
-                        lastResponseBody = response.body().string();
-                    }
-                    response.close();
-
-                    if (attempt < maxRetries) {
-                        int retryNumber = attempt + 1;
-                        log.fine(() -> Text.format("VoyageAI API server error (%d). Retry %d of %d after %dms", code, retryNumber + 1, maxRetries, RETRY_DELAY_MS));
-                        Thread.sleep(RETRY_DELAY_MS);
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new IOException("Retry interrupted", e);
-                }
-            }
-
-            var errorMsg = Text.format("Max retries exceeded for VoyageAI API (%d). Last response: %d - %s", maxRetries, lastStatusCode, lastResponseBody);
-            throw new IOException(errorMsg);
-        }
-    }
-
-    // ===== Generic Request/Response DTOs =====
+    // ===== DTOs =====
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     private record Usage(@JsonProperty("total_tokens") int totalTokens) {}
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    private static abstract class Response {
-        @JsonProperty("usage") private Usage usage;
-        Usage usage() { return usage; }
-    }
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    private record ErrorResponse(@JsonProperty("detail") String detail) {}
-
-    // ===== Text Request/Response DTOs =====
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     private record TextRequest(
@@ -434,7 +189,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
             @JsonProperty("encoding_format") String encodingFormat) {
 
         static TextRequest of(List<String> texts, String model, String inputType,
-                              boolean truncation, Integer outputDimension, String outputDtype) {
+                              boolean truncation, int outputDimension, String outputDtype) {
             return new TextRequest(texts, model, inputType, truncation, outputDimension, outputDtype, "base64");
         }
     }
@@ -445,11 +200,10 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
             @JsonProperty("index") int index) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private static class TextResponse extends Response {
+    private static class TextResponse {
         @JsonProperty("data") List<TextEmbeddingData> data;
+        @JsonProperty("usage") Usage usage;
     }
-
-    // ===== Contextual Request/Response DTOs =====
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     private record ContextualRequest(
@@ -461,21 +215,19 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
             @JsonProperty("encoding_format") String encodingFormat) {
 
         static ContextualRequest of(List<String> texts, String model, String inputType,
-                                    Integer outputDimension, String outputDtype) {
-            return new ContextualRequest(List.of(texts), model, inputType,
-                                         outputDimension, outputDtype, "base64");
+                                    int outputDimension, String outputDtype) {
+            return new ContextualRequest(List.of(texts), model, inputType, outputDimension, outputDtype, "base64");
         }
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private static class ContextualResponse extends Response {
+    private static class ContextualResponse {
         @JsonProperty("data") List<ContextualDocumentResult> data;
+        @JsonProperty("usage") Usage usage;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     private record ContextualDocumentResult(@JsonProperty("data") List<TextEmbeddingData> data) {}
-
-    // ===== Multimodal Request DTOs =====
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     private record MultimodalRequest(
@@ -488,7 +240,7 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
             @JsonProperty("encoding_format") String encodingFormat) {
 
         static MultimodalRequest of(String text, String model, String inputType,
-                                    boolean truncation, Integer outputDimension, String outputDtype) {
+                                    boolean truncation, int outputDimension, String outputDtype) {
             return new MultimodalRequest(List.of(MultimodalInput.of(text)), model, inputType,
                                          truncation, outputDimension, outputDtype, "base64");
         }
@@ -496,21 +248,14 @@ public class VoyageAIEmbedder extends AbstractComponent implements Embedder {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     private record MultimodalInput(@JsonProperty("content") List<MultimodalContentItem> content) {
-
-        static MultimodalInput of(String text) {
-            return new MultimodalInput(List.of(MultimodalContentItem.of(text)));
-        }
+        static MultimodalInput of(String text) { return new MultimodalInput(List.of(MultimodalContentItem.of(text))); }
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     private record MultimodalContentItem(
             @JsonProperty("type") String type,
             @JsonProperty("text") String text) {
-
         static MultimodalContentItem of(String text) { return new MultimodalContentItem("text", text); }
     }
 
-    // ===== Cache Key =====
-
-    private record CacheKey(String embedderId, List<String> texts, String inputType, String outputDataType) {}
 }

@@ -1,0 +1,18 @@
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+package=ai.vespa.embedding.config
+
+# Reference to the secret in Vespa's secret store containing the API key (required)
+apiKeySecretRef          string
+
+# API endpoint URL
+endpoint                 string default="https://api.mistral.ai/v1/embeddings"
+
+# Model name
+model                    string
+
+# Output dimension
+dimensions               int
+
+# Output quantization mode
+quantization             enum { AUTO, FLOAT, INT8, BINARY } default=AUTO
