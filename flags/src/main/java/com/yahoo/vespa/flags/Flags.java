@@ -340,7 +340,8 @@ public class Flags {
             "use-triton", false,
             List.of("bjorncs", "glebashnik"), "2025-04-30", "2026-06-01",
             "Whether to use Triton as ONNX runtime",
-            "Takes effect at redeployment"
+            "Takes effect at redeployment",
+            TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_TYPE, CLUSTER_ID, VESPA_VERSION
     );
 
     public static final UnboundBooleanFlag DELETE_TENANT_ROLES = defineFeatureFlag(
