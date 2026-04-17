@@ -398,6 +398,7 @@ class Int64ResultNodeVector : public NumericResultNodeVectorT<Int64ResultNode>
 {
 public:
     Int64ResultNodeVector() = default;
+    ~Int64ResultNodeVector() override;
     DECLARE_RESULTNODE(Int64ResultNodeVector);
 
     const IntegerBucketResultNode& getNullBucket() const override { return IntegerBucketResultNode::getNull(); }
@@ -420,6 +421,7 @@ class FloatResultNodeVector : public NumericResultNodeVectorT<FloatResultNode>
 {
 public:
     FloatResultNodeVector() = default;
+    ~FloatResultNodeVector() override;
     DECLARE_RESULTNODE(FloatResultNodeVector);
 
     const FloatBucketResultNode& getNullBucket() const override { return FloatBucketResultNode::getNull(); }

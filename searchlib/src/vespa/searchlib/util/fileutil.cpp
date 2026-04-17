@@ -24,6 +24,8 @@ using vespalib::getLastErrorString;
 
 namespace search::fileutil {
 
+LoadedBuffer::~LoadedBuffer() = default;
+
 LoadedMmap::LoadedMmap(const std::string &fileName)
     : LoadedBuffer(nullptr, 0),
       _mapBuffer(nullptr),

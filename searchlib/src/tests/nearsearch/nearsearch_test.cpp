@@ -158,6 +158,7 @@ protected:
 
         NearSpec(const std::string& positive_terms, uint32_t window, bool ordered, NearSearchTest* test)
             : _positive_terms(positive_terms), _window(window), _exclusion_distance(0), _ordered(ordered), _test(test) {}
+        ~NearSpec();
 
         NearSpec& avoid(const std::string& terms, uint32_t exclusion_distance) {
             _negative_terms = terms;
@@ -207,6 +208,8 @@ protected:
     NearSearchTest();
     ~NearSearchTest() override;
 };
+
+NearSearchTest::NearSpec::~NearSpec() = default;
 
 NearSearchTest::NearSearchTest()
     : ::testing::Test()
