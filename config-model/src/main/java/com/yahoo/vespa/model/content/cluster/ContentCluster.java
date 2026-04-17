@@ -102,6 +102,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
 
     public enum DistributionMode { LEGACY, STRICT, LOOSE }
     private DistributionMode distributionMode;
+    private boolean usePseudoRowColumnDistribution = false;
 
     public static class Builder {
 
@@ -248,6 +249,10 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
                     } else {
                         throw new IllegalArgumentException("Distribution type " + attr + " not supported.");
                     }
+                }
+                Boolean pseudoRowCol = distribution.childAsBoolean("pseudo-row-column-mode");
+                if (pseudoRowCol != null) {
+                    c.usePseudoRowColumnDistribution = pseudoRowCol;
                 }
             }
             ModelElement merges = tuning.child("merges");
@@ -527,6 +532,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
         if (search.usesHierarchicDistribution()) {
             builder.active_per_leaf_group(true);
         }
+        builder.relative_node_order_scoring(usePseudoRowColumnDistribution);
     }
 
     int getNodeCount() {
@@ -700,6 +706,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
         clusterBuilder.ready_copies(config.ready_copies());
         clusterBuilder.redundancy(config.redundancy());
         clusterBuilder.initial_redundancy(config.initial_redundancy());
+        clusterBuilder.relative_node_order_scoring(config.relative_node_order_scoring());
 
         for (StorDistributionConfig.Group group : config.group()) {
             DistributionConfig.Cluster.Group.Builder groupBuilder = new DistributionConfig.Cluster.Group.Builder();

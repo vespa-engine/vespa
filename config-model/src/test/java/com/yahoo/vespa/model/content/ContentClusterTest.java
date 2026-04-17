@@ -126,6 +126,7 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(15, distributionConfig.cluster("storage").initial_redundancy());
         assertEquals(15, distributionConfig.cluster("storage").redundancy());
         assertEquals(4, distributionConfig.cluster("storage").group().size());
+        assertFalse(distributionConfig.cluster("storage").relative_node_order_scoring());
         assertEquals(1, distributionConfig.cluster().size());
 
         StorDistributionConfig.Builder storBuilder = new StorDistributionConfig.Builder();
@@ -134,6 +135,7 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(15, storConfig.initial_redundancy());
         assertEquals(15, storConfig.redundancy());
         assertEquals(3, storConfig.ready_copies());
+        assertFalse(storConfig.relative_node_order_scoring());
 
         ProtonConfig.Builder protonBuilder = new ProtonConfig.Builder();
         cc.getSearch().getConfig(protonBuilder);
@@ -206,6 +208,7 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(3, distributionConfig.cluster("storage").ready_copies());
         assertEquals(4, distributionConfig.cluster("storage").initial_redundancy());
         assertEquals(5, distributionConfig.cluster("storage").redundancy());
+        assertFalse(distributionConfig.cluster("storage").relative_node_order_scoring());
 
         StorDistributionConfig.Builder storBuilder = new StorDistributionConfig.Builder();
         cc.getConfig(storBuilder);
@@ -213,12 +216,41 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(4, storConfig.initial_redundancy());
         assertEquals(5, storConfig.redundancy());
         assertEquals(3, storConfig.ready_copies());
+        assertFalse(storConfig.relative_node_order_scoring());
 
         ProtonConfig.Builder protonBuilder = new ProtonConfig.Builder();
         cc.getSearch().getConfig(protonBuilder);
         ProtonConfig protonConfig = new ProtonConfig(protonBuilder);
         assertEquals(3, protonConfig.distribution().searchablecopies());
         assertEquals(5, protonConfig.distribution().redundancy());
+    }
+
+    @Test
+    void pseudo_row_column_distribution_setting_is_propagated_to_distribution_config() {
+        ContentCluster cc = parse("""
+              <content version="1.0" id="storage">
+                <documents/>
+                <redundancy>1</redundancy>
+                <group>
+                  <node hostalias='mockhost' distribution-key='0'/>
+                </group>
+                <tuning>
+                  <distribution>
+                    <pseudo-row-column-mode>true</pseudo-row-column-mode>
+                  </distribution>
+                </tuning>
+              </content>
+            """);
+
+        var storBuilder = new StorDistributionConfig.Builder();
+        cc.getConfig(storBuilder);
+        var storConfig = new StorDistributionConfig(storBuilder);
+        assertTrue(storConfig.relative_node_order_scoring());
+
+        var distributionBuilder = new DistributionConfig.Builder();
+        cc.getConfig(distributionBuilder);
+        var distributionConfig = distributionBuilder.build();
+        assertTrue(distributionConfig.cluster("storage").relative_node_order_scoring());
     }
 
     @Test
