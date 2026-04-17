@@ -5,9 +5,9 @@
 
 namespace storage::distributor {
 
-vespalib::asciistream& operator<<(vespalib::asciistream& out, const MergeMetaData& e)
+vespalib::asciistream& operator<<(vespalib::asciistream& out, const MergeMetadata& e)
 {
-    return out << "MergeMetaData(" << e._nodeIndex << ")";
+    return out << "MergeMetadata(" << e._nodeIndex << ")";
 }
 
 } // storage::distributor

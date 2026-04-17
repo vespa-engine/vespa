@@ -31,7 +31,7 @@ MergeLimiter::MergeLimiter(uint16_t maxNodes)
 namespace {
     class EqualCopies {
         uint32_t _checksum;
-        std::vector<MergeMetaData> _copies;
+        std::vector<MergeMetadata> _copies;
         uint32_t _trustedCopies;
 
     public:
@@ -44,10 +44,10 @@ namespace {
         bool hasTrusted() const noexcept { return (_trustedCopies > 0); }
         uint32_t trustedCount() const noexcept { return _trustedCopies; }
         uint32_t size() const noexcept { return static_cast<uint32_t>(_copies.size()); }
-        bool operator==(const MergeMetaData& mmd) const noexcept {
+        bool operator==(const MergeMetadata& mmd) const noexcept {
             return (_checksum == mmd.checksum());
         }
-        void add(const MergeMetaData& mmd) {
+        void add(const MergeMetadata& mmd) {
             if (_copies.empty()) {
                 _checksum = mmd.checksum();
             }
@@ -61,8 +61,8 @@ namespace {
             }
             _copies.push_back(mmd);
         }
-        MergeMetaData extractNext() {
-            MergeMetaData data = _copies.back();
+        MergeMetadata extractNext() {
+            MergeMetadata data = _copies.back();
             _copies.pop_back();
             return data;
         }
@@ -105,7 +105,7 @@ namespace {
             swap(remaining, _groups);
             return trusted;
         }
-        bool extractNext(MergeMetaData& data, uint32_t& last) {
+        bool extractNext(MergeMetadata& data, uint32_t& last) {
             if (_groups.empty()) return false;
             if (++last >= _groups.size()) { last = 0; }
             data = _groups[last].extractNext();
@@ -127,7 +127,7 @@ namespace {
         }
 
     private:
-        void add(const MergeMetaData& mmd) {
+        void add(const MergeMetadata& mmd) {
             // Treat source only replicas as their own distinct "groups" with regards
             // to picking replicas for being part of the merge. This way, we avoid
             // accidentally picking a trusted source only replica as our one trusted
@@ -154,14 +154,14 @@ namespace {
         // is not a very pretty solution, to say the least.
         uint32_t last = -1;
         for (uint32_t i = 0; i < max; ++i) {
-            MergeMetaData data;
+            MergeMetadata data;
             if (!stats.extractNext(data, last)) return;
             result.push_back(data);
         }
     }
 
     struct SourceOnlyOrder {
-        bool operator()(const MergeMetaData& m1, const MergeMetaData& m2) {
+        bool operator()(const MergeMetadata& m1, const MergeMetadata& m2) {
             if (m1._sourceOnly == m2._sourceOnly) return false;
             return m2._sourceOnly;
         }
