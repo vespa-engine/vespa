@@ -28,9 +28,16 @@ public:
  */
 class FirstPhaseMaxBlueprint : public fef::Blueprint {
 public:
+    FirstPhaseMaxBlueprint();
+    ~FirstPhaseMaxBlueprint() override;
 
+    bool setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) override;
+    fef::FeatureExecutor& createExecutor(const fef::IQueryEnvironment& env, vespalib::Stash& stash) const override;
+    fef::ParameterDescriptions getDescriptions() const override;
+    std::unique_ptr<fef::Blueprint> createInstance() const override;
+    void prepareSharedState(const fef::IQueryEnvironment& env, fef::IObjectStore& store) const override;
+    void visitDumpFeatures(const fef::IIndexEnvironment& env, fef::IDumpFeatureVisitor& visitor) const override;
 };
 
-
-} // namespace search::features
+}
 
