@@ -115,8 +115,6 @@ public class VoyageAIEmbedder extends AbstractHttpEmbedder implements Embedder {
             // Contextual API treats the text list as chunks of a single document; batching is
             // disabled to prevent cross-document context contamination from independent embed()
             // calls being combined by the framework
-            if (texts.size() != 1)
-                throw new IllegalArgumentException("Contextual models do not support batching");
             request = ContextualRequest.of(
                     texts, config.model(), inputType, config.dimensions(), outputDataType);
         } else {
