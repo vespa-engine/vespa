@@ -192,9 +192,13 @@ public abstract class AbstractHttpEmbedder extends AbstractComponent {
 
                     lastStatusCode = code;
                     lastException = null;
-                    if (attempt == maxRetries && response.body() != null)
-                        lastResponseBody = response.body().string();
-                    response.close();
+                    try {
+                        if (attempt == maxRetries && response.body() != null) {
+                                lastResponseBody = response.body().string();
+                        }
+                    } finally {
+                        response.close();
+                    }
                 } catch (InterruptedIOException e) {
                     throw e;
                 } catch (IOException e) {
