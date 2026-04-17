@@ -31,6 +31,7 @@ vespa_add_library(searchlib_features OBJECT
     fieldmatchfeature.cpp
     fieldtermmatchfeature.cpp
     firstphasefeature.cpp
+    first_phase_max.cpp
     first_phase_max_feature.cpp
     first_phase_rank_feature.cpp
     first_phase_rank_lookup.cpp
