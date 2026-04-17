@@ -44,6 +44,8 @@ public class MistralEmbedder extends AbstractHttpEmbedder implements Embedder {
         super(httpConfig);
         this.config = config;
         this.runtime = runtime;
+        if (config.apiKeySecretRef().isBlank())
+            throw new IllegalArgumentException("'api-key-secret-ref' must be configured for Mistral embedder");
         this.apiKey = secrets.get(config.apiKeySecretRef());
         this.quantization = EmbeddingQuantization.Quantization.valueOf(config.quantization().name());
     }
