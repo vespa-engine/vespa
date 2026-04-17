@@ -27,20 +27,20 @@ public:
     void save(BufferWriter& writer) const override;
 
 private:
-    struct MetaData {
+    struct Metadata {
         using EntryRef = vespalib::datastore::EntryRef;
         using RefVector = std::vector<EntryRef, vespalib::allocator_large<EntryRef>>;
-        using NodeVector = std::vector<HnswIndexSaverMetaDataNode<type>, vespalib::allocator_large<HnswIndexSaverMetaDataNode<type>>>;
+        using NodeVector = std::vector<HnswIndexSaverMetadataNode<type>, vespalib::allocator_large<HnswIndexSaverMetadataNode<type>>>;
         uint32_t   entry_nodeid;
         int32_t    entry_level;
         RefVector  refs;
         NodeVector nodes;
-        MetaData();
-        ~MetaData();
+        Metadata();
+        ~Metadata();
     };
     using LinkArrayStore = typename HnswGraph<type>::LinkArrayStore;
     const LinkArrayStore&                 _graph_links;
-    MetaData                              _meta_data;
+    Metadata                              _metadata;
     vespalib::GenerationGuard             _guard;
     std::chrono::steady_clock::time_point _index_flush_start_time;
     const HnswGraph<type>&                _graph;

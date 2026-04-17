@@ -93,7 +93,7 @@ public:
     virtual size_t memoryUsed() const = 0;
 
     /**
-     * Calculates memory that is used for meta data by this instance. Calling
+     * Calculates memory that is used for metadata by this instance. Calling
      * flush() does not free this memory.
      * @return memory usage (in bytes)
      **/
