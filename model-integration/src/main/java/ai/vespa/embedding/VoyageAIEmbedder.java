@@ -88,7 +88,8 @@ public class VoyageAIEmbedder extends AbstractHttpEmbedder implements Embedder {
         var response = context.computeCachedValueIfAbsent(
                 cacheKey, () -> sendRequest(texts, inputType, outputDataType, context));
 
-        runtime.sampleSequenceLength(response.totalTokens(), context);
+        if (response.totalTokens() > 0)
+            runtime.sampleSequenceLength(response.totalTokens(), context);
         var tensors = toTensors(response, targetType, outputDataType);
         runtime.sampleEmbeddingLatency(Duration.ofNanos(System.nanoTime() - startTime).toMillis(), context);
         return tensors;
