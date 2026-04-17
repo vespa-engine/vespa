@@ -22,7 +22,7 @@ MoveOperation::UP
 BucketMover::createMoveOperation(const MoveKey &key) {
     if (_source->lidNeedsCommit(key._lid)) return {};
 
-    const RawDocumentMetaData &metaNow = _source->meta_store()->getRawMetaData(key._lid);
+    const RawDocumentMetadata &metaNow = _source->meta_store()->getRawMetadata(key._lid);
     if (metaNow.getGid() != key._gid) return {};
     if (metaNow.getTimestamp() != key._timestamp) return {};
 
@@ -101,7 +101,7 @@ BucketMover::getKeysToMove(size_t maxDocsToMove) {
     std::vector<MoveKey> toMove;
     for (size_t docsMoved(0); itr != end && docsMoved < maxDocsToMove; ++itr) {
         uint32_t lid = itr.getKey().get_lid();
-        const RawDocumentMetaData &metaData = _source->meta_store()->getRawMetaData(lid);
+        const RawDocumentMetadata &metaData = _source->meta_store()->getRawMetadata(lid);
         if (metaData.getBucketUsedBits() == _bucket.getUsedBits()) {
             result.first.keys().emplace_back(lid, metaData.getGid(), metaData.getTimestamp(), MoveGuard(*this));
             ++docsMoved;

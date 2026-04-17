@@ -343,7 +343,7 @@ MyDocumentSubDB::handleRemove(RemoveOperationWithDocId &op)
     }
     if (op.getValidPrevDbdId(_subDBId) && op.changedDbdId()) {
         assert(_metaStore.validLid(op.getPrevLid()));
-        const RawDocumentMetaData &meta(_metaStore.getRawMetaData(op.getPrevLid()));
+        const RawDocumentMetadata &meta(_metaStore.getRawMetadata(op.getPrevLid()));
         assert((_subDBId == 1u) == op.getPrevMarkedAsRemoved());
         assert(meta.getGid() == gid);
         (void) meta;
@@ -397,7 +397,7 @@ MyDocumentSubDB::handleMove(const MoveOperation &op)
     }
     if (op.getValidPrevDbdId(_subDBId)) {
         assert(_metaStore.validLid(op.getPrevLid()));
-        const RawDocumentMetaData &meta(_metaStore.getRawMetaData(op.getPrevLid()));
+        const RawDocumentMetadata &meta(_metaStore.getRawMetadata(op.getPrevLid()));
         assert((_subDBId == 1u) == op.getPrevMarkedAsRemoved());
         assert(meta.getGid() == gid);
         (void) meta;

@@ -27,7 +27,7 @@ DocumentScanIterator::next(uint32_t compactLidLimit)
 {
     for (--_lastLid; _lastLid > compactLidLimit; --_lastLid) {
         if (_metaStore.validLid(_lastLid)) {
-            const RawDocumentMetaData &metaData = _metaStore.getRawMetaData(_lastLid);
+            const RawDocumentMetadata &metaData = _metaStore.getRawMetadata(_lastLid);
             return DocumentMetadata(_lastLid, metaData.getTimestamp(),
                                     metaData.getBucketId(), metaData.getGid());
         }

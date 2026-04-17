@@ -283,7 +283,7 @@ putDoc(DocumentMetaStore &dms, const DocumentId& docid, uint32_t lid, Timestamp 
 }
 
 TEST(DocumentMetaStoreTest, control_meta_data_sizeof) {
-    EXPECT_EQ(32u, sizeof(RawDocumentMetaData));
+    EXPECT_EQ(32u, sizeof(RawDocumentMetadata));
     EXPECT_EQ(40u, sizeof(search::DocumentMetadata));
 }
  TEST(DocumentMetaStoreTest, removed_documents_are_bucketized_to_bucket_0)
@@ -1971,7 +1971,7 @@ void
 assertSize(DocumentMetaStore &dms, uint32_t lid, uint32_t expSize)
 {
     EXPECT_TRUE(dms.validLid(lid));
-    const auto &metaData = dms.getRawMetaData(lid);
+    const auto &metaData = dms.getRawMetadata(lid);
     EXPECT_EQ(expSize, metaData.getDocSize());
 }
 

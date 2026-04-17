@@ -27,11 +27,11 @@ public:
         vespalib::btree::BTreeNoLeafData,
         vespalib::btree::NoAggregated,
         const KeyComp &>;
-    using MetaDataView = std::span<const RawDocumentMetaData>;
+    using MetadataView = std::span<const RawDocumentMetadata>;
 
 private:
     GidIterator _gidIterator; // iterator over frozen tree
-    MetaDataView _metaDataView;
+    MetadataView _metaDataView;
     bool _writeDocSize;
 
     bool onSave(search::IAttributeSaveTarget &saveTarget) override;
@@ -39,7 +39,7 @@ public:
     DocumentMetaStoreSaver(vespalib::GenerationGuard&& guard,
                            const search::attribute::AttributeHeader& header,
                            const GidIterator& gidIterator,
-                           MetaDataView metaDataView);
+                           MetadataView metaDataView);
 
     ~DocumentMetaStoreSaver() override;
 };
