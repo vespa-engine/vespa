@@ -6,6 +6,7 @@ import ai.vespa.embedding.config.OpenaiEmbedderConfig;
 import ai.vespa.secret.Secret;
 import ai.vespa.secret.Secrets;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.annotation.Inject;
@@ -27,6 +28,9 @@ import java.util.Map;
 @Beta
 public class OpenAIEmbedder extends AbstractHttpEmbedder implements Embedder {
 
+    private static final String ADA_002_MODEL = "text-embedding-ada-002";
+    private static final int ADA_002_DIMENSIONS = 1536;
+
     private final OpenaiEmbedderConfig config;
     private final Embedder.Runtime runtime;
     private final Secret apiKey;
@@ -42,6 +46,10 @@ public class OpenAIEmbedder extends AbstractHttpEmbedder implements Embedder {
         this.config = config;
         this.runtime = runtime;
         this.apiKey = config.apiKeySecretRef().isEmpty() ? null : secrets.get(config.apiKeySecretRef());
+        if (ADA_002_MODEL.equals(config.model()) && config.dimensions() != ADA_002_DIMENSIONS)
+            throw new IllegalArgumentException(
+                    "Model '%s' has a fixed output size of %d; configure dimensions=%d"
+                            .formatted(ADA_002_MODEL, ADA_002_DIMENSIONS, ADA_002_DIMENSIONS));
     }
 
     @Override
@@ -71,7 +79,9 @@ public class OpenAIEmbedder extends AbstractHttpEmbedder implements Embedder {
     }
 
     private EmbeddingResponse sendRequest(List<String> texts, Context context) {
-        var json = toJson(new EmbeddingRequest(texts, config.model(), config.dimensions(), "base64"));
+        // ada-002 has a fixed 1536 output size and rejects the "dimensions" request field
+        Integer dimensions = ADA_002_MODEL.equals(config.model()) ? null : config.dimensions();
+        var json = toJson(new EmbeddingRequest(texts, config.model(), dimensions, "base64"));
         runtime.sampleRequestCount(context);
         var body = doHttpRequest(config.endpoint(), json, authHeaders(), context, runtime);
         return fromJson(body, EmbeddingResponse.class);
@@ -99,7 +109,7 @@ public class OpenAIEmbedder extends AbstractHttpEmbedder implements Embedder {
     private record EmbeddingRequest(
             @JsonProperty("input") List<String> input,
             @JsonProperty("model") String model,
-            @JsonProperty("dimensions") int dimensions,
+            @JsonProperty("dimensions") @JsonInclude(JsonInclude.Include.NON_NULL) Integer dimensions,
             @JsonProperty("encoding_format") String encodingFormat) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)

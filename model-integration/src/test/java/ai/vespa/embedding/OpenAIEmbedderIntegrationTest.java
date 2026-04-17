@@ -90,6 +90,33 @@ public class OpenAIEmbedderIntegrationTest {
         embedder.deconstruct();
     }
 
+    /**
+     * Verifies that the legacy text-embedding-ada-002 model (fixed 1536 output size, does
+     * not accept the "dimensions" request field) works when configured with the expected
+     * dimensions=1536. The embedder must omit the field from the request for this model.
+     */
+    @Test
+    public void testAda002WithoutDimensionsField() {
+        var config = new OpenaiEmbedderConfig.Builder()
+                .apiKeySecretRef("test_key")
+                .model("text-embedding-ada-002")
+                .dimensions(1536)
+                .build();
+        var embedder = new OpenAIEmbedder(config, Embedder.Runtime.testInstance(),
+                key -> () -> System.getenv("VESPA_TEST_OPENAI_API_KEY"));
+        try {
+            var targetType = TensorType.fromSpec("tensor<float>(d0[1536])");
+            var context = new Embedder.Context("integration-test");
+            var result = embedder.embed("hello", context, targetType);
+            assertNotNull(result);
+            assertEquals(1536, result.size());
+            assertEquals(targetType, result.type());
+            assertNonZeroTensor(result);
+        } finally {
+            embedder.deconstruct();
+        }
+    }
+
     private static OpenAIEmbedder createEmbedder(int dimensions) {
         var config = new OpenaiEmbedderConfig.Builder()
                 .apiKeySecretRef("test_key")
