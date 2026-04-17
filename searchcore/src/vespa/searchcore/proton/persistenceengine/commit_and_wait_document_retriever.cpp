@@ -19,11 +19,11 @@ CommitAndWaitDocumentRetriever::getDocumentTypeRepo() const {
 }
 
 void
-CommitAndWaitDocumentRetriever::getBucketMetaData(const Bucket &bucket, search::DocumentMetaData::Vector &result) const {
+CommitAndWaitDocumentRetriever::getBucketMetaData(const Bucket &bucket, search::DocumentMetadata::Vector &result) const {
     return _retriever->getBucketMetaData(bucket, result);
 }
 
-search::DocumentMetaData
+search::DocumentMetadata
 CommitAndWaitDocumentRetriever::getDocumentMetaData(const document::DocumentId &id) const {
     return _retriever->getDocumentMetaData(id);
 }

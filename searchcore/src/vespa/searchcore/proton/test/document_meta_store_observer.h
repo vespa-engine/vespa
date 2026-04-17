@@ -38,11 +38,11 @@ struct DocumentMetaStoreObserver : public IDocumentMetaStore
     bool getLid(const GlobalId &gid, DocId &lid) const override {
         return _store.getLid(gid, lid);
     }
-    search::DocumentMetaData getMetaData(const GlobalId &gid) const override {
-        return _store.getMetaData(gid);
+    search::DocumentMetadata getMetadata(const GlobalId &gid) const override {
+        return _store.getMetadata(gid);
     }
-    void getMetaData(const BucketId &bucketId, search::DocumentMetaData::Vector &result) const override {
-        _store.getMetaData(bucketId, result);
+    void getMetadata(const BucketId &bucketId, search::DocumentMetadata::Vector &result) const override {
+        _store.getMetadata(bucketId, result);
     }
     search::LidUsageStats getLidUsageStats() const override {
         return _store.getLidUsageStats();

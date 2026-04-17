@@ -47,7 +47,7 @@ using proton::matching::SessionManager;
 using proton::test::MockGidToLidChangeHandler;
 using search::AttributeVector;
 using search::CommitParam;
-using search::DocumentMetaData;
+using search::DocumentMetadata;
 using vespalib::IDestructorCallback;
 using vespalib::Gate;
 using vespalib::GateCallback;
@@ -544,8 +544,8 @@ struct FixtureBase
         return getMetaStore().getBucketDB().takeGuard();
     }
 
-    DocumentMetaData getMetaData(const DocumentContext &doc_) const {
-        return getMetaStore().getMetaData(doc_.doc->getId().getGlobalId());
+    DocumentMetadata getMetaData(const DocumentContext &doc_) const {
+        return getMetaStore().getMetadata(doc_.doc->getId().getGlobalId());
     }
 
     DocBuilder &getBuilder() { return sc._builder; }
@@ -763,7 +763,7 @@ void assertBucketInfo(const BucketId &ebid, const Timestamp &ets, uint32_t lid, 
 {
     document::GlobalId gid;
     EXPECT_TRUE(metaStore.getGid(lid, gid));
-    search::DocumentMetaData meta = metaStore.getMetaData(gid);
+    search::DocumentMetadata meta = metaStore.getMetadata(gid);
     EXPECT_TRUE(meta.valid());
     EXPECT_EQ(ebid, meta.bucketId);
     Timestamp ats;

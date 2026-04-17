@@ -39,7 +39,7 @@ using search::AttributeFileSaveTarget;
 using search::AttributeGuard;
 using search::AttributeVector;
 using search::CommitParam;
-using search::DocumentMetaData;
+using search::DocumentMetadata;
 using search::GrowStrategy;
 using search::LidUsageStats;
 using search::QueryTermSimple;
@@ -149,7 +149,7 @@ assertGid(const GlobalId &exp,
     Timestamp timestamp(1);
     EXPECT_TRUE(dms.getGid(lid, act));
     EXPECT_TRUE(compare(exp, act));
-    DocumentMetaData meta = dms.getMetaData(act);
+    DocumentMetadata meta = dms.getMetadata(act);
     EXPECT_TRUE(meta.valid());
     bucketId = meta.bucketId;
     timestamp = meta.timestamp;
@@ -167,7 +167,7 @@ assertLid(uint32_t exp, const GlobalId &gid, const DocumentMetaStore &dms)
 }
 
 void
-assertMetaData(const DocumentMetaData &exp, const DocumentMetaData &act)
+assertMetaData(const DocumentMetadata &exp, const DocumentMetadata &act)
 {
     EXPECT_EQ(exp.lid, act.lid);
     EXPECT_EQ(exp.timestamp, act.timestamp);
@@ -284,7 +284,7 @@ putDoc(DocumentMetaStore &dms, const DocumentId& docid, uint32_t lid, Timestamp 
 
 TEST(DocumentMetaStoreTest, control_meta_data_sizeof) {
     EXPECT_EQ(32u, sizeof(RawDocumentMetaData));
-    EXPECT_EQ(40u, sizeof(search::DocumentMetaData));
+    EXPECT_EQ(40u, sizeof(search::DocumentMetadata));
 }
  TEST(DocumentMetaStoreTest, removed_documents_are_bucketized_to_bucket_0)
 {
@@ -866,7 +866,7 @@ TEST(DocumentMetaStoreTest, can_retrieve_list_of_lids_from_bucket_id)
 }
 
 struct Comparator {
-    bool operator() (const DocumentMetaData &lhs, const DocumentMetaData &rhs) const {
+    bool operator() (const DocumentMetadata &lhs, const DocumentMetadata &rhs) const {
         return lhs.lid < rhs.lid;
     }
 };
@@ -922,36 +922,36 @@ TEST(DocumentMetaStoreTest, can_retrieve_list_of_meta_data_from_bucket_id)
 {
     UserDocFixture f;
     { // empty bucket
-        DocumentMetaData::Vector result;
-        f.dms.getMetaData(f.bid1, result);
+        DocumentMetadata::Vector result;
+        f.dms.getMetadata(f.bid1, result);
         EXPECT_EQ(0u, result.size());
     }
     f.dms.constructFreeList();
     f.addDocumentIds();
     { // verify bucket 1
-        DocumentMetaData::Vector result;
-        f.dms.getMetaData(f.bid1, result);
+        DocumentMetadata::Vector result;
+        f.dms.getMetadata(f.bid1, result);
         std::sort(result.begin(), result.end(), Comparator());
         EXPECT_EQ(4u, result.size());
-        assertMetaData(DocumentMetaData(1, Timestamp(101), f.bid1,
+        assertMetaData(DocumentMetadata(1, Timestamp(101), f.bid1,
                                         f.docids[0].getGlobalId()), result[0]);
-        assertMetaData(DocumentMetaData(2, Timestamp(102), f.bid1,
+        assertMetaData(DocumentMetadata(2, Timestamp(102), f.bid1,
                                         f.docids[1].getGlobalId()), result[1]);
-        assertMetaData(DocumentMetaData(4, Timestamp(104), f.bid1,
+        assertMetaData(DocumentMetadata(4, Timestamp(104), f.bid1,
                                         f.docids[3].getGlobalId()), result[2]);
-        assertMetaData(DocumentMetaData(5, Timestamp(105), f.bid1,
+        assertMetaData(DocumentMetadata(5, Timestamp(105), f.bid1,
                                         f.docids[4].getGlobalId()), result[3]);
     }
     { // verify bucket 2
-        DocumentMetaData::Vector result;
-        f.dms.getMetaData(f.bid2, result);
+        DocumentMetadata::Vector result;
+        f.dms.getMetadata(f.bid2, result);
         std::sort(result.begin(), result.end(), Comparator());
         EXPECT_EQ(3u, result.size());
-        assertMetaData(DocumentMetaData(3, Timestamp(103), f.bid2,
+        assertMetaData(DocumentMetadata(3, Timestamp(103), f.bid2,
                                         f.docids[2].getGlobalId()), result[0]);
-        assertMetaData(DocumentMetaData(6, Timestamp(106), f.bid2,
+        assertMetaData(DocumentMetadata(6, Timestamp(106), f.bid2,
                                         f.docids[5].getGlobalId()), result[1]);
-        assertMetaData(DocumentMetaData(7, Timestamp(107), f.bid2,
+        assertMetaData(DocumentMetadata(7, Timestamp(107), f.bid2,
                                         f.docids[6].getGlobalId()), result[2]);
     }
 }

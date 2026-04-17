@@ -8,7 +8,7 @@
 #include <vector>
 
 namespace vespalib { class IDestructorCallback; }
-namespace search { struct DocumentMetaData; }
+namespace search { struct DocumentMetadata; }
 namespace proton::documentmetastore { class OperationListener; }
 
 namespace proton {
@@ -59,12 +59,12 @@ struct ILidSpaceCompactionHandler
     /**
      * Return the meta data associated with the given lid
      */
-    virtual search::DocumentMetaData getMetaData(uint32_t lid) const = 0;
+    virtual search::DocumentMetadata getMetaData(uint32_t lid) const = 0;
 
     /**
      * Creates a move operation for moving the given document to the given lid.
      */
-    virtual std::unique_ptr<MoveOperation> createMoveOperation(const search::DocumentMetaData &document, uint32_t moveToLid) const = 0;
+    virtual std::unique_ptr<MoveOperation> createMoveOperation(const search::DocumentMetadata &document, uint32_t moveToLid) const = 0;
 
     /**
      * Performs the actual move operation.

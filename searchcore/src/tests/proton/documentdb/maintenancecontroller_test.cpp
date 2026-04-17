@@ -55,7 +55,7 @@ using vespalib::system_clock;
 using proton::bucketdb::BucketCreateNotifier;
 using search::AttributeGuard;
 using search::DocumentIdT;
-using search::DocumentMetaData;
+using search::DocumentMetadata;
 using vespalib::IDestructorCallback;
 using search::SerialNum;
 using search::CommitParam;
@@ -149,8 +149,8 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest
     explicit MyDocumentRetriever(MyDocumentSubDB &subDB) noexcept : _subDB(subDB) { }
 
     const document::DocumentTypeRepo & getDocumentTypeRepo() const override { abort(); }
-    void getBucketMetaData(const storage::spi::Bucket &, DocumentMetaData::Vector &) const override { abort(); }
-    DocumentMetaData getDocumentMetaData(const DocumentId &) const override { return {}; }
+    void getBucketMetaData(const storage::spi::Bucket &, DocumentMetadata::Vector &) const override { abort(); }
+    DocumentMetadata getDocumentMetaData(const DocumentId &) const override { return {}; }
     Document::UP getFullDocument(DocumentIdT lid) const override { return _subDB.getDocument(lid); }
     CachedSelect::SP parseSelect(const std::string &) const override { return {}; }
 };

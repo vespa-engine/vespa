@@ -54,7 +54,7 @@ createDocEntry(Timestamp timestamp, bool removed, Document::UP doc, ssize_t defa
 } // namespace proton::<unnamed>
 
 bool
-DocumentIterator::checkMeta(const search::DocumentMetaData &meta) const
+DocumentIterator::checkMeta(const search::DocumentMetadata &meta) const
 {
     if (!meta.valid()) {
         return false;
@@ -172,7 +172,7 @@ public:
 
     [[nodiscard]] bool willAlwaysFail() const noexcept { return _willAlwaysFail; }
 
-    [[nodiscard]] bool match(const search::DocumentMetaData & meta) const {
+    [[nodiscard]] bool match(const search::DocumentMetadata & meta) const {
         if (meta.lid >= _docidLimit) {
             return false;
         }
@@ -187,7 +187,7 @@ public:
         _selectCxt->_doc = nullptr;
         return _selectSession->contains_pre_doc(*_selectCxt);
     }
-    [[nodiscard]] bool match(const search::DocumentMetaData & meta, const Document * doc) const {
+    [[nodiscard]] bool match(const search::DocumentMetadata & meta, const Document * doc) const {
         if (_dscTrue || _metaOnly) {
             return true;
         }
@@ -212,7 +212,7 @@ using LidIndexMap = vespalib::hash_map<uint32_t, uint32_t>;
 class MatchVisitor : public search::IDocumentVisitor
 {
 public:
-    MatchVisitor(const Matcher &matcher, const search::DocumentMetaData::Vector &metaData,
+    MatchVisitor(const Matcher &matcher, const search::DocumentMetadata::Vector &metaData,
                  const LidIndexMap &lidIndexMap, const document::FieldSet *fields, IterateResult::List &list,
                  ssize_t defaultSerializedSize) :
         _matcher(matcher),
@@ -225,7 +225,7 @@ public:
     { }
     MatchVisitor & allowVisitCaching(bool allow) { _allowVisitCaching = allow; return *this; }
     void visit(uint32_t lid, document::Document::UP doc) override {
-        const search::DocumentMetaData & meta = _metaData[_lidIndexMap[lid]];
+        const search::DocumentMetadata & meta = _metaData[_lidIndexMap[lid]];
         assert(lid == meta.lid);
         if (_matcher.match(meta, doc.get())) {
             if (doc && _fields) {
@@ -241,7 +241,7 @@ public:
 
 private:
     const Matcher                          & _matcher;
-    const search::DocumentMetaData::Vector & _metaData;
+    const search::DocumentMetadata::Vector & _metaData;
     const LidIndexMap                      & _lidIndexMap;
     const document::FieldSet               * _fields;
     IterateResult::List                    & _list;
@@ -257,7 +257,7 @@ DocumentIterator::fetchCompleteSource(const DocTypeName & doc_type_name,
                                       IterateResult::List & list)
 {
     IDocumentRetriever::ReadGuard sourceReadGuard(source.getReadGuard());
-    search::DocumentMetaData::Vector metaData;
+    search::DocumentMetadata::Vector metaData;
     source.getBucketMetaData(_bucket, metaData);
     if (metaData.empty()) {
         return;
@@ -273,7 +273,7 @@ DocumentIterator::fetchCompleteSource(const DocTypeName & doc_type_name,
     IDocumentRetriever::LidVector lidsToFetch;
     lidsToFetch.reserve(metaData.size());
     for (size_t i(0); i < metaData.size(); i++) {
-        const search::DocumentMetaData & meta = metaData[i];
+        const search::DocumentMetadata & meta = metaData[i];
         if (checkMeta(meta)) {
             if (matcher.match(meta)) {
                 lidsToFetch.emplace_back(meta.lid);
@@ -286,7 +286,7 @@ DocumentIterator::fetchCompleteSource(const DocTypeName & doc_type_name,
     list.reserve(lidsToFetch.size());
     if ( _metaOnly ) {
         for (uint32_t lid : lidsToFetch) {
-            const search::DocumentMetaData & meta = metaData[lidIndexMap[lid]];
+            const search::DocumentMetadata & meta = metaData[lidIndexMap[lid]];
             assert(lid == meta.lid);
             list.push_back(createDocEntry(storage::spi::Timestamp(meta.timestamp), meta.removed, doc_type_name.getName(), meta.gid));
         }

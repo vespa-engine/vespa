@@ -69,7 +69,7 @@ struct MyMoveHandler : public IDocumentMoveHandler {
 
 struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
     using DocumentTypeRepo = document::DocumentTypeRepo;
-    using DocumentMetaData = search::DocumentMetaData;
+    using DocumentMetaData = search::DocumentMetadata;
     using Document = document::Document;
     using DocumentId = document::DocumentId;
     using DocumentIdT = search::DocumentIdT;

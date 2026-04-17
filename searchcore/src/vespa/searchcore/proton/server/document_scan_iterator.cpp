@@ -3,7 +3,7 @@
 #include "document_scan_iterator.h"
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
 
-using search::DocumentMetaData;
+using search::DocumentMetadata;
 
 namespace proton {
 
@@ -22,18 +22,18 @@ DocumentScanIterator::valid() const
     return _itrValid;
 }
 
-DocumentMetaData
+DocumentMetadata
 DocumentScanIterator::next(uint32_t compactLidLimit)
 {
     for (--_lastLid; _lastLid > compactLidLimit; --_lastLid) {
         if (_metaStore.validLid(_lastLid)) {
             const RawDocumentMetaData &metaData = _metaStore.getRawMetaData(_lastLid);
-            return DocumentMetaData(_lastLid, metaData.getTimestamp(),
+            return DocumentMetadata(_lastLid, metaData.getTimestamp(),
                                     metaData.getBucketId(), metaData.getGid());
         }
     }
     _itrValid = (_lastLid > compactLidLimit) ;
-    return DocumentMetaData();
+    return DocumentMetadata();
 }
 
 } // namespace proton

@@ -35,7 +35,7 @@ private:
     storage::spi::IterateResult::List     _list;
 
 
-    [[nodiscard]] bool checkMeta(const search::DocumentMetaData &meta) const;
+    [[nodiscard]] bool checkMeta(const search::DocumentMetadata &meta) const;
     void fetchCompleteSource(const DocTypeName & doc_type_name,
                              const IDocumentRetriever & source,
                              storage::spi::IterateResult::List & list);

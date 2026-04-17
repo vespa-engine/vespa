@@ -125,7 +125,7 @@ DocStoreValidator::performRemoves(FeedHandler & feedHandler, const search::IDocu
         bool found = _dms.getGid(lid, gid);
         assert(found);
         if (found) {
-            search::DocumentMetaData metaData = _dms.getMetaData(gid);
+            search::DocumentMetadata metaData = _dms.getMetadata(gid);
             assert(metaData.valid());
             document::Document::UP document = store.read(lid, repo);
             assert(document);
