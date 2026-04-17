@@ -13,12 +13,12 @@ using BucketCopyPtr = std::unique_ptr<BucketCopy>;
 std::vector<BucketCopyPtr> _bucketDatabase;
 
 struct NodeFactory {
-    std::vector<MergeMetaData> _nodes;
+    std::vector<MergeMetadata> _nodes;
 
     NodeFactory& add(int index, int crc) {
         _bucketDatabase.emplace_back(
                 std::make_unique<BucketCopy>(0, index, api::BucketInfo(crc, 5, 10)));
-        _nodes.emplace_back(MergeMetaData(index, *_bucketDatabase.back()));
+        _nodes.emplace_back(MergeMetadata(index, *_bucketDatabase.back()));
         return *this;
     }
     NodeFactory& addTrusted(int index, int crc) {
@@ -46,7 +46,7 @@ struct NodeFactory {
 
 struct MergeLimiterTest : Test {
 
-    static std::string limit(uint32_t max_nodes, std::vector<MergeMetaData> nodes) {
+    static std::string limit(uint32_t max_nodes, std::vector<MergeMetadata> nodes) {
         MergeLimiter limiter(max_nodes);
         limiter.limitMergeToMaxNodes(nodes);
         std::ostringstream actual;

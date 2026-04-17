@@ -46,26 +46,26 @@ public:
     static void generateSortedNodeList(
             const lib::Distribution&, const lib::ClusterState&,
             const document::BucketId&, MergeLimiter&,
-            std::vector<MergeMetaData>&);
+            std::vector<MergeMetadata>&);
 
     bool shouldBlockThisOperation(uint32_t messageType, uint16_t node, uint8_t pri) const override;
     bool isBlocked(const DistributorStripeOperationContext& ctx, const OperationSequencer&) const override;
 private:
     static void addIdealNodes(
             const std::vector<uint16_t>& idealNodes,
-            const std::vector<MergeMetaData>& nodes,
-            std::vector<MergeMetaData>& result);
+            const std::vector<MergeMetadata>& nodes,
+            std::vector<MergeMetadata>& result);
 
     static void addCopiesNotAlreadyAdded(
             uint16_t redundancy,
-            const std::vector<MergeMetaData>& nodes,
-            std::vector<MergeMetaData>& result);
+            const std::vector<MergeMetadata>& nodes,
+            std::vector<MergeMetadata>& result);
 
     void deleteSourceOnlyNodes(const BucketDatabase::Entry& currentState,
                                DistributorStripeMessageSender& sender);
     [[nodiscard]] bool is_global_bucket_merge() const noexcept;
     [[nodiscard]] bool all_involved_nodes_support_unordered_merge_chaining() const noexcept;
-    [[nodiscard]] uint32_t estimate_merge_memory_footprint_upper_bound(const std::vector<MergeMetaData>& nodes) const noexcept;
+    [[nodiscard]] uint32_t estimate_merge_memory_footprint_upper_bound(const std::vector<MergeMetadata>& nodes) const noexcept;
     MergeBucketMetricSet* get_merge_metrics();
 };
 

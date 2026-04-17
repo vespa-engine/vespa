@@ -487,7 +487,7 @@ TEST_F(StateCheckersTest, join) {
               testJoin(10, 100, 33, document::BucketId(33, 1)));
 
     insertJoinableBuckets();
-    // Meta data too big, no join
+    // Metadata too big, no join
     insertBucketInfo(document::BucketId(33, 1), 1,
                      api::BucketInfo(0x1, 1, 1, 1000, 1000));
 

@@ -117,7 +117,7 @@ private:
      * sorted ascendingly on entry timestamp.
      * Throws std::runtime_error upon iteration failure.
      */
-    void populateMetaData(const spi::Bucket&, Timestamp maxTimestamp, DocEntryList & entries, spi::Context& context) const;
+    void populateMetadata(const spi::Bucket&, Timestamp maxTimestamp, DocEntryList & entries, spi::Context& context) const;
 
     std::unique_ptr<document::Document>
     deserializeDiffDocument(const api::ApplyBucketDiffCommand::Entry& e, const document::DocumentTypeRepo& repo) const;

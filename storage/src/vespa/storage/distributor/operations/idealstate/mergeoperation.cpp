@@ -34,12 +34,12 @@ MergeOperation::getStatus() const
 void
 MergeOperation::addIdealNodes(
         const std::vector<uint16_t>& idealNodes,
-        const std::vector<MergeMetaData>& nodes,
-        std::vector<MergeMetaData>& result)
+        const std::vector<MergeMetadata>& nodes,
+        std::vector<MergeMetadata>& result)
 {
     // Add all ideal nodes first. These are never marked source-only.
     for (uint16_t idealNode : idealNodes) {
-        const MergeMetaData* entry = nullptr;
+        const MergeMetadata* entry = nullptr;
         for (const auto & node : nodes) {
             if (idealNode == node._nodeIndex) {
                 entry = &node;
@@ -56,8 +56,8 @@ MergeOperation::addIdealNodes(
 
 void
 MergeOperation::addCopiesNotAlreadyAdded(uint16_t redundancy,
-                                         const std::vector<MergeMetaData>& nodes,
-                                         std::vector<MergeMetaData>& result)
+                                         const std::vector<MergeMetadata>& nodes,
+                                         std::vector<MergeMetadata>& result)
 {
     for (const auto & node : nodes) {
         bool found = false;
@@ -80,11 +80,11 @@ MergeOperation::generateSortedNodeList(
         const lib::ClusterState& state,
         const document::BucketId& bucketId,
         MergeLimiter& limiter,
-        std::vector<MergeMetaData>& nodes)
+        std::vector<MergeMetadata>& nodes)
 {
     std::vector<uint16_t> idealNodes(distribution.getIdealStorageNodes(state, bucketId, "ui"));
 
-    std::vector<MergeMetaData> result;
+    std::vector<MergeMetadata> result;
     const uint16_t redundancy = distribution.getRedundancy();
     addIdealNodes(idealNodes, nodes, result);
     addCopiesNotAlreadyAdded(redundancy, nodes, result);
@@ -124,7 +124,7 @@ MergeOperation::onStart(DistributorStripeMessageSender& sender)
 
     const lib::ClusterState& clusterState(_bucketSpace->getClusterState());
     std::vector<std::unique_ptr<BucketCopy>> newCopies;
-    std::vector<MergeMetaData> nodes;
+    std::vector<MergeMetadata> nodes;
 
     for (uint16_t node : getNodes()) {
         const BucketCopy* copy = entry->getNode(node);
@@ -369,7 +369,7 @@ bool MergeOperation::all_involved_nodes_support_unordered_merge_chaining() const
     });
 }
 
-uint32_t MergeOperation::estimate_merge_memory_footprint_upper_bound(const std::vector<MergeMetaData>& nodes) const noexcept {
+uint32_t MergeOperation::estimate_merge_memory_footprint_upper_bound(const std::vector<MergeMetadata>& nodes) const noexcept {
     vespalib::hash_set<uint32_t> seen_checksums;
     uint32_t worst_case_footprint_across_nodes = 0;
     uint32_t largest_single_doc_contribution   = 0;

@@ -127,7 +127,7 @@ void update_op_metrics(FileStorThreadMetrics& metrics, const api::StorageReply &
 } // anonymous namespace
 
 void
-MergeHandler::populateMetaData(const spi::Bucket& bucket, Timestamp maxTimestamp,
+MergeHandler::populateMetadata(const spi::Bucket& bucket, Timestamp maxTimestamp,
                                DocEntryList& entries, spi::Context& context) const
 {
     spi::DocumentSelection docSel("");
@@ -232,7 +232,7 @@ MergeHandler::buildBucketInfoList(
     }
 
     DocEntryList entries;
-    populateMetaData(bucket, maxTimestamp, entries, context);
+    populateMetadata(bucket, maxTimestamp, entries, context);
 
     for (const auto& entry : entries) {
         api::GetBucketDiffCommand::Entry diff;
@@ -561,7 +561,7 @@ MergeHandler::applyDiffLocally(const spi::Bucket& bucket, std::vector<api::Apply
 
     async_results->mark_stale_bucket_info();
     DocEntryList entries;
-    populateMetaData(bucket, Timestamp::max(), entries, context);
+    populateMetadata(bucket, Timestamp::max(), entries, context);
 
     const auto newest_versions = enumerate_newest_document_versions(diff);
     const document::DocumentTypeRepo & repo = _env.getDocumentTypeRepo();

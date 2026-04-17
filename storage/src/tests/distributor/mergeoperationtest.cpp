@@ -167,9 +167,9 @@ std::string getNodeList(std::string state, uint32_t redundancy, std::string exis
         bucketDB[i] = BucketCopy(0, node, api::BucketInfo(1, 2, 3));
         bucketDB[i].setTrusted(trusted);
     }
-    std::vector<MergeMetaData> nodes(st.size());
+    std::vector<MergeMetadata> nodes(st.size());
     for (uint32_t i = 0; i < st.size(); i++) {
-        nodes[i] = MergeMetaData(bucketDB[i].getNode(), bucketDB[i]);
+        nodes[i] = MergeMetadata(bucketDB[i].getNode(), bucketDB[i]);
     }
     MergeLimiter limiter(16);
     MergeOperation::generateSortedNodeList(distribution, clusterState,
