@@ -35,7 +35,7 @@ private:
     std::unique_ptr<vespalib::DataBuffer> _backingBuffer;
 
     // To avoid having to return another container object out of docblocks
-    // the meta data has been added to document. This will not be serialized
+    // the metadata has been added to document. This will not be serialized
     // with the document and really doesn't belong here!
     int64_t _lastModified;
 

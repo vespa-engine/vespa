@@ -84,9 +84,9 @@ public:
  * Allocator for unique NUL-terminated strings that is accessed via a
  * 32-bit EntryRef. Multiple buffer types are used. Small strings use
  * a common buffer type handler with different parameters for array
- * size (which denotes number of bytes set aside for meta data
+ * size (which denotes number of bytes set aside for metadata
  * (reference count), string and NUL byte. Large strings use a
- * different buffer type handler where buffer contains meta data
+ * different buffer type handler where buffer contains metadata
  * (reference count) and an std::string, while the string value is on
  * the heap.  string_allocator::get_type_id() is used to map from
  * string length to type id.
