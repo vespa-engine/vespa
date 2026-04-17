@@ -254,6 +254,23 @@ func TestVisitCommandJSONLTruncatedRetry(t *testing.T) {
 	assert.Contains(t, client.Requests[2].URL.RawQuery, "continuation=JSONL_TOKEN")
 }
 
+func TestVisitCommandJSONLTruncatedAbort(t *testing.T) {
+	// Truncated 5 times in a row with no continuation token — should abort
+	truncatedNoToken := jsonlDoc1 + "\n" // no continuation line, no done signal
+	client := &mock.HTTPClient{}
+	client.NextResponseString(200, handlersResponse)
+	for range 5 {
+		client.NextResponse(jsonlResponse(truncatedNoToken))
+	}
+	cli, _, _ := newTestCLI(t)
+	cli.httpClient = client
+	cli.sleeper = func(d time.Duration) {}
+	err := cli.Run("visit", "--stream", "--json-lines", "--bucket-space", "default", "--content-cluster", "fooCC", "-t", "http://127.0.0.1:8080")
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "truncated")
+	assert.Equal(t, 6, len(client.Requests)) // probe + 5 visit attempts
+}
+
 func inRangeMillis(v time.Duration, lo int64, hi int64) bool {
 	return v.Milliseconds() >= lo && v.Milliseconds() <= hi
 }

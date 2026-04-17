@@ -342,6 +342,7 @@ func runVisit(vArgs *visitArgs, service *vespa.Service) (res OperationResult) {
 	const maxRetryBackoffMs = 10_000.0 // Actually up to 15s, see below
 	backoffBaselineMs := baseRetryBackoffMs
 	var continuationToken string
+	consecutiveTruncations := 0
 	for {
 		var vvo *VespaVisitOutput
 		vvo, res = runOneVisit(vArgs, service, continuationToken)
@@ -370,9 +371,14 @@ func runVisit(vArgs *visitArgs, service *vespa.Service) (res OperationResult) {
 			continuationToken = vvo.Continuation
 		}
 		if vvo.Truncated {
+			consecutiveTruncations++
+			if consecutiveTruncations >= 5 {
+				return Failure("Response truncated 5 times in a row: aborting visit")
+			}
 			vArgs.cli.printWarning("Response truncated: retrying from last continuation token (may produce duplicates)")
 			continue
 		}
+		consecutiveTruncations = 0
 		if vvo.Continuation == "" {
 			break
 		}
@@ -458,7 +464,7 @@ func runOneVisit(vArgs *visitArgs, service *vespa.Service, contToken string) (*V
 
 	if response.StatusCode == 200 {
 		if strings.Contains(response.Header.Get("Content-Type"), "application/jsonl") {
-			vvo, err := parseVisitOutputJSONL(response.Body, vArgs.cli.Stdout)
+			vvo, err := parseVisitOutputJSONL(response.Body, vArgs.cli.Stdout, vArgs.cli.Stderr)
 			if err != nil {
 				return nil, Failure("error reading JSONL response: " + err.Error())
 			}
@@ -509,7 +515,7 @@ type VespaVisitOutput struct {
 	DocumentCount int            `json:"documentCount"`
 	Continuation  string         `json:"continuation"`
 	ErrorMsg      string         `json:"message"`
-	Truncated     bool           // true when a JSONL response ended without a final newline
+	Truncated     bool           // true when JSONL response ended without a completion signal from the server
 }
 
 type jsonlLine struct {
@@ -536,22 +542,18 @@ func parseVisitOutput(r io.Reader) (*VespaVisitOutput, error) {
 	return &parsedJson, nil
 }
 
-func parseVisitOutputJSONL(r io.Reader, w io.Writer) (*VespaVisitOutput, error) {
+func parseVisitOutputJSONL(r io.Reader, w io.Writer, warnWriter io.Writer) (*VespaVisitOutput, error) {
 	dec := json.NewDecoder(r)
 	var result VespaVisitOutput
 	done := false
 	for {
-		var raw json.RawMessage
-		err := dec.Decode(&raw)
+		var line jsonlLine
+		err := dec.Decode(&line)
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
 			return &result, fmt.Errorf("error reading JSONL response: %s", err)
-		}
-		var line jsonlLine
-		if err := json.Unmarshal(raw, &line); err != nil {
-			continue
 		}
 		switch {
 		case line.Put != "" || line.Remove != "":
@@ -567,13 +569,20 @@ func parseVisitOutputJSONL(r io.Reader, w io.Writer) (*VespaVisitOutput, error) 
 			if err != nil {
 				continue
 			}
-			w.Write(outBytes)
-			w.Write([]byte("\n"))
+			if _, err := w.Write(outBytes); err != nil {
+				return &result, fmt.Errorf("error writing document: %s", err)
+			}
+			if _, err := w.Write([]byte("\n")); err != nil {
+				return &result, fmt.Errorf("error writing document: %s", err)
+			}
 			result.DocumentCount++
 		case line.Continuation != nil:
 			result.Continuation = line.Continuation.Token
 			done = line.Continuation.Token == ""
 		case line.SessionStats != nil:
+			if line.SessionStats.DocumentCount != result.DocumentCount {
+				fmt.Fprintf(warnWriter, "WARNING: server reported %d documents but %d were received\n", line.SessionStats.DocumentCount, result.DocumentCount)
+			}
 			result.DocumentCount = line.SessionStats.DocumentCount
 		case line.Message != "":
 			result.ErrorMsg = line.Message
