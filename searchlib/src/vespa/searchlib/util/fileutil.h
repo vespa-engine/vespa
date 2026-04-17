@@ -33,7 +33,7 @@ public:
           _header()
     { }
 
-    virtual ~LoadedBuffer() = default;
+    virtual ~LoadedBuffer();
     const void * buffer() const { return _buffer; }
     const char *  c_str() const { return static_cast<const char *>(_buffer); }
     size_t size() const { return _size; }

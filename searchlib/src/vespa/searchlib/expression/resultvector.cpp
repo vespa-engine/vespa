@@ -20,6 +20,10 @@ IMPLEMENT_RESULTNODE(StringBucketResultNodeVector,  ResultNodeVector);
 IMPLEMENT_RESULTNODE(RawBucketResultNodeVector,  ResultNodeVector);
 IMPLEMENT_RESULTNODE(GeneralResultNodeVector,  ResultNodeVector);
 
+Int64ResultNodeVector::~Int64ResultNodeVector() = default;
+
+FloatResultNodeVector::~FloatResultNodeVector() = default;
+
 const ResultNode *
 GeneralResultNodeVector::find(const ResultNode & key) const
 {

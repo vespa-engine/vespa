@@ -352,10 +352,13 @@ class AllowRewrite : public QueryNodeResultFactory
 {
 public:
     explicit AllowRewrite(std::string_view index) noexcept : _allowedIndex(index) {}
+    ~AllowRewrite();
     bool allow_float_terms_rewrite(std::string_view index) const noexcept override { return index == _allowedIndex; }
 private:
     std::string _allowedIndex;
 };
+
+AllowRewrite::~AllowRewrite() = default;
 
 const char TERM_UNIQ = static_cast<char>(ParseItem::ITEM_TERM) | static_cast<char>(ParseItem::IF_UNIQUEID);
 
