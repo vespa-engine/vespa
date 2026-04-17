@@ -13,8 +13,13 @@ MinRedundancy = element min-redundancy {
     xsd:integer { minInclusive = "1" maxInclusive = "65534" }
 }
 
+PseudoRowColumnMode = element pseudo-row-column-mode {
+    xsd:boolean
+}
+
 DistributionType = element distribution {
-    attribute type { string "strict" | string "loose" | string "legacy" }
+    attribute type { string "strict" | string "loose" | string "legacy" }? &
+    PseudoRowColumnMode?
 }
 
 BucketSplitting = element bucket-splitting {
