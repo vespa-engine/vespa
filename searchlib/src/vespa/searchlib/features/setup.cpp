@@ -21,6 +21,7 @@
 #include "fieldlengthfeature.h"
 #include "fieldmatchfeature.h"
 #include "fieldtermmatchfeature.h"
+#include "first_phase_max_feature.h"
 #include "first_phase_rank_feature.h"
 #include "firstphasefeature.h"
 #include "flow_completeness_feature.h"
@@ -95,6 +96,7 @@ void setup_search_features(fef::IBlueprintRegistry & registry)
     registry.addPrototype(std::make_shared<FieldMatchBlueprint>());
     registry.addPrototype(std::make_shared<FieldTermMatchBlueprint>());
     registry.addPrototype(std::make_shared<FirstPhaseBlueprint>());
+    registry.addPrototype(std::make_shared<FirstPhaseMaxBlueprint>());
     registry.addPrototype(std::make_shared<FirstPhaseRankBlueprint>());
     registry.addPrototype(std::make_shared<FlowCompletenessBlueprint>());
     registry.addPrototype(std::make_shared<ForeachBlueprint>());
