@@ -69,7 +69,7 @@ struct MyMoveHandler : public IDocumentMoveHandler {
 
 struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
     using DocumentTypeRepo = document::DocumentTypeRepo;
-    using DocumentMetaData = search::DocumentMetadata;
+    using DocumentMetadata = search::DocumentMetadata;
     using Document = document::Document;
     using DocumentId = document::DocumentId;
     using DocumentIdT = search::DocumentIdT;
@@ -88,9 +88,9 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
 
     const DocumentTypeRepo &getDocumentTypeRepo() const override { return *_repo; }
 
-    void getBucketMetaData(const storage::spi::Bucket &, DocumentMetaData::Vector &) const override {}
+    void getBucketMetadata(const storage::spi::Bucket &, DocumentMetadata::Vector &) const override {}
 
-    DocumentMetaData getDocumentMetaData(const DocumentId &) const override { return {}; }
+    DocumentMetadata getDocumentMetadata(const DocumentId &) const override { return {}; }
 
     Document::UP getFullDocument(DocumentIdT lid) const override {
         return (lid != _lid2Fail) ? Document::UP(_docs[lid]->clone()) : Document::UP();

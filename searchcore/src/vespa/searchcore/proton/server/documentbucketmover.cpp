@@ -101,9 +101,9 @@ BucketMover::getKeysToMove(size_t maxDocsToMove) {
     std::vector<MoveKey> toMove;
     for (size_t docsMoved(0); itr != end && docsMoved < maxDocsToMove; ++itr) {
         uint32_t lid = itr.getKey().get_lid();
-        const RawDocumentMetadata &metaData = _source->meta_store()->getRawMetadata(lid);
-        if (metaData.getBucketUsedBits() == _bucket.getUsedBits()) {
-            result.first.keys().emplace_back(lid, metaData.getGid(), metaData.getTimestamp(), MoveGuard(*this));
+        const RawDocumentMetadata &metadata = _source->meta_store()->getRawMetadata(lid);
+        if (metadata.getBucketUsedBits() == _bucket.getUsedBits()) {
+            result.first.keys().emplace_back(lid, metadata.getGid(), metadata.getTimestamp(), MoveGuard(*this));
             ++docsMoved;
         }
     }

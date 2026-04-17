@@ -27,31 +27,31 @@ class WriteMetadata
     using BucketId = documentmetastore::IStore::BucketId;
     using Timestamp = documentmetastore::IStore::Timestamp;
     search::BufferWriter &_datWriter;
-    MetadataView _metaDataView;
+    MetadataView _metadataView;
     bool _writeDocSize;
 public:
-    WriteMetadata(search::BufferWriter &datWriter, MetadataView metaDataView, bool writeDocSize)
+    WriteMetadata(search::BufferWriter &datWriter, MetadataView metadataView, bool writeDocSize)
         : _datWriter(datWriter),
-          _metaDataView(metaDataView),
+          _metadataView(metadataView),
           _writeDocSize(writeDocSize)
     { }
 
     void operator()(documentmetastore::GidToLidMapKey key) {
         auto lid = key.get_lid();
-        assert(lid < _metaDataView.size());
-        const RawDocumentMetadata &metaData = _metaDataView[lid];
-        const GlobalId &gid = metaData.getGid();
+        assert(lid < _metadataView.size());
+        const RawDocumentMetadata &metadata = _metadataView[lid];
+        const GlobalId &gid = metadata.getGid();
         // 6 bits used for bucket bits
-        uint8_t bucketUsedBits = metaData.getBucketUsedBits();
+        uint8_t bucketUsedBits = metadata.getBucketUsedBits();
         assert(BucketId::validUsedBits(bucketUsedBits));
         assert((bucketUsedBits >> BucketId::CountBits) == 0);
-        Timestamp timestamp = metaData.getTimestamp();
+        Timestamp timestamp = metadata.getTimestamp();
         search::BufferWriter &datWriter(_datWriter);
         datWriter.write(&lid, sizeof(lid));
         datWriter.write(gid.get(), GlobalId::LENGTH);
         datWriter.write(&bucketUsedBits, sizeof(bucketUsedBits));
         if (_writeDocSize) {
-            uint32_t docSize = metaData.getDocSize();
+            uint32_t docSize = metadata.getDocSize();
             assert(docSize < (1u << 24));
             uint8_t docSizeLow = docSize;
             uint16_t docSizeHigh = docSize >> 8;
@@ -70,10 +70,10 @@ DocumentMetaStoreSaver::
 DocumentMetaStoreSaver(GenerationGuard&& guard,
                        const search::attribute::AttributeHeader& header,
                        const GidIterator& gidIterator,
-                       MetadataView metaDataView)
+                       MetadataView metadataView)
     : AttributeSaver(std::move(guard), header),
       _gidIterator(gidIterator),
-      _metaDataView(metaDataView),
+      _metadataView(metadataView),
       _writeDocSize(true)
 {
     if (header.getVersion() == documentmetastore::NO_DOCUMENT_SIZE_TRACKING_VERSION) {
@@ -91,7 +91,7 @@ DocumentMetaStoreSaver::onSave(IAttributeSaveTarget &saveTarget)
     // write <lid,gid> pairs, sorted on gid
     std::unique_ptr<search::BufferWriter>
         datWriter(saveTarget.datWriter().allocBufferWriter());
-    _gidIterator.foreach_key(WriteMetadata(*datWriter, _metaDataView, _writeDocSize));
+    _gidIterator.foreach_key(WriteMetadata(*datWriter, _metadataView, _writeDocSize));
     datWriter->flush();
     return true;
 }

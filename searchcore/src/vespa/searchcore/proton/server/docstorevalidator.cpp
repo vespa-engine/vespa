@@ -125,12 +125,12 @@ DocStoreValidator::performRemoves(FeedHandler & feedHandler, const search::IDocu
         bool found = _dms.getGid(lid, gid);
         assert(found);
         if (found) {
-            search::DocumentMetadata metaData = _dms.getMetadata(gid);
-            assert(metaData.valid());
+            search::DocumentMetadata metadata = _dms.getMetadata(gid);
+            assert(metadata.valid());
             document::Document::UP document = store.read(lid, repo);
             assert(document);
-            LOG(info, "Removing document with id %s and lid %u with gid %s in bucket %s", document->getId().toString().c_str(), lid, metaData.gid.toString().c_str(), metaData.bucketId.toString().c_str());
-            auto remove = std::make_unique<RemoveOperationWithGid>(metaData.bucketId, storage::spi::Timestamp(metaData.timestamp), gid, document->getType().getName());
+            LOG(info, "Removing document with id %s and lid %u with gid %s in bucket %s", document->getId().toString().c_str(), lid, metadata.gid.toString().c_str(), metadata.bucketId.toString().c_str());
+            auto remove = std::make_unique<RemoveOperationWithGid>(metadata.bucketId, storage::spi::Timestamp(metadata.timestamp), gid, document->getType().getName());
             feedHandler.performOperation(FeedToken(), std::move(remove));
         }
     }

@@ -212,11 +212,11 @@ using LidIndexMap = vespalib::hash_map<uint32_t, uint32_t>;
 class MatchVisitor : public search::IDocumentVisitor
 {
 public:
-    MatchVisitor(const Matcher &matcher, const search::DocumentMetadata::Vector &metaData,
+    MatchVisitor(const Matcher &matcher, const search::DocumentMetadata::Vector &metadata,
                  const LidIndexMap &lidIndexMap, const document::FieldSet *fields, IterateResult::List &list,
                  ssize_t defaultSerializedSize) :
         _matcher(matcher),
-        _metaData(metaData),
+        _metadata(metadata),
         _lidIndexMap(lidIndexMap),
         _fields(fields),
         _list(list),
@@ -225,7 +225,7 @@ public:
     { }
     MatchVisitor & allowVisitCaching(bool allow) { _allowVisitCaching = allow; return *this; }
     void visit(uint32_t lid, document::Document::UP doc) override {
-        const search::DocumentMetadata & meta = _metaData[_lidIndexMap[lid]];
+        const search::DocumentMetadata & meta = _metadata[_lidIndexMap[lid]];
         assert(lid == meta.lid);
         if (_matcher.match(meta, doc.get())) {
             if (doc && _fields) {
@@ -241,7 +241,7 @@ public:
 
 private:
     const Matcher                          & _matcher;
-    const search::DocumentMetadata::Vector & _metaData;
+    const search::DocumentMetadata::Vector & _metadata;
     const LidIndexMap                      & _lidIndexMap;
     const document::FieldSet               * _fields;
     IterateResult::List                    & _list;
@@ -257,23 +257,23 @@ DocumentIterator::fetchCompleteSource(const DocTypeName & doc_type_name,
                                       IterateResult::List & list)
 {
     IDocumentRetriever::ReadGuard sourceReadGuard(source.getReadGuard());
-    search::DocumentMetadata::Vector metaData;
-    source.getBucketMetaData(_bucket, metaData);
-    if (metaData.empty()) {
+    search::DocumentMetadata::Vector metadata;
+    source.getBucketMetadata(_bucket, metadata);
+    if (metadata.empty()) {
         return;
     }
-    LOG(debug, "metadata count before filtering: %zu", metaData.size());
+    LOG(debug, "metadata count before filtering: %zu", metadata.size());
 
     Matcher matcher(source, _metaOnly, _selection.getDocumentSelection().getDocumentSelection());
     if (matcher.willAlwaysFail()) {
         return;
     }
 
-    LidIndexMap lidIndexMap(3*metaData.size());
+    LidIndexMap lidIndexMap(3*metadata.size());
     IDocumentRetriever::LidVector lidsToFetch;
-    lidsToFetch.reserve(metaData.size());
-    for (size_t i(0); i < metaData.size(); i++) {
-        const search::DocumentMetadata & meta = metaData[i];
+    lidsToFetch.reserve(metadata.size());
+    for (size_t i(0); i < metadata.size(); i++) {
+        const search::DocumentMetadata & meta = metadata[i];
         if (checkMeta(meta)) {
             if (matcher.match(meta)) {
                 lidsToFetch.emplace_back(meta.lid);
@@ -286,12 +286,12 @@ DocumentIterator::fetchCompleteSource(const DocTypeName & doc_type_name,
     list.reserve(lidsToFetch.size());
     if ( _metaOnly ) {
         for (uint32_t lid : lidsToFetch) {
-            const search::DocumentMetadata & meta = metaData[lidIndexMap[lid]];
+            const search::DocumentMetadata & meta = metadata[lidIndexMap[lid]];
             assert(lid == meta.lid);
             list.push_back(createDocEntry(storage::spi::Timestamp(meta.timestamp), meta.removed, doc_type_name.getName(), meta.gid));
         }
     } else {
-        MatchVisitor visitor(matcher, metaData, lidIndexMap, _fields.get(), list, _defaultSerializedSize);
+        MatchVisitor visitor(matcher, metadata, lidIndexMap, _fields.get(), list, _defaultSerializedSize);
         visitor.allowVisitCaching(isWeakRead());
         source.visitDocuments(lidsToFetch, visitor, _readConsistency);
     }

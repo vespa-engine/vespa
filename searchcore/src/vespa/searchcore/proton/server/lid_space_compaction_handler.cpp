@@ -58,11 +58,11 @@ LidSpaceCompactionHandler::getIterator() const
 }
 
 DocumentMetadata
-LidSpaceCompactionHandler::getMetaData(uint32_t lid) const {
+LidSpaceCompactionHandler::getMetadata(uint32_t lid) const {
     if (_subDb.meta_store()->validLid(lid)) {
-        const RawDocumentMetadata &metaData = _subDb.meta_store()->getRawMetadata(lid);
-        return DocumentMetadata(lid, metaData.getTimestamp(),
-                                metaData.getBucketId(), metaData.getGid());
+        const RawDocumentMetadata &metadata = _subDb.meta_store()->getRawMetadata(lid);
+        return DocumentMetadata(lid, metadata.getTimestamp(),
+                                metadata.getBucketId(), metadata.getGid());
     }
     return DocumentMetadata();
 }

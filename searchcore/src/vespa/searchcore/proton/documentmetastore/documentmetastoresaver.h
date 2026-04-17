@@ -31,7 +31,7 @@ public:
 
 private:
     GidIterator _gidIterator; // iterator over frozen tree
-    MetadataView _metaDataView;
+    MetadataView _metadataView;
     bool _writeDocSize;
 
     bool onSave(search::IAttributeSaveTarget &saveTarget) override;
@@ -39,7 +39,7 @@ public:
     DocumentMetaStoreSaver(vespalib::GenerationGuard&& guard,
                            const search::attribute::AttributeHeader& header,
                            const GidIterator& gidIterator,
-                           MetadataView metaDataView);
+                           MetadataView metadataView);
 
     ~DocumentMetaStoreSaver() override;
 };
