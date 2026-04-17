@@ -770,6 +770,7 @@ public class DeploymentSpecXmlReader {
     private DeploymentSpec.ChangeBlocker readChangeBlocker(Element tag) {
         boolean blockVersions = trueOrMissing(tag.getAttribute("version"));
         boolean blockRevisions = trueOrMissing(tag.getAttribute("revision"));
+        boolean blockMaintenance = trueOrMissing(tag.getAttribute("maintenance"));
 
         String daySpec = tag.getAttribute("days");
         String hourSpec = tag.getAttribute("hours");
@@ -777,7 +778,7 @@ public class DeploymentSpecXmlReader {
         String dateStart = tag.getAttribute("from-date");
         String dateEnd = tag.getAttribute("to-date");
 
-        return new DeploymentSpec.ChangeBlocker(blockRevisions, blockVersions,
+        return new DeploymentSpec.ChangeBlocker(blockRevisions, blockVersions, blockMaintenance,
                                                 TimeWindow.from(daySpec, hourSpec, zoneSpec, dateStart, dateEnd));
     }
 

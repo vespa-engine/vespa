@@ -264,6 +264,7 @@
       "public java.util.List changeBlocker()",
       "public boolean canUpgradeAt(java.time.Instant)",
       "public boolean canChangeRevisionAt(java.time.Instant)",
+      "public boolean canPerformMaintenanceAt(java.time.Instant)",
       "public java.util.Optional athenzService(com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
       "public java.util.Map cloudAccounts(com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
       "public com.yahoo.config.provision.CloudResourceTags cloudResourceTags()",
@@ -321,9 +322,10 @@
       "public"
     ],
     "methods" : [
-      "public void <init>(boolean, boolean, com.yahoo.config.application.api.TimeWindow)",
+      "public void <init>(boolean, boolean, boolean, com.yahoo.config.application.api.TimeWindow)",
       "public boolean blocksRevisions()",
       "public boolean blocksVersions()",
+      "public boolean blocksMaintenance()",
       "public com.yahoo.config.application.api.TimeWindow window()",
       "public java.lang.String toString()"
     ],
