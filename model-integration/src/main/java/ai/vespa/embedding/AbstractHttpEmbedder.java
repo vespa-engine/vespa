@@ -72,7 +72,7 @@ public abstract class AbstractHttpEmbedder extends AbstractComponent {
 
         log.fine(() -> "Embedding API request: " + jsonPayload);
         var call = httpClient.newCall(httpRequest);
-        call.timeout().timeout(timeoutMs, TimeUnit.MILLISECONDS);
+        call.timeout().deadline(timeoutMs, TimeUnit.MILLISECONDS);
 
         try (var response = call.execute()) {
             var body = response.body() != null ? response.body().string() : "";
