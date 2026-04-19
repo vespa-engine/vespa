@@ -5,6 +5,7 @@
 #include "buffer_type.hpp"
 
 #include <vespa/vespalib/util/size_literals.h>
+#include <algorithm>
 
 namespace vespalib::datastore {
 
