@@ -21,14 +21,18 @@ static Allocator* createAllocator() {
     return _GmemP;
 }
 
-template <> void MemBlock::dumpInfo(size_t level) { _GmemP->info(_G_logFile, level); }
+template <> void MemBlock::dumpInfo(size_t level) {
+    _GmemP->info(_G_logFile, level);
+}
 
 } // namespace vespamalloc
 
 extern "C" {
 
 int is_vespamalloc() __attribute__((visibility("default")));
-int is_vespamalloc() { return 1; }
+int is_vespamalloc() {
+    return 1;
+}
 
 // Exported symbol used by state explorer to detect vespamalloc presence and dump its info.
 void vespamalloc_dump_info(FILE* out_file) __attribute__((visibility("default")));

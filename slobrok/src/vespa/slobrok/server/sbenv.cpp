@@ -70,7 +70,9 @@ ConfigTask::ConfigTask(FNET_Scheduler* sched, Configurator& configurator)
     Schedule(1.0);
 }
 
-ConfigTask::~ConfigTask() { Kill(); }
+ConfigTask::~ConfigTask() {
+    Kill();
+}
 
 void ConfigTask::PerformTask() {
     Schedule(1.0);
@@ -113,7 +115,9 @@ SBEnv::SBEnv(const ConfigShim& shim)
 
 SBEnv::~SBEnv() = default;
 
-FNET_Scheduler* SBEnv::getScheduler() { return _transport->GetScheduler(); }
+FNET_Scheduler* SBEnv::getScheduler() {
+    return _transport->GetScheduler();
+}
 
 void SBEnv::shutdown() {
     _shuttingDown = true;

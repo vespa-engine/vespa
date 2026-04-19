@@ -34,7 +34,7 @@ public:
 
 private:
     uint32_t _size;
-    void*    produce() override { return malloc(_size); }
+    void* produce() override { return malloc(_size); }
 };
 
 MallocWorker::~MallocWorker() = default;
@@ -50,7 +50,7 @@ private:
     uint32_t _size;
 
     void* produce() override { return malloc(_size); }
-    void  consume(void* p) override { free(p); }
+    void consume(void* p) override { free(p); }
 };
 
 MallocFreeWorker::~MallocFreeWorker() = default;

@@ -6,7 +6,7 @@
 
 class B;
 
-static int  taken = 0;
+static int taken = 0;
 extern void takeB(B* foo) __attribute__((noinline));
 
 class A {

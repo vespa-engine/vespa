@@ -26,9 +26,9 @@ struct Service : FRT_Invokable {
         assert(ok);
     }
     FNET_Transport& transport() { return *frt.supervisor().GetTransport(); }
-    int             listen_port() const { return frt.supervisor().GetListenPort(); }
-    FRT_Target*     connect(int port) { return frt.supervisor().GetTarget(port); }
-    void            init_rpc() {
+    int listen_port() const { return frt.supervisor().GetListenPort(); }
+    FRT_Target* connect(int port) { return frt.supervisor().GetTarget(port); }
+    void init_rpc() {
         FRT_ReflectionBuilder rb(&frt.supervisor());
         rb.DefineMethod("inc", "l", "l", FRT_METHOD(Service::rpc_inc), this);
         rb.MethodDesc("increment a 64-bit integer, returns after 5 seconds");
@@ -66,7 +66,7 @@ struct Fixture {
 
 struct MyWait : FRT_IRequestWait {
     FRT_RPCRequest* req = nullptr;
-    void            RequestDone(FRT_RPCRequest* r) override { req = r; }
+    void RequestDone(FRT_RPCRequest* r) override { req = r; }
 };
 
 TEST(TransportDebuggerTest, transport_layers_can_be_run_with_transport_debugger) {

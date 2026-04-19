@@ -30,13 +30,17 @@ bool Configurator::poll() {
 Configurator::Configurator(Configurable& target, const config::ConfigUri& uri)
     : _subscriber(std::make_unique<config::ConfigSubscriber>(uri.getContext())),
       _handle(_subscriber->subscribe<cloud::config::SlobroksConfig>(uri.getConfigId())),
-      _target(target) {}
+      _target(target) {
+}
 
 Configurator::~Configurator() = default;
 
-int64_t Configurator::getGeneration() const { return _subscriber->getGeneration(); }
+int64_t Configurator::getGeneration() const {
+    return _subscriber->getGeneration();
+}
 
-ConfiguratorFactory::ConfiguratorFactory(const config::ConfigUri& uri) : _uri(uri) {}
+ConfiguratorFactory::ConfiguratorFactory(const config::ConfigUri& uri) : _uri(uri) {
+}
 
 ConfiguratorFactory::ConfiguratorFactory(const std::vector<std::string>& spec)
     : _uri(config::ConfigUri::createEmpty()) {

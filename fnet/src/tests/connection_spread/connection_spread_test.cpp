@@ -21,9 +21,9 @@ struct DummyAdapter : FNET_IServerAdapter {
 };
 
 struct DummyStreamer : FNET_IPacketStreamer {
-    bool         GetPacketInfo(FNET_DataBuffer*, uint32_t*, uint32_t*, uint32_t*, bool*) override { return false; }
+    bool GetPacketInfo(FNET_DataBuffer*, uint32_t*, uint32_t*, uint32_t*, bool*) override { return false; }
     FNET_Packet* Decode(FNET_DataBuffer*, uint32_t, uint32_t, FNET_Context) override { return nullptr; }
-    void         Encode(FNET_Packet*, uint32_t, FNET_DataBuffer*) override {}
+    void Encode(FNET_Packet*, uint32_t, FNET_DataBuffer*) override {}
 };
 
 struct Fixture {

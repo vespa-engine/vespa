@@ -8,7 +8,8 @@
 #include <vespa/fnet/info.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
-FRT_RPCPacket::~FRT_RPCPacket() {}
+FRT_RPCPacket::~FRT_RPCPacket() {
+}
 
 void FRT_RPCPacket::Free() {
     if (_ownsRef) {
@@ -19,7 +20,9 @@ void FRT_RPCPacket::Free() {
 
 //--------------------------------------------------------------------
 
-uint32_t FRT_RPCRequestPacket::GetPCODE() { return (_flags << 16) + PCODE_FRT_RPC_REQUEST; }
+uint32_t FRT_RPCRequestPacket::GetPCODE() {
+    return (_flags << 16) + PCODE_FRT_RPC_REQUEST;
+}
 
 uint32_t FRT_RPCRequestPacket::GetLength() {
     return (sizeof(uint32_t) + _req->GetMethodNameLen() + _req->GetParams()->GetLength());
@@ -72,8 +75,8 @@ error:
 std::string FRT_RPCRequestPacket::Print(uint32_t indent) {
     std::string s;
     s += vespalib::make_string("%*sFRT_RPCRequestPacket {\n", indent, "");
-    s += vespalib::make_string(
-        "%*s  method name: %s\n", indent, "", (_req->GetMethodName() != nullptr) ? _req->GetMethodName() : "N/A");
+    s += vespalib::make_string("%*s  method name: %s\n", indent, "",
+                               (_req->GetMethodName() != nullptr) ? _req->GetMethodName() : "N/A");
     s += vespalib::make_string("%*s  params:\n", indent, "");
     _req->GetParams()->Print(indent + 2);
     s += vespalib::make_string("%*s}\n", indent, "");
@@ -82,9 +85,13 @@ std::string FRT_RPCRequestPacket::Print(uint32_t indent) {
 
 //--------------------------------------------------------------------
 
-uint32_t FRT_RPCReplyPacket::GetPCODE() { return (_flags << 16) + PCODE_FRT_RPC_REPLY; }
+uint32_t FRT_RPCReplyPacket::GetPCODE() {
+    return (_flags << 16) + PCODE_FRT_RPC_REPLY;
+}
 
-uint32_t FRT_RPCReplyPacket::GetLength() { return _req->GetReturn()->GetLength(); }
+uint32_t FRT_RPCReplyPacket::GetLength() {
+    return _req->GetReturn()->GetLength();
+}
 
 void FRT_RPCReplyPacket::Encode(FNET_DataBuffer* dst) {
     uint32_t packet_endian =
@@ -121,9 +128,13 @@ std::string FRT_RPCReplyPacket::Print(uint32_t indent) {
 
 //--------------------------------------------------------------------
 
-uint32_t FRT_RPCErrorPacket::GetPCODE() { return (_flags << 16) + PCODE_FRT_RPC_ERROR; }
+uint32_t FRT_RPCErrorPacket::GetPCODE() {
+    return (_flags << 16) + PCODE_FRT_RPC_ERROR;
+}
 
-uint32_t FRT_RPCErrorPacket::GetLength() { return sizeof(uint32_t) * 2 + _req->GetErrorMessageLen(); }
+uint32_t FRT_RPCErrorPacket::GetLength() {
+    return sizeof(uint32_t) * 2 + _req->GetErrorMessageLen();
+}
 
 void FRT_RPCErrorPacket::Encode(FNET_DataBuffer* dst) {
     uint32_t packet_endian =

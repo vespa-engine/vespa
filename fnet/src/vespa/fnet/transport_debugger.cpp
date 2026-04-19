@@ -22,9 +22,12 @@ void TransportDebugger::Meet::mingle() {
     }
 }
 
-TransportDebugger::TransportDebugger() : _time(), _meet() {}
+TransportDebugger::TransportDebugger() : _time(), _meet() {
+}
 
-TransportDebugger::~TransportDebugger() { assert(!_meet && "error: still attached"); }
+TransportDebugger::~TransportDebugger() {
+    assert(!_meet && "error: still attached");
+}
 
 void TransportDebugger::attach(std::initializer_list<std::reference_wrapper<FNET_Transport>> list) {
     size_t N = list.size() + 1;

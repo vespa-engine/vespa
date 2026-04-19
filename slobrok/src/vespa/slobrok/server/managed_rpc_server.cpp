@@ -41,7 +41,9 @@ void ManagedRpcServer::PerformTask() {
     Schedule(seconds);
 }
 
-void ManagedRpcServer::healthCheck() { ScheduleNow(); }
+void ManagedRpcServer::healthCheck() {
+    ScheduleNow();
+}
 
 ManagedRpcServer::~ManagedRpcServer() {
     LOG(debug, "(role[%s].~ManagedRpcServer)", _name.c_str());

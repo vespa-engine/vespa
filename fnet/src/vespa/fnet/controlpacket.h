@@ -73,9 +73,9 @@ public:
     bool IsControlPacket() override;
 
     uint32_t GetCommand() override;
-    bool     IsChannelLostCMD() override;
-    bool     IsTimeoutCMD() override;
-    bool     IsBadPacketCMD() override;
+    bool IsChannelLostCMD() override;
+    bool IsTimeoutCMD() override;
+    bool IsBadPacketCMD() override;
 
     /**
      * @return FNET_NOID
@@ -95,6 +95,6 @@ public:
     /**
      * This method should never be called and will abort the program.
      **/
-    bool        Decode(FNET_DataBuffer*, uint32_t) override;
+    bool Decode(FNET_DataBuffer*, uint32_t) override;
     std::string Print(uint32_t indent = 0) override;
 };

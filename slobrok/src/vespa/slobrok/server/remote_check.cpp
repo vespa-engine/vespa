@@ -17,7 +17,9 @@ RemoteCheck::RemoteCheck(FNET_Scheduler* sched, ExchangeManager& exch) : FNET_Ta
     Schedule(seconds);
 }
 
-RemoteCheck::~RemoteCheck() { Kill(); }
+RemoteCheck::~RemoteCheck() {
+    Kill();
+}
 
 void RemoteCheck::PerformTask() {
     LOG(debug, "asking exchanger to health check");

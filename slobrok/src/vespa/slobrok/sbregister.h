@@ -60,8 +60,8 @@ private:
     class RPCHooks : public FRT_Invokable {
     private:
         RegisterAPI& _owner;
-        void         rpc_listNamesServed(FRT_RPCRequest* req);
-        void         rpc_notifyUnregistered(FRT_RPCRequest* req);
+        void rpc_listNamesServed(FRT_RPCRequest* req);
+        void rpc_notifyUnregistered(FRT_RPCRequest* req);
 
     public:
         RPCHooks(RegisterAPI& owner);

@@ -154,7 +154,9 @@ CryptoEngine::SP null_crypto = std::make_shared<NullCryptoEngine>();
 CryptoEngine::SP tls_crypto =
     std::make_shared<vespalib::TlsCryptoEngine>(vespalib::test::make_tls_options_for_testing());
 namespace {
-uint32_t getNumThreads() { return std::max(4u, std::thread::hardware_concurrency()); }
+uint32_t getNumThreads() {
+    return std::max(4u, std::thread::hardware_concurrency());
+}
 } // namespace
 
 TEST(ParallelRpcTest, parallel_rpc_with_1_1_transport_threads_and_num_cores_user_threads_no_encryption) {

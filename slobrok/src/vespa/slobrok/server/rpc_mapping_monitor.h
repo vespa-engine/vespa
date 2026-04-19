@@ -48,8 +48,8 @@ public:
     void start(const ServiceMapping& mapping, bool hurry) override;
     void stop(const ServiceMapping& mapping) override;
 
-    void            notifyFailedRpcSrv(ManagedRpcServer* rpcsrv, std::string errmsg) override;
-    void            notifyOkRpcSrv(ManagedRpcServer* rpcsrv) override;
+    void notifyFailedRpcSrv(ManagedRpcServer* rpcsrv, std::string errmsg) override;
+    void notifyOkRpcSrv(ManagedRpcServer* rpcsrv) override;
     FRT_Supervisor* getSupervisor() override { return &_orb; }
 };
 

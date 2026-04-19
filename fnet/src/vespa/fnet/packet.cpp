@@ -5,9 +5,8 @@
 #include <vespa/vespalib/util/stringfmt.h>
 
 std::string FNET_Packet::Print(uint32_t indent) {
-    return vespalib::make_string(
-        "%*sFNET_Packet[subclass] { regular=%s, control=%s, "
-        "pcode=%d, command=%d, length=%d }\n",
-        indent, "", IsRegularPacket() ? "true" : "false", IsControlPacket() ? "true" : "false", GetPCODE(),
-        GetCommand(), GetLength());
+    return vespalib::make_string("%*sFNET_Packet[subclass] { regular=%s, control=%s, "
+                                 "pcode=%d, command=%d, length=%d }\n",
+                                 indent, "", IsRegularPacket() ? "true" : "false",
+                                 IsControlPacket() ? "true" : "false", GetPCODE(), GetCommand(), GetLength());
 }

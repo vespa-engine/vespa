@@ -1,19 +1,27 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/gtest/gtest.h>
 
-void check_ptr_real(void* ptr) { (void)ptr; }
+void check_ptr_real(void* ptr) {
+    (void)ptr;
+}
 
 void (*check_ptr)(void* ptr) = check_ptr_real;
 
-void overwrite_memory_real(char* ptr, int offset) { *(ptr + offset) = 0; }
+void overwrite_memory_real(char* ptr, int offset) {
+    *(ptr + offset) = 0;
+}
 
 void (*overwrite_memory)(char* ptr, int offset) = overwrite_memory_real;
 
-char* new_vec_real(size_t size) { return new char[size]; }
+char* new_vec_real(size_t size) {
+    return new char[size];
+}
 
 char* (*new_vec)(size_t size) = new_vec_real;
 
-void delete_vec_real(char* ptr) { delete[] ptr; }
+void delete_vec_real(char* ptr) {
+    delete[] ptr;
+}
 
 void (*delete_vec)(char* ptr) = delete_vec_real;
 

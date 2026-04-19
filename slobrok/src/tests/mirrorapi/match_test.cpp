@@ -5,7 +5,7 @@
 class MatchTester : public slobrok::api::IMirrorAPI {
     SpecList lookup(std::string_view) const override { return SpecList(); }
     uint32_t updates() const override { return 0; }
-    bool     ready() const override { return true; }
+    bool ready() const override { return true; }
 
     const std::string name;
 

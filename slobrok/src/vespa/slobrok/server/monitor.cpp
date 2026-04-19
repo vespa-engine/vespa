@@ -11,7 +11,8 @@ namespace slobrok {
 //-----------------------------------------------------------------------------
 
 Monitor::Monitor(IMonitoredServer& server, FRT_Supervisor& supervisor)
-    : FNET_Task(supervisor.GetScheduler()), _monitoredServer(server), _channel(nullptr), _enabled(false) {}
+    : FNET_Task(supervisor.GetScheduler()), _monitoredServer(server), _channel(nullptr), _enabled(false) {
+}
 
 Monitor::~Monitor() {
     Kill(); // will deadlock if called from task

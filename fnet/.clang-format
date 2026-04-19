@@ -4,8 +4,15 @@ IndentWidth: 4
 DerivePointerAlignment: false
 PointerAlignment: Left
 ReferenceAlignment: Pointer
-AlignConsecutiveDeclarations: Consecutive
+AlignConsecutiveAssignments: None
+AlignConsecutiveDeclarations:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+  AlignFunctionDeclarations: false
+  AlignFunctionPointers: false
 AlignEscapedNewlines: LeftWithLastLine
+AllowShortFunctionsOnASingleLine: InlineOnly
 PackConstructorInitializers: NextLine
 BreakBeforeBraces: Custom
 BraceWrapping:
@@ -46,6 +53,3 @@ IncludeCategories:
     SortPriority:    7
   - Regex:           '<.*>'
     Priority:        8
-
-PenaltyBreakOpenParenthesis: 13
-PenaltyIndentedWhitespace: 1

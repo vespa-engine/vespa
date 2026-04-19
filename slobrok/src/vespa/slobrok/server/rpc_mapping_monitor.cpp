@@ -13,7 +13,8 @@ void RpcMappingMonitor::DelayedTasks::PerformTask() {
 }
 
 RpcMappingMonitor::RpcMappingMonitor(FRT_Supervisor& orb, MappingMonitorOwner& owner)
-    : _orb(orb), _delayedTasks(orb.GetScheduler()), _map(), _owner(owner) {}
+    : _orb(orb), _delayedTasks(orb.GetScheduler()), _map(), _owner(owner) {
+}
 
 RpcMappingMonitor::~RpcMappingMonitor() = default;
 

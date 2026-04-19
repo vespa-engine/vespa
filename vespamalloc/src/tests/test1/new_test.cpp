@@ -3,25 +3,34 @@
 #include <vespa/vespalib/util/optimized.h>
 #include <vespa/vespalib/util/size_literals.h>
 
-#include <cassert>
-#include <functional>
 #include <dlfcn.h>
 #include <malloc.h>
+
+#include <cassert>
+#include <functional>
 
 #include <vespa/log/log.h>
 
 LOG_SETUP("new_test");
 
-void* wrap_memalign_real(size_t alignment, size_t size) { return memalign(alignment, size); }
+void* wrap_memalign_real(size_t alignment, size_t size) {
+    return memalign(alignment, size);
+}
 
 void* (*wrap_memalign)(size_t alignment, size_t size) = wrap_memalign_real;
 
-void* wrap_aligned_alloc_real(size_t alignment, size_t size) { return aligned_alloc(alignment, size); }
+void* wrap_aligned_alloc_real(size_t alignment, size_t size) {
+    return aligned_alloc(alignment, size);
+}
 
 void* (*wrap_aligned_alloc)(size_t alignment, size_t size) = wrap_aligned_alloc_real;
 
-void cmp(const void* a, const void* b) { EXPECT_EQ(a, b); }
-void cmp(const void* base, size_t offset, const void* p) { cmp((static_cast<const char*>(base) + offset), p); }
+void cmp(const void* a, const void* b) {
+    EXPECT_EQ(a, b);
+}
+void cmp(const void* base, size_t offset, const void* p) {
+    cmp((static_cast<const char*>(base) + offset), p);
+}
 
 template <typename S> void verify_aligned(S* p) {
     EXPECT_TRUE((uintptr_t(p) % alignof(S)) == 0);

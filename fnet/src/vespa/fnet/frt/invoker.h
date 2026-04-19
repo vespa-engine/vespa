@@ -71,9 +71,9 @@ public:
 
     FRT_RPCRequest* GetRequest() { return _req; }
 
-    void             HandleDone(bool freeChannel);
-    bool             Invoke();
-    void             HandleReturn() override;
+    void HandleDone(bool freeChannel);
+    bool Invoke();
+    void HandleReturn() override;
     FNET_Connection* GetConnection() override;
 };
 
@@ -94,8 +94,8 @@ public:
         _req->SetReturnHandler(this);
     }
 
-    void             Invoke();
-    void             HandleReturn() override;
+    void Invoke();
+    void HandleReturn() override;
     FNET_Connection* GetConnection() override;
 };
 
@@ -117,8 +117,8 @@ public:
 
     void HandleDone();
 
-    bool       HandleAbort() override;
-    void       PerformTask() override;
+    bool HandleAbort() override;
+    void PerformTask() override;
     HP_RetCode HandlePacket(FNET_Packet* packet, FNET_Context context) override;
 };
 

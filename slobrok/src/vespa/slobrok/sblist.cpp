@@ -10,7 +10,8 @@ using LockGuard = std::lock_guard<std::mutex>;
 
 namespace slobrok::api {
 
-SlobrokList::SlobrokList() : _lock(), _slobrokSpecs(), _nextSpec(0), _currSpec(1), _retryCount(0) {}
+SlobrokList::SlobrokList() : _lock(), _slobrokSpecs(), _nextSpec(0), _currSpec(1), _retryCount(0) {
+}
 
 bool SlobrokList::contains(const std::string& spec) {
     LockGuard guard(_lock);

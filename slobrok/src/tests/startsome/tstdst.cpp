@@ -7,8 +7,9 @@
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/signalhandler.h>
 
-#include <sstream>
 #include <unistd.h>
+
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP("testrpcserver");
@@ -71,8 +72,10 @@ private:
     void rpc_stop(FRT_RPCRequest* req);
 };
 
-RPCHooks::RPCHooks(TstEnv& env) : _env(env) {}
-RPCHooks::~RPCHooks() {}
+RPCHooks::RPCHooks(TstEnv& env) : _env(env) {
+}
+RPCHooks::~RPCHooks() {
+}
 
 void RPCHooks::initRPC(FRT_Supervisor* supervisor) {
 
@@ -123,7 +126,9 @@ TstEnv::TstEnv(int sbp, int myp, const char* n)
     _rpcHooks->initRPC(getSupervisor());
 }
 
-TstEnv::~TstEnv() { delete _rpcHooks; }
+TstEnv::~TstEnv() {
+    delete _rpcHooks;
+}
 
 int TstEnv::MainLoop() {
     srandom(time(nullptr));

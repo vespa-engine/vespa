@@ -14,13 +14,13 @@ public:
     MMapPool(const MMapPool&) = delete;
     MMapPool& operator=(const MMapPool&) = delete;
     ~MMapPool();
-    void*  mmap(size_t sz);
-    void   unmap(void*);
+    void* mmap(size_t sz);
+    void unmap(void*);
     size_t get_size(void*) const;
     size_t getNumMappings() const;
     size_t getMmappedBytes() const;
     size_t getMmappedBytesPeak() const;
-    void   info(FILE* os, size_t level) const;
+    void info(FILE* os, size_t level) const;
 
 private:
     struct MMapInfo {

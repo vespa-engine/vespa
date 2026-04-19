@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <cassert>
-#include <cstdlib>
 #include <dlfcn.h>
 #include <malloc.h>
 #include <pthread.h>
+
+#include <cassert>
+#include <cstdlib>
 
 void* run(void* arg) {
     (void)arg;

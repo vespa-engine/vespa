@@ -70,12 +70,12 @@ public:
     using AtomicHeadPtr = AtomicTaggedPtr;
 
     AFListBase() noexcept : _next(nullptr) {}
-    void        setNext(AFListBase* csl) noexcept { _next = csl; }
+    void setNext(AFListBase* csl) noexcept { _next = csl; }
     static void linkInList(AtomicHeadPtr& head, AFListBase* list) noexcept;
     static void linkIn(AtomicHeadPtr& head, AFListBase* csl, AFListBase* tail) noexcept;
 
 protected:
-    AFListBase*        getNext() noexcept { return _next; }
+    AFListBase* getNext() noexcept { return _next; }
     static AFListBase* linkOut(AtomicHeadPtr& head) noexcept;
 
 private:
@@ -88,7 +88,7 @@ public:
     enum { NumBlocks = 126 };
     AFList() noexcept : _count(0) {}
     [[nodiscard]] CountT count() const noexcept { return _count; }
-    void                 add(MemBlockPtrT& ptr) noexcept {
+    void add(MemBlockPtrT& ptr) noexcept {
         ptr.free();
         PARANOID_CHECK2(if (full()) { *(int*)0 = 0; });
         _memBlockList[_count++] = ptr;
@@ -101,8 +101,8 @@ public:
     }
     [[nodiscard]] bool empty() const noexcept { return (_count == 0); }
     [[nodiscard]] bool full() const noexcept { return (_count == NumBlocks); }
-    size_t             fill(void* mem, SizeClassT sc, size_t blocksPerChunk = NumBlocks) noexcept;
-    AFList*            getNext() noexcept { return static_cast<AFList*>(AFListBase::getNext()); }
+    size_t fill(void* mem, SizeClassT sc, size_t blocksPerChunk = NumBlocks) noexcept;
+    AFList* getNext() noexcept { return static_cast<AFList*>(AFListBase::getNext()); }
     static AFList* linkOut(AtomicHeadPtr& head) noexcept { return static_cast<AFList*>(AFListBase::linkOut(head)); }
 
 private:

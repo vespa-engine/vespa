@@ -14,7 +14,7 @@ using Map = std::map<std::string, std::string>;
 
 struct Dumper : ServiceMapHistory::DiffCompletionHandler {
     std::unique_ptr<MapDiff> got = {};
-    void                     handle(MapDiff diff) override { got = std::make_unique<MapDiff>(std::move(diff)); }
+    void handle(MapDiff diff) override { got = std::make_unique<MapDiff>(std::move(diff)); }
 };
 
 MapDiff diffGen(ServiceMapHistory& history, uint32_t gen) {

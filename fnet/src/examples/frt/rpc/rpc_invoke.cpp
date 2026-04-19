@@ -50,7 +50,9 @@ public:
     int main(int argc, char** argv);
 };
 
-bool timeout_specified(char** argv) { return strcmp(argv[1], "-t") == 0; }
+bool timeout_specified(char** argv) {
+    return strcmp(argv[1], "-t") == 0;
+}
 
 int RPCClient::main(int argc, char** argv) {
     if ((argc < 3) || (timeout_specified(argv) && argc < 5)) {

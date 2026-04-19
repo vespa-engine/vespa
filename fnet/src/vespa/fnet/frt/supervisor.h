@@ -56,17 +56,17 @@ public:
     FRT_Supervisor& operator=(const FRT_Supervisor&) = delete;
     ~FRT_Supervisor() override;
 
-    FNET_Transport*        GetTransport() { return _transport; }
-    FNET_Scheduler*        GetScheduler();
+    FNET_Transport* GetTransport() { return _transport; }
+    FNET_Scheduler* GetScheduler();
     FRT_ReflectionManager* GetReflectionManager() { return &_reflectionManager; }
 
-    bool     Listen(const char* spec);
-    bool     Listen(int port);
+    bool Listen(const char* spec);
+    bool Listen(int port);
     uint32_t GetListenPort() const;
 
-    FRT_Target*            GetTarget(const char* spec);
-    FRT_Target*            Get2WayTarget(const char* spec, FNET_Context connContext = FNET_Context());
-    FRT_Target*            GetTarget(int port);
+    FRT_Target* GetTarget(const char* spec);
+    FRT_Target* Get2WayTarget(const char* spec, FNET_Context connContext = FNET_Context());
+    FRT_Target* GetTarget(int port);
     static FRT_RPCRequest* AllocRPCRequest(FRT_RPCRequest* tradein = nullptr);
 
     struct SchedulerPtr {
@@ -79,8 +79,8 @@ public:
     // methods for performing rpc invocations
     static void InvokeVoid(FNET_Connection* conn, FRT_RPCRequest* req);
     static void InvokeSync(SchedulerPtr scheduler, FNET_Connection* conn, FRT_RPCRequest* req, double timeout);
-    static void InvokeAsync(
-        SchedulerPtr scheduler, FNET_Connection* conn, FRT_RPCRequest* req, double timeout, FRT_IRequestWait* waiter);
+    static void InvokeAsync(SchedulerPtr scheduler, FNET_Connection* conn, FRT_RPCRequest* req, double timeout,
+                            FRT_IRequestWait* waiter);
 
     // FNET ServerAdapter Interface
     bool InitChannel(FNET_Channel* channel, uint32_t pcode) override;
@@ -101,9 +101,9 @@ public:
     StandaloneFRT();
     explicit StandaloneFRT(std::shared_ptr<vespalib::CryptoEngine> crypto);
     ~StandaloneFRT();
-    FRT_Supervisor&       supervisor() { return *_supervisor; }
+    FRT_Supervisor& supervisor() { return *_supervisor; }
     const FRT_Supervisor& supervisor() const { return *_supervisor; }
-    void                  shutdown();
+    void shutdown();
 
 private:
     std::unique_ptr<FNET_Transport> _transport;

@@ -7,7 +7,9 @@
 namespace vespamalloc {
 
 namespace {
-size_t sanitizeMMapThreshold(int threshold) { return std::min(MMAP_LIMIT_MAX, std::max(MMAP_LIMIT_MIN, threshold)); }
+size_t sanitizeMMapThreshold(int threshold) {
+    return std::min(MMAP_LIMIT_MAX, std::max(MMAP_LIMIT_MIN, threshold));
+}
 } // namespace
 
 template <typename MemBlockPtrT, typename ThreadStatT>
@@ -92,7 +94,8 @@ void ThreadPoolT<MemBlockPtrT, ThreadStatT>::mallocHelper(
 
 template <typename MemBlockPtrT, typename ThreadStatT>
 ThreadPoolT<MemBlockPtrT, ThreadStatT>::ThreadPoolT()
-    : _allocPool(nullptr), _mmapPool(nullptr), _mmapLimit(MMAP_LIMIT_MAX), _threadId(0), _osThreadId(0) {}
+    : _allocPool(nullptr), _mmapPool(nullptr), _mmapLimit(MMAP_LIMIT_MAX), _threadId(0), _osThreadId(0) {
+}
 
 template <typename MemBlockPtrT, typename ThreadStatT>
 ThreadPoolT<MemBlockPtrT, ThreadStatT>::~ThreadPoolT() = default;

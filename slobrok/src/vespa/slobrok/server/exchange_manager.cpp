@@ -14,12 +14,15 @@ LOG_SETUP(".slobrok.server.exchange_manager");
 namespace slobrok {
 
 namespace {
-vespalib::steady_time now() { return vespalib::steady_clock::now(); }
+vespalib::steady_time now() {
+    return vespalib::steady_clock::now();
+}
 } // namespace
 
 //-----------------------------------------------------------------------------
 
-ExchangeManager::ExchangeManager(SBEnv& env) : _partners(), _env(env), _lastFullConsensusTime(now()) {}
+ExchangeManager::ExchangeManager(SBEnv& env) : _partners(), _env(env), _lastFullConsensusTime(now()) {
+}
 
 ExchangeManager::~ExchangeManager() = default;
 
@@ -113,7 +116,8 @@ void ExchangeManager::healthCheck() {
 //-----------------------------------------------------------------------------
 
 ExchangeManager::WorkPackage::WorkItem::WorkItem(WorkPackage& pkg, RemoteSlobrok* rem, FRT_RPCRequest* req)
-    : _pkg(pkg), _pendingReq(req), _remslob(rem) {}
+    : _pkg(pkg), _pendingReq(req), _remslob(rem) {
+}
 
 void ExchangeManager::WorkPackage::WorkItem::RequestDone(FRT_RPCRequest* req) {
     bool denied = false;
@@ -136,7 +140,9 @@ void ExchangeManager::WorkPackage::WorkItem::RequestDone(FRT_RPCRequest* req) {
     _pkg.doneItem(denied);
 }
 
-void ExchangeManager::WorkPackage::WorkItem::expedite() { _remslob->invokeAsync(_pendingReq, 2.0, this); }
+void ExchangeManager::WorkPackage::WorkItem::expedite() {
+    _remslob->invokeAsync(_pendingReq, 2.0, this);
+}
 
 ExchangeManager::WorkPackage::WorkItem::~WorkItem() {
     if (_pendingReq != nullptr) {
@@ -147,7 +153,8 @@ ExchangeManager::WorkPackage::WorkItem::~WorkItem() {
 }
 
 ExchangeManager::WorkPackage::WorkPackage(op_type op, const ServiceMapping& mapping, ExchangeManager& exchanger)
-    : _work(), _doneCnt(0), _numDenied(0), _exchanger(exchanger), _mapping(mapping), _optype(op) {}
+    : _work(), _doneCnt(0), _numDenied(0), _exchanger(exchanger), _mapping(mapping), _optype(op) {
+}
 
 ExchangeManager::WorkPackage::~WorkPackage() = default;
 

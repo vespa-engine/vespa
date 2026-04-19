@@ -31,11 +31,11 @@ namespace fnet {
  **/
 struct TimeTools {
     using SP = std::shared_ptr<TimeTools>;
-    virtual vespalib::duration    event_timeout() const = 0;
+    virtual vespalib::duration event_timeout() const = 0;
     virtual vespalib::steady_time current_time() const = 0;
     virtual ~TimeTools() = default;
-    static TimeTools::SP make_debug(
-        vespalib::duration event_timeout, std::function<vespalib::steady_time()> current_time);
+    static TimeTools::SP make_debug(vespalib::duration                     event_timeout,
+                                    std::function<vespalib::steady_time()> current_time);
 };
 
 class TransportConfig {
@@ -44,9 +44,9 @@ public:
     explicit TransportConfig(int num_threads);
     ~TransportConfig();
     vespalib::AsyncResolver::SP resolver() const;
-    vespalib::CryptoEngine::SP  crypto() const;
-    fnet::TimeTools::SP         time_tools() const;
-    TransportConfig&            resolver(vespalib::AsyncResolver::SP resolver_in) {
+    vespalib::CryptoEngine::SP crypto() const;
+    fnet::TimeTools::SP time_tools() const;
+    TransportConfig& resolver(vespalib::AsyncResolver::SP resolver_in) {
         _resolver = std::move(resolver_in);
         return *this;
     }
@@ -60,7 +60,7 @@ public:
     }
 
     const FNET_Config& config() const { return _config; }
-    uint32_t           num_threads() const { return _num_threads; }
+    uint32_t num_threads() const { return _num_threads; }
 
     TransportConfig& events_before_wakeup(uint32_t v) {
         if (v > 1) {
@@ -134,7 +134,7 @@ public:
     FNET_Transport() : FNET_Transport(fnet::TransportConfig()) {}
     ~FNET_Transport();
 
-    const FNET_Config&     getConfig() const { return _config; }
+    const FNET_Config& getConfig() const { return _config; }
     const fnet::TimeTools& time_tools() const { return *_time_tools; }
 
     /**
@@ -170,8 +170,8 @@ public:
      * @param socket low-level socket
      * @param spec who we are connecting to
      **/
-    vespalib::CryptoSocket::UP create_client_crypto_socket(
-        vespalib::SocketHandle socket, const vespalib::SocketSpec& spec);
+    vespalib::CryptoSocket::UP create_client_crypto_socket(vespalib::SocketHandle      socket,
+                                                           const vespalib::SocketSpec& spec);
 
     /**
      * Wrap a plain socket endpoint (server side) in a CryptoSocket. The

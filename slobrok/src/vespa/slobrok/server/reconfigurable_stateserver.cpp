@@ -2,9 +2,10 @@
 
 #include "reconfigurable_stateserver.h"
 
-#include <vespa/config/helper/configfetcher.hpp>
 #include <vespa/vespalib/net/http/state_server.h>
 #include <vespa/vespalib/util/exceptions.h>
+
+#include <vespa/config/helper/configfetcher.hpp>
 
 #include <thread>
 
@@ -28,7 +29,9 @@ ReconfigurableStateServer::ReconfigurableStateServer(const config::ConfigUri&   
     _configFetcher->start();
 }
 
-ReconfigurableStateServer::~ReconfigurableStateServer() { _configFetcher->close(); }
+ReconfigurableStateServer::~ReconfigurableStateServer() {
+    _configFetcher->close();
+}
 
 void ReconfigurableStateServer::configure(std::unique_ptr<vespa::config::core::StateserverConfig> config) {
     _server.reset();

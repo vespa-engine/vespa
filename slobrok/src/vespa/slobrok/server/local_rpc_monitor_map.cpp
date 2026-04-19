@@ -58,7 +58,8 @@ LocalRpcMonitorMap::LocalRpcMonitorMap(FNET_Scheduler* scheduler, MappingMonitor
       _dispatcher(),
       _history(),
       _mappingMonitor(mappingMonitorFactory(*this)),
-      _subscription(MapSubscription::subscribe(_dispatcher, _history)) {}
+      _subscription(MapSubscription::subscribe(_dispatcher, _history)) {
+}
 
 LocalRpcMonitorMap::~LocalRpcMonitorMap() = default;
 
@@ -93,7 +94,9 @@ LocalRpcMonitorMap::RemovedData LocalRpcMonitorMap::removeFromMap(Map::iterator 
         .mapping = mapping, .up = psd.up, .localOnly = psd.localOnly, .inflight = std::move(psd.inflight)};
 }
 
-ServiceMapHistory& LocalRpcMonitorMap::history() { return _history; }
+ServiceMapHistory& LocalRpcMonitorMap::history() {
+    return _history;
+}
 
 bool LocalRpcMonitorMap::wouldConflict(const ServiceMapping& mapping) const {
     auto iter = _map.find(mapping.name);
@@ -165,9 +168,13 @@ void LocalRpcMonitorMap::removeLocal(const ServiceMapping& mapping) {
     _mappingMonitor->start(mapping, false);
 }
 
-void LocalRpcMonitorMap::add(const ServiceMapping& mapping) { _delayedTasks.handleLater(Event::add(mapping)); }
+void LocalRpcMonitorMap::add(const ServiceMapping& mapping) {
+    _delayedTasks.handleLater(Event::add(mapping));
+}
 
-void LocalRpcMonitorMap::remove(const ServiceMapping& mapping) { _delayedTasks.handleLater(Event::remove(mapping)); }
+void LocalRpcMonitorMap::remove(const ServiceMapping& mapping) {
+    _delayedTasks.handleLater(Event::remove(mapping));
+}
 
 void LocalRpcMonitorMap::doAdd(const ServiceMapping& mapping) {
     LOG(debug, "try add: mapping %s->%s", mapping.name.c_str(), mapping.spec.c_str());

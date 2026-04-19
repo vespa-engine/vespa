@@ -3,7 +3,9 @@
 
 void* savedptr;
 
-void delete_ptr_real(char* ptr) { delete ptr; }
+void delete_ptr_real(char* ptr) {
+    delete ptr;
+}
 
 void (*delete_ptr)(char* ptr) = delete_ptr_real;
 

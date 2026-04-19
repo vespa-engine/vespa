@@ -38,10 +38,10 @@ public:
     void SetContext(FNET_Context context) { _context = context; }
     void prefetch() { __builtin_prefetch(&_handler, 0); }
 
-    uint32_t             GetID() { return _id; }
-    FNET_Connection*     GetConnection() { return _conn; }
+    uint32_t GetID() { return _id; }
+    FNET_Connection* GetConnection() { return _conn; }
     FNET_IPacketHandler* GetHandler() { return _handler; }
-    FNET_Context         GetContext() { return _context; }
+    FNET_Context GetContext() { return _context; }
 
     /**
      * Send a packet on this channel. This operation will fail if the

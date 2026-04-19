@@ -186,7 +186,9 @@ void checkValues(FRT_Values& v1, FRT_Values& v2) {
     EXPECT_TRUE(v2.Equals(&v1));
 }
 
-void check_empty_values(FRT_Values& values) { ASSERT_EQ(0, values.GetNumValues()); }
+void check_empty_values(FRT_Values& values) {
+    ASSERT_EQ(0, values.GetNumValues());
+}
 
 void check_empty_values(FRT_Values& v1, FRT_Values& v2) {
     {
