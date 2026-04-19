@@ -272,7 +272,8 @@ RegisterAPI::RPCHooks::RPCHooks(RegisterAPI& owner) : _owner(owner) {
     //-------------------------------------------------------------------------
 }
 
-RegisterAPI::RPCHooks::~RPCHooks() {}
+RegisterAPI::RPCHooks::~RPCHooks() {
+}
 
 void RegisterAPI::RPCHooks::rpc_listNamesServed(FRT_RPCRequest* req) {
     FRT_Values&                 dst = *req->GetReturn();

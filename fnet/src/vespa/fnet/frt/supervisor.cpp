@@ -29,7 +29,9 @@ FRT_Supervisor::~FRT_Supervisor() {
     }
 }
 
-FNET_Scheduler* FRT_Supervisor::GetScheduler() { return _transport->GetScheduler(); }
+FNET_Scheduler* FRT_Supervisor::GetScheduler() {
+    return _transport->GetScheduler();
+}
 
 bool FRT_Supervisor::Listen(const char* spec) {
     if (_connector != nullptr)
@@ -44,7 +46,9 @@ bool FRT_Supervisor::Listen(int port) {
     return Listen(spec);
 }
 
-uint32_t FRT_Supervisor::GetListenPort() const { return (_connector != nullptr) ? _connector->GetPortNumber() : 0; }
+uint32_t FRT_Supervisor::GetListenPort() const {
+    return (_connector != nullptr) ? _connector->GetPortNumber() : 0;
+}
 
 FRT_Target* FRT_Supervisor::GetTarget(const char* spec) {
     FNET_TransportThread* thread = _transport->select_thread(spec, strlen(spec));
@@ -82,8 +86,8 @@ void FRT_Supervisor::InvokeVoid(FNET_Connection* conn, FRT_RPCRequest* req) {
     }
 }
 
-void FRT_Supervisor::InvokeAsync(
-    SchedulerPtr scheduler, FNET_Connection* conn, FRT_RPCRequest* req, double timeout, FRT_IRequestWait* waiter) {
+void FRT_Supervisor::InvokeAsync(SchedulerPtr scheduler, FNET_Connection* conn, FRT_RPCRequest* req, double timeout,
+                                 FRT_IRequestWait* waiter) {
     uint32_t        chid;
     FNET_Packet*    packet = req->CreateRequestPacket(true);
     FRT_RPCAdapter* adapter = &req->getStash().create<FRT_RPCAdapter>(scheduler.ptr, req, waiter);
@@ -185,7 +189,9 @@ void FRT_Supervisor::RPCHooks::InitRPC(FRT_Supervisor* supervisor) {
     //---------------------------------------------------------------------------
 }
 
-void FRT_Supervisor::RPCHooks::RPC_Ping(FRT_RPCRequest* req) { (void)req; }
+void FRT_Supervisor::RPCHooks::RPC_Ping(FRT_RPCRequest* req) {
+    (void)req;
+}
 
 void FRT_Supervisor::RPCHooks::RPC_Echo(FRT_RPCRequest* req) {
     char            tmp[1024];
@@ -210,10 +216,12 @@ void FRT_Supervisor::RPCHooks::RPC_GetMethodInfo(FRT_RPCRequest* req) {
     }
 }
 
-FRT_Supervisor::SchedulerPtr::SchedulerPtr(FNET_Transport* transport) : ptr(transport->GetScheduler()) {}
+FRT_Supervisor::SchedulerPtr::SchedulerPtr(FNET_Transport* transport) : ptr(transport->GetScheduler()) {
+}
 
 FRT_Supervisor::SchedulerPtr::SchedulerPtr(FNET_TransportThread* transport_thread)
-    : ptr(transport_thread->GetScheduler()) {}
+    : ptr(transport_thread->GetScheduler()) {
+}
 
 namespace fnet::frt {
 
@@ -223,13 +231,19 @@ StandaloneFRT::StandaloneFRT(const TransportConfig& config)
     REQUIRE(_transport->Start());
 }
 
-StandaloneFRT::StandaloneFRT() : StandaloneFRT(TransportConfig()) {}
+StandaloneFRT::StandaloneFRT() : StandaloneFRT(TransportConfig()) {
+}
 
 StandaloneFRT::StandaloneFRT(std::shared_ptr<vespalib::CryptoEngine> crypto)
-    : StandaloneFRT(TransportConfig().crypto(std::move(crypto))) {}
+    : StandaloneFRT(TransportConfig().crypto(std::move(crypto))) {
+}
 
-StandaloneFRT::~StandaloneFRT() { _transport->ShutDown(true); }
+StandaloneFRT::~StandaloneFRT() {
+    _transport->ShutDown(true);
+}
 
-void StandaloneFRT::shutdown() { _transport->ShutDown(true); }
+void StandaloneFRT::shutdown() {
+    _transport->ShutDown(true);
+}
 
 } // namespace fnet::frt

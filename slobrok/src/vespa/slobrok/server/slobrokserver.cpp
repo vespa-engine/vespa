@@ -19,6 +19,8 @@ SlobrokServer::~SlobrokServer() {
     _thread.join();
 }
 
-void SlobrokServer::run() { _env.MainLoop(); }
+void SlobrokServer::run() {
+    _env.MainLoop();
+}
 
 } // namespace slobrok

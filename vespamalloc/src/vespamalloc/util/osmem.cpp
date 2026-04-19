@@ -1,12 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "osmem.h"
 
-#include <cassert>
-#include <cctype>
-#include <cerrno>
-#include <cstdio>
-#include <cstdlib>
-#include <functional>
 #include <fcntl.h>
 #include <linux/mman.h>
 #include <sys/mman.h>
@@ -14,10 +8,18 @@
 #include <unistd.h>
 #include <vespamalloc/malloc/common.h>
 
+#include <cassert>
+#include <cctype>
+#include <cerrno>
+#include <cstdio>
+#include <cstdlib>
+#include <functional>
+
 namespace vespamalloc {
 
 Memory::Memory(size_t blockSize)
-    : _blockSize(std::max(blockSize, size_t(getpagesize()))), _start(nullptr), _end(nullptr) {}
+    : _blockSize(std::max(blockSize, size_t(getpagesize()))), _start(nullptr), _end(nullptr) {
+}
 Memory::~Memory() = default;
 
 void* MmapMemory::reserve(size_t& len) {
@@ -175,7 +177,9 @@ void* MmapMemory::getHugePages(size_t len) {
     return memory;
 }
 
-void* MmapMemory::getNormalPages(size_t len) { return getBasePages(len, MAP_ANON | MAP_PRIVATE, -1, 0); }
+void* MmapMemory::getNormalPages(size_t len) {
+    return getBasePages(len, MAP_ANON | MAP_PRIVATE, -1, 0);
+}
 
 void* MmapMemory::getBasePages(size_t len, int mmapOpt, int fd, size_t offset) {
     char* wanted =

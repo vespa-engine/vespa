@@ -45,8 +45,8 @@ public:
      * @param chid where to store the packet chid
      * @param broken where to signal broken data
      **/
-    virtual bool GetPacketInfo(
-        FNET_DataBuffer* src, uint32_t* plen, uint32_t* pcode, uint32_t* chid, bool* broken) = 0;
+    virtual bool GetPacketInfo(FNET_DataBuffer* src, uint32_t* plen, uint32_t* pcode, uint32_t* chid,
+                               bool* broken) = 0;
 
     /**
      * This method is called to un-stream a packet from the given

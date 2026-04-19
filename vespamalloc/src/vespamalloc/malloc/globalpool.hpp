@@ -12,17 +12,14 @@ size_t AllocPoolT<MemBlockPtrT>::_threadCacheLimit __attribute__((visibility("hi
 
 template <typename MemBlockPtrT>
 AllocPoolT<MemBlockPtrT>::AllocPoolT(DataSegment& ds)
-    : _chunkPool(nullptr),
-      _scList(),
-      _dataSegment(ds),
-      _getChunks(0),
-      _getChunksSum(0),
-      _allocChunkList(0),
-      _stat() {}
+    : _chunkPool(nullptr), _scList(), _dataSegment(ds), _getChunks(0), _getChunksSum(0), _allocChunkList(0), _stat() {
+}
 
 template <typename MemBlockPtrT> AllocPoolT<MemBlockPtrT>::~AllocPoolT() = default;
 
-template <typename MemBlockPtrT> void AllocPoolT<MemBlockPtrT>::enableThreadSupport() { _mutex.init(); }
+template <typename MemBlockPtrT> void AllocPoolT<MemBlockPtrT>::enableThreadSupport() {
+    _mutex.init();
+}
 
 template <typename MemBlockPtrT> void AllocPoolT<MemBlockPtrT>::setParams(size_t threadCacheLimit) {
     _threadCacheLimit = threadCacheLimit;

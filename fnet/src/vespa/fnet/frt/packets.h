@@ -41,10 +41,10 @@ class FRT_RPCRequestPacket : public FRT_RPCPacket {
 public:
     FRT_RPCRequestPacket(FRT_RPCRequest* req, uint32_t flags, bool ownsRef) : FRT_RPCPacket(req, flags, ownsRef) {}
 
-    uint32_t    GetPCODE() override;
-    uint32_t    GetLength() override;
-    void        Encode(FNET_DataBuffer* dst) override;
-    bool        Decode(FNET_DataBuffer* src, uint32_t len) override;
+    uint32_t GetPCODE() override;
+    uint32_t GetLength() override;
+    void Encode(FNET_DataBuffer* dst) override;
+    bool Decode(FNET_DataBuffer* src, uint32_t len) override;
     std::string Print(uint32_t indent = 0) override;
 };
 
@@ -52,10 +52,10 @@ class FRT_RPCReplyPacket : public FRT_RPCPacket {
 public:
     FRT_RPCReplyPacket(FRT_RPCRequest* req, uint32_t flags, bool ownsRef) : FRT_RPCPacket(req, flags, ownsRef) {}
 
-    uint32_t    GetPCODE() override;
-    uint32_t    GetLength() override;
-    void        Encode(FNET_DataBuffer* dst) override;
-    bool        Decode(FNET_DataBuffer* src, uint32_t len) override;
+    uint32_t GetPCODE() override;
+    uint32_t GetLength() override;
+    void Encode(FNET_DataBuffer* dst) override;
+    bool Decode(FNET_DataBuffer* src, uint32_t len) override;
     std::string Print(uint32_t indent = 0) override;
 };
 
@@ -63,10 +63,10 @@ class FRT_RPCErrorPacket : public FRT_RPCPacket {
 public:
     FRT_RPCErrorPacket(FRT_RPCRequest* req, uint32_t flags, bool ownsRef) : FRT_RPCPacket(req, flags, ownsRef) {}
 
-    uint32_t    GetPCODE() override;
-    uint32_t    GetLength() override;
-    void        Encode(FNET_DataBuffer* dst) override;
-    bool        Decode(FNET_DataBuffer* src, uint32_t len) override;
+    uint32_t GetPCODE() override;
+    uint32_t GetLength() override;
+    void Encode(FNET_DataBuffer* dst) override;
+    bool Decode(FNET_DataBuffer* src, uint32_t len) override;
     std::string Print(uint32_t indent = 0) override;
 };
 

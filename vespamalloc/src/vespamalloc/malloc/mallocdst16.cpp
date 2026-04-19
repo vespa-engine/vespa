@@ -29,6 +29,8 @@ template void MemBlockBoundsCheckBaseT<20, 16>::dumpInfo(size_t);
 extern "C" {
 
 int is_vespamallocdst16() __attribute__((visibility("default")));
-int is_vespamallocdst16() { return 1; }
+int is_vespamallocdst16() {
+    return 1;
+}
 }
 #include <vespamalloc/malloc/overload.h>

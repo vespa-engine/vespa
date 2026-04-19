@@ -24,11 +24,11 @@ public:
             static_cast<uint32_t*>(_ptr)[2] = th;
         }
     }
-    bool         allocated() const { return (static_cast<uint32_t*>(_ptr)[3] == ALLOC_MAGIC); }
-    size_t       size() const { return static_cast<const uint32_t*>(_ptr)[0]; }
-    size_t       alignment() const { return static_cast<const uint32_t*>(_ptr)[1]; }
-    uint32_t     threadId() const { return static_cast<uint32_t*>(_ptr)[2]; }
-    Stack*       callStack() { return reinterpret_cast<Stack*>((char*)_ptr + size() + alignment()); }
+    bool allocated() const { return (static_cast<uint32_t*>(_ptr)[3] == ALLOC_MAGIC); }
+    size_t size() const { return static_cast<const uint32_t*>(_ptr)[0]; }
+    size_t alignment() const { return static_cast<const uint32_t*>(_ptr)[1]; }
+    uint32_t threadId() const { return static_cast<uint32_t*>(_ptr)[2]; }
+    Stack* callStack() { return reinterpret_cast<Stack*>((char*)_ptr + size() + alignment()); }
     const Stack* callStack() const {
         return reinterpret_cast<const Stack*>((const char*)_ptr + size() + alignment());
     }
@@ -60,7 +60,7 @@ protected:
         ASSERT_STACKTRACE(sz < 0x100000000ul);
         static_cast<uint32_t*>(_ptr)[0] = sz;
     }
-    void                    setAlignment(size_t alignment) { static_cast<uint32_t*>(_ptr)[1] = alignment; }
+    void setAlignment(size_t alignment) { static_cast<uint32_t*>(_ptr)[1] = alignment; }
     static constexpr size_t preambleOverhead(std::align_val_t alignment) {
         return std::max(preambleOverhead(), size_t(alignment));
     }
@@ -130,8 +130,8 @@ public:
         fillMemory(size());
         setTailMagic();
     }
-    void   setExact(size_t sz) { init(sz, preambleOverhead()); }
-    void   setExact(size_t sz, std::align_val_t alignment) { init(sz, preambleOverhead(alignment)); }
+    void setExact(size_t sz) { init(sz, preambleOverhead()); }
+    void setExact(size_t sz, std::align_val_t alignment) { init(sz, preambleOverhead(alignment)); }
     size_t callStackLen() const {
         const Stack* stack = callStack();
         // Use int to avoid compiler warning about always true.
@@ -145,9 +145,9 @@ public:
     static constexpr size_t adjustSize(size_t sz) { return sz + overhead(); }
     static constexpr size_t adjustSize(size_t sz, std::align_val_t alignment) { return sz + overhead(alignment); }
     static constexpr size_t unAdjustSize(size_t sz) { return sz - overhead(); }
-    static void             dumpInfo(size_t level) __attribute__((noinline));
+    static void dumpInfo(size_t level) __attribute__((noinline));
     static constexpr size_t getMinSizeForAlignment(size_t align, size_t sz) { return sz + align; }
-    void                    info(FILE* os, unsigned level = 0) const __attribute__((noinline));
+    void info(FILE* os, unsigned level = 0) const __attribute__((noinline));
 
 protected:
     static constexpr size_t postambleOverhead() { return sizeof(unsigned) + StackTraceLen * sizeof(void*); }

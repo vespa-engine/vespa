@@ -26,12 +26,13 @@ public:
     ~Queue();
     void enqueue(const T& entry);
     void close();
-    T    dequeue();
+    T dequeue();
 };
 
 template <typename T>
 Queue<T>::Queue(const T& nil, uint32_t maxSize)
-    : _q(), _lock(), _cond(), _waitRead(0), _waitWrite(0), _maxSize(maxSize), _closed(false), _nil(nil) {}
+    : _q(), _lock(), _cond(), _waitRead(0), _waitWrite(0), _maxSize(maxSize), _closed(false), _nil(nil) {
+}
 
 template <typename T> Queue<T>::~Queue() = default;
 

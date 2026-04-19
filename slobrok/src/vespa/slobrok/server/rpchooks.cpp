@@ -68,11 +68,13 @@ RPCHooks::RPCHooks(SBEnv& env)
       _globalHistory(env.globalHistory()),
       _localHistory(env.localHistory()),
       _cnts(Metrics::zero()),
-      _m_reporter() {}
+      _m_reporter() {
+}
 
 RPCHooks::~RPCHooks() = default;
 
-void RPCHooks::reportMetrics() {}
+void RPCHooks::reportMetrics() {
+}
 
 void RPCHooks::initRPC(FRT_Supervisor* supervisor) {
     _m_reporter = std::make_unique<MetricsReport>(supervisor, *this);

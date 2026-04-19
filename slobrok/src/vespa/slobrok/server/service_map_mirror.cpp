@@ -7,9 +7,12 @@ LOG_SETUP(".slobrok.server.service_map_mirror");
 
 namespace slobrok {
 
-ServiceMapMirror::ServiceMapMirror() : _map(), _currGen(0) {}
+ServiceMapMirror::ServiceMapMirror() : _map(), _currGen(0) {
+}
 
-ServiceMapMirror::~ServiceMapMirror() { LOG_ASSERT(_listeners.size() == 0); }
+ServiceMapMirror::~ServiceMapMirror() {
+    LOG_ASSERT(_listeners.size() == 0);
+}
 
 void ServiceMapMirror::apply(const MapDiff& diff) {
     LOG(debug, "Applying diff from gen %u", diff.fromGen.getAsInt());
@@ -67,8 +70,12 @@ ServiceMappingList ServiceMapMirror::allMappings() const {
     return result;
 }
 
-void ServiceMapMirror::registerListener(MapListener& listener) { _listeners.insert(&listener); }
+void ServiceMapMirror::registerListener(MapListener& listener) {
+    _listeners.insert(&listener);
+}
 
-void ServiceMapMirror::unregisterListener(MapListener& listener) { _listeners.erase(&listener); }
+void ServiceMapMirror::unregisterListener(MapListener& listener) {
+    _listeners.erase(&listener);
+}
 
 } // namespace slobrok

@@ -25,7 +25,9 @@ public:
     void PerformTask() override;
 };
 
-void Timeout::PerformTask() { _queue->QueuePacket(&FNET_ControlPacket::Timeout, FNET_Context()); }
+void Timeout::PerformTask() {
+    _queue->QueuePacket(&FNET_ControlPacket::Timeout, FNET_Context());
+}
 
 class MyApp {
 public:

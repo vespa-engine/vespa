@@ -12,10 +12,10 @@ constexpr size_t ALLOC_LIMIT = 1024;
 struct MyBlob : FRT_ISharedBlob {
     int refcnt;
     MyBlob() : refcnt(1) {}
-    uint32_t    getLen() override { return (strlen("blob_test") + 1); }
+    uint32_t getLen() override { return (strlen("blob_test") + 1); }
     const char* getData() override { return "blob_test"; }
-    void        addRef() override { ++refcnt; }
-    void        subRef() override { --refcnt; }
+    void addRef() override { ++refcnt; }
+    void subRef() override { --refcnt; }
 };
 
 struct Data {

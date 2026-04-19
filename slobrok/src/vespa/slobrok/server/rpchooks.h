@@ -26,15 +26,15 @@ class ServiceMapHistory;
 class RPCHooks : public FRT_Invokable {
 public:
     struct Metrics {
-        unsigned long  heartBeatFails;
-        unsigned long  registerReqs;
-        unsigned long  mirrorReqs;
-        unsigned long  wantAddReqs;
-        unsigned long  doAddReqs;
-        unsigned long  doRemoveReqs;
-        unsigned long  adminReqs;
-        unsigned long  otherReqs;
-        unsigned long  missingConsensusTime;
+        unsigned long heartBeatFails;
+        unsigned long registerReqs;
+        unsigned long mirrorReqs;
+        unsigned long wantAddReqs;
+        unsigned long doAddReqs;
+        unsigned long doRemoveReqs;
+        unsigned long adminReqs;
+        unsigned long otherReqs;
+        unsigned long missingConsensusTime;
         static Metrics zero() { return Metrics{0, 0, 0, 0, 0, 0, 0, 0, 0}; }
     };
 
@@ -50,11 +50,11 @@ public:
     RPCHooks(SBEnv& env);
     ~RPCHooks() override;
 
-    void           initRPC(FRT_Supervisor* supervisor);
-    void           reportMetrics();
+    void initRPC(FRT_Supervisor* supervisor);
+    void reportMetrics();
     const Metrics& getMetrics() const { return _cnts; }
-    void           countFailedHeartbeat() { _cnts.heartBeatFails++; }
-    void           setConsensusTime(unsigned long value) { _cnts.missingConsensusTime = value; }
+    void countFailedHeartbeat() { _cnts.heartBeatFails++; }
+    void setConsensusTime(unsigned long value) { _cnts.missingConsensusTime = value; }
 
 private:
     void rpc_registerRpcServer(FRT_RPCRequest* req);

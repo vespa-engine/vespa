@@ -12,9 +12,13 @@ ProxyMapSource::ProxyMapSource() = default;
 
 ProxyMapSource::~ProxyMapSource() = default;
 
-void ProxyMapSource::registerListener(MapListener& listener) { _listeners.insert(&listener); }
+void ProxyMapSource::registerListener(MapListener& listener) {
+    _listeners.insert(&listener);
+}
 
-void ProxyMapSource::unregisterListener(MapListener& listener) { _listeners.erase(&listener); }
+void ProxyMapSource::unregisterListener(MapListener& listener) {
+    _listeners.erase(&listener);
+}
 
 void ProxyMapSource::add(const ServiceMapping& mapping) {
     for (auto* listener : _listeners) {

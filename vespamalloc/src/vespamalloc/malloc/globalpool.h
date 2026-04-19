@@ -28,9 +28,9 @@ public:
     ChunkSList* returnMemory(SizeClassT sc, ChunkSList* csl) __attribute__((noinline));
 
     DataSegment& dataSegment() { return _dataSegment; }
-    void         enableThreadSupport() __attribute__((noinline));
+    void enableThreadSupport() __attribute__((noinline));
 
-    static void   setParams(size_t threadCacheLimit);
+    static void setParams(size_t threadCacheLimit);
     static size_t computeExactSize(size_t sz) {
         return (((sz + (ALWAYS_REUSE_LIMIT - 1)) / ALWAYS_REUSE_LIMIT) * ALWAYS_REUSE_LIMIT);
     }
@@ -43,7 +43,7 @@ private:
     ChunkSList* malloc(const Guard& guard, SizeClassT sc) __attribute__((noinline));
     ChunkSList* getChunks(const Guard& guard, size_t numChunks) __attribute__((noinline));
     ChunkSList* allocChunkList(const Guard& guard) __attribute__((noinline));
-    void        validate(const void* ptr) const noexcept;
+    void validate(const void* ptr) const noexcept;
 
     class AllocFree {
     public:
@@ -68,7 +68,7 @@ private:
         std::atomic<size_t> _exactAlloc;
         std::atomic<size_t> _return;
         std::atomic<size_t> _malloc;
-        bool                isUsed() const {
+        bool isUsed() const {
             // Do not count _getFree.
             return (_getAlloc || _exchangeAlloc || _exchangeFree || _exactAlloc || _return || _malloc);
         }

@@ -3,11 +3,12 @@
 
 #include "common.h"
 
+#include <dlfcn.h>
+#include <malloc.h>
+
 #include <cerrno>
 #include <cstdlib>
 #include <new>
-#include <dlfcn.h>
-#include <malloc.h>
 
 class CreateAllocator {
 public:
@@ -33,10 +34,16 @@ void* operator new(std::size_t sz) {
     return ptr;
 }
 
-void* operator new[](std::size_t sz) { return ::operator new(sz); }
+void* operator new[](std::size_t sz) {
+    return ::operator new(sz);
+}
 
-void* operator new(std::size_t sz, const std::nothrow_t&) noexcept { return vespamalloc::_GmemP->malloc(sz); }
-void* operator new[](std::size_t sz, const std::nothrow_t&) noexcept { return vespamalloc::_GmemP->malloc(sz); }
+void* operator new(std::size_t sz, const std::nothrow_t&) noexcept {
+    return vespamalloc::_GmemP->malloc(sz);
+}
+void* operator new[](std::size_t sz, const std::nothrow_t&) noexcept {
+    return vespamalloc::_GmemP->malloc(sz);
+}
 
 void operator delete(void* ptr) noexcept {
     if (ptr) {
@@ -84,7 +91,9 @@ void operator delete[](void* ptr, std::size_t sz, const std::nothrow_t&) noexcep
  * Due to allocation being power of 2 up to huge page size (2M)
  * alignment will always be satisfied. size will always be larger or equal to alignment.
  */
-void* operator new(std::size_t sz, std::align_val_t alignment) { return vespamalloc::_GmemP->malloc(sz, alignment); }
+void* operator new(std::size_t sz, std::align_val_t alignment) {
+    return vespamalloc::_GmemP->malloc(sz, alignment);
+}
 void* operator new(std::size_t sz, std::align_val_t alignment, const std::nothrow_t&) noexcept {
     return vespamalloc::_GmemP->malloc(sz, alignment);
 }
@@ -166,16 +175,24 @@ struct mallinfo mallinfo() __THROW {
 #endif
 
 int mallopt(int param, int value) throw() __attribute((visibility("default")));
-int mallopt(int param, int value) throw() { return vespamalloc::createAllocator()->mallopt(param, value); }
+int mallopt(int param, int value) throw() {
+    return vespamalloc::createAllocator()->mallopt(param, value);
+}
 
 void* malloc(size_t sz) __attribute((visibility("default")));
-void* malloc(size_t sz) { return vespamalloc::createAllocator()->malloc(sz); }
+void* malloc(size_t sz) {
+    return vespamalloc::createAllocator()->malloc(sz);
+}
 
 void* calloc(size_t nelem, size_t esz) __attribute((visibility("default")));
-void* calloc(size_t nelem, size_t esz) { return vespamalloc::createAllocator()->calloc(nelem, esz); }
+void* calloc(size_t nelem, size_t esz) {
+    return vespamalloc::createAllocator()->calloc(nelem, esz);
+}
 
 void* realloc(void* ptr, size_t sz) __attribute((visibility("default")));
-void* realloc(void* ptr, size_t sz) { return vespamalloc::createAllocator()->realloc(ptr, sz); }
+void* realloc(void* ptr, size_t sz) {
+    return vespamalloc::createAllocator()->realloc(ptr, sz);
+}
 
 void* reallocarray(void* ptr, size_t nemb, size_t elemSize) __THROW __attribute__((visibility("default")));
 void* reallocarray(void* ptr, size_t nemb, size_t elemSize) __THROW {
@@ -221,7 +238,9 @@ int posix_memalign(void** ptr, size_t align, size_t sz) __THROW {
 }
 
 void* valloc(size_t size) __THROW __attribute__((visibility("default")));
-void* valloc(size_t size) __THROW { return memalign(sysconf(_SC_PAGESIZE), size); }
+void* valloc(size_t size) __THROW {
+    return memalign(sysconf(_SC_PAGESIZE), size);
+}
 
 void free(void* ptr) __attribute__((visibility("default")));
 void free(void* ptr) {
@@ -231,7 +250,9 @@ void free(void* ptr) {
 }
 
 size_t malloc_usable_size(void*) __THROW __attribute__((visibility("default")));
-size_t malloc_usable_size(void* ptr) __THROW { return (ptr) ? vespamalloc::_GmemP->usable_size(ptr) : 0; }
+size_t malloc_usable_size(void* ptr) __THROW {
+    return (ptr) ? vespamalloc::_GmemP->usable_size(ptr) : 0;
+}
 
 #define ALIAS(x) __attribute__((weak, alias(x), visibility("default")))
 
@@ -239,8 +260,8 @@ void* __libc_malloc(size_t sz) __THROW __attribute__((leaf, malloc, alloc_size(1
 void* __libc_realloc(void* ptr, size_t sz) __THROW __attribute__((leaf, malloc, alloc_size(2))) ALIAS("realloc");
 void* __libc_reallocarray(void* ptr, size_t nemb, size_t sz) __THROW __attribute__((leaf, malloc, alloc_size(2, 3)))
 ALIAS("reallocarray");
-void*  __libc_calloc(size_t n, size_t sz) __THROW __attribute__((leaf, malloc, alloc_size(1, 2))) ALIAS("calloc");
-void   __libc_free(void* ptr) __THROW __attribute__((leaf)) ALIAS("free");
+void* __libc_calloc(size_t n, size_t sz) __THROW __attribute__((leaf, malloc, alloc_size(1, 2))) ALIAS("calloc");
+void __libc_free(void* ptr) __THROW __attribute__((leaf)) ALIAS("free");
 size_t __libc_malloc_usable_size(void* ptr) __THROW ALIAS("malloc_usable_size");
 
 #if __GLIBC_PREREQ(2, 34)

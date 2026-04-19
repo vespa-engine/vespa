@@ -3,10 +3,11 @@
 
 #include <vespa/vespalib/util/time.h>
 
-#include <cstdlib>
-#include <thread>
 #include <vespamalloc/malloc/allocchunk.h>
 #include <vespamalloc/util/callstack.h>
+
+#include <cstdlib>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP("linklist_test");
@@ -28,24 +29,24 @@ public:
     MemBlockT() : _ptr(nullptr) {}
     MemBlockT(void* p) : _ptr(p) {}
     MemBlockT(void* p, size_t /*sz*/) : _ptr(p) {}
-    void*       ptr() { return _ptr; }
+    void* ptr() { return _ptr; }
     const void* ptr() const { return _ptr; }
-    bool        validAlloc() const { return _ptr != nullptr; }
-    bool        validFree() const { return _ptr != nullptr; }
-    void        setExact(size_t) {}
-    void        alloc(bool) {}
-    void        threadId(int) {}
-    void        free() {}
-    size_t      size() const { return 0; }
-    bool        allocated() const { return false; }
-    int         threadId() const { return 0; }
-    void        info(FILE*, unsigned level = 0) const { (void)level; }
-    Stack*      callStack() { return nullptr; }
-    size_t      callStackLen() const { return 0; }
+    bool validAlloc() const { return _ptr != nullptr; }
+    bool validFree() const { return _ptr != nullptr; }
+    void setExact(size_t) {}
+    void alloc(bool) {}
+    void threadId(int) {}
+    void free() {}
+    size_t size() const { return 0; }
+    bool allocated() const { return false; }
+    int threadId() const { return 0; }
+    void info(FILE*, unsigned level = 0) const { (void)level; }
+    Stack* callStack() { return nullptr; }
+    size_t callStackLen() const { return 0; }
 
     static size_t adjustSize(size_t sz) { return sz; }
     static size_t unAdjustSize(size_t sz) { return sz; }
-    static void   dumpInfo(size_t level);
+    static void dumpInfo(size_t level);
 
 private:
     void* _ptr;
@@ -65,7 +66,7 @@ public:
 
 private:
     List::AtomicHeadPtr& _head;
-    void                 consume(void* p) override {
+    void consume(void* p) override {
         List* l((List*)p);
         if (!((l >= &globalList[0]) && (l < &globalList[NumBlocks]))) {
             abort();
@@ -75,7 +76,8 @@ private:
 };
 
 LinkIn::LinkIn(List::AtomicHeadPtr& list, uint32_t maxQueue, bool inverse)
-    : Consumer(maxQueue, inverse), _head(list) {}
+    : Consumer(maxQueue, inverse), _head(list) {
+}
 
 //-----------------------------------------------------------------------------
 
@@ -85,7 +87,7 @@ public:
 
 private:
     List::AtomicHeadPtr& _head;
-    void*                produce() override {
+    void* produce() override {
         void* p = List::linkOut(_head);
         List* l((List*)p);
         if (!((l >= &globalList[0]) && (l < &globalList[NumBlocks]))) {
@@ -104,7 +106,7 @@ public:
 
 private:
     List::AtomicHeadPtr& _head;
-    void*                produce() override {
+    void* produce() override {
         void* p = List::linkOut(_head);
         List* l((List*)p);
         if (!((l >= &globalList[0]) && (l < &globalList[NumBlocks]))) {

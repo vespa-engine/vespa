@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <csignal>
 #include <ctype.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -11,6 +10,8 @@
 #include <vespamalloc/malloc/malloc.h>
 #include <vespamalloc/util/callstack.h>
 
+#include <csignal>
+
 namespace vespamalloc {
 
 template <typename T, typename S> class MemoryWatcher : public MemoryManager<T, S> {
@@ -19,27 +20,27 @@ public:
     virtual ~MemoryWatcher() __attribute__((noinline));
 
 private:
-    void                        installMonitor();
-    int                         getDumpSignal() const { return _params[Params::dumpsignal].valueAsLong(); }
-    static int                  getReconfigSignal() { return SIGHUP; }
-    bool                        activateLogFile(const char* logfile);
-    void                        activateOptions();
-    void                        getOptions() __attribute__((noinline));
-    void                        parseOptions(char* options) __attribute__((noinline));
-    virtual void                signalHandler(int signum, siginfo_t* sig, void* arg);
+    void installMonitor();
+    int getDumpSignal() const { return _params[Params::dumpsignal].valueAsLong(); }
+    static int getReconfigSignal() { return SIGHUP; }
+    bool activateLogFile(const char* logfile);
+    void activateOptions();
+    void getOptions() __attribute__((noinline));
+    void parseOptions(char* options) __attribute__((noinline));
+    virtual void signalHandler(int signum, siginfo_t* sig, void* arg);
     static MemoryWatcher<T, S>* _manager;
-    static void                 ssignalHandler(int signum, siginfo_t* info, void* arg);
+    static void ssignalHandler(int signum, siginfo_t* info, void* arg);
     static MemoryWatcher<T, S>* manager() { return _manager; }
-    bool                        signal(int signum) __attribute__((noinline));
+    bool signal(int signum) __attribute__((noinline));
     class NameValuePair {
     public:
         NameValuePair() : _valueName("") { _value[0] = '\0'; }
         NameValuePair(const char* vName, const char* v) : _valueName(vName) { value(v); }
         const char* valueName() const { return _valueName; }
         const char* value() const { return _value; }
-        void        value(const char* v) __attribute__((noinline));
-        long        valueAsLong() const __attribute__((noinline)) { return strtol(_value, nullptr, 0); }
-        void        info(FILE* os) __attribute__((noinline)) {
+        void value(const char* v) __attribute__((noinline));
+        long valueAsLong() const __attribute__((noinline)) { return strtol(_value, nullptr, 0); }
+        void info(FILE* os) __attribute__((noinline)) {
             fprintf(os, "%s = %s %ld", valueName(), value(), valueAsLong());
         }
 
@@ -66,9 +67,9 @@ private:
         };
         Params() __attribute__((noinline));
         ~Params() __attribute__((noinline));
-        NameValuePair&       operator[](unsigned index) { return _params[index]; }
+        NameValuePair& operator[](unsigned index) { return _params[index]; }
         const NameValuePair& operator[](unsigned index) const { return _params[index]; }
-        bool                 update(const char* vName, const char* v) {
+        bool update(const char* vName, const char* v) {
             int index(find(vName));
             if (index >= 0) {
                 _params[index].value(v);
@@ -98,7 +99,7 @@ private:
         }
 
     private:
-        int           find(const char* vName) __attribute__((noinline));
+        int find(const char* vName) __attribute__((noinline));
         NameValuePair _params[numberofentries];
     };
     FILE* _logFile;
@@ -122,7 +123,8 @@ template <typename T, typename S> MemoryWatcher<T, S>::Params::Params() {
     _params[dumpsignal] = NameValuePair("dumpsignal", "27");               // SIGPROF
 }
 
-template <typename T, typename S> MemoryWatcher<T, S>::Params::~Params() {}
+template <typename T, typename S> MemoryWatcher<T, S>::Params::~Params() {
+}
 
 template <typename T, typename S> int MemoryWatcher<T, S>::Params::find(const char* vName) {
     int index(-1);

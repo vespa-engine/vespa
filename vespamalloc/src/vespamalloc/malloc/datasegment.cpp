@@ -2,8 +2,9 @@
 
 #include "datasegment.h"
 
-#include <algorithm>
 #include <unistd.h>
+
+#include <algorithm>
 
 namespace vespamalloc::segment {
 
@@ -38,7 +39,9 @@ DataSegment::DataSegment(const IHelper& helper)
     _nextLogLimit = std::max(size_t(end()) + _nextLogLimit, _nextLogLimit);
 }
 
-size_t DataSegment::freeSize() const { return _freeList.numFreeBlocks() * BlockSize; }
+size_t DataSegment::freeSize() const {
+    return _freeList.numFreeBlocks() * BlockSize;
+}
 
 void* DataSegment::getBlock(size_t& oldBlockSize, SizeClassT sc) {
     const size_t minBlockSize = std::max(BlockSize, _osMemory.getMinBlockSize());

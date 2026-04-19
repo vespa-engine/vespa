@@ -14,10 +14,10 @@ namespace vespamalloc {
 template <typename MemBlockPtrT> class MemBlockInfoT final : public segment::IMemBlockInfo {
 public:
     MemBlockInfoT(void* ptr) : _mem(ptr, 0, false) {}
-    bool              allocated() const override { return _mem.allocated(); }
-    uint32_t          threadId() const override { return _mem.threadId(); }
-    void              info(FILE* os, int level) const override { _mem.info(os, level); }
-    uint32_t          callStackLen() const override { return _mem.callStackLen(); }
+    bool allocated() const override { return _mem.allocated(); }
+    uint32_t threadId() const override { return _mem.threadId(); }
+    void info(FILE* os, int level) const override { _mem.info(os, level); }
+    uint32_t callStackLen() const override { return _mem.callStackLen(); }
     const StackEntry* callStack() const override { return _mem.callStack(); }
 
 private:
@@ -39,16 +39,16 @@ public:
     }
     size_t getMaxNumThreads() const override { return _threadList.getMaxNumThreads(); }
     size_t classSize(SizeClassT sc) const override { return MemBlockPtrT::classSize(sc); }
-    void   dumpInfo(int level) const override { MemBlockPtrT::dumpInfo(level); }
+    void dumpInfo(int level) const override { MemBlockPtrT::dumpInfo(level); }
     std::unique_ptr<segment::IMemBlockInfo> createMemblockInfo(void* ptr) const override {
         return std::make_unique<MemBlockInfoT<MemBlockPtrT>>(ptr);
     }
 
-    int   mallopt(int param, int value);
+    int mallopt(int param, int value);
     void* malloc(size_t sz);
     void* malloc(size_t sz, std::align_val_t);
     void* realloc(void* oldPtr, size_t sz);
-    void  free(void* ptr) {
+    void free(void* ptr) {
         if (_segment.containsPtr(ptr)) {
             freeSC(ptr, _segment.sizeClass(ptr));
         } else {
@@ -94,7 +94,7 @@ public:
         _allocPool.setParams(threadCacheLimit);
     }
     const DataSegment& dataSegment() const { return _segment; }
-    const MMapPool&    mmapPool() const { return _mmapPool; }
+    const MMapPool& mmapPool() const { return _mmapPool; }
 
 private:
     void freeSC(void* ptr, SizeClassT sc);

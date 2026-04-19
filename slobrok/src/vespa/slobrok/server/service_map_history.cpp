@@ -7,7 +7,8 @@ LOG_SETUP(".slobrok.server.service_map_history");
 
 namespace slobrok {
 
-ServiceMapHistory::UpdateLog::UpdateLog() : startGeneration(1), currentGeneration(1), updates(keep_items + 1) {}
+ServiceMapHistory::UpdateLog::UpdateLog() : startGeneration(1), currentGeneration(1), updates(keep_items + 1) {
+}
 
 ServiceMapHistory::UpdateLog::~UpdateLog() = default;
 
@@ -36,9 +37,12 @@ std::vector<std::string> ServiceMapHistory::UpdateLog::updatedSince(const Genera
 
 //-----------------------------------------------------------------------------
 
-ServiceMapHistory::ServiceMapHistory() : _map(), _waitList(), _log() {}
+ServiceMapHistory::ServiceMapHistory() : _map(), _waitList(), _log() {
+}
 
-ServiceMapHistory::~ServiceMapHistory() { notify_updated(); }
+ServiceMapHistory::~ServiceMapHistory() {
+    notify_updated();
+}
 
 void ServiceMapHistory::notify_updated() {
     WaitList waitList;

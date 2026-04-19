@@ -60,19 +60,19 @@ struct BlockingCryptoSocket : public CryptoSocket {
           handshake_work_exit(hs_work_exit),
           handshake_socket_deleted(hs_socket_deleted) {}
     ~BlockingCryptoSocket() override { handshake_socket_deleted.countDown(); }
-    int             get_fd() const override { return socket.get(); }
+    int get_fd() const override { return socket.get(); }
     HandshakeResult handshake() override { return HandshakeResult::NEED_WORK; }
-    void            do_handshake_work() override {
+    void do_handshake_work() override {
         handshake_work_enter.countDown();
         handshake_work_exit.await();
     }
-    size_t  min_read_buffer_size() const override { return 1; }
+    size_t min_read_buffer_size() const override { return 1; }
     ssize_t read(char* buf, size_t len) override { return socket.read(buf, len); }
     ssize_t drain(char*, size_t) override { return 0; }
     ssize_t write(const char* buf, size_t len) override { return socket.write(buf, len); }
     ssize_t flush() override { return 0; }
     ssize_t half_close() override { return socket.half_close(); }
-    void    drop_empty_buffers() override {}
+    void drop_empty_buffers() override {}
 };
 
 struct BlockingCryptoEngine : public CryptoEngine {
@@ -80,15 +80,15 @@ struct BlockingCryptoEngine : public CryptoEngine {
     Gate handshake_work_exit;
     Gate handshake_socket_deleted;
     ~BlockingCryptoEngine() override;
-    bool             use_tls_when_client() const override { return false; }
-    bool             always_use_tls_when_server() const override { return false; }
+    bool use_tls_when_client() const override { return false; }
+    bool always_use_tls_when_server() const override { return false; }
     CryptoSocket::UP create_client_crypto_socket(SocketHandle socket, const SocketSpec&) override {
-        return std::make_unique<BlockingCryptoSocket>(
-            std::move(socket), handshake_work_enter, handshake_work_exit, handshake_socket_deleted);
+        return std::make_unique<BlockingCryptoSocket>(std::move(socket), handshake_work_enter, handshake_work_exit,
+                                                      handshake_socket_deleted);
     }
     CryptoSocket::UP create_server_crypto_socket(SocketHandle socket) override {
-        return std::make_unique<BlockingCryptoSocket>(
-            std::move(socket), handshake_work_enter, handshake_work_exit, handshake_socket_deleted);
+        return std::make_unique<BlockingCryptoSocket>(std::move(socket), handshake_work_enter, handshake_work_exit,
+                                                      handshake_socket_deleted);
     }
 };
 

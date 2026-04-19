@@ -1,14 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <cassert>
-#include <csignal>
-#include <vector>
 #include <dlfcn.h>
 #include <stdlib.h>
 #include <vespamalloc/util/callgraph.h>
 #include <vespamalloc/util/callstack.h>
 #include <vespamalloc/util/index.h>
+
+#include <cassert>
+#include <csignal>
+#include <vector>
 
 namespace vespamalloc {
 
@@ -19,7 +20,7 @@ class Aggregator {
 public:
     Aggregator();
     ~Aggregator();
-    void                push_back(size_t num, const string& s) { _map.emplace_back(num, s); }
+    void push_back(size_t num, const string& s) { _map.emplace_back(num, s); }
     friend asciistream& operator<<(asciistream& os, const Aggregator& v);
 
 private:
@@ -45,7 +46,8 @@ asciistream& operator<<(asciistream& os, const Aggregator& v);
 
 template <typename N>
 DumpGraph<N>::DumpGraph(Aggregator* aggregator, const char* start, const char* end)
-    : _string(start), _endString(end), _sum(0), _min(-1), _aggregator(aggregator) {}
+    : _string(start), _endString(end), _sum(0), _min(-1), _aggregator(aggregator) {
+}
 
 template <typename N> DumpGraph<N>::~DumpGraph() = default;
 

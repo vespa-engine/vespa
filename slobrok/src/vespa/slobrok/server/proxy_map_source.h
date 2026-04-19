@@ -13,8 +13,8 @@ namespace slobrok {
  **/
 class ProxyMapSource : public MapSource, public MapListener {
     std::set<MapListener*> _listeners;
-    void                   registerListener(MapListener& listener) override;
-    void                   unregisterListener(MapListener& listener) override;
+    void registerListener(MapListener& listener) override;
+    void unregisterListener(MapListener& listener) override;
 
 public:
     ProxyMapSource();

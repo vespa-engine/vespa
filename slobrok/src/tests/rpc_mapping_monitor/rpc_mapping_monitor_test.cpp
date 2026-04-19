@@ -20,7 +20,7 @@ struct Server : FRT_Invokable {
     std::vector<std::string> names;
     size_t                   inject_fail_cnt;
     FNET_Connection*         last_conn;
-    void                     set_last_conn(FNET_Connection* conn) {
+    void set_last_conn(FNET_Connection* conn) {
         if (last_conn) {
             last_conn->internal_subref();
         }
@@ -38,9 +38,9 @@ struct Server : FRT_Invokable {
         REQUIRE(frt.supervisor().Listen(0));
     }
     ~Server() override;
-    std::string     spec() const { return fmt("tcp/%d", frt.supervisor().GetListenPort()); }
+    std::string spec() const { return fmt("tcp/%d", frt.supervisor().GetListenPort()); }
     FNET_Transport& transport() { return *frt.supervisor().GetTransport(); }
-    void            rpc_listNamesServed(FRT_RPCRequest* req) {
+    void rpc_listNamesServed(FRT_RPCRequest* req) {
         set_last_conn(req->GetConnection());
         if (inject_fail_cnt > 0) {
             req->SetError(FRTE_RPC_METHOD_FAILED, "fail injected by unit test");
@@ -56,7 +56,9 @@ struct Server : FRT_Invokable {
     void rpc_notifyUnregistered(FRT_RPCRequest*) {}
 };
 
-Server::~Server() { set_last_conn(nullptr); }
+Server::~Server() {
+    set_last_conn(nullptr);
+}
 
 enum class State { ANY, UP, DOWN };
 
@@ -67,7 +69,7 @@ struct States {
         size_t cnt;
     };
     std::vector<Entry> hist;
-    State              state() const { return hist.back().state; }
+    State state() const { return hist.back().state; }
     States() : hist({{State::ANY, 0}}) {}
     void sample(State state) {
         if (state == hist.back().state) {
@@ -90,7 +92,7 @@ struct States {
 // history of which call-backs we have gotten so far
 struct History : MappingMonitorOwner {
     std::map<ServiceMapping, States> map;
-    void                             up(const ServiceMapping& mapping) override { map[mapping].sample(State::UP); }
+    void up(const ServiceMapping& mapping) override { map[mapping].sample(State::UP); }
     void down(const ServiceMapping& mapping) override { map[mapping].sample(State::DOWN); }
 };
 

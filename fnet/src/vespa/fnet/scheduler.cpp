@@ -144,11 +144,17 @@ void FNET_Scheduler::FirstTask(uint32_t slot) {
     _tailPt = (_currPt != nullptr) ? _currPt->_task_prev : nullptr;
 }
 
-void FNET_Scheduler::NextTask() { _currPt = (_currPt != _tailPt) ? _currPt->_task_next : nullptr; }
+void FNET_Scheduler::NextTask() {
+    _currPt = (_currPt != _tailPt) ? _currPt->_task_next : nullptr;
+}
 
-void FNET_Scheduler::AdjustCurrPt() { _currPt = (_currPt != _tailPt) ? _currPt->_task_next : nullptr; }
+void FNET_Scheduler::AdjustCurrPt() {
+    _currPt = (_currPt != _tailPt) ? _currPt->_task_next : nullptr;
+}
 
-void FNET_Scheduler::AdjustTailPt() { _tailPt = _tailPt->_task_prev; }
+void FNET_Scheduler::AdjustTailPt() {
+    _tailPt = _tailPt->_task_prev;
+}
 
 void FNET_Scheduler::LinkIn(FNET_Task* task) {
     FNET_Task** head = &(_slots[task->_task_slot]);
@@ -220,4 +226,6 @@ void FNET_Scheduler::PerformTasks(std::unique_lock<std::mutex>& guard, uint32_t 
     }
 }
 
-bool FNET_Scheduler::IsActive(FNET_Task* task) { return task->_task_next != nullptr; }
+bool FNET_Scheduler::IsActive(FNET_Task* task) {
+    return task->_task_next != nullptr;
+}

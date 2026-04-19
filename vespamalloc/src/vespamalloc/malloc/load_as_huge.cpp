@@ -2,12 +2,13 @@
 
 #include "independent_non_inlined_memcpy.h"
 
+#include <link.h>
+#include <sys/mman.h>
+
 #include <cassert>
 #include <cerrno>
 #include <cstdio>
 #include <cstring>
-#include <link.h>
-#include <sys/mman.h>
 
 /**
  * This is experimental code that will map code segments in binary and dso into
@@ -28,8 +29,12 @@ void* mmap_huge(size_t sz) {
     return mem;
 }
 
-size_t round_huge_down(size_t v) { return v & ~(HUGEPAGE_SIZE - 1); }
-size_t round_huge_up(size_t v) { return round_huge_down(v + (HUGEPAGE_SIZE - 1)); }
+size_t round_huge_down(size_t v) {
+    return v & ~(HUGEPAGE_SIZE - 1);
+}
+size_t round_huge_up(size_t v) {
+    return round_huge_down(v + (HUGEPAGE_SIZE - 1));
+}
 
 /**
  * Make a large mapping if code is larger than HUGEPAGE_SIZE and copies the content of the various segments.

@@ -29,12 +29,13 @@ struct HashState {
 };
 
 HashState::HashState(const void* key, size_t key_len)
-    : self(this), now(clock::now()), key_hash(XXH64(key, key_len, 0)) {}
+    : self(this), now(clock::now()), key_hash(XXH64(key, key_len, 0)) {
+}
 
 VESPA_THREAD_STACK_TAG(fnet_work_pool);
 
 struct DefaultTimeTools : fnet::TimeTools {
-    vespalib::duration    event_timeout() const override { return FNET_Scheduler::tick_ms; }
+    vespalib::duration event_timeout() const override { return FNET_Scheduler::tick_ms; }
     vespalib::steady_time current_time() const override { return vespalib::steady_clock::now(); }
 };
 
@@ -43,7 +44,7 @@ struct DebugTimeTools : fnet::TimeTools {
     std::function<vespalib::steady_time()> my_current_time;
     DebugTimeTools(vespalib::duration d, std::function<vespalib::steady_time()> f) noexcept
         : my_event_timeout(d), my_current_time(std::move(f)) {}
-    vespalib::duration    event_timeout() const override { return my_event_timeout; }
+    vespalib::duration event_timeout() const override { return my_event_timeout; }
     vespalib::steady_time current_time() const override { return my_current_time(); }
 };
 
@@ -86,13 +87,14 @@ struct CaptureTask : FNET_Task {
 
 namespace fnet {
 
-TimeTools::SP TimeTools::make_debug(
-    vespalib::duration event_timeout, std::function<vespalib::steady_time()> current_time) {
+TimeTools::SP TimeTools::make_debug(vespalib::duration                     event_timeout,
+                                    std::function<vespalib::steady_time()> current_time) {
     return std::make_shared<DebugTimeTools>(event_timeout, std::move(current_time));
 }
 
 TransportConfig::TransportConfig(int num_threads)
-    : _config(), _resolver(), _crypto(), _time_tools(), _num_threads(num_threads) {}
+    : _config(), _resolver(), _crypto(), _time_tools(), _num_threads(num_threads) {
+}
 
 TransportConfig::~TransportConfig() = default;
 
@@ -110,7 +112,9 @@ fnet::TimeTools::SP TransportConfig::time_tools() const {
 
 } // namespace fnet
 
-void FNET_Transport::wait_for_pending_resolves() { _async_resolver->wait_for_pending_resolves(); }
+void FNET_Transport::wait_for_pending_resolves() {
+    _async_resolver->wait_for_pending_resolves();
+}
 
 FNET_Transport::FNET_Transport(const fnet::TransportConfig& cfg)
     : _async_resolver(cfg.resolver()),
@@ -128,7 +132,9 @@ FNET_Transport::FNET_Transport(const fnet::TransportConfig& cfg)
     }
 }
 
-FNET_Transport::~FNET_Transport() { _pool.join(); }
+FNET_Transport::~FNET_Transport() {
+    _pool.join();
+}
 
 void FNET_Transport::post_or_perform(vespalib::Executor::Task::UP task) {
     if (auto rejected = _work_pool->execute(std::move(task))) {
@@ -136,13 +142,13 @@ void FNET_Transport::post_or_perform(vespalib::Executor::Task::UP task) {
     }
 }
 
-void FNET_Transport::resolve_async(
-    const std::string& spec, vespalib::AsyncResolver::ResultHandler::WP result_handler) {
+void FNET_Transport::resolve_async(const std::string&                         spec,
+                                   vespalib::AsyncResolver::ResultHandler::WP result_handler) {
     _async_resolver->resolve_async(spec, std::move(result_handler));
 }
 
-vespalib::CryptoSocket::UP FNET_Transport::create_client_crypto_socket(
-    vespalib::SocketHandle socket, const vespalib::SocketSpec& spec) {
+vespalib::CryptoSocket::UP FNET_Transport::create_client_crypto_socket(vespalib::SocketHandle      socket,
+                                                                       const vespalib::SocketSpec& spec) {
     return _crypto_engine->create_client_crypto_socket(std::move(socket), spec);
 }
 
@@ -157,13 +163,13 @@ FNET_TransportThread* FNET_Transport::select_thread(const void* key, size_t key_
     return _threads[thread_id].get();
 }
 
-FNET_Connector* FNET_Transport::Listen(
-    const char* spec, FNET_IPacketStreamer* streamer, FNET_IServerAdapter* serverAdapter) {
+FNET_Connector* FNET_Transport::Listen(const char* spec, FNET_IPacketStreamer* streamer,
+                                       FNET_IServerAdapter* serverAdapter) {
     return select_thread(spec, strlen(spec))->Listen(spec, streamer, serverAdapter);
 }
 
-FNET_Connection* FNET_Transport::Connect(
-    const char* spec, FNET_IPacketStreamer* streamer, FNET_IServerAdapter* serverAdapter, FNET_Context connContext) {
+FNET_Connection* FNET_Transport::Connect(const char* spec, FNET_IPacketStreamer* streamer,
+                                         FNET_IServerAdapter* serverAdapter, FNET_Context connContext) {
     return select_thread(spec, strlen(spec))->Connect(spec, streamer, serverAdapter, connContext);
 }
 
@@ -193,9 +199,13 @@ void FNET_Transport::detach(FNET_IServerAdapter* server_adapter) {
     sync();
 }
 
-FNET_Scheduler* FNET_Transport::GetScheduler() { return select_thread(nullptr, 0)->GetScheduler(); }
+FNET_Scheduler* FNET_Transport::GetScheduler() {
+    return select_thread(nullptr, 0)->GetScheduler();
+}
 
-bool FNET_Transport::execute(FNET_IExecutable* exe) { return select_thread(nullptr, 0)->execute(exe); }
+bool FNET_Transport::execute(FNET_IExecutable* exe) {
+    return select_thread(nullptr, 0)->execute(exe);
+}
 
 void FNET_Transport::ShutDown(bool waitFinished) {
     for (const auto& thread : _threads) {
@@ -232,9 +242,13 @@ void FNET_Transport::attach_capture_hook(std::function<bool()> capture_hook) {
     }
 }
 
-void FNET_Transport::Add(FNET_IOComponent* comp, bool needRef) { comp->Owner()->Add(comp, needRef); }
+void FNET_Transport::Add(FNET_IOComponent* comp, bool needRef) {
+    comp->Owner()->Add(comp, needRef);
+}
 
-void FNET_Transport::Close(FNET_IOComponent* comp, bool needRef) { comp->Owner()->Close(comp, needRef); }
+void FNET_Transport::Close(FNET_IOComponent* comp, bool needRef) {
+    comp->Owner()->Close(comp, needRef);
+}
 
 void FNET_Transport::Main() {
     assert(_threads.size() == 1);

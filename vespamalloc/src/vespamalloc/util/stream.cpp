@@ -1,12 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "stream.h"
 
-#include <algorithm>
 #include <stdio.h>
+
+#include <algorithm>
 
 namespace vespamalloc {
 
-asciistream::asciistream() : _rPos(0), _wPos(0), _buffer(static_cast<char*>(malloc(1024))), _sz(1024) {}
+asciistream::asciistream() : _rPos(0), _wPos(0), _buffer(static_cast<char*>(malloc(1024))), _sz(1024) {
+}
 
 asciistream::~asciistream() {
     if (_buffer != nullptr) {

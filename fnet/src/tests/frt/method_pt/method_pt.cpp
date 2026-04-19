@@ -121,7 +121,8 @@ protected:
     static void TearDownTestSuite();
 };
 
-MethodPtTest::MethodPtTest() : ::testing::Test() {}
+MethodPtTest::MethodPtTest() : ::testing::Test() {
+}
 
 MethodPtTest::~MethodPtTest() = default;
 

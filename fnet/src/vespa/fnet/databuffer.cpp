@@ -21,9 +21,11 @@ FNET_DataBuffer::FNET_DataBuffer(uint32_t len)
 }
 
 FNET_DataBuffer::FNET_DataBuffer(char* buf, uint32_t len)
-    : _bufstart(buf), _bufend(buf + len), _datapt(_bufstart), _freept(_bufstart) {}
+    : _bufstart(buf), _bufend(buf + len), _datapt(_bufstart), _freept(_bufstart) {
+}
 
-FNET_DataBuffer::~FNET_DataBuffer() {}
+FNET_DataBuffer::~FNET_DataBuffer() {
+}
 
 void FNET_DataBuffer::FreeToData(uint32_t len) {
     assert(GetFreeLen() >= len);

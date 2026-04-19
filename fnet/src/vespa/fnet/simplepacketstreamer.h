@@ -35,5 +35,5 @@ public:
 
     bool GetPacketInfo(FNET_DataBuffer* src, uint32_t* plen, uint32_t* pcode, uint32_t* chid, bool* broken) override;
     FNET_Packet* Decode(FNET_DataBuffer* src, uint32_t plen, uint32_t pcode, FNET_Context context) override;
-    void         Encode(FNET_Packet* packet, uint32_t chid, FNET_DataBuffer* dst) override;
+    void Encode(FNET_Packet* packet, uint32_t chid, FNET_DataBuffer* dst) override;
 };

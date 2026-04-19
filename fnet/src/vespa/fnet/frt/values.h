@@ -131,7 +131,7 @@ public:
     }
 
     uint16_t* AddInt16Array(uint32_t len);
-    void      AddInt16Array(const uint16_t* array, uint32_t len);
+    void AddInt16Array(const uint16_t* array, uint32_t len);
 
     void AddInt16ArrayRef(uint16_t* array, uint32_t len) {
         EnsureFree();
@@ -164,7 +164,7 @@ public:
     }
 
     uint64_t* AddInt64Array(uint32_t len);
-    void      AddInt64Array(const uint64_t* array, uint32_t len);
+    void AddInt64Array(const uint64_t* array, uint32_t len);
 
     void AddInt64ArrayRef(uint64_t* array, uint32_t len) {
         EnsureFree();
@@ -197,7 +197,7 @@ public:
     }
 
     double* AddDoubleArray(uint32_t len);
-    void    AddDoubleArray(const double* array, uint32_t len);
+    void AddDoubleArray(const double* array, uint32_t len);
 
     void AddDoubleArrayRef(double* array, uint32_t len) {
         EnsureFree();
@@ -209,35 +209,35 @@ public:
     void AddString(const char* str, uint32_t len);
     void AddString(const char* str) { AddString(str, strlen(str)); }
 
-    char*            AddString(uint32_t len);
+    char* AddString(uint32_t len);
     FRT_StringValue* AddStringArray(uint32_t len);
-    void             AddSharedData(FRT_ISharedBlob* blob);
-    void             AddData(Alloc&& buf, uint32_t len);
-    void             AddData(vespalib::DataBuffer&& buf);
-    void             AddData(const char* buf, uint32_t len);
-    char*            AddData(uint32_t len);
-    FRT_DataValue*   AddDataArray(uint32_t len);
+    void AddSharedData(FRT_ISharedBlob* blob);
+    void AddData(Alloc&& buf, uint32_t len);
+    void AddData(vespalib::DataBuffer&& buf);
+    void AddData(const char* buf, uint32_t len);
+    char* AddData(uint32_t len);
+    FRT_DataValue* AddDataArray(uint32_t len);
 
     void SetString(FRT_StringValue* value, const char* str, uint32_t len);
     void SetString(FRT_StringValue* value, const char* str);
     void SetData(FRT_DataValue* value, const char* buf, uint32_t len);
 
-    uint32_t         GetNumValues() { return _numValues; }
-    const char*      GetTypeString() { return _typeString; }
-    FRT_Value&       GetValue(uint32_t idx) { return _values[idx]; }
-    FRT_Value&       operator[](uint32_t idx) { return _values[idx]; }
+    uint32_t GetNumValues() { return _numValues; }
+    const char* GetTypeString() { return _typeString; }
+    FRT_Value& GetValue(uint32_t idx) { return _values[idx]; }
+    FRT_Value& operator[](uint32_t idx) { return _values[idx]; }
     const FRT_Value& operator[](uint32_t idx) const { return _values[idx]; }
-    uint32_t         GetType(uint32_t idx) { return _typeString[idx]; }
-    void             Print(uint32_t indent = 0);
-    uint32_t         GetLength();
-    bool             DecodeCopy(FNET_DataBuffer* dst, uint32_t len);
-    bool             DecodeBig(FNET_DataBuffer* dst, uint32_t len);
-    bool             DecodeLittle(FNET_DataBuffer* dst, uint32_t len);
-    void             EncodeCopy(FNET_DataBuffer* dst);
-    void             EncodeBig(FNET_DataBuffer* dst);
-    bool             Equals(FRT_Values* values);
-    static void      Print(FRT_Value value, uint32_t type, uint32_t indent = 0);
-    static bool      Equals(FRT_Value a, FRT_Value b, uint32_t type);
-    static bool      Equals(FRT_Value a, uint32_t a_type, FRT_Value b, uint32_t b_type);
-    static bool      CheckTypes(const char* spec, const char* actual);
+    uint32_t GetType(uint32_t idx) { return _typeString[idx]; }
+    void Print(uint32_t indent = 0);
+    uint32_t GetLength();
+    bool DecodeCopy(FNET_DataBuffer* dst, uint32_t len);
+    bool DecodeBig(FNET_DataBuffer* dst, uint32_t len);
+    bool DecodeLittle(FNET_DataBuffer* dst, uint32_t len);
+    void EncodeCopy(FNET_DataBuffer* dst);
+    void EncodeBig(FNET_DataBuffer* dst);
+    bool Equals(FRT_Values* values);
+    static void Print(FRT_Value value, uint32_t type, uint32_t indent = 0);
+    static bool Equals(FRT_Value a, FRT_Value b, uint32_t type);
+    static bool Equals(FRT_Value a, uint32_t a_type, FRT_Value b, uint32_t b_type);
+    static bool CheckTypes(const char* spec, const char* actual);
 };

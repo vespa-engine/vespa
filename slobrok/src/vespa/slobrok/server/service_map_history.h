@@ -6,8 +6,9 @@
 #include "map_listener.h"
 #include "service_mapping.h"
 
-#include <vespa/vespalib/util/arrayqueue.hpp>
 #include <vespa/vespalib/util/gencnt.h>
+
+#include <vespa/vespalib/util/arrayqueue.hpp>
 
 #include <map>
 #include <string>
@@ -44,8 +45,8 @@ private:
         vespalib::ArrayQueue<std::string> updates;
         UpdateLog();
         ~UpdateLog();
-        void                     add(const std::string& name);
-        bool                     isInRange(const Generation& gen) const;
+        void add(const std::string& name);
+        bool isInRange(const Generation& gen) const;
         std::vector<std::string> updatedSince(const Generation& gen) const;
     };
     using Map = std::map<std::string, std::string>;

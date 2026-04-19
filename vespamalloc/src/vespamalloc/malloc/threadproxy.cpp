@@ -4,15 +4,18 @@
 
 #include "common.h"
 
-#include <cstdio>
 #include <dlfcn.h>
 #include <pthread.h>
+
+#include <cstdio>
 
 namespace vespamalloc {
 
 IAllocator* _G_myMemP = nullptr;
 
-void setAllocatorForThreads(IAllocator* allocator) { _G_myMemP = allocator; }
+void setAllocatorForThreads(IAllocator* allocator) {
+    _G_myMemP = allocator;
+}
 
 } // namespace vespamalloc
 extern "C" {

@@ -30,7 +30,7 @@ public:
      */
     virtual ~FRT_IReturnHandler() = default;
 
-    virtual void             HandleReturn() = 0;
+    virtual void HandleReturn() = 0;
     virtual FNET_Connection* GetConnection() = 0;
 };
 
@@ -66,7 +66,7 @@ public:
         _return.DiscardBlobs();
     }
 
-    void         SetContext(FNET_Context context) { _context = context; }
+    void SetContext(FNET_Context context) { _context = context; }
     FNET_Context GetContext() { return _context; }
 
     Stash& getStash() { return _stash; }
@@ -89,9 +89,9 @@ public:
     void SetError(uint32_t errorCode, const char* errorMessage);
     void SetError(uint32_t errorCode);
 
-    bool        IsError() { return (_errorCode != FRTE_NO_ERROR); }
-    uint32_t    GetErrorCode() { return _errorCode; }
-    uint32_t    GetErrorMessageLen() { return _errorMessageLen; }
+    bool IsError() { return (_errorCode != FRTE_NO_ERROR); }
+    uint32_t GetErrorCode() { return _errorCode; }
+    uint32_t GetErrorMessageLen() { return _errorMessageLen; }
     const char* GetErrorMessage() { return _errorMessage; }
 
     bool CheckReturnTypes(const char* types);
@@ -99,7 +99,7 @@ public:
     void SetMethodName(const char* methodName, uint32_t len);
     void SetMethodName(const char* methodName);
 
-    uint32_t    GetMethodNameLen() const { return _methodNameLen; }
+    uint32_t GetMethodNameLen() const { return _methodNameLen; }
     const char* GetMethodName() const { return _methodName; }
 
     void Print(uint32_t indent = 0);
@@ -107,7 +107,7 @@ public:
     FNET_Packet* CreateRequestPacket(bool wantReply);
     FNET_Packet* CreateReplyPacket();
 
-    void            SetDetachedPT(bool* detachedPT) { _detachedPT = detachedPT; }
+    void SetDetachedPT(bool* detachedPT) { _detachedPT = detachedPT; }
     FRT_RPCRequest* Detach() {
         *_detachedPT = true;
         return this;
@@ -116,7 +116,7 @@ public:
     void SetAbortHandler(FRT_IAbortHandler* handler) { _abortHandler = handler; }
     void SetReturnHandler(FRT_IReturnHandler* handler) { _returnHandler = handler; }
 
-    bool             Abort();
-    void             Return();
+    bool Abort();
+    void Return();
     FNET_Connection* GetConnection();
 };

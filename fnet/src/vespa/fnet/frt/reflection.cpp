@@ -6,8 +6,8 @@
 #include "supervisor.h"
 #include "values.h"
 
-FRT_Method::FRT_Method(
-    const char* name, const char* paramSpec, const char* returnSpec, FRT_METHOD_PT method, FRT_Invokable* handler)
+FRT_Method::FRT_Method(const char* name, const char* paramSpec, const char* returnSpec, FRT_METHOD_PT method,
+                       FRT_Invokable* handler)
     : _hashNext(nullptr),
       _listNext(nullptr),
       _name(name),
@@ -16,7 +16,8 @@ FRT_Method::FRT_Method(
       _method(method),
       _handler(handler),
       _doc(),
-      _access_filter() {}
+      _access_filter() {
+}
 
 FRT_Method::~FRT_Method() = default;
 
@@ -33,9 +34,13 @@ void FRT_Method::GetDocumentation(FRT_Values* values) {
     values->DecodeCopy(&buf, _doc.size());
 }
 
-FRT_ReflectionManager::FRT_ReflectionManager() : _numMethods(0), _methods(nullptr), _methodHash() { Reset(); }
+FRT_ReflectionManager::FRT_ReflectionManager() : _numMethods(0), _methods(nullptr), _methodHash() {
+    Reset();
+}
 
-FRT_ReflectionManager::~FRT_ReflectionManager() { Reset(); }
+FRT_ReflectionManager::~FRT_ReflectionManager() {
+    Reset();
+}
 
 void FRT_ReflectionManager::Reset() {
     _numMethods = 0;
@@ -117,15 +122,16 @@ FRT_ReflectionBuilder::FRT_ReflectionBuilder(FRT_Supervisor* supervisor)
       _arg_desc(nullptr),
       _ret_name(nullptr),
       _ret_desc(nullptr),
-      _access_filter() {}
+      _access_filter() {
+}
 
 FRT_ReflectionBuilder::~FRT_ReflectionBuilder() {
     Flush();
     _req->internal_subref();
 }
 
-void FRT_ReflectionBuilder::DefineMethod(
-    const char* name, const char* paramSpec, const char* returnSpec, FRT_METHOD_PT method, FRT_Invokable* handler) {
+void FRT_ReflectionBuilder::DefineMethod(const char* name, const char* paramSpec, const char* returnSpec,
+                                         FRT_METHOD_PT method, FRT_Invokable* handler) {
     if (handler == nullptr)
         return;
 
