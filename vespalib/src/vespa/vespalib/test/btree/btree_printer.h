@@ -2,44 +2,45 @@
 
 #pragma once
 
-#include "data_printer.h"
 #include "aggregated_printer.h"
+#include "data_printer.h"
+
 #include <vespa/vespalib/btree/btreenodeallocator.h>
 
 namespace vespalib::btree::test {
 
-template <typename ostream, typename NodeAllocator>
-class BTreePrinter
-{
+template <typename ostream, typename NodeAllocator> class BTreePrinter {
     using LeafNode = typename NodeAllocator::LeafNodeType;
     using InternalNode = typename NodeAllocator::InternalNodeType;
-    ostream &_os;
-    const NodeAllocator &_allocator;
-    bool _levelFirst;
-    uint8_t _printLevel;
+    ostream&             _os;
+    const NodeAllocator& _allocator;
+    bool                 _levelFirst;
+    uint8_t              _printLevel;
 
-    void printLeafNode(const LeafNode &n) {
+    void printLeafNode(const LeafNode& n) {
         if (!_levelFirst) {
             _os << ",";
         }
         _levelFirst = false;
         _os << "{";
         for (uint32_t i = 0; i < n.validSlots(); ++i) {
-            if (i > 0) _os << ",";
+            if (i > 0)
+                _os << ",";
             _os << n.getKey(i) << ":" << n.getData(i);
         }
         printAggregated(_os, n.getAggregated());
         _os << "}";
     }
 
-    void printInternalNode(const InternalNode &n) {
+    void printInternalNode(const InternalNode& n) {
         if (!_levelFirst) {
             _os << ",";
         }
         _levelFirst = false;
         _os << "{";
         for (uint32_t i = 0; i < n.validSlots(); ++i) {
-            if (i > 0) _os << ",";
+            if (i > 0)
+                _os << ",";
             _os << n.getKey(i);
         }
         printAggregated(_os, n.getAggregated());
@@ -54,7 +55,7 @@ class BTreePrinter
             printLeafNode(*_allocator.mapLeafRef(ref));
             return;
         }
-        const InternalNode &n(*_allocator.mapInternalRef(ref));
+        const InternalNode& n(*_allocator.mapInternalRef(ref));
         if (n.getLevel() == _printLevel) {
             printInternalNode(n);
             return;
@@ -65,16 +66,10 @@ class BTreePrinter
     }
 
 public:
+    BTreePrinter(ostream& os, const NodeAllocator& allocator)
+        : _os(os), _allocator(allocator), _levelFirst(true), _printLevel(0) {}
 
-    BTreePrinter(ostream &os, const NodeAllocator &allocator)
-        : _os(os),
-          _allocator(allocator),
-          _levelFirst(true),
-          _printLevel(0)
-    {
-    }
-
-    ~BTreePrinter() { }
+    ~BTreePrinter() {}
 
     void print(BTreeNode::Ref ref) {
         if (!ref.valid()) {
@@ -83,7 +78,7 @@ public:
         }
         _printLevel = 0;
         if (!_allocator.isLeafRef(ref)) {
-            const InternalNode &n(*_allocator.mapInternalRef(ref));
+            const InternalNode& n(*_allocator.mapInternalRef(ref));
             _printLevel = n.getLevel();
         }
         while (_printLevel > 0) {

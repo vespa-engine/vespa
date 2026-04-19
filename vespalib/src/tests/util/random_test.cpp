@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/util/random.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/random.h>
 
 using namespace vespalib;
 
@@ -11,8 +11,7 @@ constexpr double eps = 1.0e-9;
 
 }
 
-TEST(RandomTest, test_java_compatibility)
-{
+TEST(RandomTest, test_java_compatibility) {
     RandomGen rnd(1);
 
     EXPECT_TRUE(rnd.nextInt32() == -1155869325);
@@ -51,8 +50,7 @@ TEST(RandomTest, test_java_compatibility)
     EXPECT_TRUE(rnd2.nextInt32() == 52699159);
 }
 
-TEST(RandoMTest, test_floating_point)
-{
+TEST(RandoMTest, test_floating_point) {
     RandomGen rnd;
 
     int buckets[100];
@@ -61,10 +59,11 @@ TEST(RandoMTest, test_floating_point)
     }
     for (int i = 0; i < 100000; i++) {
         double foo = rnd.nextDouble() * 100.0;
-        int b = (int)foo;
+        int    b = (int)foo;
         EXPECT_TRUE(b >= 0);
         EXPECT_TRUE(b < 100);
-        if (b >= 0 && b < 100) ++buckets[b];
+        if (b >= 0 && b < 100)
+            ++buckets[b];
     }
     for (int b = 0; b < 100; b++) {
         // note that it's *possible* for this to fail:
@@ -74,8 +73,7 @@ TEST(RandoMTest, test_floating_point)
     }
 }
 
-TEST(RandoMTest, test_normal_distribution)
-{
+TEST(RandoMTest, test_normal_distribution) {
     RandomGen rnd;
 
     int buckets[101];
@@ -84,10 +82,10 @@ TEST(RandoMTest, test_normal_distribution)
     }
 
     const int sum = 10000000;
-    int oor = 0;
+    int       oor = 0;
     for (int i = 0; i < sum; i++) {
         double foo = rnd.nextNormal(50, 13);
-        int idx = (int)(foo+0.5);
+        int    idx = (int)(foo + 0.5);
         if (foo < 0) {
             ++oor;
             idx = 0;
@@ -116,7 +114,7 @@ TEST(RandoMTest, test_normal_distribution)
     EXPECT_TRUE(buckets[20] > buckets[15]);
     EXPECT_TRUE(buckets[15] > buckets[10]);
     EXPECT_TRUE(buckets[10] > buckets[5]);
-    EXPECT_TRUE(buckets[5]  > buckets[1]);
+    EXPECT_TRUE(buckets[5] > buckets[1]);
 
     EXPECT_TRUE(buckets[50] > buckets[55]);
     EXPECT_TRUE(buckets[55] > buckets[60]);

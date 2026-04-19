@@ -2,14 +2,14 @@
 
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/unordered_u32_set.h>
+
 #include <benchmark/benchmark.h>
-#include <unordered_set>
+
 #include <random>
+#include <unordered_set>
 
 struct FewCollisions {
-    constexpr static uint32_t apply(uint32_t v) noexcept {
-        return v;
-    }
+    constexpr static uint32_t apply(uint32_t v) noexcept { return v; }
 };
 
 struct ManyCollisions {
@@ -35,8 +35,7 @@ inline void xorshift32_step(uint32_t& state) noexcept {
 // 32 MSBs of the SHA-256 of the most blessed string "no bli det liv, rai rai!".
 constexpr uint32_t initial_seed = 0x876ca8fb;
 
-template <typename SetT, typename KeyTransform>
-static void BM_insert_unique_from_empty(benchmark::State& state) {
+template <typename SetT, typename KeyTransform> static void BM_insert_unique_from_empty(benchmark::State& state) {
     for (auto _ : state) {
         state.PauseTiming();
         SetT set;
@@ -55,8 +54,7 @@ static void BM_insert_unique_from_empty(benchmark::State& state) {
     }
 }
 
-template <typename SetT, typename KeyTransform>
-static void BM_insert_unique_from_pre_sized(benchmark::State& state) {
+template <typename SetT, typename KeyTransform> static void BM_insert_unique_from_pre_sized(benchmark::State& state) {
     const uint32_t range_len = static_cast<uint32_t>(state.range());
     for (auto _ : state) {
         state.PauseTiming();
@@ -74,10 +72,9 @@ static void BM_insert_unique_from_pre_sized(benchmark::State& state) {
     }
 }
 
-template <typename SetT, typename KeyTransform>
-static void BM_lookup_existing(benchmark::State& state) {
+template <typename SetT, typename KeyTransform> static void BM_lookup_existing(benchmark::State& state) {
     const uint32_t range_len = static_cast<uint32_t>(state.range());
-    SetT set(range_len);
+    SetT           set(range_len);
     for (uint32_t i = 1; i <= range_len; ++i) { // assume range always < UINT32_MAX/128
         (void)set.insert(KeyTransform::apply(i));
     }
@@ -86,7 +83,7 @@ static void BM_lookup_existing(benchmark::State& state) {
     // For simplicity, we spray&pray with pseudo-random values in the inserted
     // range. The use of uniform_int_distribution adds a bit of constant overhead
     // to each iteration, but it's the same for each set type so it evens out.
-    std::minstd_rand prng;
+    std::minstd_rand              prng;
     std::uniform_int_distribution dist(1u, range_len);
     for (auto _ : state) {
         auto ret = set.contains(KeyTransform::apply(dist(prng)));
@@ -95,68 +92,67 @@ static void BM_lookup_existing(benchmark::State& state) {
     }
 }
 
-template <typename SetT, typename KeyTransform>
-static void BM_lookup_missing(benchmark::State& state) {
+template <typename SetT, typename KeyTransform> static void BM_lookup_missing(benchmark::State& state) {
     const uint32_t range_len = static_cast<uint32_t>(state.range());
-    SetT set(range_len);
+    SetT           set(range_len);
     for (uint32_t i = 1; i <= range_len; ++i) { // assume range always <= INT32_MAX/128
         (void)set.insert(KeyTransform::apply(i));
     }
     assert(set.size() == range_len);
     benchmark::ClobberMemory();
-    std::minstd_rand prng;
+    std::minstd_rand              prng;
     std::uniform_int_distribution dist(1u, UINT32_MAX);
     for (auto _ : state) {
         // Toggle MSB so that no matter what value we end up with, it won't match
         // any of the inserted values.
         const uint32_t k = KeyTransform::apply(dist(prng)) | 0x80000000;
-        auto ret = set.contains(k);
+        auto           ret = set.contains(k);
         assert(!ret);
         benchmark::DoNotOptimize(ret);
     }
 }
 
 constexpr static uint32_t range_from = 8;
-constexpr static uint32_t range_to   = 8 << 20;
+constexpr static uint32_t range_to = 8 << 20;
 
 /// Fill set with N distinct elements from an empty state
 
 BENCHMARK(BM_insert_unique_from_empty<std::unordered_set<uint32_t>, FewCollisions>)->Range(range_from, range_to);
 BENCHMARK(BM_insert_unique_from_empty<vespalib::hash_set<uint32_t>, FewCollisions>)->Range(range_from, range_to);
-BENCHMARK(BM_insert_unique_from_empty<vespalib::UnorderedU32Set,    FewCollisions>)->Range(range_from, range_to);
+BENCHMARK(BM_insert_unique_from_empty<vespalib::UnorderedU32Set, FewCollisions>)->Range(range_from, range_to);
 
 BENCHMARK(BM_insert_unique_from_empty<std::unordered_set<uint32_t>, ManyCollisions>)->Range(range_from, range_to);
 BENCHMARK(BM_insert_unique_from_empty<vespalib::hash_set<uint32_t>, ManyCollisions>)->Range(range_from, range_to);
-BENCHMARK(BM_insert_unique_from_empty<vespalib::UnorderedU32Set,    ManyCollisions>)->Range(range_from, range_to);
+BENCHMARK(BM_insert_unique_from_empty<vespalib::UnorderedU32Set, ManyCollisions>)->Range(range_from, range_to);
 
 /// Fill set with N distinct elements when presized to capacity of N
 
 BENCHMARK(BM_insert_unique_from_pre_sized<std::unordered_set<uint32_t>, FewCollisions>)->Range(range_from, range_to);
 BENCHMARK(BM_insert_unique_from_pre_sized<vespalib::hash_set<uint32_t>, FewCollisions>)->Range(range_from, range_to);
-BENCHMARK(BM_insert_unique_from_pre_sized<vespalib::UnorderedU32Set,    FewCollisions>)->Range(range_from, range_to);
+BENCHMARK(BM_insert_unique_from_pre_sized<vespalib::UnorderedU32Set, FewCollisions>)->Range(range_from, range_to);
 
 BENCHMARK(BM_insert_unique_from_pre_sized<std::unordered_set<uint32_t>, ManyCollisions>)->Range(range_from, range_to);
 BENCHMARK(BM_insert_unique_from_pre_sized<vespalib::hash_set<uint32_t>, ManyCollisions>)->Range(range_from, range_to);
-BENCHMARK(BM_insert_unique_from_pre_sized<vespalib::UnorderedU32Set,    ManyCollisions>)->Range(range_from, range_to);
+BENCHMARK(BM_insert_unique_from_pre_sized<vespalib::UnorderedU32Set, ManyCollisions>)->Range(range_from, range_to);
 
 /// Lookup elements that are known to exist in the set
 
 BENCHMARK(BM_lookup_existing<std::unordered_set<uint32_t>, FewCollisions>)->Range(range_from, range_to << 2);
 BENCHMARK(BM_lookup_existing<vespalib::hash_set<uint32_t>, FewCollisions>)->Range(range_from, range_to << 2);
-BENCHMARK(BM_lookup_existing<vespalib::UnorderedU32Set,    FewCollisions>)->Range(range_from, range_to << 2);
+BENCHMARK(BM_lookup_existing<vespalib::UnorderedU32Set, FewCollisions>)->Range(range_from, range_to << 2);
 
 BENCHMARK(BM_lookup_existing<std::unordered_set<uint32_t>, ManyCollisions>)->Range(range_from, range_to);
 BENCHMARK(BM_lookup_existing<vespalib::hash_set<uint32_t>, ManyCollisions>)->Range(range_from, range_to);
-BENCHMARK(BM_lookup_existing<vespalib::UnorderedU32Set,    ManyCollisions>)->Range(range_from, range_to);
+BENCHMARK(BM_lookup_existing<vespalib::UnorderedU32Set, ManyCollisions>)->Range(range_from, range_to);
 
 /// Lookup elements that are known to _not_ exist in the set
 
 BENCHMARK(BM_lookup_missing<std::unordered_set<uint32_t>, FewCollisions>)->Range(range_from, range_to << 2);
 BENCHMARK(BM_lookup_missing<vespalib::hash_set<uint32_t>, FewCollisions>)->Range(range_from, range_to << 2);
-BENCHMARK(BM_lookup_missing<vespalib::UnorderedU32Set,    FewCollisions>)->Range(range_from, range_to << 2);
+BENCHMARK(BM_lookup_missing<vespalib::UnorderedU32Set, FewCollisions>)->Range(range_from, range_to << 2);
 
 BENCHMARK(BM_lookup_missing<std::unordered_set<uint32_t>, ManyCollisions>)->Range(range_from, range_to);
 BENCHMARK(BM_lookup_missing<vespalib::hash_set<uint32_t>, ManyCollisions>)->Range(range_from, range_to);
-BENCHMARK(BM_lookup_missing<vespalib::UnorderedU32Set,    ManyCollisions>)->Range(range_from, range_to);
+BENCHMARK(BM_lookup_missing<vespalib::UnorderedU32Set, ManyCollisions>)->Range(range_from, range_to);
 
 BENCHMARK_MAIN();

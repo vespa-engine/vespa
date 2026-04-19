@@ -3,11 +3,13 @@
 #pragma once
 
 #include "atomic_entry_ref.h"
-#include "entryref.h"
 #include "entry_ref_filter.h"
-#include <vector>
-#include <span>
+#include "entryref.h"
+
 #include <vespa/vespalib/stllike/allocator.h>
+
+#include <span>
+#include <vector>
 
 namespace vespalib::datastore {
 
@@ -15,14 +17,14 @@ namespace vespalib::datastore {
  * Remapper for related UniqueStore class, used for adjusting
  * references to unique store after compaction.
  */
-template <typename RefT>
-class UniqueStoreRemapper {
+template <typename RefT> class UniqueStoreRemapper {
 public:
     using RefType = RefT;
 
 protected:
-    EntryRefFilter _filter;
+    EntryRefFilter                                                _filter;
     std::vector<std::vector<EntryRef, allocator_large<EntryRef>>> _mapping;
+
 public:
     UniqueStoreRemapper(EntryRefFilter&& filter);
     virtual ~UniqueStoreRemapper();
@@ -33,4 +35,4 @@ public:
     virtual void done() = 0;
 };
 
-}
+} // namespace vespalib::datastore

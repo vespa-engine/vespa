@@ -18,19 +18,18 @@ namespace vespalib {
  * the completion of the overall merge operation, external
  * synchronization is needed.
  **/
-class DualMergeDirector
-{
+class DualMergeDirector {
 public:
     struct Source {
-        virtual void merge(Source &rhs) = 0;
+        virtual void merge(Source& rhs) = 0;
         virtual ~Source() = default;
     };
 
 private:
     struct TaggedSource {
-        size_t thread_id;
-        Source *source;
-        TaggedSource(size_t t, Source &s) : thread_id(t), source(&s) {}
+        size_t  thread_id;
+        Source* source;
+        TaggedSource(size_t t, Source& s) : thread_id(t), source(&s) {}
         TaggedSource() : thread_id(-1), source(0) {}
     };
 
@@ -39,24 +38,20 @@ private:
         TaggedSource first;
         TaggedSource second;
         MergeState() : state(EMPTY), first(), second() {}
-        MergeState(State s, const TaggedSource &a)
-            : state(s), first(a), second() {}
-        MergeState(State s, const TaggedSource &a, const TaggedSource &b)
-            : state(s), first(a), second(b) {}
+        MergeState(State s, const TaggedSource& a) : state(s), first(a), second() {}
+        MergeState(State s, const TaggedSource& a, const TaggedSource& b) : state(s), first(a), second(b) {}
         bool merge();
     };
 
     struct MixedMergeStateExchanger : Rendezvous<MergeState, MergeState> {
         bool last;
-        MixedMergeStateExchanger(bool v) :
-            Rendezvous<MergeState, MergeState>(2), last(v) {}
+        MixedMergeStateExchanger(bool v) : Rendezvous<MergeState, MergeState>(2), last(v) {}
         void mingle() override;
     };
 
     struct MergeStateExchanger : Rendezvous<MergeState, MergeState> {
         size_t remaining;
-        MergeStateExchanger(size_t r) :
-            Rendezvous<MergeState, MergeState>(2), remaining(r) {}
+        MergeStateExchanger(size_t r) : Rendezvous<MergeState, MergeState>(2), remaining(r) {}
         void mingle() override;
     };
 
@@ -68,8 +63,7 @@ private:
 public:
     DualMergeDirector(size_t num_threads);
     ~DualMergeDirector();
-    void dualMerge(size_t thread_id, Source &typeA, Source &typeB);
+    void dualMerge(size_t thread_id, Source& typeA, Source& typeB);
 };
 
 } // namespace vespalib
-

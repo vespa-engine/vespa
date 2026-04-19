@@ -2,6 +2,7 @@
 #pragma once
 
 #include "private_key.h"
+
 #include <chrono>
 #include <memory>
 #include <string>
@@ -46,10 +47,22 @@ public:
         ~DistinguishedName();
 
         // TODO could add rvalue overloads as well...
-        DistinguishedName& country(std::string_view c)      { _country = c; return *this; }
-        DistinguishedName& state(std::string_view st)       { _state = st; return *this; }
-        DistinguishedName& locality(std::string_view l)     { _locality = l; return *this; }
-        DistinguishedName& organization(std::string_view o) { _organization = o; return *this; }
+        DistinguishedName& country(std::string_view c) {
+            _country = c;
+            return *this;
+        }
+        DistinguishedName& state(std::string_view st) {
+            _state = st;
+            return *this;
+        }
+        DistinguishedName& locality(std::string_view l) {
+            _locality = l;
+            return *this;
+        }
+        DistinguishedName& organization(std::string_view o) {
+            _organization = o;
+            return *this;
+        }
         DistinguishedName& organizational_unit(std::string_view ou) {
             _organizational_unit = ou;
             return *this;
@@ -61,15 +74,15 @@ public:
     };
 
     struct SubjectInfo {
-        DistinguishedName dn;
+        DistinguishedName        dn;
         std::vector<std::string> subject_alt_names;
 
         SubjectInfo() noexcept;
         explicit SubjectInfo(DistinguishedName dn_) noexcept;
-        SubjectInfo(const SubjectInfo &);
-        SubjectInfo & operator=(const SubjectInfo &) = delete;
-        SubjectInfo(SubjectInfo &&) noexcept;
-        SubjectInfo & operator=(SubjectInfo &&) noexcept;
+        SubjectInfo(const SubjectInfo&);
+        SubjectInfo& operator=(const SubjectInfo&) = delete;
+        SubjectInfo(SubjectInfo&&) noexcept;
+        SubjectInfo& operator=(SubjectInfo&&) noexcept;
         ~SubjectInfo();
 
         SubjectInfo& add_subject_alt_name(std::string san) {
@@ -89,22 +102,21 @@ public:
 
         SubjectInfo subject_info;
         // TODO make public key, but private key has both.
-        std::shared_ptr<PrivateKey> subject_key;
+        std::shared_ptr<PrivateKey>      subject_key;
         std::shared_ptr<X509Certificate> issuer; // May be nullptr for self-signed certs
-        std::shared_ptr<PrivateKey> issuer_key;
-        std::chrono::seconds valid_for = std::chrono::hours(24);
-        bool is_ca = false;
+        std::shared_ptr<PrivateKey>      issuer_key;
+        std::chrono::seconds             valid_for = std::chrono::hours(24);
+        bool                             is_ca = false;
 
         static Params self_signed(SubjectInfo subject, std::shared_ptr<PrivateKey> key);
         // TODO only need _public_ key from subject, but this is simplified
-        static Params issued_by(SubjectInfo subject,
-                                std::shared_ptr<PrivateKey> subject_key,
-                                std::shared_ptr<X509Certificate> issuer,
-                                std::shared_ptr<PrivateKey> issuer_key);
+        static Params issued_by(SubjectInfo subject, std::shared_ptr<PrivateKey> subject_key,
+                                std::shared_ptr<X509Certificate> issuer, std::shared_ptr<PrivateKey> issuer_key);
     };
 
     // Generates an X509 certificate using a SHA-256 digest
     static std::shared_ptr<X509Certificate> generate_from(Params params);
+
 protected:
     X509Certificate() = default;
 };
@@ -115,13 +127,12 @@ protected:
  */
 struct CertKeyWrapper {
     std::shared_ptr<X509Certificate> cert;
-    std::shared_ptr<PrivateKey> key;
+    std::shared_ptr<PrivateKey>      key;
 
-    CertKeyWrapper(std::shared_ptr<X509Certificate> cert_,
-                   std::shared_ptr<PrivateKey> key_);
-    CertKeyWrapper(CertKeyWrapper &&) noexcept;
-    CertKeyWrapper & operator=(CertKeyWrapper &&) noexcept;
+    CertKeyWrapper(std::shared_ptr<X509Certificate> cert_, std::shared_ptr<PrivateKey> key_);
+    CertKeyWrapper(CertKeyWrapper&&) noexcept;
+    CertKeyWrapper& operator=(CertKeyWrapper&&) noexcept;
     ~CertKeyWrapper();
 };
 
-}
+} // namespace vespalib::crypto

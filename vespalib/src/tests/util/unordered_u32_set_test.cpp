@@ -1,7 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/util/unordered_u32_set.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/unordered_u32_set.h>
+
 #include <gmock/gmock.h>
 
 namespace vespalib {
@@ -85,7 +86,7 @@ TEST(UnorderedU32SetTest, quadratic_probe_sequence_visits_all_values_in_range_ex
     // Note: this property holds only for sequences that are a power of two
     constexpr uint32_t n = 1024;
     for (size_t hash : {0, 1, 0x1337, 0x12345678}) { // initial "hash" should not matter
-        std::vector<uint32_t> visit_count(n);
+        std::vector<uint32_t>                     visit_count(n);
         UnorderedU32Set::quadratic_probe_sequence probe_seq(hash, n);
         for (uint32_t i = 0; i < n; ++i) {
             const size_t offset = probe_seq.offset();

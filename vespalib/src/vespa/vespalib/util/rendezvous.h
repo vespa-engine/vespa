@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include <type_traits>
-#include <condition_variable>
-#include <vector>
 #include <atomic>
+#include <condition_variable>
+#include <type_traits>
+#include <vector>
 
 namespace vespalib {
 
@@ -20,24 +20,22 @@ namespace vespalib {
  * subclass needs to implement the mingle function to supply the
  * application logic.
  **/
-template <typename IN, typename OUT, bool external_id = false>
-class Rendezvous
-{
+template <typename IN, typename OUT, bool external_id = false> class Rendezvous {
 private:
     std::mutex              _lock;
     std::condition_variable _cond;
     size_t                  _size;
     size_t                  _next;
     size_t                  _gen;
-    std::vector<IN *>       _in;
-    std::vector<OUT *>      _out;
+    std::vector<IN*>        _in;
+    std::vector<OUT*>       _out;
     std::atomic<bool>       _destroyed;
     size_t                  _destroyed_at;
 
     /**
      * Check if destroyed. Might throw IllegalStateException
      **/
-    void check_destroyed(size_t my_gen, const std::unique_lock<std::mutex> &guard) const;
+    void check_destroyed(size_t my_gen, const std::unique_lock<std::mutex>& guard) const;
 
     /**
      * Function called to perform the actual inter-thread state
@@ -49,12 +47,12 @@ private:
      * lock-free version for when there is only one thread meeting
      * itself.
      **/
-    void meet_self(IN &input, OUT &output);
+    void meet_self(IN& input, OUT& output);
 
     /**
      * general version for when there are multiple threads meeting.
      **/
-    void meet_others(IN &input, OUT &output, size_t my_id, std::unique_lock<std::mutex> guard);
+    void meet_others(IN& input, OUT& output, size_t my_id, std::unique_lock<std::mutex> guard);
 
 protected:
     /**
@@ -63,7 +61,7 @@ protected:
      * @return reference to the appropriate input
      * @param i the index of the requested input [0 .. size-1]
      **/
-    IN &in(size_t i) const { return *_in[i]; }
+    IN& in(size_t i) const { return *_in[i]; }
 
     /**
      * Obtain the storage location of an output parameter. This
@@ -72,7 +70,7 @@ protected:
      * @return reference to the appropriate output
      * @param i the index of the requested output [0 .. size-1]
      **/
-    OUT &out(size_t i) { return *_out[i]; }
+    OUT& out(size_t i) { return *_out[i]; }
 
 public:
     /**
@@ -106,7 +104,8 @@ public:
      * @return output parameter for a single thread
      * @param input input parameter for a single thread
      **/
-    OUT rendezvous(IN input) requires (!external_id);
+    OUT rendezvous(IN input)
+        requires(!external_id);
 
     /**
      * Called by individual threads to synchronize execution and share
@@ -119,7 +118,8 @@ public:
      * @param my_id participant id for this thread (must be in range and
      *              not conflicting with other threads)
      **/
-    OUT rendezvous(IN input, size_t my_id) requires (external_id);
+    OUT rendezvous(IN input, size_t my_id)
+        requires(external_id);
 };
 
 } // namespace vespalib

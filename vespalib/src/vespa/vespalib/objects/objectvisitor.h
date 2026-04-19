@@ -13,8 +13,7 @@ namespace vespalib {
  * of various types into invocations of the basic interface defined by
  * this class.
  **/
-class ObjectVisitor
-{
+class ObjectVisitor {
 public:
     /**
      * Open a (sub-)structure
@@ -85,4 +84,3 @@ public:
 };
 
 } // namespace vespalib
-

@@ -42,11 +42,25 @@ uint32_t leading_zeros(uint32_t value) {
         return 32;
     }
     uint32_t n = 0;
-    if (value <= 0x0000ffff) { n += 16; value <<= 16; }
-    if (value <= 0x00FFffff) { n +=  8; value <<=  8; }
-    if (value <= 0x0FFFffff) { n +=  4; value <<=  4; }
-    if (value <= 0x3FFFffff) { n +=  2; value <<=  2; }
-    if (value <= 0x7FFFffff) { n +=  1; }
+    if (value <= 0x0000ffff) {
+        n += 16;
+        value <<= 16;
+    }
+    if (value <= 0x00FFffff) {
+        n += 8;
+        value <<= 8;
+    }
+    if (value <= 0x0FFFffff) {
+        n += 4;
+        value <<= 4;
+    }
+    if (value <= 0x3FFFffff) {
+        n += 2;
+        value <<= 2;
+    }
+    if (value <= 0x7FFFffff) {
+        n += 1;
+    }
     return n;
 }
 
@@ -67,16 +81,14 @@ uint32_t leading_zeros(uint32_t value) {
  * @param last_min miniumum endpoint of last subrange
  * @return the number of bits in min and max not part of a common prefix
  **/
-uint32_t split_range(uint32_t min, uint32_t max,
-                     uint32_t &first_max, uint32_t &last_min)
-{
+uint32_t split_range(uint32_t min, uint32_t max, uint32_t& first_max, uint32_t& last_min) {
     assert(max >= min);
     uint32_t prefix = leading_zeros(min ^ max);
     first_max = mix(min, 0xFFFFffff, prefix + 1);
-    last_min  = mix(max, 0x00000000, prefix + 1);
+    last_min = mix(max, 0x00000000, prefix + 1);
     return (32 - prefix);
 }
 
 //-----------------------------------------------------------------------------
 
-}
+} // namespace vespalib::bits

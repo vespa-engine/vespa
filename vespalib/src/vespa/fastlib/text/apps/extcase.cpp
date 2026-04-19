@@ -18,8 +18,7 @@ int pageoff[256];
 
 char linebuf[1024];
 
-static int hexval(char cp)
-{
+static int hexval(char cp) {
     if (cp >= '0' && cp <= '9')
         return cp - '0';
     if (cp >= 'a' && cp <= 'f')
@@ -29,11 +28,10 @@ static int hexval(char cp)
     return -1;
 }
 
-void DumpCase()
-{
+void DumpCase() {
     Fast_BufferedFile file;
-    unsigned int code;
-    int xpage, checkpage, allocpage;
+    unsigned int      code;
+    int               xpage, checkpage, allocpage;
 
     file.WriteOpen("unicodeutil-lowercase.cpp.NEW");
 
@@ -103,22 +101,20 @@ void DumpCase()
     rename("unicodeutil-lowercase.cpp.NEW", "unicodeutil-lowercase.cpp");
 }
 
-int
-main(int argc, char **argv)
-{
+int main(int argc, char** argv) {
     (void)argc;
     (void)argv;
 
     Fast_BufferedFile file;
-    size_t len;
-    int lowcode, code, i, j;
-    bool badline;
-    int semcnt;
+    size_t            len;
+    int               lowcode, code, i, j;
+    bool              badline;
+    int               semcnt;
 
     file.ReadOpenExisting("UnicodeData-4.0.0.txt");
 
     while (!file.Eof()) {
-        (void) file.ReadLine(linebuf, sizeof(linebuf));
+        (void)file.ReadLine(linebuf, sizeof(linebuf));
         len = strlen(linebuf);
         if (len > 0 && linebuf[len - 1] == '\n')
             len--;
@@ -159,7 +155,6 @@ main(int argc, char **argv)
                     lowercase[code] = lowcode;
                 } else {
                 }
-	
             }
         }
     }

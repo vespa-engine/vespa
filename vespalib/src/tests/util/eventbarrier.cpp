@@ -1,23 +1,21 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/util/eventbarrier.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
+
+#include <vespa/vespalib/util/eventbarrier.hpp>
 
 using namespace vespalib;
 
 struct MyBarrier {
     bool done;
     MyBarrier() : done(false) {}
-    void completeBarrier() {
-        done = true;
-    }
+    void completeBarrier() { done = true; }
 };
 
-TEST(EventBarrierTest, test_empty)
-{
+TEST(EventBarrierTest, test_empty) {
     // waiting for an empty set of events
 
-    MyBarrier b;
+    MyBarrier               b;
     EventBarrier<MyBarrier> eb;
 
     EXPECT_TRUE(!eb.startBarrier(b));
@@ -34,11 +32,10 @@ TEST(EventBarrierTest, test_empty)
     EXPECT_EQ(eb.countBarriers(), 0u);
 }
 
-TEST(EventBarrierTest, test_simple)
-{
+TEST(EventBarrierTest, test_simple) {
     // a single barrier waiting for a single event
 
-    MyBarrier b;
+    MyBarrier               b;
     EventBarrier<MyBarrier> eb;
     EXPECT_EQ(eb.countEvents(), 0u);
     EXPECT_EQ(eb.countBarriers(), 0u);
@@ -58,13 +55,12 @@ TEST(EventBarrierTest, test_simple)
     EXPECT_EQ(eb.countBarriers(), 0u);
 }
 
-TEST(EventBarriarTest, test_barrier_chain)
-{
+TEST(EventBarriarTest, test_barrier_chain) {
     // more than one barrier waiting for the same set of events
 
-    MyBarrier b1;
-    MyBarrier b2;
-    MyBarrier b3;
+    MyBarrier               b1;
+    MyBarrier               b2;
+    MyBarrier               b3;
     EventBarrier<MyBarrier> eb;
     EXPECT_EQ(eb.countEvents(), 0u);
     EXPECT_EQ(eb.countBarriers(), 0u);
@@ -91,11 +87,10 @@ TEST(EventBarriarTest, test_barrier_chain)
     EXPECT_EQ(eb.countBarriers(), 0u);
 }
 
-TEST(EventBarrierTest, test_event_after)
-{
+TEST(EventBarrierTest, test_event_after) {
     // new events starting after the start of a barrier
 
-    MyBarrier b;
+    MyBarrier               b;
     EventBarrier<MyBarrier> eb;
     EXPECT_EQ(eb.countEvents(), 0u);
     EXPECT_EQ(eb.countBarriers(), 0u);
@@ -124,13 +119,12 @@ TEST(EventBarrierTest, test_event_after)
     EXPECT_EQ(eb.countBarriers(), 0u);
 }
 
-TEST(EventBarriarTest, test_reorder)
-{
+TEST(EventBarriarTest, test_reorder) {
     // events completing in a different order than they started
 
-    MyBarrier b1;
-    MyBarrier b2;
-    MyBarrier b3;
+    MyBarrier               b1;
+    MyBarrier               b2;
+    MyBarrier               b3;
     EventBarrier<MyBarrier> eb;
 
     uint32_t t1 = eb.startEvent();

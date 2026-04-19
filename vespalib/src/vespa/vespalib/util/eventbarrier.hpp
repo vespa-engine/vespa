@@ -19,16 +19,14 @@ namespace vespalib {
  * detection of a minimal event barrier should be handled. T must
  * implement the method 'void completeBarrier()' which does not throw.
  **/
-template <typename T>
-class EventBarrier
-{
+template <typename T> class EventBarrier {
 private:
-    uint32_t _token;
-    uint32_t _count;
-    ArrayQueue<std::pair<uint32_t, T*> > _queue;
+    uint32_t                            _token;
+    uint32_t                            _count;
+    ArrayQueue<std::pair<uint32_t, T*>> _queue;
 
-    EventBarrier(const EventBarrier &);
-    EventBarrier &operator=(const EventBarrier &);
+    EventBarrier(const EventBarrier&);
+    EventBarrier& operator=(const EventBarrier&);
 
 public:
     /**
@@ -56,9 +54,7 @@ public:
      *
      * @return number of pending barriers
      **/
-    uint32_t countBarriers() const {
-        return _queue.size();
-    }
+    uint32_t countBarriers() const { return _queue.size(); }
 
     /**
      * Signal the start of an event. The value returned from this
@@ -106,7 +102,7 @@ public:
      * @return true if a barrier was started, false if no events were active
      * @param handler handler notified of the completion of the barrier
      **/
-    bool startBarrier(T &handler) {
+    bool startBarrier(T& handler) {
         if (_count == 0 && _queue.empty()) {
             return false;
         }
@@ -118,4 +114,3 @@ public:
 };
 
 } // namespace vespalib
-

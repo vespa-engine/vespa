@@ -7,20 +7,18 @@ namespace vespalib {
  * A convenience class that ensures classes inheriting this cannot be
  * copied.
  */
-namespace noncopyable_
-{
-    class noncopyable
-    {
-    protected:
-        noncopyable() {}
-        ~noncopyable() {}
-    private:
-        noncopyable(const noncopyable &);
-        const noncopyable & operator=(const noncopyable &);
-  };
-}
+namespace noncopyable_ {
+class noncopyable {
+protected:
+    noncopyable() {}
+    ~noncopyable() {}
+
+private:
+    noncopyable(const noncopyable&);
+    const noncopyable& operator=(const noncopyable&);
+};
+} // namespace noncopyable_
 
 using noncopyable = noncopyable_::noncopyable;
 
 } // namespace vespalib
-

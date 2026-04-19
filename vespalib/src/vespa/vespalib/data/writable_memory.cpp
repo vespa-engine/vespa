@@ -2,6 +2,4 @@
 
 #include "writable_memory.h"
 
-namespace vespalib {
-
-} // namespace vespalib
+namespace vespalib {} // namespace vespalib

@@ -4,9 +4,7 @@
 
 namespace vespalib {
 
-GenerationGuard &
-GenerationGuard::operator=(const GenerationGuard& rhs) noexcept
-{
+GenerationGuard& GenerationGuard::operator=(const GenerationGuard& rhs) noexcept {
     if (&rhs != this) {
         cleanup();
         _hold = GenerationHold::copy(rhs._hold);
@@ -14,9 +12,7 @@ GenerationGuard::operator=(const GenerationGuard& rhs) noexcept
     return *this;
 }
 
-GenerationGuard &
-GenerationGuard::operator=(GenerationGuard&& rhs) noexcept
-{
+GenerationGuard& GenerationGuard::operator=(GenerationGuard&& rhs) noexcept {
     if (&rhs != this) {
         cleanup();
         _hold = rhs._hold;
@@ -25,4 +21,4 @@ GenerationGuard::operator=(GenerationGuard&& rhs) noexcept
     return *this;
 }
 
-}
+} // namespace vespalib

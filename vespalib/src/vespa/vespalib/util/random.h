@@ -15,10 +15,7 @@ private:
     /**
      * step the random generator once
      **/
-    void iterate() {
-        _state = (0x5DEECE66Dul * _state + 0xb) &
-                 0xFFFFFFFFFFFFul;
-    }
+    void iterate() { _state = (0x5DEECE66Dul * _state + 0xb) & 0xFFFFFFFFFFFFul; }
 
     /**
      * @brief return an integer with 1 to 32 random bits
@@ -51,7 +48,6 @@ private:
     double DRanNormalZig();
 
 public:
-
     /**
      * @brief construct a random number generator with a given seed
      **/
@@ -65,9 +61,7 @@ public:
     /**
      * @brief reset the seed
      **/
-    void setSeed(int64_t seed) {
-        _state = (seed ^ 0x5DEECE66Dul) & ((1L << 48) -1);
-    };
+    void setSeed(int64_t seed) { _state = (seed ^ 0x5DEECE66Dul) & ((1L << 48) - 1); };
 
     /**
      * @brief Return next random 32-bit signed integer
@@ -103,29 +97,20 @@ public:
     /**
      * @brief Return next random 32-bit unsigned integer
      **/
-    uint32_t nextUint32() {
-        return (uint32_t)nextInt32();
-    }
+    uint32_t nextUint32() { return (uint32_t)nextInt32(); }
 
     /**
      * @brief Returns the next random number in the range [from..to]
      **/
-    uint32_t nextUint32(uint32_t from, uint32_t to) {
-        return from + nextUint32() % (to - from + 1);
-    }
+    uint32_t nextUint32(uint32_t from, uint32_t to) { return from + nextUint32() % (to - from + 1); }
 
     /**
      * @brief Return next random 64-bit unsigned integer
      **/
-    uint64_t nextUint64() {
-        return ((uint64_t)next(32) << 32) + next(32);
-    }
+    uint64_t nextUint64() { return ((uint64_t)next(32) << 32) + next(32); }
 
     double nextNormal();
-    double nextNormal(double mean, double stddev) {
-        return mean + stddev * nextNormal();
-    }
+    double nextNormal(double mean, double stddev) { return mean + stddev * nextNormal(); }
 };
 
-}
-
+} // namespace vespalib

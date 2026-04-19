@@ -6,7 +6,7 @@
 
 namespace vespalib::metrics {
 
-using TimeStamp = std::chrono::duration<double, std::ratio<1,1>>;
+using TimeStamp = std::chrono::duration<double, std::ratio<1, 1>>;
 
 /**
  * Simple interface abstracting both timing and time measurement for

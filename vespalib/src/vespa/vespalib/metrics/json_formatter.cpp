@@ -5,11 +5,8 @@
 namespace vespalib {
 namespace metrics {
 
-JsonFormatter::JsonFormatter(const Snapshot &snapshot)
-    : _data(),
-      _top(_data.setObject()),
-      _snapLen(snapshot.endTime() - snapshot.startTime())
-{
+JsonFormatter::JsonFormatter(const Snapshot& snapshot)
+    : _data(), _top(_data.setObject()), _snapLen(snapshot.endTime() - snapshot.startTime()) {
     if (_snapLen < 0.1) {
         _snapLen = 0.1;
     }
@@ -18,24 +15,20 @@ JsonFormatter::JsonFormatter(const Snapshot &snapshot)
     _data.insert("dimensions");
     vespalib::slime::Cursor& meta = _top.setObject("snapshot");
     meta.setLong("from", (long)snapshot.startTime());
-    meta.setLong("to",   (long)snapshot.endTime());
+    meta.setLong("to", (long)snapshot.endTime());
     handle(snapshot, _top.setArray("values"));
 }
 
-void
-JsonFormatter::handle(const Snapshot &snapshot, vespalib::slime::Cursor &target)
-{
-    for (const CounterSnapshot &entry : snapshot.counters()) {
+void JsonFormatter::handle(const Snapshot& snapshot, vespalib::slime::Cursor& target) {
+    for (const CounterSnapshot& entry : snapshot.counters()) {
         handle(entry, target.addObject());
     }
-    for (const GaugeSnapshot &entry : snapshot.gauges()) {
+    for (const GaugeSnapshot& entry : snapshot.gauges()) {
         handle(entry, target.addObject());
     }
 }
 
-void
-JsonFormatter::handle(const CounterSnapshot &snapshot, vespalib::slime::Cursor &target)
-{
+void JsonFormatter::handle(const CounterSnapshot& snapshot, vespalib::slime::Cursor& target) {
     target.setString("name", snapshot.name());
     // target.setString("description", ?);
     handle(snapshot.point(), target);
@@ -44,9 +37,7 @@ JsonFormatter::handle(const CounterSnapshot &snapshot, vespalib::slime::Cursor &
     inner.setDouble("rate", snapshot.count() / _snapLen);
 }
 
-void
-JsonFormatter::handle(const GaugeSnapshot &snapshot, vespalib::slime::Cursor &target)
-{
+void JsonFormatter::handle(const GaugeSnapshot& snapshot, vespalib::slime::Cursor& target) {
     target.setString("name", snapshot.name());
     // target.setString("description", ?);
     handle(snapshot.point(), target);
@@ -60,17 +51,15 @@ JsonFormatter::handle(const GaugeSnapshot &snapshot, vespalib::slime::Cursor &ta
     inner.setDouble("rate", snapshot.observedCount() / _snapLen);
 }
 
-void
-JsonFormatter::handle(const PointSnapshot &snapshot, vespalib::slime::Cursor &target)
-{
+void JsonFormatter::handle(const PointSnapshot& snapshot, vespalib::slime::Cursor& target) {
     if (snapshot.dimensions.size() == 0) {
         return;
     }
     Cursor& inner = target.setObject("dimensions");
-    for (const DimensionBinding &entry : snapshot.dimensions) {
+    for (const DimensionBinding& entry : snapshot.dimensions) {
         inner.setString(entry.dimensionName(), entry.labelValue());
     }
 }
 
-} // namespace vespalib::metrics
+} // namespace metrics
 } // namespace vespalib

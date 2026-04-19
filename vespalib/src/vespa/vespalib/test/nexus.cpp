@@ -8,4 +8,4 @@ Nexus::~Nexus() {
     _vote.destroy();
 }
 
-}
+} // namespace vespalib::test

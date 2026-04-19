@@ -3,6 +3,7 @@
 #pragma once
 
 #include "bit_span.h"
+
 #include <algorithm>
 #include <vector>
 
@@ -15,6 +16,7 @@ namespace vespalib {
 class BitPacker {
     std::vector<std::byte> _data;
     uint64_t               _count;
+
 public:
     BitPacker() noexcept : _data(), _count(0) {}
     void reserve(uint64_t bits) { _data.reserve((bits + 7) / 8); }
@@ -34,7 +36,7 @@ public:
     }
     uint64_t size() const noexcept { return _count; }
     bool empty() const noexcept { return _count == 0; }
-    const std::vector<std::byte> &storage() const noexcept { return _data; }
+    const std::vector<std::byte>& storage() const noexcept { return _data; }
 };
 
-}
+} // namespace vespalib

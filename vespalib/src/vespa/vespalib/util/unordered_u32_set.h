@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/allocator.h>
+
 #include <cstdint>
 #include <vector>
 
@@ -72,7 +73,7 @@ class UnorderedU32Set {
 
     struct PrivateCtorTag {};
 
-    size_t     _size;
+    size_t _size;
     // Perf note: even though this technically duplicates information that can
     // be gleaned from _buf.size(), having a dedicated variable for this is
     // measurably faster. Possibly due to _buf.size() on libstdc++ needing pointer
@@ -80,9 +81,10 @@ class UnorderedU32Set {
     // dependency chain for a value we need very early in the lookup process.
     size_t     _capacity;
     BufferType _buf;
+
 public:
     using value_type = uint32_t;
-    using size_type  = size_t;
+    using size_type = size_t;
 
     UnorderedU32Set();
     explicit UnorderedU32Set(uint32_t initial_capacity);
@@ -96,7 +98,8 @@ public:
     // elements are expected to be used, this function returns whether using
     // a _dense_ bit vector should be preferred instead of a sparse set. Note
     // that this does not take memory buffer size alignment into account.
-    [[nodiscard]] constexpr static bool prefer_bitvector(const uint32_t expected_subset_size, const uint32_t full_set_size) noexcept {
+    [[nodiscard]] constexpr static bool prefer_bitvector(const uint32_t expected_subset_size,
+                                                         const uint32_t full_set_size) noexcept {
         // Let m be expected size of set size n. A dense bit vector will have memory use
         // n/8 bytes whereas a sparse set will use 4n + 4(1/4n) = 5n bytes. The extra 1/4n
         // bytes is because we can never exceed a load factor of 3/4, so add 1/4 on top.
@@ -123,12 +126,10 @@ public:
         const size_t _mask;
         size_t       _index;
         size_t       _offset;
+
     public:
         constexpr quadratic_probe_sequence(const uint64_t hash, const size_t capacity) noexcept
-            : _mask(capacity - 1),
-              _index(0),
-              _offset(hash & _mask)
-        {}
+            : _mask(capacity - 1), _index(0), _offset(hash & _mask) {}
         [[nodiscard]] size_t offset() const noexcept { return _offset; }
         void next() {
             ++_index;
@@ -143,11 +144,10 @@ public:
     class linear_probe_sequence {
         const size_t _mask;
         size_t       _offset;
+
     public:
         constexpr linear_probe_sequence(const uint64_t hash, const size_t capacity) noexcept
-            : _mask(capacity - 1),
-              _offset(hash & _mask)
-        {}
+            : _mask(capacity - 1), _offset(hash & _mask) {}
         [[nodiscard]] size_t offset() const noexcept { return _offset; }
         void next() {
             ++_offset;
@@ -192,11 +192,12 @@ public:
 
     class const_iterator {
     public:
-        using difference_type   = std::ptrdiff_t;
-        using value_type        = const uint32_t;
-        using reference         = const uint32_t&;
-        using pointer           = const uint32_t*;
+        using difference_type = std::ptrdiff_t;
+        using value_type = const uint32_t;
+        using reference = const uint32_t&;
+        using pointer = const uint32_t*;
         using iterator_category = std::forward_iterator_tag;
+
     private:
         const UnorderedU32Set* _set;
         size_t                 _idx; // Not u32 since set capacities may exceed UINT32_MAX
@@ -214,13 +215,14 @@ public:
             ++(*this);
             return prev;
         }
-        [[nodiscard]] constexpr const uint32_t& operator*()  const noexcept { return  _set->_buf[_idx]; }
+        [[nodiscard]] constexpr const uint32_t& operator*() const noexcept { return _set->_buf[_idx]; }
         [[nodiscard]] constexpr const uint32_t* operator->() const noexcept { return &_set->_buf[_idx]; }
         // Note: iterator equality comparisons do not consider parent container
         // identity, as crossing the streams is considered undefined behavior
         // (and/or just plain rude) in general.
         constexpr bool operator==(const const_iterator& rhs) const noexcept { return _idx == rhs._idx; }
         constexpr bool operator!=(const const_iterator& rhs) const noexcept { return _idx != rhs._idx; }
+
     private:
         void skip_to_next_set_element() noexcept {
             while ((_idx < _set->capacity()) && (_set->_buf[_idx] == 0)) {
@@ -242,16 +244,15 @@ private:
         // Note that the two outputs must never be XORed together, as the XOR is a fixed
         // value that will collide every single time...! Ask me how I found out.
         // Perf note: XXH3 is measurably slower than CRC32 here.
-        return (static_cast<uint64_t>(VESPA_NATIVE_CRC32_U32(0xff51afd7, h)) << 32) | VESPA_NATIVE_CRC32_U32(0xc4ceb9fe, h);
+        return (static_cast<uint64_t>(VESPA_NATIVE_CRC32_U32(0xff51afd7, h)) << 32) |
+               VESPA_NATIVE_CRC32_U32(0xc4ceb9fe, h);
     }
 
     [[nodiscard]] constexpr static size_t max_load_factor_adjusted(const size_t capacity) noexcept {
-        return (capacity/4 * 3); // max 3/4 load factor
+        return (capacity / 4 * 3); // max 3/4 load factor
     }
 
-    [[nodiscard]] bool should_grow() const noexcept {
-        return _size > max_load_factor_adjusted(_capacity);
-    }
+    [[nodiscard]] bool should_grow() const noexcept { return _size > max_load_factor_adjusted(_capacity); }
 
     void grow_and_rehash() __attribute__((noinline));
 

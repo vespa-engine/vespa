@@ -4,11 +4,11 @@
 #include <vespa/vespalib/gtest/gtest.h>
 
 TEST(UnicodeUtilTest, GetUTF8Char_WrongInput) {
-    const char *testdata = "ab\xF8";
+    const char* testdata = "ab\xF8";
 
     ucs4_t the_char = 0;
 
-    const unsigned char *src = reinterpret_cast<const unsigned char *>(testdata);
+    const unsigned char* src = reinterpret_cast<const unsigned char*>(testdata);
     while (*src != 0) {
         the_char = Fast_UnicodeUtil::GetUTF8Char(src);
     }

@@ -4,8 +4,7 @@
 
 namespace vespalib {
 
-Input::~Input()
-{
+Input::~Input() {
 }
 
 } // namespace vespalib

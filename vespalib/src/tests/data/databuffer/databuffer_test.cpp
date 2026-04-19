@@ -1,14 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/size_literals.h>
+
 #include <iostream>
 
 using namespace vespalib;
 
-TEST(DataBufferTest, test_basic)
-{
+TEST(DataBufferTest, test_basic) {
     DataBuffer a(50);
     EXPECT_EQ(256u, a.getBufSize());
     EXPECT_EQ(a.getFreeLen(), a.getBufSize());
@@ -25,9 +25,9 @@ TEST(DataBufferTest, test_basic)
     a.writeInt16(7);
     EXPECT_EQ(0u, a.getDeadLen());
     EXPECT_EQ(2u, a.getDataLen());
-    EXPECT_EQ(a.getBufSize()-2, a.getFreeLen());
+    EXPECT_EQ(a.getBufSize() - 2, a.getFreeLen());
     EXPECT_EQ(a.getData(), a.getDead());
-    EXPECT_EQ(a.getData()+2, a.getFree());
+    EXPECT_EQ(a.getData() + 2, a.getFree());
     a.clear();
     EXPECT_EQ(0u, a.getDeadLen());
     EXPECT_EQ(0u, a.getDataLen());
@@ -89,8 +89,8 @@ TEST(DataBufferTest, test_basic)
     EXPECT_EQ(8.9, a.readDouble());
     EXPECT_EQ(0u, a.getDataLen());
 
-    const char *c = "abc";
-    char b[3];
+    const char* c = "abc";
+    char        b[3];
     a.writeBytes(c, 3);
     EXPECT_EQ(3u, a.getDataLen());
     EXPECT_EQ(0, memcmp(c, a.getData(), a.getDataLen()));

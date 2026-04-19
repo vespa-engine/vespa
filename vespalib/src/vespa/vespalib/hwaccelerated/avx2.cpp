@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "avx2.h"
+
 #include "avxprivate.hpp"
 #include "fn_table.h"
 
@@ -34,34 +35,32 @@ void my_or_128(size_t offset, const std::vector<std::pair<const void*, bool>>& s
 TargetInfo my_target_info() noexcept {
     return {"AutoVec", "AVX2", 32};
 }
-} // anon ns
+} // namespace
 
 namespace {
 
 [[nodiscard]] dispatch::FnTable build_fn_table() {
     dispatch::FnTable ft(my_target_info());
     ft.dot_product_i8 = my_dot_product_i8;
-    ft.squared_euclidean_distance_i8  = my_squared_euclidean_distance_i8;
+    ft.squared_euclidean_distance_i8 = my_squared_euclidean_distance_i8;
     ft.squared_euclidean_distance_f32 = my_squared_euclidean_distance_f32;
     ft.squared_euclidean_distance_f64 = my_squared_euclidean_distance_f64;
     ft.population_count = my_population_count;
     ft.convert_bfloat16_to_float = my_convert_bfloat16_to_float;
     ft.and_128 = my_and_128;
-    ft.or_128  = my_or_128;
+    ft.or_128 = my_or_128;
     return ft;
 }
 
-} // anon ns
+} // namespace
 
-TargetInfo
-Avx2Accelerator::target_info() const noexcept {
+TargetInfo Avx2Accelerator::target_info() const noexcept {
     return my_target_info();
 }
 
-const dispatch::FnTable&
-Avx2Accelerator::fn_table() const {
+const dispatch::FnTable& Avx2Accelerator::fn_table() const {
     static const dispatch::FnTable tbl = build_fn_table();
     return tbl;
 }
 
-}
+} // namespace vespalib::hwaccelerated

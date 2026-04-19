@@ -2,24 +2,19 @@
 
 #pragma once
 
-#include <vespa/vespalib/btree/noaggregated.h>
 #include <vespa/vespalib/btree/minmaxaggregated.h>
+#include <vespa/vespalib/btree/noaggregated.h>
 
 namespace vespalib::btree::test {
 
-template <typename ostream, typename Aggregated>
-void printAggregated(ostream &os, const Aggregated &aggr);
+template <typename ostream, typename Aggregated> void printAggregated(ostream& os, const Aggregated& aggr);
 
-template <typename ostream>
-void printAggregated(ostream &os, const NoAggregated &aggr)
-{
-    (void) os;
-    (void) aggr;
+template <typename ostream> void printAggregated(ostream& os, const NoAggregated& aggr) {
+    (void)os;
+    (void)aggr;
 }
 
-template <typename ostream>
-void printAggregated(ostream &os, const MinMaxAggregated &aggr)
-{
+template <typename ostream> void printAggregated(ostream& os, const MinMaxAggregated& aggr) {
     os << "[min=" << aggr.getMin() << ",max=" << aggr.getMax() << "]";
 }
 

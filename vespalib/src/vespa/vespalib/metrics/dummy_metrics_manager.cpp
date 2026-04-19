@@ -5,18 +5,14 @@ namespace vespalib::metrics {
 
 DummyMetricsManager::~DummyMetricsManager() = default;
 
-Snapshot
-DummyMetricsManager::snapshot()
-{
+Snapshot DummyMetricsManager::snapshot() {
     Snapshot snap(0, 0);
     return snap;
 }
 
-Snapshot
-DummyMetricsManager::totalSnapshot()
-{
+Snapshot DummyMetricsManager::totalSnapshot() {
     Snapshot snap(0, 0);
     return snap;
 }
 
-}
+} // namespace vespalib::metrics

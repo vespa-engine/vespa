@@ -9,12 +9,9 @@ namespace vespalib::datastore {
 /*
  * Helper class for normalizing values inserted into unique store.
  */
-template <typename EntryT>
-class UniqueStoreValueFilter {
+template <typename EntryT> class UniqueStoreValueFilter {
 public:
-    static const EntryT &filter(const EntryT &value) {
-        return value;
-    }
+    static const EntryT& filter(const EntryT& value) { return value; }
 };
 
 /*
@@ -22,13 +19,11 @@ public:
  * inserted into unique store.  Any type of NAN is normalized to a
  * specific one.
  */
-template <typename EntryT>
-class UniqueStoreFloatingPointValueFilter {
+template <typename EntryT> class UniqueStoreFloatingPointValueFilter {
     static const EntryT normalized_nan;
+
 public:
-    static const EntryT &filter(const EntryT &value) {
-        return std::isnan(value) ? normalized_nan : value;
-    }
+    static const EntryT& filter(const EntryT& value) { return std::isnan(value) ? normalized_nan : value; }
 };
 
 template <typename EntryT>
@@ -38,16 +33,12 @@ const EntryT UniqueStoreFloatingPointValueFilter<EntryT>::normalized_nan = -std:
  * Specialized helper class for normalizing float values inserted into unique store.
  * Any type of NAN is normalized to a specific one.
  */
-template <>
-class UniqueStoreValueFilter<float> : public UniqueStoreFloatingPointValueFilter<float> {
-};
+template <> class UniqueStoreValueFilter<float> : public UniqueStoreFloatingPointValueFilter<float> {};
 
 /*
  * Specialized helper class for normalizing double values inserted into unique store.
  * Any type of NAN is normalized to a specific one.
  */
-template <>
-class UniqueStoreValueFilter<double> : public UniqueStoreFloatingPointValueFilter<double> {
-};
+template <> class UniqueStoreValueFilter<double> : public UniqueStoreFloatingPointValueFilter<double> {};
 
-}
+} // namespace vespalib::datastore

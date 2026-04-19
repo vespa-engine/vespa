@@ -3,7 +3,5 @@
 #include "string.h"
 
 namespace vespalib {
-std::string replace_variable(const std::string &input,
-                                  const std::string &variable,
-                                  const std::string &replacement);
+std::string replace_variable(const std::string& input, const std::string& variable, const std::string& replacement);
 } // namespace vespalib

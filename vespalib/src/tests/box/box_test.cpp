@@ -4,7 +4,7 @@
 
 using namespace vespalib;
 
-void checkValues(const std::vector<int> &values, size_t n) {
+void checkValues(const std::vector<int>& values, size_t n) {
     ASSERT_EQ(n, values.size());
     for (size_t i = 0; i < n; ++i) {
         EXPECT_EQ(int(10 + (10 * i)), values[i]);

@@ -23,7 +23,7 @@ private:
     std::vector<EntryRef>     _refs;
 
 public:
-    UniqueStoreHashDictionaryReadSnapshot(const HashDictionaryType &hash);
+    UniqueStoreHashDictionaryReadSnapshot(const HashDictionaryType& hash);
     void fill() override;
     void sort() override;
     size_t count(const EntryComparator& comp) const override;
@@ -31,4 +31,4 @@ public:
     void foreach_key(std::function<void(const AtomicEntryRef&)> callback) const override;
 };
 
-}
+} // namespace vespalib::datastore

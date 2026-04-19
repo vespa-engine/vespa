@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "rfc_sha1.h"
+
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/sha1.h>
-#include <string>
+
 #include <cassert>
+#include <string>
 
 using namespace vespalib;
 
@@ -16,7 +18,7 @@ struct Digest {
         }
     }
     std::string as_string() const {
-        const char *sym = "0123456789ABCDEF";
+        const char* sym = "0123456789ABCDEF";
         std::string res;
         for (size_t i = 0; i < 20; ++i) {
             res += sym[(buf[i] >> 4) & 0xf];
@@ -24,7 +26,7 @@ struct Digest {
         }
         return ("0x" + res);
     }
-    bool operator==(const Digest &rhs) const {
+    bool operator==(const Digest& rhs) const {
         for (size_t i = 0; i < 20; ++i) {
             if (buf[i] != rhs.buf[i]) {
                 return false;
@@ -34,23 +36,23 @@ struct Digest {
     }
 };
 
-std::ostream &operator <<(std::ostream &out, const Digest &digest) {
+std::ostream& operator<<(std::ostream& out, const Digest& digest) {
     out << digest.as_string();
-    return out;    
+    return out;
 }
 
-Digest digest(const char *data, size_t size) {
+Digest digest(const char* data, size_t size) {
     Digest result;
     Sha1::hash(data, size, result.buf, 20);
     return result;
 }
 
-Digest rfc_digest(const char *data, size_t size) {
-    Digest result;
+Digest rfc_digest(const char* data, size_t size) {
+    Digest      result;
     SHA1Context ctx;
     SHA1Reset(&ctx);
-    SHA1Input(&ctx, (const uint8_t *)data, size);
-    SHA1Result(&ctx, (unsigned char *)result.buf);
+    SHA1Input(&ctx, (const uint8_t*)data, size);
+    SHA1Result(&ctx, (unsigned char*)result.buf);
     return result;
 }
 
@@ -64,10 +66,10 @@ struct Data {
     }
     size_t max() const { return sizeof(buf); }
     Digest inc_digest(std::initializer_list<size_t> chunks) const {
-        Digest result;
-        Sha1 sha;
+        Digest   result;
+        Sha1     sha;
         uint32_t ofs = 0;
-        for (auto chunk: chunks) {
+        for (auto chunk : chunks) {
             assert(ofs + chunk <= max());
             sha.process(buf + ofs, chunk);
             ofs += chunk;
@@ -95,12 +97,10 @@ TEST(Sha1Test, require_that_random_data_hashes_to_the_same_as_reference_implemen
 
 TEST(Sha1Test, require_that_incremental_and_all_in_one_hashing_produces_the_same_result) {
     Data f1;
+    EXPECT_EQ(digest(f1.buf, f1.max()), f1.inc_digest({1000, 1000, 1000, 1000, 1000}));
     EXPECT_EQ(digest(f1.buf, f1.max()),
-                 f1.inc_digest({ 1000, 1000, 1000, 1000, 1000 }));
-    EXPECT_EQ(digest(f1.buf, f1.max()),
-                 f1.inc_digest({ 10, 10, 10, 10, 10, 10, 4, 64, 64, 64, 128, 75, 75, 2500, 1966 }));
-    EXPECT_EQ(digest(f1.buf, f1.max()),
-                 f1.inc_digest({ 64, 64, 128, 256, 10, 10, 10, 10, 10, 10, 10, 100, 4318 }));
+              f1.inc_digest({10, 10, 10, 10, 10, 10, 4, 64, 64, 64, 128, 75, 75, 2500, 1966}));
+    EXPECT_EQ(digest(f1.buf, f1.max()), f1.inc_digest({64, 64, 128, 256, 10, 10, 10, 10, 10, 10, 10, 100, 4318}));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

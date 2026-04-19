@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <memory>
 #include "metric_id.h"
 #include "point.h"
+
+#include <memory>
 
 namespace vespalib {
 namespace metrics {
@@ -11,22 +12,20 @@ namespace metrics {
 class MetricsManager;
 struct CounterAggregator;
 
-
 /**
  * Represents a counter metric that can be incremented.
  **/
 class Counter {
     std::shared_ptr<MetricsManager> _manager;
-    MetricId _id;
+    MetricId                        _id;
+
 public:
     Counter() : _manager(), _id(0) {}
     Counter(const Counter&) = delete;
-    Counter(Counter &&other) = default;
-    Counter& operator= (const Counter &) = delete;
-    Counter& operator= (Counter &&other) = default;
-    Counter(std::shared_ptr<MetricsManager> m, MetricId id)
-        : _manager(std::move(m)), _id(id)
-    {}
+    Counter(Counter&& other) = default;
+    Counter& operator=(const Counter&) = delete;
+    Counter& operator=(Counter&& other) = default;
+    Counter(std::shared_ptr<MetricsManager> m, MetricId id) : _manager(std::move(m)), _id(id) {}
 
     // convenience methods:
     void add() const { add(1, Point::empty); }
@@ -43,7 +42,7 @@ public:
     // internal
     struct Increment {
         using Key = std::pair<MetricId, Point>;
-        Key idx;
+        Key    idx;
         size_t value;
         Increment() = delete;
         Increment(Key k, size_t v) : idx(k), value(v) {}
@@ -53,5 +52,5 @@ public:
     using sample_type = Increment;
 };
 
-} // namespace vespalib::metrics
+} // namespace metrics
 } // namespace vespalib

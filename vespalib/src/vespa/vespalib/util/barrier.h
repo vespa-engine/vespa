@@ -9,8 +9,7 @@ namespace vespalib {
 /**
  * Reusable barrier with a predefined number of participants.
  **/
-class Barrier
-{
+class Barrier {
 private:
     size_t                  _n;
     std::mutex              _lock;
@@ -44,4 +43,3 @@ public:
 };
 
 } // namespace vespalib
-

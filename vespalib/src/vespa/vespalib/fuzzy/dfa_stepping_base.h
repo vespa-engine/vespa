@@ -2,32 +2,27 @@
 #pragma once
 
 #include "sparse_state.h"
+
 #include <span>
 
 namespace vespalib::fuzzy {
 
-template <typename Traits>
-struct DfaSteppingBase {
-    using StateType       = typename Traits::StateType;
+template <typename Traits> struct DfaSteppingBase {
+    using StateType = typename Traits::StateType;
     using TransitionsType = typename Traits::TransitionsType;
 
     std::span<const uint32_t> _u32_str; // TODO std::u32string_view
 
-    DfaSteppingBase(std::span<const uint32_t> str) noexcept
-        : _u32_str(str)
-    {
-    }
+    DfaSteppingBase(std::span<const uint32_t> str) noexcept : _u32_str(str) {}
 
-    [[nodiscard]] static constexpr uint8_t max_edits() noexcept {
-        return Traits::max_edits();
-    }
+    [[nodiscard]] static constexpr uint8_t max_edits() noexcept { return Traits::max_edits(); }
 
     /**
      * Returns the initial state of the DFA. This represents the first row in the
      * Levenshtein matrix.
      */
     [[nodiscard]] StateType start() const {
-        StateType ret;
+        StateType  ret;
         const auto j = std::min(static_cast<uint32_t>(max_edits()),
                                 static_cast<uint32_t>(_u32_str.size())); // e.g. the empty string as target
         for (uint32_t i = 0; i <= j; ++i) {
@@ -188,10 +183,12 @@ struct DfaSteppingBase {
             // in the sparse state, its implicit distance is beyond the max edits, and need not be
             // considered.
             auto dist = state_in.cost(i) + sub_cost; // (Substitution)
-            if (!new_state.empty() && (new_state.last_index() == idx)) { // (Insertion) anything to our immediate left?
+            if (!new_state.empty() && (new_state.last_index() == idx))
+            { // (Insertion) anything to our immediate left?
                 dist = std::min(dist, new_state.last_cost() + 1);
             }
-            if ((i < state_in.size() - 1) && (state_in.index(i + 1) == idx + 1)) { // (Deletion) anything immediately above?
+            if ((i < state_in.size() - 1) && (state_in.index(i + 1) == idx + 1))
+            { // (Deletion) anything immediately above?
                 dist = std::min(dist, state_in.cost(i + 1) + 1);
             }
             if (dist <= max_edits()) {
@@ -226,7 +223,7 @@ struct DfaSteppingBase {
                 break;
             }
             const uint8_t sub_cost = 1; // by definition
-            auto dist = state_in.cost(i) + sub_cost;
+            auto          dist = state_in.cost(i) + sub_cost;
             // Insertion only looks at the entries already computed in the current row
             // and always increases the cost by 1. Since we always bail out immediately if
             // there would have been at least one entry within max edits, we transitively
@@ -293,7 +290,6 @@ struct DfaSteppingBase {
         t.sort();
         return t;
     }
-
 };
 
-}
+} // namespace vespalib::fuzzy

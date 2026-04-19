@@ -1,12 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "string_hash.h"
+
 #include <vespa/vespalib/stllike/hash_fun.h>
+
 #include <cstring>
 
 namespace vespalib {
 
-double hash2d(const char *str, size_t len) {
+double hash2d(const char* str, size_t len) {
     size_t h = hashValue(str, len);
     if ((h & 0x7ff0000000000000ul) == 0x7ff0000000000000ul) {
         // Avoid nan and inf

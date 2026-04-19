@@ -2,9 +2,10 @@
 
 #pragma once
 
+#include <sys/time.h>
+
 #include <chrono>
 #include <string>
-#include <sys/time.h>
 
 // Guidelines:
 //
@@ -30,13 +31,13 @@ using namespace std::literals::chrono_literals;
 namespace vespalib {
 
 using steady_clock = std::chrono::steady_clock;
-using steady_time  = std::chrono::steady_clock::time_point;
+using steady_time = std::chrono::steady_clock::time_point;
 
 using system_clock = std::chrono::system_clock;
-using system_time  = std::chrono::system_clock::time_point;
+using system_time = std::chrono::system_clock::time_point;
 
 using file_clock = std::chrono::file_clock;
-using file_time  = std::chrono::file_clock::time_point;
+using file_time = std::chrono::file_clock::time_point;
 
 using duration = std::chrono::nanoseconds;
 
@@ -46,8 +47,7 @@ constexpr double to_s(duration d) {
 
 system_time to_utc(steady_time ts);
 
-template <typename duration_type = duration>
-constexpr duration_type from_s(double seconds) {
+template <typename duration_type = duration> constexpr duration_type from_s(double seconds) {
     return std::chrono::duration_cast<duration_type>(std::chrono::duration<double>(seconds));
 }
 
@@ -67,12 +67,12 @@ constexpr int64_t count_ns(duration d) {
     return std::chrono::duration_cast<std::chrono::nanoseconds>(d).count();
 }
 
-constexpr duration from_timeval(const timeval & tv) {
-    return duration(tv.tv_sec*1000000000L + tv.tv_usec*1000L);
+constexpr duration from_timeval(const timeval& tv) {
+    return duration(tv.tv_sec * 1000000000L + tv.tv_usec * 1000L);
 }
 
-constexpr duration from_timespec(const timespec & ts) {
-    return duration(ts.tv_sec*1000000000L + ts.tv_nsec);
+constexpr duration from_timespec(const timespec& ts) {
+    return duration(ts.tv_sec * 1000000000L + ts.tv_nsec);
 }
 
 std::string to_string(system_time time);
@@ -84,10 +84,10 @@ steady_time saturated_add(steady_time time, duration diff);
  * Simple utility class used to measure how much time has elapsed
  * since it was constructed.
  **/
-class Timer
-{
+class Timer {
 private:
     steady_time _start;
+
 public:
     Timer() : _start(steady_clock::now()) {}
     ~Timer();
@@ -103,9 +103,10 @@ uint32_t getVespaTimerHz();
 duration adjustTimeoutByDetectedHz(duration timeout);
 duration adjustTimeoutByHz(duration timeout, long hz);
 
-}
+} // namespace vespalib
 
-#if (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 170000) || (!defined(_LIBCPP_VERSION) && defined(_GLIBCXX_RELEASE) && _GLIBCXX_RELEASE < 12)
+#if (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 170000) ||                         \
+    (!defined(_LIBCPP_VERSION) && defined(_GLIBCXX_RELEASE) && _GLIBCXX_RELEASE < 12)
 
 // Temporary workaround until libc++ supports stream operators for duration
 // Temporary workaround while using libstdc++ 11

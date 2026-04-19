@@ -27,4 +27,4 @@ public:
     void foreach_key(std::function<void(const AtomicEntryRef&)> callback) const override;
 };
 
-}
+} // namespace vespalib::datastore

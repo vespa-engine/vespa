@@ -1,7 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/util/bit_packer.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/bit_packer.h>
+
 #include <vector>
 
 using vespalib::BitPacker;
@@ -9,14 +10,11 @@ using vespalib::BitSpan;
 
 namespace {
 
-std::vector<bool> my_bits = {1, 1, 0, 0, 0, 1, 1, 1,
-                             0, 0, 1, 1, 1, 0, 0, 0,
-                             1, 1, 1, 1, 0, 0, 0, 0};
+std::vector<bool> my_bits = {1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0};
 
 }
 
-TEST(BitPackerTest, bits_can_be_packed)
-{
+TEST(BitPackerTest, bits_can_be_packed) {
     BitPacker packer;
     EXPECT_TRUE(packer.empty());
     EXPECT_EQ(packer.size(), 0);
@@ -42,7 +40,7 @@ TEST(BitPackerTest, bit_span_can_be_created) {
     }
     auto span = packer.bit_span(10, 9);
     ASSERT_EQ(span.size(), 9);
-    for (int i = 0; i < 9; ++ i) {
+    for (int i = 0; i < 9; ++i) {
         int idx = i + 10;
         EXPECT_EQ(bool(my_bits[idx]), span[i]);
     }
@@ -55,7 +53,7 @@ TEST(BitPackerTest, bit_spans_are_clamped) {
     }
     auto span = packer.bit_span(16, 100);
     ASSERT_EQ(span.size(), 8);
-    for (int i = 0; i < 8; ++ i) {
+    for (int i = 0; i < 8; ++i) {
         int idx = i + 16;
         EXPECT_EQ(bool(my_bits[idx]), span[i]);
     }
