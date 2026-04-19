@@ -3,6 +3,7 @@
 #pragma once
 
 #include "memory.h"
+
 #include <string>
 #include <vector>
 
@@ -16,18 +17,17 @@ struct Input;
  * the end of the data is considered an error and will tag the reader
  * as failed with buffer underflow.
  **/
-class InputReader
-{
+class InputReader {
 private:
-    Input            &_input;
+    Input&            _input;
     Memory            _data;
     size_t            _pos;
     size_t            _bytes_evicted;
     bool              _eof;
-    std::string  _error;
+    std::string       _error;
     std::vector<char> _space;
 
-    const char *data() const { return (_data.data + _pos); }
+    const char* data() const { return (_data.data + _pos); }
     size_t size() const { return (_data.size - _pos); }
 
     size_t obtain_slow();
@@ -36,15 +36,15 @@ private:
     bool read_into_slow(void* buf, size_t bytes);
 
 public:
-    explicit InputReader(Input &input)
+    explicit InputReader(Input& input)
         : _input(input), _data(), _pos(0), _bytes_evicted(0), _eof(false), _error(), _space() {}
     ~InputReader();
 
     bool failed() const { return !_error.empty(); }
-    const std::string &get_error_message() const { return _error; }
+    const std::string& get_error_message() const { return _error; }
     size_t get_offset() const { return (_bytes_evicted + _pos); }
 
-    void fail(const std::string &msg);
+    void fail(const std::string& msg);
 
     /**
      * Make sure we have more input data available.
@@ -135,7 +135,7 @@ public:
      * @param bytes Number of bytes to read into `buf`.
      * @return true iff reading `bytes` number of bytes into `buf` succeeded.
      */
-    [[nodiscard]] bool read_into(void *buf, const size_t bytes) {
+    [[nodiscard]] bool read_into(void* buf, const size_t bytes) {
         if (obtain() >= bytes) [[likely]] {
             memcpy(buf, data(), bytes);
             _pos += bytes;

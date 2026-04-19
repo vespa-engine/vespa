@@ -9,8 +9,8 @@ namespace vespalib {
 
 class StaticStringView;
 namespace literals {
-constexpr StaticStringView operator ""_ssv(const char *literal, size_t size);
-} // literals
+constexpr StaticStringView operator""_ssv(const char* literal, size_t size);
+} // namespace literals
 
 /**
  * Contains the view of a literal string
@@ -18,9 +18,9 @@ constexpr StaticStringView operator ""_ssv(const char *literal, size_t size);
 class StaticStringView {
 private:
     std::string_view _view;
-    friend constexpr StaticStringView literals::operator ""_ssv(const char *, size_t);
-    constexpr StaticStringView(const char *literal, size_t size) noexcept
-      : _view(literal, size) {}
+    friend constexpr StaticStringView literals::operator""_ssv(const char*, size_t);
+    constexpr StaticStringView(const char* literal, size_t size) noexcept : _view(literal, size) {}
+
 public:
     constexpr std::string_view view() const noexcept { return _view; }
     constexpr operator std::string_view() const noexcept { return _view; }
@@ -28,9 +28,9 @@ public:
 };
 
 namespace literals {
-constexpr StaticStringView operator ""_ssv(const char *literal, size_t size) {
+constexpr StaticStringView operator""_ssv(const char* literal, size_t size) {
     return {literal, size};
 }
-} // literals
+} // namespace literals
 
-} // vespalib
+} // namespace vespalib

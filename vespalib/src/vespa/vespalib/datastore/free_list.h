@@ -4,6 +4,7 @@
 
 #include "buffer_free_list.h"
 #include "entryref.h"
+
 #include <vector>
 
 namespace vespalib::datastore {
@@ -30,9 +31,7 @@ public:
 
     bool empty() const noexcept { return _free_lists.empty(); }
     size_t size() const noexcept { return _free_lists.size(); }
-    EntryRef pop_entry() noexcept {
-        return _free_lists.back()->pop_entry();
-    }
+    EntryRef pop_entry() noexcept { return _free_lists.back()->pop_entry(); }
 };
 
-}
+} // namespace vespalib::datastore

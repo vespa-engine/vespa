@@ -2,6 +2,4 @@
 
 #include "cursor.h"
 
-namespace vespalib::slime {
-
-} // namespace vespalib::slime
+namespace vespalib::slime {} // namespace vespalib::slime

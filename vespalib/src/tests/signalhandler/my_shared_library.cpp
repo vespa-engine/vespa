@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "my_shared_library.h"
+
 #include <vespa/vespalib/util/signalhandler.h>
 
 // This tiny library exists solely as a way to ensure we get visible function names in our backtrace,

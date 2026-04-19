@@ -6,11 +6,10 @@
 namespace vespalib {
 
 template <typename K, typename V, typename H, typename EQ, typename M>
-bool
-hash_map<K, V, H, EQ, M>::operator ==(const hash_map & rhs) const {
+bool hash_map<K, V, H, EQ, M>::operator==(const hash_map& rhs) const {
     bool identical(rhs.size() == size());
     if (identical) {
-        for(const_iterator at(begin()), mat(end()); identical && at != mat; at++) {
+        for (const_iterator at(begin()), mat(end()); identical && at != mat; at++) {
             const_iterator bt = rhs.find(at->first);
             identical = (bt != rhs.end()) && (*at == *bt);
         }
@@ -18,4 +17,4 @@ hash_map<K, V, H, EQ, M>::operator ==(const hash_map & rhs) const {
     return identical;
 }
 
-}
+} // namespace vespalib

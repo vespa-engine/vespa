@@ -4,6 +4,7 @@
 
 #include "input.h"
 #include "output.h"
+
 #include <vespa/vespalib/util/alloc.h>
 
 namespace vespalib {
@@ -13,17 +14,15 @@ namespace vespalib {
  * data in a continuous memory segment. Tries to limit copying of
  * data.
  **/
-class SmartBuffer : public Input,
-                    public Output
-{
+class SmartBuffer : public Input, public Output {
 private:
     alloc::Alloc _data;
     size_t       _read_pos;
     size_t       _write_pos;
 
-    const char *read_ptr() const { return (const char *)(_data.get()) + _read_pos; }
+    const char* read_ptr() const { return (const char*)(_data.get()) + _read_pos; }
     size_t read_len() const { return (_write_pos - _read_pos); }
-    char *write_ptr() { return (char *)(_data.get()) + _write_pos; }
+    char* write_ptr() { return (char*)(_data.get()) + _write_pos; }
     size_t write_len() const { return (_data.size() - _write_pos); }
     size_t unused() const { return (_data.size() - read_len()); }
     void ensure_free(size_t bytes);
@@ -45,9 +44,9 @@ public:
         _write_pos = 0;
     }
     Memory obtain() override;
-    Input &evict(size_t bytes) override;
+    Input& evict(size_t bytes) override;
     WritableMemory reserve(size_t bytes) override;
-    Output &commit(size_t bytes) override;
+    Output& commit(size_t bytes) override;
 };
 
 } // namespace vespalib

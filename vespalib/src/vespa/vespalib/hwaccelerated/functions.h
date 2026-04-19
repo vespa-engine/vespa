@@ -94,4 +94,4 @@ inline void or_128(size_t offset, const std::vector<std::pair<const void*, bool>
     dispatch::VESPA_HWACCEL_DISPATCH_FN_PTR_NAME(or_128)(offset, src, dest);
 }
 
-} // vespalib::hwaccelerated
+} // namespace vespalib::hwaccelerated

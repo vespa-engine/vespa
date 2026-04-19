@@ -7,20 +7,18 @@
 #include "generationholder.h"
 #include "growstrategy.h"
 #include "memoryusage.h"
+
 #include <span>
 
 namespace vespalib {
 
-template <typename T>
-class RcuVectorHeld : public GenerationHeldBase
-{
+template <typename T> class RcuVectorHeld : public GenerationHeldBase {
     T _data;
 
 public:
     RcuVectorHeld(size_t size, T&& data) noexcept;
     ~RcuVectorHeld() override;
 };
-
 
 /**
  * Vector class for elements of type T using the read-copy-update
@@ -30,28 +28,28 @@ public:
  * generation of the vector, and initiating removing of old underlying
  * data vectors.
  **/
-template <typename T>
-class RcuVectorBase
-{
+template <typename T> class RcuVectorBase {
 private:
-    static_assert(std::is_trivially_destructible<T>::value,
-                  "Value type must be trivially destructible");
+    static_assert(std::is_trivially_destructible<T>::value, "Value type must be trivially destructible");
 
     using ArrayType = Array<T>;
     using Alloc = alloc::Alloc;
+
 protected:
     using GenerationHolderType = GenerationHolder;
+
 private:
     ArrayType             _data;
     std::atomic<const T*> _vector_start;
     GrowStrategy          _growStrategy;
-    GenerationHolderType &_genHolder;
+    GenerationHolderType& _genHolder;
 
     size_t calcNewSize(size_t baseSize) const noexcept;
     size_t calcNewSize() const noexcept;
     void expand(size_t newCapacity);
-    void expandAndInsert(const T & v);
+    void expandAndInsert(const T& v);
     void update_vector_start() noexcept;
+
 protected:
     virtual void onReallocation();
 
@@ -65,9 +63,8 @@ public:
      * New capacity is calculated based on old capacity and grow parameters:
      * nc = oc + (oc * growPercent / 100) + growDelta.
      **/
-    RcuVectorBase(GrowStrategy growStrategy,
-                  GenerationHolderType &genHolder,
-                  const Alloc &initialAlloc = Alloc::alloc());
+    RcuVectorBase(GrowStrategy growStrategy, GenerationHolderType& genHolder,
+                  const Alloc& initialAlloc = Alloc::alloc());
 
     virtual ~RcuVectorBase();
 
@@ -96,7 +93,7 @@ public:
             expand(calcNewSize(n));
         }
     }
-    void push_back(const T & v) {
+    void push_back(const T& v) {
         if (_data.size() < _data.capacity()) {
             _data.push_back(v);
         } else {
@@ -114,7 +111,7 @@ public:
      * get_size() should be called from writer only or with proper lock held.
      * Used in predicate attribute by reader (causing data race).
      */
-    size_t get_size() const noexcept{ return _data.size(); }
+    size_t get_size() const noexcept { return _data.size(); }
     /*
      * capacity() should be called from writer only.
      * Const type qualifier removed to prevent call from readers.
@@ -125,17 +122,21 @@ public:
      * operator[]() should be called from writer only.
      * Overload with const type qualifier removed to prevent call from readers.
      */
-    T & operator[](size_t i) noexcept { return _data[i]; }
+    T& operator[](size_t i) noexcept { return _data[i]; }
     /*
      * Readers holding a generation guard can call acquire_elem_ref(i)
      * to get a const reference to element i. Array bound must be handled
      * by reader, cf. committed docid limit in attribute vectors.
      */
-    const T& acquire_elem_ref(size_t i) const noexcept { return *(_vector_start.load(std::memory_order_acquire) + i); }
+    const T& acquire_elem_ref(size_t i) const noexcept {
+        return *(_vector_start.load(std::memory_order_acquire) + i);
+    }
 
     const T& get_elem_ref(size_t i) const noexcept { return _data[i]; } // Called from writer only
 
-    void prefetch_elem_ref(size_t i) const noexcept { __builtin_prefetch(_vector_start.load(std::memory_order_acquire) + i); }
+    void prefetch_elem_ref(size_t i) const noexcept {
+        __builtin_prefetch(_vector_start.load(std::memory_order_acquire) + i);
+    }
 
     /*
      * Readers holding a generation guard can call make_read_view() to
@@ -152,9 +153,7 @@ public:
     ArrayType create_replacement_vector() const { return _data.create(); }
 };
 
-template <typename T>
-class RcuVector final : public RcuVectorBase<T>
-{
+template <typename T> class RcuVector final : public RcuVectorBase<T> {
 private:
     using GenerationHolderType = typename RcuVectorBase<T>::GenerationHolderType;
     Generation           _generation;
@@ -186,4 +185,4 @@ public:
     MemoryUsage getMemoryUsage() const noexcept override;
 };
 
-}
+} // namespace vespalib

@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/util/relative_frequency_sketch.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/relative_frequency_sketch.h>
 
 namespace vespalib {
 
@@ -9,11 +9,10 @@ using namespace ::testing;
 namespace {
 
 struct IdentityHash {
-    template <typename T>
-    constexpr size_t operator()(T v) const noexcept { return v; }
+    template <typename T> constexpr size_t operator()(T v) const noexcept { return v; }
 };
 
-}
+} // namespace
 
 struct RelativeFrequencySketchTest : Test {
     // Note: although the sketch is inherently _probabilistic_, the below tests are fully
@@ -62,8 +61,8 @@ TEST_F(RelativeFrequencySketchTest, can_track_frequency_of_multiple_elements) {
     EXPECT_EQ(sketch.count_min(300), 1);
     EXPECT_EQ(sketch.count_min(400), 0);
 
-    EXPECT_EQ(sketch.estimate_relative_frequency(0, 100),   std::weak_ordering::less);
-    EXPECT_EQ(sketch.estimate_relative_frequency(100, 0),   std::weak_ordering::greater);
+    EXPECT_EQ(sketch.estimate_relative_frequency(0, 100), std::weak_ordering::less);
+    EXPECT_EQ(sketch.estimate_relative_frequency(100, 0), std::weak_ordering::greater);
     EXPECT_EQ(sketch.estimate_relative_frequency(100, 100), std::weak_ordering::equivalent);
     EXPECT_EQ(sketch.estimate_relative_frequency(100, 300), std::weak_ordering::equivalent);
     EXPECT_EQ(sketch.estimate_relative_frequency(300, 100), std::weak_ordering::equivalent);
@@ -72,8 +71,8 @@ TEST_F(RelativeFrequencySketchTest, can_track_frequency_of_multiple_elements) {
 }
 
 TEST_F(RelativeFrequencySketchTest, counters_are_divided_by_2_once_window_size_reached) {
-    U32FrequencySketch sketch(8);
-    const auto ws = sketch.window_size();
+    U32FrequencySketch    sketch(8);
+    const auto            ws = sketch.window_size();
     std::vector<uint32_t> truth(8);
     ASSERT_GT(ws, 0);
     for (size_t i = 0; i < ws - 1; ++i) { // don't trigger decay just yet
@@ -95,4 +94,4 @@ TEST_F(RelativeFrequencySketchTest, counters_are_divided_by_2_once_window_size_r
     }
 }
 
-}
+} // namespace vespalib

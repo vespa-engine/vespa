@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "regex.h"
+
 #include <re2/re2.h>
+
 #include <cassert>
 #include <cstdint>
 
@@ -11,14 +13,12 @@ using re2::StringPiece;
 
 class Regex::Impl {
     RE2 _regex;
+
 public:
     Impl(std::string_view pattern, const re2::RE2::Options& opts)
-        : _regex(StringPiece(pattern.data(), pattern.size()), opts)
-    {}
+        : _regex(StringPiece(pattern.data(), pattern.size()), opts) {}
 
-    bool parsed_ok() const noexcept {
-        return _regex.ok();
-    }
+    bool parsed_ok() const noexcept { return _regex.ok(); }
 
     bool partial_match(std::string_view input) const noexcept {
         assert(input.size() <= INT32_MAX);
@@ -38,7 +38,7 @@ public:
 
     std::pair<std::string, std::string> possible_anchored_match_prefix_range() const {
         constexpr int max_len = 128; // TODO determine a "reasonable" value. RE2 docs are not clear on this.
-        std::string min_prefix, max_prefix;
+        std::string   min_prefix, max_prefix;
 
         if (!_regex.PossibleMatchRange(&min_prefix, &max_prefix, max_len)) {
             return {};
@@ -50,11 +50,11 @@ public:
 // All RE2 instances use a Quiet option to prevent the library from
 // complaining to stderr if pattern compilation fails.
 
-Regex::Regex(std::unique_ptr<const Impl> impl)
-    : _impl(std::move(impl))
-{}
+Regex::Regex(std::unique_ptr<const Impl> impl) : _impl(std::move(impl)) {
+}
 
-Regex::Regex() : _impl() {}
+Regex::Regex() : _impl() {
+}
 
 Regex::Regex(Regex&&) noexcept = default;
 Regex& Regex::operator=(Regex&&) noexcept = default;
@@ -102,4 +102,4 @@ bool Regex::full_match(std::string_view input, std::string_view pattern) noexcep
     return impl.full_match(input);
 }
 
-}
+} // namespace vespalib

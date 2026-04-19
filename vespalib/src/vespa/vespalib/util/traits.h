@@ -8,8 +8,7 @@ namespace vespalib {
 
 //-----------------------------------------------------------------------------
 
-template <typename T>
-inline constexpr bool enable_skip_destruction = false;
+template <typename T> inline constexpr bool enable_skip_destruction = false;
 
 template <typename T>
 concept can_skip_destruction = std::is_trivially_destructible_v<T> || enable_skip_destruction<T>;
@@ -19,10 +18,9 @@ concept can_skip_destruction = std::is_trivially_destructible_v<T> || enable_ski
 // namespace. This macro will typically be used to tag classes that do
 // not classify as trivially destructible because they inherit an
 // empty virtual destructor.
-#define VESPA_CAN_SKIP_DESTRUCTION(MyType)                     \
-    namespace vespalib {                                       \
-        template <>                                            \
-        inline constexpr bool enable_skip_destruction<MyType> = true; \
+#define VESPA_CAN_SKIP_DESTRUCTION(MyType)                                    \
+    namespace vespalib {                                                      \
+    template <> inline constexpr bool enable_skip_destruction<MyType> = true; \
     }
 
 //-----------------------------------------------------------------------------

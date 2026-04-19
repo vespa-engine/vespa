@@ -5,8 +5,7 @@
 
 using namespace vespalib;
 
-TEST(GrowableByteBufferTest, test_growing)
-{
+TEST(GrowableByteBufferTest, test_growing) {
     GrowableByteBuffer buf(10);
 
     buf.putInt(3);

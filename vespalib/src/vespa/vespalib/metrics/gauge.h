@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <memory>
 #include "metric_id.h"
 #include "point.h"
+
+#include <memory>
 
 namespace vespalib {
 namespace metrics {
@@ -17,11 +18,10 @@ struct GaugeAggregator;
 class Gauge {
 private:
     std::shared_ptr<MetricsManager> _manager;
-    MetricId _id;
+    MetricId                        _id;
+
 public:
-    Gauge(std::shared_ptr<MetricsManager> m, MetricId id)
-        : _manager(std::move(m)), _id(id)
-    {}
+    Gauge(std::shared_ptr<MetricsManager> m, MetricId id) : _manager(std::move(m)), _id(id) {}
 
     /**
      * Provide a sample for the gauge.
@@ -33,7 +33,7 @@ public:
     // internal
     struct Measurement {
         using Key = std::pair<MetricId, Point>;
-        Key idx;
+        Key    idx;
         double value;
         Measurement() = delete;
         Measurement(Key k, double v) : idx(k), value(v) {}
@@ -43,5 +43,5 @@ public:
     using sample_type = Measurement;
 };
 
-} // namespace vespalib::metrics
+} // namespace metrics
 } // namespace vespalib

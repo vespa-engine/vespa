@@ -13,12 +13,12 @@ namespace vespalib {
  * by calling takeGuard().
  **/
 class GenerationHandler {
-    std::atomic<Generation>       _generation;
-    std::atomic<Generation>       _oldest_used_generation;
-    std::atomic<GenerationHold *> _last;      // Points to "current generation" entry
-    GenerationHold               *_first;     // Points to "firstUsedGeneration" entry
-    GenerationHold               *_free;      // List of free entries
-    uint32_t                      _numHolds;  // Number of allocated generation hold entries
+    std::atomic<Generation>      _generation;
+    std::atomic<Generation>      _oldest_used_generation;
+    std::atomic<GenerationHold*> _last;     // Points to "current generation" entry
+    GenerationHold*              _first;    // Points to "firstUsedGeneration" entry
+    GenerationHold*              _free;     // List of free entries
+    uint32_t                     _numHolds; // Number of allocated generation hold entries
 
     void set_generation(Generation generation) noexcept { _generation.store(generation, std::memory_order_relaxed); }
 
@@ -58,13 +58,9 @@ public:
     /**
      * Returns the current generation.
      **/
-    Generation getCurrentGeneration() const noexcept {
-        return _generation.load(std::memory_order_relaxed);
-    }
+    Generation getCurrentGeneration() const noexcept { return _generation.load(std::memory_order_relaxed); }
 
-    Generation getNextGeneration() const noexcept {
-        return getCurrentGeneration() + 1;
-    }
+    Generation getNextGeneration() const noexcept { return getCurrentGeneration() + 1; }
 
     /**
      * Returns the number of readers holding a generation guard on the
@@ -79,5 +75,4 @@ public:
     uint64_t getGenerationRefCount() const;
 };
 
-}
-
+} // namespace vespalib

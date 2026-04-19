@@ -21,7 +21,7 @@ public:
     const dispatch::FnTable& fn_table() const override;
 };
 
-} // vespalib::hwaccelerated
+} // namespace vespalib::hwaccelerated
 
 // .cpp files should set this additional macro to also generate the target class _definitions_
 #ifdef VESPA_HWACCEL_INCLUDE_DEFINITIONS

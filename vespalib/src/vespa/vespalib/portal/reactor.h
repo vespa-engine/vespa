@@ -13,8 +13,7 @@
 
 namespace vespalib::portal {
 
-class Reactor
-{
+class Reactor {
 public:
     struct EventHandler {
         virtual void handle_event(bool read, bool write) = 0;
@@ -23,15 +22,17 @@ public:
     friend class Selector<EventHandler>;
     class Token {
         friend class Reactor;
+
     private:
-        Reactor &_reactor;
-        EventHandler &_handler;
-        int _fd;
-        Token(const Token &) = delete;
-        Token &operator=(const Token &) = delete;
-        Token(Token &&) = delete;
-        Token &operator=(Token &&) = delete;
-        Token(Reactor &reactor, EventHandler &handler, int fd, bool read, bool write);
+        Reactor&      _reactor;
+        EventHandler& _handler;
+        int           _fd;
+        Token(const Token&) = delete;
+        Token& operator=(const Token&) = delete;
+        Token(Token&&) = delete;
+        Token& operator=(Token&&) = delete;
+        Token(Reactor& reactor, EventHandler& handler, int fd, bool read, bool write);
+
     public:
         using UP = std::unique_ptr<Token>;
         void update(bool read, bool write);
@@ -51,18 +52,18 @@ private:
     std::atomic<size_t>     _token_cnt;
     std::thread             _thread;
 
-    void cancel_token(const Token &token);
+    void cancel_token(const Token& token);
     void release_tokens();
 
     void handle_wakeup();
-    void handle_event(EventHandler &handler, bool read, bool write);
+    void handle_event(EventHandler& handler, bool read, bool write);
     void event_loop();
 
 public:
     Reactor(std::function<int()> tick);
     Reactor() : Reactor([]() noexcept { return -1; }) {}
     ~Reactor();
-    Token::UP attach(EventHandler &handler, int fd, bool read, bool write);
+    Token::UP attach(EventHandler& handler, int fd, bool read, bool write);
 };
 
 } // namespace vespalib::portal

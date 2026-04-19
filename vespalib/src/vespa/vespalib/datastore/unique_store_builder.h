@@ -3,6 +3,7 @@
 #pragma once
 
 #include "unique_store_allocator.h"
+
 #include <vespa/vespalib/stllike/allocator.h>
 
 namespace vespalib::datastore {
@@ -16,12 +17,11 @@ class IUniqueStoreDictionary;
  * from enum value to EntryRef value.  New unique values must be added
  * in sorted order.
  */
-template <typename Allocator>
-class UniqueStoreBuilder {
+template <typename Allocator> class UniqueStoreBuilder {
     using EntryType = typename Allocator::EntryType;
 
-    Allocator& _allocator;
-    IUniqueStoreDictionary& _dict;
+    Allocator&                                       _allocator;
+    IUniqueStoreDictionary&                          _dict;
     std::vector<EntryRef, allocator_large<EntryRef>> _refs;
     std::vector<uint32_t, allocator_large<uint32_t>> _refCounts;
 
@@ -42,4 +42,4 @@ public:
     }
 };
 
-}
+} // namespace vespalib::datastore

@@ -20,7 +20,6 @@ namespace vespalib::slime {
  * @param inspector what to inject
  * @param inserter where to inject
  **/
-void inject(const Inspector &inspector, const Inserter &inserter);
+void inject(const Inspector& inspector, const Inserter& inserter);
 
 } // namespace vespalib::slime
-

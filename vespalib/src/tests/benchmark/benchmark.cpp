@@ -6,7 +6,7 @@ LOG_SETUP("benchmark_test");
 
 using namespace vespalib;
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     if (argc > 1) {
         size_t concurrency(1);
         size_t numRuns(1000);

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
 #include <ranges>
 
 /**
@@ -20,9 +21,8 @@ MATCHER(ElementsAreDistinct, "") {
         for (auto rhs = std::ranges::cbegin(range); rhs != end; ++rhs, ++j) {
             if (i != j) {
                 if (*lhs == *rhs) {
-                    *result_listener << "Expected elements to be distinct, but element at position "
-                                     << i << " (" << *lhs << ") is equal to element at position "
-                                     << j << " (" << *rhs << ")";
+                    *result_listener << "Expected elements to be distinct, but element at position " << i << " ("
+                                     << *lhs << ") is equal to element at position " << j << " (" << *rhs << ")";
                     return false;
                 }
             } else if (!(*lhs == *rhs)) {

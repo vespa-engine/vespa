@@ -3,6 +3,7 @@
 #pragma once
 
 #include "generation.h"
+
 #include <atomic>
 
 namespace vespalib {
@@ -38,4 +39,4 @@ public:
     uint32_t getRefCountAcqRel() noexcept { return _refCount.fetch_add(0, std::memory_order_acq_rel) / 2; }
 };
 
-}
+} // namespace vespalib

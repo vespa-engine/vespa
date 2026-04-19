@@ -38,13 +38,13 @@ namespace detail {
 template <typename T> struct is_std_atomic : std::false_type {};
 template <typename T> struct is_std_atomic<std::atomic<T>> : std::true_type {};
 template <typename T> inline constexpr bool is_std_atomic_v = is_std_atomic<T>::value;
-}
+} // namespace detail
 
 // TODO can generalize atomic_ref code once no special casing is needed
 
-template <typename T1, typename T2>
-constexpr void store_ref_relaxed(T1& lhs, T2&& v) noexcept {
-    static_assert(!detail::is_std_atomic_v<T1>, "atomic ref function invoked with a std::atomic, probably not intended");
+template <typename T1, typename T2> constexpr void store_ref_relaxed(T1& lhs, T2&& v) noexcept {
+    static_assert(!detail::is_std_atomic_v<T1>,
+                  "atomic ref function invoked with a std::atomic, probably not intended");
 #if __cpp_lib_atomic_ref
     static_assert(std::atomic_ref<T1>::is_always_lock_free);
     std::atomic_ref<T1>(lhs).store(std::forward<T2>(v), std::memory_order_relaxed);
@@ -54,9 +54,9 @@ constexpr void store_ref_relaxed(T1& lhs, T2&& v) noexcept {
 #endif
 }
 
-template <typename T1, typename T2>
-constexpr void store_ref_release(T1& lhs, T2&& v) noexcept {
-    static_assert(!detail::is_std_atomic_v<T1>, "atomic ref function invoked with a std::atomic, probably not intended");
+template <typename T1, typename T2> constexpr void store_ref_release(T1& lhs, T2&& v) noexcept {
+    static_assert(!detail::is_std_atomic_v<T1>,
+                  "atomic ref function invoked with a std::atomic, probably not intended");
 #if __cpp_lib_atomic_ref
     static_assert(std::atomic_ref<T1>::is_always_lock_free);
     std::atomic_ref<T1>(lhs).store(std::forward<T2>(v), std::memory_order_release);
@@ -67,9 +67,9 @@ constexpr void store_ref_release(T1& lhs, T2&& v) noexcept {
 #endif
 }
 
-template <typename T1, typename T2>
-constexpr void store_ref_seq_cst(T1& lhs, T2&& v) noexcept {
-    static_assert(!detail::is_std_atomic_v<T1>, "atomic ref function invoked with a std::atomic, probably not intended");
+template <typename T1, typename T2> constexpr void store_ref_seq_cst(T1& lhs, T2&& v) noexcept {
+    static_assert(!detail::is_std_atomic_v<T1>,
+                  "atomic ref function invoked with a std::atomic, probably not intended");
 #if __cpp_lib_atomic_ref
     static_assert(std::atomic_ref<T1>::is_always_lock_free);
     std::atomic_ref<T1>(lhs).store(std::forward<T2>(v), std::memory_order_seq_cst);
@@ -80,9 +80,9 @@ constexpr void store_ref_seq_cst(T1& lhs, T2&& v) noexcept {
 #endif
 }
 
-template <typename T>
-[[nodiscard]] constexpr T load_ref_relaxed(const T& a) noexcept {
-    static_assert(!detail::is_std_atomic_v<T>, "atomic ref function invoked with a std::atomic, probably not intended");
+template <typename T> [[nodiscard]] constexpr T load_ref_relaxed(const T& a) noexcept {
+    static_assert(!detail::is_std_atomic_v<T>,
+                  "atomic ref function invoked with a std::atomic, probably not intended");
 #if __cpp_lib_atomic_ref
 #if LIBCXX_19_ATOMIC_REF_WORKAROUND
     using value_type = std::remove_const_t<T>;
@@ -98,9 +98,9 @@ template <typename T>
 #endif
 }
 
-template <typename T>
-[[nodiscard]] constexpr T load_ref_acquire(const T& a) noexcept {
-    static_assert(!detail::is_std_atomic_v<T>, "atomic ref function invoked with a std::atomic, probably not intended");
+template <typename T> [[nodiscard]] constexpr T load_ref_acquire(const T& a) noexcept {
+    static_assert(!detail::is_std_atomic_v<T>,
+                  "atomic ref function invoked with a std::atomic, probably not intended");
 #if __cpp_lib_atomic_ref
 #if LIBCXX_19_ATOMIC_REF_WORKAROUND
     using value_type = std::remove_const_t<T>;
@@ -117,9 +117,9 @@ template <typename T>
 #endif
 }
 
-template <typename T>
-[[nodiscard]] constexpr T load_ref_seq_cst(const T& a) noexcept {
-    static_assert(!detail::is_std_atomic_v<T>, "atomic ref function invoked with a std::atomic, probably not intended");
+template <typename T> [[nodiscard]] constexpr T load_ref_seq_cst(const T& a) noexcept {
+    static_assert(!detail::is_std_atomic_v<T>,
+                  "atomic ref function invoked with a std::atomic, probably not intended");
 #if __cpp_lib_atomic_ref
 #if LIBCXX_19_ATOMIC_REF_WORKAROUND
     using value_type = std::remove_const_t<T>;
@@ -140,40 +140,34 @@ template <typename T>
 // std::atomic<T> helpers
 //
 
-template <typename T1, typename T2>
-constexpr void store_relaxed(std::atomic<T1>& lhs, T2&& v) noexcept {
+template <typename T1, typename T2> constexpr void store_relaxed(std::atomic<T1>& lhs, T2&& v) noexcept {
     static_assert(std::atomic<T1>::is_always_lock_free);
     lhs.store(std::forward<T2>(v), std::memory_order_relaxed);
 }
 
-template <typename T1, typename T2>
-constexpr void store_release(std::atomic<T1>& lhs, T2&& v) noexcept {
+template <typename T1, typename T2> constexpr void store_release(std::atomic<T1>& lhs, T2&& v) noexcept {
     static_assert(std::atomic<T1>::is_always_lock_free);
     lhs.store(std::forward<T2>(v), std::memory_order_release);
 }
 
-template <typename T1, typename T2>
-constexpr void store_seq_cst(std::atomic<T1>& lhs, T2&& v) noexcept {
+template <typename T1, typename T2> constexpr void store_seq_cst(std::atomic<T1>& lhs, T2&& v) noexcept {
     static_assert(std::atomic<T1>::is_always_lock_free);
     lhs.store(std::forward<T2>(v), std::memory_order_seq_cst);
 }
 
-template <typename T>
-[[nodiscard]] constexpr T load_relaxed(const std::atomic<T>& a) noexcept {
+template <typename T> [[nodiscard]] constexpr T load_relaxed(const std::atomic<T>& a) noexcept {
     static_assert(std::atomic<T>::is_always_lock_free);
     return a.load(std::memory_order_relaxed);
 }
 
-template <typename T>
-[[nodiscard]] constexpr T load_acquire(const std::atomic<T>& a) noexcept {
+template <typename T> [[nodiscard]] constexpr T load_acquire(const std::atomic<T>& a) noexcept {
     static_assert(std::atomic<T>::is_always_lock_free);
     return a.load(std::memory_order_acquire);
 }
 
-template <typename T>
-[[nodiscard]] constexpr T load_seq_cst(const std::atomic<T>& a) noexcept {
+template <typename T> [[nodiscard]] constexpr T load_seq_cst(const std::atomic<T>& a) noexcept {
     static_assert(std::atomic<T>::is_always_lock_free);
     return a.load(std::memory_order_seq_cst);
 }
 
-} // vespalib::atomic
+} // namespace vespalib::atomic

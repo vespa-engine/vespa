@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "large_array_buffer_type.hpp"
+
 #include "buffer_type.hpp"
 
 namespace vespalib::datastore {
@@ -17,4 +18,4 @@ template class LargeArrayBufferType<int32_t>;
 template class LargeArrayBufferType<std::string>;
 template class LargeArrayBufferType<AtomicEntryRef>;
 
-}
+} // namespace vespalib::datastore

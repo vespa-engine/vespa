@@ -8,8 +8,7 @@ namespace vespalib {
 /**
  * Utility class inspecting and generating regular expression strings.
  **/
-class RegexpUtil
-{
+class RegexpUtil {
 public:
     /**
      * Look at the given regular expression and identify the prefix

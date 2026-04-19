@@ -13,5 +13,4 @@ template class DynamicArrayBufferType<float>;
 template class DynamicArrayBufferType<double>;
 template class DynamicArrayBufferType<AtomicEntryRef>;
 
-}
-
+} // namespace vespalib::datastore

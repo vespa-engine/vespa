@@ -15,10 +15,10 @@ namespace vespalib::datastore {
  * The array sizes vector is a monotonic strictly increasing sequence that might end
  * with exponential growth.
  */
-class ArrayStoreTypeMapper
-{
+class ArrayStoreTypeMapper {
 protected:
     std::vector<uint32_t> _array_sizes;
+
 public:
     ArrayStoreTypeMapper();
     ~ArrayStoreTypeMapper();
@@ -28,4 +28,4 @@ public:
     uint32_t get_max_type_id(uint32_t max_type_id) const noexcept;
 };
 
-}
+} // namespace vespalib::datastore

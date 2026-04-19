@@ -2,18 +2,18 @@
 
 #pragma once
 
-#include "value.h"
 #include "external_memory.h"
+#include "value.h"
 
 namespace vespalib::slime {
 
 /**
  * A data value backed by external memory.
  **/
-class ExternalDataValue : public Value
-{
+class ExternalDataValue : public Value {
 private:
     ExternalMemory::UP _value;
+
 public:
     ExternalDataValue(ExternalMemory::UP data) : _value(std::move(data)) {}
     Memory asData() const override { return _value->get(); }

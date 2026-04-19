@@ -5,13 +5,12 @@
 
 using namespace vespalib;
 
-TEST(RUsageTest, testRUsage)
-{
+TEST(RUsageTest, testRUsage) {
     RUsage r1;
     EXPECT_EQ("", r1.toString());
     RUsage r2;
     EXPECT_EQ(r2.toString(), r1.toString());
-    RUsage diff = r2-r1;
+    RUsage diff = r2 - r1;
     EXPECT_EQ(diff.toString(), r2.toString());
     {
         RUsage then = RUsage::createSelf(steady_time(7ns));
@@ -41,7 +40,7 @@ TEST(RUsageTest, testRUsage)
         EXPECT_EQ(0, r.tv_usec);
         r = a - c;
         EXPECT_EQ(-1, r.tv_sec);
-        EXPECT_EQ( 6, r.tv_usec);
+        EXPECT_EQ(6, r.tv_usec);
         r = c - a;
         EXPECT_EQ(0, r.tv_sec);
         EXPECT_EQ(999994, r.tv_usec);
@@ -50,7 +49,7 @@ TEST(RUsageTest, testRUsage)
         EXPECT_EQ(999998, r.tv_usec);
         r = d - a;
         EXPECT_EQ(-3, r.tv_sec);
-        EXPECT_EQ( 2, r.tv_usec);
+        EXPECT_EQ(2, r.tv_usec);
     }
 }
 

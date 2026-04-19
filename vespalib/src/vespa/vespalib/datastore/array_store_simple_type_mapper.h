@@ -10,13 +10,12 @@ namespace vespalib::datastore {
 /**
  * This class provides a 1-to-1 mapping between type ids and array sizes for small arrays in an array store.
  *
- * This means that buffers for type id 1 stores arrays of size 1, buffers for type id 2 stores arrays of size 2, and so on.
- * Type id 0 is always reserved for large arrays allocated on the heap.
+ * This means that buffers for type id 1 stores arrays of size 1, buffers for type id 2 stores arrays of size 2, and
+ * so on. Type id 0 is always reserved for large arrays allocated on the heap.
  *
  * A more complex mapping can be used by creating a custom mapper and BufferType implementations.
  */
-template <typename ElemT>
-class ArrayStoreSimpleTypeMapper {
+template <typename ElemT> class ArrayStoreSimpleTypeMapper {
 public:
     using SmallBufferType = SmallArrayBufferType<ElemT>;
     using LargeBufferType = LargeArrayBufferType<ElemT>;
@@ -27,4 +26,4 @@ public:
     static uint32_t get_max_type_id(uint32_t max_type_id) noexcept { return max_type_id; }
 };
 
-}
+} // namespace vespalib::datastore

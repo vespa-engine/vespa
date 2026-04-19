@@ -6,7 +6,8 @@
 
 namespace vespalib {
 
-template <typename T, size_t N>
-constexpr size_t arraysize(const T (&)[N]) { return N; }
+template <typename T, size_t N> constexpr size_t arraysize(const T (&)[N]) {
+    return N;
+}
 
-}  // namespace vespalib
+} // namespace vespalib

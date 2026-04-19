@@ -1,9 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "protocol_snooping.h"
+
 #include <vespa/vespalib/util/size_literals.h>
-#include <iostream>
-#include <cstdlib>
+
 #include <stdint.h>
+
+#include <cstdlib>
+#include <iostream>
 
 namespace vespalib::net::tls::snooping {
 
@@ -28,8 +31,7 @@ inline bool is_expected_tls_protocol_version(const char* buf) {
 
 // Length is big endian u16 in bytes 3, 4
 inline uint16_t tls_record_length(const char* buf) {
-    return (uint16_t(static_cast<unsigned char>(buf[3]) << 8)
-            + static_cast<unsigned char>(buf[4]));
+    return (uint16_t(static_cast<unsigned char>(buf[3]) << 8) + static_cast<unsigned char>(buf[4]));
 }
 
 // First byte of Handshake record in byte 5, which shall be ClientHello (0x01)
@@ -55,7 +57,7 @@ inline bool handshake_record_size_matches_length(const char* buf, uint16_t lengt
     return (static_cast<unsigned char>(buf[7]) == ((length - 4) >> 8));
 }
 
-} // anon ns
+} // namespace
 
 TlsSnoopingResult snoop_client_hello_header(const char* buf) noexcept {
     if (!is_tls_handshake_packet(buf)) {
@@ -89,13 +91,20 @@ TlsSnoopingResult snoop_client_hello_header(const char* buf) noexcept {
 
 const char* to_string(TlsSnoopingResult result) noexcept {
     switch (result) {
-    case TlsSnoopingResult::ProbablyTls:                return "ProbablyTls";
-    case TlsSnoopingResult::HandshakeMismatch:          return "HandshakeMismatch";
-    case TlsSnoopingResult::ProtocolVersionMismatch:    return "ProtocolVersionMismatch";
-    case TlsSnoopingResult::RecordSizeRfcViolation:     return "RecordSizeRfcViolation";
-    case TlsSnoopingResult::RecordNotClientHello:       return "RecordNotClientHello";
-    case TlsSnoopingResult::ClientHelloRecordTooBig:    return "ClientHelloRecordTooBig";
-    case TlsSnoopingResult::ExpectedRecordSizeMismatch: return "ExpectedRecordSizeMismatch";
+    case TlsSnoopingResult::ProbablyTls:
+        return "ProbablyTls";
+    case TlsSnoopingResult::HandshakeMismatch:
+        return "HandshakeMismatch";
+    case TlsSnoopingResult::ProtocolVersionMismatch:
+        return "ProtocolVersionMismatch";
+    case TlsSnoopingResult::RecordSizeRfcViolation:
+        return "RecordSizeRfcViolation";
+    case TlsSnoopingResult::RecordNotClientHello:
+        return "RecordNotClientHello";
+    case TlsSnoopingResult::ClientHelloRecordTooBig:
+        return "ClientHelloRecordTooBig";
+    case TlsSnoopingResult::ExpectedRecordSizeMismatch:
+        return "ExpectedRecordSizeMismatch";
     }
     abort();
 }
@@ -125,4 +134,4 @@ const char* describe_result(TlsSnoopingResult result) noexcept {
     abort();
 }
 
-}
+} // namespace vespalib::net::tls::snooping

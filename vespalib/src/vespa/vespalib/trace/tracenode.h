@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/vespalib/util/time.h>
+
 #include <string>
 #include <vector>
 
@@ -25,7 +26,7 @@ class TraceNode {
 private:
     std::string            _note;
     std::vector<TraceNode> _children;
-    TraceNode             *_parent;
+    TraceNode*             _parent;
     system_time            _timestamp;
     bool                   _strict;
     bool                   _hasNote;
@@ -41,7 +42,7 @@ public:
      * @param note The note for this node.
      * @param timestamp The timestamp to give to node.
      */
-    explicit TraceNode(const std::string &note, system_time timestamp);
+    explicit TraceNode(const std::string& note, system_time timestamp);
 
     /**
      * Create a leaf node with no note and a time stamp.
@@ -49,9 +50,9 @@ public:
      */
     explicit TraceNode(system_time timestamp) noexcept;
 
-    TraceNode & operator =(const TraceNode &);
-    TraceNode(TraceNode &&) noexcept;
-    TraceNode & operator =(TraceNode &&) noexcept;
+    TraceNode& operator=(const TraceNode&);
+    TraceNode(TraceNode&&) noexcept;
+    TraceNode& operator=(TraceNode&&) noexcept;
     ~TraceNode();
 
     /**
@@ -59,7 +60,7 @@ public:
      *
      * @param rhs The tree to copy.
      */
-    TraceNode(const TraceNode &rhs);
+    TraceNode(const TraceNode& rhs);
 
     /**
      * Swap the internals of this tree with another.
@@ -67,21 +68,21 @@ public:
      * @param other The tree to swap internals with.
      * @return This, to allow chaining.
      */
-    TraceNode &swap(TraceNode &t);
+    TraceNode& swap(TraceNode& t);
 
     /**
      * Remove all trace information from this tree.
      *
      * @return This, to allow chaining.
      */
-    TraceNode &clear();
+    TraceNode& clear();
 
     /**
      * Sort non-strict children recursively down the tree.
      *
      * @return This, to allow chaining.
      */
-    TraceNode &sort();
+    TraceNode& sort();
 
     /**
      * Compact this tree. This will reduce the height of this tree as much as
@@ -89,7 +90,7 @@ public:
      *
      * @return This, to allow chaining.
      */
-    TraceNode &compact();
+    TraceNode& compact();
 
     /**
      * Normalize this tree. This will transform all equivalent trees into the
@@ -98,7 +99,7 @@ public:
      *
      * @return This, to allow chaining.
      */
-    TraceNode &normalize();
+    TraceNode& normalize();
 
     /**
      * Check whether or not this is a root node.
@@ -135,7 +136,10 @@ public:
      * @param strict True to order children strictly.
      * @return This, to allow chaining.
      */
-    TraceNode &setStrict(bool strict) { _strict = strict; return *this; }
+    TraceNode& setStrict(bool strict) {
+        _strict = strict;
+        return *this;
+    }
 
     /**
      * Returns whether or not a note is assigned to this node.
@@ -149,7 +153,7 @@ public:
      *
      * @return The note.
      */
-    const std::string & getNote() const { return _note; }
+    const std::string& getNote() const { return _note; }
 
     /**
      * Returns the timestamp assigned to this node.
@@ -157,7 +161,6 @@ public:
      * @return The timestamp.
      */
     system_time getTimestamp() const { return _timestamp; }
-
 
     /**
      * Returns the number of child nodes of this.
@@ -172,7 +175,7 @@ public:
      * @param i The index of the child to return.
      * @return The child at the given index.
      */
-    const TraceNode &getChild(uint32_t i) const {  return _children[i]; }
+    const TraceNode& getChild(uint32_t i) const { return _children[i]; }
 
     /**
      * Convenience method to add a child node containing a note to this.
@@ -181,7 +184,7 @@ public:
      * @param note The note to assign to the child.
      * @return This, to allow chaining.
      */
-    TraceNode &addChild(const std::string &note);
+    TraceNode& addChild(const std::string& note);
 
     /**
      * Convenience method to add a child node containing a note to this and a timestamp.
@@ -190,7 +193,7 @@ public:
      * @param timestamp The timestamp to give this child.
      * @return This, to allow chaining.
      */
-    TraceNode &addChild(const std::string &note, system_time timestamp);
+    TraceNode& addChild(const std::string& note, system_time timestamp);
 
     /**
      * Adds a child node to this.
@@ -198,7 +201,7 @@ public:
      * @param child The child to add.
      * @return This, to allow chaining.
      */
-    TraceNode &addChild(TraceNode child);
+    TraceNode& addChild(TraceNode child);
 
     /**
      * Adds a list of child nodes to this.
@@ -206,7 +209,7 @@ public:
      * @param children The children to add.
      * @return This, to allow chaining.
      */
-    TraceNode &addChildren(std::vector<TraceNode> children);
+    TraceNode& addChildren(std::vector<TraceNode> children);
 
     /**
      * Generate a non-parseable, human-readable string representation of
@@ -226,7 +229,7 @@ public:
      * @param indent number of spaces to be used for indent
      * @param limit soft cap for maximum size of generated string
      **/
-    bool writeString(std::string &dst, size_t indent, size_t limit) const;
+    bool writeString(std::string& dst, size_t indent, size_t limit) const;
 
     /**
      * Returns a parseable (using {@link #decode(String)}) string
@@ -243,7 +246,7 @@ public:
      * @param str The string to parse.
      * @return The corresponding trace tree, or an empty node if parsing failed.
      */
-    static TraceNode decode(const std::string &str);
+    static TraceNode decode(const std::string& str);
 
     /**
      * Visits this TraceNode and all of its descendants in depth-first, prefix order.
@@ -251,11 +254,9 @@ public:
      * @param visitor The visitor to accept.
      * @return The visitor parameter.
      */
-    TraceVisitor & accept(TraceVisitor & visitor) const;
+    TraceVisitor& accept(TraceVisitor& visitor) const;
 
     size_t computeMemoryUsage() const;
-
 };
 
 } // namespace vespalib
-

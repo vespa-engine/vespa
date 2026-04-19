@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/traits.h>
+
 #include <vespa/vespalib/util/arrayqueue.hpp>
+
 #include <concepts>
 
 using namespace vespalib;
@@ -10,8 +12,8 @@ struct Simple {
     int value;
     int moved;
     explicit Simple(int v) : value(v), moved(0) {}
-    Simple(const Simple &rhs) : value(rhs.value), moved(rhs.moved) {}
-    Simple(Simple &&rhs) : value(rhs.value), moved(rhs.moved + 1) {}
+    Simple(const Simple& rhs) : value(rhs.value), moved(rhs.moved) {}
+    Simple(Simple&& rhs) : value(rhs.value), moved(rhs.moved + 1) {}
 };
 using Hard = std::unique_ptr<Simple>;
 
@@ -31,9 +33,9 @@ VESPA_CAN_SKIP_DESTRUCTION(Child2);
 TEST(TraitsTest, require_that_copy_ctor_detection_works) {
     EXPECT_EQ(std::copy_constructible<Simple>, true);
     EXPECT_EQ(std::copy_constructible<Hard>, false);
-    EXPECT_EQ(std::copy_constructible<ArrayQueue<Simple> >, true);
-    EXPECT_EQ(std::copy_constructible<ArrayQueue<Hard> >, false);
-    EXPECT_EQ(std::copy_constructible<std::unique_ptr<Hard> >, false);
+    EXPECT_EQ(std::copy_constructible<ArrayQueue<Simple>>, true);
+    EXPECT_EQ(std::copy_constructible<ArrayQueue<Hard>>, false);
+    EXPECT_EQ(std::copy_constructible<std::unique_ptr<Hard>>, false);
 }
 
 TEST(TraitsTest, require_that_can_skip_destruction_works) {
@@ -44,8 +46,12 @@ TEST(TraitsTest, require_that_can_skip_destruction_works) {
 }
 
 struct NoType {};
-struct TypeType { using type = NoType; };
-struct NoTypeType { static constexpr int type = 3; };
+struct TypeType {
+    using type = NoType;
+};
+struct NoTypeType {
+    static constexpr int type = 3;
+};
 
 TEST(TraitsTest, require_that_type_type_member_can_be_detected) {
     EXPECT_FALSE(has_type_type<NoType>);

@@ -1,7 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/util/typed_data_layout.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/typed_data_layout.h>
+
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -11,9 +12,9 @@ using namespace vespalib::tdl;
 namespace {
 
 struct MyObj {
-    int value;
-    std::vector<int> *ext_list = nullptr;
-    static int live_cnt;
+    int               value;
+    std::vector<int>* ext_list = nullptr;
+    static int        live_cnt;
     MyObj() : value(++live_cnt) {}
     ~MyObj() {
         --live_cnt;
@@ -25,7 +26,7 @@ struct MyObj {
 int MyObj::live_cnt = 0;
 
 struct alignas(32) BigObj {
-    int value;
+    int        value;
     static int live_cnt;
     BigObj() : value(++live_cnt) {}
     ~BigObj() { --live_cnt; }
@@ -34,10 +35,8 @@ int BigObj::live_cnt = 0;
 
 struct Size {
     size_t value;
-    template <typename Data>
-    explicit Size(const Data &d) : value(sizeof(d)) {}
-    template <typename T>
-    Size &add(size_t n, bool skip_empty = true) {
+    template <typename Data> explicit Size(const Data& d) : value(sizeof(d)) {}
+    template <typename T> Size& add(size_t n, bool skip_empty = true) {
         if (n > 0 || !skip_empty) {
             value = detail::align_up<alignof(T)>(value);
             value += n * sizeof(T);
@@ -46,8 +45,7 @@ struct Size {
     }
 };
 
-template <typename T>
-bool is_aligned(const T *ptr) {
+template <typename T> bool is_aligned(const T* ptr) {
     return (reinterpret_cast<uintptr_t>(ptr) % alignof(T)) == 0;
 }
 
@@ -65,14 +63,14 @@ TEST(TypedDataLayoutTest, default_array_handle_is_invalid) {
 
 TEST(TypedDataLayoutTest, empty_layout_can_create_data) {
     Layout<Domain<int>> layout;
-    auto data = layout.create_data();
+    auto                data = layout.create_data();
     EXPECT_TRUE(data);
     EXPECT_EQ(data->allocated(), Size(*data).value);
 }
 
 TEST(TypedDataLayoutTest, reserve_and_resolve) {
     Layout<Domain<int>> layout;
-    Handle handle = layout.reserve<int>();
+    Handle              handle = layout.reserve<int>();
     EXPECT_TRUE(handle.valid());
 
     auto data = layout.create_data();
@@ -88,7 +86,7 @@ TEST(TypedDataLayoutTest, reserve_and_resolve) {
 
 TEST(TypedDataLayoutTest, reserve_and_resolve_array) {
     Layout<Domain<int>> layout;
-    ArrayHandle handle = layout.reserve_array<int>(3);
+    ArrayHandle         handle = layout.reserve_array<int>(3);
     EXPECT_TRUE(handle.valid());
 
     auto data = layout.create_data();
@@ -117,10 +115,10 @@ TEST(TypedDataLayoutTest, object_construction_and_destruction_order) {
     std::vector<int> list;
     {
         Layout<Domain<MyObj>> layout;
-        auto h1 = layout.reserve<MyObj>();
-        auto h2 = layout.reserve<MyObj>();
-        auto h3 = layout.reserve<MyObj>();
-        auto data = layout.create_data();
+        auto                  h1 = layout.reserve<MyObj>();
+        auto                  h2 = layout.reserve<MyObj>();
+        auto                  h3 = layout.reserve<MyObj>();
+        auto                  data = layout.create_data();
         EXPECT_EQ(data->allocated(), Size(*data).add<MyObj>(3).value);
         EXPECT_EQ(data->resolve<MyObj>(h1).value, 1);
         data->resolve<MyObj>(h1).ext_list = &list;
@@ -138,8 +136,8 @@ TEST(TypedDataLayoutTest, object_construction_and_destruction_order) {
 
 TEST(TypedDataLayoutTest, array_handle_iteration) {
     Layout<Domain<int>> layout;
-    ArrayHandle handle = layout.reserve_array<int>(4);
-    auto data = layout.create_data();
+    ArrayHandle         handle = layout.reserve_array<int>(4);
+    auto                data = layout.create_data();
     EXPECT_EQ(data->allocated(), Size(*data).add<int>(4).value);
     auto span = data->resolve_array<int>(handle);
     ASSERT_EQ(span.size(), 4);
@@ -155,13 +153,13 @@ TEST(TypedDataLayoutTest, array_handle_iteration) {
 
 TEST(TypedDataLayoutTest, mixed_reserve_and_reserve_array) {
     Layout<Domain<int>> layout;
-    Handle h1 = layout.reserve<int>();
-    ArrayHandle empty = layout.reserve_array<int>(0);
+    Handle              h1 = layout.reserve<int>();
+    ArrayHandle         empty = layout.reserve_array<int>(0);
     EXPECT_TRUE(empty.valid());
     EXPECT_TRUE(empty.empty());
     ArrayHandle ah = layout.reserve_array<int>(3);
-    Handle h2 = layout.reserve<int>();
-    auto data = layout.create_data();
+    Handle      h2 = layout.reserve<int>();
+    auto        data = layout.create_data();
     EXPECT_EQ(data->allocated(), Size(*data).add<int>(5).value);
     ASSERT_EQ(data->all_of<int>().size(), 5);
     ASSERT_EQ(data->resolve_array<int>(empty).size(), 0);
@@ -181,7 +179,7 @@ TEST(TypedDataLayoutTest, mixed_reserve_and_reserve_array) {
 
 TEST(TypedDataLayoutTest, multi_reserve_and_resolve) {
     using MyLayout = Layout<Domain<int, double, std::string>>;
-    MyLayout layout;
+    MyLayout            layout;
     std::vector<Handle> ints;
     std::vector<Handle> doubles;
     std::vector<Handle> strings;
@@ -233,9 +231,9 @@ TEST(TypedDataLayoutTest, base_class) {
     ASSERT_EQ(MyObj::live_cnt, 0);
     {
         Layout<Domain<int, double>, MyObj> layout;
-        auto hi = layout.reserve<int>();
-        auto hd = layout.reserve<double>();
-        auto data = layout.create_data();
+        auto                               hi = layout.reserve<int>();
+        auto                               hd = layout.reserve<double>();
+        auto                               data = layout.create_data();
         EXPECT_EQ(MyObj::live_cnt, 1);
         EXPECT_EQ(data->allocated(), Size(*data).add<int>(1).add<double>(1).value);
         data->value = 42;
@@ -263,10 +261,10 @@ TEST(TypedDataLayoutTest, alignment) {
     ASSERT_EQ(BigObj::live_cnt, 0);
     {
         Layout<Domain<char, int, BigObj>, BigObj> layout;
-        auto hc = layout.reserve<char>();
-        auto hi = layout.reserve<int>();
-        auto hb = layout.reserve<BigObj>();
-        auto data = layout.create_data();
+        auto                                      hc = layout.reserve<char>();
+        auto                                      hi = layout.reserve<int>();
+        auto                                      hb = layout.reserve<BigObj>();
+        auto                                      data = layout.create_data();
         EXPECT_EQ(BigObj::live_cnt, 2);
         EXPECT_EQ(data->allocated(), Size(*data).add<char>(1).add<int>(1).add<BigObj>(1).value);
         EXPECT_TRUE(is_aligned(data.get()));
