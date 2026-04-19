@@ -28,9 +28,12 @@ ConfigSubscriptionSet::ConfigSubscriptionSet(std::shared_ptr<IConfigContext> con
       _subscriptionList(),
       _state(OPEN),
       _lock(),
-      _cond() {}
+      _cond() {
+}
 
-ConfigSubscriptionSet::~ConfigSubscriptionSet() { close(); }
+ConfigSubscriptionSet::~ConfigSubscriptionSet() {
+    close();
+}
 
 bool ConfigSubscriptionSet::acquireSnapshot(duration timeout, bool ignoreChange) {
     if (_state == CLOSED) {
@@ -80,8 +83,8 @@ bool ConfigSubscriptionSet::acquireSnapshot(duration timeout, bool ignoreChange)
                 generationsInSync = false;
             }
         }
-        inSync =
-            generationsInSync && (_subscriptionList.size() == numGenerationChanged) && (ignoreChange || numChanged > 0);
+        inSync = generationsInSync && (_subscriptionList.size() == numGenerationChanged) &&
+                 (ignoreChange || numChanged > 0);
         lastGeneration = generation;
         now = steady_clock::now();
         std::unique_lock guard(_lock);

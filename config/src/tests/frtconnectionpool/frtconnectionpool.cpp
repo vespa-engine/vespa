@@ -5,9 +5,10 @@
 #include <vespa/fnet/transport.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
+#include <unistd.h>
+
 #include <set>
 #include <sstream>
-#include <unistd.h>
 
 using namespace config;
 
@@ -15,7 +16,7 @@ class FRTConnectionPoolTest : public testing::Test {
 protected:
     ServerSpec::HostSpecList _sources;
     FNET_Transport           _transport;
-    void                     verifyAllSourcesInRotation(FRTConnectionPool& sourcePool);
+    void verifyAllSourcesInRotation(FRTConnectionPool& sourcePool);
     FRTConnectionPoolTest();
     ~FRTConnectionPoolTest() override;
 };
@@ -27,7 +28,9 @@ FRTConnectionPoolTest::FRTConnectionPoolTest() : testing::Test(), _sources(), _t
     _transport.Start();
 }
 
-FRTConnectionPoolTest::~FRTConnectionPoolTest() { _transport.ShutDown(true); }
+FRTConnectionPoolTest::~FRTConnectionPoolTest() {
+    _transport.ShutDown(true);
+}
 
 TimingValues timingValues;
 

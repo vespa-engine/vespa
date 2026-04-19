@@ -4,9 +4,10 @@
 #include "config-foo.h"
 #include "config-my.h"
 
-#include <vespa/config/helper/legacysubscriber.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/test_path.h>
+
+#include <vespa/config/helper/legacysubscriber.hpp>
 
 #include <fstream>
 

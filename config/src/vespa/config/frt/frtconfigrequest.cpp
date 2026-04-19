@@ -13,14 +13,23 @@ FRTConfigRequest::FRTConfigRequest(Connection* connection, const ConfigKey& key)
       _request(connection->allocRPCRequest()),
       _parameters(*_request->GetParams()),
       _connection(connection),
-      _key(key) {}
+      _key(key) {
+}
 
-FRTConfigRequest::~FRTConfigRequest() { _request->internal_subref(); }
+FRTConfigRequest::~FRTConfigRequest() {
+    _request->internal_subref();
+}
 
-bool FRTConfigRequest::abort() { return _request->Abort(); }
+bool FRTConfigRequest::abort() {
+    return _request->Abort();
+}
 
-void FRTConfigRequest::setError(int errorCode) { _connection->setError(errorCode); }
+void FRTConfigRequest::setError(int errorCode) {
+    _connection->setError(errorCode);
+}
 
-const ConfigKey& FRTConfigRequest::getKey() const { return _key; }
+const ConfigKey& FRTConfigRequest::getKey() const {
+    return _key;
+}
 
 } // namespace config

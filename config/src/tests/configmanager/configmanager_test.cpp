@@ -42,7 +42,7 @@ public:
         _data->numUpdate++;
         _data->generation = generation;
     }
-    void                           close() override { _data->numClose++; }
+    void close() override { _data->numClose++; }
     std::shared_ptr<IConfigHolder> _holder;
     TestContext*                   _data;
 };
@@ -61,7 +61,7 @@ class MySpec : public SourceSpec {
 public:
     MySpec(TestContext* data) : _key("foo"), _data(data) {}
     ~MySpec() override;
-    SourceSpecKey                  createKey() const { return SourceSpecKey(_key); }
+    SourceSpecKey createKey() const { return SourceSpecKey(_key); }
     std::unique_ptr<SourceFactory> createSourceFactory(const TimingValues& timingValues) const override {
         (void)timingValues;
         return std::make_unique<MySourceFactory>(_data);
@@ -99,8 +99,10 @@ public:
 };
 
 ManagerTester::ManagerTester(const ConfigKey& k, const MySpec& s)
-    : key(k), _mgr(s.createSourceFactory(testTimingValues), 1) {}
-ManagerTester::~ManagerTester() {}
+    : key(k), _mgr(s.createSourceFactory(testTimingValues), 1) {
+}
+ManagerTester::~ManagerTester() {
+}
 
 } // namespace
 

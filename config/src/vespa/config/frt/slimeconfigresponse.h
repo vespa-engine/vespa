@@ -25,10 +25,10 @@ public:
     SlimeConfigResponse& operator=(const SlimeConfigResponse&) = delete;
     ~SlimeConfigResponse() override;
 
-    const ConfigKey&   getKey() const override { return _key; }
+    const ConfigKey& getKey() const override { return _key; }
     const ConfigValue& getValue() const override { return _value; }
     const ConfigState& getConfigState() const override { return _state; }
-    const Trace&       getTrace() const override { return _trace; }
+    const Trace& getTrace() const override { return _trace; }
 
     std::string getHostName() const;
 
@@ -44,9 +44,9 @@ private:
     Trace       _trace;
     bool        _filled;
 
-    ConfigKey   readKey() const;
+    ConfigKey readKey() const;
     ConfigState readState() const;
-    void        readTrace();
+    void readTrace();
 
 protected:
     SlimePtr _data;

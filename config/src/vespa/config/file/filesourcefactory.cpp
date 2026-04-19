@@ -47,7 +47,8 @@ std::unique_ptr<Source> DirSourceFactory::createSource(std::shared_ptr<IConfigHo
     return std::make_unique<FileSource>(std::move(holder), fName);
 }
 
-FileSourceFactory::FileSourceFactory(const FileSpec& fileSpec) : _fileName(fileSpec.getFileName()) {}
+FileSourceFactory::FileSourceFactory(const FileSpec& fileSpec) : _fileName(fileSpec.getFileName()) {
+}
 
 std::unique_ptr<Source> FileSourceFactory::createSource(std::shared_ptr<IConfigHolder> holder,
                                                         const ConfigKey&               key) const {

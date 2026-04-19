@@ -17,10 +17,10 @@ public:
     MyConfigRequest(const ConfigKey& key) : _key(key) {}
 
     const ConfigKey& getKey() const override { return _key; }
-    bool             abort() override { return false; }
-    void             setError(int errorCode) override { (void)errorCode; }
-    bool             verifyState(const ConfigState&) const override { return false; }
-    const ConfigKey  _key;
+    bool abort() override { return false; }
+    void setError(int errorCode) override { (void)errorCode; }
+    bool verifyState(const ConfigState&) const override { return false; }
+    const ConfigKey _key;
 };
 
 class MyConfigResponse : public ConfigResponse {
@@ -36,16 +36,16 @@ public:
           _errorCode(errorC0de),
           _isError(iserror) {}
 
-    const ConfigKey&   getKey() const override { return _key; }
+    const ConfigKey& getKey() const override { return _key; }
     const ConfigValue& getValue() const override { return _value; }
     const ConfigState& getConfigState() const override { return _state; }
-    bool               hasValidResponse() const override { return _valid; }
-    bool               validateResponse() override { return _valid; }
-    void               fill() override { _fillCalled = true; }
-    std::string        errorMessage() const override { return _errorMessage; }
-    int                errorCode() const override { return _errorCode; }
-    bool               isError() const override { return _isError; }
-    const Trace&       getTrace() const override { return _trace; }
+    bool hasValidResponse() const override { return _valid; }
+    bool validateResponse() override { return _valid; }
+    void fill() override { _fillCalled = true; }
+    std::string errorMessage() const override { return _errorMessage; }
+    int errorCode() const override { return _errorCode; }
+    bool isError() const override { return _isError; }
+    const Trace& getTrace() const override { return _trace; }
 
     const ConfigKey   _key;
     const ConfigValue _value;

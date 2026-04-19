@@ -12,6 +12,6 @@ struct Method {
 namespace methods {
 
 const Method find(const std::string& name);
-void         dump();
+void dump();
 
 }; // namespace methods

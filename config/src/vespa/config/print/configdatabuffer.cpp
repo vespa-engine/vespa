@@ -6,8 +6,10 @@
 
 namespace config {
 
-ConfigDataBuffer::ConfigDataBuffer() : _slime(std::make_unique<vespalib::Slime>()) {}
+ConfigDataBuffer::ConfigDataBuffer() : _slime(std::make_unique<vespalib::Slime>()) {
+}
 
-ConfigDataBuffer::~ConfigDataBuffer() {}
+ConfigDataBuffer::~ConfigDataBuffer() {
+}
 
 } // namespace config

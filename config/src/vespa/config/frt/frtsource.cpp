@@ -25,7 +25,9 @@ private:
     FRTSource* _source;
 };
 
-GetConfigTask::~GetConfigTask() { Kill(); }
+GetConfigTask::~GetConfigTask() {
+    Kill();
+}
 
 FRTSource::FRTSource(std::shared_ptr<ConnectionFactory> connectionFactory,
                      const FRTConfigRequestFactory& requestFactory, std::unique_ptr<ConfigAgent> agent,
@@ -158,6 +160,8 @@ void FRTSource::scheduleNextGetConfig() {
     LOG(debug, "Done scheduling task");
 }
 
-void FRTSource::reload(int64_t generation) { (void)generation; }
+void FRTSource::reload(int64_t generation) {
+    (void)generation;
+}
 
 } // namespace config

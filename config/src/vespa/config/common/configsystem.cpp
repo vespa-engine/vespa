@@ -12,13 +12,18 @@ namespace config {
 
 namespace {
 
-std::string getConfigProxyFileName() { return vespa::Defaults::underVespaHome("var/run/configproxy.pid"); }
+std::string getConfigProxyFileName() {
+    return vespa::Defaults::underVespaHome("var/run/configproxy.pid");
+}
 
 } // namespace
 
-ConfigSystem::ConfigSystem() : _configProxyPidFile(getConfigProxyFileName()) {}
+ConfigSystem::ConfigSystem() : _configProxyPidFile(getConfigProxyFileName()) {
+}
 
-bool ConfigSystem::isUp() const { return isConfigProxyRunning(); }
+bool ConfigSystem::isUp() const {
+    return isConfigProxyRunning();
+}
 
 bool ConfigSystem::isConfigProxyRunning() const {
     struct stat fs;

@@ -13,7 +13,8 @@ FRTSourceFactory::FRTSourceFactory(std::unique_ptr<ConnectionFactory> connection
                                    const CompressionType& compressionType)
     : _connectionFactory(std::move(connectionFactory)),
       _requestFactory(traceLevel, vespaVersion, compressionType),
-      _timingValues(timingValues) {}
+      _timingValues(timingValues) {
+}
 
 FRTSourceFactory::~FRTSourceFactory() = default;
 

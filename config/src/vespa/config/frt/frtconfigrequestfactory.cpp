@@ -19,16 +19,16 @@ FRTConfigRequestFactory::FRTConfigRequestFactory(int traceLevel, const VespaVers
     : _traceLevel(traceLevel),
       _vespaVersion(vespaVersion),
       _hostName(vespalib::HostName::get()),
-      _compressionType(compressionType) {}
+      _compressionType(compressionType) {
+}
 
 FRTConfigRequestFactory::~FRTConfigRequestFactory() = default;
 
-std::unique_ptr<FRTConfigRequest> FRTConfigRequestFactory::createConfigRequest(const ConfigKey&   key,
-                                                                               Connection*        connection,
-                                                                               const ConfigState& state,
-                                                                               vespalib::duration serverTimeout) const {
-    return make_unique<FRTConfigRequestV3>(connection, key, state.xxhash64, state.generation, _hostName, serverTimeout,
-                                           Trace(_traceLevel), _vespaVersion, _compressionType);
+std::unique_ptr<FRTConfigRequest>
+FRTConfigRequestFactory::createConfigRequest(const ConfigKey& key, Connection* connection, const ConfigState& state,
+                                             vespalib::duration serverTimeout) const {
+    return make_unique<FRTConfigRequestV3>(connection, key, state.xxhash64, state.generation, _hostName,
+                                           serverTimeout, Trace(_traceLevel), _vespaVersion, _compressionType);
 }
 
 } // namespace config

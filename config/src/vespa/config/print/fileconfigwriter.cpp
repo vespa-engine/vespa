@@ -11,9 +11,12 @@
 
 namespace config {
 
-FileConfigWriter::FileConfigWriter(const std::string& fileName) : _fileName(fileName) {}
+FileConfigWriter::FileConfigWriter(const std::string& fileName) : _fileName(fileName) {
+}
 
-bool FileConfigWriter::write(const ConfigInstance& config) { return write(config, FileConfigFormatter()); }
+bool FileConfigWriter::write(const ConfigInstance& config) {
+    return write(config, FileConfigFormatter());
+}
 
 bool FileConfigWriter::write(const ConfigInstance& config, const ConfigFormatter& formatter) {
     std::ofstream file(_fileName.c_str());

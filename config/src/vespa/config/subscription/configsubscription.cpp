@@ -19,9 +19,12 @@ ConfigSubscription::ConfigSubscription(const SubscriptionId& id, const ConfigKey
       _current(),
       _isChanged(false),
       _lastGenerationChanged(-1),
-      _closed(false) {}
+      _closed(false) {
+}
 
-ConfigSubscription::~ConfigSubscription() { close(); }
+ConfigSubscription::~ConfigSubscription() {
+    close();
+}
 
 bool ConfigSubscription::nextUpdate(int64_t generation, vespalib::steady_time deadline) {
     if (_closed || !_holder->poll()) {
@@ -47,7 +50,9 @@ bool ConfigSubscription::hasChanged() const {
             ((_next->hasChanged() && _current && (_current->getValue() != _next->getValue())) || !_current));
 }
 
-int64_t ConfigSubscription::getGeneration() const { return _next->getGeneration(); }
+int64_t ConfigSubscription::getGeneration() const {
+    return _next->getGeneration();
+}
 
 void ConfigSubscription::close() {
     if (!_closed.exchange(true)) {

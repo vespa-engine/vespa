@@ -8,9 +8,10 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
 
+#include <xxhash.h>
+
 #include <iostream>
 #include <sstream>
-#include <xxhash.h>
 
 using vespalib::Memory;
 
@@ -48,7 +49,9 @@ StringVector getlines(vespalib::asciistream& is, char delim) {
     return lines;
 }
 
-bool isGenerationNewer(int64_t newGen, int64_t oldGen) { return (newGen > oldGen) || (newGen == 0); }
+bool isGenerationNewer(int64_t newGen, int64_t oldGen) {
+    return (newGen > oldGen) || (newGen == 0);
+}
 
 void throwInvalid(const char* format, ...) {
     char    buf[4000];

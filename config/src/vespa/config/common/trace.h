@@ -34,15 +34,15 @@ public:
     bool shouldTrace(uint32_t level) const;
     void trace(uint32_t level, const std::string& message);
 
-    void                       serialize(vespalib::slime::Cursor& cursor) const;
-    void                       deserialize(const vespalib::slime::Inspector& inspector);
+    void serialize(vespalib::slime::Cursor& cursor) const;
+    void deserialize(const vespalib::slime::Inspector& inspector);
     const vespalib::TraceNode& getRoot() const { return _root; }
 
     std::string toString() const;
 
 private:
-    void                          serializeTraceLog(vespalib::slime::Cursor& array) const;
-    void                          deserializeTraceLog(const vespalib::slime::Inspector& inspector);
+    void serializeTraceLog(vespalib::slime::Cursor& array) const;
+    void deserializeTraceLog(const vespalib::slime::Inspector& inspector);
     static const vespalib::Memory TRACELOG;
     static const vespalib::Memory TRACELEVEL;
     vespalib::TraceNode           _root;

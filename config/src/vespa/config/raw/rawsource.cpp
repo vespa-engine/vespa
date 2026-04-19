@@ -11,13 +11,19 @@ namespace config {
 RawSource::~RawSource() = default;
 
 RawSource::RawSource(std::shared_ptr<IConfigHolder> holder, const std::string& payload)
-    : _holder(std::move(holder)), _payload(payload) {}
+    : _holder(std::move(holder)), _payload(payload) {
+}
 
-void RawSource::getConfig() { _holder->handle(std::make_unique<ConfigUpdate>(ConfigValue(readConfig()), true, 1)); }
+void RawSource::getConfig() {
+    _holder->handle(std::make_unique<ConfigUpdate>(ConfigValue(readConfig()), true, 1));
+}
 
-void RawSource::reload(int64_t generation) { (void)generation; }
+void RawSource::reload(int64_t generation) {
+    (void)generation;
+}
 
-void RawSource::close() {}
+void RawSource::close() {
+}
 
 StringVector RawSource::readConfig() {
     vespalib::asciistream is(_payload);

@@ -2,9 +2,10 @@
 
 #include "config-motd.h"
 
-#include <vespa/config/helper/configgetter.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/test_path.h>
+
+#include <vespa/config/helper/configgetter.hpp>
 
 using namespace config;
 

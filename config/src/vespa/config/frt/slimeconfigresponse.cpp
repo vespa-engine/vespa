@@ -17,7 +17,8 @@ using namespace config::protocol::v2;
 namespace config {
 
 SlimeConfigResponse::SlimeConfigResponse(FRT_RPCRequest* request)
-    : FRTConfigResponse(request), _key(), _value(), _trace(), _filled(false) {}
+    : FRTConfigResponse(request), _key(), _value(), _trace(), _filled(false) {
+}
 
 SlimeConfigResponse::~SlimeConfigResponse() = default;
 
@@ -47,15 +48,16 @@ void SlimeConfigResponse::readTrace() {
 
 ConfigKey SlimeConfigResponse::readKey() const {
     Inspector& root(_data->get());
-    return ConfigKey(root[RESPONSE_CONFIGID].asString().make_string(), root[RESPONSE_DEF_NAME].asString().make_string(),
-                     root[RESPONSE_DEF_NAMESPACE].asString().make_string(),
-                     root[RESPONSE_DEF_MD5].asString().make_string());
+    return ConfigKey(
+        root[RESPONSE_CONFIGID].asString().make_string(), root[RESPONSE_DEF_NAME].asString().make_string(),
+        root[RESPONSE_DEF_NAMESPACE].asString().make_string(), root[RESPONSE_DEF_MD5].asString().make_string());
 }
 
 ConfigState SlimeConfigResponse::readState() const {
     const Slime& data(*_data);
     return ConfigState(data.get()[RESPONSE_CONFIG_XXHASH64].asString().make_string(),
-                       data.get()[RESPONSE_CONFIG_GENERATION].asLong(), data.get()[RESPONSE_APPLY_ON_RESTART].asBool());
+                       data.get()[RESPONSE_CONFIG_GENERATION].asLong(),
+                       data.get()[RESPONSE_APPLY_ON_RESTART].asBool());
 }
 
 std::string SlimeConfigResponse::getHostName() const {

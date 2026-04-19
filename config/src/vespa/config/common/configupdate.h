@@ -16,9 +16,9 @@ public:
     ConfigUpdate& operator=(const ConfigUpdate&) = delete;
     ~ConfigUpdate();
     const ConfigValue& getValue() const noexcept { return _value; }
-    bool               hasChanged() const noexcept { return _hasChanged; }
-    int64_t            getGeneration() const noexcept { return _generation; }
-    void               merge(const ConfigUpdate& b) noexcept { _hasChanged = _hasChanged || b.hasChanged(); }
+    bool hasChanged() const noexcept { return _hasChanged; }
+    int64_t getGeneration() const noexcept { return _generation; }
+    void merge(const ConfigUpdate& b) noexcept { _hasChanged = _hasChanged || b.hasChanged(); }
 
 private:
     ConfigValue _value;

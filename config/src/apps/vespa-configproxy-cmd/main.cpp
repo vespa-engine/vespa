@@ -5,16 +5,17 @@
 
 #include <vespa/vespalib/util/signalhandler.h>
 
-#include <iostream>
 #include <unistd.h>
+
+#include <iostream>
 
 class Application {
     Flags _flags;
-    bool  parseOpts(int argc, char** argv);
+    bool parseOpts(int argc, char** argv);
 
 public:
     void usage();
-    int  main(int argc, char** argv);
+    int main(int argc, char** argv);
 
     Application() : _flags() {}
 };

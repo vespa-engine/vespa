@@ -2,9 +2,10 @@
 #include "config-my.h"
 
 #include <vespa/config/common/configcontext.h>
-#include <vespa/config/helper/configfetcher.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/exception.h>
+
+#include <vespa/config/helper/configfetcher.hpp>
 
 #include <atomic>
 #include <thread>
@@ -27,7 +28,8 @@ public:
     std::string               _badConfig;
 };
 
-MyCallback::MyCallback(const std::string& badConfig) : _config(), _configured(false), _badConfig(badConfig) {}
+MyCallback::MyCallback(const std::string& badConfig) : _config(), _configured(false), _badConfig(badConfig) {
+}
 MyCallback::~MyCallback() = default;
 
 TEST(ConfigFetcherTest, requireThatConfigIsAvailableOnConstruction) {

@@ -4,9 +4,11 @@
 
 namespace config {
 
-LegacySubscriber::LegacySubscriber() : _fetcher(), _configId() {}
+LegacySubscriber::LegacySubscriber() : _fetcher(), _configId() {
+}
 
-LegacySubscriber::~LegacySubscriber() {}
+LegacySubscriber::~LegacySubscriber() {
+}
 
 void LegacySubscriber::close() {
     if (_fetcher.get() != nullptr)

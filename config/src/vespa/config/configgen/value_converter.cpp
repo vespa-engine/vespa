@@ -45,7 +45,8 @@ template <> double convertValue(const ::vespalib::slime::Inspector& __inspector)
     case DOUBLE::ID:
         return static_cast<double>(__inspector.asDouble());
     case STRING::ID:
-        return static_cast<double>(vespalib::locale::c::strtod(__inspector.asString().make_string().c_str(), nullptr));
+        return static_cast<double>(
+            vespalib::locale::c::strtod(__inspector.asString().make_string().c_str(), nullptr));
     }
     throw InvalidConfigException(
         make_string("Expected double, but got incompatible config type %u", __inspector.type().getId()));

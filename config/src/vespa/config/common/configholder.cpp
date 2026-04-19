@@ -4,7 +4,8 @@
 
 namespace config {
 
-ConfigHolder::ConfigHolder() : _lock(), _cond(), _current() {}
+ConfigHolder::ConfigHolder() : _lock(), _cond(), _current() {
+}
 
 ConfigHolder::~ConfigHolder() = default;
 

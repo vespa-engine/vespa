@@ -16,9 +16,11 @@ namespace config {
 VESPA_THREAD_STACK_TAG(config_fetcher_thread);
 
 ConfigFetcher::ConfigFetcher(std::shared_ptr<IConfigContext> context)
-    : _poller(std::make_unique<ConfigPoller>(std::move(context))), _thread(), _closed(false), _started(false) {}
+    : _poller(std::make_unique<ConfigPoller>(std::move(context))), _thread(), _closed(false), _started(false) {
+}
 
-ConfigFetcher::ConfigFetcher(const SourceSpec& spec) : ConfigFetcher(std::make_shared<ConfigContext>(spec)) {}
+ConfigFetcher::ConfigFetcher(const SourceSpec& spec) : ConfigFetcher(std::make_shared<ConfigContext>(spec)) {
+}
 
 void ConfigFetcher::start() {
     if (!_closed) {
@@ -34,9 +36,13 @@ void ConfigFetcher::start() {
     }
 }
 
-ConfigFetcher::~ConfigFetcher() { close(); }
+ConfigFetcher::~ConfigFetcher() {
+    close();
+}
 
-int64_t ConfigFetcher::getGeneration() const { return _poller->getGeneration(); }
+int64_t ConfigFetcher::getGeneration() const {
+    return _poller->getGeneration();
+}
 
 void ConfigFetcher::close() {
     if (!_closed) {

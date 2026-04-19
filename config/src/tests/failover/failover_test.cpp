@@ -4,13 +4,14 @@
 
 #include <vespa/config/common/configcontext.h>
 #include <vespa/config/frt/protocol.h>
-#include <vespa/config/subscription/configsubscriber.hpp>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/nexus.h>
+
+#include <vespa/config/subscription/configsubscriber.hpp>
 
 #include <barrier>
 
@@ -162,7 +163,8 @@ struct ConfigCheckFixture {
     std::shared_ptr<IConfigContext> ctx;
     NetworkFixture&                 nf;
 
-    ConfigCheckFixture(NetworkFixture& f2) : ctx(std::make_shared<ConfigContext>(testTimingValues, f2.spec)), nf(f2) {}
+    ConfigCheckFixture(NetworkFixture& f2)
+        : ctx(std::make_shared<ConfigContext>(testTimingValues, f2.spec)), nf(f2) {}
     void checkSubscribe() {
         ConfigSubscriber           s(ctx);
         ConfigHandle<MyConfig>::UP handle = s.subscribe<MyConfig>("myId");

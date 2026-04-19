@@ -60,7 +60,8 @@ public:
      *                 method can be used to check for this condition.
      * @throws ConfigTimeoutException if resubscribe timed out.
      */
-    ConfigSnapshot getConfigs(const ConfigKeySet& keySet, vespalib::duration timeout = DEFAULT_NEXTGENERATION_TIMEOUT);
+    ConfigSnapshot getConfigs(const ConfigKeySet& keySet,
+                              vespalib::duration  timeout = DEFAULT_NEXTGENERATION_TIMEOUT);
 
     /**
      * Close this retriever in order to shut down.
