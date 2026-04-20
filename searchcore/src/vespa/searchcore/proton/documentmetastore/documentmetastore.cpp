@@ -1286,7 +1286,7 @@ DocumentMetaStore::make_default_docid_array_store_config()
     return DocumentIdStore::optimizedConfigForHugePage(array_store_max_type_id,
                                                        TypeMapper(array_store_max_type_id, array_store_grow_factor, array_store_max_buffer_size),
                                                        vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
-                                                       vespalib::alloc::MemoryAllocator::PAGE_SIZE,
+                                                       vespalib::alloc::MemoryAllocator::NORMAL_PAGE_SIZE,
                                                        array_store_max_buffer_size,
                                                        8_Ki,
                                                        array_store_alloc_grow_factor);

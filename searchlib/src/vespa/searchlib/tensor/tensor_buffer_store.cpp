@@ -37,7 +37,7 @@ TensorBufferStore::TensorBufferStore(const ValueType& tensor_type, std::shared_p
       _array_store(ArrayStoreType::optimizedConfigForHugePage(max_small_subspaces_type_id,
                                                               TensorBufferTypeMapper(max_small_subspaces_type_id, array_store_grow_factor, ArrayStoreConfig::default_max_buffer_size, &_ops),
                                                               MemoryAllocator::HUGEPAGE_SIZE,
-                                                              MemoryAllocator::PAGE_SIZE,
+                                                              MemoryAllocator::NORMAL_PAGE_SIZE,
                                                               ArrayStoreConfig::default_max_buffer_size,
                                                               8_Ki, ALLOC_GROW_FACTOR),
                    std::move(allocator), TensorBufferTypeMapper(max_small_subspaces_type_id, array_store_grow_factor, ArrayStoreConfig::default_max_buffer_size, &_ops))

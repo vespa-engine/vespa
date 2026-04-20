@@ -42,7 +42,7 @@ ArrayStoreConfig
 DocumentFeaturesStore::make_features_store_config()
 {
     auto mapper = make_features_store_type_mapper();
-    auto result = FeaturesStore::optimizedConfigForHugePage(array_store_max_type_id, mapper, vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE, vespalib::alloc::MemoryAllocator::PAGE_SIZE, max_buffer_size, 8_Ki, alloc_grow_factor);
+    auto result = FeaturesStore::optimizedConfigForHugePage(array_store_max_type_id, mapper, vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE, vespalib::alloc::MemoryAllocator::NORMAL_PAGE_SIZE, max_buffer_size, 8_Ki, alloc_grow_factor);
     result.enable_free_lists(true);
     return result;
 }
@@ -57,7 +57,7 @@ ArrayStoreConfig
 DocumentFeaturesStore::make_ranges_store_config()
 {
     auto mapper = make_ranges_store_type_mapper();
-    auto result = RangesStore::optimizedConfigForHugePage(array_store_max_type_id, mapper, vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE, vespalib::alloc::MemoryAllocator::PAGE_SIZE, max_buffer_size, 8_Ki, alloc_grow_factor);
+    auto result = RangesStore::optimizedConfigForHugePage(array_store_max_type_id, mapper, vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE, vespalib::alloc::MemoryAllocator::NORMAL_PAGE_SIZE, max_buffer_size, 8_Ki, alloc_grow_factor);
     result.enable_free_lists(true);
     return result;
 }
