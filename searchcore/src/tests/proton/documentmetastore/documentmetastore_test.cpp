@@ -2056,6 +2056,34 @@ TEST(DocumentMetaStoreTest, document_sizes_are_saved)
     std::filesystem::remove(std::filesystem::path("documentmetastore4.dat"));
 }
 
+TEST(DocumentMetaStoreTest, full_document_ids_are_saved)
+{
+    DocumentMetaStore dms1(createBucketDB(), "[documentmetastore]", search::GrowStrategy(), true, SubDbType::READY);
+    dms1.constructFreeList();
+    addLid(dms1, 1);
+    addLid(dms1, 2);
+    addLid(dms1, 3);
+
+    TuneFileAttributes tuneFileAttributes;
+    DummyFileHeaderContext fileHeaderContext;
+    AttributeFileSaveTarget saveTarget(tuneFileAttributes, fileHeaderContext);
+    EXPECT_TRUE(dms1.save(saveTarget, "documentmetastore5"));
+
+    DocumentMetaStore dms_loaded_docids(createBucketDB(), "documentmetastore5", search::GrowStrategy(), true, SubDbType::READY);
+    EXPECT_TRUE(dms_loaded_docids.load());
+    dms_loaded_docids.constructFreeList();
+
+    auto d1 = createDocId(1);
+    EXPECT_EQ(d1.toString(), dms_loaded_docids.get_docid_string(d1.getGlobalId()));
+    auto d2 = createDocId(2);
+    EXPECT_EQ(d2.toString(), dms_loaded_docids.get_docid_string(d2.getGlobalId()));
+    auto d3 = createDocId(3);
+    EXPECT_EQ(d3.toString(), dms_loaded_docids.get_docid_string(d3.getGlobalId()));
+
+    std::filesystem::remove(std::filesystem::path("documentmetastore5.dat"));
+    std::filesystem::remove(std::filesystem::path("documentmetastore5.docids.dat"));
+}
+
 namespace {
 
 void
