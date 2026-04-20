@@ -5,7 +5,7 @@
 #include <vespa/document/base/globalid.h>
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/persistence/spi/types.h>
-#include <vespa/vespalib/datastore/entryref.h>
+#include <vespa/vespalib/datastore/atomic_entry_ref.h>
 #include <algorithm>
 #include <atomic>
 #include <cassert>
@@ -20,9 +20,10 @@ struct RawDocumentMetadata
     using GlobalId = document::GlobalId;
     using BucketId = document::BucketId;
     using Timestamp = storage::spi::Timestamp;
-    using DocumentIdEntryRef = vespalib::datastore::EntryRefT<19>;
+    using EntryRef = vespalib::datastore::EntryRef;
+    using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     GlobalId              _gid;
-    DocumentIdEntryRef    _docid_ref;
+    AtomicEntryRef        _docid_ref;
     std::atomic<uint32_t> _bucket_used_bits_and_doc_size;
     std::atomic<uint64_t> _timestamp;
 
@@ -73,8 +74,9 @@ struct RawDocumentMetadata
     GlobalId &getGid() { return _gid; }
     void setGid(const GlobalId &rhs) { _gid = rhs; }
 
-    DocumentIdEntryRef get_docid_ref() const { return _docid_ref; }
-    void set_docid_ref(DocumentIdEntryRef ref) { _docid_ref = ref; }
+    [[nodiscard]] EntryRef acquire_docid_ref() const noexcept { return _docid_ref.load_acquire(); }
+    [[nodiscard]] EntryRef get_relaxed_docid_ref() const noexcept { return _docid_ref.load_relaxed(); }
+    void set_docid_ref(EntryRef ref) noexcept { _docid_ref.store_release(ref); }
 
     uint8_t getBucketUsedBits() const { return _bucket_used_bits_and_doc_size.load(std::memory_order_relaxed) & 0xffu; }
 

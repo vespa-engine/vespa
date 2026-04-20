@@ -61,6 +61,7 @@ using vespalib::GenerationHeldBase;
 using vespalib::IllegalStateException;
 using vespalib::MemoryUsage;
 using vespalib::btree::BTreeNoLeafData;
+using vespalib::datastore::EntryRef;
 using vespalib::make_string;
 
 namespace proton {
@@ -642,7 +643,8 @@ DocumentMetaStore::remove(DocId lid, uint64_t prepare_serial_num)
     }
     RawDocumentMetadata meta = removeInternal(lid, prepare_serial_num);
     if (_store_full_document_id) {
-        _docid_store.remove(meta._docid_ref);
+        _docid_store.remove(meta.get_relaxed_docid_ref());
+        _metadataStore[lid].set_docid_ref(EntryRef());
     }
     _bucketDB->takeGuard()->remove(meta.getGid(), meta.getBucketId().stripUnused(),
                                    meta.getTimestamp(), meta.getDocSize(), _subDbType);
@@ -728,7 +730,7 @@ DocumentMetaStore::removeBatch(const std::vector<DocId> &lidsToRemove, const uin
         assert(validLid(lid));
         removed.emplace_back(lid, _metadataStore[lid]);
         if (_store_full_document_id) {
-            _docid_store.remove(removed.back().second._docid_ref);
+            _docid_store.remove(removed.back().second.get_relaxed_docid_ref());
         }
     }
     remove_batch_internal_btree(removed);
@@ -843,7 +845,7 @@ DocumentMetaStore::get_docid_string(const GlobalId &gid) const
         return {};
     }
     const RawDocumentMetadata &raw = getRawMetadata(lid);
-    auto span = _docid_store.get(raw.get_docid_ref());
+    auto span = _docid_store.get(raw.acquire_docid_ref());
     return {span.data(), span.size()};
 }
 

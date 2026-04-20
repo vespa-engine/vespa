@@ -61,7 +61,8 @@ private:
     using OperationListenerSP = std::shared_ptr<documentmetastore::OperationListener>;
     using BucketDBOwnerSP = std::shared_ptr<bucketdb::BucketDBOwner>;
     using TypeMapper = vespalib::datastore::ArrayStoreDynamicTypeMapper<char>;
-    using DocumentIdStore = vespalib::datastore::ArrayStore<char, RawDocumentMetadata::DocumentIdEntryRef, TypeMapper>;
+    using DocumentIdEntryRef = vespalib::datastore::EntryRefT<19>;
+    using DocumentIdStore = vespalib::datastore::ArrayStore<char, DocumentIdEntryRef, TypeMapper>;
 
     static constexpr float array_store_alloc_grow_factor = 0.2;
     static constexpr double array_store_grow_factor = 1.03;
