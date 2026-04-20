@@ -19,7 +19,7 @@ class ProcessMemoryStats {
     static ProcessMemoryStats createStatsFromStatm();
 
 public:
-    static size_t PAGE_SIZE;
+    static size_t normal_page_size;
 
     ProcessMemoryStats();
     /**

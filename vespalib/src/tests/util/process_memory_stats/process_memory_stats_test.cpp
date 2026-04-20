@@ -90,9 +90,9 @@ TEST_F(ProcessMemoryStatsTest, parse_statm) {
     asciistream      stream(view);
 
     ProcessMemoryStats stats = ProcessMemoryStats::parseStatm(stream);
-    EXPECT_EQ(3332000 * ProcessMemoryStats::PAGE_SIZE, stats.getVirt());
-    EXPECT_EQ((1917762 - 8060) * ProcessMemoryStats::PAGE_SIZE, stats.getAnonymousRss());
-    EXPECT_EQ(8060 * ProcessMemoryStats::PAGE_SIZE, stats.getMappedRss());
+    EXPECT_EQ(3332000 * ProcessMemoryStats::normal_page_size, stats.getVirt());
+    EXPECT_EQ((1917762 - 8060) * ProcessMemoryStats::normal_page_size, stats.getAnonymousRss());
+    EXPECT_EQ(8060 * ProcessMemoryStats::normal_page_size, stats.getMappedRss());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
