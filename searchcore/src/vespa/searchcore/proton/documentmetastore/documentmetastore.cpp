@@ -462,7 +462,7 @@ DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB,
       _metadataStore(grow, getGenerationHolder()),
       _docid_store(make_default_docid_array_store_config(), get_memory_allocator(), TypeMapper(array_store_max_type_id, array_store_grow_factor, array_store_max_buffer_size)),
       _gidToLidMap(),
-      _gid_to_lid_map_write_itr(vespalib::datastore::EntryRef(), _gidToLidMap.getAllocator()),
+      _gid_to_lid_map_write_itr(EntryRef(), _gidToLidMap.getAllocator()),
       _gid_to_lid_map_write_itr_prepare_serial_num(0u),
       _lidAlloc(_metadataStore.size(), _metadataStore.capacity(), getGenerationHolder()),
       _bucketDB(std::move(bucketDB)),
@@ -673,6 +673,9 @@ DocumentMetaStore::move(DocId fromLid, DocId toLid, uint64_t prepare_serial_num)
     assert(validLid(fromLid));
     _lidAlloc.moveLidBegin(fromLid, toLid);
     _metadataStore[toLid] = _metadataStore[fromLid];
+    if (_store_full_document_id) {
+        _metadataStore[fromLid].set_docid_ref(EntryRef());
+    }
     const GlobalId & gid = getRawGid(fromLid);
     KeyComp comp(gid, get_unbound_metadata_view());
     GidToLidMapKey find_key(fromLid, gid);
@@ -731,6 +734,7 @@ DocumentMetaStore::removeBatch(const std::vector<DocId> &lidsToRemove, const uin
         removed.emplace_back(lid, _metadataStore[lid]);
         if (_store_full_document_id) {
             _docid_store.remove(removed.back().second.get_relaxed_docid_ref());
+            _metadataStore[lid].set_docid_ref(EntryRef());
         }
     }
     remove_batch_internal_btree(removed);
