@@ -1061,7 +1061,7 @@ public class DeploymentSpecTest {
             );
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().contains("must be at least 1h"));
+            assertTrue(e.getMessage().contains("must be at least 24h"));
         }
     }
 

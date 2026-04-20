@@ -786,7 +786,7 @@ public class DeploymentSpecXmlReader {
         if (backupElement == null) return Optional.empty();
 
         Duration frequency = parseBackupFrequency(requireStringAttribute("frequency", backupElement));
-        if (validate && frequency.compareTo(Duration.ofHours(1)) < 0) illegal("backup frequency must be at least 1h");
+        if (validate && frequency.compareTo(Duration.ofHours(24)) < 0) illegal("backup frequency must be at least 24h");
 
         DeploymentSpec.BackupSpec.Granularity granularity =
                 stringAttribute("granularity", backupElement)
