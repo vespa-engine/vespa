@@ -9,6 +9,7 @@ import com.yahoo.language.process.OverloadException;
 import com.yahoo.language.process.TimeoutException;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.SocketPolicy;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -138,6 +139,27 @@ public class AbstractHttpEmbedderTest {
 
         assertEquals("ok", call());
         assertEquals(2, mockServer.getRequestCount());
+    }
+
+    @Test
+    public void testRetriesOnIOException() {
+        mockServer.enqueue(new MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AFTER_REQUEST));
+        mockServer.enqueue(new MockResponse().setResponseCode(200).setBody("ok"));
+
+        assertEquals("ok", call());
+        assertEquals(2, mockServer.getRequestCount());
+    }
+
+    @Test
+    public void testMaxRetriesExceededOnIOExceptionRethrows() {
+        for (int i = 0; i < 10; i++) {
+            mockServer.enqueue(new MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AFTER_REQUEST));
+        }
+
+        var exception = assertThrows(RuntimeException.class, this::call);
+        assertTrue(exception.getMessage().startsWith("Embedding API call failed:"));
+        assertEquals(List.of(0), runtime.sampledFailures);
+        assertEquals(4, mockServer.getRequestCount()); // 1 initial + 3 retries
     }
 
     @Test
