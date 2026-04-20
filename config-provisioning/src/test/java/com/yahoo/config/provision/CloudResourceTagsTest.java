@@ -139,7 +139,7 @@ class CloudResourceTagsTest {
 
     @Test
     void vai_prefix_rejected() {
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("vai-custom", "value")));
+        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("vai_custom", "value")));
     }
 
     @Test
