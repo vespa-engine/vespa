@@ -287,7 +287,7 @@ public class Flags {
     public static final UnboundBooleanFlag ENABLE_UI_VERSION_TOGGLE = defineFeatureFlag(
             "enable-ui-version-toggle", false,
             List.of("laura", "jille"), "2026-04-20", "2026-12-31",
-            "Enable a toggle to switch between the legacy and v2 Console UI",
+            "Enable a toggle to switch between different versions of the Console UI",
             "Takes effect immediately",
             CONSOLE_USER_EMAIL);
 
