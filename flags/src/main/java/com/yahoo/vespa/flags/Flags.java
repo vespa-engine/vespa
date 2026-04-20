@@ -284,6 +284,13 @@ public class Flags {
             + "e.g. when running tests to avoid writing a large, sparse, mostly unused file",
             "Takes effect on restart of Docker container");
 
+    public static final UnboundBooleanFlag ENABLE_UI_VERSION_TOGGLE = defineFeatureFlag(
+            "enable-ui-version-toggle", false,
+            List.of("laura", "jille"), "2026-04-20", "2026-12-31",
+            "Enable a toggle to switch between the legacy and v2 Console UI",
+            "Takes effect immediately",
+            CONSOLE_USER_EMAIL);
+
     public static final UnboundBooleanFlag ENFORCE_EMAIL_DOMAIN_SSO = defineFeatureFlag(
             "enforce-email-domain-sso", false,
             List.of("eirik"), "2024-11-07", "2026-05-01",
