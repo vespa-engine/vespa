@@ -184,12 +184,12 @@ public abstract class AbstractHttpEmbedder extends AbstractComponent {
                     var response = chain.proceed(request);
                     int code = response.code();
                     boolean retryable = code == 500 || code == 502 || code == 503 || code == 504;
-                    if (response.isSuccessful() || !retryable || attempt == maxRetries) {
-                        if (attempt == maxRetries && retryable)
-                            log.fine(() -> "Max retries exceeded (%d) for embedding API; last status %d"
-                                    .formatted(maxRetries, code));
+                    if (attempt == maxRetries && retryable) {
+                        log.fine(() -> "Max retries exceeded (%d) for embedding API; last status %d"
+                                .formatted(maxRetries, code));
                         return response;
                     }
+                    if (response.isSuccessful() || !retryable) return response;
                     response.close();
                 } catch (InterruptedIOException e) {
                     throw e;
