@@ -16,6 +16,8 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -33,14 +35,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class AbstractHttpEmbedderTest {
 
     private MockWebServer mockServer;
-    private Embedder.Runtime runtime;
+    private RecordingRuntime runtime;
     private AbstractHttpEmbedder embedder;
 
     @BeforeEach
     public void setUp() throws IOException {
         mockServer = new MockWebServer();
         mockServer.start();
-        runtime = Embedder.Runtime.testInstance();
+        runtime = new RecordingRuntime();
         embedder = new AbstractHttpEmbedder() {};
     }
 
@@ -139,14 +141,16 @@ public class AbstractHttpEmbedderTest {
     }
 
     @Test
-    public void testMaxRetriesExceeded() {
+    public void testMaxRetriesExceededRecordsActualStatusCode() {
         for (int i = 0; i < 10; i++) {
-            mockServer.enqueue(new MockResponse().setResponseCode(500).setBody("{\"error\":{\"message\":\"internal\"}}"));
+            mockServer.enqueue(new MockResponse().setResponseCode(503).setBody("{\"error\":{\"message\":\"unavailable\"}}"));
         }
 
         var exception = assertThrows(RuntimeException.class, this::call);
-        assertEquals("Embedding API call failed: Max retries exceeded for embedding API (3). "
-                + "Last response: 500 - {\"error\":{\"message\":\"internal\"}}", exception.getMessage());
+        assertEquals("Embedding API request failed with status 503: {\"error\":{\"message\":\"unavailable\"}}",
+                exception.getMessage());
+        assertEquals(List.of(503), runtime.sampledFailures);
+        assertEquals(4, mockServer.getRequestCount()); // 1 initial + 3 retries
     }
 
     @Test
@@ -175,7 +179,7 @@ public class AbstractHttpEmbedderTest {
             var exception = assertThrows(RuntimeException.class,
                     () -> embedderWithConfig.doHttpRequest(endpointUrl(), "{}", Map.of(),
                             new Embedder.Context("test"), runtime));
-            assertTrue(exception.getMessage().contains("Max retries exceeded for embedding API (1)"));
+            assertEquals("Embedding API request failed with status 503: x", exception.getMessage());
             assertEquals(2, mockServer.getRequestCount()); // 1 initial + 1 retry
         } finally {
             embedderWithConfig.deconstruct();
@@ -190,5 +194,14 @@ public class AbstractHttpEmbedderTest {
 
     private String endpointUrl() {
         return mockServer.url("/").toString();
+    }
+
+    private static class RecordingRuntime implements Embedder.Runtime {
+        final List<Integer> sampledFailures = new ArrayList<>();
+
+        @Override public void sampleEmbeddingLatency(double millis, Embedder.Context ctx) { }
+        @Override public void sampleSequenceLength(long length, Embedder.Context ctx) { }
+        @Override public void sampleRequestCount(Embedder.Context ctx) { }
+        @Override public void sampleRequestFailure(Embedder.Context ctx, int statusCode) { sampledFailures.add(statusCode); }
     }
 }
