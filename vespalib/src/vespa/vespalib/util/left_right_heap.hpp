@@ -26,6 +26,8 @@ template <typename T, typename C> void right_heap_insert(T* heap, size_t pos, T 
     *(heap - pos) = std::move(value);
 }
 
+#pragma GCC push_options
+#pragma GCC optimize("no-if-conversion", "no-if-conversion2")
 template <typename T, typename C> void left_heap_adjust(T* heap, size_t len, T value, C cmp) {
     size_t pos = 0;
     size_t child2 = 2;
@@ -61,6 +63,7 @@ template <typename T, typename C> void right_heap_adjust(T* heap, size_t len, T 
     }
     right_heap_insert<T, C>(heap, pos, std::move(value), cmp);
 }
+#pragma GCC pop_options
 
 template <typename T, typename C> void left_heap_remove(T* heap, size_t len, T value, C cmp) {
     *(heap + len) = std::move(*heap);
