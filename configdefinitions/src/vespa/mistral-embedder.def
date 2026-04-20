@@ -16,3 +16,7 @@ dimensions               int
 
 # Output quantization mode
 quantization             enum { AUTO, FLOAT, INT8, BINARY } default=AUTO
+
+# Dynamic batching configuration
+batching.maxSize         int default=0
+batching.maxDelayMillis  long default=0

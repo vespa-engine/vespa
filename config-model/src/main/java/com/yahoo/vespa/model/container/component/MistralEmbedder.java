@@ -10,6 +10,7 @@ import java.util.Locale;
 
 import static com.yahoo.text.XML.getChildValue;
 import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME;
+import static com.yahoo.vespa.model.container.component.EmbedderBatchingConfig.parseBatchingElement;
 
 /**
  * Configuration builder for Mistral embedder component.
@@ -22,6 +23,7 @@ public class MistralEmbedder extends TypedComponent implements MistralEmbedderCo
     private final String model;
     private final int dimensions;
     private final String quantization;
+    private final EmbedderBatchingConfig batching;
 
     @SuppressWarnings("unused")
     public MistralEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
@@ -31,6 +33,7 @@ public class MistralEmbedder extends TypedComponent implements MistralEmbedderCo
         this.dimensions = getChildValue(xml, "dimensions")
                 .map(Integer::parseInt).get();
         this.quantization = getChildValue(xml, "quantization").orElse(null);
+        this.batching = parseBatchingElement(xml);
     }
 
     @Override
@@ -41,5 +44,6 @@ public class MistralEmbedder extends TypedComponent implements MistralEmbedderCo
         if (quantization != null) {
             builder.quantization(MistralEmbedderConfig.Quantization.Enum.valueOf(quantization.toUpperCase(Locale.ROOT)));
         }
+        if (batching != null) batching.applyTo(builder.batching::maxSize, builder.batching::maxDelayMillis);
     }
 }

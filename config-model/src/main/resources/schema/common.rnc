@@ -169,14 +169,16 @@ OpenAIEmbedder =
    element model { xsd:string } &
    element api-key-secret-ref { xsd:string }? &
    element dimensions { xsd:positiveInteger } &
-   element endpoint { xsd:string }?
+   element endpoint { xsd:string }? &
+   EmbedderBatchingParams
 
 MistralEmbedder =
    attribute type { "mistral-embedder" } &
    element model { xsd:string } &
    element api-key-secret-ref { xsd:string } &
    element dimensions { xsd:positiveInteger } &
-   EmbedderQuantization
+   EmbedderQuantization &
+   EmbedderBatchingParams
 
 OnnxModelExecutionParams =
     element onnx-execution-mode { "parallel" | "sequential" }? &

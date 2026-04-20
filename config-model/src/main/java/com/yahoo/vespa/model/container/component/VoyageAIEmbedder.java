@@ -57,9 +57,6 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
             builder.quantization(VoyageAiEmbedderConfig.Quantization.Enum.valueOf(quantization.toUpperCase(Locale.ROOT)));
         }
         if (truncate != null) builder.truncate(truncate);
-        if (batching != null) {
-            builder.batching.maxSize(batching.maxSize());
-            builder.batching.maxDelayMillis(batching.maxDelay().toMillis());
-        }
+        if (batching != null) batching.applyTo(builder.batching::maxSize, builder.batching::maxDelayMillis);
     }
 }

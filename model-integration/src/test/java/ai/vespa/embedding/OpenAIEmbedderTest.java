@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.List;
 
 import static ai.vespa.embedding.EmbedderTestUtils.createBase64EmbeddingResponse;
@@ -98,17 +99,33 @@ public class OpenAIEmbedderTest {
         assertTrue(body.contains("\"input\":[\"Hello\",\"World\",\"Test\"]"));
     }
 
+    @Test
+    public void testBatchingConfigEnabled() {
+        var config = openaiConfigBuilder(1024);
+        config.batching.maxSize(16);
+        config.batching.maxDelayMillis(200);
+        embedder = new OpenAIEmbedder(config.build(), runtime, createMockSecrets());
+
+        var batching = embedder.batchingConfig();
+        assertTrue(batching.isEnabled());
+        assertEquals(16, batching.maxSize());
+        assertEquals(Duration.ofMillis(200), batching.maxDelay());
+    }
+
     // ===== Helper Methods =====
 
     private OpenAIEmbedder createEmbedder() { return createEmbedder(1024); }
 
     private OpenAIEmbedder createEmbedder(int dimensions) {
-        var config = new OpenaiEmbedderConfig.Builder()
+        return new OpenAIEmbedder(openaiConfigBuilder(dimensions).build(), runtime, createMockSecrets());
+    }
+
+    private OpenaiEmbedderConfig.Builder openaiConfigBuilder(int dimensions) {
+        return new OpenaiEmbedderConfig.Builder()
                 .apiKeySecretRef("test_key")
                 .endpoint(mockServer.url("/v1/embeddings").toString())
                 .model("text-embedding-3-small")
                 .dimensions(dimensions);
-        return new OpenAIEmbedder(config.build(), runtime, createMockSecrets());
     }
 
     private static String createSuccessResponse(int dimensions) {

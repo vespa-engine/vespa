@@ -36,6 +36,8 @@ public class OpenAIEmbedderTest {
         assertEquals("openai_api_key", config.apiKeySecretRef());
         assertEquals(1024, config.dimensions());
         assertEquals("https://api.openai.com/v1/embeddings", config.endpoint());
+        assertEquals(16, config.batching().maxSize());
+        assertEquals(200, config.batching().maxDelayMillis());
     }
 
     @Test
@@ -47,6 +49,8 @@ public class OpenAIEmbedderTest {
         assertEquals("text-embedding-3-small", config.model());
         assertEquals(1536, config.dimensions());
         assertEquals("https://api.openai.com/v1/embeddings", config.endpoint());
+        assertEquals(0, config.batching().maxSize());
+        assertEquals(0, config.batching().maxDelayMillis());
     }
 
     // ===== Helper Methods =====

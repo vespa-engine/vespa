@@ -33,6 +33,7 @@ public class MistralEmbedder extends AbstractHttpEmbedder implements Embedder {
     private final Embedder.Runtime runtime;
     private final Secret apiKey;
     private final EmbeddingQuantization.Quantization quantization;
+    private final Embedder.Batching batching;
 
     @Inject
     public MistralEmbedder(MistralEmbedderConfig config, Embedder.Runtime runtime, Secrets secrets) {
@@ -48,7 +49,11 @@ public class MistralEmbedder extends AbstractHttpEmbedder implements Embedder {
             throw new IllegalArgumentException("'api-key-secret-ref' must be configured for Mistral embedder");
         this.apiKey = secrets.get(config.apiKeySecretRef());
         this.quantization = EmbeddingQuantization.Quantization.valueOf(config.quantization().name());
+        this.batching = Embedder.Batching.of(
+                config.batching().maxSize(), Duration.ofMillis(config.batching().maxDelayMillis()));
     }
+
+    @Override public Batching batchingConfig() { return batching; }
 
     @Override
     public List<Integer> embed(String text, Context context) {

@@ -34,6 +34,7 @@ public class OpenAIEmbedder extends AbstractHttpEmbedder implements Embedder {
     private final OpenaiEmbedderConfig config;
     private final Embedder.Runtime runtime;
     private final Secret apiKey;
+    private final Embedder.Batching batching;
 
     @Inject
     public OpenAIEmbedder(OpenaiEmbedderConfig config, Embedder.Runtime runtime, Secrets secrets) {
@@ -50,7 +51,11 @@ public class OpenAIEmbedder extends AbstractHttpEmbedder implements Embedder {
             throw new IllegalArgumentException(
                     "Model '%s' has a fixed output size of %d; configure dimensions=%d"
                             .formatted(ADA_002_MODEL, ADA_002_DIMENSIONS, ADA_002_DIMENSIONS));
+        this.batching = Embedder.Batching.of(
+                config.batching().maxSize(), Duration.ofMillis(config.batching().maxDelayMillis()));
     }
+
+    @Override public Batching batchingConfig() { return batching; }
 
     @Override
     public List<Integer> embed(String text, Context context) {

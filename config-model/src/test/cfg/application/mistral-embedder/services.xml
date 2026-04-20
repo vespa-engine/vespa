@@ -16,6 +16,7 @@
             <api-key-secret-ref>mistral_key</api-key-secret-ref>
             <dimensions>2048</dimensions>
             <quantization>int8</quantization>
+            <batching max-size="16" max-delay="200ms"/>
         </component>
     </container>
 </services>

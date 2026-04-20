@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.List;
 
 import static ai.vespa.embedding.EmbedderTestUtils.createMockSecrets;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -89,16 +90,46 @@ public class MistralEmbedderTest {
         assertTrue(body.contains("\"output_dtype\":\"float\""));
     }
 
+    @Test
+    public void testBatchEmbedding() throws Exception {
+        mockServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody(createJsonArrayBatchResponse(3, 1024)));
+
+        embedder = createEmbedder("mistral-embed", 1024, MistralEmbedderConfig.Quantization.Enum.INT8);
+
+        var targetType = TensorType.fromSpec("tensor<int8>(d0[1024])");
+        var context = new Embedder.Context("test-embedder");
+        var texts = List.of("Hello", "World", "Test");
+        var results = embedder.embed(texts, context, targetType);
+
+        assertEquals(3, results.size());
+        for (var result : results) {
+            assertEquals(1024, result.size());
+            assertEquals(targetType, result.type());
+        }
+        assertEquals(1, mockServer.getRequestCount());
+
+        var request = mockServer.takeRequest();
+        var body = request.getBody().readUtf8();
+        assertTrue(body.contains("\"input\":[\"Hello\",\"World\",\"Test\"]"));
+    }
+
     // ===== Helpers =====
 
     private MistralEmbedder createEmbedder(String model, int dimensions, MistralEmbedderConfig.Quantization.Enum quantization) {
-        var config = new MistralEmbedderConfig.Builder()
+        return new MistralEmbedder(mistralConfigBuilder(model, dimensions, quantization).build(), runtime, createMockSecrets());
+    }
+
+    private MistralEmbedderConfig.Builder mistralConfigBuilder(String model, int dimensions,
+                                                                MistralEmbedderConfig.Quantization.Enum quantization) {
+        return new MistralEmbedderConfig.Builder()
                 .apiKeySecretRef("test_key")
                 .endpoint(mockServer.url("/v1/embeddings").toString())
                 .model(model)
                 .dimensions(dimensions)
                 .quantization(quantization);
-        return new MistralEmbedder(config.build(), runtime, createMockSecrets());
     }
 
     private static String createJsonArrayResponse(int dimensions) {
@@ -110,5 +141,21 @@ public class MistralEmbedderTest {
         return Text.format("""
                 {"object":"list","data":[{"object":"embedding","embedding":[%s],"index":0}],"model":"mistral-embed","usage":{"prompt_tokens":10,"total_tokens":10}}
                 """, values);
+    }
+
+    private static String createJsonArrayBatchResponse(int batchSize, int dimensions) {
+        var data = new StringBuilder();
+        for (int b = 0; b < batchSize; b++) {
+            var values = new StringBuilder();
+            for (int i = 0; i < dimensions; i++) {
+                if (i > 0) values.append(",");
+                values.append((i % 256) - 128);
+            }
+            if (b > 0) data.append(",");
+            data.append(Text.format("{\"object\":\"embedding\",\"embedding\":[%s],\"index\":%d}", values, b));
+        }
+        return Text.format("""
+                {"object":"list","data":[%s],"model":"mistral-embed","usage":{"prompt_tokens":30,"total_tokens":30}}
+                """, data);
     }
 }
