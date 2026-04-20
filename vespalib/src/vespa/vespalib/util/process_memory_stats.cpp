@@ -18,7 +18,7 @@ LOG_SETUP(".vespalib.util.process_memory_stats");
 
 namespace vespalib {
 
-size_t ProcessMemoryStats::PAGE_SIZE = sysconf(_SC_PAGESIZE);
+size_t ProcessMemoryStats::normal_page_size = sysconf(_SC_PAGESIZE);
 
 /*
  * The statm line looks like this:
@@ -48,13 +48,13 @@ ProcessMemoryStats ProcessMemoryStats::parseStatm(asciistream& statm) {
 
         // we only get the total program size via statm (no distinction between anonymous and non-anonymous)
         // VmSize (in status) = size (in statm)
-        ret._virt = size * PAGE_SIZE;
+        ret._virt = size * normal_page_size;
 
         // RssAnon (in status) = resident - shared (in statm)
-        ret._anonymous_rss = (resident - shared) * PAGE_SIZE;
+        ret._anonymous_rss = (resident - shared) * normal_page_size;
 
         // RssFile + RssShmem (in status) = shared (in statm)
-        ret._mapped_rss = shared * PAGE_SIZE;
+        ret._mapped_rss = shared * normal_page_size;
 
     } catch (const IllegalArgumentException& e) {
         LOG(warning, "Error '%s' while reading statm line '%s'", e.what(), statm.c_str());
