@@ -30,7 +30,7 @@ private:
  */
 class MemoryAllocator {
 public:
-    static constexpr size_t PAGE_SIZE = 4_Ki;
+    static constexpr size_t NORMAL_PAGE_SIZE = 4_Ki;
     static constexpr size_t HUGEPAGE_SIZE = 2_Mi;
     MemoryAllocator(const MemoryAllocator&) = delete;
     MemoryAllocator& operator=(const MemoryAllocator&) = delete;
