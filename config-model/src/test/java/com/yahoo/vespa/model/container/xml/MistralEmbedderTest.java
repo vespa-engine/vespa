@@ -36,6 +36,8 @@ public class MistralEmbedderTest {
         assertEquals("mistral_key", config.apiKeySecretRef());
         assertEquals(1024, config.dimensions());
         assertEquals(MistralEmbedderConfig.Quantization.Enum.AUTO, config.quantization());
+        assertEquals(0, config.batching().maxSize());
+        assertEquals(0, config.batching().maxDelayMillis());
     }
 
     @Test
@@ -47,6 +49,8 @@ public class MistralEmbedderTest {
         assertEquals("codestral-embed", config.model());
         assertEquals(2048, config.dimensions());
         assertEquals(MistralEmbedderConfig.Quantization.Enum.INT8, config.quantization());
+        assertEquals(16, config.batching().maxSize());
+        assertEquals(200, config.batching().maxDelayMillis());
     }
 
     private VespaModel loadModel(Path path) {

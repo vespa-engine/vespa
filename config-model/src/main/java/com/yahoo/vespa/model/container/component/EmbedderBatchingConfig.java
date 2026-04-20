@@ -5,6 +5,8 @@ import com.yahoo.text.XML;
 import org.w3c.dom.Element;
 
 import java.time.Duration;
+import java.util.function.IntConsumer;
+import java.util.function.LongConsumer;
 
 /**
  * Shared parsing of the {@code <batching>} element for embedder components.
@@ -12,6 +14,11 @@ import java.time.Duration;
  * @author bjorncs
  */
 record EmbedderBatchingConfig(int maxSize, Duration maxDelay) {
+
+    void applyTo(IntConsumer maxSizeSetter, LongConsumer maxDelayMillisSetter) {
+        maxSizeSetter.accept(maxSize);
+        maxDelayMillisSetter.accept(maxDelay.toMillis());
+    }
 
     static EmbedderBatchingConfig parseBatchingElement(Element parent) {
         var batchingElement = XML.getChild(parent, "batching");

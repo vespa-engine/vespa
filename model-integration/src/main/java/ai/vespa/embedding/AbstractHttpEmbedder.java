@@ -179,40 +179,30 @@ public abstract class AbstractHttpEmbedder extends AbstractComponent {
         @Override
         public okhttp3.Response intercept(Chain chain) throws IOException {
             var request = chain.request();
-            int lastStatusCode = 0;
-            var lastResponseBody = "";
-            IOException lastException = null;
-
             for (int attempt = 0; attempt <= maxRetries; attempt++) {
                 try {
                     var response = chain.proceed(request);
                     int code = response.code();
                     boolean retryable = code == 500 || code == 502 || code == 503 || code == 504;
-                    if (response.isSuccessful() || !retryable) return response;
-
-                    lastStatusCode = code;
-                    lastException = null;
-                    try {
-                        if (attempt == maxRetries && response.body() != null) {
-                                lastResponseBody = response.body().string();
-                        }
-                    } finally {
-                        response.close();
+                    if (attempt == maxRetries && retryable) {
+                        log.fine(() -> "Max retries exceeded (%d) for embedding API; last status %d"
+                                .formatted(maxRetries, code));
+                        return response;
                     }
+                    if (response.isSuccessful() || !retryable) return response;
+                    response.close();
                 } catch (InterruptedIOException e) {
                     throw e;
                 } catch (IOException e) {
-                    lastException = e;
+                    if (attempt == maxRetries) {
+                        log.fine(() -> "Max retries exceeded (%d) for embedding API; last error: %s"
+                                .formatted(maxRetries, e.getMessage()));
+                        throw e;
+                    }
                 }
-                // Both 5xx and IOException paths fall through here for retry
-                if (attempt < maxRetries)
-                    sleepBeforeRetry(chain, attempt + 1);
+                sleepBeforeRetry(chain, attempt + 1);
             }
-            if (lastException != null)
-                throw new IOException("Max retries exceeded for embedding API (%d). Last error: %s"
-                        .formatted(maxRetries, lastException.getMessage()), lastException);
-            throw new IOException("Max retries exceeded for embedding API (%d). Last response: %d - %s"
-                    .formatted(maxRetries, lastStatusCode, lastResponseBody));
+            throw new IllegalStateException("unreachable");
         }
 
         private void sleepBeforeRetry(Chain chain, int retryNumber) throws IOException {

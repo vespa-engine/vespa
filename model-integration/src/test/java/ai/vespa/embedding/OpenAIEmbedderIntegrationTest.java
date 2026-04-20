@@ -7,6 +7,7 @@ import com.yahoo.tensor.TensorType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
+import java.time.Duration;
 import java.util.List;
 
 import static ai.vespa.embedding.EmbedderTestUtils.assertNonZeroTensor;
@@ -115,6 +116,33 @@ public class OpenAIEmbedderIntegrationTest {
         } finally {
             embedder.deconstruct();
         }
+    }
+
+    @Test
+    public void testBatchingConfig() {
+        var config = new OpenaiEmbedderConfig.Builder()
+                .apiKeySecretRef("test_key")
+                .model("text-embedding-3-small")
+                .dimensions(1024);
+        config.batching.maxSize(16).maxDelayMillis(200);
+        var embedder = new OpenAIEmbedder(config.build(), Embedder.Runtime.testInstance(),
+                key -> () -> System.getenv("VESPA_TEST_OPENAI_API_KEY"));
+
+        var batching = embedder.batchingConfig();
+        assertTrue(batching.isEnabled());
+        assertEquals(16, batching.maxSize());
+        assertEquals(Duration.ofMillis(200), batching.maxDelay());
+
+        var targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
+        var context = new Embedder.Context("integration-test");
+        var results = embedder.embed(List.of("First text", "Second text"), context, targetType);
+        assertEquals(2, results.size());
+        for (var result : results) {
+            assertEquals(1024, result.size());
+            assertNonZeroTensor(result);
+        }
+
+        embedder.deconstruct();
     }
 
     private static OpenAIEmbedder createEmbedder(int dimensions) {

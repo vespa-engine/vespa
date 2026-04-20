@@ -7,6 +7,7 @@ import com.yahoo.tensor.TensorType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
+import java.time.Duration;
 import java.util.List;
 
 import static ai.vespa.embedding.EmbedderTestUtils.assertNonZeroTensor;
@@ -118,6 +119,34 @@ public class MistralEmbedderIntegrationTest {
         assertEquals(128, result.size());
         assertEquals(targetType, result.type());
         assertNonZeroTensor(result);
+
+        embedder.deconstruct();
+    }
+
+    @Test
+    public void testBatchingConfig() {
+        var config = new MistralEmbedderConfig.Builder()
+                .apiKeySecretRef("test_key")
+                .model("mistral-embed")
+                .dimensions(1024)
+                .quantization(MistralEmbedderConfig.Quantization.Enum.AUTO);
+        config.batching.maxSize(16).maxDelayMillis(200);
+        var embedder = new MistralEmbedder(config.build(), Embedder.Runtime.testInstance(),
+                key -> () -> System.getenv("VESPA_TEST_MISTRAL_API_KEY"));
+
+        var batching = embedder.batchingConfig();
+        assertTrue(batching.isEnabled());
+        assertEquals(16, batching.maxSize());
+        assertEquals(Duration.ofMillis(200), batching.maxDelay());
+
+        var targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
+        var context = new Embedder.Context("integration-test");
+        var results = embedder.embed(List.of("First text", "Second text"), context, targetType);
+        assertEquals(2, results.size());
+        for (var result : results) {
+            assertEquals(1024, result.size());
+            assertNonZeroTensor(result);
+        }
 
         embedder.deconstruct();
     }

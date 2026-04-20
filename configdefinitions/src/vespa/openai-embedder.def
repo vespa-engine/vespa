@@ -13,3 +13,7 @@ model                    string
 
 # Output dimension
 dimensions               int
+
+# Dynamic batching configuration
+batching.maxSize         int default=0
+batching.maxDelayMillis  long default=0
