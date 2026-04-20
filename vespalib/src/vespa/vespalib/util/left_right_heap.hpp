@@ -28,8 +28,10 @@ template <typename T, typename C> void right_heap_insert(T* heap, size_t pos, T 
 
 // prevent GCC 15 from turning heap-adjust branches branchless;
 // we got much better performance from GCC 14 on this code.
+#if !defined(__clang__) && defined(__GNUC__)
 #pragma GCC push_options
 #pragma GCC optimize("no-if-conversion", "no-if-conversion2")
+#endif
 template <typename T, typename C> void left_heap_adjust(T* heap, size_t len, T value, C cmp) {
     size_t pos = 0;
     size_t child2 = 2;
@@ -65,7 +67,9 @@ template <typename T, typename C> void right_heap_adjust(T* heap, size_t len, T 
     }
     right_heap_insert<T, C>(heap, pos, std::move(value), cmp);
 }
+#if !defined(__clang__) && defined(__GNUC__)
 #pragma GCC pop_options
+#endif
 
 template <typename T, typename C> void left_heap_remove(T* heap, size_t len, T value, C cmp) {
     *(heap + len) = std::move(*heap);
