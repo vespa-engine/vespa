@@ -3,6 +3,7 @@
 #include "pagedict4.h"
 #include <vespa/searchlib/index/postinglistcounts.h>
 #include <vespa/searchlib/index/dictionaryfile.h>
+#include <algorithm>
 #include <span>
 
 #include <vespa/log/log.h>

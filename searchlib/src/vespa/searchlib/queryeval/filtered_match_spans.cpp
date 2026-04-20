@@ -4,6 +4,7 @@
 #include <vespa/searchcommon/common/element_ids.h>
 #include <algorithm>
 #include <limits>
+#include <optional>
 
 using search::common::ElementIds;
 
