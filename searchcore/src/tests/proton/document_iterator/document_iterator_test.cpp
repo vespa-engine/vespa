@@ -126,15 +126,19 @@ struct UnitDR : DocumentRetrieverBaseForTest {
     const document::DocumentTypeRepo &getDocumentTypeRepo() const override {
         return repo;
     }
-    void getBucketMetadata(const Bucket &b, DocumentMetadata::Vector &result) const override
+    void getBucketMetadata(const Bucket &b, DocumentMetadata::Vector &result, bool populate_docid) const override
     {
         if (b == bucket) {
-            result.push_back(DocumentMetadata(docid, timestamp, bucket, document->getId().getGlobalId(), removed));
+            std::string docid_string;
+            if (populate_docid) {
+                docid_string = document->getId().toString();
+            }
+            result.push_back(DocumentMetadata(docid, timestamp, bucket, document->getId().getGlobalId(), removed, docid_string));
         }
     }
     DocumentMetadata getDocumentMetadata(const document::DocumentId &id) const override {
         if (document->getId() == id) {
-            return DocumentMetadata(docid, timestamp, bucket, document->getId().getGlobalId(), removed);
+            return DocumentMetadata(docid, timestamp, bucket, document->getId().getGlobalId(), removed, {});
         }
         return DocumentMetadata();
     }
@@ -262,9 +266,9 @@ struct PairDR : DocumentRetrieverBaseForTest {
     const document::DocumentTypeRepo &getDocumentTypeRepo() const override {
         return first->getDocumentTypeRepo();
     }
-    void getBucketMetadata(const Bucket &b, DocumentMetadata::Vector &result) const override {
-        first->getBucketMetadata(b, result);
-        second->getBucketMetadata(b, result);
+    void getBucketMetadata(const Bucket &b, DocumentMetadata::Vector &result, bool populate_docid) const override {
+        first->getBucketMetadata(b, result, populate_docid);
+        second->getBucketMetadata(b, result, populate_docid);
     }
     DocumentMetadata getDocumentMetadata(const document::DocumentId &id) const override {
         DocumentMetadata ret = first->getDocumentMetadata(id);
@@ -453,12 +457,17 @@ TEST(DocumentIteratorTest, require_that_custom_retrievers_work_as_expected)
     checkDoc(*dr, "id:ns:document::3", 7, 6, false);
     DocumentMetadata::Vector b5;
     DocumentMetadata::Vector b6;
-    dr->getBucketMetadata(bucket(5), b5);
-    dr->getBucketMetadata(bucket(6), b6);
+    dr->getBucketMetadata(bucket(5), b5, false);
+    dr->getBucketMetadata(bucket(6), b6, false);
     ASSERT_EQ(2u, b5.size());
     ASSERT_EQ(1u, b6.size());
     EXPECT_EQ(5u, b5[0].timestamp + b5[1].timestamp);
     EXPECT_EQ(7u, b6[0].timestamp);
+    EXPECT_EQ("", b6[0].docid);
+    DocumentMetadata::Vector b6d;
+    dr->getBucketMetadata(bucket(6), b6d, true);
+    ASSERT_EQ(1u, b6d.size());
+    EXPECT_EQ("id:ns:document::3", b6d[0].docid);
 }
 
 TEST(DocumentIteratorTest, require_that_an_empty_list_of_retrievers_can_be_iterated)

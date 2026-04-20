@@ -818,12 +818,12 @@ DocumentMetaStore::getMetadata(const GlobalId &gid) const
     const RawDocumentMetadata &raw = getRawMetadata(lid);
     Timestamp timestamp(raw.getTimestamp());
     std::atomic_thread_fence(std::memory_order_acquire);
-    return {lid, timestamp, raw.getBucketId(), raw.getGid(), _subDbType == SubDbType::REMOVED};
+    return {lid, timestamp, raw.getBucketId(), raw.getGid(), _subDbType == SubDbType::REMOVED, {}};
 }
 
 void
 DocumentMetaStore::getMetadata(const BucketId &bucketId,
-                               search::DocumentMetadata::Vector &result) const
+                               search::DocumentMetadata::Vector &result, bool populate_docid) const
 {
     TreeType::FrozenView frozenTreeView = _gidToLidMap.getFrozenView();
     TreeType::ConstIterator itr = lowerBound(bucketId, frozenTreeView);
@@ -835,8 +835,16 @@ DocumentMetaStore::getMetadata(const BucketId &bucketId,
             if (bucketId.getUsedBits() != rawData.getBucketUsedBits())
                 continue; // Wrong bucket (due to overlapping buckets)
             Timestamp timestamp(rawData.getTimestamp());
-            std::atomic_thread_fence(std::memory_order_acquire);
-            result.emplace_back(lid, timestamp, rawData.getBucketId(), rawData.getGid(),_subDbType == SubDbType::REMOVED);
+            auto docid_ref = rawData.acquire_docid_ref();
+            std::string_view docid;
+            if (populate_docid) {
+                if (!docid_ref.valid()) {
+                    continue; // Document moved (Note: transient glitch) or removed.
+                }
+                auto span = _docid_store.get(docid_ref);
+                docid = std::string_view{span.data(), span.size()};
+            }
+            result.emplace_back(lid, timestamp, rawData.getBucketId(), rawData.getGid(), _subDbType == SubDbType::REMOVED, docid);
         }
     }
 }

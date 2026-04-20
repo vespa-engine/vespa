@@ -435,12 +435,12 @@ TEST(DocumentRetrieverTest, require_that_document_retriever_can_retrieve_bucket_
 {
     Fixture f;
     DocumentMetadata::Vector result;
-    f._retriever->getBucketMetadata(makeSpiBucket(f.bucket_id), result);
+    f._retriever->getBucketMetadata(makeSpiBucket(f.bucket_id), result, false);
     ASSERT_EQ(1u, result.size());
     EXPECT_EQ(f.lid, result[0].lid);
     EXPECT_EQ(f.timestamp, result[0].timestamp);
     result.clear();
-    f._retriever->getBucketMetadata(makeSpiBucket(BucketId(f.bucket_id.getId() + 1)), result);
+    f._retriever->getBucketMetadata(makeSpiBucket(BucketId(f.bucket_id.getId() + 1)), result, false);
     EXPECT_EQ(0u, result.size());
 }
 

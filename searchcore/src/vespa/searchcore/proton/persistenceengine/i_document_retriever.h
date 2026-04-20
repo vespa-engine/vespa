@@ -33,7 +33,7 @@ public:
     virtual ~IDocumentRetriever() = default;
 
     virtual const document::DocumentTypeRepo & getDocumentTypeRepo() const = 0;
-    virtual void getBucketMetadata(const storage::spi::Bucket &bucket, search::DocumentMetadata::Vector &result) const = 0;
+    virtual void getBucketMetadata(const storage::spi::Bucket &bucket, search::DocumentMetadata::Vector &result, bool populate_docid) const = 0;
     virtual search::DocumentMetadata getDocumentMetadata(const document::DocumentId &id) const = 0;
     /**
      * Extracts the full document based on the LID

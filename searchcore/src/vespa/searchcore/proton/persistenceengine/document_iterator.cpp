@@ -258,7 +258,7 @@ DocumentIterator::fetchCompleteSource(const DocTypeName & doc_type_name,
 {
     IDocumentRetriever::ReadGuard sourceReadGuard(source.getReadGuard());
     search::DocumentMetadata::Vector metadata;
-    source.getBucketMetadata(_bucket, metadata);
+    source.getBucketMetadata(_bucket, metadata, false);
     if (metadata.empty()) {
         return;
     }

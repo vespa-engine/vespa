@@ -189,7 +189,7 @@ MyDocumentRetriever::getDocumentTypeRepo() const {
 }
 
 void
-MyDocumentRetriever::getBucketMetadata(const storage::spi::Bucket&, DocumentMetadata::Vector&) const {
+MyDocumentRetriever::getBucketMetadata(const storage::spi::Bucket&, DocumentMetadata::Vector&, bool) const {
     abort();
 }
 

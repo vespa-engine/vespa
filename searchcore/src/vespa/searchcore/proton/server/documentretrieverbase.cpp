@@ -30,9 +30,9 @@ DocumentRetrieverBase::~DocumentRetrieverBase() = default;
 
 void
 DocumentRetrieverBase::getBucketMetadata(const storage::spi::Bucket &bucket,
-                                         search::DocumentMetadata::Vector &result) const
+                                         search::DocumentMetadata::Vector &result, bool populate_docid) const
 {
-    _meta_store.getReadGuard()->get().getMetadata(bucket, result);
+    _meta_store.getReadGuard()->get().getMetadata(bucket, result, populate_docid);
 }
 
 search::DocumentMetadata

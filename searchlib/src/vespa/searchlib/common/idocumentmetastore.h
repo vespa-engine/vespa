@@ -6,8 +6,8 @@
 #include <vespa/document/base/globalid.h>
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/vespalib/util/generation.h>
-#include <vector>
 #include <memory>
+#include <vector>
 
 namespace search {
 
@@ -20,7 +20,8 @@ struct DocumentMetadata {
     uint64_t timestamp;
     document::BucketId bucketId;
     document::GlobalId gid;
-    bool removed;
+    bool               removed;
+    std::string        docid;
 
     using Vector = std::vector<DocumentMetadata>;
 
@@ -29,26 +30,29 @@ struct DocumentMetadata {
           timestamp(0),
           bucketId(),
           gid(),
-          removed(false)
+          removed(false),
+          docid()
     { }
 
     DocumentMetadata(DocId lid_,
                      uint64_t timestamp_,
                      document::BucketId bucketId_,
                      const document::GlobalId &gid_) noexcept
-        : DocumentMetadata(lid_, timestamp_, bucketId_, gid_, false)
+        : DocumentMetadata(lid_, timestamp_, bucketId_, gid_, false, {})
     { }
 
     DocumentMetadata(DocId lid_,
                      uint64_t timestamp_,
                      document::BucketId bucketId_,
                      const document::GlobalId &gid_,
-                     bool removed_) noexcept
+                     bool removed_,
+                     std::string_view docid_) noexcept
         : lid(lid_),
           timestamp(timestamp_),
           bucketId(bucketId_),
           gid(gid_),
-          removed(removed_)
+          removed(removed_),
+          docid(docid_)
     { }
 
     [[nodiscard]] bool valid() const noexcept {
@@ -102,7 +106,7 @@ struct IDocumentMetaStore {
     /**
      * Retrieves metadata for all documents contained in the given bucket.
      **/
-    virtual void getMetadata(const BucketId &bucketId, DocumentMetadata::Vector &result) const = 0;
+    virtual void getMetadata(const BucketId &bucketId, DocumentMetadata::Vector &result, bool populate_docid) const = 0;
 
     /**
      * Returns the lid following the largest lid used in the store.
