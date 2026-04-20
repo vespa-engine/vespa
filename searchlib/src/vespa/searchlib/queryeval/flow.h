@@ -326,11 +326,7 @@ private:
     bool _strict;
 public:
     OrFlow(InFlow flow) noexcept : _flow(flow.rate()), _strict(flow.strict()) {}
-    void add(double est) noexcept {
-        if (!_strict) {
-            _flow *= (1.0 - est);
-        }
-    }
+    void add(double) noexcept {}
     double flow() const noexcept { return _flow; }
     bool strict() const noexcept { return _strict; }
     void update_cost(double &total_cost, double child_cost) noexcept {

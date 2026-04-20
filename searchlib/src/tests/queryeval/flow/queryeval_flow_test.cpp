@@ -214,9 +214,9 @@ TEST(FlowTest, partial_and_flow) {
 TEST(FlowTest, full_or_flow) {
     verify_flow(OrFlow(false), {0.4, 0.7, 0.2},
                 {{1.0, 0.0, false},
-                 {0.6, 1.0-0.6, false},
-                 {0.6*0.3, 1.0-0.6*0.3, false},
-                 {0.6*0.3*0.8, 1.0-0.6*0.3*0.8, false}});
+                 {1.0, 1.0-0.6, false},
+                 {1.0, 1.0-0.6*0.3, false},
+                 {1.0, 1.0-0.6*0.3*0.8, false}});
     verify_flow(OrFlow(true), {0.4, 0.7, 0.2},
                 {{1.0, 0.0, true},
                  {1.0, 1.0-0.6, true},
@@ -228,9 +228,9 @@ TEST(FlowTest, partial_or_flow) {
     for (double in: {1.0, 0.5, 0.25}) {
         verify_flow(OrFlow(in), {0.4, 0.7, 0.2},
                     {{in, 0.0, false},
-                     {in*0.6, 1.0-0.6, false},
-                     {in*0.6*0.3, 1.0-0.6*0.3, false},
-                     {in*0.6*0.3*0.8, 1.0-0.6*0.3*0.8, false}});
+                     {in, 1.0-0.6, false},
+                     {in, 1.0-0.6*0.3, false},
+                     {in, 1.0-0.6*0.3*0.8, false}});
     }
 }
 
@@ -313,7 +313,7 @@ TEST(FlowTest, flow_cost) {
     std::vector<FlowStats> data = {{0.4, 1.1, 0.6}, {0.7, 1.2, 0.5}, {0.2, 1.3, 0.4}};
     EXPECT_DOUBLE_EQ(dual_ordered_cost_of<AndFlow>(data, false, false), 1.1 + 0.4*1.2 + 0.4*0.7*1.3);
     EXPECT_DOUBLE_EQ(dual_ordered_cost_of<AndFlow>(data, true, false), 0.6 + 0.4*1.2 + 0.4*0.7*1.3);
-    EXPECT_DOUBLE_EQ(dual_ordered_cost_of<OrFlow>(data, false, false), 1.1 + 0.6*1.2 + 0.6*0.3*1.3);
+    EXPECT_DOUBLE_EQ(dual_ordered_cost_of<OrFlow>(data, false, false), 1.1 + 1.2 + 1.3);
     EXPECT_DOUBLE_EQ(dual_ordered_cost_of<OrFlow>(data, true, false), 0.6 + 0.5 + 0.4);
     EXPECT_DOUBLE_EQ(dual_ordered_cost_of<AndNotFlow>(data, false, false), 1.1 + 0.4*1.2 + 0.4*0.3*1.3);
     EXPECT_DOUBLE_EQ(dual_ordered_cost_of<AndNotFlow>(data, true, false), 0.6 + 0.4*1.2 + 0.4*0.3*1.3);
