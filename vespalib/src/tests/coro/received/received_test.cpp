@@ -67,7 +67,7 @@ TEST(ReceivedTest, can_forward_error_to_std_promise) {
     auto              future = promise.get_future();
     result.forward(promise);
     ASSERT_TRUE(future.wait_for(0ms) == std::future_status::ready);
-    EXPECT_THROW(future.get(), std::runtime_error);
+    EXPECT_THROW((void) future.get(), std::runtime_error);
 }
 
 TEST(ReceivedTest, can_forward_nothing_as_error_to_std_promise) {
@@ -77,7 +77,7 @@ TEST(ReceivedTest, can_forward_nothing_as_error_to_std_promise) {
     auto              future = promise.get_future();
     result.forward(promise);
     ASSERT_TRUE(future.wait_for(0ms) == std::future_status::ready);
-    EXPECT_THROW(future.get(), vespalib::coro::UnavailableResultException);
+    EXPECT_THROW((void) future.get(), vespalib::coro::UnavailableResultException);
 }
 
 struct MyReceiver {
