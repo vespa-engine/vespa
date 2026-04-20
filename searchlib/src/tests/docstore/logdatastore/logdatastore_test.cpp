@@ -584,7 +584,7 @@ public:
         verifyDoc(*_datastore->read(id, _repo), id);
     }
     void read(uint32_t id) {
-        *_datastore->read(id, _repo);
+        (void) *_datastore->read(id, _repo);
     }
     void verifyDoc(const Document & doc, uint32_t id) {
         EXPECT_TRUE(doc == *_inserted[id]);
