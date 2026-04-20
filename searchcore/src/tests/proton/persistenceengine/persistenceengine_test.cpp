@@ -118,7 +118,7 @@ struct MyDocumentRetriever : DocumentRetrieverBaseForTest {
     const DocumentTypeRepo &getDocumentTypeRepo() const override {
         return repo;
     }
-    void getBucketMetadata(const storage::spi::Bucket &, search::DocumentMetadata::Vector &v) const override {
+    void getBucketMetadata(const storage::spi::Bucket &, search::DocumentMetadata::Vector &v, bool) const override {
         if (document != nullptr) {
             v.push_back(getDocumentMetadata(document->getId()));
         }

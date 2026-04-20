@@ -64,7 +64,7 @@ struct StupidMetaStore : search::IDocumentMetaStore {
     bool getGidEvenIfMoved(DocId, GlobalId &) const override { return false; }
     bool getLid(const GlobalId &, DocId &) const override { return false; }
     DocumentMetadata getMetadata(const GlobalId &) const override { return {}; }
-    void getMetadata(const BucketId &, DocumentMetadata::Vector &) const override { }
+    void getMetadata(const BucketId &, DocumentMetadata::Vector &, bool) const override { }
     DocId getCommittedDocIdLimit() const override { return 1; }
     DocId getNumUsedLids() const override { return 0; }
     DocId getNumActiveLids() const override { return 0; }

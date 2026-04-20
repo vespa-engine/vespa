@@ -41,8 +41,8 @@ struct DocumentMetaStoreObserver : public IDocumentMetaStore
     search::DocumentMetadata getMetadata(const GlobalId &gid) const override {
         return _store.getMetadata(gid);
     }
-    void getMetadata(const BucketId &bucketId, search::DocumentMetadata::Vector &result) const override {
-        _store.getMetadata(bucketId, result);
+    void getMetadata(const BucketId &bucketId, search::DocumentMetadata::Vector &result, bool populate_docid) const override {
+        _store.getMetadata(bucketId, result, populate_docid);
     }
     search::LidUsageStats getLidUsageStats() const override {
         return _store.getLidUsageStats();

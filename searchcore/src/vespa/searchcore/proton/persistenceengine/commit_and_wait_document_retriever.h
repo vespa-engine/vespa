@@ -22,7 +22,7 @@ public:
     ~CommitAndWaitDocumentRetriever() override;
 
     const document::DocumentTypeRepo &getDocumentTypeRepo() const override;
-    void getBucketMetadata(const Bucket &bucket, search::DocumentMetadata::Vector &result) const override;
+    void getBucketMetadata(const Bucket &bucket, search::DocumentMetadata::Vector &result, bool populate_docid) const override;
     search::DocumentMetadata getDocumentMetadata(const document::DocumentId &id) const override;
     DocumentUP getFullDocument(search::DocumentIdT lid) const override;
     DocumentUP getPartialDocument(search::DocumentIdT lid, const document::DocumentId & docId, const document::FieldSet & fieldSet) const override;

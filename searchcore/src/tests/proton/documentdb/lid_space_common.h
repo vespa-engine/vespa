@@ -128,7 +128,7 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
     MyDocumentRetriever(std::shared_ptr<const DocumentTypeRepo> repo_in, const MyDocumentStore& store_in) noexcept;
     ~MyDocumentRetriever();
     const document::DocumentTypeRepo& getDocumentTypeRepo() const override;
-    void getBucketMetadata(const storage::spi::Bucket&, DocumentMetadata::Vector&) const override;
+    void getBucketMetadata(const storage::spi::Bucket&, DocumentMetadata::Vector&, bool populate_docid) const override;
     DocumentMetadata getDocumentMetadata(const DocumentId&) const override;
     Document::UP getFullDocument(DocumentIdT lid) const override;
     CachedSelect::SP parseSelect(const std::string&) const override;

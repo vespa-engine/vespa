@@ -19,8 +19,8 @@ CommitAndWaitDocumentRetriever::getDocumentTypeRepo() const {
 }
 
 void
-CommitAndWaitDocumentRetriever::getBucketMetadata(const Bucket &bucket, search::DocumentMetadata::Vector &result) const {
-    return _retriever->getBucketMetadata(bucket, result);
+CommitAndWaitDocumentRetriever::getBucketMetadata(const Bucket &bucket, search::DocumentMetadata::Vector &result, bool populate_docid) const {
+    return _retriever->getBucketMetadata(bucket, result, populate_docid);
 }
 
 search::DocumentMetadata
