@@ -93,7 +93,11 @@ int64_t my_dot_product_i16(const int16_t* a, const int16_t* b, size_t sz) noexce
     return multiplyAdd<int64_t, int16_t, 8>(a, b, sz);
 }
 int64_t my_dot_product_i32(const int32_t* a, const int32_t* b, size_t sz) noexcept {
-    return multiplyAdd<int64_t, int32_t, 8>(a, b, sz);
+    int64_t sum = 0;
+    for (size_t i = 0; i < sz; i++) {
+        sum += (int64_t) a[i] * (int64_t) b[i];
+    }
+    return sum;
 }
 int64_t my_dot_product_i64(const int64_t* a, const int64_t* b, size_t sz) noexcept {
     return multiplyAdd<long long, int64_t, 8>(a, b, sz);
