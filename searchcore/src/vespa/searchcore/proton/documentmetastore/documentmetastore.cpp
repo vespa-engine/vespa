@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "documentmetastore.h"
+#include "documentidsaver.h"
 #include "documentmetastoresaver.h"
 #include "operation_listener.h"
 #include "search_context.h"
@@ -145,6 +146,42 @@ Reader::Reader(std::unique_ptr<FastOS_FileInterface> datFile)
 }
 Reader::~Reader() = default;
 
+/**
+ * Implements loading of document-id file saved by DocumentIdSaver.
+ **/
+class DocIdReader {
+private:
+    FileWithHeader     _docid_file;
+    FileReader<size_t> _length_reader;
+    FileReader<char>   _char_reader;
+
+public:
+    explicit DocIdReader(std::unique_ptr<FastOS_FileInterface> docid_file);
+    ~DocIdReader();
+
+    std::string get_next_docid() {
+        size_t length = _length_reader.readHostOrder();
+        std::string docid;
+        docid.reserve(length);
+        for (size_t i = 0; i < length; ++i) {
+            docid.push_back(_char_reader.readHostOrder());
+        }
+        return docid;
+    }
+
+    uint64_t size_on_disk() const noexcept {
+        return _docid_file.size_on_disk() + DiskSpaceCalculator::directory_placeholder_size();
+    }
+    std::chrono::steady_clock::duration flush_duration() const noexcept { return _docid_file.flush_duration(); }
+};
+
+DocIdReader::DocIdReader(std::unique_ptr<FastOS_FileInterface> docid_file)
+    : _docid_file(std::move(docid_file)),
+      _length_reader(&_docid_file.file()),
+      _char_reader(&_docid_file.file()) {
+}
+DocIdReader::~DocIdReader() = default;
+
 }
 
 namespace {
@@ -287,14 +324,23 @@ std::unique_ptr<search::AttributeSaver>
 DocumentMetaStore::onInitSave(std::string_view fileName)
 {
     auto guard(getGuard());
+    auto gid_view = _gidToLidMap.getFrozenView();
+    auto metadata_view = make_metadata_view();
+    auto docid_saver = _store_full_document_id
+                     ? std::make_unique<DocumentIdSaver>(
+                        gid_view.begin(),
+                        metadata_view,
+                        _docid_store)
+                     : std::unique_ptr<DocumentIdSaver>();
     return std::make_unique<DocumentMetaStoreSaver>
         (std::move(guard), createAttributeHeader(fileName),
-         _gidToLidMap.getFrozenView().begin(),
-         make_metadata_view());
+         gid_view.begin(),
+         metadata_view,
+         std::move(docid_saver));
 }
 
 DocumentMetaStore::DocId
-DocumentMetaStore::readNextDoc(documentmetastore::Reader & reader, TreeType::Builder & treeBuilder)
+DocumentMetaStore::readNextDoc(documentmetastore::Reader & reader, documentmetastore::DocIdReader* docid_reader, TreeType::Builder & treeBuilder)
 {
     uint32_t lid(reader.getNextLid());
     assert(lid < reader.getDocIdLimit());
@@ -303,6 +349,11 @@ DocumentMetaStore::readNextDoc(documentmetastore::Reader & reader, TreeType::Bui
     meta.setBucketUsedBits(reader.getNextBucketUsedBits());
     meta.setDocSize(reader.getNextDocSize());
     meta.setTimestamp(reader.getNextTimestamp());
+    if (docid_reader) {
+        std::string docid = docid_reader->get_next_docid();
+        const auto ref = _docid_store.add(docid);
+        meta.set_docid_ref(ref);
+    }
     treeBuilder.insert(GidToLidMapKey(lid, meta.getGid()), BTreeNoLeafData());
     assert(!validLid(lid));
     _lidAlloc.registerLid(lid);
@@ -312,6 +363,11 @@ DocumentMetaStore::readNextDoc(documentmetastore::Reader & reader, TreeType::Bui
 bool
 DocumentMetaStore::onLoad(vespalib::Executor *)
 {
+    std::unique_ptr<documentmetastore::DocIdReader> docid_reader;
+    if (_store_full_document_id && LoadUtils::file_exists(*this, DocumentMetaStoreSaver::docid_file_suffix())) {
+        auto file = LoadUtils::openFile(*this, DocumentMetaStoreSaver::docid_file_suffix());
+        docid_reader = std::make_unique<documentmetastore::DocIdReader>(std::move(file));
+    }
     documentmetastore::Reader reader(LoadUtils::openDAT(*this));
     unload();
     size_t numElems = reader.getNumElems();
@@ -323,13 +379,13 @@ DocumentMetaStore::onLoad(vespalib::Executor *)
 
     // insert gids (already sorted)
     if (numElems > 0) {
-        DocId lid = readNextDoc(reader, treeBuilder);
+        DocId lid = readNextDoc(reader, docid_reader.get(), treeBuilder);
         const RawDocumentMetadata * meta = &_metadataStore[lid];
         BucketId prevId(meta->getBucketId());
         BucketState state;
         state.add(meta->getGid(), meta->getTimestamp(), meta->getDocSize(), _subDbType);
         for (size_t i = 1; i < numElems; ++i) {
-            lid = readNextDoc(reader, treeBuilder);
+            lid = readNextDoc(reader, docid_reader.get(), treeBuilder);
             meta = &_metadataStore[lid];
             BucketId bucketId = meta->getBucketId();
             if (prevId != bucketId) {

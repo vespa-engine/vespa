@@ -6,8 +6,11 @@
 #include "i_store.h"
 #include <vespa/vespalib/btree/btreeiterator.h>
 #include <vespa/searchlib/attribute/attributesaver.h>
+#include <memory>
 
 namespace proton {
+
+class DocumentIdSaver;
 
 /*
  * Class holding the necessary context for saving a document meta
@@ -33,15 +36,19 @@ private:
     GidIterator _gidIterator; // iterator over frozen tree
     MetadataView _metadataView;
     bool _writeDocSize;
+    std::unique_ptr<DocumentIdSaver> _docid_saver;
 
     bool onSave(search::IAttributeSaveTarget &saveTarget) override;
 public:
     DocumentMetaStoreSaver(vespalib::GenerationGuard&& guard,
-                           const search::attribute::AttributeHeader& header,
-                           const GidIterator& gidIterator,
-                           MetadataView metadataView);
+                           const search::attribute::AttributeHeader &header,
+                           const GidIterator &gidIterator,
+                           MetadataView metadataView,
+                           std::unique_ptr<DocumentIdSaver> _docid_saver);
 
     ~DocumentMetaStoreSaver() override;
+
+    static std::string docid_file_suffix();
 };
 
 } // namespace proton

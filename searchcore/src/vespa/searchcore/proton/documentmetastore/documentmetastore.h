@@ -21,6 +21,7 @@ namespace proton::bucketdb {
 }
 
 namespace proton::documentmetastore {
+    class DocIdReader;
     class OperationListener;
     class Reader;
 }
@@ -138,7 +139,7 @@ private:
         return getCurrentGeneration();
     }
 
-    VESPA_DLL_LOCAL DocId readNextDoc(documentmetastore::Reader & reader, TreeType::Builder & treeBuilder);
+    VESPA_DLL_LOCAL DocId readNextDoc(documentmetastore::Reader & reader, documentmetastore::DocIdReader* docid_reader, TreeType::Builder & treeBuilder);
 
     RawDocumentMetadata removeInternal(DocId lid, uint64_t cached_iterator_sequence_id);
     void remove_batch_internal_btree(std::vector<LidAndRawDocumentMetadata>& removed);
