@@ -36,7 +36,7 @@ public class CloudResourceTags {
             "applicationid", "athenz", "athenz-domain", "athenzservice", "fqdn", "name", "owner", "zone");
 
     /** Key prefixes reserved by the platform. */
-    private static final List<String> RESERVED_KEY_PREFIXES = List.of("vai-", "corp_", "bastion_");
+    private static final List<String> RESERVED_KEY_PREFIXES = List.of("vai_", "corp_", "bastion_");
 
     private final Map<String, String> tags;
 
