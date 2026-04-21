@@ -87,6 +87,9 @@ public:
                 return false;
             }
             auto a_key = label_view.get_addr(a.tag.idx);
+#if !defined(__clang__) && defined(__GNUC__)
+#pragma GCC unroll 0
+#endif
             for (size_t i = 0; i < a_key.size(); ++i) {
                 if (a_key[i] != self(b.key[i])) {
                     return false;
