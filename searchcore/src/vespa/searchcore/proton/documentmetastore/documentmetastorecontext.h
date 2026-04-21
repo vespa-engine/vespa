@@ -51,6 +51,7 @@ public:
     }
 
     void constructFreeList() override;
+    [[nodiscard]] bool can_populate_document_metadata_docid() const noexcept override;
 };
 
 } // namespace proton

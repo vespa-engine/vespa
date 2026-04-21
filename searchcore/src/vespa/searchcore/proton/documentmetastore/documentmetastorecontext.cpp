@@ -43,4 +43,8 @@ DocumentMetaStoreContext::constructFreeList()
     _metaStore->constructFreeList();
 }
 
+bool DocumentMetaStoreContext::can_populate_document_metadata_docid() const noexcept {
+    return _metaStore->can_populate_document_metadata_docid();
+}
+
 }

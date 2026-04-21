@@ -27,6 +27,8 @@ struct IDocumentMetaStoreContext : public search::IDocumentMetaStoreContext {
      * Construct free lists of underlying meta store.
      */
     virtual void constructFreeList() = 0;
+
+    [[nodiscard]] virtual bool can_populate_document_metadata_docid() const noexcept = 0;
 };
 
 } // namespace proton
