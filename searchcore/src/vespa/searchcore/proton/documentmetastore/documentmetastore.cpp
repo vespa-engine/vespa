@@ -154,19 +154,17 @@ private:
     FileWithHeader     _docid_file;
     FileReader<size_t> _length_reader;
     FileReader<char>   _char_reader;
+    std::vector<char>  _docid_buffer;
 
 public:
     explicit DocIdReader(std::unique_ptr<FastOS_FileInterface> docid_file);
     ~DocIdReader();
 
-    std::string get_next_docid() {
+    std::span<const char> get_next_docid() {
         size_t length = _length_reader.readHostOrder();
-        std::string docid;
-        docid.reserve(length);
-        for (size_t i = 0; i < length; ++i) {
-            docid.push_back(_char_reader.readHostOrder());
-        }
-        return docid;
+        _docid_buffer.reserve(length);
+        _char_reader.readNHostOrder(_docid_buffer.data(), length);
+        return {_docid_buffer.data(), length};
     }
 
     uint64_t size_on_disk() const noexcept {
@@ -178,7 +176,8 @@ public:
 DocIdReader::DocIdReader(std::unique_ptr<FastOS_FileInterface> docid_file)
     : _docid_file(std::move(docid_file)),
       _length_reader(&_docid_file.file()),
-      _char_reader(&_docid_file.file()) {
+      _char_reader(&_docid_file.file()),
+      _docid_buffer() {
 }
 DocIdReader::~DocIdReader() = default;
 
@@ -350,8 +349,7 @@ DocumentMetaStore::readNextDoc(documentmetastore::Reader & reader, documentmetas
     meta.setDocSize(reader.getNextDocSize());
     meta.setTimestamp(reader.getNextTimestamp());
     if (docid_reader) {
-        std::string docid = docid_reader->get_next_docid();
-        const auto ref = _docid_store.add(docid);
+        const auto ref = _docid_store.add(docid_reader->get_next_docid());
         meta.set_docid_ref(ref);
     }
     treeBuilder.insert(GidToLidMapKey(lid, meta.getGid()), BTreeNoLeafData());
