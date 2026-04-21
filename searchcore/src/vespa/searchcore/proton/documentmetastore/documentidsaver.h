@@ -23,17 +23,17 @@ public:
         vespalib::btree::BTreeNoLeafData,
         vespalib::btree::NoAggregated,
         const KeyComp &>;
-    using MetaDataView = std::span<const RawDocumentMetadata>;
+    using MetadataView = std::span<const RawDocumentMetadata>;
     using TypeMapper = vespalib::datastore::ArrayStoreDynamicTypeMapper<char>;
     using DocumentIdEntryRef = vespalib::datastore::EntryRefT<19>;
     using DocumentIdStore = vespalib::datastore::ArrayStore<char, DocumentIdEntryRef, TypeMapper>;
-    DocumentIdSaver(const GidIterator &gidIterator, MetaDataView metaDataView, const DocumentIdStore& docid_store);
+    DocumentIdSaver(const GidIterator &gid_iterator, MetadataView metadata_view, const DocumentIdStore& docid_store);
     ~DocumentIdSaver();
     void save(search::BufferWriter& writer) const;
 
 private:
     GidIterator            _gid_iterator;
-    MetaDataView           _meta_data_view;
+    MetadataView           _metadata_view;
     const DocumentIdStore& _docid_store;
 };
 
