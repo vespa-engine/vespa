@@ -6,6 +6,7 @@ import ai.vespa.metricsproxy.metric.model.json.GenericJsonModel;
 import ai.vespa.metricsproxy.metric.model.json.GenericMetrics;
 import ai.vespa.metricsproxy.metric.model.json.GenericService;
 import ai.vespa.metricsproxy.service.DownService;
+import ai.vespa.metricsproxy.service.DummyService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.junit.Ignore;
@@ -118,8 +119,7 @@ public abstract class MetricsHandlerTestBase<MODEL> extends HttpHandlerTestBase 
     public void response_contains_service_metrics() {
         GenericJsonModel jsonModel = getResponseAsGenericJsonModel(DEFAULT_CONSUMER);
 
-        assertEquals(2, jsonModel.services.size());
-        GenericService dummyService = jsonModel.services.get(0);
+        GenericService dummyService = getService(jsonModel, "vespa." + DummyService.NAME);
         assertEquals(2, dummyService.metrics.size());
 
         GenericMetrics dummy0Metrics = getMetricsForService("dummy0", dummyService);
@@ -139,8 +139,7 @@ public abstract class MetricsHandlerTestBase<MODEL> extends HttpHandlerTestBase 
         // TODO: see comment in ExternalMetrics.setExtraMetrics
         // assertEquals(0, jsonModel.node.metrics.size());
 
-        assertEquals(2, jsonModel.services.size());
-        GenericService dummyService = jsonModel.services.get(0);
+        GenericService dummyService = getService(jsonModel, "vespa." + DummyService.NAME);
         assertEquals(2, dummyService.metrics.size());
 
         GenericMetrics dummy0Metrics = getMetricsForService("dummy0", dummyService);
@@ -153,11 +152,19 @@ public abstract class MetricsHandlerTestBase<MODEL> extends HttpHandlerTestBase 
     @Test
     public void consumer_name_is_case_insensitive() {
         GenericJsonModel jsonModel = getResponseAsGenericJsonModel(CUSTOM_CONSUMER.toUpperCase(Locale.ROOT));
-        GenericService dummyService = jsonModel.services.get(0);
+        GenericService dummyService = getService(jsonModel, "vespa." + DummyService.NAME);
         GenericMetrics dummy0Metrics = getMetricsForService("dummy0", dummyService);
 
         // If name was case-sensitive, this would be the default value.
         assertEquals("custom-val", dummy0Metrics.dimensions.get(REASON));
+    }
+
+    static GenericService getService(GenericJsonModel jsonModel, String serviceName) {
+        for (var service : jsonModel.services) {
+            if (service.name.equals(serviceName)) return service;
+        }
+        fail("Could not find service " + serviceName);
+        throw new RuntimeException();
     }
 
     private static GenericMetrics getMetricsForService(String serviceInstance, GenericService service) {
@@ -188,7 +195,7 @@ public abstract class MetricsHandlerTestBase<MODEL> extends HttpHandlerTestBase 
     private void assertDownServiceHealth(String consumer) {
         GenericJsonModel jsonModel = getResponseAsGenericJsonModel(consumer);
 
-        GenericService downService = jsonModel.services.get(1);
+        GenericService downService = getService(jsonModel, "vespa." + DownService.NAME);
         assertEquals(DOWN.status, downService.status.code);
         assertEquals("No response", downService.status.description);
 
