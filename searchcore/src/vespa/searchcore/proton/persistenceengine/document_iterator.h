@@ -48,7 +48,6 @@ public:
                      ReadConsistency readConsistency=ReadConsistency::STRONG);
     ~DocumentIterator();
     void add(const DocTypeName & doc_type_name, IDocumentRetriever::SP retriever);
-    void add(IDocumentRetriever::SP retriever);
     storage::spi::IterateResult iterate(size_t maxBytes);
 };
 

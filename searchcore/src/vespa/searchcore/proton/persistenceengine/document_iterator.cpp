@@ -105,12 +105,6 @@ DocumentIterator::add(const DocTypeName &doc_type_name, IDocumentRetriever::SP r
     _sources.emplace_back(doc_type_name, std::move(retriever));
 }
 
-void
-DocumentIterator::add(IDocumentRetriever::SP retriever)
-{
-    add(DocTypeName(), std::move(retriever));
-}
-
 IterateResult
 DocumentIterator::iterate(size_t maxBytes)
 {
