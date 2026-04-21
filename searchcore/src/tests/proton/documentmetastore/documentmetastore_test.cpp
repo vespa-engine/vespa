@@ -916,6 +916,7 @@ UserDocFixture::UserDocFixture(bool store_docid)
     bid1 = BucketId(minNumBits, docids[0].getGlobalId().convertToBucketId().getRawId());
     bid2 = BucketId(minNumBits, docids[2].getGlobalId().convertToBucketId().getRawId());
     bid3 = BucketId(minNumBits, docids[7].getGlobalId().convertToBucketId().getRawId());
+    EXPECT_EQ(store_docid, dms.can_populate_document_metadata_docid());
 }
 UserDocFixture::~UserDocFixture() = default;
 

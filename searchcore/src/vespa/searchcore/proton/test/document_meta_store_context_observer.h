@@ -6,9 +6,7 @@
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store_context.h>
 
 namespace proton::test {
-
-struct DocumentMetaStoreContextObserver : public IDocumentMetaStoreContext
-{
+struct DocumentMetaStoreContextObserver : public IDocumentMetaStoreContext {
     using SP = std::shared_ptr<DocumentMetaStoreContextObserver>;
 
     IDocumentMetaStoreContext &_context;
@@ -28,6 +26,9 @@ struct DocumentMetaStoreContextObserver : public IDocumentMetaStoreContext
     proton::IDocumentMetaStore &     get()       override { return *_observer; }
     IReadGuard::SP          getReadGuard() const override { return _context.getReadGuard(); }
     void               constructFreeList()       override { return _context.constructFreeList(); }
+    [[nodiscard ]] bool can_populate_document_metadata_docid() const noexcept override {
+        return _context.can_populate_document_metadata_docid();
+    }
 };
 
 }

@@ -38,6 +38,9 @@ struct DocumentMetaStoreObserver : public IDocumentMetaStore
     bool getLid(const GlobalId &gid, DocId &lid) const override {
         return _store.getLid(gid, lid);
     }
+    [[nodiscard]] bool can_populate_document_metadata_docid() const noexcept override {
+        return _store.can_populate_document_metadata_docid();
+    }
     search::DocumentMetadata getMetadata(const GlobalId &gid) const override {
         return _store.getMetadata(gid);
     }

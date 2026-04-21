@@ -864,6 +864,8 @@ DocumentMetaStore::constructFreeList()
     _lidAlloc.setFreeListConstructed();
 }
 
+bool DocumentMetaStore::can_populate_document_metadata_docid() const noexcept { return _store_full_document_id; }
+
 search::DocumentMetadata
 DocumentMetaStore::getMetadata(const GlobalId &gid) const
 {

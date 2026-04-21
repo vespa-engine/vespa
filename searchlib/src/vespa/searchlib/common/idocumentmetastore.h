@@ -98,6 +98,8 @@ struct IDocumentMetaStore {
      **/
     virtual bool getLid(const GlobalId &gid, DocId &lid) const = 0;
 
+    [[nodiscard]] virtual bool can_populate_document_metadata_docid() const noexcept = 0;
+
     /**
      * Retrieves the metadata for the document with the given gid.
      **/
