@@ -71,10 +71,6 @@ using IntEnumAttribute = EnumAttribute<IATint32>;
 using NodeUP = Node::UP;
 using SessionUP = std::unique_ptr<CachedSelect::Session>;
 
-#if 0
-extern template class SingleValueNumericPostingAttribute<IntPostingAttribute>;
-#endif
-
 using SvIntAttr = SingleValueNumericPostingAttribute<IntEnumAttribute>;
 
 namespace {
@@ -431,9 +427,10 @@ class Stats {
 private:
     bool _preDocOnlySelect;
     bool _preDocSelect;
-    bool _allFalse;
-    bool _allTrue;
-    bool _allInvalid;
+    bool _always_false;
+    bool _always_true;
+    bool _always_invalid;
+    bool _needs_document;
     uint32_t _fieldNodes;
     uint32_t _attrFieldNodes;
     uint32_t _svAttrFieldNodes;
@@ -442,18 +439,20 @@ public:
     Stats()
         : _preDocOnlySelect(false),
           _preDocSelect(false),
-          _allFalse(false),
-          _allTrue(false),
-          _allInvalid(false),
+          _always_false(false),
+          _always_true(false),
+          _always_invalid(false),
+          _needs_document(false),
           _fieldNodes(0),
           _attrFieldNodes(0),
           _svAttrFieldNodes(0)
     {}
     Stats &preDocOnlySelect() { _preDocOnlySelect = true; return *this; }
     Stats &preDocSelect() { _preDocSelect = true; return *this; }
-    Stats &allFalse() { _allFalse = true; return *this; }
-    Stats &allTrue() { _allTrue = true; return *this; }
-    Stats &allInvalid() { _allInvalid = true; return *this; };
+    Stats &always_false() { _always_false = true; return *this; }
+    Stats &always_true() { _always_true = true; return *this; }
+    Stats &always_invalid() { _always_invalid = true; return *this; };
+    Stats &needs_document() { _needs_document = true; return *this; };
     Stats &fieldNodes(uint32_t value) { _fieldNodes = value; return *this; }
     Stats &attrFieldNodes(uint32_t value) { _attrFieldNodes = value; return *this; }
     Stats &svAttrFieldNodes(uint32_t value) { _svAttrFieldNodes = value; return *this; }
@@ -461,9 +460,10 @@ public:
     void assertEquals(const CachedSelect &select) const {
         EXPECT_EQ(_preDocOnlySelect, (bool)select.preDocOnlySelect());
         EXPECT_EQ(_preDocSelect, (bool)select.preDocSelect());
-        EXPECT_EQ(_allFalse, select.allFalse());
-        EXPECT_EQ(_allTrue, select.allTrue());
-        EXPECT_EQ(_allInvalid, select.allInvalid());
+        EXPECT_EQ(_always_false, select.is_always_false());
+        EXPECT_EQ(_always_true, select.is_always_true());
+        EXPECT_EQ(_always_invalid, select.is_always_invalid());
+        EXPECT_EQ(_needs_document, select.needs_document());
         EXPECT_EQ(_fieldNodes, select.fieldNodes());
         EXPECT_EQ(_attrFieldNodes, select.attrFieldNodes());
         EXPECT_EQ(_svAttrFieldNodes, select.svAttrFieldNodes());
@@ -508,24 +508,24 @@ TEST(CachedSelectTest, Test_that_const_is_flagged)
     CachedSelect::SP cs;
 
     cs = f.testParse("false", "test");
-    EXPECT_TRUE(cs->allFalse());
-    EXPECT_FALSE(cs->allTrue());
-    EXPECT_FALSE(cs->allInvalid());
+    EXPECT_TRUE(cs->is_always_false());
+    EXPECT_FALSE(cs->is_always_true());
+    EXPECT_FALSE(cs->is_always_invalid());
     EXPECT_EQ(0u, cs->fieldNodes());
     cs = f.testParse("true", "test");
-    EXPECT_FALSE(cs->allFalse());
-    EXPECT_TRUE(cs->allTrue());
-    EXPECT_FALSE(cs->allInvalid());
+    EXPECT_FALSE(cs->is_always_false());
+    EXPECT_TRUE(cs->is_always_true());
+    EXPECT_FALSE(cs->is_always_invalid());
     EXPECT_EQ(0u, cs->fieldNodes());
     cs = f.testParse("test_2.ac > 4999", "test");
-    EXPECT_FALSE(cs->allFalse());
-    EXPECT_FALSE(cs->allTrue());
-    EXPECT_TRUE(cs->allInvalid());
+    EXPECT_FALSE(cs->is_always_false());
+    EXPECT_FALSE(cs->is_always_true());
+    EXPECT_TRUE(cs->is_always_invalid());
     EXPECT_EQ(0u, cs->fieldNodes());
     cs = f.testParse("test.aa > 4999", "test");
-    EXPECT_FALSE(cs->allFalse());
-    EXPECT_FALSE(cs->allTrue());
-    EXPECT_FALSE(cs->allInvalid());
+    EXPECT_FALSE(cs->is_always_false());
+    EXPECT_FALSE(cs->is_always_true());
+    EXPECT_FALSE(cs->is_always_invalid());
     EXPECT_EQ(1u, cs->fieldNodes());
     EXPECT_EQ(1u, cs->attrFieldNodes());
     EXPECT_EQ(1u, cs->svAttrFieldNodes());
@@ -548,7 +548,7 @@ TEST(CachedSelectTest, Test_that_basic_select_works)
         std::string selection("test.ia == \"hello\"");
         SCOPED_TRACE(selection);
         cs = f.testParse(selection, "test");
-        assertEquals(Stats().fieldNodes(1).attrFieldNodes(0).svAttrFieldNodes(0), *cs);
+        assertEquals(Stats().fieldNodes(1).attrFieldNodes(0).svAttrFieldNodes(0).needs_document(), *cs);
         checkSelect(cs, 1u, db.getDoc(1u), Result::True);
         checkSelect(cs, 2u, db.getDoc(2u), Result::False);
         checkSelect(cs, 3u, db.getDoc(3u), Result::False);
@@ -559,7 +559,7 @@ TEST(CachedSelectTest, Test_that_basic_select_works)
         std::string selection("test.ia.foo == \"hello\"");
         SCOPED_TRACE(selection);
         cs = f.testParse(selection, "test");
-        assertEquals(Stats().allInvalid(), *cs);
+        assertEquals(Stats().always_invalid(), *cs);
         checkSelect(cs, 1u, db.getDoc(1u), Result::Invalid);
         checkSelect(cs, 2u, db.getDoc(2u), Result::Invalid);
         checkSelect(cs, 3u, db.getDoc(3u), Result::Invalid);
@@ -570,7 +570,7 @@ TEST(CachedSelectTest, Test_that_basic_select_works)
         std::string selection("test.ia[2] == \"hello\"");
         SCOPED_TRACE(selection);
         cs = f.testParse(selection, "test");
-        assertEquals(Stats().allInvalid(), *cs);
+        assertEquals(Stats().always_invalid(), *cs);
         checkSelect(cs, 1u, db.getDoc(1u), Result::Invalid);
         checkSelect(cs, 2u, db.getDoc(2u), Result::Invalid);
         checkSelect(cs, 3u, db.getDoc(3u), Result::Invalid);
@@ -581,7 +581,7 @@ TEST(CachedSelectTest, Test_that_basic_select_works)
         std::string selection("test.ia{foo} == \"hello\"");
         SCOPED_TRACE(selection);
         cs = f.testParse(selection, "test");
-        assertEquals(Stats().allInvalid(), *cs);
+        assertEquals(Stats().always_invalid(), *cs);
         checkSelect(cs, 1u, db.getDoc(1u), Result::Invalid);
         checkSelect(cs, 2u, db.getDoc(2u), Result::Invalid);
         checkSelect(cs, 3u, db.getDoc(3u), Result::Invalid);
@@ -592,7 +592,7 @@ TEST(CachedSelectTest, Test_that_basic_select_works)
         std::string selection("test.ia < \"hello\"");
         SCOPED_TRACE(selection);
         cs = f.testParse(selection, "test");
-        assertEquals(Stats().fieldNodes(1).attrFieldNodes(0).svAttrFieldNodes(0), *cs);
+        assertEquals(Stats().fieldNodes(1).attrFieldNodes(0).svAttrFieldNodes(0).needs_document(), *cs);
         checkSelect(cs, 1u, db.getDoc(1u), Result::False);
         checkSelect(cs, 2u, db.getDoc(2u), Result::True);
         checkSelect(cs, 3u, db.getDoc(3u), Result::True);
@@ -618,7 +618,7 @@ TEST(CachedSelectTest, Test_that_basic_select_works)
         std::string selection("test.aa.foo == 3");
         SCOPED_TRACE(selection);
         cs = f.testParse(selection, "test");
-        assertEquals(Stats().allInvalid(), *cs);
+        assertEquals(Stats().always_invalid(), *cs);
         checkSelect(cs, 1u, db.getDoc(1u), Result::Invalid);
         checkSelect(cs, 2u, db.getDoc(2u), Result::Invalid);
         checkSelect(cs, 3u, db.getDoc(3u), Result::Invalid);
@@ -629,7 +629,7 @@ TEST(CachedSelectTest, Test_that_basic_select_works)
         std::string selection("test.aa[2] == 3");
         SCOPED_TRACE(selection);
         cs = f.testParse(selection, "test");
-        assertEquals(Stats().allInvalid(), *cs);
+        assertEquals(Stats().always_invalid(), *cs);
         checkSelect(cs, 1u, db.getDoc(1u), Result::Invalid);
         checkSelect(cs, 2u, db.getDoc(2u), Result::Invalid);
         checkSelect(cs, 3u, db.getDoc(3u), Result::Invalid);
@@ -640,7 +640,7 @@ TEST(CachedSelectTest, Test_that_basic_select_works)
         std::string selection("test.aa{4} > 3");
         SCOPED_TRACE(selection);
         cs = f.testParse(selection, "test");
-        assertEquals(Stats().allInvalid(), *cs);
+        assertEquals(Stats().always_invalid(), *cs);
         checkSelect(cs, 1u, db.getDoc(1u), Result::Invalid);
         checkSelect(cs, 2u, db.getDoc(2u), Result::Invalid);
         checkSelect(cs, 3u, db.getDoc(3u), Result::Invalid);
@@ -651,14 +651,14 @@ TEST(CachedSelectTest, Test_that_basic_select_works)
         std::string selection("test.aaa[2] == 3");
         SCOPED_TRACE(selection);
         cs = f.testParse(selection, "test");
-        assertEquals(Stats().fieldNodes(1).attrFieldNodes(1).svAttrFieldNodes(0), *cs);
+        assertEquals(Stats().fieldNodes(1).attrFieldNodes(1).svAttrFieldNodes(0).needs_document(), *cs);
     }
 
     {
         std::string selection("test.aaw{4} > 3");
         SCOPED_TRACE(selection);
         cs = f.testParse(selection, "test");
-        assertEquals(Stats().fieldNodes(1).attrFieldNodes(1).svAttrFieldNodes(0), *cs);
+        assertEquals(Stats().fieldNodes(1).attrFieldNodes(1).svAttrFieldNodes(0).needs_document(), *cs);
     }
 
     {
@@ -695,7 +695,7 @@ TEST(CachedSelectTest, Test_that_single_value_attribute_combined_with_non_attrib
 {
     PreDocSelectFixture f;
     CachedSelect::SP cs = f.testParse("test.aa == 3 AND test.ia == \"foo\"", "test");
-    assertEquals(Stats().preDocSelect().fieldNodes(2).attrFieldNodes(1).svAttrFieldNodes(1), *cs);
+    assertEquals(Stats().preDocSelect().fieldNodes(2).attrFieldNodes(1).svAttrFieldNodes(1).needs_document(), *cs);
 
     checkSelect(cs, 1u, Result::Invalid, true);
     checkSelect(cs, 2u, Result::Invalid, true);
@@ -709,7 +709,7 @@ TEST(CachedSelectTest, Test_that_single_value_attribute_with_complex_attribute_f
 {
     PreDocSelectFixture f;
     CachedSelect::SP cs = f.testParse("test.aa == 3 AND test.aaa[0] == 5", "test");
-    assertEquals(Stats().preDocSelect().fieldNodes(2).attrFieldNodes(2).svAttrFieldNodes(1), *cs);
+    assertEquals(Stats().preDocSelect().fieldNodes(2).attrFieldNodes(2).svAttrFieldNodes(1).needs_document(), *cs);
 
     checkSelect(cs, 1u, Result::Invalid, true);
     checkSelect(cs, 2u, Result::Invalid, true);
@@ -739,7 +739,7 @@ TEST(CachedSelectTest, Imported_field_can_be_used_in_doc_selections_with_mixed_a
     PreDocSelectFixture f;
     // `id.namespace` requires a doc store fetch and cannot be satisfied by attributes alone
     auto cs = f.testParse("test.my_imported_field == 3 and id.namespace != 'foo'", "test");
-    assertEquals(Stats().preDocSelect().fieldNodes(2).attrFieldNodes(1).svAttrFieldNodes(1), *cs);
+    assertEquals(Stats().preDocSelect().fieldNodes(2).attrFieldNodes(1).svAttrFieldNodes(1).needs_document(), *cs);
 
     // 2 first checks cannot be completed in pre-doc stage alone
     checkSelect(cs, 1u, Result::Invalid, true);  // -> doc eval stage
@@ -830,7 +830,7 @@ TEST(CachedSelectTest, can_check_for_non_pre_doc_only_attribute_tensor_presence_
     CachedSelect::SP cs;
     // `id.namespace` requires a doc store fetch and cannot be satisfied by attributes alone
     cs = f.testParse("test.dense_tensor != null and id.namespace != 'foo'", "test");
-    assertEquals(Stats().preDocSelect().fieldNodes(2).attrFieldNodes(1).svAttrFieldNodes(1), *cs);
+    assertEquals(Stats().preDocSelect().fieldNodes(2).attrFieldNodes(1).svAttrFieldNodes(1).needs_document(), *cs);
     checkSelect(cs, 1u, Result::Invalid, true); // pre-doc contains == true ==> must be eval'd with doc
     checkSelect(cs, 2u, Result::False, false);  // Short-circuits to False
 
@@ -838,7 +838,7 @@ TEST(CachedSelectTest, can_check_for_non_pre_doc_only_attribute_tensor_presence_
     checkSelect(cs, 2u, db.getDoc(2u), Result::False);
 
     cs = f.testParse("test.dense_tensor == null and id.namespace != 'foo'", "test");
-    assertEquals(Stats().preDocSelect().fieldNodes(2).attrFieldNodes(1).svAttrFieldNodes(1), *cs);
+    assertEquals(Stats().preDocSelect().fieldNodes(2).attrFieldNodes(1).svAttrFieldNodes(1).needs_document(), *cs);
     checkSelect(cs, 1u, Result::False, false); // Short-circuits to False
     checkSelect(cs, 2u, Result::Invalid, true);
 
@@ -855,12 +855,12 @@ TEST(CachedSelectTest, can_check_for_non_attribute_tensor_presence_in_selections
 
     CachedSelect::SP cs;
     cs = f.testParse("test.sparse_tensor != null", "test");
-    assertEquals(Stats().fieldNodes(1).attrFieldNodes(0).svAttrFieldNodes(0), *cs);
+    assertEquals(Stats().fieldNodes(1).attrFieldNodes(0).svAttrFieldNodes(0).needs_document(), *cs);
     checkSelect(cs, 1u, db.getDoc(1u), Result::True);
     checkSelect(cs, 2u, db.getDoc(2u), Result::False);
 
     cs = f.testParse("test.sparse_tensor == null", "test");
-    assertEquals(Stats().fieldNodes(1).attrFieldNodes(0).svAttrFieldNodes(0), *cs);
+    assertEquals(Stats().fieldNodes(1).attrFieldNodes(0).svAttrFieldNodes(0).needs_document(), *cs);
     checkSelect(cs, 1u, db.getDoc(1u), Result::False);
     checkSelect(cs, 2u, db.getDoc(2u), Result::True);
 }

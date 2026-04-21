@@ -146,11 +146,11 @@ public:
         if (!(_metaOnly || selection.empty())) {
             LOG(spam, "ParseSelect: %s", selection.c_str());
             _cachedSelect = source.parseSelect(selection);
-            _dscTrue = _cachedSelect->allTrue();
-            if (_cachedSelect->allFalse() || _cachedSelect->allInvalid()) {
+            _dscTrue = _cachedSelect->is_always_true();
+            if (_cachedSelect->is_always_false() || _cachedSelect->is_always_invalid()) {
                 assert(!_dscTrue);
                 LOG(debug, "Nothing will ever match cs.allFalse = '%d', cs.allInvalid = '%d'",
-                    _cachedSelect->allFalse(), _cachedSelect->allInvalid());
+                    _cachedSelect->is_always_false(), _cachedSelect->is_always_invalid());
                 _willAlwaysFail = true;
             } else {
                 _selectSession = _cachedSelect->createSession();
