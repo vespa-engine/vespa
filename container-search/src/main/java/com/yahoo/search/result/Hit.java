@@ -17,6 +17,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
@@ -87,7 +88,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      */
     private int addNumber = -1;
 
-    /** The query which produced this hit. Used for multi phase searching */
+    /** The query which produced this hit. Used for multiphase searching */
     private Query query;
 
     /**
@@ -260,7 +261,6 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         assignId(new URI(id));
     }
 
-
     /**
      * Initializes the id of this hit.
      *
@@ -313,9 +313,11 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         setRelevance(new Relevance(relevance));
     }
 
-
     /** Returns the relevance of this hit */
     public Relevance getRelevance() { return relevance; }
+
+    /** Returns the id of the group that produced this, or empty when not apt. */
+    public OptionalInt getGroup() { return OptionalInt.empty(); }
 
     /** Sets whether this hit is returned from a cache. Default is false */
     public void setCached(boolean cached) { this.cached = cached; }

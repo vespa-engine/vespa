@@ -323,7 +323,7 @@ public class LoadBalancerSimulationTest {
         // Create groups with dummy nodes
         List<Group> groups = new ArrayList<>();
         for (int i = 0; i < config.numGroups; i++) {
-            Node node = new Node("test-cluster", i, "node-" + i, i);
+            Node node = new Node("test-cluster", i, "node-" + i, i, true);
             Group group = new Group(i, List.of(node)) {
                 @Override
                 public boolean hasSufficientCoverage() {

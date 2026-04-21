@@ -104,7 +104,7 @@ public class RpcSearchInvoker extends SearchInvoker implements Client.ResponseRe
 
         ProtobufResponse protobufResponse = response.response().get();
         byte[] payload = compressor.decompress(protobufResponse);
-        return ProtobufSerialization.deserializeToSearchResult(payload, query, searcher, node.pathIndex(), node.key());
+        return ProtobufSerialization.deserializeToSearchResult(payload, query, searcher, node);
     }
 
     @Override

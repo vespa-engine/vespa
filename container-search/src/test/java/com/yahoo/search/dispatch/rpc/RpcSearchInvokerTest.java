@@ -58,7 +58,7 @@ public class RpcSearchInvokerTest {
     @Test
     void testProtobufSerialization() {
         var holders = new Holders();
-        var invoker = createRpcInvoker(new Node("test", 7, "seven", 1), 1000, holders);
+        var invoker = createRpcInvoker(new Node("test", 7, "seven", 1, true), 1000, holders);
 
         Query q = new Query("search/?query=test&hits=10&offset=3");
         RpcSearchInvoker.SerializedQuery serialized1 = (RpcSearchInvoker.SerializedQuery) invoker.sendSearchRequest(q, 1.0, null);
@@ -70,7 +70,7 @@ public class RpcSearchInvokerTest {
         assertEquals(3, request.getOffset());
         assertFalse(request.getQueryTreeBlob().isEmpty());
 
-        var invoker2 = createRpcInvoker(new Node("test", 8, "eight", 1), 1000, holders);
+        var invoker2 = createRpcInvoker(new Node("test", 8, "eight", 1, true), 1000, holders);
         RpcSearchInvoker.SerializedQuery serialized2 = (RpcSearchInvoker.SerializedQuery) invoker2.sendSearchRequest(q, 1.0, serialized1);
         assertSame(serialized1, serialized2);
         assertEquals(holders.length.get(), serialized1.compressedPayload.uncompressedSize());
@@ -81,7 +81,7 @@ public class RpcSearchInvokerTest {
     void testProtobufSerializationWithMaxHitsSet() {
         var holders = new Holders();
         int maxHits = 5;
-        var invoker = createRpcInvoker(new Node("test", 7, "seven", 1), maxHits, holders);
+        var invoker = createRpcInvoker(new Node("test", 7, "seven", 1, true), maxHits, holders);
 
         Query q = new Query("search/?query=test&hits=10&offset=3");
         invoker.sendSearchRequest(q, 1.0, null);
@@ -273,7 +273,7 @@ public class RpcSearchInvokerTest {
         List<RpcSearchInvoker> nodeInvokers = new ArrayList<>();
         List<Holders> nodeHolders = new ArrayList<>();
         for (int i = 0; i < activeDocs.size(); i++) {
-            Node node = new Node("test", i, "?", 0);
+            Node node = new Node("test", i, "?", 0, true);
             node.setActiveDocuments(activeDocs.get(i));
             node.setWorking(true);
             var holders = new Holders();

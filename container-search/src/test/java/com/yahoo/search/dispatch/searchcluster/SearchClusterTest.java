@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -60,7 +61,7 @@ public class SearchClusterTest {
             for (String name : nodeNames) {
                 int key = nodes.size() % nodesPerGroup;
                 int group = nodes.size() / nodesPerGroup;
-                nodes.add(new Node("test", key, name, group));
+                nodes.add(new Node("test", key, name, group, true));
                 numDocsPerNode.add(new AtomicInteger(1));
                 pingCounts.add(new AtomicInteger(0));
             }
@@ -169,8 +170,8 @@ public class SearchClusterTest {
             assertEquals(Set.of(), test.searchCluster.groupList().nodes());
 
             test.searchCluster.updateNodes(new AvailabilityPolicy(true, 100.0),
-                                           List.of(new Node("test", 0, "a", 0),
-                                                   new Node("test", 1, "b", 0)),
+                                           List.of(new Node("test", 0, "a", 0, true),
+                                                   new Node("test", 1, "b", 0, true)),
                                            test.clusterMonitor);
             assertTrue(test.vipStatus.isInRotation());
         }
@@ -342,7 +343,7 @@ public class SearchClusterTest {
 
     @Test
     void requireThatPingSequenceIsUpHeld() {
-        Node node = new Node("test", 1, "n", 1);
+        Node node = new Node("test", 1, "n", 1, false);
         assertEquals(1, node.createPingSequenceId());
         assertEquals(2, node.createPingSequenceId());
         assertEquals(0, node.getLastReceivedPongId());
@@ -364,7 +365,7 @@ public class SearchClusterTest {
 
     @Test
     void requireThatSingleNodeGroupIsInBalance() {
-        Group group = new Group(0, List.of(new Node("test", 1, "n", 1)));
+        Group group = new Group(0, List.of(new Node("test", 1, "n", 1, false)));
         group.nodes().forEach(node -> node.setWorking(true));
         assertTrue(group.isBalanced());
         group.aggregateNodeValues();
@@ -376,7 +377,8 @@ public class SearchClusterTest {
 
     @Test
     void requireThatMultiNodeGroupDetectsBalance() {
-        Group group = new Group(0, List.of(new Node("test", 1, "n1", 1), new Node("test", 2, "n2", 1)));
+        Group group = new Group(0, List.of(new Node("test", 1, "n1", 1, true),
+                                           new Node("test", 2, "n2", 1, true)));
         assertTrue(group.isBalanced());
         group.nodes().forEach(node -> node.setWorking(true));
         assertTrue(group.isBalanced());
@@ -403,22 +405,22 @@ public class SearchClusterTest {
     void requireThatPreciselyTheRetainedNodesAreKeptWhenNodesAreUpdated() {
         try (State state = new State("query", 2, IntStream.range(0, 6).mapToObj(i -> "node-" + i).toList())) {
             state.clusterMonitor.start();
-            List<Node> referenceNodes = List.of(new Node("test", 0, "node-0", 0),
-                                                new Node("test", 1, "node-1", 0),
-                                                new Node("test", 0, "node-2", 1),
-                                                new Node("test", 1, "node-3", 1),
-                                                new Node("test", 0, "node-4", 2),
-                                                new Node("test", 1, "node-5", 2));
+            List<Node> referenceNodes = List.of(new Node("test", 0, "node-0", 0, true),
+                                                new Node("test", 1, "node-1", 0, true),
+                                                new Node("test", 0, "node-2", 1, true),
+                                                new Node("test", 1, "node-3", 1, true),
+                                                new Node("test", 0, "node-4", 2, true),
+                                                new Node("test", 1, "node-5", 2, true));
             SearchGroups oldGroups = state.searchCluster.groupList();
             assertEquals(Set.copyOf(referenceNodes), oldGroups.nodes());
             List<BaseNodeMonitor<Node>> oldMonitors = state.clusterMonitor.nodeMonitors();
 
-            List<Node> updatedNodes = List.of(new Node("test", 0, "node-1", 0),  // Swap node-0 and node-1
-                                              new Node("test", 1, "node-0", 0),  // Swap node-1 and node-0
-                                              new Node("test", 0, "node-4", 1),  // Swap node-2 and node-4
-                                              new Node("test", 1, "node-3", 1),
-                                              new Node("test", 0, "node-2", 2),  // Swap node-4 and node-2
-                                              new Node("test", 1, "node-6", 2)); // Replace node-6
+            List<Node> updatedNodes = List.of(new Node("test", 0, "node-1", 0, true),  // Swap node-0 and node-1
+                                              new Node("test", 1, "node-0", 0, true),  // Swap node-1 and node-0
+                                              new Node("test", 0, "node-4", 1, true),  // Swap node-2 and node-4
+                                              new Node("test", 1, "node-3", 1, true),
+                                              new Node("test", 0, "node-2", 2, true),  // Swap node-4 and node-2
+                                              new Node("test", 1, "node-6", 2, true)); // Replace node-6
             state.searchCluster.updateNodes(new AvailabilityPolicy(true, 100.0),
                                             updatedNodes,
                                             state.clusterMonitor);

@@ -23,7 +23,7 @@ class MockInvoker extends SearchInvoker {
     }
 
     protected MockInvoker(int key, Coverage coverage) {
-        this(coverage, new Node("test", key, "?", 0));
+        this(coverage, new Node("test", key, "?", 0, true));
     }
 
     protected MockInvoker(Coverage coverage, Node node) {
@@ -51,9 +51,8 @@ class MockInvoker extends SearchInvoker {
         }
         if (hits != null) {
             for (Hit h : hits) {
-                if (h instanceof FastHit) {
-                    FastHit fh = (FastHit) h;
-                    ret.getLeanHits().add(new LeanHit(fh.getRawGlobalId(), fh.getPartId(), fh.getDistributionKey(), fh.getRelevance().getScore()));
+                if (h instanceof FastHit fh) {
+                    ret.getLeanHits().add(new LeanHit(fh.getRawGlobalId(), fh.getGroup(), fh.getPartId(), fh.getDistributionKey(), fh.getRelevance().getScore()));
                 } else {
                     ret.getResult().hits().add(h);
                 }

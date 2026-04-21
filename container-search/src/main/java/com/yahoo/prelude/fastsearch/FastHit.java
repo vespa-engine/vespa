@@ -19,6 +19,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.logging.Level;
@@ -35,16 +36,18 @@ public class FastHit extends Hit {
     private static final Logger log = Logger.getLogger(FastHit.class.getName());
 
     private static final byte[] emptyGID = new byte[GlobalId.LENGTH];
-    /** The index of the content node this hit originated at */
-    private int distributionKey;
 
-    /** The local identifier of the content store for this hit on the node it originated at */
+    private final OptionalInt group;
+
+    private final int distributionKey;
+
     private final int partId;
 
     /** The global id of this document in the backend node which produced it */
-    private byte[] globalId;
+    private final byte[] globalId;
 
     private transient byte[] sortData = null;
+
     // TODO: I suspect this one can be dropped.
     private transient Sorting sortDataSorting = null;
 
@@ -70,30 +73,39 @@ public class FastHit extends Hit {
      * Creates an empty and temporarily invalid summary hit
      */
     public FastHit() {
-        this(emptyGID, 0.0, 0, 0);
+        this(emptyGID, 0.0, OptionalInt.empty(), 0, 0);
     }
 
-    public FastHit(byte[] gid, double relevance, int partId, int distributionKey) {
-        this(gid, new Relevance(relevance), partId, distributionKey);
+    public FastHit(byte[] gid, double relevance, OptionalInt group, int partId, int distributionKey) {
+        this(gid, new Relevance(relevance), group, partId, distributionKey);
     }
 
-    public FastHit(byte[] gid, Relevance relevance, int partId, int distributionKey) {
+    public FastHit(byte[] gid, Relevance relevance, OptionalInt group, int partId, int distributionKey) {
         super(relevance);
         this.globalId = gid;
+        this.group = group;
         this.partId = partId;
         this.distributionKey = distributionKey;
         if (distributionKey < 0)
             log.log(Level.WARNING, "Distribution key is negative: " + this, new RuntimeException());
     }
 
-    // Note: This constructor is only used for tests, production use is always of the empty constructor
+    /** For tests. */
     public FastHit(String uri, double relevancy) {
-        this(emptyGID, relevancy, 0, 0);
+        this(emptyGID, relevancy, OptionalInt.empty(), 0, 0);
+        setId(uri);
+        types().add("summary");
+    }
+
+    /** For tests. */
+    public FastHit(String uri, double relevancy, OptionalInt group) {
+        this(emptyGID, relevancy, group, 0, 0);
         setId(uri);
         types().add("summary");
     }
 
     /** Returns false - this is a concrete hit containing requested content */
+    @Override
     public boolean isMeta() { return false; }
 
     /**
@@ -115,19 +127,21 @@ public class FastHit extends Hit {
         return indexUri;
     }
 
-    /** Returns the global id of this document in the backend node which produced it */
+    /** Returns the global id of this document in the backend node which produced it. */
     public GlobalId getGlobalId() { return new GlobalId(globalId); }
-    public byte [] getRawGlobalId() { return globalId; }
 
-    public void setGlobalId(byte [] globalId) { this.globalId = globalId; }
+    /** Returns the global id of this document in the backend node which produced it as bytes. */
+    public byte[] getRawGlobalId() { return globalId; }
 
+    /** Returns the id of the group that produced this hit, or empty when the content cluster does not use groups. */
+    @Override
+    public OptionalInt getGroup() { return group; }
+
+    /** Returns the index of this node in its content group: A continuous index starting from 0. */
     public int getPartId() { return partId; }
 
-    /** Returns the index of the node this hit originated at */
+    /** Returns unique and stable index of the node this hit originated at. */
     public int getDistributionKey() { return distributionKey; }
-
-    /** Sets the index of the node this hit originated at */
-    public void setDistributionKey(int distributionKey) { this.distributionKey = distributionKey; }
 
     public void setSortData(byte[] data, Sorting sorting) {
         this.sortData = data;
