@@ -157,7 +157,7 @@
         <snappy.vespa.version>1.1.10.6</snappy.vespa.version>
         <snakeyaml.vespa.version>2.4</snakeyaml.vespa.version>
         <surefire.vespa.version>3.5.5</surefire.vespa.version>
-        <testcontainers.vespa.version>1.19.7</testcontainers.vespa.version>
+        <testcontainers.vespa.version>1.21.4</testcontainers.vespa.version>
         <velocity.vespa.version>2.3</velocity.vespa.version>
         <velocity.tools.vespa.version>3.1</velocity.tools.vespa.version>
         <wiremock.vespa.version>3.9.1</wiremock.vespa.version>
