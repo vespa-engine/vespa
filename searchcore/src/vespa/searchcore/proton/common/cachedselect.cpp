@@ -170,9 +170,9 @@ CachedSelect::Session::selectNode() const
 void
 CachedSelect::setDocumentSelect(SelectPruner &docsPruner)
 {
-    _allFalse = docsPruner.isFalse();
-    _allTrue = docsPruner.isTrue();
-    _allInvalid = docsPruner.isInvalid();
+    _always_false = docsPruner.isFalse();
+    _always_true = docsPruner.isTrue();
+    _always_invalid = docsPruner.isInvalid();
     _docSelect = std::move(docsPruner.getNode());
     _fieldNodes = docsPruner.getFieldNodes();
     _attrFieldNodes = docsPruner.getAttrFieldNodes();
@@ -209,9 +209,9 @@ CachedSelect::CachedSelect()
       _fieldNodes(0u),
       _attrFieldNodes(0u),
       _svAttrFieldNodes(0u),
-      _allFalse(false),
-      _allTrue(false),
-      _allInvalid(false),
+      _always_false(false),
+      _always_true(false),
+      _always_invalid(false),
       _preDocOnlySelect(),
       _preDocSelect()
 { }
@@ -228,9 +228,9 @@ CachedSelect::set(const std::string &selection,
     } catch (document::select::ParsingFailedException &) {
         _docSelect.reset(nullptr);
     }
-    _allFalse = !_docSelect;
-    _allTrue = false;
-    _allInvalid = false;
+    _always_false = !_docSelect;
+    _always_true = false;
+    _always_invalid = false;
 }
 
                   
