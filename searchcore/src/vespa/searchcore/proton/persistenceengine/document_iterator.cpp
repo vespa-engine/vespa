@@ -102,13 +102,15 @@ DocumentIterator::~DocumentIterator() = default;
 void
 DocumentIterator::add(const DocTypeName &doc_type_name, IDocumentRetriever::SP retriever)
 {
+    assert(doc_type_name.getName() == retriever->get_doc_type_name().getName());
     _sources.emplace_back(doc_type_name, std::move(retriever));
 }
 
 void
 DocumentIterator::add(IDocumentRetriever::SP retriever)
 {
-    add(DocTypeName(), std::move(retriever));
+    auto& name = retriever->get_doc_type_name();
+    add(name, std::move(retriever));
 }
 
 IterateResult

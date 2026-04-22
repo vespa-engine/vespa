@@ -176,9 +176,11 @@ MyDocumentStore::read(search::DocumentIdT lid, const document::DocumentTypeRepo 
     return Document::UP(_readDoc->clone());
 }
 
-MyDocumentRetriever::MyDocumentRetriever(std::shared_ptr<const DocumentTypeRepo> repo_in, const MyDocumentStore& store_in) noexcept
+MyDocumentRetriever::MyDocumentRetriever(std::shared_ptr<const DocumentTypeRepo> repo_in,
+                                         const MyDocumentStore& store_in, const DocTypeName& doc_type_name_in) noexcept
     : repo(std::move(repo_in)),
-      store(store_in)
+      store(store_in),
+      doc_type_name(doc_type_name_in)
 {}
 
 MyDocumentRetriever::~MyDocumentRetriever() = default;
@@ -187,6 +189,8 @@ const document::DocumentTypeRepo&
 MyDocumentRetriever::getDocumentTypeRepo() const {
     return *repo;
 }
+
+const DocTypeName& MyDocumentRetriever::get_doc_type_name() const noexcept { return doc_type_name; }
 
 void
 MyDocumentRetriever::getBucketMetadata(const storage::spi::Bucket&, DocumentMetadata::Vector&, bool) const {
@@ -208,10 +212,11 @@ MyDocumentRetriever::parseSelect(const std::string&) const {
     abort();
 }
 
-MySubDb::MySubDb(std::shared_ptr<bucketdb::BucketDBOwner> bucket_db, const MyDocumentStore& store, const std::shared_ptr<const DocumentTypeRepo> & repo)
+MySubDb::MySubDb(std::shared_ptr<bucketdb::BucketDBOwner> bucket_db, const MyDocumentStore& store,
+                 const std::shared_ptr<const DocumentTypeRepo> & repo, const DocTypeName& doc_type_name)
     : sub_db(std::make_unique<DummyDocumentSubDb>(std::move(bucket_db), SUBDB_ID)),
       maintenance_sub_db(sub_db->getName(), sub_db->getSubDbId(), sub_db->getDocumentMetaStoreContext().getSP(),
-                         std::make_shared<MyDocumentRetriever>(repo, store),
+                         std::make_shared<MyDocumentRetriever>(repo, store, doc_type_name),
                          std::make_shared<MyFeedView>(repo),
                          &_pendingLidsForCommit)
 {

@@ -112,12 +112,14 @@ struct MyDocumentRetriever : DocumentRetrieverBaseForTest {
     const Document *document;
     Timestamp timestamp;
     DocumentId &last_doc_id;
+    DocTypeName doc_type_name;
 
-    MyDocumentRetriever(const Document *d, Timestamp ts, DocumentId &last_id)
-        : repo(), document(d), timestamp(ts), last_doc_id(last_id) {}
+    MyDocumentRetriever(const Document *d, Timestamp ts, DocumentId &last_id, const DocTypeName& doc_type_name_in)
+        : repo(), document(d), timestamp(ts), last_doc_id(last_id), doc_type_name(doc_type_name_in) {}
     const DocumentTypeRepo &getDocumentTypeRepo() const override {
         return repo;
     }
+    const DocTypeName& get_doc_type_name() const noexcept override { return doc_type_name; }
     void getBucketMetadata(const storage::spi::Bucket &, search::DocumentMetadata::Vector &v, bool) const override {
         if (document != nullptr) {
             v.push_back(getDocumentMetadata(document->getId()));
@@ -275,8 +277,8 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
 
     RetrieversSP getDocumentRetrievers(storage::spi::ReadConsistency) override {
         auto ret = std::make_shared<std::vector<IDocumentRetriever::SP>>();
-        ret->push_back(std::make_shared<MyDocumentRetriever>(nullptr, Timestamp(), lastDocId));
-        ret->push_back(std::make_shared<MyDocumentRetriever>(document, existingTimestamp, lastDocId));
+        ret->push_back(std::make_shared<MyDocumentRetriever>(nullptr, Timestamp(), lastDocId, _doc_type_name));
+        ret->push_back(std::make_shared<MyDocumentRetriever>(document, existingTimestamp, lastDocId, _doc_type_name));
         return ret;
     }
 

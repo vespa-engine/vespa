@@ -14,6 +14,8 @@ namespace document { class FieldSet; }
 
 namespace proton {
 
+class DocTypeName;
+
 /**
  * This is an interface that allows retrieval of documents by local id and document metadata
  * by either bucket or document id.
@@ -33,6 +35,7 @@ public:
     virtual ~IDocumentRetriever() = default;
 
     virtual const document::DocumentTypeRepo & getDocumentTypeRepo() const = 0;
+    virtual const DocTypeName& get_doc_type_name() const noexcept = 0;
     virtual void getBucketMetadata(const storage::spi::Bucket &bucket, search::DocumentMetadata::Vector &result, bool populate_docid) const = 0;
     virtual search::DocumentMetadata getDocumentMetadata(const document::DocumentId &id) const = 0;
     /**

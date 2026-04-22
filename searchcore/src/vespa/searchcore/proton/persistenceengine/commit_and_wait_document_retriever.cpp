@@ -18,6 +18,10 @@ CommitAndWaitDocumentRetriever::getDocumentTypeRepo() const {
     return _retriever->getDocumentTypeRepo();
 }
 
+const DocTypeName& CommitAndWaitDocumentRetriever::get_doc_type_name() const noexcept {
+    return _retriever->get_doc_type_name();
+}
+
 void
 CommitAndWaitDocumentRetriever::getBucketMetadata(const Bucket &bucket, search::DocumentMetadata::Vector &result, bool populate_docid) const {
     return _retriever->getBucketMetadata(bucket, result, populate_docid);

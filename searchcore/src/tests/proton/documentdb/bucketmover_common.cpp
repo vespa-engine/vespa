@@ -47,11 +47,11 @@ MyMoveHandler::handleMove(MoveOperation &op, IDestructorCallback::SP moveDoneCtx
 }
 
 MySubDb::MySubDb(const std::shared_ptr<const DocumentTypeRepo> &repo, std::shared_ptr<bucketdb::BucketDBOwner> bucketDB,
-                 uint32_t subDbId, SubDbType subDbType)
+                 const DocTypeName& doc_type_name, uint32_t subDbId, SubDbType subDbType)
     : _metaStoreSP(std::make_shared<DocumentMetaStore>(bucketDB, DocumentMetaStore::getFixedName(),
                                                        search::GrowStrategy(), subDbType)),
       _metaStore(*_metaStoreSP),
-      _realRetriever(std::make_shared<MyDocumentRetriever>(repo)),
+      _realRetriever(std::make_shared<MyDocumentRetriever>(repo, doc_type_name)),
       _retriever(_realRetriever),
       _subDb("my_sub_db", subDbId, _metaStoreSP, _retriever, IFeedView::SP(), nullptr),
       _docs(),

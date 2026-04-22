@@ -145,10 +145,14 @@ MyDocumentSubDB::~MyDocumentSubDB() = default;
 struct MyDocumentRetriever : public DocumentRetrieverBaseForTest
 {
     MyDocumentSubDB &_subDB;
+    DocTypeName      _doc_type_name;
 
-    explicit MyDocumentRetriever(MyDocumentSubDB &subDB) noexcept : _subDB(subDB) { }
+    MyDocumentRetriever(MyDocumentSubDB &subDB, const DocTypeName& doc_type_name) noexcept : _subDB(subDB),
+        _doc_type_name(doc_type_name) {
+    }
 
     const document::DocumentTypeRepo & getDocumentTypeRepo() const override { abort(); }
+    const DocTypeName& get_doc_type_name() const noexcept override { return _doc_type_name; }
     void getBucketMetadata(const storage::spi::Bucket &, DocumentMetadata::Vector &, bool) const override { abort(); }
     DocumentMetadata getDocumentMetadata(const DocumentId &) const override { return {}; }
     Document::UP getFullDocument(DocumentIdT lid) const override { return _subDB.getDocument(lid); }
@@ -290,7 +294,7 @@ MyIndexManager::~MyIndexManager() = default;
 MaintenanceDocumentSubDB
 MyDocumentSubDB::getSubDB()
 {
-    auto retriever = std::make_shared<MyDocumentRetriever>(*this);
+    auto retriever = std::make_shared<MyDocumentRetriever>(*this, _docTypeName);
 
     return MaintenanceDocumentSubDB("my_sub_db", _subDBId,
                                     _metaStoreSP,
