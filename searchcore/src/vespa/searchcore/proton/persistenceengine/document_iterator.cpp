@@ -313,7 +313,7 @@ DocumentIterator::fetchCompleteSource(const DocTypeName & doc_type_name,
                 list.push_back(DocEntry::create(Timestamp(meta.timestamp), DocumentMetaEnum::REMOVE_ENTRY, docid));
             } else {
                 auto doc = std::make_unique<Document>(repo, *document_type, docid);
-                list.push_back(createDocEntry(Timestamp(meta.timestamp), meta.removed, std::move(doc), _defaultSerializedSize));
+                list.push_back(createDocEntry(Timestamp(meta.timestamp), false, std::move(doc), _defaultSerializedSize));
             }
         }
     } else {

@@ -173,7 +173,7 @@ struct UnitDR : DocumentRetrieverBaseForTest {
     }
 };
 
-uint32_t  UnitDR::get_full_document_calls = 0;
+uint32_t UnitDR::get_full_document_calls = 0;
 
 Document::UP make_doc(DocumentId docid) {
     return Document::make_without_repo(*DataType::DOCUMENT, docid);
