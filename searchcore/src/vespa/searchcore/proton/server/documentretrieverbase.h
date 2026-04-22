@@ -16,6 +16,7 @@ class DocumentRetrieverBase : public IDocumentRetriever
     const DocTypeName                &_docTypeName;
     const document::DocumentTypeRepo &_repo;
     const IDocumentMetaStoreContext  &_meta_store;
+    const bool                        _can_populate_document_metadata_docid;
 
     using SelectCache = vespalib::lrucache_map<vespalib::LruParam<std::string, CachedSelect::SP>>;
 
@@ -38,6 +39,7 @@ public:
 
     const document::DocumentTypeRepo &getDocumentTypeRepo() const override { return _repo; }
     const DocTypeName& get_doc_type_name() const noexcept override { return _docTypeName; }
+    virtual bool can_populate_document_metadata_docid() const noexcept override;
     void getBucketMetadata(const storage::spi::Bucket &bucket, search::DocumentMetadata::Vector &result, bool populate_docid) const override;
     search::DocumentMetadata getDocumentMetadata(const document::DocumentId &id) const override;
     CachedSelect::SP parseSelect(const std::string &selection) const override;

@@ -27,6 +27,10 @@ CommitAndWaitDocumentRetriever::getBucketMetadata(const Bucket &bucket, search::
     return _retriever->getBucketMetadata(bucket, result, populate_docid);
 }
 
+bool CommitAndWaitDocumentRetriever::can_populate_document_metadata_docid() const noexcept {
+    return _retriever->can_populate_document_metadata_docid();
+}
+
 search::DocumentMetadata
 CommitAndWaitDocumentRetriever::getDocumentMetadata(const document::DocumentId &id) const {
     return _retriever->getDocumentMetadata(id);

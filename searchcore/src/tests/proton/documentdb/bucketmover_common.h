@@ -92,6 +92,8 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
     const DocumentTypeRepo &getDocumentTypeRepo() const override { return *_repo; }
     const DocTypeName& get_doc_type_name() const noexcept override { return _doc_type_name; }
 
+    bool can_populate_document_metadata_docid() const noexcept override { return false; }
+
     void getBucketMetadata(const storage::spi::Bucket &, DocumentMetadata::Vector &, bool) const override {}
 
     DocumentMetadata getDocumentMetadata(const DocumentId &) const override { return {}; }
