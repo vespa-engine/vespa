@@ -451,8 +451,8 @@ public:
     Stats &preDocSelect() { _preDocSelect = true; return *this; }
     Stats &always_false() { _always_false = true; return *this; }
     Stats &always_true() { _always_true = true; return *this; }
-    Stats &always_invalid() { _always_invalid = true; return *this; };
-    Stats &needs_document() { _needs_document = true; return *this; };
+    Stats &always_invalid() { _always_invalid = true; return *this; }
+    Stats &needs_document() { _needs_document = true; return *this; }
     Stats &fieldNodes(uint32_t value) { _fieldNodes = value; return *this; }
     Stats &attrFieldNodes(uint32_t value) { _attrFieldNodes = value; return *this; }
     Stats &svAttrFieldNodes(uint32_t value) { _svAttrFieldNodes = value; return *this; }
