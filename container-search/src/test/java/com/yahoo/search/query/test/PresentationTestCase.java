@@ -23,7 +23,7 @@ public class PresentationTestCase {
         Highlight h = new Highlight();
         h.addHighlightTerm("date", "today");
         p.setHighlight(h);
-        Presentation pc = (Presentation) p.clone();
+        Presentation pc = p.clone();
         h.addHighlightTerm("title", "Hello");
         assertTrue(pc.getBolding());
         pc.getHighlight().getHighlightItems();

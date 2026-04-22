@@ -930,7 +930,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         clone.select = select.cloneFor(clone);
         clone.ranking = ranking.cloneFor(clone);
         clone.trace = trace.cloneFor(clone);
-        clone.presentation = (Presentation) presentation.clone();
+        clone.presentation = presentation.clone();
         clone.context = getContext(true).cloneFor(clone);
 
         // Correct the Query instance in properties
