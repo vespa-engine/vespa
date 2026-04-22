@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/vespalib/util/time.h>
 #include <atomic>
 #include <memory>
 
@@ -9,7 +10,7 @@ namespace search::queryeval {
 
 /**
  * Class for collecting statistics within blueprints and search iterators.
- * Thread-safe such that search iterators from different threads can write their collected statistics here.
+ * Some member functions are thread-safe such that search iterators from different threads can write their collected statistics here.
  **/
 class QueryEvalStats : public std::enable_shared_from_this<QueryEvalStats> {
 private:
@@ -17,23 +18,31 @@ private:
     std::atomic<size_t> _exact_nns_distances_computed;
     std::atomic<size_t> _approximate_nns_distances_computed;
     std::atomic<size_t> _approximate_nns_nodes_visited;
+    vespalib::duration  _total_ann_time;
 public:
     // Constructor is only usable by this class
     QueryEvalStats(Private) noexcept
         : _exact_nns_distances_computed(0),
           _approximate_nns_distances_computed(0),
-          _approximate_nns_nodes_visited(0) {}
+          _approximate_nns_nodes_visited(0),
+          _total_ann_time(vespalib::duration::zero()) {}
     // This factory function has to be used to create objects, meaning that all such objects will be in a shared_ptr
     static std::shared_ptr<QueryEvalStats> create() { return std::make_shared<QueryEvalStats>(Private()); }
 
+    // Thread-safe
     size_t exact_nns_distances_computed() const noexcept { return _exact_nns_distances_computed.load(std::memory_order_relaxed); }
     void add_to_exact_nns_distances_computed(size_t value) noexcept { _exact_nns_distances_computed.fetch_add(value, std::memory_order_relaxed); }
 
+    // Thread-safe
     size_t approximate_nns_distances_computed() const noexcept { return _approximate_nns_distances_computed.load(std::memory_order_relaxed); }
     void add_to_approximate_nns_distances_computed(size_t value) noexcept { _approximate_nns_distances_computed.fetch_add(value, std::memory_order_relaxed); }
 
+    // Thread-safe
     size_t approximate_nns_nodes_visited() const noexcept { return _approximate_nns_nodes_visited.load(std::memory_order_relaxed); }
     void add_to_approximate_nns_nodes_visited(size_t value) noexcept { _approximate_nns_nodes_visited.fetch_add(value, std::memory_order_relaxed); }
+
+    vespalib::duration total_ann_time() const noexcept { return _total_ann_time; }
+    void add_to_total_ann_time(vespalib::duration ann_time) noexcept { _total_ann_time += ann_time; }
 };
 
 }

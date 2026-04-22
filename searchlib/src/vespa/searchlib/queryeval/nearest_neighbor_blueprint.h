@@ -60,8 +60,12 @@ private:
     bool _low_hit_ratio;
     bool _pending_index_search;
     MatchingPhase _matching_phase;
+    vespalib::duration                          _ann_time_until_doom;
+    vespalib::duration                          _ann_time_used;
+    bool                                        _ann_terminated_early;
+    bool                                        _ann_timeout_hit;
     search::tensor::NearestNeighborIndex::Stats _nni_stats;
-    std::shared_ptr<QueryEvalStats> _stats;
+    std::shared_ptr<QueryEvalStats>             _stats;
 
     static double convert_distance_threshold(double distance_threshold,
                                              const search::tensor::DistanceCalculator& distance_calc);

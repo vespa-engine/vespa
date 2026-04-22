@@ -33,6 +33,7 @@ MatchingStats::MatchingStats(double prev_soft_doom_factor) noexcept
       _softDoomed(0),
       _doomOvertime(),
       _softDoomFactor(prev_soft_doom_factor),
+      _total_ann_time(),
       _querySetupTime(),
       _queryLatency(),
       _matchTime(),
@@ -65,6 +66,7 @@ MatchingStats::add_queryeval_stats(const search::queryeval::QueryEvalStats &stat
     _exact_nns_distances_computed += stats.exact_nns_distances_computed();
     _approximate_nns_distances_computed += stats.approximate_nns_distances_computed();
     _approximate_nns_nodes_visited +=  stats.approximate_nns_nodes_visited();
+    _total_ann_time.set(vespalib::to_s(stats.total_ann_time()));
 
     return *this;
 }
@@ -85,6 +87,7 @@ MatchingStats::add(const MatchingStats &rhs) noexcept
     _softDoomed += rhs.softDoomed();
     _doomOvertime.add(rhs._doomOvertime);
 
+    _total_ann_time.add(rhs._total_ann_time);
     _querySetupTime.add(rhs._querySetupTime);
     _queryLatency.add(rhs._queryLatency);
     _matchTime.add(rhs._matchTime);
