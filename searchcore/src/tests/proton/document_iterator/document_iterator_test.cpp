@@ -117,15 +117,17 @@ struct UnitDR : DocumentRetrieverBaseForTest {
     bool                       removed;
     DocumentIdT                docid;
     DocumentIdT                docIdLimit;
+    DocTypeName                doc_type_name;
 
     UnitDR();
-    UnitDR(document::Document::UP d, Timestamp t, Bucket b, bool r);
-    UnitDR(const document::DocumentType &dt, document::Document::UP d, Timestamp t, Bucket b, bool r);
+    UnitDR(Document::UP d, Timestamp t, Bucket b, bool r);
+    UnitDR(const DocumentType &dt, Document::UP d, Timestamp t, Bucket b, bool r);
     ~UnitDR() override;
 
     const document::DocumentTypeRepo &getDocumentTypeRepo() const override {
         return repo;
     }
+    const DocTypeName& get_doc_type_name() const noexcept override { return doc_type_name; }
     void getBucketMetadata(const Bucket &b, DocumentMetadata::Vector &result, bool populate_docid) const override
     {
         if (b == bucket) {
@@ -168,25 +170,33 @@ Document::UP make_doc(DocumentId docid) {
 
 UnitDR::UnitDR()
     : repo(), document(make_doc(DocumentId())), timestamp(0),
-      bucket(), removed(false), docid(0), docIdLimit(std::numeric_limits<uint32_t>::max())
+      bucket(), removed(false), docid(0), docIdLimit(std::numeric_limits<uint32_t>::max()),
+      doc_type_name(document->getType().getName())
 {}
-UnitDR::UnitDR(document::Document::UP d, Timestamp t, Bucket b, bool r)
+
+UnitDR::UnitDR(Document::UP d, Timestamp t, Bucket b, bool r)
     : repo(), document(std::move(d)), timestamp(t), bucket(b), removed(r), docid(++_docidCnt),
-      docIdLimit(std::numeric_limits<uint32_t>::max())
+      docIdLimit(std::numeric_limits<uint32_t>::max()),
+      doc_type_name(document->getType().getName())
 {}
-UnitDR::UnitDR(const document::DocumentType &dt, document::Document::UP d, Timestamp t, Bucket b, bool r)
+
+UnitDR::UnitDR(const DocumentType &dt, Document::UP d, Timestamp t, Bucket b, bool r)
     : repo(dt), document(std::move(d)), timestamp(t), bucket(b), removed(r), docid(++_docidCnt),
-      docIdLimit(std::numeric_limits<uint32_t>::max())
-{}
+      docIdLimit(std::numeric_limits<uint32_t>::max()),
+      doc_type_name(document->getType().getName())
+{
+    EXPECT_EQ(doc_type_name.getName(), dt.getName());
+}
+
 UnitDR::~UnitDR() = default;
 
 struct VisitRecordingUnitDR : UnitDR {
     using VisitedLIDs = std::unordered_set<DocumentIdT>;
     VisitedLIDs& visited_lids;
 
-    VisitRecordingUnitDR(VisitedLIDs& visited, document::Document::UP d,
-                        Timestamp t, Bucket b, bool r)
-        : UnitDR(std::move(d), t, b, r),
+    VisitRecordingUnitDR(VisitedLIDs& visited, const DocumentType &dt, Document::UP d,
+                         Timestamp t, Bucket b, bool r)
+        : UnitDR(dt, std::move(d), t, b, r),
           visited_lids(visited)
     {
     }
@@ -266,6 +276,7 @@ struct PairDR : DocumentRetrieverBaseForTest {
     const document::DocumentTypeRepo &getDocumentTypeRepo() const override {
         return first->getDocumentTypeRepo();
     }
+    const DocTypeName& get_doc_type_name() const noexcept override { return first->get_doc_type_name(); }
     void getBucketMetadata(const Bucket &b, DocumentMetadata::Vector &result, bool populate_docid) const override {
         first->getBucketMetadata(b, result, populate_docid);
         second->getBucketMetadata(b, result, populate_docid);
@@ -376,7 +387,9 @@ IDocumentRetriever::SP doc_with_attr_fields(const std::string &id,
 
 auto doc_rec(VisitRecordingUnitDR::VisitedLIDs& visited_lids, const std::string &id, Timestamp t, Bucket b)
 {
-    return std::make_shared<VisitRecordingUnitDR>(visited_lids, Document::make_without_repo(getAttrDocType(), DocumentId(id)), t, b, false);
+    auto doc = Document::make_without_repo(getAttrDocType(), DocumentId(id));
+    auto& doc_type = doc->getType();
+    return std::make_shared<VisitRecordingUnitDR>(visited_lids, doc_type, std::move(doc), t, b, false);
 }
 
 void checkDoc(const IDocumentRetriever &dr, const std::string &id,
@@ -698,25 +711,25 @@ TEST(DocumentIteratorTest, require_that_maxBytes_splits_iteration_results)
 
 TEST(DocumentIteratorTest, require_that_maxBytes_splits_iteration_results_for_metadata_only_iteration)
 {
+    DocTypeName document_dtn("document");
     DocumentIterator itr(bucket(5), std::make_shared<document::NoFields>(), selectAll(), newestV(), -1, false);
     itr.add(doc("id:ns:document::1", Timestamp(2), bucket(5)));
     itr.add(cat(rem("id:ns:document::2", Timestamp(3), bucket(5)),
                 doc("id:ns:document::3", Timestamp(4), bucket(5))));
-    IterateResult res1 = itr.iterate(2 * sizeof(DocEntry));
+    IterateResult res1 = itr.iterate(2 * (sizeof(DocEntry) + sizeof(GlobalId) + document_dtn.getName().size()));
     EXPECT_TRUE(!res1.isCompleted());
     EXPECT_EQ(2u, res1.getEntries().size());
-    // Note: empty doc types since we did not pass in an explicit doc type alongside the retrievers
     {
         SCOPED_TRACE("first part");
-        checkEntry(res1, 0, Timestamp(2), DocumentMetaEnum::NONE, gid_of("id:ns:document::1"), "");
-        checkEntry(res1, 1, Timestamp(3), DocumentMetaEnum::REMOVE_ENTRY, gid_of("id:ns:document::2"), "");
+        checkEntry(res1, 0, Timestamp(2), DocumentMetaEnum::NONE, gid_of("id:ns:document::1"), document_dtn.getName());
+        checkEntry(res1, 1, Timestamp(3), DocumentMetaEnum::REMOVE_ENTRY, gid_of("id:ns:document::2"), document_dtn.getName());
     }
 
     IterateResult res2 = itr.iterate(largeNum);
     EXPECT_TRUE(res2.isCompleted());
     {
         SCOPED_TRACE("second part");
-        checkEntry(res2, 0, Timestamp(4), DocumentMetaEnum::NONE, gid_of("id:ns:document::3"), "");
+        checkEntry(res2, 0, Timestamp(4), DocumentMetaEnum::NONE, gid_of("id:ns:document::3"), document_dtn.getName());
     }
 
     IterateResult res3 = itr.iterate(largeNum);

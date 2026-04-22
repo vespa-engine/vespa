@@ -8,6 +8,7 @@
 #include <vespa/searchcore/proton/server/remove_operations_rate_tracker.h>
 #include <vespa/searchcore/proton/server/maintenancedocumentsubdb.h>
 #include <vespa/searchcore/proton/server/i_operation_storer.h>
+#include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/pendinglidtracker.h>
 #include <vespa/searchcore/proton/documentmetastore/operation_listener.h>
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
@@ -125,9 +126,12 @@ struct MyDocumentStore : public proton::test::DummyDocumentStore {
 struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
     std::shared_ptr<const DocumentTypeRepo> repo;
     const MyDocumentStore& store;
-    MyDocumentRetriever(std::shared_ptr<const DocumentTypeRepo> repo_in, const MyDocumentStore& store_in) noexcept;
+    DocTypeName            doc_type_name;
+    MyDocumentRetriever(std::shared_ptr<const DocumentTypeRepo> repo_in, const MyDocumentStore& store_in,
+                        const DocTypeName &doc_type_name) noexcept;
     ~MyDocumentRetriever();
     const document::DocumentTypeRepo& getDocumentTypeRepo() const override;
+    const DocTypeName& get_doc_type_name() const noexcept override;
     void getBucketMetadata(const storage::spi::Bucket&, DocumentMetadata::Vector&, bool populate_docid) const override;
     DocumentMetadata getDocumentMetadata(const DocumentId&) const override;
     Document::UP getFullDocument(DocumentIdT lid) const override;
@@ -138,6 +142,7 @@ struct MySubDb {
     std::unique_ptr<proton::test::DummyDocumentSubDb> sub_db;
     MaintenanceDocumentSubDB maintenance_sub_db;
     PendingLidTracker _pendingLidsForCommit;
-    MySubDb(std::shared_ptr<bucketdb::BucketDBOwner> bucket_db, const MyDocumentStore& store, const std::shared_ptr<const DocumentTypeRepo> & repo);
+    MySubDb(std::shared_ptr<bucketdb::BucketDBOwner> bucket_db, const MyDocumentStore& store,
+            const std::shared_ptr<const DocumentTypeRepo> & repo, const DocTypeName& doc_type_name);
     ~MySubDb();
 };

@@ -37,6 +37,7 @@ public:
     ~DocumentRetrieverBase() override;
 
     const document::DocumentTypeRepo &getDocumentTypeRepo() const override { return _repo; }
+    const DocTypeName& get_doc_type_name() const noexcept override { return _docTypeName; }
     void getBucketMetadata(const storage::spi::Bucket &bucket, search::DocumentMetadata::Vector &result, bool populate_docid) const override;
     search::DocumentMetadata getDocumentMetadata(const document::DocumentId &id) const override;
     CachedSelect::SP parseSelect(const std::string &selection) const override;
