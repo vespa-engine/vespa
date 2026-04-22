@@ -12,12 +12,14 @@ namespace vespalib {
  */
 class FakeDoom {
     std::atomic<steady_time> _time;
+    AnnDoom                  _ann_doom;
     Doom                     _doom;
 
 public:
     FakeDoom() noexcept : FakeDoom(1s) {}
     FakeDoom(steady_time::duration time_to_doom) noexcept;
     ~FakeDoom();
+    const AnnDoom& get_ann_doom() const noexcept { return _ann_doom; }
     const Doom& get_doom() const noexcept { return _doom; }
 };
 

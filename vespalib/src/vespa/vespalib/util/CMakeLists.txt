@@ -4,6 +4,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     adaptive_sequenced_executor.cpp
     address_space.cpp
     alloc.cpp
+    ann_doom.cpp
     approx.cpp
     array.cpp
     assert.cpp
