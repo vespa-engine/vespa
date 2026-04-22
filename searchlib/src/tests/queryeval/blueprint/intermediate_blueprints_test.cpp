@@ -586,22 +586,26 @@ void compare(const Blueprint &bp1, const Blueprint &bp2, bool expect_eq) {
     auto cmp_hook = [expect_eq](const auto &path, const auto &a, const auto &b) {
                         if (!path.empty() && std::holds_alternative<std::string_view>(path.back())) {
                             std::string_view field = std::get<std::string_view>(path.back());
-                            // ignore these fields to enable comparing optimized with unoptimized trees
-                            if (field == "relative_estimate" || field == "cost" || field == "strict_cost") {
-                                auto check_value = [&](double value){
-                                                       if ((value > 0.0 && value < 1e-6) || (value > 0.0 && value < 1e-6)) {
-                                                           fprintf(stderr, "  small value at %s: %g\n", path_to_str(path).c_str(),
-                                                                   value);
-                                                       }
-                                                   };
-                                check_value(a.asDouble());
-                                check_value(b.asDouble());
-                                return true;
-                            } else if (field == "strict") {
+                            if (field == "strict") {
                                 // ignore strict-tagging differences between optimized and unoptimized blueprint trees
                                 if (a.type().getId() == vespalib::slime::BOOL::ID &&
                                     b.type().getId() == vespalib::slime::BOOL::ID)
                                 {
+                                    return true;
+                                }
+                            }
+                            if (path.size() >= 2 && std::holds_alternative<std::string_view>(path[path.size() - 2])) {
+                                std::string_view parent = std::get<std::string_view>(path[path.size() - 2]);
+                                // ignore flow_stats to enable comparing optimized with unoptimized trees
+                                if (parent == "flow_stats") {
+                                    auto check_value = [&](double value){
+                                        if ((value > 0.0 && value < 1e-6) || (value > 0.0 && value < 1e-6)) {
+                                            fprintf(stderr, "  small value at %s: %g\n", path_to_str(path).c_str(),
+                                                    value);
+                                        }
+                                    };
+                                    check_value(a.asDouble());
+                                    check_value(b.asDouble());
                                     return true;
                                 }
                             }
@@ -611,7 +615,7 @@ void compare(const Blueprint &bp1, const Blueprint &bp2, bool expect_eq) {
                                     to_str(a).c_str(), to_str(b).c_str());
                         }
                         return false;
-                    };
+    };
     Slime a;
     Slime b;
     bp1.asSlime(SlimeInserter(a));
