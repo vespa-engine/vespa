@@ -64,6 +64,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.function.LongSupplier;
@@ -110,6 +111,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     private static final String ERROR_STACK_TRACE = "stackTrace";
     private static final String ERROR_SUMMARY = "summary";
     private static final String FIELDS = "fields";
+    private static final String GROUP = "group";
     private static final String ID = "id";
     private static final String LABEL = "label";
     private static final String RELEVANCE = "relevance";
@@ -492,13 +494,15 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         }
     }
 
+    /** Render top level fields like totalCount, if we are at the top level, do nothing otherwise. */
     protected void renderTotalHitCount(Hit hit) throws IOException {
         if ( ! (getRecursionLevel() == 1 && hit instanceof HitGroup)) return;
 
         fieldConsumer.ensureFieldsField();
         generator.writeNumberField(TOTAL_COUNT, getResult().getTotalHitCount());
-        // alternative for the above two lines:
-        // fieldConsumer.accept(TOTAL_COUNT, getResult().getTotalHitCount());
+        OptionalInt group = getResult().hits().getGroup();
+        if (group.isPresent())
+            generator.writeNumberField(GROUP, group.getAsInt());
     }
 
     @Override

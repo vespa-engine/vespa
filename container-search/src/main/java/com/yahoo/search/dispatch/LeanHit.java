@@ -5,6 +5,7 @@ import com.yahoo.data.access.Inspector;
 import com.yahoo.search.result.FeatureData;
 
 import java.util.Arrays;
+import java.util.OptionalInt;
 
 /**
  * @author baldersheim
@@ -12,30 +13,34 @@ import java.util.Arrays;
 public class LeanHit implements Comparable<LeanHit> {
 
     private final byte[] gid;
-    private final double relevance;
-    private final byte[] sortData;
+    private final OptionalInt group;
     private final int partId;
     private final int distributionKey;
+    private final double relevance;
+    private final byte[] sortData;
     private FeatureData matchFeatures;
 
-    public LeanHit(byte[] gid, int partId, int distributionKey, double relevance) {
-        this(gid, partId, distributionKey, relevance, null);
+    public LeanHit(byte[] gid, OptionalInt group, int partId, int distributionKey, double relevance) {
+        this(gid, group, partId, distributionKey, relevance, null);
     }
-    public LeanHit(byte[] gid, int partId, int distributionKey, double relevance, byte[] sortData) {
+
+    public LeanHit(byte[] gid, OptionalInt group, int partId, int distributionKey, double relevance, byte[] sortData) {
         this.gid = gid;
-        this.relevance = Double.isNaN(relevance) ? Double.NEGATIVE_INFINITY : relevance;
-        this.sortData = sortData;
+        this.group = group;
         this.partId = partId;
         this.distributionKey = distributionKey;
+        this.relevance = Double.isNaN(relevance) ? Double.NEGATIVE_INFINITY : relevance;
+        this.sortData = sortData;
         this.matchFeatures = null;
     }
 
-    public double getRelevance() { return relevance; }
     public byte[] getGid() { return gid; }
-    public byte[] getSortData() { return sortData; }
-    public boolean hasSortData() { return sortData != null; }
+    public OptionalInt getGroup() { return group; }
     public int getPartId() { return partId; }
     public int getDistributionKey() { return distributionKey; }
+    public double getRelevance() { return relevance; }
+    public byte[] getSortData() { return sortData; }
+    public boolean hasSortData() { return sortData != null; }
 
     public FeatureData getMatchFeatures() { return matchFeatures; }
     public boolean hasMatchFeatures() { return matchFeatures != null; }

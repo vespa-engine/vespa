@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -208,8 +209,8 @@ public class InterleavedSearchInvokerTest {
 
     @Test
     void topKProbabilityOverrideIsDisabledOnContentSkew() throws IOException {
-        Node node0 = new Node("test", 0, "host0", 0);
-        Node node1 = new Node("test", 1, "host1", 0);
+        Node node0 = new Node("test", 0, "host0", 0, true);
+        Node node1 = new Node("test", 1, "host1", 0, true);
         Group group = new Group(0, List.of(node0, node1));
 
         node0.setActiveDocuments(1000000);
@@ -220,8 +221,8 @@ public class InterleavedSearchInvokerTest {
 
     @Test
     void topKProbabilityOverrideIsDisabledOnLittleContent() throws IOException {
-        Node node0 = new Node("test", 0, "host0", 0);
-        Node node1 = new Node("test", 1, "host1", 0);
+        Node node0 = new Node("test", 0, "host0", 0, true);
+        Node node1 = new Node("test", 1, "host1", 0, true);
         Group group = new Group(0, List.of(node0, node1));
 
         node0.setActiveDocuments(10);
@@ -369,8 +370,8 @@ public class InterleavedSearchInvokerTest {
         DispatchConfig dispatchConfig = new DispatchConfig.Builder().build();
         TopKEstimator hitEstimator = new TopKEstimator(30, dispatchConfig.topKProbability(), 0.05);
         List<SearchInvoker> invokers = new ArrayList<>();
-        invokers.add(createMockInvoker(a, new Node("test", 0, "?", 0)));
-        invokers.add(createMockInvoker(b, new Node("test", 1, "?", 0)));
+        invokers.add(createMockInvoker(a, new Node("test", 0, "?", 0, false)));
+        invokers.add(createMockInvoker(b, new Node("test", 1, "?", 0, false)));
         InterleavedSearchInvoker invoker = new InterleavedSearchInvoker(Timer.monotonic, invokers, hitEstimator, dispatchConfig, group, Set.of());
         invoker.responseAvailable(invokers.get(0));
         invoker.responseAvailable(invokers.get(1));
@@ -387,7 +388,7 @@ public class InterleavedSearchInvokerTest {
             if (value < 0) {
                 hits.add(new MetaHit(value));
             } else {
-                hits.add(new FastHit(new GlobalId(IdString.createIdString("id:test:test::" + value)).getRawId(), new Relevance(value), partId, distributionKey));
+                hits.add(new FastHit(new GlobalId(IdString.createIdString("id:test:test::" + value)).getRawId(), new Relevance(value), OptionalInt.empty(), partId, distributionKey));
             }
         }
         return hits;

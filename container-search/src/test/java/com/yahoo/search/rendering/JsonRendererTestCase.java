@@ -74,6 +74,7 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -873,7 +874,7 @@ public class JsonRendererTestCase {
 
     @Test
     @Timeout(300)
-    void test() throws IOException, InterruptedException, ExecutionException {
+    void testRendering() throws IOException, InterruptedException, ExecutionException {
         String expected = "{"
                 + "    \"root\": {"
                 + "        \"children\": ["
@@ -930,7 +931,8 @@ public class JsonRendererTestCase {
                 + "            }"
                 + "        ],"
                 + "        \"fields\": {"
-                + "            \"totalCount\": 0"
+                + "            \"totalCount\": 0,"
+                + "            \"group\": 1"
                 + "        },"
                 + "        \"id\": \"toplevel\","
                 + "        \"relevance\": 1.0"
@@ -941,12 +943,12 @@ public class JsonRendererTestCase {
         Result r = new Result(q);
         r.setCoverage(new Coverage(500, 500, 1, 1));
 
-        FastHit h = new FastHit("http://localhost/", .95);
+        FastHit h = new FastHit("http://localhost/", .95, OptionalInt.of(1));
         h.setField("$a", "Hello, world.");
         h.setField("b", "foo");
         r.hits().add(h);
         HitGroup g = new HitGroup("usual");
-        h = new FastHit("http://localhost/1", .90);
+        h = new FastHit("http://localhost/1", .90, OptionalInt.of(1));
         h.setField("c", "d");
         g.add(h);
         r.hits().add(g);

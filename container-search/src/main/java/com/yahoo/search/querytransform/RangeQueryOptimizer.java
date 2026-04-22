@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.querytransform;
 
+import com.yahoo.component.chain.dependencies.After;
+import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.prelude.query.Limit;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.query.AndItem;
@@ -14,8 +16,6 @@ import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
-import com.yahoo.yolean.chain.After;
-import com.yahoo.yolean.chain.Before;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -46,10 +46,10 @@ public class RangeQueryOptimizer extends Searcher {
 
     /** Recursively performs the range optimization on this query tree and returns whether at least one optimization was done */
     private boolean recursiveOptimize(Item item, IndexFacts.Session indexFacts) {
-        if ( ! (item instanceof CompositeItem)) return false;
+        if ( ! (item instanceof CompositeItem composite)) return false;
 
         boolean optimized = false;
-        for (Iterator<Item> i = ((CompositeItem) item).getItemIterator(); i.hasNext(); )
+        for (Iterator<Item> i = composite.getItemIterator(); i.hasNext(); )
             optimized |= recursiveOptimize(i.next(), indexFacts);
 
         if (item instanceof AndItem)

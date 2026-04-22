@@ -32,10 +32,10 @@ public class Group {
         this.id = id;
         this.nodes = List.copyOf(nodes);
 
-        int idx = 0;
+        int index = 0;
         for (var node: nodes) {
-            node.setPathIndex(idx);
-            idx++;
+            node.setPathIndex(index);
+            index++;
         }
     }
 

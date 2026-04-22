@@ -18,7 +18,7 @@ import java.util.Iterator;
 /**
  * The Result contains all the data produced by executing a Query: Some very limited global information, and
  * a single HitGroup containing hits of the result. The HitGroup may contain Hits, which are the individual
- * result items, as well as further HitGroups, making up a <i>composite</i> structure. This allows the hits of a result
+ * result items, as well as further HitGroups, making up a composite structure. This allows the hits of a result
  * to be hierarchically organized. A Hit is polymorphic and may contain any kind of information deemed
  * an appropriate partial answer to the Query.
  * <p>
@@ -38,7 +38,7 @@ public final class Result extends com.yahoo.processing.Response implements Clone
     private long totalHitCount;
 
     /**
-     * The estimated total number of <i>deep</i> hits, which includes every object which matches the query.
+     * The estimated total number of deep hits, which includes every object which matches the query.
      * This is always at least the same as totalHitCount. A lower value will cause hitCount to be returned.
      */
     private long deepHitCount;
@@ -62,7 +62,7 @@ public final class Result extends com.yahoo.processing.Response implements Clone
 
     /**
      * Create an empty result.
-     * A source creating a result is <b>required</b> to call
+     * A source creating a result is required to call
      * {@link #setTotalHitCount} before releasing this result.
      *
      * @param query the query which produced this result
@@ -85,10 +85,10 @@ public final class Result extends com.yahoo.processing.Response implements Clone
     }
 
     /**
-     * Merges <b>meta information</b> from a result into this.
+     * Merges meta information from a result into this.
      * This does not merge hits, but the other information associated
-     * with a result. It should <b>always</b> be called when adding
-     * hits from a result, but there is no constraints on the order of the calls.
+     * with a result. It should always be called when adding
+     * hits from a result, but there are no constraints on the order of the calls.
      */
     public void mergeWith(Result result) {
         totalHitCount += result.getTotalHitCount();
@@ -111,7 +111,7 @@ public final class Result extends com.yahoo.processing.Response implements Clone
     /**
      * Returns the number of hit objects available in the top level group of this result.
      * Note that this number is allowed to be higher than the requested number
-     * of hits, because a searcher is allowed to add <i>meta</i> hits as well
+     * of hits, because a searcher is allowed to add meta hits as well
      * as the requested number of concrete hits.
      */
     public int getHitCount() {
@@ -119,22 +119,20 @@ public final class Result extends com.yahoo.processing.Response implements Clone
     }
 
     /**
-     * <p>Returns the total number of concrete hits contained (directly or in subgroups) in this result.
-     * This should equal the requested hits count if the query has that many matches.</p>
+     * Returns the total number of concrete hits contained (directly or in subgroups) in this result.
+     * This should equal the requested hits count if the query has that many matches.
      */
     public int getConcreteHitCount() {
         return hits.getConcreteSize();
     }
 
-    /**
-     * Returns the <b>estimated</b> total number of concrete hits which would be returned for this query.
-     */
+    /** Returns the estimated total number of concrete hits which would be returned for this query. */
     public long getTotalHitCount() {
         return totalHitCount;
     }
 
     /**
-     * Returns the estimated total number of <i>deep</i> hits, which includes every object which matches the query.
+     * Returns the estimated total number of deep hits, which includes every object which matches the query.
      * This is always at least the same as totalHitCount. A lower value will cause hitCount to be returned.
      */
     public long getDeepHitCount() {
@@ -161,9 +159,7 @@ public final class Result extends com.yahoo.processing.Response implements Clone
         timeAccountant = t;
     }
 
-    /**
-     * Returns true only if _all_ hits in this result originates from a cache.
-     */
+    /** Returns true only if _all_ hits in this result originates from a cache. */
     public boolean isCached() {
         return hits.isCached();
     }
@@ -185,7 +181,7 @@ public final class Result extends com.yahoo.processing.Response implements Clone
     public void setQuery(Query query) { hits.setQuery(query); }
 
     /**
-     * <p>Sets the hit orderer to be used for the top level hit group.</p>
+     * Sets the hit orderer to be used for the top level hit group.
      *
      * @param hitOrderer the new hit orderer, or null to use default relevancy ordering
      */
@@ -218,7 +214,7 @@ public final class Result extends com.yahoo.processing.Response implements Clone
 
     /**
      * Deep clones this result - copies are made of all hits and subgroups of hits,
-     * <i>but not of the query referenced by this</i>.
+     * but not of the query referenced by this.
      */
     public Result clone() {
         Result resultClone = (Result) super.clone();
@@ -290,12 +286,10 @@ public final class Result extends com.yahoo.processing.Response implements Clone
      * For tracing custom properties of a hit, see trace(String). An example of
      * using this is in com.yahoo.prelude.Result.
      *
-     * @param hitBuffer
-     *                the render target
-     * @param hit
-     *                the hit to be analyzed
+     * @param hitBuffer the render target
+     * @param hit the hit to be analyzed
      */
-    protected void traceExtraHitProperties(StringBuilder hitBuffer, Hit hit) { }
+    private void traceExtraHitProperties(StringBuilder hitBuffer, Hit hit) { }
 
     /** Returns the context of this result - this is equal to getQuery().getContext(create) */
     public QueryContext getContext(boolean create) { return getQuery().getContext(create); }
@@ -318,8 +312,8 @@ public final class Result extends com.yahoo.processing.Response implements Clone
      * Returns the set of "envelope" headers to be returned with this result.
      * This returns the live map in modifiable form - modify this to change the
      * headers. Or null if none, and it should not be created.
-     * <p>
-     * Used for HTTP headers when the return protocol is HTTP, e.g
+     *
+     * Used for HTTP headers when the return protocol is HTTP, e.g.
      * <pre>result.getHeaders(true).put("Cache-Control","max-age=120")</pre>
      *
      * @param create if true, create the header ListMap if it does not exist
@@ -330,4 +324,5 @@ public final class Result extends com.yahoo.processing.Response implements Clone
             headers = new ListMap<>();
         return headers;
     }
+
 }

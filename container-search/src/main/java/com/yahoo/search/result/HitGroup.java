@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
@@ -87,7 +88,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
 
     private final IncomingData<Hit> incomingHits;
 
-    /** Creates an invalid group of hits. Id must be set before handoff. */
+    /** Creates an invalid group of hits. The group's id must be set before handoff. */
     public HitGroup() {
         incomingHits = new IncomingData.NullIncomingData<>(this);
         setRelevance(new Relevance(1));
@@ -101,7 +102,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
      * @param id the id of this hit - any string, it is convenient to make this unique in the result containing this
      */
     public HitGroup(String id) {
-        this(id,new Relevance(1));
+        this(id, new Relevance(1));
     }
 
     /**
@@ -111,7 +112,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
      * @param relevance the relevance of this group of hits, preferably a number between 0 and 1
      */
     public HitGroup(String id, double relevance) {
-        this(id,new Relevance(relevance));
+        this(id, new Relevance(relevance));
     }
 
     /**
@@ -163,7 +164,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
     /**
      * Assign an id to this hit.
      * For HitGroups, this is a legal call also when an id is already set,
-     * i.e hit groups allows their ids to be reassigned.
+     * i.e. hit groups allows their ids to be reassigned.
      * This is to allow hit groups to be inserted in new structures with an id reflecting their
      * role/placement in the structure.
      *
@@ -178,7 +179,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
      * Turn off internal resorting of hits.
      *
      * @param ordered set to true to tell this group that the hits set in it is already correctly ordered and should
-     *                never be resorted. Set to false to use the default lazy resorting by hit ordering.
+     *                never be resorted. Set false to use the default lazy resorting by hit ordering.
      */
     public void setOrdered(boolean ordered) { this.orderedHits = ordered; }
 
@@ -195,9 +196,9 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
     }
 
     /**
-     * <p>Returns the number of concrete hits contained in this group
+     * Returns the number of concrete hits contained in this group
      * and all subgroups. This should equal the
-     * requested hits count if the query has that many matches.</p>
+     * requested hits count if the query has that many matches.
      */
     public int getConcreteSize() {
         if (subgroupCount<1) return concreteHitCount;
@@ -210,15 +211,27 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
     }
 
     /**
-     * <p>Returns the number of concrete hits contained in <i>this</i> group,
+     * Returns the number of concrete hits contained in this group,
      * without counting hits in subgroups.
      */
     public int getConcreteSizeShallow() { return concreteHitCount; }
 
-    /**
-     * Returns the number of HitGroups present immediately in this list of hits.
-     */
+    /** Returns the number of HitGroups present immediately in this list of hits. */
     public int getSubgroupCount() { return subgroupCount; }
+
+    /** Returns the id of the group producing the results in this, if available, and identical in all hits. */
+    public OptionalInt getGroup() {
+        OptionalInt group = OptionalInt.empty();
+        for (var i = unorderedDeepIterator(); i.hasNext(); ) {
+            Hit hit = i.next();
+            if (hit.isAuxiliary()) continue;
+            if (group.isEmpty())
+                group = hit.getGroup();
+            else if (! hit.getGroup().equals(group))
+                return OptionalInt.empty();
+        }
+        return group;
+    }
 
     /**
      * Adds a hit to this group.
@@ -534,7 +547,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
 
     /**
      * Returns an iterator that does depth-first traversal of leaf hits of this group. Calling this method has the
-     * side-effect of sorting the internal list of hits.
+     * side effect of sorting the internal list of hits.
      *
      * @return A modifiable iterator.
      */
@@ -544,7 +557,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
 
     /**
      * Returns an iterator that does depth-first traversal of leaf hits of this group, in a potentially unsorted order.
-     * As opposed to {@link #deepIterator()}, this method has no side-effect.
+     * As opposed to {@link #deepIterator()}, this method has no side effects.
      *
      * @return A modifiable iterator.
      */

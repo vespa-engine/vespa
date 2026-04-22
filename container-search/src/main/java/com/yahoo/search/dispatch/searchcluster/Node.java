@@ -2,6 +2,7 @@
 package com.yahoo.search.dispatch.searchcluster;
 
 import java.util.Objects;
+import java.util.OptionalInt;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -16,6 +17,7 @@ public class Node {
     private final int key;
     private final String hostname;
     private final int group;
+    private final OptionalInt groupWhenMultiple;
     private int pathIndex;
 
     private final AtomicLong pingSequence = new AtomicLong(0);
@@ -25,16 +27,18 @@ public class Node {
     private volatile boolean statusIsKnown = false;
     private volatile boolean working = true;
 
-    public Node(String clusterName, int key, String hostname, int group) {
+    public Node(String clusterName, int key, String hostname, int group, boolean multipleGroups) {
         this.clusterName = clusterName;
         this.key = key;
         this.hostname = hostname;
         this.group = group;
+        this.groupWhenMultiple = multipleGroups ? OptionalInt.of(group) : OptionalInt.empty();
     }
 
-    /** Give a monotonically increasing sequence number.*/
+    /** Returns a monotonically increasing sequence number.*/
     public long createPingSequenceId() { return pingSequence.incrementAndGet(); }
-    /** Checks if this pong is received in line and accepted, or out of band and should be ignored. */
+
+    /** Returns whether this pong is received in line and accepted, or out of band and should be ignored. */
     public boolean isLastReceivedPong(long pingId ) {
         long last = lastPong.get();
         while ((pingId > last) && ! lastPong.compareAndSet(last, pingId)) {
@@ -42,14 +46,16 @@ public class Node {
         }
         return last < pingId;
     }
+
     public long getLastReceivedPongId() { return lastPong.get(); }
 
     /** Returns the unique and stable distribution key of this node */
     public int key() { return key; }
 
+    /** Returns the index of this node in the group it belongs to: A continuous number starting at 0. */
     public int pathIndex() { return pathIndex; }
 
-    void setPathIndex(int index) {
+    public void setPathIndex(int index) {
         pathIndex = index;
     }
 
@@ -61,6 +67,11 @@ public class Node {
      * application/node repo.
      */
     public int group() { return group; }
+
+    /** Returns the index of this group when there are multiple groups, empty otherwise. */
+    public OptionalInt groupWhenMultiple() {
+        return groupWhenMultiple;
+    }
 
     public void setWorking(boolean working) {
         this.statusIsKnown = true;

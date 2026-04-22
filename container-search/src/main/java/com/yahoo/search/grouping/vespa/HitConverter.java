@@ -10,6 +10,8 @@ import com.yahoo.search.result.Relevance;
 import com.yahoo.searchlib.aggregation.FS4Hit;
 import com.yahoo.searchlib.aggregation.VdsHit;
 
+import java.util.OptionalInt;
+
 /**
  * Implementation of the {@link ResultBuilder.HitConverter} interface for {@link GroupingExecutor}.
  *
@@ -42,7 +44,7 @@ class HitConverter implements ResultBuilder.HitConverter {
     private Hit convertFs4Hit(String summaryClass, FS4Hit groupHit) {
         FastHit hit = new FastHit(groupHit.getGlobalId().getRawId(),
                                   new Relevance(groupHit.getRank()),
-                                  groupHit.getPath(), groupHit.getDistributionKey());
+                                  OptionalInt.empty(), groupHit.getPath(), groupHit.getDistributionKey());
         hit.setFillable();
         hit.setSearcherSpecificMetaData(searcher, summaryClass);
 
