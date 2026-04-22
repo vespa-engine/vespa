@@ -687,6 +687,12 @@ public class PermanentFlags {
             TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_ID, CLUSTER_TYPE
     );
 
+    public static final UnboundLongFlag ZOOKEEPER_PRE_ALLOC_SIZE_KIB = defineLongFlag(
+            "zookeeper-pre-alloc-size", 65536,
+            "Setting for zookeeper.preAllocSize flag in KiB, can be reduced from default value "
+                    + "e.g. when running tests to avoid writing a large, sparse, mostly unused file",
+            "Takes effect on restart of Docker container");
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(
