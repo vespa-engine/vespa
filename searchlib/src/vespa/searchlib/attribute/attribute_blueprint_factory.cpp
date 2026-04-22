@@ -814,8 +814,7 @@ public:
                                                                             std::move(calc),
                                                                             n.get_target_num_hits(),
                                                                             n.get_allow_approximate(),
-                                                                            blueprint_hnsw_params,
-                                                                            getRequestContext().getDoom()));
+                                                                            blueprint_hnsw_params));
         } catch (const vespalib::IllegalArgumentException& ex) {
             return fail_nearest_neighbor_term(n, ex.getMessage());
 
