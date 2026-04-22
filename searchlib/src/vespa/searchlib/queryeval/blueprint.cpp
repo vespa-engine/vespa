@@ -420,15 +420,21 @@ Blueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
         visitor.closeStruct();
     }
     visitor.openStruct("estimate", "HitEstimate");
-    visitor.visitBool("empty", state.estimate().empty);
-    visitor.visitInt("estHits", state.estimate().estHits);
-    visitor.visitInt("cost_tier", state.cost_tier());
-    visitor.visitInt("tree_size", state.tree_size());
-    visitor.visitBool("allow_termwise_eval", state.allow_termwise_eval());
+    {
+        visitor.visitBool("empty", state.estimate().empty);
+        visitor.visitInt("estHits", state.estimate().estHits);
+        visitor.visitInt("cost_tier", state.cost_tier());
+        visitor.visitInt("tree_size", state.tree_size());
+        visitor.visitBool("allow_termwise_eval", state.allow_termwise_eval());
+    }
     visitor.closeStruct();
-    visitor.visitFloat("relative_estimate", estimate());
-    visitor.visitFloat("cost", cost());
-    visitor.visitFloat("strict_cost", strict_cost());
+    visitor.openStruct("flow_stats", "FlowStats");
+    {
+        visitor.visitFloat("estimate", estimate());
+        visitor.visitFloat("cost", cost());
+        visitor.visitFloat("strict_cost", strict_cost());
+    }
+    visitor.closeStruct();
     visitor.visitInt("sourceId", _sourceId);
     visitor.visitInt("docid_limit", _docid_limit);
     visitor.visitInt("id", _id);
