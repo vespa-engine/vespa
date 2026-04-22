@@ -156,7 +156,7 @@
         <spifly.vespa.version>1.3.7</spifly.vespa.version>
         <snappy.vespa.version>1.1.10.6</snappy.vespa.version>
         <snakeyaml.vespa.version>2.4</snakeyaml.vespa.version>
-        <surefire.vespa.version>3.3.1</surefire.vespa.version>
+        <surefire.vespa.version>3.5.5</surefire.vespa.version>
         <testcontainers.vespa.version>1.19.7</testcontainers.vespa.version>
         <velocity.vespa.version>2.3</velocity.vespa.version>
         <velocity.tools.vespa.version>3.1</velocity.tools.vespa.version>
@@ -187,7 +187,7 @@
         <maven-dependency-plugin.vespa.version>3.8.1</maven-dependency-plugin.vespa.version>
         <maven-deploy-plugin.vespa.version>3.1.4</maven-deploy-plugin.vespa.version>
         <maven-enforcer-plugin.vespa.version>3.6.2</maven-enforcer-plugin.vespa.version>
-        <maven-failsafe-plugin.vespa.version>3.3.1</maven-failsafe-plugin.vespa.version>
+        <maven-failsafe-plugin.vespa.version>3.5.5</maven-failsafe-plugin.vespa.version>
         <maven-gpg-plugin.vespa.version>3.2.7</maven-gpg-plugin.vespa.version>
         <maven-install-plugin.vespa.version>3.1.2</maven-install-plugin.vespa.version>
         <maven-jar-plugin.vespa.version>3.4.2</maven-jar-plugin.vespa.version>
