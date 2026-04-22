@@ -703,7 +703,9 @@ void BTreeConstIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::linearSeek(const
     const LeafNodeType* lnode = _leaf.getNode();
     uint32_t            lidx = _leaf.getIdx() + 1;
     if (lidx < lnode->validSlots()) {
-        if (!comp(lnode->getKey(lidx), key)) {
+        // we lost some performance going from GCC 14 to 15 here,
+        // adding annotation that seems to help:
+        if (!comp(lnode->getKey(lidx), key)) [[likely]] {
             _leaf.setIdx(lidx);
             return;
         } else {
