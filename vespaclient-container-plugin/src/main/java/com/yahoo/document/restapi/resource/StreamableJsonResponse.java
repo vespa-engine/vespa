@@ -14,7 +14,7 @@ import java.util.function.Supplier;
  * rendering of Document V1 responses.
  */
 interface StreamableJsonResponse extends AutoCloseable {
-    void commit(int status, boolean fullyApplied) throws IOException;
+    void commit(int status, boolean fullyApplied, boolean ignoredOperation) throws IOException;
     void writeDocumentsArrayStart() throws IOException;
     void writeDocumentsArrayEnd() throws IOException;
     void writeDocumentValue(Document document, CompletionHandler completionHandler) throws IOException;

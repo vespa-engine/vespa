@@ -6,6 +6,7 @@ import com.yahoo.messagebus.Trace;
 import java.util.Objects;
 
 import static com.yahoo.documentapi.Response.Outcome.SUCCESS;
+import static com.yahoo.documentapi.Response.Outcome.IGNORED;
 
 /**
  * An asynchronous response from the document api.
@@ -69,7 +70,9 @@ public class Response {
      *
      * @return true if success
      */
-    public boolean isSuccess() { return outcome == SUCCESS; }
+    public boolean isSuccess() {
+        return outcome == SUCCESS || outcome == IGNORED;
+    }
 
     /** Returns the outcome of this operation. */
     public Outcome outcome() { return outcome; }
@@ -102,6 +105,13 @@ public class Response {
 
         /** The operation was a success. */
         SUCCESS,
+
+        /**
+         * The operation did not satisfy the document selection constraints set by any
+         * configured content cluster and was ignored. The operation has not been persisted,
+         * but this is not considered an error.
+         */
+        IGNORED,
 
         /** The operation was not carried out due to an unmet test-and-set condition. */
         CONDITION_FAILED,

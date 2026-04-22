@@ -475,12 +475,12 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
             }
             DocumentOperationParameters parameters = rawParameters.withResponseHandler(response -> {
                 outstanding.decrementAndGet();
-                handle(path, request, handler, response, (document, jsonResponse) -> {
+                handle(path, request, handler, response, (document, jsonResponse, ignoredOperation) -> {
                     if (document != null) {
                         jsonResponse.writeSingleDocument(document);
                         jsonResponse.commit(Response.Status.OK);
                     } else {
-                        jsonResponse.commit(Response.Status.NOT_FOUND);
+                        jsonResponse.commit(Response.Status.NOT_FOUND, true, ignoredOperation);
                     }
                 });
             });
@@ -946,7 +946,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
     }
 
     interface SuccessCallback {
-        void onSuccess(Document document, JsonResponse response) throws IOException;
+        void onSuccess(Document document, JsonResponse response, boolean ignoredOperation) throws IOException;
     }
 
     private static void handle(DocumentPath path,
@@ -958,7 +958,9 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         try (JsonResponse jsonResponse = JsonResponse.createWithPathAndId(path, handler, tensorOptions)) {
             jsonResponse.writeTrace(response.getTrace());
             if (response.isSuccess()) {
-                callback.onSuccess((response instanceof DocumentResponse) ? ((DocumentResponse) response).getDocument() : null, jsonResponse);
+                boolean ignoredOperation = (response.outcome() == Outcome.IGNORED);
+                Document docOrNull = (response instanceof DocumentResponse) ? ((DocumentResponse) response).getDocument() : null;
+                callback.onSuccess(docOrNull, jsonResponse, ignoredOperation);
             } else {
                 jsonResponse.writeMessage(response.getTextMessage(), StreamableJsonResponse.MessageSeverity.ERROR);
                 switch (response.outcome()) {
@@ -987,7 +989,9 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                                             boolean fullyApplied,
                                             ResponseHandler handler,
                                             com.yahoo.documentapi.Response response) {
-        handle(path, null, handler, response, (document, jsonResponse) -> jsonResponse.commit(Response.Status.OK, fullyApplied));
+        handle(path, null, handler, response, (document, jsonResponse, ignoredOperation) -> {
+            jsonResponse.commit(Status.OK, fullyApplied, ignoredOperation);
+        });
     }
 
     private static double latencyOf(HttpRequest r) {
@@ -1000,7 +1004,8 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
         incrementMetricNumOperations(); incrementMetricNumPuts(); sampleLatency(latency);
         switch (outcome) {
-            case SUCCESS -> incrementMetricSucceeded();
+            // TODO dedicated ignored-metric?
+            case SUCCESS, IGNORED -> incrementMetricSucceeded();
             case NOT_FOUND -> incrementMetricNotFound();
             case CONDITION_FAILED -> incrementMetricConditionNotMet();
             case OVERLOAD -> { /* Transient overload - don't count as failure */ }
@@ -1016,7 +1021,8 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
         incrementMetricNumOperations(); incrementMetricNumUpdates(); sampleLatency(latency);
         switch (outcome) {
-            case SUCCESS -> incrementMetricSucceeded();
+            // TODO dedicated ignored-metric?
+            case SUCCESS, IGNORED -> incrementMetricSucceeded();
             case NOT_FOUND -> incrementMetricNotFound();
             case CONDITION_FAILED -> incrementMetricConditionNotMet();
             case OVERLOAD -> { /* Transient overload - don't count as failure */ }
@@ -1029,7 +1035,8 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
     private void updateRemoveMetrics(Outcome outcome, double latency) {
         incrementMetricNumOperations(); incrementMetricNumRemoves(); sampleLatency(latency);
         switch (outcome) {
-            case SUCCESS,NOT_FOUND -> incrementMetricSucceeded();
+            // TODO dedicated ignored-metric?
+            case SUCCESS, NOT_FOUND, IGNORED -> incrementMetricSucceeded();
             case CONDITION_FAILED -> incrementMetricConditionNotMet();
             case OVERLOAD -> { /* Transient overload - don't count as failure */ }
             case TIMEOUT -> { incrementMetricFailedTimeout(); incrementMetricFailed();}
@@ -1244,7 +1251,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         visit(request, parameters, streamed, true, handler, new VisitCallback() {
             @Override public void onStart(StreamableJsonResponse response, boolean fullyApplied) throws IOException {
                 if (streamed) {
-                    response.commit(Response.Status.OK, fullyApplied);
+                    response.commit(Response.Status.OK, fullyApplied, false);
                 }
                 response.writeDocumentsArrayStart();
             }
@@ -1415,7 +1422,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                                     }
                             }
                             if ( ! streaming) {
-                                response.commit(status, fullyApplied);
+                                response.commit(status, fullyApplied, false);
                             }
                         }
                     });

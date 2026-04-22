@@ -10,14 +10,14 @@ import java.nio.ByteBuffer;
  * <p>Reasonably simple async response writer interface that allows for buffered and streaming
  * response semantics. The devil is in the details, so please read carefully!</p>
  *
- * <p>All writes performed <em>prior</em> to invoking {@link #commit(int, String, boolean)} will be
+ * <p>All writes performed <em>prior</em> to invoking {@link #commit(int, String, boolean, boolean)} will be
  * enqueued (and then subsequently flushed at commit time). All writes performed <em>after</em>
- * invoking {@link #commit(int, String, boolean)}  will be sent immediately without intermediate queuing.</p>
+ * invoking {@link #commit(int, String, boolean, boolean)}  will be sent immediately without intermediate queuing.</p>
  *
  * <p>This means supporting buffered vs. streaming response semantics becomes a matter of deciding
  * when to commit relative to performing the response payload writes. However, if this is used in a
  * <em>non-streaming</em> context, great care must be taken to avoid a catch-22/deadlock scenario
- * where invoking {@link #commit(int, String, boolean)} transitively depends on the invocation of
+ * where invoking {@link #commit(int, String, boolean, boolean)} transitively depends on the invocation of
  * one or more completion handlers already submitted via {@link #write(ByteBuffer, CompletionHandler)},
  * as these will <em>not</em> be invoked prior to commit.</p>
  *
@@ -38,14 +38,16 @@ interface ResponseWriter extends AutoCloseable {
      * @param fullyApplied Whether the request this response was created for had all its fields
      *                     recognized during processing. Should only be false if one or more request
      *                     fields were ignored. Only really makes sense for mutating operations.
+     * @param ignoredOperation True iff the operation was ignored by the routing layer and was never
+     *                         forwarded to--and thus never persisted in--any content cluster.
      */
-    void commit(int status, String contentType, boolean fullyApplied) throws IOException;
+    void commit(int status, String contentType, boolean fullyApplied, boolean ignoredOperation) throws IOException;
 
     /**
      * Write data to the underlying transport, with an optional completion handler.
      *
      * <strong>Important:</strong> any provided completion handler will <em>not</em> be invoked
-     * before {@link #commit(int, String, boolean)} has been called on the same instance used for
+     * before {@link #commit(int, String, boolean, boolean)} has been called on the same instance used for
      * writing. See the class comments for why this matters.
      *
      * @param buffer Buffer containing data to be written verbatim to the underlying transport.

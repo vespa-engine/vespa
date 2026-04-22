@@ -33,8 +33,11 @@ public final class Headers {
     public static final String HOSTNAME = "X-Yahoo-Hostname";
     public static final String SILENTUPGRADE = "X-Yahoo-Silent-Upgrade";
 
-    // A response header present and set to "true" onlynif any fields of a document operation were ignored
+    // A response header present and set to "true" only if any fields of a document operation were ignored
     // because they were not declared in the target document type.
     public static final String IGNORED_FIELDS = "X-Vespa-Ignored-Fields";
-
+    // A response header present and set to "true" only if the document operation
+    // itself was ignored due to not matching any cluster document selection
+    // constraints during routing.
+    public static final String IGNORED_OPERATION = "X-Vespa-Ignored-Operation";
 }

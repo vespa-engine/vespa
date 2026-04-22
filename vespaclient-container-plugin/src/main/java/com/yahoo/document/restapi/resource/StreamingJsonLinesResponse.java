@@ -11,6 +11,7 @@ import com.yahoo.document.json.JsonWriter;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.messagebus.Trace;
 import com.yahoo.tensor.serialization.JsonFormat;
+import com.yahoo.vespa.http.server.Headers;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -54,12 +55,12 @@ class StreamingJsonLinesResponse implements StreamableJsonResponse {
     }
 
     @Override
-    public void commit(int status, boolean fullyApplied) throws IOException {
+    public void commit(int status, boolean fullyApplied, boolean ignoredOperation) throws IOException {
         // `application/jsonl` is the de facto (not de jure) media type for JSONL,
         // so that's what we're going with. If this changes (JSONL gets some other
         // IANA assignment) we can remap this based on what the client states it
         // wants via the HTTP Accept header.
-        responseWriter.commit(status, "application/jsonl; charset=UTF-8", fullyApplied);
+        responseWriter.commit(status, "application/jsonl; charset=UTF-8", fullyApplied, ignoredOperation);
     }
 
     @Override

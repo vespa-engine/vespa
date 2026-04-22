@@ -59,6 +59,7 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vdslib.VisitorStatistics;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
+import com.yahoo.vespa.http.server.Headers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -952,6 +953,8 @@ public class DocumentV1ApiTest {
                        "  ]" +
                        "}", response.readAll());
         assertEquals(200, response.getStatus());
+        // An accepted operation does not have an ignored-header set
+        assertFalse(response.getResponse().headers().containsKey(Headers.IGNORED_OPERATION));
 
         // POST with no payload is a 400
         access.session.expect((__, ___) -> { throw new AssertionError("Not supposed to happen"); });
@@ -1142,6 +1145,32 @@ public class DocumentV1ApiTest {
         assertEquals(1, metric.metrics().get("httpapi_not_found").get(Map.of()), 0);
         assertEquals(1, metric.metrics().get("httpapi_failed").get(Map.of()), 0);
         driver.close();
+    }
+
+    @Test
+    void ignored_operation_sets_returns_success_with_vespa_ignored_response_header() {
+        var driver = new RequestHandlerTestDriver(handler); // try-with-resources hangs the test on assertion failure, which isn't optimal
+        access.session.expect((id, parameters) -> {
+            parameters.responseHandler().get().handleResponse(new Response(0, null, Response.Outcome.IGNORED));
+            return new Result();
+        });
+        var response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/one", POST,
+                """
+                {
+                  "fields": {
+                    "artist": "Verdal Danseband & Asfaltarbeid"
+                  }
+                }""");
+        assertSameJson("""
+                {
+                  "pathId": "/document/v1/space/music/number/1/one",
+                  "id": "id:space:music:n=1:one"
+                }""", response.readAll());
+        assertEquals(200, response.getStatus());
+
+        List<String> vals = response.getResponse().headers().get(Headers.IGNORED_OPERATION);
+        assertEquals(1, vals.size());
+        assertEquals("true", vals.get(0));
     }
 
     @Test
