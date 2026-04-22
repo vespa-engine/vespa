@@ -5,6 +5,7 @@ import com.yahoo.collections.Comparables;
 import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
+import com.yahoo.config.provision.AzName;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.CloudResourceTags;
@@ -512,14 +513,16 @@ public final class DeploymentSpec {
         private final Map<CloudName, CloudAccount> cloudAccounts;
         private final Optional<Duration> hostTTL;
         private final CloudResourceTags cloudResourceTags;
+        private final List<AzName> availabilityZones;
 
+        @SuppressWarnings("unused")
         public DeclaredZone(Environment environment) {
-            this(environment, Optional.empty(), Optional.empty(), Optional.empty(), Map.of(), Optional.empty(), CloudResourceTags.empty());
+            this(environment, Optional.empty(), Optional.empty(), Optional.empty(), Map.of(), Optional.empty(), CloudResourceTags.empty(), List.of());
         }
 
         public DeclaredZone(Environment environment, Optional<RegionName> region, Optional<AthenzService> athenzService,
                             Optional<String> testerNodes, Map<CloudName, CloudAccount> cloudAccounts, Optional<Duration> hostTTL,
-                            CloudResourceTags cloudResourceTags) {
+                            CloudResourceTags cloudResourceTags, List<AzName> availabilityZones) {
             if (environment != Environment.prod && region.isPresent())
                 illegal("Non-prod environments cannot specify a region");
             if (environment == Environment.prod && region.isEmpty())
@@ -532,6 +535,7 @@ public final class DeploymentSpec {
             this.cloudAccounts = Map.copyOf(cloudAccounts);
             this.hostTTL = Objects.requireNonNull(hostTTL);
             this.cloudResourceTags = Objects.requireNonNull(cloudResourceTags);
+            this.availabilityZones = List.copyOf(Objects.requireNonNull(availabilityZones));
         }
 
         public Environment environment() { return environment; }
@@ -547,6 +551,12 @@ public final class DeploymentSpec {
         Map<CloudName, CloudAccount> cloudAccounts() { return cloudAccounts; }
 
         CloudResourceTags cloudResourceTags() { return cloudResourceTags; }
+
+        /**
+         * The cloud provider availability zones that clusters deployed in this regional zone should be
+         * provisioned across, or empty in non-regional (single az) zones.
+         */
+        public List<AzName> availabilityZones() { return availabilityZones; }
 
         @Override
         public List<DeclaredZone> zones() { return List.of(this); }

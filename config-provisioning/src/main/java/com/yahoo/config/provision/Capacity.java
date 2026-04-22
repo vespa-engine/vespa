@@ -2,6 +2,7 @@
 package com.yahoo.config.provision;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -24,6 +25,7 @@ public final class Capacity {
     private final Optional<CloudAccount> cloudAccount;
     private final CloudResourceTags cloudResourceTags;
     private final ClusterInfo clusterInfo;
+    private final List<AzName> availabilityZones;
 
     private Capacity(ClusterResources min,
                      ClusterResources max,
@@ -33,7 +35,8 @@ public final class Capacity {
                      NodeType type,
                      Optional<CloudAccount> cloudAccount,
                      CloudResourceTags cloudResourceTags,
-                     ClusterInfo clusterInfo) {
+                     ClusterInfo clusterInfo,
+                     List<AzName> availabilityZones) {
         validate(min);
         validate(max);
         if (max.smallerThan(min))
@@ -50,6 +53,7 @@ public final class Capacity {
         this.cloudAccount = Objects.requireNonNull(cloudAccount);
         this.cloudResourceTags = requireNonNull(cloudResourceTags);
         this.clusterInfo = clusterInfo;
+        this.availabilityZones = List.copyOf(Objects.requireNonNull(availabilityZones));
     }
 
     private static void validate(ClusterResources resources) {
@@ -92,12 +96,18 @@ public final class Capacity {
 
     public ClusterInfo clusterInfo() { return clusterInfo; }
 
+    /**
+     * Returns the availability zones this cluster should be provisioned across.
+     * An empty list means the zone-default placement (historically: a single availability zone).
+     */
+    public List<AzName> availabilityZones() { return availabilityZones; }
+
     public Capacity withLimits(ClusterResources min, ClusterResources max) {
         return withLimits(min, max, IntRange.empty());
     }
 
     public Capacity withLimits(ClusterResources min, ClusterResources max, IntRange groupSize) {
-        return new Capacity(min, max, groupSize, required, canFail, type, cloudAccount, cloudResourceTags, clusterInfo);
+        return new Capacity(min, max, groupSize, required, canFail, type, cloudAccount, cloudResourceTags, clusterInfo, availabilityZones);
     }
 
     @Override
@@ -136,7 +146,13 @@ public final class Capacity {
     public static Capacity from(ClusterResources min, ClusterResources max, IntRange groupSize, boolean required, boolean canFail,
                                 Optional<CloudAccount> cloudAccount, CloudResourceTags cloudResourceTags,
                                 ClusterInfo clusterInfo) {
-        return new Capacity(min, max, groupSize, required, canFail, NodeType.tenant, cloudAccount, cloudResourceTags, clusterInfo);
+        return from(min, max, groupSize, required, canFail, cloudAccount, cloudResourceTags, clusterInfo, List.of());
+    }
+
+    public static Capacity from(ClusterResources min, ClusterResources max, IntRange groupSize, boolean required, boolean canFail,
+                                Optional<CloudAccount> cloudAccount, CloudResourceTags cloudResourceTags,
+                                ClusterInfo clusterInfo, List<AzName> availabilityZones) {
+        return new Capacity(min, max, groupSize, required, canFail, NodeType.tenant, cloudAccount, cloudResourceTags, clusterInfo, availabilityZones);
     }
 
     /** Creates this from a node type */
@@ -145,7 +161,7 @@ public final class Capacity {
     }
 
     private static Capacity from(ClusterResources resources, boolean required, boolean canFail, NodeType type, Duration hostTTL) {
-        return new Capacity(resources, resources, IntRange.empty(), required, canFail, type, Optional.empty(), CloudResourceTags.empty(), new ClusterInfo.Builder().hostTTL(hostTTL).build());
+        return new Capacity(resources, resources, IntRange.empty(), required, canFail, type, Optional.empty(), CloudResourceTags.empty(), new ClusterInfo.Builder().hostTTL(hostTTL).build(), List.of());
     }
 
 }

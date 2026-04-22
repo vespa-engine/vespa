@@ -151,7 +151,13 @@ Region = element region {
    attribute athenz-service { xsd:string }? &
    attribute cloud-account { xsd:string }? &
    attribute empty-host-ttl { xsd:string }? &
+   attribute name { xsd:string }? &
    CloudResourceTags? &
+   AvailabilityZone* &
+   text
+}
+
+AvailabilityZone = element availability-zone {
    text
 }
 

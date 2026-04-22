@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.application.api.Endpoint.Level;
 import com.yahoo.config.application.api.Endpoint.Target;
 import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
+import com.yahoo.config.provision.AzName;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.CloudResourceTags;
@@ -2340,6 +2341,31 @@ public class DeploymentSpecTest {
 
     private static ZoneEndpoint zoneEndpoint(DeploymentSpec spec, com.yahoo.config.provision.zone.ZoneId zoneId, ClusterSpec.Id clusterSpecId) {
         return spec.zoneEndpoint(InstanceName.from("default"), zoneId, clusterSpecId, false);
+    }
+
+    @Test
+    public void regionalZone() {
+        String r =
+                """
+                <deployment version='1.0'>
+                  <instance id='default'>
+                    <prod>
+                      <region name='aws-us-east-1'>
+                        <availability-zone>aws-us-east-1c</availability-zone>
+                        <availability-zone>aws-us-east-1d</availability-zone>
+                        <availability-zone>aws-us-east-1e</availability-zone>
+                      </region>
+                    </prod>
+                  </instance>
+                </deployment>
+                """;
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        List<DeploymentSpec.DeclaredZone> zones = spec.requireInstance("default").zones();
+        assertEquals(1, zones.size());
+        var regionalZone = zones.get(0);
+        assertEquals("aws-us-east-1", regionalZone.region().get().value());
+        assertEquals(List.of(AzName.from("aws-us-east-1c"), AzName.from("aws-us-east-1d"), AzName.from("aws-us-east-1e")),
+                     regionalZone.availabilityZones());
     }
 
 }

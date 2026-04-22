@@ -22,7 +22,7 @@ public interface Provisioner {
      */
     List<HostSpec> prepare(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity, ProvisionLogger logger);
 
-    /** Activates the allocation of nodes to this application captured in the hosts argument. */
+    /** Activates the allocation of nodes to this application captured in the 'hosts' argument. */
     void activate(Collection<HostSpec> hosts, ActivationContext context, ApplicationTransaction transaction);
 
     /** Transactionally remove an application under lock. */
