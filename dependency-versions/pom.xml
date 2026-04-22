@@ -100,7 +100,7 @@
         <felix.resolver.vespa.version>2.0.4</felix.resolver.vespa.version>
         <felix.bundlerepository.vespa.version>2.0.10</felix.bundlerepository.vespa.version>
         <findbugs.vespa.version>3.0.2</findbugs.vespa.version> <!-- Should be kept in sync with guava -->
-        <grpc.vespa.version>1.75.0</grpc.vespa.version>
+        <grpc.vespa.version>1.80.0</grpc.vespa.version>
         <gson.vespa.version>2.12.1</gson.vespa.version>
         <hamcrest.vespa.version>3.0</hamcrest.vespa.version>
         <hdrhistogram.vespa.version>2.2.2</hdrhistogram.vespa.version>
