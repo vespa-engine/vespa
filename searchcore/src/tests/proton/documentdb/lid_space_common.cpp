@@ -192,6 +192,8 @@ MyDocumentRetriever::getDocumentTypeRepo() const {
 
 const DocTypeName& MyDocumentRetriever::get_doc_type_name() const noexcept { return doc_type_name; }
 
+bool MyDocumentRetriever::can_populate_document_metadata_docid() const noexcept { return false; }
+
 void
 MyDocumentRetriever::getBucketMetadata(const storage::spi::Bucket&, DocumentMetadata::Vector&, bool) const {
     abort();

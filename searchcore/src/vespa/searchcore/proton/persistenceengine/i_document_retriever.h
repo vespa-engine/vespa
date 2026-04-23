@@ -36,6 +36,7 @@ public:
 
     virtual const document::DocumentTypeRepo & getDocumentTypeRepo() const = 0;
     virtual const DocTypeName& get_doc_type_name() const noexcept = 0;
+    virtual bool can_populate_document_metadata_docid() const noexcept = 0;
     virtual void getBucketMetadata(const storage::spi::Bucket &bucket, search::DocumentMetadata::Vector &result, bool populate_docid) const = 0;
     virtual search::DocumentMetadata getDocumentMetadata(const document::DocumentId &id) const = 0;
     /**

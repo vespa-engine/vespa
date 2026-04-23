@@ -24,6 +24,7 @@ public:
     const document::DocumentTypeRepo &getDocumentTypeRepo() const override;
     const DocTypeName& get_doc_type_name() const noexcept override;
     void getBucketMetadata(const Bucket &bucket, search::DocumentMetadata::Vector &result, bool populate_docid) const override;
+    bool can_populate_document_metadata_docid() const noexcept override;
     search::DocumentMetadata getDocumentMetadata(const document::DocumentId &id) const override;
     DocumentUP getFullDocument(search::DocumentIdT lid) const override;
     DocumentUP getPartialDocument(search::DocumentIdT lid, const document::DocumentId & docId, const document::FieldSet & fieldSet) const override;

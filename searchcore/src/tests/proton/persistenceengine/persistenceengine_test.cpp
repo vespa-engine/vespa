@@ -120,6 +120,7 @@ struct MyDocumentRetriever : DocumentRetrieverBaseForTest {
         return repo;
     }
     const DocTypeName& get_doc_type_name() const noexcept override { return doc_type_name; }
+    bool can_populate_document_metadata_docid() const noexcept override { return false; }
     void getBucketMetadata(const storage::spi::Bucket &, search::DocumentMetadata::Vector &v, bool) const override {
         if (document != nullptr) {
             v.push_back(getDocumentMetadata(document->getId()));

@@ -17,6 +17,7 @@ DocumentRetrieverBase::DocumentRetrieverBase(const DocTypeName &docTypeName, con
       _docTypeName(docTypeName),
       _repo(repo),
       _meta_store(meta_store),
+      _can_populate_document_metadata_docid(_meta_store.can_populate_document_metadata_docid()),
       _selectCache(256u),
       _lock(),
       _emptyDoc(),
@@ -27,6 +28,10 @@ DocumentRetrieverBase::DocumentRetrieverBase(const DocTypeName &docTypeName, con
 }
 
 DocumentRetrieverBase::~DocumentRetrieverBase() = default;
+
+bool DocumentRetrieverBase::can_populate_document_metadata_docid() const noexcept {
+    return _can_populate_document_metadata_docid;
+}
 
 void
 DocumentRetrieverBase::getBucketMetadata(const storage::spi::Bucket &bucket,
