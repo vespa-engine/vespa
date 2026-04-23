@@ -17,6 +17,7 @@ import com.yahoo.config.model.test.HostedConfigModelRegistry;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
+import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
@@ -617,6 +618,22 @@ public class HostedDeployTest {
         assertTrue(deployment.isPresent());
         deployment.get().activate();
         assertEquals(cloudAccount, ((Deployment) deployment.get()).session().getCloudAccount().get());
+    }
+
+    @Test
+    public void testRedeployWithCloudResourceTags() {
+        CloudResourceTags tags = CloudResourceTags.from(Map.of("env", "prod", "team", "search"));
+        DeployTester tester = new DeployTester.Builder(temporaryFolder)
+                .hostedConfigserverConfig(Zone.defaultZone())
+                .modelFactory(createHostedModelFactory(Version.fromString("4.5.6"), clock))
+                .build();
+        tester.deployApp("src/test/apps/hosted/", new PrepareParams.Builder()
+                .vespaVersion("4.5.6")
+                .cloudResourceTags(tags));
+        Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive(tester.applicationId());
+        assertTrue(deployment.isPresent());
+        deployment.get().activate();
+        assertEquals(tags, ((Deployment) deployment.get()).session().getCloudResourceTags());
     }
 
     @Test

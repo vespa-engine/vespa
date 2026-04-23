@@ -325,7 +325,8 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                     .waitForResourcesInPrepare(waitForResourcesInPrepare)
                     .tenantVaults(session.getTenantVaults())
                     .tenantSecretStores(session.getTenantSecretStores())
-                    .dataplaneTokens(session.getDataplaneTokens());
+                    .dataplaneTokens(session.getDataplaneTokens())
+                    .cloudResourceTags(session.getCloudResourceTags());
             session.getDockerImageRepository().ifPresent(params::dockerImageRepository);
             session.getAthenzDomain().ifPresent(params::athenzDomain);
             session.getCloudAccount().ifPresent(params::cloudAccount);
