@@ -5,8 +5,8 @@
 
 namespace vespalib {
 
-Deadline::Deadline(const std::atomic<steady_time>& now, steady_time time_to_deadline, Type type) noexcept
-    : _now(now), _deadline(time_to_deadline), _type(type), _missed(false) {
+Deadline::Deadline(const std::atomic<steady_time>& now, steady_time point_of_deadline, Type type) noexcept
+    : _now(now), _deadline(point_of_deadline), _type(type), _missed(false) {
 }
 
 const Deadline& Deadline::never() noexcept {

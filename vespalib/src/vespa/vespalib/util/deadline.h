@@ -11,7 +11,7 @@ class Deadline {
 public:
     enum Type { BUDGET, TIMEOUT };
 
-    Deadline(const std::atomic<steady_time>& now, steady_time time_to_deadline, Type type) noexcept;
+    Deadline(const std::atomic<steady_time>& now, steady_time point_of_deadline, Type type) noexcept;
     [[nodiscard]] Type type() const noexcept { return _type; }
     [[nodiscard]] duration time_left() const noexcept { return _deadline - get_time_ns(); }
     [[nodiscard]] bool is_missed() const noexcept { _missed = _missed || (get_time_ns() > _deadline); return _missed; }
