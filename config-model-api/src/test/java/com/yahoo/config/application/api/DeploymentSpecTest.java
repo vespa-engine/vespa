@@ -13,7 +13,6 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Tags;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.config.provision.ZoneEndpoint.AccessType;
 import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
@@ -838,7 +837,7 @@ public class DeploymentSpecTest {
                 "   <instance id='default'>" +
                 "      <block-change revision='false' days='mon,tue' hours='15-16'/>" +
                 "      <block-change days='sat' hours='10' time-zone='CET'/>" +
-                "      <block-change maintenance='false' days='mon-sun' hours='0-23' time-zone='CET' from-date='2022-01-01' to-date='2022-01-15'/>" +
+                "      <block-change maintenance='true' days='mon-sun' hours='0-23' time-zone='CET' from-date='2022-01-01' to-date='2022-01-15'/>" +
                 "      <prod>" +
                 "         <region>us-west-1</region>" +
                 "      </prod>" +
@@ -849,15 +848,15 @@ public class DeploymentSpecTest {
         assertEquals(3, spec.requireInstance("default").changeBlocker().size());
         assertTrue(spec.requireInstance("default").changeBlocker().get(0).blocksVersions());
         assertFalse(spec.requireInstance("default").changeBlocker().get(0).blocksRevisions());
-        assertTrue(spec.requireInstance("default").changeBlocker().get(0).blocksMaintenance());
+        assertFalse(spec.requireInstance("default").changeBlocker().get(0).blocksMaintenance());
         assertEquals(ZoneId.of("UTC"), spec.requireInstance("default").changeBlocker().get(0).window().zone());
 
         assertTrue(spec.requireInstance("default").changeBlocker().get(1).blocksVersions());
         assertTrue(spec.requireInstance("default").changeBlocker().get(1).blocksRevisions());
-        assertTrue(spec.requireInstance("default").changeBlocker().get(1).blocksMaintenance());
+        assertFalse(spec.requireInstance("default").changeBlocker().get(1).blocksMaintenance());
         assertEquals(ZoneId.of("CET"), spec.requireInstance("default").changeBlocker().get(1).window().zone());
 
-        assertFalse(spec.requireInstance("default").changeBlocker().get(2).blocksMaintenance());
+        assertTrue(spec.requireInstance("default").changeBlocker().get(2).blocksMaintenance());
 
         assertTrue(spec.requireInstance("default").canUpgradeAt(Instant.parse("2017-09-18T14:15:30.00Z")));
         assertFalse(spec.requireInstance("default").canUpgradeAt(Instant.parse("2017-09-18T15:15:30.00Z")));
@@ -870,10 +869,10 @@ public class DeploymentSpecTest {
 
         assertFalse(spec.requireInstance("default").canUpgradeAt(Instant.parse("2022-01-15T16:00:00.00Z")));
 
-        // maintenance=false on the third blocker means maintenance is allowed during that window
-        assertTrue(spec.requireInstance("default").canPerformMaintenanceAt(Instant.parse("2022-01-15T16:00:00.00Z")));
-        // but blocked by the first two blockers at their times
-        assertFalse(spec.requireInstance("default").canPerformMaintenanceAt(Instant.parse("2017-09-18T15:15:30.00Z")));
+        // maintenance unspecified => maintenance=false fo first two blockers means maintenance is allowed during that window
+        assertTrue(spec.requireInstance("default").canPerformMaintenanceAt(Instant.parse("2017-09-18T15:15:30.00Z")));
+        // but maintenance=true on the third blocker means maintenance is not allowed during that window
+        assertFalse(spec.requireInstance("default").canPerformMaintenanceAt(Instant.parse("2022-01-15T16:00:00.00Z")));
     }
 
     @Test
@@ -891,12 +890,12 @@ public class DeploymentSpecTest {
 
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
 
-        String inheritedChangeBlocker = "change blocker revision=false version=true maintenance=true window=time window for hour(s) " +
+        String inheritedChangeBlocker = "change blocker revision=false version=true maintenance=false window=time window for hour(s) " +
                                         "[15, 16] on [monday, tuesday] in time zone UTC and date range [any date, any date]";
 
         assertEquals(2, spec.requireInstance("instance1").changeBlocker().size());
         assertEquals(inheritedChangeBlocker, spec.requireInstance("instance1").changeBlocker().get(0).toString());
-        assertEquals("change blocker revision=true version=true maintenance=true window=time window for hour(s) [10] on " +
+        assertEquals("change blocker revision=true version=true maintenance=false window=time window for hour(s) [10] on " +
                      "[saturday] in time zone CET and date range [any date, any date]",
                      spec.requireInstance("instance1").changeBlocker().get(1).toString());
 

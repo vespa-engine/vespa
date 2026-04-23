@@ -770,7 +770,7 @@ public class DeploymentSpecXmlReader {
     private DeploymentSpec.ChangeBlocker readChangeBlocker(Element tag) {
         boolean blockVersions = trueOrMissing(tag.getAttribute("version"));
         boolean blockRevisions = trueOrMissing(tag.getAttribute("revision"));
-        boolean blockMaintenance = trueOrMissing(tag.getAttribute("maintenance"));
+        boolean blockMaintenance = tag.getAttribute("maintenance").equals("true");
 
         String daySpec = tag.getAttribute("days");
         String hourSpec = tag.getAttribute("hours");
