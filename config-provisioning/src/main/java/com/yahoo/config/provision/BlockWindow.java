@@ -13,6 +13,10 @@ import java.util.List;
  */
 public record BlockWindow(boolean revision, boolean version, boolean maintenance, List<DayOfWeek> days, List<Integer> hours, ZoneId zone) {
 
+    public BlockWindow(boolean revision, boolean version, List<DayOfWeek> days, List<Integer> hours, ZoneId zone) {
+        this(revision, version, false, days, hours, zone);
+    }
+
     public BlockWindow(boolean revision, boolean version, boolean maintenance, List<DayOfWeek> days, List<Integer> hours, ZoneId zone) {
         this.revision    = revision;
         this.version     = version;
