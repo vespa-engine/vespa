@@ -25,10 +25,6 @@
 #include <queue>
 
 #include <vespa/log/log.h>
-
-#include "ann_deadline_configuration.h"
-#include "match_tools.h"
-#include "match_tools.h"
 LOG_SETUP(".proton.matching.query");
 
 #include <vespa/searchlib/query/proto_tree_converter.hpp>

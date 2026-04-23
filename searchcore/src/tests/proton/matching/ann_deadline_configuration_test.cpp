@@ -29,26 +29,6 @@ AnnDeadlineConfigurationTest::AnnDeadlineConfigurationTest()
 
 AnnDeadlineConfigurationTest::~AnnDeadlineConfigurationTest() = default;
 
-TEST_F(AnnDeadlineConfigurationTest, deadline_matches_ann_left) {
-    AnnDeadlineConfiguration config(doom, time.load() + 50ms);
-    Deadline deadline = config.make_ann_deadline(1);
-
-    EXPECT_EQ(50ms, deadline.time_left());
-    EXPECT_FALSE(deadline.is_missed());
-
-    time.store(time.load() + 10ms);
-    EXPECT_EQ(40ms, deadline.time_left());
-    EXPECT_FALSE(deadline.is_missed());
-
-    time.store(time.load() + 40ms);
-    EXPECT_EQ(0ms, deadline.time_left());
-    EXPECT_FALSE(deadline.is_missed());
-
-    time.store(time.load() + 1ms);
-    EXPECT_EQ(-1ms, deadline.time_left());
-    EXPECT_TRUE(deadline.is_missed());
-}
-
 TEST_F(AnnDeadlineConfigurationTest, soft_doom_becomes_deadline) {
     for (auto duration : {50ms, 100ms, 1000ms}) {
         AnnDeadlineConfiguration config(doom, time.load() + duration);

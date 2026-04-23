@@ -13,6 +13,7 @@ vespa_add_executable(vespalib_util_gtest_runner_test_app TEST
     cgroup_resource_limits_test.cpp
     crc_test.cpp
     crypto_test.cpp
+    deadline_test.cpp
     defer_test.cpp
     eventbarrier.cpp
     file_area_freelist_test.cpp
