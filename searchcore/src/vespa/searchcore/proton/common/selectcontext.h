@@ -21,7 +21,7 @@ public:
     void getAttributeGuards();
     void dropAttributeGuards();
 
-    uint32_t _docId;
+    uint32_t _lid;
 
     const search::attribute::IAttributeVector& guarded_attribute_at_index(uint32_t index) const noexcept;
 private:
