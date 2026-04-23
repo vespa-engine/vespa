@@ -249,7 +249,6 @@ class CliArguments {
         return new CliArgumentsException(String.format(Locale.ROOT, "Invalid value for '%s': %s", option, cause.getMessage()), cause);
     }
 
-    @SuppressWarnings("deprecation") // Option.Builder.build() deprecated in commons-cli 1.10+ (use get())
     private static Options createOptions() {
         return new Options()
                 .addOption(Option.builder()
@@ -399,7 +398,6 @@ class CliArguments {
                         .build());
     }
 
-    @SuppressWarnings("deprecation") // HelpFormatter moved to org.apache.commons.cli.help in 1.10+
     void printHelp(OutputStream out) {
         HelpFormatter formatter = new HelpFormatter();
         PrintWriter writer = new PrintWriter(out, true, StandardCharsets.UTF_8);
