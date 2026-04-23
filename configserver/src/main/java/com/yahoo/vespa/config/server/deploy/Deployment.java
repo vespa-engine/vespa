@@ -237,7 +237,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
         List<BlockWindow> blockWindows = instanceSpec.get().changeBlocker().stream()
                 .map(cb -> new BlockWindow(
-                        cb.blocksRevisions(), cb.blocksVersions(),
+                        cb.blocksRevisions(), cb.blocksVersions(), cb.blocksMaintenance(),
                         cb.window().days(),
                         cb.window().hours(),
                         cb.window().zone()))

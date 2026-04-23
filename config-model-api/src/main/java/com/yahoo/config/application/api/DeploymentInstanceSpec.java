@@ -254,6 +254,12 @@ public final class DeploymentInstanceSpec extends DeploymentSpec.Steps {
                              .noneMatch(block -> block.window().includes(instant));
     }
 
+    /** Returns whether maintenance can be performed on these instances at the given instant */
+    public boolean canPerformMaintenanceAt(Instant instant) {
+        return changeBlockers.stream().filter(DeploymentSpec.ChangeBlocker::blocksMaintenance)
+                             .noneMatch(block -> block.window().includes(instant));
+    }
+
     /** Returns the athenz service for environment/region if configured, defaulting to that of the instance */
     public Optional<AthenzService> athenzService(Environment environment, RegionName region) {
         return zones().stream()

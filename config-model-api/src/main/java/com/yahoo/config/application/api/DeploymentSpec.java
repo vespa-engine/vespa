@@ -811,26 +811,29 @@ public final class DeploymentSpec {
 
     /** A blocking of changes in a given time window */
     public static class ChangeBlocker {
-        
+
         private final boolean revision;
         private final boolean version;
+        private final boolean maintenance;
         private final TimeWindow window;
-        
-        public ChangeBlocker(boolean revision, boolean version, TimeWindow window) {
+
+        public ChangeBlocker(boolean revision, boolean version, boolean maintenance, TimeWindow window) {
             this.revision = revision;
             this.version = version;
+            this.maintenance = maintenance;
             this.window = window;
         }
-        
+
         public boolean blocksRevisions() { return revision; }
         public boolean blocksVersions() { return version; }
+        public boolean blocksMaintenance() { return maintenance; }
         public TimeWindow window() { return window; }
 
         @Override
         public String toString() {
-            return "change blocker revision=" + revision + " version=" + version + " window=" + window;
+            return "change blocker revision=" + revision + " version=" + version + " maintenance=" + maintenance + " window=" + window;
         }
-        
+
     }
 
     /**

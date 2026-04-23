@@ -7,18 +7,19 @@ import java.time.ZoneId;
 import java.util.List;
 
 /**
- * A window of time during which changes (revisions, versions) are blocked.
+ * A window of time during which changes (revisions, versions, maintenance) are blocked.
  *
  * @author olaa
  */
-public record BlockWindow(boolean revision, boolean version, List<DayOfWeek> days, List<Integer> hours, ZoneId zone) {
+public record BlockWindow(boolean revision, boolean version, boolean maintenance, List<DayOfWeek> days, List<Integer> hours, ZoneId zone) {
 
-    public BlockWindow(boolean revision, boolean version, List<DayOfWeek> days, List<Integer> hours, ZoneId zone) {
-        this.revision = revision;
-        this.version  = version;
-        this.days     = List.copyOf(days);
-        this.hours    = List.copyOf(hours);
-        this.zone     = zone;
+    public BlockWindow(boolean revision, boolean version, boolean maintenance, List<DayOfWeek> days, List<Integer> hours, ZoneId zone) {
+        this.revision    = revision;
+        this.version     = version;
+        this.maintenance = maintenance;
+        this.days        = List.copyOf(days);
+        this.hours       = List.copyOf(hours);
+        this.zone        = zone;
     }
 
     /** Returns whether this window is currently blocking platform (Vespa version) upgrades */
@@ -29,6 +30,11 @@ public record BlockWindow(boolean revision, boolean version, List<DayOfWeek> day
     /** Returns whether this window is currently blocking revision (application package) deployments */
     public boolean blocksRevisionAt(Instant instant) {
         return revision && isWithin(instant);
+    }
+
+    /** Returns whether this window is currently blocking maintenance operations */
+    public boolean blocksMaintenanceAt(Instant instant) {
+        return maintenance && isWithin(instant);
     }
 
     private boolean isWithin(Instant instant) {

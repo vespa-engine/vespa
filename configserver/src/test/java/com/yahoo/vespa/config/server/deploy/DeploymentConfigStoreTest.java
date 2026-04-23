@@ -59,6 +59,7 @@ public class DeploymentConfigStoreTest {
         BlockWindow window = call.blockWindows().get(0);
         assertTrue(window.revision());
         assertFalse(window.version());
+        assertFalse(window.maintenance());
         assertEquals(List.of(DayOfWeek.MONDAY, DayOfWeek.TUESDAY), window.days());
         assertEquals(List.of(8, 9, 10), window.hours());
         assertEquals(ZoneId.of("UTC"), window.zone());
