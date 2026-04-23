@@ -140,6 +140,12 @@
                 <module>integration/schema-language-server</module>
             </modules>
         </profile>
+        <profile>
+            <id>vespa-testcontainers</id>
+            <modules>
+                <module>integration/vespa-testcontainers</module>
+            </modules>
+        </profile>
     </profiles>
 
     <properties>
