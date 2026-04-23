@@ -72,7 +72,7 @@ new VespaContainer("vespaengine/vespa:8.640.27")
 |--------|-------------|
 | `withApplicationPackage(String)` | Classpath resource path to app package, deployed on startup |
 | `withApplicationPackage(Path)` | Host path to app package, deployed on startup |
-| `withDeployWaitTime(Duration)` | Override default 5-minute deploy timeout |
+| `withDeployWaitTime(Duration)` | Override default 1-minute deploy timeout |
 | `deployApplicationPackage(String)` | Copy and deploy an app package on a running container |
 | `getEndpoint()` | Base URL of the query/document API (`http://host:8080`) |
 | `getConfigEndpoint()` | Base URL of the config server (`http://host:19071`) |
