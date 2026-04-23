@@ -171,6 +171,7 @@ MatchTools::setup_dump()
 MatchToolsFactory::
 MatchToolsFactory(QueryLimiter               & queryLimiter,
                   const vespalib::Doom       & doom,
+                  const AnnDeadlineConfiguration& ann_deadline_config,
                   ISearchContext             & searchContext,
                   IAttributeContext          & attributeContext,
                   search::engine::Trace      & root_trace,
@@ -231,7 +232,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         _query.fetchPostings(ExecuteInfo::create(in_flow.rate(), _requestContext.getDoom(), thread_bundle));
         if (is_search) {
             bool use_lazy_filter = LazyFilter::check(_queryEnv.getProperties());
-            _query.handle_global_filter(_requestContext, searchContext.getDocIdLimit(),
+            _query.handle_global_filter(_requestContext, ann_deadline_config, searchContext.getDocIdLimit(),
                                         _create_blueprint_params.global_filter_lower_limit,
                                         _create_blueprint_params.global_filter_upper_limit, trace, sort_by_cost, use_lazy_filter);
         }

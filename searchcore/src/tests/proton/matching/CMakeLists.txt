@@ -1,4 +1,12 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+vespa_add_executable(searchcore_ann_deadline_configuration_test_app TEST
+    SOURCES
+    ann_deadline_configuration_test.cpp
+    DEPENDS
+    searchcore_matching
+    GTest::gtest
+)
+vespa_add_test(NAME searchcore_ann_deadline_configuration_test_app COMMAND searchcore_ann_deadline_configuration_test_app)
 vespa_add_executable(searchcore_matching_test_app TEST
     SOURCES
     matching_test.cpp

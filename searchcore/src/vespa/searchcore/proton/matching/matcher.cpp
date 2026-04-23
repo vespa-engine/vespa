@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "matcher.h"
+#include "ann_deadline_configuration.h"
 #include "isearchcontext.h"
 #include "match_master.h"
 #include "match_context.h"
@@ -165,8 +166,9 @@ Matcher::create_match_tools_factory(const search::engine::Request &request, ISea
                    _stats.softDoomFactor(), factor, hasFactorOverride, vespalib::count_ns(safeLeft));
     }
     vespalib::Doom doom(_now_ref, safeDoom, request.getTimeOfDoom(), hasFactorOverride);
+    AnnDeadlineConfiguration ann_deadline_config(doom, safeDoom);
     const auto& queryTree = request.getSerializedQueryTree();
-    return std::make_unique<MatchToolsFactory>(_queryLimiter, doom, searchContext, attrContext,
+    return std::make_unique<MatchToolsFactory>(_queryLimiter, doom, ann_deadline_config, searchContext, attrContext,
                                                request.trace(), queryTree, request.location,
                                                _viewResolver, metaStore, _indexEnv, *_rankSetup,
                                                rankProperties, feature_overrides, thread_bundle,

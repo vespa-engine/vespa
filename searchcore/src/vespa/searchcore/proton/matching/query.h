@@ -16,6 +16,7 @@ namespace search::engine { class Trace; }
 
 namespace proton::matching {
 
+class AnnDeadlineConfiguration;
 class HandleRecorder;
 class ViewResolver;
 class ISearchContext;
@@ -107,7 +108,7 @@ public:
     void optimize(InFlow in_flow, bool sort_by_cost);
     void fetchPostings(const ExecuteInfo & executeInfo);
 
-    void handle_global_filter(const IRequestContext & requestContext, uint32_t docid_limit,
+    void handle_global_filter(const IRequestContext & requestContext, const AnnDeadlineConfiguration& ann_deadline_config, uint32_t docid_limit,
                               double global_filter_lower_limit, double global_filter_upper_limit,
                               search::engine::Trace& trace, bool sort_by_cost, bool use_lazy_filter = false);
 
@@ -124,11 +125,11 @@ public:
      *
      * @return whether the global filter was set on the blueprint.
      */
-    static bool handle_global_filter(Blueprint& blueprint, const vespalib::Doom& doom, uint32_t docid_limit,
+    static bool handle_global_filter(Blueprint& blueprint, const AnnDeadlineConfiguration& ann_deadline_config, uint32_t docid_limit,
                                      double global_filter_lower_limit, double global_filter_upper_limit,
                                      vespalib::ThreadBundle &thread_bundle, search::engine::Trace* trace, bool use_lazy_filter = false);
 
-    static void perform_ann_searches(Blueprint& blueprint, const vespalib::Doom& doom);
+    static void perform_ann_searches(Blueprint& blueprint, const AnnDeadlineConfiguration& ann_deadline_config);
 
     void freeze();
     void set_matching_phase(search::queryeval::MatchingPhase matching_phase) const noexcept;

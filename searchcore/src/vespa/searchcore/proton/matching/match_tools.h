@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "ann_deadline_configuration.h"
 #include "field_id_to_name_mapper.h"
 #include "handlerecorder.h"
 #include "isearchcontext.h"
@@ -150,6 +151,7 @@ public:
 
     MatchToolsFactory(QueryLimiter & queryLimiter,
                       const vespalib::Doom & softDoom,
+                      const AnnDeadlineConfiguration& ann_deadline_config,
                       ISearchContext &searchContext,
                       IAttributeContext &attributeContext,
                       search::engine::Trace & root_trace,
