@@ -23,6 +23,7 @@ import java.util.List;
  *
  * @author vekterli
  */
+@SuppressWarnings("deprecation") // commons-cli 1.10+ deprecated Option.Builder.build()
 public class KeygenTool implements Tool {
 
     static final String PRIVATE_OUT_FILE_OPTION    = "private-out-file";
