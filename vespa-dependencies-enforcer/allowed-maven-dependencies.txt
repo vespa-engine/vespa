@@ -16,9 +16,9 @@ com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${jackson2.vespa.versio
 com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${jackson2.vespa.version}
 com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jackson2.vespa.version}
 com.fasterxml.jackson.module:jackson-module-kotlin:${jackson2.vespa.version}
-com.github.docker-java:docker-java-api:3.3.6
-com.github.docker-java:docker-java-transport-zerodep:3.3.6
-com.github.docker-java:docker-java-transport:3.3.6
+com.github.docker-java:docker-java-api:3.4.2
+com.github.docker-java:docker-java-transport-zerodep:3.4.2
+com.github.docker-java:docker-java-transport:3.4.2
 com.github.luben:zstd-jni:${luben.zstd.vespa.version}
 com.google.api.grpc:proto-google-common-protos:${proto-google-common-protos.vespa.version}
 com.google.code.findbugs:jsr305:${findbugs.vespa.version}
