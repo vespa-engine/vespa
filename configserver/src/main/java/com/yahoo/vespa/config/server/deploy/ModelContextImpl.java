@@ -379,7 +379,7 @@ public class ModelContextImpl implements ModelContext {
         }
 
         @Override public String mallocImpl(Optional<ClusterSpec.Type> clusterType) {
-            var flag = flag(Flags.VESPA_USE_MALLOC_IMPL);
+            var flag = flag(PermanentFlags.VESPA_USE_MALLOC_IMPL);
             return clusterType.map(type -> flag.withClusterType(type)).orElse(flag).value();
         }
 
