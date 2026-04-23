@@ -114,9 +114,9 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
      */
     private String prependAndTruncatePrompt(String text, Context context) {
         if (!prependQuery.isBlank() && context.getDestinationType() == Context.DestinationType.QUERY) {
-            text = prependQuery + " " + text;
+            text = prependQuery + text;
         } else if (!prependDocument.isBlank()) {
-            text = prependDocument + " " + text;
+            text = prependDocument + text;
         }
         if (maxPromptTokens <= 0) return text;
         var tokens = model.encode(text);
