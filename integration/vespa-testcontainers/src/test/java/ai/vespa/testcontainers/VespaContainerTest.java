@@ -28,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class VespaContainerTest {
-    private static final DockerImageName TEST_VESPA_IMAGE = DockerImageName.parse("vespaengine/vespa:8.640.27");
+    private static final DockerImageName LATEST_VESPA_IMAGE = DockerImageName.parse("vespaengine/vespa:latest");
     private static final ObjectMapper mapper = new ObjectMapper();
     private static final String APP_PACKAGE_PATH = "/app";
     private static final String DOCUMENTS_RESOURCE = "/documents.jsonl";
@@ -36,8 +36,8 @@ class VespaContainerTest {
     private static String[] getVespaTestVersions() { return new String[] {"vespaengine/vespa:8.640.27", "vespaengine/vespa:8.635.112"}; }
 
     @Test
-    void containerStarts() {
-        try (VespaContainer container = new VespaContainer(TEST_VESPA_IMAGE)) {
+    void containerStartsWithLatestImage() {
+        try (VespaContainer container = new VespaContainer(LATEST_VESPA_IMAGE)) {
             container.start();
             assertThat(container.isRunning()).withFailMessage("Container failed to start").isTrue();
         }
@@ -54,7 +54,7 @@ class VespaContainerTest {
 
     @Test
     void automaticDeploymentWithApplicationPackage() throws Exception {
-        try (VespaContainer container = new VespaContainer(TEST_VESPA_IMAGE).withApplicationPackage(APP_PACKAGE_PATH)) {
+        try (VespaContainer container = new VespaContainer(LATEST_VESPA_IMAGE).withApplicationPackage(APP_PACKAGE_PATH)) {
             container.start();
             assertThat(container.isRunning()).withFailMessage("Container failed to start").isTrue();
             assertThat(httpGet(container.getEndpoint() + APPLICATION_STATUS_ENDPOINT)).isEqualTo(200);
@@ -63,7 +63,7 @@ class VespaContainerTest {
 
     @Test
     void appDeploysAfterApplicationPackageIsAdded() throws Exception {
-        try (VespaContainer container = new VespaContainer(TEST_VESPA_IMAGE)) {
+        try (VespaContainer container = new VespaContainer(LATEST_VESPA_IMAGE)) {
             container.start();
             assertThat(container.isRunning()).withFailMessage("Container failed to start").isTrue();
 
@@ -81,7 +81,7 @@ class VespaContainerTest {
 
     @Test
     void documentsAreFedSuccessfully() throws Exception {
-        try(VespaContainer container = new VespaContainer(TEST_VESPA_IMAGE).withApplicationPackage(APP_PACKAGE_PATH)) {
+        try(VespaContainer container = new VespaContainer(LATEST_VESPA_IMAGE).withApplicationPackage(APP_PACKAGE_PATH)) {
             container.start();
 
             final String documentsContainerPath = "/tmp/documents.jsonl";
@@ -103,7 +103,7 @@ class VespaContainerTest {
 
     @Test
     void feedAndQueryWithClients() throws Exception {
-        try (VespaContainer container = new VespaContainer(TEST_VESPA_IMAGE).withApplicationPackage(APP_PACKAGE_PATH)) {
+        try (VespaContainer container = new VespaContainer(LATEST_VESPA_IMAGE).withApplicationPackage(APP_PACKAGE_PATH)) {
             container.start();
 
             // Feed documents using vespa-feed-client

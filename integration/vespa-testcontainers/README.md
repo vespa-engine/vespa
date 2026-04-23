@@ -22,7 +22,7 @@ testImplementation 'ai.vespa:vespa-testcontainers:1.0.0'
 <dependency>
     <groupId>ai.vespa</groupId>
     <artifactId>vespa-testcontainers</artifactId>
-    <version>1.0.0</version>
+    <version>8-SNAPSHOT</version>
     <scope>test</scope>
 </dependency>
 ```
@@ -65,7 +65,7 @@ A specific Vespa version can be requested:
 new VespaContainer("vespaengine/vespa:8.640.27")
 ```
 
-See the [book-search](https://github.com/vespa-engine/sample-apps/tree/edvardwd/book-search/examples/book-search) sample app for a complete example with feeding and querying.
+[//]: # (See the [book-search]&#40;https://github.com/vespa-engine/sample-apps/tree/edvardwd/book-search/examples/book-search&#41; sample app for a complete example with feeding and querying.)
 
 ## API
 | Method | Description |
