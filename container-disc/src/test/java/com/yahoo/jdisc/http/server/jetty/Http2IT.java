@@ -83,7 +83,7 @@ class Http2IT {
         var driver = createSslTestDriver(certificateFile, privateKeyFile, metricConsumer, connectionLog);
         var tlsStrategy = ClientTlsStrategyBuilder.create()
                 .setSslContext(driver.sslContext())
-                .buildAsync();
+                .build();
         try (var client = H2AsyncClientBuilder.create()
                 .setTlsStrategy(tlsStrategy)
                 .disableAutomaticRetries()
