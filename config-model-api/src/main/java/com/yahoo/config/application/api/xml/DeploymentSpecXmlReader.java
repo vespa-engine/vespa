@@ -25,6 +25,7 @@ import com.yahoo.config.application.api.Notifications.When;
 import com.yahoo.config.application.api.TimeWindow;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
+import com.yahoo.config.provision.AzName;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.CloudResourceTags;
@@ -100,6 +101,7 @@ public class DeploymentSpecXmlReader {
     private static final String cloudAccountAttribute = "cloud-account";
     private static final String hostTTLAttribute = "empty-host-ttl";
     private static final String cloudResourceTagsTag = "resource-tags";
+    private static final String availabilityZoneTag = "availability-zone";
 
     private final boolean validate;
     private final Clock clock;
@@ -285,7 +287,7 @@ public class DeploymentSpecXmlReader {
                     return List.of(new DeclaredTest(RegionName.from(XML.getValue(stepTag).trim()), readHostTTL(stepTag))); // A production test
                 }
             case stagingTag: // Intentional fallthrough from test tag.
-                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), athenzService, testerNodes, readCloudAccounts(stepTag), readHostTTL(stepTag), readCloudResourceTags(stepTag)));
+                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), athenzService, testerNodes, readCloudAccounts(stepTag), readHostTTL(stepTag), readCloudResourceTags(stepTag), List.of()));
             case prodTag: // regions, delay and parallel may be nested within, but we can flatten them
                 return XML.getChildren(stepTag).stream()
                                                .flatMap(child -> readNonInstanceSteps(child, prodAttributes, stepTag, defaultBcp).stream())
@@ -717,9 +719,24 @@ public class DeploymentSpecXmlReader {
 
     private DeclaredZone readDeclaredZone(Environment environment, Optional<AthenzService> athenzService,
                                           Optional<String> testerNodes, Element regionTag) {
-        return new DeclaredZone(environment, Optional.of(RegionName.from(XML.getValue(regionTag).trim())),
+        return new DeclaredZone(environment, Optional.of(RegionName.from(readRegionName(regionTag))),
                                 athenzService, testerNodes,
-                                readCloudAccounts(regionTag), readHostTTL(regionTag), readCloudResourceTags(regionTag));
+                                readCloudAccounts(regionTag), readHostTTL(regionTag), readCloudResourceTags(regionTag),
+                                readAvailabilityZones(regionTag));
+    }
+
+    /** A region name can be given either as the region element text content or by a 'name' attribute. */
+    private static String readRegionName(Element regionTag) {
+        return stringAttribute("name", regionTag).orElseGet(() -> XML.getValue(regionTag).trim());
+    }
+
+    private static List<AzName> readAvailabilityZones(Element tag) {
+        List<AzName> zones = new ArrayList<>();
+        for (Element child : XML.getChildren(tag, availabilityZoneTag)) {
+            String name = XML.getValue(child).trim();
+            if ( ! name.isEmpty()) zones.add(AzName.from(name));
+        }
+        return zones;
     }
 
     private Map<CloudName, CloudAccount> readCloudAccounts(Element tag) {
