@@ -693,6 +693,15 @@ public class PermanentFlags {
                     + "e.g. when running tests to avoid writing a large, sparse, mostly unused file",
             "Takes effect on restart of Docker container");
 
+
+    public static final UnboundStringFlag VESPA_USE_MALLOC_IMPL = defineStringFlag(
+            "vespa-use-malloc-impl", "",
+            "Which malloc implementation to use  " +
+                    "Valid values: 'vespamalloc', 'mimalloc', '' (empty string, meaning default malloc implementation).",
+            "Takes effect at next reboot of the node",
+            TENANT_ID, APPLICATION, INSTANCE_ID, HOSTNAME, CLUSTER_TYPE
+    );
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(

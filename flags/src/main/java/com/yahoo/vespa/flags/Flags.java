@@ -368,15 +368,6 @@ public class Flags {
             HOSTNAME
     );
 
-    public static final UnboundStringFlag VESPA_USE_MALLOC_IMPL = defineStringFlag(
-            "vespa-use-malloc-impl", "",
-            List.of("hmusum", "johsol"), "2025-09-10", "2026-12-01",
-            "Which malloc implementation to use  " +
-                    "Valid values: 'vespamalloc', 'mimalloc', '' (empty string, meaning default malloc implementation).",
-            "Takes effect at next reboot of the node",
-            TENANT_ID, APPLICATION, INSTANCE_ID, HOSTNAME, CLUSTER_TYPE
-    );
-
     public static final UnboundBooleanFlag RESTART_ON_DEPLOY_MAINTAINER = defineFeatureFlag(
             "restart-on-deploy-maintainer", false,
             List.of("glebashnik"), "2026-04-07", "2026-10-07",
