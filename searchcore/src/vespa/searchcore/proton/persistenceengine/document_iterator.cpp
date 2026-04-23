@@ -301,9 +301,6 @@ DocumentIterator::fetchCompleteSource(const DocTypeName & doc_type_name,
             list.push_back(createDocEntry(Timestamp(meta.timestamp), meta.removed, doc_type_name.getName(), meta.gid));
         }
     } else if (populate_document_metadata_docids && !matcher.needs_document()) {
-        auto& repo = source.getDocumentTypeRepo();
-        auto document_type = repo.getDocumentType(doc_type_name.getName());
-        assert(document_type != nullptr);
         for (uint32_t lid : lidsToFetch) {
             const search::DocumentMetadata & meta = metadata[lidIndexMap[lid]];
             assert(lid == meta.lid);
@@ -312,7 +309,7 @@ DocumentIterator::fetchCompleteSource(const DocTypeName & doc_type_name,
             if (meta.removed) {
                 list.push_back(DocEntry::create(Timestamp(meta.timestamp), DocumentMetaEnum::REMOVE_ENTRY, docid));
             } else {
-                auto doc = std::make_unique<Document>(repo, *document_type, docid);
+                auto doc = source.getPartialDocument(meta.lid, docid, *_fields);
                 list.push_back(createDocEntry(Timestamp(meta.timestamp), false, std::move(doc), _defaultSerializedSize));
             }
         }
