@@ -36,7 +36,8 @@ template <typename T, typename C> void left_heap_adjust(T* heap, size_t len, T v
     size_t pos = 0;
     size_t child2 = 2;
     while (child2 < len) {
-        if (cmp(*(heap + child2 - 1), *(heap + child2))) {
+        // the cmp() is a "less" operation, but ("equal" or "greater") is more likely:
+        if (cmp(*(heap + child2 - 1), *(heap + child2))) [[unlikely]] {
             --child2;
         }
         *(heap + pos) = std::move(*(heap + child2));
