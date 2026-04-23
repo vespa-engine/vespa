@@ -51,12 +51,12 @@ public class CapacityPolicies {
     private final boolean honorDiskSpeedAndStorageTypeInDev;
 
     public CapacityPolicies(Zone zone, Exclusivity exclusivity, ApplicationId applicationId, Tuning tuning) {
-        // TODO: Consider changing cpu cap from 0.0 to 1.0 and honorDiskSpeedAndStorageTypeInDev to true
-        this(zone, exclusivity, applicationId, tuning, 0.0, false);
+        // TODO: Consider changing cpu cap from 0.0 to 1.0
+        this(zone, exclusivity, applicationId, tuning, 0.0, true);
     }
 
     public CapacityPolicies(Zone zone, Exclusivity exclusivity, ApplicationId applicationId, Tuning tuning, double cpuCap) {
-        this(zone, exclusivity, applicationId, tuning, cpuCap, false);
+        this(zone, exclusivity, applicationId, tuning, cpuCap, true);
     }
 
     public CapacityPolicies(Zone zone, Exclusivity exclusivity, ApplicationId applicationId, Tuning tuning, double cpuCap,
