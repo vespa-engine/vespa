@@ -42,6 +42,7 @@ vespa_add_executable(vespalib_util_gtest_runner_test_app TEST
     typify_test.cpp
     unordered_u32_set_test.cpp
     xmlserializabletest.cpp
+    xoshiro_test.cpp
     DEPENDS
     vespalib
     onnxruntime
