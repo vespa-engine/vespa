@@ -177,7 +177,7 @@ func TestProdDeployWithoutCertificate(t *testing.T) {
 	require.Nil(t, os.WriteFile(filepath.Join(pkgDir, "security", "clients.pem"), []byte{}, 0o644))
 	httpClient.NextResponseString(200, `{"build": 42}`)
 	assert.Nil(t, cli.Run("prod", "deploy", pkgDir))
-	assert.Contains(t, stdout.String(), "Success: Deployed '"+pkgDir+"' with build number 42")
+	assert.Contains(t, stdout.String(), "Success: Submitted '"+pkgDir+"' with build number 42")
 	assert.Contains(t, stdout.String(), "See https://console.vespa-cloud.com/tenant/t1/application/a1/prod/deployment for deployment progress")
 }
 
@@ -213,12 +213,12 @@ func prodDeploy(pkgDir string, t *testing.T) {
 	cli.Environment["VESPA_CLI_API_KEY_FILE"] = filepath.Join(cli.config.homeDir, "t1.api-key.pem")
 	httpClient.NextResponseString(200, `{"build": 42}`)
 	assert.Nil(t, cli.Run("prod", "deploy", "--add-cert"))
-	assert.Contains(t, stdout.String(), "Success: Deployed '.' with build number 42")
+	assert.Contains(t, stdout.String(), "Success: Submitted '.' with build number 42")
 	assert.Contains(t, stdout.String(), "See https://console.vespa-cloud.com/tenant/t1/application/a1/prod/deployment for deployment progress")
 	stdout.Reset()
 	httpClient.NextResponseString(200, `{"build": 43}`)
 	assert.Nil(t, cli.Run("prod", "submit", "--add-cert")) // old variant also works
-	assert.Contains(t, stdout.String(), "Success: Deployed '.' with build number 43")
+	assert.Contains(t, stdout.String(), "Success: Submitted '.' with build number 43")
 	assert.Contains(t, stdout.String(), "See https://console.vespa-cloud.com/tenant/t1/application/a1/prod/deployment for deployment progress")
 }
 
@@ -239,7 +239,7 @@ func TestProdDeployWithJava(t *testing.T) {
 	cli.Environment["VESPA_CLI_API_KEY_FILE"] = filepath.Join(cli.config.homeDir, "t1.api-key.pem")
 	assert.Nil(t, cli.Run("prod", "deploy", "--add-cert", pkgDir))
 	assert.Equal(t, "", stderr.String())
-	assert.Contains(t, stdout.String(), "Success: Deployed '"+pkgDir+"/target/application' with build number 42")
+	assert.Contains(t, stdout.String(), "Success: Submitted '"+pkgDir+"/target/application' with build number 42")
 	assert.Contains(t, stdout.String(), "See https://console.vespa-cloud.com/tenant/t1/application/a1/prod/deployment for deployment progress")
 }
 
@@ -287,10 +287,15 @@ func TestProdDeployWithWait(t *testing.T) {
 
 	// Deployed successfully
 	stdout.Reset()
+	stderr.Reset()
 	httpClient.NextResponseString(200, `{"build": 42}`)
-	httpClient.NextResponseString(200, `{"deployed": true, "jobs": []}`)
+	httpClient.NextResponseString(200, `{"deployed": false, "status": "deploying", "jobs": [{"jobName":"system-test","runStatus":"running","runId":1,"instance":"default"}]}`)
+	httpClient.NextResponseString(200, `{"deployed": true, "status": "done", "jobs": [{"jobName":"system-test","runStatus":"success","runId":1,"instance":"default"}]}`)
 	assert.Nil(t, cli.Run("prod", "deploy", "--wait", "5", "--add-cert"))
-	assert.Contains(t, stdout.String(), "Success: Deployed '.' with build number 42")
+	assert.Contains(t, stdout.String(), "Success: Submitted '.' with build number 42")
+	assert.Contains(t, stdout.String(), "Waiting up to 5s for build pipeline to complete...")
+	assert.Contains(t, stderr.String(), "system-test: running")
+	assert.Contains(t, stderr.String(), "system-test: success")
 	assert.Contains(t, stdout.String(), "Success: Build 42 deployed to production")
 
 	// Skipped due to no changes
@@ -298,7 +303,7 @@ func TestProdDeployWithWait(t *testing.T) {
 	httpClient.NextResponseString(200, `{"build": 43}`)
 	httpClient.NextResponseString(200, `{"skipReason": "no changes detected"}`)
 	assert.Nil(t, cli.Run("prod", "deploy", "--wait", "5", "--add-cert"))
-	assert.Contains(t, stdout.String(), "Success: Build 43 completed")
+	assert.Contains(t, stdout.String(), "Success: Build 43 skipped: no changes detected")
 
 	// Job failure
 	stdout.Reset()
@@ -330,5 +335,5 @@ func TestProdDeployWarnsOnInstance(t *testing.T) {
 	cli.Environment["VESPA_CLI_API_KEY_FILE"] = filepath.Join(cli.config.homeDir, "t1.api-key.pem")
 	assert.Nil(t, cli.Run("prod", "deploy", "--add-cert", pkgDir))
 	assert.Contains(t, stderr.String(), "Warning: Instance is set in config but will be ignored for production deployments")
-	assert.Contains(t, stdout.String(), "Success: Deployed")
+	assert.Contains(t, stdout.String(), "Success: Submitted")
 }

@@ -483,9 +483,10 @@ func TestAwaitBuild(t *testing.T) {
 		Status: 200,
 		Body:   []byte(`{"deployed": true, "status": "done", "jobs": []}`),
 	})
-	skipped, err := AwaitBuild(target, 42, time.Second, nil)
+	skipped, skipReason, err := AwaitBuild(target, 42, time.Second, nil)
 	assert.Nil(t, err)
 	assert.False(t, skipped)
+	assert.Equal(t, "", skipReason)
 
 	// Skipped due to no changes
 	client.NextResponse(mock.HTTPResponse{
@@ -493,9 +494,10 @@ func TestAwaitBuild(t *testing.T) {
 		Status: 200,
 		Body:   []byte(`{"skipReason": "no changes detected"}`),
 	})
-	skipped, err = AwaitBuild(target, 42, time.Second, nil)
+	skipped, skipReason, err = AwaitBuild(target, 42, time.Second, nil)
 	assert.Nil(t, err)
 	assert.True(t, skipped)
+	assert.Equal(t, "no changes detected", skipReason)
 
 	// Build failed (no jobs with runs)
 	client.NextResponse(mock.HTTPResponse{
@@ -503,7 +505,7 @@ func TestAwaitBuild(t *testing.T) {
 		Status: 200,
 		Body:   []byte(`{"hasFailed": true, "jobs": []}`),
 	})
-	_, err = AwaitBuild(target, 42, time.Second, nil)
+	_, _, err = AwaitBuild(target, 42, time.Second, nil)
 	require.NotNil(t, err)
 	assert.True(t, errors.Is(err, ErrDeployment))
 
@@ -518,7 +520,7 @@ func TestAwaitBuild(t *testing.T) {
 		Status: 200,
 		Body:   []byte(`{"active": false, "status": "deploymentFailed"}`),
 	})
-	_, err = AwaitBuild(target, 42, time.Second, nil)
+	_, _, err = AwaitBuild(target, 42, time.Second, nil)
 	require.NotNil(t, err)
 	assert.True(t, errors.Is(err, ErrDeployment))
 	assert.Contains(t, err.Error(), "production-aws-us-east-1c")
@@ -534,7 +536,7 @@ func TestAwaitBuild(t *testing.T) {
 		Status: 200,
 		Body:   []byte(`{"active": false, "status": "testFailure"}`),
 	})
-	_, err = AwaitBuild(target, 42, time.Second, nil)
+	_, _, err = AwaitBuild(target, 42, time.Second, nil)
 	require.NotNil(t, err)
 	assert.True(t, errors.Is(err, ErrDeployment))
 	assert.Contains(t, err.Error(), "system-test.aws-us-east-1c")
@@ -545,7 +547,7 @@ func TestAwaitBuild(t *testing.T) {
 		Status: 200,
 		Body:   []byte(`{"deployed": false, "status": "deploying"}`),
 	})
-	_, err = AwaitBuild(target, 42, time.Millisecond, nil)
+	_, _, err = AwaitBuild(target, 42, time.Millisecond, nil)
 	assert.True(t, errors.Is(err, ErrWaitTimeout))
 }
 
