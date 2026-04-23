@@ -111,7 +111,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     private static final String ERROR_STACK_TRACE = "stackTrace";
     private static final String ERROR_SUMMARY = "summary";
     private static final String FIELDS = "fields";
-    private static final String GROUP = "group";
+    private static final String SEARCH_GROUP = "searchGroup";
     private static final String ID = "id";
     private static final String LABEL = "label";
     private static final String RELEVANCE = "relevance";
@@ -502,7 +502,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         generator.writeNumberField(TOTAL_COUNT, getResult().getTotalHitCount());
         OptionalInt group = getResult().hits().getGroup();
         if (group.isPresent())
-            generator.writeNumberField(GROUP, group.getAsInt());
+            generator.writeNumberField(SEARCH_GROUP, group.getAsInt());
     }
 
     @Override

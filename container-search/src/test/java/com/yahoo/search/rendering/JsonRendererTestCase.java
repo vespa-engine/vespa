@@ -932,7 +932,7 @@ public class JsonRendererTestCase {
                 + "        ],"
                 + "        \"fields\": {"
                 + "            \"totalCount\": 0,"
-                + "            \"group\": 1"
+                + "            \"searchGroup\": 1"
                 + "        },"
                 + "        \"id\": \"toplevel\","
                 + "        \"relevance\": 1.0"
