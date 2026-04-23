@@ -24,7 +24,6 @@ import static com.yahoo.security.ArrayUtils.unhex;
  *
  * @author vekterli
  */
-@SuppressWarnings("deprecation") // commons-cli 1.10+ deprecated Option.Builder.build()
 public class ConvertBaseTool implements Tool {
 
     private static final int MAX_IN_BYTES = 1024;

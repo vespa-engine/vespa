@@ -31,7 +31,6 @@ import static com.yahoo.vespa.security.tool.crypto.ToolUtils.PRIVATE_KEY_FILE_OP
  *
  * @author vekterli
  */
-@SuppressWarnings("deprecation") // commons-cli 1.10+ deprecated Option.Builder.build()
 public class DecryptTool implements Tool {
 
     static final String OUTPUT_FILE_OPTION      = "output-file";

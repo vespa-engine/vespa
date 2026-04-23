@@ -19,7 +19,6 @@ import java.util.Map;
  *
  * @author MariusArhaug
  */
-@SuppressWarnings("deprecation") // commons-cli 1.10+ deprecated Option.Builder.build() and HelpFormatter
 public class CommandLineOptions {
 
     public static final String HELP_OPTION = "help";
