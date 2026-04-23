@@ -23,7 +23,6 @@ import java.util.List;
  *
  * @author vekterli
  */
-@SuppressWarnings("deprecation") // commons-cli 1.10+ deprecated Option.Builder.build()
 public class EncryptTool implements Tool {
 
     static final String OUTPUT_FILE_OPTION          = "output-file";

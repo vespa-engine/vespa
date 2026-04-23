@@ -73,7 +73,7 @@ class Utils {
     static CloseableHttpAsyncClient createHttp2Client(JettyTestDriver driver) {
         TlsStrategy tlsStrategy = ClientTlsStrategyBuilder.create()
                 .setSslContext(driver.sslContext())
-                .buildAsync();
+                .build();
         var client = H2AsyncClientBuilder.create()
                 .disableAutomaticRetries()
                 .setTlsStrategy(tlsStrategy)
