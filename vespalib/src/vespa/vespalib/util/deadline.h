@@ -7,13 +7,13 @@
 
 namespace vespalib {
 
-class AnnDoom {
+class Deadline {
 public:
-    AnnDoom(const std::atomic<steady_time> & now, steady_time doom, bool is_timeout) noexcept;
+    Deadline(const std::atomic<steady_time> & now, steady_time doom, bool is_timeout) noexcept;
     [[nodiscard]] duration ann_left() const noexcept { return _doom - get_time_ns(); }
     [[nodiscard]] bool ann_doom() const noexcept { return (get_time_ns() > _doom); }
     [[nodiscard]] bool is_ann_timeout() const noexcept { return _is_ann_timeout; }
-    [[nodiscard]] static const AnnDoom& never() noexcept;
+    [[nodiscard]] static const Deadline& never() noexcept;
 private:
     [[nodiscard]] vespalib::steady_time get_time_ns() const noexcept {
         return vespalib::steady_time(_now.load(std::memory_order_relaxed));

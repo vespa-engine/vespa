@@ -25,7 +25,7 @@ DoomTest::~DoomTest() = default;
 
 TEST_F(DoomTest, ann_doom_matches_ann_left) {
     Doom doom(time, time.load() + 50ms);
-    AnnDoom ann_doom = doom.make_ann_doom(1);
+    Deadline ann_doom = doom.make_ann_doom(1);
 
     EXPECT_EQ(50ms, ann_doom.ann_left());
     EXPECT_FALSE(ann_doom.ann_doom());
@@ -48,7 +48,7 @@ TEST_F(DoomTest, doom_becomes_ann_doom) {
         Doom doom(time, time.load() + duration);
 
         for (uint32_t remaining_searches : {1, 2, 3, 5, 10}) {
-            AnnDoom ann_doom = doom.make_ann_doom(remaining_searches);
+            Deadline ann_doom = doom.make_ann_doom(remaining_searches);
             EXPECT_FALSE(ann_doom.is_ann_timeout());
             EXPECT_EQ(duration, ann_doom.ann_left());
         }
@@ -61,7 +61,7 @@ TEST_F(DoomTest, soft_doom_becomes_ann_doom) {
             Doom doom(time, time.load() + duration, time.load() + 1s, explicit_soft_doom);
 
             for (uint32_t remaining_searches : {1, 2, 3, 5, 10}) {
-                AnnDoom ann_doom = doom.make_ann_doom(remaining_searches);
+                Deadline ann_doom = doom.make_ann_doom(remaining_searches);
                 EXPECT_FALSE(ann_doom.is_ann_timeout());
                 EXPECT_EQ(duration, ann_doom.ann_left());
             }
@@ -77,7 +77,7 @@ TEST_F(DoomTest, ann_timebudget_becomes_ann_doom) {
                           budget, false, time.load() + ann_timeout);
 
                 for (uint32_t remaining_searches : {1, 2, 3, 5, 10}) {
-                    AnnDoom ann_doom = doom.make_ann_doom(remaining_searches);
+                    Deadline ann_doom = doom.make_ann_doom(remaining_searches);
                     EXPECT_FALSE(ann_doom.is_ann_timeout());
                     EXPECT_EQ(budget, ann_doom.ann_left());
                 }
@@ -93,7 +93,7 @@ TEST_F(DoomTest, ann_timeout_becomes_ann_doom) {
                       2s, true, time.load() + ann_timeout);
 
             for (uint32_t remaining_searches : {1, 2, 5, 10}) {
-                AnnDoom ann_doom = doom.make_ann_doom(remaining_searches);
+                Deadline ann_doom = doom.make_ann_doom(remaining_searches);
                 EXPECT_TRUE(ann_doom.is_ann_timeout());
                 EXPECT_EQ(ann_timeout / remaining_searches, ann_doom.ann_left());
             }
@@ -104,25 +104,25 @@ TEST_F(DoomTest, ann_timeout_becomes_ann_doom) {
 TEST_F(DoomTest, ann_budget_ann_timeout_interaction_is_handled) {
     Doom doom(time, time.load() + 1s, time.load() + 2s, false,
               50ms, true, time.load() + 100ms);
-    AnnDoom ann_doom = doom.make_ann_doom(1);
+    Deadline ann_doom = doom.make_ann_doom(1);
     EXPECT_FALSE(ann_doom.is_ann_timeout());
     EXPECT_EQ(50ms, ann_doom.ann_left());
 
-    AnnDoom ann_doom2 = doom.make_ann_doom(2);
+    Deadline ann_doom2 = doom.make_ann_doom(2);
     EXPECT_TRUE(ann_doom2.is_ann_timeout());
     EXPECT_EQ(50ms, ann_doom2.ann_left());
 
-    AnnDoom ann_doom3 = doom.make_ann_doom(4);
+    Deadline ann_doom3 = doom.make_ann_doom(4);
     EXPECT_TRUE(ann_doom3.is_ann_timeout());
     EXPECT_EQ(25ms, ann_doom3.ann_left());
 
 
     time.store(time.load() + 50ms);
-    AnnDoom ann_doom4 = doom.make_ann_doom(1);
+    Deadline ann_doom4 = doom.make_ann_doom(1);
     EXPECT_TRUE(ann_doom4.is_ann_timeout());
     EXPECT_EQ(50ms, ann_doom4.ann_left());
 
-    AnnDoom ann_doom5 = doom.make_ann_doom(2);
+    Deadline ann_doom5 = doom.make_ann_doom(2);
     EXPECT_TRUE(ann_doom5.is_ann_timeout());
     EXPECT_EQ(25ms, ann_doom5.ann_left());
 }

@@ -26,7 +26,7 @@ Doom::Doom(const std::atomic<steady_time>& now_ref, steady_time soft_doom, stead
     assert(_ann_timeout <= _softDoom);
 }
 
-const AnnDoom Doom::make_ann_doom(uint32_t remaining_searches) const noexcept {
+const Deadline Doom::make_ann_doom(uint32_t remaining_searches) const noexcept {
     assert(remaining_searches > 0);
     vespalib::steady_time now(getTimeNS());
     // ANN might doom due to a depleted time budget or a timeout,
@@ -38,9 +38,9 @@ const AnnDoom Doom::make_ann_doom(uint32_t remaining_searches) const noexcept {
                                                            : _softDoom - now;
 
     if (_ann_timebudget < timeout_left) {
-        return AnnDoom(_now, now + _ann_timebudget, false);
+        return Deadline(_now, now + _ann_timebudget, false);
     } else {
-        return AnnDoom(_now, now + timeout_left, _ann_timeout_enabled);
+        return Deadline(_now, now + timeout_left, _ann_timeout_enabled);
     }
 }
 

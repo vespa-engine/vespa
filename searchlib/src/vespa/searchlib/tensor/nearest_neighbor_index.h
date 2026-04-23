@@ -15,7 +15,7 @@
 class FastOS_FileInterface;
 
 namespace vespalib {
-class AnnDoom;
+class Deadline;
 class GenericHeader;
 struct StateExplorer;
 }
@@ -129,7 +129,7 @@ public:
                                              uint32_t explore_k,
                                              double exploration_slack,
                                              bool prefetch_tensors,
-                                             const vespalib::AnnDoom& doom,
+                                             const vespalib::Deadline& doom,
                                              double distance_threshold) const = 0;
 
     // only return neighbors where the corresponding filter bit is set
@@ -142,7 +142,7 @@ public:
                                                          uint32_t explore_k,
                                                          double exploration_slack,
                                                          bool prefetch_tensors,
-                                                         const vespalib::AnnDoom& doom,
+                                                         const vespalib::Deadline& doom,
                                                          double distance_threshold) const = 0;
 
     virtual DistanceFunctionFactory &distance_function_factory() const = 0;

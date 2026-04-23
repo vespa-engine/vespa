@@ -233,12 +233,12 @@ protected:
     template <class VisitedTracker, class BestNeighbors>
     void search_layer_helper(Stats &stats, const BoundDistanceFunction &df, uint32_t neighbors_to_find, double exploration_slack,
                              bool prefetch_tensors, BestNeighbors& best_neighbors, uint32_t level, const GlobalFilter *filter,
-                             uint32_t nodeid_limit, const vespalib::AnnDoom* const doom, uint32_t estimated_visited_nodes) const __attribute__((noinline));
+                             uint32_t nodeid_limit, const vespalib::Deadline* const doom, uint32_t estimated_visited_nodes) const __attribute__((noinline));
     template <class VisitedTracker, class BestNeighbors>
     void search_layer_filter_first_helper(Stats &stats, const BoundDistanceFunction &df, uint32_t neighbors_to_find, double exploration_slack,
                                           bool prefetch_tensors, BestNeighbors& best_neighbors, double exploration,
                                           uint32_t level, const GlobalFilter *filter, uint32_t nodeid_limit,
-                                          const vespalib::AnnDoom* const doom, uint32_t estimated_visited_nodes) const __attribute__((noinline));
+                                          const vespalib::Deadline* const doom, uint32_t estimated_visited_nodes) const __attribute__((noinline));
     template <class VisitedTracker>
     void exploreNeighborhood(Stats &stats, HnswTraversalCandidate &cand, std::deque<uint32_t> &found, VisitedTracker &visited, double exploration, uint32_t level,
                              const internal::GlobalFilterWrapper<type>& filter_wrapper, uint32_t nodeid_limit) const;
@@ -248,13 +248,13 @@ protected:
                                      uint32_t max_neighbors_to_find) const;
     template <class BestNeighbors>
     void search_layer(Stats &stats, const BoundDistanceFunction &df, uint32_t neighbors_to_find, double exploration_slack, bool prefetch_tensors, BestNeighbors& best_neighbors,
-                      uint32_t level, const vespalib::AnnDoom* const doom, const GlobalFilter *filter = nullptr) const;
+                      uint32_t level, const vespalib::Deadline* const doom, const GlobalFilter *filter = nullptr) const;
     template <class BestNeighbors>
     void search_layer_filter_first(Stats &stats, const BoundDistanceFunction &df, uint32_t neighbors_to_find, double exploration_slack,
                                    bool prefetch_tensors, BestNeighbors& best_neighbors, double exploration,
-                                   uint32_t level, const vespalib::AnnDoom* const doom, const GlobalFilter *filter = nullptr) const;
+                                   uint32_t level, const vespalib::Deadline* const doom, const GlobalFilter *filter = nullptr) const;
     std::vector<Neighbor> top_k_by_docid(Stats &stats, uint32_t k, const BoundDistanceFunction &df, const GlobalFilter *filter, bool low_hit_ratio, double exploration,
-                                         uint32_t explore_k, double exploration_slack, bool prefetch_tensors, const vespalib::AnnDoom& doom, double distance_threshold) const;
+                                         uint32_t explore_k, double exploration_slack, bool prefetch_tensors, const vespalib::Deadline& doom, double distance_threshold) const;
 
     internal::PreparedAddDoc internal_prepare_add(uint32_t docid, VectorBundle input_vectors,
                                                   vespalib::GenerationGuard read_guard) const;
@@ -297,15 +297,15 @@ public:
     std::unique_ptr<NearestNeighborIndexLoader> make_loader(FastOS_FileInterface& file, const vespalib::GenericHeader& header) override;
 
     std::vector<Neighbor> find_top_k(Stats &stats, uint32_t k, const BoundDistanceFunction &df, uint32_t explore_k, double exploration_slack, bool prefetch_tensors,
-                                     const vespalib::AnnDoom& doom, double distance_threshold) const override;
+                                     const vespalib::Deadline& doom, double distance_threshold) const override;
 
     std::vector<Neighbor> find_top_k_with_filter(Stats &stats, uint32_t k, const BoundDistanceFunction &df, const GlobalFilter &filter, bool low_hit_ratio, double exploration,
-                                                 uint32_t explore_k, double exploration_slack, bool prefetch_tensors, const vespalib::AnnDoom& doom, double distance_threshold) const override;
+                                                 uint32_t explore_k, double exploration_slack, bool prefetch_tensors, const vespalib::Deadline& doom, double distance_threshold) const override;
 
     DistanceFunctionFactory &distance_function_factory() const override { return *_distance_ff; }
 
     SearchBestNeighbors top_k_candidates(Stats &stats, const BoundDistanceFunction &df, uint32_t k, double exploration_slack, bool prefetch_tensors, const GlobalFilter *filter, bool low_hit_ratio, double exploration,
-                                         const vespalib::AnnDoom& doom) const;
+                                         const vespalib::Deadline& doom) const;
 
     uint32_t get_entry_nodeid() const { return _graph.get_entry_node().nodeid; }
     int32_t get_entry_level() const { return _graph.get_entry_node().level; }

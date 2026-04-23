@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "ann_doom.h"
+#include "deadline.h"
 #include "time.h"
 #include <atomic>
 
@@ -24,7 +24,7 @@ public:
     bool isExplicitSoftDoom() const noexcept { return _isExplicitSoftDoom; }
     static const Doom& never() noexcept;
 
-    const AnnDoom make_ann_doom(uint32_t remaining_searches) const noexcept;
+    const Deadline make_ann_doom(uint32_t remaining_searches) const noexcept;
 
 private:
     vespalib::steady_time getTimeNS() const noexcept {

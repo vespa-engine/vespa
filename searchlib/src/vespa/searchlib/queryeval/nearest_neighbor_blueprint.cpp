@@ -152,7 +152,7 @@ NearestNeighborBlueprint::pending_index_search() const {
 }
 
 void
-NearestNeighborBlueprint::perform_index_search(const vespalib::AnnDoom &doom) {
+NearestNeighborBlueprint::perform_index_search(const vespalib::Deadline &doom) {
     if (_pending_index_search) {
         perform_top_k(_attr_tensor.nearest_neighbor_index(), doom);
         _pending_index_search = false;
@@ -160,7 +160,7 @@ NearestNeighborBlueprint::perform_index_search(const vespalib::AnnDoom &doom) {
 }
 
 void
-NearestNeighborBlueprint::perform_top_k(const search::tensor::NearestNeighborIndex* nns_index, const vespalib::AnnDoom &doom)
+NearestNeighborBlueprint::perform_top_k(const search::tensor::NearestNeighborIndex* nns_index, const vespalib::Deadline &doom)
 {
     uint32_t k = _adjusted_target_hits;
     const auto &df = _distance_calc->function();

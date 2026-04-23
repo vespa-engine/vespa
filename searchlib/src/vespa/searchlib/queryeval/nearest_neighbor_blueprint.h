@@ -65,7 +65,7 @@ private:
 
     static double convert_distance_threshold(double distance_threshold,
                                              const search::tensor::DistanceCalculator& distance_calc);
-    void perform_top_k(const search::tensor::NearestNeighborIndex* nns_index, const vespalib::AnnDoom &doom);
+    void perform_top_k(const search::tensor::NearestNeighborIndex* nns_index, const vespalib::Deadline &doom);
 public:
     NearestNeighborBlueprint(const queryeval::FieldSpec& field,
                              std::unique_ptr<search::tensor::DistanceCalculator> distance_calc,
@@ -87,7 +87,7 @@ public:
     // Whether the last call to want_global_filter() resulted in the decision to search the index.
     bool pending_index_search() const;
     // Perform the index search scheduled by the last call to set_global_filter().
-    void perform_index_search(const vespalib::AnnDoom &doom);
+    void perform_index_search(const vespalib::Deadline &doom);
     Algorithm get_algorithm() const { return _algorithm; }
     double get_distance_threshold() const { return _hnsw_params.distance_threshold; }
     const HnswParams& get_hnsw_params() const { return _hnsw_params; }

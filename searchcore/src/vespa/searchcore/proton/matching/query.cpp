@@ -375,7 +375,7 @@ Query::perform_ann_searches(Blueprint& blueprint, const vespalib::Doom& doom)
         }
     });
     while (!ann_blueprints.empty()) {
-        const vespalib::AnnDoom ann_doom = doom.make_ann_doom(ann_blueprints.size());
+        const vespalib::Deadline ann_doom = doom.make_ann_doom(ann_blueprints.size());
         ann_blueprints.front()->perform_index_search(ann_doom);
         ann_blueprints.pop();
     }

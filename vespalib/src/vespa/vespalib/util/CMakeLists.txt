@@ -4,7 +4,6 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     adaptive_sequenced_executor.cpp
     address_space.cpp
     alloc.cpp
-    ann_doom.cpp
     approx.cpp
     array.cpp
     assert.cpp
@@ -23,6 +22,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     count_down_latch.cpp
     cpu_usage.cpp
     crc.cpp
+    deadline.cpp
     destructor_callbacks.cpp
     doom.cpp
     dual_merge_director.cpp
