@@ -449,20 +449,22 @@ func streamBuildJobLogs(target Target, job buildStatusJob, timeout time.Duration
 
 // AwaitBuild waits for a production build to deploy by polling the build-status endpoint
 // and streaming per-job run logs. Returns skipped=true if the build was skipped due to no
-// changes. logWriter may be nil to suppress log output.
-func AwaitBuild(target Target, buildID int64, timeout time.Duration, logWriter io.Writer) (skipped bool, _ error) {
+// changes or being manually cancelled. logWriter may be nil to suppress log output.
+func AwaitBuild(target Target, buildID int64, timeout time.Duration, logWriter io.Writer) (skipped bool, skipReason string, _ error) {
 	if !target.IsCloud() {
-		return false, fmt.Errorf("AwaitBuild is only supported for cloud targets")
+		return false, "", fmt.Errorf("AwaitBuild is only supported for cloud targets")
 	}
 	d := target.Deployment()
 	buildStatusURL := d.System.BuildStatusURL(d, buildID)
 	req, err := http.NewRequest("GET", buildStatusURL, nil)
 	if err != nil {
-		return false, err
+		return false, "", err
 	}
 	sw := io.Writer(&syncWriter{w: logWriter})
 	var isSkipped bool
+	var observedSkipReason string
 	retryInterval := 2 * time.Second
+	lastStatus := map[string]string{}
 	statusFunc := func(status int, response []byte) (bool, error) {
 		if ok, err := isOK(status); !ok {
 			return ok, err
@@ -471,8 +473,17 @@ func AwaitBuild(target Target, buildID int64, timeout time.Duration, logWriter i
 		if err := json.Unmarshal(response, &resp); err != nil {
 			return false, err
 		}
+		for _, job := range resp.Jobs {
+			if lastStatus[job.JobName] != job.RunStatus {
+				lastStatus[job.JobName] = job.RunStatus
+				if logWriter != nil {
+					fmt.Fprintf(sw, "[%s] %s: %s\n", time.Now().Format("15:04:05"), job.JobName, job.RunStatus)
+				}
+			}
+		}
 		if resp.SkipReason != "" {
 			isSkipped = true
+			observedSkipReason = resp.SkipReason
 			return true, nil
 		}
 		if !resp.HasFailed {
@@ -504,9 +515,9 @@ func AwaitBuild(target Target, buildID int64, timeout time.Duration, logWriter i
 	}
 	_, mainErr := deployRequest(target, statusFunc, func() *http.Request { return req }, timeout, retryInterval)
 	if mainErr != nil {
-		return false, mainErr
+		return false, "", mainErr
 	}
-	return isSkipped, nil
+	return isSkipped, observedSkipReason, nil
 }
 
 func (t *cloudTarget) discoverPrivateServices(timeout time.Duration) (map[string]*PrivateServiceInfo, error) {
