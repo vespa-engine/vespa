@@ -16,6 +16,7 @@ import org.apache.commons.cli.ParseException;
  *
  * @author bjorncs
  */
+@SuppressWarnings("deprecation") // commons-cli 1.10+ deprecated Option.Builder.build() and HelpFormatter
 public class CommandLineOptions {
 
     private static final String HELP_OPTION = "help";
