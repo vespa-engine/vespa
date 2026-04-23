@@ -2351,9 +2351,9 @@ public class DeploymentSpecTest {
                   <instance id='default'>
                     <prod>
                       <region name='aws-us-east-1'>
-                        <availability-zone>aws-us-east-1c</availability-zone>
-                        <availability-zone>aws-us-east-1d</availability-zone>
-                        <availability-zone>aws-us-east-1e</availability-zone>
+                        <availability-zone>aws-use2-az1</availability-zone>
+                        <availability-zone>aws-use2-az2</availability-zone>
+                        <availability-zone>aws-use2-az3</availability-zone>
                       </region>
                     </prod>
                   </instance>
@@ -2364,7 +2364,7 @@ public class DeploymentSpecTest {
         assertEquals(1, zones.size());
         var regionalZone = zones.get(0);
         assertEquals("aws-us-east-1", regionalZone.region().get().value());
-        assertEquals(List.of(AzName.from("aws-us-east-1c"), AzName.from("aws-us-east-1d"), AzName.from("aws-us-east-1e")),
+        assertEquals(List.of(AzName.from("aws-use2-az1"), AzName.from("aws-use2-az2"), AzName.from("aws-use2-az3")),
                      regionalZone.availabilityZones());
     }
 
