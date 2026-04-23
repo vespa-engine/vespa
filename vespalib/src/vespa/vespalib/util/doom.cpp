@@ -38,9 +38,9 @@ const Deadline Doom::make_ann_doom(uint32_t remaining_searches) const noexcept {
                                                            : _softDoom - now;
 
     if (_ann_timebudget < timeout_left) {
-        return Deadline(_now, now + _ann_timebudget, false);
+        return Deadline(_now, now + _ann_timebudget, Deadline::Type::BUDGET);
     } else {
-        return Deadline(_now, now + timeout_left, _ann_timeout_enabled);
+        return Deadline(_now, now + timeout_left, _ann_timeout_enabled ? Deadline::Type::TIMEOUT : Deadline::Type::BUDGET);
     }
 }
 

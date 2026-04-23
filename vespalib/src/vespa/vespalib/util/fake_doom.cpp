@@ -6,7 +6,6 @@ namespace vespalib {
 
 FakeDoom::FakeDoom(steady_time::duration time_to_doom) noexcept
     : _time(steady_clock::now()),
-      _ann_doom(_time, _time.load(std::memory_order_relaxed) + time_to_doom, true),
       _doom(_time, _time.load(std::memory_order_relaxed) + time_to_doom) {
 }
 

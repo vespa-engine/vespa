@@ -9,18 +9,22 @@ namespace vespalib {
 
 class Deadline {
 public:
-    Deadline(const std::atomic<steady_time> & now, steady_time doom, bool is_timeout) noexcept;
-    [[nodiscard]] duration ann_left() const noexcept { return _doom - get_time_ns(); }
-    [[nodiscard]] bool ann_doom() const noexcept { return (get_time_ns() > _doom); }
-    [[nodiscard]] bool is_ann_timeout() const noexcept { return _is_ann_timeout; }
+    enum Type { BUDGET, TIMEOUT };
+
+    Deadline(const std::atomic<steady_time>& now, steady_time time_to_deadline, Type type) noexcept;
+    [[nodiscard]] Type type() const noexcept { return _type; }
+    [[nodiscard]] duration time_left() const noexcept { return _deadline - get_time_ns(); }
+    [[nodiscard]] bool is_missed() const noexcept { _missed = _missed || (get_time_ns() > _deadline); return _missed; }
+    [[nodiscard]] bool was_missed() const noexcept { return _missed; }
     [[nodiscard]] static const Deadline& never() noexcept;
 private:
     [[nodiscard]] vespalib::steady_time get_time_ns() const noexcept {
         return vespalib::steady_time(_now.load(std::memory_order_relaxed));
     }
     const std::atomic<steady_time>& _now;
-    const steady_time               _doom;
-    const bool                      _is_ann_timeout;
+    steady_time                     _deadline;
+    Type                            _type;
+    mutable bool                    _missed;
 };
 
 }

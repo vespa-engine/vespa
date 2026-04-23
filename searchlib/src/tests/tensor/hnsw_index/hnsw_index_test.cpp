@@ -19,7 +19,7 @@
 #include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/net/http/state_explorer.h>
-#include <vespa/vespalib/util/fake_doom.h>
+#include <vespa/vespalib/util/fake_deadline.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <type_traits>
@@ -182,14 +182,14 @@ public:
     std::shared_ptr<GlobalFilter> global_filter;
     LevelGenerator* level_generator;
     std::unique_ptr<IndexType> index;
-    std::unique_ptr<vespalib::FakeDoom> _doom;
+    std::unique_ptr<vespalib::FakeDeadline> _doom;
 
     HnswIndexTest()
         : vectors(),
           global_filter(GlobalFilter::create()),
           level_generator(),
           index(),
-          _doom(std::make_unique<vespalib::FakeDoom>())
+          _doom(std::make_unique<vespalib::FakeDeadline>())
     {
         vectors.set(1, {2, 2}).set(2, {3, 2}).set(3, {2, 3})
                .set(4, {1, 2}).set(5, {8, 3}).set(6, {7, 2})
@@ -271,8 +271,8 @@ public:
         NearestNeighborIndex::Stats stats;
         auto df = index->distance_function_factory().for_query_vector(qv_cells);
         auto got_by_docid = (global_filter->is_active()) ?
-                            index->find_top_k_with_filter(stats, k, *df, *global_filter, false, 0.3, explore_k, exploration_slack, false, _doom->get_ann_doom(), 10000.0) :
-                            index->find_top_k(stats, k, *df, explore_k, exploration_slack, false, _doom->get_ann_doom(), 10000.0);
+                            index->find_top_k_with_filter(stats, k, *df, *global_filter, false, 0.3, explore_k, exploration_slack, false, _doom->get_deadline(), 10000.0) :
+                            index->find_top_k(stats, k, *df, explore_k, exploration_slack, false, _doom->get_deadline(), 10000.0);
         std::vector<uint32_t> act;
         act.reserve(got_by_docid.size());
         for (auto& hit : got_by_docid) {
@@ -285,7 +285,7 @@ public:
         auto qv = vectors.get_vector(docid, 0);
         NearestNeighborIndex::Stats stats;
         auto df = index->distance_function_factory().for_query_vector(qv);
-        auto rv = index->top_k_candidates(stats, *df, k, exploration_slack, false, global_filter->ptr_if_active(), filter_first, 0.3, _doom->get_ann_doom()).peek();
+        auto rv = index->top_k_candidates(stats, *df, k, exploration_slack, false, global_filter->ptr_if_active(), filter_first, 0.3, _doom->get_deadline()).peek();
         std::sort(rv.begin(), rv.end(), LesserDistance());
         size_t idx = 0;
         for (const auto & hit : rv) {
@@ -296,7 +296,7 @@ public:
         if (exp_hits.size() == k) {
             std::vector<uint32_t> expected_by_docid = exp_hits;
             std::sort(expected_by_docid.begin(), expected_by_docid.end());
-            auto got_by_docid = index->find_top_k(stats, k, *df, k, exploration_slack, false, _doom->get_ann_doom(), 100100.25);
+            auto got_by_docid = index->find_top_k(stats, k, *df, k, exploration_slack, false, _doom->get_deadline(), 100100.25);
             for (idx = 0; idx < k; ++idx) {
                 EXPECT_EQ(expected_by_docid[idx], got_by_docid[idx].docid);
             }
@@ -313,8 +313,8 @@ public:
         NearestNeighborIndex::Stats stats;
         auto df = index->distance_function_factory().for_query_vector(qv_cells);
         auto got_by_docid = (global_filter->is_active()) ?
-                            index->find_top_k_with_filter(stats, k, *df, *global_filter, filter_first, 0.3, explore_k, exploration_slack, false, _doom->get_ann_doom(), 10000.0) :
-                            index->find_top_k(stats, k, *df, explore_k, exploration_slack, false, _doom->get_ann_doom(), 10000.0);
+                            index->find_top_k_with_filter(stats, k, *df, *global_filter, filter_first, 0.3, explore_k, exploration_slack, false, _doom->get_deadline(), 10000.0) :
+                            index->find_top_k(stats, k, *df, explore_k, exploration_slack, false, _doom->get_deadline(), 10000.0);
         return stats;
     }
     void check_with_distance_threshold(uint32_t docid, double exploration_slack = 0.0) {
@@ -322,14 +322,14 @@ public:
         NearestNeighborIndex::Stats stats;
         auto df = index->distance_function_factory().for_query_vector(qv);
         uint32_t k = 3;
-        auto rv = index->top_k_candidates(stats, *df, k, exploration_slack, false, global_filter->ptr_if_active(), false, 0.3, _doom->get_ann_doom()).peek();
+        auto rv = index->top_k_candidates(stats, *df, k, exploration_slack, false, global_filter->ptr_if_active(), false, 0.3, _doom->get_deadline()).peek();
         std::sort(rv.begin(), rv.end(), LesserDistance());
         EXPECT_EQ(rv.size(), 3);
         EXPECT_LE(rv[0].distance, rv[1].distance);
         double thr = (rv[0].distance + rv[1].distance) * 0.5;
         auto got_by_docid = (global_filter->is_active())
-            ? index->find_top_k_with_filter(stats, k, *df, *global_filter, false, 0.3, k, exploration_slack, false, _doom->get_ann_doom(), thr)
-            : index->find_top_k(stats, k, *df, k, exploration_slack, false, _doom->get_ann_doom(), thr);
+            ? index->find_top_k_with_filter(stats, k, *df, *global_filter, false, 0.3, k, exploration_slack, false, _doom->get_deadline(), thr)
+            : index->find_top_k(stats, k, *df, k, exploration_slack, false, _doom->get_deadline(), thr);
         EXPECT_EQ(got_by_docid.size(), 1);
         EXPECT_EQ(got_by_docid[0].docid, index->get_docid(rv[0].nodeid));
         for (const auto & hit : got_by_docid) {
@@ -377,10 +377,10 @@ public:
         while (loader.load_next()) {}
     }
     void reset_doom() {
-        _doom = std::make_unique<vespalib::FakeDoom>();
+        _doom = std::make_unique<vespalib::FakeDeadline>();
     }
     void reset_doom(vespalib::steady_time::duration time_to_doom) {
-        _doom = std::make_unique<vespalib::FakeDoom>(time_to_doom);
+        _doom = std::make_unique<vespalib::FakeDeadline>(time_to_doom);
     }
     uint32_t get_active_nodes() const noexcept {
         return index->get_active_nodes();
