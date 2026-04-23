@@ -110,6 +110,7 @@ IncludedVersions allV() {
 struct UnitDR : DocumentRetrieverBaseForTest {
     static DocumentIdT _docidCnt;
     static uint32_t    get_full_document_calls;
+    static uint32_t    get_partial_document_calls;
 
     document::DocumentTypeRepo repo;
     document::Document::UP     document;
@@ -153,6 +154,24 @@ struct UnitDR : DocumentRetrieverBaseForTest {
         }
         return Document::UP((lid == docid) ? document->clone() : nullptr);
     }
+    DocumentUP getPartialDocument(DocumentIdT lid, const DocumentId & docId,
+                                  const document::FieldSet& fieldSet) const override {
+        if (lid != docid) {
+            return {};
+        }
+        ++get_partial_document_calls;
+        if (fieldSet.getType() != document::FieldSet::Type::NONE &&
+            fieldSet.getType() != document::FieldSet::Type::DOCID) {
+            auto doc = getFullDocument(lid);
+            if (doc) {
+                document::FieldSet::stripFields(*doc, fieldSet);
+            }
+            return doc;
+        }
+        auto doc_type = repo.getDocumentType(doc_type_name.getName());
+        auto doc = std::make_unique<Document>(repo, *doc_type, docId);
+        return doc;
+    }
 
     uint32_t getDocIdLimit() const override {
         return docIdLimit;
@@ -170,10 +189,12 @@ struct UnitDR : DocumentRetrieverBaseForTest {
     static void reset() {
         _docidCnt = 2;
         get_full_document_calls = 0;
+        get_partial_document_calls = 0;
     }
 };
 
 uint32_t UnitDR::get_full_document_calls = 0;
+uint32_t UnitDR::get_partial_document_calls = 0;
 
 Document::UP make_doc(DocumentId docid) {
     return Document::make_without_repo(*DataType::DOCUMENT, docid);
@@ -305,6 +326,11 @@ struct PairDR : DocumentRetrieverBaseForTest {
     document::Document::UP getFullDocument(DocumentIdT lid) const override {
         Document::UP ret = first->getFullDocument(lid);
         return ret ? std::move(ret) : second->getFullDocument(lid);
+    }
+    DocumentUP getPartialDocument(DocumentIdT lid, const DocumentId & docId,
+                                  const document::FieldSet& fieldSet) const override {
+        auto doc = first->getPartialDocument(lid, docId, fieldSet);
+        return doc ? std::move(doc) : second->getPartialDocument(lid, docId, fieldSet);
     }
 
     CachedSelect::SP parseSelect(const std::string &selection) const override {
@@ -484,9 +510,10 @@ GlobalId gid_of(std::string_view id_str) {
 
 TEST(DocumentIteratorTest, require_that_custom_retrievers_work_as_expected)
 {
-    DocumentId id1("id:ns:document::1");
-    DocumentId id2("id:ns:document::2");
-    DocumentId id3("id:ns:document::3");
+    UnitDR::reset();
+    DocumentId id1("id:ns:document::1"); // lid 3
+    DocumentId id2("id:ns:document::2"); // lid 4
+    DocumentId id3("id:ns:document::3"); // lid 5
     IDocumentRetriever::SP dr =
         cat(cat(doc(id1, Timestamp(2), bucket(5)),
                 rem(id2, Timestamp(3), bucket(5))),
@@ -547,7 +574,8 @@ TEST(DocumentIteratorTest, require_that_normal_documents_can_be_iterated)
     checkEntry(res, 2, *make_doc(DocumentId("id:ns:document::3")), Timestamp(4));
 }
 
-void visit_docid_only(bool enable_populate_document_metadata_docid, uint32_t exp_get_full_document_calls)
+void visit_docid_only(bool enable_populate_document_metadata_docid, uint32_t exp_get_full_document_calls,
+                      uint32_t exp_get_partial_document_calls)
 {
     UnitDR::reset();
     DocumentIterator itr(bucket(5), std::make_shared<document::DocIdOnly>(), selectAll(), newestV(), -1, false);
@@ -563,16 +591,17 @@ void visit_docid_only(bool enable_populate_document_metadata_docid, uint32_t exp
     checkEntry(res, 2, *make_doc(DocumentId("id:ns:document::3")), Timestamp(4));
     checkEntry(res, 3, DocumentId("id:ns:document::4"), Timestamp(5));
     EXPECT_EQ(exp_get_full_document_calls, UnitDR::get_full_document_calls);
+    EXPECT_EQ(exp_get_partial_document_calls, UnitDR::get_partial_document_calls);
 }
 
 TEST(DocumentIteratorTest, iterate_docid_only_getting_full_docs)
 {
-    visit_docid_only(false, 4);
+    visit_docid_only(false, 4, 0);
 }
 
 TEST(DocumentIteratorTest, iterate_docid_only_skipping_full_docs)
 {
-    visit_docid_only(true, 0);
+    visit_docid_only(true, 0, 3);
 }
 
 void verifyIterateIgnoringStopSignal(DocumentIterator & itr) {
