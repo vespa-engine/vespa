@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
  * @author vekterli
  * @author bjorncs
  */
+@SuppressWarnings("deprecation") // commons-cli 1.10+ deprecated Option.Builder.build() and HelpFormatter
 class CliOptions {
 
     private static final Option HELP_OPTION = Option.builder("h")

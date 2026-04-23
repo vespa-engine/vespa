@@ -52,12 +52,12 @@ public class VespaAsyncHttpClientBuilder {
                     .setSslContext(vespaTlsContext.sslContext().context())
                     .setTlsVersions(vespaTlsParameters.getProtocols())
                     .setCiphers(vespaTlsParameters.getCipherSuites())
-                    .build();
+                    .buildAsync();
             if (TransportSecurityUtils.getInsecureMixedMode() != MixedMode.PLAINTEXT_CLIENT_MIXED_SERVER) {
                 clientBuilder.setRoutePlanner(new HttpToHttpsRoutePlanner());
             }
         } else {
-            tlsStrategy = ClientTlsStrategyBuilder.create().build();
+            tlsStrategy = ClientTlsStrategyBuilder.create().buildAsync();
         }
         clientBuilder.disableConnectionState(); // Share connections between subsequent requests
         clientBuilder.disableCookieManagement();
