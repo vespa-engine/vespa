@@ -3,10 +3,11 @@
 #include <vespa/log/bufferedlogger.h>
 #include <vespa/log/internal.h>
 
+#include <unistd.h>
+
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
-#include <unistd.h>
-#include <cstdlib>
 
 LOG_SETUP("bufferedlogskiptest");
 
@@ -14,8 +15,8 @@ using namespace std::literals::chrono_literals;
 
 /** Test timer returning just a given time. Used in tests to fake time. */
 struct TestTimer : public ns_log::Timer {
-    uint64_t & _time;
-    TestTimer(uint64_t & timeVar) : _time(timeVar) { }
+    uint64_t& _time;
+    TestTimer(uint64_t& timeVar) : _time(timeVar) {}
     ns_log::system_time getTimestamp() const noexcept override {
         return ns_log::system_time(std::chrono::microseconds(_time));
     }
@@ -23,18 +24,18 @@ struct TestTimer : public ns_log::Timer {
 
 std::string readFile(const std::string& file) {
     std::ostringstream ost;
-    std::ifstream is(file.c_str());
-    std::string line;
+    std::ifstream      is(file.c_str());
+    std::string        line;
     while (std::getline(is, line)) {
         std::string::size_type pos = line.find('\t');
-        if (pos == std::string::npos) continue;
+        if (pos == std::string::npos)
+            continue;
         std::string::size_type pos2 = line.find('\t', pos + 1);
-        if (pos2 == std::string::npos) continue;
-        std::string result = line.substr(0, pos)
-                           + "\tlocalhost"
-                           + line.substr(pos2);
-            // Ignore debug entries. (Log adds some itself with timestamp we
-            // can't control)
+        if (pos2 == std::string::npos)
+            continue;
+        std::string result = line.substr(0, pos) + "\tlocalhost" + line.substr(pos2);
+        // Ignore debug entries. (Log adds some itself with timestamp we
+        // can't control)
         if (result.find("\tdebug\t") == std::string::npos) {
             ost << result << "\n";
         }
@@ -42,13 +43,12 @@ std::string readFile(const std::string& file) {
     return ost.str();
 }
 
-void testSkipBufferOnDebug(const std::string& file, uint64_t & timer)
-{
+void testSkipBufferOnDebug(const std::string& file, uint64_t& timer) {
     std::cerr << "testSkipBufferOnDebug ...\n";
     LOGBM(info, "Starting up, using logfile %s", file.c_str());
 
     timer = 200 * 1000000;
-    for (uint32_t i=0; i<10; ++i) {
+    for (uint32_t i = 0; i < 10; ++i) {
         LOGBP(info, "Message");
         timer += 1;
         LOGBM(info, "Message");
@@ -63,24 +63,20 @@ void testSkipBufferOnDebug(const std::string& file, uint64_t & timer)
     if (result != expected) {
         std::cerr << "Failed "
                   << "testSkipBufferOnDebug\n";
-        [[maybe_unused]] int system_result =
-        system(("diff -u " + file
-                    + " bufferedlogskiptest.skipped.log").c_str());
+        [[maybe_unused]] int system_result = system(("diff -u " + file + " bufferedlogskiptest.skipped.log").c_str());
         std::_Exit(EXIT_FAILURE);
     }
     unlink(file.c_str());
 }
 
-void reset(uint64_t & timer) {
+void reset(uint64_t& timer) {
     timer = 0;
     ns_log::BufferedLogger::instance().setMaxCacheSize(10);
     ns_log::BufferedLogger::instance().setMaxEntryAge(300);
     ns_log::BufferedLogger::instance().setCountFactor(5);
 }
 
-int
-main(int argc, char **argv)
-{
+int main(int argc, char** argv) {
     if (argc != 2) {
         std::cerr << "bufferedlogskiptest must be called with one argument\n";
         return EXIT_FAILURE;

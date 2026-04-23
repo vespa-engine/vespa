@@ -277,12 +277,12 @@ public class Flags {
             "Whether node snapshots should be created when host storage is discarded",
             "Takes effect immediately");
 
-    public static final UnboundLongFlag ZOOKEEPER_PRE_ALLOC_SIZE_KIB = defineLongFlag(
-            "zookeeper-pre-alloc-size", 65536,
-            List.of("hmusum"), "2024-11-11", "2026-05-01",
-            "Setting for zookeeper.preAllocSize flag in KiB, can be reduced from default value "
-            + "e.g. when running tests to avoid writing a large, sparse, mostly unused file",
-            "Takes effect on restart of Docker container");
+    public static final UnboundBooleanFlag ENABLE_UI_VERSION_TOGGLE = defineFeatureFlag(
+            "enable-ui-version-toggle", false,
+            List.of("laura", "jille"), "2026-04-20", "2026-12-31",
+            "Enable a toggle to switch between different versions of the Console UI",
+            "Takes effect immediately",
+            CONSOLE_USER_EMAIL);
 
     public static final UnboundBooleanFlag ENFORCE_EMAIL_DOMAIN_SSO = defineFeatureFlag(
             "enforce-email-domain-sso", false,
@@ -340,7 +340,8 @@ public class Flags {
             "use-triton", false,
             List.of("bjorncs", "glebashnik"), "2025-04-30", "2026-06-01",
             "Whether to use Triton as ONNX runtime",
-            "Takes effect at redeployment"
+            "Takes effect at redeployment",
+            TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_TYPE, CLUSTER_ID, VESPA_VERSION
     );
 
     public static final UnboundBooleanFlag DELETE_TENANT_ROLES = defineFeatureFlag(
@@ -365,15 +366,6 @@ public class Flags {
             "or do this directly from host-admin.",
             "Takes effect at next tick",
             HOSTNAME
-    );
-
-    public static final UnboundStringFlag VESPA_USE_MALLOC_IMPL = defineStringFlag(
-            "vespa-use-malloc-impl", "",
-            List.of("hmusum", "johsol"), "2025-09-10", "2026-12-01",
-            "Which malloc implementation to use  " +
-                    "Valid values: 'vespamalloc', 'mimalloc', '' (empty string, meaning default malloc implementation).",
-            "Takes effect at next reboot of the node",
-            TENANT_ID, APPLICATION, INSTANCE_ID, HOSTNAME, CLUSTER_TYPE
     );
 
     public static final UnboundBooleanFlag RESTART_ON_DEPLOY_MAINTAINER = defineFeatureFlag(
@@ -404,7 +396,7 @@ public class Flags {
     );
 
     public static final UnboundBooleanFlag HONOR_DISK_SPEED_AND_STORAGE_TYPE_IN_DEV = defineFeatureFlag(
-            "honor-disk-speed-and-storage-type-in-dev", false,
+            "honor-disk-speed-and-storage-type-in-dev", true,
             List.of("hmusum"), "2026-03-25", "2026-05-25",
             "Whether to honor disk speed and storage type in dev",
             "Takes effect on the deployment.",

@@ -21,10 +21,10 @@ private:
 public:
     Slobrok_CMD() : _server(), _target(nullptr) {}
     ~Slobrok_CMD();
-    int  usage(const char* self);
+    int usage(const char* self);
     void initRPC(const char* spec);
     void finiRPC();
-    int  main(int argc, char** argv);
+    int main(int argc, char** argv);
 };
 
 Slobrok_CMD::~Slobrok_CMD() {

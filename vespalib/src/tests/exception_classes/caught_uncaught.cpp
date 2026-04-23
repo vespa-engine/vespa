@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/util/exceptions.h>
+
 #include <cstring>
 
 using namespace vespalib;
@@ -18,12 +19,12 @@ void silenceE() {
 void throwAndCatch() {
     try {
         silenceE();
-    } catch (const ExceptionWithPayload & e) {
+    } catch (const ExceptionWithPayload& e) {
         printf("caught it\n");
     }
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     if (argc != 2) {
         return 77;
     }

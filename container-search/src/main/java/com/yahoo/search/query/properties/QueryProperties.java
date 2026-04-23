@@ -136,6 +136,7 @@ public class QueryProperties extends Properties {
         map.put(CompoundName.fromComponents(Select.SELECT, Select.WHERE), GetterSetter.of(query -> query.getSelect().getWhereString(), (query, value) -> query.getSelect().setWhereString(asString(value, ""))));
         map.put(CompoundName.fromComponents(Select.SELECT, Select.GROUPING), GetterSetter.of(query -> query.getSelect().getGroupingString(), (query, value) -> query.getSelect().setGroupingString(asString(value, ""))));
         map.put(CompoundName.fromComponents(Trace.TRACE, Trace.LEVEL), GetterSetter.of(query -> query.getTrace().getLevel(), (query, value) -> query.getTrace().setLevel(asInteger(value, 0))));
+        map.put(CompoundName.fromComponents(Trace.TRACE, Trace.PROFILE), GetterSetter.of(query -> query.getTrace().getProfile(), (query, value) -> query.getTrace().setProfile(asBoolean(value, false))));
         map.put(CompoundName.fromComponents(Trace.TRACE, Trace.EXPLAIN_LEVEL), GetterSetter.of(query -> query.getTrace().getExplainLevel(), (query, value) -> query.getTrace().setExplainLevel(asInteger(value, 0))));
         map.put(CompoundName.fromComponents(Trace.TRACE, Trace.PROFILE_DEPTH), GetterSetter.of(null, (query, value) -> query.getTrace().setProfileDepth(asInteger(value, 0))));
         map.put(CompoundName.fromComponents(Trace.TRACE, Trace.TIMESTAMPS), GetterSetter.of(query -> query.getTrace().getTimestamps(), (query, value) -> query.getTrace().setTimestamps(asBoolean(value, false))));

@@ -17,11 +17,11 @@ namespace proton {
 
 /**
  * Interface used to manage the documents that are contained
- * in a document sub database with related meta data.
+ * in a document sub database with related metadata.
  *
- * A document meta store will have storage of <lid, meta data> pairs
- * (local document id, meta data (including global document id)) and
- * mapping from lid -> meta data and gid -> lid.
+ * A document meta store will have storage of <lid, metadata> pairs
+ * (local document id, metadata (including global document id)) and
+ * mapping from lid -> metadata and gid -> lid.
  **/
 struct IDocumentMetaStore : public search::IDocumentMetaStore,
                             public ISimpleDocumentMetaStore

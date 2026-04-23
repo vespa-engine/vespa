@@ -19,7 +19,7 @@ struct MapCall {
     static MapCall add(const ServiceMapping& m) { return {"add", m, {"", ""}}; }
     static MapCall remove(const ServiceMapping& m) { return {"remove", m, {"", ""}}; }
     static MapCall update(const ServiceMapping& o, const ServiceMapping& m) { return {"update", m, o}; }
-    void           check(const MapCall& rhs) const {
+    void check(const MapCall& rhs) const {
         EXPECT_EQ(name, rhs.name);
         EXPECT_EQ(mapping, rhs.mapping);
         EXPECT_EQ(old, rhs.old);
@@ -29,12 +29,12 @@ struct MapCall {
 MapCall::~MapCall() = default;
 
 struct MonitorCall {
-    std::string        name;
-    ServiceMapping     mapping;
-    bool               hurry;
+    std::string    name;
+    ServiceMapping mapping;
+    bool           hurry;
     static MonitorCall start(const ServiceMapping& m, bool h) { return {"start", m, h}; }
     static MonitorCall stop(const ServiceMapping& m) { return {"stop", m, false}; }
-    void               check(const MonitorCall& rhs) const {
+    void check(const MonitorCall& rhs) const {
         EXPECT_EQ(name, rhs.name);
         EXPECT_EQ(mapping, rhs.mapping);
         EXPECT_EQ(hurry, rhs.hurry);

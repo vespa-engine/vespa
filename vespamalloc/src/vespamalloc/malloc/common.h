@@ -1,12 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespamalloc/util/osmem.h>
+
 #include <atomic>
 #include <cassert>
 #include <cstdio>
 #include <new>
 #include <thread>
-#include <vespamalloc/util/osmem.h>
 
 extern "C" void MallocRecurseOnSuspend(bool recurse) __attribute__((noinline));
 
@@ -62,7 +63,9 @@ constexpr size_t   ALWAYS_REUSE_LIMIT = 0x100000ul;
 constexpr uint8_t  MAX_PTR_BITS = 57; // Maximum number of bits a pointer can use (Intel IceLake)
 constexpr uint64_t MAX_PTR = 1ul << MAX_PTR_BITS;
 
-inline constexpr int msbIdx(uint64_t v) { return (sizeof(v) * 8 - 1) - __builtin_clzl(v); }
+inline constexpr int msbIdx(uint64_t v) {
+    return (sizeof(v) * 8 - 1) - __builtin_clzl(v);
+}
 
 template <size_t MinClassSizeC> class CommonT {
 public:
@@ -79,20 +82,20 @@ class Mutex {
 public:
     Mutex() : _mutex(), _use(false) {}
     ~Mutex() { quit(); }
-    void        lock();
-    void        unlock();
+    void lock();
+    void unlock();
     static void addThread() { _threadCount.fetch_add(1); }
     static void subThread() { _threadCount.fetch_sub(1); }
     static void stopRecursion() { _stopRecursion = true; }
     static void allowRecursion() { _stopRecursion = false; }
-    void        init();
-    void        quit();
+    void init();
+    void quit();
 
 private:
     static std::atomic<uint32_t> _threadCount;
     static bool                  _stopRecursion;
     Mutex(const Mutex& org);
-    Mutex&          operator=(const Mutex& org);
+    Mutex& operator=(const Mutex& org);
     pthread_mutex_t _mutex;
     bool            _use;
 };
@@ -109,10 +112,10 @@ private:
 class IAllocator {
 public:
     virtual ~IAllocator() = default;
-    virtual bool   initThisThread() = 0;
-    virtual bool   quitThisThread() = 0;
-    virtual void   enableThreadSupport() = 0;
-    virtual void   setReturnAddressStop(const void* returnAddressStop) = 0;
+    virtual bool initThisThread() = 0;
+    virtual bool quitThisThread() = 0;
+    virtual void enableThreadSupport() = 0;
+    virtual void setReturnAddressStop(const void* returnAddressStop) = 0;
     virtual size_t getMaxNumThreads() const = 0;
 };
 

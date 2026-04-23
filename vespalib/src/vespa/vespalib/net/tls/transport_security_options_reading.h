@@ -2,6 +2,7 @@
 #pragma once
 
 #include "transport_security_options.h"
+
 #include <memory>
 
 namespace vespalib::net::tls {
@@ -17,4 +18,4 @@ std::unique_ptr<TransportSecurityOptions> read_options_from_json_file(const std:
 // Same properties as read_options_from_json_file()
 std::unique_ptr<TransportSecurityOptions> read_options_from_json_string(const std::string& json_data);
 
-}
+} // namespace vespalib::net::tls

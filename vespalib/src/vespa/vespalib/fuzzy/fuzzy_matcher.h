@@ -34,9 +34,10 @@ private:
 
 public:
     FuzzyMatcher();
-    FuzzyMatcher(const FuzzyMatcher &) = delete;
-    FuzzyMatcher & operator = (const FuzzyMatcher &) = delete;
-    FuzzyMatcher(std::string_view term, uint32_t max_edit_distance, uint32_t prefix_size, bool is_cased, bool is_prefix);
+    FuzzyMatcher(const FuzzyMatcher&) = delete;
+    FuzzyMatcher& operator=(const FuzzyMatcher&) = delete;
+    FuzzyMatcher(std::string_view term, uint32_t max_edit_distance, uint32_t prefix_size, bool is_cased,
+                 bool is_prefix);
     ~FuzzyMatcher();
 
     [[nodiscard]] bool isMatch(std::string_view target) const;
@@ -46,4 +47,4 @@ public:
     static std::span<const uint32_t> get_suffix(const std::vector<uint32_t>& termCodepoints, uint32_t prefixLength);
 };
 
-}
+} // namespace vespalib

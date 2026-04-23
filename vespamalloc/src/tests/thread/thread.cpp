@@ -2,12 +2,17 @@
 
 #include <vespa/vespalib/gtest/gtest.h>
 
-#include <atomic>
 #include <unistd.h>
 
-void* just_return(void* arg) { return arg; }
+#include <atomic>
 
-void* just_exit(void* arg) { pthread_exit(arg); }
+void* just_return(void* arg) {
+    return arg;
+}
+
+void* just_exit(void* arg) {
+    pthread_exit(arg);
+}
 
 void* just_cancel(void* arg) {
     sleep(60);

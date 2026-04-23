@@ -58,20 +58,20 @@ public:
     RemoteSlobrok(const std::string& name, const std::string& spec, ExchangeManager& manager);
     ~RemoteSlobrok() override;
 
-    void               fail();
-    bool               isConnected() const { return (_remote != nullptr); }
-    void               tryConnect();
-    void               maybeStartFetch();
-    void               invokeAsync(FRT_RPCRequest* req, double timeout, FRT_IRequestWait* rwaiter);
+    void fail();
+    bool isConnected() const { return (_remote != nullptr); }
+    void tryConnect();
+    void maybeStartFetch();
+    void invokeAsync(FRT_RPCRequest* req, double timeout, FRT_IRequestWait* rwaiter);
     const std::string& getName() const { return _rpcserver.getName(); }
     const std::string& getSpec() const { return _rpcserver.getSpec(); }
-    ServiceMapMirror&  remoteMap() { return _serviceMapMirror; }
-    void               shutdown();
+    ServiceMapMirror& remoteMap() { return _serviceMapMirror; }
+    void shutdown();
 
     // interfaces implemented:
-    void            notifyFailedRpcSrv(ManagedRpcServer* rpcsrv, std::string errmsg) override;
-    void            notifyOkRpcSrv(ManagedRpcServer* rpcsrv) override;
-    void            RequestDone(FRT_RPCRequest* req) override;
+    void notifyFailedRpcSrv(ManagedRpcServer* rpcsrv, std::string errmsg) override;
+    void notifyOkRpcSrv(ManagedRpcServer* rpcsrv) override;
+    void RequestDone(FRT_RPCRequest* req) override;
     FRT_Supervisor* getSupervisor() override;
 };
 

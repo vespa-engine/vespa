@@ -29,7 +29,7 @@ namespace {
 
 struct Sync : public FNET_IExecutable {
     vespalib::Gate gate;
-    void           execute() override { gate.countDown(); }
+    void execute() override { gate.countDown(); }
 };
 
 } // namespace
@@ -221,9 +221,13 @@ FNET_TransportThread::~FNET_TransportThread() {
     }
 }
 
-const FNET_Config& FNET_TransportThread::getConfig() const { return _owner.getConfig(); }
+const FNET_Config& FNET_TransportThread::getConfig() const {
+    return _owner.getConfig();
+}
 
-const fnet::TimeTools& FNET_TransportThread::time_tools() const { return _owner.time_tools(); }
+const fnet::TimeTools& FNET_TransportThread::time_tools() const {
+    return _owner.time_tools();
+}
 
 bool FNET_TransportThread::tune(SocketHandle& handle) const {
     handle.set_keepalive(true);
@@ -232,8 +236,8 @@ bool FNET_TransportThread::tune(SocketHandle& handle) const {
     return handle.set_blocking(false);
 }
 
-FNET_Connector* FNET_TransportThread::Listen(
-    const char* spec, FNET_IPacketStreamer* streamer, FNET_IServerAdapter* serverAdapter) {
+FNET_Connector* FNET_TransportThread::Listen(const char* spec, FNET_IPacketStreamer* streamer,
+                                             FNET_IServerAdapter* serverAdapter) {
     ServerSocket server_socket{SocketSpec(spec)};
     if (server_socket.valid() && server_socket.set_blocking(false)) {
         FNET_Connector* connector = new FNET_Connector(this, streamer, serverAdapter, spec, std::move(server_socket));
@@ -245,8 +249,8 @@ FNET_Connector* FNET_TransportThread::Listen(
     return nullptr;
 }
 
-FNET_Connection* FNET_TransportThread::Connect(
-    const char* spec, FNET_IPacketStreamer* streamer, FNET_IServerAdapter* serverAdapter, FNET_Context connContext) {
+FNET_Connection* FNET_TransportThread::Connect(const char* spec, FNET_IPacketStreamer* streamer,
+                                               FNET_IServerAdapter* serverAdapter, FNET_Context connContext) {
     std::unique_ptr<FNET_Connection> conn =
         std::make_unique<FNET_Connection>(this, streamer, serverAdapter, connContext, spec);
     if (conn->Init()) {
@@ -509,7 +513,9 @@ bool FNET_TransportThread::Start(vespalib::ThreadPool& pool) {
     return true;
 }
 
-void FNET_TransportThread::Main() { run(); }
+void FNET_TransportThread::Main() {
+    run();
+}
 
 void FNET_TransportThread::run() {
     if (!InitEventLoop()) {

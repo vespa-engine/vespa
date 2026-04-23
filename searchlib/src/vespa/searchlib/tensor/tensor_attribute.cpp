@@ -489,7 +489,7 @@ TensorAttribute::getEstimatedSaveByteSize() const
 {
     const Status &status = getStatus();
     uint64_t headerSize = FileSettings::DIRECTIO_ALIGNMENT;
-    uint64_t dynamic_memory_usage = std::max(status.get_used_minus_dead_and_onhold() - _memory_usage_empty, 4_Ki);
+    uint64_t dynamic_memory_usage = std::max(status.get_used_minus_dead_and_onhold() - _memory_usage_empty, static_cast<uint64_t>(4_Ki));
     double size_on_disk_factor = _size_on_disk_factor.load(std::memory_order_relaxed);
     /*
      * A tensor label is stored in memory as a vespalib::string_id (4 bytes long) that references an entry in a

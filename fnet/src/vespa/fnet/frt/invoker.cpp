@@ -9,9 +9,11 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".fnet.frt.invoker");
 
-FRT_SingleReqWait::FRT_SingleReqWait() : _lock(), _cond(), _done(false), _waiting(false) {}
+FRT_SingleReqWait::FRT_SingleReqWait() : _lock(), _cond(), _done(false), _waiting(false) {
+}
 
-FRT_SingleReqWait::~FRT_SingleReqWait() {}
+FRT_SingleReqWait::~FRT_SingleReqWait() {
+}
 
 void FRT_SingleReqWait::WaitReq() {
     std::unique_lock<std::mutex> guard(_lock);
@@ -82,9 +84,13 @@ void FRT_RPCInvoker::HandleDone(bool freeChannel) {
         ch->Free();
 }
 
-void FRT_RPCInvoker::HandleReturn() { HandleDone(true); }
+void FRT_RPCInvoker::HandleReturn() {
+    HandleDone(true);
+}
 
-FNET_Connection* FRT_RPCInvoker::GetConnection() { return _req->GetContext()._value.CHANNEL->GetConnection(); }
+FNET_Connection* FRT_RPCInvoker::GetConnection() {
+    return _req->GetContext()._value.CHANNEL->GetConnection();
+}
 
 //-----------------------------------------------------------------------------
 
@@ -101,7 +107,9 @@ void FRT_HookInvoker::HandleReturn() {
     LOG_ABORT("should not be reached");
 }
 
-FNET_Connection* FRT_HookInvoker::GetConnection() { return _conn; }
+FNET_Connection* FRT_HookInvoker::GetConnection() {
+    return _conn;
+}
 
 //-----------------------------------------------------------------------------
 

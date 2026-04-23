@@ -19,14 +19,14 @@ public:
     ThreadListT(const ThreadListT& tl) = delete;
     ThreadListT& operator=(const ThreadListT& tl) = delete;
     ~ThreadListT();
-    void        setParams(size_t threadCacheLimit) { ThreadPool::setParams(threadCacheLimit); }
-    bool        quitThisThread();
-    bool        initThisThread();
+    void setParams(size_t threadCacheLimit) { ThreadPool::setParams(threadCacheLimit); }
+    bool quitThisThread();
+    bool initThisThread();
     ThreadPool& getCurrent() { return *_myPool; }
-    size_t      getThreadId() const { return (_myPool - _threadVector); }
-    void        enableThreadSupport() { _isThreaded.test_and_set(); }
+    size_t getThreadId() const { return (_myPool - _threadVector); }
+    void enableThreadSupport() { _isThreaded.test_and_set(); }
 
-    void   info(FILE* os, size_t level = 0);
+    void info(FILE* os, size_t level = 0);
     size_t getMaxNumThreads() const { return NELEMS(_threadVector); }
 
 private:

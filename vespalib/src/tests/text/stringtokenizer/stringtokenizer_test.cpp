@@ -3,14 +3,15 @@
 LOG_SETUP("stringtokenizer_test");
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
+
 #include <set>
 
 using namespace vespalib;
 
 TEST(StringTokenizerTest, stringtokenizer_test) {
     {
-        std::string s("This,is ,a,,list ,\tof,,sepa rated\n, \rtokens,");
-        StringTokenizer tokenizer(s);
+        std::string              s("This,is ,a,,list ,\tof,,sepa rated\n, \rtokens,");
+        StringTokenizer          tokenizer(s);
         std::vector<std::string> result;
         result.push_back("This");
         result.push_back("is");
@@ -23,9 +24,8 @@ TEST(StringTokenizerTest, stringtokenizer_test) {
         result.push_back("tokens");
         result.push_back("");
 
-        EXPECT_EQ(result.size(),
-                             static_cast<size_t>(tokenizer.size()));
-        for (unsigned int i=0; i<result.size(); i++)
+        EXPECT_EQ(result.size(), static_cast<size_t>(tokenizer.size()));
+        for (unsigned int i = 0; i < result.size(); i++)
             EXPECT_EQ(result[i], tokenizer[i]);
         std::set<std::string> sorted(tokenizer.begin(), tokenizer.end());
         EXPECT_EQ(static_cast<size_t>(8u), sorted.size());
@@ -34,8 +34,8 @@ TEST(StringTokenizerTest, stringtokenizer_test) {
         EXPECT_EQ(7u, tokenizer.size());
     }
     {
-        std::string s("\tAnother list with some \ntokens, and stuff.");
-        StringTokenizer tokenizer(s, " \t\n", ",.");
+        std::string              s("\tAnother list with some \ntokens, and stuff.");
+        StringTokenizer          tokenizer(s, " \t\n", ",.");
         std::vector<std::string> result;
         result.push_back("");
         result.push_back("Another");
@@ -47,9 +47,8 @@ TEST(StringTokenizerTest, stringtokenizer_test) {
         result.push_back("and");
         result.push_back("stuff");
 
-        EXPECT_EQ(result.size(),
-                             static_cast<size_t>(tokenizer.size()));
-        for (unsigned int i=0; i<result.size(); i++)
+        EXPECT_EQ(result.size(), static_cast<size_t>(tokenizer.size()));
+        for (unsigned int i = 0; i < result.size(); i++)
             EXPECT_EQ(result[i], tokenizer[i]);
         std::set<std::string> sorted(tokenizer.begin(), tokenizer.end());
         EXPECT_EQ(static_cast<size_t>(8u), sorted.size());
@@ -58,7 +57,7 @@ TEST(StringTokenizerTest, stringtokenizer_test) {
         EXPECT_EQ(7u, tokenizer.size());
     }
     {
-        std::string s(" ");
+        std::string     s(" ");
         StringTokenizer tokenizer(s);
         EXPECT_EQ(0u, tokenizer.size());
     }

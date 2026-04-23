@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/util/shared_operation_throttler.h>
-#include <vespa/vespalib/util/barrier.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <thread>
+#include <vespa/vespalib/util/barrier.h>
+#include <vespa/vespalib/util/shared_operation_throttler.h>
+
 #include <cassert>
+#include <thread>
 
 using vespalib::steady_clock;
 
@@ -91,7 +92,7 @@ TEST_F(SharedOperationHandlerTest, blocking_acquire_returns_immediately_if_slot_
 
 TEST_F(SharedOperationHandlerTest, blocking_call_woken_up_if_throttle_slot_available) {
     vespalib::Barrier barrier(2);
-    std::thread t([&] {
+    std::thread       t([&] {
         auto token = f._throttler->try_acquire_one();
         assert(token.valid());
         barrier.await();
@@ -238,15 +239,12 @@ TEST_F(SharedOperationHandlerTest, dynamic_operation_throttler_tracks_max_resour
 // to the low-level DynamicThrottlePolicy API.
 
 struct WindowFixture {
-    uint64_t _milli_time;
+    uint64_t                                  _milli_time;
     std::unique_ptr<SharedOperationThrottler> _throttler;
 
-    WindowFixture(uint32_t window_size_increment = 5,
-                  uint32_t min_window_size = 20,
+    WindowFixture(uint32_t window_size_increment = 5, uint32_t min_window_size = 20,
                   uint32_t max_window_size = INT_MAX)
-        : _milli_time(0),
-          _throttler()
-    {
+        : _milli_time(0), _throttler() {
         SharedOperationThrottler::DynamicThrottleParams params;
         params.resize_rate = 1;
         params.window_size_increment = window_size_increment;
@@ -254,9 +252,8 @@ struct WindowFixture {
         params.max_window_size = max_window_size;
         params.window_size_decrement_factor = 2;
         params.window_size_backoff = 0.9;
-        _throttler = SharedOperationThrottler::make_dynamic_throttler(params, [&]() noexcept {
-            return steady_time(std::chrono::milliseconds(_milli_time));
-        });
+        _throttler = SharedOperationThrottler::make_dynamic_throttler(
+            params, [&]() noexcept { return steady_time(std::chrono::milliseconds(_milli_time)); });
     }
 
     std::vector<SharedOperationThrottler::Token> fill_entire_throttle_window() {
@@ -273,7 +270,7 @@ struct WindowFixture {
 
     uint32_t attempt_converge_on_stable_window_size(uint32_t max_pending) {
         for (uint32_t i = 0; i < 999; ++i) {
-            auto tokens = fill_entire_throttle_window();
+            auto     tokens = fill_entire_throttle_window();
             uint32_t num_pending = static_cast<uint32_t>(tokens.size());
 
             uint64_t trip_time = (num_pending < max_pending) ? 1000 : 1000 + (num_pending - max_pending) * 1000;
@@ -288,7 +285,7 @@ struct WindowFixture {
 
 TEST(WindowedSharedOperationThrottlerTest, window_size_changes_dynamically_based_on_throughput) {
     WindowFixture f;
-    uint32_t window_size = f.attempt_converge_on_stable_window_size(100);
+    uint32_t      window_size = f.attempt_converge_on_stable_window_size(100);
     ASSERT_TRUE(window_size >= 90 && window_size <= 105);
 
     window_size = f.attempt_converge_on_stable_window_size(200);
@@ -306,7 +303,7 @@ TEST(WindowedSharedOperationThrottlerTest, window_size_changes_dynamically_based
 
 TEST(WindowedSharedOperationThrottlerTest, window_size_is_reset_after_idle_time_period) {
     WindowFixture f(5, 1);
-    double window_size = f.attempt_converge_on_stable_window_size(100);
+    double        window_size = f.attempt_converge_on_stable_window_size(100);
     ASSERT_TRUE(window_size >= 90 && window_size <= 110);
 
     f._milli_time += 30001; // Not yet past 60s idle time
@@ -321,13 +318,13 @@ TEST(WindowedSharedOperationThrottlerTest, window_size_is_reset_after_idle_time_
 
 TEST(WindowedSharedOperationThrottlerTest, minimum_window_size_is_respected) {
     WindowFixture f(5, 150, INT_MAX);
-    double window_size = f.attempt_converge_on_stable_window_size(200);
+    double        window_size = f.attempt_converge_on_stable_window_size(200);
     ASSERT_TRUE(window_size >= 150 && window_size <= 210);
 }
 
 TEST(WindowedSharedOperationThrottlerTest, maximum_window_size_is_respected) {
     WindowFixture f(5, 1, 50);
-    double window_size = f.attempt_converge_on_stable_window_size(100);
+    double        window_size = f.attempt_converge_on_stable_window_size(100);
     ASSERT_TRUE(window_size >= 40 && window_size <= 50);
 }
 
@@ -341,6 +338,6 @@ TEST(WindowedSharedOperationThrottlerTest, zero_sized_acquire_time_delta_does_no
     }
 }
 
-}
+} // namespace vespalib
 
 GTEST_MAIN_RUN_ALL_TESTS()

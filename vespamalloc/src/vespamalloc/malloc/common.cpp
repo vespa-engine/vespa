@@ -68,4 +68,6 @@ void logBigBlock(const void* ptr, size_t exact, size_t adjusted, size_t gross) {
 
 } // namespace vespamalloc
 
-extern "C" void MallocRecurseOnSuspend(bool recurse) { (void)recurse; }
+extern "C" void MallocRecurseOnSuspend(bool recurse) {
+    (void)recurse;
+}

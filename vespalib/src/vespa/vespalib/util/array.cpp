@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "array.hpp"
+
 #include "array_equal.hpp"
+
 #include <cstdint>
 
 namespace vespalib {
@@ -17,4 +19,4 @@ template class Array<uint64_t>;
 template class Array<float>;
 template class Array<double>;
 
-}
+} // namespace vespalib

@@ -4,8 +4,7 @@
 
 namespace vespalib {
 
-Output::~Output()
-{
+Output::~Output() {
 }
 
 } // namespace vespalib

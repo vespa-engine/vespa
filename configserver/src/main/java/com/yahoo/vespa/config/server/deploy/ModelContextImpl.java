@@ -248,11 +248,12 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean useSimpleAnnotations() { return flag(Flags.USE_SIMPLE_ANNOTATIONS).value(); }
         @Override public boolean sendProtobufQuerytree() { return flag(Flags.SEND_PROTOBUF_QUERYTREE).value(); }
         @Override public boolean forwardAllLogLevels() { return flag(PermanentFlags.FORWARD_ALL_LOG_LEVELS).value(); }
-        @Override public long zookeeperPreAllocSize() { return flag(Flags.ZOOKEEPER_PRE_ALLOC_SIZE_KIB).value(); }
+        @Override public long zookeeperPreAllocSize() { return flag(PermanentFlags.ZOOKEEPER_PRE_ALLOC_SIZE_KIB).value(); }
         @Override public int maxContentNodeMaintenanceOpConcurrency() { return flag(Flags.MAX_CONTENT_NODE_MAINTENANCE_OP_CONCURRENCY).value(); }
         @Override public int maxDocumentOperationRequestSizeMib() { return flag(Flags.MAX_DOCUMENT_OPERATION_REQUEST_SIZE_MIB).value(); }
         @Override public Object sidecarsForTest() { return flag(Flags.SIDECARS_FOR_TEST).value(); }
         @Override public boolean useTriton() { return flag(Flags.USE_TRITON).value(); }
+        @Override public ModelContext.FeatureFlag<Boolean> useTritonFlag() { return flag(Flags.USE_TRITON); }
         @Override public boolean scaleMetricsproxyHeapByNodeCount() { return flag(Flags.SCALE_METRICSPROXY_HEAP_BY_NODE_COUNT).value(); }
         @Override public boolean ignoreConnectivityChecksAtStartup() { return flag(PermanentFlags.IGNORE_CONNECTIVITY_CHECKS_AT_STARTUP).value(); }
         @Override public int searchCoreMaxOutstandingMoveOps() { return flag(Flags.SEARCH_CORE_MAX_OUTSTANDING_MOVE_OPS).value(); }
@@ -378,7 +379,7 @@ public class ModelContextImpl implements ModelContext {
         }
 
         @Override public String mallocImpl(Optional<ClusterSpec.Type> clusterType) {
-            var flag = flag(Flags.VESPA_USE_MALLOC_IMPL);
+            var flag = flag(PermanentFlags.VESPA_USE_MALLOC_IMPL);
             return clusterType.map(type -> flag.withClusterType(type)).orElse(flag).value();
         }
 

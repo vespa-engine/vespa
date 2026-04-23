@@ -2,6 +2,7 @@
 
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_create_notifier.h>
+#include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/test/bucketfactory.h>
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
 #include <vespa/searchcore/proton/server/i_move_operation_limiter.h>
@@ -69,17 +70,19 @@ struct MyMoveHandler : public IDocumentMoveHandler {
 
 struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
     using DocumentTypeRepo = document::DocumentTypeRepo;
-    using DocumentMetaData = search::DocumentMetaData;
+    using DocumentMetadata = search::DocumentMetadata;
     using Document = document::Document;
     using DocumentId = document::DocumentId;
     using DocumentIdT = search::DocumentIdT;
     using DocumentVector = std::vector<Document::SP>;
     std::shared_ptr<const DocumentTypeRepo> _repo;
+    DocTypeName                             _doc_type_name;
     DocumentVector _docs;
     uint32_t _lid2Fail;
 
-    explicit MyDocumentRetriever(std::shared_ptr<const DocumentTypeRepo> repo)
+    explicit MyDocumentRetriever(std::shared_ptr<const DocumentTypeRepo> repo, const DocTypeName& doc_type_name)
         : _repo(std::move(repo)),
+          _doc_type_name(doc_type_name),
           _docs(),
           _lid2Fail(0)
     {
@@ -87,10 +90,13 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
     }
 
     const DocumentTypeRepo &getDocumentTypeRepo() const override { return *_repo; }
+    const DocTypeName& get_doc_type_name() const noexcept override { return _doc_type_name; }
 
-    void getBucketMetaData(const storage::spi::Bucket &, DocumentMetaData::Vector &) const override {}
+    bool can_populate_document_metadata_docid() const noexcept override { return false; }
 
-    DocumentMetaData getDocumentMetaData(const DocumentId &) const override { return {}; }
+    void getBucketMetadata(const storage::spi::Bucket &, DocumentMetadata::Vector &, bool) const override {}
+
+    DocumentMetadata getDocumentMetadata(const DocumentId &) const override { return {}; }
 
     Document::UP getFullDocument(DocumentIdT lid) const override {
         return (lid != _lid2Fail) ? Document::UP(_docs[lid]->clone()) : Document::UP();
@@ -128,7 +134,7 @@ struct MySubDb {
     bucketdb::BucketDBHandler             _bucketDBHandler;
 
     MySubDb(const std::shared_ptr<const DocumentTypeRepo> &repo, std::shared_ptr<bucketdb::BucketDBOwner> bucketDB,
-            uint32_t subDbId, SubDbType subDbType);
+            const DocTypeName& doc_type_name, uint32_t subDbId, SubDbType subDbType);
 
     ~MySubDb();
 

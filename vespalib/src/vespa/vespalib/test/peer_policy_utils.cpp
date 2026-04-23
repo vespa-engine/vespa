@@ -41,4 +41,4 @@ Capability cap_4() {
     return Capability::slobrok_api();
 }
 
-}
+} // namespace vespalib::net::tls

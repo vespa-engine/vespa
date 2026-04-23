@@ -11,7 +11,7 @@ class MergeLimiter {
     uint16_t _maxNodes;
 
 public:
-    using NodeArray = std::vector<MergeMetaData>;
+    using NodeArray = std::vector<MergeMetadata>;
 
     explicit MergeLimiter(uint16_t maxNodes);
 

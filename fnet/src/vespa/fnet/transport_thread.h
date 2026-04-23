@@ -133,7 +133,7 @@ private:
      *
      * @return config object.
      **/
-    const FNET_Config&     getConfig() const;
+    const FNET_Config& getConfig() const;
     const fnet::TimeTools& time_tools() const;
 
     void handle_add_cmd(FNET_IOComponent* ioc);

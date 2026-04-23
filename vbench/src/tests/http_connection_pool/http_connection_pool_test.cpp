@@ -26,7 +26,7 @@ TEST(HttpConnectionPoolTest, http_connection_pool) {
                         EXPECT_FALSE(conn);
                         conn = pool.getConnection(ServerSpec("localhost", f1.port()));
                         EXPECT_TRUE(conn);
-                        conn->stream().obtain(); // trigger eof
+                        (void) conn->stream().obtain(); // trigger eof
                         pool.putConnection(std::move(conn));
                         EXPECT_FALSE(conn);
                         conn = pool.getConnection(ServerSpec("localhost", f1.port()));
@@ -52,7 +52,7 @@ TEST(HttpConnectionPoolTest, stress_http_connection_pool)
                             HttpConnection::UP conn = f3.getConnection(ServerSpec("localhost", f1.port()));
                             EXPECT_TRUE(conn);
                             if (ctx.thread_id() > (num_threads / 2)) {
-                                conn->stream().obtain(); // trigger eof
+                                (void) conn->stream().obtain(); // trigger eof
                             }
                             f3.putConnection(std::move(conn));
                             EXPECT_FALSE(conn);

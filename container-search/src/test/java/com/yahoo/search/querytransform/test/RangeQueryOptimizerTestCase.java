@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class RangeQueryOptimizerTestCase {
 
     private static final Linguistics linguistics = new SimpleLinguistics();
-    private static IndexFacts indexFacts = createIndexFacts();
+    private static final IndexFacts indexFacts = createIndexFacts();
 
     @Test
     void testRangeOptimizing() {

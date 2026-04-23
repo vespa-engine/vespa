@@ -59,9 +59,9 @@ private:
     uint32_t _fieldNodes;
     uint32_t _attrFieldNodes;
     uint32_t _svAttrFieldNodes;
-    bool _allFalse;
-    bool _allTrue;
-    bool _allInvalid;
+    bool _always_false;
+    bool _always_true;
+    bool _always_invalid;
 
     /**
      * If expression doesn't reference multi value attributes or
@@ -86,13 +86,16 @@ public:
     CachedSelect();
     ~CachedSelect();
 
-    const AttributeVectors &attributes() const { return _attributes; }
-    uint32_t fieldNodes() const { return _fieldNodes; }
-    uint32_t attrFieldNodes() const { return _attrFieldNodes; }
-    uint32_t svAttrFieldNodes() const { return _svAttrFieldNodes; }
-    bool allFalse() const { return _allFalse; }
-    bool allTrue() const { return _allTrue; }
-    bool allInvalid() const { return _allInvalid; }
+    [[nodiscard]] const AttributeVectors &attributes() const noexcept { return _attributes; }
+    [[nodiscard]] uint32_t fieldNodes() const noexcept { return _fieldNodes; }
+    [[nodiscard]] uint32_t attrFieldNodes() const noexcept { return _attrFieldNodes; }
+    [[nodiscard]] uint32_t svAttrFieldNodes() const noexcept { return _svAttrFieldNodes; }
+    [[nodiscard]] bool is_always_false() const noexcept { return _always_false; }
+    [[nodiscard]] bool is_always_true() const noexcept { return _always_true; }
+    [[nodiscard]] bool is_always_invalid() const noexcept { return _always_invalid; }
+    [[nodiscard]] bool needs_document() const noexcept {
+        return !_always_false && !_always_true && !_always_invalid && !_preDocOnlySelect;
+    }
 
     // Should only be used for unit testing
     const std::unique_ptr<document::select::Node> &docSelect() const { return _docSelect; }

@@ -33,6 +33,7 @@ struct ControllerFixtureBase : public ::testing::Test
     test::BucketHandler         _bucketHandler;
     MyBucketModifiedHandler     _modifiedHandler;
     std::shared_ptr<bucketdb::BucketDBOwner> _bucketDB;
+    DocTypeName                     _doc_type_name;
     MySubDb                         _ready;
     MySubDb                         _notReady;
     BucketCreateNotifier            _bucketCreateNotifier;
@@ -118,8 +119,9 @@ ControllerFixtureBase::ControllerFixtureBase(const BlockableMaintenanceJobConfig
       _bucketHandler(),
       _modifiedHandler(),
       _bucketDB(std::make_shared<bucketdb::BucketDBOwner>()),
-      _ready(_builder.getRepo(), _bucketDB, 1, SubDbType::READY),
-      _notReady(_builder.getRepo(), _bucketDB, 2, SubDbType::NOTREADY),
+      _doc_type_name("test"),
+      _ready(_builder.getRepo(), _bucketDB, _doc_type_name, 1, SubDbType::READY),
+      _notReady(_builder.getRepo(), _bucketDB, _doc_type_name, 2, SubDbType::NOTREADY),
       _bucketCreateNotifier(),
       _resource_usage_notifier(),
       _refCount(),
@@ -130,7 +132,7 @@ ControllerFixtureBase::ControllerFixtureBase(const BlockableMaintenanceJobConfig
       _metrics("test", 1),
       _bmj(BucketMoveJob::create(_calc, RetainGuard(_refCount), _moveHandler, _modifiedHandler, _master, _bucketExecutor, _ready._subDb,
                                  _notReady._subDb, _bucketCreateNotifier, _clusterStateHandler, _bucketHandler,
-                                 _resource_usage_notifier, blockableConfig, "test", makeBucketSpace())),
+                                 _resource_usage_notifier, blockableConfig, _doc_type_name.getName(), makeBucketSpace())),
       _runner(*_bmj)
 {
 }

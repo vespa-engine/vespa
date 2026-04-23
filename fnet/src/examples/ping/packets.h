@@ -10,16 +10,16 @@ class PingRequest : public FNET_Packet {
 public:
     uint32_t GetPCODE() override;
     uint32_t GetLength() override;
-    void     Encode(FNET_DataBuffer*) override;
-    bool     Decode(FNET_DataBuffer* src, uint32_t len) override;
+    void Encode(FNET_DataBuffer*) override;
+    bool Decode(FNET_DataBuffer* src, uint32_t len) override;
 };
 
 class PingReply : public FNET_Packet {
 public:
     uint32_t GetPCODE() override;
     uint32_t GetLength() override;
-    void     Encode(FNET_DataBuffer*) override;
-    bool     Decode(FNET_DataBuffer* src, uint32_t len) override;
+    void Encode(FNET_DataBuffer*) override;
+    bool Decode(FNET_DataBuffer* src, uint32_t len) override;
 };
 
 class PingPacketFactory : public FNET_IPacketFactory {

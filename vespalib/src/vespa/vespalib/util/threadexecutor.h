@@ -3,13 +3,12 @@
 #pragma once
 
 #include "executor.h"
-#include "syncable.h"
 #include "executor_stats.h"
+#include "syncable.h"
 
 namespace vespalib {
 
-class ThreadExecutor : public Executor
-{
+class ThreadExecutor : public Executor {
 public:
     /**
      * Get number of threads in the executor pool.
@@ -37,11 +36,9 @@ public:
 /**
  * Can both execute and sync
  **/
-class SyncableThreadExecutor : public ThreadExecutor, public Syncable
-{
+class SyncableThreadExecutor : public ThreadExecutor, public Syncable {
 public:
-    virtual SyncableThreadExecutor & shutdown() = 0;
+    virtual SyncableThreadExecutor& shutdown() = 0;
 };
 
 } // namespace vespalib
-

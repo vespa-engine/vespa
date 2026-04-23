@@ -14,16 +14,14 @@ namespace vespalib::hwaccelerated {
 // Upon object destruction, the old function table is restored automatically.
 class ScopedFnTableOverride {
     dispatch::FnTable _original_fn_table;
+
 public:
     explicit ScopedFnTableOverride(const dispatch::FnTable& new_sparse_table)
-        : _original_fn_table(dispatch::active_fn_table())
-    {
+        : _original_fn_table(dispatch::active_fn_table()) {
         auto composite_table = dispatch::build_composite_fn_table(new_sparse_table, _original_fn_table, false);
         dispatch::thread_unsafe_update_function_dispatch_pointers(composite_table);
     }
-    ~ScopedFnTableOverride() {
-        dispatch::thread_unsafe_update_function_dispatch_pointers(_original_fn_table);
-    }
+    ~ScopedFnTableOverride() { dispatch::thread_unsafe_update_function_dispatch_pointers(_original_fn_table); }
 
     // Only intended for simple stack scopes, no copying/moving
     ScopedFnTableOverride(const ScopedFnTableOverride&) = delete;
@@ -32,4 +30,4 @@ public:
     ScopedFnTableOverride& operator=(ScopedFnTableOverride&&) noexcept = delete;
 };
 
-} // vespalib::hwaccelerated
+} // namespace vespalib::hwaccelerated

@@ -18,7 +18,9 @@ void FRT_Target::InvokeAsync(FRT_RPCRequest* req, double timeout, FRT_IRequestWa
     FRT_Supervisor::InvokeAsync(_scheduler, _conn, req, timeout, waiter);
 }
 
-void FRT_Target::InvokeVoid(FRT_RPCRequest* req) { FRT_Supervisor::InvokeVoid(_conn, req); }
+void FRT_Target::InvokeVoid(FRT_RPCRequest* req) {
+    FRT_Supervisor::InvokeVoid(_conn, req);
+}
 
 void FRT_Target::InvokeSync(FRT_RPCRequest* req, double timeout) {
     FRT_Supervisor::InvokeSync(_scheduler, _conn, req, timeout);

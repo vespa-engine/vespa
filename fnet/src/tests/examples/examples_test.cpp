@@ -192,10 +192,10 @@ TEST(ExamplesTest, rpc_invoke) {
             consume_result(proc);
         } else {
             ctx.barrier();
-            EXPECT_TRUE(run_with_retry(
-                fmt("exec ../../examples/frt/rpc/vespa-rpc-invoke-bin tcp/localhost:%d frt.rpc.echo "
-                                            "b:1 h:2 i:4 l:8 f:0.5 d:0.25 s:foo",
-                                PORT0)));
+            EXPECT_TRUE(
+                run_with_retry(fmt("exec ../../examples/frt/rpc/vespa-rpc-invoke-bin tcp/localhost:%d frt.rpc.echo "
+                                                           "b:1 h:2 i:4 l:8 f:0.5 d:0.25 s:foo",
+                                               PORT0)));
             kill(f1, SIGTERM);
         }
     };

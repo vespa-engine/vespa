@@ -132,7 +132,8 @@ MetricsProducer::MetricsProducer(const RPCHooks& hooks, FNET_Transport& transpor
       _producer(),
       _startTime(system_clock::now()),
       _lastSnapshotStart(_startTime),
-      _snapshotter(std::make_unique<MetricsSnapshotter>(transport, *this)) {}
+      _snapshotter(std::make_unique<MetricsSnapshotter>(transport, *this)) {
+}
 
 MetricsProducer::~MetricsProducer() = default;
 

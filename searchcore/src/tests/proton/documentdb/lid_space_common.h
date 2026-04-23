@@ -8,6 +8,7 @@
 #include <vespa/searchcore/proton/server/remove_operations_rate_tracker.h>
 #include <vespa/searchcore/proton/server/maintenancedocumentsubdb.h>
 #include <vespa/searchcore/proton/server/i_operation_storer.h>
+#include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/pendinglidtracker.h>
 #include <vespa/searchcore/proton/documentmetastore/operation_listener.h>
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
@@ -59,7 +60,7 @@ struct MyScanIterator : public IDocumentScanIterator {
     explicit MyScanIterator(const MyHandler & handler, const LidVector &lids);
     ~MyScanIterator() override;
     bool valid() const override;
-    search::DocumentMetaData next(uint32_t compactLidLimit) override;
+    search::DocumentMetadata next(uint32_t compactLidLimit) override;
 };
 
 struct MyHandler : public ILidSpaceCompactionHandler {
@@ -76,7 +77,7 @@ struct MyHandler : public ILidSpaceCompactionHandler {
     std::vector<IDestructorCallback::SP> _moveDoneContexts;
     documentmetastore::OperationListener::SP _op_listener;
     RemoveOperationsRateTracker* _rm_listener;
-    std::vector<std::pair<search::DocumentMetaData, std::shared_ptr<Document>>> _docs;
+    std::vector<std::pair<search::DocumentMetadata, std::shared_ptr<Document>>> _docs;
 
     explicit MyHandler(bool storeMoveDoneContexts, bool _bucketIdEqualLid);
     ~MyHandler() override;
@@ -88,8 +89,8 @@ struct MyHandler : public ILidSpaceCompactionHandler {
     uint32_t getSubDbId() const override { return 2; }
     LidUsageStats getLidStatus() const override;
     IDocumentScanIterator::UP getIterator() const override;
-    search::DocumentMetaData getMetaData(uint32_t lid) const override;
-    MoveOperation::UP createMoveOperation(const search::DocumentMetaData &document,
+    search::DocumentMetadata getMetadata(uint32_t lid) const override;
+    MoveOperation::UP createMoveOperation(const search::DocumentMetadata &document,
                                           uint32_t moveToLid) const override;
     void handleMove(const MoveOperation &, IDestructorCallback::SP moveDoneCtx) override;
     void handleCompactLidSpace(const CompactLidSpaceOperation &op, std::shared_ptr<IDestructorCallback>) override;
@@ -125,11 +126,15 @@ struct MyDocumentStore : public proton::test::DummyDocumentStore {
 struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
     std::shared_ptr<const DocumentTypeRepo> repo;
     const MyDocumentStore& store;
-    MyDocumentRetriever(std::shared_ptr<const DocumentTypeRepo> repo_in, const MyDocumentStore& store_in) noexcept;
+    DocTypeName            doc_type_name;
+    MyDocumentRetriever(std::shared_ptr<const DocumentTypeRepo> repo_in, const MyDocumentStore& store_in,
+                        const DocTypeName &doc_type_name) noexcept;
     ~MyDocumentRetriever();
     const document::DocumentTypeRepo& getDocumentTypeRepo() const override;
-    void getBucketMetaData(const storage::spi::Bucket&, DocumentMetaData::Vector&) const override;
-    DocumentMetaData getDocumentMetaData(const DocumentId&) const override;
+    const DocTypeName& get_doc_type_name() const noexcept override;
+    bool can_populate_document_metadata_docid() const noexcept override;
+    void getBucketMetadata(const storage::spi::Bucket&, DocumentMetadata::Vector&, bool populate_docid) const override;
+    DocumentMetadata getDocumentMetadata(const DocumentId&) const override;
     Document::UP getFullDocument(DocumentIdT lid) const override;
     CachedSelect::SP parseSelect(const std::string&) const override;
 };
@@ -138,6 +143,7 @@ struct MySubDb {
     std::unique_ptr<proton::test::DummyDocumentSubDb> sub_db;
     MaintenanceDocumentSubDB maintenance_sub_db;
     PendingLidTracker _pendingLidsForCommit;
-    MySubDb(std::shared_ptr<bucketdb::BucketDBOwner> bucket_db, const MyDocumentStore& store, const std::shared_ptr<const DocumentTypeRepo> & repo);
+    MySubDb(std::shared_ptr<bucketdb::BucketDBOwner> bucket_db, const MyDocumentStore& store,
+            const std::shared_ptr<const DocumentTypeRepo> & repo, const DocTypeName& doc_type_name);
     ~MySubDb();
 };

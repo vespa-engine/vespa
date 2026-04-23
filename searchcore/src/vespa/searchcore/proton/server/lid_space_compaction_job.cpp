@@ -22,7 +22,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.lidspace.compactionjob");
 
-using search::DocumentMetaData;
+using search::DocumentMetadata;
 using search::LidUsageStats;
 using storage::spi::makeBucketTask;
 using storage::spi::Bucket;
@@ -34,7 +34,7 @@ namespace proton::lidspace {
 namespace {
 
 bool
-isSameDocument(const search::DocumentMetaData &a, const search::DocumentMetaData &b) {
+isSameDocument(const search::DocumentMetadata &a, const search::DocumentMetadata &b) {
     //TODO Timestamp check can be removed once logic has proved itself in large scale.
     return (a.lid == b.lid) &&
            (a.bucketId == b.bucketId) &&
@@ -46,7 +46,7 @@ isSameDocument(const search::DocumentMetaData &a, const search::DocumentMetaData
 
 class CompactionJob::MoveTask : public storage::spi::BucketTask {
 public:
-    MoveTask(std::shared_ptr<CompactionJob> job, const search::DocumentMetaData & meta, IDestructorCallback::SP opsTracker)
+    MoveTask(std::shared_ptr<CompactionJob> job, const search::DocumentMetadata & meta, IDestructorCallback::SP opsTracker)
         : _job(std::move(job)),
           _meta(meta),
           _opsTracker(std::move(opsTracker))
@@ -65,7 +65,7 @@ public:
     }
 private:
     std::shared_ptr<CompactionJob> _job;
-    const search::DocumentMetaData _meta;
+    const search::DocumentMetadata _meta;
     IDestructorCallback::SP        _opsTracker;
 };
 
@@ -73,7 +73,7 @@ bool
 CompactionJob::scanDocuments(const LidUsageStats &stats)
 {
     if (_scanItr->valid()) {
-        DocumentMetaData document = getNextDocument(stats);
+        DocumentMetadata document = getNextDocument(stats);
         if (document.valid()) {
             Bucket metaBucket(document::Bucket(_bucketSpace, document.bucketId));
             _bucketExecutor.execute(metaBucket, std::make_unique<MoveTask>(shared_from_this(), document, getLimiter().beginOperation()));
@@ -86,7 +86,7 @@ CompactionJob::scanDocuments(const LidUsageStats &stats)
 }
 
 void
-CompactionJob::moveDocument(std::shared_ptr<CompactionJob> job, const search::DocumentMetaData & metaThen,
+CompactionJob::moveDocument(std::shared_ptr<CompactionJob> job, const search::DocumentMetadata & metaThen,
                             std::shared_ptr<IDestructorCallback> context)
 {
     if (job->stopped()) return; //TODO Remove once lidtracker is no longer in use.
@@ -106,12 +106,12 @@ CompactionJob::moveDocument(std::shared_ptr<CompactionJob> job, const search::Do
 }
 
 void
-CompactionJob::completeMove(const search::DocumentMetaData & metaThen, std::unique_ptr<MoveOperation> moveOp,
+CompactionJob::completeMove(const search::DocumentMetadata & metaThen, std::unique_ptr<MoveOperation> moveOp,
                             std::shared_ptr<IDestructorCallback> onDone)
 {
-    // Reread meta data as document might have been altered after move was initiated
+    // Reread metadata as document might have been altered after move was initiated
     // If so it will fail the timestamp sanity check later on.
-    search::DocumentMetaData metaNow = _handler->getMetaData(metaThen.lid);
+    search::DocumentMetadata metaNow = _handler->getMetadata(metaThen.lid);
     if ( ! isSameDocument(metaThen, metaNow)) return;
     if (metaNow.gid != moveOp->getDocument()->getId().getGlobalId()) return;
 
@@ -192,7 +192,7 @@ CompactionJob::create(const DocumentDBLidSpaceCompactionConfig &config,
             });
 }
 
-DocumentMetaData
+DocumentMetadata
 CompactionJob::getNextDocument(const LidUsageStats &stats)
 {
     return _scanItr->next(std::max(stats.getLowestFreeLid(), stats.getUsedLids()));

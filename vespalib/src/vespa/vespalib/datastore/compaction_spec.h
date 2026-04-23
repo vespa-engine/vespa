@@ -11,24 +11,17 @@ namespace vespalib::datastore {
  * address_space - to avoid running out of free buffers in data store
  *                 (i.e. move data from small buffers to larger buffers)
  */
-class CompactionSpec
-{
+class CompactionSpec {
     bool _compact_memory;
     bool _compact_address_space;
+
 public:
-    CompactionSpec()
-        : _compact_memory(false),
-          _compact_address_space(false)
-    {
-    }
+    CompactionSpec() : _compact_memory(false), _compact_address_space(false) {}
     CompactionSpec(bool compact_memory_, bool compact_address_space_) noexcept
-        : _compact_memory(compact_memory_),
-          _compact_address_space(compact_address_space_)
-    {
-    }
+        : _compact_memory(compact_memory_), _compact_address_space(compact_address_space_) {}
     bool compact() const noexcept { return _compact_memory || _compact_address_space; }
     bool compact_memory() const noexcept { return _compact_memory; }
     bool compact_address_space() const noexcept { return _compact_address_space; }
 };
 
-}
+} // namespace vespalib::datastore

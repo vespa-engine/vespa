@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/util/gate.h>
+
 #include <thread>
 
 namespace vespalib {
@@ -15,11 +16,11 @@ namespace vespalib {
  * for multi-threaded tests where the test may hang if something is
  * wrong.
  **/
-class TimeBomb
-{
+class TimeBomb {
 private:
-    Gate _gate;
+    Gate        _gate;
     std::thread _thread;
+
 public:
     TimeBomb(size_t seconds) : TimeBomb(from_s(seconds)) {}
     TimeBomb(vespalib::duration duration);

@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "implicit_levenshtein_dfa.hpp"
+
 #include "unicode_utils.h"
+
 #include <cassert>
 
 namespace vespalib::fuzzy {
@@ -16,8 +18,7 @@ namespace vespalib::fuzzy {
  * These are used for efficiently dumping an UTF-8 target string suffix from an UTF-32
  * target string index.
  */
-template <typename Traits>
-void ImplicitLevenshteinDfa<Traits>::precompute_utf8_target_with_offsets() {
+template <typename Traits> void ImplicitLevenshteinDfa<Traits>::precompute_utf8_target_with_offsets() {
     _target_utf8_char_offsets.reserve(_u32_str_buf.size());
     _target_as_utf8.reserve(_u32_str_buf.size()); // Under-reserves for all non-ASCII (TODO count via simdutf?)
     // Important: the precomputed UTF-8 target is based on the potentially case-normalized
@@ -32,4 +33,4 @@ void ImplicitLevenshteinDfa<Traits>::precompute_utf8_target_with_offsets() {
 template class ImplicitLevenshteinDfa<FixedMaxEditDistanceTraits<1>>;
 template class ImplicitLevenshteinDfa<FixedMaxEditDistanceTraits<2>>;
 
-}
+} // namespace vespalib::fuzzy

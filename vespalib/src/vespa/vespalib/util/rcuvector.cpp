@@ -37,4 +37,4 @@ template class RcuVectorHeld<int64_t>;
 template class RcuVectorHeld<float>;
 template class RcuVectorHeld<double>;
 
-}
+} // namespace vespalib

@@ -663,20 +663,6 @@ public class PermanentFlags {
             TENANT_ID, APPLICATION
     );
 
-    public static final UnboundIntFlag BACKUP_INTERVAL = defineIntFlag(
-            "backup-interval", 0,
-            "The interval in hours between automatic backup snapshots. " +
-                    "Value 0 disables automatic backups.",
-            "Takes effect on next maintainer run",
-            CLUSTER_ID, APPLICATION, TENANT_ID, ZONE_ID);
-
-    public static final UnboundBooleanFlag BACKUP_SINGLE_GROUP = defineFeatureFlag(
-            "backup-single-group", false,
-            "Whether to limit back up to a single group during automatic backup snapshots. " +
-            "Recommended only when node bucket distribution is near equivalent between groups.",
-            "Takes effect on next maintainer run",
-            CLUSTER_ID, APPLICATION, TENANT_ID, ZONE_ID);
-
     public static final UnboundBooleanFlag IGNORE_CONNECTIVITY_CHECKS_AT_STARTUP = defineFeatureFlag(
             "ignore-connectivity-checks-at-startup", false,
             "Ignore connectivity checks in config-sentinel at startup. " +
@@ -699,6 +685,21 @@ public class PermanentFlags {
                     ". Each string in the list is a regexp, e.g. 'c4d-.*' or 'c4d-high.*'.",
             "Takes effect immediately",
             TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_ID, CLUSTER_TYPE
+    );
+
+    public static final UnboundLongFlag ZOOKEEPER_PRE_ALLOC_SIZE_KIB = defineLongFlag(
+            "zookeeper-pre-alloc-size", 65536,
+            "Setting for zookeeper.preAllocSize flag in KiB, can be reduced from default value "
+                    + "e.g. when running tests to avoid writing a large, sparse, mostly unused file",
+            "Takes effect on restart of Docker container");
+
+
+    public static final UnboundStringFlag VESPA_USE_MALLOC_IMPL = defineStringFlag(
+            "vespa-use-malloc-impl", "",
+            "Which malloc implementation to use  " +
+                    "Valid values: 'vespamalloc', 'mimalloc', '' (empty string, meaning default malloc implementation).",
+            "Takes effect at next reboot of the node",
+            TENANT_ID, APPLICATION, INSTANCE_ID, HOSTNAME, CLUSTER_TYPE
     );
 
     private PermanentFlags() {}

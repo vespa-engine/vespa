@@ -6,9 +6,9 @@
 
 class FRT_ISharedBlob {
 public:
-    virtual void        addRef() = 0;
-    virtual void        subRef() = 0;
-    virtual uint32_t    getLen() = 0;
+    virtual void addRef() = 0;
+    virtual void subRef() = 0;
+    virtual uint32_t getLen() = 0;
     virtual const char* getData() = 0;
 
 protected:

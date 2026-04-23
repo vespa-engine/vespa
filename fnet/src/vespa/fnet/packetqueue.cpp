@@ -132,9 +132,11 @@ void FNET_PacketQueue_NoLock::Print(uint32_t indent) {
 //------------------------------------------------------------------
 
 FNET_PacketQueue::FNET_PacketQueue(uint32_t len, HP_RetCode hpRetCode)
-    : FNET_PacketQueue_NoLock(len, hpRetCode), _lock(), _cond(), _waitCnt(0) {}
+    : FNET_PacketQueue_NoLock(len, hpRetCode), _lock(), _cond(), _waitCnt(0) {
+}
 
-FNET_PacketQueue::~FNET_PacketQueue() {}
+FNET_PacketQueue::~FNET_PacketQueue() {
+}
 
 FNET_IPacketHandler::HP_RetCode FNET_PacketQueue::HandlePacket(FNET_Packet* packet, FNET_Context context) {
     QueuePacket(packet, context);

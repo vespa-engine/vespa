@@ -12,28 +12,28 @@
 #include "unique_store_allocator.h"
 #include "unique_store_comparator.h"
 #include "unique_store_entry.h"
+
 #include <functional>
 
-namespace vespalib::alloc { class MemoryAllocator; }
+namespace vespalib::alloc {
+class MemoryAllocator;
+}
 
 namespace vespalib::datastore {
 
-template <typename Allocator>
-class UniqueStoreBuilder;
+template <typename Allocator> class UniqueStoreBuilder;
 
-template <typename RefT>
-class UniqueStoreEnumerator;
+template <typename RefT> class UniqueStoreEnumerator;
 
-template <typename RefT>
-class UniqueStoreRemapper;
+template <typename RefT> class UniqueStoreRemapper;
 
 /**
  * Datastore for unique values of type EntryT that is accessed via a
  * 32-bit EntryRef.
  */
-template <typename EntryT, typename RefT = EntryRefT<22>, typename Comparator = UniqueStoreComparator<EntryT, RefT>, typename Allocator = UniqueStoreAllocator<EntryT, RefT> >
-class UniqueStore
-{
+template <typename EntryT, typename RefT = EntryRefT<22>, typename Comparator = UniqueStoreComparator<EntryT, RefT>,
+          typename Allocator = UniqueStoreAllocator<EntryT, RefT>>
+class UniqueStore {
 public:
     using DataStoreType = DataStoreT<RefT>;
     using EntryType = EntryT;
@@ -43,14 +43,16 @@ public:
     using Builder = UniqueStoreBuilder<Allocator>;
     using Remapper = UniqueStoreRemapper<RefT>;
     using EntryConstRefType = typename Allocator::EntryConstRefType;
+
 private:
-    Allocator _allocator;
-    DataStoreType &_store;
-    ComparatorType _comparator;
+    Allocator                               _allocator;
+    DataStoreType&                          _store;
+    ComparatorType                          _comparator;
     std::unique_ptr<IUniqueStoreDictionary> _dict;
 
 public:
-    UniqueStore(std::shared_ptr<alloc::MemoryAllocator> memory_allocator, const std::function<ComparatorType(const DataStoreType&)>& comparator_factory);
+    UniqueStore(std::shared_ptr<alloc::MemoryAllocator>                    memory_allocator,
+                const std::function<ComparatorType(const DataStoreType&)>& comparator_factory);
     explicit UniqueStore(std::shared_ptr<alloc::MemoryAllocator> memory_allocator);
     ~UniqueStore();
     void set_dictionary(std::unique_ptr<IUniqueStoreDictionary> dict);
@@ -58,7 +60,8 @@ public:
     EntryRef find(EntryConstRefType value);
     EntryConstRefType get(EntryRef ref) const { return _allocator.get(ref); }
     void remove(EntryRef ref);
-    std::unique_ptr<Remapper> compact_worst(CompactionSpec compaction_spec, const CompactionStrategy& compaction_strategy);
+    std::unique_ptr<Remapper> compact_worst(CompactionSpec            compaction_spec,
+                                            const CompactionStrategy& compaction_strategy);
     vespalib::MemoryUsage getMemoryUsage() const;
     vespalib::MemoryUsage get_values_memory_usage() const { return _store.getMemoryUsage(); }
     vespalib::MemoryUsage get_dictionary_memory_usage() const { return _dict->get_memory_usage(); }
@@ -74,7 +77,7 @@ public:
     // Pass on hold list management to underlying store
     void assign_generation(Generation current_gen);
     void reclaim_memory(Generation oldest_used_gen);
-    vespalib::GenerationHolder &getGenerationHolder() { return _store.getGenerationHolder(); }
+    vespalib::GenerationHolder& getGenerationHolder() { return _store.getGenerationHolder(); }
     void setInitializing(bool initializing) { _store.setInitializing(initializing); }
     void freeze();
     uint32_t getNumUniques() const;
@@ -85,7 +88,7 @@ public:
     const ComparatorType& get_comparator() const noexcept { return _comparator; }
 
     // Should only be used for unit testing
-    const BufferState &bufferState(EntryRef ref) const;
+    const BufferState& bufferState(EntryRef ref) const;
 };
 
-}
+} // namespace vespalib::datastore

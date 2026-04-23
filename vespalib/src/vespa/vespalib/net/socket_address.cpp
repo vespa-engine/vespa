@@ -1,13 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "socket_address.h"
+
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <sys/types.h>
-#include <sys/un.h>
+
 #include <arpa/inet.h>
 #include <ifaddrs.h>
 #include <netdb.h>
+#include <sys/types.h>
+#include <sys/un.h>
+
 #include <cassert>
 #include <cerrno>
 
@@ -17,7 +20,7 @@ namespace {
 
 const in6_addr ipv6_wildcard = IN6ADDR_ANY_INIT;
 
-socklen_t get_ip_addr_size(const sockaddr *addr) {
+socklen_t get_ip_addr_size(const sockaddr* addr) {
     if (addr != nullptr) {
         if (addr->sa_family == AF_INET) {
             return sizeof(sockaddr_in);
@@ -29,11 +32,9 @@ socklen_t get_ip_addr_size(const sockaddr *addr) {
     return 0;
 }
 
-} // namespace vespalib::<unnamed>
+} // namespace
 
-bool
-SocketAddress::is_wildcard() const
-{
+bool SocketAddress::is_wildcard() const {
     if (is_ipv4()) {
         return (addr_in()->sin_addr.s_addr == htonl(INADDR_ANY));
     }
@@ -43,21 +44,17 @@ SocketAddress::is_wildcard() const
     return false;
 }
 
-bool
-SocketAddress::is_abstract() const
-{
+bool SocketAddress::is_abstract() const {
     bool result = false;
     if (is_ipc()) {
-        const char *path_limit = (reinterpret_cast<const char *>(addr_un()) + _size);
-        const char *pos = &addr_un()->sun_path[0];
+        const char* path_limit = (reinterpret_cast<const char*>(addr_un()) + _size);
+        const char* pos = &addr_un()->sun_path[0];
         result = ((path_limit > pos) && (pos[0] == '\0'));
     }
     return result;
 }
 
-std::string
-SocketAddress::ip_address() const
-{
+std::string SocketAddress::ip_address() const {
     std::string result;
     if (is_ipv4()) {
         char buf[INET_ADDRSTRLEN];
@@ -69,22 +66,18 @@ SocketAddress::ip_address() const
     return result;
 }
 
-std::string
-SocketAddress::reverse_lookup() const
-{
+std::string SocketAddress::reverse_lookup() const {
     std::vector<char> result(4_Ki, '\0');
     getnameinfo(addr(), _size, &result[0], 4000, nullptr, 0, NI_NAMEREQD);
     return &result[0];
 }
 
-std::string
-SocketAddress::path() const
-{
+std::string SocketAddress::path() const {
     std::string result;
     if (is_ipc() && !is_abstract()) {
-        const char *path_limit = (reinterpret_cast<const char *>(addr_un()) + _size);
-        const char *pos = &addr_un()->sun_path[0];
-        const char *end = pos;
+        const char* path_limit = (reinterpret_cast<const char*>(addr_un()) + _size);
+        const char* pos = &addr_un()->sun_path[0];
+        const char* end = pos;
         while ((end < path_limit) && (*end != 0)) {
             ++end;
         }
@@ -93,14 +86,12 @@ SocketAddress::path() const
     return result;
 }
 
-std::string
-SocketAddress::name() const
-{
+std::string SocketAddress::name() const {
     std::string result;
     if (is_ipc() && is_abstract()) {
-        const char *path_limit = (reinterpret_cast<const char *>(addr_un()) + _size);
-        const char *pos = &addr_un()->sun_path[1];
-        const char *end = pos;
+        const char* path_limit = (reinterpret_cast<const char*>(addr_un()) + _size);
+        const char* pos = &addr_un()->sun_path[1];
+        const char* end = pos;
         while ((end < path_limit) && (*end != 0)) {
             ++end;
         }
@@ -109,29 +100,22 @@ SocketAddress::name() const
     return result;
 }
 
-SocketAddress::SocketAddress(const sockaddr *addr_in, socklen_t addrlen_in)
-    : _size(addrlen_in),
-      _addr()
-{
+SocketAddress::SocketAddress(const sockaddr* addr_in, socklen_t addrlen_in) : _size(addrlen_in), _addr() {
     memset(&_addr, 0, sizeof(_addr));
     memcpy(&_addr, addr_in, _size);
 }
 
-int
-SocketAddress::port() const
-{
+int SocketAddress::port() const {
     if (is_ipv4()) {
         return ntohs(addr_in()->sin_port);
     }
     if (is_ipv6()) {
-        return ntohs(addr_in6()->sin6_port);        
+        return ntohs(addr_in6()->sin6_port);
     }
     return -1;
 }
 
-std::string
-SocketAddress::spec() const
-{
+std::string SocketAddress::spec() const {
     if (is_wildcard()) {
         return make_string("tcp/%d", port());
     }
@@ -151,18 +135,14 @@ SocketAddress::spec() const
     return "invalid";
 }
 
-SocketHandle
-SocketAddress::raw_socket() const
-{
+SocketHandle SocketAddress::raw_socket() const {
     if (valid()) {
         return SocketHandle(::socket(_addr.ss_family, SOCK_STREAM, 0));
     }
     return SocketHandle();
 }
 
-SocketHandle
-SocketAddress::connect(const std::function<bool(SocketHandle&)> &tweak) const
-{
+SocketHandle SocketAddress::connect(const std::function<bool(SocketHandle&)>& tweak) const {
     SocketHandle handle = raw_socket();
     if (handle.valid() && tweak(handle)) {
         if ((::connect(handle.get(), addr(), _size) == 0) || (errno == EINPROGRESS)) {
@@ -172,9 +152,7 @@ SocketAddress::connect(const std::function<bool(SocketHandle&)> &tweak) const
     return SocketHandle();
 }
 
-SocketHandle
-SocketAddress::listen(int backlog) const
-{
+SocketHandle SocketAddress::listen(int backlog) const {
     SocketHandle handle = raw_socket();
     if (handle.valid()) {
         if (is_ipv6()) {
@@ -183,21 +161,17 @@ SocketAddress::listen(int backlog) const
         if (port() > 0) {
             handle.set_reuse_addr(true);
         }
-        if ((bind(handle.get(), addr(), _size) == 0) &&
-            (::listen(handle.get(), backlog) == 0))
-        {
+        if ((bind(handle.get(), addr(), _size) == 0) && (::listen(handle.get(), backlog) == 0)) {
             return handle;
         }
     }
     return SocketHandle();
 }
 
-SocketAddress
-SocketAddress::address_of(int sockfd)
-{
+SocketAddress SocketAddress::address_of(int sockfd) {
     SocketAddress result;
-    sockaddr *addr = reinterpret_cast<sockaddr *>(&result._addr);
-    socklen_t addr_len = sizeof(result._addr);
+    sockaddr*     addr = reinterpret_cast<sockaddr*>(&result._addr);
+    socklen_t     addr_len = sizeof(result._addr);
     if (getsockname(sockfd, addr, &addr_len) == 0) {
         assert(addr_len <= sizeof(result._addr));
         result._size = addr_len;
@@ -205,12 +179,10 @@ SocketAddress::address_of(int sockfd)
     return result;
 }
 
-SocketAddress
-SocketAddress::peer_address(int sockfd)
-{
+SocketAddress SocketAddress::peer_address(int sockfd) {
     SocketAddress result;
-    sockaddr *addr = reinterpret_cast<sockaddr *>(&result._addr);
-    socklen_t addr_len = sizeof(result._addr);
+    sockaddr*     addr = reinterpret_cast<sockaddr*>(&result._addr);
+    socklen_t     addr_len = sizeof(result._addr);
     if (getpeername(sockfd, addr, &addr_len) == 0) {
         assert(addr_len <= sizeof(result._addr));
         result._size = addr_len;
@@ -218,19 +190,18 @@ SocketAddress::peer_address(int sockfd)
     return result;
 }
 
-std::vector<SocketAddress>
-SocketAddress::resolve(int port, const char *node) {
+std::vector<SocketAddress> SocketAddress::resolve(int port, const char* node) {
     std::vector<SocketAddress> result;
-    addrinfo hints;
+    addrinfo                   hints;
     memset(&hints, 0, sizeof(addrinfo));
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = 0;
     hints.ai_flags = (AI_PASSIVE | AI_NUMERICSERV | AI_ADDRCONFIG);
     std::string service = make_string("%d", port);
-    addrinfo *list = nullptr;
+    addrinfo*   list = nullptr;
     if (getaddrinfo(node, service.c_str(), &hints, &list) == 0) {
-        for (const addrinfo *info = list; info != nullptr; info = info->ai_next) {
+        for (const addrinfo* info = list; info != nullptr; info = info->ai_next) {
             result.push_back(SocketAddress(info->ai_addr, info->ai_addrlen));
         }
         freeaddrinfo(list);
@@ -238,38 +209,30 @@ SocketAddress::resolve(int port, const char *node) {
     return result;
 }
 
-SocketAddress
-SocketAddress::select_local(int port, const char *node)
-{
-    auto prefer_ipv6 = [](const auto &a, const auto &b) { return (!a.is_ipv6() && b.is_ipv6()); };
+SocketAddress SocketAddress::select_local(int port, const char* node) {
+    auto prefer_ipv6 = [](const auto& a, const auto& b) { return (!a.is_ipv6() && b.is_ipv6()); };
     return select(prefer_ipv6, port, node);
 }
 
-SocketAddress
-SocketAddress::select_remote(int port, const char *node)
-{
-    auto prefer_ipv4 = [](const auto &a, const auto &b) { return (!a.is_ipv4() && b.is_ipv4()); };
+SocketAddress SocketAddress::select_remote(int port, const char* node) {
+    auto prefer_ipv4 = [](const auto& a, const auto& b) { return (!a.is_ipv4() && b.is_ipv4()); };
     return select(prefer_ipv4, port, node);
 }
 
-SocketAddress
-SocketAddress::from_path(const std::string &path)
-{
+SocketAddress SocketAddress::from_path(const std::string& path) {
     SocketAddress result;
-    sockaddr_un &addr_un = reinterpret_cast<sockaddr_un &>(result._addr);
+    sockaddr_un&  addr_un = reinterpret_cast<sockaddr_un&>(result._addr);
     if (!path.empty() && (path.size() < sizeof(addr_un.sun_path))) {
         addr_un.sun_family = AF_UNIX;
-        memcpy(&addr_un.sun_path[0], path.data(), path.size());        
+        memcpy(&addr_un.sun_path[0], path.data(), path.size());
         result._size = sizeof(sockaddr_un);
     }
     return result;
 }
 
-SocketAddress
-SocketAddress::from_name(const std::string &name)
-{
+SocketAddress SocketAddress::from_name(const std::string& name) {
     SocketAddress result;
-    sockaddr_un &addr_un = reinterpret_cast<sockaddr_un &>(result._addr);
+    sockaddr_un&  addr_un = reinterpret_cast<sockaddr_un&>(result._addr);
     if (!name.empty() && (name.size() < sizeof(addr_un.sun_path))) {
         addr_un.sun_family = AF_UNIX;
         memcpy(&addr_un.sun_path[1], name.data(), name.size());
@@ -278,13 +241,11 @@ SocketAddress::from_name(const std::string &name)
     return result;
 }
 
-std::vector<SocketAddress>
-SocketAddress::get_interfaces()
-{
+std::vector<SocketAddress> SocketAddress::get_interfaces() {
     std::vector<SocketAddress> result;
-    ifaddrs *list = nullptr;
+    ifaddrs*                   list = nullptr;
     if (getifaddrs(&list) == 0) {
-        for (const ifaddrs *entry = list; entry != nullptr; entry = entry->ifa_next) {
+        for (const ifaddrs* entry = list; entry != nullptr; entry = entry->ifa_next) {
             socklen_t size = get_ip_addr_size(entry->ifa_addr);
             if (size > 0) {
                 result.push_back(SocketAddress(entry->ifa_addr, size));
@@ -295,17 +256,15 @@ SocketAddress::get_interfaces()
     return result;
 }
 
-std::string
-SocketAddress::normalize(const std::string &host_name)
-{
+std::string SocketAddress::normalize(const std::string& host_name) {
     std::string result = host_name;
-    addrinfo hints;
+    addrinfo    hints;
     memset(&hints, 0, sizeof(addrinfo));
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = 0;
     hints.ai_flags = (AI_CANONNAME);
-    addrinfo *list = nullptr;
+    addrinfo* list = nullptr;
     if (getaddrinfo(host_name.c_str(), nullptr, &hints, &list) == 0) {
         if ((list != nullptr) && (list->ai_canonname != nullptr)) {
             result = list->ai_canonname;

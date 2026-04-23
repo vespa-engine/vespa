@@ -17,6 +17,7 @@ DocumentRetrieverBase::DocumentRetrieverBase(const DocTypeName &docTypeName, con
       _docTypeName(docTypeName),
       _repo(repo),
       _meta_store(meta_store),
+      _can_populate_document_metadata_docid(_meta_store.can_populate_document_metadata_docid()),
       _selectCache(256u),
       _lock(),
       _emptyDoc(),
@@ -28,16 +29,20 @@ DocumentRetrieverBase::DocumentRetrieverBase(const DocTypeName &docTypeName, con
 
 DocumentRetrieverBase::~DocumentRetrieverBase() = default;
 
-void
-DocumentRetrieverBase::getBucketMetaData(const storage::spi::Bucket &bucket,
-                                         search::DocumentMetaData::Vector &result) const
-{
-    _meta_store.getReadGuard()->get().getMetaData(bucket, result);
+bool DocumentRetrieverBase::can_populate_document_metadata_docid() const noexcept {
+    return _can_populate_document_metadata_docid;
 }
 
-search::DocumentMetaData
-DocumentRetrieverBase::getDocumentMetaData(const DocumentId &id) const {
-    return _meta_store.getReadGuard()->get().getMetaData(id.getGlobalId());
+void
+DocumentRetrieverBase::getBucketMetadata(const storage::spi::Bucket &bucket,
+                                         search::DocumentMetadata::Vector &result, bool populate_docid) const
+{
+    _meta_store.getReadGuard()->get().getMetadata(bucket, result, populate_docid);
+}
+
+search::DocumentMetadata
+DocumentRetrieverBase::getDocumentMetadata(const DocumentId &id) const {
+    return _meta_store.getReadGuard()->get().getMetadata(id.getGlobalId());
 }
     
 CachedSelect::SP

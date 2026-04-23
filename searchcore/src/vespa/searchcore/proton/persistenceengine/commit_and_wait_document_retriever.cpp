@@ -18,14 +18,22 @@ CommitAndWaitDocumentRetriever::getDocumentTypeRepo() const {
     return _retriever->getDocumentTypeRepo();
 }
 
-void
-CommitAndWaitDocumentRetriever::getBucketMetaData(const Bucket &bucket, search::DocumentMetaData::Vector &result) const {
-    return _retriever->getBucketMetaData(bucket, result);
+const DocTypeName& CommitAndWaitDocumentRetriever::get_doc_type_name() const noexcept {
+    return _retriever->get_doc_type_name();
 }
 
-search::DocumentMetaData
-CommitAndWaitDocumentRetriever::getDocumentMetaData(const document::DocumentId &id) const {
-    return _retriever->getDocumentMetaData(id);
+void
+CommitAndWaitDocumentRetriever::getBucketMetadata(const Bucket &bucket, search::DocumentMetadata::Vector &result, bool populate_docid) const {
+    return _retriever->getBucketMetadata(bucket, result, populate_docid);
+}
+
+bool CommitAndWaitDocumentRetriever::can_populate_document_metadata_docid() const noexcept {
+    return _retriever->can_populate_document_metadata_docid();
+}
+
+search::DocumentMetadata
+CommitAndWaitDocumentRetriever::getDocumentMetadata(const document::DocumentId &id) const {
+    return _retriever->getDocumentMetadata(id);
 }
 
 document::Document::UP

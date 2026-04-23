@@ -6,12 +6,14 @@
 #include "ipacketfactory.h"
 #include "packet.h"
 
-FNET_SimplePacketStreamer::FNET_SimplePacketStreamer(FNET_IPacketFactory* factory) : _factory(factory) {}
+FNET_SimplePacketStreamer::FNET_SimplePacketStreamer(FNET_IPacketFactory* factory) : _factory(factory) {
+}
 
-FNET_SimplePacketStreamer::~FNET_SimplePacketStreamer() {}
+FNET_SimplePacketStreamer::~FNET_SimplePacketStreamer() {
+}
 
-bool FNET_SimplePacketStreamer::GetPacketInfo(
-    FNET_DataBuffer* src, uint32_t* plen, uint32_t* pcode, uint32_t* chid, bool* broken) {
+bool FNET_SimplePacketStreamer::GetPacketInfo(FNET_DataBuffer* src, uint32_t* plen, uint32_t* pcode, uint32_t* chid,
+                                              bool* broken) {
     (void)broken;
 
     if (src->GetDataLen() < 3 * sizeof(uint32_t))
@@ -23,8 +25,8 @@ bool FNET_SimplePacketStreamer::GetPacketInfo(
     return true;
 }
 
-FNET_Packet* FNET_SimplePacketStreamer::Decode(
-    FNET_DataBuffer* src, uint32_t plen, uint32_t pcode, FNET_Context context) {
+FNET_Packet* FNET_SimplePacketStreamer::Decode(FNET_DataBuffer* src, uint32_t plen, uint32_t pcode,
+                                               FNET_Context context) {
     FNET_Packet* packet;
 
     packet = _factory->CreatePacket(pcode, context);

@@ -63,9 +63,9 @@ private:
         enum op_type { OP_REMOVE };
         const ServiceMapping _mapping;
         const op_type        _optype;
-        void                 addItem(RemoteSlobrok* partner);
-        void                 doneItem(bool denied);
-        void                 expedite();
+        void addItem(RemoteSlobrok* partner);
+        void doneItem(bool denied);
+        void expedite();
         WorkPackage(const WorkPackage&) = delete;
         WorkPackage& operator=(const WorkPackage&) = delete;
         WorkPackage(op_type op, const ServiceMapping& mapping, ExchangeManager& exchanger);
@@ -85,14 +85,14 @@ public:
 
     SBEnv& env() { return _env; }
 
-    OkState                  addPartner(const std::string& spec);
-    void                     removePartner(const std::string& spec);
+    OkState addPartner(const std::string& spec);
+    void removePartner(const std::string& spec);
     std::vector<std::string> getPartnerList();
 
     void forwardRemove(const std::string& name, const std::string& spec);
 
     RemoteSlobrok* lookupPartner(const std::string& name) const;
-    void           healthCheck();
+    void healthCheck();
 };
 
 //-----------------------------------------------------------------------------

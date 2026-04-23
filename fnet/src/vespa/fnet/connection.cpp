@@ -67,7 +67,9 @@ struct DoHandshakeWork : vespalib::Executor::Task {
     ~DoHandshakeWork() override;
 };
 
-DoHandshakeWork::~DoHandshakeWork() { assert(conn == nullptr); }
+DoHandshakeWork::~DoHandshakeWork() {
+    assert(conn == nullptr);
+}
 
 } // namespace
 
@@ -80,7 +82,9 @@ void FNET_Connection::ResolveHandler::handle_result(vespalib::SocketAddress resu
     connection->Owner()->Add(connection);
 }
 
-FNET_Connection::ResolveHandler::~ResolveHandler() { connection->internal_subref(); }
+FNET_Connection::ResolveHandler::~ResolveHandler() {
+    connection->internal_subref();
+}
 
 ///////////////////////
 // PROTECTED METHODS //
@@ -489,13 +493,15 @@ bool FNET_Connection::Init() {
     return true;
 }
 
-FNET_IServerAdapter* FNET_Connection::server_adapter() { return _serverAdapter; }
+FNET_IServerAdapter* FNET_Connection::server_adapter() {
+    return _serverAdapter;
+}
 
 bool FNET_Connection::handle_add_event() {
     if (_resolve_handler) {
         auto tweak = [this](vespalib::SocketHandle& handle) { return Owner()->tune(handle); };
-        _socket = Owner()->owner().create_client_crypto_socket(
-            _resolve_handler->address.connect(tweak), vespalib::SocketSpec(GetSpec()));
+        _socket = Owner()->owner().create_client_crypto_socket(_resolve_handler->address.connect(tweak),
+                                                               vespalib::SocketSpec(GetSpec()));
         _ioc_socket_fd = _socket->get_fd();
         _resolve_handler.reset();
     }

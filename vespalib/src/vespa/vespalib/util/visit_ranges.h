@@ -53,8 +53,8 @@ struct visit_ranges_both {};
  * merge-like operations.
  **/
 
-template <typename V, typename ItA, typename ItB, typename Cmp = std::less<> >
-void visit_ranges(V &&visitor, ItA pos_a, ItA end_a, ItB pos_b, ItB end_b, Cmp cmp = Cmp()) {
+template <typename V, typename ItA, typename ItB, typename Cmp = std::less<>>
+void visit_ranges(V&& visitor, ItA pos_a, ItA end_a, ItB pos_b, ItB end_b, Cmp cmp = Cmp()) {
     while ((pos_a != end_a) && (pos_b != end_b)) {
         if (cmp(*pos_a, *pos_b)) {
             visitor(visit_ranges_first(), *pos_a);
@@ -78,4 +78,4 @@ void visit_ranges(V &&visitor, ItA pos_a, ItA end_a, ItB pos_b, ItB end_b, Cmp c
     }
 }
 
-}
+} // namespace vespalib

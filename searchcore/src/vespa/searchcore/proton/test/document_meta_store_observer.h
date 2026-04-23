@@ -38,11 +38,14 @@ struct DocumentMetaStoreObserver : public IDocumentMetaStore
     bool getLid(const GlobalId &gid, DocId &lid) const override {
         return _store.getLid(gid, lid);
     }
-    search::DocumentMetaData getMetaData(const GlobalId &gid) const override {
-        return _store.getMetaData(gid);
+    [[nodiscard]] bool can_populate_document_metadata_docid() const noexcept override {
+        return _store.can_populate_document_metadata_docid();
     }
-    void getMetaData(const BucketId &bucketId, search::DocumentMetaData::Vector &result) const override {
-        _store.getMetaData(bucketId, result);
+    search::DocumentMetadata getMetadata(const GlobalId &gid) const override {
+        return _store.getMetadata(gid);
+    }
+    void getMetadata(const BucketId &bucketId, search::DocumentMetadata::Vector &result, bool populate_docid) const override {
+        _store.getMetadata(bucketId, result, populate_docid);
     }
     search::LidUsageStats getLidUsageStats() const override {
         return _store.getLidUsageStats();
@@ -72,8 +75,8 @@ struct DocumentMetaStoreObserver : public IDocumentMetaStore
     {
         return _store.put(docid, bucketId, timestamp, docSize, lid, prepare_serial_num);
     }
-    bool updateMetaData(DocId lid, const BucketId &bucketId, Timestamp timestamp) override {
-        return _store.updateMetaData(lid, bucketId, timestamp);
+    bool updateMetadata(DocId lid, const BucketId &bucketId, Timestamp timestamp) override {
+        return _store.updateMetadata(lid, bucketId, timestamp);
     }
     bool remove(DocId lid, uint64_t prepare_serial_num) override {
         return _store.remove(lid, prepare_serial_num);
@@ -92,8 +95,8 @@ struct DocumentMetaStoreObserver : public IDocumentMetaStore
      void removeBatch(const std::vector<DocId> &lidsToRemove, const DocId docIdLimit) override {
         _store.removeBatch(lidsToRemove, docIdLimit);
     }
-    const RawDocumentMetaData &getRawMetaData(DocId lid) const override {
-        return _store.getRawMetaData(lid);
+    const RawDocumentMetadata &getRawMetadata(DocId lid) const override {
+        return _store.getRawMetadata(lid);
     }
 
     /**

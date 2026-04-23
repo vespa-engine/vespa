@@ -8,9 +8,12 @@ namespace vespalib::net::tls {
 
 const char* enum_name(AuthorizationMode mode) noexcept {
     switch (mode) {
-    case AuthorizationMode::Disable: return "Disable";
-    case AuthorizationMode::LogOnly: return "LogOnly";
-    case AuthorizationMode::Enforce: return "Enforce";
+    case AuthorizationMode::Disable:
+        return "Disable";
+    case AuthorizationMode::LogOnly:
+        return "LogOnly";
+    case AuthorizationMode::Enforce:
+        return "Enforce";
     }
     abort();
 }
@@ -20,4 +23,4 @@ std::ostream& operator<<(std::ostream& os, AuthorizationMode mode) {
     return os;
 }
 
-}
+} // namespace vespalib::net::tls

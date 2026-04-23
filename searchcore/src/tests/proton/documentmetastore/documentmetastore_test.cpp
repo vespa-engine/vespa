@@ -39,7 +39,7 @@ using search::AttributeFileSaveTarget;
 using search::AttributeGuard;
 using search::AttributeVector;
 using search::CommitParam;
-using search::DocumentMetaData;
+using search::DocumentMetadata;
 using search::GrowStrategy;
 using search::LidUsageStats;
 using search::QueryTermSimple;
@@ -149,7 +149,7 @@ assertGid(const GlobalId &exp,
     Timestamp timestamp(1);
     EXPECT_TRUE(dms.getGid(lid, act));
     EXPECT_TRUE(compare(exp, act));
-    DocumentMetaData meta = dms.getMetaData(act);
+    DocumentMetadata meta = dms.getMetadata(act);
     EXPECT_TRUE(meta.valid());
     bucketId = meta.bucketId;
     timestamp = meta.timestamp;
@@ -167,13 +167,15 @@ assertLid(uint32_t exp, const GlobalId &gid, const DocumentMetaStore &dms)
 }
 
 void
-assertMetaData(const DocumentMetaData &exp, const DocumentMetaData &act)
+assertMetadata(const DocumentMetadata &exp, const DocumentMetadata &act)
 {
+    SCOPED_TRACE(std::format("exp.lid={}", exp.lid));
     EXPECT_EQ(exp.lid, act.lid);
     EXPECT_EQ(exp.timestamp, act.timestamp);
     EXPECT_EQ(exp.bucketId, act.bucketId);
     EXPECT_EQ(exp.gid, act.gid);
     EXPECT_EQ(exp.removed, act.removed);
+    EXPECT_EQ(exp.docid, act.docid);
 }
 
 void
@@ -282,9 +284,9 @@ putDoc(DocumentMetaStore &dms, const DocumentId& docid, uint32_t lid, Timestamp 
     dms.commit();
 }
 
-TEST(DocumentMetaStoreTest, control_meta_data_sizeof) {
-    EXPECT_EQ(32u, sizeof(RawDocumentMetaData));
-    EXPECT_EQ(40u, sizeof(search::DocumentMetaData));
+TEST(DocumentMetaStoreTest, control_metadata_sizeof) {
+    EXPECT_EQ(32u, sizeof(RawDocumentMetadata));
+    EXPECT_EQ(40u + sizeof(std::string), sizeof(search::DocumentMetadata));
 }
  TEST(DocumentMetaStoreTest, removed_documents_are_bucketized_to_bucket_0)
 {
@@ -866,7 +868,7 @@ TEST(DocumentMetaStoreTest, can_retrieve_list_of_lids_from_bucket_id)
 }
 
 struct Comparator {
-    bool operator() (const DocumentMetaData &lhs, const DocumentMetaData &rhs) const {
+    bool operator() (const DocumentMetadata &lhs, const DocumentMetadata &rhs) const {
         return lhs.lid < rhs.lid;
     }
 };
@@ -880,6 +882,7 @@ struct UserDocFixture {
     BucketId bid3;
     bucketdb::BucketDBHandler _bucketDBHandler;
     UserDocFixture();
+    explicit UserDocFixture(bool store_docid);
     ~UserDocFixture();
     void addDocumentId(const DocumentId& docid, uint32_t expLid, uint32_t timestampConst = 100) {
         uint32_t actLid = addDoc(dms, docid, Timestamp(expLid + timestampConst));
@@ -889,8 +892,14 @@ struct UserDocFixture {
 };
 
 UserDocFixture::UserDocFixture()
+    : UserDocFixture(false)
+{
+}
+
+UserDocFixture::UserDocFixture(bool store_docid)
     : _bucketDB(createBucketDB()),
-      dms(_bucketDB), docids(), bid1(), bid2(), bid3(),
+      dms(_bucketDB, DocumentMetaStore::getFixedName(), search::GrowStrategy(), store_docid, SubDbType::READY),
+      docids(), bid1(), bid2(), bid3(),
       _bucketDBHandler(*_bucketDB)
 {
     _bucketDBHandler.addDocumentMetaStore(&dms, 0);
@@ -907,6 +916,7 @@ UserDocFixture::UserDocFixture()
     bid1 = BucketId(minNumBits, docids[0].getGlobalId().convertToBucketId().getRawId());
     bid2 = BucketId(minNumBits, docids[2].getGlobalId().convertToBucketId().getRawId());
     bid3 = BucketId(minNumBits, docids[7].getGlobalId().convertToBucketId().getRawId());
+    EXPECT_EQ(store_docid, dms.can_populate_document_metadata_docid());
 }
 UserDocFixture::~UserDocFixture() = default;
 
@@ -918,41 +928,41 @@ UserDocFixture::addDocumentIds(size_t numGids) {
     }
 }
 
-TEST(DocumentMetaStoreTest, can_retrieve_list_of_meta_data_from_bucket_id)
+TEST(DocumentMetaStoreTest, can_retrieve_list_of_metadata_from_bucket_id)
 {
-    UserDocFixture f;
+    UserDocFixture f(true);
     { // empty bucket
-        DocumentMetaData::Vector result;
-        f.dms.getMetaData(f.bid1, result);
+        DocumentMetadata::Vector result;
+        f.dms.getMetadata(f.bid1, result, false);
         EXPECT_EQ(0u, result.size());
     }
     f.dms.constructFreeList();
     f.addDocumentIds();
     { // verify bucket 1
-        DocumentMetaData::Vector result;
-        f.dms.getMetaData(f.bid1, result);
+        DocumentMetadata::Vector result;
+        f.dms.getMetadata(f.bid1, result, true);
         std::sort(result.begin(), result.end(), Comparator());
         EXPECT_EQ(4u, result.size());
-        assertMetaData(DocumentMetaData(1, Timestamp(101), f.bid1,
-                                        f.docids[0].getGlobalId()), result[0]);
-        assertMetaData(DocumentMetaData(2, Timestamp(102), f.bid1,
-                                        f.docids[1].getGlobalId()), result[1]);
-        assertMetaData(DocumentMetaData(4, Timestamp(104), f.bid1,
-                                        f.docids[3].getGlobalId()), result[2]);
-        assertMetaData(DocumentMetaData(5, Timestamp(105), f.bid1,
-                                        f.docids[4].getGlobalId()), result[3]);
+        assertMetadata(DocumentMetadata(1, Timestamp(101), f.bid1, f.docids[0].getGlobalId(), false,
+                                        f.docids[0].toString()), result[0]);
+        assertMetadata(DocumentMetadata(2, Timestamp(102), f.bid1, f.docids[1].getGlobalId(), false,
+                                        f.docids[1].toString()), result[1]);
+        assertMetadata(DocumentMetadata(4, Timestamp(104), f.bid1, f.docids[3].getGlobalId(), false,
+                                        f.docids[3].toString()), result[2]);
+        assertMetadata(DocumentMetadata(5, Timestamp(105), f.bid1, f.docids[4].getGlobalId(), false,
+                                        f.docids[4].toString()), result[3]);
     }
     { // verify bucket 2
-        DocumentMetaData::Vector result;
-        f.dms.getMetaData(f.bid2, result);
+        DocumentMetadata::Vector result;
+        f.dms.getMetadata(f.bid2, result, true);
         std::sort(result.begin(), result.end(), Comparator());
         EXPECT_EQ(3u, result.size());
-        assertMetaData(DocumentMetaData(3, Timestamp(103), f.bid2,
-                                        f.docids[2].getGlobalId()), result[0]);
-        assertMetaData(DocumentMetaData(6, Timestamp(106), f.bid2,
-                                        f.docids[5].getGlobalId()), result[1]);
-        assertMetaData(DocumentMetaData(7, Timestamp(107), f.bid2,
-                                        f.docids[6].getGlobalId()), result[2]);
+        assertMetadata(DocumentMetadata(3, Timestamp(103), f.bid2, f.docids[2].getGlobalId(), false,
+                                        f.docids[2].toString()), result[0]);
+        assertMetadata(DocumentMetadata(6, Timestamp(106), f.bid2, f.docids[5].getGlobalId(), false,
+                                        f.docids[5].toString()), result[1]);
+        assertMetadata(DocumentMetadata(7, Timestamp(107), f.bid2, f.docids[6].getGlobalId(), false,
+                                        f.docids[6].toString()), result[2]);
     }
 }
 
@@ -1971,8 +1981,8 @@ void
 assertSize(DocumentMetaStore &dms, uint32_t lid, uint32_t expSize)
 {
     EXPECT_TRUE(dms.validLid(lid));
-    const auto &metaData = dms.getRawMetaData(lid);
-    EXPECT_EQ(expSize, metaData.getDocSize());
+    const auto &metadata = dms.getRawMetadata(lid);
+    EXPECT_EQ(expSize, metadata.getDocSize());
 }
 
 void
@@ -2054,6 +2064,34 @@ TEST(DocumentMetaStoreTest, document_sizes_are_saved)
     assertSize(dms4, 3, 1);
     std::filesystem::remove(std::filesystem::path("documentmetastore3.dat"));
     std::filesystem::remove(std::filesystem::path("documentmetastore4.dat"));
+}
+
+TEST(DocumentMetaStoreTest, full_document_ids_are_saved)
+{
+    DocumentMetaStore dms1(createBucketDB(), "[documentmetastore]", search::GrowStrategy(), true, SubDbType::READY);
+    dms1.constructFreeList();
+    addLid(dms1, 1);
+    addLid(dms1, 2);
+    addLid(dms1, 3);
+
+    TuneFileAttributes tuneFileAttributes;
+    DummyFileHeaderContext fileHeaderContext;
+    AttributeFileSaveTarget saveTarget(tuneFileAttributes, fileHeaderContext);
+    EXPECT_TRUE(dms1.save(saveTarget, "documentmetastore5"));
+
+    DocumentMetaStore dms_loaded_docids(createBucketDB(), "documentmetastore5", search::GrowStrategy(), true, SubDbType::READY);
+    EXPECT_TRUE(dms_loaded_docids.load());
+    dms_loaded_docids.constructFreeList();
+
+    auto d1 = createDocId(1);
+    EXPECT_EQ(d1.toString(), dms_loaded_docids.get_docid_string(d1.getGlobalId()));
+    auto d2 = createDocId(2);
+    EXPECT_EQ(d2.toString(), dms_loaded_docids.get_docid_string(d2.getGlobalId()));
+    auto d3 = createDocId(3);
+    EXPECT_EQ(d3.toString(), dms_loaded_docids.get_docid_string(d3.getGlobalId()));
+
+    std::filesystem::remove(std::filesystem::path("documentmetastore5.dat"));
+    std::filesystem::remove(std::filesystem::path("documentmetastore5.docids.dat"));
 }
 
 namespace {

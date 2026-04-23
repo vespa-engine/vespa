@@ -4,8 +4,15 @@ IndentWidth: 4
 DerivePointerAlignment: false
 PointerAlignment: Left
 ReferenceAlignment: Pointer
-AlignConsecutiveDeclarations: Consecutive
+AlignConsecutiveAssignments: None
+AlignConsecutiveDeclarations:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+  AlignFunctionDeclarations: false
+  AlignFunctionPointers: false
 AlignEscapedNewlines: LeftWithLastLine
+AllowShortFunctionsOnASingleLine: InlineOnly
 PackConstructorInitializers: NextLine
 BreakBeforeBraces: Custom
 BraceWrapping:
@@ -34,11 +41,15 @@ IncludeCategories:
     SortPriority:    1
   - Regex:           '^<vespa/log/log[.]h'
     Priority:        9
-  - Regex:           '^<vespa/'
+  - Regex:           '^<vespa/.*[.]h>'
     Priority:        3
-  - Regex:           '<.*[.](h|hpp)>'
+  - Regex:           '^<vespa/'
     Priority:        4
-    SortPriority:    5
+  - Regex:           '<.*[.]h>'
+    Priority:        5
+    SortPriority:    6
+  - Regex:           '<.*[.]hpp>'
+    Priority:        5
+    SortPriority:    7
   - Regex:           '<.*>'
-    Priority:        4
-    SortPriority:    4
+    Priority:        8

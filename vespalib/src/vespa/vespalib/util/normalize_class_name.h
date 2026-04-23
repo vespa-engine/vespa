@@ -12,4 +12,4 @@ namespace vespalib {
  */
 std::string normalize_class_name(std::string class_name);
 
-}
+} // namespace vespalib

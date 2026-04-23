@@ -25,10 +25,10 @@ public:
         _enableStateServer = v;
         return *this;
     }
-    bool                       enableStateServer() const { return _enableStateServer; }
-    uint32_t                   portNumber() const { return _port; }
-    std::string                configId() const { return _configId; }
-    const char*                id() const { return _configId.c_str(); }
+    bool enableStateServer() const { return _enableStateServer; }
+    uint32_t portNumber() const { return _port; }
+    std::string configId() const { return _configId; }
+    const char* id() const { return _configId.c_str(); }
     const ConfiguratorFactory& factory() const { return _factory; }
 };
 

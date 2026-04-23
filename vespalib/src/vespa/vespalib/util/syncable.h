@@ -7,8 +7,7 @@ namespace vespalib {
 /**
  * An syncable is an interface that waits for something to complete.
  **/
-class Syncable
-{
+class Syncable {
 public:
     /**
      * Synchronize with this executor. This function will block until
@@ -17,10 +16,9 @@ public:
      *
      * @return this object; for chaining
      **/
-    virtual Syncable &sync() = 0;
+    virtual Syncable& sync() = 0;
 
     virtual ~Syncable() = default;
 };
 
 } // namespace vespalib
-

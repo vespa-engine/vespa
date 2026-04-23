@@ -21,7 +21,8 @@ FRT_RPCRequest::FRT_RPCRequest()
       _methodName(nullptr),
       _detachedPT(nullptr),
       _abortHandler(nullptr),
-      _returnHandler(nullptr) {}
+      _returnHandler(nullptr) {
+}
 
 FRT_RPCRequest::~FRT_RPCRequest() = default;
 
@@ -34,7 +35,9 @@ void FRT_RPCRequest::SetError(uint32_t errorCode, const char* errorMessage) {
     SetError(errorCode, errorMessage, strlen(errorMessage));
 }
 
-void FRT_RPCRequest::SetError(uint32_t errorCode) { SetError(errorCode, FRT_GetDefaultErrorMessage(errorCode)); }
+void FRT_RPCRequest::SetError(uint32_t errorCode) {
+    SetError(errorCode, FRT_GetDefaultErrorMessage(errorCode));
+}
 
 bool FRT_RPCRequest::CheckReturnTypes(const char* types) {
     if (IsError()) {
@@ -51,7 +54,9 @@ void FRT_RPCRequest::SetMethodName(const char* methodName, uint32_t len) {
     _methodNameLen = len;
     _methodName = fnet::copyString(_stash.alloc(len + 1), methodName, len);
 }
-void FRT_RPCRequest::SetMethodName(const char* methodName) { SetMethodName(methodName, strlen(methodName)); }
+void FRT_RPCRequest::SetMethodName(const char* methodName) {
+    SetMethodName(methodName, strlen(methodName));
+}
 
 bool FRT_RPCRequest::Abort() {
     if (_abortHandler == nullptr) {
@@ -60,7 +65,9 @@ bool FRT_RPCRequest::Abort() {
     return _abortHandler->HandleAbort();
 }
 
-void FRT_RPCRequest::Return() { _returnHandler->HandleReturn(); }
+void FRT_RPCRequest::Return() {
+    _returnHandler->HandleReturn();
+}
 
 FNET_Connection* FRT_RPCRequest::GetConnection() {
     if (_returnHandler == nullptr)

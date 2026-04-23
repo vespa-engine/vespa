@@ -41,17 +41,12 @@ public:
      * @param separators The characters to be used as token separators
      * @param strip      Characters to be stripped from both ends of each token
      **/
-    explicit StringTokenizer(std::string_view source)
-        : StringTokenizer(source, ",")
-    {}
+    explicit StringTokenizer(std::string_view source) : StringTokenizer(source, ",") {}
     StringTokenizer(std::string_view source, std::string_view separators)
-        : StringTokenizer(source, separators, " \t\f\r\n")
-    {}
-    StringTokenizer(std::string_view source,
-                    std::string_view separators,
-                    std::string_view strip);
-    StringTokenizer(StringTokenizer &&) noexcept = default;
-    StringTokenizer & operator=(StringTokenizer &&) noexcept = default;
+        : StringTokenizer(source, separators, " \t\f\r\n") {}
+    StringTokenizer(std::string_view source, std::string_view separators, std::string_view strip);
+    StringTokenizer(StringTokenizer&&) noexcept = default;
+    StringTokenizer& operator=(StringTokenizer&&) noexcept = default;
     ~StringTokenizer();
 
     /** Remove any empty tokens from the token list */
@@ -61,16 +56,15 @@ public:
     [[nodiscard]] unsigned int size() const { return _tokens.size(); }
 
     /** Access a token from the current token list */
-    const Token & operator[](unsigned int index) const { return _tokens[index]; }
+    const Token& operator[](unsigned int index) const { return _tokens[index]; }
 
     [[nodiscard]] Iterator begin() const { return _tokens.begin(); }
     [[nodiscard]] Iterator end() const { return _tokens.end(); }
 
     /** Access the entire token list */
-    [[nodiscard]] const TokenList & getTokens() const { return _tokens; }
+    [[nodiscard]] const TokenList& getTokens() const { return _tokens; }
 
 private:
     TokenList _tokens;
 };
-}
-
+} // namespace vespalib

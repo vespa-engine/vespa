@@ -32,8 +32,8 @@ private:
     struct Event {
         EventType      type;
         ServiceMapping mapping;
-        static Event   add(const ServiceMapping& value) { return Event{EventType::ADD, value}; }
-        static Event   remove(const ServiceMapping& value) { return Event{EventType::REMOVE, value}; }
+        static Event add(const ServiceMapping& value) { return Event{EventType::ADD, value}; }
+        static Event remove(const ServiceMapping& value) { return Event{EventType::REMOVE, value}; }
     };
 
     class DelayedTasks : public FNET_Task {
@@ -106,7 +106,7 @@ public:
     LocalRpcMonitorMap(FNET_Scheduler* scheduler, MappingMonitorFactory mappingMonitorFactory);
     ~LocalRpcMonitorMap() override;
 
-    MapSource&         dispatcher() { return _dispatcher; }
+    MapSource& dispatcher() { return _dispatcher; }
     ServiceMapHistory& history();
 
     [[nodiscard]] bool wouldConflict(const ServiceMapping& mapping) const;

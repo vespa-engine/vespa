@@ -22,7 +22,7 @@ public:
     void RPC_concat(FRT_RPCRequest* req);
     void RPC_addFloat(FRT_RPCRequest* req);
     void RPC_addDouble(FRT_RPCRequest* req);
-    int  main(int argc, char** argv);
+    int main(int argc, char** argv);
 };
 
 void RPCServer::InitRPC(FRT_Supervisor* s) {

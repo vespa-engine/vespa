@@ -21,6 +21,7 @@ import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.InvokerResult;
 import com.yahoo.search.dispatch.LeanHit;
+import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.grouping.vespa.GroupingExecutor;
 import com.yahoo.search.query.Model;
 import com.yahoo.search.query.QueryTree;
@@ -284,15 +285,14 @@ public class ProtobufSerialization {
         return convertFromResult(searchResult).toByteArray();
     }
 
-    static InvokerResult deserializeToSearchResult(byte[] payload, Query query, VespaBackend searcher, int partId, int distKey)
+    static InvokerResult deserializeToSearchResult(byte[] payload, Query query, VespaBackend searcher, Node node)
             throws InvalidProtocolBufferException {
         var protobuf = SearchProtocol.SearchReply.parseFrom(payload);
-        return convertToResult(query, protobuf, searcher.getDocumentDatabase(query), partId, distKey);
+        return convertToResult(query, protobuf, searcher.getDocumentDatabase(query), node);
     }
 
     static InvokerResult convertToResult(Query query, SearchProtocol.SearchReply protobuf,
-                                         DocumentDatabase documentDatabase, int partId, int distKey)
-    {
+                                         DocumentDatabase documentDatabase, Node node) {
         InvokerResult result = new InvokerResult(query, protobuf.getHitsCount());
 
         result.getResult().setTotalHitCount(protobuf.getTotalHitCount());
@@ -310,16 +310,17 @@ public class ProtobufSerialization {
             for (int i = 0; i < cnt; i++) {
                 Grouping g = new Grouping();
                 g.deserialize(buf);
-                g.select(obj -> (obj instanceof FS4Hit), obj -> ((FS4Hit) obj).setPath(partId));
+                g.select(obj -> (obj instanceof FS4Hit), obj -> ((FS4Hit) obj).setPath(node.pathIndex()));
                 list.add(g);
             }
             GroupingListHit hit = new GroupingListHit(list, documentDatabase, query);
             result.getResult().hits().add(hit);
         }
         for (var replyHit : protobuf.getHitsList()) {
-            LeanHit hit = (replyHit.getSortData().isEmpty())
-                    ? new LeanHit(replyHit.getGlobalId().toByteArray(), partId, distKey, replyHit.getRelevance())
-                    : new LeanHit(replyHit.getGlobalId().toByteArray(), partId, distKey, replyHit.getRelevance(), replyHit.getSortData().toByteArray());
+            LeanHit hit = new LeanHit(replyHit.getGlobalId().toByteArray(),
+                                      node.groupWhenMultiple(), node.pathIndex(), node.key(),
+                                      replyHit.getRelevance(),
+                                      replyHit.getSortData().isEmpty() ? null : replyHit.getSortData().toByteArray());
             if (haveMatchFeatures) {
                 var hitFeatures = matchFeatures.addHit();
                 var featureList = replyHit.getMatchFeaturesList();

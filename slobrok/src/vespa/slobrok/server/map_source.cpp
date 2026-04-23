@@ -9,7 +9,9 @@ MapSubscription::MapSubscription(MapSource& source, MapListener& listener, Tag)
     _source.registerListener(_listener);
 }
 
-MapSubscription::~MapSubscription() { _source.unregisterListener(_listener); }
+MapSubscription::~MapSubscription() {
+    _source.unregisterListener(_listener);
+}
 
 std::unique_ptr<MapSubscription> MapSubscription::subscribe(MapSource& source, MapListener& listener) {
     return std::make_unique<MapSubscription>(source, listener, Tag{});

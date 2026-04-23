@@ -23,7 +23,9 @@ FNET_ChannelLookup::FNET_ChannelLookup(uint32_t hashSize) : _map(std::make_uniqu
     assert(hashSize > 0);
 }
 
-FNET_ChannelLookup::~FNET_ChannelLookup() { assert(_map->empty()); }
+FNET_ChannelLookup::~FNET_ChannelLookup() {
+    assert(_map->empty());
+}
 
 void FNET_ChannelLookup::Register(FNET_Channel* channel) {
     assert(channel->GetHandler() != nullptr);

@@ -168,10 +168,10 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
 
     String prependInstruction(String text, Context context) {
         if (prependQuery != null && !prependQuery.isEmpty() && context.getDestinationType() == Context.DestinationType.QUERY) {
-            return prependQuery + " " + text;
+            return prependQuery + text;
         }
         if (prependDocument != null && !prependDocument.isEmpty()) {
-            return prependDocument + " " + text;
+            return prependDocument + text;
         }
         return text;
     }

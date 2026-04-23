@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <cctype>
-#include <string>
 #include <cxxabi.h>
 #include <dlfcn.h>
 #include <vespamalloc/util/callstack.h>
+
+#include <cctype>
+#include <string>
 
 namespace vespamalloc {
 

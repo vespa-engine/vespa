@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/asciistream.h>
+
 #include <iosfwd>
 #include <string>
 
@@ -23,4 +24,4 @@ namespace vespalib {
 void write_xml_content_escaped(vespalib::asciistream& out, std::string_view s);
 void write_xml_content_escaped(std::ostream& out, std::string_view s);
 
-}
+} // namespace vespalib

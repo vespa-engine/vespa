@@ -18,4 +18,4 @@ extern const uint32_t fp8_e5m2_f32_bits_lut[256];
 // FP8_E4M3FN -> f32 (as u32)
 extern const uint32_t fp8_e4m3fn_f32_bits_lut[256];
 
-}
+} // namespace vespalib::hwaccelerated

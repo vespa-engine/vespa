@@ -4,22 +4,32 @@
 
 #include <vespa/fnet/databuffer.h>
 
-uint32_t PingRequest::GetPCODE() { return PCODE_PING_REQUEST; }
+uint32_t PingRequest::GetPCODE() {
+    return PCODE_PING_REQUEST;
+}
 
-uint32_t PingRequest::GetLength() { return 0; }
+uint32_t PingRequest::GetLength() {
+    return 0;
+}
 
-void PingRequest::Encode(FNET_DataBuffer*) {}
+void PingRequest::Encode(FNET_DataBuffer*) {
+}
 
 bool PingRequest::Decode(FNET_DataBuffer* src, uint32_t len) {
     src->DataToDead(len);
     return (len == 0);
 }
 
-uint32_t PingReply::GetPCODE() { return PCODE_PING_REPLY; }
+uint32_t PingReply::GetPCODE() {
+    return PCODE_PING_REPLY;
+}
 
-uint32_t PingReply::GetLength() { return 0; }
+uint32_t PingReply::GetLength() {
+    return 0;
+}
 
-void PingReply::Encode(FNET_DataBuffer*) {}
+void PingReply::Encode(FNET_DataBuffer*) {
+}
 
 bool PingReply::Decode(FNET_DataBuffer* src, uint32_t len) {
     src->DataToDead(len);

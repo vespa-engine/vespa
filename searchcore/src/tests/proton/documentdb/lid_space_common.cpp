@@ -19,7 +19,7 @@ MyScanIterator::valid() const {
     return _validItr;
 }
 
-search::DocumentMetaData MyScanIterator::next(uint32_t compactLidLimit) {
+search::DocumentMetadata MyScanIterator::next(uint32_t compactLidLimit) {
     if (_itr != _lids.begin()) {
         ++_itr;
     }
@@ -27,12 +27,12 @@ search::DocumentMetaData MyScanIterator::next(uint32_t compactLidLimit) {
     if (_itr != _lids.end()) {
         uint32_t lid = *_itr;
         if (lid > compactLidLimit) {
-            return _handler.getMetaData(lid);
+            return _handler.getMetadata(lid);
         }
     } else {
         _validItr = false;
     }
-    return search::DocumentMetaData();
+    return search::DocumentMetadata();
 }
 
 document::BucketId
@@ -93,16 +93,16 @@ MyHandler::getIterator() const {
     return std::make_unique<MyScanIterator>(*this, _lids[_iteratorCnt++]);
 }
 
-search::DocumentMetaData
-MyHandler::getMetaData(uint32_t lid) const {
+search::DocumentMetadata
+MyHandler::getMetadata(uint32_t lid) const {
     if (lid < _docs.size()) {
         return _docs[lid].first;
     }
-    return search::DocumentMetaData();
+    return search::DocumentMetadata();
 }
 
 MoveOperation::UP
-MyHandler::createMoveOperation(const search::DocumentMetaData &document, uint32_t moveToLid) const {
+MyHandler::createMoveOperation(const search::DocumentMetadata &document, uint32_t moveToLid) const {
     assert(document.lid > moveToLid);
     _moveFromLid = document.lid;
     const auto & entry = _docs[document.lid];
@@ -143,7 +143,7 @@ MyHandler::MyHandler(bool storeMoveDoneContexts, bool bucketIdEqualLid)
 {
     for (uint32_t i(0); i < 10; i++) {
         auto doc = _builder.make_document(fmt("%s%d", DOC_ID.c_str(), i));
-        _docs.emplace_back(DocumentMetaData(i, TIMESTAMP_1, createBucketId(i), doc->getId().getGlobalId()), std::move(doc));
+        _docs.emplace_back(DocumentMetadata(i, TIMESTAMP_1, createBucketId(i), doc->getId().getGlobalId()), std::move(doc));
     }
 }
 
@@ -176,9 +176,11 @@ MyDocumentStore::read(search::DocumentIdT lid, const document::DocumentTypeRepo 
     return Document::UP(_readDoc->clone());
 }
 
-MyDocumentRetriever::MyDocumentRetriever(std::shared_ptr<const DocumentTypeRepo> repo_in, const MyDocumentStore& store_in) noexcept
+MyDocumentRetriever::MyDocumentRetriever(std::shared_ptr<const DocumentTypeRepo> repo_in,
+                                         const MyDocumentStore& store_in, const DocTypeName& doc_type_name_in) noexcept
     : repo(std::move(repo_in)),
-      store(store_in)
+      store(store_in),
+      doc_type_name(doc_type_name_in)
 {}
 
 MyDocumentRetriever::~MyDocumentRetriever() = default;
@@ -188,13 +190,17 @@ MyDocumentRetriever::getDocumentTypeRepo() const {
     return *repo;
 }
 
+const DocTypeName& MyDocumentRetriever::get_doc_type_name() const noexcept { return doc_type_name; }
+
+bool MyDocumentRetriever::can_populate_document_metadata_docid() const noexcept { return false; }
+
 void
-MyDocumentRetriever::getBucketMetaData(const storage::spi::Bucket&, DocumentMetaData::Vector&) const {
+MyDocumentRetriever::getBucketMetadata(const storage::spi::Bucket&, DocumentMetadata::Vector&, bool) const {
     abort();
 }
 
-DocumentMetaData
-MyDocumentRetriever::getDocumentMetaData(const DocumentId&) const {
+DocumentMetadata
+MyDocumentRetriever::getDocumentMetadata(const DocumentId&) const {
     abort();
 }
 
@@ -208,10 +214,11 @@ MyDocumentRetriever::parseSelect(const std::string&) const {
     abort();
 }
 
-MySubDb::MySubDb(std::shared_ptr<bucketdb::BucketDBOwner> bucket_db, const MyDocumentStore& store, const std::shared_ptr<const DocumentTypeRepo> & repo)
+MySubDb::MySubDb(std::shared_ptr<bucketdb::BucketDBOwner> bucket_db, const MyDocumentStore& store,
+                 const std::shared_ptr<const DocumentTypeRepo> & repo, const DocTypeName& doc_type_name)
     : sub_db(std::make_unique<DummyDocumentSubDb>(std::move(bucket_db), SUBDB_ID)),
       maintenance_sub_db(sub_db->getName(), sub_db->getSubDbId(), sub_db->getDocumentMetaStoreContext().getSP(),
-                         std::make_shared<MyDocumentRetriever>(repo, store),
+                         std::make_shared<MyDocumentRetriever>(repo, store, doc_type_name),
                          std::make_shared<MyFeedView>(repo),
                          &_pendingLidsForCommit)
 {

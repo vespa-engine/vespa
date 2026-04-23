@@ -1,0 +1,19 @@
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+package=ai.vespa.embedding.config
+
+# Reference to the secret in Vespa's secret store containing the API key (empty = no auth)
+apiKeySecretRef          string default=""
+
+# API endpoint URL
+endpoint                 string default="https://api.openai.com/v1/embeddings"
+
+# Model name
+model                    string
+
+# Output dimension
+dimensions               int
+
+# Dynamic batching configuration
+batching.maxSize         int default=0
+batching.maxDelayMillis  long default=0

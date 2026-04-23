@@ -35,9 +35,9 @@ public:
     void disable();
 
 private:
-    void       disconnect();
+    void disconnect();
     HP_RetCode HandlePacket(FNET_Packet* packet, FNET_Context context) override;
-    void       PerformTask() override;
+    void PerformTask() override;
 };
 
 //-----------------------------------------------------------------------------

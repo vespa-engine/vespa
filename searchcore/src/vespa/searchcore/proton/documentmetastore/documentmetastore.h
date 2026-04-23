@@ -6,7 +6,7 @@
 #include "documentmetastoreattribute.h"
 #include "lid_allocator.h"
 #include "lid_gid_key_comparator.h"
-#include "raw_document_meta_data.h"
+#include "raw_document_metadata.h"
 #include <vespa/searchcore/proton/common/subdbtype.h>
 #include <vespa/searchlib/docstore/ibucketizer.h>
 #include <vespa/searchcommon/common/growstrategy.h>
@@ -21,6 +21,7 @@ namespace proton::bucketdb {
 }
 
 namespace proton::documentmetastore {
+    class DocIdReader;
     class OperationListener;
     class Reader;
 }
@@ -28,9 +29,9 @@ namespace proton::documentmetastore {
 namespace proton {
     
 /**
- * This class provides a storage of <lid, meta data> pairs (local
- * document id, meta data (including global document id)) and mapping
- * from lid -> meta data (including gid) and gid -> lid.
+ * This class provides a storage of <lid, metadata> pairs (local
+ * document id, metadata (including global document id)) and mapping
+ * from lid -> metadata (including gid) and gid -> lid.
  **/
 class DocumentMetaStore final : public DocumentMetaStoreAttribute,
                                 public DocumentMetaStoreAdapter,
@@ -43,8 +44,8 @@ public:
     using GlobalId = documentmetastore::IStore::GlobalId;
     using BucketId = documentmetastore::IStore::BucketId;
     using Timestamp = documentmetastore::IStore::Timestamp;
-    using MetaDataView = std::span<const RawDocumentMetaData>;
-    using UnboundMetaDataView = const RawDocumentMetaData *;
+    using MetadataView = std::span<const RawDocumentMetadata>;
+    using UnboundMetadataView = const RawDocumentMetadata *;
 
     // If using proton::DocumentMetaStore directly, the
     // DocumentMetaStoreAttribute functions here are used instead of
@@ -55,13 +56,14 @@ public:
     using DocumentMetaStoreAttribute::getCurrentGeneration;
 
 private:
-    // maps from lid -> meta data
-    using MetaDataStore = vespalib::RcuVectorBase<RawDocumentMetaData>;
+    // maps from lid -> metadata
+    using MetadataStore = vespalib::RcuVectorBase<RawDocumentMetadata>;
     using KeyComp = documentmetastore::LidGidKeyComparator;
     using OperationListenerSP = std::shared_ptr<documentmetastore::OperationListener>;
     using BucketDBOwnerSP = std::shared_ptr<bucketdb::BucketDBOwner>;
     using TypeMapper = vespalib::datastore::ArrayStoreDynamicTypeMapper<char>;
-    using DocumentIdStore = vespalib::datastore::ArrayStore<char, RawDocumentMetaData::DocumentIdEntryRef, TypeMapper>;
+    using DocumentIdEntryRef = vespalib::datastore::EntryRefT<19>;
+    using DocumentIdStore = vespalib::datastore::ArrayStore<char, DocumentIdEntryRef, TypeMapper>;
 
     static constexpr float array_store_alloc_grow_factor = 0.2;
     static constexpr double array_store_grow_factor = 1.03;
@@ -73,9 +75,9 @@ private:
     // using the metadata store.
     using TreeType =  vespalib::btree::BTree<documentmetastore::GidToLidMapKey, vespalib::btree::BTreeNoLeafData,
                                              vespalib::btree::NoAggregated, const KeyComp &>;
-    using LidAndRawDocumentMetaData = std::pair<uint32_t, RawDocumentMetaData>;
+    using LidAndRawDocumentMetadata = std::pair<uint32_t, RawDocumentMetadata>;
 
-    MetaDataStore       _metaDataStore;
+    MetadataStore       _metadataStore;
     DocumentIdStore     _docid_store;
     TreeType            _gidToLidMap;
     Iterator            _gid_to_lid_map_write_itr; // Iterator used for all updates of _gidToLidMap
@@ -93,9 +95,9 @@ private:
     DocId getFreeLid();
     DocId peekFreeLid();
     VESPA_DLL_LOCAL void ensureSpace(DocId lid);
-    void insert(documentmetastore::GidToLidMapKey key, const RawDocumentMetaData &metaData);
+    void insert(documentmetastore::GidToLidMapKey key, const RawDocumentMetadata &metadata);
 
-    const GlobalId & getRawGid(DocId lid) const { return getRawMetaData(lid).getGid(); }
+    const GlobalId & getRawGid(DocId lid) const { return getRawMetadata(lid).getGid(); }
 
     bool consider_compact_gid_to_lid_map();
     void onCommit() override;
@@ -115,8 +117,8 @@ private:
     typename TreeView::Iterator
     upperBound(const BucketId &bucketId, const TreeView &treeView) const;
 
-    void updateMetaDataAndBucketDB(const GlobalId &gid, DocId lid,
-                                   const RawDocumentMetaData &newMetaData);
+    void updateMetadataAndBucketDB(const GlobalId &gid, DocId lid,
+                                   const RawDocumentMetadata &newMetadata);
 
     void unload();
     void updateActiveLids(const BucketId &bucketId, bool active) override;
@@ -137,14 +139,14 @@ private:
         return getCurrentGeneration();
     }
 
-    VESPA_DLL_LOCAL DocId readNextDoc(documentmetastore::Reader & reader, TreeType::Builder & treeBuilder);
+    VESPA_DLL_LOCAL DocId readNextDoc(documentmetastore::Reader & reader, documentmetastore::DocIdReader* docid_reader, TreeType::Builder & treeBuilder);
 
-    RawDocumentMetaData removeInternal(DocId lid, uint64_t cached_iterator_sequence_id);
-    void remove_batch_internal_btree(std::vector<LidAndRawDocumentMetaData>& removed);
+    RawDocumentMetadata removeInternal(DocId lid, uint64_t cached_iterator_sequence_id);
+    void remove_batch_internal_btree(std::vector<LidAndRawDocumentMetadata>& removed);
 
-    MetaDataView make_meta_data_view() { return {&_metaDataStore[0], getCommittedDocIdLimit()}; }
-    UnboundMetaDataView acquire_unbound_meta_data_view() const noexcept { return &_metaDataStore.acquire_elem_ref(0); }
-    UnboundMetaDataView get_unbound_meta_data_view() const noexcept { return &_metaDataStore.get_elem_ref(0); } // Called from writer only
+    MetadataView make_metadata_view() { return {&_metadataStore[0], getCommittedDocIdLimit()}; }
+    UnboundMetadataView acquire_unbound_metadata_view() const noexcept { return &_metadataStore.acquire_elem_ref(0); }
+    UnboundMetadataView get_unbound_metadata_view() const noexcept { return &_metadataStore.get_elem_ref(0); } // Called from writer only
 
     uint32_t get_shrink_lid_space_blockers() const noexcept { return _shrinkLidSpaceBlockers.load(std::memory_order_relaxed); }
     void set_shrink_lid_space_blockers(uint32_t value) noexcept { _shrinkLidSpaceBlockers.store(value, std::memory_order_relaxed); }
@@ -179,7 +181,7 @@ public:
     Result inspectExisting(const GlobalId &gid, uint64_t prepare_serial_num) override;
     Result inspect(const GlobalId &gid, uint64_t prepare_serial_num) override;
     /**
-     * Puts the given <lid, meta data> pair to this store.
+     * Puts the given <lid, metadata> pair to this store.
      * This function should only be called before constructFreeList()
      * and typically after a load(). The use case is replaying of a
      * transaction log where the lids are stored in the log. The gid
@@ -188,7 +190,7 @@ public:
      **/
     Result put(const document::DocumentId& docid, const BucketId &bucketId, Timestamp timestamp,
                uint32_t docSize, DocId lid, uint64_t prepare_serial_num) override;
-    bool updateMetaData(DocId lid, const BucketId &bucketId, Timestamp timestamp) override;
+    bool updateMetadata(DocId lid, const BucketId &bucketId, Timestamp timestamp) override;
     bool remove(DocId lid, uint64_t prepare_serial_num) override;
 
     BucketId getBucketOf(const vespalib::GenerationGuard & guard, uint32_t lid) const override;
@@ -207,7 +209,7 @@ public:
     bool validLidFast(DocId lid, uint32_t limit) const { return _lidAlloc.validLid(lid, limit); }
     bool validLid(DocId lid) const override { return validLidFast(lid); }
     void removeBatch(const std::vector<DocId> &lidsToRemove, DocId docIdLimit) override;
-    const RawDocumentMetaData & getRawMetaData(DocId lid) const override { return _metaDataStore.acquire_elem_ref(lid); }
+    const RawDocumentMetadata & getRawMetadata(DocId lid) const override { return _metadataStore.acquire_elem_ref(lid); }
 
     /**
      * Implements search::IDocumentMetaStore
@@ -215,8 +217,9 @@ public:
     bool getGid(DocId lid, GlobalId &gid) const override;
     bool getGidEvenIfMoved(DocId lid, GlobalId &gid) const override;
     bool getLid(const GlobalId & gid, DocId &lid) const override;
-    search::DocumentMetaData getMetaData(const GlobalId &gid) const override;
-    void getMetaData(const BucketId &bucketId, search::DocumentMetaData::Vector &result) const override;
+    [[nodiscard]] bool can_populate_document_metadata_docid() const noexcept override;
+    search::DocumentMetadata getMetadata(const GlobalId &gid) const override;
+    void getMetadata(const BucketId &bucketId, search::DocumentMetadata::Vector &result, bool populate_docid) const override;
     std::string_view get_docid_string(const GlobalId &gid) const;
     DocId   getNumUsedLids() const override { return _lidAlloc.getNumUsedLids(); }
     DocId getNumActiveLids() const override { return _lidAlloc.getNumActiveLids(); }

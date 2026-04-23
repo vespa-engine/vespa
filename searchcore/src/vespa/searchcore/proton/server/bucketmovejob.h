@@ -32,7 +32,7 @@ namespace bucketdb { class IBucketCreateNotifier; }
  * It will first compute the set of buckets to be moved. Then N of these buckets will be iterated in parallel and
  * the documents scheduled for move. The movment will happen in 3 phases.
  * 1 - Collect meta info for documents. Must happend in master thread
- * 2 - Acquire bucket lock and fetch documents and very against meta data. This is done in BucketExecutor threads.
+ * 2 - Acquire bucket lock and fetch documents and very against metadata. This is done in BucketExecutor threads.
  * 3 - Actual movement is then done in master thread while still holding bucket lock. Once bucket has fully moved
  *     bucket modified notification is sent.
  */

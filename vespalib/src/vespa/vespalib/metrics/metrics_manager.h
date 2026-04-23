@@ -2,13 +2,14 @@
 #pragma once
 
 #include "counter.h"
-#include "gauge.h"
 #include "current_samples.h"
-#include "snapshots.h"
+#include "dimension.h"
+#include "gauge.h"
+#include "label.h"
 #include "point.h"
 #include "point_builder.h"
-#include "dimension.h"
-#include "label.h"
+#include "snapshots.h"
+
 #include <memory>
 #include <string>
 #include <thread>
@@ -19,9 +20,7 @@ namespace vespalib::metrics {
  * Interface for a Metrics manager, for creating metrics
  * and for fetching snapshots.
  **/
-class MetricsManager
-    : public std::enable_shared_from_this<MetricsManager>
-{
+class MetricsManager : public std::enable_shared_from_this<MetricsManager> {
 public:
     virtual ~MetricsManager() = default;
 
@@ -29,32 +28,30 @@ public:
      * Get or create a counter metric.
      * @param name the name of the metric.
      **/
-    virtual Counter counter(const std::string &name, const std::string &description) = 0;
+    virtual Counter counter(const std::string& name, const std::string& description) = 0;
 
     /**
      * Get or create a gauge metric.
      * @param name the name of the metric.
      **/
-    virtual Gauge gauge(const std::string &name, const std::string &description) = 0;
+    virtual Gauge gauge(const std::string& name, const std::string& description) = 0;
 
     /**
      * Get or create a dimension for labeling metrics.
      * @param name the name of the dimension.
      **/
-    virtual Dimension dimension(const std::string &name) = 0; // get or create
+    virtual Dimension dimension(const std::string& name) = 0; // get or create
 
     /**
      * Get or create a label.
      * @param value the label value.
      **/
-    virtual Label label(const std::string &value) = 0; // get or create
+    virtual Label label(const std::string& value) = 0; // get or create
 
     /**
      * Create a PointBuilder for labeling metrics.
      **/
-    PointBuilder pointBuilder() {
-        return PointBuilder(shared_from_this());
-    }
+    PointBuilder pointBuilder() { return PointBuilder(shared_from_this()); }
 
     /**
      * Create a PointBuilder for labeling metrics, starting with
@@ -84,6 +81,5 @@ public:
     // for use from Gauge only
     virtual void sample(Gauge::Measurement value) = 0;
 };
-
 
 } // namespace vespalib::metrics

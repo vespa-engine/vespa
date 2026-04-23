@@ -44,4 +44,4 @@ inline void append_utf32_char(std::vector<uint32_t>& out_str, uint32_t u32_char)
     out_str.push_back(u32_char); // no conversion needed
 }
 
-}
+} // namespace vespalib::fuzzy

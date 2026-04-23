@@ -17,4 +17,4 @@ uint64_t round_down_to_page_boundary(uint64_t offset);
  */
 size_t round_up_to_page_size(size_t sz);
 
-}
+} // namespace vespalib

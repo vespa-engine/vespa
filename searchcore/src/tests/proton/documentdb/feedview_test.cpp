@@ -47,7 +47,7 @@ using proton::matching::SessionManager;
 using proton::test::MockGidToLidChangeHandler;
 using search::AttributeVector;
 using search::CommitParam;
-using search::DocumentMetaData;
+using search::DocumentMetadata;
 using vespalib::IDestructorCallback;
 using vespalib::Gate;
 using vespalib::GateCallback;
@@ -544,8 +544,8 @@ struct FixtureBase
         return getMetaStore().getBucketDB().takeGuard();
     }
 
-    DocumentMetaData getMetaData(const DocumentContext &doc_) const {
-        return getMetaStore().getMetaData(doc_.doc->getId().getGlobalId());
+    DocumentMetadata getMetadata(const DocumentContext &doc_) const {
+        return getMetaStore().getMetadata(doc_.doc->getId().getGlobalId());
     }
 
     DocBuilder &getBuilder() { return sc._builder; }
@@ -763,7 +763,7 @@ void assertBucketInfo(const BucketId &ebid, const Timestamp &ets, uint32_t lid, 
 {
     document::GlobalId gid;
     EXPECT_TRUE(metaStore.getGid(lid, gid));
-    search::DocumentMetaData meta = metaStore.getMetaData(gid);
+    search::DocumentMetadata meta = metaStore.getMetadata(gid);
     EXPECT_TRUE(meta.valid());
     EXPECT_EQ(ebid, meta.bucketId);
     Timestamp ats;
@@ -989,14 +989,14 @@ assertPostConditionAfterRemoves(const DocumentContext::List &docs,
                                 SearchableFeedViewFixture &f)
 {
     EXPECT_EQ(3u, f.getMetaStore().getNumUsedLids());
-    EXPECT_FALSE(f.getMetaData(docs[0]).valid());
-    EXPECT_TRUE(f.getMetaData(docs[1]).valid());
-    EXPECT_FALSE(f.getMetaData(docs[1]).removed);
-    EXPECT_TRUE(f.getMetaData(docs[2]).valid());
-    EXPECT_FALSE(f.getMetaData(docs[2]).removed);
-    EXPECT_FALSE(f.getMetaData(docs[3]).valid());
-    EXPECT_TRUE(f.getMetaData(docs[4]).valid());
-    EXPECT_FALSE(f.getMetaData(docs[4]).removed);
+    EXPECT_FALSE(f.getMetadata(docs[0]).valid());
+    EXPECT_TRUE(f.getMetadata(docs[1]).valid());
+    EXPECT_FALSE(f.getMetadata(docs[1]).removed);
+    EXPECT_TRUE(f.getMetadata(docs[2]).valid());
+    EXPECT_FALSE(f.getMetadata(docs[2]).removed);
+    EXPECT_FALSE(f.getMetadata(docs[3]).valid());
+    EXPECT_TRUE(f.getMetadata(docs[4]).valid());
+    EXPECT_FALSE(f.getMetadata(docs[4]).removed);
 
     assertLidVector(MyLidVector().add(1).add(4), f.miw._removes);
     assertLidVector(MyLidVector().add(1).add(4), f.msa._removes);
@@ -1037,16 +1037,16 @@ TEST(FeedViewTest, require_that_removes_are_not_remembered)
     f.putAndWait(docs[0]);
     f.forceCommitAndWait();
     EXPECT_EQ(5u, f.getMetaStore().getNumUsedLids());
-    EXPECT_TRUE(f.getMetaData(docs[0]).valid());
-    EXPECT_TRUE(f.getMetaData(docs[1]).valid());
-    EXPECT_TRUE(f.getMetaData(docs[2]).valid());
-    EXPECT_TRUE(f.getMetaData(docs[3]).valid());
-    EXPECT_TRUE(f.getMetaData(docs[4]).valid());
-    EXPECT_FALSE(f.getMetaData(docs[0]).removed);
-    EXPECT_FALSE(f.getMetaData(docs[1]).removed);
-    EXPECT_FALSE(f.getMetaData(docs[2]).removed);
-    EXPECT_FALSE(f.getMetaData(docs[3]).removed);
-    EXPECT_FALSE(f.getMetaData(docs[4]).removed);
+    EXPECT_TRUE(f.getMetadata(docs[0]).valid());
+    EXPECT_TRUE(f.getMetadata(docs[1]).valid());
+    EXPECT_TRUE(f.getMetadata(docs[2]).valid());
+    EXPECT_TRUE(f.getMetadata(docs[3]).valid());
+    EXPECT_TRUE(f.getMetadata(docs[4]).valid());
+    EXPECT_FALSE(f.getMetadata(docs[0]).removed);
+    EXPECT_FALSE(f.getMetadata(docs[1]).removed);
+    EXPECT_FALSE(f.getMetadata(docs[2]).removed);
+    EXPECT_FALSE(f.getMetadata(docs[3]).removed);
+    EXPECT_FALSE(f.getMetadata(docs[4]).removed);
     EXPECT_EQ(5u, f.msa._store._docs.size());
     const Document::SP &doc1 = f.msa._store._docs[1];
     EXPECT_EQ(docs[3].doc->getId(), doc1->getId());

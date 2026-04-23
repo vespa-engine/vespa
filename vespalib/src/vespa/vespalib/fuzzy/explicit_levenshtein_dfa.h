@@ -5,6 +5,7 @@
 #include "levenshtein_dfa.h"
 #include "sparse_state.h"
 #include "unicode_utils.h"
+
 #include <vector>
 
 namespace vespalib::fuzzy {
@@ -12,8 +13,7 @@ namespace vespalib::fuzzy {
 // A doomed state is one that cannot possibly match the target string
 constexpr const uint32_t DOOMED = UINT32_MAX;
 
-template <uint8_t MaxEdits>
-struct DfaNode {
+template <uint8_t MaxEdits> struct DfaNode {
     static constexpr uint8_t MaxCharOutEdges = diag(MaxEdits); // Not counting wildcard edge
 
     struct Edge {
@@ -22,17 +22,13 @@ struct DfaNode {
     };
 
     std::array<Edge, MaxCharOutEdges> match_out_edges_buf;
-    uint32_t wildcard_edge_to = DOOMED;
-    uint8_t num_match_out_edges = 0;
-    uint8_t edits = UINT8_MAX;
+    uint32_t                          wildcard_edge_to = DOOMED;
+    uint8_t                           num_match_out_edges = 0;
+    uint8_t                           edits = UINT8_MAX;
 
-    [[nodiscard]] bool has_wildcard_edge() const noexcept {
-        return wildcard_edge_to != DOOMED;
-    }
+    [[nodiscard]] bool has_wildcard_edge() const noexcept { return wildcard_edge_to != DOOMED; }
 
-    [[nodiscard]] uint32_t wildcard_edge_to_or_doomed() const noexcept {
-        return wildcard_edge_to;
-    }
+    [[nodiscard]] uint32_t wildcard_edge_to_or_doomed() const noexcept { return wildcard_edge_to; }
 
     [[nodiscard]] std::span<const Edge> match_out_edges() const noexcept {
         return std::span(match_out_edges_buf.begin(), num_match_out_edges);
@@ -87,22 +83,20 @@ struct DfaNode {
     }
 };
 
-template <uint8_t MaxEdits>
-class ExplicitLevenshteinDfaImpl final : public LevenshteinDfa::Impl {
+template <uint8_t MaxEdits> class ExplicitLevenshteinDfaImpl final : public LevenshteinDfa::Impl {
 public:
-    static_assert(MaxEdits > 0 && MaxEdits <= UINT8_MAX/2);
+    static_assert(MaxEdits > 0 && MaxEdits <= UINT8_MAX / 2);
 
     using DfaNodeType = DfaNode<MaxEdits>;
     using MatchResult = LevenshteinDfa::MatchResult;
+
 private:
     std::vector<DfaNodeType> _nodes;
     const bool               _is_cased;
     const bool               _is_prefix;
+
 public:
-    ExplicitLevenshteinDfaImpl(bool is_cased, bool is_prefix) noexcept
-        : _is_cased(is_cased),
-          _is_prefix(is_prefix)
-    {}
+    ExplicitLevenshteinDfaImpl(bool is_cased, bool is_prefix) noexcept : _is_cased(is_cased), _is_prefix(is_prefix) {}
     ~ExplicitLevenshteinDfaImpl() override;
 
     static constexpr uint8_t max_edits() noexcept { return MaxEdits; }
@@ -113,9 +107,7 @@ public:
         }
     }
 
-    void set_node_edit_distance(uint32_t node_index, uint8_t edits) {
-        _nodes[node_index].edits = edits;
-    }
+    void set_node_edit_distance(uint32_t node_index, uint8_t edits) { _nodes[node_index].edits = edits; }
 
     void add_outgoing_edge(uint32_t from_node_idx, uint32_t to_node_idx, uint32_t out_char) {
         _nodes[from_node_idx].add_match_out_edge(out_char, to_node_idx);
@@ -131,26 +123,21 @@ public:
 
     [[nodiscard]] MatchResult match(std::string_view u8str, std::vector<uint32_t>& successor_out) const override;
 
-    [[nodiscard]] size_t memory_usage() const noexcept override {
-        return sizeof(DfaNodeType) * _nodes.size();
-    }
+    [[nodiscard]] size_t memory_usage() const noexcept override { return sizeof(DfaNodeType) * _nodes.size(); }
 
     void dump_as_graphviz(std::ostream& os) const override;
 };
 
-template <typename Traits>
-class ExplicitLevenshteinDfaBuilder {
+template <typename Traits> class ExplicitLevenshteinDfaBuilder {
     const std::vector<uint32_t> _u32_str_buf; // TODO std::u32string
     const bool                  _is_cased;
     const bool                  _is_prefix;
+
 public:
     ExplicitLevenshteinDfaBuilder(std::vector<uint32_t> str, bool is_cased, bool is_prefix) noexcept
-        : _u32_str_buf(std::move(str)),
-          _is_cased(is_cased),
-          _is_prefix(is_prefix)
-    {}
+        : _u32_str_buf(std::move(str)), _is_cased(is_cased), _is_prefix(is_prefix) {}
 
     [[nodiscard]] LevenshteinDfa build_dfa() const;
 };
 
-}
+} // namespace vespalib::fuzzy

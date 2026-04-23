@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include <cstdio>
 #include <unistd.h>
+
+#include <cstdio>
 
 namespace vespalib {
 
@@ -14,19 +15,19 @@ namespace vespalib {
  * The underlying file is closed when the FilePointer object is
  * destructed.
  **/
-class FilePointer
-{
+class FilePointer {
 private:
-    FILE *_fp;
+    FILE* _fp;
+
 public:
     /**
      * @brief Create a FilePointer from a FILE pointer.
      *
      * @param file the underlying FILE pointer
      **/
-    explicit FilePointer(FILE *file = nullptr) noexcept : _fp(file) {}
-    FilePointer(const FilePointer &) = delete;
-    FilePointer &operator=(const FilePointer &) = delete;
+    explicit FilePointer(FILE* file = nullptr) noexcept : _fp(file) {}
+    FilePointer(const FilePointer&) = delete;
+    FilePointer& operator=(const FilePointer&) = delete;
     /**
      * @brief Close the file if it is still open.
      **/
@@ -42,7 +43,7 @@ public:
      *
      * @return internal FILE pointer
      **/
-    FILE *fp() const noexcept { return _fp; }
+    FILE* fp() const noexcept { return _fp; }
     /**
      * @brief Implicit cast to obtain internal FILE pointer
      *
@@ -54,7 +55,7 @@ public:
      *
      * The previously owned FILE pointer is closed, if present.
      **/
-    void reset(FILE *file = nullptr) {
+    void reset(FILE* file = nullptr) {
         if (valid()) {
             fclose(_fp);
         }
@@ -67,8 +68,8 @@ public:
      *
      * @return the released FILE pointer
      **/
-    FILE *release() noexcept {
-        FILE *tmp = _fp;
+    FILE* release() noexcept {
+        FILE* tmp = _fp;
         _fp = nullptr;
         return tmp;
     }
@@ -80,10 +81,10 @@ public:
  * The underlying file is closed when the FileDescriptor object is
  * destructed.
  **/
-class FileDescriptor
-{
+class FileDescriptor {
 private:
     int _fd;
+
 public:
     /**
      * @brief Create a FileDescriptor from a file descriptor.
@@ -91,8 +92,8 @@ public:
      * @param file the underlying file descriptor
      **/
     explicit FileDescriptor(int file = -1) noexcept : _fd(file) {}
-    FileDescriptor(const FileDescriptor &) = delete;
-    FileDescriptor &operator=(const FileDescriptor &) = delete;
+    FileDescriptor(const FileDescriptor&) = delete;
+    FileDescriptor& operator=(const FileDescriptor&) = delete;
     /**
      * @brief Close the file if it is still open.
      **/
@@ -134,7 +135,6 @@ public:
     }
 };
 
-
 /**
  * @brief A CounterGuard increases an int in the constructor and decreases
  * it in the destructor.
@@ -143,19 +143,19 @@ public:
  * a given scope at a given time (for example, how many threads that
  * are currently waiting for a specific signal on a monitor).
  **/
-class CounterGuard
-{
+class CounterGuard {
 private:
-    int &_cnt;
+    int& _cnt;
+
 public:
     /**
      * @brief Increase the value
      *
      * @param cnt a reference to the value that will be modified
      **/
-    explicit CounterGuard(int &cnt) noexcept : _cnt(cnt) { ++cnt; }
-    CounterGuard(const CounterGuard &) = delete;
-    CounterGuard &operator=(const CounterGuard &) = delete;
+    explicit CounterGuard(int& cnt) noexcept : _cnt(cnt) { ++cnt; }
+    CounterGuard(const CounterGuard&) = delete;
+    CounterGuard& operator=(const CounterGuard&) = delete;
     /**
      * @brief Decrease the value
      **/
@@ -163,4 +163,3 @@ public:
 };
 
 } // namespace vespalib
-

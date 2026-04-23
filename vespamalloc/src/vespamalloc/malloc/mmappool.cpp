@@ -3,9 +3,10 @@
 
 #include "common.h"
 
-#include <algorithm>
 #include <sys/mman.h>
 #include <unistd.h>
+
+#include <algorithm>
 
 namespace vespamalloc {
 
@@ -16,9 +17,12 @@ MMapPool::MMapPool()
       _currentBytes(0ul),
       _count(0),
       _mutex(),
-      _mappings() {}
+      _mappings() {
+}
 
-MMapPool::~MMapPool() { ASSERT_STACKTRACE(_mappings.empty()); }
+MMapPool::~MMapPool() {
+    ASSERT_STACKTRACE(_mappings.empty());
+}
 
 size_t MMapPool::getNumMappings() const {
     std::lock_guard guard(_mutex);

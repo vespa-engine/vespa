@@ -6,21 +6,21 @@
 using namespace vespalib;
 
 struct Add : public Runnable {
-    int &val;
-    Add(int &v) : val(v) {}
+    int& val;
+    Add(int& v) : val(v) {}
     void run() override { val += 10; }
 };
 
 struct Mul : public Runnable {
-    int &val;
-    Mul(int &v) : val(v) {}
+    int& val;
+    Mul(int& v) : val(v) {}
     void run() override { val *= 10; }
 };
 
 TEST(RunnablePairTest, require_that_runnable_pair_runs_runnables_in_order) {
-    int value = 0;
-    Add add(value);
-    Mul mul(value);
+    int          value = 0;
+    Add          add(value);
+    Mul          mul(value);
     RunnablePair pair(add, mul);
     EXPECT_EQ(0, value);
     pair.run();

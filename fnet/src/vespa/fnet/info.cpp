@@ -52,7 +52,9 @@ FNET_Info::FNET_Info() {
     _endian = endian;
 }
 
-const char* FNET_Info::GetFNETVersion() { return vespalib::VersionTag; }
+const char* FNET_Info::GetFNETVersion() {
+    return vespalib::VersionTag;
+}
 
 void FNET_Info::PrintInfo() {
     printf("This method is deprecated. "

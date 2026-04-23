@@ -190,16 +190,23 @@ void RemoteSlobrok::notifyOkRpcSrv(ManagedRpcServer* rpcsrv) {
     _remote->InvokeAsync(_remAddPeerReq, 3.0, this);
 }
 
-void RemoteSlobrok::tryConnect() { _rpcserver.healthCheck(); }
+void RemoteSlobrok::tryConnect() {
+    _rpcserver.healthCheck();
+}
 
-FRT_Supervisor* RemoteSlobrok::getSupervisor() { return _exchanger.env().getSupervisor(); }
+FRT_Supervisor* RemoteSlobrok::getSupervisor() {
+    return _exchanger.env().getSupervisor();
+}
 
 //-----------------------------------------------------------------------------
 
 RemoteSlobrok::Reconnecter::Reconnecter(FNET_Scheduler* sched, RemoteSlobrok& owner)
-    : FNET_Task(sched), _waittime(13), _owner(owner) {}
+    : FNET_Task(sched), _waittime(13), _owner(owner) {
+}
 
-RemoteSlobrok::Reconnecter::~Reconnecter() { Kill(); }
+RemoteSlobrok::Reconnecter::~Reconnecter() {
+    Kill();
+}
 
 void RemoteSlobrok::Reconnecter::scheduleTryConnect() {
     if (_waittime < 60)
@@ -213,7 +220,9 @@ void RemoteSlobrok::Reconnecter::disable() {
     _waittime = 13;
 }
 
-void RemoteSlobrok::Reconnecter::PerformTask() { _owner.tryConnect(); }
+void RemoteSlobrok::Reconnecter::PerformTask() {
+    _owner.tryConnect();
+}
 
 void RemoteSlobrok::invokeAsync(FRT_RPCRequest* req, double timeout, FRT_IRequestWait* rwaiter) {
     LOG_ASSERT(isConnected());

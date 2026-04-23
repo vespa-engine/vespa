@@ -1,8 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <stdint.h>
 #include "casts.h"
+
+#include <stdint.h>
 
 namespace vespalib {
 
@@ -14,8 +15,6 @@ namespace vespalib {
  *
  * Author: Michael Susag
  */
-
-
 
 /*
   --------------------------------------------------------------------
@@ -44,23 +43,39 @@ namespace vespalib {
   to choose from.  I only looked at a billion or so.
   --------------------------------------------------------------------
 */
-#define bobhash_mix(a,b,c) \
-{ \
-  a -= b; a -= c; a ^= (c>>13); \
-  b -= c; b -= a; b ^= (a<<8); \
-  c -= a; c -= b; c ^= (b>>13); \
-  a -= b; a -= c; a ^= (c>>12);  \
-  b -= c; b -= a; b ^= (a<<16); \
-  c -= a; c -= b; c ^= (b>>5); \
-  a -= b; a -= c; a ^= (c>>3);  \
-  b -= c; b -= a; b ^= (a<<10); \
-  c -= a; c -= b; c ^= (b>>15); \
-}
-
+#define bobhash_mix(a, b, c) \
+    {                        \
+        a -= b;              \
+        a -= c;              \
+        a ^= (c >> 13);      \
+        b -= c;              \
+        b -= a;              \
+        b ^= (a << 8);       \
+        c -= a;              \
+        c -= b;              \
+        c ^= (b >> 13);      \
+        a -= b;              \
+        a -= c;              \
+        a ^= (c >> 12);      \
+        b -= c;              \
+        b -= a;              \
+        b ^= (a << 16);      \
+        c -= a;              \
+        c -= b;              \
+        c ^= (b >> 5);       \
+        a -= b;              \
+        a -= c;              \
+        a ^= (c >> 3);       \
+        b -= c;              \
+        b -= a;              \
+        b ^= (a << 10);      \
+        c -= a;              \
+        c -= b;              \
+        c ^= (b >> 15);      \
+    }
 
 class BobHash {
 public:
-
     /**
      * @brief The hash function - hash a variable-length key into a 32-bit value
      *
@@ -94,59 +109,71 @@ public:
      * @return A 32 bit hash value
      */
 
-    static uint32_t hash(const char *orig_k,
-                         uint32_t length,
-                         uint32_t initval) {
-        uint32_t a,b,c,len;
-        const unsigned char *k;
+    static uint32_t hash(const char* orig_k, uint32_t length, uint32_t initval) {
+        uint32_t             a, b, c, len;
+        const unsigned char* k;
         k = char_p_cast<unsigned char>(orig_k);
 
         /* Set up the internal state */
         len = length;
-        a = b = 0x9e3779b9;  /* the golden ratio; an arbitrary value */
-        c = initval;         /* the previous hash value */
+        a = b = 0x9e3779b9; /* the golden ratio; an arbitrary value */
+        c = initval;        /* the previous hash value */
 
         /*---------------------------------------- handle most of the key */
-        while (len >= 12)
-        {
-            a += (k[0] +
-                  (static_cast<uint32_t>(k[1]) << 8) +
-                  (static_cast<uint32_t>(k[2]) << 16) +
+        while (len >= 12) {
+            a += (k[0] + (static_cast<uint32_t>(k[1]) << 8) + (static_cast<uint32_t>(k[2]) << 16) +
                   (static_cast<uint32_t>(k[3]) << 24));
-            b += (k[4] +
-                  (static_cast<uint32_t>(k[5]) << 8) +
-                  (static_cast<uint32_t>(k[6]) << 16) +
+            b += (k[4] + (static_cast<uint32_t>(k[5]) << 8) + (static_cast<uint32_t>(k[6]) << 16) +
                   (static_cast<uint32_t>(k[7]) << 24));
-            c += (k[8] +
-                  (static_cast<uint32_t>(k[9]) << 8) +
-                  (static_cast<uint32_t>(k[10]) << 16) +
+            c += (k[8] + (static_cast<uint32_t>(k[9]) << 8) + (static_cast<uint32_t>(k[10]) << 16) +
                   (static_cast<uint32_t>(k[11]) << 24));
-            bobhash_mix(a,b,c);
-            k += 12; len -= 12;
+            bobhash_mix(a, b, c);
+            k += 12;
+            len -= 12;
         }
 
         /*------------------------------------- handle the last 11 bytes */
         c += length;
-        switch(len)              /* all the case statements fall through */
-        {
-        case 11: c += (static_cast<uint32_t>(k[10]) << 24); [[fallthrough]];
-        case 10: c += (static_cast<uint32_t>(k[9]) << 16); [[fallthrough]];
-        case 9 : c += (static_cast<uint32_t>(k[8]) << 8); [[fallthrough]];
+        switch (len) /* all the case statements fall through */ {
+        case 11:
+            c += (static_cast<uint32_t>(k[10]) << 24);
+            [[fallthrough]];
+        case 10:
+            c += (static_cast<uint32_t>(k[9]) << 16);
+            [[fallthrough]];
+        case 9:
+            c += (static_cast<uint32_t>(k[8]) << 8);
+            [[fallthrough]];
             /* the first byte of c is reserved for the length */
-        case 8 : b += (static_cast<uint32_t>(k[7]) << 24); [[fallthrough]];
-        case 7 : b += (static_cast<uint32_t>(k[6]) << 16); [[fallthrough]];
-        case 6 : b += (static_cast<uint32_t>(k[5]) << 8); [[fallthrough]];
-        case 5 : b += k[4]; [[fallthrough]];
-        case 4 : a += (static_cast<uint32_t>(k[3]) << 24); [[fallthrough]];
-        case 3 : a += (static_cast<uint32_t>(k[2]) << 16); [[fallthrough]];
-        case 2 : a += (static_cast<uint32_t>(k[1]) << 8); [[fallthrough]];
-        case 1 : a += k[0];
+        case 8:
+            b += (static_cast<uint32_t>(k[7]) << 24);
+            [[fallthrough]];
+        case 7:
+            b += (static_cast<uint32_t>(k[6]) << 16);
+            [[fallthrough]];
+        case 6:
+            b += (static_cast<uint32_t>(k[5]) << 8);
+            [[fallthrough]];
+        case 5:
+            b += k[4];
+            [[fallthrough]];
+        case 4:
+            a += (static_cast<uint32_t>(k[3]) << 24);
+            [[fallthrough]];
+        case 3:
+            a += (static_cast<uint32_t>(k[2]) << 16);
+            [[fallthrough]];
+        case 2:
+            a += (static_cast<uint32_t>(k[1]) << 8);
+            [[fallthrough]];
+        case 1:
+            a += k[0];
             /* case 0: nothing left to add */
         }
-        bobhash_mix(a,b,c);
+        bobhash_mix(a, b, c);
         /*-------------------------------------------- report the result */
         return c;
     }
 };
 
-}
+} // namespace vespalib

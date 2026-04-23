@@ -21,6 +21,7 @@
 #include <vespa/vespalib/util/thread_bundle.h>
 #include <vespa/searchlib/query/proto_tree_converter.h>
 #include <vespa/searchlib/query/tree/querytreecreator.h>
+#include <queue>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.query");
@@ -358,7 +359,25 @@ Query::handle_global_filter(Blueprint& blueprint, uint32_t docid_limit,
         trace->addEvent(5, "Handle global filter in query execution plan");
     }
     blueprint.set_global_filter(*global_filter, estimated_hit_ratio);
+    perform_ann_searches(blueprint);
     return true;
+}
+
+void
+Query::perform_ann_searches(Blueprint& blueprint)
+{
+    std::queue<search::queryeval::NearestNeighborBlueprint*> ann_blueprints;
+    blueprint.each_node_post_order([&ann_blueprints](Blueprint& bp) {
+        if (auto nearest_neighbor = bp.asNearestNeighbor()) {
+            if (nearest_neighbor->pending_index_search()) {
+                ann_blueprints.push(nearest_neighbor);
+            }
+        }
+    });
+    while (!ann_blueprints.empty()) {
+        ann_blueprints.front()->perform_index_search();
+        ann_blueprints.pop();
+    }
 }
 
 void

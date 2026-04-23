@@ -2,7 +2,9 @@
 
 #pragma once
 
-namespace vespalib::slime { struct Cursor; }
+namespace vespalib::slime {
+struct Cursor;
+}
 
 namespace vespalib {
 
@@ -18,4 +20,4 @@ public:
     static void memory_usage_to_slime(const MemoryUsage& usage, slime::Cursor& object);
 };
 
-}
+} // namespace vespalib

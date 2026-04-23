@@ -33,7 +33,7 @@
 %define _defattr_is_vespa_vespa 0
 %define _command_cmake cmake
 %global _vespa_abseil_cpp_version 20250127.1
-%global _vespa_build_depencencies_version 1.11.0
+%global _vespa_build_depencencies_version 1.13.0
 %global _vespa_gtest_version 1.16.0
 %global _vespa_protobuf_version 6.34.1
 %global _vespa_openblas_version 0.3.27
@@ -55,7 +55,10 @@
 %endif
 %endif
 %endif
-%if 0%{?el10} || 0%{?el9}
+%if 0%{?el10}
+%global _vespa_java_version 25
+%endif
+%if 0%{?el9}
 %global _vespa_java_version 21
 %endif
 %if ! 0%{?_vespa_java_version:1}
@@ -115,6 +118,10 @@ Requires: zstd
 
 %if 0%{?el9}
 %global _centos_stream %(grep -qs '^NAME="CentOS Stream"' /etc/os-release && echo 1 || echo 0)
+%define _devtoolset_enable /opt/rh/gcc-toolset/enable
+%endif
+
+%if 0%{?el10}
 %define _devtoolset_enable /opt/rh/gcc-toolset/enable
 %endif
 

@@ -12,9 +12,11 @@ namespace slobrok {
 
 IncrementalFetch::IncrementalFetch(FRT_Supervisor* orb, FRT_RPCRequest* req, ServiceMapHistory& smh,
                                    vespalib::GenCnt gen)
-    : FNET_Task(orb->GetScheduler()), _req(req), _smh(smh), _gen(gen) {}
+    : FNET_Task(orb->GetScheduler()), _req(req), _smh(smh), _gen(gen) {
+}
 
-IncrementalFetch::~IncrementalFetch() {}
+IncrementalFetch::~IncrementalFetch() {
+}
 
 void IncrementalFetch::completeReq(MapDiff diff) {
     FRT_Values& dst = *_req->GetReturn();

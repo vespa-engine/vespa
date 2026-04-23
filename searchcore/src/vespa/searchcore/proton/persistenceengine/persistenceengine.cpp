@@ -513,7 +513,7 @@ PersistenceEngine::get(const Bucket& b, const document::FieldSet& fields, const 
         IPersistenceHandler::RetrieversSP retrievers = snap.handlers().get()->getDocumentRetrievers(context.getReadConsistency());
         for (size_t i = 0; i < retrievers->size(); ++i) {
             IDocumentRetriever &retriever = *(*retrievers)[i];
-            search::DocumentMetaData meta = retriever.getDocumentMetaData(did);
+            search::DocumentMetadata meta = retriever.getDocumentMetadata(did);
             storage::spi::Timestamp timestamp(meta.timestamp);
             if (timestamp != 0 && meta.bucketId == b.getBucketId()) {
                 if (meta.removed) {
@@ -768,7 +768,7 @@ PersistenceEngine::propagateSavedClusterState(BucketSpace bucketSpace, IPersiste
     auto futureResult = catchResult->future_result();
     GenericResultHandler resultHandler(1, std::move(catchResult));
     handler.handleSetClusterState(*clusterState, resultHandler);
-    futureResult.get();
+    (void) futureResult.get();
 }
 
 void
@@ -834,7 +834,7 @@ PersistenceEngine::populateInitialBucketDB(const WriteGuard & guard, BucketSpace
     auto futureResult = catchResult->future_result();
     GenericResultHandler trHandler(1, std::move(catchResult));
     targetHandler.handlePopulateActiveBuckets(std::move(buckets), trHandler);
-    futureResult.get();
+    (void) futureResult.get();
 }
 
 std::unique_lock<std::shared_mutex>

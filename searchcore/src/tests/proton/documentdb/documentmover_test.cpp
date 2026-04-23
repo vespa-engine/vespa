@@ -17,7 +17,7 @@ struct MySubDbTwoBuckets : public MySubDb
                       std::shared_ptr<bucketdb::BucketDBOwner> bucketDB,
                       uint32_t subDbId,
                       SubDbType subDbType)
-        : MySubDb(builder.getRepo(), std::move(bucketDB), subDbId, subDbType)
+        : MySubDb(builder.getRepo(), std::move(bucketDB), DocTypeName("searchdoc"), subDbId, subDbType)
     {
         builder.createDocs(1, 1, 6);
         builder.createDocs(2, 6, 9);

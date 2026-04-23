@@ -55,7 +55,7 @@ using vespalib::system_clock;
 using proton::bucketdb::BucketCreateNotifier;
 using search::AttributeGuard;
 using search::DocumentIdT;
-using search::DocumentMetaData;
+using search::DocumentMetadata;
 using vespalib::IDestructorCallback;
 using search::SerialNum;
 using search::CommitParam;
@@ -145,12 +145,17 @@ MyDocumentSubDB::~MyDocumentSubDB() = default;
 struct MyDocumentRetriever : public DocumentRetrieverBaseForTest
 {
     MyDocumentSubDB &_subDB;
+    DocTypeName      _doc_type_name;
 
-    explicit MyDocumentRetriever(MyDocumentSubDB &subDB) noexcept : _subDB(subDB) { }
+    MyDocumentRetriever(MyDocumentSubDB &subDB, const DocTypeName& doc_type_name) noexcept : _subDB(subDB),
+        _doc_type_name(doc_type_name) {
+    }
 
     const document::DocumentTypeRepo & getDocumentTypeRepo() const override { abort(); }
-    void getBucketMetaData(const storage::spi::Bucket &, DocumentMetaData::Vector &) const override { abort(); }
-    DocumentMetaData getDocumentMetaData(const DocumentId &) const override { return {}; }
+    const DocTypeName& get_doc_type_name() const noexcept override { return _doc_type_name; }
+    bool can_populate_document_metadata_docid() const noexcept override { return false; }
+    void getBucketMetadata(const storage::spi::Bucket &, DocumentMetadata::Vector &, bool) const override { abort(); }
+    DocumentMetadata getDocumentMetadata(const DocumentId &) const override { return {}; }
     Document::UP getFullDocument(DocumentIdT lid) const override { return _subDB.getDocument(lid); }
     CachedSelect::SP parseSelect(const std::string &) const override { return {}; }
 };
@@ -290,7 +295,7 @@ MyIndexManager::~MyIndexManager() = default;
 MaintenanceDocumentSubDB
 MyDocumentSubDB::getSubDB()
 {
-    auto retriever = std::make_shared<MyDocumentRetriever>(*this);
+    auto retriever = std::make_shared<MyDocumentRetriever>(*this, _docTypeName);
 
     return MaintenanceDocumentSubDB("my_sub_db", _subDBId,
                                     _metaStoreSP,
@@ -343,7 +348,7 @@ MyDocumentSubDB::handleRemove(RemoveOperationWithDocId &op)
     }
     if (op.getValidPrevDbdId(_subDBId) && op.changedDbdId()) {
         assert(_metaStore.validLid(op.getPrevLid()));
-        const RawDocumentMetaData &meta(_metaStore.getRawMetaData(op.getPrevLid()));
+        const RawDocumentMetadata &meta(_metaStore.getRawMetadata(op.getPrevLid()));
         assert((_subDBId == 1u) == op.getPrevMarkedAsRemoved());
         assert(meta.getGid() == gid);
         (void) meta;
@@ -397,7 +402,7 @@ MyDocumentSubDB::handleMove(const MoveOperation &op)
     }
     if (op.getValidPrevDbdId(_subDBId)) {
         assert(_metaStore.validLid(op.getPrevLid()));
-        const RawDocumentMetaData &meta(_metaStore.getRawMetaData(op.getPrevLid()));
+        const RawDocumentMetadata &meta(_metaStore.getRawMetadata(op.getPrevLid()));
         assert((_subDBId == 1u) == op.getPrevMarkedAsRemoved());
         assert(meta.getGid() == gid);
         (void) meta;

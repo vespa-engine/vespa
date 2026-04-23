@@ -38,12 +38,12 @@ public:
     LocalBlob(Alloc data, uint32_t len) noexcept : _data(std::move(data)), _len(len) {}
     LocalBlob(const char* data, uint32_t len);
     LocalBlob(const LocalBlob&) = delete;
-    LocalBlob&  operator=(const LocalBlob&) = delete;
-    void        addRef() override {}
-    void        subRef() override { Alloc().swap(_data); }
-    uint32_t    getLen() override { return _len; }
+    LocalBlob& operator=(const LocalBlob&) = delete;
+    void addRef() override {}
+    void subRef() override { Alloc().swap(_data); }
+    uint32_t getLen() override { return _len; }
     const char* getData() override { return static_cast<const char*>(_data.get()); }
-    char*       getInternalData() { return static_cast<char*>(_data.get()); }
+    char* getInternalData() { return static_cast<char*>(_data.get()); }
 
 private:
     Alloc    _data;
@@ -77,7 +77,8 @@ using fnet::BlobRef;
 using fnet::LocalBlob;
 
 FRT_Values::FRT_Values(Stash& stash)
-    : _maxValues(0), _numValues(0), _typeString(nullptr), _values(nullptr), _blobs(nullptr), _stash(stash) {}
+    : _maxValues(0), _numValues(0), _typeString(nullptr), _values(nullptr), _blobs(nullptr), _stash(stash) {
+}
 
 FRT_Values::~FRT_Values() = default;
 
@@ -333,7 +334,9 @@ void FRT_Values::SetString(FRT_StringValue* value, const char* str, uint32_t len
     value->_len = len;
 }
 
-void FRT_Values::SetString(FRT_StringValue* value, const char* str) { SetString(value, str, strlen(str)); }
+void FRT_Values::SetString(FRT_StringValue* value, const char* str) {
+    SetString(value, str, strlen(str));
+}
 
 void FRT_Values::SetData(FRT_DataValue* value, const char* buf, uint32_t len) {
     char* mybuf = nullptr;

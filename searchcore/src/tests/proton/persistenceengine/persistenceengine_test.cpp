@@ -29,7 +29,7 @@ using document::DocumentTypeRepo;
 using document::DocumentUpdate;
 using document::GlobalId;
 using document::test::makeBucketSpace;
-using search::DocumentMetaData;
+using search::DocumentMetadata;
 using storage::spi::Bucket;
 using storage::spi::BucketChecksum;
 using storage::spi::BucketIdListResult;
@@ -112,23 +112,26 @@ struct MyDocumentRetriever : DocumentRetrieverBaseForTest {
     const Document *document;
     Timestamp timestamp;
     DocumentId &last_doc_id;
+    DocTypeName doc_type_name;
 
-    MyDocumentRetriever(const Document *d, Timestamp ts, DocumentId &last_id)
-        : repo(), document(d), timestamp(ts), last_doc_id(last_id) {}
+    MyDocumentRetriever(const Document *d, Timestamp ts, DocumentId &last_id, const DocTypeName& doc_type_name_in)
+        : repo(), document(d), timestamp(ts), last_doc_id(last_id), doc_type_name(doc_type_name_in) {}
     const DocumentTypeRepo &getDocumentTypeRepo() const override {
         return repo;
     }
-    void getBucketMetaData(const storage::spi::Bucket &, search::DocumentMetaData::Vector &v) const override {
+    const DocTypeName& get_doc_type_name() const noexcept override { return doc_type_name; }
+    bool can_populate_document_metadata_docid() const noexcept override { return false; }
+    void getBucketMetadata(const storage::spi::Bucket &, search::DocumentMetadata::Vector &v, bool) const override {
         if (document != nullptr) {
-            v.push_back(getDocumentMetaData(document->getId()));
+            v.push_back(getDocumentMetadata(document->getId()));
         }
     }
-    DocumentMetaData getDocumentMetaData(const DocumentId &id) const override {
+    DocumentMetadata getDocumentMetadata(const DocumentId &id) const override {
         last_doc_id = id;
         if (document != nullptr) {
-            return DocumentMetaData(1, timestamp, BucketId(1), document->getId().getGlobalId());
+            return DocumentMetadata(1, timestamp, BucketId(1), document->getId().getGlobalId());
         }
-        return DocumentMetaData();
+        return DocumentMetadata();
     }
     Document::UP getFullDocument(search::DocumentIdT) const override {
         if (document != nullptr) {
@@ -275,8 +278,8 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
 
     RetrieversSP getDocumentRetrievers(storage::spi::ReadConsistency) override {
         auto ret = std::make_shared<std::vector<IDocumentRetriever::SP>>();
-        ret->push_back(std::make_shared<MyDocumentRetriever>(nullptr, Timestamp(), lastDocId));
-        ret->push_back(std::make_shared<MyDocumentRetriever>(document, existingTimestamp, lastDocId));
+        ret->push_back(std::make_shared<MyDocumentRetriever>(nullptr, Timestamp(), lastDocId, _doc_type_name));
+        ret->push_back(std::make_shared<MyDocumentRetriever>(document, existingTimestamp, lastDocId, _doc_type_name));
         return ret;
     }
 

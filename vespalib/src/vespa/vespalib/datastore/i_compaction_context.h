@@ -3,6 +3,7 @@
 #pragma once
 
 #include "atomic_entry_ref.h"
+
 #include <memory>
 #include <span>
 
@@ -20,4 +21,4 @@ struct ICompactionContext {
     virtual void compact(std::span<AtomicEntryRef> refs) = 0;
 };
 
-}
+} // namespace vespalib::datastore

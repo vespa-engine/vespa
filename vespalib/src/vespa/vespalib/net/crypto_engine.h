@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include "socket_handle.h"
 #include "crypto_socket.h"
+#include "socket_handle.h"
+
 #include <memory>
 #include <mutex>
 
@@ -21,7 +22,7 @@ struct CryptoEngine {
     using SP = std::shared_ptr<CryptoEngine>;
     virtual bool use_tls_when_client() const = 0;
     virtual bool always_use_tls_when_server() const = 0;
-    virtual CryptoSocket::UP create_client_crypto_socket(SocketHandle socket, const SocketSpec &spec) = 0;
+    virtual CryptoSocket::UP create_client_crypto_socket(SocketHandle socket, const SocketSpec& spec) = 0;
     virtual CryptoSocket::UP create_server_crypto_socket(SocketHandle socket) = 0;
     virtual ~CryptoEngine();
     static CryptoEngine::SP get_default();
@@ -34,7 +35,7 @@ struct NullCryptoEngine : public CryptoEngine {
     ~NullCryptoEngine() override;
     bool use_tls_when_client() const override { return false; }
     bool always_use_tls_when_server() const override { return false; }
-    CryptoSocket::UP create_client_crypto_socket(SocketHandle socket, const SocketSpec &spec) override;
+    CryptoSocket::UP create_client_crypto_socket(SocketHandle socket, const SocketSpec& spec) override;
     CryptoSocket::UP create_server_crypto_socket(SocketHandle socket) override;
 };
 

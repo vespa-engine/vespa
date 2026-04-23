@@ -5653,7 +5653,8 @@
       "public void setRenderer(com.yahoo.component.ComponentSpecification)",
       "public java.lang.String getFormat()",
       "public void setFormat(java.lang.String)",
-      "public java.lang.Object clone()",
+      "public com.yahoo.search.Query getParent()",
+      "public com.yahoo.search.query.Presentation clone()",
       "public boolean getTiming()",
       "public void setTiming(boolean)",
       "public java.util.Set getSummaryFields()",
@@ -5667,8 +5668,10 @@
       "public boolean getTensorDirectValues()",
       "public void setTensorDirectValues(boolean)",
       "public void prepare()",
+      "public com.yahoo.search.query.Presentation cloneFor(com.yahoo.search.Query)",
       "public boolean equals(java.lang.Object)",
-      "public int hashCode()"
+      "public int hashCode()",
+      "public bridge synthetic java.lang.Object clone()"
     ],
     "fields" : [
       "public static final java.lang.String PRESENTATION",
@@ -6142,6 +6145,8 @@
     "methods" : [
       "public static com.yahoo.search.query.profile.types.QueryProfileType getArgumentType()",
       "public void <init>(com.yahoo.search.Query)",
+      "public boolean getProfile()",
+      "public void setProfile(boolean)",
       "public int getLevel()",
       "public void setLevel(int)",
       "public boolean isTraceable(int)",
@@ -6168,6 +6173,7 @@
     ],
     "fields" : [
       "public static final java.lang.String TRACE",
+      "public static final java.lang.String PROFILE",
       "public static final java.lang.String LEVEL",
       "public static final java.lang.String EXPLAIN_LEVEL",
       "public static final java.lang.String PROFILE_DEPTH",
@@ -8637,6 +8643,7 @@
       "public void setRelevance(com.yahoo.search.result.Relevance)",
       "public void setRelevance(double)",
       "public com.yahoo.search.result.Relevance getRelevance()",
+      "public java.util.OptionalInt getGroup()",
       "public void setCached(boolean)",
       "public boolean isCached()",
       "public void setFillable()",
@@ -8712,6 +8719,7 @@
       "public int getConcreteSize()",
       "public int getConcreteSizeShallow()",
       "public int getSubgroupCount()",
+      "public java.util.OptionalInt getGroup()",
       "public com.yahoo.search.result.Hit add(com.yahoo.search.result.Hit)",
       "public void addAll(java.util.List)",
       "public com.yahoo.search.result.Hit get(int)",

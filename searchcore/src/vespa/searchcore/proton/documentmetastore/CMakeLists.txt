@@ -3,6 +3,7 @@ vespa_add_library(searchcore_documentmetastore STATIC
     SOURCES
     document_meta_store_explorer.cpp
     document_meta_store_initializer_result.cpp
+    documentidsaver.cpp
     documentmetastore.cpp
     documentmetastoreattribute.cpp
     documentmetastorecontext.cpp

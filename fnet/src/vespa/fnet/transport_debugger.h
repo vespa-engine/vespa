@@ -50,11 +50,11 @@ public:
     TransportDebugger();
     ~TransportDebugger();
     vespalib::steady_time time() const { return _time; }
-    TimeTools::SP         time_tools() {
+    TimeTools::SP time_tools() {
         return TimeTools::make_debug(vespalib::duration::zero(), [this]() noexcept { return time(); });
     }
-    void                          attach(std::initializer_list<std::reference_wrapper<FNET_Transport>> list);
-    void                          step(vespalib::duration time_passed = 5ms);
+    void attach(std::initializer_list<std::reference_wrapper<FNET_Transport>> list);
+    void step(vespalib::duration time_passed = 5ms);
     template <typename Pred> bool step_until(Pred pred, vespalib::duration time_limit = 120s) {
         auto start = time();
         while (!pred() && ((time() - start) < time_limit)) {

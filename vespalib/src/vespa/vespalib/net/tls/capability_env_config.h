@@ -3,14 +3,10 @@
 
 namespace vespalib::net::tls {
 
-enum class CapabilityEnforcementMode {
-    Disable,
-    LogOnly,
-    Enforce
-};
+enum class CapabilityEnforcementMode { Disable, LogOnly, Enforce };
 
 const char* to_string(CapabilityEnforcementMode mode) noexcept;
 
 CapabilityEnforcementMode capability_enforcement_mode_from_env() noexcept;
 
-}
+} // namespace vespalib::net::tls

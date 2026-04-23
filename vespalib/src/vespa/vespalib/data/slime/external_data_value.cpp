@@ -2,6 +2,4 @@
 
 #include "external_data_value.h"
 
-namespace vespalib::slime {
-
-} // namespace vespalib::slime
+namespace vespalib::slime {} // namespace vespalib::slime

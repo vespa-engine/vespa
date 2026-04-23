@@ -20,7 +20,7 @@ RawBufferStore::RawBufferStore(std::shared_ptr<vespalib::alloc::MemoryAllocator>
     : _array_store(ArrayStoreType::optimizedConfigForHugePage(max_type_id,
                                                               TypeMapper(max_type_id, grow_factor, max_buffer_size),
                                                               MemoryAllocator::HUGEPAGE_SIZE,
-                                                              MemoryAllocator::PAGE_SIZE,
+                                                              MemoryAllocator::NORMAL_PAGE_SIZE,
                                                               max_buffer_size,
                                                               8_Ki, ALLOC_GROW_FACTOR),
                    std::move(allocator), TypeMapper(max_type_id, grow_factor, max_buffer_size)),

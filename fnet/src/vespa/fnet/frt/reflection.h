@@ -36,12 +36,12 @@ public:
 
     ~FRT_Method();
 
-    FRT_Method*                    GetNext() { return _listNext; }
-    const char*                    GetName() { return _name.c_str(); }
-    const char*                    GetParamSpec() { return _paramSpec.c_str(); }
-    const char*                    GetReturnSpec() { return _returnSpec.c_str(); }
-    FRT_METHOD_PT                  GetMethod() { return _method; }
-    FRT_Invokable*                 GetHandler() { return _handler; }
+    FRT_Method* GetNext() { return _listNext; }
+    const char* GetName() { return _name.c_str(); }
+    const char* GetParamSpec() { return _paramSpec.c_str(); }
+    const char* GetReturnSpec() { return _returnSpec.c_str(); }
+    FRT_METHOD_PT GetMethod() { return _method; }
+    FRT_Invokable* GetHandler() { return _handler; }
     const FRT_RequestAccessFilter* GetRequestAccessFilter() const noexcept { return _access_filter.get(); }
     void SetRequestAccessFilter(std::unique_ptr<FRT_RequestAccessFilter> access_filter) noexcept {
         _access_filter = std::move(access_filter);
@@ -78,10 +78,10 @@ public:
     FRT_ReflectionManager();
     ~FRT_ReflectionManager();
 
-    void        Reset();
-    void        AddMethod(FRT_Method* method);
+    void Reset();
+    void AddMethod(FRT_Method* method);
     FRT_Method* LookupMethod(const char* name);
-    void        DumpMethodList(FRT_Values* target);
+    void DumpMethodList(FRT_Values* target);
 };
 
 //------------------------------------------------------------------------

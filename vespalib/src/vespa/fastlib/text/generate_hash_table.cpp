@@ -7,7 +7,7 @@ namespace vespalib {
 GenerateHashTable::FoundBias GenerateHashTable::findBias(const KeyV& keys) const {
     for (KeyT bias = 1; bias != 0; bias++) {
         Taken taken = _takenSlots;
-        bool allOk = true;
+        bool  allOk = true;
         for (KeyT key : keys) {
             Idx hash = mix_hash(key, bias, _size);
             if (taken[hash]) {
@@ -26,7 +26,7 @@ GenerateHashTable::FoundBias GenerateHashTable::findBias(const KeyV& keys) const
 
 void GenerateHashTable::findBiases() {
     std::vector<Bucket> buckets;
-    for (Idx slot = 0; slot < _size; ++ slot) {
+    for (Idx slot = 0; slot < _size; ++slot) {
         buckets.emplace_back(Bucket{slot, {}});
         _bias[slot] = 0;
     }
@@ -35,8 +35,9 @@ void GenerateHashTable::findBiases() {
         buckets[slot].keys.push_back(key);
     }
     std::sort(buckets.begin(), buckets.end());
-    for (auto & bucket : buckets) {
-        if (bucket.keys.size() == 0) break;
+    for (auto& bucket : buckets) {
+        if (bucket.keys.size() == 0)
+            break;
         auto [bias, taken] = findBias(bucket.keys);
         _bias[bucket.slot] = bias;
         _takenSlots = taken;
@@ -45,4 +46,4 @@ void GenerateHashTable::findBiases() {
 
 GenerateHashTable::~GenerateHashTable() = default;
 
-}
+} // namespace vespalib

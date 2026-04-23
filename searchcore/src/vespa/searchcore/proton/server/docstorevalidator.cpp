@@ -43,7 +43,7 @@ DocStoreValidator::visit(uint32_t lid, const std::shared_ptr<document::Document>
     }
     const document::DocumentId &docId(doc->getId());
     const document::GlobalId &gid = docId.getGlobalId();
-    const RawDocumentMetaData &meta = _dms.getRawMetaData(lid);
+    const RawDocumentMetadata &meta = _dms.getRawMetadata(lid);
     const document::GlobalId &dmsGid = meta.getGid();
     if (gid == dmsGid) {
         _invalid->clearBit(lid);
@@ -125,12 +125,12 @@ DocStoreValidator::performRemoves(FeedHandler & feedHandler, const search::IDocu
         bool found = _dms.getGid(lid, gid);
         assert(found);
         if (found) {
-            search::DocumentMetaData metaData = _dms.getMetaData(gid);
-            assert(metaData.valid());
+            search::DocumentMetadata metadata = _dms.getMetadata(gid);
+            assert(metadata.valid());
             document::Document::UP document = store.read(lid, repo);
             assert(document);
-            LOG(info, "Removing document with id %s and lid %u with gid %s in bucket %s", document->getId().toString().c_str(), lid, metaData.gid.toString().c_str(), metaData.bucketId.toString().c_str());
-            auto remove = std::make_unique<RemoveOperationWithGid>(metaData.bucketId, storage::spi::Timestamp(metaData.timestamp), gid, document->getType().getName());
+            LOG(info, "Removing document with id %s and lid %u with gid %s in bucket %s", document->getId().toString().c_str(), lid, metadata.gid.toString().c_str(), metadata.bucketId.toString().c_str());
+            auto remove = std::make_unique<RemoveOperationWithGid>(metadata.bucketId, storage::spi::Timestamp(metadata.timestamp), gid, document->getType().getName());
             feedHandler.performOperation(FeedToken(), std::move(remove));
         }
     }

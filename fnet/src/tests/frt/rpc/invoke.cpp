@@ -38,13 +38,15 @@ private:
 public:
     RequestLatch() : _latch() {}
     ~RequestLatch() override;
-    bool            has_req() { return _latch.has_value(); }
+    bool has_req() { return _latch.has_value(); }
     FRT_RPCRequest* read() { return _latch.read(); }
-    void            write(FRT_RPCRequest* req) { _latch.write(req); }
-    void            RequestDone(FRT_RPCRequest* req) override { write(req); }
+    void write(FRT_RPCRequest* req) { _latch.write(req); }
+    void RequestDone(FRT_RPCRequest* req) override { write(req); }
 };
 
-RequestLatch::~RequestLatch() { EXPECT_TRUE(!has_req()); }
+RequestLatch::~RequestLatch() {
+    EXPECT_TRUE(!has_req());
+}
 
 //-------------------------------------------------------------
 
@@ -71,11 +73,11 @@ public:
     }
     ~MyReq() {}
     MyReq(const MyReq& rhs) = delete;
-    MyReq&          operator=(const MyReq& rhs) = delete;
+    MyReq& operator=(const MyReq& rhs) = delete;
     FRT_RPCRequest& get() { return *_req; }
     FRT_RPCRequest* borrow() { return _req.get(); }
     FRT_RPCRequest* steal() { return _req.internal_detach(); }
-    uint32_t        get_int_ret() {
+    uint32_t get_int_ret() {
         bool failed = false;
         EXPECT_TRUE(_req.get() != nullptr) << (failed = true, "");
         if (!failed) {
@@ -273,18 +275,18 @@ protected:
     static std::shared_ptr<vespalib::CryptoEngine> crypto;
 
 public:
-    FRT_Target&                       target() { return *_target; }
+    FRT_Target& target() { return *_target; }
     vespalib::ref_counted<FRT_Target> make_bad_target() {
         return vespalib::ref_counted<FRT_Target>::internal_attach(_client.supervisor().GetTarget("bogus address"));
     }
-    RequestLatch&  detached_req() { return _testRPC.detached_req(); }
-    EchoTest&      echo() { return _echoTest; }
+    RequestLatch& detached_req() { return _testRPC.detached_req(); }
+    EchoTest& echo() { return _echoTest; }
     const TestRPC& server_instance() const noexcept { return _testRPC; }
 
     InvokeTest();
     ~InvokeTest() override;
-    void        SetUp() override;
-    void        TearDown() override;
+    void SetUp() override;
+    void TearDown() override;
     static void SetUpTestSuite();
     static void TearDownTestSuite();
 };
@@ -298,7 +300,8 @@ InvokeTest::InvokeTest()
       _peerSpec(),
       _target(),
       _testRPC(&_server.supervisor()),
-      _echoTest(&_server.supervisor()) {}
+      _echoTest(&_server.supervisor()) {
+}
 
 InvokeTest::~InvokeTest() = default;
 
@@ -312,11 +315,17 @@ void InvokeTest::SetUp() {
     ASSERT_TRUE(!req.get().IsError());
 }
 
-void InvokeTest::TearDown() { _target.reset(); }
+void InvokeTest::TearDown() {
+    _target.reset();
+}
 
-void InvokeTest::SetUpTestSuite() { crypto = my_crypto_engine(); }
+void InvokeTest::SetUpTestSuite() {
+    crypto = my_crypto_engine();
+}
 
-void InvokeTest::TearDownTestSuite() { crypto.reset(); }
+void InvokeTest::TearDownTestSuite() {
+    crypto.reset();
+}
 
 //-------------------------------------------------------------
 

@@ -8,15 +8,14 @@ class Identifiable;
 /**
  * An operation that is able to operate on a generic object.
  **/
-class ObjectOperation
-{
+class ObjectOperation {
 public:
     /**
      * Apply this operation to the given object.
      *
      * @param obj the object to operate on
      **/
-    virtual void execute(Identifiable &obj) = 0;
+    virtual void execute(Identifiable& obj) = 0;
 
     /**
      * empty
@@ -25,4 +24,3 @@ public:
 };
 
 } // namespace vespalib
-

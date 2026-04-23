@@ -12,17 +12,18 @@ namespace vespalib {
  **/
 class GenerationGuard {
 private:
-    GenerationHold *_hold;
+    GenerationHold* _hold;
     void cleanup() noexcept {
         if (_hold != nullptr) {
             _hold->release();
             _hold = nullptr;
         }
     }
+
 public:
-    GenerationGuard() noexcept : _hold(nullptr) { }
-    GenerationGuard(GenerationHold *hold) noexcept : _hold(hold->acquire()) { } // hold is never nullptr
-    GenerationGuard(const GenerationGuard& rhs) noexcept : _hold(GenerationHold::copy(rhs._hold)) { }
+    GenerationGuard() noexcept : _hold(nullptr) {}
+    GenerationGuard(GenerationHold* hold) noexcept : _hold(hold->acquire()) {} // hold is never nullptr
+    GenerationGuard(const GenerationGuard& rhs) noexcept : _hold(GenerationHold::copy(rhs._hold)) {}
     GenerationGuard(GenerationGuard&& rhs) noexcept : _hold(rhs._hold) { rhs._hold = nullptr; }
     ~GenerationGuard() { cleanup(); }
     GenerationGuard& operator=(const GenerationGuard& rhs) noexcept;
@@ -31,4 +32,4 @@ public:
     Generation getGeneration() const { return _hold->_generation.load(std::memory_order_relaxed); }
 };
 
-}
+} // namespace vespalib

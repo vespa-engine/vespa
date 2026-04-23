@@ -17,13 +17,20 @@ FNET_IOComponent::FNET_IOComponent(FNET_TransportThread* owner, int socket_fd, c
       _ioc_socket_fd(socket_fd),
       _ioc_timestamp(vespalib::steady_clock::now()),
       _ioc_lock(),
-      _ioc_cond() {}
+      _ioc_cond() {
+}
 
-FNET_IOComponent::~FNET_IOComponent() { assert(_ioc_selector == nullptr); }
+FNET_IOComponent::~FNET_IOComponent() {
+    assert(_ioc_selector == nullptr);
+}
 
-const FNET_Config& FNET_IOComponent::getConfig() const { return _ioc_owner->getConfig(); }
+const FNET_Config& FNET_IOComponent::getConfig() const {
+    return _ioc_owner->getConfig();
+}
 
-void FNET_IOComponent::UpdateTimeOut() { _ioc_owner->UpdateTimeOut(this); }
+void FNET_IOComponent::UpdateTimeOut() {
+    _ioc_owner->UpdateTimeOut(this);
+}
 
 void FNET_IOComponent::attach_selector(Selector& selector) {
     detach_selector();
@@ -52,6 +59,10 @@ void FNET_IOComponent::EnableWriteEvent(bool enabled) {
     }
 }
 
-bool FNET_IOComponent::handle_add_event() { return true; }
+bool FNET_IOComponent::handle_add_event() {
+    return true;
+}
 
-bool FNET_IOComponent::handle_handshake_act() { return true; }
+bool FNET_IOComponent::handle_handshake_act() {
+    return true;
+}

@@ -9,6 +9,7 @@ struct HandlerTest : public ::testing::Test {
     DocBuilder _docBuilder;
     std::shared_ptr<bucketdb::BucketDBOwner> _bucketDB;
     MyDocumentStore _docStore;
+    DocTypeName     _doc_type_name;
     MySubDb _subDb;
     LidSpaceCompactionHandler _handler;
     HandlerTest();
@@ -19,8 +20,9 @@ HandlerTest::HandlerTest()
     : _docBuilder(),
       _bucketDB(std::make_shared<bucketdb::BucketDBOwner>()),
       _docStore(),
-      _subDb(_bucketDB, _docStore, _docBuilder.get_repo_sp()),
-      _handler(_subDb.maintenance_sub_db, "test")
+      _doc_type_name("test"),
+      _subDb(_bucketDB, _docStore, _docBuilder.get_repo_sp(), _doc_type_name),
+      _handler(_subDb.maintenance_sub_db, _doc_type_name.getName())
 {
     _docStore._readDoc = _docBuilder.make_document(DOC_ID);
 }
@@ -40,7 +42,7 @@ TEST_F(HandlerTest, createMoveOperation_works_as_expected)
     const uint32_t moveFromLid = 10;
     const BucketId bucketId(100);
     const Timestamp timestamp(200);
-    DocumentMetaData document(moveFromLid, timestamp, bucketId, GlobalId());
+    DocumentMetadata document(moveFromLid, timestamp, bucketId, GlobalId());
     {
         EXPECT_FALSE(_subDb.maintenance_sub_db.lidNeedsCommit(moveFromLid));
         IPendingLidTracker::Token token = _subDb._pendingLidsForCommit.produce(moveFromLid);

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <benchmark/benchmark.h>
+
 #include <atomic>
 #include <memory>
 #include <vector>
@@ -12,7 +13,7 @@
 struct TaggedPtr {
     TaggedPtr() noexcept : _ptr(nullptr), _tag(0) {}
     TaggedPtr(void* ptr, size_t tag) noexcept : _ptr(ptr), _tag(tag) {}
-    void* _ptr;
+    void*  _ptr;
     size_t _tag;
 };
 
@@ -35,9 +36,7 @@ void linkIn(AtomicHeadPtr& head, Node* node) noexcept {
     node->_next = static_cast<Node*>(oldHead._ptr);
 
     // linkIn/linkOut performs a release/acquire pair
-    while (!head.compare_exchange_weak(oldHead, newHead,
-                                       std::memory_order_release,
-                                       std::memory_order_relaxed)) {
+    while (!head.compare_exchange_weak(oldHead, newHead, std::memory_order_release, std::memory_order_relaxed)) {
         newHead._tag = oldHead._tag + 1;
         node->_next = static_cast<Node*>(oldHead._ptr);
     }
@@ -49,7 +48,7 @@ void linkIn(AtomicHeadPtr& head, Node* node) noexcept {
  */
 Node* linkOut(AtomicHeadPtr& head) noexcept {
     TaggedPtr oldHead = head.load(std::memory_order_relaxed);
-    Node* node = static_cast<Node*>(oldHead._ptr);
+    Node*     node = static_cast<Node*>(oldHead._ptr);
 
     if (node == nullptr) {
         return nullptr;
@@ -58,9 +57,7 @@ Node* linkOut(AtomicHeadPtr& head) noexcept {
     TaggedPtr newHead(node->_next, oldHead._tag + 1);
 
     // linkIn/linkOut performs a release/acquire pair
-    while (!head.compare_exchange_weak(oldHead, newHead,
-                                       std::memory_order_acquire,
-                                       std::memory_order_relaxed)) {
+    while (!head.compare_exchange_weak(oldHead, newHead, std::memory_order_acquire, std::memory_order_relaxed)) {
         node = static_cast<Node*>(oldHead._ptr);
         if (node == nullptr) {
             return nullptr;

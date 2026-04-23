@@ -13,8 +13,7 @@ class XmlOutputStream;
  *
  * Base class for classes that can be converted into XML.
  */
-class XmlSerializable
-{
+class XmlSerializable {
 public:
     XmlSerializable() {}
     virtual ~XmlSerializable() = default;
@@ -25,7 +24,7 @@ public:
     virtual std::string toXml(const std::string& indent = "") const;
 };
 
-}
+} // namespace vespalib::xml
 
 namespace vespalib {
 // The XmlSerializable and XmlOutputStream is often used in header files
@@ -36,5 +35,4 @@ namespace vespalib {
 using XmlSerializable = vespalib::xml::XmlSerializable;
 using XmlOutputStream = vespalib::xml::XmlOutputStream;
 
-} // vespalib
-
+} // namespace vespalib

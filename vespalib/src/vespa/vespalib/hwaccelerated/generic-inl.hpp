@@ -9,28 +9,26 @@
 
 #include "fn_table.h"
 #include "private_helpers.hpp"
+
 #include <cblas.h>
 
 namespace vespalib::hwaccelerated {
 
 namespace {
 
-template <typename ACCUM, typename T, size_t UNROLL>
-ACCUM
-multiplyAdd(const T * a, const T * b, size_t sz) noexcept
-{
+template <typename ACCUM, typename T, size_t UNROLL> ACCUM multiplyAdd(const T* a, const T* b, size_t sz) noexcept {
     ACCUM partial[UNROLL];
     for (size_t i(0); i < UNROLL; i++) {
         partial[i] = 0;
     }
     size_t i(0);
-    for (; i + UNROLL <= sz; i+= UNROLL) {
+    for (; i + UNROLL <= sz; i += UNROLL) {
         for (size_t j(0); j < UNROLL; j++) {
-            partial[j] += a[i+j] * b[i+j];
+            partial[j] += a[i + j] * b[i + j];
         }
     }
-    for (;i < sz; i++) {
-        partial[i%UNROLL] += a[i] * b[i];
+    for (; i < sz; i++) {
+        partial[i % UNROLL] += a[i] * b[i];
     }
     ACCUM sum(0);
     for (size_t j(0); j < UNROLL; j++) {
@@ -40,9 +38,7 @@ multiplyAdd(const T * a, const T * b, size_t sz) noexcept
 }
 
 template <typename AccuT, typename T, size_t UNROLL>
-AccuT
-squaredEuclideanDistanceT(const T * a, const T * b, size_t sz) noexcept
-{
+AccuT squaredEuclideanDistanceT(const T* a, const T* b, size_t sz) noexcept {
     AccuT partial[UNROLL];
     for (size_t i(0); i < UNROLL; i++) {
         partial[i] = 0;
@@ -50,13 +46,13 @@ squaredEuclideanDistanceT(const T * a, const T * b, size_t sz) noexcept
     size_t i(0);
     for (; i + UNROLL <= sz; i += UNROLL) {
         for (size_t j(0); j < UNROLL; j++) {
-            AccuT d = a[i+j] - b[i+j];
+            AccuT d = a[i + j] - b[i + j];
             partial[j] += d * d;
         }
     }
-    for (;i < sz; i++) {
+    for (; i < sz; i++) {
         AccuT d = a[i] - b[i];
-        partial[i%UNROLL] += d * d;
+        partial[i % UNROLL] += d * d;
     }
     double sum(0);
     for (size_t j(0); j < UNROLL; j++) {
@@ -65,14 +61,13 @@ squaredEuclideanDistanceT(const T * a, const T * b, size_t sz) noexcept
     return sum;
 }
 
-template<size_t UNROLL, typename Operation>
-void
-bitOperation(Operation operation, void * aOrg, const void * bOrg, size_t bytes) noexcept {
+template <size_t UNROLL, typename Operation>
+void bitOperation(Operation operation, void* aOrg, const void* bOrg, size_t bytes) noexcept {
 
-    const size_t sz(bytes/sizeof(uint64_t));
+    const size_t sz(bytes / sizeof(uint64_t));
     {
-        auto a(static_cast<uint64_t *>(aOrg));
-        auto b(static_cast<const uint64_t *>(bOrg));
+        auto   a(static_cast<uint64_t*>(aOrg));
+        auto   b(static_cast<const uint64_t*>(bOrg));
         size_t i(0);
         for (; i + UNROLL <= sz; i += UNROLL) {
             for (size_t j(0); j < UNROLL; j++) {
@@ -84,9 +79,9 @@ bitOperation(Operation operation, void * aOrg, const void * bOrg, size_t bytes) 
         }
     }
 
-    auto a(static_cast<uint8_t *>(aOrg));
-    auto b(static_cast<const uint8_t *>(bOrg));
-    for (size_t i(sz*sizeof(uint64_t)); i < bytes; i++) {
+    auto a(static_cast<uint8_t*>(aOrg));
+    auto b(static_cast<const uint8_t*>(bOrg));
+    for (size_t i(sz * sizeof(uint64_t)); i < bytes; i++) {
         a[i] = operation(a[i], b[i]);
     }
 }
@@ -98,7 +93,11 @@ int64_t my_dot_product_i16(const int16_t* a, const int16_t* b, size_t sz) noexce
     return multiplyAdd<int64_t, int16_t, 8>(a, b, sz);
 }
 int64_t my_dot_product_i32(const int32_t* a, const int32_t* b, size_t sz) noexcept {
-    return multiplyAdd<int64_t, int32_t, 8>(a, b, sz);
+    int64_t sum = 0;
+    for (size_t i = 0; i < sz; i++) {
+        sum += (int64_t) a[i] * (int64_t) b[i];
+    }
+    return sum;
 }
 int64_t my_dot_product_i64(const int64_t* a, const int64_t* b, size_t sz) noexcept {
     return multiplyAdd<long long, int64_t, 8>(a, b, sz);
@@ -144,13 +143,13 @@ void my_and_not_bit(void* aOrg, const void* bOrg, size_t bytes) noexcept {
     bitOperation<8>([](uint64_t a, uint64_t b) { return a & ~b; }, aOrg, bOrg, bytes);
 }
 void my_not_bit(void* aOrg, size_t bytes) noexcept {
-    auto a(static_cast<uint64_t *>(aOrg));
-    const size_t sz(bytes/sizeof(uint64_t));
+    auto         a(static_cast<uint64_t*>(aOrg));
+    const size_t sz(bytes / sizeof(uint64_t));
     for (size_t i(0); i < sz; i++) {
         a[i] = ~a[i];
     }
-    auto ac(static_cast<uint8_t *>(aOrg));
-    for (size_t i(sz*sizeof(uint64_t)); i < bytes; i++) {
+    auto ac(static_cast<uint8_t*>(aOrg));
+    for (size_t i(sz * sizeof(uint64_t)); i < bytes; i++) {
         ac[i] = ~ac[i];
     }
 }
@@ -174,12 +173,11 @@ TargetInfo my_target_info() noexcept {
     return {"AutoVec", VESPA_HWACCEL_TARGET_NAME, baseline_vector_bytes()};
 }
 
-} // anon ns
+} // namespace
 
 namespace {
 
-#define VESPA_HWACCEL_ASSIGN_TABLE_FN_VISITOR(fn_type, fn_field, fn_id) \
-    ft.fn_field = my_ ## fn_field;
+#define VESPA_HWACCEL_ASSIGN_TABLE_FN_VISITOR(fn_type, fn_field, fn_id) ft.fn_field = my_##fn_field;
 
 [[nodiscard]] dispatch::FnTable build_fn_table() {
     dispatch::FnTable ft(my_target_info());
@@ -188,15 +186,13 @@ namespace {
     return ft;
 }
 
-} // anon ns
+} // namespace
 
-TargetInfo
-VESPA_HWACCEL_TARGET_TYPE::target_info() const noexcept {
+TargetInfo VESPA_HWACCEL_TARGET_TYPE::target_info() const noexcept {
     return my_target_info();
 }
 
-const dispatch::FnTable&
-VESPA_HWACCEL_TARGET_TYPE::fn_table() const {
+const dispatch::FnTable& VESPA_HWACCEL_TARGET_TYPE::fn_table() const {
     static const dispatch::FnTable tbl = build_fn_table();
     return tbl;
 }
@@ -208,15 +204,15 @@ VESPA_HWACCEL_TARGET_TYPE::fn_table() const {
 
 namespace dispatch {
 
-#define VESPA_HWACCEL_MY_BASELINE_FN_PTR_NAME(name) my_ ## name
+#define VESPA_HWACCEL_MY_BASELINE_FN_PTR_NAME(name) my_##name
 
-#define VESPA_HWACCEL_DEFINE_DISPATCH_FN_PTR(fn_type, fn_field, fn_id) \
+#define VESPA_HWACCEL_DEFINE_DISPATCH_FN_PTR(fn_type, fn_field, fn_id)                                      \
     fn_type VESPA_HWACCEL_DISPATCH_FN_PTR_NAME(fn_field) = VESPA_HWACCEL_MY_BASELINE_FN_PTR_NAME(fn_field);
 
 VESPA_HWACCEL_VISIT_FN_TABLE(VESPA_HWACCEL_DEFINE_DISPATCH_FN_PTR);
 
-}
+} // namespace dispatch
 
 #endif // VESPA_HWACCEL_DEFINE_BASELINE_DISPATCH_FN_PTRS
 
-} // vespalib::hwaccelerated
+} // namespace vespalib::hwaccelerated

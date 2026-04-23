@@ -2,8 +2,9 @@
 
 #include <vespa/vespalib/gtest/gtest.h>
 
-#include <cassert>
 #include <unistd.h>
+
+#include <cassert>
 
 void* hammer(void* arg) {
     usleep(4000000);

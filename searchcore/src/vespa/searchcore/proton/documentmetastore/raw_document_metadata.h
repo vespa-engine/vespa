@@ -5,7 +5,7 @@
 #include <vespa/document/base/globalid.h>
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/persistence/spi/types.h>
-#include <vespa/vespalib/datastore/entryref.h>
+#include <vespa/vespalib/datastore/atomic_entry_ref.h>
 #include <algorithm>
 #include <atomic>
 #include <cassert>
@@ -15,27 +15,28 @@ namespace proton {
 /**
  * The raw data that is stored for a single document in the DocumentMetaStore.
  */
-struct RawDocumentMetaData
+struct RawDocumentMetadata
 {
     using GlobalId = document::GlobalId;
     using BucketId = document::BucketId;
     using Timestamp = storage::spi::Timestamp;
-    using DocumentIdEntryRef = vespalib::datastore::EntryRefT<19>;
+    using EntryRef = vespalib::datastore::EntryRef;
+    using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     GlobalId              _gid;
-    DocumentIdEntryRef    _docid_ref;
+    AtomicEntryRef        _docid_ref;
     std::atomic<uint32_t> _bucket_used_bits_and_doc_size;
     std::atomic<uint64_t> _timestamp;
 
     static uint32_t capped_doc_size(uint32_t doc_size) { return std::min(0xffffffu, doc_size); }
 
-    RawDocumentMetaData() noexcept
+    RawDocumentMetadata() noexcept
         : _gid(),
           _docid_ref(),
           _bucket_used_bits_and_doc_size(BucketId::minNumBits),
           _timestamp(0)
     { }
 
-    RawDocumentMetaData(const GlobalId &gid, const BucketId &bucketId, const Timestamp &timestamp, uint32_t docSize) noexcept
+    RawDocumentMetadata(const GlobalId &gid, const BucketId &bucketId, const Timestamp &timestamp, uint32_t docSize) noexcept
         : _gid(gid),
           _docid_ref(),
           _bucket_used_bits_and_doc_size(bucketId.getUsedBits() | (capped_doc_size(docSize) << 8)),
@@ -48,7 +49,7 @@ struct RawDocumentMetaData
                bucketId.getRawId() == verId.getId());
     }
 
-    RawDocumentMetaData(const RawDocumentMetaData& rhs)
+    RawDocumentMetadata(const RawDocumentMetadata& rhs)
         : _gid(rhs._gid),
           _docid_ref(rhs._docid_ref),
           _bucket_used_bits_and_doc_size(rhs._bucket_used_bits_and_doc_size.load(std::memory_order_relaxed)),
@@ -56,7 +57,7 @@ struct RawDocumentMetaData
     {
     }
 
-    RawDocumentMetaData& operator=(const RawDocumentMetaData& rhs) {
+    RawDocumentMetadata& operator=(const RawDocumentMetadata& rhs) {
         _gid = rhs._gid;
         _docid_ref = rhs._docid_ref;
         _bucket_used_bits_and_doc_size.store(rhs._bucket_used_bits_and_doc_size.load(std::memory_order_relaxed), std::memory_order_relaxed);
@@ -66,15 +67,16 @@ struct RawDocumentMetaData
 
     bool operator<(const GlobalId &rhs) const noexcept { return _gid < rhs; }
     bool operator==(const GlobalId &rhs) const noexcept { return _gid == rhs; }
-    bool operator<(const RawDocumentMetaData &rhs) const noexcept { return _gid < rhs._gid; }
-    bool operator==(const RawDocumentMetaData &rhs) const noexcept { return _gid == rhs._gid; }
+    bool operator<(const RawDocumentMetadata &rhs) const noexcept { return _gid < rhs._gid; }
+    bool operator==(const RawDocumentMetadata &rhs) const noexcept { return _gid == rhs._gid; }
 
     const GlobalId &getGid() const { return _gid; }
     GlobalId &getGid() { return _gid; }
     void setGid(const GlobalId &rhs) { _gid = rhs; }
 
-    DocumentIdEntryRef get_docid_ref() const { return _docid_ref; }
-    void set_docid_ref(DocumentIdEntryRef ref) { _docid_ref = ref; }
+    [[nodiscard]] EntryRef acquire_docid_ref() const noexcept { return _docid_ref.load_acquire(); }
+    [[nodiscard]] EntryRef get_relaxed_docid_ref() const noexcept { return _docid_ref.load_relaxed(); }
+    void set_docid_ref(EntryRef ref) noexcept { _docid_ref.store_release(ref); }
 
     uint8_t getBucketUsedBits() const { return _bucket_used_bits_and_doc_size.load(std::memory_order_relaxed) & 0xffu; }
 

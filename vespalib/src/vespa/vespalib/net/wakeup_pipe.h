@@ -19,6 +19,7 @@ class WakeupPipe {
 private:
     SocketHandle _reader;
     SocketHandle _writer;
+
 public:
     WakeupPipe();
     ~WakeupPipe();
@@ -27,4 +28,4 @@ public:
     void read_tokens();
 };
 
-}
+} // namespace vespalib
