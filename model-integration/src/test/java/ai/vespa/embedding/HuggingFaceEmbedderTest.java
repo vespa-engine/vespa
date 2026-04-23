@@ -256,8 +256,8 @@ public class HuggingFaceEmbedderTest {
         builder.tokenizerPath(ModelReference.valueOf(vocabPath));
         builder.transformerModel(ModelReference.valueOf(modelPath));
         builder.normalize(true);
-        builder.prependQuery("Represent this text:");
-        builder.prependDocument("This is a document:");
+        builder.prependQuery("Represent this text: ");
+        builder.prependDocument("This is a document: ");
         var onnxConfig = new OnnxEvaluatorConfig.Builder().build();
         var mockModelPathHelper = new MockModelPathHelper();
         HuggingFaceEmbedder huggingFaceEmbedder = new HuggingFaceEmbedder(OnnxRuntime.testInstance(), Embedder.Runtime.testInstance(), builder.build(), onnxConfig, mockModelPathHelper);
