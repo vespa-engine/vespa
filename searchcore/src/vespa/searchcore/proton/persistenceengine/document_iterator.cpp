@@ -191,7 +191,7 @@ public:
             return false;
         }
         assert(_selectCxt);
-        _selectCxt->_docId = meta.lid;
+        _selectCxt->_lid = meta.lid;
         _selectCxt->_doc = nullptr;
         return _selectSession->contains_pre_doc(*_selectCxt);
     }
@@ -200,7 +200,7 @@ public:
             return true;
         }
         assert(_selectCxt);
-        _selectCxt->_docId = meta.lid;
+        _selectCxt->_lid = meta.lid;
         _selectCxt->_doc = doc;
         return (doc && (doc->getId().getGlobalId() == meta.gid) && _selectSession->contains_doc(*_selectCxt));
     }

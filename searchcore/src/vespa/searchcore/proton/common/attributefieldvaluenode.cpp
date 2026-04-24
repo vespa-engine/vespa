@@ -42,7 +42,7 @@ AttributeFieldValueNode::
 getValue(const Context &context) const
 {
     const auto &sc(dynamic_cast<const SelectContext &>(context));
-    uint32_t docId(sc._docId);
+    uint32_t docId(sc._lid);
     assert(docId != 0u);
     const auto& v = sc.guarded_attribute_at_index(_attr_guard_index);
     if (v.isUndefined(docId)) {
@@ -69,7 +69,7 @@ getValue(const Context &context) const
             {
                 auto* tensor_attr = v.asTensorAttribute();
                 assert(tensor_attr != nullptr);
-                if (tensor_attr->getTensor(sc._docId)) {
+                if (tensor_attr->getTensor(sc._lid)) {
                     // This returns a sentinel tensor value that can only be used for
                     // checking field presence, not actual tensor _contents_.
                     return std::make_unique<TensorValue>();

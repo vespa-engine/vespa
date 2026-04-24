@@ -172,7 +172,7 @@ checkSelect(const CachedSelect::SP &cs,
 {
     SCOPED_TRACE("docId=" + std::to_string(docId));
     SelectContext ctx(*cs);
-    ctx._docId = docId;
+    ctx._lid = docId;
     ctx._doc = &doc;
     ctx.getAttributeGuards();
     bool expSessionContains = (cs->preDocOnlySelect() || (exp == Result::True));
@@ -188,7 +188,7 @@ checkSelect(const CachedSelect::SP &cs,
 {
     SCOPED_TRACE("docId=" + std::to_string(docId));
     SelectContext ctx(*cs);
-    ctx._docId = docId;
+    ctx._lid = docId;
     ctx.getAttributeGuards();
     EXPECT_TRUE(checkSelect((cs->preDocOnlySelect() ? cs->preDocOnlySelect() : cs->preDocSelect()), ctx, exp));
     EXPECT_EQ(expSessionContains, cs->createSession()->contains_pre_doc(ctx));
@@ -775,16 +775,16 @@ TEST(CachedSelectTest, Test_performance_when_using_attributes)
     LOG(info, "Starting minibm loop, %u ierations of 4 docs each", loopcnt);
     vespalib::Timer sw;
     for (i = 0; i < loopcnt; ++i) {
-        ctx._docId = 1u;
+        ctx._lid = 1u;
         if (sel->contains(ctx) != Result::False)
             break;
-        ctx._docId = 2u;
+        ctx._lid = 2u;
         if (sel->contains(ctx) != Result::True)
             break;
-        ctx._docId = 3u;
+        ctx._lid = 3u;
         if (sel->contains(ctx) != Result::Invalid)
             break;
-        ctx._docId = 4u;
+        ctx._lid = 4u;
         if (sel->contains(ctx) != Result::Invalid)
             break;
     }
