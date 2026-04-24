@@ -2,7 +2,9 @@
 package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Cursor;
@@ -62,7 +64,11 @@ public class ApplicationCuratorDatabase {
 
     /** Returns the lock for changes to the given application. */
     public Lock lock(ApplicationId id) {
-        return lock(lockPath(id));
+        try {
+            return lock(lockPath(id));
+        } catch (UncheckedTimeoutException e) {
+            throw new ApplicationLockException(e);
+        }
     }
 
     /** Reads, modifies and writes the application reindexing for this application, while holding its lock. */
