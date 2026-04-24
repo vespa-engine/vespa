@@ -50,6 +50,20 @@ DocStoreValidator::visit(uint32_t lid, const std::shared_ptr<document::Document>
     } else {
         _invalid->setBit(lid);
     }
+
+    if (_dms.can_populate_document_metadata_docid()) {
+        // DocumentMetaStore should store the document id of this document
+        // If it does not have the document id, we add it.
+        // If it does have the document id, we verify that it matches the one from doc.
+        auto metadata = _dms.getMetadata(dmsGid);
+        if (metadata.docid.empty()) {
+            // document id is missing, we have to add it
+            _dms.update_docid_string(lid, doc->getId().toString());
+        } else if (metadata.docid != doc->getId().toString()) {
+            // document id is there but does not match the one from the docstore
+            _invalid->setBit(lid);
+        }
+    }
 }
 
 
