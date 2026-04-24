@@ -3,27 +3,39 @@ package com.yahoo.config.provision;
 
 import java.time.DayOfWeek;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * A window of time during which changes (revisions, versions, maintenance) are blocked.
  *
  * @author olaa
  */
-public record BlockWindow(boolean revision, boolean version, boolean maintenance, List<DayOfWeek> days, List<Integer> hours, ZoneId zone) {
+public record BlockWindow(boolean revision, boolean version, boolean maintenance,
+                          List<DayOfWeek> days, List<Integer> hours, ZoneId zone,
+                          Optional<LocalDate> fromDate, Optional<LocalDate> toDate) {
 
     public BlockWindow(boolean revision, boolean version, List<DayOfWeek> days, List<Integer> hours, ZoneId zone) {
-        this(revision, version, false, days, hours, zone);
+        this(revision, version, false, days, hours, zone, Optional.empty(), Optional.empty());
     }
 
     public BlockWindow(boolean revision, boolean version, boolean maintenance, List<DayOfWeek> days, List<Integer> hours, ZoneId zone) {
+        this(revision, version, maintenance, days, hours, zone, Optional.empty(), Optional.empty());
+    }
+
+    public BlockWindow(boolean revision, boolean version, boolean maintenance,
+                       List<DayOfWeek> days, List<Integer> hours, ZoneId zone,
+                       Optional<LocalDate> fromDate, Optional<LocalDate> toDate) {
         this.revision    = revision;
         this.version     = version;
         this.maintenance = maintenance;
         this.days        = List.copyOf(days);
         this.hours       = List.copyOf(hours);
         this.zone        = zone;
+        this.fromDate    = fromDate;
+        this.toDate      = toDate;
     }
 
     /** Returns whether this window is currently blocking platform (Vespa version) upgrades */
@@ -43,7 +55,12 @@ public record BlockWindow(boolean revision, boolean version, boolean maintenance
 
     private boolean isWithin(Instant instant) {
         var localTime = instant.atZone(zone);
-        return days.contains(localTime.getDayOfWeek()) && hours.contains(localTime.getHour());
+        if (!days.contains(localTime.getDayOfWeek())) return false;
+        if (!hours.contains(localTime.getHour())) return false;
+        LocalDate date = localTime.toLocalDate();
+        if (fromDate.isPresent() && date.isBefore(fromDate.get())) return false;
+        if (toDate.isPresent() && date.isAfter(toDate.get())) return false;
+        return true;
     }
 
 }
