@@ -6,6 +6,7 @@
  * Building trees.
  */
 
+#include "benchmark_blueprint_factory.h"
 #include "common.h"
 
 #include <concepts>
@@ -37,6 +38,11 @@ struct Spec {
     std::variant<TermSpec, AndSpec, OrSpec> node;
 };
 
+template <typename... Fs>
+struct overloaded : Fs... { using Fs::operator()...; };
+
+template <typename... Fs> overloaded(Fs...) -> overloaded<Fs...>;
+
 // ----------------- Builders ------------------------
 
 Spec term(FieldConfig field, double hit_ratio);
@@ -61,5 +67,30 @@ Spec or_(Specs&&... children) {
 }
 
 std::string to_string(const Spec& s);
+
+// ----------------- Factory ------------------------
+
+class SpecBlueprintFactory : public BenchmarkBlueprintFactory {
+public:
+    using FactoryList = std::vector<std::unique_ptr<BenchmarkBlueprintFactory>>;
+
+private:
+
+    Spec _spec;
+    uint32_t _num_docs;
+    FactoryList _leaf_factories;
+
+public:
+    SpecBlueprintFactory(Spec spec, uint32_t num_docs);
+    ~SpecBlueprintFactory() override;
+
+    std::unique_ptr<Blueprint> make_blueprint() override;
+    std::string get_name(Blueprint& blueprint) const override;
+
+private:
+    static void collect_leaves(const Spec& spec, uint32_t num_docs, FactoryList& out);
+    static std::unique_ptr<Blueprint> build_tree(const Spec& spec, FactoryList& leaves, size_t& leaf_idx,
+                                                 uint32_t docid_limit);
+};
 
 }

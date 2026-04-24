@@ -1100,12 +1100,26 @@ TEST(IteratorBenchmark, btree_vs_array_nonstrict_crossover) {
     }
 }
 
-TEST(IteratorBenchmark, print_test) {
+TEST(IteratorBenchmark, spec_factory_test) {
     auto tree = and_(
-        or_(term(int32_fs, 0.1), term(int32_fs, 0.2)),
-        term(str_fs, 0.1),
-        term(str_fs, 0.5));
-    std::println("{}", to_string(tree));
+        term(int32_fs, 0.01),
+        or_(term(str_fs, 0.1), term(str_fs, 0.3)));
+
+    SpecBlueprintFactory factory(std::move(tree), num_docs);
+
+    auto res = benchmark_search(factory,
+                                num_docs + 1,
+                                /*strict*/ true,
+                                /*force_strict*/ false,
+                                /*unpack_iterator*/ false,
+                                /*filter_hit_ratio*/ 1.0,
+                                PlanningAlgo::Cost);
+
+    std::cout << factory.get_name(/*unused*/ *factory.make_blueprint()) << "\n";
+    std::cout << "time_ms=" << res.time_ms
+              << " seeks=" << res.seeks
+              << " hits=" << res.hits
+              << " actual_cost=" << res.actual_cost << "\n";
 }
 
 int main(int argc, char **argv) {
