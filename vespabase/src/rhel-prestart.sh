@@ -98,23 +98,14 @@ fixdir () {
         exit 1
     fi
     mkdir -p "$4"
-    if ! $IS_ROOT; then
-        local stat="$(stat -c "%U %G" $4)"
-        local user=${stat% *}
-        local group=${stat#* }
-        if [ "$1" != "$user" ]; then
-            echo "Wrong owner for ${VESPA_HOME}/$4, expected $1, was $user"
-            exit 1
-        fi
-        if [ "$2" != "$group" ]; then
-            echo "Wrong group for ${VESPA_HOME}/$4, expected $2, was $group"
-            exit 1
-        fi
-    else
+    if $IS_ROOT; then
         chown $1 "$4"
         chgrp $2 "$4"
+    elif ! [ -w "$4" ]; then
+        echo "Directory ${VESPA_HOME}/$4 is not writable by current user (UID $(id -u))"
+        exit 1
     fi
-    chmod $3 "$4"
+    chmod $3 "$4" 2>/dev/null || true
 }
 
 # BEGIN directory fixups
@@ -149,8 +140,9 @@ fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/vespa/cache
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/vespa/cache/config
 
 if $IS_ROOT; then
-    chown -hR ${VESPA_USER} logs/vespa
-    chown -hR ${VESPA_USER} var/db/vespa
+    chown -hR ${VESPA_USER}:root logs/vespa
+    chown -hR ${VESPA_USER}:root var/db/vespa
+    chmod -R g+w logs/vespa var/db/vespa 2>/dev/null || true
 fi
 
 # END directory fixups

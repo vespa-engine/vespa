@@ -17,6 +17,9 @@ import (
 const ENV_CHECK = envvars.VESPA_ALREADY_SWITCHED_USER_TO
 
 func CheckCorrectUser() {
+	if os.Getenv("VESPA_SKIP_USER_CHECK") != "" {
+		return
+	}
 	vespaUser := FindVespaUser()
 	currentName := ""
 	currentUser, err1 := user.Current()
@@ -24,6 +27,7 @@ func CheckCorrectUser() {
 		currentName = currentUser.Username
 	} else {
 		trace.Trace("user.Current() failed:", err1)
+		currentName = fmt.Sprintf("%d", os.Getuid())
 	}
 	if currentName == vespaUser {
 		// all OK
@@ -36,9 +40,17 @@ func CheckCorrectUser() {
 		wantName = wantUser.Username
 	} else {
 		trace.Trace("user.Lookup", vespaUser, "failed:", err2)
+		if os.Getuid() != 0 {
+			trace.Warning("target user not found and not root; proceeding as current user")
+			return
+		}
 	}
 	if currentName == wantName {
 		// somewhat OK
+		return
+	}
+	if os.Getuid() != 0 {
+		trace.Warning("not running as VESPA_USER", vespaUser, "but cannot switch (not root); proceeding")
 		return
 	}
 	trace.Warning("not running as the VESPA_USER:", vespaUser)
@@ -68,14 +80,25 @@ func MaybeSwitchUser(action string) error {
 	wantUser, err := user.Lookup(vespaUser)
 	if err != nil {
 		trace.Trace("user.Lookup", vespaUser, "failed:", err)
+		if os.Getuid() != 0 {
+			trace.Trace("not root, proceeding as current user")
+			return nil
+		}
 		return err
 	}
 	currUser, err := user.Current()
 	if err != nil {
 		trace.Trace("user.Current() failed:", err)
+		if os.Getuid() != 0 {
+			return nil
+		}
 		return err
 	}
 	if wantUser.Username != currUser.Username {
+		if os.Getuid() != 0 {
+			trace.Trace("not root, cannot switch user; proceeding as", currUser.Username)
+			return nil
+		}
 		trace.Trace("want to switch user from:", currUser.Username)
 		trace.Trace("want to switch user to:", wantUser.Username)
 		alreadyTried := os.Getenv(ENV_CHECK)
