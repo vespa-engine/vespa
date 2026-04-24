@@ -70,6 +70,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
 
         addLogForwarders(new ModelElement(adminE).child("logforwarding"), admin, deployState);
         addLoggingSpecs(new ModelElement(adminE).child("logging"), admin);
+        addTelemetryExport(new ModelElement(adminE).child("telemetry"), admin);
     }
 
     private void createContainerOnLogserverHost(DeployState deployState, Admin admin, HostResource hostResource) {

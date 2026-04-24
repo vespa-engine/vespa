@@ -13,7 +13,8 @@ AdminV2 =
    Metrics? &
    ClusterControllers? &
    LoggingSpecs? &
-   LogForwarding?
+   LogForwarding? &
+   Telemetry?
  }
 
 AdminV4 =
@@ -25,7 +26,8 @@ AdminV4 =
     AdminMonitoring? &
     Metrics? &
     LoggingSpecs? &
-    LogForwarding?
+    LogForwarding? &
+    Telemetry?
   }
 
 AdminV4Slobroks =
@@ -108,6 +110,28 @@ LogForwarding = element logforwarding {
         attribute phone-home-interval { xsd:positiveInteger }? &
         attribute role { xsd:string }?
     }
+}
+
+Telemetry = element telemetry {
+    element exporter {
+        attribute id { xsd:string } &
+        attribute type { string "otlp" | string "otlphttp" | string "googlecloud" } &
+        attribute endpoint { xsd:anyURI } &
+        element auth {
+            element bearer-token {
+                attribute vault { xsd:string } &
+                attribute name { xsd:string }
+            }
+        }? &
+        element metric-set {
+            attribute name { xsd:string }
+        }? &
+        element logs {
+            element file {
+                attribute type { xsd:string }
+            }+
+        }?
+    }+
 }
 
 LoggingSpecs = element logging {

@@ -20,6 +20,9 @@ import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import com.yahoo.vespa.model.admin.monitoring.builder.PredefinedMetricSets;
 import com.yahoo.vespa.model.admin.monitoring.builder.xml.MetricsBuilder;
+import com.yahoo.vespa.model.admin.telemetry.TelemetryAuth;
+import com.yahoo.vespa.model.admin.telemetry.TelemetryExport;
+import com.yahoo.vespa.model.admin.telemetry.TelemetryExporter;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
@@ -131,6 +134,44 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
         for (ModelElement e : loggingElement.children("package")) {
             addLoggingSpec(e, admin);
         }
+    }
+
+    void addTelemetryExport(ModelElement telemetryElement, Admin admin) {
+        if (telemetryElement == null) return;
+        List<TelemetryExporter> exporters = new ArrayList<>();
+        for (ModelElement exporterElement : telemetryElement.children("exporter")) {
+            String id = exporterElement.requiredStringAttribute("id");
+            TelemetryExporter.ExporterType type = TelemetryExporter.ExporterType.valueOf(exporterElement.requiredStringAttribute("type"));
+            String endpoint = exporterElement.requiredStringAttribute("endpoint");
+
+            Optional<TelemetryAuth> auth = Optional.empty();
+            ModelElement authElement = exporterElement.child("auth");
+            if (authElement != null) {
+                ModelElement bearerToken = authElement.child("bearer-token");
+                if (bearerToken != null) {
+                    auth = Optional.of(new TelemetryAuth(
+                            bearerToken.requiredStringAttribute("vault"),
+                            bearerToken.requiredStringAttribute("name")));
+                }
+            }
+
+            String metricSet = null;
+            ModelElement metricSetElement = exporterElement.child("metric-set");
+            if (metricSetElement != null) {
+                metricSet = metricSetElement.requiredStringAttribute("name");
+            }
+
+            List<String> logFileTypes = new ArrayList<>();
+            ModelElement logsElement = exporterElement.child("logs");
+            if (logsElement != null) {
+                for (ModelElement fileElement : logsElement.children("file")) {
+                    logFileTypes.add(fileElement.requiredStringAttribute("type"));
+                }
+            }
+
+            exporters.add(new TelemetryExporter(id, type, endpoint, auth, metricSet, logFileTypes));
+        }
+        admin.setTelemetryExport(new TelemetryExport(exporters));
     }
 
     private String parseLogforwarderRole(String role, DeployState deployState) {
