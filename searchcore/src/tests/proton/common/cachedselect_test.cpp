@@ -183,6 +183,26 @@ checkSelect(const CachedSelect::SP &cs,
 void
 checkSelect(const CachedSelect::SP &cs,
             uint32_t docId,
+            const DocumentId &document_id,
+            const Result &exp,
+            bool exp_session_contains)
+{
+    SCOPED_TRACE("docId=" + std::to_string(docId));
+    SelectContext ctx(*cs);
+    ctx._lid = docId;
+    ctx._docId = &document_id;
+    ctx.getAttributeGuards();
+    if (cs->preDocSelect() || cs->preDocOnlySelect()) {
+        EXPECT_TRUE(checkSelect((cs->preDocOnlySelect() ? cs->preDocOnlySelect() : cs->preDocSelect()), ctx, exp));
+    } else {
+        EXPECT_EQ(Result::Invalid, exp);
+    }
+    EXPECT_EQ(exp_session_contains, cs->createSession()->contains_pre_doc(ctx));
+}
+
+void
+checkSelect(const CachedSelect::SP &cs,
+            uint32_t docId,
             const Result &exp,
             bool expSessionContains)
 {
@@ -190,7 +210,11 @@ checkSelect(const CachedSelect::SP &cs,
     SelectContext ctx(*cs);
     ctx._lid = docId;
     ctx.getAttributeGuards();
-    EXPECT_TRUE(checkSelect((cs->preDocOnlySelect() ? cs->preDocOnlySelect() : cs->preDocSelect()), ctx, exp));
+    if (cs->preDocSelect() || cs->preDocOnlySelect()) {
+        EXPECT_TRUE(checkSelect((cs->preDocOnlySelect() ? cs->preDocOnlySelect() : cs->preDocSelect()), ctx, exp));
+    } else {
+        EXPECT_EQ(Result::Invalid, exp);
+    }
     EXPECT_EQ(expSessionContains, cs->createSession()->contains_pre_doc(ctx));
 }
 
@@ -202,6 +226,21 @@ checkSelect(const CachedSelect::SP &cs,
     checkSelect(cs, docId, exp, (exp == Result::True));
 }
 
+void print_expression(const std::string& label, const Node *node) {
+    std::cout << label << ": " << std::string(20 - label.size(), ' ');
+    if (node == nullptr) {
+        std::cout << "nullptr";
+    } else {
+        node->print(std::cout, true, "");
+    }
+    std::cout << std::endl;
+}
+
+void print_cs_expressions(const CachedSelect& cs) {
+    print_expression("docSelect", cs.docSelect().get());
+    print_expression("preDocSelect", cs.preDocSelect().get());
+    print_expression("preDocOnlySelect", cs.preDocOnlySelect().get());
+}
 
 class MyIntAv : public SvIntAttr
 {
@@ -360,6 +399,7 @@ class TestFixture
 public:
     std::unique_ptr<const DocumentTypeRepo> _repoUP;
     bool _hasFields;
+    bool _has_document_ids;
     MyAttributeManager _amgr;
     MyDB::UP _db;
 
@@ -379,6 +419,7 @@ public:
 TestFixture::TestFixture()
     : _repoUP(),
       _hasFields(true),
+      _has_document_ids(false),
       _amgr(),
       _db()
 {
@@ -412,12 +453,7 @@ TestFixture::testParse(const string &selection,
     assert(docType != nullptr);
     auto emptyDoc = std::make_unique<Document>(repo, *docType, DocumentId());
 
-    res->set(selection,
-             docTypeName,
-             *emptyDoc,
-             repo,
-             &_amgr,
-             _hasFields);
+    res->set(selection, docTypeName, *emptyDoc, repo, &_amgr, _hasFields, _has_document_ids);
 
     EXPECT_TRUE(res->docSelect());
     return res;
@@ -434,6 +470,7 @@ private:
     uint32_t _fieldNodes;
     uint32_t _attrFieldNodes;
     uint32_t _svAttrFieldNodes;
+    uint32_t _document_id_nodes;
 
 public:
     Stats()
@@ -445,7 +482,8 @@ public:
           _needs_document(false),
           _fieldNodes(0),
           _attrFieldNodes(0),
-          _svAttrFieldNodes(0)
+          _svAttrFieldNodes(0),
+          _document_id_nodes(0)
     {}
     Stats &preDocOnlySelect() { _preDocOnlySelect = true; return *this; }
     Stats &preDocSelect() { _preDocSelect = true; return *this; }
@@ -456,6 +494,7 @@ public:
     Stats &fieldNodes(uint32_t value) { _fieldNodes = value; return *this; }
     Stats &attrFieldNodes(uint32_t value) { _attrFieldNodes = value; return *this; }
     Stats &svAttrFieldNodes(uint32_t value) { _svAttrFieldNodes = value; return *this; }
+    Stats &document_id_nodes(uint32_t value) { _document_id_nodes = value; return *this; }
 
     void assertEquals(const CachedSelect &select) const {
         EXPECT_EQ(_preDocOnlySelect, (bool)select.preDocOnlySelect());
@@ -467,6 +506,7 @@ public:
         EXPECT_EQ(_fieldNodes, select.fieldNodes());
         EXPECT_EQ(_attrFieldNodes, select.attrFieldNodes());
         EXPECT_EQ(_svAttrFieldNodes, select.svAttrFieldNodes());
+        EXPECT_EQ(_document_id_nodes, select.document_id_nodes());
     }
 };
 
@@ -863,6 +903,97 @@ TEST(CachedSelectTest, can_check_for_non_attribute_tensor_presence_in_selections
     assertEquals(Stats().fieldNodes(1).attrFieldNodes(0).svAttrFieldNodes(0).needs_document(), *cs);
     checkSelect(cs, 1u, db.getDoc(1u), Result::False);
     checkSelect(cs, 2u, db.getDoc(2u), Result::True);
+}
+
+TEST(CachedSelectTest, can_check_docid_if_available) {
+    TestFixture f;
+    MyDB &db(*f._db);
+
+    db.addDoc(1u, "id:ns:test::1", "hello", "null", 45, 37);
+    db.addDoc(2u, "id:ns2:test::1", "hello", "null", 46, 38);
+    {
+        SCOPED_TRACE("without docids");
+        auto cs = f.testParse("id.namespace = \"ns\"", "test");
+        assertEquals(Stats().fieldNodes(1).needs_document(), *cs);
+        print_cs_expressions(*cs);
+        auto rs = cs->doc_select_resultset();
+        EXPECT_TRUE(rs.hasEnum(Result::Invalid.toEnum()));
+        EXPECT_TRUE(rs.hasEnum(Result::False.toEnum()));
+        EXPECT_TRUE(rs.hasEnum(Result::True.toEnum()));
+        rs = cs->pre_doc_select_resultset();
+        EXPECT_FALSE(rs.hasEnum(Result::Invalid.toEnum()));
+        EXPECT_FALSE(rs.hasEnum(Result::False.toEnum()));
+        EXPECT_FALSE(rs.hasEnum(Result::True.toEnum()));
+        {
+            SCOPED_TRACE("using docid");
+            checkSelect(cs, 1u, db.getDoc(1u).getId(), Result::Invalid, true);
+            checkSelect(cs, 2u, db.getDoc(2u).getId(), Result::Invalid, true);
+        }
+        {
+            SCOPED_TRACE("using doc");
+            checkSelect(cs, 1u, db.getDoc(1u), Result::True);
+            checkSelect(cs, 2u, db.getDoc(2u), Result::False);
+        }
+    }
+    f._has_document_ids = true;
+    {
+        SCOPED_TRACE("with docids");
+        auto cs = f.testParse("id.namespace = \"ns\"", "test");
+        assertEquals(Stats().preDocOnlySelect().fieldNodes(1).document_id_nodes(1), *cs);
+        print_cs_expressions(*cs);
+        auto rs = cs->doc_select_resultset();
+        EXPECT_TRUE(rs.hasEnum(Result::Invalid.toEnum()));
+        EXPECT_TRUE(rs.hasEnum(Result::False.toEnum()));
+        EXPECT_TRUE(rs.hasEnum(Result::True.toEnum()));
+        rs = cs->pre_doc_select_resultset();
+        EXPECT_TRUE(rs.hasEnum(Result::Invalid.toEnum()));
+        EXPECT_TRUE(rs.hasEnum(Result::False.toEnum()));
+        EXPECT_TRUE(rs.hasEnum(Result::True.toEnum()));
+        {
+            SCOPED_TRACE("using docid");
+            checkSelect(cs, 1u, db.getDoc(1u).getId(), Result::True, true);
+            checkSelect(cs, 2u, db.getDoc(2u).getId(), Result::False, false);
+        }
+        {
+            SCOPED_TRACE("using doc");
+            checkSelect(cs, 1u, db.getDoc(1u), Result::True);
+            checkSelect(cs, 2u, db.getDoc(2u), Result::False);
+        }
+    }
+    {
+        SCOPED_TRACE("with docids, but doomed selection");
+        auto cs = f.testParse("id.namespace = \"ns\" and test.af > 5", "test");
+        assertEquals(Stats().preDocOnlySelect().fieldNodes(1).document_id_nodes(1), *cs);
+        print_cs_expressions(*cs);
+        auto rs = cs->doc_select_resultset();
+        EXPECT_TRUE(rs.hasEnum(Result::Invalid.toEnum()));
+        EXPECT_TRUE(rs.hasEnum(Result::False.toEnum()));
+        EXPECT_FALSE(rs.hasEnum(Result::True.toEnum()));
+        rs = cs->pre_doc_select_resultset();
+        EXPECT_TRUE(rs.hasEnum(Result::Invalid.toEnum()));
+        EXPECT_TRUE(rs.hasEnum(Result::False.toEnum()));
+        EXPECT_FALSE(rs.hasEnum(Result::True.toEnum()));
+        {
+            SCOPED_TRACE("using docid");
+            checkSelect(cs, 1u, db.getDoc(1u).getId(), Result::Invalid, false);
+            checkSelect(cs, 2u, db.getDoc(2u).getId(), Result::False, false);
+        }
+        {
+            SCOPED_TRACE("using doc");
+            checkSelect(cs, 1u, db.getDoc(1u), Result::Invalid);
+            checkSelect(cs, 2u, db.getDoc(2u), Result::False);
+        }
+
+    }
+}
+
+TEST(CachedSelectTest, replaced_attribute_field_value_node_gets_field_value_priority) {
+    TestFixture f;
+    f._has_document_ids = true;
+    auto cs = f.testParse("id.namespace = \"ns\" and test.aa > 5", "test");
+    std::ostringstream os;
+    cs->preDocOnlySelect()->print(os, true, "");
+    EXPECT_EQ("id.namespace = \"ns\" and test.aa > 5", os.str());
 }
 
 }

@@ -54,12 +54,14 @@ SelectPrunerBase::SelectPrunerBase(const std::string &docType,
                                    const document::Document &emptyDoc,
                                    const document::IDocumentTypeRepo &repo,
                                    bool hasFields,
+                                   bool has_document_ids,
                                    bool hasDocuments)
     : _docType(docType),
       _amgr(amgr),
       _emptyDoc(emptyDoc),
       _repo(repo),
       _hasFields(hasFields),
+      _has_document_ids(has_document_ids),
       _hasDocuments(hasDocuments)
 {
 }
@@ -70,6 +72,7 @@ SelectPrunerBase::SelectPrunerBase(const SelectPrunerBase &rhs)
       _emptyDoc(rhs._emptyDoc),
       _repo(rhs._repo),
       _hasFields(rhs._hasFields),
+      _has_document_ids(rhs._has_document_ids),
       _hasDocuments(rhs._hasDocuments)
 {
 }
@@ -79,12 +82,14 @@ SelectPruner::SelectPruner(const std::string &docType,
                            const document::Document &emptyDoc,
                            const document::IDocumentTypeRepo &repo,
                            bool hasFields,
+                           bool has_document_ids,
                            bool hasDocuments)
     : CloningVisitor(),
-      SelectPrunerBase(docType, amgr, emptyDoc, repo, hasFields, hasDocuments),
+      SelectPrunerBase(docType, amgr, emptyDoc, repo, hasFields, has_document_ids, hasDocuments),
       _inverted(false),
       _wantInverted(false),
-      _attrFieldNodes(0u)
+      _attrFieldNodes(0u),
+      _document_id_nodes(0u)
 {
 }
 
@@ -93,7 +98,8 @@ SelectPruner::SelectPruner(const SelectPruner *rhs)
       SelectPrunerBase(*rhs),
       _inverted(false),
       _wantInverted(false),
-      _attrFieldNodes(0u)
+      _attrFieldNodes(0u),
+      _document_id_nodes(0u)
 {
 }
 
@@ -111,8 +117,8 @@ SelectPruner::visitAndBranch(const And &expr)
     }
     expr.getLeft().visit(lhs);
     expr.getRight().visit(rhs);
-    if (lhs.getFieldNodes() - lhs.getAttrFieldNodes() >
-        rhs.getFieldNodes() - rhs.getAttrFieldNodes()) {
+    if (lhs.getFieldNodes() - lhs.getAttrFieldNodes() - lhs.get_document_id_nodes() >
+        rhs.getFieldNodes() - rhs.getAttrFieldNodes() - rhs.get_document_id_nodes()) {
         lhs.swap(rhs);
     }
     ResultSet lhsSet(lhs._resultSet);
@@ -386,9 +392,12 @@ SelectPruner::visitFunctionValueNode(const FunctionValueNode &expr)
 void
 SelectPruner::visitIdValueNode(const IdValueNode &expr)
 {
-    if (!_hasDocuments) {
+    if (!_hasDocuments && !_has_document_ids) {
         setInvalidVal();
         return;
+    }
+    if (_has_document_ids) {
+        ++_document_id_nodes;
     }
     CloningVisitor::visitIdValueNode(expr);
 }
@@ -521,6 +530,7 @@ SelectPruner::addNodeCount(const SelectPruner &rhs)
 {
     _fieldNodes += rhs._fieldNodes;
     _attrFieldNodes += rhs._attrFieldNodes;
+    _document_id_nodes += rhs._document_id_nodes;
 }
 
 
@@ -688,6 +698,7 @@ SelectPruner::swap(SelectPruner &rhs)
     std::swap(_inverted, rhs._inverted);
     std::swap(_wantInverted, rhs._wantInverted);
     std::swap(_attrFieldNodes, rhs._attrFieldNodes);
+    std::swap(_document_id_nodes, rhs._document_id_nodes);
 }
 
 

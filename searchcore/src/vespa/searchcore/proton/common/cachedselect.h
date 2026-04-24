@@ -58,10 +58,13 @@ private:
     std::unique_ptr<document::select::Node> _docSelect;
     uint32_t _fieldNodes;
     uint32_t _attrFieldNodes;
+    uint32_t _document_id_nodes;
     uint32_t _svAttrFieldNodes;
     bool _always_false;
     bool _always_true;
     bool _always_invalid;
+    document::select::ResultSet _doc_select_resultset;
+    document::select::ResultSet _pre_doc_select_resultset;
 
     /**
      * If expression doesn't reference multi value attributes or
@@ -89,10 +92,15 @@ public:
     [[nodiscard]] const AttributeVectors &attributes() const noexcept { return _attributes; }
     [[nodiscard]] uint32_t fieldNodes() const noexcept { return _fieldNodes; }
     [[nodiscard]] uint32_t attrFieldNodes() const noexcept { return _attrFieldNodes; }
+    [[nodiscard]] uint32_t document_id_nodes() const noexcept { return _document_id_nodes; }
     [[nodiscard]] uint32_t svAttrFieldNodes() const noexcept { return _svAttrFieldNodes; }
     [[nodiscard]] bool is_always_false() const noexcept { return _always_false; }
     [[nodiscard]] bool is_always_true() const noexcept { return _always_true; }
     [[nodiscard]] bool is_always_invalid() const noexcept { return _always_invalid; }
+    [[nodiscard]] document::select::ResultSet doc_select_resultset() const noexcept { return _doc_select_resultset; }
+    [[nodiscard]] document::select::ResultSet pre_doc_select_resultset() const noexcept {
+        return _pre_doc_select_resultset;
+    }
     [[nodiscard]] bool needs_document() const noexcept {
         return !_always_false && !_always_true && !_always_invalid && !_preDocOnlySelect;
     }
@@ -110,7 +118,8 @@ public:
              const document::Document &emptyDoc,
              const document::IDocumentTypeRepo &repo,
              const search::IAttributeManager *amgr,
-             bool hasFields);
+             bool hasFields,
+             bool has_document_ids);
 
     std::unique_ptr<Session> createSession() const;
 
