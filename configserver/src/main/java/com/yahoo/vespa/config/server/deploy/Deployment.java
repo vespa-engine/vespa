@@ -240,7 +240,9 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                         cb.blocksRevisions(), cb.blocksVersions(), cb.blocksMaintenance(),
                         cb.window().days(),
                         cb.window().hours(),
-                        cb.window().zone()))
+                        cb.window().zone(),
+                        cb.window().dateRange().start(),
+                        cb.window().dateRange().end()))
                 .toList();
 
         deploymentConfigStore.get().store(applicationId, backup, blockWindows);
