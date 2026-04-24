@@ -9,7 +9,6 @@
 #include <vespa/searchlib/test/ft_test_app_base.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
-using search::features::FirstPhaseMax;
 using search::features::FirstPhaseMaxBlueprint;
 using search::features::setup_search_features;
 using search::fef::Blueprint;
@@ -79,11 +78,11 @@ TEST_F(FirstPhaseMaxBlueprintTest, blueprint_can_prepare_shared_state)
     auto blueprint = expect_setup_succeed({});
     search::fef::test::QueryEnvironment query_env;
     ObjectStore store;
-    EXPECT_EQ(nullptr, FirstPhaseMax::get_mutable_shared_state(store));
-    EXPECT_EQ(nullptr, FirstPhaseMax::get_shared_state(store));
+    EXPECT_EQ(nullptr, FirstPhaseMaxBlueprint::get_mutable_shared_state(store));
+    EXPECT_EQ(nullptr, FirstPhaseMaxBlueprint::get_shared_state(store));
     blueprint->prepareSharedState(query_env, store);
-    EXPECT_NE(nullptr, FirstPhaseMax::get_mutable_shared_state(store));
-    EXPECT_NE(nullptr, FirstPhaseMax::get_shared_state(store));
+    EXPECT_NE(nullptr, FirstPhaseMaxBlueprint::get_mutable_shared_state(store));
+    EXPECT_NE(nullptr, FirstPhaseMaxBlueprint::get_shared_state(store));
 }
 
 TEST_F(FirstPhaseMaxBlueprintTest, dump_features)
@@ -105,9 +104,9 @@ struct FirstPhaseMaxExecutorTest : public ::testing::Test {
 
     void setup_with_score(feature_t score) {
         EXPECT_TRUE(test.setup());
-        auto* max = FirstPhaseMax::get_mutable_shared_state(test.getQueryEnv().getObjectStore());
+        auto* max = FirstPhaseMaxBlueprint::get_mutable_shared_state(test.getQueryEnv().getObjectStore());
         ASSERT_NE(nullptr, max);
-        max->set(score);
+        *max = score;
     }
 
     void setup_without_score() {

@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include "first_phase_max.h"
-
 #include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
 
@@ -14,10 +12,10 @@ namespace search::features {
  * phase.
  */
 class FirstPhaseMaxExecutor : public fef::FeatureExecutor {
-    const FirstPhaseMax& _max;
+    const feature_t& _max;
 
 public:
-    explicit FirstPhaseMaxExecutor(const FirstPhaseMax& max);
+    explicit FirstPhaseMaxExecutor(const feature_t& max);
     ~FirstPhaseMaxExecutor() override;
 
     void execute(uint32_t) override;
@@ -30,6 +28,10 @@ class FirstPhaseMaxBlueprint : public fef::Blueprint {
 public:
     FirstPhaseMaxBlueprint();
     ~FirstPhaseMaxBlueprint() override;
+
+    // for tests
+    static const feature_t* get_shared_state(const fef::IObjectStore& store);
+    static feature_t* get_mutable_shared_state(fef::IObjectStore& store);
 
     bool setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) override;
     fef::FeatureExecutor& createExecutor(const fef::IQueryEnvironment& env, vespalib::Stash& stash) const override;
