@@ -181,6 +181,7 @@ public:
     Result put(const document::DocumentId& docid, const BucketId& bucketId, Timestamp timestamp, uint32_t docSize,
                DocId lid, uint64_t prepare_serial_num) override;
     bool updateMetadata(DocId lid, const BucketId& bucketId, Timestamp timestamp) override;
+    bool update_docid_string(DocId lid, std::string_view) override;
     bool remove(DocId lid, uint64_t prepare_serial_num) override;
 
     BucketId getBucketOf(const vespalib::GenerationGuard& guard, uint32_t lid) const override;

@@ -58,6 +58,8 @@ public:
 
     bool remove(DocId, uint64_t) override { return true; }
 
+    bool update_docid_string(DocId, std::string_view) override { return true; }
+
     void removes_complete(const std::vector<DocId>& lids) override {
         ++_removes_complete_count;
         _removes_complete_lids += lids.size();
