@@ -17,10 +17,6 @@ public record BlockWindow(boolean revision, boolean version, boolean maintenance
                           List<DayOfWeek> days, List<Integer> hours, ZoneId zone,
                           Optional<LocalDate> fromDate, Optional<LocalDate> toDate) {
 
-    public BlockWindow(boolean revision, boolean version, List<DayOfWeek> days, List<Integer> hours, ZoneId zone) {
-        this(revision, version, false, days, hours, zone, Optional.empty(), Optional.empty());
-    }
-
     public BlockWindow(boolean revision, boolean version, boolean maintenance, List<DayOfWeek> days, List<Integer> hours, ZoneId zone) {
         this(revision, version, maintenance, days, hours, zone, Optional.empty(), Optional.empty());
     }
