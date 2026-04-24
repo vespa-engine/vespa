@@ -77,6 +77,7 @@ makeDocTypeRepo()
        .addField("aaw", int_wset)
        .addField("ab", builder.intTypeRef())
        .addField("ae", builder.intTypeRef())
+       .addField("ad", builder.doubleTypeRef())
        .imported_field("my_imported_field")
        .imported_field("my_missing_imported_field");
 
@@ -222,7 +223,7 @@ SelectPrunerTest::testPrune(const string &selection, const string &exp, const st
         std::cout << "Trying to parse '" << selection << "' with docType=" << docTypeName << std::endl;
         select = parser.parse(selection);
     } catch (document::select::ParsingFailedException &e) {
-        std::cout << "Parse failed: %s" << e.getMessage() << std::endl;
+        std::cout << "Parse failed: " << e.getMessage() << std::endl;
         select.reset();
     }
     ASSERT_TRUE(select.get() != nullptr);
@@ -276,7 +277,7 @@ TEST_F(SelectPrunerTest, Test_that_test_setup_is_OK)
     const DocumentTypeRepo &repo = *_repoUP;
     const DocumentType *docType = repo.getDocumentType("test");
     ASSERT_TRUE(docType);
-    EXPECT_EQ(11u, docType->getFieldCount());
+    EXPECT_EQ(12u, docType->getFieldCount());
     EXPECT_EQ("String", docType->getField("ia").getDataType().getName());
     EXPECT_EQ("String", docType->getField("ib").getDataType().getName());
     EXPECT_EQ("Int", docType->getField("aa").getDataType().getName());
@@ -637,6 +638,30 @@ TEST_F(SelectPrunerTest, Test_that_operator_inversion_works)
               "test.aa == 3999");
 }
 
+TEST_F(SelectPrunerTest, Test_that_operator_inversion_is_disabled_for_complex_cases)
+{
+    // Double values, issues with nan and inf
+    testPrune("not test.aa != 3998.5",
+              "not test.aa != 3998.5");
+    testPrune("not test.aa != 3998.5 + 2",
+              "not test.aa != 3998.5 + 2");
+    testPrune("not test.ad != 3999",
+              "not test.ad != 3999");
+    // function
+    testPrune("not test.ad.abs() != 3999",
+              "not test.ad.abs() != 3999");
+    testPrune("not (test.ad + 3.1).abs() != 3999",
+              "not (test.ad + 3.1).abs() != 3999");
+    // array value
+    testPrune("not test.aaa != 3999",
+              "not test.aaa != 3999");
+    // wset value
+    testPrune("not test.aaw != 3999",
+              "not test.aaw != 3999");
+    // variable
+    testPrune("not $foovar == 4",
+              "not $foovar == 4");
+}
 
 TEST_F(SelectPrunerTest, Test_that_fields_are_not_present_in_removed_sub_db)
 {

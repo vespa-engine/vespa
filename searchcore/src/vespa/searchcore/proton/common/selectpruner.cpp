@@ -88,6 +88,7 @@ SelectPruner::SelectPruner(const std::string &docType,
       SelectPrunerBase(docType, amgr, emptyDoc, repo, hasFields, has_document_ids, hasDocuments),
       _inverted(false),
       _wantInverted(false),
+      _disable_operator_inversion(false),
       _attrFieldNodes(0u),
       _document_id_nodes(0u)
 {
@@ -98,6 +99,7 @@ SelectPruner::SelectPruner(const SelectPruner *rhs)
       SelectPrunerBase(*rhs),
       _inverted(false),
       _wantInverted(false),
+      _disable_operator_inversion(false),
       _attrFieldNodes(0u),
       _document_id_nodes(0u)
 {
@@ -210,7 +212,8 @@ SelectPruner::visitComparison(const Compare &expr)
     }
     bool lhsNullVal = lhs.isNullVal();
     bool rhsNullVal = rhs.isNullVal();
-    const Operator &op(getOperator(expr.getOperator()));
+    bool disable_operator_inversion = lhs._disable_operator_inversion || rhs._disable_operator_inversion;
+    const Operator &op(getOperator(expr.getOperator(), disable_operator_inversion));
     _node = std::make_unique<Compare>(std::move(lhs._valueNode),
                                       op,
                                       std::move(rhs._valueNode),
@@ -369,23 +372,22 @@ SelectPruner::visitArithmeticValueNode(const ArithmeticValueNode &expr)
                            std::move(rhs._valueNode), rhs._priority, rhs._constVal);
     addNodeCount(lhs);
     addNodeCount(rhs);
+    _disable_operator_inversion = lhs._disable_operator_inversion || rhs._disable_operator_inversion;
 }
 
 
 void
 SelectPruner::visitFunctionValueNode(const FunctionValueNode &expr)
 {
+    int priority = FuncPriority;
     expr.getChild().visit(*this);
     if (isInvalidVal()) {
         return; // Can shortcut evaluation when function argument is invalid
     }
-    ValueNode::UP child(std::move(_valueNode));
-    const std::string &funcName(expr.getFunctionName());
-    _valueNode = std::make_unique<FunctionValueNode>(funcName, std::move(child));
-    if (_priority < FuncPriority) {
-        _valueNode->setParentheses();
-    }
-    _priority = FuncPriority;
+    setValueNodeParentheses(priority);
+    std::unique_ptr<ValueNode> child(std::move(_valueNode));
+    _priority = priority;
+    _valueNode = std::make_unique<FunctionValueNode>(expr.getFunctionName(), std::move(child));
 }
 
 
@@ -413,12 +415,18 @@ SelectPruner::visitFieldValueNode(const FieldValueNode &expr)
     bool complex = false; // Cannot handle attribute if complex expression
     std::string name = SelectUtils::extractFieldName(expr, complex);
     const bool is_imported = docType->has_imported_field_name(name);
+    bool complex_field_type = true;
     if (complex || !is_imported) {
         try {
             auto fp = std::make_unique<Field>(docType->getField(name));
             if (!fp) {
                 setInvalidVal();
                 return;
+            }
+            auto& dt = fp->getDataType();
+            if ((dt.isNumeric() && dt != *document::DataType::FLOAT && dt != *document::DataType::DOUBLE) ||
+                dt == *document::DataType::STRING) {
+                complex_field_type = false;
             }
         } catch (FieldNotFoundException &) {
             setInvalidVal();
@@ -436,6 +444,7 @@ SelectPruner::visitFieldValueNode(const FieldValueNode &expr)
         }
     }
     _constVal = false;
+    _disable_operator_inversion = complex_field_type || complex;
     if (!_hasFields) {
         // If we're working on removed document sub db then we have no fields.
         set_null_value_node();
@@ -472,6 +481,17 @@ SelectPruner::visitFieldValueNode(const FieldValueNode &expr)
     _priority = FieldValuePriority;
 }
 
+void
+SelectPruner::visitFloatValueNode(const document::select::FloatValueNode& expr) {
+    CloningVisitor::visitFloatValueNode(expr);
+    _disable_operator_inversion = true;
+}
+
+void
+SelectPruner::visitVariableValueNode(const document::select::VariableValueNode& expr) {
+    CloningVisitor::visitVariableValueNode(expr);
+    _disable_operator_inversion = true;
+}
 
 void
 SelectPruner::invertNode()
@@ -492,9 +512,9 @@ SelectPruner::invertNode()
 
 
 const Operator &
-SelectPruner::getOperator(const Operator &op)
+SelectPruner::getOperator(const Operator &op, bool disable_operator_inversion)
 {
-    if (!_wantInverted) {
+    if (!_wantInverted || disable_operator_inversion) {
         return op;
     }
     if (op == FunctionOperator::GT) {
