@@ -360,7 +360,9 @@ public class PermanentFlags {
             INSTANCE_ID);
 
     public static final UnboundListFlag<String> IGNORED_HTTP_USER_AGENTS = defineListFlag(
-            "ignored-http-user-agents", List.of(), String.class,
+            "ignored-http-user-agents",
+            List.of("GGG", "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0)"),
+            String.class,
             "List of user agents to ignore (crawlers etc)",
             "Takes effect immediately.",
             INSTANCE_ID);
