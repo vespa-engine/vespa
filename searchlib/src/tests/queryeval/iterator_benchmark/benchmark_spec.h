@@ -75,9 +75,8 @@ public:
     using FactoryList = std::vector<std::unique_ptr<BenchmarkBlueprintFactory>>;
 
 private:
-
-    Spec _spec;
-    uint32_t _num_docs;
+    Spec        _spec;
+    uint32_t    _num_docs;
     FactoryList _leaf_factories;
 
 public:
