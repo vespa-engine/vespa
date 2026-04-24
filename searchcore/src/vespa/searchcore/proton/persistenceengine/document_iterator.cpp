@@ -91,7 +91,6 @@ DocumentIterator::DocumentIterator(const storage::spi::Bucket &bucket,
       _defaultSerializedSize((readConsistency == ReadConsistency::WEAK) ? defaultSerializedSize : -1),
       _readConsistency(readConsistency),
       _metaOnly(_fields->getType() == document::FieldSet::Type::NONE),
-      _use_populated_docids(_fields->getType() == document::FieldSet::Type::DOCID),
       _ignoreMaxBytes((readConsistency == ReadConsistency::WEAK) && ignoreMaxBytes),
       _fetchedData(false),
       _sources(),
@@ -267,7 +266,7 @@ DocumentIterator::fetchCompleteSource(const DocTypeName & doc_type_name,
 {
     IDocumentRetriever::ReadGuard sourceReadGuard(source.getReadGuard());
     search::DocumentMetadata::Vector metadata;
-    bool populate_document_metadata_docids = _use_populated_docids && source.can_populate_document_metadata_docid();
+    bool populate_document_metadata_docids = !_metaOnly && source.can_populate_document_metadata_docid();
     source.getBucketMetadata(_bucket, metadata, populate_document_metadata_docids);
     if (metadata.empty()) {
         return;
@@ -300,7 +299,8 @@ DocumentIterator::fetchCompleteSource(const DocTypeName & doc_type_name,
             assert(lid == meta.lid);
             list.push_back(createDocEntry(Timestamp(meta.timestamp), meta.removed, doc_type_name.getName(), meta.gid));
         }
-    } else if (populate_document_metadata_docids && !matcher.needs_document()) {
+    } else if (populate_document_metadata_docids && !matcher.needs_document() &&
+               !source.need_fetch_from_doc_store(*_fields)) {
         for (uint32_t lid : lidsToFetch) {
             const search::DocumentMetadata & meta = metadata[lidIndexMap[lid]];
             assert(lid == meta.lid);
