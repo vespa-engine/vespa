@@ -85,7 +85,6 @@ public class ModelIdResolver {
         register(m, "lightonai-denseon-int8", "https://data.vespa-cloud.com/onnx_models/lightonai-denseon-int8/model.onnx", Set.of(ONNX_MODEL));
         register(m, "lightonai-denseon-int8-vocab", "https://data.vespa-cloud.com/onnx_models/lightonai-denseon-int8/tokenizer.json", Set.of(HF_TOKENIZER));
 
-
         register(m, "alibaba-gte-modernbert", "https://data.vespa-cloud.com/onnx_models/alibaba-gte-modernbert-base/model.onnx", Set.of(ONNX_MODEL));
         register(m, "alibaba-gte-modernbert-vocab", "https://data.vespa-cloud.com/onnx_models/alibaba-gte-modernbert-base/tokenizer.json", Set.of(HF_TOKENIZER));
         register(m, "alibaba-gte-modernbert-int8", "https://data.vespa-cloud.com/onnx_models/alibaba-gte-modernbert-int8/model.onnx", Set.of(ONNX_MODEL));
