@@ -578,7 +578,7 @@ bool DocumentMetaStore::update_docid_string(DocId lid, std::string_view docid) {
     }
 
     if (_store_full_document_id) {
-        auto       metadata = _metadataStore[lid];
+        auto&      metadata = _metadataStore[lid];
         const auto new_ref = _docid_store.add(docid);
         const auto old_ref = metadata.get_relaxed_docid_ref();
         metadata.set_docid_ref(new_ref);
