@@ -28,6 +28,7 @@ import java.util.logging.Logger;
  *
  * @author Einar M R Rosenvinge
  */
+@SuppressWarnings("deprecation") // commons-cli 1.10+ deprecated Option.Builder.build() and HelpFormatter
 public class VdsVisitTarget {
 
     private static final Logger log = Logger.getLogger(VdsVisitTarget.class.getName());
