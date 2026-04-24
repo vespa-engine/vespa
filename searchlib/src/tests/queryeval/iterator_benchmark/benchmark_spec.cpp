@@ -4,4 +4,8 @@
 
 namespace search::queryeval::test {
 
+Spec term(FieldConfig field, double hit_ratio) {
+    return Spec{TermSpec{std::move(field), hit_ratio}};
+}
+
 }
