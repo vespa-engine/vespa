@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
+import ai.vespa.util.http.hc5.VespaTlsStrategy;
 import com.yahoo.container.logging.ConnectionLog;
 import com.yahoo.container.logging.ConnectionLogEntry;
 import com.yahoo.jdisc.http.ConnectorConfig;
@@ -10,7 +11,6 @@ import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.client5.http.async.methods.SimpleRequestBuilder;
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
 import org.apache.hc.client5.http.impl.async.H2AsyncClientBuilder;
-import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
 import org.apache.hc.core5.http.nio.ssl.TlsStrategy;
 import org.apache.hc.core5.net.URIAuthority;
 import org.junit.jupiter.api.Test;
@@ -81,7 +81,7 @@ class Http2IT {
         var metricConsumer = new MetricConsumerMock();
         var connectionLog = new InMemoryConnectionLog();
         var driver = createSslTestDriver(certificateFile, privateKeyFile, metricConsumer, connectionLog);
-        var tlsStrategy = ClientTlsStrategyBuilder.create()
+        var tlsStrategy = VespaTlsStrategy.tlsStrategyBuilder()
                 .setSslContext(driver.sslContext())
                 .buildAsync();
         try (var client = H2AsyncClientBuilder.create()
