@@ -28,6 +28,7 @@ public:
     search::DocumentMetadata getDocumentMetadata(const document::DocumentId &id) const override;
     DocumentUP getFullDocument(search::DocumentIdT lid) const override;
     DocumentUP getPartialDocument(search::DocumentIdT lid, const document::DocumentId & docId, const document::FieldSet & fieldSet) const override;
+    bool need_fetch_from_doc_store(const document::FieldSet& field_set) const override;
     void visitDocuments(const LidVector &lids, search::IDocumentVisitor &visitor, ReadConsistency readConsistency) const override;
     CachedSelect::SP parseSelect(const std::string &selection) const override;
     ReadGuard getReadGuard() const override;

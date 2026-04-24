@@ -47,6 +47,8 @@ public:
      * Fetches the necessary set of fields, allowing for more optimal fetch when combining only from attributes.
      */
     virtual DocumentUP getPartialDocument(search::DocumentIdT lid, const document::DocumentId & docId, const document::FieldSet & fieldSet) const;
+    // Check if getPartialDocument() must fetch the full document from doc store.
+    virtual bool need_fetch_from_doc_store(const document::FieldSet& field_set) const = 0;
     virtual ReadGuard getReadGuard() const = 0;
     virtual uint32_t getDocIdLimit() const = 0;
     /**

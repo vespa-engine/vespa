@@ -51,6 +51,10 @@ CommitAndWaitDocumentRetriever::getPartialDocument(search::DocumentIdT lid, cons
     return _retriever->getPartialDocument(lid, docId, fieldSet);
 }
 
+bool CommitAndWaitDocumentRetriever::need_fetch_from_doc_store(const document::FieldSet& field_set) const {
+    return _retriever->need_fetch_from_doc_store(field_set);
+}
+
 void
 CommitAndWaitDocumentRetriever::visitDocuments(const LidVector &lids, search::IDocumentVisitor &visitor,
                                                ReadConsistency readConsistency) const

@@ -136,6 +136,7 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
     void getBucketMetadata(const storage::spi::Bucket&, DocumentMetadata::Vector&, bool populate_docid) const override;
     DocumentMetadata getDocumentMetadata(const DocumentId&) const override;
     Document::UP getFullDocument(DocumentIdT lid) const override;
+    bool need_fetch_from_doc_store(const document::FieldSet& field_set) const override;
     CachedSelect::SP parseSelect(const std::string&) const override;
 };
 

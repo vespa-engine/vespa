@@ -139,6 +139,7 @@ struct MyDocumentRetriever : DocumentRetrieverBaseForTest {
         }
         return Document::UP();
     }
+    bool need_fetch_from_doc_store(const document::FieldSet&) const override { return true; };
 
     CachedSelect::SP parseSelect(const std::string &) const override {
         return CachedSelect::SP();
