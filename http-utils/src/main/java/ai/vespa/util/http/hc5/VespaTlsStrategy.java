@@ -3,7 +3,8 @@ package ai.vespa.util.http.hc5;
 
 import ai.vespa.util.http.AcceptAllHostnamesVerifier;
 import com.yahoo.security.tls.TlsContext;
-import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
+import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
+import org.apache.hc.client5.http.ssl.HostnameVerificationPolicy;
 import org.apache.hc.client5.http.ssl.HttpsSupport;
 import org.apache.hc.client5.http.ssl.TlsSocketStrategy;
 
@@ -23,15 +24,30 @@ import static com.yahoo.security.tls.TlsContext.getAllowedProtocols;
 public class VespaTlsStrategy {
     private VespaTlsStrategy() {}
 
+    public static ClientTlsStrategyBuilder tlsStrategyBuilder() {
+        return ClientTlsStrategyBuilder.create()
+                .setHostnameVerifier(noopVerifier())
+                .setHostVerificationPolicy(HostnameVerificationPolicy.CLIENT);
+    }
+
     public static TlsSocketStrategy of(SSLContext ctx, HostnameVerifier verifier) {
-        return new DefaultClientTlsStrategy(ctx, protocols(ctx), cipherSuites(ctx), null, verifier);
+        return tlsStrategyBuilder()
+                .setHostnameVerifier(verifier)
+                .setSslContext(ctx)
+                .setTlsVersions(protocols(ctx))
+                .setCiphers(cipherSuites(ctx))
+                .buildClassic();
     }
 
     public static TlsSocketStrategy of(SSLContext ctx) { return of(ctx, defaultVerifier()); }
 
     public static TlsSocketStrategy of(TlsContext ctx, HostnameVerifier verifier) {
-        return new DefaultClientTlsStrategy(
-                ctx.sslContext().context(), ctx.parameters().getProtocols(), ctx.parameters().getCipherSuites(), null, verifier);
+        return tlsStrategyBuilder()
+                .setHostnameVerifier(verifier)
+                .setSslContext(ctx.sslContext().context())
+                .setTlsVersions(ctx.parameters().getProtocols())
+                .setCiphers(ctx.parameters().getCipherSuites())
+                .buildClassic();
     }
 
     public static TlsSocketStrategy of(TlsContext ctx) { return of(ctx, defaultVerifier()); }
@@ -47,5 +63,4 @@ public class VespaTlsStrategy {
     private static String[] cipherSuites(SSLContext ctx) { return array(getAllowedCipherSuites(ctx)); }
     private static String[] protocols(SSLContext ctx) { return array(getAllowedProtocols(ctx)); }
     private static String[] array(Collection<String> c) { return c.toArray(String[]::new); }
-
 }

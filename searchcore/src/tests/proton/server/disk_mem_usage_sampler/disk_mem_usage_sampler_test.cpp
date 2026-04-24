@@ -102,13 +102,8 @@ TEST_F(DiskMemUsageSamplerTest, resource_usage_is_sampled)
         std::this_thread::sleep_for(50ms);
     }
     LOG(info, "Polled %zu times (%zu ms) to get a sample", i, i * 50);
-#ifdef __linux__
     // Anonymous resident memory used by current process is sampled.
     EXPECT_GT(notifier->getMemoryStats().getAnonymousRss(), 0);
-#else
-    // Anonymous resident memory used by current process is not sampled.
-    EXPECT_EQ(notifier->getMemoryStats().getAnonymousRss(), 0);
-#endif
     EXPECT_GT(notifier->getDiskUsedSize(), 0);
     EXPECT_EQ(150, notifier->get_resource_usage().transient_memory());
     EXPECT_EQ(150.0 / memory_size_bytes, notifier->usageState().transient_memory_usage());

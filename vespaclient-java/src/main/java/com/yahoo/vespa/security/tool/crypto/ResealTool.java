@@ -28,6 +28,7 @@ import static com.yahoo.vespa.security.tool.crypto.ToolUtils.PRIVATE_KEY_FILE_OP
  *
  * @author vekterli
  */
+@SuppressWarnings("deprecation") // commons-cli 1.10+ deprecated Option.Builder.build()
 public class ResealTool implements Tool {
 
     static final String EXPECTED_KEY_ID_OPTION      = "expected-key-id";

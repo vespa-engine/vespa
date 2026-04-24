@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
  *
  * @author Einar M R Rosenvinge
  */
+@SuppressWarnings("deprecation") // commons-cli 1.10+ deprecated Option.Builder.build() and HelpFormatter
 public class VdsVisit {
 
     private VdsVisitParameters params;

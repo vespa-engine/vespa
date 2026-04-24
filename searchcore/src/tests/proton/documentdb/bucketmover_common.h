@@ -101,6 +101,7 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
     Document::UP getFullDocument(DocumentIdT lid) const override {
         return (lid != _lid2Fail) ? Document::UP(_docs[lid]->clone()) : Document::UP();
     }
+    bool need_fetch_from_doc_store(const document::FieldSet&) const override { return true; }
 
     void failRetrieveForLid(uint32_t lid) { _lid2Fail = lid; }
 

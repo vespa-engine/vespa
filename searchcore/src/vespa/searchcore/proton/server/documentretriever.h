@@ -47,7 +47,7 @@ public:
     void visitDocuments(const LidVector & lids, search::IDocumentVisitor & visitor, ReadConsistency) const override;
     DocumentUP getPartialDocument(search::DocumentIdT lid, const document::DocumentId &, const document::FieldSet &) const override;
     void populate(search::DocumentIdT lid, document::Document & doc) const;
-    bool needFetchFromDocStore(const document::FieldSet &) const;
+    bool need_fetch_from_doc_store(const document::FieldSet& field_set) const override;
 private:
     void populate(search::DocumentIdT lid, document::Document & doc, const document::Field::Set & attributeFields) const;
 

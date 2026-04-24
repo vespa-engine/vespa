@@ -17,6 +17,7 @@ class MinimalDocumentRetriever : public DocumentRetrieverBase
 {
     const std::shared_ptr<const document::DocumentTypeRepo> _repo;
     const search::IDocumentStore &_doc_store;
+    uint32_t                      _field_count;
 
 public:
     // meta_store and doc_store must out-live the MinimalDocumentRetriever.
@@ -28,6 +29,7 @@ public:
     ~MinimalDocumentRetriever() override;
 
     document::Document::UP getFullDocument(search::DocumentIdT lid) const override;
+    bool need_fetch_from_doc_store(const document::FieldSet& field_set) const override;
     void visitDocuments(const LidVector & lids, search::IDocumentVisitor & visitor, ReadConsistency) const override;
 };
 }  // namespace proton

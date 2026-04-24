@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
+import ai.vespa.util.http.hc5.VespaTlsStrategy;
 import org.apache.hc.client5.http.SystemDefaultDnsResolver;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
@@ -14,7 +15,6 @@ import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
 import org.apache.hc.client5.http.ssl.DefaultHostnameVerifier;
-import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
 import org.apache.hc.client5.http.ssl.TlsSocketStrategy;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.Header;
@@ -65,12 +65,12 @@ public class SimpleHttpClient implements AutoCloseable {
             builder.disableContentCompression();
         }
         if (sslContext != null) {
-            TlsSocketStrategy tlsStrategy = new DefaultClientTlsStrategy(
-                    sslContext,
-                    toArray(enabledProtocols),
-                    toArray(enabledCiphers),
-                    null,
-                    new DefaultHostnameVerifier());
+            TlsSocketStrategy tlsStrategy = VespaTlsStrategy.tlsStrategyBuilder()
+                    .setSslContext(sslContext)
+                    .setTlsVersions(toArray(enabledProtocols))
+                    .setCiphers(toArray(enabledCiphers))
+                    .setHostnameVerifier(new DefaultHostnameVerifier())
+                    .buildClassic();
             PoolingHttpClientConnectionManager connManager = PoolingHttpClientConnectionManagerBuilder.create()
                     .setTlsSocketStrategy(tlsStrategy)
                     .setDnsResolver(new SystemDefaultDnsResolver() {

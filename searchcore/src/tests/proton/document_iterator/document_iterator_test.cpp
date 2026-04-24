@@ -31,6 +31,7 @@ using document::DocumentId;
 using document::DocumentType;
 using document::DoubleFieldValue;
 using document::Field;
+using document::FieldSet;
 using document::GlobalId;
 using document::IntFieldValue;
 using document::StringFieldValue;
@@ -155,22 +156,25 @@ struct UnitDR : DocumentRetrieverBaseForTest {
         return Document::UP((lid == docid) ? document->clone() : nullptr);
     }
     DocumentUP getPartialDocument(DocumentIdT lid, const DocumentId & docId,
-                                  const document::FieldSet& fieldSet) const override {
+                                  const FieldSet& fieldSet) const override {
         if (lid != docid) {
             return {};
         }
         ++get_partial_document_calls;
-        if (fieldSet.getType() != document::FieldSet::Type::NONE &&
-            fieldSet.getType() != document::FieldSet::Type::DOCID) {
+        if (need_fetch_from_doc_store(fieldSet)) {
             auto doc = getFullDocument(lid);
             if (doc) {
-                document::FieldSet::stripFields(*doc, fieldSet);
+                FieldSet::stripFields(*doc, fieldSet);
             }
             return doc;
         }
         auto doc_type = repo.getDocumentType(doc_type_name.getName());
         auto doc = std::make_unique<Document>(repo, *doc_type, docId);
         return doc;
+    }
+    bool need_fetch_from_doc_store(const FieldSet& field_set) const override {
+        return field_set.getType() != FieldSet::Type::NONE &&
+               field_set.getType() != FieldSet::Type::DOCID;
     }
 
     uint32_t getDocIdLimit() const override {
@@ -296,7 +300,9 @@ struct AttrUnitDR : public UnitDR
 
     CachedSelect::SP parseSelect(const std::string &selection) const override {
         auto res = std::make_shared<CachedSelect>();
-        res->set(selection, "foo", Document(repo, document->getType(), DocumentId()), repo, &_amgr, true);
+        constexpr bool  has_fields = true;
+        constexpr bool has_document_ids = false;
+        res->set(selection, "foo", Document(repo, document->getType(), DocumentId()), repo, &_amgr, has_fields, has_document_ids);
         return res;
     }
 };
@@ -328,9 +334,12 @@ struct PairDR : DocumentRetrieverBaseForTest {
         return ret ? std::move(ret) : second->getFullDocument(lid);
     }
     DocumentUP getPartialDocument(DocumentIdT lid, const DocumentId & docId,
-                                  const document::FieldSet& fieldSet) const override {
+                                  const FieldSet& fieldSet) const override {
         auto doc = first->getPartialDocument(lid, docId, fieldSet);
         return doc ? std::move(doc) : second->getPartialDocument(lid, docId, fieldSet);
+    }
+    bool need_fetch_from_doc_store(const FieldSet& field_set) const override {
+        return first->need_fetch_from_doc_store(field_set);
     }
 
     CachedSelect::SP parseSelect(const std::string &selection) const override {

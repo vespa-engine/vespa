@@ -125,7 +125,7 @@ DocumentRetriever
 }
 
 bool
-DocumentRetriever::needFetchFromDocStore(const FieldSet & fieldSet) const {
+DocumentRetriever::need_fetch_from_doc_store(const FieldSet & fieldSet) const {
     switch (fieldSet.getType()) {
         case FieldSet::Type::NONE:
         case FieldSet::Type::DOCID:
@@ -255,7 +255,7 @@ DocumentRetriever::getFullDocument(DocumentIdT lid) const
 Document::UP
 DocumentRetriever::getPartialDocument(search::DocumentIdT lid, const document::DocumentId & docId, const FieldSet & fieldSet) const {
     Document::UP doc;
-    if (needFetchFromDocStore(fieldSet)) {
+    if (need_fetch_from_doc_store(fieldSet)) {
         doc = _doc_store.read(lid, getDocumentTypeRepo());
         if (doc) {
             populate(lid, *doc);

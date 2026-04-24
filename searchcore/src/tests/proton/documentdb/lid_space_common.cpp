@@ -209,6 +209,10 @@ MyDocumentRetriever::getFullDocument(DocumentIdT lid) const {
     return store.read(lid, *repo);
 }
 
+bool MyDocumentRetriever::need_fetch_from_doc_store(const document::FieldSet&) const {
+    return true;
+}
+
 CachedSelect::SP
 MyDocumentRetriever::parseSelect(const std::string&) const {
     abort();
