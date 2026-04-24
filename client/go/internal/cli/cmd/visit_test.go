@@ -149,13 +149,14 @@ func TestVisitCommand(t *testing.T) {
 }
 
 const (
-	jsonlDoc1    = `{"put":"id:space:music::1","fields":{"title":"first"}}`
-	jsonlDoc2    = `{"put":"id:space:music::2","fields":{"title":"second"}}`
-	jsonlCont    = `{"continuation":{"token":"JSONL_TOKEN","percentFinished":50.0}}`
-	jsonlDone    = `{"continuation":{"percentFinished":100.0}}`
-	jsonlStats   = `{"sessionStats":{"documentCount":2}}`
-	jsonlOutDoc1 = `{"id":"id:space:music::1","fields":{"title":"first"}}`
-	jsonlOutDoc2 = `{"id":"id:space:music::2","fields":{"title":"second"}}`
+	jsonlDoc1      = `{"put":"id:space:music::1","fields":{"title":"first"}}`
+	jsonlDoc2      = `{"put":"id:space:music::2","fields":{"title":"second"}}`
+	jsonlRemoveDoc = `{"remove":"id:space:music::3","fields":{"title":"third"}}`
+	jsonlCont      = `{"continuation":{"token":"JSONL_TOKEN","percentFinished":50.0}}`
+	jsonlDone      = `{"continuation":{"percentFinished":100.0}}`
+	jsonlStats     = `{"sessionStats":{"documentCount":2}}`
+	jsonlOutDoc1   = `{"id":"id:space:music::1","fields":{"title":"first"}}`
+	jsonlOutDoc2   = `{"id":"id:space:music::2","fields":{"title":"second"}}`
 )
 
 func jsonlResponse(body string) mock.HTTPResponse {
@@ -186,7 +187,7 @@ func TestRunOneVisitJSONL(t *testing.T) {
 	}
 	vvo, res := runOneVisit(&vArgs, service, "")
 	assert.True(t, res.Success)
-	assert.Equal(t, "application/jsonl", client.LastRequest.Header.Get("Accept"))
+	assert.Equal(t, "application/json, application/jsonl", client.LastRequest.Header.Get("Accept"))
 	assert.Equal(t, "", vvo.Continuation)
 	assert.False(t, vvo.Truncated)
 	assert.Equal(t, 2, vvo.DocumentCount)
@@ -206,7 +207,7 @@ func TestVisitCommandJSONL(t *testing.T) {
 	assert.Equal(t, jsonlOutDoc1+"\n"+jsonlOutDoc2+"\n", stdout.String())
 	assert.Equal(t, "", stderr.String())
 	assert.Equal(t, 2, len(client.Requests))
-	assert.Equal(t, "application/jsonl", client.LastRequest.Header.Get("Accept"))
+	assert.Equal(t, "application/json, application/jsonl", client.LastRequest.Header.Get("Accept"))
 	assert.Equal(t, "cluster=fooCC&wantedDocumentCount=1000&bucketSpace=default&stream=true", client.LastRequest.URL.RawQuery)
 }
 
@@ -269,6 +270,60 @@ func TestVisitCommandJSONLTruncatedAbort(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), "truncated")
 	assert.Equal(t, 6, len(client.Requests)) // probe + 5 visit attempts
+}
+
+func TestTruncatedMidJSONLMaxRetries(t *testing.T) {
+	client := &mock.HTTPClient{}
+	client.NextResponseString(200, handlersResponse)
+	// Testing trunctaion with different substrings of document from idx = 1 to idx = 11
+	for i := range 5 {
+		truncation_idx := (i * 5) + 1
+		client.NextResponse(jsonlResponse(jsonlDoc1[0:truncation_idx]))
+	}
+	cli, _, _ := newTestCLI(t)
+	cli.httpClient = client
+	cli.sleeper = func(d time.Duration) {}
+	err := cli.Run("visit", "--stream", "--json-lines", "--bucket-space", "default", "--content-cluster", "fooCC", "-t", "http://127.0.0.1:8080")
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "truncated")
+	assert.Equal(t, 6, len(client.Requests)) // probe + 5 visit attempts until it does not try retry any more
+}
+
+// Get truncated response 2 times and then the full response
+func TestTruncatedMidJSONLSomeRetries(t *testing.T) {
+	client := &mock.HTTPClient{}
+	client.NextResponseString(200, handlersResponse)
+	// Testing trunctaion with different substrings of document from idx = 1 to idx = 11
+	for i := range 2 {
+		truncation_idx := (i * 5) + 1
+		client.NextResponse(jsonlResponse(jsonlDoc1[0:truncation_idx]))
+	}
+	jsonlComplete := jsonlDoc1 + "\n" + jsonlDone
+	client.NextResponse(jsonlResponse(jsonlComplete))
+	cli, _, _ := newTestCLI(t)
+	cli.httpClient = client
+	cli.sleeper = func(d time.Duration) {}
+	err := cli.Run("visit", "--stream", "--json-lines", "--bucket-space", "default", "--content-cluster", "fooCC", "-t", "http://127.0.0.1:8080")
+	assert.Nil(t, err)
+	assert.Equal(t, 4, len(client.Requests)) // probe + 3 visit attempts where the last one is a valid response
+}
+
+// All remove entreis should be ignored
+func TestRemoveIgnored(t *testing.T) {
+	client := &mock.HTTPClient{}
+	client.NextResponseString(200, handlersResponse)
+	// Testing trunctaion with different substrings of document from idx = 1 to idx = 11
+	response_doc := jsonlDoc1 + "\n" + jsonlDoc2 + "\n" + jsonlRemoveDoc + "\n" + jsonlDone + "\n"
+	client.NextResponse(jsonlResponse(response_doc))
+	cli, stdout, _ := newTestCLI(t)
+	cli.httpClient = client
+	cli.sleeper = func(d time.Duration) {}
+	err := cli.Run("visit", "--stream", "--json-lines", "--bucket-space", "default", "--content-cluster", "fooCC", "-t", "http://127.0.0.1:8080")
+	assert.Nil(t, err)
+	// The remove content is ignored
+	assert.NotContains(t, stdout.String(), "third")
+	assert.NotContains(t, stdout.String(), "3")
+	assert.Equal(t, 2, len(client.Requests)) // probe + 1 visit
 }
 
 func inRangeMillis(v time.Duration, lo int64, hi int64) bool {

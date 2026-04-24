@@ -448,7 +448,7 @@ func runOneVisit(vArgs *visitArgs, service *vespa.Service, contToken string) (*V
 		} else {
 			reqHeader = make(http.Header)
 		}
-		reqHeader.Set("Accept", "application/jsonl")
+		reqHeader.Set("Accept", "application/json, application/jsonl")
 	}
 	request := &http.Request{
 		URL:    url,
@@ -549,25 +549,27 @@ func parseVisitOutputJSONL(r io.Reader, w io.Writer, warnWriter io.Writer) (*Ves
 	for {
 		var line jsonlLine
 		err := dec.Decode(&line)
+		// Stops when at end of file or if json is truncated
 		if err == io.EOF {
+			break
+		}
+		if err == io.ErrUnexpectedEOF {
+			done = false
 			break
 		}
 		if err != nil {
 			return &result, fmt.Errorf("error reading JSONL response: %s", err)
 		}
 		switch {
-		case line.Put != "" || line.Remove != "":
+		case line.Put != "":
 			id := line.Put
-			if id == "" {
-				id = line.Remove
-			}
 			type docOut struct {
 				ID     string          `json:"id"`
 				Fields json.RawMessage `json:"fields,omitempty"`
 			}
 			outBytes, err := json.Marshal(docOut{ID: id, Fields: line.Fields})
 			if err != nil {
-				continue
+				return &result, err
 			}
 			if _, err := w.Write(outBytes); err != nil {
 				return &result, fmt.Errorf("error writing document: %s", err)
