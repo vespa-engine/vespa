@@ -12,6 +12,9 @@
 #include <algorithm>
 #include <cinttypes>
 #include <vector>
+#if defined(__APPLE__)
+#include <mach/mach.h>
+#endif
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.util.process_memory_stats");
@@ -34,6 +37,15 @@ ProcessMemoryStats ProcessMemoryStats::createStatsFromStatm() {
 #ifdef __linux__
     asciistream statm = asciistream::createFromDevice("/proc/self/statm");
     ret = parseStatm(statm);
+#elif defined(__APPLE__)
+    task_vm_info_data_t vm_info;
+    mach_msg_type_number_t count = TASK_VM_INFO_COUNT;
+    kern_return_t result = task_info(mach_task_self(), TASK_VM_INFO,
+                                     (task_info_t)&vm_info, &count);
+    if (result == KERN_SUCCESS) {
+        ret._virt = vm_info.virtual_size;
+        ret._anonymous_rss = vm_info.phys_footprint;
+    }
 #endif
     return ret;
 }
