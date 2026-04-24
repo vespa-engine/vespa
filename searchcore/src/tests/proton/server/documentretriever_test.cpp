@@ -57,6 +57,7 @@ using document::DocumentId;
 using document::DocumentType;
 using document::DocumentTypeRepo;
 using document::DoubleFieldValue;
+using document::FieldCollection;
 using document::GlobalId;
 using document::IntFieldValue;
 using document::LongFieldValue;
@@ -711,6 +712,25 @@ TEST(DocumentRetrieverTest, require_that_fieldset_can_figure_out_their_attribute
     EXPECT_EQ(6u, lookup._count);
     EXPECT_FALSE(fsDB.areAllFieldsAttributes(39, notAllAttr));
     EXPECT_EQ(6u, lookup._count);
+}
+
+TEST(DocumentRetrieverTest, require_that_need_fetch_from_doc_store_works) {
+    Fixture f;
+    auto dt = f.repo.getDocumentType(f._dtName.getName());
+    EXPECT_FALSE(f._retriever->need_fetch_from_doc_store(document::NoFields()));
+    EXPECT_FALSE(f._retriever->need_fetch_from_doc_store(document::DocIdOnly()));
+    EXPECT_TRUE(f._retriever->need_fetch_from_doc_store(document::DocumentOnly()));
+    EXPECT_TRUE(f._retriever->need_fetch_from_doc_store(document::AllFields()));
+    auto& sf = dt->getField(static_field); // no attribute
+    auto& df = dt->getField(dyn_field_i);  // attribute
+    EXPECT_TRUE(f._retriever->need_fetch_from_doc_store(sf));
+    EXPECT_FALSE(f._retriever->need_fetch_from_doc_store(df));
+    FieldCollection sf_set(*dt, document::Field::Set::Builder().add(&sf).build());
+    FieldCollection df_set(*dt, document::Field::Set::Builder().add(&df).build());
+    FieldCollection both_set(*dt, document::Field::Set::Builder().add(&sf).add(&df).build());
+    EXPECT_TRUE(f._retriever->need_fetch_from_doc_store(sf_set));
+    EXPECT_FALSE(f._retriever->need_fetch_from_doc_store(df_set));
+    EXPECT_TRUE(f._retriever->need_fetch_from_doc_store(both_set));
 }
 
 }  // namespace
