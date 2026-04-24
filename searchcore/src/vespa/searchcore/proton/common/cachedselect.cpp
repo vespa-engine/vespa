@@ -98,6 +98,7 @@ AttrVisitor::visitFieldValueNode(const FieldValueNode &expr)
             ++_complexAttrs;
             // Don't try to optimize complex attribute references yet.
             _valueNode = expr.clone();
+            _priority = FieldValuePriority;
             return;
         }
         auto guard = av->makeReadGuard(false);
@@ -131,6 +132,7 @@ AttrVisitor::visitFieldValueNode(const FieldValueNode &expr)
     } else {
         _valueNode = expr.clone();
     }
+    _priority = FieldValuePriority;
 }
 
 }
@@ -173,9 +175,11 @@ CachedSelect::setDocumentSelect(SelectPruner &docsPruner)
     _always_false = docsPruner.isFalse();
     _always_true = docsPruner.isTrue();
     _always_invalid = docsPruner.isInvalid();
+    _doc_select_resultset = docsPruner.getResultSet();
     _docSelect = std::move(docsPruner.getNode());
     _fieldNodes = docsPruner.getFieldNodes();
     _attrFieldNodes = docsPruner.getAttrFieldNodes();
+    _document_id_nodes = docsPruner.get_document_id_nodes();
 }
 
 void
@@ -188,10 +192,11 @@ CachedSelect::setPreDocumentSelect(const search::IAttributeManager &attrMgr,
     assert(_fieldNodes == allAttrVisitor.getFieldNodes());
     assert(_attrFieldNodes == (allAttrVisitor._mvAttrs + allAttrVisitor._svAttrs + allAttrVisitor._complexAttrs));
     _svAttrFieldNodes = allAttrVisitor._svAttrs;
+    _pre_doc_select_resultset = noDocsPruner.getResultSet();
 
-    if (_fieldNodes == _svAttrFieldNodes) {
+    if (_fieldNodes == _svAttrFieldNodes + _document_id_nodes) {
         _preDocOnlySelect = std::move(allAttrVisitor.getNode());
-    } else if (_svAttrFieldNodes > 0) {
+    } else if (_svAttrFieldNodes + _document_id_nodes > 0) {
         // Also let document-level selection use attribute wiring; otherwise imported fields
         // would not resolve to anything, as these do not exist in the concrete document itself.
         _docSelect = std::move(allAttrVisitor.getNode());
@@ -208,10 +213,13 @@ CachedSelect::CachedSelect()
       _docSelect(),
       _fieldNodes(0u),
       _attrFieldNodes(0u),
+      _document_id_nodes(0u),
       _svAttrFieldNodes(0u),
       _always_false(false),
       _always_true(false),
       _always_invalid(false),
+      _doc_select_resultset(),
+      _pre_doc_select_resultset(),
       _preDocOnlySelect(),
       _preDocSelect()
 { }
@@ -226,7 +234,7 @@ CachedSelect::set(const std::string &selection,
         document::select::Parser parser(repo, document::BucketIdFactory());
         _docSelect = parser.parse(selection);
     } catch (document::select::ParsingFailedException &) {
-        _docSelect.reset(nullptr);
+        _docSelect.reset();
     }
     _always_false = !_docSelect;
     _always_true = false;
@@ -240,21 +248,22 @@ CachedSelect::set(const std::string &selection,
                   const document::Document &emptyDoc,
                   const document::IDocumentTypeRepo &repo,
                   const search::IAttributeManager *amgr,
-                  bool hasFields)
+                  bool hasFields,
+                  bool has_document_ids)
 {                  
     set(selection, repo);
     NodeUP parsed(std::move(_docSelect));
     if (!parsed) {
         return;
     }
-    SelectPruner docsPruner(docTypeName, amgr, emptyDoc, repo, hasFields, true);
+    SelectPruner docsPruner(docTypeName, amgr, emptyDoc, repo, hasFields, has_document_ids, true);
     docsPruner.process(*parsed);
     setDocumentSelect(docsPruner);
-    if (amgr == nullptr || _attrFieldNodes == 0u) {
+    if ((amgr == nullptr || _attrFieldNodes == 0u) && _document_id_nodes == 0) {
         return;
     }
 
-    SelectPruner noDocsPruner(docTypeName, amgr, emptyDoc, repo, hasFields, false);
+    SelectPruner noDocsPruner(docTypeName, amgr, emptyDoc, repo, hasFields, has_document_ids, false);
     noDocsPruner.process(*parsed);
     setPreDocumentSelect(*amgr, noDocsPruner);
 }

@@ -21,6 +21,7 @@ protected:
     const document::Document &_emptyDoc;
     const document::IDocumentTypeRepo &_repo;
     bool _hasFields;
+    bool _has_document_ids;
     bool _hasDocuments;
 
 public:
@@ -29,6 +30,7 @@ public:
                      const document::Document &emptyDoc,
                      const document::IDocumentTypeRepo &repo,
                      bool hasFields,
+                     bool has_document_ids,
                      bool hasDocuments);
 
     SelectPrunerBase(const SelectPrunerBase &rhs);
@@ -45,12 +47,14 @@ private:
     using NodeUP = document::select::Node::UP;
     using ValueNodeUP = document::select::ValueNode::UP;
     uint32_t _attrFieldNodes;
+    uint32_t _document_id_nodes;
 public:
     SelectPruner(const std::string &docType,
                  const search::IAttributeManager *amgr,
                  const document::Document &emptyDoc,
                  const document::IDocumentTypeRepo &repo,
                  bool hasFields,
+                 bool has_document_ids,
                  bool hasDocuments);
 
     explicit SelectPruner(const SelectPruner *rhs);
@@ -58,6 +62,7 @@ public:
 
     [[nodiscard]] uint32_t getFieldNodes() const noexcept { return _fieldNodes; }
     [[nodiscard]] uint32_t getAttrFieldNodes() const noexcept { return _attrFieldNodes; }
+    [[nodiscard]] uint32_t get_document_id_nodes() const noexcept { return _document_id_nodes; }
     [[nodiscard]] const document::select::ResultSet & getResultSet() const noexcept { return _resultSet; }
     [[nodiscard]] bool isFalse() const;
     [[nodiscard]] bool isTrue() const;

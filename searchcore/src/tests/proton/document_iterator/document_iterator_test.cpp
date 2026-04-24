@@ -296,7 +296,9 @@ struct AttrUnitDR : public UnitDR
 
     CachedSelect::SP parseSelect(const std::string &selection) const override {
         auto res = std::make_shared<CachedSelect>();
-        res->set(selection, "foo", Document(repo, document->getType(), DocumentId()), repo, &_amgr, true);
+        constexpr bool  has_fields = true;
+        constexpr bool has_document_ids = false;
+        res->set(selection, "foo", Document(repo, document->getType(), DocumentId()), repo, &_amgr, has_fields, has_document_ids);
         return res;
     }
 };

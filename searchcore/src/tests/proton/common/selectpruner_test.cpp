@@ -11,9 +11,7 @@
 #include <vespa/document/select/cloningvisitor.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/gtest/gtest.h>
-
-#include <vespa/log/log.h>
-LOG_SETUP(".selectpruner_test");
+#include <iostream>
 
 using document::DataType;
 using document::Document;
@@ -136,6 +134,7 @@ public:
     MockAttributeManager _amgr;
     std::unique_ptr<const DocumentTypeRepo> _repoUP;
     bool _hasFields;
+    bool _has_document_ids;
     bool _hasDocuments;
 
     SelectPrunerTest();
@@ -153,6 +152,7 @@ SelectPrunerTest::SelectPrunerTest()
       _amgr(),
       _repoUP(),
       _hasFields(true),
+      _has_document_ids(false),
       _hasDocuments(true)
 {
     _amgr.addAttribute("aa", AttributeFactory::createAttribute("aa", { BasicType::INT32 }));
@@ -172,16 +172,17 @@ SelectPrunerTest::~SelectPrunerTest() = default;
 void
 SelectPrunerTest::testParse(const string &selection)
 {
+    SCOPED_TRACE(selection);
     const DocumentTypeRepo &repo(*_repoUP);
     document::select::Parser parser(repo,document::BucketIdFactory());
 
     NodeUP select;
 
     try {
-        LOG(info, "Trying to parse '%s'", selection.c_str());
+        std::cout << "Trying to parse '" << selection << "'" << std::endl;;
         select = parser.parse(selection);
     } catch (document::select::ParsingFailedException &e) {
-        LOG(info, "Parse failed: %s", e.what());
+        std::cout << "Parse failed: " << e.getMessage() << std::endl;;
         select.reset();
     }
     ASSERT_TRUE(select.get() != nullptr);
@@ -191,16 +192,17 @@ SelectPrunerTest::testParse(const string &selection)
 void
 SelectPrunerTest::testParseFail(const string &selection)
 {
+    SCOPED_TRACE(selection);
     const DocumentTypeRepo &repo(*_repoUP);
     document::select::Parser parser(repo,document::BucketIdFactory());
 
     NodeUP select;
 
     try {
-        LOG(info, "Trying to parse '%s'", selection.c_str());
+        std::cout << "Trying to parse '" << selection << "'" << std::endl;
         select = parser.parse(selection);
     } catch (document::select::ParsingFailedException &e) {
-        LOG(info, "Parse failed: %s", e.getMessage().c_str());
+        std::cout << "Parse failed: " << e.getMessage().c_str() << std::endl;
         select.reset();
     }
     ASSERT_TRUE(select.get() == nullptr);
@@ -217,31 +219,27 @@ SelectPrunerTest::testPrune(const string &selection, const string &exp, const st
     NodeUP select;
 
     try {
-        LOG(info, "Trying to parse '%s' with docType=%s", selection.c_str(), docTypeName.c_str());
+        std::cout << "Trying to parse '" << selection << "' with docType=" << docTypeName << std::endl;
         select = parser.parse(selection);
     } catch (document::select::ParsingFailedException &e) {
-        LOG(info, "Parse failed: %s", e.what());
+        std::cout << "Parse failed: %s" << e.getMessage() << std::endl;
         select.reset();
     }
     ASSERT_TRUE(select.get() != nullptr);
     std::ostringstream os;
     select->print(os, true, "");
-    LOG(info, "ParseTree: '%s'", os.str().c_str());
+    std::cout << "ParseTree: '" << os.str() << "'" << std::endl;
     const DocumentType *docType = repo.getDocumentType(docTypeName);
     ASSERT_TRUE(docType != nullptr);
     auto emptyDoc = std::make_unique<Document>(repo, *docType, document::DocumentId("id:ns:" + docTypeName + "::1"));
-    SelectPruner pruner(docTypeName, &_amgr, *emptyDoc, repo, _hasFields, _hasDocuments);
+    SelectPruner pruner(docTypeName, &_amgr, *emptyDoc, repo, _hasFields, _has_document_ids, _hasDocuments);
     pruner.process(*select);
     std::ostringstream pos;
     pruner.getNode()->print(pos, true, "");
     EXPECT_EQ(exp, pos.str());
-    LOG(info,
-        "Pruned ParseTree: '%s', fieldNodes=%u, attrFieldNodes=%u, cs=%s, rs=%s",
-        pos.str().c_str(),
-        pruner.getFieldNodes(),
-        pruner.getAttrFieldNodes(),
-        csString(pruner),
-        rsString(pruner.getResultSet()).c_str());
+    std::cout << "Pruned ParseTree: '" << pos.str() << "', fieldNodes=" << pruner.getFieldNodes() <<
+        ", attrFieldNodes=" << pruner.getAttrFieldNodes() << ", document_id_nodes=" << pruner.get_document_id_nodes() <<
+        ", cs=" << csString(pruner) << ", rs=" << rsString(pruner.getResultSet()) << std::endl;
     if (pruner.isConst()) {
         ResultSet t;
         if (pruner.isFalse())
@@ -260,7 +258,7 @@ SelectPrunerTest::testPrune(const string &selection, const string &exp, const st
 #if 0
     std::ostringstream os2;
     pruner.trace(os2);
-    LOG(info, "trace pruned: %s", os2.str().c_str());
+    std::cout << "trace pruned: " << os2.str() << std::endl;
 #endif
 }
 
@@ -825,4 +823,24 @@ TEST_F(SelectPrunerTest, Complex_imported_field_references_return_Invalid)
     testPrune("test.my_imported_field.foo", "invalid");
     testPrune("test.my_imported_field[123]", "invalid");
     testPrune("test.my_imported_field{foo}", "invalid");
+}
+
+TEST_F(SelectPrunerTest, id_node_with_docs) {
+        testPrune("id.namespace = \"ns\"", "id.namespace = \"ns\"");
+}
+
+TEST_F(SelectPrunerTest, id_node_with_docs_and_docids) {
+    _has_document_ids = true;
+    testPrune("id.namespace = \"ns\"", "id.namespace = \"ns\"");
+}
+
+TEST_F(SelectPrunerTest, id_node_without_docs) {
+    _hasDocuments = false;
+    testPrune("id.namespace = \"ns\"", "invalid");
+}
+
+TEST_F(SelectPrunerTest, id_node_without_docs_but_with_docids) {
+    _hasDocuments = false;
+    _has_document_ids = true;
+    testPrune("id.namespace = \"ns\"", "id.namespace = \"ns\"");
 }
