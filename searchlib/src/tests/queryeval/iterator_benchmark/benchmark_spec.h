@@ -60,4 +60,6 @@ Spec or_(Specs&&... children) {
     return make_intermediate<OrSpec>(std::forward<Specs>(children)...);
 }
 
+std::string to_string(const Spec& s);
+
 }
