@@ -286,13 +286,22 @@ public class Presentation implements Cloneable {
 
     @Override
     public boolean equals(Object o) {
-        if ( ! (o instanceof Presentation p)) return false;
-        return QueryHelper.equals(bolding, p.bolding) && QueryHelper.equals(summary, p.summary);
+        if ( ! (o instanceof Presentation other)) return false;
+        if ( ! Objects.equals(bolding, other.bolding)) return false;
+        if ( ! Objects.equals(summary, other.summary)) return false;
+        if ( ! Objects.equals(format, other.format)) return false;
+        if ( ! Objects.equals(timing, other.timing)) return false;
+        if ( ! Objects.equals(tensorShortForm, other.tensorShortForm)) return false;
+        if ( ! Objects.equals(tensorDirectValues, other.tensorDirectValues)) return false;
+        if ( ! Objects.equals(tensorHexDense, other.tensorHexDense)) return false;
+        if ( ! Objects.equals(summaryFields, other.summaryFields)) return false;
+        return true;
     }
 
     @Override
     public int hashCode() {
-        return QueryHelper.combineHash(bolding, summary);
+        return Objects.hash(bolding, summary, format, timing, tensorShortForm,
+                            tensorDirectValues, tensorHexDense, summaryFields);
     }
 
 }
