@@ -286,6 +286,7 @@ public class Presentation implements Cloneable {
 
     @Override
     public boolean equals(Object o) {
+        if (o == this) return true;
         if ( ! (o instanceof Presentation other)) return false;
         if ( ! Objects.equals(bolding, other.bolding)) return false;
         if ( ! Objects.equals(summary, other.summary)) return false;
@@ -302,6 +303,7 @@ public class Presentation implements Cloneable {
     public int hashCode() {
         return Objects.hash(bolding, summary, format, timing, tensorShortForm,
                             tensorDirectValues, tensorHexDense, summaryFields);
+
     }
 
 }
