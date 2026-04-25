@@ -141,11 +141,13 @@ namespace {
 
 class Matcher {
 public:
-    Matcher(const IDocumentRetriever &source, bool metaOnly, const std::string &selection) :
+    Matcher(const IDocumentRetriever &source, bool metaOnly, bool populate_document_metadata_docids,
+            const std::string &selection) :
         _document_selection_always_true(true),
         _metaOnly(metaOnly),
         _needs_document(false),
         _willAlwaysFail(false),
+        _populate_document_metadata_docids(populate_document_metadata_docids),
         _docidLimit(source.getDocIdLimit())
     {
         if (!(_metaOnly || selection.empty())) {
@@ -162,8 +164,8 @@ public:
                 _selectSession = _cachedSelect->createSession();
                 using document::select::GidFilter;
                 _gidFilter = GidFilter::for_selection_root_node(_selectSession->selectNode());
-                _selectCxt = std::make_unique<SelectContext>(*_cachedSelect);
-                _selectCxt->getAttributeGuards();
+                _select_ctx = std::make_unique<SelectContext>(*_cachedSelect);
+                _select_ctx->getAttributeGuards();
             }
         } else {
             _document_selection_always_true = true;
@@ -171,8 +173,8 @@ public:
     }
     
     ~Matcher() {
-        if (_selectCxt) {
-            _selectCxt->dropAttributeGuards();
+        if (_select_ctx) {
+            _select_ctx->dropAttributeGuards();
         }
     }
 
@@ -189,30 +191,39 @@ public:
         if (!_gidFilter.gid_might_match_selection(meta.gid)) {
             return false;
         }
-        assert(_selectCxt);
-        _selectCxt->_lid = meta.lid;
-        _selectCxt->_doc = nullptr;
-        return _selectSession->contains_pre_doc(*_selectCxt);
+        assert(_select_ctx);
+        _select_ctx->_lid = meta.lid;
+        _select_ctx->_doc = nullptr;
+        if (_populate_document_metadata_docids) {
+            _select_ctx->_document_id_copy.set(meta.docid);
+            _select_ctx->_docId = &_select_ctx->_document_id_copy;
+        }
+        bool result = _selectSession->contains_pre_doc(*_select_ctx);
+        if (_populate_document_metadata_docids) {
+            _select_ctx->_docId = nullptr;
+        }
+        return result;
     }
     [[nodiscard]] bool match(const search::DocumentMetadata & meta, const Document * doc) const {
         if (_document_selection_always_true || _metaOnly) {
             return true;
         }
-        assert(_selectCxt);
-        _selectCxt->_lid = meta.lid;
-        _selectCxt->_doc = doc;
-        return (doc && (doc->getId().getGlobalId() == meta.gid) && _selectSession->contains_doc(*_selectCxt));
+        assert(_select_ctx);
+        _select_ctx->_lid = meta.lid;
+        _select_ctx->_doc = doc;
+        return (doc && (doc->getId().getGlobalId() == meta.gid) && _selectSession->contains_doc(*_select_ctx));
     }
 private:
     bool                           _document_selection_always_true;
     bool                           _metaOnly;
     bool                           _needs_document;
     bool                           _willAlwaysFail;
+    bool                           _populate_document_metadata_docids;
     uint32_t                       _docidLimit;
     CachedSelect::SP               _cachedSelect;
     std::unique_ptr<CachedSelect::Session> _selectSession;
     document::select::GidFilter    _gidFilter;
-    std::unique_ptr<SelectContext> _selectCxt;
+    std::unique_ptr<SelectContext> _select_ctx;
 };
 
 using LidIndexMap = vespalib::hash_map<uint32_t, uint32_t>;
@@ -273,7 +284,8 @@ DocumentIterator::fetchCompleteSource(const DocTypeName & doc_type_name,
     }
     LOG(debug, "metadata count before filtering: %zu", metadata.size());
 
-    Matcher matcher(source, _metaOnly, _selection.getDocumentSelection().getDocumentSelection());
+    Matcher matcher(source, _metaOnly, populate_document_metadata_docids,
+                    _selection.getDocumentSelection().getDocumentSelection());
     if (matcher.willAlwaysFail()) {
         return;
     }

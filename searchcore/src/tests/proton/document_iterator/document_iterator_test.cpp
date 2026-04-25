@@ -121,6 +121,7 @@ struct UnitDR : DocumentRetrieverBaseForTest {
     DocumentIdT                docid;
     DocumentIdT                docIdLimit;
     DocTypeName                doc_type_name;
+    std::unique_ptr<Document>  empty_doc;
     bool                       enable_populate_document_metadata_docid;
 
     UnitDR();
@@ -176,6 +177,10 @@ struct UnitDR : DocumentRetrieverBaseForTest {
         return field_set.getType() != FieldSet::Type::NONE &&
                field_set.getType() != FieldSet::Type::DOCID;
     }
+    void make_empty_doc() {
+        empty_doc = std::make_unique<Document>(repo, *repo.getDocumentType(doc_type_name.getName()),
+                                               DocumentId("id:empty:" + doc_type_name.getName() + "::empty"));
+    }
 
     uint32_t getDocIdLimit() const override {
         return docIdLimit;
@@ -186,7 +191,8 @@ struct UnitDR : DocumentRetrieverBaseForTest {
 
     CachedSelect::SP parseSelect(const std::string &selection) const override {
         auto res = std::make_shared<CachedSelect>();
-        res->set(selection, repo);
+        res->set(selection, doc_type_name.getName(), *empty_doc, repo, nullptr, !removed,
+                 enable_populate_document_metadata_docid);
         return res;
     }
 
@@ -208,23 +214,29 @@ UnitDR::UnitDR()
     : repo(), document(make_doc(DocumentId())), timestamp(0),
       bucket(), removed(false), docid(0), docIdLimit(std::numeric_limits<uint32_t>::max()),
       doc_type_name(document->getType().getName()),
-      enable_populate_document_metadata_docid(false)
-{}
+      empty_doc(),
+      enable_populate_document_metadata_docid(false) {
+    make_empty_doc();
+}
 
 UnitDR::UnitDR(Document::UP d, Timestamp t, Bucket b, bool r)
     : repo(), document(std::move(d)), timestamp(t), bucket(b), removed(r), docid(++_docidCnt),
       docIdLimit(std::numeric_limits<uint32_t>::max()),
       doc_type_name(document->getType().getName()),
-      enable_populate_document_metadata_docid(false)
-{}
+      empty_doc(),
+      enable_populate_document_metadata_docid(false) {
+    make_empty_doc();
+}
 
 UnitDR::UnitDR(const DocumentType &dt, Document::UP d, Timestamp t, Bucket b, bool r)
     : repo(dt), document(std::move(d)), timestamp(t), bucket(b), removed(r), docid(++_docidCnt),
       docIdLimit(std::numeric_limits<uint32_t>::max()),
       doc_type_name(document->getType().getName()),
+      empty_doc(),
       enable_populate_document_metadata_docid(false)
 {
     EXPECT_EQ(doc_type_name.getName(), dt.getName());
+    make_empty_doc();
 }
 
 UnitDR::~UnitDR() = default;
@@ -343,9 +355,7 @@ struct PairDR : DocumentRetrieverBaseForTest {
     }
 
     CachedSelect::SP parseSelect(const std::string &selection) const override {
-        auto res = std::make_shared<CachedSelect>();
-        res->set(selection, getDocumentTypeRepo());
-        return res;
+        return first->parseSelect(selection);
     }
 };
 
@@ -583,34 +593,48 @@ TEST(DocumentIteratorTest, require_that_normal_documents_can_be_iterated)
     checkEntry(res, 2, *make_doc(DocumentId("id:ns:document::3")), Timestamp(4));
 }
 
-void visit_docid_only(bool enable_populate_document_metadata_docid, uint32_t exp_get_full_document_calls,
+void visit_docid_only(bool enable_populate_document_metadata_docid, bool select_ns2,
+                      uint32_t exp_get_full_document_calls,
                       uint32_t exp_get_partial_document_calls)
 {
     UnitDR::reset();
-    DocumentIterator itr(bucket(5), std::make_shared<document::DocIdOnly>(), selectAll(), newestV(), -1, false);
-    itr.add(doc_with_docid("id:ns:document::1", Timestamp(2), bucket(5), enable_populate_document_metadata_docid));
+    Selection selection(DocumentSelection(select_ns2  ? "id.namespace == \"ns2\"" : ""));
+    DocumentIterator itr(bucket(5), std::make_shared<document::DocIdOnly>(), selection, newestV(), -1, false);
+    itr.add(doc_with_docid("id:ns2:document::1", Timestamp(2), bucket(5), enable_populate_document_metadata_docid));
     itr.add(cat(doc_with_docid("id:ns:document::2", Timestamp(3), bucket(5), enable_populate_document_metadata_docid),
                 doc_with_docid("id:ns:document::3", Timestamp(4), bucket(5), enable_populate_document_metadata_docid)));
     itr.add(rem_with_docid("id:ns:document::4", Timestamp(5), bucket(5), enable_populate_document_metadata_docid));
     IterateResult res = itr.iterate(largeNum);
     EXPECT_TRUE(res.isCompleted());
-    EXPECT_EQ(4u, res.getEntries().size());
-    checkEntry(res, 0, *make_doc(DocumentId("id:ns:document::1")), Timestamp(2));
-    checkEntry(res, 1, *make_doc(DocumentId("id:ns:document::2")), Timestamp(3));
-    checkEntry(res, 2, *make_doc(DocumentId("id:ns:document::3")), Timestamp(4));
-    checkEntry(res, 3, DocumentId("id:ns:document::4"), Timestamp(5));
+    EXPECT_EQ(select_ns2 ? 1u : 4u, res.getEntries().size());
+    checkEntry(res, 0, *make_doc(DocumentId("id:ns2:document::1")), Timestamp(2));
+    if (!select_ns2) {
+        checkEntry(res, 1, *make_doc(DocumentId("id:ns:document::2")), Timestamp(3));
+        checkEntry(res, 2, *make_doc(DocumentId("id:ns:document::3")), Timestamp(4));
+        checkEntry(res, 3, DocumentId("id:ns:document::4"), Timestamp(5));
+    }
     EXPECT_EQ(exp_get_full_document_calls, UnitDR::get_full_document_calls);
     EXPECT_EQ(exp_get_partial_document_calls, UnitDR::get_partial_document_calls);
 }
 
 TEST(DocumentIteratorTest, iterate_docid_only_getting_full_docs)
 {
-    visit_docid_only(false, 4, 0);
+    visit_docid_only(false, false, 4, 0);
 }
 
 TEST(DocumentIteratorTest, iterate_docid_only_skipping_full_docs)
 {
-    visit_docid_only(true, 0, 3);
+    visit_docid_only(true, false, 0, 3);
+}
+
+TEST(DocumentIteratorTest, iterate_filtered_docid_only_getting_full_docs)
+{
+    visit_docid_only(false, true, 4, 0);
+}
+
+TEST(DocumentIteratorTest, iterate_filtered_docid_only_skipping_full_docs)
+{
+    visit_docid_only(true, true, 0, 1);
 }
 
 void verifyIterateIgnoringStopSignal(DocumentIterator & itr) {
