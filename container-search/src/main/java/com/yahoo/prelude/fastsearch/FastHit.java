@@ -37,7 +37,7 @@ public class FastHit extends Hit {
 
     private static final byte[] emptyGID = new byte[GlobalId.LENGTH];
 
-    private final OptionalInt group;
+    private final OptionalInt searchGroup;
 
     private final int distributionKey;
 
@@ -76,14 +76,14 @@ public class FastHit extends Hit {
         this(emptyGID, 0.0, OptionalInt.empty(), 0, 0);
     }
 
-    public FastHit(byte[] gid, double relevance, OptionalInt group, int partId, int distributionKey) {
-        this(gid, new Relevance(relevance), group, partId, distributionKey);
+    public FastHit(byte[] gid, double relevance, OptionalInt searchGroup, int partId, int distributionKey) {
+        this(gid, new Relevance(relevance), searchGroup, partId, distributionKey);
     }
 
-    public FastHit(byte[] gid, Relevance relevance, OptionalInt group, int partId, int distributionKey) {
+    public FastHit(byte[] gid, Relevance relevance, OptionalInt searchGroup, int partId, int distributionKey) {
         super(relevance);
         this.globalId = gid;
-        this.group = group;
+        this.searchGroup = searchGroup;
         this.partId = partId;
         this.distributionKey = distributionKey;
         if (distributionKey < 0)
@@ -98,8 +98,8 @@ public class FastHit extends Hit {
     }
 
     /** For tests. */
-    public FastHit(String uri, double relevancy, OptionalInt group) {
-        this(emptyGID, relevancy, group, 0, 0);
+    public FastHit(String uri, double relevancy, OptionalInt searchGroup) {
+        this(emptyGID, relevancy, searchGroup, 0, 0);
         setId(uri);
         types().add("summary");
     }
@@ -135,7 +135,7 @@ public class FastHit extends Hit {
 
     /** Returns the id of the group that produced this hit, or empty when the content cluster does not use groups. */
     @Override
-    public OptionalInt getGroup() { return group; }
+    public OptionalInt getSearchGroup() { return searchGroup; }
 
     /** Returns the index of this node in its content group: A continuous index starting from 0. */
     public int getPartId() { return partId; }

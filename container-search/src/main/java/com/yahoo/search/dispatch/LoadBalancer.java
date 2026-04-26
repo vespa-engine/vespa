@@ -64,11 +64,11 @@ public class LoadBalancer {
             Optional<GroupStatus> best = scheduler.takeNextGroup(rejectedGroups);
 
             if (best.isPresent()) {
-                GroupStatus gs = best.get();
-                gs.allocate();
-                Group ret = gs.group;
-                log.fine(() -> "Offering <" + ret + "> for query connection");
-                return Optional.of(ret);
+                GroupStatus status = best.get();
+                status.allocate();
+                Group group = status.group;
+                log.fine(() -> "Offering <" + group + "> for query connection");
+                return Optional.of(group);
             } else {
                 return Optional.empty();
             }

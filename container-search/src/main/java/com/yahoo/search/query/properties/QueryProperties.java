@@ -85,7 +85,7 @@ public class QueryProperties extends Properties {
         map.put(CompoundName.fromComponents(Model.MODEL, Model.LOCALE), GetterSetter.of(query -> query.getModel().getLocale(), (query, value) -> query.getModel().setLocale(asString(value, ""))));
         map.put(CompoundName.fromComponents(Model.MODEL, Model.ENCODING), GetterSetter.of(query -> query.getModel().getEncoding(), (query, value) -> query.getModel().setEncoding(asString(value,""))));
         map.put(CompoundName.fromComponents(Model.MODEL, Model.SOURCES), GetterSetter.of(query -> query.getModel().getSources(), (query, value) -> query.getModel().setSources(asString(value,""))));
-        map.put(CompoundName.fromComponents(Model.MODEL, Model.SEARCH_GROUP), GetterSetter.of(query -> query.getModel().getSearchGroup(), (query, value) -> query.getModel().setSearchGroup(asString(value,""))));
+        map.put(CompoundName.fromComponents(Model.MODEL, Model.SEARCH_GROUP), GetterSetter.of(query -> query.getModel().getSearchGroup(), (query, value) -> query.getModel().setSearchGroup(asInteger(value,null))));
         map.put(CompoundName.fromComponents(Model.MODEL, Model.SEARCH_PATH), GetterSetter.of(query -> query.getModel().getSearchPath(), (query, value) -> query.getModel().setSearchPath(asString(value,""))));
         map.put(CompoundName.fromComponents(Model.MODEL, Model.RESTRICT), GetterSetter.of(query -> query.getModel().getRestrict(), (query, value) -> query.getModel().setRestrict(asString(value,""))));
         map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.LOCATION), GetterSetter.of(query -> query.getRanking().getLocation(), (query, value) -> query.getRanking().setLocation(asString(value,""))));

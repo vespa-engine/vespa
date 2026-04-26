@@ -327,19 +327,22 @@ public class Dispatcher extends AbstractComponent {
                                  .orElseThrow(() -> new IllegalStateException("Could not dispatch directly to " + node));
         }
         int covered = cluster.groupsWithSufficientCoverage();
-        int groups = cluster.groupList().size();
-        int max = Integer.min(Integer.min(covered + 1, groups), MAX_GROUP_SELECTION_ATTEMPTS);
+        SearchGroups groups = cluster.groupList();
+        int max = Integer.min(Integer.min(covered + 1, groups.size()), MAX_GROUP_SELECTION_ATTEMPTS);
         Set<Integer> rejected = new HashSet<>();
         for (int i = 0; i < max; i++) {
-            Optional<Group> groupInCluster = loadBalancer.takeGroup(rejected);
-            if (groupInCluster.isEmpty()) break; // No groups available
+            boolean acceptInsufficientCoverage = (i == max - 1);
+            Optional<Group> groupInCluster = preferredGroup(query, groups, acceptInsufficientCoverage, rejected);
+            if (groupInCluster.isEmpty()) // No valid query preference
+                groupInCluster = loadBalancer.takeGroup(rejected);
+            if (groupInCluster.isEmpty()) // No groups available
+                break;
 
             Group group = groupInCluster.get();
-            boolean acceptIncompleteCoverage = (i == max - 1);
             Optional<SearchInvoker> invoker = invokerFactory.createSearchInvoker(searcher,
                                                                                  query,
                                                                                  group.nodes(),
-                                                                                 acceptIncompleteCoverage,
+                                                                                 acceptInsufficientCoverage,
                                                                                  maxHitsPerNode);
             if (invoker.isPresent()) {
                 query.trace(false, 2, "Dispatching to group ", group.id(), " after retries = ", i);
@@ -352,6 +355,17 @@ public class Dispatcher extends AbstractComponent {
             }
         }
         throw new IllegalStateException("No suitable groups to dispatch query. Rejected: " + rejected);
+    }
+
+    private static Optional<Group> preferredGroup(Query query, SearchGroups groups, boolean acceptInsufficientCoverage,
+                                                  Set<Integer> rejectedGroups) {
+        Integer preference = query.getModel().getSearchGroup();
+        if (preference == null) return Optional.empty();
+        Group group = groups.get(preference);
+        if (group == null) return Optional.empty();
+        if (! acceptInsufficientCoverage && ! group.hasSufficientCoverage()) return Optional.empty();
+        if (rejectedGroups.contains(preference)) return Optional.empty();
+        return Optional.of(group);
     }
 
 }

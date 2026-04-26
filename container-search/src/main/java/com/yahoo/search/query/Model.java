@@ -70,7 +70,7 @@ public class Model implements Cloneable {
         argumentType.addField(new FieldDescription(LOCALE, "string", "locale"));
         argumentType.addField(new FieldDescription(ENCODING, "string", "encoding"));
         argumentType.addField(new FieldDescription(SOURCES, "string", "sources search"));
-        argumentType.addField(new FieldDescription(SEARCH_GROUP, "string", "searchgroup"));
+        argumentType.addField(new FieldDescription(SEARCH_GROUP, "integer", "searchgroup"));
         argumentType.addField(new FieldDescription(SEARCH_PATH, "string", "searchpath"));
         argumentType.addField(new FieldDescription(RESTRICT, "string", "restrict"));
         argumentType.addField(new FieldDescription(TYPE, new QueryProfileFieldType(QueryType.getArgumentType()), "type"));
@@ -94,7 +94,7 @@ public class Model implements Cloneable {
     private Query parent;
     private Set<String> sources = new LinkedHashSet<>();
     private Set<String> restrict = new LinkedHashSet<>();
-    private String searchGroup;
+    private Integer searchGroup;
     private String searchPath;
     private String documentDbName = null;
     private Execution execution = new Execution(new Execution.Context(null,
@@ -219,12 +219,19 @@ public class Model implements Cloneable {
 
     /**
      * Sets the number of the content group this query should prefer when possible.
-     * When that group is out of rotation, fully loaded, or non-existent, another group
-     * will be used.
+     * This is useful to pin subsequent queries in pagination to the same group.
+     * The value of this parameter is then obtained from the searchGroup value in the
+     * fields of the top level result.
+     * <p>
+     * This is a soft preference: When the preferred group is out of rotation,
+     * fully loaded, or non-existent, another group
+     * will be used by this query such that results are still returned.
+     *
+     * @param searchGroup the index of the group to use, or null for no preference
      */
-    public void setSearchGroup(String searchGroup) { this.searchGroup = searchGroup; }
+    public void setSearchGroup(Integer searchGroup) { this.searchGroup = searchGroup; }
 
-    public String getSearchGroup() { return searchGroup; }
+    public Integer getSearchGroup() { return searchGroup; }
 
     /** Sets the path for which content nodes this query should go to - see  */
     public void setSearchPath(String searchPath) { this.searchPath = searchPath; }

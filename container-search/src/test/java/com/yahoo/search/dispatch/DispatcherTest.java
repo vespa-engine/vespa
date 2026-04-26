@@ -129,10 +129,45 @@ public class DispatcherTest {
     void testGroup0IsSelected() {
         SearchCluster cluster = new MockSearchCluster("1", 3, 1);
         Dispatcher dispatcher = new Dispatcher(new ClusterMonitor<>(cluster, false), cluster, dispatchConfig, new QrSearchersConfig.Builder().build(),
-                new MockInvokerFactory(cluster.groupList(), dispatchConfig, (n, a) -> true));
+                                               new MockInvokerFactory(cluster.groupList(), dispatchConfig, (n, a) -> true));
         cluster.pingIterationCompleted();
         assertEquals(0,
                 dispatcher.getSearchInvoker(new Query(), null).distributionKey().get().longValue());
+        dispatcher.deconstruct();
+    }
+
+    @Test
+    void testPreferredGroup() {
+        SearchCluster cluster = new MockSearchCluster("1", 3, 1);
+        Dispatcher dispatcher = new Dispatcher(new ClusterMonitor<>(cluster, false), cluster, dispatchConfig, new QrSearchersConfig.Builder().build(),
+                                               new MockInvokerFactory(cluster.groupList(), dispatchConfig, (n, a) -> true));
+        cluster.pingIterationCompleted();
+        assertEquals(2, dispatcher.getSearchInvoker(new Query("?model.searchGroup=2"), null).distributionKey().get().longValue(),
+                     "Preferred group is selected");
+        dispatcher.deconstruct();
+    }
+
+    @Test
+    void testPreferredGroupIsIgnoredWhenMissingCoverage() {
+        SearchCluster cluster = new MockSearchCluster("1", 3, 1);
+
+        Dispatcher dispatcher = new Dispatcher(new ClusterMonitor<>(cluster, false), cluster, dispatchConfig, new QrSearchersConfig.Builder().build(),
+                                               new MockInvokerFactory(cluster.groupList(), dispatchConfig, (n, a) -> true));
+        cluster.pingIterationCompleted();
+        cluster.groupList().get(2).setHasSufficientCoverage(false);
+        assertEquals(0, dispatcher.getSearchInvoker(new Query("?model.searchGroup=2"), null).distributionKey().get().longValue(),
+                     "Preferred group with insufficient coverage is ignored");
+        dispatcher.deconstruct();
+    }
+
+    @Test
+    void testPreferredGroupIsIgnoredWhenNonExistent() {
+        SearchCluster cluster = new MockSearchCluster("1", 3, 1);
+        Dispatcher dispatcher = new Dispatcher(new ClusterMonitor<>(cluster, false), cluster, dispatchConfig, new QrSearchersConfig.Builder().build(),
+                                               new MockInvokerFactory(cluster.groupList(), dispatchConfig, (n, a) -> true));
+        cluster.pingIterationCompleted();
+        assertEquals(0, dispatcher.getSearchInvoker(new Query("?model.searchGroup=3"), null).distributionKey().get().longValue(),
+                     "Non-existing preferred group is ignored");
         dispatcher.deconstruct();
     }
 
@@ -327,8 +362,8 @@ public class DispatcherTest {
         private final FactoryStep[] events;
         private int step = 0;
 
-        public MockInvokerFactory(SearchGroups cl, DispatchConfig disptachConfig, FactoryStep... events) {
-            super(cl, disptachConfig);
+        public MockInvokerFactory(SearchGroups cl, DispatchConfig dispatchConfig, FactoryStep... events) {
+            super(cl, dispatchConfig);
             this.events = events;
         }
 
