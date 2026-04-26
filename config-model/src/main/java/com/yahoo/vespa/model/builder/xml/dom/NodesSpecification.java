@@ -147,7 +147,8 @@ public class NodesSpecification {
 
         // Allow use of groups and group-size if count is not specified
         if (groupsAndGroupSizeButNoNodeCount(groups, groupSize, nodes))
-            nodes = IntRange.of(groupSize.from().orElse(1) * groups.from().orElse(1), groupSize.to().orElse(1) * groups.to().orElse(1));
+            nodes = IntRange.of(groupSize.from().orElse(1) * groups.from().orElse(1),
+                                groupSize.to().orElse(1) * groups.to().orElse(1));
 
         var min = new ClusterResources(nodes.from().orElse(1), groups.from().orElse(defaultMinGroups), nodeResources(nodesElement).getFirst());
         var max = new ClusterResources(nodes.to().orElse(1), groups.to().orElse(defaultMaxGroups), nodeResources(nodesElement).getSecond());
