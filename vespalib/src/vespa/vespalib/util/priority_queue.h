@@ -35,16 +35,16 @@ public:
     size_t size() const { return _data.size(); }
     void push(const T& item) {
         _data.push_back(item);
-        H::template push<T, C>(&_data[0], &_data[size()], _cmp);
+        H::template push<T, C>(_data.data(), _data.data() + size(), _cmp);
     }
     void push(T&& item) {
         _data.push_back(std::move(item));
-        H::template push<T, C>(&_data[0], &_data[size()], _cmp);
+        H::template push<T, C>(_data.data(), _data.data() + size(), _cmp);
     }
-    T& front() { return H::template front<T>(&_data[0], &_data[size()]); }
-    void adjust() { H::template adjust<T, C>(&_data[0], &_data[size()], _cmp); }
+    T& front() { return H::template front<T>(_data.data(), _data.data() + size()); }
+    void adjust() { H::template adjust<T, C>(_data.data(), _data.data() + size(), _cmp); }
     void pop_front() {
-        H::template pop<T, C>(&_data[0], &_data[size()], _cmp);
+        H::template pop<T, C>(_data.data(), _data.data() + size(), _cmp);
         _data.pop_back();
     }
     T& any() { return _data.back(); }
