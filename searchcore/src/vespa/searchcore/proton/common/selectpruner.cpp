@@ -717,6 +717,7 @@ SelectPruner::swap(SelectPruner &rhs)
     CloningVisitor::swap(rhs);
     std::swap(_inverted, rhs._inverted);
     std::swap(_wantInverted, rhs._wantInverted);
+    std::swap(_disable_operator_inversion, rhs._disable_operator_inversion);
     std::swap(_attrFieldNodes, rhs._attrFieldNodes);
     std::swap(_document_id_nodes, rhs._document_id_nodes);
 }
