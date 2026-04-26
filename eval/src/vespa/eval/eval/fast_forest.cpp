@@ -327,8 +327,8 @@ FixedForest<T>::eval(Context &context, const float *params) const
             apply_masks(ctx_masks, mask_pos, mask_pos + size, feature);
         } else {
             apply_masks(ctx_masks,
-                        &_default_masks[_default_offsets[(param_pos-params)-1]],
-                        &_default_masks[_default_offsets[(param_pos-params)]]);
+                        _default_masks.data() + _default_offsets[param_pos - params - 1],
+                        _default_masks.data() + _default_offsets[param_pos - params]);
         }
         mask_pos += size;
     }
@@ -609,11 +609,11 @@ MultiWordForest::eval(Context &context, const float *params) const
                             mask_pos + size.fixed, mask_pos + size.fixed + size.rle, feature);
         } else {
             apply_fixed_masks(ctx_words,
-                              &_default_masks[_default_offsets[(param_pos-params)-1].fixed],
-                              &_default_masks[_default_offsets[(param_pos-params)-1].rle]);
+                              _default_masks.data() + _default_offsets[param_pos - params - 1].fixed,
+                              _default_masks.data() + _default_offsets[param_pos - params - 1].rle);
             apply_rle_masks(reinterpret_cast<unsigned char *>(ctx_words),
-                            &_default_masks[_default_offsets[(param_pos-params)-1].rle],
-                            &_default_masks[_default_offsets[(param_pos-params)].fixed]);
+                            _default_masks.data() + _default_offsets[param_pos - params - 1].rle,
+                            _default_masks.data() + _default_offsets[param_pos - params].fixed);
         }
         mask_pos += (size.fixed + size.rle);
     }
