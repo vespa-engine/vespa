@@ -9,10 +9,12 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
+import com.yahoo.config.provision.AzName;
 import com.yahoo.config.provision.ClusterInfo;
 import com.yahoo.vespa.model.VespaModel;
 
 import java.util.Comparator;
+import java.util.List;
 import java.util.stream.Stream;
 
 /**
@@ -139,6 +141,10 @@ public final class ConfigModelContext {
                     .orElse(DEFAULT);
 
         }
-
     }
+
+    public List<AzName> availabilityZones() {
+        return getDeployState().availabilityZones(properties().applicationId().instance());
+    }
+
 }

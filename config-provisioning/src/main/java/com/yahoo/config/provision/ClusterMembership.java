@@ -21,7 +21,7 @@ public class ClusterMembership {
     private final String stringValue;
 
     private ClusterMembership(String stringValue, Version vespaVersion, Optional<DockerImage> dockerImageRepo,
-                              ZoneEndpoint zoneEndpoint, List<SidecarSpec> sidecars) {
+                              ZoneEndpoint zoneEndpoint, List<SidecarSpec> sidecars, List<AzName> availabilityZones) {
         String[] components = stringValue.split("/");
         if (components.length < 3)
             throw new RuntimeException("Could not parse '" + stringValue + "' to a cluster membership. " +
@@ -62,6 +62,7 @@ public class ClusterMembership {
                                   .loadBalancerSettings(zoneEndpoint)
                                   .stateful(stateful)
                                   .sidecars(sidecars)
+                                  .availabilityZones(availabilityZones)
                                   .build();
         this.index = nodeIndex;
         this.retired = retired;
@@ -139,7 +140,7 @@ public class ClusterMembership {
 
     public static ClusterMembership from(String stringValue, Version vespaVersion, Optional<DockerImage> dockerImageRepo,
                                          ZoneEndpoint zoneEndpoint) {
-        return new ClusterMembership(stringValue, vespaVersion, dockerImageRepo, zoneEndpoint, List.of());
+        return from(stringValue, vespaVersion, dockerImageRepo, zoneEndpoint, List.of());
     }
 
     public static ClusterMembership from(String stringValue, Version vespaVersion, Optional<DockerImage> dockerImageRepo, List<SidecarSpec> sidecars) {
@@ -148,7 +149,12 @@ public class ClusterMembership {
 
     public static ClusterMembership from(String stringValue, Version vespaVersion, Optional<DockerImage> dockerImageRepo,
                                          ZoneEndpoint zoneEndpoint, List<SidecarSpec> sidecars) {
-        return new ClusterMembership(stringValue, vespaVersion, dockerImageRepo, zoneEndpoint, sidecars);
+        return from(stringValue, vespaVersion, dockerImageRepo, zoneEndpoint, sidecars, List.of());
+    }
+
+    public static ClusterMembership from(String stringValue, Version vespaVersion, Optional<DockerImage> dockerImageRepo,
+                                         ZoneEndpoint zoneEndpoint, List<SidecarSpec> sidecars, List<AzName> availabilityZones) {
+        return new ClusterMembership(stringValue, vespaVersion, dockerImageRepo, zoneEndpoint, sidecars, availabilityZones);
     }
 
     public static ClusterMembership from(ClusterSpec cluster, int index) {

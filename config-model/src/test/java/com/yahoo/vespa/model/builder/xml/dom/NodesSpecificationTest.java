@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import com.yahoo.component.Version;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -230,7 +231,7 @@ public class NodesSpecificationTest {
         return NodesSpecification.create(false, false, Version.emptyVersion,
                                          new ModelElement(nodesXml.getDocumentElement()),
                                          Optional.empty(), Optional.empty(),
-                                         CloudResourceTags.empty());
+                                         CloudResourceTags.empty(), List.of());
 
     }
 

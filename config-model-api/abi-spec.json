@@ -496,6 +496,7 @@
     "methods" : [
       "public void <init>(java.util.List)",
       "public java.util.List zones()",
+      "public java.util.Optional zone(com.yahoo.config.provision.Zone)",
       "public java.util.List steps()",
       "public boolean concerns(com.yahoo.config.provision.Environment, java.util.Optional)",
       "public java.time.Duration delay()",
@@ -565,6 +566,7 @@
       "public java.util.Optional hostTTL(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
       "public com.yahoo.config.provision.ZoneEndpoint zoneEndpoint(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Zone, com.yahoo.config.provision.ClusterSpec$Id, boolean)",
       "public com.yahoo.config.provision.ZoneEndpoint zoneEndpoint(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.zone.ZoneId, com.yahoo.config.provision.ClusterSpec$Id, boolean)",
+      "public java.util.List availabilityZones(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Zone)",
       "public java.lang.String xmlForm()",
       "public java.util.Optional instance(com.yahoo.config.provision.InstanceName)",
       "public com.yahoo.config.application.api.DeploymentInstanceSpec requireInstance(java.lang.String)",

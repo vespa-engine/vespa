@@ -3,6 +3,7 @@ package com.yahoo.config.provision.serialization;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.AllocatedHosts;
+import com.yahoo.config.provision.AzName;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostSpec;
@@ -93,7 +94,8 @@ public class AllocatedHostsSerializerTest {
                                arm64Node,
                                arm64Node,
                                ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
-                                                      Optional.empty()),
+                                                      Optional.empty(), ZoneEndpoint.defaultEndpoint, List.of(),
+                                                      List.of(AzName.from("az1"), AzName.from("az"))),
                                Optional.empty(),
                                Optional.of(new NetworkPorts(List.of(new NetworkPorts.Allocation(1234, "service1", "configId1", "suffix1"),
                                                       new NetworkPorts.Allocation(4567, "service2", "configId2", "suffix2")))),

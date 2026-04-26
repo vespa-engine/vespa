@@ -247,8 +247,8 @@ public class StorageGroup {
             if (nodesElement == null) return;
             var nodesSpec = NodesSpecification.from(nodesElement, context);
 
-            // Allow dev deployment of self-hosted app (w/o count attribute): absent count => 1 node
-            if (!nodesSpec.hasCountAttribute() && environment == Environment.dev) return;
+            // Allow dev deployment of self-hosted apps which do not specify node count by defaulting to 1 node
+            if (!nodesSpec.specifiesNodeCount() && environment == Environment.dev) return;
 
             int minNodesPerGroup = (int) Math.ceil((double) nodesSpec.minResources().nodes() / nodesSpec.minResources().groups());
 

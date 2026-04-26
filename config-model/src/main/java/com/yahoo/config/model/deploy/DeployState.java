@@ -27,7 +27,9 @@ import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.provision.HostsXmlProvisioner;
 import com.yahoo.config.model.provision.SingleNodeProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.config.provision.AzName;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.io.IOUtils;
 import com.yahoo.schema.Application;
@@ -302,6 +304,10 @@ public class DeployState implements ConfigDefinitionStore {
         boolean isTesterApplication = getProperties().applicationId().instance().isTester();
         return isHosted() && type == ApplicationType.DEFAULT && !isTesterApplication
                 && !zone().system().isKubernetesLike();
+    }
+
+    public List<AzName> availabilityZones(InstanceName instance) {
+        return applicationPackage.getDeploymentSpec().availabilityZones(instance, zone);
     }
 
     public static class Builder {

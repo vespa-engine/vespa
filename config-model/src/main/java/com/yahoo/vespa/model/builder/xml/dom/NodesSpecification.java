@@ -5,6 +5,7 @@ import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext;
+import com.yahoo.config.provision.AzName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudResourceTags;
@@ -64,8 +65,10 @@ public class NodesSpecification {
     /** The cloud resource tags to apply to nodes in this spec */
     private final CloudResourceTags cloudResourceTags;
 
-    /* Whether the count attribute was present on the nodes element. */
-    private final boolean hasCountAttribute;
+    private final List<AzName> availabilityZones;
+
+    /** Whether the count attribute is present on the 'nodes' element. */
+    private final boolean specifiesNodeCount;
 
     private NodesSpecification(ClusterResources min,
                                ClusterResources max,
@@ -75,7 +78,8 @@ public class NodesSpecification {
                                Optional<DockerImage> dockerImageRepo,
                                Optional<CloudAccount> cloudAccount,
                                CloudResourceTags cloudResourceTags,
-                               boolean hasCountAttribute) {
+                               List<AzName> availabilityZones,
+                               boolean specifiesNodeCount) {
         if (max.smallerThan(min))
             throw new IllegalArgumentException("Max resources must be larger or equal to min resources, but " +
                                                max + " is smaller than " + min);
@@ -101,13 +105,15 @@ public class NodesSpecification {
         this.dockerImageRepo = dockerImageRepo;
         this.cloudAccount = cloudAccount;
         this.cloudResourceTags = cloudResourceTags;
-        this.hasCountAttribute = hasCountAttribute;
+        this.availabilityZones = List.copyOf(availabilityZones);
+        this.specifiesNodeCount = specifiesNodeCount;
     }
 
     static NodesSpecification create(boolean dedicated, boolean canFail, Version version,
                                      ModelElement nodesElement, Optional<DockerImage> dockerImageRepo,
                                      Optional<CloudAccount> cloudAccount,
-                                     CloudResourceTags cloudResourceTags) {
+                                     CloudResourceTags cloudResourceTags,
+                                     List<AzName> availabilityZones) {
         var resolvedElement = resolveElement(nodesElement);
         var resourceConstraints = toResourceConstraints(resolvedElement);
         boolean hasCountAttribute = resolvedElement.stringAttribute("count") != null;
@@ -122,6 +128,7 @@ public class NodesSpecification {
                                       dockerImageToUse(resolvedElement, dockerImageRepo),
                                       cloudAccount,
                                       cloudResourceTags,
+                                      availabilityZones,
                                       hasCountAttribute);
     }
 
@@ -170,7 +177,8 @@ public class NodesSpecification {
                       nodesElement,
                       context.getDeployState().getWantedDockerImageRepo(),
                       context.getDeployState().getProperties().cloudAccount(),
-                      context.getDeployState().getProperties().cloudResourceTags());
+                      context.getDeployState().getProperties().cloudResourceTags(),
+                      context.availabilityZones());
     }
 
     /**
@@ -189,7 +197,8 @@ public class NodesSpecification {
                                   nodesElement,
                                   context.getDeployState().getWantedDockerImageRepo(),
                                   context.getDeployState().getProperties().cloudAccount(),
-                                  context.getDeployState().getProperties().cloudResourceTags()));
+                                  context.getDeployState().getProperties().cloudResourceTags(),
+                                  context.availabilityZones()));
     }
 
     /**
@@ -207,6 +216,7 @@ public class NodesSpecification {
                                       context.getDeployState().getWantedDockerImageRepo(),
                                       context.getDeployState().getProperties().cloudAccount(),
                                       context.getDeployState().getProperties().cloudResourceTags(),
+                                      context.availabilityZones(),
                                       false);
     }
 
@@ -223,6 +233,7 @@ public class NodesSpecification {
                                       context.getDeployState().getWantedDockerImageRepo(),
                                       context.getDeployState().getProperties().cloudAccount(),
                                       context.getDeployState().getProperties().cloudResourceTags(),
+                                      context.availabilityZones(),
                                       false);
     }
 
@@ -250,6 +261,7 @@ public class NodesSpecification {
                                       context.getDeployState().getWantedDockerImageRepo(),
                                       context.getDeployState().getProperties().cloudAccount(),
                                       context.getDeployState().getProperties().cloudResourceTags(),
+                                      context.availabilityZones(),
                                       false);
     }
 
@@ -271,8 +283,8 @@ public class NodesSpecification {
     public boolean isExclusive() { return exclusive; }
 
     /** Returns whether the count attribute was present on the {@code <nodes>} element. */
-    public boolean hasCountAttribute() {
-        return hasCountAttribute;
+    public boolean specifiesNodeCount() {
+        return specifiesNodeCount;
     }
 
     public Map<HostResource, ClusterMembership> provision(HostSystem hostSystem,
@@ -299,6 +311,7 @@ public class NodesSpecification {
                 .loadBalancerSettings(zoneEndpoint)
                 .stateful(stateful)
                 .sidecars(sidecars)
+                .availabilityZones(availabilityZones)
                 .build();
 
         return hostSystem.allocateHosts(cluster, Capacity.from(min, max, groupSize, required, canFail, cloudAccount, cloudResourceTags, info), logger);
