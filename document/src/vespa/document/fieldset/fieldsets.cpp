@@ -22,7 +22,8 @@ uint64_t computeHash(const Field::Set& set) {
     for (const Field* field : set) {
         os << field->getName() << ':';
     }
-    return XXH64(os.c_str(), os.size(), 0);
+    auto os_view = os.view();
+    return XXH64(os_view.data(), os_view.size(), 0);
 }
 
 } // namespace

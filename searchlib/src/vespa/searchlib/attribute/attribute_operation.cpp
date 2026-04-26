@@ -240,7 +240,7 @@ Operation::create(V vector) const {
             is >> value;
             if (!is.empty()) {
                 LOG(warning, "Invalid operand, unable to consume all of (%s). (%s) is unconsumed.",
-                    std::string(operand).c_str(), is.c_str());
+                    std::string(operand).c_str(), is.str().c_str());
                 validOp = Type::BAD;
             }
             if (((validOp == Type::DIV) || (validOp == Type::MOD)) && (value == 0)) {

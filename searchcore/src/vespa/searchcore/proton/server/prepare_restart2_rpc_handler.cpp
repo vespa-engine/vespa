@@ -159,7 +159,8 @@ PrepareRestart2RpcHandler::make_result()
         add_history(stream, *_flush_history);
     }
     stream << End();
-    _req->GetReturn()->AddString(json.c_str());
+    auto json_view = json.view();
+    _req->GetReturn()->AddString(json_view.data(), json_view.size());
 }
 
 }

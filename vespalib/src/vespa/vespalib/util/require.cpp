@@ -15,7 +15,7 @@ void throw_require_failed(const char* description, const char* file, uint32_t li
     msg << "error: (" << description << ") failed";
     asciistream loc;
     loc << "file " << file << " line " << line;
-    throw RequireFailedException(msg.c_str(), loc.c_str(), 2);
+    throw RequireFailedException(msg.view(), loc.view(), 2);
 }
 
 void handle_require_failure(const char* description, const char* file, uint32_t line) {
