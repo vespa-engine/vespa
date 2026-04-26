@@ -22,7 +22,7 @@ Input& SimpleBuffer::evict(size_t bytes) {
 WritableMemory SimpleBuffer::reserve(size_t bytes) {
     assert((_used + bytes) >= _used);
     _data.resize(_used + bytes, char(0x55));
-    return {&_data[_used], bytes};
+    return {_data.data() + _used, bytes};
 }
 
 Output& SimpleBuffer::commit(size_t bytes) {
