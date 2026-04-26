@@ -125,10 +125,10 @@ template <typename Heap, typename Value = int, typename Cmp = CmpInt> struct MyS
     void push() {
         if (IsRight<Heap>::VALUE) {
             ASSERT_GT(limit, 0u);
-            Heap::push(&data[--limit], &data[data.size()], cmp);
+            Heap::push(data.data() + --limit, data.data() + data.size(), cmp);
         } else {
             ASSERT_LT(limit, data.size());
-            Heap::push(&data[0], &data[++limit], cmp);
+            Heap::push(data.data(), data.data() + ++limit, cmp);
         }
     }
     void push(int value) {
@@ -141,34 +141,34 @@ template <typename Heap, typename Value = int, typename Cmp = CmpInt> struct MyS
     }
     Value& front() {
         if (IsRight<Heap>::VALUE) {
-            return Heap::front(&data[limit], &data[data.size()]);
+            return Heap::front(data.data() + limit, data.data() + data.size());
         } else {
-            return Heap::front(&data[0], &data[limit]);
+            return Heap::front(data.data(), data.data() + limit);
         }
     }
     void adjust() {
         if (IsRight<Heap>::VALUE) {
-            Heap::adjust(&data[limit], &data[data.size()], cmp);
+            Heap::adjust(data.data() + limit, data.data() + data.size(), cmp);
         } else {
-            Heap::adjust(&data[0], &data[limit], cmp);
+            Heap::adjust(data.data(), data.data() + limit, cmp);
         }
     }
     int pop() {
         if (IsRight<Heap>::VALUE) {
             assert(limit < data.size());
-            Heap::pop(&data[limit++], &data[data.size()], cmp);
+            Heap::pop(data.data() + limit++, data.data() + data.size(), cmp);
             return unwrap(data[limit - 1]);
         } else {
             assert(limit > 0u);
-            Heap::pop(&data[0], &data[limit--], cmp);
+            Heap::pop(data.data(), data.data() + limit--, cmp);
             return unwrap(data[limit]);
         }
     }
     void check() {
         if (IsRight<Heap>::VALUE) {
-            checkHeap(&data[limit], &data[data.size()]);
+            checkHeap(data.data() + limit, data.data() + data.size());
         } else {
-            checkHeap(&data[0], &data[limit]);
+            checkHeap(data.data(), data.data() + limit);
         }
     }
     void init() {
