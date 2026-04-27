@@ -563,7 +563,8 @@ DocumentGenerator::generate(uint32_t docMin, uint32_t docIdLimit,
             }
             first = false;
             generateJSON(id);
-            f.WriteBuf(_doc.c_str(), _doc.size());
+            auto doc_view = _doc.view();
+            f.WriteBuf(doc_view.data(), doc_view.size());
         }
         f.WriteString("\n]\n");
     } else {
@@ -573,7 +574,8 @@ DocumentGenerator::generate(uint32_t docMin, uint32_t docIdLimit,
         }
         for (uint32_t id = docMin; id < docIdLimit; ++id) {
             generateXML(id);
-            f.WriteBuf(_doc.c_str(), _doc.size());
+            auto doc_view = _doc.view();
+            f.WriteBuf(doc_view.data(), doc_view.size());
         }
         if (headers) {
             f.WriteString("</vespafeed>\n");

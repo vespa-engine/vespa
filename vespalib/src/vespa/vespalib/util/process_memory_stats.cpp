@@ -69,7 +69,7 @@ ProcessMemoryStats ProcessMemoryStats::parseStatm(asciistream& statm) {
         ret._mapped_rss = shared * normal_page_size;
 
     } catch (const IllegalArgumentException& e) {
-        LOG(warning, "Error '%s' while reading statm line '%s'", e.what(), statm.c_str());
+        LOG(warning, "Error '%s' while reading statm line '%s'", e.what(), statm.str().c_str());
     }
 
     return ret;

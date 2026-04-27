@@ -129,9 +129,8 @@ public:
     asciistream& operator>>(unsigned long long& v);
     asciistream& operator>>(float& v);
     asciistream& operator>>(double& v);
-    std::string str() const { return std::string(c_str(), size()); }
-    std::string_view view() const { return std::string_view(c_str(), size()); }
-    const char* c_str() const { return _rbuf.data() + _rPos; }
+    std::string str() const { return std::string{view()}; }
+    std::string_view view() const { return {_rbuf.data() + _rPos, size()}; }
     size_t size() const { return length() - _rPos; }
     bool empty() const { return size() == 0; }
     bool eof() const { return empty(); }

@@ -76,7 +76,8 @@ ArrayParser::parsePartial(const std::string &input, OutputType &output)
                     output.emplace_back(value, index++);
                 } catch (vespalib::IllegalArgumentException & e) {
                     Issue::report("Could not parse item[%ld] = '%s' in query vector '%s', skipping. "
-                                  "Incorrect type of operands", output.size(), is.c_str(), std::string(s).c_str());
+                                  "Incorrect type of operands", output.size(), is.str().c_str(),
+                                  std::string(s).c_str());
                     return;
                 }
             }

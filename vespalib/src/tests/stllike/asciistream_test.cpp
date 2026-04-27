@@ -55,7 +55,7 @@ void verify(T first, T second, const char* firstResult, const char* secondResult
     ss << delim << second;
     EXPECT_EQ(os.size(), strlen(secondResult));
     EXPECT_EQ(ss.str().size(), strlen(secondResult));
-    EXPECT_EQ(strcmp(os.c_str(), secondResult), 0);
+    EXPECT_EQ(os.view(), secondResult);
     EXPECT_EQ(strcmp(ss.str().c_str(), secondResult), 0);
 }
 
@@ -184,31 +184,31 @@ TEST(AsciistreamTest, test_integer_manip) {
     ss << 10;
     EXPECT_EQ(os.size(), 2u);
     EXPECT_EQ(ss.str().size(), 2u);
-    EXPECT_EQ(strcmp(os.c_str(), "10"), 0);
+    EXPECT_EQ(os.view(), "10");
     EXPECT_EQ(strcmp(ss.str().c_str(), "10"), 0);
     os << ' ' << dec << 10;
     ss << ' ' << std::dec << 10;
     EXPECT_EQ(os.size(), 5u);
     EXPECT_EQ(ss.str().size(), 5u);
-    EXPECT_EQ(strcmp(os.c_str(), "10 10"), 0);
+    EXPECT_EQ(os.view(), "10 10");
     EXPECT_EQ(strcmp(ss.str().c_str(), "10 10"), 0);
     os << ' ' << hex << 10 << ' ' << 11;
     ss << ' ' << std::hex << 10 << ' ' << 11;
     EXPECT_EQ(os.size(), 9u);
     EXPECT_EQ(ss.str().size(), 9u);
-    EXPECT_EQ(strcmp(os.c_str(), "10 10 a b"), 0);
+    EXPECT_EQ(os.view(), "10 10 a b");
     EXPECT_EQ(strcmp(ss.str().c_str(), "10 10 a b"), 0);
     os << ' ' << oct << 10;
     ss << ' ' << std::oct << 10;
     EXPECT_EQ(os.size(), 12u);
     EXPECT_EQ(ss.str().size(), 12u);
-    EXPECT_EQ(strcmp(os.c_str(), "10 10 a b 12"), 0);
+    EXPECT_EQ(os.view(), "10 10 a b 12");
     EXPECT_EQ(strcmp(ss.str().c_str(), "10 10 a b 12"), 0);
 
     // std::bin not supported by std::streams.
     os << ' ' << bin << 10;
     EXPECT_EQ(os.size(), 19u);
-    EXPECT_EQ(strcmp(os.c_str(), "10 10 a b 12 0b1010"), 0);
+    EXPECT_EQ(os.view(), "10 10 a b 12 0b1010");
 
     void* fooptr = reinterpret_cast<void*>(0x1badbadc0ffeeull);
     // Also test that number base is restored OK after ptr print
@@ -238,19 +238,19 @@ TEST(AsciistreamTest, test_fill) {
         ss << 10 << ' ' << std::setfill('h') << 11;
         EXPECT_EQ(os.size(), 5u);
         EXPECT_EQ(ss.str().size(), 5u);
-        EXPECT_EQ(strcmp(os.c_str(), "10 11"), 0);
+        EXPECT_EQ(os.view(), "10 11");
         EXPECT_EQ(strcmp(ss.str().c_str(), "10 11"), 0);
         os << setw(4) << 10 << ' ' << 11;
         ss << std::setw(4) << 10 << ' ' << 11;
         EXPECT_EQ(os.size(), 12u);
         EXPECT_EQ(ss.str().size(), 12u);
-        EXPECT_EQ(strcmp(os.c_str(), "10 11hh10 11"), 0);
+        EXPECT_EQ(os.view(), "10 11hh10 11");
         EXPECT_EQ(strcmp(ss.str().c_str(), "10 11hh10 11"), 0);
         os << setw(4) << 10 << ' ' << 11;
         ss << std::setw(4) << 10 << ' ' << 11;
         EXPECT_EQ(os.size(), 19u);
         EXPECT_EQ(ss.str().size(), 19u);
-        EXPECT_EQ(strcmp(os.c_str(), "10 11hh10 11hh10 11"), 0);
+        EXPECT_EQ(os.view(), "10 11hh10 11hh10 11");
         EXPECT_EQ(strcmp(ss.str().c_str(), "10 11hh10 11hh10 11"), 0);
     }
     {
@@ -260,7 +260,7 @@ TEST(AsciistreamTest, test_fill) {
         ss << std::setfill('X') << std::setw(19) << 'a';
         EXPECT_EQ(os.size(), 19u);
         EXPECT_EQ(ss.str().size(), 19u);
-        EXPECT_EQ(strcmp(os.c_str(), "XXXXXXXXXXXXXXXXXXa"), 0);
+        EXPECT_EQ(os.view(), "XXXXXXXXXXXXXXXXXXa");
         EXPECT_EQ(strcmp(ss.str().c_str(), "XXXXXXXXXXXXXXXXXXa"), 0);
     }
     {
@@ -270,7 +270,7 @@ TEST(AsciistreamTest, test_fill) {
         ss << std::setfill('X') << std::setw(19) << "a";
         EXPECT_EQ(os.size(), 19u);
         EXPECT_EQ(ss.str().size(), 19u);
-        EXPECT_EQ(strcmp(os.c_str(), "XXXXXXXXXXXXXXXXXXa"), 0);
+        EXPECT_EQ(os.view(), "XXXXXXXXXXXXXXXXXXa");
         EXPECT_EQ(strcmp(ss.str().c_str(), "XXXXXXXXXXXXXXXXXXa"), 0);
     }
     {
@@ -281,7 +281,7 @@ TEST(AsciistreamTest, test_fill) {
         ss << std::setfill('X') << std::setw(19) << f;
         EXPECT_EQ(os.size(), 19u);
         EXPECT_EQ(ss.str().size(), 19u);
-        EXPECT_EQ(strcmp(os.c_str(), "XXXXXXXXXXXXXXXX8.9"), 0);
+        EXPECT_EQ(os.view(), "XXXXXXXXXXXXXXXX8.9");
         EXPECT_EQ(strcmp(ss.str().c_str(), "XXXXXXXXXXXXXXXX8.9"), 0);
     }
     {
@@ -292,7 +292,7 @@ TEST(AsciistreamTest, test_fill) {
         ss << std::setfill('X') << std::setw(19) << f;
         EXPECT_EQ(os.size(), 19u);
         EXPECT_EQ(ss.str().size(), 19u);
-        EXPECT_EQ(strcmp(os.c_str(), "XXXXXXXXXXXXXXXX8.9"), 0);
+        EXPECT_EQ(os.view(), "XXXXXXXXXXXXXXXX8.9");
         EXPECT_EQ(strcmp(ss.str().c_str(), "XXXXXXXXXXXXXXXX8.9"), 0);
     }
 }

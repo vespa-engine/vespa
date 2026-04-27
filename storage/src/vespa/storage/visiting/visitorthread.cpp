@@ -238,7 +238,7 @@ VisitorThread::run(framework::ThreadHandle& thread)
         } catch (std::exception& e) {
             vespalib::asciistream ost;
             ost << "Failed to handle visitor message:" << e.what();
-            LOG(warning, "Failed handling visitor message: %s", ost.c_str());
+            LOG(warning, "Failed handling visitor message: %s", ost.str().c_str());
             result = ReturnCode(ReturnCode::INTERNAL_FAILURE, ost.view());
             if (entry._message.get() && entry._message->getType() == api::MessageType::VISITOR_CREATE) {
                 _messageSender.closed(entry._visitorId);
@@ -426,7 +426,7 @@ VisitorThread::onCreateVisitor(const std::shared_ptr<api::CreateVisitorCommand>&
         if (!visitor) {
             result = ReturnCode(ReturnCode::ILLEGAL_PARAMETERS, errors.view());
             LOG(warning, "CreateVisitor(%s): Failed to create visitor: %s",
-                cmd->getInstanceId().c_str(), errors.c_str());
+                cmd->getInstanceId().c_str(), errors.str().c_str());
             break;
         }
         // Set visitor parameters
@@ -468,7 +468,7 @@ VisitorThread::onCreateVisitor(const std::shared_ptr<api::CreateVisitorCommand>&
                 << cmd->getDocumentSelection() << "': " << e.getMessage();
             result = ReturnCode(ReturnCode::ILLEGAL_PARAMETERS, ost.view());
             LOG(warning, "CreateVisitor(%s): %s",
-                         cmd->getInstanceId().c_str(), ost.c_str());
+                         cmd->getInstanceId().c_str(), ost.str().c_str());
             break;
         } catch (document::select::ParsingFailedException& e) {
             vespalib::asciistream ost;
@@ -476,7 +476,7 @@ VisitorThread::onCreateVisitor(const std::shared_ptr<api::CreateVisitorCommand>&
                 << cmd->getDocumentSelection() << "': " << e.getMessage();
             result = ReturnCode(ReturnCode::ILLEGAL_PARAMETERS, ost.view());
             LOG(warning, "CreateVisitor(%s): %s",
-                         cmd->getInstanceId().c_str(), ost.c_str());
+                         cmd->getInstanceId().c_str(), ost.str().c_str());
             break;
         }
         LOG(debug, "CreateVisitor(%s): Successfully created visitor",
@@ -570,7 +570,7 @@ VisitorThread::onInternal(const std::shared_ptr<api::InternalCommand>& cmd)
             auto& rsp = dynamic_cast<RequestStatusPage&>(*cmd);
             vespalib::asciistream ost;
             getStatus(ost, rsp.getPath());
-            _messageSender.send(std::make_shared<RequestStatusPageReply>(rsp, std::string(ost.view())));
+            _messageSender.send(std::make_shared<RequestStatusPageReply>(rsp, ost.str()));
             break;
         }
     default:

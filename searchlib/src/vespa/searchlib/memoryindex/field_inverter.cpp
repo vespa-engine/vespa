@@ -496,7 +496,7 @@ FieldInverter::pushDocuments()
         const Schema::IndexField &field = _schema.getIndexField(_fieldId);
         vespalib::asciistream s;
         s << "FieldInverter::pushDocuments(), caught exception for field " << field.getName();
-        throw vespalib::OverflowException(s.c_str(), e);
+        throw vespalib::OverflowException(s.view(), e);
     }
 }
 

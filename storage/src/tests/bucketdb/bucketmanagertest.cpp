@@ -493,7 +493,7 @@ TEST_F(BucketManagerTest, metrics_are_tracked_per_bucket_space) {
               "{\"name\":\"vds.datastored.alldisks.bytes\",\"values\":{\"last\":500}},"
               "{\"name\":\"vds.datastored.alldisks.buckets\",\"values\":{\"last\":2}}"
               "]"),
-              std::string(ascii.c_str()));
+              std::string(ascii.str().c_str()));
 }
 
 void

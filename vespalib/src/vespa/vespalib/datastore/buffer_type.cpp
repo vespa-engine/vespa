@@ -150,7 +150,7 @@ size_t BufferTypeBase::calc_entries_to_alloc(uint32_t bufferId, EntryCount free_
           << ", live_entries=" << live_entries << ", grow_entries=" << grow_entries
           << ", used_entries=" << used_entries << ", typeid(*this).name=\"" << typeid(*this).name() << "\""
           << ", new_entries=" << result << " < needed_entries=" << needed_entries;
-        throw vespalib::OverflowException(s.c_str());
+        throw vespalib::OverflowException(s.view());
     }
     return result;
 }
