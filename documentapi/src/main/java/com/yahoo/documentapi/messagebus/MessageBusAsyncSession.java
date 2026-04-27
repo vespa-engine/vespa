@@ -50,6 +50,7 @@ import java.util.logging.Logger;
 import static com.yahoo.documentapi.DocumentOperationParameters.parameters;
 import static com.yahoo.documentapi.Response.Outcome.CONDITION_FAILED;
 import static com.yahoo.documentapi.Response.Outcome.ERROR;
+import static com.yahoo.documentapi.Response.Outcome.IGNORED;
 import static com.yahoo.documentapi.Response.Outcome.INSUFFICIENT_STORAGE;
 import static com.yahoo.documentapi.Response.Outcome.NOT_FOUND;
 import static com.yahoo.documentapi.Response.Outcome.OVERLOAD;
@@ -275,7 +276,7 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
                 messageBusErrorToResultType(mbusResult.getError().getCode()), mbusResult.getError());
     }
 
-    private static Response.Outcome toOutcome(Reply reply) {
+    private static Response.Outcome toErrorOutcome(Reply reply) {
         if (reply.getErrorCodes().contains(DocumentProtocol.ERROR_OVERLOAD)) {
             return OVERLOAD;
         }
@@ -302,7 +303,7 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
     private static Response toError(Reply reply, long reqId) {
         Message msg = reply.getMessage();
         String err = getErrorMessage(reply);
-        Response.Outcome outcome = toOutcome(reply);
+        Response.Outcome outcome = toErrorOutcome(reply);
         return switch (msg.getType()) {
             case DocumentProtocol.MESSAGE_PUTDOCUMENT ->
                     new DocumentResponse(reqId, ((PutDocumentMessage) msg).getDocumentPut().getDocument(), err, outcome, reply.getTrace());
@@ -331,6 +332,8 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
                 return new UpdateResponse(reqId, ((UpdateDocumentReply)reply).wasFound(), reply.getTrace());
             case DocumentProtocol.REPLY_PUTDOCUMENT:
                 return new DocumentResponse(reqId, ((PutDocumentMessage)reply.getMessage()).getDocumentPut().getDocument(), reply.getTrace());
+            case DocumentProtocol.REPLY_DOCUMENTIGNORED:
+                return new Response(reqId, null, IGNORED, reply.getTrace());
             default:
                 return new Response(reqId, null, SUCCESS, reply.getTrace());
         }
@@ -355,9 +358,9 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
             long reqId = context.reqId;
             Response response = reply.hasErrors() ? toError(reply, reqId) : toSuccess(reply, reqId);
             ResponseHandler operationSpecificResponseHandler = context.responseHandler;
-            if (operationSpecificResponseHandler != null)
+            if (operationSpecificResponseHandler != null) {
                 operationSpecificResponseHandler.handleResponse(response);
-            else if (handler != null) {
+            } else if (handler != null) {
                 handler.handleResponse(response);
             } else {
                 queue.add(response);

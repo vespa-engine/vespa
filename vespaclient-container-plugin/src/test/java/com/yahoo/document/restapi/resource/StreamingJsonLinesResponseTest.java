@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -34,7 +35,7 @@ public class StreamingJsonLinesResponseTest {
     // Simple indirection to make matching write() calls easier by auto-converting
     // ByteBuffer content to UTF-8 strings.
     interface StringifiedResponseWriter {
-        void commit(int status, String contentType, boolean fullyApplied) throws IOException;
+        void commit(int status, String contentType, boolean fullyApplied, boolean ignoredOperation) throws IOException;
         void write(String buffer, CompletionHandler completionHandlerOrNull);
         void close() throws IOException; // Narrowed exception specifier
     }
@@ -47,8 +48,8 @@ public class StreamingJsonLinesResponseTest {
         }
 
         @Override
-        public void commit(int status, String contentType, boolean fullyApplied) throws IOException {
-            target.commit(status, contentType, fullyApplied);
+        public void commit(int status, String contentType, boolean fullyApplied, boolean ignoredOperation) throws IOException {
+            target.commit(status, contentType, fullyApplied, ignoredOperation);
         }
 
         @Override
@@ -95,8 +96,15 @@ public class StreamingJsonLinesResponseTest {
     @Test
     void commit_is_forwarded_to_writer_with_jsonl_content_type() throws IOException {
         var f = new Fixture();
-        f.jsonlResponse.commit(200, true);
-        verify(f.writer).commit(200, "application/jsonl; charset=UTF-8", true);
+        f.jsonlResponse.commit(200, true, false);
+        verify(f.writer).commit(200, "application/jsonl; charset=UTF-8", true, false);
+    }
+
+    @Test
+    void ignored_flags_are_forwarded_to_writer() throws IOException {
+        var f = new Fixture();
+        f.jsonlResponse.commit(200, false, true);
+        verify(f.writer).commit(200, "application/jsonl; charset=UTF-8", false, true);
     }
 
     @Test

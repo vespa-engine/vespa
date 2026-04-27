@@ -40,13 +40,16 @@ class BufferedContentChannelResponseWriter implements ResponseWriter {
     }
 
     @Override
-    public void commit(int status, String contentType, boolean fullyApplied) throws IOException {
+    public void commit(int status, String contentType, boolean fullyApplied, boolean ignoredOperation) throws IOException {
         Response response = new Response(status);
         if (contentType != null) {
             response.headers().add("Content-Type", List.of(contentType));
         }
         if (!fullyApplied) {
             response.headers().add(Headers.IGNORED_FIELDS, "true");
+        }
+        if (ignoredOperation) {
+            response.headers().add(Headers.IGNORED_OPERATION, "true");
         }
         synchronized (lock) {
             if (channel != null) {
@@ -76,7 +79,7 @@ class BufferedContentChannelResponseWriter implements ResponseWriter {
             try {
                 if (channel == null) {
                     log.log(WARNING, "Close called before response was committed, in " + getClass().getName());
-                    commit(Response.Status.INTERNAL_SERVER_ERROR, null, true);
+                    commit(Response.Status.INTERNAL_SERVER_ERROR, null, true, false);
                 }
             } finally {
                 if (channel != null) {

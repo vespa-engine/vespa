@@ -106,18 +106,21 @@ class JsonResponse implements StreamableJsonResponse {
     }
 
     synchronized void commit(int status) throws IOException {
-        commit(status, true);
+        commit(status, true, false);
     }
 
     /**
      * Commits a response with the given status code and some default headers, and writes whatever content is buffered.
      */
     @Override
-    public synchronized void commit(int status, boolean fullyApplied) throws IOException {
+    public synchronized void commit(int status, boolean fullyApplied, boolean ignoredOperation) throws IOException {
         Response response = new Response(status);
         response.headers().add("Content-Type", List.of("application/json; charset=UTF-8"));
         if (!fullyApplied) {
             response.headers().add(Headers.IGNORED_FIELDS, "true");
+        }
+        if (ignoredOperation) {
+            response.headers().add(Headers.IGNORED_OPERATION, "true");
         }
         try {
             channel = handler.handleResponse(response);
