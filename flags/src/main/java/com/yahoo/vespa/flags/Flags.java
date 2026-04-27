@@ -395,14 +395,6 @@ public class Flags {
             INSTANCE_ID
     );
 
-    public static final UnboundBooleanFlag HONOR_DISK_SPEED_AND_STORAGE_TYPE_IN_DEV = defineFeatureFlag(
-            "honor-disk-speed-and-storage-type-in-dev", true,
-            List.of("hmusum"), "2026-03-25", "2026-05-25",
-            "Whether to honor disk speed and storage type in dev",
-            "Takes effect on the deployment.",
-            INSTANCE_ID
-    );
-
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
