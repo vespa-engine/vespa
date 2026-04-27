@@ -66,7 +66,9 @@ public class Response {
     public String getTextMessage() { return textMessage; }
 
     /**
-     * Returns whether this response encodes a success or a failure
+     * Returns whether this response encodes a success or a failure. An ignored
+     * response is considered a success; check #{@link #outcome()} to determine the
+     * exact result.
      *
      * @return true if success
      */
