@@ -56,8 +56,8 @@ DocumentRetrieverBase::parseSelect(const std::string &selection) const
     
     auto nselect = std::make_shared<CachedSelect>();
 
-    constexpr bool has_document_ids = false; // Temporarly keep old behavior
-    nselect->set(selection, _docTypeName.getName(), *_emptyDoc, getDocumentTypeRepo(), getAttrMgr(), _hasFields, has_document_ids);
+    nselect->set(selection, _docTypeName.getName(), *_emptyDoc, getDocumentTypeRepo(), getAttrMgr(), _hasFields,
+                 _can_populate_document_metadata_docid);
 
     std::lock_guard<std::mutex> guard(_lock);
     if (_selectCache.hasKey(selection))

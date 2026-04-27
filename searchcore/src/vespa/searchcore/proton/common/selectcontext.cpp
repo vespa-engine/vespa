@@ -24,6 +24,7 @@ struct Guards : public std::vector<std::unique_ptr<AttributeReadGuard>> {
 SelectContext::SelectContext(const CachedSelect &cachedSelect)
     : Context(),
       _lid(0u),
+      _document_id_copy(),
       _guards(std::make_unique<select::Guards>(cachedSelect.attributes().size())),
       _cachedSelect(cachedSelect)
 { }

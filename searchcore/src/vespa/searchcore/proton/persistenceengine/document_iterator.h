@@ -28,7 +28,6 @@ private:
     const ssize_t                         _defaultSerializedSize;
     const ReadConsistency                 _readConsistency;
     const bool                            _metaOnly;
-    const bool                            _use_populated_docids;
     const bool                            _ignoreMaxBytes;
     bool                                  _fetchedData;
     std::vector<DocTypeNameAndRetriever>  _sources;
