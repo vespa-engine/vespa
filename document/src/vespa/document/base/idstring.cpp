@@ -180,11 +180,8 @@ IdString::IdString(string_view id) : _rawId(id), _location(0), _offsets(), _grou
         } else if (key_values[i] == ',' || i == key_values.size() - 1) {
             string_view value(key_values.substr(pos, i - pos + (i == key_values.size() - 1)));
             if (key == 'n') {
-                char tmp = value[value.size()];
-                const_cast<char&>(value[value.size()]) = 0;
                 setLocation(_location, parseNumber(value), has_set_location, key_values);
                 _has_number = true;
-                const_cast<char&>(value[value.size()]) = tmp;
             } else if (key == 'g') {
                 setLocation(_location, makeLocation(value), has_set_location, key_values);
                 _groupOffset = offset(2) + pos;
