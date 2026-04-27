@@ -108,7 +108,7 @@ public class AllocatedHostsSerializer {
             
             var sidecars = membership.cluster().sidecars();
             if (!sidecars.isEmpty())
-                sizeCarsToSlime(sidecars, object.setArray(sidecarsKey));
+                sidecarsToSlime(sidecars, object.setArray(sidecarsKey));
 
             var availabilityZones = membership.cluster().availabilityZones();
             if (!availabilityZones.isEmpty())
@@ -253,7 +253,7 @@ public class AllocatedHostsSerializer {
                                       availabilityZones(object.field(availabilityZonesKey)));
     }
 
-    private static void sizeCarsToSlime(List<SidecarSpec> sidecars, Cursor arrayCursor) {
+    private static void sidecarsToSlime(List<SidecarSpec> sidecars, Cursor arrayCursor) {
         for (var sidecar : sidecars) {
             var cursor = arrayCursor.addObject();
             cursor.setLong("id", sidecar.id());

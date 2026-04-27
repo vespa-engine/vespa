@@ -20,7 +20,7 @@ public class AzName extends PatternedStringWrapper<AzName> {
         super(az, pattern, "availability zone name");
     }
 
-    /** The special name which means to use the zone's default as. */
+    /** The special name which means to use the zone's default az. */
     public static AzName defaultName() {
         return defaultName;
     }
