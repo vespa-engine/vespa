@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.http.application;
 
-import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import org.junit.Before;
 import org.junit.Rule;
@@ -9,9 +8,6 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.IntStream;
 
 import static ai.vespa.metricsproxy.TestUtil.getFileContents;
 import static ai.vespa.metricsproxy.http.application.ApplicationMetricsRetriever.MAX_TIMEOUT;
@@ -147,42 +143,6 @@ public class ApplicationMetricsRetrieverTest {
         // Verify successful retrieving
         wireMockRule.removeStubMapping(delayedStub);
         verifyRetrievingMetricsFromSingleNode(config, node);
-    }
-
-    @Test
-    public void metrics_are_retrieved_in_batches() {
-        int numNodes = ApplicationMetricsRetriever.FETCH_BATCH_SIZE + 1;
-        String[] paths = IntStream.range(0, numNodes).mapToObj(i -> "/node" + i).toArray(String[]::new);
-        for (String path : paths)
-            wireMockRule.stubFor(get(urlPathEqualTo(path)).willReturn(aResponse().withBody(RESPONSE)));
-
-        MetricsNodesConfig config = nodesConfig(paths);
-        ApplicationMetricsRetriever retriever = new ApplicationMetricsRetriever(config);
-        retriever.getMetrics();
-        retriever.startPollAndWait();
-        Map<Node, List<MetricsPacket>> metricsByNode = retriever.getMetrics();
-        assertEquals(numNodes, metricsByNode.size());
-        for (int i = 0; i < numNodes; i++)
-            assertEquals(4, metricsByNode.get(new Node(config.node(i))).size());
-    }
-
-    @Test
-    public void get_metrics_waits_for_in_flight_batch_to_complete() throws Exception {
-        MetricsNodesConfig config = nodesConfig("/node0");
-        wireMockRule.stubFor(get(urlPathEqualTo("/node0"))
-                                     .willReturn(aResponse().withBody(RESPONSE).withFixedDelay(1000)));
-
-        ApplicationMetricsRetriever retriever = new ApplicationMetricsRetriever(config);
-        retriever.getMetrics();
-
-        Thread pollThread = new Thread(retriever::startPollAndWait);
-        pollThread.start();
-        Thread.sleep(200);
-
-        Map<Node, List<MetricsPacket>> metrics = retriever.getMetrics();
-        pollThread.join();
-        assertEquals("getMetrics should have waited for the batch and returned fresh data",
-                     4, metrics.get(new Node(config.node(0))).size());
     }
 
     @Test

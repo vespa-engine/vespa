@@ -21,11 +21,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.CancellationException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -47,14 +47,11 @@ public final class ApplicationMetricsRetriever extends AbstractComponent impleme
     private static final int HTTP_CONNECT_TIMEOUT = 5000;
     private static final int HTTP_SOCKET_TIMEOUT = 30000;
     private static final Duration METRICS_TTL = Duration.ofSeconds(30);
-    static final int FETCH_BATCH_SIZE = 50;
 
     private final CloseableHttpAsyncClient httpClient = createHttpClient();
     private final List<NodeMetricsClient> clients;
     private final Thread pollThread;
     private final Set<ConsumerId> consumerSet;
-    private final Map<ConsumerId, Integer> pendingBatches = new HashMap<>();
-    private final Map<ConsumerId, Integer> activeReaders  = new HashMap<>();
     private long pollCount = 0;
     private volatile boolean stopped;
     private volatile Duration taskTimeout;
@@ -80,10 +77,10 @@ public final class ApplicationMetricsRetriever extends AbstractComponent impleme
                 }
                 for (ConsumerId consumer : consumers) {
                     int numFailed = fetchMetricsAsync(consumer);
-                    if (numFailed > 0) {
-                        log.log(Level.INFO, "Updated metrics for consumer '" + consumer + "' failed for " + numFailed + " services");
+                    if (numFailed > 0 ) {
+                        log.log(Level.INFO, "Updated metrics for consumer '" + consumer +"' failed for " + numFailed + " services");
                     } else {
-                        log.log(Level.FINE, "Updated metrics for consumer '" + consumer + "'.");
+                        log.log(Level.FINE, "Updated metrics for consumer '" + consumer +"'.");
                     }
                 }
                 Duration timeUntilNextPoll = Duration.ofMillis(1000);
@@ -134,29 +131,12 @@ public final class ApplicationMetricsRetriever extends AbstractComponent impleme
                 // Wakeup poll thread first time we see a new consumer
                 pollThread.notifyAll();
             }
-            activeReaders.merge(consumer, 1, Integer::sum);
-            long deadline = System.currentTimeMillis() + HTTP_CONNECT_TIMEOUT;
-            while (pendingBatches.getOrDefault(consumer, 0) > 0) {
-                long remaining = deadline - System.currentTimeMillis();
-                if (remaining <= 0) {
-                    log.log(Level.WARNING, "Timed out waiting for in-flight metrics batch for consumer '" + consumer + "'");
-                    break;
-                }
-                try { pollThread.wait(remaining); } catch (InterruptedException e) { break; }
-            }
         }
-        try {
-            Map<Node, List<MetricsPacket>> metrics = new HashMap<>();
-            for (NodeMetricsClient client : clients) {
-                metrics.put(client.node, client.getMetrics(consumer));
-            }
-            return metrics;
-        } finally {
-            synchronized (pollThread) {
-                activeReaders.merge(consumer, -1, Integer::sum);
-                pollThread.notifyAll();
-            }
+        Map<Node, List<MetricsPacket>> metrics = new HashMap<>();
+        for (NodeMetricsClient client : clients) {
+            metrics.put(client.node, client.getMetrics(consumer));
         }
+        return metrics;
     }
 
     void startPollAndWait() {
@@ -176,39 +156,23 @@ public final class ApplicationMetricsRetriever extends AbstractComponent impleme
     }
 
     private int fetchMetricsAsync(ConsumerId consumer) {
+        Map<Node, Future<?>> futures = new HashMap<>();
+        for (NodeMetricsClient client : clients) {
+            client.startSnapshotUpdate(consumer, METRICS_TTL).ifPresent(future -> futures.put(client.node, future));
+        }
         int numOk = 0;
-        int numTried = 0;
-        for (int i = 0; i < clients.size(); i += FETCH_BATCH_SIZE) {
+        int numTried = futures.size();
+        for (Map.Entry<Node, Future<?>> entry : futures.entrySet()) {
             if (stopped) break;
-            synchronized (pollThread) {
-                while (activeReaders.getOrDefault(consumer, 0) > 0)
-                    try { pollThread.wait(); } catch (InterruptedException e) { break; }
-                pendingBatches.merge(consumer, 1, Integer::sum);
-            }
             try {
-                List<NodeMetricsClient> batch = clients.subList(i, Math.min(i + FETCH_BATCH_SIZE, clients.size()));
-                HashMap<Node, Future<?>> futures = new HashMap<>();
-                for (NodeMetricsClient client : batch)
-                    client.startSnapshotUpdate(consumer, METRICS_TTL).ifPresent(f -> futures.put(client.node, f));
-                numTried += futures.size();
-                for (Map.Entry<Node, Future<?>> entry : futures.entrySet()) {
-                    if (stopped) break;
-                    try {
-                        entry.getValue().get(taskTimeout.toMillis(), TimeUnit.MILLISECONDS);
-                        numOk++;
-                    } catch (InterruptedException | ExecutionException | TimeoutException | CancellationException e) {
-                        Throwable cause = e.getCause();
-                        if (stopped || e instanceof ExecutionException && (cause instanceof SocketException || cause instanceof ConnectTimeoutException)) {
-                            log.log(Level.FINE, "Failed retrieving metrics for '" + entry.getKey() + "' : " + cause.getMessage());
-                        } else {
-                            log.log(Level.WARNING, "Failed retrieving metrics for '" + entry.getKey() + "' : ", e);
-                        }
-                    }
-                }
-            } finally {
-                synchronized (pollThread) {
-                    pendingBatches.merge(consumer, -1, Integer::sum);
-                    pollThread.notifyAll();
+                entry.getValue().get(taskTimeout.toMillis(), TimeUnit.MILLISECONDS);
+                numOk++;
+            } catch (InterruptedException | ExecutionException | TimeoutException | CancellationException e) {
+                Throwable cause = e.getCause();
+                if (stopped || e instanceof ExecutionException && ((cause instanceof SocketException) || cause instanceof ConnectTimeoutException)) {
+                    log.log(Level.FINE, "Failed retrieving metrics for '" + entry.getKey() + "' : " + cause.getMessage());
+                } else {
+                    log.log(Level.WARNING, "Failed retrieving metrics for '" + entry.getKey() + "' : ", e);
                 }
             }
         }
