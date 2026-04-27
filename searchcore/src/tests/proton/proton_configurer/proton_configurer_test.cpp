@@ -99,7 +99,8 @@ struct DBConfigFixture {
              ThreadingServiceConfig::make(),
              AllocConfig::makeDefault(),
              configId,
-             docTypeName);
+             docTypeName,
+             DocumentMetaStoreConfig::make());
     }
 };
 

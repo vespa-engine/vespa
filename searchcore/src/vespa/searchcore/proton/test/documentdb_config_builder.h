@@ -34,6 +34,7 @@ private:
     const AllocConfig _alloc_config;
     std::string _configId;
     std::string _docTypeName;
+    const DocumentMetaStoreConfig _document_meta_store_config;
 
 public:
     DocumentDBConfigBuilder(int64_t generation,

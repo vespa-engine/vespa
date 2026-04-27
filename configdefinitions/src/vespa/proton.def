@@ -40,6 +40,9 @@ numsummarythreads int default=16 restart
 ## Hence it must always be followed by a manual restart when enabled.
 validate_and_sanitize_docstore enum {NO, YES} default = NO
 
+## Store the full document ids in memory and not just the internal global ids.
+store_full_document_ids enum {NO, YES} default = NO
+
 ## Maximum number of concurrent flushes outstanding.
 flush.maxconcurrent int default=2 restart
 

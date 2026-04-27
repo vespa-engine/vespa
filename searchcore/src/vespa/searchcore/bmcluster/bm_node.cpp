@@ -186,7 +186,8 @@ std::shared_ptr<DocumentDBConfig> make_document_db_config(std::shared_ptr<Docume
             proton::ThreadingServiceConfig::make(),
             proton::AllocConfig::makeDefault(),
             "client",
-            doc_type_name.getName());
+            doc_type_name.getName(),
+            proton::DocumentMetaStoreConfig::make());
 }
 
 void

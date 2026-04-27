@@ -367,7 +367,8 @@ DocumentDBConfigManager::update(FNET_Transport & transport, const ConfigSnapshot
                                  ThreadingServiceConfig::make(_bootstrapConfig->getProtonConfig()),
                                  build_alloc_config(_bootstrapConfig->getHwInfo(), _bootstrapConfig->getProtonConfig(), _docTypeName),
                                  _configId,
-                                 _docTypeName);
+                                 _docTypeName,
+                                 DocumentMetaStoreConfig::make(_bootstrapConfig->getProtonConfig()));
     assert(newSnapshot->valid());
     {
         std::lock_guard<std::mutex> lock(_pendingConfigMutex);

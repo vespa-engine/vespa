@@ -49,7 +49,8 @@ DocumentDBConfig::ComparisonResult::ComparisonResult()
       storeChanged(false),
       visibilityDelayChanged(false),
       flushChanged(false),
-      alloc_config_changed(false)
+      alloc_config_changed(false),
+      document_meta_store_config_changed(false)
 { }
 
 DocumentDBConfig::DocumentDBConfig(
@@ -72,7 +73,8 @@ DocumentDBConfig::DocumentDBConfig(
                const ThreadingServiceConfig & threading_service_config,
                const AllocConfig & alloc_config,
                const std::string &configId,
-               const std::string &docTypeName) noexcept
+               const std::string &docTypeName,
+               const DocumentMetaStoreConfig& document_meta_store_config) noexcept
     : _configId(configId),
       _docTypeName(docTypeName),
       _generation(generation),
@@ -94,7 +96,8 @@ DocumentDBConfig::DocumentDBConfig(
       _threading_service_config(threading_service_config),
       _alloc_config(alloc_config),
       _orig(),
-      _delayedAttributeAspects(false)
+      _delayedAttributeAspects(false),
+      _document_meta_store_config(document_meta_store_config)
 { }
 
 
@@ -122,7 +125,8 @@ DocumentDBConfig::operator==(const DocumentDBConfig & rhs) const
            equals<DocumentDBMaintenanceConfig>(_maintenance.get(), rhs._maintenance.get()) &&
            (_storeConfig == rhs._storeConfig) &&
            (_threading_service_config == rhs._threading_service_config) &&
-           (_alloc_config == rhs._alloc_config);
+           (_alloc_config == rhs._alloc_config) &&
+           (_document_meta_store_config == rhs._document_meta_store_config);
 }
 
 
@@ -148,6 +152,7 @@ DocumentDBConfig::compare(const DocumentDBConfig &rhs) const
     retval.visibilityDelayChanged = (_maintenance->getVisibilityDelay() != rhs._maintenance->getVisibilityDelay());
     retval.flushChanged = !equals<DocumentDBMaintenanceConfig>(_maintenance.get(), rhs._maintenance.get(), [](const auto &l, const auto &r) { return l.getFlushConfig() == r.getFlushConfig(); });
     retval.alloc_config_changed = (_alloc_config != rhs._alloc_config);
+    retval.document_meta_store_config_changed = (_document_meta_store_config != rhs._document_meta_store_config);
     return retval;
 }
 
@@ -235,7 +240,8 @@ DocumentDBConfig::makeReplayConfig(const SP & orig)
                 o._threading_service_config,
                 o._alloc_config,
                 o._configId,
-                o._docTypeName);
+                o._docTypeName,
+                o._document_meta_store_config);
     ret->_orig = orig;
     return ret;
 }
@@ -278,7 +284,8 @@ DocumentDBConfig::newFromAttributesConfig(const AttributesConfigSP &attributes) 
             _threading_service_config,
             _alloc_config,
             _configId,
-            _docTypeName);
+            _docTypeName,
+            _document_meta_store_config);
 }
 
 DocumentDBConfig::SP
@@ -317,7 +324,8 @@ DocumentDBConfig::makeDelayedAttributeAspectConfig(const SP &newCfg, const Docum
                    n._threading_service_config,
                    n._alloc_config,
                    n._configId,
-                   n._docTypeName);
+                   n._docTypeName,
+                   n._document_meta_store_config);
     result->_delayedAttributeAspects = true;
     return result;
 }

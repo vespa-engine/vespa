@@ -164,7 +164,8 @@ public:
                         ThreadingServiceConfig::make(),
                         AllocConfig::makeDefault(),
                         "client",
-                        docTypeName.getName());
+                        docTypeName.getName(),
+                        DocumentMetaStoreConfig::make());
     }
 };
 

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "document_db_maintenance_config.h"
+#include "document_meta_store_config.h"
 #include "threading_service_config.h"
 #include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
@@ -56,6 +57,7 @@ public:
         bool visibilityDelayChanged;
         bool flushChanged;
         bool alloc_config_changed;
+        bool document_meta_store_config_changed;
 
         ComparisonResult();
         ComparisonResult &setRankProfilesChanged(bool val) { rankProfilesChanged = val; return *this; }
@@ -89,6 +91,7 @@ public:
             return *this;
         }
         ComparisonResult &set_alloc_config_changed(bool val) { alloc_config_changed = val; return *this; }
+        ComparisonResult &set_document_meta_store_config_changed(bool val) { document_meta_store_config_changed = val; return *this; }
     };
 
     using SP = std::shared_ptr<DocumentDBConfig>;
@@ -133,6 +136,7 @@ private:
     const AllocConfig                         _alloc_config;
     SP                                        _orig;
     bool                                      _delayedAttributeAspects;
+    const DocumentMetaStoreConfig             _document_meta_store_config;
 
 
     template <typename T>
@@ -171,7 +175,8 @@ public:
                      const ThreadingServiceConfig & threading_service_config,
                      const AllocConfig & alloc_config,
                      const std::string &configId,
-                     const std::string &docTypeName) noexcept;
+                     const std::string &docTypeName,
+                     const DocumentMetaStoreConfig& document_meta_store_config) noexcept;
 
     DocumentDBConfig(const DocumentDBConfig &cfg) noexcept;
     DocumentDBConfig & operator=(const DocumentDBConfig &cfg) = delete;
@@ -212,6 +217,7 @@ public:
     bool getDelayedAttributeAspects() const { return _delayedAttributeAspects; }
     const ThreadingServiceConfig& get_threading_service_config() const { return _threading_service_config; }
     const AllocConfig& get_alloc_config() const { return _alloc_config; }
+    const DocumentMetaStoreConfig& get_document_meta_store_config() const { return _document_meta_store_config; }
 
     bool operator==(const DocumentDBConfig &rhs) const;
 

@@ -254,7 +254,8 @@ InitializerTask::SP
 StoreOnlyDocSubDB::
 createDocumentMetaStoreInitializer(const AllocStrategy& alloc_strategy,
                                    const search::TuneFileAttributes &tuneFile,
-                                   std::shared_ptr<DocumentMetaStoreInitializerResult::SP> result) const
+                                   std::shared_ptr<DocumentMetaStoreInitializerResult::SP> result,
+                                   bool store_full_document_ids) const
 {
     GrowStrategy grow = alloc_strategy.get_grow_strategy();
     // Amortize memory spike cost over N docs
@@ -266,7 +267,7 @@ createDocumentMetaStoreInitializer(const AllocStrategy& alloc_strategy,
     // initializers to get hold of document meta store instance in
     // their constructors.
     *result = std::make_shared<DocumentMetaStoreInitializerResult>
-              (std::make_shared<DocumentMetaStore>(_bucketDB, attrFileName, grow, _subDbType), tuneFile);
+              (std::make_shared<DocumentMetaStore>(_bucketDB, attrFileName, grow, store_full_document_ids, _subDbType), tuneFile);
     return std::make_shared<documentmetastore::DocumentMetaStoreInitializer>
         (baseDir, getSubDbName(), _docTypeName.toString(), (*result)->documentMetaStore());
 }
@@ -317,7 +318,8 @@ StoreOnlyDocSubDB::createInitializer(const DocumentDBConfig &configSnapshot, Ser
     AllocStrategy alloc_strategy = configSnapshot.get_alloc_config().make_alloc_strategy(_subDbType);
     auto dmsInitTask = createDocumentMetaStoreInitializer(alloc_strategy,
                                                           configSnapshot.getTuneFileDocumentDBSP()->_attr,
-                                                          result->writableResult().writableDocumentMetaStore());
+                                                          result->writableResult().writableDocumentMetaStore(),
+                                                          configSnapshot.get_document_meta_store_config().store_full_document_ids());
     result->addDocumentMetaStoreInitTask(dmsInitTask);
     auto summaryTask = createSummaryManagerInitializer(createStoreConfig(configSnapshot.getStoreConfig(), _subDbType),
                                                        alloc_strategy,

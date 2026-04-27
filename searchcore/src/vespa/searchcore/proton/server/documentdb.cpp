@@ -46,6 +46,8 @@
 #include <vespa/searchcorespi/index/warmupconfig.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
 
+#include "vespa/config-proton.h"
+
 LOG_SETUP(".proton.server.documentdb");
 
 using vespa::config::search::AttributesConfig;
