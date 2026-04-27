@@ -34,6 +34,7 @@ public:
 
     class Session {
     private:
+        // See below for semantics of the three versions of document select expressions.
         std::unique_ptr<document::select::Node> _docSelect;
         std::unique_ptr<document::select::Node> _preDocOnlySelect;
         std::unique_ptr<document::select::Node> _preDocSelect;
@@ -42,8 +43,20 @@ public:
         Session(std::unique_ptr<document::select::Node> docSelect,
                 std::unique_ptr<document::select::Node> preDocOnlySelect,
                 std::unique_ptr<document::select::Node> preDocSelect);
+        /*
+         * Check if document select expression might contain document without getting the document from
+         * backing store.
+         *
+        * Precondition: select context must have a valid _lid. If document retriever told that it can populate
+        * document metadata docid then _docId must also be valid in the select context.
+         */
         [[nodiscard]] bool contains_pre_doc(const SelectContext &context) const;
-        // Precondition: context must have non-nullptr _doc
+        /*
+         * Check if document select expression might contain document without getting the document from
+         * backing store.
+         *
+         * Precondition: context must have non-nullptr _doc
+         */
         [[nodiscard]] bool contains_doc(const SelectContext &context) const;
         [[nodiscard]] const document::select::Node &selectNode() const;
     };
@@ -70,7 +83,7 @@ private:
      * If expression doesn't reference multi value attributes or
      * non-attribute fields then this selection expression can be used
      * without retrieving document from document store (must use
-     * SelectContext class and populate _docId instead).
+     * SelectContext class and populate _lid and _docId instead).
      */
     std::unique_ptr<document::select::Node> _preDocOnlySelect;
 

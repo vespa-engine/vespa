@@ -6,6 +6,10 @@
 namespace search { class ReadableAttributeVector; }
 namespace proton {
 
+/*
+ * Document select node used to get a field value from an attribute vector. This might allow evaluation of the
+ * document select expression without retrieving the full document from backing store.
+ */
 class AttributeFieldValueNode : public document::select::FieldValueNode
 {
     using Context = document::select::Context;
