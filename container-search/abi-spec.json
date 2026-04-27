@@ -5921,6 +5921,8 @@
       "public void setWhereString(java.lang.String)",
       "public java.lang.String getWhereString()",
       "public void setGroupingString(java.lang.String)",
+      "public void setFieldsString(java.lang.String)",
+      "public java.lang.String getFieldsString()",
       "public void setGroupingExpressionString(java.lang.String)",
       "public java.lang.String getGroupingExpressionString()",
       "public java.lang.String getGroupingString()",
@@ -5947,6 +5949,7 @@
     "methods" : [
       "public void <init>(com.yahoo.search.query.parser.ParserEnvironment)",
       "public com.yahoo.search.query.QueryTree parse(com.yahoo.search.query.parser.Parsable)",
+      "public java.util.Set getSelectSummaryFields()",
       "public java.util.List getGroupingSteps(java.lang.String)"
     ],
     "fields" : [ ]

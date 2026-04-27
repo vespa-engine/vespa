@@ -28,14 +28,11 @@ import com.yahoo.search.query.ranking.SecondPhase;
 import com.yahoo.search.query.ranking.SoftTimeout;
 import com.yahoo.search.query.ranking.Significance;
 import com.yahoo.search.query.ranking.WeakAnd;
-import com.yahoo.slime.ArrayTraverser;
-import com.yahoo.slime.SlimeUtils;
 import com.yahoo.tensor.Tensor;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.StringJoiner;
 
 /**
  * Maps between the query model and text properties.
@@ -138,7 +135,7 @@ public class QueryProperties extends Properties {
         map.put(CompoundName.fromComponents(Select.SELECT), GetterSetter.of(query -> query.getSelect().getGroupingExpressionString(), (query, value) -> query.getSelect().setGroupingExpressionString(asString(value, ""))));
         map.put(CompoundName.fromComponents(Select.SELECT, Select.WHERE), GetterSetter.of(query -> query.getSelect().getWhereString(), (query, value) -> query.getSelect().setWhereString(asString(value, ""))));
         map.put(CompoundName.fromComponents(Select.SELECT, Select.GROUPING), GetterSetter.of(query -> query.getSelect().getGroupingString(), (query, value) -> query.getSelect().setGroupingString(asString(value, ""))));
-        map.put(CompoundName.fromComponents(Select.SELECT, Select.FIELDS), GetterSetter.of(query -> query.getPresentation().getSummaryFields(), (query, value) -> setSelectFields(query, asString(value, ""))));
+        map.put(CompoundName.fromComponents(Select.SELECT, Select.FIELDS), GetterSetter.of(query -> query.getSelect().getFieldsString(), (query, value) -> query.getSelect().setFieldsString(asString(value, ""))));
         map.put(CompoundName.fromComponents(Trace.TRACE, Trace.LEVEL), GetterSetter.of(query -> query.getTrace().getLevel(), (query, value) -> query.getTrace().setLevel(asInteger(value, 0))));
         map.put(CompoundName.fromComponents(Trace.TRACE, Trace.PROFILE), GetterSetter.of(query -> query.getTrace().getProfile(), (query, value) -> query.getTrace().setProfile(asBoolean(value, false))));
         map.put(CompoundName.fromComponents(Trace.TRACE, Trace.EXPLAIN_LEVEL), GetterSetter.of(query -> query.getTrace().getExplainLevel(), (query, value) -> query.getTrace().setExplainLevel(asInteger(value, 0))));
@@ -285,16 +282,6 @@ public class QueryProperties extends Properties {
         FieldDescription field = type.getField(key);
         if (field == null) return value; // ditto
         return field.getType().convertFrom(value, new ConversionContext(key, profileRegistry, embedders, context, this));
-    }
-
-    private static void setSelectFields(Query query, String fieldsJson) {
-        if (fieldsJson.isEmpty()) {
-            return;
-        }
-        var inspector = SlimeUtils.jsonToSlime(fieldsJson).get();
-        StringJoiner joiner = new StringJoiner(",");
-        inspector.traverse((ArrayTraverser) (idx, element) -> joiner.add(element.asString()));
-        query.getPresentation().setSummaryFields(joiner.toString());
     }
 
     private void throwIllegalParameter(String key, String namespace) {

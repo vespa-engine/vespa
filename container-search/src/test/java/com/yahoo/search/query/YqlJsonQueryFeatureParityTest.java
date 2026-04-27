@@ -343,17 +343,16 @@ public class YqlJsonQueryFeatureParityTest {
     @Test
     void testSelectFields() {
         // YQL: select id, title from sources * where title contains 'madonna'
-        var yqlQuery = new Query();
         yqlParser.parse(new Parsable().setQuery("select id, title from sources * where title contains 'madonna'"));
-        yqlQuery.getPresentation().getSummaryFields().addAll(yqlParser.getYqlSummaryFields());
 
-        // JSON: { "select": { "fields": ["id", "title"], "where": ... } }
-        var jsonQuery = new Query();
-        jsonQuery.properties().set("select.fields", "[\"id\", \"title\"]");
+        // JSON: { "select": { "fields": ["id", "title"], "where": { "contains": ["title", "madonna"] } } }
+        var select = new Select("{ \"contains\": [\"title\", \"madonna\"] }", "", new Query());
+        select.setFieldsString("[\"id\", \"title\"]");
+        selectParser.parse(new Parsable().setSelect(select));
 
-        assertEquals(yqlQuery.getPresentation().getSummaryFields(), jsonQuery.getPresentation().getSummaryFields(),
-                "YQL field selection and JSON select.fields should produce the same summary fields");
-        assertEquals(Set.of("id", "title"), jsonQuery.getPresentation().getSummaryFields());
+        assertEquals(yqlParser.getYqlSummaryFields(), selectParser.getSelectSummaryFields(),
+                "YqlParser.getYqlSummaryFields() and SelectParser.getSelectSummaryFields() should match");
+        assertEquals(Set.of("id", "title"), selectParser.getSelectSummaryFields());
     }
 
     /** Asserts parity using a where-clause; automatically wraps the YQL in {@code select * from sources * where ...} */

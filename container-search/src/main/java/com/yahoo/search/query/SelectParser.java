@@ -8,6 +8,7 @@ import com.yahoo.prelude.query.StringInItem;
 import com.yahoo.prelude.query.TrueItem;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.collections.LazyMap;
+import com.yahoo.collections.LazySet;
 import com.yahoo.geo.DistanceParser;
 import com.yahoo.geo.ParsedDegree;
 import com.yahoo.language.Language;
@@ -179,6 +180,7 @@ public class SelectParser implements Parser {
     private final IndexFacts indexFacts;
     private final Map<Integer, TaggableItem> identifiedItems = LazyMap.newHashMap();
     private final List<ConnectedItem> connectedItems = new ArrayList<>();
+    private final Set<String> selectSummaryFields = LazySet.newHashSet();
     private final Normalizer normalizer;
     private final Segmenter segmenter;
     private final Detector detector;
@@ -235,9 +237,32 @@ public class SelectParser implements Parser {
         indexFactsSession = indexFacts.newSession(query.getSources(), query.getRestrict());
         connectedItems.clear();
         identifiedItems.clear();
+        selectSummaryFields.clear();
         this.query = query;
 
+        populateSelectSummaryFields(query.getSelect().getFieldsString());
         return buildTree();
+    }
+
+    private void populateSelectSummaryFields(String fieldsJson) {
+        if (fieldsJson == null || fieldsJson.isEmpty()) {
+            return;
+        }
+        Inspector inspector = SlimeUtils.jsonToSlime(fieldsJson).get();
+        if (inspector.type() != ARRAY) {
+            throw new IllegalInputException("'select.fields' must be a JSON array of field names");
+        }
+        inspector.traverse((ArrayTraverser) (idx, element) -> {
+            if (element.type() != STRING) {
+                throw new IllegalInputException("'select.fields' element at index " + idx + " is not a string");
+            }
+            selectSummaryFields.add(element.asString());
+        });
+    }
+
+    /** The summary fields parsed from the most recent {@code select.fields} JSON array. */
+    public Set<String> getSelectSummaryFields() {
+        return selectSummaryFields;
     }
 
     private QueryTree buildTree() {
