@@ -1217,6 +1217,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                             outstanding.decrementAndGet();
                             switch (operationResponse.outcome()) {
                                 case SUCCESS:
+                                case IGNORED:
                                 case NOT_FOUND:
                                 case CONDITION_FAILED:
                                     break; // This is all OK — the latter two are due to mitigating races.
