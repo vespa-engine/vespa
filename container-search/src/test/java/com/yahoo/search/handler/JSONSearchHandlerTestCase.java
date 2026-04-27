@@ -37,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -422,6 +423,41 @@ public class JSONSearchHandlerTestCase {
         var query = new com.yahoo.search.Query();
         query.properties().set("select.fields", "[]");
         assertTrue(query.getPresentation().getSummaryFields().isEmpty());
+    }
+
+    @Test
+    void testSelectFieldsMalformedJsonReportsParseError() {
+        var query = new com.yahoo.search.Query();
+        var thrown = assertThrows(RuntimeException.class,
+                () -> query.properties().set("select.fields", "[\"id\", "));
+        assertTrue(rootCauseMessage(thrown).contains("select.fields"),
+                "error should reference 'select.fields': " + rootCauseMessage(thrown));
+    }
+
+    @Test
+    void testSelectFieldsNonStringElementRejected() {
+        var query = new com.yahoo.search.Query();
+        var thrown = assertThrows(RuntimeException.class,
+                () -> query.properties().set("select.fields", "[\"id\", 42]"));
+        assertTrue(rootCauseMessage(thrown).contains("not a string"),
+                "error should mention non-string element: " + rootCauseMessage(thrown));
+    }
+
+    @Test
+    void testSelectFieldsNotArrayRejected() {
+        var query = new com.yahoo.search.Query();
+        var thrown = assertThrows(RuntimeException.class,
+                () -> query.properties().set("select.fields", "{\"id\": 1}"));
+        assertTrue(rootCauseMessage(thrown).contains("JSON array"),
+                "error should mention JSON array: " + rootCauseMessage(thrown));
+    }
+
+    private static String rootCauseMessage(Throwable t) {
+        Throwable cause = t;
+        while (cause.getCause() != null && cause.getCause() != cause) {
+            cause = cause.getCause();
+        }
+        return cause.getMessage() == null ? "" : cause.getMessage();
     }
 
     @Test

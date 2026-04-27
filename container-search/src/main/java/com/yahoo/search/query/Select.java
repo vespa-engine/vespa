@@ -14,6 +14,7 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.slime.Type;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -122,6 +123,10 @@ public class Select implements Cloneable {
             return;
         }
         Inspector inspector = SlimeUtils.jsonToSlime(this.fields).get();
+        if (inspector.field("error_message").valid()) {
+            throw new IllegalInputException("Illegal 'select.fields': " + inspector.field("error_message").asString() +
+                                            " at: '" + new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8) + "'");
+        }
         if (inspector.type() != Type.ARRAY) {
             throw new IllegalInputException("'select.fields' must be a JSON array of field names");
         }

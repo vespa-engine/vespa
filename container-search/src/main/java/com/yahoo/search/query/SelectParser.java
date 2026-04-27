@@ -249,6 +249,10 @@ public class SelectParser implements Parser {
             return;
         }
         Inspector inspector = SlimeUtils.jsonToSlime(fieldsJson).get();
+        if (inspector.field("error_message").valid()) {
+            throw new IllegalInputException("Illegal 'select.fields': " + inspector.field("error_message").asString() +
+                                            " at: '" + new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8) + "'");
+        }
         if (inspector.type() != ARRAY) {
             throw new IllegalInputException("'select.fields' must be a JSON array of field names");
         }
