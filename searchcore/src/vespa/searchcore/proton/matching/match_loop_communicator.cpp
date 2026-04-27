@@ -13,11 +13,11 @@ MatchLoopCommunicator::MatchLoopCommunicator(size_t threads, size_t topN)
     : MatchLoopCommunicator(threads, topN, {}, nullptr, []() noexcept {})
 {}
 
-MatchLoopCommunicator::MatchLoopCommunicator(size_t threads, size_t topN, std::unique_ptr<IDiversifier> diversifier, FirstPhaseRankLookup* first_phase_rank_lookup, std::function<void()> before_second_phase)
+MatchLoopCommunicator::MatchLoopCommunicator(size_t threads, size_t topN, std::unique_ptr<IDiversifier> diversifier, IObjectStore* object_store, std::function<void()> before_second_phase)
     : _best_scores(),
       _best_dropped(),
       _estimate_match_frequency(threads),
-      _get_second_phase_work(threads, topN, _best_scores, _best_dropped, std::move(diversifier), first_phase_rank_lookup, std::move(before_second_phase)),
+      _get_second_phase_work(threads, topN, _best_scores, _best_dropped, std::move(diversifier), object_store, std::move(before_second_phase)),
       _complete_second_phase(threads, topN, _best_scores, _best_dropped)
 {}
 
@@ -81,13 +81,13 @@ public:
 
 }
 
-MatchLoopCommunicator::GetSecondPhaseWork::GetSecondPhaseWork(size_t n, size_t topN_in, Range &best_scores_in, BestDropped &best_dropped_in, std::unique_ptr<IDiversifier> diversifier, FirstPhaseRankLookup* first_phase_rank_lookup, std::function<void()> before_second_phase)
+MatchLoopCommunicator::GetSecondPhaseWork::GetSecondPhaseWork(size_t n, size_t topN_in, Range &best_scores_in, BestDropped &best_dropped_in, std::unique_ptr<IDiversifier> diversifier, IObjectStore* object_store, std::function<void()> before_second_phase)
     : vespalib::Rendezvous<SortedHitSequence, TaggedHits, true>(n),
       topN(topN_in),
       best_scores(best_scores_in),
       best_dropped(best_dropped_in),
       _diversifier(std::move(diversifier)),
-      _first_phase_rank_lookup(first_phase_rank_lookup),
+      _object_store(object_store),
       _before_second_phase(std::move(before_second_phase))
 {}
 
@@ -153,8 +153,13 @@ MatchLoopCommunicator::GetSecondPhaseWork::mingle()
             queue.push(i);
         }
     }
-    if (_first_phase_rank_lookup != nullptr) {
-        mingle(queue, RegisterFirstPhaseRank(*_first_phase_rank_lookup));
+    if (_object_store) {
+        auto* lookup = FirstPhaseRankLookup::get_mutable_shared_state(*_object_store);
+        if (lookup != nullptr) {
+            mingle(queue, RegisterFirstPhaseRank(*lookup));
+        } else {
+            mingle(queue, NoRegisterFirstPhaseRank());
+        }
     } else {
         mingle(queue, NoRegisterFirstPhaseRank());
     }

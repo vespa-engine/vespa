@@ -3,6 +3,7 @@
 #pragma once
 
 #include "i_match_loop_communicator.h"
+#include <vespa/searchlib/fef/objectstore.h>
 #include <vespa/searchlib/queryeval/idiversifier.h>
 #include <vespa/vespalib/util/rendezvous.h>
 #include <functional>
@@ -14,8 +15,9 @@ namespace proton::matching {
 class MatchLoopCommunicator final : public IMatchLoopCommunicator
 {
 private:
-    using IDiversifier = search::queryeval::IDiversifier;
     using FirstPhaseRankLookup = search::features::FirstPhaseRankLookup;
+    using IDiversifier = search::queryeval::IDiversifier;
+    using IObjectStore = search::fef::IObjectStore;
     struct BestDropped {
         bool valid = false;
         search::feature_t score = 0.0;
@@ -29,9 +31,9 @@ private:
         Range &best_scores;
         BestDropped &best_dropped;
         std::unique_ptr<IDiversifier> _diversifier;
-        FirstPhaseRankLookup* _first_phase_rank_lookup;
+        IObjectStore* _object_store;
         std::function<void()> _before_second_phase;
-        GetSecondPhaseWork(size_t n, size_t topN_in, Range &best_scores_in, BestDropped &best_dropped_in, std::unique_ptr<IDiversifier> diversifier, FirstPhaseRankLookup* first_phase_rank_lookup, std::function<void()> before_second_phase);
+        GetSecondPhaseWork(size_t n, size_t topN_in, Range &best_scores_in, BestDropped &best_dropped_in, std::unique_ptr<IDiversifier> diversifier, IObjectStore* object_store, std::function<void()> before_second_phase);
         ~GetSecondPhaseWork() override;
         void mingle() override;
         template<typename Q, typename R>
@@ -67,7 +69,7 @@ private:
 
 public:
     MatchLoopCommunicator(size_t threads, size_t topN);
-    MatchLoopCommunicator(size_t threads, size_t topN, std::unique_ptr<IDiversifier>, FirstPhaseRankLookup* first_phase_rank_lookup, std::function<void()> before_second_phsae);
+    MatchLoopCommunicator(size_t threads, size_t topN, std::unique_ptr<IDiversifier>, IObjectStore* object_store, std::function<void()> before_second_phsae);
     ~MatchLoopCommunicator();
 
     double estimate_match_frequency(const Matches &matches) override;
