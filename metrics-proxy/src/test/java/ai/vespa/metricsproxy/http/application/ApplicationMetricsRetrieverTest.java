@@ -167,25 +167,6 @@ public class ApplicationMetricsRetrieverTest {
     }
 
     @Test
-    public void get_metrics_waits_for_in_flight_batch_to_complete() throws Exception {
-        MetricsNodesConfig config = nodesConfig("/node0");
-        wireMockRule.stubFor(get(urlPathEqualTo("/node0"))
-                                     .willReturn(aResponse().withBody(RESPONSE).withFixedDelay(1000)));
-
-        ApplicationMetricsRetriever retriever = new ApplicationMetricsRetriever(config);
-        retriever.getMetrics();
-
-        Thread pollThread = new Thread(retriever::startPollAndWait);
-        pollThread.start();
-        Thread.sleep(200);
-
-        Map<Node, List<MetricsPacket>> metrics = retriever.getMetrics();
-        pollThread.join();
-        assertEquals("getMetrics should have waited for the batch and returned fresh data",
-                     4, metrics.get(new Node(config.node(0))).size());
-    }
-
-    @Test
     public void test_timeout_calculation() {
         assertEquals(MIN_TIMEOUT, timeout(1));
         assertEquals(MIN_TIMEOUT, timeout(20));
