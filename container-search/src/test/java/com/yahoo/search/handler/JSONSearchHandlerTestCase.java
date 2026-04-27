@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.handler;
 
-import com.yahoo.json.Jackson;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -12,7 +11,9 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import com.yahoo.container.protect.Error;
 import com.yahoo.io.IOUtils;
+import com.yahoo.json.Jackson;
 import com.yahoo.net.HostName;
+import com.yahoo.search.Query;
 import com.yahoo.search.searchchain.config.test.SearchChainConfigurerTestCase;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.SlimeUtils;
@@ -413,21 +414,21 @@ public class JSONSearchHandlerTestCase {
 
     @Test
     void testSelectFieldsSetsSummaryFields() {
-        var query = new com.yahoo.search.Query();
+        var query = new Query();
         query.properties().set("select.fields", "[\"id\", \"title\", \"body\"]");
         assertEquals(Set.of("id", "title", "body"), query.getPresentation().getSummaryFields());
     }
 
     @Test
     void testSelectFieldsEmptyArray() {
-        var query = new com.yahoo.search.Query();
+        var query = new Query();
         query.properties().set("select.fields", "[]");
         assertTrue(query.getPresentation().getSummaryFields().isEmpty());
     }
 
     @Test
     void testSelectFieldsMalformedJsonReportsParseError() {
-        var query = new com.yahoo.search.Query();
+        var query = new Query();
         var thrown = assertThrows(RuntimeException.class,
                 () -> query.properties().set("select.fields", "[\"id\", "));
         assertTrue(rootCauseMessage(thrown).contains("select.fields"),
@@ -436,7 +437,7 @@ public class JSONSearchHandlerTestCase {
 
     @Test
     void testSelectFieldsNonStringElementRejected() {
-        var query = new com.yahoo.search.Query();
+        var query = new Query();
         var thrown = assertThrows(RuntimeException.class,
                 () -> query.properties().set("select.fields", "[\"id\", 42]"));
         assertTrue(rootCauseMessage(thrown).contains("not a string"),
@@ -445,7 +446,7 @@ public class JSONSearchHandlerTestCase {
 
     @Test
     void testSelectFieldsNotArrayRejected() {
-        var query = new com.yahoo.search.Query();
+        var query = new Query();
         var thrown = assertThrows(RuntimeException.class,
                 () -> query.properties().set("select.fields", "{\"id\": 1}"));
         assertTrue(rootCauseMessage(thrown).contains("JSON array"),
