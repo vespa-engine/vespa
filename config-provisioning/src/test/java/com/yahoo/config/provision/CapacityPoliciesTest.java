@@ -155,7 +155,7 @@ public class CapacityPoliciesTest {
     void testDevResourcesNoCpuCapSpecified() {
         var devExclusivity = new Exclusivity(devZone, SharedHosts.empty());
         var capacityPolicies = new CapacityPolicies(devZone, devExclusivity, ApplicationId.defaultId(),
-                                                    new CapacityPolicies.Tuning(arm64, 0.0, 0));
+                                                    new CapacityPolicies.Tuning(arm64, 0.0, 0), 0.0);
         NodeResources requestedResources = new NodeResources(4, 16, 50, 0.3);
         var capacity = Capacity.from(new ClusterResources(2, 1, requestedResources));
         var result = capacityPolicies.applyOn(capacity, false);

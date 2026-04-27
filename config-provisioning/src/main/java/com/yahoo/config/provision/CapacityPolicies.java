@@ -50,8 +50,7 @@ public class CapacityPolicies {
     private final double cpuCap;
 
     public CapacityPolicies(Zone zone, Exclusivity exclusivity, ApplicationId applicationId, Tuning tuning) {
-        // TODO: Consider changing cpu cap from 0.0 to 1.0
-        this(zone, exclusivity, applicationId, tuning, 0.0);
+        this(zone, exclusivity, applicationId, tuning, 1.0);
     }
 
     public CapacityPolicies(Zone zone, Exclusivity exclusivity, ApplicationId applicationId, Tuning tuning, double cpuCap) {
