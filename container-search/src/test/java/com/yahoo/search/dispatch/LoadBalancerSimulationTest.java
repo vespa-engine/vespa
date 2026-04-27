@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.Random;
+import java.util.Set;
 
 /**
  * Discrete event simulation test for LoadBalancer that measures group skew
@@ -268,7 +269,7 @@ public class LoadBalancerSimulationTest {
         void handleArrival(ArrivalEvent event) {
             clock.setInstant(event.getTimestamp());
 
-            Optional<Group> groupOpt = loadBalancer.takeGroup(null);
+            Optional<Group> groupOpt = loadBalancer.takeGroup(Set.of());
             if (groupOpt.isPresent()) {
                 Group group = groupOpt.get();
                 statistics.recordTakeGroup(group.id());

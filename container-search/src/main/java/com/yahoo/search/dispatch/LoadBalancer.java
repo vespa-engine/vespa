@@ -53,7 +53,7 @@ public class LoadBalancer {
     }
 
     /**
-     * Select and allocate the search cluster group which is to be used for the next search query.
+     * Selects and allocates the search cluster group which is to be used for the next search query.
      * Callers <b>must</b> call {@link #releaseGroup} symmetrically for each taken allocation.
      *
      * @param rejectedGroups if not null, the load balancer will only return groups with IDs not in the set
@@ -62,7 +62,6 @@ public class LoadBalancer {
     public Optional<Group> takeGroup(Set<Integer> rejectedGroups) {
         synchronized (this) {
             Optional<GroupStatus> best = scheduler.takeNextGroup(rejectedGroups);
-
             if (best.isPresent()) {
                 GroupStatus status = best.get();
                 status.allocate();
@@ -76,6 +75,19 @@ public class LoadBalancer {
     }
 
     /**
+     * Allocates a specific group, if present.
+     * Callers <b>must</b> call {@link #releaseGroup} symmetrically for each taken allocation.
+     */
+    public Optional<Group> takeGroup(Group group) {
+        synchronized (this) {
+            GroupStatus groupStatus = scoreboard.get(group.id());
+            if (groupStatus == null) return Optional.empty();
+            groupStatus.allocate();
+            return Optional.of(group);
+        }
+    }
+
+    /**
      * Release an allocation given by {@link #takeGroup}. The release must be done exactly once for each allocation.
      *
      * @param group previously allocated group
@@ -84,8 +96,8 @@ public class LoadBalancer {
      */
     public void releaseGroup(Group group, boolean success, RequestDuration searchTime) {
         synchronized (this) {
-            GroupStatus sched = scoreboard.get(group.id());
-            sched.release(success, searchTime);
+            GroupStatus scheduled = scoreboard.get(group.id());
+            scheduled.release(success, searchTime);
         }
     }
 

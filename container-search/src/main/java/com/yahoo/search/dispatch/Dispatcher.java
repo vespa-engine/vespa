@@ -333,6 +333,8 @@ public class Dispatcher extends AbstractComponent {
         for (int i = 0; i < max; i++) {
             boolean acceptInsufficientCoverage = (i == max - 1);
             Optional<Group> groupInCluster = preferredGroup(query, groups, acceptInsufficientCoverage, rejected);
+            if (groupInCluster.isPresent())
+                groupInCluster = loadBalancer.takeGroup(groupInCluster.get());
             if (groupInCluster.isEmpty()) // No valid query preference
                 groupInCluster = loadBalancer.takeGroup(rejected);
             if (groupInCluster.isEmpty()) // No groups available
