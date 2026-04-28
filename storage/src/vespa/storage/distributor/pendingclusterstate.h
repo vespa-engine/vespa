@@ -89,6 +89,7 @@ public:
      * request bucket info commands. Only used for debug logging.
      */
     void setNodeReplied(uint16_t nodeIdx) {
+        assert(nodeIdx < _requestedNodes.size());
         _requestedNodes[nodeIdx] = true;
     }
 
