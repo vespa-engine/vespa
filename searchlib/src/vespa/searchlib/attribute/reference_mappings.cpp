@@ -83,7 +83,7 @@ ReferenceMappings::buildReverseMapping(const Reference &entry, const std::vector
 {
     EntryRef revMapIdx = entry.revMapIdx();
     assert(!revMapIdx.valid());
-    _reverseMapping.apply(revMapIdx, &adds[0], &adds[adds.size()], nullptr, nullptr);
+    _reverseMapping.apply(revMapIdx, adds.data(), adds.data() + adds.size(), nullptr, nullptr);
     entry.setRevMapIdx(revMapIdx);
 }
 
