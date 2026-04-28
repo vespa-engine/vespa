@@ -41,7 +41,9 @@ PredicateAttributeSaver::onSave(IAttributeSaveTarget& save_target)
     _index_saver->save(*writer);
     uint32_t  highest_doc_id = static_cast<uint32_t>(_min_feature.size() - 1);
     nbo_write<uint32_t>(*writer, highest_doc_id);
-    writer->write(&_min_feature[1], highest_doc_id);
+    if (highest_doc_id > 0) {
+        writer->write(&_min_feature[1], highest_doc_id);
+    }
     for (size_t i = 1; i <= highest_doc_id; ++i) {
         nbo_write<uint16_t>(*writer, _interval_range_vector[i]);
     }
