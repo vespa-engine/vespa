@@ -44,6 +44,7 @@ public:
 private:
     bool _inverted;
     bool _wantInverted;
+    bool _disable_operator_inversion;
     using NodeUP = document::select::Node::UP;
     using ValueNodeUP = document::select::ValueNode::UP;
     uint32_t _attrFieldNodes;
@@ -80,8 +81,10 @@ private:
     void visitFunctionValueNode(const document::select::FunctionValueNode &expr) override;
     void visitIdValueNode(const document::select::IdValueNode &expr) override;
     void visitFieldValueNode(const document::select::FieldValueNode &expr) override;
+    void visitFloatValueNode(const document::select::FloatValueNode& expr) override;
+    void visitVariableValueNode(const document::select::VariableValueNode& expr) override;
     void invertNode();
-    const document::select::Operator &getOperator(const document::select::Operator &op);
+    const document::select::Operator &getOperator(const document::select::Operator &op, bool disable_operator_inversion);
     void addNodeCount(const SelectPruner &rhs);
     void setInvalidVal();
     void setInvalidConst();
