@@ -132,7 +132,7 @@
         <mockito.vespa.version>5.23.0</mockito.vespa.version>
         <mojo-executor.vespa.version>2.4.0</mojo-executor.vespa.version>
         <netty.vespa.version>4.1.125.Final</netty.vespa.version>
-        <netty-tcnative.vespa.version>2.0.65.Final</netty-tcnative.vespa.version>
+        <netty-tcnative.vespa.version>2.0.77.Final</netty-tcnative.vespa.version>
         <okhttp.vespa.version>4.12.0</okhttp.vespa.version>
         <onnxruntime.vespa.version>1.23.2</onnxruntime.vespa.version>
         <openai-java.vespa.version>0.34.0</openai-java.vespa.version>
