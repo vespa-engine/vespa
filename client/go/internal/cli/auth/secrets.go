@@ -57,7 +57,7 @@ func (k *dummyKeyring) Set(namespace, key, value string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(fn, []byte(value), 0o400)
+	return os.WriteFile(fn, []byte(value), 0o600)
 }
 
 // Get gets a value for the given namespace and key.

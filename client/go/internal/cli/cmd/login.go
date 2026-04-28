@@ -97,11 +97,14 @@ func doLogin(cli *CLI, cmd *cobra.Command, useFileStorage bool) error {
 	secretsStore := auth.NewKeyringWithOptions(useFileStorage)
 	err = secretsStore.Set(auth.SecretsNamespace, system.Name, res.RefreshToken)
 	if err != nil {
-		// log the error but move on
-		cli.printWarning("Could not store the refresh token locally. You may need to login again once your access token expires (30 minutes).")
-		if !useFileStorage {
-			cli.printWarning("To persist the refresh token using file storage (unencrypted), use --file-storage flag")
-			cli.printWarning("Note: Storing the refresh token unencrypted directly on your file system means someone with access to this file can get unauthorized access to your application for the life of the refresh token (24 hours)")
+		if os.IsPermission(err) {
+			cli.printWarning(fmt.Sprintf("Could not store refresh token locally because the keyring.vespa-cli.public has wrong file permissions. Delete it and try again: %v", err))
+		} else {
+			cli.printWarning("Could not store the refresh token locally. You may need to login again once your access token expires (30 minutes).")
+			if !useFileStorage {
+				cli.printWarning("To persist the refresh token using file storage (unencrypted), use --file-storage flag")
+				cli.printWarning("Note: Storing the refresh token unencrypted directly on your file system means someone with access to this file can get unauthorized access to your application for the life of the refresh token (24 hours)")
+			}
 		}
 	}
 
