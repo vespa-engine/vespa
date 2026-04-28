@@ -181,6 +181,10 @@ public:
     [[nodiscard]] bool willAlwaysFail() const noexcept { return _willAlwaysFail; }
     [[nodiscard]] bool needs_document() const noexcept { return _needs_document; }
 
+    /*
+     * Check if the document select expression might contain the document without fetching  the document from
+     * backing store.
+     */
     [[nodiscard]] bool match(const search::DocumentMetadata & meta) const {
         if (meta.lid >= _docidLimit) {
             return false;
@@ -191,6 +195,7 @@ public:
         if (!_gidFilter.gid_might_match_selection(meta.gid)) {
             return false;
         }
+        // Provide the information we have to the document select context.
         assert(_select_ctx);
         _select_ctx->_lid = meta.lid;
         _select_ctx->_doc = nullptr;
@@ -198,20 +203,34 @@ public:
             _select_ctx->_document_id_copy.set(meta.docid);
             _select_ctx->_docId = &_select_ctx->_document_id_copy;
         }
+        /*
+         * Evaluate a version of the document select expression that doesn't access the document
+         * (uses attribute vectors and document id from document meta store instead when possible).
+         */
         bool result = _selectSession->contains_pre_doc(*_select_ctx);
+        // Cleanup
         if (_populate_document_metadata_docids) {
             _select_ctx->_docId = nullptr;
         }
         return result;
     }
+    /*
+     * Check if the document select expression contains the document after fetching the document from backing store.
+     */
     [[nodiscard]] bool match(const search::DocumentMetadata & meta, const Document * doc) const {
-        if (_document_selection_always_true || _metaOnly) {
+        if (_document_selection_always_true) {
             return true;
         }
+        // Fail selection if document was not available from backing store or if the global id doesn't match.
+        if (!doc || doc->getId().getGlobalId() != meta.gid) {
+            return false;
+        }
+        // Provide the information we have to the document select context.
         assert(_select_ctx);
         _select_ctx->_lid = meta.lid;
         _select_ctx->_doc = doc;
-        return (doc && (doc->getId().getGlobalId() == meta.gid) && _selectSession->contains_doc(*_select_ctx));
+        // Evaluate a version of the document select expression that might access the document.
+        return _selectSession->contains_doc(*_select_ctx);
     }
 private:
     bool                           _document_selection_always_true;
