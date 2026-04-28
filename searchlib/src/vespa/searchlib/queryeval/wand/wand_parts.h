@@ -424,7 +424,7 @@ template <typename FutureHeap, typename PastHeap>
 void
 DualHeap<FutureHeap, PastHeap>::init() {
     _space.clear();
-    _future = &(_space[0]);
+    _future = _space.data();
     _present = _future;
     for (size_t i = 0; i < _size; ++i) {
         if (!_futureCmp.at_end(i)) {
@@ -434,7 +434,7 @@ DualHeap<FutureHeap, PastHeap>::init() {
     }
     _past = _present;
     _trash = _past;
-    assert(_future == &(_space[0])); // space has not moved
+    assert(_future == _space.data()); // space has not moved
 }
 
 template <typename FutureHeap, typename PastHeap>
