@@ -131,9 +131,9 @@ ExtractFeatures::get_match_features(const MatchToolsFactory &mtf, const OrderedD
             break;
         }
         if (i == 0) {
-            chunks.push_back(std::make_unique<FirstChunk>(&docs[idx], &docs[idx + chunk_size], result, tools->getDoom(), tools->search(), resolver));
+            chunks.push_back(std::make_unique<FirstChunk>(docs.data() + idx, docs.data() + idx + chunk_size, result, tools->getDoom(), tools->search(), resolver));
         } else {
-            chunks.push_back(std::make_unique<LaterChunk>(&docs[idx], &docs[idx + chunk_size], result, tools->getDoom(), mtf));
+            chunks.push_back(std::make_unique<LaterChunk>(docs.data() + idx, docs.data() + idx + chunk_size, result, tools->getDoom(), mtf));
         }
         idx += chunk_size;
     }
