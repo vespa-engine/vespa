@@ -155,7 +155,9 @@ public:
         return {std::string(), queryTerm};
     }
     static ParsedTerm parseTerm(const std::string & term) {
-        if (term[0] == '*' && term[term.size() - 1] == '*') {
+        if (term.empty()) {
+            return std::make_pair(term, TermType::WORD);
+        } else if (term[0] == '*' && term.size() > 1 && term[term.size() - 1] == '*') {
             return std::make_pair(term.substr(1, term.size() - 2), TermType::SUBSTRINGTERM);
         } else if (term[0] == '*') {
             return std::make_pair(term.substr(1, term.size() - 1), TermType::SUFFIXTERM);
