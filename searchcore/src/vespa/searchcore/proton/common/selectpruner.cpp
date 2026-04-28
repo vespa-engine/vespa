@@ -444,7 +444,14 @@ SelectPruner::visitFieldValueNode(const FieldValueNode &expr)
         }
     }
     _constVal = false;
-    _disable_operator_inversion = complex_field_type || complex;
+    if (complex_field_type || complex) {
+        /*
+         * Value with unknown type, possibly float or array value. Operator inversion does not work with float values
+         * (infinity, nan) or array values (multiple results in result list or combine of result list (implicit or)
+         * not being inverted along with operator).
+         */
+        _disable_operator_inversion = true;
+    }
     if (!_hasFields) {
         // If we're working on removed document sub db then we have no fields.
         set_null_value_node();
@@ -484,12 +491,14 @@ SelectPruner::visitFieldValueNode(const FieldValueNode &expr)
 void
 SelectPruner::visitFloatValueNode(const document::select::FloatValueNode& expr) {
     CloningVisitor::visitFloatValueNode(expr);
+    // Float value. Operator inversion does not work with infinity or nan
     _disable_operator_inversion = true;
 }
 
 void
 SelectPruner::visitVariableValueNode(const document::select::VariableValueNode& expr) {
     CloningVisitor::visitVariableValueNode(expr);
+    // Float value. Operator inversion does not work with infinity or nan
     _disable_operator_inversion = true;
 }
 
