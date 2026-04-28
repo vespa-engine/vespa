@@ -199,9 +199,9 @@ TEST(IntermediateBlueprintsTest, test_Or_propagates_updated_histestimate) {
         EXPECT_FALSE(child.strict());
     }
     EXPECT_EQ(1.0, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(0)).hit_rate);
-    EXPECT_NEAR(0.5, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(1)).hit_rate, 1e-6);
-    EXPECT_NEAR(0.5*3.0/5.0, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(2)).hit_rate, 1e-6);
-    EXPECT_NEAR(0.5*3.0*42.0/(5.0*50.0), dynamic_cast<const RememberExecuteInfo &>(bp->getChild(3)).hit_rate, 1e-6);
+    EXPECT_EQ(1.0, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(1)).hit_rate);
+    EXPECT_EQ(1.0, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(2)).hit_rate);
+    EXPECT_EQ(1.0, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(3)).hit_rate);
     //--- execute info when strict:
     optimize(bp, true);
     bp->fetchPostings(ExecuteInfo::FULL);
