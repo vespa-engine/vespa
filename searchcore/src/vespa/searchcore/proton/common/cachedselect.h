@@ -44,15 +44,15 @@ public:
                 std::unique_ptr<document::select::Node> preDocOnlySelect,
                 std::unique_ptr<document::select::Node> preDocSelect);
         /*
-         * Check if document select expression might contain document without getting the document from
-         * backing store.
+         * Check if document select expression might contain the document without getting the document from
+         * the backing store.
          *
-        * Precondition: select context must have a valid _lid. If document retriever told that it can populate
-        * document metadata docid then _docId must also be valid in the select context.
+         * Precondition: select context must have a valid _lid. If the document retriever told that it can populate
+         * document metadata docid then _docId must also be valid in the select context.
          */
         [[nodiscard]] bool contains_pre_doc(const SelectContext &context) const;
         /*
-         * Check if document select expression might contain document without getting the document from
+         * Check if document select expression contains the document after getting the document from the
          * backing store.
          *
          * Precondition: context must have non-nullptr _doc
