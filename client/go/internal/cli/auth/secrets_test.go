@@ -16,4 +16,8 @@ func TestDummyKeyringSaveOverwrite(t *testing.T) {
 	assert.Nil(t, err)
 	err = k.Set("test", "user", "password2")
 	assert.Nil(t, err)
+
+	value, err := k.Get("test", "user")
+	assert.Nil(t, err)
+	assert.Equal(t, "password2", value)
 }
