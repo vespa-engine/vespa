@@ -144,7 +144,7 @@ ImportedSearchContext::createIterator(fef::TermFieldMatchData* matchData, bool s
             using DocIt = ArrayIterator<Posting>;
             DocIt postings;
             auto array = _merger.getArray();
-            postings.set(&array[0], &array[array.size()]);
+            postings.set(array.data(), array.data() + array.size());
             if (_target_attribute.getIsFilter()) {
                 return std::make_unique<FilterAttributePostingListIteratorT<DocIt>>(*this, matchData, postings);
             } else {
