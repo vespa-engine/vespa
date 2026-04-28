@@ -408,7 +408,7 @@ public class NodeResources {
         appendDouble(sb, vcpu);
         sb.append(", memory: ");
         appendDouble(sb, memoryGiB);
-        sb.append(" Gb, disk: ");
+        sb.append(" GiB, disk: ");
         appendDouble(sb, diskGb);
         sb.append(" Gb");
         if (bandwidthGbps > 0) {
