@@ -10,8 +10,8 @@ import org.w3c.dom.Element;
 import java.util.Set;
 
 import static com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig.PoolingStrategy;
-import static com.yahoo.text.XML.getChild;
 import static com.yahoo.text.XML.getChildValue;
+import static com.yahoo.vespa.model.container.component.EmbedderPrependConfig.parsePrependElement;
 import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME;
 import static com.yahoo.vespa.model.container.xml.ModelIdResolver.HF_TOKENIZER;
 import static com.yahoo.vespa.model.container.xml.ModelIdResolver.ONNX_MODEL;
@@ -32,10 +32,7 @@ public class HuggingFaceEmbedder extends OnnxEmbedder implements HuggingFaceEmbe
     private final String transformerOutput;
     private final Boolean normalize;
     private final String poolingStrategy;
-
-    private String prependQuery;
-
-    private String prependDocument;
+    private final EmbedderPrependConfig prepend;
 
     public HuggingFaceEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
         super("ai.vespa.embedding.HuggingFaceEmbedder", INTEGRATION_BUNDLE_NAME, xml, state);
@@ -49,11 +46,7 @@ public class HuggingFaceEmbedder extends OnnxEmbedder implements HuggingFaceEmbe
         transformerOutput = getChildValue(xml, "transformer-output").orElse(null);
         normalize = getChildValue(xml, "normalize").map(Boolean::parseBoolean).orElse(null);
         poolingStrategy = getChildValue(xml, "pooling-strategy").orElse(null);
-        Element prepend = getChild(xml, "prepend");
-        if (prepend != null) {
-            prependQuery = getChildValue(prepend, "query").orElse(null);
-            prependDocument = getChildValue(prepend, "document").orElse(null);
-        }
+        prepend = parsePrependElement(xml);
         model.registerOnnxModelCost(cluster, onnxModelOptions);
     }
 
@@ -67,7 +60,6 @@ public class HuggingFaceEmbedder extends OnnxEmbedder implements HuggingFaceEmbe
         if (transformerOutput != null) b.transformerOutput(transformerOutput);
         if (normalize != null) b.normalize(normalize);
         if (poolingStrategy != null) b.poolingStrategy(PoolingStrategy.Enum.valueOf(poolingStrategy));
-        if (prependQuery != null) b.prependQuery(prependQuery);
-        if (prependDocument != null) b.prependDocument(prependDocument);
+        if (prepend != null) prepend.applyTo(b::prependQuery, b::prependDocument);
     }
 }

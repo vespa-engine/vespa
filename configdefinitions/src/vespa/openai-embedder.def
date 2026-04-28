@@ -14,6 +14,12 @@ model                    string
 # Output dimension
 dimensions               int
 
+# Prefix to prepend to prompt (if in query context)
+prependQuery             string default=""
+
+# Prefix to prepend to prompt (if in document context)
+prependDocument          string default=""
+
 # Dynamic batching configuration
 batching.maxSize         int default=0
 batching.maxDelayMillis  long default=0

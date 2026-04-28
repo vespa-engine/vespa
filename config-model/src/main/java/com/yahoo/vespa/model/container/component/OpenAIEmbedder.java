@@ -9,6 +9,7 @@ import org.w3c.dom.Element;
 import static com.yahoo.text.XML.getChildValue;
 import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME;
 import static com.yahoo.vespa.model.container.component.EmbedderBatchingConfig.parseBatchingElement;
+import static com.yahoo.vespa.model.container.component.EmbedderPrependConfig.parsePrependElement;
 
 /**
  * Configuration builder for OpenAI embedder component.
@@ -22,6 +23,7 @@ public class OpenAIEmbedder extends TypedComponent implements OpenaiEmbedderConf
     private final int dimensions;
     private final String endpoint;
     private final EmbedderBatchingConfig batching;
+    private final EmbedderPrependConfig prepend;
 
     @SuppressWarnings("unused")
     public OpenAIEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
@@ -32,6 +34,7 @@ public class OpenAIEmbedder extends TypedComponent implements OpenaiEmbedderConf
                 .map(Integer::parseInt).get();
         this.endpoint = getChildValue(xml, "endpoint").orElse(null);
         this.batching = parseBatchingElement(xml);
+        this.prepend = parsePrependElement(xml);
     }
 
     @Override
@@ -41,5 +44,6 @@ public class OpenAIEmbedder extends TypedComponent implements OpenaiEmbedderConf
         builder.dimensions(dimensions);
         if (endpoint != null) builder.endpoint(endpoint);
         if (batching != null) batching.applyTo(builder.batching::maxSize, builder.batching::maxDelayMillis);
+        if (prepend != null) prepend.applyTo(builder::prependQuery, builder::prependDocument);
     }
 }

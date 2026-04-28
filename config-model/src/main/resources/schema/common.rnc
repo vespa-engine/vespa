@@ -170,6 +170,7 @@ OpenAIEmbedder =
    element api-key-secret-ref { xsd:string }? &
    element dimensions { xsd:positiveInteger } &
    element endpoint { xsd:string }? &
+   PrependResources? &
    EmbedderBatchingParams
 
 MistralEmbedder =

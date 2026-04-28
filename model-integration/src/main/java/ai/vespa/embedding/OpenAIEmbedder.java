@@ -35,6 +35,7 @@ public class OpenAIEmbedder extends AbstractHttpEmbedder implements Embedder {
     private final Embedder.Runtime runtime;
     private final Secret apiKey;
     private final Embedder.Batching batching;
+    private final TextPrepender prepender;
 
     @Inject
     public OpenAIEmbedder(OpenaiEmbedderConfig config, Embedder.Runtime runtime, Secrets secrets) {
@@ -53,6 +54,7 @@ public class OpenAIEmbedder extends AbstractHttpEmbedder implements Embedder {
                             .formatted(ADA_002_MODEL, ADA_002_DIMENSIONS, ADA_002_DIMENSIONS));
         this.batching = Embedder.Batching.of(
                 config.batching().maxSize(), Duration.ofMillis(config.batching().maxDelayMillis()));
+        this.prepender = new TextPrepender(config.prependQuery(), config.prependDocument());
     }
 
     @Override public Batching batchingConfig() { return batching; }
@@ -73,9 +75,10 @@ public class OpenAIEmbedder extends AbstractHttpEmbedder implements Embedder {
         long startTime = System.nanoTime();
         EmbeddingQuantization.validateTensorType(targetType, config.dimensions(), EmbeddingQuantization.Quantization.FLOAT);
 
+        var prepended = prepender.prependAll(texts, context);
         record CacheKey(String embedderId, List<String> texts) {}
-        var cacheKey = new CacheKey(context.getEmbedderId(), texts);
-        var response = context.computeCachedValueIfAbsent(cacheKey, () -> sendRequest(texts, context));
+        var cacheKey = new CacheKey(context.getEmbedderId(), prepended);
+        var response = context.computeCachedValueIfAbsent(cacheKey, () -> sendRequest(prepended, context));
 
         if (response.usage != null) runtime.sampleSequenceLength(response.usage.totalTokens(), context);
         var tensors = toTensors(response, targetType);
