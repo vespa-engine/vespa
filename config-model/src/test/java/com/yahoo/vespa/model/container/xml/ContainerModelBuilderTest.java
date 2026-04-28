@@ -746,8 +746,8 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                                                              () -> createModelWithTesterNodes("<nodes count='2'/>"))));
 
         assertEquals("In container cluster 'default': tester resources must be absolute, but min and max resources differ: specification of dedicated " +
-                     "min 1 nodes with [vcpu: 0.0, memory: 1.0 Gb, disk: 0.0 Gb, bandwidth: 0.3 Gbps, architecture: any] " +
-                     "max 1 nodes with [vcpu: 0.0, memory: 2.0 Gb, disk: 0.0 Gb, bandwidth: 0.3 Gbps, architecture: any]",
+                     "min 1 nodes with [vcpu: 0.0, memory: 1.0 Gib, disk: 0.0 Gb, bandwidth: 0.3 Gbps, architecture: any] " +
+                     "max 1 nodes with [vcpu: 0.0, memory: 2.0 Gib, disk: 0.0 Gb, bandwidth: 0.3 Gbps, architecture: any]",
                      Exceptions.toMessageString(assertThrows(IllegalArgumentException.class,
                                                              () -> createModelWithTesterNodes("<nodes><resources memory='[1Gb, 2Gb]'/></nodes>"))));
     }
