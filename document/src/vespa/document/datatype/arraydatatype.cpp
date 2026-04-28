@@ -37,12 +37,12 @@ bool ArrayDataType::equals(const DataType& other) const noexcept {
 
 void ArrayDataType::onBuildFieldPath(FieldPath& path, std::string_view remainFieldName) const {
     if (remainFieldName[0] == '[') {
-        size_t endPos = remainFieldName.find(']');
+        auto endPos = remainFieldName.find(']');
         if (endPos == std::string_view::npos) {
             throw vespalib::IllegalArgumentException("Array subscript must be closed with ]");
         } else {
-            int pos = endPos + 1;
-            if (remainFieldName[pos] == '.') {
+            auto pos = endPos + 1;
+            if (pos < remainFieldName.size() && remainFieldName[pos] == '.') {
                 pos++;
             }
 
