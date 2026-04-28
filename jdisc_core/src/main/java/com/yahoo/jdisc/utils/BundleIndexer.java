@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.utils;
 
-import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.text.Text;
 import org.apache.felix.bundlerepository.DataModelHelper;
 import org.apache.felix.bundlerepository.Resource;
@@ -12,7 +11,6 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -40,16 +38,7 @@ class BundleIndexer {
         this.denyListPattern = denyListPattern;
     }
 
-    Path createIndexIfMissing(List<String> additionalDirectories, String mainBundleSymbolicName) throws IOException {
-        return createIndexIfMissing(additionalDirectories, getIndexPath(mainBundleSymbolicName));
-    }
-
-    Path createIndexIfMissing(List<String> additionalDirectories, Path indexPath) throws IOException {
-        if (Files.exists(indexPath)) return indexPath;
-        return createIndex(additionalDirectories, indexPath);
-    }
-
-    private Path createIndex(List<String> additionalDirectories, Path indexPath) throws IOException {
+    Path createIndex(List<String> additionalDirectories, Path indexPath) throws IOException {
         var resources = scanBundles(additionalDirectories);
         writeIndex(resources, indexPath);
         log.log(Level.FINE, () -> Text.format("Created index with %d bundles", resources.size()));
@@ -97,19 +86,9 @@ class BundleIndexer {
     }
 
     private void writeIndex(List<Resource> resources, Path indexPath) throws IOException {
-        var tempFile = Files.createTempFile(indexPath.getParent(), ".bundle-index-", ".tmp");
-        try {
-            try (var writer = new OutputStreamWriter(Files.newOutputStream(tempFile), StandardCharsets.UTF_8)) {
-                dataModelHelper.writeRepository(dataModelHelper.repository(resources.toArray(Resource[]::new)), writer);
-            }
-            Files.move(tempFile, indexPath, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
-        } catch (Exception e) {
-            Files.deleteIfExists(tempFile);
-            throw new IOException("Failed to write repository index: " + e.getMessage(), e);
+        try (var writer = new OutputStreamWriter(Files.newOutputStream(indexPath), StandardCharsets.UTF_8)) {
+            dataModelHelper.writeRepository(dataModelHelper.repository(resources.toArray(Resource[]::new)), writer);
         }
     }
 
-    private static Path getIndexPath(String mainBundleSymbolicName) {
-        return Path.of(Defaults.getDefaults().underVespaHome("tmp/bundle-index-" + mainBundleSymbolicName + ".xml"));
-    }
 }

@@ -28,7 +28,6 @@ class MinimalMainBundleResolutionTest {
 
     @Test
     void testBundleIndexingAndResolution(@TempDir Path tempDir) throws Exception {
-        // Create a temporary bundles directory with test JAR files
         var bundlesDir = tempDir.resolve("bundles");
         Files.createDirectories(bundlesDir);
 
@@ -44,23 +43,19 @@ class MinimalMainBundleResolutionTest {
                     "com.test.main",
                     "com.test.dependency");
 
-        // Create a blacklisted bundle
         createBundle(bundlesDir.resolve("vespajlib.jar"),
                     "test.bundle.blacklisted",
                     "1.0.0",
                     "com.test.blacklisted",
                     null);
 
-        // Create index from bundles with blacklist pattern to exclude vespajlib.jar
         var indexPath = tempDir.resolve("bundle-index.xml");
         var blacklistPattern = Pattern.compile("vespajlib\\.jar");
         var bundleIndexer = new BundleIndexer(bundlesDir, blacklistPattern);
-        var createdIndexPath = bundleIndexer.createIndexIfMissing(List.of(), indexPath);
+        var createdIndexPath = bundleIndexer.createIndex(List.of(), indexPath);
 
-        // Verify index was created
         assertTrue(Files.exists(createdIndexPath), "Index file should be created");
 
-        // Create a Felix framework to get BundleContext
         var felixCacheDir = tempDir.resolve("felix-cache");
         Files.createDirectories(felixCacheDir);
         var framework = new FelixFramework(
@@ -73,11 +68,9 @@ class MinimalMainBundleResolutionTest {
             var resolver = new BundleResolver(framework.bundleContext(), indexPath);
             var resolved = resolver.resolve("test.bundle.main");
 
-            // Verify resolution results
             assertNotNull(resolved, "Resolved bundles should not be null");
             assertEquals(2, resolved.size(), "Should resolve exactly 2 bundles (main + dependency)");
 
-            // Verify both required bundles are in the resolved list
             var hasDependency = resolved.stream().anyMatch(path -> path.contains("bundle-dependency.jar"));
             var hasMain = resolved.stream().anyMatch(path -> path.contains("bundle-main.jar"));
             assertTrue(hasDependency, "Dependency bundle should be in resolved list");
