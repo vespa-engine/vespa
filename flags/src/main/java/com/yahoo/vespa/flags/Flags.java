@@ -377,15 +377,6 @@ public class Flags {
             INSTANCE_ID
     );
 
-    public static final UnboundBooleanFlag WAIT_FOR_APPLY_ON_RESTART = defineFeatureFlag(
-            "wait-for-apply-on-restart", false,
-            List.of("glebashnik"), "2026-02-01", "2026-08-01",
-            "Determines whether triggering of a pending restart waits for `applyOnRestart` to be set to `true` " +
-                    "in the observed config state.",
-            "Takes effect at next run of RestartOnDeployMaintainer.",
-            INSTANCE_ID
-    );
-
     public static final UnboundBooleanFlag APPLY_ON_RESTART_FOR_APPLICATION_METADATA_CONFIG = defineFeatureFlag(
             "apply-on-restart-for-application-metadata-config", false,
             List.of("glebashnik"), "2026-02-13", "2026-08-13",
