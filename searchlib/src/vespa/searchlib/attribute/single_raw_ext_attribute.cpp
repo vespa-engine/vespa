@@ -46,7 +46,7 @@ SingleRawExtAttribute::add(std::span<const char> v, int32_t)
     const size_t start(_offsets.back());
     const size_t sz(v.size());
     _buffer.resize(start + sz);
-    if (sz > 0) {
+    if (sz > 0) [[likely]] {
         memcpy(_buffer.data() + start, v.data(), sz);
     }
     return true;
