@@ -198,7 +198,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
       _featureOverrides(featureOverrides),
       _diversityParams(),
       _valid(false),
-      _first_phase_rank_lookup(nullptr),
+      _object_store(nullptr),
       _metaStore(metaStore),
       _needed_handles()
 {
@@ -238,7 +238,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         _query.freeze();
         trace.addEvent(5, "Prepare shared state for multi-threaded rank executors");
         _rankSetup.prepareSharedState(_queryEnv, _queryEnv.getObjectStore());
-        _first_phase_rank_lookup = FirstPhaseRankLookup::get_mutable_shared_state(_queryEnv.getObjectStore());
+        _object_store = &_queryEnv.getObjectStore();
         _diversityParams = extractDiversityParams(_rankSetup, rankProperties);
         std::string attribute = DegradationAttribute::lookup(rankProperties, _rankSetup.getDegradationAttribute());
         DegradationParams degradationParams = extractDegradationParams(_rankSetup, attribute, rankProperties);

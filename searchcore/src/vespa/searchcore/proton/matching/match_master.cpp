@@ -91,7 +91,7 @@ MatchMaster::match(search::engine::Trace & trace,
      * later on when selecting documents for second phase ranking.
      */
     MatchLoopCommunicator communicator(threadBundle.size(), params.heapSize, mtf.createDiversifier(params.diversity_want_hits),
-                                       mtf.get_first_phase_rank_lookup(),
+                                       mtf.object_store(),
                                        [&mtf]() noexcept { mtf.query().set_matching_phase(MatchingPhase::SECOND_PHASE); });
     TimedMatchLoopCommunicator timedCommunicator(communicator);
     DocidRangeScheduler::UP scheduler = createScheduler(threadBundle.size(), numSearchPartitions, params.numDocs);

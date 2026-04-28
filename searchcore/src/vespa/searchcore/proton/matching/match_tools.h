@@ -117,6 +117,7 @@ class MatchToolsFactory
 private:
     using IAttributeFunctor = search::attribute::IAttributeFunctor;
     using IAttributeContext = search::attribute::IAttributeContext;
+    using IObjectStore = search::fef::IObjectStore;
     using CreateBlueprintParams = search::queryeval::CreateBlueprintParams;
     using MatchDataLayout = search::fef::MatchDataLayout;
     using Properties = search::fef::Properties;
@@ -137,7 +138,7 @@ private:
     const Properties                 & _featureOverrides;
     DiversityParams                    _diversityParams;
     bool                               _valid;
-    FirstPhaseRankLookup*              _first_phase_rank_lookup;
+    IObjectStore*                      _object_store;
     const search::IDocumentMetaStore & _metaStore;
     HandleRecorder::HandleMap          _needed_handles;
 
@@ -197,7 +198,7 @@ public:
     static CreateBlueprintParams
     extract_create_blueprint_params(const RankSetup& rank_setup, const Properties& rank_properties,
                                     uint32_t active_docids, uint32_t docid_limit);
-    FirstPhaseRankLookup* get_first_phase_rank_lookup() const noexcept { return _first_phase_rank_lookup; }
+    IObjectStore* object_store() const noexcept { return _object_store; }
     const search::IDocumentMetaStore & metaStore() const noexcept { return _metaStore; }
     FieldIdToNameMapper getFieldIdToNameMapper() const {
         return FieldIdToNameMapper(_queryEnv.getIndexEnvironment());

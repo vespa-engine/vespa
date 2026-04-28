@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/searchcore/proton/matching/match_loop_communicator.h>
 #include <vespa/searchlib/features/first_phase_rank_lookup.h>
+#include <vespa/searchlib/fef/objectstore.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/nexus.h>
 #include <algorithm>
@@ -15,6 +16,7 @@ using Hit = MatchLoopCommunicator::Hit;
 using Hits = MatchLoopCommunicator::Hits;
 using TaggedHit = MatchLoopCommunicator::TaggedHit;
 using TaggedHits = MatchLoopCommunicator::TaggedHits;
+using ObjectStore = search::fef::ObjectStore;
 using search::features::FirstPhaseRankLookup;
 using search::queryeval::SortedHitSequence;
 using vespalib::test::Nexus;
@@ -304,10 +306,14 @@ TEST(MatchLoopCommunicatorTest, require_that_first_phase_rank_lookup_is_populate
 {
     constexpr size_t num_threads = 1;
     constexpr size_t thread_id = 0;
-    FirstPhaseRankLookup l1;
-    FirstPhaseRankLookup l2;
-    MatchLoopCommunicator f1(num_threads, 3, {}, &l1, do_nothing);
-    MatchLoopCommunicator f2(num_threads, 3, std::make_unique<EveryOdd>(), &l2, do_nothing);
+    ObjectStore s1;
+    ObjectStore s2;
+    FirstPhaseRankLookup::make_shared_state(s1);
+    FirstPhaseRankLookup::make_shared_state(s2);
+    MatchLoopCommunicator f1(num_threads, 3, {}, &s1, do_nothing);
+    MatchLoopCommunicator f2(num_threads, 3, std::make_unique<EveryOdd>(), &s2, do_nothing);
+    const auto& l1 = *FirstPhaseRankLookup::get_shared_state(s1);
+    const auto& l2 = *FirstPhaseRankLookup::get_shared_state(s2);
     auto hits_in = hit_vec({{21, 5}, {22, 4}, {23, 3}, {24, 2}, {25, 1}});
     auto res1 = second_phase(f1, hits_in, thread_id, 10);
     auto res2 = second_phase(f2, hits_in, thread_id, 10);
