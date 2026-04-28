@@ -32,6 +32,7 @@ private:
         BestDropped &best_dropped;
         std::unique_ptr<IDiversifier> _diversifier;
         IObjectStore* _object_store;
+        FirstPhaseRankLookup* _first_phase_rank_lookup;
         std::function<void()> _before_second_phase;
         GetSecondPhaseWork(size_t n, size_t topN_in, Range &best_scores_in, BestDropped &best_dropped_in, std::unique_ptr<IDiversifier> diversifier, IObjectStore* object_store, std::function<void()> before_second_phase);
         ~GetSecondPhaseWork() override;

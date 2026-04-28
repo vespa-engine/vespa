@@ -88,8 +88,12 @@ MatchLoopCommunicator::GetSecondPhaseWork::GetSecondPhaseWork(size_t n, size_t t
       best_dropped(best_dropped_in),
       _diversifier(std::move(diversifier)),
       _object_store(object_store),
-      _before_second_phase(std::move(before_second_phase))
-{}
+      _first_phase_rank_lookup(nullptr),
+      _before_second_phase(std::move(before_second_phase)) {
+    if (_object_store) {
+        _first_phase_rank_lookup = FirstPhaseRankLookup::get_mutable_shared_state(*_object_store);
+    }
+}
 
 MatchLoopCommunicator::GetSecondPhaseWork::~GetSecondPhaseWork() = default;
 
@@ -153,13 +157,9 @@ MatchLoopCommunicator::GetSecondPhaseWork::mingle()
             queue.push(i);
         }
     }
-    if (_object_store) {
-        auto* lookup = FirstPhaseRankLookup::get_mutable_shared_state(*_object_store);
-        if (lookup != nullptr) {
-            mingle(queue, RegisterFirstPhaseRank(*lookup));
-        } else {
-            mingle(queue, NoRegisterFirstPhaseRank());
-        }
+
+    if (_first_phase_rank_lookup != nullptr) {
+        mingle(queue, RegisterFirstPhaseRank(*_first_phase_rank_lookup));
     } else {
         mingle(queue, NoRegisterFirstPhaseRank());
     }
