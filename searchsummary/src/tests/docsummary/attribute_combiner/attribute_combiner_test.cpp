@@ -38,11 +38,11 @@ struct AttributeCombinerTest : public ::testing::Test
 {
     MockAttributeManager                attrs;
     std::unique_ptr<DocsumFieldWriter>  writer;
+    std::shared_ptr<MatchingElementsFields>  matching_elements_fields;
     MockStateCallback                   callback;
     GetDocsumsState                     state;
     StructFieldsMapper                  mapper;
     std::unique_ptr<SummaryElementsSelector> elements_selector;
-    std::unique_ptr<MatchingElementsFields>  matching_elements_fields;
 
     AttributeCombinerTest();
     ~AttributeCombinerTest() override;
@@ -59,11 +59,11 @@ struct AttributeCombinerTest : public ::testing::Test
 AttributeCombinerTest::AttributeCombinerTest()
     : attrs(),
       writer(),
+      matching_elements_fields(std::make_shared<MatchingElementsFields>()),
       callback(),
       state(callback),
       mapper(),
-      elements_selector(),
-      matching_elements_fields()
+      elements_selector()
 {
     attrs.build_string_attribute("array.name", {{"n1.1", "n1.2"}, {"n2"}, {"n3.1", "n3.2"}, {"", "n4.2"}, {}});
     attrs.build_int_attribute("array.val", BasicType::Type::INT8, {{ 10, 11}, {20, 21 }, {30}, { getUndefined<int8_t>(), 41}, {}});
@@ -88,6 +88,7 @@ AttributeCombinerTest::AttributeCombinerTest()
     callback.add_matching_elements(4, "map", {1});
 
     state._attrCtx = attrs.mgr().createContext();
+    state._matching_elements_fields = matching_elements_fields;
     mapper.setup(*state._attrCtx);
 }
 
@@ -101,7 +102,6 @@ AttributeCombinerTest::set_field(const std::string &field_name, bool filter_elem
     } else {
         elements_selector = std::make_unique<SummaryElementsSelector>(SummaryElementsSelector::select_all());
     }
-    matching_elements_fields = std::make_unique<MatchingElementsFields>();
     elements_selector->maybe_apply_to(*matching_elements_fields);
     writer = AttributeCombinerDFW::create(field_name, *state._attrCtx);
     EXPECT_TRUE(writer->setFieldWriterStateIndex(0));

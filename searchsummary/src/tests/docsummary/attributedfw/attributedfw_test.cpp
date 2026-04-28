@@ -33,6 +33,7 @@ class AttributeDFWTest : public ::testing::Test {
 protected:
     MockAttributeManager _attrs;
     std::unique_ptr<DocsumFieldWriter> _writer;
+    std::shared_ptr<MatchingElementsFields> _matching_elements_fields;
     MockStateCallback _callback;
     GetDocsumsState _state;
     std::unique_ptr<SummaryElementsSelector> _elements_selector;
@@ -42,6 +43,7 @@ public:
     AttributeDFWTest()
         : _attrs(),
           _writer(),
+          _matching_elements_fields(std::make_shared<MatchingElementsFields>()),
           _callback(),
           _state(_callback),
           _elements_selector(),
@@ -59,6 +61,7 @@ public:
         _attrs.build_string_attribute("single_str", { {"world"}, {}}, CollectionType::SINGLE);
         _attrs.build_raw_attribute("single_raw", { {as_vector("hello")}, {} });
         _state._attrCtx = _attrs.mgr().createContext();
+        _state._matching_elements_fields = _matching_elements_fields;
     }
     ~AttributeDFWTest() override;
 
