@@ -865,7 +865,32 @@
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
+                <artifactId>netty-codec</artifactId>
+                <version>${netty.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
                 <artifactId>netty-codec-base</artifactId>
+                <version>${netty.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-classes-quic</artifactId>
+                <version>${netty.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-compression</artifactId>
+                <version>${netty.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-http3</artifactId>
+                <version>${netty.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-codec-native-quic</artifactId>
                 <version>${netty.vespa.version}</version>
             </dependency>
             <dependency>
