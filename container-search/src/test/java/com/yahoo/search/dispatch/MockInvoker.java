@@ -6,7 +6,6 @@ import com.yahoo.search.Query;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.Hit;
-import com.yahoo.search.searchchain.Execution;
 
 import java.util.List;
 import java.util.Optional;
@@ -52,7 +51,7 @@ class MockInvoker extends SearchInvoker {
         if (hits != null) {
             for (Hit h : hits) {
                 if (h instanceof FastHit fh) {
-                    ret.getLeanHits().add(new LeanHit(fh.getRawGlobalId(), fh.getGroup(), fh.getPartId(), fh.getDistributionKey(), fh.getRelevance().getScore()));
+                    ret.getLeanHits().add(new LeanHit(fh.getRawGlobalId(), fh.getSearchGroup(), fh.getPartId(), fh.getDistributionKey(), fh.getRelevance().getScore()));
                 } else {
                     ret.getResult().hits().add(h);
                 }

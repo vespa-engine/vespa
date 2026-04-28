@@ -118,7 +118,7 @@ public class ProtobufSerializationTest {
             assertEquals(expectedRelevance--, hit.getRelevance(), DELTA);
             assertEquals(1, hit.getPartId());
             assertEquals(2, hit.getDistributionKey());
-            assertEquals(OptionalInt.of(3), hit.getGroup());
+            assertEquals(OptionalInt.of(3), hit.getSearchGroup());
             assertFalse(hit.hasSortData());
             hitNum++;
         }
@@ -140,7 +140,7 @@ public class ProtobufSerializationTest {
             assertEquals(0.0, hit.getRelevance(), DELTA);
             assertEquals(1, hit.getPartId());
             assertEquals(2, hit.getDistributionKey());
-            assertEquals(OptionalInt.of(3), hit.getGroup());
+            assertEquals(OptionalInt.of(3), hit.getSearchGroup());
             assertTrue(hit.hasSortData());
             assertEquals('b', hit.getSortData()[0]);
             assertEquals(hitNum, hit.getSortData()[11]);

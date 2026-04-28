@@ -54,6 +54,7 @@ public class Model implements Cloneable {
     public static final String LOCALE = "locale";
     public static final String ENCODING = "encoding";
     public static final String SOURCES = "sources";
+    public static final String SEARCH_GROUP = "searchGroup";
     public static final String SEARCH_PATH = "searchPath";
     public static final String RESTRICT = "restrict";
 
@@ -69,6 +70,7 @@ public class Model implements Cloneable {
         argumentType.addField(new FieldDescription(LOCALE, "string", "locale"));
         argumentType.addField(new FieldDescription(ENCODING, "string", "encoding"));
         argumentType.addField(new FieldDescription(SOURCES, "string", "sources search"));
+        argumentType.addField(new FieldDescription(SEARCH_GROUP, "integer", "searchgroup"));
         argumentType.addField(new FieldDescription(SEARCH_PATH, "string", "searchpath"));
         argumentType.addField(new FieldDescription(RESTRICT, "string", "restrict"));
         argumentType.addField(new FieldDescription(TYPE, new QueryProfileFieldType(QueryType.getArgumentType()), "type"));
@@ -92,6 +94,7 @@ public class Model implements Cloneable {
     private Query parent;
     private Set<String> sources = new LinkedHashSet<>();
     private Set<String> restrict = new LinkedHashSet<>();
+    private Integer searchGroup;
     private String searchPath;
     private String documentDbName = null;
     private Execution execution = new Execution(new Execution.Context(null,
@@ -214,7 +217,23 @@ public class Model implements Cloneable {
         this.encoding = toLowerCase(encoding);
     }
 
-    /** Set the path for which content nodes this query should go to - see  */
+    /**
+     * Sets the number of the content group this query should prefer when possible.
+     * This is useful to pin subsequent queries in pagination to the same group.
+     * The value of this parameter is then obtained from the searchGroup value in the
+     * fields of the top level result.
+     * <p>
+     * This is a soft preference: When the preferred group is out of rotation,
+     * fully loaded, or non-existent, another group
+     * will be used by this query such that results are still returned.
+     *
+     * @param searchGroup the index of the group to use, or null for no preference
+     */
+    public void setSearchGroup(Integer searchGroup) { this.searchGroup = searchGroup; }
+
+    public Integer getSearchGroup() { return searchGroup; }
+
+    /** Sets the path for which content nodes this query should go to - see  */
     public void setSearchPath(String searchPath) { this.searchPath = searchPath; }
 
     public String getSearchPath() { return searchPath; }
@@ -354,27 +373,26 @@ public class Model implements Cloneable {
     public boolean equals(Object o) {
         if ( ! (o instanceof Model other)) return false;
 
-        if ( ! (
-                QueryHelper.equals(other.encoding, this.encoding) &&
-                QueryHelper.equals(other.language, this.language) &&
-                QueryHelper.equals(other.searchPath, this.searchPath) &&
-                QueryHelper.equals(other.sources, this.sources) &&
-                QueryHelper.equals(other.restrict, this.restrict) &&
-                QueryHelper.equals(other.defaultIndex, this.defaultIndex) &&
-                QueryHelper.equals(other.type, this.type) ))
-            return false;
+        if ( ! Objects.equals(other.encoding, this.encoding)) return false;
+        if ( ! Objects.equals(other.language, this.language)) return false;
+        if ( ! Objects.equals(other.searchGroup, this.searchGroup)) return false;
+        if ( ! Objects.equals(other.searchPath, this.searchPath)) return false;
+        if ( ! Objects.equals(other.sources, this.sources)) return false;
+        if ( ! Objects.equals(other.restrict, this.restrict)) return false;
+        if ( ! Objects.equals(other.defaultIndex, this.defaultIndex)) return false;
+        if ( ! Objects.equals(other.type, this.type)) return false;
 
         if (other.queryTree == null && this.queryTree == null) // don't cause query parsing
-            return QueryHelper.equals(other.queryString, this.queryString) &&
-                   QueryHelper.equals(other.filter, this.filter);
+            return Objects.equals(other.queryString, this.queryString) &&
+                   Objects.equals(other.filter, this.filter);
         else // make sure we compare a parsed variant of both
-            return QueryHelper.equals(other.getQueryTree(), this.getQueryTree());
+            return Objects.equals(other.getQueryTree(), this.getQueryTree());
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode() +
-               QueryHelper.combineHash(encoding,filter,language,getQueryTree(),sources,restrict,defaultIndex,type,searchPath);
+        return Objects.hash(this.getClass(), encoding, filter, language, getQueryTree(),
+                            sources, restrict, defaultIndex, type, searchGroup, searchPath);
     }
 
     @Override

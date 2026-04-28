@@ -316,8 +316,8 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     /** Returns the relevance of this hit */
     public Relevance getRelevance() { return relevance; }
 
-    /** Returns the id of the group that produced this, or empty when not apt. */
-    public OptionalInt getGroup() { return OptionalInt.empty(); }
+    /** Returns the id of the search group that produced this, or empty when not apt. */
+    public OptionalInt getSearchGroup() { return OptionalInt.empty(); }
 
     /** Sets whether this hit is returned from a cache. Default is false */
     public void setCached(boolean cached) { this.cached = cached; }

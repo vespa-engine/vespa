@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -30,7 +31,7 @@ public class LoadBalancerTest {
         Node n1 = new Node("test", 0, "test-node1", 0, false);
         LoadBalancer lb = new LoadBalancer(List.of(new Group(0, List.of(n1))), LoadBalancer.Policy.ROUNDROBIN);
 
-        Optional<Group> grp = lb.takeGroup(null);
+        Optional<Group> grp = lb.takeGroup(Set.of());
         Group group = grp.orElseThrow(() -> {
             throw new IllegalStateException("Expected a SearchCluster.Group");
         });
@@ -43,7 +44,7 @@ public class LoadBalancerTest {
         Node n2 = new Node("test", 1, "test-node2", 1, true);
         LoadBalancer lb = new LoadBalancer(List.of(new Group(0, List.of(n1)), new Group(1,List.of(n2))), LoadBalancer.Policy.ROUNDROBIN);
 
-        Optional<Group> grp = lb.takeGroup(null);
+        Optional<Group> grp = lb.takeGroup(Set.of());
         Group group = grp.orElseThrow(() -> {
             throw new IllegalStateException("Expected a SearchCluster.Group");
         });
@@ -58,25 +59,25 @@ public class LoadBalancerTest {
         Node n4 = new Node("test", 1, "test-node4", 1, true);
         LoadBalancer lb = new LoadBalancer(List.of(new Group(0, List.of(n1,n2)), new Group(1,List.of(n3,n4))), LoadBalancer.Policy.ROUNDROBIN);
 
-        Optional<Group> grp = lb.takeGroup(null);
+        Optional<Group> grp = lb.takeGroup(Set.of());
         assertTrue(grp.isPresent());
     }
 
     @Test
-    void requireThatLoadBalancerReturnsDifferentGroups() {
+    void requireThatLoadBalancerLoadBalances() {
         Node n1 = new Node("test", 0, "test-node1", 0, true);
         Node n2 = new Node("test", 1, "test-node2", 1, true);
         LoadBalancer lb = new LoadBalancer(List.of(new Group(0, List.of(n1)), new Group(1,List.of(n2))), LoadBalancer.Policy.ROUNDROBIN);
 
         // get first group
-        Optional<Group> grp = lb.takeGroup(null);
+        Optional<Group> grp = lb.takeGroup(Set.of());
         Group group = grp.get();
         int id1 = group.id();
         // release allocation
         lb.releaseGroup(group, true, RequestDuration.of(Duration.ofMillis(1)));
 
         // get second group
-        grp = lb.takeGroup(null);
+        grp = lb.takeGroup(Set.of());
         group = grp.get();
         assertNotEquals(id1, group.id());
     }

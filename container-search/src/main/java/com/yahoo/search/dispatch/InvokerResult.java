@@ -41,7 +41,7 @@ public class InvokerResult {
         Query query = result.getQuery();
         Sorting sorting = query.getRanking().getSorting();
         for (LeanHit hit : leanHits) {
-            FastHit fastHit = new FastHit(hit.getGid(), hit.getRelevance(), hit.getGroup(), hit.getPartId(), hit.getDistributionKey());
+            FastHit fastHit = new FastHit(hit.getGid(), hit.getRelevance(), hit.getSearchGroup(), hit.getPartId(), hit.getDistributionKey());
             if (hit.hasSortData()) {
                 fastHit.setSortData(hit.getSortData(), sorting);
             }

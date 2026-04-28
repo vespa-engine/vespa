@@ -500,7 +500,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
         fieldConsumer.ensureFieldsField();
         generator.writeNumberField(TOTAL_COUNT, getResult().getTotalHitCount());
-        OptionalInt group = getResult().hits().getGroup();
+        OptionalInt group = getResult().hits().getSearchGroup();
         if (group.isPresent())
             generator.writeNumberField(SEARCH_GROUP, group.getAsInt());
     }

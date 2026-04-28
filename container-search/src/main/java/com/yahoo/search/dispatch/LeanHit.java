@@ -13,20 +13,20 @@ import java.util.OptionalInt;
 public class LeanHit implements Comparable<LeanHit> {
 
     private final byte[] gid;
-    private final OptionalInt group;
+    private final OptionalInt searchGroup;
     private final int partId;
     private final int distributionKey;
     private final double relevance;
     private final byte[] sortData;
     private FeatureData matchFeatures;
 
-    public LeanHit(byte[] gid, OptionalInt group, int partId, int distributionKey, double relevance) {
-        this(gid, group, partId, distributionKey, relevance, null);
+    public LeanHit(byte[] gid, OptionalInt searchGroup, int partId, int distributionKey, double relevance) {
+        this(gid, searchGroup, partId, distributionKey, relevance, null);
     }
 
-    public LeanHit(byte[] gid, OptionalInt group, int partId, int distributionKey, double relevance, byte[] sortData) {
+    public LeanHit(byte[] gid, OptionalInt searchGroup, int partId, int distributionKey, double relevance, byte[] sortData) {
         this.gid = gid;
-        this.group = group;
+        this.searchGroup = searchGroup;
         this.partId = partId;
         this.distributionKey = distributionKey;
         this.relevance = Double.isNaN(relevance) ? Double.NEGATIVE_INFINITY : relevance;
@@ -35,7 +35,7 @@ public class LeanHit implements Comparable<LeanHit> {
     }
 
     public byte[] getGid() { return gid; }
-    public OptionalInt getGroup() { return group; }
+    public OptionalInt getSearchGroup() { return searchGroup; }
     public int getPartId() { return partId; }
     public int getDistributionKey() { return distributionKey; }
     public double getRelevance() { return relevance; }

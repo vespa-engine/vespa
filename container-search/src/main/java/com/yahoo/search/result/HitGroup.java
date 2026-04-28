@@ -220,14 +220,14 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
     public int getSubgroupCount() { return subgroupCount; }
 
     /** Returns the id of the group producing the results in this, if available, and identical in all hits. */
-    public OptionalInt getGroup() {
+    public OptionalInt getSearchGroup() {
         OptionalInt group = OptionalInt.empty();
         for (var i = unorderedDeepIterator(); i.hasNext(); ) {
             Hit hit = i.next();
             if (hit.isAuxiliary()) continue;
             if (group.isEmpty())
-                group = hit.getGroup();
-            else if (! hit.getGroup().equals(group))
+                group = hit.getSearchGroup();
+            else if (! hit.getSearchGroup().equals(group))
                 return OptionalInt.empty();
         }
         return group;
