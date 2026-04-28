@@ -1761,9 +1761,11 @@ TEST_F(TopLevelBucketDBUpdaterTest, pending_cluster_state_merge) {
                       "0:1,2,4,5|1:2,3,4,6|2:1,3,5,6"));
 
     // New node came up
-    EXPECT_EQ("4:0,1|2:0,1|6:1,2,3|1:0,2,3|5:2,0,3|3:2,1,3|",
+    EXPECT_EQ("4:0,1|2:0,1|6:1,2,3|1:3,0,2|5:2,0,3|3:2,3,1|",
               merge_bucket_lists(
+                      lib::ClusterState("distributor:1 storage:3"),
                       "0:1,2,4,5|1:2,3,4,6|2:1,3,5,6",
+                      lib::ClusterState("distributor:1 storage:4"),
                       "3:1,3,5,6"));
 
     // Node came up with some buckets removed and some added
