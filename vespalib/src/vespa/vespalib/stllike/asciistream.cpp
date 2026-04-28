@@ -14,6 +14,7 @@
 #include <charconv>
 #include <limits>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include <vespa/log/log.h>
@@ -74,10 +75,6 @@ asciistream::asciistream(std::string_view buf)
       _width(0),
       _fill(' '),
       _precision(6) {
-    if (buf[buf.size()] != '\0') {
-        _wbuf = buf;
-        _rbuf = _wbuf;
-    }
 }
 
 asciistream::~asciistream() = default;
@@ -138,30 +135,13 @@ void asciistream::swap(asciistream& rhs) noexcept {
 
 namespace {
 
-int getValue(double& val, const char* buf) __attribute__((noinline));
-int getValue(float& val, const char* buf) __attribute__((noinline));
-void throwInputError(int e, const char* t, const char* buf) __attribute__((noinline));
-void throwInputError(std::errc e, const char* t, const char* buf) __attribute__((noinline));
+bool is_white_space(char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == '\r'; }
+template <std::floating_point T> std::string_view::size_type getValue(T& val, std::string_view buf) __attribute__((noinline));
+void throwInputError(std::errc e, const char* t, std::string_view buf) __attribute__((noinline));
 void throwUnderflow(size_t pos) __attribute__((noinline));
-template <typename T> T strToInt(T& v, const char* begin, const char* end) __attribute__((noinline));
+template <std::integral T> std::string_view::size_type strToInt(T& v, std::string_view buf) __attribute__((noinline));
 
-void throwInputError(int e, const char* t, const char* buf) {
-    if (e == 0) {
-        throw IllegalArgumentException("Failed decoding a " + std::string(t) + " from '" + std::string(buf) + "'.",
-                                       VESPA_STRLOC);
-    } else if (errno == ERANGE) {
-        throw IllegalArgumentException(std::string(t) + " value '" + std::string(buf) + "' is outside of range.",
-                                       VESPA_STRLOC);
-    } else if (errno == EINVAL) {
-        throw IllegalArgumentException("Illegal " + std::string(t) + " value '" + std::string(buf) + "'.",
-                                       VESPA_STRLOC);
-    } else {
-        throw IllegalArgumentException(
-            "Unknown error decoding an " + std::string(t) + " from '" + std::string(buf) + "'.", VESPA_STRLOC);
-    }
-}
-
-void throwInputError(std::errc e, const char* t, const char* buf) {
+void throwInputError(std::errc e, const char* t, std::string_view buf) {
     if (e == std::errc::invalid_argument) {
         throw IllegalArgumentException("Illegal " + std::string(t) + " value '" + std::string(buf) + "'.",
                                        VESPA_STRLOC);
@@ -178,28 +158,51 @@ void throwUnderflow(size_t pos) {
     throw IllegalArgumentException(make_string("buffer underflow at pos %ld.", pos), VESPA_STRLOC);
 }
 
-int getValue(double& val, const char* buf) {
-    char* ebuf;
-    errno = 0;
-    val = locale::c::strtod_au(buf, &ebuf);
-    if ((errno != 0) || (buf == ebuf)) {
-        throwInputError(errno, "double", buf);
+std::string_view::size_type skip_spaces_and_eat_first_plus(std::string_view buf) {
+    std::string_view::size_type i = 0;
+    for (; i < buf.size(); ++i) {
+        char c = buf[i];
+        if (!is_white_space(c)) {
+            if (c == '+') {
+                ++i;
+            }
+            break;
+        }
     }
-    return ebuf - buf;
+    return i;
 }
 
-int getValue(float& val, const char* buf) {
-    char* ebuf;
-    errno = 0;
-    val = locale::c::strtof_au(buf, &ebuf);
-    if ((errno != 0) || (buf == ebuf)) {
-        throwInputError(errno, "float", buf);
+template <std::floating_point T>
+std::string_view::size_type getValue(T& val, std::string_view buf) {
+    auto skipped = skip_spaces_and_eat_first_plus(buf);
+    T tval = 1.0;
+    auto res = std::from_chars(buf.data() + skipped, buf.data() + buf.size(), tval);
+    if (res.ec == std::errc::result_out_of_range) {
+        bool underflow = false;
+        if (tval == 1.0) {
+            // Issue 3081, no detection of underflow. Manually check for negative exponent.
+            auto epos = buf.substr(skipped).find_first_of("eE");
+            if (epos != std::string_view::npos && skipped + epos + 1 < buf.size() && buf[skipped + epos + 1] == '-') {
+                underflow = true;
+            }
+        } else if (tval > -1.0 && tval < 1.0) {
+            underflow = true;
+        }
+        if (underflow) {
+            res.ec = std::errc{};
+            tval = 0.0;
+        }
     }
-    return ebuf - buf;
+    if (res.ec != std::errc()) {
+        throwInputError(res.ec, std::is_same_v<T, double> ? "double" : "float", buf);
+    }
+    val = tval;
+    return res.ptr - buf.data();
 }
 
-template <typename T> T strToInt(T& v, const char* begin, const char* end) {
-    const char* curr = begin;
+template <std::integral T> std::string_view::size_type strToInt(T& v, std::string_view buf) {
+    auto end = buf.data() + buf.size();
+    const char* curr = buf.data();
     for (; (curr < end) && std::isspace(static_cast<unsigned char>(*curr)); curr++)
         ;
 
@@ -211,14 +214,14 @@ template <typename T> T strToInt(T& v, const char* begin, const char* end) {
     }
     if (err.ec == std::errc::invalid_argument) {
         if (err.ptr >= end) {
-            throwUnderflow(err.ptr - begin);
+            throwUnderflow(err.ptr - buf.data());
         }
-        throwInputError(err.ec, "strToInt", begin);
+        throwInputError(err.ec, "strToInt", buf);
     } else if (err.ec == std::errc::result_out_of_range) {
-        throwInputError(err.ec, "strToInt", begin);
+        throwInputError(err.ec, "strToInt", buf);
     }
 
-    return err.ptr - begin;
+    return err.ptr - buf.data();
 }
 
 } // namespace
@@ -268,55 +271,55 @@ asciistream& asciistream::operator>>(unsigned char& v) {
 }
 
 asciistream& asciistream::operator>>(unsigned short& v) {
-    _rPos += strToInt(v, &_rbuf[_rPos], &_rbuf[length()]);
+    _rPos += strToInt(v, _rbuf.substr(_rPos));
     return *this;
 }
 
 asciistream& asciistream::operator>>(unsigned int& v) {
-    _rPos += strToInt(v, &_rbuf[_rPos], &_rbuf[length()]);
+    _rPos += strToInt(v, _rbuf.substr(_rPos));
     return *this;
 }
 
 asciistream& asciistream::operator>>(unsigned long& v) {
-    _rPos += strToInt(v, &_rbuf[_rPos], &_rbuf[length()]);
+    _rPos += strToInt(v, _rbuf.substr(_rPos));
     return *this;
 }
 
 asciistream& asciistream::operator>>(unsigned long long& v) {
-    _rPos += strToInt(v, &_rbuf[_rPos], &_rbuf[length()]);
+    _rPos += strToInt(v, _rbuf.substr(_rPos));
     return *this;
 }
 
 asciistream& asciistream::operator>>(short& v) {
-    _rPos += strToInt(v, &_rbuf[_rPos], &_rbuf[length()]);
+    _rPos += strToInt(v, _rbuf.substr(_rPos));
     return *this;
 }
 
 asciistream& asciistream::operator>>(int& v) {
-    _rPos += strToInt(v, &_rbuf[_rPos], &_rbuf[length()]);
+    _rPos += strToInt(v, _rbuf.substr(_rPos));
     return *this;
 }
 
 asciistream& asciistream::operator>>(long& v) {
-    _rPos += strToInt(v, &_rbuf[_rPos], &_rbuf[length()]);
+    _rPos += strToInt(v, _rbuf.substr(_rPos));
     return *this;
 }
 
 asciistream& asciistream::operator>>(long long& v) {
-    _rPos += strToInt(v, &_rbuf[_rPos], &_rbuf[length()]);
+    _rPos += strToInt(v, _rbuf.substr(_rPos));
     return *this;
 }
 
 asciistream& asciistream::operator>>(double& v) {
     double l(0);
-    _rPos += getValue(l, &_rbuf[_rPos]);
+    _rPos += getValue(l, _rbuf.substr(_rPos));
     v = l;
     return *this;
 }
 
 asciistream& asciistream::operator>>(float& v) {
     float l(0);
-    _rPos += getValue(l, &_rbuf[_rPos]);
+    _rPos += getValue(l, _rbuf.substr(_rPos));
     v = l;
     return *this;
 }
@@ -335,7 +338,7 @@ asciistream& asciistream::operator>>(std::string& v) {
     eatWhite();
     size_t start(_rPos);
     eatNonWhite();
-    v.assign(&_rbuf[start], _rPos - start);
+    v.assign(_rbuf.substr(start, _rPos - start));
     return *this;
 }
 
@@ -545,7 +548,7 @@ std::string asciistream::getline(char delim) {
     for (; (_rPos < end) && (_rbuf[_rPos] != delim); _rPos++)
         ;
     if (_rPos > start) {
-        line.assign(&_rbuf[start], _rPos - start);
+        line.assign(_rbuf.substr(start, _rPos - start));
     }
     if (_rPos < end) {
         _rPos++; // eat the terminating\n
