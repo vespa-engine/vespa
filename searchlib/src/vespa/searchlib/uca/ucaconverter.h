@@ -39,19 +39,19 @@ private:
         void reserve(size_t size) {
             _data.reserve(size+8);
             _data.resize(size);
-            _data[size+1] = '\0';
-            _data[size+2] = '\0';
-            _data[size+3] = 'd';
-            _data[size+4] = 'e';
-            _data[size+5] = 'a';
-            _data[size+6] = 'd';
-            _data[size+7] = '\0';
+            *(_data.data() + size - 1) = '\0';
+            *(_data.data() + size + 2) = '\0';
+            *(_data.data() + size + 3) = 'd';
+            *(_data.data() + size + 4) = 'e';
+            *(_data.data() + size + 5) = 'a';
+            *(_data.data() + size + 6) = 'd';
+            *(_data.data() + size + 7) = '\0';
         }
         void check() {
-            assert(_data[siz()+3] == 'd');
-            assert(_data[siz()+4] == 'e');
-            assert(_data[siz()+5] == 'a');
-            assert(_data[siz()+6] == 'd');
+            assert(*(_data.data() + siz() + 3) == 'd');
+            assert(*(_data.data() + siz() + 4) == 'e');
+            assert(*(_data.data() + siz() + 5) == 'a');
+            assert(*(_data.data() + siz() + 6) == 'd');
         }
     };
     int utf8ToUtf16(const ConstBufferRef & src) const;
