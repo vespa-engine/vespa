@@ -3,9 +3,12 @@
 #include "benchmark_spec.h"
 
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
+#include <vespa/vespalib/util/overload.h>
 
 #include <ostream>
 #include <sstream>
+
+using vespalib::overload;
 
 namespace search::queryeval::test {
 
@@ -25,7 +28,7 @@ std::ostream& operator<<(std::ostream& os, const Spec& s) {
         os << "]";
     };
 
-    std::visit(overloaded{
+    std::visit(overload{
         [&](const TermSpec& t) {
             os << "Term(field=" << t.field.to_string() << ", r=" << t.hit_ratio << ")";
         },
@@ -55,7 +58,7 @@ SpecBlueprintFactory::~SpecBlueprintFactory() {
 }
 
 void SpecBlueprintFactory::collect_leaves(const Spec& spec, uint32_t num_docs, FactoryList& out) {
-    std::visit(overloaded{
+    std::visit(overload{
         [&](const TermSpec& t) {
             out.push_back(make_blueprint_factory(
                 t.field, QueryOperator::Term, num_docs,
@@ -75,7 +78,7 @@ void SpecBlueprintFactory::collect_leaves(const Spec& spec, uint32_t num_docs, F
 
 std::unique_ptr<Blueprint> SpecBlueprintFactory::build_tree(const Spec& spec, FactoryList& leaves, size_t& leaf_idx,
                                                  uint32_t docid_limit) {
-    return std::visit(overloaded{
+    return std::visit(overload{
         [&](const TermSpec&) -> std::unique_ptr<Blueprint> {
             return leaves[leaf_idx++]->make_blueprint();
         },

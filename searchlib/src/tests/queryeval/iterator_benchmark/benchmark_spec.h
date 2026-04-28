@@ -38,11 +38,6 @@ struct Spec {
     std::variant<TermSpec, AndSpec, OrSpec> node;
 };
 
-template <typename... Fs>
-struct overloaded : Fs... { using Fs::operator()...; };
-
-template <typename... Fs> overloaded(Fs...) -> overloaded<Fs...>;
-
 // ----------------- Builders ------------------------
 
 Spec term(FieldConfig field, double hit_ratio);
