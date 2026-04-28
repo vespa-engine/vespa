@@ -97,8 +97,8 @@ func doLogin(cli *CLI, cmd *cobra.Command, useFileStorage bool) error {
 	secretsStore := auth.NewKeyringWithOptions(useFileStorage)
 	err = secretsStore.Set(auth.SecretsNamespace, system.Name, res.RefreshToken)
 	if err != nil {
-		if os.IsPermission(err) {
-			cli.printWarning(fmt.Sprintf("Could not store refresh token locally because the keyring.vespa-cli.public has wrong file permissions. Delete it and try again: %v", err))
+		if useFileStorage && os.IsPermission(err) {
+			cli.printWarning(fmt.Sprintf("Could not store refresh token locally because ~/.vespa/keyring.%s.%s has wrong file permissions. Delete it and try again: %v", auth.SecretsNamespace, system.Name, err))
 		} else {
 			cli.printWarning("Could not store the refresh token locally. You may need to login again once your access token expires (30 minutes).")
 			if !useFileStorage {
