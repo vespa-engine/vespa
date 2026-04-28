@@ -1,16 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "intermediate_blueprint_factory.h"
 #include "benchmark_blueprint_factory.h"
+#include "benchmark_spec.h"
 #include "common.h"
+#include "intermediate_blueprint_factory.h"
+
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/stringfmt.h>
+
 #include <cmath>
 #include <iomanip>
 #include <numeric>
+#include <print>
 #include <vector>
 
 using namespace search::attribute;
@@ -1094,6 +1098,28 @@ TEST(IteratorBenchmark, btree_vs_array_nonstrict_crossover) {
         auto calculate_at = [&](double in_flow) { return std::make_pair(time_ms(*btree, in_flow), time_ms(*array, in_flow)); };
         fprintf(stderr, "btree/array crossover@%5.3f: %8.6f\n", hit_ratio, find_crossover("TIME", "btree", "array", calculate_at, 0.0001));
     }
+}
+
+TEST(IteratorBenchmark, spec_factory_test) {
+    auto tree = and_(
+        term(int32_fs, 0.01),
+        or_(term(str_fs, 0.1), term(str_fs, 0.3)));
+
+    SpecBlueprintFactory factory(std::move(tree), num_docs);
+
+    auto res = benchmark_search(factory,
+                                num_docs + 1,
+                                /*strict*/ true,
+                                /*force_strict*/ false,
+                                /*unpack_iterator*/ false,
+                                /*filter_hit_ratio*/ 1.0,
+                                PlanningAlgo::Cost);
+
+    std::cout << factory.get_name(/*unused*/ *factory.make_blueprint()) << "\n";
+    std::cout << "time_ms=" << res.time_ms
+              << " seeks=" << res.seeks
+              << " hits=" << res.hits
+              << " actual_cost=" << res.actual_cost << "\n";
 }
 
 int main(int argc, char **argv) {
