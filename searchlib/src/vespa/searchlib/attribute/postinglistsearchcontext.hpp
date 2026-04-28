@@ -218,7 +218,7 @@ createPostingIterator(fef::TermFieldMatchData *matchData, bool strict)
             using DocIt = ArrayIterator<Posting>;
             DocIt postings;
             std::span<const Posting> array = _merger.getArray();
-            postings.set(&array[0], &array[array.size()]);
+            postings.set(array.data(), array.data() + array.size());
             if (_posting_store.isFilter()) {
                 return std::make_unique<FilterAttributePostingListIteratorT<DocIt>>(_baseSearchCtx, matchData, postings);
             } else {
