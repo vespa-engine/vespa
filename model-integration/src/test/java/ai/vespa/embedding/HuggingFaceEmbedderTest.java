@@ -171,18 +171,6 @@ public class HuggingFaceEmbedderTest {
     }
 
     @Test
-    public void testPrepend() {
-        var context = new Embedder.Context("schema.indexing");
-        String input = "This is a test";
-        var embedder = getNormalizePrefixdEmbedder();
-        var result = embedder.prependInstruction(input, context);
-        assertEquals("This is a document: This is a test",  result);
-        var queryContext = new Embedder.Context("query(qt)");
-        var queryResult = embedder.prependInstruction(input, queryContext);
-        assertEquals("Represent this text: This is a test",  queryResult);
-    }
-
-    @Test
     public void testSentenceEmbedder() {
         String input = "This is a test with lots of input text here";
         var context = new Embedder.Context("schema.indexing");

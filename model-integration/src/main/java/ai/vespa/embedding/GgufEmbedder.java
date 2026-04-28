@@ -30,8 +30,7 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
     private static final Logger log = Logger.getLogger(GgufEmbedder.class.getName());
     private final LlamaModel model;
     private final int maxPromptTokens;
-    private final String prependQuery;
-    private final String prependDocument;
+    private final TextPrepender prepender;
     private final boolean normalize;
 
     public static class Exception extends RuntimeException {
@@ -59,8 +58,7 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
     //  if (!log.isLoggable(Level.FINE)) modelParams.disableLog();
         model = new LlamaModel(modelParams);
         maxPromptTokens = config.maxPromptTokens();
-        prependQuery = config.prependQuery();
-        prependDocument = config.prependDocument();
+        prepender = new TextPrepender(config.prependQuery(), config.prependDocument());
         normalize = config.normalize();
     }
 
@@ -113,11 +111,7 @@ public class GgufEmbedder extends AbstractComponent implements Embedder {
      * Tokens are assumed to be independent and that the token sequence can be safely truncated at any position.
      */
     private String prependAndTruncatePrompt(String text, Context context) {
-        if (!prependQuery.isBlank() && context.getDestinationType() == Context.DestinationType.QUERY) {
-            text = prependQuery + text;
-        } else if (!prependDocument.isBlank()) {
-            text = prependDocument + text;
-        }
+        text = prepender.prepend(text, context);
         if (maxPromptTokens <= 0) return text;
         var tokens = model.encode(text);
         var maxTruncatedLength = maxPromptTokens - 2; // Reserve space for start and end token

@@ -11,6 +11,10 @@
             <api-key-secret-ref>openai_api_key</api-key-secret-ref>
             <dimensions>1024</dimensions>
             <endpoint>https://api.openai.com/v1/embeddings</endpoint>
+            <prepend>
+                <query>query: </query>
+                <document>passage: </document>
+            </prepend>
             <batching max-size="16" max-delay="200ms"/>
         </component>
 

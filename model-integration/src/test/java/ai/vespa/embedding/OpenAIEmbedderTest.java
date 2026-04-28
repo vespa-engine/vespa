@@ -100,6 +100,54 @@ public class OpenAIEmbedderTest {
     }
 
     @Test
+    public void testPrependPrefixes() throws Exception {
+        var targetType = TensorType.fromSpec("tensor<float>(d0[1024])");
+        var texts = List.of("Hello", "World");
+
+        // Both prependQuery and prependDocument configured
+        var config = openaiConfigBuilder(1024)
+                .prependQuery("query: ")
+                .prependDocument("document: ");
+        embedder = new OpenAIEmbedder(config.build(), runtime, createMockSecrets());
+
+        // QUERY context — query prefix applied
+        mockServer.enqueue(new MockResponse().setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody(createBatchSuccessResponse(2, 1024)));
+        var queryContext = new Embedder.Context("query(embedding)");
+        embedder.embed(texts, queryContext, targetType);
+        var queryRequest = mockServer.takeRequest();
+        var queryBody = queryRequest.getBody().readUtf8();
+        assertTrue(queryBody.contains("\"input\":[\"query: Hello\",\"query: World\"]"),
+                "Expected query prefix in request body, got: " + queryBody);
+
+        // DOCUMENT context — document prefix applied
+        mockServer.enqueue(new MockResponse().setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody(createBatchSuccessResponse(2, 1024)));
+        var docContext = new Embedder.Context("test-embedder");
+        embedder.embed(texts, docContext, targetType);
+        var docRequest = mockServer.takeRequest();
+        var docBody = docRequest.getBody().readUtf8();
+        assertTrue(docBody.contains("\"input\":[\"document: Hello\",\"document: World\"]"),
+                "Expected document prefix in request body, got: " + docBody);
+
+        embedder.deconstruct();
+
+        // Only prependDocument configured — QUERY inputs must remain unmodified
+        var docOnlyConfig = openaiConfigBuilder(1024).prependDocument("document: ");
+        embedder = new OpenAIEmbedder(docOnlyConfig.build(), runtime, createMockSecrets());
+        mockServer.enqueue(new MockResponse().setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody(createBatchSuccessResponse(2, 1024)));
+        embedder.embed(texts, queryContext, targetType);
+        var docOnlyQueryRequest = mockServer.takeRequest();
+        var docOnlyQueryBody = docOnlyQueryRequest.getBody().readUtf8();
+        assertTrue(docOnlyQueryBody.contains("\"input\":[\"Hello\",\"World\"]"),
+                "Expected no prefix for QUERY when only prependDocument is set, got: " + docOnlyQueryBody);
+    }
+
+    @Test
     public void testBatchingConfigEnabled() {
         var config = openaiConfigBuilder(1024);
         config.batching.maxSize(16);

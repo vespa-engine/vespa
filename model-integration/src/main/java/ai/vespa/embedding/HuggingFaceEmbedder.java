@@ -36,8 +36,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
     private final boolean normalize;
     private final HuggingFaceTokenizer tokenizer;
     private final OnnxEvaluator evaluator;
-    private final String prependQuery;
-    private final String prependDocument;
+    private final TextPrepender prepender;
 
     record ModelAnalysis(int numInputs,
                          String inputIdsName,
@@ -107,8 +106,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         
         this.analysis = analyze(evaluator, embedderConfig);
         normalize = embedderConfig.normalize();
-        prependQuery = embedderConfig.prependQuery();
-        prependDocument = embedderConfig.prependDocument();
+        prepender = new TextPrepender(embedderConfig.prependQuery(), embedderConfig.prependDocument());
         var tokenizerPath = modelHelper.getModelPathResolvingIfNecessary(embedderConfig.tokenizerPathReference());
         var builder = new HuggingFaceTokenizer.Builder()
                 .addSpecialTokens(true)
@@ -156,7 +154,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         if (!targetType.dimensions().get(0).isIndexed()) {
             throw new IllegalArgumentException("Error in embedding to type '" + targetType + "': dimension should be indexed.");
         }
-        var embeddingResult = lookupOrEvaluate(context, prependInstruction(text, context));
+        var embeddingResult = lookupOrEvaluate(context, prepender.prepend(text, context));
         IndexedTensor tokenEmbeddings = embeddingResult.output;
         if (targetType.valueType() == TensorType.Value.INT8) {
             return binaryQuantization(embeddingResult, targetType);
@@ -165,17 +163,6 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
             return normalize ? EmbeddingNormalizer.normalize(result, targetType) : result;
         }
     }
-
-    String prependInstruction(String text, Context context) {
-        if (prependQuery != null && !prependQuery.isEmpty() && context.getDestinationType() == Context.DestinationType.QUERY) {
-            return prependQuery + text;
-        }
-        if (prependDocument != null && !prependDocument.isEmpty()) {
-            return prependDocument + text;
-        }
-        return text;
-    }
-
 
     private HuggingFaceEmbedder.HFEmbeddingResult lookupOrEvaluate(Context context, String text) {
         var key = new HFEmbedderCacheKey(context.getEmbedderId(), text);
