@@ -10,7 +10,7 @@ DocumentMetaStoreConfig::DocumentMetaStoreConfig(bool store_full_document_ids)
 }
 
 DocumentMetaStoreConfig DocumentMetaStoreConfig::make(const ProtonConfig& cfg) {
-    return { cfg.storeFullDocumentIds == vespa::config::search::core::ProtonConfig::StoreFullDocumentIds::YES };
+    return { cfg.storeFullDocumentIds };
 }
 
 DocumentMetaStoreConfig DocumentMetaStoreConfig::make() {
