@@ -39,8 +39,8 @@ public class CloudResourceTags {
     /** Key prefixes reserved by the platform. */
     private static final List<String> RESERVED_KEY_PREFIXES = List.of("vai_", "corp_", "bastion_");
 
-    /** Cluster-scoped placeholders resolved per host at apply time, not in the controller. */
-    public static final List<String> CLUSTER_PLACEHOLDERS = List.of("${clustername}", "${clustertype}");
+    /** Cluster-scoped placeholders resolved per host at apply time. */
+    static final List<String> CLUSTER_PLACEHOLDERS = List.of("${clustername}", "${clustertype}");
 
     private final Map<String, String> tags;
 
@@ -56,10 +56,35 @@ public class CloudResourceTags {
     public int size() { return tags.size(); }
 
     /**
+     * Returns a new instance with deployment-context placeholders resolved.
+     * Cluster-scoped placeholders are left untouched for later per-host resolution.
+     * Throws on any remaining unknown placeholder.
+     */
+    public CloudResourceTags resolveDeployment(String tenant, String application, String instance,
+                                               String environment, String region) {
+        if (tags.isEmpty()) return this;
+        Map<String, String> resolved = new LinkedHashMap<>();
+        for (var entry : tags.entrySet()) {
+            String value = entry.getValue()
+                    .replace("${tenant}", tenant.toLowerCase(Locale.ROOT))
+                    .replace("${application}", application.toLowerCase(Locale.ROOT))
+                    .replace("${instance}", instance.toLowerCase(Locale.ROOT))
+                    .replace("${environment}", environment)
+                    .replace("${region}", region);
+            String remaining = value;
+            for (String p : CLUSTER_PLACEHOLDERS) remaining = remaining.replace(p, "");
+            if (remaining.contains("${"))
+                throw new IllegalArgumentException("Unresolved template variable in resource tag value for key '" +
+                                                   entry.getKey() + "': " + value);
+            resolved.put(entry.getKey(), value);
+        }
+        return from(resolved);
+    }
+
+    /**
      * Returns a new instance with {@code ${clustername}} and {@code ${clustertype}} substituted.
-     * Only these two placeholders are handled; any other {@code ${...}} remaining after substitution
-     * causes an {@link IllegalArgumentException}. Callers must resolve deployment-context
-     * placeholders (e.g. {@code ${environment}}) before calling this method.
+     * All deployment-context placeholders must already be resolved; any remaining {@code ${...}}
+     * after substitution causes an {@link IllegalArgumentException}.
      */
     public CloudResourceTags resolveCluster(ClusterSpec.Id clusterId, ClusterSpec.Type clusterType) {
         if (tags.isEmpty()) return this;

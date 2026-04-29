@@ -190,6 +190,40 @@ class CloudResourceTagsTest {
     }
 
     @Test
+    void resolve_deployment_substitutes_placeholders() {
+        var tags = CloudResourceTags.from(Map.of(
+                "env", "${environment}",
+                "loc", "${region}",
+                "team", "${tenant}-${application}-${instance}"));
+        var resolved = tags.resolveDeployment("Tenant1", "App1", "Default", "prod", "aws-us-east-1c");
+        assertEquals("prod", resolved.asMap().get("env"));
+        assertEquals("aws-us-east-1c", resolved.asMap().get("loc"));
+        assertEquals("tenant1-app1-default", resolved.asMap().get("team"));
+    }
+
+    @Test
+    void resolve_deployment_passes_through_cluster_placeholders() {
+        var tags = CloudResourceTags.from(Map.of(
+                "tag", "${environment}-${clustertype}"));
+        var resolved = tags.resolveDeployment("t", "a", "i", "prod", "r");
+        assertEquals("prod-${clustertype}", resolved.asMap().get("tag"));
+    }
+
+    @Test
+    void resolve_deployment_rejects_unknown_placeholders() {
+        var tags = CloudResourceTags.from(Map.of("bad", "${unknown}"));
+        var e = assertThrows(IllegalArgumentException.class,
+                             () -> tags.resolveDeployment("t", "a", "i", "prod", "r"));
+        assertTrue(e.getMessage().contains("Unresolved template variable"));
+    }
+
+    @Test
+    void resolve_deployment_on_empty_returns_empty() {
+        var resolved = CloudResourceTags.empty().resolveDeployment("t", "a", "i", "prod", "r");
+        assertTrue(resolved.isEmpty());
+    }
+
+    @Test
     void resolve_cluster_substitutes_placeholders() {
         var tags = CloudResourceTags.from(Map.of(
                 "cluster", "${clustername}",
