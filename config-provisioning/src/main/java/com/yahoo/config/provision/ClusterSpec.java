@@ -46,7 +46,7 @@ public final class ClusterSpec {
             throw new IllegalArgumentException("Cluster of type " + type + " must be stateful");
         this.zoneEndpoint = Objects.requireNonNull(zoneEndpoint);
         this.stateful = stateful;
-        this.sidecars = Objects.requireNonNull(sidecars, "sidecars cannot be null");
+        this.sidecars = sidecars;
         this.availabilityZones = availabilityZones;
         this.telemetryExport = Objects.requireNonNull(telemetryExport, "telemetryExport cannot be null");
     }
