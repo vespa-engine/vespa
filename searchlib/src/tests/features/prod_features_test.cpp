@@ -11,6 +11,7 @@
 #include <vespa/searchlib/attribute/singleboolattribute.h>
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/features/agefeature.h>
+#include <vespa/searchlib/features/average_field_length_feature.h>
 #include <vespa/searchlib/features/array_parser.hpp>
 #include <vespa/searchlib/features/attributefeature.h>
 #include <vespa/searchlib/features/closenessfeature.h>
@@ -549,6 +550,47 @@ TEST_F(ProdFeaturesTest, test_field_length)
                                    .addScore("fieldLength(foo)", (feature_t)i + 10)
                                    .addScore("fieldLength(baz)", (feature_t)i + 20)));
         }
+    }
+}
+
+TEST_F(ProdFeaturesTest, test_average_field_length)
+{
+    AverageFieldLengthBlueprint pt;
+    { // Test blueprint.
+        EXPECT_TRUE(assertCreateInstance(pt, "averageFieldLength"));
+
+        StringList params, in, out;
+        FT_SETUP_FAIL(pt, params);
+        FtIndexEnvironment ie;
+        ie.getBuilder()
+            .addField(FieldType::INDEX, CollectionType::SINGLE, "foo")
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "bar")
+            .addField(FieldType::INDEX, CollectionType::ARRAY, "afoo")
+            .addField(FieldType::INDEX, CollectionType::WEIGHTEDSET, "wfoo");
+        FT_SETUP_FAIL(pt, params.add("qux"));
+        FT_SETUP_FAIL(pt, params.clear().add("bar"));
+        FT_SETUP_OK(pt, ie, params.clear().add("foo"), in, out.add("out"));
+        FT_SETUP_OK(pt, ie, params.clear().add("afoo"), in, out);
+        FT_SETUP_OK(pt, ie, params.clear().add("wfoo"), in, out);
+
+        ie.getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "idx_attr");
+        ie.getFields().back().addAttribute();
+        FT_SETUP_OK(pt, ie, params.clear().add("idx_attr"), in, out);
+
+        FT_DUMP_EMPTY(_factory, "averageFieldLength");
+        FT_DUMP_EMPTY(_factory, "averageFieldLength", ie);
+    }
+    { // Test executor.
+        StringList features;
+        features.add("averageFieldLength(foo)");
+        features.add("averageFieldLength(foo).out");
+        FtFeatureTest ft(_factory, features);
+        ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "foo");
+        ft.getQueryEnv().getBuilder().set_avg_field_length("foo", 42.0);
+        ASSERT_TRUE(ft.setup());
+        ASSERT_TRUE(ft.execute(RankResult()
+                                       .addScore("averageFieldLength(foo)", 42.0)
+                                       .addScore("averageFieldLength(foo).out", 42.0)));
     }
 }
 

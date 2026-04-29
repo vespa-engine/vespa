@@ -4,6 +4,7 @@
 #include "agefeature.h"
 #include "attributefeature.h"
 #include "attributematchfeature.h"
+#include "average_field_length_feature.h"
 #include "bm25_feature.h"
 #include "closenessfeature.h"
 #include "closest_feature.h"
@@ -79,6 +80,7 @@ void setup_search_features(fef::IBlueprintRegistry & registry)
     registry.addPrototype(std::make_shared<AgeBlueprint>());
     registry.addPrototype(std::make_shared<AttributeBlueprint>());
     registry.addPrototype(std::make_shared<AttributeMatchBlueprint>());
+    registry.addPrototype(std::make_shared<AverageFieldLengthBlueprint>());
     registry.addPrototype(std::make_shared<Bm25Blueprint>());
     registry.addPrototype(std::make_shared<ClosenessBlueprint>());
     registry.addPrototype(std::make_shared<ClosestBlueprint>());
