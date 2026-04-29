@@ -190,6 +190,55 @@ class CloudResourceTagsTest {
     }
 
     @Test
+    void resolve_cluster_substitutes_placeholders() {
+        var tags = CloudResourceTags.from(Map.of(
+                "cluster", "${clustername}",
+                "type", "${clustertype}",
+                "combined", "${clustername}-${clustertype}"));
+        var resolved = tags.resolveCluster(ClusterSpec.Id.from("my-search"), ClusterSpec.Type.content);
+        assertEquals("my-search", resolved.asMap().get("cluster"));
+        assertEquals("content", resolved.asMap().get("type"));
+        assertEquals("my-search-content", resolved.asMap().get("combined"));
+    }
+
+    @Test
+    void resolve_cluster_lowercases_cluster_id() {
+        var tags = CloudResourceTags.from(Map.of("cluster", "${clustername}"));
+        var resolved = tags.resolveCluster(ClusterSpec.Id.from("MyCluster"), ClusterSpec.Type.container);
+        assertEquals("mycluster", resolved.asMap().get("cluster"));
+    }
+
+    @Test
+    void resolve_cluster_leaves_other_placeholders_untouched_and_throws() {
+        var tags = CloudResourceTags.from(Map.of("tag", "${environment}-${clustername}"));
+        var e = assertThrows(IllegalArgumentException.class,
+                             () -> tags.resolveCluster(ClusterSpec.Id.from("search"), ClusterSpec.Type.content));
+        assertTrue(e.getMessage().contains("Unresolved template variable"));
+    }
+
+    @Test
+    void resolve_cluster_on_empty_tags_returns_empty() {
+        var resolved = CloudResourceTags.empty().resolveCluster(ClusterSpec.Id.from("x"), ClusterSpec.Type.admin);
+        assertTrue(resolved.isEmpty());
+    }
+
+    @Test
+    void resolve_cluster_on_tags_without_placeholders() {
+        var tags = CloudResourceTags.from(Map.of("env", "prod"));
+        var resolved = tags.resolveCluster(ClusterSpec.Id.from("search"), ClusterSpec.Type.content);
+        assertEquals("prod", resolved.asMap().get("env"));
+    }
+
+    @Test
+    void contains_cluster_placeholders() {
+        assertFalse(CloudResourceTags.empty().containsClusterPlaceholders());
+        assertFalse(CloudResourceTags.from(Map.of("env", "prod")).containsClusterPlaceholders());
+        assertTrue(CloudResourceTags.from(Map.of("cluster", "${clustername}")).containsClusterPlaceholders());
+        assertTrue(CloudResourceTags.from(Map.of("type", "${clustertype}")).containsClusterPlaceholders());
+        assertTrue(CloudResourceTags.from(Map.of("tag", "prefix-${clustername}")).containsClusterPlaceholders());
+    }
+
+    @Test
     void to_string() {
         var tags = CloudResourceTags.from(Map.of("env", "prod"));
         assertTrue(tags.toString().contains("env"));

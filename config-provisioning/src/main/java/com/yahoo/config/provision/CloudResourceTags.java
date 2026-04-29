@@ -3,6 +3,7 @@ package com.yahoo.config.provision;
 
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Pattern;
@@ -38,6 +39,9 @@ public class CloudResourceTags {
     /** Key prefixes reserved by the platform. */
     private static final List<String> RESERVED_KEY_PREFIXES = List.of("vai_", "corp_", "bastion_");
 
+    /** Cluster-scoped placeholders resolved per host at apply time, not in the controller. */
+    public static final List<String> CLUSTER_PLACEHOLDERS = List.of("${clustername}", "${clustertype}");
+
     private final Map<String, String> tags;
 
     private CloudResourceTags(Map<String, String> tags) {
@@ -50,6 +54,32 @@ public class CloudResourceTags {
     public boolean isEmpty() { return tags.isEmpty(); }
 
     public int size() { return tags.size(); }
+
+    /**
+     * Returns a new instance with {@code ${clustername}} and {@code ${clustertype}} substituted.
+     * Only these two placeholders are handled; any other {@code ${...}} remaining after substitution
+     * causes an {@link IllegalArgumentException}. Callers must resolve deployment-context
+     * placeholders (e.g. {@code ${environment}}) before calling this method.
+     */
+    public CloudResourceTags resolveCluster(ClusterSpec.Id clusterId, ClusterSpec.Type clusterType) {
+        if (tags.isEmpty()) return this;
+        Map<String, String> resolved = new LinkedHashMap<>();
+        for (var entry : tags.entrySet()) {
+            String value = entry.getValue()
+                    .replace("${clustername}", clusterId.value().toLowerCase(Locale.ROOT))
+                    .replace("${clustertype}", clusterType.name());
+            if (value.contains("${"))
+                throw new IllegalArgumentException("Unresolved template variable in resource tag value for key '" +
+                                                   entry.getKey() + "': " + value);
+            resolved.put(entry.getKey(), value);
+        }
+        return from(resolved);
+    }
+
+    /** Returns true if any tag value contains cluster-scoped placeholders. */
+    public boolean containsClusterPlaceholders() {
+        return tags.values().stream().anyMatch(v -> CLUSTER_PLACEHOLDERS.stream().anyMatch(v::contains));
+    }
 
     /**
      * Returns a new instance with the given tags merged into this.
