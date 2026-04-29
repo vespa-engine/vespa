@@ -125,11 +125,11 @@ public:
      *
      * @return whether the global filter was set on the blueprint.
      */
-    static bool handle_global_filter(Blueprint& blueprint, const AnnDeadlineConfiguration& ann_deadline_config, uint32_t docid_limit,
+    static bool handle_global_filter(Blueprint& blueprint, const vespalib::Doom& doom, const AnnDeadlineConfiguration& ann_deadline_config, uint32_t docid_limit,
                                      double global_filter_lower_limit, double global_filter_upper_limit,
                                      vespalib::ThreadBundle &thread_bundle, search::engine::Trace* trace, bool use_lazy_filter = false);
 
-    static void perform_ann_searches(Blueprint& blueprint, const AnnDeadlineConfiguration& ann_deadline_config);
+    static void perform_ann_searches(Blueprint& blueprint, const vespalib::Doom& doom, const AnnDeadlineConfiguration& ann_deadline_config);
 
     void freeze();
     void set_matching_phase(search::queryeval::MatchingPhase matching_phase) const noexcept;

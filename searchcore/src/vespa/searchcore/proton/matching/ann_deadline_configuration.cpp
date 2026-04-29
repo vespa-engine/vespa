@@ -8,20 +8,19 @@ using vespalib::Doom;
 
 namespace proton::matching {
 
-AnnDeadlineConfiguration::AnnDeadlineConfiguration(const Doom& doom, vespalib::steady_time soft_doom)
-    : AnnDeadlineConfiguration(doom, vespalib::duration::max(), false, soft_doom) {
+AnnDeadlineConfiguration::AnnDeadlineConfiguration(vespalib::steady_time soft_doom)
+    : AnnDeadlineConfiguration(vespalib::duration::max(), false, soft_doom) {
 }
 
-AnnDeadlineConfiguration::AnnDeadlineConfiguration(const Doom& doom, vespalib::duration timebudget, bool timeout_enabled, vespalib::steady_time timeout) noexcept
-    : _doom(doom),
-      _timebudget(timebudget),
+AnnDeadlineConfiguration::AnnDeadlineConfiguration(vespalib::duration timebudget, bool timeout_enabled, vespalib::steady_time timeout) noexcept
+    : _timebudget(timebudget),
       _timeout_enabled(timeout_enabled),
       _timeout(timeout) {
 }
 
-const vespalib::Deadline AnnDeadlineConfiguration::make_ann_deadline(uint32_t remaining_searches) const noexcept {
+const vespalib::Deadline AnnDeadlineConfiguration::make_ann_deadline(const vespalib::Doom& doom, uint32_t remaining_searches) const noexcept {
     assert(remaining_searches > 0);
-    vespalib::steady_time now(_doom.getTimeNS());
+    vespalib::steady_time now(doom.getTimeNS());
     // ANN might hit the deadline due to a depleted time budget or a timeout,
     // whatever happens first. The timeout might be the ANN-specific timeout
     // or the soft-timeout. The soft-timeout is used when ANN timeouts
@@ -31,9 +30,9 @@ const vespalib::Deadline AnnDeadlineConfiguration::make_ann_deadline(uint32_t re
                                                        : _timeout - now;
 
     if (_timebudget < timeout_left) {
-        return _doom.make_deadline(now + _timebudget, Deadline::Type::BUDGET);
+        return doom.make_deadline(now + _timebudget, Deadline::Type::BUDGET);
     } else {
-        return _doom.make_deadline(now + timeout_left, _timeout_enabled ? Deadline::Type::TIMEOUT : Deadline::Type::BUDGET);
+        return doom.make_deadline(now + timeout_left, _timeout_enabled ? Deadline::Type::TIMEOUT : Deadline::Type::BUDGET);
     }
 }
 

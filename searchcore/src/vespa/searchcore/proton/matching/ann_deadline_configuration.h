@@ -14,8 +14,8 @@ namespace proton::matching {
  */
 class AnnDeadlineConfiguration {
 public:
-    AnnDeadlineConfiguration(const vespalib::Doom& now, vespalib::steady_time soft_doom);
-    AnnDeadlineConfiguration(const vespalib::Doom& now, vespalib::duration timebudget, bool timeout_enabled, vespalib::steady_time timeout) noexcept;
+    AnnDeadlineConfiguration(vespalib::steady_time soft_doom);
+    AnnDeadlineConfiguration(vespalib::duration timebudget, bool timeout_enabled, vespalib::steady_time timeout) noexcept;
 
     /**
      * Returns a Deadline for the next ANN search.
@@ -23,10 +23,9 @@ public:
      * where the time until the timeout is distributed equally between all remaining searches if
      * the timeout is enabled.
      */
-    const vespalib::Deadline make_ann_deadline(uint32_t remaining_searches) const noexcept;
+    const vespalib::Deadline make_ann_deadline(const vespalib::Doom& doom, uint32_t remaining_searches) const noexcept;
 
 private:
-    const vespalib::Doom& _doom;
     vespalib::duration    _timebudget;
     bool                  _timeout_enabled;
     vespalib::steady_time _timeout;
