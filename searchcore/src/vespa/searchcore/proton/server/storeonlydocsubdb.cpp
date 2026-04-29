@@ -253,9 +253,9 @@ StoreOnlyDocSubDB::setupSummaryManager(SummaryManager::SP summaryManager)
 InitializerTask::SP
 StoreOnlyDocSubDB::
 createDocumentMetaStoreInitializer(const AllocStrategy& alloc_strategy,
+                                   bool store_full_document_ids,
                                    const search::TuneFileAttributes &tuneFile,
-                                   std::shared_ptr<DocumentMetaStoreInitializerResult::SP> result,
-                                   bool store_full_document_ids) const
+                                   std::shared_ptr<DocumentMetaStoreInitializerResult::SP> result) const
 {
     GrowStrategy grow = alloc_strategy.get_grow_strategy();
     // Amortize memory spike cost over N docs
@@ -317,9 +317,9 @@ StoreOnlyDocSubDB::createInitializer(const DocumentDBConfig &configSnapshot, Ser
                                                              _writeService.master());
     AllocStrategy alloc_strategy = configSnapshot.get_alloc_config().make_alloc_strategy(_subDbType);
     auto dmsInitTask = createDocumentMetaStoreInitializer(alloc_strategy,
+                                                          configSnapshot.get_document_meta_store_config().store_full_document_ids(),
                                                           configSnapshot.getTuneFileDocumentDBSP()->_attr,
-                                                          result->writableResult().writableDocumentMetaStore(),
-                                                          configSnapshot.get_document_meta_store_config().store_full_document_ids());
+                                                          result->writableResult().writableDocumentMetaStore());
     result->addDocumentMetaStoreInitTask(dmsInitTask);
     auto summaryTask = createSummaryManagerInitializer(createStoreConfig(configSnapshot.getStoreConfig(), _subDbType),
                                                        alloc_strategy,
