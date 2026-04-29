@@ -2,8 +2,8 @@
 
 #pragma once
 
+#include "deadline.h"
 #include "time.h"
-
 #include <atomic>
 
 namespace vespalib {
@@ -19,12 +19,15 @@ public:
     duration soft_left() const noexcept { return _softDoom - getTimeNS(); }
     duration hard_left() const noexcept { return _hardDoom - getTimeNS(); }
     bool isExplicitSoftDoom() const noexcept { return _isExplicitSoftDoom; }
-    static const Doom& never() noexcept;
+    [[nodiscard]] Deadline make_deadline(steady_time point_of_deadline, Deadline::Type type) const noexcept;
 
-private:
     vespalib::steady_time getTimeNS() const noexcept {
         return vespalib::steady_time(_now.load(std::memory_order_relaxed));
     }
+
+    static const Doom& never() noexcept;
+
+private:
     const std::atomic<steady_time>& _now;
     steady_time                     _softDoom;
     steady_time                     _hardDoom;

@@ -339,7 +339,7 @@ public:
                                      uint32_t explore_k,
                                      double exploration_slack,
                                      bool prefetch_tensors,
-                                     const vespalib::Doom& doom,
+                                     const vespalib::Deadline& doom,
                                      double distance_threshold) const override
     {
         stats.count_computed_distance();
@@ -360,7 +360,7 @@ public:
                                                  const GlobalFilter& filter, bool low_hit_ratio, double exploration, uint32_t explore_k,
                                                  double exploration_slack,
                                                  bool prefetch_tensors,
-                                                 const vespalib::Doom& doom,
+                                                 const vespalib::Deadline& doom,
                                                  double distance_threshold) const override
     {
         stats.count_computed_distance();
@@ -1520,7 +1520,7 @@ public:
             field,
             std::make_unique<DistanceCalculator>(this->as_dense_tensor(),
                                                  create_query_tensor(vec_2d(17, 42))),
-            3, approximate, hnsw_params, vespalib::Doom::never());
+            3, approximate, hnsw_params);
         EXPECT_EQ(11u, bp->getState().estimate().estHits);
         EXPECT_EQ(100100.25 * 100100.25, bp->get_distance_threshold());
         return bp;
@@ -1554,7 +1554,7 @@ TEST(TensorAttributeTest, NN_blueprint_handles_empty_filter_for_post_filtering)
     EXPECT_FALSE(bp->pending_index_search());
     bp->set_global_filter(*empty_filter, 0.6);
     EXPECT_TRUE(bp->pending_index_search());
-    bp->perform_index_search();
+    bp->perform_index_search(vespalib::Deadline::never());
     EXPECT_FALSE(bp->pending_index_search());
     // targetHits is adjusted based on the estimated hit ratio of the query.
     EXPECT_EQ(3u, bp->get_target_hits());
@@ -1571,7 +1571,7 @@ TEST(TensorAttributeTest, NN_blueprint_adjustment_of_targetHits_is_bound_for_pos
     EXPECT_FALSE(bp->pending_index_search());
     bp->set_global_filter(*empty_filter, 0.2);
     EXPECT_TRUE(bp->pending_index_search());
-    bp->perform_index_search();
+    bp->perform_index_search(vespalib::Deadline::never());
     EXPECT_FALSE(bp->pending_index_search());
     // targetHits is adjusted based on the estimated hit ratio of the query,
     // but bound by target-hits-max-adjustment-factor
@@ -1592,7 +1592,7 @@ TEST(TensorAttributeTest, NN_blueprint_handles_strong_filter_for_pre_filtering)
     EXPECT_FALSE(bp->pending_index_search());
     bp->set_global_filter(*strong_filter, 0.25);
     EXPECT_TRUE(bp->pending_index_search());
-    bp->perform_index_search();
+    bp->perform_index_search(vespalib::Deadline::never());
     EXPECT_FALSE(bp->pending_index_search());
     EXPECT_EQ(3u, bp->get_target_hits());
     EXPECT_EQ(3u, bp->get_adjusted_target_hits());
@@ -1615,7 +1615,7 @@ TEST(TensorAttributeTest, NN_blueprint_handles_weak_filter_for_pre_filtering)
     EXPECT_FALSE(bp->pending_index_search());
     bp->set_global_filter(*weak_filter, 0.6);
     EXPECT_TRUE(bp->pending_index_search());
-    bp->perform_index_search();
+    bp->perform_index_search(vespalib::Deadline::never());
     EXPECT_FALSE(bp->pending_index_search());
     EXPECT_EQ(3u, bp->get_target_hits());
     EXPECT_EQ(3u, bp->get_adjusted_target_hits());
@@ -1666,7 +1666,7 @@ TEST(TensorAttributeTest, NN_blueprint_updates_pending_index_search_after_filter
     EXPECT_FALSE(bp->pending_index_search());
     bp->set_global_filter(*weak_filter, 0.6);
     EXPECT_TRUE(bp->pending_index_search());
-    bp->perform_index_search();
+    bp->perform_index_search(vespalib::Deadline::never());
     EXPECT_FALSE(bp->pending_index_search());
 }
 
@@ -1706,7 +1706,7 @@ TEST(TensorAttributeTest, NN_blueprint_collects_stats)
         EXPECT_FALSE(bp->pending_index_search());
         bp->set_global_filter(*inactive_filter, 0.6);
         EXPECT_TRUE(bp->pending_index_search());
-        bp->perform_index_search();
+        bp->perform_index_search(vespalib::Deadline::never());
         EXPECT_FALSE(bp->pending_index_search());
     }
     EXPECT_EQ(1, stats->approximate_nns_distances_computed());
@@ -1727,7 +1727,7 @@ TEST(TensorAttributeTest, NN_blueprint_collects_stats)
         EXPECT_FALSE(bp->pending_index_search());
         bp->set_global_filter(*weak_filter, 0.6);
         EXPECT_TRUE(bp->pending_index_search());
-        bp->perform_index_search();
+        bp->perform_index_search(vespalib::Deadline::never());
         EXPECT_FALSE(bp->pending_index_search());
     }
     EXPECT_EQ(2, stats->approximate_nns_distances_computed());

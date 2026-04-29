@@ -50,8 +50,7 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
                                                    std::unique_ptr<search::tensor::DistanceCalculator> distance_calc,
                                                    uint32_t target_hits,
                                                    bool approximate,
-                                                   const HnswParams& hnsw_params,
-                                                   const vespalib::Doom& doom)
+                                                   const HnswParams& hnsw_params)
     : ComplexLeafBlueprint(field),
       _distance_calc(std::move(distance_calc)),
       _attr_tensor(_distance_calc->attribute_tensor()),
@@ -80,7 +79,6 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
       _lazy_filter_hit_ratio(),
       _low_hit_ratio(false),
       _pending_index_search(false),
-      _doom(doom),
       _matching_phase(MatchingPhase::FIRST_PHASE),
       _nni_stats(),
       _stats()
@@ -154,15 +152,15 @@ NearestNeighborBlueprint::pending_index_search() const {
 }
 
 void
-NearestNeighborBlueprint::perform_index_search() {
+NearestNeighborBlueprint::perform_index_search(const vespalib::Deadline &doom) {
     if (_pending_index_search) {
-        perform_top_k(_attr_tensor.nearest_neighbor_index());
+        perform_top_k(_attr_tensor.nearest_neighbor_index(), doom);
         _pending_index_search = false;
     }
 }
 
 void
-NearestNeighborBlueprint::perform_top_k(const search::tensor::NearestNeighborIndex* nns_index)
+NearestNeighborBlueprint::perform_top_k(const search::tensor::NearestNeighborIndex* nns_index, const vespalib::Deadline &doom)
 {
     uint32_t k = _adjusted_target_hits;
     const auto &df = _distance_calc->function();
@@ -175,15 +173,15 @@ NearestNeighborBlueprint::perform_top_k(const search::tensor::NearestNeighborInd
         _lazy_filter_hit_ratio = static_cast<double>(_lazy_filter_hits.value()) / _attr_tensor.get_num_docs();
         _low_hit_ratio = _lazy_filter_hit_ratio.value() < _hnsw_params.filter_first_upper_limit;
         _found_hits = nns_index->find_top_k_with_filter(_nni_stats, k, df, *use_filter, _low_hit_ratio, _hnsw_params.filter_first_exploration,
-                                                        k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _hnsw_params.prefetch_tensors, _doom, _hnsw_params.distance_threshold);
+                                                        k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _hnsw_params.prefetch_tensors, doom, _hnsw_params.distance_threshold);
         _algorithm = Algorithm::INDEX_TOP_K_WITH_FILTER;
     } else if (_global_filter->is_active()) {
         _low_hit_ratio = _global_filter_hit_ratio.value() < _hnsw_params.filter_first_upper_limit;
         _found_hits = nns_index->find_top_k_with_filter(_nni_stats, k, df, *_global_filter, _low_hit_ratio, _hnsw_params.filter_first_exploration,
-                                                        k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _hnsw_params.prefetch_tensors, _doom, _hnsw_params.distance_threshold);
+                                                        k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _hnsw_params.prefetch_tensors, doom, _hnsw_params.distance_threshold);
         _algorithm = Algorithm::INDEX_TOP_K_WITH_FILTER;
     } else {
-        _found_hits = nns_index->find_top_k(_nni_stats, k, df, k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _hnsw_params.prefetch_tensors, _doom, _hnsw_params.distance_threshold);
+        _found_hits = nns_index->find_top_k(_nni_stats, k, df, k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _hnsw_params.prefetch_tensors, doom, _hnsw_params.distance_threshold);
         _algorithm = Algorithm::INDEX_TOP_K;
     }
 

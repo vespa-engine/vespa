@@ -22,6 +22,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     count_down_latch.cpp
     cpu_usage.cpp
     crc.cpp
+    deadline.cpp
     destructor_callbacks.cpp
     doom.cpp
     dual_merge_director.cpp
@@ -30,6 +31,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     exceptions.cpp
     execution_profiler.cpp
     executor_idle_tracking.cpp
+    fake_deadline.cpp
     fake_doom.cpp
     featureset.cpp
     file_area_freelist.cpp
