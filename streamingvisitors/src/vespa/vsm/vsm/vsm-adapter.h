@@ -85,6 +85,7 @@ public:
     // inherit doc from IDocsumEnvironment
     const search::IAttributeManager * getAttributeManager() const override { return nullptr; }
     const juniper::Juniper * getJuniper() const override { return _juniper.get(); }
+    [[nodiscard]] std::shared_ptr<const search::IDocumentIdProvider> get_document_id_provider() const noexcept override;
 };
 
 using DocsumToolsPtr = std::shared_ptr<const DocsumTools>;

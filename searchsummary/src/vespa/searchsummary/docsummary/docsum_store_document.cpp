@@ -57,14 +57,16 @@ DocsumStoreDocument::insert_juniper_field(const std::string& field_name, Element
     }
 }
 
-void
+bool
 DocsumStoreDocument::insert_document_id(vespalib::slime::Inserter& inserter) const
 {
     if (_document) {
         auto id = _document->getId().toString();
         vespalib::Memory id_view(id.data(), id.size());
         inserter.insertString(id_view);
+        return true;
     }
+    return false;
 }
 
 }

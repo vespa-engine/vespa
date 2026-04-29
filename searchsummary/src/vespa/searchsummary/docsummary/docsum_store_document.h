@@ -22,7 +22,7 @@ public:
                               vespalib::slime::Inserter& inserter, IStringFieldConverter* converter) const override;
     void insert_juniper_field(const std::string& field_name, search::common::ElementIds selected_elements,
                               vespalib::slime::Inserter& inserter, IJuniperConverter& converter) const override;
-    void insert_document_id(vespalib::slime::Inserter& inserter) const override;
+    [[nodiscard]] bool insert_document_id(vespalib::slime::Inserter& inserter) const override;
 };
 
 }

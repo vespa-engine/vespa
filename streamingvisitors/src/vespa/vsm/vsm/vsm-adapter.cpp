@@ -129,6 +129,8 @@ DocsumTools::obtainFieldNames(const FastS_VsmsummaryHandle &cfg)
     return true;
 }
 
+std::shared_ptr<const search::IDocumentIdProvider> DocsumTools::get_document_id_provider() const noexcept { return {}; }
+
 void
 VSMAdapter::configure(const VSMConfigSnapshot & snapshot)
 {

@@ -223,7 +223,8 @@ Fixture::initViewSet(ViewSet &views)
                                                  views._service.write().field_writer(), views._service.write().shared(), views._hwInfo);
     auto summaryMgr = make_shared<SummaryManager>
             (_summaryExecutor, search::LogDocumentStore::Config(), search::GrowStrategy(), BASE_DIR,
-             TuneFileSummary(), views._fileHeaderContext,views._noTlSyncer, search::IBucketizer::SP());
+             TuneFileSummary(), views._fileHeaderContext,views._noTlSyncer, search::IBucketizer::SP(),
+             std::shared_ptr<const search::IDocumentIdProvider>());
     auto metaStore = make_shared<DocumentMetaStoreContext>(make_shared<bucketdb::BucketDBOwner>());
     auto indexWriter = std::make_shared<IndexWriter>(indexMgr);
     auto attrWriter = std::make_shared<AttributeWriter>(attrMgr);

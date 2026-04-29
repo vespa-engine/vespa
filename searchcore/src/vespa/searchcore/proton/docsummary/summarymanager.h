@@ -28,6 +28,7 @@ public:
         std::unique_ptr<juniper::Juniper>     _juniperConfig;
         search::IAttributeManager::SP         _attributeMgr;
         search::IDocumentStore::SP            _docStore;
+        std::shared_ptr<const search::IDocumentIdProvider>       _document_id_provider;
         const std::shared_ptr<const document::DocumentTypeRepo>  _repo;
     public:
         SummarySetup(const std::string & baseDir,
@@ -35,6 +36,7 @@ public:
                      const JuniperrcConfig & juniperCfg,
                      search::IAttributeManager::SP attributeMgr,
                      search::IDocumentStore::SP docStore,
+                     std::shared_ptr<const search::IDocumentIdProvider> document_id_provider,
                      std::shared_ptr<const document::DocumentTypeRepo> repo,
                      const search::index::Schema& schema);
 
@@ -45,11 +47,13 @@ public:
 
         const search::IAttributeManager * getAttributeManager() const override { return _attributeMgr.get(); }
         const juniper::Juniper * getJuniper() const override { return _juniperConfig.get(); }
+        [[nodiscard]] std::shared_ptr<const search::IDocumentIdProvider> get_document_id_provider() const noexcept override;
     };
 
 private:
     std::string               _baseDir;
-    std::shared_ptr<search::IDocumentStore> _docStore;
+    std::shared_ptr<search::IDocumentStore>            _docStore;
+    std::shared_ptr<const search::IDocumentIdProvider> _document_id_provider;
 
 public:
     using SP = std::shared_ptr<SummaryManager>;
@@ -60,7 +64,8 @@ public:
                    const search::TuneFileSummary &tuneFileSummary,
                    const search::common::FileHeaderContext &fileHeaderContext,
                    search::transactionlog::SyncProxy &tlSyncer,
-                   std::shared_ptr<search::IBucketizer> bucketizer);
+                   std::shared_ptr<search::IBucketizer> bucketizer,
+                   std::shared_ptr<const search::IDocumentIdProvider> document_id_provider);
     ~SummaryManager() override;
 
     void putDocument(uint64_t syncToken, search::DocumentIdT lid, const document::Document & doc);

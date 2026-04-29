@@ -185,7 +185,7 @@ public:
     DocsumStoreFieldValue get_field_value(const std::string& field_name) const override;
     void insert_summary_field(const std::string& field_name, ElementIds selected_elements, vespalib::slime::Inserter& inserter, IStringFieldConverter* converter) const override;
     void insert_juniper_field(const std::string& field_name, ElementIds selected_elements, vespalib::slime::Inserter& inserter, IJuniperConverter& converter) const override;
-    void insert_document_id(vespalib::slime::Inserter& inserter) const override;
+    [[nodiscard]] bool insert_document_id(vespalib::slime::Inserter& inserter) const override;
 };
 
 DocsumStoreVsmDocument::DocsumStoreVsmDocument(DocsumFilter& docsum_filter, const Document& vsm_document)
@@ -270,14 +270,16 @@ DocsumStoreVsmDocument::insert_juniper_field(const std::string& field_name, Elem
     }
 }
 
-void
+bool
 DocsumStoreVsmDocument::insert_document_id(vespalib::slime::Inserter& inserter) const
 {
     if (_document) {
         auto id = _document->getId().toString();
         vespalib::Memory id_view(id.data(), id.size());
         inserter.insertString(id_view);
+        return true;
     }
+    return false;
 }
 
 }

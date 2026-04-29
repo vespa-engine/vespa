@@ -91,6 +91,7 @@ SummaryManager::SummarySetup::
 SummarySetup(const std::string & baseDir, const SummaryConfig & summaryCfg,
              const JuniperrcConfig & juniperCfg,
              search::IAttributeManager::SP attributeMgr, search::IDocumentStore::SP docStore,
+             std::shared_ptr<const search::IDocumentIdProvider> document_id_provider,
              std::shared_ptr<const DocumentTypeRepo> repo,
              const search::index::Schema& schema)
     : _docsumWriter(),
@@ -99,6 +100,7 @@ SummarySetup(const std::string & baseDir, const SummaryConfig & summaryCfg,
       _juniperConfig(),
       _attributeMgr(std::move(attributeMgr)),
       _docStore(std::move(docStore)),
+      _document_id_provider(std::move(document_id_provider)),
       _repo(std::move(repo))
 {
     _juniperConfig = std::make_unique<juniper::Juniper>(&_juniperProps, _wordFolder.get());
@@ -126,6 +128,9 @@ SummaryManager::SummarySetup::createDocsumStore()
     return std::make_unique<DocumentStoreAdapter>(*_docStore, *_repo);
 }
 
+std::shared_ptr<const search::IDocumentIdProvider> SummaryManager::SummarySetup::get_document_id_provider() const noexcept {
+    return _document_id_provider;
+}
 
 ISummaryManager::ISummarySetup::SP
 SummaryManager::createSummarySetup(const SummaryConfig & summaryCfg,
@@ -134,16 +139,18 @@ SummaryManager::createSummarySetup(const SummaryConfig & summaryCfg,
                                    const search::index::Schema& schema)
 {
     return std::make_shared<SummarySetup>(_baseDir, summaryCfg,
-                                          juniperCfg, attributeMgr, _docStore, repo, schema);
+                                          juniperCfg, attributeMgr, _docStore, _document_id_provider, repo, schema);
 }
 
 SummaryManager::SummaryManager(vespalib::Executor &shared_executor, const LogDocumentStore::Config & storeConfig,
                                const search::GrowStrategy & growStrategy, const std::string &baseDir,
                                const TuneFileSummary &tuneFileSummary,
                                const FileHeaderContext &fileHeaderContext, search::transactionlog::SyncProxy &tlSyncer,
-                               search::IBucketizer::SP bucketizer)
+                               search::IBucketizer::SP bucketizer,
+                               std::shared_ptr<const search::IDocumentIdProvider> document_id_provider)
     : _baseDir(baseDir),
-      _docStore()
+      _docStore(),
+      _document_id_provider(std::move(document_id_provider))
 {
     _docStore = std::make_shared<LogDocumentStore>(shared_executor, baseDir, storeConfig, growStrategy, tuneFileSummary,
                                                    fileHeaderContext, tlSyncer, std::move(bucketizer));

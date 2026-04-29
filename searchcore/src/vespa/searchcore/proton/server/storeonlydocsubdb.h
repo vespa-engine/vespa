@@ -167,6 +167,7 @@ protected:
                                     const AllocStrategy& alloc_strategy,
                                     const search::TuneFileSummary &tuneFile,
                                     search::IBucketizer::SP bucketizer,
+                                    std::shared_ptr<const search::IDocumentIdProvider> document_id_provider,
                                     std::shared_ptr<SummaryManager::SP> result) const;
 
     void setupSummaryManager(SummaryManager::SP summaryManager);
