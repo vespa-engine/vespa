@@ -12,7 +12,9 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
 import static com.yahoo.vespa.flags.Dimension.APPLICATION;
@@ -51,6 +53,8 @@ import static com.yahoo.vespa.flags.Dimension.VESPA_VERSION;
 public class Flags {
 
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
+
+    private static final AtomicBoolean spiLoaded = new AtomicBoolean(false);
 
     public static final UnboundBooleanFlag GCP_ENCLAVE_V2 = defineFeatureFlag(
             "gcp-enclave-v2", false,
@@ -368,20 +372,38 @@ public class Flags {
     public static final UnboundBooleanFlag APPLY_ON_RESTART_FOR_APPLICATION_METADATA_CONFIG = defineFeatureFlag(
             "apply-on-restart-for-application-metadata-config", false,
             List.of("glebashnik"), "2026-02-13", "2026-08-13",
-            "Whether to set applyOnRestart flag on ApplicationMetadataConfig. " + 
+            "Whether to set applyOnRestart flag on ApplicationMetadataConfig. " +
                     "This might fix deferring config changes until container restart.",
             "Takes effect at redeployment",
             INSTANCE_ID
     );
 
-    /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
+    static {
+        // Discover and register flag definitions provided outside the flags bundle.
+        // Runs after the static flag map and all in-class flag fields above are initialized.
+        loadFlagDefinitionsSpi();
+    }
+
+    /**
+     * Load {@link FlagDefinitions} implementations via {@link ServiceLoader} and invoke
+     * {@link FlagDefinitions#register()} at most once per {@link Flags} class
+     * initialization (i.e. once per classloader that loads this class). The
+     * {@link AtomicBoolean} guard makes any subsequent invocation a no-op.
+     */
+    static void loadFlagDefinitionsSpi() {
+        if (spiLoaded.compareAndSet(false, true)) {
+            ServiceLoader.load(FlagDefinitions.class).forEach(FlagDefinitions::register);
+        }
+    }
+
+    /** WARNING: public for testing and for {@link FlagDefinitions} SPI implementations: All flags should be defined in {@link Flags}, {@link PermanentFlags}, or in a {@link FlagDefinitions} SPI implementation. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
                                                        String modificationEffect, Dimension... dimensions) {
         return define(UnboundBooleanFlag::new, flagId, defaultValue, owners, createdAt, expiresAt, description, modificationEffect, dimensions);
     }
 
-    /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
+    /** WARNING: public for testing and for {@link FlagDefinitions} SPI implementations: All flags should be defined in {@link Flags}, {@link PermanentFlags}, or in a {@link FlagDefinitions} SPI implementation. */
     public static UnboundStringFlag defineStringFlag(String flagId, String defaultValue, List<String> owners,
                                                      String createdAt, String expiresAt, String description,
                                                      String modificationEffect, Dimension... dimensions) {
@@ -391,7 +413,7 @@ public class Flags {
                                 dimensions);
     }
 
-    /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
+    /** WARNING: public for testing and for {@link FlagDefinitions} SPI implementations: All flags should be defined in {@link Flags}, {@link PermanentFlags}, or in a {@link FlagDefinitions} SPI implementation. */
     public static UnboundStringFlag defineStringFlag(String flagId, String defaultValue, List<String> owners,
                                                      String createdAt, String expiresAt, String description,
                                                      String modificationEffect, Predicate<String> validator,
@@ -400,28 +422,28 @@ public class Flags {
                       flagId, defaultValue, owners, createdAt, expiresAt, description, modificationEffect, dimensions);
     }
 
-    /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
+    /** WARNING: public for testing and for {@link FlagDefinitions} SPI implementations: All flags should be defined in {@link Flags}, {@link PermanentFlags}, or in a {@link FlagDefinitions} SPI implementation. */
     public static UnboundIntFlag defineIntFlag(String flagId, int defaultValue, List<String> owners,
                                                String createdAt, String expiresAt, String description,
                                                String modificationEffect, Dimension... dimensions) {
         return define(UnboundIntFlag::new, flagId, defaultValue, owners, createdAt, expiresAt, description, modificationEffect, dimensions);
     }
 
-    /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
+    /** WARNING: public for testing and for {@link FlagDefinitions} SPI implementations: All flags should be defined in {@link Flags}, {@link PermanentFlags}, or in a {@link FlagDefinitions} SPI implementation. */
     public static UnboundLongFlag defineLongFlag(String flagId, long defaultValue, List<String> owners,
                                                  String createdAt, String expiresAt, String description,
                                                  String modificationEffect, Dimension... dimensions) {
         return define(UnboundLongFlag::new, flagId, defaultValue, owners, createdAt, expiresAt, description, modificationEffect, dimensions);
     }
 
-    /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
+    /** WARNING: public for testing and for {@link FlagDefinitions} SPI implementations: All flags should be defined in {@link Flags}, {@link PermanentFlags}, or in a {@link FlagDefinitions} SPI implementation. */
     public static UnboundDoubleFlag defineDoubleFlag(String flagId, double defaultValue, List<String> owners,
                                                      String createdAt, String expiresAt, String description,
                                                      String modificationEffect, Dimension... dimensions) {
         return define(UnboundDoubleFlag::new, flagId, defaultValue, owners, createdAt, expiresAt, description, modificationEffect, dimensions);
     }
 
-    /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
+    /** WARNING: public for testing and for {@link FlagDefinitions} SPI implementations: All flags should be defined in {@link Flags}, {@link PermanentFlags}, or in a {@link FlagDefinitions} SPI implementation. */
     public static <T> UnboundJacksonFlag<T> defineJacksonFlag(String flagId, T defaultValue, Class<T> jacksonClass, List<String> owners,
                                                               String createdAt, String expiresAt, String description,
                                                               String modificationEffect, Predicate<T> validator, Dimension... dimensions) {
@@ -429,7 +451,7 @@ public class Flags {
                       flagId, defaultValue, owners, createdAt, expiresAt, description, modificationEffect, dimensions);
     }
 
-    /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
+    /** WARNING: public for testing and for {@link FlagDefinitions} SPI implementations: All flags should be defined in {@link Flags}, {@link PermanentFlags}, or in a {@link FlagDefinitions} SPI implementation. */
     public static <T> UnboundListFlag<T> defineListFlag(String flagId, List<T> defaultValue, Class<T> elementClass,
                                                         List<String> owners, String createdAt, String expiresAt,
                                                         String description, String modificationEffect, Dimension... dimensions) {
@@ -437,7 +459,7 @@ public class Flags {
                 flagId, defaultValue, owners, createdAt, expiresAt, description, modificationEffect, dimensions);
     }
 
-    /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
+    /** WARNING: public for testing and for {@link FlagDefinitions} SPI implementations: All flags should be defined in {@link Flags}, {@link PermanentFlags}, or in a {@link FlagDefinitions} SPI implementation. */
     public static <T> UnboundListFlag<T> defineListFlag(String flagId, List<T> defaultValue, Class<T> elementClass,
                                                         List<String> owners, String createdAt, String expiresAt,
                                                         String description, String modificationEffect,
