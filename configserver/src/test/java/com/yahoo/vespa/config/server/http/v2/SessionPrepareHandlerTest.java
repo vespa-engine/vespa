@@ -263,6 +263,21 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     }
 
     @Test
+    public void test_that_unchecked_timeout_exception_gives_request_timeout() throws IOException {
+        long sessionId = createSession(applicationId());
+        String exceptionMessage = "prepare timed out after build models step";
+        FailingSessionPrepareHandler handler = new FailingSessionPrepareHandler(SessionPrepareHandler.testContext(),
+                                                                                applicationRepository,
+                                                                                configserverConfig,
+                                                                                new UncheckedTimeoutException(exceptionMessage));
+        HttpResponse response = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, sessionId));
+        assertEquals(408, response.getStatus());
+        Slime data = getData(response);
+        assertEquals(HttpErrorResponse.ErrorCode.REQUEST_TIMEOUT.name(), data.get().field("error-code").asString());
+        assertEquals(exceptionMessage, data.get().field("message").asString());
+    }
+
+    @Test
     public void test_application_lock_failure() throws IOException {
         String exceptionMessage = "Timed out after waiting PT1M to acquire lock '/provision/v1/locks/foo/bar/default'";
         long sessionId = createSession(applicationId());
