@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <atomic>
 
-
 using namespace proton::matching;
 
 using Range = MatchLoopCommunicator::Range;
