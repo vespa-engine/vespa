@@ -47,9 +47,9 @@ DocumentDBConfigBuilder::DocumentDBConfigBuilder(int64_t generation,
       _store(),
       _threading_service_config(ThreadingServiceConfig::make()),
       _alloc_config(AllocConfig::makeDefault()),
+      _document_meta_store_config(DocumentMetaStoreConfig::make()),
       _configId(configId),
-      _docTypeName(docTypeName),
-      _document_meta_store_config(DocumentMetaStoreConfig::make())
+      _docTypeName(docTypeName)
 { }
 
 
@@ -72,9 +72,9 @@ DocumentDBConfigBuilder::DocumentDBConfigBuilder(const DocumentDBConfig &cfg)
       _store(cfg.getStoreConfig()),
       _threading_service_config(cfg.get_threading_service_config()),
       _alloc_config(cfg.get_alloc_config()),
+      _document_meta_store_config(cfg.get_document_meta_store_config()),
       _configId(cfg.getConfigId()),
-      _docTypeName(cfg.getDocTypeName()),
-      _document_meta_store_config(cfg.get_document_meta_store_config())
+      _docTypeName(cfg.getDocTypeName())
 {}
 
 DocumentDBConfigBuilder::~DocumentDBConfigBuilder() = default;
@@ -101,9 +101,9 @@ DocumentDBConfigBuilder::build()
             _store,
             _threading_service_config,
             _alloc_config,
+            _document_meta_store_config,
             _configId,
-            _docTypeName,
-            _document_meta_store_config);
+            _docTypeName);
 }
 
 }

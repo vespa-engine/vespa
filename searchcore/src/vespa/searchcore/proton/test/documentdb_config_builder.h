@@ -32,9 +32,9 @@ private:
     search::LogDocumentStore::Config _store;
     const ThreadingServiceConfig _threading_service_config;
     const AllocConfig _alloc_config;
+    const DocumentMetaStoreConfig _document_meta_store_config;
     std::string _configId;
     std::string _docTypeName;
-    const DocumentMetaStoreConfig _document_meta_store_config;
 
 public:
     DocumentDBConfigBuilder(int64_t generation,

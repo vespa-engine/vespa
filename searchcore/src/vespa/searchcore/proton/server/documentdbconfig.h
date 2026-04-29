@@ -134,9 +134,9 @@ private:
     search::LogDocumentStore::Config          _storeConfig;
     const ThreadingServiceConfig              _threading_service_config;
     const AllocConfig                         _alloc_config;
+    const DocumentMetaStoreConfig             _document_meta_store_config;
     SP                                        _orig;
     bool                                      _delayedAttributeAspects;
-    const DocumentMetaStoreConfig             _document_meta_store_config;
 
 
     template <typename T>
@@ -174,9 +174,9 @@ public:
                      const search::LogDocumentStore::Config & storeConfig,
                      const ThreadingServiceConfig & threading_service_config,
                      const AllocConfig & alloc_config,
+                     const DocumentMetaStoreConfig& document_meta_store_config,
                      const std::string &configId,
-                     const std::string &docTypeName,
-                     const DocumentMetaStoreConfig& document_meta_store_config) noexcept;
+                     const std::string &docTypeName) noexcept;
 
     DocumentDBConfig(const DocumentDBConfig &cfg) noexcept;
     DocumentDBConfig & operator=(const DocumentDBConfig &cfg) = delete;

@@ -98,9 +98,9 @@ struct DBConfigFixture {
              search::LogDocumentStore::Config(),
              ThreadingServiceConfig::make(),
              AllocConfig::makeDefault(),
+             DocumentMetaStoreConfig::make(),
              configId,
-             docTypeName,
-             DocumentMetaStoreConfig::make());
+             docTypeName);
     }
 };
 

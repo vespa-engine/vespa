@@ -72,9 +72,9 @@ DocumentDBConfig::DocumentDBConfig(
                const search::LogDocumentStore::Config & storeConfig,
                const ThreadingServiceConfig & threading_service_config,
                const AllocConfig & alloc_config,
+               const DocumentMetaStoreConfig& document_meta_store_config,
                const std::string &configId,
-               const std::string &docTypeName,
-               const DocumentMetaStoreConfig& document_meta_store_config) noexcept
+               const std::string &docTypeName) noexcept
     : _configId(configId),
       _docTypeName(docTypeName),
       _generation(generation),
@@ -95,9 +95,9 @@ DocumentDBConfig::DocumentDBConfig(
       _storeConfig(storeConfig),
       _threading_service_config(threading_service_config),
       _alloc_config(alloc_config),
+      _document_meta_store_config(document_meta_store_config),
       _orig(),
-      _delayedAttributeAspects(false),
-      _document_meta_store_config(document_meta_store_config)
+      _delayedAttributeAspects(false)
 { }
 
 
@@ -239,9 +239,9 @@ DocumentDBConfig::makeReplayConfig(const SP & orig)
                 o._storeConfig,
                 o._threading_service_config,
                 o._alloc_config,
+                o._document_meta_store_config,
                 o._configId,
-                o._docTypeName,
-                o._document_meta_store_config);
+                o._docTypeName);
     ret->_orig = orig;
     return ret;
 }
@@ -283,9 +283,9 @@ DocumentDBConfig::newFromAttributesConfig(const AttributesConfigSP &attributes) 
             _storeConfig,
             _threading_service_config,
             _alloc_config,
+            _document_meta_store_config,
             _configId,
-            _docTypeName,
-            _document_meta_store_config);
+            _docTypeName);
 }
 
 DocumentDBConfig::SP
@@ -323,9 +323,9 @@ DocumentDBConfig::makeDelayedAttributeAspectConfig(const SP &newCfg, const Docum
                    n._storeConfig,
                    n._threading_service_config,
                    n._alloc_config,
+                   n._document_meta_store_config,
                    n._configId,
-                   n._docTypeName,
-                   n._document_meta_store_config);
+                   n._docTypeName);
     result->_delayedAttributeAspects = true;
     return result;
 }
