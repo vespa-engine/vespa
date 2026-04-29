@@ -64,7 +64,7 @@ public class TelemetryExportTest {
         assertTrue(auth.username().isEmpty());
         assertTrue(auth.password().isEmpty());
 
-        assertEquals("Vespa9", exporter.metricSet());
+        assertEquals("Vespa9", exporter.metricSet().get());
         assertEquals(List.of("container_logs", "access_logs"), exporter.logFileTypes());
     }
 
@@ -148,7 +148,7 @@ public class TelemetryExportTest {
         VespaModel model = createModel(hosts, services);
         var exporter = model.getAdmin().getTelemetryExport().get().exporters().get(0);
         assertTrue(exporter.auth().isEmpty());
-        assertEquals("Vespa9", exporter.metricSet());
+        assertEquals("Vespa9", exporter.metricSet().get());
     }
 
     @Test
@@ -163,7 +163,7 @@ public class TelemetryExportTest {
 
         VespaModel model = createModel(hosts, services);
         var exporter = model.getAdmin().getTelemetryExport().get().exporters().get(0);
-        assertEquals("Vespa9", exporter.metricSet());
+        assertTrue(exporter.metricSet().isEmpty());
         assertTrue(exporter.logFileTypes().isEmpty());
     }
 
@@ -194,8 +194,8 @@ public class TelemetryExportTest {
                 + "  </admin>"
                 + "</services>";
 
-        assertThrows(IllegalArgumentException.class, () -> createModel(hosts, services),
-                "project is required for exporter type 'googlecloud'");
+        var exception = assertThrows(IllegalArgumentException.class, () -> createModel(hosts, services));
+        assertTrue(exception.getMessage().contains("project is required for exporter type 'googlecloud'"));
     }
 
     @Test
@@ -208,8 +208,8 @@ public class TelemetryExportTest {
                 + "  </admin>"
                 + "</services>";
 
-        assertThrows(IllegalArgumentException.class, () -> createModel(hosts, services),
-                "endpoint is required for exporter type 'otlphttp'");
+        var exception = assertThrows(IllegalArgumentException.class, () -> createModel(hosts, services));
+        assertTrue(exception.getMessage().contains("endpoint is required for exporter type 'otlphttp'"));
     }
 
     @Test

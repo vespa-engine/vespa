@@ -200,17 +200,17 @@ public class AllocatedHostsSerializerTest {
                         Optional.of("https://otel.example.com/v1"), Optional.empty(),
                         Optional.of("bearer"), Optional.of("my-vault"), Optional.of("my-token"),
                         Optional.empty(), Optional.empty(), Optional.empty(),
-                        "Vespa9", List.of("container_logs", "access_logs")),
+                        Optional.of("Vespa9"), List.of("container_logs", "access_logs")),
                 new TelemetryExportSpec("gcp-exporter", TelemetryExportSpec.ExporterType.googlecloud,
                         Optional.empty(), Optional.of("my-gcp-project"),
                         Optional.of("basic_auth"), Optional.of("my-vault"), Optional.empty(),
                         Optional.empty(), Optional.of("my-user"), Optional.of("my-pass"),
-                        "Vespa9", List.of()),
+                        Optional.empty(), List.of()),
                 new TelemetryExportSpec("api-key-exporter", TelemetryExportSpec.ExporterType.otlp,
                         Optional.of("https://api.example.com:4317"), Optional.empty(),
                         Optional.of("api_key"), Optional.of("my-vault"), Optional.of("my-key"),
                         Optional.of("X-API-Key"), Optional.empty(), Optional.empty(),
-                        "Vespa9", List.of("container_logs"))
+                        Optional.of("Vespa9"), List.of("container_logs"))
         );
 
         var host = new HostSpec("with-telemetry",

@@ -21,7 +21,7 @@ public record TelemetryExportSpec(String id,
                                   Optional<String> authHeader,
                                   Optional<String> authUsername,
                                   Optional<String> authPassword,
-                                  String metricSet,
+                                  Optional<String> metricSet,
                                   List<String> logFileTypes) {
 
     public enum ExporterType { otlp, otlphttp, googlecloud }
@@ -37,7 +37,8 @@ public record TelemetryExportSpec(String id,
         Objects.requireNonNull(authHeader, "authHeader must be non-null");
         Objects.requireNonNull(authUsername, "authUsername must be non-null");
         Objects.requireNonNull(authPassword, "authPassword must be non-null");
-        Objects.requireNonNull(metricSet, "metricSet must be non-null");
+        Objects.requireNonNull(metricSet, "metricSet must be non-null (use Optional.empty())");
+        Objects.requireNonNull(logFileTypes, "logFileTypes must be non-null");
         logFileTypes = List.copyOf(logFileTypes);
     }
 

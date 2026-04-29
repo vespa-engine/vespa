@@ -13,14 +13,12 @@ public class TelemetryExporter {
 
     public enum ExporterType { otlp, otlphttp, googlecloud }
 
-    private static final String DEFAULT_METRIC_SET = "Vespa9";
-
     private final String id;
     private final ExporterType type;
     private final Optional<String> endpoint;
     private final Optional<String> project;
     private final Optional<TelemetryAuth> auth;
-    private final String metricSet;
+    private final Optional<String> metricSet;
     private final List<String> logFileTypes;
 
     public TelemetryExporter(String id, ExporterType type, String endpoint, String project,
@@ -37,7 +35,7 @@ public class TelemetryExporter {
         this.endpoint = Optional.ofNullable(endpoint);
         this.project = Optional.ofNullable(project);
         this.auth = auth;
-        this.metricSet = metricSet != null ? metricSet : DEFAULT_METRIC_SET;
+        this.metricSet = Optional.ofNullable(metricSet);
         this.logFileTypes = logFileTypes != null ? List.copyOf(logFileTypes) : List.of();
     }
 
@@ -46,7 +44,7 @@ public class TelemetryExporter {
     public Optional<String> endpoint() { return endpoint; }
     public Optional<String> project() { return project; }
     public Optional<TelemetryAuth> auth() { return auth; }
-    public String metricSet() { return metricSet; }
+    public Optional<String> metricSet() { return metricSet; }
     public List<String> logFileTypes() { return logFileTypes; }
 
 }

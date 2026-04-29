@@ -103,6 +103,7 @@ public class HostSpec implements Comparable<HostSpec> {
     }
 
     public HostSpec withMembership(ClusterMembership membership) {
+        Objects.requireNonNull(membership, "membership cannot be null");
         return new HostSpec(hostname, realResources, advertisedResources, requestedResources, Optional.of(membership), version, networkPorts, dockerImageRepo);
     }
 
