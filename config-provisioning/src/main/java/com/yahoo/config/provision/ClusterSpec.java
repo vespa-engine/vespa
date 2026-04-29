@@ -28,10 +28,12 @@ public final class ClusterSpec {
     private final boolean stateful;
     private final List<SidecarSpec> sidecars;
     private final List<AzName> availabilityZones;
+    private final List<TelemetryExportSpec> telemetryExport;
 
     private ClusterSpec(Type type, Id id, Optional<Group> groupId, Version vespaVersion, boolean exclusive,
                         Optional<DockerImage> dockerImageRepo, ZoneEndpoint zoneEndpoint, boolean stateful,
-                        List<SidecarSpec> sidecars, List<AzName> availabilityZones) {
+                        List<SidecarSpec> sidecars, List<AzName> availabilityZones,
+                        List<TelemetryExportSpec> telemetryExport) {
         this.type = type;
         this.id = id;
         this.groupId = groupId;
@@ -44,8 +46,9 @@ public final class ClusterSpec {
             throw new IllegalArgumentException("Cluster of type " + type + " must be stateful");
         this.zoneEndpoint = Objects.requireNonNull(zoneEndpoint);
         this.stateful = stateful;
-        this.sidecars = sidecars;
+        this.sidecars = Objects.requireNonNull(sidecars, "sidecars cannot be null");
         this.availabilityZones = availabilityZones;
+        this.telemetryExport = Objects.requireNonNull(telemetryExport, "telemetryExport cannot be null");
     }
 
     /** Returns the cluster type */
@@ -87,14 +90,22 @@ public final class ClusterSpec {
      */
     public List<AzName> availabilityZones() { return availabilityZones; }
 
+    /** Returns the telemetry export specs configured for this cluster */
+    public List<TelemetryExportSpec> telemetryExport() { return telemetryExport; }
+
     public ClusterSpec with(Optional<Group> newGroup) {
         return new ClusterSpec(type, id, newGroup, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
-                               stateful, sidecars, availabilityZones);
+                               stateful, sidecars, availabilityZones, telemetryExport);
     }
 
     public ClusterSpec withExclusivity(boolean exclusive) {
         return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
-                               stateful, sidecars, availabilityZones);
+                               stateful, sidecars, availabilityZones, telemetryExport);
+    }
+
+    public ClusterSpec withTelemetryExport(List<TelemetryExportSpec> telemetryExport) {
+        return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
+                               stateful, sidecars, availabilityZones, telemetryExport);
     }
 
     /** Creates a ClusterSpec when requesting a cluster */
@@ -120,6 +131,7 @@ public final class ClusterSpec {
         private boolean stateful;
         private List<SidecarSpec> sidecars = List.of();
         private List<AzName> availabilityZones = List.of();
+        private List<TelemetryExportSpec> telemetryExport = List.of();
 
         private Builder(Type type, Id id) {
             this.type = type;
@@ -129,7 +141,7 @@ public final class ClusterSpec {
 
         public ClusterSpec build() {
             return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
-                                   stateful, sidecars, availabilityZones);
+                                   stateful, sidecars, availabilityZones, telemetryExport);
         }
 
         public Builder group(Group groupId) {
@@ -177,6 +189,11 @@ public final class ClusterSpec {
             return this;
         }
 
+        public Builder telemetryExport(List<TelemetryExportSpec> telemetryExport) {
+            this.telemetryExport = telemetryExport;
+            return this;
+        }
+
     }
 
     @Override
@@ -198,13 +215,14 @@ public final class ClusterSpec {
                dockerImageRepo.equals(that.dockerImageRepo) &&
                zoneEndpoint.equals(that.zoneEndpoint) && 
                sidecars.equals(that.sidecars) &&
-               availabilityZones.equals(that.availabilityZones);
+               availabilityZones.equals(that.availabilityZones) &&
+               telemetryExport.equals(that.telemetryExport);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(type, id, groupId, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
-                            stateful, sidecars, availabilityZones);
+                            stateful, sidecars, availabilityZones, telemetryExport);
     }
 
     /**

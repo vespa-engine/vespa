@@ -142,17 +142,13 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
         for (ModelElement exporterElement : telemetryElement.children("exporter")) {
             String id = exporterElement.requiredStringAttribute("id");
             TelemetryExporter.ExporterType type = TelemetryExporter.ExporterType.valueOf(exporterElement.requiredStringAttribute("type"));
-            String endpoint = exporterElement.requiredStringAttribute("endpoint");
+            String endpoint = exporterElement.stringAttribute("endpoint");
+            String project = exporterElement.stringAttribute("project");
 
             Optional<TelemetryAuth> auth = Optional.empty();
             ModelElement authElement = exporterElement.child("auth");
             if (authElement != null) {
-                ModelElement bearerToken = authElement.child("bearer-token");
-                if (bearerToken != null) {
-                    auth = Optional.of(new TelemetryAuth(
-                            bearerToken.requiredStringAttribute("vault"),
-                            bearerToken.requiredStringAttribute("name")));
-                }
+                auth = Optional.of(parseTelemetryAuth(authElement));
             }
 
             String metricSet = null;
@@ -169,9 +165,33 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
                 }
             }
 
-            exporters.add(new TelemetryExporter(id, type, endpoint, auth, metricSet, logFileTypes));
+            exporters.add(new TelemetryExporter(id, type, endpoint, project, auth, metricSet, logFileTypes));
         }
         admin.setTelemetryExport(new TelemetryExport(exporters));
+    }
+
+    private TelemetryAuth parseTelemetryAuth(ModelElement authElement) {
+        ModelElement bearerToken = authElement.child("bearer-token");
+        if (bearerToken != null) {
+            return TelemetryAuth.bearerToken(
+                    bearerToken.requiredStringAttribute("vault"),
+                    bearerToken.requiredStringAttribute("name"));
+        }
+        ModelElement apiKey = authElement.child("api-key");
+        if (apiKey != null) {
+            return TelemetryAuth.apiKey(
+                    apiKey.requiredStringAttribute("vault"),
+                    apiKey.requiredStringAttribute("name"),
+                    apiKey.requiredStringAttribute("header"));
+        }
+        ModelElement basicAuth = authElement.child("basic-auth");
+        if (basicAuth != null) {
+            return TelemetryAuth.basicAuth(
+                    basicAuth.requiredStringAttribute("vault"),
+                    basicAuth.requiredStringAttribute("username"),
+                    basicAuth.requiredStringAttribute("password"));
+        }
+        throw new IllegalArgumentException("Unknown auth type in <auth> element. Supported types: bearer-token, api-key, basic-auth");
     }
 
     private String parseLogforwarderRole(String role, DeployState deployState) {

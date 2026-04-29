@@ -102,6 +102,10 @@ public class HostSpec implements Comparable<HostSpec> {
         return new HostSpec(hostname, realResources, advertisedResources, requestedResources, membership, version, ports, dockerImageRepo);
     }
 
+    public HostSpec withMembership(ClusterMembership membership) {
+        return new HostSpec(hostname, realResources, advertisedResources, requestedResources, Optional.of(membership), version, networkPorts, dockerImageRepo);
+    }
+
     @Override
     public String toString() {
         return hostname +

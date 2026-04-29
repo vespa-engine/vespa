@@ -25,7 +25,7 @@ public class TelemetryExportTest {
             + "</hosts>";
 
     @Test
-    void testSingleExporter() throws Exception {
+    void testBearerTokenAuth() throws Exception {
         String services = "<services>"
                 + "  <admin version='4.0'>"
                 + "    <telemetry>"
@@ -53,14 +53,64 @@ public class TelemetryExportTest {
         var exporter = exporters.get(0);
         assertEquals("my-exporter", exporter.id());
         assertEquals(TelemetryExporter.ExporterType.otlphttp, exporter.type());
-        assertEquals("https://otel.example.com/v1", exporter.endpoint());
+        assertEquals("https://otel.example.com/v1", exporter.endpoint().get());
 
         assertTrue(exporter.auth().isPresent());
-        assertEquals("my-vault", exporter.auth().get().vault());
-        assertEquals("my-token", exporter.auth().get().name());
+        var auth = exporter.auth().get();
+        assertEquals(TelemetryAuth.Type.bearer, auth.type());
+        assertEquals("my-vault", auth.vault());
+        assertEquals("my-token", auth.name().get());
+        assertTrue(auth.header().isEmpty());
+        assertTrue(auth.username().isEmpty());
+        assertTrue(auth.password().isEmpty());
 
         assertEquals("Vespa9", exporter.metricSet());
         assertEquals(List.of("container_logs", "access_logs"), exporter.logFileTypes());
+    }
+
+    @Test
+    void testApiKeyAuth() throws Exception {
+        String services = "<services>"
+                + "  <admin version='4.0'>"
+                + "    <telemetry>"
+                + "      <exporter id='my-exporter' type='otlphttp' endpoint='https://otel.example.com/v1'>"
+                + "        <auth>"
+                + "          <api-key vault='my-vault' name='my-key' header='X-API-Key'/>"
+                + "        </auth>"
+                + "      </exporter>"
+                + "    </telemetry>"
+                + "  </admin>"
+                + "</services>";
+
+        VespaModel model = createModel(hosts, services);
+        var auth = model.getAdmin().getTelemetryExport().get().exporters().get(0).auth().get();
+        assertEquals(TelemetryAuth.Type.api_key, auth.type());
+        assertEquals("my-vault", auth.vault());
+        assertEquals("my-key", auth.name().get());
+        assertEquals("X-API-Key", auth.header().get());
+    }
+
+    @Test
+    void testBasicAuth() throws Exception {
+        String services = "<services>"
+                + "  <admin version='4.0'>"
+                + "    <telemetry>"
+                + "      <exporter id='my-exporter' type='otlphttp' endpoint='https://otel.example.com/v1'>"
+                + "        <auth>"
+                + "          <basic-auth vault='my-vault' username='my-user' password='my-pass'/>"
+                + "        </auth>"
+                + "      </exporter>"
+                + "    </telemetry>"
+                + "  </admin>"
+                + "</services>";
+
+        VespaModel model = createModel(hosts, services);
+        var auth = model.getAdmin().getTelemetryExport().get().exporters().get(0).auth().get();
+        assertEquals(TelemetryAuth.Type.basic_auth, auth.type());
+        assertEquals("my-vault", auth.vault());
+        assertTrue(auth.name().isEmpty());
+        assertEquals("my-user", auth.username().get());
+        assertEquals("my-pass", auth.password().get());
     }
 
     @Test
@@ -122,7 +172,7 @@ public class TelemetryExportTest {
         String services = "<services>"
                 + "  <admin version='4.0'>"
                 + "    <telemetry>"
-                + "      <exporter id='gcp' type='googlecloud' endpoint='https://monitoring.googleapis.com'/>"
+                + "      <exporter id='gcp' type='googlecloud' project='my-gcp-project'/>"
                 + "    </telemetry>"
                 + "  </admin>"
                 + "</services>";
@@ -130,6 +180,36 @@ public class TelemetryExportTest {
         VespaModel model = createModel(hosts, services);
         var exporter = model.getAdmin().getTelemetryExport().get().exporters().get(0);
         assertEquals(TelemetryExporter.ExporterType.googlecloud, exporter.type());
+        assertEquals("my-gcp-project", exporter.project().get());
+        assertTrue(exporter.endpoint().isEmpty());
+    }
+
+    @Test
+    void testGooglecloudWithoutProjectFails() {
+        String services = "<services>"
+                + "  <admin version='4.0'>"
+                + "    <telemetry>"
+                + "      <exporter id='gcp' type='googlecloud'/>"
+                + "    </telemetry>"
+                + "  </admin>"
+                + "</services>";
+
+        assertThrows(IllegalArgumentException.class, () -> createModel(hosts, services),
+                "project is required for exporter type 'googlecloud'");
+    }
+
+    @Test
+    void testOtlpWithoutEndpointFails() {
+        String services = "<services>"
+                + "  <admin version='4.0'>"
+                + "    <telemetry>"
+                + "      <exporter id='test' type='otlphttp'/>"
+                + "    </telemetry>"
+                + "  </admin>"
+                + "</services>";
+
+        assertThrows(IllegalArgumentException.class, () -> createModel(hosts, services),
+                "endpoint is required for exporter type 'otlphttp'");
     }
 
     @Test
@@ -145,17 +225,25 @@ public class TelemetryExportTest {
     @Test
     void testModelClassValidation() {
         assertThrows(IllegalArgumentException.class, () ->
-                new TelemetryExporter(null, TelemetryExporter.ExporterType.otlphttp, "https://ep", java.util.Optional.empty(), null, null));
+                new TelemetryExporter(null, TelemetryExporter.ExporterType.otlphttp, "https://ep", null, java.util.Optional.empty(), null, null));
         assertThrows(IllegalArgumentException.class, () ->
-                new TelemetryExporter("id", null, "https://ep", java.util.Optional.empty(), null, null));
+                new TelemetryExporter("id", null, "https://ep", null, java.util.Optional.empty(), null, null));
         assertThrows(IllegalArgumentException.class, () ->
-                new TelemetryExporter("id", TelemetryExporter.ExporterType.otlphttp, null, java.util.Optional.empty(), null, null));
+                new TelemetryExporter("id", TelemetryExporter.ExporterType.otlphttp, null, null, java.util.Optional.empty(), null, null));
+        assertThrows(IllegalArgumentException.class, () ->
+                new TelemetryExporter("id", TelemetryExporter.ExporterType.googlecloud, null, null, java.util.Optional.empty(), null, null));
         assertThrows(IllegalArgumentException.class, () ->
                 new TelemetryExport(List.of()));
         assertThrows(IllegalArgumentException.class, () ->
-                new TelemetryAuth("", "name"));
+                TelemetryAuth.bearerToken("", "name"));
         assertThrows(IllegalArgumentException.class, () ->
-                new TelemetryAuth("vault", ""));
+                TelemetryAuth.bearerToken("vault", ""));
+        assertThrows(IllegalArgumentException.class, () ->
+                TelemetryAuth.apiKey("vault", "name", ""));
+        assertThrows(IllegalArgumentException.class, () ->
+                TelemetryAuth.basicAuth("vault", "", "pass"));
+        assertThrows(IllegalArgumentException.class, () ->
+                TelemetryAuth.basicAuth("vault", "user", ""));
     }
 
     private VespaModel createModel(String hosts, String services) throws Exception {

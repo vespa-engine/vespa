@@ -10,6 +10,7 @@ import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.SidecarProbe;
 import com.yahoo.config.provision.SidecarSpec;
+import com.yahoo.config.provision.TelemetryExportSpec;
 import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 import com.yahoo.config.provision.ZoneEndpoint.AccessType;
@@ -84,6 +85,7 @@ public class AllocatedHostsSerializer {
     private static final String hostSpecNetworkPortsKey = "ports";
     private static final String sidecarsKey = "sidecars";
     private static final String availabilityZonesKey = "azs";
+    private static final String telemetryExportKey = "telemetryExport";
 
     public static byte[] toJson(AllocatedHosts allocatedHosts) throws IOException {
         Slime slime = new Slime();
@@ -113,6 +115,10 @@ public class AllocatedHostsSerializer {
             var availabilityZones = membership.cluster().availabilityZones();
             if (!availabilityZones.isEmpty())
                 availabilityZonesToSlime(availabilityZones, object.setArray(availabilityZonesKey));
+
+            var telemetryExport = membership.cluster().telemetryExport();
+            if (!telemetryExport.isEmpty())
+                telemetryExportToSlime(telemetryExport, object.setArray(telemetryExportKey));
         });
         toSlime(host.realResources(), object.setObject(realResourcesKey));
         toSlime(host.advertisedResources(), object.setObject(advertisedResourcesKey));
@@ -250,7 +256,8 @@ public class AllocatedHostsSerializer {
                                       : Optional.empty(),
                                       zoneEndpoint(object.field(loadBalancerSettingsKey)), 
                                       sidecars(object.field(sidecarsKey)),
-                                      availabilityZones(object.field(availabilityZonesKey)));
+                                      availabilityZones(object.field(availabilityZonesKey)),
+                                      telemetryExportFromSlime(object.field(telemetryExportKey)));
     }
 
     private static void sidecarsToSlime(List<SidecarSpec> sidecars, Cursor arrayCursor) {
@@ -439,6 +446,49 @@ public class AllocatedHostsSerializer {
         };
 
         return new SidecarProbe(action, initialDelaySeconds, periodSeconds, timeoutSeconds, failureThreshold);
+    }
+
+    private static void telemetryExportToSlime(List<TelemetryExportSpec> specs, Cursor arrayCursor) {
+        for (var spec : specs) {
+            var cursor = arrayCursor.addObject();
+            cursor.setString("id", spec.id());
+            cursor.setString("type", spec.type().name());
+            spec.endpoint().ifPresent(e -> cursor.setString("endpoint", e));
+            spec.project().ifPresent(p -> cursor.setString("project", p));
+            spec.authType().ifPresent(t -> cursor.setString("authType", t));
+            spec.authVault().ifPresent(v -> cursor.setString("authVault", v));
+            spec.authSecretName().ifPresent(n -> cursor.setString("authSecretName", n));
+            spec.authHeader().ifPresent(h -> cursor.setString("authHeader", h));
+            spec.authUsernameSecretName().ifPresent(u -> cursor.setString("authUsernameSecretName", u));
+            spec.authPasswordSecretName().ifPresent(p -> cursor.setString("authPasswordSecretName", p));
+            spec.metricSet().ifPresent(m -> cursor.setString("metricSet", m));
+            if (!spec.logFileTypes().isEmpty()) {
+                var logsCursor = cursor.setArray("logFileTypes");
+                spec.logFileTypes().forEach(logsCursor::addString);
+            }
+        }
+    }
+
+    private static List<TelemetryExportSpec> telemetryExportFromSlime(Inspector arrayInspector) {
+        var specs = new ArrayList<TelemetryExportSpec>();
+        arrayInspector.traverse((ArrayTraverser) (idx, inspector) -> {
+            var logFileTypes = new ArrayList<String>();
+            inspector.field("logFileTypes").traverse((ArrayTraverser) (i, elem) -> logFileTypes.add(elem.asString()));
+            specs.add(new TelemetryExportSpec(
+                    inspector.field("id").asString(),
+                    TelemetryExportSpec.ExporterType.valueOf(inspector.field("type").asString()),
+                    optionalString(inspector.field("endpoint")),
+                    optionalString(inspector.field("project")),
+                    optionalString(inspector.field("authType")),
+                    optionalString(inspector.field("authVault")),
+                    optionalString(inspector.field("authSecretName")),
+                    optionalString(inspector.field("authHeader")),
+                    optionalString(inspector.field("authUsernameSecretName")),
+                    optionalString(inspector.field("authPasswordSecretName")),
+                    optionalString(inspector.field("metricSet")),
+                    logFileTypes));
+        });
+        return specs;
     }
 
 }

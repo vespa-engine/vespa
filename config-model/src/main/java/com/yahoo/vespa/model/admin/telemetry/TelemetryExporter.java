@@ -17,20 +17,25 @@ public class TelemetryExporter {
 
     private final String id;
     private final ExporterType type;
-    private final String endpoint;
+    private final Optional<String> endpoint;
+    private final Optional<String> project;
     private final Optional<TelemetryAuth> auth;
     private final String metricSet;
     private final List<String> logFileTypes;
 
-    public TelemetryExporter(String id, ExporterType type, String endpoint,
+    public TelemetryExporter(String id, ExporterType type, String endpoint, String project,
                              Optional<TelemetryAuth> auth, String metricSet,
                              List<String> logFileTypes) {
         if (id == null || id.isBlank()) throw new IllegalArgumentException("exporter id must be non-empty");
         if (type == null) throw new IllegalArgumentException("exporter type must be specified");
-        if (endpoint == null || endpoint.isBlank()) throw new IllegalArgumentException("exporter endpoint must be non-empty");
+        if (type != ExporterType.googlecloud && (endpoint == null || endpoint.isBlank()))
+            throw new IllegalArgumentException("endpoint is required for exporter type '" + type + "'");
+        if (type == ExporterType.googlecloud && (project == null || project.isBlank()))
+            throw new IllegalArgumentException("project is required for exporter type 'googlecloud'");
         this.id = id;
         this.type = type;
-        this.endpoint = endpoint;
+        this.endpoint = Optional.ofNullable(endpoint);
+        this.project = Optional.ofNullable(project);
         this.auth = auth;
         this.metricSet = metricSet != null ? metricSet : DEFAULT_METRIC_SET;
         this.logFileTypes = logFileTypes != null ? List.copyOf(logFileTypes) : List.of();
@@ -38,7 +43,8 @@ public class TelemetryExporter {
 
     public String id() { return id; }
     public ExporterType type() { return type; }
-    public String endpoint() { return endpoint; }
+    public Optional<String> endpoint() { return endpoint; }
+    public Optional<String> project() { return project; }
     public Optional<TelemetryAuth> auth() { return auth; }
     public String metricSet() { return metricSet; }
     public List<String> logFileTypes() { return logFileTypes; }

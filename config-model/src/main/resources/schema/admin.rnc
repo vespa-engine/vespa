@@ -116,11 +116,24 @@ Telemetry = element telemetry {
     element exporter {
         attribute id { xsd:string } &
         attribute type { string "otlp" | string "otlphttp" | string "googlecloud" } &
-        attribute endpoint { xsd:anyURI } &
+        attribute endpoint { xsd:anyURI }? &
+        attribute project { xsd:string }? &
         element auth {
             element bearer-token {
                 attribute vault { xsd:string } &
                 attribute name { xsd:string }
+            }
+            |
+            element api-key {
+                attribute vault { xsd:string } &
+                attribute name { xsd:string } &
+                attribute header { xsd:string }
+            }
+            |
+            element basic-auth {
+                attribute vault { xsd:string } &
+                attribute username { xsd:string } &
+                attribute password { xsd:string }
             }
         }? &
         element metric-set {
