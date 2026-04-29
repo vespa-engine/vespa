@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "match_loop_communicator.h"
+#include <vespa/searchlib/features/first_phase_max_feature.h>
 #include <vespa/searchlib/features/first_phase_rank_lookup.h>
 #include <vespa/vespalib/util/priority_queue.h>
 #include <vespa/vespalib/util/rendezvous.hpp>
 
+using search::features::FirstPhaseMaxBlueprint;
 using search::features::FirstPhaseRankLookup;
 
 namespace proton:: matching {
@@ -89,9 +91,11 @@ MatchLoopCommunicator::GetSecondPhaseWork::GetSecondPhaseWork(size_t n, size_t t
       _diversifier(std::move(diversifier)),
       _object_store(object_store),
       _first_phase_rank_lookup(nullptr),
+      _first_phase_max(nullptr),
       _before_second_phase(std::move(before_second_phase)) {
     if (_object_store) {
         _first_phase_rank_lookup = FirstPhaseRankLookup::get_mutable_shared_state(*_object_store);
+        _first_phase_max = FirstPhaseMaxBlueprint::get_mutable_shared_state(*_object_store);
     }
 }
 
@@ -162,6 +166,10 @@ MatchLoopCommunicator::GetSecondPhaseWork::mingle()
         mingle(queue, RegisterFirstPhaseRank(*_first_phase_rank_lookup));
     } else {
         mingle(queue, NoRegisterFirstPhaseRank());
+    }
+
+    if (_first_phase_max != nullptr) {
+        *_first_phase_max = best_scores.high;
     }
 }
 

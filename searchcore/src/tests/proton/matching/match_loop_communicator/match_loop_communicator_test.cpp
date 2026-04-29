@@ -1,11 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/searchcore/proton/matching/match_loop_communicator.h>
+#include <vespa/searchlib/features/first_phase_max_feature.h>
 #include <vespa/searchlib/features/first_phase_rank_lookup.h>
 #include <vespa/searchlib/fef/objectstore.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/nexus.h>
 #include <algorithm>
 #include <atomic>
+
 
 using namespace proton::matching;
 
@@ -17,6 +19,7 @@ using Hits = MatchLoopCommunicator::Hits;
 using TaggedHit = MatchLoopCommunicator::TaggedHit;
 using TaggedHits = MatchLoopCommunicator::TaggedHits;
 using ObjectStore = search::fef::ObjectStore;
+using search::features::FirstPhaseMaxBlueprint;
 using search::features::FirstPhaseRankLookup;
 using search::queryeval::SortedHitSequence;
 using vespalib::test::Nexus;
@@ -319,6 +322,19 @@ TEST(MatchLoopCommunicatorTest, require_that_first_phase_rank_lookup_is_populate
     auto res2 = second_phase(f2, hits_in, thread_id, 10);
     EXPECT_EQ(FeatureVec({1, 2, 3, unranked, unranked}), extract_ranks(l1));
     EXPECT_EQ(FeatureVec({1, unranked, 3, unranked, 5}), extract_ranks(l2));
+}
+
+TEST(MatchLoopCommunicatorTest, require_that_first_phase_max_is_populated)
+{
+    constexpr size_t num_threads = 1;
+    constexpr size_t thread_id = 0;
+    ObjectStore store;
+    FirstPhaseMaxBlueprint::make_shared_state(store);
+    MatchLoopCommunicator f1(num_threads, 3, {}, &store, do_nothing);
+    const auto& first_phase_max = *FirstPhaseMaxBlueprint::get_shared_state(store);
+    auto hits_in = hit_vec({{21, 5}, {22, 4}, {23, 3}, {24, 2}, {25, 1}});
+    auto result = second_phase(f1, hits_in, thread_id, 10);
+    EXPECT_EQ(5, first_phase_max);
 }
 
 TEST(MatchLoopCommunicatorTest, require_that_before_second_phase_is_called_once)

@@ -42,12 +42,6 @@ namespace {
 
 const std::string key = "firstPhaseMax";
 
-static void make_shared_state(IObjectStore& store) {
-    if (store.get(key) == nullptr) {
-        store.add(key, std::make_unique<AnyWrapper<feature_t>>(-std::numeric_limits<feature_t>::infinity()));
-    }
-}
-
 }
 
 FirstPhaseMaxBlueprint::FirstPhaseMaxBlueprint()
@@ -59,6 +53,12 @@ FirstPhaseMaxBlueprint::~FirstPhaseMaxBlueprint() = default;
 bool FirstPhaseMaxBlueprint::setup(const IIndexEnvironment&, const ParameterList&) {
     describeOutput("score", "The max score from first phase.");
     return true;
+}
+
+void FirstPhaseMaxBlueprint::make_shared_state(IObjectStore& store) {
+    if (store.get(key) == nullptr) {
+        store.add(key, std::make_unique<AnyWrapper<feature_t>>(-std::numeric_limits<feature_t>::infinity()));
+    }
 }
 
 const feature_t* FirstPhaseMaxBlueprint::get_shared_state(const IObjectStore& store) {
