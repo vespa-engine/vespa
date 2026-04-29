@@ -385,7 +385,7 @@ public class AllocatedHostsSerializer {
 
     private static List<AzName> availabilityZones(Inspector arrayInspector) {
         List<AzName> availabilityZones = new ArrayList<>();
-        arrayInspector.traverse((ArrayTraverser) (_, az)-> availabilityZones.add(AzName.from(az.asString())));
+        arrayInspector.traverse((ArrayTraverser) (index, az)-> availabilityZones.add(AzName.from(az.asString())));
         return availabilityZones;
     }
 
