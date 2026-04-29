@@ -210,7 +210,7 @@ private:
     AttributeContext                         _attr_ctx;
     StructFieldsMapper                       _mapper;
     std::unique_ptr<SummaryElementsSelector> _elements_selector;
-    std::unique_ptr<MatchingElementsFields>  _matching_elements_fields;
+    std::shared_ptr<MatchingElementsFields>  _matching_elements_fields;
 
     Slime run_field_writer(const std::string& input_field_name, const ElementVector& matching_elements, bool filter) {
         auto writer = make_field_writer(input_field_name, filter);
@@ -220,6 +220,7 @@ private:
         Slime slime;
         SlimeInserter inserter(slime);
 
+        state._matching_elements_fields = _matching_elements_fields;
         writer->insert_field(doc_id, doc.get(), state, _elements_selector->get_selected_elements(doc_id, state),
                              inserter);
         return slime;
@@ -231,7 +232,7 @@ public:
           _attr_ctx(),
           _mapper(),
           _elements_selector(),
-          _matching_elements_fields()
+          _matching_elements_fields(std::make_shared<MatchingElementsFields>())
     {
         _mapper.setup(_attr_ctx);
     }
