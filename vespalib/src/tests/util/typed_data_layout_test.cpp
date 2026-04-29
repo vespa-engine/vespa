@@ -33,6 +33,26 @@ struct alignas(32) BigObj {
 };
 int BigObj::live_cnt = 0;
 
+template <domain D>
+struct MyData : Data<D> {
+    int        value;
+    static int live_cnt;
+    MyData(DataKey key) noexcept : Data<D>(key), value(++live_cnt) {}
+    ~MyData() { --live_cnt; }
+};
+template <domain D>
+int MyData<D>::live_cnt = 0;
+
+template <domain D>
+struct alignas(32) MyBigData : Data<D> {
+    int        value;
+    static int live_cnt;
+    MyBigData(DataKey key) noexcept : Data<D>(key), value(++live_cnt) {}
+    ~MyBigData() { --live_cnt; }
+};
+template <domain D>
+int MyBigData<D>::live_cnt = 0;
+
 struct Size {
     size_t value;
     template <typename Data> explicit Size(const Data& d) : value(sizeof(d)) {}
@@ -227,14 +247,15 @@ TEST(TypedDataLayoutTest, multi_reserve_and_resolve) {
     }
 }
 
-TEST(TypedDataLayoutTest, base_class) {
-    ASSERT_EQ(MyObj::live_cnt, 0);
+TEST(TypedDataLayoutTest, sub_class) {
+    using D = Domain<int, double>;
+    EXPECT_EQ(MyData<D>::live_cnt, 0);
     {
-        Layout<Domain<int, double>, MyObj> layout;
-        auto                               hi = layout.reserve<int>();
-        auto                               hd = layout.reserve<double>();
-        auto                               data = layout.create_data();
-        EXPECT_EQ(MyObj::live_cnt, 1);
+        Layout<D, MyData<D>> layout;
+        auto                 hi = layout.reserve<int>();
+        auto                 hd = layout.reserve<double>();
+        auto                 data = layout.create_data();
+        EXPECT_EQ(MyData<D>::live_cnt, 1);
         EXPECT_EQ(data->allocated(), Size(*data).add<int>(1).add<double>(1).value);
         data->value = 42;
         data->resolve<int>(hi) = 10;
@@ -243,7 +264,7 @@ TEST(TypedDataLayoutTest, base_class) {
         EXPECT_EQ(data->resolve<int>(hi), 10);
         EXPECT_EQ(data->resolve<double>(hd), 3.14);
     }
-    EXPECT_EQ(MyObj::live_cnt, 0);
+    EXPECT_EQ(MyData<D>::live_cnt, 0);
 }
 
 TEST(TypedDataLayoutTest, unused_types_do_not_affect_size) {
@@ -258,14 +279,17 @@ TEST(TypedDataLayoutTest, unused_types_do_not_affect_size) {
 }
 
 TEST(TypedDataLayoutTest, alignment) {
+    using D = Domain<char, int, BigObj>;
     ASSERT_EQ(BigObj::live_cnt, 0);
+    EXPECT_EQ(MyBigData<D>::live_cnt, 0);
     {
-        Layout<Domain<char, int, BigObj>, BigObj> layout;
-        auto                                      hc = layout.reserve<char>();
-        auto                                      hi = layout.reserve<int>();
-        auto                                      hb = layout.reserve<BigObj>();
-        auto                                      data = layout.create_data();
-        EXPECT_EQ(BigObj::live_cnt, 2);
+        Layout<D, MyBigData<D>> layout;
+        auto                    hc = layout.reserve<char>();
+        auto                    hi = layout.reserve<int>();
+        auto                    hb = layout.reserve<BigObj>();
+        auto                    data = layout.create_data();
+        EXPECT_EQ(BigObj::live_cnt, 1);
+        EXPECT_EQ(MyBigData<D>::live_cnt, 1);
         EXPECT_EQ(data->allocated(), Size(*data).add<char>(1).add<int>(1).add<BigObj>(1).value);
         EXPECT_TRUE(is_aligned(data.get()));
         EXPECT_TRUE(is_aligned(&data->resolve<char>(hc)));
@@ -273,4 +297,5 @@ TEST(TypedDataLayoutTest, alignment) {
         EXPECT_TRUE(is_aligned(&data->resolve<BigObj>(hb)));
     }
     EXPECT_EQ(BigObj::live_cnt, 0);
+    EXPECT_EQ(MyBigData<D>::live_cnt, 0);
 }

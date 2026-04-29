@@ -28,11 +28,12 @@ static_assert(Domain<char>::max_align == 1);
 static_assert(Domain<char, uint32_t>::max_align == 4);
 static_assert(Domain<char, uint64_t, uint32_t>::max_align == 8);
 
+struct alignas(1) SmallAlign {};
 struct alignas(32) BigAlign {};
-static_assert(std::same_as<decltype(detail::full_align<MyDomain, detail::EmptyBase>()), std::align_val_t>);
-static_assert(detail::full_align<Domain<char>, detail::EmptyBase>() == std::align_val_t(1));
-static_assert(detail::full_align<Domain<char, int, double>, detail::EmptyBase>() == std::align_val_t(8));
-static_assert(detail::full_align<Domain<char, BigAlign, double>, detail::EmptyBase>() == std::align_val_t(32));
+static_assert(std::same_as<decltype(detail::full_align<MyDomain, SmallAlign>()), std::align_val_t>);
+static_assert(detail::full_align<Domain<char>, SmallAlign>() == std::align_val_t(1));
+static_assert(detail::full_align<Domain<char, int, double>, SmallAlign>() == std::align_val_t(8));
+static_assert(detail::full_align<Domain<char, BigAlign, double>, SmallAlign>() == std::align_val_t(32));
 static_assert(detail::full_align<Domain<char, int, double>, BigAlign>() == std::align_val_t(32));
 
 } // namespace
