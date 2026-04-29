@@ -30,6 +30,7 @@ public:
     ~FirstPhaseMaxBlueprint() override;
 
     // for tests
+    static void make_shared_state(fef::IObjectStore& store);
     static const feature_t* get_shared_state(const fef::IObjectStore& store);
     static feature_t* get_mutable_shared_state(fef::IObjectStore& store);
 
