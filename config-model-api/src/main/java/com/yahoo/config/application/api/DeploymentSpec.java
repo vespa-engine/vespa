@@ -312,6 +312,13 @@ public final class DeploymentSpec {
                                  .orElse(ZoneEndpoint.defaultEndpoint);
     }
 
+    public List<AzName> availabilityZones(InstanceName instance, Zone zone) {
+        var declaredInstance = instance(instance);
+        if (declaredInstance.isEmpty()) return List.of();
+        var declaredZone = declaredInstance.get().zone(zone);
+        return declaredZone.map(DeclaredZone::availabilityZones).orElse(List.of());
+    }
+
     /** Returns the XML form of this spec, or null if it was not created by fromXml, nor is empty */
     public String xmlForm() { return xmlForm; }
 
@@ -662,6 +669,15 @@ public final class DeploymentSpec {
             return steps.stream()
                         .flatMap(step -> step.zones().stream())
                         .toList();
+        }
+
+        /** Returns the declared zone matching the given zone spec in this instance, if any. */
+        public Optional<DeclaredZone> zone(Zone zone) {
+            return steps.stream()
+                        .filter(step -> step.concerns(zone.environment()))
+                        .flatMap(step -> step.zones().stream())
+                        .filter(declaredZone -> declaredZone.concerns(zone.environment(), Optional.of(zone.region())))
+                        .findAny();
         }
 
         @Override

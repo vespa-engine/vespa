@@ -14,9 +14,15 @@ import java.util.regex.Pattern;
 public class AzName extends PatternedStringWrapper<AzName> {
 
     private static final Pattern pattern = Pattern.compile("[a-z]([a-z0-9-]*[a-z0-9])*");
+    private static final AzName defaultName = from("default");
 
     private AzName(String az) {
         super(az, pattern, "availability zone name");
+    }
+
+    /** The special name which means to use the zone's default az. */
+    public static AzName defaultName() {
+        return defaultName;
     }
 
     public static AzName from(String az) {
