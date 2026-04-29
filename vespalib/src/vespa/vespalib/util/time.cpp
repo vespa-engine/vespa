@@ -92,21 +92,3 @@ void Timer::waitAtLeast(duration dur, bool busyWait) {
 }
 
 } // namespace vespalib
-
-#if (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 170000) ||                         \
-    (!defined(_LIBCPP_VERSION) && defined(_GLIBCXX_RELEASE) && _GLIBCXX_RELEASE < 12)
-
-// Temporary workaround until libc++ supports stream operators for duration
-// Temporary workaround while using libstdc++ 11
-
-#include <ostream>
-
-namespace std::chrono {
-
-ostream& operator<<(ostream& os, const nanoseconds& value) {
-    os << value.count() << "ns";
-    return os;
-}
-
-} // namespace std::chrono
-#endif
