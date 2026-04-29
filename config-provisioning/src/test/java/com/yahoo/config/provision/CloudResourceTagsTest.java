@@ -210,17 +210,25 @@ class CloudResourceTagsTest {
     }
 
     @Test
-    void resolve_deployment_rejects_unknown_placeholders() {
-        var tags = CloudResourceTags.from(Map.of("bad", "${unknown}"));
-        var e = assertThrows(IllegalArgumentException.class,
-                             () -> tags.resolveDeployment("t", "a", "i", "prod", "r"));
-        assertTrue(e.getMessage().contains("Unresolved template variable"));
-    }
-
-    @Test
     void resolve_deployment_on_empty_returns_empty() {
         var resolved = CloudResourceTags.empty().resolveDeployment("t", "a", "i", "prod", "r");
         assertTrue(resolved.isEmpty());
+    }
+
+    @Test
+    void validate_placeholders_accepts_all_known() {
+        var tags = CloudResourceTags.from(Map.of(
+                "a", "${tenant}-${application}-${instance}",
+                "b", "${environment}-${region}",
+                "c", "${clustername}-${clustertype}"));
+        tags.validatePlaceholders();
+    }
+
+    @Test
+    void validate_placeholders_rejects_unknown() {
+        var tags = CloudResourceTags.from(Map.of("bad", "${unknown}"));
+        var e = assertThrows(IllegalArgumentException.class, tags::validatePlaceholders);
+        assertTrue(e.getMessage().contains("Unknown template variable"));
     }
 
     @Test
