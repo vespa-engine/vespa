@@ -104,18 +104,3 @@ duration adjustTimeoutByDetectedHz(duration timeout);
 duration adjustTimeoutByHz(duration timeout, long hz);
 
 } // namespace vespalib
-
-#if (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 170000) ||                         \
-    (!defined(_LIBCPP_VERSION) && defined(_GLIBCXX_RELEASE) && _GLIBCXX_RELEASE < 12)
-
-// Temporary workaround until libc++ supports stream operators for duration
-// Temporary workaround while using libstdc++ 11
-
-#include <iosfwd>
-
-namespace std::chrono {
-
-ostream& operator<<(ostream& os, const nanoseconds& value);
-
-}
-#endif
