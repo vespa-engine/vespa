@@ -219,6 +219,9 @@ public class CppClassBuilder implements ClassBuilder {
         String namespacePrint = generateCppNameSpaceString(namespaceList);
         String className = getTypeName(root, false);
         w.write(""
+                + "// ------------   D O   N O T   E D I T !   ------------\n"
+                + "// This file is generated from a config definition file.\n"
+                + "\n"
                 + "/**\n"
                 + " * @class " + namespacePrint + "::" + className + "\n"
                 + " * @ingroup config\n"
@@ -567,6 +570,9 @@ public class CppClassBuilder implements ClassBuilder {
     }
 
     void writeBodyHeader(Writer w, CNode root, String subdir) throws IOException {
+        w.write("// ------------   D O   N O T   E D I T !   ------------\n");
+        w.write("// This file is generated from a config definition file.\n");
+        w.write("\n");
         if (subdir == null) {
             w.write("#include \"" + getFileName(root, "h") + "\"");
         } else {
