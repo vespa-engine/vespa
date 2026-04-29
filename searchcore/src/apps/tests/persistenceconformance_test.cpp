@@ -163,6 +163,7 @@ public:
                         search::LogDocumentStore::Config(),
                         ThreadingServiceConfig::make(),
                         AllocConfig::makeDefault(),
+                        DocumentMetaStoreConfig::make(),
                         "client",
                         docTypeName.getName());
     }

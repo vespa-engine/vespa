@@ -253,6 +253,7 @@ StoreOnlyDocSubDB::setupSummaryManager(SummaryManager::SP summaryManager)
 InitializerTask::SP
 StoreOnlyDocSubDB::
 createDocumentMetaStoreInitializer(const AllocStrategy& alloc_strategy,
+                                   bool store_full_document_ids,
                                    const search::TuneFileAttributes &tuneFile,
                                    std::shared_ptr<DocumentMetaStoreInitializerResult::SP> result) const
 {
@@ -266,7 +267,7 @@ createDocumentMetaStoreInitializer(const AllocStrategy& alloc_strategy,
     // initializers to get hold of document meta store instance in
     // their constructors.
     *result = std::make_shared<DocumentMetaStoreInitializerResult>
-              (std::make_shared<DocumentMetaStore>(_bucketDB, attrFileName, grow, _subDbType), tuneFile);
+              (std::make_shared<DocumentMetaStore>(_bucketDB, attrFileName, grow, store_full_document_ids, _subDbType), tuneFile);
     return std::make_shared<documentmetastore::DocumentMetaStoreInitializer>
         (baseDir, getSubDbName(), _docTypeName.toString(), (*result)->documentMetaStore());
 }
@@ -316,6 +317,7 @@ StoreOnlyDocSubDB::createInitializer(const DocumentDBConfig &configSnapshot, Ser
                                                              _writeService.master());
     AllocStrategy alloc_strategy = configSnapshot.get_alloc_config().make_alloc_strategy(_subDbType);
     auto dmsInitTask = createDocumentMetaStoreInitializer(alloc_strategy,
+                                                          configSnapshot.get_document_meta_store_config().store_full_document_ids(),
                                                           configSnapshot.getTuneFileDocumentDBSP()->_attr,
                                                           result->writableResult().writableDocumentMetaStore());
     result->addDocumentMetaStoreInitTask(dmsInitTask);

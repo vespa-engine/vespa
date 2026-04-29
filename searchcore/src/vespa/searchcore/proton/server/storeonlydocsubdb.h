@@ -173,6 +173,7 @@ protected:
 
     std::shared_ptr<initializer::InitializerTask>
     createDocumentMetaStoreInitializer(const AllocStrategy& alloc_strategy,
+                                       bool store_full_document_ids,
                                        const search::TuneFileAttributes &tuneFile,
                                        std::shared_ptr<std::shared_ptr<DocumentMetaStoreInitializerResult>> result) const;
 
