@@ -121,19 +121,19 @@ Telemetry = element telemetry {
         element auth {
             element bearer-token {
                 attribute vault { xsd:string } &
-                attribute name { xsd:string }
+                attribute secret-name { xsd:string }
             }
             |
             element api-key {
                 attribute vault { xsd:string } &
-                attribute name { xsd:string } &
+                attribute secret-name { xsd:string } &
                 attribute header { xsd:string }
             }
             |
             element basic-auth {
                 attribute vault { xsd:string } &
-                attribute username { xsd:string } &
-                attribute password { xsd:string }
+                attribute username-secret { xsd:string } &
+                attribute password-secret { xsd:string }
             }
         }? &
         element metric-set {

@@ -625,10 +625,10 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
                         exporter.project(),
                         exporter.auth().map(a -> a.type().name()),
                         exporter.auth().map(a -> a.vault()),
-                        exporter.auth().flatMap(a -> a.name()),
+                        exporter.auth().flatMap(a -> a.secretName()),
                         exporter.auth().flatMap(a -> a.header()),
-                        exporter.auth().flatMap(a -> a.username()),
-                        exporter.auth().flatMap(a -> a.password()),
+                        exporter.auth().flatMap(a -> a.usernameSecretName()),
+                        exporter.auth().flatMap(a -> a.passwordSecretName()),
                         exporter.metricSet(),
                         exporter.logFileTypes()))
                 .toList();

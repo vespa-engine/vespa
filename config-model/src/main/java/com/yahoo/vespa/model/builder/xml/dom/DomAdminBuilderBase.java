@@ -175,21 +175,21 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
         if (bearerToken != null) {
             return TelemetryAuth.bearerToken(
                     bearerToken.requiredStringAttribute("vault"),
-                    bearerToken.requiredStringAttribute("name"));
+                    bearerToken.requiredStringAttribute("secret-name"));
         }
         ModelElement apiKey = authElement.child("api-key");
         if (apiKey != null) {
             return TelemetryAuth.apiKey(
                     apiKey.requiredStringAttribute("vault"),
-                    apiKey.requiredStringAttribute("name"),
+                    apiKey.requiredStringAttribute("secret-name"),
                     apiKey.requiredStringAttribute("header"));
         }
         ModelElement basicAuth = authElement.child("basic-auth");
         if (basicAuth != null) {
             return TelemetryAuth.basicAuth(
                     basicAuth.requiredStringAttribute("vault"),
-                    basicAuth.requiredStringAttribute("username"),
-                    basicAuth.requiredStringAttribute("password"));
+                    basicAuth.requiredStringAttribute("username-secret"),
+                    basicAuth.requiredStringAttribute("password-secret"));
         }
         throw new IllegalArgumentException("Unknown auth type in <auth> element. Supported types: bearer-token, api-key, basic-auth");
     }

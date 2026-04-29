@@ -8,6 +8,8 @@ import java.util.Optional;
 /**
  * A single telemetry exporter specification, defining how to export metrics and/or logs
  * to a customer-owned OTEL endpoint.
+ * All secret fields (authSecretName, authUsernameSecretName, authPasswordSecretName)
+ * are vault reference names, not actual credential values.
  *
  * @author onur
  */
@@ -17,10 +19,10 @@ public record TelemetryExportSpec(String id,
                                   Optional<String> project,
                                   Optional<String> authType,
                                   Optional<String> authVault,
-                                  Optional<String> authName,
+                                  Optional<String> authSecretName,
                                   Optional<String> authHeader,
-                                  Optional<String> authUsername,
-                                  Optional<String> authPassword,
+                                  Optional<String> authUsernameSecretName,
+                                  Optional<String> authPasswordSecretName,
                                   Optional<String> metricSet,
                                   List<String> logFileTypes) {
 
@@ -33,10 +35,10 @@ public record TelemetryExportSpec(String id,
         Objects.requireNonNull(project, "project must be non-null (use Optional.empty())");
         Objects.requireNonNull(authType, "authType must be non-null");
         Objects.requireNonNull(authVault, "authVault must be non-null");
-        Objects.requireNonNull(authName, "authName must be non-null");
+        Objects.requireNonNull(authSecretName, "authSecretName must be non-null");
         Objects.requireNonNull(authHeader, "authHeader must be non-null");
-        Objects.requireNonNull(authUsername, "authUsername must be non-null");
-        Objects.requireNonNull(authPassword, "authPassword must be non-null");
+        Objects.requireNonNull(authUsernameSecretName, "authUsernameSecretName must be non-null");
+        Objects.requireNonNull(authPasswordSecretName, "authPasswordSecretName must be non-null");
         Objects.requireNonNull(metricSet, "metricSet must be non-null (use Optional.empty())");
         Objects.requireNonNull(logFileTypes, "logFileTypes must be non-null");
         logFileTypes = List.copyOf(logFileTypes);

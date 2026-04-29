@@ -31,7 +31,7 @@ public class TelemetryExportTest {
                 + "    <telemetry>"
                 + "      <exporter id='my-exporter' type='otlphttp' endpoint='https://otel.example.com/v1'>"
                 + "        <auth>"
-                + "          <bearer-token vault='my-vault' name='my-token'/>"
+                + "          <bearer-token vault='my-vault' secret-name='my-token'/>"
                 + "        </auth>"
                 + "        <metric-set name='Vespa9'/>"
                 + "        <logs>"
@@ -59,10 +59,10 @@ public class TelemetryExportTest {
         var auth = exporter.auth().get();
         assertEquals(TelemetryAuth.Type.bearer, auth.type());
         assertEquals("my-vault", auth.vault());
-        assertEquals("my-token", auth.name().get());
+        assertEquals("my-token", auth.secretName().get());
         assertTrue(auth.header().isEmpty());
-        assertTrue(auth.username().isEmpty());
-        assertTrue(auth.password().isEmpty());
+        assertTrue(auth.usernameSecretName().isEmpty());
+        assertTrue(auth.passwordSecretName().isEmpty());
 
         assertEquals("Vespa9", exporter.metricSet().get());
         assertEquals(List.of("container_logs", "access_logs"), exporter.logFileTypes());
@@ -75,7 +75,7 @@ public class TelemetryExportTest {
                 + "    <telemetry>"
                 + "      <exporter id='my-exporter' type='otlphttp' endpoint='https://otel.example.com/v1'>"
                 + "        <auth>"
-                + "          <api-key vault='my-vault' name='my-key' header='X-API-Key'/>"
+                + "          <api-key vault='my-vault' secret-name='my-key' header='X-API-Key'/>"
                 + "        </auth>"
                 + "      </exporter>"
                 + "    </telemetry>"
@@ -86,7 +86,7 @@ public class TelemetryExportTest {
         var auth = model.getAdmin().getTelemetryExport().get().exporters().get(0).auth().get();
         assertEquals(TelemetryAuth.Type.api_key, auth.type());
         assertEquals("my-vault", auth.vault());
-        assertEquals("my-key", auth.name().get());
+        assertEquals("my-key", auth.secretName().get());
         assertEquals("X-API-Key", auth.header().get());
     }
 
@@ -97,7 +97,7 @@ public class TelemetryExportTest {
                 + "    <telemetry>"
                 + "      <exporter id='my-exporter' type='otlphttp' endpoint='https://otel.example.com/v1'>"
                 + "        <auth>"
-                + "          <basic-auth vault='my-vault' username='my-user' password='my-pass'/>"
+                + "          <basic-auth vault='my-vault' username-secret='my-user' password-secret='my-pass'/>"
                 + "        </auth>"
                 + "      </exporter>"
                 + "    </telemetry>"
@@ -108,9 +108,9 @@ public class TelemetryExportTest {
         var auth = model.getAdmin().getTelemetryExport().get().exporters().get(0).auth().get();
         assertEquals(TelemetryAuth.Type.basic_auth, auth.type());
         assertEquals("my-vault", auth.vault());
-        assertTrue(auth.name().isEmpty());
-        assertEquals("my-user", auth.username().get());
-        assertEquals("my-pass", auth.password().get());
+        assertTrue(auth.secretName().isEmpty());
+        assertEquals("my-user", auth.usernameSecretName().get());
+        assertEquals("my-pass", auth.passwordSecretName().get());
     }
 
     @Test
@@ -235,15 +235,15 @@ public class TelemetryExportTest {
         assertThrows(IllegalArgumentException.class, () ->
                 new TelemetryExport(List.of()));
         assertThrows(IllegalArgumentException.class, () ->
-                TelemetryAuth.bearerToken("", "name"));
+                TelemetryAuth.bearerToken("", "secret"));
         assertThrows(IllegalArgumentException.class, () ->
                 TelemetryAuth.bearerToken("vault", ""));
         assertThrows(IllegalArgumentException.class, () ->
-                TelemetryAuth.apiKey("vault", "name", ""));
+                TelemetryAuth.apiKey("vault", "secret", ""));
         assertThrows(IllegalArgumentException.class, () ->
-                TelemetryAuth.basicAuth("vault", "", "pass"));
+                TelemetryAuth.basicAuth("vault", "", "pass-secret"));
         assertThrows(IllegalArgumentException.class, () ->
-                TelemetryAuth.basicAuth("vault", "user", ""));
+                TelemetryAuth.basicAuth("vault", "user-secret", ""));
     }
 
     private VespaModel createModel(String hosts, String services) throws Exception {
