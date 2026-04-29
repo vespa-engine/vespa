@@ -250,7 +250,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean forwardAllLogLevels() { return flag(PermanentFlags.FORWARD_ALL_LOG_LEVELS).value(); }
         @Override public long zookeeperPreAllocSize() { return flag(PermanentFlags.ZOOKEEPER_PRE_ALLOC_SIZE_KIB).value(); }
         @Override public int maxContentNodeMaintenanceOpConcurrency() { return flag(Flags.MAX_CONTENT_NODE_MAINTENANCE_OP_CONCURRENCY).value(); }
-        @Override public int maxDocumentOperationRequestSizeMib() { return flag(Flags.MAX_DOCUMENT_OPERATION_REQUEST_SIZE_MIB).value(); }
         @Override public Object sidecarsForTest() { return flag(Flags.SIDECARS_FOR_TEST).value(); }
         @Override public boolean useTriton() { return flag(Flags.USE_TRITON).value(); }
         @Override public ModelContext.FeatureFlag<Boolean> useTritonFlag() { return flag(Flags.USE_TRITON); }

@@ -104,7 +104,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private int zookeeperSessionTimeoutSeconds = 30;
     private final int transport_events_before_wakeup;
     private final int transport_connections_per_target;
-    private int maxDocumentOperationRequestSizeMib;
+    private int maxDocumentOperationRequestSizeMib = new DocumentOperationExecutorConfig.Builder().build().maxDocumentOperationRequestSizeMib();
 
     /** The heap size % of total memory available to the JVM process. */
     private final int heapSizePercentageOfAvailableMemory;
@@ -156,7 +156,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         onnxModelCostCalculator = deployState.onnxModelCost().newCalculator(
                 deployState.getApplicationPackage(), deployState.getProperties().applicationId(), ClusterSpec.Id.from(clusterId));
         logger = deployState.getDeployLogger();
-        maxDocumentOperationRequestSizeMib = deployState.featureFlags().maxDocumentOperationRequestSizeMib();
     }
 
     public UserConfiguredUrls userConfiguredUrls() { return userConfiguredUrls; }
