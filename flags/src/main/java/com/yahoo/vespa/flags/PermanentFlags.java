@@ -175,6 +175,14 @@ public class PermanentFlags {
             "Takes effect on next host admin tick",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
+    public static final UnboundStringFlag CONTAINER_IMAGE_TAG_SUFFIX = defineStringFlag(
+            "container-image-tag-suffix", "",
+            "Tag suffix appended to the wanted container image of synthesized config-server, " +
+            "controller, and tenant nodes (e.g. 'alma9' -> <image-name>:<version>-alma9). " +
+            "Empty means no suffix; the default AlmaLinux 8 docker container image is used.",
+            "Takes effect on next host-admin tick",
+            HOSTNAME, NODE_TYPE, TENANT_ID, APPLICATION, INSTANCE_ID, ZONE_ID, CLOUD_ACCOUNT);
+
     public static final UnboundBooleanFlag VERBOSE_DEPLOY_PARAMETER = defineFeatureFlag(
             "verbose-deploy-parameter", false,
             "Whether (external) deployments should set verbose flag (will mean more logging in practice). " +
