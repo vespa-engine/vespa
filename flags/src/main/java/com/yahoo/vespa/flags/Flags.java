@@ -307,18 +307,6 @@ public class Flags {
             "Takes effect immediately",
             INSTANCE_ID);
 
-    public static final UnboundIntFlag MAX_DOCUMENT_OPERATION_REQUEST_SIZE_MIB = defineIntFlag(
-            "max-document-operation-request-size-mib", 100,
-            List.of("glebashnik"), "2025-09-04", "2026-06-01",
-            "Sets the maximum size in MiB of a document operation request (POST or PUT). " +
-            "This is the size of a serialized request, which can be several times larger than " +
-            "the content of the document, especially for tensors in JSON." +
-            "POST and PUT requests larger than this will return HTTP 413 Content Too Large response " +
-            "and will not be added to the message bus queue.",
-            "Takes effect immediately",
-            INSTANCE_ID
-    );
-
     public static final UnboundJacksonFlag<Sidecars> SIDECARS_FOR_TEST = defineJacksonFlag(
             "sidecars-for-test", Sidecars.DEFAULT, Sidecars.class,
             List.of("glebashnik"), "2025-04-25", "2026-05-01",
