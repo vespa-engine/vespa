@@ -1,0 +1,97 @@
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#
+# Extended PR Build.
+#
+# Runs an additional build on a labeled pull request that cannot be
+# executed on this repository's own runners. The build target is
+# configured through repository secrets so its identity does not appear
+# in this workflow's logs.
+#
+# Trigger
+#   Every pull request — including drafts — on open, push, and reopen.
+#
+# Authorization
+#   - PRs from org members run automatically via the no-rules
+#     `extended-build-internal` environment.
+#   - PRs from external authors route through the `extended-build-external`
+#     environment, which requires reviewer approval before the build runs.
+#
+# Required configuration (one-time, repo or org scope)
+#
+#   Secrets:
+#     EXTENDED_BUILD_APP_ID         App ID of the GitHub App authorized to
+#                                   start the extended build.
+#     EXTENDED_BUILD_APP_PRIVATE_KEY PEM-encoded private key for that App.
+#     EXTENDED_BUILD_OWNER          Org/user that runs the extended build.
+#     EXTENDED_BUILD_REPO           Repository that runs the extended build.
+#
+#   Environments (Settings -> Environments):
+#     extended-build-internal       No protection rules.
+#     extended-build-external       Required reviewers: vespa-engine/vespa team.
+
+name: Extended PR Build
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: extended-build-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  classify:
+    runs-on: ubuntu-latest
+    outputs:
+      env: ${{ steps.route.outputs.env }}
+    steps:
+      - name: Route by author association
+        id: route
+        env:
+          ASSOC: ${{ github.event.pull_request.author_association }}
+        run: |
+          case "${ASSOC}" in
+            OWNER|MEMBER|COLLABORATOR)
+              echo "env=extended-build-internal" >> "${GITHUB_OUTPUT}"
+              ;;
+            *)
+              echo "env=extended-build-external" >> "${GITHUB_OUTPUT}"
+              ;;
+          esac
+
+  dispatch:
+    needs: classify
+    runs-on: ubuntu-latest
+    environment: ${{ needs.classify.outputs.env }}
+    steps:
+      - name: Mint dispatch token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.EXTENDED_BUILD_APP_ID }}
+          private-key: ${{ secrets.EXTENDED_BUILD_APP_PRIVATE_KEY }}
+          owner: ${{ secrets.EXTENDED_BUILD_OWNER }}
+          repositories: ${{ secrets.EXTENDED_BUILD_REPO }}
+
+      - name: Trigger extended build
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          OWNER: ${{ secrets.EXTENDED_BUILD_OWNER }}
+          REPO: ${{ secrets.EXTENDED_BUILD_REPO }}
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          SOURCE_REPO: ${{ github.repository }}
+        run: |
+          jq -nc \
+            --arg event "extended-build" \
+            --arg branch "${BRANCH}" \
+            --arg sha "${HEAD_SHA}" \
+            --arg pr "${PR_NUMBER}" \
+            --arg src "${SOURCE_REPO}" \
+            '{event_type: $event, client_payload: {branch: $branch, head_sha: $sha, pr_number: $pr, source_repo: $src}}' \
+          | gh api --method POST "repos/${OWNER}/${REPO}/dispatches" --input -
+          echo "Dispatched extended build for PR #${PR_NUMBER}."
