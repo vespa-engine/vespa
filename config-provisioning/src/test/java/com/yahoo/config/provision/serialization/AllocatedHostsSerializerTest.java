@@ -216,7 +216,7 @@ public class AllocatedHostsSerializerTest {
         var host = new HostSpec("with-telemetry",
                 smallSlowDiskSpeedNode, bigSlowDiskSpeedNode, anyDiskSpeedNode,
                 ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
-                        Optional.empty(), ZoneEndpoint.defaultEndpoint, List.of(), telemetryExport),
+                        Optional.empty(), ZoneEndpoint.defaultEndpoint, List.of(), List.of(), telemetryExport),
                 Optional.empty(), Optional.empty(), Optional.empty());
 
         assertAllocatedHosts(AllocatedHosts.withHosts(Set.of(host)));
