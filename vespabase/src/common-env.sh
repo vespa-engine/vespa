@@ -81,6 +81,8 @@ populate_environment () {
         consider_fallback VESPA_USER "vespa"
     elif id nobody >/dev/null 2>&1 ; then
         consider_fallback VESPA_USER "nobody"
+    else
+        consider_fallback VESPA_USER "$(id -un 2>/dev/null || echo $(id -u))"
     fi
 }
 
