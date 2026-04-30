@@ -324,7 +324,10 @@ StoreOnlyDocSubDB::createInitializer(const DocumentDBConfig &configSnapshot, Ser
                                                           result->writableResult().writableDocumentMetaStore());
     result->addDocumentMetaStoreInitTask(dmsInitTask);
     auto dms = result->result().documentMetaStore()->documentMetaStore();
-    std::shared_ptr<const search::IDocumentIdProvider> document_id_provider; // No document id provider yet.
+    std::shared_ptr<const search::IDocumentIdProvider> document_id_provider;
+    if (dms->can_populate_document_metadata_docid()) {
+        document_id_provider = dms;
+    }
     auto summaryTask = createSummaryManagerInitializer(createStoreConfig(configSnapshot.getStoreConfig(), _subDbType),
                                                        alloc_strategy,
                                                        configSnapshot.getTuneFileDocumentDBSP()->_summary,
