@@ -6,17 +6,18 @@
 namespace search {
 namespace expression {
 
-class MultiplyFunctionNode : public NumericFunctionNode
-{
+class MultiplyFunctionNode : public NumericFunctionNode {
 public:
     DECLARE_EXPRESSIONNODE(MultiplyFunctionNode);
-    MultiplyFunctionNode() { }
+    MultiplyFunctionNode() {}
+
 private:
-    void onArgument(const ResultNode & arg, ResultNode & result) const override;
-    ResultNode::CP getInitialValue() const override { return  ResultNode::CP(new Int64ResultNode(1)); }
-    ResultNode & flatten(const ResultNodeVector & v, ResultNode & result) const override { return v.flattenMultiply(result); }
+    void onArgument(const ResultNode& arg, ResultNode& result) const override;
+    ResultNode::CP getInitialValue() const override { return ResultNode::CP(new Int64ResultNode(1)); }
+    ResultNode& flatten(const ResultNodeVector& v, ResultNode& result) const override {
+        return v.flattenMultiply(result);
+    }
 };
 
-}
-}
-
+} // namespace expression
+} // namespace search

@@ -13,10 +13,7 @@ namespace search::expression {
  */
 class GeoDistanceFunctionNode : public MultiArgFunctionNode {
 public:
-    enum class Unit : uint8_t {
-        KM = 0,
-        MILES = 1
-    };
+    enum class Unit : uint8_t { KM = 0, MILES = 1 };
 
 private:
     Unit _unit;

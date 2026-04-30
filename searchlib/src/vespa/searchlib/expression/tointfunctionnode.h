@@ -6,17 +6,16 @@
 namespace search {
 namespace expression {
 
-class ToIntFunctionNode : public UnaryFunctionNode
-{
+class ToIntFunctionNode : public UnaryFunctionNode {
 public:
     DECLARE_EXPRESSIONNODE(ToIntFunctionNode);
-    ToIntFunctionNode() { }
-    ToIntFunctionNode(ExpressionNode::UP arg) : UnaryFunctionNode(std::move(arg)) { }
+    ToIntFunctionNode() {}
+    ToIntFunctionNode(ExpressionNode::UP arg) : UnaryFunctionNode(std::move(arg)) {}
+
 private:
     void onExecute() const override;
     void onPrepareResult() override;
 };
 
-}
-}
-
+} // namespace expression
+} // namespace search

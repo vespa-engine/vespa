@@ -7,22 +7,20 @@ class RawResultNode;
 class ResultNodeVector;
 class ResultNode;
 
-class ResultSerializer
-{
+class ResultSerializer {
 public:
     virtual ~ResultSerializer() = default;
-    virtual ResultSerializer & putResult(const RawResultNode & value) = 0;
-    virtual ResultSerializer & putResult(const ResultNodeVector & value) = 0;
-    virtual void proxyPut(const ResultNode & value) = 0;
+    virtual ResultSerializer& putResult(const RawResultNode& value) = 0;
+    virtual ResultSerializer& putResult(const ResultNodeVector& value) = 0;
+    virtual void proxyPut(const ResultNode& value) = 0;
 };
 
-class ResultDeserializer
-{
+class ResultDeserializer {
 public:
     virtual ~ResultDeserializer() = default;
-    virtual ResultDeserializer & getResult(RawResultNode & value) = 0;
-    virtual ResultDeserializer & getResult(ResultNodeVector & value) = 0;
-    virtual void proxyGet(const ResultNode & value) = 0;
+    virtual ResultDeserializer& getResult(RawResultNode& value) = 0;
+    virtual ResultDeserializer& getResult(ResultNodeVector& value) = 0;
+    virtual void proxyGet(const ResultNode& value) = 0;
 };
 
-}
+} // namespace search::expression

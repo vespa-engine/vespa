@@ -5,19 +5,23 @@
 
 namespace search::expression {
 
-class EnumResultNode : public IntegerResultNodeT<int64_t>
-{
+class EnumResultNode : public IntegerResultNodeT<int64_t> {
 private:
     using Base = IntegerResultNodeT<int64_t>;
+
 public:
     DECLARE_RESULTNODE(EnumResultNode);
-    EnumResultNode(int64_t v=0) : Base(v) { }
-    void set(const ResultNode & rhs) override { setValue(rhs.getEnum()); }
+    EnumResultNode(int64_t v = 0) : Base(v) {}
+    void set(const ResultNode& rhs) override { setValue(rhs.getEnum()); }
+
 private:
-    int64_t onGetEnum(size_t index) const override { (void) index; return getValue(); }
+    int64_t onGetEnum(size_t index) const override {
+        (void)index;
+        return getValue();
+    }
     ConstBufferRef onGetString(size_t index, BufferRef buf) const override;
 
     std::string_view friendly_type_name() const noexcept override { return "string"; }
 };
 
-}
+} // namespace search::expression

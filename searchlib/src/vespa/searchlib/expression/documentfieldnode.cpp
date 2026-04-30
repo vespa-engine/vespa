@@ -1,11 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "documentfieldnode.h"
+
 #include "getdocidnamespacespecificfunctionnode.h"
 #include "getymumchecksumfunctionnode.h"
-#include <vespa/document/fieldvalue/fieldvalues.h>
+
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/vespalib/encoding/base64.h>
 #include <vespa/vespalib/locale/c.h>
+
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -17,26 +20,23 @@ using namespace vespalib;
 using namespace document;
 
 IMPLEMENT_ABSTRACT_EXPRESSIONNODE(DocumentAccessorNode, ExpressionNode);
-IMPLEMENT_EXPRESSIONNODE(DocumentFieldNode,    DocumentAccessorNode);
-IMPLEMENT_EXPRESSIONNODE(GetYMUMChecksumFunctionNode,           DocumentAccessorNode);
+IMPLEMENT_EXPRESSIONNODE(DocumentFieldNode, DocumentAccessorNode);
+IMPLEMENT_EXPRESSIONNODE(GetYMUMChecksumFunctionNode, DocumentAccessorNode);
 IMPLEMENT_EXPRESSIONNODE(GetDocIdNamespaceSpecificFunctionNode, DocumentAccessorNode);
 
 const std::string DocumentAccessorNode::_S_docId("documentid");
 
 DocumentFieldNode::~DocumentFieldNode() = default;
 
-DocumentFieldNode::DocumentFieldNode(const DocumentFieldNode & rhs) :
-    DocumentAccessorNode(rhs),
-    _fieldPath(),
-    _value(rhs._value),
-    _keepAliveForIndexLookups(),
-    _fieldName(rhs._fieldName)
-{
+DocumentFieldNode::DocumentFieldNode(const DocumentFieldNode& rhs)
+    : DocumentAccessorNode(rhs),
+      _fieldPath(),
+      _value(rhs._value),
+      _keepAliveForIndexLookups(),
+      _fieldName(rhs._fieldName) {
 }
 
-DocumentFieldNode &
-DocumentFieldNode::operator = (const DocumentFieldNode & rhs)
-{
+DocumentFieldNode& DocumentFieldNode::operator=(const DocumentFieldNode& rhs) {
     if (this != &rhs) {
         DocumentAccessorNode::operator=(rhs);
         _fieldPath.clear();
@@ -50,40 +50,49 @@ DocumentFieldNode::operator = (const DocumentFieldNode & rhs)
     return *this;
 }
 
-std::unique_ptr<ResultNode>
-deduceResultNode(std::string_view fieldName, const FieldValue & fv, bool preserveAccurateTypes, bool nestedMultiValue)
-{
+std::unique_ptr<ResultNode> deduceResultNode(std::string_view fieldName, const FieldValue& fv,
+                                             bool preserveAccurateTypes, bool nestedMultiValue) {
     std::unique_ptr<ResultNode> value;
     if (fv.isA(FieldValue::Type::BYTE) || fv.isA(FieldValue::Type::INT) || fv.isA(FieldValue::Type::LONG)) {
         if (preserveAccurateTypes) {
             if (fv.isA(FieldValue::Type::BYTE)) {
-                value.reset(nestedMultiValue ? static_cast<ResultNode *>(new Int8ResultNodeVector()) : static_cast<ResultNode *>(new Int8ResultNode()));
+                value.reset(nestedMultiValue ? static_cast<ResultNode*>(new Int8ResultNodeVector())
+                                             : static_cast<ResultNode*>(new Int8ResultNode()));
             } else if (fv.isA(FieldValue::Type::INT)) {
-                value.reset(nestedMultiValue ? static_cast<ResultNode *>(new Int32ResultNodeVector()) : static_cast<ResultNode *>(new Int32ResultNode()));
+                value.reset(nestedMultiValue ? static_cast<ResultNode*>(new Int32ResultNodeVector())
+                                             : static_cast<ResultNode*>(new Int32ResultNode()));
             } else {
-                value.reset(nestedMultiValue ? static_cast<ResultNode *>(new Int64ResultNodeVector()) : static_cast<ResultNode *>(new Int64ResultNode()));
+                value.reset(nestedMultiValue ? static_cast<ResultNode*>(new Int64ResultNodeVector())
+                                             : static_cast<ResultNode*>(new Int64ResultNode()));
             }
         } else {
-            value.reset(nestedMultiValue ? static_cast<ResultNode *>(new Int64ResultNodeVector()) : static_cast<ResultNode *>(new Int64ResultNode()));
+            value.reset(nestedMultiValue ? static_cast<ResultNode*>(new Int64ResultNodeVector())
+                                         : static_cast<ResultNode*>(new Int64ResultNode()));
         }
     } else if (fv.isA(FieldValue::Type::FLOAT) || fv.isA(FieldValue::Type::DOUBLE)) {
-        value.reset(nestedMultiValue ? static_cast<ResultNode *>(new FloatResultNodeVector()) : static_cast<ResultNode *>(new FloatResultNode()));
+        value.reset(nestedMultiValue ? static_cast<ResultNode*>(new FloatResultNodeVector())
+                                     : static_cast<ResultNode*>(new FloatResultNode()));
     } else if (fv.isA(FieldValue::Type::BOOL)) {
-        value.reset(nestedMultiValue ? static_cast<ResultNode *>(new BoolResultNodeVector()) : static_cast<ResultNode *>(new BoolResultNode()));
+        value.reset(nestedMultiValue ? static_cast<ResultNode*>(new BoolResultNodeVector())
+                                     : static_cast<ResultNode*>(new BoolResultNode()));
     } else if (fv.isA(FieldValue::Type::STRING)) {
-        value.reset(nestedMultiValue ? static_cast<ResultNode *>(new StringResultNodeVector()) : static_cast<ResultNode *>(new StringResultNode()));
+        value.reset(nestedMultiValue ? static_cast<ResultNode*>(new StringResultNodeVector())
+                                     : static_cast<ResultNode*>(new StringResultNode()));
     } else if (fv.isA(FieldValue::Type::RAW)) {
-        value.reset(nestedMultiValue ? static_cast<ResultNode *>(new RawResultNodeVector()) : static_cast<ResultNode *>(new RawResultNode()));
+        value.reset(nestedMultiValue ? static_cast<ResultNode*>(new RawResultNodeVector())
+                                     : static_cast<ResultNode*>(new RawResultNode()));
     } else if (fv.isCollection() || fv.isA(FieldValue::Type::MAP)) {
         if (fv.isCollection()) {
-            value = deduceResultNode(fieldName, *static_cast<const CollectionFieldValue &>(fv).createNested(), preserveAccurateTypes, nestedMultiValue);
+            value = deduceResultNode(fieldName, *static_cast<const CollectionFieldValue&>(fv).createNested(),
+                                     preserveAccurateTypes, nestedMultiValue);
         } else {
             assert(fv.isA(FieldValue::Type::MAP));
-            value = deduceResultNode(fieldName, *static_cast<const MapFieldValue &>(fv).createValue(), preserveAccurateTypes, nestedMultiValue);
+            value = deduceResultNode(fieldName, *static_cast<const MapFieldValue&>(fv).createValue(),
+                                     preserveAccurateTypes, nestedMultiValue);
         }
-        const Identifiable::RuntimeClass & rInfo = value->getClass();
+        const Identifiable::RuntimeClass& rInfo = value->getClass();
         if (rInfo.inherits(ResultNodeVector::classId)) {
-            //Already multivalue, so we are good to go.
+            // Already multivalue, so we are good to go.
         } else if (rInfo.inherits(BoolResultNode::classId)) {
             value.reset(new BoolResultNodeVector());
         } else if (rInfo.inherits(Int8ResultNode::classId)) {
@@ -101,34 +110,34 @@ deduceResultNode(std::string_view fieldName, const FieldValue & fv, bool preserv
         } else if (rInfo.inherits(RawResultNode::classId)) {
             value.reset(new RawResultNodeVector());
         } else {
-            throw std::runtime_error(make_string("Can not deduce correct resultclass for documentfield '%s' in based on class '%s'. It nests down to %s which is not expected",
+            throw std::runtime_error(make_string("Can not deduce correct resultclass for documentfield '%s' in based "
+                                                 "on class '%s'. It nests down to %s which is not expected",
                                                  std::string(fieldName).c_str(), fv.className(), rInfo.name()));
         }
     } else {
-        throw std::runtime_error(make_string("Can not deduce correct resultclass for documentfield '%s' in based on class '%s'",
-                                             std::string(fieldName).c_str(), fv.className()));
+        throw std::runtime_error(
+            make_string("Can not deduce correct resultclass for documentfield '%s' in based on class '%s'",
+                        std::string(fieldName).c_str(), fv.className()));
     }
     return value;
 }
 
-void
-DocumentFieldNode::onPrepare(bool preserveAccurateTypes)
-{
+void DocumentFieldNode::onPrepare(bool preserveAccurateTypes) {
     LOG(debug, "DocumentFieldNode::onPrepare(this=%p)", this);
 
-    if ( !_fieldPath.empty() ) {
+    if (!_fieldPath.empty()) {
         bool nestedMultiValue(false);
         for (auto it(_fieldPath.begin()), mt(_fieldPath.end()); !nestedMultiValue && (it != mt); it++) {
-            const FieldPathEntry & fpe = **it;
+            const FieldPathEntry& fpe = **it;
             if (fpe.getType() == document::FieldPathEntry::STRUCT_FIELD) {
-                const FieldValue & fv = fpe.getFieldValueToSet();
+                const FieldValue& fv = fpe.getFieldValueToSet();
                 nestedMultiValue = fv.isCollection() || fv.isA(FieldValue::Type::MAP);
             }
         }
-        const document::FieldPathEntry & endOfPath(_fieldPath.back());
+        const document::FieldPathEntry& endOfPath(_fieldPath.back());
         if (endOfPath.getFieldValueToSetPtr() != nullptr) {
             const FieldValue& fv = endOfPath.getFieldValueToSet();
-            auto res = deduceResultNode(_fieldName, fv, preserveAccurateTypes, nestedMultiValue);
+            auto              res = deduceResultNode(_fieldName, fv, preserveAccurateTypes, nestedMultiValue);
             if (res->inherits(ResultNodeVector::classId)) {
                 auto rnv_ptr = vespalib::static_cast_unique<ResultNodeVector>(std::move(res));
                 _handler = std::make_unique<MultiHandler>(*rnv_ptr);
@@ -144,88 +153,90 @@ DocumentFieldNode::onPrepare(bool preserveAccurateTypes)
             }
         } else {
             if (endOfPath.getDataType().isStructured()) {
-                throw std::runtime_error(make_string("I am not able to access structured field '%s'", _fieldName.c_str()));
+                throw std::runtime_error(
+                    make_string("I am not able to access structured field '%s'", _fieldName.c_str()));
             } else {
-                throw std::runtime_error(make_string("I am not able to access field '%s' for reasons I do not know", _fieldName.c_str()));
+                throw std::runtime_error(
+                    make_string("I am not able to access field '%s' for reasons I do not know", _fieldName.c_str()));
             }
         }
     }
 }
 
-void
-DocumentFieldNode::onDocType(const DocumentType & docType)
-{
+void DocumentFieldNode::onDocType(const DocumentType& docType) {
     LOG(debug, "DocumentFieldNode::onDocType(this=%p)", this);
     _fieldPath.clear();
     docType.buildFieldPath(_fieldPath, _fieldName);
     if (_fieldPath.empty()) {
-        throw std::runtime_error(make_string("Field %s could not be located in documenttype %s", _fieldName.c_str(), docType.getName().c_str()));
+        throw std::runtime_error(make_string("Field %s could not be located in documenttype %s", _fieldName.c_str(),
+                                             docType.getName().c_str()));
     }
 }
 
 bool DocumentFieldNode::hasMultiValue() const {
-    for (const auto & entry : _fieldPath) {
-        if (entry->getDataType().isArray()) return true;
-        if (entry->getDataType().isMap()) return true;
+    for (const auto& entry : _fieldPath) {
+        if (entry->getDataType().isArray())
+            return true;
+        if (entry->getDataType().isMap())
+            return true;
     }
     return false;
 }
 
-void DocumentFieldNode::setCurrentIndex(const CurrentIndex * index) {
+void DocumentFieldNode::setCurrentIndex(const CurrentIndex* index) {
     _currentIndex = index;
 }
 
-class FieldValue2ResultNode : public ResultNode
-{
+class FieldValue2ResultNode : public ResultNode {
 public:
     DECLARE_EXPRESSIONNODE(FieldValue2ResultNode);
-    FieldValue2ResultNode(const FieldValue * fv=nullptr) : _fv(fv) { }
-    int64_t onGetInteger(size_t index) const override { (void) index; return _fv ? _fv->getAsLong() : 0; }
-    double  onGetFloat(size_t index)   const override { (void) index; return _fv ? _fv->getAsDouble() : 0; }
+    FieldValue2ResultNode(const FieldValue* fv = nullptr) : _fv(fv) {}
+    int64_t onGetInteger(size_t index) const override {
+        (void)index;
+        return _fv ? _fv->getAsLong() : 0;
+    }
+    double onGetFloat(size_t index) const override {
+        (void)index;
+        return _fv ? _fv->getAsDouble() : 0;
+    }
     ConstBufferRef onGetString(size_t index, BufferRef buf) const override {
-        (void) index;
+        (void)index;
         if (_fv) {
-            std::pair<const char*, size_t>  raw = _fv->getAsRaw();
+            std::pair<const char*, size_t> raw = _fv->getAsRaw();
             return ConstBufferRef(raw.first, raw.second);
         }
         return buf;
     }
+
 private:
     void set(const ResultNode&) override;
     size_t hash() const override { return 0; }
 
     std::string_view friendly_type_name() const noexcept override { return "<field_value>"; }
 
-    const FieldValue * _fv;
+    const FieldValue* _fv;
 };
 
 char DefaultValue::null = 0;
 
-void
-DefaultValue::set(const ResultNode&)
-{
+void DefaultValue::set(const ResultNode&) {
     throw std::runtime_error("DefaultValue::set(const ResultNode&) is not possible.");
 }
 
-void
-FieldValue2ResultNode::set(const ResultNode&)
-{
+void FieldValue2ResultNode::set(const ResultNode&) {
     throw std::runtime_error("FieldValue2ResultNode::set(const ResultNode&) is not possible.");
 }
 
 IMPLEMENT_EXPRESSIONNODE(FieldValue2ResultNode, ResultNode);
 IMPLEMENT_EXPRESSIONNODE(DefaultValue, ResultNode);
 
-void DocumentFieldNode::onDoc(const Document & doc)
-{
-    _doc = & doc;
+void DocumentFieldNode::onDoc(const Document& doc) {
+    _doc = &doc;
     _handler->reset();
     _needExecute = true;
 }
 
-void
-DocumentFieldNode::onExecute() const
-{
+void DocumentFieldNode::onExecute() const {
     if (_needExecute) {
         _doc->iterateNested(_fieldPath.getFullRange(), *_handler);
         _needExecute = false;
@@ -247,71 +258,66 @@ DocumentFieldNode::onExecute() const
 
 DefaultValue DocumentFieldNode::SingleHandler::_defaultValue;
 
-void
-DocumentFieldNode::SingleHandler::onPrimitive(uint32_t, const Content & c)
-{
+void DocumentFieldNode::SingleHandler::onPrimitive(uint32_t, const Content& c) {
     LOG(spam, "SingleHandler::onPrimitive: field value '%s'", c.getValue().toString().c_str());
     FieldValue2ResultNode converter(&c.getValue());
     _result.set(converter);
 }
 
-void
-DocumentFieldNode::MultiHandler::onPrimitive(uint32_t, const Content & c)
-{
+void DocumentFieldNode::MultiHandler::onPrimitive(uint32_t, const Content& c) {
     LOG(spam, "MultiHandler::onPrimitive: field value '%s'", c.getValue().toString().c_str());
     FieldValue2ResultNode converter(&c.getValue());
     _result.push_back_safe(converter);
 }
 
-void
-DocumentFieldNode::Handler::onCollectionStart(const Content & c)
-{
-    const document::FieldValue & fv = c.getValue();
+void DocumentFieldNode::Handler::onCollectionStart(const Content& c) {
+    const document::FieldValue& fv = c.getValue();
     LOG(spam, "onCollectionStart: field value '%s'", fv.toString().c_str());
     if (fv.isA(FieldValue::Type::ARRAY)) {
-        const document::ArrayFieldValue & afv = static_cast<const document::ArrayFieldValue &>(fv);
+        const document::ArrayFieldValue& afv = static_cast<const document::ArrayFieldValue&>(fv);
         LOG(spam, "onCollectionStart: Array size = '%zu'", afv.size());
     } else if (fv.isA(FieldValue::Type::WSET)) {
-        const document::WeightedSetFieldValue & wsfv = static_cast<const document::WeightedSetFieldValue &>(fv);
+        const document::WeightedSetFieldValue& wsfv = static_cast<const document::WeightedSetFieldValue&>(fv);
         LOG(spam, "onCollectionStart: WeightedSet size = '%zu'", wsfv.size());
     }
 }
 
-void
-DocumentFieldNode::Handler::onStructStart(const Content & c)
-{
+void DocumentFieldNode::Handler::onStructStart(const Content& c) {
     LOG(spam, "onStructStart: field value '%s'", c.getValue().toString().c_str());
 }
 
-
-Serializer &
-DocumentFieldNode::onSerialize(Serializer & os) const
-{
+Serializer& DocumentFieldNode::onSerialize(Serializer& os) const {
     return os << _fieldName << _value;
 }
 
-Deserializer &
-DocumentFieldNode::onDeserialize(Deserializer & is)
-{
+Deserializer& DocumentFieldNode::onDeserialize(Deserializer& is) {
     return is >> _fieldName >> _value;
 }
 
-void
-DocumentFieldNode::visitMembers(vespalib::ObjectVisitor &visitor) const
-{
+void DocumentFieldNode::visitMembers(vespalib::ObjectVisitor& visitor) const {
     visit(visitor, "fieldName", _fieldName);
     visit(visitor, "value", _value);
 }
 
-class String2ResultNode : public ResultNode
-{
+class String2ResultNode : public ResultNode {
 public:
-    String2ResultNode(std::string_view s) : _s(s) { }
-    int64_t onGetInteger(size_t index) const override { (void) index; return strtoul(_s.c_str(), nullptr, 0); }
-    double  onGetFloat(size_t index)   const override { (void) index; return vespalib::locale::c::strtod(_s.c_str(), nullptr); }
-    ConstBufferRef onGetString(size_t index, BufferRef buf) const override { (void) index; (void) buf; return ConstBufferRef(_s.c_str(), _s.size()); }
+    String2ResultNode(std::string_view s) : _s(s) {}
+    int64_t onGetInteger(size_t index) const override {
+        (void)index;
+        return strtoul(_s.c_str(), nullptr, 0);
+    }
+    double onGetFloat(size_t index) const override {
+        (void)index;
+        return vespalib::locale::c::strtod(_s.c_str(), nullptr);
+    }
+    ConstBufferRef onGetString(size_t index, BufferRef buf) const override {
+        (void)index;
+        (void)buf;
+        return ConstBufferRef(_s.c_str(), _s.size());
+    }
+
 private:
-    String2ResultNode * clone() const override { return new String2ResultNode(_s); }
+    String2ResultNode* clone() const override { return new String2ResultNode(_s); }
     void set(const ResultNode&) override;
     size_t hash() const override { return 0; }
 
@@ -320,13 +326,11 @@ private:
     std::string _s;
 };
 
-void String2ResultNode::set(const ResultNode&)
-{
+void String2ResultNode::set(const ResultNode&) {
     throw std::runtime_error("String2ResultNode::set(const ResultNode&) is not possible.");
 }
 
-void GetDocIdNamespaceSpecificFunctionNode::onDoc(const Document & doc)
-{
+void GetDocIdNamespaceSpecificFunctionNode::onDoc(const Document& doc) {
     String2ResultNode converter(doc.getId().getScheme().getNamespaceSpecific());
     _value->set(converter);
 }
@@ -335,31 +339,27 @@ namespace {
 const std::string _G_valueField("value");
 }
 
-Serializer & GetDocIdNamespaceSpecificFunctionNode::onSerialize(Serializer & os) const
-{
+Serializer& GetDocIdNamespaceSpecificFunctionNode::onSerialize(Serializer& os) const {
     return os << _value;
 }
-Deserializer & GetDocIdNamespaceSpecificFunctionNode::onDeserialize(Deserializer & is)
-{
+Deserializer& GetDocIdNamespaceSpecificFunctionNode::onDeserialize(Deserializer& is) {
     return is >> _value;
 }
 
-void
-GetDocIdNamespaceSpecificFunctionNode::visitMembers(vespalib::ObjectVisitor &visitor) const
-{
+void GetDocIdNamespaceSpecificFunctionNode::visitMembers(vespalib::ObjectVisitor& visitor) const {
     visit(visitor, _G_valueField, _value);
 }
 
-void GetYMUMChecksumFunctionNode::onDoc(const Document & doc)
-{
+void GetYMUMChecksumFunctionNode::onDoc(const Document& doc) {
     std::string ymumid(doc.getId().getScheme().getNamespaceSpecific());
 
     try {
         char decoded[20];
-        int len = Base64::decode(ymumid.c_str(), ymumid.size(), decoded, sizeof(decoded));
+        int  len = Base64::decode(ymumid.c_str(), ymumid.size(), decoded, sizeof(decoded));
 
         if (len != 20) {
-            LOG(warning, "Illegal YMUMID '%s' in document id %s. Length(%d) != 20", ymumid.c_str(), doc.getId().toString().c_str(), len);
+            LOG(warning, "Illegal YMUMID '%s' in document id %s. Length(%d) != 20", ymumid.c_str(),
+                doc.getId().toString().c_str(), len);
             _checkSum = 0;
         } else {
             int32_t key[3];
@@ -367,29 +367,27 @@ void GetYMUMChecksumFunctionNode::onDoc(const Document & doc)
             memcpy(((char*)key) + 1, decoded + 9, sizeof(key) - 1);
             _checkSum = (key[0] ^ key[1] ^ key[2]);
         }
-    } catch (const std::exception & e) {
-        LOG(warning, "Illegal YMUMID '%s' in document id %s. Reason : %s", ymumid.c_str(), doc.getId().toString().c_str(), e.what());
+    } catch (const std::exception& e) {
+        LOG(warning, "Illegal YMUMID '%s' in document id %s. Reason : %s", ymumid.c_str(),
+            doc.getId().toString().c_str(), e.what());
         _checkSum = 0;
     }
 }
 
-Serializer & GetYMUMChecksumFunctionNode::onSerialize(Serializer & os) const
-{
+Serializer& GetYMUMChecksumFunctionNode::onSerialize(Serializer& os) const {
     return _checkSum.serialize(os);
 }
 
-Deserializer & GetYMUMChecksumFunctionNode::onDeserialize(Deserializer & is)
-{
+Deserializer& GetYMUMChecksumFunctionNode::onDeserialize(Deserializer& is) {
     return _checkSum.deserialize(is);
 }
 
-void
-GetYMUMChecksumFunctionNode::visitMembers(vespalib::ObjectVisitor &visitor) const
-{
+void GetYMUMChecksumFunctionNode::visitMembers(vespalib::ObjectVisitor& visitor) const {
     visit(visitor, "checkSum", _checkSum);
 }
 
-}
+} // namespace search::expression
 
 // this function was added by ../../forcelink.sh
-void forcelink_file_searchlib_expression_documentfieldnode() {}
+void forcelink_file_searchlib_expression_documentfieldnode() {
+}

@@ -17,18 +17,16 @@ namespace search::expression {
  *
  * Reads pos.x and pos.y from the document and encodes as zcurve integer(s).
  */
-class PositionDocumentFieldNode : public DocumentAccessorNode
-{
-    std::string                  _field_name;
-    document::FieldPath          _x_path;
-    document::FieldPath          _y_path;
-    const document::Document*    _doc;
+class PositionDocumentFieldNode : public DocumentAccessorNode {
+    std::string               _field_name;
+    document::FieldPath       _x_path;
+    document::FieldPath       _y_path;
+    const document::Document* _doc;
 
     class Handler {
     public:
         virtual ~Handler() = default;
-        virtual void handle(const document::Document& doc,
-                            const document::FieldPath& x_path,
+        virtual void handle(const document::Document& doc, const document::FieldPath& x_path,
                             const document::FieldPath& y_path) = 0;
         [[nodiscard]] virtual const ResultNode* result() const noexcept = 0;
     };
@@ -38,9 +36,9 @@ class PositionDocumentFieldNode : public DocumentAccessorNode
      */
     class SingleValueHandler : public Handler {
         mutable Int64ResultNode _result;
+
     public:
-        void handle(const document::Document& doc,
-                    const document::FieldPath& x_path,
+        void handle(const document::Document& doc, const document::FieldPath& x_path,
                     const document::FieldPath& y_path) override;
         [[nodiscard]] const ResultNode* result() const noexcept override { return &_result; }
     };
@@ -50,9 +48,9 @@ class PositionDocumentFieldNode : public DocumentAccessorNode
      */
     class MultiValueHandler : public Handler {
         mutable IntegerResultNodeVector _result;
+
     public:
-        void handle(const document::Document& doc,
-                    const document::FieldPath& x_path,
+        void handle(const document::Document& doc, const document::FieldPath& x_path,
                     const document::FieldPath& y_path) override;
         [[nodiscard]] const ResultNode* result() const noexcept override { return &_result; }
     };
@@ -89,4 +87,4 @@ private:
     vespalib::Deserializer& onDeserialize(vespalib::Deserializer& is) override;
 };
 
-}
+} // namespace search::expression

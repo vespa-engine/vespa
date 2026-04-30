@@ -5,16 +5,16 @@
 
 namespace search::expression {
 
-class CatFunctionNode : public MultiArgFunctionNode
-{
+class CatFunctionNode : public MultiArgFunctionNode {
 public:
     DECLARE_EXPRESSIONNODE(CatFunctionNode);
-    CatFunctionNode() { }
+    CatFunctionNode() {}
     CatFunctionNode(ExpressionNode::UP arg) { addArg(std::move(arg)); }
+
 private:
     void onPrepare(bool preserveAccurateTypes) override;
     void onPrepareResult() override;
     void onExecute() const override;
 };
 
-}
+} // namespace search::expression

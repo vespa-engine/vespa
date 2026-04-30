@@ -5,19 +5,19 @@
 
 namespace search::expression {
 
-class DebugWaitFunctionNode : public UnaryFunctionNode
-{
+class DebugWaitFunctionNode : public UnaryFunctionNode {
 public:
     DECLARE_EXPRESSIONNODE(DebugWaitFunctionNode);
     DECLARE_NBO_SERIALIZE;
     DebugWaitFunctionNode();
     ~DebugWaitFunctionNode() override;
     DebugWaitFunctionNode(ExpressionNode::UP arg, double waitTime, bool busyWait);
-    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    void visitMembers(vespalib::ObjectVisitor& visitor) const override;
+
 private:
     void onExecute() const override;
     double _waitTime;
     bool   _busyWait;
 };
 
-}
+} // namespace search::expression

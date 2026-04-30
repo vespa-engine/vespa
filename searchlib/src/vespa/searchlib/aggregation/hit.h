@@ -2,13 +2,13 @@
 #pragma once
 
 #include "rawrank.h"
-#include <vespa/searchlib/common/identifiable.h>
+
 #include <vespa/searchlib/common/hitrank.h>
+#include <vespa/searchlib/common/identifiable.h>
 
 namespace search::aggregation {
 
-class Hit : public vespalib::Identifiable
-{
+class Hit : public vespalib::Identifiable {
 private:
     RawRank _rank;
 
@@ -20,9 +20,9 @@ public:
     Hit() : _rank() {}
     Hit(RawRank rank) : _rank(rank) {}
     RawRank getRank() const { return _rank; }
-    virtual Hit *clone() const = 0;
-    int onCmp(const Identifiable &b) const override;
-    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    virtual Hit* clone() const = 0;
+    int onCmp(const Identifiable& b) const override;
+    void visitMembers(vespalib::ObjectVisitor& visitor) const override;
 };
 
-}
+} // namespace search::aggregation

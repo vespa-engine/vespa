@@ -7,16 +7,16 @@
 namespace search {
 namespace expression {
 
-class StringBucketResultNode : public BucketResultNode
-{
+class StringBucketResultNode : public BucketResultNode {
 private:
-    ResultNode::CP _from;
-    ResultNode::CP _to;
+    ResultNode::CP                _from;
+    ResultNode::CP                _to;
     static StringBucketResultNode _nullResult;
+
 public:
     struct GetValue {
         BufferRef _tmp;
-        ConstBufferRef operator () (const ResultNode & r) { return r.getString(_tmp); }
+        ConstBufferRef operator()(const ResultNode& r) { return r.getString(_tmp); }
     };
 
     DECLARE_EXPRESSIONNODE(StringBucketResultNode);
@@ -30,22 +30,21 @@ public:
     StringBucketResultNode& operator=(const StringBucketResultNode&);
     StringBucketResultNode& operator=(StringBucketResultNode&&);
     size_t hash() const override;
-    int onCmp(const Identifiable & b) const override;
-    int contains(const StringBucketResultNode & b) const;
-    int contains(const ConstBufferRef & v) const { return contains(v.c_str()); }
-    int contains(const char * v) const;
-    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    StringBucketResultNode &setRange(std::string_view from, std::string_view to) {
+    int onCmp(const Identifiable& b) const override;
+    int contains(const StringBucketResultNode& b) const;
+    int contains(const ConstBufferRef& v) const { return contains(v.c_str()); }
+    int contains(const char* v) const;
+    void visitMembers(vespalib::ObjectVisitor& visitor) const override;
+    StringBucketResultNode& setRange(std::string_view from, std::string_view to) {
         _from.reset(new StringResultNode(from));
         _to.reset(new StringResultNode(to));
         return *this;
     }
     const StringBucketResultNode& getNullBucket() const override { return getNull(); }
-    static const StringBucketResultNode & getNull() { return _nullResult; }
+    static const StringBucketResultNode& getNull() { return _nullResult; }
 
     std::string_view friendly_type_name() const noexcept override { return "string_bucket"; }
 };
 
-}
-}
-
+} // namespace expression
+} // namespace search

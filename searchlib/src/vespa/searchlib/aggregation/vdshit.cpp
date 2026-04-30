@@ -1,49 +1,45 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "vdshit.h"
-#include <vespa/vespalib/objects/visit.hpp>
-#include <vespa/vespalib/objects/serializer.hpp>
+
 #include <vespa/vespalib/objects/deserializer.hpp>
+#include <vespa/vespalib/objects/serializer.hpp>
+#include <vespa/vespalib/objects/visit.hpp>
 
 namespace search::aggregation {
 
-using vespalib::Serializer;
 using vespalib::Deserializer;
+using vespalib::Serializer;
 
 namespace {
-    std::string _G_docIdField("docId");
-    std::string _G_summaryField("summary");
-}
+std::string _G_docIdField("docId");
+std::string _G_summaryField("summary");
+} // namespace
 
 IMPLEMENT_IDENTIFIABLE_NS2(search, aggregation, VdsHit, Hit);
 
-VdsHit::VdsHit(const VdsHit &) = default;
-VdsHit & VdsHit::operator=(const VdsHit &) = default;
+VdsHit::VdsHit(const VdsHit&) = default;
+VdsHit& VdsHit::operator=(const VdsHit&) = default;
 VdsHit::~VdsHit() = default;
 
-Serializer &
-VdsHit::onSerialize(Serializer &os) const
-{
+Serializer& VdsHit::onSerialize(Serializer& os) const {
     Hit::onSerialize(os);
     return os.put(_docId) << _summary;
 }
 
-Deserializer &
-VdsHit::onDeserialize(Deserializer &is)
-{
+Deserializer& VdsHit::onDeserialize(Deserializer& is) {
     Hit::onDeserialize(is);
     return is.get(_docId) >> _summary;
 }
 
-void
-VdsHit::visitMembers(vespalib::ObjectVisitor &visitor) const
-{
+void VdsHit::visitMembers(vespalib::ObjectVisitor& visitor) const {
     Hit::visitMembers(visitor);
     visit(visitor, _G_docIdField, _docId);
     visit(visitor, _G_summaryField, _summary);
 }
 
-}
+} // namespace search::aggregation
 
 // this function was added by ../../forcelink.sh
-void forcelink_file_searchlib_aggregation_vdshit() {}
+void forcelink_file_searchlib_aggregation_vdshit() {
+}

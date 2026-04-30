@@ -7,16 +7,16 @@
 namespace search {
 namespace expression {
 
-class AndFunctionNode : public BitFunctionNode
-{
+class AndFunctionNode : public BitFunctionNode {
 public:
     DECLARE_EXPRESSIONNODE(AndFunctionNode);
-    AndFunctionNode() { }
+    AndFunctionNode() {}
+
 private:
-    ResultNode::CP getInitialValue() const override { return  ResultNode::CP(new Int64ResultNode(-1)); }
-    ResultNode & flatten(const ResultNodeVector & v, ResultNode & result) const override { return v.flattenAnd(result); }
-    void onArgument(const ResultNode & arg, Int64ResultNode & result) const override;
+    ResultNode::CP getInitialValue() const override { return ResultNode::CP(new Int64ResultNode(-1)); }
+    ResultNode& flatten(const ResultNodeVector& v, ResultNode& result) const override { return v.flattenAnd(result); }
+    void onArgument(const ResultNode& arg, Int64ResultNode& result) const override;
 };
 
-}
-}
+} // namespace expression
+} // namespace search

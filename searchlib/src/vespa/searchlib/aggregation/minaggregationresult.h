@@ -2,24 +2,25 @@
 #pragma once
 
 #include "aggregationresult.h"
+
 #include <vespa/searchlib/expression/singleresultnode.h>
 
 namespace search::aggregation {
 
-class MinAggregationResult : public AggregationResult
-{
+class MinAggregationResult : public AggregationResult {
 public:
     using SingleResultNode = expression::SingleResultNode;
     DECLARE_AGGREGATIONRESULT(MinAggregationResult);
-    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    const SingleResultNode & getMin() const { return *_min; }
+    void visitMembers(vespalib::ObjectVisitor& visitor) const override;
+    const SingleResultNode& getMin() const { return *_min; }
     MinAggregationResult();
-    MinAggregationResult(const SingleResultNode & min);
+    MinAggregationResult(const SingleResultNode& min);
     ~MinAggregationResult();
+
 private:
-    const ResultNode & onGetRank() const override { return getMin(); }
-    void onPrepare(const ResultNode & result, bool useForInit) override;
+    const ResultNode& onGetRank() const override { return getMin(); }
+    void onPrepare(const ResultNode& result, bool useForInit) override;
     SingleResultNode::CP _min;
 };
 
-}
+} // namespace search::aggregation

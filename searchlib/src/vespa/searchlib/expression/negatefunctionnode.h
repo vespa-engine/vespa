@@ -6,16 +6,15 @@
 namespace search {
 namespace expression {
 
-class NegateFunctionNode : public UnaryFunctionNode
-{
+class NegateFunctionNode : public UnaryFunctionNode {
 public:
     DECLARE_EXPRESSIONNODE(NegateFunctionNode);
-    NegateFunctionNode() { }
-    NegateFunctionNode(ExpressionNode::UP arg) : UnaryFunctionNode(std::move(arg)) { }
+    NegateFunctionNode() {}
+    NegateFunctionNode(ExpressionNode::UP arg) : UnaryFunctionNode(std::move(arg)) {}
+
 private:
     void onExecute() const override;
 };
 
-}
-}
-
+} // namespace expression
+} // namespace search

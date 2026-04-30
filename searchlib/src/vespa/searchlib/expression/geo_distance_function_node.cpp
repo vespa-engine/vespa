@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "geo_distance_function_node.h"
+
 #include "floatresultnode.h"
 #include "resultvector.h"
 
@@ -21,7 +22,7 @@ namespace {
 constexpr double one_mile_in_kilometers = 1.609344;
 constexpr double miles_per_kilometer = 1.0 / one_mile_in_kilometers;
 
-}
+} // namespace
 
 namespace search::expression {
 
@@ -29,10 +30,11 @@ using common::GeoGcd;
 
 IMPLEMENT_EXPRESSIONNODE(GeoDistanceFunctionNode, MultiArgFunctionNode)
 
-GeoDistanceFunctionNode::GeoDistanceFunctionNode(Unit unit) : _unit(unit) {}
+GeoDistanceFunctionNode::GeoDistanceFunctionNode(Unit unit) : _unit(unit) {
+}
 
-GeoDistanceFunctionNode::GeoDistanceFunctionNode() noexcept
-    : _unit(Unit::KM) {}
+GeoDistanceFunctionNode::GeoDistanceFunctionNode() noexcept : _unit(Unit::KM) {
+}
 
 GeoDistanceFunctionNode::~GeoDistanceFunctionNode() = default;
 
@@ -40,7 +42,9 @@ GeoDistanceFunctionNode::GeoDistanceFunctionNode(const GeoDistanceFunctionNode&)
 
 GeoDistanceFunctionNode& GeoDistanceFunctionNode::operator=(const GeoDistanceFunctionNode&) = default;
 
-void GeoDistanceFunctionNode::onPrepareResult() { setResultType(std::make_unique<FloatResultNode>()); }
+void GeoDistanceFunctionNode::onPrepareResult() {
+    setResultType(std::make_unique<FloatResultNode>());
+}
 
 namespace {
 
@@ -52,7 +56,7 @@ double calculate_distance_km(int64_t zcurve, const GeoGcd& geo_gcd) {
     return geo_gcd.km_great_circle_distance(doc_lat, doc_lng);
 }
 
-}
+} // namespace
 
 void GeoDistanceFunctionNode::onExecute() const {
     assert(getNumArgs() == 3 && "Expect 3 arguments: position attribute, lat, lon");
@@ -65,7 +69,7 @@ void GeoDistanceFunctionNode::onExecute() const {
     double query_lng = getArg(2).getResult()->getFloat();
     GeoGcd geo_gcd(query_lat, query_lng);
 
-    double distance = std::numeric_limits<double>::infinity();
+    double      distance = std::numeric_limits<double>::infinity();
     const auto& attribute_result = *getArg(0).getResult();
     if (attribute_result.inherits(ResultNodeVector::classId)) {
         for (const auto& value : static_cast<const ResultNodeVector&>(attribute_result)) {

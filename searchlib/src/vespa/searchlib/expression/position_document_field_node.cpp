@@ -23,8 +23,7 @@ using vespalib::geo::ZCurve;
 
 IMPLEMENT_EXPRESSIONNODE(PositionDocumentFieldNode, DocumentAccessorNode);
 
-PositionDocumentFieldNode::PositionDocumentFieldNode() noexcept
-    : _doc(nullptr) {
+PositionDocumentFieldNode::PositionDocumentFieldNode() noexcept : _doc(nullptr) {
 }
 
 PositionDocumentFieldNode::PositionDocumentFieldNode(const std::string& field_name)
@@ -64,23 +63,19 @@ bool check_multivalue(const FieldPath& field_path) {
 class IntExtractor : public IteratorHandler {
 public:
     int32_t value = 0;
-    void onPrimitive(uint32_t, const Content& c) override {
-        value = c.getValue().getAsInt();
-    }
+    void onPrimitive(uint32_t, const Content& c) override { value = c.getValue().getAsInt(); }
 };
 
 class IntListExtractor : public IteratorHandler {
 public:
     std::vector<int32_t> values;
     ~IntListExtractor() override;
-    void onPrimitive(uint32_t, const Content& c) override {
-        values.push_back(c.getValue().getAsInt());
-    }
+    void onPrimitive(uint32_t, const Content& c) override { values.push_back(c.getValue().getAsInt()); }
 };
 
 IntListExtractor::~IntListExtractor() = default;
 
-}
+} // namespace
 
 void PositionDocumentFieldNode::onDocType(const DocumentType& docType) {
     _x_path.clear();

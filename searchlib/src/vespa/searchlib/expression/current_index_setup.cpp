@@ -1,56 +1,45 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "current_index_setup.h"
+
 #include <vespa/vespalib/stllike/hash_map.hpp>
+
 #include <cassert>
 
 namespace search::expression {
 
-void
-CurrentIndexSetup::Usage::notify_unbound_name_usage(std::string_view name)
-{
+void CurrentIndexSetup::Usage::notify_unbound_name_usage(std::string_view name) {
     _unbound.insert(std::string(name));
 }
 
-CurrentIndexSetup::Usage::Usage()
-  : _unbound()
-{
+CurrentIndexSetup::Usage::Usage() : _unbound() {
 }
 
 CurrentIndexSetup::Usage::~Usage() = default;
 
-std::string_view
-CurrentIndexSetup::Usage::get_unbound_name() const
-{
+std::string_view CurrentIndexSetup::Usage::get_unbound_name() const {
     assert(has_single_unbound_name());
     return *_unbound.begin();
 }
 
-CurrentIndexSetup::Usage::Bind::Bind(CurrentIndexSetup &setup, Usage &usage) noexcept
-  : _setup(setup)
-{
+CurrentIndexSetup::Usage::Bind::Bind(CurrentIndexSetup& setup, Usage& usage) noexcept : _setup(setup) {
     auto prev = setup.capture(std::addressof(usage));
     assert(prev == nullptr); // no nesting
 }
 
-CurrentIndexSetup::Usage::Bind::~Bind()
-{
+CurrentIndexSetup::Usage::Bind::~Bind() {
     [[maybe_unused]] auto prev = _setup.capture(nullptr);
 }
 
-CurrentIndexSetup::CurrentIndexSetup()
-  : _bound(), _usage(nullptr)
-{
+CurrentIndexSetup::CurrentIndexSetup() : _bound(), _usage(nullptr) {
 }
 
 CurrentIndexSetup::~CurrentIndexSetup() = default;
 
-const CurrentIndex *
-CurrentIndexSetup::resolve(std::string_view field_name) const
-{
+const CurrentIndex* CurrentIndexSetup::resolve(std::string_view field_name) const {
     size_t pos = field_name.rfind('.');
-    auto struct_name = (pos > field_name.size()) ? field_name : field_name.substr(0, pos);
-    auto entry = _bound.find(struct_name);
+    auto   struct_name = (pos > field_name.size()) ? field_name : field_name.substr(0, pos);
+    auto   entry = _bound.find(struct_name);
     if (entry == _bound.end()) {
         if (_usage != nullptr) {
             _usage->notify_unbound_name_usage(struct_name);
@@ -60,12 +49,9 @@ CurrentIndexSetup::resolve(std::string_view field_name) const
     return entry->second;
 }
 
-void
-CurrentIndexSetup::bind(std::string_view struct_name, const CurrentIndex &index)
-{
-    auto res = _bound.insert(std::make_pair(std::string(struct_name),
-                                            std::addressof(index)));
+void CurrentIndexSetup::bind(std::string_view struct_name, const CurrentIndex& index) {
+    auto res = _bound.insert(std::make_pair(std::string(struct_name), std::addressof(index)));
     assert(res.second); // struct must be either bound or unbound
 }
 
-}
+} // namespace search::expression

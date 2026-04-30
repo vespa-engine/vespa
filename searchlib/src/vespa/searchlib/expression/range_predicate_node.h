@@ -9,14 +9,14 @@ namespace search::expression {
 /**
  * Implements range filter in grouping expressions.
  *
- * Checks if a expression is between an lower and upper bound. Lower bound and upper bound can 
+ * Checks if a expression is between an lower and upper bound. Lower bound and upper bound can
  * be set inclusive or exclusive.
  **/
 class RangePredicateNode : public FilterPredicateNode {
-    double _lower{};
-    double _upper{};
-    bool _lower_inclusive{};
-    bool _upper_inclusive{};
+    double         _lower{};
+    double         _upper{};
+    bool           _lower_inclusive{};
+    bool           _upper_inclusive{};
     ExpressionTree _argument;
 
     [[nodiscard]] bool satisfies_bounds(double value) const;
@@ -31,15 +31,15 @@ public:
     [[nodiscard]] RangePredicateNode* clone() const override { return new RangePredicateNode(*this); }
 
     // for unit testing::
-    RangePredicateNode(double lower, double upper, ExpressionNode::UP input, bool lower_inclusive, bool upper_inclusive);
+    RangePredicateNode(double lower, double upper, ExpressionNode::UP input, bool lower_inclusive,
+                       bool upper_inclusive);
 
     DECLARE_IDENTIFIABLE_NS2(search, expression, RangePredicateNode);
     DECLARE_NBO_SERIALIZE;
     bool allow(DocId docId, HitRank rank) override;
     bool allow(const document::Document&, HitRank) override;
     void visitMembers(vespalib::ObjectVisitor& visitor) const override;
-    void selectMembers(const vespalib::ObjectPredicate& predicate,
-                       vespalib::ObjectOperation& operation) override;
+    void selectMembers(const vespalib::ObjectPredicate& predicate, vespalib::ObjectOperation& operation) override;
 };
 
 } // namespace search::expression

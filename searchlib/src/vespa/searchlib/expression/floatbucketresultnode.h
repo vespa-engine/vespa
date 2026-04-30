@@ -6,15 +6,15 @@
 namespace search {
 namespace expression {
 
-class FloatBucketResultNode : public BucketResultNode
-{
+class FloatBucketResultNode : public BucketResultNode {
 private:
-    double _from;
-    double _to;
+    double                       _from;
+    double                       _to;
     static FloatBucketResultNode _nullResult;
+
 public:
     struct GetValue {
-        double operator () (const ResultNode & r) { return r.getFloat(); }
+        double operator()(const ResultNode& r) { return r.getFloat(); }
     };
 
     DECLARE_EXPRESSIONNODE(FloatBucketResultNode);
@@ -22,20 +22,20 @@ public:
     FloatBucketResultNode() noexcept : _from(0.0), _to(0.0) {}
     FloatBucketResultNode(double from, double to) : _from(from), _to(to) {}
     size_t hash() const override;
-    int onCmp(const Identifiable & b) const override;
-    int contains(const FloatBucketResultNode & b) const;
+    int onCmp(const Identifiable& b) const override;
+    int contains(const FloatBucketResultNode& b) const;
     int contains(double v) const { return (v < _from) ? 1 : ((v < _to) ? 0 : -1); }
-    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    FloatBucketResultNode &setRange(double from, double to) {
+    void visitMembers(vespalib::ObjectVisitor& visitor) const override;
+    FloatBucketResultNode& setRange(double from, double to) {
         _from = from;
         _to = to;
         return *this;
     }
     const FloatBucketResultNode& getNullBucket() const override { return getNull(); }
-    static const FloatBucketResultNode & getNull() { return _nullResult; }
+    static const FloatBucketResultNode& getNull() { return _nullResult; }
 
     std::string_view friendly_type_name() const noexcept override { return "float_bucket"; }
 };
 
-}
-}
+} // namespace expression
+} // namespace search

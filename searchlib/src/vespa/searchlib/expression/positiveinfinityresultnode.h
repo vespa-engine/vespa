@@ -5,24 +5,24 @@
 
 namespace search::expression {
 
-class PositiveInfinityResultNode : public SingleResultNode
-{
+class PositiveInfinityResultNode : public SingleResultNode {
 public:
     DECLARE_EXPRESSIONNODE(PositiveInfinityResultNode);
     size_t hash() const override;
-    int onCmp(const Identifiable & b) const override;
-    void set(const ResultNode & rhs) override;
-    void min(const ResultNode & b) override;
-    void max(const ResultNode & b) override;
-    void add(const ResultNode & b) override;
+    int onCmp(const Identifiable& b) const override;
+    void set(const ResultNode& rhs) override;
+    void min(const ResultNode& b) override;
+    void max(const ResultNode& b) override;
+    void add(const ResultNode& b) override;
+
 private:
     void setMin() override;
     void setMax() override;
     int64_t onGetInteger(size_t index) const override;
-    double onGetFloat(size_t index)    const override;
+    double onGetFloat(size_t index) const override;
     ConstBufferRef onGetString(size_t index, BufferRef buf) const override;
 
     std::string_view friendly_type_name() const noexcept override { return "infinity"; }
 };
 
-}
+} // namespace search::expression

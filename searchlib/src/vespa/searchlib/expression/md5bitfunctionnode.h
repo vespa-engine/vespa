@@ -6,16 +6,15 @@
 namespace search {
 namespace expression {
 
-class MD5BitFunctionNode : public UnaryBitFunctionNode
-{
+class MD5BitFunctionNode : public UnaryBitFunctionNode {
 public:
     DECLARE_EXPRESSIONNODE(MD5BitFunctionNode);
-    MD5BitFunctionNode() { }
-    MD5BitFunctionNode(ExpressionNode::UP arg, unsigned numBits) : UnaryBitFunctionNode(std::move(arg), numBits) { }
+    MD5BitFunctionNode() {}
+    MD5BitFunctionNode(ExpressionNode::UP arg, unsigned numBits) : UnaryBitFunctionNode(std::move(arg), numBits) {}
+
 private:
-    void internalExecute(const vespalib::nbostream & os) const override;
+    void internalExecute(const vespalib::nbostream& os) const override;
 };
 
-}
-}
-
+} // namespace expression
+} // namespace search
