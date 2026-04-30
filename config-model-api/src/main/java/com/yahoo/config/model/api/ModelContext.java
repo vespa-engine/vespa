@@ -26,6 +26,7 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
@@ -126,6 +127,8 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"johsol"}) default double docprocHandlerThreadpool() { return 1.0; }
         @ModelFeatureFlag(owners = {"glebashnik"}) default boolean applyOnRestartForApplicationMetadataConfig() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean scaleMetricsproxyHeapByNodeCount() { return false; }
+        @ModelFeatureFlag(owners = {"hmusum"}) default OptionalInt metricsProxyHeapSizeInMib() { return OptionalInt.empty(); }
+        @ModelFeatureFlag(owners = {"hmusum"}) default OptionalInt metricsProxyAdminNodeHeapSizeInMib() { return OptionalInt.empty(); }
         @ModelFeatureFlag(owners = {"hmusum"}) default double autoscalerTargetWriteCpuPercentage(Optional<String> clusterId) { return 0.95; }
         @ModelFeatureFlag(owners = {"toregge"}, removeAfter = "8.676") default double searchNodeReservedDiskSpaceFactor() { return 1.0; }
     }

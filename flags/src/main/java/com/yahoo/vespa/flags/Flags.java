@@ -180,7 +180,8 @@ public class Flags {
     public static final UnboundBooleanFlag SCALE_METRICSPROXY_HEAP_BY_NODE_COUNT = defineFeatureFlag(
             "scale-metricsproxy-heap-by-node-count", false,
             List.of("hmusum"), "2026-02-15", "2026-08-15",
-            "Whether to scale metrics proxy container heap based on total number of nodes in the application",
+            "Whether to scale metrics proxy container heap based on total number of nodes in the application." +
+            " Will not have any effect if METRICS_PROXY_HEAP_SIZE_IN_MIB or METRICS_PROXY_ADMIN_HEAP_SIZE_IN_MIB is set",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
@@ -373,6 +374,20 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID
     );
+
+    public static final UnboundIntFlag METRICS_PROXY_HEAP_SIZE_IN_MIB = defineIntFlag(
+            "metrics-proxy-heap-size-in-mib", 0,
+            List.of("hmusum"), "2026-04-29", "2026-06-01",
+            "Amount of memory (in MiB) to use for metrics proxy JVM heap on non-admin nodes. 0 means use the default.",
+            "Takes effect at redeployment",
+            TENANT_ID, APPLICATION, INSTANCE_ID);
+
+    public static final UnboundIntFlag METRICS_PROXY_ADMIN_HEAP_SIZE_IN_MIB = defineIntFlag(
+            "metrics-proxy-admin-heap-size-in-mib", 0,
+            List.of("hmusum"), "2026-04-29", "2026-06-01",
+            "Amount of memory (in MiB) to use for metrics proxy JVM heap on admin nodes. 0 means use the default.",
+            "Takes effect at redeployment",
+            TENANT_ID, APPLICATION, INSTANCE_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
