@@ -2109,6 +2109,61 @@ public class DeploymentSpecTest {
         assertHostTTL(Duration.ofHours(1), spec, "nope", prod, "us-west");
     }
 
+    @Test
+    public void skipAttribute() {
+        String r =
+                """
+                <deployment version='1.0'>
+                  <instance id='alpha'>
+                    <test skip='true'/>
+                    <staging/>
+                    <prod>
+                        <region>us-east</region>
+                    </prod>
+                  </instance>
+                  <instance id='beta'>
+                    <test/>
+                    <staging skip='true'/>
+                    <prod>
+                        <region>us-east</region>
+                    </prod>
+                  </instance>
+                  <instance id='gamma'>
+                    <test/>
+                    <staging/>
+                    <prod>
+                        <region>us-east</region>
+                    </prod>
+                  </instance>
+                </deployment>
+                """;
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+
+        // alpha: test skipped, staging not skipped
+        DeploymentSpec.DeclaredZone alphaTest = (DeploymentSpec.DeclaredZone) spec.requireInstance("alpha").steps().stream()
+                .filter(step -> step.concerns(test)).findFirst().orElseThrow();
+        assertTrue(alphaTest.skip());
+        DeploymentSpec.DeclaredZone alphaStaging = (DeploymentSpec.DeclaredZone) spec.requireInstance("alpha").steps().stream()
+                .filter(step -> step.concerns(staging)).findFirst().orElseThrow();
+        assertFalse(alphaStaging.skip());
+
+        // beta: test not skipped, staging skipped
+        DeploymentSpec.DeclaredZone betaTest = (DeploymentSpec.DeclaredZone) spec.requireInstance("beta").steps().stream()
+                .filter(step -> step.concerns(test)).findFirst().orElseThrow();
+        assertFalse(betaTest.skip());
+        DeploymentSpec.DeclaredZone betaStaging = (DeploymentSpec.DeclaredZone) spec.requireInstance("beta").steps().stream()
+                .filter(step -> step.concerns(staging)).findFirst().orElseThrow();
+        assertTrue(betaStaging.skip());
+
+        // gamma: neither skipped (default is false)
+        DeploymentSpec.DeclaredZone gammaTest = (DeploymentSpec.DeclaredZone) spec.requireInstance("gamma").steps().stream()
+                .filter(step -> step.concerns(test)).findFirst().orElseThrow();
+        assertFalse(gammaTest.skip());
+        DeploymentSpec.DeclaredZone gammaStaging = (DeploymentSpec.DeclaredZone) spec.requireInstance("gamma").steps().stream()
+                .filter(step -> step.concerns(staging)).findFirst().orElseThrow();
+        assertFalse(gammaStaging.skip());
+    }
+
     private void assertCloudAccount(String expected, DeploymentSpec spec, CloudName cloud, String instance, Environment environment, String region) {
         assertEquals(CloudAccount.from(expected),
                      spec.cloudAccount(cloud, InstanceName.from(instance), com.yahoo.config.provision.zone.ZoneId.from(environment, RegionName.from(region))));
