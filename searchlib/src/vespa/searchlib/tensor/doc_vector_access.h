@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/eval/eval/typed_cells.h>
+
 #include <cstdint>
 
 namespace search::tensor {
@@ -29,16 +30,12 @@ public:
      * and the calling code would try its best to give this prefetch enough time to bring the
      * data needed in before invoking `prefetch_vector`.
      */
-    virtual void prefetch_docid(uint32_t docid) const noexcept {
-        (void)docid;
-    }
+    virtual void prefetch_docid(uint32_t docid) const noexcept { (void)docid; }
 
     /**
      * Try to prefetch tensor's data into memory.
      */
-    virtual void prefetch_vector(uint32_t docid) const noexcept {
-        (void)docid;
-    }
+    virtual void prefetch_vector(uint32_t docid) const noexcept { (void)docid; }
 };
 
-}
+} // namespace search::tensor

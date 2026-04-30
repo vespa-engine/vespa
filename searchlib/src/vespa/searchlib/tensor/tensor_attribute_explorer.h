@@ -4,8 +4,12 @@
 
 #include <vespa/vespalib/net/http/state_explorer.h>
 
-namespace vespalib::datastore { class AtomicEntryRef; }
-namespace vespalib { template <typename T> class RcuVectorBase; }
+namespace vespalib::datastore {
+class AtomicEntryRef;
+}
+namespace vespalib {
+template <typename T> class RcuVectorBase;
+}
 
 namespace search::tensor {
 
@@ -15,17 +19,16 @@ class TensorStore;
 /**
  * Class used to explore the state of a tensor attribute vector.
  */
-class TensorAttributeExplorer : public vespalib::StateExplorer
-{
+class TensorAttributeExplorer : public vespalib::StateExplorer {
     uint64_t                                                            _compact_generation;
     const vespalib::RcuVectorBase<vespalib::datastore::AtomicEntryRef>& _ref_vector;
     const TensorStore&                                                  _tensor_store;
     const NearestNeighborIndex*                                         _index;
+
 public:
-    TensorAttributeExplorer(uint64_t compact_generation,
+    TensorAttributeExplorer(uint64_t                                                            compact_generation,
                             const vespalib::RcuVectorBase<vespalib::datastore::AtomicEntryRef>& ref_vector,
-                            const TensorStore& tensor_store,
-                            const NearestNeighborIndex* index);
+                            const TensorStore& tensor_store, const NearestNeighborIndex* index);
     ~TensorAttributeExplorer() override;
 
     // Implements vespalib::StateExplorer
@@ -34,5 +37,4 @@ public:
     std::unique_ptr<StateExplorer> get_child(std::string_view name) const override;
 };
 
-} // namespace proton
-
+} // namespace search::tensor

@@ -1,9 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "geo_degrees_distance.h"
+
 #include "temporary_vector_store.h"
-#include <numbers>
+
 #include <cmath>
+#include <numbers>
 
 using vespalib::typify_invoke;
 using vespalib::eval::TypifyCellType;
@@ -19,7 +21,8 @@ namespace search::tensor {
 class BoundGeoDistance final : public BoundDistanceFunction {
 private:
     mutable TemporaryVectorStore<double> _tmpSpace;
-    const std::span<const double> _lh_vector;
+    const std::span<const double>        _lh_vector;
+
 public:
     // in km, as defined by IUGG, see:
     // https://en.wikipedia.org/wiki/Earth_radius#Mean_radius
@@ -28,14 +31,11 @@ public:
 
     // haversine function:
     static double haversine(double angle) noexcept {
-        double s = sin(0.5*angle);
-        return s*s;
+        double s = sin(0.5 * angle);
+        return s * s;
     }
 
-    explicit  BoundGeoDistance(TypedCells lhs)
-        : _tmpSpace(lhs.size),
-          _lh_vector(_tmpSpace.storeLhs(lhs))
-    {}
+    explicit BoundGeoDistance(TypedCells lhs) : _tmpSpace(lhs.size), _lh_vector(_tmpSpace.storeLhs(lhs)) {}
     double calc(TypedCells rhs) const noexcept override {
         std::span<const double> rhs_vector = _tmpSpace.convertRhs(rhs);
         assert(2 == _lh_vector.size());
@@ -54,7 +54,7 @@ public:
         double hav_lon = haversine(lon_diff);
 
         // haversine of central angle between the two points:
-        double hav_central_angle = hav_lat + cos(lat_A)*cos(lat_B)*hav_lon;
+        double hav_central_angle = hav_lat + cos(lat_A) * cos(lat_B) * hav_lon;
         return hav_central_angle;
     }
     double convert_threshold(double threshold) const noexcept override {
@@ -76,19 +76,15 @@ public:
         // km to rawscore:
         return 1.0 / (1.0 + d);
     }
-    double calc_with_limit(TypedCells rhs, double) const noexcept override {
-        return calc(rhs);
-    }
+    double calc_with_limit(TypedCells rhs, double) const noexcept override { return calc(rhs); }
 };
 
-BoundDistanceFunction::UP
-GeoDistanceFunctionFactory::for_query_vector(TypedCells lhs) const {
+BoundDistanceFunction::UP GeoDistanceFunctionFactory::for_query_vector(TypedCells lhs) const {
     return std::make_unique<BoundGeoDistance>(lhs);
 }
 
-BoundDistanceFunction::UP
-GeoDistanceFunctionFactory::for_insertion_vector(TypedCells lhs) const {
+BoundDistanceFunction::UP GeoDistanceFunctionFactory::for_insertion_vector(TypedCells lhs) const {
     return std::make_unique<BoundGeoDistance>(lhs);
 }
 
-}
+} // namespace search::tensor

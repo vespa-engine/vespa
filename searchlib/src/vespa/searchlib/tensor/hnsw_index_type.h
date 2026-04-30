@@ -11,10 +11,6 @@ namespace search::tensor {
  *
  * MULTI: Multiple nodes per document. Managed mapping between nodeid and docid.
  */
-enum class HnswIndexType
-{
-    SINGLE,
-    MULTI
-};
+enum class HnswIndexType { SINGLE, MULTI };
 
-}
+} // namespace search::tensor

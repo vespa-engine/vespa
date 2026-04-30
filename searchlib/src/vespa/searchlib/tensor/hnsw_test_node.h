@@ -22,9 +22,9 @@ private:
 
 public:
     HnswTestNode() noexcept;
-    HnswTestNode(const HnswTestNode &) = delete;
-    HnswTestNode & operator=(const HnswTestNode &) = delete;
-    HnswTestNode(HnswTestNode &&) noexcept = default;
+    HnswTestNode(const HnswTestNode&) = delete;
+    HnswTestNode& operator=(const HnswTestNode&) = delete;
+    HnswTestNode(HnswTestNode&&) noexcept = default;
     ~HnswTestNode();
     HnswTestNode(LinkArray&& level_0) : _levels() { _levels.push_back(std::move(level_0)); }
     HnswTestNode(LevelArray&& levels_in) : _levels(std::move(levels_in)) {}
@@ -32,10 +32,7 @@ public:
     size_t size() const noexcept { return _levels.size(); }
     const LevelArray& levels() const noexcept { return _levels; }
     const LinkArray& level(size_t idx) const noexcept { return _levels[idx]; }
-    bool operator==(const HnswTestNode& rhs) noexcept  {
-        return _levels == rhs._levels;
-    }
+    bool operator==(const HnswTestNode& rhs) noexcept { return _levels == rhs._levels; }
 };
 
-}
-
+} // namespace search::tensor

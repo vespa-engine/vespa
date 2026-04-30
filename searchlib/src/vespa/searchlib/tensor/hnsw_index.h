@@ -1,11 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "hnsw_index_config.h"
 #include "distance_function.h"
 #include "distance_function_factory.h"
 #include "doc_vector_access.h"
+#include "hnsw_graph.h"
 #include "hnsw_identity_mapping.h"
+#include "hnsw_index_config.h"
 #include "hnsw_index_utils.h"
 #include "hnsw_multi_best_neighbors.h"
 #include "hnsw_nodeid_mapping.h"
@@ -13,8 +14,8 @@
 #include "hnsw_test_node.h"
 #include "nearest_neighbor_index.h"
 #include "random_level_generator.h"
-#include "hnsw_graph.h"
 #include "vector_bundle.h"
+
 #include <vespa/eval/eval/typed_cells.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/queryeval/global_filter.h>
@@ -34,8 +35,8 @@ namespace search::tensor {
  * This is achieved by using data stores that use generation tracking and associated memory management.
  *
  * The implementation is mainly based on the algorithms described in
- * "Efficient and robust approximate nearest neighbor search using Hierarchical Navigable Small World graphs" (Yu. A. Malkov, D. A. Yashunin),
- * but some adjustments are made to support proper removes.
+ * "Efficient and robust approximate nearest neighbor search using Hierarchical Navigable Small World graphs" (Yu. A.
+ * Malkov, D. A. Yashunin), but some adjustments are made to support proper removes.
  *
  * TODO: Add details on how to handle removes.
  */
@@ -43,7 +44,7 @@ namespace search::tensor {
 struct ReachabilityResult {
     uint32_t nodes_found;
     uint32_t nodes_not_found;
-    uint32_t nodes_pending;  // nodes reached but not yet explored
+    uint32_t nodes_pending; // nodes reached but not yet explored
     bool     completed;
     uint32_t timeout_ms;
 
@@ -75,26 +76,22 @@ struct PreparedFirstAddDoc : public PrepareResult {};
 
 struct PreparedAddDoc final : public PrepareResult {
     using ReadGuard = vespalib::GenerationGuard;
-    uint32_t docid;
-    ReadGuard read_guard;
-    ReadGuard hnsw_graph_read_guard;
+    uint32_t                     docid;
+    ReadGuard                    read_guard;
+    ReadGuard                    hnsw_graph_read_guard;
     std::vector<PreparedAddNode> nodes;
     PreparedAddDoc(uint32_t docid_in, ReadGuard read_guard_in, ReadGuard hnsw_graph_read_guard_in) noexcept;
     ~PreparedAddDoc() override;
     PreparedAddDoc(PreparedAddDoc&& other) noexcept;
 };
 
-template <HnswIndexType type>
-class GlobalFilterWrapper;
+template <HnswIndexType type> class GlobalFilterWrapper;
 
-template <>
-class GlobalFilterWrapper<HnswIndexType::SINGLE> {
-    const search::queryeval::GlobalFilter *_filter;
+template <> class GlobalFilterWrapper<HnswIndexType::SINGLE> {
+    const search::queryeval::GlobalFilter* _filter;
+
 public:
-    explicit GlobalFilterWrapper(const search::queryeval::GlobalFilter *filter)
-        : _filter(filter)
-    {
-    }
+    explicit GlobalFilterWrapper(const search::queryeval::GlobalFilter* filter) : _filter(filter) {}
 
     [[nodiscard]] bool check(uint32_t docid) const noexcept { return !_filter || _filter->check(docid); }
 
@@ -105,36 +102,34 @@ public:
     }
 };
 
-template <>
-class GlobalFilterWrapper<HnswIndexType::MULTI> {
-    const search::queryeval::GlobalFilter *_filter;
-    uint32_t            _docid_limit;
-public:
-    explicit GlobalFilterWrapper(const search::queryeval::GlobalFilter *filter)
-        : _filter(filter),
-          _docid_limit(filter ? filter->size() : 0u)
-    {
-    }
+template <> class GlobalFilterWrapper<HnswIndexType::MULTI> {
+    const search::queryeval::GlobalFilter* _filter;
+    uint32_t                               _docid_limit;
 
-    [[nodiscard]] bool check(uint32_t docid) const noexcept { return !_filter || (docid < _docid_limit && _filter->check(docid)); }
-    static void clamp_nodeid_limit(uint32_t&) { }
+public:
+    explicit GlobalFilterWrapper(const search::queryeval::GlobalFilter* filter)
+        : _filter(filter), _docid_limit(filter ? filter->size() : 0u) {}
+
+    [[nodiscard]] bool check(uint32_t docid) const noexcept {
+        return !_filter || (docid < _docid_limit && _filter->check(docid));
+    }
+    static void clamp_nodeid_limit(uint32_t&) {}
 };
 
-}
+} // namespace internal
 
 using LinkArray = std::vector<uint32_t, vespalib::allocator_large<uint32_t>>;
 struct SelectResult {
     HnswTraversalCandidateVector used;
-    LinkArray unused;
+    LinkArray                    unused;
     SelectResult() noexcept;
-    SelectResult(const SelectResult &) = delete;
-    SelectResult & operator=(const SelectResult &) = delete;
-    SelectResult(SelectResult &&) noexcept = default;
+    SelectResult(const SelectResult&) = delete;
+    SelectResult& operator=(const SelectResult&) = delete;
+    SelectResult(SelectResult&&) noexcept = default;
     ~SelectResult();
 };
 
-template <HnswIndexType type>
-class HnswIndex : public NearestNeighborIndex {
+template <HnswIndexType type> class HnswIndex : public NearestNeighborIndex {
 public:
     uint32_t get_docid(uint32_t nodeid) const {
         if constexpr (NodeType::identity_mapping) {
@@ -147,6 +142,7 @@ public:
     static constexpr HnswIndexType index_type = type;
     using SearchBestNeighbors = typename HnswIndexTraits<type>::SearchBestNeighbors;
     using IdMapping = typename HnswIndexTraits<type>::IdMapping;
+
 protected:
     using GraphType = HnswGraph<type>;
     using NodeType = typename GraphType::NodeType;
@@ -172,12 +168,12 @@ protected:
     // Chosen value is based on class comment for InvLogLevelGenerator.
     static constexpr uint32_t max_max_level = 29;
 
-    GraphType _graph;
-    const DocVectorAccess& _vectors;
+    GraphType                                _graph;
+    const DocVectorAccess&                   _vectors;
     std::unique_ptr<DistanceFunctionFactory> _distance_ff;
-    RandomLevelGenerator::UP _level_generator;
-    IdMapping _id_mapping; // mapping from docid to nodeid vector
-    HnswIndexConfig _cfg;
+    RandomLevelGenerator::UP                 _level_generator;
+    IdMapping                                _id_mapping; // mapping from docid to nodeid vector
+    HnswIndexConfig                          _cfg;
 
     uint32_t max_links_for_level(uint32_t level) const;
     void add_link_to(uint32_t nodeid, uint32_t level, const LinkArrayRef& old_links, uint32_t new_link) {
@@ -193,7 +189,8 @@ protected:
      * where the candidate is located.
      * Used by select_neighbors_heuristic().
      */
-    bool have_closer_distance(HnswTraversalCandidate candidate, const HnswTraversalCandidateVector& curr_result) const;
+    bool have_closer_distance(HnswTraversalCandidate              candidate,
+                              const HnswTraversalCandidateVector& curr_result) const;
     template <typename HnswCandidateVectorT>
     SelectResult select_neighbors_heuristic(const HnswCandidateVectorT& neighbors, uint32_t max_links) const;
     template <typename HnswCandidateVectorT>
@@ -201,70 +198,83 @@ protected:
     template <typename HnswCandidateVectorT>
     SelectResult select_neighbors(const HnswCandidateVectorT& neighbors, uint32_t max_links) const;
     void shrink_if_needed(uint32_t nodeid, uint32_t level);
-    void connect_new_node(uint32_t nodeid, const LinkArrayRef &neighbors, uint32_t level);
-    void mutual_reconnect(const LinkArrayRef &cluster, uint32_t level);
+    void connect_new_node(uint32_t nodeid, const LinkArrayRef& neighbors, uint32_t level);
+    void mutual_reconnect(const LinkArrayRef& cluster, uint32_t level);
     void remove_link_to(uint32_t remove_from, uint32_t remove_id, uint32_t level);
 
     TypedCells get_vector(uint32_t nodeid) const {
         if constexpr (NodeType::identity_mapping) {
             return _vectors.get_vector(nodeid, 0);
         } else {
-            auto& ref = _graph.nodes.acquire_elem_ref(nodeid);
+            auto&    ref = _graph.nodes.acquire_elem_ref(nodeid);
             uint32_t docid = ref.acquire_docid();
             uint32_t subspace = ref.acquire_subspace();
             return _vectors.get_vector(docid, subspace);
         }
     }
-    TypedCells get_vector(uint32_t docid, uint32_t subspace) const {
-        return _vectors.get_vector(docid, subspace);
-    }
-    VectorBundle get_vectors(uint32_t docid) const {
-        return _vectors.get_vectors(docid);
-    }
+    TypedCells get_vector(uint32_t docid, uint32_t subspace) const { return _vectors.get_vector(docid, subspace); }
+    VectorBundle get_vectors(uint32_t docid) const { return _vectors.get_vectors(docid); }
 
-    double calc_distance(const BoundDistanceFunction &df, uint32_t rhs_nodeid) const;
-    double calc_distance(const BoundDistanceFunction &df, uint32_t rhs_docid, uint32_t rhs_subspace) const;
-    uint32_t estimate_visited_nodes(uint32_t level, uint32_t nodeid_limit, uint32_t neighbors_to_find, const GlobalFilter* filter) const;
+    double calc_distance(const BoundDistanceFunction& df, uint32_t rhs_nodeid) const;
+    double calc_distance(const BoundDistanceFunction& df, uint32_t rhs_docid, uint32_t rhs_subspace) const;
+    uint32_t estimate_visited_nodes(uint32_t level, uint32_t nodeid_limit, uint32_t neighbors_to_find,
+                                    const GlobalFilter* filter) const;
 
     /**
      * Performs a greedy search in the given layer to find the candidate that is nearest the input vector.
      */
-    HnswCandidate find_nearest_in_layer(Stats &stats, const BoundDistanceFunction &df, const HnswCandidate& entry_point, uint32_t level) const __attribute__((noinline));
+    HnswCandidate find_nearest_in_layer(Stats& stats, const BoundDistanceFunction& df,
+                                        const HnswCandidate& entry_point, uint32_t level) const
+        __attribute__((noinline));
     template <class VisitedTracker, class BestNeighbors>
-    void search_layer_helper(Stats &stats, const BoundDistanceFunction &df, uint32_t neighbors_to_find, double exploration_slack,
-                             bool prefetch_tensors, BestNeighbors& best_neighbors, uint32_t level, const GlobalFilter *filter,
-                             uint32_t nodeid_limit, const vespalib::Deadline* const doom, uint32_t estimated_visited_nodes) const __attribute__((noinline));
+    void search_layer_helper(Stats& stats, const BoundDistanceFunction& df, uint32_t neighbors_to_find,
+                             double exploration_slack, bool prefetch_tensors, BestNeighbors& best_neighbors,
+                             uint32_t level, const GlobalFilter* filter, uint32_t nodeid_limit,
+                             const vespalib::Deadline* const doom, uint32_t estimated_visited_nodes) const
+        __attribute__((noinline));
     template <class VisitedTracker, class BestNeighbors>
-    void search_layer_filter_first_helper(Stats &stats, const BoundDistanceFunction &df, uint32_t neighbors_to_find, double exploration_slack,
-                                          bool prefetch_tensors, BestNeighbors& best_neighbors, double exploration,
-                                          uint32_t level, const GlobalFilter *filter, uint32_t nodeid_limit,
-                                          const vespalib::Deadline* const doom, uint32_t estimated_visited_nodes) const __attribute__((noinline));
+    void search_layer_filter_first_helper(Stats& stats, const BoundDistanceFunction& df, uint32_t neighbors_to_find,
+                                          double exploration_slack, bool prefetch_tensors,
+                                          BestNeighbors& best_neighbors, double exploration, uint32_t level,
+                                          const GlobalFilter* filter, uint32_t nodeid_limit,
+                                          const vespalib::Deadline* const doom,
+                                          uint32_t estimated_visited_nodes) const __attribute__((noinline));
     template <class VisitedTracker>
-    void exploreNeighborhood(Stats &stats, HnswTraversalCandidate &cand, std::deque<uint32_t> &found, VisitedTracker &visited, double exploration, uint32_t level,
+    void exploreNeighborhood(Stats& stats, HnswTraversalCandidate& cand, std::deque<uint32_t>& found,
+                             VisitedTracker& visited, double exploration, uint32_t level,
                              const internal::GlobalFilterWrapper<type>& filter_wrapper, uint32_t nodeid_limit) const;
     template <class VisitedTracker>
-    void exploreNeighborhoodByOneHop(Stats &stats, std::deque<uint32_t> &todo, std::deque<uint32_t> &found, VisitedTracker &visited, uint32_t level,
+    void exploreNeighborhoodByOneHop(Stats& stats, std::deque<uint32_t>& todo, std::deque<uint32_t>& found,
+                                     VisitedTracker& visited, uint32_t level,
                                      const internal::GlobalFilterWrapper<type>& filter_wrapper, uint32_t nodeid_limit,
                                      uint32_t max_neighbors_to_find) const;
     template <class BestNeighbors>
-    void search_layer(Stats &stats, const BoundDistanceFunction &df, uint32_t neighbors_to_find, double exploration_slack, bool prefetch_tensors, BestNeighbors& best_neighbors,
-                      uint32_t level, const vespalib::Deadline* const doom, const GlobalFilter *filter = nullptr) const;
+    void search_layer(Stats& stats, const BoundDistanceFunction& df, uint32_t neighbors_to_find,
+                      double exploration_slack, bool prefetch_tensors, BestNeighbors& best_neighbors, uint32_t level,
+                      const vespalib::Deadline* const doom, const GlobalFilter* filter = nullptr) const;
     template <class BestNeighbors>
-    void search_layer_filter_first(Stats &stats, const BoundDistanceFunction &df, uint32_t neighbors_to_find, double exploration_slack,
-                                   bool prefetch_tensors, BestNeighbors& best_neighbors, double exploration,
-                                   uint32_t level, const vespalib::Deadline* const doom, const GlobalFilter *filter = nullptr) const;
-    std::vector<Neighbor> top_k_by_docid(Stats &stats, uint32_t k, const BoundDistanceFunction &df, const GlobalFilter *filter, bool low_hit_ratio, double exploration,
-                                         uint32_t explore_k, double exploration_slack, bool prefetch_tensors, const vespalib::Deadline& doom, double distance_threshold) const;
+    void search_layer_filter_first(Stats& stats, const BoundDistanceFunction& df, uint32_t neighbors_to_find,
+                                   double exploration_slack, bool prefetch_tensors, BestNeighbors& best_neighbors,
+                                   double exploration, uint32_t level, const vespalib::Deadline* const doom,
+                                   const GlobalFilter* filter = nullptr) const;
+    std::vector<Neighbor> top_k_by_docid(Stats& stats, uint32_t k, const BoundDistanceFunction& df,
+                                         const GlobalFilter* filter, bool low_hit_ratio, double exploration,
+                                         uint32_t explore_k, double exploration_slack, bool prefetch_tensors,
+                                         const vespalib::Deadline& doom, double distance_threshold) const;
 
     internal::PreparedAddDoc internal_prepare_add(uint32_t docid, VectorBundle input_vectors,
                                                   vespalib::GenerationGuard read_guard) const;
-    void internal_prepare_add_node(internal::PreparedAddDoc& op, TypedCells input_vector, const typename GraphType::EntryNode& entry) const;
-    LinkArray filter_valid_nodeids(uint32_t level, const internal::PreparedAddNode::Links &neighbors, uint32_t self_nodeid);
-    void internal_complete_add(uint32_t docid, internal::PreparedAddDoc &op);
-    void internal_complete_add_node(uint32_t nodeid, uint32_t docid, uint32_t subspace, internal::PreparedAddNode &prepared_node);
+    void internal_prepare_add_node(internal::PreparedAddDoc& op, TypedCells input_vector,
+                                   const typename GraphType::EntryNode& entry) const;
+    LinkArray filter_valid_nodeids(uint32_t level, const internal::PreparedAddNode::Links& neighbors,
+                                   uint32_t self_nodeid);
+    void internal_complete_add(uint32_t docid, internal::PreparedAddDoc& op);
+    void internal_complete_add_node(uint32_t nodeid, uint32_t docid, uint32_t subspace,
+                                    internal::PreparedAddNode& prepared_node);
 
     // Called from writer only.
     uint32_t get_subspaces(uint32_t docid) const noexcept;
+
 public:
     HnswIndex(const DocVectorAccess& vectors, DistanceFunctionFactory::UP distance_ff,
               RandomLevelGenerator::UP level_generator, const HnswIndexConfig& cfg);
@@ -294,17 +304,24 @@ public:
     void shrink_lid_space(uint32_t doc_id_limit) override;
 
     std::unique_ptr<NearestNeighborIndexSaver> make_saver(vespalib::GenericHeader& header) const override;
-    std::unique_ptr<NearestNeighborIndexLoader> make_loader(FastOS_FileInterface& file, const vespalib::GenericHeader& header) override;
+    std::unique_ptr<NearestNeighborIndexLoader> make_loader(FastOS_FileInterface&          file,
+                                                            const vespalib::GenericHeader& header) override;
 
-    std::vector<Neighbor> find_top_k(Stats &stats, uint32_t k, const BoundDistanceFunction &df, uint32_t explore_k, double exploration_slack, bool prefetch_tensors,
-                                     const vespalib::Deadline& doom, double distance_threshold) const override;
+    std::vector<Neighbor> find_top_k(Stats& stats, uint32_t k, const BoundDistanceFunction& df, uint32_t explore_k,
+                                     double exploration_slack, bool prefetch_tensors, const vespalib::Deadline& doom,
+                                     double distance_threshold) const override;
 
-    std::vector<Neighbor> find_top_k_with_filter(Stats &stats, uint32_t k, const BoundDistanceFunction &df, const GlobalFilter &filter, bool low_hit_ratio, double exploration,
-                                                 uint32_t explore_k, double exploration_slack, bool prefetch_tensors, const vespalib::Deadline& doom, double distance_threshold) const override;
+    std::vector<Neighbor> find_top_k_with_filter(Stats& stats, uint32_t k, const BoundDistanceFunction& df,
+                                                 const GlobalFilter& filter, bool low_hit_ratio, double exploration,
+                                                 uint32_t explore_k, double exploration_slack, bool prefetch_tensors,
+                                                 const vespalib::Deadline& doom,
+                                                 double                    distance_threshold) const override;
 
-    DistanceFunctionFactory &distance_function_factory() const override { return *_distance_ff; }
+    DistanceFunctionFactory& distance_function_factory() const override { return *_distance_ff; }
 
-    SearchBestNeighbors top_k_candidates(Stats &stats, const BoundDistanceFunction &df, uint32_t k, double exploration_slack, bool prefetch_tensors, const GlobalFilter *filter, bool low_hit_ratio, double exploration,
+    SearchBestNeighbors top_k_candidates(Stats& stats, const BoundDistanceFunction& df, uint32_t k,
+                                         double exploration_slack, bool prefetch_tensors, const GlobalFilter* filter,
+                                         bool low_hit_ratio, double exploration,
                                          const vespalib::Deadline& doom) const;
 
     uint32_t get_entry_nodeid() const { return _graph.get_entry_node().nodeid; }
@@ -317,7 +334,7 @@ public:
 
     // Should only be used by unit tests.
     HnswTestNode get_node(uint32_t nodeid) const;
-    void set_node(uint32_t nodeid, const HnswTestNode &node);
+    void set_node(uint32_t nodeid, const HnswTestNode& node);
     bool check_link_symmetry() const;
     ReachabilityResult count_reachable_nodes() const;
     GraphType& get_graph() noexcept { return _graph; }
@@ -329,4 +346,4 @@ public:
     static vespalib::datastore::ArrayStoreConfig make_default_link_array_store_config();
 };
 
-}
+} // namespace search::tensor
