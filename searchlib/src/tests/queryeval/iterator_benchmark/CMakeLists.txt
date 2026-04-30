@@ -3,7 +3,7 @@ vespa_add_executable(searchlib_iterator_benchmark_test_app TEST
     SOURCES
     attribute_ctx_builder.cpp
     benchmark_blueprint_factory.cpp
-    benchmark_spec.cpp
+    blueprint_factory_builder.cpp
     common.cpp
     disk_index_builder.cpp
     intermediate_blueprint_factory.cpp
