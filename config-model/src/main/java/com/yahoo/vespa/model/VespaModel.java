@@ -29,6 +29,8 @@ import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.TelemetryExportSpec;
 import com.yahoo.container.QrConfig;
 import com.yahoo.path.Path;
 import com.yahoo.schema.LargeRankingExpressions;
@@ -45,6 +47,7 @@ import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayloadBuilder;
 import com.yahoo.vespa.config.GenericConfig.GenericConfigBuilder;
 import com.yahoo.vespa.model.admin.Admin;
+import com.yahoo.vespa.model.admin.telemetry.TelemetryExport;
 import com.yahoo.vespa.model.builder.VespaModelBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
@@ -185,7 +188,9 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
         // else: create a model with no services instantiated (no-op)
 
         // must be done last
-        this.allocatedHosts = AllocatedHosts.withHosts(hostSystem.getHostSpecs());
+        // Telemetry export is parsed from <admin><telemetry> which is built after container clusters
+        // (AdminModel depends on ContainerModel). Inject it into already-created HostSpecs before serialization.
+        this.allocatedHosts = AllocatedHosts.withHosts(withTelemetryExport(hostSystem.getHostSpecs(), deployState));
     }
 
     @Override
@@ -556,6 +561,77 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
     @Override
     public AllocatedHosts allocatedHosts() {
         return allocatedHosts;
+    }
+
+    // Copies telemetry export specs from Admin into HostSpecs that are enclave and exclusive.
+    // Only enclave tenants with <telemetry> in services.xml will have specs; all others short-circuit.
+    private Set<HostSpec> withTelemetryExport(Set<HostSpec> hostSpecs, DeployState deployState) {
+        Admin admin = getAdmin();
+        if (admin == null) return hostSpecs; // no admin section in services.xml
+        List<TelemetryExportSpec> specs = admin.getTelemetryExport()
+                .map(VespaModel::toTelemetryExportSpecs)
+                .orElse(List.of());
+        if (specs.isEmpty()) return hostSpecs; // no <telemetry> configured — the common case
+
+        // Telemetry export only applies to enclave deployments with exclusive hosts
+        boolean isEnclave = deployState.getProperties().cloudAccount()
+                .map(account -> account.isExclave(deployState.zone()))
+                .orElse(false);
+        if (!isEnclave) {
+            warnIfNoEnclaveInstances(deployState);
+            return hostSpecs; // not an enclave instance — skip telemetry injection
+        }
+
+        Set<HostSpec> updated = new LinkedHashSet<>();
+        for (HostSpec host : hostSpecs) {
+            if (host.membership().isPresent() && host.membership().get().cluster().isExclusive()) {
+                var membership = host.membership().get();
+                var cluster = membership.cluster().withTelemetryExport(specs);
+                updated.add(host.withMembership(membership.with(cluster)));
+            } else {
+                updated.add(host); // non-exclusive host — no telemetry
+            }
+        }
+        return updated;
+    }
+
+    private void warnIfNoEnclaveInstances(DeployState deployState) {
+        var spec = deployState.getApplicationPackage().getDeploymentSpec();
+        var zone = deployState.zone();
+        // Check root-level cloud accounts
+        boolean anyEnclave = spec.cloudAccounts().values().stream()
+                .anyMatch(account -> account.isExclave(zone));
+        // Check per-instance cloud accounts via the spec's resolution method
+        if (!anyEnclave) {
+            var cloud = zone.cloud().name();
+            var zoneId = com.yahoo.config.provision.zone.ZoneId.from(zone.environment(), zone.region());
+            anyEnclave = spec.instances().stream()
+                    .map(instance -> spec.cloudAccount(cloud, instance.name(), zoneId))
+                    .anyMatch(account -> account.isExclave(zone));
+        }
+        if (!anyEnclave) {
+            deployState.getDeployLogger().logApplicationPackage(Level.WARNING,
+                    "Telemetry export is configured but will have no effect: " +
+                    "requires enclave deployment with exclusive hosts");
+        }
+    }
+
+    private static List<TelemetryExportSpec> toTelemetryExportSpecs(TelemetryExport telemetryExport) {
+        return telemetryExport.exporters().stream()
+                .map(exporter -> new TelemetryExportSpec(
+                        exporter.id(),
+                        TelemetryExportSpec.ExporterType.valueOf(exporter.type().name()),
+                        exporter.endpoint(),
+                        exporter.project(),
+                        exporter.auth().map(a -> a.type().name()),
+                        exporter.auth().map(a -> a.vault()),
+                        exporter.auth().flatMap(a -> a.secretName()),
+                        exporter.auth().flatMap(a -> a.header()),
+                        exporter.auth().flatMap(a -> a.usernameSecretName()),
+                        exporter.auth().flatMap(a -> a.passwordSecretName()),
+                        exporter.metricSet(),
+                        exporter.logFileTypes()))
+                .toList();
     }
 
     private static Set<ConfigKey<?>> configsProduced(ConfigProducer cp) {
