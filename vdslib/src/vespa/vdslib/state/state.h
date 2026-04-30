@@ -10,26 +10,25 @@
 #pragma once
 
 #include "nodetype.h"
+
 #include <vespa/vespalib/util/printable.h>
+
 #include <string>
 #include <vector>
 
 namespace storage::lib {
 
 class State : public vespalib::Printable {
-    std::string _name;
-    std::string _serialized;
-    uint8_t _rankValue;
+    std::string       _name;
+    std::string       _serialized;
+    uint8_t           _rankValue;
     std::vector<bool> _validReportedNodeState;
     std::vector<bool> _validWantedNodeState;
-    bool _validClusterState;
+    bool              _validClusterState;
 
     State(const State&);
-    State(std::string_view name, std::string_view serialized,
-          uint8_t rank,
-          bool validDistributorReported, bool validStorageReported,
-          bool validDistributorWanted, bool validStorageWanted,
-          bool validCluster);
+    State(std::string_view name, std::string_view serialized, uint8_t rank, bool validDistributorReported,
+          bool validStorageReported, bool validDistributorWanted, bool validStorageWanted, bool validCluster);
     ~State();
 
     State& operator=(const State&);
@@ -62,9 +61,7 @@ public:
      *
      * Example: State::RETIRED.getName() -> "Retired"
      */
-    const std::string& getName() const noexcept {
-        return _name;
-    }
+    const std::string& getName() const noexcept { return _name; }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     bool operator==(const State& other) const { return (&other == this); }
@@ -77,10 +74,11 @@ public:
      */
     bool oneOf(const char* states) const {
         for (const char* c = states; *c != '\0'; ++c) {
-            if (*c == _serialized[0]) return true;
+            if (*c == _serialized[0])
+                return true;
         }
         return false;
     }
 };
 
-}
+} // namespace storage::lib

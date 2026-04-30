@@ -2,12 +2,12 @@
 #pragma once
 
 #include <vespa/document/util/printable.h>
+
 #include <cstdint>
 
 namespace vdslib {
 
-class VisitorStatistics : public document::Printable
-{
+class VisitorStatistics : public document::Printable {
 public:
     VisitorStatistics();
 
@@ -29,6 +29,7 @@ public:
     void setBytesReturned(uint32_t bytesReturned) { _bytesReturned = bytesReturned; }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
 private:
     uint32_t _bucketsVisited;
     uint64_t _documentsVisited;
@@ -37,5 +38,4 @@ private:
     uint64_t _bytesReturned;
 };
 
-}
-
+} // namespace vdslib

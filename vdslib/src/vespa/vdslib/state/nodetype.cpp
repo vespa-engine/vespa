@@ -1,8 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "nodetype.h"
+
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
+
 #include <cassert>
 #include <ostream>
 #include <string>
@@ -15,44 +17,38 @@ namespace storage::lib {
 const NodeType NodeType::STORAGE("storage", NodeType::Type::STORAGE);
 const NodeType NodeType::DISTRIBUTOR("distributor", NodeType::Type::DISTRIBUTOR);
 
-const NodeType&
-NodeType::get(std::string_view serialized)
-{
+const NodeType& NodeType::get(std::string_view serialized) {
     if (serialized == STORAGE._name) {
         return STORAGE;
     }
     if (serialized == DISTRIBUTOR._name) {
         return DISTRIBUTOR;
     }
-    throw vespalib::IllegalArgumentException(
-            "Unknown node type " + std::string(serialized) + " given.", VESPA_STRLOC);
+    throw vespalib::IllegalArgumentException("Unknown node type " + std::string(serialized) + " given.",
+                                             VESPA_STRLOC);
 }
 
-const NodeType&
-NodeType::get(Type type) noexcept
-{
+const NodeType& NodeType::get(Type type) noexcept {
     switch (type) {
-        case Type::STORAGE:
-            return STORAGE;
-        case Type::DISTRIBUTOR:
-            return DISTRIBUTOR;
-        case Type::UNKNOWN:
-            assert(type != Type::UNKNOWN);
+    case Type::STORAGE:
+        return STORAGE;
+    case Type::DISTRIBUTOR:
+        return DISTRIBUTOR;
+    case Type::UNKNOWN:
+        assert(type != Type::UNKNOWN);
     }
     abort();
 }
 
-NodeType::NodeType(std::string_view name, Type type) noexcept
-    : _type(type), _name(name)
-{
+NodeType::NodeType(std::string_view name, Type type) noexcept : _type(type), _name(name) {
 }
 
-std::ostream & operator << (std::ostream & os, const NodeType & n) {
+std::ostream& operator<<(std::ostream& os, const NodeType& n) {
     return os << n.toString();
 }
 
-vespalib::asciistream & operator << (vespalib::asciistream & os, const NodeType & n) {
+vespalib::asciistream& operator<<(vespalib::asciistream& os, const NodeType& n) {
     return os << n.toString();
 }
 
-}
+} // namespace storage::lib
