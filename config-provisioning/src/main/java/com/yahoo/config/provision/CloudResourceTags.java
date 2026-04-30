@@ -3,6 +3,7 @@ package com.yahoo.config.provision;
 
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Pattern;
@@ -38,6 +39,11 @@ public class CloudResourceTags {
     /** Key prefixes reserved by the platform. */
     private static final List<String> RESERVED_KEY_PREFIXES = List.of("vai_", "corp_", "bastion_");
 
+    private static final List<String> DEPLOYMENT_PLACEHOLDERS = List.of(
+            "${tenant}", "${application}", "${instance}", "${environment}", "${region}");
+
+    private static final List<String> CLUSTER_PLACEHOLDERS = List.of("${clustername}", "${clustertype}");
+
     private final Map<String, String> tags;
 
     private CloudResourceTags(Map<String, String> tags) {
@@ -50,6 +56,66 @@ public class CloudResourceTags {
     public boolean isEmpty() { return tags.isEmpty(); }
 
     public int size() { return tags.size(); }
+
+    /**
+     * Validates that all {@code ${...}} placeholders in tag values are recognized.
+     * Throws on any unknown placeholder. Does not resolve anything.
+     */
+    public void validatePlaceholders() {
+        for (var entry : tags.entrySet()) {
+            String remaining = entry.getValue();
+            for (String p : DEPLOYMENT_PLACEHOLDERS) remaining = remaining.replace(p, "");
+            for (String p : CLUSTER_PLACEHOLDERS) remaining = remaining.replace(p, "");
+            if (remaining.contains("${"))
+                throw new IllegalArgumentException("Unknown template variable in resource tag value for key '" +
+                                                   entry.getKey() + "': " + entry.getValue());
+        }
+    }
+
+    /**
+     * Returns a new instance with deployment-context placeholders
+     * ({@code ${tenant}}, {@code ${application}}, etc.) substituted.
+     * Cluster-scoped placeholders ({@code ${clustername}}, {@code ${clustertype}}) are not affected.
+     */
+    public CloudResourceTags resolveDeployment(String tenant, String application, String instance,
+                                               String environment, String region) {
+        if (tags.isEmpty()) return this;
+        Map<String, String> resolved = new LinkedHashMap<>();
+        for (var entry : tags.entrySet()) {
+            resolved.put(entry.getKey(), entry.getValue()
+                    .replace("${tenant}", tenant.toLowerCase(Locale.ROOT))
+                    .replace("${application}", application.toLowerCase(Locale.ROOT))
+                    .replace("${instance}", instance.toLowerCase(Locale.ROOT))
+                    .replace("${environment}", environment)
+                    .replace("${region}", region));
+        }
+        return from(resolved);
+    }
+
+    /**
+     * Returns a new instance with {@code ${clustername}} and {@code ${clustertype}} substituted.
+     * Throws if any {@code ${...}} placeholders remain after substitution. Call
+     * {@link #resolveDeployment} first to resolve deployment-context placeholders.
+     */
+    public CloudResourceTags resolveCluster(ClusterSpec.Id clusterId, ClusterSpec.Type clusterType) {
+        if (tags.isEmpty()) return this;
+        Map<String, String> resolved = new LinkedHashMap<>();
+        for (var entry : tags.entrySet()) {
+            String value = entry.getValue()
+                    .replace("${clustername}", clusterId.value().toLowerCase(Locale.ROOT))
+                    .replace("${clustertype}", clusterType.name());
+            if (value.contains("${"))
+                throw new IllegalArgumentException("Unresolved template variable in resource tag value for key '" +
+                                                   entry.getKey() + "': " + value);
+            resolved.put(entry.getKey(), value);
+        }
+        return from(resolved);
+    }
+
+    /** Returns true if any tag value contains cluster-scoped placeholders. */
+    public boolean containsClusterPlaceholders() {
+        return tags.values().stream().anyMatch(v -> CLUSTER_PLACEHOLDERS.stream().anyMatch(v::contains));
+    }
 
     /**
      * Returns a new instance with the given tags merged into this.
