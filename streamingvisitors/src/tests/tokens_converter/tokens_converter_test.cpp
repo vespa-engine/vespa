@@ -29,7 +29,7 @@ class TokensConverterTest : public testing::Test {
 protected:
     TokensConverterTest();
     ~TokensConverterTest() override;
-    ;
+
     std::string convert(const StringFieldValue& fv, bool exact_match, Normalizing normalize_mode);
 };
 
