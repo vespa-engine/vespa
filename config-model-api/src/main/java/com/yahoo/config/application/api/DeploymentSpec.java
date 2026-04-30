@@ -521,15 +521,16 @@ public final class DeploymentSpec {
         private final Optional<Duration> hostTTL;
         private final CloudResourceTags cloudResourceTags;
         private final List<AzName> availabilityZones;
+        private final boolean skip;
 
         @SuppressWarnings("unused")
         public DeclaredZone(Environment environment) {
-            this(environment, Optional.empty(), Optional.empty(), Optional.empty(), Map.of(), Optional.empty(), CloudResourceTags.empty(), List.of());
+            this(environment, Optional.empty(), Optional.empty(), Optional.empty(), Map.of(), Optional.empty(), CloudResourceTags.empty(), List.of(), false);
         }
 
         public DeclaredZone(Environment environment, Optional<RegionName> region, Optional<AthenzService> athenzService,
                             Optional<String> testerNodes, Map<CloudName, CloudAccount> cloudAccounts, Optional<Duration> hostTTL,
-                            CloudResourceTags cloudResourceTags, List<AzName> availabilityZones) {
+                            CloudResourceTags cloudResourceTags, List<AzName> availabilityZones, boolean skip) {
             if (environment != Environment.prod && region.isPresent())
                 illegal("Non-prod environments cannot specify a region");
             if (environment == Environment.prod && region.isEmpty())
@@ -543,6 +544,7 @@ public final class DeploymentSpec {
             this.hostTTL = Objects.requireNonNull(hostTTL);
             this.cloudResourceTags = Objects.requireNonNull(cloudResourceTags);
             this.availabilityZones = List.copyOf(Objects.requireNonNull(availabilityZones));
+            this.skip = skip;
         }
 
         public Environment environment() { return environment; }
@@ -565,6 +567,9 @@ public final class DeploymentSpec {
          */
         public List<AzName> availabilityZones() { return availabilityZones; }
 
+        /** Returns whether this step should be skipped, i.e. the corresponding job should not be run. */
+        public boolean skip() { return skip; }
+
         @Override
         public List<DeclaredZone> zones() { return List.of(this); }
 
@@ -580,7 +585,7 @@ public final class DeploymentSpec {
 
         @Override
         public int hashCode() {
-            return Objects.hash(environment, region);
+            return Objects.hash(environment, region, skip);
         }
 
         @Override
@@ -590,6 +595,7 @@ public final class DeploymentSpec {
             DeclaredZone other = (DeclaredZone)o;
             if (this.environment != other.environment) return false;
             if ( ! this.region.equals(other.region())) return false;
+            if (this.skip != other.skip) return false;
             return true;
         }
 
