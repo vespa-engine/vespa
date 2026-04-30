@@ -11,7 +11,7 @@ namespace vespalib::eval {
  * known size 1.
  **/
 struct RemoveTrivialDimensionOptimizer {
-    static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
+    static const TensorFunction& optimize(const TensorFunction& expr, Stash& stash);
 };
 
 } // namespace vespalib::eval

@@ -2,9 +2,9 @@
 
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/simple_value.h>
-#include <vespa/eval/instruction/mapped_lookup.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
 #include <vespa/eval/eval/test/gen_spec.h>
+#include <vespa/eval/instruction/mapped_lookup.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace vespalib::eval;
@@ -15,14 +15,11 @@ using namespace vespalib::eval::test;
 struct FunInfo {
     using LookFor = MappedLookup;
     bool expect_mutable;
-    FunInfo(bool expect_mutable_in)
-      : expect_mutable(expect_mutable_in) {}
-    void verify(const LookFor &fun) const {
-        EXPECT_EQ(fun.result_is_mutable(), expect_mutable);
-    }
+    FunInfo(bool expect_mutable_in) : expect_mutable(expect_mutable_in) {}
+    void verify(const LookFor& fun) const { EXPECT_EQ(fun.result_is_mutable(), expect_mutable); }
 };
 
-void verify_optimized_cell_types(const std::string &expr) {
+void verify_optimized_cell_types(const std::string& expr) {
     auto same_stable_types = CellTypeSpace(CellTypeUtils::list_stable_types(), 2).same();
     auto same_unstable_types = CellTypeSpace(CellTypeUtils::list_unstable_types(), 2).same();
     auto different_types = CellTypeSpace(CellTypeUtils::list_types(), 2).different();
@@ -31,12 +28,12 @@ void verify_optimized_cell_types(const std::string &expr) {
     EvalFixture::verify<FunInfo>(expr, {}, different_types);
 }
 
-void verify_optimized(const std::string &expr, bool expect_mutable = false) {
+void verify_optimized(const std::string& expr, bool expect_mutable = false) {
     CellTypeSpace just_float({CellType::FLOAT}, 2);
     EvalFixture::verify<FunInfo>(expr, {FunInfo(expect_mutable)}, just_float);
 }
 
-void verify_not_optimized(const std::string &expr) {
+void verify_not_optimized(const std::string& expr) {
     CellTypeSpace just_float({CellType::FLOAT}, 2);
     EvalFixture::verify<FunInfo>(expr, {}, just_float);
 }
@@ -79,10 +76,14 @@ TEST(MappedLookup, similar_expressions_are_not_optimized) {
 enum class KeyType { EMPTY, UNIT, SCALING, MULTI };
 GenSpec make_key(KeyType type) {
     switch (type) {
-    case KeyType::EMPTY:   return GenSpec().cells_float().map("x", {});
-    case KeyType::UNIT:    return GenSpec().cells_float().map("x", {"1"}).seq({1.0});
-    case KeyType::SCALING: return GenSpec().cells_float().map("x", {"1"}).seq({5.0});
-    case KeyType::MULTI:   return GenSpec().cells_float().map("x", {"1", "2", "3"}).seq({1.0});
+    case KeyType::EMPTY:
+        return GenSpec().cells_float().map("x", {});
+    case KeyType::UNIT:
+        return GenSpec().cells_float().map("x", {"1"}).seq({1.0});
+    case KeyType::SCALING:
+        return GenSpec().cells_float().map("x", {"1"}).seq({5.0});
+    case KeyType::MULTI:
+        return GenSpec().cells_float().map("x", {"1", "2", "3"}).seq({1.0});
     }
     abort();
 }
@@ -90,12 +91,18 @@ GenSpec make_key(KeyType type) {
 enum class MapType { EMPTY, SMALL, MEDIUM, LARGE1, LARGE2, LARGE3 };
 GenSpec make_map(MapType type) {
     switch (type) {
-    case MapType::EMPTY:  return GenSpec().cells_float().idx("y", 5).map("x", {});
-    case MapType::SMALL:  return GenSpec().cells_float().idx("y", 5).map("x", {"1"}).seq(N(10));
-    case MapType::MEDIUM: return GenSpec().cells_float().idx("y", 5).map("x", {"1", "2"}).seq(N(10));
-    case MapType::LARGE1:  return GenSpec().cells_float().idx("y", 5).map("x", 5, 100).seq(N(10));
-    case MapType::LARGE2:  return GenSpec().cells_float().idx("y", 5).map("x", 5, 2).seq(N(10));
-    case MapType::LARGE3:  return GenSpec().cells_float().idx("y", 5).map("x", 5, 1).seq(N(10));
+    case MapType::EMPTY:
+        return GenSpec().cells_float().idx("y", 5).map("x", {});
+    case MapType::SMALL:
+        return GenSpec().cells_float().idx("y", 5).map("x", {"1"}).seq(N(10));
+    case MapType::MEDIUM:
+        return GenSpec().cells_float().idx("y", 5).map("x", {"1", "2"}).seq(N(10));
+    case MapType::LARGE1:
+        return GenSpec().cells_float().idx("y", 5).map("x", 5, 100).seq(N(10));
+    case MapType::LARGE2:
+        return GenSpec().cells_float().idx("y", 5).map("x", 5, 2).seq(N(10));
+    case MapType::LARGE3:
+        return GenSpec().cells_float().idx("y", 5).map("x", 5, 1).seq(N(10));
     }
     abort();
 }
@@ -109,13 +116,13 @@ std::vector<MapType> map_types_for(KeyType key_type) {
 }
 
 TEST(MappedLookup, test_case_interactions) {
-    for (bool mutable_map: {false, true}) {
+    for (bool mutable_map : {false, true}) {
         std::string expr = mutable_map ? "reduce(a*@b,sum,x)" : "reduce(a*b,sum,x)";
-        for (KeyType key_type: {KeyType::EMPTY, KeyType::UNIT, KeyType::SCALING, KeyType::MULTI}) {
+        for (KeyType key_type : {KeyType::EMPTY, KeyType::UNIT, KeyType::SCALING, KeyType::MULTI}) {
             auto key = make_key(key_type);
-            for (MapType map_type: map_types_for(key_type)) {
+            for (MapType map_type : map_types_for(key_type)) {
                 auto map = make_map(map_type);
-                EvalFixture::verify<FunInfo>(expr, {FunInfo(mutable_map)}, {key,map});
+                EvalFixture::verify<FunInfo>(expr, {FunInfo(mutable_map)}, {key, map});
             }
         }
     }

@@ -17,41 +17,38 @@ namespace eval {
  * appropriate lifetime of created values. Used values are kept in the
  * cache and unused values are evicted from the cache.
  **/
-class ConstantValueCache : public ConstantValueFactory
-{
+class ConstantValueCache : public ConstantValueFactory {
 private:
     struct Cache {
         using SP = std::shared_ptr<Cache>;
         using Key = std::pair<std::string, std::string>;
         struct Value {
-            size_t num_refs;
+            size_t            num_refs;
             ConstantValue::UP const_value;
-            Value(ConstantValue::UP const_value_in)
-                : num_refs(1), const_value(std::move(const_value_in)) {}
+            Value(ConstantValue::UP const_value_in) : num_refs(1), const_value(std::move(const_value_in)) {}
         };
-        using Map = std::map<Key,Value>;
+        using Map = std::map<Key, Value>;
         std::mutex lock;
-        Map cached;
+        Map        cached;
     };
 
     struct Token : ConstantValue {
-        Cache::SP cache;
+        Cache::SP            cache;
         Cache::Map::iterator entry;
-        Token(Cache::SP cache_in, Cache::Map::iterator entry_in)
-            : cache(std::move(cache_in)), entry(entry_in) {}
-        const ValueType &type() const override { return entry->second.const_value->type(); }
-        const Value &value() const override { return entry->second.const_value->value(); }
+        Token(Cache::SP cache_in, Cache::Map::iterator entry_in) : cache(std::move(cache_in)), entry(entry_in) {}
+        const ValueType& type() const override { return entry->second.const_value->type(); }
+        const Value& value() const override { return entry->second.const_value->value(); }
         ~Token();
     };
 
-    const ConstantValueFactory &_factory;
-    Cache::SP _cache;
+    const ConstantValueFactory& _factory;
+    Cache::SP                   _cache;
 
 public:
-    ConstantValueCache(const ConstantValueFactory &factory);
-    ConstantValue::UP create(const std::string &path, const std::string &type) const override;
+    ConstantValueCache(const ConstantValueFactory& factory);
+    ConstantValue::UP create(const std::string& path, const std::string& type) const override;
     ~ConstantValueCache() override;
 };
 
-} // namespace vespalib::eval
+} // namespace eval
 } // namespace vespalib

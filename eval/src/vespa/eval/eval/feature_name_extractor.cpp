@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "feature_name_extractor.h"
+
 #include <cctype>
 
 namespace vespalib::eval {
@@ -25,8 +26,8 @@ static LegalChar suffix({'_', '.', '$', '@'});
 
 struct CountParen {
     size_t depth = 0;
-    bool quoted = false;
-    bool escaped = false;
+    bool   quoted = false;
+    bool   escaped = false;
     bool done(char c) {
         if (quoted) {
             if (escaped) {
@@ -53,12 +54,10 @@ struct CountParen {
     }
 };
 
-} // namespace <unnamed>
+} // namespace
 
-void
-FeatureNameExtractor::extract_symbol(const char *pos_in, const char *end_in,
-                                     const char *&pos_out, std::string &symbol_out) const
-{
+void FeatureNameExtractor::extract_symbol(const char* pos_in, const char* end_in, const char*& pos_out,
+                                          std::string& symbol_out) const {
     while ((pos_in < end_in) && prefix.is_legal(*pos_in)) {
         symbol_out.push_back(*pos_in++);
     }
@@ -80,4 +79,4 @@ FeatureNameExtractor::extract_symbol(const char *pos_in, const char *end_in,
     pos_out = pos_in;
 }
 
-}
+} // namespace vespalib::eval

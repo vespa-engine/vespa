@@ -2,15 +2,19 @@
 
 #pragma once
 
-#include <onnxruntime/onnxruntime_cxx_api.h>
-#include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/value_type.h>
+
+#include <onnxruntime/onnxruntime_cxx_api.h>
+
 #include <map>
 #include <set>
 #include <string>
 #include <vector>
 
-namespace vespalib::eval { struct Value; }
+namespace vespalib::eval {
+struct Value;
+}
 
 namespace vespalib::eval {
 
@@ -36,24 +40,37 @@ public:
 
     // the size of a dimension
     struct DimSize {
-        size_t value;
+        size_t      value;
         std::string name;
         DimSize() noexcept : value(0), name() {}
         DimSize(size_t size) noexcept : value(size), name() {}
-        DimSize(const std::string &symbol) noexcept : value(0), name(symbol) {}
+        DimSize(const std::string& symbol) noexcept : value(0), name(symbol) {}
         bool is_known() const { return (value > 0); }
         bool is_symbolic() const { return !name.empty(); }
         std::string as_string() const;
     };
 
     // supported onnx element types
-    enum class ElementType { INT8, INT16, INT32, INT64, UINT8, UINT16, UINT32, UINT64, FLOAT16, BFLOAT16, FLOAT, DOUBLE };
+    enum class ElementType {
+        INT8,
+        INT16,
+        INT32,
+        INT64,
+        UINT8,
+        UINT16,
+        UINT32,
+        UINT64,
+        FLOAT16,
+        BFLOAT16,
+        FLOAT,
+        DOUBLE
+    };
 
     // information about a single input or output tensor
     struct TensorInfo {
-        std::string name;
+        std::string          name;
         std::vector<DimSize> dimensions;
-        ElementType elements;
+        ElementType          elements;
         TensorInfo(std::string name_in, std::vector<DimSize> dimensions_in, ElementType elements_in);
         TensorInfo(const TensorInfo&);
         TensorInfo(TensorInfo&&) noexcept = default;
@@ -63,7 +80,7 @@ public:
 
     // concrete tensor type with known dimension sizes
     struct TensorType {
-        ElementType elements;
+        ElementType          elements;
         std::vector<int64_t> dimensions;
         TensorType(ElementType elements_in, std::vector<int64_t> dimensions_in) noexcept
             : elements(elements_in), dimensions(std::move(dimensions_in)) {}
@@ -72,31 +89,32 @@ public:
 
     // how the model should be wired with inputs/outputs
     struct WireInfo {
-        std::vector<ValueType>  vespa_inputs;
+        std::vector<ValueType>        vespa_inputs;
         std::vector<Onnx::TensorType> onnx_inputs;
         std::vector<Onnx::TensorType> onnx_outputs;
-        std::vector<ValueType>  vespa_outputs;
+        std::vector<ValueType>        vespa_outputs;
         ~WireInfo();
     };
 
     // planning how we should wire the model based on input types
     class WirePlanner {
     private:
-        std::map<std::string,ValueType> _input_types;
-        std::map<std::string,size_t> _symbolic_sizes;
-        std::map<std::string,Onnx::TensorType> _output_types;
+        std::map<std::string, ValueType>        _input_types;
+        std::map<std::string, size_t>           _symbolic_sizes;
+        std::map<std::string, Onnx::TensorType> _output_types;
 
-        bool need_model_probe(const Onnx &model) const;
-        void do_model_probe(const Onnx &model);
+        bool need_model_probe(const Onnx& model) const;
+        void do_model_probe(const Onnx& model);
+
     public:
         WirePlanner() : _input_types(), _symbolic_sizes(), _output_types() {}
         ~WirePlanner();
         static CellType best_cell_type(Onnx::ElementType type);
-        bool bind_input_type(const ValueType &vespa_in, const TensorInfo &onnx_in);
-        std::map<std::string,size_t> get_bound_sizes(const TensorInfo &onnx_in) const;
-        void prepare_output_types(const Onnx &model);
-        ValueType make_output_type(const TensorInfo &onnx_out) const;
-        WireInfo get_wire_info(const Onnx &model) const;
+        bool bind_input_type(const ValueType& vespa_in, const TensorInfo& onnx_in);
+        std::map<std::string, size_t> get_bound_sizes(const TensorInfo& onnx_in) const;
+        void prepare_output_types(const Onnx& model);
+        ValueType make_output_type(const TensorInfo& onnx_out) const;
+        WireInfo get_wire_info(const Onnx& model) const;
     };
 
     // evaluation context; use one per thread and keep model/wire_info alive
@@ -104,40 +122,38 @@ public:
     // output values are pre-allocated and will not change
     class EvalContext {
     private:
-        using param_fun_t = void (*)(EvalContext &, size_t i, const Value &);
-        using result_fun_t = void (*)(EvalContext &, size_t i);
+        using param_fun_t = void (*)(EvalContext&, size_t i, const Value&);
+        using result_fun_t = void (*)(EvalContext&, size_t i);
 
-        const Onnx                  &_model;
-        const WireInfo              &_wire_info;
-        Ort::MemoryInfo              _cpu_memory;
-        std::vector<Ort::Value>      _param_values;
-        std::vector<Ort::Value>      _result_values;
-        std::vector<Value::UP>       _results;
-        std::vector<param_fun_t>     _param_binders;
-        std::vector<std::pair<size_t,result_fun_t>> _result_converters;
+        const Onnx&                                  _model;
+        const WireInfo&                              _wire_info;
+        Ort::MemoryInfo                              _cpu_memory;
+        std::vector<Ort::Value>                      _param_values;
+        std::vector<Ort::Value>                      _result_values;
+        std::vector<Value::UP>                       _results;
+        std::vector<param_fun_t>                     _param_binders;
+        std::vector<std::pair<size_t, result_fun_t>> _result_converters;
 
-        template <typename T>
-        static void adapt_param(EvalContext &self, size_t idx, const Value &param);
-
-        template <typename SRC, typename DST>
-        static void convert_param(EvalContext &self, size_t idx, const Value &param);
+        template <typename T> static void adapt_param(EvalContext& self, size_t idx, const Value& param);
 
         template <typename SRC, typename DST>
-        static void convert_result(EvalContext &self, size_t idx);
+        static void convert_param(EvalContext& self, size_t idx, const Value& param);
+
+        template <typename SRC, typename DST> static void convert_result(EvalContext& self, size_t idx);
 
     public:
         struct SelectAdaptParam;
         struct SelectConvertParam;
         struct SelectConvertResult;
 
-        EvalContext(const Onnx &model, const WireInfo &wire_info);
+        EvalContext(const Onnx& model, const WireInfo& wire_info);
         ~EvalContext();
         size_t num_params() const { return _param_values.size(); }
         size_t num_results() const { return _result_values.size(); }
-        void bind_param(size_t i, const Value &param);
+        void bind_param(size_t i, const Value& param);
         void eval();
         void clear_results();
-        const Value &get_result(size_t i) const;
+        const Value& get_result(size_t i) const;
     };
 
 private:
@@ -146,28 +162,29 @@ private:
     private:
         Ort::Env _env;
         Shared();
+
     public:
-        static Shared &get();
-        Ort::Env &env() { return _env; }
+        static Shared& get();
+        Ort::Env& env() { return _env; }
     };
 
     static Ort::AllocatorWithDefaultOptions _alloc;
 
-    Shared                   &_shared;
-    Ort::SessionOptions       _options;
-    Ort::Session              _session;
-    std::vector<TensorInfo>   _inputs;
-    std::vector<TensorInfo>   _outputs;
-    std::vector<const char *> _input_name_refs;
-    std::vector<const char *> _output_name_refs;
+    Shared&                  _shared;
+    Ort::SessionOptions      _options;
+    Ort::Session             _session;
+    std::vector<TensorInfo>  _inputs;
+    std::vector<TensorInfo>  _outputs;
+    std::vector<const char*> _input_name_refs;
+    std::vector<const char*> _output_name_refs;
 
     void extract_meta_data() __attribute__((noinline));
 
 public:
-    Onnx(const std::string &model_file, Optimize optimize);
+    Onnx(const std::string& model_file, Optimize optimize);
     ~Onnx();
-    const std::vector<TensorInfo> &inputs() const { return _inputs; }
-    const std::vector<TensorInfo> &outputs() const { return _outputs; }
+    const std::vector<TensorInfo>& inputs() const { return _inputs; }
+    const std::vector<TensorInfo>& outputs() const { return _outputs; }
 };
 
-}
+} // namespace vespalib::eval

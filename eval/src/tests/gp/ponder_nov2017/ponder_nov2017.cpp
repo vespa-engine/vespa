@@ -1,9 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/eval/gp/gp.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/signalhandler.h>
-#include <vespa/eval/gp/gp.h>
+
 #include <limits.h>
+
 #include <algorithm>
 
 using namespace vespalib;
@@ -24,15 +26,33 @@ bool div_ok(int a, int b) {
     }
     return (b != 0);
 }
-int my_add(int a, int b) { return a + b; }
-int my_sub(int a, int b) { return a - b; }
-int my_mul(int a, int b) { return a * b; }
-int my_div(int a, int b) { return div_ok(a, b) ? (a / b) : 0; }
-int my_mod(int a, int b) { return div_ok(a, b) ? (a % b) : 0; }
-int my_pow(int a, int b) { return pow(a,b); }
-int my_and(int a, int b) { return a & b; }
-int my_or(int a, int b)  { return a | b; }
-int my_xor(int a, int b) { return a ^ b; }
+int my_add(int a, int b) {
+    return a + b;
+}
+int my_sub(int a, int b) {
+    return a - b;
+}
+int my_mul(int a, int b) {
+    return a * b;
+}
+int my_div(int a, int b) {
+    return div_ok(a, b) ? (a / b) : 0;
+}
+int my_mod(int a, int b) {
+    return div_ok(a, b) ? (a % b) : 0;
+}
+int my_pow(int a, int b) {
+    return pow(a, b);
+}
+int my_and(int a, int b) {
+    return a & b;
+}
+int my_or(int a, int b) {
+    return a | b;
+}
+int my_xor(int a, int b) {
+    return a ^ b;
+}
 
 struct Dist {
     std::vector<int> slots;
@@ -63,7 +83,7 @@ struct Dist {
         EXPECT_GE(post_z, 0);
         EXPECT_LT(post_y, 2);
         EXPECT_LT(post_z, 6);
-        int slot = (post_z<<1) | (post_y);
+        int slot = (post_z << 1) | (post_y);
         EXPECT_LT(size_t(slot), slots.size());
         ++slots[slot];
     }
@@ -77,23 +97,23 @@ struct Dist {
         EXPECT_LT(post_x, 2);
         EXPECT_LT(post_y, 2);
         EXPECT_LT(post_z, 6);
-        int slot = (post_z<<2) | (post_y<<1) | (post_x);
+        int slot = (post_z << 2) | (post_y << 1) | (post_x);
         EXPECT_LT(size_t(slot), slots.size());
         ++slots[slot];
     }
     size_t error() const {
         size_t err = 0;
-        int expect = (216 / slots.size());
+        int    expect = (216 / slots.size());
         EXPECT_EQ(216 % slots.size(), 0u);
-        for (int cnt: slots) {
+        for (int cnt : slots) {
             err += (std::max(cnt, expect) - std::min(cnt, expect));
         }
         return err;
     }
 };
 
-Feedback find_weakness(const MultiFunction &fun) {
-    size_t num_outputs = fun.num_outputs();
+Feedback find_weakness(const MultiFunction& fun) {
+    size_t            num_outputs = fun.num_outputs();
     std::vector<Dist> state(fun.num_alternatives(), Dist(num_outputs));
     for (int d1 = 1; d1 <= 6; ++d1) {
         for (int d2 = 1; d2 <= 6; ++d2) {
@@ -109,8 +129,8 @@ Feedback find_weakness(const MultiFunction &fun) {
                 Result result = fun.execute(input);
                 EXPECT_EQ(result.size(), state.size());
                 for (size_t i = 0; i < result.size(); ++i) {
-                    const Output &output = result[i];
-                    switch(output.size()) {
+                    const Output& output = result[i];
+                    switch (output.size()) {
                     case 1:
                         state[i].sample(output[0]); // z
                         break;
@@ -126,7 +146,7 @@ Feedback find_weakness(const MultiFunction &fun) {
         }
     }
     Feedback feedback;
-    for (const Dist &dist: state) {
+    for (const Dist& dist : state) {
         feedback.push_back(dist.error());
     }
     return feedback;
@@ -141,7 +161,7 @@ OpRepo my_repo() {
         .add("mod", my_mod)  // 5
         .add("pow", my_pow)  // 6
         .add("and", my_and)  // 7
-        .add("or",  my_or)   // 8
+        .add("or", my_or)    // 8
         .add("xor", my_xor); // 9
 }
 
@@ -164,15 +184,15 @@ using Op = Program::Op;
 TEST(Ponder2017, evaluating_hand_crafted_solution) {
     // constants are modeled as inputs
     Program prog(my_repo(), 6, 3, 2, 0);
-    auto a = Ref::in(0);                   // a
-    auto b = Ref::in(1);                   // b
-    auto c = Ref::in(2);                   // c
-    auto k1 = Ref::in(3);                  // 2
-    auto k2 = Ref::in(4);                  // 1502
-    auto k3 = Ref::in(5);                  // 70677
-    auto _1 = prog.add_op(sub_id, c, a);   // _1 = c-a
-    auto _2 = prog.add_op(add_id, c, a);   // _2 = c+a
-    auto _3 = prog.add_op(mul_id, _1, _2); // _3 = (c-a)*(c+a)
+    auto    a = Ref::in(0);                   // a
+    auto    b = Ref::in(1);                   // b
+    auto    c = Ref::in(2);                   // c
+    auto    k1 = Ref::in(3);                  // 2
+    auto    k2 = Ref::in(4);                  // 1502
+    auto    k3 = Ref::in(5);                  // 70677
+    auto    _1 = prog.add_op(sub_id, c, a);   // _1 = c-a
+    auto    _2 = prog.add_op(add_id, c, a);   // _2 = c+a
+    auto    _3 = prog.add_op(mul_id, _1, _2); // _3 = (c-a)*(c+a)
     // (zero-cost forwarding, for testing)
     _1 = prog.add_forward(_1);
     _2 = prog.add_forward(_2);
@@ -185,9 +205,9 @@ TEST(Ponder2017, evaluating_hand_crafted_solution) {
     prog.add_forward(_2);
     prog.add_forward(_3);
     // --- alt 1 (correct output)
-    auto z = prog.add_op(add_id, _5, c);   // z = a+b+c
-    auto y = prog.add_op(div_id, k3, d);   // y = 70677/d
-    auto x = prog.add_op(div_id, k2, d);   // x = 1502/d
+    auto z = prog.add_op(add_id, _5, c); // z = a+b+c
+    auto y = prog.add_op(div_id, k3, d); // y = 70677/d
+    auto x = prog.add_op(div_id, k2, d); // x = 1502/d
     // '%2' (for x and y) and '%6+1' (for z) done outside program
     //--- verify sub-expressions
     EXPECT_EQ(prog.as_string(a), "i0");
@@ -214,26 +234,23 @@ TEST(Ponder2017, evaluating_hand_crafted_solution) {
     EXPECT_EQ(prog.stats().alt, 1u);
 }
 
-void maybe_newline(bool &partial_line) {
+void maybe_newline(bool& partial_line) {
     if (partial_line) {
         fprintf(stderr, "\n");
         partial_line = false;
     }
 }
 
-Program try_evolve(const Params &params, size_t max_idle, const Program *program = nullptr) {
+Program try_evolve(const Params& params, size_t max_idle, const Program* program = nullptr) {
     Population population(params, my_repo(), Random().make_seed());
     if (program != nullptr) {
         population.init(*program);
     }
-    bool partial_line = false;
-    size_t ticks = 0;
-    size_t sample_tick = ticks;
+    bool           partial_line = false;
+    size_t         ticks = 0;
+    size_t         sample_tick = ticks;
     Program::Stats best_sample = population._programs[0].stats();
-    while (!SignalHandler::INT.check() &&
-           ((best_sample.weakness > 0) ||
-            ((ticks - sample_tick) < max_idle)))
-    {
+    while (!SignalHandler::INT.check() && ((best_sample.weakness > 0) || ((ticks - sample_tick) < max_idle))) {
         ++ticks;
         population.tick();
         if ((ticks % 500) == 0) {
@@ -256,8 +273,7 @@ Program try_evolve(const Params &params, size_t max_idle, const Program *program
     }
     maybe_newline(partial_line);
     Program::Stats best = population._programs[0].stats();
-    fprintf(stderr, "best stats after %zu ticks: (weakness=%g,cost=%zu)\n",
-            ticks, best.weakness, best.cost);
+    fprintf(stderr, "best stats after %zu ticks: (weakness=%g,cost=%zu)\n", ticks, best.weakness, best.cost);
     return population._programs[0];
 }
 
@@ -273,7 +289,7 @@ TEST(Ponder2017, trying_to_evolve_a_solution_automatically) {
     Program best_zy = try_evolve(Params(3, 2, 8, 8, 8), 100 * 1000, &best_z);
     fprintf(stderr, "training f(a,b,c) -> (z,y,x)...\n");
     Program best = try_evolve(Params(3, 3, 8, 8, 8), 1000 * 1000 * 1000, &best_zy);
-    auto refs = best.get_refs(best.stats().alt);
+    auto    refs = best.get_refs(best.stats().alt);
     fprintf(stderr, "x(size=%zu): %s\n", best.size_of(refs[2]), best.as_string(refs[2]).c_str());
     fprintf(stderr, "y(size=%zu): %s\n", best.size_of(refs[1]), best.as_string(refs[1]).c_str());
     fprintf(stderr, "z(size=%zu): %s\n", best.size_of(refs[0]), best.as_string(refs[0]).c_str());

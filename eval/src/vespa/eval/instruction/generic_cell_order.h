@@ -3,18 +3,18 @@
 #pragma once
 
 #include <vespa/eval/eval/cell_order.h>
-#include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/interpreted_function.h>
+#include <vespa/eval/eval/value_type.h>
 
-namespace vespalib::eval { struct ValueBuilderFactory; }
+namespace vespalib::eval {
+struct ValueBuilderFactory;
+}
 
 namespace vespalib::eval::instruction {
 
 struct GenericCellOrder {
     static InterpretedFunction::Instruction
-    make_instruction(const ValueType &result_type,
-                     const ValueType &input_type, CellOrder cell_order,
-                     Stash &stash);
+    make_instruction(const ValueType& result_type, const ValueType& input_type, CellOrder cell_order, Stash& stash);
 };
 
-} // namespace
+} // namespace vespalib::eval::instruction

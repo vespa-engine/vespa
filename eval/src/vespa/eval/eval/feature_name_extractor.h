@@ -11,8 +11,8 @@ namespace vespalib::eval {
  * parsing ranking expressions.
  **/
 struct FeatureNameExtractor : public vespalib::eval::SymbolExtractor {
-    void extract_symbol(const char *pos_in, const char *end_in,
-                        const char *&pos_out, std::string &symbol_out) const override;
+    void extract_symbol(const char* pos_in, const char* end_in, const char*& pos_out,
+                        std::string& symbol_out) const override;
 };
 
-}
+} // namespace vespalib::eval

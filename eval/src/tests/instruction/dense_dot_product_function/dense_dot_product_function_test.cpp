@@ -16,7 +16,7 @@ using namespace vespalib;
 using namespace vespalib::eval;
 using namespace vespalib::eval::test;
 
-const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
+const ValueBuilderFactory& prod_factory = FastValueBuilderFactory::get();
 
 TensorSpec makeTensor(size_t numCells, double cellBias) {
     return GenSpec(cellBias).idx("x", numCells);
@@ -45,8 +45,7 @@ void check_gen_with_result(size_t l, size_t r, double wanted) {
     EXPECT_EQ(info.size(), 1u);
 };
 
-TEST(DenseDotProductFunctionTest, require_that_basic_dot_product_with_equal_sizes_is_correct)
-{
+TEST(DenseDotProductFunctionTest, require_that_basic_dot_product_with_equal_sizes_is_correct) {
     check_gen_with_result(2, 2, (3.0 * 5.0) + (4.0 * 6.0));
 }
 
@@ -63,8 +62,7 @@ void assertDotProduct(size_t lhsNumCells, size_t rhsNumCells) {
     check_gen_with_result(lhsNumCells, rhsNumCells, calcDotProduct(numCells));
 }
 
-TEST(DenseDotProductFunctionTest, require_that_dot_product_with_equal_sizes_is_correct)
-{
+TEST(DenseDotProductFunctionTest, require_that_dot_product_with_equal_sizes_is_correct) {
     assertDotProduct(8);
     assertDotProduct(16);
     assertDotProduct(32);
@@ -88,50 +86,42 @@ TEST(DenseDotProductFunctionTest, require_that_dot_product_with_equal_sizes_is_c
 
 struct FunInfo {
     using LookFor = DenseDotProductFunction;
-    void verify(const LookFor &fun) const {
-        EXPECT_TRUE(fun.result_is_mutable());
-    }
+    void verify(const LookFor& fun) const { EXPECT_TRUE(fun.result_is_mutable()); }
 };
 
-
-void assertOptimized(const std::string &expr) {
+void assertOptimized(const std::string& expr) {
     SCOPED_TRACE(expr);
     auto all_types = CellTypeSpace(CellTypeUtils::list_types(), 2);
     EvalFixture::verify<FunInfo>(expr, {FunInfo{}}, all_types);
-
 }
 
-void assertNotOptimized(const std::string &expr) {
+void assertNotOptimized(const std::string& expr) {
     SCOPED_TRACE(expr);
     CellTypeSpace just_double({CellType::DOUBLE}, 2);
     EvalFixture::verify<FunInfo>(expr, {}, just_double);
 }
 
-TEST(DenseDotProductFunctionTest, require_that_dot_product_works_with_tensor_function)
-{
+TEST(DenseDotProductFunctionTest, require_that_dot_product_works_with_tensor_function) {
     assertOptimized("reduce(x5$1*x5$2,sum)");
     assertOptimized("reduce(x5$1*x5$2,sum,x)");
     assertOptimized("reduce(join(x5$1,x5$2,f(x,y)(x*y)),sum)");
     assertOptimized("reduce(join(x5$1,x5$2,f(x,y)(x*y)),sum,x)");
 }
 
-TEST(DenseDotProductFunctionTest, require_that_dot_product_with_compatible_dimensions_is_optimized)
-{
+TEST(DenseDotProductFunctionTest, require_that_dot_product_with_compatible_dimensions_is_optimized) {
     assertOptimized("reduce(x1$1*x1$2,sum)");
     assertOptimized("reduce(x3$1*x3$2,sum)");
     assertOptimized("reduce(x5$1*x5$2,sum)");
 }
 
-TEST(DenseDotProductFunctionTest, require_that_dot_product_with_incompatible_dimensions_is_NOT_optimized)
-{
+TEST(DenseDotProductFunctionTest, require_that_dot_product_with_incompatible_dimensions_is_NOT_optimized) {
     assertNotOptimized("reduce(x3*y3,sum)");
     assertNotOptimized("reduce(y3*x3,sum)");
     assertNotOptimized("reduce(x3*x3y3,sum)");
     assertNotOptimized("reduce(x3y3*x3,sum)");
 }
 
-TEST(DenseDotProductFunctionTest, require_that_expressions_similar_to_dot_product_are_not_optimized)
-{
+TEST(DenseDotProductFunctionTest, require_that_expressions_similar_to_dot_product_are_not_optimized) {
     assertNotOptimized("reduce(x3$1*x3$2,prod)");
     assertNotOptimized("reduce(x3$1+x3$2,sum)");
     assertNotOptimized("reduce(join(x3$1,x3$2,f(x,y)(x+y)),sum)");
@@ -139,20 +129,18 @@ TEST(DenseDotProductFunctionTest, require_that_expressions_similar_to_dot_produc
     assertNotOptimized("reduce(join(x3$1,x3$2,f(x,y)(y*y)),sum)");
 }
 
-TEST(DenseDotProductFunctionTest, require_that_multi_dimensional_dot_product_can_be_optimized)
-{
+TEST(DenseDotProductFunctionTest, require_that_multi_dimensional_dot_product_can_be_optimized) {
     assertOptimized("reduce(x3y3$1*x3y3$2,sum)");
     assertOptimized("reduce(x3y3$1*x3y3$2,sum)");
 }
 
-TEST(DenseDotProductFunctionTest, require_that_result_must_be_double_to_trigger_optimization)
-{
+TEST(DenseDotProductFunctionTest, require_that_result_must_be_double_to_trigger_optimization) {
     assertOptimized("reduce(x3y3$1*x3y3$2,sum,x,y)");
     assertNotOptimized("reduce(x3y3$1*x3y3$2,sum,x)");
     assertNotOptimized("reduce(x3y3$1*x3y3$2,sum,y)");
 }
 
-void verify_compatible(const std::string &a, const std::string &b) {
+void verify_compatible(const std::string& a, const std::string& b) {
     SCOPED_TRACE(make_string("verify_compatible(\"%s\",\"%s\")", a.c_str(), b.c_str()));
     auto a_type = ValueType::from_spec(a);
     auto b_type = ValueType::from_spec(b);
@@ -162,7 +150,7 @@ void verify_compatible(const std::string &a, const std::string &b) {
     EXPECT_TRUE(DenseDotProductFunction::compatible_types(ValueType::double_type(), b_type, a_type));
 }
 
-void verify_not_compatible(const std::string &a, const std::string &b) {
+void verify_not_compatible(const std::string& a, const std::string& b) {
     SCOPED_TRACE(make_string("verify_not_compatible(\"%s\",\"%s\")", a.c_str(), b.c_str()));
     auto a_type = ValueType::from_spec(a);
     auto b_type = ValueType::from_spec(b);
@@ -172,8 +160,7 @@ void verify_not_compatible(const std::string &a, const std::string &b) {
     EXPECT_TRUE(!DenseDotProductFunction::compatible_types(ValueType::double_type(), b_type, a_type));
 }
 
-TEST(DenseDotProductFunctionTest, require_that_type_compatibility_test_is_appropriate)
-{
+TEST(DenseDotProductFunctionTest, require_that_type_compatibility_test_is_appropriate) {
     verify_compatible("tensor(x[5])", "tensor(x[5])");
     verify_compatible("tensor(x[5])", "tensor<float>(x[5])");
     verify_compatible("tensor<float>(x[5])", "tensor(x[5])");
@@ -185,8 +172,7 @@ TEST(DenseDotProductFunctionTest, require_that_type_compatibility_test_is_approp
     verify_not_compatible("tensor(x[9],y[7],z[5])", "tensor(x[5],y[7],z[9])");
 }
 
-TEST(DenseDotProductFunctionTest, require_that_optimization_also_works_for_tensors_with_non_double_cells)
-{
+TEST(DenseDotProductFunctionTest, require_that_optimization_also_works_for_tensors_with_non_double_cells) {
     assertOptimized("reduce(x5$1*x5$2,sum)");
     assertOptimized("reduce(x5$1*x5$2,sum)");
     assertOptimized("reduce(x5$1*x5$2,sum)");

@@ -3,14 +3,17 @@
 #pragma once
 
 #include <vespa/eval/eval/tensor_spec.h>
+
 #include <vector>
 
-namespace vespalib::eval { class Function; }
+namespace vespalib::eval {
+class Function;
+}
 
 namespace vespalib::eval::test {
 
 struct ReferenceEvaluation {
-    static TensorSpec eval(const Function &function, const std::vector<TensorSpec> &params);
+    static TensorSpec eval(const Function& function, const std::vector<TensorSpec>& params);
 };
 
-} // namespace
+} // namespace vespalib::eval::test

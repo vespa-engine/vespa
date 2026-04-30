@@ -1,37 +1,39 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/data/output_writer.h>
-#include <vespa/vespalib/data/slime/json_format.h>
-#include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/io/mapped_file_input.h>
-#include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/vespalib/util/size_literals.h>
-#include <vespa/vespalib/util/require.h>
-#include <vespa/vespalib/util/stringfmt.h>
+#include "generate.h"
+
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/function.h>
 #include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/eval/eval/test/reference_evaluation.h>
 #include <vespa/eval/eval/test/test_io.h>
-#include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/streamed/streamed_value_builder_factory.h>
-#include <unistd.h>
-#include <functional>
+#include <vespa/vespalib/data/output_writer.h>
+#include <vespa/vespalib/data/slime/json_format.h>
+#include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/io/mapped_file_input.h>
+#include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/require.h>
+#include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
-#include "generate.h"
+#include <unistd.h>
+
+#include <functional>
 
 using namespace vespalib;
 using namespace vespalib::eval;
 using namespace vespalib::eval::test;
 using namespace vespalib::slime::convenience;
+using slime::JsonFormat;
 using vespalib::slime::inject;
 using vespalib::slime::SlimeInserter;
-using slime::JsonFormat;
 using namespace std::placeholders;
 
 //-----------------------------------------------------------------------------
@@ -41,9 +43,9 @@ size_t ignore_cnt = 0;
 
 //-----------------------------------------------------------------------------
 
-const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
-const ValueBuilderFactory &simple_factory = SimpleValueBuilderFactory::get();
-const ValueBuilderFactory &streamed_factory = StreamedValueBuilderFactory::get();
+const ValueBuilderFactory& prod_factory = FastValueBuilderFactory::get();
+const ValueBuilderFactory& simple_factory = SimpleValueBuilderFactory::get();
+const ValueBuilderFactory& streamed_factory = StreamedValueBuilderFactory::get();
 
 //-----------------------------------------------------------------------------
 
@@ -58,7 +60,7 @@ uint8_t unhex(char c) {
     return 0;
 }
 
-void extract_data_from_string(Memory hex_dump, nbostream &data) {
+void extract_data_from_string(Memory hex_dump, nbostream& data) {
     if ((hex_dump.size > 2) && (hex_dump.data[0] == '0') && (hex_dump.data[1] == 'x')) {
         for (size_t i = 2; i < (hex_dump.size - 1); i += 2) {
             data << uint8_t((unhex(hex_dump.data[i]) << 4) | unhex(hex_dump.data[i + 1]));
@@ -66,7 +68,7 @@ void extract_data_from_string(Memory hex_dump, nbostream &data) {
     }
 }
 
-nbostream extract_data(const Inspector &value) {
+nbostream extract_data(const Inspector& value) {
     nbostream data;
     if (value.asString().size > 0) {
         extract_data_from_string(value.asString(), data);
@@ -79,26 +81,24 @@ nbostream extract_data(const Inspector &value) {
 
 //-----------------------------------------------------------------------------
 
-void insert_value(Cursor &cursor, const std::string &name, const TensorSpec &spec) {
+void insert_value(Cursor& cursor, const std::string& name, const TensorSpec& spec) {
     nbostream data;
     Value::UP value = value_from_spec(spec, simple_factory);
     encode_value(*value, data);
     cursor.setData(name, Memory(data.peek(), data.size()));
 }
 
-TensorSpec extract_value(const Inspector &inspector) {
+TensorSpec extract_value(const Inspector& inspector) {
     nbostream data = extract_data(inspector);
     return spec_from_value(*decode_value(data, simple_factory));
 }
 
 //-----------------------------------------------------------------------------
 
-std::vector<std::string> extract_fields(const Inspector &object) {
+std::vector<std::string> extract_fields(const Inspector& object) {
     struct FieldExtractor : slime::ObjectTraverser {
         std::vector<std::string> result;
-        void field(const Memory &symbol, const Inspector &) override {
-            result.push_back(symbol.make_string());
-        }
+        void field(const Memory& symbol, const Inspector&) override { result.push_back(symbol.make_string()); }
     } extractor;
     object.traverse(extractor);
     return std::move(extractor.result);
@@ -106,9 +106,9 @@ std::vector<std::string> extract_fields(const Inspector &object) {
 
 //-----------------------------------------------------------------------------
 
-void dump_test(const Inspector &test) {
+void dump_test(const Inspector& test) {
     fprintf(stderr, "expression: '%s'\n", test["expression"].asString().make_string().c_str());
-    for (const auto &input: extract_fields(test["inputs"])) {
+    for (const auto& input : extract_fields(test["inputs"])) {
         auto value = extract_value(test["inputs"][input]);
         fprintf(stderr, "input '%s': %s\n", input.c_str(), value.to_string().c_str());
     }
@@ -116,8 +116,8 @@ void dump_test(const Inspector &test) {
 
 //-----------------------------------------------------------------------------
 
-TensorSpec ref_eval(const Inspector &test) {
-    auto fun = Function::parse(test["expression"].asString().make_string());
+TensorSpec ref_eval(const Inspector& test) {
+    auto                    fun = Function::parse(test["expression"].asString().make_string());
     std::vector<TensorSpec> params;
     for (size_t i = 0; i < fun->num_params(); ++i) {
         params.push_back(extract_value(test["inputs"][fun->param_name(i)]));
@@ -132,7 +132,7 @@ TensorSpec ref_eval(const Inspector &test) {
 
 //-----------------------------------------------------------------------------
 
-std::vector<ValueType> get_types(const std::vector<Value::UP> &param_values) {
+std::vector<ValueType> get_types(const std::vector<Value::UP>& param_values) {
     std::vector<ValueType> param_types;
     for (size_t i = 0; i < param_values.size(); ++i) {
         param_types.emplace_back(param_values[i]->type());
@@ -140,28 +140,28 @@ std::vector<ValueType> get_types(const std::vector<Value::UP> &param_values) {
     return param_types;
 }
 
-TensorSpec eval_expr(const Inspector &test, const ValueBuilderFactory &factory) {
-    auto fun = Function::parse(test["expression"].asString().make_string());
-    std::vector<Value::UP> param_values;
+TensorSpec eval_expr(const Inspector& test, const ValueBuilderFactory& factory) {
+    auto                     fun = Function::parse(test["expression"].asString().make_string());
+    std::vector<Value::UP>   param_values;
     std::vector<Value::CREF> param_refs;
     for (size_t i = 0; i < fun->num_params(); ++i) {
         param_values.emplace_back(value_from_spec(extract_value(test["inputs"][fun->param_name(i)]), factory));
         param_refs.emplace_back(*param_values.back());
     }
-    NodeTypes types = NodeTypes(*fun, get_types(param_values));
-    InterpretedFunction ifun(factory, *fun, types);
+    NodeTypes                    types = NodeTypes(*fun, get_types(param_values));
+    InterpretedFunction          ifun(factory, *fun, types);
     InterpretedFunction::Context ctx(ifun);
-    SimpleObjectParams params(param_refs);
-    const Value &result = ifun.eval(ctx, params);
+    SimpleObjectParams           params(param_refs);
+    const Value&                 result = ifun.eval(ctx, params);
     REQUIRE_EQ(result.type(), types.get_type(fun->root()));
     return spec_from_value(result);
 }
 
 //-----------------------------------------------------------------------------
 
-void print_test(const Inspector &test, OutputWriter &dst) {
+void print_test(const Inspector& test, OutputWriter& dst) {
     dst.printf("expression: '%s'\n", test["expression"].asString().make_string().c_str());
-    for (const auto &input: extract_fields(test["inputs"])) {
+    for (const auto& input : extract_fields(test["inputs"])) {
         auto value = extract_value(test["inputs"][input]);
         dst.printf("input '%s': %s\n", input.c_str(), value.to_string().c_str());
     }
@@ -170,7 +170,7 @@ void print_test(const Inspector &test, OutputWriter &dst) {
     auto ignore = extract_fields(test["ignore"]);
     if (!ignore.empty()) {
         dst.printf("ignore:");
-        for (const auto &impl: ignore) {
+        for (const auto& impl : ignore) {
             REQUIRE(test["ignore"][impl].asBool());
             dst.printf(" %s", impl.c_str());
         }
@@ -183,28 +183,27 @@ void print_test(const Inspector &test, OutputWriter &dst) {
 class MyTestBuilder : public TestBuilder {
 private:
     TestWriter _writer;
+
 public:
-    MyTestBuilder(bool full_in, Output &out) : TestBuilder(full_in), _writer(out) {}
-    void add(const std::string &expression,
-             const std::map<std::string,TensorSpec> &inputs_in,
-             const std::set<std::string> &ignore_in) override
-    {
-        Cursor &test = _writer.create();
+    MyTestBuilder(bool full_in, Output& out) : TestBuilder(full_in), _writer(out) {}
+    void add(const std::string& expression, const std::map<std::string, TensorSpec>& inputs_in,
+             const std::set<std::string>& ignore_in) override {
+        Cursor& test = _writer.create();
         test.setString("expression", expression);
-        Cursor &inputs = test.setObject("inputs");
-        for (const auto& [name, spec]: inputs_in) {
+        Cursor& inputs = test.setObject("inputs");
+        for (const auto& [name, spec] : inputs_in) {
             insert_value(inputs, name, spec);
         }
         test.setObject("result");
         if (!ignore_in.empty()) {
-            Cursor &ignore = test.setObject("ignore");
-            for (const auto &impl: ignore_in) {
+            Cursor& ignore = test.setObject("ignore");
+            for (const auto& impl : ignore_in) {
                 ignore.setBool(impl, true);
             }
         }
     }
     void add_failing_test(bool ignore_fail) {
-        Cursor &test = _writer.create();
+        Cursor& test = _writer.create();
         test.setString("expression", "a");
         insert_value(test.setObject("inputs"), "a", GenSpec(1).idx("x", 3));
         insert_value(test.setObject("result"), "dummy", GenSpec(2).idx("x", 3));
@@ -214,7 +213,7 @@ public:
     }
 };
 
-void generate(Output &out, bool full) {
+void generate(Output& out, bool full) {
     MyTestBuilder my_test_builder(full, out);
     Generator::generate(my_test_builder);
     // my_test_builder.add_failing_test(true);
@@ -223,29 +222,24 @@ void generate(Output &out, bool full) {
 
 //-----------------------------------------------------------------------------
 
-void evaluate(Input &in, Output &out) {
-    auto handle_test = [&out](Slime &slime) {
-        insert_value(slime["result"], "cpp_prod",
-                     eval_expr(slime.get(), prod_factory));
-        insert_value(slime["result"], "cpp_simple_value",
-                     eval_expr(slime.get(), simple_factory));
-        insert_value(slime["result"], "cpp_streamed_value",
-                     eval_expr(slime.get(), streamed_factory));
+void evaluate(Input& in, Output& out) {
+    auto handle_test = [&out](Slime& slime) {
+        insert_value(slime["result"], "cpp_prod", eval_expr(slime.get(), prod_factory));
+        insert_value(slime["result"], "cpp_simple_value", eval_expr(slime.get(), simple_factory));
+        insert_value(slime["result"], "cpp_streamed_value", eval_expr(slime.get(), streamed_factory));
         write_compact(slime, out);
     };
-    auto handle_summary = [&out](Slime &slime) {
-        write_compact(slime, out);
-    };
+    auto handle_summary = [&out](Slime& slime) { write_compact(slime, out); };
     for_each_test(in, handle_test, handle_summary);
 }
 
 //-----------------------------------------------------------------------------
 
-void verify(Input &in, Output &out) {
-    std::map<std::string,size_t> result_map;
-    auto handle_test = [&result_map](Slime &slime) {
+void verify(Input& in, Output& out) {
+    std::map<std::string, size_t> result_map;
+    auto                          handle_test = [&result_map](Slime& slime) {
         TensorSpec reference_result = ref_eval(slime.get());
-        for (const auto &result: extract_fields(slime["result"])) {
+        for (const auto& result : extract_fields(slime["result"])) {
             ++result_map[result];
             auto actual_result = extract_value(slime["result"][result]);
             if (!require_impl::eq(actual_result, reference_result)) {
@@ -255,16 +249,17 @@ void verify(Input &in, Output &out) {
                 } else {
                     ++fail_cnt;
                 }
-                fprintf(stderr, "%sexpression failed('%s'): '%s'\n", ignore_fail ? "IGNORED: " : "",
-                        result.c_str(), slime["expression"].asString().make_string().c_str());
-                fprintf(stderr, "%s", TensorSpec::diff(actual_result, "actual", reference_result, "expected").c_str());
+                fprintf(stderr, "%sexpression failed('%s'): '%s'\n", ignore_fail ? "IGNORED: " : "", result.c_str(),
+                                                 slime["expression"].asString().make_string().c_str());
+                fprintf(stderr, "%s",
+                                                 TensorSpec::diff(actual_result, "actual", reference_result, "expected").c_str());
                 dump_test(slime.get());
             }
         }
     };
-    auto handle_summary = [&out,&result_map](Slime &slime) {
-        Cursor &stats = slime.get().setObject("stats");
-        for (const auto &entry: result_map) {
+    auto handle_summary = [&out, &result_map](Slime& slime) {
+        Cursor& stats = slime.get().setObject("stats");
+        for (const auto& entry : result_map) {
             stats.setLong(entry.first, entry.second);
         }
         REQUIRE(!slime["fail_cnt"].valid());
@@ -278,14 +273,14 @@ void verify(Input &in, Output &out) {
 
 //-----------------------------------------------------------------------------
 
-void display(Input &in, Output &out) {
+void display(Input& in, Output& out) {
     size_t test_cnt = 0;
-    auto handle_test = [&out,&test_cnt](Slime &slime) {
+    auto   handle_test = [&out, &test_cnt](Slime& slime) {
         OutputWriter dst(out, 4_Ki);
         dst.printf("\n------- TEST #%zu -------\n\n", test_cnt++);
         print_test(slime.get(), dst);
     };
-    auto handle_summary = [&out,&test_cnt](Slime &) {
+    auto handle_summary = [&out, &test_cnt](Slime&) {
         OutputWriter dst(out, 1024);
         dst.printf("%zu tests displayed\n", test_cnt);
     };
@@ -294,7 +289,7 @@ void display(Input &in, Output &out) {
 
 //-----------------------------------------------------------------------------
 
-int usage(const char *self) {
+int usage(const char* self) {
     fprintf(stderr, "usage: %s <mode>\n", self);
     fprintf(stderr, "  <mode>: which mode to activate\n");
     fprintf(stderr, "    'generate': write test cases to stdout\n");
@@ -309,8 +304,8 @@ int usage(const char *self) {
     return 1;
 }
 
-int main(int argc, char **argv) {
-    StdIn std_in;
+int main(int argc, char** argv) {
+    StdIn  std_in;
     StdOut std_out;
     if (argc < 2) {
         return usage(argv[0]);

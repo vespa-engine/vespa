@@ -9,21 +9,19 @@ namespace vespalib::eval {
 /**
  * A trivial builder for DoubleValue objects
  **/
-class DoubleValueBuilder : public ValueBuilder<double>
-{
+class DoubleValueBuilder : public ValueBuilder<double> {
 private:
     double _value;
+
 public:
     DoubleValueBuilder() : _value(0.0) {}
     ~DoubleValueBuilder() override;
-    std::span<double>
-    add_subspace(std::span<const std::string_view>) override {
+    std::span<double> add_subspace(std::span<const std::string_view>) override {
         return std::span<double>(&_value, 1);
     }
-    std::unique_ptr<Value>
-    build(std::unique_ptr<ValueBuilder<double>>) override {
+    std::unique_ptr<Value> build(std::unique_ptr<ValueBuilder<double>>) override {
         return std::make_unique<DoubleValue>(_value);
     }
 };
 
-} // namespace
+} // namespace vespalib::eval

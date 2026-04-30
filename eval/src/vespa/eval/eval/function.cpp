@@ -1,27 +1,30 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "function.h"
+
+#include "aggr.h"
 #include "basic_nodes.h"
-#include "tensor_nodes.h"
-#include "operator_nodes.h"
 #include "call_nodes.h"
 #include "delete_node.h"
-#include "aggr.h"
+#include "operator_nodes.h"
+#include "tensor_nodes.h"
+
 #include <vespa/vespalib/locale/c.h>
 #include <vespa/vespalib/util/stringfmt.h>
+
 #include <cctype>
 #include <map>
 #include <set>
 
 namespace vespalib::eval {
 
+using nodes::Call_UP;
 using nodes::Node_UP;
 using nodes::Operator_UP;
-using nodes::Call_UP;
 
 namespace {
 
-bool has_duplicates(const std::vector<std::string> &list) {
+bool has_duplicates(const std::vector<std::string>& list) {
     for (size_t i = 0; i < list.size(); ++i) {
         for (size_t j = (i + 1); j < list.size(); ++j) {
             if (list[i] == list[j]) {
@@ -36,13 +39,14 @@ bool has_duplicates(const std::vector<std::string> &list) {
 
 class Params {
 private:
-    std::map<std::string,size_t> _params;
+    std::map<std::string, size_t> _params;
+
 protected:
-    size_t lookup(const std::string &token) const {
+    size_t lookup(const std::string& token) const {
         auto result = _params.find(token);
         return (result == _params.end()) ? UNDEF : result->second;
     }
-    size_t lookup_add(const std::string &token) {
+    size_t lookup_add(const std::string& token) {
         size_t result = lookup(token);
         if (result == UNDEF) {
             result = _params.size();
@@ -50,14 +54,15 @@ protected:
         }
         return result;
     }
+
 public:
     static const size_t UNDEF = -1;
     virtual bool implicit() const = 0;
-    virtual size_t resolve(const std::string &token) const = 0;
+    virtual size_t resolve(const std::string& token) const = 0;
     std::vector<std::string> extract() const {
         std::vector<std::string> params_out;
         params_out.resize(_params.size());
-        for (const auto &item: _params) {
+        for (const auto& item : _params) {
             params_out[item.second] = item.first;
         }
         return params_out;
@@ -66,28 +71,26 @@ public:
 };
 
 struct ExplicitParams : Params {
-    explicit ExplicitParams(const std::vector<std::string> &params_in) {
-        for (const auto &param: params_in) {
+    explicit ExplicitParams(const std::vector<std::string>& params_in) {
+        for (const auto& param : params_in) {
             assert(lookup(param) == UNDEF);
             lookup_add(param);
         }
     }
     bool implicit() const override { return false; }
-    size_t resolve(const std::string &token) const override {
-        return lookup(token);
-    }
+    size_t resolve(const std::string& token) const override { return lookup(token); }
 };
 
 struct ImplicitParams : Params {
     ImplicitParams() = default;
-    explicit ImplicitParams(const std::vector<std::string> &params_in) {
-        for (const auto &param: params_in) {
+    explicit ImplicitParams(const std::vector<std::string>& params_in) {
+        for (const auto& param : params_in) {
             assert(lookup(param) == UNDEF);
             lookup_add(param);
         }
     }
     bool implicit() const override { return true; }
-    size_t resolve(const std::string &token) const override {
+    size_t resolve(const std::string& token) const override {
         return const_cast<ImplicitParams*>(this)->lookup_add(token);
     }
 };
@@ -95,35 +98,37 @@ struct ImplicitParams : Params {
 //-----------------------------------------------------------------------------
 
 struct ResolveContext {
-    const Params &params;
-    const SymbolExtractor *symbol_extractor;
-    ResolveContext(const Params &params_in, const SymbolExtractor *symbol_extractor_in) noexcept
+    const Params&          params;
+    const SymbolExtractor* symbol_extractor;
+    ResolveContext(const Params& params_in, const SymbolExtractor* symbol_extractor_in) noexcept
         : params(params_in), symbol_extractor(symbol_extractor_in) {}
 };
 
-class ParseContext
-{
+class ParseContext {
 private:
-    const char                  *_begin;
-    const char                  *_pos;
-    const char                  *_end;
-    char                         _curr;
-    std::string             _scratch;
-    std::string             _failure;
-    std::vector<Node_UP>         _expression_stack;
-    std::vector<Operator_UP>     _operator_stack;
-    size_t                       _operator_mark;
-    std::vector<ResolveContext>  _resolve_stack;
+    const char*                 _begin;
+    const char*                 _pos;
+    const char*                 _end;
+    char                        _curr;
+    std::string                 _scratch;
+    std::string                 _failure;
+    std::vector<Node_UP>        _expression_stack;
+    std::vector<Operator_UP>    _operator_stack;
+    size_t                      _operator_mark;
+    std::vector<ResolveContext> _resolve_stack;
 
 public:
-    ParseContext(const Params &params, const char *str, size_t len,
-                 const SymbolExtractor *symbol_extractor)
-        : _begin(str), _pos(str), _end(str + len), _curr(0),
-          _scratch(), _failure(),
-          _expression_stack(), _operator_stack(),
+    ParseContext(const Params& params, const char* str, size_t len, const SymbolExtractor* symbol_extractor)
+        : _begin(str),
+          _pos(str),
+          _end(str + len),
+          _curr(0),
+          _scratch(),
+          _failure(),
+          _expression_stack(),
+          _operator_stack(),
           _operator_mark(0),
-          _resolve_stack({ResolveContext(params, symbol_extractor)})
-    {
+          _resolve_stack({ResolveContext(params, symbol_extractor)}) {
         if (_pos < _end) {
             _curr = *_pos;
         }
@@ -135,17 +140,17 @@ public:
         _expression_stack.clear();
     }
 
-    ResolveContext &resolver() {
+    ResolveContext& resolver() {
         assert(!_resolve_stack.empty());
         return _resolve_stack.back();
     }
 
-    const ResolveContext &resolver() const {
+    const ResolveContext& resolver() const {
         assert(!_resolve_stack.empty());
         return _resolve_stack.back();
     }
 
-    void push_resolve_context(const Params &params) {
+    void push_resolve_context(const Params& params) {
         if (params.implicit()) {
             _resolve_stack.emplace_back(params, resolver().symbol_extractor);
         } else {
@@ -159,7 +164,7 @@ public:
         assert(!_resolve_stack.empty());
     }
 
-    void fail(const std::string &msg) {
+    void fail(const std::string& msg) {
         if (_failure.empty()) {
             _failure = msg;
             _curr = 0;
@@ -169,8 +174,8 @@ public:
     void next() { _curr = (_curr && (_pos < _end)) ? *(++_pos) : 0; }
 
     struct InputMark {
-        const char *pos;
-        char curr;
+        const char* pos;
+        char        curr;
     };
 
     InputMark get_input_mark() const { return InputMark{_pos, _curr}; }
@@ -196,12 +201,12 @@ public:
             next();
         }
     }
-    std::string &scratch() {
+    std::string& scratch() {
         _scratch.clear();
         return _scratch;
     }
-    std::string &peek(std::string &str, size_t n) {
-        const char *p = _pos;
+    std::string& peek(std::string& str, size_t n) {
+        const char* p = _pos;
         for (size_t i = 0; i < n; ++i, ++p) {
             if (_curr != 0 && p < _end) {
                 str.push_back(*p);
@@ -217,18 +222,16 @@ public:
         }
     }
 
-    size_t resolve_parameter(const std::string &name) const {
-        return resolver().params.resolve(name);
-    }
+    size_t resolve_parameter(const std::string& name) const { return resolver().params.resolve(name); }
 
-    void extract_symbol(std::string &symbol_out, InputMark before_symbol) {
+    void extract_symbol(std::string& symbol_out, InputMark before_symbol) {
         if (resolver().symbol_extractor == nullptr) {
             return;
         }
         symbol_out.clear();
         restore_input_mark(before_symbol);
         if (!eos()) {
-            const char *new_pos = nullptr;
+            const char* new_pos = nullptr;
             resolver().symbol_extractor->extract_symbol(_pos, _end, new_pos, symbol_out);
             if ((new_pos != nullptr) && (new_pos > _pos) && (new_pos <= _end)) {
                 _pos = new_pos;
@@ -246,23 +249,21 @@ public:
         if (!_failure.empty()) {
             std::string before(_begin, (_pos - _begin));
             std::string after(_pos, (_end - _pos));
-            return Node_UP(new nodes::Error(make_string("[%s]...[%s]...[%s]",
-                                    before.c_str(), _failure.c_str(), after.c_str())));
+            return Node_UP(
+                new nodes::Error(make_string("[%s]...[%s]...[%s]", before.c_str(), _failure.c_str(), after.c_str())));
         }
         return pop_expression();
     }
 
     void apply_operator() {
         Operator_UP op = pop_operator();
-        Node_UP rhs = pop_expression();
-        Node_UP lhs = pop_expression();
+        Node_UP     rhs = pop_expression();
+        Node_UP     lhs = pop_expression();
         op->bind(std::move(lhs), std::move(rhs));
         push_expression(std::move(op));
     }
     size_t num_expressions() const { return _expression_stack.size(); }
-    void push_expression(Node_UP node) {
-        _expression_stack.push_back(std::move(node));
-    }
+    void push_expression(Node_UP node) { _expression_stack.push_back(std::move(node)); }
     Node_UP pop_expression() {
         if (_expression_stack.empty()) {
             fail("expression stack underflow");
@@ -283,9 +284,7 @@ public:
         return (c == /* eof */ '\0' || c == ')' || c == ']' || c == '}');
     }
 
-    bool find_expression_end() {
-        return (find_list_end() || (get() == ','));
-    }
+    bool find_expression_end() { return (find_list_end() || (get() == ',')); }
 
     size_t init_expression() {
         size_t old_mark = operator_mark();
@@ -300,10 +299,8 @@ public:
         operator_mark(old_mark);
     }
 
-    void apply_until(const nodes::Operator &op) {
-        while ((_operator_stack.size() > _operator_mark) &&
-               (_operator_stack.back()->do_before(op)))
-        {
+    void apply_until(const nodes::Operator& op) {
+        while ((_operator_stack.size() > _operator_mark) && (_operator_stack.back()->do_before(op))) {
             apply_operator();
         }
     }
@@ -321,10 +318,10 @@ public:
 
 //-----------------------------------------------------------------------------
 
-void parse_value(ParseContext &ctx);
-void parse_expression(ParseContext &ctx);
+void parse_value(ParseContext& ctx);
+void parse_expression(ParseContext& ctx);
 
-Node_UP get_expression(ParseContext &ctx) {
+Node_UP get_expression(ParseContext& ctx) {
     parse_expression(ctx);
     return ctx.pop_expression();
 }
@@ -342,7 +339,7 @@ int unhex(char c) {
     return -1;
 }
 
-void extract_quoted_string(ParseContext &ctx, std::string &str, char quote) {
+void extract_quoted_string(ParseContext& ctx, std::string& str, char quote) {
     ctx.eat(quote);
     while (!ctx.eos() && (ctx.get() != quote)) {
         if (ctx.get() == '\\') {
@@ -357,15 +354,31 @@ void extract_quoted_string(ParseContext &ctx, std::string &str, char quote) {
                 }
                 str.push_back((hex1 << 4) + hex2);
             } else {
-                switch(ctx.get()) {
-                case '"':  str.push_back('"');  break;
-                case '\'':  str.push_back('\'');  break;
-                case '\\': str.push_back('\\'); break;
-                case 'f':  str.push_back('\f'); break;
-                case 'n':  str.push_back('\n'); break;
-                case 'r':  str.push_back('\r'); break;
-                case 't':  str.push_back('\t'); break;
-                default: ctx.fail("bad quote"); break;
+                switch (ctx.get()) {
+                case '"':
+                    str.push_back('"');
+                    break;
+                case '\'':
+                    str.push_back('\'');
+                    break;
+                case '\\':
+                    str.push_back('\\');
+                    break;
+                case 'f':
+                    str.push_back('\f');
+                    break;
+                case 'n':
+                    str.push_back('\n');
+                    break;
+                case 'r':
+                    str.push_back('\r');
+                    break;
+                case 't':
+                    str.push_back('\t');
+                    break;
+                default:
+                    ctx.fail("bad quote");
+                    break;
                 }
             }
         } else {
@@ -376,14 +389,14 @@ void extract_quoted_string(ParseContext &ctx, std::string &str, char quote) {
     ctx.eat(quote);
 }
 
-void parse_string(ParseContext &ctx, char quote) {
-    std::string &str = ctx.scratch();
+void parse_string(ParseContext& ctx, char quote) {
+    std::string& str = ctx.scratch();
     extract_quoted_string(ctx, str, quote);
     ctx.push_expression(Node_UP(new nodes::String(str)));
 }
 
-void parse_number(ParseContext &ctx) {
-    std::string &str = ctx.scratch();
+void parse_number(ParseContext& ctx) {
+    std::string& str = ctx.scratch();
     str.push_back(ctx.get());
     ctx.next();
     while (ctx.get() >= '0' && ctx.get() <= '9') {
@@ -410,7 +423,7 @@ void parse_number(ParseContext &ctx) {
             ctx.next();
         }
     }
-    char *end = nullptr;
+    char*  end = nullptr;
     double value = vespalib::locale::c::strtod(str.c_str(), &end);
     if (!str.empty() && end == str.data() + str.size()) {
         ctx.push_expression(Node_UP(new nodes::Number(value)));
@@ -422,14 +435,11 @@ void parse_number(ParseContext &ctx) {
 // NOTE: using non-standard definition of identifiers
 // (to match ranking expression parser in Java)
 bool is_ident(char c, bool first) {
-    return ((c >= 'a' && c <= 'z') ||
-            (c >= 'A' && c <= 'Z') ||
-            (c >= '0' && c <= '9') ||
-            (c == '_') || (c == '@') ||
+    return ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || (c == '_') || (c == '@') ||
             (c == '$' && !first));
 }
 
-std::string get_ident(ParseContext &ctx, bool allow_empty) {
+std::string get_ident(ParseContext& ctx, bool allow_empty) {
     ctx.skip_spaces();
     std::string ident;
     if (is_ident(ctx.get(), true)) {
@@ -444,7 +454,7 @@ std::string get_ident(ParseContext &ctx, bool allow_empty) {
     return ident;
 }
 
-size_t get_size_t(ParseContext &ctx) {
+size_t get_size_t(ParseContext& ctx) {
     ctx.skip_spaces();
     std::string num;
     for (; std::isdigit(static_cast<unsigned char>(ctx.get())); ctx.next()) {
@@ -457,11 +467,10 @@ size_t get_size_t(ParseContext &ctx) {
 }
 
 bool is_label_end(char c) {
-    return (std::isspace(static_cast<unsigned char>(c)) || (c == '\0') ||
-            (c == ':') || (c == ',') || (c == '}'));
+    return (std::isspace(static_cast<unsigned char>(c)) || (c == '\0') || (c == ':') || (c == ',') || (c == '}'));
 }
 
-std::string get_label(ParseContext &ctx) {
+std::string get_label(ParseContext& ctx) {
     ctx.skip_spaces();
     std::string label;
     if (ctx.get() == '"') {
@@ -480,18 +489,18 @@ std::string get_label(ParseContext &ctx) {
     return label;
 }
 
-void parse_if(ParseContext &ctx) {
+void parse_if(ParseContext& ctx) {
     Node_UP cond = get_expression(ctx);
     ctx.eat(',');
     Node_UP true_expr = get_expression(ctx);
     ctx.eat(',');
     Node_UP false_expr = get_expression(ctx);
-    double p_true = 0.5;
+    double  p_true = 0.5;
     if (ctx.get() == ',') {
         ctx.eat(',');
         parse_number(ctx);
         Node_UP p_true_node = ctx.pop_expression();
-        auto p_true_number = nodes::as<nodes::Number>(*p_true_node);
+        auto    p_true_number = nodes::as<nodes::Number>(*p_true_node);
         if (p_true_number) {
             p_true = p_true_number->value();
         }
@@ -499,7 +508,7 @@ void parse_if(ParseContext &ctx) {
     ctx.push_expression(Node_UP(new nodes::If(std::move(cond), std::move(true_expr), std::move(false_expr), p_true)));
 }
 
-void parse_call(ParseContext &ctx, Call_UP call) {
+void parse_call(ParseContext& ctx, Call_UP call) {
     CommaTracker list;
     for (size_t i = 0; i < call->num_params(); ++i) {
         list.maybe_eat_comma(ctx);
@@ -510,7 +519,7 @@ void parse_call(ParseContext &ctx, Call_UP call) {
 
 // (a,b,c)     wrapped
 // ,a,b,c -> ) not wrapped
-std::vector<std::string> get_ident_list(ParseContext &ctx, bool wrapped) {
+std::vector<std::string> get_ident_list(ParseContext& ctx, bool wrapped) {
     std::vector<std::string> list;
     if (wrapped) {
         ctx.skip_spaces();
@@ -533,7 +542,7 @@ std::vector<std::string> get_ident_list(ParseContext &ctx, bool wrapped) {
 // a
 // (a,b,c)
 // cannot be empty
-std::vector<std::string> get_idents(ParseContext &ctx) {
+std::vector<std::string> get_idents(ParseContext& ctx) {
     std::vector<std::string> list;
     ctx.skip_spaces();
     if (ctx.get() == '(') {
@@ -542,15 +551,15 @@ std::vector<std::string> get_idents(ParseContext &ctx) {
         list.push_back(get_ident(ctx, false));
     }
     if (list.empty()) {
-        ctx.fail("missing identifiers");        
+        ctx.fail("missing identifiers");
     }
     return list;
 }
 
-auto parse_lambda(ParseContext &ctx, size_t num_params) {
+auto parse_lambda(ParseContext& ctx, size_t num_params) {
     ctx.skip_spaces();
     ctx.eat('f');
-    auto param_names = get_ident_list(ctx, true);
+    auto           param_names = get_ident_list(ctx, true);
     ExplicitParams params(param_names);
     ctx.push_resolve_context(params);
     ctx.skip_spaces();
@@ -560,34 +569,33 @@ auto parse_lambda(ParseContext &ctx, size_t num_params) {
     ctx.skip_spaces();
     ctx.pop_resolve_context();
     if (param_names.size() != num_params) {
-        ctx.fail(make_string("expected lambda with %zu parameter(s), was %zu",
-                             num_params, param_names.size()));
+        ctx.fail(make_string("expected lambda with %zu parameter(s), was %zu", num_params, param_names.size()));
     }
     return Function::create(std::move(lambda_root), std::move(param_names));
 }
 
-void parse_tensor_map(ParseContext &ctx) {
+void parse_tensor_map(ParseContext& ctx) {
     Node_UP child = get_expression(ctx);
     ctx.eat(',');
     auto lambda = parse_lambda(ctx, 1);
     ctx.push_expression(std::make_unique<nodes::TensorMap>(std::move(child), std::move(lambda)));
 }
 
-void parse_tensor_map_subspaces(ParseContext &ctx) {
+void parse_tensor_map_subspaces(ParseContext& ctx) {
     Node_UP child = get_expression(ctx);
     ctx.eat(',');
     auto lambda = parse_lambda(ctx, 1);
     ctx.push_expression(std::make_unique<nodes::TensorMapSubspaces>(std::move(child), std::move(lambda)));
 }
 
-void parse_tensor_filter_subspaces(ParseContext &ctx) {
+void parse_tensor_filter_subspaces(ParseContext& ctx) {
     Node_UP child = get_expression(ctx);
     ctx.eat(',');
     auto lambda = parse_lambda(ctx, 1);
     ctx.push_expression(std::make_unique<nodes::TensorFilterSubspaces>(std::move(child), std::move(lambda)));
 }
 
-void parse_tensor_join(ParseContext &ctx) {
+void parse_tensor_join(ParseContext& ctx) {
     Node_UP lhs = get_expression(ctx);
     ctx.eat(',');
     Node_UP rhs = get_expression(ctx);
@@ -596,7 +604,7 @@ void parse_tensor_join(ParseContext &ctx) {
     ctx.push_expression(std::make_unique<nodes::TensorJoin>(std::move(lhs), std::move(rhs), std::move(lambda)));
 }
 
-void parse_tensor_merge(ParseContext &ctx) {
+void parse_tensor_merge(ParseContext& ctx) {
     Node_UP lhs = get_expression(ctx);
     ctx.eat(',');
     Node_UP rhs = get_expression(ctx);
@@ -605,7 +613,7 @@ void parse_tensor_merge(ParseContext &ctx) {
     ctx.push_expression(std::make_unique<nodes::TensorMerge>(std::move(lhs), std::move(rhs), std::move(lambda)));
 }
 
-void parse_tensor_reduce(ParseContext &ctx) {
+void parse_tensor_reduce(ParseContext& ctx) {
     Node_UP child = get_expression(ctx);
     ctx.eat(',');
     auto aggr_name = get_ident(ctx, false);
@@ -618,7 +626,7 @@ void parse_tensor_reduce(ParseContext &ctx) {
     ctx.push_expression(std::make_unique<nodes::TensorReduce>(std::move(child), *maybe_aggr, std::move(dimensions)));
 }
 
-void parse_tensor_rename(ParseContext &ctx) {
+void parse_tensor_rename(ParseContext& ctx) {
     Node_UP child = get_expression(ctx);
     ctx.eat(',');
     auto from = get_idents(ctx);
@@ -634,17 +642,17 @@ void parse_tensor_rename(ParseContext &ctx) {
 }
 
 // '{a:w,x:0}'
-TensorSpec::Address get_tensor_address(ParseContext &ctx, const ValueType &type) {
+TensorSpec::Address get_tensor_address(ParseContext& ctx, const ValueType& type) {
     TensorSpec::Address addr;
     ctx.skip_spaces();
     ctx.eat('{');
     CommaTracker list;
     while (!ctx.find_list_end()) {
         list.maybe_eat_comma(ctx);
-        auto dim_name = get_ident(ctx, false);
+        auto   dim_name = get_ident(ctx, false);
         size_t dim_idx = type.dimension_index(dim_name);
         if (dim_idx != ValueType::Dimension::npos) {
-            const auto &dim = type.dimensions()[dim_idx];
+            const auto& dim = type.dimensions()[dim_idx];
             ctx.skip_spaces();
             ctx.eat(':');
             if (dim.is_mapped()) {
@@ -670,11 +678,11 @@ TensorSpec::Address get_tensor_address(ParseContext &ctx, const ValueType &type)
 
 // pre: 'tensor<float>(a{},x[3]):' -> type
 // expect: '{{a:w,x:0}:1,{a:w,x:1}:2,{a:w,x:2}:3}'
-void parse_tensor_create_verbose(ParseContext &ctx, const ValueType &type) {
+void parse_tensor_create_verbose(ParseContext& ctx, const ValueType& type) {
     ctx.skip_spaces();
     ctx.eat('{');
     nodes::TensorCreate::Spec create_spec;
-    CommaTracker list;
+    CommaTracker              list;
     while (!ctx.find_list_end()) {
         list.maybe_eat_comma(ctx);
         auto address = get_tensor_address(ctx, type);
@@ -688,12 +696,11 @@ void parse_tensor_create_verbose(ParseContext &ctx, const ValueType &type) {
 
 // pre: 'tensor<float>(a{},x[3]):' -> type
 // expect: '{w:[0,1,2]}'
-void parse_tensor_create_convenient(ParseContext &ctx, const ValueType &type,
-                                    const std::vector<ValueType::Dimension> &dim_list)
-{
+void parse_tensor_create_convenient(ParseContext& ctx, const ValueType& type,
+                                    const std::vector<ValueType::Dimension>& dim_list) {
     nodes::TensorCreate::Spec create_spec;
     using Label = TensorSpec::Label;
-    std::vector<Label> addr;
+    std::vector<Label>        addr;
     std::vector<CommaTracker> list;
     for (;;) {
         if (addr.size() == dim_list.size()) {
@@ -720,9 +727,8 @@ void parse_tensor_create_convenient(ParseContext &ctx, const ValueType &type,
         }
         if (list.back().maybe_eat_comma(ctx)) {
             if (addr.back().is_indexed()) {
-                if (++addr.back().index >= dim_list[addr.size()-1].size) {
-                    return ctx.fail(make_string("dimension too large: '%s'",
-                                    dim_list[addr.size()-1].name.c_str()));
+                if (++addr.back().index >= dim_list[addr.size() - 1].size) {
+                    return ctx.fail(make_string("dimension too large: '%s'", dim_list[addr.size() - 1].name.c_str()));
                 }
             }
         }
@@ -734,9 +740,8 @@ void parse_tensor_create_convenient(ParseContext &ctx, const ValueType &type,
     }
 }
 
-void parse_tensor_create(ParseContext &ctx, const ValueType &type,
-                         const std::vector<ValueType::Dimension> &dim_list)
-{
+void parse_tensor_create(ParseContext& ctx, const ValueType& type,
+                         const std::vector<ValueType::Dimension>& dim_list) {
     ctx.skip_spaces();
     ctx.eat(':');
     ParseContext::InputMark before_cells = ctx.get_input_mark();
@@ -753,7 +758,7 @@ void parse_tensor_create(ParseContext &ctx, const ValueType &type,
     }
 }
 
-void parse_tensor_lambda(ParseContext &ctx, const ValueType &type) {
+void parse_tensor_lambda(ParseContext& ctx, const ValueType& type) {
     ImplicitParams params(type.dimension_names());
     ctx.push_resolve_context(params);
     ctx.skip_spaces();
@@ -762,7 +767,7 @@ void parse_tensor_lambda(ParseContext &ctx, const ValueType &type) {
     ctx.eat(')');
     ctx.skip_spaces();
     ctx.pop_resolve_context();
-    auto param_names = params.extract();
+    auto                param_names = params.extract();
     std::vector<size_t> bindings;
     for (size_t i = type.dimensions().size(); i < param_names.size(); ++i) {
         size_t id = ctx.resolve_parameter(param_names[i]);
@@ -775,17 +780,17 @@ void parse_tensor_lambda(ParseContext &ctx, const ValueType &type) {
     ctx.push_expression(std::make_unique<nodes::TensorLambda>(type, std::move(bindings), std::move(function)));
 }
 
-bool maybe_parse_tensor_generator(ParseContext &ctx) {
+bool maybe_parse_tensor_generator(ParseContext& ctx) {
     ParseContext::InputMark my_mark = ctx.get_input_mark();
-    std::string type_spec("tensor");
-    while(!ctx.eos() && (ctx.get() != ')')) {
+    std::string             type_spec("tensor");
+    while (!ctx.eos() && (ctx.get() != ')')) {
         type_spec.push_back(ctx.get());
         ctx.next();
     }
     ctx.eat(')');
     type_spec.push_back(')');
     std::vector<ValueType::Dimension> dim_list;
-    ValueType type = ValueType::from_spec(type_spec, dim_list);
+    ValueType                         type = ValueType::from_spec(type_spec, dim_list);
     ctx.skip_spaces();
     bool is_tensor_generate = ((ctx.get() == ':') || (ctx.get() == '('));
     if (!is_tensor_generate) {
@@ -805,11 +810,11 @@ bool maybe_parse_tensor_generator(ParseContext &ctx) {
 }
 
 // tensor_value <-(bind)- '{d1:1,d2:foo,d3:(a+b)}'
-void parse_tensor_peek(ParseContext &ctx) {
+void parse_tensor_peek(ParseContext& ctx) {
     ctx.skip_spaces();
     ctx.eat('{');
     nodes::TensorPeek::Spec peek_spec;
-    CommaTracker list;
+    CommaTracker            list;
     while (!ctx.find_list_end()) {
         list.maybe_eat_comma(ctx);
         auto dim_name = get_ident(ctx, false);
@@ -835,7 +840,7 @@ void parse_tensor_peek(ParseContext &ctx) {
     ctx.push_expression(std::move(peek));
 }
 
-void parse_tensor_concat(ParseContext &ctx) {
+void parse_tensor_concat(ParseContext& ctx) {
     Node_UP lhs = get_expression(ctx);
     ctx.eat(',');
     Node_UP rhs = get_expression(ctx);
@@ -845,7 +850,7 @@ void parse_tensor_concat(ParseContext &ctx) {
     ctx.push_expression(std::make_unique<nodes::TensorConcat>(std::move(lhs), std::move(rhs), dimension));
 }
 
-void parse_tensor_cell_cast(ParseContext &ctx) {
+void parse_tensor_cell_cast(ParseContext& ctx) {
     Node_UP child = get_expression(ctx);
     ctx.eat(',');
     auto cell_type_name = get_ident(ctx, false);
@@ -858,7 +863,7 @@ void parse_tensor_cell_cast(ParseContext &ctx) {
     }
 }
 
-void parse_tensor_cell_order(ParseContext &ctx) {
+void parse_tensor_cell_order(ParseContext& ctx) {
     Node_UP child = get_expression(ctx);
     ctx.eat(',');
     auto cell_order_str = get_ident(ctx, false);
@@ -871,7 +876,7 @@ void parse_tensor_cell_order(ParseContext &ctx) {
     }
 }
 
-bool maybe_parse_call(ParseContext &ctx, const std::string &name) {
+bool maybe_parse_call(ParseContext& ctx, const std::string& name) {
     ctx.skip_spaces();
     if (ctx.get() == '(') {
         ctx.eat('(');
@@ -912,10 +917,10 @@ bool maybe_parse_call(ParseContext &ctx, const std::string &name) {
     return false;
 }
 
-void parse_symbol_or_call(ParseContext &ctx) {
+void parse_symbol_or_call(ParseContext& ctx) {
     ParseContext::InputMark before_name = ctx.get_input_mark();
-    std::string name = get_ident(ctx, true);
-    bool was_tensor_generate = ((name == "tensor") && maybe_parse_tensor_generator(ctx));
+    std::string             name = get_ident(ctx, true);
+    bool                    was_tensor_generate = ((name == "tensor") && maybe_parse_tensor_generator(ctx));
     if (!was_tensor_generate && !maybe_parse_call(ctx, name)) {
         ctx.extract_symbol(name, before_name);
         if (name.empty()) {
@@ -935,8 +940,7 @@ void parse_symbol_or_call(ParseContext &ctx) {
     }
 }
 
-void parse_in(ParseContext &ctx)
-{
+void parse_in(ParseContext& ctx) {
     ctx.apply_until(nodes::Less());
     auto in = std::make_unique<nodes::In>(ctx.pop_expression());
     ctx.skip_spaces();
@@ -960,7 +964,7 @@ void parse_in(ParseContext &ctx)
     ctx.push_expression(std::move(in));
 }
 
-void parse_value(ParseContext &ctx) {
+void parse_value(ParseContext& ctx) {
     ctx.skip_spaces();
     if (ctx.get() == '-') {
         ctx.next();
@@ -991,11 +995,11 @@ void parse_value(ParseContext &ctx) {
     }
 }
 
-bool parse_operator(ParseContext &ctx) {
+bool parse_operator(ParseContext& ctx) {
     bool expect_value = true;
     ctx.skip_spaces();
-    std::string &str = ctx.peek(ctx.scratch(), nodes::OperatorRepo::instance().max_size());
-    Operator_UP op = nodes::OperatorRepo::instance().create(str);
+    std::string& str = ctx.peek(ctx.scratch(), nodes::OperatorRepo::instance().max_size());
+    Operator_UP  op = nodes::OperatorRepo::instance().create(str);
     if (op.get() != nullptr) {
         ctx.push_operator(std::move(op));
         ctx.skip(str.size());
@@ -1018,9 +1022,9 @@ bool parse_operator(ParseContext &ctx) {
     return expect_value;
 }
 
-void parse_expression(ParseContext &ctx) {
+void parse_expression(ParseContext& ctx) {
     size_t old_mark = ctx.init_expression();
-    bool expect_value = true;
+    bool   expect_value = true;
     for (;;) {
         if (expect_value) {
             parse_value(ctx);
@@ -1032,9 +1036,7 @@ void parse_expression(ParseContext &ctx) {
     }
 }
 
-auto parse_function(const Params &params, std::string_view expression,
-                    const SymbolExtractor *symbol_extractor)
-{
+auto parse_function(const Params& params, std::string_view expression, const SymbolExtractor* symbol_extractor) {
     ParseContext ctx(params, expression.data(), expression.size(), symbol_extractor);
     parse_expression(ctx);
     if (ctx.failed() && params.implicit()) {
@@ -1043,60 +1045,45 @@ auto parse_function(const Params &params, std::string_view expression,
     return Function::create(ctx.get_result(), params.extract());
 }
 
-} // namespace vespalib::<unnamed>
+} // namespace
 
 //-----------------------------------------------------------------------------
 
-bool
-Function::has_error() const
-{
+bool Function::has_error() const {
     auto error = nodes::as<nodes::Error>(*_root);
     return error;
 }
 
-std::string
-Function::get_error() const
-{
+std::string Function::get_error() const {
     auto error = nodes::as<nodes::Error>(*_root);
     return error ? error->message() : "";
 }
 
-std::shared_ptr<Function const>
-Function::create(nodes::Node_UP root_in, std::vector<std::string> params_in)
-{
+std::shared_ptr<Function const> Function::create(nodes::Node_UP root_in, std::vector<std::string> params_in) {
     return std::make_shared<Function const>(std::move(root_in), std::move(params_in), ctor_tag());
 }
 
-std::shared_ptr<Function const>
-Function::parse(std::string_view expression)
-{
+std::shared_ptr<Function const> Function::parse(std::string_view expression) {
     return parse_function(ImplicitParams(), expression, nullptr);
 }
 
-std::shared_ptr<Function const>
-Function::parse(std::string_view expression, const SymbolExtractor &symbol_extractor)
-{
+std::shared_ptr<Function const> Function::parse(std::string_view       expression,
+                                                const SymbolExtractor& symbol_extractor) {
     return parse_function(ImplicitParams(), expression, &symbol_extractor);
 }
 
-std::shared_ptr<Function const>
-Function::parse(const std::vector<std::string> &params, std::string_view expression)
-{
+std::shared_ptr<Function const> Function::parse(const std::vector<std::string>& params, std::string_view expression) {
     return parse_function(ExplicitParams(params), expression, nullptr);
 }
 
-std::shared_ptr<Function const>
-Function::parse(const std::vector<std::string> &params, std::string_view expression,
-                const SymbolExtractor &symbol_extractor)
-{
+std::shared_ptr<Function const> Function::parse(const std::vector<std::string>& params, std::string_view expression,
+                                                const SymbolExtractor& symbol_extractor) {
     return parse_function(ExplicitParams(params), expression, &symbol_extractor);
 }
 
 //-----------------------------------------------------------------------------
 
-std::string
-Function::dump_as_lambda() const
-{
+std::string Function::dump_as_lambda() const {
     std::string lambda = "f(";
     for (size_t i = 0; i < _params.size(); ++i) {
         if (i > 0) {
@@ -1116,29 +1103,28 @@ Function::dump_as_lambda() const
     return lambda;
 }
 
-bool
-Function::unwrap(std::string_view input,
-                 std::string &wrapper,
-                 std::string &body,
-                 std::string &error)
-{
+bool Function::unwrap(std::string_view input, std::string& wrapper, std::string& body, std::string& error) {
     size_t pos = 0;
-    for (; pos < input.size() && std::isspace(static_cast<unsigned char>(input[pos])); ++pos);
+    for (; pos < input.size() && std::isspace(static_cast<unsigned char>(input[pos])); ++pos)
+        ;
     size_t wrapper_begin = pos;
-    for (; pos < input.size() && std::isalpha(static_cast<unsigned char>(input[pos])); ++pos);
+    for (; pos < input.size() && std::isalpha(static_cast<unsigned char>(input[pos])); ++pos)
+        ;
     size_t wrapper_end = pos;
     if (wrapper_end == wrapper_begin) {
         error = "could not extract wrapper name";
         return false;
     }
-    for (; pos < input.size() && std::isspace(static_cast<unsigned char>(input[pos])); ++pos);
+    for (; pos < input.size() && std::isspace(static_cast<unsigned char>(input[pos])); ++pos)
+        ;
     if (pos == input.size() || input[pos] != '(') {
         error = "could not match opening '('";
         return false;
     }
     size_t body_begin = (pos + 1);
     size_t body_end = (input.size() - 1);
-    for (; body_end > body_begin && std::isspace(static_cast<unsigned char>(input[body_end])); --body_end);
+    for (; body_end > body_begin && std::isspace(static_cast<unsigned char>(input[body_end])); --body_end)
+        ;
     if (input[body_end] != ')') {
         error = "could not match closing ')'";
         return false;
@@ -1151,12 +1137,10 @@ Function::unwrap(std::string_view input,
 
 //-----------------------------------------------------------------------------
 
-void
-Function::Issues::add_nested_issues(const std::string &context, const Issues &issues)
-{
-    for (const auto &issue: issues.list) {
+void Function::Issues::add_nested_issues(const std::string& context, const Issues& issues) {
+    for (const auto& issue : issues.list) {
         list.push_back(context + ": " + issue);
     }
 }
 
-}
+} // namespace vespalib::eval

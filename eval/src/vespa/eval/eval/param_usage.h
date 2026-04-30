@@ -18,7 +18,7 @@ class Function;
  * @return expected parameter usage per parameter
  * @param function the function to analyze
  **/
-std::vector<double> count_param_usage(const Function &function);
+std::vector<double> count_param_usage(const Function& function);
 
 /**
  * Calculate the probability that each parameter will be used. Note:
@@ -29,7 +29,7 @@ std::vector<double> count_param_usage(const Function &function);
  * @return parameter usage probability per parameter
  * @param function the function to analyze
  **/
-std::vector<double> check_param_usage(const Function &function);
+std::vector<double> check_param_usage(const Function& function);
 
-} // namespace vespalib::eval
+} // namespace eval
 } // namespace vespalib

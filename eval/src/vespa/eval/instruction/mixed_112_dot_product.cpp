@@ -1,10 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "mixed_112_dot_product.h"
-#include <vespa/eval/eval/fast_value.hpp>
-#include <vespa/vespalib/util/typify.h>
-#include <vespa/vespalib/util/require.h>
+
 #include <vespa/eval/eval/visit_stuff.h>
+#include <vespa/vespalib/util/require.h>
+#include <vespa/vespalib/util/typify.h>
+
+#include <vespa/eval/eval/fast_value.hpp>
+
 #include <algorithm>
 #include <optional>
 
@@ -16,36 +19,32 @@ using namespace instruction;
 
 namespace {
 
-template <typename T, size_t N>
-std::span<const T* const> as_ccar(std::array<T *, N> &array) {
+template <typename T, size_t N> std::span<const T* const> as_ccar(std::array<T*, N>& array) {
     return {array.data(), array.size()};
 }
 
-template <typename T>
-std::span<const T> as_car(T &value) {
+template <typename T> std::span<const T> as_car(T& value) {
     return {&value, 1};
 }
 
-constexpr std::array<size_t, 1> single_dim = { 0 };
+constexpr std::array<size_t, 1> single_dim = {0};
 
 template <typename CT>
-double my_mixed_112_dot_product_fallback(const Value::Index &a_idx, const Value::Index &c_idx,
-                                         const CT *a_cells, const CT *b_cells, const CT *c_cells,
-                                         size_t dense_size) __attribute__((noinline));
+double my_mixed_112_dot_product_fallback(const Value::Index& a_idx, const Value::Index& c_idx, const CT* a_cells,
+                                         const CT* b_cells, const CT* c_cells, size_t dense_size)
+    __attribute__((noinline));
 template <typename CT>
-double my_mixed_112_dot_product_fallback(const Value::Index &a_idx, const Value::Index &c_idx,
-                                         const CT *a_cells, const CT *b_cells, const CT *c_cells,
-                                         size_t dense_size)
-{
-    double result = 0.0;
-    size_t a_space = 0;
-    size_t c_space = 0;
-    std::array<string_id, 1> c_addr;
+double my_mixed_112_dot_product_fallback(const Value::Index& a_idx, const Value::Index& c_idx, const CT* a_cells,
+                                         const CT* b_cells, const CT* c_cells, size_t dense_size) {
+    double                    result = 0.0;
+    size_t                    a_space = 0;
+    size_t                    c_space = 0;
+    std::array<string_id, 1>  c_addr;
     std::array<string_id*, 1> c_addr_ref = {&c_addr[0]};
-    auto outer = a_idx.create_view({});
-    auto model = c_idx.create_view({&single_dim[0], 1});
+    auto                      outer = a_idx.create_view({});
+    auto                      model = c_idx.create_view({&single_dim[0], 1});
     outer->lookup({});
-    using dot_product = DotProduct<CT,CT>;
+    using dot_product = DotProduct<CT, CT>;
     while (outer->next_result(as_car(c_addr_ref[0]), a_space)) {
         model->lookup(as_ccar(c_addr_ref));
         if (model->next_result({}, c_space)) {
@@ -56,35 +55,33 @@ double my_mixed_112_dot_product_fallback(const Value::Index &a_idx, const Value:
 }
 
 template <typename CT>
-double my_fast_mixed_112_dot_product(const FastAddrMap *a_map, const FastAddrMap *c_map,
-                                     const CT *a_cells, const CT *b_cells, const CT *c_cells,
-                                     size_t dense_size)
-{
-    double result = 0.0;
-    const auto &a_labels = a_map->labels();
-    using dot_product = DotProduct<CT,CT>;
+double my_fast_mixed_112_dot_product(const FastAddrMap* a_map, const FastAddrMap* c_map, const CT* a_cells,
+                                     const CT* b_cells, const CT* c_cells, size_t dense_size) {
+    double      result = 0.0;
+    const auto& a_labels = a_map->labels();
+    using dot_product = DotProduct<CT, CT>;
     for (size_t a_space = 0; a_space < a_labels.size(); ++a_space) {
         if (a_cells[a_space] != 0.0) { // handle pseudo-sparse input
             auto c_space = c_map->lookup_singledim(a_labels[a_space]);
             if (c_space != FastAddrMap::npos()) {
-                result += dot_product::apply(b_cells, c_cells + (c_space * dense_size), dense_size) * a_cells[a_space];
+                result +=
+                    dot_product::apply(b_cells, c_cells + (c_space * dense_size), dense_size) * a_cells[a_space];
             }
         }
     }
     return result;
 }
 
-template <typename CT>
-void my_mixed_112_dot_product_op(InterpretedFunction::State &state, uint64_t dense_size) {
-    const auto &a_idx = state.peek(2).index();
-    const auto &c_idx = state.peek(0).index();
-    const CT *a_cells = state.peek(2).cells().unsafe_typify<CT>().data();
-    const CT *b_cells = state.peek(1).cells().unsafe_typify<CT>().data();
-    const CT *c_cells = state.peek(0).cells().unsafe_typify<CT>().data();
-    double result = __builtin_expect(are_fast(a_idx, c_idx), true)
-        ? my_fast_mixed_112_dot_product<CT>(&as_fast(a_idx).map, &as_fast(c_idx).map,
-                                            a_cells, b_cells, c_cells, dense_size)
-        : my_mixed_112_dot_product_fallback<CT>(a_idx, c_idx, a_cells, b_cells, c_cells, dense_size);
+template <typename CT> void my_mixed_112_dot_product_op(InterpretedFunction::State& state, uint64_t dense_size) {
+    const auto& a_idx = state.peek(2).index();
+    const auto& c_idx = state.peek(0).index();
+    const CT*   a_cells = state.peek(2).cells().unsafe_typify<CT>().data();
+    const CT*   b_cells = state.peek(1).cells().unsafe_typify<CT>().data();
+    const CT*   c_cells = state.peek(0).cells().unsafe_typify<CT>().data();
+    double      result = __builtin_expect(are_fast(a_idx, c_idx), true)
+                             ? my_fast_mixed_112_dot_product<CT>(&as_fast(a_idx).map, &as_fast(c_idx).map, a_cells,
+                                                                 b_cells, c_cells, dense_size)
+                             : my_mixed_112_dot_product_fallback<CT>(a_idx, c_idx, a_cells, b_cells, c_cells, dense_size);
     state.pop_pop_pop_push(state.stash.create<DoubleValue>(result));
 }
 
@@ -104,10 +101,10 @@ InterpretedFunction::op_function my_select(CellType cell_type) {
 
 struct InputState {
     std::optional<CellType> cell_type;
-    const TensorFunction *sparse = nullptr;
-    const TensorFunction *dense = nullptr;
-    const TensorFunction *mixed = nullptr;
-    bool failed = false;
+    const TensorFunction*   sparse = nullptr;
+    const TensorFunction*   dense = nullptr;
+    const TensorFunction*   mixed = nullptr;
+    bool                    failed = false;
 
     void collect_cell_type(CellType ct) {
         if (cell_type.has_value()) {
@@ -119,7 +116,7 @@ struct InputState {
         }
     }
 
-    void try_save(const TensorFunction *&my_ptr, const TensorFunction &node) {
+    void try_save(const TensorFunction*& my_ptr, const TensorFunction& node) {
         if (my_ptr == nullptr) {
             my_ptr = &node;
         } else {
@@ -127,8 +124,8 @@ struct InputState {
         }
     }
 
-    void collect(const TensorFunction &node) {
-        const auto &type = node.result_type();
+    void collect(const TensorFunction& node) {
+        const auto& type = node.result_type();
         collect_cell_type(type.cell_type());
         if (type.is_sparse()) {
             try_save(sparse, node);
@@ -151,15 +148,14 @@ struct InputState {
             return false;
         }
         // number of dimensions must match the expected 112 pattern
-        if ((sparse->result_type().dimensions().size() != 1) ||
-            (dense->result_type().dimensions().size() != 1) ||
+        if ((sparse->result_type().dimensions().size() != 1) || (dense->result_type().dimensions().size() != 1) ||
             (mixed->result_type().dimensions().size() != 2))
         {
             return false;
         }
         // the product of the sparse and dense tensors must fully overlap the mixed tensor
-        const ValueType::Dimension *mapped = &mixed->result_type().dimensions()[0];
-        const ValueType::Dimension *indexed = &mixed->result_type().dimensions()[1];
+        const ValueType::Dimension* mapped = &mixed->result_type().dimensions()[0];
+        const ValueType::Dimension* indexed = &mixed->result_type().dimensions()[1];
         if (!mapped->is_mapped()) {
             std::swap(mapped, indexed);
         }
@@ -173,11 +169,11 @@ struct InputState {
 // Try to find inputs that form a 112 mixed dot product.
 
 struct FindInputs {
-    const TensorFunction *a = nullptr;
-    const TensorFunction *b = nullptr;
-    const TensorFunction *c = nullptr;
+    const TensorFunction* a = nullptr;
+    const TensorFunction* b = nullptr;
+    const TensorFunction* c = nullptr;
 
-    bool try_match(const TensorFunction &one, const TensorFunction &two) {
+    bool try_match(const TensorFunction& one, const TensorFunction& two) {
         auto join = as<Join>(two);
         if (join && (join->function() == Mul::f)) {
             InputState state;
@@ -195,21 +191,14 @@ struct FindInputs {
     }
 };
 
-} // namespace <unnamed>
+} // namespace
 
-Mixed112DotProduct::Mixed112DotProduct(const TensorFunction &a_in,
-                                       const TensorFunction &b_in,
-                                       const TensorFunction &c_in)
-  : tensor_function::Node(DoubleValue::shared_type()),
-    _a(a_in),
-    _b(b_in),
-    _c(c_in)
-{
+Mixed112DotProduct::Mixed112DotProduct(const TensorFunction& a_in, const TensorFunction& b_in,
+                                       const TensorFunction& c_in)
+    : tensor_function::Node(DoubleValue::shared_type()), _a(a_in), _b(b_in), _c(c_in) {
 }
 
-InterpretedFunction::Instruction
-Mixed112DotProduct::compile_self(const ValueBuilderFactory &, Stash &) const
-{
+InterpretedFunction::Instruction Mixed112DotProduct::compile_self(const ValueBuilderFactory&, Stash&) const {
     REQUIRE_EQ(_a.get().result_type().cell_type(), _b.get().result_type().cell_type());
     REQUIRE_EQ(_a.get().result_type().cell_type(), _c.get().result_type().cell_type());
     REQUIRE_EQ(_b.get().result_type().dense_subspace_size(), _c.get().result_type().dense_subspace_size());
@@ -217,33 +206,25 @@ Mixed112DotProduct::compile_self(const ValueBuilderFactory &, Stash &) const
     return InterpretedFunction::Instruction(op, _c.get().result_type().dense_subspace_size());
 }
 
-void
-Mixed112DotProduct::push_children(std::vector<Child::CREF> &children) const
-{
+void Mixed112DotProduct::push_children(std::vector<Child::CREF>& children) const {
     children.emplace_back(_a);
     children.emplace_back(_b);
     children.emplace_back(_c);
 }
 
-void
-Mixed112DotProduct::visit_children(vespalib::ObjectVisitor &visitor) const
-{
+void Mixed112DotProduct::visit_children(vespalib::ObjectVisitor& visitor) const {
     ::visit(visitor, "a", _a.get());
     ::visit(visitor, "b", _b.get());
     ::visit(visitor, "c", _c.get());
 }
 
-const TensorFunction &
-Mixed112DotProduct::optimize(const TensorFunction &expr, Stash &stash)
-{
+const TensorFunction& Mixed112DotProduct::optimize(const TensorFunction& expr, Stash& stash) {
     auto reduce = as<Reduce>(expr);
     if (reduce && (reduce->aggr() == Aggr::SUM) && expr.result_type().is_double()) {
         auto join = as<Join>(reduce->child());
         if (join && (join->function() == Mul::f)) {
             FindInputs inputs;
-            if (inputs.try_match(join->lhs(), join->rhs()) ||
-                inputs.try_match(join->rhs(), join->lhs()))
-            {
+            if (inputs.try_match(join->lhs(), join->rhs()) || inputs.try_match(join->rhs(), join->lhs())) {
                 return stash.create<Mixed112DotProduct>(*inputs.a, *inputs.b, *inputs.c);
             }
         }
@@ -251,4 +232,4 @@ Mixed112DotProduct::optimize(const TensorFunction &expr, Stash &stash)
     return expr;
 }
 
-} // namespace
+} // namespace vespalib::eval

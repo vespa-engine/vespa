@@ -1,14 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "call_nodes.h"
+
 #include "node_visitor.h"
 
 namespace vespalib::eval::nodes {
 
 Call::~Call() = default;
 
-
-template <typename T> void CallHelper<T>::accept(NodeVisitor &visitor) const {
+template <typename T> void CallHelper<T>::accept(NodeVisitor& visitor) const {
     visitor.visit(static_cast<const T&>(*this));
 }
 
@@ -45,4 +45,4 @@ CallRepo::CallRepo() : _map() {
     add(nodes::Hamming());
 }
 
-}
+} // namespace vespalib::eval::nodes

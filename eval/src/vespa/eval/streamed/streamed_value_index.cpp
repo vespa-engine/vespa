@@ -1,11 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "streamed_value_index.h"
+
 #include "streamed_value_utils.h"
 
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/visit_ranges.h>
+
 #include <vespa/log/log.h>
 
 LOG_SETUP(".searchlib.tensor.streamed_value_index");
@@ -14,17 +16,13 @@ namespace vespalib::eval {
 
 namespace {
 
-struct StreamedFilterView : Value::Index::View
-{
-    LabelBlockStream label_blocks;
-    std::vector<size_t> view_dims;
+struct StreamedFilterView : Value::Index::View {
+    LabelBlockStream       label_blocks;
+    std::vector<size_t>    view_dims;
     std::vector<string_id> to_match;
 
     StreamedFilterView(LabelBlockStream labels, std::span<const size_t> view_dims_in)
-      : label_blocks(std::move(labels)),
-        view_dims(view_dims_in.begin(), view_dims_in.end()),
-        to_match()
-    {
+        : label_blocks(std::move(labels)), view_dims(view_dims_in.begin(), view_dims_in.end()), to_match() {
         to_match.reserve(view_dims.size());
     }
 
@@ -37,10 +35,10 @@ struct StreamedFilterView : Value::Index::View
         assert(view_dims.size() == to_match.size());
     }
 
-    bool next_result(std::span<string_id* const> addr_out, size_t &idx_out) override {
+    bool next_result(std::span<string_id* const> addr_out, size_t& idx_out) override {
         while (const auto block = label_blocks.next_block()) {
             idx_out = block.subspace_index;
-            bool matches = true;
+            bool   matches = true;
             size_t out_idx = 0;
             size_t vdm_idx = 0;
             for (size_t dim = 0; dim < block.address.size(); ++dim) {
@@ -52,26 +50,24 @@ struct StreamedFilterView : Value::Index::View
             }
             assert(out_idx == addr_out.size());
             assert(vdm_idx == view_dims.size());
-            if (matches) return true;
+            if (matches)
+                return true;
         }
         return false;
     }
 };
 
-struct StreamedIterationView : Value::Index::View
-{
+struct StreamedIterationView : Value::Index::View {
     LabelBlockStream label_blocks;
 
-    StreamedIterationView(LabelBlockStream labels)
-      : label_blocks(std::move(labels))
-    {}
+    StreamedIterationView(LabelBlockStream labels) : label_blocks(std::move(labels)) {}
 
     void lookup(std::span<const string_id* const> addr) override {
         label_blocks.reset();
         assert(addr.size() == 0);
     }
 
-    bool next_result(std::span<string_id* const> addr_out, size_t &idx_out) override {
+    bool next_result(std::span<string_id* const> addr_out, size_t& idx_out) override {
         if (auto block = label_blocks.next_block()) {
             idx_out = block.subspace_index;
             size_t i = 0;
@@ -85,11 +81,9 @@ struct StreamedIterationView : Value::Index::View
     }
 };
 
-} // namespace <unnamed>
+} // namespace
 
-std::unique_ptr<Value::Index::View>
-StreamedValueIndex::create_view(std::span<const size_t> dims) const
-{
+std::unique_ptr<Value::Index::View> StreamedValueIndex::create_view(std::span<const size_t> dims) const {
     LabelBlockStream label_stream(_num_subspaces, _labels_ref, _num_mapped_dims);
     if (dims.empty()) {
         return std::make_unique<StreamedIterationView>(std::move(label_stream));

@@ -1,17 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "tensor_spec.h"
+
 #include "array_array_map.h"
 #include "function.h"
 #include "value.h"
 #include "value_codec.h"
 #include "value_type.h"
-#include <vespa/vespalib/util/require.h>
-#include <vespa/vespalib/util/overload.h>
-#include <vespa/vespalib/util/visit_ranges.h>
-#include <vespa/vespalib/util/stringfmt.h>
+
 #include <vespa/eval/eval/test/reference_evaluation.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/util/overload.h>
+#include <vespa/vespalib/util/require.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/visit_ranges.h>
+
 #include <ostream>
 #include <ranges>
 
@@ -19,7 +22,7 @@ namespace vespalib::eval {
 
 namespace {
 
-std::string number_to_expr(double value) { 
+std::string number_to_expr(double value) {
     if (std::isfinite(value)) {
         return make_string("%g", value);
     } else if (std::isnan(value)) {
@@ -33,10 +36,10 @@ std::string number_to_expr(double value) {
     }
 }
 
-TensorSpec::Address extract_address(const slime::Inspector &address) {
+TensorSpec::Address extract_address(const slime::Inspector& address) {
     struct Extractor : slime::ObjectTraverser {
         TensorSpec::Address address;
-        void field(const Memory &dimension, const slime::Inspector &label) override {
+        void field(const Memory& dimension, const slime::Inspector& label) override {
             if (label.type().getId() == slime::STRING::ID) {
                 address.emplace(dimension.make_string(), TensorSpec::Label(label.asString().make_string()));
             } else if (label.type().getId() == slime::LONG::ID) {
@@ -49,10 +52,10 @@ TensorSpec::Address extract_address(const slime::Inspector &address) {
     return extractor.address;
 }
 
-std::string addr_to_compact_string(const TensorSpec::Address &addr) {
-    size_t n = 0;
+std::string addr_to_compact_string(const TensorSpec::Address& addr) {
+    size_t      n = 0;
     std::string str("[");
-    for (const auto &[dim, label]: addr) {
+    for (const auto& [dim, label] : addr) {
         if (n++) {
             str.append(",");
         }
@@ -66,7 +69,7 @@ std::string addr_to_compact_string(const TensorSpec::Address &addr) {
     return str;
 }
 
-std::string value_to_verbose_string(const TensorSpec::Value &value) {
+std::string value_to_verbose_string(const TensorSpec::Value& value) {
     return make_string("%g (%a)", value.value, value.value);
 }
 
@@ -78,58 +81,39 @@ struct DiffTable {
         Entry(const std::string& tag_in, const std::string& lhs_in, const std::string& rhs_in);
         Entry(const Entry&);
         Entry(Entry&&) noexcept = default;
-        bool is_separator() const {
-            return (tag.empty() && lhs.empty() && rhs.empty());
-        }
-        static Entry separator() { return {"","",""}; }
-        static Entry header(const std::string &lhs_desc,
-                            const std::string &rhs_desc)
-        {
+        bool is_separator() const { return (tag.empty() && lhs.empty() && rhs.empty()); }
+        static Entry separator() { return {"", "", ""}; }
+        static Entry header(const std::string& lhs_desc, const std::string& rhs_desc) {
             return {"", lhs_desc, rhs_desc};
         }
-        static Entry only_lhs(const TensorSpec::Address &addr,
-                              const TensorSpec::Value &lhs)
-        {
-            return {addr_to_compact_string(addr),
-                    value_to_verbose_string(lhs),
-                    "<missing>"};
+        static Entry only_lhs(const TensorSpec::Address& addr, const TensorSpec::Value& lhs) {
+            return {addr_to_compact_string(addr), value_to_verbose_string(lhs), "<missing>"};
         }
-        static Entry only_rhs(const TensorSpec::Address &addr,
-                              const TensorSpec::Value &rhs)
-        {
-            return {addr_to_compact_string(addr),
-                    "<missing>",
-                    value_to_verbose_string(rhs)};
+        static Entry only_rhs(const TensorSpec::Address& addr, const TensorSpec::Value& rhs) {
+            return {addr_to_compact_string(addr), "<missing>", value_to_verbose_string(rhs)};
         }
-        static Entry value_mismatch(const TensorSpec::Address &addr,
-                                    const TensorSpec::Value &lhs,
-                                    const TensorSpec::Value &rhs)
-        {
-            return {addr_to_compact_string(addr),
-                    value_to_verbose_string(lhs),
-                    value_to_verbose_string(rhs)};
+        static Entry value_mismatch(const TensorSpec::Address& addr, const TensorSpec::Value& lhs,
+                                    const TensorSpec::Value& rhs) {
+            return {addr_to_compact_string(addr), value_to_verbose_string(lhs), value_to_verbose_string(rhs)};
         }
         ~Entry();
     };
     struct Result {
-        size_t tag_len;
-        size_t lhs_len;
-        size_t rhs_len;
+        size_t      tag_len;
+        size_t      lhs_len;
+        size_t      rhs_len;
         std::string str;
         Result(size_t tag_len_in, size_t lhs_len_in, size_t rhs_len_in)
-          : tag_len(tag_len_in + 1), lhs_len(lhs_len_in + 1), rhs_len(rhs_len_in + 1),
-            str() {}
-        void add(const std::string &stuff) {
-            str.append(stuff);
-        }
-        void add(const std::string &stuff, size_t width, char pad = ' ') {
+            : tag_len(tag_len_in + 1), lhs_len(lhs_len_in + 1), rhs_len(rhs_len_in + 1), str() {}
+        void add(const std::string& stuff) { str.append(stuff); }
+        void add(const std::string& stuff, size_t width, char pad = ' ') {
             int n = (width - stuff.size());
             for (int i = 0; i < n; ++i) {
                 str.push_back(pad);
             }
             str.append(stuff);
         }
-        void add(const Entry &entry) {
+        void add(const Entry& entry) {
             if (entry.is_separator()) {
                 add("+");
                 add("", tag_len, '-');
@@ -149,11 +133,11 @@ struct DiffTable {
             }
         }
     };
-    size_t tag_len = 0;
-    size_t lhs_len = 0;
-    size_t rhs_len = 0;
+    size_t             tag_len = 0;
+    size_t             lhs_len = 0;
+    size_t             rhs_len = 0;
     std::vector<Entry> entries;
-    void add(const Entry &entry) {
+    void add(const Entry& entry) {
         tag_len = std::max(tag_len, entry.tag.size());
         lhs_len = std::max(lhs_len, entry.lhs.size());
         rhs_len = std::max(rhs_len, entry.rhs.size());
@@ -161,7 +145,7 @@ struct DiffTable {
     }
     std::string to_string() {
         Result res(tag_len, lhs_len, rhs_len);
-        for (const auto &entry: entries) {
+        for (const auto& entry : entries) {
             res.add(entry);
         }
         return std::move(res.str);
@@ -169,10 +153,7 @@ struct DiffTable {
 };
 
 DiffTable::Entry::Entry(const std::string& tag_in, const std::string& lhs_in, const std::string& rhs_in)
-    : tag(tag_in),
-      lhs(lhs_in),
-      rhs(rhs_in)
-{
+    : tag(tag_in), lhs(lhs_in), rhs(rhs_in) {
 }
 
 DiffTable::Entry::Entry(const Entry&) = default;
@@ -183,18 +164,17 @@ struct NormalizeTensorSpec {
      * This is basically value_from_spec() + spec_from_value()
      * implementation, taken from value_codec.cpp
      */
-    template <typename T>
-    static TensorSpec invoke(const ValueType &type, const TensorSpec &spec) {
-        size_t dense_size = type.dense_subspace_size();
-        size_t num_mapped_dims = type.count_mapped_dimensions();
-        size_t max_subspaces = std::max(spec.cells().size() / dense_size, size_t(1));
-        ArrayArrayMap<std::string_view,T> map(num_mapped_dims, dense_size, max_subspaces);
-        std::vector<std::string_view> sparse_key;
-        for (const auto &entry: spec.cells()) {
+    template <typename T> static TensorSpec invoke(const ValueType& type, const TensorSpec& spec) {
+        size_t                             dense_size = type.dense_subspace_size();
+        size_t                             num_mapped_dims = type.count_mapped_dimensions();
+        size_t                             max_subspaces = std::max(spec.cells().size() / dense_size, size_t(1));
+        ArrayArrayMap<std::string_view, T> map(num_mapped_dims, dense_size, max_subspaces);
+        std::vector<std::string_view>      sparse_key;
+        for (const auto& entry : spec.cells()) {
             sparse_key.clear();
             size_t dense_key = 0;
-            auto binding = entry.first.begin();
-            for (const auto &dim : type.dimensions()) {
+            auto   binding = entry.first.begin();
+            for (const auto& dim : type.dimensions()) {
                 REQUIRE(binding != entry.first.end());
                 REQUIRE(dim.name == binding->first);
                 REQUIRE(dim.is_mapped() == binding->second.is_mapped());
@@ -216,59 +196,52 @@ struct NormalizeTensorSpec {
             map.add_entry(std::span<const std::string_view>());
         }
         TensorSpec result(type.to_spec());
-        map.each_entry([&](const auto &keys, const auto &values)
-                       {
-                           auto sparse_addr_iter = keys.begin();
-                           TensorSpec::Address address;
-                           for (const auto &dim : type.dimensions()) {
-                               if (dim.is_mapped()) {
-                                   address.emplace(dim.name, std::string(*sparse_addr_iter++));
-                               }
-                           }
-                           REQUIRE(sparse_addr_iter == keys.end());
-                           for (size_t i = 0; i < values.size(); ++i) {
-                               size_t dense_key = i;
-                               for (const auto & dim : std::ranges::reverse_view(type.dimensions())) {
-                                   if (dim.is_indexed()) {
-                                       size_t label = dense_key % dim.size;
-                                       address.emplace(dim.name, label).first->second = TensorSpec::Label(label);
-                                       dense_key /= dim.size;
-                                   }
-                               }
-                               result.add(address, values[i]);
-                           }
-                       });
+        map.each_entry([&](const auto& keys, const auto& values) {
+            auto                sparse_addr_iter = keys.begin();
+            TensorSpec::Address address;
+            for (const auto& dim : type.dimensions()) {
+                if (dim.is_mapped()) {
+                    address.emplace(dim.name, std::string(*sparse_addr_iter++));
+                }
+            }
+            REQUIRE(sparse_addr_iter == keys.end());
+            for (size_t i = 0; i < values.size(); ++i) {
+                size_t dense_key = i;
+                for (const auto& dim : std::ranges::reverse_view(type.dimensions())) {
+                    if (dim.is_indexed()) {
+                        size_t label = dense_key % dim.size;
+                        address.emplace(dim.name, label).first->second = TensorSpec::Label(label);
+                        dense_key /= dim.size;
+                    }
+                }
+                result.add(address, values[i]);
+            }
+        });
         return result;
     }
 };
 
-} // namespace vespalib::eval::<unnamed>
+} // namespace
 
+TensorSpec::TensorSpec(std::string type_spec) noexcept : _type(std::move(type_spec)), _cells() {
+}
 
-TensorSpec::TensorSpec(std::string type_spec) noexcept
-    : _type(std::move(type_spec)),
-      _cells()
-{ }
-
-TensorSpec::TensorSpec(const TensorSpec &) = default;
-TensorSpec & TensorSpec::operator = (const TensorSpec &) = default;
+TensorSpec::TensorSpec(const TensorSpec&) = default;
+TensorSpec& TensorSpec::operator=(const TensorSpec&) = default;
 
 TensorSpec::~TensorSpec() = default;
 
-double
-TensorSpec::as_double() const
-{
+double TensorSpec::as_double() const {
     double result = 0.0;
-    for (const auto &[key, value]: _cells) {
+    for (const auto& [key, value] : _cells) {
         result += value.value;
     }
     return result;
 }
 
-TensorSpec &
-TensorSpec::add(Address address, double value) {
+TensorSpec& TensorSpec::add(Address address, double value) {
     auto [iter, inserted] = _cells.emplace(std::move(address), value);
-    if (! inserted) {
+    if (!inserted) {
         // to simplify reference implementations, allow
         // adding the same address several times to a Spec, but
         // only with the same value every time:
@@ -277,26 +250,22 @@ TensorSpec::add(Address address, double value) {
     return *this;
 }
 
-std::string
-TensorSpec::to_string() const
-{
+std::string TensorSpec::to_string() const {
     std::string out = make_string("spec(%s) {\n", _type.c_str());
-    for (const auto &cell: _cells) {
+    for (const auto& cell : _cells) {
         out.append(make_string("  %s: %g\n", addr_to_compact_string(cell.first).c_str(), cell.second.value));
     }
     out.append("}");
     return out;
 }
 
-void
-TensorSpec::to_slime(slime::Cursor &tensor) const
-{
+void TensorSpec::to_slime(slime::Cursor& tensor) const {
     tensor.setString("type", _type);
-    slime::Cursor &cells = tensor.setArray("cells");
-    for (const auto &my_cell: _cells) {
-        slime::Cursor &cell = cells.addObject();
-        slime::Cursor &address = cell.setObject("address");
-        for (const auto &label: my_cell.first) {
+    slime::Cursor& cells = tensor.setArray("cells");
+    for (const auto& my_cell : _cells) {
+        slime::Cursor& cell = cells.addObject();
+        slime::Cursor& address = cell.setObject("address");
+        for (const auto& label : my_cell.first) {
             if (label.second.is_mapped()) {
                 address.setString(label.first, label.second.name);
             } else {
@@ -307,16 +276,14 @@ TensorSpec::to_slime(slime::Cursor &tensor) const
     }
 }
 
-std::string
-TensorSpec::to_expr() const
-{
+std::string TensorSpec::to_expr() const {
     if (_type == "double") {
         return number_to_expr(as_double());
     }
     std::string out = _type;
     out.append(":{");
     CommaTracker cell_list;
-    for (const auto &cell: _cells) {
+    for (const auto& cell : _cells) {
         cell_list.maybe_add_comma(out);
         out.append(make_string("%s:%s", as_string(cell.first).c_str(), number_to_expr(cell.second.value).c_str()));
     }
@@ -324,28 +291,22 @@ TensorSpec::to_expr() const
     return out;
 }
 
-TensorSpec
-TensorSpec::from_slime(const slime::Inspector &tensor)
-{
-    TensorSpec spec(tensor["type"].asString().make_string());
-    const slime::Inspector &cells = tensor["cells"];
+TensorSpec TensorSpec::from_slime(const slime::Inspector& tensor) {
+    TensorSpec              spec(tensor["type"].asString().make_string());
+    const slime::Inspector& cells = tensor["cells"];
     for (size_t i = 0; i < cells.entries(); ++i) {
-        const slime::Inspector &cell = cells[i];
-        Address address = extract_address(cell["address"]);
+        const slime::Inspector& cell = cells[i];
+        Address                 address = extract_address(cell["address"]);
         spec.add(address, cell["value"].asDouble());
     }
     return spec;
 }
 
-TensorSpec
-TensorSpec::from_value(const eval::Value &value)
-{
+TensorSpec TensorSpec::from_value(const eval::Value& value) {
     return spec_from_value(value);
 }
 
-TensorSpec
-TensorSpec::from_expr(const std::string &expr)
-{
+TensorSpec TensorSpec::from_expr(const std::string& expr) {
     auto fun = Function::parse(expr);
     if (!fun->has_error() && (fun->num_params() == 0)) {
         return test::ReferenceEvaluation::eval(*fun, {});
@@ -353,58 +314,48 @@ TensorSpec::from_expr(const std::string &expr)
     return TensorSpec("error");
 }
 
-bool
-operator==(const TensorSpec &lhs, const TensorSpec &rhs)
-{
-    return ((lhs.type() == rhs.type()) &&
-            (lhs.cells() == rhs.cells()));
+bool operator==(const TensorSpec& lhs, const TensorSpec& rhs) {
+    return ((lhs.type() == rhs.type()) && (lhs.cells() == rhs.cells()));
 }
 
-std::ostream &
-operator<<(std::ostream &out, const TensorSpec &spec)
-{
+std::ostream& operator<<(std::ostream& out, const TensorSpec& spec) {
     out << spec.to_string();
     return out;
 }
 
-TensorSpec
-TensorSpec::normalize() const
-{
+TensorSpec TensorSpec::normalize() const {
     ValueType my_type = ValueType::from_spec(type());
     if (my_type.is_error()) {
         return TensorSpec(my_type.to_spec());
     }
     try {
-        return typify_invoke<1,TypifyCellType,NormalizeTensorSpec>(my_type.cell_type(), my_type, *this);
-    } catch (RequireFailedException &e) {
+        return typify_invoke<1, TypifyCellType, NormalizeTensorSpec>(my_type.cell_type(), my_type, *this);
+    } catch (RequireFailedException& e) {
         fprintf(stderr, "TensorSpec::normalize: invalid spec: %s\n", to_string().c_str());
         assert(false); // preserve crashing behavior
     }
 }
 
-std::string
-TensorSpec::diff(const TensorSpec &lhs, const std::string &lhs_desc,
-                 const TensorSpec &rhs, const std::string &rhs_desc)
-{
+std::string TensorSpec::diff(const TensorSpec& lhs, const std::string& lhs_desc, const TensorSpec& rhs,
+                             const std::string& rhs_desc) {
     using Entry = DiffTable::Entry;
     DiffTable table;
     table.add(Entry::separator());
     table.add(Entry::header(lhs_desc, rhs_desc));
     table.add(Entry::header(lhs.type(), rhs.type()));
-    auto visitor = overload {
-        [&](visit_ranges_first, const auto &a) { table.add(Entry::only_lhs(a.first, a.second)); },
-        [&](visit_ranges_second, const auto &b) { table.add(Entry::only_rhs(b.first, b.second)); },
-        [&](visit_ranges_both, const auto &a, const auto &b) {
-            if (!(a.second == b.second)) {
-                table.add(Entry::value_mismatch(a.first, a.second, b.second));
-            }
-        }
-    };
+    auto visitor =
+        overload{[&](visit_ranges_first, const auto& a) { table.add(Entry::only_lhs(a.first, a.second)); },
+                 [&](visit_ranges_second, const auto& b) { table.add(Entry::only_rhs(b.first, b.second)); },
+                 [&](visit_ranges_both, const auto& a, const auto& b) {
+                     if (!(a.second == b.second)) {
+                         table.add(Entry::value_mismatch(a.first, a.second, b.second));
+                     }
+                 }};
     table.add(Entry::separator());
     visit_ranges(visitor, lhs._cells.begin(), lhs._cells.end(), rhs._cells.begin(), rhs._cells.end(),
-                 [](const auto &a, const auto &b){ return (a.first < b.first); });
+                 [](const auto& a, const auto& b) { return (a.first < b.first); });
     table.add(Entry::separator());
     return table.to_string();
 }
 
-}
+} // namespace vespalib::eval

@@ -3,38 +3,35 @@
 #pragma once
 
 #include "streamed_value.h"
+
 #include <vespa/eval/eval/value_builder_factory.h>
 #include <vespa/vespalib/util/shared_string_repo.h>
 
 namespace vespalib::eval {
 
- /**
-  *  Builder for StreamedValue objects.
-  **/
-template <typename T>
-class StreamedValueBuilder : public ValueBuilder<T>
-{
+/**
+ *  Builder for StreamedValue objects.
+ **/
+template <typename T> class StreamedValueBuilder : public ValueBuilder<T> {
 private:
     using Handles = SharedStringRepo::Handles;
 
-    ValueType _type;
-    size_t _num_mapped_dimensions;
-    size_t _dense_subspace_size;
+    ValueType      _type;
+    size_t         _num_mapped_dimensions;
+    size_t         _dense_subspace_size;
     std::vector<T> _cells;
-    size_t _num_subspaces;
-    Handles _labels;
+    size_t         _num_subspaces;
+    Handles        _labels;
+
 public:
-    StreamedValueBuilder(const ValueType &type,
-                         size_t num_mapped_in,
-                         size_t subspace_size_in,
+    StreamedValueBuilder(const ValueType& type, size_t num_mapped_in, size_t subspace_size_in,
                          size_t expected_subspaces)
-      : _type(type),
-        _num_mapped_dimensions(num_mapped_in),
-        _dense_subspace_size(subspace_size_in),
-        _cells(),
-        _num_subspaces(0),
-        _labels()
-    {
+        : _type(type),
+          _num_mapped_dimensions(num_mapped_in),
+          _dense_subspace_size(subspace_size_in),
+          _cells(),
+          _num_subspaces(0),
+          _labels() {
         _cells.reserve(subspace_size_in * expected_subspaces);
         _labels.reserve(num_mapped_in * expected_subspaces);
     };
@@ -66,13 +63,9 @@ public:
             assert(_num_subspaces == 1);
         }
         assert(_num_subspaces * _dense_subspace_size == _cells.size());
-        return std::make_unique<StreamedValue<T>>(std::move(_type),
-                                                  _num_mapped_dimensions,
-                                                  std::move(_cells),
-                                                  _num_subspaces,
-                                                  std::move(_labels));
+        return std::make_unique<StreamedValue<T>>(std::move(_type), _num_mapped_dimensions, std::move(_cells),
+                                                  _num_subspaces, std::move(_labels));
     }
-
 };
 
-} // namespace
+} // namespace vespalib::eval

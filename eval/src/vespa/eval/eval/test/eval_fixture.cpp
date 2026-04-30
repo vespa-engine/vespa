@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "eval_fixture.h"
+
 #include "reference_evaluation.h"
+
 #include <vespa/eval/eval/make_tensor_function.h>
-#include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/optimize_tensor_function.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 using vespalib::make_string_short::fmt;
@@ -23,7 +25,7 @@ std::shared_ptr<Function const> verify_function(std::shared_ptr<Function const> 
     return fun;
 }
 
-NodeTypes get_types(const Function &function, const ParamRepo &param_repo) {
+NodeTypes get_types(const Function& function, const ParamRepo& param_repo) {
     std::vector<ValueType> param_types;
     for (size_t i = 0; i < function.num_params(); ++i) {
         auto pos = param_repo.map.find(function.param_name(i));
@@ -36,7 +38,7 @@ NodeTypes get_types(const Function &function, const ParamRepo &param_repo) {
     }
     NodeTypes node_types(function, param_types);
     if (!node_types.errors().empty()) {
-        for (const auto &msg: node_types.errors()) {
+        for (const auto& msg : node_types.errors()) {
             fprintf(stderr, "eval_fixture: type error: %s\n", msg.c_str());
         }
     }
@@ -44,7 +46,7 @@ NodeTypes get_types(const Function &function, const ParamRepo &param_repo) {
     return node_types;
 }
 
-std::set<size_t> get_mutable(const Function &function, const ParamRepo &param_repo) {
+std::set<size_t> get_mutable(const Function& function, const ParamRepo& param_repo) {
     std::set<size_t> mutable_set;
     for (size_t i = 0; i < function.num_params(); ++i) {
         auto pos = param_repo.map.find(function.param_name(i));
@@ -57,29 +59,26 @@ std::set<size_t> get_mutable(const Function &function, const ParamRepo &param_re
 }
 
 struct MyMutableInject : public tensor_function::Inject {
-    MyMutableInject(const ValueType &result_type_in, size_t param_idx_in)
-        : Inject(result_type_in, param_idx_in) {}
+    MyMutableInject(const ValueType& result_type_in, size_t param_idx_in) : Inject(result_type_in, param_idx_in) {}
     bool result_is_mutable() const override { return true; }
 };
 
-const TensorFunction &maybe_patch(bool allow_mutable, const TensorFunction &plain_fun, const std::set<size_t> &mutable_set, Stash &stash) {
+const TensorFunction& maybe_patch(bool allow_mutable, const TensorFunction& plain_fun,
+                                  const std::set<size_t>& mutable_set, Stash& stash) {
     if (!allow_mutable) {
         return plain_fun;
     }
-    auto optimizer = [&mutable_set](const TensorFunction &node, Stash &my_stash)->const TensorFunction &{
-                         if (auto inject = as<tensor_function::Inject>(node);
-                             inject && mutable_set.count(inject->param_idx()) > 0)
-                         {
-                             return my_stash.create<MyMutableInject>(inject->result_type(), inject->param_idx());
-                         }
-                         return node;
-                     };
+    auto optimizer = [&mutable_set](const TensorFunction& node, Stash& my_stash) -> const TensorFunction& {
+        if (auto inject = as<tensor_function::Inject>(node); inject && mutable_set.count(inject->param_idx()) > 0) {
+            return my_stash.create<MyMutableInject>(inject->result_type(), inject->param_idx());
+        }
+        return node;
+    };
     return apply_tensor_function_optimizer(plain_fun, optimizer, stash);
 }
 
-std::vector<Value::UP> make_params(const ValueBuilderFactory &factory, const Function &function,
-                                   const ParamRepo &param_repo)
-{
+std::vector<Value::UP> make_params(const ValueBuilderFactory& factory, const Function& function,
+                                   const ParamRepo& param_repo) {
     std::vector<Value::UP> result;
     for (size_t i = 0; i < function.num_params(); ++i) {
         auto pos = param_repo.map.find(function.param_name(i));
@@ -89,37 +88,30 @@ std::vector<Value::UP> make_params(const ValueBuilderFactory &factory, const Fun
     return result;
 }
 
-std::vector<Value::CREF> get_refs(const std::vector<Value::UP> &values) {
+std::vector<Value::CREF> get_refs(const std::vector<Value::UP>& values) {
     std::vector<Value::CREF> result;
-    for (const auto &value: values) {
+    for (const auto& value : values) {
         result.emplace_back(*value);
     }
     return result;
 }
 
-} // namespace vespalib::eval::test
+} // namespace
 
-ParamRepo &
-EvalFixture::ParamRepo::add(const std::string &name, TensorSpec value)
-{
+ParamRepo& EvalFixture::ParamRepo::add(const std::string& name, TensorSpec value) {
     REQUIRE(map.find(name) == map.end());
     map.insert_or_assign(name, Param(std::move(value), false));
     return *this;
 }
 
-ParamRepo &
-EvalFixture::ParamRepo::add_mutable(const std::string &name, TensorSpec value)
-{
+ParamRepo& EvalFixture::ParamRepo::add_mutable(const std::string& name, TensorSpec value) {
     REQUIRE(map.find(name) == map.end());
     map.insert_or_assign(name, Param(std::move(value), true));
     return *this;
 }
 
 // produce 4 variants: float/double * mutable/const
-EvalFixture::ParamRepo &
-EvalFixture::ParamRepo::add_variants(const std::string &name_base,
-                                     const GenSpec &spec)
-{
+EvalFixture::ParamRepo& EvalFixture::ParamRepo::add_variants(const std::string& name_base, const GenSpec& spec) {
     auto name_f = name_base + "_f";
     auto name_m = "@" + name_base;
     auto name_m_f = "@" + name_base + "_f";
@@ -132,10 +124,8 @@ EvalFixture::ParamRepo::add_variants(const std::string &name_base,
     return *this;
 }
 
-EvalFixture::ParamRepo &
-EvalFixture::ParamRepo::add(const std::string &name, const std::string &desc,
-                            CellType cell_type, GenSpec::seq_t seq)
-{
+EvalFixture::ParamRepo& EvalFixture::ParamRepo::add(const std::string& name, const std::string& desc,
+                                                    CellType cell_type, GenSpec::seq_t seq) {
     bool is_mutable = ((!desc.empty()) && (desc[0] == '@'));
     if (is_mutable) {
         return add_mutable(name, GenSpec::from_desc(desc.substr(1)).cells(cell_type).seq(seq));
@@ -144,19 +134,14 @@ EvalFixture::ParamRepo::add(const std::string &name, const std::string &desc,
     }
 }
 
-EvalFixture::ParamRepo &
-EvalFixture::ParamRepo::add(const std::string &name_desc, CellType cell_type, GenSpec::seq_t seq)
-{
-    auto pos = name_desc.find('$');
-    std::string desc = (pos < name_desc.size())
-                            ? name_desc.substr(0, pos)
-                            : name_desc;
+EvalFixture::ParamRepo& EvalFixture::ParamRepo::add(const std::string& name_desc, CellType cell_type,
+                                                    GenSpec::seq_t seq) {
+    auto        pos = name_desc.find('$');
+    std::string desc = (pos < name_desc.size()) ? name_desc.substr(0, pos) : name_desc;
     return add(name_desc, desc, cell_type, seq);
 }
 
-void
-EvalFixture::detect_param_tampering(const ParamRepo &param_repo, bool allow_mutable) const
-{
+void EvalFixture::detect_param_tampering(const ParamRepo& param_repo, bool allow_mutable) const {
     for (size_t i = 0; i < _function->num_params(); ++i) {
         auto pos = param_repo.map.find(_function->param_name(i));
         REQUIRE(pos != param_repo.map.end());
@@ -167,11 +152,8 @@ EvalFixture::detect_param_tampering(const ParamRepo &param_repo, bool allow_muta
     }
 }
 
-EvalFixture::EvalFixture(const ValueBuilderFactory &factory,
-                         const std::string &expr,
-                         const ParamRepo &param_repo,
-                         bool optimized,
-                         bool allow_mutable)
+EvalFixture::EvalFixture(const ValueBuilderFactory& factory, const std::string& expr, const ParamRepo& param_repo,
+                         bool optimized, bool allow_mutable)
     : _factory(factory),
       _stash(),
       _function(verify_function(Function::parse(expr))),
@@ -179,29 +161,25 @@ EvalFixture::EvalFixture(const ValueBuilderFactory &factory,
       _mutable_set(get_mutable(*_function, param_repo)),
       _plain_tensor_function(make_tensor_function(_factory, _function->root(), _node_types, _stash)),
       _patched_tensor_function(maybe_patch(allow_mutable, _plain_tensor_function, _mutable_set, _stash)),
-      _tensor_function(optimized ? optimize_tensor_function(_factory, _patched_tensor_function, _stash) : _patched_tensor_function),
+      _tensor_function(optimized ? optimize_tensor_function(_factory, _patched_tensor_function, _stash)
+                                 : _patched_tensor_function),
       _ifun(_factory, _tensor_function),
       _ictx(_ifun),
       _param_values(make_params(_factory, *_function, param_repo)),
       _params(get_refs(_param_values)),
       _result_value(_ifun.eval(_ictx, _params)),
-      _result(spec_from_value(_result_value))
-{
+      _result(spec_from_value(_result_value)) {
     auto result_type = ValueType::from_spec(_result.type());
     REQUIRE(!result_type.is_error());
     UNWIND_DO(detect_param_tampering(param_repo, allow_mutable));
 }
 
-size_t
-EvalFixture::num_params() const
-{
+size_t EvalFixture::num_params() const {
     return _param_values.size();
 }
 
-TensorSpec
-EvalFixture::ref(const std::string &expr, const ParamRepo &param_repo)
-{
-    auto fun = Function::parse(expr);
+TensorSpec EvalFixture::ref(const std::string& expr, const ParamRepo& param_repo) {
+    auto                    fun = Function::parse(expr);
     std::vector<TensorSpec> params;
     for (size_t i = 0; i < fun->num_params(); ++i) {
         auto pos = param_repo.map.find(fun->param_name(i));

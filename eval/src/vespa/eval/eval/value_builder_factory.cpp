@@ -8,15 +8,13 @@ namespace {
 
 struct CopyValue {
     template <typename CT>
-    static std::unique_ptr<Value> invoke(const Value &value,
-                                         const ValueType &type,
-                                         const ValueBuilderFactory &factory)
-    {
-        size_t num_mapped = type.count_mapped_dimensions();
-        size_t dense_size = type.dense_subspace_size();
-        const auto & idx = value.index();
-        auto input_cells = value.cells().typify<CT>();
-        auto builder = factory.create_value_builder<CT>(type, num_mapped, dense_size, idx.size());
+    static std::unique_ptr<Value> invoke(const Value& value, const ValueType& type,
+                                         const ValueBuilderFactory& factory) {
+        size_t                 num_mapped = type.count_mapped_dimensions();
+        size_t                 dense_size = type.dense_subspace_size();
+        const auto&            idx = value.index();
+        auto                   input_cells = value.cells().typify<CT>();
+        auto                   builder = factory.create_value_builder<CT>(type, num_mapped, dense_size, idx.size());
         std::vector<string_id> addr(num_mapped);
         if (num_mapped == 0) {
             assert(idx.size() == 1);
@@ -29,7 +27,7 @@ struct CopyValue {
             view->lookup({});
             std::vector<string_id*> addr_fetch;
             addr_fetch.reserve(num_mapped);
-            for (auto & label : addr) {
+            for (auto& label : addr) {
                 addr_fetch.push_back(&label);
             }
             size_t subspace_idx;
@@ -44,14 +42,11 @@ struct CopyValue {
     }
 };
 
-} // namespace <unnamed>
+} // namespace
 
-std::unique_ptr<Value>
-ValueBuilderFactory::copy(const Value &value) const
-{
-    const auto & type = value.type();
-    return typify_invoke<1,TypifyCellType,CopyValue>(type.cell_type(),
-                                                     value, type, *this);
+std::unique_ptr<Value> ValueBuilderFactory::copy(const Value& value) const {
+    const auto& type = value.type();
+    return typify_invoke<1, TypifyCellType, CopyValue>(type.cell_type(), value, type, *this);
 }
 
-}
+} // namespace vespalib::eval

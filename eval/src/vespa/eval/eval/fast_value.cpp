@@ -1,8 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fast_value.h"
-#include <vespa/vespalib/util/typify.h>
+
 #include "fast_value.hpp"
+
+#include <vespa/vespalib/util/typify.h>
 
 namespace vespalib::eval {
 
@@ -11,16 +13,17 @@ namespace vespalib::eval {
 namespace {
 
 struct CreateFastValueBuilderBase {
-    template <typename T, typename R2> static std::unique_ptr<ValueBuilderBase> invoke(const ValueType &type,
-            size_t num_mapped_dims, size_t subspace_size, size_t expected_subspaces)
-    {
+    template <typename T, typename R2>
+    static std::unique_ptr<ValueBuilderBase> invoke(const ValueType& type, size_t num_mapped_dims,
+                                                    size_t subspace_size, size_t expected_subspaces) {
         assert(check_cell_type<T>(type.cell_type()));
         if (type.is_double()) {
             return std::make_unique<FastDoubleValueBuilder>();
         } else if (num_mapped_dims == 0) {
             return std::make_unique<FastDenseValue<T>>(type, subspace_size);
         } else {
-            return std::make_unique<FastValue<T,R2::value>>(type, num_mapped_dims, subspace_size, expected_subspaces);
+            return std::make_unique<FastValue<T, R2::value>>(type, num_mapped_dims, subspace_size,
+                                                             expected_subspaces);
         }
     }
 };
@@ -31,17 +34,14 @@ struct CreateFastValueBuilderBase {
 // look up a full address in the map directly
 struct FastLookupView : public Value::Index::View {
 
-    const FastAddrMap &map;
+    const FastAddrMap& map;
     size_t             subspace;
 
-    FastLookupView(const FastAddrMap &map_in)
-            : map(map_in), subspace(FastAddrMap::npos()) {}
+    FastLookupView(const FastAddrMap& map_in) : map(map_in), subspace(FastAddrMap::npos()) {}
 
-    void lookup(std::span<const string_id* const> addr) override {
-        subspace = map.lookup(addr);
-    }
+    void lookup(std::span<const string_id* const> addr) override { subspace = map.lookup(addr); }
 
-    bool next_result(std::span<string_id* const>, size_t &idx_out) override {
+    bool next_result(std::span<string_id* const>, size_t& idx_out) override {
         if (subspace == FastAddrMap::npos()) {
             return false;
         }
@@ -56,17 +56,14 @@ struct FastLookupView : public Value::Index::View {
 // iterate all mappings
 struct FastIterateView : public Value::Index::View {
 
-    const FastAddrMap &map;
+    const FastAddrMap& map;
     size_t             pos;
 
-    FastIterateView(const FastAddrMap &map_in)
-            : map(map_in), pos(FastAddrMap::npos()) {}
+    FastIterateView(const FastAddrMap& map_in) : map(map_in), pos(FastAddrMap::npos()) {}
 
-    void lookup(std::span<const string_id* const>) override {
-        pos = 0;
-    }
+    void lookup(std::span<const string_id* const>) override { pos = 0; }
 
-    bool next_result(std::span<string_id* const> addr_out, size_t &idx_out) override {
+    bool next_result(std::span<string_id* const> addr_out, size_t& idx_out) override {
         if (pos >= map.size()) {
             return false;
         }
@@ -82,11 +79,11 @@ struct FastIterateView : public Value::Index::View {
 // find matching mappings for a partial address with brute force filtering
 struct FastFilterView : public Value::Index::View {
 
-    const FastAddrMap        &map;
-    SmallVector<size_t>       match_dims;
-    SmallVector<size_t>       extract_dims;
-    SmallVector<string_id>    query;
-    size_t                    pos;
+    const FastAddrMap&     map;
+    SmallVector<size_t>    match_dims;
+    SmallVector<size_t>    extract_dims;
+    SmallVector<string_id> query;
+    size_t                 pos;
 
     bool is_match(std::span<const string_id> addr) const {
         for (size_t i = 0; i < query.size(); ++i) {
@@ -97,9 +94,9 @@ struct FastFilterView : public Value::Index::View {
         return true;
     }
 
-    FastFilterView(const FastAddrMap &map_in, std::span<const size_t> match_dims_in) __attribute__((noinline));
-    FastFilterView(const FastFilterView &) = delete;
-    FastFilterView & operator =(const FastFilterView &) = delete;
+    FastFilterView(const FastAddrMap& map_in, std::span<const size_t> match_dims_in) __attribute__((noinline));
+    FastFilterView(const FastFilterView&) = delete;
+    FastFilterView& operator=(const FastFilterView&) = delete;
     ~FastFilterView() override;
 
     void lookup(std::span<const string_id* const> addr) override {
@@ -110,7 +107,7 @@ struct FastFilterView : public Value::Index::View {
         pos = 0;
     }
 
-    bool next_result(std::span<string_id* const> addr_out, size_t &idx_out) override {
+    bool next_result(std::span<string_id* const> addr_out, size_t& idx_out) override {
         while (pos < map.size()) {
             auto addr = map.get_addr(pos);
             if (is_match(addr)) {
@@ -127,10 +124,12 @@ struct FastFilterView : public Value::Index::View {
     }
 };
 
-FastFilterView::FastFilterView(const FastAddrMap &map_in, std::span<const size_t> match_dims_in)
-    : map(map_in), match_dims(match_dims_in.begin(), match_dims_in.end()),
-      extract_dims(), query(match_dims.size()), pos(FastAddrMap::npos())
-{
+FastFilterView::FastFilterView(const FastAddrMap& map_in, std::span<const size_t> match_dims_in)
+    : map(map_in),
+      match_dims(match_dims_in.begin(), match_dims_in.end()),
+      extract_dims(),
+      query(match_dims.size()),
+      pos(FastAddrMap::npos()) {
     auto my_pos = match_dims.begin();
     for (size_t i = 0; i < map.addr_size(); ++i) {
         if ((my_pos == match_dims.end()) || (*my_pos != i)) {
@@ -144,13 +143,11 @@ FastFilterView::FastFilterView(const FastAddrMap &map_in, std::span<const size_t
 }
 
 FastFilterView::~FastFilterView() = default;
-} // namespace <unnamed>
+} // namespace
 
 //-----------------------------------------------------------------------------
 
-std::unique_ptr<Value::Index::View>
-FastValueIndex::create_view(std::span<const size_t> dims) const
-{
+std::unique_ptr<Value::Index::View> FastValueIndex::create_view(std::span<const size_t> dims) const {
     if (map.addr_size() == 0) {
         return TrivialIndex::get().create_view(dims);
     } else if (dims.empty()) {
@@ -168,13 +165,13 @@ FastValueBuilderFactory::FastValueBuilderFactory() = default;
 FastValueBuilderFactory FastValueBuilderFactory::_factory;
 
 std::unique_ptr<ValueBuilderBase>
-FastValueBuilderFactory::create_value_builder_base(const ValueType &type, bool transient, size_t num_mapped_dims, size_t subspace_size,
-                                                   size_t expected_subspaces) const
-{
-    using MyTypify = TypifyValue<TypifyCellType,TypifyBool>;
-    return typify_invoke<2,MyTypify,CreateFastValueBuilderBase>(type.cell_type(), transient, type, num_mapped_dims, subspace_size, expected_subspaces);
+FastValueBuilderFactory::create_value_builder_base(const ValueType& type, bool transient, size_t num_mapped_dims,
+                                                   size_t subspace_size, size_t expected_subspaces) const {
+    using MyTypify = TypifyValue<TypifyCellType, TypifyBool>;
+    return typify_invoke<2, MyTypify, CreateFastValueBuilderBase>(type.cell_type(), transient, type, num_mapped_dims,
+                                                                  subspace_size, expected_subspaces);
 }
 
 //-----------------------------------------------------------------------------
 
-}
+} // namespace vespalib::eval
