@@ -11,21 +11,22 @@
 #pragma once
 
 #include "state.h"
+
 #include <vespa/document/util/printable.h>
 #include <vespa/vespalib/objects/floatingpointtype.h>
+
 #include <memory>
 
 namespace storage::lib {
 
-class NodeState : public document::Printable
-{
-    const NodeType* _type;
-    const State* _state;
-    std::string _description;
+class NodeState : public document::Printable {
+    const NodeType*  _type;
+    const State*     _state;
+    std::string      _description;
     vespalib::Double _capacity;
     vespalib::Double _initProgress;
-    uint32_t _minUsedBits;
-    uint64_t _startTimestamp;
+    uint32_t         _minUsedBits;
+    uint64_t         _startTimestamp;
 
 public:
     using CSP = std::shared_ptr<const NodeState>;
@@ -35,13 +36,11 @@ public:
     static double getListingBucketsInitProgressLimit() { return 0.01; }
 
     NodeState();
-    NodeState(const NodeState &);
-    NodeState & operator = (const NodeState &);
-    NodeState(NodeState &&) noexcept;
-    NodeState & operator = (NodeState &&) noexcept;
-    NodeState(const NodeType& nodeType, const State&,
-              std::string_view description = "",
-              double capacity = 1.0);
+    NodeState(const NodeState&);
+    NodeState& operator=(const NodeState&);
+    NodeState(NodeState&&) noexcept;
+    NodeState& operator=(NodeState&&) noexcept;
+    NodeState(const NodeType& nodeType, const State&, std::string_view description = "", double capacity = 1.0);
     /** Set type if you want to verify that content fit with the given type. */
     explicit NodeState(std::string_view serialized, const NodeType* nodeType = nullptr);
     ~NodeState() override;
@@ -51,8 +50,7 @@ public:
      * part of the system state. Don't set prefix if you want to be able to
      * recreate the nodestate with NodeState(string) function.
      */
-    void serialize(vespalib::asciistream & out, std::string_view prefix = "",
-                   bool includeDescription = true) const;
+    void serialize(vespalib::asciistream& out, std::string_view prefix = "", bool includeDescription = true) const;
 
     [[nodiscard]] const State& getState() const { return *_state; }
     [[nodiscard]] vespalib::Double getCapacity() const { return _capacity; }
@@ -70,9 +68,7 @@ public:
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     bool operator==(const NodeState& other) const;
-    bool operator!=(const NodeState& other) const {
-        return !(operator==(other));
-    }
+    bool operator!=(const NodeState& other) const { return !(operator==(other)); }
     [[nodiscard]] bool similarTo(const NodeState& other) const;
 
     /**
@@ -85,4 +81,4 @@ public:
     std::string getTextualDifference(const NodeState& other) const;
 };
 
-}
+} // namespace storage::lib

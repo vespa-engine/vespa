@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/config-stor-distribution.h>
-#include <vespa/config/helper/configgetter.hpp>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/fastos/file.h>
 #include <vespa/vdslib/distribution/distribution.h>
@@ -16,7 +15,11 @@
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/size_literals.h>
+
+#include <vespa/config/helper/configgetter.hpp>
+
 #include <gmock/gmock.h>
+
 #include <chrono>
 #include <filesystem>
 #include <fstream>
@@ -27,9 +30,7 @@ using namespace ::testing;
 
 namespace storage::lib {
 
-template <typename T>
-T readConfig(const config::ConfigUri & uri)
-{
+template <typename T> T readConfig(const config::ConfigUri& uri) {
     return *config::ConfigGetter<T>::getConfig(uri.getConfigId(), uri.getContext());
 }
 
@@ -41,34 +42,26 @@ protected:
     static void TearDownTestSuite();
 };
 
-DistributionTest::DistributionTest()
-        : ::testing::Test(),
-          vespalib::test::TestData<DistributionTest>()
-{
+DistributionTest::DistributionTest() : ::testing::Test(), vespalib::test::TestData<DistributionTest>() {
 }
 
 DistributionTest::~DistributionTest() = default;
 
-void
-DistributionTest::SetUpTestSuite()
-{
+void DistributionTest::SetUpTestSuite() {
     setup_test_data(TEST_PATH("distribution/testdata"), "distribution-testdata");
 }
 
-void
-DistributionTest::TearDownTestSuite()
-{
+void DistributionTest::TearDownTestSuite() {
     tear_down_test_data();
 }
 
-TEST_F(DistributionTest, test_verify_java_distributions)
-{
+TEST_F(DistributionTest, test_verify_java_distributions) {
     std::vector<std::string> tests;
     tests.push_back("capacity");
     tests.push_back("depth2");
     tests.push_back("depth3");
     tests.push_back("retired");
-    for (uint32_t i=0; i<tests.size(); ++i) {
+    for (uint32_t i = 0; i < tests.size(); ++i) {
         std::string test = tests[i];
         std::string java_cfg(source_testdata() + "/java_" + test + ".cfg");
         std::string java_testfile(source_testdata() + "/java_" + test + ".distribution");
@@ -80,8 +73,8 @@ TEST_F(DistributionTest, test_verify_java_distributions)
             in.close();
         }
         ClusterState state(mystate);
-        Distribution distr(readConfig<vespa::config::content::StorDistributionConfig>(
-                config::ConfigUri("file:" + java_cfg)));
+        Distribution distr(
+            readConfig<vespa::config::content::StorDistributionConfig>(config::ConfigUri("file:" + java_cfg)));
         std::ofstream of(cpp_testfile);
 
         long maxBucket = 1;
@@ -90,17 +83,18 @@ TEST_F(DistributionTest, test_verify_java_distributions)
             state.setDistributionBitCount(distributionBits);
             RandomGen randomizer(distributionBits);
             for (uint32_t bucketIndex = 0; bucketIndex < 64; ++bucketIndex) {
-                if (bucketIndex >= maxBucket) break;
+                if (bucketIndex >= maxBucket)
+                    break;
                 uint64_t bucketId = bucketIndex;
-                    // Use random bucket if we dont test all
+                // Use random bucket if we dont test all
                 if (maxBucket > 64) {
                     bucketId = randomizer.nextUint64();
                 }
                 document::BucketId bucket(distributionBits, bucketId);
                 for (uint32_t redundancy = 1; redundancy <= distr.getRedundancy(); ++redundancy) {
                     int distributorIndex = distr.getIdealDistributorNode(state, bucket, "uim");
-                    of << distributionBits << " " << (bucketId & mask)
-                       << " " << redundancy << " " << distributorIndex << "\n";
+                    of << distributionBits << " " << (bucketId & mask) << " " << redundancy << " " << distributorIndex
+                       << "\n";
                 }
             }
             mask = (mask << 1) | 1;
@@ -121,31 +115,29 @@ TEST_F(DistributionTest, test_verify_java_distributions)
 namespace {
 
 /**
-* A list of ideal nodes, sorted in preferred order. Wraps a vector to hide
-* unneeded details, and make it easily printable.
-*/
+ * A list of ideal nodes, sorted in preferred order. Wraps a vector to hide
+ * unneeded details, and make it easily printable.
+ */
 class IdealNodeList : public document::Printable {
 public:
     IdealNodeList() noexcept;
     ~IdealNodeList() override;
 
-    void push_back(const Node& node) {
-        _idealNodes.push_back(node);
-    }
+    void push_back(const Node& node) { _idealNodes.push_back(node); }
 
     const Node& operator[](uint32_t i) const noexcept { return _idealNodes[i]; }
     uint32_t size() const noexcept { return _idealNodes.size(); }
-    bool contains(const Node& n) const noexcept {
-        return indexOf(n) != 0xffff;
-    }
+    bool contains(const Node& n) const noexcept { return indexOf(n) != 0xffff; }
     uint16_t indexOf(const Node& n) const noexcept {
-        for (uint16_t i=0; i<_idealNodes.size(); ++i) {
-            if (n == _idealNodes[i]) return i;
+        for (uint16_t i = 0; i < _idealNodes.size(); ++i) {
+            if (n == _idealNodes[i])
+                return i;
         }
         return 0xffff;
     }
 
-    void print(std::ostream& out, bool, const std::string &) const override;
+    void print(std::ostream& out, bool, const std::string&) const override;
+
 private:
     std::vector<Node> _idealNodes;
 };
@@ -153,43 +145,39 @@ private:
 IdealNodeList::IdealNodeList() noexcept = default;
 IdealNodeList::~IdealNodeList() = default;
 
-void
-IdealNodeList::print(std::ostream& out, bool , const std::string &) const
-{
+void IdealNodeList::print(std::ostream& out, bool, const std::string&) const {
     out << "[";
-    for (uint32_t i=0; i<_idealNodes.size(); ++i) {
-        if (i != 0) out << ", ";
+    for (uint32_t i = 0; i < _idealNodes.size(); ++i) {
+        if (i != 0)
+            out << ", ";
         out << _idealNodes[i];
     }
     out << "]";
 }
 
-
 struct ExpectedResult {
-    ExpectedResult() { }
-    ExpectedResult(const ExpectedResult &) = default;
-    ExpectedResult & operator = (const ExpectedResult &) = default;
-    ExpectedResult(ExpectedResult &&) = default;
-    ExpectedResult & operator = (ExpectedResult &&) = default;
-    ~ExpectedResult() { }
+    ExpectedResult() {}
+    ExpectedResult(const ExpectedResult&) = default;
+    ExpectedResult& operator=(const ExpectedResult&) = default;
+    ExpectedResult(ExpectedResult&&) = default;
+    ExpectedResult& operator=(ExpectedResult&&) = default;
+    ~ExpectedResult() {}
     document::BucketId bucket;
-    IdealNodeList nodes;
-    std::string failure;
+    IdealNodeList      nodes;
+    std::string        failure;
 };
 
-void
-verifyJavaDistribution(const std::string& name, const ClusterState& state, const Distribution& distribution,
-                       const NodeType& nodeType, uint16_t redundancy, uint16_t nodeCount,
-                       std::string_view upStates, const std::vector<ExpectedResult>& results)
-{
-    (void) nodeCount;
-    for (uint32_t i=0, n=results.size(); i<n; ++i) {
+void verifyJavaDistribution(const std::string& name, const ClusterState& state, const Distribution& distribution,
+                            const NodeType& nodeType, uint16_t redundancy, uint16_t nodeCount,
+                            std::string_view upStates, const std::vector<ExpectedResult>& results) {
+    (void)nodeCount;
+    for (uint32_t i = 0, n = results.size(); i < n; ++i) {
         std::string testId = name + " " + results[i].bucket.toString();
         try {
             std::vector<uint16_t> nvect;
             distribution.getIdealNodes(nodeType, state, results[i].bucket, nvect, upStates.data(), redundancy);
             IdealNodeList nodes;
-            for (uint32_t j=0, m=nvect.size(); j<m; ++j) {
+            for (uint32_t j = 0, m = nvect.size(); j < m; ++j) {
                 nodes.push_back(Node(nodeType, nvect[j]));
             }
             EXPECT_EQ(results[i].nodes.toString(), nodes.toString()) << testId;
@@ -204,23 +192,22 @@ verifyJavaDistribution(const std::string& name, const ClusterState& state, const
     }
 }
 
-}
+} // namespace
 
-auto readFile(const std::string & filename) {
+auto readFile(const std::string& filename) {
     vespalib::File file(filename);
     file.open(vespalib::File::READONLY);
 
     std::vector<char> buf(file.getFileSize());
-    off_t read = file.read(&buf[0], buf.size(), 0);
+    off_t             read = file.read(&buf[0], buf.size(), 0);
 
     assert(read == file.getFileSize());
     return buf;
 }
 
-TEST_F(DistributionTest, test_verify_java_distributions_2)
-{
+TEST_F(DistributionTest, test_verify_java_distributions_2) {
     vespalib::DirectoryList files(vespalib::listDirectory(source_testdata()));
-    for (uint32_t i=0, n=files.size(); i<n; ++i) {
+    for (uint32_t i = 0, n = files.size(); i < n; ++i) {
         size_t pos = files[i].find(".java.results");
         if (pos == std::string::npos || pos + 13 != files[i].size()) {
             continue;
@@ -249,24 +236,24 @@ TEST_F(DistributionTest, test_verify_java_distributions_2)
         ASSERT_TRUE(size != 0);
         Cursor& c(slime.get());
 
-        ClusterState cs(c["cluster-state"].asString().make_string());
-        std::string distConfig(c["distribution"].asString().make_string());
-        Distribution d(distConfig);
-        const NodeType& nt(NodeType::get(c["node-type"].asString().make_string()));
-        uint32_t redundancy(c["redundancy"].asLong());
-        uint32_t nodeCount(c["node-count"].asLong());
-        std::string upStates(c["up-states"].asString().make_string());
+        ClusterState                cs(c["cluster-state"].asString().make_string());
+        std::string                 distConfig(c["distribution"].asString().make_string());
+        Distribution                d(distConfig);
+        const NodeType&             nt(NodeType::get(c["node-type"].asString().make_string()));
+        uint32_t                    redundancy(c["redundancy"].asLong());
+        uint32_t                    nodeCount(c["node-count"].asLong());
+        std::string                 upStates(c["up-states"].asString().make_string());
         std::vector<ExpectedResult> results;
-        for (uint32_t j=0, m=c["result"].entries(); j<m; ++j) {
-            Cursor& e(c["result"][j]);
+        for (uint32_t j = 0, m = c["result"].entries(); j < m; ++j) {
+            Cursor&        e(c["result"][j]);
             ExpectedResult result;
-            std::string bucketString(e["bucket"].asString().make_string());
-            char *end = nullptr;
-            uint64_t rawBucket = strtoull(bucketString.c_str(), &end, 16);
+            std::string    bucketString(e["bucket"].asString().make_string());
+            char*          end = nullptr;
+            uint64_t       rawBucket = strtoull(bucketString.c_str(), &end, 16);
             ASSERT_EQ(int(0), int(*end));
             result.bucket = document::BucketId(rawBucket);
             result.failure = e["failure"].asString().make_string();
-            for (uint32_t k=0; k<e["nodes"].entries(); ++k) {
+            for (uint32_t k = 0; k < e["nodes"].entries(); ++k) {
                 result.nodes.push_back(Node(nt, e["nodes"][k].asLong()));
             }
             results.push_back(result);
@@ -275,11 +262,10 @@ TEST_F(DistributionTest, test_verify_java_distributions_2)
     }
 }
 
-TEST_F(DistributionTest, test_unchanged_distribution)
-{
+TEST_F(DistributionTest, test_unchanged_distribution) {
     ClusterState state("distributor:10 storage:10");
 
-    Distribution distr(Distribution::getDefaultDistributionConfig(3, 10));
+    Distribution  distr(Distribution::getDefaultDistributionConfig(3, 10));
     std::ifstream in(source_testdata() + "/41-distributordistribution");
 
     for (unsigned i = 0; i < 64_Ki; i++) {
@@ -295,12 +281,12 @@ TEST_F(DistributionTest, test_unchanged_distribution)
 namespace {
 
 struct MyTest {
-    const NodeType* _nodeType;
-    std::string _state;
+    const NodeType*               _nodeType;
+    std::string                   _state;
     std::unique_ptr<Distribution> _distribution;
-    uint32_t _bucketsToTest;
-    const char* _upStates;
-    uint16_t _redundancy;
+    uint32_t                      _bucketsToTest;
+    const char*                   _upStates;
+    uint16_t                      _redundancy;
 
     MyTest();
     ~MyTest();
@@ -327,12 +313,12 @@ struct MyTest {
 
     std::vector<uint16_t> getNodeCounts() const {
         std::vector<uint16_t> result(10, 0);
-        for (uint32_t i=0; i<_bucketsToTest; ++i) {
-            document::BucketId bucket(16, i);
+        for (uint32_t i = 0; i < _bucketsToTest; ++i) {
+            document::BucketId    bucket(16, i);
             std::vector<uint16_t> nodes;
-            ClusterState clusterState(_state);
+            ClusterState          clusterState(_state);
             _distribution->getIdealNodes(*_nodeType, clusterState, bucket, nodes, _upStates, _redundancy);
-            for (uint32_t j=0; j<nodes.size(); ++j) {
+            for (uint32_t j = 0; j < nodes.size(); ++j) {
                 ++result[nodes[j]];
             }
         }
@@ -346,17 +332,17 @@ MyTest::MyTest()
       _distribution(new Distribution(Distribution::getDefaultDistributionConfig(3, 10))),
       _bucketsToTest(100),
       _upStates("uir"),
-      _redundancy(2)
-{ }
+      _redundancy(2) {
+}
 MyTest::~MyTest() = default;
 
 std::vector<uint16_t> createNodeCountList(const std::string& source, std::vector<uint16_t>& vals) {
-    std::vector<uint16_t> result(vals.size(), 0);
+    std::vector<uint16_t>     result(vals.size(), 0);
     vespalib::StringTokenizer st(source, " ");
-    for (uint32_t i=0; i<st.size(); ++i) {
+    for (uint32_t i = 0; i < st.size(); ++i) {
         vespalib::StringTokenizer st2(st[i], ":");
-        uint16_t node(vespalib::lexical_cast<uint16_t>(st2[0]));
-        uint16_t value = vals[node];
+        uint16_t                  node(vespalib::lexical_cast<uint16_t>(st2[0]));
+        uint16_t                  value = vals[node];
         if (st2[1] == std::string("*")) {
             value = vals[node];
         } else if (st2[1] == std::string("+")) {
@@ -373,48 +359,38 @@ std::vector<uint16_t> createNodeCountList(const std::string& source, std::vector
     return result;
 }
 
+} // namespace
+
+#define ASSERT_BUCKET_NODE_COUNTS(test, result)                              \
+    {                                                                        \
+        std::vector<uint16_t> cnt123(test.getNodeCounts());                  \
+        std::vector<uint16_t> exp123(createNodeCountList(result, cnt123));   \
+        /*std::cerr << "Expected " << exp123 << " Got " << cnt123 << "\n";*/ \
+        EXPECT_EQ(exp123, cnt123);                                           \
+    }
+
+TEST_F(DistributionTest, test_down) {
+    ASSERT_BUCKET_NODE_COUNTS(MyTest().state("storage:10 .4.s:m .5.s:m .6.s:d .7.s:d .9.s:r").upStates("u"),
+                              "0:+ 1:+ 2:+ 3:+ 8:+");
+
+    ASSERT_BUCKET_NODE_COUNTS(MyTest().state("storage:10 .4.s:m .5.s:m .6.s:d .7.s:d .9.s:r").upStates("ur"),
+                              "0:+ 1:+ 2:+ 3:+ 8:+ 9:+");
 }
 
-#define ASSERT_BUCKET_NODE_COUNTS(test, result) \
-{ \
-    std::vector<uint16_t> cnt123(test.getNodeCounts()); \
-    std::vector<uint16_t> exp123(createNodeCountList(result, cnt123)); \
-    /*std::cerr << "Expected " << exp123 << " Got " << cnt123 << "\n";*/ \
-    EXPECT_EQ(exp123, cnt123); \
-}
-
-TEST_F(DistributionTest, test_down)
-{
-    ASSERT_BUCKET_NODE_COUNTS(
-            MyTest().state("storage:10 .4.s:m .5.s:m .6.s:d .7.s:d .9.s:r")
-                    .upStates("u"),
-            "0:+ 1:+ 2:+ 3:+ 8:+");
-
-    ASSERT_BUCKET_NODE_COUNTS(
-            MyTest().state("storage:10 .4.s:m .5.s:m .6.s:d .7.s:d .9.s:r")
-                    .upStates("ur"),
-            "0:+ 1:+ 2:+ 3:+ 8:+ 9:+");
-}
-
-TEST_F(DistributionTest, test_serialize_deserialize)
-{
+TEST_F(DistributionTest, test_serialize_deserialize) {
     MyTest t1;
     MyTest t2;
     t2.distribution(new Distribution(t1._distribution->serialized()));
     EXPECT_EQ(t1.getNodeCounts(), t2.getNodeCounts());
 }
 
-TEST_F(DistributionTest, test_initializing)
-{
+TEST_F(DistributionTest, test_initializing) {
     ASSERT_BUCKET_NODE_COUNTS(
-            MyTest().state("distributor:3 .0.s:i .1.s:i .2.s:i")
-                    .upStates("ui")
-                    .nodeType(NodeType::DISTRIBUTOR),
-            "0:+ 1:+ 2:+");
+        MyTest().state("distributor:3 .0.s:i .1.s:i .2.s:i").upStates("ui").nodeType(NodeType::DISTRIBUTOR),
+        "0:+ 1:+ 2:+");
 }
 
-TEST_F(DistributionTest, testHighSplitBit)
-{
+TEST_F(DistributionTest, testHighSplitBit) {
     // Only 3 nodes of 10 are up => all copies should end on the 3 nodes and
     // none on the down nodes
     ClusterState state("storage:100");
@@ -452,8 +428,7 @@ TEST_F(DistributionTest, testHighSplitBit)
     EXPECT_EQ(ost1.view(), ost2.view());
 }
 
-TEST_F(DistributionTest, test_distribution)
-{
+TEST_F(DistributionTest, test_distribution) {
     const int min_buckets = 64_Ki;
     const int max_buckets = 64_Ki;
     const int min_nodes = 2;
@@ -462,28 +437,30 @@ TEST_F(DistributionTest, test_distribution)
     FastOS_File file;
     FastOS_File file_w;
 
-    for(int b=min_buckets; b<= max_buckets; b+=b){
+    for (int b = min_buckets; b <= max_buckets; b += b) {
         std::ostringstream ostf;
         std::ostringstream ostf_w;
         std::ostringstream ostf_weights;
 
-        for(int n=min_nodes; n<= max_nodes; n++){
+        for (int n = min_nodes; n <= max_nodes; n++) {
 
-            //Unweighted
+            // Unweighted
             std::ostringstream s1;
             s1 << "storage:" << n << std::endl;
             ClusterState systemState(s1.str());
 
             Distribution distr(Distribution::getDefaultDistributionConfig(3, n));
 
-            std::vector<std::pair<uint64_t, std::vector<uint16_t> > > _distribution(b);
-            std::vector<int> _nodeCount(n, 0);
+            std::vector<std::pair<uint64_t, std::vector<uint16_t>>> _distribution(b);
+            std::vector<int>                                        _nodeCount(n, 0);
 
             for (int i = 0; i < b; i++) {
                 _distribution[i].first = i;
                 _distribution[i].second = distr.getIdealStorageNodes(systemState, document::BucketId(26, i));
                 sort(_distribution[i].second.begin(), _distribution[i].second.end());
-                auto unique_nodes = std::distance(_distribution[i].second.begin(), unique(_distribution[i].second.begin(), _distribution[i].second.end()));
+                auto unique_nodes =
+                    std::distance(_distribution[i].second.begin(),
+                                  unique(_distribution[i].second.begin(), _distribution[i].second.end()));
                 _distribution[i].second.resize(unique_nodes);
 
                 for (unsigned j = 0; j < _distribution[i].second.size(); j++) {
@@ -493,10 +470,10 @@ TEST_F(DistributionTest, test_distribution)
 
             int min = 0;
             int max = 0;
-            for(int i=0; i<n; i++){
-                if(_nodeCount[i] < _nodeCount[min])
+            for (int i = 0; i < n; i++) {
+                if (_nodeCount[i] < _nodeCount[min])
                     min = i;
-                if(_nodeCount[i] > _nodeCount[max])
+                if (_nodeCount[i] > _nodeCount[max])
                     max = i;
             }
 
@@ -508,24 +485,23 @@ TEST_F(DistributionTest, test_distribution)
     }
 }
 
-TEST_F(DistributionTest, test_move)
-{
+TEST_F(DistributionTest, test_move) {
     // This test is quite fragile, it will break if the ideal state algorithm is
     // changed in such a way that Bucket 0x8b4f67ae remains on node 0 and 1 if
     // node 4 is added.
     std::vector<uint16_t> res;
     {
-        ClusterState systemState("storage:3");
+        ClusterState       systemState("storage:3");
         document::BucketId bucket(16, 0x8b4f67ae);
-        Distribution distr(Distribution::getDefaultDistributionConfig(2, 3));
+        Distribution       distr(Distribution::getDefaultDistributionConfig(2, 3));
         res = distr.getIdealStorageNodes(systemState, bucket);
         EXPECT_EQ(size_t(2), res.size());
     }
 
     std::vector<uint16_t> res2;
     {
-        ClusterState systemState("storage:4");
-        Distribution distr(Distribution::getDefaultDistributionConfig(2, 4));
+        ClusterState       systemState("storage:4");
+        Distribution       distr(Distribution::getDefaultDistributionConfig(2, 4));
         document::BucketId bucket(16, 0x8b4f67ae);
         res2 = distr.getIdealStorageNodes(systemState, bucket);
         EXPECT_EQ(size_t(2), res2.size());
@@ -534,20 +510,19 @@ TEST_F(DistributionTest, test_move)
     sort(res.begin(), res.end());
     sort(res2.begin(), res2.end());
 
-    std::vector<uint16_t> diff(2);
+    std::vector<uint16_t>           diff(2);
     std::vector<uint16_t>::iterator it;
 
-    it=set_difference(res.begin(), res.end(), res2.begin(), res2.end(), diff.begin());
-    EXPECT_EQ(1, int(it-diff.begin()));
+    it = set_difference(res.begin(), res.end(), res2.begin(), res2.end(), diff.begin());
+    EXPECT_EQ(1, int(it - diff.begin()));
 }
 
-TEST_F(DistributionTest, test_move_constraints)
-{
+TEST_F(DistributionTest, test_move_constraints) {
     ClusterState clusterState("storage:10");
 
     Distribution distr(Distribution::getDefaultDistributionConfig(3, 12));
 
-    std::vector<std::vector<uint16_t> > initBuckets(10000);
+    std::vector<std::vector<uint16_t>> initBuckets(10000);
     for (unsigned i = 0; i < initBuckets.size(); i++) {
         initBuckets[i] = distr.getIdealStorageNodes(clusterState, document::BucketId(16, i));
         sort(initBuckets[i].begin(), initBuckets[i].end());
@@ -555,8 +530,8 @@ TEST_F(DistributionTest, test_move_constraints)
 
     {
         // Check that adding a down node has no effect
-        std::vector<std::vector<uint16_t> > addedDownBuckets(10000);
-        ClusterState systemState("storage:11 .10.s:d");
+        std::vector<std::vector<uint16_t>> addedDownBuckets(10000);
+        ClusterState                       systemState("storage:11 .10.s:d");
 
         for (unsigned i = 0; i < addedDownBuckets.size(); i++) {
             addedDownBuckets[i] = distr.getIdealStorageNodes(systemState, document::BucketId(16, i));
@@ -565,11 +540,12 @@ TEST_F(DistributionTest, test_move_constraints)
         for (unsigned i = 0; i < initBuckets.size(); i++) {
             if (initBuckets[i] != addedDownBuckets[i]) {
                 std::cerr << i << ": ";
-                std::copy(initBuckets[i].begin(), initBuckets[i].end(), std::ostream_iterator<uint32_t>(std::cerr, ","));
+                std::copy(initBuckets[i].begin(), initBuckets[i].end(),
+                          std::ostream_iterator<uint32_t>(std::cerr, ","));
                 std::cerr << " -> ";
-                std::copy(addedDownBuckets[i].begin(), addedDownBuckets[i].end(), std::ostream_iterator<uint32_t>(std::cerr, ","));
+                std::copy(addedDownBuckets[i].begin(), addedDownBuckets[i].end(),
+                          std::ostream_iterator<uint32_t>(std::cerr, ","));
                 std::cerr << std::endl;
-
             }
             EXPECT_EQ(initBuckets[i], addedDownBuckets[i]);
         }
@@ -578,8 +554,8 @@ TEST_F(DistributionTest, test_move_constraints)
     {
         // Check that if we disable one node, we're not moving stuff away from
         // any other node
-        std::vector<std::vector<uint16_t> > removed0Buckets(10000);
-        ClusterState systemState("storage:10 .0.s:d");
+        std::vector<std::vector<uint16_t>> removed0Buckets(10000);
+        ClusterState                       systemState("storage:10 .0.s:d");
 
         for (unsigned i = 0; i < removed0Buckets.size(); i++) {
             removed0Buckets[i] = distr.getIdealStorageNodes(systemState, document::BucketId(16, i));
@@ -587,15 +563,16 @@ TEST_F(DistributionTest, test_move_constraints)
         }
         for (unsigned i = 0; i < initBuckets.size(); i++) {
             std::vector<uint16_t> movedAway;
-            set_difference(initBuckets[i].begin(), initBuckets[i].end(),
-                           removed0Buckets[i].begin(), removed0Buckets[i].end(),
-                           back_inserter(movedAway));
+            set_difference(initBuckets[i].begin(), initBuckets[i].end(), removed0Buckets[i].begin(),
+                           removed0Buckets[i].end(), back_inserter(movedAway));
             if (movedAway.size() > 0) {
                 if (movedAway[0] != 0) {
                     std::cerr << i << ": ";
-                    copy(initBuckets[i].begin(), initBuckets[i].end(), std::ostream_iterator<uint32_t>(std::cerr, ","));
+                    copy(initBuckets[i].begin(), initBuckets[i].end(),
+                         std::ostream_iterator<uint32_t>(std::cerr, ","));
                     std::cerr << " -> ";
-                    copy(removed0Buckets[i].begin(), removed0Buckets[i].end(), std::ostream_iterator<uint32_t>(std::cerr, ","));
+                    copy(removed0Buckets[i].begin(), removed0Buckets[i].end(),
+                         std::ostream_iterator<uint32_t>(std::cerr, ","));
                     std::cerr << std::endl;
                 }
 
@@ -608,8 +585,8 @@ TEST_F(DistributionTest, test_move_constraints)
     {
         // Check that if we're adding one node, we're not moving stuff to any
         // other node
-        std::vector<std::vector<uint16_t> > added10Buckets(10000);
-        ClusterState systemState("storage:11");
+        std::vector<std::vector<uint16_t>> added10Buckets(10000);
+        ClusterState                       systemState("storage:11");
 
         for (unsigned i = 0; i < added10Buckets.size(); i++) {
             added10Buckets[i] = distr.getIdealStorageNodes(systemState, document::BucketId(16, i));
@@ -617,9 +594,8 @@ TEST_F(DistributionTest, test_move_constraints)
         }
         for (unsigned i = 0; i < initBuckets.size(); i++) {
             std::vector<uint16_t> movedInto;
-            std::set_difference(added10Buckets[i].begin(), added10Buckets[i].end(),
-                                initBuckets[i].begin(), initBuckets[i].end(),
-                                std::inserter(movedInto, movedInto.begin()));
+            std::set_difference(added10Buckets[i].begin(), added10Buckets[i].end(), initBuckets[i].begin(),
+                                initBuckets[i].end(), std::inserter(movedInto, movedInto.begin()));
             if (movedInto.size() > 0) {
                 ASSERT_EQ((size_t)1, movedInto.size());
                 EXPECT_EQ((uint16_t)10, movedInto[0]);
@@ -628,8 +604,7 @@ TEST_F(DistributionTest, test_move_constraints)
     }
 }
 
-TEST_F(DistributionTest, test_distribution_bits)
-{
+TEST_F(DistributionTest, test_distribution_bits) {
     ClusterState state1("bits:16 distributor:10");
     ClusterState state2("bits:19 distributor:10");
 
@@ -639,7 +614,7 @@ TEST_F(DistributionTest, test_distribution_bits)
     std::ostringstream ost2;
 
     for (unsigned i = 0; i < 100; i++) {
-        int val = rand();
+        int      val = rand();
         uint32_t index = distr.getIdealDistributorNode(state1, document::BucketId(19, val), "u");
         ost1 << index << " ";
         index = distr.getIdealDistributorNode(state2, document::BucketId(19, val), "u");
@@ -649,8 +624,7 @@ TEST_F(DistributionTest, test_distribution_bits)
     EXPECT_NE(ost1.str(), ost2.str());
 }
 
-TEST_F(DistributionTest, test_redundancy_hierarchical_distribution)
-{
+TEST_F(DistributionTest, test_redundancy_hierarchical_distribution) {
     ClusterState state("storage:10 distributor:10");
 
     Distribution distr1(Distribution::getDefaultDistributionConfig(1, 10));
@@ -663,43 +637,39 @@ TEST_F(DistributionTest, test_redundancy_hierarchical_distribution)
     }
 }
 
-TEST_F(DistributionTest, test_hierarchical_distribution)
-{
-    std::string distConfig(
-            "redundancy 4\n"
-            "group[3]\n"
-            "group[0].name \"invalid\"\n"
-            "group[0].index \"invalid\"\n"
-            "group[0].partitions 2|*\n"
-            "group[0].nodes[0]\n"
-            "group[1].name rack0\n"
-            "group[1].index 0\n"
-            "group[1].nodes[3]\n"
-            "group[1].nodes[0].index 0\n"
-            "group[1].nodes[1].index 1\n"
-            "group[1].nodes[2].index 2\n"
-            "group[2].name rack1\n"
-            "group[2].index 1\n"
-            "group[2].nodes[3]\n"
-            "group[2].nodes[0].index 3\n"
-            "group[2].nodes[1].index 4\n"
-            "group[2].nodes[2].index 5\n");
+TEST_F(DistributionTest, test_hierarchical_distribution) {
+    std::string  distConfig("redundancy 4\n"
+                             "group[3]\n"
+                             "group[0].name \"invalid\"\n"
+                             "group[0].index \"invalid\"\n"
+                             "group[0].partitions 2|*\n"
+                             "group[0].nodes[0]\n"
+                             "group[1].name rack0\n"
+                             "group[1].index 0\n"
+                             "group[1].nodes[3]\n"
+                             "group[1].nodes[0].index 0\n"
+                             "group[1].nodes[1].index 1\n"
+                             "group[1].nodes[2].index 2\n"
+                             "group[2].name rack1\n"
+                             "group[2].index 1\n"
+                             "group[2].nodes[3]\n"
+                             "group[2].nodes[0].index 3\n"
+                             "group[2].nodes[1].index 4\n"
+                             "group[2].nodes[2].index 5\n");
     Distribution distr(distConfig);
     ClusterState state("distributor:6 storage:6");
 
     for (uint32_t i = 0; i < 3; ++i) {
-        EXPECT_EQ(std::string("rack0"),
-                  distr.getNodeGraph().getGroupForNode(i)->getName());
+        EXPECT_EQ(std::string("rack0"), distr.getNodeGraph().getGroupForNode(i)->getName());
     }
     for (uint32_t i = 3; i < 6; ++i) {
-        EXPECT_EQ(std::string("rack1"),
-                  distr.getNodeGraph().getGroupForNode(i)->getName());
+        EXPECT_EQ(std::string("rack1"), distr.getNodeGraph().getGroupForNode(i)->getName());
     }
 
     std::vector<int> mainNode(6);
-    for (uint32_t i=0; i<100; ++i) {
+    for (uint32_t i = 0; i < 100; ++i) {
         std::vector<uint16_t> nodes = distr.getIdealStorageNodes(state, document::BucketId(16, i), "u");
-        ASSERT_EQ((size_t) 4, nodes.size());
+        ASSERT_EQ((size_t)4, nodes.size());
         EXPECT_LT(nodes[0], mainNode.size());
         ++mainNode[nodes[0]];
     }
@@ -713,29 +683,27 @@ TEST_F(DistributionTest, test_hierarchical_distribution)
     EXPECT_EQ(expectedMains, mainNode);
 }
 
-TEST_F(DistributionTest, test_group_capacity)
-{
-    std::string distConfig(
-            "redundancy 1\n"
-            "group[3]\n"
-            "group[0].name \"invalid\"\n"
-            "group[0].index \"invalid\"\n"
-            "group[0].partitions *\n"
-            "group[0].nodes[0]\n"
-            "group[1].name rack0\n"
-            "group[1].index 0\n"
-            "group[1].capacity 1.0\n"
-            "group[1].nodes[3]\n"
-            "group[1].nodes[0].index 0\n"
-            "group[1].nodes[1].index 1\n"
-            "group[1].nodes[2].index 2\n"
-            "group[2].name rack1\n"
-            "group[2].index 1\n"
-            "group[2].capacity 4.0\n"
-            "group[2].nodes[3]\n"
-            "group[2].nodes[0].index 3\n"
-            "group[2].nodes[1].index 4\n"
-            "group[2].nodes[2].index 5\n");
+TEST_F(DistributionTest, test_group_capacity) {
+    std::string  distConfig("redundancy 1\n"
+                             "group[3]\n"
+                             "group[0].name \"invalid\"\n"
+                             "group[0].index \"invalid\"\n"
+                             "group[0].partitions *\n"
+                             "group[0].nodes[0]\n"
+                             "group[1].name rack0\n"
+                             "group[1].index 0\n"
+                             "group[1].capacity 1.0\n"
+                             "group[1].nodes[3]\n"
+                             "group[1].nodes[0].index 0\n"
+                             "group[1].nodes[1].index 1\n"
+                             "group[1].nodes[2].index 2\n"
+                             "group[2].name rack1\n"
+                             "group[2].index 1\n"
+                             "group[2].capacity 4.0\n"
+                             "group[2].nodes[3]\n"
+                             "group[2].nodes[0].index 3\n"
+                             "group[2].nodes[1].index 4\n"
+                             "group[2].nodes[2].index 5\n");
     Distribution distr(distConfig);
     ClusterState state("distributor:6 storage:6");
 
@@ -751,57 +719,54 @@ TEST_F(DistributionTest, test_group_capacity)
         }
     }
 
-    //std::cerr << "Group 0 is " << group0count << " 1 is " << group1count << "\n";
+    // std::cerr << "Group 0 is " << group0count << " 1 is " << group1count << "\n";
 
     EXPECT_TRUE(group0count > 180 && group0count < 220);
     EXPECT_EQ(1000 - group0count, group1count);
 }
 
-TEST_F(DistributionTest, test_hierarchical_no_redistribution)
-{
-    std::string distConfig(
-            "redundancy 2\n"
-            "group[5]\n"
-            "group[0].name \"invalid\"\n"
-            "group[0].index \"invalid\"\n"
-            "group[0].partitions *|*\n"
-            "group[0].nodes[0]\n"
-            "group[1].name switch0\n"
-            "group[1].index 0\n"
-            "group[1].partitions 1|*\n"
-            "group[1].nodes[0]\n"
-            "group[2].name rack0\n"
-            "group[2].index 0.0\n"
-            "group[2].nodes[1]\n"
-            "group[2].nodes[0].index 0\n"
-            "group[3].name rack1\n"
-            "group[3].index 0.1\n"
-            "group[3].nodes[1]\n"
-            "group[3].nodes[0].index 1\n"
-            "group[4].name switch0\n"
-            "group[4].index 1\n"
-            "group[4].partitions *\n"
-            "group[4].nodes[0]\n"
-            "group[5].name rack0\n"
-            "group[5].index 1.0\n"
-            "group[5].nodes[1]\n"
-            "group[5].nodes[0].index 2\n"
-            "group[6].name rack1\n"
-            "group[6].index 1.1\n"
-            "group[6].nodes[1]\n"
-            "group[6].nodes[0].index 3\n");
+TEST_F(DistributionTest, test_hierarchical_no_redistribution) {
+    std::string  distConfig("redundancy 2\n"
+                             "group[5]\n"
+                             "group[0].name \"invalid\"\n"
+                             "group[0].index \"invalid\"\n"
+                             "group[0].partitions *|*\n"
+                             "group[0].nodes[0]\n"
+                             "group[1].name switch0\n"
+                             "group[1].index 0\n"
+                             "group[1].partitions 1|*\n"
+                             "group[1].nodes[0]\n"
+                             "group[2].name rack0\n"
+                             "group[2].index 0.0\n"
+                             "group[2].nodes[1]\n"
+                             "group[2].nodes[0].index 0\n"
+                             "group[3].name rack1\n"
+                             "group[3].index 0.1\n"
+                             "group[3].nodes[1]\n"
+                             "group[3].nodes[0].index 1\n"
+                             "group[4].name switch0\n"
+                             "group[4].index 1\n"
+                             "group[4].partitions *\n"
+                             "group[4].nodes[0]\n"
+                             "group[5].name rack0\n"
+                             "group[5].index 1.0\n"
+                             "group[5].nodes[1]\n"
+                             "group[5].nodes[0].index 2\n"
+                             "group[6].name rack1\n"
+                             "group[6].index 1.1\n"
+                             "group[6].nodes[1]\n"
+                             "group[6].nodes[0].index 3\n");
     Distribution distribution(distConfig);
 
     ClusterState state("version:12 storage:4 distributor:4");
 
-    std::vector<uint16_t> nodes;
-    std::vector< std::vector<uint16_t> > distr(4);
-    size_t numBuckets = 1000;
+    std::vector<uint16_t>              nodes;
+    std::vector<std::vector<uint16_t>> distr(4);
+    size_t                             numBuckets = 1000;
 
     for (size_t i = 0; i < numBuckets; i++) {
-        nodes = distribution.getIdealStorageNodes(
-                state, document::BucketId(16, i), "u");
-        for (uint16_t j=0; j<nodes.size(); ++j) {
+        nodes = distribution.getIdealStorageNodes(state, document::BucketId(16, i), "u");
+        for (uint16_t j = 0; j < nodes.size(); ++j) {
             distr[nodes[j]].push_back(i);
         }
         nodes.clear();
@@ -809,29 +774,29 @@ TEST_F(DistributionTest, test_hierarchical_no_redistribution)
 
     std::vector<uint16_t> v;
 
-    set_intersection (distr[0].begin(), distr[0].end(), distr[1].begin(), distr[1].end(), back_inserter(v));
+    set_intersection(distr[0].begin(), distr[0].end(), distr[1].begin(), distr[1].end(), back_inserter(v));
     EXPECT_EQ(0, v.size());
     v.clear();
 
-    set_intersection (distr[2].begin(), distr[2].end(), distr[3].begin(), distr[3].end(), back_inserter(v));
+    set_intersection(distr[2].begin(), distr[2].end(), distr[3].begin(), distr[3].end(), back_inserter(v));
     EXPECT_EQ(0, v.size());
     v.clear();
 
-    set_union (distr[0].begin(), distr[0].end(), distr[1].begin(), distr[1].end(), back_inserter(v));
+    set_union(distr[0].begin(), distr[0].end(), distr[1].begin(), distr[1].end(), back_inserter(v));
     EXPECT_EQ(numBuckets, v.size());
     v.clear();
 
-    set_union (distr[2].begin(), distr[2].end(), distr[3].begin(), distr[3].end(), back_inserter(v));
+    set_union(distr[2].begin(), distr[2].end(), distr[3].begin(), distr[3].end(), back_inserter(v));
     EXPECT_EQ(numBuckets, v.size());
     v.clear();
 
-    state.setNodeState(Node(NodeType::STORAGE, 0),NodeState(NodeType::STORAGE, State::DOWN));
+    state.setNodeState(Node(NodeType::STORAGE, 0), NodeState(NodeType::STORAGE, State::DOWN));
 
-    std::vector< std::vector<uint16_t> > distr2(4);
+    std::vector<std::vector<uint16_t>> distr2(4);
 
     for (size_t i = 0; i < numBuckets; i++) {
         nodes = distribution.getIdealStorageNodes(state, document::BucketId(16, i), "u");
-        for (uint16_t j=0; j<nodes.size(); ++j) {
+        for (uint16_t j = 0; j < nodes.size(); ++j) {
             ASSERT_TRUE(0 != nodes[j]);
             distr2[nodes[j]].push_back(i);
         }
@@ -841,43 +806,44 @@ TEST_F(DistributionTest, test_hierarchical_no_redistribution)
     ASSERT_EQ((size_t)0, distr2[0].size());
     v.clear();
 
-    set_difference (distr[1].begin(), distr[1].end(), distr2[1].begin(), distr2[1].end(), back_inserter(v));
+    set_difference(distr[1].begin(), distr[1].end(), distr2[1].begin(), distr2[1].end(), back_inserter(v));
     EXPECT_EQ(0, v.size());
     v.clear();
 
-    set_difference (distr[2].begin(), distr[2].end(), distr2[2].begin(), distr2[2].end(), back_inserter(v));
+    set_difference(distr[2].begin(), distr[2].end(), distr2[2].begin(), distr2[2].end(), back_inserter(v));
     EXPECT_EQ(0, v.size());
     v.clear();
 
-    set_difference (distr[3].begin(), distr[3].end(), distr2[3].begin(), distr2[3].end(), back_inserter(v));
+    set_difference(distr[3].begin(), distr[3].end(), distr2[3].begin(), distr2[3].end(), back_inserter(v));
     EXPECT_EQ(0, v.size());
     v.clear();
 
-    ClusterState state2("distributor:5 .0.s:d storage:5 .0.s:d .1.s:d .1.m:foo\\x20bar");
+    ClusterState       state2("distributor:5 .0.s:d storage:5 .0.s:d .1.s:d .1.m:foo\\x20bar");
     std::ostringstream ost;
     state2.printStateGroupwise(ost, distribution, true, "");
     EXPECT_EQ(std::string("\n"
-        "ClusterState(Version: 0, Cluster state: Up, Distribution bits: 16) {\n"
-        "  Top group. 2 branches with distribution *|* {\n"
-        "    Group 0: switch0. 2 branches with distribution 1|* {\n"
-        "      Group 0: rack0. 1 node [0] {\n"
-        "        distributor.0: Down\n"
-        "        storage.0: Down\n"
-        "      }\n"
-        "      Group 1: rack1. 1 node [1] {\n"
-        "        storage.1: Down: foo bar\n"
-        "      }\n"
-        "    }\n"
-        "    Group 1: switch0. 2 branches with distribution * {\n"
-        "      Group 0: rack0. 1 node [2] {\n"
-        "        All nodes in group up and available.\n"
-        "      }\n"
-        "      Group 1: rack1. 1 node [3] {\n"
-        "        All nodes in group up and available.\n"
-        "      }\n"
-        "    }\n"
-        "  }\n"
-        "}"), "\n" + ost.str());
+                          "ClusterState(Version: 0, Cluster state: Up, Distribution bits: 16) {\n"
+                          "  Top group. 2 branches with distribution *|* {\n"
+                          "    Group 0: switch0. 2 branches with distribution 1|* {\n"
+                          "      Group 0: rack0. 1 node [0] {\n"
+                          "        distributor.0: Down\n"
+                          "        storage.0: Down\n"
+                          "      }\n"
+                          "      Group 1: rack1. 1 node [1] {\n"
+                          "        storage.1: Down: foo bar\n"
+                          "      }\n"
+                          "    }\n"
+                          "    Group 1: switch0. 2 branches with distribution * {\n"
+                          "      Group 0: rack0. 1 node [2] {\n"
+                          "        All nodes in group up and available.\n"
+                          "      }\n"
+                          "      Group 1: rack1. 1 node [3] {\n"
+                          "        All nodes in group up and available.\n"
+                          "      }\n"
+                          "    }\n"
+                          "  }\n"
+                          "}"),
+              "\n" + ost.str());
 }
 
 namespace {
@@ -901,8 +867,7 @@ std::string groupConfig("group[3]\n"
                         "group[2].nodes[2].index 5\n");
 }
 
-TEST_F(DistributionTest, test_active_per_group)
-{
+TEST_F(DistributionTest, test_active_per_group) {
     using IndexList = Distribution::IndexList;
     // Disabled feature
     {
@@ -912,8 +877,9 @@ TEST_F(DistributionTest, test_active_per_group)
     // All nodes split
     {
         Distribution distr("redundancy 4\n"
-                           "active_per_leaf_group true\n" + groupConfig);
-        IndexList global;
+                           "active_per_leaf_group true\n" +
+                           groupConfig);
+        IndexList    global;
         global.push_back(0);
         global.push_back(1);
         global.push_back(2);
@@ -935,8 +901,9 @@ TEST_F(DistributionTest, test_active_per_group)
     // Only nodes in one group
     {
         Distribution distr("redundancy 4\n"
-                           "active_per_leaf_group true\n" + groupConfig);
-        IndexList global;
+                           "active_per_leaf_group true\n" +
+                           groupConfig);
+        IndexList    global;
         global.push_back(0);
         global.push_back(1);
         global.push_back(2);
@@ -950,9 +917,10 @@ TEST_F(DistributionTest, test_active_per_group)
     }
     // No nodes
     {
-        Distribution distr("redundancy 4\n"
-                           "active_per_leaf_group true\n" + groupConfig);
-        IndexList global;
+        Distribution           distr("redundancy 4\n"
+                                               "active_per_leaf_group true\n" +
+                                     groupConfig);
+        IndexList              global;
         std::vector<IndexList> actual(distr.splitNodesIntoLeafGroups(global));
         std::vector<IndexList> expected;
         EXPECT_EQ(expected, actual);
@@ -960,8 +928,9 @@ TEST_F(DistributionTest, test_active_per_group)
     // Random nodes
     {
         Distribution distr("redundancy 4\n"
-                           "active_per_leaf_group true\n" + groupConfig);
-        IndexList global;
+                           "active_per_leaf_group true\n" +
+                           groupConfig);
+        IndexList    global;
         global.push_back(5);
         global.push_back(1);
         global.push_back(3);
@@ -976,10 +945,9 @@ TEST_F(DistributionTest, test_active_per_group)
     }
 }
 
-TEST_F(DistributionTest, test_hierarchical_distribute_less_than_redundancy)
-{
-    Distribution distr("redundancy 4\nactive_per_leaf_group true\n" + groupConfig);
-    ClusterState state("storage:6");
+TEST_F(DistributionTest, test_hierarchical_distribute_less_than_redundancy) {
+    Distribution          distr("redundancy 4\nactive_per_leaf_group true\n" + groupConfig);
+    ClusterState          state("storage:6");
     std::vector<uint16_t> actual;
 
     {
@@ -1005,7 +973,7 @@ TEST_F(DistributionTest, test_hierarchical_distribute_less_than_redundancy)
 }
 
 TEST_F(DistributionTest, wildcard_top_level_distribution_gives_expected_node_results) {
-    std::string raw_config = R"(redundancy 2
+    std::string  raw_config = R"(redundancy 2
 initial_redundancy 2
 ensure_primary_persisted true
 ready_copies 2
@@ -1037,7 +1005,7 @@ group[2].nodes[1].retired false
     Distribution distr(raw_config);
     ClusterState state("version:1 distributor:5 storage:5");
 
-    auto nodes_of = [&](uint32_t bucket){
+    auto nodes_of = [&](uint32_t bucket) {
         std::vector<uint16_t> actual;
         distr.getIdealNodes(NodeType::STORAGE, state, document::BucketId(16, bucket), actual, "uim");
         return actual;
@@ -1090,18 +1058,21 @@ std::string generate_state_with_n_nodes_up(int n_nodes) {
     return state_os.str();
 }
 
-}
+} // namespace
 
 TEST_F(DistributionTest, DISABLED_benchmark_ideal_state_for_many_groups) {
-    const int n_groups = 150;
+    const int    n_groups = 150;
     Distribution distr(generate_config_with_n_1node_groups(n_groups));
     ClusterState state(generate_state_with_n_nodes_up(n_groups));
 
     std::vector<uint16_t> actual;
-    uint32_t bucket = 0;
-    auto min_time = vespalib::BenchmarkTimer::benchmark([&]{
-        distr.getIdealNodes(NodeType::STORAGE, state, document::BucketId(16, (bucket++ & 0xffffU)), actual, "uim");
-    }, 5.0);
+    uint32_t              bucket = 0;
+    auto                  min_time = vespalib::BenchmarkTimer::benchmark(
+        [&] {
+            distr.getIdealNodes(NodeType::STORAGE, state, document::BucketId(16, (bucket++ & 0xffffU)), actual,
+                                                 "uim");
+        },
+        5.0);
     fprintf(stderr, "%.10f seconds\n", min_time);
 }
 
@@ -1115,7 +1086,7 @@ std::vector<uint32_t> distribution_bit_mask_legacy_lut() {
     std::vector<uint32_t> masks;
     masks.resize(32 + 1);
     uint32_t mask = 0;
-    for (uint32_t i=0; i<=32; ++i) {
+    for (uint32_t i = 0; i <= 32; ++i) {
         masks[i] = mask;
         mask = (mask << 1) | 1;
     }
@@ -1161,13 +1132,13 @@ relative_node_order_scoring true
 )";
 
     const Distribution distr(cfg_with_3x3_topology);
-    const uint16_t key_to_relative_index[9] = {0, 1, 2, 0, 1, 2, 0, 1, 2};
-    constexpr size_t n_buckets = 1000;
+    const uint16_t     key_to_relative_index[9] = {0, 1, 2, 0, 1, 2, 0, 1, 2};
+    constexpr size_t   n_buckets = 1000;
     const ClusterState all_up_state("version:1 storage:9 distributor:9");
 
     for (size_t i = 0; i < n_buckets; i++) {
         const document::BucketId bucket_id(16, i);
-        auto nodes = distr.getIdealStorageNodes(all_up_state, bucket_id, "ui");
+        auto                     nodes = distr.getIdealStorageNodes(all_up_state, bucket_id, "ui");
         ASSERT_THAT(nodes, SizeIs(6));
         ASSERT_THAT(nodes, Each(Le(8)));
         // All replicas should be placed on nodes that have the same _relative_ configured
@@ -1202,11 +1173,11 @@ std::string make_flat_config_with_relative_scoring(const std::vector<uint16_t>& 
 } // namespace
 
 TEST_F(DistributionTest, relative_index_scoring_allows_for_verbatim_node_replacement_via_retiring) {
-    std::string cfg_8_nodes = make_flat_config_with_relative_scoring({0, 1, 2, 3, 4, 5, 6, 7});
+    std::string  cfg_8_nodes = make_flat_config_with_relative_scoring({0, 1, 2, 3, 4, 5, 6, 7});
     Distribution distr_8(cfg_8_nodes);
     // Note that node 8 is configured _right after_ 5.
     // With relative index scoring, config order matters!
-    std::string cfg_9_nodes = make_flat_config_with_relative_scoring({0, 1, 2, 3, 4, 5, 8, 6, 7});
+    std::string  cfg_9_nodes = make_flat_config_with_relative_scoring({0, 1, 2, 3, 4, 5, 8, 6, 7});
     Distribution distr_9(cfg_9_nodes);
     ClusterState state_all_up("version:1 storage:8 distributor:8");
     // In this state, node 5 is retired with node 8 logically taking up its "slot"
@@ -1214,11 +1185,11 @@ TEST_F(DistributionTest, relative_index_scoring_allows_for_verbatim_node_replace
     // all its buckets will intrinsically belong to node 8, and no other buckets
     // in the system will move. This hinges on group node order _not_ being implicitly
     // normalized to be in distribution key order as part of configuration.
-    ClusterState state_with_retired("version:1 storage:9 .5.s:r distributor:9");
+    ClusterState     state_with_retired("version:1 storage:9 .5.s:r distributor:9");
     constexpr size_t n_buckets = 10'000;
     for (size_t i = 0; i < n_buckets; i++) {
         const document::BucketId bucket_id(16, i);
-        auto orig_nodes = distr_8.getIdealStorageNodes(state_all_up, bucket_id, "ui");
+        auto                     orig_nodes = distr_8.getIdealStorageNodes(state_all_up, bucket_id, "ui");
         ASSERT_THAT(orig_nodes, SizeIs(1));
         auto new_nodes = distr_9.getIdealStorageNodes(state_with_retired, bucket_id, "ui");
         ASSERT_THAT(new_nodes, SizeIs(1));

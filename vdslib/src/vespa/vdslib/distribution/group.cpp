@@ -3,11 +3,12 @@
 #include "group.h"
 
 #include <vespa/vdslib/state/random.h>
-#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <ostream>
-#include <cassert>
+#include <vespa/vespalib/util/exceptions.h>
+
 #include <algorithm>
+#include <cassert>
+#include <ostream>
 
 namespace storage::lib {
 
@@ -18,12 +19,10 @@ Group::Group(uint16_t index, std::string_view name) noexcept
       _distributionHash(0),
       _capacity(1.0),
       _subGroups(),
-      _nodes()
-{
+      _nodes() {
 }
 
-Group::Group(uint16_t index, std::string_view name,
-             const Distribution& d, uint16_t redundancy)
+Group::Group(uint16_t index, std::string_view name, const Distribution& d, uint16_t redundancy)
     : _name(name),
       _index(index),
       _descendent_node_count(0),
@@ -32,37 +31,27 @@ Group::Group(uint16_t index, std::string_view name,
       _preCalculated(redundancy + 1),
       _capacity(1.0),
       _subGroups(),
-      _nodes()
-{
-    for (uint32_t i=0; i<_preCalculated.size(); ++i) {
+      _nodes() {
+    for (uint32_t i = 0; i < _preCalculated.size(); ++i) {
         _preCalculated[i] = Distribution(d, i);
     }
 }
 
-Group::~Group()
-{
-    for (auto & subGroup : _subGroups) {
+Group::~Group() {
+    for (auto& subGroup : _subGroups) {
         delete subGroup.second;
         subGroup.second = nullptr;
     }
 }
 
-bool
-Group::operator==(const Group& other) const noexcept
-{
-    return (_name == other._name &&
-            _index == other._index &&
-            _descendent_node_count == other._descendent_node_count &&
-            _distributionSpec == other._distributionSpec &&
-            _preCalculated.size() == other._preCalculated.size() &&
-            _capacity == other._capacity &&
-            _subGroups == other._subGroups &&
-            _nodes == other._nodes);
+bool Group::operator==(const Group& other) const noexcept {
+    return (_name == other._name && _index == other._index &&
+            _descendent_node_count == other._descendent_node_count && _distributionSpec == other._distributionSpec &&
+            _preCalculated.size() == other._preCalculated.size() && _capacity == other._capacity &&
+            _subGroups == other._subGroups && _nodes == other._nodes);
 }
 
-void
-Group::print(std::ostream& out, bool verbose,
-             const std::string& indent) const {
+void Group::print(std::ostream& out, bool verbose, const std::string& indent) const {
     out << "Group(";
     if (!_name.empty()) {
         out << "name: " << _name << ", ";
@@ -82,15 +71,15 @@ Group::print(std::ostream& out, bool verbose,
         out << ")";
     }
 
-    if (_subGroups.size()>0) {
+    if (_subGroups.size() > 0) {
         out << ", subgroups: " << _subGroups.size();
     }
 
     out << ") {";
 
-    if (_subGroups.size()>0) {
-        for (const auto & subGroup : _subGroups) {
-            out  << "\n" << indent << "  ";
+    if (_subGroups.size() > 0) {
+        for (const auto& subGroup : _subGroups) {
+            out << "\n" << indent << "  ";
             subGroup.second->print(out, verbose, indent + "  ");
         }
     }
@@ -98,43 +87,34 @@ Group::print(std::ostream& out, bool verbose,
     out << "\n" << indent << "}";
 }
 
-void
-Group::addSubGroup(Group::UP group)
-{
+void Group::addSubGroup(Group::UP group) {
     if (_distributionSpec.size() == 0) {
-        throw vespalib::IllegalStateException(
-                "Cannot add sub groups to a group without a valid distribution",
-                VESPA_STRLOC);
+        throw vespalib::IllegalStateException("Cannot add sub groups to a group without a valid distribution",
+                                              VESPA_STRLOC);
     }
     if (!group) {
-        throw vespalib::IllegalArgumentException(
-                "Cannot add null group.", VESPA_STRLOC);
+        throw vespalib::IllegalArgumentException("Cannot add null group.", VESPA_STRLOC);
     }
-    auto it =_subGroups.find(group->getIndex());
+    auto it = _subGroups.find(group->getIndex());
     if (it != _subGroups.end()) {
-        throw vespalib::IllegalArgumentException(
-                "Another subgroup with same index is already added.",
-                VESPA_STRLOC);
+        throw vespalib::IllegalArgumentException("Another subgroup with same index is already added.", VESPA_STRLOC);
     }
     auto index = group->getIndex();
     _subGroups[index] = group.release();
 }
 
-void
-Group::setCapacity(vespalib::Double capacity)
-{
+void Group::setCapacity(vespalib::Double capacity) {
     if (capacity <= 0) {
         vespalib::asciistream ost;
-        ost << "Illegal capacity '" << capacity << "'. Capacity "
-            "must be a positive floating point number";
+        ost << "Illegal capacity '" << capacity
+            << "'. Capacity "
+               "must be a positive floating point number";
         throw vespalib::IllegalArgumentException(ost.view(), VESPA_STRLOC);
     }
     _capacity = capacity;
 }
 
-void
-Group::setNodes(const std::vector<uint16_t>& nodes, bool normalize_order)
-{
+void Group::setNodes(const std::vector<uint16_t>& nodes, bool normalize_order) {
     assert(_distributionSpec.size() == 0);
     _originalNodes = nodes;
     _nodes = nodes;
@@ -148,16 +128,14 @@ Group::setNodes(const std::vector<uint16_t>& nodes, bool normalize_order)
     }
 }
 
-const Group*
-Group::getGroupForNode(uint16_t nodeIdx) const
-{
+const Group* Group::getGroupForNode(uint16_t nodeIdx) const {
     for (auto node : _nodes) {
         if (node == nodeIdx) {
             return this;
         }
     }
 
-    for (const auto & subGroup : _subGroups) {
+    for (const auto& subGroup : _subGroups) {
         const Group* g = subGroup.second->getGroupForNode(nodeIdx);
         if (g != nullptr) {
             return g;
@@ -167,9 +145,7 @@ Group::getGroupForNode(uint16_t nodeIdx) const
     return nullptr;
 }
 
-uint16_t
-Group::update_descendent_node_counts() noexcept
-{
+uint16_t Group::update_descendent_node_counts() noexcept {
     uint16_t nodes = 0;
     if (isLeafGroup()) {
         nodes = _nodes.size();
@@ -182,27 +158,19 @@ Group::update_descendent_node_counts() noexcept
     return nodes;
 }
 
-
-void
-Group::calculateDistributionHashValues(uint32_t parentHash) noexcept
-{
+void Group::calculateDistributionHashValues(uint32_t parentHash) noexcept {
     _distributionHash = parentHash ^ (1664525L * _index + 1013904223L);
-    for (const auto & subGroup : _subGroups) {
+    for (const auto& subGroup : _subGroups) {
         subGroup.second->calculateDistributionHashValues(_distributionHash);
     }
 }
 
-void
-Group::finalize() noexcept
-{
+void Group::finalize() noexcept {
     calculateDistributionHashValues();
-    (void) update_descendent_node_counts();
+    (void)update_descendent_node_counts();
 }
 
-
-void
-Group::getConfigHash(vespalib::asciistream& out) const
-{
+void Group::getConfigHash(vespalib::asciistream& out) const {
     out << '(' << _index;
     if (_capacity != 1.0) {
         out << 'c' << _capacity;
@@ -220,11 +188,10 @@ Group::getConfigHash(vespalib::asciistream& out) const
     out << ')';
 }
 
-std::string
-Group::getDistributionConfigHash() const {
+std::string Group::getDistributionConfigHash() const {
     vespalib::asciistream ost;
     getConfigHash(ost);
     return ost.str();
 }
 
-}
+} // namespace storage::lib

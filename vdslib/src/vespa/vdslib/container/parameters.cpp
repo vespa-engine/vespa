@@ -1,11 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "parameters.hpp"
+
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/objects/hexdump.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
-#include <vespa/vespalib/util/xmlstream.h>
 #include <vespa/vespalib/util/growablebytebuffer.h>
+#include <vespa/vespalib/util/xmlstream.h>
+
+#include <vespa/vespalib/stllike/hash_map.hpp>
+
 #include <cctype>
 #include <charconv>
 #include <ostream>
@@ -14,9 +17,7 @@ using namespace vdslib;
 
 Parameters::Parameters() = default;
 
-Parameters::Parameters(document::ByteBuffer& buffer)
-    : _parameters()
-{
+Parameters::Parameters(document::ByteBuffer& buffer) : _parameters() {
     deserialize(buffer);
 }
 
@@ -28,19 +29,17 @@ Parameters& Parameters::operator=(Parameters&&) noexcept = default;
 
 Parameters::~Parameters() = default;
 
-size_t Parameters::getSerializedSize() const
-{
+size_t Parameters::getSerializedSize() const {
     size_t mysize = sizeof(int32_t);
-    for (const auto & entry : _parameters) {
+    for (const auto& entry : _parameters) {
         mysize += entry.first.size() + 4 + 4 + entry.second.size();
     }
     return mysize;
 }
 
-void Parameters::serialize(vespalib::GrowableByteBuffer& buffer) const
-{
+void Parameters::serialize(vespalib::GrowableByteBuffer& buffer) const {
     buffer.putInt(_parameters.size());
-    for (const auto & entry : _parameters) {
+    for (const auto& entry : _parameters) {
         buffer.putInt(entry.first.size());
         buffer.putBytes(entry.first.c_str(), entry.first.size());
         buffer.putInt(entry.second.size());
@@ -48,13 +47,12 @@ void Parameters::serialize(vespalib::GrowableByteBuffer& buffer) const
     }
 }
 
-void Parameters::deserialize(document::ByteBuffer& buffer)
-{
+void Parameters::deserialize(document::ByteBuffer& buffer) {
     _parameters.clear();
     int32_t mysize;
     buffer.getIntNetwork(mysize);
     _parameters.resize(mysize);
-    for (int i=0; i<mysize; i++) {
+    for (int i = 0; i < mysize; i++) {
         int32_t keylen = 0;
         buffer.getIntNetwork(keylen);
         std::string key(buffer.getBufferAtPos(), keylen);
@@ -66,28 +64,24 @@ void Parameters::deserialize(document::ByteBuffer& buffer)
     }
 }
 
-void
-Parameters::printXml(vespalib::xml::XmlOutputStream& xos) const
-{
+void Parameters::printXml(vespalib::xml::XmlOutputStream& xos) const {
     using namespace vespalib::xml;
     xos << XmlTag("parameters");
-    for (const auto & entry : _parameters) {
-        xos << XmlTag("item")
-                << XmlTag("name") << entry.first << XmlEndTag()
-                << XmlTag("value") << entry.second << XmlEndTag()
-            << XmlEndTag();
+    for (const auto& entry : _parameters) {
+        xos << XmlTag("item") << XmlTag("name") << entry.first << XmlEndTag() << XmlTag("value") << entry.second
+            << XmlEndTag() << XmlEndTag();
     }
     xos << XmlEndTag();
 }
 
-bool
-Parameters::operator==(const Parameters &other) const
-{
+bool Parameters::operator==(const Parameters& other) const {
     if (size() != other.size()) {
         return false;
     }
 
-    for (ParametersMap::const_iterator a(_parameters.begin()), b(other._parameters.begin()), am(_parameters.end()); (a != am); ++a, ++b) {
+    for (ParametersMap::const_iterator a(_parameters.begin()), b(other._parameters.begin()), am(_parameters.end());
+         (a != am); ++a, ++b)
+    {
         if ((a->first != b->first)) {
             return false;
         }
@@ -96,47 +90,45 @@ Parameters::operator==(const Parameters &other) const
     return true;
 }
 
-std::string_view Parameters::get(std::string_view id, std::string_view def) const
-{
+std::string_view Parameters::get(std::string_view id, std::string_view def) const {
     ParametersMap::const_iterator it = _parameters.find(id);
-    if (it == _parameters.end()) return def;
+    if (it == _parameters.end())
+        return def;
     return it->second;
 }
 
-bool Parameters::lookup(KeyT id, ValueRef & v ) const
-{
+bool Parameters::lookup(KeyT id, ValueRef& v) const {
     ParametersMap::const_iterator it = _parameters.find(id);
-    if (it == _parameters.end()) return false;
+    if (it == _parameters.end())
+        return false;
     v = ValueRef(it->second.c_str(), it->second.size());
     return true;
 }
 
-void Parameters::print(std::ostream& out, bool verbose, const std::string& indent) const
-{
+void Parameters::print(std::ostream& out, bool verbose, const std::string& indent) const {
     out << "Parameters(";
     if (!verbose) {
         out << _parameters.size() << " values";
     } else {
-        for (const auto & entry : _parameters) {
+        for (const auto& entry : _parameters) {
             bool isPrintable(true);
             for (size_t i(0), m(entry.second.size()); isPrintable && (i < m); i++) {
                 isPrintable = std::isprint(static_cast<unsigned char>(entry.second[i]));
             }
             out << "\n" << indent << "           " << entry.first << " = ";
-            if (!entry.second.empty() && isPrintable && (entry.second[entry.second.size()-1] == 0)) {
-                out  << entry.second.c_str();
+            if (!entry.second.empty() && isPrintable && (entry.second[entry.second.size() - 1] == 0)) {
+                out << entry.second.c_str();
             } else {
-                out  << vespalib::HexDump(entry.second.c_str(), entry.second.size());
+                out << vespalib::HexDump(entry.second.c_str(), entry.second.size());
             }
         }
     }
     out << ")";
 }
 
-std::string Parameters::toString() const
-{
+std::string Parameters::toString() const {
     std::string ret;
-    for (const auto & entry : _parameters) {
+    for (const auto& entry : _parameters) {
         ret += entry.first;
         ret += '=';
         ret += entry.second;
@@ -145,39 +137,34 @@ std::string Parameters::toString() const
     return ret;
 }
 
-void
-Parameters::set(KeyT id, int32_t value) {
+void Parameters::set(KeyT id, int32_t value) {
     char tmp[16];
     auto res = std::to_chars(tmp, tmp + sizeof(tmp), value, 10);
     _parameters[std::string(id)] = Value(tmp, size_t(res.ptr - tmp));
 }
 
-void
-Parameters::set(KeyT id, int64_t value) {
+void Parameters::set(KeyT id, int64_t value) {
     char tmp[32];
     auto res = std::to_chars(tmp, tmp + sizeof(tmp), value, 10);
     _parameters[std::string(id)] = Value(tmp, size_t(res.ptr - tmp));
 }
 
-void
-Parameters::set(KeyT id, uint64_t value) {
+void Parameters::set(KeyT id, uint64_t value) {
     char tmp[32];
     auto res = std::to_chars(tmp, tmp + sizeof(tmp), value, 10);
     _parameters[std::string(id)] = Value(tmp, size_t(res.ptr - tmp));
 }
 
-void
-Parameters::set(KeyT id, double value) {
+void Parameters::set(KeyT id, double value) {
     vespalib::asciistream ost;
     ost << value;
     _parameters[std::string(id)] = Value(ost.view());
 }
 
-
-template int32_t vdslib::Parameters::get(std::string_view , int32_t) const;
-template int64_t vdslib::Parameters::get(std::string_view , int64_t) const;
-template uint64_t vdslib::Parameters::get(std::string_view , uint64_t) const;
-template double vdslib::Parameters::get(std::string_view , double) const;
-template std::string vdslib::Parameters::get(std::string_view , std::string) const;
+template int32_t vdslib::Parameters::get(std::string_view, int32_t) const;
+template int64_t vdslib::Parameters::get(std::string_view, int64_t) const;
+template uint64_t vdslib::Parameters::get(std::string_view, uint64_t) const;
+template double vdslib::Parameters::get(std::string_view, double) const;
+template std::string vdslib::Parameters::get(std::string_view, std::string) const;
 
 VESPALIB_HASH_MAP_INSTANTIATE(std::string, vdslib::Parameters::Value);

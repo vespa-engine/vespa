@@ -13,18 +13,18 @@
 #include <string>
 
 namespace vespalib {
-    class asciistream;
+class asciistream;
 }
 
 namespace storage::lib {
 
-class NodeType  {
+class NodeType {
 public:
-    NodeType(const NodeType &) = delete;
-    NodeType & operator = (const NodeType &) = delete;
-    NodeType(NodeType &&) = delete;
-    NodeType & operator =(NodeType &&) = delete;
-    enum class Type : uint8_t {STORAGE = 0, DISTRIBUTOR = 1, UNKNOWN = 2};
+    NodeType(const NodeType&) = delete;
+    NodeType& operator=(const NodeType&) = delete;
+    NodeType(NodeType&&) = delete;
+    NodeType& operator=(NodeType&&) = delete;
+    enum class Type : uint8_t { STORAGE = 0, DISTRIBUTOR = 1, UNKNOWN = 2 };
     static const NodeType DISTRIBUTOR;
     static const NodeType STORAGE;
 
@@ -36,22 +36,22 @@ public:
     Type getType() const noexcept { return _type; }
     operator uint16_t() const noexcept { return static_cast<uint16_t>(_type); }
 
-    const std::string & toString() const noexcept { return _name; }
+    const std::string& toString() const noexcept { return _name; }
     bool operator==(const NodeType& other) const noexcept { return (&other == this); }
     bool operator!=(const NodeType& other) const noexcept { return (&other != this); }
 
     bool operator<(const NodeType& other) const noexcept {
         return (&other == this ? false : *this == NodeType::DISTRIBUTOR);
     }
+
 private:
-    Type             _type;
+    Type        _type;
     std::string _name;
 
     NodeType(std::string_view name, Type type) noexcept;
 };
 
-std::ostream & operator << (std::ostream & os, const NodeType & n);
-vespalib::asciistream & operator << (vespalib::asciistream & os, const NodeType & n);
+std::ostream& operator<<(std::ostream& os, const NodeType& n);
+vespalib::asciistream& operator<<(vespalib::asciistream& os, const NodeType& n);
 
-}
-
+} // namespace storage::lib
