@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 
 import static com.yahoo.vespa.model.container.ApplicationContainerCluster.defaultHeapSizePercentageOfAvailableMemory;
@@ -79,6 +80,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private final Map<String, Integer> searchNodeInitializerThreads = new HashMap<>();
     private boolean useTriton = false;
     private boolean scaleMetricsproxyHeapByNodeCount = false;
+    private OptionalInt metricsProxyHeapSizeInMib = OptionalInt.empty();
+    private OptionalInt metricsProxyAdminNodeHeapSizeInMib = OptionalInt.empty();
     private boolean ignoreConnectivityChecksAtStartup = false;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
@@ -138,6 +141,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean useTriton() { return useTriton; }
     @Override public ModelContext.FeatureFlag<Boolean> useTritonFlag() { return () -> useTriton; }
     @Override public boolean scaleMetricsproxyHeapByNodeCount() { return scaleMetricsproxyHeapByNodeCount; }
+    @Override public OptionalInt metricsProxyHeapSizeInMib() { return metricsProxyHeapSizeInMib; }
+    @Override public OptionalInt metricsProxyAdminNodeHeapSizeInMib() { return metricsProxyAdminNodeHeapSizeInMib; }
     @Override public boolean ignoreConnectivityChecksAtStartup() { return ignoreConnectivityChecksAtStartup; }
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
@@ -331,6 +336,16 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setScaleMetricsproxyHeapByNodeCount(boolean value) {
         this.scaleMetricsproxyHeapByNodeCount = value;
+        return this;
+    }
+
+    public TestProperties setMetricsProxyHeapSizeInMib(int value) {
+        this.metricsProxyHeapSizeInMib = OptionalInt.of(value);
+        return this;
+    }
+
+    public TestProperties setMetricsProxyAdminNodeHeapSizeInMib(int value) {
+        this.metricsProxyAdminNodeHeapSizeInMib = OptionalInt.of(value);
         return this;
     }
 

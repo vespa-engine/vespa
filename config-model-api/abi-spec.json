@@ -1443,6 +1443,8 @@
       "public double docprocHandlerThreadpool()",
       "public boolean applyOnRestartForApplicationMetadataConfig()",
       "public boolean scaleMetricsproxyHeapByNodeCount()",
+      "public java.util.OptionalInt metricsProxyHeapSizeInMib()",
+      "public java.util.OptionalInt metricsProxyAdminNodeHeapSizeInMib()",
       "public double autoscalerTargetWriteCpuPercentage(java.util.Optional)",
       "public double searchNodeReservedDiskSpaceFactor()"
     ],

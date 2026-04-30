@@ -25,6 +25,7 @@ import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.METRICS_PROXY_BUNDLE_NAME;
@@ -50,6 +51,8 @@ public class MetricsProxyContainer extends Container implements
     private final ApplicationId applicationId;
     private final Zone zone;
     private final boolean scaleHeapByNodeCount;
+    private final OptionalInt metricsProxyHeapSizeInMib;
+    private final OptionalInt metricsProxyAdminNodeHeapSizeInMib;
 
     public MetricsProxyContainer(MetricsProxyContainerCluster cluster, HostResource host, int index, DeployState deployState) {
         super(cluster, host.getHostname(), index, deployState);
@@ -59,6 +62,8 @@ public class MetricsProxyContainer extends Container implements
         this.applicationId = deployState.getApplicationPackage().getApplicationId();
         this.zone = deployState.zone();
         this.scaleHeapByNodeCount = deployState.featureFlags().scaleMetricsproxyHeapByNodeCount();
+        this.metricsProxyHeapSizeInMib = deployState.featureFlags().metricsProxyHeapSizeInMib();
+        this.metricsProxyAdminNodeHeapSizeInMib = deployState.featureFlags().metricsProxyAdminNodeHeapSizeInMib();
         setProp("clustertype", "admin");
         setProp("index", String.valueOf(index));
         addNodeSpecificComponents();
@@ -171,21 +176,22 @@ public class MetricsProxyContainer extends Container implements
     }
 
     private int calculateHeapSize(boolean adminCluster) {
-        int baseHeapSize = adminCluster ? 96 : 320;
-
-        if (!scaleHeapByNodeCount) {
-            return baseHeapSize;
+        int nodeCount = hostSystem().getHosts().size();
+        if (adminCluster) {
+            if (metricsProxyAdminNodeHeapSizeInMib.isPresent()) return metricsProxyAdminNodeHeapSizeInMib.getAsInt();
+            if (!scaleHeapByNodeCount) return 96;
+            // Increase in steps to avoid changes to heap size with small changes in node count.
+            var step = nodeCount / 50;
+            return Math.min(96 + (step * 50), 512);
         }
 
-        int nodeCount = hostSystem().getHosts().size();
-        int heapPerNode = adminCluster ? 1 : 2;
-        int maxHeapSize = adminCluster ? 512 : 1024;
-
+        if (metricsProxyHeapSizeInMib.isPresent()) return metricsProxyHeapSizeInMib.getAsInt();
+        if (!scaleHeapByNodeCount) return 320;
         // Increase in steps to avoid changes to heap size with small changes in node count.
         var step = nodeCount / 50;
-        int calculatedHeap = baseHeapSize + (step * heapPerNode * 50);
-        return Math.min(calculatedHeap, maxHeapSize);
+        return Math.min(320 + (step * 2 * 50), 1024);
     }
+
 
     private String getNodeRole() {
         String hostConfigId = getHost().getHost().getConfigId();

@@ -41,6 +41,7 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
@@ -254,6 +255,8 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean useTriton() { return flag(Flags.USE_TRITON).value(); }
         @Override public ModelContext.FeatureFlag<Boolean> useTritonFlag() { return flag(Flags.USE_TRITON); }
         @Override public boolean scaleMetricsproxyHeapByNodeCount() { return flag(Flags.SCALE_METRICSPROXY_HEAP_BY_NODE_COUNT).value(); }
+        @Override public OptionalInt metricsProxyHeapSizeInMib() { return toOptionalInt(flag(Flags.METRICS_PROXY_HEAP_SIZE_IN_MIB).value()); }
+        @Override public OptionalInt metricsProxyAdminNodeHeapSizeInMib() { return toOptionalInt(flag(Flags.METRICS_PROXY_ADMIN_HEAP_SIZE_IN_MIB).value()); }
         @Override public boolean ignoreConnectivityChecksAtStartup() { return flag(PermanentFlags.IGNORE_CONNECTIVITY_CHECKS_AT_STARTUP).value(); }
         @Override public int searchCoreMaxOutstandingMoveOps() { return flag(Flags.SEARCH_CORE_MAX_OUTSTANDING_MOVE_OPS).value(); }
         @Override public double docprocHandlerThreadpool() { return flag(Flags.DOCPROC_HANDLER_THREADPOOL).value(); }
@@ -261,6 +264,10 @@ public class ModelContextImpl implements ModelContext {
         @Override public double autoscalerTargetWriteCpuPercentage(Optional<String> clusterId) {
             var flag = flag(Flags.AUTOSCALER_TARGET_WRITE_CPU_PERCENTAGE);
             return clusterId.map(id -> flag.withClusterId(ClusterSpec.Id.from(id)).value()).orElseGet(flag::value);
+        }
+
+        private static OptionalInt toOptionalInt(int value) {
+            return value > 0 ? OptionalInt.of(value) : OptionalInt.empty();
         }
     }
 
