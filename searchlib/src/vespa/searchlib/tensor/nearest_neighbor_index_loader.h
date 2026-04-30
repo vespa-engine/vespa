@@ -20,4 +20,4 @@ public:
     virtual bool load_next() = 0;
 };
 
-}
+} // namespace search::tensor

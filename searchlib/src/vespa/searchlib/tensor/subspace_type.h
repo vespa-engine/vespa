@@ -4,15 +4,16 @@
 
 #include <vespa/eval/eval/cell_type.h>
 
-namespace vespalib::eval { class ValueType; }
+namespace vespalib::eval {
+class ValueType;
+}
 
 namespace search::tensor {
 
 /*
  * Class describing the type of a dense subspace in a tensor.
  */
-class SubspaceType
-{
+class SubspaceType {
     vespalib::eval::CellType _cell_type;
     size_t                   _size;     // # cells
     size_t                   _mem_size; // # bytes
@@ -23,4 +24,4 @@ public:
     size_t mem_size() const noexcept { return _mem_size; }
 };
 
-}
+} // namespace search::tensor

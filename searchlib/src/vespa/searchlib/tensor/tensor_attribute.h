@@ -7,12 +7,17 @@
 #include "subspace_type.h"
 #include "tensor_store.h"
 #include "typed_cells_comparator.h"
+
+#include <vespa/document/update/tensor_update.h>
 #include <vespa/searchlib/attribute/not_implemented_attribute.h>
 #include <vespa/vespalib/util/rcuvector.h>
-#include <vespa/document/update/tensor_update.h>
+
 #include <atomic>
 
-namespace vespalib::eval { struct Value; struct ValueBuilderFactory; }
+namespace vespalib::eval {
+struct Value;
+struct ValueBuilderFactory;
+} // namespace vespalib::eval
 
 namespace search::tensor {
 
@@ -27,27 +32,29 @@ protected:
     using EntryRef = TensorStore::EntryRef;
     using RefVector = vespalib::RcuVectorBase<AtomicEntryRef>;
 
-    RefVector _refVector; // docId -> ref in data store for serialized tensor
-    TensorStore &_tensorStore; // data store for serialized tensors
+    RefVector                                _refVector;   // docId -> ref in data store for serialized tensor
+    TensorStore&                             _tensorStore; // data store for serialized tensors
     std::unique_ptr<DistanceFunctionFactory> _distance_function_factory;
-    std::unique_ptr<NearestNeighborIndex> _index;
-    bool _is_dense;
-    std::unique_ptr<vespalib::eval::Value> _emptyTensor;
-    vespalib::Generation _compactGeneration; // Generation when last compact occurred
-    SubspaceType         _subspace_type;
-    TypedCellsComparator _comp;
-    uint64_t             _memory_usage_empty;
-    uint64_t             _memory_usage_at_save_start;
-    std::atomic<double>  _size_on_disk_factor; // size on disk / memory usage
+    std::unique_ptr<NearestNeighborIndex>    _index;
+    bool                                     _is_dense;
+    std::unique_ptr<vespalib::eval::Value>   _emptyTensor;
+    vespalib::Generation                     _compactGeneration; // Generation when last compact occurred
+    SubspaceType                             _subspace_type;
+    TypedCellsComparator                     _comp;
+    uint64_t                                 _memory_usage_empty;
+    uint64_t                                 _memory_usage_at_save_start;
+    std::atomic<double>                      _size_on_disk_factor; // size on disk / memory usage
 
-    void checkTensorType(const vespalib::eval::Value &tensor) const;
+    void checkTensorType(const vespalib::eval::Value& tensor) const;
     void setTensorRef(DocId docId, EntryRef ref);
     void internal_set_tensor(DocId docid, const vespalib::eval::Value& tensor);
     void consider_remove_from_index(DocId docid);
     virtual vespalib::MemoryUsage update_stat();
     void populate_address_space_usage(AddressSpaceUsage& usage) const override;
-    EntryRef acquire_entry_ref(DocId doc_id) const noexcept { return _refVector.acquire_elem_ref(doc_id).load_acquire(); }
-    bool onLoad(vespalib::Executor *executor) override;
+    EntryRef acquire_entry_ref(DocId doc_id) const noexcept {
+        return _refVector.acquire_elem_ref(doc_id).load_acquire();
+    }
+    bool onLoad(vespalib::Executor* executor) override;
     std::unique_ptr<AttributeSaver> onInitSave(std::string_view fileName) override;
     bool tensor_cells_are_unchanged(DocId docid, VectorBundle vectors) const;
 
@@ -55,16 +62,17 @@ protected:
     void setup_memory_usage_empty();
 
 public:
-    TensorAttribute(std::string_view name, const Config &cfg, TensorStore &tensorStore, const NearestNeighborIndexFactory& index_factory);
+    TensorAttribute(std::string_view name, const Config& cfg, TensorStore& tensorStore,
+                    const NearestNeighborIndexFactory& index_factory);
     ~TensorAttribute() override;
-    const ITensorAttribute *asTensorAttribute() const override;
+    const ITensorAttribute* asTensorAttribute() const override;
 
     uint32_t clearDoc(DocId docId) override;
     void onCommit() override;
     void onUpdateStat(CommitParam::UpdateStats updateStats) override;
     void reclaim_memory(vespalib::Generation oldest_used_gen) override;
     void before_inc_generation(vespalib::Generation current_gen) override;
-    bool addDoc(DocId &docId) override;
+    bool addDoc(DocId& docId) override;
     std::unique_ptr<vespalib::eval::Value> getTensor(DocId docId) const override;
     std::unique_ptr<vespalib::eval::Value> getEmptyTensor() const override;
     vespalib::eval::TypedCells extract_cells_ref(uint32_t docid) const override;
@@ -73,17 +81,15 @@ public:
     bool supports_extract_cells_ref() const override { return false; }
     bool supports_get_tensor_ref() const override { return false; }
     bool supports_get_serialized_tensor_ref() const override;
-    const vespalib::eval::ValueType & getTensorType() const override;
+    const vespalib::eval::ValueType& getTensorType() const override;
     DistanceFunctionFactory& distance_function_factory() const override;
     const NearestNeighborIndex* nearest_neighbor_index() const override;
     std::unique_ptr<vespalib::StateExplorer> make_state_explorer() const override;
     void clearDocs(DocId lidLow, DocId lidLimit, bool in_shrink_lid_space) override;
     void onShrinkLidSpace() override;
     uint32_t getVersion() const override;
-    virtual void setTensor(DocId docId, const vespalib::eval::Value &tensor);
-    virtual void update_tensor(DocId docId,
-                               const document::TensorUpdate &update,
-                               bool create_empty_if_non_existing);
+    virtual void setTensor(DocId docId, const vespalib::eval::Value& tensor);
+    virtual void update_tensor(DocId docId, const document::TensorUpdate& update, bool create_empty_if_non_existing);
     DistanceMetric distance_metric() const override;
     uint32_t get_num_docs() const override { return getNumDocs(); }
 
@@ -101,7 +107,8 @@ public:
      * This function is only called by the attribute writer thread.
      * It uses the result from the prepare step to do the modifying changes.
      */
-    virtual void complete_set_tensor(DocId docid, const vespalib::eval::Value& tensor, std::unique_ptr<PrepareResult> prepare_result);
+    virtual void complete_set_tensor(DocId docid, const vespalib::eval::Value& tensor,
+                                     std::unique_ptr<PrepareResult> prepare_result);
     void set_memory_usage_at_save_start(uint64_t memory_usage) noexcept;
     void set_size_on_disk(uint64_t value) noexcept override;
     uint64_t getEstimatedSaveByteSize() const override;
@@ -109,4 +116,4 @@ public:
     void reclaim_unused_memory() override;
 };
 
-}
+} // namespace search::tensor

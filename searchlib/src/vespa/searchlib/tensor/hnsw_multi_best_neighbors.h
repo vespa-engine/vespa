@@ -4,7 +4,9 @@
 
 #include "hnsw_index_utils.h"
 #include "nearest_neighbor_index.h"
+
 #include <vespa/vespalib/stllike/hash_map.h>
+
 #include <cassert>
 
 namespace search::tensor {
@@ -15,7 +17,7 @@ namespace search::tensor {
  */
 class HnswMultiBestNeighbors {
     using EntryRef = vespalib::datastore::EntryRef;
-    FurthestPriQ _candidates;
+    FurthestPriQ                           _candidates;
     vespalib::hash_map<uint32_t, uint32_t> _docids;
 
     void add_docid(uint32_t docid) {
@@ -36,12 +38,9 @@ class HnswMultiBestNeighbors {
             return true;
         }
     }
+
 public:
-    HnswMultiBestNeighbors()
-        : _candidates(),
-          _docids()
-    {
-    }
+    HnswMultiBestNeighbors() : _candidates(), _docids() {}
     ~HnswMultiBestNeighbors();
 
     std::vector<NearestNeighborIndex::Neighbor> get_neighbors(uint32_t k, double distance_threshold);
@@ -66,4 +65,4 @@ public:
     }
 };
 
-}
+} // namespace search::tensor

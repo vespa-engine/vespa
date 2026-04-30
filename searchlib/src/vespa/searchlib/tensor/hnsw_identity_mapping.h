@@ -4,11 +4,14 @@
 
 #include <vespa/vespalib/util/generation.h>
 #include <vespa/vespalib/util/memoryusage.h>
+
 #include <cassert>
 #include <cstdint>
 #include <span>
 
-namespace vespalib::datastore { class CompactionStrategy; }
+namespace vespalib::datastore {
+class CompactionStrategy;
+}
 
 namespace search::tensor {
 
@@ -20,11 +23,9 @@ class HnswSimpleNode;
  */
 class HnswIdentityMapping {
     uint32_t _nodeid;
+
 public:
-    HnswIdentityMapping()
-        : _nodeid(0u)
-    {
-    }
+    HnswIdentityMapping() : _nodeid(0u) {}
     std::span<const uint32_t> allocate_ids(uint32_t docid, uint32_t subspaces) {
         assert(subspaces == 1u);
         _nodeid = docid;
@@ -34,14 +35,16 @@ public:
         _nodeid = docid;
         return {&_nodeid, 1};
     }
-    void free_ids(uint32_t docid) { (void) docid; }
-    void assign_generation(vespalib::Generation current_gen) { (void) current_gen; };
-    void reclaim_memory(vespalib::Generation oldest_used_gen) { (void) oldest_used_gen; };
-    void on_load(std::span<const HnswSimpleNode> nodes) { (void) nodes; }
+    void free_ids(uint32_t docid) { (void)docid; }
+    void assign_generation(vespalib::Generation current_gen) { (void)current_gen; };
+    void reclaim_memory(vespalib::Generation oldest_used_gen) { (void)oldest_used_gen; };
+    void on_load(std::span<const HnswSimpleNode> nodes) { (void)nodes; }
     vespalib::MemoryUsage memory_usage() const { return vespalib::MemoryUsage(); }
-    vespalib::MemoryUsage update_stat(const vespalib::datastore::CompactionStrategy&) { return vespalib::MemoryUsage(); }
+    vespalib::MemoryUsage update_stat(const vespalib::datastore::CompactionStrategy&) {
+        return vespalib::MemoryUsage();
+    }
     static bool consider_compact() noexcept { return false; }
     static void compact_worst(const vespalib::datastore::CompactionStrategy&) {}
 };
 
-}
+} // namespace search::tensor

@@ -3,13 +3,15 @@
 #pragma once
 
 #include "hnsw_index_traits.h"
-#include "hnsw_simple_node.h"
 #include "hnsw_node.h"
+#include "hnsw_simple_node.h"
+
 #include <vespa/vespalib/datastore/array_store.h>
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
 #include <vespa/vespalib/datastore/entryref.h>
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/rcuvector.h>
+
 #include <chrono>
 
 namespace search::tensor {
@@ -18,8 +20,7 @@ namespace search::tensor {
  * Storage of a hierarchical navigable small world graph (HNSW)
  * that is used for approximate K-nearest neighbor search.
  */
-template <HnswIndexType type>
-struct HnswGraph {
+template <HnswIndexType type> struct HnswGraph {
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
 
     // This uses 10 bits for buffer id -> 1024 buffers.
@@ -38,7 +39,8 @@ struct HnswGraph {
     using LevelsRef = vespalib::datastore::EntryRef;
 
     // This stores the level arrays for all nodes.
-    // Each node consists of an array of levels (from level 0 to n) where each entry is a reference to the link array at that level.
+    // Each node consists of an array of levels (from level 0 to n) where each entry is a reference to the link array
+    // at that level.
     using LevelArrayStore = vespalib::datastore::ArrayStore<AtomicEntryRef, LevelArrayEntryRefType>;
     using LevelArrayRef = LevelArrayStore::ConstArrayRef;
 
@@ -47,11 +49,11 @@ struct HnswGraph {
     using LinkArrayStore = vespalib::datastore::ArrayStore<uint32_t, LinkArrayEntryRefType>;
     using LinkArrayRef = LinkArrayStore::ConstArrayRef;
 
-    NodeVector nodes;
+    NodeVector            nodes;
     std::atomic<uint32_t> nodes_size;
     std::atomic<uint32_t> active_nodes;
-    LevelArrayStore levels_store;
-    LinkArrayStore links_store;
+    LevelArrayStore       levels_store;
+    LinkArrayStore        links_store;
 
     std::atomic<uint64_t> entry_nodeid_and_level;
 
@@ -71,9 +73,7 @@ struct HnswGraph {
         return nodes.get_elem_ref(nodeid).levels_ref().load_relaxed(); // Called from writer only
     }
 
-    const NodeType& acquire_node(uint32_t nodeid) const {
-        return nodes.acquire_elem_ref(nodeid);
-    }
+    const NodeType& acquire_node(uint32_t nodeid) const { return nodes.acquire_elem_ref(nodeid); }
 
     LevelsRef acquire_levels_ref(uint32_t nodeid) const {
         return nodes.acquire_elem_ref(nodeid).levels_ref().load_acquire();
@@ -128,26 +128,20 @@ struct HnswGraph {
     void set_link_array(uint32_t nodeid, uint32_t level, const LinkArrayRef& new_links);
 
     struct EntryNode {
-        uint32_t nodeid;
+        uint32_t  nodeid;
         LevelsRef levels_ref;
-        int32_t level;
+        int32_t   level;
         EntryNode() noexcept
-          : nodeid(0), // Note that nodeid 0 is reserved and never used
-            levels_ref(),
-            level(-1)
-        {}
+            : nodeid(0), // Note that nodeid 0 is reserved and never used
+              levels_ref(),
+              level(-1) {}
         EntryNode(uint32_t nodeid_in, LevelsRef levels_ref_in, int32_t level_in) noexcept
-          : nodeid(nodeid_in),
-            levels_ref(levels_ref_in),
-            level(level_in)
-        {}
+            : nodeid(nodeid_in), levels_ref(levels_ref_in), level(level_in) {}
     };
 
     void set_entry_node(EntryNode node);
 
-    uint64_t get_entry_atomic() const {
-        return entry_nodeid_and_level.load(std::memory_order_acquire);
-    }
+    uint64_t get_entry_atomic() const { return entry_nodeid_and_level.load(std::memory_order_acquire); }
 
     EntryNode get_entry_node() const {
         EntryNode entry;
@@ -156,17 +150,11 @@ struct HnswGraph {
             entry.nodeid = (uint32_t)value;
             entry.levels_ref = acquire_levels_ref(entry.nodeid);
             entry.level = (int32_t)(value >> 32);
-            if ((entry.nodeid == 0)
-                && (entry.level == -1)
-                && ! entry.levels_ref.valid())
-            {
+            if ((entry.nodeid == 0) && (entry.level == -1) && !entry.levels_ref.valid()) {
                 // invalid in every way
                 return entry;
             }
-            if ((entry.nodeid > 0)
-                && (entry.level > -1)
-                && entry.levels_ref.valid()
-                && (get_entry_atomic() == value))
+            if ((entry.nodeid > 0) && (entry.level > -1) && entry.levels_ref.valid() && (get_entry_atomic() == value))
             {
                 // valid in every way
                 return entry;
@@ -192,4 +180,4 @@ struct HnswGraph {
     }
 };
 
-}
+} // namespace search::tensor

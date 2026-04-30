@@ -5,6 +5,7 @@
 #include "default_nearest_neighbor_index_factory.h"
 #include "dense_tensor_store.h"
 #include "tensor_attribute.h"
+
 #include <memory>
 
 namespace search::tensor {
@@ -32,4 +33,4 @@ public:
     void prefetch_vector(uint32_t docid) const noexcept override;
 };
 
-}
+} // namespace search::tensor

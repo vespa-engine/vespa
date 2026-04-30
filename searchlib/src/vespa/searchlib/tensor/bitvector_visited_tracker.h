@@ -10,9 +10,9 @@ namespace search::tensor {
  * Tracker for visited nodes based on search::AllocatedBitVector. Best when
  * many nodes are visited.
  */
-class BitVectorVisitedTracker
-{
+class BitVectorVisitedTracker {
     search::AllocatedBitVector _visited;
+
 public:
     BitVectorVisitedTracker(uint32_t nodeid_limit, uint32_t);
     ~BitVectorVisitedTracker();
@@ -27,4 +27,4 @@ public:
     }
 };
 
-}
+} // namespace search::tensor

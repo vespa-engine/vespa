@@ -6,16 +6,15 @@ namespace search::tensor {
 
 HnswMultiBestNeighbors::~HnswMultiBestNeighbors() = default;
 
-std::vector<NearestNeighborIndex::Neighbor>
-HnswMultiBestNeighbors::get_neighbors(uint32_t k, double distance_threshold)
-{
+std::vector<NearestNeighborIndex::Neighbor> HnswMultiBestNeighbors::get_neighbors(uint32_t k,
+                                                                                  double   distance_threshold) {
     while (_docids.size() > k) {
         pop();
     }
     std::vector<NearestNeighborIndex::Neighbor> result;
     result.reserve(_docids.size());
     while (!_candidates.empty()) {
-        auto& hit = _candidates.top();
+        auto&    hit = _candidates.top();
         uint32_t docid = hit.docid;
         if (remove_docid(docid) && (!(hit.distance > distance_threshold))) {
             result.emplace_back(docid, hit.distance);
@@ -25,4 +24,4 @@ HnswMultiBestNeighbors::get_neighbors(uint32_t k, double distance_threshold)
     return result;
 }
 
-}
+} // namespace search::tensor

@@ -9,19 +9,18 @@ namespace search::tensor {
 /**
  * Helper class containing temporary memory storage for possibly converted vector cells.
  */
-template <typename FloatTypeT>
-class TemporaryVectorStore {
+template <typename FloatTypeT> class TemporaryVectorStore {
 public:
     using FloatType = FloatTypeT;
+
 private:
     using TypedCells = vespalib::eval::TypedCells;
     std::vector<FloatType> _tmpSpace;
     std::span<const FloatType> internal_convert(TypedCells cells, size_t offset) noexcept;
+
 public:
     explicit TemporaryVectorStore(size_t vectorSize) noexcept : _tmpSpace(vectorSize * 2) {}
-    std::span<const FloatType> storeLhs(TypedCells cells) noexcept {
-        return internal_convert(cells, 0);
-    }
+    std::span<const FloatType> storeLhs(TypedCells cells) noexcept { return internal_convert(cells, 0); }
     std::span<const FloatType> convertRhs(TypedCells cells) {
         if (vespalib::eval::get_cell_type<FloatType>() == cells.type) [[likely]] {
             return cells.unsafe_typify<FloatType>();
@@ -35,20 +34,17 @@ public:
  * Helper class used when TypedCells vector memory is just referenced,
  * and used directly in calculations without any transforms.
  */
-template <typename FloatTypeT>
-class ReferenceVectorStore {
+template <typename FloatTypeT> class ReferenceVectorStore {
 public:
     using FloatType = FloatTypeT;
+
 private:
     using TypedCells = vespalib::eval::TypedCells;
+
 public:
-    explicit ReferenceVectorStore(size_t vector_size) noexcept { (void) vector_size; }
-    std::span<const FloatType> storeLhs(TypedCells cells) noexcept {
-        return cells.unsafe_typify<FloatType>();
-    }
-    std::span<const FloatType> convertRhs(TypedCells cells) noexcept {
-        return cells.unsafe_typify<FloatType>();
-    }
+    explicit ReferenceVectorStore(size_t vector_size) noexcept { (void)vector_size; }
+    std::span<const FloatType> storeLhs(TypedCells cells) noexcept { return cells.unsafe_typify<FloatType>(); }
+    std::span<const FloatType> convertRhs(TypedCells cells) noexcept { return cells.unsafe_typify<FloatType>(); }
 };
 
-}
+} // namespace search::tensor

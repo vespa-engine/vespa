@@ -7,4 +7,4 @@ namespace search::tensor {
 HnswTestNode::HnswTestNode() noexcept = default;
 HnswTestNode::~HnswTestNode() = default;
 
-}
+} // namespace search::tensor

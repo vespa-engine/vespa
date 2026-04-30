@@ -7,6 +7,7 @@
 #include <vespa/vespalib/util/generation_hold_list.h>
 #include <vespa/vespalib/util/growstrategy.h>
 #include <vespa/vespalib/util/memoryusage.h>
+
 #include <cstdint>
 #include <span>
 #include <vector>
@@ -32,11 +33,11 @@ private:
 
     // Maps from docid to EntryRef used to get the array of nodeids from the NodeidStore.
     std::vector<vespalib::datastore::EntryRef> _refs;
-    vespalib::GrowStrategy _grow_strategy;
-    uint32_t _nodeid_limit;
-    NodeidStore _nodeids;
-    NodeidHoldList _hold_list;
-    NodeidFreeList _free_list;
+    vespalib::GrowStrategy                     _grow_strategy;
+    uint32_t                                   _nodeid_limit;
+    NodeidStore                                _nodeids;
+    NodeidHoldList                             _hold_list;
+    NodeidFreeList                             _free_list;
 
     void ensure_refs_size(uint32_t docid);
     uint32_t allocate_id();
@@ -62,8 +63,8 @@ public:
     std::unique_ptr<vespalib::StateExplorer> make_state_explorer() const;
 };
 
-}
+} // namespace search::tensor
 
 namespace vespalib {
-    extern template class GenerationHoldList<uint32_t, false, true>;
+extern template class GenerationHoldList<uint32_t, false, true>;
 }

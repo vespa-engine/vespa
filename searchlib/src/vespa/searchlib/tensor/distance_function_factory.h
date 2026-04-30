@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include "distance_function.h"
 #include "bound_distance_function.h"
+#include "distance_function.h"
+
 #include <vespa/searchcommon/attribute/distance_metric.h>
 
 namespace search::tensor {
@@ -26,8 +27,7 @@ struct DistanceFunctionFactory {
  * Create a distance function factory customized for the given metric
  * variant and (attribute) cell type.
  **/
-DistanceFunctionFactory::UP
-make_distance_function_factory(search::attribute::DistanceMetric variant,
-                               vespalib::eval::CellType cell_type);
+DistanceFunctionFactory::UP make_distance_function_factory(search::attribute::DistanceMetric variant,
+                                                           vespalib::eval::CellType          cell_type);
 
-}
+} // namespace search::tensor

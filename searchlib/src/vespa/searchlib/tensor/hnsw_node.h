@@ -14,17 +14,12 @@ class HnswNode {
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using EntryRef = vespalib::datastore::EntryRef;
 
-    AtomicEntryRef _levels_ref;
+    AtomicEntryRef                                    _levels_ref;
     vespalib::datastore::AtomicValueWrapper<uint32_t> _docid;
     vespalib::datastore::AtomicValueWrapper<uint32_t> _subspace;
 
 public:
-    HnswNode() noexcept
-        : _levels_ref(),
-          _docid(),
-          _subspace()
-    {
-    }
+    HnswNode() noexcept : _levels_ref(), _docid(), _subspace() {}
     AtomicEntryRef& levels_ref() noexcept { return _levels_ref; }
     const AtomicEntryRef& levels_ref() const noexcept { return _levels_ref; }
     void store_docid(uint32_t docid) noexcept { _docid.store_release(docid); }
@@ -35,4 +30,4 @@ public:
     static constexpr bool identity_mapping = false;
 };
 
-}
+} // namespace search::tensor

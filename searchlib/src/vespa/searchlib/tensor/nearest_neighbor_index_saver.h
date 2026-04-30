@@ -2,7 +2,9 @@
 
 #pragma once
 
-namespace search { class BufferWriter; }
+namespace search {
+class BufferWriter;
+}
 
 namespace search::tensor {
 
@@ -30,4 +32,4 @@ public:
     virtual void save(BufferWriter& writer) const = 0;
 };
 
-}
+} // namespace search::tensor
