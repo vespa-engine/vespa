@@ -420,9 +420,11 @@ TEST(DocumentMetaStoreTest, full_docids_are_removed)
     uint32_t lid2 = addDoc(dms, docid2, bucketId2, time2);
     EXPECT_EQ(1u, lid2);
     EXPECT_EQ(docid2.toString(), dms.get_docid_string(gid2));
+    EXPECT_EQ(docid2.toString(), dms.get_document_id_string_view(lid2));
     EXPECT_TRUE(dms.remove(lid2, 0u));
     dms.commit();
     EXPECT_EQ("", dms.get_docid_string(gid2));
+    EXPECT_EQ("", dms.get_document_id_string_view(lid2));
     dms.removes_complete({ lid2 });
 }
 
