@@ -12,12 +12,19 @@ VespaVersion::VespaVersion(const VespaVersion& vespaVersion) = default;
 
 VespaVersion& VespaVersion::operator=(const VespaVersion& rhs) = default;
 
-VespaVersion::VespaVersion(const std::string& versionString) : _versionString(versionString) {}
+VespaVersion::VespaVersion(const std::string& versionString) : _versionString(versionString) {
+}
 
-VespaVersion VespaVersion::fromString(const std::string& versionString) { return VespaVersion(versionString); }
+VespaVersion VespaVersion::fromString(const std::string& versionString) {
+    return VespaVersion(versionString);
+}
 
-const VespaVersion& VespaVersion::getCurrentVersion() { return currentVersion; }
+const VespaVersion& VespaVersion::getCurrentVersion() {
+    return currentVersion;
+}
 
-const std::string& VespaVersion::toString() const { return _versionString; }
+const std::string& VespaVersion::toString() const {
+    return _versionString;
+}
 
 } // namespace config

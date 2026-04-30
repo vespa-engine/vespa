@@ -1,7 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/config/common/configcontext.h>
-#include <vespa/config/subscription/configsubscriber.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
+
+#include <vespa/config/subscription/configsubscriber.hpp>
 
 #include <config-my.h>
 

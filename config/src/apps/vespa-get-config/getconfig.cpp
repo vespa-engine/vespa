@@ -14,10 +14,11 @@
 #include <vespa/fnet/frt/target.h>
 #include <vespa/vespalib/util/signalhandler.h>
 
+#include <unistd.h>
+
 #include <cinttypes>
 #include <fstream>
 #include <sstream>
-#include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-get-config");
@@ -35,10 +36,10 @@ private:
 public:
     GetConfig() : _server(), _target(nullptr) {}
     ~GetConfig();
-    int  usage(const char* self);
+    int usage(const char* self);
     void initRPC(const char* spec);
     void finiRPC();
-    int  main(int argc, char** argv);
+    int main(int argc, char** argv);
 };
 
 GetConfig::~GetConfig() {

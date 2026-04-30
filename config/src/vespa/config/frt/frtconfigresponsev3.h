@@ -22,8 +22,8 @@ public:
 
 private:
     static const std::string RESPONSE_TYPES;
-    const std::string&       getResponseTypes() const override;
-    ConfigValue              readConfigValue() const override;
+    const std::string& getResponseTypes() const override;
+    ConfigValue readConfigValue() const override;
 };
 
 } // namespace config

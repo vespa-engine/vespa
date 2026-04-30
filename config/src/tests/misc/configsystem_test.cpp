@@ -6,8 +6,9 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/size_literals.h>
 
-#include <filesystem>
 #include <unistd.h>
+
+#include <filesystem>
 
 using namespace config;
 

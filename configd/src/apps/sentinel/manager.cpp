@@ -8,16 +8,19 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/size_literals.h>
 
-#include <string>
 #include <fcntl.h>
 #include <sys/wait.h>
+
+#include <string>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".sentinel.manager");
 
 namespace config::sentinel {
 
-Manager::Manager(Env& env) : _env(env), _services(), _outputConnections() { doConfigure(); }
+Manager::Manager(Env& env) : _env(env), _services(), _outputConnections() {
+    doConfigure();
+}
 
 Manager::~Manager() {
     terminateServices(false);
@@ -226,9 +229,10 @@ void Manager::handleCmd(const Cmd& cmd) {
         for (const auto& entry : _services) {
             const Service*                 service = entry.second.get();
             const SentinelConfig::Service& config = service->serviceConfig();
-            int sz = snprintf(retbuf + pos, left, "%s state=%s mode=%s pid=%d exitstatus=%d id=\"%s\"\n",
-                              service->name().c_str(), service->stateName(), service->isAutomatic() ? "AUTO" : "MANUAL",
-                              service->pid(), service->exitStatus(), config.id.c_str());
+            int                            sz =
+                snprintf(retbuf + pos, left, "%s state=%s mode=%s pid=%d exitstatus=%d id=\"%s\"\n",
+                         service->name().c_str(), service->stateName(), service->isAutomatic() ? "AUTO" : "MANUAL",
+                         service->pid(), service->exitStatus(), config.id.c_str());
             pos += sz;
             left -= sz;
             if (left <= 0)

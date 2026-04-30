@@ -20,11 +20,11 @@ public:
     FRTConfigResponse(FRT_RPCRequest* request);
     ~FRTConfigResponse();
 
-    bool                       validateResponse() override;
-    bool                       hasValidResponse() const override;
-    std::string                errorMessage() const override;
-    int                        errorCode() const override;
-    bool                       isError() const override;
+    bool validateResponse() override;
+    bool hasValidResponse() const override;
+    std::string errorMessage() const override;
+    int errorCode() const override;
+    bool isError() const override;
     virtual const std::string& getResponseTypes() const = 0;
 
 private:

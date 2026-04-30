@@ -6,7 +6,8 @@
 
 namespace config {
 
-AsciiConfigSnapshotWriter::AsciiConfigSnapshotWriter(vespalib::asciistream& os) : _os(os) {}
+AsciiConfigSnapshotWriter::AsciiConfigSnapshotWriter(vespalib::asciistream& os) : _os(os) {
+}
 
 bool AsciiConfigSnapshotWriter::write(const ConfigSnapshot& snapshot) {
     ConfigDataBuffer buffer;

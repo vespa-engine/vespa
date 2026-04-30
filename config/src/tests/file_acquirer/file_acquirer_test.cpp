@@ -43,7 +43,9 @@ struct ServerFixture : FRT_Invokable {
     ~ServerFixture() override;
 };
 
-ServerFixture::~ServerFixture() { transport.ShutDown(true); }
+ServerFixture::~ServerFixture() {
+    transport.ShutDown(true);
+}
 
 TEST(FileAcquirerTest, require_that_files_can_be_acquired_over_rpc) {
     ServerFixture   f1;

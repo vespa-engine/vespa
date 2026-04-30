@@ -11,12 +11,14 @@ using namespace config::protocol;
 
 namespace config {
 
-FRTConfigRequestV3::FRTConfigRequestV3(Connection* connection, const ConfigKey& key, const std::string& configXxhash64,
-                                       int64_t currentGeneration, const std::string& hostName,
-                                       vespalib::duration serverTimeout, const Trace& trace,
-                                       const VespaVersion& vespaVersion, const CompressionType& compressionType)
+FRTConfigRequestV3::FRTConfigRequestV3(Connection* connection, const ConfigKey& key,
+                                       const std::string& configXxhash64, int64_t currentGeneration,
+                                       const std::string& hostName, vespalib::duration serverTimeout,
+                                       const Trace& trace, const VespaVersion& vespaVersion,
+                                       const CompressionType& compressionType)
     : SlimeConfigRequest(connection, key, configXxhash64, currentGeneration, hostName, serverTimeout, trace,
-                         vespaVersion, 3, compressionType, "config.v3.getConfig") {}
+                         vespaVersion, 3, compressionType, "config.v3.getConfig") {
+}
 
 std::unique_ptr<ConfigResponse> FRTConfigRequestV3::createResponse(FRT_RPCRequest* request) const {
     return std::make_unique<FRTConfigResponseV3>(request);

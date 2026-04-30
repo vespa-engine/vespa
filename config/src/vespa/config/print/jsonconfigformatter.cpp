@@ -12,7 +12,8 @@ using vespalib::slime::JsonFormat;
 
 namespace config {
 
-JsonConfigFormatter::JsonConfigFormatter(bool compact) : _compact(compact) {}
+JsonConfigFormatter::JsonConfigFormatter(bool compact) : _compact(compact) {
+}
 
 void JsonConfigFormatter::encode(ConfigDataBuffer& buffer) const {
     SimpleBuffer buf;

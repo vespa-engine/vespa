@@ -13,7 +13,8 @@
 namespace config {
 
 template <typename ConfigType>
-FileConfigReader<ConfigType>::FileConfigReader(const std::string& fileName) : _fileName(fileName) {}
+FileConfigReader<ConfigType>::FileConfigReader(const std::string& fileName) : _fileName(fileName) {
+}
 
 template <typename ConfigType>
 std::unique_ptr<ConfigType> FileConfigReader<ConfigType>::read(const ConfigFormatter& formatter) {

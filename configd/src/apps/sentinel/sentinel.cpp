@@ -8,17 +8,20 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/signalhandler.h>
 
+#include <unistd.h>
+
 #include <chrono>
 #include <clocale>
 #include <string>
-#include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("sentinel.config-sentinel");
 
 using namespace config;
 
-static bool stop() { return (vespalib::SignalHandler::INT.check() || vespalib::SignalHandler::TERM.check()); }
+static bool stop() {
+    return (vespalib::SignalHandler::INT.check() || vespalib::SignalHandler::TERM.check());
+}
 
 int main(int argc, char** argv) {
     int c = getopt(argc, argv, "c:");

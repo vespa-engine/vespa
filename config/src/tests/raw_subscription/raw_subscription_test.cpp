@@ -4,8 +4,9 @@
 
 #include <vespa/config/common/configholder.h>
 #include <vespa/config/common/sourcefactory.h>
-#include <vespa/config/subscription/configsubscriber.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
+
+#include <vespa/config/subscription/configsubscriber.hpp>
 
 using namespace config;
 

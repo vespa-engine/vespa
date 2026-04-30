@@ -5,8 +5,9 @@
 #include <vespa/fnet/frt/target.h>
 #include <vespa/vespalib/util/signalhandler.h>
 
-#include <sstream>
 #include <unistd.h>
+
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-ping-configproxy");
@@ -21,10 +22,10 @@ public:
     PingProxy& operator=(const PingProxy&) = delete;
     PingProxy() : _server(), _target(nullptr) {}
     ~PingProxy();
-    int  usage(const char* self);
+    int usage(const char* self);
     void initRPC(const char* spec);
     void finiRPC();
-    int  main(int argc, char** argv);
+    int main(int argc, char** argv);
 };
 
 PingProxy::~PingProxy() {

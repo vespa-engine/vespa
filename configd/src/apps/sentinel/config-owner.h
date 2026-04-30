@@ -29,11 +29,11 @@ private:
 public:
     ConfigOwner();
     virtual ~ConfigOwner();
-    void                  subscribe(const std::string& configId, std::chrono::milliseconds timeout);
-    bool                  checkForConfigUpdate();
-    bool                  hasConfig() const { return _currConfig.get() != nullptr; }
+    void subscribe(const std::string& configId, std::chrono::milliseconds timeout);
+    bool checkForConfigUpdate();
+    bool hasConfig() const { return _currConfig.get() != nullptr; }
     const SentinelConfig& getConfig() const { return *_currConfig; }
-    int64_t               getGeneration() const { return _currGeneration; }
+    int64_t getGeneration() const { return _currGeneration; }
 };
 
 } // namespace config::sentinel

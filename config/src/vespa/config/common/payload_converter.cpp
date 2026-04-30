@@ -8,7 +8,8 @@ using vespalib::Memory;
 
 namespace config {
 
-PayloadConverter::PayloadConverter(const Inspector& inspector) : _inspector(inspector), _lines() {}
+PayloadConverter::PayloadConverter(const Inspector& inspector) : _inspector(inspector), _lines() {
+}
 
 PayloadConverter::~PayloadConverter() = default;
 
@@ -61,7 +62,9 @@ void PayloadConverter::encode(const Memory& symbol, const Inspector& inspector) 
     }
 }
 
-void PayloadConverter::field(const Memory& symbol, const Inspector& inspector) { encode(symbol, inspector); }
+void PayloadConverter::field(const Memory& symbol, const Inspector& inspector) {
+    encode(symbol, inspector);
+}
 
 void PayloadConverter::entry(size_t idx, const Inspector& inspector) {
     _nodeStack.push_back(Node(idx));
@@ -107,11 +110,19 @@ void PayloadConverter::encodeValue(const Inspector& value) {
     _buf.clear();
 }
 
-void PayloadConverter::encodeString(const std::string& value) { _buf << value; }
+void PayloadConverter::encodeString(const std::string& value) {
+    _buf << value;
+}
 
-void PayloadConverter::encodeLong(long value) { _buf << value; }
-void PayloadConverter::encodeDouble(double value) { _buf << value; }
-void PayloadConverter::encodeBool(bool value) { _buf << (value ? "true" : "false"); }
+void PayloadConverter::encodeLong(long value) {
+    _buf << value;
+}
+void PayloadConverter::encodeDouble(double value) {
+    _buf << value;
+}
+void PayloadConverter::encodeBool(bool value) {
+    _buf << (value ? "true" : "false");
+}
 
 void PayloadConverter::encodeQuotedString(const std::string& value) {
     encodeString("\"");

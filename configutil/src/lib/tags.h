@@ -6,6 +6,6 @@
 namespace configdefinitions {
 
 std::string upcase(const std::string& orig);
-bool        tagsContain(const std::string& tags, const std::string& tag);
+bool tagsContain(const std::string& tags, const std::string& tag);
 
 } // namespace configdefinitions

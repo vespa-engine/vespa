@@ -23,7 +23,8 @@ ConfigRetriever::ConfigRetriever(const ConfigKeySet& bootstrapSet, std::shared_p
       _generation(-1),
       _subscribeTimeout(subscribeTimeout),
       _bootstrapRequired(true),
-      _closed(false) {}
+      _closed(false) {
+}
 
 ConfigRetriever::~ConfigRetriever() = default;
 
@@ -82,6 +83,8 @@ void ConfigRetriever::close() {
         _configSubscriber->close();
 }
 
-bool ConfigRetriever::isClosed() const { return _closed.load(std::memory_order_relaxed); }
+bool ConfigRetriever::isClosed() const {
+    return _closed.load(std::memory_order_relaxed);
+}
 
 } // namespace config

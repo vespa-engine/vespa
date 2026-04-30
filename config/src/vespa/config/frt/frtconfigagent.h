@@ -18,8 +18,8 @@ public:
     using duration = vespalib::duration;
     virtual void handleResponse(const ConfigRequest& request, std::unique_ptr<ConfigResponse> response) = 0;
 
-    virtual duration           getTimeout() const = 0;
-    virtual duration           getWaitTime() const = 0;
+    virtual duration getTimeout() const = 0;
+    virtual duration getWaitTime() const = 0;
     virtual const ConfigState& getConfigState() const = 0;
 
     virtual ~ConfigAgent() = default;
@@ -29,9 +29,9 @@ class FRTConfigAgent : public ConfigAgent {
 public:
     FRTConfigAgent(std::shared_ptr<IConfigHolder> holder, const TimingValues& timingValues);
     ~FRTConfigAgent() override;
-    void               handleResponse(const ConfigRequest& request, std::unique_ptr<ConfigResponse> response) override;
-    duration           getTimeout() const override;
-    duration           getWaitTime() const override;
+    void handleResponse(const ConfigRequest& request, std::unique_ptr<ConfigResponse> response) override;
+    duration getTimeout() const override;
+    duration getWaitTime() const override;
     const ConfigState& getConfigState() const override;
 
 private:

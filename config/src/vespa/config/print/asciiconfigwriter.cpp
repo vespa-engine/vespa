@@ -6,9 +6,12 @@
 
 namespace config {
 
-AsciiConfigWriter::AsciiConfigWriter(vespalib::asciistream& os) : _os(os) {}
+AsciiConfigWriter::AsciiConfigWriter(vespalib::asciistream& os) : _os(os) {
+}
 
-bool AsciiConfigWriter::write(const ConfigInstance& config) { return write(config, FileConfigFormatter()); }
+bool AsciiConfigWriter::write(const ConfigInstance& config) {
+    return write(config, FileConfigFormatter());
+}
 
 bool AsciiConfigWriter::write(const ConfigInstance& config, const ConfigFormatter& formatter) {
     ConfigDataBuffer buffer;

@@ -46,7 +46,9 @@ struct SubscriptionFixture {
 
 SubscriptionFixture::~SubscriptionFixture() = default;
 
-vespalib::steady_time deadline(vespalib::duration timeout) { return vespalib::steady_clock::now() + timeout; }
+vespalib::steady_time deadline(vespalib::duration timeout) {
+    return vespalib::steady_clock::now() + timeout;
+}
 } // namespace
 
 TEST(SubscriptionTest, requireThatKeyIsReturned) {

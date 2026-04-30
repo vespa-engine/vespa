@@ -35,12 +35,12 @@ public:
     int operator==(const ConfigValue& rhs) const;
     int operator!=(const ConfigValue& rhs) const;
 
-    size_t              numLines() const { return _lines.size(); }
-    const std::string&  getLine(int i) const { return _lines.at(i); }
+    size_t numLines() const { return _lines.size(); }
+    const std::string& getLine(int i) const { return _lines.at(i); }
     const StringVector& getLines() const { return _lines; }
-    StringVector        getLegacyFormat() const;
-    std::string         asJson() const;
-    const std::string&  getXxhash64() const { return _xxhash64; }
+    StringVector getLegacyFormat() const;
+    std::string asJson() const;
+    const std::string& getXxhash64() const { return _xxhash64; }
 
     void serializeV1(::vespalib::slime::Cursor& cursor) const;
     void serializeV2(::vespalib::slime::Cursor& cursor) const;

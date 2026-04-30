@@ -6,7 +6,8 @@
 
 namespace config {
 
-template <typename ConfigType> IstreamConfigReader<ConfigType>::IstreamConfigReader(std::istream& is) : _is(is) {}
+template <typename ConfigType> IstreamConfigReader<ConfigType>::IstreamConfigReader(std::istream& is) : _is(is) {
+}
 
 template <typename ConfigType>
 std::unique_ptr<ConfigType> IstreamConfigReader<ConfigType>::read(const ConfigFormatter& formatter) {

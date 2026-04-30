@@ -3,15 +3,18 @@
 #include "config-my.h"
 
 #include <vespa/config/common/configcontext.h>
-#include <vespa/config/subscription/configsubscriber.hpp>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
+#include <vespa/config/subscription/configsubscriber.hpp>
 
 using namespace config;
 
 namespace {
 
-void assertConfigId(const std::string& expected, const ConfigUri& uri) { ASSERT_EQ(expected, uri.getConfigId()); }
+void assertConfigId(const std::string& expected, const ConfigUri& uri) {
+    ASSERT_EQ(expected, uri.getConfigId());
+}
 
 } // namespace
 

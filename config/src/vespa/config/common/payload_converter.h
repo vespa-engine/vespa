@@ -18,8 +18,8 @@ public:
     PayloadConverter(const vespalib::slime::Inspector& inspector);
     ~PayloadConverter();
     const StringVector& convert();
-    void                field(const vespalib::Memory& symbol, const vespalib::slime::Inspector& inspector) override;
-    void                entry(size_t idx, const vespalib::slime::Inspector& inspector) override;
+    void field(const vespalib::Memory& symbol, const vespalib::slime::Inspector& inspector) override;
+    void entry(size_t idx, const vespalib::slime::Inspector& inspector) override;
 
 private:
     void printPrefix();

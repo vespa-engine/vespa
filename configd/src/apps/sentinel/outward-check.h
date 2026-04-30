@@ -35,10 +35,10 @@ private:
 public:
     OutwardCheck(const std::string& spec, OutwardCheckContext& context, int ping_timeout);
     virtual ~OutwardCheck();
-    void     RequestDone(FRT_RPCRequest* req) override;
-    bool     ok() const { return _result == CcResult::ALL_OK; }
+    void RequestDone(FRT_RPCRequest* req) override;
+    bool ok() const { return _result == CcResult::ALL_OK; }
     CcResult result() const { return _result; }
-    void     classifyResult(CcResult value);
+    void classifyResult(CcResult value);
 };
 
 } // namespace config::sentinel

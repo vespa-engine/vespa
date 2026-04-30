@@ -10,7 +10,8 @@
 
 namespace config {
 
-template <typename ConfigType> AsciiConfigReader<ConfigType>::AsciiConfigReader(vespalib::asciistream& is) : _is(is) {}
+template <typename ConfigType> AsciiConfigReader<ConfigType>::AsciiConfigReader(vespalib::asciistream& is) : _is(is) {
+}
 
 template <typename ConfigType>
 std::unique_ptr<ConfigType> AsciiConfigReader<ConfigType>::read(const ConfigFormatter& formatter) {

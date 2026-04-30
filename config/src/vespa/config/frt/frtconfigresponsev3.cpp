@@ -36,9 +36,12 @@ private:
 
 const std::string FRTConfigResponseV3::RESPONSE_TYPES = "sx";
 
-FRTConfigResponseV3::FRTConfigResponseV3(FRT_RPCRequest* request) : SlimeConfigResponse(request) {}
+FRTConfigResponseV3::FRTConfigResponseV3(FRT_RPCRequest* request) : SlimeConfigResponse(request) {
+}
 
-const std::string& FRTConfigResponseV3::getResponseTypes() const { return RESPONSE_TYPES; }
+const std::string& FRTConfigResponseV3::getResponseTypes() const {
+    return RESPONSE_TYPES;
+}
 
 ConfigValue FRTConfigResponseV3::readConfigValue() const {
     std::string     xxhash64(_data->get()[RESPONSE_CONFIG_XXHASH64].asString().make_string());

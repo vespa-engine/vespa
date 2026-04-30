@@ -9,9 +9,10 @@
 #include <vespa/config/common/iconfigcontext.h>
 #include <vespa/config/common/iconfigmanager.h>
 #include <vespa/config/common/misc.h>
-#include <vespa/config/subscription/configsubscriber.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/nexus.h>
+
+#include <vespa/config/subscription/configsubscriber.hpp>
 
 #include <thread>
 
@@ -27,11 +28,17 @@ ConfigValue createValue(const std::string& value) {
     return ConfigValue(std::move(lines));
 }
 
-ConfigValue createFooValue(const std::string& value) { return createValue("fooValue \"" + value + "\""); }
+ConfigValue createFooValue(const std::string& value) {
+    return createValue("fooValue \"" + value + "\"");
+}
 
-ConfigValue createBarValue(const std::string& value) { return createValue("barValue \"" + value + "\""); }
+ConfigValue createBarValue(const std::string& value) {
+    return createValue("barValue \"" + value + "\"");
+}
 
-ConfigValue createBazValue(const std::string& value) { return createValue("bazValue \"" + value + "\""); }
+ConfigValue createBazValue(const std::string& value) {
+    return createValue("bazValue \"" + value + "\"");
+}
 
 void verifyConfig(const std::string& expected, std::unique_ptr<FooConfig> cfg) {
     ASSERT_TRUE(cfg);
@@ -56,7 +63,7 @@ class MySource : public Source {
 
 class MyManager : public IConfigManager {
 public:
-    void   unsubscribeAll() {}
+    void unsubscribeAll() {}
     size_t numSubscribers() const { return 0; }
 
     SubscriptionId                              idCounter;

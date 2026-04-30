@@ -23,12 +23,12 @@ public:
     FRTConnection& operator=(const FRTConnection&) = delete;
     ~FRTConnection() override;
 
-    FRT_RPCRequest*       allocRPCRequest() override;
-    void                  invoke(FRT_RPCRequest* req, duration timeout, FRT_IRequestWait* waiter) override;
-    const std::string&    getAddress() const override { return _address; }
+    FRT_RPCRequest* allocRPCRequest() override;
+    void invoke(FRT_RPCRequest* req, duration timeout, FRT_IRequestWait* waiter) override;
+    const std::string& getAddress() const override { return _address; }
     vespalib::steady_time getSuspendedUntil() const { return _suspendedUntil; }
-    void                  setError(int errorCode) override;
-    void                  setSuccess();
+    void setError(int errorCode) override;
+    void setSuccess();
 
 private:
     FRT_Target* getTarget();

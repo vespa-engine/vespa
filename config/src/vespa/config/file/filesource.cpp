@@ -14,7 +14,8 @@ using vespalib::asciistream;
 namespace config {
 
 FileSource::FileSource(std::shared_ptr<IConfigHolder> holder, const std::string& fileName)
-    : _holder(std::move(holder)), _fileName(fileName), _lastLoaded(-1), _generation(1) {}
+    : _holder(std::move(holder)), _fileName(fileName), _lastLoaded(-1), _generation(1) {
+}
 
 FileSource::~FileSource() = default;
 
@@ -30,7 +31,9 @@ void FileSource::getConfig() {
     }
 }
 
-void FileSource::reload(int64_t generation) { _generation = generation; }
+void FileSource::reload(int64_t generation) {
+    _generation = generation;
+}
 
 int64_t FileSource::getLast(const std::string& fileName) {
     struct stat filestat;
@@ -44,6 +47,7 @@ StringVector FileSource::readConfigFile(const std::string& fileName) {
     return getlines(is);
 }
 
-void FileSource::close() {}
+void FileSource::close() {
+}
 
 } // namespace config

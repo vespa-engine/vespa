@@ -26,8 +26,8 @@ public:
     ~ConfigManager() override;
 
     ConfigSubscription::SP subscribe(const ConfigKey& key, vespalib::duration timeout) override;
-    void                   unsubscribe(const ConfigSubscription& subscription) override;
-    void                   reload(int64_t generation) override;
+    void unsubscribe(const ConfigSubscription& subscription) override;
+    void reload(int64_t generation) override;
 
 private:
     std::atomic<SubscriptionId>    _idGenerator;

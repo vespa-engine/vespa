@@ -3,7 +3,8 @@
 
 namespace config {
 
-ConfigSetSourceFactory::ConfigSetSourceFactory(BuilderMapSP builderMap) : _builderMap(std::move(builderMap)) {}
+ConfigSetSourceFactory::ConfigSetSourceFactory(BuilderMapSP builderMap) : _builderMap(std::move(builderMap)) {
+}
 
 ConfigSetSourceFactory::~ConfigSetSourceFactory() = default;
 
