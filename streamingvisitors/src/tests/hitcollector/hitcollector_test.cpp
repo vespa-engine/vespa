@@ -1,14 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/datatype/documenttype.h>
-#include <vespa/searchlib/fef/matchdata.h>
-#include <vespa/searchlib/fef/feature_resolver.h>
-#include <vespa/searchvisitor/hitcollector.h>
+#include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_codec.h>
+#include <vespa/searchlib/fef/feature_resolver.h>
+#include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/searchvisitor/hitcollector.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -36,18 +36,16 @@ double as_double(const FeatureValue& v) {
 
 TensorSpec as_spec(const FeatureValue& v) {
     EXPECT_TRUE(v.is_data());
-    auto mem = v.as_data();
+    auto      mem = v.as_data();
     nbostream buf(mem.data, mem.size);
     return spec_from_value(*SimpleValue::from_stream(buf));
 }
 
-std::span<const FeatureValue> as_value_slice(FeatureValues& mf, uint32_t index, uint32_t num_features)
-{
-    return { mf.values.data() + index * num_features, num_features };
+std::span<const FeatureValue> as_value_slice(FeatureValues& mf, uint32_t index, uint32_t num_features) {
+    return {mf.values.data() + index * num_features, num_features};
 }
 
-void check_match_features(std::span<const FeatureValue> v, uint32_t docid)
-{
+void check_match_features(std::span<const FeatureValue> v, uint32_t docid) {
     SCOPED_TRACE(fmt("Checking docid %u for expected match features", docid));
     // The following values should have been set by MyRankProgram::run()
     EXPECT_EQ(10 + docid, as_double(v[0]));
@@ -55,17 +53,16 @@ void check_match_features(std::span<const FeatureValue> v, uint32_t docid)
     EXPECT_EQ(TensorSpec("tensor(x{})").add({{"x", "a"}}, 20 + docid), as_spec(v[2]));
 }
 
-}
+} // namespace
 
 namespace streaming {
 
-class HitCollectorTest : public ::testing::Test
-{
+class HitCollectorTest : public ::testing::Test {
 protected:
-    void assertHit(SearchResult::RankType expRank, uint32_t hitNo, SearchResult & rs);
-    void assertHit(SearchResult::RankType expRank, uint32_t expDocId, uint32_t hitNo, SearchResult & rs);
-    void addHit(HitCollector &hc, uint32_t docId, double score,
-                const char *sortData = nullptr, size_t sortDataSize = 0);
+    void assertHit(SearchResult::RankType expRank, uint32_t hitNo, SearchResult& rs);
+    void assertHit(SearchResult::RankType expRank, uint32_t expDocId, uint32_t hitNo, SearchResult& rs);
+    void addHit(HitCollector& hc, uint32_t docId, double score, const char* sortData = nullptr,
+                size_t sortDataSize = 0);
     void testSimple();
     void testGapsInDocId();
     void testHeapProperty();
@@ -79,34 +76,28 @@ protected:
     ~HitCollectorTest() override;
 };
 
-HitCollectorTest::HitCollectorTest()
-    : _docType("testdoc", 0)
-{
+HitCollectorTest::HitCollectorTest() : _docType("testdoc", 0) {
 }
 
 HitCollectorTest::~HitCollectorTest() = default;
 
-void
-HitCollectorTest::assertHit(SearchResult::RankType expRank, uint32_t hitNo, SearchResult & rs)
-{
+void HitCollectorTest::assertHit(SearchResult::RankType expRank, uint32_t hitNo, SearchResult& rs) {
     assertHit(expRank, hitNo, hitNo, rs);
 }
 
-void
-HitCollectorTest::assertHit(SearchResult::RankType expRank, uint32_t expDocId, uint32_t hitNo, SearchResult & rs)
-{
-    //std::cout << "assertHit(" << expRank << ", " << expDocId << ")" << std::endl;
-    uint32_t lDocId;
-    const char * gDocId;
+void HitCollectorTest::assertHit(SearchResult::RankType expRank, uint32_t expDocId, uint32_t hitNo,
+                                 SearchResult& rs) {
+    // std::cout << "assertHit(" << expRank << ", " << expDocId << ")" << std::endl;
+    uint32_t               lDocId;
+    const char*            gDocId;
     SearchResult::RankType rank;
     lDocId = rs.getHit(hitNo, gDocId, rank);
     EXPECT_EQ(rank, expRank);
     EXPECT_EQ(lDocId, expDocId);
 }
 
-void
-HitCollectorTest::addHit(HitCollector &hc, uint32_t docId, double score, const char *sortData, size_t sortDataSize)
-{
+void HitCollectorTest::addHit(HitCollector& hc, uint32_t docId, double score, const char* sortData,
+                              size_t sortDataSize) {
     auto doc = document::Document::make_without_repo(_docType, DocumentId("id:ns:testdoc::"));
     auto sdoc = std::make_shared<StorageDocument>(std::move(doc), SharedFieldPathMap(), 0);
     ASSERT_TRUE(sdoc->valid());
@@ -114,8 +105,7 @@ HitCollectorTest::addHit(HitCollector &hc, uint32_t docId, double score, const c
     hc.addHit(std::move(sdoc), docId, md, score, sortData, sortDataSize);
 }
 
-TEST_F(HitCollectorTest, simple)
-{
+TEST_F(HitCollectorTest, simple) {
     HitCollector hc(5, false);
 
     // add hits to hit collector
@@ -139,8 +129,7 @@ TEST_F(HitCollectorTest, simple)
     EXPECT_EQ(5, hc.numHitsOnHeap());
 }
 
-TEST_F(HitCollectorTest, gaps_in_docid)
-{
+TEST_F(HitCollectorTest, gaps_in_docid) {
     SearchResult sr;
     sr.setWantedHitCount(5);
     HitCollector hc(sr.getWantedHitCount(), false);
@@ -161,8 +150,7 @@ TEST_F(HitCollectorTest, gaps_in_docid)
     assertHit(18, 8, 4, sr);
 }
 
-TEST_F(HitCollectorTest, heap_property)
-{
+TEST_F(HitCollectorTest, heap_property) {
     {
         SearchResult sr;
         sr.setWantedHitCount(3);
@@ -190,8 +178,8 @@ TEST_F(HitCollectorTest, heap_property)
         hc.fillSearchResult(sr);
         ASSERT_TRUE(sr.getHitCount() == 3);
         assertHit(10, 0, 0, sr);
-        assertHit(9,  1, 1, sr);
-        assertHit(8,  2, 2, sr);
+        assertHit(9, 1, 1, sr);
+        assertHit(8, 2, 2, sr);
         EXPECT_EQ(6, hc.numHits());
         EXPECT_EQ(3, hc.numHitsOnHeap());
     }
@@ -213,8 +201,7 @@ TEST_F(HitCollectorTest, heap_property)
     }
 }
 
-TEST_F(HitCollectorTest, heap_property_with_sorting)
-{
+TEST_F(HitCollectorTest, heap_property_with_sorting) {
     std::vector<char> sortData;
     sortData.push_back('a');
     sortData.push_back('b');
@@ -266,8 +253,7 @@ TEST_F(HitCollectorTest, heap_property_with_sorting)
     }
 }
 
-TEST_F(HitCollectorTest, empty)
-{
+TEST_F(HitCollectorTest, empty) {
     HitCollector hc(0, false);
     addHit(hc, 0, 0);
     SearchResult rs;
@@ -275,8 +261,7 @@ TEST_F(HitCollectorTest, empty)
     ASSERT_TRUE(rs.getHitCount() == 0);
 }
 
-TEST_F(HitCollectorTest, all_hits_are_kept)
-{
+TEST_F(HitCollectorTest, all_hits_are_kept) {
     HitCollector hc(0, false);
     EXPECT_EQ(0, hc.numHits());
     EXPECT_EQ(0, hc.numHitsOnHeap());
@@ -288,32 +273,25 @@ TEST_F(HitCollectorTest, all_hits_are_kept)
     ASSERT_TRUE(rs.getHitCount() == 0);
 }
 
-class MyRankProgram : public HitCollector::IRankProgram
-{
+class MyRankProgram : public HitCollector::IRankProgram {
 private:
-    Value::UP _boxed_double;
-    Value::UP _tensor;
+    Value::UP      _boxed_double;
+    Value::UP      _tensor;
     NumberOrObject _fooValue;
     NumberOrObject _barValue;
     NumberOrObject _bazValue;
 
 public:
-    MyRankProgram()
-        : _boxed_double(),
-          _tensor(),
-          _fooValue(),
-          _barValue(),
-          _bazValue()
-    {}
+    MyRankProgram() : _boxed_double(), _tensor(), _fooValue(), _barValue(), _bazValue() {}
     ~MyRankProgram() override;
-    void run(uint32_t docid, const std::vector<search::fef::TermFieldMatchData> &) override {
+    void run(uint32_t docid, const std::vector<search::fef::TermFieldMatchData>&) override {
         _boxed_double = std::make_unique<DoubleValue>(docid + 30);
         _tensor = SimpleValue::from_spec(TensorSpec("tensor(x{})").add({{"x", "a"}}, docid + 20));
         _fooValue.as_number = docid + 10;
         _barValue.as_object = *_boxed_double;
         _bazValue.as_object = *_tensor;
     }
-  
+
     FeatureResolver get_resolver() {
         FeatureResolver resolver(2);
         resolver.add("foo", LazyValue(&_fooValue), false);
@@ -324,8 +302,7 @@ public:
 };
 MyRankProgram::~MyRankProgram() = default;
 
-TEST_F(HitCollectorTest, feature_set)
-{
+TEST_F(HitCollectorTest, feature_set) {
     HitCollector hc(3, false);
 
     addHit(hc, 0, 10);
@@ -334,8 +311,8 @@ TEST_F(HitCollectorTest, feature_set)
     addHit(hc, 3, 40); // on heap
     addHit(hc, 4, 30); // on heap
 
-    MyRankProgram rankProgram;
-    FeatureResolver resolver(rankProgram.get_resolver());
+    MyRankProgram           rankProgram;
+    FeatureResolver         resolver(rankProgram.get_resolver());
     search::StringStringMap renames;
     renames["bar"] = "qux";
     vespalib::FeatureSet::SP sf = hc.getFeatureSet(rankProgram, resolver, renames);
@@ -347,13 +324,13 @@ TEST_F(HitCollectorTest, feature_set)
     EXPECT_EQ(sf->numFeatures(), 3u);
     EXPECT_EQ(sf->numDocs(), 3u);
     {
-        const auto * f = sf->getFeaturesByDocId(1);
+        const auto* f = sf->getFeaturesByDocId(1);
         ASSERT_TRUE(f != nullptr);
         EXPECT_EQ(f[0].as_double(), 11); // 10 + docId
         EXPECT_EQ(f[1].as_double(), 31); // 30 + docId
     }
     {
-        const auto * f = sf->getFeaturesByDocId(3);
+        const auto* f = sf->getFeaturesByDocId(3);
         ASSERT_TRUE(f != nullptr);
         EXPECT_TRUE(f[0].is_double());
         EXPECT_TRUE(!f[0].is_data());
@@ -365,13 +342,13 @@ TEST_F(HitCollectorTest, feature_set)
         EXPECT_TRUE(f[2].is_data());
         {
             nbostream buf(f[2].as_data().data, f[2].as_data().size);
-            auto actual = spec_from_value(*SimpleValue::from_stream(buf));
-            auto expect = TensorSpec("tensor(x{})").add({{"x", "a"}}, 23);
+            auto      actual = spec_from_value(*SimpleValue::from_stream(buf));
+            auto      expect = TensorSpec("tensor(x{})").add({{"x", "a"}}, 23);
             EXPECT_EQ(actual, expect);
         }
     }
     {
-        const auto * f = sf->getFeaturesByDocId(4);
+        const auto* f = sf->getFeaturesByDocId(4);
         ASSERT_TRUE(f != nullptr);
         EXPECT_EQ(f[0].as_double(), 14);
         EXPECT_EQ(f[1].as_double(), 34);
@@ -387,8 +364,7 @@ TEST_F(HitCollectorTest, feature_set)
     assertHit(30, 4, 2, sr);
 }
 
-TEST_F(HitCollectorTest, match_features)
-{
+TEST_F(HitCollectorTest, match_features) {
     HitCollector hc(3, false);
 
     addHit(hc, 0, 10);
@@ -397,8 +373,8 @@ TEST_F(HitCollectorTest, match_features)
     addHit(hc, 3, 40); // on heap
     addHit(hc, 4, 30); // on heap
 
-    MyRankProgram rankProgram;
-    FeatureResolver resolver(rankProgram.get_resolver());
+    MyRankProgram           rankProgram;
+    FeatureResolver         resolver(rankProgram.get_resolver());
     search::StringStringMap renames;
     renames["bar"] = "qux";
     auto mf = hc.get_match_features(rankProgram, resolver, renames);

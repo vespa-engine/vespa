@@ -5,24 +5,22 @@
 
 namespace vsm {
 
-class IntFieldSearcher : public FieldSearcher
-{
+class IntFieldSearcher : public FieldSearcher {
 public:
     std::unique_ptr<FieldSearcher> duplicate() const override;
     explicit IntFieldSearcher(FieldIdT fId);
     ~IntFieldSearcher() override;
-    void prepare(search::streaming::QueryTermList& qtl,
-                 const SharedSearcherBuf& buf,
-                 const vsm::FieldPathMapT& field_paths,
-                 search::fef::IQueryEnvironment& query_env) override;
-    void onValue(const document::FieldValue & fv) override;
+    void prepare(search::streaming::QueryTermList& qtl, const SharedSearcherBuf& buf,
+                 const vsm::FieldPathMapT& field_paths, search::fef::IQueryEnvironment& query_env) override;
+    void onValue(const document::FieldValue& fv) override;
+
 protected:
-    class IntInfo
-    {
+    class IntInfo {
     public:
-        IntInfo(int64_t low, int64_t high, bool v) noexcept : _lower(low), _upper(high), _valid(v) { }
+        IntInfo(int64_t low, int64_t high, bool v) noexcept : _lower(low), _upper(high), _valid(v) {}
         bool cmp(int64_t key) const { return (_lower <= key) && (key <= _upper); }
-        bool valid()          const { return _valid; }
+        bool valid() const { return _valid; }
+
     private:
         int64_t _lower;
         int64_t _upper;
@@ -32,5 +30,4 @@ protected:
     IntInfoListT _intTerm;
 };
 
-}
-
+} // namespace vsm

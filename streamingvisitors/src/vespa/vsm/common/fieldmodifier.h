@@ -9,22 +9,20 @@ namespace vsm {
 /**
  * Interface for classes that want to modify a field value.
  **/
-class FieldModifier
-{
+class FieldModifier {
 public:
     using UP = std::unique_ptr<FieldModifier>;
 
     /**
      * Modifies the given field value and returns a new one.
      **/
-    virtual document::FieldValue::UP modify(const document::FieldValue & fv) = 0;
+    virtual document::FieldValue::UP modify(const document::FieldValue& fv) = 0;
 
     /**
      * Modifies the given field value and returns a new one.
      * Use the given field path to iterate the field value.
      **/
-    virtual document::FieldValue::UP modify(const document::FieldValue & fv,
-                                            const document::FieldPath & path) = 0;
+    virtual document::FieldValue::UP modify(const document::FieldValue& fv, const document::FieldPath& path) = 0;
 
     virtual ~FieldModifier() = default;
 };
@@ -34,16 +32,15 @@ using FieldModifierMapT = vespalib::hash_map<FieldIdT, FieldModifier::UP>;
 /**
  * This class wraps a map from field id to field modifier.
  **/
-class FieldModifierMap
-{
+class FieldModifierMap {
 private:
     FieldModifierMapT _map;
 
 public:
     FieldModifierMap();
     ~FieldModifierMap();
-    FieldModifierMapT & map() { return _map; }
-    const FieldModifierMapT & map() const { return _map; }
+    FieldModifierMapT& map() { return _map; }
+    const FieldModifierMapT& map() const { return _map; }
 
     /**
      * Returns the modifier associated with the given field id or NULL if not found.
@@ -51,8 +48,7 @@ public:
      * @param fId the field id to look up.
      * @return the field modifier or NULL if not found.
      **/
-    FieldModifier * getModifier(FieldIdT fId) const;
+    FieldModifier* getModifier(FieldIdT fId) const;
 };
 
-}
-
+} // namespace vsm

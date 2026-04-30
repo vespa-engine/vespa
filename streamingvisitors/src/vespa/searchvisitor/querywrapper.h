@@ -11,8 +11,7 @@ namespace streaming {
 /**
  * This class wraps a query and adds extra information to the list of leaf terms.
  **/
-class QueryWrapper
-{
+class QueryWrapper {
 public:
     using TermList = search::streaming::QueryTermList;
 
@@ -21,12 +20,11 @@ private:
     TermList                  _termList;
 
 public:
-    QueryWrapper(search::streaming::Query & query);
+    QueryWrapper(search::streaming::Query& query);
     ~QueryWrapper();
-    TermList & getTermList() { return _termList; }
-    const TermList & getTermList() const { return _termList; }
+    TermList& getTermList() { return _termList; }
+    const TermList& getTermList() const { return _termList; }
     search::streaming::Query& get_query() noexcept { return _query; }
 };
 
 } // namespace streaming
-

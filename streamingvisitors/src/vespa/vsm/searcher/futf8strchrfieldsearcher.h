@@ -5,21 +5,21 @@
 
 namespace vsm {
 
-class FUTF8StrChrFieldSearcher : public UTF8StrChrFieldSearcher
-{
+class FUTF8StrChrFieldSearcher : public UTF8StrChrFieldSearcher {
 public:
     std::unique_ptr<FieldSearcher> duplicate() const override;
     explicit FUTF8StrChrFieldSearcher(FieldIdT fId);
     ~FUTF8StrChrFieldSearcher() override;
-    static bool ansiFold(const char * toFold, size_t sz, char * folded);
-    static bool lfoldaa(const char * toFold, size_t sz, char * folded, size_t & unalignedStart);
-    static bool lfoldua(const char * toFold, size_t sz, char * folded, size_t & alignedStart);
- private:
-    size_t matchTerm(const FieldRef & f, search::streaming::QueryTerm & qt) override;
+    static bool ansiFold(const char* toFold, size_t sz, char* folded);
+    static bool lfoldaa(const char* toFold, size_t sz, char* folded, size_t& unalignedStart);
+    static bool lfoldua(const char* toFold, size_t sz, char* folded, size_t& alignedStart);
+
+private:
+    size_t matchTerm(const FieldRef& f, search::streaming::QueryTerm& qt) override;
     size_t matchTerms(const FieldRef&, size_t shortestTerm) override;
-    virtual size_t match(const char *folded, size_t sz, search::streaming::QueryTerm & qt);
-    size_t match(const char *folded, size_t sz, size_t mintsz, search::streaming::QueryTerm ** qtl, size_t qtlSize);
+    virtual size_t match(const char* folded, size_t sz, search::streaming::QueryTerm& qt);
+    size_t match(const char* folded, size_t sz, size_t mintsz, search::streaming::QueryTerm** qtl, size_t qtlSize);
     std::vector<char> _folded;
 };
 
-}
+} // namespace vsm

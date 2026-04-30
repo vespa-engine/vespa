@@ -3,13 +3,13 @@
 
 #include <vespa/vsm/common/storagedocument.h>
 
-namespace document { class DocumentTypeRepo; }
+namespace document {
+class DocumentTypeRepo;
+}
 
-namespace vsm
-{
+namespace vsm {
 
-class DocumentTypeMapping
-{
+class DocumentTypeMapping {
 public:
     DocumentTypeMapping();
     ~DocumentTypeMapping();
@@ -18,20 +18,17 @@ public:
      * Prepares the given document by sharing the field info map
      * registered for that document type.
      **/
-    bool prepareBaseDoc(SharedFieldPathMap & doc) const;
+    bool prepareBaseDoc(SharedFieldPathMap& doc) const;
 
     /**
      * Builds a field info map for all registered document types.
      **/
-    void init(const std::string & defaultDocumentType,
-              const StringFieldIdTMapT & fieldList,
-              const document::DocumentTypeRepo &repo);
+    void init(const std::string& defaultDocumentType, const StringFieldIdTMapT& fieldList,
+              const document::DocumentTypeRepo& repo);
 
-    const document::DocumentType & getCurrentDocumentType() const;
-    const std::string & getDefaultDocumentTypeName() const
-    { return _defaultDocumentTypeName; }
-    const document::DocumentType *getDefaultDocumentType() const
-    { return _defaultDocumentType; }
+    const document::DocumentType& getCurrentDocumentType() const;
+    const std::string& getDefaultDocumentTypeName() const { return _defaultDocumentTypeName; }
+    const document::DocumentType* getDefaultDocumentType() const { return _defaultDocumentType; }
 
 private:
     /**
@@ -39,16 +36,14 @@ private:
      * mapping from field id to field path and field value for all
      * field names in the given list based on the given document type.
      **/
-    void buildFieldMap(const document::DocumentType *docType,
-                       const StringFieldIdTMapT & fieldList,
-                       const std::string & typeId);
+    void buildFieldMap(const document::DocumentType* docType, const StringFieldIdTMapT& fieldList,
+                       const std::string& typeId);
     using FieldPathMapMapT = vespalib::hash_map<std::string, FieldPathMapT>;
-    using DocumentTypeUsage = std::multimap<size_t, const document::DocumentType *>;
-    FieldPathMapMapT        _fieldMap;
-    std::string        _defaultDocumentTypeName;
-    const document::DocumentType *_defaultDocumentType;
-    DocumentTypeUsage       _documentTypeFreq;
+    using DocumentTypeUsage = std::multimap<size_t, const document::DocumentType*>;
+    FieldPathMapMapT              _fieldMap;
+    std::string                   _defaultDocumentTypeName;
+    const document::DocumentType* _defaultDocumentType;
+    DocumentTypeUsage             _documentTypeFreq;
 };
 
-}
-
+} // namespace vsm

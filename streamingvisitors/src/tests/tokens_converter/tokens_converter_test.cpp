@@ -17,72 +17,61 @@ using vsm::TokensConverter;
 
 namespace {
 
-std::string
-slime_to_string(const Slime& slime)
-{
+std::string slime_to_string(const Slime& slime) {
     SimpleBuffer buf;
     JsonFormat::encode(slime, buf, true);
     return buf.get().make_string();
 }
 
-}
+} // namespace
 
-class TokensConverterTest : public testing::Test
-{
+class TokensConverterTest : public testing::Test {
 protected:
     TokensConverterTest();
     ~TokensConverterTest() override;
-;
+    ;
     std::string convert(const StringFieldValue& fv, bool exact_match, Normalizing normalize_mode);
 };
 
-TokensConverterTest::TokensConverterTest()
-    : testing::Test()
-{
+TokensConverterTest::TokensConverterTest() : testing::Test() {
 }
 
 TokensConverterTest::~TokensConverterTest() = default;
 
-std::string
-TokensConverterTest::convert(const StringFieldValue& fv, bool exact_match, Normalizing normalize_mode)
-{
+std::string TokensConverterTest::convert(const StringFieldValue& fv, bool exact_match, Normalizing normalize_mode) {
     TokensConverter converter(exact_match, normalize_mode);
-    Slime slime;
-    SlimeInserter inserter(slime);
+    Slime           slime;
+    SlimeInserter   inserter(slime);
     converter.convert(fv, inserter);
     return slime_to_string(slime);
 }
 
-TEST_F(TokensConverterTest, convert_empty_string)
-{
-    std::string exp(R"([])");
+TEST_F(TokensConverterTest, convert_empty_string) {
+    std::string      exp(R"([])");
     StringFieldValue plain_string("");
     EXPECT_EQ(exp, convert(plain_string, false, Normalizing::NONE));
     EXPECT_EQ(exp, convert(plain_string, true, Normalizing::NONE));
 }
 
-TEST_F(TokensConverterTest, convert_exact_match)
-{
-    std::string exp_none(R"([".Foo Bar Baz."])");
-    std::string exp_lowercase(R"([".foo bar baz."])");
+TEST_F(TokensConverterTest, convert_exact_match) {
+    std::string      exp_none(R"([".Foo Bar Baz."])");
+    std::string      exp_lowercase(R"([".foo bar baz."])");
     StringFieldValue plain_string(".Foo Bar Baz.");
     EXPECT_EQ(exp_none, convert(plain_string, true, Normalizing::NONE));
     EXPECT_EQ(exp_lowercase, convert(plain_string, true, Normalizing::LOWERCASE));
 }
 
-TEST_F(TokensConverterTest, convert_tokenized_string)
-{
-    std::string exp_none(R"(["Foo","Bar"])");
-    std::string exp_lowercase(R"(["foo","bar"])");
+TEST_F(TokensConverterTest, convert_tokenized_string) {
+    std::string      exp_none(R"(["Foo","Bar"])");
+    std::string      exp_lowercase(R"(["foo","bar"])");
     StringFieldValue value(".Foo Bar.");
     EXPECT_EQ(exp_none, convert(value, false, Normalizing::NONE));
     EXPECT_EQ(exp_lowercase, convert(value, false, Normalizing::LOWERCASE));
 }
 
-TEST_F(TokensConverterTest, convert_with_folding)
-{
-    std::string exp_exact_match_folded(R"(["moerk vaarkveld"])");
-    std::string exp_tokenized_folded(R"(["moerk","vaarkveld"])");
+TEST_F(TokensConverterTest, convert_with_folding) {
+    std::string      exp_exact_match_folded(R"(["moerk vaarkveld"])");
+    std::string      exp_tokenized_folded(R"(["moerk","vaarkveld"])");
     StringFieldValue value("Mørk vårkveld");
     EXPECT_EQ(exp_exact_match_folded, convert(value, true, Normalizing::LOWERCASE_AND_FOLD));
     EXPECT_EQ(exp_tokenized_folded, convert(value, false, Normalizing::LOWERCASE_AND_FOLD));
