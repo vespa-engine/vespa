@@ -53,6 +53,7 @@ public enum ControllerMetrics implements VespaMetrics {
     BILLING_EXCEPTIONS("billing.exceptions", Unit.FAILURE, "Controller: Billing related exceptions"),
     BILLING_WEBHOOK_FAILURES("billing.webhook.failures", Unit.FAILURE, "Controller: webhook failures"),
     BILLING_WEBHOOK_REQUESTS("billing.webhook.requests", Unit.REQUEST, "Controller: webhook requests"),
+    BILLING_MISSING_INSTRUMENT("billing.webhook.instruments", Unit.ITEM, "Controller: webhook resulted in zero instruments"),
     HUBSPOT_EXCEPTIONS("hubspot.exceptions", Unit.FAILURE, "Controller: Hubspot exceptions"),
     HUBSPOT_LAST_SUCCESS("hubspot.last_success", Unit.SECONDS_SINCE_EPOCH, "Controller: Last successful Hubspot synchronization"),
     TENANT_CREATED_LAST_SUCCESS("tenant.created.last_success", Unit.SECONDS_SINCE_EPOCH, "Controller: Last successful tenant creation"),
