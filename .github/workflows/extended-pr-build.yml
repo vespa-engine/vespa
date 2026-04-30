@@ -2,7 +2,7 @@
 #
 # Extended PR Build.
 #
-# Runs an additional build on a labeled pull request that cannot be
+# Runs an additional build on a pull request that cannot be
 # executed on this repository's own runners. The build target is
 # configured through repository secrets so its identity does not appear
 # in this workflow's logs.
