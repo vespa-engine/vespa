@@ -102,6 +102,7 @@ public class DeploymentSpecXmlReader {
     private static final String hostTTLAttribute = "empty-host-ttl";
     private static final String cloudResourceTagsTag = "resource-tags";
     private static final String availabilityZoneTag = "availability-zone";
+    private static final String skipAttribute = "skip"; // Undocumented on purpose
 
     private final boolean validate;
     private final Clock clock;
@@ -287,7 +288,9 @@ public class DeploymentSpecXmlReader {
                     return List.of(new DeclaredTest(RegionName.from(XML.getValue(stepTag).trim()), readHostTTL(stepTag))); // A production test
                 }
             case stagingTag: // Intentional fallthrough from test tag.
-                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), athenzService, testerNodes, readCloudAccounts(stepTag), readHostTTL(stepTag), readCloudResourceTags(stepTag), List.of()));
+                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), athenzService, testerNodes,
+                                                readCloudAccounts(stepTag), readHostTTL(stepTag), readCloudResourceTags(stepTag),
+                                                List.of(), "true".equals(stepTag.getAttribute(skipAttribute))));
             case prodTag: // regions, delay and parallel may be nested within, but we can flatten them
                 return XML.getChildren(stepTag).stream()
                                                .flatMap(child -> readNonInstanceSteps(child, prodAttributes, stepTag, defaultBcp).stream())
@@ -722,7 +725,7 @@ public class DeploymentSpecXmlReader {
         return new DeclaredZone(environment, Optional.of(RegionName.from(readRegionName(regionTag))),
                                 athenzService, testerNodes,
                                 readCloudAccounts(regionTag), readHostTTL(regionTag), readCloudResourceTags(regionTag),
-                                readAvailabilityZones(regionTag));
+                                readAvailabilityZones(regionTag), false);
     }
 
     /** A region name can be given either as the region element text content or by a 'name' attribute. */
