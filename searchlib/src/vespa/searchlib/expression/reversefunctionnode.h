@@ -6,16 +6,15 @@
 namespace search {
 namespace expression {
 
-class ReverseFunctionNode : public UnaryFunctionNode
-{
+class ReverseFunctionNode : public UnaryFunctionNode {
 public:
     DECLARE_EXPRESSIONNODE(ReverseFunctionNode);
-    ReverseFunctionNode() { }
-    ReverseFunctionNode(ExpressionNode::UP  arg) : UnaryFunctionNode(std::move(arg)) { }
+    ReverseFunctionNode() {}
+    ReverseFunctionNode(ExpressionNode::UP arg) : UnaryFunctionNode(std::move(arg)) {}
+
 private:
     void onExecute() const override;
 };
 
-}
-}
-
+} // namespace expression
+} // namespace search

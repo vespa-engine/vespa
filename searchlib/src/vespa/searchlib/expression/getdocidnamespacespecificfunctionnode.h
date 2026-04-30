@@ -8,22 +8,22 @@
 namespace search {
 namespace expression {
 
-class GetDocIdNamespaceSpecificFunctionNode : public DocumentAccessorNode
-{
+class GetDocIdNamespaceSpecificFunctionNode : public DocumentAccessorNode {
 public:
     DECLARE_NBO_SERIALIZE;
-    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    void visitMembers(vespalib::ObjectVisitor& visitor) const override;
     DECLARE_EXPRESSIONNODE(GetDocIdNamespaceSpecificFunctionNode);
-    GetDocIdNamespaceSpecificFunctionNode() : _value(new StringResultNode("")) { }
-    GetDocIdNamespaceSpecificFunctionNode(ResultNode::UP resultNode) : _value(resultNode.release()) { }
+    GetDocIdNamespaceSpecificFunctionNode() : _value(new StringResultNode("")) {}
+    GetDocIdNamespaceSpecificFunctionNode(ResultNode::UP resultNode) : _value(resultNode.release()) {}
+
 private:
-    const ResultNode * getResult() const override { return _value.get(); }
-    void onDocType(const document::DocumentType & docType) override { (void) docType; }
-    void onDoc(const document::Document & doc) override;
-    void onPrepare(bool preserveAccurateTypes) override { (void) preserveAccurateTypes; }
-    void onExecute() const override { }
+    const ResultNode* getResult() const override { return _value.get(); }
+    void onDocType(const document::DocumentType& docType) override { (void)docType; }
+    void onDoc(const document::Document& doc) override;
+    void onPrepare(bool preserveAccurateTypes) override { (void)preserveAccurateTypes; }
+    void onExecute() const override {}
     ResultNode::CP _value;
 };
 
-}
-}
+} // namespace expression
+} // namespace search

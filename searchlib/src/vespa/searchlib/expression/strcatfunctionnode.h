@@ -6,17 +6,16 @@
 namespace search {
 namespace expression {
 
-class StrCatFunctionNode : public MultiArgFunctionNode
-{
+class StrCatFunctionNode : public MultiArgFunctionNode {
 public:
     DECLARE_EXPRESSIONNODE(StrCatFunctionNode);
-    StrCatFunctionNode() { }
+    StrCatFunctionNode() {}
     StrCatFunctionNode(ExpressionNode::UP arg) { addArg(std::move(arg)); }
+
 private:
     void onPrepareResult() override;
     void onExecute() const override;
 };
 
-}
-}
-
+} // namespace expression
+} // namespace search

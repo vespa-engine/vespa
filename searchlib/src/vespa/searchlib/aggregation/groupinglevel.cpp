@@ -1,9 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "groupinglevel.h"
+
 #include "grouping.h"
-#include <vespa/searchlib/expression/resultvector.h>
+
 #include <vespa/searchlib/expression/current_index_setup.h>
+#include <vespa/searchlib/expression/resultvector.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/issue.h>
 
@@ -15,8 +17,8 @@ LOG_SETUP(".searchlib.aggregation.groupinglevel");
 namespace search::aggregation {
 
 using expression::ResultNodeVector;
-using vespalib::Serializer;
 using vespalib::Deserializer;
+using vespalib::Serializer;
 
 IMPLEMENT_IDENTIFIABLE_NS2(search, aggregation, GroupingLevel, vespalib::Identifiable);
 
@@ -28,30 +30,25 @@ GroupingLevel::GroupingLevel() noexcept
       _currentIndex(),
       _classify(),
       _collect(),
-      _grouper(nullptr)
-{ }
+      _grouper(nullptr) {
+}
 
 GroupingLevel::~GroupingLevel() = default;
 
-GroupingLevel::GroupingLevel(const GroupingLevel &) = default;
+GroupingLevel::GroupingLevel(const GroupingLevel&) = default;
 GroupingLevel::GroupingLevel(GroupingLevel&&) noexcept = default;
-GroupingLevel & GroupingLevel::operator =(const GroupingLevel &) = default;
+GroupingLevel& GroupingLevel::operator=(const GroupingLevel&) = default;
 GroupingLevel& GroupingLevel::operator=(GroupingLevel&&) noexcept = default;
 
-Serializer &
-GroupingLevel::onSerialize(Serializer & os) const
-{
+Serializer& GroupingLevel::onSerialize(Serializer& os) const {
     return os << _maxGroups << _precision << _classify << _collect;
 }
 
-Deserializer &
-GroupingLevel::onDeserialize(Deserializer & is)
-{
+Deserializer& GroupingLevel::onDeserialize(Deserializer& is) {
     return is >> _maxGroups >> _precision >> _classify >> _collect;
 }
 
-Serializer &
-GroupingLevel::serializeVariant(Serializer & os, bool allowV2) const {
+Serializer& GroupingLevel::serializeVariant(Serializer& os, bool allowV2) const {
     if (allowV2 && _filter.get()) {
         uint32_t cid = CID_search_aggregation_GroupingLevelV2;
         return os << cid << _maxGroups << _precision << _classify << _filter << _collect;
@@ -61,8 +58,7 @@ GroupingLevel::serializeVariant(Serializer & os, bool allowV2) const {
     }
 }
 
-Deserializer &
-GroupingLevel::deserializeVariant(Deserializer & is, bool allowV2) {
+Deserializer& GroupingLevel::deserializeVariant(Deserializer& is, bool allowV2) {
     uint32_t cid;
     is.get(cid);
     if (allowV2 && (cid == CID_search_aggregation_GroupingLevelV2)) {
@@ -73,21 +69,17 @@ GroupingLevel::deserializeVariant(Deserializer & is, bool allowV2) {
     }
 }
 
-void
-GroupingLevel::visitMembers(vespalib::ObjectVisitor &visitor) const
-{
+void GroupingLevel::visitMembers(vespalib::ObjectVisitor& visitor) const {
     visit(visitor, "maxGroups", _maxGroups);
     visit(visitor, "precision", _precision);
-    visit(visitor, "classify",  _classify);
+    visit(visitor, "classify", _classify);
     if (_filter.get()) {
-        visit(visitor, "filter",  *_filter);
+        visit(visitor, "filter", *_filter);
     }
-    visit(visitor, "collect",   _collect);
+    visit(visitor, "collect", _collect);
 }
 
-void
-GroupingLevel::selectMembers(const vespalib::ObjectPredicate & predicate, vespalib::ObjectOperation & operation)
-{
+void GroupingLevel::selectMembers(const vespalib::ObjectPredicate& predicate, vespalib::ObjectOperation& operation) {
     _classify.select(predicate, operation);
     if (_filter.get()) {
         _filter->select(predicate, operation);
@@ -95,25 +87,21 @@ GroupingLevel::selectMembers(const vespalib::ObjectPredicate & predicate, vespal
     _collect.select(predicate, operation);
 }
 
-GroupingLevel::Grouper::Grouper(const Grouping * grouping, uint32_t level) noexcept
+GroupingLevel::Grouper::Grouper(const Grouping* grouping, uint32_t level) noexcept
     : _grouping(grouping),
       _level(level),
       _frozen(_level < _grouping->getFirstLevel()),
       _hasNext(_level < _grouping->getLevels().size()),
-      _doNext(_level < _grouping->getLastLevel())
-{
+      _doNext(_level < _grouping->getLastLevel()) {
 }
 
-bool
-GroupingLevel::Grouper::hasNext(size_t level) const noexcept
-{
+bool GroupingLevel::Grouper::hasNext(size_t level) const noexcept {
     return level < _grouping->getLevels().size();
 }
 
-template<typename Doc>
-void
-GroupingLevel::SingleValueGrouper::groupDoc(Group & g, const ResultNode & result, const Doc & doc, HitRank rank) const
-{
+template <typename Doc>
+void GroupingLevel::SingleValueGrouper::groupDoc(Group& g, const ResultNode& result, const Doc& doc,
+                                                 HitRank rank) const {
     bool allowed = false;
     try {
         allowed = _filter.allow(doc, rank);
@@ -130,22 +118,18 @@ GroupingLevel::SingleValueGrouper::groupDoc(Group & g, const ResultNode & result
     }
 }
 
-void
-GroupingLevel::SingleValueGrouper::group(Group & g, const ResultNode & result, DocId doc, HitRank rank) const
-{
+void GroupingLevel::SingleValueGrouper::group(Group& g, const ResultNode& result, DocId doc, HitRank rank) const {
     groupDoc(g, result, doc, rank);
 }
 
-void
-GroupingLevel::SingleValueGrouper::group(Group & g, const ResultNode & result, const document::Document & doc, HitRank rank) const
-{
+void GroupingLevel::SingleValueGrouper::group(Group& g, const ResultNode& result, const document::Document& doc,
+                                              HitRank rank) const {
     groupDoc(g, result, doc, rank);
 }
 
-template<typename Doc>
-void
-GroupingLevel::MultiValueGrouper::groupDoc(Group & g, const ResultNode & result, const Doc & doc, HitRank rank) const
-{
+template <typename Doc>
+void GroupingLevel::MultiValueGrouper::groupDoc(Group& g, const ResultNode& result, const Doc& doc,
+                                                HitRank rank) const {
     const ResultNodeVector& rv = static_cast<const ResultNodeVector&>(result);
     for (size_t i = 0; i < rv.size(); i++) {
         const ResultNode& sr = rv.get(i);
@@ -154,21 +138,17 @@ GroupingLevel::MultiValueGrouper::groupDoc(Group & g, const ResultNode & result,
     }
 }
 
-void
-GroupingLevel::MultiValueGrouper::group(Group & g, const ResultNode & result, DocId doc, HitRank rank) const
-{
+void GroupingLevel::MultiValueGrouper::group(Group& g, const ResultNode& result, DocId doc, HitRank rank) const {
     groupDoc(g, result, doc, rank);
 }
 
-void
-GroupingLevel::MultiValueGrouper::group(Group & g, const ResultNode & result, const document::Document & doc, HitRank rank) const
-{
+void GroupingLevel::MultiValueGrouper::group(Group& g, const ResultNode& result, const document::Document& doc,
+                                             HitRank rank) const {
     groupDoc(g, result, doc, rank);
 }
 
-void
-GroupingLevel::wire_current_index(CurrentIndexSetup &setup, const vespalib::ObjectPredicate &resolve_pred, vespalib::ObjectOperation &resolve_op)
-{
+void GroupingLevel::wire_current_index(CurrentIndexSetup& setup, const vespalib::ObjectPredicate& resolve_pred,
+                                       vespalib::ObjectOperation& resolve_op) {
     CurrentIndexSetup::Usage usage;
     {
         CurrentIndexSetup::Usage::Bind capture_guard(setup, usage);
@@ -183,9 +163,7 @@ GroupingLevel::wire_current_index(CurrentIndexSetup &setup, const vespalib::Obje
     _collect.select(resolve_pred, resolve_op);
 }
 
-void
-GroupingLevel::prepare(const Grouping * grouping, uint32_t level, bool isOrdered_)
-{
+void GroupingLevel::prepare(const Grouping* grouping, uint32_t level, bool isOrdered_) {
     _isOrdered = isOrdered_;
     _frozen = level < grouping->getFirstLevel();
     if (_classify.getResult()->inherits(ResultNodeVector::classId)) {
@@ -195,10 +173,13 @@ GroupingLevel::prepare(const Grouping * grouping, uint32_t level, bool isOrdered
     }
 }
 
-// template<> void GroupingLevel::MultiValueGrouper::groupDoc(Group & g, const ResultNode::CP & result, const document::Document & doc, HitRank rank, bool isOrdered) const;
-// template<> void GroupingLevel::MultiValueGrouper::groupDoc(Group & g, const ResultNode::CP & result, DocId doc, HitRank rank, bool isOrdered) const;
+// template<> void GroupingLevel::MultiValueGrouper::groupDoc(Group & g, const ResultNode::CP & result, const
+// document::Document & doc, HitRank rank, bool isOrdered) const; template<> void
+// GroupingLevel::MultiValueGrouper::groupDoc(Group & g, const ResultNode::CP & result, DocId doc, HitRank rank, bool
+// isOrdered) const;
 
-}
+} // namespace search::aggregation
 
 // this function was added by ../../forcelink.sh
-void forcelink_file_searchlib_aggregation_groupinglevel() {}
+void forcelink_file_searchlib_aggregation_groupinglevel() {
+}

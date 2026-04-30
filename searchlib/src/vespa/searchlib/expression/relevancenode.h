@@ -5,19 +5,19 @@
 
 namespace search::expression {
 
-class RelevanceNode : public ExpressionNode
-{
+class RelevanceNode : public ExpressionNode {
 public:
     DECLARE_NBO_SERIALIZE;
     DECLARE_EXPRESSIONNODE(RelevanceNode);
-    RelevanceNode() : ExpressionNode(), _relevance() { }
-    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    const ResultNode * getResult() const override { return &_relevance; }
+    RelevanceNode() : ExpressionNode(), _relevance() {}
+    void visitMembers(vespalib::ObjectVisitor& visitor) const override;
+    const ResultNode* getResult() const override { return &_relevance; }
     void setRelevance(double relevance) { _relevance.set(relevance); }
+
 private:
-    void onPrepare(bool preserveAccurateTypes) override { (void) preserveAccurateTypes; }
-    void onExecute() const override { }
+    void onPrepare(bool preserveAccurateTypes) override { (void)preserveAccurateTypes; }
+    void onExecute() const override {}
     FloatResultNode _relevance;
 };
 
-}
+} // namespace search::expression

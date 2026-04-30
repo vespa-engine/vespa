@@ -7,20 +7,20 @@
 namespace search {
 namespace expression {
 
-class GetYMUMChecksumFunctionNode : public DocumentAccessorNode
-{
+class GetYMUMChecksumFunctionNode : public DocumentAccessorNode {
 public:
     DECLARE_NBO_SERIALIZE;
-    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    void visitMembers(vespalib::ObjectVisitor& visitor) const override;
     DECLARE_EXPRESSIONNODE(GetYMUMChecksumFunctionNode);
+
 private:
-    void onPrepare(bool preserveAccurateTypes) override { (void) preserveAccurateTypes; }
-    const ResultNode * getResult() const override { return &_checkSum; }
-    void onDocType(const document::DocumentType & docType) override { (void) docType; }
-    void onDoc(const document::Document & doc) override;
-    void onExecute() const override { }
+    void onPrepare(bool preserveAccurateTypes) override { (void)preserveAccurateTypes; }
+    const ResultNode* getResult() const override { return &_checkSum; }
+    void onDocType(const document::DocumentType& docType) override { (void)docType; }
+    void onDoc(const document::Document& doc) override;
+    void onExecute() const override {}
     Int64ResultNode _checkSum;
 };
 
-}
-}
+} // namespace expression
+} // namespace search

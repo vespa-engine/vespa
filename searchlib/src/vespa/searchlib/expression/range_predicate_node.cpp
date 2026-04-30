@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "range_predicate_node.h"
+
 #include "resultnode.h"
 #include "resultvector.h"
 
@@ -66,15 +67,14 @@ RangePredicateNode::RangePredicateNode(const RangePredicateNode&) = default;
 
 RangePredicateNode& RangePredicateNode::operator=(const RangePredicateNode&) = default;
 
-RangePredicateNode::RangePredicateNode(double lower, double upper, ExpressionNode::UP input, bool lower_inclusive, bool upper_inclusive)
-  : _lower(lower),
-    _upper(upper),
-    _lower_inclusive(lower_inclusive),
-    _upper_inclusive(upper_inclusive),
-    _argument(std::move(input))
-{
+RangePredicateNode::RangePredicateNode(double lower, double upper, ExpressionNode::UP input, bool lower_inclusive,
+                                       bool upper_inclusive)
+    : _lower(lower),
+      _upper(upper),
+      _lower_inclusive(lower_inclusive),
+      _upper_inclusive(upper_inclusive),
+      _argument(std::move(input)) {
 }
-
 
 Serializer& RangePredicateNode::onSerialize(Serializer& os) const {
     return os << _lower << _upper << _lower_inclusive << _upper_inclusive << _argument;
@@ -98,7 +98,7 @@ void RangePredicateNode::visitMembers(vespalib::ObjectVisitor& visitor) const {
 }
 
 void RangePredicateNode::selectMembers(const vespalib::ObjectPredicate& predicate,
-                                       vespalib::ObjectOperation& operation) {
+                                       vespalib::ObjectOperation&       operation) {
     _argument.select(predicate, operation);
 }
 

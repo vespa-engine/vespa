@@ -6,16 +6,15 @@
 namespace search {
 namespace expression {
 
-class SortFunctionNode : public UnaryFunctionNode
-{
+class SortFunctionNode : public UnaryFunctionNode {
 public:
     DECLARE_EXPRESSIONNODE(SortFunctionNode);
-    SortFunctionNode() { }
-    SortFunctionNode(ExpressionNode::UP arg) : UnaryFunctionNode(std::move(arg)) { }
+    SortFunctionNode() {}
+    SortFunctionNode(ExpressionNode::UP arg) : UnaryFunctionNode(std::move(arg)) {}
+
 private:
     void onExecute() const override;
 };
 
-}
-}
-
+} // namespace expression
+} // namespace search

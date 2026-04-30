@@ -1,13 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "simple_interpolate.h"
+
 #include <cstddef>
 
 namespace search::expression {
 
-double
-simple_interpolate(const std::vector<double>& v, double lookup) noexcept
-{
+double simple_interpolate(const std::vector<double>& v, double lookup) noexcept {
     if (v.empty() || lookup < v[0]) {
         return 0;
     }
@@ -23,4 +22,4 @@ simple_interpolate(const std::vector<double>& v, double lookup) noexcept
     return v.size() - 1;
 }
 
-}
+} // namespace search::expression

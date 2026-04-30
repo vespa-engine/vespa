@@ -6,23 +6,20 @@
 
 namespace search::expression {
 
-class EnumAttributeResult final : public AttributeResult
-{
+class EnumAttributeResult final : public AttributeResult {
 public:
     using EnumRefs = attribute::IAttributeVector::EnumRefs;
     DECLARE_RESULTNODE(EnumAttributeResult);
-    EnumAttributeResult(EnumRefs enumRefs, const attribute::IAttributeVector * attribute, DocId docId) :
-        AttributeResult(attribute, docId),
-        _enumRefs(enumRefs)
-    {
-    }
+    EnumAttributeResult(EnumRefs enumRefs, const attribute::IAttributeVector* attribute, DocId docId)
+        : AttributeResult(attribute, docId), _enumRefs(enumRefs) {}
+
 private:
-    EnumAttributeResult()
-        : AttributeResult(),
-          _enumRefs()
-    { }
-    int64_t onGetEnum(size_t index) const override { (void) index; return (static_cast<int64_t>(_enumRefs[getDocId()].load_relaxed().ref())); }
+    EnumAttributeResult() : AttributeResult(), _enumRefs() {}
+    int64_t onGetEnum(size_t index) const override {
+        (void)index;
+        return (static_cast<int64_t>(_enumRefs[getDocId()].load_relaxed().ref()));
+    }
     EnumRefs _enumRefs;
 };
 
-}
+} // namespace search::expression

@@ -3,59 +3,41 @@
 
 namespace search::expression {
 
-using vespalib::Serializer;
 using vespalib::Deserializer;
+using vespalib::Serializer;
 
 IMPLEMENT_EXPRESSIONNODE(ArrayAtLookup, AttributeNode);
 
-ArrayAtLookup::ArrayAtLookup() noexcept
-    : AttributeNode(),
-      _currentIndex(),
-      _indexExpression()
-{
+ArrayAtLookup::ArrayAtLookup() noexcept : AttributeNode(), _currentIndex(), _indexExpression() {
     setCurrentIndex(&_currentIndex);
 }
 
 ArrayAtLookup::~ArrayAtLookup() = default;
-ArrayAtLookup & ArrayAtLookup::operator=(const ArrayAtLookup &rhs) = default;
+ArrayAtLookup& ArrayAtLookup::operator=(const ArrayAtLookup& rhs) = default;
 
-ArrayAtLookup::ArrayAtLookup(const std::string &attribute, ExpressionNode::UP indexExpr)
-    : AttributeNode(attribute),
-      _currentIndex(),
-      _indexExpression(std::move(indexExpr))
-{
+ArrayAtLookup::ArrayAtLookup(const std::string& attribute, ExpressionNode::UP indexExpr)
+    : AttributeNode(attribute), _currentIndex(), _indexExpression(std::move(indexExpr)) {
     setCurrentIndex(&_currentIndex);
 }
 
-ArrayAtLookup::ArrayAtLookup(const search::attribute::IAttributeVector &attr,
-                             ExpressionNode::UP indexExpr)
-    : AttributeNode(attr),
-      _currentIndex(),
-      _indexExpression(std::move(indexExpr))
-{
+ArrayAtLookup::ArrayAtLookup(const search::attribute::IAttributeVector& attr, ExpressionNode::UP indexExpr)
+    : AttributeNode(attr), _currentIndex(), _indexExpression(std::move(indexExpr)) {
     setCurrentIndex(&_currentIndex);
 }
 
-ArrayAtLookup::ArrayAtLookup(const ArrayAtLookup &rhs)
-    : AttributeNode(rhs),
-      _currentIndex(),
-      _indexExpression(rhs._indexExpression)
-{
+ArrayAtLookup::ArrayAtLookup(const ArrayAtLookup& rhs)
+    : AttributeNode(rhs), _currentIndex(), _indexExpression(rhs._indexExpression) {
     setCurrentIndex(&_currentIndex);
 }
 
-void
-ArrayAtLookup::onExecute() const
-{
+void ArrayAtLookup::onExecute() const {
     _indexExpression->execute();
     int64_t idx = _indexExpression->getResult()->getInteger();
     _currentIndex.set(idx);
     AttributeNode::onExecute();
 }
 
-Serializer &
-ArrayAtLookup::onSerialize(Serializer & os) const
-{
+Serializer& ArrayAtLookup::onSerialize(Serializer& os) const {
     // Here we are doing a dirty skipping AttributeNode in the inheritance.
     // This is due to refactoring and the need to keep serialization the same.
     FunctionNode::onSerialize(os);
@@ -64,9 +46,7 @@ ArrayAtLookup::onSerialize(Serializer & os) const
     return os;
 }
 
-Deserializer &
-ArrayAtLookup::onDeserialize(Deserializer & is)
-{
+Deserializer& ArrayAtLookup::onDeserialize(Deserializer& is) {
     // See comment in onSerialize method.
     FunctionNode::onDeserialize(is);
     uint32_t count(0);
@@ -80,20 +60,16 @@ ArrayAtLookup::onDeserialize(Deserializer & is)
     return is;
 }
 
-void
-ArrayAtLookup::visitMembers(vespalib::ObjectVisitor &visitor) const
-{
+void ArrayAtLookup::visitMembers(vespalib::ObjectVisitor& visitor) const {
     AttributeNode::visitMembers(visitor);
     visit(visitor, "index", *_indexExpression);
 }
 
-void
-ArrayAtLookup::selectMembers(const vespalib::ObjectPredicate & predicate, vespalib::ObjectOperation & operation)
-{
+void ArrayAtLookup::selectMembers(const vespalib::ObjectPredicate& predicate, vespalib::ObjectOperation& operation) {
     AttributeNode::selectMembers(predicate, operation);
     if (_indexExpression) {
         _indexExpression->select(predicate, operation);
     }
 }
 
-}
+} // namespace search::expression

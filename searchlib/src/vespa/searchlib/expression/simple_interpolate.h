@@ -12,4 +12,4 @@ namespace search::expression {
  */
 double simple_interpolate(const std::vector<double>& v, double lookup) noexcept;
 
-}
+} // namespace search::expression

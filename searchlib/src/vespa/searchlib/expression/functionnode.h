@@ -6,22 +6,26 @@
 
 namespace search::expression {
 
-class FunctionNode : public ExpressionNode
-{
+class FunctionNode : public ExpressionNode {
 public:
     DECLARE_NBO_SERIALIZE;
-    void visitMembers(vespalib::ObjectVisitor & visitor) const override;
+    void visitMembers(vespalib::ObjectVisitor& visitor) const override;
     DECLARE_ABSTRACT_EXPRESSIONNODE(FunctionNode);
-    const ResultNode * getResult() const override { return _tmpResult.get(); }
-    ResultNode & updateResult() const { return *_tmpResult; }
+    const ResultNode* getResult() const override { return _tmpResult.get(); }
+    ResultNode& updateResult() const { return *_tmpResult; }
     virtual void reset() { _tmpResult.reset(nullptr); }
 
-    FunctionNode &setResult(const ResultNode::CP res) { _tmpResult = std::move(res); return *this; }
+    FunctionNode& setResult(const ResultNode::CP res) {
+        _tmpResult = std::move(res);
+        return *this;
+    }
+
 protected:
     void setResultType(ResultNode::UP res) { _tmpResult = std::move(res); }
-    void selectMembers(const vespalib::ObjectPredicate & predicate, vespalib::ObjectOperation & operation) override;
+    void selectMembers(const vespalib::ObjectPredicate& predicate, vespalib::ObjectOperation& operation) override;
+
 private:
     mutable ResultNode::CP _tmpResult;
 };
 
-}
+} // namespace search::expression

@@ -1,10 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "multi_arg_predicate_node.h"
 
+#include <vespa/vespalib/util/exceptions.h>
+
 #include <vespa/vespalib/objects/deserializer.hpp>
 #include <vespa/vespalib/objects/serializer.hpp>
 #include <vespa/vespalib/objects/visit.hpp>
-#include <vespa/vespalib/util/exceptions.h>
 
 #include <algorithm>
 
@@ -36,7 +37,7 @@ Serializer& MultiArgPredicateNode::onSerialize(Serializer& os) const {
 Deserializer& MultiArgPredicateNode::onDeserialize(Deserializer& is) {
     is >> _args;
 
-    if (std::ranges::any_of(_args, [](const auto& arg){ return arg.get() == nullptr; })) {
+    if (std::ranges::any_of(_args, [](const auto& arg) { return arg.get() == nullptr; })) {
         throw vespalib::IllegalArgumentException("Filter predicate node received non-present argument node.");
     }
 
@@ -48,9 +49,9 @@ void MultiArgPredicateNode::visitMembers(vespalib::ObjectVisitor& visitor) const
 }
 
 void MultiArgPredicateNode::selectMembers(const vespalib::ObjectPredicate& predicate,
-                                                vespalib::ObjectOperation& operation) {
+                                          vespalib::ObjectOperation&       operation) {
     FilterPredicateNode::selectMembers(predicate, operation);
-    for(auto& _arg : _args) {
+    for (auto& _arg : _args) {
         _arg->select(predicate, operation);
     }
 }

@@ -6,168 +6,153 @@
 
 namespace search::expression {
 
-class NumericFunctionNode : public MultiArgFunctionNode
-{
+class NumericFunctionNode : public MultiArgFunctionNode {
 public:
     DECLARE_ABSTRACT_EXPRESSIONNODE(NumericFunctionNode);
     NumericFunctionNode();
-    NumericFunctionNode(const NumericFunctionNode & rhs);
-    NumericFunctionNode & operator = (const NumericFunctionNode & rhs);
+    NumericFunctionNode(const NumericFunctionNode& rhs);
+    NumericFunctionNode& operator=(const NumericFunctionNode& rhs);
     ~NumericFunctionNode() override;
-    void reset() override { _handler.reset(); MultiArgFunctionNode::reset(); }
+    void reset() override {
+        _handler.reset();
+        MultiArgFunctionNode::reset();
+    }
+
 protected:
     void onPrepare(bool preserveAccurateTypes) override;
 
-    class Handler
-    {
+    class Handler {
     public:
-        Handler(const NumericFunctionNode & func) : _function(func) { }
+        Handler(const NumericFunctionNode& func) : _function(func) {}
         virtual ~Handler() = default;
-        virtual void handle(const ResultNode & arg) = 0;
-        virtual void handleFirst(const ResultNode & arg) = 0;
+        virtual void handle(const ResultNode& arg) = 0;
+        virtual void handleFirst(const ResultNode& arg) = 0;
+
     protected:
-        const NumericFunctionNode & function() const { return _function; }
+        const NumericFunctionNode& function() const { return _function; }
+
     private:
-        const NumericFunctionNode & _function;
+        const NumericFunctionNode& _function;
     };
 
-    template <typename T>
-    class VectorHandler : public Handler
-    {
+    template <typename T> class VectorHandler : public Handler {
     protected:
-        VectorHandler(const NumericFunctionNode & func) :
-            Handler(func),
-            _result(static_cast<T &>(func.updateResult()))
-        { }
-        void handle(const ResultNode & arg) override;
-        void handleFirst(const ResultNode & arg) override;
+        VectorHandler(const NumericFunctionNode& func)
+            : Handler(func), _result(static_cast<T&>(func.updateResult())) {}
+        void handle(const ResultNode& arg) override;
+        void handleFirst(const ResultNode& arg) override;
+
     private:
-        T & _result;
+        T& _result;
     };
 
-    class VectorIntegerHandler : public VectorHandler<IntegerResultNodeVector>
-    {
+    class VectorIntegerHandler : public VectorHandler<IntegerResultNodeVector> {
     private:
         using BaseHandler = VectorHandler<IntegerResultNodeVector>;
+
     public:
-        VectorIntegerHandler(const NumericFunctionNode & func) : BaseHandler(func) { }
+        VectorIntegerHandler(const NumericFunctionNode& func) : BaseHandler(func) {}
     };
-    class VectorFloatHandler : public VectorHandler<FloatResultNodeVector>
-    {
+    class VectorFloatHandler : public VectorHandler<FloatResultNodeVector> {
     private:
         using BaseHandler = VectorHandler<FloatResultNodeVector>;
+
     public:
-        VectorFloatHandler(const NumericFunctionNode & func) : BaseHandler(func) { }
+        VectorFloatHandler(const NumericFunctionNode& func) : BaseHandler(func) {}
     };
-    class VectorStringHandler : public VectorHandler<StringResultNodeVector>
-    {
+    class VectorStringHandler : public VectorHandler<StringResultNodeVector> {
     private:
         using BaseHandler = VectorHandler<StringResultNodeVector>;
+
     public:
-        VectorStringHandler(const NumericFunctionNode & func) : BaseHandler(func) { }
+        VectorStringHandler(const NumericFunctionNode& func) : BaseHandler(func) {}
     };
+
 private:
     virtual ResultNode::CP getInitialValue() const = 0;
-    virtual ResultNode & flatten(const ResultNodeVector & v, ResultNode & result) const = 0;
-    class ScalarIntegerHandler : public Handler
-    {
+    virtual ResultNode& flatten(const ResultNodeVector& v, ResultNode& result) const = 0;
+    class ScalarIntegerHandler : public Handler {
     public:
-        ScalarIntegerHandler(const NumericFunctionNode & func) :
-            Handler(func),
-            _result(static_cast<Int64ResultNode &>(func.updateResult()))
-        { }
-        void handle(const ResultNode & arg) override;
-        void handleFirst(const ResultNode & arg) override { _result.set(arg.getInteger()); }
+        ScalarIntegerHandler(const NumericFunctionNode& func)
+            : Handler(func), _result(static_cast<Int64ResultNode&>(func.updateResult())) {}
+        void handle(const ResultNode& arg) override;
+        void handleFirst(const ResultNode& arg) override { _result.set(arg.getInteger()); }
+
     protected:
-        Int64ResultNode & _result;
+        Int64ResultNode& _result;
     };
-    class ScalarFloatHandler : public Handler
-    {
+    class ScalarFloatHandler : public Handler {
     public:
-        ScalarFloatHandler(const NumericFunctionNode & func) :
-            Handler(func),
-            _result(static_cast<FloatResultNode &>(func.updateResult()))
-        { }
-        void handle(const ResultNode & arg) override;
-        void handleFirst(const ResultNode & arg) override { _result.set(arg.getFloat()); }
+        ScalarFloatHandler(const NumericFunctionNode& func)
+            : Handler(func), _result(static_cast<FloatResultNode&>(func.updateResult())) {}
+        void handle(const ResultNode& arg) override;
+        void handleFirst(const ResultNode& arg) override { _result.set(arg.getFloat()); }
+
     protected:
-        FloatResultNode & _result;
+        FloatResultNode& _result;
     };
-    class ScalarStringHandler : public Handler
-    {
+    class ScalarStringHandler : public Handler {
     public:
-        ScalarStringHandler(const NumericFunctionNode & func) :
-            Handler(func),
-            _result(static_cast<StringResultNode &>(func.updateResult()))
-        { }
-        void handle(const ResultNode & arg) override;
-        void handleFirst(const ResultNode & arg) override {
+        ScalarStringHandler(const NumericFunctionNode& func)
+            : Handler(func), _result(static_cast<StringResultNode&>(func.updateResult())) {}
+        void handle(const ResultNode& arg) override;
+        void handleFirst(const ResultNode& arg) override {
             HoldString b(arg);
             _result.set(b);
         }
+
     protected:
-        StringResultNode & _result;
+        StringResultNode& _result;
     };
-    class ScalarRawHandler : public Handler
-    {
+    class ScalarRawHandler : public Handler {
     public:
-        ScalarRawHandler(const NumericFunctionNode & func) :
-            Handler(func),
-            _result(static_cast<RawResultNode &>(func.updateResult()))
-        { }
-        void handle(const ResultNode & arg) override;
-        void handleFirst(const ResultNode & arg) override {
+        ScalarRawHandler(const NumericFunctionNode& func)
+            : Handler(func), _result(static_cast<RawResultNode&>(func.updateResult())) {}
+        void handle(const ResultNode& arg) override;
+        void handleFirst(const ResultNode& arg) override {
             HoldString b(arg);
             _result.setBuffer(b.data(), b.size());
         }
+
     protected:
-        RawResultNode & _result;
+        RawResultNode& _result;
     };
-    class FlattenIntegerHandler : public ScalarIntegerHandler
-    {
+    class FlattenIntegerHandler : public ScalarIntegerHandler {
     public:
-        FlattenIntegerHandler(const NumericFunctionNode & func) :
-            ScalarIntegerHandler(func),
-            _initial()
-        {
+        FlattenIntegerHandler(const NumericFunctionNode& func) : ScalarIntegerHandler(func), _initial() {
             _initial.set(*func.getInitialValue());
         }
-        void handle(const ResultNode & arg) override;
-        void handleFirst(const ResultNode & arg) override { handle(arg); }
+        void handle(const ResultNode& arg) override;
+        void handleFirst(const ResultNode& arg) override { handle(arg); }
+
     private:
         Int64ResultNode _initial;
     };
-    class FlattenFloatHandler : public ScalarFloatHandler
-    {
+    class FlattenFloatHandler : public ScalarFloatHandler {
     public:
-        FlattenFloatHandler(const NumericFunctionNode & func) :
-            ScalarFloatHandler(func),
-            _initial()
-        {
+        FlattenFloatHandler(const NumericFunctionNode& func) : ScalarFloatHandler(func), _initial() {
             _initial.set(*func.getInitialValue());
         }
-        void handle(const ResultNode & arg) override;
-        void handleFirst(const ResultNode & arg) override { handle(arg); }
+        void handle(const ResultNode& arg) override;
+        void handleFirst(const ResultNode& arg) override { handle(arg); }
+
     private:
         FloatResultNode _initial;
     };
-    class FlattenStringHandler : public ScalarStringHandler
-    {
+    class FlattenStringHandler : public ScalarStringHandler {
     public:
-        FlattenStringHandler(const NumericFunctionNode & func) :
-            ScalarStringHandler(func),
-            _initial()
-        {
+        FlattenStringHandler(const NumericFunctionNode& func) : ScalarStringHandler(func), _initial() {
             _initial.set(*func.getInitialValue());
         }
-        void handle(const ResultNode & arg) override;
-        void handleFirst(const ResultNode & arg) override { handle(arg); }
+        void handle(const ResultNode& arg) override;
+        void handleFirst(const ResultNode& arg) override { handle(arg); }
+
     private:
         StringResultNode _initial;
     };
 
-    void onCalculate(const ExpressionNodeVector & args, ResultNode & result) const override;
+    void onCalculate(const ExpressionNodeVector& args, ResultNode& result) const override;
     std::unique_ptr<Handler> _handler;
 };
 
-}
+} // namespace search::expression

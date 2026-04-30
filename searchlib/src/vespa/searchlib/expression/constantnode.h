@@ -7,21 +7,20 @@
 namespace search {
 namespace expression {
 
-class ConstantNode : public ExpressionNode
-{
+class ConstantNode : public ExpressionNode {
 public:
     DECLARE_NBO_SERIALIZE;
     DECLARE_EXPRESSIONNODE(ConstantNode);
-    ConstantNode() : ExpressionNode(), _result() { }
-    ConstantNode(ResultNode::UP r) : ExpressionNode(), _result(r.release()) { }
-    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    const ResultNode * getResult() const override { return _result.get(); }
+    ConstantNode() : ExpressionNode(), _result() {}
+    ConstantNode(ResultNode::UP r) : ExpressionNode(), _result(r.release()) {}
+    void visitMembers(vespalib::ObjectVisitor& visitor) const override;
+    const ResultNode* getResult() const override { return _result.get(); }
+
 private:
-    void onPrepare(bool preserveAccurateTypes) override { (void) preserveAccurateTypes; }
-    void onExecute() const override { }
+    void onPrepare(bool preserveAccurateTypes) override { (void)preserveAccurateTypes; }
+    void onExecute() const override {}
     ResultNode::CP _result;
 };
 
-}
-}
-
+} // namespace expression
+} // namespace search

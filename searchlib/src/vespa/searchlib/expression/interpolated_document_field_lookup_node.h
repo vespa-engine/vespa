@@ -9,8 +9,7 @@ namespace search::expression {
 /*
  * Interpolated lookup for streaming search.
  */
-class InterpolatedDocumentFieldLookupNode : public DocumentFieldNode
-{
+class InterpolatedDocumentFieldLookupNode : public DocumentFieldNode {
 public:
     DECLARE_EXPRESSIONNODE(InterpolatedDocumentFieldLookupNode);
     DECLARE_NBO_SERIALIZE;
@@ -19,15 +18,16 @@ public:
     InterpolatedDocumentFieldLookupNode(std::string_view name, std::unique_ptr<ExpressionNode> arg);
     InterpolatedDocumentFieldLookupNode(const InterpolatedDocumentFieldLookupNode& rhs);
     ~InterpolatedDocumentFieldLookupNode() override;
-    InterpolatedDocumentFieldLookupNode& operator=(const InterpolatedDocumentFieldLookupNode &rhs);
+    InterpolatedDocumentFieldLookupNode& operator=(const InterpolatedDocumentFieldLookupNode& rhs);
     void visitMembers(vespalib::ObjectVisitor& visitor) const override;
     void selectMembers(const vespalib::ObjectPredicate& predicate, vespalib::ObjectOperation& operation) override;
+
 private:
     void onPrepare(bool preserveAccurateTypes) override;
     void onExecute() const override;
-    vespalib::IdentifiablePtr<ExpressionNode>  _lookup_expression;
-    mutable std::vector<double>                _values;
-    mutable FloatResultNode                    _float_result;
+    vespalib::IdentifiablePtr<ExpressionNode> _lookup_expression;
+    mutable std::vector<double>               _values;
+    mutable FloatResultNode                   _float_result;
 };
 
-}
+} // namespace search::expression

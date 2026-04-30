@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "istrue_predicate_node.h"
+
 #include "integerresultnode.h"
 
 #include <vespa/vespalib/util/exceptions.h>
@@ -19,7 +20,7 @@ const BoolResultNode* as_bool_result(const ResultNode* result) {
     return static_cast<const BoolResultNode*>(result);
 }
 
-}
+} // namespace
 
 bool IsTruePredicateNode::check(const ResultNode* result) const {
     if (!result->inherits(BoolResultNode::classId)) {
@@ -54,9 +55,7 @@ IsTruePredicateNode::IsTruePredicateNode(const IsTruePredicateNode&) = default;
 
 IsTruePredicateNode& IsTruePredicateNode::operator=(const IsTruePredicateNode&) = default;
 
-IsTruePredicateNode::IsTruePredicateNode(ExpressionNode::UP input)
-  : _expression(std::move(input))
-{
+IsTruePredicateNode::IsTruePredicateNode(ExpressionNode::UP input) : _expression(std::move(input)) {
 }
 
 Serializer& IsTruePredicateNode::onSerialize(Serializer& os) const {
@@ -73,7 +72,7 @@ void IsTruePredicateNode::visitMembers(vespalib::ObjectVisitor& visitor) const {
 }
 
 void IsTruePredicateNode::selectMembers(const vespalib::ObjectPredicate& predicate,
-                                        vespalib::ObjectOperation& operation) {
+                                        vespalib::ObjectOperation&       operation) {
     _expression.select(predicate, operation);
 }
 

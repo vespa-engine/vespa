@@ -5,20 +5,17 @@
 
 namespace search::expression {
 
-class UnaryFunctionNode : public MultiArgFunctionNode
-{
+class UnaryFunctionNode : public MultiArgFunctionNode {
 public:
     DECLARE_ABSTRACT_EXPRESSIONNODE(UnaryFunctionNode);
     UnaryFunctionNode() noexcept = default;
-    UnaryFunctionNode(ExpressionNode::UP arg) :
-        MultiArgFunctionNode()
-    {
-        appendArg(std::move(arg));
-    }
+    UnaryFunctionNode(ExpressionNode::UP arg) : MultiArgFunctionNode() { appendArg(std::move(arg)); }
+
 protected:
-    const ExpressionNode & getArg() const { return MultiArgFunctionNode::getArg(0); }
+    const ExpressionNode& getArg() const { return MultiArgFunctionNode::getArg(0); }
+
 private:
     void onPrepareResult() override;
 };
 
-}
+} // namespace search::expression

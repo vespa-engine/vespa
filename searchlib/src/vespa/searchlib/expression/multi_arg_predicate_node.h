@@ -25,10 +25,9 @@ public:
     DECLARE_NBO_SERIALIZE;
 
     void visitMembers(vespalib::ObjectVisitor& visitor) const override;
-    void selectMembers(const vespalib::ObjectPredicate& predicate,
-                       vespalib::ObjectOperation& operation) override;
+    void selectMembers(const vespalib::ObjectPredicate& predicate, vespalib::ObjectOperation& operation) override;
 
     [[nodiscard]] FilterPredicateNodeVector& args() noexcept { return _args; }
     [[nodiscard]] const FilterPredicateNodeVector& args() const noexcept { return _args; }
 };
-}
+} // namespace search::expression
