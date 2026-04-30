@@ -24,11 +24,10 @@
 // Layout:
 //   Used to plan which objects are needed.
 //   Reserves handles that can later be resolved against Data.
-//   Defines the Data and DataUP types used to access the data.
 //
 // Data:
 //   Owns the packed storage for all objects planned by Layout.
-//   Inherits from the Base class specified in Layout.
+//   This class can be extended by the user to add custom data and API.
 //
 // Handle:
 //   Reserved by Layout for a single object.
@@ -81,8 +80,6 @@ template <size_t I, typename H, typename... Ts> constexpr auto get_type_at() {
     }
 }
 
-struct EmptyBase {};
-
 } // namespace detail
 
 template <typename H, typename... Ts> struct Domain {
@@ -107,23 +104,23 @@ template <typename T, domain D> constexpr size_t type_id() {
 
 namespace detail {
 
-template <domain D, typename Base> constexpr std::align_val_t full_align() {
-    return std::align_val_t(std::max(D::max_align, alignof(Base)));
+template <domain D, typename Target> constexpr std::align_val_t full_align() {
+    return std::align_val_t(std::max(D::max_align, alignof(Target)));
 }
 
-template <domain D, typename Base> struct DataDeleter;
+template <domain D, typename Target> struct DataDeleter;
 
 } // namespace detail
 
-template <domain D, typename Base> class Data;
-template <domain D, typename Base = detail::EmptyBase> class Layout;
+template <domain D> class Data;
+template <domain D, typename Target = Data<D>> class Layout;
 class ArrayHandle;
 
 class Handle {
 private:
     friend class ArrayHandle;
     friend class HandleIterator;
-    template <domain D, typename Base> friend class Layout;
+    template <domain D, typename Target> friend class Layout;
     uint32_t                  _value;
     static constexpr uint32_t invalid_handle = 0xffffffff;
     static constexpr uint32_t offset_bits = 24;
@@ -165,8 +162,8 @@ public:
 
 class ArrayHandle {
 private:
-    template <domain D, typename Base> friend class Layout;
-    template <domain D, typename Base> friend class Data;
+    template <domain D, typename Target> friend class Layout;
+    template <domain D> friend class Data;
     Handle   _base;
     uint32_t _size;
 
@@ -189,11 +186,17 @@ public:
     constexpr auto end() const noexcept { return HandleIterator(_base._value + _size); }
 };
 
-template <typename... Ts, typename Base> class Data<Domain<Ts...>, Base> : public Base {
+class DataKey {
+private:
+    template <domain D, typename Target> friend class Layout;
+    constexpr DataKey() noexcept = default;
+};
+
+template <typename... Ts> class Data<Domain<Ts...>> {
 private:
     using MyDomain = Domain<Ts...>;
-    friend class Layout<MyDomain, Base>;
-    friend struct detail::DataDeleter<MyDomain, Base>;
+    template <domain D, typename Target> friend class Layout;
+    template <domain D, typename Target> friend struct detail::DataDeleter;
     struct VectorRef {
         uint32_t pos;
         uint32_t len;
@@ -201,13 +204,14 @@ private:
     };
     size_t                                     _allocated;
     std::array<VectorRef, MyDomain::num_types> _header;
-    constexpr Data(size_t need_size) noexcept : _allocated(need_size), _header{} {}
     Data(const Data&) = delete;
     Data(Data&&) = delete;
     Data& operator=(const Data&) = delete;
     Data& operator=(Data&&) = delete;
 
 public:
+    constexpr Data(DataKey) noexcept : _allocated{}, _header{} {}
+    
     template <typename T> std::span<T> all_of() noexcept {
         static constexpr size_t I = type_id<T, MyDomain>();
         if (_header[I].len == 0) {
@@ -252,31 +256,31 @@ public:
 
 namespace detail {
 
-template <typename... Ts, typename Base> struct DataDeleter<Domain<Ts...>, Base> {
+template <typename... Ts, typename Target> struct DataDeleter<Domain<Ts...>, Target> {
     using MyDomain = Domain<Ts...>;
-    using MyData = Data<MyDomain, Base>;
-    void operator()(MyData* ptr) noexcept {
+    static_assert(std::derived_from<Target, Data<MyDomain>>);
+    void operator()(Target* ptr) noexcept {
         auto destruct_array = [&]<typename T>() {
             for (auto& obj : ptr->template all_of<T>()) {
                 obj.~T();
             }
         };
         (destruct_array.template operator()<Ts>(), ...);
-        ptr->~MyData();
-        ::operator delete(ptr, full_align<MyDomain, Base>());
+        ptr->~Target();
+        ::operator delete(ptr, full_align<MyDomain, Target>());
     }
 };
 
 } // namespace detail
 
-template <typename... Ts, typename Base> class Layout<Domain<Ts...>, Base> {
+template <typename... Ts, typename Target> class Layout<Domain<Ts...>, Target> {
 private:
     using MyDomain = Domain<Ts...>;
     std::array<uint32_t, MyDomain::num_types> counts{};
+    static_assert(std::derived_from<Target, Data<MyDomain>>);
 
 public:
-    using MyData = Data<MyDomain, Base>;
-    using DataUP = std::unique_ptr<MyData, detail::DataDeleter<MyDomain, Base>>;
+    using DataUP = std::unique_ptr<Target, detail::DataDeleter<MyDomain, Target>>;
     template <typename T> Handle reserve() {
         static constexpr size_t I = type_id<T, MyDomain>();
         return Handle::make<I>(counts[I]++);
@@ -292,7 +296,7 @@ public:
         return ArrayHandle::make<I>(0, counts[I]);
     }
     DataUP create_data() const {
-        size_t need_size = sizeof(MyData);
+        size_t need_size = sizeof(Target);
         [&]<size_t... Is>(std::index_sequence<Is...>) {
             auto handle_array = [&]<typename T, size_t I>() {
                 if (counts[I] > 0) {
@@ -303,11 +307,12 @@ public:
             (handle_array.template operator()<Ts, Is>(), ...);
         }(typename MyDomain::index_sequence{});
         assert(need_size <= UINT32_MAX);
-        constexpr auto align = detail::full_align<MyDomain, Base>();
+        constexpr auto align = detail::full_align<MyDomain, Target>();
         char*          mem = static_cast<char*>(::operator new(need_size, align));
-        DataUP         result(new (mem) MyData(need_size));
+        DataUP         result(new (mem) Target(DataKey{}));
         auto&          obj = *result;
-        size_t         offset = sizeof(MyData);
+        size_t         offset = sizeof(Target);
+        obj._allocated = need_size;
         [&]<size_t... Is>(std::index_sequence<Is...>) {
             auto construct_array = [&]<typename T, size_t I>() {
                 if (counts[I] > 0) {
