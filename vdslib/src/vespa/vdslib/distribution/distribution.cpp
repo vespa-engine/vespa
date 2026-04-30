@@ -278,7 +278,8 @@ namespace {
         }
         tmpResults.emplace_back(scoredNode);
     }
-}
+
+} // namespace <unnamed>
 
 void
 Distribution::getIdealGroups(const document::BucketId& bucket, const ClusterState& clusterState, const Group& parent,
