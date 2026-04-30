@@ -11,6 +11,29 @@ namespace hwaccelerated = vespalib::hwaccelerated;
 
 namespace search::tensor {
 
+namespace {
+
+const std::string hnsw_max_squared_norm = "hnsw.max_squared_norm";
+
+}
+
+void
+MipsDistanceFunctionFactoryBase::save_state(vespalib::GenericHeader& header) const
+{
+    header.putTag(vespalib::GenericHeader::Tag(hnsw_max_squared_norm, _sq_norm_store->get_max()));
+}
+
+void
+MipsDistanceFunctionFactoryBase::load_state(const vespalib::GenericHeader& header)
+{
+    if (header.hasTag(hnsw_max_squared_norm)) {
+        const auto& tag = header.getTag(hnsw_max_squared_norm);
+        if (tag.getType() == vespalib::GenericHeader::Tag::Type::TYPE_FLOAT) {
+            (void) _sq_norm_store->get_max(tag.asFloat());
+        }
+    }
+}
+
 template <typename VectorStoreType, bool extra_dim>
 class BoundMipsDistanceFunction final : public BoundDistanceFunction {
     using FloatType = VectorStoreType::FloatType;

@@ -14,6 +14,7 @@ const std::string innerproduct = "innerproduct";
 const std::string prenormalized_angular = "prenormalized_angular";
 const std::string dotproduct = "dotproduct";
 const std::string hamming = "hamming";
+const std::string turboquant = "turboquant";
 
 }
 
@@ -28,6 +29,7 @@ DistanceMetricUtils::to_string(DistanceMetric metric)
         case DistanceMetric::Hamming: return hamming;
         case DistanceMetric::PrenormalizedAngular: return prenormalized_angular;
         case DistanceMetric::Dotproduct: return dotproduct;
+        case DistanceMetric::TurboQuant: return turboquant;
     }
     throw vespalib::IllegalArgumentException("Unknown distance metric " + std::to_string(static_cast<int>(metric)));
 }
@@ -49,6 +51,8 @@ DistanceMetricUtils::to_distance_metric(const std::string& metric)
         return DistanceMetric::Dotproduct;
     } else if (metric == hamming) {
         return DistanceMetric::Hamming;
+    } else if (metric == turboquant) {
+        return DistanceMetric::TurboQuant;
     } else {
         throw vespalib::IllegalStateException("Unknown distance metric '" + metric + "'");
     }

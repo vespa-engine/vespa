@@ -770,7 +770,7 @@
       ]
     },
     "enum-value-inline": {
-      "match": "(?<![a-zA-Z0-9_-])(match|rank|rank-type|sorting|bolding|stemming|summary-to|distance-metric|normalizing|function|locale|strength|order)(:\\s*)(token|word|exact|text|gram|prefix|substring|suffix|cased|uncased|literal|identity|tags|source|bolding|full|static|dynamic|tokens|matched-elements-only|angular|dotproduct|euclidean|prenormalized-angular|hamming|geodegrees|best|shortest|multiple|none|primary|secondary|tertiary|quaternary|identical|lowercase|raw|ascending|descending|always|on-demand|never|normal|contextual)(?![a-zA-Z0-9_-])",
+      "match": "(?<![a-zA-Z0-9_-])(match|rank|rank-type|sorting|bolding|stemming|summary-to|distance-metric|normalizing|function|locale|strength|order)(:\\s*)(token|word|exact|text|gram|prefix|substring|suffix|cased|uncased|literal|identity|tags|source|bolding|full|static|dynamic|tokens|matched-elements-only|angular|dotproduct|euclidean|innerproduct|prenormalized-angular|hamming|geodegrees|turboquant|best|shortest|multiple|none|primary|secondary|tertiary|quaternary|identical|lowercase|raw|ascending|descending|always|on-demand|never|normal|contextual)(?![a-zA-Z0-9_-])",
       "captures": {
         "1": {
           "name": "keyword.control.vespa"
@@ -818,7 +818,7 @@
         },
         {
           "name": "variable.other.enummember.vespa",
-          "match": "\\b(token|word|exact|text|gram|prefix|substring|suffix|cased|uncased|literal|identity|tags|source|bolding|full|static|dynamic|tokens|matched-elements-only|angular|dotproduct|euclidean|prenormalized-angular|hamming|geodegrees|best|shortest|multiple|none|primary|secondary|tertiary|quaternary|identical|lowercase|raw|ascending|descending|always|on-demand|never|normal|contextual)\\b"
+          "match": "\\b(token|word|exact|text|gram|prefix|substring|suffix|cased|uncased|literal|identity|tags|source|bolding|full|static|dynamic|tokens|matched-elements-only|angular|dotproduct|euclidean|innerproduct|prenormalized-angular|hamming|geodegrees|turboquant|best|shortest|multiple|none|primary|secondary|tertiary|quaternary|identical|lowercase|raw|ascending|descending|always|on-demand|never|normal|contextual)\\b"
         },
         {
           "include": "#schema-keywords"
@@ -878,7 +878,7 @@
         },
         {
           "name": "variable.other.enummember.vespa",
-          "match": "\\b(token|word|exact|text|gram|prefix|substring|suffix|cased|uncased|literal|identity|tags|source|bolding|full|static|dynamic|tokens|matched-elements-only|angular|dotproduct|euclidean|prenormalized-angular|hamming|geodegrees|best|shortest|multiple|none|primary|secondary|tertiary|quaternary|identical|lowercase|raw|ascending|descending|always|on-demand|never|normal|contextual)\\b"
+          "match": "\\b(token|word|exact|text|gram|prefix|substring|suffix|cased|uncased|literal|identity|tags|source|bolding|full|static|dynamic|tokens|matched-elements-only|angular|dotproduct|euclidean|innerproduct|prenormalized-angular|hamming|geodegrees|turboquant|best|shortest|multiple|none|primary|secondary|tertiary|quaternary|identical|lowercase|raw|ascending|descending|always|on-demand|never|normal|contextual)\\b"
         },
         {
           "include": "#schema-keywords"

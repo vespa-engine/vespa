@@ -3,6 +3,7 @@
 #include "distance_function_factory.h"
 #include "distance_functions.h"
 #include "mips_distance_transform.h"
+#include "turbo_quant_distance.h"
 
 using search::attribute::DistanceMetric;
 using vespalib::eval::CellType;
@@ -46,6 +47,14 @@ make_distance_function_factory(DistanceMetric variant, CellType cell_type)
                 case CellType::BFLOAT16: return std::make_unique<MipsDistanceFunctionFactory<vespalib::BFloat16>>(true);
                 case CellType::FLOAT:    return std::make_unique<MipsDistanceFunctionFactory<float>>(true);
                 default:                 return std::make_unique<MipsDistanceFunctionFactory<float>>();
+            }
+        case DistanceMetric::TurboQuant:
+            switch (cell_type) {
+                case CellType::DOUBLE:   return std::make_unique<TurboQuantDistanceFunctionFactory<double>>(true);
+                case CellType::INT8:     return std::make_unique<TurboQuantDistanceFunctionFactory<Int8Float>>(true);
+                case CellType::BFLOAT16: return std::make_unique<TurboQuantDistanceFunctionFactory<vespalib::BFloat16>>(true);
+                case CellType::FLOAT:    return std::make_unique<TurboQuantDistanceFunctionFactory<float>>(true);
+                default:                 return std::make_unique<TurboQuantDistanceFunctionFactory<float>>();
             }
         case DistanceMetric::GeoDegrees:
             return std::make_unique<GeoDistanceFunctionFactory>();

@@ -5,8 +5,10 @@
 #include <vespa/searchlib/tensor/distance_functions.h>
 #include <vespa/searchlib/tensor/distance_function_factory.h>
 #include <vespa/searchlib/tensor/mips_distance_transform.h>
+#include <vespa/searchlib/tensor/turbo_quant_distance.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <numbers>
+#include <random>
 #include <vector>
 
 #include <vespa/log/log.h>
@@ -762,6 +764,106 @@ TEST(DistanceFunctionsTest, dotproduct_can_reference_insertion_vector)
     expect_reference_insertion_vector<double>(0.0, DistanceMetric::Dotproduct, CellType::DOUBLE);
     expect_reference_insertion_vector<Int8Float>(0.0, DistanceMetric::Dotproduct, CellType::INT8);
     expect_reference_insertion_vector<BFloat16>(0.0, DistanceMetric::Dotproduct, CellType::BFLOAT16);
+}
+
+TEST(DistanceFunctionsTest, turboquant_uses_dedicated_factory_type)
+{
+    auto dotproduct_factory = make_distance_function_factory(DistanceMetric::Dotproduct, CellType::FLOAT);
+    auto turboquant_factory = make_distance_function_factory(DistanceMetric::TurboQuant, CellType::FLOAT);
+    EXPECT_NE(nullptr, dynamic_cast<MipsDistanceFunctionFactory<float>*>(dotproduct_factory.get()));
+    EXPECT_NE(nullptr, dynamic_cast<TurboQuantDistanceFunctionFactory<float>*>(turboquant_factory.get()));
+    EXPECT_EQ(nullptr, dynamic_cast<TurboQuantDistanceFunctionFactory<float>*>(dotproduct_factory.get()));
+}
+
+TEST(DistanceFunctionsTest, turboquant_can_reference_insertion_vector)
+{
+    auto check_ref = [](CellType cell_type) {
+        std::vector<double> lhs{0.0, 1.0};
+        std::vector<double> rhs{0.0, 1.0};
+        auto factory = make_distance_function_factory(DistanceMetric::TurboQuant, cell_type);
+        auto func = factory->for_insertion_vector(t(lhs));
+        const double before = func->calc(t(rhs));
+        lhs[0] = 1.0;
+        lhs[1] = 0.0;
+        const double after = func->calc(t(rhs));
+        EXPECT_NE(before, after);
+    };
+    check_ref(CellType::FLOAT);
+    check_ref(CellType::DOUBLE);
+}
+
+TEST(DistanceFunctionsTest, turboquant_prefers_identical_vector_over_dissimilar_vector)
+{
+    std::vector<float> query{1.0f, 2.0f, 3.0f, 4.0f};
+    std::vector<float> same{1.0f, 2.0f, 3.0f, 4.0f};
+    std::vector<float> dissimilar{-4.0f, 3.0f, -2.0f, 1.0f};
+
+    auto factory = make_distance_function_factory(DistanceMetric::TurboQuant, CellType::FLOAT);
+    auto df = factory->for_query_vector(t(query));
+    const double same_distance = df->calc(t(same));
+    const double dissimilar_distance = df->calc(t(dissimilar));
+
+    EXPECT_LT(same_distance, dissimilar_distance);
+    EXPECT_GT(df->to_rawscore(same_distance), df->to_rawscore(dissimilar_distance));
+}
+
+TEST(DistanceFunctionsTest, turboquant_topk_overlap_with_exact_dotproduct_is_reasonable)
+{
+    constexpr size_t dims = 128;
+    constexpr size_t docs = 200;
+    constexpr size_t k = 10;
+
+    std::mt19937 rng(7);
+    std::uniform_real_distribution<float> dist(-3.0f, 3.0f);
+
+    std::vector<float> query(dims);
+    for (auto& value : query) {
+        value = dist(rng);
+    }
+    std::vector<std::vector<float>> vectors;
+    vectors.reserve(docs);
+    for (size_t i = 0; i < docs; ++i) {
+        std::vector<float> v(dims);
+        for (auto& value : v) {
+            value = dist(rng);
+        }
+        vectors.push_back(std::move(v));
+    }
+
+    auto turbo_factory = make_distance_function_factory(DistanceMetric::TurboQuant, CellType::FLOAT);
+    auto turbo_df = turbo_factory->for_query_vector(t(query));
+
+    auto exact_dot = [&query](const std::vector<float>& v) {
+        double sum = 0.0;
+        for (size_t i = 0; i < query.size(); ++i) {
+            sum += static_cast<double>(query[i]) * static_cast<double>(v[i]);
+        }
+        return sum;
+    };
+
+    std::vector<std::pair<double, uint32_t>> exact;
+    std::vector<std::pair<double, uint32_t>> approx;
+    exact.reserve(docs);
+    approx.reserve(docs);
+    for (uint32_t i = 0; i < docs; ++i) {
+        const auto& v = vectors[i];
+        exact.emplace_back(exact_dot(v), i);
+        approx.emplace_back(turbo_df->to_rawscore(turbo_df->calc(t(v))), i);
+    }
+    auto greater = [](const auto& lhs, const auto& rhs) { return lhs.first > rhs.first; };
+    std::partial_sort(exact.begin(), exact.begin() + k, exact.end(), greater);
+    std::partial_sort(approx.begin(), approx.begin() + k, approx.end(), greater);
+
+    size_t overlap = 0;
+    for (size_t i = 0; i < k; ++i) {
+        for (size_t j = 0; j < k; ++j) {
+            if (exact[i].second == approx[j].second) {
+                ++overlap;
+                break;
+            }
+        }
+    }
+    EXPECT_GE(overlap, 5u);
 }
 
 TEST(DistanceFunctionsTest, hamming_can_reference_insertion_vector)

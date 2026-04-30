@@ -139,6 +139,9 @@ ConfigConverter::convert(const AttributesConfig::Attribute & cfg)
         case CfgDm::DOTPRODUCT:
             dm = DistanceMetric::Dotproduct;
             break;
+        case CfgDm::TURBOQUANT:
+            dm = DistanceMetric::TurboQuant;
+            break;
     }
     retval.set_distance_metric(dm);
     if (cfg.index.hnsw.enabled) {

@@ -348,6 +348,7 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
         // TODO Vespa 9: Remove 'innerproduct' as alias for 'prenormalized-angular'.
         assertDerivedDistanceMetric(AttributesConfig.Attribute.Distancemetric.INNERPRODUCT, "innerproduct");
         assertDerivedDistanceMetric(AttributesConfig.Attribute.Distancemetric.PRENORMALIZED_ANGULAR, "prenormalized-angular");
+        assertDerivedDistanceMetric(AttributesConfig.Attribute.Distancemetric.TURBOQUANT, "turboquant");
     }
 
     private void assertDerivedDistanceMetric(AttributesConfig.Attribute.Distancemetric.Enum expDistanceMetric,

@@ -79,6 +79,7 @@ TEST(AttributeHeaderTest, can_be_added_to_and_extracted_from_generic_header)
     verify_roundtrip_serialization(HnswIPO({16, 100, DistanceMetric::InnerProduct}));
     verify_roundtrip_serialization(HnswIPO({16, 100, DistanceMetric::PrenormalizedAngular}));
     verify_roundtrip_serialization(HnswIPO({16, 100, DistanceMetric::Hamming}));
+    verify_roundtrip_serialization(HnswIPO({16, 100, DistanceMetric::TurboQuant}));
     verify_roundtrip_serialization(HnswIPO());
 }
 

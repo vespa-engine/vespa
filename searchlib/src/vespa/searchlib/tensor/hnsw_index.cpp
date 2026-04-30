@@ -6,7 +6,6 @@
 #include "hnsw_index_explorer.h"
 #include "hnsw_index_loader.hpp"
 #include "hnsw_index_saver.h"
-#include "mips_distance_transform.h"
 #include "random_level_generator.h"
 #include "vector_bundle.h"
 #include <vespa/searchlib/attribute/address_space_components.h>
@@ -42,29 +41,6 @@ constexpr float alloc_grow_factor = 0.3;
 constexpr size_t max_level_array_size = 16;
 constexpr size_t max_link_array_size = 193;
 constexpr vespalib::duration MAX_COUNT_DURATION(1000ms);
-
-const std::string hnsw_max_squared_norm = "hnsw.max_squared_norm";
-
-void save_mips_max_distance(GenericHeader& header, DistanceFunctionFactory& dff) {
-    auto* mips_dff = dynamic_cast<MipsDistanceFunctionFactoryBase*>(&dff);
-    if (mips_dff != nullptr) {
-        auto& norm_store = mips_dff->get_max_squared_norm_store();
-        header.putTag(GenericHeader::Tag(hnsw_max_squared_norm, norm_store.get_max()));
-    }
-}
-
-void load_mips_max_distance(const GenericHeader& header, DistanceFunctionFactory& dff) {
-    auto* mips_dff = dynamic_cast<MipsDistanceFunctionFactoryBase*>(&dff);
-    if (mips_dff != nullptr) {
-        auto& norm_store = mips_dff->get_max_squared_norm_store();
-        if (header.hasTag(hnsw_max_squared_norm)) {
-            auto& tag = header.getTag(hnsw_max_squared_norm);
-            if (tag.getType() == GenericHeader::Tag::Type::TYPE_FLOAT) {
-                (void) norm_store.get_max(tag.asFloat());
-            }
-        }
-    }
-}
 
 bool has_link_to(std::span<const uint32_t> links, uint32_t id) {
     for (uint32_t link : links) {
@@ -1091,7 +1067,7 @@ template <HnswIndexType type>
 std::unique_ptr<NearestNeighborIndexSaver>
 HnswIndex<type>::make_saver(GenericHeader& header) const
 {
-    save_mips_max_distance(header, distance_function_factory());
+    distance_function_factory().save_state(header);
     return std::make_unique<HnswIndexSaver<type>>(_graph);
 }
 
@@ -1100,7 +1076,7 @@ std::unique_ptr<NearestNeighborIndexLoader>
 HnswIndex<type>::make_loader(FastOS_FileInterface& file, const vespalib::GenericHeader& header)
 {
     assert(get_entry_nodeid() == 0); // cannot load after index has data
-    load_mips_max_distance(header, distance_function_factory());
+    distance_function_factory().load_state(header);
     _graph.set_last_flush_duration(FileHeaderContext::get_flush_duration(header));
     using ReaderType = FileReader<uint32_t>;
     using LoaderType = HnswIndexLoader<ReaderType, type>;
