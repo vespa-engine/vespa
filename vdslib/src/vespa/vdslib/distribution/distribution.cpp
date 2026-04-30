@@ -1,20 +1,23 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "distribution.h"
+
 #include "distribution_config_util.h"
+
+#include <vespa/config-stor-distribution.h>
+#include <vespa/config/print/asciiconfigwriter.h>
+#include <vespa/log/bufferedlogger.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vdslib/state/random.h>
-#include <vespa/vespalib/util/bobhash.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/config/print/asciiconfigwriter.h>
-#include <vespa/config/print/asciiconfigreader.hpp>
+#include <vespa/vespalib/util/bobhash.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
-#include <vespa/config-stor-distribution.h>
-#include <cmath>
-#include <cassert>
 
-#include <vespa/log/bufferedlogger.h>
+#include <vespa/config/print/asciiconfigreader.hpp>
+#include <vespa/vespalib/stllike/hash_map.hpp>
+
+#include <cassert>
+#include <cmath>
 LOG_SETUP(".vdslib.distribution");
 
 namespace storage::lib {
@@ -31,10 +34,9 @@ Distribution::Distribution()
       _global(false),
       _activePerGroup(false),
       _ensurePrimaryPersisted(true),
-      _relative_node_order_scoring(false)
-{
-    auto config(getDefaultDistributionConfig(0, 0));
-    vespalib::asciistream ost;
+      _relative_node_order_scoring(false) {
+    auto                      config(getDefaultDistributionConfig(0, 0));
+    vespalib::asciistream     ost;
     config::AsciiConfigWriter writer(ost);
     writer.write(config.get());
     _serialized = ost.view();
@@ -52,32 +54,26 @@ Distribution::Distribution(const Distribution& d)
       _activePerGroup(false),
       _ensurePrimaryPersisted(true),
       _relative_node_order_scoring(false),
-      _serialized(d._serialized)
-{
-    vespalib::asciistream ist(_serialized);
+      _serialized(d._serialized) {
+    vespalib::asciistream                                                     ist(_serialized);
     config::AsciiConfigReader<vespa::config::content::StorDistributionConfig> reader(ist);
     configure(*reader.read());
 }
 
-Distribution::ConfigWrapper::ConfigWrapper(std::unique_ptr<DistributionConfig> cfg) noexcept
-    : _cfg(std::move(cfg))
-{ }
+Distribution::ConfigWrapper::ConfigWrapper(std::unique_ptr<DistributionConfig> cfg) noexcept : _cfg(std::move(cfg)) {
+}
 
 Distribution::ConfigWrapper::~ConfigWrapper() = default;
 
-std::unique_ptr<Distribution::DistributionConfig>
-Distribution::ConfigWrapper::steal() noexcept {
+std::unique_ptr<Distribution::DistributionConfig> Distribution::ConfigWrapper::steal() noexcept {
     return std::move(_cfg);
 }
 
-Distribution::Distribution(const ConfigWrapper& config)
-    : Distribution(config.get())
-{
+Distribution::Distribution(const ConfigWrapper& config) : Distribution(config.get()) {
 }
 
 Distribution::Distribution(const vespa::config::content::StorDistributionConfig& config)
-    : Distribution(config, false)
-{
+    : Distribution(config, false) {
 }
 
 Distribution::Distribution(const vespa::config::content::StorDistributionConfig& config, bool is_global)
@@ -89,9 +85,8 @@ Distribution::Distribution(const vespa::config::content::StorDistributionConfig&
       _global(is_global),
       _activePerGroup(false),
       _ensurePrimaryPersisted(true),
-      _relative_node_order_scoring(false)
-{
-    vespalib::asciistream ost;
+      _relative_node_order_scoring(false) {
+    vespalib::asciistream     ost;
     config::AsciiConfigWriter writer(ost);
     writer.write(config);
     _serialized = ost.view();
@@ -108,37 +103,35 @@ Distribution::Distribution(const std::string& serialized)
       _activePerGroup(false),
       _ensurePrimaryPersisted(true),
       _relative_node_order_scoring(false),
-      _serialized(serialized)
-{
-    vespalib::asciistream ist(_serialized);
+      _serialized(serialized) {
+    vespalib::asciistream                                                     ist(_serialized);
     config::AsciiConfigReader<vespa::config::content::StorDistributionConfig> reader(ist);
     configure(*reader.read());
 }
 
 Distribution::~Distribution() = default;
 
-void
-Distribution::configure(const vespa::config::content::StorDistributionConfig& config)
-{
+void Distribution::configure(const vespa::config::content::StorDistributionConfig& config) {
     using DistrConfig = vespa::config::content::StorDistributionConfig;
     using ConfigGroup = DistrConfig::Group;
-    std::unique_ptr<Group> nodeGraph;
-    std::vector<const Group *> node2Group;
-    for (uint32_t i=0, n=config.group.size(); i<n; ++i) {
-        const ConfigGroup& cg(config.group[i]);
+    std::unique_ptr<Group>    nodeGraph;
+    std::vector<const Group*> node2Group;
+    for (uint32_t i = 0, n = config.group.size(); i < n; ++i) {
+        const ConfigGroup&    cg(config.group[i]);
         std::vector<uint16_t> path;
         if (nodeGraph) {
             path = DistributionConfigUtil::getGroupPath(cg.index);
         }
-        bool isLeafGroup = ! cg.nodes.empty();
-        uint16_t index = (path.empty() ? 0 : path.back());
-        std::unique_ptr<Group> group = (isLeafGroup)
+        bool                   isLeafGroup = !cg.nodes.empty();
+        uint16_t               index = (path.empty() ? 0 : path.back());
+        std::unique_ptr<Group> group =
+            (isLeafGroup)
                 ? std::make_unique<Group>(index, cg.name)
                 : std::make_unique<Group>(index, cg.name, Group::Distribution(cg.partitions), config.redundancy);
         group->setCapacity(cg.capacity);
         if (isLeafGroup) {
             std::vector<uint16_t> nodes(cg.nodes.size());
-            for (uint32_t j=0, m=nodes.size(); j<m; ++j) {
+            for (uint32_t j = 0, m = nodes.size(); j < m; ++j) {
                 uint16_t nodeIndex = cg.nodes[j].index;
                 nodes[j] = nodeIndex;
                 if (node2Group.size() <= nodeIndex) {
@@ -156,16 +149,17 @@ Distribution::configure(const vespa::config::content::StorDistributionConfig& co
         } else {
             assert(nodeGraph);
             Group* parent = nodeGraph.get();
-            for (uint32_t j=0; j<path.size() - 1; ++j) {
+            for (uint32_t j = 0; j < path.size() - 1; ++j) {
                 parent = parent->getSubGroups()[path[j]];
             }
             parent->addSubGroup(std::move(group));
         }
     }
-    if ( ! nodeGraph) {
-        throw vespalib::IllegalStateException(
-            "Got config that didn't seem to specify even a root group. Must "
-            "have a root group at minimum:\n" + _serialized, VESPA_STRLOC);
+    if (!nodeGraph) {
+        throw vespalib::IllegalStateException("Got config that didn't seem to specify even a root group. Must "
+                                              "have a root group at minimum:\n" +
+                                                  _serialized,
+                                              VESPA_STRLOC);
     }
     nodeGraph->finalize();
     _nodeGraph = std::move(nodeGraph);
@@ -188,111 +182,90 @@ Distribution::configure(const vespa::config::content::StorDistributionConfig& co
     }
 }
 
-uint32_t
-Distribution::getGroupSeed(const document::BucketId& bucket, const ClusterState& clusterState, const Group& group) const
-{
-    uint32_t seed(static_cast<uint32_t>(bucket.getRawId())
-                  & distribution_bit_mask(clusterState.getDistributionBitCount()));
+uint32_t Distribution::getGroupSeed(const document::BucketId& bucket, const ClusterState& clusterState,
+                                    const Group& group) const {
+    uint32_t seed(static_cast<uint32_t>(bucket.getRawId()) &
+                  distribution_bit_mask(clusterState.getDistributionBitCount()));
     seed ^= group.getDistributionHash();
     return seed;
 }
 
-uint32_t
-Distribution::getDistributorSeed(const document::BucketId& bucket, const ClusterState& state) const
-{
-    uint32_t seed(static_cast<uint32_t>(bucket.getRawId())
-                  & distribution_bit_mask(state.getDistributionBitCount()));
+uint32_t Distribution::getDistributorSeed(const document::BucketId& bucket, const ClusterState& state) const {
+    uint32_t seed(static_cast<uint32_t>(bucket.getRawId()) & distribution_bit_mask(state.getDistributionBitCount()));
     return seed;
 }
 
-uint32_t
-Distribution::getStorageSeed(const document::BucketId& bucket, const ClusterState& state) const
-{
-    uint32_t seed(static_cast<uint32_t>(bucket.getRawId())
-                  & distribution_bit_mask(state.getDistributionBitCount()));
+uint32_t Distribution::getStorageSeed(const document::BucketId& bucket, const ClusterState& state) const {
+    uint32_t seed(static_cast<uint32_t>(bucket.getRawId()) & distribution_bit_mask(state.getDistributionBitCount()));
 
     if (bucket.getUsedBits() > 33) {
         int usedBits = bucket.getUsedBits() - 1;
-        seed ^= (distribution_bit_mask(usedBits - 32)
-                 & (bucket.getRawId() >> 32)) << 6;
+        seed ^= (distribution_bit_mask(usedBits - 32) & (bucket.getRawId() >> 32)) << 6;
     }
     return seed;
 }
 
-void
-Distribution::print(std::ostream& out, bool, const std::string&) const {
+void Distribution::print(std::ostream& out, bool, const std::string&) const {
     out << serialized();
 }
 
 namespace {
 
-    /** Used to record scored groups during ideal groups calculation. */
-    struct ScoredGroup {
-        double       _score;
-        const Group* _group;
+/** Used to record scored groups during ideal groups calculation. */
+struct ScoredGroup {
+    double       _score;
+    const Group* _group;
 
-        ScoredGroup() noexcept : _score(0), _group(nullptr) { }
-        ScoredGroup(double score, const Group* group) noexcept
-            : _score(score), _group(group) { }
+    ScoredGroup() noexcept : _score(0), _group(nullptr) {}
+    ScoredGroup(double score, const Group* group) noexcept : _score(score), _group(group) {}
 
-        bool operator<(const ScoredGroup& other) const noexcept {
-            return (_score > other._score);
-        }
-    };
+    bool operator<(const ScoredGroup& other) const noexcept { return (_score > other._score); }
+};
 
-    /** Used to record scored nodes during ideal nodes calculation. */
-    struct ScoredNode {
-        double   _score;
-        uint16_t _index;
+/** Used to record scored nodes during ideal nodes calculation. */
+struct ScoredNode {
+    double   _score;
+    uint16_t _index;
 
-        constexpr ScoredNode() noexcept : _score(0), _index(UINT16_MAX) {}
-        constexpr ScoredNode(double score, uint16_t index) noexcept
-            : _score(score), _index(index) {}
+    constexpr ScoredNode() noexcept : _score(0), _index(UINT16_MAX) {}
+    constexpr ScoredNode(double score, uint16_t index) noexcept : _score(score), _index(index) {}
 
-        constexpr bool operator<(const ScoredNode& other) const noexcept {
-            return (_score < other._score);
-        }
-        constexpr bool valid() const noexcept {
-            return (_index != UINT16_MAX);
-        }
-    };
+    constexpr bool operator<(const ScoredNode& other) const noexcept { return (_score < other._score); }
+    constexpr bool valid() const noexcept { return (_index != UINT16_MAX); }
+};
 
-    // Trim the input vector so that no trailing invalid entries remain and that
-    // it has a maximum size of `redundancy`.
-    void
-    trimResult(std::vector<ScoredNode>& nodes, uint16_t redundancy) {
-        while (!nodes.empty() && (!nodes.back().valid() || (nodes.size() > redundancy))) {
-            nodes.pop_back();
+// Trim the input vector so that no trailing invalid entries remain and that
+// it has a maximum size of `redundancy`.
+void trimResult(std::vector<ScoredNode>& nodes, uint16_t redundancy) {
+    while (!nodes.empty() && (!nodes.back().valid() || (nodes.size() > redundancy))) {
+        nodes.pop_back();
+    }
+}
+
+void insertOrdered(std::vector<ScoredNode>& tmpResults, ScoredNode&& scoredNode) {
+    tmpResults.pop_back();
+    auto it = tmpResults.begin();
+    for (; it != tmpResults.end(); ++it) {
+        if (*it < scoredNode) {
+            tmpResults.insert(it, scoredNode);
+            return;
         }
     }
+    tmpResults.emplace_back(scoredNode);
+}
 
-    void
-    insertOrdered(std::vector<ScoredNode> & tmpResults, ScoredNode && scoredNode) {
-        tmpResults.pop_back();
-        auto it = tmpResults.begin();
-        for (; it != tmpResults.end(); ++it) {
-            if (*it < scoredNode) {
-                tmpResults.insert(it, scoredNode);
-                return;
-            }
-        }
-        tmpResults.emplace_back(scoredNode);
-    }
+} // namespace
 
-} // namespace <unnamed>
-
-void
-Distribution::getIdealGroups(const document::BucketId& bucket, const ClusterState& clusterState, const Group& parent,
-                             uint16_t redundancy, std::vector<ResultGroup>& results) const
-{
+void Distribution::getIdealGroups(const document::BucketId& bucket, const ClusterState& clusterState,
+                                  const Group& parent, uint16_t redundancy, std::vector<ResultGroup>& results) const {
     if (parent.isLeafGroup()) {
         results.emplace_back(parent, redundancy);
         return;
     }
-    uint32_t seed = getGroupSeed(bucket, clusterState, parent);
-    RandomGen random(seed);
-    uint32_t currentIndex = 0;
-    const auto& subGroups = parent.getSubGroups();
+    uint32_t                 seed = getGroupSeed(bucket, clusterState, parent);
+    RandomGen                random(seed);
+    uint32_t                 currentIndex = 0;
+    const auto&              subGroups = parent.getSubGroups();
     std::vector<ScoredGroup> tmpResults;
     tmpResults.reserve(subGroups.size());
     for (const auto& g : subGroups) {
@@ -314,7 +287,7 @@ Distribution::getIdealGroups(const document::BucketId& bucket, const ClusterStat
         if (tmpResults.size() > redundancyArray.size()) {
             tmpResults.resize(redundancyArray.size());
         }
-        for (uint32_t i=0, n=tmpResults.size(); i<n; ++i) {
+        for (uint32_t i = 0, n = tmpResults.size(); i < n; ++i) {
             ScoredGroup& group(tmpResults[i]);
             getIdealGroups(bucket, clusterState, *group._group, redundancyArray[i], results);
         }
@@ -325,18 +298,17 @@ Distribution::getIdealGroups(const document::BucketId& bucket, const ClusterStat
     }
 }
 
-const Group*
-Distribution::getIdealDistributorGroup(const document::BucketId& bucket, const ClusterState& clusterState, const Group& parent) const
-{
+const Group* Distribution::getIdealDistributorGroup(const document::BucketId& bucket,
+                                                    const ClusterState& clusterState, const Group& parent) const {
     if (parent.isLeafGroup()) {
         return &parent;
     }
-    ScoredGroup result;
-    uint32_t seed(getGroupSeed(bucket, clusterState, parent));
-    RandomGen random(seed);
-    uint32_t currentIndex = 0;
+    ScoredGroup                       result;
+    uint32_t                          seed(getGroupSeed(bucket, clusterState, parent));
+    RandomGen                         random(seed);
+    uint32_t                          currentIndex = 0;
     const std::map<uint16_t, Group*>& subGroups(parent.getSubGroups());
-    for (const auto & subGroup : subGroups) {
+    for (const auto& subGroup : subGroups) {
         while (subGroup.first < currentIndex++) {
             random.nextDouble();
         }
@@ -358,9 +330,7 @@ Distribution::getIdealDistributorGroup(const document::BucketId& bucket, const C
     return getIdealDistributorGroup(bucket, clusterState, *result._group);
 }
 
-bool
-Distribution::allDistributorsDown(const Group& g, const ClusterState& cs)
-{
+bool Distribution::allDistributorsDown(const Group& g, const ClusterState& cs) {
     if (g.isLeafGroup()) {
         for (uint16_t node : g.getNodes()) {
             const NodeState& ns(cs.getNodeState(Node(NodeType::DISTRIBUTOR, node)));
@@ -369,7 +339,7 @@ Distribution::allDistributorsDown(const Group& g, const ClusterState& cs)
             }
         }
     } else {
-        for (const auto & subGroup : g.getSubGroups()) {
+        for (const auto& subGroup : g.getSubGroups()) {
             if (!allDistributorsDown(*subGroup.second, cs)) {
                 return false;
             }
@@ -378,10 +348,9 @@ Distribution::allDistributorsDown(const Group& g, const ClusterState& cs)
     return true;
 }
 
-void
-Distribution::getIdealNodes(const NodeType& nodeType, const ClusterState& clusterState, const document::BucketId& bucket,
-                            std::vector<uint16_t>& resultNodes, const char* upStates, uint16_t redundancy) const
-{
+void Distribution::getIdealNodes(const NodeType& nodeType, const ClusterState& clusterState,
+                                 const document::BucketId& bucket, std::vector<uint16_t>& resultNodes,
+                                 const char* upStates, uint16_t redundancy) const {
     if (redundancy == DEFAULT_REDUNDANCY) {
         redundancy = _redundancy;
     }
@@ -393,14 +362,13 @@ Distribution::getIdealNodes(const NodeType& nodeType, const ClusterState& cluste
     // it. Different nodes own various parts of the bucket.
     if (bucket.getUsedBits() < clusterState.getDistributionBitCount()) {
         vespalib::asciistream ost;
-        ost << "Cannot get ideal state for bucket " << bucket << " using "
-            << bucket.getUsedBits() << " bits when cluster uses "
-            << clusterState.getDistributionBitCount() << " distribution bits.";
+        ost << "Cannot get ideal state for bucket " << bucket << " using " << bucket.getUsedBits()
+            << " bits when cluster uses " << clusterState.getDistributionBitCount() << " distribution bits.";
         throw TooFewBucketBitsInUseException(ost.view(), VESPA_STRLOC);
     }
     // Find what hierarchical groups we should have copies in
     std::vector<ResultGroup> group_distribution;
-    uint32_t seed;
+    uint32_t                 seed;
     if (nodeType == NodeType::STORAGE) {
         seed = getStorageSeed(bucket, clusterState);
         getIdealGroups(bucket, clusterState, *_nodeGraph, redundancy, group_distribution);
@@ -414,11 +382,11 @@ Distribution::getIdealNodes(const NodeType& nodeType, const ClusterState& cluste
         }
         group_distribution.emplace_back(*group, 1);
     }
-    RandomGen random(seed);
-    uint32_t randomIndex = 0;
+    RandomGen               random(seed);
+    uint32_t                randomIndex = 0;
     std::vector<ScoredNode> tmpResults;
     for (const auto& group : group_distribution) {
-        uint16_t groupRedundancy(group._redundancy);
+        uint16_t                     groupRedundancy(group._redundancy);
         const std::vector<uint16_t>& nodes(group._group->getNodes());
         // Create temporary place to hold results.
         // Stuff in redundancy fake entries to
@@ -462,7 +430,7 @@ Distribution::getIdealNodes(const NodeType& nodeType, const ClusterState& cluste
                     random.setSeed(seed);
                     randomIndex = 0;
                 }
-                for (uint32_t k=randomIndex, o=scoring_index; k<o; ++k) {
+                for (uint32_t k = randomIndex, o = scoring_index; k < o; ++k) {
                     random.nextDouble();
                 }
                 randomIndex = scoring_index;
@@ -485,9 +453,7 @@ Distribution::getIdealNodes(const NodeType& nodeType, const ClusterState& cluste
     }
 }
 
-Distribution::ConfigWrapper
-Distribution::getDefaultDistributionConfig(uint16_t redundancy, uint16_t nodeCount)
-{
+Distribution::ConfigWrapper Distribution::getDefaultDistributionConfig(uint16_t redundancy, uint16_t nodeCount) {
     auto config = std::make_unique<vespa::config::content::StorDistributionConfigBuilder>();
     config->redundancy = redundancy;
     config->group.resize(1);
@@ -495,23 +461,21 @@ Distribution::getDefaultDistributionConfig(uint16_t redundancy, uint16_t nodeCou
     config->group[0].name = "invalid";
     config->group[0].partitions = "*";
     config->group[0].nodes.resize(nodeCount);
-    for (uint16_t i=0; i<nodeCount; ++i) {
+    for (uint16_t i = 0; i < nodeCount; ++i) {
         config->group[0].nodes[i].index = i;
     }
     return ConfigWrapper(std::move(config));
 }
 
-std::vector<uint16_t>
-Distribution::getIdealStorageNodes(const ClusterState& state, const document::BucketId& bucket, const char* upStates) const
-{
+std::vector<uint16_t> Distribution::getIdealStorageNodes(const ClusterState& state, const document::BucketId& bucket,
+                                                         const char* upStates) const {
     std::vector<uint16_t> nodes;
     getIdealNodes(NodeType::STORAGE, state, bucket, nodes, upStates);
     return nodes;
 }
 
-uint16_t
-Distribution::getIdealDistributorNode(const ClusterState& state, const document::BucketId& bucket, const char* upStates) const
-{
+uint16_t Distribution::getIdealDistributorNode(const ClusterState& state, const document::BucketId& bucket,
+                                               const char* upStates) const {
     std::vector<uint16_t> nodes;
     getIdealNodes(NodeType::DISTRIBUTOR, state, bucket, nodes, upStates);
     assert(nodes.size() <= 1);
@@ -524,8 +488,7 @@ Distribution::getIdealDistributorNode(const ClusterState& state, const document:
 }
 
 std::vector<Distribution::IndexList>
-Distribution::splitNodesIntoLeafGroups(std::span<const uint16_t> nodeList) const
-{
+Distribution::splitNodesIntoLeafGroups(std::span<const uint16_t> nodeList) const {
     vespalib::hash_map<uint16_t, IndexList> nodes(nodeList.size());
     for (auto node : nodeList) {
         const Group* group((node < _node2Group.size()) ? _node2Group[node] : nullptr);
@@ -538,7 +501,7 @@ Distribution::splitNodesIntoLeafGroups(std::span<const uint16_t> nodeList) const
     }
     std::vector<uint16_t> sorted;
     sorted.reserve(nodes.size());
-    for (const auto & entry : nodes) {
+    for (const auto& entry : nodes) {
         sorted.push_back(entry.first);
     }
     std::sort(sorted.begin(), sorted.end());
@@ -550,4 +513,4 @@ Distribution::splitNodesIntoLeafGroups(std::span<const uint16_t> nodeList) const
     return result;
 }
 
-}
+} // namespace storage::lib

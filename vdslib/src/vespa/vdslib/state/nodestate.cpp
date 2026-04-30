@@ -2,11 +2,12 @@
 
 #include "nodestate.h"
 
+#include <vespa/document/util/stringutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/lexical_cast.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
-#include <vespa/document/util/stringutil.h>
 #include <vespa/vespalib/util/exceptions.h>
+
 #include <sstream>
 #include <string>
 
@@ -17,10 +18,10 @@ using vespalib::IllegalArgumentException;
 
 namespace storage::lib {
 
-NodeState::NodeState(const NodeState &) = default;
-NodeState & NodeState::operator = (const NodeState &) = default;
-NodeState::NodeState(NodeState &&) noexcept = default;
-NodeState & NodeState::operator = (NodeState &&) noexcept = default;
+NodeState::NodeState(const NodeState&) = default;
+NodeState& NodeState::operator=(const NodeState&) = default;
+NodeState::NodeState(NodeState&&) noexcept = default;
+NodeState& NodeState::operator=(NodeState&&) noexcept = default;
 NodeState::~NodeState() = default;
 
 NodeState::NodeState()
@@ -30,21 +31,18 @@ NodeState::NodeState()
       _capacity(1.0),
       _initProgress(0.0),
       _minUsedBits(16),
-      _startTimestamp(0)
-{
+      _startTimestamp(0) {
     setState(State::UP);
 }
 
-NodeState::NodeState(const NodeType& type, const State& state,
-                     std::string_view description, double capacity)
+NodeState::NodeState(const NodeType& type, const State& state, std::string_view description, double capacity)
     : _type(&type),
       _state(nullptr),
       _description(description),
       _capacity(1.0),
       _initProgress(0.0),
       _minUsedBits(16),
-      _startTimestamp(0)
-{
+      _startTimestamp(0) {
     setState(state);
     if (type == NodeType::STORAGE) {
         setCapacity(capacity);
@@ -58,100 +56,114 @@ NodeState::NodeState(std::string_view serialized, const NodeType* type)
       _capacity(1.0),
       _initProgress(0.0),
       _minUsedBits(16),
-      _startTimestamp(0)
-{
+      _startTimestamp(0) {
 
     vespalib::StringTokenizer st(serialized, " \t\f\r\n");
     st.removeEmptyTokens();
     for (auto token : st) {
         std::string::size_type index = token.find(':');
         if (index == std::string::npos) {
-            throw IllegalArgumentException("Token " + std::string(token) + " does not contain ':': " + std::string(serialized), VESPA_STRLOC);
+            throw IllegalArgumentException(
+                "Token " + std::string(token) + " does not contain ':': " + std::string(serialized), VESPA_STRLOC);
         }
         std::string_view key = token.substr(0, index);
         std::string_view value = token.substr(index + 1);
-        if (!key.empty()) switch (key[0]) {
+        if (!key.empty())
+            switch (key[0]) {
             case 'b':
-                if (_type != nullptr && *type != NodeType::STORAGE) break;
-                if (key.size() > 1) break;
+                if (_type != nullptr && *type != NodeType::STORAGE)
+                    break;
+                if (key.size() > 1)
+                    break;
                 try {
                     setMinUsedBits(vespalib::lexical_cast<uint32_t>(value));
                 } catch (...) {
-                    throw IllegalArgumentException("Illegal used bits '" + std::string(value) + "'. Used bits must be a positive"
-                                                   " integer ", VESPA_STRLOC);
+                    throw IllegalArgumentException("Illegal used bits '" + std::string(value) +
+                                                       "'. Used bits must be a positive"
+                                                       " integer ",
+                                                   VESPA_STRLOC);
                 }
                 continue;
             case 's':
-                if (key.size() > 1) break;
+                if (key.size() > 1)
+                    break;
                 setState(State::get(value));
                 continue;
             case 'c':
-                if (key.size() > 1) break;
-                if (_type != nullptr && *type != NodeType::STORAGE) break;
+                if (key.size() > 1)
+                    break;
+                if (_type != nullptr && *type != NodeType::STORAGE)
+                    break;
                 try {
                     setCapacity(vespalib::lexical_cast<double>(value));
                 } catch (...) {
-                    throw IllegalArgumentException("Illegal capacity '" + std::string(value) + "'. Capacity must be a positive"
-                                                   " floating point number", VESPA_STRLOC);
+                    throw IllegalArgumentException("Illegal capacity '" + std::string(value) +
+                                                       "'. Capacity must be a positive"
+                                                       " floating point number",
+                                                   VESPA_STRLOC);
                 }
                 continue;
             case 'i':
-                if (key.size() > 1) break;
+                if (key.size() > 1)
+                    break;
                 try {
                     setInitProgress(vespalib::lexical_cast<double>(value));
                 } catch (...) {
-                    throw IllegalArgumentException("Illegal init progress '" + std::string(value) + "'. Init progress must be a"
-                                                   " floating point number from 0.0 to 1.0", VESPA_STRLOC);
+                    throw IllegalArgumentException("Illegal init progress '" + std::string(value) +
+                                                       "'. Init progress must be a"
+                                                       " floating point number from 0.0 to 1.0",
+                                                   VESPA_STRLOC);
                 }
                 continue;
             case 't':
-                if (key.size() > 1) break;
+                if (key.size() > 1)
+                    break;
                 try {
                     setStartTimestamp(vespalib::lexical_cast<uint64_t>(value));
                 } catch (...) {
-                    throw IllegalArgumentException("Illegal start timestamp '" + std::string(value) + "'. Start timestamp must be"
-                                                   " 0 or positive long.", VESPA_STRLOC);
+                    throw IllegalArgumentException("Illegal start timestamp '" + std::string(value) +
+                                                       "'. Start timestamp must be"
+                                                       " 0 or positive long.",
+                                                   VESPA_STRLOC);
                 }
                 continue;
             case 'm':
-                if (key.size() > 1) break;
+                if (key.size() > 1)
+                    break;
                 _description = document::StringUtil::unescape(value);
                 continue;
             default:
                 break;
-        }
-        LOG(debug, "Unknown key %s in nodestate. Ignoring it, assuming it's a "
-                   "new feature from a newer version than ourself: %s",
+            }
+        LOG(debug,
+            "Unknown key %s in nodestate. Ignoring it, assuming it's a "
+            "new feature from a newer version than ourself: %s",
             std::string(key).c_str(), std::string(serialized).c_str());
     }
 }
 
 namespace {
-    struct SeparatorPrinter {
-        mutable bool first;
-        SeparatorPrinter() : first(true) {}
+struct SeparatorPrinter {
+    mutable bool first;
+    SeparatorPrinter() : first(true) {}
 
-        void print(vespalib::asciistream & os) const {
-            if (first) {
-                first = false;
-            } else {
-                os << ' ';
-            }
+    void print(vespalib::asciistream& os) const {
+        if (first) {
+            first = false;
+        } else {
+            os << ' ';
         }
-    };
-
-    vespalib::asciistream & operator<<(vespalib::asciistream & os, const SeparatorPrinter& sep)
-    {
-        sep.print(os);
-        return os;
     }
+};
 
+vespalib::asciistream& operator<<(vespalib::asciistream& os, const SeparatorPrinter& sep) {
+    sep.print(os);
+    return os;
 }
 
-void
-NodeState::serialize(vespalib::asciistream & out, std::string_view prefix,
-                     bool includeDescription) const
-{
+} // namespace
+
+void NodeState::serialize(vespalib::asciistream& out, std::string_view prefix, bool includeDescription) const {
     SeparatorPrinter sep;
     // Always give node state if not part of a system state
     // to prevent empty serialization
@@ -171,29 +183,24 @@ NodeState::serialize(vespalib::asciistream & out, std::string_view prefix,
     if (_startTimestamp != 0u) {
         out << sep << prefix << "t:" << _startTimestamp;
     }
-    if (includeDescription && ! _description.empty()) {
-        out << sep << prefix << "m:"
-            << document::StringUtil::escape(_description, ' ');
+    if (includeDescription && !_description.empty()) {
+        out << sep << prefix << "m:" << document::StringUtil::escape(_description, ' ');
     }
 }
 
-void
-NodeState::setState(const State& state)
-{
+void NodeState::setState(const State& state) {
     if (_type != nullptr) {
         // We don't know whether you want to store reported, wanted or
         // current node state, so we must accept any.
-        if (!state.validReportedNodeState(*_type)
-            && !state.validWantedNodeState(*_type))
-        {
-            throw IllegalArgumentException(state.toString(true) + " is not a legal " + _type->toString() + " state", VESPA_STRLOC);
+        if (!state.validReportedNodeState(*_type) && !state.validWantedNodeState(*_type)) {
+            throw IllegalArgumentException(state.toString(true) + " is not a legal " + _type->toString() + " state",
+                                           VESPA_STRLOC);
         }
     }
     _state = &state;
 }
 
-void
-NodeState::setMinUsedBits(uint32_t usedBits) {
+void NodeState::setMinUsedBits(uint32_t usedBits) {
     if (usedBits < 1 || usedBits > 58) {
         std::ostringstream ost;
         ost << "Illegal used bits '" << usedBits << "'. Minimum used bits must be an integer > 0 and < 59.";
@@ -203,9 +210,7 @@ NodeState::setMinUsedBits(uint32_t usedBits) {
     _minUsedBits = usedBits;
 }
 
-void
-NodeState::setCapacity(vespalib::Double capacity)
-{
+void NodeState::setCapacity(vespalib::Double capacity) {
     if (capacity < 0) {
         std::ostringstream ost;
         ost << "Illegal capacity '" << capacity << "'. Capacity must be a positive floating point number";
@@ -217,27 +222,22 @@ NodeState::setCapacity(vespalib::Double capacity)
     _capacity = capacity;
 }
 
-void
-NodeState::setInitProgress(vespalib::Double initProgress)
-{
+void NodeState::setInitProgress(vespalib::Double initProgress) {
     if (initProgress < 0 || initProgress > 1.0) {
         std::ostringstream ost;
-        ost << "Illegal init progress '" << initProgress << "'. Init progress "
+        ost << "Illegal init progress '" << initProgress
+            << "'. Init progress "
                "must be a floating point number from 0.0 to 1.0";
         throw IllegalArgumentException(ost.str(), VESPA_STRLOC);
     }
     _initProgress = initProgress;
 }
 
-void
-NodeState::setStartTimestamp(uint64_t startTimestamp)
-{
+void NodeState::setStartTimestamp(uint64_t startTimestamp) {
     _startTimestamp = startTimestamp;
 }
 
-void
-NodeState::print(std::ostream& out, bool verbose, const std::string& indent) const
-{
+void NodeState::print(std::ostream& out, bool verbose, const std::string& indent) const {
     if (!verbose) {
         vespalib::asciistream tmp;
         serialize(tmp);
@@ -262,12 +262,8 @@ NodeState::print(std::ostream& out, bool verbose, const std::string& indent) con
     }
 }
 
-bool
-NodeState::operator==(const NodeState& other) const
-{
-    if (_state != other._state ||
-        _capacity != other._capacity ||
-        _minUsedBits != other._minUsedBits ||
+bool NodeState::operator==(const NodeState& other) const {
+    if (_state != other._state || _capacity != other._capacity || _minUsedBits != other._minUsedBits ||
         _startTimestamp != other._startTimestamp ||
         (*_state == State::INITIALIZING && (_initProgress != other._initProgress)))
     {
@@ -276,20 +272,16 @@ NodeState::operator==(const NodeState& other) const
     return true;
 }
 
-bool
-NodeState::similarTo(const NodeState& other) const
-{
-    if (_state != other._state ||
-        _capacity != other._capacity ||
-        _minUsedBits != other._minUsedBits ||
+bool NodeState::similarTo(const NodeState& other) const {
+    if (_state != other._state || _capacity != other._capacity || _minUsedBits != other._minUsedBits ||
         _startTimestamp < other._startTimestamp)
     {
         return false;
     }
     if (*_state == State::INITIALIZING) {
         double limit = getListingBucketsInitProgressLimit();
-        bool below1 = (_initProgress < limit);
-        bool below2 = (other._initProgress < limit);
+        bool   below1 = (_initProgress < limit);
+        bool   below2 = (other._initProgress < limit);
         if (below1 != below2) {
             return false;
         }
@@ -297,20 +289,19 @@ NodeState::similarTo(const NodeState& other) const
     return true;
 }
 
-void
-NodeState::verifySupportForNodeType(const NodeType& type) const
-{
-    if (_type != nullptr && *_type == type) return;
+void NodeState::verifySupportForNodeType(const NodeType& type) const {
+    if (_type != nullptr && *_type == type)
+        return;
     if (!_state->validReportedNodeState(type) && !_state->validWantedNodeState(type)) {
-        throw IllegalArgumentException("State " + _state->toString() + " does not fit a node of type " + type.toString(), VESPA_STRLOC);
+        throw IllegalArgumentException(
+            "State " + _state->toString() + " does not fit a node of type " + type.toString(), VESPA_STRLOC);
     }
     if (type == NodeType::DISTRIBUTOR && _capacity != 1.0) {
         throw IllegalArgumentException("Capacity should not be set for a distributor node.", VESPA_STRLOC);
     }
 }
 
-std::string
-NodeState::getTextualDifference(const NodeState& other) const {
+std::string NodeState::getTextualDifference(const NodeState& other) const {
     std::ostringstream source;
     std::ostringstream target;
 
@@ -351,4 +342,4 @@ NodeState::getTextualDifference(const NodeState& other) const {
     return total.str();
 }
 
-}
+} // namespace storage::lib

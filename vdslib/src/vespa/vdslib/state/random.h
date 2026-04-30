@@ -11,9 +11,7 @@ namespace storage::lib {
  */
 class RandomGen : public vespalib::RandomGen {
 public:
-    RandomGen(int32_t seed) : vespalib::RandomGen(seed) {
-        nextDouble();
-    };
+    RandomGen(int32_t seed) : vespalib::RandomGen(seed) { nextDouble(); };
 
     /**
      * Construct a random number generator with an auto-generated seed
@@ -29,4 +27,4 @@ public:
     }
 };
 
-}
+} // namespace storage::lib
