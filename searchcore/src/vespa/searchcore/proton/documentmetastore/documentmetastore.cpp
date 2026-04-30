@@ -667,6 +667,26 @@ DocumentMetaStore::updateMetadata(DocId lid, const BucketId &bucketId, Timestamp
     return true;
 }
 
+bool
+DocumentMetaStore::update_docid_string(DocId lid, std::string_view docid) {
+    if (!validLid(lid)) {
+        return false;
+    }
+
+    if (_store_full_document_id) {
+        auto& metadata = _metadataStore[lid];
+        const auto new_ref = _docid_store.add(docid);
+        const auto old_ref = metadata.get_relaxed_docid_ref();
+        metadata.set_docid_ref(new_ref);
+        if (old_ref.valid()) {
+            _docid_store.remove(old_ref);
+        }
+
+    }
+
+    return true;
+}
+
 RawDocumentMetadata
 DocumentMetaStore::removeInternal(DocId lid, uint64_t prepare_serial_num)
 {

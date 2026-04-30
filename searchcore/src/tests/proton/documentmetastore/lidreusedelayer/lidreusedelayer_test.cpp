@@ -74,6 +74,10 @@ public:
         return true;
     }
 
+    bool update_docid_string(DocId, std::string_view) override {
+        return true;
+    }
+
     bool remove(DocId, uint64_t) override {
         return true;
     }

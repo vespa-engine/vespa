@@ -78,6 +78,9 @@ struct DocumentMetaStoreObserver : public IDocumentMetaStore
     bool updateMetadata(DocId lid, const BucketId &bucketId, Timestamp timestamp) override {
         return _store.updateMetadata(lid, bucketId, timestamp);
     }
+    bool update_docid_string(DocId lid, std::string_view docid) override {
+        return _store.update_docid_string(lid, docid);
+    }
     bool remove(DocId lid, uint64_t prepare_serial_num) override {
         return _store.remove(lid, prepare_serial_num);
     }
