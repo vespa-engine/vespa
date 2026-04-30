@@ -97,7 +97,7 @@ public class FelixFramework implements OsgiFramework {
                         "initialization, but privileges are not available. YMMV.");
             }
             if (bundle.getHeaders().get(Constants.FRAGMENT_HOST) != null) {
-                continue; // fragments can not be started
+                continue; // fragments cannot be started
             }
             bundle.start();
         }

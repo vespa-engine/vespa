@@ -119,7 +119,7 @@ void* (*call_reallocarray)(void*, size_t, size_t) = reallocarray;
 
 TEST(NewTest, verify_reallocarray) {
     void* arr = calloc(5, 5);
-    // Used to ensure that 'arr' can not resized in place.
+    // Used to ensure that 'arr' cannot resized in place.
     std::vector<std::unique_ptr<char[]>> dummies;
     for (size_t i(0); i < 1000; i++) {
         dummies.push_back(std::make_unique<char[]>(5 * 5));
@@ -196,7 +196,7 @@ TEST(NewTest, verify_malloc_usable_size_is_sane) {
         EXPECT_EQ(64u, usable_size);
         verify_vespamalloc_usable_size();
     } else {
-        // Non vespamalloc implementations we can not say anything about
+        // Non vespamalloc implementations we cannot say anything about
         EXPECT_GE(usable_size, SZ);
     }
 }

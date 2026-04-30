@@ -54,8 +54,7 @@ int FloatBucketResultNode::onCmp(const Identifiable& b) const {
         }
     }
     // at least one of f1,f2 is NaN
-    else if (std::isnan(f1))
-    {
+    else if (std::isnan(f1)) {
         if (!std::isnan(t1)) {
             LOG(warning, "Unexpected limits FloatBucketResultNode: [%g,%g>", f1, t1);
         }

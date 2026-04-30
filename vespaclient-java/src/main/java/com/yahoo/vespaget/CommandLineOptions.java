@@ -190,7 +190,7 @@ public class CommandLineOptions {
             }
 
             if (printIdsOnly && !fieldSet.isEmpty()) {
-                throw new IllegalArgumentException("Field set option can not be used in combination with print ids option.");
+                throw new IllegalArgumentException("Field set option cannot be used in combination with print ids option.");
             }
 
             if (printIdsOnly) {

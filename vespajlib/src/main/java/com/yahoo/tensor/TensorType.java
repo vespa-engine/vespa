@@ -651,7 +651,7 @@ public class TensorType {
             switch (type) {
                 case mapped -> mapped(name);
                 case indexedUnbound -> indexed(name);
-                default -> throw new IllegalArgumentException("This can not create a dimension of type " + type);
+                default -> throw new IllegalArgumentException("This cannot create a dimension of type " + type);
             }
             return this;
         }

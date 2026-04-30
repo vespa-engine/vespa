@@ -37,7 +37,7 @@ public class RedundancyBuilder {
             }
 
             if (readyCopies != null && readyCopies > finalRedundancy)
-                throw new IllegalArgumentException("Number of searchable copies can not be higher than final redundancy");
+                throw new IllegalArgumentException("Number of searchable copies cannot be higher than final redundancy");
         }
 
         ModelElement minRedundancyElement = clusterXml.child("min-redundancy");

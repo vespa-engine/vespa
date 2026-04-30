@@ -270,7 +270,7 @@ public class SymbolReferenceResolver {
                     if (node.getParent().getASTClass() != importField.class) {
                         diagnostics.add(new SchemaDiagnostic.Builder()
                                 .setRange( node.getRange())
-                                .setMessage( "Field " + referencedSymbol.get().getLongIdentifier() + " can not be accessed directly. Hint: Add an import field statement to access the field.")
+                                .setMessage( "Field " + referencedSymbol.get().getLongIdentifier() + " cannot be accessed directly. Hint: Add an import field statement to access the field.")
                                 .setSeverity( DiagnosticSeverity.Error)
                                 .setCode(DiagnosticCode.ACCESS_UNIMPORTED_FIELD)
                                 .build());

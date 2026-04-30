@@ -8,7 +8,7 @@ public class ForceLoad {
 
     /**
      * Force the loading of the given classes. If any of the named
-     * classes can not be loaded, an error will be thrown.
+     * classes cannot be loaded, an error will be thrown.
      *
      * @param packageName the name of the package for which we want to forceload classes.
      * @param classNames array of names of classes (without package prefix) to force load.

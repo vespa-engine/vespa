@@ -84,7 +84,7 @@ public class RuleBase {
      * @param  ruleFile the rule file to read. The name of the file (minus path) becomes the rule base name.
      * @param  automataFile the automata file, or null to not use an automata
      * @throws java.io.IOException if there is a problem reading one of the files
-     * @throws ParseException if the rule file can not be parsed correctly
+     * @throws ParseException if the rule file cannot be parsed correctly
      * @throws RuleBaseException if the rule file contains inconsistencies
      */
     public static RuleBase createFromFile(String ruleFile, String automataFile, Linguistics linguistics)
@@ -99,7 +99,7 @@ public class RuleBase {
      * @param  ruleString the rule string to read
      * @param  automataFile the automata file, or null to not use an automata
      * @throws java.io.IOException if there is a problem reading the automata file
-     * @throws com.yahoo.prelude.semantics.parser.ParseException if the rule file can not be parsed correctly
+     * @throws com.yahoo.prelude.semantics.parser.ParseException if the rule file cannot be parsed correctly
      * @throws com.yahoo.prelude.semantics.RuleBaseException if the rule file contains inconsistencies
      */
     public static RuleBase createFromString(String name, String ruleString, String automataFile, Linguistics linguistics)
@@ -111,7 +111,7 @@ public class RuleBase {
 
     /**
      * <p>Include another rule base into this. This <b>transfers ownership</b>
-     * of the given rule base - it can not be subsequently used for any purpose
+     * of the given rule base - it cannot be subsequently used for any purpose
      * (including accessing).</p>
      *
      * <p>Each rule base will only be included by the first include directive encountered

@@ -216,7 +216,7 @@ void MemoryManager<MemBlockPtrT, ThreadListT>::freeSC(void* ptr, SizeClassT sc) 
             crash();
         }
     } else {
-        fprintf(stderr, "%p not allocated here, can not be freed\n", ptr);
+        fprintf(stderr, "%p not allocated here, cannot be freed\n", ptr);
         crash();
     }
 }

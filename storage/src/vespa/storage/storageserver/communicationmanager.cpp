@@ -536,7 +536,7 @@ CommunicationManager::sendCommand(const std::shared_ptr<api::StorageCommand> & m
     if (!msg->sourceIndexSet()) {
         msg->setSourceIndex(_component.getIndex());
     }
-    // Components can not specify what storage node to send to
+    // Components cannot specify what storage node to send to
     // without specifying protocol. This is a workaround, such that code
     // doesn't have to care whether message is in documentapi or storage
     // protocol.

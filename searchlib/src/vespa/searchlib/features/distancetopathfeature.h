@@ -35,7 +35,7 @@ public:
     void execute(uint32_t docId) override;
 
     /**
-     * Defines a default distance value to use if a proper one can not be determined.
+     * Defines a default distance value to use if a proper one cannot be determined.
      */
     static const feature_t DEFAULT_DISTANCE;
 };

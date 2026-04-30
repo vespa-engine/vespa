@@ -36,7 +36,7 @@ garbagecollection.interval int default=0
 ## If false, dont do splits inline with feeding.
 inlinebucketsplitting bool default=true
 
-## Maximum nodes involved in a merge operation. Currently, this can not be more
+## Maximum nodes involved in a merge operation. Currently, this cannot be more
 ## than 16 nodes due to protocol limitations. However, decreasing the max may
 ## be useful if 16 node merges ends up too expensive.
 maximum_nodes_per_merge int default=16

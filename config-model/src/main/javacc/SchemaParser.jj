@@ -611,7 +611,7 @@ ParsedField field() :
     <FIELD> name = identifier() <TYPE> type = dataType()
     {
         if (name != null && Schema.isReservedName(name.toLowerCase(java.util.Locale.ROOT))) {
-            throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
+            throw new IllegalArgumentException("Reserved name '" + name + "' cannot be used as a field name.");
         }
         field = new ParsedField(name, type);
     }
@@ -830,7 +830,7 @@ void structFieldDefinition(ParsedStruct struct) :
 {
     <FIELD> name = identifier() <TYPE> type = dataType() {
         if (name != null && Schema.isReservedName(name.toLowerCase(java.util.Locale.ROOT))) {
-            throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
+            throw new IllegalArgumentException("Reserved name '" + name + "' cannot be used as a field name.");
         }
         field = new ParsedField(name, type);
     }
@@ -853,7 +853,7 @@ void structField(ParsedField field) :
 {
     <STRUCT_FIELD> name = identifier() {
         if (name != null && Schema.isReservedName(name.toLowerCase(java.util.Locale.ROOT))) {
-            throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
+            throw new IllegalArgumentException("Reserved name '" + name + "' cannot be used as a field name.");
         }
         structField = new ParsedField(name, null);
     }

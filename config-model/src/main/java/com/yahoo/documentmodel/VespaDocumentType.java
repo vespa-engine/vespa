@@ -7,7 +7,7 @@ import com.yahoo.document.PositionDataType;
 
 /**
  * This class represents the builtin 'document' document type that all other documenttypes inherits.
- * Remember that changes here must be compatible. Changes to types of fields can not be done here.
+ * Remember that changes here must be compatible. Changes to types of fields cannot be done here.
  * This must also match the mirroring class in c++.
  *
  * @author baldersheim

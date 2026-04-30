@@ -195,7 +195,7 @@ public class ImplicitSummaries extends Processor {
                                  "to this attribute, remove any bolding and dynamic snippeting from this field");
                 // Note: The dynamic setting has already overridden the attribute map setting,
                 // so we do not need to actually do attribute.setSummary(false) here
-                // Also, we can not do this, since it makes it impossible to fetch this attribute
+                // Also, we cannot do this, since it makes it impossible to fetch this attribute
                 // in another summary
             }
         }

@@ -90,7 +90,7 @@ void ExpressionNode::onArgument(const ResultNode& arg, ResultNode& result) const
     (void)result;
     throw std::runtime_error(
         make_string("Class %s does not implement onArgument(const ResultNode & arg, ResultNode & result). Probably "
-                    "an indication that it tries to take a multivalued argument, which it can not.",
+                    "an indication that it tries to take a multivalued argument, which it cannot.",
                     getClass().name()));
 }
 
@@ -149,7 +149,7 @@ ResultNode::UP ArithmeticTypeConversion::getType(const ResultNode& arg1, const R
         } else if (baseTypeId == FloatResultNode::classId) {
             return std::make_unique<FloatResultNodeVector>();
         } else {
-            throw std::runtime_error("We can not handle anything but numbers.");
+            throw std::runtime_error("We cannot handle anything but numbers.");
         }
     } else {
         throw std::runtime_error("We are not able to handle multidimensional arrays");

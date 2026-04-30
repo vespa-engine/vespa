@@ -70,7 +70,7 @@ public class RuleImporter {
      * Imports semantic rules from a file
      *
      * @param fileName the rule file to use
-     * @throws java.io.IOException if the file can not be read for some reason
+     * @throws java.io.IOException if the file cannot be read for some reason
      * @throws ParseException if the file does not contain a valid semantic rule set
      */
     public RuleBase importFile(String fileName) throws IOException, ParseException {
@@ -82,7 +82,7 @@ public class RuleImporter {
      *
      * @param fileName the rule file to use
      * @param automataFile the automata file to use, or null to not use any
-     * @throws java.io.IOException if the file can not be read for some reason
+     * @throws java.io.IOException if the file cannot be read for some reason
      * @throws ParseException if the file does not contain a valid semantic rule set
      */
     public RuleBase importFile(String fileName, String automataFile) throws IOException, ParseException {

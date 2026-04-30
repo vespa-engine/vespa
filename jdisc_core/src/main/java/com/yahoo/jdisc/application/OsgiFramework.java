@@ -31,7 +31,7 @@ public interface OsgiFramework {
      * BundleInstallationException} that contains the list of successfully installed bundles.</p>
      *
      * <p>It would be preferable if this method was exception-safe (that it would roll-back all installed bundles in the
-     * case of an exception), but that can not be implemented thread-safely since an <code>Application</code> may choose to
+     * case of an exception), but that cannot be implemented thread-safely since an <code>Application</code> may choose to
      * install bundles concurrently through any available <code>BundleContext</code>.</p>
      *
      * @param bundleLocation the location identifier of the bundle to install

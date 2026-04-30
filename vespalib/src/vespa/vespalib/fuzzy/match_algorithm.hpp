@@ -108,7 +108,7 @@ template <uint8_t MaxEdits> struct MatchAlgorithm {
      * a later state that can have a higher out edge. However, edit distance costs can
      * never decrease, only stay constant (with matching substitutions) or increase (with
      * insertions, deletions or non-matching substitutions), so it's impossible to follow
-     * an out-edge from X to any later potentially matching state. Thus, S' can not exist
+     * an out-edge from X to any later potentially matching state. Thus, S' cannot exist
      * and we have a contradiction.
      *
      * Since we want to generate the smallest possible larger string that matches, we ideally

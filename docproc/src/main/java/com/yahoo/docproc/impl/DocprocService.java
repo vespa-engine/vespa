@@ -148,7 +148,7 @@ public class DocprocService extends AbstractComponent {
     }
 
     /**
-     * Returns the processing chain of this service. This stack can not be modified.
+     * Returns the processing chain of this service. This stack cannot be modified.
      * To change the stack, set a new one.
      */
     // TODO: Enforce unmodifiability

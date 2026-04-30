@@ -174,7 +174,7 @@ public class Struct extends StructuredFieldValue {
                 setFieldValue(otherEntry.getKey(), otherEntry.getValue());
             }
         } else {
-            throw new IllegalArgumentException("Type " + o.getClass() + " can not specify a " + getClass() + " instance");
+            throw new IllegalArgumentException("Type " + o.getClass() + " cannot specify a " + getClass() + " instance");
         }
     }
 

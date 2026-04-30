@@ -31,7 +31,7 @@ public record TokenDomain(byte[] checkHashContext) {
 
     public TokenDomain {
         if (Arrays.equals(checkHashContext, TokenFingerprint.FINGERPRINT_CONTEXT)) {
-            throw new IllegalArgumentException("Fingerprint and check hash contexts can not be equal");
+            throw new IllegalArgumentException("Fingerprint and check hash contexts cannot be equal");
         }
     }
 

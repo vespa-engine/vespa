@@ -857,7 +857,7 @@ ParsedField fieldElm() :
     {
         if (Schema.isReservedName(name.toLowerCase())) {
             lastConsumedToken.addParseException(new ParseException(
-                "Reserved name '" + lastConsumedToken.toString() + "' can not be used as a field name.",
+                "Reserved name '" + lastConsumedToken.toString() + "' cannot be used as a field name.",
                 lastConsumedToken,
                 parsingStack
             ));
@@ -1149,7 +1149,7 @@ void structFieldElm(ParsedField field) :
 }
     <STRUCT_FIELD> name = identifierStr {
         if (name != null && Schema.isReservedName(name.toLowerCase())) {
-            throw new IllegalArgumentException("Reserved name '" + name + "' can not be used as a field name.");
+            throw new IllegalArgumentException("Reserved name '" + name + "' cannot be used as a field name.");
         }
         structField = new ParsedField(name, null);
     }

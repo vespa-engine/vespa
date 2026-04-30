@@ -240,7 +240,7 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
 
 
         /**
-         * Clean up when the task can not be executed because no worker thread is available.
+         * Clean up when the task cannot be executed because no worker thread is available.
          */
         void failOnOverload() {
             try (ResourceReference reference = requestReference) {

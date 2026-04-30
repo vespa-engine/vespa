@@ -180,7 +180,7 @@ message TrainerSpec {
   optional bool vocabulary_output_piece_score = 32 [default = true];
 
   // `vocab_size` is treated as hard limit. Crash if
-  // the model can not produce the vocab of size `vocab_size`,
+  // the model cannot produce the vocab of size `vocab_size`,
   // When `hard_vocab_limit` is false, vocab_size is treated
   // as soft limit. Note that when model_type=char,
   // always assumes hard_vocab_limit = false.

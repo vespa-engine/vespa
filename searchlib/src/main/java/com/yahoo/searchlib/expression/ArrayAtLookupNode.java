@@ -49,7 +49,7 @@ public final class ArrayAtLookupNode extends UnaryFunctionNode {
      */
     private void setAttributeName(String attribute) {
         if (attribute == null) {
-            throw new IllegalArgumentException("Attribute name can not be null.");
+            throw new IllegalArgumentException("Attribute name cannot be null.");
         }
         this.attribute = attribute;
     }

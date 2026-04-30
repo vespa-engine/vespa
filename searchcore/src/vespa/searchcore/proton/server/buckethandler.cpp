@@ -161,7 +161,7 @@ BucketHandler::notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalcu
         return; // Don't deactivate buckets in maintenance mode; let query traffic drain away naturally.
     }
     // We implicitly deactivate buckets in two edge cases:
-    //  - Up -> Down (not maintenance; handled above), since the node can not be expected to offer
+    //  - Up -> Down (not maintenance; handled above), since the node cannot be expected to offer
     //    any graceful query draining when set Down.
     //  - Maintenance -> !Maintenance, since we'd otherwise introduce a bunch of transient duplicate
     //    results into queries if we transition to an available state.

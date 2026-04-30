@@ -68,7 +68,7 @@
    fun:pthread_create@@GLIBC_2.2.5
 }
 {
-   This is a bug in glibc. We can not suffer for that.
+   This is a bug in glibc. We cannot suffer for that.
    Memcheck:Free
    fun:free
    fun:free_mem

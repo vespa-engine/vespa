@@ -21,7 +21,7 @@ public record EnclaveAccountProfile(@JsonProperty("cloudAccount") String cloudAc
             Objects.requireNonNull(azureClientId, "azureClientId must not be null for cloudAccount " + cloudAccount);
             Objects.requireNonNull(azureTenantId, "azureTenantId must not be null for cloudAccount " + cloudAccount);
         } else if (azureClientId != null || azureTenantId != null) {
-            throw new IllegalArgumentException("azureClientId and azureTenantId can not be set for cloudAccount " + cloudAccount);
+            throw new IllegalArgumentException("azureClientId and azureTenantId cannot be set for cloudAccount " + cloudAccount);
         }
     }
 

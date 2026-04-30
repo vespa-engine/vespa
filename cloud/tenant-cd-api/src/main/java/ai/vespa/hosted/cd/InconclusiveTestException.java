@@ -3,7 +3,7 @@ package ai.vespa.hosted.cd;
 
 
 /**
- * Signals that a test method can not yield a conclusive result at this time, and must be retried later.
+ * Signals that a test method cannot yield a conclusive result at this time, and must be retried later.
  *
  * @author jonmv
  */

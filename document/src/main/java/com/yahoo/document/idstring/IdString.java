@@ -72,7 +72,7 @@ public abstract class IdString {
     /**
      * Creates a IdString based on the given serialized document id string.
      *
-     * The document id string can not contain 0x0 byte characters.
+     * The document id string cannot contain 0x0 byte characters.
      */
     public static IdString createFromSerialized(String id) {
         validateNoZeroBytes(id);

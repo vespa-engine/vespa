@@ -241,7 +241,7 @@ public final class Application implements AutoCloseable {
         }
 
         /**
-         * Get the file name (path) of a resource or fail if it can not be found
+         * Get the file name (path) of a resource or fail if it cannot be found
          *
          * @param resource Name of desired resource
          * @return Path of resource

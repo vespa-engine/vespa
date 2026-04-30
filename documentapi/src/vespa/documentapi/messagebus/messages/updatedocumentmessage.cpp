@@ -42,7 +42,7 @@ uint32_t UpdateDocumentMessage::getType() const {
 
 void UpdateDocumentMessage::setDocumentUpdate(document::DocumentUpdate::SP documentUpdate) {
     if (!documentUpdate) {
-        throw vespalib::IllegalArgumentException("Document update can not be null.", VESPA_STRLOC);
+        throw vespalib::IllegalArgumentException("Document update cannot be null.", VESPA_STRLOC);
     }
     _documentUpdate = std::move(documentUpdate);
 }

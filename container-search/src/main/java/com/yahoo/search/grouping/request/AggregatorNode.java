@@ -3,7 +3,7 @@ package com.yahoo.search.grouping.request;
 
 /**
  * This class represents an aggregated value in a {@link GroupingExpression}. Because it operates on a list of data, it
- * can not be used as a document-level expression (i.e. level 0, see {@link GroupingExpression#resolveLevel(int)}). The
+ * cannot be used as a document-level expression (i.e. level 0, see {@link GroupingExpression#resolveLevel(int)}). The
  * contained expression is evaluated at the level of the aggregator minus 1.
  *
  * @author Simon Thoresen Hult

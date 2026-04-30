@@ -117,7 +117,7 @@ public class SameElementItemTestCase {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) { // Success
-            assertEquals("The word of a word item can not be empty", e.getMessage());
+            assertEquals("The word of a word item cannot be empty", e.getMessage());
         }
     }
 
