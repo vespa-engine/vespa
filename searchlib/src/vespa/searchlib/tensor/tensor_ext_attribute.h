@@ -2,10 +2,11 @@
 
 #pragma once
 
-#include "i_tensor_attribute.h"
-#include "empty_subspace.h"
-#include "subspace_type.h"
 #include "distance_function_factory.h"
+#include "empty_subspace.h"
+#include "i_tensor_attribute.h"
+#include "subspace_type.h"
+
 #include <vespa/searchlib/attribute/not_implemented_attribute.h>
 #include <vespa/vespalib/stllike/allocator.h>
 
@@ -16,16 +17,13 @@ namespace search::tensor {
  * document in streaming search. The tensor is not owned by this
  * attribute vector.
  */
-class TensorExtAttribute : public NotImplementedAttribute,
-                           public ITensorAttribute,
-                           public IExtendAttribute
-{
+class TensorExtAttribute : public NotImplementedAttribute, public ITensorAttribute, public IExtendAttribute {
     std::vector<const vespalib::eval::Value*> _data;
     // XXX this should probably be longer-lived:
-    std::unique_ptr<DistanceFunctionFactory>  _distance_function_factory;
-    SubspaceType                              _subspace_type;
-    EmptySubspace                             _empty;
-    std::unique_ptr<vespalib::eval::Value>    _empty_tensor;
+    std::unique_ptr<DistanceFunctionFactory> _distance_function_factory;
+    SubspaceType                             _subspace_type;
+    EmptySubspace                            _empty;
+    std::unique_ptr<vespalib::eval::Value>   _empty_tensor;
 
 public:
     TensorExtAttribute(const std::string& name, const Config& cfg);
@@ -49,13 +47,11 @@ public:
     bool supports_extract_cells_ref() const override;
     bool supports_get_tensor_ref() const override;
     bool supports_get_serialized_tensor_ref() const override;
-    const vespalib::eval::ValueType & getTensorType() const override;
-    DistanceFunctionFactory& distance_function_factory() const override {
-        return *_distance_function_factory;
-    }
+    const vespalib::eval::ValueType& getTensorType() const override;
+    DistanceFunctionFactory& distance_function_factory() const override { return *_distance_function_factory; }
     search::attribute::DistanceMetric distance_metric() const override;
     uint32_t get_num_docs() const override;
     std::unique_ptr<vespalib::StateExplorer> make_state_explorer() const override;
 };
 
-}
+} // namespace search::tensor

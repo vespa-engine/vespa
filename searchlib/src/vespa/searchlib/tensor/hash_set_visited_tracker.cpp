@@ -5,10 +5,9 @@
 namespace search::tensor {
 
 HashSetVisitedTracker::HashSetVisitedTracker(uint32_t, uint32_t estimated_visited_nodes)
-    : _visited(estimated_visited_nodes)
-{
+    : _visited(estimated_visited_nodes) {
 }
 
 HashSetVisitedTracker::~HashSetVisitedTracker() = default;
 
-}
+} // namespace search::tensor

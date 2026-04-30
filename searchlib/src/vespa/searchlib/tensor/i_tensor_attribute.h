@@ -3,13 +3,22 @@
 #pragma once
 
 #include "doc_vector_access.h"
+
 #include <vespa/eval/eval/typed_cells.h>
 #include <vespa/searchcommon/attribute/distance_metric.h>
+
 #include <memory>
 
-namespace vespalib { struct StateExplorer; }
-namespace vespalib::eval { class ValueType; struct Value; }
-namespace vespalib::slime { struct Inserter; }
+namespace vespalib {
+struct StateExplorer;
+}
+namespace vespalib::eval {
+class ValueType;
+struct Value;
+} // namespace vespalib::eval
+namespace vespalib::slime {
+struct Inserter;
+}
 
 namespace search::tensor {
 
@@ -32,7 +41,7 @@ public:
     virtual bool supports_get_tensor_ref() const = 0;
     virtual bool supports_get_serialized_tensor_ref() const = 0;
 
-    virtual const vespalib::eval::ValueType & getTensorType() const = 0;
+    virtual const vespalib::eval::ValueType& getTensorType() const = 0;
 
     virtual DistanceFunctionFactory& distance_function_factory() const = 0;
     virtual const NearestNeighborIndex* nearest_neighbor_index() const { return nullptr; }
@@ -46,4 +55,4 @@ public:
     virtual std::unique_ptr<vespalib::StateExplorer> make_state_explorer() const = 0;
 };
 
-}  // namespace search::tensor
+} // namespace search::tensor

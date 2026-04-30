@@ -19,4 +19,4 @@ inline constexpr uint32_t DENSE_TENSOR_ATTRIBUTE_VERSION = 1;
 inline constexpr uint8_t tensorIsNotPresent = 0;
 inline constexpr uint8_t tensorIsPresent = 1;
 
-}
+} // namespace search::tensor

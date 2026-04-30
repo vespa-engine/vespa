@@ -2,14 +2,17 @@
 
 #pragma once
 
-#include "tensor_store.h"
 #include "empty_subspace.h"
 #include "subspace_type.h"
+#include "tensor_store.h"
 #include "vector_bundle.h"
+
 #include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/datastore/datastore.h>
 
-namespace vespalib::eval { struct Value; }
+namespace vespalib::eval {
+struct Value;
+}
 
 namespace search::tensor {
 
@@ -30,6 +33,7 @@ private:
         using ParentType = BufferType<TensorSP>;
         using ParentType::empty_entry;
         using CleanContext = typename ParentType::CleanContext;
+
     public:
         TensorBufferType();
         void clean_hold(void* buffer, size_t offset, EntryCount num_entries, CleanContext clean_ctx) override;
@@ -46,7 +50,7 @@ public:
     ~DirectTensorStore() override;
     using RefType = TensorStoreType::RefType;
 
-    const vespalib::eval::Value * get_tensor_ptr(EntryRef ref) const noexcept {
+    const vespalib::eval::Value* get_tensor_ptr(EntryRef ref) const noexcept {
         if (!ref.valid()) {
             return nullptr;
         }
@@ -57,14 +61,13 @@ public:
     void holdTensor(EntryRef ref) override;
     EntryRef move_on_compact(EntryRef ref) override;
     vespalib::MemoryUsage update_stat(const vespalib::datastore::CompactionStrategy& compaction_strategy) override;
-    std::unique_ptr<vespalib::datastore::ICompactionContext> start_compact(const vespalib::datastore::CompactionStrategy& compaction_strategy) override;
+    std::unique_ptr<vespalib::datastore::ICompactionContext>
+    start_compact(const vespalib::datastore::CompactionStrategy& compaction_strategy) override;
     EntryRef store_tensor(const vespalib::eval::Value& tensor) override;
     EntryRef store_encoded_tensor(vespalib::nbostream& encoded) override;
     std::unique_ptr<vespalib::eval::Value> get_tensor(EntryRef ref) const override;
     bool encode_stored_tensor(EntryRef ref, vespalib::nbostream& target) const override;
-    vespalib::eval::TypedCells get_empty_subspace() const noexcept {
-        return _empty.cells();
-    }
+    vespalib::eval::TypedCells get_empty_subspace() const noexcept { return _empty.cells(); }
     VectorBundle get_vectors(EntryRef ref) const noexcept {
         auto tensor = get_tensor_ptr(ref);
         if (tensor == nullptr) {
@@ -74,4 +77,4 @@ public:
     }
 };
 
-}
+} // namespace search::tensor

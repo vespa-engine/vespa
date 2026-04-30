@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/imported_attribute_vector_read_guard.h>
 #include "i_tensor_attribute.h"
+
+#include <vespa/searchlib/attribute/imported_attribute_vector_read_guard.h>
 
 namespace search::attribute {
 class ImportedAttributeVector;
@@ -18,18 +19,18 @@ namespace search::tensor {
  * boundary check is setup during construction.
  */
 class ImportedTensorAttributeVectorReadGuard : public attribute::ImportedAttributeVectorReadGuard,
-                                               public ITensorAttribute
-{
+                                               public ITensorAttribute {
     using ReferenceAttribute = attribute::ReferenceAttribute;
     using BitVectorSearchCache = attribute::BitVectorSearchCache;
-    const ITensorAttribute &_target_tensor_attribute;
+    const ITensorAttribute& _target_tensor_attribute;
+
 public:
-    ImportedTensorAttributeVectorReadGuard(std::shared_ptr<MetaStoreReadGuard> targetMetaStoreReadGuard,
-                                           const attribute::ImportedAttributeVector &imported_attribute,
-                                           bool stableEnumGuard);
+    ImportedTensorAttributeVectorReadGuard(std::shared_ptr<MetaStoreReadGuard>       targetMetaStoreReadGuard,
+                                           const attribute::ImportedAttributeVector& imported_attribute,
+                                           bool                                      stableEnumGuard);
     ~ImportedTensorAttributeVectorReadGuard() override;
 
-    const ITensorAttribute *asTensorAttribute() const override;
+    const ITensorAttribute* asTensorAttribute() const override;
 
     std::unique_ptr<vespalib::eval::Value> getTensor(uint32_t docId) const override;
     std::unique_ptr<vespalib::eval::Value> getEmptyTensor() const override;
@@ -48,8 +49,8 @@ public:
     vespalib::eval::TypedCells get_vector(uint32_t docid, uint32_t subspace) const noexcept override;
     VectorBundle get_vectors(uint32_t docid) const noexcept override;
 
-    const vespalib::eval::ValueType &getTensorType() const override;
+    const vespalib::eval::ValueType& getTensorType() const override;
     std::unique_ptr<vespalib::StateExplorer> make_state_explorer() const override;
 };
 
-}
+} // namespace search::tensor

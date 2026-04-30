@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "distance_function.h"
 #include "angular_distance.h"
+#include "distance_function.h"
 #include "euclidean_distance.h"
 #include "geo_degrees_distance.h"
 #include "hamming_distance.h"

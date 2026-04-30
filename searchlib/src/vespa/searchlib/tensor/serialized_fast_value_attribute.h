@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "tensor_attribute.h"
 #include "default_nearest_neighbor_index_factory.h"
+#include "tensor_attribute.h"
 #include "tensor_buffer_store.h"
 
 namespace search::tensor {
@@ -20,7 +20,9 @@ namespace search::tensor {
 class SerializedFastValueAttribute : public TensorAttribute {
     TensorBufferStore _tensorBufferStore; // data store for serialized tensors
 public:
-    SerializedFastValueAttribute(std::string_view baseFileName, const Config &cfg, const NearestNeighborIndexFactory& index_factory = DefaultNearestNeighborIndexFactory());
+    SerializedFastValueAttribute(
+        std::string_view baseFileName, const Config& cfg,
+        const NearestNeighborIndexFactory& index_factory = DefaultNearestNeighborIndexFactory());
     ~SerializedFastValueAttribute() override;
 
     SerializedTensorRef get_serialized_tensor_ref(uint32_t docid) const override;
@@ -33,4 +35,4 @@ public:
     void prefetch_vector(uint32_t docid) const noexcept override;
 };
 
-}
+} // namespace search::tensor

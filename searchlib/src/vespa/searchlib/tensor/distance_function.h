@@ -22,16 +22,12 @@ public:
      * Convert rawscore to external distance.
      * Override this when the rawscore is NOT defined as (1.0 / (1.0 + external_distance)).
      */
-    virtual double to_distance(double rawscore) const noexcept {
-        return (1.0 / rawscore) - 1.0;
-    }
+    virtual double to_distance(double rawscore) const noexcept { return (1.0 / rawscore) - 1.0; }
 
     /**
      * The minimum rawscore (also used as closeness) that this distance function can return.
      */
-    virtual double min_rawscore() const noexcept {
-        return 0.0;
-    }
+    virtual double min_rawscore() const noexcept { return 0.0; }
 };
 
-}
+} // namespace search::tensor
