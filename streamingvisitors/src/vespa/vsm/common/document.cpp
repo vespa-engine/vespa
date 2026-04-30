@@ -11,16 +11,6 @@ using search::TimeT;
 
 namespace vsm {
 
-vespalib::asciistream& operator<<(vespalib::asciistream& os, const FieldRef& f) {
-    const char* s = f.data();
-    os << f.size();
-    if (s) {
-        os << s; // Better hope it's null terminated!
-    }
-    os << " : ";
-    return os;
-}
-
 vespalib::asciistream& operator<<(vespalib::asciistream& os, const StringFieldIdTMap& f) {
     std::map<std::string, FieldIdT> ordered(f._map.begin(), f._map.end());
     for (const auto& elem : ordered) {

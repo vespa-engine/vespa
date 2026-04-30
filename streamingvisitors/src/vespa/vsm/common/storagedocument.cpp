@@ -21,7 +21,7 @@ StorageDocument::~StorageDocument() = default;
 
 namespace {
 FieldPath                    _emptyFieldPath;
-StorageDocument::SubDocument _empySubDocument(nullptr, _emptyFieldPath.getFullRange());
+StorageDocument::SubDocument _emptySubDocument(nullptr, _emptyFieldPath.getFullRange());
 } // namespace
 
 const StorageDocument::SubDocument& StorageDocument::getComplexField(FieldIdT fId) const {
@@ -39,7 +39,7 @@ const StorageDocument::SubDocument& StorageDocument::getComplexField(FieldIdT fI
             }
         } else {
             LOG(debug, "Failed getting field fId %d.", fId);
-            return _empySubDocument;
+            return _emptySubDocument;
         }
     }
     return _cachedFields[fId];
