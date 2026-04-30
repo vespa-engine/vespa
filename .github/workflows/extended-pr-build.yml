@@ -69,7 +69,7 @@ jobs:
     steps:
       - name: Mint dispatch token
         id: app-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ secrets.EXTENDED_BUILD_APP_ID }}
           private-key: ${{ secrets.EXTENDED_BUILD_APP_PRIVATE_KEY }}
