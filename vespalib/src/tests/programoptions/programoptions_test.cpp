@@ -217,7 +217,7 @@ TEST(ProgramOptionsTest, test_failures) {
             options.parse();
             FAIL() << "Expected exception";
         } catch (InvalidCommandLineArgumentsException& e) {
-            EXPECT_EQ("The argument '3000000000' can not be interpreted as a "
+            EXPECT_EQ("The argument '3000000000' cannot be interpreted as a "
                       "number of type int.",
                       e.getMessage());
         }
@@ -254,7 +254,7 @@ TEST(ProgramOptionsTest, test_failures) {
             options.parse();
             FAIL() << "Expected exception";
         } catch (InvalidCommandLineArgumentsException& e) {
-            EXPECT_EQ("The argument 'en' can not be interpreted as a number "
+            EXPECT_EQ("The argument 'en' cannot be interpreted as a number "
                       "of type int.",
                       e.getMessage());
         }

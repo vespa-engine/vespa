@@ -49,7 +49,7 @@ void ProgramOptions::NumberOptionParser<Number>::set(const std::vector<std::stri
         _number = vespalib::lexical_cast<Number>(arguments[0]);
     } catch (const vespalib::IllegalArgumentException& e) {
         std::ostringstream ost;
-        ost << "The argument '" << arguments[0] << "' can not be interpreted as a number of type "
+        ost << "The argument '" << arguments[0] << "' cannot be interpreted as a number of type "
             << getTypeName<Number>() << ".";
         throw InvalidCommandLineArgumentsException(ost.str(), VESPA_STRLOC);
     }

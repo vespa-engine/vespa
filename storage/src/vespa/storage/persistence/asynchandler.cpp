@@ -188,7 +188,7 @@ AsyncHandler::handleCreateBucket(api::CreateBucketCommand& cmd, MessageTracker::
     }
     spi::Bucket bucket(cmd.getBucket());
     auto task = makeResultTask([tracker = std::move(tracker)](spi::Result::UP ignored) mutable {
-        // TODO Even if an non OK response can not be handled sanely we might probably log a message, or increment a metric
+        // TODO Even if an non OK response cannot be handled sanely we might probably log a message, or increment a metric
         (void) ignored;
         tracker->sendReply();
     });

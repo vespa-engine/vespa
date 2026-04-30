@@ -42,7 +42,7 @@ public:
      * some common expressions. We guarantuee that you get all buckets
      * that may contain data, but not that you get the minimal bucket set.
      *
-     * If a small bucket set can not be identified, a null pointer is returned
+     * If a small bucket set cannot be identified, a null pointer is returned
      * to indicate all buckets needs to be visited.
      */
     std::unique_ptr<BucketVector> select(const select::Node& expression) const;

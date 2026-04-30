@@ -936,7 +936,7 @@ message ModelOptimizationPolicy
     //@@
     //@@       For "auto_mixed_precision", no parameters are required. If set,
     //@@       the model will try to use FP16 for better performance.
-    //@@       This optimization can not be set with "tensorrt".
+    //@@       This optimization cannot be set with "tensorrt".
     //@@
     //@@       For "gpu_io", no parameters are required. If set, the model will
     //@@       be executed using TensorFlow Callable API to set input and output

@@ -80,7 +80,7 @@ public class SameElementItem extends NonReducibleCompositeItem implements HasInd
     }
 
     /**
-     * Set an element filter. The filter can not contain null values or negative numbers.
+     * Set an element filter. The filter cannot contain null values or negative numbers.
      * <p>
      * The filter will be deduplicates and sorted.
      */

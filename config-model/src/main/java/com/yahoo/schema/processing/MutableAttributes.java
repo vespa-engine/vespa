@@ -21,7 +21,7 @@ public class MutableAttributes extends Processor {
             if ( ! field.isExtraField() && field.getAttributes().containsKey(field.getName())) {
                 if (field.getAttributes().get(field.getName()).isMutable()) {
                     throw new IllegalArgumentException("Field '" + field.getName() + "' in '" + schema.getDocument().getName() +
-                                                       "' can not be marked mutable as it is inside the document clause.");
+                                                       "' cannot be marked mutable as it is inside the document clause.");
                 }
             }
         }

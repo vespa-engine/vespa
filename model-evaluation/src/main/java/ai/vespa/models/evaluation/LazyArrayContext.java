@@ -134,7 +134,7 @@ public final class LazyArrayContext extends Context implements ContextIndex {
     private Integer requireIndexOf(String name) {
         Integer index = indexedBindings.indexOf(name);
         if (index == null)
-            throw new IllegalArgumentException("Value '" + name + "' can not be bound in " + this);
+            throw new IllegalArgumentException("Value '" + name + "' cannot be bound in " + this);
         return index;
     }
 

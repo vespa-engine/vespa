@@ -967,7 +967,7 @@ public class QueryTestCase {
             fail("Expected exception");
         }
         catch (NullPointerException e) {
-            assertEquals("A composite item child can not be null", e.getMessage());
+            assertEquals("A composite item child cannot be null", e.getMessage());
         }
 
         try {

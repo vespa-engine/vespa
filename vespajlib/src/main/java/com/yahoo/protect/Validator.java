@@ -11,13 +11,13 @@ public abstract class Validator {
     /** Throws NullPointerException if the argument is null */
     public static void ensureNotNull(String argumentDescription, Object argument) {
         if (argument == null)
-            throw new NullPointerException(argumentDescription + " can not be null");
+            throw new NullPointerException(argumentDescription + " cannot be null");
     }
 
     /** Throws NullPointerException if the argument is null */
     public static void ensureNonEmpty(String argumentDescription, String argument) {
         if (argument.isEmpty())
-            throw new IllegalArgumentException(argumentDescription + " can not be empty");
+            throw new IllegalArgumentException(argumentDescription + " cannot be empty");
     }
 
     /**

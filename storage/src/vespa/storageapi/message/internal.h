@@ -23,7 +23,7 @@ namespace storage::api {
  *
  * @brief Base class for commands local to a VDS node.
  *
- * This is the base class for internal server commands. They can not be
+ * This is the base class for internal server commands. They cannot be
  * serialized, so any attempt of sending such a command away from a storage
  * node will fail.
  */

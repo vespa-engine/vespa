@@ -72,7 +72,7 @@ public class SDDocumentType implements Cloneable {
         if (getType(name) != null)
             throw new IllegalArgumentException("Data type '" + name + "' has already been used.");
         if (name.getName().equals(docType.getName()))
-            throw new IllegalArgumentException("Data type '" + name + "' can not have same name as its defining document.");
+            throw new IllegalArgumentException("Data type '" + name + "' cannot have same name as its defining document.");
         ownedTypes.put(name, dt);
         return this;
     }
@@ -158,7 +158,7 @@ public class SDDocumentType implements Cloneable {
                 this.structType = docType.contentStruct();
                 inheritedTypes.clear();
             } else {
-                throw new IllegalArgumentException("You can not set a null struct");
+                throw new IllegalArgumentException("You cannot set a null struct");
             }
         }
         return this;
@@ -235,7 +235,7 @@ public class SDDocumentType implements Cloneable {
             	if (pField.getName().equals(field.getName())) {
             		if (!pField.getDataType().equals(field.getDataType())) {
             			throw new IllegalArgumentException("For " + this + ", field '" + field.getName() +
-                                                           "': Datatype can not be different from that of same field " +
+                                                           "': Datatype cannot be different from that of same field " +
                                                            "in the supertype '" + parent.getName() + "'");
             		}
             	}

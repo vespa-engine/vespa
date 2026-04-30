@@ -1099,7 +1099,7 @@ SearchVisitor::setupGrouping(const std::vector<char> & groupingBlob)
             if (!grouping.getAll() || (preparator.getNumHitsAggregators() == 0)) {
                 _groupingList.push_back(groupingPtr);
             } else {
-                Issue::report("You can not collect hits with an all aggregator yet.");
+                Issue::report("You cannot collect hits with an all aggregator yet.");
             }
         } catch (const document::FieldNotFoundException & e) {
             Issue::report("Could not locate field for grouping number %ld : %s", i, e.getMessage().c_str());

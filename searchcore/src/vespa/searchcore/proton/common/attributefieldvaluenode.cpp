@@ -80,7 +80,7 @@ getValue(const Context &context) const
         case BasicType::PREDICATE:
         case BasicType::REFERENCE:
         case BasicType::RAW:
-            throw IllegalArgumentException(make_string("Attribute '%s' of type '%s' can not be used for selection",
+            throw IllegalArgumentException(make_string("Attribute '%s' of type '%s' cannot be used for selection",
                                                        v.getName().c_str(), BasicType(v.getBasicType()).asString()));
         case BasicType::MAX_TYPE:
             throw IllegalStateException(make_string("Attribute '%s' has illegal type '%d'", v.getName().c_str(), v.getBasicType()));

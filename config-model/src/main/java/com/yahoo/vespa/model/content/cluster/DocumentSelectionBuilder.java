@@ -39,7 +39,7 @@ public class DocumentSelectionBuilder {
                                                        "but references " + type);
                 } else {
                     throw new IllegalArgumentException("Selection for document type '" + this.allowedType +
-                                                       "' can not contain references to other document types, " +
+                                                       "' cannot contain references to other document types, " +
                                                        "but references " + type);
                 }
             }

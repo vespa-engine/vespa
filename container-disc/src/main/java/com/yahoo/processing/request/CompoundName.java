@@ -75,7 +75,7 @@ public final class CompoundName {
      * @param compounds the compounds of this name
      */
     private CompoundName(String name, String [] compounds, boolean useCache) {
-        this.name = Objects.requireNonNull(name, "Name can not be null");
+        this.name = Objects.requireNonNull(name, "Name cannot be null");
         this.lowerCasedName = toLowerCase(name);
         if (compounds.length == 1) {
             if (compounds[0].isEmpty()) {
@@ -140,7 +140,7 @@ public final class CompoundName {
         } else if (p < m) {
             l.add(s.substring(p, m));
         } else {
-            throw new IllegalArgumentException("'" + s + "' is not a legal compound name. Names can not end with a dot.");
+            throw new IllegalArgumentException("'" + s + "' is not a legal compound name. Names cannot end with a dot.");
         }
         return l;
     }

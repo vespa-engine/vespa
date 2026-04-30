@@ -33,7 +33,7 @@ InvalidDataTypeConversionException::InvalidDataTypeConversionException(const Dat
                                                                        const DataType&    expected,
                                                                        const std::string& location)
     : IllegalStateException(
-          fmt("%s can not be converted to %s.", actual.toString().c_str(), expected.toString().c_str()), location, 1),
+          fmt("%s cannot be converted to %s.", actual.toString().c_str(), expected.toString().c_str()), location, 1),
       _actual(actual),
       _expected(expected) {
 }

@@ -40,7 +40,7 @@ public class NameTestCase {
             profile.set("a.", "anyValue", (QueryProfileRegistry) null);
             fail("Should have failed");
         } catch (IllegalArgumentException e) {
-            assertEquals("'a.' is not a legal compound name. Names can not end with a dot.", e.getMessage());
+            assertEquals("'a.' is not a legal compound name. Names cannot end with a dot.", e.getMessage());
         }
         assertLegalFieldName("_a_b");
         assertLegalFieldName("a_b");

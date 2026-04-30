@@ -81,10 +81,10 @@ public final class HKDF {
         Objects.requireNonNull(salt);
         Objects.requireNonNull(ikm);
         if (ikm.length == 0) {
-            throw new IllegalArgumentException("HKDF extraction IKM array can not be empty");
+            throw new IllegalArgumentException("HKDF extraction IKM array cannot be empty");
         }
         if (salt.length == 0) {
-            throw new IllegalArgumentException("HKDF extraction salt array can not be empty");
+            throw new IllegalArgumentException("HKDF extraction salt array cannot be empty");
         }
     }
 

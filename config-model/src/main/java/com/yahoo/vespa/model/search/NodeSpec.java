@@ -13,10 +13,10 @@ public class NodeSpec {
 
     public NodeSpec(int groupIndex, int partitionId) {
         if (groupIndex < 0) {
-            throw new IllegalArgumentException("GroupId(" + groupIndex + ") can not be below 0");
+            throw new IllegalArgumentException("GroupId(" + groupIndex + ") cannot be below 0");
         }
         if (partitionId < 0) {
-            throw new IllegalArgumentException("PartId(" + partitionId + ") can not be below 0");
+            throw new IllegalArgumentException("PartId(" + partitionId + ") cannot be below 0");
         }
         this.groupIndex = groupIndex;
         this.partitionId = partitionId;

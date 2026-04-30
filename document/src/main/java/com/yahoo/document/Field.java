@@ -99,7 +99,7 @@ public class Field extends FieldBase implements FieldSet, Comparable<Field> {
      * @param newId the id - if this is less than 100 it will cause document to serialize
      *              using just one byte for this field id. 100-127 are reserved values
      * @param owner the owning document, this is checked for collisions and notified
-     *              of the id change. It can not be null
+     *              of the id change. It cannot be null
      */
     public void setId(int newId, DocumentType owner) {
         if (owner == null) {

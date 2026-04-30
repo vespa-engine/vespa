@@ -37,7 +37,7 @@ uint32_t PutDocumentMessage::getType() const {
 
 void PutDocumentMessage::setDocument(document::Document::SP document) {
     if (!document) {
-        throw vespalib::IllegalArgumentException("Document can not be null.", VESPA_STRLOC);
+        throw vespalib::IllegalArgumentException("Document cannot be null.", VESPA_STRLOC);
     }
     _document = std::move(document);
 }

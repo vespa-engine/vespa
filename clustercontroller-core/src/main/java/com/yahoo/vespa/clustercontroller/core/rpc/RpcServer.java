@@ -216,7 +216,7 @@ public class RpcServer {
                     if (!oldState.equals(nodeState) || !oldState.getDescription().equals(nodeState.getDescription())) {
                         if (!nodeState.getState().validWantedNodeState(nodeType)) {
                             throw new IllegalStateException("State " + nodeState.getState()
-                                    + " can not be used as wanted state for node of type " + nodeType);
+                                    + " cannot be used as wanted state for node of type " + nodeType);
                         }
                         node.setWantedState(nodeState);
                         changeListener.handleNewWantedNodeState(node, nodeState);

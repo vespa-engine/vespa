@@ -53,7 +53,7 @@ public class GetDocumentMessage extends DocumentMessage {
      */
     public void setDocumentId(DocumentId documentId) {
         if (documentId == null) {
-            throw new IllegalArgumentException("Document id can not be null.");
+            throw new IllegalArgumentException("Document id cannot be null.");
         }
         this.documentId = documentId;
     }

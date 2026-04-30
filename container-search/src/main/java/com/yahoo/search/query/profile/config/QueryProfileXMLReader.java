@@ -142,7 +142,7 @@ public class QueryProfileXMLReader {
                 QueryProfileType type = registry.getType(typeId);
                 if (type == null)
                     throw new IllegalArgumentException("Query profile '" + reader.getName() +
-                                                       "': Type id '" + typeId + "' can not be resolved");
+                                                       "': Type id '" + typeId + "' cannot be resolved");
                 queryProfile.setType(type);
             }
 

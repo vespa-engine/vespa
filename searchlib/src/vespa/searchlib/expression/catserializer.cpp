@@ -20,7 +20,7 @@ CatSerializer& CatSerializer::put(std::string_view value) {
 
 CatSerializer& CatSerializer::nop(const void*) {
     throw vespalib::Exception(
-        "search::expression::CatSerializer can not deserialize anything as it looses information on serialize");
+        "search::expression::CatSerializer cannot deserialize anything as it loses information on serialize");
     return *this;
 }
 

@@ -147,7 +147,7 @@ public final class ContentCluster {
     }
 
     /**
-     * Indicate that future orchestration decisions can not look at existing nodes set into
+     * Indicate that future orchestration decisions cannot look at existing nodes set into
      * Maintenance as "proof" that it's safe to set <em>further</em> nodes into Maintenance.
      * The existing node(s) will first have to come back up and allow the cluster to get
      * back into sync.

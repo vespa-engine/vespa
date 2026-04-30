@@ -166,7 +166,7 @@ public:
 
     /**
      * Returns the searchable that will give the correct search view of the index manager.
-     * Normally switched everytime underlying index structures are changed in a way that can not be
+     * Normally switched everytime underlying index structures are changed in a way that cannot be
      * handled in a thread safe way without locking. For instance flushing of memory index or
      * starting using a new schema.
      *

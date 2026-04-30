@@ -152,13 +152,13 @@ public:
     /**
      * Force a metric update for all update hooks. Useful if you want to ensure
      * nice values before reporting something.
-     * This function can not be called from an update hook callback.
+     * This function cannot be called from an update hook callback.
      */
     void updateMetrics();
 
     /**
      * Force event logging to happen now.
-     * This function can not be called from an update hook callback.
+     * This function cannot be called from an update hook callback.
      */
     void forceEventLogging();
 
@@ -166,7 +166,7 @@ public:
      * Register a new metric to be included in the active metric set. You need
      * to have grabbed the metric lock in order to do this. (You also need to
      * grab that lock if you alter registration of already registered metric
-     * set.) This function can not be called from an update hook callback.
+     * set.) This function cannot be called from an update hook callback.
      */
     void registerMetric(const MetricLockGuard& l, Metric& m) {
         assertMetricLockLocked(l);
@@ -177,7 +177,7 @@ public:
      * Unregister a metric from the active metric set. You need to have grabbed
      * the metric lock in order to do this. (You also need to grab that lock
      * if you alter registration of already registered metric set.)
-     * This function can not be called from an update hook callback.
+     * This function cannot be called from an update hook callback.
      */
     void unregisterMetric(const MetricLockGuard& l, Metric& m) {
         assertMetricLockLocked(l);
@@ -186,7 +186,7 @@ public:
 
     /**
      * Reset all metrics including all snapshots.
-     * This function can not be called from an update hook callback.
+     * This function cannot be called from an update hook callback.
      */
     void reset(system_time currentTime);
 

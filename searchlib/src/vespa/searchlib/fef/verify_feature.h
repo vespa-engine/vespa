@@ -15,7 +15,7 @@ using Message = std::pair<Level, std::string>;
 
 /**
  * Verify whether a specific feature can be computed. If the feature
- * can not be computed, log a reason why, including feature
+ * cannot be computed, log a reason why, including feature
  * dependencies.
  *
  * @return true if the feature can be computed, false otherwise

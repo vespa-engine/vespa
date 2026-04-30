@@ -9,7 +9,7 @@ namespace search::expression {
 /**
  * Implements range filter in grouping expressions.
  *
- * Checks if a expression is between an lower and upper bound. Lower bound and upper bound can
+ * Checks if an expression is between a lower and an upper bound. Lower bound and upper bound can
  * be set inclusive or exclusive.
  **/
 class RangePredicateNode : public FilterPredicateNode {

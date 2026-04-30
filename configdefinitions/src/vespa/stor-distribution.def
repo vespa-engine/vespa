@@ -24,7 +24,7 @@ ready_copies int default=0
 ## of buckets per leaf hierarchical group. This is a simple implementation for
 ## search to be able to setup top level dispatcher to only send search to all
 ## nodes in one group as they have a static cost per node used. If used,
-## hierarchical grouping can not be used for other purposes. Using this option
+## hierarchical grouping cannot be used for other purposes. Using this option
 ## implies that:
 ##   - ready_copies == redundancy
 ##   - Only one level of hierarchical grouping defined.

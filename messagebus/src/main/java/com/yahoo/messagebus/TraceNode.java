@@ -293,7 +293,7 @@ public class TraceNode implements Comparable<TraceNode> {
      */
     public TraceNode addChild(TraceNode child) {
         if (note != null) {
-            throw new IllegalStateException("Nodes with notes are leaf nodes, you can not add children to it.");
+            throw new IllegalStateException("Nodes with notes are leaf nodes, you cannot add children to it.");
         }
         TraceNode node = new TraceNode(child);
         node.parent = this;
