@@ -87,7 +87,7 @@ jobs:
           BRANCH: ${{ github.event.pull_request.head.ref }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          SOURCE_REPO: ${{ github.repository }}
+          SOURCE_REPO: ${{ github.event.pull_request.head.repo.full_name }}
         run: |
           jq -nc \
             --arg event "extended-build" \
