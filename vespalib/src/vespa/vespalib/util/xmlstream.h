@@ -81,7 +81,7 @@ public:
  * @brief Defined a single attribute within an XML tag.
  *
  * When adding an XML to an XML stream, the attribute will be added to the last
- * tag added. This can not be called after the last tag opened in the stream is
+ * tag added. This cannot be called after the last tag opened in the stream is
  * closed, so add all attributes before starting to add new XML child tags.
  */
 class XmlAttribute {

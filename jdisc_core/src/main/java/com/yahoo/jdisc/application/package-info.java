@@ -69,7 +69,7 @@ void reconfigureApplication() {
  *   <dt>X-JDisc-Privileged-Activator</dt>
  *   <dd>
  *     if "true", this tells jDISC that this bundle requires root privileges for its {@link
- *     org.osgi.framework.BundleActivator BundleActivator}. If privileges can not be provided, this bundle should not be
+ *     org.osgi.framework.BundleActivator BundleActivator}. If privileges cannot be provided, this bundle should not be
  *     installed. Only the Application bundle and its dependencies can ever be given privileges, as jDISC itself drops
  *     its privileges after the bootstrapping step.
  *   </dd>

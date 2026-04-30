@@ -239,7 +239,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
      */
     public void setFieldUpdates(Collection<FieldUpdate> fieldUpdates) {
         if (fieldUpdates == null) {
-            throw new NullPointerException("The field updates of a document update can not be null");
+            throw new NullPointerException("The field updates of a document update cannot be null");
         }
         clearFieldUpdates();
         addFieldUpdates(fieldUpdates);

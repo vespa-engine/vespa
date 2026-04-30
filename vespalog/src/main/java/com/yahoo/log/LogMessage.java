@@ -87,7 +87,7 @@ public class LogMessage
      * @param msg The log message
      * @return Returns a LogMessage instance
      * @throws InvalidLogFormatException if the log message
-     *    can not be parsed, ie. is invalid, we throw this
+     *    cannot be parsed, ie. is invalid, we throw this
      *    exception.
      */
     public static LogMessage parseNativeFormat(String msg) throws InvalidLogFormatException {

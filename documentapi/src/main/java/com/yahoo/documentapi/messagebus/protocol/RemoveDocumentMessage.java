@@ -56,7 +56,7 @@ public class RemoveDocumentMessage extends TestAndSetMessage {
      */
     public void setDocumentId(DocumentId documentId) {
         if (documentId == null) {
-            throw new IllegalArgumentException("Document id can not be null.");
+            throw new IllegalArgumentException("Document id cannot be null.");
         }
 
         remove = new DocumentRemove(documentId);

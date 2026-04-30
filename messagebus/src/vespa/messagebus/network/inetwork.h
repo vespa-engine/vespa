@@ -85,7 +85,7 @@ public:
 
     /**
      * Resolves the service address of the recipient referenced by the given
-     * routing node. If a recipient can not be resolved, this method tags the
+     * routing node. If a recipient cannot be resolved, this method tags the
      * node with an error. If this method succeeds, you need to invoke {@link
      * #freeServiceAddress(RoutingNode)} once you are done with the service
      * address.

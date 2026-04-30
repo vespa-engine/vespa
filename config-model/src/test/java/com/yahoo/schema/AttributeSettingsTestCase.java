@@ -178,7 +178,7 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
                     "}\n");
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("Field 'f' in 'test' can not be marked mutable as it is inside the document clause.", e.getMessage());
+            assertEquals("Field 'f' in 'test' cannot be marked mutable as it is inside the document clause.", e.getMessage());
         }
     }
 

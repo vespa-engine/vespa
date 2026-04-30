@@ -26,7 +26,7 @@ import com.yahoo.component.chain.Phase;
  * that name.
  * <p>
  * A warning will be logged if multiple components of different types provides the
- * same name. A component can not provide the same name as a phase.
+ * same name. A component cannot provide the same name as a phase.
  *
  * @author Tony Vaagenes
  */

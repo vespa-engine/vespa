@@ -65,7 +65,7 @@ queryprofile[].queryprofilevariant[].reference[].overridable string default=""
 # The id follows the same rules as for query profiles
 queryprofiletype[].id string
 
-# If this is strict, non-declared values can not be set in a query profile of this type nor
+# If this is strict, non-declared values cannot be set in a query profile of this type nor
 # in the request or by a programmatic call
 queryprofiletype[].strict bool default=false
 

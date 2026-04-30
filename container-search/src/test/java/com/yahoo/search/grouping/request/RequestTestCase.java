@@ -98,7 +98,7 @@ public class RequestTestCase {
         try {
             new LongBucket(2, 1);
         } catch (IllegalArgumentException e) {
-            assertEquals("Bucket to-value can not be less than from-value.", e.getMessage());
+            assertEquals("Bucket to-value cannot be less than from-value.", e.getMessage());
         }
         try {
             new LongPredefined(new AttributeValue("foo"),
@@ -139,7 +139,7 @@ public class RequestTestCase {
             all.resolveLevel(0);
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("Operation 'all(order(foo))' can not order single hit.", e.getMessage());
+            assertEquals("Operation 'all(order(foo))' cannot order single hit.", e.getMessage());
         }
         all.resolveLevel(1);
         assertEquals(0, all.getOrderBy(0).getLevel());
@@ -153,7 +153,7 @@ public class RequestTestCase {
             all.resolveLevel(0);
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("Operation 'all(max(69))' can not apply max to single hit.", e.getMessage());
+            assertEquals("Operation 'all(max(69))' cannot apply max to single hit.", e.getMessage());
         }
         all.resolveLevel(1);
     }
@@ -191,7 +191,7 @@ public class RequestTestCase {
             each.resolveLevel(0);
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("Operation '" + each + "' can not operate on single hit.", e.getMessage());
+            assertEquals("Operation '" + each + "' cannot operate on single hit.", e.getMessage());
         }
         each.resolveLevel(1);
         assertEquals(0, each.getLevel());

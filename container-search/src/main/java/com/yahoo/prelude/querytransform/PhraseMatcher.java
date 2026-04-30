@@ -280,7 +280,7 @@ public class PhraseMatcher {
          *
          * @param owner the composite we have matched within
          * @param replace the list of string to replace the matched by, or null to not replace.
-         *        This transfers ownership of this list to this class - it can not subsequently be accessed
+         *        This transfers ownership of this list to this class - it cannot subsequently be accessed
          *        by the caller. If this list is set, it must have the same length as <code>length</code>.
          *        No replacement is represented by null items within the list.
          * @param startIndex the first index in composite to match

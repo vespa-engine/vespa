@@ -35,7 +35,7 @@ public final class NameNode extends ExpressionNode {
     }
 
     @Override
-    public TensorType type(TypeContext<Reference> context) { throw new RuntimeException("Named nodes can not have a type"); }
+    public TensorType type(TypeContext<Reference> context) { throw new RuntimeException("Named nodes cannot have a type"); }
 
     @Override
     public Value evaluate(Context context) {

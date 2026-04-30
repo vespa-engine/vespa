@@ -65,7 +65,7 @@ public class StringResultNode extends SingleResultNode {
      */
     public StringResultNode setValue(String value) {
         if (value == null) {
-            throw new IllegalArgumentException("Value can not be null.");
+            throw new IllegalArgumentException("Value cannot be null.");
         }
         this.utf8Value = Utf8.toBytes(value);
         return this;

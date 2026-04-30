@@ -23,7 +23,7 @@ final class SourceGroup {
         assert (validMember(leader));
 
         if (this.leader != null)
-            throw new IllegalArgumentException("There can not be two default providers for the source '" + id + "'");
+            throw new IllegalArgumentException("There cannot be two default providers for the source '" + id + "'");
 
         this.leader = leader;
     }

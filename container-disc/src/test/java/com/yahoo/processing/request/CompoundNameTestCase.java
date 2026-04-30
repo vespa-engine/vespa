@@ -83,7 +83,7 @@ public class CompoundNameTestCase {
 
     @Test
     void testIllegalCompound() {
-        assertEquals("'a.' is not a legal compound name. Names can not end with a dot.",
+        assertEquals("'a.' is not a legal compound name. Names cannot end with a dot.",
                      assertThrows(IllegalArgumentException.class,
                                   () -> CompoundName.from("a."))
                              .getMessage());

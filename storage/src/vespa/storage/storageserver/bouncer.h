@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**
- * Component which rejects messages that can not be accepted by the node in
+ * Component which rejects messages that cannot be accepted by the node in
  * its current state.
  */
 

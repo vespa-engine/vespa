@@ -68,7 +68,7 @@ public final class Capacity {
     public boolean isRequired() { return required; }
 
     /**
-     * Returns true if an exception should be thrown if the specified capacity can not be satisfied
+     * Returns true if an exception should be thrown if the specified capacity cannot be satisfied
      * (to whatever policies are applied and taking required true/false into account).
      * Returns false if it is preferable to still succeed with partially satisfied capacity.
      */

@@ -54,7 +54,7 @@ public:
      * Decodes a {@link Routable} from the given byte array. This uses the content of the byte array to
      * dispatch the decode request to the appropriate {@link RoutableFactory} that was previously registered.
      *
-     * If a routable can not be decoded, this method returns an empty blob.
+     * If a routable cannot be decoded, this method returns an empty blob.
      *
      * @param version The version of the encoded routable.
      * @param data    The byte array containing the encoded routable.
@@ -66,7 +66,7 @@ public:
      * Encodes a {@link Routable} into a byte array. This dispatches the encode request to the appropriate
      * {@link RoutableFactory} that was previously registered.
      *
-     * If a routable can not be encoded, this method returns an empty byte array.
+     * If a routable cannot be encoded, this method returns an empty byte array.
      *
      * @param version The version to encode the routable as.
      * @param obj     The routable to encode.

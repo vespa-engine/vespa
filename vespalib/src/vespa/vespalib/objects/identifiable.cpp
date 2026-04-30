@@ -189,7 +189,7 @@ Identifiable::UP Identifiable::create(Deserializer& is) {
         } else {
             throw std::runtime_error(
                 make_string("Failed deserializing an Identifiable for classId %d(%0x). "
-                            "It is abstract, so it can not be instantiated. Does it need to be abstract ?",
+                            "It is abstract, so it cannot be instantiated. Does it need to be abstract ?",
                             cid, cid));
         }
     } else {

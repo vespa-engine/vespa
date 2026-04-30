@@ -100,7 +100,7 @@ public class CommandLineOptionsTest {
         Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
             getParsedOptions("--printids", "--fieldset", AllFields.NAME);
         });
-        assertTrue(exception.getMessage().contains("Field set option can not be used in combination with print ids option."));
+        assertTrue(exception.getMessage().contains("Field set option cannot be used in combination with print ids option."));
     }
 
     @Test

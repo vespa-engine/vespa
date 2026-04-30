@@ -8,7 +8,7 @@ namespace=vespa.config.content
 # If this is set to true, the distributor will try to enforce one active copy of
 # buckets per hierarchical leaf group. This lets the top level dispatcher send
 # queries only to the nodes of one group, saving computational effort.
-# If used, hierarchical grouping can not be used for other purposes.
+# If used, hierarchical grouping cannot be used for other purposes.
 # Using this option implies that:
 #   - ready_copies == redundancy
 #   - Only one level of hierarchical grouping may be defined.

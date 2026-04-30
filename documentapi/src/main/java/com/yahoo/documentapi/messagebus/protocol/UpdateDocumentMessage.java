@@ -76,7 +76,7 @@ public class UpdateDocumentMessage extends TestAndSetMessage {
      */
     public void setDocumentUpdate(DocumentUpdate upd) {
         if (upd == null) {
-            throw new IllegalArgumentException("Document update can not be null.");
+            throw new IllegalArgumentException("Document update cannot be null.");
         }
         buffer = null;
         decoder = null;

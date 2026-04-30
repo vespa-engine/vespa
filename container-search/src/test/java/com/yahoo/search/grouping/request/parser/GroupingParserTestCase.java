@@ -200,17 +200,17 @@ public class GroupingParserTestCase {
         assertParse("all(each() each())");
         assertParse("each(all() all())");
         assertIllegalArgument("each(all() each())",
-                "Operation 'each()' can not operate on single hit.");
+                "Operation 'each()' cannot operate on single hit.");
         assertIllegalArgument("each(group(foo) all() each())",
-                "Operation 'each(group(foo) all() each())' can not group single hit.");
+                "Operation 'each(group(foo) all() each())' cannot group single hit.");
         assertIllegalArgument("each(each() all())",
-                "Operation 'each()' can not operate on single hit.");
+                "Operation 'each()' cannot operate on single hit.");
         assertIllegalArgument("each(group(foo) each() all())",
-                "Operation 'each(group(foo) each() all())' can not group single hit.");
+                "Operation 'each(group(foo) each() all())' cannot group single hit.");
         assertIllegalArgument("each(each() each())",
-                "Operation 'each()' can not operate on single hit.");
+                "Operation 'each()' cannot operate on single hit.");
         assertIllegalArgument("each(group(foo) each() each())",
-                "Operation 'each(group(foo) each() each())' can not group single hit.");
+                "Operation 'each(group(foo) each() each())' cannot group single hit.");
     }
 
     @Test
@@ -339,11 +339,11 @@ public class GroupingParserTestCase {
                 "Encountered \" \"inf\" \"inf\"\" at line 1, column 34.");
 
         assertIllegalArgument("all(group(predefined(foo, bucket(2, 1))))",
-                "Bucket to-value can not be less than from-value.");
+                "Bucket to-value cannot be less than from-value.");
         assertIllegalArgument("all(group(predefined(foo, bucket(3, 4), bucket(1, 2))))",
                 "Buckets must be monotonically increasing, got bucket[3, 4> before bucket[1, 2>.");
         assertIllegalArgument("all(group(predefined(foo, bucket(b, a))))",
-                "Bucket to-value can not be less than from-value.");
+                "Bucket to-value cannot be less than from-value.");
         assertIllegalArgument("all(group(predefined(foo, bucket(b, -inf))))",
                 "Encountered \" \"-inf\" \"-inf\"\" at line 1, column 37.");
         assertIllegalArgument("all(group(predefined(foo, bucket(c, d), bucket(a, b))))",

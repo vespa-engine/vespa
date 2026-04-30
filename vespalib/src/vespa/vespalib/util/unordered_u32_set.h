@@ -51,7 +51,7 @@ namespace vespalib {
  * property that observing a zero-slot during a probe means that the value can
  * not possibly exist at a _later_ probe point. Consequently, probing for
  * insertion can insert at that slot without introducing duplicates, and probing
- * for lookups can immediately return "not found" since the value can not exist
+ * for lookups can immediately return "not found" since the value cannot exist
  * at any later probe point (it would have been inserted in this slot already).
  *
  * Note that this particular invariant would be violated if we supported deletes
