@@ -8,7 +8,10 @@
 # in this workflow's logs.
 #
 # Trigger
-#   Every pull request — including drafts — on open, push, and reopen.
+#   Fires whenever the code diff changes: on open, on synchronize (new
+#   commits pushed, force-pushed, rebased, or merged with the base branch),
+#   and on reopen. Does not fire for metadata-only events such as title
+#   edits or ready-for-review transitions.
 #
 # Authorization
 #   - PRs from org members run automatically via the no-rules
