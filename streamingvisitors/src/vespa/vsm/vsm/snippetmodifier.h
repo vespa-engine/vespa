@@ -2,12 +2,13 @@
 #pragma once
 
 #include "fieldsearchspec.h"
+
+#include <vespa/document/fieldvalue/fieldvalue.h>
+#include <vespa/document/fieldvalue/iteratorhandler.h>
 #include <vespa/vsm/common/charbuffer.h>
 #include <vespa/vsm/common/document.h>
 #include <vespa/vsm/common/fieldmodifier.h>
 #include <vespa/vsm/searcher/utf8substringsnippetmodifier.h>
-#include <vespa/document/fieldvalue/fieldvalue.h>
-#include <vespa/document/fieldvalue/iteratorhandler.h>
 
 namespace vsm {
 
@@ -20,18 +21,17 @@ namespace vsm {
  * responsible for modifying the field value by inserting unit separators before and after matches.
  * A record separator is inserted between primitive field values the same way as done by FlattenDocsumWriter.
  **/
-class SnippetModifier : public FieldModifier, public document::fieldvalue::IteratorHandler
-{
+class SnippetModifier : public FieldModifier, public document::fieldvalue::IteratorHandler {
 private:
     UTF8SubstringSnippetModifier::SP _searcher;
     CharBuffer::SP                   _valueBuf; // buffer to store the final modified field value
     char                             _recordSep;
     bool                             _useSep;
-    document::FieldPath    _empty;
+    document::FieldPath              _empty;
 
     void considerSeparator();
     // Inherrit doc from document::FieldValue::IteratorHandler
-    void onPrimitive(uint32_t, const Content & c) override;
+    void onPrimitive(uint32_t, const Content& c) override;
     void reset();
 
 public:
@@ -40,7 +40,7 @@ public:
      *
      * @param searcher the searcher used to modify primitive field values.
      **/
-    SnippetModifier(const UTF8SubstringSnippetModifier::SP & searcher);
+    SnippetModifier(const UTF8SubstringSnippetModifier::SP& searcher);
 
     /**
      * Creates a new instance.
@@ -48,16 +48,14 @@ public:
      * @param searcher the searcher used to modify primitive field values.
      * @param valueBuf the shared buffer used to store the final modified field value.
      **/
-    SnippetModifier(const UTF8SubstringSnippetModifier::SP & searcher, const CharBuffer::SP & valueBuf);
+    SnippetModifier(const UTF8SubstringSnippetModifier::SP& searcher, const CharBuffer::SP& valueBuf);
 
     ~SnippetModifier();
 
     /**
      * Modifies the complete given field value.
      **/
-    document::FieldValue::UP modify(const document::FieldValue & fv) override {
-        return modify(fv, _empty);
-    }
+    document::FieldValue::UP modify(const document::FieldValue& fv) override { return modify(fv, _empty); }
 
     /**
      * Modifies the given field value by passing all primitive field values to the searcher and
@@ -68,11 +66,10 @@ public:
      * @param path the field path used to iterate the field value.
      * @return the new modified field value.
      **/
-    document::FieldValue::UP modify(const document::FieldValue & fv,
-                                    const document::FieldPath & path) override;
+    document::FieldValue::UP modify(const document::FieldValue& fv, const document::FieldPath& path) override;
 
-    const CharBuffer & getValueBuf() const { return *_valueBuf; }
-    const UTF8SubstringSnippetModifier::SP & getSearcher() const { return _searcher; }
+    const CharBuffer& getValueBuf() const { return *_valueBuf; }
+    const UTF8SubstringSnippetModifier::SP& getSearcher() const { return _searcher; }
 };
 
 /**
@@ -80,8 +77,7 @@ public:
  * The modifiers are instantiated and prepared in the setup function.
  * This class also holds shared buffers that are used by the modifiers.
  **/
-class SnippetModifierManager
-{
+class SnippetModifierManager {
 private:
     FieldModifierMap   _modifiers;
     SharedSearcherBuf  _searchBuf;
@@ -102,14 +98,11 @@ public:
      * @param field_paths mapping from field id to document::FieldPath.
      * @param query_env query environment containg e.g. query tensors.
      **/
-    void setup(const search::streaming::QueryTermList& queryTerms,
-               const FieldSearchSpecMapT& specMap,
-               const IndexFieldMapT& fieldMap,
-               const vsm::FieldPathMapT& field_paths,
+    void setup(const search::streaming::QueryTermList& queryTerms, const FieldSearchSpecMapT& specMap,
+               const IndexFieldMapT& fieldMap, const vsm::FieldPathMapT& field_paths,
                search::fef::IQueryEnvironment& query_env);
 
-    const FieldModifierMap & getModifiers() const { return _modifiers; }
+    const FieldModifierMap& getModifiers() const { return _modifiers; }
 };
 
-}
-
+} // namespace vsm

@@ -3,13 +3,15 @@
 #pragma once
 
 #include "rankmanager.h"
+
+#include <vespa/config/retriever/simpleconfigurer.h>
+#include <vespa/config/subscription/configuri.h>
 #include <vespa/eval/eval/value_cache/constant_tensor_loader.h>
 #include <vespa/eval/eval/value_cache/constant_value_cache.h>
 #include <vespa/searchsummary/docsummary/juniperproperties.h>
 #include <vespa/storage/visiting/visitor.h>
-#include <vespa/config/retriever/simpleconfigurer.h>
-#include <vespa/config/subscription/configuri.h>
 #include <vespa/vsm/vsm/vsm-adapter.h>
+
 #include <mutex>
 
 class FNET_Transport;
@@ -23,30 +25,31 @@ class RankingAssetsBuilder;
 class RankingConstants;
 class RankingExpressions;
 
-}
+} // namespace search::fef
 
 namespace streaming {
 
 class SearchEnvironmentSnapshot;
 
-class SearchEnvironment : public storage::VisitorEnvironment
-{
+class SearchEnvironment : public storage::VisitorEnvironment {
 private:
     class Env : public config::SimpleConfigurable {
     public:
         using SP = std::shared_ptr<Env>;
-        Env(const config::ConfigUri& configUri, const Fast_NormalizeWordFolder& wf, FNET_Transport* transport, const std::string& file_distributor_connection_spec);
+        Env(const config::ConfigUri& configUri, const Fast_NormalizeWordFolder& wf, FNET_Transport* transport,
+            const std::string& file_distributor_connection_spec);
         ~Env() override;
-        void configure(const config::ConfigSnapshot & snapshot) override;
+        void configure(const config::ConfigSnapshot& snapshot) override;
 
-        static config::ConfigKeySet createKeySet(const std::string & configId);
+        static config::ConfigKeySet createKeySet(const std::string& configId);
         std::shared_ptr<const SearchEnvironmentSnapshot> get_snapshot();
+
     private:
         template <typename ConfigType, typename RankingAssetType>
-        void configure_ranking_asset(std::shared_ptr<const RankingAssetType> &ranking_asset,
-                                     const config::ConfigSnapshot& snapshot,
-                                     search::fef::RankingAssetsBuilder& builder);
-        const std::string                                 _configId;
+        void configure_ranking_asset(std::shared_ptr<const RankingAssetType>& ranking_asset,
+                                     const config::ConfigSnapshot&            snapshot,
+                                     search::fef::RankingAssetsBuilder&       builder);
+        const std::string                                      _configId;
         config::SimpleConfigurer                               _configurer;
         std::unique_ptr<vsm::VSMAdapter>                       _vsmAdapter;
         std::unique_ptr<RankManager>                           _rankManager;
@@ -60,25 +63,26 @@ private:
         std::shared_ptr<const search::fef::RankingExpressions> _ranking_expressions;
         std::shared_ptr<const search::fef::IRankingAssetsRepo> _ranking_assets_repo;
         FNET_Transport* const                                  _transport;
-        const std::string                                 _file_distributor_connection_spec;
+        const std::string                                      _file_distributor_connection_spec;
     };
     using EnvMap = vespalib::hash_map<std::string, Env::SP>;
     using EnvMapUP = std::unique_ptr<EnvMap>;
     using ThreadLocals = std::vector<EnvMapUP>;
 
-    static __thread EnvMap * _localEnvMap;
-    EnvMap                   _envMap;
-    ThreadLocals             _threadLocals;
-    std::mutex               _lock;
+    static __thread EnvMap*                   _localEnvMap;
+    EnvMap                                    _envMap;
+    ThreadLocals                              _threadLocals;
+    std::mutex                                _lock;
     std::unique_ptr<Fast_NormalizeWordFolder> _wordFolder;
-    config::ConfigUri        _configUri;
-    FNET_Transport* const    _transport;
-    std::string         _file_distributor_connection_spec;
+    config::ConfigUri                         _configUri;
+    FNET_Transport* const                     _transport;
+    std::string                               _file_distributor_connection_spec;
 
-    Env & getEnv(const std::string & config_id);
+    Env& getEnv(const std::string& config_id);
 
 public:
-    SearchEnvironment(const config::ConfigUri & configUri, FNET_Transport* transport, const std::string& file_distributor_connection_spec);
+    SearchEnvironment(const config::ConfigUri& configUri, FNET_Transport* transport,
+                      const std::string& file_distributor_connection_spec);
     ~SearchEnvironment();
     std::shared_ptr<const SearchEnvironmentSnapshot> get_snapshot(const std::string& config_id);
     std::optional<int64_t> get_oldest_config_generation();
@@ -86,5 +90,4 @@ public:
     void clear_thread_local_env_map();
 };
 
-}
-
+} // namespace streaming

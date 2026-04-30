@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchsummary/docsummary/i_query_term_filter.h>
-#include <vespa/vsm/vsm/query_term_filter_factory.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vsm/vsm/query_term_filter_factory.h>
 
 using search::docsummary::IQueryTermFilter;
 using search::docsummary::IQueryTermFilterFactory;
@@ -14,15 +14,14 @@ using vsm::QueryTermFilterFactory;
 
 class QueryTermFilterFactoryTest : public testing::Test {
     std::unique_ptr<IQueryTermFilterFactory> _factory;
-    VsmfieldsConfigBuilder _fields;
-    VsmsummaryConfigBuilder _summary;
+    VsmfieldsConfigBuilder                   _fields;
+    VsmsummaryConfigBuilder                  _summary;
+
 protected:
     QueryTermFilterFactoryTest();
     ~QueryTermFilterFactoryTest() override;
 
-    void make_factory() {
-        _factory = std::make_unique<QueryTermFilterFactory>(_fields, _summary);
-    }
+    void make_factory() { _factory = std::make_unique<QueryTermFilterFactory>(_fields, _summary); }
 
     bool check_view(const std::string& view, const std::string& summary_field) {
         if (!_factory) {
@@ -32,8 +31,7 @@ protected:
         return query_term_filter->use_view(view);
     }
 
-    void add_summary_field(const std::string& summary_field_name, const std::vector<std::string>& field_names)
-    {
+    void add_summary_field(const std::string& summary_field_name, const std::vector<std::string>& field_names) {
         VsmsummaryConfigBuilder::Fieldmap field_map;
         field_map.summary = summary_field_name;
         for (auto& field_name : field_names) {
@@ -44,8 +42,7 @@ protected:
         _summary.fieldmap.emplace_back(field_map);
         _factory.reset();
     }
-    void add_index(const std::string& index_name, const std::vector<std::string>& field_names)
-    {
+    void add_index(const std::string& index_name, const std::vector<std::string>& field_names) {
         if (_fields.documenttype.empty()) {
             _fields.documenttype.resize(1);
             _fields.documenttype.back().name = "dummy";
@@ -62,29 +59,22 @@ protected:
     }
 };
 
-
-QueryTermFilterFactoryTest::QueryTermFilterFactoryTest()
-    : testing::Test(),
-      _factory()
-{
+QueryTermFilterFactoryTest::QueryTermFilterFactoryTest() : testing::Test(), _factory() {
 }
 
 QueryTermFilterFactoryTest::~QueryTermFilterFactoryTest() = default;
 
-TEST_F(QueryTermFilterFactoryTest, empty_config)
-{
+TEST_F(QueryTermFilterFactoryTest, empty_config) {
     EXPECT_FALSE(check_view("foo", "foo"));
 }
 
-TEST_F(QueryTermFilterFactoryTest, implied_identity_mapping_for_summary_field)
-{
+TEST_F(QueryTermFilterFactoryTest, implied_identity_mapping_for_summary_field) {
     add_index("foo", {"bar"});
     EXPECT_FALSE(check_view("foo", "foo"));
     EXPECT_TRUE(check_view("foo", "bar"));
 }
 
-TEST_F(QueryTermFilterFactoryTest, two_source_fields_for_summary_field)
-{
+TEST_F(QueryTermFilterFactoryTest, two_source_fields_for_summary_field) {
     add_index("bar", {"bar"});
     add_index("baz", {"baz"});
     add_summary_field("foo", {"bar", "baz"});
@@ -95,8 +85,7 @@ TEST_F(QueryTermFilterFactoryTest, two_source_fields_for_summary_field)
     EXPECT_TRUE(check_view("baz", "baz"));
 }
 
-TEST_F(QueryTermFilterFactoryTest, two_source_fields_for_summary_field_and_multiple_indexes)
-{
+TEST_F(QueryTermFilterFactoryTest, two_source_fields_for_summary_field_and_multiple_indexes) {
     add_index("bar", {"bar"});
     add_index("baz", {"baz"});
     add_index("both", {"bar", "baz"});

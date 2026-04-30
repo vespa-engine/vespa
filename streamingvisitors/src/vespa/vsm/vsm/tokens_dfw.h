@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/searchsummary/docsummary/docsum_field_writer.h>
 #include <vespa/searchlib/query/query_normalization.h>
+#include <vespa/searchsummary/docsummary/docsum_field_writer.h>
 
 namespace vsm {
 
@@ -12,21 +12,19 @@ namespace vsm {
  * arrays containing the tokens. Tokenization is performed
  * on the fly using the exact_match and normalize_mode settings.
  */
-class TokensDFW : public search::docsummary::DocsumFieldWriter
-{
+class TokensDFW : public search::docsummary::DocsumFieldWriter {
 private:
-    std::string            _input_field_name;
-    bool                        _exact_match;
-    search::Normalizing         _normalize_mode;
+    std::string         _input_field_name;
+    bool                _exact_match;
+    search::Normalizing _normalize_mode;
 
 public:
     explicit TokensDFW(const std::string& input_field_name, bool exact_match, search::Normalizing normalize_mode);
     ~TokensDFW() override;
     bool isGenerated() const override;
     void insert_field(uint32_t docid, const search::docsummary::IDocsumStoreDocument* doc,
-                      search::docsummary::GetDocsumsState& state,
-                      search::common::ElementIds selected_elements,
+                      search::docsummary::GetDocsumsState& state, search::common::ElementIds selected_elements,
                       vespalib::slime::Inserter& target) const override;
 };
 
-}
+} // namespace vsm

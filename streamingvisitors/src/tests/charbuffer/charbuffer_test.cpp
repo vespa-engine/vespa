@@ -5,24 +5,21 @@
 
 namespace vsm {
 
-TEST(CharBufferTest, empty)
-{
+TEST(CharBufferTest, empty) {
     CharBuffer buf;
     EXPECT_EQ(buf.getLength(), 0u);
     EXPECT_EQ(buf.getPos(), 0u);
     EXPECT_EQ(buf.getRemaining(), 0u);
 }
 
-TEST(CharBufferTest, explicit_length)
-{
+TEST(CharBufferTest, explicit_length) {
     CharBuffer buf(8);
     EXPECT_EQ(buf.getLength(), 8u);
     EXPECT_EQ(buf.getPos(), 0u);
     EXPECT_EQ(buf.getRemaining(), 8u);
 }
 
-TEST(CharBufferTest, resize)
-{
+TEST(CharBufferTest, resize) {
     CharBuffer buf(8);
     EXPECT_EQ(buf.getLength(), 8u);
     buf.resize(16);
@@ -31,8 +28,7 @@ TEST(CharBufferTest, resize)
     EXPECT_EQ(buf.getLength(), 16u);
 }
 
-TEST(CharBufferTest, put_with_triggered_resize)
-{
+TEST(CharBufferTest, put_with_triggered_resize) {
     CharBuffer buf(8);
     buf.put("123456", 6);
     EXPECT_EQ(buf.getLength(), 8u);
@@ -60,6 +56,6 @@ TEST(CharBufferTest, put_with_triggered_resize)
     EXPECT_EQ(std::string(buf.getBuffer(), buf.getPos()), "bcd");
 }
 
-}
+} // namespace vsm
 
 GTEST_MAIN_RUN_ALL_TESTS()

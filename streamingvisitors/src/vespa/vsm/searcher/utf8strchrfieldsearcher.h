@@ -9,15 +9,14 @@ namespace vsm {
  * This class does normal utf8 searches.
  * This class uses an highly optimized version of the tokenize method in fastlib.
  **/
-class UTF8StrChrFieldSearcher : public UTF8StringFieldSearcherBase
-{
+class UTF8StrChrFieldSearcher : public UTF8StringFieldSearcherBase {
 public:
     std::unique_ptr<FieldSearcher> duplicate() const override;
-    explicit UTF8StrChrFieldSearcher(FieldIdT fId) : UTF8StringFieldSearcherBase(fId) { }
+    explicit UTF8StrChrFieldSearcher(FieldIdT fId) : UTF8StringFieldSearcherBase(fId) {}
+
 protected:
-    size_t matchTerm(const FieldRef & f, search::streaming::QueryTerm & qt) override;
-    size_t matchTerms(const FieldRef & f, size_t shortestTerm) override;
+    size_t matchTerm(const FieldRef& f, search::streaming::QueryTerm& qt) override;
+    size_t matchTerms(const FieldRef& f, size_t shortestTerm) override;
 };
 
-}
-
+} // namespace vsm

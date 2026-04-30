@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "utf8flexiblestringfieldsearcher.h"
+
 #include <vespa/searchlib/query/streaming/fuzzy_term.h>
 #include <vespa/searchlib/query/streaming/regexp_term.h>
+
 #include <algorithm>
 #include <cassert>
 
@@ -13,16 +15,12 @@ using search::streaming::QueryTermList;
 
 namespace vsm {
 
-std::unique_ptr<FieldSearcher>
-UTF8FlexibleStringFieldSearcher::duplicate() const
-{
+std::unique_ptr<FieldSearcher> UTF8FlexibleStringFieldSearcher::duplicate() const {
     return std::make_unique<UTF8FlexibleStringFieldSearcher>(*this);
 }
 
-size_t
-UTF8FlexibleStringFieldSearcher::matchTerms(const FieldRef & f, const size_t mintsz)
-{
-    (void) mintsz;
+size_t UTF8FlexibleStringFieldSearcher::matchTerms(const FieldRef& f, const size_t mintsz) {
+    (void)mintsz;
     size_t words = 0;
     for (auto qt : _qtl) {
         words = std::max(words, matchTerm(f, *qt));
@@ -30,9 +28,7 @@ UTF8FlexibleStringFieldSearcher::matchTerms(const FieldRef & f, const size_t min
     return words;
 }
 
-size_t
-UTF8FlexibleStringFieldSearcher::match_regexp(const FieldRef & f, search::streaming::QueryTerm & qt)
-{
+size_t UTF8FlexibleStringFieldSearcher::match_regexp(const FieldRef& f, search::streaming::QueryTerm& qt) {
     auto* regexp_term = qt.as_regexp_term();
     assert(regexp_term != nullptr);
     if (regexp_term->regexp().partial_match({f.data(), f.size()})) {
@@ -41,9 +37,7 @@ UTF8FlexibleStringFieldSearcher::match_regexp(const FieldRef & f, search::stream
     return 1;
 }
 
-size_t
-UTF8FlexibleStringFieldSearcher::match_fuzzy(const FieldRef & f, search::streaming::QueryTerm & qt)
-{
+size_t UTF8FlexibleStringFieldSearcher::match_fuzzy(const FieldRef& f, search::streaming::QueryTerm& qt) {
     auto* fuzzy_term = qt.as_fuzzy_term();
     assert(fuzzy_term != nullptr);
     // TODO delegate to matchTermExact if max edits == 0?
@@ -54,9 +48,7 @@ UTF8FlexibleStringFieldSearcher::match_fuzzy(const FieldRef & f, search::streami
     return 1;
 }
 
-size_t
-UTF8FlexibleStringFieldSearcher::matchTerm(const FieldRef & f, QueryTerm & qt)
-{
+size_t UTF8FlexibleStringFieldSearcher::matchTerm(const FieldRef& f, QueryTerm& qt) {
     if (qt.isPrefix()) {
         LOG(debug, "Use prefix match for prefix term '%s:%s'", qt.index().c_str(), qt.getTerm());
         return matchTermRegular(f, qt);
@@ -92,8 +84,7 @@ UTF8FlexibleStringFieldSearcher::matchTerm(const FieldRef & f, QueryTerm & qt)
     }
 }
 
-UTF8FlexibleStringFieldSearcher::UTF8FlexibleStringFieldSearcher(FieldIdT fId) :
-    UTF8StringFieldSearcherBase(fId)
-{ }
-
+UTF8FlexibleStringFieldSearcher::UTF8FlexibleStringFieldSearcher(FieldIdT fId) : UTF8StringFieldSearcherBase(fId) {
 }
+
+} // namespace vsm

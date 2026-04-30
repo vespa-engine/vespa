@@ -5,8 +5,7 @@
 
 namespace vsm {
 
-const search::byte * sse2_foldaa(const search::byte * toFoldOrg, size_t sz, search::byte * foldedOrg);
-const search::byte * sse2_foldua(const search::byte * toFoldOrg, size_t sz, search::byte * foldedOrg);
+const search::byte* sse2_foldaa(const search::byte* toFoldOrg, size_t sz, search::byte* foldedOrg);
+const search::byte* sse2_foldua(const search::byte* toFoldOrg, size_t sz, search::byte* foldedOrg);
 
-}
-
+} // namespace vsm

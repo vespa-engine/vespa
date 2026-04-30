@@ -1,16 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vector>
 #include <memory>
+#include <vector>
 
 namespace vsm {
 
 /**
  * Simple growable char buffer.
  **/
-class CharBuffer
-{
+class CharBuffer {
 private:
     std::vector<char> _buffer;
     size_t            _pos;
@@ -28,7 +27,7 @@ public:
      * current position, and updates the position accordingly.
      * Resizing will occur if needed.
      **/
-    void put(const char * src, size_t n);
+    void put(const char* src, size_t n);
 
     /**
      * Resizes the buffer so that the new length becomes len.
@@ -41,12 +40,11 @@ public:
      **/
     void reset() { _pos = 0; }
 
-    const char * getBuffer() const { return &_buffer[0]; }
+    const char* getBuffer() const { return &_buffer[0]; }
     size_t getLength() const { return _buffer.size(); }
     size_t getPos() const { return _pos; }
     size_t getRemaining() const { return getLength() - getPos(); }
     void put(char c) { put(&c, 1); }
 };
 
-}
-
+} // namespace vsm

@@ -1,17 +1,19 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "docsumfilter.h"
+
+#include <vespa/document/base/exceptions.h>
+#include <vespa/document/datatype/datatype.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/juniper/juniper_separators.h>
 #include <vespa/searchsummary/docsummary/i_docsum_store_document.h>
 #include <vespa/searchsummary/docsummary/i_juniper_converter.h>
 #include <vespa/searchsummary/docsummary/i_string_field_converter.h>
 #include <vespa/searchsummary/docsummary/slime_filler.h>
 #include <vespa/searchsummary/docsummary/slime_filler_filter.h>
-#include <vespa/document/base/exceptions.h>
-#include <vespa/document/datatype/datatype.h>
-#include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/util/issue.h>
+
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -28,40 +30,38 @@ namespace vsm {
 
 namespace {
 
-bool is_struct_or_multivalue_field_type(const document::DataType& data_type)
-{
+bool is_struct_or_multivalue_field_type(const document::DataType& data_type) {
     return (data_type.isStructured() || data_type.isArray() || data_type.isWeightedSet() || data_type.isMap());
 }
 
-bool is_struct_or_multivalue_field_type(const FieldPath& fp)
-{
+bool is_struct_or_multivalue_field_type(const FieldPath& fp) {
     if (fp.size() == 1u) {
         auto& fpe = fp[0];
-        if (fpe.getType() == FieldPathEntry::Type::STRUCT_FIELD && is_struct_or_multivalue_field_type(fpe.getDataType())) {
+        if (fpe.getType() == FieldPathEntry::Type::STRUCT_FIELD &&
+            is_struct_or_multivalue_field_type(fpe.getDataType()))
+        {
             return true;
         }
     }
     return false;
 }
 
-
-std::optional<FieldIdT>
-get_single_source_field_id(const DocsumFieldSpec &field_spec)
-{
+std::optional<FieldIdT> get_single_source_field_id(const DocsumFieldSpec& field_spec) {
     if (field_spec.is_struct_or_multivalue()) {
         return field_spec.getOutputField().getId();
     }
-    if (field_spec.getInputFields().size() == 1 && field_spec.getCommand() == VsmsummaryConfig::Fieldmap::Command::NONE) {
+    if (field_spec.getInputFields().size() == 1 &&
+        field_spec.getCommand() == VsmsummaryConfig::Fieldmap::Command::NONE)
+    {
         return field_spec.getInputFields()[0].getId();
     }
     return std::nullopt; // No single source
 }
 
-FieldPath
-copyPathButFirst(const FieldPath & rhs) {
+FieldPath copyPathButFirst(const FieldPath& rhs) {
     // skip the element that correspond to the start field value
     FieldPath path;
-    if ( ! rhs.empty()) {
+    if (!rhs.empty()) {
         for (auto it = rhs.begin() + 1; it != rhs.end(); ++it) {
             path.push_back(std::make_unique<document::FieldPathEntry>(**it));
         }
@@ -69,12 +69,10 @@ copyPathButFirst(const FieldPath & rhs) {
     return path;
 }
 
-void
-prepareFieldSpec(DocsumFieldSpec & spec, const DocsumTools::FieldSpec & toolsSpec,
-                 const FieldMap & fieldMap, const FieldPathMapT & fieldPathMap)
-{
+void prepareFieldSpec(DocsumFieldSpec& spec, const DocsumTools::FieldSpec& toolsSpec, const FieldMap& fieldMap,
+                      const FieldPathMapT& fieldPathMap) {
     { // setup output field
-        const std::string & name = toolsSpec.getOutputName();
+        const std::string& name = toolsSpec.getOutputName();
         LOG(debug, "prepareFieldSpec: output field name '%s'", name.c_str());
         FieldIdT field = fieldMap.fieldNo(name);
         if (field != FieldMap::npos) {
@@ -96,13 +94,14 @@ prepareFieldSpec(DocsumFieldSpec & spec, const DocsumTools::FieldSpec & toolsSpe
     if (spec.is_struct_or_multivalue()) {
         filter = std::make_unique<SlimeFillerFilter>();
     }
-    for (const auto & name : toolsSpec.getInputNames()) {
+    for (const auto& name : toolsSpec.getInputNames()) {
         LOG(debug, "prepareFieldSpec: input field name '%s'", name.c_str());
         FieldIdT field = fieldMap.fieldNo(name);
         if (field != FieldMap::npos) {
             if (field < fieldPathMap.size()) {
                 LOG(debug, "field %u < map size %zu", field, fieldPathMap.size());
-                spec.getInputFields().push_back(DocsumFieldSpec::FieldIdentifier(field, copyPathButFirst(fieldPathMap[field])));
+                spec.getInputFields().push_back(
+                    DocsumFieldSpec::FieldIdentifier(field, copyPathButFirst(fieldPathMap[field])));
             } else {
                 Issue::report("Could not find a field path for field '%s' with id '%d'", name.c_str(), field);
                 spec.getInputFields().push_back(DocsumFieldSpec::FieldIdentifier(field, FieldPath()));
@@ -121,40 +120,32 @@ prepareFieldSpec(DocsumFieldSpec & spec, const DocsumTools::FieldSpec & toolsSpe
  * This class creates a modified field value which is then passed to
  * the original juniper converter.
  */
-class SnippetModifierJuniperConverter : public IStringFieldConverter
-{
+class SnippetModifierJuniperConverter : public IStringFieldConverter {
     IJuniperConverter& _juniper_converter;
     FieldModifier*     _modifier;
     FieldPath          _empty_field_path;
+
 public:
     SnippetModifierJuniperConverter(IJuniperConverter& juniper_converter, FieldModifier* modifier)
-        : IStringFieldConverter(),
-          _juniper_converter(juniper_converter),
-          _modifier(modifier),
-          _empty_field_path()
-    {
-    }
+        : IStringFieldConverter(), _juniper_converter(juniper_converter), _modifier(modifier), _empty_field_path() {}
     ~SnippetModifierJuniperConverter() override = default;
-    void convert(const document::StringFieldValue &input, vespalib::slime::Inserter& inserter) override;
+    void convert(const document::StringFieldValue& input, vespalib::slime::Inserter& inserter) override;
     bool render_weighted_set_as_array() const override;
 };
 
-void
-SnippetModifierJuniperConverter::convert(const document::StringFieldValue &input, vespalib::slime::Inserter& inserter)
-{
+void SnippetModifierJuniperConverter::convert(const document::StringFieldValue& input,
+                                              vespalib::slime::Inserter&        inserter) {
     if (_modifier != nullptr) {
         auto fv = _modifier->modify(input, _empty_field_path);
         assert(fv);
-        auto& modified_input = dynamic_cast<const document::StringFieldValue &>(*fv);
+        auto& modified_input = dynamic_cast<const document::StringFieldValue&>(*fv);
         _juniper_converter.convert(modified_input.getValueRef(), inserter);
     } else {
         _juniper_converter.convert(input.getValueRef(), inserter);
     }
 }
 
-bool
-SnippetModifierJuniperConverter::render_weighted_set_as_array() const
-{
+bool SnippetModifierJuniperConverter::render_weighted_set_as_array() const {
     return false;
 }
 
@@ -163,15 +154,14 @@ SnippetModifierJuniperConverter::render_weighted_set_as_array() const
  * (vsm::DocsumFilter). VSM specific transforms might be applied when
  * accessing some fields.
  **/
-class DocsumStoreVsmDocument : public IDocsumStoreDocument
-{
+class DocsumStoreVsmDocument : public IDocsumStoreDocument {
     DocsumFilter&             _docsum_filter;
     const ResultClass&        _result_class;
     const Document&           _vsm_document;
     const document::Document* _document;
 
-    static const document::Document *get_document_document(const Document& vsm_document) {
-        const auto* storage_doc = dynamic_cast<const StorageDocument *>(&vsm_document);
+    static const document::Document* get_document_document(const Document& vsm_document) {
+        const auto* storage_doc = dynamic_cast<const StorageDocument*>(&vsm_document);
         return (storage_doc != nullptr && storage_doc->valid()) ? &storage_doc->docDoc() : nullptr;
     }
     static const ResultClass& get_result_class(const DocsumFilter& docsum_filter) {
@@ -179,12 +169,15 @@ class DocsumStoreVsmDocument : public IDocsumStoreDocument
         assert(result_class != nullptr);
         return *result_class;
     }
+
 public:
     DocsumStoreVsmDocument(DocsumFilter& docsum_filter, const Document& vsm_document);
     ~DocsumStoreVsmDocument() override;
     DocsumStoreFieldValue get_field_value(const std::string& field_name) const override;
-    void insert_summary_field(const std::string& field_name, ElementIds selected_elements, vespalib::slime::Inserter& inserter, IStringFieldConverter* converter) const override;
-    void insert_juniper_field(const std::string& field_name, ElementIds selected_elements, vespalib::slime::Inserter& inserter, IJuniperConverter& converter) const override;
+    void insert_summary_field(const std::string& field_name, ElementIds selected_elements,
+                              vespalib::slime::Inserter& inserter, IStringFieldConverter* converter) const override;
+    void insert_juniper_field(const std::string& field_name, ElementIds selected_elements,
+                              vespalib::slime::Inserter& inserter, IJuniperConverter& converter) const override;
     [[nodiscard]] bool insert_document_id(vespalib::slime::Inserter& inserter) const override;
 };
 
@@ -192,24 +185,21 @@ DocsumStoreVsmDocument::DocsumStoreVsmDocument(DocsumFilter& docsum_filter, cons
     : _docsum_filter(docsum_filter),
       _result_class(get_result_class(docsum_filter)),
       _vsm_document(vsm_document),
-      _document(get_document_document(vsm_document))
-{
+      _document(get_document_document(vsm_document)) {
 }
 
 DocsumStoreVsmDocument::~DocsumStoreVsmDocument() = default;
 
-DocsumStoreFieldValue
-DocsumStoreVsmDocument::get_field_value(const std::string& field_name) const
-{
+DocsumStoreFieldValue DocsumStoreVsmDocument::get_field_value(const std::string& field_name) const {
     if (_document != nullptr) {
         auto entry_idx = _result_class.getIndexFromName(field_name);
         if (entry_idx >= 0) {
-            assert((uint32_t) entry_idx < _result_class.getNumEntries());
+            assert((uint32_t)entry_idx < _result_class.getNumEntries());
             return _docsum_filter.get_summary_field(entry_idx, _vsm_document);
         }
         try {
-            const document::Field & field = _document->getField(field_name);
-            auto value(field.getDataType().createFieldValue());
+            const document::Field& field = _document->getField(field_name);
+            auto                   value(field.getDataType().createFieldValue());
             if (value) {
                 if (_document->getValue(field, *value)) {
                     return DocsumStoreFieldValue(std::move(value));
@@ -222,19 +212,19 @@ DocsumStoreVsmDocument::get_field_value(const std::string& field_name) const
     return {};
 }
 
-void
-DocsumStoreVsmDocument::insert_summary_field(const std::string& field_name, ElementIds selected_elements, vespalib::slime::Inserter& inserter, IStringFieldConverter* converter) const
-{
+void DocsumStoreVsmDocument::insert_summary_field(const std::string& field_name, ElementIds selected_elements,
+                                                  vespalib::slime::Inserter& inserter,
+                                                  IStringFieldConverter*     converter) const {
     if (_document != nullptr) {
         auto entry_idx = _result_class.getIndexFromName(field_name);
         if (entry_idx >= 0) {
-            assert((uint32_t) entry_idx < _result_class.getNumEntries());
+            assert((uint32_t)entry_idx < _result_class.getNumEntries());
             _docsum_filter.insert_summary_field(entry_idx, _vsm_document, selected_elements, inserter, converter);
             return;
         }
         try {
-            const document::Field & field = _document->getField(field_name);
-            auto value(field.getDataType().createFieldValue());
+            const document::Field& field = _document->getField(field_name);
+            auto                   value(field.getDataType().createFieldValue());
             if (value) {
                 if (_document->getValue(field, *value)) {
                     SlimeFiller::insert_summary_field(*value, selected_elements, inserter, converter);
@@ -246,15 +236,15 @@ DocsumStoreVsmDocument::insert_summary_field(const std::string& field_name, Elem
     }
 }
 
-void
-DocsumStoreVsmDocument::insert_juniper_field(const std::string& field_name, ElementIds selected_elements, vespalib::slime::Inserter& inserter, IJuniperConverter& converter) const
-{
+void DocsumStoreVsmDocument::insert_juniper_field(const std::string& field_name, ElementIds selected_elements,
+                                                  vespalib::slime::Inserter& inserter,
+                                                  IJuniperConverter&         converter) const {
     auto field_value = get_field_value(field_name);
     if (field_value) {
         FieldModifier* modifier = nullptr;
-        auto entry_idx = _result_class.getIndexFromName(field_name);
+        auto           entry_idx = _result_class.getIndexFromName(field_name);
         if (entry_idx >= 0) {
-            assert((uint32_t) entry_idx < _result_class.getNumEntries());
+            assert((uint32_t)entry_idx < _result_class.getNumEntries());
             if (is_struct_or_multivalue_field_type(*field_value->getDataType())) {
                 modifier = _docsum_filter.get_field_modifier(entry_idx);
             } else {
@@ -270,11 +260,9 @@ DocsumStoreVsmDocument::insert_juniper_field(const std::string& field_name, Elem
     }
 }
 
-bool
-DocsumStoreVsmDocument::insert_document_id(vespalib::slime::Inserter& inserter) const
-{
+bool DocsumStoreVsmDocument::insert_document_id(vespalib::slime::Inserter& inserter) const {
     if (_document) {
-        auto id = _document->getId().toString();
+        auto             id = _document->getId().toString();
         vespalib::Memory id_view(id.data(), id.size());
         inserter.insertString(id_view);
         return true;
@@ -282,21 +270,19 @@ DocsumStoreVsmDocument::insert_document_id(vespalib::slime::Inserter& inserter) 
     return false;
 }
 
-}
+} // namespace
 
-const document::FieldValue *
-DocsumFilter::getFieldValue(const DocsumFieldSpec::FieldIdentifier & fieldId,
-                            VsmsummaryConfig::Fieldmap::Command command,
-                            const Document & docsum, bool & modified)
-{
-    FieldIdT fId = fieldId.getId();
-    const document::FieldValue * fv = docsum.getField(fId);
+const document::FieldValue* DocsumFilter::getFieldValue(const DocsumFieldSpec::FieldIdentifier& fieldId,
+                                                        VsmsummaryConfig::Fieldmap::Command     command,
+                                                        const Document& docsum, bool& modified) {
+    FieldIdT                    fId = fieldId.getId();
+    const document::FieldValue* fv = docsum.getField(fId);
     if (fv == nullptr) {
         return nullptr;
     }
     if (command == VsmsummaryConfig::Fieldmap::Command::FLATTENJUNIPER) {
         if (_snippetModifiers != nullptr) {
-            FieldModifier *mod = _snippetModifiers->getModifier(fId);
+            FieldModifier* mod = _snippetModifiers->getModifier(fId);
             if (mod != nullptr) {
                 _cachedValue = mod->modify(*fv, fieldId.getPath());
                 modified = true;
@@ -307,30 +293,28 @@ DocsumFilter::getFieldValue(const DocsumFieldSpec::FieldIdentifier & fieldId,
     return fv;
 }
 
+DocsumFilter::DocsumFilter(DocsumToolsPtr tools, const IDocSumCache& docsumCache)
+    : _docsumCache(&docsumCache),
+      _tools(std::move(tools)),
+      _fields(),
+      _flattenWriter(),
+      _snippetModifiers(nullptr),
+      _cachedValue(),
+      _emptyFieldPath() {
+}
 
-DocsumFilter::DocsumFilter(DocsumToolsPtr tools, const IDocSumCache & docsumCache) :
-    _docsumCache(&docsumCache),
-    _tools(std::move(tools)),
-    _fields(),
-    _flattenWriter(),
-    _snippetModifiers(nullptr),
-    _cachedValue(),
-    _emptyFieldPath()
-{ }
+DocsumFilter::~DocsumFilter() = default;
 
-DocsumFilter::~DocsumFilter() =default;
-
-void DocsumFilter::init(const FieldMap & fieldMap, const FieldPathMapT & fieldPathMap)
-{
+void DocsumFilter::init(const FieldMap& fieldMap, const FieldPathMapT& fieldPathMap) {
     if (_tools.get()) {
-        const ResultClass *resClass = _tools->getResultClass();
-        const std::vector<DocsumTools::FieldSpec> & inputSpecs = _tools->getFieldSpecs();
+        const ResultClass*                         resClass = _tools->getResultClass();
+        const std::vector<DocsumTools::FieldSpec>& inputSpecs = _tools->getFieldSpecs();
         if (resClass != nullptr) {
             uint32_t entryCnt = resClass->getNumEntries();
             assert(entryCnt == inputSpecs.size());
             for (uint32_t i = 0; i < entryCnt; ++i) {
-                const ResConfigEntry &entry = *resClass->getEntry(i);
-                const DocsumTools::FieldSpec & toolsSpec = inputSpecs[i];
+                const ResConfigEntry&         entry = *resClass->getEntry(i);
+                const DocsumTools::FieldSpec& toolsSpec = inputSpecs[i];
                 _fields.push_back(DocsumFieldSpec(toolsSpec.getCommand()));
                 LOG(debug, "About to prepare field spec for summary field '%s'", entry.name().c_str());
                 prepareFieldSpec(_fields.back(), toolsSpec, fieldMap, fieldPathMap);
@@ -340,9 +324,7 @@ void DocsumFilter::init(const FieldMap & fieldMap, const FieldPathMapT & fieldPa
     }
 }
 
-bool
-DocsumFilter::write_flatten_field(const DocsumFieldSpec& field_spec, const Document& doc)
-{
+bool DocsumFilter::write_flatten_field(const DocsumFieldSpec& field_spec, const Document& doc) {
     if (field_spec.getCommand() == VsmsummaryConfig::Fieldmap::Command::NONE) {
         LOG(debug, "write_flatten_field: Cannot handle command NONE");
         return false;
@@ -355,13 +337,13 @@ DocsumFilter::write_flatten_field(const DocsumFieldSpec& field_spec, const Docum
     default:
         break;
     }
-    const DocsumFieldSpec::FieldIdentifierVector & inputFields = field_spec.getInputFields();
-    for (const auto & fieldId : inputFields) {
-        bool modified = false;
-        const document::FieldValue * fv = getFieldValue(fieldId, field_spec.getCommand(), doc, modified);
+    const DocsumFieldSpec::FieldIdentifierVector& inputFields = field_spec.getInputFields();
+    for (const auto& fieldId : inputFields) {
+        bool                        modified = false;
+        const document::FieldValue* fv = getFieldValue(fieldId, field_spec.getCommand(), doc, modified);
         if (fv != nullptr) {
-            LOG(debug, "write_flatten_field: About to flatten field '%d' with field value (%s) '%s'",
-                fieldId.getId(), modified ? "modified" : "original", fv->toString().c_str());
+            LOG(debug, "write_flatten_field: About to flatten field '%d' with field value (%s) '%s'", fieldId.getId(),
+                modified ? "modified" : "original", fv->toString().c_str());
             if (modified) {
                 fv->iterateNested(_emptyFieldPath, _flattenWriter);
             } else {
@@ -374,24 +356,20 @@ DocsumFilter::write_flatten_field(const DocsumFieldSpec& field_spec, const Docum
     return true;
 }
 
-std::unique_ptr<const IDocsumStoreDocument>
-DocsumFilter::get_document(uint32_t id)
-{
-    const ResultClass *resClass = _tools->getResultClass();
+std::unique_ptr<const IDocsumStoreDocument> DocsumFilter::get_document(uint32_t id) {
+    const ResultClass* resClass = _tools->getResultClass();
     if (resClass == nullptr) {
         return {};
     }
 
-    const Document & doc = _docsumCache->getDocSum(id);
+    const Document& doc = _docsumCache->getDocSum(id);
 
     return std::make_unique<DocsumStoreVsmDocument>(*this, doc);
 }
 
-search::docsummary::DocsumStoreFieldValue
-DocsumFilter::get_summary_field(uint32_t entry_idx, const Document& doc)
-{
+search::docsummary::DocsumStoreFieldValue DocsumFilter::get_summary_field(uint32_t entry_idx, const Document& doc) {
     const auto& field_spec = _fields[entry_idx];
-    auto single_source_field_id = get_single_source_field_id(field_spec);
+    auto        single_source_field_id = get_single_source_field_id(field_spec);
     if (single_source_field_id.has_value()) {
         auto field_value = doc.getField(single_source_field_id.value());
         return DocsumStoreFieldValue(field_value);
@@ -400,17 +378,15 @@ DocsumFilter::get_summary_field(uint32_t entry_idx, const Document& doc)
         return {};
     }
     const CharBuffer& buf = _flattenWriter.getResult();
-    auto value = document::StringFieldValue::make(std::string_view(buf.getBuffer(), buf.getPos()));
+    auto              value = document::StringFieldValue::make(std::string_view(buf.getBuffer(), buf.getPos()));
     _flattenWriter.clear();
     return DocsumStoreFieldValue(std::move(value));
 }
 
-void
-DocsumFilter::insert_summary_field(uint32_t entry_idx, const Document& doc, ElementIds selected_elements,
-                                   vespalib::slime::Inserter& inserter, IStringFieldConverter* converter)
-{
+void DocsumFilter::insert_summary_field(uint32_t entry_idx, const Document& doc, ElementIds selected_elements,
+                                        vespalib::slime::Inserter& inserter, IStringFieldConverter* converter) {
     const auto& field_spec = _fields[entry_idx];
-    auto single_source_field_id = get_single_source_field_id(field_spec);
+    auto        single_source_field_id = get_single_source_field_id(field_spec);
     if (single_source_field_id.has_value()) {
         auto field_value = doc.getField(single_source_field_id.value());
         if (field_value != nullptr) {
@@ -427,24 +403,20 @@ DocsumFilter::insert_summary_field(uint32_t entry_idx, const Document& doc, Elem
     _flattenWriter.clear();
 }
 
-bool
-DocsumFilter::has_flatten_juniper_command(uint32_t entry_idx) const
-{
+bool DocsumFilter::has_flatten_juniper_command(uint32_t entry_idx) const {
     const auto& field_spec = _fields[entry_idx];
-    auto command = field_spec.getCommand();
+    auto        command = field_spec.getCommand();
     return command == VsmsummaryConfig::Fieldmap::Command::FLATTENJUNIPER;
 }
 
-FieldModifier*
-DocsumFilter::get_field_modifier(uint32_t entry_idx)
-{
+FieldModifier* DocsumFilter::get_field_modifier(uint32_t entry_idx) {
     if (_snippetModifiers == nullptr) {
         return nullptr;
     }
     const auto& field_spec = _fields[entry_idx];
-    auto& fieldId = field_spec.getOutputField();
-    FieldIdT fId = fieldId.getId();
+    auto&       fieldId = field_spec.getOutputField();
+    FieldIdT    fId = fieldId.getId();
     return _snippetModifiers->getModifier(fId);
 }
 
-}
+} // namespace vsm
