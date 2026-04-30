@@ -31,7 +31,7 @@ public:
                                       vespalib::slime::Inserter& inserter, IStringFieldConverter* converter) const = 0;
     virtual void insert_juniper_field(const std::string& field_name, search::common::ElementIds selected_elements,
                                       vespalib::slime::Inserter& inserter, IJuniperConverter& converter) const = 0;
-    virtual void insert_document_id(vespalib::slime::Inserter& inserter) const = 0;
+    [[nodiscard]] virtual bool insert_document_id(vespalib::slime::Inserter& inserter) const = 0;
 };
 
 }

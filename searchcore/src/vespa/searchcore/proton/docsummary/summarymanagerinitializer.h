@@ -24,6 +24,7 @@ class SummaryManagerInitializer : public initializer::InitializerTask
     const search::common::FileHeaderContext &_fileHeaderContext;
     search::transactionlog::SyncProxy       &_tlSyncer;
     const IBucketizerSP                      _bucketizer;
+    std::shared_ptr<const search::IDocumentIdProvider> _document_id_provider;
     std::shared_ptr<SummaryManager::SP>      _result;
 
 public:
@@ -39,6 +40,7 @@ public:
                               const search::common::FileHeaderContext & fileHeaderContext,
                               search::transactionlog::SyncProxy &tlSyncer,
                               IBucketizerSP bucketizer,
+                              std::shared_ptr<const search::IDocumentIdProvider> document_id_provider,
                               std::shared_ptr<SummaryManager::SP> result);
     ~SummaryManagerInitializer() override;
     void run() override;

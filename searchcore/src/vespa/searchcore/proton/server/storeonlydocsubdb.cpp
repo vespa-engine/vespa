@@ -231,13 +231,15 @@ createSummaryManagerInitializer(const search::LogDocumentStore::Config & storeCf
                                 const AllocStrategy& alloc_strategy,
                                 const search::TuneFileSummary &tuneFile,
                                 search::IBucketizer::SP bucketizer,
+                                std::shared_ptr<const search::IDocumentIdProvider> document_id_provider,
                                 std::shared_ptr<SummaryManager::SP> result) const
 {
     GrowStrategy grow = alloc_strategy.get_grow_strategy();
     std::string baseDir(_baseDir + "/summary");
     return std::make_shared<SummaryManagerInitializer>
         (grow, baseDir, getSubDbName(), _writeService.shared(),
-         storeCfg, tuneFile, _fileHeaderContext, _tlSyncer, std::move(bucketizer), std::move(result));
+         storeCfg, tuneFile, _fileHeaderContext, _tlSyncer, std::move(bucketizer),
+         std::move(document_id_provider), std::move(result));
 }
 
 void
@@ -321,10 +323,13 @@ StoreOnlyDocSubDB::createInitializer(const DocumentDBConfig &configSnapshot, Ser
                                                           configSnapshot.getTuneFileDocumentDBSP()->_attr,
                                                           result->writableResult().writableDocumentMetaStore());
     result->addDocumentMetaStoreInitTask(dmsInitTask);
+    auto dms = result->result().documentMetaStore()->documentMetaStore();
+    std::shared_ptr<const search::IDocumentIdProvider> document_id_provider; // No document id provider yet.
     auto summaryTask = createSummaryManagerInitializer(createStoreConfig(configSnapshot.getStoreConfig(), _subDbType),
                                                        alloc_strategy,
                                                        configSnapshot.getTuneFileDocumentDBSP()->_summary,
-                                                       result->result().documentMetaStore()->documentMetaStore(),
+                                                       std::move(dms),
+                                                       std::move(document_id_provider),
                                                        result->writableResult().writableSummaryManager());
     result->addDependency(summaryTask);
     summaryTask->addDependency(dmsInitTask);

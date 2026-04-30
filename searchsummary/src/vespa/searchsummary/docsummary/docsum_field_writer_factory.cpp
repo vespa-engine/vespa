@@ -129,7 +129,7 @@ DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_na
             throw_if_nullptr(fieldWriter, command);
         }
     } else if (command == command::documentid) {
-        fieldWriter = std::make_unique<DocumentIdDFW>();
+        fieldWriter = std::make_unique<DocumentIdDFW>(_env.get_document_id_provider());
     } else {
         throw IllegalArgumentException("Unknown command '" + command + "'.");
     }

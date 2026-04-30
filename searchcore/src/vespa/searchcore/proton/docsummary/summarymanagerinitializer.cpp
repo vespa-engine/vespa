@@ -17,6 +17,7 @@ SummaryManagerInitializer(const search::GrowStrategy &grow,
                           const search::common::FileHeaderContext &fileHeaderContext,
                           search::transactionlog::SyncProxy &tlSyncer,
                           IBucketizerSP bucketizer,
+                          std::shared_ptr<const search::IDocumentIdProvider> document_id_provider,
                           std::shared_ptr<SummaryManager::SP> result)
     : proton::initializer::InitializerTask(),
       _grow(grow),
@@ -28,6 +29,7 @@ SummaryManagerInitializer(const search::GrowStrategy &grow,
       _fileHeaderContext(fileHeaderContext),
       _tlSyncer(tlSyncer),
       _bucketizer(std::move(bucketizer)),
+      _document_id_provider(std::move(document_id_provider)),
       _result(std::move(result))
 { }
 
@@ -42,7 +44,7 @@ SummaryManagerInitializer::run()
     MemoryUsageLogger::log("start load document store", _subDbName);
     *_result = std::make_shared<SummaryManager>
                (_shared_executor, _storeCfg, _grow, _baseDir,
-                _tuneFile, _fileHeaderContext, _tlSyncer, _bucketizer);
+                _tuneFile, _fileHeaderContext, _tlSyncer, _bucketizer, _document_id_provider);
     EventLogger::loadDocumentStoreComplete(_subDbName, timer.elapsed());
     MemoryUsageLogger::log("finish load document store", _subDbName);
 }
