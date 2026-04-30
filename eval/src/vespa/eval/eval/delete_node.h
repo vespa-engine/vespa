@@ -14,4 +14,4 @@ namespace vespalib::eval {
  **/
 void delete_node(nodes::Node_UP node);
 
-}
+} // namespace vespalib::eval

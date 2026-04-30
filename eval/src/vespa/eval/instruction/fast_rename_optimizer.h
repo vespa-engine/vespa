@@ -10,10 +10,9 @@ namespace vespalib::eval {
  * Tensor function optimizer for efficient non-transposing renames.
  **/
 struct FastRenameOptimizer {
-    static bool is_stable_rename(const ValueType &from_type, const ValueType &to_type,
-                                 const std::vector<std::string> &from,
-                                 const std::vector<std::string> &to);
-    static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
+    static bool is_stable_rename(const ValueType& from_type, const ValueType& to_type,
+                                 const std::vector<std::string>& from, const std::vector<std::string>& to);
+    static const TensorFunction& optimize(const TensorFunction& expr, Stash& stash);
 };
 
 } // namespace vespalib::eval

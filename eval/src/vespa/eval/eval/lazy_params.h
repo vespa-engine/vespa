@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include <vector>
 #include "value.h"
+
+#include <vector>
 
 namespace vespalib {
 
@@ -16,9 +17,9 @@ namespace eval {
  **/
 struct LazyParams {
     // used by compiled code to resolve lazy double-only parameters
-    using resolve_function = double (*)(void *ctx, size_t idx);
+    using resolve_function = double (*)(void* ctx, size_t idx);
 
-    virtual const Value &resolve(size_t idx, Stash &stash) const = 0;
+    virtual const Value& resolve(size_t idx, Stash& stash) const = 0;
     virtual ~LazyParams();
 };
 
@@ -28,10 +29,9 @@ struct LazyParams {
  **/
 struct SimpleObjectParams : LazyParams {
     std::vector<Value::CREF> params;
-    explicit SimpleObjectParams(const std::vector<Value::CREF> &params_in)
-        : params(params_in) {}
+    explicit SimpleObjectParams(const std::vector<Value::CREF>& params_in) : params(params_in) {}
     ~SimpleObjectParams();
-    const Value &resolve(size_t idx, Stash &stash) const override;
+    const Value& resolve(size_t idx, Stash& stash) const override;
 };
 
 /**
@@ -40,10 +40,9 @@ struct SimpleObjectParams : LazyParams {
  **/
 struct SimpleParams : LazyParams {
     std::vector<double> params;
-    explicit SimpleParams(const std::vector<double> &params_in)
-        : params(params_in) {}
+    explicit SimpleParams(const std::vector<double>& params_in) : params(params_in) {}
     ~SimpleParams();
-    const Value &resolve(size_t idx, Stash &stash) const override;
+    const Value& resolve(size_t idx, Stash& stash) const override;
 };
 
 /**
@@ -51,10 +50,8 @@ struct SimpleParams : LazyParams {
  **/
 struct NoParams : LazyParams {
     static NoParams params;
-    const Value &resolve(size_t, Stash &) const override {
-        abort();
-    }
+    const Value& resolve(size_t, Stash&) const override { abort(); }
 };
 
-} // namespace vespalib::eval
+} // namespace eval
 } // namespace vespalib

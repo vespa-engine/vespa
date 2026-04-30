@@ -6,4 +6,4 @@ namespace vespalib::eval {
 
 StreamedValueView::~StreamedValueView() = default;
 
-} // namespace
+} // namespace vespalib::eval

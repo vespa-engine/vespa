@@ -2,13 +2,15 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/stllike/allocator.h>
+#include <vespa/vespalib/stllike/hash_set.h>
+
 #include <vespa/vespalib/stllike/hash_set.hpp>
-#include <vector>
+
 #include <cassert>
 #include <span>
 #include <type_traits>
+#include <vector>
 
 namespace vespalib::eval {
 
@@ -22,12 +24,10 @@ namespace vespalib::eval {
  * entries are added they cannot be removed. Keys cannot be
  * overwritten, but values can.
  **/
-template <typename K, typename V, typename H = vespalib::hash<K>, typename EQ = std::equal_to<> >
-class ArrayArrayMap
-{
+template <typename K, typename V, typename H = vespalib::hash<K>, typename EQ = std::equal_to<>> class ArrayArrayMap {
 private:
-    size_t _keys_per_entry;
-    size_t _values_per_entry;
+    size_t                                       _keys_per_entry;
+    size_t                                       _values_per_entry;
     std::vector<K, vespalib::allocator_large<K>> _keys;
     std::vector<V, vespalib::allocator_large<V>> _values;
 
@@ -42,25 +42,27 @@ public:
         bool valid() const { return (id != npos()); }
     };
 
-    std::span<const K> get_keys(Tag tag) const { return {_keys.data() + (tag.id * _keys_per_entry), _keys_per_entry}; }
+    std::span<const K> get_keys(Tag tag) const {
+        return {_keys.data() + (tag.id * _keys_per_entry), _keys_per_entry};
+    }
     std::span<V> get_values(Tag tag) { return {&_values[tag.id * _values_per_entry], _values_per_entry}; }
     std::span<const V> get_values(Tag tag) const { return {&_values[tag.id * _values_per_entry], _values_per_entry}; }
 
     struct MyKey {
-        Tag tag;
+        Tag      tag;
         uint32_t hash;
     };
 
     template <typename T> struct AltKey {
         std::span<const T> key;
-        uint32_t hash;
+        uint32_t           hash;
     };
 
     struct Hash {
         H hash_fun;
         template <typename T> uint32_t operator()(std::span<const T> key) const {
             uint32_t h = 0;
-            for (const T &k: key) {
+            for (const T& k : key) {
                 if constexpr (std::is_pointer_v<T>) {
                     h = h * 31 + hash_fun(*k);
                 } else {
@@ -69,16 +71,15 @@ public:
             }
             return h;
         }
-        uint32_t operator()(const MyKey &key) const { return key.hash; }
-        template <typename T> uint32_t operator()(const AltKey<T> &key) const { return key.hash; }
+        uint32_t operator()(const MyKey& key) const { return key.hash; }
+        template <typename T> uint32_t operator()(const AltKey<T>& key) const { return key.hash; }
     };
 
     struct Equal {
-        const ArrayArrayMap &parent;
-        EQ eq_fun;
-        Equal(const ArrayArrayMap &parent_in) : parent(parent_in), eq_fun() {}
-        template <typename T>
-        bool operator()(const MyKey &a, const AltKey<T> &b) const {
+        const ArrayArrayMap& parent;
+        EQ                   eq_fun;
+        Equal(const ArrayArrayMap& parent_in) : parent(parent_in), eq_fun() {}
+        template <typename T> bool operator()(const MyKey& a, const AltKey<T>& b) const {
             if ((a.hash != b.hash) || (b.key.size() != parent.keys_per_entry())) {
                 return false;
             }
@@ -96,21 +97,20 @@ public:
             }
             return true;
         }
-        bool operator()(const MyKey &a, const MyKey &b) const {
+        bool operator()(const MyKey& a, const MyKey& b) const {
             return operator()(a, AltKey<K>{parent.get_keys(b.tag), b.hash});
         }
     };
 
-    using MapType = vespalib::hash_set<MyKey,Hash,Equal>;
+    using MapType = vespalib::hash_set<MyKey, Hash, Equal>;
 
 private:
     MapType _map;
-    Hash _hasher;
+    Hash    _hasher;
 
-    template <typename T>
-    Tag add_entry(std::span<const T> key, uint32_t hash) {
+    template <typename T> Tag add_entry(std::span<const T> key, uint32_t hash) {
         uint32_t tag_id = _map.size();
-        for (const auto &k: key) {
+        for (const auto& k : key) {
             if constexpr (std::is_pointer_v<T>) {
                 _keys.push_back(*k);
             } else {
@@ -118,21 +118,20 @@ private:
             }
         }
         _values.resize(_values.size() + _values_per_entry);
-        auto [pos, was_inserted] = _map.insert(MyKey{{tag_id},hash});
+        auto [pos, was_inserted] = _map.insert(MyKey{{tag_id}, hash});
         assert(was_inserted);
         return Tag{tag_id};
     }
 
 public:
     ArrayArrayMap(size_t keys_per_entry_in, size_t values_per_entry_in, size_t expected_entries);
-    ArrayArrayMap(const ArrayArrayMap &) = delete;
-    ArrayArrayMap & operator = (const ArrayArrayMap &) = delete;
+    ArrayArrayMap(const ArrayArrayMap&) = delete;
+    ArrayArrayMap& operator=(const ArrayArrayMap&) = delete;
     ~ArrayArrayMap();
 
     size_t size() const { return _map.size(); }
 
-    template <typename T>
-    Tag lookup(std::span<const T> key) const {
+    template <typename T> Tag lookup(std::span<const T> key) const {
         auto pos = _map.find(AltKey<T>{key, _hasher(key)});
         if (pos == _map.end()) {
             return Tag::make_invalid();
@@ -140,23 +139,18 @@ public:
         return pos->tag;
     }
 
-    template <typename T>
-    Tag add_entry(std::span<const T> key) {
-        return add_entry(key, _hasher(key));
-    }
+    template <typename T> Tag add_entry(std::span<const T> key) { return add_entry(key, _hasher(key)); }
 
-    template <typename T>
-    std::pair<Tag,bool> lookup_or_add_entry(std::span<const T> key) {
+    template <typename T> std::pair<Tag, bool> lookup_or_add_entry(std::span<const T> key) {
         uint32_t hash = _hasher(key);
-        auto pos = _map.find(AltKey<T>{key, hash});
+        auto     pos = _map.find(AltKey<T>{key, hash});
         if (pos == _map.end()) {
             return {add_entry(key, hash), true};
         }
         return {pos->tag, false};
     }
 
-    template <typename F>
-    void each_entry(F &&f) const {
+    template <typename F> void each_entry(F&& f) const {
         for (uint32_t i = 0; i < size(); ++i) {
             f(get_keys(Tag{i}), get_values(Tag{i}));
         }
@@ -164,16 +158,19 @@ public:
 };
 
 template <typename K, typename V, typename H, typename EQ>
-ArrayArrayMap<K,V,H,EQ>::ArrayArrayMap(size_t keys_per_entry_in, size_t values_per_entry_in, size_t expected_entries)
-    : _keys_per_entry(keys_per_entry_in), _values_per_entry(values_per_entry_in), _keys(), _values(),
-      _map(expected_entries * 2, Hash(), Equal(*this)), _hasher()
-{
+ArrayArrayMap<K, V, H, EQ>::ArrayArrayMap(size_t keys_per_entry_in, size_t values_per_entry_in,
+                                          size_t expected_entries)
+    : _keys_per_entry(keys_per_entry_in),
+      _values_per_entry(values_per_entry_in),
+      _keys(),
+      _values(),
+      _map(expected_entries * 2, Hash(), Equal(*this)),
+      _hasher() {
     _keys.reserve(_keys_per_entry * expected_entries);
     _values.reserve(_values_per_entry * expected_entries);
     static_assert(!std::is_pointer_v<K>, "keys cannot be pointers due to auto-deref of alt keys");
 }
 
-template <typename K, typename V, typename H, typename EQ>
-ArrayArrayMap<K,V,H,EQ>::~ArrayArrayMap() = default;
+template <typename K, typename V, typename H, typename EQ> ArrayArrayMap<K, V, H, EQ>::~ArrayArrayMap() = default;
 
-}
+} // namespace vespalib::eval

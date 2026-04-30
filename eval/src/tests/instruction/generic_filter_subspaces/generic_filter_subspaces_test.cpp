@@ -1,15 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/fast_value.h>
+#include <vespa/eval/eval/interpreted_function.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/test/gen_spec.h>
+#include <vespa/eval/eval/test/reference_evaluation.h>
+#include <vespa/eval/eval/test/reference_operations.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/instruction/generic_filter_subspaces.h>
-#include <vespa/eval/eval/interpreted_function.h>
-#include <vespa/eval/eval/test/reference_operations.h>
-#include <vespa/eval/eval/test/reference_evaluation.h>
-#include <vespa/eval/eval/test/gen_spec.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 using namespace vespalib;
 using namespace vespalib::eval;
@@ -18,25 +18,23 @@ using namespace vespalib::eval::test;
 
 using vespalib::make_string_short::fmt;
 
-TensorSpec ref_eval(const TensorSpec &a, const Function &lambda) {
-    auto subspace_fun = [&](const TensorSpec &subspace){
-        return ReferenceEvaluation::eval(lambda, {subspace});
-    };
+TensorSpec ref_eval(const TensorSpec& a, const Function& lambda) {
+    auto subspace_fun = [&](const TensorSpec& subspace) { return ReferenceEvaluation::eval(lambda, {subspace}); };
     return ReferenceOperations::filter_subspaces(a, subspace_fun);
 }
 
-TensorSpec my_eval(const TensorSpec &a, const Function &lambda, const ValueBuilderFactory &factory) {
-    Stash stash;
-    auto lhs = value_from_spec(a, factory);
-    auto inner_type = lhs->type().strip_mapped_dimensions();
-    auto res_type = lhs->type();
+TensorSpec my_eval(const TensorSpec& a, const Function& lambda, const ValueBuilderFactory& factory) {
+    Stash     stash;
+    auto      lhs = value_from_spec(a, factory);
+    auto      inner_type = lhs->type().strip_mapped_dimensions();
+    auto      res_type = lhs->type();
     NodeTypes inner_types(lambda, {inner_type});
     auto my_op = GenericFilterSubspaces::make_instruction(res_type, inner_type, lambda, inner_types, factory, stash);
     InterpretedFunction::EvalSingle single(factory, my_op);
     return spec_from_value(single.eval(std::vector<Value::CREF>({*lhs})));
 }
 
-void verify(const std::string &input_str, const std::string &fun_str, const std::string &expect_str) {
+void verify(const std::string& input_str, const std::string& fun_str, const std::string& expect_str) {
     SCOPED_TRACE(fmt("input: %s, fun: %s, expect: %s", input_str.c_str(), fun_str.c_str(), expect_str.c_str()));
     auto input = TensorSpec::from_expr(input_str);
     ASSERT_TRUE(input.type() != "error");
@@ -44,7 +42,7 @@ void verify(const std::string &input_str, const std::string &fun_str, const std:
     ASSERT_TRUE(expect.type() != "error");
     auto fun = Function::parse({"s"}, fun_str);
     ASSERT_FALSE(fun->has_error());
-    for (CellType cell_type: CellTypeUtils::list_types()) {
+    for (CellType cell_type : CellTypeUtils::list_types()) {
         SCOPED_TRACE(fmt("cell type: %d", int(cell_type)));
         auto typed_input = ReferenceOperations::cell_cast(input, cell_type);
         auto typed_expect = ReferenceOperations::cell_cast(expect, cell_type);
@@ -86,7 +84,8 @@ TEST(GenericFilterSubspacesTest, filter_matrices) {
     verify("tensor(x{},y[2],z[3]):{a:[[0,0,0],[4,5,6]]}", "s", "tensor(x{},y[2],z[3]):{a:[[0,0,0],[4,5,6]]}");
     verify("tensor(x{},y[2],z[3]):{a:[[1,2,3],[0,0,0]]}", "s", "tensor(x{},y[2],z[3]):{a:[[1,2,3],[0,0,0]]}");
     verify("tensor(x{},y[2],z[3]):{a:[[0,0,0],[0,0,0]]}", "s", "tensor(x{},y[2],z[3]):{}");
-    verify("tensor(x{},y[2],z[3]):{a:[[1,2,3],[4,5,6]]}", "reduce(s,sum)==21", "tensor(x{},y[2],z[3]):{a:[[1,2,3],[4,5,6]]}");
+    verify("tensor(x{},y[2],z[3]):{a:[[1,2,3],[4,5,6]]}", "reduce(s,sum)==21",
+           "tensor(x{},y[2],z[3]):{a:[[1,2,3],[4,5,6]]}");
     verify("tensor(x{},y[2],z[3]):{a:[[1,2,3],[4,5,6]]}", "reduce(s,sum)!=21", "tensor(x{},y[2],z[3]):{}");
 }
 

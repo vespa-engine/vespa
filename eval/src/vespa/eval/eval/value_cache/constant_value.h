@@ -2,9 +2,10 @@
 
 #pragma once
 
-#include <memory>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_type.h>
+
+#include <memory>
 
 namespace vespalib {
 namespace eval {
@@ -15,8 +16,8 @@ namespace eval {
  * well.
  **/
 struct ConstantValue {
-    virtual const ValueType &type() const = 0;
-    virtual const Value &value() const = 0;
+    virtual const ValueType& type() const = 0;
+    virtual const Value& value() const = 0;
     using UP = std::unique_ptr<ConstantValue>;
     virtual ~ConstantValue() = default;
 };
@@ -24,19 +25,21 @@ struct ConstantValue {
 class SimpleConstantValue : public ConstantValue {
 private:
     const Value::UP _value;
+
 public:
     SimpleConstantValue(Value::UP value) : _value(std::move(value)) {}
-    const ValueType &type() const override { return _value->type(); }
-    const Value &value() const override { return *_value; }
+    const ValueType& type() const override { return _value->type(); }
+    const Value& value() const override { return *_value; }
 };
 
 class BadConstantValue : public ConstantValue {
 private:
     const ValueType _type;
+
 public:
     BadConstantValue() : _type(ValueType::error_type()) {}
-    const ValueType &type() const override { return _type; }
-    const Value &value() const override { abort(); }
+    const ValueType& type() const override { return _type; }
+    const Value& value() const override { abort(); }
 };
 
 /**
@@ -45,9 +48,9 @@ public:
  * to share constants among users.
  **/
 struct ConstantValueFactory {
-    virtual ConstantValue::UP create(const std::string &path, const std::string &type) const = 0;
+    virtual ConstantValue::UP create(const std::string& path, const std::string& type) const = 0;
     virtual ~ConstantValueFactory() = default;
 };
 
-} // namespace vespalib::eval
+} // namespace eval
 } // namespace vespalib

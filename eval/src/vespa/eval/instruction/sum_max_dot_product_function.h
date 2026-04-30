@@ -31,19 +31,17 @@ namespace vespalib::eval {
  * Note that not all equivalent forms are matched by this function
  * (initial matching will be very specific).
  **/
-class SumMaxDotProductFunction : public tensor_function::Op2
-{
+class SumMaxDotProductFunction : public tensor_function::Op2 {
 private:
     size_t _dp_size;
+
 public:
-    SumMaxDotProductFunction(const ValueType &res_type_in,
-                             const TensorFunction &query,
-                             const TensorFunction &document,
-                             size_t dp_size);
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
+    SumMaxDotProductFunction(const ValueType& res_type_in, const TensorFunction& query,
+                             const TensorFunction& document, size_t dp_size);
+    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory& factory, Stash& stash) const override;
     size_t dp_size() const { return _dp_size; }
     bool result_is_mutable() const override { return true; }
-    static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
+    static const TensorFunction& optimize(const TensorFunction& expr, Stash& stash);
 };
 
-} // namespace
+} // namespace vespalib::eval

@@ -14,7 +14,7 @@ auto all_types = CellTypeUtils::list_types();
 
 TEST(CellTypeSpaceTest, n_1) {
     auto space = CellTypeSpace(all_types, 1);
-    for (auto t0: all_types) {
+    for (auto t0 : all_types) {
         ASSERT_TRUE(space.valid());
         auto ts = space.get();
         ASSERT_EQ(ts.size(), 1);
@@ -26,8 +26,8 @@ TEST(CellTypeSpaceTest, n_1) {
 
 TEST(CellTypeSpaceTest, n_2) {
     auto space = CellTypeSpace(all_types, 2);
-    for (auto t0: all_types) {
-        for (auto t1: all_types) {
+    for (auto t0 : all_types) {
+        for (auto t1 : all_types) {
             ASSERT_TRUE(space.valid());
             auto ts = space.get();
             ASSERT_EQ(ts.size(), 2);
@@ -41,9 +41,10 @@ TEST(CellTypeSpaceTest, n_2) {
 
 TEST(CellTypeSpaceTest, n_2_same) {
     auto space = CellTypeSpace(all_types, 2).same();
-    for (auto t0: all_types) {
-        for (auto t1: all_types) {
-            if (t0 != t1) continue;
+    for (auto t0 : all_types) {
+        for (auto t1 : all_types) {
+            if (t0 != t1)
+                continue;
             ASSERT_TRUE(space.valid());
             auto ts = space.get();
             ASSERT_EQ(ts.size(), 2);
@@ -57,9 +58,10 @@ TEST(CellTypeSpaceTest, n_2_same) {
 
 TEST(CellTypeSpaceTest, n_2_different) {
     auto space = CellTypeSpace(all_types, 2).different();
-    for (auto t0: all_types) {
-        for (auto t1: all_types) {
-            if (t0 == t1) continue;
+    for (auto t0 : all_types) {
+        for (auto t1 : all_types) {
+            if (t0 == t1)
+                continue;
             ASSERT_TRUE(space.valid());
             auto ts = space.get();
             ASSERT_EQ(ts.size(), 2);

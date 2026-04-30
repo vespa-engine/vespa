@@ -4,9 +4,12 @@
 
 #include "int8float.h"
 #include "operation.h"
+
 #include <vespa/vespalib/util/bfloat16.h>
 #include <vespa/vespalib/util/typify.h>
+
 #include <cblas.h>
+
 #include <cmath>
 
 namespace vespalib::eval::operation {
@@ -30,7 +33,7 @@ template <> struct InlineOp1<Exp> {
 };
 template <> struct InlineOp1<Inv> {
     InlineOp1(op1_t) {}
-    template <typename A> constexpr auto operator()(A a) const { return (A{1}/a); }
+    template <typename A> constexpr auto operator()(A a) const { return (A{1} / a); }
 };
 template <> struct InlineOp1<Sqrt> {
     InlineOp1(op1_t) {}
@@ -47,7 +50,7 @@ template <> struct InlineOp1<Tanh> {
 
 struct TypifyOp1 {
     template <typename T> using Result = TypifyResultType<T>;
-    template <typename F> static decltype(auto) resolve(op1_t value, F &&f) {
+    template <typename F> static decltype(auto) resolve(op1_t value, F&& f) {
         if (value == Cube::f) {
             return f(Result<InlineOp1<Cube>>());
         } else if (value == Exp::f) {
@@ -75,8 +78,7 @@ struct CallOp2 {
     double operator()(double a, double b) const { return my_op2(a, b); }
 };
 
-template <typename Op2>
-struct SwapArgs2 {
+template <typename Op2> struct SwapArgs2 {
     Op2 op2;
     SwapArgs2(op2_t op2_in) : op2(op2_in) {}
     template <typename A, typename B> constexpr auto operator()(A a, B b) const { return op2(b, a); }
@@ -85,31 +87,31 @@ struct SwapArgs2 {
 template <typename T> struct InlineOp2;
 template <> struct InlineOp2<Add> {
     InlineOp2(op2_t) {}
-    template <typename A, typename B> constexpr auto operator()(A a, B b) const { return (a+b); }
+    template <typename A, typename B> constexpr auto operator()(A a, B b) const { return (a + b); }
 };
 template <> struct InlineOp2<Div> {
     InlineOp2(op2_t) {}
-    template <typename A, typename B> constexpr auto operator()(A a, B b) const { return (a/b); }
+    template <typename A, typename B> constexpr auto operator()(A a, B b) const { return (a / b); }
 };
 template <> struct InlineOp2<Mul> {
     InlineOp2(op2_t) {}
-    template <typename A, typename B> constexpr auto operator()(A a, B b) const { return (a*b); }
+    template <typename A, typename B> constexpr auto operator()(A a, B b) const { return (a * b); }
 };
 template <> struct InlineOp2<Pow> {
     InlineOp2(op2_t) {}
-    constexpr float operator()(float a, float b) const { return std::pow(a,b); }
-    constexpr double operator()(float a, double b) const { return std::pow(a,b); }
-    constexpr double operator()(double a, float b) const { return std::pow(a,b); }
-    constexpr double operator()(double a, double b) const { return std::pow(a,b); }
+    constexpr float operator()(float a, float b) const { return std::pow(a, b); }
+    constexpr double operator()(float a, double b) const { return std::pow(a, b); }
+    constexpr double operator()(double a, float b) const { return std::pow(a, b); }
+    constexpr double operator()(double a, double b) const { return std::pow(a, b); }
 };
 template <> struct InlineOp2<Sub> {
     InlineOp2(op2_t) {}
-    template <typename A, typename B> constexpr auto operator()(A a, B b) const { return (a-b); }
+    template <typename A, typename B> constexpr auto operator()(A a, B b) const { return (a - b); }
 };
 
 struct TypifyOp2 {
     template <typename T> using Result = TypifyResultType<T>;
-    template <typename F> static decltype(auto) resolve(op2_t value, F &&f) {
+    template <typename F> static decltype(auto) resolve(op2_t value, F&& f) {
         if (value == Add::f) {
             return f(Result<InlineOp2<Add>>());
         } else if (value == Div::f) {
@@ -128,22 +130,21 @@ struct TypifyOp2 {
 
 //-----------------------------------------------------------------------------
 
-template <typename A, typename OP1>
-void apply_op1_vec(A *dst, const A *src, size_t n, OP1 &&f) {
+template <typename A, typename OP1> void apply_op1_vec(A* dst, const A* src, size_t n, OP1&& f) {
     for (size_t i = 0; i < n; ++i) {
         dst[i] = f(src[i]);
     }
 }
 
 template <typename D, typename A, typename B, typename OP2>
-void apply_op2_vec_num(D *dst, const A *a, B b, size_t n, OP2 &&f) {
+void apply_op2_vec_num(D* dst, const A* a, B b, size_t n, OP2&& f) {
     for (size_t i = 0; i < n; ++i) {
         dst[i] = f(a[i], b);
     }
 }
 
 template <typename D, typename A, typename B, typename OP2>
-void apply_op2_vec_vec(D *dst, const A *a, const B *b, size_t n, OP2 &&f) {
+void apply_op2_vec_vec(D* dst, const A* a, const B* b, size_t n, OP2&& f) {
     for (size_t i = 0; i < n; ++i) {
         dst[i] = f(a[i], b[i]);
     }
@@ -151,9 +152,8 @@ void apply_op2_vec_vec(D *dst, const A *a, const B *b, size_t n, OP2 &&f) {
 
 //-----------------------------------------------------------------------------
 
-template <typename LCT, typename RCT>
-struct DotProduct {
-    static double apply(const LCT * lhs, const RCT * rhs, size_t count) {
+template <typename LCT, typename RCT> struct DotProduct {
+    static double apply(const LCT* lhs, const RCT* rhs, size_t count) {
         double result = 0.0;
         for (size_t i = 0; i < count; ++i) {
             result += lhs[i] * rhs[i];
@@ -162,30 +162,24 @@ struct DotProduct {
     }
 };
 
-template <>
-struct DotProduct<float,float> {
-    static float apply(const float * lhs, const float * rhs, size_t count) {
-        return cblas_sdot(count, lhs, 1, rhs, 1);
-    }
+template <> struct DotProduct<float, float> {
+    static float apply(const float* lhs, const float* rhs, size_t count) { return cblas_sdot(count, lhs, 1, rhs, 1); }
 };
 
-template <>
-struct DotProduct<double,double> {
-    static double apply(const double * lhs, const double * rhs, size_t count) {
+template <> struct DotProduct<double, double> {
+    static double apply(const double* lhs, const double* rhs, size_t count) {
         return cblas_ddot(count, lhs, 1, rhs, 1);
     }
 };
 
-template <>
-struct DotProduct<Int8Float, Int8Float> {
-    static double apply(const Int8Float *lhs, const Int8Float *rhs, size_t count);
+template <> struct DotProduct<Int8Float, Int8Float> {
+    static double apply(const Int8Float* lhs, const Int8Float* rhs, size_t count);
 };
 
-template <>
-struct DotProduct<BFloat16, BFloat16> {
-    static double apply(const BFloat16 *lhs, const BFloat16 *rhs, size_t count);
+template <> struct DotProduct<BFloat16, BFloat16> {
+    static double apply(const BFloat16* lhs, const BFloat16* rhs, size_t count);
 };
 
 //-----------------------------------------------------------------------------
 
-}
+} // namespace vespalib::eval::operation

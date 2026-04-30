@@ -1,22 +1,23 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/eval/eval/compile_tensor_function.h>
 #include <vespa/eval/eval/fast_value.h>
-#include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/interpreted_function.h>
-#include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/eval/lazy_params.h>
 #include <vespa/eval/eval/make_tensor_function.h>
 #include <vespa/eval/eval/optimize_tensor_function.h>
-#include <vespa/eval/eval/compile_tensor_function.h>
-#include <vespa/eval/instruction/universal_dot_product.h>
-#include <vespa/eval/eval/test/reference_operations.h>
-#include <vespa/eval/eval/test/reference_evaluation.h>
+#include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/eval/test/gen_spec.h>
+#include <vespa/eval/eval/test/reference_evaluation.h>
+#include <vespa/eval/eval/test/reference_operations.h>
+#include <vespa/eval/eval/value_codec.h>
+#include <vespa/eval/instruction/universal_dot_product.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/classname.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/trinary.h>
-#include <vespa/vespalib/gtest/gtest.h>
+
 #include <optional>
 
 using namespace vespalib;
@@ -25,23 +26,21 @@ using namespace vespalib::eval::test;
 
 using vespalib::make_string_short::fmt;
 
-const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
-bool bench = false;
-double budget = 1.0;
-size_t verify_cnt = 0;
+const ValueBuilderFactory& prod_factory = FastValueBuilderFactory::get();
+bool                       bench = false;
+double                     budget = 1.0;
+size_t                     verify_cnt = 0;
 
-std::vector<std::string> ns_list = {
-    {"vespalib::eval::instruction::(anonymous namespace)::"},
-    {"vespalib::eval::(anonymous namespace)::"},
-    {"vespalib::eval::InterpretedFunction::"},
-    {"vespalib::eval::tensor_function::"},
-    {"vespalib::eval::operation::"},
-    {"vespalib::eval::aggr::"},
-    {"vespalib::eval::"}
-};
-std::string strip_ns(const std::string &str) {
+std::vector<std::string> ns_list = {{"vespalib::eval::instruction::(anonymous namespace)::"},
+                                    {"vespalib::eval::(anonymous namespace)::"},
+                                    {"vespalib::eval::InterpretedFunction::"},
+                                    {"vespalib::eval::tensor_function::"},
+                                    {"vespalib::eval::operation::"},
+                                    {"vespalib::eval::aggr::"},
+                                    {"vespalib::eval::"}};
+std::string strip_ns(const std::string& str) {
     std::string tmp = str;
-    for (const auto &ns: ns_list) {
+    for (const auto& ns : ns_list) {
         for (bool again = true; again;) {
             again = false;
             if (auto pos = tmp.find(ns); pos < tmp.size()) {
@@ -54,15 +53,21 @@ std::string strip_ns(const std::string &str) {
 }
 
 using select_cell_type_t = std::function<CellType(size_t idx)>;
-CellType always_double(size_t) { return CellType::DOUBLE; }
-select_cell_type_t select(CellType lct) { return [lct](size_t)noexcept{ return lct; }; }
-select_cell_type_t  select(CellType lct, CellType rct) { return [lct,rct](size_t idx)noexcept{ return idx ? rct : lct; }; }
+CellType always_double(size_t) {
+    return CellType::DOUBLE;
+}
+select_cell_type_t select(CellType lct) {
+    return [lct](size_t) noexcept { return lct; };
+}
+select_cell_type_t select(CellType lct, CellType rct) {
+    return [lct, rct](size_t idx) noexcept { return idx ? rct : lct; };
+}
 
-TensorSpec make_spec(const std::string &param_name, size_t idx, select_cell_type_t select_cell_type) {
+TensorSpec make_spec(const std::string& param_name, size_t idx, select_cell_type_t select_cell_type) {
     return GenSpec::from_desc(param_name).cells(select_cell_type(idx)).seq(N(1 + idx));
 }
 
-TensorSpec eval_ref(const Function &fun, select_cell_type_t select_cell_type) {
+TensorSpec eval_ref(const Function& fun, select_cell_type_t select_cell_type) {
     std::vector<TensorSpec> params;
     for (size_t i = 0; i < fun.num_params(); ++i) {
         params.push_back(make_spec(fun.param_name(i), i, select_cell_type));
@@ -70,26 +75,25 @@ TensorSpec eval_ref(const Function &fun, select_cell_type_t select_cell_type) {
     return ReferenceEvaluation::eval(fun, params);
 }
 
-class Optimize
-{
+class Optimize {
 private:
-    struct ctor_tag{};
+    struct ctor_tag {};
+
 public:
     enum class With { NONE, CUSTOM, PROD, SPECIFIC };
-    With with;
-    std::string name;
+    With                          with;
+    std::string                   name;
     OptimizeTensorFunctionOptions options;
-    tensor_function_optimizer optimizer;
-    Optimize(With with_in, const std::string name_in,
-             const OptimizeTensorFunctionOptions &options_in,
+    tensor_function_optimizer     optimizer;
+    Optimize(With with_in, const std::string name_in, const OptimizeTensorFunctionOptions& options_in,
              tensor_function_optimizer optimizer_in, ctor_tag)
-      : with(with_in), name(name_in), options(options_in), optimizer(optimizer_in) {}
+        : with(with_in), name(name_in), options(options_in), optimizer(optimizer_in) {}
     static Optimize none() { return {With::NONE, "none", {}, {}, {}}; }
     static Optimize prod() { return {With::PROD, "prod", {}, {}, {}}; }
-    static Optimize custom(const std::string &name_in, const OptimizeTensorFunctionOptions &options_in) {
+    static Optimize custom(const std::string& name_in, const OptimizeTensorFunctionOptions& options_in) {
         return {With::CUSTOM, name_in, options_in, {}, {}};
     }
-    static Optimize specific(const std::string &name_in, tensor_function_optimizer optimizer_in) {
+    static Optimize specific(const std::string& name_in, tensor_function_optimizer optimizer_in) {
         return {With::SPECIFIC, name_in, {}, optimizer_in, {}};
     }
     ~Optimize();
@@ -109,10 +113,9 @@ Optimize with_universal() {
 }
 
 Optimize universal_only() {
-    auto my_optimizer = [](const TensorFunction &expr, Stash &stash)->const TensorFunction &
-                        {
-                            return UniversalDotProduct::optimize(expr, stash, true);
-                        };
+    auto my_optimizer = [](const TensorFunction& expr, Stash& stash) -> const TensorFunction& {
+        return UniversalDotProduct::optimize(expr, stash, true);
+    };
     return Optimize::specific("universal_only", my_optimizer);
 }
 
@@ -124,9 +127,8 @@ bool satisfies(bool actual, Trinary expect) {
     return (expect == Trinary::Undefined) || (actual == (expect == Trinary::True));
 }
 
-void verify(const std::string &expr, select_cell_type_t select_cell_type,
-            Trinary expect_forward, Trinary expect_distinct, Trinary expect_single)
-{
+void verify(const std::string& expr, select_cell_type_t select_cell_type, Trinary expect_forward,
+            Trinary expect_distinct, Trinary expect_single) {
     ++verify_cnt;
     auto fun = Function::parse(expr);
     ASSERT_FALSE(fun->has_error());
@@ -135,31 +137,30 @@ void verify(const std::string &expr, select_cell_type_t select_cell_type,
         auto value = value_from_spec(make_spec(fun->param_name(i), i, select_cell_type), prod_factory);
         values.push_back(std::move(value));
     }
-    SimpleObjectParams params({});
+    SimpleObjectParams     params({});
     std::vector<ValueType> param_types;
-    for (auto &&up: values) {
+    for (auto&& up : values) {
         params.params.emplace_back(*up);
         param_types.push_back(up->type());
     }
-    NodeTypes node_types(*fun, param_types);
-    const ValueType &expected_type = node_types.get_type(fun->root());
+    NodeTypes        node_types(*fun, param_types);
+    const ValueType& expected_type = node_types.get_type(fun->root());
     ASSERT_FALSE(expected_type.is_error());
-    Stash stash;
-    std::vector<const TensorFunction *> list;
-    const TensorFunction &plain_fun = make_tensor_function(prod_factory, fun->root(), node_types, stash);
-    const TensorFunction &optimized = apply_tensor_function_optimizer(plain_fun, universal_only().optimizer, stash,
-                                                                      [&list](const auto &node){
-                                                                          list.push_back(std::addressof(node));
-                                                                      });
+    Stash                              stash;
+    std::vector<const TensorFunction*> list;
+    const TensorFunction&              plain_fun = make_tensor_function(prod_factory, fun->root(), node_types, stash);
+    const TensorFunction&              optimized =
+        apply_tensor_function_optimizer(plain_fun, universal_only().optimizer, stash,
+                                        [&list](const auto& node) { list.push_back(std::addressof(node)); });
     ASSERT_EQ(list.size(), 1);
     auto node = as<UniversalDotProduct>(*list[0]);
     ASSERT_TRUE(node);
     EXPECT_TRUE(satisfies(node->forward(), expect_forward));
     EXPECT_TRUE(satisfies(node->distinct(), expect_distinct));
     EXPECT_TRUE(satisfies(node->single(), expect_single));
-    InterpretedFunction ifun(prod_factory, optimized);
+    InterpretedFunction          ifun(prod_factory, optimized);
     InterpretedFunction::Context ctx(ifun);
-    const Value &actual = ifun.eval(ctx, params);
+    const Value&                 actual = ifun.eval(ctx, params);
     EXPECT_EQ(actual.type(), expected_type);
     EXPECT_EQ(actual.cells().type, expected_type.cell_type());
     if (expected_type.count_mapped_dimensions() == 0) {
@@ -171,39 +172,39 @@ void verify(const std::string &expr, select_cell_type_t select_cell_type,
     auto expected = eval_ref(*fun, select_cell_type);
     EXPECT_EQ(spec_from_value(actual), expected);
 }
-void verify(const std::string &expr) {
+void verify(const std::string& expr) {
     verify(expr, always_double, Trinary::Undefined, Trinary::Undefined, Trinary::Undefined);
 }
-void verify(const std::string &expr, select_cell_type_t select_cell_type, bool forward, bool distinct, bool single) {
+void verify(const std::string& expr, select_cell_type_t select_cell_type, bool forward, bool distinct, bool single) {
     verify(expr, select_cell_type, tri(forward), tri(distinct), tri(single));
 }
 
-using cost_list_t = std::vector<std::pair<std::string,double>>;
-std::vector<std::pair<std::string,cost_list_t>> benchmark_results;
+using cost_list_t = std::vector<std::pair<std::string, double>>;
+std::vector<std::pair<std::string, cost_list_t>> benchmark_results;
 
-void benchmark(const std::string &expr, std::vector<Optimize> list) {
+void benchmark(const std::string& expr, std::vector<Optimize> list) {
     verify(expr);
     auto fun = Function::parse(expr);
     ASSERT_FALSE(fun->has_error());
     cost_list_t cost_list;
     fprintf(stderr, "BENCH: %s\n", expr.c_str());
-    for (Optimize &optimize: list) {
+    for (Optimize& optimize : list) {
         std::vector<Value::UP> values;
         for (size_t i = 0; i < fun->num_params(); ++i) {
             auto value = value_from_spec(make_spec(fun->param_name(i), i, always_double), prod_factory);
             values.push_back(std::move(value));
         }
-        SimpleObjectParams params({});
+        SimpleObjectParams     params({});
         std::vector<ValueType> param_types;
-        for (auto &&up: values) {
+        for (auto&& up : values) {
             params.params.emplace_back(*up);
             param_types.push_back(up->type());
         }
         NodeTypes node_types(*fun, param_types);
         ASSERT_FALSE(node_types.get_type(fun->root()).is_error());
-        Stash stash;
-        const TensorFunction &plain_fun = make_tensor_function(prod_factory, fun->root(), node_types, stash);
-        const TensorFunction *optimized = nullptr;
+        Stash                 stash;
+        const TensorFunction& plain_fun = make_tensor_function(prod_factory, fun->root(), node_types, stash);
+        const TensorFunction* optimized = nullptr;
         switch (optimize.with) {
         case Optimize::With::NONE:
             optimized = std::addressof(plain_fun);
@@ -217,25 +218,25 @@ void benchmark(const std::string &expr, std::vector<Optimize> list) {
         case Optimize::With::SPECIFIC:
             size_t count = 0;
             optimized = std::addressof(apply_tensor_function_optimizer(plain_fun, optimize.optimizer, stash,
-                                                                       [&count](const auto &)noexcept{ ++count; }));
+                                                                       [&count](const auto&) noexcept { ++count; }));
             ASSERT_EQ(count, 1);
             break;
         }
         ASSERT_NE(optimized, nullptr);
-        CTFMetaData ctf_meta;
-        InterpretedFunction ifun(prod_factory, *optimized, &ctf_meta);
+        CTFMetaData                          ctf_meta;
+        InterpretedFunction                  ifun(prod_factory, *optimized, &ctf_meta);
         InterpretedFunction::ProfiledContext pctx(ifun);
         ASSERT_EQ(ctf_meta.steps.size(), ifun.program_size());
         std::vector<duration> prev_time(ctf_meta.steps.size(), duration::zero());
         std::vector<duration> min_time(ctf_meta.steps.size(), duration::max());
-        BenchmarkTimer timer(budget);
+        BenchmarkTimer        timer(budget);
         while (timer.has_budget()) {
             timer.before();
-            const Value &result = ifun.eval(pctx.context, params);
-            (void) result;
+            const Value& result = ifun.eval(pctx.context, params);
+            (void)result;
             timer.after();
-            const Value &profiled_result = ifun.eval(pctx, params);
-            (void) profiled_result;
+            const Value& profiled_result = ifun.eval(pctx, params);
+            (void)profiled_result;
             for (size_t i = 0; i < ctf_meta.steps.size(); ++i) {
                 min_time[i] = std::min(min_time[i], pctx.cost[i].second - prev_time[i]);
                 prev_time[i] = pctx.cost[i].second;
@@ -263,13 +264,13 @@ TEST(UniversalDotProductTest, test_select_cell_types) {
     EXPECT_EQ(always(1), CellType::DOUBLE);
     EXPECT_EQ(always(0), CellType::DOUBLE);
     EXPECT_EQ(always(1), CellType::DOUBLE);
-    for (CellType lct: CellTypeUtils::list_types()) {
+    for (CellType lct : CellTypeUtils::list_types()) {
         auto sel1 = select(lct);
         EXPECT_EQ(sel1(0), lct);
         EXPECT_EQ(sel1(1), lct);
         EXPECT_EQ(sel1(0), lct);
         EXPECT_EQ(sel1(1), lct);
-        for (CellType rct: CellTypeUtils::list_types()) {
+        for (CellType rct : CellTypeUtils::list_types()) {
             auto sel2 = select(lct, rct);
             EXPECT_EQ(sel2(0), lct);
             EXPECT_EQ(sel2(1), rct);
@@ -283,16 +284,16 @@ TEST(UniversalDotProductTest, universal_dot_product_works_for_various_cases) {
     //  forward, distinct, single
     verify("reduce(2.0*3.0, sum)", always_double, true, true, true);
 
-    for (CellType lct: CellTypeUtils::list_types()) {
-        for (CellType rct: CellTypeUtils::list_types()) {
+    for (CellType lct : CellTypeUtils::list_types()) {
+        for (CellType rct : CellTypeUtils::list_types()) {
             auto sel2 = select(lct, rct);
-                                                       // forward, distinct, single
-            verify("reduce(a4_1x8*a2_1x8,sum,a,x)", sel2,   false,    false,  false);
-            verify("reduce(a4_1x8*a2_1x8,sum,a)",   sel2,   false,    false,   true);
-            verify("reduce(a4_1x8*a2_1x8,sum,x)",   sel2,   false,     true,  false);
-            verify("reduce(a4_1x8*b2_1x8,sum,b,x)", sel2,    true,    false,  false);
-            verify("reduce(a4_1x8*b2_1x8,sum,b)",   sel2,    true,    false,   true);
-            verify("reduce(a4_1x8*x8,sum,x)",       sel2,    true,     true,  false);
+            // forward, distinct, single
+            verify("reduce(a4_1x8*a2_1x8,sum,a,x)", sel2, false, false, false);
+            verify("reduce(a4_1x8*a2_1x8,sum,a)", sel2, false, false, true);
+            verify("reduce(a4_1x8*a2_1x8,sum,x)", sel2, false, true, false);
+            verify("reduce(a4_1x8*b2_1x8,sum,b,x)", sel2, true, false, false);
+            verify("reduce(a4_1x8*b2_1x8,sum,b)", sel2, true, false, true);
+            verify("reduce(a4_1x8*x8,sum,x)", sel2, true, true, false);
         }
     }
     // !forward, distinct, single
@@ -348,35 +349,35 @@ TEST(UniversalDotProductTest, bench_vector_dot_product) {
     }
     auto optimize_list = std::vector<Optimize>({baseline(), with_universal(), universal_only()});
 
-    benchmark("reduce(2.0*3.0,sum)",                    optimize_list);
-    benchmark("reduce(5.0*x128,sum,x)",                 optimize_list);
-    benchmark("reduce(a1*x128,sum,x)",                  optimize_list);
-    benchmark("reduce(a8*x128,sum,x)",                  optimize_list);
-    benchmark("reduce(a1_1b8*x128,sum,x)",              optimize_list);
-    benchmark("reduce(x16*x16,sum,x)",                  optimize_list);
-    benchmark("reduce(x768*x768,sum,x)",                optimize_list);
-    benchmark("reduce(y64*x8y64,sum,x,y)",              optimize_list);
-    benchmark("reduce(y64*x8y64,sum,y)",                optimize_list);
-    benchmark("reduce(y64*x8y64,sum,x)",                optimize_list);
-    benchmark("reduce(a8y64*a8y64,sum,y)",              optimize_list);
-    benchmark("reduce(a8y64*a8y64,sum,a)",              optimize_list);
-    benchmark("reduce(a8y64*b8y64,sum,y)",              optimize_list);
-    benchmark("reduce(a8b64*b64c8,sum,b)",              optimize_list);
-    benchmark("reduce(x64_1*x64_1,sum,x)",              optimize_list);
-    benchmark("reduce(a64_1*b64_1,sum,b)",              optimize_list);
-    benchmark("reduce(a8_1b8_1*b8_1c8_1,sum,b)",        optimize_list);
-    benchmark("reduce(a8_1b8_1*b8_1c8_1,sum,a,c)",      optimize_list);
-    benchmark("reduce(a8_1b8_1*b8_1c8_1,sum,a,b,c)",    optimize_list);
-    benchmark("reduce(b64_1x128*x128,sum,x)",           optimize_list);
-    benchmark("reduce(b64_1x8y128*x8y128,sum,y)",       optimize_list);
-    benchmark("reduce(b64_1x128*x128,sum,b,x)",         optimize_list);
+    benchmark("reduce(2.0*3.0,sum)", optimize_list);
+    benchmark("reduce(5.0*x128,sum,x)", optimize_list);
+    benchmark("reduce(a1*x128,sum,x)", optimize_list);
+    benchmark("reduce(a8*x128,sum,x)", optimize_list);
+    benchmark("reduce(a1_1b8*x128,sum,x)", optimize_list);
+    benchmark("reduce(x16*x16,sum,x)", optimize_list);
+    benchmark("reduce(x768*x768,sum,x)", optimize_list);
+    benchmark("reduce(y64*x8y64,sum,x,y)", optimize_list);
+    benchmark("reduce(y64*x8y64,sum,y)", optimize_list);
+    benchmark("reduce(y64*x8y64,sum,x)", optimize_list);
+    benchmark("reduce(a8y64*a8y64,sum,y)", optimize_list);
+    benchmark("reduce(a8y64*a8y64,sum,a)", optimize_list);
+    benchmark("reduce(a8y64*b8y64,sum,y)", optimize_list);
+    benchmark("reduce(a8b64*b64c8,sum,b)", optimize_list);
+    benchmark("reduce(x64_1*x64_1,sum,x)", optimize_list);
+    benchmark("reduce(a64_1*b64_1,sum,b)", optimize_list);
+    benchmark("reduce(a8_1b8_1*b8_1c8_1,sum,b)", optimize_list);
+    benchmark("reduce(a8_1b8_1*b8_1c8_1,sum,a,c)", optimize_list);
+    benchmark("reduce(a8_1b8_1*b8_1c8_1,sum,a,b,c)", optimize_list);
+    benchmark("reduce(b64_1x128*x128,sum,x)", optimize_list);
+    benchmark("reduce(b64_1x8y128*x8y128,sum,y)", optimize_list);
+    benchmark("reduce(b64_1x128*x128,sum,b,x)", optimize_list);
     benchmark("reduce(a1_1x128*a2_1b64_1x128,sum,a,x)", optimize_list);
 
     size_t max_expr_size = 0;
-    for (const auto &[expr, cost_list]: benchmark_results) {
+    for (const auto& [expr, cost_list] : benchmark_results) {
         max_expr_size = std::max(max_expr_size, expr.size());
     }
-    for (const auto &[expr, cost_list]: benchmark_results) {
+    for (const auto& [expr, cost_list] : benchmark_results) {
         for (size_t i = 0; i < max_expr_size - expr.size(); ++i) {
             fprintf(stderr, " ");
         }
@@ -385,7 +386,7 @@ TEST(UniversalDotProductTest, bench_vector_dot_product) {
         double baseline_cost = 0.0;
         double with_universal_cost = 0.0;
         double universal_only_cost = 0.0;
-        for (const auto &[name, cost]: cost_list) {
+        for (const auto& [name, cost] : cost_list) {
             if (++cnt > 1) {
                 fprintf(stderr, ", ");
             }
@@ -412,7 +413,7 @@ TEST(UniversalDotProductTest, bench_vector_dot_product) {
     fprintf(stderr, "\n");
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     const std::string bench_option = "bench";
     const std::string fast_option = "fast";
     const std::string slow_option = "slow";

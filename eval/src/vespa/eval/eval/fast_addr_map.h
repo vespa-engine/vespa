@@ -3,9 +3,11 @@
 #pragma once
 
 #include "memory_usage_stuff.h"
-#include <vespa/vespalib/util/string_id.h>
-#include <vespa/vespalib/stllike/identity.h>
+
 #include <vespa/vespalib/stllike/hashtable.h>
+#include <vespa/vespalib/stllike/identity.h>
+#include <vespa/vespalib/util/string_id.h>
+
 #include <span>
 
 namespace vespalib::eval {
@@ -16,23 +18,21 @@ namespace vespalib::eval {
  * index). Labels are represented by string enum values stored and
  * handled outside this class.
  **/
-class FastAddrMap
-{
+class FastAddrMap {
 public:
     // label extracting functions
     static constexpr string_id self(string_id label) noexcept { return label; }
-    static constexpr string_id self(const string_id *label) noexcept { return *label; }
+    static constexpr string_id self(const string_id* label) noexcept { return *label; }
 
     // label hashing functions
     static constexpr uint32_t hash_label(string_id label) noexcept { return label.value(); }
-    static constexpr uint32_t hash_label(const string_id *label) noexcept { return label->value(); }
+    static constexpr uint32_t hash_label(const string_id* label) noexcept { return label->value(); }
     static constexpr uint32_t combine_label_hash(uint32_t full_hash, uint32_t next_hash) noexcept {
         return ((full_hash * 31) + next_hash);
     }
-    template <typename T>
-    static constexpr uint32_t hash_labels(std::span<const T> addr) {
+    template <typename T> static constexpr uint32_t hash_labels(std::span<const T> addr) {
         uint32_t hash = 0;
-        for (const T &label: addr) {
+        for (const T& label : addr) {
             hash = combine_label_hash(hash, hash_label(label));
         }
         return hash;
@@ -48,21 +48,21 @@ public:
 
     // sparse hash set entry
     struct Entry {
-        Tag tag;
+        Tag      tag;
         uint32_t hash;
     };
 
     // alternative key(s) used for lookup in sparse hash set
     template <typename T> struct AltKey {
         std::span<const T> key;
-        uint32_t hash;
+        uint32_t           hash;
     };
 
     // view able to convert tags into sparse addresses
     struct LabelView {
-        size_t addr_size;
-        const StringIdVector &labels;
-        LabelView(size_t num_mapped_dims, const StringIdVector &labels_in) noexcept
+        size_t                addr_size;
+        const StringIdVector& labels;
+        LabelView(size_t num_mapped_dims, const StringIdVector& labels_in) noexcept
             : addr_size(num_mapped_dims), labels(labels_in) {}
         std::span<const string_id> get_addr(size_t idx) const noexcept {
             return {labels.data() + (idx * addr_size), addr_size};
@@ -71,18 +71,16 @@ public:
 
     // hashing functor for sparse hash set
     struct Hash {
-        template <typename T>
-        constexpr uint32_t operator()(const AltKey<T> &key) const noexcept { return key.hash; }
-        constexpr uint32_t operator()(const Entry &entry) const noexcept { return entry.hash; }
+        template <typename T> constexpr uint32_t operator()(const AltKey<T>& key) const noexcept { return key.hash; }
+        constexpr uint32_t operator()(const Entry& entry) const noexcept { return entry.hash; }
         constexpr uint32_t operator()(string_id label) const noexcept { return label.value(); }
     };
 
     // equality functor for sparse hash set
     struct Equal {
-        const LabelView &label_view;
-        Equal(const LabelView &label_view_in) noexcept : label_view(label_view_in) {}
-        template <typename T>
-        bool operator()(const Entry &a, const AltKey<T> &b) const noexcept {
+        const LabelView& label_view;
+        Equal(const LabelView& label_view_in) noexcept : label_view(label_view_in) {}
+        template <typename T> bool operator()(const Entry& a, const AltKey<T>& b) const noexcept {
             if (a.hash != b.hash) {
                 return false;
             }
@@ -97,32 +95,31 @@ public:
             }
             return true;
         }
-        bool operator()(const Entry &a, string_id b) const { return (a.hash == b.value()); }
+        bool operator()(const Entry& a, string_id b) const { return (a.hash == b.value()); }
     };
 
     using HashType = hashtable<Entry, Entry, Hash, Equal, Identity, hashtable_base::and_modulator>;
 
 private:
     LabelView _labels;
-    HashType _map;
+    HashType  _map;
 
 public:
-    FastAddrMap(size_t num_mapped_dims, const StringIdVector &labels_in, size_t expected_subspaces);
+    FastAddrMap(size_t num_mapped_dims, const StringIdVector& labels_in, size_t expected_subspaces);
     ~FastAddrMap();
-    FastAddrMap(const FastAddrMap &) = delete;
-    FastAddrMap &operator=(const FastAddrMap &) = delete;
-    FastAddrMap(FastAddrMap &&) = delete;
-    FastAddrMap &operator=(FastAddrMap &&) = delete;
+    FastAddrMap(const FastAddrMap&) = delete;
+    FastAddrMap& operator=(const FastAddrMap&) = delete;
+    FastAddrMap(FastAddrMap&&) = delete;
+    FastAddrMap& operator=(FastAddrMap&&) = delete;
     static constexpr size_t npos() noexcept { return -1; }
     std::span<const string_id> get_addr(size_t idx) const noexcept { return _labels.get_addr(idx); }
     size_t size() const noexcept { return _map.size(); }
     constexpr size_t addr_size() const noexcept { return _labels.addr_size; }
-    const StringIdVector &labels() const noexcept { return _labels.labels; }
-    template <typename T>
-    size_t lookup(std::span<const T> addr, uint32_t hash) const noexcept {
+    const StringIdVector& labels() const noexcept { return _labels.labels; }
+    template <typename T> size_t lookup(std::span<const T> addr, uint32_t hash) const noexcept {
         // assert(addr_size() == addr.size());
         AltKey<T> key{addr, hash};
-        auto pos = _map.find(key);
+        auto      pos = _map.find(key);
         return (pos == _map.end()) ? npos() : pos->tag.idx;
     }
     size_t lookup_singledim(string_id addr) const noexcept {
@@ -130,28 +127,21 @@ public:
         auto pos = _map.find(addr);
         return (pos == _map.end()) ? npos() : pos->tag.idx;
     }
-    template <typename T>
-    size_t lookup(std::span<const T> addr) const noexcept {
-        return (addr.size() == 1)
-            ? lookup_singledim(self(addr[0]))
-            : lookup(addr, hash_labels(addr));
+    template <typename T> size_t lookup(std::span<const T> addr) const noexcept {
+        return (addr.size() == 1) ? lookup_singledim(self(addr[0])) : lookup(addr, hash_labels(addr));
     }
     void add_mapping(uint32_t hash) {
         uint32_t idx = _map.size();
         _map.force_insert(Entry{{idx}, hash});
     }
-    template <typename F>
-    void each_map_entry(F &&f) const {
-        _map.for_each([&](const auto &entry)
-                      {
-                          f(entry.tag.idx, entry.hash);
-                      });
+    template <typename F> void each_map_entry(F&& f) const {
+        _map.for_each([&](const auto& entry) { f(entry.tag.idx, entry.hash); });
     }
     MemoryUsage estimate_extra_memory_usage() const {
         MemoryUsage extra_usage;
-        size_t map_self_size = sizeof(_map);
-        size_t map_used = _map.getMemoryUsed();
-        size_t map_allocated = _map.getMemoryConsumption();
+        size_t      map_self_size = sizeof(_map);
+        size_t      map_used = _map.getMemoryUsed();
+        size_t      map_allocated = _map.getMemoryConsumption();
         // avoid double-counting the map itself
         map_used = std::min(map_used, map_used - map_self_size);
         map_allocated = std::min(map_allocated, map_allocated - map_self_size);
@@ -161,4 +151,4 @@ public:
     }
 };
 
-}
+} // namespace vespalib::eval

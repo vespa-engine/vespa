@@ -2,29 +2,29 @@
 
 #pragma once
 
-#include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/nested_loop.h>
+#include <vespa/eval/eval/value_type.h>
 #include <vespa/vespalib/util/small_vector.h>
 
 namespace vespalib::eval::instruction {
 
 struct DenseJoinReducePlan {
-    size_t lhs_size;
-    size_t rhs_size;
-    size_t res_size;
+    size_t              lhs_size;
+    size_t              rhs_size;
+    size_t              res_size;
     SmallVector<size_t> loop_cnt;
     SmallVector<size_t> lhs_stride;
     SmallVector<size_t> rhs_stride;
     SmallVector<size_t> res_stride;
-    DenseJoinReducePlan(const ValueType &lhs, const ValueType &rhs, const ValueType &res);
+    DenseJoinReducePlan(const ValueType& lhs, const ValueType& rhs, const ValueType& res);
     ~DenseJoinReducePlan();
-    template <typename F> void execute(size_t lhs, size_t rhs, size_t res, const F &f) const {
+    template <typename F> void execute(size_t lhs, size_t rhs, size_t res, const F& f) const {
         run_nested_loop(lhs, rhs, res, loop_cnt, lhs_stride, rhs_stride, res_stride, f);
     }
-    template <typename F> void execute_distinct(size_t lhs, size_t rhs, const F &f) const {
+    template <typename F> void execute_distinct(size_t lhs, size_t rhs, const F& f) const {
         run_nested_loop(lhs, rhs, loop_cnt, lhs_stride, rhs_stride, f);
     }
     bool is_distinct() const;
 };
 
-} // namespace
+} // namespace vespalib::eval::instruction

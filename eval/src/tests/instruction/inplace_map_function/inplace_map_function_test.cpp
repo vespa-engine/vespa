@@ -1,11 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/eval/eval/tensor_function.h>
-#include <vespa/eval/instruction/inplace_map_function.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
 #include <vespa/eval/eval/test/gen_spec.h>
-#include <vespa/vespalib/util/require.h>
+#include <vespa/eval/instruction/inplace_map_function.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/require.h>
 
 using namespace vespalib;
 using namespace vespalib::eval;
@@ -15,7 +15,7 @@ using namespace vespalib::eval::tensor_function;
 struct FunInfo {
     using LookFor = InplaceMapFunction;
     bool debug_dump;
-    void verify(const LookFor &fun) const {
+    void verify(const LookFor& fun) const {
         EXPECT_TRUE(fun.result_is_mutable());
         EXPECT_EQ(fun.inplace(), true);
         if (debug_dump) {
@@ -25,7 +25,7 @@ struct FunInfo {
     }
 };
 
-void verify_optimized(const std::string &expr) {
+void verify_optimized(const std::string& expr) {
     SCOPED_TRACE(expr.c_str());
     CellTypeSpace stable_types(CellTypeUtils::list_stable_types(), 1);
     CellTypeSpace unstable_types(CellTypeUtils::list_unstable_types(), 1);
@@ -33,7 +33,7 @@ void verify_optimized(const std::string &expr) {
     EvalFixture::verify<FunInfo>(expr, {}, unstable_types);
 }
 
-void verify_not_optimized(const std::string &expr) {
+void verify_not_optimized(const std::string& expr) {
     SCOPED_TRACE(expr.c_str());
     CellTypeSpace just_double({CellType::DOUBLE}, 1);
     EvalFixture::verify<FunInfo>(expr, {}, just_double);

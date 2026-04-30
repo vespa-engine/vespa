@@ -35,15 +35,14 @@ namespace vespalib::eval {
  * simple lookup with fallback:
  * if(reduce(key*map,count)==128,reduce(key*map,sum,x),fallback)
  **/
-class MappedLookup : public tensor_function::Op2
-{
+class MappedLookup : public tensor_function::Op2 {
 public:
-    MappedLookup(const ValueType &res_type, const TensorFunction &key_in, const TensorFunction &map_in);
-    const TensorFunction &key() const { return lhs(); }
-    const TensorFunction &map() const { return rhs(); }
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
+    MappedLookup(const ValueType& res_type, const TensorFunction& key_in, const TensorFunction& map_in);
+    const TensorFunction& key() const { return lhs(); }
+    const TensorFunction& map() const { return rhs(); }
+    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory& factory, Stash& stash) const override;
     bool result_is_mutable() const override { return map().result_is_mutable(); }
-    static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
+    static const TensorFunction& optimize(const TensorFunction& expr, Stash& stash);
 };
 
-} // namespace
+} // namespace vespalib::eval

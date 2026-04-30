@@ -3,9 +3,11 @@
 #pragma once
 
 #include "memory_usage_stuff.h"
-#include "value_type.h"
 #include "typed_cells.h"
+#include "value_type.h"
+
 #include <vespa/vespalib/util/string_id.h>
+
 #include <memory>
 
 namespace vespalib::eval {
@@ -16,7 +18,7 @@ namespace vespalib::eval {
 struct Value {
     using UP = std::unique_ptr<Value>;
     using CREF = std::reference_wrapper<const Value>;
-    virtual const ValueType &type() const = 0;
+    virtual const ValueType& type() const = 0;
     virtual ~Value() = default;
 
     // Root lookup structure for mapping labels to dense subspace indexes
@@ -39,7 +41,7 @@ struct Value {
             // lookup into the given partial address and index. Only
             // the labels for the dimensions NOT specified in
             // create_view will be extracted here.
-            virtual bool next_result(std::span<string_id* const> addr_out, size_t &idx_out) = 0;
+            virtual bool next_result(std::span<string_id* const> addr_out, size_t& idx_out) = 0;
 
             virtual ~View() = default;
         };
@@ -54,7 +56,7 @@ struct Value {
         virtual ~Index() = default;
     };
     virtual TypedCells cells() const = 0;
-    virtual const Index &index() const = 0;
+    virtual const Index& index() const = 0;
     virtual MemoryUsage get_memory_usage() const = 0;
     virtual double as_double() const;
     bool as_bool() const { return (as_double() != 0.0); }
@@ -67,8 +69,9 @@ class EmptyIndex : public Value::Index {
 private:
     EmptyIndex();
     static EmptyIndex _index;
+
 public:
-    static const EmptyIndex &get() { return _index; }
+    static const EmptyIndex& get() { return _index; }
     size_t size() const override;
     std::unique_ptr<View> create_view(std::span<const size_t> dims) const override;
 };
@@ -80,64 +83,64 @@ class TrivialIndex : public Value::Index {
 private:
     TrivialIndex();
     static TrivialIndex _index;
+
 public:
-    static const TrivialIndex &get() { return _index; }
+    static const TrivialIndex& get() { return _index; }
     size_t size() const override;
     std::unique_ptr<View> create_view(std::span<const size_t> dims) const override;
 };
 
-class DoubleValue final : public Value
-{
+class DoubleValue final : public Value {
 private:
-    double _value;
+    double           _value;
     static ValueType _type;
+
 public:
     DoubleValue(double value) : _value(value) {}
     TypedCells cells() const final override { return TypedCells(std::span<const double>(&_value, 1)); }
-    const Index &index() const final override { return TrivialIndex::get(); }
+    const Index& index() const final override { return TrivialIndex::get(); }
     MemoryUsage get_memory_usage() const final override { return self_memory_usage<DoubleValue>(); }
     double as_double() const final override { return _value; }
-    const ValueType &type() const final override { return _type; }
-    static const ValueType &shared_type() { return _type; }
+    const ValueType& type() const final override { return _type; }
+    static const ValueType& shared_type() { return _type; }
 };
 
 /**
  * A generic value without any mapped dimensions referencing its
  * components without owning anything.
  **/
-class DenseValueView final : public Value
-{
+class DenseValueView final : public Value {
 private:
-    const ValueType &_type;
-    TypedCells _cells;
+    const ValueType& _type;
+    TypedCells       _cells;
+
 public:
-    DenseValueView(const ValueType &type_in, TypedCells cells_in)
-        : _type(type_in), _cells(cells_in) {}
-    const ValueType &type() const final override { return _type; }
+    DenseValueView(const ValueType& type_in, TypedCells cells_in) : _type(type_in), _cells(cells_in) {}
+    const ValueType& type() const final override { return _type; }
     TypedCells cells() const final override { return _cells; }
-    const Index &index() const final override { return TrivialIndex::get(); }
+    const Index& index() const final override { return TrivialIndex::get(); }
     MemoryUsage get_memory_usage() const final override { return self_memory_usage<DenseValueView>(); }
 };
 
 /**
  * A generic value referencing its components without owning anything.
  **/
-class ValueView final : public Value
-{
+class ValueView final : public Value {
 private:
-    const ValueType &_type;
-    const Index &_index;
-    TypedCells _cells;
+    const ValueType& _type;
+    const Index&     _index;
+    TypedCells       _cells;
+
 public:
-    ValueView(const ValueType &type_in, const Index &index_in, TypedCells cells_in)
+    ValueView(const ValueType& type_in, const Index& index_in, TypedCells cells_in)
         : _type(type_in), _index(index_in), _cells(cells_in) {}
-    const ValueType &type() const final override { return _type; }
+    const ValueType& type() const final override { return _type; }
     TypedCells cells() const final override { return _cells; }
-    const Index &index() const final override { return _index; }
+    const Index& index() const final override { return _index; }
     MemoryUsage get_memory_usage() const final override { return self_memory_usage<ValueView>(); }
 };
 
-}
+} // namespace vespalib::eval
 
 VESPA_CAN_SKIP_DESTRUCTION(::vespalib::eval::DoubleValue);
 VESPA_CAN_SKIP_DESTRUCTION(::vespalib::eval::DenseValueView);

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "cell_type.h"
+
 #include <string>
 #include <vector>
 
@@ -13,22 +14,17 @@ namespace vespalib::eval {
  * compilation of interpreted functions using boxed polymorphic
  * values.
  **/
-class ValueType
-{
+class ValueType {
 public:
     struct Dimension {
         using size_type = uint32_t;
         static constexpr size_type npos = -1;
-        std::string name;
-        size_type size;
-        Dimension(std::string name_in) noexcept
-            : name(std::move(name_in)), size(npos) {}
-        Dimension(std::string name_in, size_type size_in) noexcept
-            : name(std::move(name_in)), size(size_in) {}
-        bool operator==(const Dimension &rhs) const noexcept {
-            return ((name == rhs.name) && (size == rhs.size));
-        }
-        bool operator!=(const Dimension &rhs) const noexcept { return !(*this == rhs); }
+        std::string                name;
+        size_type                  size;
+        Dimension(std::string name_in) noexcept : name(std::move(name_in)), size(npos) {}
+        Dimension(std::string name_in, size_type size_in) noexcept : name(std::move(name_in)), size(size_in) {}
+        bool operator==(const Dimension& rhs) const noexcept { return ((name == rhs.name) && (size == rhs.size)); }
+        bool operator!=(const Dimension& rhs) const noexcept { return !(*this == rhs); }
         bool is_mapped() const noexcept { return (size == npos); }
         bool is_indexed() const noexcept { return (size != npos); }
         bool is_trivial() const noexcept { return (size == 1); }
@@ -39,19 +35,18 @@ private:
     CellType               _cell_type;
     std::vector<Dimension> _dimensions;
 
-    ValueType() noexcept
-        : _error(true), _cell_type(CellType::DOUBLE), _dimensions() {}
+    ValueType() noexcept : _error(true), _cell_type(CellType::DOUBLE), _dimensions() {}
 
-    ValueType(CellType cell_type_in, std::vector<Dimension> &&dimensions_in) noexcept
+    ValueType(CellType cell_type_in, std::vector<Dimension>&& dimensions_in) noexcept
         : _error(false), _cell_type(cell_type_in), _dimensions(std::move(dimensions_in)) {}
 
     static ValueType error_if(bool has_error, ValueType else_type);
 
 public:
-    ValueType(ValueType &&) noexcept = default;
-    ValueType(const ValueType &);
-    ValueType &operator=(ValueType &&) noexcept = default;
-    ValueType &operator=(const ValueType &);
+    ValueType(ValueType&&) noexcept = default;
+    ValueType(const ValueType&);
+    ValueType& operator=(ValueType&&) noexcept = default;
+    ValueType& operator=(const ValueType&);
     ~ValueType();
     CellType cell_type() const { return _cell_type; }
     CellMeta cell_meta() const { return {_cell_type, is_double()}; }
@@ -64,45 +59,40 @@ public:
     size_t count_indexed_dimensions() const;
     size_t count_mapped_dimensions() const;
     size_t dense_subspace_size() const;
-    const std::vector<Dimension> &dimensions() const { return _dimensions; }
+    const std::vector<Dimension>& dimensions() const { return _dimensions; }
     std::vector<Dimension> nontrivial_indexed_dimensions() const;
     std::vector<Dimension> indexed_dimensions() const;
     std::vector<Dimension> mapped_dimensions() const;
-    size_t dimension_index(const std::string &name) const;
-    size_t stride_of(const std::string &name) const;
-    bool has_dimension(const std::string &name) const {
-        return (dimension_index(name) != Dimension::npos);
-    }
+    size_t dimension_index(const std::string& name) const;
+    size_t stride_of(const std::string& name) const;
+    bool has_dimension(const std::string& name) const { return (dimension_index(name) != Dimension::npos); }
     std::vector<std::string> dimension_names() const;
-    bool operator==(const ValueType &rhs) const noexcept {
-        return ((_error == rhs._error) &&
-                (_cell_type == rhs._cell_type) &&
-                (_dimensions == rhs._dimensions));
+    bool operator==(const ValueType& rhs) const noexcept {
+        return ((_error == rhs._error) && (_cell_type == rhs._cell_type) && (_dimensions == rhs._dimensions));
     }
-    bool operator!=(const ValueType &rhs) const noexcept { return !(*this == rhs); }
+    bool operator!=(const ValueType& rhs) const noexcept { return !(*this == rhs); }
 
     ValueType strip_mapped_dimensions() const;
     ValueType strip_indexed_dimensions() const;
-    ValueType wrap(const ValueType &inner);
+    ValueType wrap(const ValueType& inner);
     ValueType map() const;
-    ValueType reduce(const std::vector<std::string> &dimensions_in) const;
-    ValueType peek(const std::vector<std::string> &dimensions_in) const;
-    ValueType rename(const std::vector<std::string> &from,
-                     const std::vector<std::string> &to) const;
+    ValueType reduce(const std::vector<std::string>& dimensions_in) const;
+    ValueType peek(const std::vector<std::string>& dimensions_in) const;
+    ValueType rename(const std::vector<std::string>& from, const std::vector<std::string>& to) const;
     ValueType cell_cast(CellType to_cell_type) const;
 
     static ValueType error_type() { return {}; }
     static ValueType make_type(CellType cell_type, std::vector<Dimension> dimensions_in);
     static ValueType double_type() { return make_type(CellType::DOUBLE, {}); }
-    static ValueType from_spec(const std::string &spec);
-    static ValueType from_spec(const std::string &spec, std::vector<ValueType::Dimension> &unsorted);
+    static ValueType from_spec(const std::string& spec);
+    static ValueType from_spec(const std::string& spec, std::vector<ValueType::Dimension>& unsorted);
     std::string to_spec() const;
-    static ValueType join(const ValueType &lhs, const ValueType &rhs);
-    static ValueType merge(const ValueType &lhs, const ValueType &rhs);
-    static ValueType concat(const ValueType &lhs, const ValueType &rhs, const std::string &dimension);
-    static ValueType either(const ValueType &one, const ValueType &other);
+    static ValueType join(const ValueType& lhs, const ValueType& rhs);
+    static ValueType merge(const ValueType& lhs, const ValueType& rhs);
+    static ValueType concat(const ValueType& lhs, const ValueType& rhs, const std::string& dimension);
+    static ValueType either(const ValueType& one, const ValueType& other);
 };
 
-std::ostream &operator<<(std::ostream &os, const ValueType &type);
+std::ostream& operator<<(std::ostream& os, const ValueType& type);
 
-} // namespace
+} // namespace vespalib::eval

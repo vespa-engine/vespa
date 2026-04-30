@@ -9,14 +9,13 @@ namespace vespalib::eval {
 /**
  * Tensor function for joining tensors with full sparse overlap.
  */
-class SparseFullOverlapJoinFunction : public tensor_function::Join
-{
+class SparseFullOverlapJoinFunction : public tensor_function::Join {
 public:
-    SparseFullOverlapJoinFunction(const tensor_function::Join &original);
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
+    SparseFullOverlapJoinFunction(const tensor_function::Join& original);
+    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory& factory, Stash& stash) const override;
     bool result_is_mutable() const override { return true; }
-    static bool compatible_types(const ValueType &res, const ValueType &lhs, const ValueType &rhs);
-    static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
+    static bool compatible_types(const ValueType& res, const ValueType& lhs, const ValueType& rhs);
+    static const TensorFunction& optimize(const TensorFunction& expr, Stash& stash);
 };
 
-} // namespace
+} // namespace vespalib::eval

@@ -2,14 +2,15 @@
 
 #pragma once
 
-#include <vespa/vespalib/data/memory.h>
-#include <vespa/vespalib/data/writable_memory.h>
 #include <vespa/vespalib/data/input.h>
+#include <vespa/vespalib/data/memory.h>
 #include <vespa/vespalib/data/output.h>
 #include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/data/writable_memory.h>
 #include <vespa/vespalib/process/process.h>
+#include <vespa/vespalib/util/size_literals.h>
+
 #include <functional>
 
 namespace vespalib::eval::test {
@@ -19,15 +20,16 @@ namespace vespalib::eval::test {
  **/
 class StdIn : public Input {
 private:
-    bool _eof = false;
+    bool         _eof = false;
     SimpleBuffer _input;
+
 public:
     struct Broken : std::exception {
-        const char *what() const noexcept override { return "stdin is broken"; }
+        const char* what() const noexcept override { return "stdin is broken"; }
     };
     ~StdIn() {}
     Memory obtain() override;
-    Input &evict(size_t bytes) override;
+    Input& evict(size_t bytes) override;
 };
 
 /**
@@ -36,13 +38,14 @@ public:
 class StdOut : public Output {
 private:
     SimpleBuffer _output;
+
 public:
     struct Broken : std::exception {
-        const char *what() const noexcept override { return "stdout is broken"; }
+        const char* what() const noexcept override { return "stdout is broken"; }
     };
     ~StdOut() {}
     WritableMemory reserve(size_t bytes) override;
-    Output &commit(size_t bytes) override;
+    Output& commit(size_t bytes) override;
 };
 
 /**
@@ -51,25 +54,25 @@ public:
  **/
 class ServerCmd {
 private:
-    Process _child;
+    Process     _child;
     std::string _basename;
-    bool _closed;
-    bool _exited;
-    int _exit_code;
+    bool        _closed;
+    bool        _exited;
+    int         _exit_code;
 
     void maybe_close();
     void maybe_exit();
 
-    void dump_string(const char *prefix, const std::string &str);
-    void dump_message(const char *prefix, const Slime &slime);
+    void dump_string(const char* prefix, const std::string& str);
+    void dump_message(const char* prefix, const Slime& slime);
 
 public:
-    struct capture_stderr_tag{};
+    struct capture_stderr_tag {};
     ServerCmd(std::string cmd);
     ServerCmd(std::string cmd, capture_stderr_tag);
     ~ServerCmd();
-    Slime invoke(const Slime &req);
-    std::string write_then_read_all(const std::string &input);
+    Slime invoke(const Slime& req);
+    std::string write_then_read_all(const std::string& input);
     int shutdown();
 };
 
@@ -78,26 +81,27 @@ public:
  **/
 class LineReader {
 private:
-    Input &_input;
+    Input& _input;
+
 public:
-    LineReader(Input &input) : _input(input) {}
-    bool read_line(std::string &line);
+    LineReader(Input& input) : _input(input) {}
+    bool read_line(std::string& line);
 };
 
 /**
  * Skip whitespaces from the input and return true if eof was reached.
  **/
-bool look_for_eof(Input &input);
+bool look_for_eof(Input& input);
 
 /**
  * Read from the input until eof is reached (data is discarded).
  **/
-void read_until_eof(Input &input);
+void read_until_eof(Input& input);
 
 /**
  * Write a slime structure as compact json with a trailing newline.
  **/
-void write_compact(const Slime &slime, Output &out);
+void write_compact(const Slime& slime, Output& out);
 
 /**
  * Write tests to the given output. Will write a minimal summary when
@@ -109,13 +113,14 @@ void write_compact(const Slime &slime, Output &out);
  **/
 class TestWriter {
 private:
-    Output &_out;
+    Output& _out;
     Slime   _test;
     size_t  _num_tests;
     void maybe_write_test();
+
 public:
-    TestWriter(Output &output);
-    slime::Cursor &create();
+    TestWriter(Output& output);
+    slime::Cursor& create();
     ~TestWriter();
 };
 
@@ -125,8 +130,7 @@ public:
  * the 'handle_summary' function will be called once at the end. This
  * function also does some minor consistency checking.
  **/
-void for_each_test(Input &in,
-                   const std::function<void(Slime&)> &handle_test,
-                   const std::function<void(Slime&)> &handle_summary);
+void for_each_test(Input& in, const std::function<void(Slime&)>& handle_test,
+                   const std::function<void(Slime&)>& handle_summary);
 
 } // namespace vespalib::eval::test

@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "generate.h"
+
+#include <vespa/eval/eval/aggr.h>
 #include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/eval/eval/value_type_spec.h>
-#include <vespa/eval/eval/aggr.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 using namespace vespalib::eval;
@@ -15,12 +16,10 @@ using vespalib::make_string_short::fmt;
 namespace {
 
 struct IgnoreJava : TestBuilder {
-    TestBuilder &dst;
-    IgnoreJava(TestBuilder &dst_in) : TestBuilder(dst_in.full), dst(dst_in) {}
-    void add(const std::string &expression,
-             const std::map<std::string,TensorSpec> &inputs,
-             const std::set<std::string> &ignore) override
-    {
+    TestBuilder& dst;
+    IgnoreJava(TestBuilder& dst_in) : TestBuilder(dst_in.full), dst(dst_in) {}
+    void add(const std::string& expression, const std::map<std::string, TensorSpec>& inputs,
+             const std::set<std::string>& ignore) override {
         auto my_ignore = ignore;
         my_ignore.insert("vespajlib");
         dst.add(expression, inputs, my_ignore);
@@ -29,30 +28,24 @@ struct IgnoreJava : TestBuilder {
 
 //-----------------------------------------------------------------------------
 
-const std::vector<std::string> basic_layouts = {
-    "",
-    "a3", "a3c5", "a3c5e7",
-    "b2_1", "b2_1d3_1", "b2_1d3_1f4_1",
-    "a3b2_1c5d3_1", "b2_1c5d3_1e7"
-};
+const std::vector<std::string> basic_layouts = {"",         "a3",           "a3c5",         "a3c5e7",      "b2_1",
+                                                "b2_1d3_1", "b2_1d3_1f4_1", "a3b2_1c5d3_1", "b2_1c5d3_1e7"};
 
-const std::vector<std::pair<std::string,std::string>> join_layouts = {
-    {"", ""},
-    {"", "a3"},
-    {"", "b2_1"},
-    {"", "a3b2_1"},
-    {"a3c5e7", "a3c5e7"},
-    {"c5", "a3e7"},
-    {"a3c5", "c5e7"},
-    {"b4_1d6_1f8_1", "b2_2d3_2f4_2"},
-    {"d3_1", "b2_1f4_1"},
-    {"b2_1d6_1", "d3_2f4_2"},
-    {"a3b4_1c5d6_1", "a3b2_1c5d3_1"},
-    {"a3b2_1", "c5d3_1"},
-    {"a3b4_1c5", "b2_1c5d3_1"}
-};
+const std::vector<std::pair<std::string, std::string>> join_layouts = {{"", ""},
+                                                                       {"", "a3"},
+                                                                       {"", "b2_1"},
+                                                                       {"", "a3b2_1"},
+                                                                       {"a3c5e7", "a3c5e7"},
+                                                                       {"c5", "a3e7"},
+                                                                       {"a3c5", "c5e7"},
+                                                                       {"b4_1d6_1f8_1", "b2_2d3_2f4_2"},
+                                                                       {"d3_1", "b2_1f4_1"},
+                                                                       {"b2_1d6_1", "d3_2f4_2"},
+                                                                       {"a3b4_1c5d6_1", "a3b2_1c5d3_1"},
+                                                                       {"a3b2_1", "c5d3_1"},
+                                                                       {"a3b4_1c5", "b2_1c5d3_1"}};
 
-const std::vector<std::pair<std::string,std::string>> merge_layouts = {
+const std::vector<std::pair<std::string, std::string>> merge_layouts = {
     {"", ""},
     {"a3c5e7", "a3c5e7"},
     {"b15_2", "b10_3"},
@@ -60,13 +53,9 @@ const std::vector<std::pair<std::string,std::string>> merge_layouts = {
     {"a3b6_2c1d4_3e2f6_2", "a3b4_3c1d6_2e2f4_3"},
 };
 
-const std::vector<std::string> concat_c_layouts_a = {
-    "", "c3", "a3", "b6_2", "a3b6_2", "a3b6_2c3"
-};
+const std::vector<std::string> concat_c_layouts_a = {"", "c3", "a3", "b6_2", "a3b6_2", "a3b6_2c3"};
 
-const std::vector<std::string> concat_c_layouts_b = {
-    "", "c5", "a3", "b4_3", "a3b4_3", "a3b4_3c5"
-};
+const std::vector<std::string> concat_c_layouts_b = {"", "c5", "a3", "b4_3", "a3b4_3", "a3b4_3c5"};
 
 //-----------------------------------------------------------------------------
 
@@ -76,13 +65,13 @@ const std::vector<CellType> all_types = CellTypeUtils::list_types();
 
 const double my_nan = std::numeric_limits<double>::quiet_NaN();
 
-Sequence skew(const Sequence &seq) {
+Sequence skew(const Sequence& seq) {
     return [seq](size_t i) { return seq(i + 7); };
 }
 
 Sequence my_seq(double x0, double delta, size_t n) {
     std::vector<double> values;
-    double x = x0;
+    double              x = x0;
     for (size_t i = 0; i < n; ++i) {
         values.push_back(x);
         x += delta;
@@ -92,42 +81,42 @@ Sequence my_seq(double x0, double delta, size_t n) {
 
 //-----------------------------------------------------------------------------
 
-void generate(const std::string &expr, const GenSpec &a, TestBuilder &dst) {
+void generate(const std::string& expr, const GenSpec& a, TestBuilder& dst) {
     auto a_cell_types = a.dims().empty() ? just_double : dst.full ? all_types : just_float;
-    for (auto a_ct: a_cell_types) {
+    for (auto a_ct : a_cell_types) {
         dst.add(expr, {{"a", a.cpy().cells(a_ct)}});
     }
 }
 
-void generate(const std::string &expr, const GenSpec &a, const GenSpec &b, TestBuilder &dst) {
+void generate(const std::string& expr, const GenSpec& a, const GenSpec& b, TestBuilder& dst) {
     auto a_cell_types = a.dims().empty() ? just_double : dst.full ? all_types : just_float;
     auto b_cell_types = b.dims().empty() ? just_double : dst.full ? all_types : just_float;
-    for (auto a_ct: a_cell_types) {
-        for (auto b_ct: b_cell_types) {
-            dst.add(expr, {{"a", a.cpy().cells(a_ct)},{"b", b.cpy().cells(b_ct)}});
+    for (auto a_ct : a_cell_types) {
+        for (auto b_ct : b_cell_types) {
+            dst.add(expr, {{"a", a.cpy().cells(a_ct)}, {"b", b.cpy().cells(b_ct)}});
         }
     }
 }
 
-void generate_with_cell_type(const char *expr_fmt, TestBuilder &dst) {
+void generate_with_cell_type(const char* expr_fmt, TestBuilder& dst) {
     auto cell_types = dst.full ? all_types : just_float;
-    for (auto ct: cell_types) {
+    for (auto ct : cell_types) {
         auto name = value_type::cell_type_to_name(ct);
         dst.add(fmt(expr_fmt, name.c_str()), {});
     }
 }
 
-void generate_with_cell_type(const char *expr_fmt, double a, double b, double c, TestBuilder &dst) {
+void generate_with_cell_type(const char* expr_fmt, double a, double b, double c, TestBuilder& dst) {
     auto cell_types = dst.full ? all_types : just_float;
-    for (auto ct: cell_types) {
+    for (auto ct : cell_types) {
         auto name = value_type::cell_type_to_name(ct);
-        dst.add(fmt(expr_fmt, name.c_str()), {{"a", GenSpec(a)},{"b", GenSpec(b)},{"c", GenSpec(c)}});
+        dst.add(fmt(expr_fmt, name.c_str()), {{"a", GenSpec(a)}, {"b", GenSpec(b)}, {"c", GenSpec(c)}});
     }
 }
 
 //-----------------------------------------------------------------------------
 
-void generate_const(TestBuilder &dst) {
+void generate_const(TestBuilder& dst) {
     dst.add("1.25", {});
     dst.add("2.75", {});
     dst.add("\"this is a string that will be hashed\"", {});
@@ -148,8 +137,8 @@ void generate_const(TestBuilder &dst) {
 
 //-----------------------------------------------------------------------------
 
-void generate_inject(TestBuilder &dst) {
-    for (const auto &layout: basic_layouts) {
+void generate_inject(TestBuilder& dst) {
+    for (const auto& layout : basic_layouts) {
         GenSpec a = GenSpec::from_desc(layout).seq(N());
         generate("a", a, dst);
     }
@@ -157,31 +146,26 @@ void generate_inject(TestBuilder &dst) {
 
 //-----------------------------------------------------------------------------
 
-void generate_reduce(Aggr aggr, const Sequence &seq, TestBuilder &dst) {
-    for (const auto &layout: basic_layouts) {
+void generate_reduce(Aggr aggr, const Sequence& seq, TestBuilder& dst) {
+    for (const auto& layout : basic_layouts) {
         GenSpec a = GenSpec::from_desc(layout).seq(seq);
-        for (const auto &dim: a.dims()) {
-            std::string expr = fmt("reduce(a,%s,%s)",
-                                        AggrNames::name_of(aggr)->c_str(),
-                                        dim.name().c_str());
+        for (const auto& dim : a.dims()) {
+            std::string expr = fmt("reduce(a,%s,%s)", AggrNames::name_of(aggr)->c_str(), dim.name().c_str());
             generate(expr, a, dst);
         }
         if (a.dims().size() > 1) {
-            std::string expr = fmt("reduce(a,%s,%s,%s)",
-                                        AggrNames::name_of(aggr)->c_str(),
-                                        a.dims().back().name().c_str(),
-                                        a.dims().front().name().c_str());
+            std::string expr = fmt("reduce(a,%s,%s,%s)", AggrNames::name_of(aggr)->c_str(),
+                                   a.dims().back().name().c_str(), a.dims().front().name().c_str());
             generate(expr, a, dst);
         }
         {
-            std::string expr = fmt("reduce(a,%s)",
-                                        AggrNames::name_of(aggr)->c_str());
+            std::string expr = fmt("reduce(a,%s)", AggrNames::name_of(aggr)->c_str());
             generate(expr, a, dst);
         }
     }
 }
 
-void generate_reduce(TestBuilder &dst) {
+void generate_reduce(TestBuilder& dst) {
     generate_reduce(Aggr::AVG, N(), dst);
     generate_reduce(Aggr::COUNT, N(), dst);
     generate_reduce(Aggr::PROD, SigmoidF(N()), dst);
@@ -193,19 +177,19 @@ void generate_reduce(TestBuilder &dst) {
 
 //-----------------------------------------------------------------------------
 
-void generate_map_expr(const std::string &expr, const Sequence &seq, TestBuilder &dst) {
-    for (const auto &layout: basic_layouts) {
+void generate_map_expr(const std::string& expr, const Sequence& seq, TestBuilder& dst) {
+    for (const auto& layout : basic_layouts) {
         GenSpec a = GenSpec::from_desc(layout).seq(seq);
         generate(expr, a, dst);
     }
 }
 
-void generate_op1_map(const std::string &op1_expr, const Sequence &seq, TestBuilder &dst) {
+void generate_op1_map(const std::string& op1_expr, const Sequence& seq, TestBuilder& dst) {
     generate_map_expr(op1_expr, seq, dst);
     generate_map_expr(fmt("map(a,f(a)(%s))", op1_expr.c_str()), seq, dst);
 }
 
-void generate_map(TestBuilder &dst) {
+void generate_map(TestBuilder& dst) {
     generate_op1_map("-a", Sub2(Div16(N())), dst);
     generate_op1_map("!a", Seq({0.0, 1.0, 1.0}), dst);
     generate_op1_map("cos(a)", Div16(N()), dst);
@@ -236,12 +220,12 @@ void generate_map(TestBuilder &dst) {
 
 //-----------------------------------------------------------------------------
 
-void generate_map_subspaces(TestBuilder &dst) {
-    auto my_seq = Seq({-128, -43, 85, 127});
-    auto scalar = GenSpec(7.0);
-    auto sparse = GenSpec().from_desc("x8_1").seq(my_seq);
-    auto mixed = GenSpec().from_desc("x4_1y4").seq(my_seq);
-    auto dense = GenSpec().from_desc("y4").seq(my_seq);
+void generate_map_subspaces(TestBuilder& dst) {
+    auto        my_seq = Seq({-128, -43, 85, 127});
+    auto        scalar = GenSpec(7.0);
+    auto        sparse = GenSpec().from_desc("x8_1").seq(my_seq);
+    auto        mixed = GenSpec().from_desc("x4_1y4").seq(my_seq);
+    auto        dense = GenSpec().from_desc("y4").seq(my_seq);
     std::string map_a("map_subspaces(a,f(a)(a*3+2))");
     std::string unpack_a("map_subspaces(a,f(a)(tensor<int8>(y[8])(bit(a,7-y%8))))");
     std::string unpack_y4("map_subspaces(a,f(a)(tensor<int8>(y[32])(bit(a{y:(y/8)},7-y%8))))");
@@ -258,11 +242,11 @@ void generate_map_subspaces(TestBuilder &dst) {
 
 //-----------------------------------------------------------------------------
 
-void generate_filter_subspaces(TestBuilder &dst) {
-    auto my_seq = Seq({1, 2, 3, 4, 5, 6, 7, 8});
-    auto sparse = GenSpec().from_desc("x8_1").seq(my_seq);
-    auto mixed = GenSpec().from_desc("x4_1y2").seq(my_seq);
-    auto complex = GenSpec().from_desc("x2_1y2_1z2").seq(my_seq);
+void generate_filter_subspaces(TestBuilder& dst) {
+    auto        my_seq = Seq({1, 2, 3, 4, 5, 6, 7, 8});
+    auto        sparse = GenSpec().from_desc("x8_1").seq(my_seq);
+    auto        mixed = GenSpec().from_desc("x4_1y2").seq(my_seq);
+    auto        complex = GenSpec().from_desc("x2_1y2_1z2").seq(my_seq);
     std::string single("filter_subspaces(a,f(x)(x>3.5))");
     std::string with_y("filter_subspaces(a,f(x)(x{y:0}>3.5))");
     std::string with_z("filter_subspaces(a,f(x)(x{z:1}>3.5))");
@@ -273,8 +257,8 @@ void generate_filter_subspaces(TestBuilder &dst) {
 
 //-----------------------------------------------------------------------------
 
-void generate_join_expr(const std::string &expr, const Sequence &seq, TestBuilder &dst) {
-    for (const auto &layouts: join_layouts) {
+void generate_join_expr(const std::string& expr, const Sequence& seq, TestBuilder& dst) {
+    for (const auto& layouts : join_layouts) {
         GenSpec a = GenSpec::from_desc(layouts.first).seq(seq);
         GenSpec b = GenSpec::from_desc(layouts.second).seq(skew(seq));
         generate(expr, a, b, dst);
@@ -282,25 +266,25 @@ void generate_join_expr(const std::string &expr, const Sequence &seq, TestBuilde
     }
 }
 
-void generate_join_expr(const std::string &expr, const Sequence &seq_a, const Sequence &seq_b, TestBuilder &dst) {
-    for (const auto &layouts: join_layouts) {
+void generate_join_expr(const std::string& expr, const Sequence& seq_a, const Sequence& seq_b, TestBuilder& dst) {
+    for (const auto& layouts : join_layouts) {
         GenSpec a = GenSpec::from_desc(layouts.first).seq(seq_a);
         GenSpec b = GenSpec::from_desc(layouts.second).seq(seq_b);
         generate(expr, a, b, dst);
     }
 }
 
-void generate_op2_join(const std::string &op2_expr, const Sequence &seq, TestBuilder &dst) {
+void generate_op2_join(const std::string& op2_expr, const Sequence& seq, TestBuilder& dst) {
     generate_join_expr(op2_expr, seq, dst);
     generate_join_expr(fmt("join(a,b,f(a,b)(%s))", op2_expr.c_str()), seq, dst);
 }
 
-void generate_op2_join(const std::string &op2_expr, const Sequence &seq_a, const Sequence &seq_b, TestBuilder &dst) {
+void generate_op2_join(const std::string& op2_expr, const Sequence& seq_a, const Sequence& seq_b, TestBuilder& dst) {
     generate_join_expr(op2_expr, seq_a, seq_b, dst);
     generate_join_expr(fmt("join(a,b,f(a,b)(%s))", op2_expr.c_str()), seq_a, seq_b, dst);
 }
 
-void generate_join(TestBuilder &dst) {
+void generate_join(TestBuilder& dst) {
     generate_op2_join("a+b", Div16(N()), dst);
     generate_op2_join("a-b", Div16(N()), dst);
     generate_op2_join("a*b", Div16(N()), dst);
@@ -334,8 +318,8 @@ void generate_join(TestBuilder &dst) {
 
 //-----------------------------------------------------------------------------
 
-void generate_merge_expr(const std::string &expr, const Sequence &seq, TestBuilder &dst) {
-    for (const auto &layouts: merge_layouts) {
+void generate_merge_expr(const std::string& expr, const Sequence& seq, TestBuilder& dst) {
+    for (const auto& layouts : merge_layouts) {
         GenSpec a = GenSpec::from_desc(layouts.first).seq(seq);
         GenSpec b = GenSpec::from_desc(layouts.second).seq(skew(seq));
         generate(expr, a, b, dst);
@@ -343,25 +327,25 @@ void generate_merge_expr(const std::string &expr, const Sequence &seq, TestBuild
     }
 }
 
-void generate_merge_expr(const std::string &expr, const Sequence &seq_a, const Sequence &seq_b, TestBuilder &dst) {
-    for (const auto &layouts: merge_layouts) {
+void generate_merge_expr(const std::string& expr, const Sequence& seq_a, const Sequence& seq_b, TestBuilder& dst) {
+    for (const auto& layouts : merge_layouts) {
         GenSpec a = GenSpec::from_desc(layouts.first).seq(seq_a);
         GenSpec b = GenSpec::from_desc(layouts.second).seq(seq_b);
         generate(expr, a, b, dst);
     }
 }
 
-void generate_op2_merge(const std::string &op2_expr, const Sequence &seq, TestBuilder &dst) {
+void generate_op2_merge(const std::string& op2_expr, const Sequence& seq, TestBuilder& dst) {
     generate_merge_expr(op2_expr, seq, dst);
     generate_merge_expr(fmt("merge(a,b,f(a,b)(%s))", op2_expr.c_str()), seq, dst);
 }
 
-void generate_op2_merge(const std::string &op2_expr, const Sequence &seq_a, const Sequence &seq_b, TestBuilder &dst) {
+void generate_op2_merge(const std::string& op2_expr, const Sequence& seq_a, const Sequence& seq_b, TestBuilder& dst) {
     generate_merge_expr(op2_expr, seq_a, seq_b, dst);
     generate_merge_expr(fmt("merge(a,b,f(a,b)(%s))", op2_expr.c_str()), seq_a, seq_b, dst);
 }
 
-void generate_merge(TestBuilder &dst) {
+void generate_merge(TestBuilder& dst) {
     generate_op2_merge("a+b", Div16(N()), dst);
     generate_op2_merge("a-b", Div16(N()), dst);
     generate_op2_merge("a*b", Div16(N()), dst);
@@ -395,9 +379,9 @@ void generate_merge(TestBuilder &dst) {
 
 //-----------------------------------------------------------------------------
 
-void generate_concat(TestBuilder &dst) {
-    for (const auto &layout_a: concat_c_layouts_a) {
-        for (const auto &layout_b: concat_c_layouts_b) {
+void generate_concat(TestBuilder& dst) {
+    for (const auto& layout_a : concat_c_layouts_a) {
+        for (const auto& layout_b : concat_c_layouts_b) {
             GenSpec a = GenSpec::from_desc(layout_a).seq(N());
             GenSpec b = GenSpec::from_desc(layout_b).seq(skew(N()));
             generate("concat(a, b, c)", a, b, dst);
@@ -408,7 +392,7 @@ void generate_concat(TestBuilder &dst) {
 
 //-----------------------------------------------------------------------------
 
-void generate_create(TestBuilder &dst) {
+void generate_create(TestBuilder& dst) {
     generate_with_cell_type("tensor<%s>(x[3]):[a,b,c]", 1, 2, 3, dst);
     generate_with_cell_type("tensor<%s>(x{}):{a:a,b:b,c:c}", 1, 2, 3, dst);
     generate_with_cell_type("tensor<%s>(x{},y[2]):{a:[a,b+c]}", 1, 2, 3, dst);
@@ -416,7 +400,7 @@ void generate_create(TestBuilder &dst) {
 
 //-----------------------------------------------------------------------------
 
-void generate_lambda(TestBuilder &dst) {
+void generate_lambda(TestBuilder& dst) {
     generate_with_cell_type("tensor<%s>(x[10])(a+b+c+x+1)", 1, 2, 3, dst);
     generate_with_cell_type("tensor<%s>(x[5],y[4])(a+b+c+x*4+(y+1))", 1, 2, 3, dst);
     generate_with_cell_type("tensor<%s>(x[5],y[4])(a+b+c+(x==y))", 1, 2, 3, dst);
@@ -424,13 +408,13 @@ void generate_lambda(TestBuilder &dst) {
 
 //-----------------------------------------------------------------------------
 
-void generate_cell_cast(TestBuilder &dst) {
-    for (const auto &layout: basic_layouts) {
+void generate_cell_cast(TestBuilder& dst) {
+    for (const auto& layout : basic_layouts) {
         GenSpec a = GenSpec::from_desc(layout).seq(N(-100));
-        auto from_cell_types = a.dims().empty() ? just_double : dst.full ? all_types : just_float;
-        auto to_cell_types = a.dims().empty() ? just_double : all_types;
-        for (auto a_ct: from_cell_types) {
-            for (auto to_ct: to_cell_types) {
+        auto    from_cell_types = a.dims().empty() ? just_double : dst.full ? all_types : just_float;
+        auto    to_cell_types = a.dims().empty() ? just_double : all_types;
+        for (auto a_ct : from_cell_types) {
+            for (auto to_ct : to_cell_types) {
                 auto name = value_type::cell_type_to_name(to_ct);
                 dst.add(fmt("cell_cast(a,%s)", name.c_str()), {{"a", a.cpy().cells(a_ct)}});
             }
@@ -440,12 +424,12 @@ void generate_cell_cast(TestBuilder &dst) {
 
 //-----------------------------------------------------------------------------
 
-void generate_cell_order(TestBuilder &dst) {
-    auto my_seq = Seq({37, -82, 114, -11, 5, -103});
-    auto scalar = GenSpec(37.0);
-    auto sparse = GenSpec().from_desc("x3_1y2_1").seq(my_seq);
-    auto mixed = GenSpec().from_desc("x3_1y2").seq(my_seq);
-    auto dense = GenSpec().from_desc("x3y2").seq(my_seq);
+void generate_cell_order(TestBuilder& dst) {
+    auto        my_seq = Seq({37, -82, 114, -11, 5, -103});
+    auto        scalar = GenSpec(37.0);
+    auto        sparse = GenSpec().from_desc("x3_1y2_1").seq(my_seq);
+    auto        mixed = GenSpec().from_desc("x3_1y2").seq(my_seq);
+    auto        dense = GenSpec().from_desc("x3y2").seq(my_seq);
     std::string order_max("cell_order(a,max)");
     std::string order_min("cell_order(a,min)");
     generate(order_max, scalar, dst);
@@ -460,12 +444,12 @@ void generate_cell_order(TestBuilder &dst) {
 
 //-----------------------------------------------------------------------------
 
-void generate_peek(TestBuilder &dst) {
+void generate_peek(TestBuilder& dst) {
     GenSpec num(2);
-    GenSpec dense  = GenSpec::from_desc("x3y5z7").seq(N());
+    GenSpec dense = GenSpec::from_desc("x3y5z7").seq(N());
     GenSpec sparse = GenSpec::from_desc("x3_1y5_1z7_1").seq(N());
-    GenSpec mixed  = GenSpec::from_desc("x3_1y5z7").seq(N());
-    for (const auto &spec: {dense, sparse, mixed}) {
+    GenSpec mixed = GenSpec::from_desc("x3_1y5z7").seq(N());
+    for (const auto& spec : {dense, sparse, mixed}) {
         generate("a{x:1,y:2,z:4}", spec, dst);
         generate("a{y:2,z:5}", spec, dst);
         generate("a{x:2}", spec, dst);
@@ -477,11 +461,11 @@ void generate_peek(TestBuilder &dst) {
 
 //-----------------------------------------------------------------------------
 
-void generate_rename(TestBuilder &dst) {
-    GenSpec dense  = GenSpec::from_desc("x3y5z7").seq(N());
+void generate_rename(TestBuilder& dst) {
+    GenSpec dense = GenSpec::from_desc("x3y5z7").seq(N());
     GenSpec sparse = GenSpec::from_desc("x3_1y5_1z7_1").seq(N());
-    GenSpec mixed  = GenSpec::from_desc("x3_1y5z7").seq(N());
-    for (const auto &spec: {dense, sparse, mixed}) {
+    GenSpec mixed = GenSpec::from_desc("x3_1y5z7").seq(N());
+    for (const auto& spec : {dense, sparse, mixed}) {
         generate("rename(a,x,d)", spec, dst);
         generate("rename(a,y,d)", spec, dst);
         generate("rename(a,z,d)", spec, dst);
@@ -491,22 +475,22 @@ void generate_rename(TestBuilder &dst) {
 
 //-----------------------------------------------------------------------------
 
-void generate_if(TestBuilder &dst) {
+void generate_if(TestBuilder& dst) {
     std::string expr = "if(a,b,c)";
-    for (const auto &layout: basic_layouts) {
+    for (const auto& layout : basic_layouts) {
         GenSpec b = GenSpec::from_desc(layout).seq(N());
         GenSpec c = GenSpec::from_desc(layout).seq(skew(N()));
-        auto cell_types = b.dims().empty() ? just_double : dst.full ? all_types : just_float;
-        for (auto ct: cell_types) {
-            dst.add(expr, {{"a", GenSpec(0.0)},{"b", b.cpy().cells(ct)},{"c", c.cpy().cells(ct)}});
-            dst.add(expr, {{"a", GenSpec(1.0)},{"b", b.cpy().cells(ct)},{"c", c.cpy().cells(ct)}});
+        auto    cell_types = b.dims().empty() ? just_double : dst.full ? all_types : just_float;
+        for (auto ct : cell_types) {
+            dst.add(expr, {{"a", GenSpec(0.0)}, {"b", b.cpy().cells(ct)}, {"c", c.cpy().cells(ct)}});
+            dst.add(expr, {{"a", GenSpec(1.0)}, {"b", b.cpy().cells(ct)}, {"c", c.cpy().cells(ct)}});
         }
     }
 }
 
 //-----------------------------------------------------------------------------
 
-void generate_products(TestBuilder &dst) {
+void generate_products(TestBuilder& dst) {
     auto z1 = GenSpec(1).from_desc("z7");
     auto z2 = GenSpec(7).from_desc("z7");
     auto xz = GenSpec(1).from_desc("x3z7");
@@ -522,9 +506,9 @@ void generate_products(TestBuilder &dst) {
 
 //-----------------------------------------------------------------------------
 
-void generate_expanding_reduce(TestBuilder &dst) {
+void generate_expanding_reduce(TestBuilder& dst) {
     auto spec = GenSpec::from_desc("x5y0_0");
-    for (Aggr aggr: Aggregator::list()) {
+    for (Aggr aggr : Aggregator::list()) {
         // end up with more cells than you started with
         auto expr1 = fmt("reduce(a,%s,y)", AggrNames::name_of(aggr)->c_str());
         auto expr2 = fmt("reduce(a,%s)", AggrNames::name_of(aggr)->c_str());
@@ -535,7 +519,7 @@ void generate_expanding_reduce(TestBuilder &dst) {
 
 //-----------------------------------------------------------------------------
 
-void generate_converting_lambda(TestBuilder &dst) {
+void generate_converting_lambda(TestBuilder& dst) {
     auto dense = GenSpec::from_desc("x3");
     auto sparse = GenSpec::from_desc("y5_2");
     auto mixed = GenSpec::from_desc("x3y5_2");
@@ -547,7 +531,7 @@ void generate_converting_lambda(TestBuilder &dst) {
 
 //-----------------------------------------------------------------------------
 
-void generate_shadowing_lambda(TestBuilder &dst) {
+void generate_shadowing_lambda(TestBuilder& dst) {
     auto a = GenSpec::from_desc("a3");
     auto b = GenSpec::from_desc("b3");
     // index 'a' shadows external parameter 'a'
@@ -556,7 +540,7 @@ void generate_shadowing_lambda(TestBuilder &dst) {
 
 //-----------------------------------------------------------------------------
 
-void generate_strict_verbatim_peek(TestBuilder &dst) {
+void generate_strict_verbatim_peek(TestBuilder& dst) {
     auto a = GenSpec(3);
     auto b = GenSpec().map("x", {"3", "a"});
     // 'a' without () is verbatim even if 'a' is a known value
@@ -565,9 +549,9 @@ void generate_strict_verbatim_peek(TestBuilder &dst) {
 
 //-----------------------------------------------------------------------------
 
-void generate_nested_tensor_lambda(TestBuilder &dst) {
+void generate_nested_tensor_lambda(TestBuilder& dst) {
     auto a = GenSpec(2);
-    auto b = GenSpec::from_desc("x3").seq(Seq({3,5,7}));
+    auto b = GenSpec::from_desc("x3").seq(Seq({3, 5, 7}));
     // constant nested tensor lambda
     dst.add("tensor(x[2],y[3],z[5])(tensor(x[5],y[3],z[2])(x*6+y*2+z){x:(z),y:(y),z:(x)})", {});
     // dynamic nested tensor lambda
@@ -577,7 +561,7 @@ void generate_nested_tensor_lambda(TestBuilder &dst) {
 
 //-----------------------------------------------------------------------------
 
-void generate_erf_value_test(TestBuilder &dst) {
+void generate_erf_value_test(TestBuilder& dst) {
     auto a = GenSpec().idx("x", 16 * 17 * 6).seq(Div17(Div16(N(0))));
     dst.add("erf(a)", {{"a", a}});
     dst.add("erf(-a)", {{"a", a}});
@@ -585,7 +569,7 @@ void generate_erf_value_test(TestBuilder &dst) {
 
 //-----------------------------------------------------------------------------
 
-void generate_nan_existence(TestBuilder &dst) {
+void generate_nan_existence(TestBuilder& dst) {
     auto seq1 = Seq({1.0, 1.0, my_nan, my_nan});
     auto seq2 = Seq({2.0, 2.0, my_nan, my_nan});
     auto sparse1 = GenSpec().from_desc("x8_1").seq(seq1);
@@ -594,25 +578,23 @@ void generate_nan_existence(TestBuilder &dst) {
     auto mixed2 = GenSpec().from_desc("x4_2y4").seq(seq2);
     // try to provoke differences between nan and non-existence
     const std::string inner_expr = "f(x,y)(if(isNan(x),11,x)+if(isNan(y),22,y))";
-    std::string merge_expr = fmt("merge(a,b,%s)", inner_expr.c_str());
-    std::string join_expr = fmt("join(a,b,%s)", inner_expr.c_str());
+    std::string       merge_expr = fmt("merge(a,b,%s)", inner_expr.c_str());
+    std::string       join_expr = fmt("join(a,b,%s)", inner_expr.c_str());
     dst.add(merge_expr, {{"a", sparse1}, {"b", sparse2}});
-    dst.add(merge_expr, {{"a",  mixed1}, {"b",  mixed2}});
+    dst.add(merge_expr, {{"a", mixed1}, {"b", mixed2}});
     dst.add(join_expr, {{"a", sparse1}, {"b", sparse2}});
-    dst.add(join_expr, {{"a",  mixed1}, {"b",  mixed2}});
-    dst.add(join_expr, {{"a", sparse1}, {"b",  mixed2}});
-    dst.add(join_expr, {{"a",  mixed1}, {"b", sparse2}});
+    dst.add(join_expr, {{"a", mixed1}, {"b", mixed2}});
+    dst.add(join_expr, {{"a", sparse1}, {"b", mixed2}});
+    dst.add(join_expr, {{"a", mixed1}, {"b", sparse2}});
 }
 
 //-----------------------------------------------------------------------------
 
-} // namespace <unnamed>
+} // namespace
 
 //-----------------------------------------------------------------------------
 
-void
-Generator::generate(TestBuilder &dst)
-{
+void Generator::generate(TestBuilder& dst) {
     generate_const(dst);
     generate_inject(dst);
     generate_reduce(dst);

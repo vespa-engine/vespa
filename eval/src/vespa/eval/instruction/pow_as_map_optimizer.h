@@ -12,7 +12,7 @@ namespace vespalib::eval {
  * expressions on the form 'map(tensor,f(x)(x*x...))'.
  **/
 struct PowAsMapOptimizer {
-    static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
+    static const TensorFunction& optimize(const TensorFunction& expr, Stash& stash);
 };
 
 } // namespace vespalib::eval

@@ -11,7 +11,7 @@ TEST(AddrToSymbol, null_ptr) {
 }
 
 TEST(AddrToSymbol, global_symbol) {
-    auto sym = addr_to_symbol((const void *)addr_to_symbol);
+    auto sym = addr_to_symbol((const void*)addr_to_symbol);
     fprintf(stderr, "global symbol: %s\n", sym.c_str());
     EXPECT_TRUE(sym.find("addr_to_symbol") < sym.size());
 }

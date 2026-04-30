@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/eval/eval/tensor_function.h>
-#include <vespa/eval/instruction/dense_simple_expand_function.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
 #include <vespa/eval/eval/test/gen_spec.h>
+#include <vespa/eval/instruction/dense_simple_expand_function.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace vespalib;
@@ -16,19 +16,19 @@ using Inner = DenseSimpleExpandFunction::Inner;
 struct FunInfo {
     using LookFor = DenseSimpleExpandFunction;
     Inner inner;
-    void verify(const LookFor &fun) const {
+    void verify(const LookFor& fun) const {
         EXPECT_TRUE(fun.result_is_mutable());
         EXPECT_EQ(fun.inner(), inner);
     }
 };
 
-void verify_optimized(const std::string &expr, Inner inner) {
+void verify_optimized(const std::string& expr, Inner inner) {
     SCOPED_TRACE(expr.c_str());
     CellTypeSpace all_types(CellTypeUtils::list_types(), 2);
     EvalFixture::verify<FunInfo>(expr, {FunInfo{inner}}, all_types);
 }
 
-void verify_not_optimized(const std::string &expr) {
+void verify_not_optimized(const std::string& expr) {
     SCOPED_TRACE(expr.c_str());
     CellTypeSpace just_double({CellType::DOUBLE}, 2);
     EvalFixture::verify<FunInfo>(expr, {}, just_double);

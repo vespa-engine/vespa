@@ -2,11 +2,12 @@
 
 #pragma once
 
+#include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value_type.h>
-#include <vespa/eval/eval/operation.h>
-#include <functional>
+
 #include <cassert>
+#include <functional>
 
 namespace vespalib::eval::test {
 
@@ -23,22 +24,22 @@ Sequence N(double bias = 1.0);
 Sequence AX_B(double a, double b);
 
 // Sequence of another sequence divided by 16
-Sequence Div16(const Sequence &seq);
+Sequence Div16(const Sequence& seq);
 
 // Sequence of another sequence divided by 17
-Sequence Div17(const Sequence &seq);
+Sequence Div17(const Sequence& seq);
 
 // Sequence of another sequence minus 2
-Sequence Sub2(const Sequence &seq);
+Sequence Sub2(const Sequence& seq);
 
 // Sequence of a unary operator applied to a sequence
-Sequence OpSeq(const Sequence &seq, map_fun_t op);
+Sequence OpSeq(const Sequence& seq, map_fun_t op);
 
 // Sequence of applying sigmoid to another sequence, plus rounding to nearest float
-Sequence SigmoidF(const Sequence &seq);
+Sequence SigmoidF(const Sequence& seq);
 
 // pre-defined repeating sequence of numbers
-Sequence Seq(const std::vector<double> &seq);
+Sequence Seq(const std::vector<double>& seq);
 
 /**
  * Type and labels for a single dimension of a TensorSpec to be
@@ -49,28 +50,26 @@ Sequence Seq(const std::vector<double> &seq);
  * dimension for different tensors should enable us to exhibit
  * sufficient levels of partial overlap.
  **/
-class DimSpec
-{
+class DimSpec {
 private:
     std::string              _name;
-    size_t                        _size;
+    size_t                   _size;
     std::vector<std::string> _dict;
+
 public:
-    DimSpec(const std::string &name, size_t size) noexcept;
-    DimSpec(const std::string &name, std::vector<std::string> dict) noexcept;
-    DimSpec(DimSpec &&) noexcept;
-    DimSpec & operator=(DimSpec &&) noexcept;
-    DimSpec & operator=(const DimSpec &);
-    DimSpec(const DimSpec &);
+    DimSpec(const std::string& name, size_t size) noexcept;
+    DimSpec(const std::string& name, std::vector<std::string> dict) noexcept;
+    DimSpec(DimSpec&&) noexcept;
+    DimSpec& operator=(DimSpec&&) noexcept;
+    DimSpec& operator=(const DimSpec&);
+    DimSpec(const DimSpec&);
     ~DimSpec();
-    static std::vector<std::string> make_dict(size_t size, size_t stride, const std::string &prefix);
+    static std::vector<std::string> make_dict(size_t size, size_t stride, const std::string& prefix);
     ValueType::Dimension type() const {
         return _size ? ValueType::Dimension{_name, uint32_t(_size)} : ValueType::Dimension{_name};
     }
-    const std::string &name() const { return _name; }
-    size_t size() const {
-        return _size ? _size : _dict.size();
-    }
+    const std::string& name() const { return _name; }
+    size_t size() const { return _size ? _size : _dict.size(); }
     TensorSpec::Label label(size_t idx) const {
         assert(idx < size());
         return _size ? TensorSpec::Label{idx} : TensorSpec::Label{_dict[idx]};
@@ -81,22 +80,21 @@ public:
     //
     // 'a2' -> DimSpec("a", 2);
     // 'b2_3' -> DimSpec("b", make_dict(2, 3, ""));
-    static DimSpec from_desc(const std::string &desc);
+    static DimSpec from_desc(const std::string& desc);
 };
 
 /**
  * Specification defining how to generate a TensorSpec. Typically used
  * to generate complex values for testing and benchmarking.
  **/
-class GenSpec
-{
+class GenSpec {
 public:
     using seq_t = Sequence;
 
 private:
     std::vector<DimSpec> _dims;
-    CellType _cells;
-    seq_t _seq;
+    CellType             _cells;
+    seq_t                _seq;
 
 public:
     GenSpec() noexcept : _dims(), _cells(CellType::DOUBLE), _seq(N()) {}
@@ -108,51 +106,51 @@ public:
     //
     // 'a2b12c5' -> GenSpec().idx("a", 2).idx("b", 12).idx("c", 5);
     // 'a2_1b3_2c5_1' -> GenSpec().map("a", 2).map("b", 3, 2).map("c", 5);
-    static GenSpec from_desc(const std::string &desc);
+    static GenSpec from_desc(const std::string& desc);
 
-    GenSpec(GenSpec &&other) noexcept;
-    GenSpec(const GenSpec &other);
-    GenSpec &operator=(GenSpec &&other) noexcept;
-    GenSpec &operator=(const GenSpec &other);
+    GenSpec(GenSpec&& other) noexcept;
+    GenSpec(const GenSpec& other);
+    GenSpec& operator=(GenSpec&& other) noexcept;
+    GenSpec& operator=(const GenSpec& other);
     ~GenSpec();
-    const std::vector<DimSpec> &dims() const { return _dims; }
+    const std::vector<DimSpec>& dims() const { return _dims; }
     CellType cells() const { return _cells; }
-    const seq_t &seq() const { return _seq; }
+    const seq_t& seq() const { return _seq; }
     GenSpec cpy() const { return *this; }
-    GenSpec &idx(const std::string &name, size_t size) {
+    GenSpec& idx(const std::string& name, size_t size) {
         assert(size != 0);
         _dims.emplace_back(name, size);
         return *this;
     }
-    GenSpec &map(const std::string &name, size_t size, size_t stride = 1, const std::string &prefix = "") {
+    GenSpec& map(const std::string& name, size_t size, size_t stride = 1, const std::string& prefix = "") {
         _dims.emplace_back(name, DimSpec::make_dict(size, stride, prefix));
         return *this;
     }
-    GenSpec &map(const std::string &name, std::vector<std::string> dict) {
+    GenSpec& map(const std::string& name, std::vector<std::string> dict) {
         _dims.emplace_back(name, std::move(dict));
         return *this;
     }
-    GenSpec &desc(const std::string &dim_desc) {
+    GenSpec& desc(const std::string& dim_desc) {
         _dims.push_back(DimSpec::from_desc(dim_desc));
         return *this;
     }
-    GenSpec &cells(CellType cell_type) {
+    GenSpec& cells(CellType cell_type) {
         _cells = cell_type;
         return *this;
     }
-    GenSpec &cells_double() { return cells(CellType::DOUBLE); }
-    GenSpec &cells_float() { return cells(CellType::FLOAT); }
-    GenSpec &seq(const seq_t &seq_in) {
+    GenSpec& cells_double() { return cells(CellType::DOUBLE); }
+    GenSpec& cells_float() { return cells(CellType::FLOAT); }
+    GenSpec& seq(const seq_t& seq_in) {
         _seq = seq_in;
         return *this;
     }
-    GenSpec &seq(const std::vector<double> &numbers) { return seq(Seq({numbers})); }
+    GenSpec& seq(const std::vector<double>& numbers) { return seq(Seq({numbers})); }
     bool bad_scalar() const;
     ValueType type() const;
     TensorSpec gen() const;
     operator TensorSpec() const { return gen(); }
 };
 
-std::ostream &operator<<(std::ostream &out, const GenSpec &spec);
+std::ostream& operator<<(std::ostream& out, const GenSpec& spec);
 
-} // namespace
+} // namespace vespalib::eval::test

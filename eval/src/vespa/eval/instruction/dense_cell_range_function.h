@@ -11,21 +11,18 @@ namespace vespalib::eval {
  * another tensor. The value type will (typically) change, but the
  * cell type must remain the same.
  **/
-class DenseCellRangeFunction : public tensor_function::Op1
-{
+class DenseCellRangeFunction : public tensor_function::Op1 {
 private:
     size_t _offset;
     size_t _length;
 
 public:
-    DenseCellRangeFunction(const ValueType &result_type,
-                           const TensorFunction &child,
-                           size_t offset, size_t length);
+    DenseCellRangeFunction(const ValueType& result_type, const TensorFunction& child, size_t offset, size_t length);
     ~DenseCellRangeFunction() override;
     size_t offset() const { return _offset; }
     size_t length() const { return _length; }
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
+    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory& factory, Stash& stash) const override;
     bool result_is_mutable() const override { return child().result_is_mutable(); }
 };
 
-} // namespace
+} // namespace vespalib::eval

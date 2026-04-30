@@ -4,7 +4,9 @@
 
 #include <cstdint>
 
-namespace vespalib { class nbostream; }
+namespace vespalib {
+class nbostream;
+}
 
 namespace vespalib::eval {
 
@@ -14,20 +16,21 @@ namespace vespalib::eval {
 class Int8Float {
 private:
     int8_t _bits;
+
 public:
     constexpr Int8Float(float value) noexcept : _bits(value) {}
     Int8Float() noexcept = default;
     ~Int8Float() noexcept = default;
-    constexpr Int8Float(const Int8Float &other) noexcept = default;
-    constexpr Int8Float(Int8Float &&other) noexcept = default;
-    constexpr Int8Float& operator=(const Int8Float &other) noexcept = default;
-    constexpr Int8Float& operator=(Int8Float &&other) noexcept = default;
+    constexpr Int8Float(const Int8Float& other) noexcept = default;
+    constexpr Int8Float(Int8Float&& other) noexcept = default;
+    constexpr Int8Float& operator=(const Int8Float& other) noexcept = default;
+    constexpr Int8Float& operator=(Int8Float&& other) noexcept = default;
     constexpr Int8Float& operator=(float value) noexcept {
         _bits = value;
         return *this;
     }
 
-    constexpr operator float () const noexcept { return _bits; }
+    constexpr operator float() const noexcept { return _bits; }
 
     constexpr float to_float() const noexcept { return _bits; }
     constexpr void assign(float value) noexcept { _bits = value; }
@@ -36,7 +39,7 @@ public:
     constexpr void assign_bits(int8_t value) noexcept { _bits = value; }
 };
 
-nbostream & operator << (nbostream &stream, Int8Float v);
-nbostream & operator >> (nbostream &stream, Int8Float & v);
+nbostream& operator<<(nbostream& stream, Int8Float v);
+nbostream& operator>>(nbostream& stream, Int8Float& v);
 
-}
+} // namespace vespalib::eval

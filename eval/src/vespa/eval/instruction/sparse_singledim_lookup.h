@@ -12,13 +12,12 @@ namespace vespalib::eval {
  * result. If lookup keys are kept small [0,10000000> (to avoid label
  * enumeration) this is a simple hashtable lookup with numeric keys.
  **/
-class SparseSingledimLookup : public tensor_function::Op2
-{
+class SparseSingledimLookup : public tensor_function::Op2 {
 public:
-    SparseSingledimLookup(const TensorFunction &tensor, const TensorFunction &expr);
-    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
+    SparseSingledimLookup(const TensorFunction& tensor, const TensorFunction& expr);
+    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory& factory, Stash& stash) const override;
     bool result_is_mutable() const override { return true; }
-    static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
+    static const TensorFunction& optimize(const TensorFunction& expr, Stash& stash);
 };
 
-} // namespace
+} // namespace vespalib::eval
