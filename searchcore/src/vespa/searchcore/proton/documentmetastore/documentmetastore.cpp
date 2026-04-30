@@ -917,6 +917,15 @@ DocumentMetaStore::get_docid_string(const GlobalId &gid) const
     return {span.data(), span.size()};
 }
 
+std::string_view DocumentMetaStore::get_document_id_string_view(uint32_t lid) const noexcept {
+    if (!validLidFast(lid)) [[unlikely]] {
+        return {};
+    }
+    auto& raw = getRawMetadata(lid);
+    auto span = _docid_store.get(raw.acquire_docid_ref());
+    return {span.data(), span.size()};
+}
+
 LidUsageStats
 DocumentMetaStore::getLidUsageStats() const
 {

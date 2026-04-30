@@ -8,6 +8,7 @@
 #include "lid_gid_key_comparator.h"
 #include "raw_document_metadata.h"
 #include <vespa/searchcore/proton/common/subdbtype.h>
+#include <vespa/searchlib/common/i_document_id_provider.h>
 #include <vespa/searchlib/docstore/ibucketizer.h>
 #include <vespa/searchcommon/common/growstrategy.h>
 #include <vespa/vespalib/datastore/array_store.h>
@@ -35,7 +36,8 @@ namespace proton {
  **/
 class DocumentMetaStore final : public DocumentMetaStoreAttribute,
                                 public DocumentMetaStoreAdapter,
-                                public search::IBucketizer
+                                public search::IBucketizer,
+                                public search::IDocumentIdProvider
 {
 public:
     using SP = std::shared_ptr<DocumentMetaStore>;
@@ -221,6 +223,7 @@ public:
     search::DocumentMetadata getMetadata(const GlobalId &gid) const override;
     void getMetadata(const BucketId &bucketId, search::DocumentMetadata::Vector &result, bool populate_docid) const override;
     std::string_view get_docid_string(const GlobalId &gid) const;
+    [[nodiscard]] std::string_view get_document_id_string_view(uint32_t lid) const noexcept override;
     DocId   getNumUsedLids() const override { return _lidAlloc.getNumUsedLids(); }
     DocId getNumActiveLids() const override { return _lidAlloc.getNumActiveLids(); }
     search::LidUsageStats getLidUsageStats() const override;

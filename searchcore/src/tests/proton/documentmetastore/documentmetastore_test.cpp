@@ -374,21 +374,29 @@ TEST(DocumentMetaStoreTest, full_docids_can_be_inserted_and_retrieved)
 {
     DocumentMetaStore dms(createBucketDB(), "[documentmetastore]", search::GrowStrategy(), true, SubDbType::READY);
     dms.constructFreeList();
+    uint32_t lid1 = 1;
+    uint32_t lid2 = 2;
     // put()
-    assertPut(bucketId1, time1, 1, docid1, dms);
-    assertPut(bucketId2, time2, 2, docid2, dms);
+    assertPut(bucketId1, time1, lid1, docid1, dms);
+    assertPut(bucketId2, time2, lid2, docid2, dms);
 
     // get_docid_string()
     EXPECT_EQ(docid1.toString(), dms.get_docid_string(gid1));
     EXPECT_EQ(docid2.toString(), dms.get_docid_string(gid2));
+
+    EXPECT_EQ(docid1.toString(), dms.get_document_id_string_view(lid1));
+    EXPECT_EQ(docid2.toString(), dms.get_document_id_string_view(lid2));;
 
     // already inserted
-    assertPut(bucketId1, time1, 1, docid1, dms);
-    assertPut(bucketId2, time2, 2, docid2, dms);
+    assertPut(bucketId1, time1, lid1, docid1, dms);
+    assertPut(bucketId2, time2, lid2, docid2, dms);
 
     // get_docid_string()
     EXPECT_EQ(docid1.toString(), dms.get_docid_string(gid1));
     EXPECT_EQ(docid2.toString(), dms.get_docid_string(gid2));
+
+    EXPECT_EQ(docid1.toString(), dms.get_document_id_string_view(lid1));
+    EXPECT_EQ(docid2.toString(), dms.get_document_id_string_view(lid2));;
 }
 
 TEST(DocumentMetaStoreTest, full_docids_are_removed)
@@ -397,21 +405,25 @@ TEST(DocumentMetaStoreTest, full_docids_are_removed)
     dms.constructFreeList();
 
     // Add document and get gid
-    addDoc(dms, docid1, bucketId1, time1);
+    uint32_t lid1 = addDoc(dms, docid1, bucketId1, time1);
+    EXPECT_EQ(1u, lid1);
     EXPECT_EQ(docid1.toString(), dms.get_docid_string(gid1));
+    EXPECT_EQ(docid1.toString(), dms.get_document_id_string_view(lid1));
     // Remove and check that full string is also removed
-    EXPECT_TRUE(dms.remove(1, 0u));
+    EXPECT_TRUE(dms.remove(lid1, 0u));
     dms.commit();
     EXPECT_EQ("", dms.get_docid_string(gid1));
-    dms.removes_complete({ 1 });
+    EXPECT_EQ("", dms.get_document_id_string_view(lid1));
+    dms.removes_complete({ lid1 });
 
     // With reused lid
-    addDoc(dms, docid2, bucketId2, time2);
+    uint32_t lid2 = addDoc(dms, docid2, bucketId2, time2);
+    EXPECT_EQ(1u, lid2);
     EXPECT_EQ(docid2.toString(), dms.get_docid_string(gid2));
-    EXPECT_TRUE(dms.remove(1, 0u));
+    EXPECT_TRUE(dms.remove(lid2, 0u));
     dms.commit();
     EXPECT_EQ("", dms.get_docid_string(gid2));
-    dms.removes_complete({ 1 });
+    dms.removes_complete({ lid2 });
 }
 
 TEST(DocumentMetaStore, generation_handling_is_working)
