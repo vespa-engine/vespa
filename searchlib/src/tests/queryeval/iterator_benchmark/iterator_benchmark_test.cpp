@@ -1021,7 +1021,7 @@ TEST(IteratorBenchmark, btree_vs_array_nonstrict_crossover) {
 }
 
 TEST(IteratorBenchmark, spec_factory_test) {
-    auto tree = and_(term(int32_fs, num_docs, 0, 0.01), term(str_fs, num_docs, 0, 0.3));
+    auto tree = and_(term(int32_fs, num_docs, 0, 0.01), term(str_fs, num_docs, 0, 0.3), enn(100));
 
     auto res = benchmark_search(*tree, num_docs + 1,
                                 /*strict*/ true,

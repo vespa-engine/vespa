@@ -14,6 +14,8 @@ namespace search::queryeval::test {
 
 using FactoryPtr = std::shared_ptr<BenchmarkBlueprintFactory>;
 
+FactoryPtr enn(uint32_t target_hits);
+
 FactoryPtr term(FieldConfig field, uint32_t num_docs, uint32_t default_values_per_document, double hit_ratio);
 
 template <class... Cs> FactoryPtr and_(Cs&&... cs) {
