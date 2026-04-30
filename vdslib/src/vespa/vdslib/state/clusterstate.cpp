@@ -89,7 +89,7 @@ ClusterState::ClusterState(std::string_view serialized)
         } else {
             lastAbsolutePath = key;
         }
-        
+
         if (key.empty() || ! parse(key, value, nodeData) ) {
             LOG(debug, "Unknown key %s in systemstate. Ignoring it, assuming it's "
                        "a new feature from a newer version than ourself: %s",
@@ -343,8 +343,8 @@ ClusterState::removeExtraElements(const NodeType & type)
 {
     // Simplify the system state by removing the last indexes if the nodes
     // are down.
-    for (int32_t index = _nodeCount[type]; index >= 0; --index) {
-        Node node(type, index - 1);
+    for (int32_t index = _nodeCount[type]; index-- > 0; ) {
+        Node node(type, index);
         const auto it = _nodeStates.find(node);
         if (it == _nodeStates.end()) break;
         if (it->second.getState() != State::DOWN) break;
@@ -411,7 +411,7 @@ template<typename T>
 std::string getNumberSpec(const std::vector<T>& numbers) {
     std::ostringstream ost;
     bool first = true;
-    uint32_t firstInRange = numbers.size() == 0 ? 0 : numbers[0];;
+    uint32_t firstInRange = numbers.size() == 0 ? 0 : numbers[0];
     uint32_t lastInRange = firstInRange;
     for (uint32_t i=1; i<=numbers.size(); ++i) {
         if (i < numbers.size() && numbers[i] == lastInRange + 1) {

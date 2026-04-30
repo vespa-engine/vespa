@@ -87,7 +87,7 @@ Parameters::operator==(const Parameters &other) const
         return false;
     }
 
-    for (ParametersMap::const_iterator a(_parameters.begin()), b(other._parameters.begin()), am(_parameters.begin()); (a != am); ++a, ++b) {
+    for (ParametersMap::const_iterator a(_parameters.begin()), b(other._parameters.begin()), am(_parameters.end()); (a != am); ++a, ++b) {
         if ((a->first != b->first)) {
             return false;
         }
