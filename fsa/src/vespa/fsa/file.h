@@ -16,14 +16,8 @@ namespace fsa {
 /**
  * @brief File access method enum.
  */
-enum FileAccessMethod {
-  FILE_ACCESS_UNDEF,
-  FILE_ACCESS_READ,
-  FILE_ACCESS_MMAP,
-  FILE_ACCESS_MMAP_WITH_MLOCK
-};
+enum FileAccessMethod { FILE_ACCESS_UNDEF, FILE_ACCESS_READ, FILE_ACCESS_MMAP, FILE_ACCESS_MMAP_WITH_MLOCK };
 
 // }}}
 
 } // namespace fsa
-
