@@ -11,6 +11,7 @@
 #include <unistd.h>
 
 #include <atomic>
+#include <mutex>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -30,6 +31,7 @@ int         defaultPortConfigProxyRpc = 0;
 const char* defaultConfigServers = nullptr;
 std::string VESPA_HOME_ENV = "VESPA_HOME=";
 
+std::mutex        init_mutex;
 std::atomic<bool> initialized(false);
 
 long getNumFromEnv(const char* envName) {
@@ -130,7 +132,10 @@ const char* findConfigServers(const char* defServers) {
 }
 
 void findDefaults() {
-    if (initialized)
+    if (initialized.load(std::memory_order_acquire))
+        return;
+    std::lock_guard<std::mutex> lock(init_mutex);
+    if (initialized.load(std::memory_order_relaxed))
         return;
 
     defaultHome = findVespaHome("/opt/vespa");
@@ -143,7 +148,7 @@ void findDefaults() {
     defaultPortConfigProxyRpc = findConfigProxyPort(defaultPortBase + 90);
     defaultConfigServers = findConfigServers("localhost");
 
-    initialized = true;
+    initialized.store(true, std::memory_order_release);
 }
 
 std::string myPath(const char* argv0) {
@@ -192,7 +197,8 @@ void Defaults::bootstrap(const char* argv0) {
             putenv(&VESPA_HOME_ENV[0]);
         }
     }
-    initialized = false;
+    std::lock_guard<std::mutex> lock(init_mutex);
+    initialized.store(false, std::memory_order_relaxed);
 }
 
 const char* Defaults::vespaHome() {
