@@ -1,22 +1,22 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
-#include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/ref_counted.h>
 
 std::string spec;
 
-class TestErrors : public ::testing::Test
-{
+class TestErrors : public ::testing::Test {
 protected:
     static std::unique_ptr<fnet::frt::StandaloneFRT> server;
-    static vespalib::ref_counted<FRT_Target> target;
+    static vespalib::ref_counted<FRT_Target>         target;
 
     vespalib::ref_counted<FRT_RPCRequest> alloc_rpc_request() {
         return vespalib::ref_counted<FRT_RPCRequest>::internal_attach(server->supervisor().AllocRPCRequest());
     }
+
 public:
     TestErrors();
     ~TestErrors() override;
@@ -26,27 +26,22 @@ public:
 };
 
 std::unique_ptr<fnet::frt::StandaloneFRT> TestErrors::server;
-vespalib::ref_counted<FRT_Target> TestErrors::target;
+vespalib::ref_counted<FRT_Target>         TestErrors::target;
 
 TestErrors::TestErrors() = default;
 TestErrors::~TestErrors() = default;
 
-void
-TestErrors::SetUpTestSuite()
-{
+void TestErrors::SetUpTestSuite() {
     server = std::make_unique<fnet::frt::StandaloneFRT>();
     target = vespalib::ref_counted<FRT_Target>::internal_attach(server->supervisor().GetTarget(spec.c_str()));
 }
 
-void
-TestErrors::TearDownTestSuite()
-{
+void TestErrors::TearDownTestSuite() {
     target.reset();
     server.reset();
 }
 
-TEST_F(TestErrors, no_error)
-{
+TEST_F(TestErrors, no_error) {
     auto req1 = alloc_rpc_request();
     req1->SetMethodName("test");
     req1->GetParams()->AddInt32(42);
@@ -58,9 +53,7 @@ TEST_F(TestErrors, no_error)
     ASSERT_EQ(42, req1->GetReturn()->GetValue(0)._intval32);
 }
 
-
-TEST_F(TestErrors, no_such_method)
-{
+TEST_F(TestErrors, no_such_method) {
     auto req1 = alloc_rpc_request();
     req1->SetMethodName("bogus");
     target->InvokeSync(req1.get(), 60.0);
@@ -69,9 +62,7 @@ TEST_F(TestErrors, no_such_method)
     EXPECT_TRUE(FRTE_RPC_NO_SUCH_METHOD == req1->GetErrorCode());
 }
 
-
-TEST_F(TestErrors, wrong_parameters)
-{
+TEST_F(TestErrors, wrong_parameters) {
     auto req1 = alloc_rpc_request();
     req1->SetMethodName("test");
     req1->GetParams()->AddInt32(42);
@@ -105,9 +96,7 @@ TEST_F(TestErrors, wrong_parameters)
     EXPECT_TRUE(FRTE_RPC_WRONG_PARAMS == req3->GetErrorCode());
 }
 
-
-TEST_F(TestErrors, wrong_return_values)
-{
+TEST_F(TestErrors, wrong_return_values) {
     auto req1 = alloc_rpc_request();
     req1->SetMethodName("test");
     req1->GetParams()->AddInt32(42);
@@ -119,9 +108,7 @@ TEST_F(TestErrors, wrong_return_values)
     EXPECT_TRUE(FRTE_RPC_WRONG_RETURN == req1->GetErrorCode());
 }
 
-
-TEST_F(TestErrors, method_failed)
-{
+TEST_F(TestErrors, method_failed) {
     auto req1 = alloc_rpc_request();
     req1->SetMethodName("test");
     req1->GetParams()->AddInt32(42);
@@ -143,9 +130,7 @@ TEST_F(TestErrors, method_failed)
     EXPECT_EQ(75000, req2->GetErrorCode());
 }
 
-int
-main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
     if (argc != 2) {
         fprintf(stderr, "usage: %s spec\n", argv[0]);
         return 1;

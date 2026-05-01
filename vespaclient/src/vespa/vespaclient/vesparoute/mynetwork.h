@@ -17,17 +17,17 @@ public:
      *
      * @param params The parameter object to pass to the rpc network.
      */
-    MyNetwork(const mbus::RPCNetworkParams &params);
+    MyNetwork(const mbus::RPCNetworkParams& params);
 
     // Overrides RPCNetwork.
-    bool allocServiceAddress(mbus::RoutingNode &recipient) override;
-    void freeServiceAddress(mbus::RoutingNode &recipient) override;
-    void send(const mbus::Message &msg, const std::vector<mbus::RoutingNode*> &recipients) override;
+    bool allocServiceAddress(mbus::RoutingNode& recipient) override;
+    void freeServiceAddress(mbus::RoutingNode& recipient) override;
+    void send(const mbus::Message& msg, const std::vector<mbus::RoutingNode*>& recipients) override;
 
     /**
      * Removes and returns the list of recipients that was most recently sent to.
      *
      * @param contexts The list to move the contexts to.
      */
-    void removeNodes(std::vector<mbus::RoutingNode*> &nodes);
+    void removeNodes(std::vector<mbus::RoutingNode*>& nodes);
 };

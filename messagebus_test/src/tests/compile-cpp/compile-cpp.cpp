@@ -7,7 +7,7 @@ void test_cpp_compile() {
     mbus::Route r;
 }
 
-int main(int, char **) {
+int main(int, char**) {
     test_cpp_compile();
     return 0;
 }

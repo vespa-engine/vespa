@@ -5,23 +5,17 @@
 
 using namespace mbus;
 
-class App
-{
+class App {
 public:
-    void dump(const std::string &desc, uint32_t value);
-    int main(int argc, char **argv);
+    void dump(const std::string& desc, uint32_t value);
+    int main(int argc, char** argv);
 };
 
-void
-App::dump(const std::string &desc, uint32_t value)
-{
-    fprintf(stdout, "%s => %u => \"%s\"\n", desc.c_str(), value,
-            ErrorCode::getName(value).c_str());
+void App::dump(const std::string& desc, uint32_t value) {
+    fprintf(stdout, "%s => %u => \"%s\"\n", desc.c_str(), value, ErrorCode::getName(value).c_str());
 }
 
-int
-App::main(int, char **)
-{
+int App::main(int, char**) {
     dump("NONE", ErrorCode::NONE);
 
     dump("SEND_QUEUE_FULL", ErrorCode::SEND_QUEUE_FULL);
@@ -61,7 +55,7 @@ App::main(int, char **)
     return 0;
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     vespalib::SignalHandler::PIPE.ignore();
     App app;
     return app.main(argc, argv);
