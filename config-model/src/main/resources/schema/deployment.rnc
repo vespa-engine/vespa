@@ -109,6 +109,7 @@ Test = element test {
    attribute athenz-service { xsd:string }? &
    attribute cloud-account { xsd:string }? &
    attribute empty-host-ttl { xsd:string }? &
+   attribute skip { xsd:string }? &
    CloudResourceTags? &
    Tester?
 }
@@ -117,6 +118,7 @@ Staging = element staging {
    attribute athenz-service { xsd:string }? &
    attribute cloud-account { xsd:string }? &
    attribute empty-host-ttl { xsd:string }? &
+   attribute skip { xsd:string }? &
    CloudResourceTags? &
    Tester?
 }
