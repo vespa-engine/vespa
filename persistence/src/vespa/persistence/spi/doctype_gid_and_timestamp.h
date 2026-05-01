@@ -2,12 +2,16 @@
 #pragma once
 
 #include "types.h"
+
 #include <vespa/document/base/globalid.h>
 #include <vespa/vespalib/stllike/hash_fun.h>
+
 #include <iosfwd>
 #include <string>
 
-namespace vespalib { class asciistream; }
+namespace vespalib {
+class asciistream;
+}
 
 namespace storage::spi {
 
@@ -18,9 +22,9 @@ namespace storage::spi {
  * Prefer this instead of a std::tuple due to named fields and a pre-provided hash function.
  */
 struct DocTypeGidAndTimestamp {
-    std::string doc_type;
+    std::string        doc_type;
     document::GlobalId gid;
-    Timestamp timestamp;
+    Timestamp          timestamp;
 
     DocTypeGidAndTimestamp();
     DocTypeGidAndTimestamp(const std::string& doc_type_, document::GlobalId gid_, Timestamp timestamp_) noexcept;
@@ -31,8 +35,7 @@ struct DocTypeGidAndTimestamp {
     DocTypeGidAndTimestamp& operator=(DocTypeGidAndTimestamp&&) noexcept;
 
     bool operator==(const DocTypeGidAndTimestamp& rhs) const noexcept {
-        return ((doc_type == rhs.doc_type) && (gid == rhs.gid) &&
-                (timestamp == rhs.timestamp));
+        return ((doc_type == rhs.doc_type) && (gid == rhs.gid) && (timestamp == rhs.timestamp));
     }
 
     void print(vespalib::asciistream&) const;
@@ -50,4 +53,4 @@ struct DocTypeGidAndTimestamp {
 vespalib::asciistream& operator<<(vespalib::asciistream&, const DocTypeGidAndTimestamp&);
 std::ostream& operator<<(std::ostream&, const DocTypeGidAndTimestamp&);
 
-}
+} // namespace storage::spi

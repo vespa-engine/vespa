@@ -8,15 +8,15 @@
 #include <vector>
 
 namespace vespalib {
-    class nbostream;
+class nbostream;
 }
 
 namespace document {
-    class GlobalId;
-    class Document;
-    class DocumentId;
-    class DocumentUpdate;
-}
+class GlobalId;
+class Document;
+class DocumentId;
+class DocumentUpdate;
+} // namespace document
 
 /**
  * We create small wrapper classes for number values for the following reasons:
@@ -24,37 +24,43 @@ namespace document {
  *     caller using numbers in wrong order.
  *   - We can identify type by typename instead of variable name.
  */
-#define DEFINE_PRIMITIVE_WRAPPER(type, name) \
-  class name { \
-      type _value; \
-  public: \
-      using Type = type; \
-      name() noexcept : _value() {} \
-      explicit name(type v) noexcept : _value(v) {} \
-      operator type() const noexcept { return _value; } \
-      operator type&() noexcept { return _value; } \
-      type getValue() const noexcept { return _value; } \
-      name& operator=(type val) noexcept { _value = val; return *this; } \
-      friend vespalib::nbostream & \
-      operator<<(vespalib::nbostream &os, const name &wrapped); \
-      friend vespalib::nbostream & \
-      operator>>(vespalib::nbostream &is, name &wrapped); \
-  }; \
+#define DEFINE_PRIMITIVE_WRAPPER(type, name)                                                  \
+    class name {                                                                              \
+        type _value;                                                                          \
+                                                                                              \
+    public:                                                                                   \
+        using Type = type;                                                                    \
+        name() noexcept : _value() {                                                          \
+        }                                                                                     \
+        explicit name(type v) noexcept : _value(v) {                                          \
+        }                                                                                     \
+        operator type() const noexcept {                                                      \
+            return _value;                                                                    \
+        }                                                                                     \
+        operator type&() noexcept {                                                           \
+            return _value;                                                                    \
+        }                                                                                     \
+        type getValue() const noexcept {                                                      \
+            return _value;                                                                    \
+        }                                                                                     \
+        name& operator=(type val) noexcept {                                                  \
+            _value = val;                                                                     \
+            return *this;                                                                     \
+        }                                                                                     \
+        friend vespalib::nbostream& operator<<(vespalib::nbostream& os, const name& wrapped); \
+        friend vespalib::nbostream& operator>>(vespalib::nbostream& is, name& wrapped);       \
+    };
 
-#define DEFINE_PRIMITIVE_WRAPPER_NBOSTREAM(name) \
-  vespalib::nbostream & \
-  operator<<(vespalib::nbostream &os, const name &wrapped) \
-  { \
-      os << wrapped._value; \
-      return os; \
-  } \
-  \
-  vespalib::nbostream & \
-  operator>>(vespalib::nbostream &is, name &wrapped) \
-  { \
-      is >> wrapped._value; \
-      return is; \
-  } \
+#define DEFINE_PRIMITIVE_WRAPPER_NBOSTREAM(name)                                    \
+    vespalib::nbostream& operator<<(vespalib::nbostream& os, const name& wrapped) { \
+        os << wrapped._value;                                                       \
+        return os;                                                                  \
+    }                                                                               \
+                                                                                    \
+    vespalib::nbostream& operator>>(vespalib::nbostream& is, name& wrapped) {       \
+        is >> wrapped._value;                                                       \
+        return is;                                                                  \
+    }
 
 namespace storage::spi {
 
@@ -95,15 +101,8 @@ using DocumentIdUP = std::unique_ptr<document::DocumentId>;
 using DocumentSP = std::shared_ptr<document::Document>;
 using DocumentUpdateSP = std::shared_ptr<document::DocumentUpdate>;
 
-enum IncludedVersions {
-    NEWEST_DOCUMENT_ONLY,
-    NEWEST_DOCUMENT_OR_REMOVE,
-    ALL_VERSIONS
-};
+enum IncludedVersions { NEWEST_DOCUMENT_ONLY, NEWEST_DOCUMENT_OR_REMOVE, ALL_VERSIONS };
 
-enum MaintenanceLevel {
-    LOW,
-    HIGH
-};
+enum MaintenanceLevel { LOW, HIGH };
 
-}
+} // namespace storage::spi

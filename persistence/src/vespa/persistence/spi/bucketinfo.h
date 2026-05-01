@@ -8,32 +8,23 @@
 
 #include <vespa/persistence/spi/types.h>
 
-namespace vespalib { class asciistream; }
+namespace vespalib {
+class asciistream;
+}
 
 namespace storage::spi {
 
 class BucketInfo {
 public:
-    enum ReadyState {
-        NOT_READY,
-        READY
-    };
+    enum ReadyState { NOT_READY, READY };
 
-    enum ActiveState {
-        NOT_ACTIVE,
-        ACTIVE
-    };
+    enum ActiveState { NOT_ACTIVE, ACTIVE };
 
     /** Create an invalid bucket info object. */
     BucketInfo();
 
-    BucketInfo(BucketChecksum checksum,
-               uint32_t docCount,
-               uint32_t docSize,
-               uint32_t entryCount,
-               uint32_t size,
-               ReadyState ready = READY,
-               ActiveState active = NOT_ACTIVE);
+    BucketInfo(BucketChecksum checksum, uint32_t docCount, uint32_t docSize, uint32_t entryCount, uint32_t size,
+               ReadyState ready = READY, ActiveState active = NOT_ACTIVE);
 
     bool operator==(const BucketInfo& o) const;
 
@@ -91,15 +82,15 @@ public:
 
 private:
     BucketChecksum _checksum;
-    uint32_t _documentCount;
-    uint32_t _documentSize;
-    uint32_t _entryCount;
-    uint32_t _size;
-    ReadyState _ready;
-    ActiveState _active;
+    uint32_t       _documentCount;
+    uint32_t       _documentSize;
+    uint32_t       _entryCount;
+    uint32_t       _size;
+    ReadyState     _ready;
+    ActiveState    _active;
 };
 
 vespalib::asciistream& operator<<(vespalib::asciistream& out, const BucketInfo& info);
 std::ostream& operator<<(std::ostream& out, const BucketInfo& info);
 
-}
+} // namespace storage::spi

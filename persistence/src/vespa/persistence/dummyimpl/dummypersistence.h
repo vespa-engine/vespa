@@ -8,60 +8,51 @@
 
 #pragma once
 
-#include <vespa/persistence/spi/abstractpersistenceprovider.h>
-#include <vespa/persistence/spi/docentry.h>
 #include <vespa/document/base/globalid.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/persistence/spi/abstractpersistenceprovider.h>
+#include <vespa/persistence/spi/docentry.h>
 #include <vespa/vespalib/stllike/hash_map.h>
+
 #include <atomic>
+#include <condition_variable>
 #include <map>
 #include <mutex>
-#include <condition_variable>
 
 namespace document {
 class DocumentTypeRepo;
-    class FieldSet;
-    namespace select { class Node; }
+class FieldSet;
+namespace select {
+class Node;
 }
+} // namespace document
 
 namespace storage::spi::dummy {
 
-enum class LockMode {
-    Exclusive,
-    Shared
-};
+enum class LockMode { Exclusive, Shared };
 
-struct BucketEntry
-{
+struct BucketEntry {
     DocEntry::SP entry;
-    GlobalId gid;
+    GlobalId     gid;
 
-    BucketEntry(DocEntry::SP e, const GlobalId& g) noexcept
-        : entry(std::move(e)),
-          gid(g)
-    { }
+    BucketEntry(DocEntry::SP e, const GlobalId& g) noexcept : entry(std::move(e)), gid(g) {}
 };
 
 struct BucketContent {
-    typedef vespalib::hash_map<
-        document::GlobalId,
-        DocEntry::SP,
-        document::GlobalId::hash
-    > GidMapType;
+    typedef vespalib::hash_map<document::GlobalId, DocEntry::SP, document::GlobalId::hash> GidMapType;
 
     using SP = std::shared_ptr<BucketContent>;
 
-    std::vector<BucketEntry> _entries;
-    GidMapType _gidMap;
-    mutable BucketInfo _info;
+    std::vector<BucketEntry>  _entries;
+    GidMapType                _gidMap;
+    mutable BucketInfo        _info;
     mutable std::atomic<bool> _inUse;
-    mutable bool _outdatedInfo;
-    bool _active;
+    mutable bool              _outdatedInfo;
+    bool                      _active;
 
     BucketContent() noexcept;
     ~BucketContent();
-
 
     uint32_t computeEntryChecksum(const BucketEntry&) const;
     BucketChecksum updateRollingChecksum(uint32_t entryChecksum);
@@ -81,13 +72,9 @@ struct BucketContent {
     void eraseEntries(const GlobalId& git);
     void setActive(bool active = true) {
         _active = active;
-        _info = BucketInfo(_info.getChecksum(),
-                           _info.getDocumentCount(),
-                           _info.getDocumentSize(),
-                           _info.getEntryCount(),
-                           _info.getUsedSize(),
-                           _info.getReady(),
-                           active ? BucketInfo::ACTIVE : BucketInfo::NOT_ACTIVE);
+        _info =
+            BucketInfo(_info.getChecksum(), _info.getDocumentCount(), _info.getDocumentSize(), _info.getEntryCount(),
+                       _info.getUsedSize(), _info.getReady(), active ? BucketInfo::ACTIVE : BucketInfo::NOT_ACTIVE);
     }
     bool isActive() const { return _active; }
     void setOutdatedInfo(bool outdated) { _outdatedInfo = outdated; }
@@ -96,49 +83,37 @@ struct BucketContent {
 
 struct Iterator {
     using UP = std::unique_ptr<Iterator>;
-    Bucket _bucket;
-    std::vector<Timestamp> _leftToIterate;
+    Bucket                              _bucket;
+    std::vector<Timestamp>              _leftToIterate;
     std::shared_ptr<document::FieldSet> _fieldSet;
 };
 
 class DummyPersistence;
 
-class BucketContentGuard
-{
+class BucketContentGuard {
     BucketContentGuard(const BucketContentGuard&);
     BucketContentGuard& operator=(const BucketContentGuard&);
+
 public:
     using UP = std::unique_ptr<BucketContentGuard>;
 
-    BucketContentGuard(DummyPersistence& persistence,
-                       BucketContent& content,
-                       LockMode lock_mode)
-        : _persistence(persistence),
-          _content(content),
-          _lock_mode(lock_mode)
-    {
-    }
+    BucketContentGuard(DummyPersistence& persistence, BucketContent& content, LockMode lock_mode)
+        : _persistence(persistence), _content(content), _lock_mode(lock_mode) {}
     ~BucketContentGuard();
 
-    BucketContent& getContent() noexcept {
-        return _content;
-    }
+    BucketContent& getContent() noexcept { return _content; }
 
-    BucketContent* operator->() noexcept {
-        return &_content;
-    }
+    BucketContent* operator->() noexcept { return &_content; }
 
-    BucketContent& operator*() noexcept {
-        return _content;
-    }
+    BucketContent& operator*() noexcept { return _content; }
+
 private:
     DummyPersistence& _persistence;
-    BucketContent& _content;
-    LockMode _lock_mode;
+    BucketContent&    _content;
+    LockMode          _lock_mode;
 };
 
-class DummyPersistence : public AbstractPersistenceProvider
-{
+class DummyPersistence : public AbstractPersistenceProvider {
 public:
     explicit DummyPersistence(const std::shared_ptr<const document::DocumentTypeRepo>& repo);
     ~DummyPersistence() override;
@@ -164,11 +139,12 @@ public:
     GetResult get(const Bucket&, const document::FieldSet&, const DocumentId&, Context&) const override;
     void putAsync(const Bucket&, Timestamp, DocumentSP, OperationComplete::UP) override;
     void removeAsync(const Bucket& b, std::vector<spi::IdAndTimestamp> ids, OperationComplete::UP) override;
-    void removeByGidAsync(const Bucket& b, std::vector<spi::DocTypeGidAndTimestamp> ids, std::unique_ptr<OperationComplete>) override;
+    void removeByGidAsync(const Bucket& b, std::vector<spi::DocTypeGidAndTimestamp> ids,
+                          std::unique_ptr<OperationComplete>) override;
     void updateAsync(const Bucket&, Timestamp, DocumentUpdateSP, OperationComplete::UP) override;
 
-    CreateIteratorResult
-    createIterator(const Bucket &bucket, FieldSetSP fs, const Selection &, IncludedVersions, Context &context) override;
+    CreateIteratorResult createIterator(const Bucket& bucket, FieldSetSP fs, const Selection&, IncludedVersions,
+                                        Context& context) override;
 
     IterateResult iterate(IteratorId, uint64_t maxByteSize) const override;
     Result destroyIterator(IteratorId) override;
@@ -180,7 +156,8 @@ public:
 
     Result join(const Bucket& source1, const Bucket& source2, const Bucket& target) override;
 
-    std::unique_ptr<vespalib::IDestructorCallback> register_resource_usage_listener(IResourceUsageListener& listener) override;
+    std::unique_ptr<vespalib::IDestructorCallback>
+    register_resource_usage_listener(IResourceUsageListener& listener) override;
     std::unique_ptr<vespalib::IDestructorCallback> register_executor(std::shared_ptr<BucketExecutor>) override;
     std::shared_ptr<BucketExecutor> get_bucket_executor() noexcept { return _bucket_executor.lock(); }
 
@@ -199,9 +176,7 @@ public:
      */
     bool isActive(const Bucket&) const;
 
-    const ClusterState& getClusterState() const {
-        return *_clusterState;
-    }
+    const ClusterState& getClusterState() const { return *_clusterState; }
 
 private:
     void verifyInitialized() const noexcept __attribute__((noinline));
@@ -209,24 +184,24 @@ private:
     // Const since funcs only alter mutable field in BucketContent
     BucketContentGuard::UP acquireBucketWithLock(const Bucket& b, LockMode lock_mode = LockMode::Exclusive) const;
     void releaseBucketNoLock(const BucketContent& bc, LockMode lock_mode = LockMode::Exclusive) const noexcept;
-    void internal_create_bucket(const Bucket &b);
+    void internal_create_bucket(const Bucket& b);
 
-    mutable bool _initialized;
+    mutable bool                                      _initialized;
     std::shared_ptr<const document::DocumentTypeRepo> _repo;
     using Content = vespalib::hash_map<Bucket, BucketContent::SP, document::BucketId::hash>;
 
-    Content _content;
-    IteratorId _nextIterator;
+    Content                                    _content;
+    IteratorId                                 _nextIterator;
     mutable std::map<IteratorId, Iterator::UP> _iterators;
-    mutable std::mutex      _monitor;
-    std::condition_variable _cond;
+    mutable std::mutex                         _monitor;
+    std::condition_variable                    _cond;
 
     std::unique_ptr<ClusterState> _clusterState;
     std::weak_ptr<BucketExecutor> _bucket_executor;
 
     mutable BucketIdListResult::List _modifiedBuckets;
     std::unique_ptr<document::select::Node> parseDocumentSelection(const string& documentSelection, bool allowLeaf);
-    Content::const_iterator find(const Bucket & bucket) const __attribute__((noinline));
+    Content::const_iterator find(const Bucket& bucket) const __attribute__((noinline));
 };
 
-}
+} // namespace storage::spi::dummy

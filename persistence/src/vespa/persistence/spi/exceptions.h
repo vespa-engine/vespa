@@ -15,4 +15,4 @@ namespace storage::spi {
  */
 VESPA_DEFINE_EXCEPTION(HandledException, vespalib::Exception);
 
-}
+} // namespace storage::spi

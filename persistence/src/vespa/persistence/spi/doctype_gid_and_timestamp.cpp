@@ -1,21 +1,19 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "doctype_gid_and_timestamp.h"
+
 #include <vespa/vespalib/stllike/asciistream.h>
+
 #include <ostream>
 
 namespace storage::spi {
 
-DocTypeGidAndTimestamp::DocTypeGidAndTimestamp()
-    : doc_type(),
-      gid()
-{
+DocTypeGidAndTimestamp::DocTypeGidAndTimestamp() : doc_type(), gid() {
 }
 
-DocTypeGidAndTimestamp::DocTypeGidAndTimestamp(const std::string& doc_type_, document::GlobalId gid_, Timestamp timestamp_) noexcept
-    : doc_type(doc_type_),
-      gid(std::move(gid_)),
-      timestamp(timestamp_)
-{}
+DocTypeGidAndTimestamp::DocTypeGidAndTimestamp(const std::string& doc_type_, document::GlobalId gid_,
+                                               Timestamp timestamp_) noexcept
+    : doc_type(doc_type_), gid(std::move(gid_)), timestamp(timestamp_) {
+}
 
 DocTypeGidAndTimestamp::DocTypeGidAndTimestamp(const DocTypeGidAndTimestamp&) = default;
 DocTypeGidAndTimestamp& DocTypeGidAndTimestamp::operator=(const DocTypeGidAndTimestamp&) = default;
@@ -41,4 +39,4 @@ std::ostream& operator<<(std::ostream& os, const DocTypeGidAndTimestamp& dt_gid_
     return os;
 }
 
-}
+} // namespace storage::spi
