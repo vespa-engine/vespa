@@ -24,7 +24,8 @@ var cborDecMode cbor.DecMode
 func init() {
 	var err error
 	cborDecMode, err = cbor.DecOptions{
-		DefaultMapType: reflect.TypeOf(map[string]interface{}(nil)),
+		DefaultMapType:  reflect.TypeOf(map[string]interface{}(nil)),
+		MaxNestedLevels: 1000,
 	}.DecMode()
 	if err != nil {
 		panic("failed to initialize CBOR decoder mode: " + err.Error())
