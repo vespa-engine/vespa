@@ -10,15 +10,15 @@
 
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
+
 #include <gtest/gtest.h>
 
-namespace document
-{
+namespace document {
 
 class DocumentTypeRepo;
 class TestDocMan;
 
-}
+} // namespace document
 
 namespace storage::spi {
 
@@ -30,143 +30,81 @@ public:
         using UP = std::unique_ptr<PersistenceFactory>;
 
         virtual ~PersistenceFactory() = default;
-        virtual PersistenceProviderUP getPersistenceImplementation(
-                const std::shared_ptr<const document::DocumentTypeRepo> &repo,
-                const DocumenttypesConfig &typesCfg) = 0;
+        virtual PersistenceProviderUP
+        getPersistenceImplementation(const std::shared_ptr<const document::DocumentTypeRepo>& repo,
+                                     const DocumenttypesConfig&                               typesCfg) = 0;
 
-        virtual void
-        clear()
-        {
+        virtual void clear() {
             // clear persistent state, i.e. remove files/directories
         }
 
-        virtual bool
-        hasPersistence() const
-        {
-            return false;
-        }
-        virtual bool
-        supportsActiveState() const
-        {
-            return false;
-        }
-        virtual bool
-        supportsRemoveEntry() const
-        {
-            return false;
-        }
+        virtual bool hasPersistence() const { return false; }
+        virtual bool supportsActiveState() const { return false; }
+        virtual bool supportsRemoveEntry() const { return false; }
         // If bucket spaces are supported then testdoctype2 is in bucket space 1
         virtual bool supportsBucketSpaces() const { return false; }
     };
 
     // Set by test runner.
-    static std::unique_ptr<PersistenceFactory>(*_factoryFactory)(const std::string &docType);
+    static std::unique_ptr<PersistenceFactory> (*_factoryFactory)(const std::string& docType);
 
 protected:
     PersistenceFactory::UP _factory;
 
-    void populateBucket(const Bucket& b,
-                        PersistenceProvider& spi,
-                        uint32_t from,
-                        uint32_t to,
+    void populateBucket(const Bucket& b, PersistenceProvider& spi, uint32_t from, uint32_t to,
                         document::TestDocMan& testDocMan);
 
-    void
-    testDeleteBucketPostCondition(const PersistenceProvider &spi,
-                                  const Bucket &bucket,
-                                  const Document &doc1);
+    void testDeleteBucketPostCondition(const PersistenceProvider& spi, const Bucket& bucket, const Document& doc1);
 
-    void
-    testSplitNormalCasePostCondition(const PersistenceProvider &spi,
-                                     const Bucket &bucketA,
-                                     const Bucket &bucketB,
-                                     const Bucket &bucketC,
-                                     document::TestDocMan &testDocMan);
+    void testSplitNormalCasePostCondition(const PersistenceProvider& spi, const Bucket& bucketA,
+                                          const Bucket& bucketB, const Bucket& bucketC,
+                                          document::TestDocMan& testDocMan);
 
-    void
-    testSplitTargetExistsPostCondition(const PersistenceProvider &spi,
-                                       const Bucket &bucketA,
-                                       const Bucket &bucketB,
-                                       const Bucket &bucketC,
-                                       document::TestDocMan &testDocMan);
+    void testSplitTargetExistsPostCondition(const PersistenceProvider& spi, const Bucket& bucketA,
+                                            const Bucket& bucketB, const Bucket& bucketC,
+                                            document::TestDocMan& testDocMan);
 
-    void
-    testSplitSingleDocumentInSourcePostCondition(
-            const PersistenceProvider& spi,
-            const Bucket& source,
-            const Bucket& target1,
-            const Bucket& target2,
-            document::TestDocMan& testDocMan);
+    void testSplitSingleDocumentInSourcePostCondition(const PersistenceProvider& spi, const Bucket& source,
+                                                      const Bucket& target1, const Bucket& target2,
+                                                      document::TestDocMan& testDocMan);
 
-    void
-    createAndPopulateJoinSourceBuckets(
-            PersistenceProvider& spi,
-            const Bucket& source1,
-            const Bucket& source2,
-            document::TestDocMan& testDocMan);
+    void createAndPopulateJoinSourceBuckets(PersistenceProvider& spi, const Bucket& source1, const Bucket& source2,
+                                            document::TestDocMan& testDocMan);
 
-    void
-    doTestJoinNormalCase(const Bucket& source1,
-                         const Bucket& source2,
-                         const Bucket& target);
+    void doTestJoinNormalCase(const Bucket& source1, const Bucket& source2, const Bucket& target);
 
-    void
-    testJoinNormalCasePostCondition(const PersistenceProvider &spi,
-                                    const Bucket &bucketA,
-                                    const Bucket &bucketB,
-                                    const Bucket &bucketC,
-                                    document::TestDocMan &testDocMan);
+    void testJoinNormalCasePostCondition(const PersistenceProvider& spi, const Bucket& bucketA, const Bucket& bucketB,
+                                         const Bucket& bucketC, document::TestDocMan& testDocMan);
 
-    void
-    testJoinTargetExistsPostCondition(const PersistenceProvider &spi,
-                                      const Bucket &bucketA,
-                                      const Bucket &bucketB,
-                                      const Bucket &bucketC,
-                                      document::TestDocMan &testDocMan);
+    void testJoinTargetExistsPostCondition(const PersistenceProvider& spi, const Bucket& bucketA,
+                                           const Bucket& bucketB, const Bucket& bucketC,
+                                           document::TestDocMan& testDocMan);
 
-    void
-    testJoinOneBucketPostCondition(const PersistenceProvider &spi,
-                                   const Bucket &bucketA,
-                                   const Bucket &bucketC,
-                                   document::TestDocMan &testDocMan);
+    void testJoinOneBucketPostCondition(const PersistenceProvider& spi, const Bucket& bucketA, const Bucket& bucketC,
+                                        document::TestDocMan& testDocMan);
 
-    void
-    doTestJoinSameSourceBuckets(const Bucket& source,
-                                const Bucket& target);
+    void doTestJoinSameSourceBuckets(const Bucket& source, const Bucket& target);
 
-    void
-    testJoinSameSourceBucketsPostCondition(
-            const PersistenceProvider& spi,
-            const Bucket& source,
-            const Bucket& target,
-            document::TestDocMan& testDocMan);
+    void testJoinSameSourceBucketsPostCondition(const PersistenceProvider& spi, const Bucket& source,
+                                                const Bucket& target, document::TestDocMan& testDocMan);
 
-    void
-    testJoinSameSourceBucketsTargetExistsPostCondition(
-            const PersistenceProvider& spi,
-            const Bucket& source,
-            const Bucket& target,
-            document::TestDocMan& testDocMan);
+    void testJoinSameSourceBucketsTargetExistsPostCondition(const PersistenceProvider& spi, const Bucket& source,
+                                                            const Bucket& target, document::TestDocMan& testDocMan);
 
     void test_iterate_empty_or_missing_bucket(bool bucket_exists);
 
     void test_empty_bucket_info(bool bucket_exists, bool active);
 
-    void assert_remove_by_gid(PersistenceProvider& spi,
-                              const Bucket& bucket,
-                              std::vector<DocTypeGidAndTimestamp> ids,
-                              size_t exp_removed,
-                              size_t exp_remaining,
-                              const std::string& label);
+    void assert_remove_by_gid(PersistenceProvider& spi, const Bucket& bucket, std::vector<DocTypeGidAndTimestamp> ids,
+                              size_t exp_removed, size_t exp_remaining, const std::string& label);
 
     ConformanceTest();
-    ConformanceTest(const std::string &docType);
+    ConformanceTest(const std::string& docType);
 };
 
-class SingleDocTypeConformanceTest : public ConformanceTest
-{
+class SingleDocTypeConformanceTest : public ConformanceTest {
 protected:
     SingleDocTypeConformanceTest();
 };
 
-}
+} // namespace storage::spi

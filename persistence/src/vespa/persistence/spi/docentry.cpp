@@ -1,8 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "docentry.h"
+
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/objects/nbostream.h>
+
 #include <sstream>
 
 namespace storage::spi {
@@ -11,12 +13,13 @@ namespace {
 
 class DocEntryWithId final : public DocEntry {
 public:
-    DocEntryWithId(Timestamp t, DocumentMetaEnum metaEnum, const DocumentId &docId);
+    DocEntryWithId(Timestamp t, DocumentMetaEnum metaEnum, const DocumentId& docId);
     ~DocEntryWithId() override;
     std::string toString() const override;
-    const DocumentId* getDocumentId() const override { return & _documentId; }
+    const DocumentId* getDocumentId() const override { return &_documentId; }
     std::string_view getDocumentType() const override { return _documentId.getDocType(); }
     GlobalId getGid() const override { return _documentId.getGlobalId(); }
+
 private:
     DocumentId _documentId;
 };
@@ -28,9 +31,10 @@ public:
     std::string toString() const override;
     std::string_view getDocumentType() const override { return _type; }
     GlobalId getGid() const override { return _gid; }
+
 private:
     std::string _type;
-    GlobalId         _gid;
+    GlobalId    _gid;
 };
 
 class DocEntryWithDoc final : public DocEntry {
@@ -51,54 +55,45 @@ public:
     DocumentUP releaseDocument() override { return std::move(_document); }
     std::string_view getDocumentType() const override { return _document->getId().getDocType(); }
     GlobalId getGid() const override { return _document->getId().getGlobalId(); }
+
 private:
     DocumentUP _document;
 };
 
 DocEntryWithDoc::DocEntryWithDoc(Timestamp t, DocumentUP doc)
-    : DocEntry(t, DocumentMetaEnum::NONE, doc->serialize().size()),
-      _document(std::move(doc))
-{ }
+    : DocEntry(t, DocumentMetaEnum::NONE, doc->serialize().size()), _document(std::move(doc)) {
+}
 
 DocEntryWithDoc::DocEntryWithDoc(Timestamp t, DocumentUP doc, size_t serializedDocumentSize)
-    : DocEntry(t, DocumentMetaEnum::NONE, serializedDocumentSize),
-      _document(std::move(doc))
-{ }
+    : DocEntry(t, DocumentMetaEnum::NONE, serializedDocumentSize), _document(std::move(doc)) {
+}
 
 DocEntryWithId::DocEntryWithId(Timestamp t, DocumentMetaEnum metaEnum, const DocumentId& docId)
-    : DocEntry(t, metaEnum, docId.getSerializedSize()),
-      _documentId(docId)
-{ }
+    : DocEntry(t, metaEnum, docId.getSerializedSize()), _documentId(docId) {
+}
 
-DocEntryWithTypeAndGid::DocEntryWithTypeAndGid(Timestamp t, DocumentMetaEnum metaEnum, std::string_view docType, GlobalId gid)
-    : DocEntry(t, metaEnum, sizeof(DocEntry) + docType.size() + sizeof(gid)),
-      _type(docType),
-      _gid(gid)
-{ }
+DocEntryWithTypeAndGid::DocEntryWithTypeAndGid(Timestamp t, DocumentMetaEnum metaEnum, std::string_view docType,
+                                               GlobalId gid)
+    : DocEntry(t, metaEnum, sizeof(DocEntry) + docType.size() + sizeof(gid)), _type(docType), _gid(gid) {
+}
 
 DocEntryWithTypeAndGid::~DocEntryWithTypeAndGid() = default;
 DocEntryWithId::~DocEntryWithId() = default;
 DocEntryWithDoc::~DocEntryWithDoc() = default;
 
-std::string
-DocEntryWithId::toString() const
-{
+std::string DocEntryWithId::toString() const {
     std::ostringstream out;
     out << "DocEntry(" << getTimestamp() << ", " << int(getMetaEnum()) << ", " << _documentId << ")";
     return out.str();
 }
 
-std::string
-DocEntryWithTypeAndGid::toString() const
-{
+std::string DocEntryWithTypeAndGid::toString() const {
     std::ostringstream out;
     out << "DocEntry(" << getTimestamp() << ", " << int(getMetaEnum()) << ", " << _type << ", " << _gid << ")";
     return out.str();
 }
 
-std::string
-DocEntryWithDoc::toString() const
-{
+std::string DocEntryWithDoc::toString() const {
     std::ostringstream out;
     out << "DocEntry(" << getTimestamp() << ", " << int(getMetaEnum()) << ", ";
     if (_document.get()) {
@@ -110,47 +105,38 @@ DocEntryWithDoc::toString() const
     return out.str();
 }
 
-}
+} // namespace
 
-DocEntry::UP
-DocEntry::create(Timestamp t, DocumentMetaEnum metaEnum) {
+DocEntry::UP DocEntry::create(Timestamp t, DocumentMetaEnum metaEnum) {
     return UP(new DocEntry(t, metaEnum));
 }
-DocEntry::UP
-DocEntry::create(Timestamp t, DocumentMetaEnum metaEnum, const DocumentId &docId) {
+DocEntry::UP DocEntry::create(Timestamp t, DocumentMetaEnum metaEnum, const DocumentId& docId) {
     return std::make_unique<DocEntryWithId>(t, metaEnum, docId);
 }
-DocEntry::UP
-DocEntry::create(Timestamp t, DocumentMetaEnum metaEnum, std::string_view docType, GlobalId gid) {
+DocEntry::UP DocEntry::create(Timestamp t, DocumentMetaEnum metaEnum, std::string_view docType, GlobalId gid) {
     return std::make_unique<DocEntryWithTypeAndGid>(t, metaEnum, docType, gid);
 }
-DocEntry::UP
-DocEntry::create(Timestamp t, DocumentUP doc) {
+DocEntry::UP DocEntry::create(Timestamp t, DocumentUP doc) {
     return std::make_unique<DocEntryWithDoc>(t, std::move(doc));
 }
-DocEntry::UP
-DocEntry::create(Timestamp t, DocumentUP doc, SizeType serializedDocumentSize) {
+DocEntry::UP DocEntry::create(Timestamp t, DocumentUP doc, SizeType serializedDocumentSize) {
     return std::make_unique<DocEntryWithDoc>(t, std::move(doc), serializedDocumentSize);
 }
 
 DocEntry::~DocEntry() = default;
 
-DocumentUP
-DocEntry::releaseDocument() {
+DocumentUP DocEntry::releaseDocument() {
     return {};
 }
 
-std::string
-DocEntry::toString() const
-{
+std::string DocEntry::toString() const {
     std::ostringstream out;
     out << "DocEntry(" << _timestamp << ", " << int(_metaEnum) << ", metadata only)";
     return out.str();
 }
 
-std::ostream &
-operator << (std::ostream & os, const DocEntry & r) {
+std::ostream& operator<<(std::ostream& os, const DocEntry& r) {
     return os << r.toString();
 }
 
-}
+} // namespace storage::spi

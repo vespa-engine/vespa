@@ -3,12 +3,14 @@
 #pragma once
 
 #include "bucket.h"
+
 #include <memory>
 
-namespace vespalib { class IDestructorCallback; }
+namespace vespalib {
+class IDestructorCallback;
+}
 
 namespace storage::spi {
-
 
 /**
  * Task that will be run in thread from content layer.
@@ -19,8 +21,8 @@ namespace storage::spi {
 class BucketTask {
 public:
     virtual ~BucketTask() = default;
-    virtual void run(const Bucket & bucket, std::shared_ptr<vespalib::IDestructorCallback> onComplete) = 0;
-    virtual void fail(const Bucket &) = 0;
+    virtual void run(const Bucket& bucket, std::shared_ptr<vespalib::IDestructorCallback> onComplete) = 0;
+    virtual void fail(const Bucket&) = 0;
 };
 
 /**
@@ -29,7 +31,7 @@ public:
  */
 struct BucketExecutor {
     virtual ~BucketExecutor() = default;
-    virtual void execute(const Bucket & bucket, std::unique_ptr<BucketTask> task) = 0;
+    virtual void execute(const Bucket& bucket, std::unique_ptr<BucketTask> task) = 0;
 };
 
-}
+} // namespace storage::spi

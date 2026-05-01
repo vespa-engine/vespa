@@ -15,4 +15,4 @@ struct BucketLimits {
     constexpr static uint8_t MaxUsedBits = 58;
 };
 
-}
+} // namespace storage::spi

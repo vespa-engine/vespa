@@ -1,8 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "bucketinfo.h"
 #include "bucket.h"
+#include "bucketinfo.h"
+
 #include <vespa/document/bucket/bucketidlist.h>
 
 namespace storage::spi {
@@ -32,44 +33,33 @@ public:
      * Constructor to use when an error has been detected.
      */
     Result(ErrorType error, const std::string& errorMessage) noexcept
-        : _errorCode(error),
-          _errorMessage(errorMessage)
-    {}
+        : _errorCode(error), _errorMessage(errorMessage) {}
 
-    Result(const Result &);
+    Result(const Result&);
     Result(Result&&) noexcept;
-    Result & operator = (const Result &);
+    Result& operator=(const Result&);
     Result& operator=(Result&&) noexcept;
 
     virtual ~Result();
 
-    bool operator==(const Result& o) const {
-        return _errorCode == o._errorCode
-               && _errorMessage == o._errorMessage;
-    }
+    bool operator==(const Result& o) const { return _errorCode == o._errorCode && _errorMessage == o._errorMessage; }
 
-    bool hasError() const {
-        return _errorCode != ErrorType::NONE;
-    }
+    bool hasError() const { return _errorCode != ErrorType::NONE; }
 
-    ErrorType getErrorCode() const {
-        return _errorCode;
-    }
+    ErrorType getErrorCode() const { return _errorCode; }
 
-    const std::string& getErrorMessage() const {
-        return _errorMessage;
-    }
+    const std::string& getErrorMessage() const { return _errorMessage; }
 
     std::string toString() const;
 
 private:
-    ErrorType _errorCode;
+    ErrorType   _errorCode;
     std::string _errorMessage;
 };
 
-std::ostream & operator << (std::ostream & os, const Result & r);
+std::ostream& operator<<(std::ostream& os, const Result& r);
 
-std::ostream & operator << (std::ostream & os, const Result::ErrorType &errorCode);
+std::ostream& operator<<(std::ostream& os, const Result::ErrorType& errorCode);
 
 class BucketInfoResult final : public Result {
 public:
@@ -78,8 +68,7 @@ public:
      * The service layer will not update the bucket information in this case,
      * so it should not be returned either.
      */
-    BucketInfoResult(ErrorType error, const std::string& errorMessage)
-        : Result(error, errorMessage) {};
+    BucketInfoResult(ErrorType error, const std::string& errorMessage) : Result(error, errorMessage) {};
 
     /**
      * Constructor to use when the write operation was successful,
@@ -87,16 +76,13 @@ public:
      */
     BucketInfoResult(const BucketInfo& info) : _info(info) {}
 
-    const BucketInfo& getBucketInfo() const {
-        return _info;
-    }
+    const BucketInfo& getBucketInfo() const { return _info; }
 
 private:
     BucketInfo _info;
 };
 
-class UpdateResult final : public Result
-{
+class UpdateResult final : public Result {
 public:
     /**
      * Constructor to use for a result where an error has been detected.
@@ -104,20 +90,17 @@ public:
      * so it should not be returned either.
      */
     UpdateResult(ErrorType error, const std::string& errorMessage)
-        : Result(error, errorMessage),
-          _existingTimestamp(0) { }
+        : Result(error, errorMessage), _existingTimestamp(0) {}
 
     /**
      * Constructor to use when no document to update was found.
      */
-    UpdateResult()
-        : _existingTimestamp(0) { }
+    UpdateResult() : _existingTimestamp(0) {}
 
     /**
      * Constructor to use when the update was successful.
      */
-    UpdateResult(Timestamp existingTimestamp)
-        : _existingTimestamp(existingTimestamp) {}
+    UpdateResult(Timestamp existingTimestamp) : _existingTimestamp(existingTimestamp) {}
 
     Timestamp getExistingTimestamp() const { return _existingTimestamp; }
 
@@ -126,8 +109,7 @@ private:
     Timestamp _existingTimestamp;
 };
 
-class RemoveResult : public Result
-{
+class RemoveResult : public Result {
 public:
     /**
      * Constructor to use for a result where an error has been detected.
@@ -135,14 +117,10 @@ public:
      * so it should not be returned either.
      */
     RemoveResult(ErrorType error, const std::string& errorMessage) noexcept
-        : Result(error, errorMessage),
-          _numRemoved(0)
-    { }
+        : Result(error, errorMessage), _numRemoved(0) {}
 
-    explicit RemoveResult(bool found) noexcept
-            : RemoveResult(found ? 1u : 0u) { }
-    explicit RemoveResult(uint32_t numRemoved) noexcept
-        : _numRemoved(numRemoved) { }
+    explicit RemoveResult(bool found) noexcept : RemoveResult(found ? 1u : 0u) {}
+    explicit RemoveResult(uint32_t numRemoved) noexcept : _numRemoved(numRemoved) {}
     bool wasFound() const { return _numRemoved > 0; }
     uint32_t num_removed() const { return _numRemoved; }
     void inc_num_removed(uint32_t add) { _numRemoved += add; }
@@ -158,23 +136,14 @@ public:
      * Not finding the document is not an error in this context.
      */
     GetResult(ErrorType error, const std::string& errorMessage)
-        : Result(error, errorMessage),
-          _timestamp(0),
-          _is_tombstone(false)
-    {
-    }
+        : Result(error, errorMessage), _timestamp(0), _is_tombstone(false) {}
 
     /**
      * Constructor to use when we didn't find the document in question.
      */
-    GetResult()
-        : _timestamp(0),
-          _doc(),
-          _is_tombstone(false)
-    {
-    }
-    GetResult(GetResult &&) noexcept = default;
-    GetResult & operator=(GetResult &&) noexcept = default;
+    GetResult() : _timestamp(0), _doc(), _is_tombstone(false) {}
+    GetResult(GetResult&&) noexcept = default;
+    GetResult& operator=(GetResult&&) noexcept = default;
 
     /**
      * Constructor to use when we found the document asked for.
@@ -184,39 +153,23 @@ public:
      */
     GetResult(DocumentUP doc, Timestamp timestamp);
 
-    static GetResult make_for_tombstone(Timestamp removed_at_ts) {
-        return GetResult(removed_at_ts, true);
-    }
+    static GetResult make_for_tombstone(Timestamp removed_at_ts) { return GetResult(removed_at_ts, true); }
 
-    static GetResult make_for_metadata_only(Timestamp removed_at_ts) {
-        return GetResult(removed_at_ts, false);
-    }
+    static GetResult make_for_metadata_only(Timestamp removed_at_ts) { return GetResult(removed_at_ts, false); }
 
     ~GetResult() override;
 
-    [[nodiscard]] Timestamp getTimestamp() const {
-        return _timestamp;
-    }
+    [[nodiscard]] Timestamp getTimestamp() const { return _timestamp; }
 
-    [[nodiscard]] bool hasDocument() const {
-        return (_doc.get() != nullptr);
-    }
+    [[nodiscard]] bool hasDocument() const { return (_doc.get() != nullptr); }
 
-    [[nodiscard]] bool is_tombstone() const noexcept {
-        return _is_tombstone;
-    }
+    [[nodiscard]] bool is_tombstone() const noexcept { return _is_tombstone; }
 
-    const Document& getDocument() const {
-        return *_doc;
-    }
+    const Document& getDocument() const { return *_doc; }
 
-    Document& getDocument() {
-        return *_doc;
-    }
+    Document& getDocument() { return *_doc; }
 
-    const DocumentSP & getDocumentPtr() {
-        return _doc;
-    }
+    const DocumentSP& getDocumentPtr() { return _doc; }
 
 private:
     // Explicitly creates a metadata only GetResult with no document, optionally a tombstone (remove entry).
@@ -234,8 +187,7 @@ public:
     /**
      * Constructor used when there was an error listing the buckets.
      */
-    BucketIdListResult(ErrorType error, const std::string& errorMessage)
-        : Result(error, errorMessage) {}
+    BucketIdListResult(ErrorType error, const std::string& errorMessage) : Result(error, errorMessage) {}
 
     /**
      * Constructor used when the bucket listing was successful.
@@ -243,16 +195,10 @@ public:
      * @param list The list of bucket ids this partition has. Is swapped with
      * the list internal to this object.
      */
-    BucketIdListResult(List list)
-        : Result(),
-          _info(std::move(list))
-    { }
-    BucketIdListResult()
-        : Result(),
-          _info()
-    { }
-    BucketIdListResult(BucketIdListResult &&) noexcept = default;
-    BucketIdListResult & operator =(BucketIdListResult &&) noexcept = default;
+    BucketIdListResult(List list) : Result(), _info(std::move(list)) {}
+    BucketIdListResult() : Result(), _info() {}
+    BucketIdListResult(BucketIdListResult&&) noexcept = default;
+    BucketIdListResult& operator=(BucketIdListResult&&) noexcept = default;
     ~BucketIdListResult();
 
     const List& getList() const { return _info; }
@@ -268,15 +214,12 @@ public:
      * Constructor used when there was an error creating the iterator.
      */
     CreateIteratorResult(ErrorType error, const std::string& errorMessage) noexcept
-        : Result(error, errorMessage),
-          _iterator(0) { }
+        : Result(error, errorMessage), _iterator(0) {}
 
     /**
      * Constructor used when the iterator state was successfully created.
      */
-    CreateIteratorResult(const IteratorId& id) noexcept
-        : _iterator(id)
-    { }
+    CreateIteratorResult(const IteratorId& id) noexcept : _iterator(id) {}
 
     const IteratorId& getIteratorId() const { return _iterator; }
 
@@ -302,9 +245,9 @@ public:
      */
     IterateResult(List entries, bool completed);
 
-    IterateResult(const IterateResult &) = delete;
-    IterateResult(IterateResult &&rhs) noexcept;
-    IterateResult &operator=(IterateResult &&rhs) noexcept;
+    IterateResult(const IterateResult&) = delete;
+    IterateResult(IterateResult&& rhs) noexcept;
+    IterateResult& operator=(IterateResult&& rhs) noexcept;
 
     ~IterateResult();
 
@@ -317,5 +260,4 @@ private:
     List _entries;
 };
 
-}
-
+} // namespace storage::spi
