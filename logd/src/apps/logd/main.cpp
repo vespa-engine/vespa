@@ -1,15 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/config/common/exceptions.h>
+#include <vespa/vespalib/util/sig_catch.h>
+
 #include <logd/config_subscriber.h>
 #include <logd/empty_forwarder.h>
 #include <logd/exceptions.h>
 #include <logd/metrics.h>
 #include <logd/state_reporter.h>
 #include <logd/watcher.h>
-#include <vespa/config/common/exceptions.h>
-#include <vespa/vespalib/util/sig_catch.h>
-#include <csignal>
 #include <unistd.h>
+
+#include <csignal>
 
 #include <vespa/log/log.h>
 LOG_SETUP("logdemon");
@@ -17,21 +19,20 @@ LOG_SETUP("logdemon");
 using namespace logdemon;
 using config::FileSpec;
 
-int main(int, char**)
-{
+int main(int, char**) {
     StateReporter stateReporter;
-    Metrics metrics(stateReporter.metrics());
+    Metrics       metrics(stateReporter.metrics());
 
     EV_STARTED("logdemon");
 
     vespalib::SigCatch catcher;
 
-    const char *cfid = getenv("VESPA_CONFIG_ID");
+    const char* cfid = getenv("VESPA_CONFIG_ID");
 
     try {
         config::ConfigUri config_uri(cfid);
-        ConfigSubscriber subscriber(config_uri);
-        Forwarder::UP forwarder;
+        ConfigSubscriber  subscriber(config_uri);
+        Forwarder::UP     forwarder;
 
         int sleepcount = 0;
         while (true) {
@@ -45,7 +46,7 @@ int main(int, char**)
                 stateReporter.setStatePort(subscriber.getStatePort());
                 stateReporter.gotConf(subscriber.generation());
 
-                sleepcount = 0 ; // connection OK, reset sleep time
+                sleepcount = 0; // connection OK, reset sleep time
                 watcher.watchfile();
             } catch (ConnectionException& ex) {
                 LOG(debug, "connection exception: %s", ex.what());
@@ -67,11 +68,11 @@ int main(int, char**)
                 }
             }
         }
-    } catch (config::ConfigRuntimeException & ex) {
+    } catch (config::ConfigRuntimeException& ex) {
         LOG(error, "Configuration failed: %s", ex.what());
         EV_STOPPING("logdemon", "bad config");
         return 1;
-    } catch (config::InvalidConfigException & ex) {
+    } catch (config::InvalidConfigException& ex) {
         LOG(error, "Configuration failed: %s", ex.what());
         EV_STOPPING("logdemon", "bad config");
         return 1;
@@ -83,7 +84,7 @@ int main(int, char**)
         LOG(error, "stopping on error: %s", ex.what());
         EV_STOPPING("logdemon", "fatal error");
         return 1;
-    } catch (std::exception & ex) {
+    } catch (std::exception& ex) {
         LOG(error, "unknown exception: %s", ex.what());
         EV_STOPPING("logdemon", "unknown error");
         return 1;

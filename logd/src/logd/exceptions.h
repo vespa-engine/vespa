@@ -9,14 +9,14 @@ namespace logdemon {
 class MsgException : public std::exception {
 private:
     std::string _string;
+
 public:
-    MsgException(const std::string & s) : _string(s) {}
+    MsgException(const std::string& s) : _string(s) {}
     ~MsgException() override {}
-    const char *what() const noexcept override { return _string.c_str(); }
+    const char* what() const noexcept override { return _string.c_str(); }
 };
 
-class ConnectionException : public MsgException
-{
+class ConnectionException : public MsgException {
 public:
     ConnectionException(const std::string& msg) : MsgException(msg) {}
 };
@@ -26,16 +26,14 @@ public:
     DecodeException(const std::string& msg) : MsgException(msg) {}
 };
 
-class SigTermException : public MsgException
-{
+class SigTermException : public MsgException {
 public:
-    SigTermException(const char *s) : MsgException(s) {}
+    SigTermException(const char* s) : MsgException(s) {}
 };
 
-class SomethingBad : public MsgException
-{
+class SomethingBad : public MsgException {
 public:
-    SomethingBad(const char *s) : MsgException(s) {}
+    SomethingBad(const char* s) : MsgException(s) {}
 };
 
-}
+} // namespace logdemon

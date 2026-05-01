@@ -2,11 +2,13 @@
 #pragma once
 
 #include "forwarder.h"
-#include <logd/config-logd.h>
+
 #include <vespa/config/subscription/configsubscriber.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/vespalib/util/time.h>
+
+#include <logd/config-logd.h>
 
 namespace logdemon {
 
@@ -17,20 +19,21 @@ struct Metrics;
  */
 class ConfigSubscriber {
 private:
-    std::string _logserver_host;
-    int _logserver_rpc_port;
-    int _state_port;
-    ForwardMap _forward_filter;
-    int _rotate_size;
-    vespalib::duration  _rotate_age;
-    int _remove_meg;
-    vespalib::duration _remove_age;
-    bool _use_logserver;
-    config::ConfigSubscriber _subscriber;
+    std::string                                              _logserver_host;
+    int                                                      _logserver_rpc_port;
+    int                                                      _state_port;
+    ForwardMap                                               _forward_filter;
+    int                                                      _rotate_size;
+    vespalib::duration                                       _rotate_age;
+    int                                                      _remove_meg;
+    vespalib::duration                                       _remove_age;
+    bool                                                     _use_logserver;
+    config::ConfigSubscriber                                 _subscriber;
     config::ConfigHandle<cloud::config::log::LogdConfig>::UP _handle;
-    bool _has_available;
-    bool _need_new_forwarder;
-    fnet::frt::StandaloneFRT _server;
+    bool                                                     _has_available;
+    bool                                                     _need_new_forwarder;
+    fnet::frt::StandaloneFRT                                 _server;
+
 public:
     bool checkAvailable();
     void latch();
@@ -52,5 +55,4 @@ public:
     size_t generation() const { return _subscriber.getGeneration(); }
 };
 
-}
-
+} // namespace logdemon

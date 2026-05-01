@@ -11,23 +11,23 @@ class ConfigSubscriber;
 /**
  * Class used to watch a log file and forward new log lines to the logserver.
  */
-class Watcher
-{
+class Watcher {
 private:
-    std::vector<char>  _buffer;
-    ConfigSubscriber & _confsubscriber;
-    Forwarder        & _forwarder;
-    int                _wfd;
-    char * getBuf() { return &_buffer[0]; }
+    std::vector<char> _buffer;
+    ConfigSubscriber& _confsubscriber;
+    Forwarder&        _forwarder;
+    int               _wfd;
+    char* getBuf() { return &_buffer[0]; }
     long getBufSize() const { return _buffer.size(); }
+
 public:
     Watcher(const Watcher& other) = delete;
     Watcher& operator=(const Watcher& other) = delete;
-    Watcher(ConfigSubscriber &cfs, Forwarder &fw);
+    Watcher(ConfigSubscriber& cfs, Forwarder& fw);
     ~Watcher();
 
     void watchfile();
-    void removeOldLogs(const char *prefix);
+    void removeOldLogs(const char* prefix);
 };
 
-}
+} // namespace logdemon

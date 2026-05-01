@@ -1,26 +1,30 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "wrapper.h"
-#include <csignal>
-#include <unistd.h>
+
 #include <vespa/config/common/exceptions.h>
+#include <vespa/defaults.h>
 #include <vespa/vespalib/util/sig_catch.h>
 
-#include <vespa/defaults.h>
+#include <unistd.h>
+
+#include <csignal>
+
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-otelcol-start");
 
-static void run(const char *configId) {
+static void run(const char* configId) {
     vespalib::SigCatch catcher;
-    Wrapper handler(configId);
+    Wrapper            handler(configId);
     try {
         handler.start(configId);
-        while (! catcher.receivedStopSignal()) {
+        while (!catcher.receivedStopSignal()) {
             handler.check();
             usleep(125000); // Avoid busy looping;
         }
-    } catch (config::ConfigTimeoutException & ex) {
-        LOG(warning, "Timout getting config, please check your setup. Will exit and restart: %s", ex.getMessage().c_str());
+    } catch (config::ConfigTimeoutException& ex) {
+        LOG(warning, "Timout getting config, please check your setup. Will exit and restart: %s",
+            ex.getMessage().c_str());
         std::_Exit(EXIT_FAILURE);
     } catch (config::InvalidConfigException& ex) {
         LOG(error, "Fatal: Invalid configuration, please check your setup: %s", ex.getMessage().c_str());
@@ -34,8 +38,8 @@ static void run(const char *configId) {
 
 int main(int argc, char** argv) {
     vespa::Defaults::bootstrap(argv[0]);
-    int c = -1;
-    const char *cfid = nullptr;
+    int         c = -1;
+    const char* cfid = nullptr;
     while ((c = getopt(argc, argv, "c:")) != -1) {
         switch (c) {
         case 'c':

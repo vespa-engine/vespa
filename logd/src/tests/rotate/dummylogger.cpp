@@ -2,20 +2,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP("dummylogger");
 
-int
-main(int argc, char **argv)
-{
-    (void) argc;
-    (void) argv;
+int main(int argc, char** argv) {
+    (void)argc;
+    (void)argv;
     int cnt = 100000;
     for (int i = 0; i < cnt; ++i) {
         LOG(info, "This is log message %d/%d", i + 1, cnt);
         if ((i % 100) == 0) {
             struct timespec t;
-            t.tv_sec  = 0;
+            t.tv_sec = 0;
             t.tv_nsec = 250000000;
             nanosleep(&t, nullptr);
         }

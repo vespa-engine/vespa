@@ -5,8 +5,8 @@
 
 namespace logdemon {
 
-using vespalib::metrics::Dimension;
 using vespalib::metrics::Counter;
+using vespalib::metrics::Dimension;
 using vespalib::metrics::MetricsManager;
 using vespalib::metrics::Point;
 
@@ -15,14 +15,14 @@ using vespalib::metrics::Point;
  */
 struct Metrics {
     std::shared_ptr<MetricsManager> metrics;
-    const Dimension loglevel;
-    const Dimension servicename;
-    const Counter loglines;
+    const Dimension                 loglevel;
+    const Dimension                 servicename;
+    const Counter                   loglines;
 
     Metrics(std::shared_ptr<MetricsManager> m);
     ~Metrics();
 
-    void countLine(const std::string &level, const std::string &service) const;
+    void countLine(const std::string& level, const std::string& service) const;
 };
 
 } // namespace logdemon

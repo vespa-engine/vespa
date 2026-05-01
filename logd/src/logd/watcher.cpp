@@ -1,18 +1,22 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "watcher.h"
+
 #include "config_subscriber.h"
 #include "exceptions.h"
 #include "forwarder.h"
-#include "watcher.h"
+
 #include <vespa/vespalib/util/sig_catch.h>
-#include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <thread>
-#include <cinttypes>
+#include <vespa/vespalib/util/time.h>
+
 #include <fcntl.h>
 #include <glob.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
+#include <cinttypes>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP("");
@@ -21,8 +25,7 @@ namespace logdemon {
 namespace {
 
 // wait until 1 second has passed since "start"
-void snooze(vespalib::Timer & timer)
-{
+void snooze(vespalib::Timer& timer) {
     if (timer.elapsed() > 1000ms) {
         // already used enough time, no sleep
         return;
@@ -32,25 +35,18 @@ void snooze(vespalib::Timer & timer)
 }
 
 constexpr size_t G_BUFSIZE = 1_Mi;
-} // namespace logdemon::<unnamed>
+} // namespace
 
-
-Watcher::Watcher(ConfigSubscriber &cfs, Forwarder &fw)
-    : _buffer(G_BUFSIZE),
-      _confsubscriber(cfs),
-      _forwarder(fw),
-      _wfd(-1)
-{
+Watcher::Watcher(ConfigSubscriber& cfs, Forwarder& fw)
+    : _buffer(G_BUFSIZE), _confsubscriber(cfs), _forwarder(fw), _wfd(-1) {
 }
 
-Watcher::~Watcher()
-{
+Watcher::~Watcher() {
     if (_wfd >= 0) {
         LOG(debug, "~Watcher closing %d", _wfd);
         close(_wfd);
     }
 }
-
 
 struct donecache {
     donecache() : st_dev(0), st_ino(0), offset(0), valid(false) { memset(pad, 0, sizeof(pad)); }
@@ -58,7 +54,7 @@ struct donecache {
     ino_t st_ino; /* inode number */
     off_t offset;
     bool  valid;
-    char pad[7];
+    char  pad[7];
 };
 
 class StateSaver {
@@ -67,12 +63,12 @@ public:
     ~StateSaver();
     void saveState(const donecache&);
     bool loadState(donecache&);
+
 private:
     int _savefd;
 };
 
-void StateSaver::saveState(const donecache& already)
-{
+void StateSaver::saveState(const donecache& already) {
     if (_savefd < 0) {
         // cannot save state
         return;
@@ -86,47 +82,39 @@ void StateSaver::saveState(const donecache& already)
     }
 }
 
-bool
-StateSaver::loadState(donecache& already)
-{
-    if (_savefd >= 0 &&
-        read(_savefd, &already, sizeof(already)) == sizeof(already))
-    {
+bool StateSaver::loadState(donecache& already) {
+    if (_savefd >= 0 && read(_savefd, &already, sizeof(already)) == sizeof(already)) {
         return true;
     } else {
         return false;
     }
 }
 
-StateSaver::StateSaver() : _savefd(-1)
-{
-    _savefd = open("var/db/vespa/logd.donestate", O_RDWR|O_CREAT, 0664);
+StateSaver::StateSaver() : _savefd(-1) {
+    _savefd = open("var/db/vespa/logd.donestate", O_RDWR | O_CREAT, 0664);
     if (_savefd < 0) {
         LOG(warning, "could not open var/db/vespa/logd.donestate: %s", strerror(errno));
     }
 }
 
-StateSaver::~StateSaver()
-{
+StateSaver::~StateSaver() {
     LOG(debug, "~StateSaver closing %d", _savefd);
     if (_savefd >= 0) {
         close(_savefd);
     }
 }
-        
-void
-Watcher::watchfile()
-{
-    struct donecache already;
-    char newfn[FILENAME_MAX];
-    int spamfill_counter = 0;
 
-    char *target = getenv("VESPA_LOG_TARGET");
+void Watcher::watchfile() {
+    struct donecache already;
+    char             newfn[FILENAME_MAX];
+    int              spamfill_counter = 0;
+
+    char* target = getenv("VESPA_LOG_TARGET");
     if (target == nullptr || strncmp(target, "file:", 5) != 0) {
         LOG(error, "expected VESPA_LOG_TARGET (%s) to be a file: target", target);
         throw SomethingBad("bad log target");
     }
-    const char *filename = target+5;
+    const char* filename = target + 5;
 
     if (strlen(filename) + 50 > FILENAME_MAX) {
         LOG(error, "too long filename '%s'", filename);
@@ -138,22 +126,22 @@ Watcher::watchfile()
         already.valid = true;
     }
 
-    vespalib::SigCatch catcher;
-    int sleepcount = 0;
+    vespalib::SigCatch    catcher;
+    int                   sleepcount = 0;
     vespalib::system_time created = vespalib::system_time::min();
     vespalib::system_time lastPrune = vespalib::system_time::min();
 
- again:
+again:
     // XXX should close and/or check _wfd first ?
-    _wfd = open(filename, O_RDONLY|O_CREAT, 0664);
+    _wfd = open(filename, O_RDONLY | O_CREAT, 0664);
     if (_wfd < 0) {
         LOG(error, "open(%s) failed: %s", filename, strerror(errno));
         throw SomethingBad("could not create or open logfile");
     }
 
-    bool rotate = false;
+    bool            rotate = false;
     vespalib::Timer rotTimer;
-    off_t offset = 0;
+    off_t           offset = 0;
 
     while (true) {
         struct stat sb;
@@ -165,10 +153,7 @@ Watcher::watchfile()
             created = vespalib::system_time(std::chrono::seconds(sb.st_ctime));
         }
         if (already.valid) {
-            if (sb.st_dev == already.st_dev &&
-                sb.st_ino == already.st_ino &&
-                sb.st_size >= already.offset)
-            {
+            if (sb.st_dev == already.st_dev && sb.st_ino == already.st_ino && sb.st_size >= already.offset) {
                 offset = already.offset;
             }
             // only update offset from cache once:
@@ -185,12 +170,12 @@ Watcher::watchfile()
 
         if (sb.st_size > offset) {
             lseek(_wfd, offset, SEEK_SET);
-            char *buffer = getBuf();
+            char*   buffer = getBuf();
             ssize_t rsize = read(_wfd, buffer, (getBufSize() - 1));
             if (rsize > 0) {
                 buffer[rsize] = '\0';
-                char *l = buffer;
-                char *nnl = (char *)memchr(buffer, '\n', rsize);
+                char* l = buffer;
+                char* nnl = (char*)memchr(buffer, '\n', rsize);
                 if (nnl == nullptr && rsize == (getBufSize() - 1)) {
                     LOG(error, "no newline in %ld bytes, skipping", static_cast<long>(rsize));
                     offset += rsize;
@@ -214,8 +199,8 @@ Watcher::watchfile()
         already.st_ino = sb.st_ino;
 
         vespalib::system_time now = vespalib::system_clock::now();
-        bool wantrotate = (now > created + _confsubscriber.getRotateAge())
-                          || (sb.st_size > _confsubscriber.getRotateSize());
+        bool                  wantrotate =
+            (now > created + _confsubscriber.getRotateAge()) || (sb.st_size > _confsubscriber.getRotateSize());
 
         if (now > lastPrune + 61s) {
             removeOldLogs(filename);
@@ -224,9 +209,8 @@ Watcher::watchfile()
 
         if (rotate) {
             vespalib::duration rotTime = rotTimer.elapsed();
-            off_t overflow_size = (1.1 * _confsubscriber.getRotateSize());
-            if ((rotTime > 59s) ||
-                (sb.st_size == offset && rotTime > 4s) ||
+            off_t              overflow_size = (1.1 * _confsubscriber.getRotateSize());
+            if ((rotTime > 59s) || (sb.st_size == offset && rotTime > 4s) ||
                 (sb.st_size > overflow_size && rotTime > 2s))
             {
                 if (sb.st_size != offset) {
@@ -249,10 +233,7 @@ Watcher::watchfile()
                 }
                 goto again;
             }
-        } else if (stat(filename, &sb) != 0
-            || sb.st_dev != already.st_dev
-            || sb.st_ino != already.st_ino)
-        {
+        } else if (stat(filename, &sb) != 0 || sb.st_dev != already.st_dev || sb.st_ino != already.st_ino) {
             LOG(warning, "logfile rotated away underneath");
             created = now;
             close(_wfd);
@@ -260,14 +241,13 @@ Watcher::watchfile()
         } else if (wantrotate) {
             rotate = true;
             rotTimer = vespalib::Timer();
-            LOG(debug, "preparing to rotate logfile, old logfile size %d, age %2.3f seconds",
-                (int)offset, vespalib::to_s(now-created));
+            LOG(debug, "preparing to rotate logfile, old logfile size %d, age %2.3f seconds", (int)offset,
+                vespalib::to_s(now - created));
             int l = strlen(filename);
             strcpy(newfn, filename);
-            time_t seconds = vespalib::count_s(now.time_since_epoch());
-            struct tm *nowtm = gmtime(&seconds);
-            if (strftime(newfn+l, FILENAME_MAX-l-1, "-%Y-%m-%d.%H-%M-%S", nowtm) < 10)
-            {
+            time_t     seconds = vespalib::count_s(now.time_since_epoch());
+            struct tm* nowtm = gmtime(&seconds);
+            if (strftime(newfn + l, FILENAME_MAX - l - 1, "-%Y-%m-%d.%H-%M-%S", nowtm) < 10) {
                 LOG(error, "could not strftime");
                 throw SomethingBad("strftime failed");
             }
@@ -299,24 +279,21 @@ Watcher::watchfile()
             if (_forwarder.badLines()) {
                 LOG(info, "seen %d bad loglines in %d iterations", _forwarder.badLines(), sleepcount);
                 _forwarder.resetBadLines();
-                sleepcount=0;
+                sleepcount = 0;
             }
         }
     }
 }
 
-static int globerrfunc(const char *path, int errno_was)
-{
+static int globerrfunc(const char* path, int errno_was) {
     LOG(warning, "glob %s: %s", path, strerror(errno_was));
     return 0;
 }
 
-void
-Watcher::removeOldLogs(const char *prefix)
-{
+void Watcher::removeOldLogs(const char* prefix) {
     const char suffix[] = "-*-*-*.*-*-*";
-    char pattern[FILENAME_MAX];
-    int l = strlen(prefix) + sizeof(suffix) + 20;
+    char       pattern[FILENAME_MAX];
+    int        l = strlen(prefix) + sizeof(suffix) + 20;
     if (l > FILENAME_MAX) {
         LOG(error, "too long filename prefix in removeOldLog()");
         return;
@@ -336,7 +313,7 @@ Watcher::removeOldLogs(const char *prefix)
     int globresult = glob(pattern, 0, &globerrfunc, &myglob);
     if (globresult == 0) {
         for (int i = 0; i < (int)myglob.gl_pathc; i++) {
-            const char *fname = myglob.gl_pathv[myglob.gl_pathc-i-1];
+            const char* fname = myglob.gl_pathv[myglob.gl_pathc - i - 1];
 
             struct stat sb;
             if (stat(fname, &sb) != 0) {
@@ -347,7 +324,7 @@ Watcher::removeOldLogs(const char *prefix)
                 vespalib::system_time mtime = vespalib::system_time(std::chrono::seconds(sb.st_mtime));
                 vespalib::system_time now = vespalib::system_clock::now();
                 if ((mtime + _confsubscriber.getRemoveAge()) < now) {
-                    LOG(info, "removing %s, too old (%f days)", fname, vespalib::to_s(now - mtime)/86400.0);
+                    LOG(info, "removing %s, too old (%f days)", fname, vespalib::to_s(now - mtime) / 86400.0);
 
                     if (unlink(fname) != 0) {
                         LOG(warning, "cannot remove %s: %s", fname, strerror(errno));
@@ -355,9 +332,9 @@ Watcher::removeOldLogs(const char *prefix)
                     continue;
                 }
                 totalsize += sb.st_size;
-                if (totalsize > (_confsubscriber.getRemoveMegabytes() * 1048576LL))
-                {
-                    LOG(info, "removing %s, total size (%" PRId64 ") too big", fname, static_cast<int64_t>(totalsize));
+                if (totalsize > (_confsubscriber.getRemoveMegabytes() * 1048576LL)) {
+                    LOG(info, "removing %s, total size (%" PRId64 ") too big", fname,
+                        static_cast<int64_t>(totalsize));
                     if (unlink(fname) != 0) {
                         LOG(warning, "cannot remove %s: %s", fname, strerror(errno));
                     }
@@ -374,4 +351,4 @@ Watcher::removeOldLogs(const char *prefix)
     globfree(&myglob);
 }
 
-} // namespace
+} // namespace logdemon

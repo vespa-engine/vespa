@@ -3,7 +3,9 @@
 #pragma once
 
 #include "log_protocol_proto.h"
+
 #include <vespa/log/log_message.h>
+
 #include <vector>
 
 namespace logdemon {
@@ -20,4 +22,4 @@ struct ProtoConverter {
     static void log_message_to_proto(const ns_log::LogMessage& message, ProtoLogMessage& proto);
 };
 
-}
+} // namespace logdemon

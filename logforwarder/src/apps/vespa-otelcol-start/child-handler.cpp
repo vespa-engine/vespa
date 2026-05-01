@@ -2,25 +2,27 @@
 
 #include "child-handler.h"
 
-#include <unistd.h>
+#include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <signal.h>
-#include <sys/wait.h>
+#include <unistd.h>
+
 #include <cstdio>
 #include <cstdlib>
-#include <vector>
 #include <string>
+#include <vector>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".child-handler");
 
-ChildHandler::ChildHandler() : _childRunning(false), _childPid(0) {}
+ChildHandler::ChildHandler() : _childRunning(false), _childPid(0) {
+}
 
 ChildHandler::~ChildHandler() = default;
 
 bool ChildHandler::checkChild() {
-    if (! _childRunning) return true;
+    if (!_childRunning)
+        return true;
     int waitStatus = 0;
     int r = waitpid(_childPid, &waitStatus, WNOHANG);
     if (r == 0) {
@@ -49,7 +51,7 @@ bool ChildHandler::checkChild() {
     return true;
 }
 
-void ChildHandler::startChild(const std::string &progPath, const std::string &cfPath) {
+void ChildHandler::startChild(const std::string& progPath, const std::string& cfPath) {
     _terminating = false;
     LOG(info, "startChild '%s' '%s'", progPath.c_str(), cfPath.c_str());
     pid_t child = fork();
@@ -59,16 +61,16 @@ void ChildHandler::startChild(const std::string &progPath, const std::string &cf
     }
     if (child == 0) {
         std::string cfgPrefix{"--config=file:"};
-        const char *gwCfg = "/etc/otelcol/gw-config.yaml";
+        const char* gwCfg = "/etc/otelcol/gw-config.yaml";
         std::string cfArg1{cfgPrefix + gwCfg};
         std::string cfArg2{cfgPrefix + cfPath};
         if (access(gwCfg, R_OK) == 0) {
-            const char *cargv[] = { progPath.c_str(), cfArg1.c_str(), cfArg2.c_str(), nullptr };
-            execv(progPath.c_str(), const_cast<char **>(cargv));
+            const char* cargv[] = {progPath.c_str(), cfArg1.c_str(), cfArg2.c_str(), nullptr};
+            execv(progPath.c_str(), const_cast<char**>(cargv));
         } else {
             fprintf(stderr, "info\tMissing config file: %s (running without it)\n", gwCfg);
-            const char *cargv[] = { progPath.c_str(), cfArg2.c_str(), nullptr };
-            execv(progPath.c_str(), const_cast<char **>(cargv));
+            const char* cargv[] = {progPath.c_str(), cfArg2.c_str(), nullptr};
+            execv(progPath.c_str(), const_cast<char**>(cargv));
         }
         // if execv fails:
         perror(progPath.c_str());
@@ -80,17 +82,20 @@ void ChildHandler::startChild(const std::string &progPath, const std::string &cf
 }
 
 void ChildHandler::stopChild() {
-    if (! _childRunning) return;
+    if (!_childRunning)
+        return;
     LOG(info, "stopChild");
     _terminating = true;
     kill(_childPid, SIGTERM);
     for (int retry = 0; retry < 10; ++retry) {
-        if (checkChild()) return;
+        if (checkChild())
+            return;
         usleep(12500 + retry * 20000);
     }
     kill(_childPid, SIGKILL);
     for (int retry = 0; retry < 10; ++retry) {
-        if (checkChild()) return;
+        if (checkChild())
+            return;
         usleep(12500 + retry * 20000);
     }
     LOG(error, "Could not terminete child process %d", _childPid);
