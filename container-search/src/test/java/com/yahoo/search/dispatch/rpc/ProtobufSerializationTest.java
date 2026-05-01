@@ -68,12 +68,12 @@ public class ProtobufSerializationTest {
     void testDocsumSerialization() {
         Query q = new Query("search/?query=test&hits=10&offset=3");
         var builder = ProtobufSerialization.createDocsumRequestBuilder(q, "server", "summary", Set.of("f1", "f2"),true, 0.5,
-                                                                       new QrSearchersConfig.Builder().sendProtobufQuerytree(false).build());
+                                                                       new QrSearchersConfig.Builder().sendProtobufQuerytree(true).build());
         builder.setTimeout(0);
         var hit = new FastHit(new GlobalId(IdString.createIdString("id:ns:type::id")).getRawId(), 0, OptionalInt.of(0), 0, 0);
         var bytes = ProtobufSerialization.serializeDocsumRequest(builder, List.of(hit));
 
-        assertEquals(56, bytes.length);
+        assertEquals(77, bytes.length);
     }
 
     private String contentsOf(ByteString property) {

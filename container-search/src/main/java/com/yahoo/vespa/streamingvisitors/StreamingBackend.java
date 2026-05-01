@@ -87,11 +87,6 @@ public class StreamingBackend extends VespaBackend {
         this.route = Route.parse(storageClusterRouteSpec);
     }
 
-    private boolean sendProtobufQuerytree() {
-        var config = clusterParams.getQrSearchersConfig();
-        return config != null && config.sendProtobufQuerytree();
-    }
-
     public StreamingBackend(ClusterParams clusterParams, String searchClusterName, VespaDocumentAccess access, String storageClusterRouteSpec) {
         this(clusterParams, searchClusterName, new VespaVisitorFactory(access), storageClusterRouteSpec);
     }
@@ -165,7 +160,7 @@ public class StreamingBackend extends VespaBackend {
             partialSummaryHandler = new PartialSummaryHandler(db);
             partialSummaryHandler.wantToFill(query);
         }
-        var visitorContext = new Visitor.Context(getSearchClusterName(), schema, effectiveTraceLevel, partialSummaryHandler, sendProtobufQuerytree());
+        var visitorContext = new Visitor.Context(getSearchClusterName(), schema, effectiveTraceLevel, partialSummaryHandler);
         Visitor visitor = visitorFactory.createVisitor(query, route, visitorContext);
         try {
             visitor.doSearch();

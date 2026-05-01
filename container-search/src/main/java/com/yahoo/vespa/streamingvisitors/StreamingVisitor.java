@@ -148,7 +148,7 @@ class StreamingVisitor extends VisitorDataHandler implements Visitor {
         }
 
         EncodedData ed = new EncodedData();
-        boolean sendProtobuf = context.sendProtobufQuerytree();
+        boolean sendProtobuf = true;
         ProtobufSerialization.setProtobufAlsoSerialized(sendProtobuf);
         try {
             encodeQueryData(query, 0, ed);

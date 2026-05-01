@@ -103,7 +103,7 @@ public class ProtobufSerialization {
         GrowableByteBuffer scratchPad = threadLocalBuffer.get();
         var queryTree = query.getModel().getQueryTree();
         var context = new SerializationContext(contentShare);
-        boolean sendProtobuf = qrSearchersConfig.sendProtobufQuerytree();
+        boolean sendProtobuf = true;
         try {
             isProtobufAlsoSerialized.set(sendProtobuf);
             builder.setQueryTreeBlob(serializeQueryTree(queryTree, context, scratchPad));
@@ -262,7 +262,7 @@ public class ProtobufSerialization {
         var ranking = query.getRanking();
         var featureMap = ranking.getFeatures().asMap();
 
-        boolean sendProtobuf = qrSearchersConfig.sendProtobufQuerytree();
+        boolean sendProtobuf = true;
         var context = SerializationContext.ignored(); // Not necessary to track content share for docsum requests
         try {
             isProtobufAlsoSerialized.set(sendProtobuf);
