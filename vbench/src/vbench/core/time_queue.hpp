@@ -4,32 +4,18 @@ namespace vbench {
 
 template <typename T>
 TimeQueue<T>::TimeQueue(double window, double tick)
-    : _lock(),
-      _cond(),
-      _time(0.0),
-      _window(window),
-      _tick(tick),
-      _queue(),
-      _closed(false)
-{
+    : _lock(), _cond(), _time(0.0), _window(window), _tick(tick), _queue(), _closed(false) {
 }
 
-template<typename T>
-TimeQueue<T>::~TimeQueue() = default;
+template <typename T> TimeQueue<T>::~TimeQueue() = default;
 
-template <typename T>
-void
-TimeQueue<T>::close()
-{
+template <typename T> void TimeQueue<T>::close() {
     std::lock_guard guard(_lock);
     _closed = true;
     _cond.notify_all();
 }
 
-template <typename T>
-void
-TimeQueue<T>::discard()
-{
+template <typename T> void TimeQueue<T>::discard() {
     std::lock_guard guard(_lock);
     while (!_queue.empty()) {
         _queue.pop_any();
@@ -37,10 +23,7 @@ TimeQueue<T>::discard()
     _cond.notify_all();
 }
 
-template <typename T>
-void
-TimeQueue<T>::insert(std::unique_ptr<T> obj, double time)
-{
+template <typename T> void TimeQueue<T>::insert(std::unique_ptr<T> obj, double time) {
     std::unique_lock guard(_lock);
     while (time > (_time + _window) && !_closed) {
         _cond.wait(guard);
@@ -50,10 +33,7 @@ TimeQueue<T>::insert(std::unique_ptr<T> obj, double time)
     }
 }
 
-template <typename T>
-bool
-TimeQueue<T>::extract(double time, std::vector<std::unique_ptr<T> > &list, double &delay)
-{
+template <typename T> bool TimeQueue<T>::extract(double time, std::vector<std::unique_ptr<T>>& list, double& delay) {
     std::lock_guard guard(_lock);
     _time = time;
     while (!_queue.empty() && _queue.front().time <= time) {

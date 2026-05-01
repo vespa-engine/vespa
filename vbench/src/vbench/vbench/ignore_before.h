@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include "request.h"
 #include "analyzer.h"
+#include "request.h"
+
 #include <vbench/core/handler.h>
 
 namespace vbench {
@@ -12,15 +13,14 @@ namespace vbench {
  * Component ignoring (discarding) requests that have start times
  * before a specific time.
  **/
-class IgnoreBefore : public Analyzer
-{
+class IgnoreBefore : public Analyzer {
 private:
-    Handler<Request> &_next;
+    Handler<Request>& _next;
     double            _time;
     size_t            _ignored;
 
 public:
-    IgnoreBefore(double time, Handler<Request> &next);
+    IgnoreBefore(double time, Handler<Request>& next);
     void handle(Request::UP request) override;
     void report() override;
 };

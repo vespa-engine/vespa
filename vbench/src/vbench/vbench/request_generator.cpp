@@ -4,25 +4,17 @@
 
 namespace vbench {
 
-RequestGenerator::RequestGenerator(const string &inputFile,
-                                   Handler<Request> &next)
-    : _input(inputFile),
-      _next(next),
-      _aborted(false)
-{
+RequestGenerator::RequestGenerator(const string& inputFile, Handler<Request>& next)
+    : _input(inputFile), _next(next), _aborted(false) {
 }
 
 RequestGenerator::~RequestGenerator() = default;
 
-void
-RequestGenerator::abort()
-{
+void RequestGenerator::abort() {
     _aborted = true;
 }
 
-void
-RequestGenerator::run()
-{
+void RequestGenerator::run() {
     string line;
     while (!_aborted && _input.readLine(line)) {
         Request::UP request(new Request());

@@ -2,6 +2,4 @@
 
 #include "handler_thread.h"
 
-namespace vbench {
-
-} // namespace vbench
+namespace vbench {} // namespace vbench

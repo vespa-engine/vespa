@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <vbench/test/all.h>
 
 using namespace vbench;
@@ -30,7 +31,7 @@ TEST(BenchmarkHeadersTest, require_that_benchmark_headers_can_be_set) {
     headers.handleHeader("X-Yahoo-Vespa-QueryHits", "7");
     headers.handleHeader("X-Yahoo-Vespa-QueryOffset", "8");
     headers.handleHeader("X-Yahoo-Vespa-SearchTime", "9");
-    headers.handleHeader("X-Yahoo-Vespa-AttributeFetchTime" , "10");
+    headers.handleHeader("X-Yahoo-Vespa-AttributeFetchTime", "10");
     headers.handleHeader("X-Yahoo-Vespa-FillTime", "11");
     headers.handleHeader("X-Yahoo-Vespa-DocsSearched", "12");
     headers.handleHeader("X-Yahoo-Vespa-NodesSearched", "13");

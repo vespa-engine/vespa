@@ -2,6 +2,4 @@
 
 #include "taint.h"
 
-namespace vbench {
-
-} // namespace vbench
+namespace vbench {} // namespace vbench

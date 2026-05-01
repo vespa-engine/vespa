@@ -7,11 +7,9 @@ namespace vbench {
 /**
  * Something that can be closed to disrupt its steady-state behavior.
  **/
-struct Closeable
-{
+struct Closeable {
     virtual void close() = 0;
     virtual ~Closeable() = default;
 };
 
 } // namespace vbench
-

@@ -2,10 +2,7 @@
 
 namespace vbench {
 
-template <typename T>
-void
-HandlerThread<T>::run()
-{
+template <typename T> void HandlerThread<T>::run() {
     for (;;) {
         std::unique_lock guard(_lock);
         while (!_done && _queue.empty()) {
@@ -23,30 +20,19 @@ HandlerThread<T>::run()
 }
 
 template <typename T>
-HandlerThread<T>::HandlerThread(Handler<T> &next, init_fun_t init_fun)
-    : _lock(),
-      _cond(),
-      _queue(),
-      _next(next),
-      _thread(),
-      _done(false)
-{
+HandlerThread<T>::HandlerThread(Handler<T>& next, init_fun_t init_fun)
+    : _lock(), _cond(), _queue(), _next(next), _thread(), _done(false) {
     _thread = vespalib::thread::start(*this, init_fun);
 }
 
-template <typename T>
-HandlerThread<T>::~HandlerThread()
-{
+template <typename T> HandlerThread<T>::~HandlerThread() {
     if (!_done) {
         join();
     }
     assert(_queue.empty());
 }
 
-template <typename T>
-void
-HandlerThread<T>::handle(std::unique_ptr<T> obj)
-{
+template <typename T> void HandlerThread<T>::handle(std::unique_ptr<T> obj) {
     std::unique_lock guard(_lock);
     if (!_done) {
         if (_queue.empty()) {
@@ -56,10 +42,7 @@ HandlerThread<T>::handle(std::unique_ptr<T> obj)
     }
 }
 
-template <typename T>
-void
-HandlerThread<T>::join()
-{
+template <typename T> void HandlerThread<T>::join() {
     {
         std::lock_guard guard(_lock);
         _done = true;

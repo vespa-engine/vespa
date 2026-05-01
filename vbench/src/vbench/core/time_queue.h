@@ -3,10 +3,12 @@
 #pragma once
 
 #include "closeable.h"
+
 #include <vespa/vespalib/util/priority_queue.h>
+
+#include <condition_variable>
 #include <memory>
 #include <mutex>
-#include <condition_variable>
 
 namespace vbench {
 
@@ -15,23 +17,19 @@ namespace vbench {
  * according to an abstract time line. After a time queue is closed,
  * all incoming objects will be deleted.
  **/
-template <typename T>
-class TimeQueue : public Closeable
-{
+template <typename T> class TimeQueue : public Closeable {
 private:
     struct Entry {
         std::unique_ptr<T> object;
-        double time;
+        double             time;
         Entry(std::unique_ptr<T> obj, double t) noexcept : object(std::move(obj)), time(t) {}
-        Entry(Entry &&rhs) noexcept : object(std::move(rhs.object)), time(rhs.time) {}
-        Entry &operator=(Entry &&rhs) noexcept {
+        Entry(Entry&& rhs) noexcept : object(std::move(rhs.object)), time(rhs.time) {}
+        Entry& operator=(Entry&& rhs) noexcept {
             object = std::move(rhs.object);
             time = rhs.time;
             return *this;
         }
-        bool operator<(const Entry &rhs) const noexcept {
-            return (time < rhs.time);
-        }
+        bool operator<(const Entry& rhs) const noexcept { return (time < rhs.time); }
     };
 
     std::mutex                     _lock;
@@ -48,10 +46,9 @@ public:
     void close() override;
     void discard();
     void insert(std::unique_ptr<T> obj, double time);
-    bool extract(double time, std::vector<std::unique_ptr<T> > &list, double &delay);
+    bool extract(double time, std::vector<std::unique_ptr<T>>& list, double& delay);
 };
 
 } // namespace vbench
 
 #include "time_queue.hpp"
-

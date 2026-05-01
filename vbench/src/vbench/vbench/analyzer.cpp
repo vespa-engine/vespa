@@ -2,6 +2,4 @@
 
 #include "analyzer.h"
 
-namespace vbench {
-
-} // namespace vbench
+namespace vbench {} // namespace vbench

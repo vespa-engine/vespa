@@ -2,6 +2,4 @@
 
 #include "dispatcher.h"
 
-namespace vbench {
-
-} // namespace vbench
+namespace vbench {} // namespace vbench

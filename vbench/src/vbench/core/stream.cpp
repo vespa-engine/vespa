@@ -2,6 +2,4 @@
 
 #include "stream.h"
 
-namespace vbench {
-
-} // namespace vbench
+namespace vbench {} // namespace vbench

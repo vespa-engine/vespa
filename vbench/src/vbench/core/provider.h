@@ -9,12 +9,9 @@ namespace vbench {
 /**
  * A Provider is a component from which you can request an object.
  **/
-template <typename T>
-struct Provider
-{
+template <typename T> struct Provider {
     virtual std::unique_ptr<T> provide() = 0;
     virtual ~Provider() = default;
 };
 
 } // namespace vbench
-

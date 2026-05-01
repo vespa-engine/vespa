@@ -4,16 +4,10 @@
 
 namespace vbench {
 
-ServerTagger::ServerTagger(const ServerSpec &server,
-                           Handler<Request> &next)
-    : _server(server),
-      _next(next)
-{
+ServerTagger::ServerTagger(const ServerSpec& server, Handler<Request>& next) : _server(server), _next(next) {
 }
 
-void
-ServerTagger::handle(Request::UP request)
-{
+void ServerTagger::handle(Request::UP request) {
     request->server(_server);
     _next.handle(std::move(request));
 }

@@ -10,17 +10,16 @@ namespace vbench {
  * Component calculating the rate of successful requests based on end
  * time.
  **/
-class QpsAnalyzer : public Analyzer
-{
+class QpsAnalyzer : public Analyzer {
 private:
-    Handler<Request> &_next;
+    Handler<Request>& _next;
     double            _qps;
     size_t            _samples;
     double            _begin;
     size_t            _cnt;
 
 public:
-    QpsAnalyzer(Handler<Request> &next);
+    QpsAnalyzer(Handler<Request>& next);
     void handle(Request::UP request) override;
     void report() override;
     void addEndTime(double end);

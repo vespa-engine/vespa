@@ -2,6 +2,4 @@
 
 #include "closeable.h"
 
-namespace vbench {
-
-} // namespace vbench
+namespace vbench {} // namespace vbench

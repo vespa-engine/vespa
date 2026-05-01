@@ -6,21 +6,12 @@
 namespace vbench {
 
 template <typename T>
-Dispatcher<T>::Dispatcher(Handler<T> &fallback)
-    : _fallback(fallback),
-      _lock(),
-      _threads(),
-      _closed(false)
-{
+Dispatcher<T>::Dispatcher(Handler<T>& fallback) : _fallback(fallback), _lock(), _threads(), _closed(false) {
 }
 
-template <typename T>
-Dispatcher<T>::~Dispatcher() = default;
+template <typename T> Dispatcher<T>::~Dispatcher() = default;
 
-template <typename T>
-bool
-Dispatcher<T>::waitForThreads(size_t threads, size_t pollCnt) const
-{
+template <typename T> bool Dispatcher<T>::waitForThreads(size_t threads, size_t pollCnt) const {
     for (size_t i = 0; i < pollCnt; ++i) {
         if (i != 0) {
             std::this_thread::sleep_for(20ms);
@@ -35,10 +26,7 @@ Dispatcher<T>::waitForThreads(size_t threads, size_t pollCnt) const
     return false;
 }
 
-template <typename T>
-void
-Dispatcher<T>::close()
-{
+template <typename T> void Dispatcher<T>::close() {
     std::vector<ThreadState*> threads;
     {
         std::lock_guard guard(_lock);
@@ -50,13 +38,10 @@ Dispatcher<T>::close()
     }
 }
 
-template <typename T>
-void
-Dispatcher<T>::handle(std::unique_ptr<T> obj)
-{
+template <typename T> void Dispatcher<T>::handle(std::unique_ptr<T> obj) {
     std::unique_lock guard(_lock);
     if (!_threads.empty()) {
-        ThreadState *state = _threads.back();
+        ThreadState* state = _threads.back();
         _threads.pop_back();
         guard.unlock();
         state->object = std::move(obj);
@@ -70,10 +55,7 @@ Dispatcher<T>::handle(std::unique_ptr<T> obj)
     }
 }
 
-template <typename T>
-std::unique_ptr<T>
-Dispatcher<T>::provide()
-{
+template <typename T> std::unique_ptr<T> Dispatcher<T>::provide() {
     ThreadState state;
     {
         std::unique_lock guard(_lock);
