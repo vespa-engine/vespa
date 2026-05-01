@@ -3,22 +3,23 @@
 #pragma once
 
 #include "metric.h"
+
 #include <vespa/vespalib/util/time.h>
-#include <regex>
+
 #include <optional>
+#include <regex>
 
 namespace metrics {
 
 class TextWriter : public MetricVisitor {
-    vespalib::duration _period;
-    std::ostream& _out;
-    std::vector<std::string> _path;
+    vespalib::duration        _period;
+    std::ostream&             _out;
+    std::vector<std::string>  _path;
     std::optional<std::regex> _regex;
-    bool _verbose;
+    bool                      _verbose;
 
 public:
-    TextWriter(std::ostream& out, vespalib::duration period,
-               const std::string& regex, bool verbose);
+    TextWriter(std::ostream& out, vespalib::duration period, const std::string& regex, bool verbose);
     ~TextWriter() override;
 
     bool visitSnapshot(const MetricSnapshot&) override;
@@ -32,5 +33,4 @@ private:
     bool writeCommon(const Metric& m);
 };
 
-}
-
+} // namespace metrics
