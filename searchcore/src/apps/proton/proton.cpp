@@ -1,23 +1,25 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchcore/proton/server/proton.h>
-#include <vespa/storage/storageserver/storagenode.h>
-#include <vespa/metrics/metricmanager.h>
-#include <vespa/searchvisitor/searchvisitor.h>
-#include <vespa/vespalib/util/signalhandler.h>
-#include <vespa/vespalib/util/programoptions.h>
-#include <vespa/vespalib/util/size_literals.h>
-#include <vespa/vespalib/util/exceptions.h>
-#include <vespa/config/common/exceptions.h>
 #include <vespa/config/common/configcontext.h>
-#include <vespa/fnet/transport.h>
+#include <vespa/config/common/exceptions.h>
 #include <vespa/fastos/file_interface.h>
+#include <vespa/fnet/transport.h>
+#include <vespa/metrics/metricmanager.h>
+#include <vespa/searchcore/proton/server/proton.h>
+#include <vespa/searchvisitor/searchvisitor.h>
+#include <vespa/storage/storageserver/storagenode.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/programoptions.h>
+#include <vespa/vespalib/util/signalhandler.h>
+#include <vespa/vespalib/util/size_literals.h>
+
 #include <absl/debugging/failure_signal_handler.h>
 #include <absl/debugging/symbolize.h>
+#include <fcntl.h>
+
 #include <filesystem>
 #include <iostream>
 #include <thread>
-#include <fcntl.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("proton");
@@ -25,36 +27,30 @@ LOG_SETUP("proton");
 using SIG = vespalib::SignalHandler;
 using vespa::config::search::core::ProtonConfig;
 
-struct Params
-{
+struct Params {
     std::string identity;
     std::string serviceidentity;
-    uint64_t subscribeTimeout;
+    uint64_t    subscribeTimeout;
     Params();
     ~Params();
 };
 
-Params::Params()
-    : identity(),
-      serviceidentity(),
-      subscribeTimeout(60)
-{}
+Params::Params() : identity(), serviceidentity(), subscribeTimeout(60) {
+}
 Params::~Params() = default;
 
-class App
-{
+class App {
 private:
-    static void setupSignals(char **argv);
+    static void setupSignals(char** argv);
     static void setup_fadvise();
-    Params parseParams(int argc, char **argv);
-    void startAndRun(FNET_Transport & transport, int argc, char **argv);
+    Params parseParams(int argc, char** argv);
+    void startAndRun(FNET_Transport& transport, int argc, char** argv);
+
 public:
-    int main(int argc, char **argv);
+    int main(int argc, char** argv);
 };
 
-void
-App::setupSignals(char **argv)
-{
+void App::setupSignals(char** argv) {
     // Ensure that symbolizer global setup/allocation happens prior to any invocations of
     // the symbolizer itself. Otherwise, we risk nested failures when the symbolizer attempts
     // to allocate internal structures when processing an abort-signal caused by an OOM.
@@ -79,59 +75,63 @@ App::setupSignals(char **argv)
     SIG::enable_cross_thread_stack_tracing();
 }
 
-void
-App::setup_fadvise()
-{
+void App::setup_fadvise() {
 #ifdef __linux__
-    char * fadvise = getenv("VESPA_FADVISE_OPTIONS");
+    char* fadvise = getenv("VESPA_FADVISE_OPTIONS");
     if (fadvise != nullptr) {
         int fadviseOptions(0);
-        if (strstr(fadvise, "SEQUENTIAL")) { fadviseOptions |= POSIX_FADV_SEQUENTIAL; }
-        if (strstr(fadvise, "RANDOM"))     { fadviseOptions |= POSIX_FADV_RANDOM; }
-        if (strstr(fadvise, "WILLNEED"))   { fadviseOptions |= POSIX_FADV_WILLNEED; }
-        if (strstr(fadvise, "DONTNEED"))   { fadviseOptions |= POSIX_FADV_DONTNEED; }
-        if (strstr(fadvise, "NOREUSE"))    { fadviseOptions |= POSIX_FADV_NOREUSE; }
+        if (strstr(fadvise, "SEQUENTIAL")) {
+            fadviseOptions |= POSIX_FADV_SEQUENTIAL;
+        }
+        if (strstr(fadvise, "RANDOM")) {
+            fadviseOptions |= POSIX_FADV_RANDOM;
+        }
+        if (strstr(fadvise, "WILLNEED")) {
+            fadviseOptions |= POSIX_FADV_WILLNEED;
+        }
+        if (strstr(fadvise, "DONTNEED")) {
+            fadviseOptions |= POSIX_FADV_DONTNEED;
+        }
+        if (strstr(fadvise, "NOREUSE")) {
+            fadviseOptions |= POSIX_FADV_NOREUSE;
+        }
         FastOS_FileInterface::setDefaultFAdviseOptions(fadviseOptions);
     }
 #endif
 }
 
-Params
-App::parseParams(int argc, char **argv)
-{
-    Params params;
+Params App::parseParams(int argc, char** argv) {
+    Params                   params;
     vespalib::ProgramOptions parser(argc, argv);
     parser.setSyntaxMessage("proton -- the nextgen search core");
     parser.addOption("identity", params.identity, "Node identity and config id");
     std::string empty;
     parser.addOption("serviceidentity", params.serviceidentity, empty, "Service node identity and config id");
-    parser.addOption("subscribeTimeout", params.subscribeTimeout, UINT64_C(600000), "Initial config subscribe timeout");
+    parser.addOption("subscribeTimeout", params.subscribeTimeout, UINT64_C(600000),
+                     "Initial config subscribe timeout");
     try {
         parser.parse();
-    } catch (vespalib::InvalidCommandLineArgumentsException &e) {
+    } catch (vespalib::InvalidCommandLineArgumentsException& e) {
         parser.writeSyntaxPage(std::cerr);
         throw;
     }
     return params;
 }
 
-
 using storage::spi::PersistenceProvider;
 
 #include <vespa/storageserver/app/servicelayerprocess.h>
 
 class ProtonServiceLayerProcess : public storage::ServiceLayerProcess {
-    proton::Proton&         _proton;
-    FNET_Transport&         _transport;
-    std::string        _file_distributor_connection_spec;
-    metrics::MetricManager* _metricManager;
+    proton::Proton&                                _proton;
+    FNET_Transport&                                _transport;
+    std::string                                    _file_distributor_connection_spec;
+    metrics::MetricManager*                        _metricManager;
     std::weak_ptr<streaming::SearchVisitorFactory> _search_visitor_factory;
 
 public:
-    ProtonServiceLayerProcess(const config::ConfigUri & configUri,
-                              proton::Proton & proton, FNET_Transport& transport,
-                              const std::string& file_distributor_connection_spec,
-                              const vespalib::HwInfo& hw_info);
+    ProtonServiceLayerProcess(const config::ConfigUri& configUri, proton::Proton& proton, FNET_Transport& transport,
+                              const std::string& file_distributor_connection_spec, const vespalib::HwInfo& hw_info);
     ~ProtonServiceLayerProcess() override { shutdown(); }
 
     void shutdown() override;
@@ -150,47 +150,38 @@ public:
     void add_external_visitors() override;
 };
 
-ProtonServiceLayerProcess::ProtonServiceLayerProcess(const config::ConfigUri & configUri,
-                                                     proton::Proton & proton, FNET_Transport& transport,
-                                                     const std::string& file_distributor_connection_spec,
+ProtonServiceLayerProcess::ProtonServiceLayerProcess(const config::ConfigUri& configUri, proton::Proton& proton,
+                                                     FNET_Transport&         transport,
+                                                     const std::string&      file_distributor_connection_spec,
                                                      const vespalib::HwInfo& hw_info)
     : ServiceLayerProcess(configUri, hw_info),
       _proton(proton),
       _transport(transport),
       _file_distributor_connection_spec(file_distributor_connection_spec),
       _metricManager(nullptr),
-      _search_visitor_factory()
-{
+      _search_visitor_factory() {
     setMetricManager(_proton.getMetricManager());
 }
 
-void
-ProtonServiceLayerProcess::shutdown()
-{
+void ProtonServiceLayerProcess::shutdown() {
     ServiceLayerProcess::shutdown();
 }
 
-void
-ProtonServiceLayerProcess::setupProvider()
-{
+void ProtonServiceLayerProcess::setupProvider() {
     if (_metricManager != nullptr) {
         _context.getComponentRegister().setMetricManager(*_metricManager);
     }
 }
 
-storage::spi::PersistenceProvider &
-ProtonServiceLayerProcess::getProvider()
-{
+storage::spi::PersistenceProvider& ProtonServiceLayerProcess::getProvider() {
     return _proton.getPersistence();
 }
 
-int64_t
-ProtonServiceLayerProcess::getGeneration() const
-{
+int64_t ProtonServiceLayerProcess::getGeneration() const {
     int64_t slGen = storage::ServiceLayerProcess::getGeneration();
     int64_t protonGen = _proton.getConfigGeneration();
     int64_t gen = std::min(slGen, protonGen);
-    auto factory = _search_visitor_factory.lock();
+    auto    factory = _search_visitor_factory.lock();
     if (factory) {
         auto factory_gen = factory->get_oldest_config_generation();
         if (factory_gen.has_value()) {
@@ -200,10 +191,9 @@ ProtonServiceLayerProcess::getGeneration() const
     return gen;
 }
 
-void
-ProtonServiceLayerProcess::add_external_visitors()
-{
-    auto factory = std::make_shared<streaming::SearchVisitorFactory>(_configUri, &_transport, _file_distributor_connection_spec);
+void ProtonServiceLayerProcess::add_external_visitors() {
+    auto factory =
+        std::make_shared<streaming::SearchVisitorFactory>(_configUri, &_transport, _file_distributor_connection_spec);
     _search_visitor_factory = factory;
     _externalVisitors["searchvisitor"] = factory;
 }
@@ -213,29 +203,23 @@ namespace {
 class ExitOnSignal {
     std::atomic<bool> _stop;
     std::thread       _thread;
-    
+
 public:
     ExitOnSignal();
     ~ExitOnSignal();
     void operator()();
 };
 
-ExitOnSignal::ExitOnSignal()
-    : _stop(false),
-      _thread()
-{
+ExitOnSignal::ExitOnSignal() : _stop(false), _thread() {
     _thread = std::thread(std::ref(*this));
 }
 
-ExitOnSignal::~ExitOnSignal()
-{
+ExitOnSignal::~ExitOnSignal() {
     _stop.store(true, std::memory_order_relaxed);
     _thread.join();
 }
 
-void
-ExitOnSignal::operator()()
-{
+void ExitOnSignal::operator()() {
     while (!_stop.load(std::memory_order_relaxed)) {
         if (SIG::INT.check() || SIG::TERM.check()) {
             EV_STOPPING("proton", "unclean shutdown after interrupted init");
@@ -245,31 +229,24 @@ ExitOnSignal::operator()()
     }
 }
 
-fnet::TransportConfig
-buildTransportConfig() {
+fnet::TransportConfig buildTransportConfig() {
     uint32_t numProcs = std::thread::hardware_concurrency();
-    return fnet::TransportConfig(std::max(1u, std::min(4u, numProcs/8)));
+    return fnet::TransportConfig(std::max(1u, std::min(4u, numProcs / 8)));
 }
 
 class Transport {
 public:
-    Transport(const fnet::TransportConfig & config)
-        : _transport(config)
-    {
-        _transport.Start();
-    }
-    ~Transport() {
-        _transport.ShutDown(true);
-    }
-    FNET_Transport & transport() { return _transport; }
+    Transport(const fnet::TransportConfig& config) : _transport(config) { _transport.Start(); }
+    ~Transport() { _transport.ShutDown(true); }
+    FNET_Transport& transport() { return _transport; }
+
 private:
     FNET_Transport _transport;
 };
 
-}
+} // namespace
 
-void
-App::startAndRun(FNET_Transport & transport, int argc, char **argv) {
+void App::startAndRun(FNET_Transport& transport, int argc, char** argv) {
     Params params = parseParams(argc, argv);
     LOG(debug, "identity: '%s'", params.identity.c_str());
     LOG(debug, "serviceidentity: '%s'", params.serviceidentity.c_str());
@@ -277,16 +254,16 @@ App::startAndRun(FNET_Transport & transport, int argc, char **argv) {
     std::chrono::milliseconds subscribeTimeout(params.subscribeTimeout);
 
     config::ConfigServerSpec configServerSpec(transport);
-    config::ConfigUri identityUri(params.identity, std::make_shared<config::ConfigContext>(configServerSpec));
-    auto protonUP = std::make_unique<proton::Proton>(transport, identityUri,
-                                                     (argc > 0) ? argv[0] : "proton", subscribeTimeout);
-    proton::Proton & proton = *protonUP;
+    config::ConfigUri        identityUri(params.identity, std::make_shared<config::ConfigContext>(configServerSpec));
+    auto                     protonUP =
+        std::make_unique<proton::Proton>(transport, identityUri, (argc > 0) ? argv[0] : "proton", subscribeTimeout);
+    proton::Proton&             proton = *protonUP;
     proton::BootstrapConfig::SP configSnapshot = proton.init();
     if (proton.hasAbortedInit()) {
         EV_STOPPING("proton", "shutdown after aborted init");
     } else {
-        const ProtonConfig &protonConfig = configSnapshot->getProtonConfig();
-        std::string basedir = protonConfig.basedir;
+        const ProtonConfig& protonConfig = configSnapshot->getProtonConfig();
+        std::string         basedir = protonConfig.basedir;
         std::filesystem::create_directories(std::filesystem::path(basedir));
         {
             ExitOnSignal exit_on_signal;
@@ -295,9 +272,10 @@ App::startAndRun(FNET_Transport & transport, int argc, char **argv) {
         std::string file_distributor_connection_spec = configSnapshot->getFiledistributorrpcConfig().connectionspec;
         std::unique_ptr<ProtonServiceLayerProcess> spiProton;
 
-        if ( ! params.serviceidentity.empty()) {
-            spiProton = std::make_unique<ProtonServiceLayerProcess>(identityUri.createWithNewId(params.serviceidentity), proton, transport,
-                                                                    file_distributor_connection_spec, configSnapshot->getHwInfo());
+        if (!params.serviceidentity.empty()) {
+            spiProton = std::make_unique<ProtonServiceLayerProcess>(
+                identityUri.createWithNewId(params.serviceidentity), proton, transport,
+                file_distributor_connection_spec, configSnapshot->getHwInfo());
             spiProton->setupConfig(subscribeTimeout);
             spiProton->createNode();
             EV_STARTED("servicelayer");
@@ -326,32 +304,30 @@ App::startAndRun(FNET_Transport & transport, int argc, char **argv) {
     }
 }
 
-int
-App::main(int argc, char **argv)
-{
+int App::main(int argc, char** argv) {
     try {
         setupSignals(argv);
         setup_fadvise();
         FastOS_FileInterface::enableFSync();
         Transport transport(buildTransportConfig());
         startAndRun(transport.transport(), argc, argv);
-    } catch (const vespalib::InvalidCommandLineArgumentsException &e) {
+    } catch (const vespalib::InvalidCommandLineArgumentsException& e) {
         LOG(warning, "Invalid commandline arguments: '%s'", e.what());
         return 1;
-    } catch (const config::ConfigTimeoutException &e) {
+    } catch (const config::ConfigTimeoutException& e) {
         LOG(warning, "Error subscribing to initial config: '%s'", e.what());
         return 1;
-    } catch (const vespalib::PortListenException &e) {
-        LOG(warning, "Failed listening to a network port(%d) with protocol(%s): '%s'",
-                   e.get_port(), e.get_protocol().c_str(), e.what());
+    } catch (const vespalib::PortListenException& e) {
+        LOG(warning, "Failed listening to a network port(%d) with protocol(%s): '%s'", e.get_port(),
+            e.get_protocol().c_str(), e.what());
         return 1;
-    } catch (const vespalib::NetworkSetupFailureException & e) {
+    } catch (const vespalib::NetworkSetupFailureException& e) {
         LOG(warning, "Network failure: '%s'", e.what());
         return 1;
-    } catch (const config::InvalidConfigException & e) {
+    } catch (const config::InvalidConfigException& e) {
         LOG(warning, "Invalid config failure: '%s'", e.what());
         return 1;
-    } catch (const vespalib::IllegalStateException & e) {
+    } catch (const vespalib::IllegalStateException& e) {
         LOG(error, "Unknown IllegalStateException: '%s'", e.what());
         throw;
     }
@@ -359,7 +335,7 @@ App::main(int argc, char **argv)
     return 0;
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     App app;
     return app.main(argc, argv);
 }

@@ -2,18 +2,20 @@
 
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/fastos/file.h>
-#include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/rand48.h>
-#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/signalhandler.h>
-#include <iostream>
-#include <sstream>
+#include <vespa/vespalib/util/size_literals.h>
+
+#include <getopt.h>
 #include <openssl/evp.h>
+
 #include <cassert>
 #include <filesystem>
-#include <getopt.h>
+#include <iostream>
 #include <limits>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -28,36 +30,27 @@ using std::string;
 namespace {
 
 struct EvpMdCtxDeleter {
-    void operator()(EVP_MD_CTX* evp_md_ctx) const noexcept {
-        EVP_MD_CTX_free(evp_md_ctx);
-    }
+    void operator()(EVP_MD_CTX* evp_md_ctx) const noexcept { EVP_MD_CTX_free(evp_md_ctx); }
 };
 
 using EvpMdCtxPtr = std::unique_ptr<EVP_MD_CTX, EvpMdCtxDeleter>;
 
-}
+} // namespace
 
-void
-usageHeader()
-{
+void usageHeader() {
     using std::cerr;
     cerr << "vespa-gen-testdocs version 0.0\n\nUSAGE:\n";
 }
 
-string
-prependBaseDir(const string &baseDir,
-               const string &file)
-{
+string prependBaseDir(const string& baseDir, const string& file) {
     if (baseDir.empty() || baseDir == ".")
         return file;
     return baseDir + "/" + file;
 }
 
-std::vector<string>
-splitArg(const string &arg)
-{
+std::vector<string> splitArg(const string& arg) {
     std::vector<string> argv;
-    string::size_type pos = 0;
+    string::size_type   pos = 0;
     for (;;) {
         auto found = arg.find(',', pos);
         if (found == string::npos) {
@@ -70,29 +63,26 @@ splitArg(const string &arg)
     return argv;
 }
 
-void
-shafile(const string &baseDir, const string &file)
-{
-    unsigned char digest[EVP_MAX_MD_SIZE];
-    unsigned int digest_len = 0;
-    string fullFile(prependBaseDir(baseDir, file));
-    FastOS_File f;
+void shafile(const string& baseDir, const string& file) {
+    unsigned char      digest[EVP_MAX_MD_SIZE];
+    unsigned int       digest_len = 0;
+    string             fullFile(prependBaseDir(baseDir, file));
+    FastOS_File        f;
     std::ostringstream os;
-    Alloc buf = Alloc::alloc_aligned(64_Ki, 0x1000);
+    Alloc              buf = Alloc::alloc_aligned(64_Ki, 0x1000);
     f.EnableDirectIO();
     bool openres = f.OpenReadOnly(fullFile.c_str());
     if (!openres) {
         LOG(error, "Could not open %s for sha256 checksum", fullFile.c_str());
         LOG_ABORT("should not be reached");
     }
-    int64_t flen = f.getSize();
-    int64_t remainder = flen;
-    EvpMdCtxPtr md_ctx(EVP_MD_CTX_new());
+    int64_t       flen = f.getSize();
+    int64_t       remainder = flen;
+    EvpMdCtxPtr   md_ctx(EVP_MD_CTX_new());
     const EVP_MD* md = EVP_get_digestbyname("SHA256");
     EVP_DigestInit_ex(md_ctx.get(), md, nullptr);
     while (remainder > 0) {
-        int64_t thistime =
-            std::min(remainder, static_cast<int64_t>(buf.size()));
+        int64_t thistime = std::min(remainder, static_cast<int64_t>(buf.size()));
         f.ReadBuf(buf.get(), thistime);
         EVP_DigestUpdate(md_ctx.get(), buf.get(), thistime);
         remainder -= thistime;
@@ -107,48 +97,33 @@ shafile(const string &baseDir, const string &file)
     LOG(info, "SHA256(%s)= %s", file.c_str(), os.str().c_str());
 }
 
-class StringGenerator
-{
-    vespalib::Rand48 &_rnd;
+class StringGenerator {
+    vespalib::Rand48& _rnd;
 
 public:
-    StringGenerator(vespalib::Rand48 &rnd);
+    StringGenerator(vespalib::Rand48& rnd);
 
-    void rand_string(string &res, uint32_t minLen, uint32_t maxLen);
+    void rand_string(string& res, uint32_t minLen, uint32_t maxLen);
 
-    void rand_unique_array(StringArray &res, uint32_t minLen, uint32_t maxLen, uint32_t size);
+    void rand_unique_array(StringArray& res, uint32_t minLen, uint32_t maxLen, uint32_t size);
 };
 
-
-StringGenerator::StringGenerator(vespalib::Rand48 &rnd)
-    : _rnd(rnd)
-{
+StringGenerator::StringGenerator(vespalib::Rand48& rnd) : _rnd(rnd) {
 }
 
-
-void
-StringGenerator::rand_string(string &res,
-                             uint32_t minLen,
-                             uint32_t maxLen)
-{
+void StringGenerator::rand_string(string& res, uint32_t minLen, uint32_t maxLen) {
     uint32_t len = minLen + _rnd.lrand48() % (maxLen - minLen + 1);
-    
+
     res.clear();
     for (uint32_t i = 0; i < len; ++i) {
         res += 'a' + _rnd.lrand48() % ('z' - 'a' + 1);
     }
 }
-    
 
-void
-StringGenerator::rand_unique_array(StringArray &res,
-                                   uint32_t minLen,
-                                   uint32_t maxLen,
-                                   uint32_t size)
-{
+void StringGenerator::rand_unique_array(StringArray& res, uint32_t minLen, uint32_t maxLen, uint32_t size) {
     StringSet set(size * 2);
-    string s;
-    
+    string    s;
+
     res.reserve(size);
     for (uint32_t i = 0; i < size; ++i) {
         do {
@@ -159,9 +134,7 @@ StringGenerator::rand_unique_array(StringArray &res,
     }
 }
 
-
-class FieldGenerator
-{
+class FieldGenerator {
 public:
     using SP = std::shared_ptr<FieldGenerator>;
 
@@ -169,42 +142,31 @@ protected:
     const string _name;
 
 public:
-    FieldGenerator(const string &name);
+    FieldGenerator(const string& name);
     virtual ~FieldGenerator();
     virtual void setup();
-    virtual void generateXML(vespalib::asciistream &doc, uint32_t id);
-    virtual void generateJSON(vespalib::asciistream &doc, uint32_t id);
-    virtual void generateValue(vespalib::asciistream &doc, uint32_t id);
+    virtual void generateXML(vespalib::asciistream& doc, uint32_t id);
+    virtual void generateJSON(vespalib::asciistream& doc, uint32_t id);
+    virtual void generateValue(vespalib::asciistream& doc, uint32_t id);
     virtual bool isString() const { return true; }
 };
 
-
-
-FieldGenerator::FieldGenerator(const string &name)
-    : _name(name)
-{
+FieldGenerator::FieldGenerator(const string& name) : _name(name) {
 }
 
-FieldGenerator::~FieldGenerator()
-{
+FieldGenerator::~FieldGenerator() {
 }
 
-void
-FieldGenerator::setup()
-{
+void FieldGenerator::setup() {
 }
 
-void
-FieldGenerator::generateXML(vespalib::asciistream &doc, uint32_t id)
-{
+void FieldGenerator::generateXML(vespalib::asciistream& doc, uint32_t id) {
     doc << "  <" << _name << ">";
     generateValue(doc, id);
     doc << "</" << _name << ">\n";
 }
 
-void
-FieldGenerator::generateJSON(vespalib::asciistream &doc, uint32_t id)
-{
+void FieldGenerator::generateJSON(vespalib::asciistream& doc, uint32_t id) {
     doc << "\"" << _name << "\": ";
     bool needQuote = isString();
     if (needQuote) {
@@ -216,24 +178,20 @@ FieldGenerator::generateJSON(vespalib::asciistream &doc, uint32_t id)
     }
 }
 
-void
-FieldGenerator::generateValue(vespalib::asciistream &, uint32_t)
-{
+void FieldGenerator::generateValue(vespalib::asciistream&, uint32_t) {
 }
 
-class ConstTextFieldGenerator : public FieldGenerator
-{
+class ConstTextFieldGenerator : public FieldGenerator {
     string _value;
+
 public:
     ConstTextFieldGenerator(std::vector<string> argv) noexcept;
     ~ConstTextFieldGenerator() override;
-    void generateValue(vespalib::asciistream &doc, uint32_t id) override;
+    void generateValue(vespalib::asciistream& doc, uint32_t id) override;
 };
 
 ConstTextFieldGenerator::ConstTextFieldGenerator(std::vector<string> argv) noexcept
-    : FieldGenerator(argv[0]),
-      _value()
-{
+    : FieldGenerator(argv[0]), _value() {
     if (argv.size() > 1) {
         _value = argv[1];
     }
@@ -241,29 +199,23 @@ ConstTextFieldGenerator::ConstTextFieldGenerator(std::vector<string> argv) noexc
 
 ConstTextFieldGenerator::~ConstTextFieldGenerator() = default;
 
-void
-ConstTextFieldGenerator::generateValue(vespalib::asciistream &doc, uint32_t)
-{
+void ConstTextFieldGenerator::generateValue(vespalib::asciistream& doc, uint32_t) {
     doc << _value;
 }
 
-class PrefixTextFieldGenerator : public FieldGenerator
-{
-    string _prefix;
+class PrefixTextFieldGenerator : public FieldGenerator {
+    string   _prefix;
     uint32_t _mod;
     uint32_t _div;
+
 public:
     PrefixTextFieldGenerator(std::vector<string> argv) noexcept;
     ~PrefixTextFieldGenerator() override;
-    void generateValue(vespalib::asciistream &doc, uint32_t id) override;
+    void generateValue(vespalib::asciistream& doc, uint32_t id) override;
 };
 
 PrefixTextFieldGenerator::PrefixTextFieldGenerator(std::vector<string> argv) noexcept
-    : FieldGenerator(argv[0]),
-      _prefix(),
-      _mod(std::numeric_limits<uint32_t>::max()),
-      _div(1u)
-{
+    : FieldGenerator(argv[0]), _prefix(), _mod(std::numeric_limits<uint32_t>::max()), _div(1u) {
     if (argv.size() > 1) {
         _prefix = argv[1];
         if (argv.size() > 2) {
@@ -281,109 +233,70 @@ PrefixTextFieldGenerator::PrefixTextFieldGenerator(std::vector<string> argv) noe
 
 PrefixTextFieldGenerator::~PrefixTextFieldGenerator() = default;
 
-void
-PrefixTextFieldGenerator::generateValue(vespalib::asciistream &doc, uint32_t id)
-{
+void PrefixTextFieldGenerator::generateValue(vespalib::asciistream& doc, uint32_t id) {
     doc << _prefix << ((id / _div) % _mod);
 }
 
-class RandTextFieldGenerator : public FieldGenerator
-{
-    vespalib::Rand48 &_rnd;
-    uint32_t _numWords;
-    StringArray _strings;
-    uint32_t _minFill;
-    uint32_t _randFill;
+class RandTextFieldGenerator : public FieldGenerator {
+    vespalib::Rand48& _rnd;
+    uint32_t          _numWords;
+    StringArray       _strings;
+    uint32_t          _minFill;
+    uint32_t          _randFill;
 
 public:
-    RandTextFieldGenerator(const string &name,
-                           vespalib::Rand48 &rnd,
-                           uint32_t numWords,
-                           uint32_t minFill,
+    RandTextFieldGenerator(const string& name, vespalib::Rand48& rnd, uint32_t numWords, uint32_t minFill,
                            uint32_t maxFill);
     ~RandTextFieldGenerator() override;
     void setup() override;
-    void generateValue(vespalib::asciistream &doc, uint32_t id) override;
+    void generateValue(vespalib::asciistream& doc, uint32_t id) override;
 };
 
-
-RandTextFieldGenerator::RandTextFieldGenerator(const string &name,
-                                               vespalib::Rand48 &rnd,
-                                               uint32_t numWords,
-                                               uint32_t minFill,
-                                               uint32_t randFill)
-    : FieldGenerator(name),
-      _rnd(rnd),
-      _numWords(numWords),
-      _strings(),
-      _minFill(minFill),
-      _randFill(randFill)
-{
+RandTextFieldGenerator::RandTextFieldGenerator(const string& name, vespalib::Rand48& rnd, uint32_t numWords,
+                                               uint32_t minFill, uint32_t randFill)
+    : FieldGenerator(name), _rnd(rnd), _numWords(numWords), _strings(), _minFill(minFill), _randFill(randFill) {
 }
 
-
-
-RandTextFieldGenerator::~RandTextFieldGenerator()
-{
+RandTextFieldGenerator::~RandTextFieldGenerator() {
 }
 
-
-void
-RandTextFieldGenerator::setup()
-{
-    LOG(info,
-        "generating dictionary for field %s (%u words)",
-        _name.c_str(), _numWords);
+void RandTextFieldGenerator::setup() {
+    LOG(info, "generating dictionary for field %s (%u words)", _name.c_str(), _numWords);
     StringGenerator(_rnd).rand_unique_array(_strings, 5, 10, _numWords);
 }
 
-
-void
-RandTextFieldGenerator::generateValue(vespalib::asciistream &doc, uint32_t)
-{
+void RandTextFieldGenerator::generateValue(vespalib::asciistream& doc, uint32_t) {
     uint32_t gLen = _minFill + _rnd.lrand48() % (_randFill + 1);
-    bool first = true;
+    bool     first = true;
     for (uint32_t i = 0; i < gLen; ++i) {
         if (!first)
             doc << " ";
         first = false;
-        uint32_t wNum = _rnd.lrand48() % _strings.size();
-        const string &s(_strings[wNum]);
+        uint32_t      wNum = _rnd.lrand48() % _strings.size();
+        const string& s(_strings[wNum]);
         assert(s.size() > 0);
         doc << s;
     }
 }
 
-class ModTextFieldGenerator : public FieldGenerator
-{
+class ModTextFieldGenerator : public FieldGenerator {
     std::vector<uint32_t> _mods;
 
 public:
-    ModTextFieldGenerator(const string &name,
-                          vespalib::Rand48 &rnd,
-                          const std::vector<uint32_t> &mods);
+    ModTextFieldGenerator(const string& name, vespalib::Rand48& rnd, const std::vector<uint32_t>& mods);
     ~ModTextFieldGenerator() override;
-    void generateValue(vespalib::asciistream &doc, uint32_t id) override;
+    void generateValue(vespalib::asciistream& doc, uint32_t id) override;
 };
 
-
-ModTextFieldGenerator::ModTextFieldGenerator(const string &name,
-                                             [[maybe_unused]] vespalib::Rand48 &rnd,
-                                             const std::vector<uint32_t> &mods)
-    : FieldGenerator(name),
-      _mods(mods)
-{
-}
-    
-
-ModTextFieldGenerator::~ModTextFieldGenerator()
-{
+ModTextFieldGenerator::ModTextFieldGenerator(const string& name, [[maybe_unused]] vespalib::Rand48& rnd,
+                                             const std::vector<uint32_t>& mods)
+    : FieldGenerator(name), _mods(mods) {
 }
 
+ModTextFieldGenerator::~ModTextFieldGenerator() {
+}
 
-void
-ModTextFieldGenerator::generateValue(vespalib::asciistream &doc, uint32_t id)
-{
+void ModTextFieldGenerator::generateValue(vespalib::asciistream& doc, uint32_t id) {
     using MI = std::vector<uint32_t>::const_iterator;
     bool first = true;
     for (MI mi(_mods.begin()), me(_mods.end()); mi != me; ++mi) {
@@ -395,145 +308,94 @@ ModTextFieldGenerator::generateValue(vespalib::asciistream &doc, uint32_t id)
     }
 }
 
-
-class IdTextFieldGenerator : public FieldGenerator
-{
+class IdTextFieldGenerator : public FieldGenerator {
 public:
-    IdTextFieldGenerator(const string &name);
+    IdTextFieldGenerator(const string& name);
     ~IdTextFieldGenerator() override;
-    void generateValue(vespalib::asciistream &doc, uint32_t id) override;
+    void generateValue(vespalib::asciistream& doc, uint32_t id) override;
 };
 
-
-IdTextFieldGenerator::IdTextFieldGenerator(const string &name)
-    : FieldGenerator(name)
-{
-}
-    
-
-IdTextFieldGenerator::~IdTextFieldGenerator()
-{
+IdTextFieldGenerator::IdTextFieldGenerator(const string& name) : FieldGenerator(name) {
 }
 
+IdTextFieldGenerator::~IdTextFieldGenerator() {
+}
 
-void
-IdTextFieldGenerator::generateValue(vespalib::asciistream &doc, uint32_t id)
-{
+void IdTextFieldGenerator::generateValue(vespalib::asciistream& doc, uint32_t id) {
     doc << id;
 }
 
-
-class RandIntFieldGenerator : public FieldGenerator
-{
-    vespalib::Rand48 &_rnd;
-    uint32_t _low;
-    uint32_t _count;
+class RandIntFieldGenerator : public FieldGenerator {
+    vespalib::Rand48& _rnd;
+    uint32_t          _low;
+    uint32_t          _count;
 
 public:
-    RandIntFieldGenerator(const string &name,
-                          vespalib::Rand48 &rnd,
-                          uint32_t low,
-                          uint32_t count);
+    RandIntFieldGenerator(const string& name, vespalib::Rand48& rnd, uint32_t low, uint32_t count);
     ~RandIntFieldGenerator() override;
-    void generateValue(vespalib::asciistream &doc, uint32_t id) override;
+    void generateValue(vespalib::asciistream& doc, uint32_t id) override;
     bool isString() const override { return false; }
 };
 
-
-
-RandIntFieldGenerator::RandIntFieldGenerator(const string &name,
-                                             vespalib::Rand48 &rnd,
-                                             uint32_t low,
-                                             uint32_t count)
-    : FieldGenerator(name),
-      _rnd(rnd),
-      _low(low),
-      _count(count)
-{
-}
-    
-
-RandIntFieldGenerator::~RandIntFieldGenerator()
-{
+RandIntFieldGenerator::RandIntFieldGenerator(const string& name, vespalib::Rand48& rnd, uint32_t low, uint32_t count)
+    : FieldGenerator(name), _rnd(rnd), _low(low), _count(count) {
 }
 
+RandIntFieldGenerator::~RandIntFieldGenerator() {
+}
 
-void
-RandIntFieldGenerator::generateValue(vespalib::asciistream &doc, uint32_t)
-{
+void RandIntFieldGenerator::generateValue(vespalib::asciistream& doc, uint32_t) {
     uint32_t r = _low + _rnd.lrand48() % _count;
     doc << r;
 }
 
-class DocumentGenerator
-{
-    string _docType;
-    string _idPrefix;
+class DocumentGenerator {
+    string                _docType;
+    string                _idPrefix;
     vespalib::asciistream _doc;
     using FieldVec = std::vector<FieldGenerator::SP>;
     const FieldVec _fields;
- 
-    void
-    setup();
-public:   
-    DocumentGenerator(const string &docType,
-                      const string &idPrefix,
-                      const FieldVec &fields);
+
+    void setup();
+
+public:
+    DocumentGenerator(const string& docType, const string& idPrefix, const FieldVec& fields);
     ~DocumentGenerator();
     void generateXML(uint32_t id);
     void generateJSON(uint32_t id);
-    void generate(uint32_t docMin, uint32_t docIdLimit,
-                  const string &baseDir,
-                  const string &feedFileName,
+    void generate(uint32_t docMin, uint32_t docIdLimit, const string& baseDir, const string& feedFileName,
                   bool headers, bool json);
 };
 
-
-DocumentGenerator::DocumentGenerator(const string &docType,
-                                     const string &idPrefix,
-                                     const FieldVec &fields)
-    : _docType(docType),
-      _idPrefix(idPrefix),
-      _doc(),
-      _fields(fields)
-{
+DocumentGenerator::DocumentGenerator(const string& docType, const string& idPrefix, const FieldVec& fields)
+    : _docType(docType), _idPrefix(idPrefix), _doc(), _fields(fields) {
     setup();
 }
 
-
-DocumentGenerator::~DocumentGenerator()
-{
+DocumentGenerator::~DocumentGenerator() {
 }
 
-void
-DocumentGenerator::setup()
-{
+void DocumentGenerator::setup() {
     using FI = FieldVec::const_iterator;
     for (FI i(_fields.begin()), ie(_fields.end()); i != ie; ++i) {
         (*i)->setup();
     }
 }
 
-
-void
-DocumentGenerator::generateXML(uint32_t id)
-{
+void DocumentGenerator::generateXML(uint32_t id) {
     _doc.clear();
-    _doc << "<document documenttype=\"" << _docType << "\" documentid=\"" <<
-        _idPrefix << id << "\">\n";
-    for (const auto &field : _fields) {
+    _doc << "<document documenttype=\"" << _docType << "\" documentid=\"" << _idPrefix << id << "\">\n";
+    for (const auto& field : _fields) {
         field->generateXML(_doc, id);
     }
     _doc << "</document>\n";
 }
 
-void
-DocumentGenerator::generateJSON(uint32_t id)
-{
+void DocumentGenerator::generateJSON(uint32_t id) {
     _doc.clear();
     _doc << "  { \"put\": \"" << _idPrefix << id << "\",\n    \"fields\": {";
     bool first = true;
-    for (const auto &field : _fields) {
+    for (const auto& field : _fields) {
         if (!first) {
             _doc << ",";
         }
@@ -544,12 +406,8 @@ DocumentGenerator::generateJSON(uint32_t id)
     _doc << "\n    }\n  }";
 }
 
-void
-DocumentGenerator::generate(uint32_t docMin, uint32_t docIdLimit,
-                            const string &baseDir,
-                            const string &feedFileName,
-                            bool headers, bool json)
-{
+void DocumentGenerator::generate(uint32_t docMin, uint32_t docIdLimit, const string& baseDir,
+                                 const string& feedFileName, bool headers, bool json) {
     string fullName(prependBaseDir(baseDir, feedFileName));
     std::filesystem::remove(std::filesystem::path(fullName));
     Fast_BufferedFile f;
@@ -588,32 +446,29 @@ DocumentGenerator::generate(uint32_t docMin, uint32_t docIdLimit,
     shafile(baseDir, feedFileName);
 }
 
-
-class SubApp
-{
+class SubApp {
 public:
     virtual void usage(bool showHeader) = 0;
-    virtual bool getOptions(int argc, char **argv) = 0;
+    virtual bool getOptions(int argc, char** argv) = 0;
     virtual int run() = 0;
     virtual ~SubApp() = default;
 };
 
-class GenTestDocsApp : public SubApp
-{
-    string _baseDir;
-    string _docType;
-    uint32_t _minDocId;
-    uint32_t _docIdLimit;
-    bool _verbose;
-    int _numWords;
-    int _optIndex;
+class GenTestDocsApp : public SubApp {
+    string                          _baseDir;
+    string                          _docType;
+    uint32_t                        _minDocId;
+    uint32_t                        _docIdLimit;
+    bool                            _verbose;
+    int                             _numWords;
+    int                             _optIndex;
     std::vector<FieldGenerator::SP> _fields;
-    std::vector<uint32_t> _mods;
-    vespalib::Rand48 _rnd;
-    string _outFile;
-    bool _headers;
-    bool _json;
-    
+    std::vector<uint32_t>           _mods;
+    vespalib::Rand48                _rnd;
+    string                          _outFile;
+    bool                            _headers;
+    bool                            _json;
+
 public:
     GenTestDocsApp()
         : _baseDir(""),
@@ -628,8 +483,7 @@ public:
           _rnd(),
           _outFile(),
           _headers(false),
-          _json(false)
-    {
+          _json(false) {
         _mods.push_back(2);
         _mods.push_back(3);
         _mods.push_back(5);
@@ -638,61 +492,43 @@ public:
         _rnd.srand48(42);
     }
 
-    ~GenTestDocsApp() override
-    {
-    }
+    ~GenTestDocsApp() override {}
 
     void usage(bool showHeader) override;
-    bool getOptions(int argc, char **argv) override;
+    bool getOptions(int argc, char** argv) override;
     int run() override;
 };
 
-
-void
-GenTestDocsApp::usage(bool showHeader)
-{
+void GenTestDocsApp::usage(bool showHeader) {
     using std::cerr;
     if (showHeader)
         usageHeader();
-    cerr <<
-        "vespa-gen-testdocs gentestdocs\n"
-        " [--basedir basedir]\n"
-        " [--consttextfield name]\n"
-        " [--prefixtextfield name]\n"
-        " [--randtextfield name]\n"
-        " [--modtextfield name]\n"
-        " [--idtextfield name]\n"
-        " [--randintfield name]\n"
-        " [--docidlimit docIdLimit]\n"
-        " [--mindocid mindocid]\n"
-        " [--numwords numWords]\n"
-        " [--doctype docType]\n"
-        " [--headers]\n"
-        " [--json]\n"
-        " outFile\n";
+    cerr << "vespa-gen-testdocs gentestdocs\n"
+            " [--basedir basedir]\n"
+            " [--consttextfield name]\n"
+            " [--prefixtextfield name]\n"
+            " [--randtextfield name]\n"
+            " [--modtextfield name]\n"
+            " [--idtextfield name]\n"
+            " [--randintfield name]\n"
+            " [--docidlimit docIdLimit]\n"
+            " [--mindocid mindocid]\n"
+            " [--numwords numWords]\n"
+            " [--doctype docType]\n"
+            " [--headers]\n"
+            " [--json]\n"
+            " outFile\n";
 }
 
-bool
-GenTestDocsApp::getOptions(int argc, char **argv)
-{
-    int c;
-    int longopt_index = 0;
+bool GenTestDocsApp::getOptions(int argc, char** argv) {
+    int                  c;
+    int                  longopt_index = 0;
     static struct option longopts[] = {
-        { "basedir", 1, nullptr, 0 },
-        { "consttextfield", 1, nullptr, 0 },
-        { "prefixtextfield", 1, nullptr, 0 },
-        { "randtextfield", 1, nullptr, 0 },
-        { "modtextfield", 1, nullptr, 0 },
-        { "idtextfield", 1, nullptr, 0 },
-        { "randintfield", 1, nullptr, 0 },
-        { "docidlimit", 1, nullptr, 0 },
-        { "mindocid", 1, nullptr, 0 },
-        { "numwords", 1, nullptr, 0 },
-        { "doctype", 1, nullptr, 0 },
-        { "headers", 0, nullptr, 0 },
-        { "json", 0, nullptr, 0 },
-        { nullptr, 0, nullptr, 0 }
-    };
+        {"basedir", 1, nullptr, 0},       {"consttextfield", 1, nullptr, 0}, {"prefixtextfield", 1, nullptr, 0},
+        {"randtextfield", 1, nullptr, 0}, {"modtextfield", 1, nullptr, 0},   {"idtextfield", 1, nullptr, 0},
+        {"randintfield", 1, nullptr, 0},  {"docidlimit", 1, nullptr, 0},     {"mindocid", 1, nullptr, 0},
+        {"numwords", 1, nullptr, 0},      {"doctype", 1, nullptr, 0},        {"headers", 0, nullptr, 0},
+        {"json", 0, nullptr, 0},          {nullptr, 0, nullptr, 0}};
     enum longopts_enum {
         LONGOPT_BASEDIR,
         LONGOPT_CONSTTEXTFIELD,
@@ -709,9 +545,7 @@ GenTestDocsApp::getOptions(int argc, char **argv)
         LONGOPT_JSON
     };
     optind = 2;
-    while ((c = getopt_long(argc, argv, "v",
-                            longopts,
-                            &longopt_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "v", longopts, &longopt_index)) != -1) {
         FieldGenerator::SP g;
         switch (c) {
         case 0:
@@ -726,17 +560,11 @@ GenTestDocsApp::getOptions(int argc, char **argv)
                 _fields.emplace_back(std::make_shared<PrefixTextFieldGenerator>(splitArg(optarg)));
                 break;
             case LONGOPT_RANDTEXTFIELD:
-                g.reset(new RandTextFieldGenerator(optarg,
-                                                   _rnd,
-                                                   _numWords,
-                                                   20,
-                                                   50));
+                g.reset(new RandTextFieldGenerator(optarg, _rnd, _numWords, 20, 50));
                 _fields.push_back(g);
                 break;
             case LONGOPT_MODTEXTFIELD:
-                g.reset(new ModTextFieldGenerator(optarg,
-                                                  _rnd,
-                                                  _mods));
+                g.reset(new ModTextFieldGenerator(optarg, _rnd, _mods));
                 _fields.push_back(g);
                 break;
             case LONGOPT_IDTEXTFIELD:
@@ -744,10 +572,7 @@ GenTestDocsApp::getOptions(int argc, char **argv)
                 _fields.push_back(g);
                 break;
             case LONGOPT_RANDINTFIELD:
-                g.reset(new RandIntFieldGenerator(optarg,
-                                                  _rnd,
-                                                  0,
-                                                  100000));
+                g.reset(new RandIntFieldGenerator(optarg, _rnd, 0, 100000));
                 _fields.push_back(g);
                 break;
             case LONGOPT_DOCIDLIMIT:
@@ -770,13 +595,9 @@ GenTestDocsApp::getOptions(int argc, char **argv)
                 break;
             default:
                 if (optarg != nullptr) {
-                    LOG(error,
-                        "longopt %s with arg %s",
-                        longopts[longopt_index].name, optarg);
+                    LOG(error, "longopt %s with arg %s", longopts[longopt_index].name, optarg);
                 } else {
-                    LOG(error,
-                        "longopt %s",
-                        longopts[longopt_index].name);
+                    LOG(error, "longopt %s", longopts[longopt_index].name);
                 }
             }
             break;
@@ -795,41 +616,29 @@ GenTestDocsApp::getOptions(int argc, char **argv)
     return true;
 }
 
-
-int
-GenTestDocsApp::run()
-{
+int GenTestDocsApp::run() {
     printf("Hello world\n");
     string idPrefix("id:test:");
     idPrefix += _docType;
     idPrefix += "::";
-    DocumentGenerator dg(_docType,
-                         idPrefix,
-                         _fields);
+    DocumentGenerator dg(_docType, idPrefix, _fields);
     LOG(info, "generating %s", _outFile.c_str());
     dg.generate(_minDocId, _docIdLimit, _baseDir, _outFile, _headers, _json);
     LOG(info, "done");
     return 0;
 }
 
-
-class App
-{
+class App {
 public:
     void usage();
-    int main(int argc, char **argv);
+    int main(int argc, char** argv);
 };
 
-
-void
-App::usage()
-{
+void App::usage() {
     GenTestDocsApp().usage(true);
 }
 
-int
-App::main(int argc, char **argv)
-{
+int App::main(int argc, char** argv) {
     if (argc < 2) {
         usage();
         return 1;
@@ -848,8 +657,7 @@ App::main(int argc, char **argv)
     return 1;
 }
 
-
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     vespalib::SignalHandler::PIPE.ignore();
     App app;
     return app.main(argc, argv);
