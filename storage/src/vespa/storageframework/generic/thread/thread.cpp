@@ -4,19 +4,15 @@
 
 namespace storage::framework {
 
-void
-Thread::interruptAndJoin()
-{
+void Thread::interruptAndJoin() {
     interrupt();
     join();
 }
 
-void
-Thread::interruptAndJoin(std::condition_variable &cv)
-{
+void Thread::interruptAndJoin(std::condition_variable& cv) {
     interrupt();
     cv.notify_all();
     join();
 }
 
-}
+} // namespace storage::framework

@@ -14,15 +14,16 @@
  */
 #pragma once
 
-#include <ostream>
 #include <vespa/storageframework/generic/status/httpurlpath.h>
 #include <vespa/vespalib/net/tls/capability_set.h>
+
+#include <ostream>
 #include <string>
 
 namespace storage::framework {
 
 struct StatusReporter {
-    using Capability    = vespalib::net::tls::Capability;
+    using Capability = vespalib::net::tls::Capability;
     using CapabilitySet = vespalib::net::tls::CapabilitySet;
 
     StatusReporter(std::string_view id, std::string_view name);
@@ -49,7 +50,7 @@ struct StatusReporter {
      * "403 Forbidden" error response will be returned to the client.
      */
     virtual CapabilitySet required_capabilities() const noexcept {
-        return CapabilitySet::of({ Capability::content_status_pages() });
+        return CapabilitySet::of({Capability::content_status_pages()});
     }
 
     /**
@@ -68,7 +69,6 @@ struct StatusReporter {
 private:
     std::string _id;
     std::string _name;
-
 };
 
-}
+} // namespace storage::framework

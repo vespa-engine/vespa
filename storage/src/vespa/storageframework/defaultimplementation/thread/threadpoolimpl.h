@@ -5,18 +5,17 @@
 #include <vespa/storageframework/generic/thread/threadpool.h>
 
 namespace storage::framework {
-    struct Clock;
+struct Clock;
 }
 namespace storage::framework::defaultimplementation {
 
 class ThreadImpl;
 
-struct ThreadPoolImpl final : public ThreadPool
-{
-    std::vector<ThreadImpl*>   _threads;
-    mutable std::mutex         _threadVectorLock;
-    Clock                    & _clock;
-    bool                       _stopping;
+struct ThreadPoolImpl final : public ThreadPool {
+    std::vector<ThreadImpl*> _threads;
+    mutable std::mutex       _threadVectorLock;
+    Clock&                   _clock;
+    bool                     _stopping;
 
 public:
     ThreadPoolImpl(Clock&);
@@ -30,4 +29,4 @@ public:
     Clock& getClock() { return _clock; }
 };
 
-}
+} // namespace storage::framework::defaultimplementation

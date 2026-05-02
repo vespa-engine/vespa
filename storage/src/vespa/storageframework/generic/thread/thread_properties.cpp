@@ -4,13 +4,9 @@
 
 namespace storage::framework {
 
-ThreadProperties::ThreadProperties(vespalib::duration waitTime,
-                                   vespalib::duration maxProcessTime,
+ThreadProperties::ThreadProperties(vespalib::duration waitTime, vespalib::duration maxProcessTime,
                                    int ticksBeforeWait)
-    : _maxProcessTime(maxProcessTime),
-      _waitTime(waitTime),
-      _ticksBeforeWait(ticksBeforeWait)
-{
+    : _maxProcessTime(maxProcessTime), _waitTime(waitTime), _ticksBeforeWait(ticksBeforeWait) {
 }
 
-}
+} // namespace storage::framework
