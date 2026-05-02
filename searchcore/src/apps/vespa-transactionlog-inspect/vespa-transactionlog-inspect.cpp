@@ -20,6 +20,7 @@
 #include <vespa/config/helper/configgetter.hpp>
 
 #include <iostream>
+#include <stdexcept>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -65,9 +66,13 @@ vespalib::nbostream& ConfigFile::deserialize(vespalib::nbostream& stream) {
     stream >> modTime;
     uint32_t sz;
     stream >> sz;
+    if (stream.size() < sz) {
+        throw std::runtime_error("ConfigFile::deserialize: malformed packet, payload size exceeds remaining stream");
+    }
     _content.resize(sz);
-    assert(stream.size() >= sz);
-    memcpy(&_content[0], stream.peek(), sz);
+    if (sz > 0) {
+        memcpy(_content.data(), stream.peek(), sz);
+    }
     stream.adjustReadPos(sz);
     return stream;
 }
@@ -75,7 +80,9 @@ vespalib::nbostream& ConfigFile::deserialize(vespalib::nbostream& stream) {
 void ConfigFile::print() const {
     std::cout << "Name: " << _name << "\n"
               << "Content-Length: " << _content.size() << "\n\n";
-    std::cout.write(&_content[0], _content.size());
+    if (!_content.empty()) {
+        std::cout.write(_content.data(), _content.size());
+    }
     std::cout << "\n-----------------------------" << std::endl;
 }
 

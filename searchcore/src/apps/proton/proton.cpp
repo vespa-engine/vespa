@@ -17,6 +17,8 @@
 #include <absl/debugging/symbolize.h>
 #include <fcntl.h>
 
+#include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <iostream>
 #include <thread>
