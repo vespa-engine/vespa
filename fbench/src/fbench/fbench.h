@@ -15,7 +15,7 @@ struct CryptoEngine;
 /**
  * This is the application class of the fbench program. It controls
  * the operation of the test clients and collects overall results.
- * The functionallity of the Main method is split into several helper
+ * The functionality of the Main method is split into several helper
  * methods for more clarity in the source.
  **/
 class FBench {

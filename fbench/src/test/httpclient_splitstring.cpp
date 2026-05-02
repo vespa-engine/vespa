@@ -38,7 +38,7 @@ void DebugHTTPClient::SplitLineTest(const char* input) {
 void DebugHTTPClient::DebugSplitLine() {
     SplitLineTest("This is a test");
     SplitLineTest("This is exactly five words");
-    SplitLineTest("five words with traling space ");
+    SplitLineTest("five words with trailing space ");
     SplitLineTest(" This\t is \ta \t harder\ttest  ");
     SplitLineTest("SingleWord");
     SplitLineTest("\t\t  \t\tSingleWordWithSpacesAround  \t\t  ");

@@ -50,7 +50,7 @@ public:
     void Stop();
 
     /**
-     * Set the measured time spen to 0 ms and stop the timer if it is
+     * Set the measured time span to 0 ms and stop the timer if it is
      * running.
      **/
     void Clear();

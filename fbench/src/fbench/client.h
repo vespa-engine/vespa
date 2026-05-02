@@ -84,13 +84,13 @@ struct ClientArguments {
     int _maxLineSize;
 
     /**
-     * Indicate wether keep-alive connections should be enabled for this
+     * Indicate whether keep-alive connections should be enabled for this
      * client.
      **/
     bool _keepAlive;
 
     /**
-     * Indicate wether POST content should be Base64 decoded before
+     * Indicate whether POST content should be Base64 decoded before
      * sending it
      **/
     bool _base64Decode;

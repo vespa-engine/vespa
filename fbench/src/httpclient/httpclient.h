@@ -231,7 +231,7 @@ protected:
      * Close the connection to the url we are currently reading
      * from. Will also close the physical connection if keepAlive is not
      * enabled or if all the url content was not read. This is done
-     * because skipping will probably be more expencive than creating a
+     * because skipping will probably be more expensive than creating a
      * new connection.
      *
      * @return success(true)/failure(false)

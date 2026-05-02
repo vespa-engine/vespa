@@ -416,7 +416,7 @@ int FBench::Main(int argc, char* argv[]) {
             base64Decode = true;
             break;
         case 'x':
-            // consuming x for backwards compability. This turned on header benchmark data
+            // consuming x for backwards compatibility. This turned on header benchmark data
             // but this is now always on.
             break;
         case 'y':

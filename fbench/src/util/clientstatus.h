@@ -13,7 +13,7 @@
  **/
 struct ClientStatus {
     /**
-     * Indicates wether a fatal error has occurred.
+     * Indicates whether a fatal error has occurred.
      **/
     bool _error;
 
