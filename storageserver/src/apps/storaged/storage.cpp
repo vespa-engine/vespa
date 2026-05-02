@@ -12,20 +12,24 @@
  */
 
 #include "forcelink.h"
+
 #include <vespa/persistence/spi/exceptions.h>
 #include <vespa/storageserver/app/distributorprocess.h>
 #include <vespa/storageserver/app/dummyservicelayerprocess.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/programoptions.h>
 #include <vespa/vespalib/util/shutdownguard.h>
-#include <vespa/vespalib/util/exceptions.h>
-#include <vespa/config/helper/configgetter.hpp>
 #include <vespa/vespalib/util/signalhandler.h>
-#include <google/protobuf/message_lite.h>
+
+#include <vespa/config/helper/configgetter.hpp>
+
 #include <absl/debugging/failure_signal_handler.h>
 #include <absl/debugging/symbolize.h>
-#include <iostream>
+#include <google/protobuf/message_lite.h>
+
 #include <csignal>
 #include <cstdlib>
+#include <iostream>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vds.application");
@@ -37,23 +41,25 @@ namespace {
 
 Process::UP createProcess(std::string_view configId) {
     // FIXME: Rewrite parameter to config uri and pass when all subsequent configs are converted.
-    config::ConfigUri uri(configId);
-    std::unique_ptr<vespa::config::content::core::StorServerConfig> serverConfig = config::ConfigGetter<vespa::config::content::core::StorServerConfig>::getConfig(uri.getConfigId(), uri.getContext());
+    config::ConfigUri                                               uri(configId);
+    std::unique_ptr<vespa::config::content::core::StorServerConfig> serverConfig =
+        config::ConfigGetter<vespa::config::content::core::StorServerConfig>::getConfig(uri.getConfigId(),
+                                                                                        uri.getContext());
     if (serverConfig->isDistributor) {
         return std::make_unique<DistributorProcess>(uri);
-    } else switch (serverConfig->persistenceProvider.type) {
+    } else
+        switch (serverConfig->persistenceProvider.type) {
         case vespa::config::content::core::StorServerConfig::PersistenceProvider::Type::STORAGE:
         case vespa::config::content::core::StorServerConfig::PersistenceProvider::Type::DUMMY:
             return std::make_unique<DummyServiceLayerProcess>(uri);
         default:
             throw vespalib::IllegalStateException("Unknown persistence provider.", VESPA_STRLOC);
-    }
+        }
 }
 
 } // End of anonymous namespace
 
-class StorageApp : private vespalib::ProgramOptions
-{
+class StorageApp : private vespalib::ProgramOptions {
     std::string             _configId;
     bool                    _showSyntax;
     uint32_t                _maxShutdownTime;
@@ -71,39 +77,35 @@ public:
         _signalCond.notify_one();
     }
     void handleSignals();
-    int main(int argc, char **argv);
+    int main(int argc, char** argv);
 
 private:
     vespalib::duration getMaxShutDownTime() { return std::chrono::milliseconds(_maxShutdownTime); }
-    bool init(int argc, char **argv);
+    bool init(int argc, char** argv);
     bool gotSignal() { return _lastSignal != 0; }
 };
 
-StorageApp::StorageApp()
-    : _showSyntax(false), _maxShutdownTime(120000), _lastSignal(0), _signalLock()
-{
-    setSyntaxMessage(
-        "This is the main daemon used to start the storage nodes. The same "
-        "actual binary is used for both storage and distributor nodes, but "
-        "it is duplicated when installing, such that one can hotfix a "
-        "distributor bug without restarting storage nodes.");
+StorageApp::StorageApp() : _showSyntax(false), _maxShutdownTime(120000), _lastSignal(0), _signalLock() {
+    setSyntaxMessage("This is the main daemon used to start the storage nodes. The same "
+                     "actual binary is used for both storage and distributor nodes, but "
+                     "it is duplicated when installing, such that one can hotfix a "
+                     "distributor bug without restarting storage nodes.");
     addOption("c config-id", _configId,
-        "The config identifier this storage node should use to request "
-        "config. This identifier specifies whether the binary will behave "
-        "as a storage or distributor, what cluster it belongs to, and the "
-        "index it has in the cluster.");
+              "The config identifier this storage node should use to request "
+              "config. This identifier specifies whether the binary will behave "
+              "as a storage or distributor, what cluster it belongs to, and the "
+              "index it has in the cluster.");
     addOption("h help", _showSyntax, false, "Show this syntax help page.");
     addOption("t maxshutdowntime", _maxShutdownTime, uint32_t(120000),
-        "Maximum amount of milliseconds we allow proper shutdown to run before "
-        "abruptly killing the process.");
+              "Maximum amount of milliseconds we allow proper shutdown to run before "
+              "abruptly killing the process.");
 }
 
 StorageApp::~StorageApp() = default;
 
-bool StorageApp::init(int argc, char **argv)
-{
+bool StorageApp::init(int argc, char** argv) {
     setCommandLineArguments(argc, argv);
-    try{
+    try {
         parse();
     } catch (vespalib::InvalidCommandLineArgumentsException& e) {
         std::cerr << e.getMessage() << "\n\n";
@@ -118,67 +120,68 @@ bool StorageApp::init(int argc, char **argv)
 }
 
 namespace {
-    storage::StorageApp *sigtramp = nullptr;
-    uint32_t _G_signalCount = 0;
+storage::StorageApp* sigtramp = nullptr;
+uint32_t             _G_signalCount = 0;
 
-    void killHandler(int sig) {
-        if (_G_signalCount == 0) {
-            _G_signalCount++;
-            if (sigtramp == nullptr) {
-                std::_Exit(EXIT_FAILURE);
-            }
-            // note: this is not totally safe, sigtramp is not protected by a lock
-            sigtramp->handleSignal(sig);
-        } else if (_G_signalCount > 2) {
-            fprintf(stderr, "Received another shutdown signal %u while "
-                    "shutdown in progress (count=%u)\n",
-                    sig, _G_signalCount);
+void killHandler(int sig) {
+    if (_G_signalCount == 0) {
+        _G_signalCount++;
+        if (sigtramp == nullptr) {
+            std::_Exit(EXIT_FAILURE);
         }
-    }
-
-    void setupKillHandler() {
-        struct sigaction usr_action;
-        sigset_t block_mask;
-
-        /* Establish the signal handler. */
-        sigfillset (&block_mask);
-        usr_action.sa_handler = killHandler;
-        usr_action.sa_mask = block_mask;
-        usr_action.sa_flags = 0;
-        sigaction (SIGTERM, &usr_action, nullptr);
-        sigaction (SIGINT, &usr_action, nullptr);
+        // note: this is not totally safe, sigtramp is not protected by a lock
+        sigtramp->handleSignal(sig);
+    } else if (_G_signalCount > 2) {
+        fprintf(stderr,
+                "Received another shutdown signal %u while "
+                "shutdown in progress (count=%u)\n",
+                sig, _G_signalCount);
     }
 }
 
-void StorageApp::handleSignals()
-{
+void setupKillHandler() {
+    struct sigaction usr_action;
+    sigset_t         block_mask;
+
+    /* Establish the signal handler. */
+    sigfillset(&block_mask);
+    usr_action.sa_handler = killHandler;
+    usr_action.sa_mask = block_mask;
+    usr_action.sa_flags = 0;
+    sigaction(SIGTERM, &usr_action, nullptr);
+    sigaction(SIGINT, &usr_action, nullptr);
+}
+} // namespace
+
+void StorageApp::handleSignals() {
     if (gotSignal()) {
         int signal = _lastSignal;
-        LOG(debug, "starting controlled shutdown of storage "
-                   "(received signal %d)", signal);
+        LOG(debug,
+            "starting controlled shutdown of storage "
+            "(received signal %d)",
+            signal);
         _process->getNode().requestShutdown("controlled shutdown");
     }
 }
 
-int StorageApp::main(int argc, char **argv)
-{
+int StorageApp::main(int argc, char** argv) {
     if (!init(argc, argv)) {
         return 255;
     }
-    try{
+    try {
         _process = createProcess(_configId);
         _process->setupConfig(600000ms);
         _process->createNode();
-    } catch (const spi::HandledException & e) {
+    } catch (const spi::HandledException& e) {
         LOG(warning, "Died due to known cause: %s", e.what());
         return 1;
-    } catch (const vespalib::NetworkSetupFailureException & e) {
+    } catch (const vespalib::NetworkSetupFailureException& e) {
         LOG(warning, "Network failure: '%s'", e.what());
         return 1;
-    } catch (const vespalib::IllegalStateException & e) {
+    } catch (const vespalib::IllegalStateException& e) {
         LOG(error, "Unknown IllegalStateException: '%s'", e.what());
         return 1;
-    } catch (const vespalib::Exception & e) {
+    } catch (const vespalib::Exception& e) {
         LOG(error, "Caught exception when starting: %s", e.what());
         return 1;
     }
@@ -212,9 +215,9 @@ int StorageApp::main(int argc, char **argv)
     return 0;
 }
 
-} // storage
+} // namespace storage
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     // See `App::setupSignals` in `searchcore/src/apps/proton/proton.cpp` for
     // parameter and handler ordering rationale for the Abseil integration.
     absl::InitializeSymbolizer(argv[0]);
@@ -228,7 +231,7 @@ int main(int argc, char **argv) {
 
     storage::StorageApp app;
     storage::sigtramp = &app;
-    int retval = app.main(argc,argv);
+    int retval = app.main(argc, argv);
     storage::sigtramp = nullptr;
     LOG(debug, "Exiting");
     return retval;
