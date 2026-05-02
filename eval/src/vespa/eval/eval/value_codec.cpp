@@ -294,7 +294,6 @@ struct ContentEncoder {
     template <typename T> static void invoke(const Value& value, const EncodeState& state, nbostream& output) {
         SmallVector<string_id>  address(state.num_mapped_dims);
         SmallVector<string_id*> a_refs(state.num_mapped_dims);
-        ;
         for (size_t i = 0; i < state.num_mapped_dims; ++i) {
             a_refs[i] = &address[i];
         }

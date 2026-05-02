@@ -233,7 +233,6 @@ size_t DataSegment::infoThread(FILE* os, int level, uint32_t thread, SizeClassT 
         Aggregator                            agg;
         DumpGraph<typename CallGraphLT::Node> dump(&agg, "{ ", " }");
         callGraph->traverseDepth(dump);
-        ;
         asciistream ost;
         ost << agg;
         fprintf(os, "%s\n", ost.c_str());

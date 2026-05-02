@@ -186,7 +186,6 @@ size_t ClockMONOTONIC::onRun() {
         end = nanoseconds(ts.tv_sec * 1000L * 1000L * 1000L + ts.tv_nsec);
     }
     return count_ns(start - end);
-    ;
 }
 
 ClockMONOTONIC_RAW::ClockMONOTONIC_RAW() {

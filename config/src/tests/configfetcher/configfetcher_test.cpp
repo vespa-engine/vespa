@@ -153,7 +153,6 @@ TEST(ConfigFetcherTest, verify_that_config_generation_can_be_obtained_from_confi
                 break;
             }
             std::this_thread::sleep_for(10ms);
-            ;
         }
         EXPECT_EQ(2, fetcher.getGeneration());
         EXPECT_EQ("bar", cb._config.get()->myField);
