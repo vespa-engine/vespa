@@ -1,12 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/fastos/file.h>
-#include <iomanip>
-#include <iostream>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/signalhandler.h>
+
 #include <unistd.h>
+
+#include <iomanip>
+#include <iostream>
+
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-fileheader-inspect");
 
@@ -18,32 +21,27 @@ private:
     char        _delimiter;
     bool        _quiet;
 
-    int parseOpts(int argc, char **argv);
-    void usage(const char *self);
-    void printQuiet(FileHeader &header);
-    void printVerbose(FileHeader &header);
-    std::string escape(const std::string &str, char quote = '\0');
-    std::string getTypeString(const FileHeader::Tag &tag);
-    std::string getValueString(const FileHeader::Tag &tag);
+    int parseOpts(int argc, char** argv);
+    void usage(const char* self);
+    void printQuiet(FileHeader& header);
+    void printVerbose(FileHeader& header);
+    std::string escape(const std::string& str, char quote = '\0');
+    std::string getTypeString(const FileHeader::Tag& tag);
+    std::string getValueString(const FileHeader::Tag& tag);
 
 public:
     Application();
     ~Application();
-    int main(int argc, char **argv);
+    int main(int argc, char** argv);
 };
 
-Application::Application() :
-    _fileName(""),
-    _delimiter(';'),
-    _quiet(false)
-{ }
+Application::Application() : _fileName(""), _delimiter(';'), _quiet(false) {
+}
 
-Application::~Application() {}
+Application::~Application() {
+}
 
-
-void
-Application::usage(const char *self)
-{
+void Application::usage(const char* self) {
     printf("Tool for inspecting the headers of files used by Vespa.\n");
     printf("Usage: %s [options] filename\n", self);
     printf("\n");
@@ -54,10 +52,7 @@ Application::usage(const char *self)
     printf("-h             Shows this help page.\n");
 }
 
-
-int
-Application::parseOpts(int argc, char **argv)
-{
+int Application::parseOpts(int argc, char** argv) {
     int c = '?';
     while ((c = getopt(argc, argv, "d:f:qh")) != -1) {
         switch (c) {
@@ -88,9 +83,7 @@ Application::parseOpts(int argc, char **argv)
     return ~(EXIT_SUCCESS | EXIT_FAILURE);
 }
 
-int
-Application::main(int argc, char **argv)
-{
+int Application::main(int argc, char** argv) {
     int ret = parseOpts(argc, argv);
     if (ret == EXIT_FAILURE || ret == EXIT_SUCCESS) {
         return ret;
@@ -105,7 +98,7 @@ Application::main(int argc, char **argv)
     FileHeader header;
     try {
         header.readFile(file);
-    } catch (IllegalHeaderException &e) {
+    } catch (IllegalHeaderException& e) {
         std::cerr << e.getMessage() << std::endl;
         return EXIT_FAILURE;
     }
@@ -118,42 +111,35 @@ Application::main(int argc, char **argv)
     return EXIT_SUCCESS;
 }
 
-void
-Application::printQuiet(FileHeader &header)
-{
+void Application::printQuiet(FileHeader& header) {
     for (uint32_t i = 0, len = header.getNumTags(); i < len; ++i) {
-        const FileHeader::Tag &tag = header.getTag(i);
-        std::cout << escape(tag.getName(), _delimiter) << _delimiter
-                  << escape(getTypeString(tag), _delimiter) << _delimiter
-                  << escape(getValueString(tag), _delimiter) << std::endl;
+        const FileHeader::Tag& tag = header.getTag(i);
+        std::cout << escape(tag.getName(), _delimiter) << _delimiter << escape(getTypeString(tag), _delimiter)
+                  << _delimiter << escape(getValueString(tag), _delimiter) << std::endl;
     }
 }
 
-void
-Application::printVerbose(FileHeader &header)
-{
+void Application::printVerbose(FileHeader& header) {
     uint32_t nameWidth = 3, typeWidth = 4, valueWidth = 5;
     for (uint32_t i = 0, len = header.getNumTags(); i < len; ++i) {
-        const FileHeader::Tag &tag = header.getTag(i);
+        const FileHeader::Tag& tag = header.getTag(i);
         nameWidth = std::max(nameWidth, (uint32_t)tag.getName().size());
         typeWidth = std::max(typeWidth, (uint32_t)getTypeString(tag).size());
         valueWidth = std::max(valueWidth, (uint32_t)getValueString(tag).size());
     }
 
     vespalib::asciistream line;
-    line << "+" << std::string(nameWidth + 2, '-')
-         << "+" << std::string(typeWidth + 2, '-')
-         << "+" << std::string(valueWidth + 2, '-')
-         << "+";
+    line << "+" << std::string(nameWidth + 2, '-') << "+" << std::string(typeWidth + 2, '-') << "+"
+         << std::string(valueWidth + 2, '-') << "+";
 
     std::cout << std::left << line.view() << std::endl;
     std::cout << "| " << std::setw(nameWidth) << "Tag" << " "
               << "| " << std::setw(typeWidth) << "Type" << " "
-              << "| " << std::setw(valueWidth)<< "Value" << " "
+              << "| " << std::setw(valueWidth) << "Value" << " "
               << "| " << std::endl;
     std::cout << line.view() << std::endl;
     for (uint32_t i = 0, len = header.getNumTags(); i < len; ++i) {
-        const FileHeader::Tag &tag = header.getTag(i);
+        const FileHeader::Tag& tag = header.getTag(i);
         std::cout << "| " << std::setw(nameWidth) << escape(tag.getName()) << " "
                   << "| " << std::setw(typeWidth) << getTypeString(tag) << " "
                   << "| " << std::setw(valueWidth) << escape(getValueString(tag)) << " "
@@ -162,9 +148,7 @@ Application::printVerbose(FileHeader &header)
     std::cout << line.view() << std::endl;
 }
 
-std::string
-Application::escape(const std::string &str, char quote)
-{
+std::string Application::escape(const std::string& str, char quote) {
     std::string ret = "";
     for (uint32_t i = 0, len = str.size(); i < len; ++i) {
         char c = str[i];
@@ -191,9 +175,7 @@ Application::escape(const std::string &str, char quote)
     return ret;
 }
 
-std::string
-Application::getTypeString(const FileHeader::Tag &tag)
-{
+std::string Application::getTypeString(const FileHeader::Tag& tag) {
     switch (tag.getType()) {
     case FileHeader::Tag::TYPE_FLOAT:
         return "float";
@@ -207,17 +189,13 @@ Application::getTypeString(const FileHeader::Tag &tag)
     }
 }
 
-std::string
-Application::getValueString(const FileHeader::Tag &tag)
-{
+std::string Application::getValueString(const FileHeader::Tag& tag) {
     vespalib::asciistream out;
     out << tag;
     return out.str();
 }
 
-int
-main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
     vespalib::SignalHandler::PIPE.ignore();
     Application app;
     return app.main(argc, argv);

@@ -1,31 +1,31 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-
+#include <vespa/document/annotation/spanlist.h>
+#include <vespa/document/annotation/spantree.h>
+#include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/repo/fixedtyperepo.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/searchlib/common/scheduletaskcallback.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/memoryindex/memory_index.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
+#include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/queryeval/fake_searchable.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
-#include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/test/index/mock_field_length_inspector.h>
-#include <vespa/document/annotation/spanlist.h>
-#include <vespa/document/annotation/spantree.h>
-#include <vespa/document/datatype/documenttype.h>
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/document/repo/newconfigbuilder.h>
-#include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/document/repo/fixedtyperepo.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/rand48.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
+
 #include <memory>
 
 #include <vespa/log/log.h>
@@ -46,12 +46,12 @@ using namespace search::memoryindex;
 using namespace search::queryeval;
 using search::ScheduleTaskCallback;
 using search::index::schema::DataType;
+using search::index::test::MockFieldLengthInspector;
 using search::query::Node;
 using search::query::SimplePhrase;
 using search::query::SimpleStringTerm;
-using search::index::test::MockFieldLengthInspector;
-using vespalib::IDestructorCallback;
 using vespalib::asciistream;
+using vespalib::IDestructorCallback;
 using vespalib::makeLambdaTask;
 
 namespace {
@@ -62,46 +62,35 @@ const std::string body("body");
 const std::string foo("foo");
 const std::string bar("bar");
 const std::string doc_type_name = "test";
-uint32_t docid_limit = 100; // needed for relative estimates
+uint32_t          docid_limit = 100; // needed for relative estimates
 
-Schema
-makeSchema()
-{
+Schema makeSchema() {
     Schema schema;
     schema.addIndexField(Schema::IndexField(title, DataType::STRING));
     schema.addIndexField(Schema::IndexField(body, DataType::STRING));
     return schema;
 }
 
-document::config::DocumenttypesConfig
-makeDocTypeRepoConfig()
-{
-    const int32_t doc_type_id = 787121340;
+document::config::DocumenttypesConfig makeDocTypeRepoConfig() {
+    const int32_t                                  doc_type_id = 787121340;
     document::new_config_builder::NewConfigBuilder builder;
-    auto& doc = builder.document(doc_type_name, doc_type_id);
-    doc.addField(title, builder.stringTypeRef())
-       .addField(body, builder.stringTypeRef());
+    auto&                                          doc = builder.document(doc_type_name, doc_type_id);
+    doc.addField(title, builder.stringTypeRef()).addField(body, builder.stringTypeRef());
     return builder.config();
 }
 
-
 bool isWordChar(char c) {
-    return ((c >= '0' && c <= '9') ||
-            (c >= 'A' && c <= 'Z') ||
-            (c >= 'a' && c <= 'z'));
+    return ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'));
 }
 
-
-void
-tokenizeStringFieldValue(const document::FixedTypeRepo & repo, StringFieldValue &field)
-{
-    auto spanList = std::make_unique<SpanList>();
-    SpanList *spans = spanList.get();
-    auto spanTree = std::make_unique<document::SpanTree>(SPANTREE_NAME, std::move(spanList));
-    const std::string &text = field.getValue();
-    uint32_t cur = 0;
-    int32_t start = 0;
-    bool inWord = false;
+void tokenizeStringFieldValue(const document::FixedTypeRepo& repo, StringFieldValue& field) {
+    auto               spanList = std::make_unique<SpanList>();
+    SpanList*          spans = spanList.get();
+    auto               spanTree = std::make_unique<document::SpanTree>(SPANTREE_NAME, std::move(spanList));
+    const std::string& text = field.getValue();
+    uint32_t           cur = 0;
+    int32_t            start = 0;
+    bool               inWord = false;
     for (cur = 0; cur < text.size(); ++cur) {
         char c = text[cur];
         bool isWc = isWordChar(c);
@@ -110,15 +99,13 @@ tokenizeStringFieldValue(const document::FixedTypeRepo & repo, StringFieldValue 
             start = cur;
         } else if (inWord && !isWc) {
             int32_t len = cur - start;
-            spanTree->annotate(spans->add(std::make_unique<Span>(start, len)),
-                               *AnnotationType::TERM);
+            spanTree->annotate(spans->add(std::make_unique<Span>(start, len)), *AnnotationType::TERM);
             inWord = false;
         }
     }
     if (inWord) {
         int32_t len = cur - start;
-        spanTree->annotate(spans->add(std::make_unique<Span>(start, len)),
-                           *AnnotationType::TERM);
+        spanTree->annotate(spans->add(std::make_unique<Span>(start, len)), *AnnotationType::TERM);
     }
     if (spanTree->numAnnotations() > 0u) {
         StringFieldValue::SpanTrees trees;
@@ -127,24 +114,20 @@ tokenizeStringFieldValue(const document::FixedTypeRepo & repo, StringFieldValue 
     }
 }
 
-
-void
-setFieldValue(Document &doc, std::string_view fieldName, std::string_view fieldString)
-{
+void setFieldValue(Document& doc, std::string_view fieldName, std::string_view fieldString) {
     std::unique_ptr<StringFieldValue> fieldValue = StringFieldValue::make(fieldString);
-    document::FixedTypeRepo repo(*doc.getRepo(), doc.getType());
+    document::FixedTypeRepo           repo(*doc.getRepo(), doc.getType());
     tokenizeStringFieldValue(repo, *fieldValue);
     doc.setFieldValue(doc.getField(fieldName), std::move(fieldValue));
 }
 
-Document::UP
-makeDoc(const DocumentTypeRepo &repo, uint32_t i, std::string_view titleString, std::string_view bodyString = "")
-{
+Document::UP makeDoc(const DocumentTypeRepo& repo, uint32_t i, std::string_view titleString,
+                     std::string_view bodyString = "") {
     asciistream idstr;
     idstr << "id:test:test:: " << i;
-    DocumentId id(idstr.view());
-    const DocumentType *docType = repo.getDocumentType(doc_type_name);
-    auto doc = std::make_unique<Document>(repo, *docType, id);
+    DocumentId          id(idstr.view());
+    const DocumentType* docType = repo.getDocumentType(doc_type_name);
+    auto                doc = std::make_unique<Document>(repo, *docType, id);
     if (!titleString.empty()) {
         setFieldValue(*doc, title, titleString);
     }
@@ -154,9 +137,7 @@ makeDoc(const DocumentTypeRepo &repo, uint32_t i, std::string_view titleString, 
     return doc;
 }
 
-Document::UP
-makeDoc(const DocumentTypeRepo &repo, uint32_t i)
-{
+Document::UP makeDoc(const DocumentTypeRepo& repo, uint32_t i) {
     asciistream titleStr;
     asciistream bodyStr;
     titleStr << i;
@@ -164,13 +145,12 @@ makeDoc(const DocumentTypeRepo &repo, uint32_t i)
     return makeDoc(repo, i, titleStr.view(), bodyStr.view());
 }
 
-
 SimpleStringTerm makeTerm(std::string_view term) {
     return SimpleStringTerm(std::string(term), "field", 0, search::query::Weight(0));
 }
 
-Node::UP makePhrase(const std::string &term1, const std::string &term2) {
-    auto * phrase = new SimplePhrase("field", 0, search::query::Weight(0));
+Node::UP makePhrase(const std::string& term1, const std::string& term2) {
+    auto*    phrase = new SimplePhrase("field", 0, search::query::Weight(0));
     Node::UP node(phrase);
     phrase->append(std::make_unique<SimpleStringTerm>(makeTerm(term1)));
     phrase->append(std::make_unique<SimpleStringTerm>(makeTerm(term2)));
@@ -179,55 +159,51 @@ Node::UP makePhrase(const std::string &term1, const std::string &term2) {
 
 class HoldDoc : public IDestructorCallback {
     std::unique_ptr<Document> _doc;
+
 public:
-    explicit HoldDoc(std::unique_ptr<Document> doc) noexcept
-        : _doc(std::move(doc))
-    {
-    }
+    explicit HoldDoc(std::unique_ptr<Document> doc) noexcept : _doc(std::move(doc)) {}
     ~HoldDoc() override = default;
 };
 
-}  // namespace
+} // namespace
 
 struct Fixture {
-    Schema       schema;
-    DocumentTypeRepo  repo;
-    vespalib::ThreadStackExecutor _executor;
+    Schema                                            schema;
+    DocumentTypeRepo                                  repo;
+    vespalib::ThreadStackExecutor                     _executor;
     std::unique_ptr<vespalib::ISequencedTaskExecutor> _invertThreads;
     std::unique_ptr<vespalib::ISequencedTaskExecutor> _pushThreads;
-    MemoryIndex  index;
-    uint32_t _readThreads;
-    vespalib::ThreadStackExecutor _writer; // 1 write thread
-    vespalib::ThreadStackExecutor _readers; // multiple reader threads
-    vespalib::Rand48 _rnd;
-    uint32_t _keyLimit;
-    std::atomic<long> _readSeed;
-    std::atomic<long> _doneWriteWork;
-    std::atomic<long> _doneReadWork;
-    std::atomic<long> _emptyCount;
-    std::atomic<long> _nonEmptyCount;
-    std::atomic<int> _stopRead;
-    bool _reportWork;
+    MemoryIndex                                       index;
+    uint32_t                                          _readThreads;
+    vespalib::ThreadStackExecutor                     _writer;  // 1 write thread
+    vespalib::ThreadStackExecutor                     _readers; // multiple reader threads
+    vespalib::Rand48                                  _rnd;
+    uint32_t                                          _keyLimit;
+    std::atomic<long>                                 _readSeed;
+    std::atomic<long>                                 _doneWriteWork;
+    std::atomic<long>                                 _doneReadWork;
+    std::atomic<long>                                 _emptyCount;
+    std::atomic<long>                                 _nonEmptyCount;
+    std::atomic<int>                                  _stopRead;
+    bool                                              _reportWork;
 
     explicit Fixture(uint32_t readThreads = 1);
-    Fixture(const Fixture &index) = delete;
-    Fixture(Fixture &&index) = delete;
-    Fixture &operator=(const Fixture &index) = delete;
-    Fixture &operator=(Fixture &&index) = delete;
+    Fixture(const Fixture& index) = delete;
+    Fixture(Fixture&& index) = delete;
+    Fixture& operator=(const Fixture& index) = delete;
+    Fixture& operator=(Fixture&& index) = delete;
     ~Fixture();
 
     void internalSyncCommit() {
         vespalib::Gate gate;
-        index.commit(std::make_shared<ScheduleTaskCallback>
-                     (_executor,
-                      makeLambdaTask([&]() { gate.countDown(); })));
+        index.commit(std::make_shared<ScheduleTaskCallback>(_executor, makeLambdaTask([&]() { gate.countDown(); })));
         gate.await();
     }
     void put(uint32_t id, Document::UP doc) {
         auto& docref = *doc;
         index.insertDocument(id, docref, std::make_shared<HoldDoc>(std::move(doc)));
     }
-     void remove(uint32_t id) {
+    void remove(uint32_t id) {
         std::vector<uint32_t> lids;
         lids.push_back(id);
         index.removeDocuments(std::move(lids));
@@ -261,35 +237,27 @@ Fixture::Fixture(uint32_t readThreads)
       _emptyCount(0),
       _nonEmptyCount(0),
       _stopRead(0),
-      _reportWork(false)
-{
+      _reportWork(false) {
     _rnd.srand48(32);
 }
 
-
-Fixture::~Fixture()
-{
+Fixture::~Fixture() {
     _readers.sync();
     _readers.shutdown();
     _writer.sync();
     _writer.shutdown();
     if (_reportWork) {
-        LOG(info,
-            "readWork=%ld, writeWork=%ld, emptyCount=%ld, nonemptyCount=%ld",
-            _doneReadWork.load(), _doneWriteWork.load(),
-            _emptyCount.load(), _nonEmptyCount.load());
+        LOG(info, "readWork=%ld, writeWork=%ld, emptyCount=%ld, nonemptyCount=%ld", _doneReadWork.load(),
+            _doneWriteWork.load(), _emptyCount.load(), _nonEmptyCount.load());
     }
 }
 
-
-void
-Fixture::readWork(uint32_t cnt)
-{
+void Fixture::readWork(uint32_t cnt) {
     vespalib::Rand48 rnd;
     rnd.srand48(++_readSeed);
-    uint32_t i;
-    uint32_t emptyCount = 0;
-    uint32_t nonEmptyCount = 0;
+    uint32_t    i;
+    uint32_t    emptyCount = 0;
+    uint32_t    nonEmptyCount = 0;
     std::string fieldName = "title";
 
     for (i = 0; i < cnt && _stopRead.load() == 0; ++i) {
@@ -300,13 +268,13 @@ Fixture::readWork(uint32_t cnt)
 
         SimpleStringTerm term = makeTerm(keyStr.view());
 
-        uint32_t fieldId = 0;
+        uint32_t           fieldId = 0;
         FakeRequestContext requestContext;
 
         MatchDataLayout mdl;
         TermFieldHandle handle = mdl.allocTermField(fieldId);
 
-        FieldSpec field(fieldName, fieldId, handle);
+        FieldSpec     field(fieldName, fieldId, handle);
         FieldSpecList fields;
         fields.add(field);
         auto result = index.createBlueprint(requestContext, fields, term, mdl);
@@ -322,7 +290,7 @@ Fixture::readWork(uint32_t cnt)
             ++nonEmptyCount;
         }
         result->fetchPostings(ExecuteInfo::FULL);
-        MatchData::UP match_data = mdl.createMatchData();
+        MatchData::UP      match_data = mdl.createMatchData();
         SearchIterator::UP search = result->createSearch(*match_data);
         EXPECT_TRUE(search) << (failed = true, "Did not get search iterator");
         if (failed) {
@@ -335,18 +303,12 @@ Fixture::readWork(uint32_t cnt)
     LOG(info, "done %u read work", i);
 }
 
-
-void
-Fixture::readWork()
-{
+void Fixture::readWork() {
     readWork(std::numeric_limits<uint32_t>::max());
 }
 
-
-void
-Fixture::writeWork(uint32_t cnt)
-{
-    vespalib::Rand48 &rnd(_rnd);
+void Fixture::writeWork(uint32_t cnt) {
+    vespalib::Rand48& rnd(_rnd);
     for (uint32_t i = 0; i < cnt; ++i) {
         uint32_t key = rnd.lrand48() % _keyLimit;
         if ((rnd.lrand48() & 1) == 0) {
@@ -361,30 +323,24 @@ Fixture::writeWork(uint32_t cnt)
     LOG(info, "done %u write work", cnt);
 }
 
-
-void
-Fixture::stressTest(uint32_t writeCnt)
-{
+void Fixture::stressTest(uint32_t writeCnt) {
     _reportWork = true;
     uint32_t readThreads = getReadThreads();
-    LOG(info,
-        "starting stress test, 1 write thread, %u read threads, %u writes",
-        readThreads, writeCnt);
+    LOG(info, "starting stress test, 1 write thread, %u read threads, %u writes", readThreads, writeCnt);
     _writer.execute(makeLambdaTask([this, writeCnt]() { writeWork(writeCnt); }));
     for (uint32_t i = 0; i < readThreads; ++i) {
         _readers.execute(makeLambdaTask([this]() { readWork(); }));
     }
 }
 
-
 //-----------------------------------------------------------------------------
 
-std::string toString(SearchIterator & search)
-{
+std::string toString(SearchIterator& search) {
     std::ostringstream oss;
-    bool first = true;
-    for (search.seek(1); ! search.isAtEnd(); search.seek(search.getDocId() + 1)) {
-        if (!first) oss << ",";
+    bool               first = true;
+    for (search.seek(1); !search.isAtEnd(); search.seek(search.getDocId() + 1)) {
+        if (!first)
+            oss << ",";
         oss << search.getDocId();
         first = false;
     }
@@ -393,16 +349,14 @@ std::string toString(SearchIterator & search)
 
 //-----------------------------------------------------------------------------
 
-bool
-verifyResult(const FakeResult &expect, Searchable &index, std::string fieldName, const Node &term)
-{
-    uint32_t fieldId = 0;
+bool verifyResult(const FakeResult& expect, Searchable& index, std::string fieldName, const Node& term) {
+    uint32_t           fieldId = 0;
     FakeRequestContext requestContext;
 
     MatchDataLayout mdl;
     TermFieldHandle handle = mdl.allocTermField(fieldId);
 
-    FieldSpec field(fieldName, fieldId, handle);
+    FieldSpec     field(fieldName, fieldId, handle);
     FieldSpecList fields;
     fields.add(field);
 
@@ -417,13 +371,13 @@ verifyResult(const FakeResult &expect, Searchable &index, std::string fieldName,
     EXPECT_EQ(expect.inspect().empty(), result->getState().estimate().empty);
 
     result->fetchPostings(ExecuteInfo::FULL);
-    MatchData::UP match_data = mdl.createMatchData();
+    MatchData::UP      match_data = mdl.createMatchData();
     SearchIterator::UP search = result->createSearch(*match_data);
     EXPECT_TRUE(search) << (failed = true, "");
-    if (failed){
+    if (failed) {
         return false;
     }
-    TermFieldMatchData &tmd = *match_data->resolveTermField(handle);
+    TermFieldMatchData& tmd = *match_data->resolveTermField(handle);
 
     FakeResult actual;
     search->initFullRange();
@@ -443,8 +397,7 @@ verifyResult(const FakeResult &expect, Searchable &index, std::string fieldName,
 
 // tests basic usage; index some documents in docid order and perform
 // some searches.
-TEST(MemoryIndexStressTest, testIndexAndSearch)
-{
+TEST(MemoryIndexStressTest, testIndexAndSearch) {
     Fixture f;
     f.put(1, makeDoc(f.repo, 1, "foo bar foo", "foo foo foo"));
     f.internalSyncCommit();
@@ -452,47 +405,32 @@ TEST(MemoryIndexStressTest, testIndexAndSearch)
     f.internalSyncCommit();
 
     // search for "foo" in "title"
-    EXPECT_TRUE(verifyResult(FakeResult()
-                            .doc(1).len(3).pos(0).pos(2)
-                            .doc(2).len(2).pos(1),
-                             f.index, title, makeTerm(foo)));
+    EXPECT_TRUE(
+        verifyResult(FakeResult().doc(1).len(3).pos(0).pos(2).doc(2).len(2).pos(1), f.index, title, makeTerm(foo)));
 
     // search for "bar" in "title"
-    EXPECT_TRUE(verifyResult(FakeResult()
-                            .doc(1).len(3).pos(1)
-                            .doc(2).len(2).pos(0),
-                            f.index, title, makeTerm(bar)));
+    EXPECT_TRUE(verifyResult(FakeResult().doc(1).len(3).pos(1).doc(2).len(2).pos(0), f.index, title, makeTerm(bar)));
 
     // search for "foo" in "body"
-    EXPECT_TRUE(verifyResult(FakeResult()
-                            .doc(1).len(3).pos(0).pos(1).pos(2),
-                             f.index, body, makeTerm(foo)));
+    EXPECT_TRUE(verifyResult(FakeResult().doc(1).len(3).pos(0).pos(1).pos(2), f.index, body, makeTerm(foo)));
 
     // search for "bar" in "body"
-    EXPECT_TRUE(verifyResult(FakeResult()
-                            .doc(2).len(4).pos(0).pos(1).pos(2).pos(3),
-                             f.index, body, makeTerm(bar)));
+    EXPECT_TRUE(verifyResult(FakeResult().doc(2).len(4).pos(0).pos(1).pos(2).pos(3), f.index, body, makeTerm(bar)));
 
     // search for "bogus" in "title"
-    EXPECT_TRUE(verifyResult(FakeResult(),
-                            f.index, title, makeTerm("bogus")));
+    EXPECT_TRUE(verifyResult(FakeResult(), f.index, title, makeTerm("bogus")));
 
     // search for "foo" in "bogus"
-    EXPECT_TRUE(verifyResult(FakeResult(),
-                            f.index, "bogus", makeTerm(foo)));
+    EXPECT_TRUE(verifyResult(FakeResult(), f.index, "bogus", makeTerm(foo)));
 
     // search for "bar foo" in "title"
-    EXPECT_TRUE(verifyResult(FakeResult()
-                             .doc(1).len(3).pos(1)
-                             .doc(2).len(2).pos(0),
-                             f.index, title, *makePhrase(bar, foo)));
-
+    EXPECT_TRUE(
+        verifyResult(FakeResult().doc(1).len(3).pos(1).doc(2).len(2).pos(0), f.index, title, *makePhrase(bar, foo)));
 }
 
 // tests index update behavior; remove/update and unordered docid
 // indexing.
-TEST(MemoryIndexStressTest, require_that_documents_can_be_removed_and_updated)
-{
+TEST(MemoryIndexStressTest, require_that_documents_can_be_removed_and_updated) {
     Fixture f;
     // add unordered
     f.put(3, makeDoc(f.repo, 3, "foo foo foo"));
@@ -502,40 +440,31 @@ TEST(MemoryIndexStressTest, require_that_documents_can_be_removed_and_updated)
     f.put(2, makeDoc(f.repo, 2, "foo foo"));
     f.internalSyncCommit();
 
-    EXPECT_TRUE(verifyResult(FakeResult()
-                            .doc(1).len(1).pos(0)
-                            .doc(2).len(2).pos(0).pos(1)
-                            .doc(3).len(3).pos(0).pos(1).pos(2),
-                             f.index, title, makeTerm(foo)));
+    EXPECT_TRUE(
+        verifyResult(FakeResult().doc(1).len(1).pos(0).doc(2).len(2).pos(0).pos(1).doc(3).len(3).pos(0).pos(1).pos(2),
+                     f.index, title, makeTerm(foo)));
 
     // remove document
     f.remove(2);
     f.internalSyncCommit();
 
-    EXPECT_TRUE(verifyResult(FakeResult()
-                            .doc(1).len(1).pos(0)
-                            .doc(3).len(3).pos(0).pos(1).pos(2),
-                            f.index, title, makeTerm(foo)));
+    EXPECT_TRUE(verifyResult(FakeResult().doc(1).len(1).pos(0).doc(3).len(3).pos(0).pos(1).pos(2), f.index, title,
+                             makeTerm(foo)));
 
     // update document
     f.put(1, makeDoc(f.repo, 1, "bar foo foo"));
     f.internalSyncCommit();
 
-    EXPECT_TRUE(verifyResult(FakeResult()
-                            .doc(1).len(3).pos(1).pos(2)
-                            .doc(3).len(3).pos(0).pos(1).pos(2),
-                             f.index, title, makeTerm(foo)));
+    EXPECT_TRUE(verifyResult(FakeResult().doc(1).len(3).pos(1).pos(2).doc(3).len(3).pos(0).pos(1).pos(2), f.index,
+                             title, makeTerm(foo)));
 }
 
-
-TEST(MemoryIndexStressTest, stress_test_4_readers)
-{
+TEST(MemoryIndexStressTest, stress_test_4_readers) {
     Fixture f(4);
     f.stressTest(1000000);
 }
 
-TEST(MemoryIndexStressTest, stress_test_128_readers)
-{
+TEST(MemoryIndexStressTest, stress_test_128_readers) {
     Fixture f(128);
     f.stressTest(1000000);
 }
