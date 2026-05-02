@@ -1,47 +1,43 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <iostream>
-#include <vespa/searchlib/attribute/attribute.h>
-#include <vespa/searchlib/attribute/attributeguard.h>
-#include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchcommon/attribute/config.h>
-#include <vespa/vespalib/data/fileheader.h>
-#include <fstream>
-
 #include <vespa/fastlib/io/bufferedfile.h>
+#include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchlib/attribute/attribute.h>
+#include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/attribute/attributeguard.h>
+#include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/util/signalhandler.h>
+
 #include <unistd.h>
+
+#include <fstream>
+#include <iostream>
 
 namespace search {
 
 using AttributePtr = AttributeVector::SP;
 
-class LoadAttribute
-{
+class LoadAttribute {
 private:
-    void load(const AttributePtr & ptr);
-    void applyUpdate(const AttributePtr & ptr);
-    void printContent(const AttributePtr & ptr, std::ostream & os);
+    void load(const AttributePtr& ptr);
+    void applyUpdate(const AttributePtr& ptr);
+    void printContent(const AttributePtr& ptr, std::ostream& os);
     void usage();
 
 public:
-    int main(int argc, char **argv);
+    int main(int argc, char** argv);
 };
 
-void
-LoadAttribute::load(const AttributePtr & ptr)
-{
+void LoadAttribute::load(const AttributePtr& ptr) {
     std::cout << "loading attribute: " << ptr->getBaseFileName() << std::endl;
     ptr->load();
-    std::cout << "attribute successfully loaded"  << std::endl;
+    std::cout << "attribute successfully loaded" << std::endl;
 }
 
-void
-LoadAttribute::applyUpdate(const AttributePtr & ptr)
-{
+void LoadAttribute::applyUpdate(const AttributePtr& ptr) {
     std::cout << "applyUpdate" << std::endl;
     if (ptr->isIntegerType()) {
-        IntegerAttribute * a = static_cast<IntegerAttribute *>(ptr.get());
+        IntegerAttribute* a = static_cast<IntegerAttribute*>(ptr.get());
         if (ptr->hasMultiValue()) {
             a->append(0, 123456789, 1);
         } else {
@@ -49,7 +45,7 @@ LoadAttribute::applyUpdate(const AttributePtr & ptr)
         }
         a->commit();
     } else if (ptr->isFloatingPointType()) {
-        FloatingPointAttribute * a = static_cast<FloatingPointAttribute *>(ptr.get());
+        FloatingPointAttribute* a = static_cast<FloatingPointAttribute*>(ptr.get());
         if (ptr->hasMultiValue()) {
             a->append(0, 123456789.5f, 1);
         } else {
@@ -57,7 +53,7 @@ LoadAttribute::applyUpdate(const AttributePtr & ptr)
         }
         a->commit();
     } else if (ptr->isStringType()) {
-        StringAttribute * a = static_cast<StringAttribute *>(ptr.get());
+        StringAttribute* a = static_cast<StringAttribute*>(ptr.get());
         if (ptr->hasMultiValue()) {
             a->append(0, "non-existing string value", 1);
         } else {
@@ -67,23 +63,22 @@ LoadAttribute::applyUpdate(const AttributePtr & ptr)
     }
 }
 
-void
-LoadAttribute::printContent(const AttributePtr & ptr, std::ostream & os)
-{
+void LoadAttribute::printContent(const AttributePtr& ptr, std::ostream& os) {
     uint32_t sz = ptr->getMaxValueCount();
     if (ptr->hasWeightedSetType()) {
-        AttributeVector::WeightedString * buf = new AttributeVector::WeightedString[sz];
+        AttributeVector::WeightedString* buf = new AttributeVector::WeightedString[sz];
         for (uint32_t doc = 0; doc < ptr->getNumDocs(); ++doc) {
             uint32_t valueCount = ptr->get(doc, buf, sz);
             assert(valueCount <= sz);
             os << "doc " << doc << ": valueCount(" << valueCount << ")" << std::endl;
             for (uint32_t i = 0; i < valueCount; ++i) {
-                os << "    " << i << ": " << "[" << buf[i].getValue() << ", " << buf[i].getWeight() << "]" << std::endl;
+                os << "    " << i << ": " << "[" << buf[i].getValue() << ", " << buf[i].getWeight() << "]"
+                   << std::endl;
             }
         }
-        delete [] buf;
+        delete[] buf;
     } else {
-        std::string *buf = new std::string[ptr->getMaxValueCount()];
+        std::string* buf = new std::string[ptr->getMaxValueCount()];
         for (uint32_t doc = 0; doc < ptr->getNumDocs(); ++doc) {
             uint32_t valueCount = ptr->get(doc, buf, sz);
             assert(valueCount <= sz);
@@ -92,28 +87,24 @@ LoadAttribute::printContent(const AttributePtr & ptr, std::ostream & os)
                 os << "    " << i << ": " << "[" << buf[i] << "]" << std::endl;
             }
         }
-        delete [] buf;
+        delete[] buf;
     }
 }
 
-void
-LoadAttribute::usage()
-{
+void LoadAttribute::usage() {
     std::cout << "usage: vespa-attribute-inspect [-p (print content to <attribute>.out)]" << std::endl;
     std::cout << "                     [-a (apply a single update)]" << std::endl;
     std::cout << "                     [-s (save attribute to <attribute>.save.dat)]" << std::endl;
     std::cout << "                     <attribute>" << std::endl;
 }
 
-int
-LoadAttribute::main(int argc, char **argv)
-{
+int LoadAttribute::main(int argc, char** argv) {
     bool doPrintContent = false;
     bool doApplyUpdate = false;
     bool doSave = false;
     bool doFastSearch = false;
 
-    int opt;
+    int  opt;
     bool optError = false;
     while ((opt = getopt(argc, argv, "pasf:")) != -1) {
         switch (opt) {
@@ -127,8 +118,7 @@ LoadAttribute::main(int argc, char **argv)
             if (strcmp(optarg, "search") == 0) {
                 doFastSearch = true;
             } else {
-                std::cerr << "Expected 'search' or 'aggregate', got '" <<
-                    optarg << "'" << std::endl;
+                std::cerr << "Expected 'search' or 'aggregate', got '" << optarg << "'" << std::endl;
                 optError = true;
             }
             break;
@@ -146,19 +136,19 @@ LoadAttribute::main(int argc, char **argv)
         return -1;
     }
 
-    std::string fileName(argv[optind]);
+    std::string          fileName(argv[optind]);
     vespalib::FileHeader fh;
     {
-        std::string datFileName(fileName + ".dat");
+        std::string       datFileName(fileName + ".dat");
         Fast_BufferedFile file;
         file.ReadOpenExisting(datFileName.c_str());
-        (void) fh.readFile(file);
+        (void)fh.readFile(file);
     }
-    attribute::BasicType bt(fh.getTag("datatype").asString());
+    attribute::BasicType      bt(fh.getTag("datatype").asString());
     attribute::CollectionType ct(fh.getTag("collectiontype").asString());
-    attribute::Config c(bt, ct);
+    attribute::Config         c(bt, ct);
     c.setFastSearch(doFastSearch);
-    AttributePtr ptr = AttributeFactory::createAttribute(fileName, c);
+    AttributePtr    ptr = AttributeFactory::createAttribute(fileName, c);
     vespalib::Timer timer;
     load(ptr);
     std::cout << "load time: " << vespalib::to_s(timer.elapsed()) << " seconds " << std::endl;
@@ -172,7 +162,7 @@ LoadAttribute::main(int argc, char **argv)
     }
 
     if (doPrintContent) {
-        std::string outFile(fileName + ".out");
+        std::string   outFile(fileName + ".out");
         std::ofstream of(outFile.c_str());
         if (of.fail()) {
             std::cout << "failed opening: " << fileName << ".out" << std::endl;
@@ -193,9 +183,9 @@ LoadAttribute::main(int argc, char **argv)
     return 0;
 }
 
-}
+} // namespace search
 
-int main(int argc, char ** argv) {
+int main(int argc, char** argv) {
     vespalib::SignalHandler::PIPE.ignore();
     search::LoadAttribute myApp;
     return myApp.main(argc, argv);

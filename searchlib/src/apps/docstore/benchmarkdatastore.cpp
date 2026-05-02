@@ -5,10 +5,12 @@
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
-#include <vespa/vespalib/util/signalhandler.h>
+
 #include <unistd.h>
+
 #include <random>
 
 #include <vespa/log/log.h>
@@ -16,31 +18,26 @@ LOG_SETUP("documentstore.benchmark");
 
 using namespace search;
 
-class BenchmarkDataStoreApp
-{
-    void usage(const char *self);
-    int benchmark(const std::string & directory, size_t numReads, size_t numThreads, size_t perChunk, const std::string & readType);
-    void read(size_t numReads, size_t perChunk, const IDataStore * dataStore);
+class BenchmarkDataStoreApp {
+    void usage(const char* self);
+    int benchmark(const std::string& directory, size_t numReads, size_t numThreads, size_t perChunk,
+                  const std::string& readType);
+    void read(size_t numReads, size_t perChunk, const IDataStore* dataStore);
+
 public:
-    int main(int argc, char **argv);
+    int main(int argc, char** argv);
 };
 
-
-
-void
-BenchmarkDataStoreApp::usage(const char *self)
-{
+void BenchmarkDataStoreApp::usage(const char* self) {
     printf("Usage: %s <direcory> <numreads> <numthreads> <objects per read> <normal,directio,mmap>\n", self);
     fflush(stdout);
 }
 
-int
-BenchmarkDataStoreApp::main(int argc, char **argv)
-{
+int BenchmarkDataStoreApp::main(int argc, char** argv) {
     if (argc >= 2) {
-        size_t numThreads(16);
-        size_t numReads(1000000);
-        size_t perChunk(1);
+        size_t      numThreads(16);
+        size_t      numReads(1000000);
+        size_t      perChunk(1);
         std::string readType("directio");
         std::string directory(argv[1]);
         if (argc >= 3) {
@@ -64,31 +61,29 @@ BenchmarkDataStoreApp::main(int argc, char **argv)
     return 0;
 }
 
-void BenchmarkDataStoreApp::read(size_t numReads, size_t perChunk, const IDataStore * dataStore)
-{
+void BenchmarkDataStoreApp::read(size_t numReads, size_t perChunk, const IDataStore* dataStore) {
     vespalib::DataBuffer buf;
-    std::minstd_rand rng;
-    const size_t docIdLimit(dataStore->getDocIdLimit());
+    std::minstd_rand     rng;
+    const size_t         docIdLimit(dataStore->getDocIdLimit());
     assert(docIdLimit > 0);
     rng.seed(getpid());
     int32_t rnd(0);
-    for ( size_t i(0); i < numReads; i++) {
+    for (size_t i(0); i < numReads; i++) {
         rnd = rng();
-        uint32_t lid(rnd%docIdLimit);
-        for (uint32_t j(lid); j < std::min(docIdLimit, lid+perChunk); j++) {
+        uint32_t lid(rnd % docIdLimit);
+        for (uint32_t j(lid); j < std::min(docIdLimit, lid + perChunk); j++) {
             dataStore->read(j, buf);
             buf.clear();
         }
     }
 }
 
-int
-BenchmarkDataStoreApp::benchmark(const std::string & dir, size_t numReads, size_t numThreads, size_t perChunk, const std::string & readType)
-{
-    int retval(0);
+int BenchmarkDataStoreApp::benchmark(const std::string& dir, size_t numReads, size_t numThreads, size_t perChunk,
+                                     const std::string& readType) {
+    int                  retval(0);
     LogDataStore::Config config;
-    GrowStrategy growStrategy;
-    TuneFileSummary tuning;
+    GrowStrategy         growStrategy;
+    TuneFileSummary      tuning;
     if (readType == "directio") {
         tuning._randRead.setWantDirectIO();
     } else if (readType == "normal") {
@@ -97,22 +92,22 @@ BenchmarkDataStoreApp::benchmark(const std::string & dir, size_t numReads, size_
         tuning._randRead.setWantMemoryMap();
     }
     search::index::DummyFileHeaderContext fileHeaderContext;
-    vespalib::ThreadStackExecutor executor(1);
-    transactionlog::NoSyncProxy noTlSyncer;
-    LogDataStore store(executor, dir, config, growStrategy, tuning,
-                       fileHeaderContext,
-                       noTlSyncer, nullptr, true);
+    vespalib::ThreadStackExecutor         executor(1);
+    transactionlog::NoSyncProxy           noTlSyncer;
+    LogDataStore store(executor, dir, config, growStrategy, tuning, fileHeaderContext, noTlSyncer, nullptr, true);
     vespalib::ThreadStackExecutor bmPool(numThreads);
-    LOG(info, "Start read benchmark with %lu threads doing %lu reads in chunks of %lu reads. Totally %lu objects", numThreads, numReads, perChunk, numThreads * numReads * perChunk);
+    LOG(info, "Start read benchmark with %lu threads doing %lu reads in chunks of %lu reads. Totally %lu objects",
+        numThreads, numReads, perChunk, numThreads * numReads * perChunk);
     for (size_t i(0); i < numThreads; i++) {
-        bmPool.execute(vespalib::makeLambdaTask([&]() { read(numReads, perChunk, static_cast<const IDataStore *>(&store)); }));
+        bmPool.execute(
+            vespalib::makeLambdaTask([&]() { read(numReads, perChunk, static_cast<const IDataStore*>(&store)); }));
     }
     bmPool.sync();
     LOG(info, "Benchmark done.");
     return retval;
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     vespalib::SignalHandler::PIPE.ignore();
     BenchmarkDataStoreApp app;
     return app.main(argc, argv);
