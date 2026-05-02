@@ -3,15 +3,14 @@
 
 namespace search::transactionlog {
 
-NoSyncProxy::NoSyncProxy() { }
-
-NoSyncProxy::~NoSyncProxy() { }
-
-
-void
-NoSyncProxy::sync(SerialNum syncTo)
-{
-    (void) syncTo;
+NoSyncProxy::NoSyncProxy() {
 }
 
+NoSyncProxy::~NoSyncProxy() {
 }
+
+void NoSyncProxy::sync(SerialNum syncTo) {
+    (void)syncTo;
+}
+
+} // namespace search::transactionlog

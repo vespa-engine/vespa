@@ -1,9 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "client_session.h"
+
 #include "translogclient.h"
-#include <vespa/vespalib/util/stringfmt.h>
+
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/frt/supervisor.h>
+#include <vespa/vespalib/util/stringfmt.h>
+
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -13,15 +16,11 @@ using namespace std::chrono_literals;
 
 namespace search::transactionlog::client {
 
-SessionKey::SessionKey(const std::string & domain, int sessionId)
-    : _domain(domain),
-      _sessionId(sessionId)
-{ }
+SessionKey::SessionKey(const std::string& domain, int sessionId) : _domain(domain), _sessionId(sessionId) {
+}
 SessionKey::~SessionKey() = default;
 
-int
-SessionKey::cmp(const SessionKey & b) const
-{
+int SessionKey::cmp(const SessionKey& b) const {
     int diff(strcmp(_domain.c_str(), b._domain.c_str()));
     if (diff == 0) {
         diff = _sessionId - b._sessionId;
@@ -29,25 +28,18 @@ SessionKey::cmp(const SessionKey & b) const
     return diff;
 }
 
-Session::Session(const std::string & domain, TransLogClient & tlc)
-    : _tlc(tlc),
-      _domain(domain),
-      _sessionId(0)
-{
+Session::Session(const std::string& domain, TransLogClient& tlc) : _tlc(tlc), _domain(domain), _sessionId(0) {
 }
 
-Session::~Session()
-{
+Session::~Session() {
     close();
     clear();
 }
 
-bool
-Session::commit(const vespalib::ConstBufferRef & buf)
-{
+bool Session::commit(const vespalib::ConstBufferRef& buf) {
     bool retval(true);
     if (buf.size() != 0) {
-        FRT_RPCRequest *req = _tlc._supervisor->AllocRPCRequest();
+        FRT_RPCRequest* req = _tlc._supervisor->AllocRPCRequest();
         req->SetMethodName("domainCommit");
         req->GetParams()->AddString(_domain.c_str());
         req->GetParams()->AddData(buf.c_str(), buf.size());
@@ -60,19 +52,19 @@ Session::commit(const vespalib::ConstBufferRef & buf)
             if (req->GetReturn() != nullptr) {
                 msg = req->GetReturn()->GetValue(1)._string._str;
             } else {
-                msg = vespalib::make_string("Clientside error %s: error(%d): %s", req->GetMethodName(), req->GetErrorCode(), req->GetErrorMessage());
+                msg = vespalib::make_string("Clientside error %s: error(%d): %s", req->GetMethodName(),
+                                            req->GetErrorCode(), req->GetErrorMessage());
             }
             req->internal_subref();
-            throw std::runtime_error(vespalib::make_string("commit failed with code %d. server says: %s", retcode, msg.c_str()));
+            throw std::runtime_error(
+                vespalib::make_string("commit failed with code %d. server says: %s", retcode, msg.c_str()));
         }
     }
     return retval;
 }
 
-bool
-Session::status(SerialNum & b, SerialNum & e, size_t & count)
-{
-    FRT_RPCRequest *req = _tlc._supervisor->AllocRPCRequest();
+bool Session::status(SerialNum& b, SerialNum& e, size_t& count) {
+    FRT_RPCRequest* req = _tlc._supervisor->AllocRPCRequest();
     req->SetMethodName("domainStatus");
     req->GetParams()->AddString(_domain.c_str());
     int32_t retval(_tlc.rpc(req));
@@ -85,10 +77,8 @@ Session::status(SerialNum & b, SerialNum & e, size_t & count)
     return (retval == 0);
 }
 
-bool
-Session::erase(const SerialNum & to)
-{
-    FRT_RPCRequest *req = _tlc._supervisor->AllocRPCRequest();
+bool Session::erase(const SerialNum& to) {
+    FRT_RPCRequest* req = _tlc._supervisor->AllocRPCRequest();
     req->SetMethodName("domainPrune");
     req->GetParams()->AddString(_domain.c_str());
     req->GetParams()->AddInt64(to);
@@ -100,13 +90,10 @@ Session::erase(const SerialNum & to)
     return (retval == 0);
 }
 
-
-bool
-Session::sync(const SerialNum &syncTo, SerialNum &syncedTo)
-{
-    FRT_RPCRequest *req = _tlc._supervisor->AllocRPCRequest();
+bool Session::sync(const SerialNum& syncTo, SerialNum& syncedTo) {
+    FRT_RPCRequest* req = _tlc._supervisor->AllocRPCRequest();
     req->SetMethodName("domainSync");
-    FRT_Values & params = *req->GetParams();
+    FRT_Values& params = *req->GetParams();
     params.AddString(_domain.c_str());
     params.AddInt64(syncTo);
     int32_t retval(_tlc.rpc(req));
@@ -117,10 +104,7 @@ Session::sync(const SerialNum &syncTo, SerialNum &syncedTo)
     return (retval == 0);
 }
 
-
-void
-Session::clear()
-{
+void Session::clear() {
     if (_sessionId > 0) {
         std::lock_guard guard(_tlc._lock);
         _tlc._sessions.erase(SessionKey(_domain, _sessionId));
@@ -128,15 +112,11 @@ Session::clear()
     _sessionId = 0;
 }
 
-Visitor::Visitor(const std::string & domain, TransLogClient & tlc, Callback & callBack) :
-    Session(domain, tlc),
-    _callback(callBack)
-{
+Visitor::Visitor(const std::string& domain, TransLogClient& tlc, Callback& callBack)
+    : Session(domain, tlc), _callback(callBack) {
 }
 
-bool
-Session::init(FRT_RPCRequest *req)
-{
+bool Session::init(FRT_RPCRequest* req) {
     int32_t retval(_tlc.rpc(req));
     req->internal_subref();
     if (retval > 0) {
@@ -152,10 +132,8 @@ Session::init(FRT_RPCRequest *req)
     return (retval > 0);
 }
 
-bool
-Visitor::visit(const SerialNum & from, const SerialNum & to)
-{
-    FRT_RPCRequest *req = _tlc._supervisor->AllocRPCRequest();
+bool Visitor::visit(const SerialNum& from, const SerialNum& to) {
+    FRT_RPCRequest* req = _tlc._supervisor->AllocRPCRequest();
     req->SetMethodName("domainVisit");
     req->GetParams()->AddString(_domain.c_str());
     req->GetParams()->AddInt64(from);
@@ -163,10 +141,8 @@ Visitor::visit(const SerialNum & from, const SerialNum & to)
     return init(req);
 }
 
-bool
-Session::run()
-{
-    FRT_RPCRequest *req = _tlc._supervisor->AllocRPCRequest();
+bool Session::run() {
+    FRT_RPCRequest* req = _tlc._supervisor->AllocRPCRequest();
     req->SetMethodName("domainSessionRun");
     req->GetParams()->AddString(_domain.c_str());
     req->GetParams()->AddInt32(_sessionId);
@@ -175,25 +151,23 @@ Session::run()
     return (retval == 0);
 }
 
-bool
-Session::close()
-{
+bool Session::close() {
     int retval(0);
     if (_sessionId > 0) {
         do {
-            FRT_RPCRequest *req = _tlc._supervisor->AllocRPCRequest();
+            FRT_RPCRequest* req = _tlc._supervisor->AllocRPCRequest();
             req->SetMethodName("domainSessionClose");
             req->GetParams()->AddString(_domain.c_str());
             req->GetParams()->AddInt32(_sessionId);
-            if ( (retval = _tlc.rpc(req)) > 0) {
+            if ((retval = _tlc.rpc(req)) > 0) {
                 std::this_thread::sleep_for(10ms);
             }
             req->internal_subref();
-        } while ( retval == 1 );
+        } while (retval == 1);
     }
     return (retval == 0);
 }
 
 Visitor::~Visitor() = default;
 
-}
+} // namespace search::transactionlog::client

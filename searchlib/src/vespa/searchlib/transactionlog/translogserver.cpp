@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "translogserver.h"
-#include "domain.h"
+
 #include "client_common.h"
+#include "domain.h"
+
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/transport.h>
@@ -12,6 +14,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
+
 #include <filesystem>
 #include <fstream>
 #include <thread>
@@ -31,39 +34,29 @@ namespace search::transactionlog {
 
 namespace {
 
-class SyncHandler : public std::enable_shared_from_this<SyncHandler>
-{
-    std::atomic<bool>         & _closed;
-    FRT_RPCRequest            & _req;
-    Domain::SP                  _domain;
-    SerialNum                   _syncTo;
-    
+class SyncHandler : public std::enable_shared_from_this<SyncHandler> {
+    std::atomic<bool>& _closed;
+    FRT_RPCRequest&    _req;
+    Domain::SP         _domain;
+    SerialNum          _syncTo;
+
 public:
-    SyncHandler(std::atomic<bool>& closed, FRT_RPCRequest *req, Domain::SP domain, SerialNum syncTo) noexcept;
+    SyncHandler(std::atomic<bool>& closed, FRT_RPCRequest* req, Domain::SP domain, SerialNum syncTo) noexcept;
 
     ~SyncHandler();
     bool poll();
 };
 
-SyncHandler::SyncHandler(std::atomic<bool>& closed, FRT_RPCRequest *req, Domain::SP domain, SerialNum syncTo) noexcept
-    : _closed(closed),
-      _req(*req),
-      _domain(std::move(domain)),
-      _syncTo(syncTo)
-{
+SyncHandler::SyncHandler(std::atomic<bool>& closed, FRT_RPCRequest* req, Domain::SP domain, SerialNum syncTo) noexcept
+    : _closed(closed), _req(*req), _domain(std::move(domain)), _syncTo(syncTo) {
 }
 
 SyncHandler::~SyncHandler() = default;
 
-bool
-SyncHandler::poll()
-{
+bool SyncHandler::poll() {
     SerialNum synced(_domain->getSynced());
-    if (_domain->getMarkedDeleted() ||
-        _closed.load(std::memory_order_acquire) ||
-        synced >= _syncTo)
-    {
-        FRT_Values &rvals = *_req.GetReturn();
+    if (_domain->getMarkedDeleted() || _closed.load(std::memory_order_acquire) || synced >= _syncTo) {
+        FRT_Values& rvals = *_req.GetReturn();
         rvals.AddInt32(0);
         rvals.AddInt64(synced);
         _req.Return();
@@ -78,22 +71,26 @@ SyncHandler::poll()
 
 VESPA_THREAD_STACK_TAG(tls_executor);
 
+} // namespace
+
+TransLogServer::TransLogServer(FNET_Transport& transport, const std::string& name, int listenPort,
+                               const std::string& baseDir, const FileHeaderContext& fileHeaderContext)
+    : TransLogServer(transport, name, listenPort, baseDir, fileHeaderContext,
+                     DomainConfig()
+                         .setEncoding(Encoding(Encoding::xxh64, Encoding::Compression::zstd))
+                         .setPartSizeLimit(0x10000000)
+                         .setChunkSizeLimit(0x40000)) {
 }
 
-TransLogServer::TransLogServer(FNET_Transport & transport, const std::string &name, int listenPort, const std::string &baseDir,
-                               const FileHeaderContext &fileHeaderContext)
-    : TransLogServer(transport, name, listenPort, baseDir, fileHeaderContext,
-                     DomainConfig().setEncoding(Encoding(Encoding::xxh64, Encoding::Compression::zstd))
-                                        .setPartSizeLimit(0x10000000).setChunkSizeLimit(0x40000))
-{}
+TransLogServer::TransLogServer(FNET_Transport& transport, const std::string& name, int listenPort,
+                               const std::string& baseDir, const FileHeaderContext& fileHeaderContext,
+                               const DomainConfig& cfg)
+    : TransLogServer(transport, name, listenPort, baseDir, fileHeaderContext, cfg, 4) {
+}
 
-TransLogServer::TransLogServer(FNET_Transport & transport, const std::string &name, int listenPort, const std::string &baseDir,
-                               const FileHeaderContext &fileHeaderContext, const DomainConfig &  cfg)
-    : TransLogServer(transport, name, listenPort, baseDir, fileHeaderContext, cfg, 4)
-{}
-
-TransLogServer::TransLogServer(FNET_Transport & transport, const std::string &name, int listenPort, const std::string &baseDir,
-                               const FileHeaderContext &fileHeaderContext, const DomainConfig & cfg, size_t maxThreads)
+TransLogServer::TransLogServer(FNET_Transport& transport, const std::string& name, int listenPort,
+                               const std::string& baseDir, const FileHeaderContext& fileHeaderContext,
+                               const DomainConfig& cfg, size_t maxThreads)
     : FRT_Invokable(),
       _name(name),
       _baseDir(baseDir),
@@ -104,8 +101,7 @@ TransLogServer::TransLogServer(FNET_Transport & transport, const std::string &na
       _domains(),
       _reqQ(),
       _fileHeaderContext(fileHeaderContext),
-      _closed(false)
-{
+      _closed(false) {
     int retval(0);
     if ((retval = makeDirectory(_baseDir)) == 0) {
         if ((retval = makeDirectory(dir())) == 0) {
@@ -113,12 +109,13 @@ TransLogServer::TransLogServer(FNET_Transport & transport, const std::string &na
             while (domainDir.good() && !domainDir.eof()) {
                 std::string domainName;
                 domainDir >> domainName;
-                if ( ! domainName.empty()) {
+                if (!domainName.empty()) {
                     try {
                         auto domain = make_shared<Domain>(domainName, dir(), _executor, cfg, _fileHeaderContext);
                         _domains[domain->name()] = domain;
-                    } catch (const std::exception & e) {
-                        LOG(warning, "Failed creating %s domain on startup. Exception = %s", domainName.c_str(), e.what());
+                    } catch (const std::exception& e) {
+                        LOG(warning, "Failed creating %s domain on startup. Exception = %s", domainName.c_str(),
+                            e.what());
                     }
                 }
             }
@@ -134,20 +131,24 @@ TransLogServer::TransLogServer(FNET_Transport & transport, const std::string &na
                     std::this_thread::sleep_for(1s);
                 }
             }
-            if ( ! listenOk ) {
-                throw std::runtime_error(make_string("Failed listening at port %s. Giving up. Requires manual intervention.", listenSpec));
+            if (!listenOk) {
+                throw std::runtime_error(
+                    make_string("Failed listening at port %s. Giving up. Requires manual intervention.", listenSpec));
             }
         } else {
-            throw std::runtime_error(make_string("Failed creating tls dir %s r(%d), e(%d). Requires manual intervention.", dir().c_str(), retval, errno));
+            throw std::runtime_error(
+                make_string("Failed creating tls dir %s r(%d), e(%d). Requires manual intervention.", dir().c_str(),
+                            retval, errno));
         }
     } else {
-        throw std::runtime_error(make_string("Failed creating tls base dir %s r(%d), e(%d). Requires manual intervention.", _baseDir.c_str(), retval, errno));
+        throw std::runtime_error(
+            make_string("Failed creating tls base dir %s r(%d), e(%d). Requires manual intervention.",
+                        _baseDir.c_str(), retval, errno));
     }
-    _thread = std::thread([this](){run();});
+    _thread = std::thread([this]() { run(); });
 }
 
-TransLogServer::~TransLogServer()
-{
+TransLogServer::~TransLogServer() {
     request_stop();
     _thread.join();
     _executor.sync();
@@ -155,19 +156,15 @@ TransLogServer::~TransLogServer()
     _executor.sync();
 }
 
-void
-TransLogServer::request_stop()
-{
+void TransLogServer::request_stop() {
     _closed = true;
     LOG(info, "Stopping TLS");
     _reqQ.push(nullptr);
 }
 
-void
-TransLogServer::run()
-{
-    FRT_RPCRequest *req(nullptr);
-    bool hasPacket(false);
+void TransLogServer::run() {
+    FRT_RPCRequest* req(nullptr);
+    bool            hasPacket(false);
     do {
         for (req = nullptr; (hasPacket = _reqQ.pop(req, 60000)) && (req != nullptr); req = nullptr) {
             bool immediate = true;
@@ -205,68 +202,57 @@ TransLogServer::run()
     LOG(info, "TLS Stopped");
 }
 
-TransLogServer &
-TransLogServer::setDomainConfig(const DomainConfig & cfg) {
+TransLogServer& TransLogServer::setDomainConfig(const DomainConfig& cfg) {
     WriteGuard domainGuard(_domainMutex);
     _domainConfig = cfg;
-    for(auto &domain: _domains) {
+    for (auto& domain : _domains) {
         domain.second->setConfig(cfg);
     }
     return *this;
 }
 
-DomainStats
-TransLogServer::getDomainStats() const
-{
+DomainStats TransLogServer::getDomainStats() const {
     DomainStats retval;
-    ReadGuard domainGuard(_domainMutex);
-    for (const auto &elem : _domains) {
+    ReadGuard   domainGuard(_domainMutex);
+    for (const auto& elem : _domains) {
         retval[elem.first] = elem.second->getDomainInfo();
     }
     return retval;
 }
 
-uint64_t
-TransLogServer::get_size_on_disk() const
-{
+uint64_t TransLogServer::get_size_on_disk() const {
     DiskSpaceCalculator calc;
-    constexpr uint32_t placeholder_domains_size = 1000;
-    auto placeholder_name_dir_size = DiskSpaceCalculator::directory_placeholder_size(); // the "tls/tls" dir
+    constexpr uint32_t  placeholder_domains_size = 1000;
+    auto     placeholder_name_dir_size = DiskSpaceCalculator::directory_placeholder_size(); // the "tls/tls" dir
     uint64_t size_on_disk = DiskSpaceCalculator::directory_placeholder_size() + placeholder_name_dir_size +
                             calc(placeholder_domains_size);
     ReadGuard domainGuard(_domainMutex);
-    for (const auto &elem : _domains) {
+    for (const auto& elem : _domains) {
         size_on_disk += elem.second->get_size_on_disk();
     }
     return size_on_disk;
 }
 
-std::vector<std::string>
-TransLogServer::getDomainNames()
-{
+std::vector<std::string> TransLogServer::getDomainNames() {
     std::vector<std::string> names;
-    ReadGuard guard(_domainMutex);
-    for(const auto &domain: _domains) {
+    ReadGuard                guard(_domainMutex);
+    for (const auto& domain : _domains) {
         names.push_back(domain.first);
     }
     return names;
 }
 
-Domain::SP
-TransLogServer::findDomain(std::string_view domainName) const
-{
+Domain::SP TransLogServer::findDomain(std::string_view domainName) const {
     ReadGuard domainGuard(_domainMutex);
-    auto found(_domains.find(std::string(domainName)));
+    auto      found(_domains.find(std::string(domainName)));
     if (found != _domains.end()) {
         return found->second;
     }
     return {};
 }
 
-void
-TransLogServer::exportRPC(FRT_Supervisor & supervisor)
-{
-    FRT_ReflectionBuilder rb( & supervisor);
+void TransLogServer::exportRPC(FRT_Supervisor& supervisor) {
+    FRT_ReflectionBuilder rb(&supervisor);
 
     //-- Create Domain -----------------------------------------------------------
     rb.DefineMethod("createDomain", "s", "i", FRT_METHOD(TransLogServer::relayToThreadRPC), this);
@@ -323,7 +309,9 @@ TransLogServer::exportRPC(FRT_Supervisor & supervisor)
     rb.ParamDesc("name", "The name of the domain.");
     rb.ParamDesc("from", "Will return all entries following(not including) <from>.");
     rb.ParamDesc("to", "Will return all entries including <to>.");
-    rb.ReturnDesc("result", "A resultcode(int) of the operation. Negative number indicates error. Positive number is the sessionid");
+    rb.ReturnDesc(
+        "result",
+        "A resultcode(int) of the operation. Negative number indicates error. Positive number is the sessionid");
 
     //-- Domain Session Run -----------------------------------------------------------
     rb.DefineMethod("domainSessionRun", "si", "i", FRT_METHOD(TransLogServer::relayToThreadRPC), this);
@@ -337,7 +325,9 @@ TransLogServer::exportRPC(FRT_Supervisor & supervisor)
     rb.MethodDesc("This will close the session.");
     rb.ParamDesc("name", "The name of the domain.");
     rb.ParamDesc("sessionid", "The session identifier.");
-    rb.ReturnDesc("result", "A resultcode(int) of the operation. Negative number indicates error. 1 means busy -> retry. 0 is OK.");
+    rb.ReturnDesc(
+        "result",
+        "A resultcode(int) of the operation. Negative number indicates error. 1 means busy -> retry. 0 is OK.");
 
     //-- Domain Sync --
     rb.DefineMethod("domainSync", "sl", "il", FRT_METHOD(TransLogServer::relayToThreadRPC), this);
@@ -352,17 +342,13 @@ namespace {
 
 constexpr double NEVER(-1.0);
 
-void
-writeDomainDir(std::shared_lock<std::shared_mutex> &guard,
-               std::string dir,
-               std::string domainList,
-               const std::map<std::string, std::shared_ptr<Domain>> &domains)
-{
-    (void) guard;
+void writeDomainDir(std::shared_lock<std::shared_mutex>& guard, std::string dir, std::string domainList,
+                    const std::map<std::string, std::shared_ptr<Domain>>& domains) {
+    (void)guard;
     std::string domainListTmp(domainList + ".tmp");
     std::filesystem::remove(std::filesystem::path(domainListTmp));
     std::ofstream domainDir(domainListTmp.c_str(), std::ios::trunc);
-    for (const auto &domainEntry : domains) {
+    for (const auto& domainEntry : domains) {
         domainDir << domainEntry.first << std::endl;
     }
     domainDir.close();
@@ -373,19 +359,16 @@ writeDomainDir(std::shared_lock<std::shared_mutex> &guard,
 
 class RPCDestination : public Destination {
 public:
-    RPCDestination(FRT_Supervisor & supervisor, FNET_Connection * connection)
-        : _supervisor(supervisor), _connection(connection), _ok(true)
-    {
+    RPCDestination(FRT_Supervisor& supervisor, FNET_Connection* connection)
+        : _supervisor(supervisor), _connection(connection), _ok(true) {
         _connection->internal_addref();
     }
     ~RPCDestination() override { _connection->internal_subref(); }
 
-    bool ok() const override {
-        return _ok;
-    }
+    bool ok() const override { return _ok; }
 
-    bool send(int32_t id, const std::string & domain, const Packet & packet) override {
-        FRT_RPCRequest *req = _supervisor.AllocRPCRequest();
+    bool send(int32_t id, const std::string& domain, const Packet& packet) override {
+        FRT_RPCRequest* req = _supervisor.AllocRPCRequest();
         req->SetMethodName("visitCallback");
         req->GetParams()->AddString(domain.c_str());
         req->GetParams()->AddInt32(id);
@@ -393,28 +376,27 @@ public:
         return send(req);
     }
 
-    bool sendDone(int32_t id, const std::string & domain) override {
-        FRT_RPCRequest *req = _supervisor.AllocRPCRequest();
+    bool sendDone(int32_t id, const std::string& domain) override {
+        FRT_RPCRequest* req = _supervisor.AllocRPCRequest();
         req->SetMethodName("eofCallback");
         req->GetParams()->AddString(domain.c_str());
         req->GetParams()->AddInt32(id);
         bool retval(send(req));
         return retval;
     }
-    bool connected() const override {
-        return (_connection->GetState() <= FNET_Connection::FNET_CONNECTED);
-    }
+    bool connected() const override { return (_connection->GetState() <= FNET_Connection::FNET_CONNECTED); }
+
 private:
-    bool send(FRT_RPCRequest * req) {
+    bool send(FRT_RPCRequest* req) {
         int32_t retval = rpc(req);
-        if ( ! ((retval == client::RPC::OK) || (retval == FRTE_RPC_CONNECTION)) ) {
+        if (!((retval == client::RPC::OK) || (retval == FRTE_RPC_CONNECTION))) {
             LOG(error, "Return value != OK(%d) in send for method 'visitCallback'.", retval);
         }
         req->internal_subref();
 
         return (retval == client::RPC::OK);
     }
-    int32_t rpc(FRT_RPCRequest * req) {
+    int32_t rpc(FRT_RPCRequest* req) {
         int32_t retval(-7);
         LOG(debug, "rpc %s starting.", req->GetMethodName());
         FRT_Supervisor::InvokeSync(_supervisor.GetTransport(), _connection, req, NEVER);
@@ -422,37 +404,37 @@ private:
             retval = (req->GetReturn()->GetValue(0)._intval32);
             LOG(debug, "rpc %s = %d\n", req->GetMethodName(), retval);
         } else if (req->GetErrorCode() == FRTE_RPC_TIMEOUT) {
-            LOG(warning, "rpc %s timed out. Will allow to continue: error(%d): %s\n", req->GetMethodName(), req->GetErrorCode(), req->GetErrorMessage());
+            LOG(warning, "rpc %s timed out. Will allow to continue: error(%d): %s\n", req->GetMethodName(),
+                req->GetErrorCode(), req->GetErrorMessage());
             retval = -req->GetErrorCode();
         } else {
             if (req->GetErrorCode() != FRTE_RPC_CONNECTION) {
-                LOG(warning, "rpc %s: error(%d): %s\n", req->GetMethodName(), req->GetErrorCode(), req->GetErrorMessage());
+                LOG(warning, "rpc %s: error(%d): %s\n", req->GetMethodName(), req->GetErrorCode(),
+                    req->GetErrorMessage());
             }
             retval = -req->GetErrorCode();
             _ok = false;
         }
         return retval;
     }
-    FRT_Supervisor   & _supervisor;
-    FNET_Connection  * _connection;
-    bool               _ok;
+    FRT_Supervisor&  _supervisor;
+    FNET_Connection* _connection;
+    bool             _ok;
 };
 
-}
+} // namespace
 
-void
-TransLogServer::createDomain(FRT_RPCRequest *req)
-{
-    uint32_t retval(0);
-    FRT_Values & params = *req->GetParams();
-    FRT_Values & ret    = *req->GetReturn();
+void TransLogServer::createDomain(FRT_RPCRequest* req) {
+    uint32_t    retval(0);
+    FRT_Values& params = *req->GetParams();
+    FRT_Values& ret = *req->GetReturn();
 
-    const char * domainName = params[0]._string._str;
+    const char* domainName = params[0]._string._str;
     LOG(debug, "createDomain(%s)", domainName);
 
     std::lock_guard createDeleteGuard(_fileLock);
-    Domain::SP domain(findDomain(domainName));
-    if ( !domain ) {
+    Domain::SP      domain(findDomain(domainName));
+    if (!domain) {
         try {
             domain = std::make_shared<Domain>(domainName, dir(), _executor, _domainConfig, _fileHeaderContext);
             {
@@ -461,7 +443,7 @@ TransLogServer::createDomain(FRT_RPCRequest *req)
             }
             ReadGuard domainGuard(_domainMutex);
             writeDomainDir(domainGuard, dir(), domainList(), _domains);
-        } catch (const std::exception & e) {
+        } catch (const std::exception& e) {
             LOG(warning, "Failed creating %s domain. Exception = %s", domainName, e.what());
             retval = uint32_t(-1);
         }
@@ -470,20 +452,18 @@ TransLogServer::createDomain(FRT_RPCRequest *req)
     ret.AddInt32(retval);
 }
 
-void
-TransLogServer::deleteDomain(FRT_RPCRequest *req)
-{
-    uint32_t retval(0);
+void TransLogServer::deleteDomain(FRT_RPCRequest* req) {
+    uint32_t    retval(0);
     std::string msg("ok");
-    FRT_Values & params = *req->GetParams();
-    FRT_Values & ret    = *req->GetReturn();
+    FRT_Values& params = *req->GetParams();
+    FRT_Values& ret = *req->GetReturn();
 
-    const char * domainName = params[0]._string._str;
+    const char* domainName = params[0]._string._str;
     LOG(debug, "deleteDomain(%s)", domainName);
 
     std::lock_guard createDeleteGuard(_fileLock);
-    Domain::SP domain(findDomain(domainName));
-    if ( !domain || (domain->getNumSessions() == 0)) {
+    Domain::SP      domain(findDomain(domainName));
+    if (!domain || (domain->getNumSessions() == 0)) {
         try {
             if (domain) {
                 domain->markDeleted();
@@ -494,7 +474,7 @@ TransLogServer::deleteDomain(FRT_RPCRequest *req)
             vespalib::File::sync(dir());
             ReadGuard domainGuard(_domainMutex);
             writeDomainDir(domainGuard, dir(), domainList(), _domains);
-        } catch (const std::exception & e) {
+        } catch (const std::exception& e) {
             msg = make_string("Failed deleting %s domain. Exception = %s", domainName, e.what());
             retval = -1;
             LOG(warning, "%s", msg.c_str());
@@ -508,32 +488,28 @@ TransLogServer::deleteDomain(FRT_RPCRequest *req)
     ret.AddString(msg.c_str());
 }
 
-void
-TransLogServer::openDomain(FRT_RPCRequest *req)
-{
-    uint32_t retval(0);
-    FRT_Values & params = *req->GetParams();
-    FRT_Values & ret    = *req->GetReturn();
+void TransLogServer::openDomain(FRT_RPCRequest* req) {
+    uint32_t    retval(0);
+    FRT_Values& params = *req->GetParams();
+    FRT_Values& ret = *req->GetReturn();
 
-    const char * domainName = params[0]._string._str;
+    const char* domainName = params[0]._string._str;
     LOG(debug, "openDomain(%s)", domainName);
 
     Domain::SP domain(findDomain(domainName));
-    if ( !domain ) {
+    if (!domain) {
         retval = uint32_t(-1);
     }
 
     ret.AddInt32(retval);
 }
 
-void
-TransLogServer::listDomains(FRT_RPCRequest *req)
-{
-    FRT_Values & ret    = *req->GetReturn();
+void TransLogServer::listDomains(FRT_RPCRequest* req) {
+    FRT_Values& ret = *req->GetReturn();
     LOG(debug, "listDomains()");
 
     std::string domains;
-    ReadGuard domainGuard(_domainMutex);
+    ReadGuard   domainGuard(_domainMutex);
     for (const auto& elem : _domains) {
         domains += elem.second->name();
         domains += "\n";
@@ -542,12 +518,10 @@ TransLogServer::listDomains(FRT_RPCRequest *req)
     ret.AddString(domains.c_str());
 }
 
-void
-TransLogServer::domainStatus(FRT_RPCRequest *req)
-{
-    FRT_Values & params = *req->GetParams();
-    FRT_Values & ret    = *req->GetReturn();
-    const char * domainName = params[0]._string._str;
+void TransLogServer::domainStatus(FRT_RPCRequest* req) {
+    FRT_Values& params = *req->GetParams();
+    FRT_Values& ret = *req->GetReturn();
+    const char* domainName = params[0]._string._str;
     LOG(debug, "domainStatus(%s)", domainName);
     Domain::SP domain(findDomain(domainName));
     if (domain) {
@@ -563,9 +537,7 @@ TransLogServer::domainStatus(FRT_RPCRequest *req)
     }
 }
 
-std::shared_ptr<Writer>
-TransLogServer::getWriter(const std::string & domainName) const
-{
+std::shared_ptr<Writer> TransLogServer::getWriter(const std::string& domainName) const {
     Domain::SP domain(findDomain(domainName));
     if (domain) {
         return domain;
@@ -574,12 +546,10 @@ TransLogServer::getWriter(const std::string & domainName) const
     }
 }
 
-void
-TransLogServer::domainCommit(FRT_RPCRequest *req)
-{
-    FRT_Values & params = *req->GetParams();
-    FRT_Values & ret    = *req->GetReturn();
-    const char * domainName = params[0]._string._str;
+void TransLogServer::domainCommit(FRT_RPCRequest* req) {
+    FRT_Values& params = *req->GetParams();
+    FRT_Values& ret = *req->GetReturn();
+    const char* domainName = params[0]._string._str;
     LOG(debug, "domainCommit(%s)(%d)", domainName, params[1]._data._len);
     Domain::SP domain(findDomain(domainName));
     if (domain) {
@@ -595,7 +565,7 @@ TransLogServer::domainCommit(FRT_RPCRequest *req)
             gate.await();
             ret.AddInt32(0);
             ret.AddString("ok");
-        } catch (const std::exception & e) {
+        } catch (const std::exception& e) {
             ret.AddInt32(-2);
             ret.AddString(make_string("Exception during commit on %s : %s", domainName, e.what()).c_str());
         }
@@ -605,32 +575,29 @@ TransLogServer::domainCommit(FRT_RPCRequest *req)
     }
 }
 
-void
-TransLogServer::domainVisit(FRT_RPCRequest *req)
-{
+void TransLogServer::domainVisit(FRT_RPCRequest* req) {
     uint32_t retval(uint32_t(-1));
-    FRT_Values & params = *req->GetParams();
-    FRT_Values & ret    = *req->GetReturn();
-    const char * domainName = params[0]._string._str;
+    FRT_Values& params = *req->GetParams();
+    FRT_Values& ret = *req->GetReturn();
+    const char* domainName = params[0]._string._str;
     LOG(debug, "domainVisit(%s)", domainName);
     Domain::SP domain(findDomain(domainName));
     if (domain) {
         SerialNum from(params[1]._intval64);
         SerialNum to(params[2]._intval64);
         LOG(debug, "domainVisit(%s, %" PRIu64 ", %" PRIu64 ")", domainName, from, to);
-        retval = domain->visit(domain, from, to, std::make_unique<RPCDestination>(*_supervisor, req->GetConnection()));
+        retval =
+            domain->visit(domain, from, to, std::make_unique<RPCDestination>(*_supervisor, req->GetConnection()));
     }
     ret.AddInt32(retval);
 }
 
-void
-TransLogServer::domainSessionRun(FRT_RPCRequest *req)
-{
+void TransLogServer::domainSessionRun(FRT_RPCRequest* req) {
     uint32_t retval(uint32_t(-1));
-    FRT_Values & params = *req->GetParams();
-    FRT_Values & ret    = *req->GetReturn();
-    const char * domainName = params[0]._string._str;
-    int sessionId(params[1]._intval32);
+    FRT_Values& params = *req->GetParams();
+    FRT_Values& ret = *req->GetReturn();
+    const char* domainName = params[0]._string._str;
+    int         sessionId(params[1]._intval32);
     LOG(debug, "domainSessionRun(%s, %d)", domainName, sessionId);
     Domain::SP domain(findDomain(domainName));
     if (domain) {
@@ -640,21 +607,17 @@ TransLogServer::domainSessionRun(FRT_RPCRequest *req)
     ret.AddInt32(retval);
 }
 
-void
-TransLogServer::relayToThreadRPC(FRT_RPCRequest *req)
-{
+void TransLogServer::relayToThreadRPC(FRT_RPCRequest* req) {
     req->Detach();
     _reqQ.push(req);
 }
 
-void
-TransLogServer::domainSessionClose(FRT_RPCRequest *req)
-{
+void TransLogServer::domainSessionClose(FRT_RPCRequest* req) {
     uint32_t retval(uint32_t(-1));
-    FRT_Values & params = *req->GetParams();
-    FRT_Values & ret    = *req->GetReturn();
-    const char * domainName = params[0]._string._str;
-    int sessionId(params[1]._intval32);
+    FRT_Values& params = *req->GetParams();
+    FRT_Values& ret = *req->GetReturn();
+    const char* domainName = params[0]._string._str;
+    int         sessionId(params[1]._intval32);
     LOG(debug, "domainSessionClose(%s, %d)", domainName, sessionId);
     Domain::SP domain(findDomain(domainName));
     if (domain) {
@@ -665,13 +628,11 @@ TransLogServer::domainSessionClose(FRT_RPCRequest *req)
     ret.AddInt32(retval);
 }
 
-void
-TransLogServer::domainPrune(FRT_RPCRequest *req)
-{
+void TransLogServer::domainPrune(FRT_RPCRequest* req) {
     uint32_t retval(uint32_t(-1));
-    FRT_Values & params = *req->GetParams();
-    FRT_Values & ret    = *req->GetReturn();
-    const char * domainName = params[0]._string._str;
+    FRT_Values& params = *req->GetParams();
+    FRT_Values& ret = *req->GetReturn();
+    const char* domainName = params[0]._string._str;
     LOG(debug, "domainPrune(%s)", domainName);
     Domain::SP domain(findDomain(domainName));
     if (domain) {
@@ -686,17 +647,15 @@ TransLogServer::domainPrune(FRT_RPCRequest *req)
     ret.AddInt32(retval);
 }
 
-void
-TransLogServer::domainSync(FRT_RPCRequest *req)
-{
-    FRT_Values & params = *req->GetParams();
-    const char * domainName = params[0]._string._str;
-    SerialNum syncTo(params[1]._intval64);
+void TransLogServer::domainSync(FRT_RPCRequest* req) {
+    FRT_Values& params = *req->GetParams();
+    const char* domainName = params[0]._string._str;
+    SerialNum   syncTo(params[1]._intval64);
     LOG(debug, "domainSync(%s, %" PRIu64 ")", domainName, syncTo);
     Domain::SP domain(findDomain(domainName));
 
-    if ( ! domain) {
-        FRT_Values &rvals = *req->GetReturn();
+    if (!domain) {
+        FRT_Values& rvals = *req->GetReturn();
         rvals.AddInt32(0);
         rvals.AddInt64(0);
         req->Return();
@@ -707,4 +666,4 @@ TransLogServer::domainSync(FRT_RPCRequest *req)
     syncHandler->poll();
 }
 
-}
+} // namespace search::transactionlog
