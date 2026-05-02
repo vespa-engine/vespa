@@ -1815,7 +1815,7 @@ TEST_F(SparseTensorAttributeTest, size_on_disk_factor_is_calculated_and_used)
         uint32_t docid = 0;
         attr.addDoc(docid);
         ASSERT_NE(0, docid);
-        real_attr->setTensor(docid, *tensor);;
+        real_attr->setTensor(docid, *tensor);
         attr.commit(CommitParam::UpdateStats::FORCE);
         dynamic_memory_usage = attr.getStatus().get_used_minus_dead_and_onhold() - initial_memory_usage;
     }

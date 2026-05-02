@@ -180,10 +180,10 @@ SelectPrunerTest::testParse(const string &selection)
     NodeUP select;
 
     try {
-        std::cout << "Trying to parse '" << selection << "'" << std::endl;;
+        std::cout << "Trying to parse '" << selection << "'" << std::endl;
         select = parser.parse(selection);
     } catch (document::select::ParsingFailedException &e) {
-        std::cout << "Parse failed: " << e.getMessage() << std::endl;;
+        std::cout << "Parse failed: " << e.getMessage() << std::endl;
         select.reset();
     }
     ASSERT_TRUE(select.get() != nullptr);

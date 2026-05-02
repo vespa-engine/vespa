@@ -139,7 +139,7 @@ private:
     std::vector<Matcher> _matchers;
     bool match(uint32_t docId) override;
     void hide_positive_terms_from_ranking() override;
-    void filter_positive_terms(uint32_t docid, std::span<const MatchSpan> match_spans) override;;
+    void filter_positive_terms(uint32_t docid, std::span<const MatchSpan> match_spans) override;
 
 public:
     /**

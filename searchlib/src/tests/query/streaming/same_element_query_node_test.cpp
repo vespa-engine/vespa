@@ -233,7 +233,7 @@ SameElementQueryNodeTest::make_query(QueryTweak query_tweak,
             term->set_element_length(hl_idx, element_len);
         }
     }
-    return std::make_unique<QueryAndHandles>(std::move(q), std::move(mdl), std::move(handles));;
+    return std::make_unique<QueryAndHandles>(std::move(q), std::move(mdl), std::move(handles));
 }
 
 TEST_F(SameElementQueryNodeTest, a_unhandled_sameElement_stack)

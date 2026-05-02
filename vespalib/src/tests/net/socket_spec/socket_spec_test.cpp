@@ -28,7 +28,6 @@ bool verify(const SocketSpec& spec, bool valid, const std::string& path, const s
     EXPECT_EQ(spec.host_with_fallback(), host_with_fallback) << (retval = false, "");
     EXPECT_EQ(spec.port(), port) << (retval = false, "");
     return retval;
-    ;
 }
 
 bool has_only_path(const SocketSpec& spec, const std::string& path) {

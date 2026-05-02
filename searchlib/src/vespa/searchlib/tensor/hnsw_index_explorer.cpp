@@ -81,7 +81,6 @@ std::unique_ptr<vespalib::StateExplorer> HnswIndexExplorer<type>::get_child(std:
     auto& graph = _index.get_graph();
     if (name == LEVELS_STORE_NAME) {
         return graph.levels_store.make_state_explorer();
-        ;
     } else if (name == LINKS_STORE_NAME) {
         return graph.links_store.make_state_explorer();
     } else if (name == NODEID_STORE_NAME) {

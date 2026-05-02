@@ -285,7 +285,7 @@ public:
             LOG(debug, "No need to send aborts on transition '%s' -> '%s'",
                 old_ownership->getBaselineState().toString().c_str(),
                 new_ownership->getBaselineState().toString().c_str());
-            return _owner.sendDown(_command);;
+            return _owner.sendDown(_command);
         }
         logTransition(old_ownership->getBaselineState(), new_ownership->getBaselineState());
 

@@ -91,7 +91,6 @@ FeatureValues::FeatureValues(const FeatureValues& rhs) = default;
 FeatureValues::FeatureValues(FeatureValues&& rhs) noexcept = default;
 FeatureValues::~FeatureValues() noexcept = default;
 FeatureValues& FeatureValues::operator=(const FeatureValues& rhs) = default;
-;
 FeatureValues& FeatureValues::operator=(FeatureValues&& rhs) noexcept = default;
 
 } // namespace vespalib

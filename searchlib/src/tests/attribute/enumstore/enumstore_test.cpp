@@ -742,7 +742,7 @@ EnumStoreDictionaryTest<EnumStoreTypeAndDictionaryType>::get_sample_values(uint3
         auto enum_idx = dict.find(compare);
         EXPECT_TRUE(enum_idx.valid());
         EntryRef posting_idx;
-        dict.update_posting_list(enum_idx, compare, [&posting_idx](EntryRef ref) noexcept { posting_idx = ref; return ref; });;
+        dict.update_posting_list(enum_idx, compare, [&posting_idx](EntryRef ref) noexcept { posting_idx = ref; return ref; });
         auto find_result = dict.find_posting_list(compare, dict.get_frozen_root());
         EXPECT_EQ(enum_idx, find_result.first);
         EXPECT_EQ(posting_idx, find_result.second);

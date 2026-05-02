@@ -105,7 +105,7 @@ public:
         return add("handler1", targetName, IFlushTarget::Type::GC, flushedSerial, approxDiskBytes, replay_operation_cost);
     }
     ContextsBuilder& set_approx_read_disk_bytes(uint32_t idx, uint64_t approx_read_disk_bytes_) {
-        assert(idx < _result.size());;
+        assert(idx < _result.size());
         auto& target = dynamic_cast<SimpleFlushTarget&>(*_result[idx]->getTarget());
         target.set_approx_disk_read_bytes(approx_read_disk_bytes_);
         return *this;

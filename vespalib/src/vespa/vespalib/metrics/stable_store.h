@@ -22,7 +22,6 @@ public:
         size_t sz = _mine.size();
         if (sz == _mine.capacity()) {
             UP next(new MyClass(_size, std::move(_more), std::move(_mine)));
-            ;
             _mine.clear();
             _mine.reserve(sz << 1);
             _more = std::move(next);

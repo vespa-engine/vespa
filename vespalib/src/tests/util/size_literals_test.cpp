@@ -24,7 +24,6 @@ TEST(SizeLiteralsTest, simple_usage) {
     EXPECT_EQ(v1m, 1024ul * 1024ul);
     EXPECT_EQ(v1g, 1024ul * 1024ul * 1024ul);
     EXPECT_EQ(v1t, 1024ul * 1024ul * 1024ul * 1024ul);
-    ;
 
     EXPECT_EQ(v42k, 42ul * 1024ul);
     EXPECT_EQ(v42m, 42ul * 1024ul * 1024ul);

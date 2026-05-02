@@ -71,7 +71,6 @@ void MapDataType::buildFieldPathImpl(FieldPath& path, const DataType& dataType, 
         }
     } else if (remainFieldName.starts_with(key_keyword)) {
         size_t endPos = key_keyword.size();
-        ;
         if (remainFieldName.size() > endPos && remainFieldName[endPos] == '.') {
             endPos++;
         }

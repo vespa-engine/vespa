@@ -360,7 +360,7 @@ DocumentSubDBCollection::get_resource_usage() const
 {
     ResourceUsage resource_usage;
     for (auto subDb : _subDBs) {
-        resource_usage.merge(subDb->get_resource_usage());;
+        resource_usage.merge(subDb->get_resource_usage());
     }
     return resource_usage;
 }

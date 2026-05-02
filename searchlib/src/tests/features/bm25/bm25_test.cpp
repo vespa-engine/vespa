@@ -307,7 +307,7 @@ struct Bm25ExecutorTest : public ::testing::TestWithParam<TestParam> {
         if (!GetParam()._elementwise) {
             // flatten
             tfmd->setNumOccs(tfmd->getNumOccs() + num_occs);
-            tfmd->setFieldLength(tfmd->getFieldLength() + element_length);;
+            tfmd->setFieldLength(tfmd->getFieldLength() + element_length);
         } else {
             for (uint32_t pos = 0; pos < num_occs; ++pos) {
                 tfmd->appendPosition({element_id, pos, 1, element_length});

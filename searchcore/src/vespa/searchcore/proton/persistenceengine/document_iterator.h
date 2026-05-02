@@ -21,7 +21,7 @@ private:
     using ReadConsistency = storage::spi::ReadConsistency;
     using DocTypeNameAndRetriever = std::pair<DocTypeName, IDocumentRetriever::SP>;
 
-    const storage::spi::Bucket            _bucket;;
+    const storage::spi::Bucket            _bucket;
     const storage::spi::Selection         _selection;
     const storage::spi::IncludedVersions  _versions;
     const document::FieldSet::SP          _fields;

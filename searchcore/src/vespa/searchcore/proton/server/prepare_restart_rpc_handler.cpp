@@ -20,7 +20,7 @@ PrepareRestartRpcHandler::~PrepareRestartRpcHandler() = default;
 void
 PrepareRestartRpcHandler::make_result()
 {
-    _req->GetReturn()->AddInt8(is_success() ? 1 : 0);;
+    _req->GetReturn()->AddInt8(is_success() ? 1 : 0);
 }
 
 }
