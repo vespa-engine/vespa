@@ -23,7 +23,6 @@ public class GroupingValidatorTestCase {
     void requireThatAvailableAttributesDoNotThrow() {
         validateGrouping(List.of("foo", "bar"),
                 "all(group(foo) each(output(max(bar))))");
-        ;
     }
 
     @Test

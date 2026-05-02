@@ -577,7 +577,7 @@ public class SchemaMappingAndAccessesTest {
 
     public static class TestMappingStructInArrayProcessor extends DocumentProcessor {
         public Progress process(Processing processing) {
-            Document document = ((DocumentPut)processing.getDocumentOperations().get(0)).getDocument();;
+            Document document = ((DocumentPut)processing.getDocumentOperations().get(0)).getDocument();
             document.setFieldValue("name", new StringFieldValue("peter"));
             return Progress.DONE;
         }

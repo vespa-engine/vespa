@@ -31,7 +31,7 @@ class JsonFileFeederExample implements Closeable {
 
         final AtomicInteger resultsReceived = new AtomicInteger(0);
         final AtomicInteger errorsReceived = new AtomicInteger(0);
-        final long startTimeMillis = System.currentTimeMillis();;
+        final long startTimeMillis = System.currentTimeMillis();
 
         @Override
         public void onNextResult(Result result, FeedException error) {
