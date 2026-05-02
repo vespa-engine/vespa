@@ -1,15 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "trans_log_server_explorer.h"
-#include "translogserver.h"
+
 #include "domain.h"
+#include "translogserver.h"
+
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/util/time.h>
+
 #include <filesystem>
 
-
-using vespalib::slime::Inserter;
 using vespalib::slime::Cursor;
+using vespalib::slime::Inserter;
 namespace fs = std::filesystem;
 
 namespace search::transactionlog {
@@ -19,8 +21,8 @@ namespace {
 struct DomainExplorer : vespalib::StateExplorer {
     Domain::SP domain;
     DomainExplorer(Domain::SP domain_in) : domain(std::move(domain_in)) {}
-    void get_state(const Inserter &inserter, bool full) const override {
-        Cursor &state = inserter.insertObject();
+    void get_state(const Inserter& inserter, bool full) const override {
+        Cursor&    state = inserter.insertObject();
         DomainInfo info = domain->getDomainInfo();
         state.setLong("from", info.range.from());
         state.setLong("to", info.range.to());
@@ -28,9 +30,9 @@ struct DomainExplorer : vespalib::StateExplorer {
         state.setLong("byteSize", info.byteSize);
         state.setLong("size_on_disk", info.size_on_disk);
         if (full) {
-            Cursor &array = state.setArray("parts");
-            for (const PartInfo &part_in: info.parts) {
-                Cursor &part = array.addObject();
+            Cursor& array = state.setArray("parts");
+            for (const PartInfo& part_in : info.parts) {
+                Cursor& part = array.addObject();
                 part.setLong("from", part_in.range.from());
                 part.setLong("to", part_in.range.to());
                 part.setLong("numEntries", part_in.numEntries);
@@ -43,27 +45,21 @@ struct DomainExplorer : vespalib::StateExplorer {
     }
 };
 
-} // namespace search::transactionlog::<unnamed>
+} // namespace
 
 TransLogServerExplorer::~TransLogServerExplorer() = default;
 
-void
-TransLogServerExplorer::get_state(const Inserter &inserter, bool full) const
-{
-    (void) full;
+void TransLogServerExplorer::get_state(const Inserter& inserter, bool full) const {
+    (void)full;
     Cursor& state = inserter.insertObject();
     state.setLong("size_on_disk", _server->get_size_on_disk());
 }
 
-std::vector<std::string>
-TransLogServerExplorer::get_children_names() const
-{
+std::vector<std::string> TransLogServerExplorer::get_children_names() const {
     return _server->getDomainNames();
 }
 
-std::unique_ptr<vespalib::StateExplorer>
-TransLogServerExplorer::get_child(std::string_view name) const
-{
+std::unique_ptr<vespalib::StateExplorer> TransLogServerExplorer::get_child(std::string_view name) const {
     Domain::SP domain = _server->findDomain(name);
     if (!domain) {
         return std::unique_ptr<vespalib::StateExplorer>(nullptr);
@@ -71,4 +67,4 @@ TransLogServerExplorer::get_child(std::string_view name) const
     return std::unique_ptr<vespalib::StateExplorer>(new DomainExplorer(std::move(domain)));
 }
 
-}
+} // namespace search::transactionlog

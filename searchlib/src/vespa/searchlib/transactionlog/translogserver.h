@@ -2,83 +2,87 @@
 #pragma once
 
 #include "domainconfig.h"
-#include <vespa/vespalib/util/threadstackexecutor.h>
+
 #include <vespa/document/util/queue.h>
 #include <vespa/fnet/frt/invokable.h>
-#include <shared_mutex>
+#include <vespa/vespalib/util/threadstackexecutor.h>
+
 #include <atomic>
+#include <shared_mutex>
 #include <thread>
 
 class FRT_Supervisor;
 class FNET_Transport;
 
-namespace search::common { class FileHeaderContext; }
+namespace search::common {
+class FileHeaderContext;
+}
 namespace search::transactionlog {
 
 class TransLogServerExplorer;
 class Domain;
 
-class TransLogServer : private FRT_Invokable, public WriterFactory
-{
+class TransLogServer : private FRT_Invokable, public WriterFactory {
 public:
     friend class TransLogServerExplorer;
     using SP = std::shared_ptr<TransLogServer>;
     using DomainSP = std::shared_ptr<Domain>;
-    TransLogServer(FNET_Transport & transport, const std::string &name, int listenPort, const std::string &baseDir,
-                   const common::FileHeaderContext &fileHeaderContext, const DomainConfig & cfg, size_t maxThreads);
-    TransLogServer(FNET_Transport & transport, const std::string &name, int listenPort, const std::string &baseDir,
-                   const common::FileHeaderContext &fileHeaderContext, const DomainConfig & cfg);
-    TransLogServer(FNET_Transport & transport, const std::string &name, int listenPort, const std::string &baseDir,
-                   const common::FileHeaderContext &fileHeaderContext);
+    TransLogServer(FNET_Transport& transport, const std::string& name, int listenPort, const std::string& baseDir,
+                   const common::FileHeaderContext& fileHeaderContext, const DomainConfig& cfg, size_t maxThreads);
+    TransLogServer(FNET_Transport& transport, const std::string& name, int listenPort, const std::string& baseDir,
+                   const common::FileHeaderContext& fileHeaderContext, const DomainConfig& cfg);
+    TransLogServer(FNET_Transport& transport, const std::string& name, int listenPort, const std::string& baseDir,
+                   const common::FileHeaderContext& fileHeaderContext);
     ~TransLogServer() override;
     DomainStats getDomainStats() const;
     uint64_t get_size_on_disk() const;
-    std::shared_ptr<Writer> getWriter(const std::string & domainName) const override;
-    TransLogServer & setDomainConfig(const DomainConfig & cfg);
+    std::shared_ptr<Writer> getWriter(const std::string& domainName) const override;
+    TransLogServer& setDomainConfig(const DomainConfig& cfg);
 
 private:
     void request_stop();
     void run();
-    void exportRPC(FRT_Supervisor & supervisor);
-    void relayToThreadRPC(FRT_RPCRequest *req);
+    void exportRPC(FRT_Supervisor& supervisor);
+    void relayToThreadRPC(FRT_RPCRequest* req);
 
-    void createDomain(FRT_RPCRequest *req);
-    void deleteDomain(FRT_RPCRequest *req);
-    void openDomain(FRT_RPCRequest *req);
-    void listDomains(FRT_RPCRequest *req);
+    void createDomain(FRT_RPCRequest* req);
+    void deleteDomain(FRT_RPCRequest* req);
+    void openDomain(FRT_RPCRequest* req);
+    void listDomains(FRT_RPCRequest* req);
 
-    void domainStatus(FRT_RPCRequest *req);
-    void domainCommit(FRT_RPCRequest *req);
-    void domainSessionRun(FRT_RPCRequest *req);
-    void domainPrune(FRT_RPCRequest *req);
-    void domainVisit(FRT_RPCRequest *req);
-    void domainSessionClose(FRT_RPCRequest *req);
-    void domainSync(FRT_RPCRequest *req);
+    void domainStatus(FRT_RPCRequest* req);
+    void domainCommit(FRT_RPCRequest* req);
+    void domainSessionRun(FRT_RPCRequest* req);
+    void domainPrune(FRT_RPCRequest* req);
+    void domainVisit(FRT_RPCRequest* req);
+    void domainSessionClose(FRT_RPCRequest* req);
+    void domainSync(FRT_RPCRequest* req);
 
     std::vector<std::string> getDomainNames();
     DomainSP findDomain(std::string_view name) const;
-    std::string dir()        const { return _baseDir + "/" + _name; }
+    std::string dir() const { return _baseDir + "/" + _name; }
     std::string domainList() const { return dir() + "/" + _name + ".domains"; }
 
-    using DomainList = std::map<std::string, DomainSP >;
+    using DomainList = std::map<std::string, DomainSP>;
     using ReadGuard = std::shared_lock<std::shared_mutex>;
     using WriteGuard = std::unique_lock<std::shared_mutex>;
 
     bool running() const { return !_closed.load(std::memory_order_relaxed); }
 
-    std::string                    _name;
-    std::string                    _baseDir;
-    DomainConfig                        _domainConfig;
-    vespalib::ThreadStackExecutor       _executor;
-    std::thread                         _thread;
-    std::unique_ptr<FRT_Supervisor>     _supervisor;
-    DomainList                          _domains;
-    mutable std::shared_mutex           _domainMutex;;          // Protects _domains
-    std::condition_variable             _domainCondition;
-    std::mutex                          _fileLock;      // Protects the creating and deleting domains including file system operations.
-    document::Queue<FRT_RPCRequest *>   _reqQ;
-    const common::FileHeaderContext    &_fileHeaderContext;
-    std::atomic<bool>                   _closed;
+    std::string                     _name;
+    std::string                     _baseDir;
+    DomainConfig                    _domainConfig;
+    vespalib::ThreadStackExecutor   _executor;
+    std::thread                     _thread;
+    std::unique_ptr<FRT_Supervisor> _supervisor;
+    DomainList                      _domains;
+    mutable std::shared_mutex       _domainMutex;
+    ; // Protects _domains
+    std::condition_variable _domainCondition;
+    std::mutex              _fileLock; // Protects the creating and deleting domains including file system operations.
+    document::Queue<FRT_RPCRequest*> _reqQ;
+    const common::FileHeaderContext& _fileHeaderContext;
+    std::atomic<bool>                _closed;
 };
 
-}
+} // namespace search::transactionlog

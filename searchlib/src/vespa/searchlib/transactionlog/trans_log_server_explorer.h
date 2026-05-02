@@ -11,8 +11,7 @@ class TransLogServer;
 /**
  * Class used to explore the state of a transaction log server.
  */
-class TransLogServerExplorer : public vespalib::StateExplorer
-{
+class TransLogServerExplorer : public vespalib::StateExplorer {
 private:
     using TransLogServerSP = std::shared_ptr<TransLogServer>;
     TransLogServerSP _server;
@@ -20,9 +19,9 @@ private:
 public:
     TransLogServerExplorer(TransLogServerSP server) : _server(std::move(server)) {}
     ~TransLogServerExplorer() override;
-    void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
+    void get_state(const vespalib::slime::Inserter& inserter, bool full) const override;
     std::vector<std::string> get_children_names() const override;
     std::unique_ptr<StateExplorer> get_child(std::string_view name) const override;
 };
 
-}
+} // namespace search::transactionlog
