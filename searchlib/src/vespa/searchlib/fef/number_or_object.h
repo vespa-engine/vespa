@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/searchlib/common/feature.h>
 #include <vespa/eval/eval/value.h>
+#include <vespa/searchlib/common/feature.h>
 
 namespace search::fef {
 
@@ -21,4 +21,4 @@ union NumberOrObject {
     ~NumberOrObject() {}
 };
 
-}
+} // namespace search::fef

@@ -13,10 +13,10 @@ class OnnxModel;
  * Empty strings or nullptrs indicates nothing found.
  */
 struct IRankingAssetsRepo {
-    virtual vespalib::eval::ConstantValue::UP getConstant(const std::string &name) const = 0;
-    virtual std::string getExpression(const std::string &name) const = 0;
-    virtual const search::fef::OnnxModel *getOnnxModel(const std::string &name) const = 0;
+    virtual vespalib::eval::ConstantValue::UP getConstant(const std::string& name) const = 0;
+    virtual std::string getExpression(const std::string& name) const = 0;
+    virtual const search::fef::OnnxModel* getOnnxModel(const std::string& name) const = 0;
     virtual ~IRankingAssetsRepo() = default;
 };
 
-}
+} // namespace search::fef

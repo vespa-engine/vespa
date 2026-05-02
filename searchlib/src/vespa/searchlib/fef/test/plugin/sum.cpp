@@ -1,14 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "sum.h"
+
 #include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/vespalib/util/stash.h>
 
 namespace search::fef::test {
 
-void
-SumExecutor::execute(uint32_t)
-{
+void SumExecutor::execute(uint32_t) {
     feature_t sum = 0.0f;
     for (uint32_t i = 0; i < inputs().size(); ++i) {
         sum += inputs().get_number(i);
@@ -16,18 +15,13 @@ SumExecutor::execute(uint32_t)
     outputs().set_number(0, sum);
 }
 
-
-SumBlueprint::SumBlueprint() :
-    Blueprint("mysum")
-{
+SumBlueprint::SumBlueprint() : Blueprint("mysum") {
 }
 
-void
-SumBlueprint::visitDumpFeatures(const IIndexEnvironment & indexEnv, IDumpFeatureVisitor & visitor) const
-{
-    (void) indexEnv;
+void SumBlueprint::visitDumpFeatures(const IIndexEnvironment& indexEnv, IDumpFeatureVisitor& visitor) const {
+    (void)indexEnv;
 #if 1
-    (void) visitor;
+    (void)visitor;
 #else
     // Use the feature name builder to make sure that the naming of features are quoted correctly.
     using FNB = FeatureNameBuilder;
@@ -50,10 +44,8 @@ SumBlueprint::visitDumpFeatures(const IIndexEnvironment & indexEnv, IDumpFeature
 #endif
 }
 
-bool
-SumBlueprint::setup(const IIndexEnvironment & indexEnv, const StringVector & params)
-{
-    (void) indexEnv;
+bool SumBlueprint::setup(const IIndexEnvironment& indexEnv, const StringVector& params) {
+    (void)indexEnv;
 
     // This blueprints expects all parameters to be complete feature names, so depend on these.
     for (uint32_t i = 0; i < params.size(); ++i) {
@@ -65,11 +57,9 @@ SumBlueprint::setup(const IIndexEnvironment & indexEnv, const StringVector & par
     return true;
 }
 
-FeatureExecutor &
-SumBlueprint::createExecutor(const IQueryEnvironment &queryEnv, vespalib::Stash &stash) const
-{
-    (void) queryEnv;
+FeatureExecutor& SumBlueprint::createExecutor(const IQueryEnvironment& queryEnv, vespalib::Stash& stash) const {
+    (void)queryEnv;
     return stash.create<SumExecutor>();
 }
 
-}
+} // namespace search::fef::test

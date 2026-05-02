@@ -6,7 +6,9 @@
 #include <memory>
 #include <string>
 
-namespace vespalib::eval { struct ConstantValue; }
+namespace vespalib::eval {
+struct ConstantValue;
+}
 
 namespace search::fef {
 
@@ -19,8 +21,7 @@ class OnnxModel;
  * Abstract view of index related information available to the
  * framework.
  **/
-class IIndexEnvironment
-{
+class IIndexEnvironment {
 public:
     using string = std::string;
     /**
@@ -31,12 +32,7 @@ public:
      * means that we are just trying to figure out if this setup is
      * valid; the feature will never actually be executed.
      **/
-    enum FeatureMotivation {
-        UNKNOWN = 0,
-        RANK = 1,
-        DUMP = 2,
-        VERIFY_SETUP = 3
-    };
+    enum FeatureMotivation { UNKNOWN = 0, RANK = 1, DUMP = 2, VERIFY_SETUP = 3 };
 
     /**
      * Obtain the set of properties associated with this index
@@ -44,7 +40,7 @@ public:
      *
      * @return properties
      **/
-    virtual const Properties &getProperties() const = 0;
+    virtual const Properties& getProperties() const = 0;
 
     /**
      * Obtain the number of fields
@@ -60,7 +56,7 @@ public:
      *
      * @return information about a single field
      **/
-    virtual const FieldInfo *getField(uint32_t id) const = 0;
+    virtual const FieldInfo* getField(uint32_t id) const = 0;
 
     /**
      * Obtain a field by using the field name. If the field is not
@@ -68,14 +64,14 @@ public:
      *
      * @return information about a single field
      **/
-    virtual const FieldInfo *getFieldByName(const string &name) const = 0;
+    virtual const FieldInfo* getFieldByName(const string& name) const = 0;
 
     /**
      * Obtain the table manager associated with this index environment.
      *
      * @return table manager
      **/
-    virtual const ITableManager &getTableManager() const = 0;
+    virtual const ITableManager& getTableManager() const = 0;
 
     /**
      * Obtain the current motivation behind feature setup. The
@@ -101,17 +97,17 @@ public:
     /**
      * Returns a constant rank value with the given name or null ptr if no such value exists.
      */
-    virtual std::unique_ptr<vespalib::eval::ConstantValue> getConstantValue(const std::string &name) const = 0;
+    virtual std::unique_ptr<vespalib::eval::ConstantValue> getConstantValue(const std::string& name) const = 0;
 
     /**
      * Returns the ranking expression with the given name or empty string if not found.
      **/
-    virtual std::string getRankingExpression(const std::string &name) const = 0;
+    virtual std::string getRankingExpression(const std::string& name) const = 0;
 
     /**
      * Get configuration for the given onnx model.
      **/
-    virtual const OnnxModel *getOnnxModel(const std::string &name) const = 0;
+    virtual const OnnxModel* getOnnxModel(const std::string& name) const = 0;
 
     virtual uint32_t getDistributionKey() const = 0;
 
@@ -121,5 +117,4 @@ public:
     virtual ~IIndexEnvironment() = default;
 };
 
-}
-
+} // namespace search::fef

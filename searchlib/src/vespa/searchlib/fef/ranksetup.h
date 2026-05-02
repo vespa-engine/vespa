@@ -3,12 +3,14 @@
 #pragma once
 
 #include "blueprintfactory.h"
+#include "blueprintresolver.h"
 #include "iindexenvironment.h"
 #include "iqueryenvironment.h"
-#include "blueprintresolver.h"
 #include "rank_program.h"
+
 #include <vespa/searchlib/common/stringmap.h>
 #include <vespa/vespalib/fuzzy/fuzzy_matching_algorithm.h>
+
 #include <optional>
 
 namespace search::fef {
@@ -22,84 +24,83 @@ namespace search::fef {
  * all features that should be dumped when performing a full feature
  * dump.
  **/
-class RankSetup
-{
+class RankSetup {
 public:
     using Warnings = BlueprintResolver::Warnings;
     struct MutateOperation {
     public:
         MutateOperation() : MutateOperation("", "") {}
         MutateOperation(std::string_view attribute, std::string_view operation)
-            : _attribute(attribute),
-              _operation(operation)
-        {}
+            : _attribute(attribute), _operation(operation) {}
         ~MutateOperation();
         bool enabled() const noexcept { return !_attribute.empty() && !_operation.empty(); }
         std::string _attribute;
         std::string _operation;
     };
-private:
-    const BlueprintFactory  &_factory;
-    const IIndexEnvironment &_indexEnv;
-    BlueprintResolver::SP    _first_phase_resolver;
-    BlueprintResolver::SP    _second_phase_resolver;
-    BlueprintResolver::SP    _match_resolver;
-    BlueprintResolver::SP    _summary_resolver;
-    BlueprintResolver::SP    _dumpResolver;
-    std::string         _firstPhaseRankFeature;
-    std::string         _secondPhaseRankFeature;
-    std::string         _degradationAttribute;
-    double                   _termwise_limit;
-    uint32_t                 _numThreads;
-    uint32_t                 _minHitsPerThread;
-    uint32_t                 _numSearchPartitions;
-    uint32_t                 _heapSize;
-    uint32_t                 _arraySize;
-    uint32_t                 _estimatePoint;
-    uint32_t                 _estimateLimit;
-    uint32_t                 _degradationMaxHits;
-    double                   _degradationMaxFilterCoverage;
-    double                   _degradationSamplePercentage;
-    double                   _degradationPostFilterMultiplier;
-    std::optional<feature_t> _first_phase_rank_score_drop_limit;
-    std::optional<feature_t> _second_phase_rank_score_drop_limit;
-    std::vector<std::string> _match_features;
-    std::vector<std::string> _summaryFeatures;
-    std::vector<std::string> _dumpFeatures;
-    Warnings                 _warnings;
-    StringStringMap          _feature_rename_map;
-    bool                     _sort_blueprints_by_cost;
-    bool                     _ignoreDefaultRankFeatures;
-    bool                     _compiled;
-    bool                     _compileError;
-    bool                     _degradationAscendingOrder;
-    std::string         _diversityAttribute;
-    uint32_t                 _diversityMinGroups;
-    double                   _diversityCutoffFactor;
-    std::string         _diversityCutoffStrategy;
-    bool                     _softTimeoutEnabled;
-    double                   _softTimeoutTailCost;
-    double                   _global_filter_lower_limit;
-    double                   _global_filter_upper_limit;
-    double                   _filter_first_upper_limit;
-    double                   _filter_first_exploration;
-    double                   _exploration_slack;
-    bool                     _prefetch_tensors;
-    double                   _target_hits_max_adjustment_factor;
-    double                   _weakand_stop_word_adjust_limit;
-    double                   _weakand_stop_word_drop_limit;
-    bool                     _weakand_allow_drop_all;
-    vespalib::FuzzyMatchingAlgorithm _fuzzy_matching_algorithm;
-    MutateOperation          _mutateOnMatch;
-    MutateOperation          _mutateOnFirstPhase;
-    MutateOperation          _mutateOnSecondPhase;
-    MutateOperation          _mutateOnSummary;
-    bool                     _mutateAllowQueryOverride;
 
-    void compileAndCheckForErrors(BlueprintResolver &bp);
+private:
+    const BlueprintFactory&          _factory;
+    const IIndexEnvironment&         _indexEnv;
+    BlueprintResolver::SP            _first_phase_resolver;
+    BlueprintResolver::SP            _second_phase_resolver;
+    BlueprintResolver::SP            _match_resolver;
+    BlueprintResolver::SP            _summary_resolver;
+    BlueprintResolver::SP            _dumpResolver;
+    std::string                      _firstPhaseRankFeature;
+    std::string                      _secondPhaseRankFeature;
+    std::string                      _degradationAttribute;
+    double                           _termwise_limit;
+    uint32_t                         _numThreads;
+    uint32_t                         _minHitsPerThread;
+    uint32_t                         _numSearchPartitions;
+    uint32_t                         _heapSize;
+    uint32_t                         _arraySize;
+    uint32_t                         _estimatePoint;
+    uint32_t                         _estimateLimit;
+    uint32_t                         _degradationMaxHits;
+    double                           _degradationMaxFilterCoverage;
+    double                           _degradationSamplePercentage;
+    double                           _degradationPostFilterMultiplier;
+    std::optional<feature_t>         _first_phase_rank_score_drop_limit;
+    std::optional<feature_t>         _second_phase_rank_score_drop_limit;
+    std::vector<std::string>         _match_features;
+    std::vector<std::string>         _summaryFeatures;
+    std::vector<std::string>         _dumpFeatures;
+    Warnings                         _warnings;
+    StringStringMap                  _feature_rename_map;
+    bool                             _sort_blueprints_by_cost;
+    bool                             _ignoreDefaultRankFeatures;
+    bool                             _compiled;
+    bool                             _compileError;
+    bool                             _degradationAscendingOrder;
+    std::string                      _diversityAttribute;
+    uint32_t                         _diversityMinGroups;
+    double                           _diversityCutoffFactor;
+    std::string                      _diversityCutoffStrategy;
+    bool                             _softTimeoutEnabled;
+    double                           _softTimeoutTailCost;
+    double                           _global_filter_lower_limit;
+    double                           _global_filter_upper_limit;
+    double                           _filter_first_upper_limit;
+    double                           _filter_first_exploration;
+    double                           _exploration_slack;
+    bool                             _prefetch_tensors;
+    double                           _target_hits_max_adjustment_factor;
+    double                           _weakand_stop_word_adjust_limit;
+    double                           _weakand_stop_word_drop_limit;
+    bool                             _weakand_allow_drop_all;
+    vespalib::FuzzyMatchingAlgorithm _fuzzy_matching_algorithm;
+    MutateOperation                  _mutateOnMatch;
+    MutateOperation                  _mutateOnFirstPhase;
+    MutateOperation                  _mutateOnSecondPhase;
+    MutateOperation                  _mutateOnSummary;
+    bool                             _mutateAllowQueryOverride;
+
+    void compileAndCheckForErrors(BlueprintResolver& bp);
+
 public:
-    RankSetup(const RankSetup &) = delete;
-    RankSetup &operator=(const RankSetup &) = delete;
+    RankSetup(const RankSetup&) = delete;
+    RankSetup& operator=(const RankSetup&) = delete;
     /**
      * Convenience typedef for a shared pointer to this class.
      **/
@@ -112,7 +113,7 @@ public:
      * @param factory blueprint factory
      * @param indexEnv index environment
      **/
-    RankSetup(const BlueprintFactory &factory, const IIndexEnvironment &indexEnv);
+    RankSetup(const BlueprintFactory& factory, const IIndexEnvironment& indexEnv);
 
     ~RankSetup();
 
@@ -129,14 +130,14 @@ public:
      *
      * @param featureName full feature name for first phase rank
      **/
-    void setFirstPhaseRank(const std::string &featureName);
+    void setFirstPhaseRank(const std::string& featureName);
 
     /**
      * Returns the first phase ranking.
      *
      * @return feature name for first phase rank
      **/
-    const std::string &getFirstPhaseRank() const { return _firstPhaseRankFeature; }
+    const std::string& getFirstPhaseRank() const { return _firstPhaseRankFeature; }
 
     /**
      * This method is invoked during setup (before invoking the @ref
@@ -144,14 +145,14 @@ public:
      *
      * @param featureName full feature name for second phase rank
      **/
-    void setSecondPhaseRank(const std::string &featureName);
+    void setSecondPhaseRank(const std::string& featureName);
 
     /**
      * Returns the second phase ranking.
      *
      * @return feature name for second phase rank
      **/
-    const std::string &getSecondPhaseRank() const { return _secondPhaseRankFeature; }
+    const std::string& getSecondPhaseRank() const { return _secondPhaseRankFeature; }
 
     /**
      * Set the termwise limit
@@ -224,68 +225,42 @@ public:
     uint32_t getArraySize() const { return _arraySize; }
 
     /** get name of attribute to use for graceful degradation in match phase */
-    std::string getDegradationAttribute() const {
-        return _degradationAttribute;
-    }
+    std::string getDegradationAttribute() const { return _degradationAttribute; }
     /** check whether attribute should be used in ascending order during graceful degradation in match phase */
-    bool isDegradationOrderAscending() const {
-        return _degradationAscendingOrder;
-    }
+    bool isDegradationOrderAscending() const { return _degradationAscendingOrder; }
     /** get number of hits to collect during graceful degradation in match phase */
-    uint32_t getDegradationMaxHits() const {
-        return _degradationMaxHits;
-    }
+    uint32_t getDegradationMaxHits() const { return _degradationMaxHits; }
 
     double getDegradationMaxFilterCoverage() const { return _degradationMaxFilterCoverage; }
     /** get number of hits to collect during graceful degradation in match phase */
-    double getDegradationSamplePercentage() const {
-        return _degradationSamplePercentage;
-    }
+    double getDegradationSamplePercentage() const { return _degradationSamplePercentage; }
 
     /** get number of hits to collect during graceful degradation in match phase */
-    double getDegradationPostFilterMultiplier() const {
-        return _degradationPostFilterMultiplier;
-    }
+    double getDegradationPostFilterMultiplier() const { return _degradationPostFilterMultiplier; }
 
     /** get the attribute used to ensure diversity during match phase limiting **/
-    std::string getDiversityAttribute() const {
-        return _diversityAttribute;
-    }
+    std::string getDiversityAttribute() const { return _diversityAttribute; }
 
     /** get the minimal diversity we should try to achieve **/
-    uint32_t getDiversityMinGroups() const {
-        return _diversityMinGroups;
-    }
+    uint32_t getDiversityMinGroups() const { return _diversityMinGroups; }
 
-    double getDiversityCutoffFactor() const {
-        return _diversityCutoffFactor;
-    }
+    double getDiversityCutoffFactor() const { return _diversityCutoffFactor; }
 
-    const std::string & getDiversityCutoffStrategy() const {
-        return _diversityCutoffStrategy;
-    }
+    const std::string& getDiversityCutoffStrategy() const { return _diversityCutoffStrategy; }
 
     /** set name of attribute to use for graceful degradation in match phase */
-    void setDegradationAttribute(const std::string &name) {
-        _degradationAttribute = name;
-    }
+    void setDegradationAttribute(const std::string& name) { _degradationAttribute = name; }
     /** set whether attribute should be used in ascending order during graceful degradation in match phase */
-    void setDegradationOrderAscending(bool ascending) {
-        _degradationAscendingOrder = ascending;
-    }
+    void setDegradationOrderAscending(bool ascending) { _degradationAscendingOrder = ascending; }
     /** set number of hits to collect during graceful degradation in match phase */
-    void setDegradationMaxHits(uint32_t maxHits) {
-        _degradationMaxHits = maxHits;
-    }
+    void setDegradationMaxHits(uint32_t maxHits) { _degradationMaxHits = maxHits; }
 
     void setDegradationMaxFilterCoverage(double degradationMaxFilterCoverage) {
         _degradationMaxFilterCoverage = degradationMaxFilterCoverage;
     }
 
     /** set number of hits to collect during graceful degradation in match phase */
-    void setDegradationSamplePercentage(double samplePercentage) {
-        _degradationSamplePercentage = samplePercentage;
-    }
+    void setDegradationSamplePercentage(double samplePercentage) { _degradationSamplePercentage = samplePercentage; }
 
     /** set number of hits to collect during graceful degradation in match phase */
     void setDegradationPostFilterMultiplier(double samplePercentage) {
@@ -293,22 +268,14 @@ public:
     }
 
     /** set the attribute used to ensure diversity during match phase limiting **/
-    void setDiversityAttribute(const std::string &value) {
-        _diversityAttribute = value;
-    }
+    void setDiversityAttribute(const std::string& value) { _diversityAttribute = value; }
 
     /** set the minimal diversity we should try to achieve **/
-    void setDiversityMinGroups(uint32_t value) {
-        _diversityMinGroups = value;
-    }
+    void setDiversityMinGroups(uint32_t value) { _diversityMinGroups = value; }
 
-    void setDiversityCutoffFactor(double value) {
-        _diversityCutoffFactor = value;
-    }
+    void setDiversityCutoffFactor(double value) { _diversityCutoffFactor = value; }
 
-    void setDiversityCutoffStrategy(const std::string & value) {
-        _diversityCutoffStrategy  = value;
-    }
+    void setDiversityCutoffStrategy(const std::string& value) { _diversityCutoffStrategy = value; }
 
     /**
      * Sets the estimate point to be used in parallel query evaluation.
@@ -343,18 +310,26 @@ public:
      *
      * @param value the first phase rank score drop limit
      **/
-    void set_first_phase_rank_score_drop_limit(std::optional<feature_t> value) { _first_phase_rank_score_drop_limit = value; }
+    void set_first_phase_rank_score_drop_limit(std::optional<feature_t> value) {
+        _first_phase_rank_score_drop_limit = value;
+    }
 
     /**
      * Returns the rank score drop limit to be used in parallel query evaluation.
      *
      * @return the rank score drop limit
      **/
-    std::optional<feature_t> get_first_phase_rank_score_drop_limit() const noexcept { return _first_phase_rank_score_drop_limit; }
+    std::optional<feature_t> get_first_phase_rank_score_drop_limit() const noexcept {
+        return _first_phase_rank_score_drop_limit;
+    }
 
-    void set_second_phase_rank_score_drop_limit(std::optional<feature_t> value) { _second_phase_rank_score_drop_limit = value; }
+    void set_second_phase_rank_score_drop_limit(std::optional<feature_t> value) {
+        _second_phase_rank_score_drop_limit = value;
+    }
 
-    std::optional<feature_t> get_second_phase_rank_score_drop_limit() const noexcept { return _second_phase_rank_score_drop_limit; }
+    std::optional<feature_t> get_second_phase_rank_score_drop_limit() const noexcept {
+        return _second_phase_rank_score_drop_limit;
+    }
 
     /**
      * This method may be used to indicate that certain features
@@ -362,7 +337,7 @@ public:
      *
      * @param match_feature full feature name of a match feature
      **/
-    void add_match_feature(const std::string &match_feature);
+    void add_match_feature(const std::string& match_feature);
 
     /**
      * This method may be used to indicate that certain features
@@ -370,7 +345,7 @@ public:
      *
      * @param summaryFeature full feature name of a summary feature
      **/
-    void addSummaryFeature(const std::string &summaryFeature);
+    void addSummaryFeature(const std::string& summaryFeature);
 
     /**
      * @return whether there are any match features
@@ -382,16 +357,16 @@ public:
      *
      * @return vector of match feature names.
      **/
-    const std::vector<std::string> &get_match_features() const { return _match_features; }
+    const std::vector<std::string>& get_match_features() const { return _match_features; }
 
-    const StringStringMap &get_feature_rename_map() const { return _feature_rename_map; }
+    const StringStringMap& get_feature_rename_map() const { return _feature_rename_map; }
 
     /**
      * Returns a const view of the summary features added.
      *
      * @return vector of summary feature names.
      **/
-    const std::vector<std::string> &getSummaryFeatures() const { return _summaryFeatures; }
+    const std::vector<std::string>& getSummaryFeatures() const { return _summaryFeatures; }
 
     /**
      * Set the flag indicating whether we should ignore the default
@@ -435,14 +410,14 @@ public:
      *
      * @param dumpFeature full feature name of a dump feature
      **/
-    void addDumpFeature(const std::string &dumpFeature);
+    void addDumpFeature(const std::string& dumpFeature);
 
     /**
      * Returns a const view of the dump features added.
      *
      * @return vector of dump feature names.
      **/
-    const std::vector<std::string> &getDumpFeatures() const { return _dumpFeatures; }
+    const std::vector<std::string>& getDumpFeatures() const { return _dumpFeatures; }
 
     /**
      * Create blueprints, resolve dependencies and form a strategy for
@@ -467,8 +442,12 @@ public:
     // them to be ready to use. Also keep in mind that creating a rank
     // program is cheap while setting it up is more expensive.
 
-    RankProgram::UP create_first_phase_program() const { return std::make_unique<RankProgram>(_first_phase_resolver); }
-    RankProgram::UP create_second_phase_program() const { return std::make_unique<RankProgram>(_second_phase_resolver); }
+    RankProgram::UP create_first_phase_program() const {
+        return std::make_unique<RankProgram>(_first_phase_resolver);
+    }
+    RankProgram::UP create_second_phase_program() const {
+        return std::make_unique<RankProgram>(_second_phase_resolver);
+    }
     RankProgram::UP create_match_program() const { return std::make_unique<RankProgram>(_match_resolver); }
     RankProgram::UP create_summary_program() const { return std::make_unique<RankProgram>(_summary_resolver); }
     RankProgram::UP create_dump_program() const { return std::make_unique<RankProgram>(_dumpResolver); }
@@ -478,15 +457,15 @@ public:
      * This is called before creating multiple execution threads.
      * @param queryEnv The query environment.
      */
-    void prepareSharedState(const IQueryEnvironment & queryEnv, IObjectStore & objectStore) const;
+    void prepareSharedState(const IQueryEnvironment& queryEnv, IObjectStore& objectStore) const;
 
-    const MutateOperation & getMutateOnMatch() const { return _mutateOnMatch; }
-    const MutateOperation & getMutateOnFirstPhase() const { return _mutateOnFirstPhase; }
-    const MutateOperation & getMutateOnSecondPhase() const { return _mutateOnSecondPhase; }
-    const MutateOperation & getMutateOnSummary() const { return _mutateOnSummary; }
+    const MutateOperation& getMutateOnMatch() const { return _mutateOnMatch; }
+    const MutateOperation& getMutateOnFirstPhase() const { return _mutateOnFirstPhase; }
+    const MutateOperation& getMutateOnSecondPhase() const { return _mutateOnSecondPhase; }
+    const MutateOperation& getMutateOnSummary() const { return _mutateOnSummary; }
 
     bool allowMutateQueryOverride() const { return _mutateAllowQueryOverride; }
     bool sort_blueprints_by_cost() const noexcept { return _sort_blueprints_by_cost; }
 };
 
-}
+} // namespace search::fef

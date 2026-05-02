@@ -1,8 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "featuretest.h"
-#include <vespa/searchlib/fef/utils.h>
+
 #include <vespa/searchlib/fef/blueprint.h>
+#include <vespa/searchlib/fef/utils.h>
+
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -10,50 +12,39 @@ LOG_SETUP(".fef.featuretest");
 
 namespace search::fef::test {
 
-FeatureTest::FeatureTest(BlueprintFactory &factory,
-                         const IndexEnvironment &indexEnv,
-                         QueryEnvironment &queryEnv,
-                         MatchDataLayout &layout,
-                         const std::vector<std::string> &features,
-                         const Properties &overrides) :
-    _factory(factory),
-    _indexEnv(indexEnv),
-    _queryEnv(queryEnv),
-    _features(features),
-    _layout(layout),
-    _overrides(overrides),
-    _resolver(new BlueprintResolver(factory, indexEnv)),
-    _match_data(_layout.createMatchData()),
-    _rankProgram(new RankProgram(_resolver)),
-    _doneSetup(false)
-{
+FeatureTest::FeatureTest(BlueprintFactory& factory, const IndexEnvironment& indexEnv, QueryEnvironment& queryEnv,
+                         MatchDataLayout& layout, const std::vector<std::string>& features,
+                         const Properties& overrides)
+    : _factory(factory),
+      _indexEnv(indexEnv),
+      _queryEnv(queryEnv),
+      _features(features),
+      _layout(layout),
+      _overrides(overrides),
+      _resolver(new BlueprintResolver(factory, indexEnv)),
+      _match_data(_layout.createMatchData()),
+      _rankProgram(new RankProgram(_resolver)),
+      _doneSetup(false) {
 }
 
 FeatureTest::~FeatureTest() = default;
 
-FeatureTest::FeatureTest(BlueprintFactory &factory,
-                         const IndexEnvironment &indexEnv,
-                         QueryEnvironment &queryEnv,
-                         MatchDataLayout &layout,
-                         const std::string &feature,
-                         const Properties &overrides) :
-    _factory(factory),
-    _indexEnv(indexEnv),
-    _queryEnv(queryEnv),
-    _features(),
-    _layout(layout),
-    _overrides(overrides),
-    _resolver(new BlueprintResolver(factory, indexEnv)),
-    _match_data(_layout.createMatchData()),
-    _rankProgram(new RankProgram(_resolver)),
-    _doneSetup(false)
-{
+FeatureTest::FeatureTest(BlueprintFactory& factory, const IndexEnvironment& indexEnv, QueryEnvironment& queryEnv,
+                         MatchDataLayout& layout, const std::string& feature, const Properties& overrides)
+    : _factory(factory),
+      _indexEnv(indexEnv),
+      _queryEnv(queryEnv),
+      _features(),
+      _layout(layout),
+      _overrides(overrides),
+      _resolver(new BlueprintResolver(factory, indexEnv)),
+      _match_data(_layout.createMatchData()),
+      _rankProgram(new RankProgram(_resolver)),
+      _doneSetup(false) {
     _features.push_back(feature);
 }
 
-bool
-FeatureTest::setup()
-{
+bool FeatureTest::setup() {
     if (_doneSetup) {
         LOG(error, "Setup already done.");
         return false;
@@ -74,7 +65,7 @@ FeatureTest::setup()
         LOG(error, "Failed to compile blueprint resolver.");
         return false;
     }
-    for (const auto &spec: _resolver->getExecutorSpecs()) {
+    for (const auto& spec : _resolver->getExecutorSpecs()) {
         spec.blueprint->prepareSharedState(_queryEnv, _queryEnv.getObjectStore());
     }
     _rankProgram->setup(*_match_data, _queryEnv, _overrides);
@@ -82,9 +73,7 @@ FeatureTest::setup()
     return true;
 }
 
-MatchDataBuilder::UP
-FeatureTest::createMatchDataBuilder()
-{
+MatchDataBuilder::UP FeatureTest::createMatchDataBuilder() {
     if (_doneSetup) {
         return MatchDataBuilder::UP(new MatchDataBuilder(_queryEnv, *_match_data));
     }
@@ -92,9 +81,7 @@ FeatureTest::createMatchDataBuilder()
     return MatchDataBuilder::UP();
 }
 
-bool
-FeatureTest::execute(const RankResult &expected, uint32_t docId)
-{
+bool FeatureTest::execute(const RankResult& expected, uint32_t docId) {
     RankResult result;
     if (!executeOnly(result, docId)) {
         return false;
@@ -114,15 +101,11 @@ FeatureTest::execute(const RankResult &expected, uint32_t docId)
     return true;
 }
 
-bool
-FeatureTest::execute(feature_t expected, double epsilon, uint32_t docId)
-{
+bool FeatureTest::execute(feature_t expected, double epsilon, uint32_t docId) {
     return execute(RankResult().setEpsilon(epsilon).addScore(_features.front(), expected), docId);
 }
 
-bool
-FeatureTest::executeOnly(RankResult & result, uint32_t docId)
-{
+bool FeatureTest::executeOnly(RankResult& result, uint32_t docId) {
     if (!_doneSetup) {
         LOG(error, "Setup not done.");
         return false;
@@ -134,19 +117,15 @@ FeatureTest::executeOnly(RankResult & result, uint32_t docId)
     return true;
 }
 
-vespalib::eval::Value::CREF
-FeatureTest::resolveObjectFeature(uint32_t docid)
-{
+vespalib::eval::Value::CREF FeatureTest::resolveObjectFeature(uint32_t docid) {
     return Utils::getObjectFeature(*_rankProgram, docid);
 }
 
-void
-FeatureTest::clear()
-{
+void FeatureTest::clear() {
     _resolver = BlueprintResolver::SP(new BlueprintResolver(_factory, _indexEnv));
     _match_data = _layout.createMatchData();
     _rankProgram.reset(new RankProgram(_resolver));
     _doneSetup = false;
 }
 
-}
+} // namespace search::fef::test

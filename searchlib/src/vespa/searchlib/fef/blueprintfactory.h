@@ -3,6 +3,7 @@
 #pragma once
 
 #include "iblueprintregistry.h"
+
 #include <map>
 #include <string>
 
@@ -16,8 +17,7 @@ class IDumpFeatureVisitor;
  * This class implements the blueprint repository interface and acts
  * as a blueprint factory for the framework itself.
  **/
-class BlueprintFactory : public IBlueprintRegistry
-{
+class BlueprintFactory : public IBlueprintRegistry {
 private:
     using BlueprintSP = std::shared_ptr<Blueprint>;
     using BlueprintMap = std::map<std::string, BlueprintSP>;
@@ -25,8 +25,8 @@ private:
     BlueprintMap _blueprintMap;
 
 public:
-    BlueprintFactory(const BlueprintFactory &) = delete;
-    BlueprintFactory &operator=(const BlueprintFactory &) = delete;
+    BlueprintFactory(const BlueprintFactory&) = delete;
+    BlueprintFactory& operator=(const BlueprintFactory&) = delete;
     BlueprintFactory();
 
     void addPrototype(BlueprintSP proto) override;
@@ -39,8 +39,7 @@ public:
      * @param indexEnv the index environment
      * @param visitor the object visiting dump features
      **/
-    void visitDumpFeatures(const IIndexEnvironment &indexEnv,
-                           IDumpFeatureVisitor &visitor) const;
+    void visitDumpFeatures(const IIndexEnvironment& indexEnv, IDumpFeatureVisitor& visitor) const;
 
     /**
      * Create a new blueprint instance by using the appropriate
@@ -51,7 +50,7 @@ public:
      * @return fresh and clean blueprint of the appropriate class
      * @param name feature executor base name
      **/
-    BlueprintSP createBlueprint(const std::string &name) const;
+    BlueprintSP createBlueprint(const std::string& name) const;
 };
 
-}
+} // namespace search::fef

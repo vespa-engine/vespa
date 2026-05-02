@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "mock_attribute_context.h"
+
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
-#include <memory>
+
 #include <map>
+#include <memory>
 
 #pragma once
 
@@ -19,8 +21,9 @@ namespace search::fef::test {
  * attribute map for their lookups.
  */
 class AttributeMap {
-    std::map<std::string, std::shared_ptr<attribute::IAttributeVector>> _attributes;
+    std::map<std::string, std::shared_ptr<attribute::IAttributeVector>>   _attributes;
     std::map<std::string, std::unique_ptr<attribute::AttributeReadGuard>> _guards;
+
 public:
     using IAttributeVector = attribute::IAttributeVector;
     ~AttributeMap();
@@ -33,9 +36,9 @@ public:
         _guards.emplace(guard->attribute()->getName(), std::move(guard));
     }
 
-    const IAttributeVector * getAttribute(std::string_view name_view) const {
+    const IAttributeVector* getAttribute(std::string_view name_view) const {
         std::string name(name_view);
-        auto attrItr = _attributes.find(name);
+        auto        attrItr = _attributes.find(name);
         if (attrItr != _attributes.end()) {
             return attrItr->second.get();
         }
@@ -46,18 +49,16 @@ public:
         return nullptr;
     }
 
-    void getAttributeList(std::vector<const IAttributeVector *> & list) const {
+    void getAttributeList(std::vector<const IAttributeVector*>& list) const {
         for (const auto& attr : _attributes) {
             list.emplace_back(attr.second.get());
         }
-        for (const auto &guard : _guards) {
+        for (const auto& guard : _guards) {
             list.emplace_back(guard.second->attribute());
         }
     }
 
-    attribute::IAttributeContext::UP createContext() const {
-        return std::make_unique<MockAttributeContext>(*this);
-    }
+    attribute::IAttributeContext::UP createContext() const { return std::make_unique<MockAttributeContext>(*this); }
 };
 
-}
+} // namespace search::fef::test

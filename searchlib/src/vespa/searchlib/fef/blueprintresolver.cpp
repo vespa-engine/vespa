@@ -1,13 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "blueprintresolver.h"
+
+#include "blueprint.h"
 #include "blueprintfactory.h"
 #include "featurenameparser.h"
-#include "blueprint.h"
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/size_literals.h>
+
 #include <vespa/config.h>
+#include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/stringfmt.h>
+
 #include <cassert>
 #include <set>
 
@@ -22,24 +25,26 @@ constexpr int TRACE_SKIP_POS = 10;
 
 using Accept = Blueprint::AcceptInput;
 
-std::string describe(const std::string &feature_name) {
+std::string describe(const std::string& feature_name) {
     return BlueprintResolver::describe_feature(feature_name);
 }
 
 bool is_compatible(bool is_object, Accept accept_type) {
-    return ((accept_type == Accept::ANY) ||
-            ((accept_type == Accept::OBJECT) == (is_object)));
+    return ((accept_type == Accept::ANY) || ((accept_type == Accept::OBJECT) == (is_object)));
 }
 
-const char *type_str(bool is_object) {
+const char* type_str(bool is_object) {
     return (is_object ? "object" : "number");
 }
 
-const char *accept_type_str(Accept accept_type) {
+const char* accept_type_str(Accept accept_type) {
     switch (accept_type) {
-    case Accept::NUMBER: return "number";
-    case Accept::OBJECT: return "object";
-    case Accept::ANY:    return "any";
+    case Accept::NUMBER:
+        return "number";
+    case Accept::OBJECT:
+        return "object";
+    case Accept::ANY:
+        return "any";
     }
     return "(not reached)";
 }
@@ -51,38 +56,36 @@ struct Compiler : public Blueprint::DependencyHandler {
     using FeatureMap = BlueprintResolver::FeatureMap;
 
     struct Frame {
-        ExecutorSpec spec;
-        const FeatureNameParser &parser;
-        Frame(Blueprint::SP blueprint, const FeatureNameParser &parser_in) noexcept
+        ExecutorSpec             spec;
+        const FeatureNameParser& parser;
+        Frame(Blueprint::SP blueprint, const FeatureNameParser& parser_in) noexcept
             : spec(std::move(blueprint)), parser(parser_in) {}
     };
     using Stack = std::vector<Frame>;
     using Errors = std::vector<std::string>;
 
     struct FrameGuard {
-        Stack &stack;
-        explicit FrameGuard(Stack &stack_in) : stack(stack_in) {}
+        Stack& stack;
+        explicit FrameGuard(Stack& stack_in) : stack(stack_in) {}
         ~FrameGuard() {
             stack.back().spec.blueprint->detach_dependency_handler();
             stack.pop_back();
         }
     };
 
-    const BlueprintFactory     &factory;
-    const IIndexEnvironment    &index_env;
-    Stack                       resolve_stack;
-    Errors                      errors;
-    ExecutorSpecList           &spec_list;
-    FeatureMap                 &feature_map;
-    std::set<std::string>  setup_set;
-    std::set<std::string>  failed_set;
-    const char                 *min_stack;
-    const char                 *max_stack;
+    const BlueprintFactory&  factory;
+    const IIndexEnvironment& index_env;
+    Stack                    resolve_stack;
+    Errors                   errors;
+    ExecutorSpecList&        spec_list;
+    FeatureMap&              feature_map;
+    std::set<std::string>    setup_set;
+    std::set<std::string>    failed_set;
+    const char*              min_stack;
+    const char*              max_stack;
 
-    Compiler(const BlueprintFactory &factory_in,
-             const IIndexEnvironment &index_env_in,
-             ExecutorSpecList &spec_list_out,
-             FeatureMap &feature_map_out)
+    Compiler(const BlueprintFactory& factory_in, const IIndexEnvironment& index_env_in,
+             ExecutorSpecList& spec_list_out, FeatureMap& feature_map_out)
         : factory(factory_in),
           index_env(index_env_in),
           resolve_stack(),
@@ -101,17 +104,15 @@ struct Compiler : public Blueprint::DependencyHandler {
         max_stack = (max_stack == nullptr) ? &c : std::max(max_stack, &c);
     }
 
-    [[nodiscard]] int stack_usage() const {
-        return (max_stack - min_stack);
-    }
+    [[nodiscard]] int stack_usage() const { return (max_stack - min_stack); }
 
-    Frame &self() { return resolve_stack.back(); }
+    Frame& self() { return resolve_stack.back(); }
     [[nodiscard]] bool failed() const { return !failed_set.empty(); }
 
     std::string make_trace(bool skip_self) {
         std::string trace;
-        auto pos = resolve_stack.rbegin();
-        auto end = resolve_stack.rend();
+        auto        pos = resolve_stack.rbegin();
+        auto        end = resolve_stack.rend();
         if ((pos != end) && skip_self) {
             ++pos;
         }
@@ -131,10 +132,10 @@ struct Compiler : public Blueprint::DependencyHandler {
         return trace;
     }
 
-    FeatureRef fail(const std::string &feature_name, const std::string &reason, bool skip_self = false) {
+    FeatureRef fail(const std::string& feature_name, const std::string& reason, bool skip_self = false) {
         if (failed_set.count(feature_name) == 0) {
             failed_set.insert(feature_name);
-            auto trace = make_trace(skip_self);
+            auto        trace = make_trace(skip_self);
             std::string msg;
             msg = fmt("invalid %s: %s\n%s", describe(feature_name).c_str(), reason.c_str(), trace.c_str());
             vespalib::chomp(msg);
@@ -144,23 +145,21 @@ struct Compiler : public Blueprint::DependencyHandler {
         return {};
     }
 
-    void fail_self(const std::string &reason) {
-        fail(self().parser.featureName(), reason, true);
-    }
+    void fail_self(const std::string& reason) { fail(self().parser.featureName(), reason, true); }
 
-    FeatureRef verify_type(const FeatureNameParser &parser, FeatureRef ref, Accept accept_type) {
-        const auto &spec = spec_list[ref.executor];
-        bool is_object = spec.output_types[ref.output].is_object();
+    FeatureRef verify_type(const FeatureNameParser& parser, FeatureRef ref, Accept accept_type) {
+        const auto& spec = spec_list[ref.executor];
+        bool        is_object = spec.output_types[ref.output].is_object();
         if (!is_compatible(is_object, accept_type)) {
             return fail(parser.featureName(),
-                        fmt("output '%s' has wrong type: was %s, expected %s",
-                            parser.output().c_str(), type_str(is_object), accept_type_str(accept_type)));
+                        fmt("output '%s' has wrong type: was %s, expected %s", parser.output().c_str(),
+                            type_str(is_object), accept_type_str(accept_type)));
         }
         probe_stack();
         return ref;
     }
 
-    void setup_executor(const FeatureNameParser &parser) {
+    void setup_executor(const FeatureNameParser& parser) {
         if (setup_set.count(parser.executorName()) == 0) {
             setup_set.insert(parser.executorName());
             if (Blueprint::SP blueprint = factory.createBlueprint(parser.baseName())) {
@@ -181,7 +180,7 @@ struct Compiler : public Blueprint::DependencyHandler {
         }
     }
 
-    FeatureRef resolve_feature(const std::string &feature_name, Accept accept_type) {
+    FeatureRef resolve_feature(const std::string& feature_name, Accept accept_type) {
         auto parser = std::make_unique<FeatureNameParser>(feature_name);
         if (!parser->valid()) {
             return fail(feature_name, "malformed name");
@@ -196,7 +195,7 @@ struct Compiler : public Blueprint::DependencyHandler {
         if ((resolve_stack.size() + 1) > BlueprintResolver::MAX_DEP_DEPTH) {
             return fail(parser->featureName(), "dependency graph too deep");
         }
-        for (const Frame &frame: resolve_stack) {
+        for (const Frame& frame : resolve_stack) {
             if (frame.parser.executorName() == parser->executorName()) {
                 return fail(parser->featureName(), "dependency cycle detected");
             }
@@ -209,7 +208,7 @@ struct Compiler : public Blueprint::DependencyHandler {
         return fail(parser->featureName(), fmt("unknown output: '%s'", parser->output().c_str()));
     }
 
-    std::optional<FeatureType> resolve_input(const std::string &feature_name, Accept accept_type) override {
+    std::optional<FeatureType> resolve_input(const std::string& feature_name, Accept accept_type) override {
         assert(self().spec.output_types.empty()); // require: 'resolve inputs' before 'define outputs'
         auto ref = resolve_feature(feature_name, accept_type);
         if (!ref.valid()) {
@@ -221,7 +220,7 @@ struct Compiler : public Blueprint::DependencyHandler {
         return spec_list[ref.executor].output_types[ref.output];
     }
 
-    void define_output(const std::string &output_name, FeatureType type) override {
+    void define_output(const std::string& output_name, FeatureType type) override {
         std::string feature_name = self().parser.executorName();
         if (!output_name.empty()) {
             feature_name.push_back('.');
@@ -235,45 +234,29 @@ struct Compiler : public Blueprint::DependencyHandler {
         self().spec.output_types.push_back(std::move(type));
     }
 
-    void fail(const std::string &msg) override {
-        fail_self(msg);
-    }
+    void fail(const std::string& msg) override { fail_self(msg); }
 };
 
 Compiler::~Compiler() = default;
 
-} // namespace search::fef::<unnamed>
+} // namespace
 
 BlueprintResolver::ExecutorSpec::ExecutorSpec(Blueprint::SP blueprint_in) noexcept
-    : blueprint(std::move(blueprint_in)),
-      inputs(),
-      output_types()
-{ }
-BlueprintResolver::ExecutorSpec::ExecutorSpec(ExecutorSpec &&) noexcept = default;
-BlueprintResolver::ExecutorSpec & BlueprintResolver::ExecutorSpec::operator =(ExecutorSpec &&) noexcept = default;
-BlueprintResolver::ExecutorSpec::ExecutorSpec(const ExecutorSpec &) = default;
+    : blueprint(std::move(blueprint_in)), inputs(), output_types() {
+}
+BlueprintResolver::ExecutorSpec::ExecutorSpec(ExecutorSpec&&) noexcept = default;
+BlueprintResolver::ExecutorSpec& BlueprintResolver::ExecutorSpec::operator=(ExecutorSpec&&) noexcept = default;
+BlueprintResolver::ExecutorSpec::ExecutorSpec(const ExecutorSpec&) = default;
 BlueprintResolver::ExecutorSpec::~ExecutorSpec() = default;
 BlueprintResolver::~BlueprintResolver() = default;
 
-BlueprintResolver::BlueprintResolver(const BlueprintFactory &factory,
-                                     const IIndexEnvironment &indexEnv)
-    : _factory(factory),
-      _indexEnv(indexEnv),
-      _seeds(),
-      _executorSpecs(),
-      _featureMap(),
-      _seedMap(),
-      _warnings()
-{
+BlueprintResolver::BlueprintResolver(const BlueprintFactory& factory, const IIndexEnvironment& indexEnv)
+    : _factory(factory), _indexEnv(indexEnv), _seeds(), _executorSpecs(), _featureMap(), _seedMap(), _warnings() {
 }
 
-std::string
-BlueprintResolver::describe_feature(const std::string &name)
-{
+std::string BlueprintResolver::describe_feature(const std::string& name) {
     auto parser = std::make_unique<FeatureNameParser>(name);
-    if (parser->valid() &&
-        (parser->baseName() == "rankingExpression") &&
-        (parser->parameters().size() == 1) &&
+    if (parser->valid() && (parser->baseName() == "rankingExpression") && (parser->parameters().size() == 1) &&
         parser->output().empty())
     {
         auto param = parser->parameters()[0];
@@ -283,34 +266,30 @@ BlueprintResolver::describe_feature(const std::string &name)
     return fmt("rank feature %s", name.c_str());
 }
 
-void
-BlueprintResolver::addSeed(std::string_view feature)
-{
+void BlueprintResolver::addSeed(std::string_view feature) {
     _seeds.emplace_back(feature);
 }
 
 namespace {
 #if defined(VESPA_USE_ADDRESS_SANITIZER)
-    constexpr size_t STACK_MULTIPLIER  = 10;
+constexpr size_t STACK_MULTIPLIER = 10;
 #else
-    constexpr size_t STACK_MULTIPLIER  = 1;
+constexpr size_t STACK_MULTIPLIER = 1;
 #endif
-}
+} // namespace
 
-bool
-BlueprintResolver::compile()
-{
+bool BlueprintResolver::compile() {
     assert(_executorSpecs.empty()); // only one compilation allowed
     Compiler compiler(_factory, _indexEnv, _executorSpecs, _featureMap);
 
     compiler.probe_stack();
-    for (const auto &seed: _seeds) {
-       auto ref = compiler.resolve_feature(seed, Blueprint::AcceptInput::ANY);
-       if (compiler.failed()) {
-           _warnings = std::move(compiler.errors);
-           break;
-       }
-       _seedMap.emplace(FeatureNameParser(seed).featureName(), ref);
+    for (const auto& seed : _seeds) {
+        auto ref = compiler.resolve_feature(seed, Blueprint::AcceptInput::ANY);
+        if (compiler.failed()) {
+            _warnings = std::move(compiler.errors);
+            break;
+        }
+        _seedMap.emplace(FeatureNameParser(seed).featureName(), ref);
     }
 
     size_t stack_usage = compiler.stack_usage();
@@ -320,4 +299,4 @@ BlueprintResolver::compile()
     return !compiler.failed();
 }
 
-}
+} // namespace search::fef

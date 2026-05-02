@@ -10,18 +10,17 @@ namespace search {
 namespace fef {
 namespace test {
 
-class CfgValueBlueprint : public Blueprint
-{
+class CfgValueBlueprint : public Blueprint {
 private:
     std::vector<feature_t> _values;
 
 public:
     CfgValueBlueprint();
     ~CfgValueBlueprint();
-    void visitDumpFeatures(const IIndexEnvironment & indexEnv, IDumpFeatureVisitor & visitor) const override;
+    void visitDumpFeatures(const IIndexEnvironment& indexEnv, IDumpFeatureVisitor& visitor) const override;
     Blueprint::UP createInstance() const override { return Blueprint::UP(new CfgValueBlueprint()); }
-    bool setup(const IIndexEnvironment & indexEnv, const StringVector & params) override;
-    FeatureExecutor &createExecutor(const IQueryEnvironment & queryEnv, vespalib::Stash &stash) const override;
+    bool setup(const IIndexEnvironment& indexEnv, const StringVector& params) override;
+    FeatureExecutor& createExecutor(const IQueryEnvironment& queryEnv, vespalib::Stash& stash) const override;
 };
 
 } // namespace test

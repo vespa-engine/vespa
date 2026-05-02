@@ -10,7 +10,7 @@ namespace search::fef {
 class BlueprintFactory;
 class IIndexEnvironment;
 
-enum class Level {INFO, WARNING, ERROR};
+enum class Level { INFO, WARNING, ERROR };
 using Message = std::pair<Level, std::string>;
 
 /**
@@ -24,10 +24,7 @@ using Message = std::pair<Level, std::string>;
  * @param featureName name of feature to verify
  * @param desc external description of the feature
  **/
-bool verifyFeature(const BlueprintFactory &factory,
-                   const IIndexEnvironment &indexEnv,
-                   const std::string &featureName,
-                   const std::string &desc,
-                   std::vector<Message> & errors);
+bool verifyFeature(const BlueprintFactory& factory, const IIndexEnvironment& indexEnv, const std::string& featureName,
+                   const std::string& desc, std::vector<Message>& errors);
 
-}
+} // namespace search::fef

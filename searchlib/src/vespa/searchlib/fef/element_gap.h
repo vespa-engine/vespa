@@ -12,4 +12,4 @@ namespace search::fef {
  */
 using ElementGap = std::optional<uint32_t>;
 
-}
+} // namespace search::fef

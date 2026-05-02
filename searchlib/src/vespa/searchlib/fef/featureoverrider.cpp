@@ -4,35 +4,23 @@
 
 namespace search::fef {
 
-void
-FeatureOverrider::handle_bind_inputs(std::span<const LazyValue> inputs)
-{
+void FeatureOverrider::handle_bind_inputs(std::span<const LazyValue> inputs) {
     _executor.bind_inputs(inputs);
 }
 
-void
-FeatureOverrider::handle_bind_outputs(std::span<NumberOrObject> outputs)
-{
+void FeatureOverrider::handle_bind_outputs(std::span<NumberOrObject> outputs) {
     _executor.bind_outputs(outputs);
 }
 
-FeatureOverrider::FeatureOverrider(FeatureExecutor &executor, uint32_t outputIdx, feature_t number, Value::UP object)
-    : _executor(executor),
-      _outputIdx(outputIdx),
-      _number(number),
-      _object(std::move(object))
-{
+FeatureOverrider::FeatureOverrider(FeatureExecutor& executor, uint32_t outputIdx, feature_t number, Value::UP object)
+    : _executor(executor), _outputIdx(outputIdx), _number(number), _object(std::move(object)) {
 }
 
-bool
-FeatureOverrider::isPure()
-{
+bool FeatureOverrider::isPure() {
     return _executor.isPure();
 }
 
-void
-FeatureOverrider::execute(uint32_t docId)
-{
+void FeatureOverrider::execute(uint32_t docId) {
     _executor.lazy_execute(docId);
     if (_outputIdx < outputs().size()) {
         if (_object) {
@@ -43,10 +31,8 @@ FeatureOverrider::execute(uint32_t docId)
     }
 }
 
-void
-FeatureOverrider::handle_bind_match_data(const MatchData &md)
-{
+void FeatureOverrider::handle_bind_match_data(const MatchData& md) {
     _executor.bind_match_data(md);
 }
 
-}
+} // namespace search::fef

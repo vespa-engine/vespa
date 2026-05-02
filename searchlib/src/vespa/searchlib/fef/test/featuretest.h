@@ -7,6 +7,8 @@
 #include "queryenvironment.h"
 #include "queryenvironmentbuilder.h"
 #include "rankresult.h"
+
+#include <vespa/eval/eval/value.h>
 #include <vespa/searchlib/fef/blueprintfactory.h>
 #include <vespa/searchlib/fef/blueprintresolver.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
@@ -15,7 +17,6 @@
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/rank_program.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include <vespa/eval/eval/value.h>
 
 namespace search::fef::test {
 
@@ -34,12 +35,8 @@ public:
      * @param feature   The feature strings to run.
      * @param overrides The set of feature overrides.
      */
-    FeatureTest(BlueprintFactory &factory,
-                const IndexEnvironment &indexEnv,
-                QueryEnvironment &queryEnv,
-                MatchDataLayout &layout,
-                const std::vector<std::string> &features,
-                const Properties &overrides);
+    FeatureTest(BlueprintFactory& factory, const IndexEnvironment& indexEnv, QueryEnvironment& queryEnv,
+                MatchDataLayout& layout, const std::vector<std::string>& features, const Properties& overrides);
     ~FeatureTest();
 
     /**
@@ -52,12 +49,8 @@ public:
      * @param feature   The feature string to run.
      * @param overrides The set of feature overrides.
      */
-    FeatureTest(BlueprintFactory &factory,
-                const IndexEnvironment &indexEnv,
-                QueryEnvironment &queryEnv,
-                MatchDataLayout &layout,
-                const std::string &feature,
-                const Properties &overrides);
+    FeatureTest(BlueprintFactory& factory, const IndexEnvironment& indexEnv, QueryEnvironment& queryEnv,
+                MatchDataLayout& layout, const std::string& feature, const Properties& overrides);
     /**
      * Necessary method to setup the internal feature execution manager. A test will typically assert on the return of
      * this method, since no test can run if setup failed.
@@ -67,8 +60,8 @@ public:
     bool setup();
 
     /**
-     * Creates and returns a match data builder object. This will clear whatever content is currently contained in this
-     * runner. The builder offers a simple API to build a match data object.
+     * Creates and returns a match data builder object. This will clear whatever content is currently contained in
+     * this runner. The builder offers a simple API to build a match data object.
      *
      * @return A builder object.
      */
@@ -81,7 +74,7 @@ public:
      * @param docId    The document id to set on the match data object before running executors.
      * @return Whether or not the output matched the expected.
      */
-    bool execute(const RankResult &expected, uint32_t docId = 1);
+    bool execute(const RankResult& expected, uint32_t docId = 1);
 
     /**
      * Convenience method to assert the final output of a feature string.
@@ -100,7 +93,7 @@ public:
      * @param docId  The document id to set on the match data object before running executors.
      * @return Whether the executors were executed.
      */
-    bool executeOnly(RankResult & result, uint32_t docId = 1);
+    bool executeOnly(RankResult& result, uint32_t docId = 1);
 
     /**
      * Resolve the only object feature that is present in the match data of the underlying
@@ -109,18 +102,18 @@ public:
     vespalib::eval::Value::CREF resolveObjectFeature(uint32_t docid = 1);
 
 private:
-    BlueprintFactory                       &_factory;
-    const IndexEnvironment                 &_indexEnv;
-    QueryEnvironment                       &_queryEnv;
-    std::vector<std::string>           _features;
-    MatchDataLayout                        &_layout;
-    const Properties                       &_overrides;
-    BlueprintResolver::SP                   _resolver;
-    MatchData::UP                           _match_data;
-    RankProgram::UP                         _rankProgram;
-    bool                                    _doneSetup;
+    BlueprintFactory&        _factory;
+    const IndexEnvironment&  _indexEnv;
+    QueryEnvironment&        _queryEnv;
+    std::vector<std::string> _features;
+    MatchDataLayout&         _layout;
+    const Properties&        _overrides;
+    BlueprintResolver::SP    _resolver;
+    MatchData::UP            _match_data;
+    RankProgram::UP          _rankProgram;
+    bool                     _doneSetup;
 
     void clear();
 };
 
-}
+} // namespace search::fef::test

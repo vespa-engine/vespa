@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "setup.h"
+
 #include "cfgvalue.h"
 #include "chain.h"
 #include "double.h"
@@ -11,8 +12,7 @@
 
 namespace search::fef::test {
 
-void setup_fef_test_plugin(IBlueprintRegistry & registry)
-{
+void setup_fef_test_plugin(IBlueprintRegistry& registry) {
     // register blueprints
     registry.addPrototype(std::make_shared<DoubleBlueprint>());
     registry.addPrototype(std::make_shared<SumBlueprint>());

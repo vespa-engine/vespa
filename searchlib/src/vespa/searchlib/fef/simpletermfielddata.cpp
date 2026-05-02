@@ -2,6 +2,4 @@
 
 #include "simpletermfielddata.h"
 
-namespace search::fef {
-
-}
+namespace search::fef {}

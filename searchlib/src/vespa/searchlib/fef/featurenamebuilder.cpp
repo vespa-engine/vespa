@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "featurenamebuilder.h"
+
 #include "featurenameparser.h"
 
 namespace {
@@ -8,8 +9,7 @@ namespace {
 // ref: http://en.wikipedia.org/wiki/ASCII
 // note: we also consider space to be printable
 bool isPrintable(char c) {
-    return (static_cast<unsigned char>(c) >= 32 &&
-            static_cast<unsigned char>(c) <= 126);
+    return (static_cast<unsigned char>(c) >= 32 && static_cast<unsigned char>(c) <= 126);
 }
 
 bool isSpace(char c) {
@@ -25,7 +25,7 @@ bool isSpace(char c) {
     }
 }
 
-bool isBlank(const std::string &str) {
+bool isBlank(const std::string& str) {
     for (uint32_t i = 0; i < str.size(); ++i) {
         if (!isSpace(str[i])) {
             return false;
@@ -34,7 +34,7 @@ bool isBlank(const std::string &str) {
     return true;
 }
 
-void appendQuoted(char c, std::string &str) {
+void appendQuoted(char c, std::string& str) {
     switch (c) {
     case '\\':
         str.append("\\\\");
@@ -58,7 +58,7 @@ void appendQuoted(char c, std::string &str) {
         if (isPrintable(c)) {
             str.push_back(c);
         } else {
-            const char *lookup = "0123456789abcdef";
+            const char* lookup = "0123456789abcdef";
             str.append("\\x");
             str.push_back(lookup[(c >> 4) & 0xf]);
             str.push_back(lookup[c & 0xf]);
@@ -66,8 +66,7 @@ void appendQuoted(char c, std::string &str) {
     }
 }
 
-std::string quoteString(const std::string &str)
-{
+std::string quoteString(const std::string& str) {
     std::string res;
     res.push_back('"');
     for (uint32_t i = 0; i < str.size(); ++i) {
@@ -77,29 +76,21 @@ std::string quoteString(const std::string &str)
     return res;
 }
 
-} // namespace <unnamed>
+} // namespace
 
 namespace search::fef {
 
-FeatureNameBuilder::FeatureNameBuilder()
-    : _baseName(),
-      _parameters(),
-      _output()
-{
+FeatureNameBuilder::FeatureNameBuilder() : _baseName(), _parameters(), _output() {
 }
 
 FeatureNameBuilder::~FeatureNameBuilder() = default;
 
-FeatureNameBuilder &
-FeatureNameBuilder::baseName(const std::string &str)
-{
+FeatureNameBuilder& FeatureNameBuilder::baseName(const std::string& str) {
     _baseName = str;
     return *this;
 }
 
-FeatureNameBuilder &
-FeatureNameBuilder::parameter(const std::string &str, bool exact)
-{
+FeatureNameBuilder& FeatureNameBuilder::parameter(const std::string& str, bool exact) {
     if (str.empty() || (!exact && isBlank(str))) {
         _parameters.push_back("");
     } else {
@@ -113,23 +104,17 @@ FeatureNameBuilder::parameter(const std::string &str, bool exact)
     return *this;
 }
 
-FeatureNameBuilder &
-FeatureNameBuilder::clearParameters()
-{
+FeatureNameBuilder& FeatureNameBuilder::clearParameters() {
     _parameters.resize(0);
     return *this;
 }
 
-FeatureNameBuilder &
-FeatureNameBuilder::output(const std::string &str)
-{
+FeatureNameBuilder& FeatureNameBuilder::output(const std::string& str) {
     _output = str;
     return *this;
 }
 
-std::string
-FeatureNameBuilder::buildName() const
-{
+std::string FeatureNameBuilder::buildName() const {
     std::string ret;
     if (!_baseName.empty()) {
         ret = _baseName;
@@ -151,4 +136,4 @@ FeatureNameBuilder::buildName() const
     return ret;
 }
 
-}
+} // namespace search::fef

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "matchdatabuilder.h"
+
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -10,12 +11,8 @@ LOG_SETUP(".fef.matchdatabuilder");
 
 namespace search::fef::test {
 
-MatchDataBuilder::MatchDataBuilder(QueryEnvironment &queryEnv, MatchData &data)
-    : _queryEnv(queryEnv),
-      _data(data),
-      _index(),
-      _match()
-{
+MatchDataBuilder::MatchDataBuilder(QueryEnvironment& queryEnv, MatchData& data)
+    : _queryEnv(queryEnv), _data(data), _index(), _match() {
     // reset all match data objects.
     for (TermFieldHandle handle = 0; handle < _data.getNumTermFields(); ++handle) {
         _data.resolveTermField(handle)->reset(TermFieldMatchData::invalidId());
@@ -24,25 +21,20 @@ MatchDataBuilder::MatchDataBuilder(QueryEnvironment &queryEnv, MatchData &data)
 
 MatchDataBuilder::~MatchDataBuilder() = default;
 
-TermFieldMatchData *
-MatchDataBuilder::getTermFieldMatchData(uint32_t termId, uint32_t fieldId)
-{
-    const ITermData *term = _queryEnv.getTerm(termId);
+TermFieldMatchData* MatchDataBuilder::getTermFieldMatchData(uint32_t termId, uint32_t fieldId) {
+    const ITermData* term = _queryEnv.getTerm(termId);
     if (term == nullptr) {
         return nullptr;
     }
-    const ITermFieldData *field = term->lookupField(fieldId);
+    const ITermFieldData* field = term->lookupField(fieldId);
     if (field == nullptr || field->getHandle() >= _data.getNumTermFields()) {
         return nullptr;
     }
     return _data.resolveTermField(field->getHandle());
 }
 
-
-bool
-MatchDataBuilder::setFieldLength(const std::string &fieldName, uint32_t length)
-{
-    const FieldInfo *info = _queryEnv.getIndexEnv()->getFieldByName(fieldName);
+bool MatchDataBuilder::setFieldLength(const std::string& fieldName, uint32_t length) {
+    const FieldInfo* info = _queryEnv.getIndexEnv()->getFieldByName(fieldName);
     if (info == nullptr) {
         LOG(error, "Field '%s' does not exist.", fieldName.c_str());
         return false;
@@ -51,10 +43,8 @@ MatchDataBuilder::setFieldLength(const std::string &fieldName, uint32_t length)
     return true;
 }
 
-bool
-MatchDataBuilder::addElement(const std::string &fieldName, int32_t weight, uint32_t length)
-{
-    const FieldInfo *info = _queryEnv.getIndexEnv()->getFieldByName(fieldName);
+bool MatchDataBuilder::addElement(const std::string& fieldName, int32_t weight, uint32_t length) {
+    const FieldInfo* info = _queryEnv.getIndexEnv()->getFieldByName(fieldName);
     if (info == nullptr) {
         LOG(error, "Field '%s' does not exist.", fieldName.c_str());
         return false;
@@ -63,10 +53,8 @@ MatchDataBuilder::addElement(const std::string &fieldName, int32_t weight, uint3
     return true;
 }
 
-bool
-MatchDataBuilder::addOccurence(const std::string &fieldName, uint32_t termId, uint32_t pos, uint32_t element)
-{
-    const FieldInfo *info = _queryEnv.getIndexEnv()->getFieldByName(fieldName);
+bool MatchDataBuilder::addOccurence(const std::string& fieldName, uint32_t termId, uint32_t pos, uint32_t element) {
+    const FieldInfo* info = _queryEnv.getIndexEnv()->getFieldByName(fieldName);
     if (info == nullptr) {
         LOG(error, "Field '%s' does not exist.", fieldName.c_str());
         return false;
@@ -75,7 +63,7 @@ MatchDataBuilder::addOccurence(const std::string &fieldName, uint32_t termId, ui
         LOG(error, "Term id '%u' is invalid.", termId);
         return false;
     }
-    const ITermFieldData *tfd = _queryEnv.getTerm(termId)->lookupField(info->id());
+    const ITermFieldData* tfd = _queryEnv.getTerm(termId)->lookupField(info->id());
     if (tfd == nullptr) {
         LOG(error, "Field '%s' is not searched by the given term.", fieldName.c_str());
         return false;
@@ -84,10 +72,8 @@ MatchDataBuilder::addOccurence(const std::string &fieldName, uint32_t termId, ui
     return true;
 }
 
-bool
-MatchDataBuilder::setWeight(const std::string &fieldName, uint32_t termId, int32_t weight)
-{
-    const FieldInfo *info = _queryEnv.getIndexEnv()->getFieldByName(fieldName);
+bool MatchDataBuilder::setWeight(const std::string& fieldName, uint32_t termId, int32_t weight) {
+    const FieldInfo* info = _queryEnv.getIndexEnv()->getFieldByName(fieldName);
     if (info == nullptr) {
         LOG(error, "Field '%s' does not exist.", fieldName.c_str());
         return false;
@@ -96,7 +82,7 @@ MatchDataBuilder::setWeight(const std::string &fieldName, uint32_t termId, int32
         LOG(error, "Term id '%u' is invalid.", termId);
         return false;
     }
-    const ITermFieldData *tfd = _queryEnv.getTerm(termId)->lookupField(info->id());
+    const ITermFieldData* tfd = _queryEnv.getTerm(termId)->lookupField(info->id());
     if (tfd == nullptr) {
         LOG(error, "Field '%s' is not searched by the given term.", fieldName.c_str());
         return false;
@@ -108,16 +94,14 @@ MatchDataBuilder::setWeight(const std::string &fieldName, uint32_t termId, int32
     return true;
 }
 
-bool
-MatchDataBuilder::apply(uint32_t docId)
-{
+bool MatchDataBuilder::apply(uint32_t docId) {
     // For each term, do
     for (const auto& term_elem : _match) {
         uint32_t termId = term_elem.first;
 
         for (const auto& field_elem : term_elem.second) {
-            uint32_t fieldId = field_elem.first;
-            TermFieldMatchData *match = getTermFieldMatchData(termId, fieldId);
+            uint32_t            fieldId = field_elem.first;
+            TermFieldMatchData* match = getTermFieldMatchData(termId, fieldId);
 
             // Make sure there is a corresponding term field match data object.
             if (match == nullptr) {
@@ -128,23 +112,22 @@ MatchDataBuilder::apply(uint32_t docId)
 
             // find field data
             MyField field;
-            auto idxItr = _index.find(fieldId);
+            auto    idxItr = _index.find(fieldId);
             if (idxItr != _index.end()) {
                 field = idxItr->second;
             }
 
             // For log, attempt to lookup field name.
-            const FieldInfo *info = _queryEnv.getIndexEnv()->getField(fieldId);
-            std::string name = info != nullptr ? info->name() : vespalib::make_string("%d", fieldId).c_str();
+            const FieldInfo* info = _queryEnv.getIndexEnv()->getField(fieldId);
+            std::string      name = info != nullptr ? info->name() : vespalib::make_string("%d", fieldId).c_str();
 
             // For each occurence of that term, in that field, do
             for (const auto& occ : field_elem.second) {
                 // Append a term match position to the term match data.
-                match->appendPosition(TermFieldMatchDataPosition(occ.eid, occ.pos,
-                                                                 field.getWeight(occ.eid),
-                                                                 field.getLength(occ.eid)));
-                LOG(debug, "Added occurence of term '%u' in field '%s' at position '%u'.",
-                    termId, name.c_str(), occ.pos);
+                match->appendPosition(
+                    TermFieldMatchDataPosition(occ.eid, occ.pos, field.getWeight(occ.eid), field.getLength(occ.eid)));
+                LOG(debug, "Added occurence of term '%u' in field '%s' at position '%u'.", termId, name.c_str(),
+                    occ.pos);
                 if (occ.pos >= field.getLength(occ.eid)) {
                     LOG(warning, "Added occurence of term '%u' in field '%s' at position '%u' >= fieldLen '%u'.",
                         termId, name.c_str(), occ.pos, field.getLength(occ.eid));
@@ -156,4 +139,4 @@ MatchDataBuilder::apply(uint32_t docId)
     return true;
 }
 
-}
+} // namespace search::fef::test

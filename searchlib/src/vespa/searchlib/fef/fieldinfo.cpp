@@ -4,8 +4,7 @@
 
 namespace search::fef {
 
-FieldInfo::FieldInfo(FieldType type_in, CollectionType collection_in,
-                     const string &name_in, uint32_t id_in)
+FieldInfo::FieldInfo(FieldType type_in, CollectionType collection_in, const string& name_in, uint32_t id_in)
     : _type(type_in),
       _data_type(DataType::DOUBLE),
       _collection(collection_in),
@@ -13,9 +12,7 @@ FieldInfo::FieldInfo(FieldType type_in, CollectionType collection_in,
       _id(id_in),
       _threshold(false),
       _element_gap(),
-      _hasAttribute(type_in == FieldType::ATTRIBUTE)
-{
+      _hasAttribute(type_in == FieldType::ATTRIBUTE) {
 }
 
-
-}
+} // namespace search::fef

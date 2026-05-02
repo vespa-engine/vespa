@@ -8,11 +8,9 @@ TableManager::TableManager() = default;
 
 TableManager::~TableManager() = default;
 
-const Table *
-TableManager::getTable(const std::string & name) const
-{
+const Table* TableManager::getTable(const std::string& name) const {
     std::lock_guard guard(_lock);
-    auto itr = _cache.find(name);
+    auto            itr = _cache.find(name);
     if (itr != _cache.end()) {
         return itr->second.get();
     }
@@ -27,4 +25,4 @@ TableManager::getTable(const std::string & name) const
     return nullptr;
 }
 
-}
+} // namespace search::fef
