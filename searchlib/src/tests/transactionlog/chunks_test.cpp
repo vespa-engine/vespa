@@ -1,8 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchlib/transactionlog/chunks.h>
-#include <atomic>
 #include <vespa/vespalib/gtest/gtest.h>
+
+#include <atomic>
 
 #include <vespa/log/log.h>
 LOG_SETUP("translog_chunks_test");
@@ -12,14 +13,14 @@ using vespalib::ConstBufferRef;
 using vespalib::nbostream;
 using vespalib::compression::CompressionConfig;
 
-constexpr const char * TEXT = "abcdefghijklmnopqrstuvwxyz_abcdefghijklmnopqrstuvwxyz_abcdefghijklmnopqrstuvwxyz_abcdefghijklmnopqrstuvwxyz_abcdefghijklmnopqrstuvwxyz";
-constexpr const char * TEXT2 = "something else";
+constexpr const char* TEXT = "abcdefghijklmnopqrstuvwxyz_abcdefghijklmnopqrstuvwxyz_abcdefghijklmnopqrstuvwxyz_"
+                             "abcdefghijklmnopqrstuvwxyz_abcdefghijklmnopqrstuvwxyz";
+constexpr const char* TEXT2 = "something else";
 
-void
-verifySerializationAndDeserialization(IChunk & org, size_t numEntries, Encoding expected) {
+void verifySerializationAndDeserialization(IChunk& org, size_t numEntries, Encoding expected) {
     for (size_t i(0); i < numEntries; i++) {
-        const char *start = TEXT + (i%20);
-        Packet::Entry entry(i, i%8, ConstBufferRef(start, strlen(start)));
+        const char*   start = TEXT + (i % 20);
+        Packet::Entry entry(i, i % 8, ConstBufferRef(start, strlen(start)));
         org.add(entry);
     }
     nbostream os;
@@ -39,7 +40,8 @@ TEST(TransactionLogChunksTest, test_serialization_and_deserialization_of_current
 
 TEST(TransactionLogChunksTest, test_serialization_and_deserialization_of_legacy_uncompressed_ccittcrc32) {
     CCITTCRC32NoneChunk chunk;
-    verifySerializationAndDeserialization(chunk, 1, Encoding(Encoding::Crc::ccitt_crc32, Encoding::Compression::none));
+    verifySerializationAndDeserialization(chunk, 1,
+                                          Encoding(Encoding::Crc::ccitt_crc32, Encoding::Compression::none));
 }
 
 TEST(TransactionLogChunksTest, test_serialization_and_deserialization_of_future_multientry_xxh64_lz4_compression) {
@@ -52,34 +54,38 @@ TEST(TransactionLogChunksTest, test_serialization_and_deserialization_of_future_
 TEST(TransactionLogChunksTest, test_serialization_and_deserialization_of_future_multientry_xxh64_zstd_compression) {
     for (size_t level(1); level < 9; level++) {
         XXH64CompressedChunk chunk(CompressionConfig::Type::ZSTD, level);
-        verifySerializationAndDeserialization(chunk, 100, Encoding(Encoding::Crc::xxh64, Encoding::Compression::zstd));
+        verifySerializationAndDeserialization(chunk, 100,
+                                              Encoding(Encoding::Crc::xxh64, Encoding::Compression::zstd));
     }
 }
 
 TEST(TransactionLogChunksTest, test_serialization_and_deserialization_of_future_multientry_xxh64_no_compression) {
     XXH64CompressedChunk chunk(CompressionConfig::Type::NONE_MULTI, 1);
-    verifySerializationAndDeserialization(chunk, 100, Encoding(Encoding::Crc::xxh64, Encoding::Compression::none_multi));
+    verifySerializationAndDeserialization(chunk, 100,
+                                          Encoding(Encoding::Crc::xxh64, Encoding::Compression::none_multi));
 }
 
 TEST(TransactionLogChunksTest, test_serialization_and_deserialization_of_uncompressable_lz4) {
     XXH64CompressedChunk chunk(CompressionConfig::Type::LZ4, 1);
-    verifySerializationAndDeserialization(chunk, 1, Encoding(Encoding::Crc::xxh64, Encoding::Compression::none_multi));
+    verifySerializationAndDeserialization(chunk, 1,
+                                          Encoding(Encoding::Crc::xxh64, Encoding::Compression::none_multi));
 }
 
 TEST(TransactionLogChunksTest, test_serialization_and_deserialization_of_uncompressable_zstd) {
     XXH64CompressedChunk chunk(CompressionConfig::Type::ZSTD, 1);
-    verifySerializationAndDeserialization(chunk, 1, Encoding(Encoding::Crc::xxh64, Encoding::Compression::none_multi));
+    verifySerializationAndDeserialization(chunk, 1,
+                                          Encoding(Encoding::Crc::xxh64, Encoding::Compression::none_multi));
 }
 
 TEST(TransactionLogChunksTest, test_empty_commitchunk) {
-    CommitChunk cc(1,1);
+    CommitChunk cc(1, 1);
     EXPECT_EQ(0u, cc.sizeBytes());
     EXPECT_EQ(0u, cc.getNumCallBacks());
 }
 
 struct Counter : public vespalib::IDestructorCallback {
-    std::atomic<uint32_t> & _counter;
-    Counter(std::atomic<uint32_t> & counter) noexcept : _counter(counter) { _counter++; }
+    std::atomic<uint32_t>& _counter;
+    Counter(std::atomic<uint32_t>& counter) noexcept : _counter(counter) { _counter++; }
     ~Counter() override { _counter--; }
 };
 

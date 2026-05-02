@@ -1,13 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchlib/common/feature.h>
-
-#include <vespa/searchlib/attribute/attributeguard.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/integerbase.h>
-#include <vespa/searchcommon/attribute/config.h>
-
+#include <vespa/searchlib/common/feature.h>
+#include <vespa/searchlib/features/rankingexpressionfeature.h>
+#include <vespa/searchlib/features/second_phase_feature.h>
+#include <vespa/searchlib/features/setup.h>
+#include <vespa/searchlib/features/valuefeature.h>
 #include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/searchlib/fef/blueprintfactory.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
@@ -17,25 +19,20 @@
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/rank_program.h>
 #include <vespa/searchlib/fef/ranksetup.h>
-#include <vespa/searchlib/fef/utils.h>
-
+#include <vespa/searchlib/fef/test/dummy_dependency_handler.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
-#include <vespa/searchlib/fef/test/queryenvironment.h>
-#include <vespa/searchlib/fef/test/rankresult.h>
-
-#include <vespa/searchlib/features/rankingexpressionfeature.h>
-#include <vespa/searchlib/features/second_phase_feature.h>
-#include <vespa/searchlib/features/setup.h>
-#include <vespa/searchlib/features/valuefeature.h>
+#include <vespa/searchlib/fef/test/plugin/cfgvalue.h>
 #include <vespa/searchlib/fef/test/plugin/chain.h>
 #include <vespa/searchlib/fef/test/plugin/double.h>
 #include <vespa/searchlib/fef/test/plugin/setup.h>
 #include <vespa/searchlib/fef/test/plugin/staticrank.h>
 #include <vespa/searchlib/fef/test/plugin/sum.h>
-#include <vespa/searchlib/fef/test/plugin/cfgvalue.h>
-#include <vespa/searchlib/fef/test/dummy_dependency_handler.h>
+#include <vespa/searchlib/fef/test/queryenvironment.h>
+#include <vespa/searchlib/fef/test/rankresult.h>
+#include <vespa/searchlib/fef/utils.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stringfmt.h>
+
 #include <iostream>
 
 using namespace search::fef;
@@ -49,70 +46,67 @@ using FNB = FeatureNameBuilder;
 //-----------------------------------------------------------------------------
 // DumpFeatureVisitor
 //-----------------------------------------------------------------------------
-class DumpFeatureVisitor : public IDumpFeatureVisitor
-{
+class DumpFeatureVisitor : public IDumpFeatureVisitor {
 public:
     DumpFeatureVisitor() {}
-    void visitDumpFeature(const std::string & name) override {
-        std::cout << "dump feature: " << name << std::endl;
-    }
+    void visitDumpFeature(const std::string& name) override { std::cout << "dump feature: " << name << std::endl; }
 };
-
 
 //-----------------------------------------------------------------------------
 // RankEnvironment
 //-----------------------------------------------------------------------------
-class RankEnvironment
-{
+class RankEnvironment {
 private:
-    const BlueprintFactory & _factory;
-    const IIndexEnvironment & _indexEnv;
-    const IQueryEnvironment & _queryEnv;
+    const BlueprintFactory&  _factory;
+    const IIndexEnvironment& _indexEnv;
+    const IQueryEnvironment& _queryEnv;
 
 public:
-    RankEnvironment(const BlueprintFactory & bfactory,
-                    const IIndexEnvironment & indexEnv, const IQueryEnvironment & queryEnv) :
-        _factory(bfactory), _indexEnv(indexEnv), _queryEnv(queryEnv) {}
+    RankEnvironment(const BlueprintFactory& bfactory, const IIndexEnvironment& indexEnv,
+                    const IQueryEnvironment& queryEnv)
+        : _factory(bfactory), _indexEnv(indexEnv), _queryEnv(queryEnv) {}
 
-    const BlueprintFactory & factory() const { return _factory; }
-    const IIndexEnvironment & indexEnvironment() const { return _indexEnv; }
-    const IQueryEnvironment & queryEnvironment() const { return _queryEnv; }
+    const BlueprintFactory& factory() const { return _factory; }
+    const IIndexEnvironment& indexEnvironment() const { return _indexEnv; }
+    const IQueryEnvironment& queryEnvironment() const { return _queryEnv; }
 };
-
 
 //-----------------------------------------------------------------------------
 // RankExecutor
 //-----------------------------------------------------------------------------
-class RankExecutor
-{
+class RankExecutor {
 private:
-    std::string _initRank;
-    std::string _finalRank;
-    const RankEnvironment & _rankEnv;
-    MatchDataLayout _layout;
+    std::string                _initRank;
+    std::string                _finalRank;
+    const RankEnvironment&     _rankEnv;
+    MatchDataLayout            _layout;
     std::unique_ptr<RankSetup> _rs;
-    MatchData::UP _match_data;
-    RankProgram::UP _firstPhaseProgram;
-    RankProgram::UP _secondPhaseProgram;
+    MatchData::UP              _match_data;
+    RankProgram::UP            _firstPhaseProgram;
+    RankProgram::UP            _secondPhaseProgram;
 
 public:
-    RankExecutor(const std::string &initRank, const std::string &finalRank, const RankEnvironment &rankEnv);
+    RankExecutor(const std::string& initRank, const std::string& finalRank, const RankEnvironment& rankEnv);
     ~RankExecutor();
     bool setup();
     RankResult execute(uint32_t docId = 1);
 };
 
-RankExecutor::RankExecutor(const std::string &initRank, const std::string &finalRank,
-                           const RankEnvironment &rankEnv)
-    : _initRank(initRank), _finalRank(finalRank), _rankEnv(rankEnv), _layout(),
-      _rs(), _match_data(), _firstPhaseProgram(), _secondPhaseProgram()
-{}
+RankExecutor::RankExecutor(const std::string& initRank, const std::string& finalRank, const RankEnvironment& rankEnv)
+    : _initRank(initRank),
+      _finalRank(finalRank),
+      _rankEnv(rankEnv),
+      _layout(),
+      _rs(),
+      _match_data(),
+      _firstPhaseProgram(),
+      _secondPhaseProgram() {
+}
 
-RankExecutor::~RankExecutor() {}
+RankExecutor::~RankExecutor() {
+}
 
-bool
-RankExecutor::setup()
-{
+bool RankExecutor::setup() {
     _rs = std::unique_ptr<RankSetup>(new RankSetup(_rankEnv.factory(), _rankEnv.indexEnvironment()));
     if (_initRank.empty()) {
         return false;
@@ -137,9 +131,7 @@ RankExecutor::setup()
     return true;
 }
 
-RankResult
-RankExecutor::execute(uint32_t docId)
-{
+RankResult RankExecutor::execute(uint32_t docId) {
     RankResult result;
     result.addScore(_initRank, Utils::getScoreFeature(*_firstPhaseProgram, docId));
 
@@ -150,51 +142,44 @@ RankExecutor::execute(uint32_t docId)
     return result;
 }
 
-
 //-----------------------------------------------------------------------------
 // FeatureDumper
 //-----------------------------------------------------------------------------
-class FeatureDumper
-{
+class FeatureDumper {
 private:
-    const RankEnvironment & _rankEnv;
-    RankSetup _setup;
-    MatchDataLayout _layout;
-    MatchData::UP _match_data;
-    RankProgram::UP _rankProgram;
+    const RankEnvironment& _rankEnv;
+    RankSetup              _setup;
+    MatchDataLayout        _layout;
+    MatchData::UP          _match_data;
+    RankProgram::UP        _rankProgram;
 
 public:
-    FeatureDumper(const RankEnvironment & rankEnv);
+    FeatureDumper(const RankEnvironment& rankEnv);
     ~FeatureDumper();
-    void addDumpFeature(const std::string &name);
+    void addDumpFeature(const std::string& name);
     void configure();
     bool setup();
     RankResult dump();
 };
 
-FeatureDumper::FeatureDumper(const RankEnvironment & rankEnv)
+FeatureDumper::FeatureDumper(const RankEnvironment& rankEnv)
     : _rankEnv(rankEnv),
       _setup(_rankEnv.factory(), _rankEnv.indexEnvironment()),
       _layout(),
       _match_data(),
-      _rankProgram()
-{}
-FeatureDumper::~FeatureDumper() {}
-void
-FeatureDumper::addDumpFeature(const std::string &name)
-{
+      _rankProgram() {
+}
+FeatureDumper::~FeatureDumper() {
+}
+void FeatureDumper::addDumpFeature(const std::string& name) {
     _setup.addDumpFeature(name);
 }
 
-void
-FeatureDumper::configure()
-{
+void FeatureDumper::configure() {
     _setup.configure();
 }
 
-bool
-FeatureDumper::setup()
-{
+bool FeatureDumper::setup() {
     if (!_setup.compile()) {
         return false;
     }
@@ -205,40 +190,35 @@ FeatureDumper::setup()
     return true;
 }
 
-RankResult
-FeatureDumper::dump()
-{
+RankResult FeatureDumper::dump() {
     std::map<std::string, feature_t> features = Utils::getSeedFeatures(*_rankProgram, 1);
-    RankResult retval;
+    RankResult                       retval;
     for (auto itr = features.begin(); itr != features.end(); ++itr) {
         retval.addScore(itr->first, itr->second);
     }
     return retval;
 }
 
-
 //-----------------------------------------------------------------------------
 // RankSetupTest
 //-----------------------------------------------------------------------------
-class RankSetupTest : public ::testing::Test
-{
+class RankSetupTest : public ::testing::Test {
 protected:
-    BlueprintFactory _factory;
+    BlueprintFactory         _factory;
     search::AttributeManager _manager;
-    IndexEnvironment _indexEnv;
-    QueryEnvironment _queryEnv;
-    RankEnvironment  _rankEnv;
-    DumpFeatureVisitor _visitor;
+    IndexEnvironment         _indexEnv;
+    QueryEnvironment         _queryEnv;
+    RankEnvironment          _rankEnv;
+    DumpFeatureVisitor       _visitor;
 
-    bool testExecution(const std::string & initRank, feature_t initScore,
-                       const std::string & finalRank = "", feature_t finalScore = 0.0f, uint32_t docId = 1);
-    bool testExecution(const RankEnvironment &rankEnv,
-                       const std::string & initRank, feature_t initScore,
-                       const std::string & finalRank = "", feature_t finalScore = 0.0f, uint32_t docId = 1);
+    bool testExecution(const std::string& initRank, feature_t initScore, const std::string& finalRank = "",
+                       feature_t finalScore = 0.0f, uint32_t docId = 1);
+    bool testExecution(const RankEnvironment& rankEnv, const std::string& initRank, feature_t initScore,
+                       const std::string& finalRank = "", feature_t finalScore = 0.0f, uint32_t docId = 1);
     void testExecution();
     void testFeatureDump();
 
-    void checkFeatures(std::map<std::string, feature_t> &exp, std::map<std::string, feature_t> &actual);
+    void checkFeatures(std::map<std::string, feature_t>& exp, std::map<std::string, feature_t>& actual);
     void testFeatureNormalization();
 
     RankSetupTest();
@@ -246,13 +226,7 @@ protected:
 };
 
 RankSetupTest::RankSetupTest()
-    : _factory(),
-      _manager(),
-      _indexEnv(),
-      _queryEnv(),
-      _rankEnv(_factory, _indexEnv, _queryEnv),
-      _visitor()
-{
+    : _factory(), _manager(), _indexEnv(), _queryEnv(), _rankEnv(_factory, _indexEnv, _queryEnv), _visitor() {
     // register blueprints
     setup_fef_test_plugin(_factory);
     _factory.addPrototype(Blueprint::SP(new ValueBlueprint()));
@@ -260,17 +234,14 @@ RankSetupTest::RankSetupTest()
     _factory.addPrototype(std::make_shared<SecondPhaseBlueprint>());
 
     // setup an original attribute manager with two attributes
-    search::attribute::Config cfg(search::attribute::BasicType::INT32,
-                                        search::attribute::CollectionType::SINGLE);
-    search::AttributeVector::SP av1 =
-        search::AttributeFactory::createAttribute("staticrank1", cfg);
-    search::AttributeVector::SP av2 =
-        search::AttributeFactory::createAttribute("staticrank2", cfg);
+    search::attribute::Config   cfg(search::attribute::BasicType::INT32, search::attribute::CollectionType::SINGLE);
+    search::AttributeVector::SP av1 = search::AttributeFactory::createAttribute("staticrank1", cfg);
+    search::AttributeVector::SP av2 = search::AttributeFactory::createAttribute("staticrank2", cfg);
     av1->addDocs(5);
     av2->addDocs(5);
     for (uint32_t i = 0; i < 5; ++i) {
-        (static_cast<search::IntegerAttribute *>(av1.get()))->update(i, i + 100);
-        (static_cast<search::IntegerAttribute *>(av2.get()))->update(i, i + 200);
+        (static_cast<search::IntegerAttribute*>(av1.get()))->update(i, i + 100);
+        (static_cast<search::IntegerAttribute*>(av2.get()))->update(i, i + 200);
     }
     av1->commit();
     av2->commit();
@@ -286,12 +257,11 @@ RankSetupTest::RankSetupTest()
 
 RankSetupTest::~RankSetupTest() = default;
 
-TEST_F(RankSetupTest, value_blueprint)
-{
+TEST_F(RankSetupTest, value_blueprint) {
     ValueBlueprint prototype;
     prototype.visitDumpFeatures(_indexEnv, _visitor);
     { // basic test
-        Blueprint::UP bp = prototype.createInstance();
+        Blueprint::UP          bp = prototype.createInstance();
         DummyDependencyHandler deps(*bp);
         bp->setName("value");
         EXPECT_EQ(bp->getName(), "value");
@@ -304,28 +274,27 @@ TEST_F(RankSetupTest, value_blueprint)
         EXPECT_EQ(deps.output[0], "0");
         EXPECT_EQ(deps.output[1], "1");
 
-        vespalib::Stash stash;
-        FeatureExecutor &fe = bp->createExecutor(_queryEnv, stash);
-        ValueExecutor * vfe = static_cast<ValueExecutor *>(&fe);
+        vespalib::Stash  stash;
+        FeatureExecutor& fe = bp->createExecutor(_queryEnv, stash);
+        ValueExecutor*   vfe = static_cast<ValueExecutor*>(&fe);
         EXPECT_EQ(vfe->getValues().size(), 2u);
         EXPECT_EQ(vfe->getValues()[0], 5.5f);
         EXPECT_EQ(vfe->getValues()[1], 10.5f);
     }
     { // invalid params
-        Blueprint::UP bp = prototype.createInstance();
-        DummyDependencyHandler deps(*bp);
+        Blueprint::UP            bp = prototype.createInstance();
+        DummyDependencyHandler   deps(*bp);
         std::vector<std::string> params;
         EXPECT_TRUE(!bp->setup(_indexEnv, params));
     }
 }
 
-TEST_F(RankSetupTest, double_blueprint)
-{
+TEST_F(RankSetupTest, double_blueprint) {
     DoubleBlueprint prototype;
     prototype.visitDumpFeatures(_indexEnv, _visitor);
     { // basic test
-        Blueprint::UP bp = prototype.createInstance();
-        DummyDependencyHandler deps(*bp);
+        Blueprint::UP            bp = prototype.createInstance();
+        DummyDependencyHandler   deps(*bp);
         std::vector<std::string> params;
         params.push_back("value(5.5).0");
         params.push_back("value(10.5).0");
@@ -336,16 +305,15 @@ TEST_F(RankSetupTest, double_blueprint)
         EXPECT_EQ(deps.output.size(), 2u);
         EXPECT_EQ(deps.output[0], "0");
         EXPECT_EQ(deps.output[1], "1");
-   }
+    }
 }
 
-TEST_F(RankSetupTest, sum_blueprint)
-{
+TEST_F(RankSetupTest, sum_blueprint) {
     SumBlueprint prototype;
     prototype.visitDumpFeatures(_indexEnv, _visitor);
     { // basic test
-        Blueprint::UP bp = prototype.createInstance();
-        DummyDependencyHandler deps(*bp);
+        Blueprint::UP            bp = prototype.createInstance();
+        DummyDependencyHandler   deps(*bp);
         std::vector<std::string> params;
         params.push_back("value(5.5, 10.5).0");
         params.push_back("value(5.5, 10.5).1");
@@ -358,12 +326,11 @@ TEST_F(RankSetupTest, sum_blueprint)
     }
 }
 
-TEST_F(RankSetupTest, static_rank_blueprint)
-{
+TEST_F(RankSetupTest, static_rank_blueprint) {
     StaticRankBlueprint prototype;
     { // basic test
-        Blueprint::UP bp = prototype.createInstance();
-        DummyDependencyHandler deps(*bp);
+        Blueprint::UP            bp = prototype.createInstance();
+        DummyDependencyHandler   deps(*bp);
         std::vector<std::string> params;
         params.push_back("sr1");
         EXPECT_TRUE(bp->setup(_indexEnv, params));
@@ -372,8 +339,8 @@ TEST_F(RankSetupTest, static_rank_blueprint)
         EXPECT_EQ(deps.output[0], "out");
     }
     { // invalid params
-        Blueprint::UP bp = prototype.createInstance();
-        DummyDependencyHandler deps(*bp);
+        Blueprint::UP            bp = prototype.createInstance();
+        DummyDependencyHandler   deps(*bp);
         std::vector<std::string> params;
         EXPECT_TRUE(!bp->setup(_indexEnv, params));
         params.push_back("sr1");
@@ -382,12 +349,11 @@ TEST_F(RankSetupTest, static_rank_blueprint)
     }
 }
 
-TEST_F(RankSetupTest, chain_blueprint)
-{
+TEST_F(RankSetupTest, chain_blueprint) {
     ChainBlueprint prototype;
     { // chaining
-        Blueprint::UP bp = prototype.createInstance();
-        DummyDependencyHandler deps(*bp);
+        Blueprint::UP            bp = prototype.createInstance();
+        DummyDependencyHandler   deps(*bp);
         std::vector<std::string> params;
         params.push_back("basic");
         params.push_back("2");
@@ -397,8 +363,8 @@ TEST_F(RankSetupTest, chain_blueprint)
         EXPECT_EQ(deps.input[0], "chain(basic,1,4)");
     }
     { // leaf node
-        Blueprint::UP bp = prototype.createInstance();
-        DummyDependencyHandler deps(*bp);
+        Blueprint::UP            bp = prototype.createInstance();
+        DummyDependencyHandler   deps(*bp);
         std::vector<std::string> params;
         params.push_back("basic");
         params.push_back("1");
@@ -408,8 +374,8 @@ TEST_F(RankSetupTest, chain_blueprint)
         EXPECT_EQ(deps.input[0], "value(4)");
     }
     { // cycle
-        Blueprint::UP bp = prototype.createInstance();
-        DummyDependencyHandler deps(*bp);
+        Blueprint::UP            bp = prototype.createInstance();
+        DummyDependencyHandler   deps(*bp);
         std::vector<std::string> params;
         params.push_back("cycle");
         params.push_back("1");
@@ -419,8 +385,8 @@ TEST_F(RankSetupTest, chain_blueprint)
         EXPECT_EQ(deps.input[0], "chain(cycle,4,4)");
     }
     { // invalid params
-        Blueprint::UP bp = prototype.createInstance();
-        DummyDependencyHandler deps(*bp);
+        Blueprint::UP            bp = prototype.createInstance();
+        DummyDependencyHandler   deps(*bp);
         std::vector<std::string> params;
         EXPECT_TRUE(!bp->setup(_indexEnv, params));
         params.push_back("basic");
@@ -430,16 +396,15 @@ TEST_F(RankSetupTest, chain_blueprint)
     }
 }
 
-TEST_F(RankSetupTest, cfg_value_blueprint)
-{
-    CfgValueBlueprint     prototype;
-    IndexEnvironment      indexEnv;
+TEST_F(RankSetupTest, cfg_value_blueprint) {
+    CfgValueBlueprint prototype;
+    IndexEnvironment  indexEnv;
     indexEnv.getProperties().add("test_cfgvalue(foo).value", "1.0");
     indexEnv.getProperties().add("test_cfgvalue(foo).value", "2.0");
     indexEnv.getProperties().add("test_cfgvalue(foo).value", "3.0");
 
     { // basic test
-        Blueprint::UP bp = prototype.createInstance();
+        Blueprint::UP          bp = prototype.createInstance();
         DummyDependencyHandler deps(*bp);
         bp->setName("test_cfgvalue(foo)");
         std::vector<std::string> params;
@@ -452,9 +417,9 @@ TEST_F(RankSetupTest, cfg_value_blueprint)
         EXPECT_EQ(deps.output[1], "1");
         EXPECT_EQ(deps.output[2], "2");
 
-        vespalib::Stash stash;
-        FeatureExecutor &fe = bp->createExecutor(_queryEnv, stash);
-        ValueExecutor *vfe = static_cast<ValueExecutor *>(&fe);
+        vespalib::Stash  stash;
+        FeatureExecutor& fe = bp->createExecutor(_queryEnv, stash);
+        ValueExecutor*   vfe = static_cast<ValueExecutor*>(&fe);
         EXPECT_EQ(vfe->getValues().size(), 3u);
         EXPECT_EQ(vfe->getValues()[0], 1.0f);
         EXPECT_EQ(vfe->getValues()[1], 2.0f);
@@ -462,8 +427,7 @@ TEST_F(RankSetupTest, cfg_value_blueprint)
     }
 }
 
-TEST_F(RankSetupTest, compilation)
-{
+TEST_F(RankSetupTest, compilation) {
     { // unknown blueprint
         RankSetup rs(_factory, _indexEnv);
         rs.setFirstPhaseRank("unknown");
@@ -490,14 +454,15 @@ TEST_F(RankSetupTest, compilation)
         EXPECT_TRUE(!rs.compile());
     }
     { // almost too deep dependency graph
-        RankSetup rs(_factory, _indexEnv);
+        RankSetup          rs(_factory, _indexEnv);
         std::ostringstream oss;
-        oss << "chain(basic," << (BlueprintResolver::MAX_DEP_DEPTH - 1) << ",4)"; // gives tree height == MAX_DEP_DEPTH
+        oss << "chain(basic," << (BlueprintResolver::MAX_DEP_DEPTH - 1)
+            << ",4)"; // gives tree height == MAX_DEP_DEPTH
         rs.setFirstPhaseRank(oss.str());
         EXPECT_TRUE(rs.compile());
     }
     { // too deep dependency graph
-        RankSetup rs(_factory, _indexEnv);
+        RankSetup          rs(_factory, _indexEnv);
         std::ostringstream oss;
         oss << "chain(basic," << BlueprintResolver::MAX_DEP_DEPTH << ",4)"; // gives tree height == MAX_DEP_DEPTH + 1
         rs.setFirstPhaseRank(oss.str());
@@ -521,8 +486,7 @@ TEST_F(RankSetupTest, compilation)
     }
 }
 
-TEST_F(RankSetupTest, rank_setup)
-{
+TEST_F(RankSetupTest, rank_setup) {
     using namespace search::fef::indexproperties;
     IndexEnvironment env;
     IndexEnvironment empty_env;
@@ -618,18 +582,14 @@ TEST_F(RankSetupTest, rank_setup)
     EXPECT_EQ(rs.get_weakand_allow_drop_all(), true);
 }
 
-bool
-RankSetupTest::testExecution(const std::string & initRank, feature_t initScore,
-                             const std::string & finalRank, feature_t finalScore, uint32_t docId)
-{
+bool RankSetupTest::testExecution(const std::string& initRank, feature_t initScore, const std::string& finalRank,
+                                  feature_t finalScore, uint32_t docId) {
     return testExecution(_rankEnv, initRank, initScore, finalRank, finalScore, docId);
 }
 
-bool
-RankSetupTest::testExecution(const RankEnvironment &rankEnv, const std::string & initRank, feature_t initScore,
-                             const std::string & finalRank, feature_t finalScore, uint32_t docId)
-{
-    bool ok = true;
+bool RankSetupTest::testExecution(const RankEnvironment& rankEnv, const std::string& initRank, feature_t initScore,
+                                  const std::string& finalRank, feature_t finalScore, uint32_t docId) {
+    bool         ok = true;
     RankExecutor re(initRank, finalRank, rankEnv);
     ok = ok && re.setup();
     EXPECT_TRUE(ok);
@@ -644,8 +604,7 @@ RankSetupTest::testExecution(const RankEnvironment &rankEnv, const std::string &
     return ok;
 }
 
-TEST_F(RankSetupTest, execution)
-{
+TEST_F(RankSetupTest, execution) {
     { // value executor
         std::string v = FNB().baseName("value").parameter("5.5").parameter("10.5").buildName();
         EXPECT_TRUE(testExecution(v + ".0", 5.5f));
@@ -660,7 +619,8 @@ TEST_F(RankSetupTest, execution)
         EXPECT_TRUE(testExecution(d2, 4.0f));
     }
     { // sum executor
-        std::string s1 = FNB().baseName("mysum").parameter("value(2).0").parameter("value(4).0").output("out").buildName();
+        std::string s1 =
+            FNB().baseName("mysum").parameter("value(2).0").parameter("value(4).0").output("out").buildName();
         std::string s2 = FNB().baseName("mysum").parameter("value(2)").parameter("value(4)").buildName();
         EXPECT_TRUE(testExecution(s1, 6.0f));
         EXPECT_TRUE(testExecution(s2, 6.0f));
@@ -669,8 +629,7 @@ TEST_F(RankSetupTest, execution)
         std::string sr1 = "staticrank(staticrank1)";
         std::string sr2 = "staticrank(staticrank2)";
         for (uint32_t i = 1; i < 5; ++i) {
-            EXPECT_TRUE(testExecution(sr1, static_cast<feature_t>(i + 100),
-                                     sr2, static_cast<feature_t>(i + 200), i));
+            EXPECT_TRUE(testExecution(sr1, static_cast<feature_t>(i + 100), sr2, static_cast<feature_t>(i + 200), i));
         }
     }
     { // test topologic sorting
@@ -713,7 +672,7 @@ TEST_F(RankSetupTest, execution)
         EXPECT_TRUE(testExecution(s1, 20.0f, s2, 80.0f));
     }
     { // max dependency depth
-        uint32_t maxDepth = BlueprintResolver::MAX_DEP_DEPTH;
+        uint32_t           maxDepth = BlueprintResolver::MAX_DEP_DEPTH;
         std::ostringstream oss;
         oss << "chain(basic," << (maxDepth - 1) << ",4)"; // gives tree height == MAX_DEP_DEPTH;
         EXPECT_TRUE(testExecution(oss.str(), 4.0f));
@@ -724,18 +683,15 @@ TEST_F(RankSetupTest, execution)
         indexEnv.getProperties().add("test_cfgvalue(foo).value", "2.0");
         indexEnv.getProperties().add("test_cfgvalue(bar).value", "5.0");
 
-        std::string s = FNB().baseName("mysum")
-                        .parameter("test_cfgvalue(foo).0")
-                        .parameter("test_cfgvalue(foo).1")
-                        .buildName();
+        std::string s =
+            FNB().baseName("mysum").parameter("test_cfgvalue(foo).0").parameter("test_cfgvalue(foo).1").buildName();
 
-        EXPECT_TRUE(testExecution(RankEnvironment(_factory, indexEnv, _queryEnv),
-                                 s, 3.0f, "test_cfgvalue(bar).0", 5.0f));
+        EXPECT_TRUE(
+            testExecution(RankEnvironment(_factory, indexEnv, _queryEnv), s, 3.0f, "test_cfgvalue(bar).0", 5.0f));
     }
 }
 
-TEST_F(RankSetupTest, feature_dump)
-{
+TEST_F(RankSetupTest, feature_dump) {
     {
         FeatureDumper dumper(_rankEnv);
         dumper.addDumpFeature("value(2)");
@@ -752,10 +708,12 @@ TEST_F(RankSetupTest, feature_dump)
         exp.addScore(FNB().baseName("double").parameter("value(4)").buildName(), 8.0f);
         exp.addScore(FNB().baseName("double").parameter("value(8)").buildName(), 16.0f);
         exp.addScore(FNB().baseName("mysum").parameter("value(4)").parameter("value(16)").buildName(), 20.0f);
-        exp.addScore(FNB().baseName("mysum").
-                     parameter(FNB().baseName("double").parameter("value(8)").buildName()).
-                     parameter(FNB().baseName("double").parameter("value(32)").buildName()).
-                     buildName(), 80.0f);
+        exp.addScore(FNB()
+                         .baseName("mysum")
+                         .parameter(FNB().baseName("double").parameter("value(8)").buildName())
+                         .parameter(FNB().baseName("double").parameter("value(32)").buildName())
+                         .buildName(),
+                     80.0f);
         EXPECT_EQ(exp, dumper.dump());
     }
     {
@@ -779,10 +737,12 @@ TEST_F(RankSetupTest, feature_dump)
 
     {
         FeatureDumper dumper(_rankEnv);
-        dumper.addDumpFeature(FNB().baseName("rankingExpression").parameter("if(mysum(value(12),value(10))>2,3,4)").buildName());
+        dumper.addDumpFeature(
+            FNB().baseName("rankingExpression").parameter("if(mysum(value(12),value(10))>2,3,4)").buildName());
         EXPECT_TRUE(dumper.setup());
         RankResult exp;
-        exp.addScore(FNB().baseName("rankingExpression").parameter("if(mysum(value(12),value(10))>2,3,4)").buildName(), 3.0f);
+        exp.addScore(
+            FNB().baseName("rankingExpression").parameter("if(mysum(value(12),value(10))>2,3,4)").buildName(), 3.0f);
         EXPECT_EQ(exp, dumper.dump());
     }
     { // dump features indicated by visitation
@@ -795,7 +755,7 @@ TEST_F(RankSetupTest, feature_dump)
         indexEnv.getProperties().add(indexproperties::rank::SecondPhase::NAME, "");
 
         RankEnvironment rankEnv(_factory, indexEnv, _queryEnv);
-        FeatureDumper dumper(rankEnv);
+        FeatureDumper   dumper(rankEnv);
         dumper.configure();
         EXPECT_TRUE(dumper.setup());
         RankResult exp;
@@ -815,7 +775,7 @@ TEST_F(RankSetupTest, feature_dump)
         indexEnv.getProperties().add(indexproperties::rank::SecondPhase::NAME, "");
 
         RankEnvironment rankEnv(_factory, indexEnv, _queryEnv);
-        FeatureDumper dumper(rankEnv);
+        FeatureDumper   dumper(rankEnv);
         dumper.configure();
         EXPECT_TRUE(dumper.setup());
         RankResult exp;
@@ -827,7 +787,7 @@ TEST_F(RankSetupTest, feature_dump)
         indexEnv.getProperties().add(indexproperties::rank::FirstPhase::NAME, "value(2)");
         indexEnv.getProperties().add(indexproperties::rank::SecondPhase::NAME, "value(4)");
         RankEnvironment rankEnv(_factory, indexEnv, _queryEnv);
-        FeatureDumper dumper(rankEnv);
+        FeatureDumper   dumper(rankEnv);
         dumper.configure();
         dumper.addDumpFeature("secondPhase");
         EXPECT_TRUE(dumper.setup());
@@ -837,13 +797,11 @@ TEST_F(RankSetupTest, feature_dump)
     }
 }
 
-void
-RankSetupTest::checkFeatures(std::map<std::string, feature_t> &exp, std::map<std::string, feature_t> &actual)
-{
+void RankSetupTest::checkFeatures(std::map<std::string, feature_t>& exp, std::map<std::string, feature_t>& actual) {
     using ITR = std::map<std::string, feature_t>::const_iterator;
     ASSERT_EQ(exp.size(), actual.size());
-    ITR exp_itr    = exp.begin();
-    ITR exp_end    = exp.end();
+    ITR exp_itr = exp.begin();
+    ITR exp_end = exp.end();
     ITR actual_itr = actual.begin();
     ITR actual_end = actual.end();
     for (; exp_itr != exp_end && actual_itr != actual_end; ++exp_itr, ++actual_itr) {
@@ -853,14 +811,13 @@ RankSetupTest::checkFeatures(std::map<std::string, feature_t> &exp, std::map<std
     EXPECT_EQ(exp_itr == exp_end, actual_itr == actual_end);
 }
 
-TEST_F(RankSetupTest, feature_normalization)
-{
+TEST_F(RankSetupTest, feature_normalization) {
     BlueprintFactory factory;
     factory.addPrototype(Blueprint::SP(new ValueBlueprint()));
     factory.addPrototype(Blueprint::SP(new SumBlueprint()));
 
     IndexEnvironment idxEnv;
-    RankSetup rankSetup(factory, idxEnv);
+    RankSetup        rankSetup(factory, idxEnv);
 
     rankSetup.setFirstPhaseRank(" mysum ( value ( 1 ) , value ( 1 ) ) ");
     rankSetup.setSecondPhaseRank(" mysum ( value ( 2 ) , value ( 2 ) ) ");
@@ -874,13 +831,13 @@ TEST_F(RankSetupTest, feature_normalization)
     ASSERT_TRUE(rankSetup.compile());
 
     { // RANK context
-        MatchDataLayout layout;
+        MatchDataLayout  layout;
         QueryEnvironment queryEnv;
-        MatchData::UP match_data = layout.createMatchData();
-        RankProgram::UP firstPhaseProgram = rankSetup.create_first_phase_program();
-        RankProgram::UP secondPhaseProgram = rankSetup.create_second_phase_program();
-        RankProgram::UP match_program = rankSetup.create_match_program();
-        RankProgram::UP summaryProgram = rankSetup.create_summary_program();
+        MatchData::UP    match_data = layout.createMatchData();
+        RankProgram::UP  firstPhaseProgram = rankSetup.create_first_phase_program();
+        RankProgram::UP  secondPhaseProgram = rankSetup.create_second_phase_program();
+        RankProgram::UP  match_program = rankSetup.create_match_program();
+        RankProgram::UP  summaryProgram = rankSetup.create_summary_program();
         firstPhaseProgram->setup(*match_data, queryEnv);
         secondPhaseProgram->setup(*match_data, queryEnv);
         match_program->setup(*match_data, queryEnv);
@@ -944,10 +901,10 @@ TEST_F(RankSetupTest, feature_normalization)
     }
 
     { // DUMP context
-        MatchDataLayout layout;
+        MatchDataLayout  layout;
         QueryEnvironment queryEnv;
-        MatchData::UP match_data = layout.createMatchData();
-        RankProgram::UP rankProgram = rankSetup.create_dump_program();
+        MatchData::UP    match_data = layout.createMatchData();
+        RankProgram::UP  rankProgram = rankSetup.create_dump_program();
         rankProgram->setup(*match_data, queryEnv);
 
         {

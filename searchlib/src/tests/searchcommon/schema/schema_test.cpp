@@ -4,6 +4,7 @@
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/test_path.h>
+
 #include <fstream>
 #include <string>
 
@@ -14,8 +15,8 @@ using std::string;
 
 namespace search::index {
 
-using schema::DataType;
 using schema::CollectionType;
+using schema::DataType;
 using SIAF = Schema::ImportedAttributeField;
 using SIF = Schema::IndexField;
 
@@ -23,27 +24,19 @@ std::string src_path(std::string_view prefix, std::string_view path) {
     return std::string(prefix) + TEST_PATH(std::string(path));
 }
 
-void
-assertField(const Schema::Field& exp, const Schema::Field& act)
-{
+void assertField(const Schema::Field& exp, const Schema::Field& act) {
     EXPECT_EQ(exp.getName(), act.getName());
     EXPECT_EQ(exp.getDataType(), act.getDataType());
     EXPECT_EQ(exp.getCollectionType(), act.getCollectionType());
 }
 
-void
-assertIndexField(const Schema::IndexField& exp,
-                 const Schema::IndexField& act)
-{
+void assertIndexField(const Schema::IndexField& exp, const Schema::IndexField& act) {
     assertField(exp, act);
     EXPECT_EQ(exp.getAvgElemLen(), act.getAvgElemLen());
     EXPECT_EQ(exp.use_interleaved_features(), act.use_interleaved_features());
 }
 
-void
-assertSet(const Schema::FieldSet& exp,
-          const Schema::FieldSet& act)
-{
+void assertSet(const Schema::FieldSet& exp, const Schema::FieldSet& act) {
     EXPECT_EQ(exp.getName(), act.getName());
     ASSERT_EQ(exp.getFields().size(), act.getFields().size());
     for (size_t i = 0; i < exp.getFields().size(); ++i) {
@@ -51,9 +44,7 @@ assertSet(const Schema::FieldSet& exp,
     }
 }
 
-void
-assertSchema(const Schema& exp, const Schema& act)
-{
+void assertSchema(const Schema& exp, const Schema& act) {
     ASSERT_EQ(exp.getNumIndexFields(), act.getNumIndexFields());
     for (size_t i = 0; i < exp.getNumIndexFields(); ++i) {
         assertIndexField(exp.getIndexField(i), act.getIndexField(i));
@@ -66,16 +57,15 @@ assertSchema(const Schema& exp, const Schema& act)
     for (size_t i = 0; i < exp.getNumFieldSets(); ++i) {
         assertSet(exp.getFieldSet(i), act.getFieldSet(i));
     }
-    const auto &expImported = exp.getImportedAttributeFields();
-    const auto &actImported = act.getImportedAttributeFields();
+    const auto& expImported = exp.getImportedAttributeFields();
+    const auto& actImported = act.getImportedAttributeFields();
     ASSERT_EQ(expImported.size(), actImported.size());
     for (size_t i = 0; i < expImported.size(); ++i) {
         assertField(expImported[i], actImported[i]);
     }
 }
 
-TEST(SchemaTest, test_basic)
-{
+TEST(SchemaTest, test_basic) {
     Schema s;
     EXPECT_EQ(0u, s.getNumIndexFields());
     EXPECT_EQ(0u, s.getNumAttributeFields());
@@ -85,7 +75,7 @@ TEST(SchemaTest, test_basic)
     s.addIndexField(Schema::IndexField("bar", DataType::INT32));
 
     s.addAttributeField(Schema::AttributeField("foo", DataType::STRING, CollectionType::ARRAY));
-    s.addAttributeField(Schema::AttributeField("bar", DataType::INT32,  CollectionType::WEIGHTEDSET));
+    s.addAttributeField(Schema::AttributeField("bar", DataType::INT32, CollectionType::WEIGHTEDSET));
     s.addAttributeField(Schema::AttributeField("cox", DataType::STRING));
 
     s.addFieldSet(Schema::FieldSet("default").addField("foo").addField("bar"));
@@ -134,21 +124,20 @@ TEST(SchemaTest, test_basic)
     }
     EXPECT_EQ(1u, s.getNumImportedAttributeFields());
     {
-        const auto &imported = s.getImportedAttributeFields();
+        const auto& imported = s.getImportedAttributeFields();
         EXPECT_EQ(1u, imported.size());
         assertField(SIAF("imported", DataType::INT32, CollectionType::SINGLE), imported[0]);
     }
 }
 
-TEST(SchemaTest, test_load_and_save)
-{
+TEST(SchemaTest, test_load_and_save) {
     using SAF = Schema::AttributeField;
     using SDT = schema::DataType;
     using SCT = schema::CollectionType;
     using SFS = Schema::FieldSet;
 
     { // load from config -> save to file -> load from file
-        Schema s;
+        Schema           s;
         SchemaConfigurer configurer(s, src_path("dir:", "load-save-cfg"));
         EXPECT_EQ(3u, s.getNumIndexFields());
         assertIndexField(SIF("a", SDT::STRING), s.getIndexField(0));
@@ -156,21 +145,18 @@ TEST(SchemaTest, test_load_and_save)
         assertIndexField(SIF("c", SDT::STRING).set_interleaved_features(true), s.getIndexField(2));
 
         EXPECT_EQ(9u, s.getNumAttributeFields());
-        assertField(SAF("a", SDT::STRING, SCT::SINGLE),
-                    s.getAttributeField(0));
+        assertField(SAF("a", SDT::STRING, SCT::SINGLE), s.getAttributeField(0));
         assertField(SAF("b", SDT::INT8, SCT::ARRAY), s.getAttributeField(1));
-        assertField(SAF("c", SDT::INT16, SCT::WEIGHTEDSET),
-                    s.getAttributeField(2));
-        assertField(SAF("d", SDT::INT32),       s.getAttributeField(3));
-        assertField(SAF("e", SDT::INT64),       s.getAttributeField(4));
-        assertField(SAF("f", SDT::FLOAT),       s.getAttributeField(5));
-        assertField(SAF("g", SDT::DOUBLE),      s.getAttributeField(6));
+        assertField(SAF("c", SDT::INT16, SCT::WEIGHTEDSET), s.getAttributeField(2));
+        assertField(SAF("d", SDT::INT32), s.getAttributeField(3));
+        assertField(SAF("e", SDT::INT64), s.getAttributeField(4));
+        assertField(SAF("f", SDT::FLOAT), s.getAttributeField(5));
+        assertField(SAF("g", SDT::DOUBLE), s.getAttributeField(6));
         assertField(SAF("h", SDT::BOOLEANTREE), s.getAttributeField(7));
         assertField(SAF("i", SDT::TENSOR), s.getAttributeField(8));
 
         EXPECT_EQ(1u, s.getNumFieldSets());
-        assertSet(SFS("default").addField("a").addField("c"),
-                  s.getFieldSet(0));
+        assertSet(SFS("default").addField("a").addField("c"), s.getFieldSet(0));
 
         Schema s2 = s;
         EXPECT_TRUE(s.saveToFile("schema.txt"));
@@ -199,9 +185,7 @@ TEST(SchemaTest, test_load_and_save)
     }
 }
 
-void
-addAllFieldTypes(const string& name, Schema& schema)
-{
+void addAllFieldTypes(const string& name, Schema& schema) {
     Schema::IndexField index_field(name, DataType::STRING);
     schema.addIndexField(index_field);
 
@@ -211,35 +195,27 @@ addAllFieldTypes(const string& name, Schema& schema)
     schema.addFieldSet(Schema::FieldSet(name));
 }
 
-TEST(SchemaTest, require_that_schemas_can_be_added)
-{
+TEST(SchemaTest, require_that_schemas_can_be_added) {
     const string name1 = "foo";
     const string name2 = "bar";
-    Schema s1;
+    Schema       s1;
     addAllFieldTypes(name1, s1);
     Schema s2;
     addAllFieldTypes(name2, s2);
 
     Schema::UP sum = Schema::make_union(s1, s2);
     ASSERT_EQ(2u, sum->getNumIndexFields());
-    EXPECT_TRUE(s1.getIndexField(0) ==
-                sum->getIndexField(sum->getIndexFieldId(name1)));
-    EXPECT_TRUE(s2.getIndexField(0) ==
-                sum->getIndexField(sum->getIndexFieldId(name2)));
+    EXPECT_TRUE(s1.getIndexField(0) == sum->getIndexField(sum->getIndexFieldId(name1)));
+    EXPECT_TRUE(s2.getIndexField(0) == sum->getIndexField(sum->getIndexFieldId(name2)));
     ASSERT_EQ(2u, sum->getNumAttributeFields());
-    EXPECT_TRUE(s1.getAttributeField(0) ==
-                sum->getAttributeField(sum->getAttributeFieldId(name1)));
-    EXPECT_TRUE(s2.getAttributeField(0) ==
-                sum->getAttributeField(sum->getAttributeFieldId(name2)));
+    EXPECT_TRUE(s1.getAttributeField(0) == sum->getAttributeField(sum->getAttributeFieldId(name1)));
+    EXPECT_TRUE(s2.getAttributeField(0) == sum->getAttributeField(sum->getAttributeFieldId(name2)));
     ASSERT_EQ(2u, sum->getNumFieldSets());
-    EXPECT_TRUE(s1.getFieldSet(0) ==
-                sum->getFieldSet(sum->getFieldSetId(name1)));
-    EXPECT_TRUE(s2.getFieldSet(0) ==
-                sum->getFieldSet(sum->getFieldSetId(name2)));
+    EXPECT_TRUE(s1.getFieldSet(0) == sum->getFieldSet(sum->getFieldSetId(name1)));
+    EXPECT_TRUE(s2.getFieldSet(0) == sum->getFieldSet(sum->getFieldSetId(name2)));
 }
 
-TEST(SchemaTest, require_that_S_union_S_equals_S_for_schema_S)
-{
+TEST(SchemaTest, require_that_S_union_S_equals_S_for_schema_S) {
     Schema schema;
     addAllFieldTypes("foo", schema);
 
@@ -247,11 +223,10 @@ TEST(SchemaTest, require_that_S_union_S_equals_S_for_schema_S)
     EXPECT_TRUE(schema == *sum);
 }
 
-TEST(SchemaTest, require_that_schema_can_calculate_set_difference)
-{
+TEST(SchemaTest, require_that_schema_can_calculate_set_difference) {
     const string name1 = "foo";
     const string name2 = "bar";
-    Schema s1;
+    Schema       s1;
     addAllFieldTypes(name1, s1);
     addAllFieldTypes(name2, s1);
     Schema s2;
@@ -264,12 +239,11 @@ TEST(SchemaTest, require_that_schema_can_calculate_set_difference)
     EXPECT_TRUE(expected == *schema);
 }
 
-TEST(SchemaTest, require_that_schema_can_calculate_intersection)
-{
+TEST(SchemaTest, require_that_schema_can_calculate_intersection) {
     const string name1 = "foo";
     const string name2 = "bar";
     const string name3 = "baz";
-    Schema s1;
+    Schema       s1;
     addAllFieldTypes(name1, s1);
     addAllFieldTypes(name2, s1);
     Schema s2;
@@ -283,10 +257,9 @@ TEST(SchemaTest, require_that_schema_can_calculate_intersection)
     EXPECT_TRUE(expected == *schema);
 }
 
-TEST(SchemaTest, require_that_incompatible_fields_are_removed_from_intersection)
-{
+TEST(SchemaTest, require_that_incompatible_fields_are_removed_from_intersection) {
     const string name = "foo";
-    Schema s1;
+    Schema       s1;
     s1.addIndexField(Schema::IndexField(name, DataType::STRING));
     Schema s2;
     s2.addIndexField(Schema::IndexField(name, DataType::INT32));
@@ -295,8 +268,7 @@ TEST(SchemaTest, require_that_incompatible_fields_are_removed_from_intersection)
     EXPECT_FALSE(schema->isIndexField(name));
 }
 
-TEST(SchemaTest, require_that_imported_attribute_fields_are_not_saved_to_disk)
-{
+TEST(SchemaTest, require_that_imported_attribute_fields_are_not_saved_to_disk) {
     const std::string fileName = "schema-no-imported-fields.txt";
     {
         Schema s;
@@ -310,39 +282,35 @@ TEST(SchemaTest, require_that_imported_attribute_fields_are_not_saved_to_disk)
     }
 }
 
-TEST(SchemaTest, require_that_schema_can_be_built_with_imported_attribute_fields)
-{
-    Schema s;
+TEST(SchemaTest, require_that_schema_can_be_built_with_imported_attribute_fields) {
+    Schema           s;
     SchemaConfigurer configurer(s, src_path("dir:", "imported-fields-cfg"));
 
-    const auto &imported = s.getImportedAttributeFields();
+    const auto& imported = s.getImportedAttributeFields();
     ASSERT_EQ(2u, imported.size());
     assertField(SIAF("imported_a", DataType::INT32, CollectionType::SINGLE), imported[0]);
     assertField(SIAF("imported_b", DataType::STRING, CollectionType::ARRAY), imported[1]);
 
-    const auto &regular = s.getAttributeFields();
+    const auto& regular = s.getAttributeFields();
     ASSERT_EQ(1u, regular.size());
     assertField(SIAF("regular", DataType::INT32, CollectionType::SINGLE), regular[0]);
 }
 
-TEST(SchemaTest, require_that_index_field_is_loaded_with_default_values_when_properties_are_not_set)
-{
+TEST(SchemaTest, require_that_index_field_is_loaded_with_default_values_when_properties_are_not_set) {
     Schema s;
     ASSERT_TRUE(s.loadFromFile(TEST_PATH("schema-without-index-field-properties.txt")));
 
     const auto& index_fields = s.getIndexFields();
     ASSERT_EQ(1, index_fields.size());
-    assertIndexField(SIF("foo", DataType::STRING, CollectionType::SINGLE).
-                             setAvgElemLen(512).
-                             set_interleaved_features(false),
-                     index_fields[0]);
+    assertIndexField(
+        SIF("foo", DataType::STRING, CollectionType::SINGLE).setAvgElemLen(512).set_interleaved_features(false),
+        index_fields[0]);
     assertIndexField(SIF("foo", DataType::STRING, CollectionType::SINGLE), index_fields[0]);
 }
 
-TEST(SchemaTest, test_load_from_saved_schema_with_summary_fields)
-{
+TEST(SchemaTest, test_load_from_saved_schema_with_summary_fields) {
     std::string schema_name(TEST_PATH("old-schema-with-summary-fields.txt"));
-    Schema s;
+    Schema      s;
     s.addIndexField(Schema::IndexField("ifoo", DataType::STRING));
     s.addIndexField(Schema::IndexField("ibar", DataType::INT32));
     s.addAttributeField(Schema::AttributeField("afoo", DataType::STRING));
@@ -352,6 +320,6 @@ TEST(SchemaTest, test_load_from_saved_schema_with_summary_fields)
     assertSchema(s, s2);
 }
 
-}
+} // namespace search::index
 
 GTEST_MAIN_RUN_ALL_TESTS()

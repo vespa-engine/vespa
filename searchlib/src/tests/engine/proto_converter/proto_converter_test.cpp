@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/searchlib/engine/proto_converter.h>
-#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
+#include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using ::search::UniqueIssues;
 using Converter = ::search::engine::ProtoConverter;
@@ -17,17 +17,17 @@ using DocsumReply = ::search::engine::DocsumReply;
 using MonitorRequest = ::search::engine::MonitorRequest;
 using MonitorReply = ::search::engine::MonitorReply;
 
-using vespalib::Slime;
 using vespalib::Memory;
+using vespalib::Slime;
 using vespalib::slime::BinaryFormat;
 
 //-----------------------------------------------------------------------------
 
 struct ProtoConverterTest : ::testing::Test {
     static constexpr size_t gid_len = document::GlobalId::LENGTH;
-    char id0[gid_len] = { 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12};
-    char id1[gid_len] = {11,12,13,14,15,16,17,18,19,20,21,22};
-    char id2[gid_len] = {21,22,23,24,25,26,27,28,29,30,31,32};
+    char                    id0[gid_len] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+    char                    id1[gid_len] = {11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22};
+    char                    id2[gid_len] = {21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32};
     static_assert(gid_len == 12);
 };
 
@@ -35,7 +35,7 @@ struct ProtoConverterTest : ::testing::Test {
 
 struct SearchRequestTest : ProtoConverterTest {
     Converter::ProtoSearchRequest proto;
-    SearchRequest request;
+    SearchRequest                 request;
     void convert() { Converter::search_request_from_proto(proto, request); }
 };
 
@@ -91,7 +91,7 @@ TEST_F(SearchRequestTest, require_that_profile_depth_is_fallback) {
 }
 
 TEST_F(SearchRequestTest, require_that_sorting_is_converted) {
-    auto *sort_field = proto.add_sorting();
+    auto* sort_field = proto.add_sorting();
     sort_field->set_ascending(true);
     sort_field->set_field("foo");
     sort_field = proto.add_sorting();
@@ -134,14 +134,14 @@ TEST_F(SearchRequestTest, require_that_rank_profile_is_converted) {
 }
 
 TEST_F(SearchRequestTest, require_that_feature_overrides_are_converted) {
-    auto *prop = proto.add_feature_overrides();
+    auto* prop = proto.add_feature_overrides();
     prop->set_name("foo");
     prop->add_values("a");
     prop = proto.add_feature_overrides();
     prop->set_name("bar");
     prop->add_values("b");
     prop->add_values("c");
-    auto *tprop = proto.add_tensor_feature_overrides();
+    auto* tprop = proto.add_tensor_feature_overrides();
     tprop->set_name("x1");
     tprop->set_value("[1,2,3]");
     tprop = proto.add_tensor_feature_overrides();
@@ -164,14 +164,14 @@ TEST_F(SearchRequestTest, require_that_feature_overrides_are_converted) {
 }
 
 TEST_F(SearchRequestTest, require_that_rank_properties_are_converted) {
-    auto *prop = proto.add_rank_properties();
+    auto* prop = proto.add_rank_properties();
     prop->set_name("foo");
     prop->add_values("a");
     prop = proto.add_rank_properties();
     prop->set_name("bar");
     prop->add_values("b");
     prop->add_values("c");
-    auto *tprop = proto.add_tensor_rank_properties();
+    auto* tprop = proto.add_tensor_rank_properties();
     tprop->set_name("x1");
     tprop->set_value("[1,2,3]");
     tprop = proto.add_tensor_rank_properties();
@@ -214,7 +214,7 @@ TEST_F(SearchRequestTest, require_that_query_tree_blob_is_converted) {
 //-----------------------------------------------------------------------------
 
 struct SearchReplyTest : ProtoConverterTest {
-    SearchReply reply;
+    SearchReply                 reply;
     Converter::ProtoSearchReply proto;
     void fill_hits() {
         reply.hits.resize(3);
@@ -379,7 +379,7 @@ TEST_F(SearchReplyTest, require_that_issues_are_converted_to_errors) {
 
 struct DocsumRequestTest : ProtoConverterTest {
     Converter::ProtoDocsumRequest proto;
-    DocsumRequest request;
+    DocsumRequest                 request;
     DocsumRequestTest() : proto(), request() {}
     void convert() { Converter::docsum_request_from_proto(proto, request); }
 };
@@ -429,14 +429,14 @@ TEST_F(DocsumRequestTest, require_that_rank_profile_is_converted) {
 }
 
 TEST_F(DocsumRequestTest, require_that_feature_overrides_are_converted) {
-    auto *prop = proto.add_feature_overrides();
+    auto* prop = proto.add_feature_overrides();
     prop->set_name("foo");
     prop->add_values("a");
     prop = proto.add_feature_overrides();
     prop->set_name("bar");
     prop->add_values("b");
     prop->add_values("c");
-    auto *tprop = proto.add_tensor_feature_overrides();
+    auto* tprop = proto.add_tensor_feature_overrides();
     tprop->set_name("x1");
     tprop->set_value("[1,2,3]");
     tprop = proto.add_tensor_feature_overrides();
@@ -459,14 +459,14 @@ TEST_F(DocsumRequestTest, require_that_feature_overrides_are_converted) {
 }
 
 TEST_F(DocsumRequestTest, require_that_rank_properties_are_converted) {
-    auto *prop = proto.add_rank_properties();
+    auto* prop = proto.add_rank_properties();
     prop->set_name("foo");
     prop->add_values("a");
     prop = proto.add_rank_properties();
     prop->set_name("bar");
     prop->add_values("b");
     prop->add_values("c");
-    auto *tprop = proto.add_tensor_rank_properties();
+    auto* tprop = proto.add_tensor_rank_properties();
     tprop->set_name("x1");
     tprop->set_value("[1,2,3]");
     tprop = proto.add_tensor_rank_properties();
@@ -489,7 +489,7 @@ TEST_F(DocsumRequestTest, require_that_rank_properties_are_converted) {
 }
 
 TEST_F(DocsumRequestTest, require_that_highlight_terms_are_converted) {
-    auto *prop = proto.add_highlight_terms();
+    auto* prop = proto.add_highlight_terms();
     prop->set_name("foo");
     prop->add_values("a");
     prop = proto.add_highlight_terms();
@@ -545,23 +545,21 @@ TEST_F(DocsumRequestTest, require_that_global_ids_are_converted) {
 //-----------------------------------------------------------------------------
 
 struct DocsumReplyTest : ProtoConverterTest {
-    Slime &slime;
-    DocsumReply reply;
+    Slime&                      slime;
+    DocsumReply                 reply;
     Converter::ProtoDocsumReply proto;
     void convert() { Converter::docsum_reply_to_proto(reply, proto); }
-    explicit DocsumReplyTest(std::unique_ptr<Slime> slime_in)
-        : slime(*slime_in), reply(std::move(slime_in))
-    {}
+    explicit DocsumReplyTest(std::unique_ptr<Slime> slime_in) : slime(*slime_in), reply(std::move(slime_in)) {}
     DocsumReplyTest() : DocsumReplyTest(std::make_unique<Slime>()) {}
 };
 
 TEST_F(DocsumReplyTest, require_that_slime_summaries_are_converted) {
-    auto &list = slime.setArray();
-    auto &doc0 = list.addObject();
+    auto& list = slime.setArray();
+    auto& doc0 = list.addObject();
     doc0.setLong("my_field", 42);
     convert();
-    const auto &mem = proto.slime_summaries();
-    Slime decoded;
+    const auto& mem = proto.slime_summaries();
+    Slime       decoded;
     EXPECT_EQ(BinaryFormat::decode(Memory(mem.data(), mem.size()), decoded), mem.size());
     EXPECT_EQ(decoded.get()[0]["my_field"].asLong(), 42);
 }
@@ -590,7 +588,7 @@ TEST_F(DocsumReplyTest, require_that_issues_are_converted_to_errors) {
 //-----------------------------------------------------------------------------
 
 struct MonitorReplyTest : ProtoConverterTest {
-    MonitorReply reply;
+    MonitorReply                 reply;
     Converter::ProtoMonitorReply proto;
     void convert() { Converter::monitor_reply_to_proto(reply, proto); }
 };
