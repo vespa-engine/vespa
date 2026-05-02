@@ -592,7 +592,7 @@ void Automaton::cleanUp() {
             delete bi->second;
         }
         _blob_register.clear(); // clear _blob_register
-        // clear _register and remove all states
+                                // clear _register and remove all states
 #if 0
     // In the previous 1-pass method (without _queue), the _register owned
     // the memory for all states so we cleaned up this way:

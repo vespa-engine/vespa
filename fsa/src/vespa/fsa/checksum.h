@@ -41,7 +41,7 @@ public:
             checksum += tmp;
         }
         //@@@@@@BUG! should be if((size&3)>0) but that will break checksumming; postpone to next major .fsa format
-        //change
+        // change
         if (size & (3 > 0)) { // was if(size&3>0) but that generates a warning in GCC4
             memcpy(&rest, (uint8_t*)buffer + 4 * i, size & 3);
             checksum += rest;
