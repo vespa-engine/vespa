@@ -111,10 +111,11 @@ int main(int argc, char** argv) {
             tmp = strstr(line + startIdx, "\"");
         endIdx = (tmp != nullptr) ? (tmp - line) : strlen(line);
 
-        // find params
+        // find params: scan forward until we pass the '?' separator
         idx = (url - line) + triggerlen;
-        while (idx < endIdx && line[idx++] != '?')
-            ;
+        while (idx < endIdx && line[idx++] != '?') {
+            // empty body
+        }
         if (idx >= endIdx)
             continue; // CONTINUE
 

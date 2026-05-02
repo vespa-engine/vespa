@@ -14,25 +14,19 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    auto        engine = std::make_shared<vespalib::NullCryptoEngine>();
-    HTTPClient* client;
-    ssize_t     len;
-
-    if (argc == 4) {
-        client = new HTTPClient(engine, argv[1], atoi(argv[2]), false, true);
-    } else {
-        client = new HTTPClient(engine, argv[1], atoi(argv[2]), true, true);
-    }
+    auto       engine = std::make_shared<vespalib::NullCryptoEngine>();
+    ssize_t    len;
+    HTTPClient client(engine, argv[1], atoi(argv[2]), argc != 4, true);
 
     std::ostream* output = &std::cout;
 
-    if ((len = client->Fetch(argv[3], output).ResultSize()) >= 0) {
+    if ((len = client.Fetch(argv[3], output).ResultSize()) >= 0) {
         printf("SUCCESS!\n");
         printf("LENGTH: %ld\n", len);
     } else {
         printf("ERROR: could not fetch URL content.\n");
     }
-    if ((len = client->Fetch(argv[3], output).ResultSize()) >= 0) {
+    if ((len = client.Fetch(argv[3], output).ResultSize()) >= 0) {
         printf("SUCCESS!\n");
         printf("LENGTH: %ld\n", len);
     } else {
@@ -41,18 +35,18 @@ int main(int argc, char** argv) {
 
     std::this_thread::sleep_for(std::chrono::seconds(20));
 
-    if ((len = client->Fetch(argv[3], output).ResultSize()) >= 0) {
+    if ((len = client.Fetch(argv[3], output).ResultSize()) >= 0) {
         printf("SUCCESS!\n");
         printf("LENGTH: %ld\n", len);
     } else {
         printf("ERROR: could not fetch URL content.\n");
     }
-    if ((len = client->Fetch(argv[3], output).ResultSize()) >= 0) {
+    if ((len = client.Fetch(argv[3], output).ResultSize()) >= 0) {
         printf("SUCCESS!\n");
         printf("LENGTH: %ld\n", len);
     } else {
         printf("ERROR: could not fetch URL content.\n");
     }
-    printf("REUSE COUNT: %" PRIu64 "\n", client->GetReuseCount());
+    printf("REUSE COUNT: %" PRIu64 "\n", client.GetReuseCount());
     return 0;
 }
