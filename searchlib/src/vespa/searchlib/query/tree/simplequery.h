@@ -27,37 +27,33 @@ struct SimpleAndNot : AndNot {
 };
 struct SimpleNear : Near {
     SimpleNear(size_t dist, size_t num_negative_terms, size_t exclusion_distance)
-      : Near(dist, num_negative_terms, exclusion_distance) {}
+        : Near(dist, num_negative_terms, exclusion_distance) {}
     ~SimpleNear() override;
 };
 struct SimpleONear : ONear {
     SimpleONear(size_t dist, size_t num_negative_terms, size_t exclusion_distance)
-      : ONear(dist, num_negative_terms, exclusion_distance) {}
+        : ONear(dist, num_negative_terms, exclusion_distance) {}
     ~SimpleONear() override;
 };
-struct SimpleOr : Or
-{
+struct SimpleOr : Or {
     ~SimpleOr() override;
 };
 struct SimpleWeakAnd : WeakAnd {
-    SimpleWeakAnd(uint32_t targetNumHits, std::string view) :
-        WeakAnd(targetNumHits, std::string(std::move(view)))
-    {}
+    SimpleWeakAnd(uint32_t targetNumHits, std::string view) : WeakAnd(targetNumHits, std::string(std::move(view))) {}
     ~SimpleWeakAnd() override;
 };
 struct SimpleEquiv : Equiv {
-    SimpleEquiv(int32_t id, Weight weight)
-        : Equiv(id, weight) {}
+    SimpleEquiv(int32_t id, Weight weight) : Equiv(id, weight) {}
     ~SimpleEquiv() override;
 };
 struct SimplePhrase : Phrase {
-    SimplePhrase(std::string view, int32_t id, Weight weight)
-        : Phrase(std::move(view), id, weight) {}
+    SimplePhrase(std::string view, int32_t id, Weight weight) : Phrase(std::move(view), id, weight) {}
     ~SimplePhrase() override;
 };
 
 struct SimpleSameElement : SameElement {
-    SimpleSameElement(std::string view, int32_t id, Weight weight, std::vector<uint32_t> element_filter = std::vector<uint32_t>())
+    SimpleSameElement(std::string view, int32_t id, Weight weight,
+                      std::vector<uint32_t> element_filter = std::vector<uint32_t>())
         : SameElement(std::move(view), id, weight, std::move(element_filter)) {}
     ~SimpleSameElement() override;
 };
@@ -81,81 +77,65 @@ struct SimpleWordAlternatives : WordAlternatives {
     using WordAlternatives::WordAlternatives;
     ~SimpleWordAlternatives() override;
 };
-struct SimpleRank : Rank
-{
+struct SimpleRank : Rank {
     ~SimpleRank() override;
 };
 struct SimpleNumberTerm : NumberTerm {
     SimpleNumberTerm(Type term, std::string view, int32_t id, Weight weight)
-        : NumberTerm(term, std::move(view), id, weight) {
-    }
+        : NumberTerm(term, std::move(view), id, weight) {}
     ~SimpleNumberTerm() override;
 };
 struct SimpleLocationTerm : LocationTerm {
-    SimpleLocationTerm(const Type &term, std::string view, int32_t id, Weight weight)
-        : LocationTerm(term, std::move(view), id, weight) {
-    }
+    SimpleLocationTerm(const Type& term, std::string view, int32_t id, Weight weight)
+        : LocationTerm(term, std::move(view), id, weight) {}
     ~SimpleLocationTerm() override;
 };
 struct SimplePrefixTerm : PrefixTerm {
-    SimplePrefixTerm(const Type &term, std::string view, int32_t id, Weight weight)
-        : PrefixTerm(term, std::move(view), id, weight) {
-    }
+    SimplePrefixTerm(const Type& term, std::string view, int32_t id, Weight weight)
+        : PrefixTerm(term, std::move(view), id, weight) {}
     ~SimplePrefixTerm() override;
 };
 struct SimpleRangeTerm : RangeTerm {
-    SimpleRangeTerm(const Type &term, std::string view, int32_t id, Weight weight)
-        : RangeTerm(term, std::move(view), id, weight) {
-    }
+    SimpleRangeTerm(const Type& term, std::string view, int32_t id, Weight weight)
+        : RangeTerm(term, std::move(view), id, weight) {}
     ~SimpleRangeTerm() override;
 };
 struct SimpleStringTerm : StringTerm {
-    SimpleStringTerm(const Type &term, std::string view, int32_t id, Weight weight)
-        : StringTerm(term, std::move(view), id, weight) {
-    }
+    SimpleStringTerm(const Type& term, std::string view, int32_t id, Weight weight)
+        : StringTerm(term, std::move(view), id, weight) {}
     ~SimpleStringTerm() override;
 };
 struct SimpleSubstringTerm : SubstringTerm {
-    SimpleSubstringTerm(const Type &term, std::string view, int32_t id, Weight weight)
-        : SubstringTerm(term, std::move(view), id, weight) {
-    }
+    SimpleSubstringTerm(const Type& term, std::string view, int32_t id, Weight weight)
+        : SubstringTerm(term, std::move(view), id, weight) {}
     ~SimpleSubstringTerm() override;
 };
 struct SimpleSuffixTerm : SuffixTerm {
-    SimpleSuffixTerm(const Type &term, std::string view, int32_t id, Weight weight)
-        : SuffixTerm(term, std::move(view), id, weight) {
-    }
+    SimpleSuffixTerm(const Type& term, std::string view, int32_t id, Weight weight)
+        : SuffixTerm(term, std::move(view), id, weight) {}
     ~SimpleSuffixTerm() override;
 };
 struct SimplePredicateQuery : PredicateQuery {
     SimplePredicateQuery(PredicateQueryTerm::UP term, std::string view, int32_t id, Weight weight)
-        : PredicateQuery(std::move(term), std::move(view), id, weight) {
-    }
+        : PredicateQuery(std::move(term), std::move(view), id, weight) {}
     ~SimplePredicateQuery() override;
 };
 struct SimpleRegExpTerm : RegExpTerm {
-    SimpleRegExpTerm(const Type &term, std::string view, int32_t id, Weight weight)
-        : RegExpTerm(term, std::move(view), id, weight) {
-    }
+    SimpleRegExpTerm(const Type& term, std::string view, int32_t id, Weight weight)
+        : RegExpTerm(term, std::move(view), id, weight) {}
     ~SimpleRegExpTerm() override;
 };
 struct SimpleNearestNeighborTerm : NearestNeighborTerm {
-    SimpleNearestNeighborTerm(std::string_view query_tensor_name, std::string field_name,
-                              int32_t id, Weight weight, uint32_t target_num_hits,
-                              bool allow_approximate,
-                              HnswParams hnsw_params = HnswParams())
-        : NearestNeighborTerm(query_tensor_name, std::move(field_name), id, weight,
-                              target_num_hits, allow_approximate,
-                              std::move(hnsw_params))
-    {}
+    SimpleNearestNeighborTerm(std::string_view query_tensor_name, std::string field_name, int32_t id, Weight weight,
+                              uint32_t target_num_hits, bool allow_approximate, HnswParams hnsw_params = HnswParams())
+        : NearestNeighborTerm(query_tensor_name, std::move(field_name), id, weight, target_num_hits,
+                              allow_approximate, std::move(hnsw_params)) {}
     ~SimpleNearestNeighborTerm() override;
 };
 struct SimpleFuzzyTerm : FuzzyTerm {
-    SimpleFuzzyTerm(const Type &term, std::string view, int32_t id, Weight weight, uint32_t max_edit_distance,
+    SimpleFuzzyTerm(const Type& term, std::string view, int32_t id, Weight weight, uint32_t max_edit_distance,
                     uint32_t prefix_lock_length, bool prefix_match)
-        : FuzzyTerm(term, std::move(view), id, weight, max_edit_distance, prefix_lock_length, prefix_match)
-    {
-    }
+        : FuzzyTerm(term, std::move(view), id, weight, max_edit_distance, prefix_lock_length, prefix_match) {}
     ~SimpleFuzzyTerm() override;
 };
 
@@ -190,4 +170,4 @@ struct SimpleQueryNodeTypes {
     using WordAlternatives = SimpleWordAlternatives;
 };
 
-}
+} // namespace search::query

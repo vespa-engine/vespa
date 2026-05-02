@@ -6,12 +6,14 @@
 #include "intermediatenodes.h"
 #include "queryvisitor.h"
 #include "string_term_vector.h"
+#include "termnodes.h"
 #include "weighted_integer_term_vector.h"
 #include "weighted_string_term_vector.h"
-#include "termnodes.h"
+
 #include <vespa/searchlib/common/geo_location_spec.h>
-#include <vespa/searchlib/query/numeric_range_spec.h>
 #include <vespa/searchlib/engine/search_protocol_proto.h>
+#include <vespa/searchlib/query/numeric_range_spec.h>
+
 #include <cassert>
 
 namespace search::query {
@@ -27,16 +29,16 @@ class QueryToProtobuf : private QueryVisitor {
     std::vector<ProtoItem*> _item_stack;
 
 public:
-    ProtoQueryTree serialize(const Node &node) {
+    ProtoQueryTree serialize(const Node& node) {
         ProtoQueryTree tree;
         _item_stack.push_back(tree.mutable_root());
-        const_cast<Node &>(node).accept(*this);
+        const_cast<Node&>(node).accept(*this);
         assert(_item_stack.size() == 1);
         return tree;
     }
 
 private:
-    void copyTermState(const Term &original, ProtoProperties *props) {
+    void copyTermState(const Term& original, ProtoProperties* props) {
         props->set_index(original.getView());
         if (original.getWeight().percent() != 100) {
             props->set_item_weight(original.getWeight().percent());
@@ -44,12 +46,12 @@ private:
         props->set_unique_id(original.getId());
         props->set_do_not_rank(!original.isRanked());
         props->set_do_not_use_position_data(!original.usePositionData());
-        props->set_do_not_highlight(false);  // Default value, Term API doesn't expose this yet
-        props->set_is_special_token(false);  // Default value, Term API doesn't expose this yet
+        props->set_do_not_highlight(false); // Default value, Term API doesn't expose this yet
+        props->set_is_special_token(false); // Default value, Term API doesn't expose this yet
     }
 
     ProtoItem* makeChild() {
-        auto* parent = _item_stack.back();
+        auto*      parent = _item_stack.back();
         ProtoItem* child = nullptr;
 
         // Determine which intermediate node type we're adding to
@@ -78,7 +80,7 @@ private:
         return child;
     }
 
-    void visitNodes(const std::vector<Node *> &nodes) {
+    void visitNodes(const std::vector<Node*>& nodes) {
         for (auto node : nodes) {
             auto* child = makeChild();
             _item_stack.push_back(child);
@@ -87,24 +89,24 @@ private:
         }
     }
 
-    void visit(And &node) override {
+    void visit(And& node) override {
         _item_stack.back()->mutable_item_and();
         visitNodes(node.getChildren());
     }
 
-    void visit(AndNot &node) override {
+    void visit(AndNot& node) override {
         _item_stack.back()->mutable_item_and_not();
         visitNodes(node.getChildren());
     }
 
-    void visit(WeakAnd &node) override {
+    void visit(WeakAnd& node) override {
         auto* item = _item_stack.back()->mutable_item_weak_and();
         item->set_index(node.getView());
         item->set_target_num_hits(node.getTargetNumHits());
         visitNodes(node.getChildren());
     }
 
-    void visit(Equiv &node) override {
+    void visit(Equiv& node) override {
         auto* item = _item_stack.back()->mutable_item_equiv();
         auto* props = item->mutable_properties();
         props->set_unique_id(node.getId());
@@ -114,7 +116,7 @@ private:
         visitNodes(node.getChildren());
     }
 
-    void visit(Near &node) override {
+    void visit(Near& node) override {
         auto* item = _item_stack.back()->mutable_item_near();
         item->set_distance(node.getDistance());
         item->set_num_negative_terms(node.num_negative_terms());
@@ -122,7 +124,7 @@ private:
         visitNodes(node.getChildren());
     }
 
-    void visit(ONear &node) override {
+    void visit(ONear& node) override {
         auto* item = _item_stack.back()->mutable_item_onear();
         item->set_distance(node.getDistance());
         item->set_num_negative_terms(node.num_negative_terms());
@@ -130,18 +132,18 @@ private:
         visitNodes(node.getChildren());
     }
 
-    void visit(Or &node) override {
+    void visit(Or& node) override {
         _item_stack.back()->mutable_item_or();
         visitNodes(node.getChildren());
     }
 
-    void visit(Phrase &node) override {
+    void visit(Phrase& node) override {
         auto* item = _item_stack.back()->mutable_item_phrase();
         copyTermState(node, item->mutable_properties());
         visitNodes(node.getChildren());
     }
 
-    void visit(SameElement &node) override {
+    void visit(SameElement& node) override {
         auto* item = _item_stack.back()->mutable_item_same_element();
         copyTermState(node, item->mutable_properties());
         for (const uint32_t id : node.get_element_filter()) {
@@ -150,15 +152,16 @@ private:
         visitNodes(node.getChildren());
     }
 
-    void serializeMultiTerm(const MultiTerm& node,
-                           google::protobuf::RepeatedPtrField<searchlib::searchprotocol::protobuf::PureWeightedString>* weighted_strings,
-                           google::protobuf::RepeatedPtrField<searchlib::searchprotocol::protobuf::PureWeightedLong>* weighted_longs) {
+    void serializeMultiTerm(
+        const MultiTerm&                                                                             node,
+        google::protobuf::RepeatedPtrField<searchlib::searchprotocol::protobuf::PureWeightedString>* weighted_strings,
+        google::protobuf::RepeatedPtrField<searchlib::searchprotocol::protobuf::PureWeightedLong>*   weighted_longs) {
         uint32_t num_terms = node.getNumTerms();
         switch (node.getType()) {
         case MultiTerm::Type::STRING:
         case MultiTerm::Type::WEIGHTED_STRING:
             for (uint32_t i = 0; i < num_terms; i++) {
-                auto v = node.getAsString(i);
+                auto  v = node.getAsString(i);
                 auto* item = weighted_strings->Add();
                 item->set_value(v.first);
                 item->set_weight(v.second.percent());
@@ -167,7 +170,7 @@ private:
         case MultiTerm::Type::INTEGER:
         case MultiTerm::Type::WEIGHTED_INTEGER:
             for (uint32_t i = 0; i < num_terms; i++) {
-                auto v = node.getAsInteger(i);
+                auto  v = node.getAsInteger(i);
                 auto* item = weighted_longs->Add();
                 item->set_value(v.first);
                 item->set_weight(v.second.percent());
@@ -179,9 +182,9 @@ private:
         }
     }
 
-    void visit(WeightedSetTerm &node) override {
-        bool is_string = (node.getType() == MultiTerm::Type::STRING ||
-                         node.getType() == MultiTerm::Type::WEIGHTED_STRING);
+    void visit(WeightedSetTerm& node) override {
+        bool is_string =
+            (node.getType() == MultiTerm::Type::STRING || node.getType() == MultiTerm::Type::WEIGHTED_STRING);
         if (is_string) {
             auto* item = _item_stack.back()->mutable_item_weighted_set_of_string();
             copyTermState(node, item->mutable_properties());
@@ -193,9 +196,9 @@ private:
         }
     }
 
-    void visit(DotProduct &node) override {
-        bool is_string = (node.getType() == MultiTerm::Type::STRING ||
-                         node.getType() == MultiTerm::Type::WEIGHTED_STRING);
+    void visit(DotProduct& node) override {
+        bool is_string =
+            (node.getType() == MultiTerm::Type::STRING || node.getType() == MultiTerm::Type::WEIGHTED_STRING);
         if (is_string) {
             auto* item = _item_stack.back()->mutable_item_dot_product_of_string();
             copyTermState(node, item->mutable_properties());
@@ -207,9 +210,9 @@ private:
         }
     }
 
-    void visit(WandTerm &node) override {
-        bool is_string = (node.getType() == MultiTerm::Type::STRING ||
-                         node.getType() == MultiTerm::Type::WEIGHTED_STRING);
+    void visit(WandTerm& node) override {
+        bool is_string =
+            (node.getType() == MultiTerm::Type::STRING || node.getType() == MultiTerm::Type::WEIGHTED_STRING);
         if (is_string) {
             auto* item = _item_stack.back()->mutable_item_string_wand();
             copyTermState(node, item->mutable_properties());
@@ -227,15 +230,17 @@ private:
         }
     }
 
-    void visit(Rank &node) override {
+    void visit(Rank& node) override {
         _item_stack.back()->mutable_item_rank();
         visitNodes(node.getChildren());
     }
 
-    void visit(NumberTerm &node) override {
+    void visit(NumberTerm& node) override {
         const auto& term_str = node.getTerm();
         // Check if the term contains a decimal point to determine if it's floating point
-        if (term_str.find('.') != std::string::npos || term_str.find('e') != std::string::npos || term_str.find('E') != std::string::npos) {
+        if (term_str.find('.') != std::string::npos || term_str.find('e') != std::string::npos ||
+            term_str.find('E') != std::string::npos)
+        {
             auto* item = _item_stack.back()->mutable_item_floating_point_term();
             copyTermState(node, item->mutable_properties());
             item->set_number(std::stod(term_str));
@@ -246,7 +251,7 @@ private:
         }
     }
 
-    void visit(LocationTerm &node) override {
+    void visit(LocationTerm& node) override {
         auto* item = _item_stack.back()->mutable_item_geo_location_term();
         copyTermState(node, item->mutable_properties());
 
@@ -273,13 +278,13 @@ private:
         }
     }
 
-    void visit(PrefixTerm &node) override {
+    void visit(PrefixTerm& node) override {
         auto* item = _item_stack.back()->mutable_item_prefix_term();
         copyTermState(node, item->mutable_properties());
         item->set_word(node.getTerm());
     }
 
-    void visit(RangeTerm &node) override {
+    void visit(RangeTerm& node) override {
         // Get the spec directly from the Range
         const auto* spec = node.getTerm().getSpec();
 
@@ -334,25 +339,25 @@ private:
         }
     }
 
-    void visit(StringTerm &node) override {
+    void visit(StringTerm& node) override {
         auto* item = _item_stack.back()->mutable_item_word_term();
         copyTermState(node, item->mutable_properties());
         item->set_word(node.getTerm());
     }
 
-    void visit(SubstringTerm &node) override {
+    void visit(SubstringTerm& node) override {
         auto* item = _item_stack.back()->mutable_item_substring_term();
         copyTermState(node, item->mutable_properties());
         item->set_word(node.getTerm());
     }
 
-    void visit(SuffixTerm &node) override {
+    void visit(SuffixTerm& node) override {
         auto* item = _item_stack.back()->mutable_item_suffix_term();
         copyTermState(node, item->mutable_properties());
         item->set_word(node.getTerm());
     }
 
-    void visit(PredicateQuery &node) override {
+    void visit(PredicateQuery& node) override {
         auto* item = _item_stack.back()->mutable_item_predicate_query();
         copyTermState(node, item->mutable_properties());
 
@@ -371,13 +376,13 @@ private:
         }
     }
 
-    void visit(RegExpTerm &node) override {
+    void visit(RegExpTerm& node) override {
         auto* item = _item_stack.back()->mutable_item_regexp();
         copyTermState(node, item->mutable_properties());
         item->set_regexp(node.getTerm());
     }
 
-    void visit(NearestNeighborTerm &node) override {
+    void visit(NearestNeighborTerm& node) override {
         auto* item = _item_stack.back()->mutable_item_nearest_neighbor();
         copyTermState(node, item->mutable_properties());
         item->set_query_tensor_name(node.get_query_tensor_name());
@@ -387,15 +392,11 @@ private:
         item->set_distance_threshold(node.get_distance_threshold());
     }
 
-    void visit(TrueQueryNode &) override {
-        _item_stack.back()->mutable_item_true();
-    }
+    void visit(TrueQueryNode&) override { _item_stack.back()->mutable_item_true(); }
 
-    void visit(FalseQueryNode &) override {
-        _item_stack.back()->mutable_item_false();
-    }
+    void visit(FalseQueryNode&) override { _item_stack.back()->mutable_item_false(); }
 
-    void visit(FuzzyTerm &node) override {
+    void visit(FuzzyTerm& node) override {
         auto* item = _item_stack.back()->mutable_item_fuzzy();
         copyTermState(node, item->mutable_properties());
         item->set_word(node.getTerm());
@@ -405,8 +406,8 @@ private:
     }
 
     void visit(InTerm& node) override {
-        bool is_string = (node.getType() == MultiTerm::Type::STRING ||
-                         node.getType() == MultiTerm::Type::WEIGHTED_STRING);
+        bool is_string =
+            (node.getType() == MultiTerm::Type::STRING || node.getType() == MultiTerm::Type::WEIGHTED_STRING);
         if (is_string) {
             auto* item = _item_stack.back()->mutable_item_string_in();
             copyTermState(node, item->mutable_properties());
@@ -427,15 +428,15 @@ private:
     void visit(WordAlternatives& node) override {
         auto* item = _item_stack.back()->mutable_item_word_alternatives();
         copyTermState(node, item->mutable_properties());
-        auto * weighted_strings = item->mutable_weighted_strings();
-        for (const auto & term : node.getChildren()) {
+        auto* weighted_strings = item->mutable_weighted_strings();
+        for (const auto& term : node.getChildren()) {
             const std::string& word = term->getTerm();
-            auto weight = term->getWeight();
-            auto* ws = weighted_strings->Add();
+            auto               weight = term->getWeight();
+            auto*              ws = weighted_strings->Add();
             ws->set_value(word);
             ws->set_weight(weight.percent());
         }
     }
 };
 
-}
+} // namespace search::query

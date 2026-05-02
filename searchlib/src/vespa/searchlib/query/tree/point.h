@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include <cstdint>
 #include <vespa/searchlib/common/geo_location.h>
+
+#include <cstdint>
 
 namespace search::query {
 

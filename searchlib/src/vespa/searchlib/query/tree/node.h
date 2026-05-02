@@ -12,13 +12,13 @@ struct QueryVisitor;
   and operator nodes (AND, NOT, OR, PHRASE, NEAR, ONEAR, etc).
 */
 class Node {
- public:
+public:
     using UP = std::unique_ptr<Node>;
 
     virtual ~Node() = default;
-    virtual void accept(QueryVisitor &visitor) = 0;
+    virtual void accept(QueryVisitor& visitor) = 0;
     virtual bool isIntermediate() const { return false; }
     virtual bool isLocationTerm() const { return false; }
 };
 
-}
+} // namespace search::query

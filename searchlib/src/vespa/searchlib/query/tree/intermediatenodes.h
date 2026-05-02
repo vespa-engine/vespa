@@ -30,15 +30,16 @@ public:
 //-----------------------------------------------------------------------------
 
 class WeakAnd : public QueryNodeMixin<WeakAnd, Intermediate> {
-    uint32_t _targetNumHits;
+    uint32_t    _targetNumHits;
     std::string _view;
+
 public:
     virtual ~WeakAnd() = 0;
 
     WeakAnd(uint32_t targetNumHits, std::string view) : _targetNumHits(targetNumHits), _view(std::move(view)) {}
 
     uint32_t getTargetNumHits() const { return _targetNumHits; }
-    const std::string & getView() const { return _view; }
+    const std::string& getView() const { return _view; }
 };
 
 //-----------------------------------------------------------------------------
@@ -47,12 +48,11 @@ class Equiv : public QueryNodeMixin<Equiv, Intermediate> {
 private:
     int32_t _id;
     Weight  _weight;
+
 public:
     virtual ~Equiv() = 0;
 
-    Equiv(int32_t id, Weight weight)
-        : _id(id), _weight(weight)
-    {}
+    Equiv(int32_t id, Weight weight) : _id(id), _weight(weight) {}
 
     Weight getWeight() const { return _weight; }
     int32_t getId() const { return _id; }
@@ -67,15 +67,16 @@ public:
 
 //-----------------------------------------------------------------------------
 
-class Near : public QueryNodeMixin<Near, Intermediate>
-{
+class Near : public QueryNodeMixin<Near, Intermediate> {
     uint32_t _distance;
     uint32_t _num_negative_terms;
     uint32_t _exclusion_distance;
 
 public:
     Near(size_t distance, size_t num_negative_terms_in, size_t exclusion_distance_in)
-      : _distance(distance), _num_negative_terms(num_negative_terms_in), _exclusion_distance(exclusion_distance_in) {}
+        : _distance(distance),
+          _num_negative_terms(num_negative_terms_in),
+          _exclusion_distance(exclusion_distance_in) {}
     virtual ~Near() = 0;
 
     size_t getDistance() const { return _distance; }
@@ -85,15 +86,16 @@ public:
 
 //-----------------------------------------------------------------------------
 
-class ONear : public QueryNodeMixin<ONear, Intermediate>
-{
+class ONear : public QueryNodeMixin<ONear, Intermediate> {
     uint32_t _distance;
     uint32_t _num_negative_terms;
     uint32_t _exclusion_distance;
 
 public:
     ONear(size_t distance, size_t num_negative_terms_in, size_t exclusion_distance_in)
-      : _distance(distance), _num_negative_terms(num_negative_terms_in), _exclusion_distance(exclusion_distance_in) {}
+        : _distance(distance),
+          _num_negative_terms(num_negative_terms_in),
+          _exclusion_distance(exclusion_distance_in) {}
     virtual ~ONear() = 0;
 
     size_t getDistance() const { return _distance; }
@@ -105,32 +107,34 @@ public:
 
 class Phrase : public QueryNodeMixin<Phrase, Intermediate>, public Term {
 public:
-    Phrase(std::string view, int32_t id, Weight weight)
-        : Term(std::move(view), id, weight), _expensive(false) {}
+    Phrase(std::string view, int32_t id, Weight weight) : Term(std::move(view), id, weight), _expensive(false) {}
     virtual ~Phrase() = 0;
-    Phrase &set_expensive(bool value) {
+    Phrase& set_expensive(bool value) {
         _expensive = value;
         return *this;
     }
     bool is_expensive() const { return _expensive; }
+
 private:
     bool _expensive;
 };
 
 class SameElement : public QueryNodeMixin<SameElement, Intermediate>, public Term {
 public:
-    SameElement(std::string view, int32_t id, Weight weight, std::vector<uint32_t> element_filter = std::vector<uint32_t>())
+    SameElement(std::string view, int32_t id, Weight weight,
+                std::vector<uint32_t> element_filter = std::vector<uint32_t>())
         : Term(std::move(view), id, weight), _expensive(false), _element_filter(std::move(element_filter)) {}
     virtual ~SameElement() = 0;
-    SameElement &set_expensive(bool value) {
+    SameElement& set_expensive(bool value) {
         _expensive = value;
         return *this;
     }
     bool is_expensive() const { return _expensive; }
     [[nodiscard]] const std::vector<uint32_t>& get_element_filter() const { return _element_filter; }
+
 private:
-    bool _expensive;
+    bool                  _expensive;
     std::vector<uint32_t> _element_filter;
 };
 
-}
+} // namespace search::query

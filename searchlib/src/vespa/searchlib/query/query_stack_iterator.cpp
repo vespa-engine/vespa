@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "query_stack_iterator.h"
+
 #include <vespa/searchlib/query/tree/integer_term_vector.h>
 #include <vespa/searchlib/query/tree/predicate_query_term.h>
 #include <vespa/searchlib/query/tree/string_term_vector.h>
@@ -17,7 +18,7 @@ struct Dummy : QueryStackIterator {
     ~Dummy();
 };
 Dummy::~Dummy() = default;
-}
+} // namespace
 
 std::unique_ptr<query::PredicateQueryTerm> QueryStackIterator::getPredicateQueryTerm() {
     return std::move(_d.predicateQueryTerm);
@@ -70,4 +71,4 @@ void QueryStackIterator::Data::clear() {
     fuzzy_prefix_lock_length = 0;
 }
 
-}
+} // namespace search

@@ -9,8 +9,7 @@ namespace search::query {
  * Represents the weight given on a query item such as a term, phrase, or equiv.
  * Normally given and used as an integer percent value.
  */
-class Weight
-{
+class Weight {
 private:
     int32_t _weight;
 
@@ -31,7 +30,7 @@ public:
      * retrieve the weight value.
      * @return weight value in percent.
      **/
-    int32_t percent() const  { return _weight; }
+    int32_t percent() const { return _weight; }
 
     /**
      * retrieve the weight value as a multiplier.
@@ -40,13 +39,11 @@ public:
     double multiplier() const { return 0.01 * _weight; }
 
     /** compare two weights */
-    bool operator== (const Weight& other) const noexcept { return _weight == other._weight; }
+    bool operator==(const Weight& other) const noexcept { return _weight == other._weight; }
 };
 
-}
+} // namespace search::query
 
-inline search::query::Weight operator+(const search::query::Weight& a, const search::query::Weight& b)
-{
+inline search::query::Weight operator+(const search::query::Weight& a, const search::query::Weight& b) {
     return search::query::Weight(a.percent() + b.percent());
 }
-
