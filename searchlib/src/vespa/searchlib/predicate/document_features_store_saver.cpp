@@ -45,7 +45,7 @@ void
 serialize_words(BufferWriter& writer, const std::vector<EntryRef>& word_list,
                 const memoryindex::WordStore& word_store)
 {
-    nbo_write<uint32_t>(writer, word_list.size());;
+    nbo_write<uint32_t>(writer, word_list.size());
     for (const auto &word_ref : word_list) {
         const char *word = word_store.getWord(word_ref);
         uint32_t len = strlen(word);

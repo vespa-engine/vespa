@@ -34,7 +34,7 @@ FilteredMatchSpansTest::~FilteredMatchSpansTest() = default;
 TEST_F(FilteredMatchSpansTest, single_field_intersections)
 {
     auto sample_spans = match_spans({{7, {1, 9}, {2, 1}}, { 7, {2, 8}, {2, 10}}});
-    EXPECT_EQ(sample_spans, as_vector(_filtered_spans.intersection(sample_spans, ElementIds::select_all())));;
+    EXPECT_EQ(sample_spans, as_vector(_filtered_spans.intersection(sample_spans, ElementIds::select_all())));
     EXPECT_EQ(match_spans({}), as_vector(_filtered_spans.intersection(sample_spans, make_element_ids({}))));
     EXPECT_EQ(match_spans({}), as_vector(_filtered_spans.intersection(sample_spans, make_element_ids({0}))));
     EXPECT_EQ(match_spans({{7, {1, 9}, {1, pos_limit}}}), as_vector(_filtered_spans.intersection(sample_spans, make_element_ids({1}))));
@@ -47,7 +47,7 @@ TEST_F(FilteredMatchSpansTest, single_field_intersections)
 TEST_F(FilteredMatchSpansTest, multiple_fields_intersections)
 {
     auto sample_spans = match_spans({{7, {2, 8}, {2, 10}}, {7, {5, 9}, {5, 12}}, {13, {1, 9}, {2, 1}}});
-    EXPECT_EQ(sample_spans, as_vector(_filtered_spans.intersection(sample_spans, ElementIds::select_all())));;
+    EXPECT_EQ(sample_spans, as_vector(_filtered_spans.intersection(sample_spans, ElementIds::select_all())));
     EXPECT_EQ(match_spans({}), as_vector(_filtered_spans.intersection(sample_spans, make_element_ids({}))));
     EXPECT_EQ(match_spans({}), as_vector(_filtered_spans.intersection(sample_spans, make_element_ids({0}))));
     EXPECT_EQ(match_spans({{13, {1, 9}, {1, pos_limit}}}), as_vector(_filtered_spans.intersection(sample_spans, make_element_ids({1}))));

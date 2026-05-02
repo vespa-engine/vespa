@@ -1099,7 +1099,7 @@ IndexMaintainer::getFusionStats() const
         source_list = _source_list;
         stats.maxFlushed = _maxFlushed;
     }
-    stats.diskUsage = _disk_indexes->get_size_on_disk(false) - DiskIndexes::get_size_on_disk_overhead();;
+    stats.diskUsage = _disk_indexes->get_size_on_disk(false) - DiskIndexes::get_size_on_disk_overhead();
     {
         LockGuard guard(_fusion_lock);
         stats.numUnfused = _fusion_spec.flush_ids.size() + ((_fusion_spec.last_fusion_id != 0) ? 1 : 0);

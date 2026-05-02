@@ -228,7 +228,7 @@ private:
 
     PerNodeBucketSpacesStats per_node_bucket_spaces_stats() const override;
     DistributorGlobalStats distributor_global_stats() const override;
-    ContentNodeMessageStatsTracker::NodeStats content_node_stats() const override;;
+    ContentNodeMessageStatsTracker::NodeStats content_node_stats() const override;
 
     SimpleMaintenanceScanner::PendingMaintenanceStats pending_maintenance_stats() const;
 

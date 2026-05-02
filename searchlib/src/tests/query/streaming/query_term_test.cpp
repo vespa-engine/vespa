@@ -104,8 +104,8 @@ QueryTermTest::QueryTermTest()
     for (uint32_t i = 0; i < existing_handles; ++i) {
         (void) _mdl.allocTermField(field0);
     }
-    _normal_handle = _mdl.allocTermField(field.id());;
-    _filter_handle = _mdl.allocTermField(filterfield.id());;
+    _normal_handle = _mdl.allocTermField(field.id());
+    _filter_handle = _mdl.allocTermField(filterfield.id());
 }
 
 QueryTermTest::~QueryTermTest() = default;

@@ -186,7 +186,7 @@ public:
     }
     void assertAttributes(const StringSet &expAttrs) {
         if (expAttrs.empty()) {
-            EXPECT_TRUE(_handler._reader.get() == nullptr);;
+            EXPECT_TRUE(_handler._reader.get() == nullptr);
         } else {
             const auto & populator = dynamic_cast<const AttributePopulator &>(*_handler._reader);
             std::vector<search::AttributeVector *> attrList = populator.getWriter().getWritableAttributes();

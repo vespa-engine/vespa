@@ -196,7 +196,7 @@ AttributeHeader::addTags(vespalib::GenericHeader &header) const
         header.putTag(Tag(createSerialNumTag, _createSerialNum));
     }
     if (_basicType.type() == attribute::BasicType::Type::TENSOR) {
-        header.putTag(Tag(tensorTypeTag, _tensorType.to_spec()));;
+        header.putTag(Tag(tensorTypeTag, _tensorType.to_spec()));
         if (_hnsw_index_params.has_value()) {
             header.putTag(Tag(nearest_neighbor_index_tag, hnsw_index_value));
             const auto& params = *_hnsw_index_params;

@@ -733,7 +733,7 @@ FlushEngine::get_reserved_disk_space() const
         for (auto& entry : _flushing) {
             auto& target = entry.second._target;
             auto gain = target->getApproxDiskGain();
-            calc.track_disk_gain(gain, target->getType(), target->getComponent());;
+            calc.track_disk_gain(gain, target->getType(), target->getComponent());
         }
     }
     return calc.get_reserved_disk();

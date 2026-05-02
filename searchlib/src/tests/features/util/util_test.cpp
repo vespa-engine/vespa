@@ -72,7 +72,7 @@ TEST(UtilsTest, verify_str2Num)
 TEST(UtilsTest, lookup_document_frequency)
 {
     using OptDF = std::optional<DocumentFrequency>;
-    IndexEnvironment index_env;;
+    IndexEnvironment index_env;
     QueryEnvironment query_env(&index_env);
     query_env.getTerms() = std::vector<SimpleTermData>{make_term(0), make_term(5), make_term(6), make_term(10)};
     // Properties not used due to bad unique id

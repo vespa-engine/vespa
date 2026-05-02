@@ -33,7 +33,7 @@ class RankSearchStrict : public RankSearch
 {
 protected:
     void doSeek(uint32_t docid) override;
-    UP andWith(UP filter, uint32_t estimate) override;;
+    UP andWith(UP filter, uint32_t estimate) override;
 
 public:
     /**

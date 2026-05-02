@@ -108,7 +108,7 @@ Blueprint::lookupAttribute(const std::string & key, std::string_view attrName, c
     if (attribute == nullptr) {
         attribute = env.getAttributeContext().getAttribute(attrName);
     }
-    return attribute;;
+    return attribute;
 }
 
 std::string

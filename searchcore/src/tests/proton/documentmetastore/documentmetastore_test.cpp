@@ -385,7 +385,7 @@ TEST(DocumentMetaStoreTest, full_docids_can_be_inserted_and_retrieved)
     EXPECT_EQ(docid2.toString(), dms.get_docid_string(gid2));
 
     EXPECT_EQ(docid1.toString(), dms.get_document_id_string_view(lid1));
-    EXPECT_EQ(docid2.toString(), dms.get_document_id_string_view(lid2));;
+    EXPECT_EQ(docid2.toString(), dms.get_document_id_string_view(lid2));
 
     // already inserted
     assertPut(bucketId1, time1, lid1, docid1, dms);
@@ -396,7 +396,7 @@ TEST(DocumentMetaStoreTest, full_docids_can_be_inserted_and_retrieved)
     EXPECT_EQ(docid2.toString(), dms.get_docid_string(gid2));
 
     EXPECT_EQ(docid1.toString(), dms.get_document_id_string_view(lid1));
-    EXPECT_EQ(docid2.toString(), dms.get_document_id_string_view(lid2));;
+    EXPECT_EQ(docid2.toString(), dms.get_document_id_string_view(lid2));
 }
 
 TEST(DocumentMetaStoreTest, full_docids_are_removed)

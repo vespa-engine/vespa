@@ -778,7 +778,7 @@ EnumeratedSaveTest::checkLoad(Config cfg, const std::string &name,
     EXPECT_TRUE(v->load());
     EXPECT_NE(0u, v->size_on_disk());
     EXPECT_NE(zero_flush_duration, v->last_flush_duration());
-    compare(v, ev);;
+    compare(v, ev);
     return v;
 }
 

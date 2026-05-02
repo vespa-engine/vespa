@@ -663,7 +663,7 @@ TEST(DocumentRetrieverTest, require_that_raw_attribute_can_be_retrieved)
     ASSERT_TRUE(value);
     auto& raw_value = dynamic_cast<RawFieldValue&>(*value);
     auto raw_value_ref = raw_value.getValueRef();
-    ASSERT_EQ(as_vector(dynamic_raw_backing), as_vector(raw_value_ref));;
+    ASSERT_EQ(as_vector(dynamic_raw_backing), as_vector(raw_value_ref));
 
     f.clearAttributes({ dyn_field_raw });
     doc = f._retriever->getDocument(metadata.lid, doc_id);

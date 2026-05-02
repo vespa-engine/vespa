@@ -58,7 +58,7 @@ make_draining_flush_counts(const FlushHistoryView& view)
 FlushCounts
 make_active_flush_counts(const FlushHistoryView& view)
 {
-    return view.active_strategy().flush_counts();;
+    return view.active_strategy().flush_counts();
 }
 
 /*

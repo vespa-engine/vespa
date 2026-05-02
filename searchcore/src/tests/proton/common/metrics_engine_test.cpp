@@ -25,7 +25,7 @@ protected:
     ~MetricsEngineTest() override;
 
     void set_attributes(std::vector<std::string> field_names) {
-        engine.set_attributes(attributes, field_names);;
+        engine.set_attributes(attributes, field_names);
     }
 
     void set_index_fields(std::vector<std::string> field_names) {

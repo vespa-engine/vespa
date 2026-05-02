@@ -238,7 +238,7 @@ validateDiskIndex(DiskIndex &dw, bool f2HasElements, bool f3HasWeights)
         }
     }
     {
-        uint32_t id1(schema.getIndexFieldId("f3"));;
+        uint32_t id1(schema.getIndexFieldId("f3"));
         auto& field_index = dw.get_field_index(id1);
         auto lr1(dw.lookup(id1, "zz"));
         auto wh1(field_index.read_posting_list(lr1));
@@ -259,7 +259,7 @@ validateDiskIndex(DiskIndex &dw, bool f2HasElements, bool f3HasWeights)
         }
     }
     {
-        uint32_t id1(schema.getIndexFieldId("f3"));;
+        uint32_t id1(schema.getIndexFieldId("f3"));
         auto& field_index = dw.get_field_index(id1);
         auto lr1(dw.lookup(id1, "zz0"));
         auto wh1(field_index.read_posting_list(lr1));
