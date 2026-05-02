@@ -1,7 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <util/authority.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
+#include <util/authority.h>
 
 using vespalib::SocketSpec;
 
@@ -55,13 +56,9 @@ TEST(MakeHostHeaderValueTest, host_port_is_formatted_as_expected) {
 }
 
 TEST(MakeHostHeaderValueTest, inappropriate_spec_gives_empty_host_value) {
-    std::vector<SocketSpec> bad_specs = {
-        SocketSpec::invalid,
-        SocketSpec::from_port(123),
-        SocketSpec::from_name("foo"),
-        SocketSpec::from_path("bar")
-    };
-    for (const auto &spec: bad_specs) {
+    std::vector<SocketSpec> bad_specs = {SocketSpec::invalid, SocketSpec::from_port(123),
+                                         SocketSpec::from_name("foo"), SocketSpec::from_path("bar")};
+    for (const auto& spec : bad_specs) {
         EXPECT_EQ(make_host_header_value(spec, false), "");
         EXPECT_EQ(make_host_header_value(spec, true), "");
     }

@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <util/filereader.h>
-#include <iostream>
 #include <string.h>
-#include <cassert>
 #include <unistd.h>
+#include <util/filereader.h>
+
+#include <cassert>
+#include <iostream>
 
 /**
  * Extract query urls from web logs. The filterfile application reads
@@ -13,20 +14,18 @@
  * are kept in the output.
  **/
 
-int
-main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
     bool showUsage = false;
     bool allowAllParams = false;
     int  bufsize = 10240;
 
     // parse options and override defaults.
-    int         opt;
-    bool        optError;
+    int  opt;
+    bool optError;
 
     optError = false;
-    while((opt = getopt(argc, argv, "ahm:")) != -1) {
-        switch(opt) {
+    while ((opt = getopt(argc, argv, "ahm:")) != -1) {
+        switch (opt) {
         case 'a':
             allowAllParams = true;
             break;
@@ -58,42 +57,42 @@ main(int argc, char** argv)
         return -1;
     }
 
-    const char *beginToken = "GET ";
-    int beginTokenlen = strlen(beginToken);
+    const char* beginToken = "GET ";
+    int         beginTokenlen = strlen(beginToken);
 
-    const char *endToken = " HTTP/";
+    const char* endToken = " HTTP/";
 
-    //const char *prefix = "/cgi-bin/search?";
-    const char *prefix = "/?";
-    int prefixlen = strlen(prefix);
+    // const char *prefix = "/cgi-bin/search?";
+    const char* prefix = "/?";
+    int         prefixlen = strlen(prefix);
 
-    //const char *trigger = "/cgi-bin/";
-    const char *trigger = "";
-    int triggerlen = strlen(trigger);
+    // const char *trigger = "/cgi-bin/";
+    const char* trigger = "";
+    int         triggerlen = strlen(trigger);
 
     // open input and output (should never fail)
-    FileReader *reader = new FileReader();
+    FileReader* reader = new FileReader();
     if (!reader->OpenStdin()) {
         printf("could not open stdin! (strange)\n");
         delete reader;
         return -1;
     }
-    std::ostream & file = std::cout;
+    std::ostream& file = std::cout;
 
     // filter the input
-    char *line    = new char[bufsize];
+    char* line = new char[bufsize];
     assert(line != nullptr);
     int   res;
-    char *tmp;
-    char *url;
+    char* tmp;
+    char* url;
     int   startIdx;
     int   endIdx;
     int   idx;
     int   outIdx;
-    char *buf     = new char[bufsize];
+    char* buf = new char[bufsize];
     assert(buf != nullptr);
-    int   state; // 0=expect param name, 1=copy, 2=skip
-    bool  gotQuery;
+    int  state; // 0=expect param name, 1=copy, 2=skip
+    bool gotQuery;
     memcpy(buf, prefix, prefixlen);
     while ((res = reader->ReadLine(line, bufsize - 1)) >= 0) {
 
@@ -104,7 +103,7 @@ main(int argc, char** argv)
         // find url beginning
         url = strstr(line + startIdx, trigger);
         if (url == nullptr)
-            continue;                                // CONTINUE
+            continue; // CONTINUE
 
         // find field end
         tmp = strstr(line + startIdx, endToken);
@@ -114,20 +113,21 @@ main(int argc, char** argv)
 
         // find params
         idx = (url - line) + triggerlen;
-        while (idx < endIdx && line[idx++] != '?');
+        while (idx < endIdx && line[idx++] != '?')
+            ;
         if (idx >= endIdx)
-            continue;                                // CONTINUE
+            continue; // CONTINUE
 
-        outIdx   = prefixlen;
-        state    = 0;              // expect param name
+        outIdx = prefixlen;
+        state = 0; // expect param name
         gotQuery = false;
-        while(idx < endIdx) {
+        while (idx < endIdx) {
             switch (state) {
             case 0:
-                state = ((strncmp(line + idx, "query=", 6) == 0
-                          && (gotQuery = true)) ||
-                         allowAllParams ||
-                         strncmp(line + idx, "type=", 5) == 0) ? 1 : 2;
+                state = ((strncmp(line + idx, "query=", 6) == 0 && (gotQuery = true)) || allowAllParams ||
+                         strncmp(line + idx, "type=", 5) == 0)
+                            ? 1
+                            : 2;
                 break;
             case 1:
                 buf[outIdx++] = line[idx];
@@ -139,7 +139,7 @@ main(int argc, char** argv)
             }
         }
         if (!gotQuery)
-            continue;                                // CONTINUE
+            continue; // CONTINUE
 
         if (buf[outIdx - 1] == '&')
             outIdx--;
@@ -148,14 +148,14 @@ main(int argc, char** argv)
         if (!file.write(buf, outIdx)) {
             reader->Close();
             delete reader;
-            delete [] line;
-            delete [] buf;
+            delete[] line;
+            delete[] buf;
             return -1;
         }
     }
     reader->Close();
     delete reader;
-    delete [] line;
-    delete [] buf;
+    delete[] line;
+    delete[] buf;
     return 0;
 }

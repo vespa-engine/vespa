@@ -1,29 +1,31 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fbench.h"
+
 #include "client.h"
 
-#include <util/timer.h>
-#include <httpclient/httpclient.h>
-#include <util/filereader.h>
-#include <util/clientstatus.h>
 #include <vespa/vespalib/crypto/crypto_exception.h>
-#include <vespa/vespalib/net/crypto_engine.h>
-#include <vespa/vespalib/net/tls/transport_security_options.h>
-#include <vespa/vespalib/net/tls/tls_crypto_engine.h>
 #include <vespa/vespalib/io/mapped_file_input.h>
+#include <vespa/vespalib/net/crypto_engine.h>
+#include <vespa/vespalib/net/tls/tls_crypto_engine.h>
+#include <vespa/vespalib/net/tls/transport_security_options.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <cstring>
+
+#include <httpclient/httpclient.h>
+#include <unistd.h>
+#include <util/clientstatus.h>
+#include <util/filereader.h>
+#include <util/timer.h>
+
+#include <cinttypes>
 #include <cmath>
 #include <csignal>
-#include <cinttypes>
 #include <cstdlib>
-#include <unistd.h>
+#include <cstring>
 
 namespace {
 
-std::string
-maybe_load(const std::string &file_name, bool &failed) {
+std::string maybe_load(const std::string& file_name, bool& failed) {
     std::string content;
     if (!file_name.empty()) {
         vespalib::MappedFileInput file(file_name);
@@ -37,7 +39,7 @@ maybe_load(const std::string &file_name, bool &failed) {
     return content;
 }
 
-}
+} // namespace
 
 sig_atomic_t exitSignal = 0;
 
@@ -55,25 +57,16 @@ FBench::FBench()
       _usePostMode(false),
       _headerBenchmarkdataCoverage(false),
       _seconds(60),
-      _singleQueryFile(false)
-{
+      _singleQueryFile(false) {
 }
 
-FBench::~FBench()
-{
+FBench::~FBench() {
     _clients.clear();
 }
 
-bool
-FBench::init_crypto_engine(const std::string &ca_certs_file_name,
-                           const std::string &cert_chain_file_name,
-                           const std::string &private_key_file_name,
-                           bool allow_default_tls)
-{
-    if (ca_certs_file_name.empty() &&
-        cert_chain_file_name.empty() &&
-        private_key_file_name.empty())
-    {
+bool FBench::init_crypto_engine(const std::string& ca_certs_file_name, const std::string& cert_chain_file_name,
+                                const std::string& private_key_file_name, bool allow_default_tls) {
+    if (ca_certs_file_name.empty() && cert_chain_file_name.empty() && private_key_file_name.empty()) {
         if (allow_default_tls) {
             _crypto_engine = vespalib::CryptoEngine::get_default();
         } else {
@@ -90,12 +83,12 @@ FBench::init_crypto_engine(const std::string &ca_certs_file_name,
         return false;
     }
     bool load_failed = false;
-    auto ts_builder = vespalib::net::tls::TransportSecurityOptions::Params().
-            ca_certs_pem(maybe_load(ca_certs_file_name, load_failed)).
-            cert_chain_pem(maybe_load(cert_chain_file_name, load_failed)).
-            private_key_pem(maybe_load(private_key_file_name, load_failed)).
-            authorized_peers(vespalib::net::tls::AuthorizedPeers::allow_all_authenticated()).
-            disable_hostname_validation(true); // TODO configurable or default false!
+    auto ts_builder = vespalib::net::tls::TransportSecurityOptions::Params()
+                          .ca_certs_pem(maybe_load(ca_certs_file_name, load_failed))
+                          .cert_chain_pem(maybe_load(cert_chain_file_name, load_failed))
+                          .private_key_pem(maybe_load(private_key_file_name, load_failed))
+                          .authorized_peers(vespalib::net::tls::AuthorizedPeers::allow_all_authenticated())
+                          .disable_hostname_validation(true); // TODO configurable or default false!
     vespalib::net::tls::TransportSecurityOptions tls_opts(std::move(ts_builder));
     if (load_failed) {
         fprintf(stderr, "failed to load transport security options\n");
@@ -103,25 +96,21 @@ FBench::init_crypto_engine(const std::string &ca_certs_file_name,
     }
     try {
         _crypto_engine = std::make_shared<vespalib::TlsCryptoEngine>(tls_opts);
-    } catch (vespalib::crypto::CryptoException &e) {
+    } catch (vespalib::crypto::CryptoException& e) {
         fprintf(stderr, "%s\n", e.what());
         return false;
     }
     return true;
 }
 
-void
-FBench::InitBenchmark(int numClients, int ignoreCount, int cycle,
-                      const char *filenamePattern, const char *outputPattern,
-                      int byteLimit, int restartLimit, int maxLineSize,
-                      bool keepAlive, bool base64Decode,
-                      bool headerBenchmarkdataCoverage, int seconds,
-                      bool singleQueryFile, const std::string & queryStringToAppend, const std::string & extraHeaders,
-                      const std::string &authority, bool postMode)
-{
+void FBench::InitBenchmark(int numClients, int ignoreCount, int cycle, const char* filenamePattern,
+                           const char* outputPattern, int byteLimit, int restartLimit, int maxLineSize,
+                           bool keepAlive, bool base64Decode, bool headerBenchmarkdataCoverage, int seconds,
+                           bool singleQueryFile, const std::string& queryStringToAppend,
+                           const std::string& extraHeaders, const std::string& authority, bool postMode) {
     _clients.resize(numClients);
-    _ignoreCount     = ignoreCount;
-    _cycle           = cycle;
+    _ignoreCount = ignoreCount;
+    _cycle = cycle;
 
     _filenamePattern = filenamePattern;
     if (outputPattern != nullptr) {
@@ -131,73 +120,65 @@ FBench::InitBenchmark(int numClients, int ignoreCount, int cycle,
     }
 
     _queryStringToAppend = queryStringToAppend;
-    _extraHeaders    = extraHeaders;
-    _authority       = authority;
-    _byteLimit       = byteLimit;
-    _restartLimit    = restartLimit;
-    _maxLineSize     = maxLineSize;
-    _keepAlive       = keepAlive;
-    _base64Decode    = base64Decode;
-    _usePostMode     = postMode;
+    _extraHeaders = extraHeaders;
+    _authority = authority;
+    _byteLimit = byteLimit;
+    _restartLimit = restartLimit;
+    _maxLineSize = maxLineSize;
+    _keepAlive = keepAlive;
+    _base64Decode = base64Decode;
+    _usePostMode = postMode;
     _headerBenchmarkdataCoverage = headerBenchmarkdataCoverage;
     _seconds = seconds;
     _singleQueryFile = singleQueryFile;
 }
 
-void
-FBench::CreateClients()
-{
+void FBench::CreateClients() {
     int spread = (_cycle > 1) ? _cycle : 1;
 
     int i(0);
-    for(auto & client : _clients) {
+    for (auto& client : _clients) {
         uint64_t off_beg = 0;
         uint64_t off_end = 0;
         if (_singleQueryFile) {
             off_beg = _queryfileOffset[i];
-            off_end = _queryfileOffset[i+1];
+            off_end = _queryfileOffset[i + 1];
         }
-        client = std::make_unique<Client>(_crypto_engine,
-            std::make_unique<ClientArguments>(i, _filenamePattern, _outputPattern,
-                                              _hostnames[i % _hostnames.size()].c_str(),
-                                              _ports[i % _ports.size()], _cycle,random() % spread,
-                                              _ignoreCount, _byteLimit, _restartLimit, _maxLineSize, _keepAlive,
-                                              _base64Decode, _headerBenchmarkdataCoverage, off_beg, off_end,
-                                              _singleQueryFile, _queryStringToAppend, _extraHeaders, _authority, _usePostMode));
+        client = std::make_unique<Client>(
+            _crypto_engine,
+            std::make_unique<ClientArguments>(
+                i, _filenamePattern, _outputPattern, _hostnames[i % _hostnames.size()].c_str(),
+                _ports[i % _ports.size()], _cycle, random() % spread, _ignoreCount, _byteLimit, _restartLimit,
+                _maxLineSize, _keepAlive, _base64Decode, _headerBenchmarkdataCoverage, off_beg, off_end,
+                _singleQueryFile, _queryStringToAppend, _extraHeaders, _authority, _usePostMode));
         ++i;
     }
 }
 
-bool
-FBench::ClientsDone()
-{
+bool FBench::ClientsDone() {
     bool done(true);
-    for (auto & client : _clients) {
-        if ( ! client->done() ) {
+    for (auto& client : _clients) {
+        if (!client->done()) {
             return false;
         }
     }
     return done;
 }
 
-void
-FBench::StartClients()
-{
+void FBench::StartClients() {
     printf("Starting clients...\n");
-    for (auto & client : _clients) {
+    for (auto& client : _clients) {
         client->start();
     }
 }
 
-void
-FBench::StopClients()
-{
+void FBench::StopClients() {
     printf("Stopping clients");
-    for (auto & client : _clients) {
+    for (auto& client : _clients) {
         client->stop();
     }
     printf("\nClients stopped.\n");
-    for (auto & client : _clients) {
+    for (auto& client : _clients) {
         client->join();
     }
     printf("\nClients Joined.\n");
@@ -205,15 +186,11 @@ FBench::StopClients()
 
 namespace {
 
-const char *
-approx(double latency, const ClientStatus & status) {
-    return (latency > (status._timetable.size() / status._timetableResolution - 1))
-           ? "ms (approx)"
-           : "ms";
+const char* approx(double latency, const ClientStatus& status) {
+    return (latency > (status._timetable.size() / status._timetableResolution - 1)) ? "ms (approx)" : "ms";
 }
 
-std::string
-fmtPercentile(double percentile) {
+std::string fmtPercentile(double percentile) {
     char buf[32];
     if (percentile <= 99.0) {
         snprintf(buf, sizeof(buf), "%2d  ", int(percentile));
@@ -223,23 +200,20 @@ fmtPercentile(double percentile) {
     return buf;
 }
 
-}
+} // namespace
 
-void
-FBench::PrintSummary()
-{
+void FBench::PrintSummary() {
     ClientStatus status;
 
-    double maxRate    = 0;
+    double maxRate = 0;
     double actualRate = 0;
 
     int realNumClients = 0;
-    
+
     int i = 0;
-    for (auto & client : _clients) {
+    for (auto& client : _clients) {
         if (client->GetStatus()._error) {
-            printf("Client %d: %s => discarding client results.\n",
-                   i, client->GetStatus()._errorMsg.c_str());
+            printf("Client %d: %s => discarding client results.\n", i, client->GetStatus()._errorMsg.c_str());
         } else {
             status.Merge(client->GetStatus());
             ++realNumClients;
@@ -249,8 +223,7 @@ FBench::PrintSummary()
     double avg = status.GetAverage();
 
     maxRate = (avg > 0) ? realNumClients * 1000.0 / avg : 0;
-    actualRate = (status._realTime > 0) ?
-                 realNumClients * 1000.0 * status._requestCnt / status._realTime : 0;
+    actualRate = (status._realTime > 0) ? realNumClients * 1000.0 * status._requestCnt / status._realTime : 0;
 
     if (_keepAlive) {
         printf("*** HTTP keep-alive statistics ***\n");
@@ -271,27 +244,25 @@ FBench::PrintSummary()
 
     for (double percentile : {25.0, 50.0, 75.0, 90.0, 95.0, 98.0, 99.0, 99.5, 99.6, 99.7, 99.8, 99.9}) {
         double latency = status.GetPercentile(percentile);
-        printf("%s percentile:          %8.2f %s\n",
-               fmtPercentile(percentile).c_str(), latency, approx(latency, status));
+        printf("%s percentile:          %8.2f %s\n", fmtPercentile(percentile).c_str(), latency,
+               approx(latency, status));
     }
 
     printf("actual query rate:      %8.2f Q/s\n", actualRate);
-    printf("utilization:            %8.2f %%\n",
-           (maxRate > 0) ? 100 * (actualRate / maxRate) : 0);
+    printf("utilization:            %8.2f %%\n", (maxRate > 0) ? 100 * (actualRate / maxRate) : 0);
     printf("zero hit queries:       %8ld\n", status._zeroHitQueries);
     printf("zero hit percentage:    %8.2f %%\n",
-           (status._requestCnt > 0) ? 100.0*(double(status._zeroHitQueries)/status._requestCnt) : 0.0);
+           (status._requestCnt > 0) ? 100.0 * (double(status._zeroHitQueries) / status._requestCnt) : 0.0);
     printf("http request status breakdown:\n");
     for (const auto& entry : status._requestStatusDistribution)
         printf("  %8u : %8u \n", entry.first, entry.second);
-    
+
     fflush(stdout);
 }
 
-void
-FBench::Usage()
-{
-    printf("usage: vespa-fbench [-H extraHeader] [-a queryStringToAppend ] [-n numClients] [-c cycleTime] [-l limit] [-i ignoreCount]\n");
+void FBench::Usage() {
+    printf("usage: vespa-fbench [-H extraHeader] [-a queryStringToAppend ] [-n numClients] [-c cycleTime] [-l limit] "
+           "[-i ignoreCount]\n");
     printf("              [-s seconds] [-q queryFilePattern] [-o outputFilePattern]\n");
     printf("              [-r restartLimit] [-m maxLineSize] [-k] <hostname> <port>\n\n");
     printf(" -H <str> : append extra header to each get request.\n");
@@ -326,55 +297,51 @@ FBench::Usage()
     printf("This is distributed in round-robin manner to clients\n");
 }
 
-void
-FBench::Exit()
-{
+void FBench::Exit() {
     StopClients();
     printf("\n");
     PrintSummary();
     std::_Exit(0);
 }
 
-int
-FBench::Main(int argc, char *argv[])
-{
+int FBench::Main(int argc, char* argv[]) {
     // parameters with default values.
-    int numClients  = 10;
-    int cycleTime   = 0;
-    int byteLimit   = 0;
-    int ignoreCount = 0;
-    int seconds     = 60;
-    int maxLineSize = 128_Ki;
+    int       numClients = 10;
+    int       cycleTime = 0;
+    int       byteLimit = 0;
+    int       ignoreCount = 0;
+    int       seconds = 60;
+    int       maxLineSize = 128_Ki;
     const int minLineSize = 1024;
 
-    const char *queryFilePattern  = "query%03d.txt";
-    const char *outputFilePattern = nullptr;
+    const char* queryFilePattern = "query%03d.txt";
+    const char* outputFilePattern = nullptr;
     std::string queryStringToAppend;
     std::string extraHeaders;
-    std::string ca_certs_file_name; // -T
-    std::string cert_chain_file_name; // -C
-    std::string private_key_file_name; // -K
-    bool allow_default_tls = false; // -D
+    std::string ca_certs_file_name;        // -T
+    std::string cert_chain_file_name;      // -C
+    std::string private_key_file_name;     // -K
+    bool        allow_default_tls = false; // -D
 
     int  restartLimit = -1;
-    bool keepAlive    = true;
+    bool keepAlive = true;
     bool base64Decode = false;
     bool headerBenchmarkdataCoverage = false;
     bool usePostMode = false;
 
-    bool singleQueryFile = false;
+    bool        singleQueryFile = false;
     std::string authority;
 
-    int  printInterval = 0;
+    int printInterval = 0;
 
     // parse options and override defaults.
-    int         opt;
-    bool        optError;
+    int  opt;
+    bool optError;
 
     optError = false;
     std::string content_type = "Content-type:application/json";
-    while((opt = getopt(argc, argv, "H:A:T:C:K:Da:n:c:l:i:s:q:o:r:m:p:kdxyzP")) != -1) {
-        switch(opt) {
+    while ((opt = getopt(argc, argv, "H:A:T:C:K:Da:n:c:l:i:s:q:o:r:m:p:kdxyzP")) != -1) {
+        switch (opt) {
         case 'A':
             authority = optarg;
             break;
@@ -448,9 +415,9 @@ FBench::Main(int argc, char *argv[])
         case 'd':
             base64Decode = true;
             break;
-        case 'x': 
+        case 'x':
             // consuming x for backwards compability. This turned on header benchmark data
-            // but this is now always on. 
+            // but this is now always on.
             break;
         case 'y':
             headerBenchmarkdataCoverage = true;
@@ -467,7 +434,7 @@ FBench::Main(int argc, char *argv[])
         extraHeaders += content_type + "\r\n";
     }
 
-    if ( argc < (optind + 2) || optError) {
+    if (argc < (optind + 2) || optError) {
         Usage();
         return -1;
     }
@@ -485,11 +452,11 @@ FBench::Main(int argc, char *argv[])
 
     short hosts = args / 2;
 
-    for (int i=0; i<hosts; ++i) {
-        _hostnames.push_back(std::string(argv[optind+2*i]));
-        int port = atoi(argv[optind+2*i+1]);
+    for (int i = 0; i < hosts; ++i) {
+        _hostnames.push_back(std::string(argv[optind + 2 * i]));
+        int port = atoi(argv[optind + 2 * i + 1]);
         if (port == 0) {
-            fprintf(stderr, "Not a valid port:\t%s\n", argv[optind+2*i+1]);
+            fprintf(stderr, "Not a valid port:\t%s\n", argv[optind + 2 * i + 1]);
             return -1;
         }
         _ports.push_back(port);
@@ -504,27 +471,25 @@ FBench::Main(int argc, char *argv[])
         queryFilePattern = filename;
         FileReader reader;
         if (!reader.Open(queryFilePattern)) {
-            fprintf(stderr, "ERROR: could not open file '%s' [read mode]\n",
-                    queryFilePattern);
+            fprintf(stderr, "ERROR: could not open file '%s' [read mode]\n", queryFilePattern);
             return -1;
         }
 
         uint64_t totalSize = reader.GetFileSize();
         uint64_t perClient = totalSize / numClients;
 
-        for (int i=1; i<numClients; ++i) {
+        for (int i = 1; i < numClients; ++i) {
             /** Start each client with some offset, adjusted to next newline
              **/
             FileReader r;
             r.Open(queryFilePattern);
-            uint64_t clientOffset = std::max(i*perClient, _queryfileOffset.back() );
+            uint64_t clientOffset = std::max(i * perClient, _queryfileOffset.back());
             uint64_t newline = r.FindNextLine(clientOffset);
             _queryfileOffset.push_back(newline);
         }
 
         // Add pos to end of file
         _queryfileOffset.push_back(totalSize);
-
 
         // Print offset of clients
         /*
@@ -534,13 +499,9 @@ FBench::Main(int argc, char *argv[])
         */
     }
 
-    InitBenchmark(numClients, ignoreCount, cycleTime,
-                  queryFilePattern, outputFilePattern,
-                  byteLimit, restartLimit, maxLineSize,
-                  keepAlive, base64Decode,
-                  headerBenchmarkdataCoverage, seconds,
-                  singleQueryFile, queryStringToAppend, extraHeaders,
-                  authority, usePostMode);
+    InitBenchmark(numClients, ignoreCount, cycleTime, queryFilePattern, outputFilePattern, byteLimit, restartLimit,
+                  maxLineSize, keepAlive, base64Decode, headerBenchmarkdataCoverage, seconds, singleQueryFile,
+                  queryStringToAppend, extraHeaders, authority, usePostMode);
 
     CreateClients();
     StartClients();
@@ -563,7 +524,7 @@ FBench::Main(int argc, char *argv[])
         Timer sleepTimer;
         sleepTimer.SetMax(1000);
 
-        for (;seconds > 0 && !ClientsDone(); seconds--) {
+        for (; seconds > 0 && !ClientsDone(); seconds--) {
             if (exitSignal) {
                 _seconds = _seconds - seconds;
                 Exit();
@@ -589,16 +550,13 @@ FBench::Main(int argc, char *argv[])
     return 0;
 }
 
-void sighandler(int sig)
-{
+void sighandler(int sig) {
     if (sig == SIGINT) {
         exitSignal = 1;
     }
 }
 
-int
-main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
 
     struct sigaction act;
 
