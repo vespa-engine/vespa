@@ -98,5 +98,5 @@ void ChildHandler::stopChild() {
             return;
         usleep(12500 + retry * 20000);
     }
-    LOG(error, "Could not terminete child process %d", _childPid);
+    LOG(error, "Could not terminate child process %d", _childPid);
 }

@@ -110,7 +110,11 @@ void Watcher::watchfile() {
     int              spamfill_counter = 0;
 
     char* target = getenv("VESPA_LOG_TARGET");
-    if (target == nullptr || strncmp(target, "file:", 5) != 0) {
+    if (target == nullptr) {
+        LOG(error, "VESPA_LOG_TARGET is not set, expected a file: target");
+        throw SomethingBad("bad log target");
+    }
+    if (strncmp(target, "file:", 5) != 0) {
         LOG(error, "expected VESPA_LOG_TARGET (%s) to be a file: target", target);
         throw SomethingBad("bad log target");
     }

@@ -95,7 +95,7 @@ void CfHandler::start(const char* configId) {
     try {
         subscribe(configId, CONFIG_TIMEOUT_MS);
     } catch (config::ConfigTimeoutException& ex) {
-        LOG(warning, "Timout getting config, please check your setup. Will exit and restart: %s",
+        LOG(warning, "Timeout getting config, please check your setup. Will exit and restart: %s",
             ex.getMessage().c_str());
         std::_Exit(EXIT_FAILURE);
     } catch (config::InvalidConfigException& ex) {

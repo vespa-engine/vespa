@@ -13,7 +13,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".logd.empty_forwarder");
 
-using LogLevel = ns_log::Logger::LogLevel;
 using ns_log::BadLogLineException;
 using ns_log::Logger;
 using ns_log::LogMessage;

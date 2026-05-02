@@ -23,7 +23,7 @@ static void run(const char* configId) {
             usleep(125000); // Avoid busy looping;
         }
     } catch (config::ConfigTimeoutException& ex) {
-        LOG(warning, "Timout getting config, please check your setup. Will exit and restart: %s",
+        LOG(warning, "Timeout getting config, please check your setup. Will exit and restart: %s",
             ex.getMessage().c_str());
         std::_Exit(EXIT_FAILURE);
     } catch (config::InvalidConfigException& ex) {
