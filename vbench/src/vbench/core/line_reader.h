@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include <vespa/vespalib/data/input_reader.h>
 #include "string.h"
+
+#include <vespa/vespalib/data/input_reader.h>
 
 namespace vbench {
 
@@ -14,10 +15,10 @@ using Input = vespalib::Input;
  * an underlying input. This class is implemented in terms of the
  * ByteInput class.
  **/
-class LineReader
-{
+class LineReader {
 public:
     using InputReader = vespalib::InputReader;
+
 private:
     InputReader _input;
 
@@ -27,7 +28,7 @@ public:
      *
      * @param input the underlying Input
      **/
-    LineReader(Input &input);
+    LineReader(Input& input);
 
     /**
      * Read the next line of input. Lines are separated by '\n'. '\r'
@@ -38,8 +39,7 @@ public:
      *         false if no more data was available
      * @param dst where to store the line that was read
      **/
-    bool readLine(string &dst);
+    bool readLine(string& dst);
 };
 
 } // namespace vbench
-

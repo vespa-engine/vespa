@@ -1,12 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <vbench/test/all.h>
 
 using namespace vbench;
 
-void post(double endTime, Handler<Request> &handler,
-          Request::Status status = Request::STATUS_OK)
-{
+void post(double endTime, Handler<Request>& handler, Request::Status status = Request::STATUS_OK) {
     Request::UP req(new Request());
     req->status(status).endTime(endTime);
     handler.handle(std::move(req));

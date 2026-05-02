@@ -1,37 +1,24 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-
 #include "qps_analyzer.h"
 
 namespace vbench {
 
-QpsAnalyzer::QpsAnalyzer(Handler<Request> &next)
-    : _next(next),
-      _qps(0),
-      _samples(0),
-      _begin(0),
-      _cnt(0)
-{
+QpsAnalyzer::QpsAnalyzer(Handler<Request>& next) : _next(next), _qps(0), _samples(0), _begin(0), _cnt(0) {
 }
 
-void
-QpsAnalyzer::handle(Request::UP request)
-{
+void QpsAnalyzer::handle(Request::UP request) {
     if (request->status() == Request::STATUS_OK) {
         addEndTime(request->endTime());
     }
     _next.handle(std::move(request));
 }
 
-void
-QpsAnalyzer::report()
-{
+void QpsAnalyzer::report() {
     fprintf(stdout, "end qps: %g\n", _qps);
 }
 
-void
-QpsAnalyzer::addEndTime(double end)
-{
+void QpsAnalyzer::addEndTime(double end) {
     ++_cnt;
     if (end < _begin) {
         _begin = end;

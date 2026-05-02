@@ -4,14 +4,10 @@
 
 namespace vbench {
 
-DroppedTagger::DroppedTagger(Handler<Request> &next)
-    : _next(next)
-{
+DroppedTagger::DroppedTagger(Handler<Request>& next) : _next(next) {
 }
 
-void
-DroppedTagger::handle(Request::UP request)
-{
+void DroppedTagger::handle(Request::UP request) {
     request->status(Request::STATUS_DROPPED);
     _next.handle(std::move(request));
 }

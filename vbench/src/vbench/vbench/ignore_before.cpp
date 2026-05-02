@@ -4,16 +4,10 @@
 
 namespace vbench {
 
-IgnoreBefore::IgnoreBefore(double time, Handler<Request> &next)
-    : _next(next),
-      _time(time),
-      _ignored(0)
-{
+IgnoreBefore::IgnoreBefore(double time, Handler<Request>& next) : _next(next), _time(time), _ignored(0) {
 }
 
-void
-IgnoreBefore::handle(Request::UP request)
-{
+void IgnoreBefore::handle(Request::UP request) {
     if (request->startTime() < _time) {
         ++_ignored;
         return;
@@ -21,9 +15,7 @@ IgnoreBefore::handle(Request::UP request)
     _next.handle(std::move(request));
 }
 
-void
-IgnoreBefore::report()
-{
+void IgnoreBefore::report() {
     fprintf(stdout, "ignored %zu requests\n", _ignored);
 }
 

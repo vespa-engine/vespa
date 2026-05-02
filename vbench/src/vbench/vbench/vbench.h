@@ -13,33 +13,33 @@
 #include "request_sink.h"
 #include "server_tagger.h"
 #include "tagger.h"
-#include <vbench/core/taintable.h>
+
 #include <vespa/vespalib/data/slime/slime.h>
+
+#include <vbench/core/taintable.h>
 
 namespace vbench {
 
-class VBench : public vespalib::Runnable,
-               public Taintable
-{
+class VBench : public vespalib::Runnable, public Taintable {
 private:
     struct InputChain {
         using UP = std::unique_ptr<InputChain>;
-        std::vector<Tagger::UP>           taggers;
-        Generator::UP                     generator;
-        std::thread                       thread;
+        std::vector<Tagger::UP> taggers;
+        Generator::UP           generator;
+        std::thread             thread;
     };
-    NativeFactory                _factory;
-    std::vector<Analyzer::UP>    _analyzers;
-    RequestScheduler::UP         _scheduler;
-    std::vector<InputChain::UP>  _inputs;
-    Taint                        _taint;
+    NativeFactory               _factory;
+    std::vector<Analyzer::UP>   _analyzers;
+    RequestScheduler::UP        _scheduler;
+    std::vector<InputChain::UP> _inputs;
+    Taint                       _taint;
 
 public:
-    VBench(const vespalib::Slime &cfg);
+    VBench(const vespalib::Slime& cfg);
     ~VBench();
     void abort();
     void run() override;
-    const Taint &tainted() const override { return _taint; }
+    const Taint& tainted() const override { return _taint; }
 };
 
 } // namespace vbench

@@ -2,23 +2,22 @@
 
 #pragma once
 
-#include "tagger.h"
 #include "request.h"
+#include "tagger.h"
 
 namespace vbench {
 
 /**
  * Sets the start time of requests based on a given qps.
  **/
-class QpsTagger : public Tagger
-{
+class QpsTagger : public Tagger {
 private:
     double            _invQps;
     size_t            _count;
-    Handler<Request> &_next;
+    Handler<Request>& _next;
 
 public:
-    QpsTagger(double qps, Handler<Request> &next);
+    QpsTagger(double qps, Handler<Request>& next);
     void handle(Request::UP request) override;
 };
 

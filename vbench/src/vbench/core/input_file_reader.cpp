@@ -4,21 +4,16 @@
 
 namespace vbench {
 
-InputFileReader::InputFileReader(const string &name)
-    : _file(name),
-      _lines(_file),
-      _taint()
-{
+InputFileReader::InputFileReader(const string& name) : _file(name), _lines(_file), _taint() {
     if (!_file.valid()) {
         _taint.reset(strfmt("could not open file: %s", name.c_str()));
     }
 }
 
-InputFileReader::~InputFileReader() {}
+InputFileReader::~InputFileReader() {
+}
 
-bool
-InputFileReader::readLine(string &dst)
-{
+bool InputFileReader::readLine(string& dst) {
     while (_lines.readLine(dst) && dst.empty()) {
         // skip empty lines
     }

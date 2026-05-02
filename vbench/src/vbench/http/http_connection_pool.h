@@ -3,8 +3,11 @@
 #pragma once
 
 #include "http_connection.h"
-#include <vbench/core/timer.h>
+
 #include <vespa/vespalib/util/arrayqueue.hpp>
+
+#include <vbench/core/timer.h>
+
 #include <map>
 
 namespace vbench {
@@ -14,8 +17,7 @@ namespace vbench {
  * connections. The pool is shared between threads to reduce the
  * number of needed connections when using many servers.
  **/
-class HttpConnectionPool
-{
+class HttpConnectionPool {
 private:
     using Queue = vespalib::ArrayQueue<HttpConnection::UP>;
     using Map = std::map<ServerSpec, size_t>;
@@ -25,15 +27,14 @@ private:
     Map                _map;
     std::vector<Queue> _store;
     CryptoEngine::SP   _crypto;
-    Timer             &_timer;
+    Timer&             _timer;
 
 public:
-    HttpConnectionPool(CryptoEngine::SP crypto, Timer &timer);
+    HttpConnectionPool(CryptoEngine::SP crypto, Timer& timer);
     ~HttpConnectionPool();
-    CryptoEngine &crypto() { return *_crypto; }
-    HttpConnection::UP getConnection(const ServerSpec &server);
+    CryptoEngine& crypto() { return *_crypto; }
+    HttpConnection::UP getConnection(const ServerSpec& server);
     void putConnection(HttpConnection::UP conn);
 };
 
 } // namespace vbench
-

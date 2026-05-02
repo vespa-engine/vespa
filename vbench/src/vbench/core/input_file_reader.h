@@ -2,11 +2,12 @@
 
 #pragma once
 
+#include "line_reader.h"
 #include "string.h"
 #include "taintable.h"
-#include "line_reader.h"
-#include <vespa/vespalib/io/mapped_file_input.h>
+
 #include <vespa/vespalib/data/input_reader.h>
+#include <vespa/vespalib/io/mapped_file_input.h>
 
 namespace vbench {
 
@@ -14,15 +15,14 @@ namespace vbench {
  * Read non-empty lines from an input file. This class is implemented
  * in terms of the MappedFileInput and LineReader classes.
  **/
-class InputFileReader : public Taintable
-{
+class InputFileReader : public Taintable {
 private:
     vespalib::MappedFileInput _file;
     LineReader                _lines;
     Taint                     _taint;
 
 public:
-    InputFileReader(const string &name);
+    InputFileReader(const string& name);
     ~InputFileReader();
 
     /**
@@ -33,10 +33,9 @@ public:
      * @return true if dst is non-empty
      * @param dst place to put read line
      **/
-    bool readLine(string &dst);
+    bool readLine(string& dst);
 
-    const Taint &tainted() const override { return _taint; }
+    const Taint& tainted() const override { return _taint; }
 };
 
 } // namespace vbench
-

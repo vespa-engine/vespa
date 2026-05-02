@@ -1,7 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vbench/test/all.h>
 #include <vespa/vespalib/util/time.h>
+
+#include <vbench/test/all.h>
 
 using namespace vbench;
 
@@ -19,7 +20,7 @@ MyHandler::~MyHandler() = default;
 VESPA_THREAD_STACK_TAG(test_thread);
 
 TEST(HandlerThreadTest, handler_thread) {
-    MyHandler handler;
+    MyHandler          handler;
     HandlerThread<int> th(handler, test_thread);
     th.handle(std::unique_ptr<int>(new int(1)));
     th.handle(std::unique_ptr<int>(new int(2)));

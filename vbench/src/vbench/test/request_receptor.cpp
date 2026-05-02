@@ -6,9 +6,7 @@ namespace vbench {
 
 RequestReceptor::~RequestReceptor() = default;
 
-void
-RequestReceptor::handle(Request::UP req)
-{
+void RequestReceptor::handle(Request::UP req) {
     request = std::move(req);
 }
 

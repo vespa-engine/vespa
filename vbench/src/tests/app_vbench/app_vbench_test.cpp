@@ -1,15 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/test/nexus.h>
-#include <vbench/test/all.h>
-#include <vespa/vespalib/process/process.h>
 #include <vespa/vespalib/net/crypto_engine.h>
 #include <vespa/vespalib/net/tls/tls_crypto_engine.h>
-#include <vespa/vespalib/test/make_tls_options_for_testing.h>
 #include <vespa/vespalib/portal/portal.h>
-#include <sys/types.h>
-#include <sys/stat.h>
+#include <vespa/vespalib/process/process.h>
+#include <vespa/vespalib/test/make_tls_options_for_testing.h>
+#include <vespa/vespalib/test/nexus.h>
+
 #include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <vbench/test/all.h>
 
 using namespace vbench;
 using vespalib::Process;
@@ -23,7 +24,7 @@ auto null_crypto = std::make_shared<vespalib::NullCryptoEngine>();
 auto tls_opts = vespalib::test::make_tls_options_for_testing();
 auto tls_crypto = std::make_shared<vespalib::TlsCryptoEngine>(tls_opts);
 
-void write_file(const std::string &file_name, const std::string &content) {
+void write_file(const std::string& file_name, const std::string& content) {
     int fd = creat(file_name.c_str(), 0600);
     ASSERT_TRUE(fd >= 0);
     ssize_t res = write(fd, content.data(), content.size());
@@ -47,45 +48,48 @@ struct MyGet : vespalib::Portal::GetHandler {
 };
 
 struct Servers {
-    MyGet my_get;
-    MyGet my_tls_get;
-    Portal::SP portal;
-    Portal::SP tls_portal;
+    MyGet             my_get;
+    MyGet             my_tls_get;
+    Portal::SP        portal;
+    Portal::SP        tls_portal;
     Portal::Token::UP root;
     Portal::Token::UP tls_root;
-    Servers() : my_get(), my_tls_get(),
-                portal(Portal::create(null_crypto, 0)),
-                tls_portal(Portal::create(tls_crypto, 0)),
-                root(portal->bind("/", my_get)),
-                tls_root(tls_portal->bind("/", my_tls_get))
-    {
+    Servers()
+        : my_get(),
+          my_tls_get(),
+          portal(Portal::create(null_crypto, 0)),
+          tls_portal(Portal::create(tls_crypto, 0)),
+          root(portal->bind("/", my_get)),
+          tls_root(tls_portal->bind("/", my_tls_get)) {
         write_file("ca_certs.pem", tls_opts.ca_certs_pem());
         write_file("certs.pem", tls_opts.cert_chain_pem());
         write_file("test.key", tls_opts.private_key_pem());
     }
-    ~Servers() {
-        write_file("test.key", "garbage\n");
-    }
+    ~Servers() { write_file("test.key", "garbage\n"); }
 };
 
 TEST(AppVbenchTest, run_vbench) {
-    size_t num_threads = 2;
+    size_t  num_threads = 2;
     Servers f1;
-    auto task = [&](Nexus &ctx){
-                    if (ctx.thread_id() == 0) {
-                        std::string out;
-                        EXPECT_TRUE(Process::run(strfmt("sed 's/_LOCAL_PORT_/%d/' vbench.cfg.template > vbench.cfg", f1.portal->listen_port()).c_str()));
-                        EXPECT_TRUE(Process::run("../../apps/vbench/vbench_app run vbench.cfg 2> vbench.out", out));
-                        fprintf(stderr, "null crypto: %s\n", out.c_str());
-                        EXPECT_GT(f1.my_get.cnt, 10u);
-                    } else {
-                        std::string tls_out;
-                        EXPECT_TRUE(Process::run(strfmt("sed 's/_LOCAL_PORT_/%d/' vbench.tls.cfg.template > vbench.tls.cfg", f1.tls_portal->listen_port()).c_str()));
-                        EXPECT_TRUE(Process::run("../../apps/vbench/vbench_app run vbench.tls.cfg 2> vbench.tls.out", tls_out));
-                        fprintf(stderr, "tls crypto: %s\n", tls_out.c_str());
-                        EXPECT_GT(f1.my_tls_get.cnt, 10u);
-                    }
-                };
+    auto    task = [&](Nexus& ctx) {
+        if (ctx.thread_id() == 0) {
+            std::string out;
+            EXPECT_TRUE(Process::run(
+                strfmt("sed 's/_LOCAL_PORT_/%d/' vbench.cfg.template > vbench.cfg", f1.portal->listen_port())
+                    .c_str()));
+            EXPECT_TRUE(Process::run("../../apps/vbench/vbench_app run vbench.cfg 2> vbench.out", out));
+            fprintf(stderr, "null crypto: %s\n", out.c_str());
+            EXPECT_GT(f1.my_get.cnt, 10u);
+        } else {
+            std::string tls_out;
+            EXPECT_TRUE(Process::run(strfmt("sed 's/_LOCAL_PORT_/%d/' vbench.tls.cfg.template > vbench.tls.cfg",
+                                               f1.tls_portal->listen_port())
+                                            .c_str()));
+            EXPECT_TRUE(Process::run("../../apps/vbench/vbench_app run vbench.tls.cfg 2> vbench.tls.out", tls_out));
+            fprintf(stderr, "tls crypto: %s\n", tls_out.c_str());
+            EXPECT_GT(f1.my_tls_get.cnt, 10u);
+        }
+    };
     Nexus::run(num_threads, task);
 }
 
