@@ -18,6 +18,7 @@
 #pragma once
 
 #include "statusreporter.h"
+
 #include <vespa/vespalib/util/xmlstream.h>
 
 namespace storage::framework {
@@ -26,17 +27,14 @@ struct XmlStatusReporter : public StatusReporter {
     XmlStatusReporter(std::string_view id, std::string_view name);
     virtual ~XmlStatusReporter();
 
-    virtual void initXmlReport(vespalib::xml::XmlOutputStream&,
-                               const HttpUrlPath&) const;
+    virtual void initXmlReport(vespalib::xml::XmlOutputStream&, const HttpUrlPath&) const;
 
     /**
      * @return Empty string if ok, otherwise indicate a failure condition.
      */
-    virtual std::string reportXmlStatus(vespalib::xml::XmlOutputStream&,
-                                             const HttpUrlPath&) const = 0;
+    virtual std::string reportXmlStatus(vespalib::xml::XmlOutputStream&, const HttpUrlPath&) const = 0;
 
-    virtual void finalizeXmlReport(vespalib::xml::XmlOutputStream&,
-                                   const HttpUrlPath&) const;
+    virtual void finalizeXmlReport(vespalib::xml::XmlOutputStream&, const HttpUrlPath&) const;
 
     // Implementation of status reporter interface
     std::string getReportContentType(const HttpUrlPath&) const override;
@@ -50,30 +48,23 @@ struct XmlStatusReporter : public StatusReporter {
  */
 class PartlyXmlStatusReporter : public XmlStatusReporter {
     vespalib::XmlOutputStream _xos;
-    const HttpUrlPath& _path;
+    const HttpUrlPath&        _path;
 
 public:
-    PartlyXmlStatusReporter(const StatusReporter& main, std::ostream& out,
-                            const HttpUrlPath& path)
-        : XmlStatusReporter(main.getId(), main.getName()),
-          _xos(out),
-          _path(path)
-    {
+    PartlyXmlStatusReporter(const StatusReporter& main, std::ostream& out, const HttpUrlPath& path)
+        : XmlStatusReporter(main.getId(), main.getName()), _xos(out), _path(path) {
         initXmlReport(_xos, path);
     }
 
-    ~PartlyXmlStatusReporter() {
-        finalizeXmlReport(_xos, _path);
-    }
+    ~PartlyXmlStatusReporter() { finalizeXmlReport(_xos, _path); }
 
     vespalib::XmlOutputStream& getStream() { return _xos; }
     std::string reportXmlStatus(vespalib::xml::XmlOutputStream&, const HttpUrlPath&) const override { return ""; }
 
-    template<typename T>
-    PartlyXmlStatusReporter& operator<<(const T& v) {
+    template <typename T> PartlyXmlStatusReporter& operator<<(const T& v) {
         _xos << v;
         return *this;
     }
 };
 
-}
+} // namespace storage::framework

@@ -18,4 +18,4 @@ struct RealClock final : public Clock {
     vespalib::system_time getSystemTime() const override;
 };
 
-}
+} // namespace storage::framework::defaultimplementation

@@ -22,4 +22,4 @@ struct StatusReporterMap {
     virtual std::vector<const StatusReporter*> getStatusReporters() = 0;
 };
 
-} // storage::framework
+} // namespace storage::framework

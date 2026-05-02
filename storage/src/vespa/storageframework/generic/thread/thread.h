@@ -14,16 +14,17 @@
 
 #include "runnable.h"
 #include "thread_properties.h"
+
 #include <condition_variable>
 
 namespace storage::framework {
 
 /** Data kept on each thread due to the registerTick functionality. */
 struct ThreadTickData {
-    CycleType _lastTickType;
+    CycleType             _lastTickType;
     vespalib::steady_time _lastTick;
-    vespalib::duration _maxProcessingTimeSeen;
-    vespalib::duration _maxWaitTimeSeen;
+    vespalib::duration    _maxProcessingTimeSeen;
+    vespalib::duration    _maxWaitTimeSeen;
 };
 
 class Thread : public ThreadHandle {
@@ -40,7 +41,7 @@ public:
     /** Check whether thread have been interrupted or not. */
     [[nodiscard]] bool interrupted() const override = 0;
     /** Check whether thread have been joined or not. */
-    [[nodiscard]] virtual bool joined() const  = 0;
+    [[nodiscard]] virtual bool joined() const = 0;
 
     /**
      * Call this function to set interrupt flag, such that later calls to
@@ -65,7 +66,7 @@ public:
      */
     void interruptAndJoin();
 
-    void interruptAndJoin(std::condition_variable &cv);
+    void interruptAndJoin(std::condition_variable& cv);
 };
 
-}
+} // namespace storage::framework

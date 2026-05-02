@@ -4,15 +4,12 @@
 
 namespace storage::framework {
 
-HtmlStatusReporter::HtmlStatusReporter(std::string_view id, std::string_view name)
-    : StatusReporter(id, name)
-{ }
+HtmlStatusReporter::HtmlStatusReporter(std::string_view id, std::string_view name) : StatusReporter(id, name) {
+}
 
 HtmlStatusReporter::~HtmlStatusReporter() = default;
 
-void
-HtmlStatusReporter::reportHtmlHeader(std::ostream& out, const HttpUrlPath& path) const
-{
+void HtmlStatusReporter::reportHtmlHeader(std::ostream& out, const HttpUrlPath& path) const {
     out << "<html>\n"
         << "<head>\n"
         << "  <title>" << getName() << "</title>\n";
@@ -22,26 +19,21 @@ HtmlStatusReporter::reportHtmlHeader(std::ostream& out, const HttpUrlPath& path)
         << "  <h1>" << getName() << "</h1>\n";
 }
 
-void
-HtmlStatusReporter::reportHtmlFooter(std::ostream& out, const HttpUrlPath&) const
-{
+void HtmlStatusReporter::reportHtmlFooter(std::ostream& out, const HttpUrlPath&) const {
     out << "</body>\n</html>\n";
 }
 
-std::string
-HtmlStatusReporter::getReportContentType(const HttpUrlPath&) const
-{
+std::string HtmlStatusReporter::getReportContentType(const HttpUrlPath&) const {
     return "text/html";
 }
 
-bool
-HtmlStatusReporter::reportStatus(std::ostream& out, const HttpUrlPath& path) const
-{
-    if (!isValidStatusRequest()) return false;
+bool HtmlStatusReporter::reportStatus(std::ostream& out, const HttpUrlPath& path) const {
+    if (!isValidStatusRequest())
+        return false;
     reportHtmlHeader(out, path);
     reportHtmlStatus(out, path);
     reportHtmlFooter(out, path);
     return true;
 }
 
-}
+} // namespace storage::framework

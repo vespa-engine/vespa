@@ -24,4 +24,4 @@ struct ComponentRegister {
     virtual void requestShutdown(std::string_view reason) = 0;
 };
 
-}
+} // namespace storage::framework

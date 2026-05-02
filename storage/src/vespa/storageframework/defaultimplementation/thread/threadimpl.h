@@ -4,6 +4,7 @@
 
 #include <vespa/storageframework/generic/thread/thread.h>
 #include <vespa/vespalib/util/cpu_usage.h>
+
 #include <array>
 #include <atomic>
 #include <optional>
@@ -12,8 +13,7 @@ namespace storage::framework::defaultimplementation {
 
 struct ThreadPoolImpl;
 
-class ThreadImpl final : public Thread
-{
+class ThreadImpl final : public Thread {
     /**
      * Internal data race free implementation of tick data that maps to and
      * from ThreadTickData. We hide the atomicity of this since atomic vars
@@ -25,12 +25,11 @@ class ThreadImpl final : public Thread
             : _lastTickType(),
               _lastTick(vespalib::steady_time(vespalib::duration::zero())),
               _maxProcessingTimeSeen(),
-              _maxWaitTimeSeen()
-        {}
-        std::atomic<CycleType> _lastTickType;
+              _maxWaitTimeSeen() {}
+        std::atomic<CycleType>             _lastTickType;
         std::atomic<vespalib::steady_time> _lastTick;
-        std::atomic<vespalib::duration> _maxProcessingTimeSeen;
-        std::atomic<vespalib::duration> _maxWaitTimeSeen;
+        std::atomic<vespalib::duration>    _maxProcessingTimeSeen;
+        std::atomic<vespalib::duration>    _maxWaitTimeSeen;
         // struct stores and loads are both data race free with relaxed
         // memory semantics. This means it's possible to observe stale/partial
         // state in a case with concurrent readers/writers.
@@ -38,14 +37,14 @@ class ThreadImpl final : public Thread
         void storeRelaxed(const ThreadTickData& newState) noexcept;
     };
 
-    ThreadPoolImpl& _pool;
-    Runnable& _runnable;
-    ThreadProperties _properties;
-    std::array<AtomicThreadTickData, 3> _tickData;
-    std::atomic<uint32_t> _tickDataPtr;
-    std::atomic<bool> _interrupted;
-    bool _joined;
-    std::thread _thread;
+    ThreadPoolImpl&                             _pool;
+    Runnable&                                   _runnable;
+    ThreadProperties                            _properties;
+    std::array<AtomicThreadTickData, 3>         _tickData;
+    std::atomic<uint32_t>                       _tickDataPtr;
+    std::atomic<bool>                           _interrupted;
+    bool                                        _joined;
+    std::thread                                 _thread;
     std::optional<vespalib::CpuUsage::Category> _cpu_category;
 
     void run();
@@ -65,16 +64,12 @@ public:
 
     void registerTick(CycleType, vespalib::steady_time) override;
     void registerTick(CycleType cycleType) override;
-    vespalib::duration getWaitTime() const override {
-        return _properties.getWaitTime();
-    }
-    int getTicksBeforeWait() const override {
-        return _properties.getTicksBeforeWait();
-    }
+    vespalib::duration getWaitTime() const override { return _properties.getWaitTime(); }
+    int getTicksBeforeWait() const override { return _properties.getTicksBeforeWait(); }
 
     void setTickData(const ThreadTickData&);
     ThreadTickData getTickData() const override;
     const ThreadProperties& getProperties() const override { return _properties; }
 };
 
-}
+} // namespace storage::framework::defaultimplementation

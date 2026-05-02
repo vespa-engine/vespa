@@ -15,7 +15,7 @@
 #include <string>
 
 namespace metrics {
-    class Metric;
+class Metric;
 }
 
 namespace storage::framework {
@@ -38,7 +38,6 @@ struct ManagedComponent {
     virtual void setThreadPool(ThreadPool&) = 0;
     virtual void open() = 0;
     virtual void close() = 0;
-
 };
 
-}
+} // namespace storage::framework

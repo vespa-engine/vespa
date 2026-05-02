@@ -4,7 +4,7 @@
 #include <vespa/vespalib/util/time.h>
 
 namespace vespalib {
-    class asciistream;
+class asciistream;
 }
 
 namespace storage::framework {
@@ -19,8 +19,7 @@ namespace storage::framework {
  * requiring time in another granularity. This little wrapper class exist to
  * make sure that will conflict in types
  */
-class MicroSecTime
-{
+class MicroSecTime {
 public:
     explicit MicroSecTime(uint64_t t) noexcept : _time(t) {}
 
@@ -35,13 +34,14 @@ public:
     [[nodiscard]] uint32_t getSeconds() const noexcept { return (getTime() / 1000000); }
 
     static MicroSecTime max() noexcept { return MicroSecTime(std::numeric_limits<uint64_t>::max()); }
+
 private:
     // time_t may be signed. Negative timestamps is just a source for bugs. Enforce unsigned.
     uint64_t _time;
 };
 
-std::ostream& operator<<(std::ostream& out, const MicroSecTime & t);
+std::ostream& operator<<(std::ostream& out, const MicroSecTime& t);
 
-vespalib::asciistream& operator<<(vespalib::asciistream& out, const MicroSecTime & t);
+vespalib::asciistream& operator<<(vespalib::asciistream& out, const MicroSecTime& t);
 
-}
+} // namespace storage::framework
