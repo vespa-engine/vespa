@@ -636,7 +636,7 @@ public class HttpServerIT {
         RequestTypeHandler handler = new RequestTypeHandler();
         var cfg = new ServerConfig.Builder().metric(new ServerConfig.Metric.Builder().reporterEnabled(false));
         JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(handler, cfg, new ConnectorConfig.Builder());
-        var statisticsCollector = MetricAggregatingRequestLog.getBean(driver.server());;
+        var statisticsCollector = MetricAggregatingRequestLog.getBean(driver.server());
         {
             List<MetricAggregatingRequestLog.StatisticsEntry> stats = statisticsCollector.takeStatistics();
             assertEquals(0, stats.size());

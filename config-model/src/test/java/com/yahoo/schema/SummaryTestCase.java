@@ -465,7 +465,7 @@ public class SummaryTestCase {
         public TestValue(DocumentSummary summary, DocumentSummary parent, List<List<String>> fields) {
             this.summary = summary;
             this.parent = parent;
-            this.fields = fields.stream().flatMap(Collection::stream).toList();;
+            this.fields = fields.stream().flatMap(Collection::stream).toList();
         }
 
     }

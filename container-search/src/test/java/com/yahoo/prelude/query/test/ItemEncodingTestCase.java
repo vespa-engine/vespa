@@ -371,7 +371,6 @@ public class ItemEncodingTestCase {
         assertType(buffer, 20, 1);
         assertWeight(buffer, 7);
         assertEquals(a.getValue(), buffer.getLong(), "Value");
-        ;
     }
 
     @Test

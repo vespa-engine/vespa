@@ -219,7 +219,7 @@ public class ColBertEmbedderTest {
         Tensor shortDoc = assertEmbed("tensor<int8>(dt{},x[16])", "annoyance", indexingContext,16);
         // 4 tokens, 16 bytes each = 64 bytes
         //CLS [unused1] sequence
-        assertEquals(4*16,shortDoc.size());;
+        assertEquals(4*16,shortDoc.size());
 
         var queryContext = new Embedder.Context("query(qt{})");
         Tensor query = assertEmbed("tensor<float>(dt{},x[128])", text, queryContext,128);

@@ -52,7 +52,7 @@ public class MetricsConsumer {
      * @param metricSet the metrics for this consumer
      */
     public MetricsConsumer(String id, MetricSet metricSet) {
-        this.id = Objects.requireNonNull(id, "A consumer must have a non-null id.");;
+        this.id = Objects.requireNonNull(id, "A consumer must have a non-null id.");
         this.metricSet = Objects.requireNonNull(metricSet, "A consumer must have a non-null metric set.");
     }
 
