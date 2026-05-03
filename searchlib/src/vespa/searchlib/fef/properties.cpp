@@ -1,19 +1,19 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "properties.h"
+
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/stllike/hash_map_equal.hpp>
+
 #include <cassert>
 #include <string>
 
 namespace search::fef {
 
-const Property::Value Property::_emptyValue;
+const Property::Value  Property::_emptyValue;
 const Property::Values Property::_emptyValues;
 
-const Property::Value &
-Property::getAt(uint32_t idx) const noexcept
-{
+const Property::Value& Property::getAt(uint32_t idx) const noexcept {
     if (idx < (*_values).size()) {
         return (*_values)[idx];
     }
@@ -22,38 +22,30 @@ Property::getAt(uint32_t idx) const noexcept
 
 //-----------------------------------------------------------------------------
 
-uint32_t
-Properties::rawHash(const void *buf, uint32_t len) noexcept
-{
-    uint32_t res = 0;
-    auto *pt = (unsigned const char *) buf;
-    unsigned const char *end = pt + len;
+uint32_t Properties::rawHash(const void* buf, uint32_t len) noexcept {
+    uint32_t             res = 0;
+    auto*                pt = (unsigned const char*)buf;
+    unsigned const char* end = pt + len;
     while (pt < end) {
         res = (res << 7) + (res >> 25) + *pt++;
     }
     return res;
 }
 
-Properties::Properties() noexcept
-    : _numValues(0),
-      _data()
-{
+Properties::Properties() noexcept : _numValues(0), _data() {
 }
 
-Properties::Properties(const Properties &) = default;
-Properties & Properties::operator=(const Properties &) = default;
+Properties::Properties(const Properties&) = default;
+Properties& Properties::operator=(const Properties&) = default;
 
-Properties::~Properties()
-{
+Properties::~Properties() {
     assert(_numValues >= _data.size());
 }
 
-Properties &
-Properties::add(std::string_view key, std::string_view value)
-{
+Properties& Properties::add(std::string_view key, std::string_view value) {
     if (!key.empty()) {
-        auto node = _data.find(key);
-        Value * v = nullptr;
+        auto   node = _data.find(key);
+        Value* v = nullptr;
         if (node != _data.end()) {
             v = &node->second;
         } else {
@@ -65,9 +57,7 @@ Properties::add(std::string_view key, std::string_view value)
     return *this;
 }
 
-uint32_t
-Properties::count(std::string_view key) const noexcept
-{
+uint32_t Properties::count(std::string_view key) const noexcept {
     if (!key.empty()) {
         auto node = _data.find(key);
         if (node != _data.end()) {
@@ -77,9 +67,7 @@ Properties::count(std::string_view key) const noexcept
     return 0;
 }
 
-Properties &
-Properties::remove(std::string_view key)
-{
+Properties& Properties::remove(std::string_view key) {
     if (!key.empty()) {
         auto node = _data.find(key);
         if (node != _data.end()) {
@@ -90,12 +78,10 @@ Properties::remove(std::string_view key)
     return *this;
 }
 
-Properties &
-Properties::import(const Properties &src)
-{
+Properties& Properties::import(const Properties& src) {
     for (const auto& elem : src._data) {
         Map::insert_result res = _data.insert(Map::value_type(elem.first, elem.second));
-        if ( ! res.second) {
+        if (!res.second) {
             _numValues -= res.first->second.size();
             res.first->second = elem.second;
         }
@@ -104,9 +90,7 @@ Properties::import(const Properties &src)
     return *this;
 }
 
-Properties &
-Properties::clear()
-{
+Properties& Properties::clear() {
     if (_data.empty()) {
         return *this;
     }
@@ -118,20 +102,15 @@ Properties::clear()
     return *this;
 }
 
-bool
-Properties::operator==(const Properties &rhs) const noexcept
-{
-    return (_numValues == rhs._numValues &&
-            _data == rhs._data);
+bool Properties::operator==(const Properties& rhs) const noexcept {
+    return (_numValues == rhs._numValues && _data == rhs._data);
 }
 
-uint32_t
-Properties::hashCode() const noexcept
-{
+uint32_t Properties::hashCode() const noexcept {
     uint32_t hash = numKeys() + numValues();
     for (const auto& elem : _data) {
-        const Key &key = elem.first;
-        const Value &value = elem.second;
+        const Key&   key = elem.first;
+        const Value& value = elem.second;
         hash += rawHash(key.data(), key.size());
         for (const auto& velem : value) {
             hash += rawHash(velem.data(), velem.size());
@@ -140,33 +119,24 @@ Properties::hashCode() const noexcept
     return hash;
 }
 
-void
-Properties::visitProperties(IPropertiesVisitor &visitor) const
-{
+void Properties::visitProperties(IPropertiesVisitor& visitor) const {
     for (const auto& elem : _data) {
         visitor.visitProperty(elem.first, Property(elem.second));
     }
 }
 
-void
-Properties::visitNamespace(std::string_view ns, IPropertiesVisitor &visitor) const
-{
+void Properties::visitNamespace(std::string_view ns, IPropertiesVisitor& visitor) const {
     std::string tmp;
     std::string prefix = std::string(ns) + ".";
     for (const auto& elem : _data) {
-        if ((elem.first.find(prefix) == 0) &&
-            (elem.first.size() > prefix.size()))
-        {
-            tmp = std::string_view(elem.first.data() + prefix.size(),
-                                      elem.first.size() - prefix.size());
+        if ((elem.first.find(prefix) == 0) && (elem.first.size() > prefix.size())) {
+            tmp = std::string_view(elem.first.data() + prefix.size(), elem.first.size() - prefix.size());
             visitor.visitProperty(tmp, Property(elem.second));
         }
     }
 }
 
-Property
-Properties::lookup(std::string_view key) const noexcept
-{
+Property Properties::lookup(std::string_view key) const noexcept {
     if (key.empty()) {
         return {};
     }
@@ -177,8 +147,7 @@ Properties::lookup(std::string_view key) const noexcept
     return {node->second};
 }
 
-Property Properties::lookup(std::string_view namespace1, std::string_view key) const noexcept
-{
+Property Properties::lookup(std::string_view namespace1, std::string_view key) const noexcept {
     if (namespace1.empty() || key.empty()) {
         return {};
     }
@@ -187,10 +156,8 @@ Property Properties::lookup(std::string_view namespace1, std::string_view key) c
     return lookup(fullKey);
 }
 
-Property Properties::lookup(std::string_view namespace1,
-                            std::string_view namespace2,
-                            std::string_view key) const noexcept
-{
+Property Properties::lookup(std::string_view namespace1, std::string_view namespace2,
+                            std::string_view key) const noexcept {
     if (namespace1.empty() || namespace2.empty() || key.empty()) {
         return {};
     }
@@ -199,11 +166,8 @@ Property Properties::lookup(std::string_view namespace1,
     return lookup(fullKey);
 }
 
-Property Properties::lookup(std::string_view namespace1,
-                            std::string_view namespace2,
-                            std::string_view namespace3,
-                            std::string_view key) const noexcept
-{
+Property Properties::lookup(std::string_view namespace1, std::string_view namespace2, std::string_view namespace3,
+                            std::string_view key) const noexcept {
     if (namespace1.empty() || namespace2.empty() || namespace3.empty() || key.empty()) {
         return {};
     }
@@ -212,12 +176,11 @@ Property Properties::lookup(std::string_view namespace1,
     return lookup(fullKey);
 }
 
-void Properties::swap(Properties & rhs) noexcept
-{
+void Properties::swap(Properties& rhs) noexcept {
     _data.swap(rhs._data);
     std::swap(_numValues, rhs._numValues);
 }
 
-}
+} // namespace search::fef
 
 VESPALIB_HASH_MAP_INSTANTIATE(std::string, search::fef::Property::Values);

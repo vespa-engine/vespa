@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/queryeval/match_span.h>
+
 #include <span>
 
 namespace search::fef {
@@ -12,8 +13,8 @@ namespace search::fef {
  */
 class NoMatchDataFilter {
 public:
-    NoMatchDataFilter() noexcept { }
-    void new_field() noexcept { }
+    NoMatchDataFilter() noexcept {}
+    void new_field() noexcept {}
     bool is_filtered(const streaming::Hit&) const noexcept { return false; }
 };
 
@@ -23,16 +24,12 @@ public:
 class ElementIdMatchDataFilter {
     const std::span<const uint32_t>     _element_ids;
     std::span<const uint32_t>::iterator _element_ids_it;
+
 public:
     explicit ElementIdMatchDataFilter(std::span<const uint32_t> element_ids) noexcept
-        : _element_ids(element_ids),
-          _element_ids_it()
-    {
-    }
+        : _element_ids(element_ids), _element_ids_it() {}
 
-    void new_field() noexcept {
-        _element_ids_it = _element_ids.begin();
-    }
+    void new_field() noexcept { _element_ids_it = _element_ids.begin(); }
 
     bool is_filtered(const streaming::Hit& hit) noexcept {
         while (_element_ids_it != _element_ids.end() && *_element_ids_it < hit.element_id()) {
@@ -53,17 +50,15 @@ public:
  * Filter for match data that passes match data within the match spans.
  */
 class MatchSpanMatchDataFilter {
-    std::span<const queryeval::MatchSpan> _match_spans;
+    std::span<const queryeval::MatchSpan>           _match_spans;
     std::span<const queryeval::MatchSpan>::iterator _match_spans_it;
+
 public:
     explicit MatchSpanMatchDataFilter(std::span<const queryeval::MatchSpan> match_spans) noexcept
-        : _match_spans(match_spans),
-          _match_spans_it(match_spans.begin())
-    {
-    }
+        : _match_spans(match_spans), _match_spans_it(match_spans.begin()) {}
 
     // Match span contains field id, no iterator rewinding required.
-    void new_field() noexcept { }
+    void new_field() noexcept {}
 
     bool is_filtered(const streaming::Hit& hit) noexcept {
         while (_match_spans_it != _match_spans.end() && _match_spans_it->is_before(hit)) {
@@ -80,4 +75,4 @@ public:
     }
 };
 
-}
+} // namespace search::fef

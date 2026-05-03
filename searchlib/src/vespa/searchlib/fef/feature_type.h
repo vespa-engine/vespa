@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/eval/eval/value_type.h>
+
 #include <memory>
 
 namespace search::fef {
@@ -21,16 +22,17 @@ class FeatureType {
 private:
     using TYPE = vespalib::eval::ValueType;
     using TYPE_UP = std::unique_ptr<TYPE>;
-    TYPE_UP _type;
+    TYPE_UP                  _type;
     static const FeatureType _number;
     explicit FeatureType(TYPE_UP type_in) : _type(std::move(type_in)) {}
+
 public:
-    FeatureType(const FeatureType &rhs);
-    FeatureType(FeatureType &&rhs) noexcept = default;
+    FeatureType(const FeatureType& rhs);
+    FeatureType(FeatureType&& rhs) noexcept = default;
     [[nodiscard]] bool is_object() const { return (_type.get() != nullptr); }
-    [[nodiscard]] const TYPE &type() const;
-    static const FeatureType &number() { return _number; }
-    static FeatureType object(const TYPE &type_in);
+    [[nodiscard]] const TYPE& type() const;
+    static const FeatureType& number() { return _number; }
+    static FeatureType object(const TYPE& type_in);
 };
 
-}
+} // namespace search::fef

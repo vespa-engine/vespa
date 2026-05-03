@@ -10,14 +10,13 @@ namespace search::fef {
  * Iterator used to iterate over all positions of a term inside a
  * specific field.
  **/
-class FieldPositionsIterator
-{
+class FieldPositionsIterator {
 public:
     /**
      * The iterator type of the underlying data, which have all
      * positions for a term across all fields searched.
      **/
-    using PositionsIterator = const TermFieldMatchDataPosition *;
+    using PositionsIterator = const TermFieldMatchDataPosition*;
 
 private:
     uint32_t          _length;
@@ -36,8 +35,7 @@ public:
      * Create a new iterator for a field we know nothing about. This
      * will give the field no position data and a length of 0.
      **/
-    FieldPositionsIterator()
-        : _length(UNKNOWN_LENGTH), _begin(0), _pos(0), _end(0) {}
+    FieldPositionsIterator() : _length(UNKNOWN_LENGTH), _begin(0), _pos(0), _end(0) {}
 
     /**
      * Create a new iterator for a field with the given offset and
@@ -47,9 +45,7 @@ public:
      * @param begin start of position data slice
      * @param end end of position data slice
      **/
-    FieldPositionsIterator(uint32_t length,
-                           PositionsIterator begin,
-                           PositionsIterator end)
+    FieldPositionsIterator(uint32_t length, PositionsIterator begin, PositionsIterator end)
         : _length(length), _begin(begin), _pos(begin), _end(end) {}
 
     /**
@@ -64,8 +60,8 @@ public:
     void relocate(PositionsIterator oldRef, PositionsIterator newRef) {
         if (_begin != PositionsIterator(0)) {
             _begin = newRef + (_begin - oldRef);
-            _pos   = newRef + (_pos   - oldRef);
-            _end   = newRef + (_end   - oldRef);
+            _pos = newRef + (_pos - oldRef);
+            _end = newRef + (_end - oldRef);
         }
     }
 
@@ -157,4 +153,4 @@ public:
     uint32_t size() const { return (_end - _begin); }
 };
 
-}
+} // namespace search::fef

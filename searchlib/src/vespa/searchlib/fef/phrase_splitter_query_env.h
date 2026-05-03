@@ -17,37 +17,38 @@ namespace search::fef {
  * Use this class and PhraseSplitter class if you want to handle a
  * phrase term the same way as single terms.
  **/
-class PhraseSplitterQueryEnv : public IQueryEnvironment
-{
+class PhraseSplitterQueryEnv : public IQueryEnvironment {
 private:
     struct TermIdx {
         uint32_t idx;      // index into either query environment or vector of TermData objects
         bool     splitted; // whether this term has been splitted or not
         TermIdx(uint32_t i, bool s) : idx(i), splitted(s) {}
     };
+
 public:
     struct PhraseTerm {
-        const ITermData & term; // for original phrase
-        uint32_t idx; // index into vector of our TermData objects
-        TermFieldHandle orig_handle;
-        PhraseTerm(const ITermData & t, uint32_t i, uint32_t h) : term(t), idx(i), orig_handle(h) {}
+        const ITermData& term; // for original phrase
+        uint32_t         idx;  // index into vector of our TermData objects
+        TermFieldHandle  orig_handle;
+        PhraseTerm(const ITermData& t, uint32_t i, uint32_t h) : term(t), idx(i), orig_handle(h) {}
     };
     struct HowToCopy {
         TermFieldHandle orig_handle;
         TermFieldHandle split_handle;
-        uint32_t offsetInPhrase;
+        uint32_t        offsetInPhrase;
     };
-private:
-    const IQueryEnvironment        &_queryEnv;
-    std::vector<SimpleTermData>     _terms;       // splitted terms
-    std::vector<HowToCopy>          _copyInfo;
-    std::vector<TermIdx>            _termIdxMap;  // renumbering of terms
-    TermFieldHandle                 _maxHandle;   // the largest among original term field handles
-    TermFieldHandle                 _skipHandles;   // how many handles to skip
-    uint32_t                        _field_id;
-    std::vector<PhraseTerm>         _phrase_terms; // data about original phrase terms
 
-    void considerTerm(uint32_t termIdx, const ITermData &term, uint32_t fieldId);
+private:
+    const IQueryEnvironment&    _queryEnv;
+    std::vector<SimpleTermData> _terms; // splitted terms
+    std::vector<HowToCopy>      _copyInfo;
+    std::vector<TermIdx>        _termIdxMap;  // renumbering of terms
+    TermFieldHandle             _maxHandle;   // the largest among original term field handles
+    TermFieldHandle             _skipHandles; // how many handles to skip
+    uint32_t                    _field_id;
+    std::vector<PhraseTerm>     _phrase_terms; // data about original phrase terms
+
+    void considerTerm(uint32_t termIdx, const ITermData& term, uint32_t fieldId);
 
 public:
     /**
@@ -56,7 +57,7 @@ public:
      * @param queryEnv the query environment to wrap.
      * @param fieldId the field where we need to split phrases
      **/
-    PhraseSplitterQueryEnv(const IQueryEnvironment & queryEnv, uint32_t fieldId);
+    PhraseSplitterQueryEnv(const IQueryEnvironment& queryEnv, uint32_t fieldId);
     ~PhraseSplitterQueryEnv();
 
     /**
@@ -64,21 +65,23 @@ public:
      **/
     uint32_t getNumTerms() const override { return _termIdxMap.size(); }
 
-    const ITermData * getTerm(uint32_t idx) const override {
+    const ITermData* getTerm(uint32_t idx) const override {
         if (idx >= _termIdxMap.size()) {
             return nullptr;
         }
-        const TermIdx & ti = _termIdxMap[idx];
+        const TermIdx& ti = _termIdxMap[idx];
         return ti.splitted ? &_terms[ti.idx] : _queryEnv.getTerm(ti.idx);
     }
 
-    const Properties & getProperties() const override { return _queryEnv.getProperties(); }
-    GeoLocationSpecPtrs getAllLocations() const override {
-        return _queryEnv.getAllLocations();
+    const Properties& getProperties() const override { return _queryEnv.getProperties(); }
+    GeoLocationSpecPtrs getAllLocations() const override { return _queryEnv.getAllLocations(); }
+    const attribute::IAttributeContext& getAttributeContext() const override {
+        return _queryEnv.getAttributeContext();
     }
-    const attribute::IAttributeContext & getAttributeContext() const override { return _queryEnv.getAttributeContext(); }
-    index::FieldLengthInfo get_field_length_info(const std::string &field_name) const override { return _queryEnv.get_field_length_info(field_name); }
-    const IIndexEnvironment & getIndexEnvironment() const override { return _queryEnv.getIndexEnvironment(); }
+    index::FieldLengthInfo get_field_length_info(const std::string& field_name) const override {
+        return _queryEnv.get_field_length_info(field_name);
+    }
+    const IIndexEnvironment& getIndexEnvironment() const override { return _queryEnv.getIndexEnvironment(); }
 
     // Accessor methods used by PhraseSplitter
     TermFieldHandle get_skip_handles() const { return _skipHandles; }
@@ -88,5 +91,4 @@ public:
     const std::vector<PhraseTerm>& get_phrase_terms() const { return _phrase_terms; }
 };
 
-
-}
+} // namespace search::fef

@@ -13,9 +13,6 @@ namespace search::fef {
  * Interleaved:
  *   Interleaved match data ('number of occurrences' and 'field length') should be available.
  */
-enum class MatchDataDetails {
-    Normal = 1,
-    Interleaved = 2
-};
+enum class MatchDataDetails { Normal = 1, Interleaved = 2 };
 
-}
+} // namespace search::fef

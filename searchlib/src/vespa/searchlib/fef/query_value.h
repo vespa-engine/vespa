@@ -3,12 +3,16 @@
 #pragma once
 
 #include "properties.h"
+
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/vespalib/util/exception.h>
+
 #include <memory>
 #include <string>
 
-namespace vespalib::eval { struct Value; }
+namespace vespalib::eval {
+struct Value;
+}
 
 namespace search::fef {
 
@@ -48,10 +52,10 @@ public:
  */
 class QueryValue {
 private:
-    std::string _key; // 'foo'
-    std::string _name; // 'query(foo)'
-    std::string _old_key; // '$foo'
-    std::string _stored_value_key; // query.value.foo
+    std::string               _key;              // 'foo'
+    std::string               _name;             // 'query(foo)'
+    std::string               _old_key;          // '$foo'
+    std::string               _stored_value_key; // query.value.foo
     vespalib::eval::ValueType _type;
 
     Property config_lookup(const IIndexEnvironment& env) const;
@@ -84,8 +88,6 @@ public:
     const vespalib::eval::Value* lookup_value(const fef::IObjectStore& store) const;
 
     double lookup_number(const fef::IQueryEnvironment& env, double default_value) const;
-
 };
 
-}
-
+} // namespace search::fef

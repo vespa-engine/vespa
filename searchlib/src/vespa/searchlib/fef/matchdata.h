@@ -4,6 +4,7 @@
 
 #include "handle.h"
 #include "termfieldmatchdata.h"
+
 #include <memory>
 #include <vector>
 
@@ -13,8 +14,7 @@ namespace search::fef {
  * An object of this class is used to store all basic data and derived
  * features for a single hit.
  **/
-class MatchData
-{
+class MatchData {
 private:
     std::vector<TermFieldMatchData> _termFields;
     double                          _termwise_limit;
@@ -23,16 +23,16 @@ public:
     /**
      * Wrapper for constructor parameters
      **/
-    class Params
-    {
+    class Params {
     private:
         uint32_t _numTermFields;
 
         friend class ::search::fef::MatchData;
         Params() : _numTermFields(0) {}
+
     public:
         uint32_t numTermFields() const { return _numTermFields; }
-        Params & numTermFields(uint32_t value) {
+        Params& numTermFields(uint32_t value) {
             _numTermFields = value;
             return *this;
         }
@@ -56,7 +56,7 @@ public:
      * @param numAttributes number of attribute slots
      * @param numFeatures number of feature slots
      **/
-    explicit MatchData(const Params &cparams);
+    explicit MatchData(const Params& cparams);
 
     /**
      * Reset this match data in such a way that it can be re-used with
@@ -67,8 +67,8 @@ public:
      **/
     void soft_reset();
 
-    MatchData(const MatchData &rhs) = delete;
-    MatchData & operator=(const MatchData &rhs) = delete;
+    MatchData(const MatchData& rhs) = delete;
+    MatchData& operator=(const MatchData& rhs) = delete;
 
     /**
      * A number in the range [0,1] indicating how much of the corpus
@@ -94,9 +94,7 @@ public:
      * @return term field match data
      * @param handle term field handle
      **/
-    TermFieldMatchData *resolveTermField(TermFieldHandle handle) {
-        return &_termFields[handle];
-    }
+    TermFieldMatchData* resolveTermField(TermFieldHandle handle) { return &_termFields[handle]; }
 
     /**
      * Resolve a term field handle into a pointer to the actual data.
@@ -104,9 +102,9 @@ public:
      * @return term field match data
      * @param handle term field handle
      **/
-    const TermFieldMatchData *resolveTermField(TermFieldHandle handle) const { return &_termFields[handle]; }
+    const TermFieldMatchData* resolveTermField(TermFieldHandle handle) const { return &_termFields[handle]; }
 
     static MatchData::UP makeTestInstance(uint32_t numTermFields, uint32_t fieldIdLimit);
 };
 
-}
+} // namespace search::fef

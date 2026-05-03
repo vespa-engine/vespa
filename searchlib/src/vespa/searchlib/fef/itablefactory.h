@@ -3,6 +3,7 @@
 #pragma once
 
 #include "table.h"
+
 #include <string>
 
 namespace search::fef {
@@ -10,8 +11,7 @@ namespace search::fef {
 /**
  * This is an interface for a factory used to create tables.
  **/
-class ITableFactory
-{
+class ITableFactory {
 public:
     /**
      * Convenience typedef for a shared pointer to this class.
@@ -22,7 +22,7 @@ public:
      * Creates a table with the given name.
      * Table::SP(NULL) is returned if the table cannot be created.
      **/
-    virtual Table::SP createTable(const std::string & name) const = 0;
+    virtual Table::SP createTable(const std::string& name) const = 0;
 
     /**
      * Virtual destructor to allow safe subclassing.
@@ -30,4 +30,4 @@ public:
     virtual ~ITableFactory() = default;
 };
 
-}
+} // namespace search::fef

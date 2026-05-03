@@ -19,11 +19,9 @@ public:
         std::string type;
         std::string filePath;
 
-        Constant(const std::string &name_in,
-                 const std::string &type_in,
-                 const std::string &filePath_in);
+        Constant(const std::string& name_in, const std::string& type_in, const std::string& filePath_in);
         ~Constant();
-        bool operator==(const Constant &rhs) const;
+        bool operator==(const Constant& rhs) const;
     };
 
     using Vector = std::vector<Constant>;
@@ -34,15 +32,15 @@ private:
 
 public:
     RankingConstants();
-    RankingConstants(RankingConstants &&) noexcept;
-    RankingConstants & operator =(RankingConstants &&) = delete;
-    RankingConstants(const RankingConstants &) = delete;
-    RankingConstants & operator =(const RankingConstants &) = delete;
-    explicit RankingConstants(const Vector &constants);
+    RankingConstants(RankingConstants&&) noexcept;
+    RankingConstants& operator=(RankingConstants&&) = delete;
+    RankingConstants(const RankingConstants&) = delete;
+    RankingConstants& operator=(const RankingConstants&) = delete;
+    explicit RankingConstants(const Vector& constants);
     ~RankingConstants();
-    bool operator==(const RankingConstants &rhs) const;
-    const Constant *getConstant(const std::string &name) const;
+    bool operator==(const RankingConstants& rhs) const;
+    const Constant* getConstant(const std::string& name) const;
     size_t size() const { return _constants.size(); }
 };
 
-}
+} // namespace search::fef

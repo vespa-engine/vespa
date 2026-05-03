@@ -2,14 +2,18 @@
 
 #pragma once
 
-#include "fieldpositionsiterator.h"
 #include "fieldinfo.h"
+#include "fieldpositionsiterator.h"
+
 #include <vespa/searchlib/common/feature.h>
+
 #include <cstring>
 #include <limits>
 #include <span>
 
-namespace search::queryeval { class MatchSpan; }
+namespace search::queryeval {
+class MatchSpan;
+}
 
 namespace search::fef {
 
@@ -18,13 +22,12 @@ class TermMatchDataMerger;
 /**
  * Match information for a single term within a single field.
  **/
-class TermFieldMatchData
-{
+class TermFieldMatchData {
 public:
-    using PositionsIterator = const TermFieldMatchDataPosition *;
-    using MutablePositionsIterator = TermFieldMatchDataPosition *;
+    using PositionsIterator = const TermFieldMatchDataPosition*;
+    using MutablePositionsIterator = TermFieldMatchDataPosition*;
     struct Positions {
-        TermFieldMatchDataPosition *_positions;
+        TermFieldMatchDataPosition* _positions;
         uint16_t                    _maxElementLength;
         uint16_t                    _allocated;
     };
@@ -35,19 +38,28 @@ public:
         Positions     _positions;
         uint64_t      _subqueries;
     };
+
 private:
-    bool  isRawScore()  const noexcept { return _flags & RAW_SCORE_FLAG; }
-    bool  isMultiPos()  const noexcept { return _flags & MULTIPOS_FLAG; }
-    bool  empty() const noexcept { return _sz == 0; }
-    void  clear() noexcept { _sz = 0; }
-    bool  allocated() const noexcept { return isMultiPos(); }
-    const TermFieldMatchDataPosition * getFixed() const noexcept { return reinterpret_cast<const TermFieldMatchDataPosition *>(_data._position); }
-    TermFieldMatchDataPosition * getFixed() noexcept { return reinterpret_cast<TermFieldMatchDataPosition *>(_data._position); }
-    const TermFieldMatchDataPosition * getMultiple() const noexcept { return _data._positions._positions; }
-    TermFieldMatchDataPosition * getMultiple() noexcept { return _data._positions._positions; }
-    int32_t  getElementWeight() const noexcept { return empty() ? 1 : allocated() ? getMultiple()->getElementWeight() : getFixed()->getElementWeight(); }
-    uint32_t getMaxElementLength() const noexcept { return empty() ? 0 : allocated() ? _data._positions._maxElementLength : getFixed()->getElementLen(); }
-    void appendPositionToAllocatedVector(const TermFieldMatchDataPosition &pos);
+    bool isRawScore() const noexcept { return _flags & RAW_SCORE_FLAG; }
+    bool isMultiPos() const noexcept { return _flags & MULTIPOS_FLAG; }
+    bool empty() const noexcept { return _sz == 0; }
+    void clear() noexcept { _sz = 0; }
+    bool allocated() const noexcept { return isMultiPos(); }
+    const TermFieldMatchDataPosition* getFixed() const noexcept {
+        return reinterpret_cast<const TermFieldMatchDataPosition*>(_data._position);
+    }
+    TermFieldMatchDataPosition* getFixed() noexcept {
+        return reinterpret_cast<TermFieldMatchDataPosition*>(_data._position);
+    }
+    const TermFieldMatchDataPosition* getMultiple() const noexcept { return _data._positions._positions; }
+    TermFieldMatchDataPosition* getMultiple() noexcept { return _data._positions._positions; }
+    int32_t getElementWeight() const noexcept {
+        return empty() ? 1 : allocated() ? getMultiple()->getElementWeight() : getFixed()->getElementWeight();
+    }
+    uint32_t getMaxElementLength() const noexcept {
+        return empty() ? 0 : allocated() ? _data._positions._maxElementLength : getFixed()->getElementLen();
+    }
+    void appendPositionToAllocatedVector(const TermFieldMatchDataPosition& pos);
     void allocateVector();
     void resizePositionVector(size_t sz) __attribute__((noinline));
     MutablePositionsIterator mutable_begin() { return allocated() ? getMultiple() : getFixed(); }
@@ -57,34 +69,38 @@ private:
     static constexpr uint16_t MULTIPOS_FLAG = 2;
     static constexpr uint16_t UNPACK_NORMAL_FEATURES_FLAG = 4;
     static constexpr uint16_t UNPACK_INTERLEAVED_FEATURES_FLAG = 8;
-    static constexpr uint16_t UNPACK_ALL_FEATURES_MASK = UNPACK_NORMAL_FEATURES_FLAG | UNPACK_INTERLEAVED_FEATURES_FLAG;
+    static constexpr uint16_t UNPACK_ALL_FEATURES_MASK =
+        UNPACK_NORMAL_FEATURES_FLAG | UNPACK_INTERLEAVED_FEATURES_FLAG;
     static constexpr uint16_t HIDDEN_FROM_RANKING = 16;
 
-    uint32_t  _docId;
-    uint16_t  _fieldId;
-    uint16_t  _flags;
-    uint16_t  _sz;
+    uint32_t _docId;
+    uint16_t _fieldId;
+    uint16_t _flags;
+    uint16_t _sz;
 
     // Number of occurrences and field length used when unpacking interleaved features.
     // This can exist in addition to full position features.
     uint16_t _numOccs;
     uint16_t _fieldLength;
 
-    Features  _data;
+    Features _data;
 
     void finish_filter_match_data();
-    template <typename MatchDataFilter>
-    void filter_match_data(uint32_t docid, MatchDataFilter match_data_filter);
+    template <typename MatchDataFilter> void filter_match_data(uint32_t docid, MatchDataFilter match_data_filter);
+
 public:
     PositionsIterator begin() const { return allocated() ? getMultiple() : getFixed(); }
-    PositionsIterator end() const { return allocated() ? getMultiple() + _sz : empty() ? getFixed() : getFixed()+1; }
+    PositionsIterator end() const {
+        return allocated() ? getMultiple() + _sz : empty() ? getFixed() : getFixed() + 1;
+    }
     size_t size() const noexcept { return _sz; }
     size_t capacity() const noexcept { return allocated() ? _data._positions._allocated : 1; }
     void reservePositions(size_t sz) {
         if (sz > capacity()) {
             if (!allocated()) {
                 allocateVector();
-                if (sz <= capacity()) return;
+                if (sz <= capacity())
+                    return;
             }
             resizePositionVector(sz);
         }
@@ -95,9 +111,9 @@ public:
      * set.
      **/
     TermFieldMatchData();
-    TermFieldMatchData(const TermFieldMatchData & rhs);
+    TermFieldMatchData(const TermFieldMatchData& rhs);
     ~TermFieldMatchData();
-    TermFieldMatchData & operator = (const TermFieldMatchData & rhs);
+    TermFieldMatchData& operator=(const TermFieldMatchData& rhs);
 
     /**
      * Swaps the content of this object with the content of the given
@@ -105,7 +121,7 @@ public:
      *
      * @param rhs The object to swap with.
      **/
-    void swap(TermFieldMatchData &rhs);
+    void swap(TermFieldMatchData& rhs);
 
     MutablePositionsIterator populate_fixed();
 
@@ -115,7 +131,7 @@ public:
      * @return this object (for chaining)
      * @param fieldId field id
      **/
-    TermFieldMatchData &setFieldId(uint32_t fieldId);
+    TermFieldMatchData& setFieldId(uint32_t fieldId);
 
     /**
      * Obtain the field id
@@ -133,7 +149,7 @@ public:
      * @return this object (for chaining)
      * @param docId id of the document we are generating match information for
      **/
-    TermFieldMatchData &reset(uint32_t docId) noexcept {
+    TermFieldMatchData& reset(uint32_t docId) noexcept {
         _docId = docId;
         _sz = 0;
         _numOccs = 0;
@@ -153,7 +169,7 @@ public:
      * @return this object (for chaining)
      * @param docId id of the document we are generating match information for
      **/
-    TermFieldMatchData &resetOnlyDocId(uint32_t docId) noexcept {
+    TermFieldMatchData& resetOnlyDocId(uint32_t docId) noexcept {
         _docId = docId;
         return *this;
     }
@@ -168,13 +184,13 @@ public:
      * @param docId id of the document we have matched
      * @param score a raw score for the matched document
      **/
-    TermFieldMatchData &setRawScore(uint32_t docId, feature_t score) noexcept {
+    TermFieldMatchData& setRawScore(uint32_t docId, feature_t score) noexcept {
         resetOnlyDocId(docId);
         enableRawScore();
         _data._rawScore = score;
         return *this;
     }
-    TermFieldMatchData & enableRawScore() noexcept {
+    TermFieldMatchData& enableRawScore() noexcept {
         _flags |= RAW_SCORE_FLAG;
         return *this;
     }
@@ -184,9 +200,7 @@ public:
      *
      * @return raw score
      **/
-    feature_t getRawScore() const noexcept {
-        return __builtin_expect(isRawScore(), true) ? _data._rawScore : 0.0;
-    }
+    feature_t getRawScore() const noexcept { return __builtin_expect(isRawScore(), true) ? _data._rawScore : 0.0; }
 
     void setSubqueries(uint32_t docId, uint64_t subqueries) noexcept {
         resetOnlyDocId(docId);
@@ -205,9 +219,7 @@ public:
      *
      * @return document id
      **/
-    uint32_t getDocId() const noexcept {
-        return _docId;
-    }
+    uint32_t getDocId() const noexcept { return _docId; }
 
     // Returns true if this instance has match data for docId that is visible to the ranking framework.
     bool has_ranking_data(uint32_t docId) const noexcept { return docId == _docId && !is_hidden_from_ranking(); }
@@ -228,7 +240,8 @@ public:
         if (__builtin_expect(_sz == 0, false)) {
             return 1;
         }
-        return __builtin_expect(allocated(), false) ? getMultiple()->getElementWeight() : getFixed()->getElementWeight();
+        return __builtin_expect(allocated(), false) ? getMultiple()->getElementWeight()
+                                                    : getFixed()->getElementWeight();
     }
 
     /**
@@ -238,7 +251,7 @@ public:
      * @return this object (for chaining)
      * @param pos low-level occurrence information
      **/
-    TermFieldMatchData &appendPosition(const TermFieldMatchDataPosition &pos) {
+    TermFieldMatchData& appendPosition(const TermFieldMatchDataPosition& pos) {
         if (_sz == 0 && !allocated()) {
             _sz = 1;
             new (_data._position) TermFieldMatchDataPosition(pos);
@@ -278,14 +291,12 @@ public:
 
     bool needs_normal_features() const noexcept { return ((_flags & UNPACK_NORMAL_FEATURES_FLAG) != 0u); }
 
-    bool needs_interleaved_features() const noexcept{ return ((_flags & UNPACK_INTERLEAVED_FEATURES_FLAG) != 0u); }
+    bool needs_interleaved_features() const noexcept { return ((_flags & UNPACK_INTERLEAVED_FEATURES_FLAG) != 0u); }
 
     /**
      * Tag that this instance is not really used for ranking.
      */
-    void tagAsNotNeeded() noexcept {
-        _flags &=  ~(UNPACK_NORMAL_FEATURES_FLAG | UNPACK_INTERLEAVED_FEATURES_FLAG);
-    }
+    void tagAsNotNeeded() noexcept { _flags &= ~(UNPACK_NORMAL_FEATURES_FLAG | UNPACK_INTERLEAVED_FEATURES_FLAG); }
 
     /**
      * Tag that this instance is used for ranking (normal features)
@@ -309,13 +320,9 @@ public:
         }
     }
 
-    void set_hidden_from_ranking() noexcept {
-        _flags |= HIDDEN_FROM_RANKING;
-    }
+    void set_hidden_from_ranking() noexcept { _flags |= HIDDEN_FROM_RANKING; }
 
-    void clear_hidden_from_ranking() noexcept {
-        _flags &= ~HIDDEN_FROM_RANKING;
-    }
+    void clear_hidden_from_ranking() noexcept { _flags &= ~HIDDEN_FROM_RANKING; }
 
     bool is_hidden_from_ranking() const noexcept { return (_flags & HIDDEN_FROM_RANKING) != 0; }
 
@@ -332,4 +339,4 @@ public:
     static uint32_t invalidId() noexcept { return 0xdeadbeefU; }
 };
 
-}
+} // namespace search::fef

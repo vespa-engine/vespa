@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/searchlib/common/feature.h>
+
 #include <map>
 #include <string>
 #include <vector>
@@ -28,7 +29,7 @@ public:
      * @param score       The score of that feature.
      * @return            This, to allow chaining.
      */
-    RankResult &addScore(const std::string & featureName, feature_t score);
+    RankResult& addScore(const std::string& featureName, feature_t score);
 
     /**
      * Returns the score of a given feature.
@@ -36,7 +37,7 @@ public:
      * @param featureName The name of the feature.
      * @return            The score of that feature.
      */
-    feature_t getScore(const std::string & featureName) const;
+    feature_t getScore(const std::string& featureName) const;
 
     /**
      * Implements equality operator.
@@ -44,7 +45,7 @@ public:
      * @param rhs The result to compare to.
      * @return    Whether or not this is equal to the other.
      */
-    bool operator==(const RankResult & rhs) const;
+    bool operator==(const RankResult& rhs) const;
 
     /**
      * Returns whether or not this rank result contains another.
@@ -52,14 +53,14 @@ public:
      * @param rhs The result to see if this contains.
      * @return Whether or not this contains the other.
      */
-    bool includes(const RankResult & rhs) const;
+    bool includes(const RankResult& rhs) const;
 
     /**
      * Clears the content of this map.
      *
      * @return This, to allow chaining.
      */
-    RankResult &clear();
+    RankResult& clear();
 
     /**
      * Fills the given vector with the key strings of this.
@@ -67,7 +68,7 @@ public:
      * @param ret The vector to fill.
      * @return    Reference to the 'ret' param.
      */
-    std::vector<std::string> &getKeys(std::vector<std::string> &ret);
+    std::vector<std::string>& getKeys(std::vector<std::string>& ret);
 
     /**
      * Creates and returns a vector with the key strings of this.
@@ -82,7 +83,7 @@ public:
      * @param epsilon The new epsilon.
      * @return        This, to allow chaining.
      */
-    RankResult &setEpsilon(double epsilon);
+    RankResult& setEpsilon(double epsilon);
 
     /**
      * Returns the epsilon used when comparing this rank result to another.
@@ -98,11 +99,11 @@ public:
      * @param rhs The result to write.
      * @return    The stream, to allow chaining.
      */
-    friend std::ostream & operator<<(std::ostream & os, const RankResult & rhs);
+    friend std::ostream& operator<<(std::ostream& os, const RankResult& rhs);
 
 private:
     RankScores _rankScores;
     double     _epsilon;
 };
 
-}
+} // namespace search::fef::test

@@ -12,19 +12,19 @@ namespace search::fef {
  * Simple parser used to split feature names into components by the
  * framework.
  **/
-class FeatureNameParser
-{
+class FeatureNameParser {
 public:
     using string = std::string;
     using StringVector = std::vector<string>;
+
 private:
-    bool                _valid;
-    uint32_t            _endPos;
-    string              _baseName;
-    StringVector        _parameters;
-    string              _output;
-    string              _executorName;
-    string              _featureName;
+    bool         _valid;
+    uint32_t     _endPos;
+    string       _baseName;
+    StringVector _parameters;
+    string       _output;
+    string       _executorName;
+    string       _featureName;
 
 public:
     /**
@@ -35,7 +35,7 @@ public:
      *
      * @param featureName feature name
      **/
-    FeatureNameParser(const std::string &featureName);
+    FeatureNameParser(const std::string& featureName);
     ~FeatureNameParser();
 
     /**
@@ -62,21 +62,21 @@ public:
      *
      * @return base name
      **/
-    const string &baseName() const { return _baseName; }
+    const string& baseName() const { return _baseName; }
 
     /**
      * Obtain the parameter list from the parsed feature name.
      *
      * @return parameter list
      **/
-    const StringVector &parameters() const { return _parameters; }
+    const StringVector& parameters() const { return _parameters; }
 
     /**
      * Obtain the output name from the parsed feature name.
      *
      * @return output name
      **/
-    const string &output() const { return _output; }
+    const string& output() const { return _output; }
 
     /**
      * Obtain a normalized name for the executor making this
@@ -85,7 +85,7 @@ public:
      *
      * @return normalized executor name with parameters
      **/
-    const string &executorName() const { return _executorName; }
+    const string& executorName() const { return _executorName; }
 
     /**
      * Obtain a normalized full feature name. The @ref
@@ -93,7 +93,7 @@ public:
      *
      * @return normalized full feature name
      **/
-    const string &featureName() const { return _featureName; }
+    const string& featureName() const { return _featureName; }
 };
 
-}
+} // namespace search::fef

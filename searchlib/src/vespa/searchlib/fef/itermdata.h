@@ -3,7 +3,9 @@
 #pragma once
 
 #include "itermfielddata.h"
+
 #include <vespa/searchlib/query/weight.h>
+
 #include <cstddef>
 #include <optional>
 #include <string>
@@ -13,8 +15,7 @@ namespace search::fef {
 /**
  * Interface to static match data for a single unit (term/phrase/etc).
  **/
-class ITermData
-{
+class ITermData {
 protected:
     virtual ~ITermData() = default;
 
@@ -50,7 +51,7 @@ public:
      * Direct access to data for individual fields
      * @param i local index, must have: 0 <= i < numFields()
      */
-    virtual const ITermFieldData &field(size_t i) const = 0;
+    virtual const ITermFieldData& field(size_t i) const = 0;
 
     /**
      * Obtain information about a specific field that may be searched
@@ -60,27 +61,25 @@ public:
      * @param fieldId global field ID
      * @return term field data, or NULL if not found
      **/
-    virtual const ITermFieldData *lookupField(uint32_t fieldId) const = 0;
+    virtual const ITermFieldData* lookupField(uint32_t fieldId) const = 0;
 };
 
 /**
  * convenience adapter for easy iteration
  **/
-class ITermFieldRangeAdapter
-{
+class ITermFieldRangeAdapter {
     const ITermData& _ref;
-    size_t _idx;
-    size_t _lim;
+    size_t           _idx;
+    size_t           _lim;
+
 public:
-    explicit ITermFieldRangeAdapter(const ITermData& ref)
-        : _ref(ref), _idx(0), _lim(ref.numFields())
-    {}
+    explicit ITermFieldRangeAdapter(const ITermData& ref) : _ref(ref), _idx(0), _lim(ref.numFields()) {}
 
     bool valid() const { return (_idx < _lim); }
 
-    const ITermFieldData& get() const  { return _ref.field(_idx); }
+    const ITermFieldData& get() const { return _ref.field(_idx); }
 
     void next() { ++_idx; }
 };
 
-}
+} // namespace search::fef

@@ -2,16 +2,19 @@
 
 #pragma once
 
+#include "feature_type.h"
 #include "featureexecutor.h"
+#include "idumpfeaturevisitor.h"
 #include "iindexenvironment.h"
 #include "iqueryenvironment.h"
-#include "idumpfeaturevisitor.h"
 #include "parameter.h"
 #include "parameterdescriptions.h"
-#include "feature_type.h"
+
 #include <optional>
 
-namespace vespalib { class Stash; }
+namespace vespalib {
+class Stash;
+}
 
 namespace search::fef {
 
@@ -28,8 +31,7 @@ namespace search::fef {
  * (feature dumps are used for things like MLR training). It will be
  * possible to define additional dump features in the config.
  **/
-class Blueprint
-{
+class Blueprint {
 public:
     /**
      * A feature can be either a number (double) or an object
@@ -44,9 +46,10 @@ public:
      * executor setup.
      **/
     struct DependencyHandler {
-        virtual std::optional<FeatureType> resolve_input(const std::string &feature_name, AcceptInput accept_type) = 0;
-        virtual void define_output(const std::string &output_name, FeatureType type) = 0;
-        virtual void fail(const std::string &msg) = 0;
+        virtual std::optional<FeatureType> resolve_input(const std::string& feature_name,
+                                                         AcceptInput        accept_type) = 0;
+        virtual void define_output(const std::string& output_name, FeatureType type) = 0;
+        virtual void fail(const std::string& msg) = 0;
         virtual ~DependencyHandler() = default;
     };
 
@@ -64,9 +67,9 @@ public:
     using StringVector = std::vector<string>;
 
 private:
-    string                   _baseName;
-    string                   _name;
-    DependencyHandler       *_dependency_handler;
+    string             _baseName;
+    string             _name;
+    DependencyHandler* _dependency_handler;
 
 protected:
     /**
@@ -89,8 +92,7 @@ protected:
      * @param inName feature name of input
      * @param type accepted input type
      **/
-    std::optional<FeatureType> defineInput(const std::string & inName,
-                                           AcceptInput accept = AcceptInput::NUMBER);
+    std::optional<FeatureType> defineInput(const std::string& inName, AcceptInput accept = AcceptInput::NUMBER);
 
     /**
      * Describe an output for this blueprint. This method should be
@@ -105,8 +107,7 @@ protected:
      * @param outName output name
      * @param desc output description
      **/
-    void describeOutput(const std::string & outName, std::string_view desc,
-                        FeatureType type = FeatureType::number());
+    void describeOutput(const std::string& outName, std::string_view desc, FeatureType type = FeatureType::number());
 
     /**
      * Fail the setup of this blueprint with the given message. This
@@ -117,7 +118,7 @@ protected:
      * @return false
      * @param format printf-style format string
      **/
-    bool fail(const char *format, ...) __attribute__ ((format (printf,2,3)));
+    bool fail(const char* format, ...) __attribute__((format(printf, 2, 3)));
 
     /**
      * Fail the setup of this blueprint with the given message. This
@@ -128,30 +129,29 @@ protected:
      * @return false
      * @param msg pre-formatted message
      **/
-    bool fail(const std::string &msg);
+    bool fail(const std::string& msg);
 
     /**
      * Used to store a reference to the attribute during prepareSharedState
      * for later use in createExecutor
      **/
-    static const IAttributeVector *
-    lookupAndStoreAttribute(const std::string & key, std::string_view attrName,
-                            const IQueryEnvironment & env, IObjectStore & objectStore);
+    static const IAttributeVector* lookupAndStoreAttribute(const std::string& key, std::string_view attrName,
+                                                           const IQueryEnvironment& env, IObjectStore& objectStore);
     /**
      * Used to lookup attribute from the most efficient source.
      **/
-    static const IAttributeVector *
-    lookupAttribute(const std::string & key, std::string_view attrName, const IQueryEnvironment & env);
+    static const IAttributeVector* lookupAttribute(const std::string& key, std::string_view attrName,
+                                                   const IQueryEnvironment& env);
     static std::string createAttributeKey(std::string_view attrName);
 
     /*
      * Used by elementwise blueprint to forward dependency handler.
      */
-    DependencyHandler *get_dependency_handler() const noexcept { return _dependency_handler; }
+    DependencyHandler* get_dependency_handler() const noexcept { return _dependency_handler; }
 
 public:
-    Blueprint(const Blueprint &) = delete;
-    Blueprint &operator=(const Blueprint &) = delete;
+    Blueprint(const Blueprint&) = delete;
+    Blueprint& operator=(const Blueprint&) = delete;
 
     /**
      * Obtain the base name of this blueprint. This method will
@@ -172,7 +172,7 @@ public:
      *
      * @return blueprint base name
      **/
-    const std::string & getBaseName() const { return _baseName; }
+    const std::string& getBaseName() const { return _baseName; }
 
     /**
      * This method may indicate which features that should be dumped
@@ -187,8 +187,7 @@ public:
      * @param indexEnv the index environment
      * @param visitor the object visiting dump features
      **/
-    virtual void visitDumpFeatures(const IIndexEnvironment &indexEnv,
-                                   IDumpFeatureVisitor &visitor) const = 0;
+    virtual void visitDumpFeatures(const IIndexEnvironment& indexEnv, IDumpFeatureVisitor& visitor) const = 0;
 
     /**
      * Create another instance of this class. This must be implemented
@@ -215,7 +214,7 @@ public:
      *
      * @return blueprint name
      **/
-    const string &getName() const { return _name; }
+    const string& getName() const { return _name; }
 
     /**
      * Returns the parameter descriptions for this blueprint.
@@ -225,13 +224,11 @@ public:
      **/
     virtual ParameterDescriptions getDescriptions() const;
 
-    void attach_dependency_handler(DependencyHandler &dependency_handler) {
+    void attach_dependency_handler(DependencyHandler& dependency_handler) {
         _dependency_handler = &dependency_handler;
     }
 
-    void detach_dependency_handler() {
-        _dependency_handler = nullptr;
-    }
+    void detach_dependency_handler() { _dependency_handler = nullptr; }
 
     /**
      * Tailor this blueprint for the given set of parameters. The
@@ -248,8 +245,7 @@ public:
      * @param indexEnv the index environment
      * @param params the parameters as simple strings
      **/
-    virtual bool setup(const IIndexEnvironment &indexEnv,
-                       const StringVector &params);
+    virtual bool setup(const IIndexEnvironment& indexEnv, const StringVector& params);
 
     /**
      * Setups this blueprint for the given set of parameters. The
@@ -261,15 +257,14 @@ public:
      * @param indexEnv the index environment.
      * @param params the parameters as a list of actual parameters.
      **/
-    virtual bool setup(const IIndexEnvironment &indexEnv,
-                       const ParameterList &params);
+    virtual bool setup(const IIndexEnvironment& indexEnv, const ParameterList& params);
 
     /**
      * Here you can do some preprocessing. State must be stored in the IObjectStore.
      * This is called before creating multiple execution threads.
      * @param queryEnv The query environment.
      */
-    virtual void prepareSharedState(const IQueryEnvironment & queryEnv, IObjectStore & objectStore) const;
+    virtual void prepareSharedState(const IQueryEnvironment& queryEnv, IObjectStore& objectStore) const;
 
     /**
      * Create a feature executor based on this blueprint. Failure to
@@ -280,8 +275,7 @@ public:
      * @param queryEnv query environment
      * @param stash    heterogenous object store
      **/
-    virtual FeatureExecutor &createExecutor(const IQueryEnvironment &queryEnv,
-                                            vespalib::Stash &stash) const = 0;
+    virtual FeatureExecutor& createExecutor(const IQueryEnvironment& queryEnv, vespalib::Stash& stash) const = 0;
 
     /**
      * Virtual destructor to allow safe subclassing.
@@ -289,4 +283,4 @@ public:
     virtual ~Blueprint();
 };
 
-}
+} // namespace search::fef

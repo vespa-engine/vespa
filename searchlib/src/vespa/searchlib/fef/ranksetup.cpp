@@ -1,27 +1,26 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "ranksetup.h"
+
 #include "blueprint.h"
-#include "indexproperties.h"
 #include "featurenameparser.h"
 #include "idumpfeaturevisitor.h"
-#include <vespa/vespalib/util/stringfmt.h>
+#include "indexproperties.h"
+
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 using vespalib::make_string_short::fmt;
 
 namespace {
-class VisitorAdapter : public search::fef::IDumpFeatureVisitor
-{
-    search::fef::BlueprintResolver &_resolver;
+class VisitorAdapter : public search::fef::IDumpFeatureVisitor {
+    search::fef::BlueprintResolver& _resolver;
+
 public:
-    explicit VisitorAdapter(search::fef::BlueprintResolver &resolver)
-        : _resolver(resolver) {}
-    void visitDumpFeature(const std::string &name) override {
-        _resolver.addSeed(name);
-    }
+    explicit VisitorAdapter(search::fef::BlueprintResolver& resolver) : _resolver(resolver) {}
+    void visitDumpFeature(const std::string& name) override { _resolver.addSeed(name); }
 };
-} // namespace <unnamed>
+} // namespace
 
 namespace search::fef {
 
@@ -29,7 +28,7 @@ RankSetup::MutateOperation::~MutateOperation() = default;
 
 using namespace indexproperties;
 
-RankSetup::RankSetup(const BlueprintFactory &factory, const IIndexEnvironment &indexEnv)
+RankSetup::RankSetup(const BlueprintFactory& factory, const IIndexEnvironment& indexEnv)
     : _factory(factory),
       _indexEnv(indexEnv),
       _first_phase_resolver(std::make_shared<BlueprintResolver>(factory, indexEnv)),
@@ -84,29 +83,27 @@ RankSetup::RankSetup(const BlueprintFactory &factory, const IIndexEnvironment &i
       _mutateOnFirstPhase(),
       _mutateOnSecondPhase(),
       _mutateOnSummary(),
-      _mutateAllowQueryOverride(false)
-{ }
+      _mutateAllowQueryOverride(false) {
+}
 
 RankSetup::~RankSetup() = default;
 
-void
-RankSetup::configure()
-{
+void RankSetup::configure() {
     setFirstPhaseRank(rank::FirstPhase::lookup(_indexEnv.getProperties()));
     setSecondPhaseRank(rank::SecondPhase::lookup(_indexEnv.getProperties()));
-    for (const auto &feature: match::Feature::lookup(_indexEnv.getProperties())) {
+    for (const auto& feature : match::Feature::lookup(_indexEnv.getProperties())) {
         add_match_feature(feature);
     }
     std::vector<std::string> summaryFeatures = summary::Feature::lookup(_indexEnv.getProperties());
-    for (const auto & feature : summaryFeatures) {
+    for (const auto& feature : summaryFeatures) {
         addSummaryFeature(feature);
     }
     setIgnoreDefaultRankFeatures(dump::IgnoreDefaultFeatures::check(_indexEnv.getProperties()));
     std::vector<std::string> dumpFeatures = dump::Feature::lookup(_indexEnv.getProperties());
-    for (const auto & feature : dumpFeatures) {
+    for (const auto& feature : dumpFeatures) {
         addDumpFeature(feature);
     }
-    for (const auto & rename : feature_rename::Rename::lookup(_indexEnv.getProperties())) {
+    for (const auto& rename : feature_rename::Rename::lookup(_indexEnv.getProperties())) {
         _feature_rename_map[rename.first] = rename.second;
     }
     set_termwise_limit(matching::TermwiseLimit::lookup(_indexEnv.getProperties()));
@@ -120,15 +117,18 @@ RankSetup::configure()
     setDegradationMaxHits(matchphase::DegradationMaxHits::lookup(_indexEnv.getProperties()));
     setDegradationMaxFilterCoverage(matchphase::DegradationMaxFilterCoverage::lookup(_indexEnv.getProperties()));
     setDegradationSamplePercentage(matchphase::DegradationSamplePercentage::lookup(_indexEnv.getProperties()));
-    setDegradationPostFilterMultiplier(matchphase::DegradationPostFilterMultiplier::lookup(_indexEnv.getProperties()));
+    setDegradationPostFilterMultiplier(
+        matchphase::DegradationPostFilterMultiplier::lookup(_indexEnv.getProperties()));
     setDiversityAttribute(matchphase::DiversityAttribute::lookup(_indexEnv.getProperties()));
     setDiversityMinGroups(matchphase::DiversityMinGroups::lookup(_indexEnv.getProperties()));
     setDiversityCutoffFactor(matchphase::DiversityCutoffFactor::lookup(_indexEnv.getProperties()));
     setDiversityCutoffStrategy(matchphase::DiversityCutoffStrategy::lookup(_indexEnv.getProperties()));
     setEstimatePoint(hitcollector::EstimatePoint::lookup(_indexEnv.getProperties()));
     setEstimateLimit(hitcollector::EstimateLimit::lookup(_indexEnv.getProperties()));
-    set_first_phase_rank_score_drop_limit(hitcollector::FirstPhaseRankScoreDropLimit::lookup(_indexEnv.getProperties()));
-    set_second_phase_rank_score_drop_limit(hitcollector::SecondPhaseRankScoreDropLimit::lookup(_indexEnv.getProperties()));
+    set_first_phase_rank_score_drop_limit(
+        hitcollector::FirstPhaseRankScoreDropLimit::lookup(_indexEnv.getProperties()));
+    set_second_phase_rank_score_drop_limit(
+        hitcollector::SecondPhaseRankScoreDropLimit::lookup(_indexEnv.getProperties()));
     setSoftTimeoutEnabled(softtimeout::Enabled::lookup(_indexEnv.getProperties()));
     setSoftTimeoutTailCost(softtimeout::TailCost::lookup(_indexEnv.getProperties()));
     set_global_filter_lower_limit(matching::GlobalFilterLowerLimit::lookup(_indexEnv.getProperties()));
@@ -154,53 +154,40 @@ RankSetup::configure()
     _sort_blueprints_by_cost = matching::SortBlueprintsByCost::check(_indexEnv.getProperties());
 }
 
-void
-RankSetup::setFirstPhaseRank(const std::string &featureName)
-{
+void RankSetup::setFirstPhaseRank(const std::string& featureName) {
     assert(!_compiled);
     _firstPhaseRankFeature = featureName;
 }
 
-void
-RankSetup::setSecondPhaseRank(const std::string &featureName)
-{
+void RankSetup::setSecondPhaseRank(const std::string& featureName) {
     assert(!_compiled);
     _secondPhaseRankFeature = featureName;
 }
 
-void
-RankSetup::add_match_feature(const std::string &match_feature)
-{
+void RankSetup::add_match_feature(const std::string& match_feature) {
     assert(!_compiled);
     _match_features.push_back(match_feature);
 }
 
-void
-RankSetup::addSummaryFeature(const std::string &summaryFeature)
-{
+void RankSetup::addSummaryFeature(const std::string& summaryFeature) {
     assert(!_compiled);
     _summaryFeatures.push_back(summaryFeature);
 }
 
-void
-RankSetup::addDumpFeature(const std::string &dumpFeature)
-{
+void RankSetup::addDumpFeature(const std::string& dumpFeature) {
     assert(!_compiled);
     _dumpFeatures.push_back(dumpFeature);
 }
 
-void
-RankSetup::compileAndCheckForErrors(BlueprintResolver &bpr) {
+void RankSetup::compileAndCheckForErrors(BlueprintResolver& bpr) {
     bool ok = bpr.compile();
-    if ( ! ok ) {
+    if (!ok) {
         _compileError = true;
-        const auto & warnings = bpr.getWarnings();
+        const auto& warnings = bpr.getWarnings();
         _warnings.insert(_warnings.end(), warnings.begin(), warnings.end());
     }
 }
-bool
-RankSetup::compile()
-{
+bool RankSetup::compile() {
     assert(!_compiled);
     if (!_firstPhaseRankFeature.empty()) {
         FeatureNameParser parser(_firstPhaseRankFeature);
@@ -224,17 +211,17 @@ RankSetup::compile()
             _compileError = true;
         }
     }
-    for (const auto &feature: _match_features) {
+    for (const auto& feature : _match_features) {
         _match_resolver->addSeed(feature);
     }
-    for (const auto & feature :_summaryFeatures) {
+    for (const auto& feature : _summaryFeatures) {
         _summary_resolver->addSeed(feature);
     }
     if (!_ignoreDefaultRankFeatures) {
         VisitorAdapter adapter(*_dumpResolver);
         _factory.visitDumpFeatures(_indexEnv, adapter);
     }
-    for (const auto & feature : _dumpFeatures) {
+    for (const auto& feature : _dumpFeatures) {
         _dumpResolver->addSeed(feature);
     }
     _indexEnv.hintFeatureMotivation(IIndexEnvironment::RANK);
@@ -248,31 +235,28 @@ RankSetup::compile()
     return !_compileError;
 }
 
-void
-RankSetup::prepareSharedState(const IQueryEnvironment &queryEnv, IObjectStore &objectStore) const
-{
+void RankSetup::prepareSharedState(const IQueryEnvironment& queryEnv, IObjectStore& objectStore) const {
     assert(_compiled && !_compileError);
-    for (const auto &spec : _first_phase_resolver->getExecutorSpecs()) {
+    for (const auto& spec : _first_phase_resolver->getExecutorSpecs()) {
         spec.blueprint->prepareSharedState(queryEnv, objectStore);
     }
-    for (const auto &spec : _second_phase_resolver->getExecutorSpecs()) {
+    for (const auto& spec : _second_phase_resolver->getExecutorSpecs()) {
         spec.blueprint->prepareSharedState(queryEnv, objectStore);
     }
-    for (const auto &spec : _match_resolver->getExecutorSpecs()) {
+    for (const auto& spec : _match_resolver->getExecutorSpecs()) {
         spec.blueprint->prepareSharedState(queryEnv, objectStore);
     }
-    for (const auto &spec : _summary_resolver->getExecutorSpecs()) {
+    for (const auto& spec : _summary_resolver->getExecutorSpecs()) {
         spec.blueprint->prepareSharedState(queryEnv, objectStore);
     }
 }
 
-std::string
-RankSetup::getJoinedWarnings() const {
+std::string RankSetup::getJoinedWarnings() const {
     vespalib::asciistream os;
-    for (const auto & m : _warnings) {
+    for (const auto& m : _warnings) {
         os << m << "\n";
     }
     return os.str();
 }
 
-}
+} // namespace search::fef
