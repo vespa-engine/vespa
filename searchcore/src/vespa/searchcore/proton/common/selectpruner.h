@@ -1,45 +1,41 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/document/select/node.h>
-#include <vespa/document/select/valuenode.h>
 #include <vespa/document/select/cloningvisitor.h>
+#include <vespa/document/select/node.h>
 #include <vespa/document/select/operator.h>
 #include <vespa/document/select/resultset.h>
+#include <vespa/document/select/valuenode.h>
 
-namespace search { class IAttributeManager; }
+namespace search {
+class IAttributeManager;
+}
 
-namespace document { class IDocumentTypeRepo; }
+namespace document {
+class IDocumentTypeRepo;
+}
 
 namespace proton {
 
-class SelectPrunerBase
-{
+class SelectPrunerBase {
 protected:
-    const std::string &_docType;
-    const search::IAttributeManager *_amgr;
-    const document::Document &_emptyDoc;
-    const document::IDocumentTypeRepo &_repo;
-    bool _hasFields;
-    bool _has_document_ids;
-    bool _hasDocuments;
+    const std::string&                 _docType;
+    const search::IAttributeManager*   _amgr;
+    const document::Document&          _emptyDoc;
+    const document::IDocumentTypeRepo& _repo;
+    bool                               _hasFields;
+    bool                               _has_document_ids;
+    bool                               _hasDocuments;
 
 public:
-    SelectPrunerBase(const std::string &docType,
-                     const search::IAttributeManager *amgr,
-                     const document::Document &emptyDoc,
-                     const document::IDocumentTypeRepo &repo,
-                     bool hasFields,
-                     bool has_document_ids,
-                     bool hasDocuments);
+    SelectPrunerBase(const std::string& docType, const search::IAttributeManager* amgr,
+                     const document::Document& emptyDoc, const document::IDocumentTypeRepo& repo, bool hasFields,
+                     bool has_document_ids, bool hasDocuments);
 
-    SelectPrunerBase(const SelectPrunerBase &rhs);
+    SelectPrunerBase(const SelectPrunerBase& rhs);
 };
 
-
-class SelectPruner : public document::select::CloningVisitor,
-                     public SelectPrunerBase
-{
+class SelectPruner : public document::select::CloningVisitor, public SelectPrunerBase {
 public:
 private:
     bool _inverted;
@@ -49,43 +45,42 @@ private:
     using ValueNodeUP = document::select::ValueNode::UP;
     uint32_t _attrFieldNodes;
     uint32_t _document_id_nodes;
-public:
-    SelectPruner(const std::string &docType,
-                 const search::IAttributeManager *amgr,
-                 const document::Document &emptyDoc,
-                 const document::IDocumentTypeRepo &repo,
-                 bool hasFields,
-                 bool has_document_ids,
-                 bool hasDocuments);
 
-    explicit SelectPruner(const SelectPruner *rhs);
+public:
+    SelectPruner(const std::string& docType, const search::IAttributeManager* amgr,
+                 const document::Document& emptyDoc, const document::IDocumentTypeRepo& repo, bool hasFields,
+                 bool has_document_ids, bool hasDocuments);
+
+    explicit SelectPruner(const SelectPruner* rhs);
     ~SelectPruner() override;
 
     [[nodiscard]] uint32_t getFieldNodes() const noexcept { return _fieldNodes; }
     [[nodiscard]] uint32_t getAttrFieldNodes() const noexcept { return _attrFieldNodes; }
     [[nodiscard]] uint32_t get_document_id_nodes() const noexcept { return _document_id_nodes; }
-    [[nodiscard]] const document::select::ResultSet & getResultSet() const noexcept { return _resultSet; }
+    [[nodiscard]] const document::select::ResultSet& getResultSet() const noexcept { return _resultSet; }
     [[nodiscard]] bool isFalse() const;
     [[nodiscard]] bool isTrue() const;
     [[nodiscard]] bool isInvalid() const;
     [[nodiscard]] bool isConst() const;
-    void trace(std::ostream &t);
-    void process(const document::select::Node &node);
+    void trace(std::ostream& t);
+    void process(const document::select::Node& node);
+
 private:
-    void visitAndBranch(const document::select::And &expr) override;
-    void visitComparison(const document::select::Compare &expr) override;
-    void visitDocumentType(const document::select::DocType &expr) override;
-    void visitNotBranch(const document::select::Not &expr) override;
-    void visitOrBranch(const document::select::Or &expr) override;
-    void visitArithmeticValueNode(const document::select::ArithmeticValueNode &expr) override;
-    void visitFunctionValueNode(const document::select::FunctionValueNode &expr) override;
-    void visitIdValueNode(const document::select::IdValueNode &expr) override;
-    void visitFieldValueNode(const document::select::FieldValueNode &expr) override;
+    void visitAndBranch(const document::select::And& expr) override;
+    void visitComparison(const document::select::Compare& expr) override;
+    void visitDocumentType(const document::select::DocType& expr) override;
+    void visitNotBranch(const document::select::Not& expr) override;
+    void visitOrBranch(const document::select::Or& expr) override;
+    void visitArithmeticValueNode(const document::select::ArithmeticValueNode& expr) override;
+    void visitFunctionValueNode(const document::select::FunctionValueNode& expr) override;
+    void visitIdValueNode(const document::select::IdValueNode& expr) override;
+    void visitFieldValueNode(const document::select::FieldValueNode& expr) override;
     void visitFloatValueNode(const document::select::FloatValueNode& expr) override;
     void visitVariableValueNode(const document::select::VariableValueNode& expr) override;
     void invertNode();
-    const document::select::Operator &getOperator(const document::select::Operator &op, bool disable_operator_inversion);
-    void addNodeCount(const SelectPruner &rhs);
+    const document::select::Operator& getOperator(const document::select::Operator& op,
+                                                  bool                              disable_operator_inversion);
+    void addNodeCount(const SelectPruner& rhs);
     void setInvalidVal();
     void setInvalidConst();
     void setTernaryConst(bool val);
@@ -93,7 +88,7 @@ private:
     void resolveTernaryConst(bool wantInverted);
     [[nodiscard]] bool isInvalidVal() const;
     [[nodiscard]] bool isNullVal() const;
-    void swap(SelectPruner &rhs);
+    void swap(SelectPruner& rhs);
 };
 
 } // namespace proton

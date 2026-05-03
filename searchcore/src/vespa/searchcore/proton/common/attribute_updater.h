@@ -11,14 +11,14 @@ namespace search {
 class PredicateAttribute;
 
 namespace tensor {
-    class PrepareResult;
-    class TensorAttribute;
-}
+class PrepareResult;
+class TensorAttribute;
+} // namespace tensor
 namespace attribute {
 class ArrayBoolAttribute;
 class ReferenceAttribute;
 class SingleRawAttribute;
-}
+} // namespace attribute
 
 VESPA_DEFINE_EXCEPTION(UpdateException, vespalib::Exception);
 
@@ -32,38 +32,36 @@ class AttributeUpdater {
     using ValueUpdate = document::ValueUpdate;
 
 public:
-    static void handleUpdate(AttributeVector & vec, uint32_t lid, const FieldUpdate & upd);
-    static void handleValue(AttributeVector & vec, uint32_t lid, const FieldValue & val);
+    static void handleUpdate(AttributeVector& vec, uint32_t lid, const FieldUpdate& upd);
+    static void handleValue(AttributeVector& vec, uint32_t lid, const FieldValue& val);
 
-    static std::unique_ptr<tensor::PrepareResult> prepare_set_value(AttributeVector& attr, uint32_t docid, const FieldValue& val);
+    static std::unique_ptr<tensor::PrepareResult> prepare_set_value(AttributeVector& attr, uint32_t docid,
+                                                                    const FieldValue& val);
     static void complete_set_value(AttributeVector& attr, uint32_t docid, const FieldValue& val,
                                    std::unique_ptr<tensor::PrepareResult> prepare_result);
 
 private:
-    template <typename V>
-    static void handleUpdate(V & vec, uint32_t lid, const ValueUpdate & upd);
+    template <typename V> static void handleUpdate(V& vec, uint32_t lid, const ValueUpdate& upd);
     template <typename V, typename Accessor>
-    static void handleValueT(V & vec, Accessor ac, uint32_t lid, const FieldValue & val);
+    static void handleValueT(V& vec, Accessor ac, uint32_t lid, const FieldValue& val);
     template <typename V, typename Accessor>
-    static void handleUpdateT(V & vec, Accessor ac, uint32_t lid, const ValueUpdate & val);
-    template <typename V, typename Accessor>
-    static void appendValue(V & vec, uint32_t lid, Accessor & ac);
-    static void appendValue(IntegerAttribute & vec, uint32_t lid, const FieldValue & val, int weight=1);
-    static void removeValue(IntegerAttribute & vec, uint32_t lid, const FieldValue & val);
-    static void updateValue(IntegerAttribute & vec, uint32_t lid, const FieldValue & val);
-    static void appendValue(FloatingPointAttribute & vec, uint32_t lid, const FieldValue & val, int weight=1);
-    static void removeValue(FloatingPointAttribute & vec, uint32_t lid, const FieldValue & val);
-    static void updateValue(FloatingPointAttribute & vec, uint32_t lid, const FieldValue & val);
-    static void appendValue(StringAttribute & vec, uint32_t lid, const FieldValue & val, int weight=1);
-    static void removeValue(StringAttribute & vec, uint32_t lid, const FieldValue & val);
-    static void updateValue(StringAttribute & vec, uint32_t lid, const FieldValue & val);
-    static void updateValue(PredicateAttribute & vec, uint32_t lid, const FieldValue & val);
-    static void updateValue(tensor::TensorAttribute & vec, uint32_t lid, const FieldValue & val);
-    static void updateValue(attribute::ReferenceAttribute & vec, uint32_t lid, const FieldValue & val);
+    static void handleUpdateT(V& vec, Accessor ac, uint32_t lid, const ValueUpdate& val);
+    template <typename V, typename Accessor> static void appendValue(V& vec, uint32_t lid, Accessor& ac);
+    static void appendValue(IntegerAttribute& vec, uint32_t lid, const FieldValue& val, int weight = 1);
+    static void removeValue(IntegerAttribute& vec, uint32_t lid, const FieldValue& val);
+    static void updateValue(IntegerAttribute& vec, uint32_t lid, const FieldValue& val);
+    static void appendValue(FloatingPointAttribute& vec, uint32_t lid, const FieldValue& val, int weight = 1);
+    static void removeValue(FloatingPointAttribute& vec, uint32_t lid, const FieldValue& val);
+    static void updateValue(FloatingPointAttribute& vec, uint32_t lid, const FieldValue& val);
+    static void appendValue(StringAttribute& vec, uint32_t lid, const FieldValue& val, int weight = 1);
+    static void removeValue(StringAttribute& vec, uint32_t lid, const FieldValue& val);
+    static void updateValue(StringAttribute& vec, uint32_t lid, const FieldValue& val);
+    static void updateValue(PredicateAttribute& vec, uint32_t lid, const FieldValue& val);
+    static void updateValue(tensor::TensorAttribute& vec, uint32_t lid, const FieldValue& val);
+    static void updateValue(attribute::ReferenceAttribute& vec, uint32_t lid, const FieldValue& val);
     static void updateValue(attribute::SingleRawAttribute& vec, uint32_t lid, const FieldValue& val);
     static void updateValue(attribute::ArrayBoolAttribute& vec, uint32_t lid, const FieldValue& val);
     static void appendValue(attribute::ArrayBoolAttribute& vec, uint32_t lid, const FieldValue& val);
 };
 
-}
-
+} // namespace search

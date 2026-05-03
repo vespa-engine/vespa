@@ -2,9 +2,12 @@
 #pragma once
 
 #include <vespa/vespalib/util/idestructorcallback.h>
+
 #include <atomic>
 
-namespace storage::spi { class Result; }
+namespace storage::spi {
+class Result;
+}
 namespace proton {
 
 using ResultUP = std::unique_ptr<storage::spi::Result>;
@@ -22,7 +25,6 @@ public:
     virtual void send(ResultUP result, bool documentWasFound) = 0;
 };
 
-
 /*
  * Interface class for feed token state.
  */
@@ -31,9 +33,8 @@ public:
     virtual bool is_replay() const noexcept = 0;
     virtual void fail() = 0;
     virtual void setResult(ResultUP result, bool documentWasFound) = 0;
-    virtual const storage::spi::Result &getResult() = 0;
+    virtual const storage::spi::Result& getResult() = 0;
 };
-
 
 /**
  * This holds the result of the feed operation until it is either failed or acked.
@@ -41,21 +42,23 @@ public:
  */
 class State : public IState {
 public:
-    State(const State &) = delete;
-    State & operator = (const State &) = delete;
-    State(ITransport & transport);
+    State(const State&) = delete;
+    State& operator=(const State&) = delete;
+    State(ITransport& transport);
     ~State() override;
     bool is_replay() const noexcept override;
     void fail() override;
     void setResult(ResultUP result, bool documentWasFound) override;
-    const storage::spi::Result &getResult() override { return *_result; }
+    const storage::spi::Result& getResult() override { return *_result; }
+
 protected:
     void ack();
+
 private:
-    ITransport           &_transport;
-    ResultUP              _result;
-    bool                  _documentWasFound;
-    std::atomic<bool>     _alreadySent;
+    ITransport&       _transport;
+    ResultUP          _result;
+    bool              _documentWasFound;
+    std::atomic<bool> _alreadySent;
 };
 
 /**
@@ -64,28 +67,23 @@ private:
  */
 class OwningState : public State {
 public:
-    OwningState(std::shared_ptr<ITransport> transport)
-        : State(*transport),
-          _owned(std::move(transport))
-    {}
+    OwningState(std::shared_ptr<ITransport> transport) : State(*transport), _owned(std::move(transport)) {}
     ~OwningState() override;
+
 private:
     std::shared_ptr<ITransport> _owned;
 };
 
-inline std::shared_ptr<State>
-make(ITransport & latch) {
+inline std::shared_ptr<State> make(ITransport& latch) {
     return std::make_shared<State>(latch);
 }
 
-inline std::shared_ptr<State>
-make(std::shared_ptr<ITransport> transport) {
+inline std::shared_ptr<State> make(std::shared_ptr<ITransport> transport) {
     return std::make_shared<OwningState>(std::move(transport));
 }
 
-}
+} // namespace feedtoken
 
 using FeedToken = std::shared_ptr<feedtoken::IState>;
 
 } // namespace proton
-

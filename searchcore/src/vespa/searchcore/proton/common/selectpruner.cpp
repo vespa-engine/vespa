@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "selectpruner.h"
+
 #include "select_utils.h"
+
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/i_documenttype_repo.h>
@@ -11,106 +13,91 @@
 #include <vespa/document/select/doctype.h>
 #include <vespa/document/select/invalidconstant.h>
 #include <vespa/document/select/valuenodes.h>
-#include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
+#include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 
-using document::select::And;
-using document::select::Compare;
-using document::select::Constant;
-using document::select::DocType;
-using document::select::Not;
-using document::select::Or;
-using document::select::ArithmeticValueNode;
-using document::select::FunctionValueNode;
-using document::select::IdValueNode;
-using document::select::FieldValueNode;
-using document::select::FloatValueNode;
-using document::select::VariableValueNode;
-using document::select::IntegerValueNode;
-using document::select::InvalidConstant;
-using document::select::CurrentTimeValueNode;
-using document::select::StringValueNode;
-using document::select::NullValueNode;
-using document::select::InvalidValueNode;
-using document::select::Node;
-using document::select::Result;
-using document::select::ResultSet;
-using document::select::ResultList;
-using document::select::FunctionOperator;
-using document::select::Operator;
-using document::select::InvalidValue;
-using document::select::ValueNode;
-using document::FieldPath;
 using document::Field;
 using document::FieldNotFoundException;
+using document::FieldPath;
+using document::select::And;
+using document::select::ArithmeticValueNode;
+using document::select::Compare;
+using document::select::Constant;
+using document::select::CurrentTimeValueNode;
+using document::select::DocType;
+using document::select::FieldValueNode;
+using document::select::FloatValueNode;
+using document::select::FunctionOperator;
+using document::select::FunctionValueNode;
+using document::select::IdValueNode;
+using document::select::IntegerValueNode;
+using document::select::InvalidConstant;
+using document::select::InvalidValue;
+using document::select::InvalidValueNode;
+using document::select::Node;
+using document::select::Not;
+using document::select::NullValueNode;
+using document::select::Operator;
+using document::select::Or;
+using document::select::Result;
+using document::select::ResultList;
+using document::select::ResultSet;
+using document::select::StringValueNode;
+using document::select::ValueNode;
+using document::select::VariableValueNode;
 using search::AttributeGuard;
 using search::attribute::CollectionType;
 
 namespace proton {
 
-SelectPrunerBase::SelectPrunerBase(const std::string &docType,
-                                   const search::IAttributeManager *amgr,
-                                   const document::Document &emptyDoc,
-                                   const document::IDocumentTypeRepo &repo,
-                                   bool hasFields,
-                                   bool has_document_ids,
-                                   bool hasDocuments)
+SelectPrunerBase::SelectPrunerBase(const std::string& docType, const search::IAttributeManager* amgr,
+                                   const document::Document& emptyDoc, const document::IDocumentTypeRepo& repo,
+                                   bool hasFields, bool has_document_ids, bool hasDocuments)
     : _docType(docType),
       _amgr(amgr),
       _emptyDoc(emptyDoc),
       _repo(repo),
       _hasFields(hasFields),
       _has_document_ids(has_document_ids),
-      _hasDocuments(hasDocuments)
-{
+      _hasDocuments(hasDocuments) {
 }
 
-SelectPrunerBase::SelectPrunerBase(const SelectPrunerBase &rhs)
+SelectPrunerBase::SelectPrunerBase(const SelectPrunerBase& rhs)
     : _docType(rhs._docType),
       _amgr(rhs._amgr),
       _emptyDoc(rhs._emptyDoc),
       _repo(rhs._repo),
       _hasFields(rhs._hasFields),
       _has_document_ids(rhs._has_document_ids),
-      _hasDocuments(rhs._hasDocuments)
-{
+      _hasDocuments(rhs._hasDocuments) {
 }
 
-SelectPruner::SelectPruner(const std::string &docType,
-                           const search::IAttributeManager *amgr,
-                           const document::Document &emptyDoc,
-                           const document::IDocumentTypeRepo &repo,
-                           bool hasFields,
-                           bool has_document_ids,
-                           bool hasDocuments)
+SelectPruner::SelectPruner(const std::string& docType, const search::IAttributeManager* amgr,
+                           const document::Document& emptyDoc, const document::IDocumentTypeRepo& repo,
+                           bool hasFields, bool has_document_ids, bool hasDocuments)
     : CloningVisitor(),
       SelectPrunerBase(docType, amgr, emptyDoc, repo, hasFields, has_document_ids, hasDocuments),
       _inverted(false),
       _wantInverted(false),
       _disable_operator_inversion(false),
       _attrFieldNodes(0u),
-      _document_id_nodes(0u)
-{
+      _document_id_nodes(0u) {
 }
 
-SelectPruner::SelectPruner(const SelectPruner *rhs)
+SelectPruner::SelectPruner(const SelectPruner* rhs)
     : CloningVisitor(),
       SelectPrunerBase(*rhs),
       _inverted(false),
       _wantInverted(false),
       _disable_operator_inversion(false),
       _attrFieldNodes(0u),
-      _document_id_nodes(0u)
-{
+      _document_id_nodes(0u) {
 }
-
 
 SelectPruner::~SelectPruner() = default;
 
-void
-SelectPruner::visitAndBranch(const And &expr)
-{
+void SelectPruner::visitAndBranch(const And& expr) {
     SelectPruner lhs(this);
     SelectPruner rhs(this);
     if (_wantInverted) {
@@ -120,7 +107,8 @@ SelectPruner::visitAndBranch(const And &expr)
     expr.getLeft().visit(lhs);
     expr.getRight().visit(rhs);
     if (lhs.getFieldNodes() - lhs.getAttrFieldNodes() - lhs.get_document_id_nodes() >
-        rhs.getFieldNodes() - rhs.getAttrFieldNodes() - rhs.get_document_id_nodes()) {
+        rhs.getFieldNodes() - rhs.getAttrFieldNodes() - rhs.get_document_id_nodes())
+    {
         lhs.swap(rhs);
     }
     ResultSet lhsSet(lhs._resultSet);
@@ -195,10 +183,7 @@ SelectPruner::visitAndBranch(const And &expr)
     addNodeCount(rhs);
 }
 
-
-void
-SelectPruner::visitComparison(const Compare &expr)
-{
+void SelectPruner::visitComparison(const Compare& expr) {
     SelectPruner lhs(this);
     SelectPruner rhs(this);
     expr.getLeft().visit(lhs);
@@ -210,13 +195,11 @@ SelectPruner::visitComparison(const Compare &expr)
         setInvalidConst();
         return;
     }
-    bool lhsNullVal = lhs.isNullVal();
-    bool rhsNullVal = rhs.isNullVal();
-    bool disable_operator_inversion = lhs._disable_operator_inversion || rhs._disable_operator_inversion;
-    const Operator &op(getOperator(expr.getOperator(), disable_operator_inversion));
-    _node = std::make_unique<Compare>(std::move(lhs._valueNode),
-                                      op,
-                                      std::move(rhs._valueNode),
+    bool            lhsNullVal = lhs.isNullVal();
+    bool            rhsNullVal = rhs.isNullVal();
+    bool            disable_operator_inversion = lhs._disable_operator_inversion || rhs._disable_operator_inversion;
+    const Operator& op(getOperator(expr.getOperator(), disable_operator_inversion));
+    _node = std::make_unique<Compare>(std::move(lhs._valueNode), op, std::move(rhs._valueNode),
                                       expr.getBucketIdFactory());
     _priority = ComparePriority;
     if (_constVal && (lhsNullVal || rhsNullVal)) {
@@ -232,20 +215,16 @@ SelectPruner::visitComparison(const Compare &expr)
         if (isInvalid()) {
             _resultSet.add(Result::Invalid);
         } else {
-            _resultSet.add(isTrue() != _inverted ?
-                           Result::True : Result::False);
+            _resultSet.add(isTrue() != _inverted ? Result::True : Result::False);
         }
         return;
     }
-    _resultSet.fill();  // should be less if const
+    _resultSet.fill(); // should be less if const
     addNodeCount(lhs);
     addNodeCount(rhs);
 }
 
-
-void
-SelectPruner::visitDocumentType(const DocType &expr)
-{
+void SelectPruner::visitDocumentType(const DocType& expr) {
     _constVal = true;
     bool res = expr.contains(_emptyDoc) == Result::True;
     if (_wantInverted) {
@@ -257,20 +236,14 @@ SelectPruner::visitDocumentType(const DocType &expr)
     _priority = DocumentTypePriority;
 }
 
-
-void
-SelectPruner::visitNotBranch(const Not &expr)
-{
+void SelectPruner::visitNotBranch(const Not& expr) {
     _wantInverted = !_wantInverted;
     expr.getChild().visit(*this);
     _inverted = !_inverted;
     _wantInverted = !_wantInverted;
 }
 
-
-void
-SelectPruner::visitOrBranch(const Or &expr)
-{
+void SelectPruner::visitOrBranch(const Or& expr) {
     SelectPruner lhs(this);
     SelectPruner rhs(this);
     if (_wantInverted) {
@@ -279,8 +252,7 @@ SelectPruner::visitOrBranch(const Or &expr)
     }
     expr.getLeft().visit(lhs);
     expr.getRight().visit(rhs);
-    if (lhs.getFieldNodes() - lhs.getAttrFieldNodes() >
-        rhs.getFieldNodes() - rhs.getAttrFieldNodes()) {
+    if (lhs.getFieldNodes() - lhs.getAttrFieldNodes() > rhs.getFieldNodes() - rhs.getAttrFieldNodes()) {
         lhs.swap(rhs);
     }
     ResultSet lhsSet(lhs._resultSet);
@@ -355,10 +327,7 @@ SelectPruner::visitOrBranch(const Or &expr)
     addNodeCount(rhs);
 }
 
-
-void
-SelectPruner::visitArithmeticValueNode(const ArithmeticValueNode &expr)
-{
+void SelectPruner::visitArithmeticValueNode(const ArithmeticValueNode& expr) {
     SelectPruner lhs(this);
     SelectPruner rhs(this);
     expr.getLeft().visit(lhs);
@@ -367,18 +336,14 @@ SelectPruner::visitArithmeticValueNode(const ArithmeticValueNode &expr)
         setInvalidVal();
         return;
     }
-    setArithmeticValueNode(expr,
-                           std::move(lhs._valueNode), lhs._priority, lhs._constVal,
-                           std::move(rhs._valueNode), rhs._priority, rhs._constVal);
+    setArithmeticValueNode(expr, std::move(lhs._valueNode), lhs._priority, lhs._constVal, std::move(rhs._valueNode),
+                           rhs._priority, rhs._constVal);
     addNodeCount(lhs);
     addNodeCount(rhs);
     _disable_operator_inversion = lhs._disable_operator_inversion || rhs._disable_operator_inversion;
 }
 
-
-void
-SelectPruner::visitFunctionValueNode(const FunctionValueNode &expr)
-{
+void SelectPruner::visitFunctionValueNode(const FunctionValueNode& expr) {
     int priority = FuncPriority;
     expr.getChild().visit(*this);
     if (isInvalidVal()) {
@@ -390,10 +355,7 @@ SelectPruner::visitFunctionValueNode(const FunctionValueNode &expr)
     _valueNode = std::make_unique<FunctionValueNode>(expr.getFunctionName(), std::move(child));
 }
 
-
-void
-SelectPruner::visitIdValueNode(const IdValueNode &expr)
-{
+void SelectPruner::visitIdValueNode(const IdValueNode& expr) {
     if (!_hasDocuments && !_has_document_ids) {
         setInvalidVal();
         return;
@@ -404,18 +366,16 @@ SelectPruner::visitIdValueNode(const IdValueNode &expr)
     CloningVisitor::visitIdValueNode(expr);
 }
 
-void
-SelectPruner::visitFieldValueNode(const FieldValueNode &expr)
-{
+void SelectPruner::visitFieldValueNode(const FieldValueNode& expr) {
     if (_docType != expr.getDocType()) {
         setInvalidVal();
         return;
     }
-    const document::DocumentType *docType = _repo.getDocumentType(_docType);
-    bool complex = false; // Cannot handle attribute if complex expression
-    std::string name = SelectUtils::extractFieldName(expr, complex);
-    const bool is_imported = docType->has_imported_field_name(name);
-    bool complex_field_type = true;
+    const document::DocumentType* docType = _repo.getDocumentType(_docType);
+    bool                          complex = false; // Cannot handle attribute if complex expression
+    std::string                   name = SelectUtils::extractFieldName(expr, complex);
+    const bool                    is_imported = docType->has_imported_field_name(name);
+    bool                          complex_field_type = true;
     if (complex || !is_imported) {
         try {
             auto fp = std::make_unique<Field>(docType->getField(name));
@@ -425,20 +385,21 @@ SelectPruner::visitFieldValueNode(const FieldValueNode &expr)
             }
             auto& dt = fp->getDataType();
             if ((dt.isNumeric() && dt != *document::DataType::FLOAT && dt != *document::DataType::DOUBLE) ||
-                dt == *document::DataType::STRING) {
+                dt == *document::DataType::STRING)
+            {
                 complex_field_type = false;
             }
-        } catch (FieldNotFoundException &) {
+        } catch (FieldNotFoundException&) {
             setInvalidVal();
             return;
         }
         try {
             FieldPath path;
             docType->buildFieldPath(path, expr.getFieldName());
-        } catch (vespalib::IllegalArgumentException &) {
+        } catch (vespalib::IllegalArgumentException&) {
             setInvalidVal();
             return;
-        } catch (FieldNotFoundException &) {
+        } catch (FieldNotFoundException&) {
             setInvalidVal();
             return;
         }
@@ -457,7 +418,7 @@ SelectPruner::visitFieldValueNode(const FieldValueNode &expr)
         set_null_value_node();
         return;
     }
-    
+
     _valueNode = expr.clone(); // Replace with different node type for attrs ?
     _valueNode->clearParentheses();
     bool svAttr = false;
@@ -488,23 +449,19 @@ SelectPruner::visitFieldValueNode(const FieldValueNode &expr)
     _priority = FieldValuePriority;
 }
 
-void
-SelectPruner::visitFloatValueNode(const document::select::FloatValueNode& expr) {
+void SelectPruner::visitFloatValueNode(const document::select::FloatValueNode& expr) {
     CloningVisitor::visitFloatValueNode(expr);
     // Float value. Operator inversion does not work with infinity or nan
     _disable_operator_inversion = true;
 }
 
-void
-SelectPruner::visitVariableValueNode(const document::select::VariableValueNode& expr) {
+void SelectPruner::visitVariableValueNode(const document::select::VariableValueNode& expr) {
     CloningVisitor::visitVariableValueNode(expr);
     // Float value. Operator inversion does not work with infinity or nan
     _disable_operator_inversion = true;
 }
 
-void
-SelectPruner::invertNode()
-{
+void SelectPruner::invertNode() {
     _resultSet = _resultSet.calcNot();
     if (isInvalid()) {
         _inverted = !_inverted;
@@ -519,10 +476,7 @@ SelectPruner::invertNode()
     _inverted = !_inverted;
 }
 
-
-const Operator &
-SelectPruner::getOperator(const Operator &op, bool disable_operator_inversion)
-{
+const Operator& SelectPruner::getOperator(const Operator& op, bool disable_operator_inversion) {
     if (!_wantInverted || disable_operator_inversion) {
         return op;
     }
@@ -553,57 +507,42 @@ SelectPruner::getOperator(const Operator &op, bool disable_operator_inversion)
     return op;
 }
 
-
-void
-SelectPruner::addNodeCount(const SelectPruner &rhs)
-{
+void SelectPruner::addNodeCount(const SelectPruner& rhs) {
     _fieldNodes += rhs._fieldNodes;
     _attrFieldNodes += rhs._attrFieldNodes;
     _document_id_nodes += rhs._document_id_nodes;
 }
 
-
-void
-SelectPruner::setInvalidVal()
-{
+void SelectPruner::setInvalidVal() {
     _constVal = true;
     _priority = InvalidValPriority;
     _valueNode = std::make_unique<InvalidValueNode>("invalidval");
 }
 
-
-void
-SelectPruner::setInvalidConst()
-{
+void SelectPruner::setInvalidConst() {
     _constVal = true;
     _priority = InvalidConstPriority;
     _node = std::make_unique<InvalidConstant>("invalid");
 }
 
-void
-SelectPruner::set_null_value_node()
-{
+void SelectPruner::set_null_value_node() {
     _constVal = true;
     _valueNode = std::make_unique<NullValueNode>();
     _priority = NullValPriority;
 }
 
-void
-SelectPruner::setTernaryConst(bool val)
-{
+void SelectPruner::setTernaryConst(bool val) {
     _constVal = true;
     _priority = ConstPriority;
     _node = std::make_unique<Constant>(val);
 }
 
-void
-SelectPruner::resolveTernaryConst(bool wantInverted)
-{
+void SelectPruner::resolveTernaryConst(bool wantInverted) {
     if (!_constVal) {
         return;
     }
-    const Result &res1(_node->contains(_emptyDoc).combineResults());
-    const Result &res = _inverted == wantInverted ? res1 : !res1;
+    const Result& res1(_node->contains(_emptyDoc).combineResults());
+    const Result& res = _inverted == wantInverted ? res1 : !res1;
     if (res == Result::Invalid) {
         setInvalidConst();
     } else {
@@ -615,103 +554,79 @@ SelectPruner::resolveTernaryConst(bool wantInverted)
     }
 }
 
-
-bool
-SelectPruner::isFalse() const
-{
+bool SelectPruner::isFalse() const {
     if (!_constVal) {
         return false;
     }
-    Constant *c(dynamic_cast<Constant *>(_node.get()));
+    Constant* c(dynamic_cast<Constant*>(_node.get()));
     if (c != nullptr) {
         return _inverted == c->getConstantValue();
     }
-    InvalidConstant *ic(dynamic_cast<InvalidConstant *>(_node.get()));
+    InvalidConstant* ic(dynamic_cast<InvalidConstant*>(_node.get()));
     if (ic != nullptr) {
         return false;
     }
-    const Result &res(_node->contains(_emptyDoc).combineResults());
+    const Result& res(_node->contains(_emptyDoc).combineResults());
     return _inverted ? res == Result::True : res == Result::False;
 }
 
-
-bool
-SelectPruner::isTrue() const
-{
+bool SelectPruner::isTrue() const {
     if (!_constVal) {
         return false;
     }
-    Constant *c(dynamic_cast<Constant *>(_node.get()));
+    Constant* c(dynamic_cast<Constant*>(_node.get()));
     if (c != nullptr) {
         return _inverted != c->getConstantValue();
     }
-    InvalidConstant *ic(dynamic_cast<InvalidConstant *>(_node.get()));
+    InvalidConstant* ic(dynamic_cast<InvalidConstant*>(_node.get()));
     if (ic != nullptr) {
         return false;
     }
-    const Result &res(_node->contains(_emptyDoc).combineResults());
+    const Result& res(_node->contains(_emptyDoc).combineResults());
     return _inverted ? res == Result::False : res == Result::True;
 }
 
-
-bool
-SelectPruner::isInvalid() const
-{
+bool SelectPruner::isInvalid() const {
     if (!_constVal) {
         return false;
     }
-    Constant *c(dynamic_cast<Constant *>(_node.get()));
+    Constant* c(dynamic_cast<Constant*>(_node.get()));
     if (c != nullptr) {
         return false;
     }
-    InvalidConstant *ic(dynamic_cast<InvalidConstant *>(_node.get()));
+    InvalidConstant* ic(dynamic_cast<InvalidConstant*>(_node.get()));
     if (ic != nullptr) {
         return true;
     }
-    const Result &res(_node->contains(_emptyDoc).combineResults());
+    const Result& res(_node->contains(_emptyDoc).combineResults());
     return res == Result::Invalid;
 }
 
-
-bool
-SelectPruner::isInvalidVal() const
-{
+bool SelectPruner::isInvalidVal() const {
     if (!_constVal) {
         return false;
     }
-    InvalidValueNode *iv(dynamic_cast<InvalidValueNode *>(_valueNode.get()));
+    InvalidValueNode* iv(dynamic_cast<InvalidValueNode*>(_valueNode.get()));
     return iv != nullptr;
 }
 
-
-bool
-SelectPruner::isNullVal() const
-{
+bool SelectPruner::isNullVal() const {
     if (!_constVal) {
         return false;
     }
-    NullValueNode *nv(dynamic_cast<NullValueNode *>(_valueNode.get()));
+    NullValueNode* nv(dynamic_cast<NullValueNode*>(_valueNode.get()));
     return nv != nullptr;
 }
 
-
-bool
-SelectPruner::isConst() const
-{
+bool SelectPruner::isConst() const {
     return _constVal;
 }
 
-
-void
-SelectPruner::trace(std::ostream &t)
-{
+void SelectPruner::trace(std::ostream& t) {
     _node->trace(_emptyDoc, t);
 }
 
-
-void
-SelectPruner::process(const Node &node)
-{
+void SelectPruner::process(const Node& node) {
     node.visit(*this);
     resolveTernaryConst(false);
     if (_inverted) {
@@ -719,10 +634,7 @@ SelectPruner::process(const Node &node)
     }
 }
 
-
-void
-SelectPruner::swap(SelectPruner &rhs)
-{
+void SelectPruner::swap(SelectPruner& rhs) {
     CloningVisitor::swap(rhs);
     std::swap(_inverted, rhs._inverted);
     std::swap(_wantInverted, rhs._wantInverted);
@@ -730,6 +642,5 @@ SelectPruner::swap(SelectPruner &rhs)
     std::swap(_attrFieldNodes, rhs._attrFieldNodes);
     std::swap(_document_id_nodes, rhs._document_id_nodes);
 }
-
 
 } // namespace proton

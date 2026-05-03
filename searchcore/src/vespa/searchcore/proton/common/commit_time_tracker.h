@@ -8,13 +8,13 @@ namespace proton {
 /**
  * Class used to track when commit is needed based on wanted visibility delay.
  */
-class CommitTimeTracker
-{
+class CommitTimeTracker {
 private:
-    vespalib::duration             _visibilityDelay;
-    mutable vespalib::steady_time  _nextCommit;
+    vespalib::duration            _visibilityDelay;
+    mutable vespalib::steady_time _nextCommit;
 
     bool hasVisibilityDelay() const { return _visibilityDelay != vespalib::duration::zero(); }
+
 public:
     CommitTimeTracker(vespalib::duration visibilityDelay);
     bool needCommit() const;
