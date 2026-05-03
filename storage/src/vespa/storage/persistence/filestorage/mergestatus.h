@@ -2,35 +2,35 @@
 #pragma once
 
 #include <vespa/persistence/spi/context.h>
+#include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/storageapi/messageapi/storagereply.h>
-#include <vespa/storageapi/message/bucket.h>
-#include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/storageframework/generic/clock/time.h>
+#include <vespa/storageframework/generic/clock/timer.h>
 
-#include <vector>
 #include <deque>
 #include <future>
 #include <memory>
 #include <optional>
+#include <vector>
 
 namespace storage {
 
 class MergeStatus : public document::Printable {
 public:
-    std::shared_ptr<api::StorageReply> reply;
-    std::vector<api::MergeBucketCommand::Node> full_node_list;
-    std::vector<api::MergeBucketCommand::Node> nodeList;
-    framework::MicroSecTime maxTimestamp;
+    std::shared_ptr<api::StorageReply>           reply;
+    std::vector<api::MergeBucketCommand::Node>   full_node_list;
+    std::vector<api::MergeBucketCommand::Node>   nodeList;
+    framework::MicroSecTime                      maxTimestamp;
     std::deque<api::GetBucketDiffCommand::Entry> diff;
-    api::StorageMessage::Id pendingId;
-    std::shared_ptr<api::GetBucketDiffReply> pendingGetDiff;
-    std::shared_ptr<api::ApplyBucketDiffReply> pendingApplyDiff;
-    vespalib::duration timeout;
-    framework::MilliSecTimer startTime;
-    std::optional<std::future<std::string>> delayed_error;
-    spi::Context context;
- 	
+    api::StorageMessage::Id                      pendingId;
+    std::shared_ptr<api::GetBucketDiffReply>     pendingGetDiff;
+    std::shared_ptr<api::ApplyBucketDiffReply>   pendingApplyDiff;
+    vespalib::duration                           timeout;
+    framework::MilliSecTimer                     startTime;
+    std::optional<std::future<std::string>>      delayed_error;
+    spi::Context                                 context;
+
     MergeStatus(const framework::Clock&, api::StorageMessage::Priority, uint32_t traceLevel);
     ~MergeStatus() override;
 
@@ -41,12 +41,12 @@ public:
      *   or the two diffs had entries with mismatching hasmasks, which
      *   indicates that bucket contents have changed during the merge.
      */
-    bool removeFromDiff(const std::vector<api::ApplyBucketDiffCommand::Entry>& part, uint16_t hasMask, const std::vector<api::MergeBucketCommand::Node> &nodes);
+    bool removeFromDiff(const std::vector<api::ApplyBucketDiffCommand::Entry>& part, uint16_t hasMask,
+                        const std::vector<api::MergeBucketCommand::Node>& nodes);
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     bool isFirstNode() const { return static_cast<bool>(reply); }
     void set_delayed_error(std::future<std::string>&& delayed_error_in);
-    void check_delayed_error(api::ReturnCode &return_code);
+    void check_delayed_error(api::ReturnCode& return_code);
 };
 
-} // storage
-
+} // namespace storage

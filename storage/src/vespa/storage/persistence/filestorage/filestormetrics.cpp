@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "filestormetrics.h"
+
 #include <vespa/metrics/summetric.hpp>
+
 #include <sstream>
 
 namespace storage {
@@ -12,140 +14,112 @@ FileStorThreadMetrics::Op::Op(const std::string& id, const std::string& name, Me
       _name(name),
       count("count", {{"yamasdefault"}}, "Number of requests processed.", this),
       latency("latency", {{"yamasdefault"}}, "Latency of successful requests.", this),
-      failed("failed", {{"yamasdefault"}}, "Number of failed requests.", this)
-{ }
+      failed("failed", {{"yamasdefault"}}, "Number of failed requests.", this) {
+}
 
 FileStorThreadMetrics::Op::~Op() = default;
 
-MetricSet *
-FileStorThreadMetrics::Op::clone(std::vector<Metric::UP>& ownerList,
-                                 CopyType copyType,
-                                 MetricSet* owner,
-                                 bool includeUnused) const
-{
+MetricSet* FileStorThreadMetrics::Op::clone(std::vector<Metric::UP>& ownerList, CopyType copyType, MetricSet* owner,
+                                            bool includeUnused) const {
     if (copyType == INACTIVE) {
         return MetricSet::clone(ownerList, INACTIVE, owner, includeUnused);
     }
-    return (Op*) (new Op(getName(), _name, owner))->assignValues(*this);
+    return (Op*)(new Op(getName(), _name, owner))->assignValues(*this);
 }
 
 template <typename BaseOp>
-FileStorThreadMetrics::OpWithRequestSize<BaseOp>::OpWithRequestSize(const std::string& id, const std::string& name, MetricSet* owner)
-        : BaseOp(id, name, owner),
-          request_size("request_size", {}, "Size of requests, in bytes", this)
-{
+FileStorThreadMetrics::OpWithRequestSize<BaseOp>::OpWithRequestSize(const std::string& id, const std::string& name,
+                                                                    MetricSet* owner)
+    : BaseOp(id, name, owner), request_size("request_size", {}, "Size of requests, in bytes", this) {
 }
 
-template <typename BaseOp>
-FileStorThreadMetrics::OpWithRequestSize<BaseOp>::~OpWithRequestSize() = default;
+template <typename BaseOp> FileStorThreadMetrics::OpWithRequestSize<BaseOp>::~OpWithRequestSize() = default;
 
 // FIXME this has very non-intuitive semantics, ending up with copy&paste patterns
 template <typename BaseOp>
-MetricSet*
-FileStorThreadMetrics::OpWithRequestSize<BaseOp>::clone(
-        std::vector<Metric::UP>& ownerList,
-        CopyType copyType,
-        MetricSet* owner,
-        bool includeUnused) const
-{
+MetricSet* FileStorThreadMetrics::OpWithRequestSize<BaseOp>::clone(std::vector<Metric::UP>& ownerList,
+                                                                   CopyType copyType, MetricSet* owner,
+                                                                   bool includeUnused) const {
     if (copyType == INACTIVE) {
         return MetricSet::clone(ownerList, INACTIVE, owner, includeUnused);
     }
-    return static_cast<OpWithRequestSize<BaseOp>*>((new OpWithRequestSize<BaseOp>(this->getName(), this->_name, owner))
-            ->assignValues(*this));
+    return static_cast<OpWithRequestSize<BaseOp>*>(
+        (new OpWithRequestSize<BaseOp>(this->getName(), this->_name, owner))->assignValues(*this));
 }
 
 template <typename BaseOp>
-FileStorThreadMetrics::OpWithTestAndSetFailed<BaseOp>::OpWithTestAndSetFailed(const std::string& id, const std::string& name, MetricSet* owner)
+FileStorThreadMetrics::OpWithTestAndSetFailed<BaseOp>::OpWithTestAndSetFailed(const std::string& id,
+                                                                              const std::string& name,
+                                                                              MetricSet*         owner)
     : BaseOp(id, name, owner),
       test_and_set_failed("test_and_set_failed", {{"yamasdefault"}},
-                           "Number of times operations were failed due to a "
-                           "test-and-set condition mismatch", this)
-{
+                          "Number of times operations were failed due to a "
+                          "test-and-set condition mismatch",
+                          this) {
 }
 
-template <typename BaseOp>
-FileStorThreadMetrics::OpWithTestAndSetFailed<BaseOp>::~OpWithTestAndSetFailed() = default;
+template <typename BaseOp> FileStorThreadMetrics::OpWithTestAndSetFailed<BaseOp>::~OpWithTestAndSetFailed() = default;
 
 // FIXME this has very non-intuitive semantics, ending up with copy&paste patterns (yet again...)
 template <typename BaseOp>
-MetricSet*
-FileStorThreadMetrics::OpWithTestAndSetFailed<BaseOp>::clone(
-        std::vector<Metric::UP>& ownerList,
-        CopyType copyType,
-        MetricSet* owner,
-        bool includeUnused) const
-{
+MetricSet* FileStorThreadMetrics::OpWithTestAndSetFailed<BaseOp>::clone(std::vector<Metric::UP>& ownerList,
+                                                                        CopyType copyType, MetricSet* owner,
+                                                                        bool includeUnused) const {
     if (copyType == INACTIVE) {
         return MetricSet::clone(ownerList, INACTIVE, owner, includeUnused);
     }
-    return static_cast<OpWithTestAndSetFailed<BaseOp>*>((new OpWithTestAndSetFailed<BaseOp>(this->getName(), this->_name, owner))
-            ->assignValues(*this));
+    return static_cast<OpWithTestAndSetFailed<BaseOp>*>(
+        (new OpWithTestAndSetFailed<BaseOp>(this->getName(), this->_name, owner))->assignValues(*this));
 }
 
-FileStorThreadMetrics::OpWithNotFound::OpWithNotFound(const std::string& id, const std::string& name, MetricSet* owner)
+FileStorThreadMetrics::OpWithNotFound::OpWithNotFound(const std::string& id, const std::string& name,
+                                                      MetricSet* owner)
     : Op(id, name, owner),
-      notFound("not_found", {},
-               "Number of requests that could not be completed due to source document not found.",
-               this)
-{ }
+      notFound("not_found", {}, "Number of requests that could not be completed due to source document not found.",
+               this) {
+}
 
 FileStorThreadMetrics::OpWithNotFound::~OpWithNotFound() = default;
 
-MetricSet *
-FileStorThreadMetrics::OpWithNotFound::clone(std::vector<Metric::UP>& ownerList,
-                                             CopyType copyType,
-                                             MetricSet* owner,
-                                             bool includeUnused) const
-{
+MetricSet* FileStorThreadMetrics::OpWithNotFound::clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
+                                                        MetricSet* owner, bool includeUnused) const {
     if (copyType == INACTIVE) {
         return MetricSet::clone(ownerList, INACTIVE, owner, includeUnused);
     }
-    return (OpWithNotFound*)
-            (new OpWithNotFound(getName(), _name, owner))
-                ->assignValues(*this);
+    return (OpWithNotFound*)(new OpWithNotFound(getName(), _name, owner))->assignValues(*this);
 }
 
 FileStorThreadMetrics::Update::Update(MetricSet* owner)
     : OpWithTestAndSetFailed("update", "Update", owner),
-      latencyRead("latency_read", {}, "Latency of the source read in the request.", this)
-{ }
+      latencyRead("latency_read", {}, "Latency of the source read in the request.", this) {
+}
 
 FileStorThreadMetrics::Update::~Update() = default;
 
-MetricSet *
-FileStorThreadMetrics::Update::clone(std::vector<Metric::UP>& ownerList,
-                                     CopyType copyType,
-                                     MetricSet* owner,
-                                     bool includeUnused) const
-{
+MetricSet* FileStorThreadMetrics::Update::clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
+                                                MetricSet* owner, bool includeUnused) const {
     if (copyType == INACTIVE) {
         return MetricSet::clone(ownerList, INACTIVE, owner, includeUnused);
     }
-    return (Update*) (new Update(owner))->assignValues(*this);
+    return (Update*)(new Update(owner))->assignValues(*this);
 }
 
 FileStorThreadMetrics::Visitor::Visitor(MetricSet* owner)
-    : Op("visit", "Visit", owner),
-      documentsPerIterate("docs", {}, "Number of entries read per iterate call", this)
-{ }
+    : Op("visit", "Visit", owner), documentsPerIterate("docs", {}, "Number of entries read per iterate call", this) {
+}
 
 FileStorThreadMetrics::Visitor::~Visitor() = default;
 
-MetricSet *
-FileStorThreadMetrics::Visitor::clone(std::vector<Metric::UP>& ownerList,
-                                      CopyType copyType,
-                                      MetricSet* owner,
-                                      bool includeUnused) const
-{
+MetricSet* FileStorThreadMetrics::Visitor::clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
+                                                 MetricSet* owner, bool includeUnused) const {
     if (copyType == INACTIVE) {
         return MetricSet::clone(ownerList, INACTIVE, owner, includeUnused);
     }
-    return (Visitor*) (new Visitor(owner))->assignValues(*this);
+    return (Visitor*)(new Visitor(owner))->assignValues(*this);
 }
 
 FileStorThreadMetrics::FileStorThreadMetrics(const std::string& name, const std::string& desc)
-    : MetricSet(name, {{"filestor"},{"partofsum"}}, desc),
+    : MetricSet(name, {{"filestor"}, {"partofsum"}}, desc),
       operations("operations", {}, "Number of operations processed.", this),
       failedOperations("failedoperations", {}, "Number of operations throwing exceptions.", this),
       put("put", "Put", this),
@@ -171,9 +145,10 @@ FileStorThreadMetrics::FileStorThreadMetrics(const std::string& name, const std:
       getBucketDiff("getbucketdiff", "Number of getbucketdiff commands that have been processed.", this),
       applyBucketDiff("applybucketdiff", "Number of applybucketdiff commands that have been processed.", this),
       getBucketDiffReply("getbucketdiffreply", {}, "Number of getbucketdiff replies that have been processed.", this),
-      applyBucketDiffReply("applybucketdiffreply", {}, "Number of applybucketdiff replies that have been processed.", this),
-      merge_handler_metrics(this)
-{ }
+      applyBucketDiffReply("applybucketdiffreply", {}, "Number of applybucketdiff replies that have been processed.",
+                           this),
+      merge_handler_metrics(this) {
+}
 
 FileStorThreadMetrics::~FileStorThreadMetrics() = default;
 
@@ -182,14 +157,16 @@ FileStorStripeMetrics::FileStorStripeMetrics(const std::string& name, const std:
       averageQueueWaitingTime("averagequeuewait", {}, "Average time an operation spends in input queue.", this),
       throttled_rpc_direct_dispatches("throttled_rpc_direct_dispatches", {},
                                       "Number of times an RPC thread could not directly dispatch an async operation "
-                                      "directly to Proton because it was disallowed by the throttle policy", this),
+                                      "directly to Proton because it was disallowed by the throttle policy",
+                                      this),
       throttled_persistence_thread_polls("throttled_persistence_thread_polls", {},
                                          "Number of times a persistence thread could not immediately dispatch a "
-                                         "queued async operation because it was disallowed by the throttle policy", this),
+                                         "queued async operation because it was disallowed by the throttle policy",
+                                         this),
       timeouts_waiting_for_throttle_token("timeouts_waiting_for_throttle_token", {},
                                           "Number of times a persistence thread timed out waiting for an available "
-                                          "throttle policy token", this)
-{
+                                          "throttle policy token",
+                                          this) {
 }
 
 FileStorStripeMetrics::~FileStorStripeMetrics() = default;
@@ -202,22 +179,23 @@ FileStorMetrics::FileStorMetrics()
       queueSize("queuesize", {}, "Size of input message queue.", this),
       pendingMerges("pendingmerge", {}, "Number of buckets currently being merged.", this),
       throttle_window_size("throttle_window_size", {}, "Current size of async operation throttler window size", this),
-      throttle_waiting_threads("throttle_waiting_threads", {}, "Number of threads waiting to acquire a throttle token", this),
+      throttle_waiting_threads("throttle_waiting_threads", {},
+                               "Number of threads waiting to acquire a throttle token", this),
       throttle_active_tokens("throttle_active_tokens", {}, "Current number of active throttle tokens", this),
       active_operations(this),
-      bucket_db_init_latency("bucket_db_init_latency", {}, "Time taken (in ms) to initialize bucket databases with "
-                                                           "information from the persistence provider", this)
-{
+      bucket_db_init_latency("bucket_db_init_latency", {},
+                             "Time taken (in ms) to initialize bucket databases with "
+                             "information from the persistence provider",
+                             this) {
     pendingMerges.unsetOnZeroValue();
 }
 
 FileStorMetrics::~FileStorMetrics() = default;
 
-void FileStorMetrics::initDiskMetrics(uint32_t numStripes, uint32_t threadsPerDisk)
-{
+void FileStorMetrics::initDiskMetrics(uint32_t numStripes, uint32_t threadsPerDisk) {
     threads.clear();
     threads.resize(threadsPerDisk);
-    for (uint32_t i=0; i<threadsPerDisk; ++i) {
+    for (uint32_t i = 0; i < threadsPerDisk; ++i) {
         std::ostringstream desc;
         std::ostringstream name;
         name << "thread" << i;
@@ -228,7 +206,7 @@ void FileStorMetrics::initDiskMetrics(uint32_t numStripes, uint32_t threadsPerDi
     }
     stripes.clear();
     stripes.resize(numStripes);
-    for (uint32_t i=0; i<numStripes; ++i) {
+    for (uint32_t i = 0; i < numStripes; ++i) {
         std::ostringstream desc;
         std::ostringstream name;
         name << "stripe" << i;
@@ -239,4 +217,4 @@ void FileStorMetrics::initDiskMetrics(uint32_t numStripes, uint32_t threadsPerDi
     }
 }
 
-}
+} // namespace storage

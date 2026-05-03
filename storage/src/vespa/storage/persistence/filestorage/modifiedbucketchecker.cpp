@@ -1,14 +1,19 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "modifiedbucketchecker.h"
+
 #include "filestormanager.h"
-#include <vespa/storageframework/generic/thread/thread.h>
-#include <vespa/persistence/spi/persistenceprovider.h>
+
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/subscription/configuri.h>
+#include <vespa/persistence/spi/persistenceprovider.h>
+#include <vespa/storageframework/generic/thread/thread.h>
+
 #include <vespa/config/helper/configfetcher.hpp>
-#include <algorithm>
+
 #include <unistd.h>
+
+#include <algorithm>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".persistence.filestor.modifiedbucketchecker");
@@ -17,24 +22,18 @@ using document::BucketSpace;
 
 namespace storage {
 
-ModifiedBucketChecker::CyclicBucketSpaceIterator::
-CyclicBucketSpaceIterator(ContentBucketSpaceRepo::BucketSpaces bucketSpaces)
-    : _bucketSpaces(std::move(bucketSpaces)),
-      _idx(0)
-{
+ModifiedBucketChecker::CyclicBucketSpaceIterator::CyclicBucketSpaceIterator(
+    ContentBucketSpaceRepo::BucketSpaces bucketSpaces)
+    : _bucketSpaces(std::move(bucketSpaces)), _idx(0) {
     std::sort(_bucketSpaces.begin(), _bucketSpaces.end());
 }
 
 ModifiedBucketChecker::BucketIdListResult::BucketIdListResult()
-    : _bucketSpace(document::BucketSpace::invalid()),
-      _buckets()
-{
+    : _bucketSpace(document::BucketSpace::invalid()), _buckets() {
 }
 
-void
-ModifiedBucketChecker::BucketIdListResult::reset(document::BucketSpace bucketSpace,
-                                                 document::bucket::BucketIdList &buckets)
-{
+void ModifiedBucketChecker::BucketIdListResult::reset(document::BucketSpace           bucketSpace,
+                                                      document::bucket::BucketIdList& buckets) {
     _bucketSpace = bucketSpace;
     assert(_buckets.empty());
     _buckets.swap(buckets);
@@ -43,10 +42,9 @@ ModifiedBucketChecker::BucketIdListResult::reset(document::BucketSpace bucketSpa
     std::reverse(_buckets.begin(), _buckets.end());
 }
 
-ModifiedBucketChecker::ModifiedBucketChecker(
-        ServiceLayerComponentRegister& compReg,
-        spi::PersistenceProvider& provider,
-        const StorServerConfig& bootstrap_config)
+ModifiedBucketChecker::ModifiedBucketChecker(ServiceLayerComponentRegister& compReg,
+                                             spi::PersistenceProvider&      provider,
+                                             const StorServerConfig&        bootstrap_config)
     : StorageLink("Modified bucket checker"),
       _provider(provider),
       _component(),
@@ -57,8 +55,7 @@ ModifiedBucketChecker::ModifiedBucketChecker(
       _rechecksNotStarted(),
       _pendingRequests(0),
       _maxPendingChunkSize(100),
-      _singleThreadMode(false)
-{
+      _singleThreadMode(false) {
     on_configure(bootstrap_config);
 
     std::ostringstream threadName;
@@ -67,34 +64,25 @@ ModifiedBucketChecker::ModifiedBucketChecker(
     _bucketSpaces = std::make_unique<CyclicBucketSpaceIterator>(_component->getBucketSpaceRepo().getBucketSpaces());
 }
 
-ModifiedBucketChecker::~ModifiedBucketChecker()
-{
+ModifiedBucketChecker::~ModifiedBucketChecker() {
     assert(!_thread);
 }
 
-void
-ModifiedBucketChecker::on_configure(const vespa::config::content::core::StorServerConfig& newConfig)
-{
+void ModifiedBucketChecker::on_configure(const vespa::config::content::core::StorServerConfig& newConfig) {
     std::lock_guard lock(_stateLock);
     if (newConfig.bucketRecheckingChunkSize < 1) {
-        throw config::InvalidConfigException(
-                "Cannot have bucket rechecking chunk size of less than 1");
+        throw config::InvalidConfigException("Cannot have bucket rechecking chunk size of less than 1");
     }
     _maxPendingChunkSize = newConfig.bucketRecheckingChunkSize;
 }
 
-
-void
-ModifiedBucketChecker::onOpen()
-{
+void ModifiedBucketChecker::onOpen() {
     if (!_singleThreadMode) {
         _thread = _component->startThread(*this, 60s, 1s);
     }
 }
 
-void
-ModifiedBucketChecker::onClose()
-{
+void ModifiedBucketChecker::onClose() {
     if (_singleThreadMode) {
         return;
     }
@@ -110,9 +98,7 @@ ModifiedBucketChecker::onClose()
     _thread.reset();
 }
 
-void
-ModifiedBucketChecker::run(framework::ThreadHandle& thread)
-{
+void ModifiedBucketChecker::run(framework::ThreadHandle& thread) {
     LOG(debug, "Started modified bucket checker thread with pid %d", getpid());
 
     while (!thread.interrupted()) {
@@ -129,9 +115,7 @@ ModifiedBucketChecker::run(framework::ThreadHandle& thread)
     }
 }
 
-bool
-ModifiedBucketChecker::onInternalReply(const std::shared_ptr<api::InternalReply>& r)
-{
+bool ModifiedBucketChecker::onInternalReply(const std::shared_ptr<api::InternalReply>& r) {
     if (r->getType() == RecheckBucketInfoReply::ID) {
         std::lock_guard guard(_stateLock);
         assert(_pendingRequests > 0);
@@ -144,13 +128,10 @@ ModifiedBucketChecker::onInternalReply(const std::shared_ptr<api::InternalReply>
     return false;
 }
 
-bool
-ModifiedBucketChecker::requestModifiedBucketsFromProvider(document::BucketSpace bucketSpace)
-{
+bool ModifiedBucketChecker::requestModifiedBucketsFromProvider(document::BucketSpace bucketSpace) {
     spi::BucketIdListResult result(_provider.getModifiedBuckets(bucketSpace));
     if (result.hasError()) {
-        LOG(debug, "getModifiedBuckets() failed: %s",
-            result.toString().c_str());
+        LOG(debug, "getModifiedBuckets() failed: %s", result.toString().c_str());
         return false;
     }
     {
@@ -160,10 +141,7 @@ ModifiedBucketChecker::requestModifiedBucketsFromProvider(document::BucketSpace 
     return true;
 }
 
-void
-ModifiedBucketChecker::nextRecheckChunk(
-        std::vector<RecheckBucketInfoCommand::SP>& commandsToSend)
-{
+void ModifiedBucketChecker::nextRecheckChunk(std::vector<RecheckBucketInfoCommand::SP>& commandsToSend) {
     assert(_pendingRequests == 0);
     assert(commandsToSend.empty());
     size_t n = std::min(_maxPendingChunkSize, _rechecksNotStarted.size());
@@ -177,10 +155,8 @@ ModifiedBucketChecker::nextRecheckChunk(
     LOG(spam, "Prepared new recheck chunk with %zu commands", n);
 }
 
-void
-ModifiedBucketChecker::dispatchAllToPersistenceQueues(
-        const std::vector<RecheckBucketInfoCommand::SP>& commandsToSend)
-{
+void ModifiedBucketChecker::dispatchAllToPersistenceQueues(
+    const std::vector<RecheckBucketInfoCommand::SP>& commandsToSend) {
     for (auto& cmd : commandsToSend) {
         // We assume sendDown doesn't throw, but that it may send a reply
         // up synchronously, so we cannot hold lock around it. We also make
@@ -190,9 +166,7 @@ ModifiedBucketChecker::dispatchAllToPersistenceQueues(
     }
 }
 
-bool
-ModifiedBucketChecker::tick()
-{
+bool ModifiedBucketChecker::tick() {
     // Do two phases of locking, as we want tick() to both fetch modified
     // buckets and send the first chunk for these in a single call. However,
     // we want getModifiedBuckets() to called outside the lock.
@@ -215,13 +189,13 @@ ModifiedBucketChecker::tick()
         std::lock_guard guard(_stateLock);
         if (moreChunksRemaining()) {
             nextRecheckChunk(commandsToSend);
-        } 
+        }
     }
     // Sending must be done outside the lock.
     if (!commandsToSend.empty()) {
         dispatchAllToPersistenceQueues(commandsToSend);
-    } 
+    }
     return true;
 }
 
-} // ns storage
+} // namespace storage

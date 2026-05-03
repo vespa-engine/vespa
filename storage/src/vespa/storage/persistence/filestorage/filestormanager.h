@@ -4,38 +4,41 @@
 
 #include "filestorhandler.h"
 #include "service_layer_host_info_reporter.h"
-#include <vespa/vespalib/util/isequencedtaskexecutor.h>
+
+#include <vespa/config/helper/ifetchercallback.h>
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/persistence/spi/bucketexecutor.h>
 #include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storage/common/messagesender.h>
+#include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/common/servicelayercomponent.h>
 #include <vespa/storage/common/statusmessages.h>
 #include <vespa/storage/common/storagelinkqueued.h>
 #include <vespa/storage/persistence/diskthread.h>
-
-#include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storageframework/generic/status/htmlstatusreporter.h>
-
-#include <vespa/config/helper/ifetchercallback.h>
+#include <vespa/vespalib/util/isequencedtaskexecutor.h>
 
 namespace config {
-    class ConfigUri;
-    class ConfigFetcher;
+class ConfigUri;
+class ConfigFetcher;
+} // namespace config
+namespace vespalib {
+class IDestructorCallback;
 }
-namespace vespalib { class IDestructorCallback; }
 
 namespace vespa::config::content::internal {
-    class InternalStorFilestorType;
+class InternalStorFilestorType;
 }
 
 namespace storage {
 namespace api {
-    class ReturnCode;
-    class StorageReply;
-    class BucketCommand;
+class ReturnCode;
+class StorageReply;
+class BucketCommand;
+} // namespace api
+namespace spi {
+struct PersistenceProvider;
 }
-namespace spi { struct PersistenceProvider; }
 
 class ContentBucketSpace;
 struct FileStorManagerTest;
@@ -51,49 +54,44 @@ class FileStorManager : public StorageLinkQueued,
                         public framework::HtmlStatusReporter,
                         public StateListener,
                         public MessageSender,
-                        public spi::BucketExecutor
-{
+                        public spi::BucketExecutor {
     using StorFilestorConfig = vespa::config::content::internal::InternalStorFilestorType;
 
-    ServiceLayerComponentRegister             & _compReg;
-    ServiceLayerComponent                       _component;
-    std::unique_ptr<spi::PersistenceProvider>   _provider;
-    DoneInitializeHandler                     & _init_handler;
-    const document::BucketIdFactory           & _bucketIdFactory;
+    ServiceLayerComponentRegister&            _compReg;
+    ServiceLayerComponent                     _component;
+    std::unique_ptr<spi::PersistenceProvider> _provider;
+    DoneInitializeHandler&                    _init_handler;
+    const document::BucketIdFactory&          _bucketIdFactory;
 
     std::vector<std::unique_ptr<PersistenceHandler>> _persistenceHandlers;
     std::vector<std::unique_ptr<DiskThread>>         _threads;
     std::unique_ptr<BucketOwnershipNotifier>         _bucketOwnershipNotifier;
 
-    std::unique_ptr<StorFilestorConfig> _config;
-    std::atomic<bool>                   _use_async_message_handling_on_schedule;
-    std::shared_ptr<FileStorMetrics>    _metrics;
-    std::unique_ptr<FileStorHandler>    _filestorHandler;
+    std::unique_ptr<StorFilestorConfig>               _config;
+    std::atomic<bool>                                 _use_async_message_handling_on_schedule;
+    std::shared_ptr<FileStorMetrics>                  _metrics;
+    std::unique_ptr<FileStorHandler>                  _filestorHandler;
     std::unique_ptr<vespalib::ISequencedTaskExecutor> _sequencedExecutor;
 
-    bool       _closed;
-    std::mutex _lock;
+    bool                                           _closed;
+    std::mutex                                     _lock;
     std::unique_ptr<vespalib::IDestructorCallback> _bucketExecutorRegistration;
     ServiceLayerHostInfoReporter                   _host_info_reporter;
     std::unique_ptr<vespalib::IDestructorCallback> _resource_usage_listener_registration;
 
 public:
-    FileStorManager(const StorFilestorConfig&, spi::PersistenceProvider&,
-                    ServiceLayerComponentRegister&, DoneInitializeHandler&, HostInfo&);
-    FileStorManager(const FileStorManager &) = delete;
-    FileStorManager& operator=(const FileStorManager &) = delete;
+    FileStorManager(const StorFilestorConfig&, spi::PersistenceProvider&, ServiceLayerComponentRegister&,
+                    DoneInitializeHandler&, HostInfo&);
+    FileStorManager(const FileStorManager&) = delete;
+    FileStorManager& operator=(const FileStorManager&) = delete;
 
     ~FileStorManager() override;
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    FileStorHandler& getFileStorHandler() noexcept {
-        return *_filestorHandler;
-    };
+    FileStorHandler& getFileStorHandler() noexcept { return *_filestorHandler; };
 
-    spi::PersistenceProvider& getPersistenceProvider() noexcept {
-        return *_provider;
-    }
+    spi::PersistenceProvider& getPersistenceProvider() noexcept { return *_provider; }
     ProviderErrorWrapper& error_wrapper() noexcept;
 
     void handleNewState() noexcept override;
@@ -117,20 +115,16 @@ public:
     void on_configure(const StorFilestorConfig& config);
 
 private:
-    PersistenceHandler & createRegisteredHandler(const ServiceLayerComponent & component);
-    VESPA_DLL_LOCAL PersistenceHandler & getThreadLocalHandler();
+    PersistenceHandler& createRegisteredHandler(const ServiceLayerComponent& component);
+    VESPA_DLL_LOCAL PersistenceHandler& getThreadLocalHandler();
 
     void replyWithBucketNotFound(api::StorageMessage&, const document::Bucket&);
 
-    void replyDroppedOperation(api::StorageMessage& msg,
-                               const document::Bucket& bucket,
-                               api::ReturnCode::Result returnCode,
-                               std::string_view reason);
+    void replyDroppedOperation(api::StorageMessage& msg, const document::Bucket& bucket,
+                               api::ReturnCode::Result returnCode, std::string_view reason);
 
-    StorBucketDatabase::WrappedEntry ensureConsistentBucket(
-            const document::Bucket& bucket,
-            api::StorageMessage& msg,
-            const char* callerId);
+    StorBucketDatabase::WrappedEntry ensureConsistentBucket(const document::Bucket& bucket, api::StorageMessage& msg,
+                                                            const char* callerId);
 
     bool validateApplyDiffCommandBucket(api::StorageMessage& msg, const StorBucketDatabase::WrappedEntry&);
     bool validateDiffReplyBucket(const StorBucketDatabase::WrappedEntry&, const document::Bucket&);
@@ -177,8 +171,7 @@ private:
     void onFlush(bool downwards) override;
     void reportHtmlStatus(std::ostream&, const framework::HttpUrlPath&) const override;
     void storageDistributionChanged() override;
-    [[nodiscard]] static bool should_deactivate_buckets(const ContentBucketSpace& space,
-                                                        bool node_up_in_space,
+    [[nodiscard]] static bool should_deactivate_buckets(const ContentBucketSpace& space, bool node_up_in_space,
                                                         bool maintenance_in_all_spaces) noexcept;
     [[nodiscard]] bool maintenance_in_all_spaces(const lib::Node& node) const noexcept;
     void maybe_log_received_cluster_state();
@@ -186,7 +179,7 @@ private:
     void propagateClusterStates();
     void update_reported_state_after_db_init();
 
-    void execute(const spi::Bucket &bucket, std::unique_ptr<spi::BucketTask> task) override;
+    void execute(const spi::Bucket& bucket, std::unique_ptr<spi::BucketTask> task) override;
 };
 
-} // storage
+} // namespace storage
