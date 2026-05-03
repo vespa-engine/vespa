@@ -12,8 +12,8 @@ LOG_SETUP("attribute_tokens_dfw_test");
 
 using search::attribute::CollectionType;
 using search::docsummary::AttributeTokensDFW;
-using search::docsummary::GetDocsumsState;
 using search::docsummary::DocsumFieldWriter;
+using search::docsummary::GetDocsumsState;
 using search::docsummary::SummaryElementsSelector;
 using search::docsummary::test::MockAttributeManager;
 using search::docsummary::test::MockStateCallback;
@@ -21,12 +21,12 @@ using search::docsummary::test::SlimeValue;
 
 class AttributeTokensDFWTest : public ::testing::Test {
 protected:
-    MockAttributeManager _attrs;
+    MockAttributeManager               _attrs;
     std::unique_ptr<DocsumFieldWriter> _writer;
-    MockStateCallback _callback;
-    GetDocsumsState _state;
-    SummaryElementsSelector _elements_selector;
-    std::string _field_name;
+    MockStateCallback                  _callback;
+    GetDocsumsState                    _state;
+    SummaryElementsSelector            _elements_selector;
+    std::string                        _field_name;
 
 public:
     AttributeTokensDFWTest()
@@ -35,12 +35,12 @@ public:
           _callback(),
           _state(_callback),
           _elements_selector(SummaryElementsSelector::select_all()),
-          _field_name()
-    {
-        _attrs.build_string_attribute("array_str", { {"This", "is", "A TEST"}, {} });
-        _attrs.build_string_attribute("cased_array_str", { {"CASING", "Matters here" }, {} }, CollectionType::ARRAY, false);
-        _attrs.build_string_attribute("wset_str", { {"This is", "b", "C"}, {} }, CollectionType::WSET);
-        _attrs.build_string_attribute("single_str", { {"Hello World"}, {} }, CollectionType::SINGLE);
+          _field_name() {
+        _attrs.build_string_attribute("array_str", {{"This", "is", "A TEST"}, {}});
+        _attrs.build_string_attribute("cased_array_str", {{"CASING", "Matters here"}, {}}, CollectionType::ARRAY,
+                                      false);
+        _attrs.build_string_attribute("wset_str", {{"This is", "b", "C"}, {}}, CollectionType::WSET);
+        _attrs.build_string_attribute("single_str", {{"Hello World"}, {}}, CollectionType::SINGLE);
         _state._attrCtx = _attrs.mgr().createContext();
     }
     ~AttributeTokensDFWTest() override;
@@ -57,7 +57,7 @@ public:
     }
 
     void expect_field(const std::string& exp_slime_as_json, uint32_t docid) {
-        vespalib::Slime act;
+        vespalib::Slime                act;
         vespalib::slime::SlimeInserter inserter(act);
         if (!_writer->isDefaultValue(docid, _state)) {
             _writer->insert_field(docid, nullptr, _state, _elements_selector.get_selected_elements(docid, _state),
@@ -71,36 +71,31 @@ public:
 
 AttributeTokensDFWTest::~AttributeTokensDFWTest() = default;
 
-TEST_F(AttributeTokensDFWTest, outputs_slime_for_array_of_string)
-{
+TEST_F(AttributeTokensDFWTest, outputs_slime_for_array_of_string) {
     setup("array_str");
     expect_field("[ ['this' ], [ 'is' ], [ 'a test' ] ]", 1);
     expect_field("null", 2);
 }
 
-TEST_F(AttributeTokensDFWTest, outputs_slime_for_cased_array_of_string)
-{
+TEST_F(AttributeTokensDFWTest, outputs_slime_for_cased_array_of_string) {
     setup("cased_array_str");
     expect_field("[ ['CASING' ], [ 'Matters here' ] ]", 1);
     expect_field("null", 2);
 }
 
-TEST_F(AttributeTokensDFWTest, outputs_slime_for_wset_of_string)
-{
+TEST_F(AttributeTokensDFWTest, outputs_slime_for_wset_of_string) {
     setup("wset_str");
     expect_field("[ ['this is'], [ 'b' ], [ 'c' ] ]", 1);
     expect_field("null", 2);
 }
 
-TEST_F(AttributeTokensDFWTest, single_string)
-{
+TEST_F(AttributeTokensDFWTest, single_string) {
     setup("single_str");
     expect_field("[ 'hello world' ]", 1);
     expect_field("[ '' ]", 2);
 }
 
-TEST_F(AttributeTokensDFWTest, missing_atribute)
-{
+TEST_F(AttributeTokensDFWTest, missing_atribute) {
     setup("delayed_add_attribute_aspect");
     expect_field("null", 1);
 }

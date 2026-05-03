@@ -6,8 +6,8 @@
 #include <vespa/document/annotation/spantree.h>
 #include <vespa/document/datatype/annotationtype.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/repo/fixedtyperepo.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/searchlib/util/linguisticsannotation.h>
 #include <vespa/searchlib/util/token_extractor.h>
 #include <vespa/searchsummary/docsummary/tokens_converter.h>
@@ -34,32 +34,27 @@ using vespalib::slime::SlimeInserter;
 
 namespace {
 
-std::string
-slime_to_string(const Slime& slime)
-{
+std::string slime_to_string(const Slime& slime) {
     SimpleBuffer buf;
     JsonFormat::encode(slime, buf, true);
     return buf.get().make_string();
 }
 
-DocumenttypesConfig
-get_document_types_config()
-{
+DocumenttypesConfig get_document_types_config() {
     using namespace document::new_config_builder;
     NewConfigBuilder builder;
     builder.document("indexingdocument", 42);
     return builder.config();
 }
 
-}
+} // namespace
 
-class TokensConverterTest : public testing::Test
-{
+class TokensConverterTest : public testing::Test {
 protected:
     std::shared_ptr<const DocumentTypeRepo> _repo;
     const DocumentType*                     _document_type;
     document::FixedTypeRepo                 _fixed_repo;
-    std::string                        _dummy_field_name;
+    std::string                             _dummy_field_name;
     TokenExtractor                          _token_extractor;
 
     TokensConverterTest();
@@ -77,23 +72,18 @@ TokensConverterTest::TokensConverterTest()
       _document_type(_repo->getDocumentType("indexingdocument")),
       _fixed_repo(*_repo, *_document_type),
       _dummy_field_name(),
-      _token_extractor(_dummy_field_name, 100)
-{
+      _token_extractor(_dummy_field_name, 100) {
 }
 
 TokensConverterTest::~TokensConverterTest() = default;
 
-void
-TokensConverterTest::set_span_tree(StringFieldValue & value, std::unique_ptr<SpanTree> tree)
-{
+void TokensConverterTest::set_span_tree(StringFieldValue& value, std::unique_ptr<SpanTree> tree) {
     StringFieldValue::SpanTrees trees;
     trees.push_back(std::move(tree));
     value.setSpanTrees(trees, _fixed_repo);
 }
 
-StringFieldValue
-TokensConverterTest::make_annotated_string(bool alt_tokens)
-{
+StringFieldValue TokensConverterTest::make_annotated_string(bool alt_tokens) {
     auto span_list_up = std::make_unique<SpanList>();
     auto span_list = span_list_up.get();
     auto tree = std::make_unique<SpanTree>(SPANTREE_NAME, std::move(span_list_up));
@@ -108,9 +98,7 @@ TokensConverterTest::make_annotated_string(bool alt_tokens)
     return value;
 }
 
-StringFieldValue
-TokensConverterTest::make_annotated_chinese_string()
-{
+StringFieldValue TokensConverterTest::make_annotated_chinese_string() {
     auto span_list_up = std::make_unique<SpanList>();
     auto span_list = span_list_up.get();
     auto tree = std::make_unique<SpanTree>(SPANTREE_NAME, std::move(span_list_up));
@@ -122,52 +110,43 @@ TokensConverterTest::make_annotated_chinese_string()
     return value;
 }
 
-std::string
-TokensConverterTest::make_exp_annotated_chinese_string_tokens()
-{
+std::string TokensConverterTest::make_exp_annotated_chinese_string_tokens() {
     return R"(["我就是那个","大灰狼"])";
 }
 
-std::string
-TokensConverterTest::convert(const StringFieldValue& fv)
-{
+std::string TokensConverterTest::convert(const StringFieldValue& fv) {
     TokensConverter converter(_token_extractor);
-    Slime slime;
-    SlimeInserter inserter(slime);
+    Slime           slime;
+    SlimeInserter   inserter(slime);
     converter.convert(fv, inserter);
     return slime_to_string(slime);
 }
 
-TEST_F(TokensConverterTest, convert_empty_string)
-{
-    std::string exp(R"([])");
+TEST_F(TokensConverterTest, convert_empty_string) {
+    std::string      exp(R"([])");
     StringFieldValue plain_string("");
     EXPECT_EQ(exp, convert(plain_string));
 }
 
-TEST_F(TokensConverterTest, convert_plain_string)
-{
-    std::string exp(R"([])");
+TEST_F(TokensConverterTest, convert_plain_string) {
+    std::string      exp(R"([])");
     StringFieldValue plain_string("Foo Bar Baz");
     EXPECT_EQ(exp, convert(plain_string));
 }
 
-TEST_F(TokensConverterTest, convert_annotated_string)
-{
+TEST_F(TokensConverterTest, convert_annotated_string) {
     std::string exp(R"(["foo","baz"])");
-    auto annotated_string = make_annotated_string(false);
+    auto        annotated_string = make_annotated_string(false);
     EXPECT_EQ(exp, convert(annotated_string));
 }
 
-TEST_F(TokensConverterTest, convert_annotated_string_with_alternatives)
-{
+TEST_F(TokensConverterTest, convert_annotated_string_with_alternatives) {
     std::string exp(R"(["foo",["bar","baz"]])");
-    auto annotated_string = make_annotated_string(true);
+    auto        annotated_string = make_annotated_string(true);
     EXPECT_EQ(exp, convert(annotated_string));
 }
 
-TEST_F(TokensConverterTest, convert_annotated_chinese_string)
-{
+TEST_F(TokensConverterTest, convert_annotated_chinese_string) {
     auto exp = make_exp_annotated_chinese_string_tokens();
     auto annotated_chinese_string = make_annotated_chinese_string();
     EXPECT_EQ(exp, convert(annotated_chinese_string));

@@ -16,6 +16,7 @@
 #include "ITokenProcessor.h"
 #include "matchobject.h"
 #include "querynode.h"
+
 #include <list>
 #include <map>
 #include <string>
@@ -81,7 +82,7 @@ public:
     int TotalMatchCnt(int number);
     int ExactMatchCnt(int number);
 
-    inline int  QueryTerms() { return _mo->TermCount(); }
+    inline int QueryTerms() { return _mo->TermCount(); }
     const char* QueryTermText(int term_no);
 
     inline const key_occ_vector& OccurrenceList() { return _occ; }
@@ -128,7 +129,7 @@ protected:
     // factory methods for creating/referencing/dereferencing MatchCandidates:
     MatchCandidate* NewCandidate(QueryExpr*) __attribute__((noinline));
     MatchCandidate* RefCandidate(MatchCandidate* m);
-    void            DerefCandidate(MatchCandidate* m);
+    void DerefCandidate(MatchCandidate* m);
 
 private:
     Result*        _result;
@@ -189,4 +190,4 @@ private:
  */
 std::string BuildSummary(const char* buffer, size_t buflen, SummaryDesc* summary, const SummaryConfig* config,
                          size_t& char_size);
-void        DeleteSummaryDesc(SummaryDesc*);
+void DeleteSummaryDesc(SummaryDesc*);

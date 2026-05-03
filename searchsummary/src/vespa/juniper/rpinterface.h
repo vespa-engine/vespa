@@ -5,6 +5,7 @@
 
 #include "IJuniperProperties.h"
 #include "query.h"
+
 #include <memory>
 
 /** @file rpinterface.h This file is the main include file for the advanced
@@ -61,7 +62,7 @@ public:
     virtual ~Summary() = default;
     // The textual representation of the generated summary
     virtual const char* Text() const = 0;
-    virtual size_t      Length() const = 0;
+    virtual size_t Length() const = 0;
 };
 
 class Juniper {
@@ -84,15 +85,14 @@ public:
      *   - should always be left with the default value to ensure binary backward
      *     compatibility between versions.
      */
-    Juniper(IJuniperProperties* props, const Fast_WordFolder* wordfolder,
-            int api_version = JUNIPER_RP_ABI_VERSION);
+    Juniper(IJuniperProperties* props, const Fast_WordFolder* wordfolder, int api_version = JUNIPER_RP_ABI_VERSION);
     /** Deinitialize the Juniper subsystem. Release all remaining resources
      *  associated with Juniper - reverse the effect of the Init function.
      *  Assumes that all Result objects have been released.
      */
     ~Juniper();
 
-    const Fast_WordFolder&    getWordFolder() const noexcept { return *_wordfolder; }
+    const Fast_WordFolder& getWordFolder() const noexcept { return *_wordfolder; }
     const IJuniperProperties& getProp() const noexcept { return *_props; }
 
     /** Create a result processing configuration of Juniper for subsequent use
@@ -120,8 +120,8 @@ public:
     std::unique_ptr<QueryHandle> CreateQueryHandle(const IQuery& query, const char* juniperoptions) const;
 
 private:
-    IJuniperProperties*            _props;
-    const Fast_WordFolder*         _wordfolder;
+    IJuniperProperties*    _props;
+    const Fast_WordFolder* _wordfolder;
 };
 
 /** This function defines an equality relation over Juniper configs,

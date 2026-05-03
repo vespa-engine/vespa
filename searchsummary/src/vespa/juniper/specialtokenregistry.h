@@ -3,8 +3,10 @@
 #pragma once
 
 #include "querynode.h"
-#include <vector>
+
 #include <vespa/vespalib/text/lowercase.h>
+
+#include <vector>
 
 namespace juniper {
 
@@ -30,8 +32,8 @@ public:
 
     public:
         CharStream(const char* srcBuf, const char* srcEnd, ucs4_t* dstBuf, ucs4_t* dstEnd);
-        bool   hasMoreChars() const { return _srcItr < _srcEnd; }
-        bool   hasMoreSpace() const { return _dstItr < _dstEnd; }
+        bool hasMoreChars() const { return _srcItr < _srcEnd; }
+        bool hasMoreSpace() const { return _dstItr < _dstEnd; }
         ucs4_t getNextChar() {
             ucs4_t ch = Fast_UnicodeUtil::GetUTF8Char(_srcItr);
             ch = vespalib::LowerCase::convert(ch);
@@ -42,9 +44,9 @@ public:
             _srcItr = _srcBuf;
             _dstItr = _dstBuf;
         }
-        bool        resetAndInc();
-        bool        isStartWordChar() const { return _isStartWordChar; }
-        size_t      getNumChars() const { return _dstItr - _dstBuf; }
+        bool resetAndInc();
+        bool isStartWordChar() const { return _isStartWordChar; }
+        size_t getNumChars() const { return _dstItr - _dstBuf; }
         const char* getSrcStart() const { return _srcBuf; }
         const char* getSrcItr() const { return _srcItr; }
     };
@@ -57,7 +59,7 @@ private:
 public:
     SpecialTokenRegistry(QueryExpr* query);
     const std::vector<QueryTerm*>& getSpecialTokens() const { return _specialTokens; }
-    void                           addSpecialToken(QueryTerm* term) { _specialTokens.push_back(term); }
+    void addSpecialToken(QueryTerm* term) { _specialTokens.push_back(term); }
     /**
      * Tries to tokenize the given utf-8 buffer (character stream) into a special token.
      * Returns the new position of the buffer if a special token is matched, NULL otherwise.

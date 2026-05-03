@@ -1,8 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <string>
 #include <vespa/fastlib/text/wordfolder.h>
+
+#include <string>
 
 class SummaryConfig;
 
@@ -13,22 +14,22 @@ public:
     DocsumParams();
 
     DocsumParams& SetEnabled(bool en);
-    bool          Enabled() const;
+    bool Enabled() const;
 
     DocsumParams& SetLength(size_t length);
-    size_t        Length() const;
+    size_t Length() const;
 
     DocsumParams& SetMinLength(size_t length);
-    size_t        MinLength() const;
+    size_t MinLength() const;
 
     DocsumParams& SetMaxMatches(size_t matches);
-    size_t        MaxMatches() const;
+    size_t MaxMatches() const;
 
     DocsumParams& SetSurroundMax(size_t length);
-    size_t        SurroundMax() const;
+    size_t SurroundMax() const;
 
     DocsumParams& SetFallback(const char* fallback);
-    int           Fallback() const;
+    int Fallback() const;
 
 private:
     bool   _enabled;
@@ -48,24 +49,24 @@ public:
     MatcherParams& operator=(MatcherParams&&) = delete;
 
     MatcherParams& SetMatchWindowSize(size_t winsize);
-    size_t         MatchWindowSize() const;
+    size_t MatchWindowSize() const;
 
     double MatchWindowSizeFallbackMultiplier() const;
 
     MatcherParams& SetMaxMatchCandidates(size_t max_match_candidates);
-    size_t         MaxMatchCandidates() const;
+    size_t MaxMatchCandidates() const;
 
     MatcherParams& SetStemMinLength(size_t stem_min);
-    size_t         StemMinLength() const;
+    size_t StemMinLength() const;
 
     MatcherParams& SetStemMaxExtend(size_t stem_extend);
-    size_t         StemMaxExtend() const;
+    size_t StemMaxExtend() const;
 
-    MatcherParams&         SetWordFolder(const Fast_WordFolder* wordfolder);
+    MatcherParams& SetWordFolder(const Fast_WordFolder* wordfolder);
     const Fast_WordFolder* WordFolder() const noexcept { return _wordfolder; }
 
     MatcherParams& SetProximityFactor(double factor);
-    double         ProximityFactor() const noexcept { return _proximity_factor; };
+    double ProximityFactor() const noexcept { return _proximity_factor; };
 
 private:
     size_t                 _match_winsize;

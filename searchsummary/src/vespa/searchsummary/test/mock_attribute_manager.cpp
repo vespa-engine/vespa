@@ -1,13 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "mock_attribute_manager.h"
+
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/array_bool_attribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/floatbase.h>
 #include <vespa/searchlib/attribute/integerbase.h>
-#include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/attribute/single_raw_attribute.h>
-#include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchlib/attribute/stringbase.h>
+
 #include <cassert>
 
 using search::attribute::BasicType;
@@ -18,15 +20,12 @@ using search::attribute::SingleRawAttribute;
 namespace search::docsummary::test {
 
 template <typename AttributeType, typename ValueType>
-void
-MockAttributeManager::build_attribute(const std::string& name, BasicType type,
-                                      CollectionType col_type,
-                                      const std::vector<std::vector<ValueType>>& values,
-                                      std::optional<bool> uncased)
-{
+void MockAttributeManager::build_attribute(const std::string& name, BasicType type, CollectionType col_type,
+                                           const std::vector<std::vector<ValueType>>& values,
+                                           std::optional<bool>                        uncased) {
     Config cfg(type, col_type);
     if (uncased.has_value()) {
-        cfg.set_match(uncased.value() ? Config::Match::UNCASED  : Config::Match::CASED);
+        cfg.set_match(uncased.value() ? Config::Match::UNCASED : Config::Match::CASED);
     }
     auto attr_base = AttributeFactory::createAttribute(name, cfg);
     assert(attr_base);
@@ -50,51 +49,39 @@ MockAttributeManager::build_attribute(const std::string& name, BasicType type,
     _mgr.add(attr);
 }
 
-MockAttributeManager::MockAttributeManager()
-    : _mgr()
-{
+MockAttributeManager::MockAttributeManager() : _mgr() {
 }
 
 MockAttributeManager::~MockAttributeManager() = default;
 
-void
-MockAttributeManager::build_string_attribute(const std::string& name,
-                                             const std::vector<std::vector<std::string>>& values,
-                                             CollectionType col_type,
-                                             std::optional<bool> uncased)
-{
+void MockAttributeManager::build_string_attribute(const std::string&                           name,
+                                                  const std::vector<std::vector<std::string>>& values,
+                                                  CollectionType col_type, std::optional<bool> uncased) {
     build_attribute<StringAttribute, std::string>(name, BasicType::Type::STRING, col_type, values, uncased);
 }
 
-void
-MockAttributeManager::build_float_attribute(const std::string& name,
-                                            const std::vector<std::vector<double>>& values,
-                                            CollectionType col_type)
-{
+void MockAttributeManager::build_float_attribute(const std::string&                      name,
+                                                 const std::vector<std::vector<double>>& values,
+                                                 CollectionType                          col_type) {
     build_attribute<FloatingPointAttribute, double>(name, BasicType::Type::DOUBLE, col_type, values, std::nullopt);
 }
 
-void
-MockAttributeManager::build_int_attribute(const std::string& name, BasicType type,
-                                          const std::vector<std::vector<int64_t>>& values,
-                                          CollectionType col_type)
-{
+void MockAttributeManager::build_int_attribute(const std::string& name, BasicType type,
+                                               const std::vector<std::vector<int64_t>>& values,
+                                               CollectionType                           col_type) {
     build_attribute<IntegerAttribute, int64_t>(name, type, col_type, values, std::nullopt);
 }
 
-void
-MockAttributeManager::build_raw_attribute(const std::string& name,
-                                          const std::vector<std::vector<std::vector<char>>>& values)
-{
-    build_attribute<SingleRawAttribute, std::vector<char>>(name, BasicType::Type::RAW, CollectionType::SINGLE, values, std::nullopt);
+void MockAttributeManager::build_raw_attribute(const std::string&                                 name,
+                                               const std::vector<std::vector<std::vector<char>>>& values) {
+    build_attribute<SingleRawAttribute, std::vector<char>>(name, BasicType::Type::RAW, CollectionType::SINGLE, values,
+                                                           std::nullopt);
 }
 
-void
-MockAttributeManager::build_bool_attribute(const std::string& name,
-                                           const std::vector<std::vector<int8_t>>& values)
-{
+void MockAttributeManager::build_bool_attribute(const std::string&                      name,
+                                                const std::vector<std::vector<int8_t>>& values) {
     Config cfg(BasicType::BOOL, CollectionType::ARRAY);
-    auto attr_base = AttributeFactory::createAttribute(name, cfg);
+    auto   attr_base = AttributeFactory::createAttribute(name, cfg);
     assert(attr_base);
     auto& bool_attr = dynamic_cast<search::attribute::ArrayBoolAttribute&>(*attr_base);
     attr_base->addReservedDoc();
@@ -109,4 +96,4 @@ MockAttributeManager::build_bool_attribute(const std::string& name,
     _mgr.add(attr_base);
 }
 
-}
+} // namespace search::docsummary::test

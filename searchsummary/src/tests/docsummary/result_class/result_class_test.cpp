@@ -4,6 +4,7 @@
 #include <vespa/searchsummary/docsummary/resultclass.h>
 #include <vespa/searchsummary/docsummary/summary_elements_selector.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <memory>
 
 using search::common::ElementIds;
@@ -12,16 +13,15 @@ using namespace search::docsummary;
 class MockWriter : public DocsumFieldWriter {
 private:
     bool _generated;
+
 public:
     MockWriter(bool generated) : _generated(generated) {}
     bool isGenerated() const override { return _generated; }
-    void insert_field(uint32_t, const IDocsumStoreDocument*, GetDocsumsState&,
-                      ElementIds,
-                      vespalib::slime::Inserter &) const override {}
+    void insert_field(uint32_t, const IDocsumStoreDocument*, GetDocsumsState&, ElementIds,
+                      vespalib::slime::Inserter&) const override {}
 };
 
-TEST(ResultClassTest, subset_of_fields_in_class_are_generated)
-{    
+TEST(ResultClassTest, subset_of_fields_in_class_are_generated) {
     ResultClass rc("test");
     rc.addConfigEntry("from_disk");
     rc.addConfigEntry("generated", SummaryElementsSelector::select_all(), std::make_unique<MockWriter>(true));
@@ -34,8 +34,7 @@ TEST(ResultClassTest, subset_of_fields_in_class_are_generated)
     EXPECT_FALSE(rc.all_fields_generated({"not_generated"}));
 }
 
-TEST(ResultClassTest, all_fields_in_class_are_generated)
-{
+TEST(ResultClassTest, all_fields_in_class_are_generated) {
     ResultClass rc("test");
     rc.addConfigEntry("generated_1", SummaryElementsSelector::select_all(), std::make_unique<MockWriter>(true));
     rc.addConfigEntry("generated_2", SummaryElementsSelector::select_all(), std::make_unique<MockWriter>(true));

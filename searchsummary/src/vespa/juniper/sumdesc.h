@@ -5,6 +5,7 @@
 
 #include "juniperdebug.h"
 #include "mcand.h"
+
 #include <list>
 #define _NEED_SUMMARY_CONFIG_IMPL 1
 #include "SummaryConfig.h"
@@ -64,14 +65,15 @@ protected:
     void build_fulldoc_desc();
 
     /** Helper functions to build a dynamic teaser extract */
-    int  find_matches();
-    int  recompute_estimate(int len_per_elem);
+    int find_matches();
+    int recompute_estimate(int len_per_elem);
     void build_highlight_descs();
     void locate_accidential_matches();
 
     bool overlap(MatchCandidate* m);
     bool word_connector(const unsigned char* s);
-    int  complete_extended_token(const unsigned char* start, ssize_t length, const unsigned char*& ptr, off_t increment);
+    int complete_extended_token(const unsigned char* start, ssize_t length, const unsigned char*& ptr,
+                                off_t increment);
 
 private:
     /* desired net printout length */

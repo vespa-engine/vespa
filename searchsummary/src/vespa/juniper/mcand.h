@@ -47,7 +47,7 @@ public:
 
     MatchCandidate(QueryExpr* query, MatchElement** elms, off_t ctxt_start);
     ~MatchCandidate();
-    void     ref() { ++_refcnt; }
+    void ref() { ++_refcnt; }
     uint32_t deref() {
         --_refcnt;
         return _refcnt;
@@ -55,21 +55,21 @@ public:
     void set_valid() override;
     void dump(std::string& s) override;
 
-    int        elems() const { return _nelems; }
-    int        elem_store_sz() const { return _elems; }
-    int        word_distance() const { return _elems ? _endtoken - _starttoken - (_elems - 1) : 0; }
-    off_t      ctxt_startpos() const { return _ctxt_start; }
-    off_t      endtoken() const override { return _endtoken; }
-    off_t      endpos() const override { return _endpos; }
-    ssize_t    size() const { return _endpos - _startpos; }
-    bool       order() const { return _options & X_ORDERED; }
-    bool       partial_ok() const { return !(_options & X_COMPLETE); }
+    int elems() const { return _nelems; }
+    int elem_store_sz() const { return _elems; }
+    int word_distance() const { return _elems ? _endtoken - _starttoken - (_elems - 1) : 0; }
+    off_t ctxt_startpos() const { return _ctxt_start; }
+    off_t endtoken() const override { return _endtoken; }
+    off_t endpos() const override { return _endpos; }
+    ssize_t size() const { return _endpos - _startpos; }
+    bool order() const { return _options & X_ORDERED; }
+    bool partial_ok() const { return !(_options & X_COMPLETE); }
     QueryExpr* match() { return _match; }
-    int        weight() const { return _elem_weight; }
-    size_t     word_length() const override { return _endtoken - _starttoken; }
+    int weight() const { return _elem_weight; }
+    size_t word_length() const override { return _endtoken - _starttoken; }
 
     bool complete() override;
-    int  weight(MatchElement* me, QueryExpr* mexp);
+    int weight(MatchElement* me, QueryExpr* mexp);
 
     size_t length() const override { return _endpos - _startpos; }
 

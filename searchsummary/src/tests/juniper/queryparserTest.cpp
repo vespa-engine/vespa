@@ -3,11 +3,14 @@
  * Author Knut Omang
  */
 
-#include "testenv.h"
 #include "queryparser.h"
+
 #include "fakerewriter.h"
+#include "testenv.h"
+
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/test_path.h>
+
 #include <map>
 
 /**
@@ -58,9 +61,9 @@ TEST(QueryParserTest, testTraverse) {
         std::string          stk2;
         qh2.MatchObj()->Query()->Dump(stk2);
         EXPECT_TRUE(strcmp(stk2.c_str(), "Node<a:3,v>["
-                                   "Node<a:2>[xx:100,yy:100],"
-                                   "Node<a:2,o,l:0,e,v,c>[junip*:100,proximity:100],"
-                                   "Node<a:2,o,l:0,e,v,c>[data:100,search:100]]") == 0);
+                                         "Node<a:2>[xx:100,yy:100],"
+                                         "Node<a:2,o,l:0,e,v,c>[junip*:100,proximity:100],"
+                                         "Node<a:2,o,l:0,e,v,c>[data:100,search:100]]") == 0);
     }
 
     {
@@ -76,9 +79,9 @@ TEST(QueryParserTest, testTraverse) {
         qh2.MatchObj()->Query()->Dump(stk2);
         std::string s(stk2.c_str());
         EXPECT_EQ(s, "Node<a:4,v>[cmsm:100,Node<a:2>[cidus:100,ntus:100],"
-                       "Node<a:4>[jtft:100,jtct:100,jtin:100,jtfp:100],"
-                       "Node<a:2,v>[Node<a:2,o,l:0,e,v,c>[strategic:100,marketing:100],"
-                       "Node<a:2,o,l:0,e,v,c>[marketing:100,strategy:100]]]");
+                     "Node<a:4>[jtft:100,jtct:100,jtin:100,jtfp:100],"
+                     "Node<a:2,v>[Node<a:2,o,l:0,e,v,c>[strategic:100,marketing:100],"
+                     "Node<a:2,o,l:0,e,v,c>[marketing:100,strategy:100]]]");
     }
 
     // Query with NEAR and WITHIN
@@ -89,8 +92,8 @@ TEST(QueryParserTest, testTraverse) {
     std::string          stk3;
     qh3.MatchObj()->Query()->Dump(stk3);
     EXPECT_TRUE(strcmp(stk3.c_str(), "Node<a:2,v>["
-                               "Node<a:2,l:1,v,c>[linux:100,kernel:100],"
-                               "Node<a:2,o,l:3,v,c>[linus:100,torvalds:100]]") == 0);
+                                     "Node<a:2,l:1,v,c>[linux:100,kernel:100],"
+                                     "Node<a:2,o,l:3,v,c>[linus:100,torvalds:100]]") == 0);
 
     // Query with ONEAR
     juniper::QueryParser p4("OR(ONEAR/3(linus,torvalds))");
@@ -102,7 +105,7 @@ TEST(QueryParserTest, testTraverse) {
     EXPECT_TRUE(strcmp(stk4.c_str(), "Node<a:2,o,l:3,v,c>[linus:100,torvalds:100]") == 0);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
     juniper::TestEnv te(argc, argv, TEST_PATH("testclient.rc").c_str());
     return RUN_ALL_TESTS();

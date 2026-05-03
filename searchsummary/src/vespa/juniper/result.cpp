@@ -2,12 +2,14 @@
 
 #define _NEED_SUMMARY_CONFIG_IMPL 1
 #include "result.h"
+
 #include "Matcher.h"
 #include "SummaryConfig.h"
 #include "appender.h"
 #include "config.h"
 #include "juniperparams.h"
 #include "rpinterface.h"
+
 #include <vespa/vespalib/util/size_literals.h>
 
 #include <vespa/log/log.h>
@@ -22,29 +24,30 @@ public:
     explicit SummaryImpl(const std::string& t) : _text(t) {}
     ~SummaryImpl() override = default;
     const char* Text() const override { return _text.c_str(); }
-    size_t      Length() const override { return _text.size(); }
+    size_t Length() const override { return _text.size(); }
     std::string _text;
 };
 
 Result::Result(const Config& config, QueryHandle& qhandle, const char* docsum, size_t docsum_len)
-  : _qhandle(&qhandle),
-    _mo(qhandle.MatchObj()),
-    _docsum(docsum),
-    _docsum_len(docsum_len),
-    _config(&config),
-    _matcher(),
-    _tokenizer(),
-    _summaries(),
-    _scan_done(false),
-    _dynsum_len(-1),
-    _max_matches(-1),
-    _surround_max(-1),
-    _stem_min(0),
-    _stem_extend(0),
-    _winsize(0),
-    _winsize_fallback_multiplier(10.0),
-    _max_match_candidates(1000) {
-    if (!_mo) return; // The empty result..
+    : _qhandle(&qhandle),
+      _mo(qhandle.MatchObj()),
+      _docsum(docsum),
+      _docsum_len(docsum_len),
+      _config(&config),
+      _matcher(),
+      _tokenizer(),
+      _summaries(),
+      _scan_done(false),
+      _dynsum_len(-1),
+      _max_matches(-1),
+      _surround_max(-1),
+      _stem_min(0),
+      _stem_extend(0),
+      _winsize(0),
+      _winsize_fallback_multiplier(10.0),
+      _max_match_candidates(1000) {
+    if (!_mo)
+        return; // The empty result..
 
     const MatcherParams&   mp = _config->_matcherparams;
     const Fast_WordFolder* wordfolder = mp.WordFolder();
@@ -83,17 +86,22 @@ Result::Result(const Config& config, QueryHandle& qhandle, const char* docsum, s
 
     _registry = std::make_unique<SpecialTokenRegistry>(_matcher->getQuery());
 
-    if (qhandle._log_mask) _matcher->set_log(qhandle._log_mask);
+    if (qhandle._log_mask)
+        _matcher->set_log(qhandle._log_mask);
 
     _tokenizer->SetSuccessor(_matcher.get());
-    if (!_registry->getSpecialTokens().empty()) { _tokenizer->setRegistry(_registry.get()); }
+    if (!_registry->getSpecialTokens().empty()) {
+        _tokenizer->setRegistry(_registry.get());
+    }
 }
 
 Result::~Result() = default;
 
 long Result::GetRelevancy() {
-    if (!_mo) return PROXIMITYBOOST_NOCONSTRAINT_OFFSET;
-    if (!_mo->Query()) return PROXIMITYBOOST_NOCONSTRAINT_OFFSET;
+    if (!_mo)
+        return PROXIMITYBOOST_NOCONSTRAINT_OFFSET;
+    if (!_mo->Query())
+        return PROXIMITYBOOST_NOCONSTRAINT_OFFSET;
     Scan();
     long retval = _matcher->GlobalRank();
     LOG(debug, "juniper::GetRelevancy(%lu)", retval);
@@ -121,18 +129,18 @@ Summary* Result::GetTeaser(const Config* alt_config) {
         else
             _surround_max = _qhandle->_surround_max;
 
-        SummaryDesc* sdesc =
-            _matcher->CreateSummaryDesc(_dynsum_len, dsp.MinLength(), _max_matches, _surround_max);
+        SummaryDesc* sdesc = _matcher->CreateSummaryDesc(_dynsum_len, dsp.MinLength(), _max_matches, _surround_max);
 
         if (sdesc) {
             size_t char_size;
-            sum =
-                std::make_unique<SummaryImpl>(BuildSummary(_docsum, _docsum_len, sdesc, cfg->_sumconf, char_size));
+            sum = std::make_unique<SummaryImpl>(BuildSummary(_docsum, _docsum_len, sdesc, cfg->_sumconf, char_size));
             DeleteSummaryDesc(sdesc);
         }
     }
 
-    if (!sum) { sum = std::make_unique<SummaryImpl>(); }
+    if (!sum) {
+        sum = std::make_unique<SummaryImpl>();
+    }
 
     if (sum->_text.empty() && dsp.Fallback() == DocsumParams::FALLBACK_PREFIX) {
         std::vector<char>      text;

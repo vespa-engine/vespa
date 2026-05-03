@@ -20,8 +20,8 @@ using search::IAttributeManager;
 using search::MatchingElements;
 using search::SingleInt64ExtAttribute;
 using search::attribute::IAttributeContext;
-using search::attribute::IAttributeVector;
 using search::attribute::IAttributeFunctor;
+using search::attribute::IAttributeVector;
 using search::common::ElementIds;
 using std::string;
 using std::vector;
@@ -31,47 +31,39 @@ namespace search::docsummary {
 namespace {
 
 class MyAttributeContext : public IAttributeContext {
-    const IAttributeVector &_attr;
+    const IAttributeVector& _attr;
+
 public:
-    MyAttributeContext(const IAttributeVector &attr) : _attr(attr) {}
-     const IAttributeVector *getAttribute(std::string_view) const override {
-        return &_attr;
-    }
-    const IAttributeVector *getAttributeStableEnum(std::string_view) const override {
+    MyAttributeContext(const IAttributeVector& attr) : _attr(attr) {}
+    const IAttributeVector* getAttribute(std::string_view) const override { return &_attr; }
+    const IAttributeVector* getAttributeStableEnum(std::string_view) const override {
         LOG_ABORT("MyAttributeContext::getAttributeStableEnum should not be reached");
     }
-    void getAttributeList(vector<const IAttributeVector *> &) const override {
+    void getAttributeList(vector<const IAttributeVector*>&) const override {
         LOG_ABORT("MyAttributeContext::getAttributeList should not be reached");
     }
 
-    void
-    asyncForAttribute(std::string_view, std::unique_ptr<IAttributeFunctor>) const override {
+    void asyncForAttribute(std::string_view, std::unique_ptr<IAttributeFunctor>) const override {
         LOG_ABORT("MyAttributeContext::asyncForAttribute should not be reached");
     }
 };
 
 class MyAttributeManager : public IAttributeManager {
-    const IAttributeVector &_attr;
-public:
+    const IAttributeVector& _attr;
 
-    MyAttributeManager(const IAttributeVector &attr) : _attr(attr) {}
-    AttributeGuard::UP getAttribute(std::string_view) const override {
-        LOG_ABORT("should not be reached");
-    }
+public:
+    MyAttributeManager(const IAttributeVector& attr) : _attr(attr) {}
+    AttributeGuard::UP getAttribute(std::string_view) const override { LOG_ABORT("should not be reached"); }
     std::unique_ptr<attribute::AttributeReadGuard> getAttributeReadGuard(std::string_view, bool) const override {
         LOG_ABORT("should not be reached");
     }
-    void getAttributeList(vector<AttributeGuard> &) const override {
-        LOG_ABORT("should not be reached");
-    }
+    void getAttributeList(vector<AttributeGuard>&) const override { LOG_ABORT("should not be reached"); }
 
     void asyncForAttribute(std::string_view, std::unique_ptr<IAttributeFunctor>) const override {
         LOG_ABORT("should not be reached");
     }
 
-    IAttributeContext::UP createContext() const override {
-        return std::make_unique<MyAttributeContext>(_attr);
-    }
+    IAttributeContext::UP createContext() const override { return std::make_unique<MyAttributeContext>(_attr); }
 
     std::shared_ptr<attribute::ReadableAttributeVector> readable_attribute_vector(std::string_view) const override {
         LOG_ABORT("should not be reached");
@@ -81,16 +73,15 @@ public:
 struct MyGetDocsumsStateCallback : GetDocsumsStateCallback {
     void fillSummaryFeatures(GetDocsumsState&) override {}
     void fillRankFeatures(GetDocsumsState&) override {}
-    std::unique_ptr<MatchingElements> fill_matching_elements(const MatchingElementsFields &) override { abort(); }
+    std::unique_ptr<MatchingElements> fill_matching_elements(const MatchingElementsFields&) override { abort(); }
 };
 
 template <typename AttrType>
-void checkWritePositionField(AttrType &attr,
-                             uint32_t doc_id, const std::string &expect_json) {
-    for (AttributeVector::DocId i = 0; i < doc_id + 1; ) {
+void checkWritePositionField(AttrType& attr, uint32_t doc_id, const std::string& expect_json) {
+    for (AttributeVector::DocId i = 0; i < doc_id + 1;) {
         attr.addDoc(i);
         if (i == 007) {
-            attr.add((int64_t) -1);
+            attr.add((int64_t)-1);
         } else if (i == 0x42) {
             attr.add(0xAAAAaaaaAAAAaaaa);
         } else if (i == 0x17) {
@@ -103,13 +94,13 @@ void checkWritePositionField(AttrType &attr,
     }
 
     MyAttributeManager attribute_man(attr);
-    PositionsDFW::UP writer = PositionsDFW::create(attr.getName().c_str(), &attribute_man);
+    PositionsDFW::UP   writer = PositionsDFW::create(attr.getName().c_str(), &attribute_man);
     ASSERT_TRUE(writer.get());
     MyGetDocsumsStateCallback callback;
-    GetDocsumsState state(callback);
+    GetDocsumsState           state(callback);
     state._attributes.push_back(&attr);
 
-    vespalib::Slime target;
+    vespalib::Slime                target;
     vespalib::slime::SlimeInserter inserter(target);
     writer->insert_field(doc_id, nullptr, state, ElementIds::select_all(), inserter);
 
@@ -117,18 +108,17 @@ void checkWritePositionField(AttrType &attr,
     EXPECT_EQ(expected.slime, target);
 }
 
-}  // namespace
+} // namespace
 
-TEST(PositionsDFWTest, require_that_2D_position_field_is_written)
-{
+TEST(PositionsDFWTest, require_that_2D_position_field_is_written) {
     SingleInt64ExtAttribute attr("foo");
     checkWritePositionField(attr, 0x3e, "{lng:0.000006,lat:0.000007,latlong:'N0.000007;E0.000006'}");
-    checkWritePositionField(attr,  007, "{lng:-0.000001,lat:-0.000001,latlong:'S0.000001;W0.000001'}");
+    checkWritePositionField(attr, 007, "{lng:-0.000001,lat:-0.000001,latlong:'S0.000001;W0.000001'}");
     checkWritePositionField(attr, 0x42, "{lng:0.0,lat:-0.000001,latlong:'S0.000001;E0.000000'}");
     checkWritePositionField(attr, 0x17, "{lng:-16.711935,lat:16.711935,latlong:'N16.711935;W16.711935'}");
-    checkWritePositionField(attr,   42, "null");
+    checkWritePositionField(attr, 42, "null");
 }
 
-}
+} // namespace search::docsummary
 
 GTEST_MAIN_RUN_ALL_TESTS()

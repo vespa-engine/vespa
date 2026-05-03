@@ -4,8 +4,10 @@
  */
 
 #include "testenv.h"
-#include <unistd.h>
+
 #include <vespa/juniper/propreader.h>
+
+#include <unistd.h>
 
 namespace juniper {
 
@@ -19,13 +21,19 @@ TestEnv::TestEnv(int argc, char** argv, const char* propfile) : _props(), _confi
 
     while ((c = getopt(argc, argv, "d:hcm:")) != EOF) {
         switch (c) {
-        case 'd': fprintf(stderr, "This version of Juniper compiled without debug\n"); break;
-        case 'c': color_highlight = true; break;
+        case 'd':
+            fprintf(stderr, "This version of Juniper compiled without debug\n");
+            break;
+        case 'c':
+            color_highlight = true;
+            break;
         case 'm':
             // option handled by test framework
             break;
         case 'h':
-        default:  Usage(argv[0]); return;
+        default:
+            Usage(argv[0]);
+            return;
         }
     }
 
@@ -49,7 +57,8 @@ TestEnv::TestEnv(int argc, char** argv, const char* propfile) : _props(), _confi
     TestConfig = _config.get();
 }
 
-TestEnv::~TestEnv() {}
+TestEnv::~TestEnv() {
+}
 
 void TestEnv::Usage(char* s) {
     fprintf(stderr, "Usage: %s [options]\n", s);
@@ -58,13 +67,14 @@ void TestEnv::Usage(char* s) {
     fprintf(stderr, "  -h: This help\n");
 }
 
-TestQuery::TestQuery(const char* qexp, const char* options)
-  : _qparser(qexp),
-    _qhandle(_qparser, options) {}
+TestQuery::TestQuery(const char* qexp, const char* options) : _qparser(qexp), _qhandle(_qparser, options) {
+}
 
-PropertyMap::PropertyMap() : _map() {}
+PropertyMap::PropertyMap() : _map() {
+}
 
-PropertyMap::~PropertyMap() {}
+PropertyMap::~PropertyMap() {
+}
 
 PropertyMap& PropertyMap::set(const char* name, const char* value) {
     _map[std::string(name)] = std::string(value);
@@ -73,7 +83,9 @@ PropertyMap& PropertyMap::set(const char* name, const char* value) {
 
 const char* PropertyMap::GetProperty(const char* name, const char* def) const {
     auto res = _map.find(std::string(name));
-    if (res != _map.end()) { return res->second.c_str(); }
+    if (res != _map.end()) {
+        return res->second.c_str();
+    }
     return def;
 }
 
