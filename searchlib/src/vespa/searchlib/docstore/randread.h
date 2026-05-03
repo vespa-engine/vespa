@@ -8,17 +8,18 @@
 
 class FastOS_FileInterface;
 
-namespace vespalib { class DataBuffer; }
+namespace vespalib {
+class DataBuffer;
+}
 
 namespace search {
 
-class FileRandRead
-{
+class FileRandRead {
 public:
     using FSP = std::shared_ptr<FastOS_FileInterface>;
     virtual ~FileRandRead() = default;
-    virtual FSP read(size_t offset, vespalib::DataBuffer & buffer, size_t sz) = 0;
+    virtual FSP read(size_t offset, vespalib::DataBuffer& buffer, size_t sz) = 0;
     virtual int64_t getSize() const = 0;
 };
 
-}
+} // namespace search

@@ -3,54 +3,53 @@
 #pragma once
 
 #include "idatastore.h"
+
 #include <vespa/searchlib/common/i_compactable_lid_space.h>
 #include <vespa/searchlib/query/base.h>
+
 #include <future>
 
 namespace document {
-    class Document;
-    class DocumentTypeRepo;
-}
+class Document;
+class DocumentTypeRepo;
+} // namespace document
 
 namespace vespalib {
 struct CacheStats;
 class nbostream;
-}
+} // namespace vespalib
 
 namespace search {
 
-class IDocumentStoreReadVisitor
-{
+class IDocumentStoreReadVisitor {
 public:
     using DocumentSP = std::shared_ptr<document::Document>;
     virtual ~IDocumentStoreReadVisitor() = default;
-    virtual void visit(uint32_t lid, const DocumentSP &doc) = 0;
+    virtual void visit(uint32_t lid, const DocumentSP& doc) = 0;
     virtual void visit(uint32_t lid) = 0;
 };
 
-class IDocumentStoreRewriteVisitor
-{
+class IDocumentStoreRewriteVisitor {
 public:
     using DocumentSP = std::shared_ptr<document::Document>;
     virtual ~IDocumentStoreRewriteVisitor() = default;
-    virtual void visit(uint32_t lid, const DocumentSP &doc) = 0;
+    virtual void visit(uint32_t lid, const DocumentSP& doc) = 0;
 };
 
-class IDocumentStoreVisitorProgress
-{
+class IDocumentStoreVisitorProgress {
 public:
     virtual ~IDocumentStoreVisitorProgress() = default;
 
     virtual void updateProgress(double progress) = 0;
 };
 
-class IDocumentVisitor
-{
+class IDocumentVisitor {
 public:
     using DocumentUP = std::unique_ptr<document::Document>;
     virtual ~IDocumentVisitor() = default;
     virtual void visit(uint32_t lid, DocumentUP doc) = 0;
     virtual bool allowVisitCaching() const = 0;
+
 private:
 };
 
@@ -59,8 +58,7 @@ private:
  * updates will be held in memory until flush() is called.
  * Uses a Local ID as key.
  **/
-class IDocumentStore : public common::ICompactableLidSpace
-{
+class IDocumentStore : public common::ICompactableLidSpace {
 public:
     /**
      * Convenience typedef for a shared pointer to this class.
@@ -74,8 +72,9 @@ public:
      * @param lid The local ID associated with the document.
      * @return NULL if there is no document associated with the lid.
      **/
-    virtual DocumentUP read(DocumentIdT lid, const document::DocumentTypeRepo &repo) const = 0;
-    virtual void visit(const LidVector & lidVector, const document::DocumentTypeRepo &repo, IDocumentVisitor & visitor) const;
+    virtual DocumentUP read(DocumentIdT lid, const document::DocumentTypeRepo& repo) const = 0;
+    virtual void visit(const LidVector& lidVector, const document::DocumentTypeRepo& repo,
+                       IDocumentVisitor& visitor) const;
 
     /**
      * Serialize and store a document.
@@ -83,7 +82,7 @@ public:
      * @param lid The local ID associated with the document
      **/
     virtual void write(uint64_t syncToken, DocumentIdT lid, const document::Document& doc) = 0;
-    virtual void write(uint64_t synkToken, DocumentIdT lid, const vespalib::nbostream & os) = 0;
+    virtual void write(uint64_t synkToken, DocumentIdT lid, const vespalib::nbostream& os) = 0;
 
     /**
      * Mark a document as removed. A later read() will return NULL for the given lid.
@@ -178,23 +177,19 @@ public:
     /**
      * Returns the base directory from which all structures are stored.
      **/
-    virtual const std::string & getBaseDir() const = 0;
+    virtual const std::string& getBaseDir() const = 0;
 
     /**
      * Visit all documents found in document store.
      */
-    virtual void
-    accept(IDocumentStoreReadVisitor &visitor,
-           IDocumentStoreVisitorProgress &visitorProgress,
-           const document::DocumentTypeRepo &repo) = 0;
+    virtual void accept(IDocumentStoreReadVisitor& visitor, IDocumentStoreVisitorProgress& visitorProgress,
+                        const document::DocumentTypeRepo& repo) = 0;
 
     /**
      * Visit all documents found in document store.
      */
-    virtual void
-    accept(IDocumentStoreRewriteVisitor &visitor,
-           IDocumentStoreVisitorProgress &visitorProgress,
-           const document::DocumentTypeRepo &repo) = 0;
+    virtual void accept(IDocumentStoreRewriteVisitor& visitor, IDocumentStoreVisitorProgress& visitorProgress,
+                        const document::DocumentTypeRepo& repo) = 0;
 
     /**
      * Return cost of visiting all documents found in document store.
@@ -218,4 +213,3 @@ public:
 };
 
 } // namespace search
-

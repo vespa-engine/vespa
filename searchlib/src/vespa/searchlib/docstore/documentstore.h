@@ -3,13 +3,14 @@
 #pragma once
 
 #include "idocumentstore.h"
+
 #include <vespa/vespalib/util/compressionconfig.h>
 
 namespace search::docstore {
-    class VisitCache;
-    class BackingStore;
-    class Cache;
-}
+class VisitCache;
+class BackingStore;
+class Cache;
+} // namespace search::docstore
 
 namespace search {
 
@@ -18,29 +19,31 @@ namespace search {
  * updates will be held in memory until flush() is called.
  * Uses a Local ID as key.
  **/
-class DocumentStore : public IDocumentStore
-{
+class DocumentStore : public IDocumentStore {
 public:
     class Config {
     public:
-        enum UpdateStrategy {INVALIDATE, UPDATE };
+        enum UpdateStrategy { INVALIDATE, UPDATE };
         using CompressionConfig = vespalib::compression::CompressionConfig;
-        Config() noexcept :
-            _compression(CompressionConfig::LZ4, 9, 70),
-            _maxCacheBytes(1000000000),
-            _updateStrategy(INVALIDATE)
-        { }
-        Config(CompressionConfig compression, size_t maxCacheBytes) noexcept :
-            _compression((maxCacheBytes != 0) ? compression : CompressionConfig::NONE),
-            _maxCacheBytes(maxCacheBytes),
-            _updateStrategy(INVALIDATE)
-        { }
+        Config() noexcept
+            : _compression(CompressionConfig::LZ4, 9, 70), _maxCacheBytes(1000000000), _updateStrategy(INVALIDATE) {}
+        Config(CompressionConfig compression, size_t maxCacheBytes) noexcept
+            : _compression((maxCacheBytes != 0) ? compression : CompressionConfig::NONE),
+              _maxCacheBytes(maxCacheBytes),
+              _updateStrategy(INVALIDATE) {}
         CompressionConfig getCompression() const { return _compression; }
-        size_t getMaxCacheBytes()   const { return _maxCacheBytes; }
-        Config & disableCache() { _maxCacheBytes = 0; return *this; }
-        Config & updateStrategy(UpdateStrategy strategy) { _updateStrategy = strategy; return *this; }
+        size_t getMaxCacheBytes() const { return _maxCacheBytes; }
+        Config& disableCache() {
+            _maxCacheBytes = 0;
+            return *this;
+        }
+        Config& updateStrategy(UpdateStrategy strategy) {
+            _updateStrategy = strategy;
+            return *this;
+        }
         UpdateStrategy updateStrategy() const { return _updateStrategy; }
-        bool operator == (const Config &) const;
+        bool operator==(const Config&) const;
+
     private:
         CompressionConfig _compression;
         size_t            _maxCacheBytes;
@@ -54,13 +57,14 @@ public:
      * @throws vespalib::IoException if the file is corrupt or other IO problems occur.
      * @param baseDir  The path to a directory where "simpledocstore.dat" will exist.
      **/
-    DocumentStore(const Config & config, IDataStore & store);
+    DocumentStore(const Config& config, IDataStore& store);
     ~DocumentStore() override;
 
-    DocumentUP read(DocumentIdT lid, const document::DocumentTypeRepo &repo) const override;
-    void visit(const LidVector & lids, const document::DocumentTypeRepo &repo, IDocumentVisitor & visitor) const override;
+    DocumentUP read(DocumentIdT lid, const document::DocumentTypeRepo& repo) const override;
+    void visit(const LidVector& lids, const document::DocumentTypeRepo& repo,
+               IDocumentVisitor& visitor) const override;
     void write(uint64_t synkToken, DocumentIdT lid, const document::Document& doc) override;
-    void write(uint64_t synkToken, DocumentIdT lid, const vespalib::nbostream & os) override;
+    void write(uint64_t synkToken, DocumentIdT lid, const vespalib::nbostream& os) override;
     void remove(uint64_t syncToken, DocumentIdT lid) override;
     void flush(uint64_t syncToken) override;
     uint64_t initFlush(uint64_t synctoken) override;
@@ -70,18 +74,18 @@ public:
     uint64_t tentativeLastSyncToken() const override;
     vespalib::system_time getLastFlushTime() const override;
     uint32_t getDocIdLimit() const override { return _backingStore.getDocIdLimit(); }
-    size_t        memoryUsed() const override { return _backingStore.memoryUsed(); }
-    size_t  getDiskFootprint() const override { return _backingStore.getDiskFootprint(); }
-    uint64_t  get_size_on_disk() const override { return _backingStore.get_size_on_disk(); }
-    size_t      getDiskBloat() const override { return _backingStore.getDiskBloat(); }
+    size_t memoryUsed() const override { return _backingStore.memoryUsed(); }
+    size_t getDiskFootprint() const override { return _backingStore.getDiskFootprint(); }
+    uint64_t get_size_on_disk() const override { return _backingStore.get_size_on_disk(); }
+    size_t getDiskBloat() const override { return _backingStore.getDiskBloat(); }
     size_t getMaxSpreadAsBloat() const override { return _backingStore.getMaxSpreadAsBloat(); }
     vespalib::CacheStats getCacheStats() const override;
     size_t memoryMeta() const override { return _backingStore.memoryMeta(); }
-    const std::string & getBaseDir() const override { return _backingStore.getBaseDir(); }
-    void accept(IDocumentStoreReadVisitor &visitor, IDocumentStoreVisitorProgress &visitorProgress,
-                const document::DocumentTypeRepo &repo) override;
-    void accept(IDocumentStoreRewriteVisitor &visitor, IDocumentStoreVisitorProgress &visitorProgress,
-                const document::DocumentTypeRepo &repo) override;
+    const std::string& getBaseDir() const override { return _backingStore.getBaseDir(); }
+    void accept(IDocumentStoreReadVisitor& visitor, IDocumentStoreVisitorProgress& visitorProgress,
+                const document::DocumentTypeRepo& repo) override;
+    void accept(IDocumentStoreRewriteVisitor& visitor, IDocumentStoreVisitorProgress& visitorProgress,
+                const document::DocumentTypeRepo& repo) override;
     double getVisitCost() const override;
     DataStoreStorageStats getStorageStats() const override;
     vespalib::MemoryUsage getMemoryUsage() const override;
@@ -95,7 +99,7 @@ public:
     bool canShrinkLidSpace() const override;
     size_t getEstimatedShrinkLidSpaceGain() const override;
     void shrinkLidSpace() override;
-    void reconfigure(const Config & config);
+    void reconfigure(const Config& config);
 
 private:
     bool useCache() const;
@@ -103,12 +107,12 @@ private:
 
     template <class> class WrapVisitor;
     class WrapVisitorProgress;
-    IDataStore &                             _backingStore;
-    std::unique_ptr<docstore::BackingStore>  _store;
-    std::unique_ptr<docstore::Cache>         _cache;
-    std::unique_ptr<docstore::VisitCache>    _visitCache;
-    std::atomic<Config::UpdateStrategy>      _updateStrategy;
-    mutable std::atomic<uint64_t>            _uncached_lookups;
+    IDataStore&                             _backingStore;
+    std::unique_ptr<docstore::BackingStore> _store;
+    std::unique_ptr<docstore::Cache>        _cache;
+    std::unique_ptr<docstore::VisitCache>   _visitCache;
+    std::atomic<Config::UpdateStrategy>     _updateStrategy;
+    mutable std::atomic<uint64_t>           _uncached_lookups;
 };
 
 } // namespace search
