@@ -14,13 +14,9 @@ class IndexDiskDirState {
     uint32_t                _active_count;
     std::optional<uint64_t> _size_on_disk;
     bool                    _stale;
+
 public:
-    IndexDiskDirState()
-        : _active_count(0),
-          _size_on_disk(),
-          _stale(false)
-    {
-    }
+    IndexDiskDirState() : _active_count(0), _size_on_disk(), _stale(false) {}
 
     bool activate(uint64_t size_on_disk) noexcept;
     bool deactivate() noexcept;
@@ -31,4 +27,4 @@ public:
     void set_stale() noexcept { _stale = true; }
 };
 
-}
+} // namespace searchcorespi::index

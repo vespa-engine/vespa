@@ -2,14 +2,22 @@
 #pragma once
 
 #include "indexsearchable.h"
+
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/vespalib/util/memoryusage.h>
+
 #include <string>
 
-namespace document { class Document; }
-namespace vespalib { class IDestructorCallback; }
-namespace vespalib::slime { struct Cursor; }
+namespace document {
+class Document;
+}
+namespace vespalib {
+class IDestructorCallback;
+}
+namespace vespalib::slime {
+struct Cursor;
+}
 namespace searchcorespi::index {
 
 /**
@@ -44,7 +52,8 @@ struct IMemoryIndex : public searchcorespi::IndexSearchable {
      * @param doc the document to insert.
      * @param on_write_done shared object that notifies write done when destructed.
      */
-    virtual void insertDocument(uint32_t lid, const document::Document &doc, const OnWriteDoneType& on_write_done) = 0;
+    virtual void insertDocument(uint32_t lid, const document::Document& doc,
+                                const OnWriteDoneType& on_write_done) = 0;
 
     /**
      * Removes the given document from this memory index.
@@ -73,16 +82,12 @@ struct IMemoryIndex : public searchcorespi::IndexSearchable {
      * @param docIdLimit the largest local document id used + 1
      * @param serialNum the serial number of the last operation to the memory index.
      */
-    virtual void flushToDisk(const std::string &flushDir,
-                             uint32_t docIdLimit,
-                             search::SerialNum serialNum) = 0;
+    virtual void flushToDisk(const std::string& flushDir, uint32_t docIdLimit, search::SerialNum serialNum) = 0;
 
-    virtual void pruneRemovedFields(const search::index::Schema &schema) = 0;
+    virtual void pruneRemovedFields(const search::index::Schema& schema) = 0;
     virtual std::shared_ptr<const search::index::Schema> getPrunedSchema() const = 0;
 
     virtual void insert_write_context_state(vespalib::slime::Cursor& object) const = 0;
 };
 
-}
-
-
+} // namespace searchcorespi::index

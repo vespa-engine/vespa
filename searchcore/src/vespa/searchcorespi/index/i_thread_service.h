@@ -9,17 +9,16 @@ namespace searchcorespi::index {
 /**
  * Interface for a single thread used for write tasks.
  */
-struct IThreadService : public vespalib::ThreadExecutor
-{
-    IThreadService(const IThreadService &) = delete;
-    IThreadService & operator = (const IThreadService &) = delete;
+struct IThreadService : public vespalib::ThreadExecutor {
+    IThreadService(const IThreadService&) = delete;
+    IThreadService& operator=(const IThreadService&) = delete;
     IThreadService() = default;
     virtual ~IThreadService() = default;
 
     /**
      * Run the given runnable in the underlying thread and wait until its done.
      */
-    virtual void run(vespalib::Runnable &runnable) = 0;
+    virtual void run(vespalib::Runnable& runnable) = 0;
 
     /**
      * Returns whether the current thread is the underlying thread.
@@ -27,8 +26,6 @@ struct IThreadService : public vespalib::ThreadExecutor
     virtual bool isCurrentThread() const = 0;
 };
 
-struct ISyncableThreadService : public IThreadService, vespalib::Syncable {
+struct ISyncableThreadService : public IThreadService, vespalib::Syncable {};
 
-};
-
-}
+} // namespace searchcorespi::index

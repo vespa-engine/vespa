@@ -3,12 +3,15 @@
 
 #include "idiskindex.h"
 #include "imemoryindex.h"
+
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/searchlib/diskindex/docidmapper.h>
 #include <vespa/searchlib/index/i_field_length_inspector.h>
 
-namespace search { class IFlushToken; }
+namespace search {
+class IFlushToken;
+}
 
 namespace searchcorespi::index {
 
@@ -24,19 +27,18 @@ struct IIndexMaintainerOperations {
     /**
      * Creates a new memory index using the given schema.
      */
-    virtual IMemoryIndex::SP createMemoryIndex(const Schema& schema,
-                                               const IFieldLengthInspector& inspector,
+    virtual IMemoryIndex::SP createMemoryIndex(const Schema& schema, const IFieldLengthInspector& inspector,
                                                search::SerialNum serialNum) = 0;
 
     /**
      * Loads a disk index from the given directory.
      */
-    virtual IDiskIndex::SP loadDiskIndex(const std::string &indexDir) = 0;
+    virtual IDiskIndex::SP loadDiskIndex(const std::string& indexDir) = 0;
 
     /**
      * Reloads the given disk index and returns a new instance.
      */
-    virtual IDiskIndex::SP reloadDiskIndex(const IDiskIndex &oldIndex) = 0;
+    virtual IDiskIndex::SP reloadDiskIndex(const IDiskIndex& oldIndex) = 0;
 
     /**
      * Runs fusion on a given set of input disk indexes to create a fusioned output disk index.
@@ -50,14 +52,9 @@ struct IIndexMaintainerOperations {
      * @param selectorArray the array specifying in which input disk index a document is located.
      * @param lastSerialNum the serial number of the last operation in the last input disk index.
      */
-    virtual bool runFusion(const Schema &schema,
-                           const std::string &outputDir,
-                           const std::vector<std::string> &sources,
-                           const SelectorArray &selectorArray,
-                           search::SerialNum lastSerialNum,
-                           std::shared_ptr<search::IFlushToken> flush_token) = 0;
+    virtual bool runFusion(const Schema& schema, const std::string& outputDir,
+                           const std::vector<std::string>& sources, const SelectorArray& selectorArray,
+                           search::SerialNum lastSerialNum, std::shared_ptr<search::IFlushToken> flush_token) = 0;
 };
 
-}
-
-
+} // namespace searchcorespi::index

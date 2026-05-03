@@ -4,7 +4,9 @@
 
 #include "indexsearchable.h"
 
-namespace search::queryeval { class ISourceSelector; }
+namespace search::queryeval {
+class ISourceSelector;
+}
 namespace searchcorespi {
 
 /**
@@ -14,6 +16,7 @@ namespace searchcorespi {
 class IIndexCollection {
 protected:
     using ISourceSelector = search::queryeval::ISourceSelector;
+
 public:
     using UP = std::unique_ptr<IIndexCollection>;
     using SP = std::shared_ptr<IIndexCollection>;
@@ -23,7 +26,7 @@ public:
     /**
      * Returns the source selector used to determine which index to use for each document.
      */
-    virtual const ISourceSelector &getSourceSelector() const = 0;
+    virtual const ISourceSelector& getSourceSelector() const = 0;
 
     /**
      * Returns the number sources (index searchables) for this collection.
@@ -33,7 +36,7 @@ public:
     /**
      * Returns the index searchable for source i (i in the range [0, getSourceCount()>).
      */
-    virtual IndexSearchable &getSearchable(uint32_t i) const = 0;
+    virtual IndexSearchable& getSearchable(uint32_t i) const = 0;
 
     /**
      * Returns the source id for source i (i in the range [0, getSourceCount()>).
@@ -42,8 +45,6 @@ public:
     virtual uint32_t getSourceId(uint32_t i) const = 0;
 
     virtual std::string toString() const;
-
 };
 
-}  // namespace searchcorespi
-
+} // namespace searchcorespi

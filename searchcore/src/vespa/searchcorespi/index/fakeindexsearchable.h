@@ -3,8 +3,9 @@
 #pragma once
 
 #include "indexsearchable.h"
-#include <vespa/searchlib/queryeval/fake_searchable.h>
+
 #include <vespa/searchlib/queryeval/blueprint.h>
+#include <vespa/searchlib/queryeval/fake_searchable.h>
 
 namespace searchcorespi {
 
@@ -16,32 +17,25 @@ private:
     search::queryeval::FakeSearchable _fake;
 
 public:
-    FakeIndexSearchable() : _fake() { }
+    FakeIndexSearchable() : _fake() {}
 
-    search::queryeval::FakeSearchable &getFake() { return _fake; }
+    search::queryeval::FakeSearchable& getFake() { return _fake; }
 
     std::unique_ptr<search::queryeval::Blueprint>
-    createBlueprint(const IRequestContext & requestContext,
-                    const FieldSpec &field,
-                    const Node &term,
-                    search::fef::MatchDataLayout &global_layout) override
-    {
+    createBlueprint(const IRequestContext& requestContext, const FieldSpec& field, const Node& term,
+                    search::fef::MatchDataLayout& global_layout) override {
         return _fake.createBlueprint(requestContext, field, term, global_layout);
     }
 
-    search::IndexStats get_index_stats(bool) const override {
-        return search::IndexStats();
-    }
+    search::IndexStats get_index_stats(bool) const override { return search::IndexStats(); }
 
     search::SerialNum getSerialNum() const override { return 0; }
-    void accept(IndexSearchableVisitor &) const override { }
+    void accept(IndexSearchableVisitor&) const override {}
 
     search::index::FieldLengthInfo get_field_length_info(const std::string& field_name) const override {
-        (void) field_name;
+        (void)field_name;
         return search::index::FieldLengthInfo();
     }
-
 };
 
-}  // namespace searchcorespi
-
+} // namespace searchcorespi

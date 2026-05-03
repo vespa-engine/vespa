@@ -1,26 +1,26 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "index_manager_explorer.h"
+
 #include "index_manager_stats.h"
+
 #include <vespa/searchcorespi/index/imemoryindex.h>
 #include <vespa/searchcorespi/index/indexsearchablevisitor.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 
-using vespalib::slime::Cursor;
-using vespalib::slime::Inserter;
 using search::IndexStats;
 using searchcorespi::index::DiskIndexStats;
 using searchcorespi::index::MemoryIndexStats;
+using vespalib::slime::Cursor;
+using vespalib::slime::Inserter;
 
 namespace searchcorespi {
 
 namespace {
 
-void
-insertDiskIndex(Cursor &arrayCursor, const DiskIndexStats &diskIndex)
-{
-    Cursor &diskIndexCursor = arrayCursor.addObject();
-    const IndexStats &sstats = diskIndex.get_index_stats();
+void insertDiskIndex(Cursor& arrayCursor, const DiskIndexStats& diskIndex) {
+    Cursor&           diskIndexCursor = arrayCursor.addObject();
+    const IndexStats& sstats = diskIndex.get_index_stats();
     diskIndexCursor.setLong("serialNum", diskIndex.getSerialNum());
     diskIndexCursor.setString("indexDir", diskIndex.getIndexdir());
     diskIndexCursor.setLong("disk_usage", sstats.sizeOnDisk());
@@ -32,21 +32,17 @@ insertDiskIndex(Cursor &arrayCursor, const DiskIndexStats &diskIndex)
     }
 }
 
-void
-insertMemoryUsage(Cursor &object, const vespalib::MemoryUsage &usage)
-{
-    Cursor &memory = object.setObject("memoryUsage");
+void insertMemoryUsage(Cursor& object, const vespalib::MemoryUsage& usage) {
+    Cursor& memory = object.setObject("memoryUsage");
     memory.setLong("allocatedBytes", usage.allocatedBytes());
     memory.setLong("usedBytes", usage.usedBytes());
     memory.setLong("deadBytes", usage.deadBytes());
     memory.setLong("onHoldBytes", usage.allocatedBytesOnHold());
 }
 
-void
-insertMemoryIndex(Cursor &arrayCursor, const MemoryIndexStats &memoryIndex)
-{
-    Cursor &memoryIndexCursor = arrayCursor.addObject();
-    const IndexStats &sstats = memoryIndex.get_index_stats();
+void insertMemoryIndex(Cursor& arrayCursor, const MemoryIndexStats& memoryIndex) {
+    Cursor&           memoryIndexCursor = arrayCursor.addObject();
+    const IndexStats& sstats = memoryIndex.get_index_stats();
     memoryIndexCursor.setLong("serialNum", memoryIndex.getSerialNum());
     memoryIndexCursor.setLong("docsInMemory", sstats.docsInMemory());
     insertMemoryUsage(memoryIndexCursor, sstats.memoryUsage());
@@ -55,7 +51,7 @@ insertMemoryIndex(Cursor &arrayCursor, const MemoryIndexStats &memoryIndex)
 class WriteContextInserter : public IndexSearchableVisitor {
 private:
     Cursor& _object;
-    bool _has_inserted;
+    bool    _has_inserted;
 
 public:
     WriteContextInserter(Cursor& object) : _object(object), _has_inserted(false) {}
@@ -68,30 +64,26 @@ public:
     }
 };
 
+} // namespace
+
+IndexManagerExplorer::IndexManagerExplorer(IIndexManager::SP mgr) : _mgr(std::move(mgr)) {
 }
 
-IndexManagerExplorer::IndexManagerExplorer(IIndexManager::SP mgr)
-    : _mgr(std::move(mgr))
-{
-}
-
-void
-IndexManagerExplorer::get_state(const Inserter &inserter, bool full) const
-{
-    Cursor &object = inserter.insertObject();
+void IndexManagerExplorer::get_state(const Inserter& inserter, bool full) const {
+    Cursor& object = inserter.insertObject();
     object.setLong("lastSerialNum", _mgr->getCurrentSerialNum());
     if (full) {
         IndexManagerStats stats(*_mgr);
         object.setBool("pending_urgent_flush", _mgr->has_pending_urgent_flush());
-        Cursor &diskIndexArrayCursor = object.setArray("diskIndexes");
-        for (const auto &diskIndex : stats.getDiskIndexes()) {
+        Cursor& diskIndexArrayCursor = object.setArray("diskIndexes");
+        for (const auto& diskIndex : stats.getDiskIndexes()) {
             insertDiskIndex(diskIndexArrayCursor, diskIndex);
         }
-        Cursor &memoryIndexArrayCursor = object.setArray("memoryIndexes");
-        for (const auto &memoryIndex : stats.getMemoryIndexes()) {
+        Cursor& memoryIndexArrayCursor = object.setArray("memoryIndexes");
+        for (const auto& memoryIndex : stats.getMemoryIndexes()) {
             insertMemoryIndex(memoryIndexArrayCursor, memoryIndex);
         }
-        auto& write_contexts = object.setObject("write_contexts");
+        auto&                write_contexts = object.setObject("write_contexts");
         WriteContextInserter visitor(write_contexts);
         _mgr->getSearchable()->accept(visitor);
     }
