@@ -1,49 +1,45 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "threaded_compactable_lid_space.h"
+
 #include <future>
 
 namespace search::common {
 
 ThreadedCompactableLidSpace::ThreadedCompactableLidSpace(std::shared_ptr<ICompactableLidSpace> target,
-                                                         ISequencedTaskExecutor &executor,
-                                                         ISequencedTaskExecutor::ExecutorId id)
-    : _target(std::move(target)),
-      _executor(executor),
-      _executorId(id)
-{
+                                                         ISequencedTaskExecutor&               executor,
+                                                         ISequencedTaskExecutor::ExecutorId    id)
+    : _target(std::move(target)), _executor(executor), _executorId(id) {
 }
 
 ThreadedCompactableLidSpace::~ThreadedCompactableLidSpace() = default;
 
-void
-ThreadedCompactableLidSpace::compactLidSpace(uint32_t wantedDocLidLimit)
-{
+void ThreadedCompactableLidSpace::compactLidSpace(uint32_t wantedDocLidLimit) {
     std::promise<void> promise;
-    auto future = promise.get_future();
-    _executor.executeLambda(_executorId, [this, wantedDocLidLimit, &promise]() { _target->compactLidSpace(wantedDocLidLimit); promise.set_value(); });
+    auto               future = promise.get_future();
+    _executor.executeLambda(_executorId, [this, wantedDocLidLimit, &promise]() {
+        _target->compactLidSpace(wantedDocLidLimit);
+        promise.set_value();
+    });
     future.wait();
 }
 
-bool
-ThreadedCompactableLidSpace::canShrinkLidSpace() const
-{
+bool ThreadedCompactableLidSpace::canShrinkLidSpace() const {
     return _target->canShrinkLidSpace();
 }
 
-size_t
-ThreadedCompactableLidSpace::getEstimatedShrinkLidSpaceGain() const
-{
+size_t ThreadedCompactableLidSpace::getEstimatedShrinkLidSpaceGain() const {
     return _target->getEstimatedShrinkLidSpaceGain();
 }
 
-void
-ThreadedCompactableLidSpace::shrinkLidSpace()
-{
+void ThreadedCompactableLidSpace::shrinkLidSpace() {
     std::promise<void> promise;
-    auto future = promise.get_future();
-    _executor.executeLambda(_executorId, [this, &promise]() { _target->shrinkLidSpace(); promise.set_value(); });
+    auto               future = promise.get_future();
+    _executor.executeLambda(_executorId, [this, &promise]() {
+        _target->shrinkLidSpace();
+        promise.set_value();
+    });
     future.wait();
 }
 
-}
+} // namespace search::common

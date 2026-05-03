@@ -2,13 +2,13 @@
 #pragma once
 
 #include <vespa/vespalib/util/generationholder.h>
+
 #include <set>
 #include <span>
 
 namespace search {
 
-class CondensedBitVector
-{
+class CondensedBitVector {
 public:
     using UP = std::unique_ptr<CondensedBitVector>;
     using SP = std::shared_ptr<CondensedBitVector>;
@@ -17,8 +17,8 @@ public:
 
     virtual ~CondensedBitVector();
 
-    virtual void initializeCountVector(const KeySet & keys, std::span<uint8_t> v) const = 0;
-    virtual void addCountVector(const KeySet & keys, std::span<uint8_t> v) const = 0;
+    virtual void initializeCountVector(const KeySet& keys, std::span<uint8_t> v) const = 0;
+    virtual void addCountVector(const KeySet& keys, std::span<uint8_t> v) const = 0;
     virtual void set(Key key, uint32_t index, bool v) = 0;
     virtual bool get(Key key, uint32_t index) const = 0;
     virtual void clearIndex(uint32_t index) = 0;
@@ -36,7 +36,7 @@ public:
     virtual void adjustDocIdLimit(uint32_t docId) = 0;
     bool hasKey(Key key) const { return key < getKeyCapacity(); }
     void addKey(Key key) const;
-    static CondensedBitVector::UP create(size_t size, vespalib::GenerationHolder &genHolder);
+    static CondensedBitVector::UP create(size_t size, vespalib::GenerationHolder& genHolder);
 };
 
-}
+} // namespace search

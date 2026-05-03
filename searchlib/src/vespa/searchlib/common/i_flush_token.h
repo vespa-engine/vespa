@@ -14,4 +14,4 @@ public:
     virtual bool stop_requested() const noexcept = 0;
 };
 
-}
+} // namespace search

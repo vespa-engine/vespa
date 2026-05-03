@@ -3,31 +3,32 @@
 #pragma once
 
 #include <vespa/searchcommon/common/iblobconverter.h>
+
 #include <string>
 
 namespace search::common {
 
-class PassThroughConverter : public BlobConverter
-{
+class PassThroughConverter : public BlobConverter {
 private:
-    ConstBufferRef onConvert(const ConstBufferRef & src) const override;
+    ConstBufferRef onConvert(const ConstBufferRef& src) const override;
 };
 
-class LowercaseConverter : public BlobConverter
-{
+class LowercaseConverter : public BlobConverter {
 public:
     LowercaseConverter() noexcept;
+
 private:
-    ConstBufferRef onConvert(const ConstBufferRef & src) const override;
+    ConstBufferRef onConvert(const ConstBufferRef& src) const override;
     mutable std::string _buffer;
 };
 
 class ConverterFactory {
 protected:
     using string_view = std::string_view;
+
 public:
     virtual ~ConverterFactory() = default;
     virtual BlobConverter::UP create(string_view local, string_view strength) const = 0;
 };
 
-}
+} // namespace search::common

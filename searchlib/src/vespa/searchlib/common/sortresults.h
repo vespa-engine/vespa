@@ -4,16 +4,17 @@
 
 #include "rankedhit.h"
 #include "sortspec.h"
+
 #include <vespa/vespalib/stllike/allocator.h>
 #include <vespa/vespalib/util/doom.h>
 
 #define INSERT_SORT_LEVEL 80
 
 namespace search::attribute {
-    class IAttributeContext;
-    class IAttributeVector;
-    class ISortBlobWriter;
-}
+class IAttributeContext;
+class IAttributeVector;
+class ISortBlobWriter;
+} // namespace search::attribute
 /**
  * Sort the given array of results.
  *
@@ -43,13 +44,12 @@ struct FastS_IResultSorter {
 
 //-----------------------------------------------------------------------------
 
-class FastS_DefaultResultSorter : public FastS_IResultSorter
-{
+class FastS_DefaultResultSorter : public FastS_IResultSorter {
 private:
     static FastS_DefaultResultSorter _instance;
 
 public:
-    static FastS_DefaultResultSorter *instance() { return &_instance; }
+    static FastS_DefaultResultSorter* instance() { return &_instance; }
     void sortResults(search::RankedHit a[], uint32_t n, uint32_t ntop) override {
         return FastS_SortResults(a, n, ntop);
     }
@@ -57,34 +57,25 @@ public:
 
 //-----------------------------------------------------------------------------
 
-class FastS_SortSpec : public FastS_IResultSorter
-{
+class FastS_SortSpec : public FastS_IResultSorter {
 private:
     friend class MultilevelSortTest;
-public:
-    enum {
-        ASC_VECTOR  = 0,
-        DESC_VECTOR = 1,
-        ASC_RANK    = 2,
-        DESC_RANK   = 3,
-        ASC_DOCID   = 4,
-        DESC_DOCID  = 5
-    };
 
-    struct VectorRef
-    {
-        VectorRef(uint32_t type, const search::attribute::IAttributeVector * vector,
+public:
+    enum { ASC_VECTOR = 0, DESC_VECTOR = 1, ASC_RANK = 2, DESC_RANK = 3, ASC_DOCID = 4, DESC_DOCID = 5 };
+
+    struct VectorRef {
+        VectorRef(uint32_t type, const search::attribute::IAttributeVector* vector,
                   std::unique_ptr<search::attribute::ISortBlobWriter> writer) noexcept;
-        uint32_t                 _type;
-        const search::attribute::IAttributeVector *_vector;
+        uint32_t                                            _type;
+        const search::attribute::IAttributeVector*          _vector;
         std::unique_ptr<search::attribute::ISortBlobWriter> _writer;
         bool has_ascending_sort_order() const {
             return _type == ASC_VECTOR || _type == ASC_RANK || _type == ASC_DOCID;
         }
     };
 
-    struct SortData : public search::RankedHit
-    {
+    struct SortData : public search::RankedHit {
         SortData() noexcept : RankedHit(), _idx(0u), _len(0u), _pos(0u) {}
         uint32_t _idx;
         uint32_t _len;
@@ -96,35 +87,35 @@ private:
     using BinarySortData = std::vector<uint8_t, vespalib::allocator_large<uint8_t>>;
     using SortDataArray = std::vector<SortData, vespalib::allocator_large<SortData>>;
     using ConverterFactory = search::common::ConverterFactory;
-    std::string         _documentmetastore;
+    std::string              _documentmetastore;
     uint16_t                 _partitionId;
     vespalib::Doom           _doom;
-    const ConverterFactory & _ucaFactory;
+    const ConverterFactory&  _ucaFactory;
     search::common::SortSpec _sortSpec;
     VectorRefList            _vectors;
     BinarySortData           _binarySortData;
     SortDataArray            _sortDataArray;
 
-    bool Add(search::attribute::IAttributeContext & vecMan, const search::common::FieldSortSpec & field_sort_spec);
-    void initSortData(const search::RankedHit *a, uint32_t n);
-    int initSortData(const VectorRef & vec, const search::RankedHit & hit, size_t offset);
+    bool Add(search::attribute::IAttributeContext& vecMan, const search::common::FieldSortSpec& field_sort_spec);
+    void initSortData(const search::RankedHit* a, uint32_t n);
+    int initSortData(const VectorRef& vec, const search::RankedHit& hit, size_t offset);
 
 public:
-    FastS_SortSpec(const FastS_SortSpec &) = delete;
-    FastS_SortSpec & operator = (const FastS_SortSpec &) = delete;
-    FastS_SortSpec(std::string_view documentmetastore, uint32_t partitionId, const vespalib::Doom & doom, const ConverterFactory & ucaFactory);
+    FastS_SortSpec(const FastS_SortSpec&) = delete;
+    FastS_SortSpec& operator=(const FastS_SortSpec&) = delete;
+    FastS_SortSpec(std::string_view documentmetastore, uint32_t partitionId, const vespalib::Doom& doom,
+                   const ConverterFactory& ucaFactory);
     ~FastS_SortSpec() override;
 
-    std::pair<const char *, size_t> getSortRef(size_t i) const {
-        return {(const char*)(&_binarySortData[0] + _sortDataArray[i]._idx), _sortDataArray[i]._len };
+    std::pair<const char*, size_t> getSortRef(size_t i) const {
+        return {(const char*)(&_binarySortData[0] + _sortDataArray[i]._idx), _sortDataArray[i]._len};
     }
-    bool Init(const std::string & sortSpec, search::attribute::IAttributeContext & vecMan);
+    bool Init(const std::string& sortSpec, search::attribute::IAttributeContext& vecMan);
     void sortResults(search::RankedHit a[], uint32_t n, uint32_t topn) override;
     uint32_t getSortDataSize(uint32_t offset, uint32_t n);
-    void copySortData(uint32_t offset, uint32_t n, uint32_t *idx, char *buf);
+    void copySortData(uint32_t offset, uint32_t n, uint32_t* idx, char* buf);
     void freeSortData();
-    void initWithoutSorting(const search::RankedHit * hits, uint32_t hitCnt);
+    void initWithoutSorting(const search::RankedHit* hits, uint32_t hitCnt);
 };
 
 //-----------------------------------------------------------------------------
-

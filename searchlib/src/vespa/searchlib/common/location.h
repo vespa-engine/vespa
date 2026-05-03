@@ -7,15 +7,13 @@
 
 namespace search::common {
 
-class Location : public DocumentLocations,
-                 public GeoLocation
-{
+class Location : public DocumentLocations, public GeoLocation {
 public:
     Location(const GeoLocation& from);
     ~Location() {}
-    Location(Location &&) = default;
+    Location(Location&&) = default;
     bool getRankOnDistance() const { return has_point; }
     bool getPruneOnDistance() const { return can_limit(); }
 };
 
-}
+} // namespace search::common

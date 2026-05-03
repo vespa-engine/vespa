@@ -14,7 +14,7 @@ namespace search {
 class IDocumentIdProvider {
 public:
     virtual ~IDocumentIdProvider() = default;
-   [[nodiscard]] virtual std::string_view get_document_id_string_view(uint32_t lid) const noexcept = 0;
+    [[nodiscard]] virtual std::string_view get_document_id_string_view(uint32_t lid) const noexcept = 0;
 };
 
-}
+} // namespace search

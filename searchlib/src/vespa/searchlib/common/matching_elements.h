@@ -15,8 +15,7 @@ namespace search {
  * Keeps track of which elements matched the query for a set of fields
  * across multiple documents.
  **/
-class MatchingElements
-{
+class MatchingElements {
 private:
     using key_t = std::pair<uint32_t, std::string>;
     using value_t = std::vector<uint32_t>;
@@ -29,8 +28,8 @@ public:
 
     using UP = std::unique_ptr<MatchingElements>;
 
-    void add_matching_elements(uint32_t docid, const std::string &field_name, const std::vector<uint32_t> &elements);
-    const std::vector<uint32_t> &get_matching_elements(uint32_t docid, const std::string &field_name) const;
+    void add_matching_elements(uint32_t docid, const std::string& field_name, const std::vector<uint32_t>& elements);
+    const std::vector<uint32_t>& get_matching_elements(uint32_t docid, const std::string& field_name) const;
 };
 
 } // namespace search

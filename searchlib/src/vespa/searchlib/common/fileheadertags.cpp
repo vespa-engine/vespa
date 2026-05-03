@@ -13,4 +13,4 @@ std::string DESC("desc");
 std::string ENTRY_SIZE("entrySize");
 std::string NUM_KEYS("numKeys");
 
-}
+} // namespace search::tags

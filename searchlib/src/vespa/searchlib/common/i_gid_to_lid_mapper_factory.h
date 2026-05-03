@@ -11,8 +11,7 @@ class IGidToLidMapper;
 /*
  * Interface to factory class for creating classes mapping from gid to lid.
  */
-class IGidToLidMapperFactory
-{
+class IGidToLidMapperFactory {
 public:
     using SP = std::shared_ptr<IGidToLidMapperFactory>;
     virtual ~IGidToLidMapperFactory() = default;

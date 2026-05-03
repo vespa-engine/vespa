@@ -4,6 +4,7 @@
 
 #include "geo_location.h"
 #include "geo_location_spec.h"
+
 #include <cstdint>
 #include <string>
 
@@ -12,8 +13,7 @@ namespace search::common {
 /**
  * Parser for a geo-location string representation.
  **/
-class GeoLocationParser
-{
+class GeoLocationParser {
 public:
     GeoLocationParser();
 
@@ -23,7 +23,8 @@ public:
     std::string getFieldName() const { return _field_name; }
     GeoLocation getGeoLocation() const;
 
-    const char * getParseError() const { return _parseError; }
+    const char* getParseError() const { return _parseError; }
+
 private:
     bool _valid;
     bool _has_point;
@@ -31,19 +32,19 @@ private:
 
     std::string _field_name;
 
-    int32_t  _x;         /* Query X position */
-    int32_t  _y;         /* Query Y position */
-    uint32_t _x_aspect;  /* X distance multiplier fraction */
-    uint32_t _radius;    /* Radius for euclidean distance */
-    int32_t  _min_x;     /* Min X coordinate */
-    int32_t  _max_x;     /* Max X coordinate */
-    int32_t  _min_y;     /* Min Y coordinate */
-    int32_t  _max_y;     /* Max Y coordinate */
+    int32_t  _x;        /* Query X position */
+    int32_t  _y;        /* Query Y position */
+    uint32_t _x_aspect; /* X distance multiplier fraction */
+    uint32_t _radius;   /* Radius for euclidean distance */
+    int32_t  _min_x;    /* Min X coordinate */
+    int32_t  _max_x;    /* Max X coordinate */
+    int32_t  _min_y;    /* Min Y coordinate */
+    int32_t  _max_y;    /* Max Y coordinate */
 
-    const char *_parseError;
-    bool correctDimensionalitySkip(const char * &p);
+    const char* _parseError;
+    bool correctDimensionalitySkip(const char*& p);
     bool parseJsonFormat(std::string_view locStr);
     bool parseOldFormat(std::string_view locStr);
 };
 
-} // namespace
+} // namespace search::common

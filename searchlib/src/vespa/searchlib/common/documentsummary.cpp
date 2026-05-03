@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "documentsummary.h"
+
 #include <vespa/fastlib/io/bufferedfile.h>
-#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/error.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.documentsummary");
@@ -12,14 +13,12 @@ using vespalib::getLastErrorString;
 
 namespace search::docsummary {
 
-bool
-DocumentSummary::readDocIdLimit(const std::string &dir, uint32_t &count)
-{
-    char numbuf[20];
+bool DocumentSummary::readDocIdLimit(const std::string& dir, uint32_t& count) {
+    char              numbuf[20];
     Fast_BufferedFile qcntfile(4_Ki);
-    unsigned int qcnt;
-    std::string qcntname;
-    const char *p;
+    unsigned int      qcnt;
+    std::string       qcntname;
+    const char*       p;
 
     qcntname = dir + "/docsum.qcnt";
 
@@ -35,11 +34,8 @@ DocumentSummary::readDocIdLimit(const std::string &dir, uint32_t &count)
     return true;
 }
 
-
-bool
-DocumentSummary::writeDocIdLimit(const std::string &dir, uint32_t count)
-{
-    std::string qcntname = dir + "/docsum.qcnt";
+bool DocumentSummary::writeDocIdLimit(const std::string& dir, uint32_t count) {
+    std::string       qcntname = dir + "/docsum.qcnt";
     Fast_BufferedFile qcntfile(4_Ki);
 
     qcntfile.WriteOpen(qcntname.c_str());
@@ -49,15 +45,15 @@ DocumentSummary::writeDocIdLimit(const std::string &dir, uint32_t count)
     }
     qcntfile.addNum(count, 0, ' ');
     qcntfile.WriteByte('\n');
-    if ( ! qcntfile.Sync() ) {
+    if (!qcntfile.Sync()) {
         LOG(error, "Could not sync %s: %s", qcntname.c_str(), getLastErrorString().c_str());
         return false;
     }
-    if ( ! qcntfile.Close() ) {
+    if (!qcntfile.Close()) {
         LOG(error, "Could not sync %s: %s", qcntname.c_str(), getLastErrorString().c_str());
         return false;
     }
     return true;
 }
 
-}
+} // namespace search::docsummary
