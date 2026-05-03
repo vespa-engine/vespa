@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "prod_features_test.h"
+
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
@@ -11,9 +12,8 @@
 #include <vespa/searchlib/attribute/singleboolattribute.h>
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/features/agefeature.h>
-#include <vespa/searchlib/features/average_field_length_feature.h>
-#include <vespa/searchlib/features/array_parser.hpp>
 #include <vespa/searchlib/features/attributefeature.h>
+#include <vespa/searchlib/features/average_field_length_feature.h>
 #include <vespa/searchlib/features/closenessfeature.h>
 #include <vespa/searchlib/features/distancefeature.h>
 #include <vespa/searchlib/features/dotproductfeature.h>
@@ -38,7 +38,6 @@
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/features/termfeature.h>
 #include <vespa/searchlib/features/utils.h>
-#include <vespa/searchlib/features/weighted_set_parser.hpp>
 #include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/queryproperties.h>
@@ -49,6 +48,10 @@
 #include <vespa/vespalib/util/rand48.h>
 #include <vespa/vespalib/util/string_hash.h>
 #include <vespa/vespalib/util/stringfmt.h>
+
+#include <vespa/searchlib/features/array_parser.hpp>
+#include <vespa/searchlib/features/weighted_set_parser.hpp>
+
 #include <cmath>
 #include <iomanip>
 #include <sstream>
@@ -82,8 +85,7 @@ using DataType = FieldInfo::DataType;
 
 const double EPS = 10e-6;
 
-Test::Test()
-{
+Test::Test() {
     // Configure factory with all known blueprints.
     setup_fef_test_plugin(_factory);
     setup_search_features(_factory);
@@ -94,8 +96,7 @@ Test::~Test() = default;
 ProdFeaturesTest::ProdFeaturesTest() = default;
 ProdFeaturesTest::~ProdFeaturesTest() = default;
 
-TEST_F(ProdFeaturesTest, test_ft_lib)
-{
+TEST_F(ProdFeaturesTest, test_ft_lib) {
     { // toQuery
         FtQuery q = FtUtil::toQuery("a b!50 0.5:c!200%0.5  d%0.3   e!300 0.3:f ");
         ASSERT_TRUE(q.size() == 6);
@@ -125,7 +126,7 @@ TEST_F(ProdFeaturesTest, test_ft_lib)
         EXPECT_NEAR(q[5].significance, 0.1f, EPS);
     }
     { // toRankResult
-        RankResult rr = toRankResult("foo", "a:0.5 b:-0.5  c:2   d:3 ");
+        RankResult               rr = toRankResult("foo", "a:0.5 b:-0.5  c:2   d:3 ");
         std::vector<std::string> keys = rr.getKeys();
         ASSERT_TRUE(keys.size() == 4);
         EXPECT_EQ(keys[0], std::string("foo.a"));
@@ -139,9 +140,7 @@ TEST_F(ProdFeaturesTest, test_ft_lib)
     }
 }
 
-
-TEST_F(ProdFeaturesTest, test_age)
-{
+TEST_F(ProdFeaturesTest, test_age) {
     { // Test blueprint
         FtIndexEnvironment idx_env;
         idx_env.getBuilder()
@@ -160,16 +159,14 @@ TEST_F(ProdFeaturesTest, test_age)
     }
 
     { // Test executor
-        assertAge(0,   "doctime", 60, 120);
-        assertAge(60,  "doctime", 180, 120);
+        assertAge(0, "doctime", 60, 120);
+        assertAge(60, "doctime", 180, 120);
         assertAge(15000000000, "doctime", 20000000000, 5000000000);
     }
 }
 
-void
-Test::assertAge(feature_t expAge, const std::string & attr, uint64_t now, uint64_t docTime)
-{
-    std::string feature = "age(" + attr + ")";
+void Test::assertAge(feature_t expAge, const std::string& attr, uint64_t now, uint64_t docTime) {
+    std::string   feature = "age(" + attr + ")";
     FtFeatureTest ft(_factory, feature);
     setupForAgeTest(ft, docTime);
     ft.getQueryEnv().getProperties().add(queryproperties::now::SystemTime::NAME,
@@ -178,27 +175,22 @@ Test::assertAge(feature_t expAge, const std::string & attr, uint64_t now, uint64
     ASSERT_TRUE(ft.execute(RankResult().addScore(feature, expAge)));
 }
 
-void
-Test::setupForAgeTest(FtFeatureTest & ft, int64_t docTime)
-{
-    auto doctime = AttributeBuilder("doctime", AVC(AVBT::INT64,  AVCT::SINGLE)).
-            fill({docTime}).get();
+void Test::setupForAgeTest(FtFeatureTest& ft, int64_t docTime) {
+    auto doctime = AttributeBuilder("doctime", AVC(AVBT::INT64, AVCT::SINGLE)).fill({docTime}).get();
     ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "doctime");
     ft.getIndexEnv().getAttributeMap().add(doctime);
 }
 
-TEST_F(ProdFeaturesTest, test_attribute)
-{
+TEST_F(ProdFeaturesTest, test_attribute) {
     AttributeBlueprint prototype;
     {
         FtIndexEnvironment idx_env;
-        idx_env.getBuilder()
-            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "bar");
+        idx_env.getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "bar");
 
         EXPECT_TRUE(assertCreateInstance(prototype, "attribute"));
 
         StringList params, in, out;
-        FT_SETUP_FAIL(prototype, idx_env, params);            // expects 1 - 2 params
+        FT_SETUP_FAIL(prototype, idx_env, params); // expects 1 - 2 params
 
         FT_SETUP_OK(prototype, idx_env, params.add("bar"), in,
                     out.add("value").add("weight").add("contains").add("count"));
@@ -208,24 +200,25 @@ TEST_F(ProdFeaturesTest, test_attribute)
     }
     { // single attributes
         RankResult exp;
-        exp.addScore("attribute(sint)", 10).
-            addScore("attribute(sint,0)", 10).
-            addScore("attribute(slong)", 20).
-            addScore("attribute(sbyte)", 37).
-            addScore("attribute(sbool)", 1).
-            addScore("attribute(sebool)", 0).
-            addScore("attribute(sfloat)", 60.5f).
-            addScore("attribute(sdouble)", 67.5f).
-            addScore("attribute(sstr)", vespalib::hash2d("foo")).
-            addScore("attribute(sint).count", 1).
-            addScore("attribute(sfloat).count", 1).
-            addScore("attribute(sstr).count", 1).
-            addScore("attribute(udefint)", search::attribute::getUndefined<feature_t>()).
-            addScore("attribute(udeffloat)", search::attribute::getUndefined<feature_t>()).
-            addScore("attribute(udefstr)", vespalib::hash2d(""));
+        exp.addScore("attribute(sint)", 10)
+            .addScore("attribute(sint,0)", 10)
+            .addScore("attribute(slong)", 20)
+            .addScore("attribute(sbyte)", 37)
+            .addScore("attribute(sbool)", 1)
+            .addScore("attribute(sebool)", 0)
+            .addScore("attribute(sfloat)", 60.5f)
+            .addScore("attribute(sdouble)", 67.5f)
+            .addScore("attribute(sstr)", vespalib::hash2d("foo"))
+            .addScore("attribute(sint).count", 1)
+            .addScore("attribute(sfloat).count", 1)
+            .addScore("attribute(sstr).count", 1)
+            .addScore("attribute(udefint)", search::attribute::getUndefined<feature_t>())
+            .addScore("attribute(udeffloat)", search::attribute::getUndefined<feature_t>())
+            .addScore("attribute(udefstr)", vespalib::hash2d(""));
 
         FtFeatureTest ft(_factory, exp.getKeys());
-        ft.getIndexEnv().getBuilder()
+        ft.getIndexEnv()
+            .getBuilder()
             .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sint")
             .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "slong")
             .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sbyte")
@@ -243,88 +236,92 @@ TEST_F(ProdFeaturesTest, test_attribute)
     }
     { // array attributes
         RankResult exp;
-        exp.addScore("attribute(aint)", 0).
-            addScore("attribute(aint,0)", 20).
-            addScore("attribute(aint,1)", 30).
-            addScore("attribute(aint,2)", 0).
-            addScore("attribute(afloat,0)", 70.5f).
-            addScore("attribute(afloat,1)", 80.5f).
-            addScore("attribute(astr,0)", vespalib::hash2d("bar")).
-            addScore("attribute(astr,1)", vespalib::hash2d("baz")).
-            addScore("attribute(aint).count", 2).
-            addScore("attribute(aint,0).count", 0).
-            addScore("attribute(afloat).count", 2).
-            addScore("attribute(afloat,0).count", 0).
-            addScore("attribute(astr).count", 2).
-            addScore("attribute(astr,0).count", 0);
+        exp.addScore("attribute(aint)", 0)
+            .addScore("attribute(aint,0)", 20)
+            .addScore("attribute(aint,1)", 30)
+            .addScore("attribute(aint,2)", 0)
+            .addScore("attribute(afloat,0)", 70.5f)
+            .addScore("attribute(afloat,1)", 80.5f)
+            .addScore("attribute(astr,0)", vespalib::hash2d("bar"))
+            .addScore("attribute(astr,1)", vespalib::hash2d("baz"))
+            .addScore("attribute(aint).count", 2)
+            .addScore("attribute(aint,0).count", 0)
+            .addScore("attribute(afloat).count", 2)
+            .addScore("attribute(afloat,0).count", 0)
+            .addScore("attribute(astr).count", 2)
+            .addScore("attribute(astr,0).count", 0);
 
         FtFeatureTest ft(_factory, exp.getKeys());
-        ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "aint").
-            addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "afloat").
-            addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "astr");
+        ft.getIndexEnv()
+            .getBuilder()
+            .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "aint")
+            .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "afloat")
+            .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "astr");
         setupForAttributeTest(ft);
         ASSERT_TRUE(ft.setup());
         ASSERT_TRUE(ft.execute(exp));
     }
     { // weighted set attributes
         RankResult exp;
-        exp.addScore("attribute(wsint).value", 0).
-            addScore("attribute(wsint).weight", 0).
-            addScore("attribute(wsint).contains", 0).
-            addScore("attribute(wsint,100).value", 0).
-            addScore("attribute(wsint,100).weight", 0).
-            addScore("attribute(wsint,100).contains", 0).
-            addScore("attribute(wsint,40).value", 40).
-            addScore("attribute(wsint,40).weight", 10).
-            addScore("attribute(wsint,40).contains", 1).
-            addScore("attribute(wsint,50).value", 50).
-            addScore("attribute(wsint,50).weight", 20).
-            addScore("attribute(wsint,50).contains", 1).
-            addScore("attribute(wsfloat).value", 0).
-            addScore("attribute(wsfloat).weight", 0).
-            addScore("attribute(wsfloat).contains", 0).
-            addScore("attribute(wsfloat,1000.5).value", 0).
-            addScore("attribute(wsfloat,1000.5).weight", 0).
-            addScore("attribute(wsfloat,1000.5).contains", 0).
-            addScore("attribute(wsfloat,90.5).value", 90.5f).
-            addScore("attribute(wsfloat,90.5).weight", -30).
-            addScore("attribute(wsfloat,90.5).contains", 1).
-            addScore("attribute(wsfloat,100.5).value", 100.5f).
-            addScore("attribute(wsfloat,100.5).weight", -40).
-            addScore("attribute(wsfloat,100.5).contains", 1).
-            addScore("attribute(wsstr).value", 0).
-            addScore("attribute(wsstr).weight", 0).
-            addScore("attribute(wsstr).contains", 0).
-            addScore("attribute(wsstr,foo).value", 0).
-            addScore("attribute(wsstr,foo).weight", 0).
-            addScore("attribute(wsstr,foo).contains", 0).
-            addScore("attribute(wsstr,qux).value", vespalib::hash2d("qux")).
-            addScore("attribute(wsstr,qux).weight", 11).
-            addScore("attribute(wsstr,qux).contains", 1).
-            addScore("attribute(wsstr,quux).value", vespalib::hash2d("quux")).
-            addScore("attribute(wsstr,quux).weight", 12).
-            addScore("attribute(wsstr,quux).contains", 1).
-            addScore("attribute(wsint).count", 2).
-            addScore("attribute(wsint,40).count", 0).
-            addScore("attribute(wsfloat).count", 2).
-            addScore("attribute(wsfloat,90.5).count", 0).
-            addScore("attribute(wsstr).count", 2).
-            addScore("attribute(wsstr,qux).count", 0);
+        exp.addScore("attribute(wsint).value", 0)
+            .addScore("attribute(wsint).weight", 0)
+            .addScore("attribute(wsint).contains", 0)
+            .addScore("attribute(wsint,100).value", 0)
+            .addScore("attribute(wsint,100).weight", 0)
+            .addScore("attribute(wsint,100).contains", 0)
+            .addScore("attribute(wsint,40).value", 40)
+            .addScore("attribute(wsint,40).weight", 10)
+            .addScore("attribute(wsint,40).contains", 1)
+            .addScore("attribute(wsint,50).value", 50)
+            .addScore("attribute(wsint,50).weight", 20)
+            .addScore("attribute(wsint,50).contains", 1)
+            .addScore("attribute(wsfloat).value", 0)
+            .addScore("attribute(wsfloat).weight", 0)
+            .addScore("attribute(wsfloat).contains", 0)
+            .addScore("attribute(wsfloat,1000.5).value", 0)
+            .addScore("attribute(wsfloat,1000.5).weight", 0)
+            .addScore("attribute(wsfloat,1000.5).contains", 0)
+            .addScore("attribute(wsfloat,90.5).value", 90.5f)
+            .addScore("attribute(wsfloat,90.5).weight", -30)
+            .addScore("attribute(wsfloat,90.5).contains", 1)
+            .addScore("attribute(wsfloat,100.5).value", 100.5f)
+            .addScore("attribute(wsfloat,100.5).weight", -40)
+            .addScore("attribute(wsfloat,100.5).contains", 1)
+            .addScore("attribute(wsstr).value", 0)
+            .addScore("attribute(wsstr).weight", 0)
+            .addScore("attribute(wsstr).contains", 0)
+            .addScore("attribute(wsstr,foo).value", 0)
+            .addScore("attribute(wsstr,foo).weight", 0)
+            .addScore("attribute(wsstr,foo).contains", 0)
+            .addScore("attribute(wsstr,qux).value", vespalib::hash2d("qux"))
+            .addScore("attribute(wsstr,qux).weight", 11)
+            .addScore("attribute(wsstr,qux).contains", 1)
+            .addScore("attribute(wsstr,quux).value", vespalib::hash2d("quux"))
+            .addScore("attribute(wsstr,quux).weight", 12)
+            .addScore("attribute(wsstr,quux).contains", 1)
+            .addScore("attribute(wsint).count", 2)
+            .addScore("attribute(wsint,40).count", 0)
+            .addScore("attribute(wsfloat).count", 2)
+            .addScore("attribute(wsfloat,90.5).count", 0)
+            .addScore("attribute(wsstr).count", 2)
+            .addScore("attribute(wsstr,qux).count", 0);
 
         FtFeatureTest ft(_factory, exp.getKeys());
-        ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::WEIGHTEDSET, "wsint").
-            addField(FieldType::ATTRIBUTE, CollectionType::WEIGHTEDSET, "wsfloat").
-            addField(FieldType::ATTRIBUTE, CollectionType::WEIGHTEDSET, "wsstr");
+        ft.getIndexEnv()
+            .getBuilder()
+            .addField(FieldType::ATTRIBUTE, CollectionType::WEIGHTEDSET, "wsint")
+            .addField(FieldType::ATTRIBUTE, CollectionType::WEIGHTEDSET, "wsfloat")
+            .addField(FieldType::ATTRIBUTE, CollectionType::WEIGHTEDSET, "wsstr");
         setupForAttributeTest(ft);
         ASSERT_TRUE(ft.setup());
         ASSERT_TRUE(ft.execute(exp));
     }
     { // unique only attribute, i.e. enumerated attribute
         RankResult exp;
-        exp.addScore("attribute(unique).value", 10).
-            addScore("attribute(unique).weight", 0).
-            addScore("attribute(unique).contains", 0).
-            addScore("attribute(unique).count", 1);
+        exp.addScore("attribute(unique).value", 10)
+            .addScore("attribute(unique).weight", 0)
+            .addScore("attribute(unique).contains", 0)
+            .addScore("attribute(unique).count", 1);
 
         FtFeatureTest ft(_factory, exp.getKeys());
         setupForAttributeTest(ft);
@@ -341,29 +338,26 @@ TEST_F(ProdFeaturesTest, test_attribute)
     }
 }
 
-
-void
-Test::setupForAttributeTest(FtFeatureTest &ft, bool setup_env)
-{
+void Test::setupForAttributeTest(FtFeatureTest& ft, bool setup_env) {
     // setup an original attribute manager with attributes
     std::vector<AttributePtr> avs;
-    avs.push_back(AttributeFactory::createAttribute("sint",   AVC(AVBT::INT32,  AVCT::SINGLE))); // 0
-    avs.push_back(AttributeFactory::createAttribute("aint",   AVC(AVBT::INT32,  AVCT::ARRAY)));  // 1
-    avs.push_back(AttributeFactory::createAttribute("wsint",  AVC(AVBT::INT32,  AVCT::WSET)));    // 2
-    avs.push_back(AttributeFactory::createAttribute("sfloat", AVC(AVBT::FLOAT,  AVCT::SINGLE))); // 3
-    avs.push_back(AttributeFactory::createAttribute("afloat", AVC(AVBT::FLOAT,  AVCT::ARRAY)));  // 4
-    avs.push_back(AttributeFactory::createAttribute("wsfloat",AVC(AVBT::FLOAT,  AVCT::WSET)));    // 5
-    avs.push_back(AttributeFactory::createAttribute("sstr",   AVC(AVBT::STRING, AVCT::SINGLE))); // 6
-    avs.push_back(AttributeFactory::createAttribute("astr",   AVC(AVBT::STRING, AVCT::ARRAY)));  // 7
-    avs.push_back(AttributeFactory::createAttribute("wsstr",  AVC(AVBT::STRING, AVCT::WSET)));    // 8
-    avs.push_back(AttributeFactory::createAttribute("udefint", AVC(AVBT::INT32, AVCT::SINGLE)));    // 9
-    avs.push_back(AttributeFactory::createAttribute("udeffloat", AVC(AVBT::FLOAT, AVCT::SINGLE)));    // 10
-    avs.push_back(AttributeFactory::createAttribute("udefstr", AVC(AVBT::STRING, AVCT::SINGLE)));    // 11
-    avs.push_back(AttributeFactory::createAttribute("sbyte",   AVC(AVBT::INT64,  AVCT::SINGLE))); // 12
-    avs.push_back(AttributeFactory::createAttribute("slong",   AVC(AVBT::INT64,  AVCT::SINGLE))); // 13
-    avs.push_back(AttributeFactory::createAttribute("sbool",   AVC(AVBT::BOOL,  AVCT::SINGLE))); // 14
-    avs.push_back(AttributeFactory::createAttribute("sebool",   AVC(AVBT::BOOL,  AVCT::SINGLE))); // 15
-    avs.push_back(AttributeFactory::createAttribute("sdouble",   AVC(AVBT::DOUBLE,  AVCT::SINGLE))); // 16
+    avs.push_back(AttributeFactory::createAttribute("sint", AVC(AVBT::INT32, AVCT::SINGLE)));      // 0
+    avs.push_back(AttributeFactory::createAttribute("aint", AVC(AVBT::INT32, AVCT::ARRAY)));       // 1
+    avs.push_back(AttributeFactory::createAttribute("wsint", AVC(AVBT::INT32, AVCT::WSET)));       // 2
+    avs.push_back(AttributeFactory::createAttribute("sfloat", AVC(AVBT::FLOAT, AVCT::SINGLE)));    // 3
+    avs.push_back(AttributeFactory::createAttribute("afloat", AVC(AVBT::FLOAT, AVCT::ARRAY)));     // 4
+    avs.push_back(AttributeFactory::createAttribute("wsfloat", AVC(AVBT::FLOAT, AVCT::WSET)));     // 5
+    avs.push_back(AttributeFactory::createAttribute("sstr", AVC(AVBT::STRING, AVCT::SINGLE)));     // 6
+    avs.push_back(AttributeFactory::createAttribute("astr", AVC(AVBT::STRING, AVCT::ARRAY)));      // 7
+    avs.push_back(AttributeFactory::createAttribute("wsstr", AVC(AVBT::STRING, AVCT::WSET)));      // 8
+    avs.push_back(AttributeFactory::createAttribute("udefint", AVC(AVBT::INT32, AVCT::SINGLE)));   // 9
+    avs.push_back(AttributeFactory::createAttribute("udeffloat", AVC(AVBT::FLOAT, AVCT::SINGLE))); // 10
+    avs.push_back(AttributeFactory::createAttribute("udefstr", AVC(AVBT::STRING, AVCT::SINGLE)));  // 11
+    avs.push_back(AttributeFactory::createAttribute("sbyte", AVC(AVBT::INT64, AVCT::SINGLE)));     // 12
+    avs.push_back(AttributeFactory::createAttribute("slong", AVC(AVBT::INT64, AVCT::SINGLE)));     // 13
+    avs.push_back(AttributeFactory::createAttribute("sbool", AVC(AVBT::BOOL, AVCT::SINGLE)));      // 14
+    avs.push_back(AttributeFactory::createAttribute("sebool", AVC(AVBT::BOOL, AVCT::SINGLE)));     // 15
+    avs.push_back(AttributeFactory::createAttribute("sdouble", AVC(AVBT::DOUBLE, AVCT::SINGLE)));  // 16
     {
         AVC cfg(AVBT::TENSOR, AVCT::SINGLE);
         cfg.setTensorType(ValueType::from_spec("tensor(x[2])"));
@@ -371,7 +365,7 @@ Test::setupForAttributeTest(FtFeatureTest &ft, bool setup_env)
     }
     avs.push_back(AttributeFactory::createAttribute("predicate", AVC(AVBT::PREDICATE, AVCT::SINGLE))); // 18
     avs.push_back(AttributeFactory::createAttribute("reference", AVC(AVBT::REFERENCE, AVCT::SINGLE))); // 19
-    avs.push_back(AttributeFactory::createAttribute("raw", AVC(AVBT::RAW, AVCT::SINGLE))); // 20
+    avs.push_back(AttributeFactory::createAttribute("raw", AVC(AVBT::RAW, AVCT::SINGLE)));             // 20
 
     // simulate a unique only attribute as specified in sd
     AVC cfg(AVBT::INT32, AVCT::SINGLE);
@@ -380,7 +374,8 @@ Test::setupForAttributeTest(FtFeatureTest &ft, bool setup_env)
 
     if (setup_env) {
         // register attributes in index environment
-        ft.getIndexEnv().getBuilder()
+        ft.getIndexEnv()
+            .getBuilder()
             .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sint")
             .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "aint")
             .addField(FieldType::ATTRIBUTE, CollectionType::WEIGHTEDSET, "wsint")
@@ -397,55 +392,54 @@ Test::setupForAttributeTest(FtFeatureTest &ft, bool setup_env)
             .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "slong")
             .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sdouble")
             .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sbyte")
-            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::BOOL,"sbool")
-            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::BOOL,"sebool")
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::BOOL, "sbool")
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::BOOL, "sebool")
             .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::TENSOR, "tensor")
             .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::BOOLEANTREE, "predicate")
             .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::REFERENCE, "reference")
             .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::RAW, "raw");
     }
 
-    for (const auto & attr : avs) {
+    for (const auto& attr : avs) {
         attr->addReservedDoc();
         attr->addDocs(1);
         ft.getIndexEnv().getAttributeMap().add(attr);
     }
 
     // integer attributes
-    (dynamic_cast<IntegerAttribute *>(avs[0].get()))->update(1, 10);
-    (dynamic_cast<IntegerAttribute *>(avs[12].get()))->update(1, 37);
-    (dynamic_cast<IntegerAttribute *>(avs[13].get()))->update(1, 20);
-    (dynamic_cast<SingleBoolAttribute *>(avs[14].get()))->update(1, 1);
-    (dynamic_cast<SingleBoolAttribute *>(avs[15].get()))->update(1, 0);
-    (dynamic_cast<IntegerAttribute *>(avs[1].get()))->append(1, 20, 0);
-    (dynamic_cast<IntegerAttribute *>(avs[1].get()))->append(1, 30, 0);
-    (dynamic_cast<IntegerAttribute *>(avs[2].get()))->append(1, 40, 10);
-    (dynamic_cast<IntegerAttribute *>(avs[2].get()))->append(1, 50, 20);
-    (dynamic_cast<IntegerAttribute *>(avs[9].get()))->update(1, search::attribute::getUndefined<int32_t>());
+    (dynamic_cast<IntegerAttribute*>(avs[0].get()))->update(1, 10);
+    (dynamic_cast<IntegerAttribute*>(avs[12].get()))->update(1, 37);
+    (dynamic_cast<IntegerAttribute*>(avs[13].get()))->update(1, 20);
+    (dynamic_cast<SingleBoolAttribute*>(avs[14].get()))->update(1, 1);
+    (dynamic_cast<SingleBoolAttribute*>(avs[15].get()))->update(1, 0);
+    (dynamic_cast<IntegerAttribute*>(avs[1].get()))->append(1, 20, 0);
+    (dynamic_cast<IntegerAttribute*>(avs[1].get()))->append(1, 30, 0);
+    (dynamic_cast<IntegerAttribute*>(avs[2].get()))->append(1, 40, 10);
+    (dynamic_cast<IntegerAttribute*>(avs[2].get()))->append(1, 50, 20);
+    (dynamic_cast<IntegerAttribute*>(avs[9].get()))->update(1, search::attribute::getUndefined<int32_t>());
     dynamic_cast<IntegerAttribute&>(*avs[21]).update(1, 10);
     // feature_t attributes
-    (dynamic_cast<FloatingPointAttribute *>(avs[3].get()))->update(1, 60.5f);
-    (dynamic_cast<FloatingPointAttribute *>(avs[4].get()))->append(1, 70.5f, 0);
-    (dynamic_cast<FloatingPointAttribute *>(avs[4].get()))->append(1, 80.5f, 0);
-    (dynamic_cast<FloatingPointAttribute *>(avs[5].get()))->append(1, 90.5f, -30);
-    (dynamic_cast<FloatingPointAttribute *>(avs[5].get()))->append(1, 100.5f, -40);
-    (dynamic_cast<FloatingPointAttribute *>(avs[10].get()))->update(1, search::attribute::getUndefined<float>());
-    (dynamic_cast<FloatingPointAttribute *>(avs[16].get()))->update(1, 67.5);
+    (dynamic_cast<FloatingPointAttribute*>(avs[3].get()))->update(1, 60.5f);
+    (dynamic_cast<FloatingPointAttribute*>(avs[4].get()))->append(1, 70.5f, 0);
+    (dynamic_cast<FloatingPointAttribute*>(avs[4].get()))->append(1, 80.5f, 0);
+    (dynamic_cast<FloatingPointAttribute*>(avs[5].get()))->append(1, 90.5f, -30);
+    (dynamic_cast<FloatingPointAttribute*>(avs[5].get()))->append(1, 100.5f, -40);
+    (dynamic_cast<FloatingPointAttribute*>(avs[10].get()))->update(1, search::attribute::getUndefined<float>());
+    (dynamic_cast<FloatingPointAttribute*>(avs[16].get()))->update(1, 67.5);
     // string attributes
-    (dynamic_cast<StringAttribute *>(avs[6].get()))->update(1, "foo");
-    (dynamic_cast<StringAttribute *>(avs[7].get()))->append(1, "bar", 0);
-    (dynamic_cast<StringAttribute *>(avs[7].get()))->append(1, "baz", 0);
-    (dynamic_cast<StringAttribute *>(avs[8].get()))->append(1, "qux", 11);
-    (dynamic_cast<StringAttribute *>(avs[8].get()))->append(1, "quux", 12);
-    (dynamic_cast<StringAttribute *>(avs[11].get()))->update(1, "");
+    (dynamic_cast<StringAttribute*>(avs[6].get()))->update(1, "foo");
+    (dynamic_cast<StringAttribute*>(avs[7].get()))->append(1, "bar", 0);
+    (dynamic_cast<StringAttribute*>(avs[7].get()))->append(1, "baz", 0);
+    (dynamic_cast<StringAttribute*>(avs[8].get()))->append(1, "qux", 11);
+    (dynamic_cast<StringAttribute*>(avs[8].get()))->append(1, "quux", 12);
+    (dynamic_cast<StringAttribute*>(avs[11].get()))->update(1, "");
 
     for (auto& av : avs) {
         av->commit();
     }
 }
 
-TEST_F(ProdFeaturesTest, test_closeness)
-{
+TEST_F(ProdFeaturesTest, test_closeness) {
     { // Test blueprint.
         ClosenessBlueprint pt;
 
@@ -459,33 +453,33 @@ TEST_F(ProdFeaturesTest, test_closeness)
     }
 
     { // Test executor.
-        assertCloseness(1,   "pos", 0);
+        assertCloseness(1, "pos", 0);
         assertCloseness(0.8, "pos", 1802661);
-        assertCloseness(0,   "pos", 9013306);
+        assertCloseness(0, "pos", 9013306);
         // two-argument version
         assertCloseness(0.8, "field,pos", 1802661);
 
         // use non-default maxDistance
-        assertCloseness(1,   "pos", 0,   100);
-        assertCloseness(0.5, "pos", 50,  100);
-        assertCloseness(0,   "pos", 100, 100);
-        assertCloseness(0,   "pos", 101, 100);
+        assertCloseness(1, "pos", 0, 100);
+        assertCloseness(0.5, "pos", 50, 100);
+        assertCloseness(0, "pos", 100, 100);
+        assertCloseness(0, "pos", 101, 100);
 
-        // test logscale using halfResponse (define that x = 10 should give 0.5 -> s = -10^2/(2*10 - 100) = 1.25 (scale distance))
-        assertCloseness(1,   "pos", 0,   100, 10);
-        assertCloseness(0.5, "pos", 10,  100, 10);
-        assertCloseness(0,   "pos", 100, 100, 10);
-        assertCloseness(0,   "pos", 101, 100, 10);
+        // test logscale using halfResponse (define that x = 10 should give 0.5 -> s = -10^2/(2*10 - 100) = 1.25
+        // (scale distance))
+        assertCloseness(1, "pos", 0, 100, 10);
+        assertCloseness(0.5, "pos", 10, 100, 10);
+        assertCloseness(0, "pos", 100, 100, 10);
+        assertCloseness(0, "pos", 101, 100, 10);
     }
 }
 
-void
-Test::assertCloseness(feature_t exp, const std::string & attr, double distance, double maxDistance, double halfResponse)
-{
-    std::string feature = "closeness(" + attr + ")";
-    FtFeatureTest ft(_factory, feature);
-    std::vector<std::pair<int32_t, int32_t> > positions;
-    int32_t x = 0;
+void Test::assertCloseness(feature_t exp, const std::string& attr, double distance, double maxDistance,
+                           double halfResponse) {
+    std::string                              feature = "closeness(" + attr + ")";
+    FtFeatureTest                            ft(_factory, feature);
+    std::vector<std::pair<int32_t, int32_t>> positions;
+    int32_t                                  x = 0;
     positions.emplace_back(x, x);
     setupForDistanceTest(ft, "pos", positions, false);
     GeoLocation::Point p{int32_t(distance), 0};
@@ -495,16 +489,14 @@ Test::assertCloseness(feature_t exp, const std::string & attr, double distance, 
                                              vespalib::make_string("%u", (unsigned int)maxDistance));
     }
     if (halfResponse > 0) {
-        ft.getIndexEnv().getProperties().add(feature + ".halfResponse",
-                                             vespalib::make_string("%f", halfResponse));
+        ft.getIndexEnv().getProperties().add(feature + ".halfResponse", vespalib::make_string("%f", halfResponse));
         feature.append(".logscale");
     }
     ASSERT_TRUE(ft.setup());
     ASSERT_TRUE(ft.execute(RankResult().addScore(feature, exp)));
 }
 
-TEST_F(ProdFeaturesTest, test_field_length)
-{
+TEST_F(ProdFeaturesTest, test_field_length) {
     FieldLengthBlueprint pt;
 
     { // Test blueprint.
@@ -518,8 +510,8 @@ TEST_F(ProdFeaturesTest, test_field_length)
             .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "bar")
             .addField(FieldType::INDEX, CollectionType::ARRAY, "afoo")
             .addField(FieldType::INDEX, CollectionType::WEIGHTEDSET, "wfoo");
-        FT_SETUP_FAIL(pt, params.add("qux")); // does not exists
-        FT_SETUP_FAIL(pt, params.clear().add("bar")); // not an index
+        FT_SETUP_FAIL(pt, params.add("qux"));          // does not exists
+        FT_SETUP_FAIL(pt, params.clear().add("bar"));  // not an index
         FT_SETUP_FAIL(pt, params.clear().add("afoo")); // wrong collection type
         FT_SETUP_FAIL(pt, params.clear().add("wfoo")); // wrong collection type
         FT_SETUP_OK(pt, ie, params.clear().add("foo"), in, out.add("out"));
@@ -535,8 +527,11 @@ TEST_F(ProdFeaturesTest, test_field_length)
             FtFeatureTest ft(_factory, features);
             ASSERT_TRUE(!ft.setup());
 
-            ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "foo").
-                addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "bar").addField(FieldType::INDEX, CollectionType::SINGLE, "baz");
+            ft.getIndexEnv()
+                .getBuilder()
+                .addField(FieldType::INDEX, CollectionType::SINGLE, "foo")
+                .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "bar")
+                .addField(FieldType::INDEX, CollectionType::SINGLE, "baz");
             ft.getQueryEnv().getBuilder().addAllFields();
             ASSERT_TRUE(ft.setup());
 
@@ -547,14 +542,13 @@ TEST_F(ProdFeaturesTest, test_field_length)
             ASSERT_TRUE(mdb->setFieldLength("baz", i + 20));
             ASSERT_TRUE(mdb->apply(1));
             ASSERT_TRUE(ft.execute(RankResult()
-                                   .addScore("fieldLength(foo)", (feature_t)i + 10)
-                                   .addScore("fieldLength(baz)", (feature_t)i + 20)));
+                                       .addScore("fieldLength(foo)", (feature_t)i + 10)
+                                       .addScore("fieldLength(baz)", (feature_t)i + 20)));
         }
     }
 }
 
-TEST_F(ProdFeaturesTest, test_average_field_length)
-{
+TEST_F(ProdFeaturesTest, test_average_field_length) {
     AverageFieldLengthBlueprint pt;
     { // Test blueprint.
         EXPECT_TRUE(assertCreateInstance(pt, "averageFieldLength"));
@@ -588,25 +582,18 @@ TEST_F(ProdFeaturesTest, test_average_field_length)
         ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "foo");
         ft.getQueryEnv().getBuilder().set_avg_field_length("foo", 42.0);
         ASSERT_TRUE(ft.setup());
-        ASSERT_TRUE(ft.execute(RankResult()
-                                       .addScore("averageFieldLength(foo)", 42.0)
-                                       .addScore("averageFieldLength(foo).out", 42.0)));
+        ASSERT_TRUE(ft.execute(
+            RankResult().addScore("averageFieldLength(foo)", 42.0).addScore("averageFieldLength(foo).out", 42.0)));
     }
 }
 
-
-void
-Test::assertFieldMatch(const std::string & spec,
-                       const std::string & query,
-                       const std::string & field,
-                       const fieldmatch::Params * params,
-                       uint32_t totalTermWeight,
-                       feature_t totalSignificance)
-{
-    LOG(info, "assertFieldMatch('%s', '%s', '%s', (%u))", spec.c_str(), query.c_str(), field.c_str(), totalTermWeight);
+void Test::assertFieldMatch(const std::string& spec, const std::string& query, const std::string& field,
+                            const fieldmatch::Params* params, uint32_t totalTermWeight, feature_t totalSignificance) {
+    LOG(info, "assertFieldMatch('%s', '%s', '%s', (%u))", spec.c_str(), query.c_str(), field.c_str(),
+        totalTermWeight);
 
     // Setup feature test.
-    std::string feature = "fieldMatch(foo)";
+    std::string   feature = "fieldMatch(foo)";
     FtFeatureTest ft(_factory, feature);
 
     setupFieldMatch(ft, "foo", query, field, params, totalTermWeight, totalSignificance, 1);
@@ -617,27 +604,17 @@ Test::assertFieldMatch(const std::string & spec,
     ASSERT_TRUE(ft.execute(rr));
 }
 
-void
-Test::assertFieldMatch(const std::string & spec,
-                       const std::string & query,
-                       const std::string & field,
-                       uint32_t totalTermWeight)
-{
+void Test::assertFieldMatch(const std::string& spec, const std::string& query, const std::string& field,
+                            uint32_t totalTermWeight) {
     assertFieldMatch(spec, query, field, nullptr, totalTermWeight);
 }
 
-void
-Test::assertFieldMatchTS(const std::string & spec,
-                         const std::string & query,
-                         const std::string & field,
-                         feature_t totalSignificance)
-{
+void Test::assertFieldMatchTS(const std::string& spec, const std::string& query, const std::string& field,
+                              feature_t totalSignificance) {
     assertFieldMatch(spec, query, field, nullptr, 0, totalSignificance);
 }
 
-
-TEST_F(ProdFeaturesTest, test_first_phase)
-{
+TEST_F(ProdFeaturesTest, test_first_phase) {
     { // Test blueprint.
         FirstPhaseBlueprint pt;
 
@@ -662,8 +639,7 @@ TEST_F(ProdFeaturesTest, test_first_phase)
     }
 }
 
-TEST_F(ProdFeaturesTest, test_second_phase)
-{
+TEST_F(ProdFeaturesTest, test_second_phase) {
     { // Test blueprint.
         SecondPhaseBlueprint pt;
 
@@ -688,8 +664,7 @@ TEST_F(ProdFeaturesTest, test_second_phase)
     }
 }
 
-TEST_F(ProdFeaturesTest, test_foreach)
-{
+TEST_F(ProdFeaturesTest, test_foreach) {
     { // Test blueprint.
         ForeachBlueprint pt;
 
@@ -712,9 +687,24 @@ TEST_F(ProdFeaturesTest, test_foreach)
 
         // various dimensions
         FT_SETUP_OK(pt, ie, params.clear().add("terms").add("N").add("foo(N)").add("true").add("sum"),
-                    in.clear().add("foo(0)").add("foo(1)").add("foo(2)").add("foo(3)").add("foo(4)").
-                               add("foo(5)").add("foo(6)").add("foo(7)").add("foo(8)").add("foo(9)").
-                               add("foo(10)").add("foo(11)").add("foo(12)").add("foo(13)").add("foo(14)").add("foo(15)"), out);
+                    in.clear()
+                        .add("foo(0)")
+                        .add("foo(1)")
+                        .add("foo(2)")
+                        .add("foo(3)")
+                        .add("foo(4)")
+                        .add("foo(5)")
+                        .add("foo(6)")
+                        .add("foo(7)")
+                        .add("foo(8)")
+                        .add("foo(9)")
+                        .add("foo(10)")
+                        .add("foo(11)")
+                        .add("foo(12)")
+                        .add("foo(13)")
+                        .add("foo(14)")
+                        .add("foo(15)"),
+                    out);
         ie.getProperties().add("foreach.maxTerms", "1");
         FT_SETUP_OK(pt, ie, params.clear().add("terms").add("N").add("foo").add("true").add("sum"),
                     in.clear().add("foo"), out);
@@ -724,7 +714,8 @@ TEST_F(ProdFeaturesTest, test_foreach)
                     in.clear().add("foo(baz)"), out);
 
         // various conditions
-        FT_SETUP_OK(pt, ie, params.clear().add("terms").add("N").add("foo").add("true").add("sum"), in.clear().add("foo"), out);
+        FT_SETUP_OK(pt, ie, params.clear().add("terms").add("N").add("foo").add("true").add("sum"),
+                    in.clear().add("foo"), out);
         FT_SETUP_OK(pt, ie, params.clear().add("terms").add("N").add("foo").add("<4").add("sum"), in, out);
         FT_SETUP_OK(pt, ie, params.clear().add("terms").add("N").add("foo").add(">4").add("sum"), in, out);
         // various operations
@@ -739,19 +730,19 @@ TEST_F(ProdFeaturesTest, test_foreach)
     }
     { // Test executor
         // single loop
-        assertForeachOperation( 16.5, "true", "sum");
+        assertForeachOperation(16.5, "true", "sum");
         assertForeachOperation(-2106, "true", "product");
-        assertForeachOperation(  3.3, "true", "average");
-        assertForeachOperation(    8, "true", "max");
-        assertForeachOperation( -4.5, "true", "min");
-        assertForeachOperation(    5, "true", "count");
+        assertForeachOperation(3.3, "true", "average");
+        assertForeachOperation(8, "true", "max");
+        assertForeachOperation(-4.5, "true", "min");
+        assertForeachOperation(5, "true", "count");
 
-        assertForeachOperation(3,    "\">4\"", "count");
-        assertForeachOperation(2,  "\">4.5\"", "count");
-        assertForeachOperation(2,    "\"<4\"", "count");
-        assertForeachOperation(2,  "\"<4.5\"", "count");
-        assertForeachOperation(4,    "\">0\"", "count");
-        assertForeachOperation(1,    "\"<0\"", "count");
+        assertForeachOperation(3, "\">4\"", "count");
+        assertForeachOperation(2, "\">4.5\"", "count");
+        assertForeachOperation(2, "\"<4\"", "count");
+        assertForeachOperation(2, "\"<4.5\"", "count");
+        assertForeachOperation(4, "\">0\"", "count");
+        assertForeachOperation(1, "\"<0\"", "count");
         assertForeachOperation(4, "\">-4.5\"", "count");
         assertForeachOperation(1, "\"<-4.4\"", "count");
 
@@ -762,8 +753,8 @@ TEST_F(ProdFeaturesTest, test_foreach)
         }
 
         { // double loop
-            std::string feature =
-                "foreach(fields,N,foreach(attributes,M,rankingExpression(\"value(N)+value(M)\"),true,product),true,sum)";
+            std::string feature = "foreach(fields,N,foreach(attributes,M,rankingExpression(\"value(N)+value(M)\"),"
+                                  "true,product),true,sum)";
             LOG(info, "double loop feature: '%s'", feature.c_str());
             FtFeatureTest ft(_factory, feature);
             ft.getIndexEnv().getProperties().add("foreach.maxTerms", "1");
@@ -779,10 +770,8 @@ TEST_F(ProdFeaturesTest, test_foreach)
     }
 }
 
-void
-Test::assertForeachOperation(feature_t exp, const std::string & cond, const std::string & op)
-{
-    std::string feature = "foreach(fields,N,value(N)," + cond + "," + op + ")";
+void Test::assertForeachOperation(feature_t exp, const std::string& cond, const std::string& op) {
+    std::string   feature = "foreach(fields,N,value(N)," + cond + "," + op + ")";
     FtFeatureTest ft(_factory, feature);
     ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "4.5");
     ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "2");
@@ -794,13 +783,10 @@ Test::assertForeachOperation(feature_t exp, const std::string & cond, const std:
     ASSERT_TRUE(ft.execute(exp)); // check that reset works
 }
 
-
-TEST_F(ProdFeaturesTest, test_freshness)
-{
+TEST_F(ProdFeaturesTest, test_freshness) {
     { // Test blueprint.
         FtIndexEnvironment idx_env;
-        idx_env.getBuilder()
-            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "name");
+        idx_env.getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "name");
 
         FreshnessBlueprint pt;
 
@@ -814,40 +800,38 @@ TEST_F(ProdFeaturesTest, test_freshness)
     }
 
     { // Test executor.
-        assertFreshness(1,   "doctime", 0);
-        assertFreshness(0.5, "doctime", 3*15*24*60*60);
-        assertFreshness(0,   "doctime", 3*30*24*60*60);
+        assertFreshness(1, "doctime", 0);
+        assertFreshness(0.5, "doctime", 3 * 15 * 24 * 60 * 60);
+        assertFreshness(0, "doctime", 3 * 30 * 24 * 60 * 60);
         // use non-default maxAge
-        assertFreshness(1,    "doctime", 0,   120);
-        assertFreshness(0.75, "doctime", 30,  120);
-        assertFreshness(0.5,  "doctime", 60,  120);
-        assertFreshness(0,    "doctime", 120, 120);
-        assertFreshness(0,    "doctime", 121, 120);
+        assertFreshness(1, "doctime", 0, 120);
+        assertFreshness(0.75, "doctime", 30, 120);
+        assertFreshness(0.5, "doctime", 60, 120);
+        assertFreshness(0, "doctime", 120, 120);
+        assertFreshness(0, "doctime", 121, 120);
 
         // test logscale
-        assertFreshness(1,   "doctime", 0, 0, 0, true);
-        assertFreshness(0.5, "doctime", 7*24*60*60, 0, 0, true);
-        assertFreshness(0,   "doctime", 3*30*24*60*60, 0, 0, true);
+        assertFreshness(1, "doctime", 0, 0, 0, true);
+        assertFreshness(0.5, "doctime", 7 * 24 * 60 * 60, 0, 0, true);
+        assertFreshness(0, "doctime", 3 * 30 * 24 * 60 * 60, 0, 0, true);
         // use non-default maxAge & halfResponse
-        assertFreshness(1,   "doctime", 0,   120, 30, true);
-        assertFreshness(0.5, "doctime", 30,  120, 30, true); // half response after 30 secs
-        assertFreshness(0,   "doctime", 120, 120, 30, true);
-        assertFreshness(0,   "doctime", 121, 120, 30, true);
+        assertFreshness(1, "doctime", 0, 120, 30, true);
+        assertFreshness(0.5, "doctime", 30, 120, 30, true); // half response after 30 secs
+        assertFreshness(0, "doctime", 120, 120, 30, true);
+        assertFreshness(0, "doctime", 121, 120, 30, true);
         // test invalid half response
         assertFreshness(0.5, "doctime", 1, 120, 0.5, true); // half response is set to 1
         assertFreshness(0.5, "doctime", 59, 120, 70, true); // half response is set to 120/2 - 1
     }
 }
 
-void
-Test::assertFreshness(feature_t expFreshness, const std::string & attr, uint32_t age, uint32_t maxAge, double halfResponse, bool logScale)
-{
-    std::string feature = "freshness(" + attr + ")";
+void Test::assertFreshness(feature_t expFreshness, const std::string& attr, uint32_t age, uint32_t maxAge,
+                           double halfResponse, bool logScale) {
+    std::string   feature = "freshness(" + attr + ")";
     FtFeatureTest ft(_factory, feature);
     setupForAgeTest(ft, 60); // time = 60
     if (maxAge > 0) {
-        ft.getIndexEnv().getProperties().add("freshness(" + attr + ").maxAge",
-                                             vespalib::make_string("%u", maxAge));
+        ft.getIndexEnv().getProperties().add("freshness(" + attr + ").maxAge", vespalib::make_string("%u", maxAge));
     }
     if (halfResponse > 0) {
         ft.getIndexEnv().getProperties().add("freshness(" + attr + ").halfResponse",
@@ -865,64 +849,57 @@ Test::assertFreshness(feature_t expFreshness, const std::string & attr, uint32_t
 namespace {
 
 struct AirPort {
-    const char *tla;
-    double lat;
-    double lng;
+    const char* tla;
+    double      lat;
+    double      lng;
 };
 
-std::pair<int32_t, int32_t> toXY(const AirPort &p) {
+std::pair<int32_t, int32_t> toXY(const AirPort& p) {
     return std::make_pair(int(p.lng * 1.0e6), int(p.lat * 1.0e6));
 }
 
-GeoLocation toGL(const AirPort &p) {
-    auto x = int(p.lng * 1.0e6);
-    auto y = int(p.lat * 1.0e6);
+GeoLocation toGL(const AirPort& p) {
+    auto               x = int(p.lng * 1.0e6);
+    auto               y = int(p.lat * 1.0e6);
     GeoLocation::Point gp{x, y};
     return GeoLocation{gp};
 }
 
-}
+} // namespace
 
-TEST_F(ProdFeaturesTest, test_great_circle_distance)
-{
+TEST_F(ProdFeaturesTest, test_great_circle_distance) {
     { // Test blueprint.
         GreatCircleDistanceBlueprint pt;
         EXPECT_TRUE(assertCreateInstance(pt, "great_circle_distance"));
         StringList params, in, out;
         FT_SETUP_FAIL(pt, params);
         FtIndexEnvironment idx_env;
-        idx_env
-            .getBuilder()
-            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::INT64, "pos_zcurve");
-        FT_SETUP_OK(pt, idx_env, params.add("pos"), in,
-                    out.add("km").add("latitude").add("longitude"));
+        idx_env.getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::INT64, "pos_zcurve");
+        FT_SETUP_OK(pt, idx_env, params.add("pos"), in, out.add("km").add("latitude").add("longitude"));
         FT_DUMP_EMPTY(_factory, "great_circle_distance");
     }
     { // Test executor.
-        FtFeatureTest ft(_factory, "great_circle_distance(pos)");
-        const AirPort SFO = { "SFO",  37.618806,  -122.375416 };
-        const AirPort TRD = { "TRD",  63.457556,  10.924250 };
-        std::vector<std::pair<int32_t,int32_t>> pos = { toXY(SFO), toXY(TRD) };
+        FtFeatureTest                            ft(_factory, "great_circle_distance(pos)");
+        const AirPort                            SFO = {"SFO", 37.618806, -122.375416};
+        const AirPort                            TRD = {"TRD", 63.457556, 10.924250};
+        std::vector<std::pair<int32_t, int32_t>> pos = {toXY(SFO), toXY(TRD)};
         setupForDistanceTest(ft, "pos_zcurve", pos, true);
-        const AirPort LHR = { "LHR",  51.477500,  -0.461388 };
-        const AirPort JFK = { "JFK",  40.639928,  -73.778692 };
+        const AirPort LHR = {"LHR", 51.477500, -0.461388};
+        const AirPort JFK = {"JFK", 40.639928, -73.778692};
         ft.getQueryEnv().addLocation(GeoLocationSpec{"pos", toGL(LHR)});
         ft.getQueryEnv().addLocation(GeoLocationSpec{"pos", toGL(JFK)});
         ASSERT_TRUE(ft.setup());
         double exp = 1494; // according to gcmap.com
-        ASSERT_TRUE(ft.execute(RankResult().setEpsilon(10.0).
-                               addScore("great_circle_distance(pos)", exp)));
-        ASSERT_TRUE(ft.execute(RankResult().setEpsilon(10.0).
-                               addScore("great_circle_distance(pos).km", exp)));
-        ASSERT_TRUE(ft.execute(RankResult().setEpsilon(1e-9).
-                               addScore("great_circle_distance(pos).latitude", TRD.lat)));
-        ASSERT_TRUE(ft.execute(RankResult().setEpsilon(1e-9).
-                               addScore("great_circle_distance(pos).longitude", TRD.lng)));
+        ASSERT_TRUE(ft.execute(RankResult().setEpsilon(10.0).addScore("great_circle_distance(pos)", exp)));
+        ASSERT_TRUE(ft.execute(RankResult().setEpsilon(10.0).addScore("great_circle_distance(pos).km", exp)));
+        ASSERT_TRUE(
+            ft.execute(RankResult().setEpsilon(1e-9).addScore("great_circle_distance(pos).latitude", TRD.lat)));
+        ASSERT_TRUE(
+            ft.execute(RankResult().setEpsilon(1e-9).addScore("great_circle_distance(pos).longitude", TRD.lng)));
     }
 }
 
-TEST_F(ProdFeaturesTest, test_distance)
-{
+TEST_F(ProdFeaturesTest, test_distance) {
     { // Test blueprint.
         DistanceBlueprint pt;
 
@@ -931,9 +908,7 @@ TEST_F(ProdFeaturesTest, test_distance)
         StringList params, in, out;
         FT_SETUP_FAIL(pt, params);
         FtIndexEnvironment idx_env;
-        idx_env
-            .getBuilder()
-            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::INT64, "pos");
+        idx_env.getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::INT64, "pos");
         FT_SETUP_OK(pt, idx_env, params.add("pos"), in,
                     out.add("out").add("index").add("latitude").add("longitude").add("km"));
         FT_DUMP_EMPTY(_factory, "distance");
@@ -942,50 +917,58 @@ TEST_F(ProdFeaturesTest, test_distance)
     { // Test executor.
 
         { // test 2D single location (zcurve)
-            assert2DZDistance(static_cast<feature_t>(std::sqrt(650.0f)), "5:-5",  10,  20);
-            assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), "5:-5",  10, -20);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(650.0f)), "5:-5", 10, 20);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), "5:-5", 10, -20);
             assert2DZDistance(static_cast<feature_t>(std::sqrt(450.0f)), "5:-5", -10, -20);
-            assert2DZDistance(static_cast<feature_t>(std::sqrt(850.0f)), "5:-5", -10,  20);
-            assert2DZDistance(static_cast<feature_t>(std::sqrt(325.0f)), "5:-5",  15, -20, 0x80000000); // 2^31
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(850.0f)), "5:-5", -10, 20);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(325.0f)), "5:-5", 15, -20, 0x80000000); // 2^31
         }
 
         { // test 2D multi location (zcurve)
             // note: "aspect" is ignored now, computed from "y", and cos(60 degrees) = 0.5
-            std::string positions = "5:59999995," "35:60000000," "5:60000040," "35:59999960";
-            assert2DZDistance(static_cast<feature_t>(0.0f),              positions,   5, 59999995, 0, 0);
-            assert2DZDistance(static_cast<feature_t>(0.0f),              positions,  35, 60000000, 0x10000000, 1);
-            assert2DZDistance(static_cast<feature_t>(0.0f),              positions,   5, 60000040, 0x20000000, 2);
-            assert2DZDistance(static_cast<feature_t>(0.0f),              positions,  35, 59999960, 0x30000000, 3);
-            assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), positions,  15, 59999980, 0x40000000, 0);
-            assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), positions,  -5, 59999980, 0x50000000, 0);
-            assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), positions,  45, 59999985, 0x60000000, 1);
-            assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), positions,  45, 60000015, 0x70000000, 1);
-            assert2DZDistance(static_cast<feature_t>(std::sqrt(425.0f)), positions,  15, 60000020, 0x80000000, 2);
-            assert2DZDistance(static_cast<feature_t>(std::sqrt(425.0f)), positions,  -5, 60000020, 0x90000000, 2);
-            assert2DZDistance(static_cast<feature_t>(std::sqrt(50.0f)),  positions,  45, 59999955, 0xa0000000, 3);
-            assert2DZDistance(static_cast<feature_t>(std::sqrt(50.0f)),  positions,  45, 59999965, 0xb0000000, 3);
+            std::string positions = "5:59999995,"
+                                    "35:60000000,"
+                                    "5:60000040,"
+                                    "35:59999960";
+            assert2DZDistance(static_cast<feature_t>(0.0f), positions, 5, 59999995, 0, 0);
+            assert2DZDistance(static_cast<feature_t>(0.0f), positions, 35, 60000000, 0x10000000, 1);
+            assert2DZDistance(static_cast<feature_t>(0.0f), positions, 5, 60000040, 0x20000000, 2);
+            assert2DZDistance(static_cast<feature_t>(0.0f), positions, 35, 59999960, 0x30000000, 3);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), positions, 15, 59999980, 0x40000000, 0);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), positions, -5, 59999980, 0x50000000, 0);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), positions, 45, 59999985, 0x60000000, 1);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), positions, 45, 60000015, 0x70000000, 1);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(425.0f)), positions, 15, 60000020, 0x80000000, 2);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(425.0f)), positions, -5, 60000020, 0x90000000, 2);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(50.0f)), positions, 45, 59999955, 0xa0000000, 3);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(50.0f)), positions, 45, 59999965, 0xb0000000, 3);
 
             assert2DZDistance(static_cast<feature_t>(std::sqrt(450.0f)), positions, -25, 59999980, 0xc0000000, 0);
             assert2DZDistance(static_cast<feature_t>(std::sqrt(625.0f)), positions, -25, 60000060, 0xd0000000, 2);
-            assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), positions,  15, 59999980, 0xe0000000, 0);
-            assert2DZDistance(static_cast<feature_t>(std::sqrt(425.0f)), positions,  45, 59999980, 0xf0000000, 1);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(250.0f)), positions, 15, 59999980, 0xe0000000, 0);
+            assert2DZDistance(static_cast<feature_t>(std::sqrt(425.0f)), positions, 45, 59999980, 0xf0000000, 1);
         }
 
         { // test geo multi location (zcurve)
             // note: cos(70.528779 degrees) = 1/3
-            std::string positions = "0:70528779," "100:70528879," "-200:70528979," "-300:70528479," "400:70528379";
-            assert2DZDistance(static_cast<feature_t>(0.0f),  positions,    0, 70528779 +   0, 0, 0);
-            assert2DZDistance(static_cast<feature_t>(1.0f),  positions,  100, 70528779 + 101, 0x20000000, 1);
-            assert2DZDistance(static_cast<feature_t>(0.0f),  positions, -200, 70528779 + 200, 0x40000000, 2);
-            assert2DZDistance(static_cast<feature_t>(13.0f), positions, -315, 70528779  -312, 0x80000000, 3);
-            assert2DZDistance(static_cast<feature_t>(5.0f),  positions,  412, 70528779  -403, 0xB0000000, 4);
-            assert2DZDistance(static_cast<feature_t>(5.0f),  positions,  109, 70528779 + 104, 0xF0000000, 1);
+            std::string positions = "0:70528779,"
+                                    "100:70528879,"
+                                    "-200:70528979,"
+                                    "-300:70528479,"
+                                    "400:70528379";
+            assert2DZDistance(static_cast<feature_t>(0.0f), positions, 0, 70528779 + 0, 0, 0);
+            assert2DZDistance(static_cast<feature_t>(1.0f), positions, 100, 70528779 + 101, 0x20000000, 1);
+            assert2DZDistance(static_cast<feature_t>(0.0f), positions, -200, 70528779 + 200, 0x40000000, 2);
+            assert2DZDistance(static_cast<feature_t>(13.0f), positions, -315, 70528779 - 312, 0x80000000, 3);
+            assert2DZDistance(static_cast<feature_t>(5.0f), positions, 412, 70528779 - 403, 0xB0000000, 4);
+            assert2DZDistance(static_cast<feature_t>(5.0f), positions, 109, 70528779 + 104, 0xF0000000, 1);
         }
 
-        { // test default distance
+        {     // test default distance
             { // non-existing attribute
                 FtFeatureTest ft(_factory, "distance(pos)");
-                ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::INT64, "pos");
+                ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::INT64,
+                                                       "pos");
                 GeoLocation::Point p{0, 0};
                 ft.getQueryEnv().addLocation(GeoLocationSpec{"pos", p});
 
@@ -993,17 +976,19 @@ TEST_F(ProdFeaturesTest, test_distance)
                 ASSERT_TRUE(ft.execute(RankResult().addScore("distance(pos)", 6400000000.0)));
             }
             { // label
-                FtFeatureTest ft(_factory, "distance(label,foo)");
+                FtFeatureTest      ft(_factory, "distance(label,foo)");
                 GeoLocation::Point p{0, 0};
                 ft.getQueryEnv().addLocation(GeoLocationSpec{"pos", p});
                 ASSERT_TRUE(ft.setup());
-                ASSERT_TRUE(ft.execute(RankResult().addScore("distance(label,foo)", std::numeric_limits<feature_t>::max())));
+                ASSERT_TRUE(
+                    ft.execute(RankResult().addScore("distance(label,foo)", std::numeric_limits<feature_t>::max())));
             }
             { // wrong attribute type (float)
                 FtFeatureTest ft(_factory, "distance(pos)");
-                auto pos = AttributeBuilder("pos", AVC(AVBT::FLOAT,  AVCT::SINGLE)).get();
+                auto          pos = AttributeBuilder("pos", AVC(AVBT::FLOAT, AVCT::SINGLE)).get();
                 ft.getIndexEnv().getAttributeMap().add(pos);
-                ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::INT64, "pos");
+                ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::INT64,
+                                                       "pos");
                 GeoLocation::Point p{0, 0};
                 ft.getQueryEnv().addLocation(GeoLocationSpec{"pos", p});
                 ASSERT_TRUE(ft.setup());
@@ -1011,9 +996,10 @@ TEST_F(ProdFeaturesTest, test_distance)
             }
             { // wrong attribute type (string)
                 FtFeatureTest ft(_factory, "distance(pos)");
-                auto pos = AttributeBuilder("pos", AVC(AVBT::STRING,  AVCT::SINGLE)).get();
+                auto          pos = AttributeBuilder("pos", AVC(AVBT::STRING, AVCT::SINGLE)).get();
                 ft.getIndexEnv().getAttributeMap().add(pos);
-                ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::INT64, "pos");
+                ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::INT64,
+                                                       "pos");
                 GeoLocation::Point p{0, 0};
                 ft.getQueryEnv().addLocation(GeoLocationSpec{"pos", p});
                 ASSERT_TRUE(ft.setup());
@@ -1021,9 +1007,10 @@ TEST_F(ProdFeaturesTest, test_distance)
             }
             { // wrong attribute collection type (weighted set)
                 FtFeatureTest ft(_factory, "distance(pos)");
-                auto pos = AttributeBuilder("pos", AVC(AVBT::INT64,  AVCT::WSET)).get();
+                auto          pos = AttributeBuilder("pos", AVC(AVBT::INT64, AVCT::WSET)).get();
                 ft.getIndexEnv().getAttributeMap().add(pos);
-                ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::WEIGHTEDSET, DataType::INT64, "pos");
+                ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::WEIGHTEDSET,
+                                                       DataType::INT64, "pos");
                 GeoLocation::Point p{0, 0};
                 ft.getQueryEnv().addLocation(GeoLocationSpec{"pos", p});
                 ASSERT_TRUE(ft.setup());
@@ -1033,16 +1020,14 @@ TEST_F(ProdFeaturesTest, test_distance)
     }
 }
 
-void
-Test::setupForDistanceTest(FtFeatureTest &ft, const std::string & attrName,
-                           const std::vector<std::pair<int32_t, int32_t> > & positions, bool zcurve)
-{
-    auto pos = AttributeBuilder(attrName, AVC(AVBT::INT64,  AVCT::ARRAY)).docs(1).get();
+void Test::setupForDistanceTest(FtFeatureTest& ft, const std::string& attrName,
+                                const std::vector<std::pair<int32_t, int32_t>>& positions, bool zcurve) {
+    auto pos = AttributeBuilder(attrName, AVC(AVBT::INT64, AVCT::ARRAY)).docs(1).get();
     ft.getIndexEnv().getAttributeMap().add(pos);
     ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, DataType::INT64, attrName);
 
-    auto ia = dynamic_cast<IntegerAttribute *>(pos.get());
-    for (const auto & p : positions) {
+    auto ia = dynamic_cast<IntegerAttribute*>(pos.get());
+    for (const auto& p : positions) {
         if (zcurve) {
             ia->append(1, vespalib::geo::ZCurve::encode(p.first, p.second), 0);
         } else {
@@ -1052,40 +1037,34 @@ Test::setupForDistanceTest(FtFeatureTest &ft, const std::string & attrName,
     pos->commit();
 }
 
-void
-Test::assert2DZDistance(feature_t exp, const std::string & positions,
-                        int32_t xquery, int32_t yquery, uint32_t xAspect,
-                        uint32_t hit_index)
-{
-    LOG(info, "assert2DZDistance(%g, %s, %d, %d, %u, %u)", exp, positions.c_str(), xquery, yquery, xAspect, hit_index);
-    FtFeatureTest ft(_factory, "distance(pos)");
-    std::vector<std::string> ta = FtUtil::tokenize(positions, ",");
-    std::vector<std::pair<int32_t, int32_t> > pos;
-    for (const auto & s : ta) {
+void Test::assert2DZDistance(feature_t exp, const std::string& positions, int32_t xquery, int32_t yquery,
+                             uint32_t xAspect, uint32_t hit_index) {
+    LOG(info, "assert2DZDistance(%g, %s, %d, %d, %u, %u)", exp, positions.c_str(), xquery, yquery, xAspect,
+        hit_index);
+    FtFeatureTest                            ft(_factory, "distance(pos)");
+    std::vector<std::string>                 ta = FtUtil::tokenize(positions, ",");
+    std::vector<std::pair<int32_t, int32_t>> pos;
+    for (const auto& s : ta) {
         std::vector<std::string> tb = FtUtil::tokenize(s, ":");
-        auto x = util::strToNum<int32_t>(tb[0]);
-        auto y = util::strToNum<int32_t>(tb[1]);
+        auto                     x = util::strToNum<int32_t>(tb[0]);
+        auto                     y = util::strToNum<int32_t>(tb[1]);
         pos.emplace_back(x, y);
     }
     setupForDistanceTest(ft, "pos", pos, true);
-    GeoLocation::Point p{xquery, yquery};
+    GeoLocation::Point  p{xquery, yquery};
     GeoLocation::Aspect aspect{xAspect};
     ft.getQueryEnv().addLocation(GeoLocationSpec{"pos", {p, aspect}});
     ASSERT_TRUE(ft.setup());
-    EXPECT_TRUE(ft.execute(RankResult().setEpsilon(1e-4).
-                           addScore("distance(pos)", exp)));
-    EXPECT_TRUE(ft.execute(RankResult().setEpsilon(1e-4).
-                           addScore("distance(pos).km", exp * 0.00011119508023)));
-    EXPECT_TRUE(ft.execute(RankResult().setEpsilon(1e-30).
-                           addScore("distance(pos).index", hit_index)));
-    EXPECT_TRUE(ft.execute(RankResult().setEpsilon(1e-9).
-                           addScore("distance(pos).latitude", pos[hit_index].second * 1e-6)));
-    EXPECT_TRUE(ft.execute(RankResult().setEpsilon(1e-9).
-                           addScore("distance(pos).longitude", pos[hit_index].first * 1e-6)));
+    EXPECT_TRUE(ft.execute(RankResult().setEpsilon(1e-4).addScore("distance(pos)", exp)));
+    EXPECT_TRUE(ft.execute(RankResult().setEpsilon(1e-4).addScore("distance(pos).km", exp * 0.00011119508023)));
+    EXPECT_TRUE(ft.execute(RankResult().setEpsilon(1e-30).addScore("distance(pos).index", hit_index)));
+    EXPECT_TRUE(
+        ft.execute(RankResult().setEpsilon(1e-9).addScore("distance(pos).latitude", pos[hit_index].second * 1e-6)));
+    EXPECT_TRUE(
+        ft.execute(RankResult().setEpsilon(1e-9).addScore("distance(pos).longitude", pos[hit_index].first * 1e-6)));
 }
 
-TEST_F(ProdFeaturesTest, test_distance_to_path)
-{
+TEST_F(ProdFeaturesTest, test_distance_to_path) {
     {
         // Test blueprint.
         DistanceToPathBlueprint pt;
@@ -1102,7 +1081,7 @@ TEST_F(ProdFeaturesTest, test_distance_to_path)
 
     {
         // Test executor.
-        std::vector<std::pair<int32_t, int32_t> > pos;
+        std::vector<std::pair<int32_t, int32_t>> pos;
         pos.emplace_back(0, 0);
 
         // invalid path
@@ -1163,7 +1142,7 @@ TEST_F(ProdFeaturesTest, test_distance_to_path)
             {
                 // Wrong attribute type (float).
                 FtFeatureTest ft(_factory, "distanceToPath(pos)");
-                auto att = AttributeBuilder("pos", AVC(AVBT::FLOAT, AVCT::SINGLE)).get();
+                auto          att = AttributeBuilder("pos", AVC(AVBT::FLOAT, AVCT::SINGLE)).get();
                 ft.getIndexEnv().getAttributeMap().add(att);
                 ft.getQueryEnv().getProperties().add("distanceToPath(pos).path", "0 0 1 1");
                 ASSERT_TRUE(ft.setup());
@@ -1172,7 +1151,7 @@ TEST_F(ProdFeaturesTest, test_distance_to_path)
             {
                 // Wrong attribute type (string).
                 FtFeatureTest ft(_factory, "distanceToPath(pos)");
-                auto att = AttributeBuilder("pos", AVC(AVBT::STRING, AVCT::SINGLE)).get();
+                auto          att = AttributeBuilder("pos", AVC(AVBT::STRING, AVCT::SINGLE)).get();
                 ft.getIndexEnv().getAttributeMap().add(att);
                 ft.getQueryEnv().getProperties().add("distanceToPath(pos).path", "0 0 1 1");
                 ASSERT_TRUE(ft.setup());
@@ -1181,7 +1160,7 @@ TEST_F(ProdFeaturesTest, test_distance_to_path)
             {
                 // Wrong attribute collection type (weighted set).
                 FtFeatureTest ft(_factory, "distanceToPath(pos)");
-                auto att = AttributeBuilder("pos", AVC(AVBT::INT64, AVCT::WSET)).get();
+                auto          att = AttributeBuilder("pos", AVC(AVBT::INT64, AVCT::WSET)).get();
                 ft.getIndexEnv().getAttributeMap().add(att);
                 ft.getQueryEnv().getProperties().add("distanceToPath(pos).path", "0 0 1 1");
                 ASSERT_TRUE(ft.setup());
@@ -1191,10 +1170,8 @@ TEST_F(ProdFeaturesTest, test_distance_to_path)
     }
 }
 
-void
-Test::assertDistanceToPath(const std::vector<std::pair<int32_t, int32_t> > & pos,
-                           const std::string &path, feature_t distance, feature_t traveled, feature_t product)
-{
+void Test::assertDistanceToPath(const std::vector<std::pair<int32_t, int32_t>>& pos, const std::string& path,
+                                feature_t distance, feature_t traveled, feature_t product) {
     LOG(info, "Testing distance to path '%s' with %zd document locations.", path.c_str(), pos.size());
 
     FtFeatureTest ft(_factory, "distanceToPath(pos)");
@@ -1203,58 +1180,52 @@ Test::assertDistanceToPath(const std::vector<std::pair<int32_t, int32_t> > & pos
     ft.getQueryEnv().getProperties().add("distanceToPath(pos).path", path);
     ASSERT_TRUE(ft.setup());
     ASSERT_TRUE(ft.execute(RankResult()
-                           .addScore("distanceToPath(pos).distance", distance)
-                           .addScore("distanceToPath(pos).traveled", traveled)
-                           .addScore("distanceToPath(pos).product", product)));
+                               .addScore("distanceToPath(pos).distance", distance)
+                               .addScore("distanceToPath(pos).traveled", traveled)
+                               .addScore("distanceToPath(pos).product", product)));
 }
 
 namespace {
 
-void
-verifyCorrectDotProductExecutor(BlueprintFactory & factory, std::string_view attrName,
-                                std::string_view queryVector, std::string_view expected)
-{
+void verifyCorrectDotProductExecutor(BlueprintFactory& factory, std::string_view attrName,
+                                     std::string_view queryVector, std::string_view expected) {
     ParameterList params = {{ParameterType::ATTRIBUTE, std::string(attrName)}, {ParameterType::STRING, "vector"}};
     FtFeatureTest ft(factory, "value(0)");
     Test::setupForDotProductTest(ft);
     ft.getQueryEnv().getProperties().add("dotProduct.vector", queryVector);
-    DotProductBlueprint bp;
+    DotProductBlueprint    bp;
     DummyDependencyHandler deps(bp);
     EXPECT_TRUE(bp.setup(ft.getIndexEnv(), params));
-    vespalib::Stash stash;
-    FeatureExecutor &exc = bp.createExecutor(ft.getQueryEnv(), stash);
+    vespalib::Stash  stash;
+    FeatureExecutor& exc = bp.createExecutor(ft.getQueryEnv(), stash);
     // check that we have the optimized enum version
     EXPECT_EQ(expected, exc.getClassName());
     EXPECT_EQ(1u, deps.output.size());
 }
 
-template<typename T>
-void verifyArrayParser()
-{
+template <typename T> void verifyArrayParser() {
     std::vector<std::string> v = {"(0:2,7:-3,1:-3)", "{0:2,7:-3,1:-3}", "[2 -3 0 0 0 0 0 -3]"};
-    for(const std::string & s : v) {
+    for (const std::string& s : v) {
         std::vector<T> out;
         ArrayParser::parse(s, out);
         EXPECT_EQ(8u, out.size());
-        EXPECT_EQ(2,  out[0]);
+        EXPECT_EQ(2, out[0]);
         EXPECT_EQ(-3, out[1]);
-        EXPECT_EQ(0,  out[2]);
-        EXPECT_EQ(0,  out[3]);
-        EXPECT_EQ(0,  out[4]);
-        EXPECT_EQ(0,  out[5]);
-        EXPECT_EQ(0,  out[6]);
+        EXPECT_EQ(0, out[2]);
+        EXPECT_EQ(0, out[3]);
+        EXPECT_EQ(0, out[4]);
+        EXPECT_EQ(0, out[5]);
+        EXPECT_EQ(0, out[6]);
         EXPECT_EQ(-3, out[7]);
     }
 }
 
-}
+} // namespace
 
-TEST_F(ProdFeaturesTest, test_dot_product)
-{
+TEST_F(ProdFeaturesTest, test_dot_product) {
     { // Test blueprint.
         FtIndexEnvironment idx_env;
-        idx_env.getBuilder()
-            .addField(FieldType::ATTRIBUTE, CollectionType::WEIGHTEDSET, "attribute");
+        idx_env.getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::WEIGHTEDSET, "attribute");
 
         DotProductBlueprint pt;
 
@@ -1267,11 +1238,11 @@ TEST_F(ProdFeaturesTest, test_dot_product)
         FT_DUMP_EMPTY(_factory, "dotProduct");
     }
 
-    { // Test vector parser
+    {     // Test vector parser
         { // string enum vector
             FtFeatureTest ft(_factory, "value(0)");
             setupForDotProductTest(ft);
-            const search::attribute::IAttributeVector * sv(ft.getIndexEnv().getAttributeMap().getAttribute("wsstr"));
+            const search::attribute::IAttributeVector* sv(ft.getIndexEnv().getAttributeMap().getAttribute("wsstr"));
             ASSERT_TRUE(sv != nullptr);
             EXPECT_TRUE(sv->hasEnum());
             search::attribute::EnumHandle e;
@@ -1290,7 +1261,7 @@ TEST_F(ProdFeaturesTest, test_dot_product)
                 EXPECT_EQ(out.getVector()[0].second, 1.0);
             }
             std::vector<std::string> v = {"(b:2.5,c:-3.5)", "{b:2.5,c:-3.5}"};
-            for(const std::string & s : v) {
+            for (const std::string& s : v) {
                 dotproduct::wset::EnumVector out(sv);
                 WeightedSetParser::parse(s, out);
                 EXPECT_EQ(out.getVector().size(), 2u);
@@ -1350,119 +1321,116 @@ TEST_F(ProdFeaturesTest, test_dot_product)
     verifyArrayParser<float>();
     verifyArrayParser<double>();
     {
-        std::string s = "[[1:3]]";
+        std::string          s = "[[1:3]]";
         std::vector<int32_t> out;
         ArrayParser::parse(s, out);
         EXPECT_EQ(0u, out.size());
     }
 
-    { // Test executor.
+    {     // Test executor.
         { // string enum attribute
             // docId = 1
-            assertDotProduct(0,    "()");
-            assertDotProduct(0,    "(f:5)");
-            assertDotProduct(0,    "(f:5,g:5)");
-            assertDotProduct(-5,   "(a:-5)");
-            assertDotProduct(25,   "(e:5)");
+            assertDotProduct(0, "()");
+            assertDotProduct(0, "(f:5)");
+            assertDotProduct(0, "(f:5,g:5)");
+            assertDotProduct(-5, "(a:-5)");
+            assertDotProduct(25, "(e:5)");
             assertDotProduct(-5.5, "(a:-5.5)");
             assertDotProduct(27.5, "(e:5.5)");
-            assertDotProduct(55,   "(a:1,b:2,c:3,d:4,e:5)");
-            assertDotProduct(20,   "(b:10,b:15)");
+            assertDotProduct(55, "(a:1,b:2,c:3,d:4,e:5)");
+            assertDotProduct(20, "(b:10,b:15)");
             // docId = 2
             assertDotProduct(0, "()", 2);
             assertDotProduct(0, "(a:1,b:2,c:3,d:4,e:5)", 2);
         }
         { // string attribute
-            assertDotProduct(0,   "(f:5,g:5)",             1, "wsextstr");
+            assertDotProduct(0, "(f:5,g:5)", 1, "wsextstr");
             assertDotProduct(550, "(a:1,b:2,c:3,d:4,e:5)", 1, "wsextstr");
         }
-        for (const char * name : {"wsbyte", "wsint", "wsint_fast"}) {
-            assertDotProduct(0,  "()",                    1, name);
-            assertDotProduct(0,  "(6:5,7:5)",             1, name);
+        for (const char* name : {"wsbyte", "wsint", "wsint_fast"}) {
+            assertDotProduct(0, "()", 1, name);
+            assertDotProduct(0, "(6:5,7:5)", 1, name);
             assertDotProduct(18, "(4:4.5)", 1, name);
             assertDotProduct(57, "(1:1,2:2,3:3,4:4.5,5:5)", 1, name);
         }
-        for (const char * name : {"arrbyte", "arrint", "arrfloat", "arrint_fast", "arrfloat_fast"}) {
-            assertDotProduct(0,  "()",                    1, name);
-            assertDotProduct(0,  "(6:5,7:5)",             1, name);
-            assertDotProduct(55,  "(0:1,1:2,2:3,3:4,4:5)", 1, name);
-            assertDotProduct(55,  "[1 2 3 4 5]", 1, name);
-            assertDotProduct(41,  "{3:4,4:5}", 1, name);
+        for (const char* name : {"arrbyte", "arrint", "arrfloat", "arrint_fast", "arrfloat_fast"}) {
+            assertDotProduct(0, "()", 1, name);
+            assertDotProduct(0, "(6:5,7:5)", 1, name);
+            assertDotProduct(55, "(0:1,1:2,2:3,3:4,4:5)", 1, name);
+            assertDotProduct(55, "[1 2 3 4 5]", 1, name);
+            assertDotProduct(41, "{3:4,4:5}", 1, name);
         }
         { // float array attribute
-            assertDotProduct(55,  "[1.0 2.0 3.0 4.0 5.0]", 1, "arrfloat");
-            assertDotProduct(41,  "{3:4,4:5.0}", 1, "arrfloat");
+            assertDotProduct(55, "[1.0 2.0 3.0 4.0 5.0]", 1, "arrfloat");
+            assertDotProduct(41, "{3:4,4:5.0}", 1, "arrfloat");
         }
         { // Sparse float array attribute.
             assertDotProduct(17, "(0:1,3:4,50:97)", 1, "arrfloat");
         }
 
-        assertDotProduct(0, "(0:1,3:4,50:97)", 1, "sint"); // attribute of the wrong type
-        assertDotProduct(17, "(0:1,3:4,50:97)", 1, "sint", "arrfloat"); // attribute override
+        assertDotProduct(0, "(0:1,3:4,50:97)", 1, "sint");                          // attribute of the wrong type
+        assertDotProduct(17, "(0:1,3:4,50:97)", 1, "sint", "arrfloat");             // attribute override
         assertDotProduct(0, "(0:1,3:4,50:97)", 1, "sint", "arrfloat_non_existing"); // incorrect attribute override
     }
-    verifyCorrectDotProductExecutor(_factory, "wsstr", "{a:1,b:2}", "search::features::dotproduct::wset::(anonymous namespace)::DotProductExecutorByEnum");
-    verifyCorrectDotProductExecutor(_factory, "wsstr", "{a:1}", "search::features::dotproduct::wset::(anonymous namespace)::SingleDotProductExecutorByEnum");
+    verifyCorrectDotProductExecutor(
+        _factory, "wsstr", "{a:1,b:2}",
+        "search::features::dotproduct::wset::(anonymous namespace)::DotProductExecutorByEnum");
+    verifyCorrectDotProductExecutor(
+        _factory, "wsstr", "{a:1}",
+        "search::features::dotproduct::wset::(anonymous namespace)::SingleDotProductExecutorByEnum");
     verifyCorrectDotProductExecutor(_factory, "wsstr", "{unknown:1}", "search::features::SingleZeroValueExecutor");
-    verifyCorrectDotProductExecutor(_factory, "wsint", "{1:1, 2:3}", "search::features::dotproduct::wset::DotProductByWeightedSetReadViewExecutor<int>");
-    verifyCorrectDotProductExecutor(_factory, "wsint", "{1:1}", "search::features::dotproduct::wset::(anonymous namespace)::SingleDotProductByWeightedValueExecutor<int>");
+    verifyCorrectDotProductExecutor(
+        _factory, "wsint", "{1:1, 2:3}",
+        "search::features::dotproduct::wset::DotProductByWeightedSetReadViewExecutor<int>");
+    verifyCorrectDotProductExecutor(
+        _factory, "wsint", "{1:1}",
+        "search::features::dotproduct::wset::(anonymous namespace)::SingleDotProductByWeightedValueExecutor<int>");
     verifyCorrectDotProductExecutor(_factory, "wsint", "{}", "search::features::SingleZeroValueExecutor");
-
 }
 
-void
-Test::assertDotProduct(feature_t exp, const std::string & vector, uint32_t docId,
-                       const std::string & attribute, const std::string & attributeOverride)
-{
+void Test::assertDotProduct(feature_t exp, const std::string& vector, uint32_t docId, const std::string& attribute,
+                            const std::string& attributeOverride) {
     RankResult rr;
     rr.addScore("dotProduct(" + attribute + ",vector)", exp);
     FtFeatureTest ft(_factory, rr.getKeys());
     setupForDotProductTest(ft);
     ft.getQueryEnv().getProperties().add("dotProduct.vector", vector);
-    if ( ! attributeOverride.empty() ) {
+    if (!attributeOverride.empty()) {
         ft.getQueryEnv().getProperties().add("dotProduct." + attribute + ".override.name", attributeOverride);
     }
     ASSERT_TRUE(ft.setup());
     ASSERT_TRUE(ft.execute(rr, docId));
 }
 
-void
-Test::setupForDotProductTest(FtFeatureTest & ft)
-{
+void Test::setupForDotProductTest(FtFeatureTest& ft) {
     struct Config {
         Config() : name(nullptr), dataType(AVBT::BOOL), collectionType(AVCT::SINGLE), fastSearch(false) {}
-        Config(const char *n, AVBT dt, AVCT ct, bool fs) : name(n), dataType(dt), collectionType(ct), fastSearch(fs) {}
-        const char * name;
-        AVBT dataType;
-        AVCT collectionType;
-        bool fastSearch;
+        Config(const char* n, AVBT dt, AVCT ct, bool fs)
+            : name(n), dataType(dt), collectionType(ct), fastSearch(fs) {}
+        const char* name;
+        AVBT        dataType;
+        AVCT        collectionType;
+        bool        fastSearch;
     };
-    std::vector<Config> cfgList = { {"wsint", AVBT::INT32, AVCT::WSET, false},
-                                    {"wsbyte", AVBT::INT8, AVCT::WSET, false},
-                                    {"wsint_fast", AVBT::INT8, AVCT::WSET, true},
-                                    {"arrbyte", AVBT::INT8, AVCT::ARRAY, false},
-                                    {"arrint", AVBT::INT32, AVCT::ARRAY, false},
-                                    {"arrfloat", AVBT::FLOAT, AVCT::ARRAY, false},
-                                    {"arrint_fast", AVBT::INT32, AVCT::ARRAY, true},
-                                    {"arrfloat_fast", AVBT::FLOAT, AVCT::ARRAY, true}
-                                  };
-    auto a = AttributeBuilder("wsstr", AVC(AVBT::STRING, AVCT::WSET)).
-            fill_wset({{{"a", 1}, {"b", 2}, {"c", 3}, {"d", 4}, {"e", 5}}, {}}).get();
+    std::vector<Config> cfgList = {
+        {"wsint", AVBT::INT32, AVCT::WSET, false},       {"wsbyte", AVBT::INT8, AVCT::WSET, false},
+        {"wsint_fast", AVBT::INT8, AVCT::WSET, true},    {"arrbyte", AVBT::INT8, AVCT::ARRAY, false},
+        {"arrint", AVBT::INT32, AVCT::ARRAY, false},     {"arrfloat", AVBT::FLOAT, AVCT::ARRAY, false},
+        {"arrint_fast", AVBT::INT32, AVCT::ARRAY, true}, {"arrfloat_fast", AVBT::FLOAT, AVCT::ARRAY, true}};
+    auto a = AttributeBuilder("wsstr", AVC(AVBT::STRING, AVCT::WSET))
+                 .fill_wset({{{"a", 1}, {"b", 2}, {"c", 3}, {"d", 4}, {"e", 5}}, {}})
+                 .get();
     auto c = AttributeBuilder("sint", AVC(AVBT::INT32, AVCT::SINGLE)).docs(2).get();
     auto d = std::make_shared<search::WeightedSetStringExtAttribute>("wsextstr");
     ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::WEIGHTEDSET, "wsstr");
     ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sint");
     ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::WEIGHTEDSET, "wsextstr");
-    for (const Config & cfg : cfgList) {
-        AttributeBuilder builder(cfg.name, AVC(cfg.dataType,
-                                               cfg.collectionType,
-                                               cfg.fastSearch));
-        auto baf = builder.get();
-        ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE,
-                                               cfg.collectionType==AVCT::ARRAY
-                                               ? CollectionType::ARRAY
-                                               : CollectionType::WEIGHTEDSET,
-                                               cfg.name);
+    for (const Config& cfg : cfgList) {
+        AttributeBuilder builder(cfg.name, AVC(cfg.dataType, cfg.collectionType, cfg.fastSearch));
+        auto             baf = builder.get();
+        ft.getIndexEnv().getBuilder().addField(
+            FieldType::ATTRIBUTE,
+            cfg.collectionType == AVCT::ARRAY ? CollectionType::ARRAY : CollectionType::WEIGHTEDSET, cfg.name);
         ft.getIndexEnv().getAttributeMap().add(baf);
         if (baf->isIntegerType()) {
             using WIL = AttributeBuilder::WeightedIntList;
@@ -1479,7 +1447,7 @@ Test::setupForDotProductTest(FtFeatureTest & ft)
 
     EXPECT_TRUE(!d->hasEnum());
     uint32_t docId;
-    d->addDoc(docId);  // reserved doc
+    d->addDoc(docId); // reserved doc
     d->addDoc(docId);
     d->add("a", 10);
     d->add("b", 20);
@@ -1489,8 +1457,7 @@ Test::setupForDotProductTest(FtFeatureTest & ft)
     d->addDoc(docId);
 }
 
-TEST_F(ProdFeaturesTest, test_now)
-{
+TEST_F(ProdFeaturesTest, test_now) {
     {
         // Test blueprint.
         NowBlueprint pt;
@@ -1498,7 +1465,7 @@ TEST_F(ProdFeaturesTest, test_now)
         EXPECT_TRUE(assertCreateInstance(pt, "now"));
 
         StringList params, in, out;
-        FT_SETUP_OK  (pt, params, in, out.add("out"));
+        FT_SETUP_OK(pt, params, in, out.add("out"));
         FT_SETUP_FAIL(pt, params.add("foo"));
 
         FT_DUMP_EMPTY(_factory, "now");
@@ -1532,9 +1499,7 @@ TEST_F(ProdFeaturesTest, test_now)
     }
 }
 
-
-TEST_F(ProdFeaturesTest, test_match)
-{
+TEST_F(ProdFeaturesTest, test_match) {
     { // Test blueprint.
         MatchBlueprint pt;
 
@@ -1543,16 +1508,16 @@ TEST_F(ProdFeaturesTest, test_match)
         FtFeatureTest ft(_factory, "");
         setupForAttributeTest(ft);
 
-         ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "foo");
-         ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::ARRAY, "bar");
-         ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::WEIGHTEDSET, "baz");
-         ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sint");
-         ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "aint");
-         ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::WEIGHTEDSET, "wsint");
-         ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "tensor");
-         ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "predicate");
-         ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "reference");
-         ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "raw");
+        ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "foo");
+        ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::ARRAY, "bar");
+        ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::WEIGHTEDSET, "baz");
+        ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "sint");
+        ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "aint");
+        ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::WEIGHTEDSET, "wsint");
+        ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "tensor");
+        ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "predicate");
+        ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "reference");
+        ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "raw");
 
         FtIndexEnvironment idx_env;
         idx_env.getBuilder()
@@ -1569,19 +1534,19 @@ TEST_F(ProdFeaturesTest, test_match)
 
         StringList params, in, out;
         FT_SETUP_OK(pt, params, in, out.add("score").add("totalWeight"));
-        FT_SETUP_OK(pt, idx_env, params, in
-                    .add("fieldMatch(foo)")
-                    .add("elementCompleteness(bar)")
-                    .add("elementCompleteness(baz)")
-                    .add("attributeMatch(sint)")
-                    .add("attributeMatch(aint)")
-                    .add("attributeMatch(wsint)"), out
-                    .add("weight.foo")
-                    .add("weight.bar")
-                    .add("weight.baz")
-                    .add("weight.sint")
-                    .add("weight.aint")
-                    .add("weight.wsint"));
+        FT_SETUP_OK(pt, idx_env, params,
+                    in.add("fieldMatch(foo)")
+                        .add("elementCompleteness(bar)")
+                        .add("elementCompleteness(baz)")
+                        .add("attributeMatch(sint)")
+                        .add("attributeMatch(aint)")
+                        .add("attributeMatch(wsint)"),
+                    out.add("weight.foo")
+                        .add("weight.bar")
+                        .add("weight.baz")
+                        .add("weight.sint")
+                        .add("weight.aint")
+                        .add("weight.wsint"));
         FT_SETUP_FAIL(pt, idx_env, params.add("1")); // expects 0 parameters
 
         FT_DUMP_EMPTY(_factory, "match");
@@ -1597,7 +1562,8 @@ TEST_F(ProdFeaturesTest, test_match)
         ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "aint");
         ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::WEIGHTEDSET, "wsint");
 
-        ft.getIndexEnv().getProperties().add("vespa.fieldweight.foo", "100"); // assign weight to all fields, simulate sd behaviour
+        ft.getIndexEnv().getProperties().add("vespa.fieldweight.foo",
+                                             "100"); // assign weight to all fields, simulate sd behaviour
         ft.getIndexEnv().getProperties().add("vespa.fieldweight.bar", "200");
         ft.getIndexEnv().getProperties().add("vespa.fieldweight.sint", "300");
         ft.getIndexEnv().getProperties().add("vespa.fieldweight.aint", "400");
@@ -1619,7 +1585,8 @@ TEST_F(ProdFeaturesTest, test_match)
         ASSERT_TRUE(mdb->setWeight("sint", 1, 0));
         ASSERT_TRUE(mdb->apply(1));
 
-        RankResult rr = toRankResult("match", "score:1 totalWeight:400 weight.foo:100 weight.bar:200 weight.baz:100 weight.sint:300 weight.aint:400 weight.wsint:100");
+        RankResult rr = toRankResult("match", "score:1 totalWeight:400 weight.foo:100 weight.bar:200 weight.baz:100 "
+                                              "weight.sint:300 weight.aint:400 weight.wsint:100");
         rr.setEpsilon(1e-4); // same as java tests
         ASSERT_TRUE(ft.execute(rr));
     }
@@ -1641,8 +1608,7 @@ TEST_F(ProdFeaturesTest, test_match)
     }
 }
 
-TEST_F(ProdFeaturesTest, test_match_count)
-{
+TEST_F(ProdFeaturesTest, test_match_count) {
     { // Test blueprint.
         MatchCountBlueprint pt;
 
@@ -1653,7 +1619,7 @@ TEST_F(ProdFeaturesTest, test_match_count)
         ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "bar");
 
         StringList params, in, out;
-        FT_SETUP_FAIL(pt, ft.getIndexEnv(), params); // expects 1 parameter
+        FT_SETUP_FAIL(pt, ft.getIndexEnv(), params);            // expects 1 parameter
         FT_SETUP_FAIL(pt, ft.getIndexEnv(), params.add("baz")); // cannot find the field
         FT_SETUP_OK(pt, ft.getIndexEnv(), params.clear().add("foo"), in, out.add("out"));
         FT_SETUP_OK(pt, ft.getIndexEnv(), params.clear().add("bar"), in, out);
@@ -1668,14 +1634,13 @@ TEST_F(ProdFeaturesTest, test_match_count)
         EXPECT_TRUE(assertMatches(0, "a", "a", "matchCount(foo)", 2));
     }
     { // Test executor for attribute fields
-        FtFeatureTest ft(_factory, StringList().add("matchCount(foo)").
-                                                add("matchCount(baz)"));
+        FtFeatureTest ft(_factory, StringList().add("matchCount(foo)").add("matchCount(baz)"));
         ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "foo");
         ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "bar");
         ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "baz");
-        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("foo") != nullptr);   // query term 0, hit in foo
-        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("bar") != nullptr);   // query term 1, hit in bar
-        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("foo") != nullptr);   // query term 2, hit in foo
+        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("foo") != nullptr); // query term 0, hit in foo
+        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("bar") != nullptr); // query term 1, hit in bar
+        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("foo") != nullptr); // query term 2, hit in foo
         ASSERT_TRUE(ft.setup());
 
         MatchDataBuilder::UP mdb = ft.createMatchDataBuilder();
@@ -1693,31 +1658,29 @@ void verifySequence(uint64_t first, uint64_t second) {
     ASSERT_GT(double(first), double(second));
 }
 
-TEST_F(ProdFeaturesTest, test_unique)
-{
+TEST_F(ProdFeaturesTest, test_unique) {
     {
         GlobalSequenceBlueprint bp;
         EXPECT_TRUE(assertCreateInstance(bp, "globalSequence"));
         FtFeatureTest ft(_factory, "");
-        StringList params, in, out;
+        StringList    params, in, out;
         FT_SETUP_OK(bp, ft.getIndexEnv(), params, in, out.add("out"));
         FT_DUMP_EMPTY(_factory, "globalSequence");
     }
     FtFeatureTest ft(_factory, "globalSequence");
     ASSERT_TRUE(ft.setup());
-    verifySequence(GlobalSequenceBlueprint::globalSequence(1, 0), GlobalSequenceBlueprint::globalSequence(1,1));
-    verifySequence(GlobalSequenceBlueprint::globalSequence(1, 1), GlobalSequenceBlueprint::globalSequence(1,2));
-    verifySequence(GlobalSequenceBlueprint::globalSequence(1, 1), GlobalSequenceBlueprint::globalSequence(2,1));
-    verifySequence(GlobalSequenceBlueprint::globalSequence(2, 1), GlobalSequenceBlueprint::globalSequence(2,2));
-    verifySequence(GlobalSequenceBlueprint::globalSequence(2, 2), GlobalSequenceBlueprint::globalSequence(2,3));
-    verifySequence(GlobalSequenceBlueprint::globalSequence(2, 2), GlobalSequenceBlueprint::globalSequence(3,0));
+    verifySequence(GlobalSequenceBlueprint::globalSequence(1, 0), GlobalSequenceBlueprint::globalSequence(1, 1));
+    verifySequence(GlobalSequenceBlueprint::globalSequence(1, 1), GlobalSequenceBlueprint::globalSequence(1, 2));
+    verifySequence(GlobalSequenceBlueprint::globalSequence(1, 1), GlobalSequenceBlueprint::globalSequence(2, 1));
+    verifySequence(GlobalSequenceBlueprint::globalSequence(2, 1), GlobalSequenceBlueprint::globalSequence(2, 2));
+    verifySequence(GlobalSequenceBlueprint::globalSequence(2, 2), GlobalSequenceBlueprint::globalSequence(2, 3));
+    verifySequence(GlobalSequenceBlueprint::globalSequence(2, 2), GlobalSequenceBlueprint::globalSequence(3, 0));
     ASSERT_EQ(0xfffffffefffdul, (1ul << 48) - 0x10003l);
     EXPECT_TRUE(ft.execute(0xfffffffefffdul, 0, 1));
     EXPECT_TRUE(ft.execute(0xfffffff8fffdul, 0, 7));
 }
 
-TEST_F(ProdFeaturesTest, test_matches)
-{
+TEST_F(ProdFeaturesTest, test_matches) {
     { // Test blueprint.
         MatchesBlueprint pt;
 
@@ -1728,7 +1691,7 @@ TEST_F(ProdFeaturesTest, test_matches)
         ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "bar");
 
         StringList params, in, out;
-        FT_SETUP_FAIL(pt, ft.getIndexEnv(), params); // expects 1-2 parameters
+        FT_SETUP_FAIL(pt, ft.getIndexEnv(), params);            // expects 1-2 parameters
         FT_SETUP_FAIL(pt, ft.getIndexEnv(), params.add("baz")); // cannot find the field
         FT_SETUP_OK(pt, ft.getIndexEnv(), params.clear().add("foo"), in, out.add("out"));
         FT_SETUP_OK(pt, ft.getIndexEnv(), params.add("1"), in, out);
@@ -1751,18 +1714,19 @@ TEST_F(ProdFeaturesTest, test_matches)
         EXPECT_TRUE(assertMatches(1, "x b", "a b", "matches(foo,1)"));
     }
     { // Test executor for attribute fields
-        FtFeatureTest ft(_factory, StringList().add("matches(foo)").
-                                                add("matches(baz)").
-                                                add("matches(foo,0)").
-                                                add("matches(foo,1)").
-                                                add("matches(foo,2)").
-                                                add("matches(foo,3)"));
+        FtFeatureTest ft(_factory, StringList()
+                                       .add("matches(foo)")
+                                       .add("matches(baz)")
+                                       .add("matches(foo,0)")
+                                       .add("matches(foo,1)")
+                                       .add("matches(foo,2)")
+                                       .add("matches(foo,3)"));
         ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "foo");
         ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "bar");
         ft.getIndexEnv().getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "baz");
-        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("foo") != nullptr);   // query term 0, hit in foo
-        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("bar") != nullptr);   // query term 1, hit in bar
-        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("foo") != nullptr);   // query term 2, hit in foo
+        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("foo") != nullptr); // query term 0, hit in foo
+        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("bar") != nullptr); // query term 1, hit in bar
+        ASSERT_TRUE(ft.getQueryEnv().getBuilder().addAttributeNode("foo") != nullptr); // query term 2, hit in foo
         ASSERT_TRUE(ft.setup());
 
         MatchDataBuilder::UP mdb = ft.createMatchDataBuilder();
@@ -1789,19 +1753,14 @@ TEST_F(ProdFeaturesTest, test_matches)
     }
 }
 
-bool
-Test::assertMatches(uint32_t output,
-                    const std::string & query,
-                    const std::string & field,
-                    const std::string & feature,
-                    uint32_t docId)
-{
+bool Test::assertMatches(uint32_t output, const std::string& query, const std::string& field,
+                         const std::string& feature, uint32_t docId) {
     LOG(info, "assertMatches(%u, '%s', '%s', '%s')", output, query.c_str(), field.c_str(), feature.c_str());
 
     // Setup feature test.
     FtFeatureTest ft(_factory, feature);
     ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "foo");
-    std::map<std::string, std::vector<std::string> > index;
+    std::map<std::string, std::vector<std::string>> index;
     index["foo"] = FtUtil::tokenize(field);
     FT_SETUP(ft, FtUtil::toQuery(query), index, 1);
 
@@ -1812,8 +1771,7 @@ Test::assertMatches(uint32_t output,
     return !failed;
 }
 
-TEST_F(ProdFeaturesTest, test_query)
-{
+TEST_F(ProdFeaturesTest, test_query) {
     { // Test blueprint.
         QueryBlueprint pt;
 
@@ -1828,20 +1786,19 @@ TEST_F(ProdFeaturesTest, test_query)
 
     { // Test executor.
         RankResult exp;
-        exp.addScore("query(def1)", 1.0).
-            addScore("query(def2)", 2.0).
-            addScore("query(def3)", 0.0).
-            addScore("query(val1)", 1.1).
-            addScore("query(val2)", 2.2).
-            addScore("query(hash1)", vespalib::hash2d("foo")).
-            addScore("query(hash2)", vespalib::hash2d("2")).
-            addScore("query(hash3)", vespalib::hash2d("foo")).
-            addScore("query(hash4)", vespalib::hash2d("'foo"));
+        exp.addScore("query(def1)", 1.0)
+            .addScore("query(def2)", 2.0)
+            .addScore("query(def3)", 0.0)
+            .addScore("query(val1)", 1.1)
+            .addScore("query(val2)", 2.2)
+            .addScore("query(hash1)", vespalib::hash2d("foo"))
+            .addScore("query(hash2)", vespalib::hash2d("2"))
+            .addScore("query(hash3)", vespalib::hash2d("foo"))
+            .addScore("query(hash4)", vespalib::hash2d("'foo"));
         FtFeatureTest ft(_factory, exp.getKeys());
-        ft.getIndexEnv().getProperties()
-            .add("query(def1)", "1.0")
-            .add("$def2", "2.0");
-        ft.getQueryEnv().getProperties()
+        ft.getIndexEnv().getProperties().add("query(def1)", "1.0").add("$def2", "2.0");
+        ft.getQueryEnv()
+            .getProperties()
             .add("val1", "1.1")
             .add("$val2", "2.2")
             .add("hash1", "foo")
@@ -1853,8 +1810,7 @@ TEST_F(ProdFeaturesTest, test_query)
     }
 }
 
-TEST_F(ProdFeaturesTest, test_query_term_count)
-{
+TEST_F(ProdFeaturesTest, test_query_term_count) {
     { // Test blueprint.
         QueryTermCountBlueprint pt;
 
@@ -1890,16 +1846,15 @@ TEST_F(ProdFeaturesTest, test_query_term_count)
     }
 }
 
-TEST_F(ProdFeaturesTest, test_random)
-{
+TEST_F(ProdFeaturesTest, test_random) {
     { // Test blueprint.
         RandomBlueprint pt;
 
         EXPECT_TRUE(assertCreateInstance(pt, "random"));
 
         StringList params, in, out;
-        FT_SETUP_OK  (pt, params, in, out.add("out").add("match"));
-        FT_SETUP_OK  (pt, params.add("1"), in, out);
+        FT_SETUP_OK(pt, params, in, out.add("out").add("match"));
+        FT_SETUP_OK(pt, params.add("1"), in, out);
         FT_SETUP_FAIL(pt, params.add("2"));
 
         FT_DUMP_EMPTY(_factory, "random");
@@ -1941,8 +1896,7 @@ TEST_F(ProdFeaturesTest, test_random)
     }
 }
 
-TEST_F(ProdFeaturesTest, test_random_normal)
-{
+TEST_F(ProdFeaturesTest, test_random_normal) {
     { // Test blueprint.
         RandomNormalBlueprint pt;
 
@@ -1985,8 +1939,7 @@ TEST_F(ProdFeaturesTest, test_random_normal)
     }
 }
 
-TEST_F(ProdFeaturesTest, test_random_normal_stable)
-{
+TEST_F(ProdFeaturesTest, test_random_normal_stable) {
     { // Test blueprint.
         RandomNormalStableBlueprint pt;
 
@@ -2011,7 +1964,8 @@ TEST_F(ProdFeaturesTest, test_random_normal_stable)
         for (uint32_t i = 0; i < 5; ++i) {
             rr.clear();
             ASSERT_TRUE(ft1.executeOnly(rr, i + 1));
-            ASSERT_TRUE(ft2.execute(((rr.getScore("randomNormalStable(0.0,0.1)") - 0.0) / 0.1) * 0.2 + 1.0, EPS, i + 1));
+            ASSERT_TRUE(
+                ft2.execute(((rr.getScore("randomNormalStable(0.0,0.1)") - 0.0) / 0.1) * 0.2 + 1.0, EPS, i + 1));
         }
     }
     { // Test executor (randomNormalStable)
@@ -2028,8 +1982,7 @@ TEST_F(ProdFeaturesTest, test_random_normal_stable)
     }
 }
 
-TEST_F(ProdFeaturesTest, test_ranking_expression)
-{
+TEST_F(ProdFeaturesTest, test_ranking_expression) {
     { // Test blueprint.
         RankingExpressionBlueprint prototype;
 
@@ -2037,12 +1990,11 @@ TEST_F(ProdFeaturesTest, test_ranking_expression)
 
         StringList params, in, out;
         FT_SETUP_FAIL(prototype, params); // requires config to run without params
-        FT_SETUP_OK  (prototype, params.add("foo.out"), in.add("foo.out"), out.add("out"));
+        FT_SETUP_OK(prototype, params.add("foo.out"), in.add("foo.out"), out.add("out"));
         FT_SETUP_FAIL(prototype, params.add("bar.out"));
-        FT_SETUP_OK  (prototype, params.clear().add("log((1 + 2)- 3 * 4 / 5 )"), in.clear(), out);
-        FT_SETUP_OK  (prototype,
-                      params.clear().add("if(if(f1.out<1,0,1)<if(f2.out<2,0,1),f3.out,3)"),
-                      in.clear().add("f1.out").add("f2.out").add("f3.out"), out);
+        FT_SETUP_OK(prototype, params.clear().add("log((1 + 2)- 3 * 4 / 5 )"), in.clear(), out);
+        FT_SETUP_OK(prototype, params.clear().add("if(if(f1.out<1,0,1)<if(f2.out<2,0,1),f3.out,3)"),
+                    in.clear().add("f1.out").add("f2.out").add("f3.out"), out);
 
         FT_DUMP_EMPTY(_factory, "rankingExpression");
     }
@@ -2082,7 +2034,8 @@ TEST_F(ProdFeaturesTest, test_ranking_expression)
         }
         {
             FtFeatureTest ft(_factory, "rankingExpression");
-            ft.getIndexEnv().getProperties()
+            ft.getIndexEnv()
+                .getProperties()
                 .add("rankingExpression.rankingScript", "if(")
                 .add("rankingExpression.rankingScript", "1<")
                 .add("rankingExpression.rankingScript", "2,")
@@ -2093,7 +2046,7 @@ TEST_F(ProdFeaturesTest, test_ranking_expression)
         }
         {
             // test interpreted expression
-            std::string my_expr("3.0 + value(4.0) + reduce(tensorFromWeightedSet(query(my_tensor)),sum)");
+            std::string   my_expr("3.0 + value(4.0) + reduce(tensorFromWeightedSet(query(my_tensor)),sum)");
             FtFeatureTest ft(_factory, getExpression(my_expr));
             ft.getQueryEnv().getProperties().add("my_tensor", "{a:1,b:2,c:3}");
             ASSERT_TRUE(ft.setup());
@@ -2102,15 +2055,12 @@ TEST_F(ProdFeaturesTest, test_ranking_expression)
     }
 }
 
-std::string
-Test::getExpression(const std::string &parameter) const
-{
+std::string Test::getExpression(const std::string& parameter) const {
     using FNB = search::fef::FeatureNameBuilder;
     return FNB().baseName("rankingExpression").parameter(parameter).buildName();
 }
 
-TEST_F(ProdFeaturesTest, test_term)
-{
+TEST_F(ProdFeaturesTest, test_term) {
     {
         // Test blueprint.
         TermBlueprint pt;
@@ -2118,7 +2068,7 @@ TEST_F(ProdFeaturesTest, test_term)
             EXPECT_TRUE(assertCreateInstance(pt, "term"));
 
             StringList params, in, out;
-            FT_SETUP_OK  (pt, params.add("0"), in, out.add("connectedness").add("significance").add("weight"));
+            FT_SETUP_OK(pt, params.add("0"), in, out.add("connectedness").add("significance").add("weight"));
             FT_SETUP_FAIL(pt, params.add("1"));
         }
         {
@@ -2145,35 +2095,45 @@ TEST_F(ProdFeaturesTest, test_term)
         ASSERT_TRUE(ft.setup());
 
         RankResult exp;
-        exp .addScore("term(0).connectedness", 0)
-            .addScore("term(0).significance",  0)
-            .addScore("term(0).weight",        0);
+        exp.addScore("term(0).connectedness", 0).addScore("term(0).significance", 0).addScore("term(0).weight", 0);
         ASSERT_TRUE(ft.execute(exp));
     }
     {
         // Test executor.
         FtFeatureTest ft(_factory, StringList().add("term(1)").add("term(2)"));
-        ft.getIndexEnv().getBuilder()
-            .addField(FieldType::INDEX, CollectionType::SINGLE,     "idx1")  // field 0
-            .addField(FieldType::INDEX, CollectionType::SINGLE,     "idx2")  // field 1
+        ft.getIndexEnv()
+            .getBuilder()
+            .addField(FieldType::INDEX, CollectionType::SINGLE, "idx1")      // field 0
+            .addField(FieldType::INDEX, CollectionType::SINGLE, "idx2")      // field 1
             .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "attr"); // field 2
         ft.getQueryEnv().getBuilder().addAllFields().setUniqueId(0);
-        ft.getQueryEnv().getBuilder().addAllFields().setUniqueId(1)
-                .setWeight(search::query::Weight(200)).lookupField(0)->setDocFreq(50, 100);
-        ft.getQueryEnv().getBuilder().addAttributeNode("attr")->setUniqueId(2)
-                .setWeight(search::query::Weight(400)).lookupField(2)->setDocFreq(25, 100);
+        ft.getQueryEnv()
+            .getBuilder()
+            .addAllFields()
+            .setUniqueId(1)
+            .setWeight(search::query::Weight(200))
+            .lookupField(0)
+            ->setDocFreq(50, 100);
+        ft.getQueryEnv()
+            .getBuilder()
+            .addAttributeNode("attr")
+            ->setUniqueId(2)
+            .setWeight(search::query::Weight(400))
+            .lookupField(2)
+            ->setDocFreq(25, 100);
         // setup connectedness between term 1 and term 0
         ft.getQueryEnv().getProperties().add("vespa.term.1.connexity", "0");
         ft.getQueryEnv().getProperties().add("vespa.term.1.connexity", "0.7");
         ASSERT_TRUE(ft.setup());
 
         RankResult exp;
-        exp.addScore("term(1).significance",  util::calculate_legacy_significance({50, 100})).
-            addScore("term(1).weight",        200.0f).
-            addScore("term(1).connectedness", 0.7f).
-            addScore("term(2).significance",  util::calculate_legacy_significance({25, 100})).
-            addScore("term(2).weight",        400.0f).
-            addScore("term(2).connectedness", 0.1f). // default connectedness
+        exp.addScore("term(1).significance", util::calculate_legacy_significance({50, 100}))
+            .addScore("term(1).weight", 200.0f)
+            .addScore("term(1).connectedness", 0.7f)
+            .addScore("term(2).significance", util::calculate_legacy_significance({25, 100}))
+            .addScore("term(2).weight", 400.0f)
+            .addScore("term(2).connectedness", 0.1f)
+            . // default connectedness
             setEpsilon(10e-6);
         ASSERT_TRUE(ft.execute(exp));
     }
@@ -2189,14 +2149,13 @@ TEST_F(ProdFeaturesTest, test_term)
     }
 }
 
-TEST_F(ProdFeaturesTest, test_term_distance)
-{
+TEST_F(ProdFeaturesTest, test_term_distance) {
     { // test blueprint
         TermDistanceBlueprint pt;
         {
             EXPECT_TRUE(assertCreateInstance(pt, "termDistance"));
 
-            StringList params, in, out;
+            StringList         params, in, out;
             FtIndexEnvironment ie;
             ie.getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "foo");
             ie.getBuilder().addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "bar");
@@ -2204,9 +2163,8 @@ TEST_F(ProdFeaturesTest, test_term_distance)
             FT_SETUP_FAIL(pt, ie, params.add("baz").add("0").add("0"));
             FT_SETUP_FAIL(pt, ie, params.clear().add("bar").add("0").add("0"));
 
-            FT_SETUP_OK(pt, ie, params.clear().add("foo").add("0").add("0"),
-                        in, out.add("forward").add("forwardTermPosition")
-                               .add("reverse").add("reverseTermPosition"));
+            FT_SETUP_OK(pt, ie, params.clear().add("foo").add("0").add("0"), in,
+                        out.add("forward").add("forwardTermPosition").add("reverse").add("reverseTermPosition"));
         }
         {
             FT_DUMP_EMPTY(_factory, "termDistance");
@@ -2220,56 +2178,53 @@ TEST_F(ProdFeaturesTest, test_term_distance)
         EXPECT_TRUE(assertTermDistance(Result(), "a b", "x x"));
         EXPECT_TRUE(assertTermDistance(Result(), "a b", "a x"));
         EXPECT_TRUE(assertTermDistance(Result(), "a b", "x b"));
-        EXPECT_TRUE(assertTermDistance(Result(), "a",   "a b"));
-        EXPECT_TRUE(assertTermDistance(Result(), "a",   "a a"));
-        EXPECT_TRUE(assertTermDistance(Result(1,0,UV,UV), "a b", "a b"));
+        EXPECT_TRUE(assertTermDistance(Result(), "a", "a b"));
+        EXPECT_TRUE(assertTermDistance(Result(), "a", "a a"));
+        EXPECT_TRUE(assertTermDistance(Result(1, 0, UV, UV), "a b", "a b"));
         // Change docid to give 0 hits
         EXPECT_TRUE(assertTermDistance(Result(), "a b", "a b", 2));
-        EXPECT_TRUE(assertTermDistance(Result(2,0,UV,UV), "a b", "a x b"));
-        EXPECT_TRUE(assertTermDistance(Result(UV,UV,1,0), "a b", "b a"));
-        EXPECT_TRUE(assertTermDistance(Result(UV,UV,2,0), "a b", "b x a"));
-        EXPECT_TRUE(assertTermDistance(Result(2,18,1,20), "a b", "a x x x x x b x x x x a x x x b x x a x b a"));
-        EXPECT_TRUE(assertTermDistance(Result(1,0,2,1),   "a b", "a b x a x x b x x x a x x x x b x x x x x a"));
-        EXPECT_TRUE(assertTermDistance(Result(1,0,1,1),   "a b", "a b a b a")); // first best is kept
-        EXPECT_TRUE(assertTermDistance(Result(1,0,1,0), "a a", "a a"));
-        EXPECT_TRUE(assertTermDistance(Result(2,0,2,0), "a a", "a x a"));
+        EXPECT_TRUE(assertTermDistance(Result(2, 0, UV, UV), "a b", "a x b"));
+        EXPECT_TRUE(assertTermDistance(Result(UV, UV, 1, 0), "a b", "b a"));
+        EXPECT_TRUE(assertTermDistance(Result(UV, UV, 2, 0), "a b", "b x a"));
+        EXPECT_TRUE(assertTermDistance(Result(2, 18, 1, 20), "a b", "a x x x x x b x x x x a x x x b x x a x b a"));
+        EXPECT_TRUE(assertTermDistance(Result(1, 0, 2, 1), "a b", "a b x a x x b x x x a x x x x b x x x x x a"));
+        EXPECT_TRUE(assertTermDistance(Result(1, 0, 1, 1), "a b", "a b a b a")); // first best is kept
+        EXPECT_TRUE(assertTermDistance(Result(1, 0, 1, 0), "a a", "a a"));
+        EXPECT_TRUE(assertTermDistance(Result(2, 0, 2, 0), "a a", "a x a"));
         EXPECT_TRUE(assertTermDistance(Result(1, 0, 1, 5), "a b", "a b x x x b a b x"));
-        // Get proximity between phrase "a b y" and term "b". Use postings for term "a" as posting for phrase "a b y", but adjust phrase length of query term.
+        // Get proximity between phrase "a b y" and term "b". Use postings for term "a" as posting for phrase "a b y",
+        // but adjust phrase length of query term.
         EXPECT_TRUE(assertTermDistance(Result(3, 0, 1, 5), "a b", {"a b y y y b a b y"}, 1, std::nullopt, 3));
         // Distance between positions in adjacent elements is not calculated when element gap is not set.
         EXPECT_TRUE(assertTermDistance(Result(), "a b", {"a x", "x b x"}, 1, std::nullopt, std::nullopt));
         EXPECT_TRUE(assertTermDistance(Result(), "a b", {"a i", "i b i"}, 1, ElementGap(std::nullopt), std::nullopt));
         // Distance between positions in adjacent elements is calculated when element gap is set.
-        EXPECT_TRUE(assertTermDistance(Result(103, 0, UV, UV), "a b", {"a y", "x b y"}, 1, ElementGap(100), std::nullopt));
-        EXPECT_TRUE(assertTermDistance(Result(UV, UV, 103, 0), "a b", {"b x", "x a x"}, 1, ElementGap(100), std::nullopt));
+        EXPECT_TRUE(
+            assertTermDistance(Result(103, 0, UV, UV), "a b", {"a y", "x b y"}, 1, ElementGap(100), std::nullopt));
+        EXPECT_TRUE(
+            assertTermDistance(Result(UV, UV, 103, 0), "a b", {"b x", "x a x"}, 1, ElementGap(100), std::nullopt));
         // Best forward distance is within first element, no best reverse distance
-        EXPECT_TRUE(assertTermDistance(Result(3, 0, UV, UV), "a b", {"a x x b", "x b"}, 1, ElementGap(0), std::nullopt));
+        EXPECT_TRUE(
+            assertTermDistance(Result(3, 0, UV, UV), "a b", {"a x x b", "x b"}, 1, ElementGap(0), std::nullopt));
         // Best forward distance is spanning elements, best reverse distance is within first element
-        EXPECT_TRUE(assertTermDistance(Result(2, 4, 1, 3), "a b", {"a x x b a", "x b"}, 1, ElementGap(0), std::nullopt));
+        EXPECT_TRUE(
+            assertTermDistance(Result(2, 4, 1, 3), "a b", {"a x x b a", "x b"}, 1, ElementGap(0), std::nullopt));
         // Best forward distance is within second element, best reverse distance is spanning elements
-        EXPECT_TRUE(assertTermDistance(Result(1, 3, 1, 3), "a b", {"a x x b", "a x b a b"}, 1, ElementGap(0), std::nullopt));
+        EXPECT_TRUE(
+            assertTermDistance(Result(1, 3, 1, 3), "a b", {"a x x b", "a x b a b"}, 1, ElementGap(0), std::nullopt));
     }
 }
 
-bool
-Test::assertTermDistance(const TermDistanceCalculator::Result & exp,
-                         const std::string & query,
-                         const std::string & field,
-                         uint32_t docId)
-{
+bool Test::assertTermDistance(const TermDistanceCalculator::Result& exp, const std::string& query,
+                              const std::string& field, uint32_t docId) {
     std::vector<std::string> mv_field;
     mv_field.emplace_back(field);
     return assertTermDistance(exp, query, mv_field, docId, std::nullopt, std::nullopt);
 }
 
-bool
-Test::assertTermDistance(const TermDistanceCalculator::Result & exp,
-                         const std::string & query,
-                         const std::vector<std::string> & field,
-                         uint32_t docId,
-                         std::optional<ElementGap> element_gap,
-                         std::optional<uint32_t> phrase_length)
-{
+bool Test::assertTermDistance(const TermDistanceCalculator::Result& exp, const std::string& query,
+                              const std::vector<std::string>& field, uint32_t docId,
+                              std::optional<ElementGap> element_gap, std::optional<uint32_t> phrase_length) {
     std::ostringstream os;
     os << "assertTermDistance(" << std::quoted(query) << ", " << testing::PrintToString(field) << ")";
     if (element_gap.has_value()) {
@@ -2285,10 +2240,11 @@ Test::assertTermDistance(const TermDistanceCalculator::Result & exp,
     SCOPED_TRACE(os.str());
     LOG(info, "%s", os.str().c_str());
 
-    std::string feature = "termDistance(foo,0,1)";
+    std::string   feature = "termDistance(foo,0,1)";
     FtFeatureTest ft(_factory, feature);
 
-    ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::ARRAY, DataType::STRING, element_gap, "foo");
+    ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::ARRAY, DataType::STRING, element_gap,
+                                           "foo");
     FtIndex index;
     index.field("foo");
     for (auto& elem : field) {
@@ -2300,23 +2256,22 @@ Test::assertTermDistance(const TermDistanceCalculator::Result & exp,
     }
 
     RankResult rr;
-    rr.addScore(feature + ".forward",             exp.forwardDist);
+    rr.addScore(feature + ".forward", exp.forwardDist);
     rr.addScore(feature + ".forwardTermPosition", exp.forwardTermPos);
-    rr.addScore(feature + ".reverse",             exp.reverseDist);
+    rr.addScore(feature + ".reverse", exp.reverseDist);
     rr.addScore(feature + ".reverseTermPosition", exp.reverseTermPos);
     bool failed = false;
     EXPECT_TRUE(ft.execute(rr, docId)) << (failed = true, "");
     return !failed;
 }
 
-TEST_F(ProdFeaturesTest, test_utils)
-{
-    { // calculate_legacy_significance
+TEST_F(ProdFeaturesTest, test_utils) {
+    {                                   // calculate_legacy_significance
         constexpr uint64_t N = 1000000; // The "normal" corpus size for legacy significance
         EXPECT_NEAR(util::calculate_legacy_significance({0, N}), 1, EPS);
         EXPECT_NEAR(util::calculate_legacy_significance({1, N}), 1, EPS);
-        EXPECT_NEAR(util::calculate_legacy_significance({ N, N}), 0.5, EPS);
-        EXPECT_NEAR(util::calculate_legacy_significance({ N + 1, N}), 0.5, EPS);
+        EXPECT_NEAR(util::calculate_legacy_significance({N, N}), 0.5, EPS);
+        EXPECT_NEAR(util::calculate_legacy_significance({N + 1, N}), 0.5, EPS);
         feature_t last = 1;
         for (uint32_t i = 2; i <= 100; i = i + 1) {
             feature_t s = util::calculate_legacy_significance({i, N});
