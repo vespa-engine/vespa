@@ -4,21 +4,17 @@
 
 namespace search::test {
 
-VectorBufferWriter::VectorBufferWriter()
-    : BufferWriter()
-{
+VectorBufferWriter::VectorBufferWriter() : BufferWriter() {
     setup(tmp, 1024);
 }
 
 VectorBufferWriter::~VectorBufferWriter() = default;
 
-void
-VectorBufferWriter::flush()
-{
+void VectorBufferWriter::flush() {
     for (size_t i = 0; i < usedLen(); ++i) {
         output.push_back(tmp[i]);
     }
     rewind();
 }
 
-}
+} // namespace search::test

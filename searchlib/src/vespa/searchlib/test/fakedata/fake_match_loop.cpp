@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fake_match_loop.h"
+
 #include "fakeposting.h"
+
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/queryeval/andsearch.h>
 #include <vespa/searchlib/queryeval/orsearch.h>
@@ -19,16 +21,12 @@ namespace {
 
 class IteratorState {
 private:
-    TermFieldMatchData _md;
-    TermFieldMatchDataArray _tfmda;
+    TermFieldMatchData              _md;
+    TermFieldMatchDataArray         _tfmda;
     std::unique_ptr<SearchIterator> _itr;
 
 public:
-    IteratorState(const FakePosting& posting)
-        : _md(),
-          _tfmda(),
-          _itr()
-    {
+    IteratorState(const FakePosting& posting) : _md(), _tfmda(), _itr() {
         _tfmda.add(&_md);
         _md.setNeedNormalFeatures(posting.enable_unpack_normal_features());
         _md.setNeedInterleavedFeatures(posting.enable_unpack_interleaved_features());
@@ -40,10 +38,7 @@ public:
     SearchIterator* release() { return _itr.release(); }
 };
 
-template <bool do_unpack>
-int
-do_match_loop(SearchIterator& itr, uint32_t doc_id_limit)
-{
+template <bool do_unpack> int do_match_loop(SearchIterator& itr, uint32_t doc_id_limit) {
     uint32_t hits = 0;
     itr.initFullRange();
     uint32_t doc_id = itr.getDocId();
@@ -63,57 +58,48 @@ do_match_loop(SearchIterator& itr, uint32_t doc_id_limit)
     return hits;
 }
 
-}
+} // namespace
 
-int
-FakeMatchLoop::direct_posting_scan(const FakePosting& posting, uint32_t doc_id_limit)
-{
+int FakeMatchLoop::direct_posting_scan(const FakePosting& posting, uint32_t doc_id_limit) {
     IteratorState state(posting);
     return do_match_loop<false>(state.itr(), doc_id_limit);
 }
 
-int
-FakeMatchLoop::direct_posting_scan_with_unpack(const FakePosting& posting, uint32_t doc_id_limit)
-{
+int FakeMatchLoop::direct_posting_scan_with_unpack(const FakePosting& posting, uint32_t doc_id_limit) {
     IteratorState state(posting);
     return do_match_loop<true>(state.itr(), doc_id_limit);
 }
 
-int
-FakeMatchLoop::and_pair_posting_scan(const FakePosting& posting_1, const FakePosting& posting_2, uint32_t doc_id_limit)
-{
-    IteratorState state_1(posting_1);
-    IteratorState state_2(posting_2);
+int FakeMatchLoop::and_pair_posting_scan(const FakePosting& posting_1, const FakePosting& posting_2,
+                                         uint32_t doc_id_limit) {
+    IteratorState                   state_1(posting_1);
+    IteratorState                   state_2(posting_2);
     std::unique_ptr<SearchIterator> iterator(AndSearch::create({state_1.release(), state_2.release()}, true));
     return do_match_loop<false>(*iterator, doc_id_limit);
 }
 
-int
-FakeMatchLoop::and_pair_posting_scan_with_unpack(const FakePosting& posting_1, const FakePosting& posting_2, uint32_t doc_id_limit)
-{
-    IteratorState state_1(posting_1);
-    IteratorState state_2(posting_2);
+int FakeMatchLoop::and_pair_posting_scan_with_unpack(const FakePosting& posting_1, const FakePosting& posting_2,
+                                                     uint32_t doc_id_limit) {
+    IteratorState                   state_1(posting_1);
+    IteratorState                   state_2(posting_2);
     std::unique_ptr<SearchIterator> iterator(AndSearch::create({state_1.release(), state_2.release()}, true));
     return do_match_loop<true>(*iterator, doc_id_limit);
 }
 
-int
-FakeMatchLoop::or_pair_posting_scan(const FakePosting& posting_1, const FakePosting& posting_2, uint32_t doc_id_limit)
-{
-    IteratorState state_1(posting_1);
-    IteratorState state_2(posting_2);
+int FakeMatchLoop::or_pair_posting_scan(const FakePosting& posting_1, const FakePosting& posting_2,
+                                        uint32_t doc_id_limit) {
+    IteratorState                   state_1(posting_1);
+    IteratorState                   state_2(posting_2);
     std::unique_ptr<SearchIterator> iterator(OrSearch::create({state_1.release(), state_2.release()}, true));
     return do_match_loop<false>(*iterator, doc_id_limit);
 }
 
-int
-FakeMatchLoop::or_pair_posting_scan_with_unpack(const FakePosting& posting_1, const FakePosting& posting_2, uint32_t doc_id_limit)
-{
-    IteratorState state_1(posting_1);
-    IteratorState state_2(posting_2);
+int FakeMatchLoop::or_pair_posting_scan_with_unpack(const FakePosting& posting_1, const FakePosting& posting_2,
+                                                    uint32_t doc_id_limit) {
+    IteratorState                   state_1(posting_1);
+    IteratorState                   state_2(posting_2);
     std::unique_ptr<SearchIterator> iterator(OrSearch::create({state_1.release(), state_2.release()}, true));
     return do_match_loop<true>(*iterator, doc_id_limit);
 }
 
-}
-
+} // namespace search::fakedata

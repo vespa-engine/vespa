@@ -11,9 +11,9 @@ namespace search::index::test {
  */
 class MockFieldLengthInspector : public IFieldLengthInspector {
     FieldLengthInfo get_field_length_info(const std::string& field_name) const override {
-        (void) field_name;
+        (void)field_name;
         return FieldLengthInfo();
     }
 };
 
-}
+} // namespace search::index::test

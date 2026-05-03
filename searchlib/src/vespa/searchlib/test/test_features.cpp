@@ -1,10 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "test_features.h"
+
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/locale/c.h>
 #include <vespa/vespalib/util/stash.h>
-
 
 using vespalib::eval::DoubleValue;
 using vespalib::eval::ValueType;
@@ -19,9 +19,7 @@ struct ImpureValueExecutor : FeatureExecutor {
     void execute(uint32_t) override { outputs().set_number(0, value); }
 };
 
-bool
-ImpureValueBlueprint::setup(const IIndexEnvironment &, const std::vector<std::string> &params)
-{
+bool ImpureValueBlueprint::setup(const IIndexEnvironment&, const std::vector<std::string>& params) {
     bool failed = false;
     EXPECT_EQ(1u, params.size()) << (failed = true, "");
     if (failed) {
@@ -32,9 +30,7 @@ ImpureValueBlueprint::setup(const IIndexEnvironment &, const std::vector<std::st
     return true;
 }
 
-FeatureExecutor &
-ImpureValueBlueprint::createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const
-{
+FeatureExecutor& ImpureValueBlueprint::createExecutor(const IQueryEnvironment&, vespalib::Stash& stash) const {
     return stash.create<ImpureValueExecutor>(value);
 }
 
@@ -44,16 +40,12 @@ struct DocidExecutor : FeatureExecutor {
     void execute(uint32_t docid) override { outputs().set_number(0, docid); }
 };
 
-bool
-DocidBlueprint::setup(const IIndexEnvironment &, const std::vector<std::string> &)
-{
+bool DocidBlueprint::setup(const IIndexEnvironment&, const std::vector<std::string>&) {
     describeOutput("out", "the local document id");
     return true;
 }
 
-FeatureExecutor &
-DocidBlueprint::createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const
-{
+FeatureExecutor& DocidBlueprint::createExecutor(const IQueryEnvironment&, vespalib::Stash& stash) const {
     return stash.create<DocidExecutor>();
 }
 
@@ -69,9 +61,7 @@ struct BoxingExecutor : FeatureExecutor {
     }
 };
 
-bool
-BoxingBlueprint::setup(const IIndexEnvironment &, const std::vector<std::string> &params)
-{
+bool BoxingBlueprint::setup(const IIndexEnvironment&, const std::vector<std::string>& params) {
     bool failed = false;
     EXPECT_EQ(1u, params.size()) << (failed = true, "");
     if (failed) {
@@ -82,17 +72,15 @@ BoxingBlueprint::setup(const IIndexEnvironment &, const std::vector<std::string>
     return true;
 }
 
-FeatureExecutor &
-BoxingBlueprint::createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const
-{
+FeatureExecutor& BoxingBlueprint::createExecutor(const IQueryEnvironment&, vespalib::Stash& stash) const {
     return stash.create<BoxingExecutor>();
 }
 
 //-----------------------------------------------------------------------------
 
 struct TrackingExecutor : FeatureExecutor {
-    size_t &ext_cnt;
-    TrackingExecutor(size_t &ext_cnt_in) : ext_cnt(ext_cnt_in) {}
+    size_t& ext_cnt;
+    TrackingExecutor(size_t& ext_cnt_in) : ext_cnt(ext_cnt_in) {}
     bool isPure() override { return true; }
     void execute(uint32_t) override {
         ++ext_cnt;
@@ -100,9 +88,7 @@ struct TrackingExecutor : FeatureExecutor {
     }
 };
 
-bool
-TrackingBlueprint::setup(const IIndexEnvironment &, const std::vector<std::string> &params)
-{
+bool TrackingBlueprint::setup(const IIndexEnvironment&, const std::vector<std::string>& params) {
     bool failed = false;
     EXPECT_EQ(1u, params.size()) << (failed = true, "");
     if (failed) {
@@ -113,12 +99,10 @@ TrackingBlueprint::setup(const IIndexEnvironment &, const std::vector<std::strin
     return true;
 }
 
-FeatureExecutor &
-TrackingBlueprint::createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const
-{
+FeatureExecutor& TrackingBlueprint::createExecutor(const IQueryEnvironment&, vespalib::Stash& stash) const {
     return stash.create<TrackingExecutor>(ext_cnt);
 }
 
 //-----------------------------------------------------------------------------
 
-}
+} // namespace search::fef::test

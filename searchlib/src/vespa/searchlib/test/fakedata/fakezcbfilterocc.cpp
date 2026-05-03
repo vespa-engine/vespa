@@ -1,24 +1,21 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fakezcbfilterocc.h"
+
+#include "fpfactory.h"
+
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 #include <vespa/searchlib/queryeval/iterators.h>
-#include "fpfactory.h"
 
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataPosition;
 
 namespace search::fakedata {
 
-static FPFactoryInit
-init(std::make_pair("ZcbFilterOcc",
-                    makeFPFactory<FPFactoryT<FakeZcbFilterOcc> >));
+static FPFactoryInit init(std::make_pair("ZcbFilterOcc", makeFPFactory<FPFactoryT<FakeZcbFilterOcc>>));
 
-static void
-zcbEncode(std::vector<uint8_t> &bytes,
-         uint32_t num)
-{
+static void zcbEncode(std::vector<uint8_t>& bytes, uint32_t num) {
     if (num < (1 << 7)) {
         num <<= 1;
         num += 1;
@@ -37,32 +34,27 @@ zcbEncode(std::vector<uint8_t> &bytes,
     } while (num != 0);
 }
 
+#define ZCBDECODE(valI, resop)                                                     \
+    do {                                                                           \
+        if (__builtin_expect((valI[0] & 1) != 0, true)) {                          \
+            resop(valI[0] >> 1);                                                   \
+            valI += 1;                                                             \
+        } else if (__builtin_expect((valI[0] & 2) != 0, true)) {                   \
+            resop(((*(const uint32_t*)(const void*)valI) >> 2) & ((1 << 14) - 1)); \
+            valI += 2;                                                             \
+        } else if (__builtin_expect((valI[0] & 4) != 0, true)) {                   \
+            resop(((*(const uint32_t*)(const void*)valI) >> 3) & ((1 << 21) - 1)); \
+            valI += 3;                                                             \
+        } else {                                                                   \
+            resop((*(const uint32_t*)(const void*)valI) >> 4);                     \
+            valI += 4;                                                             \
+        }                                                                          \
+    } while (0)
 
-#define ZCBDECODE(valI, resop)                                       \
-do {                                                                 \
-    if (__builtin_expect((valI[0] & 1) != 0, true)) {                \
-        resop (valI[0] >> 1);                                        \
-        valI += 1;                                                   \
-    } else if (__builtin_expect((valI[0] & 2) != 0, true)) {         \
-        resop (((*(const uint32_t *) (const void *)valI) >> 2) & ((1 << 14) - 1)); \
-        valI += 2;                                                   \
-    } else if (__builtin_expect((valI[0] & 4) != 0, true)) {         \
-        resop (((*(const uint32_t *) (const void *)valI) >> 3) & ((1 << 21) - 1)); \
-        valI += 3;                                                   \
-    } else {                                                         \
-        resop ((*(const uint32_t *) (const void *) valI) >> 4);       \
-        valI += 4;                                                   \
-    }                                                                \
-} while (0)
-
-FakeZcbFilterOcc::FakeZcbFilterOcc(const FakeWord &fw)
-    : FakePosting(fw.getName() + ".zcbfilterocc"),
-      _compressed(),
-      _docIdLimit(0),
-      _hitDocs(0)
-{
+FakeZcbFilterOcc::FakeZcbFilterOcc(const FakeWord& fw)
+    : FakePosting(fw.getName() + ".zcbfilterocc"), _compressed(), _docIdLimit(0), _hitDocs(0) {
     std::vector<uint8_t> bytes;
-    uint32_t lastDocId = 0u;
+    uint32_t             lastDocId = 0u;
 
     auto d = fw._postings.begin();
     auto de = fw._postings.end();
@@ -86,82 +78,52 @@ FakeZcbFilterOcc::FakeZcbFilterOcc(const FakeWord &fw)
     _docIdLimit = fw._docIdLimit;
 }
 
-
-FakeZcbFilterOcc::~FakeZcbFilterOcc()
-{
+FakeZcbFilterOcc::~FakeZcbFilterOcc() {
 }
 
-
-void
-FakeZcbFilterOcc::forceLink()
-{
+void FakeZcbFilterOcc::forceLink() {
 }
 
-
-size_t
-FakeZcbFilterOcc::bitSize() const
-{
+size_t FakeZcbFilterOcc::bitSize() const {
     // Do not count the 3 padding bytes here.
-    return 8 * (_compressed.size() - 3) ;
+    return 8 * (_compressed.size() - 3);
 }
 
-bool
-FakeZcbFilterOcc::hasWordPositions() const
-{
+bool FakeZcbFilterOcc::hasWordPositions() const {
     return false;
 }
 
-
-int
-FakeZcbFilterOcc::lowLevelSinglePostingScan() const
-{
+int FakeZcbFilterOcc::lowLevelSinglePostingScan() const {
     return 0;
 }
 
-
-int
-FakeZcbFilterOcc::lowLevelSinglePostingScanUnpack() const
-{
+int FakeZcbFilterOcc::lowLevelSinglePostingScanUnpack() const {
     return 0;
 }
 
-
-int
-FakeZcbFilterOcc::
-lowLevelAndPairPostingScan(const FakePosting &rhs) const
-{
-    (void) rhs;
+int FakeZcbFilterOcc::lowLevelAndPairPostingScan(const FakePosting& rhs) const {
+    (void)rhs;
     return 0;
 }
 
-
-int
-FakeZcbFilterOcc::
-lowLevelAndPairPostingScanUnpack(const FakePosting &rhs) const
-{
-    (void) rhs;
+int FakeZcbFilterOcc::lowLevelAndPairPostingScanUnpack(const FakePosting& rhs) const {
+    (void)rhs;
     return 0;
 }
 
-
-class FakeFilterOccZCBArrayIterator
-    : public queryeval::RankedSearchIteratorBase
-{
+class FakeFilterOccZCBArrayIterator : public queryeval::RankedSearchIteratorBase {
 private:
+    FakeFilterOccZCBArrayIterator(const FakeFilterOccZCBArrayIterator& other);
 
-    FakeFilterOccZCBArrayIterator(const FakeFilterOccZCBArrayIterator &other);
-
-    FakeFilterOccZCBArrayIterator&
-    operator=(const FakeFilterOccZCBArrayIterator &other);
+    FakeFilterOccZCBArrayIterator& operator=(const FakeFilterOccZCBArrayIterator& other);
 
 public:
     // Pointer to compressed data
-    const uint8_t *_valI;
-    unsigned int _residue;
+    const uint8_t* _valI;
+    unsigned int   _residue;
 
-    FakeFilterOccZCBArrayIterator(const uint8_t *compressedOccurrences,
-                                  unsigned int residue,
-                                  const fef::TermFieldMatchDataArray &matchData);
+    FakeFilterOccZCBArrayIterator(const uint8_t* compressedOccurrences, unsigned int residue,
+                                  const fef::TermFieldMatchDataArray& matchData);
 
     ~FakeFilterOccZCBArrayIterator() override;
 
@@ -171,21 +133,14 @@ public:
     Trinary is_strict() const override { return Trinary::True; }
 };
 
-
-FakeFilterOccZCBArrayIterator::
-FakeFilterOccZCBArrayIterator(const uint8_t *compressedOccurrences,
-                              unsigned int residue,
-                              const fef::TermFieldMatchDataArray &matchData)
-    : queryeval::RankedSearchIteratorBase(matchData),
-      _valI(compressedOccurrences),
-      _residue(residue)
-{
+FakeFilterOccZCBArrayIterator::FakeFilterOccZCBArrayIterator(const uint8_t* compressedOccurrences,
+                                                             unsigned int   residue,
+                                                             const fef::TermFieldMatchDataArray& matchData)
+    : queryeval::RankedSearchIteratorBase(matchData), _valI(compressedOccurrences), _residue(residue) {
     clearUnpacked();
 }
 
-void
-FakeFilterOccZCBArrayIterator::initRange(uint32_t begin, uint32_t end)
-{
+void FakeFilterOccZCBArrayIterator::initRange(uint32_t begin, uint32_t end) {
     queryeval::RankedSearchIteratorBase::initRange(begin, end);
     uint32_t docId = 0;
     if (_residue > 0) {
@@ -196,17 +151,12 @@ FakeFilterOccZCBArrayIterator::initRange(uint32_t begin, uint32_t end)
     }
 }
 
-
-FakeFilterOccZCBArrayIterator::~FakeFilterOccZCBArrayIterator()
-{
+FakeFilterOccZCBArrayIterator::~FakeFilterOccZCBArrayIterator() {
 }
 
-
-void
-FakeFilterOccZCBArrayIterator::doSeek(uint32_t docId)
-{
-    const uint8_t *oCompr = _valI;
-    uint32_t oDocId = getDocId();
+void FakeFilterOccZCBArrayIterator::doSeek(uint32_t docId) {
+    const uint8_t* oCompr = _valI;
+    uint32_t       oDocId = getDocId();
 
     if (getUnpacked())
         clearUnpacked();
@@ -218,16 +168,13 @@ FakeFilterOccZCBArrayIterator::doSeek(uint32_t docId)
     _valI = oCompr;
     setDocId(oDocId);
     return;
- atbreak:
+atbreak:
     _valI = oCompr;
-    setAtEnd();           // Mark end of data
+    setAtEnd(); // Mark end of data
     return;
 }
 
-
-void
-FakeFilterOccZCBArrayIterator::doUnpack(uint32_t docId)
-{
+void FakeFilterOccZCBArrayIterator::doUnpack(uint32_t docId) {
     if (_matchData.size() != 1) {
         return;
     }
@@ -240,13 +187,10 @@ FakeFilterOccZCBArrayIterator::doUnpack(uint32_t docId)
     setUnpacked();
 }
 
-
 std::unique_ptr<search::queryeval::SearchIterator>
-FakeZcbFilterOcc::
-createIterator(const fef::TermFieldMatchDataArray &matchData) const
-{
-    const uint8_t *arr = &*_compressed.begin();
-    return std::make_unique<FakeFilterOccZCBArrayIterator>(arr, _hitDocs,  matchData);
+FakeZcbFilterOcc::createIterator(const fef::TermFieldMatchDataArray& matchData) const {
+    const uint8_t* arr = &*_compressed.begin();
+    return std::make_unique<FakeFilterOccZCBArrayIterator>(arr, _hitDocs, matchData);
 }
 
-}
+} // namespace search::fakedata

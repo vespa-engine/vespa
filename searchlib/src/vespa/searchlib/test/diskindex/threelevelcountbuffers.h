@@ -12,15 +12,14 @@ namespace search::diskindex {
  * ThreeLevelCountReadBuffers by unit tests to verify that encode + decode roundtrip generates
  * original values, and by PageDictMemRandReader to verify that lookup works.
  */
-class ThreeLevelCountWriteBuffers
-{
+class ThreeLevelCountWriteBuffers {
 public:
     using EC = search::bitcompression::FeatureEncodeContext<true>;
     using WriteBuffer = test::CompressedWriteBuffer<true>;
     WriteBuffer _ss; // sparse sparse buffer
     WriteBuffer _sp; // sparse page buffer
     WriteBuffer _p;  // page buffer
-    ThreeLevelCountWriteBuffers(EC &sse, EC &spe, EC &pe);
+    ThreeLevelCountWriteBuffers(EC& sse, EC& spe, EC& pe);
     ~ThreeLevelCountWriteBuffers();
 
     void flush();
@@ -33,8 +32,7 @@ public:
  * This class contains a view of compressed data owned by the related ThreeLevelCountWriteBuffers class.
  * It is used to test that encode + decode round trip reconstructs original values.
  */
-class ThreeLevelCountReadBuffers
-{
+class ThreeLevelCountReadBuffers {
 public:
     using DC = search::bitcompression::FeatureDecodeContext<true>;
     using ReadBuffer = test::CompressedReadBuffer<true>;
@@ -43,8 +41,8 @@ public:
     ReadBuffer _p;
 
     // Unit test usage constructor.
-    ThreeLevelCountReadBuffers(DC &ssd, DC &spd, DC &pd, const ThreeLevelCountWriteBuffers &wb);
+    ThreeLevelCountReadBuffers(DC& ssd, DC& spd, DC& pd, const ThreeLevelCountWriteBuffers& wb);
     ~ThreeLevelCountReadBuffers();
 };
 
-}
+} // namespace search::diskindex

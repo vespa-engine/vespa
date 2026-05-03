@@ -8,20 +8,20 @@ namespace diskindex {
 
 class TestDiskIndex {
 private:
-    void buildIndex(const std::string &dir, bool directio,
-                    bool fieldEmpty, bool docEmpty, bool wordEmpty);
+    void buildIndex(const std::string& dir, bool directio, bool fieldEmpty, bool docEmpty, bool wordEmpty);
+
 protected:
-    index::Schema _schema;
+    index::Schema              _schema;
     std::unique_ptr<DiskIndex> _index;
 
 public:
     TestDiskIndex();
     ~TestDiskIndex();
-    DiskIndex & getIndex() { return *_index; }
+    DiskIndex& getIndex() { return *_index; }
     void buildSchema();
-    void openIndex(const std::string &dir, bool directio, bool readmmap, bool use_posting_list_cache,
-                   bool fieldEmpty, bool docEmpty, bool wordEmpty);
+    void openIndex(const std::string& dir, bool directio, bool readmmap, bool use_posting_list_cache, bool fieldEmpty,
+                   bool docEmpty, bool wordEmpty);
 };
 
-}
-}
+} // namespace diskindex
+} // namespace search

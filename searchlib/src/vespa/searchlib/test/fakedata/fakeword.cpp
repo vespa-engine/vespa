@@ -2,38 +2,31 @@
 
 #include "fakeword.h"
 
-#include <vespa/searchlib/index/postinglistfile.h>
-#include <vespa/searchlib/index/postinglistcountfile.h>
-#include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/bitcompression/compression.h>
-#include <vespa/searchlib/bitcompression/posocccompression.h>
 #include <vespa/searchlib/bitcompression/posocc_fields_params.h>
+#include <vespa/searchlib/bitcompression/posocccompression.h>
+#include <vespa/searchlib/index/docidandfeatures.h>
+#include <vespa/searchlib/index/postinglistcountfile.h>
+#include <vespa/searchlib/index/postinglistfile.h>
 #include <vespa/vespalib/util/size_literals.h>
 
+using search::diskindex::FieldReader;
+using search::diskindex::FieldWriter;
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataPosition;
-using search::index::WordDocElementFeatures;
-using search::index::WordDocElementWordPosFeatures;
-using search::index::PostingListFileSeqWrite;
 using search::index::DocIdAndFeatures;
 using search::index::DocIdAndPosOccFeatures;
 using search::index::PostingListCounts;
 using search::index::PostingListFileSeqRead;
-using search::diskindex::FieldReader;
-using search::diskindex::FieldWriter;
+using search::index::PostingListFileSeqWrite;
+using search::index::WordDocElementFeatures;
+using search::index::WordDocElementWordPosFeatures;
 
-namespace search
-{
+namespace search {
 
-namespace fakedata
-{
+namespace fakedata {
 
-
-static void
-fillbitset(search::BitVector *bitvector,
-           unsigned int size,
-           vespalib::Rand48 &rnd)
-{
+static void fillbitset(search::BitVector* bitvector, unsigned int size, vespalib::Rand48& rnd) {
     unsigned int range;
     unsigned int idx;
     unsigned int j;
@@ -66,16 +59,11 @@ fillbitset(search::BitVector *bitvector,
     }
 }
 
+static void fillcorrelatedbitset(search::BitVector& bitvector, unsigned int size, const FakeWord& otherword,
+                                 vespalib::Rand48& rnd) {
+    const FakeWord::DocWordFeatureList& opostings = otherword._postings;
 
-static void
-fillcorrelatedbitset(search::BitVector &bitvector,
-                     unsigned int size,
-                     const FakeWord &otherword,
-                     vespalib::Rand48 &rnd)
-{
-    const FakeWord::DocWordFeatureList &opostings = otherword._postings;
-
-    unsigned int range = opostings.size();
+    unsigned int          range = opostings.size();
     search::BitVector::UP corrmap(search::BitVector::create(range + 1));
 
     if (size > range)
@@ -93,46 +81,25 @@ fillcorrelatedbitset(search::BitVector &bitvector,
     }
 }
 
-
-FakeWord::DocWordPosFeature::DocWordPosFeature()
-    : _elementId(0),
-      _wordPos(0),
-      _elementWeight(1),
-      _elementLen(0)
-{
+FakeWord::DocWordPosFeature::DocWordPosFeature() : _elementId(0), _wordPos(0), _elementWeight(1), _elementLen(0) {
 }
 
-
-FakeWord::DocWordPosFeature::~DocWordPosFeature()
-{
+FakeWord::DocWordPosFeature::~DocWordPosFeature() {
 }
 
-
-FakeWord::DocWordCollapsedFeature::DocWordCollapsedFeature()
-    : _field_len(0),
-      _num_occs(0)
-{
+FakeWord::DocWordCollapsedFeature::DocWordCollapsedFeature() : _field_len(0), _num_occs(0) {
 }
 
 FakeWord::DocWordCollapsedFeature::~DocWordCollapsedFeature() = default;
 
-FakeWord::DocWordFeature::DocWordFeature()
-    : _docId(0),
-      _collapsedDocWordFeatures(),
-      _positions(0),
-      _accPositions(0)
-{
+FakeWord::DocWordFeature::DocWordFeature() : _docId(0), _collapsedDocWordFeatures(), _positions(0), _accPositions(0) {
 }
 
-FakeWord::DocWordFeature::~DocWordFeature()
-{
+FakeWord::DocWordFeature::~DocWordFeature() {
 }
 
-FakeWord::FakeWord(uint32_t docIdLimit,
-                   const std::vector<uint32_t> & docIds,
-                   const std::string &name,
-                   const PosOccFieldsParams &fieldsParams,
-                   uint32_t packedIndex)
+FakeWord::FakeWord(uint32_t docIdLimit, const std::vector<uint32_t>& docIds, const std::string& name,
+                   const PosOccFieldsParams& fieldsParams, uint32_t packedIndex)
     : _postings(),
       _wordPosFeatures(),
       _extraPostings(),
@@ -140,8 +107,7 @@ FakeWord::FakeWord(uint32_t docIdLimit,
       _docIdLimit(docIdLimit),
       _name(name),
       _fieldsParams(fieldsParams),
-      _packedIndex(packedIndex)
-{
+      _packedIndex(packedIndex) {
     search::BitVector::UP bitmap(search::BitVector::create(docIdLimit));
     for (uint32_t docId : docIds) {
         bitmap->setBit(docId);
@@ -150,13 +116,8 @@ FakeWord::FakeWord(uint32_t docIdLimit,
     fakeup(*bitmap, rnd, _postings, _wordPosFeatures);
 }
 
-FakeWord::FakeWord(uint32_t docIdLimit,
-                   uint32_t wordDocs,
-                   uint32_t tempWordDocs,
-                   const std::string &name,
-                   vespalib::Rand48 &rnd,
-                   const PosOccFieldsParams &fieldsParams,
-                   uint32_t packedIndex)
+FakeWord::FakeWord(uint32_t docIdLimit, uint32_t wordDocs, uint32_t tempWordDocs, const std::string& name,
+                   vespalib::Rand48& rnd, const PosOccFieldsParams& fieldsParams, uint32_t packedIndex)
     : _postings(),
       _wordPosFeatures(),
       _extraPostings(),
@@ -164,8 +125,7 @@ FakeWord::FakeWord(uint32_t docIdLimit,
       _docIdLimit(docIdLimit),
       _name(name),
       _fieldsParams(fieldsParams),
-      _packedIndex(packedIndex)
-{
+      _packedIndex(packedIndex) {
     search::BitVector::UP bitmap(search::BitVector::create(docIdLimit));
 
     fillbitset(bitmap.get(), wordDocs, rnd);
@@ -175,27 +135,18 @@ FakeWord::FakeWord(uint32_t docIdLimit,
     setupRandomizer(rnd);
 }
 
-
-FakeWord::FakeWord(uint32_t docIdLimit,
-                   uint32_t wordDocs,
-                   uint32_t tempWordDocs,
-                   const std::string &name,
-                   const FakeWord &otherWord,
-                   size_t overlapDocs,
-                   vespalib::Rand48 &rnd,
-                   const PosOccFieldsParams &fieldsParams,
-                   uint32_t packedIndex)
+FakeWord::FakeWord(uint32_t docIdLimit, uint32_t wordDocs, uint32_t tempWordDocs, const std::string& name,
+                   const FakeWord& otherWord, size_t overlapDocs, vespalib::Rand48& rnd,
+                   const PosOccFieldsParams& fieldsParams, uint32_t packedIndex)
     : _postings(),
       _wordPosFeatures(),
       _docIdLimit(docIdLimit),
       _name(name),
       _fieldsParams(fieldsParams),
-      _packedIndex(packedIndex)
-{
+      _packedIndex(packedIndex) {
     search::BitVector::UP bitmap(search::BitVector::create(docIdLimit));
 
-    if (wordDocs * 2 < docIdLimit &&
-        overlapDocs > 0)
+    if (wordDocs * 2 < docIdLimit && overlapDocs > 0)
         fillcorrelatedbitset(*bitmap, overlapDocs, otherWord, rnd);
     fillbitset(bitmap.get(), wordDocs, rnd);
 
@@ -204,28 +155,21 @@ FakeWord::FakeWord(uint32_t docIdLimit,
     setupRandomizer(rnd);
 }
 
-
-FakeWord::~FakeWord()
-{
+FakeWord::~FakeWord() {
 }
 
-
-void
-FakeWord::fakeup(search::BitVector &bitmap,
-                 vespalib::Rand48 &rnd,
-                 DocWordFeatureList &postings,
-                 DocWordPosFeatureList &wordPosFeatures)
-{
+void FakeWord::fakeup(search::BitVector& bitmap, vespalib::Rand48& rnd, DocWordFeatureList& postings,
+                      DocWordPosFeatureList& wordPosFeatures) {
     DocWordPosFeatureList wpf;
-    unsigned int idx;
-    uint32_t numFields = _fieldsParams.getNumFields();
+    unsigned int          idx;
+    uint32_t              numFields = _fieldsParams.getNumFields();
     assert(numFields == 1u);
-    (void) numFields;
+    (void)numFields;
     uint32_t docIdLimit = bitmap.size();
     idx = bitmap.getNextTrueBit(1u);
     while (idx < docIdLimit) {
         DocWordFeature dwf;
-        unsigned int positions;
+        unsigned int   positions;
 
         dwf._docId = idx;
         positions = ((rnd.lrand48() % 10) == 0) ? 2 : 1;
@@ -250,22 +194,20 @@ FakeWord::fakeup(search::BitVector &bitmap,
             auto i = wpf.begin();
             while (i != ie) {
                 uint32_t lastwordpos = i->_wordPos;
-                auto pi = i;
+                auto     pi = i;
                 ++i;
-                while (i != ie &&
-                       pi->_elementId == i->_elementId) {
+                while (i != ie && pi->_elementId == i->_elementId) {
                     if (i->_wordPos <= lastwordpos)
                         i->_wordPos = lastwordpos + 1;
                     lastwordpos = i->_wordPos;
                     ++i;
                 }
                 uint32_t elementLen = (rnd.lrand48() % 8_Ki) + 1 + lastwordpos;
-                int32_t elementWeight = 1;
-                if (_fieldsParams.getFieldParams()[0].
-                    _hasElementWeights) {
+                int32_t  elementWeight = 1;
+                if (_fieldsParams.getFieldParams()[0]._hasElementWeights) {
                     uint32_t uWeight = rnd.lrand48() % 2001;
                     if ((uWeight & 1) != 0)
-                        elementWeight = - (uWeight >> 1) - 1;
+                        elementWeight = -(uWeight >> 1) - 1;
                     else
                         elementWeight = (uWeight >> 1);
                     assert(elementWeight <= 1000);
@@ -297,12 +239,7 @@ FakeWord::fakeup(search::BitVector &bitmap,
     }
 }
 
-
-void
-FakeWord::fakeupTemps(vespalib::Rand48 &rnd,
-                      uint32_t docIdLimit,
-                      uint32_t tempWordDocs)
-{
+void FakeWord::fakeupTemps(vespalib::Rand48& rnd, uint32_t docIdLimit, uint32_t tempWordDocs) {
     uint32_t maxTempWordDocs = docIdLimit / 2;
     tempWordDocs = std::min(tempWordDocs, maxTempWordDocs);
     if (tempWordDocs > 0) {
@@ -312,14 +249,12 @@ FakeWord::fakeupTemps(vespalib::Rand48 &rnd,
     }
 }
 
-void
-FakeWord::setupRandomizer(vespalib::Rand48 &rnd)
-{
+void FakeWord::setupRandomizer(vespalib::Rand48& rnd) {
     Randomizer randomAdd;
     Randomizer randomRem;
 
-    auto d = _postings.begin();
-    auto de = _postings.end();
+    auto    d = _postings.begin();
+    auto    de = _postings.end();
     int32_t ref = 0;
 
     while (d != de) {
@@ -337,7 +272,7 @@ FakeWord::setupRandomizer(vespalib::Rand48 &rnd)
     auto ed = _extraPostings.begin();
     auto ede = _extraPostings.end();
 
-    int32_t eref = -1;
+    int32_t  eref = -1;
     uint32_t tref = 0;
     ref = 0;
     int32_t refmax = _randomizer.size();
@@ -370,10 +305,7 @@ FakeWord::setupRandomizer(vespalib::Rand48 &rnd)
     std::sort(_randomizer.begin(), _randomizer.end());
 }
 
-
-void
-FakeWord::addDocIdBias(uint32_t docIdBias)
-{
+void FakeWord::addDocIdBias(uint32_t docIdBias) {
     auto d = _postings.begin();
     auto de = _postings.end();
     for (; d != de; ++d) {
@@ -387,15 +319,9 @@ FakeWord::addDocIdBias(uint32_t docIdBias)
     _docIdLimit += docIdBias;
 }
 
-
-bool
-FakeWord::validate(search::queryeval::SearchIterator *iterator,
-                   const fef::TermFieldMatchDataArray &matchData,
-                   uint32_t stride,
-                   bool unpack_normal_features,
-                   bool unpack_interleaved_features,
-                   bool verbose) const
-{
+bool FakeWord::validate(search::queryeval::SearchIterator* iterator, const fef::TermFieldMatchDataArray& matchData,
+                        uint32_t stride, bool unpack_normal_features, bool unpack_interleaved_features,
+                        bool verbose) const {
     iterator->initFullRange();
     uint32_t docId = 0;
 
@@ -422,7 +348,7 @@ FakeWord::validate(search::queryeval::SearchIterator *iterator,
             docId = d->_docId;
             bool seekRes = iterator->seek(docId);
             assert(seekRes);
-            (void) seekRes;
+            (void)seekRes;
             assert(d != de);
             unsigned int positions = d->_positions;
             iterator->unpack(docId);
@@ -462,19 +388,12 @@ FakeWord::validate(search::queryeval::SearchIterator *iterator,
     assert(p == pe || !unpack_normal_features);
     assert(d == de);
     if (verbose)
-        printf("word '%s' validated successfully with unpack\n",
-               _name.c_str());
+        printf("word '%s' validated successfully with unpack\n", _name.c_str());
     return true;
 }
 
-
-bool
-FakeWord::validate(search::queryeval::SearchIterator *iterator,
-                   const fef::TermFieldMatchDataArray &matchData,
-                   bool unpack_normal_features,
-                   bool unpack_interleaved_features,
-                   bool verbose) const
-{
+bool FakeWord::validate(search::queryeval::SearchIterator* iterator, const fef::TermFieldMatchDataArray& matchData,
+                        bool unpack_normal_features, bool unpack_interleaved_features, bool verbose) const {
     iterator->initFullRange();
     uint32_t docId = 1;
 
@@ -537,15 +456,11 @@ FakeWord::validate(search::queryeval::SearchIterator *iterator,
     assert(p == pe || !unpack_normal_features);
     assert(d == de);
     if (verbose)
-        printf("word '%s' validated successfully with unpack\n",
-               _name.c_str());
+        printf("word '%s' validated successfully with unpack\n", _name.c_str());
     return true;
 }
 
-
-bool
-FakeWord::validate(search::queryeval::SearchIterator *iterator, bool verbose) const
-{
+bool FakeWord::validate(search::queryeval::SearchIterator* iterator, bool verbose) const {
     iterator->initFullRange();
     uint32_t docId = 1;
 
@@ -571,24 +486,17 @@ FakeWord::validate(search::queryeval::SearchIterator *iterator, bool verbose) co
     }
     assert(d == de);
     if (verbose)
-        printf("word '%s' validated successfully without unpack\n",
-               _name.c_str());
+        printf("word '%s' validated successfully without unpack\n", _name.c_str());
     return true;
 }
 
-
-bool
-FakeWord::validate(FieldReader &fieldReader,
-                   uint32_t wordNum,
-                   const fef::TermFieldMatchDataArray &matchData,
-                   bool decode_interleaved_features,
-                   bool verbose) const
-{
+bool FakeWord::validate(FieldReader& fieldReader, uint32_t wordNum, const fef::TermFieldMatchDataArray& matchData,
+                        bool decode_interleaved_features, bool verbose) const {
     uint32_t docId = 0;
     uint32_t numDocs;
     uint32_t residue;
     uint32_t presidue;
-    bool unpres;
+    bool     unpres;
 
     using TMDPI = TermFieldMatchData::PositionsIterator;
 
@@ -602,12 +510,12 @@ FakeWord::validate(FieldReader &fieldReader,
 #ifdef notyet
     // Validate word number
 #else
-    (void) wordNum;
+    (void)wordNum;
 #endif
     numDocs = _postings.size();
     for (residue = numDocs; residue > 0; --residue) {
         assert(fieldReader._wordNum == wordNum);
-        DocIdAndFeatures &features(fieldReader._docIdAndFeatures);
+        DocIdAndFeatures& features(fieldReader._docIdAndFeatures);
         docId = features.doc_id();
         assert(d != de);
         assert(d->_docId == docId);
@@ -620,12 +528,12 @@ FakeWord::validate(FieldReader &fieldReader,
             unpres = features.unpack(matchData);
             assert(unpres);
 #else
-            (void) unpres;
+            (void)unpres;
 
             auto element = features.elements().begin();
             auto position = features.word_positions().begin();
 
-            TermFieldMatchData *tfmd = matchData[0];
+            TermFieldMatchData* tfmd = matchData[0];
             assert(tfmd != nullptr);
             tfmd->reset(features.doc_id());
 
@@ -633,10 +541,8 @@ FakeWord::validate(FieldReader &fieldReader,
             while (elementResidue != 0) {
                 uint32_t positionResidue = element->getNumOccs();
                 while (positionResidue != 0) {
-                    uint32_t wordPos = position->getWordPos();
-                    TermFieldMatchDataPosition pos(element->getElementId(),
-                                                   wordPos,
-                                                   element->getWeight(),
+                    uint32_t                   wordPos = position->getWordPos();
+                    TermFieldMatchDataPosition pos(element->getElementId(), wordPos, element->getWeight(),
                                                    element->getElementLen());
                     tfmd->appendPosition(pos);
                     ++position;
@@ -676,16 +582,11 @@ FakeWord::validate(FieldReader &fieldReader,
         assert(d == de);
     }
     if (verbose)
-        printf("word '%s' validated successfully %s unpack\n",
-               _name.c_str(),
-               matchData.valid() ? "with" : "without");
+        printf("word '%s' validated successfully %s unpack\n", _name.c_str(), matchData.valid() ? "with" : "without");
     return true;
 }
 
-
-void
-FakeWord::validate(const std::vector<uint32_t> &docIds) const
-{
+void FakeWord::validate(const std::vector<uint32_t>& docIds) const {
     auto d = _postings.begin();
     auto de = _postings.end();
     auto di = docIds.begin();
@@ -700,15 +601,12 @@ FakeWord::validate(const std::vector<uint32_t> &docIds) const
     assert(di == die);
 }
 
-
-void
-FakeWord::validate(const search::BitVector &bv) const
-{
-    auto d = _postings.begin();
-    auto de = _postings.end();
+void FakeWord::validate(const search::BitVector& bv) const {
+    auto     d = _postings.begin();
+    auto     de = _postings.end();
     uint32_t bitHits = bv.countTrueBits();
     assert(bitHits == _postings.size());
-    (void) bitHits;
+    (void)bitHits;
     uint32_t bi = bv.getNextTrueBit(1u);
     while (d != de) {
         assert(d->_docId == bi);
@@ -718,13 +616,9 @@ FakeWord::validate(const search::BitVector &bv) const
     assert(bi >= bv.size());
 }
 
-
-bool
-FakeWord::dump(FieldWriter &fieldWriter,
-               bool verbose) const
-{
-    uint32_t numDocs;
-    uint32_t residue;
+bool FakeWord::dump(FieldWriter& fieldWriter, bool verbose) const {
+    uint32_t               numDocs;
+    uint32_t               residue;
     DocIdAndPosOccFeatures features;
 
     auto d = _postings.begin();
@@ -745,26 +639,14 @@ FakeWord::dump(FieldWriter &fieldWriter,
     assert(p == pe);
     assert(d == de);
     if (verbose)
-        printf("word '%s' dumped successfully\n",
-               _name.c_str());
+        printf("word '%s' dumped successfully\n", _name.c_str());
     return true;
 }
 
-
-FakeWord::RandomizedReader::RandomizedReader()
-    : _r(),
-      _fw(nullptr),
-      _wordIdx(0u),
-      _valid(false),
-      _ri(),
-      _re()
-{
+FakeWord::RandomizedReader::RandomizedReader() : _r(), _fw(nullptr), _wordIdx(0u), _valid(false), _ri(), _re() {
 }
 
-
-void
-FakeWord::RandomizedReader::read()
-{
+void FakeWord::RandomizedReader::read() {
     if (_ri != _re) {
         _r = *_ri;
         ++_ri;
@@ -772,11 +654,7 @@ FakeWord::RandomizedReader::read()
         _valid = false;
 }
 
-
-void
-FakeWord::RandomizedReader::setup(const FakeWord *fw,
-                                  uint32_t wordIdx)
-{
+void FakeWord::RandomizedReader::setup(const FakeWord* fw, uint32_t wordIdx) {
     _fw = fw;
     _wordIdx = wordIdx;
     _ri = fw->_randomizer.begin();
@@ -784,11 +662,8 @@ FakeWord::RandomizedReader::setup(const FakeWord *fw,
     _valid = _ri != _re;
 }
 
-
-FakeWord::RandomizedWriter::~RandomizedWriter()
-{
+FakeWord::RandomizedWriter::~RandomizedWriter() {
 }
-
 
 } // namespace fakedata
 

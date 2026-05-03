@@ -3,10 +3,10 @@
 #pragma once
 
 #include <vespa/searchlib/util/bufferwriter.h>
+
 #include <vector>
 
-namespace search::test
-{
+namespace search::test {
 
 /*
  * Class used by hnsw graph/index unit tests to save hnsw index to a
@@ -15,6 +15,7 @@ namespace search::test
 class VectorBufferWriter : public BufferWriter {
 private:
     char tmp[1024];
+
 public:
     std::vector<char> output;
     VectorBufferWriter();
@@ -22,4 +23,4 @@ public:
     void flush() override;
 };
 
-}
+} // namespace search::test

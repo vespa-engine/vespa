@@ -7,24 +7,16 @@
 
 namespace search::test {
 
-class DirectoryHandler
-{
+class DirectoryHandler {
 private:
     std::string _mkdir;
     std::string _rmdir;
-    bool             _cleanup;
+    bool        _cleanup;
 
 public:
-    DirectoryHandler(const std::string &mkdir)
-        : DirectoryHandler(mkdir, mkdir)
-    {
-    }
-    DirectoryHandler(const std::string &mkdir,
-                     const std::string &rmdir)
-        : _mkdir(mkdir),
-          _rmdir(rmdir),
-          _cleanup(true)
-    {
+    DirectoryHandler(const std::string& mkdir) : DirectoryHandler(mkdir, mkdir) {}
+    DirectoryHandler(const std::string& mkdir, const std::string& rmdir)
+        : _mkdir(mkdir), _rmdir(rmdir), _cleanup(true) {
         std::filesystem::create_directories(std::filesystem::path(_mkdir));
     }
     ~DirectoryHandler() {
@@ -33,7 +25,7 @@ public:
         }
     }
     void cleanup(bool v) { _cleanup = v; }
-    const  std::string & getDir() const { return _mkdir; }
+    const std::string& getDir() const { return _mkdir; }
 };
 
-}
+} // namespace search::test
