@@ -3,6 +3,7 @@
 #pragma once
 
 #include "hit_estimate.h"
+
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/flow_tuning.h>
 
@@ -19,15 +20,15 @@ struct HitEstimateFlowStatsAdapter {
     double abs_to_rel_est(const HitEstimate& est) const noexcept {
         return queryeval::Blueprint::abs_to_rel_est(est.est_hits(), docid_limit);
     }
-    double estimate(const HitEstimate& est) const noexcept {
-        return est.is_unknown() ? 0.5 : abs_to_rel_est(est);
-    }
+    double estimate(const HitEstimate& est) const noexcept { return est.is_unknown() ? 0.5 : abs_to_rel_est(est); }
     double cost(const HitEstimate& est) const noexcept {
-        return est.is_unknown() ? queryeval::flow::lookup_cost(num_indirections) : queryeval::flow::btree_cost(abs_to_rel_est(est));
+        return est.is_unknown() ? queryeval::flow::lookup_cost(num_indirections)
+                                : queryeval::flow::btree_cost(abs_to_rel_est(est));
     }
-    double strict_cost(const HitEstimate &est) const noexcept {
-        return est.is_unknown() ? queryeval::flow::lookup_strict_cost(num_indirections) : queryeval::flow::btree_strict_cost(abs_to_rel_est(est));
+    double strict_cost(const HitEstimate& est) const noexcept {
+        return est.is_unknown() ? queryeval::flow::lookup_strict_cost(num_indirections)
+                                : queryeval::flow::btree_strict_cost(abs_to_rel_est(est));
     }
 };
 
-}
+} // namespace search::attribute

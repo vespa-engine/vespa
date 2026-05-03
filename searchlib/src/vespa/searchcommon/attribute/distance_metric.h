@@ -6,6 +6,14 @@
 
 namespace search::attribute {
 
-enum class DistanceMetric : uint8_t { Euclidean, Angular, GeoDegrees, InnerProduct, Hamming, PrenormalizedAngular, Dotproduct };
+enum class DistanceMetric : uint8_t {
+    Euclidean,
+    Angular,
+    GeoDegrees,
+    InnerProduct,
+    Hamming,
+    PrenormalizedAngular,
+    Dotproduct
+};
 
 }

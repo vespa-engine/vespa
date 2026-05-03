@@ -19,12 +19,12 @@ class Config;
  * During update we also need to update the field value in the document.
  *
  * For struct field attributes this is false.
- * A struct field attribute typically represents a sub-field of a more complex field (e.g. map of struct or array of struct).
- * During update the complex field is first updated in the document,
- * then the struct field attribute is updated based on the new content of the complex field.
+ * A struct field attribute typically represents a sub-field of a more complex field (e.g. map of struct or array of
+ * struct). During update the complex field is first updated in the document, then the struct field attribute is
+ * updated based on the new content of the complex field.
  */
-bool isUpdateableInMemoryOnly(const std::string &attrName, const Config &cfg);
+bool isUpdateableInMemoryOnly(const std::string& attrName, const Config& cfg);
 
-bool isStructFieldAttribute(const std::string &attrName);
+bool isStructFieldAttribute(const std::string& attrName);
 
-}
+} // namespace search::attribute

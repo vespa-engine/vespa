@@ -16,7 +16,7 @@ namespace search::attribute {
 class HitEstimate {
 private:
     uint32_t _est_hits;
-    bool _unknown;
+    bool     _unknown;
 
     HitEstimate(uint32_t est_hits_in, bool unknown_in) : _est_hits(est_hits_in), _unknown(unknown_in) {}
 
@@ -27,5 +27,4 @@ public:
     bool is_unknown() const { return _unknown; }
 };
 
-}
-
+} // namespace search::attribute

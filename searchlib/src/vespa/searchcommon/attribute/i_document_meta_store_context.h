@@ -26,7 +26,7 @@ struct IDocumentMetaStoreContext {
         /**
          * Access to read interface.
          */
-        virtual const search::IDocumentMetaStore &get() const = 0;
+        virtual const search::IDocumentMetaStore& get() const = 0;
     };
 
     virtual ~IDocumentMetaStoreContext() = default;
@@ -36,7 +36,6 @@ struct IDocumentMetaStoreContext {
      * Should be used by all reader threads.
      */
     virtual IReadGuard::SP getReadGuard() const = 0;
-
 };
 
-}
+} // namespace search

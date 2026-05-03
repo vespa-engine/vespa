@@ -7,9 +7,8 @@
 
 namespace search::attribute {
 
-class CollectionType
-{
- public:
+class CollectionType {
+public:
     enum Type : uint8_t {
         /**
          * Single value type with one value stored for each document.
@@ -28,47 +27,38 @@ class CollectionType
     };
 
     CollectionType(Type t = SINGLE, bool remove = false, bool create = false) noexcept
-        : _type(t),
-          _removeIfZero(remove),
-          _createIfNonExistant(create)
-    { }
+        : _type(t), _removeIfZero(remove), _createIfNonExistant(create) {}
 
-    explicit
-    CollectionType(const std::string & t, bool remove = false, bool create = false)
-        : _type(asType(t)),
-          _removeIfZero(remove),
-          _createIfNonExistant(create)
-    { }
+    explicit CollectionType(const std::string& t, bool remove = false, bool create = false)
+        : _type(asType(t)), _removeIfZero(remove), _createIfNonExistant(create) {}
 
-    Type type()                const noexcept { return _type; }
-    bool isMultiValue()        const noexcept { return _type != SINGLE; }
-    bool isWeightedSet()       const noexcept { return _type == WSET; }
-    bool isArray()             const noexcept { return _type == ARRAY; }
-    bool removeIfZero()        const noexcept { return _removeIfZero; }
+    Type type() const noexcept { return _type; }
+    bool isMultiValue() const noexcept { return _type != SINGLE; }
+    bool isWeightedSet() const noexcept { return _type == WSET; }
+    bool isArray() const noexcept { return _type == ARRAY; }
+    bool removeIfZero() const noexcept { return _removeIfZero; }
     bool createIfNonExistant() const noexcept { return _createIfNonExistant; }
-    const char * asString()    const noexcept { return asString(_type); }
+    const char* asString() const noexcept { return asString(_type); }
     void removeIfZero(bool newValue) noexcept { _removeIfZero = newValue; }
     void createIfNonExistant(bool newValue) noexcept { _createIfNonExistant = newValue; }
-    bool operator!=(const CollectionType &b) const noexcept { return !(operator==(b)); }
-    bool operator==(const CollectionType &b) const noexcept {
-        return _type == b._type &&
-               _removeIfZero == b._removeIfZero &&
-               _createIfNonExistant == b._createIfNonExistant;
+    bool operator!=(const CollectionType& b) const noexcept { return !(operator==(b)); }
+    bool operator==(const CollectionType& b) const noexcept {
+        return _type == b._type && _removeIfZero == b._removeIfZero && _createIfNonExistant == b._createIfNonExistant;
     }
 
-  private:
+private:
     struct TypeInfo {
-        Type _type;
-        const char * _name;
+        Type        _type;
+        const char* _name;
     };
 
-    static const char * asString(Type t) noexcept { return _typeTable[t]._name; }
-    static Type asType(const std::string &t);
+    static const char* asString(Type t) noexcept { return _typeTable[t]._name; }
+    static Type asType(const std::string& t);
 
-    Type _type : 4;
-    bool _removeIfZero : 1;
-    bool _createIfNonExistant : 1;
+    Type                  _type : 4;
+    bool                  _removeIfZero : 1;
+    bool                  _createIfNonExistant : 1;
     static const TypeInfo _typeTable[MAX_TYPE];
 };
 
-}
+} // namespace search::attribute

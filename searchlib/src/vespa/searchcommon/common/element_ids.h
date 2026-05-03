@@ -15,14 +15,13 @@ namespace search::common {
  * If _element_ids.data() is nullptr then all elements are selected.
  */
 class ElementIds {
-    const std::span<const uint32_t> _element_ids;
+    const std::span<const uint32_t>        _element_ids;
     static const std::span<const uint32_t> _empty; // empty span where data() is not nullptr
-    ElementIds() noexcept : _element_ids() { } // default std::span constructor gives nullptr for data()
+    ElementIds() noexcept : _element_ids() {}      // default std::span constructor gives nullptr for data()
 public:
     using iterator = std::span<const uint32_t>::iterator;
     explicit ElementIds(const std::vector<uint32_t>& element_ids) noexcept
-        : _element_ids(element_ids.empty() ? _empty : element_ids)
-    {
+        : _element_ids(element_ids.empty() ? _empty : element_ids) {
         // _elements_ids.data() is known to not be nullptr here since _empty was used if vector was empty.
     }
     const uint32_t& back() const noexcept { return _element_ids.back(); }
@@ -33,4 +32,4 @@ public:
     static ElementIds select_all() noexcept { return ElementIds(); }
 };
 
-}
+} // namespace search::common
