@@ -2,13 +2,19 @@
 #pragma once
 
 #include "searchiterator.h"
+
 #include <vespa/searchlib/attribute/array_bool_attribute.h>
+
 #include <cstdint>
 #include <vector>
 
-namespace search::attribute { class ArrayBoolAttribute; };
+namespace search::attribute {
+class ArrayBoolAttribute;
+};
 
-namespace search::fef { class TermFieldMatchData; }
+namespace search::fef {
+class TermFieldMatchData;
+}
 
 namespace search::queryeval {
 
@@ -27,8 +33,7 @@ protected:
     const std::vector<uint32_t>& _element_filter;
     fef::TermFieldMatchData*     _tfmd;
 
-    ArrayBoolSearch(const ArrayBoolAttribute& attr,
-                    const std::vector<uint32_t>& element_filter,
+    ArrayBoolSearch(const ArrayBoolAttribute& attr, const std::vector<uint32_t>& element_filter,
                     fef::TermFieldMatchData* tfmd);
 
 public:
@@ -45,11 +50,9 @@ public:
      * @param strict Whether the iterator should  be strict.
      * @param tfmd TermFieldMatchData to unpack into.
      **/
-    static std::unique_ptr<ArrayBoolSearch> create(const ArrayBoolAttribute& attr,
-                                                   const std::vector<uint32_t>& element_filter,
-                                                   bool want_true,
-                                                   bool strict,
-                                                   fef::TermFieldMatchData* tfmd);
+    static std::unique_ptr<ArrayBoolSearch> create(const ArrayBoolAttribute&    attr,
+                                                   const std::vector<uint32_t>& element_filter, bool want_true,
+                                                   bool strict, fef::TermFieldMatchData* tfmd);
 };
 
-} // namespace
+} // namespace search::queryeval

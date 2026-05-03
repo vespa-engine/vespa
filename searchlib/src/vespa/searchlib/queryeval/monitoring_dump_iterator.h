@@ -9,8 +9,7 @@ namespace search::queryeval {
  * Search iterator that dumps the search stats of the underlying
  * monitoring search iterator upon destruction.
  */
-class MonitoringDumpIterator : public SearchIterator
-{
+class MonitoringDumpIterator : public SearchIterator {
 private:
     MonitoringSearchIterator::UP _search;
 
@@ -24,10 +23,10 @@ public:
     Trinary is_strict() const override { return _search->is_strict(); }
     void initRange(uint32_t beginid, uint32_t endid) override {
         _search->initRange(beginid, endid);
-        SearchIterator::initRange(_search->getDocId()+1, _search->getEndId());
+        SearchIterator::initRange(_search->getDocId() + 1, _search->getEndId());
     }
     void get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids) override;
     void and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids) override;
 };
 
-}
+} // namespace search::queryeval

@@ -3,76 +3,71 @@
 #pragma once
 
 #include "posting_info.h"
+
 #include <vespa/searchlib/common/feature.h>
 #include <vespa/searchlib/common/fslimits.h>
-#include <vector>
-#include <memory>
 
-namespace search::streaming { class Hit; }
+#include <memory>
+#include <vector>
+
+namespace search::streaming {
+class Hit;
+}
 
 namespace search::queryeval {
 
-class FakeResult
-{
+class FakeResult {
 public:
     struct Element {
         uint32_t              id;
         int32_t               weight;
         uint32_t              length;
         std::vector<uint32_t> positions;
-        Element(uint32_t id_) : id(id_), weight(1),
-                                length(SEARCHLIB_FEF_UNKNOWN_FIELD_LENGTH),
-                                positions() {}
-        bool operator==(const Element &rhs) const {
-            return (id == rhs.id &&
-                    weight == rhs.weight &&
-                    length == rhs.length &&
-                    positions == rhs.positions);
+        Element(uint32_t id_) : id(id_), weight(1), length(SEARCHLIB_FEF_UNKNOWN_FIELD_LENGTH), positions() {}
+        bool operator==(const Element& rhs) const {
+            return (id == rhs.id && weight == rhs.weight && length == rhs.length && positions == rhs.positions);
         }
     };
 
     struct Document {
         uint32_t             docId;
         std::vector<Element> elements;
-        feature_t rawScore;
-        uint32_t field_length;
-        uint32_t num_occs;
+        feature_t            rawScore;
+        uint32_t             field_length;
+        uint32_t             num_occs;
         Document(uint32_t id) : docId(id), elements(), rawScore(0), field_length(0), num_occs(0) {}
-        bool operator==(const Document &rhs) const {
-            return (docId == rhs.docId &&
-                    elements == rhs.elements &&
-                    rawScore == rhs.rawScore &&
-                    field_length == rhs.field_length &&
-                    num_occs == rhs.num_occs);
+        bool operator==(const Document& rhs) const {
+            return (docId == rhs.docId && elements == rhs.elements && rawScore == rhs.rawScore &&
+                    field_length == rhs.field_length && num_occs == rhs.num_occs);
         }
     };
 
 private:
-    std::vector<Document> _documents;
+    std::vector<Document>              _documents;
     std::shared_ptr<MinMaxPostingInfo> _minMaxPostingInfo;
 
 public:
     FakeResult();
-    FakeResult(const FakeResult &);
+    FakeResult(const FakeResult&);
     ~FakeResult();
-    FakeResult &operator=(const FakeResult &);
+    FakeResult& operator=(const FakeResult&);
 
-    FakeResult &doc(uint32_t docId) {
+    FakeResult& doc(uint32_t docId) {
         _documents.push_back(Document(docId));
         return *this;
     }
 
-    FakeResult &elem(uint32_t id) {
+    FakeResult& elem(uint32_t id) {
         _documents.back().elements.push_back(Element(id));
         return *this;
     }
 
-    FakeResult &score(feature_t s) {
+    FakeResult& score(feature_t s) {
         _documents.back().rawScore = s;
         return *this;
     }
 
-    FakeResult &len(uint32_t length) {
+    FakeResult& len(uint32_t length) {
         if (_documents.back().elements.empty()) {
             elem(0);
         }
@@ -80,7 +75,7 @@ public:
         return *this;
     }
 
-    FakeResult &weight(uint32_t w) {
+    FakeResult& weight(uint32_t w) {
         if (_documents.back().elements.empty()) {
             elem(0);
         }
@@ -88,7 +83,7 @@ public:
         return *this;
     }
 
-    FakeResult &pos(uint32_t p) {
+    FakeResult& pos(uint32_t p) {
         if (_documents.back().elements.empty()) {
             elem(0);
         }
@@ -96,28 +91,26 @@ public:
         return *this;
     }
 
-    FakeResult &minMax(int32_t minWeight, int32_t maxWeight) {
+    FakeResult& minMax(int32_t minWeight, int32_t maxWeight) {
         _minMaxPostingInfo = std::make_shared<MinMaxPostingInfo>(minWeight, maxWeight);
         return *this;
     }
 
-    FakeResult &field_length(uint32_t field_length_) {
+    FakeResult& field_length(uint32_t field_length_) {
         _documents.back().field_length = field_length_;
         return *this;
     }
 
-    FakeResult &num_occs(uint32_t num_occs_) {
+    FakeResult& num_occs(uint32_t num_occs_) {
         _documents.back().num_occs = num_occs_;
         return *this;
     }
 
-    bool operator==(const FakeResult &rhs) const {
-        return _documents == rhs._documents;
-    }
+    bool operator==(const FakeResult& rhs) const { return _documents == rhs._documents; }
 
-    const std::vector<Document> &inspect() const { return _documents; }
+    const std::vector<Document>& inspect() const { return _documents; }
 
-    const PostingInfo *postingInfo() const { return _minMaxPostingInfo.get(); }
+    const PostingInfo* postingInfo() const { return _minMaxPostingInfo.get(); }
 
     /**
      * Extract hits for a specific document as streaming Hit objects.
@@ -128,6 +121,6 @@ public:
     std::vector<search::streaming::Hit> get_streaming_hits(uint32_t docid, uint32_t field_id) const;
 };
 
-std::ostream &operator << (std::ostream &out, const FakeResult &result);
+std::ostream& operator<<(std::ostream& out, const FakeResult& result);
 
-}
+} // namespace search::queryeval

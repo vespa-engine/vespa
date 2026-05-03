@@ -3,12 +3,15 @@
 #pragma once
 
 #include "multisearch.h"
-#include <vespa/vespalib/util/priority_queue.h>
+
+#include <vespa/searchlib/attribute/posting_iterator_pack.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
-#include <vespa/searchlib/attribute/posting_iterator_pack.h>
+#include <vespa/vespalib/util/priority_queue.h>
 
-namespace search::fef { class TermFieldMatchData; }
+namespace search::fef {
+class TermFieldMatchData;
+}
 
 namespace search::queryeval {
 
@@ -19,8 +22,7 @@ namespace search::queryeval {
  * This class is a base class for a set of different instantiations of
  * DotProductSearchImpl, defined in the .cpp-file.
  */
-class DotProductSearch : public SearchIterator
-{
+class DotProductSearch : public SearchIterator {
 protected:
     DotProductSearch() {}
 
@@ -30,18 +32,14 @@ public:
     static constexpr bool supports_hash_filter = false;
 
     // TODO: use MultiSearch::Children to pass ownership
-    static SearchIterator::UP create(const std::vector<SearchIterator*> &children,
-                                     search::fef::TermFieldMatchData &tmd,
-                                     bool field_is_filter,
-                                     const std::vector<fef::TermFieldMatchData*> &childMatch,
-                                     const std::vector<int32_t> &weights,
-                                     fef::MatchData::UP md);
+    static SearchIterator::UP create(const std::vector<SearchIterator*>& children,
+                                     search::fef::TermFieldMatchData& tmd, bool field_is_filter,
+                                     const std::vector<fef::TermFieldMatchData*>& childMatch,
+                                     const std::vector<int32_t>& weights, fef::MatchData::UP md);
 
-    static SearchIterator::UP create(search::fef::TermFieldMatchData &tmd,
-                                     bool field_is_filter,
-                                     const std::vector<int32_t> &weights,
-                                     std::vector<DocidWithWeightIterator> &&iterators);
+    static SearchIterator::UP create(search::fef::TermFieldMatchData& tmd, bool field_is_filter,
+                                     const std::vector<int32_t>&            weights,
+                                     std::vector<DocidWithWeightIterator>&& iterators);
 };
 
-}
-
+} // namespace search::queryeval

@@ -8,14 +8,14 @@
 
 namespace search::queryeval {
 
-class SplitFloat
-{
+class SplitFloat {
 private:
     std::vector<std::string> _parts;
+
 public:
     explicit SplitFloat(std::string_view input);
     size_t parts() const { return _parts.size(); }
-    const std::string &getPart(size_t i) const { return _parts[i]; }
+    const std::string& getPart(size_t i) const { return _parts[i]; }
 };
 
-}
+} // namespace search::queryeval

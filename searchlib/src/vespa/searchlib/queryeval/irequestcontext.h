@@ -3,14 +3,19 @@
 #pragma once
 
 #include <vespa/searchcommon/attribute/i_document_meta_store_context.h>
+
 #include <string>
 
-namespace search::attribute { class IAttributeVector; }
-namespace vespalib::eval { struct Value; }
-namespace vespalib {
-    class Doom;
-    struct ThreadBundle;
+namespace search::attribute {
+class IAttributeVector;
 }
+namespace vespalib::eval {
+struct Value;
+}
+namespace vespalib {
+class Doom;
+struct ThreadBundle;
+} // namespace vespalib
 
 namespace search::queryeval {
 
@@ -20,8 +25,7 @@ class IElementGapInspector;
 /**
  * Provides a context that follows the life of a query.
  */
-class IRequestContext
-{
+class IRequestContext {
 public:
     using MetaStoreReadGuardSP = std::shared_ptr<IDocumentMetaStoreContext::IReadGuard>;
     virtual ~IRequestContext() = default;
@@ -30,18 +34,18 @@ public:
      * Provides the time of soft doom for the query. Now it is time to start cleaning up and return what you have.
      * @return time of soft doom.
      */
-    virtual const vespalib::Doom & getDoom() const = 0;
+    virtual const vespalib::Doom& getDoom() const = 0;
     /**
      * Provide an optional thread bundle that can be used for multithreading parts of the query.
      */
-    virtual vespalib::ThreadBundle & thread_bundle() const = 0;
+    virtual vespalib::ThreadBundle& thread_bundle() const = 0;
 
     /**
      * Provide access to attribute vectors.
      * @return AttributeVector or nullptr if it does not exist.
      */
-    virtual const attribute::IAttributeVector *getAttribute(std::string_view name) const = 0;
-    virtual const attribute::IAttributeVector *getAttributeStableEnum(std::string_view name) const = 0;
+    virtual const attribute::IAttributeVector* getAttribute(std::string_view name) const = 0;
+    virtual const attribute::IAttributeVector* getAttributeStableEnum(std::string_view name) const = 0;
 
     /**
      * Returns the tensor of the given name that was passed with the query.
@@ -51,9 +55,9 @@ public:
 
     virtual const CreateBlueprintParams& get_create_blueprint_params() const = 0;
 
-    virtual const MetaStoreReadGuardSP * getMetaStoreReadGuard() const = 0;
+    virtual const MetaStoreReadGuardSP* getMetaStoreReadGuard() const = 0;
 
     virtual const IElementGapInspector& get_element_gap_inspector() const noexcept = 0;
 };
 
-}
+} // namespace search::queryeval

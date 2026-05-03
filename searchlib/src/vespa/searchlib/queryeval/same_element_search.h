@@ -2,11 +2,12 @@
 
 #pragma once
 
-#include <vespa/searchlib/fef/matchdata.h>
-#include <vespa/searchlib/fef/termfieldmatchdataarray.h>
-#include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/common/matching_elements.h>
+#include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/searchlib/fef/termfieldmatchdata.h>
+#include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
+
 #include <memory>
 #include <span>
 #include <vector>
@@ -17,8 +18,7 @@ namespace search::queryeval {
  * Search iterator for a collection of terms that need to match within
  * the same element (array index).
  */
-class SameElementSearch : public SearchIterator
-{
+class SameElementSearch : public SearchIterator {
 private:
     using It = fef::TermFieldMatchData::PositionsIterator;
 
@@ -29,31 +29,29 @@ private:
     bool                                         _strict;
     std::vector<uint32_t>                        _element_filter;
 
-    void fetch_matching_elements(uint32_t docid, std::vector<uint32_t> &dst);
+    void fetch_matching_elements(uint32_t docid, std::vector<uint32_t>& dst);
     bool check_docid_match(uint32_t docid);
     bool check_element_match(uint32_t docid);
     void hide_descendants_match_data();
     void filter_descendants_match_data(uint32_t docid, std::span<const uint32_t> element_ids);
 
 public:
-    SameElementSearch(fef::TermFieldMatchData &tfmd,
-                      std::vector<fef::TermFieldMatchData*> descendants_index_tfmd,
-                      std::vector<std::unique_ptr<SearchIterator>> children,
-                      bool strict,
+    SameElementSearch(fef::TermFieldMatchData& tfmd, std::vector<fef::TermFieldMatchData*> descendants_index_tfmd,
+                      std::vector<std::unique_ptr<SearchIterator>> children, bool strict,
                       std::vector<uint32_t> element_filter = std::vector<uint32_t>());
     ~SameElementSearch() override;
     void initRange(uint32_t begin_id, uint32_t end_id) override;
     void doSeek(uint32_t docid) override;
     void doUnpack(uint32_t docid) override;
-    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    const std::vector<std::unique_ptr<SearchIterator>> &children() const { return _children; }
+    void visitMembers(vespalib::ObjectVisitor& visitor) const override;
+    const std::vector<std::unique_ptr<SearchIterator>>& children() const { return _children; }
 
     // used during docsum fetching to identify matching elements
     // initRange must be called before use.
     // doSeek/doUnpack must not be called.
-    void find_matching_elements(uint32_t docid, std::vector<uint32_t> &dst);
+    void find_matching_elements(uint32_t docid, std::vector<uint32_t>& dst);
 
     Trinary is_strict() const override { return _strict ? Trinary::True : Trinary::False; };
 };
 
-}
+} // namespace search::queryeval

@@ -2,22 +2,30 @@
 
 #pragma once
 
-#include "posting_info.h"
 #include "begin_and_end_id.h"
+#include "posting_info.h"
+
 #include <vespa/vespalib/util/trinary.h>
+
 #include <functional>
 #include <memory>
 #include <string>
 #include <vector>
 
-namespace vespalib { class ObjectVisitor; }
-namespace vespalib::slime {
-    struct Cursor;
-    struct Inserter;
+namespace vespalib {
+class ObjectVisitor;
 }
+namespace vespalib::slime {
+struct Cursor;
+struct Inserter;
+} // namespace vespalib::slime
 
-namespace search { class BitVector; }
-namespace search::attribute { class ISearchContext; }
+namespace search {
+class BitVector;
+}
+namespace search::attribute {
+class ISearchContext;
+}
 
 namespace search::queryeval {
 
@@ -34,8 +42,7 @@ class MultiBitVectorIteratorBase;
  * contract between the application and the leaf search objects and is
  * of no concern to the interface defined by this class.
  **/
-class SearchIterator
-{
+class SearchIterator {
 private:
     using BitVectorUP = std::unique_ptr<BitVector>;
     /**
@@ -56,8 +63,9 @@ private:
      **/
     uint32_t _id;
 
-    void and_hits_into_strict(BitVector &result, uint32_t begin_id);
-    void and_hits_into_non_strict(BitVector &result, uint32_t begin_id);
+    void and_hits_into_strict(BitVector& result, uint32_t begin_id);
+    void and_hits_into_non_strict(BitVector& result, uint32_t begin_id);
+
 protected:
     /**
      * This method is used by the @ref doSeek method to indicate that
@@ -87,7 +95,7 @@ public:
     uint32_t id() const noexcept { return _id; }
     virtual std::string make_id_ref_str() const;
 
-    using Trinary=vespalib::Trinary;
+    using Trinary = vespalib::Trinary;
     // doSeek and doUnpack are called by templated classes, so making
     // them public to avoid complicated friend requests. Note that if
     // you call doSeek and doUnpack directly instead of using
@@ -170,7 +178,7 @@ public:
      * @param begin_id the lowest document id that may be a hit
      *                 (we might not remember beginId from initRange)
      **/
-    virtual void or_hits_into(BitVector &result, uint32_t begin_id);
+    virtual void or_hits_into(BitVector& result, uint32_t begin_id);
 
     /**
      * Find all hits in the currently searched range (specified by
@@ -186,7 +194,7 @@ public:
      * @param begin_id the lowest document id that may be a hit
      *                 (we might not remember beginId from initRange)
      **/
-    virtual void and_hits_into(BitVector &result, uint32_t begin_id);
+    virtual void and_hits_into(BitVector& result, uint32_t begin_id);
 
 public:
     using UP = std::unique_ptr<SearchIterator>;
@@ -194,10 +202,9 @@ public:
     /**
      * The constructor sets the current document id to @ref beginId.
      **/
-    SearchIterator() noexcept : _docid(0), _endid(0), _id(0) { }
-    SearchIterator(const SearchIterator &) = delete;
-    SearchIterator &operator=(const SearchIterator &) = delete;
-
+    SearchIterator() noexcept : _docid(0), _endid(0), _id(0) {}
+    SearchIterator(const SearchIterator&) = delete;
+    SearchIterator& operator=(const SearchIterator&) = delete;
 
     /**
      * Special value indicating that this searcher has not yet started
@@ -293,7 +300,7 @@ public:
      *
      * @return global posting info or NULL if no info is available.
      **/
-    virtual const PostingInfo *getPostingInfo() const { return nullptr; }
+    virtual const PostingInfo* getPostingInfo() const { return nullptr; }
 
     /**
      * Create a human-readable representation of this object. This
@@ -305,13 +312,13 @@ public:
     std::string asString() const;
 
     /**
-    * Create a slime representation of this object. This
-    * method will use object visitation internally to capture the
-    * full structure of this object.
-    *
-    * @return structured slime representation of this object
-    **/
-    vespalib::slime::Cursor & asSlime(const vespalib::slime::Inserter & cursor) const;
+     * Create a slime representation of this object. This
+     * method will use object visitation internally to capture the
+     * full structure of this object.
+     *
+     * @return structured slime representation of this object
+     **/
+    vespalib::slime::Cursor& asSlime(const vespalib::slime::Inserter& cursor) const;
 
     /**
      * Obtain the fully qualified name of the concrete class for this
@@ -335,7 +342,7 @@ public:
      *
      * @param visitor the visitor of this object
      **/
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
+    virtual void visitMembers(vespalib::ObjectVisitor& visitor) const;
 
     /**
      * Empty, just defined to make it virtual.
@@ -348,17 +355,17 @@ public:
     class BitVectorMeta {
     public:
         BitVectorMeta() noexcept : BitVectorMeta(nullptr, 0, false) {}
-        BitVectorMeta(const BitVector * bv, uint32_t docidLimit, bool inverted_in) noexcept
-            : _bv(bv), _docidLimit(docidLimit), _inverted(inverted_in)
-        {}
-        const BitVector * vector() const noexcept { return _bv; }
-        bool inverted () const noexcept { return _inverted; }
+        BitVectorMeta(const BitVector* bv, uint32_t docidLimit, bool inverted_in) noexcept
+            : _bv(bv), _docidLimit(docidLimit), _inverted(inverted_in) {}
+        const BitVector* vector() const noexcept { return _bv; }
+        bool inverted() const noexcept { return _inverted; }
         uint32_t getDocidLimit() const noexcept { return _docidLimit; }
         bool valid() const noexcept { return _bv != nullptr; }
+
     private:
-        const BitVector * _bv;
-        uint32_t          _docidLimit;
-        bool              _inverted;
+        const BitVector* _bv;
+        uint32_t         _docidLimit;
+        bool             _inverted;
     };
     bool isBitVector() const noexcept { return asBitVector().valid(); }
     virtual BitVectorMeta asBitVector() const noexcept { return {}; }
@@ -371,7 +378,7 @@ public:
      */
     virtual bool isMultiSearch() const { return false; }
 
-    virtual WeakAndSearch *as_weak_and() noexcept { return nullptr; }
+    virtual WeakAndSearch* as_weak_and() noexcept { return nullptr; }
 
     /**
      * This is used for adding an extra filter. If it is accepted it will return an empty UP.
@@ -403,9 +410,7 @@ public:
     virtual void and_element_ids_into(uint32_t docid, std::vector<uint32_t>& element_ids);
 };
 
-}
+} // namespace search::queryeval
 
-void visit(vespalib::ObjectVisitor &self, std::string_view name,
-           const search::queryeval::SearchIterator &obj);
-void visit(vespalib::ObjectVisitor &self, std::string_view name,
-           const search::queryeval::SearchIterator *obj);
+void visit(vespalib::ObjectVisitor& self, std::string_view name, const search::queryeval::SearchIterator& obj);
+void visit(vespalib::ObjectVisitor& self, std::string_view name, const search::queryeval::SearchIterator* obj);

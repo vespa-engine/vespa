@@ -18,4 +18,4 @@ public:
     virtual ~IElementGapInspector() = default;
 };
 
-}
+} // namespace search::queryeval

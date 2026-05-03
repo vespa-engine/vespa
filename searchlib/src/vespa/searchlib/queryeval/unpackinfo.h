@@ -9,8 +9,7 @@ namespace search::queryeval {
 
 class MultiSearch;
 
-class UnpackInfo
-{
+class UnpackInfo {
 private:
     static constexpr size_t max_size = 31;
     static constexpr size_t max_index = 255;
@@ -22,15 +21,15 @@ public:
     UnpackInfo();
 
     // add an index to unpack, will not renumber existing indexes
-    UnpackInfo &add(size_t index);
+    UnpackInfo& add(size_t index);
 
     // insert an index that may need unpacking, will renumber existing indexes
-    UnpackInfo &insert(size_t index, bool unpack = true);
+    UnpackInfo& insert(size_t index, bool unpack = true);
 
     // remove an index and its unpack data, will renumber existing indexes
-    UnpackInfo &remove(size_t index);
+    UnpackInfo& remove(size_t index);
 
-    UnpackInfo &forceAll() {
+    UnpackInfo& forceAll() {
         _size = (max_size + 1);
         return *this;
     }
@@ -39,8 +38,7 @@ public:
     bool empty() const { return (_size == 0); }
     bool needUnpack(size_t index) const;
 
-    template <typename F>
-    void each(F &&f, size_t n) const {
+    template <typename F> void each(F&& f, size_t n) const {
         if (__builtin_expect(unpackAll(), false)) {
             for (size_t i = 0; i < n; ++i) {
                 f(i);
@@ -56,14 +54,20 @@ public:
 };
 
 struct NoUnpack {
-    void unpack(uint32_t docid, const MultiSearch & search) {
-        (void) docid;
-        (void) search;
+    void unpack(uint32_t docid, const MultiSearch& search) {
+        (void)docid;
+        (void)search;
     }
-    void each(auto &&f, size_t n) { (void) f; (void) n; }
-    void onRemove(size_t index) { (void) index; }
-    void onInsert(size_t index) { (void) index; }
-    bool needUnpack(size_t index) const { (void) index; return false; }
+    void each(auto&& f, size_t n) {
+        (void)f;
+        (void)n;
+    }
+    void onRemove(size_t index) { (void)index; }
+    void onInsert(size_t index) { (void)index; }
+    bool needUnpack(size_t index) const {
+        (void)index;
+        return false;
+    }
 };
 
-}
+} // namespace search::queryeval

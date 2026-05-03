@@ -3,6 +3,7 @@
 #pragma once
 
 #include "match_span.h"
+
 #include <vector>
 
 namespace search::queryeval::near_search_utils {
@@ -12,12 +13,11 @@ namespace search::queryeval::near_search_utils {
  */
 class BoolMatchResult {
     bool _is_match;
+
 public:
-    BoolMatchResult() noexcept
-        : _is_match(false)
-    { }
+    BoolMatchResult() noexcept : _is_match(false) {}
     void register_match(uint32_t element_id) noexcept {
-        (void) element_id;
+        (void)element_id;
         _is_match = true;
     }
     static constexpr bool shortcut_return = true;
@@ -31,12 +31,10 @@ public:
 class ElementIdMatchResult {
     std::vector<uint32_t>& _element_ids;
     bool                   _need_sort;
+
 public:
     explicit ElementIdMatchResult(std::vector<uint32_t>& element_ids) noexcept
-        : _element_ids(element_ids),
-          _need_sort(false)
-    {
-    }
+        : _element_ids(element_ids), _need_sort(false) {}
     void register_match(uint32_t element_id) {
         if (_element_ids.empty()) {
             _element_ids.push_back(element_id);
@@ -54,13 +52,13 @@ public:
 
 class SpanMatchResult {
     std::vector<MatchSpan>& _match_spans;
+
 public:
-    explicit SpanMatchResult(std::vector<MatchSpan>& match_spans) noexcept
-        : _match_spans(match_spans)
-    {
-    }
+    explicit SpanMatchResult(std::vector<MatchSpan>& match_spans) noexcept : _match_spans(match_spans) {}
     void register_match(const MatchSpan& match_span) {
-        if (_match_spans.empty() || _match_spans.back().field_id() != match_span.field_id() || _match_spans.back().last() < match_span.first()) {
+        if (_match_spans.empty() || _match_spans.back().field_id() != match_span.field_id() ||
+            _match_spans.back().last() < match_span.first())
+        {
             _match_spans.push_back(match_span);
         } else {
             _match_spans.back().merge_spans(match_span);
@@ -70,4 +68,4 @@ public:
     static constexpr bool collect_spans = true;
 };
 
-}
+} // namespace search::queryeval::near_search_utils

@@ -9,4 +9,3 @@ static constexpr uint32_t beginDocId = 0u;
 static constexpr uint32_t endDocId = 0x7fffffffu; // max signed value
 
 } // namespace search
-

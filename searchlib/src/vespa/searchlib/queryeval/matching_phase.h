@@ -7,12 +7,6 @@ namespace search::queryeval {
 /*
  * The different matching phases when evaluating a query.
  */
-enum class MatchingPhase {
-    FIRST_PHASE,
-    SECOND_PHASE,
-    MATCH_FEATURES,
-    SUMMARY_FEATURES,
-    DUMP_FEATURES
-};
+enum class MatchingPhase { FIRST_PHASE, SECOND_PHASE, MATCH_FEATURES, SUMMARY_FEATURES, DUMP_FEATURES };
 
-}
+} // namespace search::queryeval
