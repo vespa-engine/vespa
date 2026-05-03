@@ -3,23 +3,23 @@
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
 #include <vespa/slobrok/sbmirror.h>
-#include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/locale/c.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/util/time.h>
+
 #include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-storage-cmd");
 
-class RPCClient
-{
+class RPCClient {
 private:
-    static bool addArg(FRT_RPCRequest *req, const char *param) {
+    static bool addArg(FRT_RPCRequest* req, const char* param) {
         int len = strlen(param);
         if (len < 2 || param[1] != ':') {
             return false;
         }
-        const char *value = param + 2;
+        const char* value = param + 2;
         switch (param[0]) {
         case 'b':
             req->GetParams()->AddInt8(strtoll(value, nullptr, 0));
@@ -49,7 +49,7 @@ private:
     }
 
 public:
-    int main(int argc, char **argv) {
+    int main(int argc, char** argv) {
         if (argc < 3) {
             fprintf(stderr, "usage: vespa-storage-cmd <connectspec> <method> [args]\n");
             fprintf(stderr, "Calls RPC method on a storage/distributor process\n");
@@ -58,11 +58,11 @@ public:
             fprintf(stderr, "    supported types: {'b','h','i','l','f','d','s'}\n");
             return 1;
         }
-        int retCode = 0;
+        int                      retCode = 0;
         fnet::frt::StandaloneFRT supervisor;
 
         slobrok::ConfiguratorFactory sbcfg(config::ConfigUri("client"));
-        slobrok::api::MirrorAPI mirror(supervisor.supervisor(), sbcfg);
+        slobrok::api::MirrorAPI      mirror(supervisor.supervisor(), sbcfg);
 
         while (!mirror.ready()) {
             std::this_thread::sleep_for(10ms);
@@ -75,25 +75,23 @@ public:
         }
 
         for (size_t j = 0; j < list.size(); j++) {
-            FRT_Target *target = supervisor.supervisor().GetTarget(list[j].second.c_str());
+            FRT_Target* target = supervisor.supervisor().GetTarget(list[j].second.c_str());
 
             // If not fleet controller, need to connect first.
             if (strstr(argv[1], "fleetcontroller") == nullptr) {
-                FRT_RPCRequest *req = supervisor.supervisor().AllocRPCRequest();
+                FRT_RPCRequest* req = supervisor.supervisor().AllocRPCRequest();
                 req->SetMethodName("vespa.storage.connect");
                 req->GetParams()->AddString(argv[1]);
                 target->InvokeSync(req, 10.0);
 
                 if (req->GetErrorCode() != FRTE_NO_ERROR) {
-                    fprintf(stderr, "error(%d): %s\n",
-                        req->GetErrorCode(),
-                        req->GetErrorMessage());
+                    fprintf(stderr, "error(%d): %s\n", req->GetErrorCode(), req->GetErrorMessage());
                     continue;
                 }
                 req->internal_subref();
             }
 
-            FRT_RPCRequest *req = supervisor.supervisor().AllocRPCRequest();
+            FRT_RPCRequest* req = supervisor.supervisor().AllocRPCRequest();
             req->SetMethodName(argv[2]);
 
             for (int i = 3; i < argc; ++i) {
@@ -110,9 +108,7 @@ public:
                     req->GetReturn()->Print();
                     retCode = 3;
                 } else {
-                    fprintf(stderr, "error(%d): %s\n",
-                        req->GetErrorCode(),
-                        req->GetErrorMessage());
+                    fprintf(stderr, "error(%d): %s\n", req->GetErrorCode(), req->GetErrorMessage());
                 }
             }
             req->internal_subref();
@@ -122,7 +118,7 @@ public:
     }
 };
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     vespalib::SignalHandler::PIPE.ignore();
     RPCClient myapp;
     return myapp.main(argc, argv);

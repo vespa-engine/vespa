@@ -4,8 +4,9 @@
 #include <vespa/storageframework/defaultimplementation/component/testcomponentregister.h>
 #include <vespa/storageframework/generic/thread/tickingthread.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/atomic.h>
+#include <vespa/vespalib/util/stringfmt.h>
+
 #include <thread>
 
 using namespace vespalib::atomic;
@@ -20,9 +21,7 @@ struct Context {
 
     constexpr Context() noexcept : _critTickCount(0), _nonCritTickCount(0) {}
     Context(const Context& rhs) noexcept
-        : _critTickCount(load_relaxed(rhs._critTickCount)),
-          _nonCritTickCount(load_relaxed(rhs._nonCritTickCount))
-    {}
+        : _critTickCount(load_relaxed(rhs._critTickCount)), _nonCritTickCount(load_relaxed(rhs._nonCritTickCount)) {}
 };
 
 struct MyApp : public TickingThread {
@@ -57,28 +56,26 @@ struct MyApp : public TickingThread {
     }
     uint64_t getMinCritTick() {
         uint64_t min = std::numeric_limits<uint64_t>::max();
-        for (auto & c : _context) {
+        for (auto& c : _context) {
             min = std::min(min, load_relaxed(c._critTickCount));
         }
         return min;
     }
     [[nodiscard]] uint64_t getTotalCritTicks() const noexcept {
         uint64_t total = 0;
-        for (const auto & i : _context) {
+        for (const auto& i : _context) {
             total += load_relaxed(i._critTickCount);
         }
         return total;
     }
     [[nodiscard]] uint64_t getTotalNonCritTicks() const noexcept {
         uint64_t total = 0;
-        for (const auto & c : _context) {
+        for (const auto& c : _context) {
             total += load_relaxed(c._nonCritTickCount);
         }
         return total;
     }
-    [[nodiscard]] uint64_t getTotalTicks() const noexcept {
-        return getTotalCritTicks() + getTotalNonCritTicks();
-    }
+    [[nodiscard]] uint64_t getTotalTicks() const noexcept { return getTotalCritTicks() + getTotalNonCritTicks(); }
     [[nodiscard]] bool hasCritOverlap() const noexcept { return load_relaxed(_critOverlap); }
 };
 
@@ -86,9 +83,8 @@ MyApp::MyApp(int threadCount, bool doCritOverlapTest)
     : _critOverlapCounter(0),
       _critOverlap(false),
       _doCritOverlapTest(doCritOverlapTest),
-      _threadPool(TickingThreadPool::createDefault("testApp", 100ms))
-{
-    for (int i=0; i<threadCount; ++i) {
+      _threadPool(TickingThreadPool::createDefault("testApp", 100ms)) {
+    for (int i = 0; i < threadCount; ++i) {
         _threadPool->addThread(*this);
         _context.emplace_back();
     }
@@ -96,13 +92,12 @@ MyApp::MyApp(int threadCount, bool doCritOverlapTest)
 
 MyApp::~MyApp() = default;
 
-}
+} // namespace
 
-TEST(TickingThreadTest, test_ticks_before_wait_basic)
-{
+TEST(TickingThreadTest, test_ticks_before_wait_basic) {
     TestComponentRegister testReg(std::make_unique<ComponentRegisterImpl>());
-    int threadCount = 1;
-    MyApp app(threadCount);
+    int                   threadCount = 1;
+    MyApp                 app(threadCount);
     app.start(testReg.getThreadPoolImpl());
 
     // Default behaviour is 5ms sleep before each tick. Let's do 20 ticks,
@@ -116,18 +111,16 @@ TEST(TickingThreadTest, test_ticks_before_wait_basic)
     app._threadPool->stop();
 }
 
-TEST(TickingThreadTest, test_destroy_without_starting)
-{
+TEST(TickingThreadTest, test_destroy_without_starting) {
     TestComponentRegister testReg(std::make_unique<ComponentRegisterImpl>());
-    int threadCount = 5;
-    MyApp app(threadCount, true);
+    int                   threadCount = 5;
+    MyApp                 app(threadCount, true);
 }
 
-TEST(TickingThreadTest, test_verbose_stopping)
-{
+TEST(TickingThreadTest, test_verbose_stopping) {
     TestComponentRegister testReg(std::make_unique<ComponentRegisterImpl>());
-    int threadCount = 5;
-    MyApp app(threadCount, true);
+    int                   threadCount = 5;
+    MyApp                 app(threadCount, true);
     app.start(testReg.getThreadPoolImpl());
     while (app.getMinCritTick() < 5) {
         std::this_thread::sleep_for(1ms);
@@ -135,23 +128,21 @@ TEST(TickingThreadTest, test_verbose_stopping)
     app._threadPool->stop();
 }
 
-TEST(TickingThreadTest, test_stop_on_deletion)
-{
+TEST(TickingThreadTest, test_stop_on_deletion) {
     TestComponentRegister testReg(std::make_unique<ComponentRegisterImpl>());
-    int threadCount = 5;
-    MyApp app(threadCount, true);
+    int                   threadCount = 5;
+    MyApp                 app(threadCount, true);
     app.start(testReg.getThreadPoolImpl());
     while (app.getMinCritTick() < 5) {
         std::this_thread::sleep_for(1ms);
     }
 }
 
-TEST(TickingThreadTest, test_lock_all_ticks)
-{
+TEST(TickingThreadTest, test_lock_all_ticks) {
     TestComponentRegister testReg(std::make_unique<ComponentRegisterImpl>());
-    int threadCount = 5;
-    MyApp app1(threadCount);
-    MyApp app2(threadCount);
+    int                   threadCount = 5;
+    MyApp                 app1(threadCount);
+    MyApp                 app2(threadCount);
     app1.start(testReg.getThreadPoolImpl());
     app2.start(testReg.getThreadPoolImpl());
     while (std::min(app1.getMinCritTick(), app2.getMinCritTick()) < 5) {
@@ -162,7 +153,7 @@ TEST(TickingThreadTest, test_lock_all_ticks)
         TickingLockGuard guard(app1._threadPool->freezeAllTicks());
         ticks1 = app1.getTotalTicks();
         ticks2 = app2.getTotalTicks();
-        
+
         while (app2.getMinCritTick() < 2 * ticks2 / threadCount) {
             std::this_thread::sleep_for(1ms);
         }
@@ -173,11 +164,10 @@ TEST(TickingThreadTest, test_lock_all_ticks)
     }
 }
 
-TEST(TickingThreadTest, test_lock_critical_ticks)
-{
+TEST(TickingThreadTest, test_lock_critical_ticks) {
     TestComponentRegister testReg(std::make_unique<ComponentRegisterImpl>());
-    int threadCount = 5;
-    uint64_t iterationsBeforeOverlap = 0;
+    int                   threadCount = 5;
+    uint64_t              iterationsBeforeOverlap = 0;
     {
         MyApp app(threadCount, true);
         app.start(testReg.getThreadPoolImpl());
@@ -190,10 +180,10 @@ TEST(TickingThreadTest, test_lock_critical_ticks)
     {
         MyApp app(threadCount, true);
         app.start(testReg.getThreadPoolImpl());
-        for (uint64_t i=0; i<iterationsBeforeOverlap * 10; ++i) {
+        for (uint64_t i = 0; i < iterationsBeforeOverlap * 10; ++i) {
             std::this_thread::sleep_for(1ms);
             TickingLockGuard guard(app._threadPool->freezeCriticalTicks());
-            for (int j=0; j<threadCount; ++j) {
+            for (int j = 0; j < threadCount; ++j) {
                 ++app._context[j]._critTickCount;
             }
             EXPECT_TRUE(!app.hasCritOverlap());
@@ -207,10 +197,7 @@ RealClock clock;
 
 void printTaskInfo(const std::string& task, const char* action) {
     std::string msg = vespalib::make_string(
-            "%" PRIu64 ": %s %s\n",
-            vespalib::count_us(clock.getSystemTime().time_since_epoch()),
-            task.c_str(),
-            action);
+        "%" PRIu64 ": %s %s\n", vespalib::count_us(clock.getSystemTime().time_since_epoch()), task.c_str(), action);
     // std::cerr << msg;
 }
 
@@ -218,7 +205,7 @@ struct BroadcastApp : public TickingThread {
     std::vector<std::string> _queue;
     std::vector<std::string> _active;
     std::vector<std::string> _processed;
-    TickingThreadPool::UP _threadPool;
+    TickingThreadPool::UP    _threadPool;
 
     // Set a huge wait time by default to ensure we have to notify
     BroadcastApp();
@@ -228,7 +215,7 @@ struct BroadcastApp : public TickingThread {
 
     ThreadWaitInfo doCriticalTick(ThreadIndex) override {
         if (!_queue.empty()) {
-            for (const auto & task : _queue) {
+            for (const auto& task : _queue) {
                 printTaskInfo(task, "activating");
                 _active.push_back(task);
             }
@@ -239,7 +226,7 @@ struct BroadcastApp : public TickingThread {
     }
     ThreadWaitInfo doNonCriticalTick(ThreadIndex) override {
         if (!_active.empty()) {
-            for (const auto & task : _active) {
+            for (const auto& task : _active) {
                 printTaskInfo(task, "processing");
                 _processed.push_back(task);
             }
@@ -256,19 +243,16 @@ struct BroadcastApp : public TickingThread {
     }
 };
 
-BroadcastApp::BroadcastApp()
-    : _threadPool(TickingThreadPool::createDefault("testApp", 300s))
-{
+BroadcastApp::BroadcastApp() : _threadPool(TickingThreadPool::createDefault("testApp", 300s)) {
     _threadPool->addThread(*this);
 }
 BroadcastApp::~BroadcastApp() = default;
 
-}
+} // namespace
 
-TEST(TickingThreadTest, test_broadcast)
-{
+TEST(TickingThreadTest, test_broadcast) {
     TestComponentRegister testReg(std::make_unique<ComponentRegisterImpl>());
-    BroadcastApp app;
+    BroadcastApp          app;
     app.start(testReg.getThreadPoolImpl());
     app.doTask("foo");
     std::this_thread::sleep_for(1ms);
@@ -280,4 +264,4 @@ TEST(TickingThreadTest, test_broadcast)
     std::this_thread::sleep_for(1ms);
 }
 
-}
+} // namespace storage::framework::defaultimplementation
