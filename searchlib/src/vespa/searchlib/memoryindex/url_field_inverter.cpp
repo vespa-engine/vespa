@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "url_field_inverter.h"
+
 #include "field_inverter.h"
+
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
@@ -9,8 +11,9 @@
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <stdexcept>
+
 #include <cassert>
+#include <stdexcept>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".memoryindex.url_field_inverter");
@@ -22,9 +25,7 @@ namespace {
 static std::string HOSTNAME_BEGIN("StArThOsT");
 static std::string HOSTNAME_END("EnDhOsT");
 
-static size_t
-lowercaseToken(std::string &dest, const char *src, size_t srcSize)
-{
+static size_t lowercaseToken(std::string& dest, const char* src, size_t srcSize) {
     dest.clear();
     dest.reserve(8 + srcSize);
 
@@ -42,7 +43,7 @@ lowercaseToken(std::string &dest, const char *src, size_t srcSize)
     return dest.size();
 }
 
-}
+} // namespace
 
 using document::ArrayFieldValue;
 using document::DataType;
@@ -58,9 +59,7 @@ using search::index::schema::CollectionType;
 using search::util::URL;
 using vespalib::make_string;
 
-void
-UrlFieldInverter::startDoc(uint32_t docId)
-{
+void UrlFieldInverter::startDoc(uint32_t docId) {
     _all->startDoc(docId);
     _scheme->startDoc(docId);
     _host->startDoc(docId);
@@ -71,9 +70,7 @@ UrlFieldInverter::startDoc(uint32_t docId)
     _hostname->startDoc(docId);
 }
 
-void
-UrlFieldInverter::endDoc()
-{
+void UrlFieldInverter::endDoc() {
     _all->endDoc();
     _scheme->endDoc();
     _host->endDoc();
@@ -84,9 +81,7 @@ UrlFieldInverter::endDoc()
     _hostname->endDoc();
 }
 
-void
-UrlFieldInverter::startElement(int32_t weight)
-{
+void UrlFieldInverter::startElement(int32_t weight) {
     _all->startElement(weight);
     _scheme->startElement(weight);
     _host->startElement(weight);
@@ -97,9 +92,7 @@ UrlFieldInverter::startElement(int32_t weight)
     _hostname->startElement(weight);
 }
 
-void
-UrlFieldInverter::endElement()
-{
+void UrlFieldInverter::endElement() {
     _all->endElement();
     _scheme->endElement();
     _host->endElement();
@@ -110,29 +103,24 @@ UrlFieldInverter::endElement()
     _hostname->endElement();
 }
 
-void
-UrlFieldInverter::processUrlField(const FieldValue &url_field, const Document& doc)
-{
+void UrlFieldInverter::processUrlField(const FieldValue& url_field, const Document& doc) {
     assert(url_field.isA(FieldValue::Type::STRING));
-    const std::string &url_str =
-        static_cast<const StringFieldValue &>(url_field).getValue();
+    const std::string& url_str = static_cast<const StringFieldValue&>(url_field).getValue();
     processUrlOldStyle(url_str, doc);
     return;
 }
 
-void
-UrlFieldInverter::processUrlOldStyle(const std::string &s, const Document& doc)
-{
-    URL url(reinterpret_cast<const unsigned char *>(s.data()), s.size());
+void UrlFieldInverter::processUrlOldStyle(const std::string& s, const Document& doc) {
+    URL url(reinterpret_cast<const unsigned char*>(s.data()), s.size());
 
     _hostname->addWord(HOSTNAME_BEGIN, doc);
 
-    std::string lowToken;
-    const unsigned char *t;
-    URL::URL_CONTEXT url_context;
+    std::string          lowToken;
+    const unsigned char* t;
+    URL::URL_CONTEXT     url_context;
     while ((t = url.GetToken(url_context))) {
-        const char *token = reinterpret_cast<const char *>(t);
-        size_t tokenLen = strlen(token);
+        const char* token = reinterpret_cast<const char*>(t);
+        size_t      tokenLen = strlen(token);
         tokenLen = lowercaseToken(lowToken, token, tokenLen);
         token = lowToken.c_str();
         std::string_view tokenRef(token, tokenLen);
@@ -179,23 +167,19 @@ UrlFieldInverter::processUrlOldStyle(const std::string &s, const Document& doc)
     _hostname->addWord(HOSTNAME_END, doc);
 }
 
-void
-UrlFieldInverter::processArrayUrlField(const ArrayFieldValue &field, const Document& doc)
-{
-    for (uint32_t el(0), ele(field.size());el < ele; ++el) {
-        const FieldValue &element = field[el];
+void UrlFieldInverter::processArrayUrlField(const ArrayFieldValue& field, const Document& doc) {
+    for (uint32_t el(0), ele(field.size()); el < ele; ++el) {
+        const FieldValue& element = field[el];
         startElement(1);
         processUrlField(element, doc);
         endElement();
     }
 }
 
-void
-UrlFieldInverter::processWeightedSetUrlField(const WeightedSetFieldValue &field, const Document& doc)
-{
-    for (const auto & el : field) {
-        const FieldValue &key = *el.first;
-        const FieldValue &xweight = *el.second;
+void UrlFieldInverter::processWeightedSetUrlField(const WeightedSetFieldValue& field, const Document& doc) {
+    for (const auto& el : field) {
+        const FieldValue& key = *el.first;
+        const FieldValue& xweight = *el.second;
         assert(xweight.isA(FieldValue::Type::INT));
         int32_t weight = xweight.getAsInt();
         startElement(weight);
@@ -206,17 +190,13 @@ UrlFieldInverter::processWeightedSetUrlField(const WeightedSetFieldValue &field,
 
 namespace {
 
-bool
-isUriType(const DataType &type)
-{
+bool isUriType(const DataType& type) {
     return type == *DataType::STRING || type == *DataType::URI;
 }
 
-}
+} // namespace
 
-void
-UrlFieldInverter::invertUrlField(const FieldValue &val, const Document& doc)
-{
+void UrlFieldInverter::invertUrlField(const FieldValue& val, const Document& doc) {
     switch (_collectionType) {
     case CollectionType::SINGLE:
         if (isUriType(*val.getDataType())) {
@@ -227,7 +207,7 @@ UrlFieldInverter::invertUrlField(const FieldValue &val, const Document& doc)
         break;
     case CollectionType::WEIGHTEDSET: {
         if (val.isA(FieldValue::Type::WSET)) {
-            const auto &wset = static_cast<const WeightedSetFieldValue &>(val);
+            const auto& wset = static_cast<const WeightedSetFieldValue&>(val);
             if (isUriType(wset.getNestedType())) {
                 processWeightedSetUrlField(wset, doc);
             }
@@ -236,7 +216,7 @@ UrlFieldInverter::invertUrlField(const FieldValue &val, const Document& doc)
     }
     case CollectionType::ARRAY: {
         if (val.isA(FieldValue::Type::ARRAY)) {
-            const auto &arr = static_cast<const ArrayFieldValue &>(val);
+            const auto& arr = static_cast<const ArrayFieldValue&>(val);
             if (isUriType(arr.getNestedType())) {
                 processArrayUrlField(arr, doc);
             }
@@ -248,9 +228,7 @@ UrlFieldInverter::invertUrlField(const FieldValue &val, const Document& doc)
     }
 }
 
-void
-UrlFieldInverter::invertField(uint32_t docId, const FieldValue::UP &val, const Document& doc)
-{
+void UrlFieldInverter::invertField(uint32_t docId, const FieldValue::UP& val, const Document& doc) {
     if (val) {
         startDoc(docId);
         invertUrlField(*val, doc);
@@ -260,9 +238,7 @@ UrlFieldInverter::invertField(uint32_t docId, const FieldValue::UP &val, const D
     }
 }
 
-void
-UrlFieldInverter::removeDocument(uint32_t docId)
-{
+void UrlFieldInverter::removeDocument(uint32_t docId) {
     _all->removeDocument(docId);
     _scheme->removeDocument(docId);
     _host->removeDocument(docId);
@@ -273,9 +249,7 @@ UrlFieldInverter::removeDocument(uint32_t docId)
     _hostname->removeDocument(docId);
 }
 
-void
-UrlFieldInverter::applyRemoves()
-{
+void UrlFieldInverter::applyRemoves() {
     _all->applyRemoves();
     _scheme->applyRemoves();
     _host->applyRemoves();
@@ -286,9 +260,7 @@ UrlFieldInverter::applyRemoves()
     _hostname->applyRemoves();
 }
 
-void
-UrlFieldInverter::pushDocuments()
-{
+void UrlFieldInverter::pushDocuments() {
     _all->pushDocuments();
     _scheme->pushDocuments();
     _host->pushDocuments();
@@ -299,15 +271,10 @@ UrlFieldInverter::pushDocuments()
     _hostname->pushDocuments();
 }
 
-UrlFieldInverter::UrlFieldInverter(index::schema::CollectionType collectionType,
-                                   FieldInverter *all,
-                                   FieldInverter *scheme,
-                                   FieldInverter *host,
-                                   FieldInverter *port,
-                                   FieldInverter *path,
-                                   FieldInverter *query,
-                                   FieldInverter *fragment,
-                                   FieldInverter *hostname)
+UrlFieldInverter::UrlFieldInverter(index::schema::CollectionType collectionType, FieldInverter* all,
+                                   FieldInverter* scheme, FieldInverter* host, FieldInverter* port,
+                                   FieldInverter* path, FieldInverter* query, FieldInverter* fragment,
+                                   FieldInverter* hostname)
     : _all(all),
       _scheme(scheme),
       _host(host),
@@ -316,8 +283,7 @@ UrlFieldInverter::UrlFieldInverter(index::schema::CollectionType collectionType,
       _query(query),
       _fragment(fragment),
       _hostname(hostname),
-      _collectionType(collectionType)
-{
+      _collectionType(collectionType) {
 }
 
-}
+} // namespace search::memoryindex

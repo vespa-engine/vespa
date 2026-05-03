@@ -3,6 +3,7 @@
 #pragma once
 
 #include "field_index.h"
+
 #include <vespa/searchlib/queryeval/searchiterator.h>
 
 namespace search::memoryindex {
@@ -20,9 +21,6 @@ namespace search::memoryindex {
 template <bool interleaved_features>
 queryeval::SearchIterator::UP
 make_search_iterator(typename FieldIndex<interleaved_features>::PostingList::ConstIterator itr,
-                     const FeatureStore& feature_store,
-                     uint32_t field_id,
-                     fef::TermFieldMatchDataArray match_data);
+                     const FeatureStore& feature_store, uint32_t field_id, fef::TermFieldMatchDataArray match_data);
 
-}
-
+} // namespace search::memoryindex

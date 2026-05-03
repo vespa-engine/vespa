@@ -4,11 +4,9 @@
 
 namespace search::memoryindex {
 
-PushContext::PushContext(vespalib::ISequencedTaskExecutor::ExecutorId id)
-    : BundledFieldsContext(id)
-{
+PushContext::PushContext(vespalib::ISequencedTaskExecutor::ExecutorId id) : BundledFieldsContext(id) {
 }
 
 PushContext::~PushContext() = default;
 
-}
+} // namespace search::memoryindex

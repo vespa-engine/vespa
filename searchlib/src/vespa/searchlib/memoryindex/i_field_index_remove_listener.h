@@ -20,4 +20,4 @@ public:
     virtual void remove(const std::string_view word, uint32_t docId) = 0;
 };
 
-}
+} // namespace search::memoryindex

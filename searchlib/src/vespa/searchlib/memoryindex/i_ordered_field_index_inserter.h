@@ -3,10 +3,13 @@
 #pragma once
 
 #include <vespa/vespalib/datastore/entryref.h>
+
 #include <cstdint>
 #include <string>
 
-namespace search::index { class DocIdAndFeatures; }
+namespace search::index {
+class DocIdAndFeatures;
+}
 
 namespace search::memoryindex {
 
@@ -28,7 +31,7 @@ public:
     /**
      * Add (word, docId) tuple with the given features.
      */
-    virtual void add(uint32_t docId, const index::DocIdAndFeatures &features) = 0;
+    virtual void add(uint32_t docId, const index::DocIdAndFeatures& features) = 0;
 
     /**
      * Returns the reference to the current word (only used by unit tests).
@@ -56,4 +59,4 @@ public:
     virtual void rewind() = 0;
 };
 
-}
+} // namespace search::memoryindex
