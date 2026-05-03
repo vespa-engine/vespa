@@ -2,10 +2,11 @@
 
 #pragma once
 
-#include <vector>
-#include <cstddef>
-#include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/datastore/atomic_value_wrapper.h>
+#include <vespa/vespalib/util/time.h>
+
+#include <cstddef>
+#include <vector>
 
 namespace search::queryeval {
 class QueryEvalStats;
@@ -19,30 +20,28 @@ namespace proton::matching {
  * produced by a single search are set on a single object. Values are
  * aggregated by adding objects together.
  **/
-struct MatchingStats
-{
+struct MatchingStats {
 private:
     class Avg {
         double _value;
         size_t _count;
         double _min;
         double _max;
+
     public:
         Avg() noexcept : _value(0.0), _count(0), _min(0.0), _max(0.0) {}
-        Avg & set(double value) noexcept {
+        Avg& set(double value) noexcept {
             _value = value;
             _count = 1;
             _min = value;
             _max = value;
             return *this;
         }
-        double avg() const noexcept {
-            return (_count > 0) ? (_value / _count) : 0;
-        }
+        double avg() const noexcept { return (_count > 0) ? (_value / _count) : 0; }
         size_t count() const noexcept { return _count; }
         double min() const noexcept { return _min; }
         double max() const noexcept { return _max; }
-        void add(const Avg &other) noexcept {
+        void add(const Avg& other) noexcept {
             if (_count == 0) {
                 _min = other._min;
                 _max = other._max;
@@ -56,7 +55,6 @@ private:
     };
 
 public:
-
     /**
      * Matching statistics that are tracked separately for each match
      * thread.
@@ -71,6 +69,7 @@ public:
         Avg    _active_time;
         Avg    _wait_time;
         friend MatchingStats;
+
     public:
         Partition() noexcept
             : _docsCovered(0),
@@ -80,33 +79,57 @@ public:
               _softDoomed(0),
               _doomOvertime(),
               _active_time(),
-              _wait_time() { }
+              _wait_time() {}
 
-        Partition &docsCovered(size_t value) noexcept { _docsCovered = value; return *this; }
+        Partition& docsCovered(size_t value) noexcept {
+            _docsCovered = value;
+            return *this;
+        }
         size_t docsCovered() const noexcept { return _docsCovered; }
-        Partition &docsMatched(size_t value) noexcept { _docsMatched = value; return *this; }
+        Partition& docsMatched(size_t value) noexcept {
+            _docsMatched = value;
+            return *this;
+        }
         size_t docsMatched() const noexcept { return _docsMatched; }
-        Partition &docsRanked(size_t value) noexcept { _docsRanked = value; return *this; }
+        Partition& docsRanked(size_t value) noexcept {
+            _docsRanked = value;
+            return *this;
+        }
         size_t docsRanked() const noexcept { return _docsRanked; }
-        Partition &docsReRanked(size_t value) noexcept { _docsReRanked = value; return *this; }
+        Partition& docsReRanked(size_t value) noexcept {
+            _docsReRanked = value;
+            return *this;
+        }
         size_t docsReRanked() const noexcept { return _docsReRanked; }
-        Partition &softDoomed(bool v) noexcept { _softDoomed += v ? 1 : 0; return *this; }
+        Partition& softDoomed(bool v) noexcept {
+            _softDoomed += v ? 1 : 0;
+            return *this;
+        }
         size_t softDoomed() const noexcept { return _softDoomed; }
-        Partition & doomOvertime(vespalib::duration overtime) noexcept { _doomOvertime.set(vespalib::to_s(overtime)); return *this; }
+        Partition& doomOvertime(vespalib::duration overtime) noexcept {
+            _doomOvertime.set(vespalib::to_s(overtime));
+            return *this;
+        }
         vespalib::duration doomOvertime() const noexcept { return vespalib::from_s(_doomOvertime.max()); }
 
-        Partition &active_time(double time_s) noexcept { _active_time.set(time_s); return *this; }
+        Partition& active_time(double time_s) noexcept {
+            _active_time.set(time_s);
+            return *this;
+        }
         double active_time_avg() const noexcept { return _active_time.avg(); }
         size_t active_time_count() const noexcept { return _active_time.count(); }
         double active_time_min() const noexcept { return _active_time.min(); }
         double active_time_max() const noexcept { return _active_time.max(); }
-        Partition &wait_time(double time_s) noexcept { _wait_time.set(time_s); return *this; }
+        Partition& wait_time(double time_s) noexcept {
+            _wait_time.set(time_s);
+            return *this;
+        }
         double wait_time_avg() const noexcept { return _wait_time.avg(); }
         size_t wait_time_count() const noexcept { return _wait_time.count(); }
         double wait_time_min() const noexcept { return _wait_time.min(); }
         double wait_time_max() const noexcept { return _wait_time.max(); }
 
-        Partition &add(const Partition &rhs) noexcept {
+        Partition& add(const Partition& rhs) noexcept {
             _docsCovered += rhs.docsCovered();
             _docsMatched += rhs._docsMatched;
             _docsRanked += rhs._docsRanked;
@@ -121,17 +144,17 @@ public:
     };
 
 private:
-    size_t                 _queries;
-    size_t                 _limited_queries;
-    size_t                 _docidSpaceCovered;
-    size_t                 _docsMatched;
-    size_t                 _docsRanked;
-    size_t                 _docsReRanked;
-    size_t                 _exact_nns_distances_computed;
-    size_t                 _approximate_nns_distances_computed;
-    size_t                 _approximate_nns_nodes_visited;
-    size_t                 _softDoomed;
-    Avg                    _doomOvertime;
+    size_t _queries;
+    size_t _limited_queries;
+    size_t _docidSpaceCovered;
+    size_t _docsMatched;
+    size_t _docsRanked;
+    size_t _docsReRanked;
+    size_t _exact_nns_distances_computed;
+    size_t _approximate_nns_distances_computed;
+    size_t _approximate_nns_nodes_visited;
+    size_t _softDoomed;
+    Avg    _doomOvertime;
     using SoftDoomFactor = vespalib::datastore::AtomicValueWrapper<double>;
     SoftDoomFactor         _softDoomFactor;
     Avg                    _querySetupTime;
@@ -143,91 +166,140 @@ private:
 
 public:
     static constexpr double INITIAL_SOFT_DOOM_FACTOR = 0.5;
-    MatchingStats(const MatchingStats &) = delete;
-    MatchingStats & operator = (const MatchingStats &) = delete;
-    MatchingStats(MatchingStats &&) noexcept = default;
-    MatchingStats & operator =  (MatchingStats &&) noexcept = default;
+    MatchingStats(const MatchingStats&) = delete;
+    MatchingStats& operator=(const MatchingStats&) = delete;
+    MatchingStats(MatchingStats&&) noexcept = default;
+    MatchingStats& operator=(MatchingStats&&) noexcept = default;
     MatchingStats() noexcept : MatchingStats(INITIAL_SOFT_DOOM_FACTOR) {}
     MatchingStats(double prev_soft_doom_factor) noexcept;
     ~MatchingStats();
 
-    MatchingStats &queries(size_t value) { _queries = value; return *this; }
+    MatchingStats& queries(size_t value) {
+        _queries = value;
+        return *this;
+    }
     size_t queries() const { return _queries; }
 
-    MatchingStats &limited_queries(size_t value) { _limited_queries = value; return *this; }
+    MatchingStats& limited_queries(size_t value) {
+        _limited_queries = value;
+        return *this;
+    }
     size_t limited_queries() const { return _limited_queries; }
 
-    MatchingStats &docidSpaceCovered(size_t value) { _docidSpaceCovered = value; return *this; }
+    MatchingStats& docidSpaceCovered(size_t value) {
+        _docidSpaceCovered = value;
+        return *this;
+    }
     size_t docidSpaceCovered() const { return _docidSpaceCovered; }
 
-    MatchingStats &docsMatched(size_t value) { _docsMatched = value; return *this; }
+    MatchingStats& docsMatched(size_t value) {
+        _docsMatched = value;
+        return *this;
+    }
     size_t docsMatched() const { return _docsMatched; }
 
-    MatchingStats &docsRanked(size_t value) { _docsRanked = value; return *this; }
+    MatchingStats& docsRanked(size_t value) {
+        _docsRanked = value;
+        return *this;
+    }
     size_t docsRanked() const { return _docsRanked; }
 
-    MatchingStats &docsReRanked(size_t value) { _docsReRanked = value; return *this; }
+    MatchingStats& docsReRanked(size_t value) {
+        _docsReRanked = value;
+        return *this;
+    }
     size_t docsReRanked() const { return _docsReRanked; }
 
-    MatchingStats &exact_nns_distances_computed(size_t value) { _exact_nns_distances_computed = value; return *this; }
+    MatchingStats& exact_nns_distances_computed(size_t value) {
+        _exact_nns_distances_computed = value;
+        return *this;
+    }
     size_t exact_nns_distances_computed() const { return _exact_nns_distances_computed; }
 
-    MatchingStats &approximate_nns_distances_computed(size_t value) { _approximate_nns_distances_computed = value; return *this; }
+    MatchingStats& approximate_nns_distances_computed(size_t value) {
+        _approximate_nns_distances_computed = value;
+        return *this;
+    }
     size_t approximate_nns_distances_computed() const { return _approximate_nns_distances_computed; }
 
-    MatchingStats &approximate_nns_nodes_visited(size_t value) { _approximate_nns_nodes_visited = value; return *this; }
+    MatchingStats& approximate_nns_nodes_visited(size_t value) {
+        _approximate_nns_nodes_visited = value;
+        return *this;
+    }
     size_t approximate_nns_nodes_visited() const { return _approximate_nns_nodes_visited; }
 
-    MatchingStats &softDoomed(size_t value) { _softDoomed = value; return *this; }
+    MatchingStats& softDoomed(size_t value) {
+        _softDoomed = value;
+        return *this;
+    }
     size_t softDoomed() const { return _softDoomed; }
 
     vespalib::duration doomOvertime() const { return vespalib::from_s(_doomOvertime.max()); }
 
-    MatchingStats &softDoomFactor(double value) { _softDoomFactor.store_relaxed(value); return *this; }
+    MatchingStats& softDoomFactor(double value) {
+        _softDoomFactor.store_relaxed(value);
+        return *this;
+    }
     double softDoomFactor() const { return _softDoomFactor.load_relaxed(); }
-    MatchingStats &updatesoftDoomFactor(vespalib::duration hardLimit, vespalib::duration softLimit, vespalib::duration duration);
+    MatchingStats& updatesoftDoomFactor(vespalib::duration hardLimit, vespalib::duration softLimit,
+                                        vespalib::duration duration);
 
-    MatchingStats &querySetupTime(double time_s) { _querySetupTime.set(time_s); return *this; }
+    MatchingStats& querySetupTime(double time_s) {
+        _querySetupTime.set(time_s);
+        return *this;
+    }
     double querySetupTimeAvg() const { return _querySetupTime.avg(); }
     size_t querySetupTimeCount() const { return _querySetupTime.count(); }
     double querySetupTimeMin() const { return _querySetupTime.min(); }
     double querySetupTimeMax() const { return _querySetupTime.max(); }
 
-    MatchingStats &queryLatency(double time_s) { _queryLatency.set(time_s); return *this; }
+    MatchingStats& queryLatency(double time_s) {
+        _queryLatency.set(time_s);
+        return *this;
+    }
     double queryLatencyAvg() const { return _queryLatency.avg(); }
     size_t queryLatencyCount() const { return _queryLatency.count(); }
     double queryLatencyMin() const { return _queryLatency.min(); }
     double queryLatencyMax() const { return _queryLatency.max(); }
 
-    MatchingStats &matchTime(double time_s) { _matchTime.set(time_s); return *this; }
+    MatchingStats& matchTime(double time_s) {
+        _matchTime.set(time_s);
+        return *this;
+    }
     double matchTimeAvg() const { return _matchTime.avg(); }
     size_t matchTimeCount() const { return _matchTime.count(); }
     double matchTimeMin() const { return _matchTime.min(); }
     double matchTimeMax() const { return _matchTime.max(); }
 
-    MatchingStats &groupingTime(double time_s) { _groupingTime.set(time_s); return *this; }
+    MatchingStats& groupingTime(double time_s) {
+        _groupingTime.set(time_s);
+        return *this;
+    }
     double groupingTimeAvg() const { return _groupingTime.avg(); }
     size_t groupingTimeCount() const { return _groupingTime.count(); }
     double groupingTimeMin() const { return _groupingTime.min(); }
     double groupingTimeMax() const { return _groupingTime.max(); }
 
-    MatchingStats &rerankTime(double time_s) { _rerankTime.set(time_s); return *this; }
+    MatchingStats& rerankTime(double time_s) {
+        _rerankTime.set(time_s);
+        return *this;
+    }
     double rerankTimeAvg() const { return _rerankTime.avg(); }
     size_t rerankTimeCount() const { return _rerankTime.count(); }
     double rerankTimeMin() const { return _rerankTime.min(); }
     double rerankTimeMax() const { return _rerankTime.max(); }
 
     // used to merge in stats from each match thread
-    MatchingStats &merge_partition(const Partition &partition, size_t id);
+    MatchingStats& merge_partition(const Partition& partition, size_t id);
     size_t getNumPartitions() const { return _partitions.size(); }
-    const Partition &getPartition(size_t index) const { return _partitions[index]; }
+    const Partition& getPartition(size_t index) const { return _partitions[index]; }
 
     // used to merge in queryeval stats
     // these are collected in a distinct, thread-safe object
-    MatchingStats &add_queryeval_stats(const search::queryeval::QueryEvalStats &stats) noexcept;
+    MatchingStats& add_queryeval_stats(const search::queryeval::QueryEvalStats& stats) noexcept;
 
     // used to aggregate accross searches (and configurations)
-    MatchingStats &add(const MatchingStats &rhs) noexcept;
+    MatchingStats& add(const MatchingStats& rhs) noexcept;
 };
 
-}
+} // namespace proton::matching

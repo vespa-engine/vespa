@@ -5,8 +5,9 @@
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/vespalib/util/featureset.h>
-#include <vector>
+
 #include <memory>
+#include <vector>
 
 namespace proton::matching {
 
@@ -18,8 +19,7 @@ class SearchSession;
  * request. Note that external objects must be kept alive by the one
  * using this class.
  **/
-class DocsumMatcher
-{
+class DocsumMatcher {
 private:
     using FeatureSet = vespalib::FeatureSet;
     using MatchingElementsFields = search::MatchingElementsFields;
@@ -27,8 +27,8 @@ private:
 
     std::shared_ptr<SearchSession>     _from_session;
     std::unique_ptr<MatchToolsFactory> _from_mtf;
-    MatchToolsFactory    *_mtf;
-    std::vector<uint32_t> _docs;
+    MatchToolsFactory*                 _mtf;
+    std::vector<uint32_t>              _docs;
 
 public:
     DocsumMatcher();
@@ -40,7 +40,7 @@ public:
 
     FeatureSet::UP get_summary_features() const;
     FeatureSet::UP get_rank_features() const;
-    MatchingElements::UP get_matching_elements(const MatchingElementsFields &fields) const;
+    MatchingElements::UP get_matching_elements(const MatchingElementsFields& fields) const;
 };
 
-}
+} // namespace proton::matching

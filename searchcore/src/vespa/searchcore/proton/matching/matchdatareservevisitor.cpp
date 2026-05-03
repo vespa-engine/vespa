@@ -5,32 +5,24 @@
 namespace proton::matching {
 
 MatchDataReserveVisitor::MatchDataReserveVisitor(search::fef::MatchDataLayout& mdl)
-    : search::query::TemplateTermVisitor<MatchDataReserveVisitor, ProtonNodeTypes>(),
-      _mdl(mdl)
-{
+    : search::query::TemplateTermVisitor<MatchDataReserveVisitor, ProtonNodeTypes>(), _mdl(mdl) {
 }
 
 MatchDataReserveVisitor::~MatchDataReserveVisitor() = default;
 
-void
-MatchDataReserveVisitor::visit(ProtonNodeTypes::Equiv& n)
-{
+void MatchDataReserveVisitor::visit(ProtonNodeTypes::Equiv& n) {
     visitChildren(n);
     n.allocateTerms(_mdl);
 }
 
-void
-MatchDataReserveVisitor::visit(ProtonNodeTypes::SameElement& n)
-{
+void MatchDataReserveVisitor::visit(ProtonNodeTypes::SameElement& n) {
     visitChildren(n);
     n.allocateTerms(_mdl);
 }
 
-void
-MatchDataReserveVisitor::visit(ProtonNodeTypes::WordAlternatives& n)
-{
+void MatchDataReserveVisitor::visit(ProtonNodeTypes::WordAlternatives& n) {
     n.allocateTerms(_mdl);
-    for (const auto & child : n.getChildren()) {
+    for (const auto& child : n.getChildren()) {
         child->accept(*this);
     }
 }
@@ -40,4 +32,4 @@ void MatchDataReserveVisitor::visit(ProtonNodeTypes::Phrase& n) {
     visitChildren(n);
 }
 
-}
+} // namespace proton::matching

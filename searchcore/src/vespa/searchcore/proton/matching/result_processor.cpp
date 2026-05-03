@@ -1,54 +1,55 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "result_processor.h"
+
 #include "partial_result.h"
 #include "sessionmanager.h"
-#include <vespa/searchcore/proton/documentmetastore/documentmetastoreattribute.h>
-#include <vespa/searchcore/grouping/groupingmanager.h>
+
 #include <vespa/searchcore/grouping/groupingcontext.h>
-#include <vespa/searchlib/uca/ucaconverter.h>
+#include <vespa/searchcore/grouping/groupingmanager.h>
+#include <vespa/searchcore/proton/documentmetastore/documentmetastoreattribute.h>
 #include <vespa/searchlib/engine/searchreply.h>
+#include <vespa/searchlib/uca/ucaconverter.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.result_processor");
 
 using search::attribute::IAttributeContext;
-using search::grouping::GroupingSession;
 using search::grouping::GroupingContext;
+using search::grouping::GroupingSession;
 using search::grouping::SessionId;
 
 namespace proton::matching {
 
 ResultProcessor::Result::Result(std::unique_ptr<search::engine::SearchReply> reply, size_t numFs4Hits)
-    : _reply(std::move(reply)),
-      _numFs4Hits(numFs4Hits)
-{ }
+    : _reply(std::move(reply)), _numFs4Hits(numFs4Hits) {
+}
 
 ResultProcessor::Result::~Result() = default;
 
-ResultProcessor::Sort::Sort(uint32_t partitionId, const vespalib::Doom & doom, IAttributeContext &ac, const std::string &ss)
+ResultProcessor::Sort::Sort(uint32_t partitionId, const vespalib::Doom& doom, IAttributeContext& ac,
+                            const std::string& ss)
     : sorter(FastS_DefaultResultSorter::instance()),
       _ucaFactory(std::make_unique<search::uca::UcaConverterFactory>()),
-      sortSpec(DocumentMetaStoreAttribute::getFixedName(), partitionId, doom, *_ucaFactory)
-{
+      sortSpec(DocumentMetaStoreAttribute::getFixedName(), partitionId, doom, *_ucaFactory) {
     if (!ss.empty() && sortSpec.Init(ss.c_str(), ac)) {
         sorter = &sortSpec;
     }
 }
 
-ResultProcessor::Context::Context(const search::BitVector & validLids, Sort::UP s, PartialResultUP r, GroupingContext::UP g)
+ResultProcessor::Context::Context(const search::BitVector& validLids, Sort::UP s, PartialResultUP r,
+                                  GroupingContext::UP g)
     : _validLids(validLids),
       sort(std::move(s)),
       result(std::move(r)),
       grouping(std::move(g)),
-      groupingSource(grouping.get())
-{ }
+      groupingSource(grouping.get()) {
+}
 
 ResultProcessor::Context::~Context() = default;
 
-void
-ResultProcessor::GroupingSource::merge(Source &s) {
-    auto &rhs = dynamic_cast<GroupingSource&>(s);
+void ResultProcessor::GroupingSource::merge(Source& s) {
+    auto& rhs = dynamic_cast<GroupingSource&>(s);
     assert((ctx == nullptr) == (rhs.ctx == nullptr));
     if (ctx != nullptr) {
         search::grouping::GroupingManager man(*ctx);
@@ -56,13 +57,10 @@ ResultProcessor::GroupingSource::merge(Source &s) {
     }
 }
 
-ResultProcessor::ResultProcessor(IAttributeContext &attrContext,
-                                 const search::IDocumentMetaStore &metaStore,
-                                 SessionManager &sessionMgr,
-                                 GroupingContext &groupingContext,
-                                 const std::string &sessionId,
-                                 const std::string &sortSpec,
-                                 size_t offset, size_t hits)
+ResultProcessor::ResultProcessor(IAttributeContext& attrContext, const search::IDocumentMetaStore& metaStore,
+                                 SessionManager& sessionMgr, GroupingContext& groupingContext,
+                                 const std::string& sessionId, const std::string& sortSpec, size_t offset,
+                                 size_t hits)
     : _attrContext(attrContext),
       _metaStore(metaStore),
       _sessionMgr(sessionMgr),
@@ -71,8 +69,7 @@ ResultProcessor::ResultProcessor(IAttributeContext &attrContext,
       _sortSpec(sortSpec),
       _offset(offset),
       _hits(hits),
-      _wasMerged(false)
-{
+      _wasMerged(false) {
     if (!_groupingContext.empty()) {
         _groupingSession = std::make_unique<GroupingSession>(sessionId, _groupingContext, attrContext, nullptr);
     }
@@ -80,9 +77,7 @@ ResultProcessor::ResultProcessor(IAttributeContext &attrContext,
 
 ResultProcessor::~ResultProcessor() = default;
 
-void
-ResultProcessor::prepareThreadContextCreation(size_t num_threads)
-{
+void ResultProcessor::prepareThreadContextCreation(size_t num_threads) {
     if (num_threads > 1) {
         _wasMerged = true;
     }
@@ -92,37 +87,34 @@ ResultProcessor::prepareThreadContextCreation(size_t num_threads)
 }
 
 std::unique_ptr<ResultProcessor::Context>
-ResultProcessor::createThreadContext(const vespalib::Doom & hardDoom, size_t thread_id, uint32_t distributionKey)
-{
+ResultProcessor::createThreadContext(const vespalib::Doom& hardDoom, size_t thread_id, uint32_t distributionKey) {
     auto sort = std::make_unique<Sort>(distributionKey, hardDoom, _attrContext, _sortSpec);
     auto result = std::make_unique<PartialResult>((_offset + _hits), sort->hasSortData());
     search::grouping::GroupingContext::UP groupingContext;
     if (_groupingSession) {
         groupingContext = _groupingSession->createThreadContext(thread_id, _attrContext, nullptr);
     }
-    return std::make_unique<Context>(_metaStore.getValidLids(), std::move(sort), std::move(result), std::move(groupingContext));
+    return std::make_unique<Context>(_metaStore.getValidLids(), std::move(sort), std::move(result),
+                                     std::move(groupingContext));
 }
 
-std::vector<std::pair<uint32_t,uint32_t>>
-ResultProcessor::extract_docid_ordering(const PartialResult &result) const
-{
-    size_t est_size = result.size() - std::min(result.size(), _offset);
-    std::vector<std::pair<uint32_t,uint32_t>> list;
+std::vector<std::pair<uint32_t, uint32_t>>
+ResultProcessor::extract_docid_ordering(const PartialResult& result) const {
+    size_t                                     est_size = result.size() - std::min(result.size(), _offset);
+    std::vector<std::pair<uint32_t, uint32_t>> list;
     list.reserve(est_size);
     for (size_t i = _offset; i < result.size(); ++i) {
         list.emplace_back(result.hit(i).getDocId(), list.size());
     }
-    std::sort(list.begin(), list.end(), [](const auto &a, const auto &b){ return (a.first < b.first); });
+    std::sort(list.begin(), list.end(), [](const auto& a, const auto& b) { return (a.first < b.first); });
     return list;
 }
 
-ResultProcessor::Result::UP
-ResultProcessor::makeReply(PartialResultUP full_result)
-{
-    auto reply = std::make_unique<search::engine::SearchReply>();
-    search::engine::SearchReply &r = *reply;
-    PartialResult &result = *full_result;
-    size_t numFs4Hits(0);
+ResultProcessor::Result::UP ResultProcessor::makeReply(PartialResultUP full_result) {
+    auto                         reply = std::make_unique<search::engine::SearchReply>();
+    search::engine::SearchReply& r = *reply;
+    PartialResult&               result = *full_result;
+    size_t                       numFs4Hits(0);
     if (_groupingSession) {
         if (_wasMerged) {
             _groupingSession->getGroupingManager().prune();
@@ -135,14 +127,14 @@ ResultProcessor::makeReply(PartialResultUP full_result)
         }
     }
     uint32_t hitOffset = _offset;
-    uint32_t hitcnt    = (result.size() > hitOffset) ? (result.size() - hitOffset) : 0;
-    r.totalHitCount    = result.totalHits();
+    uint32_t hitcnt = (result.size() > hitOffset) ? (result.size() - hitOffset) : 0;
+    r.totalHitCount = result.totalHits();
     r.hits.resize(hitcnt);
     document::GlobalId gid;
     for (size_t i = 0; i < hitcnt; ++i) {
-        search::engine::SearchReply::Hit &dst = r.hits[i];
-        const search::RankedHit &src = result.hit(hitOffset + i);
-        uint32_t docId = src.getDocId();
+        search::engine::SearchReply::Hit& dst = r.hits[i];
+        const search::RankedHit&          src = result.hit(hitOffset + i);
+        uint32_t                          docId = src.getDocId();
         if (_metaStore.getGidEvenIfMoved(docId, gid)) {
             dst.gid = gid;
         } else {
@@ -160,7 +152,7 @@ ResultProcessor::makeReply(PartialResultUP full_result)
         r.sortData.resize(sortDataSize);
         uint32_t sortOffset = 0;
         for (size_t i = 0; i < hitcnt; ++i) {
-            const PartialResult::SortRef &sr = result.sortData(hitOffset + i);
+            const PartialResult::SortRef& sr = result.sortData(hitOffset + i);
             r.sortIndex[i] = sortOffset;
             memcpy(&r.sortData[0] + sortOffset, sr.first, sr.second);
             sortOffset += sr.second;
@@ -172,4 +164,4 @@ ResultProcessor::makeReply(PartialResultUP full_result)
     return std::make_unique<Result>(std::move(reply), numFs4Hits);
 }
 
-}
+} // namespace proton::matching

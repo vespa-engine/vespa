@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/dual_merge_director.h>
 #include <vespa/searchlib/common/rankedhit.h>
+#include <vespa/vespalib/util/dual_merge_director.h>
+
 #include <vector>
 
 namespace proton::matching {
@@ -12,31 +13,29 @@ namespace proton::matching {
  * The best hits from each match thread are put into a partial result
  * and merged with results from other threads.
  **/
-class PartialResult : public vespalib::DualMergeDirector::Source
-{
+class PartialResult : public vespalib::DualMergeDirector::Source {
 public:
-    using SortRef = std::pair<const char *, size_t>;
+    using SortRef = std::pair<const char*, size_t>;
     PartialResult(size_t maxSize_in, bool hasSortData_in);
-    PartialResult(const PartialResult &) = delete;
-    PartialResult & operator =(const PartialResult &) = delete;
+    PartialResult(const PartialResult&) = delete;
+    PartialResult& operator=(const PartialResult&) = delete;
     ~PartialResult() override;
     size_t size() const { return _hits.size(); }
     size_t maxSize() const { return _maxSize; }
     size_t totalHits() const { return _totalHits; }
     bool hasSortData() const { return _hasSortData; }
     size_t sortDataSize() const { return _sortDataSize; }
-    const search::RankedHit &hit(size_t i) const { return _hits[i]; }
-    const SortRef &sortData(size_t i) const { return _sortData[i]; }
+    const search::RankedHit& hit(size_t i) const { return _hits[i]; }
+    const SortRef& sortData(size_t i) const { return _sortData[i]; }
     void totalHits(size_t th) { _totalHits = th; }
-    void add(const search::RankedHit &h) {
-        _hits.push_back(h);
-    }
-    void add(const search::RankedHit &h, const SortRef &sd) {
+    void add(const search::RankedHit& h) { _hits.push_back(h); }
+    void add(const search::RankedHit& h, const SortRef& sd) {
         _hits.push_back(h);
         _sortData.push_back(sd);
         _sortDataSize += sd.second;
     }
-    void merge(Source &rhs) override;
+    void merge(Source& rhs) override;
+
 private:
     std::vector<search::RankedHit> _hits;
     std::vector<SortRef>           _sortData;
@@ -46,5 +45,4 @@ private:
     size_t                         _sortDataSize;
 };
 
-}
-
+} // namespace proton::matching

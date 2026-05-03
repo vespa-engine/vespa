@@ -3,23 +3,26 @@
 #pragma once
 
 #include "isearchcontext.h"
+
 #include <vespa/searchcorespi/index/fakeindexsearchable.h>
 #include <vespa/searchcorespi/index/indexcollection.h>
 #include <vespa/searchlib/attribute/fixedsourceselector.h>
 #include <vespa/vespalib/util/doom.h>
+
 #include <algorithm>
 #include <map>
 #include <vector>
 
-namespace vespalib { class TestClock; }
+namespace vespalib {
+class TestClock;
+}
 namespace proton::matching {
 
 using searchcorespi::FakeIndexSearchable;
-using searchcorespi::IndexSearchable;
 using searchcorespi::IndexCollection;
+using searchcorespi::IndexSearchable;
 
-class FakeSearchContext : public ISearchContext
-{
+class FakeSearchContext : public ISearchContext {
 public:
     using FakeSearchable = search::queryeval::FakeSearchable;
 
@@ -32,40 +35,32 @@ private:
     uint32_t                               _docIdLimit;
 
 public:
-    FakeSearchContext(size_t initialNumDocs=0);
+    FakeSearchContext(size_t initialNumDocs = 0);
     ~FakeSearchContext();
 
-    FakeSearchContext &addIdx(uint32_t id) {
+    FakeSearchContext& addIdx(uint32_t id) {
         _indexes->append(id, std::make_shared<FakeIndexSearchable>());
         return *this;
     }
 
-    FakeSearchContext &setLimit(uint32_t limit) {
+    FakeSearchContext& setLimit(uint32_t limit) {
         _docIdLimit = limit;
         return *this;
     }
 
-    FakeSearchable &attr() { return _attrSearchable; }
+    FakeSearchable& attr() { return _attrSearchable; }
 
-    FakeIndexSearchable &idx(uint32_t i) {
-        return static_cast<FakeIndexSearchable &>(_indexes->getSearchable(i));
-    }
+    FakeIndexSearchable& idx(uint32_t i) { return static_cast<FakeIndexSearchable&>(_indexes->getSearchable(i)); }
 
-    search::queryeval::ISourceSelector &selector() { return *_selector; }
+    search::queryeval::ISourceSelector& selector() { return *_selector; }
 
     // Implements ISearchContext
-    IndexSearchable &getIndexes() override {
-        return *_indexes;
-    }
+    IndexSearchable& getIndexes() override { return *_indexes; }
 
-    search::queryeval::Searchable &getAttributes() override {
-        return _attrSearchable;
-    }
+    search::queryeval::Searchable& getAttributes() override { return _attrSearchable; }
 
-    uint32_t getDocIdLimit() override {
-        return _docIdLimit;
-    }
-    virtual const vespalib::Doom & getDoom() const { return _doom; }
+    uint32_t getDocIdLimit() override { return _docIdLimit; }
+    virtual const vespalib::Doom& getDoom() const { return _doom; }
 };
 
-}
+} // namespace proton::matching

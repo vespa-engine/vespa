@@ -8,33 +8,43 @@
 #include "querylimiter.h"
 #include "search_session.h"
 #include "viewresolver.h"
+
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
-#include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/searchlib/common/matching_elements.h>
+#include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/searchlib/common/resultset.h>
 #include <vespa/searchlib/fef/blueprintfactory.h>
 #include <vespa/searchlib/fef/i_ranking_assets_repo.h>
-#include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/query/base.h>
+#include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/vespalib/util/featureset.h>
 #include <vespa/vespalib/util/thread_bundle.h>
+
 #include <mutex>
 
 namespace search::grouping {
-    class GroupingContext;
-    class GroupingSession;
+class GroupingContext;
+class GroupingSession;
+} // namespace search::grouping
+namespace search::index {
+class Schema;
 }
-namespace search::index { class Schema; }
-namespace search::attribute { class IAttributeContext; }
+namespace search::attribute {
+class IAttributeContext;
+}
 namespace search::engine {
-    class Request;
-    class SearchRequest;
-    class DocsumRequest;
-    class SearchReply;
-    class Coverage;
+class Request;
+class SearchRequest;
+class DocsumRequest;
+class SearchReply;
+class Coverage;
+} // namespace search::engine
+namespace search {
+struct IDocumentMetaStore;
 }
-namespace search { struct IDocumentMetaStore; }
-namespace search::fef { class RankSetup; }
+namespace search::fef {
+class RankSetup;
+}
 
 namespace proton::matching {
 
@@ -45,8 +55,7 @@ class MatchToolsFactory;
 /**
  * The Matcher is responsible for performing searches.
  **/
-class Matcher
-{
+class Matcher {
 private:
     using IAttributeContext = search::attribute::IAttributeContext;
     using DocsumRequest = search::engine::DocsumRequest;
@@ -66,20 +75,20 @@ private:
     std::mutex                      _statsLock;
     MatchingStats                   _stats;
     my_clock::time_point            _startTime;
-    const std::atomic<steady_time> &_now_ref;
-    QueryLimiter                   &_queryLimiter;
+    const std::atomic<steady_time>& _now_ref;
+    QueryLimiter&                   _queryLimiter;
     uint32_t                        _distributionKey;
 
     size_t computeNumThreadsPerSearch(search::queryeval::Blueprint::HitEstimate hits,
-                                      const Properties & rankProperties) const;
-    void updateStats(const MatchingStats & stats, const search::engine::Request & request,
-                     const Coverage & coverage, bool isDoomExplicit);
+                                      const Properties&                         rankProperties) const;
+    void updateStats(const MatchingStats& stats, const search::engine::Request& request, const Coverage& coverage,
+                     bool isDoomExplicit);
+
 public:
     using SP = std::shared_ptr<Matcher>;
 
-
-    Matcher(const Matcher &) = delete;
-    Matcher &operator=(const Matcher &) = delete;
+    Matcher(const Matcher&) = delete;
+    Matcher& operator=(const Matcher&) = delete;
     ~Matcher();
 
     /**
@@ -90,11 +99,11 @@ public:
      * @param props ranking configuration
      * @param clock used for timeout handling
      **/
-    Matcher(const search::index::Schema &schema, Properties props,
-            const std::atomic<steady_time> & now_ref, QueryLimiter &queryLimiter,
-            const search::fef::IRankingAssetsRepo &rankingAssetsRepo, uint32_t distributionKey);
+    Matcher(const search::index::Schema& schema, Properties props, const std::atomic<steady_time>& now_ref,
+            QueryLimiter& queryLimiter, const search::fef::IRankingAssetsRepo& rankingAssetsRepo,
+            uint32_t distributionKey);
 
-    const search::fef::IIndexEnvironment &get_index_env() const { return _indexEnv; }
+    const search::fef::IIndexEnvironment& get_index_env() const { return _indexEnv; }
 
     /**
      * Observe and reset stats for this object.
@@ -108,11 +117,11 @@ public:
      * function is exposed for testing purposes.
      **/
     std::unique_ptr<MatchToolsFactory>
-    create_match_tools_factory(const search::engine::Request &request, ISearchContext &searchContext,
-                               IAttributeContext &attrContext, const search::IDocumentMetaStore &metaStore,
-                               const Properties &feature_overrides, vespalib::ThreadBundle &thread_bundle,
-                               const IDocumentMetaStoreContext::IReadGuard::SP * metaStoreReadGuard,
-                               uint32_t maxHits, bool is_search) const;
+    create_match_tools_factory(const search::engine::Request& request, ISearchContext& searchContext,
+                               IAttributeContext& attrContext, const search::IDocumentMetaStore& metaStore,
+                               const Properties& feature_overrides, vespalib::ThreadBundle& thread_bundle,
+                               const IDocumentMetaStoreContext::IReadGuard::SP* metaStoreReadGuard, uint32_t maxHits,
+                               bool is_search) const;
 
     /**
      * Perform a search against this matcher.
@@ -126,11 +135,9 @@ public:
      * @param metaStore the document meta store used to map from lid to gid
      **/
     std::unique_ptr<search::engine::SearchReply>
-    match(const SearchRequest &request, vespalib::ThreadBundle &threadBundle,
-          ISearchContext &searchContext, IAttributeContext &attrContext,
-          SessionManager &sessionManager, const search::IDocumentMetaStore &metaStore,
-          const bucketdb::BucketDBOwner & bucketdb,
-          SearchSession::OwnershipBundle &&owned_objects);
+    match(const SearchRequest& request, vespalib::ThreadBundle& threadBundle, ISearchContext& searchContext,
+          IAttributeContext& attrContext, SessionManager& sessionManager, const search::IDocumentMetaStore& metaStore,
+          const bucketdb::BucketDBOwner& bucketdb, SearchSession::OwnershipBundle&& owned_objects);
 
     /**
      * Perform matching for the documents in the given docsum request
@@ -142,9 +149,8 @@ public:
      * @param attrCtx abstract view of attribute data
      * @return calculated summary features.
      **/
-    vespalib::FeatureSet::SP
-    getSummaryFeatures(const DocsumRequest & req, ISearchContext & searchCtx,
-                       IAttributeContext & attrCtx, SessionManager &sessionManager) const;
+    vespalib::FeatureSet::SP getSummaryFeatures(const DocsumRequest& req, ISearchContext& searchCtx,
+                                                IAttributeContext& attrCtx, SessionManager& sessionManager) const;
 
     /**
      * Perform matching for the documents in the given docsum request
@@ -156,9 +162,8 @@ public:
      * @param attrCtx abstract view of attribute data
      * @return calculated rank features.
      **/
-    vespalib::FeatureSet::SP
-    getRankFeatures(const DocsumRequest & req, ISearchContext & searchCtx,
-                    IAttributeContext & attrCtx, SessionManager &sessionManager) const;
+    vespalib::FeatureSet::SP getRankFeatures(const DocsumRequest& req, ISearchContext& searchCtx,
+                                             IAttributeContext& attrCtx, SessionManager& sessionManager) const;
 
     /**
      * Perform partial matching for the documents in the given docsum request
@@ -172,12 +177,12 @@ public:
      *               about and how they relate to each other
      * @return matching elements
      **/
-    MatchingElements::UP get_matching_elements(const DocsumRequest &req, ISearchContext &search_ctx,
-                                               IAttributeContext &attr_ctx, SessionManager &session_manager,
-                                               const MatchingElementsFields &fields) const;
+    MatchingElements::UP get_matching_elements(const DocsumRequest& req, ISearchContext& search_ctx,
+                                               IAttributeContext& attr_ctx, SessionManager& session_manager,
+                                               const MatchingElementsFields& fields) const;
 
-    DocsumMatcher::UP create_docsum_matcher(const DocsumRequest &req, ISearchContext &search_ctx,
-                                            IAttributeContext &attr_ctx, SessionManager &session_manager) const;
+    DocsumMatcher::UP create_docsum_matcher(const DocsumRequest& req, ISearchContext& search_ctx,
+                                            IAttributeContext& attr_ctx, SessionManager& session_manager) const;
 
     /**
      * @return true if this rankprofile has summary-features enabled
@@ -186,8 +191,8 @@ public:
     /**
      * Return a session if it exist, and a bool saying if it should exist.
      */
-    static std::pair<std::shared_ptr<SearchSession>, bool>
-    lookupSearchSession(SessionManager &session_manager, const Request & request);
+    static std::pair<std::shared_ptr<SearchSession>, bool> lookupSearchSession(SessionManager& session_manager,
+                                                                               const Request&  request);
 };
 
-}
+} // namespace proton::matching

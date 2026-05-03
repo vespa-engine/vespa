@@ -3,9 +3,12 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/hash_map.h>
+
 #include <string>
 
-namespace search::index { class Schema; }
+namespace search::index {
+class Schema;
+}
 
 namespace proton::matching {
 
@@ -16,13 +19,10 @@ namespace proton::matching {
  * of fields it contains. If the view is empty, it will resolve to a
  * field with the same name as the view itself.
  **/
-class ViewResolver
-{
+class ViewResolver {
 private:
-    using Map = vespalib::hash_map<std::string, std::vector<std::string> >;
+    using Map = vespalib::hash_map<std::string, std::vector<std::string>>;
     Map _map;
-
-
 
 public:
     /**
@@ -35,7 +35,7 @@ public:
      * @param view the name of the view
      * @param field the name of the field
      **/
-    ViewResolver &add(const std::string & view, std::string_view field);
+    ViewResolver& add(const std::string& view, std::string_view field);
 
     /**
      * Resolve a view to obtain the set of fields it
@@ -47,8 +47,7 @@ public:
      * @param fields vector that will be filled out with the fields
      *               that are part of the requested view.
      **/
-    bool resolve(std::string_view view,
-                 std::vector<std::string> &fields) const;
+    bool resolve(std::string_view view, std::vector<std::string>& fields) const;
 
     /**
      * Create a view resolver based on the field collections defined
@@ -60,7 +59,7 @@ public:
      * @return view resolver
      * @param schema index schema
      **/
-    static ViewResolver createFromSchema(const search::index::Schema &schema);
+    static ViewResolver createFromSchema(const search::index::Schema& schema);
 };
 
-}
+} // namespace proton::matching

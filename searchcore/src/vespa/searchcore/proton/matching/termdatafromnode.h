@@ -2,13 +2,16 @@
 
 #pragma once
 
-namespace search { namespace query { class Node; } }
+namespace search {
+namespace query {
+class Node;
+}
+} // namespace search
 
 namespace proton::matching {
 
 class ProtonTermData;
 
-const ProtonTermData *termDataFromNode(const search::query::Node &node);
+const ProtonTermData* termDataFromNode(const search::query::Node& node);
 
-}
-
+} // namespace proton::matching

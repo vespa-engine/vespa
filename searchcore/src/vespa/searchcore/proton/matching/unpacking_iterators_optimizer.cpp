@@ -3,10 +3,11 @@
 #include "unpacking_iterators_optimizer.h"
 
 #include "querynodes.h"
-#include <vespa/vespalib/util/classname.h>
+
+#include <vespa/searchlib/query/tree/querytreecreator.h>
 #include <vespa/searchlib/query/tree/queryvisitor.h>
 #include <vespa/searchlib/query/tree/templatetermvisitor.h>
-#include <vespa/searchlib/query/tree/querytreecreator.h>
+#include <vespa/vespalib/util/classname.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".matching.unpacking_iterators_optimizer");
@@ -20,77 +21,73 @@ namespace {
 struct TermExpander : QueryVisitor {
     std::vector<Node::UP> terms;
 
-    template <typename T>
-    void expand(T &n) {
+    template <typename T> void expand(T& n) {
         n.set_expensive(true);
-        for (Node *child: n.getChildren()) {
+        for (Node* child : n.getChildren()) {
             Node::UP node = QueryTreeCreator<ProtonNodeTypes>::replicate(*child);
-            if (Term *term = dynamic_cast<Term *>(node.get())) {
+            if (Term* term = dynamic_cast<Term*>(node.get())) {
                 term->setRanked(false);
                 term->setPositionData(false);
                 terms.push_back(std::move(node));
             }
         }
     }
-    void visit(And &) override {}
-    void visit(AndNot &) override {}
-    void visit(Equiv &) override {}
-    void visit(WordAlternatives &) override {}
-    void visit(NumberTerm &) override {}
-    void visit(LocationTerm &) override {}
-    void visit(Near &) override {}
-    void visit(ONear &) override {}
-    void visit(Or &) override {}
-    void visit(Phrase &n) override { expand(n); }
-    void visit(SameElement &) override {
+    void visit(And&) override {}
+    void visit(AndNot&) override {}
+    void visit(Equiv&) override {}
+    void visit(WordAlternatives&) override {}
+    void visit(NumberTerm&) override {}
+    void visit(LocationTerm&) override {}
+    void visit(Near&) override {}
+    void visit(ONear&) override {}
+    void visit(Or&) override {}
+    void visit(Phrase& n) override { expand(n); }
+    void visit(SameElement&) override {
         // TODO expand(n) once we figure out to handle artificial terms in matched-elements-only;
     }
-    void visit(PrefixTerm &) override {}
-    void visit(RangeTerm &) override {}
-    void visit(Rank &) override {}
-    void visit(StringTerm &) override {}
-    void visit(SubstringTerm &) override {}
-    void visit(SuffixTerm &) override {}
-    void visit(WeakAnd &) override {}
-    void visit(WeightedSetTerm &) override {}
-    void visit(DotProduct &) override {}
-    void visit(WandTerm &) override {}
-    void visit(PredicateQuery &) override {}
-    void visit(RegExpTerm &) override {}
-    void visit(NearestNeighborTerm &) override {}
-    void visit(TrueQueryNode &) override {}
-    void visit(FalseQueryNode &) override {}
-    void visit(FuzzyTerm &) override {}
+    void visit(PrefixTerm&) override {}
+    void visit(RangeTerm&) override {}
+    void visit(Rank&) override {}
+    void visit(StringTerm&) override {}
+    void visit(SubstringTerm&) override {}
+    void visit(SuffixTerm&) override {}
+    void visit(WeakAnd&) override {}
+    void visit(WeightedSetTerm&) override {}
+    void visit(DotProduct&) override {}
+    void visit(WandTerm&) override {}
+    void visit(PredicateQuery&) override {}
+    void visit(RegExpTerm&) override {}
+    void visit(NearestNeighborTerm&) override {}
+    void visit(TrueQueryNode&) override {}
+    void visit(FalseQueryNode&) override {}
+    void visit(FuzzyTerm&) override {}
     void visit(InTerm&) override {}
 
-    void flush(Intermediate &parent) {
-        for (Node::UP &term: terms) {
+    void flush(Intermediate& parent) {
+        for (Node::UP& term : terms) {
             parent.append(std::move(term));
         }
         terms.clear();
     }
 };
 
-struct NodeTraverser : TemplateTermVisitor<NodeTraverser, ProtonNodeTypes>
-{
-    template <class TermNode> void visitTerm(TermNode &) {}
-    void visit(ProtonNodeTypes::And &n) override {
-        for (Node *child: n.getChildren()) {
+struct NodeTraverser : TemplateTermVisitor<NodeTraverser, ProtonNodeTypes> {
+    template <class TermNode> void visitTerm(TermNode&) {}
+    void visit(ProtonNodeTypes::And& n) override {
+        for (Node* child : n.getChildren()) {
             child->accept(*this);
         }
         TermExpander expander;
-        for (Node *child: n.getChildren()) {
+        for (Node* child : n.getChildren()) {
             child->accept(expander);
         }
         expander.flush(n);
     }
 };
 
-} // namespace proton::matching::<unnamed>
+} // namespace
 
-search::query::Node::UP
-UnpackingIteratorsOptimizer::optimize(search::query::Node::UP root, bool has_white_list)
-{
+search::query::Node::UP UnpackingIteratorsOptimizer::optimize(search::query::Node::UP root, bool has_white_list) {
     NodeTraverser traverser;
     root->accept(traverser);
     if (has_white_list) {

@@ -4,10 +4,11 @@
 
 #include <vespa/searchlib/queryeval/begin_and_end_id.h>
 #include <vespa/vespalib/util/vespa_dll_local.h>
-#include <mutex>
-#include <condition_variable>
-#include <atomic>
+
 #include <algorithm>
+#include <atomic>
+#include <condition_variable>
+#include <mutex>
 #include <vector>
 
 namespace proton::matching {
@@ -19,8 +20,7 @@ struct DocidRange {
     uint32_t begin;
     uint32_t end;
     DocidRange() : begin(search::endDocId), end(search::endDocId) {}
-    DocidRange(uint32_t begin_in, uint32_t end_in)
-        : begin(begin_in), end(std::max(begin_in, end_in)) {}
+    DocidRange(uint32_t begin_in, uint32_t end_in) : begin(begin_in), end(std::max(begin_in, end_in)) {}
     bool empty() const { return (end <= begin); }
     size_t size() const { return (end - begin); }
 };
@@ -41,9 +41,7 @@ private:
 
 public:
     DocidRangeSplitter(DocidRange total_range, size_t count)
-        : _range(total_range),
-          _step(_range.size() / count),
-          _skew(_range.size() % count) {}
+        : _range(total_range), _step(_range.size() / count), _skew(_range.size() % count) {}
     DocidRange get(size_t i) const { return DocidRange(offset(i), offset(i + 1)); }
     DocidRange full_range() const { return _range; }
 };
@@ -55,10 +53,11 @@ public:
 class IdleObserver {
 private:
     static const std::atomic<size_t> _always_zero;
-    const std::atomic<size_t> &_num_idle;
+    const std::atomic<size_t>&       _num_idle;
+
 public:
     IdleObserver() : _num_idle(_always_zero) {}
-    IdleObserver(const std::atomic<size_t> &num_idle) : _num_idle(num_idle) {}
+    IdleObserver(const std::atomic<size_t>& num_idle) : _num_idle(num_idle) {}
     bool is_always_zero() const { return (&_num_idle == &_always_zero); }
     size_t get() const { return _num_idle.load(std::memory_order_relaxed); }
 };
@@ -119,10 +118,10 @@ struct DocidRangeScheduler {
  * range (partition) for each thread. The first thread gets the first
  * part and so on.
  **/
-class PartitionDocidRangeScheduler : public DocidRangeScheduler
-{
+class PartitionDocidRangeScheduler : public DocidRangeScheduler {
 private:
     std::vector<DocidRange> _ranges;
+
 public:
     PartitionDocidRangeScheduler(size_t num_threads, uint32_t docid_limit);
     ~PartitionDocidRangeScheduler() override;
@@ -139,8 +138,7 @@ public:
  * size. Tasks are assigned according to increasing docid to the first
  * worker thread that wants more to do.
  **/
-class TaskDocidRangeScheduler : public DocidRangeScheduler
-{
+class TaskDocidRangeScheduler : public DocidRangeScheduler {
 private:
     std::mutex          _lock;
     DocidRangeSplitter  _splitter;
@@ -150,6 +148,7 @@ private:
     std::atomic<size_t> _unassigned;
 
     DocidRange next_task(size_t thread_id);
+
 public:
     TaskDocidRangeScheduler(size_t num_threads, size_t num_tasks, uint32_t docid_limit);
     ~TaskDocidRangeScheduler() override;
@@ -166,8 +165,7 @@ public:
  * part of the docid space and then uses cooperative work-sharing to
  * re-distribute work between threads as needed.
  **/
-class AdaptiveDocidRangeScheduler : public DocidRangeScheduler
-{
+class AdaptiveDocidRangeScheduler : public DocidRangeScheduler {
 private:
     using Guard = std::unique_lock<std::mutex>;
     struct Worker {
@@ -184,11 +182,12 @@ private:
     std::vector<size_t> _idle;
     std::atomic<size_t> _num_idle;
 
-    VESPA_DLL_LOCAL size_t take_idle(const Guard &guard);
-    VESPA_DLL_LOCAL void make_idle(const Guard &guard, size_t thread_id);
-    VESPA_DLL_LOCAL void donate(const Guard &guard, size_t src_thread, DocidRange range);
-    VESPA_DLL_LOCAL bool all_work_done(const Guard &guard) const;
-    VESPA_DLL_LOCAL DocidRange finalize(const Guard &guard, size_t thread_id);
+    VESPA_DLL_LOCAL size_t take_idle(const Guard& guard);
+    VESPA_DLL_LOCAL void make_idle(const Guard& guard, size_t thread_id);
+    VESPA_DLL_LOCAL void donate(const Guard& guard, size_t src_thread, DocidRange range);
+    VESPA_DLL_LOCAL bool all_work_done(const Guard& guard) const;
+    VESPA_DLL_LOCAL DocidRange finalize(const Guard& guard, size_t thread_id);
+
 public:
     AdaptiveDocidRangeScheduler(size_t num_threads, uint32_t min_task, uint32_t docid_limit);
     ~AdaptiveDocidRangeScheduler();
@@ -200,4 +199,4 @@ public:
     DocidRange share_range(size_t, DocidRange todo) override;
 };
 
-}
+} // namespace proton::matching

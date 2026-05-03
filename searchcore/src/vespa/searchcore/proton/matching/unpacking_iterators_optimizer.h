@@ -15,4 +15,4 @@ struct UnpackingIteratorsOptimizer {
     static search::query::Node::UP optimize(search::query::Node::UP root, bool has_white_list);
 };
 
-}
+} // namespace proton::matching

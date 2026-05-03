@@ -2,44 +2,47 @@
 
 #pragma once
 
-#include <memory>
 #include <vespa/vespalib/util/doom.h>
-#include <mutex>
+
 #include <condition_variable>
+#include <memory>
+#include <mutex>
 
 namespace proton::matching {
 
-class QueryLimiter
-{
+class QueryLimiter {
 private:
     using Doom = vespalib::Doom;
+
 public:
     class Token {
     public:
         using UP = std::unique_ptr<Token>;
         virtual ~Token() = default;
     };
+
 public:
     QueryLimiter();
     void configure(int maxThreads, double coverage, uint32_t minHits);
-    Token::UP getToken(const Doom & doom, uint32_t numDocs, uint32_t numHits, bool hasSorting, bool hasGrouping);
+    Token::UP getToken(const Doom& doom, uint32_t numDocs, uint32_t numHits, bool hasSorting, bool hasGrouping);
+
 private:
-    class NoLimitToken : public Token {
-    };
+    class NoLimitToken : public Token {};
     class LimitedToken : public Token {
     private:
-        QueryLimiter & _limiter;
+        QueryLimiter& _limiter;
+
     public:
-        LimitedToken(const Doom & doom, QueryLimiter & limiter);
-        LimitedToken(const NoLimitToken &) = delete;
-        LimitedToken & operator =(const NoLimitToken &) = delete;
+        LimitedToken(const Doom& doom, QueryLimiter& limiter);
+        LimitedToken(const NoLimitToken&) = delete;
+        LimitedToken& operator=(const NoLimitToken&) = delete;
         ~LimitedToken() override;
     };
-    void grabToken(const Doom & doom);
+    void grabToken(const Doom& doom);
     void releaseToken();
     std::mutex              _lock;
     std::condition_variable _cond;
-    int _activeThreads;
+    int                     _activeThreads;
 
     // These are updated asynchronously at reconfig.
     std::atomic<int>      _maxThreads;
@@ -51,4 +54,4 @@ private:
     [[nodiscard]] uint32_t get_min_hits() const noexcept { return _minHits.load(std::memory_order_relaxed); }
 };
 
-}
+} // namespace proton::matching
