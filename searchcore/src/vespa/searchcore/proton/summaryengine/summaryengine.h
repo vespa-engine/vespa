@@ -2,20 +2,21 @@
 #pragma once
 
 #include "isearchhandler.h"
-#include <vespa/searchcore/proton/common/doctypename.h>
-#include <vespa/searchcore/proton/common/handlermap.hpp>
-#include <vespa/searchlib/engine/docsumapi.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
-#include <vespa/metrics/valuemetric.h>
+
 #include <vespa/metrics/countmetric.h>
 #include <vespa/metrics/metricset.h>
-#include <mutex>
+#include <vespa/metrics/valuemetric.h>
+#include <vespa/searchcore/proton/common/doctypename.h>
+#include <vespa/searchlib/engine/docsumapi.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 
+#include <vespa/searchcore/proton/common/handlermap.hpp>
+
+#include <mutex>
 
 namespace proton {
 
-class SummaryEngine : public search::engine::DocsumServer
-{
+class SummaryEngine : public search::engine::DocsumServer {
 private:
     void updateDocsumMetrics(double latency_s, uint32_t numDocs);
     using DocsumReply = search::engine::DocsumReply;
@@ -31,17 +32,17 @@ private:
         ~DocsumMetrics();
     };
 
-    std::mutex                    _lock;
-    bool                          _async;
-    bool                          _closed;
-    std::atomic<bool>             _forward_issues;
-    HandlerMap<ISearchHandler>    _handlers;
-    vespalib::ThreadStackExecutor _executor;
+    std::mutex                          _lock;
+    bool                                _async;
+    bool                                _closed;
+    std::atomic<bool>                   _forward_issues;
+    HandlerMap<ISearchHandler>          _handlers;
+    vespalib::ThreadStackExecutor       _executor;
     std::unique_ptr<metrics::MetricSet> _metrics;
 
 public:
-    SummaryEngine(const SummaryEngine &) = delete;
-    SummaryEngine & operator = (const SummaryEngine &) = delete;
+    SummaryEngine(const SummaryEngine&) = delete;
+    SummaryEngine& operator=(const SummaryEngine&) = delete;
 
     /**
      * Constructs a new summary engine. This does the necessary setup of the
@@ -52,9 +53,7 @@ public:
      * @param numThreads Number of threads allocated for handling summary requests.
      */
     SummaryEngine(size_t numThreads, bool async);
-    SummaryEngine(size_t numThreads)
-        : SummaryEngine(numThreads, true)
-    { }
+    SummaryEngine(size_t numThreads) : SummaryEngine(numThreads, true) {}
 
     /**
      * Frees any allocated resources. This will also stop all internal threads
@@ -96,7 +95,7 @@ public:
      * @param searchHandler The handler to register.
      * @return The replaced handler, if any.
      */
-    ISearchHandler::SP putSearchHandler(const DocTypeName &docTypeName, const ISearchHandler::SP &searchHandler);
+    ISearchHandler::SP putSearchHandler(const DocTypeName& docTypeName, const ISearchHandler::SP& searchHandler);
 
     /**
      * Returns the summary handler for the given document type. If no handler was
@@ -105,7 +104,7 @@ public:
      * @param docType The document type whose handler to return.
      * @return The registered handler, if any.
      */
-    ISearchHandler::SP getSearchHandler(const DocTypeName &docTypeName);
+    ISearchHandler::SP getSearchHandler(const DocTypeName& docTypeName);
 
     /**
      * Removes and returns the summary handler for the given document type. If no
@@ -114,10 +113,10 @@ public:
      * @param docType The document type whose handler to remove.
      * @return The removed handler, if any.
      */
-    ISearchHandler::SP removeSearchHandler(const DocTypeName &docTypeName);
+    ISearchHandler::SP removeSearchHandler(const DocTypeName& docTypeName);
 
     // Implements DocsumServer.
-    DocsumReply::UP getDocsums(DocsumRequest::Source request, DocsumClient & client) override;
+    DocsumReply::UP getDocsums(DocsumRequest::Source request, DocsumClient& client) override;
 
     /**
      * Performs the given docsum request in the current thread and returns the reply.
@@ -126,10 +125,9 @@ public:
      */
     DocsumReply::UP getDocsums(DocsumRequest::UP req) override;
 
-    metrics::MetricSet & getMetrics() { return *_metrics; }
+    metrics::MetricSet& getMetrics() { return *_metrics; }
 
     void set_issue_forwarding(bool enable) { _forward_issues = enable; }
 };
 
 } // namespace proton
-

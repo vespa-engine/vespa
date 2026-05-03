@@ -2,6 +2,7 @@
 #pragma once
 
 #include "initializer_task_visitor.h"
+
 #include <memory>
 #include <vector>
 
@@ -15,25 +16,23 @@ class InitializerTask {
 public:
     using SP = std::shared_ptr<InitializerTask>;
     using List = std::vector<SP>;
-    enum class State {
-        BLOCKED,
-        RUNNING,
-        DONE
-    };
+    enum class State { BLOCKED, RUNNING, DONE };
+
 private:
-    State           _state;
-    List            _dependencies;
+    State _state;
+    List  _dependencies;
+
 public:
     InitializerTask();
     virtual ~InitializerTask();
     State getState() const { return _state; }
-    const List &getDependencies() const { return _dependencies; }
+    const List& getDependencies() const { return _dependencies; }
     void setRunning() { _state = State::RUNNING; }
     void setDone() { _state = State::DONE; }
     void addDependency(SP dependency);
     virtual void run() = 0;
     virtual size_t get_transient_memory_usage() const;
-    virtual void accept_visitor(InitializerTaskVisitor &visitor);
+    virtual void accept_visitor(InitializerTaskVisitor& visitor);
 };
 
-}
+} // namespace proton::initializer

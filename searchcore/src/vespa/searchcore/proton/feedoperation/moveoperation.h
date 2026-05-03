@@ -5,31 +5,25 @@
 
 namespace proton {
 
-class MoveOperation : public DocumentOperation
-{
+class MoveOperation : public DocumentOperation {
 private:
     using DocumentSP = std::shared_ptr<document::Document>;
     DocumentSP _doc;
+
 public:
     using UP = std::unique_ptr<MoveOperation>;
 
     MoveOperation();
-    MoveOperation(const document::BucketId &bucketId,
-                  Timestamp timestamp,
-                  const DocumentSP &doc,
-                  DbDocumentId sourceDbdId,
-                  uint32_t targetSubDbId);
+    MoveOperation(const document::BucketId& bucketId, Timestamp timestamp, const DocumentSP& doc,
+                  DbDocumentId sourceDbdId, uint32_t targetSubDbId);
     ~MoveOperation() override;
-    const DocumentSP &getDocument() const { return _doc; }
+    const DocumentSP& getDocument() const { return _doc; }
     DbDocumentId getSourceDbdId() const { return getPrevDbDocumentId(); }
     DbDocumentId getTargetDbdId() const { return getDbDocumentId(); }
-    void setTargetLid(search::DocumentIdT lid) {
-        setDbDocumentId(DbDocumentId(getSubDbId(), lid));
-    }
-    void serialize(vespalib::nbostream &os) const override;
-    void deserialize(vespalib::nbostream &is, const document::DocumentTypeRepo &repo) override;
+    void setTargetLid(search::DocumentIdT lid) { setDbDocumentId(DbDocumentId(getSubDbId(), lid)); }
+    void serialize(vespalib::nbostream& os) const override;
+    void deserialize(vespalib::nbostream& is, const document::DocumentTypeRepo& repo) override;
     std::string toString() const override;
 };
 
 } // namespace proton
-
