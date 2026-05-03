@@ -3,6 +3,7 @@
 #pragma once
 
 #include "query_term_simple.h"
+
 #include <string>
 
 namespace search {
@@ -16,4 +17,4 @@ struct QueryTermDecoder {
     static QueryTermSimple::UP decodeTerm(QueryPacketT term);
 };
 
-}
+} // namespace search

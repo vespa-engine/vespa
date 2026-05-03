@@ -2,6 +2,7 @@
 #pragma once
 
 #include "queryterm.h"
+
 #include <vespa/vespalib/regex/regex.h>
 
 namespace search::streaming {
@@ -12,9 +13,10 @@ namespace search::streaming {
  */
 class RegexpTerm : public QueryTerm {
     vespalib::Regex _regexp;
+
 public:
-    RegexpTerm(std::unique_ptr<QueryNodeResultBase> result_base, string_view term,
-               const string& index, Type type, Normalizing normalizing);
+    RegexpTerm(std::unique_ptr<QueryNodeResultBase> result_base, string_view term, const string& index, Type type,
+               Normalizing normalizing);
     ~RegexpTerm() override;
 
     RegexpTerm* as_regexp_term() noexcept override { return this; }
@@ -22,4 +24,4 @@ public:
     [[nodiscard]] const vespalib::Regex& regexp() const noexcept { return _regexp; }
 };
 
-}
+} // namespace search::streaming

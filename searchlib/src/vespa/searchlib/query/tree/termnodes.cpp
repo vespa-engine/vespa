@@ -1,29 +1,30 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "termnodes.h"
+
+#include "simplequery.h"
 #include "weighted_integer_term_vector.h"
 #include "weighted_string_term_vector.h"
-#include "simplequery.h"
+
 #include <vespa/vespalib/util/exceptions.h>
-#include <charconv>
+
 #include <cassert>
+#include <charconv>
 
 using vespalib::IllegalArgumentException;
 using vespalib::make_string_short::fmt;
 namespace search::query {
 
-StringTerm::StringTerm(const Type &term, std::string view, int32_t id, Weight weight)
-    : QueryNodeMixinType(term, std::move(view), id, weight)
-{}
+StringTerm::StringTerm(const Type& term, std::string view, int32_t id, Weight weight)
+    : QueryNodeMixinType(term, std::move(view), id, weight) {
+}
 
-
-WordAlternatives::WordAlternatives(std::unique_ptr<TermVector> terms, const std::string & view, int32_t id, Weight weight)
-  : QueryNodeMixinType(view, id, weight),
-    _children()
-{
+WordAlternatives::WordAlternatives(std::unique_ptr<TermVector> terms, const std::string& view, int32_t id,
+                                   Weight weight)
+    : QueryNodeMixinType(view, id, weight), _children() {
     _children.reserve(terms->size());
     for (uint32_t i = 0; i < terms->size(); i++) {
-        auto pair = terms->getAsString(i);
+        auto        pair = terms->getAsString(i);
         std::string word(pair.first);
         _children.emplace_back(std::make_unique<SimpleStringTerm>(word, view, id, pair.second));
     }
@@ -45,23 +46,16 @@ FuzzyTerm::~FuzzyTerm() = default;
 InTerm::~InTerm() = default;
 WordAlternatives::~WordAlternatives() = default;
 
-MultiTerm::MultiTerm(uint32_t num_terms)
-    : _terms(),
-      _num_terms(num_terms),
-      _type(Type::UNKNOWN)
-{}
+MultiTerm::MultiTerm(uint32_t num_terms) : _terms(), _num_terms(num_terms), _type(Type::UNKNOWN) {
+}
 
 MultiTerm::MultiTerm(std::unique_ptr<TermVector> terms, Type type)
-    : _terms(std::move(terms)),
-      _num_terms(_terms->size()),
-      _type(type)
-{
+    : _terms(std::move(terms)), _num_terms(_terms->size()), _type(type) {
 }
 
 MultiTerm::~MultiTerm() = default;
 
-std::unique_ptr<TermVector>
-MultiTerm::downgrade() {
+std::unique_ptr<TermVector> MultiTerm::downgrade() {
     // Downgrade all number to string. This should really not happen
     auto new_terms = std::make_unique<WeightedStringTermVector>(_num_terms);
     for (uint32_t i(0), m(_terms->size()); i < m; i++) {
@@ -71,9 +65,8 @@ MultiTerm::downgrade() {
     return new_terms;
 }
 
-void
-MultiTerm::addTerm(std::string_view term, Weight weight) {
-    if ( ! _terms) {
+void MultiTerm::addTerm(std::string_view term, Weight weight) {
+    if (!_terms) {
         _terms = std::make_unique<WeightedStringTermVector>(_num_terms);
         _type = Type::WEIGHTED_STRING;
     }
@@ -84,13 +77,12 @@ MultiTerm::addTerm(std::string_view term, Weight weight) {
     _terms->addTerm(term, weight);
 }
 
-void
-MultiTerm::addTerm(int64_t term, Weight weight) {
-    if ( ! _terms) {
+void MultiTerm::addTerm(int64_t term, Weight weight) {
+    if (!_terms) {
         _terms = std::make_unique<WeightedIntegerTermVector>(_num_terms);
         _type = Type::WEIGHTED_INTEGER;
     }
     _terms->addTerm(term, weight);
 }
 
-}
+} // namespace search::query

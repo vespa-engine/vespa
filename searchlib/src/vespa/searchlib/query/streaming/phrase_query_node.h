@@ -10,20 +10,19 @@ namespace search::streaming {
    N-ary phrase operator. All terms must be satisfied and have the correct order
    with distance to next term equal to 1.
 */
-class PhraseQueryNode : public MultiTerm
-{
+class PhraseQueryNode : public MultiTerm {
 public:
     PhraseQueryNode(std::unique_ptr<QueryNodeResultBase> result_base, string index, uint32_t num_terms);
     ~PhraseQueryNode() override;
     bool evaluate() override;
-    const HitList & evaluateHits(HitList & hl) override;
+    const HitList& evaluateHits(HitList& hl) override;
     void get_element_ids(std::vector<uint32_t>& element_ids) override;
     void unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data,
                            const fef::IIndexEnvironment& index_env, search::common::ElementIds element_ids) override;
     void unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data,
-                           const fef::IIndexEnvironment& index_env,
+                           const fef::IIndexEnvironment&         index_env,
                            std::span<const queryeval::MatchSpan> match_spans) override;
     size_t width() const override;
 };
 
-}
+} // namespace search::streaming

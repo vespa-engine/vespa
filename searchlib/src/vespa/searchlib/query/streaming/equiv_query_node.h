@@ -9,22 +9,21 @@ namespace search::streaming {
 /**
    N-ary "EQUIV" operator that merges terms from nodes below.
 */
-class EquivQueryNode : public MultiTerm
-{
+class EquivQueryNode : public MultiTerm {
 public:
     EquivQueryNode(std::unique_ptr<QueryNodeResultBase> result_base, uint32_t num_terms);
     ~EquivQueryNode() override;
     bool evaluate() override;
-    const HitList & evaluateHits(HitList & hl) override;
+    const HitList& evaluateHits(HitList& hl) override;
     void get_element_ids(std::vector<uint32_t>& element_ids) override;
     void unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data,
                            const fef::IIndexEnvironment& index_env, search::common::ElementIds element_ids) override;
     void unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data,
-                           const fef::IIndexEnvironment& index_env,
+                           const fef::IIndexEnvironment&         index_env,
                            std::span<const queryeval::MatchSpan> match_spans) override;
     bool multi_index_terms() const noexcept override;
     const EquivQueryNode* as_equiv_query_node() const noexcept override;
     std::vector<std::unique_ptr<QueryTerm>> steal_terms();
 };
 
-}
+} // namespace search::streaming

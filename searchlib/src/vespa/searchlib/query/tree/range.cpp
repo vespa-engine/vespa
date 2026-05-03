@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "range.h"
+
 #include <vespa/vespalib/stllike/asciistream.h>
+
 #include <format>
 #include <limits>
 
@@ -10,9 +12,7 @@ LOG_SETUP(".searchlib.query.tree.range");
 
 namespace search::query {
 
-Range::Range(int64_t f, int64_t t)
-    : _spec(std::make_unique<NumericRangeSpec>())
-{
+Range::Range(int64_t f, int64_t t) : _spec(std::make_unique<NumericRangeSpec>()) {
     _spec->valid = true;
     _spec->valid_integers = true;
     _spec->lower_inclusive = true;
@@ -23,9 +23,7 @@ Range::Range(int64_t f, int64_t t)
     _spec->fp_upper_limit = static_cast<double>(t);
 }
 
-Range::Range(std::string range)
-    : _spec(NumericRangeSpec::fromString(range))
-{
+Range::Range(std::string range) : _spec(NumericRangeSpec::fromString(range)) {
     if (!_spec || !_spec->valid) {
         LOG(warning, "Failed to parse range string: '%s'", range.c_str());
     } else {
@@ -33,9 +31,7 @@ Range::Range(std::string range)
     }
 }
 
-Range::Range(const Range& other)
-    : _spec(other._spec ? std::make_unique<NumericRangeSpec>(*other._spec) : nullptr)
-{
+Range::Range(const Range& other) : _spec(other._spec ? std::make_unique<NumericRangeSpec>(*other._spec) : nullptr) {
 }
 
 Range& Range::operator=(const Range& other) {
@@ -115,17 +111,18 @@ std::string Range::getRangeString() const {
     return result;
 }
 
-bool operator==(const Range &r1, const Range &r2) {
+bool operator==(const Range& r1, const Range& r2) {
     const NumericRangeSpec* s1 = r1.getSpec();
     const NumericRangeSpec* s2 = r2.getSpec();
-    if (s1 == s2) return true;
-    if (!s1 || !s2) return false;
+    if (s1 == s2)
+        return true;
+    if (!s1 || !s2)
+        return false;
     return (*s1 == *s2);
 }
 
-vespalib::asciistream &operator<<(vespalib::asciistream &out, const Range &range)
-{
+vespalib::asciistream& operator<<(vespalib::asciistream& out, const Range& range) {
     return out << range.getRangeString();
 }
 
-}
+} // namespace search::query

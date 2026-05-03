@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "phrase_query_node.h"
+
 #include "hit_iterator_pack.h"
 #include "queryterm.hpp"
 
@@ -10,45 +11,38 @@ using search::fef::MatchSpanMatchDataFilter;
 namespace search::streaming {
 
 PhraseQueryNode::PhraseQueryNode(std::unique_ptr<QueryNodeResultBase> result_base, string index, uint32_t num_terms)
-    : MultiTerm(std::move(result_base), std::move(index), num_terms)
-{
+    : MultiTerm(std::move(result_base), std::move(index), num_terms) {
 }
 
 PhraseQueryNode::~PhraseQueryNode() = default;
 
-bool
-PhraseQueryNode::evaluate()
-{
+bool PhraseQueryNode::evaluate() {
     if (_cached_evaluate_result.has_value()) {
         return _cached_evaluate_result.value();
     }
     HitList hl;
-    bool result = !evaluateHits(hl).empty();
+    bool    result = !evaluateHits(hl).empty();
     _cached_evaluate_result.emplace(result);
     return result;
 }
 
-size_t
-PhraseQueryNode::width() const
-{
+size_t PhraseQueryNode::width() const {
     return get_terms().size();
 }
 
-const HitList &
-PhraseQueryNode::evaluateHits(HitList & hl)
-{
+const HitList& PhraseQueryNode::evaluateHits(HitList& hl) {
     hl.clear();
-    auto& terms = get_terms();
+    auto&           terms = get_terms();
     HitIteratorPack itr_pack(terms);
     if (!itr_pack.all_valid()) {
         return hl;
     }
     while (itr_pack.seek_to_matching_field_element()) {
         uint32_t first_position = itr_pack.front()->position();
-        bool retry_element = true;
+        bool     retry_element = true;
         while (retry_element) {
             uint32_t position_offset = 0;
-            bool match = true;
+            bool     match = true;
             for (auto& it : itr_pack) {
                 if (!it.seek_in_field_element(first_position + position_offset, itr_pack.get_field_element_ref())) {
                     retry_element = false;
@@ -74,33 +68,27 @@ PhraseQueryNode::evaluateHits(HitList & hl)
     return hl;
 }
 
-void
-PhraseQueryNode::get_element_ids(std::vector<uint32_t>& element_ids)
-{
-    HitList list;
+void PhraseQueryNode::get_element_ids(std::vector<uint32_t>& element_ids) {
+    HitList        list;
     const HitList& hit_list = evaluateHits(list);
     get_element_ids_helper(element_ids, hit_list);
 }
 
-void
-PhraseQueryNode::unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data,
-                                   const fef::IIndexEnvironment& index_env, ElementIds element_ids)
-{
-    HitList list;
+void PhraseQueryNode::unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data,
+                                        const fef::IIndexEnvironment& index_env, ElementIds element_ids) {
+    HitList        list;
     const HitList& hit_list = evaluateHits(list);
     unpack_match_data_helper(docid, td, match_data, hit_list, *get_terms().front(), is_filter(), index_env,
                              element_ids);
 }
 
-void
-PhraseQueryNode::unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data,
-                                   const fef::IIndexEnvironment& index_env,
-                                   std::span<const queryeval::MatchSpan> match_spans)
-{
-    HitList list;
+void PhraseQueryNode::unpack_match_data(uint32_t docid, const fef::ITermData& td, fef::MatchData& match_data,
+                                        const fef::IIndexEnvironment&         index_env,
+                                        std::span<const queryeval::MatchSpan> match_spans) {
+    HitList        list;
     const HitList& hit_list = evaluateHits(list);
     unpack_filtered_match_data(docid, td, match_data, hit_list, *get_terms().front(), is_filter(), index_env,
                                MatchSpanMatchDataFilter(match_spans));
 }
 
-}
+} // namespace search::streaming

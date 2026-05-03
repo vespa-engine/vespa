@@ -1,8 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "onear_query_node.h"
+
 #include "hit_iterator_pack.h"
+
 #include <vespa/searchlib/queryeval/near_search_utils.h>
+
 #include <span>
 
 using search::queryeval::MatchSpan;
@@ -14,15 +17,12 @@ namespace search::streaming {
 
 ONearQueryNode::~ONearQueryNode() = default;
 
-template <typename MatchResult>
-void
-ONearQueryNode::evaluate_helper(MatchResult& match_result) const
-{
+template <typename MatchResult> void ONearQueryNode::evaluate_helper(MatchResult& match_result) const {
     auto& children = getChildren();
     if (num_negative_terms() >= children.size()) {
         return; // No positive terms
     }
-    size_t num_positive_terms = children.size() - num_negative_terms();
+    size_t          num_positive_terms = children.size() - num_negative_terms();
     HitIteratorPack itr_pack(std::span(children.begin(), num_positive_terms));
     if (!itr_pack.all_valid()) {
         return; // Empty positive term found
@@ -89,9 +89,7 @@ ONearQueryNode::evaluate_helper(MatchResult& match_result) const
     }
 }
 
-bool
-ONearQueryNode::evaluate()
-{
+bool ONearQueryNode::evaluate() {
     if (_cached_evaluate_result.has_value()) {
         return _cached_evaluate_result.value();
     }
@@ -101,21 +99,19 @@ ONearQueryNode::evaluate()
     return match_result.is_match();
 }
 
-void
-ONearQueryNode::get_element_ids(std::vector<uint32_t>& element_ids)
-{
+void ONearQueryNode::get_element_ids(std::vector<uint32_t>& element_ids) {
     // Retrieve the elements that matched
-    ElementIdMatchResult match_result(element_ids);;
+    ElementIdMatchResult match_result(element_ids);
+    ;
     evaluate_helper(match_result);
     match_result.maybe_sort_element_ids();
 }
 
-void
-ONearQueryNode::get_match_spans(std::vector<MatchSpan>& match_spans)
-{
+void ONearQueryNode::get_match_spans(std::vector<MatchSpan>& match_spans) {
     // Retrieve the matching spans
-    SpanMatchResult match_result(match_spans);;
+    SpanMatchResult match_result(match_spans);
+    ;
     evaluate_helper(match_result);
 }
 
-}
+} // namespace search::streaming

@@ -1,16 +1,18 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "proto_tree_iterator.h"
+
 #include <vespa/searchlib/query/tree/integer_term_vector.h>
 #include <vespa/searchlib/query/tree/predicate_query_term.h>
-#include <vespa/searchlib/query/tree/string_term_vector.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
-#include <format>
+#include <vespa/searchlib/query/tree/string_term_vector.h>
+
 #include <cmath>
+#include <format>
 
 using search::query::IntegerTermVector;
-using search::query::StringTermVector;
 using search::query::PredicateQueryTerm;
+using search::query::StringTermVector;
 
 using namespace searchlib::searchprotocol::protobuf;
 
@@ -19,23 +21,22 @@ namespace {
 
 using TreeItem = ProtoTreeIterator::TreeItem;
 
-void walk(const QueryTreeItem &item, std::vector<TreeItem>& target);
+void walk(const QueryTreeItem& item, std::vector<TreeItem>& target);
 
-void walk(const PureWeightedString &item, std::vector<TreeItem>& target) {
+void walk(const PureWeightedString& item, std::vector<TreeItem>& target) {
     target.push_back(TreeItem(&item));
 }
-void walk(const PureWeightedLong &item, std::vector<TreeItem>& target) {
+void walk(const PureWeightedLong& item, std::vector<TreeItem>& target) {
     target.push_back(TreeItem(&item));
 }
 
-template<typename T>
-void walk_children(const T& t, std::vector<TreeItem>& target) {
+template <typename T> void walk_children(const T& t, std::vector<TreeItem>& target) {
     for (const auto& child : t) {
         walk(child, target);
     }
 }
 
-void walk(const QueryTreeItem &item, std::vector<TreeItem>& target) {
+void walk(const QueryTreeItem& item, std::vector<TreeItem>& target) {
     target.push_back(TreeItem(&item));
     using IC = QueryTreeItem::ItemCase;
     switch (item.item_case()) {
@@ -90,7 +91,7 @@ bool fillTermProperties(const TermItemProperties& props, QueryStackIterator::Dat
     _d.noPositionDataFlag = props.do_not_use_position_data();
     _d.creaFilterFlag = props.do_not_highlight();
     _d.isSpecialTokenFlag = props.is_special_token();
-    return ! _d.index_view.empty();
+    return !_d.index_view.empty();
 }
 
 bool handle(const ItemOr& item, QueryStackIterator::Data& _d) {
@@ -211,10 +212,7 @@ bool handle(const ItemPhrase& item, QueryStackIterator::Data& _d) {
     return true;
 }
 
-bool handle(const ItemIntegerTerm& item,
-            QueryStackIterator::Data& _d,
-            std::string& tmp)
-{
+bool handle(const ItemIntegerTerm& item, QueryStackIterator::Data& _d, std::string& tmp) {
     fillTermProperties(item.properties(), _d);
     _d.itemType = ParseItem::ItemType::ITEM_NUMTERM;
     _d.integerTerm = item.number();
@@ -223,10 +221,7 @@ bool handle(const ItemIntegerTerm& item,
     return true;
 }
 
-bool handle(const ItemFloatingPointTerm& item,
-            QueryStackIterator::Data& _d,
-            std::string& tmp)
-{
+bool handle(const ItemFloatingPointTerm& item, QueryStackIterator::Data& _d, std::string& tmp) {
     fillTermProperties(item.properties(), _d);
     _d.itemType = ParseItem::ItemType::ITEM_NUMTERM;
     tmp = std::format("{}", item.number());
@@ -234,10 +229,7 @@ bool handle(const ItemFloatingPointTerm& item,
     return true;
 }
 
-bool handle(const ItemIntegerRangeTerm& item,
-            QueryStackIterator::Data& _d,
-            std::string& tmp)
-{
+bool handle(const ItemIntegerRangeTerm& item, QueryStackIterator::Data& _d, std::string& tmp) {
     fillTermProperties(item.properties(), _d);
     _d.itemType = ParseItem::ItemType::ITEM_NUMTERM;
     auto b_mark = item.lower_inclusive() ? "[" : "<";
@@ -246,9 +238,7 @@ bool handle(const ItemIntegerRangeTerm& item,
     if (item.has_range_limit() || item.with_diversity()) {
         tmp += std::format(";{}", item.range_limit());
         if (item.with_diversity()) {
-            tmp += std::format(";{};{}",
-                               item.diversity_attribute(),
-                               item.diversity_max_per_group());
+            tmp += std::format(";{};{}", item.diversity_attribute(), item.diversity_max_per_group());
             if (item.with_diversity_cutoff()) {
                 tmp += std::format(";{}", item.diversity_cutoff_groups());
                 if (item.diversity_cutoff_strict()) {
@@ -262,10 +252,7 @@ bool handle(const ItemIntegerRangeTerm& item,
     return true;
 }
 
-bool handle(const ItemFloatingPointRangeTerm& item,
-            QueryStackIterator::Data& _d,
-            std::string& tmp)
-{
+bool handle(const ItemFloatingPointRangeTerm& item, QueryStackIterator::Data& _d, std::string& tmp) {
     fillTermProperties(item.properties(), _d);
     _d.itemType = ParseItem::ItemType::ITEM_NUMTERM;
     auto b_mark = item.lower_inclusive() ? "[" : "<";
@@ -274,9 +261,7 @@ bool handle(const ItemFloatingPointRangeTerm& item,
     if (item.has_range_limit() || item.with_diversity()) {
         tmp += std::format(";{}", item.range_limit());
         if (item.with_diversity()) {
-            tmp += std::format(";{};{}",
-                               item.diversity_attribute(),
-                               item.diversity_max_per_group());
+            tmp += std::format(";{};{}", item.diversity_attribute(), item.diversity_max_per_group());
             if (item.with_diversity_cutoff()) {
                 tmp += std::format(";{}", item.diversity_cutoff_groups());
                 if (item.diversity_cutoff_strict()) {
@@ -339,13 +324,13 @@ bool handle(const ItemPredicateQuery& item, QueryStackIterator::Data& _d) {
     for (const auto& feature : item.features()) {
         std::string key = feature.key();
         std::string value = feature.value();
-        uint64_t sub_queries = feature.sub_queries();
+        uint64_t    sub_queries = feature.sub_queries();
         _d.predicateQueryTerm->addFeature(key, value, sub_queries);
     }
     for (const auto& range : item.range_features()) {
         std::string key = range.key();
-        uint64_t value = range.value();
-        uint64_t sub_queries = range.sub_queries();
+        uint64_t    value = range.value();
+        uint64_t    sub_queries = range.sub_queries();
         _d.predicateQueryTerm->addRangeFeature(key, value, sub_queries);
     }
     return true;
@@ -363,10 +348,7 @@ bool handle(const ItemNearestNeighbor& item, QueryStackIterator::Data& _d) {
     return true;
 }
 
-bool handle(const ItemGeoLocationTerm& item,
-            QueryStackIterator::Data& _d,
-            std::string& tmp)
-{
+bool handle(const ItemGeoLocationTerm& item, QueryStackIterator::Data& _d, std::string& tmp) {
     constexpr int M = 1000000;
     fillTermProperties(item.properties(), _d);
     _d.itemType = ParseItem::ItemType::ITEM_GEO_LOCATION_TERM;
@@ -376,8 +358,8 @@ bool handle(const ItemGeoLocationTerm& item,
         int y = std::round(item.latitude() * M);
         int radius = (item.radius() < 0) ? -1 : std::round(item.radius() * M);
 
-        double radians = item.latitude() * M_PI / 180.0;
-        double cosLat = cos(radians);
+        double  radians = item.latitude() * M_PI / 180.0;
+        double  cosLat = cos(radians);
         int64_t aspect = cosLat * 4294967295L;
         if (aspect < 0) {
             aspect = 0;
@@ -391,7 +373,8 @@ bool handle(const ItemGeoLocationTerm& item,
         int n = std::round(item.n() * M);
         tmp = std::format("[2,{},{},{},{}]", w, s, e, n);
     }
-    if (tmp == "") return false;
+    if (tmp == "")
+        return false;
     _d.term_view = tmp;
     return true;
 }
@@ -411,7 +394,7 @@ bool handle(const ItemStringIn& item, QueryStackIterator::Data& _d) {
     fillTermProperties(item.properties(), _d);
     _d.itemType = ParseItem::ItemType::ITEM_STRING_IN;
     uint32_t num_terms = item.words_size();
-    auto terms = std::make_unique<StringTermVector>(num_terms);
+    auto     terms = std::make_unique<StringTermVector>(num_terms);
     for (const auto& word : item.words()) {
         terms->addTerm(word);
     }
@@ -423,7 +406,7 @@ bool handle(const ItemNumericIn& item, QueryStackIterator::Data& _d) {
     fillTermProperties(item.properties(), _d);
     _d.itemType = ParseItem::ItemType::ITEM_NUMERIC_IN;
     uint32_t num_terms = item.numbers_size();
-    auto terms = std::make_unique<IntegerTermVector>(num_terms);
+    auto     terms = std::make_unique<IntegerTermVector>(num_terms);
     for (int64_t number : item.numbers()) {
         terms->addTerm(number);
     }
@@ -431,12 +414,10 @@ bool handle(const ItemNumericIn& item, QueryStackIterator::Data& _d) {
     return true;
 }
 
-} // namespace <unnamed>
+} // namespace
 
 bool ProtoTreeIterator::handle_variant_item(TreeItem item) {
-    auto visitor = [&](const auto *p) -> bool {
-        return handle_item(*p);
-    };
+    auto visitor = [&](const auto* p) -> bool { return handle_item(*p); };
     return std::visit(visitor, item);
 }
 
@@ -459,7 +440,6 @@ bool ProtoTreeIterator::handle_item(const PureWeightedLong& item) {
     _d.weight.setPercent(item.weight());
     return true;
 }
-
 
 bool ProtoTreeIterator::handle_item(const QueryTreeItem& qsi) {
     _d.clear();
@@ -554,11 +534,7 @@ bool ProtoTreeIterator::handle_item(const QueryTreeItem& qsi) {
 ProtoTreeIterator::~ProtoTreeIterator() = default;
 
 ProtoTreeIterator::ProtoTreeIterator(const ProtobufQueryTree& proto_query_tree)
-  : _proto(proto_query_tree),
-    _items(),
-    _pos(0),
-    _serialized_term()
-{
+    : _proto(proto_query_tree), _items(), _pos(0), _serialized_term() {
     walk(_proto.root(), _items);
 }
 

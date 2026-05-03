@@ -8,9 +8,7 @@ namespace search::streaming {
 
 QueryTermDataFactory::~QueryTermDataFactory() = default;
 
-const search::queryeval::IElementGapInspector&
-QueryTermDataFactory::get_element_gap_inspector() const noexcept
-{
+const search::queryeval::IElementGapInspector& QueryTermDataFactory::get_element_gap_inspector() const noexcept {
     if (_element_gap_inspector == nullptr) {
         return QueryNodeResultFactory::get_element_gap_inspector();
     } else {
@@ -18,4 +16,4 @@ QueryTermDataFactory::get_element_gap_inspector() const noexcept
     }
 }
 
-}
+} // namespace search::streaming
