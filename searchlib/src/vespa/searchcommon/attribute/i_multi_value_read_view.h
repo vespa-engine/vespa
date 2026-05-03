@@ -3,7 +3,9 @@
 #pragma once
 
 #include "multivalue.h"
+
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
+
 #include <span>
 
 namespace search::attribute {
@@ -12,8 +14,7 @@ namespace search::attribute {
  * Read view for the data stored in a multi-value attribute.
  * @tparam MultiValueType The multi-value type of the data to access.
  */
-template <typename MultiValueType>
-class IMultiValueReadView {
+template <typename MultiValueType> class IMultiValueReadView {
 public:
     virtual ~IMultiValueReadView() = default;
     virtual std::span<const MultiValueType> get_values(uint32_t docid) const = 0;
@@ -23,15 +24,13 @@ public:
  * Read view for the raw data stored in an array attribute.
  * @tparam T The value type of the raw data to access.
  */
-template <typename T>
-using IArrayReadView = IMultiValueReadView<T>;
+template <typename T> using IArrayReadView = IMultiValueReadView<T>;
 
 /**
  * Read view for the raw data stored in a weighted set attribute.
  * @tparam T The value type of the raw data to access.
  */
-template <typename T>
-using IWeightedSetReadView = IMultiValueReadView<multivalue::WeightedValue<T>>;
+template <typename T> using IWeightedSetReadView = IMultiValueReadView<multivalue::WeightedValue<T>>;
 
 /**
  * Read view for the raw data stored in an enumerated array attribute.
@@ -43,4 +42,4 @@ using IArrayEnumReadView = IArrayReadView<vespalib::datastore::AtomicEntryRef>;
  */
 using IWeightedSetEnumReadView = IWeightedSetReadView<vespalib::datastore::AtomicEntryRef>;
 
-}
+} // namespace search::attribute

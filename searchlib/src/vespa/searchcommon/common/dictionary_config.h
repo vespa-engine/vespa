@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <iosfwd>
 #include <cstdint>
+#include <iosfwd>
 
 namespace search {
 
@@ -19,13 +19,14 @@ public:
     DictionaryConfig(Type type, Match match) noexcept : _type(type), _match(match) {}
     Type getType() const { return _type; }
     Match getMatch() const { return _match; }
-    bool operator == (const DictionaryConfig & b) const { return (_type == b._type) && (_match == b._match); }
+    bool operator==(const DictionaryConfig& b) const { return (_type == b._type) && (_match == b._match); }
+
 private:
     Type  _type : 4;
     Match _match : 4;
 };
 
-std::ostream& operator<<(std::ostream& os, const DictionaryConfig & cfg);
+std::ostream& operator<<(std::ostream& os, const DictionaryConfig& cfg);
 std::ostream& operator<<(std::ostream& os, DictionaryConfig::Type type);
 std::ostream& operator<<(std::ostream& os, DictionaryConfig::Match match);
 

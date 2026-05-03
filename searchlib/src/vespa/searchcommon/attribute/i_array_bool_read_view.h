@@ -16,4 +16,4 @@ public:
     virtual BitSpan get_values(uint32_t docid) const = 0;
 };
 
-}
+} // namespace search::attribute
