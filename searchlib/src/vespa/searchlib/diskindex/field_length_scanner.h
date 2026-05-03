@@ -2,12 +2,14 @@
 
 #pragma once
 
-#include <vector>
-#include <unordered_map>
-#include <limits>
 #include <cstdint>
+#include <limits>
+#include <unordered_map>
+#include <vector>
 
-namespace search::index { class DocIdAndFeatures; }
+namespace search::index {
+class DocIdAndFeatures;
+}
 
 namespace search::diskindex {
 
@@ -23,11 +25,7 @@ class FieldLengthScanner {
         static uint16_t make_element_mask(uint32_t element_id) { return (1u << element_id); }
 
     public:
-        FieldLengthEntry() noexcept
-            : _field_length(0),
-              _elements(0)
-        {
-        }
+        FieldLengthEntry() noexcept : _field_length(0), _elements(0) {}
 
         void add_element_length(uint32_t element_length) {
             // Cap field length
@@ -50,15 +48,15 @@ class FieldLengthScanner {
         uint16_t get_field_length() const { return _field_length; }
     };
     std::vector<FieldLengthEntry> _field_length_vector;
-    static constexpr uint32_t element_id_bias = 16;
+    static constexpr uint32_t     element_id_bias = 16;
     // bit vectors for element >= element_id_bias
     std::unordered_map<uint32_t, std::vector<bool>> _scanned_elements_map;
 
 public:
     FieldLengthScanner(uint32_t doc_id_limit);
     ~FieldLengthScanner();
-    void scan_features(const index::DocIdAndFeatures &features);
+    void scan_features(const index::DocIdAndFeatures& features);
     uint16_t get_field_length(uint32_t doc_id) const { return _field_length_vector[doc_id].get_field_length(); }
 };
 
-}
+} // namespace search::diskindex

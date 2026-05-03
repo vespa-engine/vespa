@@ -2,15 +2,14 @@
 
 #pragma once
 
-#include <vespa/searchlib/index/dictionaryfile.h>
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/countcompression.h>
 #include <vespa/searchlib/bitcompression/pagedict4.h>
+#include <vespa/searchlib/index/dictionaryfile.h>
 
 namespace search::diskindex {
 
-class PageDict4RandRead : public index::DictionaryFileRandRead
-{
+class PageDict4RandRead : public index::DictionaryFileRandRead {
     using DC = bitcompression::PostingListCountFileDecodeContext;
     using SSReader = bitcompression::PageDict4SSReader;
 
@@ -24,8 +23,8 @@ class PageDict4RandRead : public index::DictionaryFileRandRead
 
     std::unique_ptr<SSReader> _ssReader;
 
-    DC _ssd;
-    ComprFileReadContext _ssReadContext;
+    DC                                    _ssd;
+    ComprFileReadContext                  _ssReadContext;
     std::unique_ptr<FastOS_FileInterface> _ssfile;
     std::unique_ptr<FastOS_FileInterface> _spfile;
     std::unique_ptr<FastOS_FileInterface> _pfile;
@@ -41,18 +40,18 @@ class PageDict4RandRead : public index::DictionaryFileRandRead
     void readSSHeader();
     void readSPHeader();
     void readPHeader();
+
 public:
     PageDict4RandRead();
     ~PageDict4RandRead();
 
-    bool lookup(std::string_view word, uint64_t &wordNum,
-                PostingListOffsetAndCounts &offsetAndCounts) override;
+    bool lookup(std::string_view word, uint64_t& wordNum, PostingListOffsetAndCounts& offsetAndCounts) override;
 
-    bool open(const std::string &name, const TuneFileRandRead &tuneFileRead) override;
+    bool open(const std::string& name, const TuneFileRandRead& tuneFileRead) override;
 
     bool close() override;
     uint64_t getNumWordIds() const override;
     void set_mmap_file_size_threshold(uint32_t v) { _mmap_file_size_threshold = v; }
 };
 
-}
+} // namespace search::diskindex

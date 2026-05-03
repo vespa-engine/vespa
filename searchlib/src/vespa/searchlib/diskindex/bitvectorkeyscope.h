@@ -4,12 +4,8 @@
 
 namespace search::diskindex {
 
-enum class BitVectorKeyScope
-{
-    SHARED_WORDS,
-    PERFIELD_WORDS
-};
+enum class BitVectorKeyScope { SHARED_WORDS, PERFIELD_WORDS };
 
-const char *getBitVectorKeyScopeSuffix(BitVectorKeyScope scope);
+const char* getBitVectorKeyScopeSuffix(BitVectorKeyScope scope);
 
-}
+} // namespace search::diskindex

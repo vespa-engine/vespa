@@ -3,7 +3,9 @@
 #pragma once
 
 #include "docidmapper.h"
+
 #include <vespa/searchcommon/common/schema.h>
+
 #include <string>
 
 namespace search::diskindex {
@@ -11,10 +13,9 @@ namespace search::diskindex {
 /*
  * Class representing an index used as input for fusion.
  */
-class FusionInputIndex
-{
+class FusionInputIndex {
 private:
-    std::string     _path;
+    std::string          _path;
     uint32_t             _index;
     const SelectorArray* _selector;
     index::Schema        _schema;
@@ -23,7 +24,7 @@ private:
 public:
     FusionInputIndex(const std::string& path, uint32_t index, const SelectorArray& selector);
     FusionInputIndex(FusionInputIndex&&) = default;
-    FusionInputIndex & operator = (FusionInputIndex&&) = default;
+    FusionInputIndex& operator=(FusionInputIndex&&) = default;
     ~FusionInputIndex();
 
     void setup();
@@ -33,4 +34,4 @@ public:
     const index::Schema& getSchema() const noexcept { return _schema; }
 };
 
-}
+} // namespace search::diskindex

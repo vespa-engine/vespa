@@ -25,4 +25,4 @@ extern std::string FEATURES_SIZE_FLUSH_BITS;
 
 }
 
-}
+} // namespace search::diskindex

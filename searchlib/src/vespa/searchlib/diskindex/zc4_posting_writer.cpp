@@ -1,9 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "features_size_flush.h"
 #include "zc4_posting_writer.h"
+
+#include "features_size_flush.h"
+
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/index/postinglistcounts.h>
+
 #include <cassert>
 
 using search::index::DocIdAndFeatures;
@@ -13,29 +16,19 @@ using search::index::PostingListParams;
 namespace search::diskindex {
 
 template <bool bigEndian>
-Zc4PostingWriter<bigEndian>::Zc4PostingWriter(PostingListCounts &counts)
-    : Zc4PostingWriterBase(counts),
-      _encode_context(),
-      _encode_features(nullptr)
-{
+Zc4PostingWriter<bigEndian>::Zc4PostingWriter(PostingListCounts& counts)
+    : Zc4PostingWriterBase(counts), _encode_context(), _encode_features(nullptr) {
     _encode_context.setWriteContext(&_writeContext);
     _writeContext.setEncodeContext(&_encode_context);
 }
 
-template <bool bigEndian>
-Zc4PostingWriter<bigEndian>::~Zc4PostingWriter() = default;
+template <bool bigEndian> Zc4PostingWriter<bigEndian>::~Zc4PostingWriter() = default;
 
-template <bool bigEndian>
-void
-Zc4PostingWriter<bigEndian>::write_zc_view(std::span<const uint8_t> view)
-{
+template <bool bigEndian> void Zc4PostingWriter<bigEndian>::write_zc_view(std::span<const uint8_t> view) {
     _encode_context.writeBytes(view);
 }
 
-template <bool bigEndian>
-void
-Zc4PostingWriter<bigEndian>::reset_chunk()
-{
+template <bool bigEndian> void Zc4PostingWriter<bigEndian>::reset_chunk() {
     _docIds.clear();
     if (_encode_features != nullptr) {
         _encode_features->setupWrite(_featureWriteContext);
@@ -43,10 +36,7 @@ Zc4PostingWriter<bigEndian>::reset_chunk()
     }
 }
 
-template <bool bigEndian>
-void
-Zc4PostingWriter<bigEndian>::flush_word_with_skip(bool hasMore)
-{
+template <bool bigEndian> void Zc4PostingWriter<bigEndian>::flush_word_with_skip(bool hasMore) {
     uint32_t numDocs = _docIds.size();
     assert(numDocs > 0);
 
@@ -55,13 +45,12 @@ Zc4PostingWriter<bigEndian>::flush_word_with_skip(bool hasMore)
      * bit is always written. A marker value is needed to keep readers in sync.
      */
     bool features_size_flush = (numDocs < _minSkipDocs && _counts._segments.empty()) ||
-                               (numDocs < _minChunkDocs && hasMore) ||
-                               (numDocs == features_size_flush_marker);
+                               (numDocs < _minChunkDocs && hasMore) || (numDocs == features_size_flush_marker);
 
     if (_encode_features != nullptr) {
         _encode_features->flush();
     }
-    EncodeContext &e = _encode_context;
+    EncodeContext& e = _encode_context;
 
     if (features_size_flush) {
         // Inform readers that chunk was flushed due to features size
@@ -97,18 +86,13 @@ Zc4PostingWriter<bigEndian>::flush_word_with_skip(bool hasMore)
 
     // Encode last document id in chunk or word.
     if (_dynamicK) {
-        uint32_t docIdK = e.calcDocIdK((_counts._segments.empty() &&
-                                        !hasMore) ?
-                                       numDocs : 1,
-                                       _docIdLimit);
-        e.encodeExpGolomb(_docIdLimit - 1 - _docIds.back()._doc_id,
-                          docIdK);
+        uint32_t docIdK = e.calcDocIdK((_counts._segments.empty() && !hasMore) ? numDocs : 1, _docIdLimit);
+        e.encodeExpGolomb(_docIdLimit - 1 - _docIds.back()._doc_id, docIdK);
     } else {
-        e.encodeExpGolomb(_docIdLimit - 1 - _docIds.back()._doc_id,
-                          K_VALUE_ZCPOSTING_LASTDOCID);
+        e.encodeExpGolomb(_docIdLimit - 1 - _docIds.back()._doc_id, K_VALUE_ZCPOSTING_LASTDOCID);
     }
 
-    e.smallAlign(8);    // Byte align
+    e.smallAlign(8); // Byte align
 
     write_zc_view(docids_view);
     write_zc_view(l1_skip_view);
@@ -121,7 +105,7 @@ Zc4PostingWriter<bigEndian>::flush_word_with_skip(bool hasMore)
 
     _counts._numDocs += numDocs;
     if (hasMore || !_counts._segments.empty()) {
-        uint64_t writePos = e.getWriteOffset();
+        uint64_t                   writePos = e.getWriteOffset();
         PostingListCounts::Segment seg;
         seg._bitLength = writePos - (_writePos + _counts._bitLength);
         seg._numDocs = numDocs;
@@ -135,9 +119,7 @@ Zc4PostingWriter<bigEndian>::flush_word_with_skip(bool hasMore)
 }
 
 template <bool bigEndian>
-void
-Zc4PostingWriter<bigEndian>::write_docid_and_features(const DocIdAndFeatures &features)
-{
+void Zc4PostingWriter<bigEndian>::write_docid_and_features(const DocIdAndFeatures& features) {
     if (__builtin_expect(_docIds.size() >= _minChunkDocs || (_featureOffset >= _features_size_flush_bits), false)) {
         flush_word_with_skip(true);
     }
@@ -154,26 +136,23 @@ Zc4PostingWriter<bigEndian>::write_docid_and_features(const DocIdAndFeatures &fe
     }
 }
 
-template <bool bigEndian>
-void
-Zc4PostingWriter<bigEndian>::flush_word_no_skip()
-{
+template <bool bigEndian> void Zc4PostingWriter<bigEndian>::flush_word_no_skip() {
     // Too few document ids for skip info.
     assert(_docIds.size() < _minSkipDocs && _counts._segments.empty());
 
     if (_encode_features != nullptr) {
         _encode_features->flush();
     }
-    EncodeContext &e = _encode_context;
-    uint32_t numDocs = _docIds.size();
+    EncodeContext& e = _encode_context;
+    uint32_t       numDocs = _docIds.size();
 
     e.encodeExpGolomb(numDocs - 1, K_VALUE_ZCPOSTING_NUMDOCS);
 
     uint32_t docIdK = _dynamicK ? e.calcDocIdK(numDocs, _docIdLimit) : K_VALUE_ZCPOSTING_DELTA_DOCID;
 
-    uint32_t baseDocId = 1;
-    const uint64_t *features = _featureWriteContext.getComprBuf();
-    uint64_t featureOffset = 0;
+    uint32_t        baseDocId = 1;
+    const uint64_t* features = _featureWriteContext.getComprBuf();
+    uint64_t        featureOffset = 0;
 
     for (const auto& elem : _docIds) {
         uint32_t docId = elem._doc_id;
@@ -187,9 +166,7 @@ Zc4PostingWriter<bigEndian>::flush_word_no_skip()
             e.encodeExpGolomb(elem._num_occs - 1, K_VALUE_ZCPOSTING_NUM_OCCS);
         }
         if (featureSize != 0) {
-            e.writeBits(features + (featureOffset >> 6),
-                        featureOffset & 63,
-                        featureSize);
+            e.writeBits(features + (featureOffset >> 6), featureOffset & 63, featureSize);
             featureOffset += featureSize;
         }
     }
@@ -197,12 +174,11 @@ Zc4PostingWriter<bigEndian>::flush_word_no_skip()
     reset_chunk();
 }
 
-template <bool bigEndian>
-void
-Zc4PostingWriter<bigEndian>::flush_word()
-{
+template <bool bigEndian> void Zc4PostingWriter<bigEndian>::flush_word() {
     if (__builtin_expect(_docIds.size() >= _minSkipDocs || (_featureOffset >= _features_size_flush_bits) ||
-                         !_counts._segments.empty(), false)) {
+                             !_counts._segments.empty(),
+                         false))
+    {
         // Use skip information if enough documents, feature bits or chunking has happened
         flush_word_with_skip(false);
         _numWords++;
@@ -211,17 +187,14 @@ Zc4PostingWriter<bigEndian>::flush_word()
         _numWords++;
     }
 
-    EncodeContext &e = _encode_context;
-    uint64_t writePos = e.getWriteOffset();
+    EncodeContext& e = _encode_context;
+    uint64_t       writePos = e.getWriteOffset();
 
     _counts._bitLength = writePos - _writePos;
     _writePos = writePos;
 }
 
-template <bool bigEndian>
-void
-Zc4PostingWriter<bigEndian>::set_encode_features(EncodeContext *encode_features)
-{
+template <bool bigEndian> void Zc4PostingWriter<bigEndian>::set_encode_features(EncodeContext* encode_features) {
     _encode_features = encode_features;
     if (_encode_features != nullptr) {
         _encode_features->setWriteContext(&_featureWriteContext);
@@ -231,22 +204,16 @@ Zc4PostingWriter<bigEndian>::set_encode_features(EncodeContext *encode_features)
     _featureOffset = 0;
 }
 
-template <bool bigEndian>
-void
-Zc4PostingWriter<bigEndian>::on_open()
-{
+template <bool bigEndian> void Zc4PostingWriter<bigEndian>::on_open() {
     _numWords = 0;
-    _writePos = _encode_context.getWriteOffset(); // Position after file header 
+    _writePos = _encode_context.getWriteOffset(); // Position after file header
 }
 
-template <bool bigEndian>
-void
-Zc4PostingWriter<bigEndian>::on_close()
-{
+template <bool bigEndian> void Zc4PostingWriter<bigEndian>::on_close() {
     _encode_context.pad_for_memory_map_and_flush();
 }
 
 template class Zc4PostingWriter<false>;
 template class Zc4PostingWriter<true>;
 
-}
+} // namespace search::diskindex

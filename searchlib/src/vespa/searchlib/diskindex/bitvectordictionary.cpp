@@ -1,12 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bitvectordictionary.h"
+
+#include <vespa/fastos/file.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/fileheadertags.h>
 #include <vespa/searchlib/common/read_stats.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/util/error.h>
-#include <vespa/fastos/file.h>
+
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -20,21 +22,13 @@ namespace search::diskindex {
 using namespace tags;
 
 BitVectorDictionary::BitVectorDictionary()
-    : _docIdLimit(0u),
-      _entries(),
-      _vectorSize(0u),
-      _datFile(),
-      _datHeaderLen(0u),
-      _memory_mapped(false)
-{ }
+    : _docIdLimit(0u), _entries(), _vectorSize(0u), _datFile(), _datHeaderLen(0u), _memory_mapped(false) {
+}
 
 BitVectorDictionary::~BitVectorDictionary() = default;
 
-bool
-BitVectorDictionary::open(const std::string &pathPrefix,
-                          const TuneFileRandRead &tuneFileRead,
-                          BitVectorKeyScope scope)
-{
+bool BitVectorDictionary::open(const std::string& pathPrefix, const TuneFileRandRead& tuneFileRead,
+                               BitVectorKeyScope scope) {
     {
         std::string booloccIdxName = pathPrefix + "boolocc" + getBitVectorKeyScopeSuffix(scope);
         FastOS_File idxFile;
@@ -46,7 +40,7 @@ BitVectorDictionary::open(const std::string &pathPrefix,
         }
 
         vespalib::FileHeader idxHeader;
-        uint32_t idxHeaderLen = idxHeader.readFile(idxFile);
+        uint32_t             idxHeaderLen = idxHeader.readFile(idxFile);
         idxFile.SetPosition(idxHeaderLen);
         assert(idxHeader.hasTag(FROZEN));
         assert(idxHeader.hasTag(DOCID_LIMIT));
@@ -93,8 +87,7 @@ BitVectorDictionary::open(const std::string &pathPrefix,
     return true;
 }
 
-BitVectorDictionaryLookupResult
-BitVectorDictionary::lookup(uint64_t wordNum) {
+BitVectorDictionaryLookupResult BitVectorDictionary::lookup(uint64_t wordNum) {
     WordSingleKey key;
     key._wordNum = wordNum;
     auto itr = std::lower_bound(_entries.begin(), _entries.end(), key);
@@ -104,31 +97,28 @@ BitVectorDictionary::lookup(uint64_t wordNum) {
     return BitVectorDictionaryLookupResult(itr - _entries.begin());
 }
 
-std::unique_ptr<const BitVector>
-BitVectorDictionary::read_bitvector(BitVectorDictionaryLookupResult lookup_result, ReadStats& read_stats)
-{
+std::unique_ptr<const BitVector> BitVectorDictionary::read_bitvector(BitVectorDictionaryLookupResult lookup_result,
+                                                                     ReadStats&                      read_stats) {
     if (!lookup_result.valid()) {
         return {};
     }
-    int64_t offset = ((int64_t) _vectorSize) * lookup_result.idx + _datHeaderLen;
-    return BitVector::create(_docIdLimit, *_datFile, offset, _vectorSize, _entries[lookup_result.idx]._numDocs, read_stats);
+    int64_t offset = ((int64_t)_vectorSize) * lookup_result.idx + _datHeaderLen;
+    return BitVector::create(_docIdLimit, *_datFile, offset, _vectorSize, _entries[lookup_result.idx]._numDocs,
+                             read_stats);
 }
 
-std::unique_ptr<const BitVector>
-BitVectorDictionary::read_bitvector(BitVectorDictionaryLookupResult lookup_result)
-{
+std::unique_ptr<const BitVector> BitVectorDictionary::read_bitvector(BitVectorDictionaryLookupResult lookup_result) {
     ReadStats read_stats;
     return read_bitvector(lookup_result, read_stats);
 }
 
 PostingListFileRange
-BitVectorDictionary::get_bitvector_file_range(index::BitVectorDictionaryLookupResult lookup_result) const
-{
+BitVectorDictionary::get_bitvector_file_range(index::BitVectorDictionaryLookupResult lookup_result) const {
     if (!lookup_result.valid()) {
         return {0, 0};
     }
-    uint64_t offset = ((uint64_t) _vectorSize) * lookup_result.idx + _datHeaderLen;
+    uint64_t offset = ((uint64_t)_vectorSize) * lookup_result.idx + _datHeaderLen;
     return {offset, offset + _vectorSize};
 }
 
-}
+} // namespace search::diskindex

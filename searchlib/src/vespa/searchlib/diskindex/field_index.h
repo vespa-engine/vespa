@@ -5,10 +5,12 @@
 #include "bitvectordictionary.h"
 #include "i_posting_list_cache.h"
 #include "zcposoccrandread.h"
+
 #include <vespa/searchlib/index/dictionary_lookup_result.h>
 #include <vespa/searchlib/index/dictionaryfile.h>
 #include <vespa/searchlib/index/field_length_info.h>
 #include <vespa/searchlib/util/field_index_stats.h>
+
 #include <atomic>
 #include <mutex>
 #include <string>
@@ -28,7 +30,7 @@ class FieldIndex : public IPostingListCache::IPostingListFileBacking {
 
     class LockedFieldIndexIoStats {
         FieldIndexIoStats _stats;
-        std::mutex _mutex;
+        std::mutex        _mutex;
 
     public:
         LockedFieldIndexIoStats() noexcept;
@@ -49,19 +51,20 @@ class FieldIndex : public IPostingListCache::IPostingListFileBacking {
         }
     };
 
-    std::shared_ptr<DiskPostingFile> _posting_file;
-    std::shared_ptr<BitVectorDictionary> _bit_vector_dict;
+    std::shared_ptr<DiskPostingFile>               _posting_file;
+    std::shared_ptr<BitVectorDictionary>           _bit_vector_dict;
     std::unique_ptr<index::DictionaryFileRandRead> _dict;
-    uint64_t _file_id;
-    uint64_t _size_on_disk;
-    std::shared_ptr<LockedFieldIndexIoStats> _io_stats;
-    std::shared_ptr<IPostingListCache> _posting_list_cache;
-    bool                               _posting_list_cache_enabled;
-    bool                               _bitvector_cache_enabled;
-    static std::atomic<uint64_t> _file_id_source;
-    uint32_t _field_id;
+    uint64_t                                       _file_id;
+    uint64_t                                       _size_on_disk;
+    std::shared_ptr<LockedFieldIndexIoStats>       _io_stats;
+    std::shared_ptr<IPostingListCache>             _posting_list_cache;
+    bool                                           _posting_list_cache_enabled;
+    bool                                           _bitvector_cache_enabled;
+    static std::atomic<uint64_t>                   _file_id_source;
+    uint32_t                                       _field_id;
 
     static uint64_t get_next_file_id() noexcept { return _file_id_source.fetch_add(1) + 1; }
+
 public:
     FieldIndex();
     FieldIndex(uint32_t field_id, std::shared_ptr<IPostingListCache> posting_list_cache);
@@ -71,26 +74,30 @@ public:
     static uint64_t calculate_size_on_disk(const std::string& dir, const std::vector<std::string>& file_names);
     static uint64_t calculate_field_index_size_on_disk(const std::string& field_dir);
     bool open_dictionary(const std::string& field_dir, const TuneFileSearch& tune_file_search);
-    bool open(const std::string& field_dir, const TuneFileSearch &tune_file_search);
+    bool open(const std::string& field_dir, const TuneFileSearch& tune_file_search);
     void reuse_files(const FieldIndex& rhs);
     index::DictionaryLookupResult lookup(std::string_view word) const;
-    index::PostingListHandle read_uncached_posting_list(const search::index::DictionaryLookupResult &lookup_result,
-                                                        bool trim) const;
+    index::PostingListHandle read_uncached_posting_list(const search::index::DictionaryLookupResult& lookup_result,
+                                                        bool                                         trim) const;
     index::PostingListHandle read(const IPostingListCache::Key& key, IPostingListCache::Context& ctx) const override;
     index::PostingListHandle read_posting_list(const search::index::DictionaryLookupResult& lookup_result) const;
-    PostingListFileRange get_posting_list_file_range(const search::index::DictionaryLookupResult& lookup_result) const {
+    PostingListFileRange
+    get_posting_list_file_range(const search::index::DictionaryLookupResult& lookup_result) const {
         return _posting_file->get_posting_list_file_range(lookup_result);
     }
-    index::BitVectorDictionaryLookupResult lookup_bit_vector(const search::index::DictionaryLookupResult& lookup_result) const;
-    std::shared_ptr<const BitVector> read_uncached_bit_vector(index::BitVectorDictionaryLookupResult lookup_result) const;
-    std::shared_ptr<const BitVector> read(const IPostingListCache::BitVectorKey& key, IPostingListCache::Context& ctx) const override;
+    index::BitVectorDictionaryLookupResult
+    lookup_bit_vector(const search::index::DictionaryLookupResult& lookup_result) const;
+    std::shared_ptr<const BitVector>
+    read_uncached_bit_vector(index::BitVectorDictionaryLookupResult lookup_result) const;
+    std::shared_ptr<const BitVector> read(const IPostingListCache::BitVectorKey& key,
+                                          IPostingListCache::Context&            ctx) const override;
     std::shared_ptr<const BitVector> read_bit_vector(index::BitVectorDictionaryLookupResult lookup_result) const;
     PostingListFileRange get_bitvector_file_range(index::BitVectorDictionaryLookupResult lookup_result) const {
         return _bit_vector_dict->get_bitvector_file_range(lookup_result);
     }
-    std::unique_ptr<search::queryeval::SearchIterator> create_iterator(const search::index::DictionaryLookupResult& lookup_result,
-                                                                       const index::PostingListHandle& handle,
-                                                                       const search::fef::TermFieldMatchDataArray& tfmda) const;
+    std::unique_ptr<search::queryeval::SearchIterator>
+    create_iterator(const search::index::DictionaryLookupResult& lookup_result,
+                    const index::PostingListHandle& handle, const search::fef::TermFieldMatchDataArray& tfmda) const;
     index::FieldLengthInfo get_field_length_info() const;
 
     index::DictionaryFileRandRead* get_dictionary() noexcept { return _dict.get(); }
@@ -100,4 +107,4 @@ public:
     bool is_posting_list_cache_enabled() const noexcept { return _posting_list_cache_enabled; }
 };
 
-}
+} // namespace search::diskindex

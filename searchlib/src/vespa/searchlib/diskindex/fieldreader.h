@@ -1,12 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "wordnummapper.h"
 #include "docidmapper.h"
 #include "fieldwriter.h"
-#include <vespa/searchlib/index/postinglistcounts.h>
+#include "wordnummapper.h"
+
 #include <vespa/searchlib/index/dictionaryfile.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
+#include <vespa/searchlib/index/postinglistcounts.h>
 #include <vespa/searchlib/index/postinglistfile.h>
 #include <vespa/searchlib/index/schemautil.h>
 
@@ -25,11 +26,11 @@ class FieldLengthScanner;
  * It is used by the fusion code as one of many input objects connected
  * to a FieldWriter class that writes the merged output for the field.
  */
-class FieldReader
-{
+class FieldReader {
 private:
     void VESPA_DLL_LOCAL readCounts();
     void VESPA_DLL_LOCAL readDocIdAndFeatures();
+
 public:
     using DictionaryFileSeqRead = index::DictionaryFileSeqRead;
 
@@ -42,29 +43,26 @@ public:
 
     uint64_t         _wordNum;
     DocIdAndFeatures _docIdAndFeatures;
+
 protected:
-    std::unique_ptr<DictionaryFileSeqRead> _dictFile;
+    std::unique_ptr<DictionaryFileSeqRead>  _dictFile;
     std::unique_ptr<PostingListFileSeqRead> _oldposoccfile;
-    WordNumMapper _wordNumMapper;
-    DocIdMapper _docIdMapper;
-    uint64_t _oldWordNum;
-    uint32_t _residue;
-    uint32_t _docIdLimit;
-    std::string _word;
+    WordNumMapper                           _wordNumMapper;
+    DocIdMapper                             _docIdMapper;
+    uint64_t                                _oldWordNum;
+    uint32_t                                _residue;
+    uint32_t                                _docIdLimit;
+    std::string                             _word;
 
-    static uint64_t noWordNumHigh() {
-        return std::numeric_limits<uint64_t>::max();
-    }
+    static uint64_t noWordNumHigh() { return std::numeric_limits<uint64_t>::max(); }
 
-    static uint64_t noWordNum() {
-        return 0u;
-    }
+    static uint64_t noWordNum() { return 0u; }
 
 public:
-    FieldReader(const FieldReader &rhs) = delete;
-    FieldReader(const FieldReader &&rhs) = delete;
-    FieldReader &operator=(const FieldReader &rhs) = delete;
-    FieldReader &operator=(const FieldReader &&rhs) = delete;
+    FieldReader(const FieldReader& rhs) = delete;
+    FieldReader(const FieldReader&& rhs) = delete;
+    FieldReader& operator=(const FieldReader& rhs) = delete;
+    FieldReader& operator=(const FieldReader&& rhs) = delete;
 
     FieldReader();
 
@@ -75,7 +73,7 @@ public:
     virtual bool need_regenerate_interleaved_features_scan();
     virtual void scan_element_lengths(uint32_t scan_chunk);
 
-    void write(FieldWriter &writer) {
+    void write(FieldWriter& writer) {
         if (_wordNum != writer.getSparseWordNum()) {
             writer.newWord(_wordNum, _word);
         }
@@ -84,37 +82,35 @@ public:
 
     bool isValid() const { return _wordNum != noWordNumHigh(); }
 
-    bool operator<(const FieldReader &rhs) const {
+    bool operator<(const FieldReader& rhs) const {
         return _wordNum < rhs._wordNum ||
-            (_wordNum == rhs._wordNum &&
-             _docIdAndFeatures.doc_id() < rhs._docIdAndFeatures.doc_id());
+               (_wordNum == rhs._wordNum && _docIdAndFeatures.doc_id() < rhs._docIdAndFeatures.doc_id());
     }
 
-    virtual void setup(const WordNumMapping &wordNumMapping, const DocIdMapping &docIdMapping);
-    virtual bool open(const std::string &prefix, const TuneFileSeqRead &tuneFileRead);
+    virtual void setup(const WordNumMapping& wordNumMapping, const DocIdMapping& docIdMapping);
+    virtual bool open(const std::string& prefix, const TuneFileSeqRead& tuneFileRead);
     virtual bool close();
-    virtual void setFeatureParams(const PostingListParams &params);
-    virtual void getFeatureParams(PostingListParams &params);
+    virtual void setFeatureParams(const PostingListParams& params);
+    virtual void getFeatureParams(PostingListParams& params);
     uint32_t getDocIdLimit() const { return _docIdLimit; }
-    const index::FieldLengthInfo &get_field_length_info() const;
+    const index::FieldLengthInfo& get_field_length_info() const;
 
-    static std::unique_ptr<FieldReader> allocFieldReader(const IndexIterator &index, const Schema &oldSchema, std::shared_ptr<FieldLengthScanner> field_length_scanner);
+    static std::unique_ptr<FieldReader> allocFieldReader(const IndexIterator& index, const Schema& oldSchema,
+                                                         std::shared_ptr<FieldLengthScanner> field_length_scanner);
 };
-
 
 /*
  * Field reader that pretends that input is empty, e.g. due to field
  * not existing in source or being incompatible.
  */
-class FieldReaderEmpty : public FieldReader
-{
+class FieldReaderEmpty : public FieldReader {
 private:
     const IndexIterator _index;
 
 public:
-    FieldReaderEmpty(const IndexIterator &index);
-    bool open(const std::string &prefix, const TuneFileSeqRead &tuneFileRead) override;
-    void getFeatureParams(PostingListParams &params) override;
+    FieldReaderEmpty(const IndexIterator& index);
+    bool open(const std::string& prefix, const TuneFileSeqRead& tuneFileRead) override;
+    void getFeatureParams(PostingListParams& params) override;
 };
 
 /*
@@ -122,22 +118,22 @@ public:
  * weights or discard nonzero elements, due to collection type change.
  * It is also used to regenerate interleaved features from normal features.
  */
-class FieldReaderStripInfo : public FieldReader
-{
+class FieldReaderStripInfo : public FieldReader {
 private:
-    bool _hasElements;
-    bool _hasElementWeights;
-    bool _want_interleaved_features;
-    bool _regenerate_interleaved_features;
+    bool                                _hasElements;
+    bool                                _hasElementWeights;
+    bool                                _want_interleaved_features;
+    bool                                _regenerate_interleaved_features;
     std::shared_ptr<FieldLengthScanner> _field_length_scanner;
+
 public:
-    FieldReaderStripInfo(const IndexIterator &index, std::shared_ptr<FieldLengthScanner>);
+    FieldReaderStripInfo(const IndexIterator& index, std::shared_ptr<FieldLengthScanner>);
     bool allowRawFeatures() override;
     bool need_regenerate_interleaved_features_scan() override;
-    bool open(const std::string &prefix, const TuneFileSeqRead &tuneFileRead) override;
+    bool open(const std::string& prefix, const TuneFileSeqRead& tuneFileRead) override;
     void read() override;
     void scan_element_lengths(uint32_t scan_chunk) override;
-    void getFeatureParams(PostingListParams &params) override;
+    void getFeatureParams(PostingListParams& params) override;
 };
 
-}
+} // namespace search::diskindex
