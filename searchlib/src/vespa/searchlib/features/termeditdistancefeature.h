@@ -113,7 +113,7 @@ public:
 
     /**
      * The cost of each operation is specified by the parameters to the {@link #setup} method of this blueprint. All
-     * costs are multiplied by the relative weight of eacht query term. Furthermore, if the query term is not
+     * costs are multiplied by the relative weight of each query term. Furthermore, if the query term is not
      * mandatory, all operations are free. The parameters are:
      *
      * 1. The name of the field to calculate the distance for.

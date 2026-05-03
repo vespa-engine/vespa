@@ -37,25 +37,17 @@ public:
     fef::Blueprint::UP createInstance() const override;
     fef::ParameterDescriptions getDescriptions() const override {
         return fef::ParameterDescriptions()
-            .
             // Can run without parameters:
-            desc()
-            .
-
+            .desc()
             // Can run with two parameters (mean and stddev):
-            desc()
-            .number()
-            . // mean
-            number()
-            . // stddev
-
+            .desc()
+            .number() // mean
+            .number() // stddev
             // Can run with three parameters:
-            desc()
-            .number()
-            . // mean
-            number()
-            .         // stddev
-            string(); // in order to name different features
+            .desc()
+            .number()  // mean
+            .number()  // stddev
+            .string(); // in order to name different features
     }
 
     bool setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) override;

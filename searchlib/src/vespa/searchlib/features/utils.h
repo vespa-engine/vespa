@@ -11,6 +11,7 @@
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/vespalib/util/string_hash.h>
 
+#include <cstring>
 #include <limits>
 #include <optional>
 
