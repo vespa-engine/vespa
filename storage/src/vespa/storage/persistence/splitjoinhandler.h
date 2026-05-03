@@ -3,11 +3,14 @@
 #pragma once
 
 #include "types.h"
+
 #include <vespa/storageapi/message/bucketsplitting.h>
 
 namespace storage {
 
-namespace spi { struct PersistenceProvider; }
+namespace spi {
+struct PersistenceProvider;
+}
 class PersistenceUtil;
 class BucketOwnershipNotifier;
 class RecheckBucketInfoCommand;
@@ -18,11 +21,12 @@ class RecheckBucketInfoCommand;
  */
 class SplitJoinHandler : public Types {
 public:
-    SplitJoinHandler(PersistenceUtil &, spi::PersistenceProvider &,
-                     BucketOwnershipNotifier &, bool enableMultibitSplitOptimalization);
+    SplitJoinHandler(PersistenceUtil&, spi::PersistenceProvider&, BucketOwnershipNotifier&,
+                     bool enableMultibitSplitOptimalization);
     MessageTrackerUP handleSplitBucket(api::SplitBucketCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleRecheckBucketInfo(RecheckBucketInfoCommand& cmd, MessageTrackerUP tracker) const;
     MessageTrackerUP handleJoinBuckets(api::JoinBucketsCommand& cmd, MessageTrackerUP tracker) const;
+
 private:
     /**
      * Sanity-checking of join command parameters. Invokes tracker.fail() with
@@ -30,12 +34,11 @@ private:
      * OK. Returns true and does not touch the tracker otherwise.
      */
     static bool validateJoinCommand(const api::JoinBucketsCommand& cmd, MessageTracker& tracker);
-    PersistenceUtil          &_env;
-    spi::PersistenceProvider &_spi;
-    BucketOwnershipNotifier  &_bucketOwnershipNotifier;
+    PersistenceUtil&          _env;
+    spi::PersistenceProvider& _spi;
+    BucketOwnershipNotifier&  _bucketOwnershipNotifier;
     // TODO Rewrite tests so below config can be removed. Hardcoded to false in production.
-    bool                      _enableMultibitSplitOptimalization;
+    bool _enableMultibitSplitOptimalization;
 };
 
-} // storage
-
+} // namespace storage

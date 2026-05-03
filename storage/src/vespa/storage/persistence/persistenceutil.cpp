@@ -1,44 +1,36 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "persistenceutil.h"
+
+#include <vespa/document/base/documentid.h>
+#include <vespa/log/bufferedlogger.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/storageapi/messageapi/bucketinforeply.h>
-#include <vespa/document/base/documentid.h>
 #include <vespa/vespalib/util/exceptions.h>
-
-#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".persistence.util");
 
 namespace storage {
 namespace {
 
 constexpr bool is_batchable(api::MessageType::Id id) noexcept {
-    return (id == api::MessageType::PUT_ID ||
-            id == api::MessageType::REMOVE_ID ||
-            id == api::MessageType::UPDATE_ID);
+    return (id == api::MessageType::PUT_ID || id == api::MessageType::REMOVE_ID || id == api::MessageType::UPDATE_ID);
 }
 
 constexpr bool has_bucket_info(api::MessageType::Id id) noexcept {
     return (is_batchable(id) ||
-            (id == api::MessageType::REMOVELOCATION_ID ||
-             id == api::MessageType::JOINBUCKETS_ID));
+            (id == api::MessageType::REMOVELOCATION_ID || id == api::MessageType::JOINBUCKETS_ID));
 }
 
 constexpr vespalib::duration WARN_ON_SLOW_OPERATIONS = 5s;
 
-} // anon ns
+} // namespace
 
 DeferredReplySenderStub::DeferredReplySenderStub() = default;
 DeferredReplySenderStub::~DeferredReplySenderStub() = default;
 
 AsyncMessageBatch::AsyncMessageBatch(std::shared_ptr<FileStorHandler::BucketLockInterface> bucket_lock,
-                                     const PersistenceUtil& env,
-                                     MessageSender& reply_sender) noexcept
-    : _bucket_lock(std::move(bucket_lock)),
-      _env(env),
-      _reply_sender(reply_sender),
-      _deferred_sender_stub()
-{
+                                     const PersistenceUtil& env, MessageSender& reply_sender) noexcept
+    : _bucket_lock(std::move(bucket_lock)), _env(env), _reply_sender(reply_sender), _deferred_sender_stub() {
     assert(_bucket_lock);
 }
 
@@ -54,36 +46,29 @@ AsyncMessageBatch::~AsyncMessageBatch() {
         _reply_sender.sendReplyDirectly(reply);
     }
     LOG(debug, "Processed async feed message batch of %zu ops for %s. New bucket info is %s",
-        _deferred_sender_stub._deferred_replies.size(),
-        _bucket_lock->getBucket().toString().c_str(), bucket_info.toString().c_str());
+        _deferred_sender_stub._deferred_replies.size(), _bucket_lock->getBucket().toString().c_str(),
+        bucket_info.toString().c_str());
 }
 
-MessageTracker::MessageTracker(const framework::MilliSecTimer & timer,
-                               const PersistenceUtil & env,
-                               MessageSender & replySender,
-                               FileStorHandler::BucketLockInterface::SP bucketLock,
-                               std::shared_ptr<api::StorageMessage> msg,
-                               ThrottleToken throttle_token)
-    : MessageTracker(timer, env, replySender, true, std::move(bucketLock), {}, std::move(msg), std::move(throttle_token))
-{}
+MessageTracker::MessageTracker(const framework::MilliSecTimer& timer, const PersistenceUtil& env,
+                               MessageSender& replySender, FileStorHandler::BucketLockInterface::SP bucketLock,
+                               std::shared_ptr<api::StorageMessage> msg, ThrottleToken throttle_token)
+    : MessageTracker(timer, env, replySender, true, std::move(bucketLock), {}, std::move(msg),
+                     std::move(throttle_token)) {
+}
 
-MessageTracker::MessageTracker(const framework::MilliSecTimer& timer,
-                               const PersistenceUtil& env,
-                               std::shared_ptr<AsyncMessageBatch> batch,
-                               MessageSender& deferred_reply_sender,
-                               std::shared_ptr<api::StorageMessage> msg,
-                               ThrottleToken throttle_token)
-    : MessageTracker(timer, env, deferred_reply_sender, false, {}, std::move(batch), std::move(msg), std::move(throttle_token))
-{}
+MessageTracker::MessageTracker(const framework::MilliSecTimer& timer, const PersistenceUtil& env,
+                               std::shared_ptr<AsyncMessageBatch> batch, MessageSender& deferred_reply_sender,
+                               std::shared_ptr<api::StorageMessage> msg, ThrottleToken throttle_token)
+    : MessageTracker(timer, env, deferred_reply_sender, false, {}, std::move(batch), std::move(msg),
+                     std::move(throttle_token)) {
+}
 
-MessageTracker::MessageTracker(const framework::MilliSecTimer & timer,
-                               const PersistenceUtil & env,
-                               MessageSender & replySender,
-                               bool update_bucket_info,
+MessageTracker::MessageTracker(const framework::MilliSecTimer& timer, const PersistenceUtil& env,
+                               MessageSender& replySender, bool update_bucket_info,
                                std::shared_ptr<FileStorHandler::BucketLockInterface> bucket_lock,
-                               std::shared_ptr<AsyncMessageBatch> part_of_batch,
-                               std::shared_ptr<api::StorageMessage> msg,
-                               ThrottleToken throttle_token)
+                               std::shared_ptr<AsyncMessageBatch>                    part_of_batch,
+                               std::shared_ptr<api::StorageMessage> msg, ThrottleToken throttle_token)
     : _sendReply(true),
       _updateBucketInfo(update_bucket_info && has_bucket_info(msg->getType().getId())),
       _bucketLock(std::move(bucket_lock)),
@@ -95,19 +80,18 @@ MessageTracker::MessageTracker(const framework::MilliSecTimer & timer,
       _replySender(replySender),
       _metric(nullptr),
       _result(api::ReturnCode::OK),
-      _timer(timer)
-{ }
-
-MessageTracker::UP
-MessageTracker::createForTesting(const framework::MilliSecTimer & timer, PersistenceUtil &env, MessageSender &replySender,
-                                 FileStorHandler::BucketLockInterface::SP bucketLock, api::StorageMessage::SP msg)
-{
-    return MessageTracker::UP(new MessageTracker(timer, env, replySender, false, std::move(bucketLock),
-                                                 {}, std::move(msg), ThrottleToken()));
+      _timer(timer) {
 }
 
-void
-MessageTracker::setMetric(FileStorThreadMetrics::Op& metric) {
+MessageTracker::UP MessageTracker::createForTesting(const framework::MilliSecTimer& timer, PersistenceUtil& env,
+                                                    MessageSender&                           replySender,
+                                                    FileStorHandler::BucketLockInterface::SP bucketLock,
+                                                    api::StorageMessage::SP                  msg) {
+    return MessageTracker::UP(new MessageTracker(timer, env, replySender, false, std::move(bucketLock), {},
+                                                 std::move(msg), ThrottleToken()));
+}
+
+void MessageTracker::setMetric(FileStorThreadMetrics::Op& metric) {
     metric.count.inc();
     _metric = &metric;
 }
@@ -120,14 +104,12 @@ bool MessageTracker::count_result_as_failure() const noexcept {
     if (hasReply() && getReply().getResult().failed()) {
         return (getReply().getResult().getResult() != api::ReturnCode::TEST_AND_SET_CONDITION_FAILED);
     }
-    return (getResult().failed()
-            && (getResult().getResult() != api::ReturnCode::TEST_AND_SET_CONDITION_FAILED));
+    return (getResult().failed() && (getResult().getResult() != api::ReturnCode::TEST_AND_SET_CONDITION_FAILED));
 }
 
-void
-MessageTracker::sendReply() {
-    if ( ! _msg->getType().isReply()) {
-        generateReply(static_cast<api::StorageCommand &>(*_msg));
+void MessageTracker::sendReply() {
+    if (!_msg->getType().isReply()) {
+        generateReply(static_cast<api::StorageCommand&>(*_msg));
     }
     if (count_result_as_failure()) {
         _env._metrics.failedOperations.inc();
@@ -135,8 +117,8 @@ MessageTracker::sendReply() {
     vespalib::duration duration = _timer.getElapsedTime();
     if (duration >= WARN_ON_SLOW_OPERATIONS) {
         LOGBT(warning, _msg->getType().toString(),
-              "Slow processing of message %s. Processing time: %1.1f s (>=%1.1f s)",
-              _msg->toString().c_str(), vespalib::to_s(duration), vespalib::to_s(WARN_ON_SLOW_OPERATIONS));
+              "Slow processing of message %s. Processing time: %1.1f s (>=%1.1f s)", _msg->toString().c_str(),
+              vespalib::to_s(duration), vespalib::to_s(WARN_ON_SLOW_OPERATIONS));
     } else {
         LOGBT(spam, _msg->getType().toString(), "Processing time of message %s: %1.1f s",
               _msg->toString(true).c_str(), vespalib::to_s(duration));
@@ -159,9 +141,7 @@ MessageTracker::sendReply() {
     }
 }
 
-bool
-MessageTracker::checkForError(const spi::Result& response)
-{
+bool MessageTracker::checkForError(const spi::Result& response) {
     uint32_t code = PersistenceUtil::convertErrorCode(response);
 
     if (code != 0) {
@@ -172,16 +152,12 @@ MessageTracker::checkForError(const spi::Result& response)
     return true;
 }
 
-void
-MessageTracker::fail(const api::ReturnCode& result)
-{
+void MessageTracker::fail(const api::ReturnCode& result) {
     _result = result;
     LOG(debug, "Failing operation with error: %s", _result.toString().c_str());
 }
 
-void
-MessageTracker::generateReply(api::StorageCommand& cmd)
-{
+void MessageTracker::generateReply(api::StorageCommand& cmd) {
     if (!_sendReply) {
         return;
     }
@@ -197,15 +173,12 @@ MessageTracker::generateReply(api::StorageCommand& cmd)
         if (_reply->getResult().getResult() != api::ReturnCode::TEST_AND_SET_CONDITION_FAILED) {
             _metric->failed.inc();
         }
-        LOGBP(debug, "Failed to handle command %s: %s",
-              cmd.toString().c_str(),
-              _result.toString().c_str());
+        LOGBP(debug, "Failed to handle command %s: %s", cmd.toString().c_str(), _result.toString().c_str());
     }
 }
 
 std::shared_ptr<FileStorHandler::OperationSyncPhaseDoneNotifier>
-MessageTracker::sync_phase_done_notifier_or_nullptr() const
-{
+MessageTracker::sync_phase_done_notifier_or_nullptr() const {
     if (_bucketLock && _bucketLock->wants_sync_phase_done_notification()) {
         return _bucketLock;
     }
@@ -221,18 +194,15 @@ PersistenceUtil::PersistenceUtil(const ServiceLayerComponent& component, FileSto
       _bucketIdFactory(component.getBucketIdFactory()),
       _spi(provider),
       _lastGeneration(0),
-      _repos()
-{
+      _repos() {
 }
 
 PersistenceUtil::~PersistenceUtil() = default;
 
-void
-PersistenceUtil::updateBucketDatabase(const document::Bucket &bucket, const api::BucketInfo& i) const
-{
+void PersistenceUtil::updateBucketDatabase(const document::Bucket& bucket, const api::BucketInfo& i) const {
     // Update bucket database
-    StorBucketDatabase::WrappedEntry entry(getBucketDatabase(bucket.getBucketSpace()).get(bucket.getBucketId(),
-                                                                                          "env::updatebucketdb"));
+    StorBucketDatabase::WrappedEntry entry(
+        getBucketDatabase(bucket.getBucketSpace()).get(bucket.getBucketId(), "env::updatebucketdb"));
     if (entry.exists()) {
         api::BucketInfo info = i;
 
@@ -248,9 +218,8 @@ PersistenceUtil::updateBucketDatabase(const document::Bucket &bucket, const api:
     }
 }
 
-PersistenceUtil::LockResult
-PersistenceUtil::lockAndGetDisk(const document::Bucket &bucket, StorBucketDatabase::Flag flags)
-{
+PersistenceUtil::LockResult PersistenceUtil::lockAndGetDisk(const document::Bucket&  bucket,
+                                                            StorBucketDatabase::Flag flags) {
     // To lock the bucket, we need to ensure that we don't conflict with
     // bucket disk move command. First we fetch current disk index from
     // bucket DB. When we attempt to lock that lock. And lastly we check
@@ -262,21 +231,19 @@ PersistenceUtil::lockAndGetDisk(const document::Bucket &bucket, StorBucketDataba
         // This function is only called in a context where we require exclusive
         // locking (split/join). Refactor if this no longer the case.
         std::shared_ptr<FileStorHandler::BucketLockInterface> lock(
-                _fileStorHandler.lock(bucket, api::LockingRequirements::Exclusive));
+            _fileStorHandler.lock(bucket, api::LockingRequirements::Exclusive));
 
         // TODO disks are no longer used in practice, can we safely discard this?
         // Might need it for synchronization purposes if something has taken the
         // disk lock _and_ the bucket lock...?
-        StorBucketDatabase::WrappedEntry entry(getBucketDatabase(bucket.getBucketSpace()).get(
-                bucket.getBucketId(), "join-lockAndGetDisk-1", flags));
+        StorBucketDatabase::WrappedEntry entry(
+            getBucketDatabase(bucket.getBucketSpace()).get(bucket.getBucketId(), "join-lockAndGetDisk-1", flags));
         result.lock = lock;
         return result;
     }
 }
 
-void
-PersistenceUtil::setBucketInfo(MessageTracker& tracker, const document::Bucket &bucket) const
-{
+void PersistenceUtil::setBucketInfo(MessageTracker& tracker, const document::Bucket& bucket) const {
     api::BucketInfo info = getBucketInfo(bucket);
 
     dynamic_cast<api::BucketInfoReply&>(tracker.getReply()).setBucketInfo(info);
@@ -284,29 +251,18 @@ PersistenceUtil::setBucketInfo(MessageTracker& tracker, const document::Bucket &
     updateBucketDatabase(bucket, info);
 }
 
-api::BucketInfo
-PersistenceUtil::getBucketInfo(const document::Bucket &bucket) const
-{
+api::BucketInfo PersistenceUtil::getBucketInfo(const document::Bucket& bucket) const {
     spi::BucketInfoResult response = _spi.getBucketInfo(spi::Bucket(bucket));
 
     return convertBucketInfo(response.getBucketInfo());
 }
 
-api::BucketInfo
-PersistenceUtil::convertBucketInfo(const spi::BucketInfo& info)
-{
-   return api::BucketInfo(info.getChecksum(),
-                          info.getDocumentCount(),
-                          info.getDocumentSize(),
-                          info.getEntryCount(),
-                          info.getUsedSize(),
-                          info.isReady(),
-                          info.isActive(), 0);
+api::BucketInfo PersistenceUtil::convertBucketInfo(const spi::BucketInfo& info) {
+    return api::BucketInfo(info.getChecksum(), info.getDocumentCount(), info.getDocumentSize(), info.getEntryCount(),
+                           info.getUsedSize(), info.isReady(), info.isActive(), 0);
 }
 
-uint32_t
-PersistenceUtil::convertErrorCode(const spi::Result& response)
-{
+uint32_t PersistenceUtil::convertErrorCode(const spi::Result& response) {
     switch (response.getErrorCode()) {
     case spi::Result::ErrorType::NONE:
         return 0;
@@ -325,23 +281,21 @@ PersistenceUtil::convertErrorCode(const spi::Result& response)
     return 0;
 }
 
-spi::Bucket
-PersistenceUtil::getBucket(const document::DocumentId& id, const document::Bucket &bucket) const
-{
+spi::Bucket PersistenceUtil::getBucket(const document::DocumentId& id, const document::Bucket& bucket) const {
     document::BucketId docBucket(_bucketIdFactory.getBucketId(id));
     docBucket.setUsedBits(bucket.getBucketId().getUsedBits());
     if (bucket.getBucketId() != docBucket) {
         docBucket = _bucketIdFactory.getBucketId(id);
-        throw vespalib::IllegalStateException("Document " + id.toString()
-                                              + " (bucket " + docBucket.toString() + ") does not belong in "
-                                              + "bucket " + bucket.getBucketId().toString() + ".", VESPA_STRLOC);
+        throw vespalib::IllegalStateException("Document " + id.toString() + " (bucket " + docBucket.toString() +
+                                                  ") does not belong in " + "bucket " +
+                                                  bucket.getBucketId().toString() + ".",
+                                              VESPA_STRLOC);
     }
 
     return spi::Bucket(bucket);
 }
 
-void
-PersistenceUtil::reloadComponent() const {
+void PersistenceUtil::reloadComponent() const {
     // Thread safe as it is only called from the same thread
     while (componentHasChanged()) {
         _lastGeneration = _component.getGeneration();
@@ -349,4 +303,4 @@ PersistenceUtil::reloadComponent() const {
     }
 }
 
-} // storage
+} // namespace storage

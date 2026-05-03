@@ -9,22 +9,19 @@ using vespalib::CpuUsage;
 
 namespace storage {
 
-PersistenceHandler::PersistenceHandler(vespalib::ISequencedTaskExecutor & sequencedExecutor,
-                                      const ServiceLayerComponent & component,
-                                      uint32_t bucketMergeChunkSize,
-                                      bool multibitSplit,
-                                      spi::PersistenceProvider& provider,
-                                      FileStorHandler& filestorHandler,
-                                      BucketOwnershipNotifier & bucketOwnershipNotifier,
-                                      FileStorThreadMetrics& metrics)
+PersistenceHandler::PersistenceHandler(vespalib::ISequencedTaskExecutor& sequencedExecutor,
+                                       const ServiceLayerComponent& component, uint32_t bucketMergeChunkSize,
+                                       bool multibitSplit, spi::PersistenceProvider& provider,
+                                       FileStorHandler&         filestorHandler,
+                                       BucketOwnershipNotifier& bucketOwnershipNotifier,
+                                       FileStorThreadMetrics&   metrics)
     : _clock(component.getClock()),
       _env(component, filestorHandler, metrics, provider),
       _processAllHandler(_env, provider),
       _mergeHandler(_env, provider, component.cluster_context(), _clock, sequencedExecutor, bucketMergeChunkSize),
       _asyncHandler(_env, provider, bucketOwnershipNotifier, sequencedExecutor, component.getBucketIdFactory()),
       _splitJoinHandler(_env, provider, bucketOwnershipNotifier, multibitSplit),
-      _simpleHandler(_env, provider, component.getBucketIdFactory())
-{
+      _simpleHandler(_env, provider, component.getBucketIdFactory()) {
 }
 
 PersistenceHandler::~PersistenceHandler() = default;
@@ -36,10 +33,10 @@ PersistenceHandler::~PersistenceHandler() = default;
 // in which case the guard is a no-op.
 class OperationSyncPhaseTrackingGuard {
     std::shared_ptr<FileStorHandler::OperationSyncPhaseDoneNotifier> _maybe_notifier;
+
 public:
     explicit OperationSyncPhaseTrackingGuard(const MessageTracker& tracker)
-        : _maybe_notifier(tracker.sync_phase_done_notifier_or_nullptr())
-    {}
+        : _maybe_notifier(tracker.sync_phase_done_notifier_or_nullptr()) {}
 
     ~OperationSyncPhaseTrackingGuard() {
         if (_maybe_notifier) {
@@ -48,13 +45,11 @@ public:
     }
 };
 
-MessageTracker::UP
-PersistenceHandler::handleCommandSplitByType(api::StorageCommand& msg, MessageTracker::UP tracker) const
-{
+MessageTracker::UP PersistenceHandler::handleCommandSplitByType(api::StorageCommand& msg,
+                                                                MessageTracker::UP   tracker) const {
     OperationSyncPhaseTrackingGuard sync_guard(*tracker);
     switch (msg.getType().getId()) {
-    case api::MessageType::GET_ID:
-    {
+    case api::MessageType::GET_ID: {
         auto usage = vespalib::CpuUsage::use(CpuUsage::Category::READ);
         return _simpleHandler.handleGet(static_cast<api::GetCommand&>(msg), std::move(tracker));
     }
@@ -67,12 +62,13 @@ PersistenceHandler::handleCommandSplitByType(api::StorageCommand& msg, MessageTr
     case api::MessageType::CREATEBUCKET_ID:
         return _asyncHandler.handleCreateBucket(static_cast<api::CreateBucketCommand&>(msg), std::move(tracker));
     case api::MessageType::DELETEBUCKET_ID:
-        return _asyncHandler.handle_delete_bucket_throttling(static_cast<api::DeleteBucketCommand&>(msg), std::move(tracker));
+        return _asyncHandler.handle_delete_bucket_throttling(static_cast<api::DeleteBucketCommand&>(msg),
+                                                             std::move(tracker));
     case api::MessageType::JOINBUCKETS_ID:
         return _splitJoinHandler.handleJoinBuckets(static_cast<api::JoinBucketsCommand&>(msg), std::move(tracker));
     case api::MessageType::SPLITBUCKET_ID:
         return _splitJoinHandler.handleSplitBucket(static_cast<api::SplitBucketCommand&>(msg), std::move(tracker));
-       // Depends on iterators
+        // Depends on iterators
     case api::MessageType::STATBUCKET_ID:
         return _processAllHandler.handleStatBucket(static_cast<api::StatBucketCommand&>(msg), std::move(tracker));
     case api::MessageType::REMOVELOCATION_ID:
@@ -82,25 +78,25 @@ PersistenceHandler::handleCommandSplitByType(api::StorageCommand& msg, MessageTr
     case api::MessageType::GETBUCKETDIFF_ID:
         return _mergeHandler.handleGetBucketDiff(static_cast<api::GetBucketDiffCommand&>(msg), std::move(tracker));
     case api::MessageType::APPLYBUCKETDIFF_ID:
-        return _mergeHandler.handleApplyBucketDiff(static_cast<api::ApplyBucketDiffCommand&>(msg), std::move(tracker));
+        return _mergeHandler.handleApplyBucketDiff(static_cast<api::ApplyBucketDiffCommand&>(msg),
+                                                   std::move(tracker));
     case api::MessageType::SETBUCKETSTATE_ID:
         return _asyncHandler.handleSetBucketState(static_cast<api::SetBucketStateCommand&>(msg), std::move(tracker));
     case api::MessageType::INTERNAL_ID:
-        switch(static_cast<api::InternalCommand&>(msg).getType()) {
-        case GetIterCommand::ID:
-        {
+        switch (static_cast<api::InternalCommand&>(msg).getType()) {
+        case GetIterCommand::ID: {
             auto usage = vespalib::CpuUsage::use(CpuUsage::Category::READ);
             return _simpleHandler.handleGetIter(static_cast<GetIterCommand&>(msg), std::move(tracker));
         }
-        case CreateIteratorCommand::ID:
-        {
+        case CreateIteratorCommand::ID: {
             auto usage = vespalib::CpuUsage::use(CpuUsage::Category::READ);
             return _simpleHandler.handleCreateIterator(static_cast<CreateIteratorCommand&>(msg), std::move(tracker));
         }
         case RecheckBucketInfoCommand::ID:
-            return _splitJoinHandler.handleRecheckBucketInfo(static_cast<RecheckBucketInfoCommand&>(msg), std::move(tracker));
+            return _splitJoinHandler.handleRecheckBucketInfo(static_cast<RecheckBucketInfoCommand&>(msg),
+                                                             std::move(tracker));
         case RunTaskCommand::ID:
-            return _asyncHandler.handleRunTask(static_cast<RunTaskCommand &>(msg), std::move(tracker));
+            return _asyncHandler.handleRunTask(static_cast<RunTaskCommand&>(msg), std::move(tracker));
         default:
             LOG(warning, "Persistence handler received unhandled internal command %s", msg.toString().c_str());
             break;
@@ -111,15 +107,14 @@ PersistenceHandler::handleCommandSplitByType(api::StorageCommand& msg, MessageTr
     return {};
 }
 
-MessageTracker::UP
-PersistenceHandler::handleReply(api::StorageReply& reply, MessageTracker::UP tracker) const
-{
+MessageTracker::UP PersistenceHandler::handleReply(api::StorageReply& reply, MessageTracker::UP tracker) const {
     switch (reply.getType().getId()) {
     case api::MessageType::GETBUCKETDIFF_REPLY_ID:
         _mergeHandler.handleGetBucketDiffReply(static_cast<api::GetBucketDiffReply&>(reply), _env._fileStorHandler);
         break;
     case api::MessageType::APPLYBUCKETDIFF_REPLY_ID:
-        _mergeHandler.handleApplyBucketDiffReply(static_cast<api::ApplyBucketDiffReply&>(reply), _env._fileStorHandler, std::move(tracker));
+        _mergeHandler.handleApplyBucketDiffReply(static_cast<api::ApplyBucketDiffReply&>(reply),
+                                                 _env._fileStorHandler, std::move(tracker));
         break;
     default:
         break;
@@ -127,9 +122,7 @@ PersistenceHandler::handleReply(api::StorageReply& reply, MessageTracker::UP tra
     return tracker;
 }
 
-MessageTracker::UP
-PersistenceHandler::processMessage(api::StorageMessage& msg, MessageTracker::UP tracker) const
-{
+MessageTracker::UP PersistenceHandler::processMessage(api::StorageMessage& msg, MessageTracker::UP tracker) const {
     MBUS_TRACE(msg.getTrace(), 5, "PersistenceHandler: Processing message in persistence layer");
 
     _env._metrics.operations.inc();
@@ -143,7 +136,7 @@ PersistenceHandler::processMessage(api::StorageMessage& msg, MessageTracker::UP 
             LOG(debug, "Caught exception for %s: %s", msg.toString().c_str(), e.what());
         }
     } else {
-        auto & initiatingCommand = static_cast<api::StorageCommand&>(msg);
+        auto& initiatingCommand = static_cast<api::StorageCommand&>(msg);
         try {
             LOG(debug, "Handling command: %s", msg.toString().c_str());
             LOG(spam, "Message content: %s", msg.toString(true).c_str());
@@ -159,9 +152,8 @@ PersistenceHandler::processMessage(api::StorageMessage& msg, MessageTracker::UP 
     return tracker;
 }
 
-void
-PersistenceHandler::processLockedMessage(FileStorHandler::LockedMessage lock) const {
-    api::StorageMessage & msg(*lock.msg);
+void PersistenceHandler::processLockedMessage(FileStorHandler::LockedMessage lock) const {
+    api::StorageMessage& msg(*lock.msg);
     // Important: we _copy_ the message shared_ptr instead of moving to ensure that `msg` remains
     // valid even if the tracker is destroyed by an exception in processMessage().
     auto tracker = std::make_unique<MessageTracker>(framework::MilliSecTimer(_clock), _env, _env._fileStorHandler,
@@ -172,19 +164,18 @@ PersistenceHandler::processLockedMessage(FileStorHandler::LockedMessage lock) co
     }
 }
 
-void
-PersistenceHandler::process_locked_message_batch(std::shared_ptr<FileStorHandler::BucketLockInterface> lock,
-                                                 std::span<BatchedMessage> bucket_messages)
-{
+void PersistenceHandler::process_locked_message_batch(std::shared_ptr<FileStorHandler::BucketLockInterface> lock,
+                                                      std::span<BatchedMessage> bucket_messages) {
     const auto bucket = lock->getBucket();
-    auto batch = std::make_shared<AsyncMessageBatch>(std::move(lock), _env, _env._fileStorHandler);
+    auto       batch = std::make_shared<AsyncMessageBatch>(std::move(lock), _env, _env._fileStorHandler);
     for (auto& bm : bucket_messages) {
         assert(bm.first->getBucket() == bucket);
         // Important: we _copy_ the message shared_ptr instead of moving to ensure that `*bm.first` remains
         // valid even if the tracker is destroyed by an exception in processMessage(). All std::exceptions
         // are caught there, so we do not expect our loop to be interrupted.
-        auto tracker = std::make_unique<MessageTracker>(framework::MilliSecTimer(_clock), _env, batch,
-                                                        batch->deferred_sender_stub(), bm.first, std::move(bm.second));
+        auto tracker =
+            std::make_unique<MessageTracker>(framework::MilliSecTimer(_clock), _env, batch,
+                                             batch->deferred_sender_stub(), bm.first, std::move(bm.second));
         tracker = processMessage(*bm.first, std::move(tracker));
         if (tracker) {
             tracker->sendReply(); // Actually defers to batch reply queue
@@ -192,4 +183,4 @@ PersistenceHandler::process_locked_message_batch(std::shared_ptr<FileStorHandler
     }
 }
 
-}
+} // namespace storage

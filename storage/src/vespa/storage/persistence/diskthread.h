@@ -13,27 +13,27 @@
 #pragma once
 
 #include <vespa/storageframework/generic/thread/runnable.h>
+
 #include <memory>
 
-namespace storage::framework { class Thread; }
+namespace storage::framework {
+class Thread;
+}
 
 namespace storage {
 
-class DiskThread : public framework::Runnable
-{
+class DiskThread : public framework::Runnable {
 public:
     using SP = std::shared_ptr<DiskThread>;
 
-    DiskThread(const DiskThread &) = delete;
-    DiskThread & operator = (const DiskThread &) = delete;
+    DiskThread(const DiskThread&) = delete;
+    DiskThread& operator=(const DiskThread&) = delete;
     DiskThread() = default;
     virtual ~DiskThread() = default;
     /** Waits for current operation to be finished. */
     virtual void flush() = 0;
 
     virtual framework::Thread& getThread() = 0;
-
 };
 
-}
-
+} // namespace storage

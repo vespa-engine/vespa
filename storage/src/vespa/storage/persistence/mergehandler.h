@@ -14,25 +14,32 @@
 #pragma once
 
 #include "merge_bucket_info_syncer.h"
+
 #include <vespa/persistence/spi/bucket.h>
-#include <vespa/storageapi/message/bucket.h>
 #include <vespa/storage/common/cluster_context.h>
 #include <vespa/storage/common/messagesender.h>
+#include <vespa/storageapi/message/bucket.h>
+#include <vespa/storageframework/generic/clock/time.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/monitored_refcount.h>
-#include <vespa/storageframework/generic/clock/time.h>
 
-namespace vespalib { class ISequencedTaskExecutor; }
-namespace document { class Document; }
+namespace vespalib {
+class ISequencedTaskExecutor;
+}
+namespace document {
+class Document;
+}
 namespace storage {
 
-namespace framework { struct Clock; }
+namespace framework {
+struct Clock;
+}
 
 namespace spi {
-    struct PersistenceProvider;
-    class Context;
-    class DocEntry;
-}
+struct PersistenceProvider;
+class Context;
+class DocEntry;
+} // namespace spi
 class PersistenceUtil;
 class ApplyBucketDiffState;
 class MergeStatus;
@@ -42,18 +49,14 @@ class MergeHandler : public MergeBucketInfoSyncer {
 private:
     using MessageTrackerUP = std::unique_ptr<MessageTracker>;
     using Timestamp = framework::MicroSecTime;
+
 public:
     using NewestDocumentVersionMapping = vespalib::hash_map<std::string_view, api::Timestamp>;
 
-    enum StateFlag {
-        IN_USE                     = 0x01,
-        DELETED                    = 0x02,
-        DELETED_IN_PLACE           = 0x04
-    };
+    enum StateFlag { IN_USE = 0x01, DELETED = 0x02, DELETED_IN_PLACE = 0x04 };
 
-    MergeHandler(PersistenceUtil& env, spi::PersistenceProvider& spi,
-                 const ClusterContext& cluster_context, const framework::Clock & clock,
-                 vespalib::ISequencedTaskExecutor& executor,
+    MergeHandler(PersistenceUtil& env, spi::PersistenceProvider& spi, const ClusterContext& cluster_context,
+                 const framework::Clock& clock, vespalib::ISequencedTaskExecutor& executor,
                  uint32_t maxChunkSize = 4190208);
 
     ~MergeHandler() override;
@@ -64,7 +67,7 @@ public:
                         uint8_t nodeIndex, spi::Context& context) const;
     void applyDiffLocally(const spi::Bucket& bucket, std::vector<api::ApplyBucketDiffCommand::Entry>& diff,
                           uint8_t nodeIndex, spi::Context& context,
-                          const std::shared_ptr<ApplyBucketDiffState> & async_results) const;
+                          const std::shared_ptr<ApplyBucketDiffState>& async_results) const;
     void sync_bucket_info(const spi::Bucket& bucket) const override;
     void schedule_delayed_delete(std::unique_ptr<ApplyBucketDiffState>) const override;
 
@@ -83,23 +86,24 @@ public:
      * owned by `diff`, so this memory must remain unchanged and stable for the duration of the returned
      * mapping's lifetime.
      */
-    static NewestDocumentVersionMapping enumerate_newest_document_versions(
-            const std::vector<api::ApplyBucketDiffCommand::Entry>& diff);
+    static NewestDocumentVersionMapping
+    enumerate_newest_document_versions(const std::vector<api::ApplyBucketDiffCommand::Entry>& diff);
 
 private:
     using DocEntryList = std::vector<std::unique_ptr<spi::DocEntry>>;
-    const framework::Clock   &_clock;
-    const ClusterContext     &_cluster_context;
-    PersistenceUtil          &_env;
-    spi::PersistenceProvider &_spi;
+    const framework::Clock&                      _clock;
+    const ClusterContext&                        _cluster_context;
+    PersistenceUtil&                             _env;
+    spi::PersistenceProvider&                    _spi;
     std::unique_ptr<vespalib::MonitoredRefCount> _monitored_ref_count;
-    const uint32_t            _maxChunkSize;
-    vespalib::ISequencedTaskExecutor& _executor;
+    const uint32_t                               _maxChunkSize;
+    vespalib::ISequencedTaskExecutor&            _executor;
 
     MessageTrackerUP handleGetBucketDiffStage2(api::GetBucketDiffCommand&, MessageTrackerUP) const;
     /** Returns a reply if merge is complete */
     api::StorageReply::SP processBucketMerge(const spi::Bucket& bucket, MergeStatus& status, MessageSender& sender,
-                                             spi::Context& context, std::shared_ptr<ApplyBucketDiffState>& async_results) const;
+                                             spi::Context&                          context,
+                                             std::shared_ptr<ApplyBucketDiffState>& async_results) const;
 
     /**
      * Invoke either put, remove or unrevertable remove on the SPI
@@ -117,11 +121,11 @@ private:
      * sorted ascendingly on entry timestamp.
      * Throws std::runtime_error upon iteration failure.
      */
-    void populateMetadata(const spi::Bucket&, Timestamp maxTimestamp, DocEntryList & entries, spi::Context& context) const;
+    void populateMetadata(const spi::Bucket&, Timestamp maxTimestamp, DocEntryList& entries,
+                          spi::Context& context) const;
 
-    std::unique_ptr<document::Document>
-    deserializeDiffDocument(const api::ApplyBucketDiffCommand::Entry& e, const document::DocumentTypeRepo& repo) const;
+    std::unique_ptr<document::Document> deserializeDiffDocument(const api::ApplyBucketDiffCommand::Entry& e,
+                                                                const document::DocumentTypeRepo&         repo) const;
 };
 
-} // storage
-
+} // namespace storage

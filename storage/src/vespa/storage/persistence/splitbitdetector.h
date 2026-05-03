@@ -23,29 +23,24 @@
 
 namespace storage {
 
-namespace spi { struct PersistenceProvider; }
+namespace spi {
+struct PersistenceProvider;
+}
 
-struct SplitBitDetector
-{
-    enum ResultType {
-        OK,
-        EMPTY,
-        ERROR
-    };
+struct SplitBitDetector {
+    enum ResultType { OK, EMPTY, ERROR };
 
     class Result : public vespalib::Printable {
-        ResultType _result;
+        ResultType         _result;
         document::BucketId _target1;
         document::BucketId _target2;
-        std::string _reason;
-        bool _singleTarget;
+        std::string        _reason;
+        bool               _singleTarget;
 
     public:
         Result() : _result(EMPTY), _singleTarget(false) {}
-        Result(std::string_view error)
-            : _result(ERROR), _reason(error), _singleTarget(false) {}
-        Result(const document::BucketId& t1, const document::BucketId& t2,
-               bool single)
+        Result(std::string_view error) : _result(ERROR), _reason(error), _singleTarget(false) {}
+        Result(const document::BucketId& t1, const document::BucketId& t2, bool single)
             : _result(OK), _target1(t1), _target2(t2), _singleTarget(single) {}
 
         bool success() const { return (_result == OK); }
@@ -55,14 +50,12 @@ struct SplitBitDetector
         const document::BucketId& getTarget1() const { return _target1; }
         const document::BucketId& getTarget2() const { return _target2; }
 
-            // Printable implementation
+        // Printable implementation
         void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     };
 
-    static Result detectSplit(spi::PersistenceProvider&, const spi::Bucket&,
-                              uint32_t maxSplitBits, spi::Context&,
+    static Result detectSplit(spi::PersistenceProvider&, const spi::Bucket&, uint32_t maxSplitBits, spi::Context&,
                               uint32_t minCount = 0, uint32_t minSize = 0);
 };
 
-} // storage
-
+} // namespace storage
