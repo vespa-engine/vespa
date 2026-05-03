@@ -4,6 +4,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/doom.h>
 #include <vespa/vespalib/util/time.h>
+
 #include <cstdint>
 
 using proton::matching::AnnDeadlineConfiguration;
@@ -14,17 +15,15 @@ using vespalib::steady_time;
 class AnnDeadlineConfigurationTest : public ::testing::Test {
 protected:
     std::atomic<steady_time> time;
-    Doom doom;
+    Doom                     doom;
 
 public:
     AnnDeadlineConfigurationTest();
     ~AnnDeadlineConfigurationTest() override;
-
 };
 
 AnnDeadlineConfigurationTest::AnnDeadlineConfigurationTest()
-    : time(vespalib::steady_clock::now()),
-      doom(time, time.load() + 1s) {
+    : time(vespalib::steady_clock::now()), doom(time, time.load() + 1s) {
 }
 
 AnnDeadlineConfigurationTest::~AnnDeadlineConfigurationTest() = default;
@@ -69,7 +68,7 @@ TEST_F(AnnDeadlineConfigurationTest, ann_timeout_becomes_deadline) {
 
 TEST_F(AnnDeadlineConfigurationTest, ann_budget_ann_timeout_interaction_is_handled) {
     AnnDeadlineConfiguration config(50ms, true, time.load() + 100ms);
-    Deadline deadline = config.make_ann_deadline(doom, 1);
+    Deadline                 deadline = config.make_ann_deadline(doom, 1);
     EXPECT_EQ(Deadline::Type::BUDGET, deadline.type());
     EXPECT_EQ(50ms, deadline.time_left());
 
@@ -80,7 +79,6 @@ TEST_F(AnnDeadlineConfigurationTest, ann_budget_ann_timeout_interaction_is_handl
     Deadline deadline3 = config.make_ann_deadline(doom, 4);
     EXPECT_EQ(Deadline::Type::TIMEOUT, deadline3.type());
     EXPECT_EQ(25ms, deadline3.time_left());
-
 
     time.store(time.load() + 50ms);
     Deadline deadline4 = config.make_ann_deadline(doom, 1);

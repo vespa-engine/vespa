@@ -4,13 +4,14 @@
 #include <vespa/log/log.h>
 LOG_SETUP("resolveviewvisitor_test");
 
-#include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchcore/proton/matching/querynodes.h>
 #include <vespa/searchcore/proton/matching/resolveviewvisitor.h>
 #include <vespa/searchcore/proton/matching/viewresolver.h>
+#include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/query/tree/node.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <string>
 
 namespace fef_test = search::fef::test;
@@ -25,14 +26,14 @@ using CollectionType = FieldInfo::CollectionType;
 
 namespace {
 
-const string term = "term";
-const string view = "view";
-const string field1 = "field1";
-const string field2 = "field2";
-const uint32_t id = 1;
+const string                term = "term";
+const string                view = "view";
+const string                field1 = "field1";
+const string                field2 = "field2";
+const uint32_t              id = 1;
 const search::query::Weight weight(2);
 
-ViewResolver getResolver(const string &test_view) {
+ViewResolver getResolver(const string& test_view) {
     ViewResolver resolver;
     resolver.add(test_view, field1);
     resolver.add(test_view, field2);
@@ -44,27 +45,22 @@ protected:
     IndexEnvironment index_environment;
     ResolveViewVisitorTest();
     ~ResolveViewVisitorTest() override;
-    void checkResolveAlias(const string &view_name, const string &alias) const;
+    void checkResolveAlias(const string& view_name, const string& alias) const;
 };
 
-ResolveViewVisitorTest::ResolveViewVisitorTest()
-    : ::testing::Test(),
-      index_environment()
-{
+ResolveViewVisitorTest::ResolveViewVisitorTest() : ::testing::Test(), index_environment() {
     index_environment.getFields().emplace_back(FieldType::INDEX, CollectionType::SINGLE, field1, 0);
     index_environment.getFields().emplace_back(FieldType::INDEX, CollectionType::SINGLE, field2, 1);
 }
 
 ResolveViewVisitorTest::~ResolveViewVisitorTest() = default;
 
-void
-ResolveViewVisitorTest::checkResolveAlias(const string &view_name, const string &alias) const
-{
+void ResolveViewVisitorTest::checkResolveAlias(const string& view_name, const string& alias) const {
     ViewResolver resolver = getResolver(view_name);
 
     QueryBuilder<ProtonNodeTypes> builder;
-    ProtonTermData &base = builder.addStringTerm(term, alias, id, weight);
-    Node::UP node = builder.build();
+    ProtonTermData&               base = builder.addStringTerm(term, alias, id, weight);
+    Node::UP                      node = builder.build();
 
     ResolveViewVisitor visitor(resolver, index_environment);
     node->accept(visitor);
@@ -78,8 +74,8 @@ TEST_F(ResolveViewVisitorTest, requireThatFieldsResolveToThemselves) {
     ViewResolver resolver = getResolver(view);
 
     QueryBuilder<ProtonNodeTypes> builder;
-    ProtonTermData &base = builder.addStringTerm(term, field1, id, weight);
-    Node::UP node = builder.build();
+    ProtonTermData&               base = builder.addStringTerm(term, field1, id, weight);
+    Node::UP                      node = builder.build();
 
     ResolveViewVisitor visitor(resolver, index_environment);
     node->accept(visitor);
@@ -105,8 +101,8 @@ TEST_F(ResolveViewVisitorTest, requireThatWeCanForceFilterField) {
 
     { // use filter field settings from index environment
         QueryBuilder<ProtonNodeTypes> builder;
-        ProtonStringTerm &sterm = builder.addStringTerm(term, view, id, weight);
-        Node::UP node = builder.build();
+        ProtonStringTerm&             sterm = builder.addStringTerm(term, view, id, weight);
+        Node::UP                      node = builder.build();
         node->accept(visitor);
         ASSERT_EQ(2u, sterm.numFields());
         EXPECT_TRUE(!sterm.field(0).is_filter());
@@ -114,7 +110,7 @@ TEST_F(ResolveViewVisitorTest, requireThatWeCanForceFilterField) {
     }
     { // force filter on all fields
         QueryBuilder<ProtonNodeTypes> builder;
-        ProtonStringTerm &sterm = builder.addStringTerm(term, view, id, weight);
+        ProtonStringTerm&             sterm = builder.addStringTerm(term, view, id, weight);
         sterm.setPositionData(false); // force filter
         Node::UP node = builder.build();
         node->accept(visitor);
@@ -129,7 +125,7 @@ TEST_F(ResolveViewVisitorTest, require_that_equiv_nodes_resolve_view_from_childr
     resolver.add(view, field1);
 
     QueryBuilder<ProtonNodeTypes> builder;
-    ProtonTermData &base = builder.addEquiv(2, id, weight);
+    ProtonTermData&               base = builder.addEquiv(2, id, weight);
     builder.addStringTerm(term, view, 42, weight);
     builder.addStringTerm(term, field2, 43, weight);
     Node::UP node = builder.build();
@@ -148,8 +144,8 @@ TEST_F(ResolveViewVisitorTest, require_that_view_is_resolved_for_SameElement_and
     resolver.add("view2", field2);
 
     QueryBuilder<ProtonNodeTypes> builder;
-    ProtonSameElement &same_elem = builder.addSameElement(2, "view2", 13, weight);
-    ProtonStringTerm &my_term = builder.addStringTerm(term, view, 42, weight);
+    ProtonSameElement&            same_elem = builder.addSameElement(2, "view2", 13, weight);
+    ProtonStringTerm&             my_term = builder.addStringTerm(term, view, 42, weight);
     builder.addStringTerm(term, field2, 43, weight);
     Node::UP node = builder.build();
 
@@ -163,6 +159,6 @@ TEST_F(ResolveViewVisitorTest, require_that_view_is_resolved_for_SameElement_and
     EXPECT_EQ(field1, my_term.field(0).getName());
 }
 
-}  // namespace
+} // namespace
 
 GTEST_MAIN_RUN_ALL_TESTS()
