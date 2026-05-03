@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bitvectorfile.h"
+
+#include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/common/fileheadertags.h>
@@ -8,44 +10,36 @@
 #include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/fastlib/io/bufferedfile.h>
+
 #include <cassert>
 
 namespace search::diskindex {
 
-using search::index::BitVectorWordSingleKey;
 using search::common::FileHeaderContext;
+using search::index::BitVectorWordSingleKey;
 using namespace tags;
 
 namespace {
 
-void
-readHeader(vespalib::FileHeader &h, const std::string &name)
-{
+void readHeader(vespalib::FileHeader& h, const std::string& name) {
     Fast_BufferedFile file(32_Ki);
     file.ReadOpenExisting(name.c_str());
     h.readFile(file);
 }
 
-}
+} // namespace
 
 BitVectorFileWrite::BitVectorFileWrite(BitVectorKeyScope scope)
-    : BitVectorIdxFileWrite(scope),
-      _datFile(),
-      _datHeaderLen(0)
-{
+    : BitVectorIdxFileWrite(scope), _datFile(), _datHeaderLen(0) {
 }
 
 BitVectorFileWrite::~BitVectorFileWrite() = default;
 
-void
-BitVectorFileWrite::open(const std::string &name, uint32_t docIdLimit,
-                         const TuneFileSeqWrite &tuneFileWrite,
-                         const FileHeaderContext &fileHeaderContext)
-{
+void BitVectorFileWrite::open(const std::string& name, uint32_t docIdLimit, const TuneFileSeqWrite& tuneFileWrite,
+                              const FileHeaderContext& fileHeaderContext) {
     std::string datname = name + ".bdat";
 
-    assert( ! _datFile);
+    assert(!_datFile);
 
     Parent::open(name, docIdLimit, tuneFileWrite, fileHeaderContext);
 
@@ -63,7 +57,7 @@ BitVectorFileWrite::open(const std::string &name, uint32_t docIdLimit,
         makeDatHeader(fileHeaderContext);
     }
 
-    size_t bitmapbytes = BitVector::getFileBytes(_docIdLimit);
+    size_t  bitmapbytes = BitVector::getFileBytes(_docIdLimit);
     int64_t pos = static_cast<int64_t>(_numKeys) * static_cast<int64_t>(bitmapbytes) + _datHeaderLen;
 
     assert(_datFile->getSize() >= pos);
@@ -72,14 +66,11 @@ BitVectorFileWrite::open(const std::string &name, uint32_t docIdLimit,
     assert(pos == _datFile->getPosition());
 }
 
-
-void
-BitVectorFileWrite::makeDatHeader(const FileHeaderContext &fileHeaderContext)
-{
+void BitVectorFileWrite::makeDatHeader(const FileHeaderContext& fileHeaderContext) {
     vespalib::FileHeader h(FileSettings::DIRECTIO_ALIGNMENT);
     using Tag = vespalib::GenericHeader::Tag;
     fileHeaderContext.addTags(h, _datFile->GetFileName());
-    h.putTag(Tag(ENTRY_SIZE, (int64_t) BitVector::getFileBytes(_docIdLimit)));
+    h.putTag(Tag(ENTRY_SIZE, (int64_t)BitVector::getFileBytes(_docIdLimit)));
     h.putTag(Tag(DOCID_LIMIT, _docIdLimit));
     h.putTag(Tag(NUM_KEYS, _numKeys));
     h.putTag(Tag(FROZEN, 0));
@@ -90,10 +81,7 @@ BitVectorFileWrite::makeDatHeader(const FileHeaderContext &fileHeaderContext)
     _datFile->Flush();
 }
 
-
-void
-BitVectorFileWrite::updateDatHeader(uint64_t fileBitSize)
-{
+void BitVectorFileWrite::updateDatHeader(uint64_t fileBitSize) {
     vespalib::FileHeader h(FileSettings::DIRECTIO_ALIGNMENT);
     using Tag = vespalib::GenericHeader::Tag;
     readHeader(h, _datFile->GetFileName());
@@ -110,43 +98,31 @@ BitVectorFileWrite::updateDatHeader(uint64_t fileBitSize)
     assert(sync_ok);
 }
 
-
-void
-BitVectorFileWrite::addWordSingle(uint64_t wordNum, const BitVector &bitVector)
-{
+void BitVectorFileWrite::addWordSingle(uint64_t wordNum, const BitVector& bitVector) {
     assert(bitVector.size() == _docIdLimit);
     bitVector.invalidateCachedCount();
     Parent::addWordSingle(wordNum, bitVector.countTrueBits());
     _datFile->WriteBuf(bitVector.getStart(), bitVector.getFileBytes());
 }
 
-
-void
-BitVectorFileWrite::flush()
-{
+void BitVectorFileWrite::flush() {
     Parent::flush();
     _datFile->Flush();
 }
 
-
-void
-BitVectorFileWrite::sync()
-{
+void BitVectorFileWrite::sync() {
     flush();
     Parent::syncCommon();
     bool sync_ok = _datFile->Sync();
     assert(sync_ok);
 }
 
-
-void
-BitVectorFileWrite::close()
-{
+void BitVectorFileWrite::close() {
     if (_datFile && _datFile->IsOpened()) {
-        size_t bitmapbytes = BitVector::getFileBytes(_docIdLimit);
+        size_t   bitmapbytes = BitVector::getFileBytes(_docIdLimit);
         uint64_t pos = _datFile->getPosition();
         assert(pos == static_cast<uint64_t>(_numKeys) * static_cast<uint64_t>(bitmapbytes) + _datHeaderLen);
-        (void) bitmapbytes;
+        (void)bitmapbytes;
         _datFile->alignEndForDirectIO();
         updateDatHeader(pos * 8);
         bool close_ok = _datFile->Close();
@@ -158,4 +134,4 @@ BitVectorFileWrite::close()
 
 BitVectorCandidate::~BitVectorCandidate() = default;
 
-}
+} // namespace search::diskindex

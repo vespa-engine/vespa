@@ -3,46 +3,45 @@
 #pragma once
 
 #include "bitvectorkeyscope.h"
+
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
+
 #include <string>
 
 class Fast_BufferedFile;
 
-namespace search::common { class FileHeaderContext; }
+namespace search::common {
+class FileHeaderContext;
+}
 
 namespace search::diskindex {
 
-class BitVectorIdxFileWrite
-{
+class BitVectorIdxFileWrite {
 private:
     std::unique_ptr<Fast_BufferedFile> _idxFile;
 
 public:
-
 protected:
-    uint32_t _numKeys;      // Number of bitvectors and keys
-    uint32_t _docIdLimit;   // Limit for document ids (docId < docIdLimit)
-    uint32_t _idxHeaderLen;
+    uint32_t          _numKeys;    // Number of bitvectors and keys
+    uint32_t          _docIdLimit; // Limit for document ids (docId < docIdLimit)
+    uint32_t          _idxHeaderLen;
     BitVectorKeyScope _scope;
 
     uint64_t idxSize() const;
     void syncCommon();
 
 public:
-    BitVectorIdxFileWrite(const BitVectorIdxFileWrite &) = delete;
-    BitVectorIdxFileWrite(const BitVectorIdxFileWrite &&) = delete;
-    BitVectorIdxFileWrite& operator=(const BitVectorIdxFileWrite &) = delete;
-    BitVectorIdxFileWrite& operator=(const BitVectorIdxFileWrite &&) = delete;
+    BitVectorIdxFileWrite(const BitVectorIdxFileWrite&) = delete;
+    BitVectorIdxFileWrite(const BitVectorIdxFileWrite&&) = delete;
+    BitVectorIdxFileWrite& operator=(const BitVectorIdxFileWrite&) = delete;
+    BitVectorIdxFileWrite& operator=(const BitVectorIdxFileWrite&&) = delete;
     BitVectorIdxFileWrite(BitVectorKeyScope scope);
 
     virtual ~BitVectorIdxFileWrite();
 
-    virtual void open(const std::string &name, uint32_t docIdLimit,
-                      const TuneFileSeqWrite &tuneFileWrite,
-                      const common::FileHeaderContext &fileHeaderContext);
-
-
+    virtual void open(const std::string& name, uint32_t docIdLimit, const TuneFileSeqWrite& tuneFileWrite,
+                      const common::FileHeaderContext& fileHeaderContext);
 
     void addWordSingle(uint64_t wordNum, uint32_t numDocs);
     virtual void flush();
@@ -61,8 +60,8 @@ public:
         return ret;
     }
 
-    void makeIdxHeader(const common::FileHeaderContext &fileHeaderContext);
+    void makeIdxHeader(const common::FileHeaderContext& fileHeaderContext);
     void updateIdxHeader(uint64_t fileBitSize);
 };
 
-}
+} // namespace search::diskindex

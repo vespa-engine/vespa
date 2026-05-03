@@ -1,32 +1,31 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "features_size_flush.h"
 #include "zcpostingiterators.h"
+
+#include "features_size_flush.h"
+
+#include <vespa/searchlib/bitcompression/posocccompression.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
-#include <vespa/searchlib/bitcompression/posocccompression.h>
+
 #include <cassert>
 
 namespace search::diskindex {
 
-using search::fef::TermFieldMatchDataArray;
-using search::fef::TermFieldMatchData;
+using queryeval::RankedSearchIteratorBase;
 using search::bitcompression::FeatureDecodeContext;
 using search::bitcompression::FeatureEncodeContext;
-using queryeval::RankedSearchIteratorBase;
+using search::fef::TermFieldMatchData;
+using search::fef::TermFieldMatchDataArray;
 
 #define DEBUG_ZCPOSTING_PRINTF 0
 #define DEBUG_ZCPOSTING_ASSERT 0
 
-ZcIteratorBase::ZcIteratorBase(TermFieldMatchDataArray matchData, Position start, uint32_t docIdLimit) :
-    RankedSearchIteratorBase(std::move(matchData)),
-    _docIdLimit(docIdLimit),
-    _start(start)
-{ }
+ZcIteratorBase::ZcIteratorBase(TermFieldMatchDataArray matchData, Position start, uint32_t docIdLimit)
+    : RankedSearchIteratorBase(std::move(matchData)), _docIdLimit(docIdLimit), _start(start) {
+}
 
-void
-ZcIteratorBase::initRange(uint32_t beginid, uint32_t endid)
-{
+void ZcIteratorBase::initRange(uint32_t beginid, uint32_t endid) {
     uint32_t prev = getDocId();
     setEndId(endid);
     if ((beginid <= prev) || (prev == 0)) {
@@ -36,12 +35,10 @@ ZcIteratorBase::initRange(uint32_t beginid, uint32_t endid)
     seek(beginid);
 }
 
-
 template <bool bigEndian>
-ZcRareWordPostingIteratorBase<bigEndian>::
-ZcRareWordPostingIteratorBase(TermFieldMatchDataArray matchData, Position start, uint32_t docIdLimit,
-                              bool decode_normal_features, bool decode_interleaved_features,
-                              bool unpack_normal_features, bool unpack_interleaved_features)
+ZcRareWordPostingIteratorBase<bigEndian>::ZcRareWordPostingIteratorBase(
+    TermFieldMatchDataArray matchData, Position start, uint32_t docIdLimit, bool decode_normal_features,
+    bool decode_interleaved_features, bool unpack_normal_features, bool unpack_interleaved_features)
     : ZcIteratorBase(std::move(matchData), start, docIdLimit),
       _decodeContext(nullptr),
       _residue(0),
@@ -52,26 +49,21 @@ ZcRareWordPostingIteratorBase(TermFieldMatchDataArray matchData, Position start,
       _unpack_normal_features(unpack_normal_features),
       _unpack_interleaved_features(unpack_interleaved_features),
       _field_length(0),
-      _num_occs(0)
-{ }
-
-
-template <bool bigEndian, bool dynamic_k>
-ZcRareWordPostingIterator<bigEndian, dynamic_k>::
-ZcRareWordPostingIterator(TermFieldMatchDataArray matchData, Position start, uint32_t docIdLimit,
-                          bool decode_normal_features, bool decode_interleaved_features,
-                          bool unpack_normal_features, bool unpack_interleaved_features)
-    : ZcRareWordPostingIteratorBase<bigEndian>(std::move(matchData), start, docIdLimit,
-                                               decode_normal_features, decode_interleaved_features,
-                                               unpack_normal_features, unpack_interleaved_features),
-      _doc_id_k_param()
-{
+      _num_occs(0) {
 }
 
 template <bool bigEndian, bool dynamic_k>
-void
-ZcRareWordPostingIterator<bigEndian, dynamic_k>::doSeek(uint32_t docId)
-{
+ZcRareWordPostingIterator<bigEndian, dynamic_k>::ZcRareWordPostingIterator(
+    TermFieldMatchDataArray matchData, Position start, uint32_t docIdLimit, bool decode_normal_features,
+    bool decode_interleaved_features, bool unpack_normal_features, bool unpack_interleaved_features)
+    : ZcRareWordPostingIteratorBase<bigEndian>(std::move(matchData), start, docIdLimit, decode_normal_features,
+                                               decode_interleaved_features, unpack_normal_features,
+                                               unpack_interleaved_features),
+      _doc_id_k_param() {
+}
+
+template <bool bigEndian, bool dynamic_k>
+void ZcRareWordPostingIterator<bigEndian, dynamic_k>::doSeek(uint32_t docId) {
     using EC = FeatureEncodeContext<bigEndian>;
     uint32_t length;
     uint64_t val64;
@@ -87,8 +79,7 @@ ZcRareWordPostingIterator<bigEndian, dynamic_k>::doSeek(uint32_t docId)
         UC64_DECODEEXPGOLOMB_NS(o, _doc_id_k_param.get_doc_id_k(), EC);
         oDocId += 1 + static_cast<uint32_t>(val64);
 #if DEBUG_ZCPOSTING_PRINTF
-        printf("Decode docId=%d\n",
-               oDocId);
+        printf("Decode docId=%d\n", oDocId);
 #endif
         if (_decode_interleaved_features) {
             UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_FIELD_LENGTH, EC);
@@ -109,8 +100,7 @@ ZcRareWordPostingIterator<bigEndian, dynamic_k>::doSeek(uint32_t docId)
         UC64_DECODEEXPGOLOMB_NS(o, _doc_id_k_param.get_doc_id_k(), EC);
         oDocId += 1 + static_cast<uint32_t>(val64);
 #if DEBUG_ZCPOSTING_PRINTF
-        printf("Decode docId=%d\n",
-               oDocId);
+        printf("Decode docId=%d\n", oDocId);
 #endif
         if (_decode_interleaved_features) {
             UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_FIELD_LENGTH, EC);
@@ -122,16 +112,12 @@ ZcRareWordPostingIterator<bigEndian, dynamic_k>::doSeek(uint32_t docId)
     UC64_DECODECONTEXT_STORE(o, _decodeContext->_);
     setDocId(oDocId);
     return;
- atbreak:
+atbreak:
     setAtEnd(); // Mark end of data
     return;
 }
 
-
-template <bool bigEndian>
-void
-ZcRareWordPostingIteratorBase<bigEndian>::doUnpack(uint32_t docId)
-{
+template <bool bigEndian> void ZcRareWordPostingIteratorBase<bigEndian>::doUnpack(uint32_t docId) {
     if (!_matchData.valid()) {
         return;
     }
@@ -153,24 +139,20 @@ ZcRareWordPostingIteratorBase<bigEndian>::doUnpack(uint32_t docId)
         _matchData[0]->clear_hidden_from_ranking();
     }
     if (_decode_interleaved_features && _unpack_interleaved_features) {
-        TermFieldMatchData *tfmd = _matchData[0];
+        TermFieldMatchData* tfmd = _matchData[0];
         tfmd->setFieldLength(_field_length);
         tfmd->setNumOccs(_num_occs);
     }
     setUnpacked();
 }
 
-template <bool bigEndian>
-void ZcRareWordPostingIteratorBase<bigEndian>::rewind(Position start)
-{
+template <bool bigEndian> void ZcRareWordPostingIteratorBase<bigEndian>::rewind(Position start) {
     _decodeContext->setPosition(start);
 }
 
 template <bool bigEndian, bool dynamic_k>
-void
-ZcRareWordPostingIterator<bigEndian, dynamic_k>::readWordStart(uint32_t docIdLimit)
-{
-    (void) docIdLimit;
+void ZcRareWordPostingIterator<bigEndian, dynamic_k>::readWordStart(uint32_t docIdLimit) {
+    (void)docIdLimit;
     using EC = FeatureEncodeContext<bigEndian>;
     UC64_DECODECONTEXT_CONSTRUCTOR(o, _decodeContext->_);
     uint32_t length;
@@ -215,22 +197,17 @@ ZcPostingIteratorBase::ZcPostingIteratorBase(TermFieldMatchDataArray matchData, 
       _unpack_interleaved_features(unpack_interleaved_features),
       _chunkNo(0),
       _field_length(0),
-      _num_occs(0)
-{
+      _num_occs(0) {
 }
 
 template <bool bigEndian>
-ZcPostingIterator<bigEndian>::
-ZcPostingIterator(uint32_t minChunkDocs,
-                  bool dynamicK,
-                  const PostingListCounts &counts,
-                  search::fef::TermFieldMatchDataArray matchData,
-                  Position start, uint32_t docIdLimit,
-                  bool decode_normal_features, bool decode_interleaved_features,
-                  bool unpack_normal_features, bool unpack_interleaved_features)
-    : ZcPostingIteratorBase(std::move(matchData), start, docIdLimit,
-                            decode_normal_features, decode_interleaved_features,
-                            unpack_normal_features, unpack_interleaved_features),
+ZcPostingIterator<bigEndian>::ZcPostingIterator(uint32_t minChunkDocs, bool dynamicK, const PostingListCounts& counts,
+                                                search::fef::TermFieldMatchDataArray matchData, Position start,
+                                                uint32_t docIdLimit, bool decode_normal_features,
+                                                bool decode_interleaved_features, bool unpack_normal_features,
+                                                bool unpack_interleaved_features)
+    : ZcPostingIteratorBase(std::move(matchData), start, docIdLimit, decode_normal_features,
+                            decode_interleaved_features, unpack_normal_features, unpack_interleaved_features),
       _decodeContext(nullptr),
       _minChunkDocs(minChunkDocs),
       _docIdK(0),
@@ -238,16 +215,12 @@ ZcPostingIterator(uint32_t minChunkDocs,
       _numDocs(0),
       _featuresValI(nullptr),
       _featuresBitOffset(0),
-      _counts(counts)
-{ }
+      _counts(counts) {
+}
 
-
-template <bool bigEndian>
-void
-ZcPostingIterator<bigEndian>::readWordStart(uint32_t docIdLimit)
-{
+template <bool bigEndian> void ZcPostingIterator<bigEndian>::readWordStart(uint32_t docIdLimit) {
     using EC = FeatureEncodeContext<bigEndian>;
-    DecodeContextBase &d = *_decodeContext;
+    DecodeContextBase& d = *_decodeContext;
     UC64_DECODECONTEXT_CONSTRUCTOR(o, d._);
     uint32_t length;
     uint64_t val64;
@@ -321,7 +294,7 @@ ZcPostingIterator<bigEndian>::readWordStart(uint32_t docIdLimit)
 
     UC64_DECODECONTEXT_STORE(o, d._);
     assert((d.getBitOffset() & 7) == 0);
-    const uint8_t *bcompr = d.getByteCompr();
+    const uint8_t* bcompr = d.getByteCompr();
     _zc_decoder_start = bcompr;
     _zc_decoder.set_cur(bcompr);
     bcompr += docIdsSize;
@@ -347,10 +320,7 @@ ZcPostingIterator<bigEndian>::readWordStart(uint32_t docIdLimit)
 #endif
 }
 
-
-void
-ZcPostingIteratorBase::doChunkSkipSeek(uint32_t docId)
-{
+void ZcPostingIteratorBase::doChunkSkipSeek(uint32_t docId) {
     while (docId > _chunk._lastDocId && _hasMore) {
         // Skip to start of next chunk
         _featureSeekPos = 0;
@@ -367,10 +337,7 @@ ZcPostingIteratorBase::doChunkSkipSeek(uint32_t docId)
     }
 }
 
-
-void
-ZcPostingIteratorBase::doL4SkipSeek(uint32_t docId)
-{
+void ZcPostingIteratorBase::doL4SkipSeek(uint32_t docId) {
     uint32_t lastL4SkipDocId;
 
     if (__builtin_expect(docId > _chunk._lastDocId, false)) {
@@ -386,12 +353,8 @@ ZcPostingIteratorBase::doL4SkipSeek(uint32_t docId)
 #if DEBUG_ZCPOSTING_PRINTF
         printf("L4Decode docId %d, docIdPos %d,"
                "l1SkipPos %d, l2SkipPos %d, l3SkipPos %d, nextDocId %d\n",
-               lastL4SkipDocId,
-               (int) (_l4._docIdPos - _valIBase),
-               (int) (_l4._l1Pos - _l1._valIBase),
-               (int) (_l4._l2Pos - _l2._valIBase),
-               (int) (_l4._l3Pos - _l3._valIBase),
-               _l4._skipDocId);
+               lastL4SkipDocId, (int)(_l4._docIdPos - _valIBase), (int)(_l4._l1Pos - _l1._valIBase),
+               (int)(_l4._l2Pos - _l2._valIBase), (int)(_l4._l3Pos - _l3._valIBase), _l4._skipDocId);
 #endif
     } while (docId > _l4._skipDocId);
     _l3._docIdPos = _l4._docIdPos;
@@ -417,21 +380,14 @@ ZcPostingIteratorBase::doL4SkipSeek(uint32_t docId)
 #if DEBUG_ZCPOSTING_PRINTF
     printf("L4Seek, docId %d docIdPos %d"
            " L1SkipPos %d L2SkipPos %d L3SkipPos %d, nextDocId %d\n",
-           lastL4SkipDocId,
-           (int) (_l4._docIdPos - _valIBase),
-           (int) (_l4._l1Pos - _l1._valIBase),
-           (int) (_l4._l2Pos - _l2._valIBase),
-           (int) (_l4._l3Pos - _l3._valIBase),
-           _l4._skipDocId);
+           lastL4SkipDocId, (int)(_l4._docIdPos - _valIBase), (int)(_l4._l1Pos - _l1._valIBase),
+           (int)(_l4._l2Pos - _l2._valIBase), (int)(_l4._l3Pos - _l3._valIBase), _l4._skipDocId);
 #endif
     _featureSeekPos = _l4._skipFeaturePos;
     clearUnpacked();
 }
 
-
-void
-ZcPostingIteratorBase::doL3SkipSeek(uint32_t docId)
-{
+void ZcPostingIteratorBase::doL3SkipSeek(uint32_t docId) {
     uint32_t lastL3SkipDocId;
 
     if (__builtin_expect(docId > _l4._skipDocId, false)) {
@@ -447,11 +403,8 @@ ZcPostingIteratorBase::doL3SkipSeek(uint32_t docId)
 #if DEBUG_ZCPOSTING_PRINTF
         printf("L3Decode docId %d, docIdPos %d,"
                "l1SkipPos %d, l2SkipPos %d, nextDocId %d\n",
-               lastL3SkipDocId,
-               (int) (_l3._docIdPos - _valIBase),
-               (int) (_l3._l1Pos - _l1._valIBase),
-               (int) (_l3._l2Pos - _l2._valIBase),
-               _l3._skipDocId);
+               lastL3SkipDocId, (int)(_l3._docIdPos - _valIBase), (int)(_l3._l1Pos - _l1._valIBase),
+               (int)(_l3._l2Pos - _l2._valIBase), _l3._skipDocId);
 #endif
     } while (docId > _l3._skipDocId);
     _l2._docIdPos = _l3._docIdPos;
@@ -470,20 +423,14 @@ ZcPostingIteratorBase::doL3SkipSeek(uint32_t docId)
 #if DEBUG_ZCPOSTING_PRINTF
     printf("L3Seek, docId %d docIdPos %d"
            " L1SkipPos %d L2SkipPos %d, nextDocId %d\n",
-           lastL3SkipDocId,
-           (int) (_l3._docIdPos - _valIBase),
-           (int) (_l3._l1Pos - _l1._valIBase),
-           (int) (_l3._l2Pos - _l2._valIBase),
-           _l3._skipDocId);
+           lastL3SkipDocId, (int)(_l3._docIdPos - _valIBase), (int)(_l3._l1Pos - _l1._valIBase),
+           (int)(_l3._l2Pos - _l2._valIBase), _l3._skipDocId);
 #endif
     _featureSeekPos = _l3._skipFeaturePos;
     clearUnpacked();
 }
 
-
-void
-ZcPostingIteratorBase::doL2SkipSeek(uint32_t docId)
-{
+void ZcPostingIteratorBase::doL2SkipSeek(uint32_t docId) {
     uint32_t lastL2SkipDocId;
 
     if (__builtin_expect(docId > _l3._skipDocId, false)) {
@@ -497,11 +444,8 @@ ZcPostingIteratorBase::doL2SkipSeek(uint32_t docId)
         _l2.decodeSkipEntry(_decode_normal_features);
         _l2.nextDocId();
 #if DEBUG_ZCPOSTING_PRINTF
-        printf("L2Decode docId %d, docIdPos %d, l1SkipPos %d, nextDocId %d\n",
-               lastL2SkipDocId,
-               (int) (_l2._docIdPos - _valIBase),
-               (int) (_l2._l1Pos - _l1._valIBase),
-               _l2._skipDocId);
+        printf("L2Decode docId %d, docIdPos %d, l1SkipPos %d, nextDocId %d\n", lastL2SkipDocId,
+               (int)(_l2._docIdPos - _valIBase), (int)(_l2._l1Pos - _l1._valIBase), _l2._skipDocId);
 #endif
     } while (docId > _l2._skipDocId);
     _l1._docIdPos = _l2._docIdPos;
@@ -512,20 +456,14 @@ ZcPostingIteratorBase::doL2SkipSeek(uint32_t docId)
     nextDocId(lastL2SkipDocId);
     _l1.nextDocId();
 #if DEBUG_ZCPOSTING_PRINTF
-    printf("L2Seek, docId %d docIdPos %d L1SkipPos %d, nextDocId %d\n",
-           lastL2SkipDocId,
-           (int) (_l2._docIdPos - _valIBase),
-           (int) (_l2._l1Pos - _l1._valIBase),
-           _l2._skipDocId);
+    printf("L2Seek, docId %d docIdPos %d L1SkipPos %d, nextDocId %d\n", lastL2SkipDocId,
+           (int)(_l2._docIdPos - _valIBase), (int)(_l2._l1Pos - _l1._valIBase), _l2._skipDocId);
 #endif
     _featureSeekPos = _l2._skipFeaturePos;
     clearUnpacked();
 }
 
-
-void
-ZcPostingIteratorBase::doL1SkipSeek(uint32_t docId)
-{
+void ZcPostingIteratorBase::doL1SkipSeek(uint32_t docId) {
     uint32_t lastL1SkipDocId;
     if (__builtin_expect(docId > _l2._skipDocId, false)) {
         doL2SkipSeek(docId);
@@ -538,29 +476,21 @@ ZcPostingIteratorBase::doL1SkipSeek(uint32_t docId)
         _l1.decodeSkipEntry(_decode_normal_features);
         _l1.nextDocId();
 #if DEBUG_ZCPOSTING_PRINTF
-        printf("L1Decode docId %d, docIdPos %d, L1SkipPos %d, nextDocId %d\n",
-               lastL1SkipDocId,
-               (int) (_l1._docIdPos - _valIBase),
-               (int) (_l1._valI - _l1._valIBase),
-                _l1._skipDocId);
+        printf("L1Decode docId %d, docIdPos %d, L1SkipPos %d, nextDocId %d\n", lastL1SkipDocId,
+               (int)(_l1._docIdPos - _valIBase), (int)(_l1._valI - _l1._valIBase), _l1._skipDocId);
 #endif
     } while (docId > _l1._skipDocId);
     _zc_decoder.set_cur(_l1._docIdPos);
     nextDocId(lastL1SkipDocId);
 #if DEBUG_ZCPOSTING_PRINTF
-    printf("L1SkipSeek, docId %d docIdPos %d, nextDocId %d\n",
-           lastL1SkipDocId,
-           (int) (_l1._docIdPos - _valIBase),
+    printf("L1SkipSeek, docId %d docIdPos %d, nextDocId %d\n", lastL1SkipDocId, (int)(_l1._docIdPos - _valIBase),
            _l1._skipDocId);
 #endif
     _featureSeekPos = _l1._skipFeaturePos;
     clearUnpacked();
 }
 
-
-void
-ZcPostingIteratorBase::doSeek(uint32_t docId)
-{
+void ZcPostingIteratorBase::doSeek(uint32_t docId) {
     if (docId > _l1._skipDocId) {
         doL1SkipSeek(docId);
     }
@@ -576,8 +506,8 @@ ZcPostingIteratorBase::doSeek(uint32_t docId)
     assert(docId <= _l4._skipDocId);
 #endif
     ZcDecoder zc_decoder(_zc_decoder);
-    uint32_t field_length = _field_length;
-    uint32_t num_occs = _num_occs;
+    uint32_t  field_length = _field_length;
+    uint32_t  num_occs = _num_occs;
     while (__builtin_expect(oDocId < docId, true)) {
 #if DEBUG_ZCPOSTING_ASSERT
         assert(oDocId <= _l1._skipDocId);
@@ -587,8 +517,7 @@ ZcPostingIteratorBase::doSeek(uint32_t docId)
 #endif
         oDocId += (1 + zc_decoder.decode32());
 #if DEBUG_ZCPOSTING_PRINTF
-        printf("Decode docId=%d\n",
-               oDocId);
+        printf("Decode docId=%d\n", oDocId);
 #endif
         if (_decode_interleaved_features) {
             field_length = 1 + zc_decoder.decode32();
@@ -605,11 +534,7 @@ ZcPostingIteratorBase::doSeek(uint32_t docId)
     return;
 }
 
-
-template <bool bigEndian>
-void
-ZcPostingIterator<bigEndian>::doUnpack(uint32_t docId)
-{
+template <bool bigEndian> void ZcPostingIterator<bigEndian>::doUnpack(uint32_t docId) {
     if (!_matchData.valid()) {
         return;
     }
@@ -634,16 +559,14 @@ ZcPostingIterator<bigEndian>::doUnpack(uint32_t docId)
         _matchData[0]->clear_hidden_from_ranking();
     }
     if (_decode_interleaved_features && _unpack_interleaved_features) {
-        TermFieldMatchData *tfmd = _matchData[0];
+        TermFieldMatchData* tfmd = _matchData[0];
         tfmd->setFieldLength(_field_length);
         tfmd->setNumOccs(_num_occs);
     }
     setUnpacked();
 }
 
-template <bool bigEndian>
-void ZcPostingIterator<bigEndian>::rewind(Position start)
-{
+template <bool bigEndian> void ZcPostingIterator<bigEndian>::rewind(Position start) {
     _decodeContext->setPosition(start);
     _hasMore = false;
     _chunk._lastDocId = 0;
@@ -658,4 +581,4 @@ template class ZcRareWordPostingIterator<true, true>;
 template class ZcPostingIterator<true>;
 template class ZcPostingIterator<false>;
 
-}
+} // namespace search::diskindex

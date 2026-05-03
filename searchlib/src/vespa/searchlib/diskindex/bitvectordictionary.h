@@ -2,17 +2,23 @@
 #pragma once
 
 #include "bitvectorkeyscope.h"
-#include <vespa/searchlib/index/bitvector_dictionary_lookup_result.h>
-#include <vespa/searchlib/index/posting_list_file_range.h>
-#include <vespa/searchlib/index/bitvectorkeys.h>
+
 #include <vespa/searchlib/common/tunefileinfo.h>
+#include <vespa/searchlib/index/bitvector_dictionary_lookup_result.h>
+#include <vespa/searchlib/index/bitvectorkeys.h>
+#include <vespa/searchlib/index/posting_list_file_range.h>
+
 #include <string>
 #include <vector>
 
 class FastOS_FileInterface;
 
-namespace search { class BitVector; }
-namespace search { struct ReadStats; }
+namespace search {
+class BitVector;
+}
+namespace search {
+struct ReadStats;
+}
 
 namespace search::diskindex {
 
@@ -21,8 +27,7 @@ namespace search::diskindex {
  * The dictionary is constructed based on the boolocc idx file and
  * the actual bit vectors are stored in the boolocc dat file.
  **/
-class BitVectorDictionary
-{
+class BitVectorDictionary {
 private:
     using WordSingleKey = search::index::BitVectorWordSingleKey;
 
@@ -35,8 +40,8 @@ private:
 
 public:
     using SP = std::shared_ptr<BitVectorDictionary>;
-    BitVectorDictionary(const BitVectorDictionary &rhs) = delete;
-    BitVectorDictionary &operator=(const BitVectorDictionary &rhs) = delete;
+    BitVectorDictionary(const BitVectorDictionary& rhs) = delete;
+    BitVectorDictionary& operator=(const BitVectorDictionary& rhs) = delete;
     BitVectorDictionary();
     ~BitVectorDictionary();
 
@@ -49,10 +54,7 @@ public:
      *                   are located.
      * @return true if the files could be opened.
      **/
-    bool
-    open(const std::string &pathPrefix,
-         const TuneFileRandRead &tuneFileRead,
-         BitVectorKeyScope scope);
+    bool open(const std::string& pathPrefix, const TuneFileRandRead& tuneFileRead, BitVectorKeyScope scope);
 
     /**
      * Lookup the given word number.
@@ -69,15 +71,14 @@ public:
      * @return the loaded bit vector or empty if lookup result was invalid.
      **/
     std::unique_ptr<const BitVector> read_bitvector(index::BitVectorDictionaryLookupResult lookup_result,
-                                                    ReadStats &read_stats);
+                                                    ReadStats&                             read_stats);
     std::unique_ptr<const BitVector> read_bitvector(index::BitVectorDictionaryLookupResult lookup_result);
     index::PostingListFileRange get_bitvector_file_range(index::BitVectorDictionaryLookupResult lookup_result) const;
 
     uint32_t getDocIdLimit() const noexcept { return _docIdLimit; }
 
-    const std::vector<WordSingleKey> & getEntries() const noexcept { return _entries; }
+    const std::vector<WordSingleKey>& getEntries() const noexcept { return _entries; }
     bool get_memory_mapped() const noexcept { return _memory_mapped; }
 };
 
-}
-
+} // namespace search::diskindex

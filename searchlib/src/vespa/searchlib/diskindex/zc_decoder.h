@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 
 namespace search::diskindex {
 
@@ -13,25 +13,19 @@ namespace search::diskindex {
  */
 class ZcDecoder {
 protected:
-    const uint8_t* _cur;
+    const uint8_t*           _cur;
     static constexpr uint8_t mark = 1 << 7;
     static constexpr uint8_t mask = mark - 1;
 
 public:
-    ZcDecoder() noexcept
-        : _cur(nullptr)
-    {
-    }
+    ZcDecoder() noexcept : _cur(nullptr) {}
 
-    ZcDecoder(const uint8_t* cur) noexcept
-        : _cur(cur)
-    {
-    }
+    ZcDecoder(const uint8_t* cur) noexcept : _cur(cur) {}
 
     void set_cur(const uint8_t* cur) noexcept { _cur = cur; }
 
     uint64_t decode42() noexcept {
-        const uint8_t *cur = _cur;
+        const uint8_t* cur = _cur;
         if (cur[0] < mark) [[likely]] {
             _cur = cur + 1;
             return cur[0];
@@ -56,7 +50,7 @@ public:
     }
 
     uint32_t decode32() noexcept {
-        const uint8_t *cur = _cur;
+        const uint8_t* cur = _cur;
         if (cur[0] < mark) [[likely]] {
             _cur = cur + 1;
             return cur[0];
@@ -77,4 +71,4 @@ public:
     }
 };
 
-}
+} // namespace search::diskindex

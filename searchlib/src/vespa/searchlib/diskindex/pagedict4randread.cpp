@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "pagedict4randread.h"
+
+#include <vespa/fastos/file.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/fastos/file.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".diskindex.pagedict4randread");
@@ -14,7 +15,7 @@ std::string myPId("PageDict4P.1");
 std::string mySPId("PageDict4SP.1");
 std::string mySSId("PageDict4SS.1");
 
-}
+} // namespace
 
 using vespalib::getLastErrorString;
 
@@ -34,22 +35,17 @@ PageDict4RandRead::PageDict4RandRead()
       _ssHeaderLen(0u),
       _spHeaderLen(0u),
       _pHeaderLen(0u),
-      _mmap_file_size_threshold(32_Mi)
-{
+      _mmap_file_size_threshold(32_Mi) {
     _ssd.setReadContext(&_ssReadContext);
 }
 
-
 PageDict4RandRead::~PageDict4RandRead() = default;
 
-
-void
-PageDict4RandRead::readSSHeader()
-{
-    DC &ssd = _ssd;
+void PageDict4RandRead::readSSHeader() {
+    DC& ssd = _ssd;
 
     vespalib::FileHeader header;
-    uint32_t headerLen = ssd.readHeader(header, _ssfile->getSize());
+    uint32_t             headerLen = ssd.readHeader(header, _ssfile->getSize());
     assert(header.hasTag("frozen"));
     assert(header.hasTag("fileBitSize"));
     assert(header.hasTag("format.0"));
@@ -76,11 +72,8 @@ PageDict4RandRead::readSSHeader()
     _ssHeaderLen = headerLen;
 }
 
-
-void
-PageDict4RandRead::readSPHeader()
-{
-    DC d;
+void PageDict4RandRead::readSPHeader() {
+    DC                   d;
     ComprFileReadContext rc(d);
 
     d.setReadContext(&rc);
@@ -91,7 +84,7 @@ PageDict4RandRead::readSPHeader()
     rc.readComprBuffer();
 
     vespalib::FileHeader header;
-    uint32_t headerLen = d.readHeader(header, _spfile->getSize());
+    uint32_t             headerLen = d.readHeader(header, _spfile->getSize());
     assert(header.hasTag("frozen"));
     assert(header.hasTag("fileBitSize"));
     assert(header.hasTag("format.0"));
@@ -109,11 +102,8 @@ PageDict4RandRead::readSPHeader()
     _spHeaderLen = headerLen;
 }
 
-
-void
-PageDict4RandRead::readPHeader()
-{
-    DC d;
+void PageDict4RandRead::readPHeader() {
+    DC                   d;
     ComprFileReadContext rc(d);
 
     d.setReadContext(&rc);
@@ -124,7 +114,7 @@ PageDict4RandRead::readPHeader()
     rc.readComprBuffer();
 
     vespalib::FileHeader header;
-    uint32_t headerLen = d.readHeader(header, _pfile->getSize());
+    uint32_t             headerLen = d.readHeader(header, _pfile->getSize());
     assert(header.hasTag("frozen"));
     assert(header.hasTag("fileBitSize"));
     assert(header.hasTag("format.0"));
@@ -142,12 +132,8 @@ PageDict4RandRead::readPHeader()
     _pHeaderLen = headerLen;
 }
 
-
-bool
-PageDict4RandRead::lookup(std::string_view word,
-                          uint64_t &wordNum,
-                          PostingListOffsetAndCounts &offsetAndCounts)
-{
+bool PageDict4RandRead::lookup(std::string_view word, uint64_t& wordNum,
+                               PostingListOffsetAndCounts& offsetAndCounts) {
     SSLookupRes ssRes(_ssReader->lookup(word));
     if (!ssRes._res) {
         offsetAndCounts._offset = ssRes._l6StartOffset._fileOffset;
@@ -165,26 +151,15 @@ PageDict4RandRead::lookup(std::string_view word,
         return true;
     } else {
         SPLookupRes spRes;
-        size_t pageSize = PageDict4PageParams::getPageByteSize();
-        const char *spData = static_cast<const char *>(_spfile->MemoryMapPtr(0));
-        spRes.lookup(*_ssReader,
-                     spData + pageSize * ssRes._sparsePageNum,
-                     word,
-                     ssRes._l6Word,
-                     ssRes._lastWord,
-                     ssRes._l6StartOffset,
-                     ssRes._l6WordNum,
-                     ssRes._pageNum);
+        size_t      pageSize = PageDict4PageParams::getPageByteSize();
+        const char* spData = static_cast<const char*>(_spfile->MemoryMapPtr(0));
+        spRes.lookup(*_ssReader, spData + pageSize * ssRes._sparsePageNum, word, ssRes._l6Word, ssRes._lastWord,
+                     ssRes._l6StartOffset, ssRes._l6WordNum, ssRes._pageNum);
 
-        PLookupRes pRes;
-        const char *pData = static_cast<const char *>(_pfile->MemoryMapPtr(0));
-        pRes.lookup(*_ssReader,
-                    pData + pageSize * spRes._pageNum,
-                    word,
-                    spRes._l3Word,
-                    spRes._lastWord,
-                    spRes._l3StartOffset,
-                    spRes._l3WordNum);
+        PLookupRes  pRes;
+        const char* pData = static_cast<const char*>(_pfile->MemoryMapPtr(0));
+        pRes.lookup(*_ssReader, pData + pageSize * spRes._pageNum, word, spRes._l3Word, spRes._lastWord,
+                    spRes._l3StartOffset, spRes._l3WordNum);
         offsetAndCounts._offset = pRes._startOffset._fileOffset;
         offsetAndCounts._accNumDocs = pRes._startOffset._accNumDocs;
         wordNum = pRes._wordNum;
@@ -197,11 +172,7 @@ PageDict4RandRead::lookup(std::string_view word,
     }
 }
 
-
-bool
-PageDict4RandRead::open(const std::string &name,
-                        const TuneFileRandRead &tuneFileRead)
-{
+bool PageDict4RandRead::open(const std::string& name, const TuneFileRandRead& tuneFileRead) {
     std::string pname = name + ".pdat";
     std::string spname = name + ".spdat";
     std::string ssname = name + ".ssdat";
@@ -269,17 +240,14 @@ PageDict4RandRead::open(const std::string &name,
     readSPHeader();
     readPHeader();
 
-    _ssReader = std::make_unique<SSReader>(_ssReadContext, _ssHeaderLen, _ssFileBitSize, _spHeaderLen,
-                                           _spFileBitSize, _pHeaderLen, _pFileBitSize);
+    _ssReader = std::make_unique<SSReader>(_ssReadContext, _ssHeaderLen, _ssFileBitSize, _spHeaderLen, _spFileBitSize,
+                                           _pHeaderLen, _pFileBitSize);
     _ssReader->setup(_ssd);
 
     return true;
 }
 
-
-bool
-PageDict4RandRead::close()
-{
+bool PageDict4RandRead::close() {
     _ssReader.reset();
 
     _ssReadContext.dropComprBuf();
@@ -290,10 +258,8 @@ PageDict4RandRead::close()
     return ok;
 }
 
-uint64_t
-PageDict4RandRead::getNumWordIds() const
-{
+uint64_t PageDict4RandRead::getNumWordIds() const {
     return _ssd._numWordIds;
 }
 
-}
+} // namespace search::diskindex

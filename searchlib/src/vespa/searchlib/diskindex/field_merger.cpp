@@ -1,21 +1,25 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "field_merger.h"
-#include "fieldreader.h"
+
+#include "dictionarywordreader.h"
 #include "field_length_scanner.h"
+#include "fieldreader.h"
 #include "fusion_input_index.h"
 #include "fusion_output_index.h"
-#include "dictionarywordreader.h"
 #include "wordnummapper.h"
+
 #include <vespa/fastos/file.h>
 #include <vespa/searchlib/bitcompression/posocc_fields_params.h>
 #include <vespa/searchlib/common/i_flush_token.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/util/filekit.h>
-#include <vespa/searchlib/util/posting_priority_queue_merger.hpp>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
+
+#include <vespa/searchlib/util/posting_priority_queue_merger.hpp>
+
 #include <filesystem>
 #include <system_error>
 
@@ -37,7 +41,6 @@ using vespalib::make_string;
 
 namespace search::diskindex {
 
-
 namespace {
 
 constexpr uint32_t renumber_word_ids_heap_limit = 4;
@@ -46,8 +49,7 @@ constexpr uint32_t merge_postings_heap_limit = 4;
 constexpr uint32_t merge_postings_merge_chunk = 50000;
 constexpr uint32_t scan_chunk = 80000;
 
-std::string
-createTmpPath(const std::string & base, uint32_t index) {
+std::string createTmpPath(const std::string& base, uint32_t index) {
     vespalib::asciistream os;
     os << base;
     os << "/tmpindex";
@@ -55,9 +57,10 @@ createTmpPath(const std::string & base, uint32_t index) {
     return os.str();
 }
 
-}
+} // namespace
 
-FieldMerger::FieldMerger(uint32_t id, const FusionOutputIndex& fusion_out_index, std::shared_ptr<IFlushToken> flush_token)
+FieldMerger::FieldMerger(uint32_t id, const FusionOutputIndex& fusion_out_index,
+                         std::shared_ptr<IFlushToken> flush_token)
     : _id(id),
       _field_name(SchemaUtil::IndexIterator(fusion_out_index.get_schema(), id).getName()),
       _field_dir(fusion_out_index.get_path() + "/" + _field_name),
@@ -74,26 +77,21 @@ FieldMerger::FieldMerger(uint32_t id, const FusionOutputIndex& fusion_out_index,
       _field_length_scanner(),
       _open_reader_idx(std::numeric_limits<uint32_t>::max()),
       _state(State::MERGE_START),
-      _failed(false)
-{
+      _failed(false) {
 }
 
 FieldMerger::~FieldMerger() = default;
 
-void
-FieldMerger::make_tmp_dirs()
-{
-    for (const auto & index : _fusion_out_index.get_old_indexes()) {
+void FieldMerger::make_tmp_dirs() {
+    for (const auto& index : _fusion_out_index.get_old_indexes()) {
         std::filesystem::create_directory(std::filesystem::path(createTmpPath(_field_dir, index.getIndex())));
     }
 }
 
-bool
-FieldMerger::clean_tmp_dirs()
-{
+bool FieldMerger::clean_tmp_dirs() {
     uint32_t i = 0;
     for (;;) {
-        std::string tmpindexpath = createTmpPath(_field_dir, i);
+        std::string     tmpindexpath = createTmpPath(_field_dir, i);
         FastOS_StatInfo statInfo;
         if (!FastOS_File::Stat(tmpindexpath.c_str(), &statInfo)) {
             if (statInfo._error == FastOS_StatInfo::FileNotFound) {
@@ -106,7 +104,7 @@ FieldMerger::clean_tmp_dirs()
     }
     while (i > 0) {
         i--;
-        std::string tmpindexpath = createTmpPath(_field_dir, i);
+        std::string     tmpindexpath = createTmpPath(_field_dir, i);
         std::error_code ec;
         std::filesystem::remove_all(std::filesystem::path(tmpindexpath), ec);
         if (ec) {
@@ -117,20 +115,18 @@ FieldMerger::clean_tmp_dirs()
     return true;
 }
 
-bool
-FieldMerger::open_input_word_readers()
-{
+bool FieldMerger::open_input_word_readers() {
     _word_readers.reserve(_fusion_out_index.get_old_indexes().size());
     _word_heap = std::make_unique<PostingPriorityQueueMerger<DictionaryWordReader, WordAggregator>>();
     SchemaUtil::IndexIterator index(_fusion_out_index.get_schema(), _id);
-    for (auto & oi : _fusion_out_index.get_old_indexes()) {
-        auto reader(std::make_unique<DictionaryWordReader>());
-        const std::string &tmpindexpath = createTmpPath(_field_dir, oi.getIndex());
-        const std::string &oldindexpath = oi.getPath();
-        std::string wordMapName = tmpindexpath + "/old2new.dat";
-        std::string fieldDir(oldindexpath + "/" + _field_name);
-        std::string dictName(fieldDir + "/dictionary");
-        const Schema &oldSchema = oi.getSchema();
+    for (auto& oi : _fusion_out_index.get_old_indexes()) {
+        auto               reader(std::make_unique<DictionaryWordReader>());
+        const std::string& tmpindexpath = createTmpPath(_field_dir, oi.getIndex());
+        const std::string& oldindexpath = oi.getPath();
+        std::string        wordMapName = tmpindexpath + "/old2new.dat";
+        std::string        fieldDir(oldindexpath + "/" + _field_name);
+        std::string        dictName(fieldDir + "/dictionary");
+        const Schema&      oldSchema = oi.getSchema();
         if (!index.hasOldFields(oldSchema)) {
             continue; // drop data
         }
@@ -149,18 +145,16 @@ FieldMerger::open_input_word_readers()
     return true;
 }
 
-bool
-FieldMerger::read_mapping_files()
-{
+bool FieldMerger::read_mapping_files() {
     _word_num_mappings.resize(_fusion_out_index.get_old_indexes().size());
     SchemaUtil::IndexIterator index(_fusion_out_index.get_schema(), _id);
-    for (const auto & oi : _fusion_out_index.get_old_indexes()) {
+    for (const auto& oi : _fusion_out_index.get_old_indexes()) {
         std::vector<uint32_t> oldIndexes;
-        const Schema &oldSchema = oi.getSchema();
+        const Schema&         oldSchema = oi.getSchema();
         if (!SchemaUtil::getIndexIds(oldSchema, DataType::STRING, oldIndexes)) {
             return false;
         }
-        WordNumMapping &wordNumMapping = _word_num_mappings[oi.getIndex()];
+        WordNumMapping& wordNumMapping = _word_num_mappings[oi.getIndex()];
         if (oldIndexes.empty()) {
             wordNumMapping.noMappingFile();
             continue;
@@ -177,9 +171,7 @@ FieldMerger::read_mapping_files()
     return true;
 }
 
-bool
-FieldMerger::renumber_word_ids_start()
-{
+bool FieldMerger::renumber_word_ids_start() {
     LOG(debug, "Renumber word IDs for field %s", _field_name.c_str());
     if (!open_input_word_readers()) {
         return false;
@@ -190,9 +182,7 @@ FieldMerger::renumber_word_ids_start()
     return true;
 }
 
-void
-FieldMerger::renumber_word_ids_main()
-{
+void FieldMerger::renumber_word_ids_main() {
     _word_heap->merge(*_word_aggregator, *_flush_token);
     if (_flush_token->stop_requested()) {
         _failed = true;
@@ -201,15 +191,13 @@ FieldMerger::renumber_word_ids_main()
     }
 }
 
-bool
-FieldMerger::renumber_word_ids_finish()
-{
+bool FieldMerger::renumber_word_ids_finish() {
     _word_heap.reset();
     _num_word_ids = _word_aggregator->getWordNum();
     _word_aggregator.reset();
 
     // Close files
-    for (auto &i : _word_readers) {
+    for (auto& i : _word_readers) {
         i->write_word_number_mapping_end_guard();
         i->close();
     }
@@ -225,9 +213,7 @@ FieldMerger::renumber_word_ids_finish()
     return true;
 }
 
-void
-FieldMerger::renumber_word_ids_failed()
-{
+void FieldMerger::renumber_word_ids_failed() {
     _failed = true;
     if (_flush_token->stop_requested()) {
         return;
@@ -235,21 +221,19 @@ FieldMerger::renumber_word_ids_failed()
     LOG(error, "Could not renumber field word ids for field %s dir %s", _field_name.c_str(), _field_dir.c_str());
 }
 
-void
-FieldMerger::allocate_field_length_scanner()
-{
+void FieldMerger::allocate_field_length_scanner() {
     SchemaUtil::IndexIterator index(_fusion_out_index.get_schema(), _id);
     if (index.use_interleaved_features()) {
         PosOccFieldsParams fieldsParams;
         fieldsParams.setSchemaParams(index.getSchema(), index.getIndex());
         assert(fieldsParams.getNumFields() > 0);
-        const PosOccFieldParams &fieldParams = fieldsParams.getFieldParams()[0];
+        const PosOccFieldParams& fieldParams = fieldsParams.getFieldParams()[0];
         if (fieldParams._hasElements) {
-            for (const auto &old_index : _fusion_out_index.get_old_indexes()) {
-                const Schema &old_schema = old_index.getSchema();
-                if (index.hasOldFields(old_schema) &&
-                    !index.has_matching_use_interleaved_features(old_schema)) {
-                    _field_length_scanner = std::make_shared<FieldLengthScanner>(_fusion_out_index.get_doc_id_limit());
+            for (const auto& old_index : _fusion_out_index.get_old_indexes()) {
+                const Schema& old_schema = old_index.getSchema();
+                if (index.hasOldFields(old_schema) && !index.has_matching_use_interleaved_features(old_schema)) {
+                    _field_length_scanner =
+                        std::make_shared<FieldLengthScanner>(_fusion_out_index.get_doc_id_limit());
                     return;
                 }
             }
@@ -257,24 +241,22 @@ FieldMerger::allocate_field_length_scanner()
     }
 }
 
-bool
-FieldMerger::open_input_field_reader()
-{
+bool FieldMerger::open_input_field_reader() {
     auto& oi = _fusion_out_index.get_old_indexes()[_open_reader_idx];
-    if (!_readers.back()->open(oi.getPath() + "/" + _field_name + "/", _fusion_out_index.get_tune_file_indexing()._read)) {
+    if (!_readers.back()->open(oi.getPath() + "/" + _field_name + "/",
+                               _fusion_out_index.get_tune_file_indexing()._read))
+    {
         _readers.pop_back();
         return false;
     }
     return true;
 }
 
-void
-FieldMerger::open_input_field_readers()
-{
+void FieldMerger::open_input_field_readers() {
     SchemaUtil::IndexIterator index(_fusion_out_index.get_schema(), _id);
     for (; _open_reader_idx < _fusion_out_index.get_old_indexes().size(); ++_open_reader_idx) {
-        auto& oi = _fusion_out_index.get_old_indexes()[_open_reader_idx];
-        const Schema &oldSchema = oi.getSchema();
+        auto&         oi = _fusion_out_index.get_old_indexes()[_open_reader_idx];
+        const Schema& oldSchema = oi.getSchema();
         if (!index.hasOldFields(oldSchema)) {
             continue; // drop data
         }
@@ -295,9 +277,7 @@ FieldMerger::open_input_field_readers()
     _state = State::OPEN_POSTINGS_FIELD_READERS_FINISH;
 }
 
-void
-FieldMerger::scan_element_lengths()
-{
+void FieldMerger::scan_element_lengths() {
     auto& reader = *_readers.back();
     if (reader.isValid()) {
         reader.scan_element_lengths(_fusion_out_index.get_force_small_merge_chunk() ? 1u : scan_chunk);
@@ -314,34 +294,30 @@ FieldMerger::scan_element_lengths()
     }
 }
 
-
-bool
-FieldMerger::open_field_writer()
-{
+bool FieldMerger::open_field_writer() {
     FieldLengthInfo field_length_info;
     if (!_readers.empty()) {
         field_length_info = _readers.back()->get_field_length_info();
     }
     SchemaUtil::IndexIterator index(_fusion_out_index.get_schema(), _id);
     if (!_writer->open(64, 262144, 0, _fusion_out_index.get_dynamic_k_pos_index_format(),
-                       index.use_interleaved_features(), index.getSchema(),
-                       index.getIndex(),
-                       field_length_info,
-                       _fusion_out_index.get_tune_file_indexing()._write, _fusion_out_index.get_file_header_context())) {
-        throw IllegalArgumentException(make_string("Could not open output posocc + dictionary in %s", _field_dir.c_str()));
+                       index.use_interleaved_features(), index.getSchema(), index.getIndex(), field_length_info,
+                       _fusion_out_index.get_tune_file_indexing()._write,
+                       _fusion_out_index.get_file_header_context()))
+    {
+        throw IllegalArgumentException(
+            make_string("Could not open output posocc + dictionary in %s", _field_dir.c_str()));
     }
     return true;
 }
 
-bool
-FieldMerger::select_cooked_or_raw_features(FieldReader& reader)
-{
-    bool rawFormatOK = true;
-    bool cookedFormatOK = true;
+bool FieldMerger::select_cooked_or_raw_features(FieldReader& reader) {
+    bool              rawFormatOK = true;
+    bool              cookedFormatOK = true;
     PostingListParams featureParams;
     PostingListParams outFeatureParams;
-    std::string cookedFormat;
-    std::string rawFormat;
+    std::string       cookedFormat;
+    std::string       rawFormat;
 
     if (!reader.isValid()) {
         return true;
@@ -351,7 +327,7 @@ FieldMerger::select_cooked_or_raw_features(FieldReader& reader)
         cookedFormat = featureParams.getStr("cookedEncoding");
         rawFormat = featureParams.getStr("encoding");
         if (rawFormat == "") {
-            rawFormatOK = false;    // Typically uncompressed file
+            rawFormatOK = false; // Typically uncompressed file
         }
         outFeatureParams = featureParams;
     }
@@ -367,7 +343,7 @@ FieldMerger::select_cooked_or_raw_features(FieldReader& reader)
             rawFormatOK = false;
         }
         if (!reader.allowRawFeatures()) {
-            rawFormatOK = false;    // Reader transforms data
+            rawFormatOK = false; // Reader transforms data
         }
     }
     if (!cookedFormatOK) {
@@ -379,8 +355,7 @@ FieldMerger::select_cooked_or_raw_features(FieldReader& reader)
         featureParams.set("cooked", false);
         reader.setFeatureParams(featureParams);
         reader.getFeatureParams(featureParams);
-        if (featureParams.isSet("cookedEncoding") ||
-            rawFormat != featureParams.getStr("encoding")) {
+        if (featureParams.isSet("cookedEncoding") || rawFormat != featureParams.getStr("encoding")) {
             rawFormatOK = false;
         }
         if (!rawFormatOK) {
@@ -392,11 +367,9 @@ FieldMerger::select_cooked_or_raw_features(FieldReader& reader)
     return true;
 }
 
-bool
-FieldMerger::setup_merge_heap()
-{
+bool FieldMerger::setup_merge_heap() {
     _heap = std::make_unique<PostingPriorityQueueMerger<FieldReader, FieldWriter>>();
-    for (auto &reader : _readers) {
+    for (auto& reader : _readers) {
         if (!select_cooked_or_raw_features(*reader)) {
             return false;
         }
@@ -412,9 +385,7 @@ FieldMerger::setup_merge_heap()
     return true;
 }
 
-void
-FieldMerger::merge_postings_start()
-{
+void FieldMerger::merge_postings_start() {
     /* OUTPUT */
     _writer = std::make_unique<FieldWriter>(_fusion_out_index.get_doc_id_limit(), _num_word_ids, _field_dir + "/");
     _readers.reserve(_fusion_out_index.get_old_indexes().size());
@@ -423,9 +394,7 @@ FieldMerger::merge_postings_start()
     _state = State::OPEN_POSTINGS_FIELD_READERS;
 }
 
-void
-FieldMerger::merge_postings_open_field_readers_done()
-{
+void FieldMerger::merge_postings_open_field_readers_done() {
     if (!open_field_writer() || !setup_merge_heap()) {
         merge_postings_failed();
     } else {
@@ -433,9 +402,7 @@ FieldMerger::merge_postings_open_field_readers_done()
     }
 }
 
-void
-FieldMerger::merge_postings_main()
-{
+void FieldMerger::merge_postings_main() {
     _heap->merge(*_writer, *_flush_token);
     if (_flush_token->stop_requested()) {
         _failed = true;
@@ -444,39 +411,34 @@ FieldMerger::merge_postings_main()
     }
 }
 
-bool
-FieldMerger::merge_postings_finish()
-{
+bool FieldMerger::merge_postings_finish() {
     _heap.reset();
 
-    for (auto &reader : _readers) {
+    for (auto& reader : _readers) {
         if (!reader->close()) {
             return false;
         }
     }
     _readers.clear();
     if (!_writer->close()) {
-        throw IllegalArgumentException(make_string("Could not close output posocc + dictionary in %s", _field_dir.c_str()));
+        throw IllegalArgumentException(
+            make_string("Could not close output posocc + dictionary in %s", _field_dir.c_str()));
     }
     _writer.reset();
     return true;
 }
 
-void
-FieldMerger::merge_postings_failed()
-{
+void FieldMerger::merge_postings_failed() {
     _failed = true;
     if (_flush_token->stop_requested()) {
         return;
     }
-    throw IllegalArgumentException(make_string("Could not merge field postings for field %s dir %s",
-                                               _field_name.c_str(), _field_dir.c_str()));
+    throw IllegalArgumentException(
+        make_string("Could not merge field postings for field %s dir %s", _field_name.c_str(), _field_dir.c_str()));
 }
 
-void
-FieldMerger::merge_field_start()
-{
-    const Schema &schema = _fusion_out_index.get_schema();
+void FieldMerger::merge_field_start() {
+    const Schema&             schema = _fusion_out_index.get_schema();
     SchemaUtil::IndexIterator index(schema, _id);
     SchemaUtil::IndexSettings settings = index.getIndexSettings();
     if (settings.hasError()) {
@@ -497,9 +459,7 @@ FieldMerger::merge_field_start()
     _state = State::RENUMBER_WORD_IDS;
 }
 
-void
-FieldMerger::merge_field_finish()
-{
+void FieldMerger::merge_field_finish() {
     bool res = merge_postings_finish();
     if (!res) {
         merge_postings_failed();
@@ -517,9 +477,7 @@ FieldMerger::merge_field_finish()
     _state = State::MERGE_DONE;
 }
 
-void
-FieldMerger::process_merge_field()
-{
+void FieldMerger::process_merge_field() {
     switch (_state) {
     case State::MERGE_START:
         merge_field_start();
@@ -556,4 +514,4 @@ FieldMerger::process_merge_field()
     }
 }
 
-}
+} // namespace search::diskindex
