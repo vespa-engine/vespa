@@ -2,11 +2,12 @@
 #pragma once
 
 #include <vespa/juniper/IJuniperProperties.h>
+
 #include <map>
 #include <string>
 
 namespace vespa::config::search::summary::internal {
-    class InternalJuniperrcType;
+class InternalJuniperrcType;
 }
 namespace search::docsummary {
 
@@ -20,7 +21,6 @@ private:
      */
     void reset();
 
-
 public:
     using JuniperrcConfig = const vespa::config::search::summary::internal::InternalJuniperrcType;
     /**
@@ -30,7 +30,7 @@ public:
     /**
      * Constructs a juniper property object with default values set.
      */
-    explicit JuniperProperties(const JuniperrcConfig &cfg);
+    explicit JuniperProperties(const JuniperrcConfig& cfg);
 
     ~JuniperProperties() override;
 
@@ -39,10 +39,10 @@ public:
      *
      * @param cfg The configuration object.
      */
-    void configure(const JuniperrcConfig &cfg);
+    void configure(const JuniperrcConfig& cfg);
 
     // Inherit doc from IJuniperProperties.
-    const char *GetProperty(const char *name, const char *def) const override;
+    const char* GetProperty(const char* name, const char* def) const override;
 };
 
-}
+} // namespace search::docsummary

@@ -3,11 +3,18 @@
 #pragma once
 
 #include <vespa/vespalib/data/memory.h>
+
 #include <memory>
 
-namespace search::attribute { class IAttributeVector; }
-namespace vespalib { class Stash; }
-namespace vespalib::slime { struct Cursor; }
+namespace search::attribute {
+class IAttributeVector;
+}
+namespace vespalib {
+class Stash;
+}
+namespace vespalib::slime {
+struct Cursor;
+}
 
 namespace search::docsummary {
 
@@ -17,17 +24,18 @@ namespace search::docsummary {
  * If the value to be inserted is considered to be undefined then
  * the value is not inserted.
  */
-class AttributeFieldWriter
-{
+class AttributeFieldWriter {
 protected:
-    const vespalib::Memory                     _fieldName;
+    const vespalib::Memory _fieldName;
     explicit AttributeFieldWriter(vespalib::Memory fieldName);
+
 public:
     virtual ~AttributeFieldWriter();
     virtual uint32_t fetch(uint32_t docId) = 0;
-    virtual void print(uint32_t idx, vespalib::slime::Cursor &cursor) = 0;
+    virtual void print(uint32_t idx, vespalib::slime::Cursor& cursor) = 0;
     // Create a new attribute field writer which is owned by stash
-    static AttributeFieldWriter& create(vespalib::Memory fieldName, const search::attribute::IAttributeVector& attr, vespalib::Stash& stash, bool keep_empty_strings = false);
+    static AttributeFieldWriter& create(vespalib::Memory fieldName, const search::attribute::IAttributeVector& attr,
+                                        vespalib::Stash& stash, bool keep_empty_strings = false);
 };
 
-}
+} // namespace search::docsummary

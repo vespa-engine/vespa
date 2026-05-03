@@ -4,8 +4,12 @@
 
 #include <vespa/searchlib/attribute/iattributemanager.h>
 
-namespace juniper { class Juniper; }
-namespace search { class IDocumentIdProvider; }
+namespace juniper {
+class Juniper;
+}
+namespace search {
+class IDocumentIdProvider;
+}
 
 namespace search::docsummary {
 
@@ -15,9 +19,9 @@ namespace search::docsummary {
 class IDocsumEnvironment {
 public:
     virtual ~IDocsumEnvironment() = default;
-    virtual const search::IAttributeManager * getAttributeManager() const = 0;
-    virtual const juniper::Juniper * getJuniper() const = 0;
+    virtual const search::IAttributeManager* getAttributeManager() const = 0;
+    virtual const juniper::Juniper* getJuniper() const = 0;
     [[nodiscard]] virtual std::shared_ptr<const IDocumentIdProvider> get_document_id_provider() const noexcept = 0;
 };
 
-}
+} // namespace search::docsummary

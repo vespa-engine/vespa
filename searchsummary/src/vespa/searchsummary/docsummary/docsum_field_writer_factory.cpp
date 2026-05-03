@@ -1,19 +1,21 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "docsum_field_writer_factory.h"
+
 #include "attribute_combiner_dfw.h"
 #include "attribute_tokens_dfw.h"
 #include "copy_dfw.h"
 #include "docsum_field_writer_commands.h"
-#include "docsum_field_writer_factory.h"
 #include "document_id_dfw.h"
+#include "dynamicteaserdfw.h"
 #include "empty_dfw.h"
 #include "geoposdfw.h"
 #include "idocsumenvironment.h"
-#include "dynamicteaserdfw.h"
 #include "positionsdfw.h"
 #include "rankfeaturesdfw.h"
 #include "summaryfeaturesdfw.h"
 #include "tokens_dfw.h"
+
 #include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/issue.h>
@@ -23,48 +25,39 @@ using vespalib::Issue;
 
 namespace search::docsummary {
 
-DocsumFieldWriterFactory::DocsumFieldWriterFactory(const IDocsumEnvironment& env, const IQueryTermFilterFactory& query_term_filter_factory)
-    : _env(env),
-      _query_term_filter_factory(query_term_filter_factory)
-{
+DocsumFieldWriterFactory::DocsumFieldWriterFactory(const IDocsumEnvironment&      env,
+                                                   const IQueryTermFilterFactory& query_term_filter_factory)
+    : _env(env), _query_term_filter_factory(query_term_filter_factory) {
 }
 
 DocsumFieldWriterFactory::~DocsumFieldWriterFactory() = default;
 
-bool
-DocsumFieldWriterFactory::has_attribute_manager() const noexcept
-{
+bool DocsumFieldWriterFactory::has_attribute_manager() const noexcept {
     return getEnvironment().getAttributeManager() != nullptr;
 }
 
 namespace {
 
-void
-throw_if_nullptr(const std::unique_ptr<DocsumFieldWriter>& writer,
-                 const std::string& command)
-{
-    if ( ! writer) {
+void throw_if_nullptr(const std::unique_ptr<DocsumFieldWriter>& writer, const std::string& command) {
+    if (!writer) {
         throw IllegalArgumentException("Failed to create docsum field writer for command '" + command + "'.");
     }
 }
 
-}
+} // namespace
 
-void
-DocsumFieldWriterFactory::throw_missing_source(const std::string& command)
-{
+void DocsumFieldWriterFactory::throw_missing_source(const std::string& command) {
     throw IllegalArgumentException("Missing source for command '" + command + "'.");
 }
 
-std::unique_ptr<DocsumFieldWriter>
-DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_name,
-                                                     const std::string& command,
-                                                     const std::string& source)
-{
+std::unique_ptr<DocsumFieldWriter> DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_name,
+                                                                                        const std::string& command,
+                                                                                        const std::string& source) {
     std::unique_ptr<DocsumFieldWriter> fieldWriter;
     if (command == command::dynamic_teaser) {
-        if ( ! source.empty() ) {
-            fieldWriter = std::make_unique<DynamicTeaserDFW>(getEnvironment().getJuniper(), field_name.c_str(), source, _query_term_filter_factory);
+        if (!source.empty()) {
+            fieldWriter = std::make_unique<DynamicTeaserDFW>(getEnvironment().getJuniper(), field_name.c_str(),
+                                                             source, _query_term_filter_factory);
         } else {
             throw_missing_source(command);
         }
@@ -75,7 +68,7 @@ DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_na
     } else if (command == command::empty) {
         fieldWriter = std::make_unique<EmptyDFW>();
     } else if (command == command::copy) {
-        if ( ! source.empty() ) {
+        if (!source.empty()) {
             fieldWriter = std::make_unique<CopyDFW>(source);
         } else {
             throw_missing_source(command);
@@ -89,7 +82,7 @@ DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_na
     } else if (command == command::attribute_tokens) {
         if (!source.empty()) {
             if (has_attribute_manager()) {
-                auto ctx = getEnvironment().getAttributeManager()->createContext();
+                auto        ctx = getEnvironment().getAttributeManager()->createContext();
                 const auto* attr = ctx->getAttribute(source);
                 if (attr == nullptr) {
                     Issue::report("No valid attribute vector found: field='%s', command='%s', source='%s'",
@@ -123,7 +116,7 @@ DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_na
         }
     } else if (command == command::attribute_combiner) {
         if (has_attribute_manager()) {
-            auto attr_ctx = getEnvironment().getAttributeManager()->createContext();
+            auto               attr_ctx = getEnvironment().getAttributeManager()->createContext();
             const std::string& source_field = source.empty() ? field_name : source;
             fieldWriter = AttributeCombinerDFW::create(source_field, *attr_ctx);
             throw_if_nullptr(fieldWriter, command);
@@ -136,4 +129,4 @@ DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_na
     return fieldWriter;
 }
 
-}
+} // namespace search::docsummary

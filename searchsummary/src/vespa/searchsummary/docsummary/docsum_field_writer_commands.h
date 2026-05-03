@@ -24,4 +24,4 @@ extern const std::string rank_features;
 extern const std::string summary_features;
 extern const std::string tokens;
 
-}
+} // namespace search::docsummary::command

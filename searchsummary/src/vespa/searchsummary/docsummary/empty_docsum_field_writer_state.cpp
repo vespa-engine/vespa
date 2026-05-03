@@ -11,9 +11,7 @@ EmptyDocsumFieldWriterState::EmptyDocsumFieldWriterState() = default;
 
 EmptyDocsumFieldWriterState::~EmptyDocsumFieldWriterState() = default;
 
-void
-EmptyDocsumFieldWriterState::insertField(uint32_t, ElementIds, Inserter&)
-{
+void EmptyDocsumFieldWriterState::insertField(uint32_t, ElementIds, Inserter&) {
 }
 
-}
+} // namespace search::docsummary

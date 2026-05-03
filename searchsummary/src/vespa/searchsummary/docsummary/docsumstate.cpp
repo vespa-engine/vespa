@@ -1,18 +1,22 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "docsumstate.h"
+
 #include "docsum_field_writer_state.h"
-#include <vespa/juniper/rpinterface.h>
+
 #include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/juniper/queryhandle.h>
+#include <vespa/juniper/rpinterface.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/common/geo_location_parser.h>
 #include <vespa/searchlib/common/geo_location_spec.h>
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/parsequery/parse.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/issue.h>
+
+#include <vespa/vespalib/stllike/hash_map.hpp>
+
 #include <cassert>
 
 using search::common::GeoLocationParser;
@@ -22,20 +26,16 @@ using vespalib::Issue;
 
 namespace search::docsummary {
 
-GetDocsumsState::DynTeaserState::DynTeaserState()
-    : _queries()
-{
+GetDocsumsState::DynTeaserState::DynTeaserState() : _queries() {
 }
 
 GetDocsumsState::DynTeaserState::~DynTeaserState() = default;
 
-std::unique_ptr<juniper::QueryHandle>&
-GetDocsumsState::DynTeaserState::get_query(std::string_view field)
-{
+std::unique_ptr<juniper::QueryHandle>& GetDocsumsState::DynTeaserState::get_query(std::string_view field) {
     return _queries[std::string(field)];
 }
 
-GetDocsumsState::GetDocsumsState(GetDocsumsStateCallback &callback)
+GetDocsumsState::GetDocsumsState(GetDocsumsStateCallback& callback)
     : _args(),
       _docsumbuf(),
       _callback(callback),
@@ -52,25 +52,19 @@ GetDocsumsState::GetDocsumsState(GetDocsumsStateCallback &callback)
       _rankFeatures(nullptr),
       _matching_elements(),
       _summary_features_elements(),
-      _summary_features_elements_keys()
-{
+      _summary_features_elements_keys() {
 }
-
 
 GetDocsumsState::~GetDocsumsState() = default;
 
-const MatchingElements &
-GetDocsumsState::get_matching_elements()
-{
+const MatchingElements& GetDocsumsState::get_matching_elements() {
     if (!_matching_elements) {
         _matching_elements = _callback.fill_matching_elements(*_matching_elements_fields);
     }
     return *_matching_elements;
 }
 
-const FeatureSet&
-GetDocsumsState::get_summary_features()
-{
+const FeatureSet& GetDocsumsState::get_summary_features() {
     if (!_summaryFeatures) {
         _callback.fillSummaryFeatures(*this);
         if (!_summaryFeatures) {
@@ -81,43 +75,38 @@ GetDocsumsState::get_summary_features()
     return *_summaryFeatures;
 }
 
-void
-GetDocsumsState::parse_locations()
-{
+void GetDocsumsState::parse_locations() {
     using document::PositionDataType;
     assert(_parsedLocations.empty()); // only allowed to call this once
-    if (! _args.getLocation().empty()) {
+    if (!_args.getLocation().empty()) {
         GeoLocationParser parser;
         if (parser.parseWithField(_args.getLocation())) {
-            auto view = parser.getFieldName();
-            auto attr_name = PositionDataType::getZCurveFieldName(view);
+            auto            view = parser.getFieldName();
+            auto            attr_name = PositionDataType::getZCurveFieldName(view);
             GeoLocationSpec spec{attr_name, parser.getGeoLocation()};
             _parsedLocations.push_back(spec);
         } else {
-            Issue::report("could not parse location string '%s' from request",
-                          _args.getLocation().c_str());
+            Issue::report("could not parse location string '%s' from request", _args.getLocation().c_str());
         }
     }
     {
         const auto& tree = _args.getSerializedQueryTree();
-        auto iterator = tree.makeIterator();
+        auto        iterator = tree.makeIterator();
         while (iterator->next()) {
             if (iterator->getType() == search::ParseItem::ITEM_GEO_LOCATION_TERM) {
-                std::string view = iterator->index_as_string();
-                std::string term(iterator->getTerm());
+                std::string       view = iterator->index_as_string();
+                std::string       term(iterator->getTerm());
                 GeoLocationParser parser;
                 if (parser.parseNoField(term)) {
-                    auto attr_name = PositionDataType::getZCurveFieldName(view);
+                    auto            attr_name = PositionDataType::getZCurveFieldName(view);
                     GeoLocationSpec spec{attr_name, parser.getGeoLocation()};
                     _parsedLocations.push_back(spec);
                 } else {
-                    Issue::report("could not parse location string '%s' from stack dump",
-                                  term.c_str());
+                    Issue::report("could not parse location string '%s' from stack dump", term.c_str());
                 }
             }
         }
     }
 }
 
-
-}
+} // namespace search::docsummary

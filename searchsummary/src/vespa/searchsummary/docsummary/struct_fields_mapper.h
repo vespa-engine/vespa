@@ -7,7 +7,9 @@
 #include <string>
 #include <vector>
 
-namespace search::attribute { class IAttributeContext; }
+namespace search::attribute {
+class IAttributeContext;
+}
 
 namespace search::docsummary {
 
@@ -16,6 +18,7 @@ namespace search::docsummary {
  */
 class StructFieldsMapper {
     std::map<std::string, std::set<std::string>> _fields;
+
 public:
     StructFieldsMapper();
     StructFieldsMapper(const StructFieldsMapper& rhs);
@@ -26,4 +29,4 @@ public:
     std::vector<std::string> get_struct_fields(const std::string& field) const;
 };
 
-}
+} // namespace search::docsummary

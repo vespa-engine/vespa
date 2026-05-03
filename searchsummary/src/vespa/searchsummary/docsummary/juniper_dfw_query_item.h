@@ -4,7 +4,9 @@
 
 #include <vespa/juniper/query_item.h>
 
-namespace search { class QueryStackIterator; }
+namespace search {
+class QueryStackIterator;
+}
 
 namespace search::docsummary {
 
@@ -15,21 +17,21 @@ struct JuniperDFWExplicitItemData;
  * the stack of the IQuery Traverse method. This is needed because
  * the Traverse method is const.
  **/
-class JuniperDFWQueryItem : public juniper::QueryItem
-{
-    search::QueryStackIterator *_si;
-    const JuniperDFWExplicitItemData *_data;
+class JuniperDFWQueryItem : public juniper::QueryItem {
+    search::QueryStackIterator*       _si;
+    const JuniperDFWExplicitItemData* _data;
+
 public:
     JuniperDFWQueryItem() : _si(nullptr), _data(nullptr) {}
     ~JuniperDFWQueryItem() override = default;
-    explicit JuniperDFWQueryItem(search::QueryStackIterator *si) : _si(si), _data(nullptr) {}
-    explicit JuniperDFWQueryItem(const JuniperDFWExplicitItemData *data) : _si(nullptr), _data(data) {}
+    explicit JuniperDFWQueryItem(search::QueryStackIterator* si) : _si(si), _data(nullptr) {}
+    explicit JuniperDFWQueryItem(const JuniperDFWExplicitItemData* data) : _si(nullptr), _data(data) {}
     JuniperDFWQueryItem(const QueryItem&) = delete;
-    JuniperDFWQueryItem& operator= (const QueryItem&) = delete;
+    JuniperDFWQueryItem& operator=(const QueryItem&) = delete;
 
     std::string_view get_index() const override;
     int get_weight() const override;
     juniper::ItemCreator get_creator() const override;
 };
 
-}
+} // namespace search::docsummary

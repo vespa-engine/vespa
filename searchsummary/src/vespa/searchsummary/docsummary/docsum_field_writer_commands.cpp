@@ -18,5 +18,4 @@ const std::string rank_features("rankfeatures");
 const std::string summary_features("summaryfeatures");
 const std::string tokens("tokens");
 
-}
-
+} // namespace search::docsummary::command

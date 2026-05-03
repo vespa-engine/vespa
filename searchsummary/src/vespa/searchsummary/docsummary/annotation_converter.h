@@ -3,11 +3,16 @@
 #pragma once
 
 #include "i_string_field_converter.h"
+
 #include <vespa/vespalib/stllike/asciistream.h>
 
-namespace document { class Span; }
+namespace document {
+class Span;
+}
 
-namespace vespalib { class asciistream; }
+namespace vespalib {
+class asciistream;
+}
 
 namespace search::docsummary {
 
@@ -18,22 +23,20 @@ class IJuniperConverter;
  * with interlinear annotations used by juniper before passing it to
  * the juniper converter.
  */
-class AnnotationConverter : public IStringFieldConverter
-{
-    IJuniperConverter&     _juniper_converter;
-    std::string_view    _text;
-    vespalib::asciistream  _out;
+class AnnotationConverter : public IStringFieldConverter {
+    IJuniperConverter&    _juniper_converter;
+    std::string_view      _text;
+    vespalib::asciistream _out;
 
-    template <typename ForwardIt>
-    void handleAnnotations(const document::Span& span, ForwardIt it, ForwardIt last);
-    template <typename ForwardIt>
-    void annotateSpans(const document::Span& span, ForwardIt it, ForwardIt last);
+    template <typename ForwardIt> void handleAnnotations(const document::Span& span, ForwardIt it, ForwardIt last);
+    template <typename ForwardIt> void annotateSpans(const document::Span& span, ForwardIt it, ForwardIt last);
     void handleIndexingTerms(const document::StringFieldValue& value);
+
 public:
     AnnotationConverter(IJuniperConverter& juniper_converter);
     ~AnnotationConverter() override;
-    void convert(const document::StringFieldValue &input, vespalib::slime::Inserter& inserter) override;
+    void convert(const document::StringFieldValue& input, vespalib::slime::Inserter& inserter) override;
     bool render_weighted_set_as_array() const override;
 };
 
-}
+} // namespace search::docsummary

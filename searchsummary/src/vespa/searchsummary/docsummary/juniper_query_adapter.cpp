@@ -1,31 +1,32 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "juniper_query_adapter.h"
+
 #include "i_query_term_filter.h"
 #include "juniper_dfw_query_item.h"
 #include "juniper_dfw_term_visitor.h"
+
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
-#include <vespa/searchlib/queryeval/split_float.h>
 #include <vespa/searchlib/query/query_normalization.h>
+#include <vespa/searchlib/queryeval/split_float.h>
 
 namespace search::docsummary {
 
-JuniperQueryAdapter::JuniperQueryAdapter(const QueryNormalization * normalization, const IQueryTermFilter *query_term_filter,
-                                         std::unique_ptr<search::QueryStackIterator> iterator, const search::fef::Properties & highlightTerms)
+JuniperQueryAdapter::JuniperQueryAdapter(const QueryNormalization*                   normalization,
+                                         const IQueryTermFilter*                     query_term_filter,
+                                         std::unique_ptr<search::QueryStackIterator> iterator,
+                                         const search::fef::Properties&              highlightTerms)
     : _query_normalization(normalization),
       _query_term_filter(query_term_filter),
       _iterator(std::move(iterator)),
-      _highlightTerms(highlightTerms)
-{
+      _highlightTerms(highlightTerms) {
 }
 
 JuniperQueryAdapter::~JuniperQueryAdapter() = default;
 
 // TODO: put this functionality into the stack dump iterator
-bool
-JuniperQueryAdapter::skipItem(search::QueryStackIterator& iterator) const
-{
+bool JuniperQueryAdapter::skipItem(search::QueryStackIterator& iterator) const {
     uint32_t skipCount = iterator.getArity();
 
     while (skipCount > 0) {
@@ -37,12 +38,10 @@ JuniperQueryAdapter::skipItem(search::QueryStackIterator& iterator) const
     return true;
 }
 
-bool
-JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
-{
-    bool rc = true;
+bool JuniperQueryAdapter::Traverse(juniper::IQueryVisitor* v) const {
+    bool                rc = true;
     JuniperDFWQueryItem item(_iterator.get());
-    auto& iterator = *_iterator;
+    auto&               iterator = *_iterator;
 
     if (_highlightTerms.numKeys() > 0) {
         v->VisitAND(&item, 2);
@@ -76,40 +75,36 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
             [[fallthrough]];
         case search::ParseItem::ITEM_TERM:
         case search::ParseItem::ITEM_EXACTSTRINGTERM:
-        case search::ParseItem::ITEM_PURE_WEIGHTED_STRING:
-            {
-                std::string_view term(iterator.getTerm());
-                if (_query_normalization) {
-                    std::string_view index = iterator.index_as_view();
-                    if (index.empty()) {
-                        index = QueryStackIterator::DEFAULT_INDEX;
-                    }
-                    Normalizing normalization = _query_normalization->normalizing_mode(index);
-                    TermType termType = ParseItem::toTermType(iterator.getType());
-                    v->visitKeyword(&item, QueryNormalization::optional_fold(term, termType, normalization),
-                                    prefix_like, isSpecialToken);
-                } else {
-                    v->visitKeyword(&item, term, prefix_like, isSpecialToken);
+        case search::ParseItem::ITEM_PURE_WEIGHTED_STRING: {
+            std::string_view term(iterator.getTerm());
+            if (_query_normalization) {
+                std::string_view index = iterator.index_as_view();
+                if (index.empty()) {
+                    index = QueryStackIterator::DEFAULT_INDEX;
                 }
+                Normalizing normalization = _query_normalization->normalizing_mode(index);
+                TermType    termType = ParseItem::toTermType(iterator.getType());
+                v->visitKeyword(&item, QueryNormalization::optional_fold(term, termType, normalization), prefix_like,
+                                isSpecialToken);
+            } else {
+                v->visitKeyword(&item, term, prefix_like, isSpecialToken);
             }
-            break;
-        case search::ParseItem::ITEM_NUMTERM:
-            {
-                std::string_view term = iterator.getTerm();
-                queryeval::SplitFloat splitter(term);
-                if (splitter.parts() > 1) {
-                    if (v->VisitPHRASE(&item, splitter.parts())) {
-                        for (size_t i = 0; i < splitter.parts(); ++i) {
-                            v->visitKeyword(&item, splitter.getPart(i), false, false);
-                        }
+        } break;
+        case search::ParseItem::ITEM_NUMTERM: {
+            std::string_view      term = iterator.getTerm();
+            queryeval::SplitFloat splitter(term);
+            if (splitter.parts() > 1) {
+                if (v->VisitPHRASE(&item, splitter.parts())) {
+                    for (size_t i = 0; i < splitter.parts(); ++i) {
+                        v->visitKeyword(&item, splitter.getPart(i), false, false);
                     }
-                } else if (splitter.parts() == 1) {
-                    v->visitKeyword(&item, splitter.getPart(0), false, false);
-                } else {
-                    v->visitKeyword(&item, term, false, true);
                 }
+            } else if (splitter.parts() == 1) {
+                v->visitKeyword(&item, splitter.getPart(0), false, false);
+            } else {
+                v->visitKeyword(&item, term, false, true);
             }
-            break;
+        } break;
         case search::ParseItem::ITEM_PHRASE:
             if (!v->VisitPHRASE(&item, iterator.getArity()))
                 rc = skipItem(iterator);
@@ -160,9 +155,7 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
     return rc;
 }
 
-bool
-JuniperQueryAdapter::UsefulIndex(const juniper::QueryItem* item) const
-{
+bool JuniperQueryAdapter::UsefulIndex(const juniper::QueryItem* item) const {
     if (_query_term_filter == nullptr) {
         return true;
     }
@@ -170,4 +163,4 @@ JuniperQueryAdapter::UsefulIndex(const juniper::QueryItem* item) const
     return _query_term_filter->use_view(index);
 }
 
-}
+} // namespace search::docsummary
