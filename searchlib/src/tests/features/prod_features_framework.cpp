@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "prod_features_test.h"
+
 #include <vespa/searchlib/features/valuefeature.h>
 
 using namespace search::features;
@@ -8,8 +9,7 @@ using namespace search::fef;
 using namespace search::fef::test;
 using CollectionType = FieldInfo::CollectionType;
 
-TEST_F(ProdFeaturesTest, test_framework)
-{
+TEST_F(ProdFeaturesTest, test_framework) {
     IndexEnvironment indexEnv;
     { // test index environment builder
         IndexEnvironmentBuilder ieb(indexEnv);
@@ -17,21 +17,21 @@ TEST_F(ProdFeaturesTest, test_framework)
             .addField(FieldType::ATTRIBUTE, CollectionType::WEIGHTEDSET, "bar")
             .addField(FieldType::INDEX, CollectionType::ARRAY, "baz");
         {
-            const FieldInfo * info = indexEnv.getFieldByName("foo");
+            const FieldInfo* info = indexEnv.getFieldByName("foo");
             ASSERT_TRUE(info != nullptr);
             EXPECT_EQ(info->id(), 0u);
             EXPECT_TRUE(info->type() == FieldType::INDEX);
             EXPECT_TRUE(info->collection() == CollectionType::SINGLE);
         }
         {
-            const FieldInfo * info = indexEnv.getFieldByName("bar");
+            const FieldInfo* info = indexEnv.getFieldByName("bar");
             ASSERT_TRUE(info != nullptr);
             EXPECT_EQ(info->id(), 1u);
             EXPECT_TRUE(info->type() == FieldType::ATTRIBUTE);
             EXPECT_TRUE(info->collection() == CollectionType::WEIGHTEDSET);
         }
         {
-            const FieldInfo * info = indexEnv.getFieldByName("baz");
+            const FieldInfo* info = indexEnv.getFieldByName("baz");
             ASSERT_TRUE(info != nullptr);
             EXPECT_EQ(info->id(), 2u);
             EXPECT_TRUE(info->type() == FieldType::INDEX);
@@ -41,11 +41,11 @@ TEST_F(ProdFeaturesTest, test_framework)
     }
 
     QueryEnvironment queryEnv(&indexEnv);
-    MatchDataLayout layout;
+    MatchDataLayout  layout;
     { // test query environment builder
         QueryEnvironmentBuilder qeb(queryEnv, layout);
         {
-            SimpleTermData &tr = qeb.addAllFields();
+            SimpleTermData& tr = qeb.addAllFields();
             ASSERT_TRUE(tr.lookupField(0) != nullptr);
             ASSERT_TRUE(tr.lookupField(1) != nullptr);
             ASSERT_TRUE(tr.lookupField(2) != nullptr);
@@ -53,19 +53,19 @@ TEST_F(ProdFeaturesTest, test_framework)
             EXPECT_TRUE(tr.lookupField(0)->getHandle() == 0u);
             EXPECT_TRUE(tr.lookupField(1)->getHandle() == 1u);
             EXPECT_TRUE(tr.lookupField(2)->getHandle() == 2u);
-            const ITermData *tp = queryEnv.getTerm(0);
+            const ITermData* tp = queryEnv.getTerm(0);
             ASSERT_TRUE(tp != nullptr);
             EXPECT_EQ(tp, &tr);
         }
         {
-            SimpleTermData *tr = qeb.addAttributeNode("bar");
+            SimpleTermData* tr = qeb.addAttributeNode("bar");
             ASSERT_TRUE(tr != nullptr);
             ASSERT_TRUE(tr->lookupField(1) != nullptr);
             EXPECT_TRUE(tr->lookupField(0) == nullptr);
             EXPECT_TRUE(tr->lookupField(2) == nullptr);
             EXPECT_TRUE(tr->lookupField(3) == nullptr);
             EXPECT_TRUE(tr->lookupField(1)->getHandle() == 3u);
-            const ITermData *tp = queryEnv.getTerm(1);
+            const ITermData* tp = queryEnv.getTerm(1);
             ASSERT_TRUE(tp != nullptr);
             EXPECT_EQ(tp, tr);
         }
@@ -88,7 +88,7 @@ TEST_F(ProdFeaturesTest, test_framework)
 
         {
             {
-                TermFieldMatchData *tfmd = mdb.getTermFieldMatchData(0, 0);
+                TermFieldMatchData* tfmd = mdb.getTermFieldMatchData(0, 0);
                 ASSERT_TRUE(tfmd != nullptr);
 
                 FieldPositionsIterator itr = tfmd->getIterator(); // foo (index)
@@ -102,14 +102,14 @@ TEST_F(ProdFeaturesTest, test_framework)
                 ASSERT_TRUE(!itr.valid());
             }
             {
-                TermFieldMatchData *tfmd = mdb.getTermFieldMatchData(0, 1);
+                TermFieldMatchData* tfmd = mdb.getTermFieldMatchData(0, 1);
                 ASSERT_TRUE(tfmd != nullptr);
 
                 FieldPositionsIterator itr = tfmd->getIterator(); // bar (attribute)
                 ASSERT_TRUE(!itr.valid());
             }
             {
-                TermFieldMatchData *tfmd = mdb.getTermFieldMatchData(0, 2);
+                TermFieldMatchData* tfmd = mdb.getTermFieldMatchData(0, 2);
                 ASSERT_TRUE(tfmd != nullptr);
 
                 FieldPositionsIterator itr = tfmd->getIterator(); // baz (index)
@@ -124,7 +124,7 @@ TEST_F(ProdFeaturesTest, test_framework)
             }
         }
         {
-            TermFieldMatchData *tfmd = mdb.getTermFieldMatchData(1, 1);
+            TermFieldMatchData* tfmd = mdb.getTermFieldMatchData(1, 1);
             ASSERT_TRUE(tfmd != nullptr);
 
             FieldPositionsIterator itr = tfmd->getIterator(); // bar (attribute)
@@ -147,8 +147,8 @@ TEST_F(ProdFeaturesTest, test_framework)
     Properties overrides;
 
     { // test feature test runner
-        FeatureTest ft(factory, indexEnv, queryEnv, layout,
-                       StringList().add("value(10)").add("value(20)").add("value(30)"), overrides);
+        FeatureTest          ft(factory, indexEnv, queryEnv, layout,
+                                StringList().add("value(10)").add("value(20)").add("value(30)"), overrides);
         MatchDataBuilder::UP mdb1 = ft.createMatchDataBuilder();
         EXPECT_TRUE(mdb1.get() == nullptr);
         EXPECT_TRUE(!ft.execute(RankResult().addScore("value(10)", 10.0f)));
@@ -160,9 +160,9 @@ TEST_F(ProdFeaturesTest, test_framework)
         EXPECT_TRUE(!ft.execute(RankResult().addScore("value(10)", 20.0f)));
         EXPECT_TRUE(!ft.execute(RankResult().addScore("value(5)", 5.0f)));
     }
-    { // test simple constructor
+    {                        // test simple constructor
         MatchDataLayout mdl; // match data layout cannot be reused
-        FeatureTest ft(factory, indexEnv, queryEnv, mdl, "value(10)", overrides);
+        FeatureTest     ft(factory, indexEnv, queryEnv, mdl, "value(10)", overrides);
         ASSERT_TRUE(ft.setup());
         EXPECT_TRUE(ft.execute(10.0f));
     }

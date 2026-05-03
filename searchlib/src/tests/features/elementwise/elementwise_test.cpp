@@ -35,7 +35,7 @@ std::string feature_name(const StringVector& params) {
     return builder.buildName();
 }
 
-}
+} // namespace
 
 class ElementwiseBlueprintTest : public ::testing::Test {
 protected:
@@ -50,9 +50,7 @@ protected:
     void expect_bm25_setup_succeed(const StringVector& params);
 };
 
-ElementwiseBlueprintTest::ElementwiseBlueprintTest()
-    : ::testing::Test()
-{
+ElementwiseBlueprintTest::ElementwiseBlueprintTest() : ::testing::Test() {
     setup_search_features(factory);
     IndexEnvironmentBuilder builder(index_env);
     builder.addField(FieldType::INDEX, CollectionType::SINGLE, "is");
@@ -63,62 +61,50 @@ ElementwiseBlueprintTest::ElementwiseBlueprintTest()
 
 ElementwiseBlueprintTest::~ElementwiseBlueprintTest() = default;
 
-std::shared_ptr<Blueprint>
-ElementwiseBlueprintTest::make_blueprint() const
-{
+std::shared_ptr<Blueprint> ElementwiseBlueprintTest::make_blueprint() const {
     return factory.createBlueprint(elementwise_feature_base_name);
 }
 
-void
-ElementwiseBlueprintTest::expect_setup_fail(const StringVector& params)
-{
+void ElementwiseBlueprintTest::expect_setup_fail(const StringVector& params) {
     SCOPED_TRACE(feature_name(params));
-    auto blueprint = make_blueprint();
+    auto                   blueprint = make_blueprint();
     DummyDependencyHandler deps(*blueprint);
     EXPECT_FALSE(blueprint->setup(index_env, params));
     std::cerr << "fail msg: " << deps.fail_msg << std::endl;
 }
 
-void
-ElementwiseBlueprintTest::expect_bm25_setup_succeed(const StringVector& params)
-{
+void ElementwiseBlueprintTest::expect_bm25_setup_succeed(const StringVector& params) {
     SCOPED_TRACE(feature_name(params));
-    auto blueprint = make_blueprint();
+    auto                   blueprint = make_blueprint();
     DummyDependencyHandler deps(*blueprint);
     EXPECT_TRUE(blueprint->setup(index_env, params));
     EXPECT_EQ(0, deps.input.size());
     EXPECT_EQ(StringVector({"score"}), deps.output);
 }
 
-TEST_F(ElementwiseBlueprintTest, blueprint_can_be_created_from_factory)
-{
+TEST_F(ElementwiseBlueprintTest, blueprint_can_be_created_from_factory) {
     auto bp = factory.createBlueprint(elementwise_feature_base_name);
     EXPECT_TRUE(bp.get() != nullptr);
     EXPECT_TRUE(dynamic_cast<ElementwiseBlueprint*>(bp.get()) != nullptr);
 }
 
-TEST_F(ElementwiseBlueprintTest, blueprint_setup_fails_when_feature_is_unknown)
-{
-    expect_setup_fail({"unknownFeature", "x"});   // unknown feature
-
+TEST_F(ElementwiseBlueprintTest, blueprint_setup_fails_when_feature_is_unknown) {
+    expect_setup_fail({"unknownFeature", "x"}); // unknown feature
 }
 
-TEST_F(ElementwiseBlueprintTest, blueprint_setup_fails_when_parameter_list_is_not_valid)
-{
-    expect_setup_fail({});           // wrong parameter number
-    expect_setup_fail({"bm25"});   // wrong parameter number
-    expect_setup_fail({"bm25", "x"});   // wrong parameter number
-    expect_setup_fail({"bm25(as)", "x"});       // 'as' is an attribute
+TEST_F(ElementwiseBlueprintTest, blueprint_setup_fails_when_parameter_list_is_not_valid) {
+    expect_setup_fail({});                   // wrong parameter number
+    expect_setup_fail({"bm25"});             // wrong parameter number
+    expect_setup_fail({"bm25", "x"});        // wrong parameter number
+    expect_setup_fail({"bm25(as)", "x"});    // 'as' is an attribute
     expect_setup_fail({"bm25(is,ia)", "x"}); // wrong parameter number
 }
 
-TEST_F(ElementwiseBlueprintTest, blueprint_setup_fails_when_cell_type_is_malformed)
-{
+TEST_F(ElementwiseBlueprintTest, blueprint_setup_fails_when_cell_type_is_malformed) {
     expect_setup_fail({"bm25(is)", "x", "complex"});
 }
 
-TEST_F(ElementwiseBlueprintTest, blueprint_setup_succeeds_for_index_field)
-{
+TEST_F(ElementwiseBlueprintTest, blueprint_setup_succeeds_for_index_field) {
     expect_bm25_setup_succeed({"bm25(is)", "x"});
     expect_bm25_setup_succeed({"bm25(ia)", "x"});
     expect_bm25_setup_succeed({"bm25(iws)", "x"});

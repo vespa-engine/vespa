@@ -1,5 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchlib/features/bm25_feature.h>
 #include <vespa/searchlib/features/bm25_utils.h>
 #include <vespa/searchlib/features/setup.h>
@@ -9,8 +11,7 @@
 #include <vespa/searchlib/fef/test/indexenvironmentbuilder.h>
 #include <vespa/searchlib/test/ft_test_app_base.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/eval/eval/value_codec.h>
+
 #include <cmath>
 
 using namespace search::features;
@@ -27,8 +28,8 @@ struct TestParam {
     std::string _cell_type_name;
     bool        _elementwise;
 
-    TestParam(const std::string& name, const std::string& tensor_type_spec,
-              const std::string& dimension_name, const std::string& cell_type_name, bool elementwise);
+    TestParam(const std::string& name, const std::string& tensor_type_spec, const std::string& dimension_name,
+              const std::string& cell_type_name, bool elementwise);
     TestParam(const TestParam&);
     ~TestParam();
     std::string feature_base_name() const;
@@ -38,28 +39,23 @@ struct TestParam {
     std::string average_length_suffix() const;
 };
 
-TestParam::TestParam(const std::string& name, const std::string& tensor_type_spec,
-                     const std::string& dimension_name, const std::string& cell_type_name, bool elementwise)
+TestParam::TestParam(const std::string& name, const std::string& tensor_type_spec, const std::string& dimension_name,
+                     const std::string& cell_type_name, bool elementwise)
     : _name(name),
       _tensor_type_spec(tensor_type_spec),
       _dimension_name(dimension_name),
       _cell_type_name(cell_type_name),
-      _elementwise(elementwise)
-{
+      _elementwise(elementwise) {
 }
 
 TestParam::TestParam(const TestParam&) = default;
 TestParam::~TestParam() = default;
 
-std::string
-TestParam::feature_base_name() const
-{
+std::string TestParam::feature_base_name() const {
     return _elementwise ? "elementwise" : "bm25";
 }
 
-std::string
-TestParam::feature_name(const std::string& base_name, const StringVector& params) const
-{
+std::string TestParam::feature_name(const std::string& base_name, const StringVector& params) const {
     FeatureNameBuilder builder;
     builder.baseName(base_name);
     for (auto& param : params) {
@@ -68,9 +64,7 @@ TestParam::feature_name(const std::string& base_name, const StringVector& params
     return builder.buildName();
 }
 
-StringVector
-TestParam::wrap_params(const StringVector& params) const
-{
+StringVector TestParam::wrap_params(const StringVector& params) const {
     if (!_elementwise) {
         return params;
     }
@@ -81,44 +75,30 @@ TestParam::wrap_params(const StringVector& params) const
     return wrapped_params;
 }
 
-std::string
-TestParam::feature_name(const StringVector& params) const
-{
+std::string TestParam::feature_name(const StringVector& params) const {
     return feature_name(feature_base_name(), wrap_params(params));
 }
 
-std::string
-TestParam::average_length_suffix() const
-{
+std::string TestParam::average_length_suffix() const {
     return _elementwise ? "averageElementLength" : "averageFieldLength";
 }
 
-std::ostream& operator<<(std::ostream& os, const TestParam& param)
-{
+std::ostream& operator<<(std::ostream& os, const TestParam& param) {
     os << param._name;
     return os;
 }
 
 auto test_values = ::testing::Values(
-    TestParam("bm25", "error",
-              "", "", false),
-    TestParam("elementwiseBm25", "tensor(x{})",
-              "x", "double", true),
-    TestParam("elementwiseBm25float", "tensor<float>(x{})",
-              "x", "float", true),
-    TestParam("elementwiseBm25bfloat16", "tensor<bfloat16>(x{})",
-              "x", "bfloat16", true),
-    TestParam("elementwiseBm25int8", "tensor<int8>(x{})",
-              "x", "int8", true));
+    TestParam("bm25", "error", "", "", false), TestParam("elementwiseBm25", "tensor(x{})", "x", "double", true),
+    TestParam("elementwiseBm25float", "tensor<float>(x{})", "x", "float", true),
+    TestParam("elementwiseBm25bfloat16", "tensor<bfloat16>(x{})", "x", "bfloat16", true),
+    TestParam("elementwiseBm25int8", "tensor<int8>(x{})", "x", "int8", true));
 
 struct Bm25BlueprintTest : public ::testing::TestWithParam<TestParam> {
-    BlueprintFactory factory;
+    BlueprintFactory       factory;
     test::IndexEnvironment index_env;
 
-    Bm25BlueprintTest()
-        : factory(),
-          index_env()
-    {
+    Bm25BlueprintTest() : factory(), index_env() {
         setup_search_features(factory);
         test::IndexEnvironmentBuilder builder(index_env);
         builder.addField(FieldType::INDEX, CollectionType::SINGLE, "is");
@@ -128,19 +108,17 @@ struct Bm25BlueprintTest : public ::testing::TestWithParam<TestParam> {
     }
     ~Bm25BlueprintTest() override;
 
-    Blueprint::SP make_blueprint() const {
-        return factory.createBlueprint(GetParam().feature_base_name());
-    }
+    Blueprint::SP make_blueprint() const { return factory.createBlueprint(GetParam().feature_base_name()); }
     std::string feature_name() const { return GetParam().feature_name({"is"}); }
 
     void expect_setup_fail(const StringVector& params) {
-        auto blueprint = make_blueprint();
+        auto                         blueprint = make_blueprint();
         test::DummyDependencyHandler deps(*blueprint);
         EXPECT_FALSE(blueprint->setup(index_env, GetParam().wrap_params(params)));
     }
 
     Blueprint::SP expect_setup_succeed(const StringVector& params) {
-        auto blueprint = make_blueprint();
+        auto                         blueprint = make_blueprint();
         test::DummyDependencyHandler deps(*blueprint);
         EXPECT_TRUE(blueprint->setup(index_env, GetParam().wrap_params(params)));
         EXPECT_EQ(0, deps.input.size());
@@ -151,67 +129,56 @@ struct Bm25BlueprintTest : public ::testing::TestWithParam<TestParam> {
 
 Bm25BlueprintTest::~Bm25BlueprintTest() = default;
 
-
 INSTANTIATE_TEST_SUITE_P(Bm25BlueprintMultiTest, Bm25BlueprintTest, test_values, testing::PrintToStringParamName());
 
-TEST_P(Bm25BlueprintTest, blueprint_can_be_created_from_factory)
-{
+TEST_P(Bm25BlueprintTest, blueprint_can_be_created_from_factory) {
     auto bp = factory.createBlueprint("bm25");
     EXPECT_TRUE(bp.get() != nullptr);
     EXPECT_TRUE(dynamic_cast<Bm25Blueprint*>(bp.get()) != nullptr);
 }
 
-TEST_P(Bm25BlueprintTest, blueprint_setup_fails_when_parameter_list_is_not_valid)
-{
+TEST_P(Bm25BlueprintTest, blueprint_setup_fails_when_parameter_list_is_not_valid) {
     expect_setup_fail({});           // wrong parameter number
     expect_setup_fail({"as"});       // 'as' is an attribute
     expect_setup_fail({"is", "ia"}); // wrong parameter number
 }
 
-TEST_P(Bm25BlueprintTest, blueprint_setup_fails_when_k1_param_is_malformed)
-{
+TEST_P(Bm25BlueprintTest, blueprint_setup_fails_when_k1_param_is_malformed) {
     index_env.getProperties().add(feature_name() + ".k1", "malformed");
     expect_setup_fail({"is"});
 }
 
-TEST_P(Bm25BlueprintTest, blueprint_setup_fails_when_b_param_is_malformed)
-{
+TEST_P(Bm25BlueprintTest, blueprint_setup_fails_when_b_param_is_malformed) {
     index_env.getProperties().add(feature_name() + ".b", "malformed");
     expect_setup_fail({"is"});
 }
 
-TEST_P(Bm25BlueprintTest, blueprint_setup_fails_when_avg_field_length_is_malformed)
-{
-    index_env.getProperties().add(feature_name() + "."  + GetParam().average_length_suffix(), "malformed");
+TEST_P(Bm25BlueprintTest, blueprint_setup_fails_when_avg_field_length_is_malformed) {
+    index_env.getProperties().add(feature_name() + "." + GetParam().average_length_suffix(), "malformed");
     expect_setup_fail({"is"});
 }
 
-TEST_P(Bm25BlueprintTest, blueprint_setup_succeeds_for_index_field)
-{
+TEST_P(Bm25BlueprintTest, blueprint_setup_succeeds_for_index_field) {
     expect_setup_succeed({"is"});
     expect_setup_succeed({"ia"});
     expect_setup_succeed({"iws"});
 }
 
-TEST_P(Bm25BlueprintTest, blueprint_can_prepare_shared_state_with_average_field_length)
-{
-    auto blueprint = expect_setup_succeed({"is"});
+TEST_P(Bm25BlueprintTest, blueprint_can_prepare_shared_state_with_average_field_length) {
+    auto                   blueprint = expect_setup_succeed({"is"});
     test::QueryEnvironment query_env;
-    query_env.get_field_length_info_map()["is"] =
-        search::index::FieldLengthInfo(10.0, 10.0, 1);
+    query_env.get_field_length_info_map()["is"] = search::index::FieldLengthInfo(10.0, 10.0, 1);
     ObjectStore store;
     blueprint->prepareSharedState(query_env, store);
     EXPECT_DOUBLE_EQ(10.0, as_value<double>(*store.get(GetParam()._elementwise ? "bm25.ael.is" : "bm25.afl.is")));
 }
 
-TEST_P(Bm25BlueprintTest, dump_features_for_all_index_fields)
-{
+TEST_P(Bm25BlueprintTest, dump_features_for_all_index_fields) {
     StringList expected;
     if (!GetParam()._elementwise) {
         expected.add("bm25(is)").add("bm25(ia)").add("bm25(iws)");
     }
-    FtTestAppBase::FT_DUMP(factory, GetParam().feature_base_name(), index_env,
-                           expected);
+    FtTestAppBase::FT_DUMP(factory, GetParam().feature_base_name(), index_env, expected);
 }
 
 struct Scorer {
@@ -220,30 +187,22 @@ struct Scorer {
     double k1_param;
     double b_param;
 
-    Scorer() :
-        avg_field_length(10),
-        k1_param(1.2),
-        b_param(0.75)
-    {}
+    Scorer() : avg_field_length(10), k1_param(1.2), b_param(0.75) {}
 
     feature_t score(feature_t num_occs, feature_t field_length, double inverse_doc_freq) const {
         return inverse_doc_freq * (num_occs * (1 + k1_param)) /
-                (num_occs + (k1_param * ((1 - b_param) + b_param * field_length / avg_field_length)));
+               (num_occs + (k1_param * ((1 - b_param) + b_param * field_length / avg_field_length)));
     }
 };
 
 struct Bm25ExecutorTest : public ::testing::TestWithParam<TestParam> {
-    BlueprintFactory factory;
-    FtFeatureTest test;
+    BlueprintFactory           factory;
+    FtFeatureTest              test;
     test::MatchDataBuilder::UP match_data;
-    Scorer scorer;
-    static constexpr uint32_t total_doc_count = 100;
+    Scorer                     scorer;
+    static constexpr uint32_t  total_doc_count = 100;
 
-    Bm25ExecutorTest()
-        : factory(),
-          test(factory, GetParam().feature_name({"foo"})),
-          match_data()
-    {
+    Bm25ExecutorTest() : factory(), test(factory, GetParam().feature_name({"foo"})), match_data() {
         setup_search_features(factory);
         test.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "foo");
         test.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "bar");
@@ -287,7 +246,8 @@ struct Bm25ExecutorTest : public ::testing::TestWithParam<TestParam> {
         ASSERT_TRUE(tfmd != nullptr);
         tfmd->reset(123);
     }
-    void prepare_term(uint32_t term_id, uint32_t field_id, uint16_t num_occs, uint16_t field_length, uint32_t doc_id = 1) {
+    void prepare_term(uint32_t term_id, uint32_t field_id, uint16_t num_occs, uint16_t field_length,
+                      uint32_t doc_id = 1) {
         auto* tfmd = match_data->getTermFieldMatchData(term_id, field_id);
         ASSERT_TRUE(tfmd != nullptr);
         tfmd->reset(doc_id);
@@ -301,7 +261,8 @@ struct Bm25ExecutorTest : public ::testing::TestWithParam<TestParam> {
         }
     }
 
-    void append_term(uint32_t term_id, uint32_t field_id, uint32_t element_id, uint16_t num_occs, uint32_t element_length) {
+    void append_term(uint32_t term_id, uint32_t field_id, uint32_t element_id, uint16_t num_occs,
+                     uint32_t element_length) {
         auto* tfmd = match_data->getTermFieldMatchData(term_id, field_id);
         ASSERT_TRUE(tfmd != nullptr);
         if (!GetParam()._elementwise) {
@@ -328,23 +289,20 @@ Bm25ExecutorTest::~Bm25ExecutorTest() = default;
 
 INSTANTIATE_TEST_SUITE_P(Bm25ExecutorMultiTest, Bm25ExecutorTest, test_values, testing::PrintToStringParamName());
 
-TEST_P(Bm25ExecutorTest, score_is_calculated_for_a_single_term)
-{
+TEST_P(Bm25ExecutorTest, score_is_calculated_for_a_single_term) {
     setup();
     prepare_term(0, 0, 3, 20);
     EXPECT_TRUE(execute(score(3.0, 20, idf(25))));
 }
 
-TEST_P(Bm25ExecutorTest, score_is_calculated_for_multiple_terms)
-{
+TEST_P(Bm25ExecutorTest, score_is_calculated_for_multiple_terms) {
     setup();
     prepare_term(0, 0, 3, 20);
     prepare_term(1, 0, 7, 5);
     EXPECT_TRUE(execute(score(3.0, 20, idf(25)) + score(7.0, 5.0, idf(35))));
 }
 
-TEST_P(Bm25ExecutorTest, term_that_does_not_match_document_is_ignored)
-{
+TEST_P(Bm25ExecutorTest, term_that_does_not_match_document_is_ignored) {
     setup();
     prepare_term(0, 0, 3, 20);
     uint32_t unmatched_doc_id = 123;
@@ -352,15 +310,13 @@ TEST_P(Bm25ExecutorTest, term_that_does_not_match_document_is_ignored)
     EXPECT_TRUE(execute(score(3.0, 20, idf(25))));
 }
 
-TEST_P(Bm25ExecutorTest, term_searching_another_field_is_ignored)
-{
+TEST_P(Bm25ExecutorTest, term_searching_another_field_is_ignored) {
     setup();
     prepare_term(2, 1, 3, 20);
     EXPECT_TRUE(execute(0.0));
 }
 
-TEST_P(Bm25ExecutorTest, uses_average_field_length_from_shared_state_if_found)
-{
+TEST_P(Bm25ExecutorTest, uses_average_field_length_from_shared_state_if_found) {
     std::string key(GetParam()._elementwise ? "bm25.ael.foo" : "bm25.afl.foo");
     test.getQueryEnv().getObjectStore().add(key, std::make_unique<AnyWrapper<double>>(15));
     setup();
@@ -369,24 +325,17 @@ TEST_P(Bm25ExecutorTest, uses_average_field_length_from_shared_state_if_found)
     EXPECT_TRUE(execute(score(3.0, 20, idf(25))));
 }
 
-TEST_P(Bm25ExecutorTest, calculates_inverse_document_frequency)
-{
-    EXPECT_DOUBLE_EQ(std::log(1 + (99 + 0.5) / (1 + 0.5)),
-                     Bm25Utils::calculate_inverse_document_frequency({1, 100}));
+TEST_P(Bm25ExecutorTest, calculates_inverse_document_frequency) {
+    EXPECT_DOUBLE_EQ(std::log(1 + (99 + 0.5) / (1 + 0.5)), Bm25Utils::calculate_inverse_document_frequency({1, 100}));
     EXPECT_DOUBLE_EQ(std::log(1 + (60 + 0.5) / (40 + 0.5)),
                      Bm25Utils::calculate_inverse_document_frequency({40, 100}));
-    EXPECT_DOUBLE_EQ(std::log(1 + (0.5) / (100 + 0.5)),
-                     Bm25Utils::calculate_inverse_document_frequency({100, 100}));
-    EXPECT_DOUBLE_EQ(std::log(1 + (0.5) / (100 + 0.5)),
-                    Bm25Utils::calculate_inverse_document_frequency({200, 100}));
-    EXPECT_DOUBLE_EQ(std::log(1 + (99 + 0.5) / (1 + 0.5)),
-                     Bm25Utils::calculate_inverse_document_frequency({0, 100}));
-    EXPECT_DOUBLE_EQ(std::log(1 + (0.5) / (1 + 0.5)),
-                     Bm25Utils::calculate_inverse_document_frequency({0, 0}));
+    EXPECT_DOUBLE_EQ(std::log(1 + (0.5) / (100 + 0.5)), Bm25Utils::calculate_inverse_document_frequency({100, 100}));
+    EXPECT_DOUBLE_EQ(std::log(1 + (0.5) / (100 + 0.5)), Bm25Utils::calculate_inverse_document_frequency({200, 100}));
+    EXPECT_DOUBLE_EQ(std::log(1 + (99 + 0.5) / (1 + 0.5)), Bm25Utils::calculate_inverse_document_frequency({0, 100}));
+    EXPECT_DOUBLE_EQ(std::log(1 + (0.5) / (1 + 0.5)), Bm25Utils::calculate_inverse_document_frequency({0, 0}));
 }
 
-TEST_P(Bm25ExecutorTest, k1_param_can_be_overriden)
-{
+TEST_P(Bm25ExecutorTest, k1_param_can_be_overriden) {
     test.getIndexEnv().getProperties().add(feature_name() + ".k1", "2.5");
     setup();
     prepare_term(0, 0, 3, 20);
@@ -394,8 +343,7 @@ TEST_P(Bm25ExecutorTest, k1_param_can_be_overriden)
     EXPECT_TRUE(execute(score(3.0, 20, idf(25))));
 }
 
-TEST_P(Bm25ExecutorTest, b_param_can_be_overriden)
-{
+TEST_P(Bm25ExecutorTest, b_param_can_be_overriden) {
     test.getIndexEnv().getProperties().add(feature_name() + ".b", "0.9");
     setup();
     prepare_term(0, 0, 3, 20);
@@ -403,8 +351,7 @@ TEST_P(Bm25ExecutorTest, b_param_can_be_overriden)
     EXPECT_TRUE(execute(score(3.0, 20, idf(25))));
 }
 
-TEST_P(Bm25ExecutorTest, avg_field_length_can_be_overriden)
-{
+TEST_P(Bm25ExecutorTest, avg_field_length_can_be_overriden) {
     test.getIndexEnv().getProperties().add(feature_name() + "." + GetParam().average_length_suffix(), "15");
     setup();
     prepare_term(0, 0, 3, 20);
@@ -412,23 +359,20 @@ TEST_P(Bm25ExecutorTest, avg_field_length_can_be_overriden)
     EXPECT_TRUE(execute(score(3.0, 20, idf(25))));
 }
 
-TEST_P(Bm25ExecutorTest, inverse_document_frequency_can_be_overriden_with_significance)
-{
+TEST_P(Bm25ExecutorTest, inverse_document_frequency_can_be_overriden_with_significance) {
     test.getQueryEnv().getProperties().add("vespa.term.0.significance", "0.35");
     setup();
     prepare_term(0, 0, 3, 20);
     EXPECT_TRUE(execute(score(3.0, 20, 0.35)));
 }
 
-TEST_P(Bm25ExecutorTest, missing_interleaved_features_are_handled)
-{
+TEST_P(Bm25ExecutorTest, missing_interleaved_features_are_handled) {
     setup();
     prepare_term(0, 0, 0, 0);
     EXPECT_TRUE(execute(score(GetParam()._elementwise ? 0.0 : 1.0, 10, idf(25))));
 }
 
-TEST_P(Bm25ExecutorTest, multiple_elements_and_terms)
-{
+TEST_P(Bm25ExecutorTest, multiple_elements_and_terms) {
     setup();
     prepare_term(0, 0, 0, 0);
     append_term(0, 0, 1, 3, 20);
@@ -441,8 +385,8 @@ TEST_P(Bm25ExecutorTest, multiple_elements_and_terms)
         EXPECT_TRUE(execute(score(5, 25, idf(25))) + score(3, 25, idf(35)));
     } else {
         // One tensor cell for each matching element
-        auto value = test.resolveObjectFeature();
-        auto spec = spec_from_value(value.get());
+        auto       value = test.resolveObjectFeature();
+        auto       spec = spec_from_value(value.get());
         TensorSpec exp_spec(GetParam()._tensor_type_spec);
         exp_spec.add({{"x", "1"}}, score(3, 20, idf(25)));
         exp_spec.add({{"x", "7"}}, score(2, 5, idf(25)) + score(1, 5, idf(35)));

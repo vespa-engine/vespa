@@ -16,7 +16,7 @@ void PrintTo(const DocumentFrequency& document_frequency, std::ostream* os) {
     *os << "{" << document_frequency.frequency << "," << document_frequency.count << "}";
 }
 
-}
+} // namespace search::features::util
 
 SimpleTermData make_term(uint32_t uid) {
     SimpleTermData term;
@@ -38,8 +38,7 @@ struct TermLabelFixture {
     }
 };
 
-TEST(UtilsTest, require_that_label_can_be_mapped_to_term)
-{
+TEST(UtilsTest, require_that_label_can_be_mapped_to_term) {
     TermLabelFixture f1;
     EXPECT_EQ((ITermData*)&f1.queryEnv.getTerms()[0], getTermByLabel(f1.queryEnv, "foo"));
     EXPECT_EQ(nullptr, getTermByLabel(f1.queryEnv, "bar"));
@@ -48,8 +47,7 @@ TEST(UtilsTest, require_that_label_can_be_mapped_to_term)
     EXPECT_EQ(nullptr, getTermByLabel(f1.queryEnv, "unknown"));
 }
 
-template <typename T>
-void verifyStrToNum(const std::string& label) {
+template <typename T> void verifyStrToNum(const std::string& label) {
     SCOPED_TRACE(label);
     EXPECT_EQ(-17, static_cast<long>(strToNum<T>("-17")));
     EXPECT_EQ(-1, static_cast<long>(strToNum<T>("-1")));
@@ -61,16 +59,14 @@ void verifyStrToNum(const std::string& label) {
     EXPECT_EQ(27, static_cast<long>(strToNum<T>("0x1b")));
 }
 
-TEST(UtilsTest, verify_str2Num)
-{
+TEST(UtilsTest, verify_str2Num) {
     verifyStrToNum<int8_t>("int8_t");
     verifyStrToNum<int16_t>("int16_t");
     verifyStrToNum<int32_t>("int32_t");
     verifyStrToNum<int64_t>("int64_t");
 }
 
-TEST(UtilsTest, lookup_document_frequency)
-{
+TEST(UtilsTest, lookup_document_frequency) {
     using OptDF = std::optional<DocumentFrequency>;
     IndexEnvironment index_env;
     QueryEnvironment query_env(&index_env);
