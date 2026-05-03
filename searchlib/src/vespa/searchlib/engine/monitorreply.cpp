@@ -5,12 +5,7 @@
 namespace search::engine {
 
 MonitorReply::MonitorReply()
-    : activeDocs(0),
-      targetActiveDocs(0),
-      distribution_key(-1),
-      timestamp(),
-      is_blocking_writes(false)
-{ }
-
+    : activeDocs(0), targetActiveDocs(0), distribution_key(-1), timestamp(), is_blocking_writes(false) {
 }
 
+} // namespace search::engine

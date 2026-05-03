@@ -3,23 +3,23 @@
 #pragma once
 
 #include "searchrequest.h"
+
 #include <vespa/document/base/globalid.h>
 #include <vespa/searchlib/common/hitrank.h>
 #include <vespa/searchlib/common/unique_issues.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/featureset.h>
+
 #include <vector>
 
 namespace search::engine {
 
 class Coverage {
 public:
-    Coverage() noexcept : Coverage(0) { }
-    explicit Coverage(uint64_t active) noexcept : Coverage(active, active) { }
+    Coverage() noexcept : Coverage(0) {}
+    explicit Coverage(uint64_t active) noexcept : Coverage(active, active) {}
     Coverage(uint64_t active, uint64_t covered) noexcept
-        : _covered(covered), _active(active), _targetActive(active),
-          _degradeReason(0)
-    { }
+        : _covered(covered), _active(active), _targetActive(active), _degradeReason(0) {}
     uint64_t getCovered() const { return _covered; }
     uint64_t getActive() const { return _active; }
     uint64_t getTargetActive() const { return _targetActive; }
@@ -27,13 +27,29 @@ public:
     bool wasDegradedByMatchPhase() const { return ((_degradeReason & MATCH_PHASE) != 0); }
     bool wasDegradedByTimeout() const { return ((_degradeReason & TIMEOUT) != 0); }
 
-    Coverage & setCovered(uint64_t v) { _covered = v; return *this; }
-    Coverage & setActive(uint64_t v) { _active = v; return *this; }
-    Coverage & setTargetActive(uint64_t v) { _targetActive = v; return *this; }
+    Coverage& setCovered(uint64_t v) {
+        _covered = v;
+        return *this;
+    }
+    Coverage& setActive(uint64_t v) {
+        _active = v;
+        return *this;
+    }
+    Coverage& setTargetActive(uint64_t v) {
+        _targetActive = v;
+        return *this;
+    }
 
-    Coverage & degradeMatchPhase() { _degradeReason |= MATCH_PHASE; return *this; }
-    Coverage & degradeTimeout() { _degradeReason |= TIMEOUT; return *this; }
-    enum DegradeReason {MATCH_PHASE=0x01, TIMEOUT=0x02};
+    Coverage& degradeMatchPhase() {
+        _degradeReason |= MATCH_PHASE;
+        return *this;
+    }
+    Coverage& degradeTimeout() {
+        _degradeReason |= TIMEOUT;
+        return *this;
+    }
+    enum DegradeReason { MATCH_PHASE = 0x01, TIMEOUT = 0x02 };
+
 private:
     uint64_t _covered;
     uint64_t _active;
@@ -41,14 +57,12 @@ private:
     uint32_t _degradeReason;
 };
 
-class SearchReply
-{
+class SearchReply {
 public:
     using FeatureValues = vespalib::FeatureValues;
     using UP = std::unique_ptr<SearchReply>;
 
-    class Hit
-    {
+    class Hit {
     public:
         Hit() noexcept : gid(), metric(0) {}
         document::GlobalId gid;
@@ -56,7 +70,8 @@ public:
     };
 
 private:
-    uint32_t              _distributionKey;
+    uint32_t _distributionKey;
+
 public:
     uint64_t              totalHitCount;
     std::vector<uint32_t> sortIndex;
@@ -67,15 +82,15 @@ public:
     FeatureValues         match_features;
     PropertiesMap         propertiesMap;
 
-    SearchRequest::UP     request;
-    UniqueIssues::UP      my_issues;
+    SearchRequest::UP request;
+    UniqueIssues::UP  my_issues;
 
     SearchReply();
     ~SearchReply();
-    SearchReply(const SearchReply &rhs); // for test only
+    SearchReply(const SearchReply& rhs); // for test only
 
     void setDistributionKey(uint32_t key) { _distributionKey = key; }
     uint32_t getDistributionKey() const { return _distributionKey; }
 };
 
-}
+} // namespace search::engine

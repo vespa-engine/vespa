@@ -2,9 +2,10 @@
 
 #pragma once
 
-#include <vespa/metrics/valuemetric.h>
 #include <vespa/metrics/countmetric.h>
 #include <vespa/metrics/metricset.h>
+#include <vespa/metrics/valuemetric.h>
+
 #include <mutex>
 
 namespace search::engine {
@@ -13,8 +14,7 @@ namespace search::engine {
  * Metrics for the proto rpc adapter component implementing the search
  * protocol in proton.
  **/
-class SearchProtocolMetrics : public metrics::MetricSet
-{
+class SearchProtocolMetrics : public metrics::MetricSet {
 public:
     // sub-metrics for query request/reply
     struct QueryMetrics : metrics::MetricSet {
@@ -22,7 +22,7 @@ public:
         metrics::LongAverageMetric   request_size;
         metrics::LongAverageMetric   reply_size;
 
-        QueryMetrics(metrics::MetricSet *parent);
+        QueryMetrics(metrics::MetricSet* parent);
         ~QueryMetrics() override;
     };
 
@@ -41,7 +41,7 @@ public:
         metrics::LongAverageMetric   reply_size;
         metrics::LongCountMetric     requested_documents;
 
-        DocsumMetrics(metrics::MetricSet *parent);
+        DocsumMetrics(metrics::MetricSet* parent);
         ~DocsumMetrics() override;
     };
 
@@ -63,11 +63,11 @@ public:
     SearchProtocolMetrics();
     ~SearchProtocolMetrics() override;
 
-    const QueryMetrics &query() const { return _query; }
-    const DocsumMetrics &docsum() const { return _docsum; }
+    const QueryMetrics& query() const { return _query; }
+    const DocsumMetrics& docsum() const { return _docsum; }
 
-    void update_query_metrics(const QueryStats &stats);
-    void update_docsum_metrics(const DocsumStats &stats);
+    void update_query_metrics(const QueryStats& stats);
+    void update_docsum_metrics(const DocsumStats& stats);
 };
 
-}
+} // namespace search::engine
