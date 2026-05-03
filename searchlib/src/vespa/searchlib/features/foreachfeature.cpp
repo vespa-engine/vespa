@@ -1,13 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "foreachfeature.h"
-#include "valuefeature.h"
+
 #include "utils.h"
+#include "valuefeature.h"
 
 #include <vespa/searchlib/fef/properties.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/stllike/replace_variable.h>
+#include <vespa/vespalib/util/stash.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.foreachfeature");
@@ -17,18 +18,11 @@ using namespace search::fef;
 namespace search::features {
 
 template <typename CO, typename OP>
-ForeachExecutor<CO, OP>::ForeachExecutor(const CO & condition, uint32_t numInputs) :
-    FeatureExecutor(),
-    _condition(condition),
-    _operation(),
-    _numInputs(numInputs)
-{
+ForeachExecutor<CO, OP>::ForeachExecutor(const CO& condition, uint32_t numInputs)
+    : FeatureExecutor(), _condition(condition), _operation(), _numInputs(numInputs) {
 }
 
-template <typename CO, typename OP>
-void
-ForeachExecutor<CO, OP>::execute(uint32_t)
-{
+template <typename CO, typename OP> void ForeachExecutor<CO, OP>::execute(uint32_t) {
     _operation.reset();
     for (uint32_t i = 0; i < inputs().size(); ++i) {
         feature_t val = inputs().get_number(i);
@@ -39,10 +33,7 @@ ForeachExecutor<CO, OP>::execute(uint32_t)
     outputs().set_number(0, _operation.getResult());
 }
 
-
-bool
-ForeachBlueprint::decideDimension(const std::string & param)
-{
+bool ForeachBlueprint::decideDimension(const std::string& param) {
     if (param == "terms") {
         _dimension = TERMS;
     } else if (param == "fields") {
@@ -57,9 +48,7 @@ ForeachBlueprint::decideDimension(const std::string & param)
     return true;
 }
 
-bool
-ForeachBlueprint::decideCondition(const std::string & condition, const std::string & operation)
-{
+bool ForeachBlueprint::decideCondition(const std::string& condition, const std::string& operation) {
     if (condition == "true") {
         return decideOperation(TrueCondition(), operation);
     } else if (condition.size() >= 2 && condition[0] == '<') {
@@ -67,16 +56,12 @@ ForeachBlueprint::decideCondition(const std::string & condition, const std::stri
     } else if (condition.size() >= 2 && condition[0] == '>') {
         return decideOperation(GreaterThanCondition(util::strToNum<feature_t>(condition.substr(1))), operation);
     } else {
-        LOG(error, "Expected condition parameter to be 'true', '<a', or '>a', but was '%s'",
-            condition.c_str());
+        LOG(error, "Expected condition parameter to be 'true', '<a', or '>a', but was '%s'", condition.c_str());
         return false;
     }
 }
 
-template <typename CO>
-bool
-ForeachBlueprint::decideOperation(CO condition, const std::string & operation)
-{
+template <typename CO> bool ForeachBlueprint::decideOperation(CO condition, const std::string& operation) {
     if (operation == "sum") {
         setExecutorCreator<CO, SumOperation>(condition);
     } else if (operation == "product") {
@@ -90,49 +75,37 @@ ForeachBlueprint::decideOperation(CO condition, const std::string & operation)
     } else if (operation == "count") {
         setExecutorCreator<CO, CountOperation>(condition);
     } else {
-        LOG(error, "Expected operation parameter to be 'sum', 'product', 'average', 'max', 'min', or 'count', but was '%s'",
+        LOG(error,
+            "Expected operation parameter to be 'sum', 'product', 'average', 'max', 'min', or 'count', but was '%s'",
             operation.c_str());
         return false;
     }
     return true;
 }
 
-template <typename CO, typename OP>
-void
-ForeachBlueprint::setExecutorCreator(CO condition)
-{
+template <typename CO, typename OP> void ForeachBlueprint::setExecutorCreator(CO condition) {
     class ExecutorCreator : public ExecutorCreatorBase {
     private:
         CO _condition;
+
     public:
         ExecutorCreator(CO cond) : _condition(cond) {}
-        search::fef::FeatureExecutor &create(uint32_t numInputs, vespalib::Stash &stash) const override {
-            return stash.create<ForeachExecutor<CO, OP>>(_condition,  numInputs);
+        search::fef::FeatureExecutor& create(uint32_t numInputs, vespalib::Stash& stash) const override {
+            return stash.create<ForeachExecutor<CO, OP>>(_condition, numInputs);
         }
     };
     _executorCreator.reset(new ExecutorCreator(condition));
 }
 
-ForeachBlueprint::ForeachBlueprint() :
-    Blueprint("foreach"),
-    _dimension(ILLEGAL),
-    _executorCreator(),
-    _num_inputs(0)
-{
+ForeachBlueprint::ForeachBlueprint() : Blueprint("foreach"), _dimension(ILLEGAL), _executorCreator(), _num_inputs(0) {
 }
 
 ForeachBlueprint::~ForeachBlueprint() = default;
 
-void
-ForeachBlueprint::visitDumpFeatures(const IIndexEnvironment &,
-                                    IDumpFeatureVisitor &) const
-{
+void ForeachBlueprint::visitDumpFeatures(const IIndexEnvironment&, IDumpFeatureVisitor&) const {
 }
 
-bool
-ForeachBlueprint::setup(const IIndexEnvironment & env,
-                        const ParameterList & params)
-{
+bool ForeachBlueprint::setup(const IIndexEnvironment& env, const ParameterList& params) {
     if (!decideDimension(params[0].getValue())) {
         return false;
     }
@@ -140,8 +113,8 @@ ForeachBlueprint::setup(const IIndexEnvironment & env,
         return false;
     }
 
-    const std::string & variable = params[1].getValue();
-    const std::string & feature = params[2].getValue();
+    const std::string& variable = params[1].getValue();
+    const std::string& feature = params[2].getValue();
 
     if (_dimension == TERMS) {
         uint32_t maxTerms = util::strToNum<uint32_t>(env.getProperties().lookup(getBaseName(), "maxTerms").get("16"));
@@ -151,7 +124,7 @@ ForeachBlueprint::setup(const IIndexEnvironment & env,
         }
     } else {
         for (uint32_t i = 0; i < env.getNumFields(); ++i) {
-            const FieldInfo * info = env.getField(i);
+            const FieldInfo* info = env.getField(i);
             if (info->type() == FieldType::INDEX && _dimension == FIELDS) {
                 defineInput(vespalib::replace_variable(feature, variable, info->name()));
                 ++_num_inputs;
@@ -167,20 +140,15 @@ ForeachBlueprint::setup(const IIndexEnvironment & env,
     return true;
 }
 
-Blueprint::UP
-ForeachBlueprint::createInstance() const
-{
+Blueprint::UP ForeachBlueprint::createInstance() const {
     return std::make_unique<ForeachBlueprint>();
 }
 
-FeatureExecutor &
-ForeachBlueprint::createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const
-{
+FeatureExecutor& ForeachBlueprint::createExecutor(const IQueryEnvironment&, vespalib::Stash& stash) const {
     if (_executorCreator) {
         return _executorCreator->create(_num_inputs, stash);
     }
     return stash.create<SingleZeroValueExecutor>();
 }
 
-
-}
+} // namespace search::features

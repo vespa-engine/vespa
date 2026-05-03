@@ -1,8 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "termdistancecalculator.h"
-#include <vespa/searchlib/fef/matchdata.h>
+
 #include <vespa/searchlib/fef/itermdata.h>
+#include <vespa/searchlib/fef/matchdata.h>
 
 using search::fef::ElementGap;
 using search::fef::MatchData;
@@ -12,12 +13,10 @@ namespace search::features {
 
 const uint32_t TermDistanceCalculator::UNDEFINED_VALUE(1000000);
 
-void
-TermDistanceCalculator::run(const QueryTerm &termX, const QueryTerm &termY, ElementGap element_gap,
-                            const MatchData & match, uint32_t docId, Result & r)
-{
-    const TermFieldMatchData *tmdX = match.resolveTermField(termX.fieldHandle());
-    const TermFieldMatchData *tmdY = match.resolveTermField(termY.fieldHandle());
+void TermDistanceCalculator::run(const QueryTerm& termX, const QueryTerm& termY, ElementGap element_gap,
+                                 const MatchData& match, uint32_t docId, Result& r) {
+    const TermFieldMatchData* tmdX = match.resolveTermField(termX.fieldHandle());
+    const TermFieldMatchData* tmdY = match.resolveTermField(termY.fieldHandle());
     if (!tmdX->has_ranking_data(docId) || !tmdY->has_ranking_data(docId)) {
         return;
     }
@@ -25,14 +24,9 @@ TermDistanceCalculator::run(const QueryTerm &termX, const QueryTerm &termY, Elem
     findBest(tmdY, tmdX, element_gap, termY.termData()->getPhraseLength(), r.reverseDist, r.reverseTermPos);
 }
 
-void
-TermDistanceCalculator::findBest(const TermFieldMatchData *tmdX,
-                                 const TermFieldMatchData *tmdY,
-                                 ElementGap element_gap,
-                                 uint32_t numTermsX,
-                                 uint32_t & bestDist,
-                                 uint32_t & bestPos)
-{
+void TermDistanceCalculator::findBest(const TermFieldMatchData* tmdX, const TermFieldMatchData* tmdY,
+                                      ElementGap element_gap, uint32_t numTermsX, uint32_t& bestDist,
+                                      uint32_t& bestPos) {
     search::fef::TermFieldMatchData::PositionsIterator itA, itB, epA, epB;
     itA = tmdX->begin();
     epA = tmdX->end();
@@ -62,4 +56,4 @@ TermDistanceCalculator::findBest(const TermFieldMatchData *tmdX,
     }
 }
 
-}
+} // namespace search::features

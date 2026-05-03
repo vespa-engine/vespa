@@ -7,10 +7,8 @@ LOG_SETUP(".features.array_parser");
 
 namespace search::features {
 
-void
-ArrayParser::parse(const std::string &input, std::vector<int8_t> &output)
-{
+void ArrayParser::parse(const std::string& input, std::vector<int8_t>& output) {
     parse<std::vector<int8_t>, int16_t>(input, output);
 }
 
-}
+} // namespace search::features

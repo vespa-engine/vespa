@@ -1,10 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "nativerankfeature.h"
-#include "valuefeature.h"
+
 #include "utils.h"
+#include "valuefeature.h"
+
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/util/stash.h>
+
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -14,9 +17,7 @@ using namespace search::fef;
 
 namespace {
 
-std::string
-buildFeatureName(const std::string & baseName, const search::features::FieldWrapper & fields)
-{
+std::string buildFeatureName(const std::string& baseName, const search::features::FieldWrapper& fields) {
     std::ostringstream oss;
     oss << baseName << "(";
     for (size_t i = 0; i < fields.getNumFields(); ++i) {
@@ -29,25 +30,22 @@ buildFeatureName(const std::string & baseName, const search::features::FieldWrap
     return oss.str();
 }
 
-}
+} // namespace
 
 namespace search::features {
 
-FieldWrapper::FieldWrapper(const IIndexEnvironment & env,
-                           const ParameterList & fields,
-                           const FieldType filter) :
-    _fields()
-{
+FieldWrapper::FieldWrapper(const IIndexEnvironment& env, const ParameterList& fields, const FieldType filter)
+    : _fields() {
     if (!fields.empty()) {
         for (size_t i = 0; i < fields.size(); ++i) {
-            const search::fef::FieldInfo * info = fields[i].asField();
+            const search::fef::FieldInfo* info = fields[i].asField();
             if (info->type() == filter) {
                 _fields.push_back(info);
             }
         }
     } else {
         for (size_t i = 0; i < env.getNumFields(); ++i) {
-            const search::fef::FieldInfo * info = env.getField(i);
+            const search::fef::FieldInfo* info = env.getField(i);
             LOG_ASSERT(info->id() == i && "The field ids must be the same in FieldInfo as in IIndexEnvironment");
             if (info->type() == filter) {
                 _fields.push_back(info);
@@ -56,60 +54,43 @@ FieldWrapper::FieldWrapper(const IIndexEnvironment & env,
     }
 }
 
-
-NativeRankExecutor::NativeRankExecutor(const NativeRankParams & params) :
-    FeatureExecutor(),
-    _params(params),
-    _divisor(0)
-{
+NativeRankExecutor::NativeRankExecutor(const NativeRankParams& params)
+    : FeatureExecutor(), _params(params), _divisor(0) {
     _divisor += _params.fieldMatchWeight;
     _divisor += _params.attributeMatchWeight;
     _divisor += _params.proximityWeight;
 }
 
-void
-NativeRankExecutor::execute(uint32_t)
-{
-    outputs().set_number(0, (inputs().get_number(0) * _params.fieldMatchWeight
-                             + inputs().get_number(1) * _params.proximityWeight
-                             + inputs().get_number(2) * _params.attributeMatchWeight) / _divisor);
+void NativeRankExecutor::execute(uint32_t) {
+    outputs().set_number(0, (inputs().get_number(0) * _params.fieldMatchWeight +
+                             inputs().get_number(1) * _params.proximityWeight +
+                             inputs().get_number(2) * _params.attributeMatchWeight) /
+                                _divisor);
 }
 
-
-NativeRankBlueprint::NativeRankBlueprint() :
-    Blueprint("nativeRank"),
-    _params()
-{
+NativeRankBlueprint::NativeRankBlueprint() : Blueprint("nativeRank"), _params() {
 }
 
-void
-NativeRankBlueprint::visitDumpFeatures(const IIndexEnvironment & env,
-                                       IDumpFeatureVisitor & visitor) const
-{
-    (void) env;
+void NativeRankBlueprint::visitDumpFeatures(const IIndexEnvironment& env, IDumpFeatureVisitor& visitor) const {
+    (void)env;
     visitor.visitDumpFeature(getBaseName());
 }
 
-Blueprint::UP
-NativeRankBlueprint::createInstance() const
-{
+Blueprint::UP NativeRankBlueprint::createInstance() const {
     return std::make_unique<NativeRankBlueprint>();
 }
 
-bool
-NativeRankBlueprint::setup(const IIndexEnvironment & env,
-                           const ParameterList & params)
-{
-    _params.fieldMatchWeight = util::strToNum<feature_t>
-        (env.getProperties().lookup(getBaseName(), "fieldMatchWeight").get("100"));
-    _params.attributeMatchWeight = util::strToNum<feature_t>
-        (env.getProperties().lookup(getBaseName(), "attributeMatchWeight").get("100"));
+bool NativeRankBlueprint::setup(const IIndexEnvironment& env, const ParameterList& params) {
+    _params.fieldMatchWeight =
+        util::strToNum<feature_t>(env.getProperties().lookup(getBaseName(), "fieldMatchWeight").get("100"));
+    _params.attributeMatchWeight =
+        util::strToNum<feature_t>(env.getProperties().lookup(getBaseName(), "attributeMatchWeight").get("100"));
     std::string defProxWeight = "25";
     if (!useTableNormalization(env)) {
         defProxWeight = "100"; // must use another weight to match the default boost tables
     }
-    _params.proximityWeight = util::strToNum<feature_t>
-        (env.getProperties().lookup(getBaseName(), "proximityWeight").get(defProxWeight));
+    _params.proximityWeight =
+        util::strToNum<feature_t>(env.getProperties().lookup(getBaseName(), "proximityWeight").get(defProxWeight));
 
     std::string nfm = "nativeFieldMatch";
     std::string np = "nativeProximity";
@@ -151,9 +132,7 @@ NativeRankBlueprint::setup(const IIndexEnvironment & env,
     return true;
 }
 
-FeatureExecutor &
-NativeRankBlueprint::createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const
-{
+FeatureExecutor& NativeRankBlueprint::createExecutor(const IQueryEnvironment&, vespalib::Stash& stash) const {
     if (_params.proximityWeight + _params.fieldMatchWeight + _params.attributeMatchWeight > 0) {
         return stash.create<NativeRankExecutor>(_params);
     } else {
@@ -161,11 +140,9 @@ NativeRankBlueprint::createExecutor(const IQueryEnvironment &, vespalib::Stash &
     }
 }
 
-bool
-NativeRankBlueprint::useTableNormalization(const search::fef::IIndexEnvironment & env)
-{
+bool NativeRankBlueprint::useTableNormalization(const search::fef::IIndexEnvironment& env) {
     Property norm = env.getProperties().lookup("nativeRank", "useTableNormalization");
     return (!(norm.found() && (norm.get() == std::string("false"))));
 }
 
-}
+} // namespace search::features

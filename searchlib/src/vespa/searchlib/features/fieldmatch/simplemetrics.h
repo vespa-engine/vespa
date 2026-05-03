@@ -1,8 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/common/feature.h>
 #include "params.h"
+
+#include <vespa/searchlib/common/feature.h>
+
 #include <string>
 
 namespace search::features::fieldmatch {
@@ -12,20 +14,20 @@ namespace search::features::fieldmatch {
  **/
 class SimpleMetrics {
 private:
-    const Params & _params;
-    uint32_t _matches;
-    uint32_t _matchesWithPosOcc;
-    bool     _matchWithInvalidFieldLength; // 0 or UNKNOWN_LENGTH
-    uint32_t _numTerms;
-    uint32_t _matchedWeight;
-    uint32_t _totalWeightInField;
-    uint32_t _totalWeightInQuery;
+    const Params& _params;
+    uint32_t      _matches;
+    uint32_t      _matchesWithPosOcc;
+    bool          _matchWithInvalidFieldLength; // 0 or UNKNOWN_LENGTH
+    uint32_t      _numTerms;
+    uint32_t      _matchedWeight;
+    uint32_t      _totalWeightInField;
+    uint32_t      _totalWeightInQuery;
 
 public:
     /**
      * Constructs a new object.
      **/
-    SimpleMetrics(const Params & params);
+    SimpleMetrics(const Params& params);
 
     /**
      * Resets the match data of this object.
@@ -61,10 +63,7 @@ public:
     /**
      * Registers that a match has invalid field length.
      **/
-    void hasMatchWithInvalidFieldLength() {
-        _matchWithInvalidFieldLength = true;
-    }
-
+    void hasMatchWithInvalidFieldLength() { _matchWithInvalidFieldLength = true; }
 
     /**
      * Registers a term that is searching in the field in question.
@@ -81,18 +80,14 @@ public:
      *
      * @param weight The weight of the term.
      **/
-    void addQueryTerm(uint32_t weight) {
-        _totalWeightInQuery += weight;
-    }
+    void addQueryTerm(uint32_t weight) { _totalWeightInQuery += weight; }
 
     /**
      * Overrides the total weight for all query terms.
      *
      * @param weight The total weight.
      **/
-    void setTotalWeightInQuery(uint32_t weight) {
-        _totalWeightInQuery = weight;
-    }
+    void setTotalWeightInQuery(uint32_t weight) { _totalWeightInQuery = weight; }
 
     /**
      * Returns the normalized score for this object.
@@ -139,36 +134,28 @@ public:
      *
      * @return The number of matches.
      **/
-    uint32_t getMatches() const {
-        return _matches;
-    }
+    uint32_t getMatches() const { return _matches; }
 
     /**
      * Returns the number of matches in the field in question with position information.
      *
      * @return The number of matches with position information.
      **/
-    uint32_t getMatchesWithPosOcc() const {
-        return _matchesWithPosOcc;
-    }
+    uint32_t getMatchesWithPosOcc() const { return _matchesWithPosOcc; }
 
     /**
      * Returns the number of degraded matches (no position information) in the field in question.
      *
      * @return The number of degraded matches.
      **/
-    uint32_t getDegradedMatches() const {
-        return getMatches() - getMatchesWithPosOcc();
-    }
+    uint32_t getDegradedMatches() const { return getMatches() - getMatchesWithPosOcc(); }
 
     /**
      * Returns whether we have a match in the field in question with invalid field length.
      *
      * @return Whether we have seen an invalid field length.
      **/
-    bool getMatchWithInvalidFieldLength() const {
-        return _matchWithInvalidFieldLength;
-    }
+    bool getMatchWithInvalidFieldLength() const { return _matchWithInvalidFieldLength; }
 
     /**
      * Returns a string representation of this object.
@@ -178,4 +165,4 @@ public:
     std::string toString() const;
 };
 
-}
+} // namespace search::features::fieldmatch

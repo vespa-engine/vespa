@@ -1,12 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "matchfeature.h"
+
 #include "utils.h"
+
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/util/stash.h>
-
 
 using namespace search::fef;
 using CollectionType = FieldInfo::CollectionType;
@@ -18,8 +19,7 @@ namespace {
 
 auto attribute_match_data_types = ParameterDataTypeSet::primitiveTypeSet();
 
-bool matchable_field(const FieldInfo& info)
-{
+bool matchable_field(const FieldInfo& info) {
     auto field_type = info.type();
     if (field_type != FieldType::INDEX && field_type != FieldType::ATTRIBUTE) {
         return false;
@@ -36,17 +36,12 @@ bool matchable_field(const FieldInfo& info)
     return true;
 }
 
+} // namespace
+
+MatchExecutor::MatchExecutor(const MatchParams& params) : FeatureExecutor(), _params(params) {
 }
 
-MatchExecutor::MatchExecutor(const MatchParams & params) :
-    FeatureExecutor(),
-    _params(params)
-{
-}
-
-void
-MatchExecutor::execute(uint32_t)
-{
+void MatchExecutor::execute(uint32_t) {
     feature_t sum = 0.0f;
     feature_t totalWeight = 0.0f;
     for (uint32_t i = 0; i < _params.weights.size(); ++i) {
@@ -63,34 +58,23 @@ MatchExecutor::execute(uint32_t)
     outputs().set_number(1, totalWeight);
 }
 
-MatchBlueprint::MatchBlueprint()
-    : Blueprint("match"),
-      _params()
-{
+MatchBlueprint::MatchBlueprint() : Blueprint("match"), _params() {
 }
 
 MatchBlueprint::~MatchBlueprint() = default;
 
-void
-MatchBlueprint::visitDumpFeatures(const IIndexEnvironment & env,
-                                  IDumpFeatureVisitor & visitor) const
-{
-    (void) env;
-    (void) visitor;
+void MatchBlueprint::visitDumpFeatures(const IIndexEnvironment& env, IDumpFeatureVisitor& visitor) const {
+    (void)env;
+    (void)visitor;
 }
 
-Blueprint::UP
-MatchBlueprint::createInstance() const
-{
+Blueprint::UP MatchBlueprint::createInstance() const {
     return std::make_unique<MatchBlueprint>();
 }
 
-bool
-MatchBlueprint::setup(const IIndexEnvironment & env,
-                      const ParameterList &)
-{
+bool MatchBlueprint::setup(const IIndexEnvironment& env, const ParameterList&) {
     for (uint32_t i = 0; i < env.getNumFields(); ++i) {
-        const FieldInfo * info = env.getField(i);
+        const FieldInfo* info = env.getField(i);
         if (!matchable_field(*info)) {
             continue;
         }
@@ -108,7 +92,7 @@ MatchBlueprint::setup(const IIndexEnvironment & env,
     describeOutput("score", "Normalized sum over all matched fields");
     describeOutput("totalWeight", "Sum of rank weights for all matched fields");
     for (uint32_t i = 0; i < env.getNumFields(); ++i) {
-        const FieldInfo * info = env.getField(i);
+        const FieldInfo* info = env.getField(i);
         if (!matchable_field(*info)) {
             continue;
         }
@@ -117,11 +101,9 @@ MatchBlueprint::setup(const IIndexEnvironment & env,
     return true;
 }
 
-FeatureExecutor &
-MatchBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
-{
-    (void) env;
+FeatureExecutor& MatchBlueprint::createExecutor(const IQueryEnvironment& env, vespalib::Stash& stash) const {
+    (void)env;
     return stash.create<MatchExecutor>(_params);
 }
 
-}
+} // namespace search::features
