@@ -4,13 +4,15 @@
 
 #include <memory>
 
-namespace search::query { class Node; }
+namespace search::query {
+class Node;
+}
 
 namespace search::queryeval {
 class Blueprint;
 class FieldSpec;
 class IRequestContext;
-}
+} // namespace search::queryeval
 
 namespace search::queryeval::test {
 
@@ -20,8 +22,7 @@ namespace search::queryeval::test {
 class BenchmarkSearchable {
 public:
     virtual ~BenchmarkSearchable() = default;
-    virtual std::unique_ptr<Blueprint> create_blueprint(const FieldSpec& field,
-                                                        const search::query::Node& term) = 0;
+    virtual std::unique_ptr<Blueprint> create_blueprint(const FieldSpec& field, const search::query::Node& term) = 0;
 };
 
-}
+} // namespace search::queryeval::test

@@ -4,8 +4,10 @@
 
 #include "benchmark_searchable.h"
 #include "common.h"
+
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/test/mock_attribute_context.h>
+
 #include <memory>
 
 namespace search::queryeval::test {
@@ -19,8 +21,9 @@ private:
 
 public:
     AttributeContextBuilder();
-    void add(const search::attribute::Config& cfg, std::string_view field_name, uint32_t num_docs, const HitSpecs& hit_specs, bool disjunct_terms);
+    void add(const search::attribute::Config& cfg, std::string_view field_name, uint32_t num_docs,
+             const HitSpecs& hit_specs, bool disjunct_terms);
     std::unique_ptr<BenchmarkSearchable> build();
 };
 
-}
+} // namespace search::queryeval::test

@@ -5,6 +5,7 @@
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/common/bitvector.h>
+
 #include <random>
 #include <variant>
 
@@ -29,21 +30,10 @@ public:
         res.addIndexField(std::get<1>(_cfg));
         return res;
     }
-    std::string to_string() const {
-        return is_attr() ? search::queryeval::test::to_string(attr_cfg()) : "diskindex";
-    }
+    std::string to_string() const { return is_attr() ? search::queryeval::test::to_string(attr_cfg()) : "diskindex"; }
 };
 
-enum class QueryOperator {
-    Term,
-    In,
-    WeightedSet,
-    DotProduct,
-    And,
-    Or,
-    WeakAnd,
-    ParallelWeakAnd
-};
+enum class QueryOperator { Term, In, WeightedSet, DotProduct, And, Or, WeakAnd, ParallelWeakAnd };
 
 std::string to_string(QueryOperator query_op);
 
@@ -58,13 +48,10 @@ using TermVector = std::vector<uint32_t>;
 class HitSpecs {
 private:
     std::vector<HitSpec> _specs;
-    uint32_t _next_term_value;
+    uint32_t             _next_term_value;
 
 public:
-    HitSpecs(uint32_t first_term_value)
-        : _specs(), _next_term_value(first_term_value)
-    {
-    }
+    HitSpecs(uint32_t first_term_value) : _specs(), _next_term_value(first_term_value) {}
     TermVector add(uint32_t num_terms, uint32_t hits_per_term) {
         TermVector res;
         for (uint32_t i = 0; i < num_terms; ++i) {
@@ -87,4 +74,4 @@ BitVector::UP random_docids(uint32_t docid_limit, uint32_t count);
 
 int32_t random_int(int32_t a, int32_t b);
 
-}
+} // namespace search::queryeval::test

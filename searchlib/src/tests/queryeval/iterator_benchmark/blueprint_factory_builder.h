@@ -16,11 +16,10 @@ using FactoryPtr = std::shared_ptr<BenchmarkBlueprintFactory>;
 
 FactoryPtr term(FieldConfig field, uint32_t num_docs, uint32_t default_values_per_document, double hit_ratio);
 
-template <class... Cs>
-FactoryPtr and_(Cs&&... cs) {
+template <class... Cs> FactoryPtr and_(Cs&&... cs) {
     auto up = std::make_unique<AndBlueprintFactory>();
     (up->add_child(std::forward<Cs>(cs)), ...);
     return up;
 }
 
-}
+} // namespace search::queryeval::test

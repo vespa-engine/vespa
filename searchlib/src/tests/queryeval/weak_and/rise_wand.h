@@ -2,9 +2,10 @@
 
 #pragma once
 
-#include <vespa/searchlib/queryeval/wand/weak_and_search.h>
 #include <vespa/searchlib/queryeval/wand/wand_parts.h>
+#include <vespa/searchlib/queryeval/wand/weak_and_search.h>
 #include <vespa/vespalib/util/priority_queue.h>
+
 #include <functional>
 
 using search::queryeval::wand::Bm25TermFrequencyScorer;
@@ -13,24 +14,19 @@ using namespace search::queryeval;
 
 namespace rise {
 
-struct TermFreqScorer
-{
+struct TermFreqScorer {
     Bm25TermFrequencyScorer _termFrequencyScorer;
-    TermFreqScorer(uint32_t num_docs) noexcept
-        : _termFrequencyScorer(num_docs)
-    { }
-    int64_t calculateMaxScore(const wand::Term &term) const noexcept {
+    TermFreqScorer(uint32_t num_docs) noexcept : _termFrequencyScorer(num_docs) {}
+    int64_t calculateMaxScore(const wand::Term& term) const noexcept {
         return _termFrequencyScorer.calculateMaxScore(term);
     }
-    static int64_t calculateScore(const wand::Term &term, uint32_t docId) {
+    static int64_t calculateScore(const wand::Term& term, uint32_t docId) {
         term.search->unpack(docId);
         return term.maxScore;
     }
 };
 
-template <typename Scorer, typename Cmp>
-class RiseWand : public search::queryeval::SearchIterator
-{
+template <typename Scorer, typename Cmp> class RiseWand : public search::queryeval::SearchIterator {
 public:
     using docid_t = uint32_t;
     using score_t = uint64_t;
@@ -40,17 +36,14 @@ public:
 private:
     // comparator class that compares two streams. The variables a and b are
     // logically indices into the streams vector.
-    class StreamComparator
-    {
+    class StreamComparator {
     private:
-        const docid_t *_streamDocIds;
-        //const addr_t *const *_streamPayloads;
+        const docid_t* _streamDocIds;
+        // const addr_t *const *_streamPayloads;
 
     public:
-        explicit StreamComparator(const docid_t *streamDocIds) noexcept
-            : _streamDocIds(streamDocIds)
-        { }
-        //const addr_t *const *streamPayloads);
+        explicit StreamComparator(const docid_t* streamDocIds) noexcept : _streamDocIds(streamDocIds) {}
+        // const addr_t *const *streamPayloads);
         bool operator()(const uint16_t a, const uint16_t b) const noexcept {
             return (_streamDocIds[a] < _streamDocIds[b]);
         }
@@ -65,15 +58,15 @@ private:
     size_t _lastPivotIdx;
 
     // array of current doc ids for the various streams
-    docid_t *_streamDocIds;
+    docid_t* _streamDocIds;
 
     // two arrays of indices into the _streams vector. This is used for merge.
     // inplace_merge is not as efficient as the copy merge.
-    uint16_t *_streamIndices;
-    uint16_t *_streamIndicesAux;
+    uint16_t* _streamIndices;
+    uint16_t* _streamIndicesAux;
 
     // comparator that compares two streams
-    StreamComparator _streamComparator;
+    StreamComparator             _streamComparator;
     [[no_unique_address]] Scorer _scorer;
 
     //-------------------------------------------------------------------------
@@ -81,7 +74,7 @@ private:
 
     size_t                           _n;
     score_t                          _limit;
-    score_t                         *_streamScores;
+    score_t*                         _streamScores;
     vespalib::PriorityQueue<score_t> _scores;
     Terms                            _terms;
 
@@ -95,7 +88,7 @@ private:
      *
      * @return  whether a valid pivot index is found
      */
-    bool _findPivotFeatureIdx(score_t threshold, uint32_t &pivotIdx);
+    bool _findPivotFeatureIdx(score_t threshold, uint32_t& pivotIdx);
 
     /**
      * let the first numStreamsToMove streams in the stream
@@ -127,15 +120,14 @@ private:
     void _sortMerge(uint32_t numStreamsToSort);
 
 public:
-    RiseWand(const Terms &terms, uint32_t n, Scorer scorer);
+    RiseWand(const Terms& terms, uint32_t n, Scorer scorer);
     ~RiseWand() override;
     void next();
     void doSeek(uint32_t docid) override;
     void doUnpack(uint32_t docid) override;
 };
 
-using TermFrequencyRiseWand = RiseWand<TermFreqScorer, std::greater_equal<> >;
-using DotProductRiseWand = RiseWand<DotProductScorer, std::greater<> >;
+using TermFrequencyRiseWand = RiseWand<TermFreqScorer, std::greater_equal<>>;
+using DotProductRiseWand = RiseWand<DotProductScorer, std::greater<>>;
 
-} // namespacve rise
-
+} // namespace rise
