@@ -1,22 +1,25 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "posocccompression.h"
+
 #include "posocc_fields_params.h"
 #include "raw_features_collector.h"
+
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/index/postinglistparams.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/data/fileheader.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+
 #include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".posocccompression");
 
+using search::fef::TermFieldMatchData;
 using search::index::DocIdAndFeatures;
 using search::index::PostingListParams;
 using search::index::Schema;
-using search::fef::TermFieldMatchData;
 using vespalib::GenericHeader;
 using namespace search::index;
 
@@ -24,42 +27,32 @@ namespace {
 
 std::string PosOccId = "PosOcc.3";
 std::string PosOccIdCooked = "PosOcc.3.Cooked";
-std::string EG64PosOccId = "EG64PosOcc.3"; // Dynamic k values
-std::string EG64PosOccId2 = "EG64PosOcc.2";    // Fixed k values
+std::string EG64PosOccId = "EG64PosOcc.3";  // Dynamic k values
+std::string EG64PosOccId2 = "EG64PosOcc.2"; // Fixed k values
 
-}
+} // namespace
 
 namespace search::bitcompression {
 
-
 template <bool bigEndian>
-void
-EG2PosOccDecodeContext<bigEndian>::
-readHeader(const vespalib::GenericHeader &header,
-           const std::string &prefix)
-{
-    const_cast<PosOccFieldsParams *>(_fieldsParams)->readHeader(header, prefix);
+void EG2PosOccDecodeContext<bigEndian>::readHeader(const vespalib::GenericHeader& header, const std::string& prefix) {
+    const_cast<PosOccFieldsParams*>(_fieldsParams)->readHeader(header, prefix);
 }
 
 template <bool bigEndian>
-void
-EG2PosOccDecodeContext<bigEndian>::
-collect_raw_features_and_read_compr_buffer(RawFeaturesCollector& raw_features_collector, DocIdAndFeatures& features)
-{
+void EG2PosOccDecodeContext<bigEndian>::collect_raw_features_and_read_compr_buffer(
+    RawFeaturesCollector& raw_features_collector, DocIdAndFeatures& features) {
     raw_features_collector.collect_before_read_compr_buffer(*this, features);
     this->readComprBuffer();
     raw_features_collector.fixup_after_read_compr_buffer(*this);
 }
 
 template <bool bigEndian>
-void
-EG2PosOccDecodeContext<bigEndian>::
-readFeatures(search::index::DocIdAndFeatures &features)
-{
+void EG2PosOccDecodeContext<bigEndian>::readFeatures(search::index::DocIdAndFeatures& features) {
     RawFeaturesCollector raw_features_collector(*this, features);
 
-    const PosOccFieldParams &fieldParams = _fieldsParams->getFieldParams()[0];
-    uint32_t numElements = 1;
+    const PosOccFieldParams& fieldParams = _fieldsParams->getFieldParams()[0];
+    uint32_t                 numElements = 1;
     UC64_DECODECONTEXT_CONSTRUCTOR(o, _);
     uint32_t length;
     uint64_t val64;
@@ -67,7 +60,7 @@ readFeatures(search::index::DocIdAndFeatures &features)
         UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_NUMELEMENTS, EC);
         numElements = static_cast<uint32_t>(val64) + 1;
     }
-    const uint64_t *valE = _valE;
+    const uint64_t* valE = _valE;
     for (uint32_t elementDone = 0; elementDone < numElements; ++elementDone) {
         if (fieldParams._hasElements) {
             UC64_SKIPEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_ELEMENTID, EC);
@@ -101,7 +94,7 @@ readFeatures(search::index::DocIdAndFeatures &features)
                 valE = _valE;
                 UC64_DECODECONTEXT_LOAD(o, _);
             }
-            UC64_SKIPEXPGOLOMB_SMALL_NS(o,K_VALUE_POSOCC_DELTA_WORDPOS, EC);
+            UC64_SKIPEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_DELTA_WORDPOS, EC);
         }
     }
     UC64_DECODECONTEXT_STORE(o, _);
@@ -110,15 +103,12 @@ readFeatures(search::index::DocIdAndFeatures &features)
 }
 
 template <bool bigEndian>
-void
-EG2PosOccDecodeContextCooked<bigEndian>::
-readFeatures(search::index::DocIdAndFeatures &features)
-{
+void EG2PosOccDecodeContextCooked<bigEndian>::readFeatures(search::index::DocIdAndFeatures& features) {
     features.clear_features();
     features.set_has_raw_data(false);
 
-    const PosOccFieldParams &fieldParams = _fieldsParams->getFieldParams()[0];
-    uint32_t numElements = 1;
+    const PosOccFieldParams& fieldParams = _fieldsParams->getFieldParams()[0];
+    uint32_t                 numElements = 1;
     UC64_DECODECONTEXT_CONSTRUCTOR(o, _);
     uint32_t length;
     uint64_t val64;
@@ -126,8 +116,8 @@ readFeatures(search::index::DocIdAndFeatures &features)
         UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_NUMELEMENTS, EC);
         numElements = static_cast<uint32_t>(val64) + 1;
     }
-    const uint64_t *valE = _valE;
-    uint32_t elementId = 0;
+    const uint64_t* valE = _valE;
+    uint32_t        elementId = 0;
     for (uint32_t elementDone = 0; elementDone < numElements; ++elementDone, ++elementId) {
         if (fieldParams._hasElements) {
             UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_ELEMENTID, EC);
@@ -181,17 +171,12 @@ readFeatures(search::index::DocIdAndFeatures &features)
     this->readComprBufferIfNeeded();
 }
 
-
-template <bool bigEndian>
-void
-EG2PosOccDecodeContext<bigEndian>::
-skipFeatures(unsigned int count)
-{
+template <bool bigEndian> void EG2PosOccDecodeContext<bigEndian>::skipFeatures(unsigned int count) {
     UC64_DECODECONTEXT_CONSTRUCTOR(o, _);
     uint32_t length;
     uint64_t val64;
 
-    const PosOccFieldParams &fieldParams = _fieldsParams->getFieldParams()[0];
+    const PosOccFieldParams& fieldParams = _fieldsParams->getFieldParams()[0];
     for (unsigned int i = count; i > 0; --i) {
         uint32_t numElements = 1;
         if (fieldParams._hasElements) {
@@ -218,24 +203,20 @@ skipFeatures(unsigned int count)
     UC64_DECODECONTEXT_STORE(o, _);
 }
 
-
 template <bool bigEndian>
-void
-EG2PosOccDecodeContext<bigEndian>::
-unpackFeatures(const search::fef::TermFieldMatchDataArray &matchData,
-               uint32_t docId)
-{
+void EG2PosOccDecodeContext<bigEndian>::unpackFeatures(const search::fef::TermFieldMatchDataArray& matchData,
+                                                       uint32_t                                    docId) {
     UC64_DECODECONTEXT_CONSTRUCTOR(o, _);
     uint32_t length;
     uint64_t val64;
 
-    const PosOccFieldParams &fieldParams = _fieldsParams->getFieldParams()[0];
-    uint32_t numElements = 1;
+    const PosOccFieldParams& fieldParams = _fieldsParams->getFieldParams()[0];
+    uint32_t                 numElements = 1;
     if (fieldParams._hasElements) {
         UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_NUMELEMENTS, EC);
         numElements = static_cast<uint32_t>(val64) + 1;
     }
-    TermFieldMatchData *tfmd = matchData[0];
+    TermFieldMatchData* tfmd = matchData[0];
     tfmd->reset(docId);
     tfmd->clear_hidden_from_ranking();
     uint32_t elementId = 0;
@@ -273,79 +254,42 @@ unpackFeatures(const search::fef::TermFieldMatchDataArray &matchData,
     UC64_DECODECONTEXT_STORE(o, _);
 }
 
-
-template <bool bigEndian>
-void
-EG2PosOccDecodeContext<bigEndian>::
-setParams(const PostingListParams &params)
-{
-    const_cast<PosOccFieldsParams *>(_fieldsParams)->setParams(params);
+template <bool bigEndian> void EG2PosOccDecodeContext<bigEndian>::setParams(const PostingListParams& params) {
+    const_cast<PosOccFieldsParams*>(_fieldsParams)->setParams(params);
 }
 
-
-template <bool bigEndian>
-void
-EG2PosOccDecodeContext<bigEndian>::
-getParams(PostingListParams &params) const
-{
+template <bool bigEndian> void EG2PosOccDecodeContext<bigEndian>::getParams(PostingListParams& params) const {
     params.clear();
     params.setStr("encoding", EG64PosOccId2);
     _fieldsParams->getParams(params);
 }
 
-
-template <bool bigEndian>
-void
-EG2PosOccDecodeContextCooked<bigEndian>::
-getParams(PostingListParams &params) const
-{
+template <bool bigEndian> void EG2PosOccDecodeContextCooked<bigEndian>::getParams(PostingListParams& params) const {
     ParentClass::getParams(params);
     params.setStr("cookedEncoding", PosOccIdCooked);
 }
 
-
 template <bool bigEndian>
-void
-EG2PosOccEncodeContext<bigEndian>::
-readHeader(const vespalib::GenericHeader &header,
-           const std::string &prefix)
-{
-    const_cast<PosOccFieldsParams *>(_fieldsParams)->readHeader(header,
-            prefix);
+void EG2PosOccEncodeContext<bigEndian>::readHeader(const vespalib::GenericHeader& header, const std::string& prefix) {
+    const_cast<PosOccFieldsParams*>(_fieldsParams)->readHeader(header, prefix);
 }
 
-
-template <bool bigEndian>
-const std::string &
-EG2PosOccDecodeContext<bigEndian>::getIdentifier() const
-{
+template <bool bigEndian> const std::string& EG2PosOccDecodeContext<bigEndian>::getIdentifier() const {
     return EG64PosOccId2;
 }
 
-
 template <bool bigEndian>
-void
-EG2PosOccEncodeContext<bigEndian>::
-writeHeader(vespalib::GenericHeader &header,
-            const std::string &prefix) const
-{
+void EG2PosOccEncodeContext<bigEndian>::writeHeader(vespalib::GenericHeader& header,
+                                                    const std::string&       prefix) const {
     _fieldsParams->writeHeader(header, prefix);
 }
 
-
-template <bool bigEndian>
-const std::string &
-EG2PosOccEncodeContext<bigEndian>::getIdentifier() const
-{
+template <bool bigEndian> const std::string& EG2PosOccEncodeContext<bigEndian>::getIdentifier() const {
     return EG64PosOccId2;
 }
 
-
 template <bool bigEndian>
-void
-EG2PosOccEncodeContext<bigEndian>::
-writeFeatures(const search::index::DocIdAndFeatures &features)
-{
+void EG2PosOccEncodeContext<bigEndian>::writeFeatures(const search::index::DocIdAndFeatures& features) {
     if (features.has_raw_data()) {
         writeBits(features.blob().data(), features.bit_offset(), features.bit_length());
         return;
@@ -354,7 +298,7 @@ writeFeatures(const search::index::DocIdAndFeatures &features)
     auto element = features.elements().begin();
     auto position = features.word_positions().begin();
 
-    const PosOccFieldParams &fieldParams = _fieldsParams->getFieldParams()[0];
+    const PosOccFieldParams& fieldParams = _fieldsParams->getFieldParams()[0];
 
     uint32_t numElements = features.elements().size();
     if (fieldParams._hasElements) {
@@ -364,8 +308,7 @@ writeFeatures(const search::index::DocIdAndFeatures &features)
         assert(numElements == 1);
     }
     uint32_t minElementId = 0;
-    for (uint32_t elementDone = 0; elementDone < numElements;
-         ++elementDone, ++element) {
+    for (uint32_t elementDone = 0; elementDone < numElements; ++elementDone, ++element) {
         if (fieldParams._hasElements) {
             uint32_t elementId = element->getElementId();
             assert(elementId >= minElementId);
@@ -381,7 +324,7 @@ writeFeatures(const search::index::DocIdAndFeatures &features)
         } else {
             uint32_t elementId = element->getElementId();
             assert(elementId == 0);
-            (void) elementId;
+            (void)elementId;
         }
 
         encodeExpGolomb(element->getElementLen() - 1, K_VALUE_POSOCC_ELEMENTLEN);
@@ -413,49 +356,29 @@ writeFeatures(const search::index::DocIdAndFeatures &features)
     }
 }
 
-
-template <bool bigEndian>
-void
-EG2PosOccEncodeContext<bigEndian>::
-setParams(const PostingListParams &params)
-{
-    const_cast<PosOccFieldsParams *>(_fieldsParams)->setParams(params);
+template <bool bigEndian> void EG2PosOccEncodeContext<bigEndian>::setParams(const PostingListParams& params) {
+    const_cast<PosOccFieldsParams*>(_fieldsParams)->setParams(params);
 }
 
-
-template <bool bigEndian>
-void
-EG2PosOccEncodeContext<bigEndian>::
-getParams(PostingListParams &params) const
-{
+template <bool bigEndian> void EG2PosOccEncodeContext<bigEndian>::getParams(PostingListParams& params) const {
     params.clear();
     params.setStr("encoding", EG64PosOccId2);
     params.setStr("cookedEncoding", PosOccIdCooked);
     _fieldsParams->getParams(params);
 }
 
-
 template <bool bigEndian>
-void
-EGPosOccDecodeContext<bigEndian>::
-readHeader(const vespalib::GenericHeader &header,
-           const std::string &prefix)
-{
+void EGPosOccDecodeContext<bigEndian>::readHeader(const vespalib::GenericHeader& header, const std::string& prefix) {
     ParentClass::readHeader(header, prefix);
 }
 
-
 template <bool bigEndian>
-void
-EGPosOccDecodeContext<bigEndian>::
-readFeatures(search::index::DocIdAndFeatures &features)
-{
+void EGPosOccDecodeContext<bigEndian>::readFeatures(search::index::DocIdAndFeatures& features) {
     RawFeaturesCollector raw_features_collector(*this, features);
 
-    const PosOccFieldParams &fieldParams = _fieldsParams->getFieldParams()[0];
-    uint32_t elementLenK = EGPosOccEncodeContext<bigEndian>::
-                           calcElementLenK(fieldParams._avgElemLen);
-    uint32_t numElements = 1;
+    const PosOccFieldParams& fieldParams = _fieldsParams->getFieldParams()[0];
+    uint32_t                 elementLenK = EGPosOccEncodeContext<bigEndian>::calcElementLenK(fieldParams._avgElemLen);
+    uint32_t                 numElements = 1;
     UC64_DECODECONTEXT_CONSTRUCTOR(o, _);
     uint32_t length;
     uint64_t val64;
@@ -463,7 +386,7 @@ readFeatures(search::index::DocIdAndFeatures &features)
         UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_NUMELEMENTS, EC);
         numElements = static_cast<uint32_t>(val64) + 1;
     }
-    const uint64_t *valE = _valE;
+    const uint64_t* valE = _valE;
     for (uint32_t elementDone = 0; elementDone < numElements; ++elementDone) {
         if (fieldParams._hasElements) {
             UC64_SKIPEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_ELEMENTID, EC);
@@ -499,12 +422,8 @@ readFeatures(search::index::DocIdAndFeatures &features)
     this->readComprBufferIfNeeded();
 }
 
-
 template <bool bigEndian>
-void
-EGPosOccDecodeContextCooked<bigEndian>::
-readFeatures(search::index::DocIdAndFeatures &features)
-{
+void EGPosOccDecodeContextCooked<bigEndian>::readFeatures(search::index::DocIdAndFeatures& features) {
     UC64_DECODECONTEXT_CONSTRUCTOR(o, _);
     uint32_t length;
     uint64_t val64;
@@ -512,18 +431,15 @@ readFeatures(search::index::DocIdAndFeatures &features)
     features.clear_features();
     features.set_has_raw_data(false);
 
-    const PosOccFieldParams &fieldParams = _fieldsParams->getFieldParams()[0];
-    uint32_t elementLenK = EGPosOccEncodeContext<bigEndian>::
-                           calcElementLenK(fieldParams._avgElemLen);
-    uint32_t numElements = 1;
+    const PosOccFieldParams& fieldParams = _fieldsParams->getFieldParams()[0];
+    uint32_t                 elementLenK = EGPosOccEncodeContext<bigEndian>::calcElementLenK(fieldParams._avgElemLen);
+    uint32_t                 numElements = 1;
     if (fieldParams._hasElements) {
-        UC64_DECODEEXPGOLOMB_SMALL_NS(o,
-                                      K_VALUE_POSOCC_NUMELEMENTS,
-                                      EC);
+        UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_NUMELEMENTS, EC);
         numElements = static_cast<uint32_t>(val64) + 1;
     }
-    const uint64_t *valE = _valE;
-    uint32_t elementId = 0;
+    const uint64_t* valE = _valE;
+    uint32_t        elementId = 0;
     for (uint32_t elementDone = 0; elementDone < numElements; ++elementDone, ++elementId) {
         if (fieldParams._hasElements) {
             UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_ELEMENTID, EC);
@@ -567,18 +483,13 @@ readFeatures(search::index::DocIdAndFeatures &features)
     this->readComprBufferIfNeeded();
 }
 
-
-template <bool bigEndian>
-void
-EGPosOccDecodeContext<bigEndian>::
-skipFeatures(unsigned int count)
-{
+template <bool bigEndian> void EGPosOccDecodeContext<bigEndian>::skipFeatures(unsigned int count) {
     UC64_DECODECONTEXT_CONSTRUCTOR(o, _);
     uint32_t length;
     uint64_t val64;
 
     for (unsigned int i = count; i > 0; --i) {
-        const PosOccFieldParams &fieldParams = _fieldsParams->getFieldParams()[0];
+        const PosOccFieldParams& fieldParams = _fieldsParams->getFieldParams()[0];
         uint32_t elementLenK = EGPosOccEncodeContext<bigEndian>::calcElementLenK(fieldParams._avgElemLen);
         uint32_t numElements = 1;
         if (fieldParams._hasElements) {
@@ -607,26 +518,21 @@ skipFeatures(unsigned int count)
     UC64_DECODECONTEXT_STORE(o, _);
 }
 
-
 template <bool bigEndian>
-void
-EGPosOccDecodeContext<bigEndian>::
-unpackFeatures(const search::fef::TermFieldMatchDataArray &matchData,
-               uint32_t docId)
-{
+void EGPosOccDecodeContext<bigEndian>::unpackFeatures(const search::fef::TermFieldMatchDataArray& matchData,
+                                                      uint32_t                                    docId) {
     UC64_DECODECONTEXT_CONSTRUCTOR(o, _);
     uint32_t length;
     uint64_t val64;
 
-    const PosOccFieldParams &fieldParams =
-        _fieldsParams->getFieldParams()[0];
-    uint32_t elementLenK = EGPosOccEncodeContext<bigEndian>::calcElementLenK(fieldParams._avgElemLen);
-    uint32_t numElements = 1;
+    const PosOccFieldParams& fieldParams = _fieldsParams->getFieldParams()[0];
+    uint32_t                 elementLenK = EGPosOccEncodeContext<bigEndian>::calcElementLenK(fieldParams._avgElemLen);
+    uint32_t                 numElements = 1;
     if (fieldParams._hasElements) {
         UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_NUMELEMENTS, EC);
         numElements = static_cast<uint32_t>(val64) + 1;
     }
-    TermFieldMatchData *tfmd = matchData[0];
+    TermFieldMatchData* tfmd = matchData[0];
     tfmd->reset(docId);
     tfmd->clear_hidden_from_ranking();
     uint32_t elementId = 0;
@@ -665,94 +571,54 @@ unpackFeatures(const search::fef::TermFieldMatchDataArray &matchData,
     UC64_DECODECONTEXT_STORE(o, _);
 }
 
-
-template <bool bigEndian>
-void
-EGPosOccDecodeContext<bigEndian>::
-setParams(const PostingListParams &params)
-{
+template <bool bigEndian> void EGPosOccDecodeContext<bigEndian>::setParams(const PostingListParams& params) {
     ParentClass::setParams(params);
 }
 
-
-template <bool bigEndian>
-void
-EGPosOccDecodeContext<bigEndian>::
-getParams(PostingListParams &params) const
-{
+template <bool bigEndian> void EGPosOccDecodeContext<bigEndian>::getParams(PostingListParams& params) const {
     ParentClass::getParams(params);
     params.setStr("encoding", EG64PosOccId);
 }
 
-
-template <bool bigEndian>
-void
-EGPosOccDecodeContextCooked<bigEndian>::
-getParams(PostingListParams &params) const
-{
+template <bool bigEndian> void EGPosOccDecodeContextCooked<bigEndian>::getParams(PostingListParams& params) const {
     ParentClass::getParams(params);
     params.setStr("cookedEncoding", PosOccIdCooked);
 }
 
-
 template <bool bigEndian>
-void
-EGPosOccEncodeContext<bigEndian>::
-readHeader(const vespalib::GenericHeader &header,
-           const std::string &prefix)
-{
+void EGPosOccEncodeContext<bigEndian>::readHeader(const vespalib::GenericHeader& header, const std::string& prefix) {
     ParentClass::readHeader(header, prefix);
 }
 
-
-template <bool bigEndian>
-const std::string &
-EGPosOccDecodeContext<bigEndian>::getIdentifier() const
-{
+template <bool bigEndian> const std::string& EGPosOccDecodeContext<bigEndian>::getIdentifier() const {
     return EG64PosOccId;
 }
 
-
 template <bool bigEndian>
-void
-EGPosOccEncodeContext<bigEndian>::
-writeHeader(vespalib::GenericHeader &header,
-            const std::string &prefix) const
-{
+void EGPosOccEncodeContext<bigEndian>::writeHeader(vespalib::GenericHeader& header, const std::string& prefix) const {
     ParentClass::writeHeader(header, prefix);
 }
 
-
-template <bool bigEndian>
-const std::string &
-EGPosOccEncodeContext<bigEndian>::getIdentifier() const
-{
+template <bool bigEndian> const std::string& EGPosOccEncodeContext<bigEndian>::getIdentifier() const {
     return EG64PosOccId;
 }
 
-
 template <bool bigEndian>
-void
-EGPosOccEncodeContext<bigEndian>::
-writeFeatures(const search::index::DocIdAndFeatures &features)
-{
+void EGPosOccEncodeContext<bigEndian>::writeFeatures(const search::index::DocIdAndFeatures& features) {
     if (features.has_raw_data()) {
-        writeBits(features.blob().data(),
-                  features.bit_offset(), features.bit_length());
+        writeBits(features.blob().data(), features.bit_offset(), features.bit_length());
         return;
     }
 
-    auto element = features.elements().begin();
-    auto position = features.word_positions().begin();
-    const PosOccFieldParams &fieldParams =
-        _fieldsParams->getFieldParams()[0];
-    uint32_t elementLenK = calcElementLenK(fieldParams._avgElemLen);
+    auto                     element = features.elements().begin();
+    auto                     position = features.word_positions().begin();
+    const PosOccFieldParams& fieldParams = _fieldsParams->getFieldParams()[0];
+    uint32_t                 elementLenK = calcElementLenK(fieldParams._avgElemLen);
 
     uint32_t numElements = features.elements().size();
     if (fieldParams._hasElements) {
         assert(numElements > 0u);
-        encodeExpGolomb(numElements - 1,
-                        K_VALUE_POSOCC_NUMELEMENTS);
+        encodeExpGolomb(numElements - 1, K_VALUE_POSOCC_NUMELEMENTS);
     } else {
         assert(numElements == 1);
     }
@@ -761,13 +627,11 @@ writeFeatures(const search::index::DocIdAndFeatures &features)
         if (fieldParams._hasElements) {
             uint32_t elementId = element->getElementId();
             assert(elementId >= minElementId);
-            encodeExpGolomb(elementId - minElementId,
-                            K_VALUE_POSOCC_ELEMENTID);
+            encodeExpGolomb(elementId - minElementId, K_VALUE_POSOCC_ELEMENTID);
             minElementId = elementId + 1;
             if (fieldParams._hasElementWeights) {
                 int32_t elementWeight = element->getWeight();
-                encodeExpGolomb(this->convertToUnsigned(elementWeight),
-                                K_VALUE_POSOCC_ELEMENTWEIGHT);
+                encodeExpGolomb(this->convertToUnsigned(elementWeight), K_VALUE_POSOCC_ELEMENTWEIGHT);
             }
             if (__builtin_expect(_valI >= _valE, false)) {
                 _writeContext->writeComprBuffer(false);
@@ -775,14 +639,13 @@ writeFeatures(const search::index::DocIdAndFeatures &features)
         } else {
             uint32_t elementId = element->getElementId();
             assert(elementId == 0);
-            (void) elementId;
+            (void)elementId;
         }
         uint32_t elementLen = element->getElementLen();
         encodeExpGolomb(elementLen - 1, elementLenK);
         uint32_t numPositions = element->getNumOccs();
         assert(numPositions > 0);
-        encodeExpGolomb(numPositions - 1,
-                        K_VALUE_POSOCC_NUMPOSITIONS);
+        encodeExpGolomb(numPositions - 1, K_VALUE_POSOCC_NUMPOSITIONS);
 
         uint32_t wordPosK = calcWordPosK(numPositions, elementLen);
         uint32_t wordPos = static_cast<uint32_t>(-1);
@@ -790,8 +653,7 @@ writeFeatures(const search::index::DocIdAndFeatures &features)
         while (positionResidue > 0) {
             uint32_t lastWordPos = wordPos;
             wordPos = position->getWordPos();
-            encodeExpGolomb(wordPos - lastWordPos - 1,
-                            wordPosK);
+            encodeExpGolomb(wordPos - lastWordPos - 1, wordPosK);
             if (__builtin_expect(_valI >= _valE, false)) {
                 _writeContext->writeComprBuffer(false);
             }
@@ -801,27 +663,15 @@ writeFeatures(const search::index::DocIdAndFeatures &features)
     }
 }
 
-
-
-template <bool bigEndian>
-void
-EGPosOccEncodeContext<bigEndian>::
-setParams(const PostingListParams &params)
-{
+template <bool bigEndian> void EGPosOccEncodeContext<bigEndian>::setParams(const PostingListParams& params) {
     ParentClass::setParams(params);
 }
 
-
-template <bool bigEndian>
-void
-EGPosOccEncodeContext<bigEndian>::
-getParams(PostingListParams &params) const
-{
+template <bool bigEndian> void EGPosOccEncodeContext<bigEndian>::getParams(PostingListParams& params) const {
     ParentClass::getParams(params);
     params.setStr("encoding", EG64PosOccId);
     params.setStr("cookedEncoding", PosOccIdCooked);
 }
-
 
 template class EG2PosOccDecodeContext<true>;
 template class EG2PosOccDecodeContext<false>;
@@ -841,4 +691,4 @@ template class EGPosOccDecodeContextCooked<false>;
 template class EGPosOccEncodeContext<true>;
 template class EGPosOccEncodeContext<false>;
 
-}
+} // namespace search::bitcompression
