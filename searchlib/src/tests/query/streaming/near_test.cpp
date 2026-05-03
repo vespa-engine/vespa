@@ -17,6 +17,7 @@
 #include <vespa/searchlib/queryeval/test/mock_element_gap_inspector.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+
 #include <format>
 #include <ostream>
 #include <sstream>
@@ -32,8 +33,8 @@ using search::fef::MatchData;
 using search::fef::MatchDataLayout;
 using search::fef::test::IndexEnvironment;
 using search::index::schema::CollectionType;
-using search::query::QueryBuilder;
 using search::query::Node;
+using search::query::QueryBuilder;
 using search::query::SimpleQueryNodeTypes;
 using search::query::StackDumpCreator;
 using search::query::Weight;
@@ -55,19 +56,15 @@ inline namespace near_test {
 
 class TestParam {
     bool _ordered;
+
 public:
-    TestParam(bool ordered_in)
-        : _ordered(ordered_in)
-    {
-    }
+    TestParam(bool ordered_in) : _ordered(ordered_in) {}
     bool ordered() const noexcept { return _ordered; }
 };
 
-std::ostream& operator<<(std::ostream& os, const TestParam& param)
-{
+std::ostream& operator<<(std::ostream& os, const TestParam& param) {
     os << (param.ordered() ? "onear" : "near");
     return os;
-
 }
 
 enum class QueryTweak {
@@ -79,6 +76,7 @@ enum class QueryTweak {
 
 class MyQueryNodeResultFactory : public QueryNodeResultFactory {
     MockElementGapInspector _mock_element_gap_inspector;
+
 public:
     MyQueryNodeResultFactory(ElementGap element_gap);
     ~MyQueryNodeResultFactory() override;
@@ -86,22 +84,19 @@ public:
 };
 
 MyQueryNodeResultFactory::MyQueryNodeResultFactory(ElementGap element_gap)
-    : QueryNodeResultFactory(),
-      _mock_element_gap_inspector(element_gap)
-{
+    : QueryNodeResultFactory(), _mock_element_gap_inspector(element_gap) {
 }
 
 MyQueryNodeResultFactory::~MyQueryNodeResultFactory() = default;
 
-const search::queryeval::IElementGapInspector&
-MyQueryNodeResultFactory::get_element_gap_inspector() const noexcept
-{
+const search::queryeval::IElementGapInspector& MyQueryNodeResultFactory::get_element_gap_inspector() const noexcept {
     return _mock_element_gap_inspector;
 }
 
 class WrappedQuery {
     std::unique_ptr<MyQueryNodeResultFactory> _factory; // contains element gap inspector
     std::unique_ptr<Query>                    _query;
+
 public:
     WrappedQuery(std::unique_ptr<MyQueryNodeResultFactory> factory_in, std::unique_ptr<Query> query_in);
     ~WrappedQuery();
@@ -109,14 +104,12 @@ public:
 };
 
 WrappedQuery::WrappedQuery(std::unique_ptr<MyQueryNodeResultFactory> factory_in, std::unique_ptr<Query> query_in)
-    : _factory(std::move(factory_in)),
-      _query(std::move(query_in))
-{
+    : _factory(std::move(factory_in)), _query(std::move(query_in)) {
 }
 
 WrappedQuery::~WrappedQuery() = default;
 
-}
+} // namespace near_test
 
 class NearTest : public ::testing::TestWithParam<TestParam> {
 protected:
@@ -125,22 +118,29 @@ protected:
     ~NearTest() override;
     bool evaluate_query(uint32_t distance, const std::vector<std::vector<TestHit>>& hitsvv);
     bool evaluate_query(QueryTweak query_tweak, uint32_t distance, const std::vector<std::vector<TestHit>>& hitsvv);
-    WrappedQuery make_query(QueryTweak query_tweak, uint32_t distance, const std::vector<std::vector<TestHit>>& hitsvv);
-    std::vector<uint32_t> get_element_ids(QueryTweak query_tweak, uint32_t distance, const std::vector<std::vector<TestHit>>& hitsvv);
+    WrappedQuery make_query(QueryTweak query_tweak, uint32_t distance,
+                            const std::vector<std::vector<TestHit>>& hitsvv);
+    std::vector<uint32_t> get_element_ids(QueryTweak query_tweak, uint32_t distance,
+                                          const std::vector<std::vector<TestHit>>& hitsvv);
     static MatchSpan match_span(uint32_t field_id, uint32_t first_elem, uint32_t first_pos, uint32_t last_elem,
                                 uint32_t last_pos);
 
     // Visual test support
     struct NearSpec {
-        std::string _terms;
-        uint32_t _window;
-        std::string _negative_terms;
-        uint32_t _exclusion_distance;
+        std::string                          _terms;
+        uint32_t                             _window;
+        std::string                          _negative_terms;
+        uint32_t                             _exclusion_distance;
         std::optional<std::vector<uint32_t>> _field_ids;
-        NearTest* _test;
+        NearTest*                            _test;
 
         NearSpec(const std::string& terms, uint32_t window, NearTest* test)
-            : _terms(terms), _window(window), _negative_terms(), _exclusion_distance(0), _field_ids(std::nullopt), _test(test) {}
+            : _terms(terms),
+              _window(window),
+              _negative_terms(),
+              _exclusion_distance(0),
+              _field_ids(std::nullopt),
+              _test(test) {}
         ~NearSpec();
 
         NearSpec& avoid(const std::string& terms, uint32_t exclusion_distance) {
@@ -149,62 +149,52 @@ protected:
             return *this;
         }
 
-        template <typename... Args>
-        NearSpec& fields(Args... field_ids) {
+        template <typename... Args> NearSpec& fields(Args... field_ids) {
             _field_ids = std::vector<uint32_t>{static_cast<uint32_t>(field_ids)...};
             return *this;
         }
 
         std::string to_string() const;
         void verify_common(const search::queryeval::FakeIndex& index, uint32_t docid,
-                           std::optional<std::vector<uint32_t>> expected_elements,
+                           std::optional<std::vector<uint32_t>>  expected_elements,
                            std::optional<std::vector<MatchSpan>> expected_match_spans,
-                           std::optional<std::vector<uint32_t>> unpack_element_filter,
-                           std::optional<std::vector<uint32_t>> expected_occs);
+                           std::optional<std::vector<uint32_t>>  unpack_element_filter,
+                           std::optional<std::vector<uint32_t>>  expected_occs);
         void verify(const search::queryeval::FakeIndex& index, uint32_t docid,
-                   const std::vector<uint32_t>& expected_elements);
+                    const std::vector<uint32_t>& expected_elements);
         void verify_spans(const search::queryeval::FakeIndex& index, uint32_t docid,
                           const std::vector<MatchSpan>& expected_match_spans);
         void verify_occs(const search::queryeval::FakeIndex& index, uint32_t docid,
                          std::optional<std::vector<uint32_t>> unpack_element_filter,
-                         const std::vector<uint32_t>& expected_occs);
+                         const std::vector<uint32_t>&         expected_occs);
     };
 
-    NearSpec near(const std::string& terms, uint32_t window) {
-        return NearSpec(terms, window, this);
-    }
+    NearSpec near(const std::string& terms, uint32_t window) { return NearSpec(terms, window, this); }
 
     search::queryeval::FakeIndex index() { return {}; }
 };
 
-NearTest::NearTest()
-    : ::testing::TestWithParam<TestParam>(),
-      _element_gap_setting()
-{
+NearTest::NearTest() : ::testing::TestWithParam<TestParam>(), _element_gap_setting() {
 }
 
 NearTest::~NearTest() = default;
 NearTest::NearSpec::~NearSpec() = default;
 
-bool
-NearTest::evaluate_query(uint32_t distance, const std::vector<std::vector<TestHit>>& hitsvv)
-{
+bool NearTest::evaluate_query(uint32_t distance, const std::vector<std::vector<TestHit>>& hitsvv) {
     return evaluate_query(QueryTweak::NORMAL, distance, hitsvv);
 }
 
-bool
-NearTest::evaluate_query(QueryTweak query_tweak, uint32_t distance, const std::vector<std::vector<TestHit>>& hitsvv)
-{
+bool NearTest::evaluate_query(QueryTweak query_tweak, uint32_t distance,
+                              const std::vector<std::vector<TestHit>>& hitsvv) {
     auto wrapped_query = make_query(query_tweak, distance, hitsvv);
     return wrapped_query.query().getRoot().evaluate();
 }
 
-WrappedQuery
-NearTest::make_query(QueryTweak query_tweak, uint32_t distance, const std::vector<std::vector<TestHit> >& hitsvv)
-{
+WrappedQuery NearTest::make_query(QueryTweak query_tweak, uint32_t distance,
+                                  const std::vector<std::vector<TestHit>>& hitsvv) {
     QueryBuilder<SimpleQueryNodeTypes> builder;
-    auto num_terms = hitsvv.size();
-    auto top_arity = num_terms;
+    auto                               num_terms = hitsvv.size();
+    auto                               top_arity = num_terms;
     if (query_tweak != QueryTweak::NORMAL) {
         EXPECT_LT(2, num_terms);
         assert(num_terms > 2);
@@ -217,23 +207,23 @@ NearTest::make_query(QueryTweak query_tweak, uint32_t distance, const std::vecto
     }
     for (uint32_t idx = 0; idx < hitsvv.size(); ++idx) {
         switch (query_tweak) {
-            case QueryTweak::PHRASE:
-                if (idx == hitsvv.size() - 2) {
-                    builder.addPhrase(2, "field", num_terms, Weight(0));
-                }
-                break;
-            case QueryTweak::EARLY_PHRASE:
-                if (idx == hitsvv.size() - 3) {
-                    builder.addPhrase(2, "field", num_terms, Weight(0));
-                }
-                break;
-            case QueryTweak::EQUIV:
-                if (idx == hitsvv.size() - 2) {
-                    builder.addEquiv(2, num_terms, Weight(0));
-                }
-                break;
-            default:
-                break;
+        case QueryTweak::PHRASE:
+            if (idx == hitsvv.size() - 2) {
+                builder.addPhrase(2, "field", num_terms, Weight(0));
+            }
+            break;
+        case QueryTweak::EARLY_PHRASE:
+            if (idx == hitsvv.size() - 3) {
+                builder.addPhrase(2, "field", num_terms, Weight(0));
+            }
+            break;
+        case QueryTweak::EQUIV:
+            if (idx == hitsvv.size() - 2) {
+                builder.addEquiv(2, num_terms, Weight(0));
+            }
+            break;
+        default:
+            break;
         }
         vespalib::asciistream s;
         s << "s" << idx;
@@ -265,7 +255,7 @@ NearTest::make_query(QueryTweak query_tweak, uint32_t distance, const std::vecto
         }
     }
     EXPECT_EQ(hitsvv.size(), terms.size());
-    for (QueryTerm * qt : terms) {
+    for (QueryTerm* qt : terms) {
         qt->resizeFieldId(1);
     }
     for (uint32_t idx = 0; idx < hitsvv.size(); ++idx) {
@@ -279,25 +269,20 @@ NearTest::make_query(QueryTweak query_tweak, uint32_t distance, const std::vecto
     return WrappedQuery(std::move(empty), std::move(q));
 }
 
-std::vector<uint32_t>
-NearTest::get_element_ids(QueryTweak query_tweak, uint32_t distance, const std::vector<std::vector<TestHit>>& hitsvv)
-{
-    auto wrapped_query = make_query(query_tweak, distance, hitsvv);
+std::vector<uint32_t> NearTest::get_element_ids(QueryTweak query_tweak, uint32_t distance,
+                                                const std::vector<std::vector<TestHit>>& hitsvv) {
+    auto                  wrapped_query = make_query(query_tweak, distance, hitsvv);
     std::vector<uint32_t> result;
     wrapped_query.query().getRoot().get_element_ids(result);
     return result;
 }
 
-MatchSpan
-NearTest::match_span(uint32_t field_id, uint32_t first_elem, uint32_t first_pos, uint32_t last_elem,
-                     uint32_t last_pos)
-{
+MatchSpan NearTest::match_span(uint32_t field_id, uint32_t first_elem, uint32_t first_pos, uint32_t last_elem,
+                               uint32_t last_pos) {
     return MatchSpan(field_id, MatchSpanPos(first_elem, first_pos), MatchSpanPos(last_elem, last_pos));
 }
 
-std::string
-NearTest::NearSpec::to_string() const
-{
+std::string NearTest::NearSpec::to_string() const {
     std::ostringstream os;
     if (_test->GetParam().ordered()) {
         os << "o";
@@ -310,13 +295,11 @@ NearTest::NearSpec::to_string() const
     return os.str();
 }
 
-void
-NearTest::NearSpec::verify_common(const search::queryeval::FakeIndex& index, uint32_t docid,
-                                  std::optional<std::vector<uint32_t>> expected_elements,
-                                  std::optional<std::vector<MatchSpan>> expected_match_spans,
-                                  std::optional<std::vector<uint32_t>> unpack_element_filter,
-                                  std::optional<std::vector<uint32_t>> expected_occs)
-{
+void NearTest::NearSpec::verify_common(const search::queryeval::FakeIndex& index, uint32_t docid,
+                                       std::optional<std::vector<uint32_t>>  expected_elements,
+                                       std::optional<std::vector<MatchSpan>> expected_match_spans,
+                                       std::optional<std::vector<uint32_t>>  unpack_element_filter,
+                                       std::optional<std::vector<uint32_t>>  expected_occs) {
     MockElementGapInspector element_gap_inspector(_test->_element_gap_setting.value_or(std::nullopt));
 
     // Create Near or ONear node
@@ -337,7 +320,7 @@ NearTest::NearSpec::verify_common(const search::queryeval::FakeIndex& index, uin
 
     // Create term nodes and add hits
     std::string all_terms = _terms + _negative_terms;
-    uint32_t max_field_id = 0;
+    uint32_t    max_field_id = 0;
     for (char ch : all_terms) {
         auto hits = index.get_streaming_hits(ch, docid, _field_ids);
 
@@ -348,9 +331,9 @@ NearTest::NearSpec::verify_common(const search::queryeval::FakeIndex& index, uin
     }
 
     std::vector<QueryTerm*> positive_terms;
-    MatchDataLayout mdl;
-    IndexEnvironment index_env;
-    auto& fields = index_env.getFields();
+    MatchDataLayout         mdl;
+    IndexEnvironment        index_env;
+    auto&                   fields = index_env.getFields();
     for (uint32_t field_id = 0; field_id <= max_field_id; ++field_id) {
         fields.emplace_back(FieldType::INDEX, CollectionType::SINGLE, std::format("field{}", field_id), field_id);
     }
@@ -360,19 +343,18 @@ NearTest::NearSpec::verify_common(const search::queryeval::FakeIndex& index, uin
 
         vespalib::asciistream term_str;
         term_str << ch;
-        auto term = std::make_unique<QueryTerm>(std::make_unique<search::streaming::QueryTermData>(),
-                                                term_str.str(), "view", QueryTerm::Type::WORD);
+        auto term = std::make_unique<QueryTerm>(std::make_unique<search::streaming::QueryTermData>(), term_str.str(),
+                                                "view", QueryTerm::Type::WORD);
         term->resizeFieldId(max_field_id);
-        auto &qtd = static_cast<QueryTermData &>(term->getQueryItem());
-        auto &td = qtd.getTermData();
+        auto& qtd = static_cast<QueryTermData&>(term->getQueryItem());
+        auto& td = qtd.getTermData();
         for (uint32_t field_id = 0; field_id <= max_field_id; ++field_id) {
             auto handle = mdl.allocTermField(field_id);
             td.addField(field_id).setHandle(handle);
         }
 
         for (const auto& hit : hits) {
-            auto hl_idx = term->add(hit.field_id(), hit.element_id(),
-                                   hit.element_weight(), hit.position());
+            auto hl_idx = term->add(hit.field_id(), hit.element_id(), hit.element_weight(), hit.position());
             term->set_element_length(hl_idx, hit.element_length());
         }
 
@@ -404,8 +386,8 @@ NearTest::NearSpec::verify_common(const search::queryeval::FakeIndex& index, uin
         std::vector<uint32_t> act_occs;
         for (auto& term : positive_terms) {
             uint32_t occs = 0;
-            auto &qtd = static_cast<QueryTermData &>(term->getQueryItem());
-            auto &td = qtd.getTermData();
+            auto&    qtd = static_cast<QueryTermData&>(term->getQueryItem());
+            auto&    td = qtd.getTermData();
             for (uint32_t field_id = 0; field_id <= max_field_id; ++field_id) {
                 auto field = td.lookupField(field_id);
                 if (field != nullptr) {
@@ -424,124 +406,87 @@ NearTest::NearSpec::verify_common(const search::queryeval::FakeIndex& index, uin
     }
 }
 
-void
-NearTest::NearSpec::verify(const search::queryeval::FakeIndex& index, uint32_t docid,
-                           const std::vector<uint32_t>& expected_elements)
-{
+void NearTest::NearSpec::verify(const search::queryeval::FakeIndex& index, uint32_t docid,
+                                const std::vector<uint32_t>& expected_elements) {
     std::ostringstream os;
     os << to_string() << ".verify(index," << docid << "," << testing::PrintToString(expected_elements) << ")";
     SCOPED_TRACE(os.str());
     verify_common(index, docid, expected_elements, std::nullopt, std::nullopt, std::nullopt);
 }
 
-void
-NearTest::NearSpec::verify_spans(const search::queryeval::FakeIndex& index, uint32_t docid,
-                                 const std::vector<MatchSpan>& expected_match_spans)
-{
+void NearTest::NearSpec::verify_spans(const search::queryeval::FakeIndex& index, uint32_t docid,
+                                      const std::vector<MatchSpan>& expected_match_spans) {
     std::ostringstream os;
-    os << to_string() << ".verify_spans(index," << docid << "," << testing::PrintToString(expected_match_spans) << ")";
+    os << to_string() << ".verify_spans(index," << docid << "," << testing::PrintToString(expected_match_spans)
+       << ")";
     SCOPED_TRACE(os.str());
     verify_common(index, docid, std::nullopt, expected_match_spans, std::nullopt, std::nullopt);
 }
 
-void
-NearTest::NearSpec::verify_occs(const search::queryeval::FakeIndex& index, uint32_t docid,
-                                std::optional<std::vector<uint32_t>> unpack_element_filter,
-                                const std::vector<uint32_t>& expected_occs)
-{
+void NearTest::NearSpec::verify_occs(const search::queryeval::FakeIndex& index, uint32_t docid,
+                                     std::optional<std::vector<uint32_t>> unpack_element_filter,
+                                     const std::vector<uint32_t>&         expected_occs) {
     std::ostringstream os;
-    os << to_string() << ".verify_occs(index," << docid << "," << testing::PrintToString(unpack_element_filter) << "," <<
-        testing::PrintToString(expected_occs) << ")";
+    os << to_string() << ".verify_occs(index," << docid << "," << testing::PrintToString(unpack_element_filter) << ","
+       << testing::PrintToString(expected_occs) << ")";
     SCOPED_TRACE(os.str());
     verify_common(index, docid, std::nullopt, std::nullopt, unpack_element_filter, expected_occs);
 }
 
-TEST_P(NearTest, test_empty_near)
-{
-    EXPECT_FALSE(evaluate_query(4, { }));
+TEST_P(NearTest, test_empty_near) {
+    EXPECT_FALSE(evaluate_query(4, {}));
 }
 
-TEST_P(NearTest, test_near_success)
-{
-    EXPECT_TRUE(evaluate_query(4, { { { 0, 0, 10, 6, 0} },
-                                    { { 0, 0, 10, 6, 2} },
-                                    { { 0, 0, 10, 6, 4} } }));
+TEST_P(NearTest, test_near_success) {
+    EXPECT_TRUE(evaluate_query(4, {{{0, 0, 10, 6, 0}}, {{0, 0, 10, 6, 2}}, {{0, 0, 10, 6, 4}}}));
 }
 
-TEST_P(NearTest, test_near_fail_distance_exceeded_first_term)
-{
-    EXPECT_FALSE(evaluate_query(4, { { { 0, 0, 10, 6, 0} },
-                                     { { 0, 0, 10, 6, 2} },
-                                     { { 0, 0, 10, 6, 5} } }));
+TEST_P(NearTest, test_near_fail_distance_exceeded_first_term) {
+    EXPECT_FALSE(evaluate_query(4, {{{0, 0, 10, 6, 0}}, {{0, 0, 10, 6, 2}}, {{0, 0, 10, 6, 5}}}));
 }
 
-TEST_P(NearTest, test_near_fail_distance_exceeded_second_term)
-{
-    EXPECT_FALSE(evaluate_query(4, { { { 0, 0, 10, 6, 2} },
-                                     { { 0, 0, 10, 6, 0} },
-                                     { { 0, 0, 10, 6, 5} } }));
+TEST_P(NearTest, test_near_fail_distance_exceeded_second_term) {
+    EXPECT_FALSE(evaluate_query(4, {{{0, 0, 10, 6, 2}}, {{0, 0, 10, 6, 0}}, {{0, 0, 10, 6, 5}}}));
 }
 
-TEST_P(NearTest, test_near_fail_element)
-{
-    EXPECT_FALSE(evaluate_query(4, { { { 0, 0, 10, 6, 0} },
-                                     { { 0, 0, 10, 6, 2} },
-                                     { { 0, 1, 10, 6, 4} } }));
+TEST_P(NearTest, test_near_fail_element) {
+    EXPECT_FALSE(evaluate_query(4, {{{0, 0, 10, 6, 0}}, {{0, 0, 10, 6, 2}}, {{0, 1, 10, 6, 4}}}));
 }
 
-TEST_P(NearTest, test_near_fail_field)
-{
-    EXPECT_FALSE(evaluate_query(4, { { { 0, 0, 10, 6, 0} },
-                                     { { 0, 0, 10, 6, 2} },
-                                     { { 1, 0, 10, 6, 4} } }));
+TEST_P(NearTest, test_near_fail_field) {
+    EXPECT_FALSE(evaluate_query(4, {{{0, 0, 10, 6, 0}}, {{0, 0, 10, 6, 2}}, {{1, 0, 10, 6, 4}}}));
 }
 
-TEST_P(NearTest, test_near_success_after_step_first_term)
-{
-    EXPECT_TRUE(evaluate_query(4, { { { 0, 0, 10, 6, 0}, { 0, 0, 10, 6, 2} },
-                                    { { 0, 0, 10, 6, 3} },
-                                    { { 0, 0, 10, 6, 5} } }));
+TEST_P(NearTest, test_near_success_after_step_first_term) {
+    EXPECT_TRUE(evaluate_query(4, {{{0, 0, 10, 6, 0}, {0, 0, 10, 6, 2}}, {{0, 0, 10, 6, 3}}, {{0, 0, 10, 6, 5}}}));
 }
 
-TEST_P(NearTest, test_near_success_after_step_second_term)
-{
-    EXPECT_TRUE(evaluate_query(4, { { { 0, 0, 10, 6, 2} },
-                                    { { 0, 0, 10, 6, 0}, {0, 0, 10, 6, 3} },
-                                    { { 0, 0, 10, 6, 5} } }));
+TEST_P(NearTest, test_near_success_after_step_second_term) {
+    EXPECT_TRUE(evaluate_query(4, {{{0, 0, 10, 6, 2}}, {{0, 0, 10, 6, 0}, {0, 0, 10, 6, 3}}, {{0, 0, 10, 6, 5}}}));
 }
 
-TEST_P(NearTest, test_near_success_in_second_element)
-{
-    EXPECT_TRUE(evaluate_query(4, { { { 0, 0, 10, 6, 0}, { 0, 1, 10, 6, 0} },
-                                    { { 0, 0, 10, 6, 2}, { 0, 1, 10, 6, 2} },
-                                    { { 0, 0, 10, 6, 5}, { 0, 1, 10, 6, 4} } }));
+TEST_P(NearTest, test_near_success_in_second_element) {
+    EXPECT_TRUE(evaluate_query(4, {{{0, 0, 10, 6, 0}, {0, 1, 10, 6, 0}},
+                                   {{0, 0, 10, 6, 2}, {0, 1, 10, 6, 2}},
+                                   {{0, 0, 10, 6, 5}, {0, 1, 10, 6, 4}}}));
 }
 
-TEST_P(NearTest, test_near_success_in_second_field)
-{
-    EXPECT_TRUE(evaluate_query(4, { { { 0, 0, 10, 6, 0}, { 1, 0, 10, 6, 0} },
-                                    { { 0, 0, 10, 6, 2}, { 1, 0, 10, 6, 2} },
-                                    { { 0, 0, 10, 6, 5}, { 1, 0, 10, 6, 4} } }));
+TEST_P(NearTest, test_near_success_in_second_field) {
+    EXPECT_TRUE(evaluate_query(4, {{{0, 0, 10, 6, 0}, {1, 0, 10, 6, 0}},
+                                   {{0, 0, 10, 6, 2}, {1, 0, 10, 6, 2}},
+                                   {{0, 0, 10, 6, 5}, {1, 0, 10, 6, 4}}}));
 }
 
-TEST_P(NearTest, test_order_might_matter)
-{
-    EXPECT_EQ(!GetParam().ordered(), evaluate_query(4, { { { 0, 0, 10, 6, 2} },
-                                                         { { 0, 0, 10, 6, 0} },
-                                                         { { 0, 0, 10, 6, 4} } }));
+TEST_P(NearTest, test_order_might_matter) {
+    EXPECT_EQ(!GetParam().ordered(), evaluate_query(4, {{{0, 0, 10, 6, 2}}, {{0, 0, 10, 6, 0}}, {{0, 0, 10, 6, 4}}}));
 }
 
-TEST_P(NearTest, test_overlap_might_matter)
-{
-    EXPECT_EQ(!GetParam().ordered(), evaluate_query(4, { { { 0, 0, 10, 6, 0} },
-                                                         { { 0, 0, 10, 6, 0} },
-                                                         { { 0, 0, 10, 6, 4} } }));
+TEST_P(NearTest, test_overlap_might_matter) {
+    EXPECT_EQ(!GetParam().ordered(), evaluate_query(4, {{{0, 0, 10, 6, 0}}, {{0, 0, 10, 6, 0}}, {{0, 0, 10, 6, 4}}}));
 }
 
-TEST_P(NearTest, element_boundary)
-{
-    std::vector<std::vector<TestHit>> hitsvv({ { { 0, 0, 10, 5, 0} },
-                                               { { 0, 1, 10, 5, 1 } } });
+TEST_P(NearTest, element_boundary) {
+    std::vector<std::vector<TestHit>> hitsvv({{{0, 0, 10, 5, 0}}, {{0, 1, 10, 5, 1}}});
     EXPECT_FALSE(evaluate_query(20, hitsvv));
     _element_gap_setting.emplace(0);
     EXPECT_TRUE(evaluate_query(20, hitsvv));
@@ -551,11 +496,9 @@ TEST_P(NearTest, element_boundary)
     EXPECT_FALSE(evaluate_query(20, hitsvv));
 }
 
-TEST_P(NearTest, phrase_below_near)
-{
-    std::vector<std::vector<TestHit>> hitsvv({ { { 0, 1, 10, 10, 0 }, { 0, 1, 10, 10, 7} },
-                                               { { 0, 1, 10, 10, 4 } },
-                                               { { 0, 1, 10, 10, 5 } } });
+TEST_P(NearTest, phrase_below_near) {
+    std::vector<std::vector<TestHit>> hitsvv(
+        {{{0, 1, 10, 10, 0}, {0, 1, 10, 10, 7}}, {{0, 1, 10, 10, 4}}, {{0, 1, 10, 10, 5}}});
     EXPECT_FALSE(evaluate_query(QueryTweak::PHRASE, 1, hitsvv));
     // The following should succeed for near but phrase length is not taken into account for now.
     EXPECT_FALSE(evaluate_query(QueryTweak::PHRASE, 2, hitsvv));
@@ -563,11 +506,9 @@ TEST_P(NearTest, phrase_below_near)
     EXPECT_TRUE(evaluate_query(QueryTweak::PHRASE, 4, hitsvv));
 }
 
-TEST_P(NearTest, early_phrase_below_near)
-{
-    std::vector<std::vector<TestHit>> hitsvv({ { { 0, 1, 10, 10, 4 } },
-                                               { { 0, 1, 10, 10, 5 } },
-                                               { { 0, 1, 10, 10, 0 }, { 0, 1, 10, 10, 7} } });
+TEST_P(NearTest, early_phrase_below_near) {
+    std::vector<std::vector<TestHit>> hitsvv(
+        {{{0, 1, 10, 10, 4}}, {{0, 1, 10, 10, 5}}, {{0, 1, 10, 10, 0}, {0, 1, 10, 10, 7}}});
     EXPECT_FALSE(evaluate_query(QueryTweak::EARLY_PHRASE, 1, hitsvv));
     // The following should succeed for near and onear but phrase length is not taken into account for now.
     EXPECT_FALSE(evaluate_query(QueryTweak::EARLY_PHRASE, 2, hitsvv));
@@ -575,33 +516,26 @@ TEST_P(NearTest, early_phrase_below_near)
     EXPECT_TRUE(evaluate_query(QueryTweak::EARLY_PHRASE, 4, hitsvv));
 }
 
-TEST_P(NearTest, equiv_below_near)
-{
-    std::vector<std::vector<TestHit>> hitsvv({ { { 0, 1, 10, 10, 0 }, { 0, 1, 10, 10, 7} },
-                                               { { 0, 1, 10, 10, 4 } },
-                                               { { 0, 1, 10, 10, 5 } } });
+TEST_P(NearTest, equiv_below_near) {
+    std::vector<std::vector<TestHit>> hitsvv(
+        {{{0, 1, 10, 10, 0}, {0, 1, 10, 10, 7}}, {{0, 1, 10, 10, 4}}, {{0, 1, 10, 10, 5}}});
     EXPECT_FALSE(evaluate_query(QueryTweak::EQUIV, 1, hitsvv));
     EXPECT_EQ(!GetParam().ordered(), evaluate_query(QueryTweak::EQUIV, 2, hitsvv));
     EXPECT_EQ(!GetParam().ordered(), evaluate_query(QueryTweak::EQUIV, 3, hitsvv));
     EXPECT_TRUE(evaluate_query(QueryTweak::EQUIV, 4, hitsvv));
 }
 
-TEST_P(NearTest, get_element_ids)
-{
+TEST_P(NearTest, get_element_ids) {
     using IDS = std::vector<uint32_t>;
-    std::vector<std::vector<TestHit>> hitsvv({ { { 0, 3, 10, 5, 2 }, { 0, 7, 10, 5, 2} },
-                                               { { 0, 3, 10, 5, 4 }, { 0, 7, 10, 5, 0} } });
-    EXPECT_EQ((GetParam().ordered() ? IDS{ 3 } : IDS{ 3, 7 }), get_element_ids(QueryTweak::NORMAL, 4, hitsvv));
+    std::vector<std::vector<TestHit>> hitsvv(
+        {{{0, 3, 10, 5, 2}, {0, 7, 10, 5, 2}}, {{0, 3, 10, 5, 4}, {0, 7, 10, 5, 0}}});
+    EXPECT_EQ((GetParam().ordered() ? IDS{3} : IDS{3, 7}), get_element_ids(QueryTweak::NORMAL, 4, hitsvv));
     std::swap(hitsvv[0], hitsvv[1]);
-    EXPECT_EQ((GetParam().ordered() ? IDS{ 7 } : IDS{ 3, 7 }), get_element_ids(QueryTweak::NORMAL, 4, hitsvv));
+    EXPECT_EQ((GetParam().ordered() ? IDS{7} : IDS{3, 7}), get_element_ids(QueryTweak::NORMAL, 4, hitsvv));
 }
 
-TEST_P(NearTest, basic_visual_test)
-{
-    auto docs = index().doc(69)
-        .elem(1, "..A.B.C..")
-        .elem(2, "..A.C.B..")
-        .elem(3, "..A.B..C.");
+TEST_P(NearTest, basic_visual_test) {
+    auto docs = index().doc(69).elem(1, "..A.B.C..").elem(2, "..A.C.B..").elem(3, "..A.B..C.");
 
     if (GetParam().ordered()) {
         near("ABC", 4).verify(docs, 69, {1});
@@ -642,15 +576,14 @@ TEST_P(NearTest, basic_visual_test)
     }
 }
 
-TEST_P(NearTest, merged_match_spans)
-{
-    auto docs = index().doc(69)
-        .elem(1, "..A.B.A.B.")
-        .elem(2, "A.B.");
+TEST_P(NearTest, merged_match_spans) {
+    auto docs = index().doc(69).elem(1, "..A.B.A.B.").elem(2, "A.B.");
     if (GetParam().ordered()) {
-        near("AB", 2).verify_spans(docs, 69, {match_span(0, 1, 2, 1, 4), match_span(0, 1, 6, 1, 8), match_span(0, 2, 0, 2, 2)});
+        near("AB", 2).verify_spans(docs, 69,
+                                   {match_span(0, 1, 2, 1, 4), match_span(0, 1, 6, 1, 8), match_span(0, 2, 0, 2, 2)});
         _element_gap_setting.emplace(0);
-        near("AB", 2).verify_spans(docs, 69, {match_span(0, 1, 2, 1, 4), match_span(0, 1, 6, 1, 8), match_span(0, 2, 0, 2, 2)});
+        near("AB", 2).verify_spans(docs, 69,
+                                   {match_span(0, 1, 2, 1, 4), match_span(0, 1, 6, 1, 8), match_span(0, 2, 0, 2, 2)});
     } else {
         near("AB", 2).verify_spans(docs, 69, {match_span(0, 1, 2, 1, 8), match_span(0, 2, 0, 2, 2)});
         _element_gap_setting.emplace(0);
@@ -658,8 +591,7 @@ TEST_P(NearTest, merged_match_spans)
     }
 }
 
-TEST_P(NearTest, extended_match_spans)
-{
+TEST_P(NearTest, extended_match_spans) {
     {
         SCOPED_TRACE("span and negative term in same element");
         auto docs = index().doc(69).elem(0, "AABAA.C");
@@ -764,11 +696,8 @@ TEST_P(NearTest, extended_match_spans)
     }
 }
 
-TEST_P(NearTest, multi_field_visual_test)
-{
-    auto docs = index().doc(69)
-        .field(0).elem(1, "..A.B.C..")
-        .field(1).elem(1, "..A.C.B..");
+TEST_P(NearTest, multi_field_visual_test) {
+    auto docs = index().doc(69).field(0).elem(1, "..A.B.C..").field(1).elem(1, "..A.C.B..");
 
     if (GetParam().ordered()) {
         near("ABC", 4).fields(0, 1).verify(docs, 69, {1});
@@ -779,27 +708,20 @@ TEST_P(NearTest, multi_field_visual_test)
     }
 }
 
-TEST_P(NearTest, non_matching_negative_term)
-{
+TEST_P(NearTest, non_matching_negative_term) {
     auto docs = index().doc(69).elem(1, "AB");
 
     near("AB", 4).avoid("X", 3).verify(docs, 69, {1});
 }
 
-TEST_P(NearTest, negative_term_retry_window)
-{
-    auto docs = index().doc(69)
-        .elem(1, "X.A.A.B...X")
-        .elem(2, "X.A.A.B..X.");
+TEST_P(NearTest, negative_term_retry_window) {
+    auto docs = index().doc(69).elem(1, "X.A.A.B...X").elem(2, "X.A.A.B..X.");
 
     near("AB", 4).avoid("X", 3).verify(docs, 69, {1});
 }
 
-TEST_P(NearTest, quantum_brick)
-{
-    auto docs = index().doc(69)
-        .elem(1, "AB").elem(2, "X").elem(3, "AB")
-        .elem(4, "AB").elem(5, " X ").elem(6, "BA");
+TEST_P(NearTest, quantum_brick) {
+    auto docs = index().doc(69).elem(1, "AB").elem(2, "X").elem(3, "AB").elem(4, "AB").elem(5, " X ").elem(6, "BA");
     _element_gap_setting.emplace(1);
 
     if (GetParam().ordered()) {
@@ -809,36 +731,24 @@ TEST_P(NearTest, quantum_brick)
     }
 }
 
-TEST_P(NearTest, zero_exclusion_distance)
-{
-    auto docs = index().doc(69)
-        .elem(1, "xAxBx")
-        .elem(2, "xA.Bx");
+TEST_P(NearTest, zero_exclusion_distance) {
+    auto docs = index().doc(69).elem(1, "xAxBx").elem(2, "xA.Bx");
 
     near("AB", 2).avoid("x", 0).verify(docs, 69, {2});
 }
 
-TEST_P(NearTest, multiple_negative_terms)
-{
-    auto docs = index().doc(69)
-        .elem(1, "yxyAxByxy")
-        .elem(2, "xyxAyBxyx")
-        .elem(3, "yxyA.Byxy")
-        .elem(4, "xyxB.Axyx");
+TEST_P(NearTest, multiple_negative_terms) {
+    auto docs = index().doc(69).elem(1, "yxyAxByxy").elem(2, "xyxAyBxyx").elem(3, "yxyA.Byxy").elem(4, "xyxB.Axyx");
 
     if (GetParam().ordered()) {
         near("AB", 2).avoid("xy", 0).verify(docs, 69, {3});
     } else {
-        near("AB", 2).avoid("xy", 0).verify(docs, 69, {3,4});
+        near("AB", 2).avoid("xy", 0).verify(docs, 69, {3, 4});
     }
 }
 
-TEST_P(NearTest, single_positive_term)
-{
-    auto docs = index().doc(69)
-        .elem(1, "XX..A...X")
-        .elem(2, "X...A..XX")
-        .elem(3, "X...A...X");
+TEST_P(NearTest, single_positive_term) {
+    auto docs = index().doc(69).elem(1, "XX..A...X").elem(2, "X...A..XX").elem(3, "X...A...X");
 
     near("A", 1).avoid("X", 3).verify(docs, 69, {3});
 }

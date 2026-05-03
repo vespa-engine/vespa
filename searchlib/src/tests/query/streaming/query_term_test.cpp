@@ -24,10 +24,10 @@ using search::fef::TermFieldMatchData;
 using search::fef::test::IndexEnvironment;
 using search::index::schema::CollectionType;
 using search::index::schema::DataType;
-using search::query::Weight;
 using search::query::QueryBuilder;
 using search::query::SimpleQueryNodeTypes;
 using search::query::StackDumpCreator;
+using search::query::Weight;
 using search::queryeval::ElementIdExtractor;
 using search::queryeval::MatchSpan;
 using search::streaming::Query;
@@ -38,16 +38,13 @@ using search::streaming::QueryTermList;
 
 namespace {
 
-std::vector<uint32_t>
-make_vec(std::vector<uint32_t> values)
-{
+std::vector<uint32_t> make_vec(std::vector<uint32_t> values) {
     return values;
 }
 
-}
+} // namespace
 
-class QueryTermTest : public testing::Test
-{
+class QueryTermTest : public testing::Test {
 protected:
     QueryTermDataFactory       _factory;
     IndexEnvironment           _index_env;
@@ -90,8 +87,7 @@ QueryTermTest::QueryTermTest()
       _normal_handle(IllegalHandle),
       _filter_handle(IllegalHandle),
       _md(),
-      _tfmd(nullptr)
-{
+      _tfmd(nullptr) {
     FieldInfo field(FieldType::INDEX, CollectionType::ARRAY, "field", normal_field_id);
     FieldInfo filterfield(FieldType::INDEX, CollectionType::ARRAY, "filterfield", filter_field_id);
     filterfield.setFilter(true);
@@ -102,7 +98,7 @@ QueryTermTest::QueryTermTest()
     _index_env.getFields().emplace_back(field);
     _index_env.getFields().emplace_back(filterfield);
     for (uint32_t i = 0; i < existing_handles; ++i) {
-        (void) _mdl.allocTermField(field0);
+        (void)_mdl.allocTermField(field0);
     }
     _normal_handle = _mdl.allocTermField(field.id());
     _filter_handle = _mdl.allocTermField(filterfield.id());
@@ -110,29 +106,25 @@ QueryTermTest::QueryTermTest()
 
 QueryTermTest::~QueryTermTest() = default;
 
-void
-QueryTermTest::build_query(QueryBuilder<SimpleQueryNodeTypes> &builder)
-{
+void QueryTermTest::build_query(QueryBuilder<SimpleQueryNodeTypes>& builder) {
     auto build_node = builder.build();
     auto serializedQueryTree = StackDumpCreator::createSerializedQueryTree(*build_node);
     _query = std::make_unique<Query>(_factory, *serializedQueryTree);
 }
 
-void
-QueryTermTest::build_query(bool filter)
-{
+void QueryTermTest::build_query(bool filter) {
     QueryBuilder<SimpleQueryNodeTypes> builder;
-    constexpr int32_t id = 42;
-    constexpr int32_t weight = 1;
+    constexpr int32_t                  id = 42;
+    constexpr int32_t                  weight = 1;
     builder.addStringTerm("term", filter ? "filterfield" : "field", id, Weight(weight));
     build_query(builder);
     QueryTermList term_list;
     _query->getLeaves(term_list);
     ASSERT_EQ(1u, term_list.size());
-    _node = dynamic_cast<QueryTerm *>(term_list.front());
+    _node = dynamic_cast<QueryTerm*>(term_list.front());
     ASSERT_NE(nullptr, _node);
-    auto &qtd = static_cast<QueryTermData &>(_node->getQueryItem());
-    auto &td = qtd.getTermData();
+    auto& qtd = static_cast<QueryTermData&>(_node->getQueryItem());
+    auto& td = qtd.getTermData();
     _field_id = filter ? filter_field_id : normal_field_id;
     auto handle = filter ? _filter_handle : _normal_handle;
     td.addField(_field_id).setHandle(handle);
@@ -142,9 +134,7 @@ QueryTermTest::build_query(bool filter)
     ASSERT_NE(nullptr, _tfmd);
 }
 
-void
-QueryTermTest::populate_term()
-{
+void QueryTermTest::populate_term() {
     ASSERT_NE(nullptr, _node);
     _node->add(_field_id, 0, 1, 0);
     _node->add(_field_id, 3, 1, 1);
@@ -152,26 +142,19 @@ QueryTermTest::populate_term()
     _node->add(_field_id, 10, 1, 1);
     auto& field_info = _node->getFieldInfo(_field_id);
     field_info.setFieldLength(mock_field_length);
-
 }
 
-std::vector<uint32_t>
-QueryTermTest::extract_element_ids(uint32_t docid)
-{
+std::vector<uint32_t> QueryTermTest::extract_element_ids(uint32_t docid) {
     std::vector<uint32_t> element_ids;
     ElementIdExtractor::get_element_ids(*_tfmd, docid, element_ids);
     return element_ids;
 }
 
-std::vector<MatchSpan>
-QueryTermTest::make_match_spans(std::vector<MatchSpan> match_spans)
-{
+std::vector<MatchSpan> QueryTermTest::make_match_spans(std::vector<MatchSpan> match_spans) {
     return match_spans;
 }
 
-void
-QueryTermTest::test_unpack_match_data_for_term_node(bool interleaved_features, bool filter)
-{
+void QueryTermTest::test_unpack_match_data_for_term_node(bool interleaved_features, bool filter) {
     ASSERT_NO_FATAL_FAILURE(build_query(filter));
     _tfmd->setNeedInterleavedFeatures(interleaved_features);
     EXPECT_TRUE(_tfmd->has_invalid_docid());
@@ -193,28 +176,23 @@ QueryTermTest::test_unpack_match_data_for_term_node(bool interleaved_features, b
     EXPECT_TRUE(_tfmd->has_ranking_data(2));
 }
 
-TEST_F(QueryTermTest, unpack_normal_match_data_for_term_node)
-{
+TEST_F(QueryTermTest, unpack_normal_match_data_for_term_node) {
     test_unpack_match_data_for_term_node(false, false);
 }
 
-TEST_F(QueryTermTest, unpack_interleaved_match_data_for_term_node)
-{
+TEST_F(QueryTermTest, unpack_interleaved_match_data_for_term_node) {
     test_unpack_match_data_for_term_node(true, false);
 }
 
-TEST_F(QueryTermTest, unpack_normal_match_data_for_term_node_filter)
-{
+TEST_F(QueryTermTest, unpack_normal_match_data_for_term_node_filter) {
     test_unpack_match_data_for_term_node(false, true);
 }
 
-TEST_F(QueryTermTest, unpack_interleaved_match_data_for_term_node_filter)
-{
+TEST_F(QueryTermTest, unpack_interleaved_match_data_for_term_node_filter) {
     test_unpack_match_data_for_term_node(true, true);
 }
 
-TEST_F(QueryTermTest, unpack_match_data_with_element_filter)
-{
+TEST_F(QueryTermTest, unpack_match_data_with_element_filter) {
     ASSERT_NO_FATAL_FAILURE(build_query(false));
     _tfmd->setNeedInterleavedFeatures(true);
     ASSERT_NO_FATAL_FAILURE(populate_term());
@@ -248,8 +226,7 @@ TEST_F(QueryTermTest, unpack_match_data_with_element_filter)
     EXPECT_TRUE(_tfmd->has_invalid_docid());
 }
 
-TEST_F(QueryTermTest, unpack_match_data_with_match_spans)
-{
+TEST_F(QueryTermTest, unpack_match_data_with_match_spans) {
     ASSERT_NO_FATAL_FAILURE(build_query(false));
     _tfmd->setNeedInterleavedFeatures(true);
     ASSERT_NO_FATAL_FAILURE(populate_term());
@@ -263,14 +240,13 @@ TEST_F(QueryTermTest, unpack_match_data_with_match_spans)
     EXPECT_EQ(make_vec({0, 3, 7, 10}), extract_element_ids(docid));
     reset_tfmd();
     // Intersection between match spans and match data contains multiple matches in multiple elements.
-    _node->unpack_match_data(docid, *_md, _index_env, make_match_spans({
-                                 {_field_id, {0, 0}, {0, 1}},
-                                 {_field_id, {2, 0}, {2, 1}},
-                                 {_field_id, {3, 0}, {3, 1}},
-                                 {_field_id, {8, 0}, {8, 1}},
-                                 {_field_id, {10, 0}, {10, 1}},
-                                 {_field_id, {12, 0}, {12, 1}}
-                             }));
+    _node->unpack_match_data(docid, *_md, _index_env,
+                             make_match_spans({{_field_id, {0, 0}, {0, 1}},
+                                               {_field_id, {2, 0}, {2, 1}},
+                                               {_field_id, {3, 0}, {3, 1}},
+                                               {_field_id, {8, 0}, {8, 1}},
+                                               {_field_id, {10, 0}, {10, 1}},
+                                               {_field_id, {12, 0}, {12, 1}}}));
     EXPECT_TRUE(_tfmd->has_ranking_data(docid));
     EXPECT_EQ(3, _tfmd->getNumOccs());
     EXPECT_EQ(mock_field_length, _tfmd->getFieldLength());
