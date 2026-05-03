@@ -1,20 +1,22 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dummy_cluster_context.h"
-#include <tests/distributor/distributor_stripe_test_util.h>
+
 #include <vespa/document/test/make_document_bucket.h>
-#include <vespa/storage/distributor/top_level_distributor.h>
+#include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storage/distributor/idealstatemetricsset.h>
 #include <vespa/storage/distributor/operations/idealstate/garbagecollectionoperation.h>
-#include <vespa/storage/config/distributorconfiguration.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
-using document::test::makeDocumentBucket;
+#include <tests/distributor/distributor_stripe_test_util.h>
+
 using document::BucketId;
 using document::DocumentId;
 using document::FixedBucketSpaces;
+using document::test::makeDocumentBucket;
 using namespace ::testing;
 
 namespace storage::distributor {
@@ -51,9 +53,7 @@ struct GarbageCollectionOperationTest : Test, DistributorStripeTestUtil {
         _sender.set_operation_sequencer(_operation_sequencer);
     };
 
-    void TearDown() override {
-        close();
-    }
+    void TearDown() override { close(); }
 
     void enable_two_phase_gc() {
         NodeSupportedFeatures with_two_phase;
@@ -64,12 +64,13 @@ struct GarbageCollectionOperationTest : Test, DistributorStripeTestUtil {
 
     std::shared_ptr<GarbageCollectionOperation> create_op() {
         auto op = std::make_shared<GarbageCollectionOperation>(
-                dummy_cluster_context, BucketAndNodes(makeDocumentBucket(_bucket_id), {0, 1}));
+            dummy_cluster_context, BucketAndNodes(makeDocumentBucket(_bucket_id), {0, 1}));
         op->setIdealStateManager(&getIdealStateManager());
         return op;
     }
 
-    static std::shared_ptr<api::RemoveLocationCommand> as_remove_location_command(const std::shared_ptr<api::StorageCommand>& cmd) {
+    static std::shared_ptr<api::RemoveLocationCommand>
+    as_remove_location_command(const std::shared_ptr<api::StorageCommand>& cmd) {
         auto msg = std::dynamic_pointer_cast<api::RemoveLocationCommand>(cmd);
         assert(msg);
         return msg;
@@ -82,12 +83,12 @@ struct GarbageCollectionOperationTest : Test, DistributorStripeTestUtil {
     }
 
     // FIXME fragile to assume that send order == node index, but that's the way it currently works
-    void reply_to_nth_request(GarbageCollectionOperation& op, size_t n,
-                              uint32_t bucket_info_checksum, uint32_t n_docs_removed) {
+    void reply_to_nth_request(GarbageCollectionOperation& op, size_t n, uint32_t bucket_info_checksum,
+                              uint32_t n_docs_removed) {
         auto msg = _sender.command(n);
         assert(msg->getType() == api::MessageType::REMOVELOCATION);
         std::shared_ptr<api::StorageReply> reply(msg->makeReply());
-        auto& gc_reply = dynamic_cast<api::RemoveLocationReply&>(*reply);
+        auto&                              gc_reply = dynamic_cast<api::RemoveLocationReply&>(*reply);
         gc_reply.set_documents_removed(n_docs_removed);
         gc_reply.setBucketInfo(api::BucketInfo(bucket_info_checksum, 90, 500));
 
@@ -143,7 +144,8 @@ TEST_F(GarbageCollectionOperationTest, simple_legacy) {
         EXPECT_EQ("music.date < 34", tmp.getDocumentSelection());
         reply_to_nth_request(*op, i, 777 + i, 50);
     }
-    ASSERT_NO_FATAL_FAILURE(assert_bucket_db_contains({api::BucketInfo(777, 90, 500), api::BucketInfo(778, 90, 500)}, 34));
+    ASSERT_NO_FATAL_FAILURE(
+        assert_bucket_db_contains({api::BucketInfo(777, 90, 500), api::BucketInfo(778, 90, 500)}, 34));
     EXPECT_EQ(50u, gc_removed_documents_metric());
 }
 
@@ -155,11 +157,13 @@ TEST_F(GarbageCollectionOperationTest, replica_bucket_info_not_added_to_db_until
 
     // Respond to 1st request. Should _not_ cause bucket info to be merged into the database yet
     reply_to_nth_request(*op, 0, 1234, 70);
-    ASSERT_NO_FATAL_FAILURE(assert_bucket_db_contains({api::BucketInfo(250, 50, 300), api::BucketInfo(250, 50, 300)}, 0));
+    ASSERT_NO_FATAL_FAILURE(
+        assert_bucket_db_contains({api::BucketInfo(250, 50, 300), api::BucketInfo(250, 50, 300)}, 0));
 
     // Respond to 2nd request. This _should_ cause bucket info to be merged into the database.
     reply_to_nth_request(*op, 1, 4567, 60);
-    ASSERT_NO_FATAL_FAILURE(assert_bucket_db_contains({api::BucketInfo(1234, 90, 500), api::BucketInfo(4567, 90, 500)}, 34));
+    ASSERT_NO_FATAL_FAILURE(
+        assert_bucket_db_contains({api::BucketInfo(1234, 90, 500), api::BucketInfo(4567, 90, 500)}, 34));
 
     EXPECT_EQ(70u, gc_removed_documents_metric()); // Use max of received metrics
 }
@@ -177,7 +181,8 @@ TEST_F(GarbageCollectionOperationTest, no_replica_bucket_info_added_to_db_if_ope
     // as part of the ownership change, but there are already non-cancellation behaviors that
     // avoid creating buckets from scratch in the DB if they do not exist, so just checking to
     // see if the bucket exists or not risks hiding missing cancellation edge handling.
-    ASSERT_NO_FATAL_FAILURE(assert_bucket_db_contains({api::BucketInfo(250, 50, 300), api::BucketInfo(250, 50, 300)}, 0));
+    ASSERT_NO_FATAL_FAILURE(
+        assert_bucket_db_contains({api::BucketInfo(250, 50, 300), api::BucketInfo(250, 50, 300)}, 0));
     // However, we still update our metrics if we _did_ remove documents on one or more nodes
     EXPECT_EQ(70u, gc_removed_documents_metric());
 }
@@ -192,7 +197,8 @@ TEST_F(GarbageCollectionOperationTest, no_replica_bucket_info_added_to_db_for_ca
     reply_to_nth_request(*op, 1, 4567, 60);
 
     // DB state is unchanged for node 0, changed for node 1
-    ASSERT_NO_FATAL_FAILURE(assert_bucket_db_contains({api::BucketInfo(250, 50, 300), api::BucketInfo(4567, 90, 500)}, 34));
+    ASSERT_NO_FATAL_FAILURE(
+        assert_bucket_db_contains({api::BucketInfo(250, 50, 300), api::BucketInfo(4567, 90, 500)}, 34));
 }
 
 TEST_F(GarbageCollectionOperationTest, node_cancellation_is_cumulative) {
@@ -206,7 +212,8 @@ TEST_F(GarbageCollectionOperationTest, node_cancellation_is_cumulative) {
     reply_to_nth_request(*op, 1, 4567, 60);
 
     // DB state is unchanged for both nodes
-    ASSERT_NO_FATAL_FAILURE(assert_bucket_db_contains({api::BucketInfo(250, 50, 300), api::BucketInfo(250, 50, 300)}, 0));
+    ASSERT_NO_FATAL_FAILURE(
+        assert_bucket_db_contains({api::BucketInfo(250, 50, 300), api::BucketInfo(250, 50, 300)}, 0));
 }
 
 TEST_F(GarbageCollectionOperationTest, gc_bucket_info_does_not_overwrite_later_sequenced_bucket_info_writes) {
@@ -219,7 +226,8 @@ TEST_F(GarbageCollectionOperationTest, gc_bucket_info_does_not_overwrite_later_s
     insertBucketInfo(op->getBucketId(), 0, 7777, 100, 2000);
     reply_to_nth_request(*op, 1, 4567, 0);
     // Bucket info for node 0 is that of the later sequenced operation, _not_ from the earlier GC op.
-    ASSERT_NO_FATAL_FAILURE(assert_bucket_db_contains({api::BucketInfo(7777, 100, 2000), api::BucketInfo(4567, 90, 500)}, 34));
+    ASSERT_NO_FATAL_FAILURE(
+        assert_bucket_db_contains({api::BucketInfo(7777, 100, 2000), api::BucketInfo(4567, 90, 500)}, 34));
 }
 
 TEST_F(GarbageCollectionOperationTest, two_phase_gc_requires_config_enabling_and_explicit_node_support) {
@@ -253,7 +261,8 @@ TEST_F(GarbageCollectionOperationTest, first_phase_sends_enumerate_only_remove_l
     }
 }
 
-TEST_F(GarbageCollectionOperationTest, second_phase_sends_highest_timestamped_union_of_returned_entries_with_feed_pri) {
+TEST_F(GarbageCollectionOperationTest,
+       second_phase_sends_highest_timestamped_union_of_returned_entries_with_feed_pri) {
     enable_two_phase_gc();
     auto op = create_op();
     op->start(_sender);
@@ -326,9 +335,8 @@ TEST_F(GarbageCollectionOperationTest, db_metrics_and_timestamp_are_updated_on_s
     EXPECT_TRUE(op->ok());
     EXPECT_TRUE(op->is_done());
     EXPECT_EQ(3u, gc_removed_documents_metric());
-    ASSERT_NO_FATAL_FAILURE(assert_bucket_db_contains({api::BucketInfo(0x1234, 90, 500),
-                                                       api::BucketInfo(0x4567, 90, 500)},
-                                                      _gc_start_time_sec));
+    ASSERT_NO_FATAL_FAILURE(assert_bucket_db_contains(
+        {api::BucketInfo(0x1234, 90, 500), api::BucketInfo(0x4567, 90, 500)}, _gc_start_time_sec));
 }
 
 struct GarbageCollectionOperationPhase1FailureTest : GarbageCollectionOperationTest {
@@ -364,7 +372,7 @@ struct GarbageCollectionOperationPhase1FailureTest : GarbageCollectionOperationT
         // GC not completed, so timestamp/bucket DB are _not_ updated
         ASSERT_NO_FATAL_FAILURE(assert_bucket_db_contains({api::BucketInfo(250, 50, 300), // test init values
                                                            api::BucketInfo(250, 50, 300)},
-                                                          0/*GC start timestamp*/));
+                                                          0 /*GC start timestamp*/));
         EXPECT_EQ(0u, gc_removed_documents_metric()); // Nothing removed
     }
 };
@@ -441,4 +449,4 @@ TEST_F(GarbageCollectionOperationTest, document_level_write_locks_are_checked_an
     EXPECT_TRUE(e3_lock.valid());
 }
 
-} // storage::distributor
+} // namespace storage::distributor

@@ -1,23 +1,25 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <tests/distributor/distributor_stripe_test_util.h>
-#include <vespa/config/helper/configgetter.hpp>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/document/update/documentupdate.h>
-#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/operations/external/updateoperation.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/test_path.h>
 
+#include <vespa/config/helper/configgetter.hpp>
+
+#include <tests/distributor/distributor_stripe_test_util.h>
+
 using config::ConfigGetter;
 using config::FileSpec;
-using std::string;
 using document::test::makeDocumentBucket;
+using std::string;
 using namespace document;
 using namespace storage::api;
 using namespace std;
@@ -28,39 +30,31 @@ namespace storage::distributor {
 
 struct UpdateOperationTest : Test, DistributorStripeTestUtil {
     std::shared_ptr<const DocumentTypeRepo> _repo;
-    const DocumentType* _html_type;
+    const DocumentType*                     _html_type;
 
     UpdateOperationTest()
-        : _repo(std::make_shared<DocumentTypeRepo>(*ConfigGetter<DocumenttypesConfig>::
-                                                   getConfig("config-doctypes", FileSpec(TEST_PATH("../config-doctypes.cfg"))))),
-          _html_type(_repo->getDocumentType("text/html"))
-    {
-    }
+        : _repo(std::make_shared<DocumentTypeRepo>(*ConfigGetter<DocumenttypesConfig>::getConfig(
+              "config-doctypes", FileSpec(TEST_PATH("../config-doctypes.cfg"))))),
+          _html_type(_repo->getDocumentType("text/html")) {}
 
-    void SetUp() override {
-        createLinks();
-    }
+    void SetUp() override { createLinks(); }
 
-    void TearDown() override {
-        close();
-    }
+    void TearDown() override { close(); }
 
     void replyToMessage(UpdateOperation& callback, DistributorMessageSenderStub& sender, uint32_t index,
-                        uint64_t oldTimestamp, const api::BucketInfo& info = api::BucketInfo(2,4,6),
+                        uint64_t oldTimestamp, const api::BucketInfo& info = api::BucketInfo(2, 4, 6),
                         const api::ReturnCode& result = api::ReturnCode());
 
-    std::shared_ptr<UpdateOperation>
-    sendUpdate(const std::string& bucketState, bool create_if_missing = false, bool cache_create_flag = false);
+    std::shared_ptr<UpdateOperation> sendUpdate(const std::string& bucketState, bool create_if_missing = false,
+                                                bool cache_create_flag = false);
 
     document::BucketId _bId;
 };
 
-std::shared_ptr<UpdateOperation>
-UpdateOperationTest::sendUpdate(const std::string& bucketState, bool create_if_missing, bool cache_create_flag)
-{
+std::shared_ptr<UpdateOperation> UpdateOperationTest::sendUpdate(const std::string& bucketState,
+                                                                 bool create_if_missing, bool cache_create_flag) {
     auto update = std::make_shared<document::DocumentUpdate>(
-            *_repo, *_html_type,
-            document::DocumentId("id:ns:" + _html_type->getName() + "::1"));
+        *_repo, *_html_type, document::DocumentId("id:ns:" + _html_type->getName() + "::1"));
     update->setCreateIfNonExistent(create_if_missing);
 
     _bId = operation_context().make_split_bit_constrained_bucket_id(update->getId());
@@ -72,19 +66,17 @@ UpdateOperationTest::sendUpdate(const std::string& bucketState, bool create_if_m
         msg->set_cached_create_if_missing(create_if_missing);
     }
 
-    return std::make_shared<UpdateOperation>(
-            node_context(), operation_context(), getDistributorBucketSpace(), msg, std::vector<BucketDatabase::Entry>(),
-            metrics().updates);
+    return std::make_shared<UpdateOperation>(node_context(), operation_context(), getDistributorBucketSpace(), msg,
+                                             std::vector<BucketDatabase::Entry>(), metrics().updates);
 }
 
-void
-UpdateOperationTest::replyToMessage(UpdateOperation& callback, DistributorMessageSenderStub& sender, uint32_t index,
-                                     uint64_t oldTimestamp, const api::BucketInfo& info, const api::ReturnCode& result)
-{
-    std::shared_ptr<api::StorageMessage> msg2  = sender.command(index);
-    auto* updatec = dynamic_cast<UpdateCommand*>(msg2.get());
-    std::unique_ptr<api::StorageReply> reply(updatec->makeReply());
-    auto* updateR = static_cast<api::UpdateReply*>(reply.get());
+void UpdateOperationTest::replyToMessage(UpdateOperation& callback, DistributorMessageSenderStub& sender,
+                                         uint32_t index, uint64_t oldTimestamp, const api::BucketInfo& info,
+                                         const api::ReturnCode& result) {
+    std::shared_ptr<api::StorageMessage> msg2 = sender.command(index);
+    auto*                                updatec = dynamic_cast<UpdateCommand*>(msg2.get());
+    std::unique_ptr<api::StorageReply>   reply(updatec->makeReply());
+    auto*                                updateR = static_cast<api::UpdateReply*>(reply.get());
     updateR->setOldTimestamp(oldTimestamp);
     updateR->setBucketInfo(info);
     updateR->setResult(result);
@@ -96,7 +88,7 @@ TEST_F(UpdateOperationTest, simple) {
     setup_stripe(1, 1, "storage:1 distributor:1");
 
     std::shared_ptr<UpdateOperation> cb(sendUpdate("0=1/2/3"));
-    DistributorMessageSenderStub sender;
+    DistributorMessageSenderStub     sender;
     cb->start(sender);
 
     ASSERT_EQ("Update => 0", sender.getCommands(true));
@@ -115,7 +107,7 @@ TEST_F(UpdateOperationTest, not_found) {
     setup_stripe(1, 1, "storage:1 distributor:1");
 
     std::shared_ptr<UpdateOperation> cb(sendUpdate("0=1/2/3"));
-    DistributorMessageSenderStub sender;
+    DistributorMessageSenderStub     sender;
     cb->start(sender);
 
     ASSERT_EQ("Update => 0", sender.getCommands(true));
@@ -130,7 +122,7 @@ TEST_F(UpdateOperationTest, not_found) {
 TEST_F(UpdateOperationTest, multi_node) {
     setup_stripe(2, 2, "distributor:1 storage:2");
     std::shared_ptr<UpdateOperation> cb(sendUpdate("0=1/2/3,1=1/2/3"));
-    DistributorMessageSenderStub sender;
+    DistributorMessageSenderStub     sender;
     cb->start(sender);
 
     ASSERT_EQ("Update => 0,Update => 1", sender.getCommands(true));
@@ -143,8 +135,8 @@ TEST_F(UpdateOperationTest, multi_node) {
               sender.getLastReply(true));
 
     ASSERT_EQ(_bId.toString() + " : "
-              "node(idx=1,crc=0x2,docs=4/4,bytes=6/6,trusted=true,active=false,ready=false), "
-              "node(idx=0,crc=0x2,docs=4/4,bytes=6/6,trusted=true,active=false,ready=false)",
+                                "node(idx=1,crc=0x2,docs=4/4,bytes=6/6,trusted=true,active=false,ready=false), "
+                                "node(idx=0,crc=0x2,docs=4/4,bytes=6/6,trusted=true,active=false,ready=false)",
               dumpBucket(_bId));
 
     auto& m = metrics().updates;
@@ -154,7 +146,7 @@ TEST_F(UpdateOperationTest, multi_node) {
 TEST_F(UpdateOperationTest, multi_node_inconsistent_timestamp) {
     setup_stripe(2, 2, "distributor:1 storage:2");
     std::shared_ptr<UpdateOperation> cb(sendUpdate("0=1/2/3,1=1/2/3"));
-    DistributorMessageSenderStub sender;
+    DistributorMessageSenderStub     sender;
     cb->start(sender);
 
     ASSERT_EQ("Update => 0,Update => 1", sender.getCommands(true));
@@ -174,7 +166,7 @@ TEST_F(UpdateOperationTest, multi_node_inconsistent_timestamp) {
 TEST_F(UpdateOperationTest, test_and_set_failures_increment_tas_metric) {
     setup_stripe(2, 2, "distributor:1 storage:1");
     std::shared_ptr<UpdateOperation> cb(sendUpdate("0=1/2/3"));
-    DistributorMessageSenderStub sender;
+    DistributorMessageSenderStub     sender;
     cb->start(sender);
     ASSERT_EQ("Update => 0", sender.getCommands(true));
     api::ReturnCode result(api::ReturnCode::TEST_AND_SET_CONDITION_FAILED, "bork bork");
@@ -203,7 +195,7 @@ TEST_F(UpdateOperationTest, test_and_set_failures_increment_tas_metric) {
 TEST_F(UpdateOperationTest, create_if_missing_update_sentinel_timestamp_is_treated_as_zero_timestamp) {
     setup_stripe(2, 2, "distributor:1 storage:2");
     std::shared_ptr<UpdateOperation> cb(sendUpdate("0=1/2/3,1=1/2/3", true));
-    DistributorMessageSenderStub sender;
+    DistributorMessageSenderStub     sender;
     cb->start(sender);
 
     ASSERT_EQ("Update => 0,Update => 1", sender.getCommands(true));
@@ -225,13 +217,13 @@ TEST_F(UpdateOperationTest, create_if_missing_update_sentinel_timestamp_is_treat
 TEST_F(UpdateOperationTest, inconsistent_create_if_missing_updates_picks_largest_non_auto_created_replica) {
     setup_stripe(2, 3, "distributor:1 storage:3");
     std::shared_ptr<UpdateOperation> cb(sendUpdate("0=1/2/3,1=1/2/3,2=1/2/3", true));
-    DistributorMessageSenderStub sender;
+    DistributorMessageSenderStub     sender;
     cb->start(sender);
 
     ASSERT_EQ("Update => 0,Update => 1,Update => 2", sender.getCommands(true));
     replyToMessage(*cb, sender, 0, 100); // Newly created
-    replyToMessage(*cb, sender, 2, 80); // Too old and dusty; should not be picked.
-    replyToMessage(*cb, sender, 1, 90); // Should be picked
+    replyToMessage(*cb, sender, 2, 80);  // Too old and dusty; should not be picked.
+    replyToMessage(*cb, sender, 1, 90);  // Should be picked
 
     ASSERT_EQ("UpdateReply(id:ns:text/html::1, BucketId(0x0000000000000000), "
               "timestamp 100, timestamp of updated doc: 90 Was inconsistent "
@@ -255,7 +247,7 @@ TEST_F(UpdateOperationTest, cancelled_nodes_are_not_updated_in_db) {
     setup_stripe(Redundancy(3), NodeCount(3), "distributor:1 storage:3");
 
     std::shared_ptr<UpdateOperation> op = sendUpdate("0=1/2/3,1=1/2/3,2=1/2/3");
-    DistributorMessageSenderStub sender;
+    DistributorMessageSenderStub     sender;
     op->start(sender);
 
     ASSERT_EQ("Update => 0,Update => 1,Update => 2", sender.getCommands(true));
@@ -280,7 +272,7 @@ TEST_F(UpdateOperationTest, cached_create_if_missing_is_propagated_to_fanout_req
     for (bool cache_flag : {false, true}) {
         for (bool create_if_missing : {false, true}) {
             std::shared_ptr<UpdateOperation> cb(sendUpdate("0=1/2/3", create_if_missing, cache_flag));
-            DistributorMessageSenderStub sender;
+            DistributorMessageSenderStub     sender;
             cb->start(sender);
 
             ASSERT_EQ("Update => 0", sender.getCommands(true));
@@ -291,4 +283,4 @@ TEST_F(UpdateOperationTest, cached_create_if_missing_is_propagated_to_fanout_req
     }
 }
 
-}
+} // namespace storage::distributor

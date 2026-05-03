@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/storage/distributor/throttlingoperationstarter.h>
-#include <tests/distributor/maintenancemocks.h>
 #include <vespa/document/test/make_document_bucket.h>
+#include <vespa/storage/distributor/throttlingoperationstarter.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
+#include <tests/distributor/maintenancemocks.h>
 
 namespace storage::distributor {
 
@@ -17,30 +18,26 @@ const MockOperation& as_mock_operation(const Operation& operation) {
     return dynamic_cast<const MockOperation&>(operation);
 }
 
-}
+} // namespace
 
 struct ThrottlingOperationStarterTest : Test {
     std::shared_ptr<Operation> createMockOperation() {
         return std::make_shared<MockOperation>(makeDocumentBucket(BucketId(16, 1)));
     }
 
-    std::unique_ptr<MockOperationStarter> _starterImpl;
+    std::unique_ptr<MockOperationStarter>       _starterImpl;
     std::unique_ptr<ThrottlingOperationStarter> _operationStarter;
 
     void SetUp() override;
     void TearDown() override;
 };
 
-void
-ThrottlingOperationStarterTest::SetUp()
-{
+void ThrottlingOperationStarterTest::SetUp() {
     _starterImpl = std::make_unique<MockOperationStarter>();
     _operationStarter = std::make_unique<ThrottlingOperationStarter>(*_starterImpl);
 }
 
-void
-ThrottlingOperationStarterTest::TearDown()
-{
+void ThrottlingOperationStarterTest::TearDown() {
     // Must clear before _operationStarter goes out of scope, or operation
     // destructors will try to call method on destroyed object.
     _starterImpl->getOperations().clear();
@@ -118,4 +115,4 @@ TEST_F(ThrottlingOperationStarterTest, finishing_operations_allows_more_to_start
     EXPECT_FALSE(_starterImpl->getOperations().empty());
 }
 
-}
+} // namespace storage::distributor

@@ -1,21 +1,23 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <tests/distributor/distributor_stripe_test_util.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/document/test/make_document_bucket.h>
-#include <vespa/storage/distributor/top_level_bucket_db_updater.h>
-#include <vespa/storage/distributor/top_level_distributor.h>
+#include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storage/distributor/operation_sequencer.h>
 #include <vespa/storage/distributor/operations/idealstate/mergeoperation.h>
-#include <vespa/storage/config/distributorconfiguration.h>
+#include <vespa/storage/distributor/top_level_bucket_db_updater.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
+
+#include <tests/distributor/distributor_stripe_test_util.h>
+
 #include <charconv>
 
-using document::test::makeDocumentBucket;
 using document::test::makeBucketSpace;
+using document::test::makeDocumentBucket;
 using namespace ::testing;
 
 namespace storage::distributor {
@@ -34,13 +36,11 @@ struct MergeOperationTest : Test, DistributorStripeTestUtil {
         _sender.set_operation_sequencer(_operation_sequencer);
     }
 
-    void TearDown() override {
-        close();
-    }
+    void TearDown() override { close(); }
 
     std::shared_ptr<MergeOperation> setup_minimal_merge_op();
     std::shared_ptr<MergeOperation> setup_simple_merge_op(const std::vector<uint16_t>& nodes,
-                                                          Priority merge_pri = 120);
+                                                          Priority                     merge_pri = 120);
     std::shared_ptr<MergeOperation> setup_simple_merge_op(Priority merge_pri = 120);
     void assert_simple_merge_bucket_command();
     void assert_simple_delete_bucket_command();
@@ -48,24 +48,20 @@ struct MergeOperationTest : Test, DistributorStripeTestUtil {
     [[nodiscard]] uint32_t merge_footprint(const std::string& db_state);
 };
 
-std::shared_ptr<MergeOperation> 
-MergeOperationTest::setup_minimal_merge_op()
-{
+std::shared_ptr<MergeOperation> MergeOperationTest::setup_minimal_merge_op() {
     document::BucketId bucket_id(16, 1);
     auto op = std::make_shared<MergeOperation>(BucketAndNodes(makeDocumentBucket(bucket_id), {0, 1, 2}));
     op->setIdealStateManager(&getIdealStateManager());
     return op;
 }
 
-std::shared_ptr<MergeOperation> 
-MergeOperationTest::setup_simple_merge_op(const std::vector<uint16_t>& nodes, Priority merge_pri)
-{
+std::shared_ptr<MergeOperation> MergeOperationTest::setup_simple_merge_op(const std::vector<uint16_t>& nodes,
+                                                                          Priority                     merge_pri) {
     getClock().setAbsoluteTimeInSeconds(10);
 
-    addNodesToBucketDB(document::BucketId(16, 1),
-                       "0=10/1/1/t,"
-                       "1=20/1/1,"
-                       "2=10/1/1/t");
+    addNodesToBucketDB(document::BucketId(16, 1), "0=10/1/1/t,"
+                                                  "1=20/1/1,"
+                                                  "2=10/1/1/t");
 
     enable_cluster_state("distributor:1 storage:3");
 
@@ -76,33 +72,26 @@ MergeOperationTest::setup_simple_merge_op(const std::vector<uint16_t>& nodes, Pr
     return op;
 }
 
-std::shared_ptr<MergeOperation>
-MergeOperationTest::setup_simple_merge_op(Priority merge_pri)
-{
+std::shared_ptr<MergeOperation> MergeOperationTest::setup_simple_merge_op(Priority merge_pri) {
     return setup_simple_merge_op({0, 1, 2}, merge_pri);
 }
 
-void
-MergeOperationTest::assert_simple_merge_bucket_command()
-{
+void MergeOperationTest::assert_simple_merge_bucket_command() {
     ASSERT_EQ("MergeBucketCommand(BucketId(0x4000000000000001), to time 10000000, "
               "cluster state version: 0, nodes: [0, 2, 1 (source only)], chain: [], "
               "estimated memory footprint: 2 bytes, reasons to start: ) => 0",
               _sender.getLastCommand(true));
 }
 
-void
-MergeOperationTest::assert_simple_delete_bucket_command()
-{
+void MergeOperationTest::assert_simple_delete_bucket_command() {
     ASSERT_EQ("DeleteBucketCommand(BucketId(0x4000000000000001)) "
               "Reasons to start:  => 1",
               _sender.getLastCommand(true));
 }
 
-MergeBucketMetricSet&
-MergeOperationTest::get_merge_metrics()
-{
-    return dynamic_cast<MergeBucketMetricSet&>(*getIdealStateManager().getMetrics().operations[IdealStateOperation::MERGE_BUCKET]);
+MergeBucketMetricSet& MergeOperationTest::get_merge_metrics() {
+    return dynamic_cast<MergeBucketMetricSet&>(
+        *getIdealStateManager().getMetrics().operations[IdealStateOperation::MERGE_BUCKET]);
 }
 
 TEST_F(MergeOperationTest, simple) {
@@ -124,10 +113,9 @@ TEST_F(MergeOperationTest, fail_if_source_only_copies_changed) {
     }
 
     // Source-only copy changed during merge
-    addNodesToBucketDB(document::BucketId(16, 1),
-                       "0=10/1/1/t,"
-                       "1=40/1/1,"
-                       "2=10/1/1/t");
+    addNodesToBucketDB(document::BucketId(16, 1), "0=10/1/1/t,"
+                                                  "1=40/1/1,"
+                                                  "2=10/1/1/t");
     sendReply(*op);
     // Should not be a remove here!
     ASSERT_NO_FATAL_FAILURE(assert_simple_merge_bucket_command());
@@ -148,14 +136,14 @@ TEST_F(MergeOperationTest, fail_if_delete_bucket_fails) {
 
 namespace {
 std::string getNodeList(std::string state, uint32_t redundancy, std::string existing) {
-    lib::Distribution distribution(lib::Distribution::getDefaultDistributionConfig(redundancy));
-    lib::ClusterState clusterState(state);
+    lib::Distribution         distribution(lib::Distribution::getDefaultDistributionConfig(redundancy));
+    lib::ClusterState         clusterState(state);
     vespalib::StringTokenizer st(existing, ",");
-    std::vector<BucketCopy> bucketDB(st.size());
+    std::vector<BucketCopy>   bucketDB(st.size());
     for (uint32_t i = 0; i < st.size(); i++) {
         std::string num(st[i]);
-        size_t pos = num.find('t');
-        bool trusted = false;
+        size_t      pos = num.find('t');
+        bool        trusted = false;
 
         if (pos != std::string::npos) {
             num.erase(pos);
@@ -172,9 +160,7 @@ std::string getNodeList(std::string state, uint32_t redundancy, std::string exis
         nodes[i] = MergeMetadata(bucketDB[i].getNode(), bucketDB[i]);
     }
     MergeLimiter limiter(16);
-    MergeOperation::generateSortedNodeList(distribution, clusterState,
-                                           document::BucketId(32, 1),
-                                           limiter, nodes);
+    MergeOperation::generateSortedNodeList(distribution, clusterState, document::BucketId(32, 1), limiter, nodes);
     std::ostringstream actual;
     for (uint32_t i = 0; i < nodes.size(); i++) {
         if (i != 0) {
@@ -187,95 +173,64 @@ std::string getNodeList(std::string state, uint32_t redundancy, std::string exis
     }
     return actual.str();
 }
-}
+} // namespace
 
 TEST_F(MergeOperationTest, generate_node_list) {
     // If this fails, the distribution has changed and the rest of the test will
     // likely fail
-    ASSERT_EQ("3,5,7,6,8,0,9,2,1,4",
-              getNodeList("storage:10", 10, "0,1,2,3,4,5,6,7,8,9"));
+    ASSERT_EQ("3,5,7,6,8,0,9,2,1,4", getNodeList("storage:10", 10, "0,1,2,3,4,5,6,7,8,9"));
 
     // Nodes that are initializing should be treated as up
-    EXPECT_EQ("3,5,7s,6s",
-              getNodeList("storage:10 .3.s:i .5.s:i", 2, "7,6,3,5")); // Ideal: 3,5
+    EXPECT_EQ("3,5,7s,6s", getNodeList("storage:10 .3.s:i .5.s:i", 2, "7,6,3,5")); // Ideal: 3,5
 
     // Order is given by ideal state algorithm, not order of storagenodes in bucket db
-    EXPECT_EQ("3,5,7",
-              getNodeList("storage:10", 3, "3,7,5"));
+    EXPECT_EQ("3,5,7", getNodeList("storage:10", 3, "3,7,5"));
 
     // Node not in ideal state will be used if not enough nodes in ideal state
-    EXPECT_EQ("3,7,6",
-              getNodeList("storage:10", 3, "3,7,6"));
+    EXPECT_EQ("3,7,6", getNodeList("storage:10", 3, "3,7,6"));
 
     // Nodes not in ideal state will be included as source only after redundancy
     // is reached
-    EXPECT_EQ("3,5,7,8s",
-              getNodeList("storage:10", 3, "3,5,7,8"));
+    EXPECT_EQ("3,5,7,8s", getNodeList("storage:10", 3, "3,5,7,8"));
 
     // Need at least redundancy copies that are not source only
-    EXPECT_EQ("3,5,8,9s",
-              getNodeList("storage:10", 3, "3,5,8,9"));
+    EXPECT_EQ("3,5,8,9s", getNodeList("storage:10", 3, "3,5,8,9"));
 
     // Order is given by storagenodes in bucket db
     // when no nodes are in ideal state
-    EXPECT_EQ("4,1,2",
-              getNodeList("storage:10", 3, "4,1,2"));
+    EXPECT_EQ("4,1,2", getNodeList("storage:10", 3, "4,1,2"));
 
-    EXPECT_EQ("3,0s,1s,2s,4s,5s,6s,7s,8s,9s",
-              getNodeList("storage:10", 1, "0,1,2,3,4,5,6,7,8,9"));
-    EXPECT_EQ("3,5,0s,1s,2s,4s,6s,7s,8s,9s",
-              getNodeList("storage:10", 2, "0,1,2,3,4,5,6,7,8,9"));
-    EXPECT_EQ("3,5,7,0s,1s,2s,4s,6s,8s,9s",
-              getNodeList("storage:10", 3, "0,1,2,3,4,5,6,7,8,9"));
-    EXPECT_EQ("3,5,7,6,0s,1s,2s,4s,8s,9s",
-              getNodeList("storage:10", 4, "0,1,2,3,4,5,6,7,8,9"));
-    EXPECT_EQ("3,5,7,6,8,0s,1s,2s,4s,9s",
-              getNodeList("storage:10", 5, "0,1,2,3,4,5,6,7,8,9"));
-    EXPECT_EQ("3,5,7,6,8,0,1s,2s,4s,9s",
-              getNodeList("storage:10", 6, "0,1,2,3,4,5,6,7,8,9"));
-    EXPECT_EQ("3,5,7,6,8,0,9,1s,2s,4s",
-              getNodeList("storage:10", 7, "0,1,2,3,4,5,6,7,8,9"));
-    EXPECT_EQ("3,5,7,6,8,0,9,2,1s,4s",
-              getNodeList("storage:10", 8, "0,1,2,3,4,5,6,7,8,9"));
-    EXPECT_EQ("3,5,7,6,8,0,9,2,1,4s",
-              getNodeList("storage:10", 9, "0,1,2,3,4,5,6,7,8,9"));
-    EXPECT_EQ("3,5,7,6,8,0,9,2,1,4",
-              getNodeList("storage:10", 10, "0,1,2,3,4,5,6,7,8,9"));
-    EXPECT_EQ("3,9s,8s,7s,6s,5s,4s,2s,1s,0s",
-              getNodeList("storage:10", 1, "9,8,7,6,5,4,3,2,1,0"));
-    EXPECT_EQ("3,5,9s,8s,7s,6s,4s,2s,1s,0s",
-              getNodeList("storage:10", 2, "9,8,7,6,5,4,3,2,1,0"));
-    EXPECT_EQ("3,5,7,9s,8s,6s,4s,2s,1s,0s",
-              getNodeList("storage:10", 3, "9,8,7,6,5,4,3,2,1,0"));
-    EXPECT_EQ("3,5,7,6,9s,8s,4s,2s,1s,0s",
-              getNodeList("storage:10", 4, "9,8,7,6,5,4,3,2,1,0"));
-    EXPECT_EQ("3,5,7,6,8,9s,4s,2s,1s,0s",
-              getNodeList("storage:10", 5, "9,8,7,6,5,4,3,2,1,0"));
-    EXPECT_EQ("3,5,7,6,8,0,9s,4s,2s,1s",
-              getNodeList("storage:10", 6, "9,8,7,6,5,4,3,2,1,0"));
-    EXPECT_EQ("3,5,7,6,8,0,9,4s,2s,1s",
-              getNodeList("storage:10", 7, "9,8,7,6,5,4,3,2,1,0"));
-    EXPECT_EQ("3,5,7,6,8,0,9,2,4s,1s",
-              getNodeList("storage:10", 8, "9,8,7,6,5,4,3,2,1,0"));
-    EXPECT_EQ("3,5,7,6,8,0,9,2,1,4s",
-              getNodeList("storage:10", 9, "9,8,7,6,5,4,3,2,1,0"));
-    EXPECT_EQ("3,5,7,6,8,0,9,2,1,4",
-              getNodeList("storage:10", 10, "9,8,7,6,5,4,3,2,1,0"));
+    EXPECT_EQ("3,0s,1s,2s,4s,5s,6s,7s,8s,9s", getNodeList("storage:10", 1, "0,1,2,3,4,5,6,7,8,9"));
+    EXPECT_EQ("3,5,0s,1s,2s,4s,6s,7s,8s,9s", getNodeList("storage:10", 2, "0,1,2,3,4,5,6,7,8,9"));
+    EXPECT_EQ("3,5,7,0s,1s,2s,4s,6s,8s,9s", getNodeList("storage:10", 3, "0,1,2,3,4,5,6,7,8,9"));
+    EXPECT_EQ("3,5,7,6,0s,1s,2s,4s,8s,9s", getNodeList("storage:10", 4, "0,1,2,3,4,5,6,7,8,9"));
+    EXPECT_EQ("3,5,7,6,8,0s,1s,2s,4s,9s", getNodeList("storage:10", 5, "0,1,2,3,4,5,6,7,8,9"));
+    EXPECT_EQ("3,5,7,6,8,0,1s,2s,4s,9s", getNodeList("storage:10", 6, "0,1,2,3,4,5,6,7,8,9"));
+    EXPECT_EQ("3,5,7,6,8,0,9,1s,2s,4s", getNodeList("storage:10", 7, "0,1,2,3,4,5,6,7,8,9"));
+    EXPECT_EQ("3,5,7,6,8,0,9,2,1s,4s", getNodeList("storage:10", 8, "0,1,2,3,4,5,6,7,8,9"));
+    EXPECT_EQ("3,5,7,6,8,0,9,2,1,4s", getNodeList("storage:10", 9, "0,1,2,3,4,5,6,7,8,9"));
+    EXPECT_EQ("3,5,7,6,8,0,9,2,1,4", getNodeList("storage:10", 10, "0,1,2,3,4,5,6,7,8,9"));
+    EXPECT_EQ("3,9s,8s,7s,6s,5s,4s,2s,1s,0s", getNodeList("storage:10", 1, "9,8,7,6,5,4,3,2,1,0"));
+    EXPECT_EQ("3,5,9s,8s,7s,6s,4s,2s,1s,0s", getNodeList("storage:10", 2, "9,8,7,6,5,4,3,2,1,0"));
+    EXPECT_EQ("3,5,7,9s,8s,6s,4s,2s,1s,0s", getNodeList("storage:10", 3, "9,8,7,6,5,4,3,2,1,0"));
+    EXPECT_EQ("3,5,7,6,9s,8s,4s,2s,1s,0s", getNodeList("storage:10", 4, "9,8,7,6,5,4,3,2,1,0"));
+    EXPECT_EQ("3,5,7,6,8,9s,4s,2s,1s,0s", getNodeList("storage:10", 5, "9,8,7,6,5,4,3,2,1,0"));
+    EXPECT_EQ("3,5,7,6,8,0,9s,4s,2s,1s", getNodeList("storage:10", 6, "9,8,7,6,5,4,3,2,1,0"));
+    EXPECT_EQ("3,5,7,6,8,0,9,4s,2s,1s", getNodeList("storage:10", 7, "9,8,7,6,5,4,3,2,1,0"));
+    EXPECT_EQ("3,5,7,6,8,0,9,2,4s,1s", getNodeList("storage:10", 8, "9,8,7,6,5,4,3,2,1,0"));
+    EXPECT_EQ("3,5,7,6,8,0,9,2,1,4s", getNodeList("storage:10", 9, "9,8,7,6,5,4,3,2,1,0"));
+    EXPECT_EQ("3,5,7,6,8,0,9,2,1,4", getNodeList("storage:10", 10, "9,8,7,6,5,4,3,2,1,0"));
 
     // Trusted copies can be source-only if they are in the non-ideal node set.
-    EXPECT_EQ("3,5,7,6,8,0,9,1s,2s,4s",
-              getNodeList("storage:10", 7, "0,1t,2t,3,4,5,6,7,8,9"));
+    EXPECT_EQ("3,5,7,6,8,0,9,1s,2s,4s", getNodeList("storage:10", 7, "0,1t,2t,3,4,5,6,7,8,9"));
 
-    EXPECT_EQ("3,5,7,6,8,0,9,1s,2s,4s",
-              getNodeList("storage:10", 7, "0,1,2t,3,4,5,6,7,8,9"));
+    EXPECT_EQ("3,5,7,6,8,0,9,1s,2s,4s", getNodeList("storage:10", 7, "0,1,2t,3,4,5,6,7,8,9"));
 
     // Retired nodes are not in ideal state
     // Ideal: 5,7
-    EXPECT_EQ("0,2,3s",
-              getNodeList("storage:10 .3.s:r", 2, "0,2,3"));
+    EXPECT_EQ("0,2,3s", getNodeList("storage:10 .3.s:r", 2, "0,2,3"));
     // Ideal: 5,7,6
-    EXPECT_EQ("0,2,3",
-              getNodeList("storage:10 .3.s:r", 3, "0,2,3"));
+    EXPECT_EQ("0,2,3", getNodeList("storage:10 .3.s:r", 3, "0,2,3"));
 }
 
 TEST_F(MergeOperationTest, do_not_remove_copies_with_pending_messages) {
@@ -283,13 +238,11 @@ TEST_F(MergeOperationTest, do_not_remove_copies_with_pending_messages) {
 
     getClock().setAbsoluteTimeInSeconds(10);
     enable_cluster_state("distributor:1 storage:3");
-    addNodesToBucketDB(bucket,
-                       "0=10/1/1/t,"
-                       "1=20/1/1,"
-                       "2=10/1/1/t");
+    addNodesToBucketDB(bucket, "0=10/1/1/t,"
+                               "1=20/1/1,"
+                               "2=10/1/1/t");
 
-    MergeOperation op(BucketAndNodes(makeDocumentBucket(bucket),
-                                     toVector<uint16_t>(0, 1, 2)));
+    MergeOperation op(BucketAndNodes(makeDocumentBucket(bucket), toVector<uint16_t>(0, 1, 2)));
     op.setIdealStateManager(&getIdealStateManager());
     op.start(_sender);
 
@@ -302,8 +255,8 @@ TEST_F(MergeOperationTest, do_not_remove_copies_with_pending_messages) {
     // Suddenly a wild operation appears to the source only copy!
     // Removes are blocked by all and any operation types, so can just choose
     // at will.
-    auto msg = std::make_shared<api::SetBucketStateCommand>(
-            makeDocumentBucket(bucket), api::SetBucketStateCommand::ACTIVE);
+    auto msg =
+        std::make_shared<api::SetBucketStateCommand>(makeDocumentBucket(bucket), api::SetBucketStateCommand::ACTIVE);
     msg->setAddress(api::StorageMessageAddress::create(&_g_storage, lib::NodeType::STORAGE, 1));
     pending_message_tracker().insert(msg);
 
@@ -343,21 +296,18 @@ TEST_F(MergeOperationTest, do_not_remove_copies_with_pending_messages) {
 TEST_F(MergeOperationTest, allow_deleting_active_source_only_replica) {
     getClock().setAbsoluteTimeInSeconds(10);
 
-    addNodesToBucketDB(document::BucketId(16, 1),
-                       "0=10/1/1/t,"
-                       "1=20/1/1/u/a,"
-                       "2=10/1/1/t");
+    addNodesToBucketDB(document::BucketId(16, 1), "0=10/1/1/t,"
+                                                  "1=20/1/1/u/a,"
+                                                  "2=10/1/1/t");
 
     enable_cluster_state("distributor:1 storage:3");
-    MergeOperation op(BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
-                                     toVector<uint16_t>(0, 1, 2)));
+    MergeOperation op(BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)), toVector<uint16_t>(0, 1, 2)));
     op.setIdealStateManager(&getIdealStateManager());
     op.start(_sender);
 
-    std::string merge(
-            "MergeBucketCommand(BucketId(0x4000000000000001), to time "
-            "10000000, cluster state version: 0, nodes: [0, 2, 1 (source only)], chain: [], "
-            "estimated memory footprint: 2 bytes, reasons to start: ) => 0");
+    std::string merge("MergeBucketCommand(BucketId(0x4000000000000001), to time "
+                      "10000000, cluster state version: 0, nodes: [0, 2, 1 (source only)], chain: [], "
+                      "estimated memory footprint: 2 bytes, reasons to start: ) => 0");
     ASSERT_EQ(merge, _sender.getLastCommand(true));
 
     sendReply(op);
@@ -371,38 +321,30 @@ TEST_F(MergeOperationTest, mark_redundant_trusted_copies_as_source_only) {
     // an ideal state sequence of [3, 5, 7, 6, 8, 0, 9, 2, 1, 4]
 
     // 3 redundancy, 5 trusted -> 2 trusted source only.
-    EXPECT_EQ("3,5,7,6s,8s",
-              getNodeList("storage:10", 3, "3t,5t,7t,6t,8t"));
+    EXPECT_EQ("3,5,7,6s,8s", getNodeList("storage:10", 3, "3t,5t,7t,6t,8t"));
 
     // 3 redundancy, 4 trusted -> 1 trusted source only.
-    EXPECT_EQ("3,5,7,6s,8s",
-              getNodeList("storage:10", 3, "3t,5t,7t,6t,8"));
+    EXPECT_EQ("3,5,7,6s,8s", getNodeList("storage:10", 3, "3t,5t,7t,6t,8"));
 
     // 3 redundancy, 3 trusted -> 0 trusted source only, 2 non-trusted sources.
-    EXPECT_EQ("3,5,7,6s,8s",
-              getNodeList("storage:10", 3, "3t,5t,7t,6,8"));
+    EXPECT_EQ("3,5,7,6s,8s", getNodeList("storage:10", 3, "3t,5t,7t,6,8"));
 
     // Trusted-ness should not be taken into account when marking nodes as source-only.
     // 2 out of 3 ideal replicas trusted.
-    EXPECT_EQ("3,5,7,6s,8s",
-              getNodeList("storage:10", 3, "3t,5t,7,6t,8t"));
+    EXPECT_EQ("3,5,7,6s,8s", getNodeList("storage:10", 3, "3t,5t,7,6t,8t"));
 
     // 1 out of 3 ideal replicas trusted.
-    EXPECT_EQ("3,5,7,6s,8s",
-              getNodeList("storage:10", 3, "3t,5,7,6t,8t"));
+    EXPECT_EQ("3,5,7,6s,8s", getNodeList("storage:10", 3, "3t,5,7,6t,8t"));
 
     // 0 out of 3 ideal replicas trusted.
-    EXPECT_EQ("3,5,7,6s,8s",
-              getNodeList("storage:10", 3, "3,5,7,6t,8t"));
+    EXPECT_EQ("3,5,7,6s,8s", getNodeList("storage:10", 3, "3,5,7,6t,8t"));
 
     // #redundancy of trusted, but none are ideal. Non-ideal trusted may be
     // marked as source only.
-    EXPECT_EQ("3,5,7,6s,8s,0s,9s",
-              getNodeList("storage:10", 3, "3,5,7,6,8t,0t,9t"));
+    EXPECT_EQ("3,5,7,6s,8s,0s,9s", getNodeList("storage:10", 3, "3,5,7,6,8t,0t,9t"));
 
     // Allow for removing excess trusted, non-ideal copies.
-    EXPECT_EQ("3,5,7,6s,8s,0s,9s",
-              getNodeList("storage:10", 3, "3,5,7,6t,8t,0t,9t"));
+    EXPECT_EQ("3,5,7,6s,8s,0s,9s", getNodeList("storage:10", 3, "3,5,7,6t,8t,0t,9t"));
 }
 
 TEST_F(MergeOperationTest, only_mark_redundant_retired_replicas_as_source_only) {
@@ -411,8 +353,7 @@ TEST_F(MergeOperationTest, only_mark_redundant_retired_replicas_as_source_only) 
     // nodes are meant as source-only due to being migrated away from, but
     // source-only nodes will have their replica removed after a successful
     // merge, which we cannot allow to happen here.
-    EXPECT_EQ("1,0,2s",
-              getNodeList("storage:3 .0.s:r .1.s:r .2.s:r", 2, "1,0,2"));
+    EXPECT_EQ("1,0,2s", getNodeList("storage:3 .0.s:r .1.s:r .2.s:r", 2, "1,0,2"));
 }
 
 TEST_F(MergeOperationTest, mark_post_merge_redundant_replicas_source_only) {
@@ -421,26 +362,21 @@ TEST_F(MergeOperationTest, mark_post_merge_redundant_replicas_source_only) {
     // Retired node 7 is not part of the #redundancy ideal state and should be moved
     // to node 6. Once the merge is done we'll end up with too many replicas unless
     // we allow marking the to-be-moved replica as source only.
-    EXPECT_EQ("3,5,6,7s",
-              getNodeList("storage:10 .7.s:r", 3, "3t,5t,7t,6"));
+    EXPECT_EQ("3,5,6,7s", getNodeList("storage:10 .7.s:r", 3, "3t,5t,7t,6"));
 
     // Should be allowed to mark as source only even if retired replica is the
     // only trusted replica at the time the merge starts.
-    EXPECT_EQ("3,5,6,7s",
-              getNodeList("storage:10 .7.s:r", 3, "3,5,7t,6"));
+    EXPECT_EQ("3,5,6,7s", getNodeList("storage:10 .7.s:r", 3, "3,5,7t,6"));
 
     // This extends to multiple retired nodes.
-    EXPECT_EQ("3,6,8,5s,7s",
-              getNodeList("storage:10 .5.s:r .7.s:r", 3, "3t,5t,7t,6,8"));
+    EXPECT_EQ("3,6,8,5s,7s", getNodeList("storage:10 .5.s:r .7.s:r", 3, "3t,5t,7t,6,8"));
 
     // If number of post-merge ideal nodes is lower than desired redundancy, don't
     // mark any as source only.
-    EXPECT_EQ("3,5,7,6",
-              getNodeList("storage:10", 5, "3,5,7,6"));
+    EXPECT_EQ("3,5,7,6", getNodeList("storage:10", 5, "3,5,7,6"));
 
     // Same applies to when post-merge ideal nodes is _equal_ to desired redundancy.
-    EXPECT_EQ("3,5,7,6",
-              getNodeList("storage:10", 4, "3,5,7,6"));
+    EXPECT_EQ("3,5,7,6", getNodeList("storage:10", 4, "3,5,7,6"));
 }
 
 TEST_F(MergeOperationTest, merge_operation_is_blocked_by_any_busy_target_node) {
@@ -466,14 +402,13 @@ TEST_F(MergeOperationTest, merge_operation_is_blocked_by_any_busy_target_node) {
     EXPECT_TRUE(op.isBlocked(operation_context(), _operation_sequencer));
 }
 
-
 TEST_F(MergeOperationTest, global_bucket_merges_are_not_blocked_by_busy_nodes) {
     getClock().setAbsoluteTimeInSeconds(10);
     document::BucketId bucket_id(16, 1);
     addNodesToBucketDB(bucket_id, "0=10/1/1/t,1=20/1/1,2=10/1/1/t");
     enable_cluster_state("distributor:1 storage:3");
     document::Bucket global_bucket(document::FixedBucketSpaces::global_space(), bucket_id);
-    MergeOperation op(BucketAndNodes(global_bucket, toVector<uint16_t>(0, 1, 2)));
+    MergeOperation   op(BucketAndNodes(global_bucket, toVector<uint16_t>(0, 1, 2)));
     op.setIdealStateManager(&getIdealStateManager());
 
     // Node 1 is included in operation node set but should not cause a block of global bucket merge
@@ -499,7 +434,8 @@ TEST_F(MergeOperationTest, missing_replica_is_included_in_limited_node_list) {
     getClock().setAbsoluteTimeInSeconds(10);
     addNodesToBucketDB(document::BucketId(16, 1), "1=0/0/0/t,2=0/0/0/t,3=0/0/0/t");
     const uint16_t max_merge_size = 2;
-    MergeOperation op(BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)), toVector<uint16_t>(0, 1, 2, 3)), max_merge_size);
+    MergeOperation op(BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)), toVector<uint16_t>(0, 1, 2, 3)),
+                      max_merge_size);
     op.setIdealStateManager(&getIdealStateManager());
     op.start(_sender);
 
@@ -521,8 +457,8 @@ TEST_F(MergeOperationTest, merge_operation_is_blocked_by_request_bucket_info_to_
     // Not initially blocked
     EXPECT_FALSE(op.isBlocked(operation_context(), _operation_sequencer));
 
-    auto info_cmd = std::make_shared<api::RequestBucketInfoCommand>(
-            makeBucketSpace(), std::vector<document::BucketId>({bucket_id}));
+    auto info_cmd = std::make_shared<api::RequestBucketInfoCommand>(makeBucketSpace(),
+                                                                    std::vector<document::BucketId>({bucket_id}));
     info_cmd->setAddress(api::StorageMessageAddress::create(&_g_storage, lib::NodeType::STORAGE, 1)); // 1 is in chain
     pending_message_tracker().insert(info_cmd);
 
@@ -540,7 +476,7 @@ TEST_F(MergeOperationTest, merge_operation_is_not_blocked_by_request_bucket_info
     op.setIdealStateManager(&getIdealStateManager());
 
     auto info_cmd = std::make_shared<api::RequestBucketInfoCommand>(
-            makeBucketSpace(), std::vector<document::BucketId>({other_bucket_id}));
+        makeBucketSpace(), std::vector<document::BucketId>({other_bucket_id}));
     info_cmd->setAddress(api::StorageMessageAddress::create(&_g_storage, lib::NodeType::STORAGE, 1));
     pending_message_tracker().insert(info_cmd);
 
@@ -654,7 +590,7 @@ TEST_F(MergeOperationTest, memory_footprint_is_computed_from_replica_state) {
     // All replicas mutually out of sync
     EXPECT_EQ(merge_footprint("0=10/100/3000,1=20/200/7000,2=30/100/5000"), 15'000);
     // One replica empty
-    EXPECT_EQ(merge_footprint("0=20/200/4000,1=20/200/4000,2=1/0/0"),        4'000);
+    EXPECT_EQ(merge_footprint("0=20/200/4000,1=20/200/4000,2=1/0/0"), 4'000);
 }
 
 TEST_F(MergeOperationTest, memory_footprint_is_bounded_by_max_expected_merge_chunk_size) {
@@ -662,7 +598,7 @@ TEST_F(MergeOperationTest, memory_footprint_is_bounded_by_max_expected_merge_chu
     cfg->setSplitSize(20'000); // proxy for max merge chunk size
     configure_stripe(cfg);
 
-    EXPECT_EQ(merge_footprint("0=10/100/5000,1=20/200/5000,2=30/100/9999"),  19'999);
+    EXPECT_EQ(merge_footprint("0=10/100/5000,1=20/200/5000,2=30/100/9999"), 19'999);
     EXPECT_EQ(merge_footprint("0=10/100/5000,1=20/200/5000,2=30/100/10000"), 20'000);
     EXPECT_EQ(merge_footprint("0=10/100/5000,1=20/200/5000,2=30/100/10001"), 20'000);
     EXPECT_EQ(merge_footprint("0=10/100/6000,1=20/200/7000,2=30/100/20000"), 20'000);
@@ -674,7 +610,7 @@ TEST_F(MergeOperationTest, memory_footprint_with_single_doc_replica_can_be_great
     configure_stripe(cfg);
 
     EXPECT_EQ(merge_footprint("0=10/100/5000,1=20/200/5000,2=30/1/50000"), 50'000);
-    EXPECT_EQ(merge_footprint("0=10/100/5000,1=20/1/60000,2=30/1/50000"),  60'000);
+    EXPECT_EQ(merge_footprint("0=10/100/5000,1=20/1/60000,2=30/1/50000"), 60'000);
 }
 
 TEST_F(MergeOperationTest, memory_footprint_estimation_saturates_instead_of_overflowing_u32_limits) {
@@ -687,4 +623,4 @@ TEST_F(MergeOperationTest, memory_footprint_estimation_saturates_instead_of_over
     EXPECT_EQ(merge_footprint("0=10/10/1431655765,1=20/10/1431655765,2=30/10/1431655766"), 1'234'567);
 }
 
-} // storage::distributor
+} // namespace storage::distributor

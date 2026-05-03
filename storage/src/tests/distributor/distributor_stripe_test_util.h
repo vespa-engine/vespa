@@ -2,18 +2,20 @@
 #pragma once
 
 #include "distributor_message_sender_stub.h"
-#include <tests/common/dummystoragelink.h>
-#include <tests/common/testhelper.h>
-#include <tests/common/teststorageapp.h>
-#include <tests/common/storage_config_set.h>
+
 #include <vespa/storage/common/hostreporter/hostinfo.h>
 #include <vespa/storage/config/config-stor-distributormanager.h>
 #include <vespa/storage/distributor/memory_usage_token.h>
 #include <vespa/storage/distributor/stripe_host_info_notifier.h>
 #include <vespa/storage/storageutil/utils.h>
 
+#include <tests/common/dummystoragelink.h>
+#include <tests/common/storage_config_set.h>
+#include <tests/common/testhelper.h>
+#include <tests/common/teststorageapp.h>
+
 namespace storage::framework {
-    struct TickingThreadPool;
+struct TickingThreadPool;
 }
 
 namespace storage::distributor {
@@ -40,8 +42,7 @@ class StripeBucketDBUpdater;
  * This was copied from DistributorTestUtil (used in LegacyDistributorTest)
  * and adjusted to work with one distributor stripe.
  */
-class DistributorStripeTestUtil : public DoneInitializeHandler,
-                                  public StripeHostInfoNotifier {
+class DistributorStripeTestUtil : public DoneInitializeHandler, public StripeHostInfoNotifier {
 public:
     DistributorStripeTestUtil();
     ~DistributorStripeTestUtil() override;
@@ -95,22 +96,14 @@ public:
      * Inserts the given bucket information for the given bucket and node in
      * the bucket database.
      */
-    void insertBucketInfo(document::BucketId id,
-                          uint16_t node,
-                          uint32_t checksum,
-                          uint32_t count,
-                          uint32_t size,
-                          bool trusted = false,
-                          bool active = false);
+    void insertBucketInfo(document::BucketId id, uint16_t node, uint32_t checksum, uint32_t count, uint32_t size,
+                          bool trusted = false, bool active = false);
 
     /**
      * Inserts the given bucket information for the given bucket and node in
      * the bucket database.
      */
-    void insertBucketInfo(document::BucketId id,
-                          uint16_t node,
-                          const api::BucketInfo& info,
-                          bool trusted = false,
+    void insertBucketInfo(document::BucketId id, uint16_t node, const api::BucketInfo& info, bool trusted = false,
                           bool active = false);
 
     std::string dumpBucket(const document::BucketId& bucket);
@@ -119,9 +112,7 @@ public:
      * Replies to message idx sent upwards with the given result code.
      * If idx = -1, replies to the last command received upwards.
      */
-    void sendReply(Operation& op,
-                   int idx = -1,
-                   api::ReturnCode::Result result = api::ReturnCode::OK);
+    void sendReply(Operation& op, int idx = -1, api::ReturnCode::Result result = api::ReturnCode::OK);
 
     StripeBucketDBUpdater& getBucketDBUpdater();
     IdealStateManager& getIdealStateManager();
@@ -164,23 +155,18 @@ public:
     DistributorComponentRegister& getComponentRegister() { return _node->getComponentRegister(); }
     DistributorComponentRegisterImpl& getComponentRegisterImpl() { return _node->getComponentRegister(); }
 
-    void setup_stripe(int redundancy,
-                      int nodeCount,
-                      const std::string& systemState,
-                      uint32_t earlyReturn = false,
+    void setup_stripe(int redundancy, int nodeCount, const std::string& systemState, uint32_t earlyReturn = false,
                       bool requirePrimaryToBeWritten = true);
 
-    void setup_stripe(int redundancy,
-                      int node_count,
-                      const lib::ClusterStateBundle& state,
-                      uint32_t early_return = false,
-                      bool require_primary_to_be_written = true);
+    void setup_stripe(int redundancy, int node_count, const lib::ClusterStateBundle& state,
+                      uint32_t early_return = false, bool require_primary_to_be_written = true);
 
     void set_redundancy(uint32_t redundancy);
 
     void trigger_distribution_change(std::shared_ptr<lib::Distribution> distr);
     void simulate_distribution_config_change(std::shared_ptr<lib::Distribution> new_config);
-    static std::shared_ptr<lib::Distribution> make_default_distribution_config(uint16_t redundancy, uint16_t node_count);
+    static std::shared_ptr<lib::Distribution> make_default_distribution_config(uint16_t redundancy,
+                                                                               uint16_t node_count);
 
     using ConfigBuilder = DistributorManagerConfig;
 
@@ -192,9 +178,7 @@ public:
     void notifyDoneInitializing() override {}
 
     // Implements StripeHostInfoNotifier
-    void notify_stripe_wants_to_send_host_info(uint16_t stripe_index) override {
-        (void) stripe_index;
-    }
+    void notify_stripe_wants_to_send_host_info(uint16_t stripe_index) override { (void)stripe_index; }
 
     void disableBucketActivationInConfig(bool disable);
 
@@ -219,7 +203,7 @@ public:
     void clear_pending_cluster_state_bundle();
 
     template <typename CmdType>
-    requires std::is_base_of_v<api::StorageCommand, CmdType>
+        requires std::is_base_of_v<api::StorageCommand, CmdType>
     [[nodiscard]] std::shared_ptr<CmdType> sent_command(size_t idx) {
         assert(idx < _sender.commands().size());
         auto cmd = std::dynamic_pointer_cast<CmdType>(_sender.command(idx));
@@ -228,7 +212,7 @@ public:
     }
 
     template <typename ReplyType>
-    requires std::is_base_of_v<api::StorageReply, ReplyType>
+        requires std::is_base_of_v<api::StorageReply, ReplyType>
     [[nodiscard]] std::shared_ptr<ReplyType> sent_reply(size_t idx) {
         assert(idx < _sender.replies().size());
         auto reply = std::dynamic_pointer_cast<ReplyType>(_sender.reply(idx));
@@ -240,16 +224,16 @@ public:
     void tag_content_node_supports_condition_probing(uint16_t index, bool supported);
 
 protected:
-    std::unique_ptr<StorageConfigSet> _config;
-    std::unique_ptr<TestDistributorApp> _node;
+    std::unique_ptr<StorageConfigSet>     _config;
+    std::unique_ptr<TestDistributorApp>   _node;
     std::shared_ptr<DistributorMetricSet> _metrics;
     std::shared_ptr<IdealStateMetricSet>  _ideal_state_metrics;
-    MemoryUsageTracker _memory_usage_tracker;
-    std::unique_ptr<DistributorStripe> _stripe;
-    DistributorMessageSenderStub _sender;
-    DistributorMessageSenderStub _senderDown;
-    HostInfo _hostInfo;
-    bool _done_initializing;
+    MemoryUsageTracker                    _memory_usage_tracker;
+    std::unique_ptr<DistributorStripe>    _stripe;
+    DistributorMessageSenderStub          _sender;
+    DistributorMessageSenderStub          _senderDown;
+    HostInfo                              _hostInfo;
+    bool                                  _done_initializing;
 
     struct MessageSenderImpl : public ChainedMessageSender {
         DistributorMessageSenderStub& _sender;
@@ -257,12 +241,8 @@ protected:
         MessageSenderImpl(DistributorMessageSenderStub& up, DistributorMessageSenderStub& down)
             : _sender(up), _senderDown(down) {}
 
-        void sendUp(const std::shared_ptr<api::StorageMessage>& msg) override {
-            _sender.send(msg);
-        }
-        void sendDown(const std::shared_ptr<api::StorageMessage>& msg) override {
-            _senderDown.send(msg);
-        }
+        void sendUp(const std::shared_ptr<api::StorageMessage>& msg) override { _sender.send(msg); }
+        void sendDown(const std::shared_ptr<api::StorageMessage>& msg) override { _senderDown.send(msg); }
     };
     MessageSenderImpl _messageSender;
 
@@ -270,4 +250,4 @@ protected:
     void enable_cluster_state(const lib::ClusterStateBundle& state);
 };
 
-}
+} // namespace storage::distributor

@@ -1,14 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <tests/distributor/maintenancemocks.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/distributor_bucket_space_repo.h>
 #include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
 #include <vespa/storage/distributor/maintenance/simplemaintenancescanner.h>
-#include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/text/stringtokenizer.h>
+
+#include <tests/distributor/maintenancemocks.h>
 
 namespace storage::distributor {
 
@@ -22,9 +23,9 @@ struct SimpleMaintenanceScannerTest : Test {
     using PendingStats = SimpleMaintenanceScanner::PendingMaintenanceStats;
 
     std::unique_ptr<MockMaintenancePriorityGenerator> _priorityGenerator;
-    std::unique_ptr<DistributorBucketSpaceRepo> _bucketSpaceRepo;
-    std::unique_ptr<SimpleBucketPriorityDatabase> _priorityDb;
-    std::unique_ptr<SimpleMaintenanceScanner> _scanner;
+    std::unique_ptr<DistributorBucketSpaceRepo>       _bucketSpaceRepo;
+    std::unique_ptr<SimpleBucketPriorityDatabase>     _priorityDb;
+    std::unique_ptr<SimpleMaintenanceScanner>         _scanner;
 
     void addBucketToDb(document::BucketSpace bucketSpace, int bucketNum);
     void addBucketToDb(int bucketNum);
@@ -34,32 +35,24 @@ struct SimpleMaintenanceScannerTest : Test {
     void SetUp() override;
 };
 
-void
-SimpleMaintenanceScannerTest::SetUp()
-{
+void SimpleMaintenanceScannerTest::SetUp() {
     _priorityGenerator = std::make_unique<MockMaintenancePriorityGenerator>();
     _bucketSpaceRepo = std::make_unique<DistributorBucketSpaceRepo>(0u);
     _priorityDb = std::make_unique<SimpleBucketPriorityDatabase>();
     _scanner = std::make_unique<SimpleMaintenanceScanner>(*_priorityDb, *_priorityGenerator, *_bucketSpaceRepo);
 }
 
-void
-SimpleMaintenanceScannerTest::addBucketToDb(document::BucketSpace bucketSpace, int bucketNum)
-{
+void SimpleMaintenanceScannerTest::addBucketToDb(document::BucketSpace bucketSpace, int bucketNum) {
     BucketDatabase::Entry entry(BucketId(16, bucketNum), BucketInfo());
-    auto& bucketDb(_bucketSpaceRepo->get(bucketSpace).getBucketDatabase());
+    auto&                 bucketDb(_bucketSpaceRepo->get(bucketSpace).getBucketDatabase());
     bucketDb.update(entry);
 }
 
-void
-SimpleMaintenanceScannerTest::addBucketToDb(int bucketNum)
-{
+void SimpleMaintenanceScannerTest::addBucketToDb(int bucketNum) {
     addBucketToDb(makeBucketSpace(), bucketNum);
 }
 
-std::string
-SimpleMaintenanceScannerTest::stringifyGlobalPendingStats(const PendingStats& stats) const
-{
+std::string SimpleMaintenanceScannerTest::stringifyGlobalPendingStats(const PendingStats& stats) const {
     std::ostringstream ss;
     ss << stats.global;
     return ss.str();
@@ -67,7 +60,8 @@ SimpleMaintenanceScannerTest::stringifyGlobalPendingStats(const PendingStats& st
 
 TEST_F(SimpleMaintenanceScannerTest, prioritize_single_bucket) {
     addBucketToDb(1);
-    std::string expected("PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)), pri VERY_HIGH)\n");
+    std::string expected(
+        "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)), pri VERY_HIGH)\n");
 
     auto scanResult = _scanner->scanNext();
     ASSERT_FALSE(scanResult.isDone());
@@ -83,7 +77,8 @@ TEST_F(SimpleMaintenanceScannerTest, prioritize_single_bucket_alt_bucket_space) 
     _bucketSpaceRepo->add(bucketSpace, std::make_unique<DistributorBucketSpace>());
     (void)_scanner->fetch_and_reset();
     addBucketToDb(bucketSpace, 1);
-    std::string expected("PrioritizedBucket(Bucket(BucketSpace(0x0000000000000004), BucketId(0x4000000000000001)), pri VERY_HIGH)\n");
+    std::string expected(
+        "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000004), BucketId(0x4000000000000001)), pri VERY_HIGH)\n");
 
     auto scanResult = _scanner->scanNext();
     ASSERT_FALSE(scanResult.isDone());
@@ -97,10 +92,10 @@ TEST_F(SimpleMaintenanceScannerTest, prioritize_single_bucket_alt_bucket_space) 
 namespace {
 
 std::string sortLines(const std::string& source) {
-    vespalib::StringTokenizer st(source,"\n","");
-    std::vector<std::string> lines;
+    vespalib::StringTokenizer st(source, "\n", "");
+    std::vector<std::string>  lines;
     lines.reserve(st.size());
-    for (const auto & token : st) {
+    for (const auto& token : st) {
         lines.emplace_back(token);
     }
     std::sort(lines.begin(), lines.end());
@@ -111,24 +106,22 @@ std::string sortLines(const std::string& source) {
     return ost.str();
 }
 
-}
+} // namespace
 
 TEST_F(SimpleMaintenanceScannerTest, prioritize_multiple_buckets) {
     addBucketToDb(1);
     addBucketToDb(2);
     addBucketToDb(3);
-    std::string expected("PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)), pri VERY_HIGH)\n"
-                         "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000002)), pri VERY_HIGH)\n"
-                         "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000003)), pri VERY_HIGH)\n");
+    std::string expected(
+        "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)), pri VERY_HIGH)\n"
+        "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000002)), pri VERY_HIGH)\n"
+        "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000003)), pri VERY_HIGH)\n");
 
     ASSERT_TRUE(scanEntireDatabase(3));
-    EXPECT_EQ(sortLines(expected),
-              sortLines(_priorityDb->toString()));
+    EXPECT_EQ(sortLines(expected), sortLines(_priorityDb->toString()));
 }
 
-bool
-SimpleMaintenanceScannerTest::scanEntireDatabase(int expected) const
-{
+bool SimpleMaintenanceScannerTest::scanEntireDatabase(int expected) const {
     for (int i = 0; i < expected; ++i) {
         if (_scanner->scanNext().isDone()) {
             return false;
@@ -142,8 +135,9 @@ TEST_F(SimpleMaintenanceScannerTest, reset) {
     addBucketToDb(3);
 
     ASSERT_TRUE(scanEntireDatabase(2));
-    std::string expected("PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)), pri VERY_HIGH)\n"
-                         "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000003)), pri VERY_HIGH)\n");
+    std::string expected(
+        "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)), pri VERY_HIGH)\n"
+        "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000003)), pri VERY_HIGH)\n");
     EXPECT_EQ(expected, _priorityDb->toString());
 
     addBucketToDb(2);
@@ -153,9 +147,10 @@ TEST_F(SimpleMaintenanceScannerTest, reset) {
     (void)_scanner->fetch_and_reset();
     ASSERT_TRUE(scanEntireDatabase(3));
 
-    expected = "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)), pri VERY_HIGH)\n"
-               "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000002)), pri VERY_HIGH)\n"
-               "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000003)), pri VERY_HIGH)\n";
+    expected =
+        "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)), pri VERY_HIGH)\n"
+        "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000002)), pri VERY_HIGH)\n"
+        "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000003)), pri VERY_HIGH)\n";
     EXPECT_EQ(sortLines(expected), sortLines(_priorityDb->toString()));
 }
 
@@ -167,7 +162,7 @@ TEST_F(SimpleMaintenanceScannerTest, pending_maintenance_operation_statistics) {
                               "split bucket: 0, join bucket: 0, "
                               "set bucket state: 0, garbage collection: 0");
     {
-        const auto & stats = _scanner->getPendingMaintenanceStats();
+        const auto& stats = _scanner->getPendingMaintenanceStats();
         EXPECT_EQ(expectedEmpty, stringifyGlobalPendingStats(stats));
     }
 
@@ -175,7 +170,7 @@ TEST_F(SimpleMaintenanceScannerTest, pending_maintenance_operation_statistics) {
 
     // All mock operations generated have the merge type.
     {
-        const auto & stats = _scanner->getPendingMaintenanceStats();
+        const auto& stats = _scanner->getPendingMaintenanceStats();
         std::string expected("delete bucket: 0, merge bucket: 2, "
                              "split bucket: 0, join bucket: 0, "
                              "set bucket state: 0, garbage collection: 0");
@@ -184,7 +179,7 @@ TEST_F(SimpleMaintenanceScannerTest, pending_maintenance_operation_statistics) {
 
     (void)_scanner->fetch_and_reset();
     {
-        const auto & stats = _scanner->getPendingMaintenanceStats();
+        const auto& stats = _scanner->getPendingMaintenanceStats();
         EXPECT_EQ(expectedEmpty, stringifyGlobalPendingStats(stats));
     }
 }
@@ -193,14 +188,14 @@ TEST_F(SimpleMaintenanceScannerTest, per_node_maintenance_stats_are_tracked) {
     addBucketToDb(1);
     addBucketToDb(3);
     {
-        const auto & stats = _scanner->getPendingMaintenanceStats();
+        const auto&          stats = _scanner->getPendingMaintenanceStats();
         NodeMaintenanceStats emptyStats;
         EXPECT_EQ(emptyStats, stats.perNodeStats.forNode(0, makeBucketSpace()));
     }
     ASSERT_TRUE(scanEntireDatabase(2));
     // Mock is currently hardwired to increment movingOut for node 1 and
     // copyingIn for node 2 per bucket iterated (we've got 2).
-        const auto & stats = _scanner->getPendingMaintenanceStats();
+    const auto& stats = _scanner->getPendingMaintenanceStats();
     {
         NodeMaintenanceStats wantedNode1Stats;
         wantedNode1Stats.movingOut = 2;
@@ -308,4 +303,4 @@ TEST_F(SimpleMaintenanceScannerTest, empty_bucket_db_is_immediately_done_by_defa
     EXPECT_TRUE(res.isDone());
 }
 
-}
+} // namespace storage::distributor

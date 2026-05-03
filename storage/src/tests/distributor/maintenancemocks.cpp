@@ -4,10 +4,9 @@
 
 namespace storage::distributor {
 
-MockOperationStarter::MockOperationStarter() noexcept
-    : _shouldStart(true)
-{}
+MockOperationStarter::MockOperationStarter() noexcept : _shouldStart(true) {
+}
 
 MockOperationStarter::~MockOperationStarter() = default;
 
-}
+} // namespace storage::distributor
