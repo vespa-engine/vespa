@@ -27,9 +27,9 @@ std::ostream& operator<<(std::ostream& os, DictionaryConfig::Type type) {
 std::ostream& operator<<(std::ostream& os, DictionaryConfig::Match match) {
     switch (match) {
     case DictionaryConfig::Match::CASED:
-        return os << "CASE_SENSTITIVE";
+        return os << "CASE_SENSITIVE";
     case DictionaryConfig::Match::UNCASED:
-        return os << "CASE_INSENSTITIVE";
+        return os << "CASE_INSENSITIVE";
     }
     assert(false);
 }
