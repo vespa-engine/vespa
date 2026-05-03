@@ -11,9 +11,9 @@ namespace search::features {
 class FieldLengthExecutor : public fef::FeatureExecutor {
 private:
     std::vector<fef::TermFieldHandle> _fieldHandles;
-    const fef::MatchData             *_md;
+    const fef::MatchData*             _md;
 
-    void handle_bind_match_data(const fef::MatchData &md) override;
+    void handle_bind_match_data(const fef::MatchData& md) override;
 
 public:
     /**
@@ -22,7 +22,7 @@ public:
      * @param env       The query environment
      * @param fieldId   The field id
      */
-    FieldLengthExecutor(const fef::IQueryEnvironment &env, uint32_t fieldId);
+    FieldLengthExecutor(const fef::IQueryEnvironment& env, uint32_t fieldId);
     void execute(uint32_t docId) override;
 };
 
@@ -31,19 +31,19 @@ public:
  */
 class FieldLengthBlueprint : public fef::Blueprint {
 private:
-    const fef::FieldInfo *_field;
+    const fef::FieldInfo* _field;
 
 public:
     FieldLengthBlueprint();
 
-    void visitDumpFeatures(const fef::IIndexEnvironment &env, fef::IDumpFeatureVisitor &visitor) const override;
+    void visitDumpFeatures(const fef::IIndexEnvironment& env, fef::IDumpFeatureVisitor& visitor) const override;
     fef::Blueprint::UP createInstance() const override;
-    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    fef::FeatureExecutor& createExecutor(const fef::IQueryEnvironment& env, vespalib::Stash& stash) const override;
     fef::ParameterDescriptions getDescriptions() const override {
         return fef::ParameterDescriptions().desc().indexField(fef::ParameterCollection::SINGLE);
     }
 
-    bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
+    bool setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) override;
 };
 
-}
+} // namespace search::features

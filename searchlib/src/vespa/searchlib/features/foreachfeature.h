@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/fef/blueprint.h>
+
 #include <limits>
 
 namespace search::features {
@@ -11,15 +12,14 @@ namespace search::features {
  * Implements the executor for the foreach feature.
  * Uses a condition and operation template class to perform the computation.
  */
-template <typename CO, typename OP>
-class ForeachExecutor : public fef::FeatureExecutor {
+template <typename CO, typename OP> class ForeachExecutor : public fef::FeatureExecutor {
 private:
-    CO        _condition;
-    OP        _operation;
-    uint32_t  _numInputs;
+    CO       _condition;
+    OP       _operation;
+    uint32_t _numInputs;
 
 public:
-    ForeachExecutor(const CO & condition, uint32_t numInputs);
+    ForeachExecutor(const CO& condition, uint32_t numInputs);
     void execute(uint32_t docId) override;
 };
 
@@ -29,6 +29,7 @@ public:
 class ConditionBase {
 protected:
     feature_t _param;
+
 public:
     ConditionBase(feature_t param = 0) : _param(param) {}
 };
@@ -37,7 +38,10 @@ public:
  * Implements the true condition.
  **/
 struct TrueCondition : public ConditionBase {
-    bool useValue(feature_t val) { (void) val; return true; }
+    bool useValue(feature_t val) {
+        (void)val;
+        return true;
+    }
 };
 
 /**
@@ -56,13 +60,13 @@ struct GreaterThanCondition : public ConditionBase {
     bool useValue(feature_t val) { return val > _param; }
 };
 
-
 /**
  * Base class for operation template class.
  */
 class OperationBase {
 protected:
     feature_t _result;
+
 public:
     OperationBase() : _result(0) {}
     feature_t getResult() const { return _result; }
@@ -90,10 +94,17 @@ struct ProductOperation : public OperationBase {
 class AverageOperation : public OperationBase {
 private:
     uint32_t _numValues;
+
 public:
     AverageOperation() : OperationBase(), _numValues(0) {}
-    void reset() { _result = 0; _numValues = 0; }
-    void onValue(feature_t val) { _result += val; ++_numValues; }
+    void reset() {
+        _result = 0;
+        _numValues = 0;
+    }
+    void onValue(feature_t val) {
+        _result += val;
+        ++_numValues;
+    }
     feature_t getResult() const { return _numValues != 0 ? _result / _numValues : 0; }
 };
 
@@ -118,47 +129,42 @@ struct MinOperation : public OperationBase {
  **/
 struct CountOperation : public OperationBase {
     void reset() { _result = 0; }
-    void onValue(feature_t val) { (void) val; _result += 1; }
+    void onValue(feature_t val) {
+        (void)val;
+        _result += 1;
+    }
 };
-
 
 /**
  * Implements the blueprint for the foreach executor.
  */
 class ForeachBlueprint : public fef::Blueprint {
 private:
-    enum Dimension {
-        TERMS,
-        FIELDS,
-        ATTRIBUTES,
-        ILLEGAL
-    };
+    enum Dimension { TERMS, FIELDS, ATTRIBUTES, ILLEGAL };
     struct ExecutorCreatorBase {
-        virtual fef::FeatureExecutor &create(uint32_t numInputs, vespalib::Stash &stash) const = 0;
+        virtual fef::FeatureExecutor& create(uint32_t numInputs, vespalib::Stash& stash) const = 0;
         virtual ~ExecutorCreatorBase() = default;
     };
 
-    Dimension _dimension;
+    Dimension                            _dimension;
     std::unique_ptr<ExecutorCreatorBase> _executorCreator;
-    size_t _num_inputs;
+    size_t                               _num_inputs;
 
-    bool decideDimension(const std::string & param);
-    bool decideCondition(const std::string & condition, const std::string & operation);
-    template <typename CO>
-    bool decideOperation(CO condition, const std::string & operation);
-    template <typename CO, typename OP>
-    void setExecutorCreator(CO condition);
+    bool decideDimension(const std::string& param);
+    bool decideCondition(const std::string& condition, const std::string& operation);
+    template <typename CO> bool decideOperation(CO condition, const std::string& operation);
+    template <typename CO, typename OP> void setExecutorCreator(CO condition);
 
 public:
     ForeachBlueprint();
     ~ForeachBlueprint();
-    void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
+    void visitDumpFeatures(const fef::IIndexEnvironment& env, fef::IDumpFeatureVisitor& visitor) const override;
     fef::Blueprint::UP createInstance() const override;
     fef::ParameterDescriptions getDescriptions() const override {
         return fef::ParameterDescriptions().desc().string().string().feature().string().string();
     }
-    bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
-    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    bool setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) override;
+    fef::FeatureExecutor& createExecutor(const fef::IQueryEnvironment& env, vespalib::Stash& stash) const override;
 };
 
-}
+} // namespace search::features

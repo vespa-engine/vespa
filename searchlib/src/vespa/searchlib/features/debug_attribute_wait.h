@@ -2,33 +2,32 @@
 
 #pragma once
 
-#include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
+#include <vespa/searchlib/fef/blueprint.h>
 
 namespace search::features {
 
 //-----------------------------------------------------------------------------
 
 struct DebugAttributeWaitParams {
-    bool   busyWait;
+    bool busyWait;
 };
 
 //-----------------------------------------------------------------------------
 
-class DebugAttributeWaitBlueprint : public fef::Blueprint
-{
+class DebugAttributeWaitBlueprint : public fef::Blueprint {
 private:
-    std::string _attribute;
+    std::string              _attribute;
     DebugAttributeWaitParams _params;
 
 public:
     DebugAttributeWaitBlueprint();
     ~DebugAttributeWaitBlueprint() override;
-    void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
+    void visitDumpFeatures(const fef::IIndexEnvironment& env, fef::IDumpFeatureVisitor& visitor) const override;
     fef::Blueprint::UP createInstance() const override;
     fef::ParameterDescriptions getDescriptions() const override;
-    bool setup(const fef::IIndexEnvironment &env, const fef::ParameterList &params) override;
-    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    bool setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) override;
+    fef::FeatureExecutor& createExecutor(const fef::IQueryEnvironment& env, vespalib::Stash& stash) const override;
 };
 
-}
+} // namespace search::features

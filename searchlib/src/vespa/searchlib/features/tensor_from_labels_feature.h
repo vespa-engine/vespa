@@ -13,20 +13,15 @@ namespace search::features {
  *
  * The array source can be either an attribute vector or query parameter.
  */
-class TensorFromLabelsBlueprint : public TensorFactoryBlueprint
-{
+class TensorFromLabelsBlueprint : public TensorFactoryBlueprint {
 public:
     TensorFromLabelsBlueprint();
-    fef::Blueprint::UP createInstance() const override {
-        return Blueprint::UP(new TensorFromLabelsBlueprint());
-    }
+    fef::Blueprint::UP createInstance() const override { return Blueprint::UP(new TensorFromLabelsBlueprint()); }
     fef::ParameterDescriptions getDescriptions() const override {
-        return fef::ParameterDescriptions().
-            desc().string().
-            desc().string().string();
+        return fef::ParameterDescriptions().desc().string().desc().string().string();
     }
-    bool setup(const fef::IIndexEnvironment &env, const fef::ParameterList &params) override;
-    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    bool setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) override;
+    fef::FeatureExecutor& createExecutor(const fef::IQueryEnvironment& env, vespalib::Stash& stash) const override;
 };
 
-}
+} // namespace search::features

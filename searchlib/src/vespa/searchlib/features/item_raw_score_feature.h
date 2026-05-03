@@ -6,58 +6,52 @@
 
 namespace search::features {
 
-class ItemRawScoreExecutor : public fef::FeatureExecutor
-{
+class ItemRawScoreExecutor : public fef::FeatureExecutor {
 public:
     using HandleVector = std::vector<fef::TermFieldHandle>;
-private:
-    HandleVector _handles;
-    const fef::MatchData *_md;
 
-    void handle_bind_match_data(const fef::MatchData &md) override;
+private:
+    HandleVector          _handles;
+    const fef::MatchData* _md;
+
+    void handle_bind_match_data(const fef::MatchData& md) override;
 
 public:
-    ItemRawScoreExecutor(HandleVector handles)
-        : FeatureExecutor(), _handles(handles), _md(nullptr) {}
+    ItemRawScoreExecutor(HandleVector handles) : FeatureExecutor(), _handles(handles), _md(nullptr) {}
     void execute(uint32_t docId) override;
 };
 
-class SimpleItemRawScoreExecutor : public fef::FeatureExecutor
-{
+class SimpleItemRawScoreExecutor : public fef::FeatureExecutor {
 private:
-    fef::TermFieldHandle _handle;
-    const fef::MatchData *_md;
+    fef::TermFieldHandle  _handle;
+    const fef::MatchData* _md;
 
-    void handle_bind_match_data(const fef::MatchData &md) override;
+    void handle_bind_match_data(const fef::MatchData& md) override;
 
 public:
-    SimpleItemRawScoreExecutor(fef::TermFieldHandle handle)
-        : FeatureExecutor(), _handle(handle), _md(nullptr) {}
+    SimpleItemRawScoreExecutor(fef::TermFieldHandle handle) : FeatureExecutor(), _handle(handle), _md(nullptr) {}
     void execute(uint32_t docId) override;
 };
-
 
 //-----------------------------------------------------------------------------
 
-class ItemRawScoreBlueprint : public fef::Blueprint
-{
+class ItemRawScoreBlueprint : public fef::Blueprint {
 private:
     using HandleVector = std::vector<fef::TermFieldHandle>;
     std::string _label;
+
 public:
     ItemRawScoreBlueprint() : Blueprint("itemRawScore"), _label() {}
     ~ItemRawScoreBlueprint() override;
-    void visitDumpFeatures(const fef::IIndexEnvironment &, fef::IDumpFeatureVisitor &) const override {}
-    fef::Blueprint::UP createInstance() const override {
-        return Blueprint::UP(new ItemRawScoreBlueprint());
-    }
+    void visitDumpFeatures(const fef::IIndexEnvironment&, fef::IDumpFeatureVisitor&) const override {}
+    fef::Blueprint::UP createInstance() const override { return Blueprint::UP(new ItemRawScoreBlueprint()); }
     fef::ParameterDescriptions getDescriptions() const override {
         return fef::ParameterDescriptions().desc().string();
     }
-    bool setup(const fef::IIndexEnvironment &env, const fef::ParameterList &params) override;
-    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    bool setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) override;
+    fef::FeatureExecutor& createExecutor(const fef::IQueryEnvironment& env, vespalib::Stash& stash) const override;
 
-    static HandleVector resolve(const fef::IQueryEnvironment &env, const std::string &label);
+    static HandleVector resolve(const fef::IQueryEnvironment& env, const std::string& label);
 };
 
-}
+} // namespace search::features

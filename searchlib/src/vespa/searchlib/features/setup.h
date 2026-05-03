@@ -11,6 +11,6 @@ namespace search::features {
  *
  * @param registry The blueprint registry to add prototypes to.
  **/
-void setup_search_features(fef::IBlueprintRegistry & registry);
+void setup_search_features(fef::IBlueprintRegistry& registry);
 
-}
+} // namespace search::features

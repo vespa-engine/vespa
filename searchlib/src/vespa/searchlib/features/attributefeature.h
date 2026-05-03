@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/eval/eval/value_type.h>
+#include <vespa/searchlib/fef/blueprint.h>
 
 namespace search::features {
 
@@ -15,23 +15,22 @@ namespace search::features {
  */
 class AttributeBlueprint : public fef::Blueprint {
 private:
-    std::string          _attrName; // the name of the attribute vector
-    std::string          _attrKey;  // Used for looking up the attribute in the ObjectStore.
-    std::string          _extra;    // the index or key
+    std::string               _attrName; // the name of the attribute vector
+    std::string               _attrKey;  // Used for looking up the attribute in the ObjectStore.
+    std::string               _extra;    // the index or key
     vespalib::eval::ValueType _tensorType;
     uint8_t                   _numOutputs;
-
 
 public:
     AttributeBlueprint();
     ~AttributeBlueprint() override;
-    void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
+    void visitDumpFeatures(const fef::IIndexEnvironment& env, fef::IDumpFeatureVisitor& visitor) const override;
 
     fef::Blueprint::UP createInstance() const override;
-    void prepareSharedState(const fef::IQueryEnvironment & queryEnv, fef::IObjectStore & objectStore) const override;
-    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
-    fef::ParameterDescriptions getDescriptions() const  override;
-    bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
+    void prepareSharedState(const fef::IQueryEnvironment& queryEnv, fef::IObjectStore& objectStore) const override;
+    fef::FeatureExecutor& createExecutor(const fef::IQueryEnvironment& env, vespalib::Stash& stash) const override;
+    fef::ParameterDescriptions getDescriptions() const override;
+    bool setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) override;
 };
 
-}
+} // namespace search::features

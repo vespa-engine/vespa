@@ -16,13 +16,12 @@ struct MatchParams {
  */
 class MatchExecutor : public fef::FeatureExecutor {
 private:
-    const MatchParams & _params;
+    const MatchParams& _params;
 
 public:
-    MatchExecutor(const MatchParams & params);
+    MatchExecutor(const MatchParams& params);
     void execute(uint32_t docId) override;
 };
-
 
 /**
  * Implements the blueprint for the match executor.
@@ -30,17 +29,16 @@ public:
 class MatchBlueprint : public fef::Blueprint {
 private:
     MatchParams _params;
+
 public:
     MatchBlueprint();
     ~MatchBlueprint() override;
 
-    void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
+    void visitDumpFeatures(const fef::IIndexEnvironment& env, fef::IDumpFeatureVisitor& visitor) const override;
     fef::Blueprint::UP createInstance() const override;
-    fef::ParameterDescriptions getDescriptions() const override {
-        return fef::ParameterDescriptions().desc();
-    }
-    bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
-    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    fef::ParameterDescriptions getDescriptions() const override { return fef::ParameterDescriptions().desc(); }
+    bool setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) override;
+    fef::FeatureExecutor& createExecutor(const fef::IQueryEnvironment& env, vespalib::Stash& stash) const override;
 };
 
-}
+} // namespace search::features

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "tensor_factory_blueprint.h"
+
 #include <vespa/eval/eval/value_type.h>
 
 namespace search::features {
@@ -17,25 +18,21 @@ namespace search::features {
  *   - Labels from items.itemname attribute
  *   - Values from items.price attribute
  */
-class TensorFromStructsBlueprint : public TensorFactoryBlueprint
-{
+class TensorFromStructsBlueprint : public TensorFactoryBlueprint {
 private:
-    std::string _keyField;
-    std::string _valueField;
+    std::string              _keyField;
+    std::string              _valueField;
     vespalib::eval::CellType _cellType;
 
 public:
     TensorFromStructsBlueprint();
     ~TensorFromStructsBlueprint() override;
-    fef::Blueprint::UP createInstance() const override {
-        return Blueprint::UP(new TensorFromStructsBlueprint());
-    }
+    fef::Blueprint::UP createInstance() const override { return Blueprint::UP(new TensorFromStructsBlueprint()); }
     fef::ParameterDescriptions getDescriptions() const override {
-        return fef::ParameterDescriptions().
-            desc().string().string().string().string();
+        return fef::ParameterDescriptions().desc().string().string().string().string();
     }
-    bool setup(const fef::IIndexEnvironment &env, const fef::ParameterList &params) override;
-    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    bool setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) override;
+    fef::FeatureExecutor& createExecutor(const fef::IQueryEnvironment& env, vespalib::Stash& stash) const override;
 };
 
-}
+} // namespace search::features

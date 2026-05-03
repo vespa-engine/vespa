@@ -2,9 +2,10 @@
 
 #pragma once
 
+#include "termdistancecalculator.h"
+
 #include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/searchlib/fef/table.h>
-#include "termdistancecalculator.h"
 
 namespace search::features {
 
@@ -12,9 +13,9 @@ namespace search::features {
  * This struct contains parameters used by the executor.
  **/
 struct TermDistanceParams {
-    uint32_t fieldId;
-    uint32_t termX;
-    uint32_t termY;
+    uint32_t                fieldId;
+    uint32_t                termX;
+    uint32_t                termY;
     std::optional<uint32_t> element_gap;
     TermDistanceParams() : fieldId(0), termX(0), termY(0), element_gap() {}
 };
@@ -22,23 +23,20 @@ struct TermDistanceParams {
 /**
  * Implements the executor for calculating min term distance (forward and reverse).
  **/
-class TermDistanceExecutor : public fef::FeatureExecutor
-{
+class TermDistanceExecutor : public fef::FeatureExecutor {
 private:
-    QueryTerm        _termA;
-    QueryTerm        _termB;
+    QueryTerm               _termA;
+    QueryTerm               _termB;
     std::optional<uint32_t> _element_gap;
-    const fef::MatchData *_md;
+    const fef::MatchData*   _md;
 
-    void handle_bind_match_data(const fef::MatchData &md) override;
+    void handle_bind_match_data(const fef::MatchData& md) override;
 
 public:
-    TermDistanceExecutor(const fef::IQueryEnvironment & env,
-                         const TermDistanceParams & params);
+    TermDistanceExecutor(const fef::IQueryEnvironment& env, const TermDistanceParams& params);
     void execute(uint32_t docId) override;
     bool valid() const;
 };
-
 
 /**
  * Implements the blueprint for the term distance executor.
@@ -49,13 +47,13 @@ private:
 
 public:
     TermDistanceBlueprint();
-    void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
+    void visitDumpFeatures(const fef::IIndexEnvironment& env, fef::IDumpFeatureVisitor& visitor) const override;
     fef::Blueprint::UP createInstance() const override;
     fef::ParameterDescriptions getDescriptions() const override {
         return fef::ParameterDescriptions().desc().indexField(fef::ParameterCollection::ANY).number().number();
     }
-    bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
-    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    bool setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) override;
+    fef::FeatureExecutor& createExecutor(const fef::IQueryEnvironment& env, vespalib::Stash& stash) const override;
 };
 
-}
+} // namespace search::features

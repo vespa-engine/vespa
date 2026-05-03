@@ -14,29 +14,21 @@ namespace search::features {
  */
 class QueryTerm {
 private:
-    const fef::ITermData *_termData;
+    const fef::ITermData* _termData;
     fef::TermFieldHandle  _handle;
     feature_t             _significance;
     feature_t             _connectedness;
+
 public:
-    QueryTerm()
-        : _termData(nullptr),
-          _handle(fef::IllegalHandle),
-          _significance(0),
-          _connectedness(0)
-    { }
-    QueryTerm(const fef::ITermData *td, feature_t sig = 0, feature_t con = 0)
-        : _termData(td),
-          _handle(fef::IllegalHandle),
-          _significance(sig),
-          _connectedness(con)
-    { }
-    const fef::ITermData *termData() const { return _termData; }
+    QueryTerm() : _termData(nullptr), _handle(fef::IllegalHandle), _significance(0), _connectedness(0) {}
+    QueryTerm(const fef::ITermData* td, feature_t sig = 0, feature_t con = 0)
+        : _termData(td), _handle(fef::IllegalHandle), _significance(sig), _connectedness(con) {}
+    const fef::ITermData* termData() const { return _termData; }
     feature_t significance() const { return _significance; }
     feature_t connectedness() const { return _connectedness; }
     fef::TermFieldHandle fieldHandle() const { return _handle; }
     void fieldHandle(fef::TermFieldHandle handle) { _handle = handle; }
-    void fieldHandle(const fef::ITermFieldData *fd) {
+    void fieldHandle(const fef::ITermFieldData* fd) {
         if (fd) {
             _handle = fd->getHandle();
         }
@@ -60,7 +52,7 @@ public:
      * @param termIndex the index to use when looking up the TermData object.
      * @param lookupConnectedness whether we should look up the connectedness this term has with the previous term.
      */
-    static QueryTerm create(const fef::IQueryEnvironment & env, uint32_t termIndex, bool lookupConnectedness = false);
+    static QueryTerm create(const fef::IQueryEnvironment& env, uint32_t termIndex, bool lookupConnectedness = false);
 };
 
 /**
@@ -70,14 +62,16 @@ public:
  */
 class QueryTermHelper {
 public:
-    QueryTermHelper(const fef::IQueryEnvironment & env);
-    const QueryTermVector & terms() const { return *_queryTerms; }
-    static const QueryTermVector & lookupAndStoreQueryTerms(const fef::IQueryEnvironment & env, fef::IObjectStore & objectStore);
+    QueryTermHelper(const fef::IQueryEnvironment& env);
+    const QueryTermVector& terms() const { return *_queryTerms; }
+    static const QueryTermVector& lookupAndStoreQueryTerms(const fef::IQueryEnvironment& env,
+                                                           fef::IObjectStore&            objectStore);
+
 private:
-    static const QueryTermVector * lookupQueryTerms(const fef::IQueryEnvironment & env);
-    static QueryTermVector createQueryTermvector(const fef::IQueryEnvironment & env);
-    QueryTermVector         _fallBack;
-    const QueryTermVector * _queryTerms;
+    static const QueryTermVector* lookupQueryTerms(const fef::IQueryEnvironment& env);
+    static QueryTermVector createQueryTermvector(const fef::IQueryEnvironment& env);
+    QueryTermVector        _fallBack;
+    const QueryTermVector* _queryTerms;
 };
 
-}
+} // namespace search::features

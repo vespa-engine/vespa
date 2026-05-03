@@ -2,14 +2,15 @@
 
 #pragma once
 
-#include <vespa/searchlib/fef/featureexecutor.h>
-#include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value.h>
+#include <vespa/searchcommon/attribute/iattributevector.h>
+#include <vespa/searchlib/fef/featureexecutor.h>
+
 #include <string>
 
-using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::CellType;
+using vespalib::eval::FastValueBuilderFactory;
 
 namespace search::features {
 
@@ -17,37 +18,31 @@ namespace search::features {
  * Feature executor that extracts the content from an attribute vector
  * and converts that into a tensor.
  */
-template <typename WeightedBufferType>
-class TensorFromAttributeExecutor : public fef::FeatureExecutor
-{
+template <typename WeightedBufferType> class TensorFromAttributeExecutor : public fef::FeatureExecutor {
 private:
-    const search::attribute::IAttributeVector *_attribute;
-    vespalib::eval::ValueType _type;
-    WeightedBufferType _attrBuffer;
-    std::vector<std::string_view> _addr_ref;
-    std::unique_ptr<vespalib::eval::Value> _tensor;
-    bool _is_single_value;
+    const search::attribute::IAttributeVector* _attribute;
+    vespalib::eval::ValueType                  _type;
+    WeightedBufferType                         _attrBuffer;
+    std::vector<std::string_view>              _addr_ref;
+    std::unique_ptr<vespalib::eval::Value>     _tensor;
+    bool                                       _is_single_value;
 
 public:
-    TensorFromAttributeExecutor(const search::attribute::IAttributeVector *attribute,
-                                const vespalib::eval::ValueType &valueType)
+    TensorFromAttributeExecutor(const search::attribute::IAttributeVector* attribute,
+                                const vespalib::eval::ValueType&           valueType)
         : _attribute(attribute),
           _type(valueType),
           _attrBuffer(),
           _addr_ref(),
           _tensor(),
-          _is_single_value(attribute->getCollectionType() == search::attribute::CollectionType::SINGLE)
-    {
+          _is_single_value(attribute->getCollectionType() == search::attribute::CollectionType::SINGLE) {
         _attrBuffer.allocate(_attribute->getMaxValueCount());
         _addr_ref.reserve(1);
     }
     void execute(uint32_t docId) override;
 };
 
-template <typename WeightedBufferType>
-void
-TensorFromAttributeExecutor<WeightedBufferType>::execute(uint32_t docId)
-{
+template <typename WeightedBufferType> void TensorFromAttributeExecutor<WeightedBufferType>::execute(uint32_t docId) {
     _attrBuffer.fill(*_attribute, docId);
     auto factory = FastValueBuilderFactory::get();
     auto builder = factory.create_value_builder<double>(_type, 1, 1, _attrBuffer.size());
@@ -63,4 +58,4 @@ TensorFromAttributeExecutor<WeightedBufferType>::execute(uint32_t docId)
     outputs().set_object(0, *_tensor);
 }
 
-}
+} // namespace search::features

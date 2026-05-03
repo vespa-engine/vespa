@@ -12,16 +12,14 @@ namespace search::features {
  * matchCount(name)
  *  - returns number of matches of the query in the particular field.
  */
-class MatchCountBlueprint : public fef::Blueprint
-{
+class MatchCountBlueprint : public fef::Blueprint {
 private:
-    const fef::FieldInfo *_field;
+    const fef::FieldInfo* _field;
 
 public:
     MatchCountBlueprint();
 
-    void visitDumpFeatures(const fef::IIndexEnvironment & env,
-                           fef::IDumpFeatureVisitor & visitor) const override;
+    void visitDumpFeatures(const fef::IIndexEnvironment& env, fef::IDumpFeatureVisitor& visitor) const override;
 
     fef::Blueprint::UP createInstance() const override;
 
@@ -29,10 +27,9 @@ public:
         return fef::ParameterDescriptions().desc().field();
     }
 
-    bool setup(const fef::IIndexEnvironment & env,
-               const fef::ParameterList & params) override;
+    bool setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) override;
 
-    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    fef::FeatureExecutor& createExecutor(const fef::IQueryEnvironment& env, vespalib::Stash& stash) const override;
 };
 
-}
+} // namespace search::features

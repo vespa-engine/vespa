@@ -4,7 +4,9 @@
 
 #include "nativerankfeature.h"
 #include "termdistancecalculator.h"
+
 #include <vespa/searchlib/fef/element_gap.h>
+
 #include <map>
 
 namespace search::features {
@@ -12,23 +14,23 @@ namespace search::features {
 /**
  * This struct contains parameters used by the executor.
  **/
-struct NativeProximityParam : public NativeParamBase
-{
+struct NativeProximityParam : public NativeParamBase {
     NativeProximityParam() noexcept
-        : NativeParamBase(), proximityTable(nullptr), revProximityTable(nullptr), proximityImportance(0.5),
-          _element_gap()
-    { }
-    const fef::Table * proximityTable;
-    const fef::Table * revProximityTable;
-    feature_t proximityImportance;
+        : NativeParamBase(),
+          proximityTable(nullptr),
+          revProximityTable(nullptr),
+          proximityImportance(0.5),
+          _element_gap() {}
+    const fef::Table*       proximityTable;
+    const fef::Table*       revProximityTable;
+    feature_t               proximityImportance;
     search::fef::ElementGap _element_gap;
 };
 
-class NativeProximityParams : public NativeRankParamsBase<NativeProximityParam>
-{
+class NativeProximityParams : public NativeRankParamsBase<NativeProximityParam> {
 public:
     uint32_t slidingWindow;
-    NativeProximityParams() : slidingWindow(4) { }
+    NativeProximityParams() : slidingWindow(4) {}
 };
 
 /**
@@ -44,23 +46,23 @@ public:
         QueryTerm first;
         QueryTerm second;
         feature_t connectedness;
-        TermPair(QueryTerm f, QueryTerm s, feature_t c) :
-            first(f), second(s), connectedness(c) {}
+        TermPair(QueryTerm f, QueryTerm s, feature_t c) : first(f), second(s), connectedness(c) {}
     };
     using TermPairVector = std::vector<TermPair>;
     /**
      * Represents the setup needed to calculate the proximity score for a single field.
      **/
     struct FieldSetup {
-        uint32_t fieldId;
+        uint32_t       fieldId;
         TermPairVector pairs;
-        feature_t divisor;
+        feature_t      divisor;
         FieldSetup(uint32_t fid) : fieldId(fid), pairs(), divisor(0) {}
     };
+
 private:
-    const NativeProximityParams&  _params;
-    std::vector<FieldSetup>       _setups;
-    uint32_t                      _total_field_weight;
+    const NativeProximityParams&        _params;
+    std::vector<FieldSetup>             _setups;
+    uint32_t                            _total_field_weight;
     std::map<uint32_t, QueryTermVector> _fields;
 
 public:
@@ -82,22 +84,22 @@ class NativeProximityExecutor : public fef::FeatureExecutor {
 public:
     using TermPair = NativeProximityExecutorSharedState::TermPair;
     using FieldSetup = NativeProximityExecutorSharedState::FieldSetup;
+
 private:
-    const NativeProximityParams & _params;
-    std::span<const FieldSetup> _setups;
-    uint32_t                      _totalFieldWeight;
-    const fef::MatchData         *_md;
+    const NativeProximityParams& _params;
+    std::span<const FieldSetup>  _setups;
+    uint32_t                     _totalFieldWeight;
+    const fef::MatchData*        _md;
 
-    feature_t calculateScoreForField(const FieldSetup & fs, uint32_t docId);
-    feature_t calculateScoreForPair(const TermPair & pair, uint32_t fieldId, uint32_t docId);
+    feature_t calculateScoreForField(const FieldSetup& fs, uint32_t docId);
+    feature_t calculateScoreForPair(const TermPair& pair, uint32_t fieldId, uint32_t docId);
 
-    void handle_bind_match_data(const fef::MatchData &md) override;
+    void handle_bind_match_data(const fef::MatchData& md) override;
 
 public:
     NativeProximityExecutor(const NativeProximityExecutorSharedState& shared_state);
     void execute(uint32_t docId) override;
 };
-
 
 /**
  * Implements the blueprint for the native proximity executor.
@@ -105,24 +107,24 @@ public:
 class NativeProximityBlueprint : public fef::Blueprint {
 private:
     NativeProximityParams _params;
-    std::string      _defaultProximityBoost;
-    std::string      _defaultRevProximityBoost;
-    std::string      _shared_state_key;
+    std::string           _defaultProximityBoost;
+    std::string           _defaultRevProximityBoost;
+    std::string           _shared_state_key;
 
 public:
     NativeProximityBlueprint();
     ~NativeProximityBlueprint();
-    void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
+    void visitDumpFeatures(const fef::IIndexEnvironment& env, fef::IDumpFeatureVisitor& visitor) const override;
     fef::Blueprint::UP createInstance() const override;
     fef::ParameterDescriptions getDescriptions() const override {
         return fef::ParameterDescriptions().desc().field().repeat();
     }
-    bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
-    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    bool setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) override;
+    fef::FeatureExecutor& createExecutor(const fef::IQueryEnvironment& env, vespalib::Stash& stash) const override;
 
-    const NativeProximityParams & getParams() const { return _params; }
+    const NativeProximityParams& getParams() const { return _params; }
 
-    void prepareSharedState(const fef::IQueryEnvironment &queryEnv, fef::IObjectStore &objectStore) const override;
+    void prepareSharedState(const fef::IQueryEnvironment& queryEnv, fef::IObjectStore& objectStore) const override;
 };
 
-}
+} // namespace search::features

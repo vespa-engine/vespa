@@ -2,13 +2,13 @@
 
 #pragma once
 
-#include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
+#include <vespa/searchlib/fef/blueprint.h>
 
 namespace search::features {
 
 /** Convenience typedef. */
-using GeoLocationSpecPtrs = std::vector<const search::common::GeoLocationSpec *>;
+using GeoLocationSpecPtrs = std::vector<const search::common::GeoLocationSpec*>;
 
 /**
  * Implements the executor for the distance feature.
@@ -26,25 +26,25 @@ private:
     std::string _field_name;
     std::string _label_name;
     std::string _attr_name;
-    uint32_t _attr_id;
-    bool _use_geo_pos;
-    bool _use_nns_tensor;
-    bool _use_item_label;
+    uint32_t    _attr_id;
+    bool        _use_geo_pos;
+    bool        _use_nns_tensor;
+    bool        _use_item_label;
 
-    bool setup_geopos(const std::string &attr);
-    bool setup_nns(const std::string &attr);
+    bool setup_geopos(const std::string& attr);
+    bool setup_nns(const std::string& attr);
 
 public:
     DistanceBlueprint();
     ~DistanceBlueprint();
-    void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
+    void visitDumpFeatures(const fef::IIndexEnvironment& env, fef::IDumpFeatureVisitor& visitor) const override;
     fef::Blueprint::UP createInstance() const override;
     fef::ParameterDescriptions getDescriptions() const override {
         return fef::ParameterDescriptions().desc().string().desc().string().string();
     }
-    bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
+    bool setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) override;
     void prepareSharedState(const fef::IQueryEnvironment& env, fef::IObjectStore& store) const override;
-    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    fef::FeatureExecutor& createExecutor(const fef::IQueryEnvironment& env, vespalib::Stash& stash) const override;
 };
 
-}
+} // namespace search::features
