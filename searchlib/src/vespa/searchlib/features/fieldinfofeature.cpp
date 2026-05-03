@@ -1,38 +1,34 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fieldinfofeature.h"
-#include "valuefeature.h"
+
 #include "utils.h"
-#include <vespa/searchlib/fef/properties.h>
+#include "valuefeature.h"
+
+#include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/fieldtype.h>
-#include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/handle.h>
+#include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/util/stash.h>
+
 #include <sstream>
 
 using search::fef::TermFieldHandle;
 
 namespace search::features {
 
-IndexFieldInfoExecutor::IndexFieldInfoExecutor(feature_t type, feature_t isFilter,
-                                               [[maybe_unused]] uint32_t field, TermFieldHandle fieldHandle)
-    : fef::FeatureExecutor(),
-      _type(type),
-      _isFilter(isFilter),
-      _fieldHandle(fieldHandle),
-      _md(nullptr)
-{
+IndexFieldInfoExecutor::IndexFieldInfoExecutor(feature_t type, feature_t isFilter, [[maybe_unused]] uint32_t field,
+                                               TermFieldHandle fieldHandle)
+    : fef::FeatureExecutor(), _type(type), _isFilter(isFilter), _fieldHandle(fieldHandle), _md(nullptr) {
     // empty
 }
 
-void
-IndexFieldInfoExecutor::execute(uint32_t docId)
-{
+void IndexFieldInfoExecutor::execute(uint32_t docId) {
     outputs().set_number(0, _type);
     outputs().set_number(1, _isFilter);
     outputs().set_number(2, 1.0f); // searched
-    const fef::TermFieldMatchData *tfmd = _md->resolveTermField(_fieldHandle);
+    const fef::TermFieldMatchData* tfmd = _md->resolveTermField(_fieldHandle);
     if (tfmd->has_ranking_data(docId)) {
         outputs().set_number(3, 1.0f); // hit
     } else {
@@ -42,8 +38,8 @@ IndexFieldInfoExecutor::execute(uint32_t docId)
     outputs().set_number(4, itr.getFieldLength());
     if (itr.valid()) {
         uint32_t first = itr.getPosition();
-        uint32_t last  = 0;
-        uint32_t cnt   = 0;
+        uint32_t last = 0;
+        uint32_t cnt = 0;
         for (; itr.valid(); itr.next()) {
             last = itr.getPosition();
             ++cnt;
@@ -58,38 +54,30 @@ IndexFieldInfoExecutor::execute(uint32_t docId)
     }
 }
 
-void
-IndexFieldInfoExecutor::handle_bind_match_data(const fef::MatchData &md)
-{
+void IndexFieldInfoExecutor::handle_bind_match_data(const fef::MatchData& md) {
     _md = &md;
 }
 
 //-----------------------------------------------------------------------------
 
 AttrFieldInfoExecutor::AttrFieldInfoExecutor(feature_t type, TermFieldHandle fieldHandle)
-    : FeatureExecutor(),
-      _type(type),
-      _fieldHandle(fieldHandle),
-      _md(nullptr)
-{
+    : FeatureExecutor(), _type(type), _fieldHandle(fieldHandle), _md(nullptr) {
     // empty
 }
 
-void
-AttrFieldInfoExecutor::execute(uint32_t docId)
-{
+void AttrFieldInfoExecutor::execute(uint32_t docId) {
     outputs().set_number(0, _type);
-    outputs().set_number(1, 0.0); // not filter
+    outputs().set_number(1, 0.0);  // not filter
     outputs().set_number(2, 1.0f); // searched
-    const fef::TermFieldMatchData *tfmd = _md->resolveTermField(_fieldHandle);
+    const fef::TermFieldMatchData* tfmd = _md->resolveTermField(_fieldHandle);
     if (tfmd->has_ranking_data(docId)) {
-        outputs().set_number(3, 1.0f); // hit
+        outputs().set_number(3, 1.0f);                                        // hit
         outputs().set_number(4, fef::FieldPositionsIterator::UNKNOWN_LENGTH); // len
-        outputs().set_number(5, 0.0f); // first
-        outputs().set_number(6, 0.0f); // last
+        outputs().set_number(5, 0.0f);                                        // first
+        outputs().set_number(6, 0.0f);                                        // last
         outputs().set_number(7, 1.0f);
     } else {
-        outputs().set_number(3, 0.0f); // no hit
+        outputs().set_number(3, 0.0f);                                        // no hit
         outputs().set_number(4, fef::FieldPositionsIterator::UNKNOWN_LENGTH); // len
         outputs().set_number(5, fef::FieldPositionsIterator::UNKNOWN_LENGTH); // first
         outputs().set_number(6, fef::FieldPositionsIterator::UNKNOWN_LENGTH); // last
@@ -97,35 +85,30 @@ AttrFieldInfoExecutor::execute(uint32_t docId)
     }
 }
 
-void
-AttrFieldInfoExecutor::handle_bind_match_data(const fef::MatchData &md)
-{
+void AttrFieldInfoExecutor::handle_bind_match_data(const fef::MatchData& md) {
     _md = &md;
 }
 
 //-----------------------------------------------------------------------------
 
-FieldInfoBlueprint::FieldInfoBlueprint() :
-    fef::Blueprint("fieldInfo"),
-    _overview(false),
-    _indexcnt(0.0f),
-    _attrcnt(0.0f),
-    _type(0.0f),
-    _isFilter(0.0f),
-    _fieldId(fef::IllegalFieldId)
-{
+FieldInfoBlueprint::FieldInfoBlueprint()
+    : fef::Blueprint("fieldInfo"),
+      _overview(false),
+      _indexcnt(0.0f),
+      _attrcnt(0.0f),
+      _type(0.0f),
+      _isFilter(0.0f),
+      _fieldId(fef::IllegalFieldId) {
     // empty
 }
 
-void
-FieldInfoBlueprint::visitDumpFeatures(const fef::IIndexEnvironment &indexEnv,
-                                      fef::IDumpFeatureVisitor &visitor) const
-{
+void FieldInfoBlueprint::visitDumpFeatures(const fef::IIndexEnvironment& indexEnv,
+                                           fef::IDumpFeatureVisitor&     visitor) const {
     if (!indexEnv.getProperties().lookup(getBaseName(), "enable").get("").empty()) {
         fef::FeatureNameBuilder fnb;
         fnb.baseName(getBaseName());
         for (uint32_t i = 0; i < indexEnv.getNumFields(); ++i) {
-            const fef::FieldInfo *fi = indexEnv.getField(i);
+            const fef::FieldInfo* fi = indexEnv.getField(i);
             fnb.clearParameters().parameter(fi->name());
             fnb.output("type");
             visitor.visitDumpFeature(fnb.buildName());
@@ -152,10 +135,7 @@ FieldInfoBlueprint::visitDumpFeatures(const fef::IIndexEnvironment &indexEnv,
     }
 }
 
-bool
-FieldInfoBlueprint::setup(const fef::IIndexEnvironment &indexEnv,
-                          const fef::ParameterList &params)
-{
+bool FieldInfoBlueprint::setup(const fef::IIndexEnvironment& indexEnv, const fef::ParameterList& params) {
     if (params.empty()) {
         _overview = true;
         for (uint32_t i = 0; i < indexEnv.getNumFields(); ++i) {
@@ -171,8 +151,8 @@ FieldInfoBlueprint::setup(const fef::IIndexEnvironment &indexEnv,
         return true;
     }
     if (params.size() == 1) {
-        std::string name = params[0].getValue();
-        const fef::FieldInfo *fi = indexEnv.getFieldByName(name);
+        std::string           name = params[0].getValue();
+        const fef::FieldInfo* fi = indexEnv.getFieldByName(name);
         if (fi != nullptr) {
             _fieldId = fi->id();
             if (fi->type() == fef::FieldType::INDEX) {
@@ -199,9 +179,8 @@ FieldInfoBlueprint::setup(const fef::IIndexEnvironment &indexEnv,
     return false;
 }
 
-fef::FeatureExecutor &
-FieldInfoBlueprint::createExecutor(const fef::IQueryEnvironment &queryEnv, vespalib::Stash &stash) const
-{
+fef::FeatureExecutor& FieldInfoBlueprint::createExecutor(const fef::IQueryEnvironment& queryEnv,
+                                                         vespalib::Stash&              stash) const {
     if (_overview) {
         std::vector<feature_t> values;
         values.push_back(_indexcnt);
@@ -213,29 +192,29 @@ FieldInfoBlueprint::createExecutor(const fef::IQueryEnvironment &queryEnv, vespa
         std::vector<feature_t> values;
         values.push_back(_type);
         values.push_back(_isFilter);
-        values.push_back(0.0f); // not searched
-        values.push_back(0.0f); // no hit
+        values.push_back(0.0f);                                        // not searched
+        values.push_back(0.0f);                                        // no hit
         values.push_back(fef::FieldPositionsIterator::UNKNOWN_LENGTH); // default field length
         values.push_back(fef::FieldPositionsIterator::UNKNOWN_LENGTH); // default first pos
         values.push_back(fef::FieldPositionsIterator::UNKNOWN_LENGTH); // default last pos
-        values.push_back(0.0f); // number of hits
+        values.push_back(0.0f);                                        // number of hits
         return stash.create<ValueExecutor>(values);
     }
-    if (_type == 1.0) {  // index
+    if (_type == 1.0) { // index
         return stash.create<IndexFieldInfoExecutor>(_type, _isFilter, _fieldId, fieldHandle);
-    } else if (_type == 2.0) {  // attribute
+    } else if (_type == 2.0) { // attribute
         return stash.create<AttrFieldInfoExecutor>(_type, fieldHandle);
     }
     std::vector<feature_t> values;
     values.push_back(_type);
     values.push_back(_isFilter);
-    values.push_back(1.0f); // searched
-    values.push_back(0.0f); // no hit
+    values.push_back(1.0f);                                        // searched
+    values.push_back(0.0f);                                        // no hit
     values.push_back(fef::FieldPositionsIterator::UNKNOWN_LENGTH); // default field length
     values.push_back(fef::FieldPositionsIterator::UNKNOWN_LENGTH); // default first pos
     values.push_back(fef::FieldPositionsIterator::UNKNOWN_LENGTH); // default last pos
-    values.push_back(0.0f); // number of hits
+    values.push_back(0.0f);                                        // number of hits
     return stash.create<ValueExecutor>(values);
 }
 
-}
+} // namespace search::features

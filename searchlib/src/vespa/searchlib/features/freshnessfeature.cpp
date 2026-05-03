@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "freshnessfeature.h"
+
 #include "utils.h"
+
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/util/stash.h>
 
@@ -12,16 +14,11 @@ using namespace search::fef;
 
 namespace search::features {
 
-FreshnessExecutor::FreshnessExecutor(feature_t maxAge, feature_t scaleAge) :
-    FeatureExecutor(),
-    _maxAge(maxAge),
-    _logCalc(maxAge, scaleAge)
-{
+FreshnessExecutor::FreshnessExecutor(feature_t maxAge, feature_t scaleAge)
+    : FeatureExecutor(), _maxAge(maxAge), _logCalc(maxAge, scaleAge) {
 }
 
-void
-FreshnessExecutor::execute(uint32_t)
-{
+void FreshnessExecutor::execute(uint32_t) {
     feature_t age = inputs().get_number(0);
     LOG(debug, "Age: %f  Maxage: %f res: %f\n", age, _maxAge, (age / _maxAge));
     feature_t freshness = std::max(1 - (age / _maxAge), (feature_t)0);
@@ -29,27 +26,19 @@ FreshnessExecutor::execute(uint32_t)
     outputs().set_number(1, _logCalc.get(age));
 }
 
-
 FreshnessBlueprint::FreshnessBlueprint()
     : Blueprint("freshness"),
-      _maxAge(3*30*24*60*60), // default value (90 days)
-      _halfResponse(7*24*60*60), // makes sure freshness.logscale = 0.5 when age is 7 days
-      _scaleAge(LogarithmCalculator::getScale(_halfResponse, _maxAge))
-{
+      _maxAge(3 * 30 * 24 * 60 * 60),  // default value (90 days)
+      _halfResponse(7 * 24 * 60 * 60), // makes sure freshness.logscale = 0.5 when age is 7 days
+      _scaleAge(LogarithmCalculator::getScale(_halfResponse, _maxAge)) {
 }
 
 FreshnessBlueprint::~FreshnessBlueprint() = default;
 
-void
-FreshnessBlueprint::visitDumpFeatures(const IIndexEnvironment &,
-                                      IDumpFeatureVisitor &) const
-{
+void FreshnessBlueprint::visitDumpFeatures(const IIndexEnvironment&, IDumpFeatureVisitor&) const {
 }
 
-bool
-FreshnessBlueprint::setup(const IIndexEnvironment & env,
-                          const ParameterList & params)
-{
+bool FreshnessBlueprint::setup(const IIndexEnvironment& env, const ParameterList& params) {
     // params[0] = attribute name
     Property p = env.getProperties().lookup(getName(), "maxAge");
     if (p.found()) {
@@ -61,19 +50,17 @@ FreshnessBlueprint::setup(const IIndexEnvironment & env,
     }
     // sanity checks:
     if (_maxAge < 1) {
-        LOG(warning, "Invalid %s.maxAge = %g, using 1.0",
-            getName().c_str(), (double)_maxAge);
+        LOG(warning, "Invalid %s.maxAge = %g, using 1.0", getName().c_str(), (double)_maxAge);
         _maxAge = 1.0;
     }
     if (_halfResponse < 1) {
-        LOG(warning, "Invalid %s.halfResponse = %g, using 1.0",
-            getName().c_str(), (double)_halfResponse);
+        LOG(warning, "Invalid %s.halfResponse = %g, using 1.0", getName().c_str(), (double)_halfResponse);
         _halfResponse = 1.0;
     }
     if (_halfResponse >= _maxAge / 2) {
         feature_t newResponse = (_maxAge / 2) - 1;
-        LOG(warning, "Invalid %s.halfResponse = %g, using %g ((%s.maxAge / 2) - 1)",
-            getName().c_str(), (double)_halfResponse, (double)newResponse, getName().c_str());
+        LOG(warning, "Invalid %s.halfResponse = %g, using %g ((%s.maxAge / 2) - 1)", getName().c_str(),
+            (double)_halfResponse, (double)newResponse, getName().c_str());
         _halfResponse = newResponse;
     }
     _scaleAge = LogarithmCalculator::getScale(_halfResponse, _maxAge);
@@ -85,22 +72,17 @@ FreshnessBlueprint::setup(const IIndexEnvironment & env,
     return true;
 }
 
-Blueprint::UP
-FreshnessBlueprint::createInstance() const
-{
+Blueprint::UP FreshnessBlueprint::createInstance() const {
     return std::make_unique<FreshnessBlueprint>();
 }
 
-fef::ParameterDescriptions
-FreshnessBlueprint::getDescriptions() const
-{
-    return fef::ParameterDescriptions().desc().attribute(fef::ParameterDataTypeSet::numericTypeSet(), fef::ParameterCollection::ANY);
+fef::ParameterDescriptions FreshnessBlueprint::getDescriptions() const {
+    return fef::ParameterDescriptions().desc().attribute(fef::ParameterDataTypeSet::numericTypeSet(),
+                                                         fef::ParameterCollection::ANY);
 }
 
-FeatureExecutor &
-FreshnessBlueprint::createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const
-{
+FeatureExecutor& FreshnessBlueprint::createExecutor(const IQueryEnvironment&, vespalib::Stash& stash) const {
     return stash.create<FreshnessExecutor>(_maxAge, _scaleAge);
 }
 
-}
+} // namespace search::features

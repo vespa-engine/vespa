@@ -3,49 +3,44 @@
 #pragma once
 
 #include "array_parser.h"
+
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/issue.h>
-#include <vector>
+
 #include <algorithm>
+#include <vector>
 
 using vespalib::Issue;
 
 namespace search::features {
 
-template <typename OutputType, typename T>
-void
-ArrayParser::parse(const std::string &input, OutputType &output)
-{
+template <typename OutputType, typename T> void ArrayParser::parse(const std::string& input, OutputType& output) {
     using SparseVector = std::vector<ValueAndIndex<T>>;
     SparseVector sparse;
     parsePartial(input, sparse);
     std::sort(sparse.begin(), sparse.end());
-    if ( ! sparse.empty() ) {
-        output.resize(sparse.back().getIndex()+1);
-        for (const typename SparseVector::value_type &elem : sparse) {
+    if (!sparse.empty()) {
+        output.resize(sparse.back().getIndex() + 1);
+        for (const typename SparseVector::value_type& elem : sparse) {
             output[elem.getIndex()] = elem.getValue();
         }
     }
 }
 
-template <typename OutputType>
-void
-ArrayParser::parsePartial(const std::string &input, OutputType &output)
-{
+template <typename OutputType> void ArrayParser::parsePartial(const std::string& input, OutputType& output) {
     size_t len = input.size();
     if (len >= 2) {
-        std::string_view s(input.c_str()+1, len - 2);
+        std::string_view s(input.c_str() + 1, len - 2);
         using ValueAndIndexType = typename OutputType::value_type;
         typename ValueAndIndexType::ValueType value;
-        if ((input[0] == '{' && input[len - 1] == '}') ||
-            (input[0] == '(' && input[len - 1] == ')') ) {
+        if ((input[0] == '{' && input[len - 1] == '}') || (input[0] == '(' && input[len - 1] == ')')) {
             size_t key;
-            char colon;
-            while ( ! s.empty() ) {
+            char   colon;
+            while (!s.empty()) {
                 std::string::size_type commaPos(s.find(','));
-                std::string_view item(s.substr(0, commaPos));
-                vespalib::asciistream is(item);
+                std::string_view       item(s.substr(0, commaPos));
+                vespalib::asciistream  is(item);
                 try {
                     is >> key >> colon >> value;
                     if ((colon == ':') && is.eof()) {
@@ -56,38 +51,39 @@ ArrayParser::parsePartial(const std::string &input, OutputType &output)
                                       std::string(item).c_str(), input.c_str());
                         return;
                     }
-                } catch (vespalib::IllegalArgumentException & e) {
+                } catch (vespalib::IllegalArgumentException& e) {
                     Issue::report("Could not parse item '%s' in query vector '%s', skipping. "
-                                  "Incorrect type of operands", std::string(item).c_str(), input.c_str());
+                                  "Incorrect type of operands",
+                                  std::string(item).c_str(), input.c_str());
                     return;
                 }
                 if (commaPos != std::string::npos) {
-                    s = s.substr(commaPos+1);
+                    s = s.substr(commaPos + 1);
                 } else {
                     s = std::string_view();
                 }
             }
         } else if (len >= 2 && input[0] == '[' && input[len - 1] == ']') {
             vespalib::asciistream is(s);
-            uint32_t index(0);
+            uint32_t              index(0);
             while (!is.eof()) {
                 try {
                     is >> value;
                     output.emplace_back(value, index++);
-                } catch (vespalib::IllegalArgumentException & e) {
+                } catch (vespalib::IllegalArgumentException& e) {
                     Issue::report("Could not parse item[%ld] = '%s' in query vector '%s', skipping. "
-                                  "Incorrect type of operands", output.size(), is.str().c_str(),
-                                  std::string(s).c_str());
+                                  "Incorrect type of operands",
+                                  output.size(), is.str().c_str(), std::string(s).c_str());
                     return;
                 }
             }
         }
     } else {
-        Issue::report("Could not parse query vector '%s'. Expected surrounding '(' and ')' or '{' and '}'.", input.c_str());
+        Issue::report("Could not parse query vector '%s'. Expected surrounding '(' and ')' or '{' and '}'.",
+                      input.c_str());
     }
 }
 
-template void
-ArrayParser::parse(const std::string &input, std::vector<int> &);
+template void ArrayParser::parse(const std::string& input, std::vector<int>&);
 
-}
+} // namespace search::features

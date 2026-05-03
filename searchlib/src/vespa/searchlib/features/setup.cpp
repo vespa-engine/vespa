@@ -35,6 +35,7 @@
 #include "matchcountfeature.h"
 #include "matchesfeature.h"
 #include "matchfeature.h"
+#include "max_reduce_prod_join_replacer.h"
 #include "native_dot_product_feature.h"
 #include "nativeattributematchfeature.h"
 #include "nativefieldmatchfeature.h"
@@ -65,17 +66,15 @@
 #include "text_similarity_feature.h"
 #include "valuefeature.h"
 
-#include "max_reduce_prod_join_replacer.h"
 #include <vespa/searchlib/features/rankingexpression/expression_replacer.h>
 
-using search::fef::Blueprint;
-using search::features::rankingexpression::ListExpressionReplacer;
 using search::features::MaxReduceProdJoinReplacer;
+using search::features::rankingexpression::ListExpressionReplacer;
+using search::fef::Blueprint;
 
 namespace search::features {
 
-void setup_search_features(fef::IBlueprintRegistry & registry)
-{
+void setup_search_features(fef::IBlueprintRegistry& registry) {
     // Prod features.
     registry.addPrototype(std::make_shared<AgeBlueprint>());
     registry.addPrototype(std::make_shared<AttributeBlueprint>());
@@ -149,4 +148,4 @@ void setup_search_features(fef::IBlueprintRegistry & registry)
     registry.addPrototype(std::make_shared<RankingExpressionBlueprint>(std::move(replacers)));
 }
 
-}
+} // namespace search::features

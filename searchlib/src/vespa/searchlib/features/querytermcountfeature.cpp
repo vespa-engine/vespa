@@ -1,49 +1,38 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "querytermcountfeature.h"
-#include "valuefeature.h"
-#include <vespa/searchlib/fef/properties.h>
-#include <vespa/searchlib/fef/fieldinfo.h>
-#include <vespa/searchlib/fef/featurenamebuilder.h>
-#include <vespa/searchlib/fef/itermdata.h>
-#include <vespa/vespalib/util/stash.h>
 
+#include "valuefeature.h"
+
+#include <vespa/searchlib/fef/featurenamebuilder.h>
+#include <vespa/searchlib/fef/fieldinfo.h>
+#include <vespa/searchlib/fef/itermdata.h>
+#include <vespa/searchlib/fef/properties.h>
+#include <vespa/vespalib/util/stash.h>
 
 using namespace search::fef;
 
 namespace search::features {
 
-QueryTermCountBlueprint::QueryTermCountBlueprint() :
-    Blueprint("queryTermCount")
-{
+QueryTermCountBlueprint::QueryTermCountBlueprint() : Blueprint("queryTermCount") {
 }
 
-void
-QueryTermCountBlueprint::visitDumpFeatures(const IIndexEnvironment & env,
-                                           IDumpFeatureVisitor & visitor) const
-{
-    (void) env;
+void QueryTermCountBlueprint::visitDumpFeatures(const IIndexEnvironment& env, IDumpFeatureVisitor& visitor) const {
+    (void)env;
     visitor.visitDumpFeature(getBaseName());
 }
 
-Blueprint::UP
-QueryTermCountBlueprint::createInstance() const
-{
+Blueprint::UP QueryTermCountBlueprint::createInstance() const {
     return std::make_unique<QueryTermCountBlueprint>();
 }
 
-bool
-QueryTermCountBlueprint::setup(const IIndexEnvironment &,
-                               const ParameterList &)
-{
+bool QueryTermCountBlueprint::setup(const IIndexEnvironment&, const ParameterList&) {
     describeOutput("out", "The number of query terms found in the query environment.");
     return true;
 }
 
-FeatureExecutor &
-QueryTermCountBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
-{
+FeatureExecutor& QueryTermCountBlueprint::createExecutor(const IQueryEnvironment& env, vespalib::Stash& stash) const {
     return stash.create<SingleValueExecutor>(env.getNumTerms());
 }
 
-}
+} // namespace search::features

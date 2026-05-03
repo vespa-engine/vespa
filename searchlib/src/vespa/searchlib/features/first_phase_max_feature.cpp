@@ -26,8 +26,7 @@ namespace search::features {
 
 // -------------- Executor -----------------------
 
-FirstPhaseMaxExecutor::FirstPhaseMaxExecutor(const feature_t& max)
-    : FeatureExecutor(), _max(max) {
+FirstPhaseMaxExecutor::FirstPhaseMaxExecutor(const feature_t& max) : FeatureExecutor(), _max(max) {
 }
 
 FirstPhaseMaxExecutor::~FirstPhaseMaxExecutor() = default;
@@ -44,8 +43,7 @@ const std::string key = "firstPhaseMax";
 
 }
 
-FirstPhaseMaxBlueprint::FirstPhaseMaxBlueprint()
-    : Blueprint("firstPhaseMax") {
+FirstPhaseMaxBlueprint::FirstPhaseMaxBlueprint() : Blueprint("firstPhaseMax") {
 }
 
 FirstPhaseMaxBlueprint::~FirstPhaseMaxBlueprint() = default;
@@ -103,4 +101,4 @@ void FirstPhaseMaxBlueprint::visitDumpFeatures(const IIndexEnvironment&, IDumpFe
     // no-op
 }
 
-}
+} // namespace search::features

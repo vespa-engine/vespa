@@ -1,13 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "termeditdistancefeature.h"
+
 #include "utils.h"
+
 #include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/properties.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/locale/c.h>
 #include <vespa/vespalib/util/stash.h>
-
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.termeditdistance");
@@ -17,45 +18,37 @@ namespace search::features {
 //---------------------------------------------------------------------------------------------------------------------
 // TedCell
 //---------------------------------------------------------------------------------------------------------------------
-TedCell::TedCell() noexcept :
-    cost(util::FEATURE_MAX),
-    numDel(0),
-    numIns(0),
-    numSub(0)
-{}
+TedCell::TedCell() noexcept : cost(util::FEATURE_MAX), numDel(0), numIns(0), numSub(0) {
+}
 
-TedCell::TedCell(feature_t argCost, uint32_t argNumDel, uint32_t argNumIns, uint32_t argNumSub) noexcept :
-    cost(argCost),
-    numDel(argNumDel),
-    numIns(argNumIns),
-    numSub(argNumSub)
-{}
+TedCell::TedCell(feature_t argCost, uint32_t argNumDel, uint32_t argNumIns, uint32_t argNumSub) noexcept
+    : cost(argCost), numDel(argNumDel), numIns(argNumIns), numSub(argNumSub) {
+}
 
 //---------------------------------------------------------------------------------------------------------------------
 // TermEditDistanceConfig
 //---------------------------------------------------------------------------------------------------------------------
-TermEditDistanceConfig::TermEditDistanceConfig() :
-    fieldId(search::fef::IllegalFieldId),
-    fieldBegin(0),
-    fieldEnd(std::numeric_limits<uint32_t>::max()),
-    costDel(1),
-    costIns(1),
-    costSub(1)
-{}
+TermEditDistanceConfig::TermEditDistanceConfig()
+    : fieldId(search::fef::IllegalFieldId),
+      fieldBegin(0),
+      fieldEnd(std::numeric_limits<uint32_t>::max()),
+      costDel(1),
+      costIns(1),
+      costSub(1) {
+}
 
 //---------------------------------------------------------------------------------------------------------------------
 // TermEditDistanceExecutor
 //---------------------------------------------------------------------------------------------------------------------
-TermEditDistanceExecutor::TermEditDistanceExecutor(const search::fef::IQueryEnvironment &env,
-                                                   const TermEditDistanceConfig &config) :
-    search::fef::FeatureExecutor(),
-    _config(config),
-    _fieldHandles(),
-    _termWeights(),
-    _prevRow(16),
-    _thisRow(_prevRow.size()),
-    _md(nullptr)
-{
+TermEditDistanceExecutor::TermEditDistanceExecutor(const search::fef::IQueryEnvironment& env,
+                                                   const TermEditDistanceConfig&         config)
+    : search::fef::FeatureExecutor(),
+      _config(config),
+      _fieldHandles(),
+      _termWeights(),
+      _prevRow(16),
+      _thisRow(_prevRow.size()),
+      _md(nullptr) {
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
         _fieldHandles.push_back(util::getTermFieldHandle(env, i, config.fieldId));
         _termWeights.push_back(1.0f);
@@ -66,14 +59,11 @@ TermEditDistanceExecutor::TermEditDistanceExecutor(const search::fef::IQueryEnvi
     }
 }
 
-void
-TermEditDistanceExecutor::execute(uint32_t docId)
-{
+void TermEditDistanceExecutor::execute(uint32_t docId) {
     // Determine the number of terms in the field.
     uint32_t numQueryTerms = _fieldHandles.size();
-    uint32_t fieldBegin    = _config.fieldBegin;
-    uint32_t fieldEnd      = std::min(_config.fieldEnd,
-                                      (uint32_t)inputs().get_number(0));
+    uint32_t fieldBegin = _config.fieldBegin;
+    uint32_t fieldEnd = std::min(_config.fieldEnd, (uint32_t)inputs().get_number(0));
 
     // _P_A_R_A_N_O_I_A_
     TedCell last;
@@ -87,8 +77,8 @@ TermEditDistanceExecutor::execute(uint32_t docId)
         for (uint32_t field = 0; field <= numFieldTerms; ++field) {
             _prevRow[field] = TedCell(field * _config.costIns, 0, field, 0);
         }
-        //LOG(debug, "[   F     I     E     L     D     S   ]");
-        //logRow(_prevRow, numFieldTerms + 1);
+        // LOG(debug, "[   F     I     E     L     D     S   ]");
+        // logRow(_prevRow, numFieldTerms + 1);
 
         // Iterate over each query term.
         for (uint32_t query = 1; query <= numQueryTerms; ++query) {
@@ -97,7 +87,7 @@ TermEditDistanceExecutor::execute(uint32_t docId)
             // Look for a match of this term.
             search::fef::TermFieldHandle handle = _fieldHandles[query - 1];
             if (handle != search::fef::IllegalHandle) {
-                const fef::TermFieldMatchData &tfmd = *_md->resolveTermField(handle);
+                const fef::TermFieldMatchData& tfmd = *_md->resolveTermField(handle);
                 if (tfmd.has_ranking_data(docId)) {
                     it = tfmd.getIterator(); // this is now valid
                     while (it.valid() && it.getPosition() < fieldBegin) {
@@ -107,7 +97,7 @@ TermEditDistanceExecutor::execute(uint32_t docId)
             }
 
             // Predefine the cost of operations on the current term.
-            feature_t weight  = _termWeights[query - 1];
+            feature_t weight = _termWeights[query - 1];
             feature_t costDel = _config.costDel * weight;
             feature_t costIns = _config.costIns * weight;
             feature_t costSub = _config.costSub * weight;
@@ -126,26 +116,26 @@ TermEditDistanceExecutor::execute(uint32_t docId)
                 }
 
                 // Determine the least-cost operation.
-                feature_t del = _prevRow[field    ].cost + costDel; // cost per previous query term, ie. ignoring this query term.
-                feature_t ins = _thisRow[field - 1].cost + costIns; // cost per previous field term, ie. insert this query term.
+                feature_t del =
+                    _prevRow[field].cost + costDel; // cost per previous query term, ie. ignoring this query term.
+                feature_t ins =
+                    _thisRow[field - 1].cost + costIns; // cost per previous field term, ie. insert this query term.
                 feature_t sub = _prevRow[field - 1].cost + costSub; // cost to replace field term with query term.
 
                 feature_t min = std::min(del, std::min(ins, sub));
                 if (min == del) {
-                    const TedCell &cell = _prevRow[field];
+                    const TedCell& cell = _prevRow[field];
                     _thisRow[field] = TedCell(del, cell.numDel + 1, cell.numIns, cell.numSub);
-                }
-                else if(min == ins) {
-                    const TedCell &cell = _thisRow[field - 1];
+                } else if (min == ins) {
+                    const TedCell& cell = _thisRow[field - 1];
                     _thisRow[field] = TedCell(ins, cell.numDel, cell.numIns + 1, cell.numSub);
-                }
-                else {
-                    const TedCell &cell = _prevRow[field - 1];
+                } else {
+                    const TedCell& cell = _prevRow[field - 1];
                     _thisRow[field] = TedCell(sub, cell.numDel, cell.numIns, cell.numSub + 1);
                 }
             }
             _thisRow.swap(_prevRow);
-            //logRow(_prevRow, numFieldTerms + 1);
+            // logRow(_prevRow, numFieldTerms + 1);
         }
 
         // Retrieve the bottom-right value.
@@ -157,15 +147,11 @@ TermEditDistanceExecutor::execute(uint32_t docId)
     outputs().set_number(3, last.numSub);
 }
 
-void
-TermEditDistanceExecutor::handle_bind_match_data(const fef::MatchData &md)
-{
+void TermEditDistanceExecutor::handle_bind_match_data(const fef::MatchData& md) {
     _md = &md;
 }
 
-void
-TermEditDistanceExecutor::logRow(const std::vector<TedCell> &row, size_t numCols)
-{
+void TermEditDistanceExecutor::logRow(const std::vector<TedCell>& row, size_t numCols) {
     if (LOG_WOULD_LOG(info)) {
         std::string str = "[ ";
         for (size_t i = 0; i < numCols; ++i) {
@@ -182,24 +168,17 @@ TermEditDistanceExecutor::logRow(const std::vector<TedCell> &row, size_t numCols
 //---------------------------------------------------------------------------------------------------------------------
 // TermEditDistanceBlueprint
 //---------------------------------------------------------------------------------------------------------------------
-TermEditDistanceBlueprint::TermEditDistanceBlueprint() :
-    search::fef::Blueprint("termEditDistance"),
-    _config()
-{
+TermEditDistanceBlueprint::TermEditDistanceBlueprint() : search::fef::Blueprint("termEditDistance"), _config() {
     // empty
 }
 
-void
-TermEditDistanceBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironment &,
-                                             search::fef::IDumpFeatureVisitor &) const
-{
+void TermEditDistanceBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironment&,
+                                                  search::fef::IDumpFeatureVisitor&) const {
     // empty
 }
 
-bool
-TermEditDistanceBlueprint::setup(const search::fef::IIndexEnvironment &env,
-                                 const search::fef::ParameterList &params)
-{
+bool TermEditDistanceBlueprint::setup(const search::fef::IIndexEnvironment& env,
+                                      const search::fef::ParameterList&     params) {
     _config.fieldId = params[0].asField()->id();
 
     std::string costDel = env.getProperties().lookup(getName(), "costDel").getAt(0);
@@ -217,16 +196,13 @@ TermEditDistanceBlueprint::setup(const search::fef::IIndexEnvironment &env,
     return true;
 }
 
-search::fef::Blueprint::UP
-TermEditDistanceBlueprint::createInstance() const
-{
+search::fef::Blueprint::UP TermEditDistanceBlueprint::createInstance() const {
     return std::make_unique<TermEditDistanceBlueprint>();
 }
 
-search::fef::FeatureExecutor &
-TermEditDistanceBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
-{
+search::fef::FeatureExecutor& TermEditDistanceBlueprint::createExecutor(const search::fef::IQueryEnvironment& env,
+                                                                        vespalib::Stash& stash) const {
     return stash.create<TermEditDistanceExecutor>(env, _config);
 }
 
-}
+} // namespace search::features

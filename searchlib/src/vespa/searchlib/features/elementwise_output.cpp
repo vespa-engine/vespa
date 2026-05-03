@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "elementwise_output.h"
-#include <vespa/searchlib/tensor/fast_value_view.h>
 
+#include <vespa/searchlib/tensor/fast_value_view.h>
 
 using search::tensor::FastValueView;
 using vespalib::SharedStringRepo;
@@ -14,11 +14,10 @@ namespace search::features {
 namespace {
 
 struct InitializeCells {
-    template <typename CT, typename VCT>
-    static void invoke(VCT& cells) { cells = std::vector<CT>(); };
+    template <typename CT, typename VCT> static void invoke(VCT& cells) { cells = std::vector<CT>(); };
 };
 
-}
+} // namespace
 
 struct ElementwiseOutput::CallBuilderHelper {
     template <typename CT>
@@ -27,22 +26,15 @@ struct ElementwiseOutput::CallBuilderHelper {
     }
 };
 
-
 ElementwiseOutput::ElementwiseOutput(const vespalib::eval::Value& empty_output)
-    : _labels(),
-      _cells(),
-      _empty_output(empty_output),
-      _output()
-{
+    : _labels(), _cells(), _empty_output(empty_output), _output() {
     typify_invoke<1, TypifyCellType, InitializeCells>(_empty_output.type().cell_type(), _cells);
 }
 
 ElementwiseOutput::~ElementwiseOutput() = default;
 
 template <typename CT>
-TypedCells
-ElementwiseOutput::build_helper(const vespalib::hash_map<uint32_t, double>& scores)
-{
+TypedCells ElementwiseOutput::build_helper(const vespalib::hash_map<uint32_t, double>& scores) {
     auto& cells = std::get<std::vector<CT>>(_cells);
     cells.clear();
     for (auto& elem : scores) {
@@ -52,9 +44,7 @@ ElementwiseOutput::build_helper(const vespalib::hash_map<uint32_t, double>& scor
     return TypedCells(cells);
 }
 
-const vespalib::eval::Value&
-ElementwiseOutput::build(const vespalib::hash_map<uint32_t, double>& scores)
-{
+const vespalib::eval::Value& ElementwiseOutput::build(const vespalib::hash_map<uint32_t, double>& scores) {
     if (scores.empty()) {
         return _empty_output;
     }
@@ -64,4 +54,4 @@ ElementwiseOutput::build(const vespalib::hash_map<uint32_t, double>& scores)
     return *_output;
 }
 
-}
+} // namespace search::features
