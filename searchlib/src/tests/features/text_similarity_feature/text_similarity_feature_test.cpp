@@ -142,7 +142,7 @@ TEST(TextSimilarityFeatureTest, require_that_no_match_gives_zero_outputs) {
     EXPECT_EQ(0.0, f1.get_feature("x", indexFoo().element("y"), FIELD));
 }
 
-TEST(TextSimilarityFeatureTest, require_that_minal_perfect_match_gives_max_outputs) {
+TEST(TextSimilarityFeatureTest, require_that_minimal_perfect_match_gives_max_outputs) {
     RankFixture f1;
     EXPECT_EQ(1.0, f1.get_feature("x", indexFoo().element("x"), SCORE));
     EXPECT_EQ(1.0, f1.get_feature("x", indexFoo().element("x"), PROXIMITY));

@@ -107,9 +107,8 @@ TEST_F(ProdFeaturesTest, test_attribute_match) {
         mdb->setWeight("sfloat", 4, 0);
         mdb->apply(1);
         RankResult exp;
-        exp.addScore("attributeMatch(sint)", 0.5f)
-            . // same as completeness
-            addScore("attributeMatch(sint).matches", 2)
+        exp.addScore("attributeMatch(sint)", 0.5f) // same as completeness
+            .addScore("attributeMatch(sint).matches", 2)
             .addScore("attributeMatch(sint).totalWeight", 0)
             .addScore("attributeMatch(sint).averageWeight", 0)
             .addScore("attributeMatch(sint).maxWeight", 0)
@@ -121,9 +120,8 @@ TEST_F(ProdFeaturesTest, test_attribute_match) {
             .addScore("attributeMatch(sint).weight", 0.4)
             .addScore("attributeMatch(sint).significance", 0.6)
             .addScore("attributeMatch(sint).importance", 0.5)
-            .addScore("attributeMatch(sfloat)", 1)
-            . // same as completeness
-            addScore("attributeMatch(sfloat).matches", 1)
+            .addScore("attributeMatch(sfloat)", 1) // same as completeness
+            .addScore("attributeMatch(sfloat).matches", 1)
             .addScore("attributeMatch(sfloat).totalWeight", 0)
             .addScore("attributeMatch(sfloat).averageWeight", 0)
             .addScore("attributeMatch(sfloat).maxWeight", 0)
@@ -135,9 +133,8 @@ TEST_F(ProdFeaturesTest, test_attribute_match) {
             .addScore("attributeMatch(sfloat).weight", 0.2)
             .addScore("attributeMatch(sfloat).significance", 0.1)
             .addScore("attributeMatch(sfloat).importance", 0.15)
-            .addScore("attributeMatch(sstr)", 0)
-            . // same as completeness
-            addScore("attributeMatch(sstr).matches", 0)
+            .addScore("attributeMatch(sstr)", 0) // same as completeness
+            .addScore("attributeMatch(sstr).matches", 0)
             .addScore("attributeMatch(sstr).totalWeight", 0)
             .addScore("attributeMatch(sstr).averageWeight", 0)
             .addScore("attributeMatch(sstr).maxWeight", 0)
