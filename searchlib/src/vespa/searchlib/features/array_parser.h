@@ -20,29 +20,27 @@ namespace search::features {
  *    has values for indexes in the range [0,max index specified].
  *    The parsed array is sorted in index order.
  */
-class ArrayParser
-{
+class ArrayParser {
 public:
-    template <typename T>
-    class ValueAndIndex {
+    template <typename T> class ValueAndIndex {
     public:
         using ValueType = T;
-        ValueAndIndex(T value, uint32_t index) noexcept : _value(value), _index(index) { }
+        ValueAndIndex(T value, uint32_t index) noexcept : _value(value), _index(index) {}
         T getValue() const { return _value; }
         uint32_t getIndex() const { return _index; }
-        bool operator < (const ValueAndIndex & b) const noexcept { return _index < b._index; }
+        bool operator<(const ValueAndIndex& b) const noexcept { return _index < b._index; }
+
     private:
         T        _value;
         uint32_t _index;
     };
 
     template <typename OutputType, typename T = typename OutputType::value_type>
-    static void parse(const std::string &input, OutputType &output);
+    static void parse(const std::string& input, OutputType& output);
 
-    static void parse(const std::string &input, std::vector<int8_t> &output);
+    static void parse(const std::string& input, std::vector<int8_t>& output);
 
-    template <typename OutputType>
-    static void parsePartial(const std::string &input, OutputType &output);
+    template <typename OutputType> static void parsePartial(const std::string& input, OutputType& output);
 };
 
-}
+} // namespace search::features

@@ -2,14 +2,16 @@
 
 #pragma once
 
+#include <vespa/searchlib/common/feature.h>
 #include <vespa/searchlib/fef/document_frequency.h>
 #include <vespa/searchlib/fef/iqueryenvironment.h>
-#include <vespa/searchlib/fef/table.h>
-#include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/itermfielddata.h>
-#include <vespa/searchlib/common/feature.h>
+#include <vespa/searchlib/fef/table.h>
+#include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/vespalib/util/string_hash.h>
+
+#include <cstring>
 #include <limits>
 #include <optional>
 
@@ -25,7 +27,7 @@ const feature_t FEATURE_MAX = std::numeric_limits<feature_t>::max();
  */
 const feature_t FEATURE_MIN = -std::numeric_limits<feature_t>::max();
 
-using ConstCharPtr = const char *;
+using ConstCharPtr = const char*;
 
 /**
  * Converts the given string to a numeric value.
@@ -33,11 +35,9 @@ using ConstCharPtr = const char *;
  * @param str The string to convert.
  * @return The numeric value.
  */
-template <typename T>
-T strToNum(std::string_view str);
+template <typename T> T strToNum(std::string_view str);
 
-template <typename T>
-feature_t getAsFeature(T value) __attribute__((__always_inline__));
+template <typename T> feature_t getAsFeature(T value) __attribute__((__always_inline__));
 
 /**
  * Converts the given value to a feature value.
@@ -45,9 +45,7 @@ feature_t getAsFeature(T value) __attribute__((__always_inline__));
  * @param value The value to convert.
  * @return The feature value.
  */
-template <typename T>
-inline feature_t getAsFeature(T value)
-{
+template <typename T> inline feature_t getAsFeature(T value) {
     return static_cast<feature_t>(value);
 }
 
@@ -57,8 +55,7 @@ inline feature_t getAsFeature(T value)
  * @param value The string to convert.
  * @return The feature value.
  */
-template <>
-inline feature_t getAsFeature<ConstCharPtr>(ConstCharPtr value) {
+template <> inline feature_t getAsFeature<ConstCharPtr>(ConstCharPtr value) {
     return vespalib::hash2d(value, strlen(value));
 }
 
@@ -68,8 +65,7 @@ inline feature_t getAsFeature<ConstCharPtr>(ConstCharPtr value) {
  * @param value The string to convert.
  * @return The feature value.
  */
-template <>
-inline feature_t getAsFeature<std::string_view>(std::string_view value) {
+template <> inline feature_t getAsFeature<std::string_view>(std::string_view value) {
     return vespalib::hash2d(value);
 }
 
@@ -82,7 +78,7 @@ inline feature_t getAsFeature<std::string_view>(std::string_view value) {
  * @param fallback The value to return if the connectedness was not found in the property map.
  * @return         The connectedness.
  */
-feature_t lookupConnectedness(const search::fef::IQueryEnvironment & env, uint32_t termId, feature_t fallback = 0.1f);
+feature_t lookupConnectedness(const search::fef::IQueryEnvironment& env, uint32_t termId, feature_t fallback = 0.1f);
 
 /**
  * Returns the normalized strength with which the given current term is connected to the given previous term.
@@ -94,8 +90,8 @@ feature_t lookupConnectedness(const search::fef::IQueryEnvironment & env, uint32
  * @param fallback     The value to return if the connectedness was not found in the property map.
  * @return             The connectedness between the current term and previous term.
  */
-feature_t lookupConnectedness(const search::fef::IQueryEnvironment & env,
-                              uint32_t currUniqueId, uint32_t prevUniqueId, feature_t fallback = 0.1f);
+feature_t lookupConnectedness(const search::fef::IQueryEnvironment& env, uint32_t currUniqueId, uint32_t prevUniqueId,
+                              feature_t fallback = 0.1f);
 
 /**
  * Returns the significance of the given term.
@@ -106,7 +102,8 @@ feature_t lookupConnectedness(const search::fef::IQueryEnvironment & env,
  * @param fallback     The value to return if the significance was not found in the property map.
  * @return             The significance.
  */
-feature_t lookupSignificance(const search::fef::IQueryEnvironment& env, const search::fef::ITermData& term, feature_t fallback);
+feature_t lookupSignificance(const search::fef::IQueryEnvironment& env, const search::fef::ITermData& term,
+                             feature_t fallback);
 
 /**
  * Returns the significance based on the given document frequency
@@ -137,9 +134,9 @@ feature_t calculate_legacy_significance(const search::fef::ITermData& termData);
  * @param fallback    the actual name of the table to use if we do not find any properties.
  * @return the table pointer or NULL if not found.
  **/
-const search::fef::Table *
-lookupTable(const search::fef::IIndexEnvironment & env, const std::string & featureName,
-            const std::string & table, const std::string & fieldName, const std::string & fallback);
+const search::fef::Table* lookupTable(const search::fef::IIndexEnvironment& env, const std::string& featureName,
+                                      const std::string& table, const std::string& fieldName,
+                                      const std::string& fallback);
 
 /**
  * Obtain query information for a term/field combination.
@@ -149,9 +146,9 @@ lookupTable(const search::fef::IIndexEnvironment & env, const std::string & feat
  * @param termId the term id
  * @param fieldId the field id
  **/
-inline const search::fef::ITermFieldData *
-getTermFieldData(const search::fef::IQueryEnvironment &env, uint32_t termId, uint32_t fieldId) {
-    const search::fef::ITermData *td = env.getTerm(termId);
+inline const search::fef::ITermFieldData* getTermFieldData(const search::fef::IQueryEnvironment& env, uint32_t termId,
+                                                           uint32_t fieldId) {
+    const search::fef::ITermData* td = env.getTerm(termId);
     return (td == nullptr) ? nullptr : td->lookupField(fieldId);
 }
 
@@ -163,9 +160,9 @@ getTermFieldData(const search::fef::IQueryEnvironment &env, uint32_t termId, uin
  * @param termId the term id
  * @param fieldId the field id
  **/
-inline search::fef::TermFieldHandle
-getTermFieldHandle(const search::fef::IQueryEnvironment &env, uint32_t termId, uint32_t fieldId) {
-    const search::fef::ITermFieldData *tfd = getTermFieldData(env, termId, fieldId);
+inline search::fef::TermFieldHandle getTermFieldHandle(const search::fef::IQueryEnvironment& env, uint32_t termId,
+                                                       uint32_t fieldId) {
+    const search::fef::ITermFieldData* tfd = getTermFieldData(env, termId, fieldId);
     return (tfd == nullptr) ? search::fef::IllegalHandle : tfd->getHandle();
 }
 
@@ -179,13 +176,11 @@ getTermFieldHandle(const search::fef::IQueryEnvironment &env, uint32_t termId, u
  * @param env query environment
  * @param label query item label
  **/
-const search::fef::ITermData *
-getTermByLabel(const search::fef::IQueryEnvironment &env, const std::string &label);
+const search::fef::ITermData* getTermByLabel(const search::fef::IQueryEnvironment& env, const std::string& label);
 
-std::optional<search::fef::DocumentFrequency>
-lookup_document_frequency(const search::fef::IQueryEnvironment& env, const search::fef::ITermData& term);
+std::optional<search::fef::DocumentFrequency> lookup_document_frequency(const search::fef::IQueryEnvironment& env,
+                                                                        const search::fef::ITermData&         term);
 
-feature_t
-get_legacy_significance(const search::fef::IQueryEnvironment& env, const search::fef::ITermData& term);
+feature_t get_legacy_significance(const search::fef::IQueryEnvironment& env, const search::fef::ITermData& term);
 
-}
+} // namespace search::features::util

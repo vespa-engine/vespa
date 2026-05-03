@@ -42,5 +42,4 @@ public:
     void visitDumpFeatures(const fef::IIndexEnvironment& env, fef::IDumpFeatureVisitor& visitor) const override;
 };
 
-}
-
+} // namespace search::features

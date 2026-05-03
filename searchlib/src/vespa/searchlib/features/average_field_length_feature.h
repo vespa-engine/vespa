@@ -25,4 +25,4 @@ public:
     bool setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) override;
 };
 
-}
+} // namespace search::features

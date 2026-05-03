@@ -23,8 +23,8 @@ public:
 
 /**
  * Implements the necessary config for the term edit distance calculator. This class exists so that the executor does
- * not need a separate copy of the config parsed by the blueprint, and at the same time avoiding that the executor needs
- * to know about the blueprint.
+ * not need a separate copy of the config parsed by the blueprint, and at the same time avoiding that the executor
+ * needs to know about the blueprint.
  */
 struct TermEditDistanceConfig {
     TermEditDistanceConfig();
@@ -47,9 +47,7 @@ public:
      *
      * @param config The config for this executor.
      */
-    TermEditDistanceExecutor(const fef::IQueryEnvironment &env,
-                             const TermEditDistanceConfig &config);
-
+    TermEditDistanceExecutor(const fef::IQueryEnvironment& env, const TermEditDistanceConfig& config);
 
     /**
      *
@@ -64,8 +62,8 @@ public:
      *  r|3 . . . .
      *  y|4 . . . .
      *
-     * Run through this matrix per field term, per query term; i.e. column by column, row by row. Compare the field term
-     * at that column with the query term at that row. Then set the value of that cell to the minimum of:
+     * Run through this matrix per field term, per query term; i.e. column by column, row by row. Compare the field
+     * term at that column with the query term at that row. Then set the value of that cell to the minimum of:
      *
      * 1. The cost of substitution; the above-left value plus the cost (0 if equal).
      * 2. The cost of insertion; the left value plus the cost.
@@ -84,17 +82,17 @@ private:
      * @param row     The list of feature values to write.
      * @param numCols The number of columns to write.
      */
-    void logRow(const std::vector<TedCell> &row, size_t numCols);
+    void logRow(const std::vector<TedCell>& row, size_t numCols);
 
-    void handle_bind_match_data(const fef::MatchData &md) override;
+    void handle_bind_match_data(const fef::MatchData& md) override;
 
 private:
-    const TermEditDistanceConfig             &_config;       // The config for this executor.
+    const TermEditDistanceConfig&     _config;       // The config for this executor.
     std::vector<fef::TermFieldHandle> _fieldHandles; // The handles of all query terms.
-    std::vector<feature_t>                    _termWeights;  // The weights of all query terms.
-    std::vector<TedCell>                      _prevRow;      // Optimized representation of the cost table.
-    std::vector<TedCell>                      _thisRow;      //
-    const fef::MatchData                     *_md;
+    std::vector<feature_t>            _termWeights;  // The weights of all query terms.
+    std::vector<TedCell>              _prevRow;      // Optimized representation of the cost table.
+    std::vector<TedCell>              _thisRow;      //
+    const fef::MatchData*             _md;
 };
 
 /**
@@ -106,17 +104,17 @@ public:
      * Constructs a new blueprint for the term edit distance calculator.
      */
     TermEditDistanceBlueprint();
-    void visitDumpFeatures(const fef::IIndexEnvironment &env, fef::IDumpFeatureVisitor &visitor) const override;
+    void visitDumpFeatures(const fef::IIndexEnvironment& env, fef::IDumpFeatureVisitor& visitor) const override;
     fef::Blueprint::UP createInstance() const override;
-    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    fef::FeatureExecutor& createExecutor(const fef::IQueryEnvironment& env, vespalib::Stash& stash) const override;
     fef::ParameterDescriptions getDescriptions() const override {
         return fef::ParameterDescriptions().desc().indexField(fef::ParameterCollection::SINGLE);
     }
 
     /**
      * The cost of each operation is specified by the parameters to the {@link #setup} method of this blueprint. All
-     * costs are multiplied by the relative weight of eacht query term. Furthermore, if the query term is not mandatory,
-     * all operations are free. The parameters are:
+     * costs are multiplied by the relative weight of each query term. Furthermore, if the query term is not
+     * mandatory, all operations are free. The parameters are:
      *
      * 1. The name of the field to calculate the distance for.
      * 2. The cost of ignoring a query term, this is typically HIGH.
@@ -129,10 +127,10 @@ public:
      * @param params A list of the parameters mentioned above.
      * @return Whether or not setup was possible.
      */
-    bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
+    bool setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) override;
 
 private:
     TermEditDistanceConfig _config; // The config for this blueprint.
 };
 
-}
+} // namespace search::features

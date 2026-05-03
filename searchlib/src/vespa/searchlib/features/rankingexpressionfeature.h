@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/eval/eval/fast_forest.h>
 #include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/eval/eval/llvm/compile_cache.h>
 #include <vespa/searchlib/features/rankingexpression/expression_replacer.h>
 #include <vespa/searchlib/features/rankingexpression/intrinsic_expression.h>
+#include <vespa/searchlib/fef/blueprint.h>
 
 namespace search::features {
 
@@ -15,8 +15,7 @@ namespace search::features {
 /**
  * Implements the blueprint for ranking expression.
  */
-class RankingExpressionBlueprint : public fef::Blueprint
-{
+class RankingExpressionBlueprint : public fef::Blueprint {
 private:
     rankingexpression::ExpressionReplacer::SP  _expression_replacer;
     rankingexpression::IntrinsicExpression::UP _intrinsic_expression;
@@ -31,17 +30,15 @@ public:
     RankingExpressionBlueprint(rankingexpression::ExpressionReplacer::SP replacer);
     ~RankingExpressionBlueprint() override;
 
-    void visitDumpFeatures(const fef::IIndexEnvironment &env, fef::IDumpFeatureVisitor &visitor) const override;
+    void visitDumpFeatures(const fef::IIndexEnvironment& env, fef::IDumpFeatureVisitor& visitor) const override;
     fef::Blueprint::UP createInstance() const override;
     fef::ParameterDescriptions getDescriptions() const override {
-        return fef::ParameterDescriptions().
-            desc().
-            desc().string();
+        return fef::ParameterDescriptions().desc().desc().string();
     }
 
-    bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
-    void prepareSharedState(const fef::IQueryEnvironment & queryEnv, fef::IObjectStore & objectStore) const override;
-    fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
+    bool setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) override;
+    void prepareSharedState(const fef::IQueryEnvironment& queryEnv, fef::IObjectStore& objectStore) const override;
+    fef::FeatureExecutor& createExecutor(const fef::IQueryEnvironment& env, vespalib::Stash& stash) const override;
 };
 
-}
+} // namespace search::features

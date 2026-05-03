@@ -14,13 +14,15 @@ private:
 public:
     QueryTermCountBlueprint();
 
-    void visitDumpFeatures(const search::fef::IIndexEnvironment & env, search::fef::IDumpFeatureVisitor & visitor) const override;
+    void visitDumpFeatures(const search::fef::IIndexEnvironment& env,
+                           search::fef::IDumpFeatureVisitor&     visitor) const override;
     search::fef::Blueprint::UP createInstance() const override;
     search::fef::ParameterDescriptions getDescriptions() const override {
         return search::fef::ParameterDescriptions().desc();
     }
-    bool setup(const search::fef::IIndexEnvironment & env, const search::fef::ParameterList & params) override;
-    search::fef::FeatureExecutor &createExecutor(const search::fef::IQueryEnvironment & env, vespalib::Stash &stash) const override;
+    bool setup(const search::fef::IIndexEnvironment& env, const search::fef::ParameterList& params) override;
+    search::fef::FeatureExecutor& createExecutor(const search::fef::IQueryEnvironment& env,
+                                                 vespalib::Stash&                      stash) const override;
 };
 
-}
+} // namespace search::features

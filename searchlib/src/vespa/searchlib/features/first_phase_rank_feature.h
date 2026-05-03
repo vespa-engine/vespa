@@ -3,6 +3,7 @@
 #pragma once
 
 #include "first_phase_rank_lookup.h"
+
 #include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
 
@@ -16,6 +17,7 @@ class FirstPhaseRankLookup;
  */
 class FirstPhaseRankExecutor : public fef::FeatureExecutor {
     const FirstPhaseRankLookup& _lookup;
+
 public:
     FirstPhaseRankExecutor(const FirstPhaseRankLookup& lookup);
     ~FirstPhaseRankExecutor() override;
@@ -37,4 +39,4 @@ public:
     fef::FeatureExecutor& createExecutor(const fef::IQueryEnvironment& env, vespalib::Stash& stash) const override;
 };
 
-}
+} // namespace search::features

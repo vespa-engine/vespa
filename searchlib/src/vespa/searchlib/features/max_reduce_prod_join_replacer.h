@@ -3,6 +3,7 @@
 #pragma once
 
 #include "internal_max_reduce_prod_join_feature.h"
+
 #include <vespa/searchlib/features/rankingexpression/expression_replacer.h>
 
 namespace search::features {
@@ -25,9 +26,7 @@ namespace search::features {
 struct MaxReduceProdJoinReplacer {
     using ExpressionReplacer = rankingexpression::ExpressionReplacer;
     static ExpressionReplacer::UP create(fef::Blueprint::UP proto);
-    static ExpressionReplacer::UP create() {
-        return create(std::make_unique<InternalMaxReduceProdJoinBlueprint>());
-    }
+    static ExpressionReplacer::UP create() { return create(std::make_unique<InternalMaxReduceProdJoinBlueprint>()); }
 };
 
 } // namespace search::features
