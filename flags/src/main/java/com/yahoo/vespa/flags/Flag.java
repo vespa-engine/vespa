@@ -85,7 +85,7 @@ public interface Flag<T, F extends Flag<T, F>> {
     /** Sets the zone and environment dimensions. */
     default F with(Zone zone) { return with(Dimension.ZONE_ID, zone.systemLocalValue()) .with(Dimension.ENVIRONMENT, zone.environment().value()); }
     /** Sets the zone and environment dimensions. */
-    default F with(ZoneApi zoneApi) { return with(zoneApi.getVirtualId()); }
+    default F with(ZoneApi zoneApi) { return with(zoneApi.id()); }
 
     /** Sets the tenant, application, and instance dimensions. */
     default F withApplicationId(Optional<ApplicationId> applicationId) { return applicationId.map(this::with).orElse(self()); }

@@ -22,9 +22,9 @@ public class ZoneId {
      *
      * <p>The controller may also be associated with a real zone, i.e. with a region defining the location like
      * aws-us-east-1a.  Because such a zone ID is different for different systems, and may clash with a prod zone in the
-     * same region and system, the virtual zone ID is often used.</p>
+     * same region and system, the controller zone ID returned here (see {@link ZoneApi#id()}) is often used instead.</p>
      */
-    public static ZoneId ofVirtualControllerZone() { return CONTROLLER; }
+    public static ZoneId ofControllerZone() { return CONTROLLER; }
 
     private final Environment environment;
     private final RegionName region;
