@@ -1,8 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "directory_traverse.h"
+
 #include "disk_space_calculator.h"
+
 #include <vespa/vespalib/util/size_literals.h>
+
 #include <filesystem>
 #include <system_error>
 
@@ -12,18 +15,16 @@ namespace fs = std::filesystem;
 
 namespace {
 
-uint64_t
-try_get_tree_size(const fs::path& path)
-{
-    std::error_code ec;
+uint64_t try_get_tree_size(const fs::path& path) {
+    std::error_code                  ec;
     fs::recursive_directory_iterator dir_itr(path, fs::directory_options::skip_permission_denied, ec);
     if (ec) {
         return 0;
     }
 
-    uint64_t total_size = DiskSpaceCalculator::directory_placeholder_size();
+    uint64_t            total_size = DiskSpaceCalculator::directory_placeholder_size();
     DiskSpaceCalculator calc;
-    for (const auto &elem : dir_itr) {
+    for (const auto& elem : dir_itr) {
         if (elem.is_symlink()) {
             total_size += DiskSpaceCalculator::symlink_placeholder_size();
         } else if (elem.is_directory()) {
@@ -39,18 +40,14 @@ try_get_tree_size(const fs::path& path)
     return total_size;
 }
 
-}
+} // namespace
 
-DirectoryTraverse::DirectoryTraverse(const fs::path& path)
-    : _path(path)
-{
+DirectoryTraverse::DirectoryTraverse(const fs::path& path) : _path(path) {
 }
 
 DirectoryTraverse::~DirectoryTraverse() = default;
 
-uint64_t
-DirectoryTraverse::GetTreeSize()
-{
+uint64_t DirectoryTraverse::GetTreeSize() {
     // Since try_get_tree_size may throw on concurrent directory
     // modifications, immediately retry a bounded number of times if this
     // happens.  Number of retries chosen randomly by counting fingers.
@@ -64,9 +61,7 @@ DirectoryTraverse::GetTreeSize()
     return 0;
 }
 
-uint64_t
-DirectoryTraverse::get_tree_size(const fs::path& path)
-{
+uint64_t DirectoryTraverse::get_tree_size(const fs::path& path) {
     DirectoryTraverse traverse(path);
     return traverse.GetTreeSize();
 }

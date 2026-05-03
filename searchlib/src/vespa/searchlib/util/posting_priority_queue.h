@@ -2,47 +2,37 @@
 
 #pragma once
 
-#include <vector>
 #include <cstdint>
+#include <vector>
 
 namespace search {
 
 /*
  * Provide priority queue semantics for a set of posting readers.
  */
-template <class Reader>
-class PostingPriorityQueue
-{
+template <class Reader> class PostingPriorityQueue {
 protected:
-    class Ref
-    {
-        Reader *_ref;
-    public:
-        Ref(Reader *ref)
-            : _ref(ref)
-        {
-        }
+    class Ref {
+        Reader* _ref;
 
-        bool operator<(const Ref &rhs) const noexcept { return *_ref < *rhs._ref; }
-        Reader *get() const noexcept { return _ref; }
+    public:
+        Ref(Reader* ref) : _ref(ref) {}
+
+        bool operator<(const Ref& rhs) const noexcept { return *_ref < *rhs._ref; }
+        Reader* get() const noexcept { return _ref; }
     };
 
     using Vector = std::vector<Ref>;
-    Vector _vec;
+    Vector   _vec;
     uint32_t _heap_limit;
     uint32_t _merge_chunk;
 
 public:
-    PostingPriorityQueue()
-        : _vec(),
-          _heap_limit(0u),
-          _merge_chunk(0u)
-    {
-    }
+    PostingPriorityQueue() : _vec(), _heap_limit(0u), _merge_chunk(0u) {}
 
     bool empty() const { return _vec.empty(); }
     void clear() { _vec.clear(); }
-    void initialAdd(Reader *it) { _vec.push_back(Ref(it)); }
+    void initialAdd(Reader* it) { _vec.push_back(Ref(it)); }
 
     /*
      * Sort vector after a set of initial add operations, so lowest()
@@ -54,7 +44,7 @@ public:
     /*
      * Return lowest value.  Assumes vector is sorted.
      */
-    Reader *lowest() const { return _vec.front().get(); }
+    Reader* lowest() const { return _vec.front().get(); }
 
     /*
      * The vector might no longer be sorted since the first element has changed
@@ -63,4 +53,4 @@ public:
     void adjust();
 };
 
-}
+} // namespace search

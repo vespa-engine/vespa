@@ -1,18 +1,18 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "logutil.h"
+
 #include "directory_traverse.h"
+
 #include <vector>
 
 using vespalib::JSONStringer;
 
 namespace search::util {
 
-std::string
-LogUtil::extractLastElements(const std::string & path, size_t numElems)
-{
+std::string LogUtil::extractLastElements(const std::string& path, size_t numElems) {
     std::vector<std::string> elems;
-    for (size_t pos = 0; pos < path.size(); ) {
+    for (size_t pos = 0; pos < path.size();) {
         size_t fpos = path.find('/', pos);
         if (fpos == std::string::npos) {
             fpos = path.size();
@@ -30,15 +30,14 @@ LogUtil::extractLastElements(const std::string & path, size_t numElems)
     size_t num = std::min(numElems, elems.size());
     size_t pos = elems.size() - num;
     for (size_t i = 0; i < num; ++i) {
-        if (i != 0) retval.append("/");
+        if (i != 0)
+            retval.append("/");
         retval.append(elems[pos + i]);
     }
     return retval;
 }
 
-void
-LogUtil::logDir(JSONStringer & jstr, const std::string & path, size_t numElems)
-{
+void LogUtil::logDir(JSONStringer& jstr, const std::string& path, size_t numElems) {
     jstr.beginObject();
     jstr.appendKey("dir").appendString(LogUtil::extractLastElements(path, numElems));
     search::DirectoryTraverse dirt(path.c_str());
@@ -46,4 +45,4 @@ LogUtil::logDir(JSONStringer & jstr, const std::string & path, size_t numElems)
     jstr.endObject();
 }
 
-}
+} // namespace search::util

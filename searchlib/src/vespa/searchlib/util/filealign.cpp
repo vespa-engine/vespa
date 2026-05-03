@@ -1,17 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "filealign.h"
+
 #include <vespa/fastos/file_interface.h>
 #include <vespa/vespalib/util/size_literals.h>
+
 #include <cassert>
 
 namespace search {
 
 namespace {
 
-size_t
-gcd(size_t a, size_t b)
-{
+size_t gcd(size_t a, size_t b) {
     size_t remainder;
 
     for (;;) {
@@ -23,15 +23,11 @@ gcd(size_t a, size_t b)
     }
 }
 
-
-size_t
-getMinBlocking(size_t elementsize, size_t alignment)
-{
+size_t getMinBlocking(size_t elementsize, size_t alignment) {
     return alignment / gcd(alignment, elementsize);
 }
 
-}
-
+} // namespace
 
 FileAlign::FileAlign()
     : _directIOFileAlign(1),
@@ -40,16 +36,12 @@ FileAlign::FileAlign()
       _minAlignedSize(1),
       _elemSize(1),
       _directIOMemAlign(1),
-      _directio(false)
-{ }
-
+      _directio(false) {
+}
 
 FileAlign::~FileAlign() = default;
 
-
-size_t
-FileAlign::adjustSize(int64_t offset, size_t size) const
-{
+size_t FileAlign::adjustSize(int64_t offset, size_t size) const {
     if (_directio && (offset & (_directIOFileAlign - 1)) != 0) {
         // Align end of IO to direct IO boundary
         assert(offset % _elemSize == 0);
@@ -67,20 +59,12 @@ FileAlign::adjustSize(int64_t offset, size_t size) const
     return size;
 }
 
-
-size_t
-FileAlign::adjustElements(int64_t eoffset, size_t esize) const
-{
+size_t FileAlign::adjustElements(int64_t eoffset, size_t esize) const {
     return adjustSize(eoffset * _elemSize, esize * _elemSize) / _elemSize;
 }
 
-
-size_t
-FileAlign::setupAlign(size_t elements,
-                      size_t elemSize,
-                      FastOS_FileInterface *file,
-                      size_t preferredFileAlignment)
-{
+size_t FileAlign::setupAlign(size_t elements, size_t elemSize, FastOS_FileInterface* file,
+                             size_t preferredFileAlignment) {
     size_t memoryAlignment;
     size_t transferGranularity;
     size_t transferMaximum;
@@ -113,4 +97,4 @@ FileAlign::setupAlign(size_t elements,
     return elements;
 }
 
-}
+} // namespace search

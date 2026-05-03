@@ -4,7 +4,9 @@
 
 #include "bufferwriter.h"
 
-namespace vespalib { class DataBuffer; }
+namespace vespalib {
+class DataBuffer;
+}
 
 namespace search {
 
@@ -12,13 +14,13 @@ namespace search {
  * Class to write to a data buffer, used during migration of
  * attribute vector saver implementation.
  */
-class DataBufferWriter : public BufferWriter
-{
+class DataBufferWriter : public BufferWriter {
     vespalib::DataBuffer& _data_buffer;
+
 public:
     DataBufferWriter(vespalib::DataBuffer& data_buffer);
     ~DataBufferWriter();
     void flush() override;
 };
 
-}
+} // namespace search

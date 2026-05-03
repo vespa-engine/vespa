@@ -6,20 +6,13 @@
 namespace search {
 
 template <typename T>
-SequentialReadModifyWriteVector<T>::SequentialReadModifyWriteVector()
-    : Vector(),
-      _rp(0),
-      _wp(0)
-{ }
-
-template <typename T>
-SequentialReadModifyWriteVector<T>::SequentialReadModifyWriteVector(size_t sz)
-    : Vector(sz),
-      _rp(0),
-      _wp(0)
-{ }
-
-template <typename T>
-SequentialReadModifyWriteVector<T>::~SequentialReadModifyWriteVector() = default;
-
+SequentialReadModifyWriteVector<T>::SequentialReadModifyWriteVector() : Vector(), _rp(0), _wp(0) {
 }
+
+template <typename T>
+SequentialReadModifyWriteVector<T>::SequentialReadModifyWriteVector(size_t sz) : Vector(sz), _rp(0), _wp(0) {
+}
+
+template <typename T> SequentialReadModifyWriteVector<T>::~SequentialReadModifyWriteVector() = default;
+
+} // namespace search

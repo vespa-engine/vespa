@@ -2,6 +2,4 @@
 
 #include "slime_output_raw_buf_adapter.h"
 
-namespace search {
-
-} // namespace search
+namespace search {} // namespace search

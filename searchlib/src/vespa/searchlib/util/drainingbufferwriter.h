@@ -3,8 +3,9 @@
 #pragma once
 
 #include "bufferwriter.h"
-#include <vector>
+
 #include <cstdint>
+#include <vector>
 
 namespace search {
 
@@ -12,11 +13,11 @@ namespace search {
  * Class to write to a "drain" buffer, used to measure performance of
  * BufferWriter and measure number of bytes written.
  */
-class DrainingBufferWriter : public BufferWriter
-{
+class DrainingBufferWriter : public BufferWriter {
     std::vector<char> _buf;
-    size_t _bytesWritten;
-    uint32_t _incompleteBuffers;
+    size_t            _bytesWritten;
+    uint32_t          _incompleteBuffers;
+
 public:
     static constexpr size_t BUFFER_SIZE = 262144;
 
