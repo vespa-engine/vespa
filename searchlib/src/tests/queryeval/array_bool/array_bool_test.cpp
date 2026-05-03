@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchcommon/attribute/config.h>
-#include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
+#include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchcommon/attribute/search_context_params.h>
 #include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/searchlib/attribute/array_bool_attribute.h>
@@ -27,6 +27,7 @@
 #include <vespa/searchlib/test/mock_attribute_manager.h>
 #include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <algorithm>
 #include <cassert>
 #include <list>
@@ -50,6 +51,10 @@ using search::attribute::ReadableAttributeVector;
 using search::attribute::SearchContext;
 using search::attribute::SearchContextParams;
 using search::attribute::test::MockAttributeManager;
+using search::fef::MatchData;
+using search::fef::MatchDataLayout;
+using search::fef::TermFieldHandle;
+using search::fef::TermFieldMatchData;
 using search::queryeval::ArrayBoolBlueprint;
 using search::queryeval::ArrayBoolSearch;
 using search::queryeval::Blueprint;
@@ -58,10 +63,6 @@ using search::queryeval::FieldSpec;
 using search::queryeval::SameElementBlueprint;
 using search::queryeval::SameElementSearch;
 using search::queryeval::SearchIterator;
-using search::fef::MatchData;
-using search::fef::MatchDataLayout;
-using search::fef::TermFieldHandle;
-using search::fef::TermFieldMatchData;
 
 namespace {
 /***********************************************************************************************************************
@@ -70,11 +71,11 @@ namespace {
 // Generate all subsets of a given vector
 // Used to generate element filters
 std::list<std::vector<uint32_t>> all_subsets(const std::vector<uint32_t>& nums) {
-    std::list<std::vector<uint32_t>> subsets { std::vector<uint32_t>() };
+    std::list<std::vector<uint32_t>> subsets{std::vector<uint32_t>()};
 
     for (uint32_t n : nums) {
         size_t num_elements = subsets.size();
-        auto it = subsets.begin();
+        auto   it = subsets.begin();
         for (size_t i = 0; i < num_elements; ++i) {
             std::vector<uint32_t> subset(*it);
             subset.push_back(n);
@@ -104,12 +105,7 @@ struct TestAttribute {
     ArrayBoolAttribute*              bool_attr;
     MockAttributeManager             manager;
 
-    TestAttribute()
-        : attr(),
-          bool_attr(nullptr),
-          manager() {
-        reset(true);
-    }
+    TestAttribute() : attr(), bool_attr(nullptr), manager() { reset(true); }
     ~TestAttribute();
     void reset(bool add_to_manager) {
         Config cfg(BasicType::BOOL, CollectionType::ARRAY);
@@ -151,8 +147,7 @@ struct TestMatchData {
           md(mdl->createMatchData()),
           tfmd(md->resolveTermField(handle)),
           tfmd2(md->resolveTermField(handle2)),
-          tfmd3(md->resolveTermField(handle3)) {
-    }
+          tfmd3(md->resolveTermField(handle3)) {}
 
     ~TestMatchData();
 };
@@ -175,15 +170,9 @@ protected:
 
 public:
     SearchBuilder(TestAttribute& tattr, const std::vector<uint32_t>& element_filter, bool want_true)
-        : _tattr(tattr),
-          _tmd(),
-          _element_filter(element_filter),
-          _want_true(want_true) {
-    }
+        : _tattr(tattr), _tmd(), _element_filter(element_filter), _want_true(want_true) {}
     virtual ~SearchBuilder();
-    virtual TermFieldMatchData* tfmd() const {
-        return _tmd.tfmd;
-    }
+    virtual TermFieldMatchData* tfmd() const { return _tmd.tfmd; }
     virtual std::unique_ptr<SearchIterator> create_search(bool strict) const = 0;
 };
 
@@ -195,13 +184,11 @@ SearchBuilder::~SearchBuilder() = default;
 class ArrayBoolSearchBuilder : public SearchBuilder {
 public:
     ArrayBoolSearchBuilder(TestAttribute& tattr, const std::vector<uint32_t>& element_filter, bool want_true)
-        : SearchBuilder(tattr, element_filter, want_true) {
-    }
+        : SearchBuilder(tattr, element_filter, want_true) {}
     ~ArrayBoolSearchBuilder() override;
     std::unique_ptr<SearchIterator> create_search(bool strict) const override {
         return ArrayBoolSearch::create(*_tattr.bool_attr, _element_filter, _want_true, strict, _tmd.tfmd);
     }
-
 };
 
 ArrayBoolSearchBuilder::~ArrayBoolSearchBuilder() = default;
@@ -209,18 +196,20 @@ ArrayBoolSearchBuilder::~ArrayBoolSearchBuilder() = default;
 /**
  * SameElementArrayBoolSearchBuilder is a convenience class to get a SameElementSearch with an ArrayBoolSearch
  */
-class SameElementArrayBoolSearchBuilder : public  SearchBuilder {
+class SameElementArrayBoolSearchBuilder : public SearchBuilder {
 public:
-    SameElementArrayBoolSearchBuilder(TestAttribute& tattr, const std::vector<uint32_t>& element_filter, bool want_true)
-        : SearchBuilder(tattr, element_filter, want_true) {
-    }
+    SameElementArrayBoolSearchBuilder(TestAttribute& tattr, const std::vector<uint32_t>& element_filter,
+                                      bool want_true)
+        : SearchBuilder(tattr, element_filter, want_true) {}
     ~SameElementArrayBoolSearchBuilder() override;
     std::unique_ptr<SearchIterator> create_search(bool strict) const override {
         std::vector<std::unique_ptr<SearchIterator>> ab_search;
-        ab_search.emplace_back(ArrayBoolSearch::create(*_tattr.bool_attr, _element_filter, _want_true, strict, _tmd.tfmd2));
+        ab_search.emplace_back(
+            ArrayBoolSearch::create(*_tattr.bool_attr, _element_filter, _want_true, strict, _tmd.tfmd2));
         std::vector<TermFieldMatchData*> children_tfmd;
         children_tfmd.push_back(_tmd.tfmd2);
-        return std::make_unique<SameElementSearch>(*(_tmd.tfmd), children_tfmd, std::move(ab_search), strict, _element_filter);
+        return std::make_unique<SameElementSearch>(*(_tmd.tfmd), children_tfmd, std::move(ab_search), strict,
+                                                   _element_filter);
     }
 };
 
@@ -229,20 +218,23 @@ SameElementArrayBoolSearchBuilder::~SameElementArrayBoolSearchBuilder() = defaul
 /**
  * SameElementMultiArrayBoolSearchBuilder is a convenience class to get a SameElementSearch with two ArrayBoolSearches
  */
-class SameElementMultiArrayBoolSearchBuilder : public  SearchBuilder {
+class SameElementMultiArrayBoolSearchBuilder : public SearchBuilder {
 public:
-    SameElementMultiArrayBoolSearchBuilder(TestAttribute& tattr, const std::vector<uint32_t>& element_filter, bool want_true)
-        : SearchBuilder(tattr, element_filter, want_true) {
-    }
+    SameElementMultiArrayBoolSearchBuilder(TestAttribute& tattr, const std::vector<uint32_t>& element_filter,
+                                           bool want_true)
+        : SearchBuilder(tattr, element_filter, want_true) {}
     ~SameElementMultiArrayBoolSearchBuilder() override;
     std::unique_ptr<SearchIterator> create_search(bool strict) const override {
         std::vector<std::unique_ptr<SearchIterator>> ab_search;
-        ab_search.emplace_back(ArrayBoolSearch::create(*_tattr.bool_attr, _element_filter, _want_true, strict, _tmd.tfmd2));
-        ab_search.emplace_back(ArrayBoolSearch::create(*_tattr.bool_attr, _element_filter, _want_true, strict, _tmd.tfmd3));
+        ab_search.emplace_back(
+            ArrayBoolSearch::create(*_tattr.bool_attr, _element_filter, _want_true, strict, _tmd.tfmd2));
+        ab_search.emplace_back(
+            ArrayBoolSearch::create(*_tattr.bool_attr, _element_filter, _want_true, strict, _tmd.tfmd3));
         std::vector<TermFieldMatchData*> children_tfmd;
         children_tfmd.push_back(_tmd.tfmd2);
         children_tfmd.push_back(_tmd.tfmd3);
-        return std::make_unique<SameElementSearch>(*(_tmd.tfmd), children_tfmd, std::move(ab_search), strict, _element_filter);
+        return std::make_unique<SameElementSearch>(*(_tmd.tfmd), children_tfmd, std::move(ab_search), strict,
+                                                   _element_filter);
     }
 };
 
@@ -253,25 +245,29 @@ SameElementMultiArrayBoolSearchBuilder::~SameElementMultiArrayBoolSearchBuilder(
  */
 class SameElementGenericSearchBuilder : public SearchBuilder {
     std::unique_ptr<SearchContext> _ctx;
+
 public:
     SameElementGenericSearchBuilder(TestAttribute& tattr, const std::vector<uint32_t>& element_filter, bool want_true)
         : SearchBuilder(tattr, element_filter, want_true),
-          _ctx(_tattr.bool_attr->getSearch(std::make_unique<QueryTermSimple>(want_true ? "true" : "false", QueryTermSimple::Type::WORD), SearchContextParams())) {
-    }
+          _ctx(_tattr.bool_attr->getSearch(
+              std::make_unique<QueryTermSimple>(want_true ? "true" : "false", QueryTermSimple::Type::WORD),
+              SearchContextParams())) {}
     ~SameElementGenericSearchBuilder() override;
     std::unique_ptr<SearchIterator> create_search(bool strict) const override {
         std::vector<std::unique_ptr<SearchIterator>> ctx_search;
         ctx_search.emplace_back(_ctx->createIterator(_tmd.tfmd2, strict));
         std::vector<TermFieldMatchData*> children_tfmd;
         children_tfmd.push_back(_tmd.tfmd2);
-        return std::make_unique<SameElementSearch>(*(_tmd.tfmd), children_tfmd, std::move(ctx_search), strict, _element_filter);
+        return std::make_unique<SameElementSearch>(*(_tmd.tfmd), children_tfmd, std::move(ctx_search), strict,
+                                                   _element_filter);
     }
 };
 
 SameElementGenericSearchBuilder::~SameElementGenericSearchBuilder() = default;
 
 /**
- * SameElementBlueprintSearchBuilder is a convenience class to get a SameElementSearch with whatever a SameElementBlueprint constructs
+ * SameElementBlueprintSearchBuilder is a convenience class to get a SameElementSearch with whatever a
+ * SameElementBlueprint constructs
  */
 class SameElementBlueprintSearchBuilder : public SearchBuilder {
 protected:
@@ -281,17 +277,21 @@ protected:
     std::unique_ptr<SameElementBlueprint> _blueprint;
 
 public:
-    SameElementBlueprintSearchBuilder(TestAttribute& tattr, const std::vector<uint32_t>& element_filter, bool want_true, bool expose_match_data_for_same_element = true)
+    SameElementBlueprintSearchBuilder(TestAttribute& tattr, const std::vector<uint32_t>& element_filter,
+                                      bool want_true, bool expose_match_data_for_same_element = true)
         : SearchBuilder(tattr, element_filter, want_true),
-            _attribute_context(tattr.manager),
-            _request_context(&_attribute_context) {
-        search::query::SimpleStringTerm term(want_true ? "true" : "false", _tmd.field_spec2.getName(), _tmd.field_spec2.getFieldId(), search::query::Weight(0));
-        std::unique_ptr<Blueprint> child_blueprint = _factory.createBlueprint(_request_context, _tmd.field_spec2, term, *_tmd.mdl);
+          _attribute_context(tattr.manager),
+          _request_context(&_attribute_context) {
+        search::query::SimpleStringTerm term(want_true ? "true" : "false", _tmd.field_spec2.getName(),
+                                             _tmd.field_spec2.getFieldId(), search::query::Weight(0));
+        std::unique_ptr<Blueprint>      child_blueprint =
+            _factory.createBlueprint(_request_context, _tmd.field_spec2, term, *_tmd.mdl);
 
         std::vector<TermFieldHandle> descendant_handles;
         descendant_handles.push_back(_tmd.handle2);
 
-        _blueprint = std::make_unique<SameElementBlueprint>(_tmd.field_spec, descendant_handles, false, expose_match_data_for_same_element, element_filter);
+        _blueprint = std::make_unique<SameElementBlueprint>(_tmd.field_spec, descendant_handles, false,
+                                                            expose_match_data_for_same_element, element_filter);
         _blueprint->addChild(std::move(child_blueprint));
     }
     ~SameElementBlueprintSearchBuilder() override;
@@ -305,13 +305,15 @@ public:
 SameElementBlueprintSearchBuilder::~SameElementBlueprintSearchBuilder() = default;
 
 /**
- * SameElementBlueprintReplacementSearchBuilder is a convenience class to get whatever the replacement for SameElementBlueprint constructs
+ * SameElementBlueprintReplacementSearchBuilder is a convenience class to get whatever the replacement for
+ * SameElementBlueprint constructs
  */
 class SameElementBlueprintReplacementSearchBuilder : public SameElementBlueprintSearchBuilder {
     std::unique_ptr<Blueprint> _replacement;
 
 public:
-    SameElementBlueprintReplacementSearchBuilder(TestAttribute& tattr, const std::vector<uint32_t>& element_filter, bool want_true, bool expose_match_data_for_same_element = true)
+    SameElementBlueprintReplacementSearchBuilder(TestAttribute& tattr, const std::vector<uint32_t>& element_filter,
+                                                 bool want_true, bool expose_match_data_for_same_element = true)
         : SameElementBlueprintSearchBuilder(tattr, element_filter, want_true, expose_match_data_for_same_element),
           _replacement(_blueprint->get_replacement()) {
         assert(_replacement);
@@ -327,13 +329,17 @@ public:
 SameElementBlueprintReplacementSearchBuilder::~SameElementBlueprintReplacementSearchBuilder() = default;
 
 /**
- * UnexposingSameElementBlueprintReplacementSearchBuilder is a convenience class to get whatever the replacement for SameElementBlueprint constructs
- * when the SameElementBlueprint is instructed to not expose its match data
+ * UnexposingSameElementBlueprintReplacementSearchBuilder is a convenience class to get whatever the replacement for
+ * SameElementBlueprint constructs when the SameElementBlueprint is instructed to not expose its match data
  */
 class UnexposingSameElementBlueprintReplacementSearchBuilder : public SameElementBlueprintReplacementSearchBuilder {
 public:
-    UnexposingSameElementBlueprintReplacementSearchBuilder(TestAttribute& tattr, const std::vector<uint32_t>& element_filter, bool want_true)
-        : SameElementBlueprintReplacementSearchBuilder(tattr, element_filter, want_true, false) { // Do not expose match data of SameElementBlueprint but of children
+    UnexposingSameElementBlueprintReplacementSearchBuilder(TestAttribute&               tattr,
+                                                           const std::vector<uint32_t>& element_filter,
+                                                           bool                         want_true)
+        : SameElementBlueprintReplacementSearchBuilder(
+              tattr, element_filter, want_true,
+              false) { // Do not expose match data of SameElementBlueprint but of children
     }
     ~UnexposingSameElementBlueprintReplacementSearchBuilder() override;
     TermFieldMatchData* tfmd() const override {
@@ -341,19 +347,21 @@ public:
     }
 };
 
-UnexposingSameElementBlueprintReplacementSearchBuilder::~UnexposingSameElementBlueprintReplacementSearchBuilder() = default;
+UnexposingSameElementBlueprintReplacementSearchBuilder::~UnexposingSameElementBlueprintReplacementSearchBuilder() =
+    default;
 
 /**
  * ArrayBoolBlueprintSearchBuilder is a convenience class to get whatever ArrayBoolBlueprint constructs
  */
 class ArrayBoolBlueprintSearchBuilder : public SearchBuilder {
 protected:
-    std::unique_ptr<ArrayBoolBlueprint>   _blueprint;
+    std::unique_ptr<ArrayBoolBlueprint> _blueprint;
 
 public:
     ArrayBoolBlueprintSearchBuilder(TestAttribute& tattr, const std::vector<uint32_t>& element_filter, bool want_true)
         : SearchBuilder(tattr, element_filter, want_true) {
-        _blueprint = std::make_unique<ArrayBoolBlueprint>(_tmd.field_spec, *_tattr.bool_attr, _element_filter, _want_true);
+        _blueprint =
+            std::make_unique<ArrayBoolBlueprint>(_tmd.field_spec, *_tattr.bool_attr, _element_filter, _want_true);
     }
     ~ArrayBoolBlueprintSearchBuilder() override;
     std::unique_ptr<SearchIterator> create_search(bool strict) const override {
@@ -361,22 +369,21 @@ public:
         _blueprint->basic_plan(flow, _tattr.attr->getCommittedDocIdLimit());
         return _blueprint->createSearchImpl(*_tmd.md);
     }
-    const ArrayBoolBlueprint& get_blueprint() const {
-        return *_blueprint;
-    }
+    const ArrayBoolBlueprint& get_blueprint() const { return *_blueprint; }
 };
 
 ArrayBoolBlueprintSearchBuilder::~ArrayBoolBlueprintSearchBuilder() = default;
 
 /**
- * ArrayBoolBlueprintFilterSearchBuilder is a convenience class to get whatever filter iterator ArrayBoolBlueprint constructs
+ * ArrayBoolBlueprintFilterSearchBuilder is a convenience class to get whatever filter iterator ArrayBoolBlueprint
+ * constructs
  */
 class ArrayBoolBlueprintFilterSearchBuilder : public ArrayBoolBlueprintSearchBuilder {
 
 public:
-    ArrayBoolBlueprintFilterSearchBuilder(TestAttribute& tattr, const std::vector<uint32_t>& element_filter, bool want_true)
-        : ArrayBoolBlueprintSearchBuilder(tattr, element_filter, want_true) {
-    }
+    ArrayBoolBlueprintFilterSearchBuilder(TestAttribute& tattr, const std::vector<uint32_t>& element_filter,
+                                          bool want_true)
+        : ArrayBoolBlueprintSearchBuilder(tattr, element_filter, want_true) {}
     ~ArrayBoolBlueprintFilterSearchBuilder() override;
     std::unique_ptr<SearchIterator> create_search(bool strict) const override {
         search::queryeval::InFlow flow(strict);
@@ -388,7 +395,7 @@ public:
 
 ArrayBoolBlueprintFilterSearchBuilder::~ArrayBoolBlueprintFilterSearchBuilder() = default;
 
-}
+} // namespace
 
 /***********************************************************************************************************************
  * Blueprint tests
@@ -401,9 +408,9 @@ TEST(ArrayBoolSearchTest, require_that_same_element_blueprint_creates_array_bool
 
     for (bool want_true : {false, true}) {
         for (bool strict : {false, true}) {
-            std::vector<uint32_t> element_filter({1, 2, 3});
+            std::vector<uint32_t>             element_filter({1, 2, 3});
             SameElementBlueprintSearchBuilder builder(test_attribute, element_filter, want_true);
-            auto search = builder.create_search(strict);
+            auto                              search = builder.create_search(strict);
 
             auto se = dynamic_cast<SameElementSearch*>(search.get());
             ASSERT_TRUE(se);
@@ -414,7 +421,8 @@ TEST(ArrayBoolSearchTest, require_that_same_element_blueprint_creates_array_bool
             ASSERT_TRUE(abs);
             EXPECT_EQ(abs->get_want_true(), want_true);
             EXPECT_TRUE(abs->is_strict() == (strict ? vespalib::Trinary::True : vespalib::Trinary::False));
-            EXPECT_TRUE(std::equal(element_filter.begin(), element_filter.begin() + element_filter.size(), abs->get_element_filter().begin()));
+            EXPECT_TRUE(std::equal(element_filter.begin(), element_filter.begin() + element_filter.size(),
+                                   abs->get_element_filter().begin()));
             EXPECT_EQ(test_attribute.bool_attr, &abs->get_attribute());
         }
     }
@@ -427,15 +435,16 @@ TEST(ArrayBoolSearchTest, require_that_same_element_blueprint_replacement_create
 
     for (bool want_true : {false, true}) {
         for (bool strict : {false, true}) {
-            std::vector<uint32_t> element_filter({1, 2, 3});
+            std::vector<uint32_t>                        element_filter({1, 2, 3});
             SameElementBlueprintReplacementSearchBuilder builder(test_attribute, element_filter, want_true);
-            auto search = builder.create_search(strict);
+            auto                                         search = builder.create_search(strict);
 
             auto abs = dynamic_cast<ArrayBoolSearch*>(search.get());
             ASSERT_TRUE(abs);
             EXPECT_EQ(abs->get_want_true(), want_true);
             EXPECT_TRUE(abs->is_strict() == (strict ? vespalib::Trinary::True : vespalib::Trinary::False));
-            EXPECT_TRUE(std::equal(element_filter.begin(), element_filter.begin() + element_filter.size(), abs->get_element_filter().begin()));
+            EXPECT_TRUE(std::equal(element_filter.begin(), element_filter.begin() + element_filter.size(),
+                                   abs->get_element_filter().begin()));
             EXPECT_EQ(test_attribute.bool_attr, &abs->get_attribute());
         }
     }
@@ -443,7 +452,7 @@ TEST(ArrayBoolSearchTest, require_that_same_element_blueprint_replacement_create
 
 void verify_hit_estimate(TestAttribute& test_attr, uint32_t estimated_hits, bool empty) {
     ArrayBoolBlueprintSearchBuilder builder(test_attr, {0}, true);
-    auto hit_estimate = builder.get_blueprint().getState().estimate();
+    auto                            hit_estimate = builder.get_blueprint().getState().estimate();
     EXPECT_EQ(hit_estimate.estHits, estimated_hits);
     EXPECT_EQ(hit_estimate.empty, empty);
 }
@@ -470,8 +479,7 @@ TEST(ArrayBoolSearchTest, require_that_blueprint_hit_estimate_yields_correct_num
 /**
  * Test fixture that contains an ArrayBoolAttribute with a few arrays
  **/
-template<typename B>
-class ArrayBoolSearchTest : public ::testing::Test {
+template <typename B> class ArrayBoolSearchTest : public ::testing::Test {
 protected:
     TestAttribute _test_attribute;
 
@@ -479,9 +487,7 @@ protected:
     ~ArrayBoolSearchTest() override;
 };
 
-template<typename B>
-ArrayBoolSearchTest<B>::ArrayBoolSearchTest()
-    : _test_attribute() {
+template <typename B> ArrayBoolSearchTest<B>::ArrayBoolSearchTest() : _test_attribute() {
     _test_attribute.attr->addDocs(5);
     std::vector<int8_t> vals1 = {0, 1, 0};
     _test_attribute.bool_attr->set_bools(1, vals1);
@@ -494,17 +500,13 @@ ArrayBoolSearchTest<B>::ArrayBoolSearchTest()
     _test_attribute.attr->commit();
 }
 
-template<typename B>
-ArrayBoolSearchTest<B>::~ArrayBoolSearchTest() = default;
+template <typename B> ArrayBoolSearchTest<B>::~ArrayBoolSearchTest() = default;
 
-using Builders = ::testing::Types<ArrayBoolSearchBuilder,
-                                  ArrayBoolBlueprintSearchBuilder,
-                                  SameElementArrayBoolSearchBuilder,
-                                  SameElementMultiArrayBoolSearchBuilder,
-                                  SameElementGenericSearchBuilder,
-                                  SameElementBlueprintSearchBuilder,
-                                  SameElementBlueprintReplacementSearchBuilder,
-                                  UnexposingSameElementBlueprintReplacementSearchBuilder>;
+using Builders =
+    ::testing::Types<ArrayBoolSearchBuilder, ArrayBoolBlueprintSearchBuilder, SameElementArrayBoolSearchBuilder,
+                     SameElementMultiArrayBoolSearchBuilder, SameElementGenericSearchBuilder,
+                     SameElementBlueprintSearchBuilder, SameElementBlueprintReplacementSearchBuilder,
+                     UnexposingSameElementBlueprintReplacementSearchBuilder>;
 TYPED_TEST_SUITE(ArrayBoolSearchTest, Builders);
 
 /***********************************************************************************************************************
@@ -513,8 +515,8 @@ TYPED_TEST_SUITE(ArrayBoolSearchTest, Builders);
 
 TYPED_TEST(ArrayBoolSearchTest, require_that_non_strict_iterator_can_seek_and_unpack_matching_docid) {
     std::vector<uint32_t> element_filter({1, 2});
-    TypeParam builder(this->_test_attribute, element_filter, true);
-    auto search = builder.create_search(false);
+    TypeParam             builder(this->_test_attribute, element_filter, true);
+    auto                  search = builder.create_search(false);
 
     search->initRange(1, 1000);
     EXPECT_LT(search->getDocId(), 1u);
@@ -546,13 +548,14 @@ TYPED_TEST(ArrayBoolSearchTest, require_that_non_strict_iterator_can_seek_and_un
     EXPECT_FALSE(search->seek(1000));
 
     // A non-strict iterator must not necessarily update the docid if we do not have a match
-    //EXPECT_TRUE(search->isAtEnd());
+    // EXPECT_TRUE(search->isAtEnd());
 }
 
-TYPED_TEST(ArrayBoolSearchTest, require_that_non_strict_iterator_can_seek_and_unpack_matching_docid_searching_for_false) {
+TYPED_TEST(ArrayBoolSearchTest,
+           require_that_non_strict_iterator_can_seek_and_unpack_matching_docid_searching_for_false) {
     std::vector<uint32_t> element_filter({1, 2});
-    TypeParam builder(this->_test_attribute, element_filter, false);
-    auto search = builder.create_search(false);
+    TypeParam             builder(this->_test_attribute, element_filter, false);
+    auto                  search = builder.create_search(false);
 
     search->initRange(1, 1000);
     EXPECT_LT(search->getDocId(), 1u);
@@ -584,13 +587,13 @@ TYPED_TEST(ArrayBoolSearchTest, require_that_non_strict_iterator_can_seek_and_un
     EXPECT_FALSE(search->seek(1000));
 
     // A non-strict iterator must not necessarily update the docid if we do not have a match
-    //EXPECT_TRUE(search->isAtEnd());
+    // EXPECT_TRUE(search->isAtEnd());
 }
 
 TYPED_TEST(ArrayBoolSearchTest, require_that_strict_iterator_seeks_to_next_hit_and_can_unpack_matching_docid) {
     std::vector<uint32_t> element_filter({1, 2});
-    TypeParam builder(this->_test_attribute, element_filter, true);
-    auto search = builder.create_search(true);
+    TypeParam             builder(this->_test_attribute, element_filter, true);
+    auto                  search = builder.create_search(true);
 
     search->initRange(1, 1000);
     EXPECT_LT(search->getDocId(), 1u);
@@ -617,10 +620,11 @@ TYPED_TEST(ArrayBoolSearchTest, require_that_strict_iterator_seeks_to_next_hit_a
     EXPECT_TRUE(search->isAtEnd());
 }
 
-TYPED_TEST(ArrayBoolSearchTest, require_that_strict_iterator_seeks_to_next_hit_and_can_unpack_matching_docid_searching_for_false) {
+TYPED_TEST(ArrayBoolSearchTest,
+           require_that_strict_iterator_seeks_to_next_hit_and_can_unpack_matching_docid_searching_for_false) {
     std::vector<uint32_t> element_filter({1, 2});
-    TypeParam builder(this->_test_attribute, element_filter, false);
-    auto search = builder.create_search(true);
+    TypeParam             builder(this->_test_attribute, element_filter, false);
+    auto                  search = builder.create_search(true);
 
     search->initRange(1, 1000);
     EXPECT_LT(search->getDocId(), 1u);
@@ -651,10 +655,11 @@ TYPED_TEST(ArrayBoolSearchTest, require_that_strict_iterator_seeks_to_next_hit_a
  * Unpacking tests
  **********************************************************************************************************************/
 
-template<typename B>
-void verify_unpacking(TestAttribute& test_attr, const std::vector<uint32_t>& element_filter, bool want_true, const std::vector<uint32_t>& docids) {
+template <typename B>
+void verify_unpacking(TestAttribute& test_attr, const std::vector<uint32_t>& element_filter, bool want_true,
+                      const std::vector<uint32_t>& docids) {
     for (bool strict : {false, true}) {
-        B builder(test_attr, element_filter, want_true);
+        B    builder(test_attr, element_filter, want_true);
         auto search = builder.create_search(strict);
 
         search->initRange(1, test_attr.attr->getCommittedDocIdLimit());
@@ -683,7 +688,6 @@ TYPED_TEST(ArrayBoolSearchTest, require_that_multi_element_iterator_can_unpack_m
     // Matches doc 1 and 2
     verify_unpacking<TypeParam>(this->_test_attribute, {0, 2}, false, {1, 2});
 }
-
 
 /***********************************************************************************************************************
  * Element id tests
@@ -739,15 +743,16 @@ void verify_element_ids_for_docid(SearchIterator& search, uint32_t docid, const 
     }
 }
 
-template<typename B>
-void verify_element_ids(TestAttribute &test_attr, const std::vector<uint32_t>& element_filter, bool want_true, const std::vector<std::vector<uint32_t>>& element_ids) {
+template <typename B>
+void verify_element_ids(TestAttribute& test_attr, const std::vector<uint32_t>& element_filter, bool want_true,
+                        const std::vector<std::vector<uint32_t>>& element_ids) {
     for (bool strict : {false, true}) {
-        B builder(test_attr, element_filter, want_true);
+        B    builder(test_attr, element_filter, want_true);
         auto search = builder.create_search(strict);
 
         search->initRange(1, test_attr.attr->getCommittedDocIdLimit());
         for (uint32_t docid = 1; docid <= element_ids.size(); ++docid) {
-            verify_element_ids_for_docid(*search, docid, element_ids[docid-1]);
+            verify_element_ids_for_docid(*search, docid, element_ids[docid - 1]);
         }
     }
 }
@@ -770,7 +775,8 @@ TYPED_TEST(ArrayBoolSearchTest, require_that_multi_element_iterator_can_get_elem
  * Comparison of ArrayBoolSearch to generic iterator obtained from search context
  **********************************************************************************************************************/
 
-void verify_same_relaxed_iterator_behavior(SearchIterator& it1, TermFieldMatchData* tfmd1, SearchIterator& it2, TermFieldMatchData* tfmd2, uint32_t begin_id, uint32_t end_id) {
+void verify_same_relaxed_iterator_behavior(SearchIterator& it1, TermFieldMatchData* tfmd1, SearchIterator& it2,
+                                           TermFieldMatchData* tfmd2, uint32_t begin_id, uint32_t end_id) {
     it1.initRange(begin_id, end_id);
     it2.initRange(begin_id, end_id);
 
@@ -788,7 +794,8 @@ void verify_same_relaxed_iterator_behavior(SearchIterator& it1, TermFieldMatchDa
     EXPECT_EQ(it1.isAtEnd(), it2.isAtEnd());
 }
 
-void verify_same_strict_iterator_behavior(SearchIterator& it1, TermFieldMatchData* tfmd1, SearchIterator& it2, TermFieldMatchData* tfmd2, uint32_t begin_id, uint32_t end_id) {
+void verify_same_strict_iterator_behavior(SearchIterator& it1, TermFieldMatchData* tfmd1, SearchIterator& it2,
+                                          TermFieldMatchData* tfmd2, uint32_t begin_id, uint32_t end_id) {
     it1.initRange(begin_id, end_id);
     it2.initRange(begin_id, end_id);
 
@@ -806,12 +813,12 @@ void verify_same_strict_iterator_behavior(SearchIterator& it1, TermFieldMatchDat
         uint32_t old_docid = docid;
         docid = it1.seekNext(old_docid + 1);
         EXPECT_EQ(docid, it2.seekNext(old_docid + 1));
-
     }
     EXPECT_EQ(it1.isAtEnd(), it2.isAtEnd());
 }
 
-void verify_same_iterator_behavior(SearchIterator& it1, TermFieldMatchData* tfmd1, SearchIterator& it2, TermFieldMatchData* tfmd2, uint32_t begin_id, uint32_t end_id, bool strict) {
+void verify_same_iterator_behavior(SearchIterator& it1, TermFieldMatchData* tfmd1, SearchIterator& it2,
+                                   TermFieldMatchData* tfmd2, uint32_t begin_id, uint32_t end_id, bool strict) {
     if (strict) {
         verify_same_strict_iterator_behavior(it1, tfmd1, it2, tfmd2, begin_id, end_id);
     } else {
@@ -822,15 +829,16 @@ void verify_same_iterator_behavior(SearchIterator& it1, TermFieldMatchData* tfmd
 TYPED_TEST(ArrayBoolSearchTest, require_that_iterator_behaves_the_same_as_other_iterators) {
     for (const auto& element_filter : all_non_empty_subsets({0, 1, 2, 3, 4, 5})) {
         for (bool strict : {false, true}) {
-            for (bool want_true: {false, true}) {
+            for (bool want_true : {false, true}) {
                 ArrayBoolSearchBuilder builder(this->_test_attribute, element_filter, want_true);
-                auto search1 = builder.create_search(strict);
+                auto                   search1 = builder.create_search(strict);
 
                 TypeParam builder2(this->_test_attribute, element_filter, want_true);
-                auto search2 = builder2.create_search(strict);
+                auto      search2 = builder2.create_search(strict);
 
                 for (uint32_t begin_id : {0, 1, 2, 3, 4, 5}) {
-                    verify_same_iterator_behavior(*search1, builder.tfmd(), *search2, builder2.tfmd(), begin_id, 1000, strict);
+                    verify_same_iterator_behavior(*search1, builder.tfmd(), *search2, builder2.tfmd(), begin_id, 1000,
+                                                  strict);
                 }
             }
         }
@@ -844,10 +852,9 @@ TYPED_TEST(ArrayBoolSearchTest, require_that_iterator_behaves_the_same_as_other_
 /**
  * Verifier creates the test attribute
  **/
-template<typename B>
-class Verifier : public search::test::SearchIteratorVerifier {
-    TestAttribute         _test_attribute;
-    B                     _builder;
+template <typename B> class Verifier : public search::test::SearchIteratorVerifier {
+    TestAttribute _test_attribute;
+    B             _builder;
 
 public:
     Verifier(size_t array_length, const std::vector<uint32_t>& element_filter, bool want_true);
@@ -855,14 +862,13 @@ public:
     SearchIterator::UP create(bool strict) const override;
 };
 
-template<typename B>
+template <typename B>
 Verifier<B>::Verifier(size_t array_length, const std::vector<uint32_t>& element_filter, bool want_true)
-    : _test_attribute(),
-      _builder(_test_attribute, element_filter, want_true) {
+    : _test_attribute(), _builder(_test_attribute, element_filter, want_true) {
     assert(!element_filter.empty());
     size_t element_filter_index = 0;
 
-    auto expected_docids = getExpectedDocIds();
+    auto   expected_docids = getExpectedDocIds();
     size_t index = 0;
 
     _test_attribute.attr->addDocs(getDocIdLimit());
@@ -908,47 +914,35 @@ Verifier<B>::Verifier(size_t array_length, const std::vector<uint32_t>& element_
     _test_attribute.attr->commit();
 }
 
-template<typename B>
-Verifier<B>::~Verifier() = default;
+template <typename B> Verifier<B>::~Verifier() = default;
 
-
-template<typename B>
-SearchIterator::UP Verifier<B>::create(bool strict) const {
+template <typename B> SearchIterator::UP Verifier<B>::create(bool strict) const {
     return _builder.create_search(strict);
 }
-
 
 /**
  * Test fixture that does absolutely nothing
  **/
-template<typename B>
-class VerifierTest : public ::testing::Test {
+template <typename B> class VerifierTest : public ::testing::Test {
 protected:
     VerifierTest();
     ~VerifierTest() override;
 };
 
-template<typename B>
-VerifierTest<B>::VerifierTest() = default;
+template <typename B> VerifierTest<B>::VerifierTest() = default;
 
-template<typename B>
-VerifierTest<B>::~VerifierTest() = default;
-
+template <typename B> VerifierTest<B>::~VerifierTest() = default;
 
 // All builders, including the one producing a filter iterator, which does not support unpacking
-using AllBuilders = ::testing::Types<ArrayBoolSearchBuilder,
-                                     ArrayBoolBlueprintSearchBuilder,
-                                     ArrayBoolBlueprintFilterSearchBuilder,
-                                     SameElementArrayBoolSearchBuilder,
-                                     SameElementMultiArrayBoolSearchBuilder,
-                                     SameElementGenericSearchBuilder,
-                                     SameElementBlueprintSearchBuilder,
-                                     SameElementBlueprintReplacementSearchBuilder,
+using AllBuilders = ::testing::Types<ArrayBoolSearchBuilder, ArrayBoolBlueprintSearchBuilder,
+                                     ArrayBoolBlueprintFilterSearchBuilder, SameElementArrayBoolSearchBuilder,
+                                     SameElementMultiArrayBoolSearchBuilder, SameElementGenericSearchBuilder,
+                                     SameElementBlueprintSearchBuilder, SameElementBlueprintReplacementSearchBuilder,
                                      UnexposingSameElementBlueprintReplacementSearchBuilder>;
 TYPED_TEST_SUITE(VerifierTest, AllBuilders);
 
 TYPED_TEST(VerifierTest, verify_iterator_multiple_elements) {
-    for (const auto& element_filter: all_non_empty_subsets({0, 1, 2, 3, 4})) {
+    for (const auto& element_filter : all_non_empty_subsets({0, 1, 2, 3, 4})) {
         for (bool want_true : {false, true}) {
             Verifier<TypeParam> verifier(5, element_filter, want_true);
             verifier.verify();
