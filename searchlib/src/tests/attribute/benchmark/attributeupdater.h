@@ -2,10 +2,11 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/hdr_abort.h>
-#include <vespa/searchlib/util/randomgenerator.h>
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
+#include <vespa/searchlib/util/randomgenerator.h>
+#include <vespa/vespalib/util/hdr_abort.h>
+
 #include <iostream>
 #include <thread>
 
@@ -15,27 +16,25 @@
 
 namespace search {
 
-class AttributeValidator
-{
+class AttributeValidator {
 private:
     uint32_t _totalCnt;
 
 public:
     AttributeValidator() : _totalCnt(0) {}
     uint32_t getTotalCnt() const { return _totalCnt; }
-    bool reportAssert(bool rc, const std::string & file, uint32_t line, const std::string & str) {
+    bool reportAssert(bool rc, const std::string& file, uint32_t line, const std::string& str) {
         _totalCnt++;
         if (!rc) {
-            std::cout << "Assert " << _totalCnt << " failed: \"" << str << "\" ("
-                << file << ":" << line << ")" << std::endl;
+            std::cout << "Assert " << _totalCnt << " failed: \"" << str << "\" (" << file << ":" << line << ")"
+                      << std::endl;
             HDR_ABORT("should not be reached");
         }
         return true;
     }
     template <class A, class B>
-    bool reportAssertEqual(const std::string & file, uint32_t line,
-                           const std::string & aStr, const std::string & bStr,
-                           const A & a, const B & b) {
+    bool reportAssertEqual(const std::string& file, uint32_t line, const std::string& aStr, const std::string& bStr,
+                           const A& a, const B& b) {
         _totalCnt++;
         if (!(a == b)) {
             std::cout << "Assert equal failed: " << std::endl;
@@ -48,146 +47,135 @@ public:
     }
 };
 
-class AttributeUpdaterStatus
-{
+class AttributeUpdaterStatus {
 public:
     vespalib::duration _totalUpdateTime;
-    uint64_t _numDocumentUpdates;
-    uint64_t _numValueUpdates;
+    uint64_t           _numDocumentUpdates;
+    uint64_t           _numValueUpdates;
 
-    AttributeUpdaterStatus() :
-        _totalUpdateTime(vespalib::duration::zero()), _numDocumentUpdates(0), _numValueUpdates(0) {}
+    AttributeUpdaterStatus()
+        : _totalUpdateTime(vespalib::duration::zero()), _numDocumentUpdates(0), _numValueUpdates(0) {}
     void reset() {
         _totalUpdateTime = vespalib::duration::zero();
         _numDocumentUpdates = 0;
         _numValueUpdates = 0;
     }
     void printXML() const {
-        std::cout << "<total-update-time>" << vespalib::count_ms(_totalUpdateTime) << "</total-update-time>" << std::endl;
+        std::cout << "<total-update-time>" << vespalib::count_ms(_totalUpdateTime) << "</total-update-time>"
+                  << std::endl;
         std::cout << "<documents-updated>" << _numDocumentUpdates << "</documents-updated>" << std::endl;
-        std::cout << "<document-update-throughput>" << documentUpdateThroughput() << "</document-update-throughput>" << std::endl;
-        std::cout << "<avg-document-update-time>" << avgDocumentUpdateTime() << "</avg-document-update-time>" << std::endl;
+        std::cout << "<document-update-throughput>" << documentUpdateThroughput() << "</document-update-throughput>"
+                  << std::endl;
+        std::cout << "<avg-document-update-time>" << avgDocumentUpdateTime() << "</avg-document-update-time>"
+                  << std::endl;
         std::cout << "<values-updated>" << _numValueUpdates << "</values-updated>" << std::endl;
-        std::cout << "<value-update-throughput>" << valueUpdateThroughput() << "</value-update-throughput>" << std::endl;
+        std::cout << "<value-update-throughput>" << valueUpdateThroughput() << "</value-update-throughput>"
+                  << std::endl;
         std::cout << "<avg-value-update-time>" << avgValueUpdateTime() << "</avg-value-update-time>" << std::endl;
     }
-    double documentUpdateThroughput() const {
-        return _numDocumentUpdates * 1000 / as_ms();
-    }
-    double avgDocumentUpdateTime() const {
-        return vespalib::count_ms(_totalUpdateTime  / _numDocumentUpdates);
-    }
-    double valueUpdateThroughput() const {
-        return _numValueUpdates * 1000 / as_ms();
-    }
-    double avgValueUpdateTime() const {
-        return vespalib::count_ms(_totalUpdateTime / _numValueUpdates);
-    }
+    double documentUpdateThroughput() const { return _numDocumentUpdates * 1000 / as_ms(); }
+    double avgDocumentUpdateTime() const { return vespalib::count_ms(_totalUpdateTime / _numDocumentUpdates); }
+    double valueUpdateThroughput() const { return _numValueUpdates * 1000 / as_ms(); }
+    double avgValueUpdateTime() const { return vespalib::count_ms(_totalUpdateTime / _numValueUpdates); }
+
 private:
-    double as_ms() const { return vespalib::count_ns(_totalUpdateTime)/1000000.0;}
+    double as_ms() const { return vespalib::count_ns(_totalUpdateTime) / 1000000.0; }
 };
 
 // AttributeVectorInstance, AttributeVectorType, AttributeVectorBufferType
-template <typename Vector, typename T, typename BT>
-class AttributeUpdater
-{
+template <typename Vector, typename T, typename BT> class AttributeUpdater {
 protected:
     using AttributePtr = AttributeVector::SP;
-    using AttributeCommit = std::map<uint32_t, std::vector<T> >;
+    using AttributeCommit = std::map<uint32_t, std::vector<T>>;
 
-    const AttributePtr & _attrPtr;
-    Vector & _attrVec;
-    const std::vector<T> & _values;
-    std::vector<T> _buffer;
-    std::vector<BT> _getBuffer;
-    RandomGenerator & _rndGen;
-    AttributeCommit _expected;
-    vespalib::Timer _timer;
+    const AttributePtr&    _attrPtr;
+    Vector&                _attrVec;
+    const std::vector<T>&  _values;
+    std::vector<T>         _buffer;
+    std::vector<BT>        _getBuffer;
+    RandomGenerator&       _rndGen;
+    AttributeCommit        _expected;
+    vespalib::Timer        _timer;
     AttributeUpdaterStatus _status;
-    AttributeValidator _validator;
+    AttributeValidator     _validator;
 
     // config
-    bool _validate;
+    bool     _validate;
     uint32_t _commitFreq;
     uint32_t _minValueCount;
     uint32_t _maxValueCount;
 
-    uint32_t getRandomCount() {
-        return _rndGen.rand(_minValueCount, _maxValueCount);
-    }
-    uint32_t getRandomDoc() {
-        return _rndGen.rand(0, _attrPtr->getNumDocs() - 1);
-    }
-    const T & getRandomValue() {
-        return _values[_rndGen.rand(0, _values.size() - 1)];
-    }
+    uint32_t getRandomCount() { return _rndGen.rand(_minValueCount, _maxValueCount); }
+    uint32_t getRandomDoc() { return _rndGen.rand(0, _attrPtr->getNumDocs() - 1); }
+    const T& getRandomValue() { return _values[_rndGen.rand(0, _values.size() - 1)]; }
     void updateValues(uint32_t doc);
     void commit();
 
 public:
-    AttributeUpdater(const AttributePtr & attrPtr, const std::vector<T> & values,
-                     RandomGenerator & rndGen, bool validate, uint32_t commitFreq,
-                     uint32_t minValueCount, uint32_t maxValueCount);
+    AttributeUpdater(const AttributePtr& attrPtr, const std::vector<T>& values, RandomGenerator& rndGen,
+                     bool validate, uint32_t commitFreq, uint32_t minValueCount, uint32_t maxValueCount);
     ~AttributeUpdater();
-    void resetStatus() {
-        _status.reset();
-    }
-    const AttributeUpdaterStatus & getStatus() const {
-        return _status;
-    }
-    const AttributeValidator & getValidator() const {
-        return _validator;
-    }
+    void resetStatus() { _status.reset(); }
+    const AttributeUpdaterStatus& getStatus() const { return _status; }
+    const AttributeValidator& getValidator() const { return _validator; }
     void populate();
     void update(uint32_t numUpdates);
 };
 
 template <typename Vector, typename T, typename BT>
-AttributeUpdater<Vector, T, BT>::AttributeUpdater(const AttributePtr & attrPtr, const std::vector<T> & values,
-                 RandomGenerator & rndGen, bool validate, uint32_t commitFreq,
-                 uint32_t minValueCount, uint32_t maxValueCount)
-    :_attrPtr(attrPtr), _attrVec(*(static_cast<Vector *>(attrPtr.get()))), _values(values), _buffer(),
-     _getBuffer(), _rndGen(rndGen), _expected(), _timer(), _status(), _validator(), _validate(validate),
-     _commitFreq(commitFreq), _minValueCount(minValueCount), _maxValueCount(maxValueCount)
-{}
+AttributeUpdater<Vector, T, BT>::AttributeUpdater(const AttributePtr& attrPtr, const std::vector<T>& values,
+                                                  RandomGenerator& rndGen, bool validate, uint32_t commitFreq,
+                                                  uint32_t minValueCount, uint32_t maxValueCount)
+    : _attrPtr(attrPtr),
+      _attrVec(*(static_cast<Vector*>(attrPtr.get()))),
+      _values(values),
+      _buffer(),
+      _getBuffer(),
+      _rndGen(rndGen),
+      _expected(),
+      _timer(),
+      _status(),
+      _validator(),
+      _validate(validate),
+      _commitFreq(commitFreq),
+      _minValueCount(minValueCount),
+      _maxValueCount(maxValueCount) {
+}
+
+template <typename Vector, typename T, typename BT> AttributeUpdater<Vector, T, BT>::~AttributeUpdater() = default;
 
 template <typename Vector, typename T, typename BT>
-AttributeUpdater<Vector, T, BT>::~AttributeUpdater() = default;
-
-template <typename Vector, typename T, typename BT>
-class AttributeUpdaterThread : public AttributeUpdater<Vector, T, BT>
-{
+class AttributeUpdaterThread : public AttributeUpdater<Vector, T, BT> {
 private:
     using AttributePtr = AttributeVector::SP;
     std::atomic<bool> _done;
-    std::thread _thread;
+    std::thread       _thread;
+
 public:
-    AttributeUpdaterThread(const AttributePtr & attrPtr, const std::vector<T> & values,
-                           RandomGenerator & rndGen, bool validate, uint32_t commitFreq,
-                           uint32_t minValueCount, uint32_t maxValueCount);
+    AttributeUpdaterThread(const AttributePtr& attrPtr, const std::vector<T>& values, RandomGenerator& rndGen,
+                           bool validate, uint32_t commitFreq, uint32_t minValueCount, uint32_t maxValueCount);
     ~AttributeUpdaterThread();
     void doRun();
-    void start() { _thread = std::thread([this](){doRun();}); }
+    void start() {
+        _thread = std::thread([this]() { doRun(); });
+    }
     void stop() { _done = true; }
     void join() { _thread.join(); }
 };
 
 template <typename Vector, typename T, typename BT>
-AttributeUpdaterThread<Vector, T, BT>::AttributeUpdaterThread(const AttributePtr & attrPtr, const std::vector<T> & values,
-                                               RandomGenerator & rndGen, bool validate, uint32_t commitFreq,
-                                               uint32_t minValueCount, uint32_t maxValueCount)
-  : AttributeUpdater<Vector, T, BT>(attrPtr, values, rndGen, validate, commitFreq, minValueCount, maxValueCount),
-    _done(false),
-    _thread()
-{}
+AttributeUpdaterThread<Vector, T, BT>::AttributeUpdaterThread(const AttributePtr&   attrPtr,
+                                                              const std::vector<T>& values, RandomGenerator& rndGen,
+                                                              bool validate, uint32_t commitFreq,
+                                                              uint32_t minValueCount, uint32_t maxValueCount)
+    : AttributeUpdater<Vector, T, BT>(attrPtr, values, rndGen, validate, commitFreq, minValueCount, maxValueCount),
+      _done(false),
+      _thread() {
+}
 template <typename Vector, typename T, typename BT>
 AttributeUpdaterThread<Vector, T, BT>::~AttributeUpdaterThread() = default;
 
-
-template <typename Vector, typename T, typename BT>
-void
-AttributeUpdater<Vector, T, BT>::updateValues(uint32_t doc)
-{
+template <typename Vector, typename T, typename BT> void AttributeUpdater<Vector, T, BT>::updateValues(uint32_t doc) {
     uint32_t valueCount = getRandomCount();
 
     if (_validate) {
@@ -232,31 +220,28 @@ AttributeUpdater<Vector, T, BT>::updateValues(uint32_t doc)
     }
 
     _status._numDocumentUpdates++;
-    _status._numValueUpdates += (_attrPtr->hasMultiValue() ? valueCount: 1);
+    _status._numValueUpdates += (_attrPtr->hasMultiValue() ? valueCount : 1);
 }
 
-template <typename Vector, typename T, typename BT>
-void
-AttributeUpdater<Vector, T, BT>::commit()
-{
+template <typename Vector, typename T, typename BT> void AttributeUpdater<Vector, T, BT>::commit() {
     AttributeGuard guard(this->_attrPtr);
     if (_validate) {
         _attrPtr->commit();
         _getBuffer.resize(_maxValueCount);
-        for (typename AttributeCommit::iterator iter = _expected.begin();
-             iter != _expected.end(); ++iter)
-        {
+        for (typename AttributeCommit::iterator iter = _expected.begin(); iter != _expected.end(); ++iter) {
             uint32_t valueCount = _attrPtr->get(iter->first, &_getBuffer[0], _getBuffer.size());
             _validator.VALIDATOR_ASSERT(_minValueCount <= valueCount && valueCount <= _maxValueCount);
             if (valueCount != iter->second.size()) {
                 std::cout << "validate(" << iter->first << ")" << std::endl;
                 std::cout << "expected(" << iter->second.size() << ")" << std::endl;
                 for (size_t i = 0; i < iter->second.size(); ++i) {
-                    std::cout << "    [" << iter->second[i].getValue() << ", " << iter->second[i].getWeight() << "]" << std::endl;
+                    std::cout << "    [" << iter->second[i].getValue() << ", " << iter->second[i].getWeight() << "]"
+                              << std::endl;
                 }
                 std::cout << "actual(" << valueCount << ")" << std::endl;
                 for (size_t i = 0; i < valueCount; ++i) {
-                    std::cout << "    [" << _getBuffer[i].getValue() << ", " << _getBuffer[i].getWeight() << "]" << std::endl;
+                    std::cout << "    [" << _getBuffer[i].getValue() << ", " << _getBuffer[i].getWeight() << "]"
+                              << std::endl;
                 }
             }
             _validator.VALIDATOR_ASSERT_EQUAL(valueCount, iter->second.size());
@@ -271,10 +256,7 @@ AttributeUpdater<Vector, T, BT>::commit()
     }
 }
 
-template <typename Vector, typename T, typename BT>
-void
-AttributeUpdater<Vector, T, BT>::populate()
-{
+template <typename Vector, typename T, typename BT> void AttributeUpdater<Vector, T, BT>::populate() {
     _timer = vespalib::Timer();
     for (uint32_t doc = 0; doc < _attrPtr->getNumDocs(); ++doc) {
         updateValues(doc);
@@ -286,11 +268,8 @@ AttributeUpdater<Vector, T, BT>::populate()
     _status._totalUpdateTime += _timer.elapsed();
 }
 
-
 template <typename Vector, typename T, typename BT>
-void
-AttributeUpdater<Vector, T, BT>::update(uint32_t numUpdates)
-{
+void AttributeUpdater<Vector, T, BT>::update(uint32_t numUpdates) {
     _timer = vespalib::Timer();
     for (uint32_t i = 0; i < numUpdates; ++i) {
         uint32_t doc = getRandomDoc();
@@ -303,13 +282,9 @@ AttributeUpdater<Vector, T, BT>::update(uint32_t numUpdates)
     _status._totalUpdateTime += _timer.elapsed();
 }
 
-
-template <typename Vector, typename T, typename BT>
-void
-AttributeUpdaterThread<Vector, T, BT>::doRun()
-{
+template <typename Vector, typename T, typename BT> void AttributeUpdaterThread<Vector, T, BT>::doRun() {
     this->_timer = vespalib::Timer();
-    while(!_done) {
+    while (!_done) {
         uint32_t doc = this->getRandomDoc();
         this->updateValues(doc);
         if (this->_status._numDocumentUpdates % this->_commitFreq == (this->_commitFreq - 1)) {
@@ -320,4 +295,4 @@ AttributeUpdaterThread<Vector, T, BT>::doRun()
     this->_status._totalUpdateTime += this->_timer.elapsed();
 }
 
-} // search
+} // namespace search

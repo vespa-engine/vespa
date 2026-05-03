@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/document/base/documentid.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/attribute/search_context.h>
@@ -11,9 +12,10 @@
 #include <vespa/searchlib/queryeval/fake_result.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/test/mock_gid_to_lid_mapping.h>
-#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <vespa/vespalib/btree/btreenode.hpp>
+
 #include <cinttypes>
 #include <filesystem>
 
@@ -48,7 +50,7 @@ std::string doc3("id:test:music::3");
 
 constexpr auto zero_flush_duration = std::chrono::steady_clock::duration::zero();
 
-}
+} // namespace
 
 struct MyGidToLidMapperFactory : public search::attribute::test::MockGidToLidMapperFactory {
     MyGidToLidMapperFactory() {
@@ -57,46 +59,35 @@ struct MyGidToLidMapperFactory : public search::attribute::test::MockGidToLidMap
     }
 
     void add(std::string_view docId, uint32_t lid) {
-        auto insres = _map.insert({ toGid(docId), lid });
+        auto insres = _map.insert({toGid(docId), lid});
         if (!insres.second) {
             insres.first->second = lid;
         }
     }
 
-    void remove(std::string_view docId) {
-        _map.erase(toGid(docId));
-    }
+    void remove(std::string_view docId) { _map.erase(toGid(docId)); }
 };
 
 class LidCollector {
-    std::vector<uint32_t> &_lids;
+    std::vector<uint32_t>& _lids;
+
 public:
-    LidCollector(std::vector<uint32_t> &lids)
-        : _lids(lids)
-    {
-    }
+    LidCollector(std::vector<uint32_t>& lids) : _lids(lids) {}
     void operator()(uint32_t lid) { _lids.push_back(lid); }
 };
 
 struct ReferenceAttributeTest : public ::testing::Test {
     std::shared_ptr<ReferenceAttribute> _attr;
 
-    ReferenceAttributeTest()
-        : _attr()
-    {
-        resetAttr();
-    }
+    ReferenceAttributeTest() : _attr() { resetAttr(); }
 
     ~ReferenceAttributeTest() override;
 
-    AttributeVector &attr() {
-        return *_attr;
-    }
+    AttributeVector& attr() { return *_attr; }
 
     void resetAttr() {
         _attr.reset();
-        _attr = std::make_shared<ReferenceAttribute>("test",
-                                                     Config(BasicType::REFERENCE));
+        _attr = std::make_shared<ReferenceAttribute>("test", Config(BasicType::REFERENCE));
     }
 
     void ensureDocIdLimit(uint32_t docIdLimit) {
@@ -112,8 +103,8 @@ struct ReferenceAttributeTest : public ::testing::Test {
         return attr().getStatus();
     }
 
-    const GlobalId *get(uint32_t doc) {
-        const Reference *ref = _attr->getReference(doc);
+    const GlobalId* get(uint32_t doc) {
+        const Reference* ref = _attr->getReference(doc);
         if (ref != nullptr) {
             return &ref->gid();
         } else {
@@ -121,28 +112,20 @@ struct ReferenceAttributeTest : public ::testing::Test {
         }
     }
 
-    const Reference *getRef(uint32_t doc) {
-        return _attr->getReference(doc);
-    }
+    const Reference* getRef(uint32_t doc) { return _attr->getReference(doc); }
 
     auto get_enum(uint32_t doc) { return _attr->getEnum(doc); }
 
-    void set(uint32_t doc, const GlobalId &gid) {
-        _attr->update(doc, gid);
-    }
+    void set(uint32_t doc, const GlobalId& gid) { _attr->update(doc, gid); }
 
-    void clear(uint32_t doc) {
-        _attr->clearDoc(doc);
-    }
+    void clear(uint32_t doc) { _attr->clearDoc(doc); }
 
     void commit() { attr().commit(); }
 
-    void assertNoRef(uint32_t doc) {
-        EXPECT_TRUE(get(doc) == nullptr);
-    }
+    void assertNoRef(uint32_t doc) { EXPECT_TRUE(get(doc) == nullptr); }
 
     void assertRef(std::string_view str, uint32_t doc) {
-        const GlobalId *gid = get(doc);
+        const GlobalId* gid = get(doc);
         ASSERT_TRUE(gid != nullptr);
         EXPECT_EQ(toGid(str), *gid);
     }
@@ -162,7 +145,7 @@ struct ReferenceAttributeTest : public ::testing::Test {
 
     void assertLids(uint32_t targetLid, std::vector<uint32_t> expLids) {
         std::vector<uint32_t> lids;
-        LidCollector collector(lids);
+        LidCollector          collector(lids);
         _attr->foreach_lid(targetLid, collector);
         EXPECT_EQ(expLids, lids);
     }
@@ -183,8 +166,8 @@ struct ReferenceAttributeTest : public ::testing::Test {
     void triggerCompaction(uint64_t iterLimit) {
         search::attribute::Status oldStatus = getStatus();
         search::attribute::Status newStatus = oldStatus;
-        uint64_t iter = 0;
-        AttributeGuard guard(_attr);
+        uint64_t                  iter = 0;
+        AttributeGuard            guard(_attr);
         uint64_t dropCount = vespalib::datastore::CompactionStrategy::DEAD_BYTES_SLACK / sizeof(Reference);
         for (; iter < iterLimit; ++iter) {
             clear(2);
@@ -199,29 +182,25 @@ struct ReferenceAttributeTest : public ::testing::Test {
             oldStatus = newStatus;
         }
         EXPECT_GT(iterLimit, iter);
-        LOG(info, "iter = %" PRIu64 ", memory usage %" PRIu64 ", -> %" PRIu64,
-            iter, oldStatus.getUsed(), newStatus.getUsed());
+        LOG(info, "iter = %" PRIu64 ", memory usage %" PRIu64 ", -> %" PRIu64, iter, oldStatus.getUsed(),
+            newStatus.getUsed());
     }
 
-    void notifyReferencedPut(const GlobalId &gid, uint32_t referencedDoc) {
+    void notifyReferencedPut(const GlobalId& gid, uint32_t referencedDoc) {
         _attr->notifyReferencedPut(gid, referencedDoc);
     }
-    void notifyReferencedRemove(const GlobalId &gid) {
-        _attr->notifyReferencedRemove(gid);
-    }
-    void setGidToLidMapperFactory(std::shared_ptr<MyGidToLidMapperFactory> factory, const std::vector<GlobalId>& removes) {
+    void notifyReferencedRemove(const GlobalId& gid) { _attr->notifyReferencedRemove(gid); }
+    void setGidToLidMapperFactory(std::shared_ptr<MyGidToLidMapperFactory> factory,
+                                  const std::vector<GlobalId>&             removes) {
         _attr->setGidToLidMapperFactory(factory);
         _attr->populateTargetLids(removes);
     }
-    uint32_t getUniqueGids() {
-        return getStatus().getNumUniqueValues();
-    }
+    uint32_t getUniqueGids() { return getStatus().getNumUniqueValues(); }
 };
 
 ReferenceAttributeTest::~ReferenceAttributeTest() = default;
 
-TEST_F(ReferenceAttributeTest, reference_attribute_can_be_instantiated)
-{
+TEST_F(ReferenceAttributeTest, reference_attribute_can_be_instantiated) {
     ensureDocIdLimit(5);
     set(1, toGid(doc1));
     set(2, toGid(doc2));
@@ -232,8 +211,7 @@ TEST_F(ReferenceAttributeTest, reference_attribute_can_be_instantiated)
     assertRef(doc2, 2);
 }
 
-TEST_F(ReferenceAttributeTest, new_reference_for_a_document_can_be_set)
-{
+TEST_F(ReferenceAttributeTest, new_reference_for_a_document_can_be_set) {
     ensureDocIdLimit(5);
     set(1, toGid(doc1));
     set(2, toGid(doc2));
@@ -251,8 +229,7 @@ TEST_F(ReferenceAttributeTest, new_reference_for_a_document_can_be_set)
     assertRef(doc2, 3);
 }
 
-TEST_F(ReferenceAttributeTest, reference_for_a_document_can_be_cleared)
-{
+TEST_F(ReferenceAttributeTest, reference_for_a_document_can_be_cleared) {
     ensureDocIdLimit(5);
     set(2, toGid(doc2));
     commit();
@@ -265,8 +242,7 @@ TEST_F(ReferenceAttributeTest, reference_for_a_document_can_be_cleared)
     assertNoRef(2);
 }
 
-TEST_F(ReferenceAttributeTest, lid_beyond_range_is_mapped_to_zero)
-{
+TEST_F(ReferenceAttributeTest, lid_beyond_range_is_mapped_to_zero) {
     auto factory = std::make_shared<MyGidToLidMapperFactory>();
     setGidToLidMapperFactory(factory, {});
     ensureDocIdLimit(5);
@@ -277,12 +253,11 @@ TEST_F(ReferenceAttributeTest, lid_beyond_range_is_mapped_to_zero)
     EXPECT_EQ(17, _attr->getTargetLid(5));
 }
 
-TEST_F(ReferenceAttributeTest, read_guard_protects_references)
-{
+TEST_F(ReferenceAttributeTest, read_guard_protects_references) {
     ensureDocIdLimit(5);
     set(2, toGid(doc2));
     commit();
-    const GlobalId *gid = get(2);
+    const GlobalId* gid = get(2);
     ASSERT_TRUE(gid != nullptr);
     EXPECT_EQ(toGid(doc2), *gid);
     {
@@ -295,8 +270,7 @@ TEST_F(ReferenceAttributeTest, read_guard_protects_references)
     EXPECT_NE(toGid(doc2), *gid);
 }
 
-TEST_F(ReferenceAttributeTest, attribute_can_be_compacted)
-{
+TEST_F(ReferenceAttributeTest, attribute_can_be_compacted) {
     ensureDocIdLimit(5);
     set(1, toGid(doc1));
     set(2, toGid(doc2));
@@ -307,8 +281,7 @@ TEST_F(ReferenceAttributeTest, attribute_can_be_compacted)
     assertRef(doc2, 2);
 }
 
-TEST_F(ReferenceAttributeTest, attribute_can_be_saved_and_loaded)
-{
+TEST_F(ReferenceAttributeTest, attribute_can_be_saved_and_loaded) {
     ensureDocIdLimit(5);
     set(1, toGid(doc1));
     set(2, toGid(doc2));
@@ -325,8 +298,7 @@ TEST_F(ReferenceAttributeTest, attribute_can_be_saved_and_loaded)
     EXPECT_TRUE(std::filesystem::remove(std::filesystem::path("test.udat")));
 }
 
-TEST_F(ReferenceAttributeTest, update_uses_gid_mapper_to_set_target_lid)
-{
+TEST_F(ReferenceAttributeTest, update_uses_gid_mapper_to_set_target_lid) {
     ensureDocIdLimit(6);
     auto factory = std::make_shared<MyGidToLidMapperFactory>();
     setGidToLidMapperFactory(factory, {});
@@ -342,8 +314,7 @@ TEST_F(ReferenceAttributeTest, update_uses_gid_mapper_to_set_target_lid)
     assertTargetLid(5, 0);
 }
 
-TEST_F(ReferenceAttributeTest, notifyReferencedPut_updates_lid_2_lid_mapping)
-{
+TEST_F(ReferenceAttributeTest, notifyReferencedPut_updates_lid_2_lid_mapping) {
     ensureDocIdLimit(4);
     set(1, toGid(doc1));
     set(2, toGid(doc2));
@@ -362,9 +333,7 @@ TEST_F(ReferenceAttributeTest, notifyReferencedPut_updates_lid_2_lid_mapping)
 
 namespace {
 
-void
-preparePopulateTargetLids(ReferenceAttributeTest &f)
-{
+void preparePopulateTargetLids(ReferenceAttributeTest& f) {
     f.ensureDocIdLimit(6);
     f.set(1, toGid(doc1));
     f.set(2, toGid(doc2));
@@ -378,9 +347,7 @@ preparePopulateTargetLids(ReferenceAttributeTest &f)
     f.assertNoTargetLid(5);
 }
 
-void
-checkPopulateTargetLids(ReferenceAttributeTest &f)
-{
+void checkPopulateTargetLids(ReferenceAttributeTest& f) {
     auto factory = std::make_shared<MyGidToLidMapperFactory>();
     f.setGidToLidMapperFactory(factory, {});
     f.assertTargetLid(1, 10);
@@ -388,22 +355,20 @@ checkPopulateTargetLids(ReferenceAttributeTest &f)
     f.assertTargetLid(3, 10);
     f.assertTargetLid(4, 0);
     f.assertNoTargetLid(5);
-    f.assertLids(0, { });
-    f.assertLids(10, { 1, 3});
-    f.assertLids(17, { 2 });
-    f.assertLids(18, { });
+    f.assertLids(0, {});
+    f.assertLids(10, {1, 3});
+    f.assertLids(17, {2});
+    f.assertLids(18, {});
 }
 
-}
+} // namespace
 
-TEST_F(ReferenceAttributeTest, populateTargetLids_uses_gid_mapper_to_update_lid_2_lid_mapping)
-{
+TEST_F(ReferenceAttributeTest, populateTargetLids_uses_gid_mapper_to_update_lid_2_lid_mapping) {
     preparePopulateTargetLids(*this);
     checkPopulateTargetLids(*this);
 }
 
-TEST_F(ReferenceAttributeTest, populateTargetLids_uses_gid_mapper_to_update_lid_2_lid_mapping_after_load)
-{
+TEST_F(ReferenceAttributeTest, populateTargetLids_uses_gid_mapper_to_update_lid_2_lid_mapping_after_load) {
     preparePopulateTargetLids(*this);
     save();
     load();
@@ -412,40 +377,37 @@ TEST_F(ReferenceAttributeTest, populateTargetLids_uses_gid_mapper_to_update_lid_
     EXPECT_TRUE(std::filesystem::remove(std::filesystem::path("test.udat")));
 }
 
-TEST_F(ReferenceAttributeTest, populateTargetLids_handles_removes)
-{
+TEST_F(ReferenceAttributeTest, populateTargetLids_handles_removes) {
     preparePopulateTargetLids(*this);
     auto factory = std::make_shared<MyGidToLidMapperFactory>();
-    setGidToLidMapperFactory(factory, { toGid(doc1) });
+    setGidToLidMapperFactory(factory, {toGid(doc1)});
     assertTargetLid(1, 0);
     assertTargetLid(2, 17);
     assertTargetLid(3, 0);
     assertTargetLid(4, 0);
     assertNoTargetLid(5);
-    assertLids(0, { });
-    assertLids(10, { });
-    assertLids(17, { 2 });
-    assertLids(18, { });
+    assertLids(0, {});
+    assertLids(10, {});
+    assertLids(17, {2});
+    assertLids(18, {});
 }
 
-TEST_F(ReferenceAttributeTest, notifyReferencedPut_and_notifyReferencedRemove_changes_reverse_mapping)
-{
+TEST_F(ReferenceAttributeTest, notifyReferencedPut_and_notifyReferencedRemove_changes_reverse_mapping) {
     preparePopulateTargetLids(*this);
-    assertLids(10, { });
-    assertLids(11, { });
+    assertLids(10, {});
+    assertLids(11, {});
     notifyReferencedPut(toGid(doc1), 10);
-    assertLids(10, { 1, 3});
-    assertLids(11, { });
+    assertLids(10, {1, 3});
+    assertLids(11, {});
     notifyReferencedPut(toGid(doc1), 11);
-    assertLids(10, { });
-    assertLids(11, { 1, 3});
+    assertLids(10, {});
+    assertLids(11, {1, 3});
     notifyReferencedRemove(toGid(doc1));
-    assertLids(10, { });
-    assertLids(11, { });
+    assertLids(10, {});
+    assertLids(11, {});
 }
 
-TEST_F(ReferenceAttributeTest, unique_gids_are_tracked)
-{
+TEST_F(ReferenceAttributeTest, unique_gids_are_tracked) {
     EXPECT_EQ(0u, getUniqueGids());
     notifyReferencedPut(toGid(doc1), 10);
     EXPECT_EQ(1u, getUniqueGids());
@@ -454,7 +416,7 @@ TEST_F(ReferenceAttributeTest, unique_gids_are_tracked)
     commit();
     EXPECT_EQ(1u, getUniqueGids());
     assertTargetLid(1, 10);
-    assertLids(10, { 1 });
+    assertLids(10, {1});
     set(2, toGid(doc2));
     commit();
     EXPECT_EQ(2u, getUniqueGids());
@@ -462,21 +424,20 @@ TEST_F(ReferenceAttributeTest, unique_gids_are_tracked)
     notifyReferencedPut(toGid(doc2), 17);
     EXPECT_EQ(2u, getUniqueGids());
     assertTargetLid(2, 17);
-    assertLids(17, { 2 });
+    assertLids(17, {2});
     clear(1);
     notifyReferencedRemove(toGid(doc2));
     EXPECT_EQ(2u, getUniqueGids());
     assertNoTargetLid(1);
     assertTargetLid(2, 0);
-    assertLids(10, { });
-    assertLids(17, { });
+    assertLids(10, {});
+    assertLids(17, {});
     clear(2);
     notifyReferencedRemove(toGid(doc1));
     EXPECT_EQ(0u, getUniqueGids());
 }
 
-TEST_F(ReferenceAttributeTest, getEnum_returns_same_value_for_same_reference)
-{
+TEST_F(ReferenceAttributeTest, getEnum_returns_same_value_for_same_reference) {
     ensureDocIdLimit(7);
     set(1, toGid(doc1));
     set(2, toGid(doc2));
@@ -496,9 +457,7 @@ struct ReferenceAttributeSearchTest : public ReferenceAttributeTest {
 
     constexpr static uint32_t doc_id_limit = 6;
 
-    ReferenceAttributeSearchTest()
-        : ReferenceAttributeTest()
-    {
+    ReferenceAttributeSearchTest() : ReferenceAttributeTest() {
         ensureDocIdLimit(doc_id_limit);
         set(1, toGid(doc1));
         set(3, toGid(doc2));
@@ -521,15 +480,13 @@ struct ReferenceAttributeSearchTest : public ReferenceAttributeTest {
         auto ctx = _attr->getSearch(std::make_unique<QueryTermSimple>(term, QueryTermSimple::Type::WORD),
                                     SearchContextParams());
         TermFieldMatchData tfmd;
-        auto itr = ctx->createIterator(&tfmd, false);
-        FakeResult actual = perform_search(*itr);
+        auto               itr = ctx->createIterator(&tfmd, false);
+        FakeResult         actual = perform_search(*itr);
         EXPECT_EQ(expected, actual);
     }
-
 };
 
-TEST_F(ReferenceAttributeSearchTest, can_be_searched_by_document_id)
-{
+TEST_F(ReferenceAttributeSearchTest, can_be_searched_by_document_id) {
     expect_search_result(doc1, FakeResult().doc(1).doc(4));
     expect_search_result(doc2, FakeResult().doc(3));
     expect_search_result(doc3, FakeResult());

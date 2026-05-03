@@ -3,12 +3,14 @@
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/status.h>
 #include <vespa/searchlib/attribute/postingstore.h>
-#include <vespa/searchlib/attribute/enumstore.hpp>
-#include <vespa/vespalib/btree/btreerootbase.hpp>
-#include <vespa/searchlib/attribute/postingstore.hpp>
-#include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/generationhandler.h>
+
+#include <vespa/searchlib/attribute/enumstore.hpp>
+#include <vespa/searchlib/attribute/postingstore.hpp>
+#include <vespa/vespalib/btree/btreerootbase.hpp>
+#include <vespa/vespalib/datastore/buffer_type.hpp>
+
 #include <ostream>
 
 using vespalib::GenerationGuard;
@@ -28,14 +30,10 @@ constexpr uint32_t huge_sequence_length = 800;
 
 struct PostingStoreSetup {
     bool enable_only_bitvector;
-    explicit PostingStoreSetup(bool enable_only_bitvector_in)
-        : enable_only_bitvector(enable_only_bitvector_in)
-    {
-    }
+    explicit PostingStoreSetup(bool enable_only_bitvector_in) : enable_only_bitvector(enable_only_bitvector_in) {}
 };
 
-std::ostream& operator<<(std::ostream& os, const PostingStoreSetup setup)
-{
+std::ostream& operator<<(std::ostream& os, const PostingStoreSetup setup) {
     os << (setup.enable_only_bitvector ? "onlybv" : "mixed");
     return os;
 }
@@ -46,10 +44,9 @@ Config make_config(PostingStoreSetup param) {
     return cfg;
 }
 
-}
+} // namespace
 
-class PostingStoreTest : public ::testing::TestWithParam<PostingStoreSetup>
-{
+class PostingStoreTest : public ::testing::TestWithParam<PostingStoreSetup> {
 protected:
     GenerationHandler _gen_handler;
     Config            _config;
@@ -60,8 +57,7 @@ protected:
     PostingStoreTest();
     ~PostingStoreTest() override;
 
-    void inc_generation()
-    {
+    void inc_generation() {
         _value_store.freeze_dictionary();
         _store.freeze();
         _value_store.assign_generation(_gen_handler.getCurrentGeneration());
@@ -71,21 +67,18 @@ protected:
         _store.reclaim_memory(_gen_handler.get_oldest_used_generation());
     }
 
-    EntryRef add_sequence(int start_key, int end_key)
-    {
+    EntryRef add_sequence(int start_key, int end_key) {
         std::vector<MyPostingStore::KeyDataType> additions;
-        std::vector<MyPostingStore::KeyType> removals;
-        EntryRef root;
+        std::vector<MyPostingStore::KeyType>     removals;
+        EntryRef                                 root;
         for (int i = start_key; i < end_key; ++i) {
             additions.emplace_back(i, 0);
         }
-        _store.apply(root,
-                     additions.data(), additions.data() + additions.size(),
-                     removals.data(), removals.data() + removals.size());
+        _store.apply(root, additions.data(), additions.data() + additions.size(), removals.data(),
+                     removals.data() + removals.size());
         return root;
     }
-    static std::vector<int> make_exp_sequence(int start_key, int end_key)
-    {
+    static std::vector<int> make_exp_sequence(int start_key, int end_key) {
         std::vector<int> sequence;
         for (int i = start_key; i < end_key; ++i) {
             sequence.emplace_back(i);
@@ -98,7 +91,8 @@ protected:
         return sequence;
     }
 
-    void populate(std::vector<uint32_t> sequence_lengths, std::optional<std::function<void()>> clear_callback = std::nullopt);
+    void populate(std::vector<uint32_t>                sequence_lengths,
+                  std::optional<std::function<void()>> clear_callback = std::nullopt);
     EntryRef get_posting_ref(int key);
     void test_compact_btree_nodes(uint32_t sequence_length);
     void test_compact_sequence(uint32_t sequence_length);
@@ -109,31 +103,35 @@ PostingStoreTest::PostingStoreTest()
       _config(make_config(GetParam())),
       _status(),
       _value_store(true, _config.get_dictionary_config()),
-      _store(_value_store.get_dictionary(), _status, _config)
-{
+      _store(_value_store.get_dictionary(), _status, _config) {
     _store.resizeBitVectors(lid_limit, lid_limit);
 }
 
-PostingStoreTest::~PostingStoreTest()
-{
-    _value_store.get_dictionary().clear_all_posting_lists([this](EntryRef posting_idx) { _store.clear(posting_idx); });
+PostingStoreTest::~PostingStoreTest() {
+    _value_store.get_dictionary().clear_all_posting_lists(
+        [this](EntryRef posting_idx) { _store.clear(posting_idx); });
     _store.clearBuilder();
     inc_generation();
 }
 
-void
-PostingStoreTest::populate(std::vector<uint32_t> sequence_lengths, std::optional<std::function<void()>> clear_callback)
-{
-    auto& store = _store;
-    auto& dictionary = _value_store.get_dictionary();
+void PostingStoreTest::populate(std::vector<uint32_t>                sequence_lengths,
+                                std::optional<std::function<void()>> clear_callback) {
+    auto&                 store = _store;
+    auto&                 dictionary = _value_store.get_dictionary();
     std::vector<EntryRef> refs;
     for (auto sequence_length : sequence_lengths) {
         for (int i = 0; i < 9000; ++i) {
             refs.emplace_back(add_sequence(i + 6, i + 6 + sequence_length));
         }
     }
-    dictionary.update_posting_list(_value_store.insert(1), _value_store.get_comparator(), [this, sequence_length = sequence_lengths.front()](EntryRef) { return add_sequence(4, 4 + sequence_length); });
-    dictionary.update_posting_list(_value_store.insert(2), _value_store.get_comparator(), [this, sequence_length = sequence_lengths.front()](EntryRef) { return add_sequence(5, 5 + sequence_length); });
+    dictionary.update_posting_list(_value_store.insert(1), _value_store.get_comparator(),
+                                   [this, sequence_length = sequence_lengths.front()](EntryRef) {
+                                       return add_sequence(4, 4 + sequence_length);
+                                   });
+    dictionary.update_posting_list(_value_store.insert(2), _value_store.get_comparator(),
+                                   [this, sequence_length = sequence_lengths.front()](EntryRef) {
+                                       return add_sequence(5, 5 + sequence_length);
+                                   });
     for (auto sequence_length : sequence_lengths) {
         for (int i = 9000; i < 11000; ++i) {
             refs.emplace_back(add_sequence(i + 6, i + 6 + sequence_length));
@@ -148,23 +146,19 @@ PostingStoreTest::populate(std::vector<uint32_t> sequence_lengths, std::optional
     inc_generation();
 }
 
-EntryRef
-PostingStoreTest::get_posting_ref(int key)
-{
-    auto &dictionary = _value_store.get_dictionary();
-    auto root = dictionary.get_frozen_root();
+EntryRef PostingStoreTest::get_posting_ref(int key) {
+    auto& dictionary = _value_store.get_dictionary();
+    auto  root = dictionary.get_frozen_root();
     return dictionary.find_posting_list(_value_store.make_comparator(key), root).second;
 }
 
-void
-PostingStoreTest::test_compact_sequence(uint32_t sequence_length)
-{
+void PostingStoreTest::test_compact_sequence(uint32_t sequence_length) {
     populate({sequence_length});
-    auto &store = _store;
-    EntryRef old_ref1 = get_posting_ref(1);
-    EntryRef old_ref2 = get_posting_ref(2);
-    auto usage_before = store.getMemoryUsage();
-    bool compaction_done = false;
+    auto&              store = _store;
+    EntryRef           old_ref1 = get_posting_ref(1);
+    EntryRef           old_ref2 = get_posting_ref(2);
+    auto               usage_before = store.getMemoryUsage();
+    bool               compaction_done = false;
     CompactionStrategy compaction_strategy(0.05, 0.2);
     for (uint32_t pass = 0; pass < 45; ++pass) {
         store.update_stat(compaction_strategy);
@@ -189,15 +183,13 @@ PostingStoreTest::test_compact_sequence(uint32_t sequence_length)
     EXPECT_GT(usage_before.total.deadBytes(), usage_after.total.deadBytes());
 }
 
-void
-PostingStoreTest::test_compact_btree_nodes(uint32_t sequence_length)
-{
+void PostingStoreTest::test_compact_btree_nodes(uint32_t sequence_length) {
     populate({sequence_length});
-    auto &store = _store;
-    EntryRef old_ref1 = get_posting_ref(1);
-    EntryRef old_ref2 = get_posting_ref(2);
-    auto usage_before = store.getMemoryUsage();
-    bool compaction_done = false;
+    auto&              store = _store;
+    EntryRef           old_ref1 = get_posting_ref(1);
+    EntryRef           old_ref2 = get_posting_ref(2);
+    auto               usage_before = store.getMemoryUsage();
+    bool               compaction_done = false;
     CompactionStrategy compaction_strategy(0.05, 0.2);
     for (uint32_t pass = 0; pass < 55; ++pass) {
         store.update_stat(compaction_strategy);
@@ -226,32 +218,27 @@ PostingStoreTest::test_compact_btree_nodes(uint32_t sequence_length)
     }
 }
 
-INSTANTIATE_TEST_SUITE_P(PostingStoreMultiTest,
-                         PostingStoreTest,
-                         testing::Values(PostingStoreSetup(false), PostingStoreSetup(true)), testing::PrintToStringParamName());
+INSTANTIATE_TEST_SUITE_P(PostingStoreMultiTest, PostingStoreTest,
+                         testing::Values(PostingStoreSetup(false), PostingStoreSetup(true)),
+                         testing::PrintToStringParamName());
 
-TEST_P(PostingStoreTest, require_that_nodes_for_multiple_small_btrees_are_compacted)
-{
+TEST_P(PostingStoreTest, require_that_nodes_for_multiple_small_btrees_are_compacted) {
     test_compact_btree_nodes(30);
 }
 
-TEST_P(PostingStoreTest, require_that_nodes_for_multiple_large_btrees_are_compacted)
-{
+TEST_P(PostingStoreTest, require_that_nodes_for_multiple_large_btrees_are_compacted) {
     test_compact_btree_nodes(huge_sequence_length);
 }
 
-TEST_P(PostingStoreTest, require_that_short_arrays_are_compacted)
-{
+TEST_P(PostingStoreTest, require_that_short_arrays_are_compacted) {
     test_compact_sequence(4);
 }
 
-TEST_P(PostingStoreTest, require_that_btree_roots_are_compacted)
-{
+TEST_P(PostingStoreTest, require_that_btree_roots_are_compacted) {
     test_compact_sequence(10);
 }
 
-TEST_P(PostingStoreTest, require_that_bitvectors_are_compacted)
-{
+TEST_P(PostingStoreTest, require_that_bitvectors_are_compacted) {
     test_compact_sequence(huge_sequence_length);
 }
 
@@ -261,34 +248,29 @@ namespace {
  * Check if compaction of btree nodes or short arrays is suppressed due to
  * dead ratio being too low for the sum of both data stores.
  */
-bool compaction_is_suppressed(MyPostingStore& store, CompactionStrategy& compaction_strategy)
-{
+bool compaction_is_suppressed(MyPostingStore& store, CompactionStrategy& compaction_strategy) {
     store.update_stat(compaction_strategy);
     auto& compaction_spec = store.get_compaction_spec();
-    auto memory_usage = store.getMemoryUsage();
-    return ((compaction_strategy.should_compact_memory(memory_usage.btrees) &&
-             !compaction_spec.btree_nodes()) ||
-            (compaction_strategy.should_compact_memory(memory_usage.short_arrays) &&
-             !compaction_spec.store()));
+    auto  memory_usage = store.getMemoryUsage();
+    return ((compaction_strategy.should_compact_memory(memory_usage.btrees) && !compaction_spec.btree_nodes()) ||
+            (compaction_strategy.should_compact_memory(memory_usage.short_arrays) && !compaction_spec.store()));
 }
 
-}
+} // namespace
 
-TEST_P(PostingStoreTest, require_that_compaction_is_suppressed)
-{
+TEST_P(PostingStoreTest, require_that_compaction_is_suppressed) {
     CompactionStrategy compaction_strategy(0.05, 0.2);
-    bool suppressed_compaction = false;
-    auto clear_callback = [this, &compaction_strategy, &suppressed_compaction]() mutable
-                          {
-                              inc_generation();
-                              if (compaction_is_suppressed(_store, compaction_strategy)) {
-                                  suppressed_compaction = true;
-                              }
-                          };
-    populate({ 4, 10}, clear_callback);
+    bool               suppressed_compaction = false;
+    auto               clear_callback = [this, &compaction_strategy, &suppressed_compaction]() mutable {
+        inc_generation();
+        if (compaction_is_suppressed(_store, compaction_strategy)) {
+            suppressed_compaction = true;
+        }
+    };
+    populate({4, 10}, clear_callback);
     EXPECT_TRUE(suppressed_compaction);
 }
 
-}
+} // namespace search::attribute
 
 GTEST_MAIN_RUN_ALL_TESTS()

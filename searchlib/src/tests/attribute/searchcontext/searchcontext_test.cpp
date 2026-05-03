@@ -23,6 +23,7 @@
 #include <vespa/vespalib/util/compress.h>
 #include <vespa/vespalib/util/simple_thread_bundle.h>
 #include <vespa/vespalib/util/stringfmt.h>
+
 #include <filesystem>
 #include <initializer_list>
 #include <memory>
@@ -37,11 +38,8 @@ namespace search {
 
 namespace {
 
-bool
-isUnsignedSmallIntAttribute(const AttributeVector &a)
-{
-    switch (a.getBasicType())
-    {
+bool isUnsignedSmallIntAttribute(const AttributeVector& a) {
+    switch (a.getBasicType()) {
     case attribute::BasicType::BOOL:
     case attribute::BasicType::UINT2:
     case attribute::BasicType::UINT4:
@@ -51,7 +49,7 @@ isUnsignedSmallIntAttribute(const AttributeVector &a)
     }
 }
 
-}
+} // namespace
 
 using AttributePtr = AttributeVector::SP;
 using ResultSetPtr = std::unique_ptr<ResultSet>;
@@ -76,14 +74,13 @@ using queryeval::SearchIterator;
 using queryeval::SimpleResult;
 using TermType = search::QueryTermSimple::Type;
 
-class DocSet : public std::set<uint32_t>
-{
+class DocSet : public std::set<uint32_t> {
 public:
     DocSet() noexcept;
     ~DocSet();
-    DocSet(std::initializer_list<uint32_t> l) : std::set<uint32_t>(l) { }
-    DocSet(const uint32_t *b, const uint32_t *e) : std::set<uint32_t>(b, e) {}
-    DocSet & put(const uint32_t &v) {
+    DocSet(std::initializer_list<uint32_t> l) : std::set<uint32_t>(l) {}
+    DocSet(const uint32_t* b, const uint32_t* e) : std::set<uint32_t>(b, e) {}
+    DocSet& put(const uint32_t& v) {
         insert(v);
         return *this;
     }
@@ -93,27 +90,24 @@ DocSet::DocSet() noexcept = default;
 DocSet::~DocSet() = default;
 
 bool is_flag_attribute(const Config& cfg) {
-    return cfg.fastSearch() &&
-        (cfg.basicType() == BasicType::INT8) &&
-        (cfg.collectionType() == CollectionType::ARRAY);
+    return cfg.fastSearch() && (cfg.basicType() == BasicType::INT8) &&
+           (cfg.collectionType() == CollectionType::ARRAY);
 }
 
-template <typename V, typename T>
-class PostingList
-{
+template <typename V, typename T> class PostingList {
 private:
-    V * _vec;
-    T _value;
+    V*     _vec;
+    T      _value;
     DocSet _hits;
 
 public:
-    PostingList(V & vec, T value);
+    PostingList(V& vec, T value);
     ~PostingList();
-    const V & getAttribute() const { return *_vec; }
-    V & getAttribute() { return *_vec; }
-    const T & getValue() const { return _value; }
-    DocSet & getHits() { return _hits; }
-    const DocSet & getHits() const { return _hits; }
+    const V& getAttribute() const { return *_vec; }
+    V& getAttribute() { return *_vec; }
+    const T& getValue() const { return _value; }
+    DocSet& getHits() { return _hits; }
+    const DocSet& getHits() const { return _hits; }
     uint32_t getHitCount() const { return _hits.size(); }
     attribute::HitEstimate expected_hit_estimate() const {
         if (getHitCount() == 0) {
@@ -133,141 +127,123 @@ public:
 };
 
 template <typename V, typename T>
-PostingList<V, T>::PostingList(V & vec, T value) : _vec(&vec), _value(value), _hits() {}
+PostingList<V, T>::PostingList(V& vec, T value) : _vec(&vec), _value(value), _hits() {
+}
 
-template <typename V, typename T>
-PostingList<V, T>::~PostingList() = default;
+template <typename V, typename T> PostingList<V, T>::~PostingList() = default;
 
-class DocRange
-{
+class DocRange {
 public:
     uint32_t start;
     uint32_t end;
     DocRange(uint32_t start_, uint32_t end_) : start(start_), end(end_) {}
 };
 
-class SearchContextTest : public ::testing::Test
-{
+class SearchContextTest : public ::testing::Test {
 public:
     // helper functions
-    static void addReservedDoc(AttributeVector &ptr);
-    static void addDocs(AttributeVector & ptr, uint32_t numDocs);
+    static void addReservedDoc(AttributeVector& ptr);
+    static void addDocs(AttributeVector& ptr, uint32_t numDocs);
     template <typename V, typename T>
-    static SearchContextPtr getSearch(const V & vec, const T & term, TermType termType=TermType::WORD);
+    static SearchContextPtr getSearch(const V& vec, const T& term, TermType termType = TermType::WORD);
+
 protected:
     using ConfigMap = std::map<std::string, Config>;
     // Map of all config objects
-    ConfigMap _integerCfg;
-    ConfigMap _floatCfg;
-    ConfigMap _stringCfg;
+    ConfigMap          _integerCfg;
+    ConfigMap          _floatCfg;
+    ConfigMap          _stringCfg;
     static std::string _test_dir;
-    static bool _default_preserve_weight;
+    static bool        _default_preserve_weight;
 
     static AttributePtr create_as(const AttributeVector& attr, const std::string& name_suffix);
 
-    template <typename T>
-    void fillVector(std::vector<T> & values, size_t numValues);
-    template <typename V, typename T>
-    void fillAttribute(V & vec, const std::vector<T> & values);
-    template <typename V, typename T>
-    void resetAttribute(V & vec, const T & value);
-    template <typename V, typename T>
-    void fillPostingList(PostingList<V, T> & pl, const DocRange & range);
-    template <typename V, typename T>
-    void fillPostingList(PostingList<V, T> & pl);
-    static void buildTermQuery(std::vector<char> & buffer, const std::string & index, const std::string & term,
-                               TermType termType=TermType::WORD);
+    template <typename T> void fillVector(std::vector<T>& values, size_t numValues);
+    template <typename V, typename T> void fillAttribute(V& vec, const std::vector<T>& values);
+    template <typename V, typename T> void resetAttribute(V& vec, const T& value);
+    template <typename V, typename T> void fillPostingList(PostingList<V, T>& pl, const DocRange& range);
+    template <typename V, typename T> void fillPostingList(PostingList<V, T>& pl);
+    static void buildTermQuery(std::vector<char>& buffer, const std::string& index, const std::string& term,
+                               TermType termType = TermType::WORD);
 
-    ResultSetPtr performSearch(SearchIterator & sb, uint32_t numDocs);
+    ResultSetPtr performSearch(SearchIterator& sb, uint32_t numDocs);
+    template <typename V, typename T> ResultSetPtr performSearch(const V& vec, const T& term);
     template <typename V, typename T>
-    ResultSetPtr performSearch(const V & vec, const T & term);
-    template <typename V, typename T>
-    ResultSetPtr performSearch(const queryeval::ExecuteInfo & executeInfo, const V & vec, const T & term, TermType termType);
+    ResultSetPtr performSearch(const queryeval::ExecuteInfo& executeInfo, const V& vec, const T& term,
+                               TermType termType);
     template <typename V>
-    void performSearch(const V & vec, const std::string & term, const DocSet & expected, TermType termType);
+    void performSearch(const V& vec, const std::string& term, const DocSet& expected, TermType termType);
     template <typename V>
-    void performSearch(const queryeval::ExecuteInfo & executeInfo, const V & vec, const std::string & term,
-                       const DocSet & expected, TermType termType);
-    void checkResultSet(const ResultSet & rs, const DocSet & exp, bool bitVector);
+    void performSearch(const queryeval::ExecuteInfo& executeInfo, const V& vec, const std::string& term,
+                       const DocSet& expected, TermType termType);
+    void checkResultSet(const ResultSet& rs, const DocSet& exp, bool bitVector);
 
-    template<typename T, typename A>
-    void testSearchIterator(const std::vector<T> & keys, const std::string &keyAsString, const ConfigMap &cfgs);
+    template <typename T, typename A>
+    void testSearchIterator(const std::vector<T>& keys, const std::string& keyAsString, const ConfigMap& cfgs);
     // test search functionality
-    template <typename V, typename T>
-    void testFind(const PostingList<V, T> & first, bool verify_hit_estimate);
+    template <typename V, typename T> void testFind(const PostingList<V, T>& first, bool verify_hit_estimate);
 
+    template <typename V, typename T> void testSearch(V& attribute, uint32_t numDocs, const std::vector<T>& values);
+    template <typename T, typename A> void testSearch(const ConfigMap& cfgs);
+    template <typename V, typename T> void testMultiValueSearchHelper(V& vec, const std::vector<T>& values);
     template <typename V, typename T>
-    void testSearch(V & attribute, uint32_t numDocs, const std::vector<T> & values);
-    template<typename T, typename A>
-    void testSearch(const ConfigMap & cfgs);
-    template <typename V, typename T>
-    void testMultiValueSearchHelper(V & vec, const std::vector<T> & values);
-    template <typename V, typename T>
-    void testMultiValueSearch(V& attr, uint32_t num_docs, const std::vector<T> & values);
+    void testMultiValueSearch(V& attr, uint32_t num_docs, const std::vector<T>& values);
 
     class IteratorTester {
     public:
-        virtual bool matches(const SearchIterator & base) const = 0;
+        virtual bool matches(const SearchIterator& base) const = 0;
         virtual ~IteratorTester() = default;
     };
-    class AttributeIteratorTester : public IteratorTester
-    {
+    class AttributeIteratorTester : public IteratorTester {
     public:
-        bool matches(const SearchIterator & base) const override {
-            return dynamic_cast<const AttributeIterator *>(&base) != nullptr;
+        bool matches(const SearchIterator& base) const override {
+            return dynamic_cast<const AttributeIterator*>(&base) != nullptr;
         }
     };
-    class FlagAttributeIteratorTester : public IteratorTester
-    {
+    class FlagAttributeIteratorTester : public IteratorTester {
     public:
-        bool matches(const SearchIterator & base) const override {
-            return (dynamic_cast<const FlagAttributeIterator *>(&base) != nullptr) ||
-                   (dynamic_cast<const BitVectorIterator *>(&base) != nullptr) ||
-                   (dynamic_cast<const queryeval::EmptySearch *>(&base) != nullptr);
+        bool matches(const SearchIterator& base) const override {
+            return (dynamic_cast<const FlagAttributeIterator*>(&base) != nullptr) ||
+                   (dynamic_cast<const BitVectorIterator*>(&base) != nullptr) ||
+                   (dynamic_cast<const queryeval::EmptySearch*>(&base) != nullptr);
         }
     };
-    class AttributePostingListIteratorTester : public IteratorTester
-    {
+    class AttributePostingListIteratorTester : public IteratorTester {
     public:
-        bool matches(const SearchIterator & base) const override {
-            return dynamic_cast<const AttributePostingListIterator *>(&base) != nullptr ||
-                dynamic_cast<const queryeval::EmptySearch *>(&base) != nullptr;
-                
+        bool matches(const SearchIterator& base) const override {
+            return dynamic_cast<const AttributePostingListIterator*>(&base) != nullptr ||
+                   dynamic_cast<const queryeval::EmptySearch*>(&base) != nullptr;
         }
     };
-
 
     // test search iterator functionality
-    void testStrictSearchIterator(SearchContext & threeHits, SearchContext & noHits, const IteratorTester & typeTester);
-    void testNonStrictSearchIterator(SearchContext & threeHits, SearchContext & noHits, const IteratorTester & typeTester);
+    void testStrictSearchIterator(SearchContext& threeHits, SearchContext& noHits, const IteratorTester& typeTester);
+    void testNonStrictSearchIterator(SearchContext& threeHits, SearchContext& noHits,
+                                     const IteratorTester& typeTester);
     AttributePtr fillForSearchIteratorTest(const std::string& name, const Config& cfg);
     AttributePtr fillForSemiNibbleSearchIteratorTest(const std::string& name, const Config& cfg);
 
-
     // test search iterator unpacking
-    void fillForSearchIteratorUnpackingTest(IntegerAttribute * ia, bool extra);
-    void testSearchIteratorUnpacking(const AttributePtr & ptr, SearchContext & sc, bool extra, bool strict) {
+    void fillForSearchIteratorUnpackingTest(IntegerAttribute* ia, bool extra);
+    void testSearchIteratorUnpacking(const AttributePtr& ptr, SearchContext& sc, bool extra, bool strict) {
         sc.fetchPostings(queryeval::ExecuteInfo::FULL, true);
         for (bool withElementId : {false, true}) {
             testSearchIteratorUnpacking(ptr, sc, extra, strict, withElementId);
         }
     }
-    void testSearchIteratorUnpacking(const AttributePtr & ptr, SearchContext & sc,
-                                     bool extra, bool strict, bool withElementId);
-
+    void testSearchIteratorUnpacking(const AttributePtr& ptr, SearchContext& sc, bool extra, bool strict,
+                                     bool withElementId);
 
     // test range search
     template <typename VectorType>
-    void performRangeSearch(const VectorType & vec, const std::string & term, const DocSet & expected);
+    void performRangeSearch(const VectorType& vec, const std::string& term, const DocSet& expected);
     template <typename VectorType, typename ValueType>
-    void testRangeSearch(const AttributePtr & ptr, uint32_t numDocs, std::vector<ValueType> values);
-
+    void testRangeSearch(const AttributePtr& ptr, uint32_t numDocs, std::vector<ValueType> values);
 
     // test case insensitive search
-    void performCaseInsensitiveSearch(const StringAttribute & vec, const std::string & term, const DocSet & expected);
-    void testCaseInsensitiveSearch(const AttributePtr & ptr);
+    void performCaseInsensitiveSearch(const StringAttribute& vec, const std::string& term, const DocSet& expected);
+    void testCaseInsensitiveSearch(const AttributePtr& ptr);
     void testRegexSearch(const std::string& name, const Config& cfg);
-
 
     // test prefix search
     void testPrefixSearch(const std::string& name, const Config& cfg);
@@ -280,25 +256,23 @@ protected:
 
     // test that search is working after clear doc
     template <typename VectorType, typename ValueType>
-    void requireThatSearchIsWorkingAfterClearDoc(const std::string & name, const Config & cfg,
-                                                 ValueType startValue, const std::string & term);
+    void requireThatSearchIsWorkingAfterClearDoc(const std::string& name, const Config& cfg, ValueType startValue,
+                                                 const std::string& term);
 
     // test that search is working after load and clear doc
     template <typename VectorType, typename ValueType>
-    void requireThatSearchIsWorkingAfterLoadAndClearDoc(const std::string & name, const Config & cfg,
+    void requireThatSearchIsWorkingAfterLoadAndClearDoc(const std::string& name, const Config& cfg,
                                                         ValueType startValue, ValueType defaultValue,
-                                                        const std::string & term);
+                                                        const std::string& term);
 
     template <typename VectorType, typename ValueType>
-    void requireThatSearchIsWorkingAfterUpdates(const std::string & name, const Config & cfg,
-                                                ValueType value1, ValueType value2);
-
+    void requireThatSearchIsWorkingAfterUpdates(const std::string& name, const Config& cfg, ValueType value1,
+                                                ValueType value2);
 
     template <typename VectorType, typename ValueType>
-    void requireThatInvalidSearchTermGivesZeroHits(const std::string & name, const Config & cfg, ValueType value);
+    void requireThatInvalidSearchTermGivesZeroHits(const std::string& name, const Config& cfg, ValueType value);
 
-
-    void requireThatOutOfBoundsSearchTermGivesZeroHits(const std::string &name, const Config &cfg, int32_t maxValue);
+    void requireThatOutOfBoundsSearchTermGivesZeroHits(const std::string& name, const Config& cfg, int32_t maxValue);
 
     // init maps with config objects
     void initIntegerConfig();
@@ -314,13 +288,9 @@ public:
 };
 
 std::string SearchContextTest::_test_dir = "test_data";
-bool SearchContextTest::_default_preserve_weight = false;
+bool        SearchContextTest::_default_preserve_weight = false;
 
-SearchContextTest::SearchContextTest() :
-    _integerCfg(),
-    _floatCfg(),
-    _stringCfg()
-{
+SearchContextTest::SearchContextTest() : _integerCfg(), _floatCfg(), _stringCfg() {
     initIntegerConfig();
     initFloatConfig();
     initStringConfig();
@@ -328,36 +298,25 @@ SearchContextTest::SearchContextTest() :
 
 SearchContextTest::~SearchContextTest() = default;
 
-void
-SearchContextTest::SetUpTestSuite()
-{
+void SearchContextTest::SetUpTestSuite() {
     std::filesystem::remove_all(_test_dir);
     std::filesystem::create_directory(_test_dir);
     _default_preserve_weight = PostingListSearchContext::get_preserve_weight();
 }
 
-void
-SearchContextTest::TearDownTestSuite()
-{
+void SearchContextTest::TearDownTestSuite() {
     std::filesystem::remove_all(_test_dir);
 }
 
-void
-SearchContextTest::SetUp()
-{
+void SearchContextTest::SetUp() {
     PostingListSearchContext::set_preserve_weight(_default_preserve_weight);
 }
 
-void
-SearchContextTest::addReservedDoc(AttributeVector &ptr)
-{
+void SearchContextTest::addReservedDoc(AttributeVector& ptr) {
     ptr.addReservedDoc();
 }
 
-
-void
-SearchContextTest::addDocs(AttributeVector & ptr, uint32_t numDocs)
-{
+void SearchContextTest::addDocs(AttributeVector& ptr, uint32_t numDocs) {
     uint32_t docId;
     addReservedDoc(ptr);
     for (uint32_t i = 1; i <= numDocs; ++i) {
@@ -367,10 +326,7 @@ SearchContextTest::addDocs(AttributeVector & ptr, uint32_t numDocs)
     ASSERT_TRUE(ptr.getNumDocs() == numDocs + 1);
 }
 
-template <typename T>
-void
-SearchContextTest::fillVector(std::vector<T> & values, size_t numValues)
-{
+template <typename T> void SearchContextTest::fillVector(std::vector<T>& values, size_t numValues) {
     values.clear();
     values.reserve(numValues);
     for (size_t i = 1; i <= numValues; ++i) {
@@ -378,10 +334,7 @@ SearchContextTest::fillVector(std::vector<T> & values, size_t numValues)
     }
 }
 
-template <>
-void
-SearchContextTest::fillVector(std::vector<std::string> & values, size_t numValues)
-{
+template <> void SearchContextTest::fillVector(std::vector<std::string>& values, size_t numValues) {
     values.clear();
     values.reserve(numValues);
     for (size_t i = 0; i < numValues; ++i) {
@@ -391,10 +344,7 @@ SearchContextTest::fillVector(std::vector<std::string> & values, size_t numValue
     }
 }
 
-template <typename V, typename T>
-void
-SearchContextTest::fillAttribute(V & vec, const std::vector<T> & values)
-{
+template <typename V, typename T> void SearchContextTest::fillAttribute(V& vec, const std::vector<T>& values) {
     for (uint32_t doc = 1; doc < vec.getNumDocs(); ++doc) {
         ASSERT_TRUE(doc < vec.getNumDocs());
         vec.clearDoc(doc);
@@ -407,10 +357,7 @@ SearchContextTest::fillAttribute(V & vec, const std::vector<T> & values)
     vec.commit(CommitParam::UpdateStats::FORCE);
 }
 
-template <typename V, typename T>
-void
-SearchContextTest::resetAttribute(V & vec, const T & value)
-{
+template <typename V, typename T> void SearchContextTest::resetAttribute(V& vec, const T& value) {
     for (uint32_t doc = 1; doc < vec.getNumDocs(); ++doc) {
         ASSERT_TRUE(doc < vec.getNumDocs());
         EXPECT_TRUE(vec.update(doc, value));
@@ -419,9 +366,7 @@ SearchContextTest::resetAttribute(V & vec, const T & value)
 }
 
 template <typename V, typename T>
-void
-SearchContextTest::fillPostingList(PostingList<V, T> & pl, const DocRange & range)
-{
+void SearchContextTest::fillPostingList(PostingList<V, T>& pl, const DocRange& range) {
     pl.getHits().clear();
     for (uint32_t doc = range.start; doc < range.end; ++doc) {
         ASSERT_TRUE(doc < pl.getAttribute().getNumDocs());
@@ -431,31 +376,28 @@ SearchContextTest::fillPostingList(PostingList<V, T> & pl, const DocRange & rang
     pl.getAttribute().commit(CommitParam::UpdateStats::FORCE);
 }
 
-template <typename V, typename T>
-void
-SearchContextTest::fillPostingList(PostingList<V, T> & pl)
-{
-    auto & vec = dynamic_cast<AttributeVector &>(pl.getAttribute());
+template <typename V, typename T> void SearchContextTest::fillPostingList(PostingList<V, T>& pl) {
+    auto& vec = dynamic_cast<AttributeVector&>(pl.getAttribute());
     pl.getHits().clear();
     uint32_t sz = vec.getMaxValueCount();
-    T * buf = new T[sz];
+    T*       buf = new T[sz];
     for (uint32_t doc = 1; doc < vec.getNumDocs(); ++doc) {
         uint32_t valueCount = vec.get(doc, buf, sz);
         EXPECT_TRUE(valueCount <= sz);
         for (uint32_t i = 0; i < valueCount; ++i) {
             if (buf[i] == pl.getValue()) {
-                //std::cout << "hit for doc(" << doc << "): buf[" << i << "] (=" << buf[i] << ") == " << pl.getValue() << std::endl;
+                // std::cout << "hit for doc(" << doc << "): buf[" << i << "] (=" << buf[i] << ") == " <<
+                // pl.getValue() << std::endl;
                 pl.getHits().insert(doc);
                 break;
             }
         }
     }
-    delete [] buf;
+    delete[] buf;
 }
 
-void
-SearchContextTest::buildTermQuery(std::vector<char> & buffer, const std::string & index, const std::string & term, TermType termType)
-{
+void SearchContextTest::buildTermQuery(std::vector<char>& buffer, const std::string& index, const std::string& term,
+                                       TermType termType) {
     uint32_t indexLen = index.size();
     uint32_t termLen = term.size();
     uint32_t fuzzyParametersSize = (termType == TermType::FUZZYTERM) ? 8 : 0;
@@ -463,12 +405,18 @@ SearchContextTest::buildTermQuery(std::vector<char> & buffer, const std::string 
     uint32_t p = 0;
     buffer.resize(queryPacketSize);
     switch (termType) {
-      case TermType::PREFIXTERM: buffer[p++] = ParseItem::ITEM_PREFIXTERM; break;
-      case TermType::REGEXP: buffer[p++] = ParseItem::ITEM_REGEXP; break;
-      case TermType::FUZZYTERM: buffer[p++] = ParseItem::ITEM_FUZZY; break;
-      default:
-         buffer[p++] = ParseItem::ITEM_TERM;
-         break;
+    case TermType::PREFIXTERM:
+        buffer[p++] = ParseItem::ITEM_PREFIXTERM;
+        break;
+    case TermType::REGEXP:
+        buffer[p++] = ParseItem::ITEM_REGEXP;
+        break;
+    case TermType::FUZZYTERM:
+        buffer[p++] = ParseItem::ITEM_FUZZY;
+        break;
+    default:
+        buffer[p++] = ParseItem::ITEM_TERM;
+        break;
     }
     p += vespalib::compress::Integer::compressPositive(indexLen, &buffer[p]);
     memcpy(&buffer[p], index.c_str(), indexLen);
@@ -478,63 +426,52 @@ SearchContextTest::buildTermQuery(std::vector<char> & buffer, const std::string 
     p += termLen;
 
     if (termType == TermType::FUZZYTERM) {
-        p += vespalib::compress::Integer::compressPositive(2, &buffer[p]);  // max edit distance
-        p += vespalib::compress::Integer::compressPositive(0, &buffer[p]);  // prefix length
+        p += vespalib::compress::Integer::compressPositive(2, &buffer[p]); // max edit distance
+        p += vespalib::compress::Integer::compressPositive(0, &buffer[p]); // prefix length
     }
 
     buffer.resize(p);
 }
 
 template <typename V, typename T>
-SearchContextPtr
-SearchContextTest::getSearch(const V & vec, const T & term, TermType termType)
-{
-    std::vector<char> query;
+SearchContextPtr SearchContextTest::getSearch(const V& vec, const T& term, TermType termType) {
+    std::vector<char>     query;
     vespalib::asciistream ss;
     ss << term;
     buildTermQuery(query, vec.getName(), ss.str(), termType);
 
-    return (dynamic_cast<const AttributeVector &>(vec)).
-        getSearch(std::string_view(&query[0], query.size()),
-                  attribute::SearchContextParams());
+    return (dynamic_cast<const AttributeVector&>(vec))
+        .getSearch(std::string_view(&query[0], query.size()), attribute::SearchContextParams());
 }
 
-ResultSetPtr
-SearchContextTest::performSearch(SearchIterator & sb, uint32_t numDocs)
-{
+ResultSetPtr SearchContextTest::performSearch(SearchIterator& sb, uint32_t numDocs) {
     HitCollector hc(numDocs, numDocs);
     sb.initRange(1, numDocs);
     // assume strict toplevel search object located at start
-    for (sb.seek(1u); ! sb.isAtEnd(); sb.seek(sb.getDocId() + 1)) {
+    for (sb.seek(1u); !sb.isAtEnd(); sb.seek(sb.getDocId() + 1)) {
         hc.addHit(sb.getDocId(), 0.0);
     }
     return hc.getResultSet();
 }
 
-template <typename V, typename T>
-ResultSetPtr
-SearchContextTest::performSearch(const V & vec, const T & term)
-{
+template <typename V, typename T> ResultSetPtr SearchContextTest::performSearch(const V& vec, const T& term) {
     return performSearch(queryeval::ExecuteInfo::FULL, vec, term, TermType::WORD);
 }
 
 template <typename V, typename T>
-ResultSetPtr
-SearchContextTest::performSearch(const queryeval::ExecuteInfo & executeInfo, const V & vec, const T & term, TermType termType)
-{
+ResultSetPtr SearchContextTest::performSearch(const queryeval::ExecuteInfo& executeInfo, const V& vec, const T& term,
+                                              TermType termType) {
     TermFieldMatchData dummy;
-    SearchContextPtr sc = getSearch(vec, term, termType);
+    SearchContextPtr   sc = getSearch(vec, term, termType);
     sc->fetchPostings(executeInfo, true);
     SearchBasePtr sb = sc->createIterator(&dummy, true);
-    ResultSetPtr rs = performSearch(*sb, vec.getNumDocs());
+    ResultSetPtr  rs = performSearch(*sb, vec.getNumDocs());
     return rs;
 }
 
 template <typename V>
-void
-SearchContextTest::performSearch(const queryeval::ExecuteInfo & executeInfo, const V & vec, const std::string & term,
-                                 const DocSet & expected, TermType termType)
-{
+void SearchContextTest::performSearch(const queryeval::ExecuteInfo& executeInfo, const V& vec,
+                                      const std::string& term, const DocSet& expected, TermType termType) {
 #if 0
     std::cout << "performSearch[" << term << "]: {";
     std::copy(expected.begin(), expected.end(), std::ostream_iterator<uint32_t>(std::cout, ", "));
@@ -546,28 +483,24 @@ SearchContextTest::performSearch(const queryeval::ExecuteInfo & executeInfo, con
     }
 }
 template <typename V>
-void
-SearchContextTest::performSearch(const V & vec, const std::string & term,
-                                 const DocSet & expected, TermType termType)
-{
+void SearchContextTest::performSearch(const V& vec, const std::string& term, const DocSet& expected,
+                                      TermType termType) {
     performSearch(queryeval::ExecuteInfo::FULL, vec, term, expected, termType);
 }
 
-void
-SearchContextTest::checkResultSet(const ResultSet & rs, const DocSet & expected, bool bitVector)
-{
+void SearchContextTest::checkResultSet(const ResultSet& rs, const DocSet& expected, bool bitVector) {
     EXPECT_EQ(rs.getNumHits(), expected.size());
     if (bitVector) {
-        const BitVector * vec = rs.getBitOverflow();
-        if ( ! expected.empty()) {
+        const BitVector* vec = rs.getBitOverflow();
+        if (!expected.empty()) {
             ASSERT_TRUE(vec != nullptr);
-            for (const auto & expect : expected) {
+            for (const auto& expect : expected) {
                 EXPECT_TRUE(vec->testBit(expect));
             }
         }
     } else {
-        const RankedHit * array = rs.getArray();
-        if ( ! expected.empty()) {
+        const RankedHit* array = rs.getArray();
+        if (!expected.empty()) {
             ASSERT_TRUE(array != nullptr);
             uint32_t i = 0;
             for (auto iter = expected.begin(); iter != expected.end(); ++iter, ++i) {
@@ -577,14 +510,11 @@ SearchContextTest::checkResultSet(const ResultSet & rs, const DocSet & expected,
     }
 }
 
-
 //-----------------------------------------------------------------------------
 // Test search functionality
 //-----------------------------------------------------------------------------
 template <typename V, typename T>
-void
-SearchContextTest::testFind(const PostingList<V, T> & pl, bool verify_hit_estimate)
-{
+void SearchContextTest::testFind(const PostingList<V, T>& pl, bool verify_hit_estimate) {
     { // strict search iterator
         SearchContextPtr sc = getSearch(pl.getAttribute(), pl.getValue());
         if (verify_hit_estimate) {
@@ -595,23 +525,21 @@ SearchContextTest::testFind(const PostingList<V, T> & pl, bool verify_hit_estima
         }
         sc->fetchPostings(queryeval::ExecuteInfo::FULL, true);
         TermFieldMatchData dummy;
-        SearchBasePtr sb = sc->createIterator(&dummy, true);
-        ResultSetPtr rs = performSearch(*sb, pl.getAttribute().getNumDocs());
+        SearchBasePtr      sb = sc->createIterator(&dummy, true);
+        ResultSetPtr       rs = performSearch(*sb, pl.getAttribute().getNumDocs());
         checkResultSet(*rs, pl.getHits(), false);
     }
 }
 
 template <typename V, typename T>
-void
-SearchContextTest::testSearch(V & attribute, uint32_t numDocs, const std::vector<T> & values)
-{
-    LOG(info, "testSearch: vector '%s' with %u documents and %lu unique values",
-        attribute.getName().c_str(), numDocs, values.size());
+void SearchContextTest::testSearch(V& attribute, uint32_t numDocs, const std::vector<T>& values) {
+    LOG(info, "testSearch: vector '%s' with %u documents and %lu unique values", attribute.getName().c_str(), numDocs,
+        values.size());
 
     // fill attribute vectors
     addDocs(attribute, numDocs);
 
-    std::vector<PostingList<V, T> > lists;
+    std::vector<PostingList<V, T>> lists;
 
     // fill posting lists
     ASSERT_TRUE((attribute.getNumDocs() - 1) % values.size() == 0);
@@ -623,45 +551,38 @@ SearchContextTest::testSearch(V & attribute, uint32_t numDocs, const std::vector
     }
 
     // test find()
-    for (const auto & list : lists) {
+    for (const auto& list : lists) {
         testFind(list, true);
     }
 }
 
 template <typename V, typename T>
-void
-SearchContextTest::testMultiValueSearchHelper(V & vec, const std::vector<T> & values)
-{
-    std::vector<PostingList<V, T> > lists;
+void SearchContextTest::testMultiValueSearchHelper(V& vec, const std::vector<T>& values) {
+    std::vector<PostingList<V, T>> lists;
 
     // fill posting lists based on attribute content
-    for (const T & value : values) {
+    for (const T& value : values) {
         lists.push_back(PostingList<V, T>(vec, value));
         fillPostingList(lists.back());
     }
 
     // test find()
-    for (const auto & list : lists) {
-        //std::cout << "testFind(lists[" << i << "]): value = " << lists[i].getValue()
-        //                                            << ", hit count = " << lists[i].getHitCount() << std::endl;
+    for (const auto& list : lists) {
+        // std::cout << "testFind(lists[" << i << "]): value = " << lists[i].getValue()
+        //                                             << ", hit count = " << lists[i].getHitCount() << std::endl;
         testFind(list, false);
     }
 }
 
-AttributePtr
-SearchContextTest::create_as(const AttributeVector& attr, const std::string& name_suffix)
-{
+AttributePtr SearchContextTest::create_as(const AttributeVector& attr, const std::string& name_suffix) {
     return AttributeFactory::createAttribute(_test_dir + "/" + attr.getName() + name_suffix, attr.getConfig());
 }
 
-
 template <typename V, typename T>
-void
-SearchContextTest::testMultiValueSearch(V& attr, uint32_t num_docs, const std::vector<T> & values)
-{
+void SearchContextTest::testMultiValueSearch(V& attr, uint32_t num_docs, const std::vector<T>& values) {
     addDocs(attr, num_docs);
-    LOG(info, "testMultiValueSearch: vector '%s' with %u documents and %lu unique values",
-        attr.getName().c_str(), attr.getNumDocs(), values.size());
+    LOG(info, "testMultiValueSearch: vector '%s' with %u documents and %lu unique values", attr.getName().c_str(),
+        attr.getNumDocs(), values.size());
 
     fillAttribute(attr, values);
 
@@ -697,64 +618,57 @@ SearchContextTest::testMultiValueSearch(V& attr, uint32_t num_docs, const std::v
     testMultiValueSearchHelper(static_cast<V&>(*attr3.get()), values);
 }
 
-template<typename T, typename A>
-void SearchContextTest::testSearch(const ConfigMap & cfgs) {
-    uint32_t numDocs = 100;
-    uint32_t numUniques = 20;
+template <typename T, typename A> void SearchContextTest::testSearch(const ConfigMap& cfgs) {
+    uint32_t       numDocs = 100;
+    uint32_t       numUniques = 20;
     std::vector<T> values;
     fillVector(values, numUniques);
-    for (const auto & cfg : cfgs) {
+    for (const auto& cfg : cfgs) {
         AttributePtr second = AttributeFactory::createAttribute(cfg.first + "-2", cfg.second);
-        testSearch(*(dynamic_cast<A *>(second.get())), numDocs, values);
+        testSearch(*(dynamic_cast<A*>(second.get())), numDocs, values);
         if (second->hasMultiValue()) {
             AttributePtr first = AttributeFactory::createAttribute(cfg.first + "-1", cfg.second);
-            testMultiValueSearch(*(dynamic_cast<A *>(first.get())), second->getNumDocs(), values);
+            testMultiValueSearch(*(dynamic_cast<A*>(first.get())), second->getNumDocs(), values);
         }
     }
 }
 
-
-template<typename T, typename A>
-class Verifier : public search::test::SearchIteratorVerifier {
+template <typename T, typename A> class Verifier : public search::test::SearchIteratorVerifier {
 public:
-    Verifier(const std::vector<T> & keys, const std::string & keyAsString,
-             const std::string & name, const Config & cfg);
+    Verifier(const std::vector<T>& keys, const std::string& keyAsString, const std::string& name, const Config& cfg);
     ~Verifier() override;
-    SearchIterator::UP
-    create(bool strict) const override {
+    SearchIterator::UP create(bool strict) const override {
         _sc->fetchPostings(queryeval::ExecuteInfo::FULL, strict);
         return _sc->createIterator(&_dummy, strict);
     }
+
 private:
     mutable TermFieldMatchData _dummy;
-    AttributePtr     _attribute;
-    SearchContextPtr _sc;
+    AttributePtr               _attribute;
+    SearchContextPtr           _sc;
 };
 
-template<typename T, typename A>
-Verifier<T, A>::Verifier(const std::vector<T> & keys, const std::string & keyAsString,
-                         const std::string & name, const Config & cfg)
-    : _dummy(),
-      _attribute(AttributeFactory::createAttribute(name + "-initrange", cfg)),
-      _sc()
-{
+template <typename T, typename A>
+Verifier<T, A>::Verifier(const std::vector<T>& keys, const std::string& keyAsString, const std::string& name,
+                         const Config& cfg)
+    : _dummy(), _attribute(AttributeFactory::createAttribute(name + "-initrange", cfg)), _sc() {
     SearchContextTest::addDocs(*_attribute, getDocIdLimit());
     size_t i(0);
     for (uint32_t doc : getExpectedDocIds()) {
-        EXPECT_TRUE(nullptr != dynamic_cast<A *>(_attribute.get()));
-        EXPECT_TRUE(dynamic_cast<A &>(*_attribute).update(doc, keys[(i++)%keys.size()]));
+        EXPECT_TRUE(nullptr != dynamic_cast<A*>(_attribute.get()));
+        EXPECT_TRUE(dynamic_cast<A&>(*_attribute).update(doc, keys[(i++) % keys.size()]));
     }
     _attribute->commit(CommitParam::UpdateStats::FORCE);
     _sc = SearchContextTest::getSearch(*_attribute, keyAsString);
     EXPECT_TRUE(_sc->valid());
 }
 
-template<typename T, typename A>
-Verifier<T, A>::~Verifier() = default;
+template <typename T, typename A> Verifier<T, A>::~Verifier() = default;
 
-template<typename T, typename A>
-void SearchContextTest::testSearchIterator(const std::vector<T> & keys, const std::string &keyAsString, const ConfigMap &cfgs) {
-    for (const auto & cfg : cfgs) {
+template <typename T, typename A>
+void SearchContextTest::testSearchIterator(const std::vector<T>& keys, const std::string& keyAsString,
+                                           const ConfigMap& cfgs) {
+    for (const auto& cfg : cfgs) {
         {
             Verifier<T, A> verifier(keys, keyAsString, cfg.first, cfg.second);
             verifier.verify();
@@ -768,28 +682,25 @@ void SearchContextTest::testSearchIterator(const std::vector<T> & keys, const st
     }
 }
 
-TEST_F(SearchContextTest, test_search_iterator_conformance)
-{
-    testSearchIterator<AttributeVector::largeint_t, IntegerAttribute>({42,45,46}, "[0;100]", _integerCfg);
+TEST_F(SearchContextTest, test_search_iterator_conformance) {
+    testSearchIterator<AttributeVector::largeint_t, IntegerAttribute>({42, 45, 46}, "[0;100]", _integerCfg);
     testSearchIterator<AttributeVector::largeint_t, IntegerAttribute>({42}, "42", _integerCfg);
     testSearchIterator<double, FloatingPointAttribute>({42.42}, "42.42", _floatCfg);
     testSearchIterator<std::string, StringAttribute>({"any-key"}, "any-key", _stringCfg);
 }
 
-TEST_F(SearchContextTest, test_search)
-{
+TEST_F(SearchContextTest, test_search) {
     const uint32_t numDocs = 100;
     const uint32_t numUniques = 20;
 
     { // IntegerAttribute
-        for (const auto & cfg : _integerCfg) {
-            AttributePtr attribute = AttributeFactory::createAttribute(cfg.first + "-3", cfg.second);
+        for (const auto& cfg : _integerCfg) {
+            AttributePtr     attribute = AttributeFactory::createAttribute(cfg.first + "-3", cfg.second);
             SearchContextPtr sc = getSearch(*attribute, "100");
             ASSERT_TRUE(sc->valid());
             sc = getSearch(*attribute, "1A0");
-            EXPECT_FALSE( sc->valid() );
+            EXPECT_FALSE(sc->valid());
         }
-
 
         { // CollectionType::ARRAY Flags.
             std::vector<AttributeVector::largeint_t> values;
@@ -797,21 +708,21 @@ TEST_F(SearchContextTest, test_search)
             Config cfg(BasicType::INT8, CollectionType::ARRAY);
             cfg.setFastSearch(true);
             AttributePtr second = AttributeFactory::createAttribute("flags-2", cfg);
-            testSearch(*(dynamic_cast<IntegerAttribute *>(second.get())), numDocs, values);
+            testSearch(*(dynamic_cast<IntegerAttribute*>(second.get())), numDocs, values);
             AttributePtr first = AttributeFactory::createAttribute("flags-1", cfg);
-            testMultiValueSearch(*(dynamic_cast<IntegerAttribute *>(first.get())), second->getNumDocs(), values);
+            testMultiValueSearch(*(dynamic_cast<IntegerAttribute*>(first.get())), second->getNumDocs(), values);
         }
     }
 
     { // FloatingPointAttribute
-        for (const auto & cfg : _floatCfg) {
-            AttributePtr attribute = AttributeFactory::createAttribute(cfg.first + "-3", cfg.second);
+        for (const auto& cfg : _floatCfg) {
+            AttributePtr     attribute = AttributeFactory::createAttribute(cfg.first + "-3", cfg.second);
             SearchContextPtr sc = getSearch(*attribute, "100");
             ASSERT_TRUE(sc->valid());
             sc = getSearch(*attribute, "7.3");
-            ASSERT_TRUE( sc->valid() );
+            ASSERT_TRUE(sc->valid());
             sc = getSearch(*attribute, "1A0");
-            EXPECT_FALSE( sc->valid() );
+            EXPECT_FALSE(sc->valid());
         }
     }
 
@@ -823,19 +734,15 @@ TEST_F(SearchContextTest, test_search)
 //-----------------------------------------------------------------------------
 // Test search iterator functionality
 //-----------------------------------------------------------------------------
-void
-SearchContextTest::testStrictSearchIterator(SearchContext & threeHits,
-                                            SearchContext & noHits,
-                                            const IteratorTester & typeTester)
-{
+void SearchContextTest::testStrictSearchIterator(SearchContext& threeHits, SearchContext& noHits,
+                                                 const IteratorTester& typeTester) {
     TermFieldMatchData dummy;
     { // search for value with 3 hits
         threeHits.fetchPostings(queryeval::ExecuteInfo::FULL, true);
         SearchBasePtr sb = threeHits.createIterator(&dummy, true);
         sb->initRange(1, threeHits.attribute().getCommittedDocIdLimit());
         EXPECT_TRUE(typeTester.matches(*sb));
-        EXPECT_TRUE(sb->getDocId() == sb->beginId() ||
-                    sb->getDocId() == 1u);
+        EXPECT_TRUE(sb->getDocId() == sb->beginId() || sb->getDocId() == 1u);
         EXPECT_TRUE(sb->seek(1));
         EXPECT_EQ(sb->getDocId(), 1u);
         EXPECT_TRUE(!sb->seek(2));
@@ -855,18 +762,14 @@ SearchContextTest::testStrictSearchIterator(SearchContext & threeHits,
         SearchBasePtr sb = noHits.createIterator(&dummy, true);
         sb->initRange(1, noHits.attribute().getCommittedDocIdLimit());
         ASSERT_TRUE(typeTester.matches(*sb));
-        EXPECT_TRUE(sb->getDocId() == sb->beginId() ||
-                   sb->isAtEnd());
+        EXPECT_TRUE(sb->getDocId() == sb->beginId() || sb->isAtEnd());
         EXPECT_TRUE(!sb->seek(1));
         EXPECT_TRUE(sb->isAtEnd());
     }
 }
 
-void
-SearchContextTest::testNonStrictSearchIterator(SearchContext & threeHits,
-                                               SearchContext & noHits,
-                                               const IteratorTester & typeTester)
-{
+void SearchContextTest::testNonStrictSearchIterator(SearchContext& threeHits, SearchContext& noHits,
+                                                    const IteratorTester& typeTester) {
     TermFieldMatchData dummy;
     { // search for value with three hits
         threeHits.fetchPostings(queryeval::ExecuteInfo::FULL, false);
@@ -892,8 +795,7 @@ SearchContextTest::testNonStrictSearchIterator(SearchContext & threeHits,
         sb->initRange(1, threeHits.attribute().getCommittedDocIdLimit());
 
         EXPECT_TRUE(typeTester.matches(*sb));
-        EXPECT_TRUE(sb->getDocId() == sb->beginId() ||
-                    sb->isAtEnd());
+        EXPECT_TRUE(sb->getDocId() == sb->beginId() || sb->isAtEnd());
         EXPECT_TRUE(!sb->seek(1));
         EXPECT_NE(sb->getDocId(), 1u);
         EXPECT_TRUE(!sb->seek(6));
@@ -901,26 +803,21 @@ SearchContextTest::testNonStrictSearchIterator(SearchContext & threeHits,
     }
 }
 
-AttributePtr
-SearchContextTest::fillForSearchIteratorTest(const std::string& name, const Config& cfg)
-{
+AttributePtr SearchContextTest::fillForSearchIteratorTest(const std::string& name, const Config& cfg) {
     return AttributeBuilder(name, cfg).fill({10, 20, 10, 20, 10}).get();
 }
 
-AttributePtr
-SearchContextTest::fillForSemiNibbleSearchIteratorTest(const std::string& name, const Config& cfg)
-{
+AttributePtr SearchContextTest::fillForSemiNibbleSearchIteratorTest(const std::string& name, const Config& cfg) {
     return AttributeBuilder(name, cfg).fill({1, 2, 1, 2, 1}).get();
 }
 
-TEST_F(SearchContextTest, test_search_iterator)
-{
+TEST_F(SearchContextTest, test_search_iterator) {
     {
         Config cfg(BasicType::INT32, CollectionType::SINGLE);
-        auto ptr = fillForSearchIteratorTest("s-int32", cfg);
+        auto   ptr = fillForSearchIteratorTest("s-int32", cfg);
 
-        SearchContextPtr threeHits = getSearch(*ptr.get(), 10);
-        SearchContextPtr noHits = getSearch(*ptr.get(), 30);
+        SearchContextPtr        threeHits = getSearch(*ptr.get(), 10);
+        SearchContextPtr        noHits = getSearch(*ptr.get(), 30);
         AttributeIteratorTester tester;
         testStrictSearchIterator(*threeHits, *noHits, tester);
         threeHits = getSearch(*ptr.get(), 10);
@@ -929,10 +826,10 @@ TEST_F(SearchContextTest, test_search_iterator)
     }
     {
         Config cfg(BasicType::UINT2, CollectionType::SINGLE);
-        auto ptr = fillForSemiNibbleSearchIteratorTest("s-uint2", cfg);
+        auto   ptr = fillForSemiNibbleSearchIteratorTest("s-uint2", cfg);
 
-        SearchContextPtr threeHits = getSearch(*ptr.get(), 1);
-        SearchContextPtr noHits = getSearch(*ptr.get(), 3);
+        SearchContextPtr        threeHits = getSearch(*ptr.get(), 1);
+        SearchContextPtr        noHits = getSearch(*ptr.get(), 3);
         AttributeIteratorTester tester;
         testStrictSearchIterator(*threeHits, *noHits, tester);
         threeHits = getSearch(*ptr.get(), 1);
@@ -944,19 +841,18 @@ TEST_F(SearchContextTest, test_search_iterator)
         cfg.setFastSearch(true);
         auto ptr = fillForSearchIteratorTest("sfs-int32", cfg);
 
-        SearchContextPtr threeHits = getSearch(*ptr.get(), 10);
-        SearchContextPtr noHits = getSearch(*ptr.get(), 30);
+        SearchContextPtr                   threeHits = getSearch(*ptr.get(), 10);
+        SearchContextPtr                   noHits = getSearch(*ptr.get(), 30);
         AttributePostingListIteratorTester tester;
         testStrictSearchIterator(*threeHits, *noHits, tester);
     }
     {
         Config cfg(BasicType::STRING, CollectionType::SINGLE);
         cfg.setFastSearch(true);
-        auto ptr = AttributeBuilder("sfs-string", cfg).
-                fill({"three"s, "two"s, "three"s, "two"s, "three"s}).get();
+        auto ptr = AttributeBuilder("sfs-string", cfg).fill({"three"s, "two"s, "three"s, "two"s, "three"s}).get();
 
-        SearchContextPtr threeHits = getSearch(*ptr.get(), "three");
-        SearchContextPtr noHits = getSearch(*ptr.get(), "none");
+        SearchContextPtr                   threeHits = getSearch(*ptr.get(), "three");
+        SearchContextPtr                   noHits = getSearch(*ptr.get(), "none");
         AttributePostingListIteratorTester tester;
         testStrictSearchIterator(*threeHits, *noHits, tester);
     }
@@ -965,8 +861,8 @@ TEST_F(SearchContextTest, test_search_iterator)
         cfg.setFastSearch(true);
         auto ptr = fillForSearchIteratorTest("flags", cfg);
 
-        SearchContextPtr threeHits = getSearch(*ptr.get(), 10);
-        SearchContextPtr noHits = getSearch(*ptr.get(), 30);
+        SearchContextPtr            threeHits = getSearch(*ptr.get(), 10);
+        SearchContextPtr            noHits = getSearch(*ptr.get(), 30);
         FlagAttributeIteratorTester tester;
         testStrictSearchIterator(*threeHits, *noHits, tester);
         threeHits = getSearch(*ptr.get(), 10);
@@ -975,15 +871,10 @@ TEST_F(SearchContextTest, test_search_iterator)
     }
 }
 
-
-
 //-----------------------------------------------------------------------------
 // Test search iterator unpacking
 //-----------------------------------------------------------------------------
-void
-SearchContextTest::fillForSearchIteratorUnpackingTest(IntegerAttribute * ia,
-                                                      bool extra)
-{
+void SearchContextTest::fillForSearchIteratorUnpackingTest(IntegerAttribute* ia, bool extra) {
     addReservedDoc(*ia);
     ia->addDocs(3);
     if (ia->getCollectionType() == CollectionType::SINGLE) {
@@ -1015,10 +906,8 @@ SearchContextTest::fillForSearchIteratorUnpackingTest(IntegerAttribute * ia,
     ia->commit(CommitParam::UpdateStats::FORCE);
 }
 
-void
-SearchContextTest::testSearchIteratorUnpacking(const AttributePtr & attr, SearchContext & sc,
-                                               bool extra, bool strict, bool withElementId)
-{
+void SearchContextTest::testSearchIteratorUnpacking(const AttributePtr& attr, SearchContext& sc, bool extra,
+                                                    bool strict, bool withElementId) {
     LOG(info, "testSearchIteratorUnpacking: vector '%s'", attr->getName().c_str());
 
     TermFieldMatchData md;
@@ -1028,8 +917,8 @@ SearchContextTest::testSearchIteratorUnpacking(const AttributePtr & attr, Search
     pos.setElementWeight(100);
     md.appendPosition(pos);
 
-    SearchBasePtr sbp = sc.createIterator(&md, strict);
-    SearchIterator & search = *sbp;
+    SearchBasePtr   sbp = sc.createIterator(&md, strict);
+    SearchIterator& search = *sbp;
     search.initFullRange();
 
     std::vector<int32_t> weights(3);
@@ -1062,8 +951,8 @@ SearchContextTest::testSearchIteratorUnpacking(const AttributePtr & attr, Search
         std::vector<uint32_t> elems;
         search.get_element_ids(2, elems);
         ASSERT_EQ(2u, elems.size());
-        EXPECT_EQ(0u,elems[0]);
-        EXPECT_EQ(1u,elems[1]);
+        EXPECT_EQ(0u, elems[0]);
+        EXPECT_EQ(1u, elems[1]);
     } else {
         EXPECT_EQ(md.getWeight(), weights[1]);
     }
@@ -1075,9 +964,9 @@ SearchContextTest::testSearchIteratorUnpacking(const AttributePtr & attr, Search
         std::vector<uint32_t> elems;
         search.get_element_ids(3, elems);
         ASSERT_EQ(3u, elems.size());
-        EXPECT_EQ(0u,elems[0]);
-        EXPECT_EQ(1u,elems[1]);
-        EXPECT_EQ(2u,elems[2]);
+        EXPECT_EQ(0u, elems[0]);
+        EXPECT_EQ(1u, elems[1]);
+        EXPECT_EQ(2u, elems[2]);
     } else {
         EXPECT_EQ(md.getWeight(), weights[2]);
     }
@@ -1089,9 +978,8 @@ SearchContextTest::testSearchIteratorUnpacking(const AttributePtr & attr, Search
     }
 }
 
-TEST_F(SearchContextTest, test_search_iterator_unpacking)
-{
-    std::vector<std::pair<std::string, Config> > config;
+TEST_F(SearchContextTest, test_search_iterator_unpacking) {
+    std::vector<std::pair<std::string, Config>> config;
 
     {
         Config cfg(BasicType::INT32, CollectionType::SINGLE);
@@ -1130,16 +1018,16 @@ TEST_F(SearchContextTest, test_search_iterator_unpacking)
         config.emplace_back("flags", cfg);
     }
 
-    for (const auto & cfg : config) {
+    for (const auto& cfg : config) {
         AttributePtr ptr = AttributeFactory::createAttribute(cfg.first, cfg.second);
-        fillForSearchIteratorUnpackingTest(dynamic_cast<IntegerAttribute *>(ptr.get()), false);
+        fillForSearchIteratorUnpackingTest(dynamic_cast<IntegerAttribute*>(ptr.get()), false);
         SearchContextPtr sc = getSearch(*ptr.get(), 10);
         testSearchIteratorUnpacking(ptr, *sc, false, true);
         sc = getSearch(*ptr.get(), 10);
         testSearchIteratorUnpacking(ptr, *sc, false, false);
         if (cfg.second.fastSearch()) {
             AttributePtr ptr2 = AttributeFactory::createAttribute(cfg.first + "-extra", cfg.second);
-            fillForSearchIteratorUnpackingTest(dynamic_cast<IntegerAttribute *>(ptr2.get()), true);
+            fillForSearchIteratorUnpackingTest(dynamic_cast<IntegerAttribute*>(ptr2.get()), true);
             SearchContextPtr sc2 = getSearch(*ptr2.get(), 10);
             testSearchIteratorUnpacking(ptr2, *sc2, true, true);
             sc2 = getSearch(*ptr2.get(), 10);
@@ -1148,17 +1036,13 @@ TEST_F(SearchContextTest, test_search_iterator_unpacking)
     }
 }
 
-
-
 //-----------------------------------------------------------------------------
 // Test range search
 //-----------------------------------------------------------------------------
 
 template <typename VectorType>
-void
-SearchContextTest::performRangeSearch(const VectorType & vec, const std::string & term, const DocSet & expected)
-{
-    for (size_t num_threads : {1,3}) {
+void SearchContextTest::performRangeSearch(const VectorType& vec, const std::string& term, const DocSet& expected) {
+    for (size_t num_threads : {1, 3}) {
         vespalib::SimpleThreadBundle thread_bundle(num_threads);
         auto executeInfo = queryeval::ExecuteInfo::create(1.0, vespalib::Doom::never(), thread_bundle);
         performSearch(executeInfo, vec, term, expected, TermType::WORD);
@@ -1166,32 +1050,30 @@ SearchContextTest::performRangeSearch(const VectorType & vec, const std::string 
 }
 
 template <typename VectorType, typename ValueType>
-void
-SearchContextTest::testRangeSearch(const AttributePtr & ptr, uint32_t numDocs, std::vector<ValueType> values)
-{
+void SearchContextTest::testRangeSearch(const AttributePtr& ptr, uint32_t numDocs, std::vector<ValueType> values) {
     LOG(info, "testRangeSearch: vector '%s'", ptr->getName().c_str());
 
-    auto & vec = dynamic_cast<VectorType &>(*ptr.get());
+    auto& vec = dynamic_cast<VectorType&>(*ptr.get());
 
     addDocs(vec, numDocs);
 
     std::map<ValueType, DocSet> postingList;
 
     uint32_t docCnt = 0;
-    for (uint32_t i = 0; i < values.size() && docCnt < numDocs; i+=2) {
-        //std::cout << "postingList[" << values[i] << "]: {";
+    for (uint32_t i = 0; i < values.size() && docCnt < numDocs; i += 2) {
+        // std::cout << "postingList[" << values[i] << "]: {";
         for (uint32_t j = 0; j < (i + 1) && docCnt < numDocs; ++j, ++docCnt) {
             EXPECT_TRUE(vec.update(docCnt + 1u, values[i]));
             postingList[values[i]].insert(docCnt + 1u);
-            //std::cout << docCnt << ", ";
+            // std::cout << docCnt << ", ";
         }
-        //std::cout << "}" << std::endl;
+        // std::cout << "}" << std::endl;
     }
     ptr->commit(CommitParam::UpdateStats::FORCE);
     ValueType zeroValue = 0;
-    bool smallUInt = isUnsignedSmallIntAttribute(vec);
+    bool      smallUInt = isUnsignedSmallIntAttribute(vec);
     if (smallUInt) {
-        for (uint32_t i = docCnt ; i < numDocs; ++i) {
+        for (uint32_t i = docCnt; i < numDocs; ++i) {
             postingList[zeroValue].insert(i + 1u);
         }
     }
@@ -1202,8 +1084,7 @@ SearchContextTest::testRangeSearch(const AttributePtr & ptr, uint32_t numDocs, s
         ss << "<" << values[i];
         DocSet expected;
         if (smallUInt) {
-            expected.insert(postingList[zeroValue].begin(),
-                            postingList[zeroValue].end());
+            expected.insert(postingList[zeroValue].begin(), postingList[zeroValue].end());
         }
         for (uint32_t j = 0; j < i; ++j) {
             expected.insert(postingList[values[j]].begin(), postingList[values[j]].end());
@@ -1246,8 +1127,7 @@ SearchContextTest::testRangeSearch(const AttributePtr & ptr, uint32_t numDocs, s
     }
 }
 
-DocSet
-createDocs(uint32_t from, int32_t count) {
+DocSet createDocs(uint32_t from, int32_t count) {
     DocSet docs;
     if (count >= 0) {
         for (int32_t i(0); i < count; i++) {
@@ -1261,8 +1141,7 @@ createDocs(uint32_t from, int32_t count) {
     return docs;
 }
 
-TEST_F(SearchContextTest, test_range_search_limited_huge_dictionary)
-{
+TEST_F(SearchContextTest, test_range_search_limited_huge_dictionary) {
     Config cfg(BasicType::INT32, CollectionType::SINGLE);
     cfg.setFastSearch(true);
     std::vector<int32_t> v;
@@ -1270,8 +1149,8 @@ TEST_F(SearchContextTest, test_range_search_limited_huge_dictionary)
     for (size_t i(0); i < v.capacity(); i++) {
         v.push_back(i);
     }
-    auto ptr = AttributeBuilder("limited-int32", cfg).fill(v).get();
-    auto& vec = dynamic_cast<IntegerAttribute &>(*ptr);
+    auto  ptr = AttributeBuilder("limited-int32", cfg).fill(v).get();
+    auto& vec = dynamic_cast<IntegerAttribute&>(*ptr);
 
     performRangeSearch(vec, "[1;9;1200]", createDocs(2, 9));
     performRangeSearch(vec, "[1;1109;1200]", createDocs(2, 1109));
@@ -1282,12 +1161,11 @@ TEST_F(SearchContextTest, test_range_search_limited_huge_dictionary)
     performRangeSearch(vec, "[1;3009;-1200]", createDocs(2000, -1200));
 }
 
-TEST_F(SearchContextTest, test_range_search_limited)
-{
+TEST_F(SearchContextTest, test_range_search_limited) {
     Config cfg(BasicType::INT32, CollectionType::SINGLE);
     cfg.setFastSearch(true);
-    auto ptr = AttributeBuilder("limited-int32", cfg).fill({1,1,2,3,4,5,6,7,8,9,9,10}).get();
-    auto& vec = dynamic_cast<IntegerAttribute &>(*ptr);
+    auto  ptr = AttributeBuilder("limited-int32", cfg).fill({1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 10}).get();
+    auto& vec = dynamic_cast<IntegerAttribute&>(*ptr);
 
     DocSet expected;
     for (size_t i(1); i < 12; i++) {
@@ -1335,8 +1213,7 @@ TEST_F(SearchContextTest, test_range_search_limited)
     performRangeSearch(vec, "[;;-1]", expected);
 }
 
-TEST_F(SearchContextTest, test_range_search)
-{
+TEST_F(SearchContextTest, test_range_search) {
     const uint32_t numDocs = 100;
     const uint32_t numValues = 20;
     const uint32_t numNibbleValues = 9;
@@ -1344,7 +1221,7 @@ TEST_F(SearchContextTest, test_range_search)
     { // IntegerAttribute
         std::vector<largeint_t> values;
         std::vector<largeint_t> nibbleValues;
-        largeint_t start = 1;
+        largeint_t              start = 1;
 
         for (uint32_t i = 0; i < numValues; ++i) {
             values.push_back(start + i);
@@ -1353,7 +1230,7 @@ TEST_F(SearchContextTest, test_range_search)
             nibbleValues.push_back(start + i);
         }
 
-        for (const auto & cfg : _integerCfg) {
+        for (const auto& cfg : _integerCfg) {
             AttributePtr ptr = AttributeFactory::createAttribute(cfg.first, cfg.second);
             testRangeSearch<IntegerAttribute, largeint_t>(ptr, numDocs, values);
         }
@@ -1364,7 +1241,7 @@ TEST_F(SearchContextTest, test_range_search)
             testRangeSearch<IntegerAttribute, largeint_t>(ptr, numDocs, values);
         }
         {
-            Config cfg(BasicType::UINT4, CollectionType::SINGLE);
+            Config       cfg(BasicType::UINT4, CollectionType::SINGLE);
             AttributePtr ptr = AttributeFactory::createAttribute("s-uint4", cfg);
             testRangeSearch<IntegerAttribute, largeint_t>(ptr, numDocs, nibbleValues);
         }
@@ -1372,47 +1249,42 @@ TEST_F(SearchContextTest, test_range_search)
 
     { // FloatingPointAttribute
         std::vector<double> values;
-        double start = 1;
+        double              start = 1;
 
         for (uint32_t i = 0; i < numValues; ++i) {
             values.push_back(start + i);
         }
 
-        for (const auto & cfg : _floatCfg) {
+        for (const auto& cfg : _floatCfg) {
             AttributePtr ptr = AttributeFactory::createAttribute(cfg.first, cfg.second);
             testRangeSearch<FloatingPointAttribute, double>(ptr, numDocs, values);
         }
     }
 }
 
-
 //-----------------------------------------------------------------------------
 // Test case insensitive search
 //-----------------------------------------------------------------------------
 
-void
-SearchContextTest::performCaseInsensitiveSearch(const StringAttribute & vec, const std::string & term,
-                                                const DocSet & expected)
-{
+void SearchContextTest::performCaseInsensitiveSearch(const StringAttribute& vec, const std::string& term,
+                                                     const DocSet& expected) {
     performSearch(vec, term, expected, TermType::WORD);
 }
 
-void
-SearchContextTest::testCaseInsensitiveSearch(const AttributePtr & ptr)
-{
+void SearchContextTest::testCaseInsensitiveSearch(const AttributePtr& ptr) {
     LOG(info, "testCaseInsensitiveSearch: vector '%s'", ptr->getName().c_str());
 
-    auto & vec = dynamic_cast<StringAttribute &>(*ptr.get());
+    auto& vec = dynamic_cast<StringAttribute&>(*ptr.get());
 
     uint32_t numDocs = 5 * 5;
     addDocs(*ptr.get(), numDocs);
 
-    const char * terms[][5] = {
-    {"lower", "upper", "firstupper", "mixedcase", "intermixedcase"}, // lower
-    {"LOWER", "UPPER", "FIRSTUPPER", "MIXEDCASE", "INTERMIXEDCASE"}, // upper
-    {"Lower", "Upper", "Firstupper", "Mixedcase", "Intermixedcase"}, // firstUpper
-    {"Lower", "Upper", "FirstUpper", "MixedCase", "InterMixedCase"}, // mixedCase
-    {"lower", "upper", "firstUpper", "mixedCase", "interMixedCase"}, // interMixedCase
+    const char* terms[][5] = {
+        {"lower", "upper", "firstupper", "mixedcase", "intermixedcase"}, // lower
+        {"LOWER", "UPPER", "FIRSTUPPER", "MIXEDCASE", "INTERMIXEDCASE"}, // upper
+        {"Lower", "Upper", "Firstupper", "Mixedcase", "Intermixedcase"}, // firstUpper
+        {"Lower", "Upper", "FirstUpper", "MixedCase", "InterMixedCase"}, // mixedCase
+        {"lower", "upper", "firstUpper", "mixedCase", "interMixedCase"}, // interMixedCase
     };
 
     uint32_t doc = 1;
@@ -1425,7 +1297,7 @@ SearchContextTest::testCaseInsensitiveSearch(const AttributePtr & ptr)
 
     ptr->commit(CommitParam::UpdateStats::FORCE);
 
-    const char * buffer[1];
+    const char* buffer[1];
     doc = 1;
     for (uint32_t j = 0; j < 5; ++j) {
         for (uint32_t i = 0; i < 5; ++i) {
@@ -1458,16 +1330,15 @@ SearchContextTest::testCaseInsensitiveSearch(const AttributePtr & ptr)
     performCaseInsensitiveSearch(vec, "None", empty);
 }
 
-void
-SearchContextTest::testRegexSearch(const std::string& name, const Config& cfg)
-{
+void SearchContextTest::testRegexSearch(const std::string& name, const Config& cfg) {
     LOG(info, "testRegexSearch: vector '%s'", name.c_str());
-    auto attr = AttributeBuilder(name, cfg).
-            fill({"abc1def"s, "abc2Def"s, "abc2def"s, "abc4def"s, "abc5def"s, "abc6def"s}).get();
+    auto attr = AttributeBuilder(name, cfg)
+                    .fill({"abc1def"s, "abc2Def"s, "abc2def"s, "abc4def"s, "abc5def"s, "abc6def"s})
+                    .get();
 
-    std::vector<const char *> terms = { "abc", "bc2de", "^abc1def.*bar" };
-    std::vector<DocSet> expected;
-    DocSet empty;
+    std::vector<const char*> terms = {"abc", "bc2de", "^abc1def.*bar"};
+    std::vector<DocSet>      expected;
+    DocSet                   empty;
     expected.emplace_back(DocSet{1, 2, 3, 4, 5, 6}); // "abc"
     expected.emplace_back(DocSet{2, 3});             // "bc2de"
     expected.emplace_back(empty);                    // "^abc1def.*bar"
@@ -1478,39 +1349,33 @@ SearchContextTest::testRegexSearch(const std::string& name, const Config& cfg)
     }
 }
 
-
-TEST_F(SearchContextTest, test_case_insensitive_search)
-{
-    for (const auto & cfg : _stringCfg) {
+TEST_F(SearchContextTest, test_case_insensitive_search) {
+    for (const auto& cfg : _stringCfg) {
         testCaseInsensitiveSearch(AttributeFactory::createAttribute(cfg.first, cfg.second));
     }
 }
 
-TEST_F(SearchContextTest, test_regex_search)
-{
-    for (const auto & cfg : _stringCfg) {
+TEST_F(SearchContextTest, test_regex_search) {
+    for (const auto& cfg : _stringCfg) {
         testRegexSearch(cfg.first, cfg.second);
     }
 }
-
 
 //-----------------------------------------------------------------------------
 // Test prefix search
 //-----------------------------------------------------------------------------
 
-void
-SearchContextTest::testPrefixSearch(const std::string& name, const Config& cfg)
-{
+void SearchContextTest::testPrefixSearch(const std::string& name, const Config& cfg) {
     LOG(info, "testPrefixSearch: vector '%s'", name.c_str());
-    auto attr = AttributeBuilder(name, cfg).
-            fill({"prefixsearch"s, "PREFIXSEARCH"s, "PrefixSearch"s, "precommit"s, "PRECOMMIT"s, "PreCommit"s}).get();
+    auto attr =
+        AttributeBuilder(name, cfg)
+            .fill({"prefixsearch"s, "PREFIXSEARCH"s, "PrefixSearch"s, "precommit"s, "PRECOMMIT"s, "PreCommit"s})
+            .get();
 
-    const char * terms[][3] = {{"pre", "PRE", "Pre"},
-                               {"pref", "PREF", "Pref"},
-                               {"prec", "PREC", "PreC"},
-                               {"prex", "PREX", "Prex"}};
+    const char* terms[][3] = {
+        {"pre", "PRE", "Pre"}, {"pref", "PREF", "Pref"}, {"prec", "PREC", "PreC"}, {"prex", "PREX", "Prex"}};
     std::vector<DocSet> expected;
-    DocSet empty;
+    DocSet              empty;
     expected.emplace_back(DocSet({1, 2, 3, 4, 5, 6})); // "pre"
     expected.emplace_back(DocSet({1, 2, 3}));          // "pref"
     expected.emplace_back(DocSet({4, 5, 6}));          // "prec"
@@ -1532,9 +1397,10 @@ SearchContextTest::testPrefixSearch(const std::string& name, const Config& cfg)
     // PostingListFoldedSearchContextT<DataT>::countHits() to populate
     // partial vector of posting indexes, with scan resumed by
     // fillArray or fillBitVector.
-    auto& vec = dynamic_cast<StringAttribute &>(*attr.get());
-    uint32_t old_size = attr->getNumDocs();
-    constexpr uint32_t longrange_values = search::attribute::PostingListFoldedSearchContextT<int32_t>::MAX_POSTING_INDEXES_SIZE + 100;
+    auto&              vec = dynamic_cast<StringAttribute&>(*attr.get());
+    uint32_t           old_size = attr->getNumDocs();
+    constexpr uint32_t longrange_values =
+        search::attribute::PostingListFoldedSearchContextT<int32_t>::MAX_POSTING_INDEXES_SIZE + 100;
     attr->addDocs(longrange_values);
     DocSet exp_longrange;
     for (uint32_t i = 0; i < longrange_values; ++i) {
@@ -1548,23 +1414,19 @@ SearchContextTest::testPrefixSearch(const std::string& name, const Config& cfg)
     performSearch(*attr, "lpref", exp_longrange, TermType::PREFIXTERM);
 }
 
-
-TEST_F(SearchContextTest, test_prefix_search)
-{
-    for (const auto & cfg : _stringCfg) {
+TEST_F(SearchContextTest, test_prefix_search) {
+    for (const auto& cfg : _stringCfg) {
         testPrefixSearch(cfg.first, cfg.second);
     }
 }
 
-void
-SearchContextTest::test_weighted_prefix_search(const std::string& name, const Config& cfg)
-{
+void SearchContextTest::test_weighted_prefix_search(const std::string& name, const Config& cfg) {
     SCOPED_TRACE(name);
     auto attr = AttributeBuilder(name, cfg).get();
     auto string_attr = std::dynamic_pointer_cast<StringAttribute>(attr);
     ASSERT_TRUE(string_attr);
     attr->addDocs(800);
-    uint32_t docid = 0;
+    uint32_t    docid = 0;
     std::string val_a("a");
     std::string val_A("A");
     std::string val_aa("aa");
@@ -1587,31 +1449,31 @@ SearchContextTest::test_weighted_prefix_search(const std::string& name, const Co
     }
     attr->commit();
 
-    for (auto preserve_weight : { false, true }) {
+    for (auto preserve_weight : {false, true}) {
         SCOPED_TRACE(std::string("preserve_weight=") + (preserve_weight ? "true" : "false"));
         PostingListSearchContext::set_preserve_weight(preserve_weight);
-        for (auto common_word : { false, true }) {
+        for (auto common_word : {false, true}) {
             SCOPED_TRACE(std::string("common_word=") + (common_word ? "true" : "false"));
             TermFieldMatchData md;
-            auto sc = getSearch(*attr, common_word ? val_a : val_aaa, TermType::PREFIXTERM);
+            auto               sc = getSearch(*attr, common_word ? val_a : val_aaa, TermType::PREFIXTERM);
             sc->fetchPostings(queryeval::ExecuteInfo::FULL, true);
             auto itr = sc->createIterator(&md, true);
             itr->initRange(1, attr->getCommittedDocIdLimit());
             EXPECT_TRUE(itr->seek(1));
             itr->unpack(1);
             EXPECT_TRUE(md.has_ranking_data(1));
-            int32_t expected_weight = (preserve_weight || !common_word || !cfg.fastSearch()) ?
-                                      (attr->hasWeightedSetType() ?
-                                       (common_word ? (1000 + 300 + 200 + 10 + 3 + 2) : (1000 + 300 + 200)) :
-                                       (attr->hasMultiValue() ? (common_word ? (1 + 1 + 1 + 1 + 1 + 1) : (1 + 1 + 1)) : 1)) :
-                                      1;
+            int32_t expected_weight =
+                (preserve_weight || !common_word || !cfg.fastSearch())
+                    ? (attr->hasWeightedSetType()
+                           ? (common_word ? (1000 + 300 + 200 + 10 + 3 + 2) : (1000 + 300 + 200))
+                           : (attr->hasMultiValue() ? (common_word ? (1 + 1 + 1 + 1 + 1 + 1) : (1 + 1 + 1)) : 1))
+                    : 1;
             EXPECT_EQ(expected_weight, md.getWeight());
         }
     }
 }
 
-TEST_F(SearchContextTest, test_weighted_prefix_search)
-{
+TEST_F(SearchContextTest, test_weighted_prefix_search) {
     for (const auto& cfg : _stringCfg) {
         test_weighted_prefix_search(cfg.first, cfg.second);
     }
@@ -1621,22 +1483,17 @@ TEST_F(SearchContextTest, test_weighted_prefix_search)
 // Test fuzzy search
 //-----------------------------------------------------------------------------
 
-void
-SearchContextTest::testFuzzySearch(const std::string& name, const Config& cfg)
-{
+void SearchContextTest::testFuzzySearch(const std::string& name, const Config& cfg) {
     LOG(info, "testFuzzySearch: vector '%s'", name.c_str());
     auto attr = AttributeBuilder(name, cfg).fill({"fuzzysearch"s, "notthis"s, "FUZZYSEARCH"s}).get();
 
-    const char * terms[][2] = {
-        {"fuzzysearch", "FUZZYSEARCH"},
-        {"fuzzysearck", "FUZZYSEARCK"},
-        {"fuzzysekkkk", "FUZZYSEKKKK"}
-    };
+    const char* terms[][2] = {
+        {"fuzzysearch", "FUZZYSEARCH"}, {"fuzzysearck", "FUZZYSEARCK"}, {"fuzzysekkkk", "FUZZYSEKKKK"}};
     std::vector<DocSet> expected;
-    DocSet empty;
+    DocSet              empty;
     expected.emplace_back(DocSet({1, 3})); // normal search
     expected.emplace_back(DocSet({1, 3})); // fuzzy search
-    expected.emplace_back(); // results
+    expected.emplace_back();               // results
 
     for (uint32_t i = 0; i < 3; ++i) {
         for (uint32_t j = 0; j < 2; ++j) {
@@ -1645,33 +1502,26 @@ SearchContextTest::testFuzzySearch(const std::string& name, const Config& cfg)
     }
 }
 
-TEST_F(SearchContextTest, test_fuzzy_search)
-{
-    for (const auto & cfg : _stringCfg) {
+TEST_F(SearchContextTest, test_fuzzy_search) {
+    for (const auto& cfg : _stringCfg) {
         testFuzzySearch(cfg.first, cfg.second);
     }
 }
 
-
 template <typename VectorType, typename ValueType>
-void
-SearchContextTest::requireThatSearchIsWorkingAfterClearDoc(const std::string & name,
-                                                           const Config & cfg,
-                                                           ValueType startValue,
-                                                           const std::string & term)
-{
+void SearchContextTest::requireThatSearchIsWorkingAfterClearDoc(const std::string& name, const Config& cfg,
+                                                                ValueType startValue, const std::string& term) {
     AttributePtr a = AttributeFactory::createAttribute(name, cfg);
-    LOG(info, "requireThatSearchIsWorkingAfterClearDoc: vector '%s', term '%s'",
-        a->getName().c_str(), term.c_str());
+    LOG(info, "requireThatSearchIsWorkingAfterClearDoc: vector '%s', term '%s'", a->getName().c_str(), term.c_str());
     addReservedDoc(*a);
     a->addDocs(4);
-    auto & v = dynamic_cast<VectorType &>(*a);
+    auto& v = dynamic_cast<VectorType&>(*a);
     resetAttribute(v, startValue);
     {
         ResultSetPtr rs = performSearch(v, term);
         EXPECT_EQ(4u, rs->getNumHits());
         ASSERT_TRUE(4u == rs->getNumHits());
-        const RankedHit * array = rs->getArray();
+        const RankedHit* array = rs->getArray();
         EXPECT_EQ(1u, array[0].getDocId());
         EXPECT_EQ(2u, array[1].getDocId());
         EXPECT_EQ(3u, array[2].getDocId());
@@ -1683,43 +1533,38 @@ SearchContextTest::requireThatSearchIsWorkingAfterClearDoc(const std::string & n
     {
         ResultSetPtr rs = performSearch(v, term);
         EXPECT_EQ(2u, rs->getNumHits());
-        const RankedHit * array = rs->getArray();
+        const RankedHit* array = rs->getArray();
         EXPECT_EQ(2u, array[0].getDocId());
         EXPECT_EQ(4u, array[1].getDocId());
     }
 }
 
-TEST_F(SearchContextTest, require_that_search_is_working_after_clear_doc)
-{
-    for (const auto & cfg : _integerCfg) {
+TEST_F(SearchContextTest, require_that_search_is_working_after_clear_doc) {
+    for (const auto& cfg : _integerCfg) {
         requireThatSearchIsWorkingAfterClearDoc<IntegerAttribute>(cfg.first, cfg.second, 10, "10");
         requireThatSearchIsWorkingAfterClearDoc<IntegerAttribute>(cfg.first, cfg.second, 10, "<11");
     }
 
-    for (const auto & cfg : _floatCfg) {
+    for (const auto& cfg : _floatCfg) {
         requireThatSearchIsWorkingAfterClearDoc<FloatingPointAttribute>(cfg.first, cfg.second, 10.5, "10.5");
         requireThatSearchIsWorkingAfterClearDoc<FloatingPointAttribute>(cfg.first, cfg.second, 10.5, "<10.6");
     }
 
-    for (const auto & cfg : _stringCfg) {
+    for (const auto& cfg : _stringCfg) {
         requireThatSearchIsWorkingAfterClearDoc<StringAttribute>(cfg.first, cfg.second, "start", "start");
     }
 }
 
 template <typename VectorType, typename ValueType>
-void
-SearchContextTest::requireThatSearchIsWorkingAfterLoadAndClearDoc(const std::string & name,
-                                                                  const Config & cfg,
-                                                                  ValueType startValue,
-                                                                  ValueType defaultValue,
-                                                                  const std::string & term)
-{
+void SearchContextTest::requireThatSearchIsWorkingAfterLoadAndClearDoc(const std::string& name, const Config& cfg,
+                                                                       ValueType startValue, ValueType defaultValue,
+                                                                       const std::string& term) {
     AttributePtr a = AttributeFactory::createAttribute(name, cfg);
-    LOG(info, "requireThatSearchIsWorkingAfterLoadAndClearDoc: vector '%s', term '%s'",
-        a->getName().c_str(), term.c_str());
+    LOG(info, "requireThatSearchIsWorkingAfterLoadAndClearDoc: vector '%s', term '%s'", a->getName().c_str(),
+        term.c_str());
     addReservedDoc(*a);
     a->addDocs(15);
-    auto & va = dynamic_cast<VectorType &>(*a);
+    auto& va = dynamic_cast<VectorType&>(*a);
     resetAttribute(va, startValue); // triggers vector vector in posting list (count 15)
     AttributePtr b = AttributeFactory::createAttribute(_test_dir + "/" + name + "-save", cfg);
     EXPECT_TRUE(a->save(b->getBaseFileName()));
@@ -1727,9 +1572,9 @@ SearchContextTest::requireThatSearchIsWorkingAfterLoadAndClearDoc(const std::str
     b->clearDoc(6); // goes from vector vector to single vector with count 14
     b->commit(CommitParam::UpdateStats::FORCE);
     {
-        ResultSetPtr rs = performSearch(dynamic_cast<VectorType &>(*b), term);
+        ResultSetPtr rs = performSearch(dynamic_cast<VectorType&>(*b), term);
         EXPECT_EQ(14u, rs->getNumHits());
-        const RankedHit * array = rs->getArray();
+        const RankedHit* array = rs->getArray();
         for (uint32_t i = 0; i < 14; ++i) {
             if (i < 5) {
                 EXPECT_EQ(i + 1, array[i].getDocId());
@@ -1746,8 +1591,7 @@ SearchContextTest::requireThatSearchIsWorkingAfterLoadAndClearDoc(const std::str
     }
 }
 
-TEST_F(SearchContextTest, require_that_search_is_working_after_load_and_clear_doc)
-{
+TEST_F(SearchContextTest, require_that_search_is_working_after_load_and_clear_doc) {
     {
         int64_t value = 10;
         int64_t defValue = search::attribute::getUndefined<int32_t>();
@@ -1759,22 +1603,18 @@ TEST_F(SearchContextTest, require_that_search_is_working_after_load_and_clear_do
     {
         std::string value = "foo";
         std::string defValue = "";
-        requireThatSearchIsWorkingAfterLoadAndClearDoc<StringAttribute>("s-fs-str", _stringCfg["s-fs-str"],
-                                                                        value, defValue, value);
-        requireThatSearchIsWorkingAfterLoadAndClearDoc<StringAttribute>("a-fs-str", _stringCfg["a-fs-str"],
-                                                                        value, defValue, value);
+        requireThatSearchIsWorkingAfterLoadAndClearDoc<StringAttribute>("s-fs-str", _stringCfg["s-fs-str"], value,
+                                                                        defValue, value);
+        requireThatSearchIsWorkingAfterLoadAndClearDoc<StringAttribute>("a-fs-str", _stringCfg["a-fs-str"], value,
+                                                                        defValue, value);
     }
 }
 
 template <typename VectorType, typename ValueType>
-void
-SearchContextTest::requireThatSearchIsWorkingAfterUpdates(const std::string & name,
-                                                          const Config & cfg,
-                                                          ValueType value1,
-                                                          ValueType value2)
-{
+void SearchContextTest::requireThatSearchIsWorkingAfterUpdates(const std::string& name, const Config& cfg,
+                                                               ValueType value1, ValueType value2) {
     AttributePtr a = AttributeFactory::createAttribute(name, cfg);
-    auto & va = dynamic_cast<VectorType &>(*a);
+    auto&        va = dynamic_cast<VectorType&>(*a);
     LOG(info, "requireThatSearchIsWorkingAfterUpdates: vector '%s'", a->getName().c_str());
     addReservedDoc(*a);
     a->addDocs(2);
@@ -1793,27 +1633,24 @@ SearchContextTest::requireThatSearchIsWorkingAfterUpdates(const std::string & na
     }
 }
 
-TEST_F(SearchContextTest, require_that_search_is_working_after_updates)
-{
-    for (const auto & cfg : _integerCfg) {
+TEST_F(SearchContextTest, require_that_search_is_working_after_updates) {
+    for (const auto& cfg : _integerCfg) {
         requireThatSearchIsWorkingAfterUpdates<IntegerAttribute>(cfg.first, cfg.second, 10, 20);
     }
 
-    for (const auto & cfg : _stringCfg) {
+    for (const auto& cfg : _stringCfg) {
         requireThatSearchIsWorkingAfterUpdates<StringAttribute>(cfg.first, cfg.second, "foo", "bar");
     }
 }
 
-TEST_F(SearchContextTest, require_that_flag_attribute_is_working_when_new_docs_are_added)
-{
+TEST_F(SearchContextTest, require_that_flag_attribute_is_working_when_new_docs_are_added) {
     LOG(info, "requireThatFlagAttributeIsWorkingWhenNewDocsAreAdded()");
     Config cfg(BasicType::INT8, CollectionType::ARRAY);
     cfg.setFastSearch(true);
     {
         cfg.setGrowStrategy(GrowStrategy::make(1, 0, 1));
         using IL = AttributeBuilder::IntList;
-        auto a = AttributeBuilder("flags", cfg).
-                fill_array({IL{10, 24}, {20, 24}, {30, 26}, {40, 24}}).get();
+        auto a = AttributeBuilder("flags", cfg).fill_array({IL{10, 24}, {20, 24}, {30, 26}, {40, 24}}).get();
         {
             ResultSetPtr rs = performSearch(*a, "<24");
             EXPECT_EQ(2u, rs->getNumHits());
@@ -1830,8 +1667,8 @@ TEST_F(SearchContextTest, require_that_flag_attribute_is_working_when_new_docs_a
     }
     {
         cfg.setGrowStrategy(GrowStrategy::make(4, 0, 4));
-        AttributePtr a = AttributeFactory::createAttribute("flags", cfg);
-        auto & fa = dynamic_cast<FlagAttribute &>(*a);
+        AttributePtr          a = AttributeFactory::createAttribute("flags", cfg);
+        auto&                 fa = dynamic_cast<FlagAttribute&>(*a);
         std::vector<uint32_t> exp50;
         std::vector<uint32_t> exp60;
         addReservedDoc(fa);
@@ -1868,35 +1705,29 @@ TEST_F(SearchContextTest, require_that_flag_attribute_is_working_when_new_docs_a
 }
 
 template <typename VectorType, typename ValueType>
-void
-SearchContextTest::requireThatInvalidSearchTermGivesZeroHits(const std::string & name,
-                                                             const Config & cfg,
-                                                             ValueType value)
-{
+void SearchContextTest::requireThatInvalidSearchTermGivesZeroHits(const std::string& name, const Config& cfg,
+                                                                  ValueType value) {
     auto a = AttributeBuilder(name, cfg).fill({value}).get();
     LOG(info, "requireThatInvalidSearchTermGivesZeroHits: vector '%s'", a->getName().c_str());
     ResultSetPtr rs = performSearch(*a, "foo");
     EXPECT_EQ(0u, rs->getNumHits());
 }
 
-TEST_F(SearchContextTest, require_that_invalid_search_term_gives_zero_hits)
-{
-    for (const auto & cfg : _integerCfg) {
+TEST_F(SearchContextTest, require_that_invalid_search_term_gives_zero_hits) {
+    for (const auto& cfg : _integerCfg) {
         requireThatInvalidSearchTermGivesZeroHits<IntegerAttribute, int32_t>(cfg.first, cfg.second, 10);
     }
-    for (const auto & cfg : _floatCfg) {
+    for (const auto& cfg : _floatCfg) {
         requireThatInvalidSearchTermGivesZeroHits<FloatingPointAttribute, double>(cfg.first, cfg.second, 10.0);
     }
 }
 
-TEST_F(SearchContextTest, require_that_flag_attribute_handles_the_byte_range)
-{
+TEST_F(SearchContextTest, require_that_flag_attribute_handles_the_byte_range) {
     LOG(info, "requireThatFlagAttributeHandlesTheByteRange()");
     Config cfg(BasicType::INT8, CollectionType::ARRAY);
     cfg.setFastSearch(true);
     using IL = AttributeBuilder::IntList;
-    auto a = AttributeBuilder("flags", cfg).
-            fill_array({IL{-128}, {-64, -8}, {0, 8}, {64, 24}, {127}}).get();
+    auto a = AttributeBuilder("flags", cfg).fill_array({IL{-128}, {-64, -8}, {0, 8}, {64, 24}, {127}}).get();
 
     performSearch(*a, "-128", DocSet({1}), TermType::WORD);
     performSearch(*a, "127", DocSet({5}), TermType::WORD);
@@ -1909,21 +1740,18 @@ TEST_F(SearchContextTest, require_that_flag_attribute_handles_the_byte_range)
     performSearch(*a, "[8;128]", DocSet({3, 4, 5}), TermType::WORD);
 }
 
-void
-SearchContextTest::requireThatOutOfBoundsSearchTermGivesZeroHits(const std::string &name,
-                                                                 const Config &cfg,
-                                                                 int32_t maxValue)
-{
-    auto a = AttributeBuilder(name, cfg).fill({maxValue}).get();
-    std::string term = vespalib::make_string("%" PRIu64 "", (int64_t) maxValue + 1);
-    LOG(info, "requireThatOutOfBoundsSearchTermGivesZeroHits: vector '%s', term '%s'", a->getName().c_str(), term.c_str());
+void SearchContextTest::requireThatOutOfBoundsSearchTermGivesZeroHits(const std::string& name, const Config& cfg,
+                                                                      int32_t maxValue) {
+    auto        a = AttributeBuilder(name, cfg).fill({maxValue}).get();
+    std::string term = vespalib::make_string("%" PRIu64 "", (int64_t)maxValue + 1);
+    LOG(info, "requireThatOutOfBoundsSearchTermGivesZeroHits: vector '%s', term '%s'", a->getName().c_str(),
+        term.c_str());
     ResultSetPtr rs = performSearch(*a, term);
     EXPECT_EQ(0u, rs->getNumHits());
 }
 
-TEST_F(SearchContextTest, require_that_out_of_bounds_search_term_gives_zero_hits)
-{
-    for (const auto & cfg : _integerCfg) {
+TEST_F(SearchContextTest, require_that_out_of_bounds_search_term_gives_zero_hits) {
+    for (const auto& cfg : _integerCfg) {
         int32_t maxValue = std::numeric_limits<int32_t>::max();
         requireThatOutOfBoundsSearchTermGivesZeroHits(cfg.first, cfg.second, maxValue);
     }
@@ -1941,8 +1769,7 @@ private:
 
 public:
     BoolAttributeFixture(const SimpleResult& true_docs, uint32_t num_docs)
-        : _attr("bool_attr", search::GrowStrategy(), false)
-    {
+        : _attr("bool_attr", search::GrowStrategy(), false) {
         _attr.addDocs(num_docs);
         for (uint32_t i = 0; i < true_docs.getHitCount(); ++i) {
             uint32_t docid = true_docs.getHit(i);
@@ -1955,9 +1782,9 @@ public:
                                SearchContextParams().useBitVector(true));
     }
     SimpleResult search_context(const std::string& term) const {
-        auto search_ctx = create_search_context(term);
+        auto         search_ctx = create_search_context(term);
         SimpleResult result;
-        int32_t weight = 10;
+        int32_t      weight = 10;
         for (uint32_t docid = 1; docid < _attr.getNumDocs(); ++docid) {
             bool match_1 = search_ctx->matches(docid);
             bool match_2 = search_ctx->matches(docid, weight);
@@ -1971,17 +1798,16 @@ public:
         return result;
     }
     SimpleResult search_iterator(const std::string& term, bool strict) const {
-        auto search_ctx = create_search_context(term);
+        auto               search_ctx = create_search_context(term);
         TermFieldMatchData tfmd;
-        auto itr = search_ctx->createIterator(&tfmd, strict);
-        SimpleResult result;
+        auto               itr = search_ctx->createIterator(&tfmd, strict);
+        SimpleResult       result;
         result.search(*itr, _attr.getNumDocs());
         return result;
     }
 };
 
-TEST_F(SearchContextTest, single_bool_attribute_search_context_handles_true_and_false_queries)
-{
+TEST_F(SearchContextTest, single_bool_attribute_search_context_handles_true_and_false_queries) {
     BoolAttributeFixture f(SimpleResult().addHit(3).addHit(5).addHit(7), 9);
 
     auto true_exp = SimpleResult().addHit(3).addHit(5).addHit(7);
@@ -1993,8 +1819,7 @@ TEST_F(SearchContextTest, single_bool_attribute_search_context_handles_true_and_
     EXPECT_EQ(false_exp, f.search_context("0"));
 }
 
-TEST_F(SearchContextTest, single_bool_attribute_search_iterator_handles_true_and_false_queries)
-{
+TEST_F(SearchContextTest, single_bool_attribute_search_iterator_handles_true_and_false_queries) {
     BoolAttributeFixture f(SimpleResult().addHit(3).addHit(5).addHit(7), 9);
 
     auto true_exp = SimpleResult().addHit(3).addHit(5).addHit(7);
@@ -2010,9 +1835,7 @@ TEST_F(SearchContextTest, single_bool_attribute_search_iterator_handles_true_and
     EXPECT_EQ(false_exp, f.search_iterator("0", true));
 }
 
-void
-SearchContextTest::initIntegerConfig()
-{
+void SearchContextTest::initIntegerConfig() {
     { // CollectionType::SINGLE
         Config cfg(BasicType::INT32, CollectionType::SINGLE);
         _integerCfg["s-int32"] = cfg;
@@ -2042,9 +1865,7 @@ SearchContextTest::initIntegerConfig()
     }
 }
 
-void
-SearchContextTest::initFloatConfig()
-{
+void SearchContextTest::initFloatConfig() {
     { // CollectionType::SINGLE
         Config cfg(BasicType::FLOAT, CollectionType::SINGLE);
         _floatCfg["s-float"] = cfg;
@@ -2074,9 +1895,7 @@ SearchContextTest::initFloatConfig()
     }
 }
 
-void
-SearchContextTest::initStringConfig()
-{
+void SearchContextTest::initStringConfig() {
     { // CollectionType::SINGLE
         Config cfg(BasicType::STRING, CollectionType::SINGLE);
         _stringCfg["s-str"] = cfg;
@@ -2106,6 +1925,6 @@ SearchContextTest::initStringConfig()
     }
 }
 
-}
+} // namespace search
 
 GTEST_MAIN_RUN_ALL_TESTS()

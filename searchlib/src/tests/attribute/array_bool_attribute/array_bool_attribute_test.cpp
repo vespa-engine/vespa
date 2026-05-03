@@ -10,6 +10,7 @@
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stash.h>
+
 #include <filesystem>
 #include <memory>
 
@@ -41,10 +42,9 @@ void remove_saved_attr() {
     std::filesystem::remove("array_bool.dat");
 }
 
-}
+} // namespace
 
-class ArrayBoolAttributeTest : public ::testing::Test
-{
+class ArrayBoolAttributeTest : public ::testing::Test {
 protected:
     std::shared_ptr<AttributeVector> _attr;
     ArrayBoolAttribute*              _bool_attr;
@@ -54,18 +54,13 @@ protected:
     void reset_attr(bool add_reserved);
 };
 
-ArrayBoolAttributeTest::ArrayBoolAttributeTest()
-    : _attr(),
-      _bool_attr(nullptr)
-{
+ArrayBoolAttributeTest::ArrayBoolAttributeTest() : _attr(), _bool_attr(nullptr) {
     reset_attr(true);
 }
 
 ArrayBoolAttributeTest::~ArrayBoolAttributeTest() = default;
 
-void
-ArrayBoolAttributeTest::reset_attr(bool add_reserved)
-{
+void ArrayBoolAttributeTest::reset_attr(bool add_reserved) {
     Config cfg(BasicType::BOOL, CollectionType::ARRAY);
     _attr = AttributeFactory::createAttribute("array_bool", cfg);
     _bool_attr = &dynamic_cast<ArrayBoolAttribute&>(*_attr);
@@ -74,23 +69,20 @@ ArrayBoolAttributeTest::reset_attr(bool add_reserved)
     }
 }
 
-TEST_F(ArrayBoolAttributeTest, factory_creates_correct_type)
-{
+TEST_F(ArrayBoolAttributeTest, factory_creates_correct_type) {
     Config cfg(BasicType::BOOL, CollectionType::ARRAY);
-    auto attr = AttributeFactory::createAttribute("test_factory", cfg);
+    auto   attr = AttributeFactory::createAttribute("test_factory", cfg);
     EXPECT_NE(nullptr, dynamic_cast<ArrayBoolAttribute*>(attr.get()));
 }
 
-TEST_F(ArrayBoolAttributeTest, empty_document_has_zero_values)
-{
+TEST_F(ArrayBoolAttributeTest, empty_document_has_zero_values) {
     EXPECT_TRUE(_attr->addDocs(5));
     _attr->commit();
     EXPECT_EQ(0u, _attr->getValueCount(1));
     EXPECT_EQ(0, _attr->getInt(1));
 }
 
-TEST_F(ArrayBoolAttributeTest, set_and_get_bools)
-{
+TEST_F(ArrayBoolAttributeTest, set_and_get_bools) {
     EXPECT_TRUE(_attr->addDocs(5));
     std::vector<int8_t> vals = {1, 0, 1, 1, 0};
     _bool_attr->set_bools(1, vals);
@@ -99,7 +91,7 @@ TEST_F(ArrayBoolAttributeTest, set_and_get_bools)
     EXPECT_EQ(5u, _attr->getValueCount(1));
 
     std::vector<bool> expected = {true, false, true, true, false};
-    auto bs = _bool_attr->get_bools(1);
+    auto              bs = _bool_attr->get_bools(1);
     ASSERT_EQ(to_vec(bs), expected);
 
     // Empty document
@@ -107,8 +99,7 @@ TEST_F(ArrayBoolAttributeTest, set_and_get_bools)
     EXPECT_EQ(0u, _bool_attr->get_bools(2).size());
 }
 
-TEST_F(ArrayBoolAttributeTest, set_bools_replaces_previous_values)
-{
+TEST_F(ArrayBoolAttributeTest, set_bools_replaces_previous_values) {
     EXPECT_TRUE(_attr->addDocs(5));
     std::vector<int8_t> vals1 = {1, 0, 1, 1, 0};
     _bool_attr->set_bools(1, vals1);
@@ -126,8 +117,7 @@ TEST_F(ArrayBoolAttributeTest, set_bools_replaces_previous_values)
     EXPECT_EQ(to_vec(_bool_attr->get_bools(1)), expected);
 }
 
-TEST_F(ArrayBoolAttributeTest, clear_doc)
-{
+TEST_F(ArrayBoolAttributeTest, clear_doc) {
     EXPECT_TRUE(_attr->addDocs(5));
     std::vector<int8_t> vals = {1, 0, 1};
     _bool_attr->set_bools(1, vals);
@@ -140,8 +130,7 @@ TEST_F(ArrayBoolAttributeTest, clear_doc)
     EXPECT_EQ(0u, _attr->clearDoc(1));
 }
 
-TEST_F(ArrayBoolAttributeTest, various_bool_counts)
-{
+TEST_F(ArrayBoolAttributeTest, various_bool_counts) {
     EXPECT_TRUE(_attr->addDocs(10));
     // doc 1: 0 bools
     std::vector<int8_t> v1 = {1};
@@ -177,8 +166,7 @@ TEST_F(ArrayBoolAttributeTest, various_bool_counts)
     }
 }
 
-TEST_F(ArrayBoolAttributeTest, read_view)
-{
+TEST_F(ArrayBoolAttributeTest, read_view) {
     EXPECT_TRUE(_attr->addDocs(5));
     std::vector<int8_t> vals = {1, 0, 1, 1};
     _bool_attr->set_bools(1, vals);
@@ -188,19 +176,18 @@ TEST_F(ArrayBoolAttributeTest, read_view)
     ASSERT_NE(nullptr, mv_attr);
 
     vespalib::Stash stash;
-    auto* read_view = mv_attr->make_read_view(IMultiValueAttribute::ArrayBoolTag(), stash);
+    auto*           read_view = mv_attr->make_read_view(IMultiValueAttribute::ArrayBoolTag(), stash);
     ASSERT_NE(nullptr, read_view);
 
     std::vector<bool> expected = {true, false, true, true};
-    auto bs = read_view->get_values(1);
+    auto              bs = read_view->get_values(1);
     ASSERT_EQ(to_vec(bs), expected);
 
     // Empty document
     EXPECT_EQ(0u, read_view->get_values(2).size());
 }
 
-TEST_F(ArrayBoolAttributeTest, search_context_true)
-{
+TEST_F(ArrayBoolAttributeTest, search_context_true) {
     EXPECT_TRUE(_attr->addDocs(5));
     std::vector<int8_t> vals1 = {0, 1, 0};
     _bool_attr->set_bools(1, vals1);
@@ -229,8 +216,7 @@ TEST_F(ArrayBoolAttributeTest, search_context_true)
     EXPECT_EQ(-1, ctx->find(4, 0));
 }
 
-TEST_F(ArrayBoolAttributeTest, search_context_false)
-{
+TEST_F(ArrayBoolAttributeTest, search_context_false) {
     EXPECT_TRUE(_attr->addDocs(5));
     std::vector<int8_t> vals1 = {1, 0, 1};
     _bool_attr->set_bools(1, vals1);
@@ -244,28 +230,26 @@ TEST_F(ArrayBoolAttributeTest, search_context_false)
     EXPECT_EQ(1, ctx->find(1, 0));
 }
 
-TEST_F(ArrayBoolAttributeTest, search_context_numeric)
-{
+TEST_F(ArrayBoolAttributeTest, search_context_numeric) {
     EXPECT_TRUE(_attr->addDocs(5));
     std::vector<int8_t> vals = {0, 1};
     _bool_attr->set_bools(1, vals);
     _attr->commit();
 
     // "1" matches true
-    auto ctx1 = _attr->getSearch(std::make_unique<QueryTermSimple>("1", QueryTermSimple::Type::WORD),
-                                 SearchContextParams());
+    auto ctx1 =
+        _attr->getSearch(std::make_unique<QueryTermSimple>("1", QueryTermSimple::Type::WORD), SearchContextParams());
     ASSERT_TRUE(ctx1->valid());
     EXPECT_EQ(1, ctx1->find(1, 0));
 
     // "0" matches false
-    auto ctx0 = _attr->getSearch(std::make_unique<QueryTermSimple>("0", QueryTermSimple::Type::WORD),
-                                 SearchContextParams());
+    auto ctx0 =
+        _attr->getSearch(std::make_unique<QueryTermSimple>("0", QueryTermSimple::Type::WORD), SearchContextParams());
     ASSERT_TRUE(ctx0->valid());
     EXPECT_EQ(0, ctx0->find(1, 0));
 }
 
-TEST_F(ArrayBoolAttributeTest, search_context_invalid_term)
-{
+TEST_F(ArrayBoolAttributeTest, search_context_invalid_term) {
     EXPECT_TRUE(_attr->addDocs(5));
     _attr->commit();
 
@@ -274,8 +258,7 @@ TEST_F(ArrayBoolAttributeTest, search_context_invalid_term)
     EXPECT_FALSE(ctx->valid());
 }
 
-TEST_F(ArrayBoolAttributeTest, save_and_load)
-{
+TEST_F(ArrayBoolAttributeTest, save_and_load) {
     remove_saved_attr();
     EXPECT_TRUE(_attr->addDocs(10));
     std::vector<int8_t> vals1 = {1, 0, 1};
@@ -324,19 +307,17 @@ TEST_F(ArrayBoolAttributeTest, save_and_load)
     remove_saved_attr();
 }
 
-TEST_F(ArrayBoolAttributeTest, address_space_usage_is_reported)
-{
+TEST_F(ArrayBoolAttributeTest, address_space_usage_is_reported) {
     auto& raw_store = AddressSpaceComponents::raw_store;
     _attr->addDocs(1);
     _attr->commit();
     AddressSpaceUsage usage = _attr->getAddressSpaceUsage();
-    const auto& all = usage.get_all();
+    const auto&       all = usage.get_all();
     EXPECT_EQ(1u, all.size());
     EXPECT_EQ(1u, all.count(raw_store));
 }
 
-TEST_F(ArrayBoolAttributeTest, get_array_values)
-{
+TEST_F(ArrayBoolAttributeTest, get_array_values) {
     EXPECT_TRUE(_attr->addDocs(5));
     std::vector<int8_t> vals = {1, 0, 1, 1, 0};
     _bool_attr->set_bools(1, vals);
@@ -368,7 +349,8 @@ TEST_F(ArrayBoolAttributeTest, get_array_values)
     EXPECT_EQ(expected_wfloat.size(), _attr->get(1, buf_wfloat.data(), buf_wfloat.size()));
     EXPECT_EQ(expected_wfloat, buf_wfloat);
 
-    std::vector<AttributeVector::WeightedString> expected_wstring = {{"1", 1}, {"0", 1}, {"1", 1}, {"1", 1}, {"0", 1}};
+    std::vector<AttributeVector::WeightedString> expected_wstring = {
+        {"1", 1}, {"0", 1}, {"1", 1}, {"1", 1}, {"0", 1}};
     std::vector<AttributeVector::WeightedString> buf_wstring(expected_wstring.size());
     EXPECT_EQ(expected_wstring.size(), _attr->get(1, buf_wstring.data(), buf_wstring.size()));
     EXPECT_EQ(expected_wstring, buf_wstring);
@@ -418,8 +400,7 @@ TEST_F(ArrayBoolAttributeTest, get_array_values)
     EXPECT_EQ(partial_wstring, pbuf_wstring);
 }
 
-TEST_F(ArrayBoolAttributeTest, get_single_values)
-{
+TEST_F(ArrayBoolAttributeTest, get_single_values) {
     EXPECT_TRUE(_attr->addDocs(5));
     std::vector<int8_t> vals = {1, 0, 1};
     _bool_attr->set_bools(1, vals);
@@ -431,13 +412,11 @@ TEST_F(ArrayBoolAttributeTest, get_single_values)
     EXPECT_EQ(std::numeric_limits<uint32_t>::max(), _attr->getEnum(1));
 }
 
-TEST_F(ArrayBoolAttributeTest, is_not_sortable)
-{
+TEST_F(ArrayBoolAttributeTest, is_not_sortable) {
     EXPECT_FALSE(_attr->is_sortable());
 }
 
-TEST_F(ArrayBoolAttributeTest, find_enum_returns_false)
-{
+TEST_F(ArrayBoolAttributeTest, find_enum_returns_false) {
     EXPECT_TRUE(_attr->addDocs(5));
     std::vector<int8_t> vals = {1, 0, 1};
     _bool_attr->set_bools(1, vals);
@@ -447,8 +426,7 @@ TEST_F(ArrayBoolAttributeTest, find_enum_returns_false)
     EXPECT_FALSE(_attr->findEnum("0", h));
 }
 
-TEST_F(ArrayBoolAttributeTest, find_folded_enums_returns_empty)
-{
+TEST_F(ArrayBoolAttributeTest, find_folded_enums_returns_empty) {
     EXPECT_TRUE(_attr->addDocs(5));
     std::vector<int8_t> vals = {1, 0, 1};
     _bool_attr->set_bools(1, vals);
@@ -457,8 +435,7 @@ TEST_F(ArrayBoolAttributeTest, find_folded_enums_returns_empty)
     EXPECT_TRUE(_attr->findFoldedEnums("0").empty());
 }
 
-TEST_F(ArrayBoolAttributeTest, shrink_lid_space)
-{
+TEST_F(ArrayBoolAttributeTest, shrink_lid_space) {
     EXPECT_TRUE(_attr->addDocs(10));
     std::vector<int8_t> vals = {1, 0, 1};
     _bool_attr->set_bools(1, vals);
@@ -472,8 +449,7 @@ TEST_F(ArrayBoolAttributeTest, shrink_lid_space)
     EXPECT_EQ(3u, _attr->getValueCount(1));
 }
 
-TEST_F(ArrayBoolAttributeTest, search_context_from_nonzero_elem_id)
-{
+TEST_F(ArrayBoolAttributeTest, search_context_from_nonzero_elem_id) {
     EXPECT_TRUE(_attr->addDocs(5));
     std::vector<int8_t> vals = {1, 0, 1, 0, 1};
     _bool_attr->set_bools(1, vals);
@@ -495,8 +471,7 @@ TEST_F(ArrayBoolAttributeTest, search_context_from_nonzero_elem_id)
     EXPECT_EQ(-1, ctx->find(1, 5));
 }
 
-TEST_F(ArrayBoolAttributeTest, total_value_count_tracking)
-{
+TEST_F(ArrayBoolAttributeTest, total_value_count_tracking) {
     EXPECT_TRUE(_attr->addDocs(5));
     EXPECT_EQ(0u, _bool_attr->getTotalValueCount());
 
@@ -528,8 +503,7 @@ TEST_F(ArrayBoolAttributeTest, total_value_count_tracking)
     EXPECT_EQ(0u, _bool_attr->getTotalValueCount());
 }
 
-TEST_F(ArrayBoolAttributeTest, total_value_count_after_save_load)
-{
+TEST_F(ArrayBoolAttributeTest, total_value_count_after_save_load) {
     remove_saved_attr();
     EXPECT_TRUE(_attr->addDocs(5));
     std::vector<int8_t> vals1 = {1, 0, 1};
@@ -551,8 +525,7 @@ TEST_F(ArrayBoolAttributeTest, total_value_count_after_save_load)
     remove_saved_attr();
 }
 
-TEST_F(ArrayBoolAttributeTest, estimated_save_byte_size)
-{
+TEST_F(ArrayBoolAttributeTest, estimated_save_byte_size) {
     EXPECT_TRUE(_attr->addDocs(5));
     std::vector<int8_t> vals1 = {1, 0, 1};
     _bool_attr->set_bools(1, vals1);
@@ -567,16 +540,13 @@ TEST_F(ArrayBoolAttributeTest, estimated_save_byte_size)
     EXPECT_EQ(expected, estimate);
 }
 
-class ArrayBoolExtAttributeTest : public ::testing::Test
-{
+class ArrayBoolExtAttributeTest : public ::testing::Test {
 protected:
     using ArrayBoolExtAttribute = search::attribute::ArrayBoolExtAttribute;
     std::shared_ptr<ArrayBoolExtAttribute> _attr;
-    std::map<DocId,std::vector<bool>> _added;
+    std::map<DocId, std::vector<bool>>     _added;
 
-    ArrayBoolExtAttributeTest()
-        : _attr(std::make_shared<ArrayBoolExtAttribute>("ext_array_bool"))
-    {}
+    ArrayBoolExtAttributeTest() : _attr(std::make_shared<ArrayBoolExtAttribute>("ext_array_bool")) {}
 
     void add(std::vector<bool> values) {
         DocId docid;
@@ -590,8 +560,7 @@ protected:
     }
 };
 
-TEST_F(ArrayBoolExtAttributeTest, build_and_verify)
-{
+TEST_F(ArrayBoolExtAttributeTest, build_and_verify) {
     std::vector<bool> empty;
     std::vector<bool> many_vals;
     for (int i = 0; i < 100; ++i) {
@@ -605,7 +574,7 @@ TEST_F(ArrayBoolExtAttributeTest, build_and_verify)
     add({1, 0, 1, 1, 0, 0, 1, 1});
 
     vespalib::Stash stash;
-    auto* mv_attr = _attr->as_multi_value_attribute();
+    auto*           mv_attr = _attr->as_multi_value_attribute();
     ASSERT_NE(nullptr, mv_attr);
     auto* read_view = mv_attr->make_read_view(IMultiValueAttribute::ArrayBoolTag(), stash);
     ASSERT_NE(nullptr, read_view);
