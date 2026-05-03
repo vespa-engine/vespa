@@ -3,10 +3,15 @@
 #pragma once
 
 #include "postinglisttraits.h"
+
 #include <functional>
 
-namespace search::fef       { class TermFieldMatchData; }
-namespace search::queryeval { class SearchIterator; }
+namespace search::fef {
+class TermFieldMatchData;
+}
+namespace search::queryeval {
+class SearchIterator;
+}
 
 namespace search {
 
@@ -23,7 +28,8 @@ using DocidWithWeightIterator = attribute::PostingListTraits<int32_t>::const_ite
 /**
  * Baseline interface providing access to dictionary lookups and underlying posting lists for an attribute vector.
  *
- * This is used to speedup query execution for multi-term query operators as InTerm, WeightedSetTerm, DotProduct, Wand.
+ * This is used to speedup query execution for multi-term query operators as InTerm, WeightedSetTerm, DotProduct,
+ * Wand.
  */
 class IDirectPostingStore {
 public:
@@ -31,21 +37,26 @@ public:
         virtual ~LookupKey() = default;
         // It is required that the string is zero terminated
         virtual std::string_view asString() const = 0;
-        virtual bool asInteger(int64_t &value) const;
+        virtual bool asInteger(int64_t& value) const;
     };
 
     struct LookupResult {
         const vespalib::datastore::EntryRef posting_idx;
-        const uint32_t posting_size;
-        const int32_t min_weight;
-        const int32_t max_weight;
+        const uint32_t                      posting_size;
+        const int32_t                       min_weight;
+        const int32_t                       max_weight;
         const vespalib::datastore::EntryRef enum_idx;
         LookupResult() : posting_idx(), posting_size(0), min_weight(0), max_weight(0), enum_idx() {}
-        LookupResult(vespalib::datastore::EntryRef posting_idx_in, uint32_t posting_size_in, int32_t min_weight_in, int32_t max_weight_in, vespalib::datastore::EntryRef enum_idx_in)
-            : posting_idx(posting_idx_in), posting_size(posting_size_in), min_weight(min_weight_in), max_weight(max_weight_in), enum_idx(enum_idx_in) {}
+        LookupResult(vespalib::datastore::EntryRef posting_idx_in, uint32_t posting_size_in, int32_t min_weight_in,
+                     int32_t max_weight_in, vespalib::datastore::EntryRef enum_idx_in)
+            : posting_idx(posting_idx_in),
+              posting_size(posting_size_in),
+              min_weight(min_weight_in),
+              max_weight(max_weight_in),
+              enum_idx(enum_idx_in) {}
     };
     virtual vespalib::datastore::EntryRef get_dictionary_snapshot() const = 0;
-    virtual LookupResult lookup(const LookupKey & key, vespalib::datastore::EntryRef dictionary_snapshot) const = 0;
+    virtual LookupResult lookup(const LookupKey& key, vespalib::datastore::EntryRef dictionary_snapshot) const = 0;
 
     // Convenience only use by various tests.
     LookupResult lookup(std::string_view term, vespalib::datastore::EntryRef dictionary_snapshot) const;
@@ -53,9 +64,13 @@ public:
      * Collect enum indexes (via callback) where folded
      * (e.g. lowercased) value equals the folded value for enum_idx.
      */
-    virtual void collect_folded(vespalib::datastore::EntryRef enum_idx, vespalib::datastore::EntryRef dictionary_snapshot, const std::function<void(vespalib::datastore::EntryRef)>& callback) const = 0;
+    virtual void collect_folded(vespalib::datastore::EntryRef                             enum_idx,
+                                vespalib::datastore::EntryRef                             dictionary_snapshot,
+                                const std::function<void(vespalib::datastore::EntryRef)>& callback) const = 0;
     virtual bool has_btree_iterator(vespalib::datastore::EntryRef posting_idx) const noexcept = 0;
-    virtual std::unique_ptr<queryeval::SearchIterator> make_bitvector_iterator(vespalib::datastore::EntryRef posting_idx, uint32_t doc_id_limit, fef::TermFieldMatchData &match_data, bool strict) const = 0;
+    virtual std::unique_ptr<queryeval::SearchIterator>
+    make_bitvector_iterator(vespalib::datastore::EntryRef posting_idx, uint32_t doc_id_limit,
+                            fef::TermFieldMatchData& match_data, bool strict) const = 0;
     virtual bool has_bitvector(vespalib::datastore::EntryRef posting_idx) const noexcept = 0;
     virtual int64_t get_integer_value(vespalib::datastore::EntryRef enum_idx) const noexcept = 0;
 
@@ -68,5 +83,4 @@ public:
     virtual ~IDirectPostingStore() = default;
 };
 
-}
-
+} // namespace search

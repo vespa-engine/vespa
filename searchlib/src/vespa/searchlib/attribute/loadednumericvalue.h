@@ -3,8 +3,9 @@
 #pragma once
 
 #include "loadedvalue.h"
-#include <vespa/vespalib/util/sort.h>
+
 #include <vespa/searchlib/util/fileutil.h>
+#include <vespa/vespalib/util/sort.h>
 
 namespace search::attribute {
 
@@ -13,35 +14,24 @@ namespace search::attribute {
  * save file (i.e. old save format).  For numeric data types.
  */
 
-template <typename T>
-struct LoadedNumericValue : public LoadedValue<T>
-{
-    LoadedNumericValue() : LoadedValue<T>() { }
+template <typename T> struct LoadedNumericValue : public LoadedValue<T> {
+    LoadedNumericValue() : LoadedValue<T>() {}
 
-    class ValueCompare
-    {
+    class ValueCompare {
     public:
-        bool operator()(const LoadedNumericValue<T> &x, const LoadedNumericValue<T> &y) const {
-            return x < y;
-        }
+        bool operator()(const LoadedNumericValue<T>& x, const LoadedNumericValue<T>& y) const { return x < y; }
     };
 
-    class ValueRadix
-    {
+    class ValueRadix {
     public:
-        uint64_t operator()(const LoadedValue<T> &v) const {
+        uint64_t operator()(const LoadedValue<T>& v) const {
             return vespalib::convertForSort<T, true>::convert(v.getValue());
         }
     };
 };
 
+template <typename T> void sortLoadedByValue(SequentialReadModifyWriteVector<LoadedNumericValue<T>>& loaded);
 
-template <typename T>
-void
-sortLoadedByValue(SequentialReadModifyWriteVector<LoadedNumericValue<T>> & loaded);
+template <typename T> void sortLoadedByDocId(SequentialReadModifyWriteVector<LoadedNumericValue<T>>& loaded);
 
-template <typename T>
-void
-sortLoadedByDocId(SequentialReadModifyWriteVector<LoadedNumericValue<T>> & loaded);
-
-}
+} // namespace search::attribute

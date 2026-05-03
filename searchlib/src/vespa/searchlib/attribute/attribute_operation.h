@@ -3,12 +3,16 @@
 #pragma once
 
 #include "vespa/searchcommon/attribute/i_attribute_functor.h"
-#include <vespa/searchlib/common/rankedhit.h>
+
 #include <vespa/searchcommon/attribute/basictype.h>
+#include <vespa/searchlib/common/rankedhit.h>
 #include <vespa/vespalib/util/array.h>
+
 #include <vector>
 
-namespace search { class BitVector; }
+namespace search {
+class BitVector;
+}
 
 namespace search::attribute {
 
@@ -18,8 +22,8 @@ public:
     using FullResult = std::pair<std::unique_ptr<search::BitVector>, vespalib::Array<search::RankedHit>>;
 
     template <typename Hits>
-    static std::unique_ptr<AttributeOperation>
-    create(search::attribute::BasicType type, std::string_view operation, Hits docIds);
+    static std::unique_ptr<AttributeOperation> create(search::attribute::BasicType type, std::string_view operation,
+                                                      Hits docIds);
 };
 
-}
+} // namespace search::attribute

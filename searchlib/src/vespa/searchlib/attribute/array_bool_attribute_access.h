@@ -3,6 +3,7 @@
 #pragma once
 
 #include "attributevector.h"
+
 #include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
 
 namespace search::attribute {
@@ -15,9 +16,7 @@ namespace search::attribute {
  * - ArrayBoolAttribute: indexed search (RcuVector + RawBufferStore)
  * - ArrayBoolExtAttribute: streaming search (flat vectors, IExtendAttribute)
  */
-class ArrayBoolAttributeAccess : public AttributeVector,
-                                 public IMultiValueAttribute
-{
+class ArrayBoolAttributeAccess : public AttributeVector, public IMultiValueAttribute {
 protected:
     ArrayBoolAttributeAccess(const std::string& name, const Config& config);
     ~ArrayBoolAttributeAccess() override;
@@ -42,7 +41,8 @@ public:
     uint32_t get(DocId doc, WeightedEnum* v, uint32_t sz) const override;
     uint32_t getEnum(DocId doc) const override;
     bool is_sortable() const noexcept override;
-    std::unique_ptr<attribute::ISortBlobWriter> make_sort_blob_writer(bool ascending, const common::BlobConverter* converter,
+    std::unique_ptr<attribute::ISortBlobWriter> make_sort_blob_writer(bool                            ascending,
+                                                                      const common::BlobConverter*    converter,
                                                                       common::sortspec::MissingPolicy policy,
                                                                       std::string_view missing_value) const override;
 
@@ -50,4 +50,4 @@ public:
     const IMultiValueAttribute* as_multi_value_attribute() const override;
 };
 
-}
+} // namespace search::attribute

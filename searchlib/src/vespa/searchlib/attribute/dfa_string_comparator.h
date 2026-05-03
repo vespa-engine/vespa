@@ -3,7 +3,9 @@
 #pragma once
 
 #include "i_enum_store.h"
+
 #include <vespa/vespalib/datastore/unique_store_string_comparator.h>
+
 #include <functional>
 
 namespace search::attribute {
@@ -18,20 +20,21 @@ namespace search::attribute {
  * the comparison.
  */
 
-class DfaStringComparator : public vespalib::datastore::UniqueStoreStringComparator<IEnumStore::InternalIndex>
-{
+class DfaStringComparator : public vespalib::datastore::UniqueStoreStringComparator<IEnumStore::InternalIndex> {
 public:
     using ParentType = vespalib::datastore::UniqueStoreStringComparator<IEnumStore::InternalIndex>;
     using DataStoreType = ParentType::DataStoreType;
+
 private:
     using ParentType::get;
     std::reference_wrapper<const std::vector<uint32_t>> _candidate;
-    bool _cased;
+    bool                                                _cased;
 
 public:
     DfaStringComparator(const DataStoreType& data_store, const std::vector<uint32_t>& candidate, bool cased) noexcept;
 
-    bool less(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const noexcept override;
+    bool less(const vespalib::datastore::EntryRef lhs,
+              const vespalib::datastore::EntryRef rhs) const noexcept override;
 };
 
-}
+} // namespace search::attribute

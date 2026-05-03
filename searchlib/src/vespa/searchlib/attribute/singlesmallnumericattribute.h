@@ -4,16 +4,17 @@
 
 #include "integerbase.h"
 #include "search_context.h"
+
 #include <vespa/vespalib/util/atomic.h>
 #include <vespa/vespalib/util/rcuvector.h>
+
 #include <limits>
 
 namespace search {
 
 class GrowStrategy;
 
-class SingleValueSmallNumericAttribute : public IntegerAttributeTemplate<int8_t>
-{
+class SingleValueSmallNumericAttribute : public IntegerAttributeTemplate<int8_t> {
 private:
     using B = IntegerAttributeTemplate<int8_t>;
     using T = B::BaseType;
@@ -26,38 +27,31 @@ private:
     using WeightedEnum = B::WeightedEnum;
 
 protected:
-    using Word = uint32_t;  // Large enough to contain numDocs.
+    using Word = uint32_t; // Large enough to contain numDocs.
 private:
-    Word _valueMask;            // 0x01, 0x03 or 0x0f
-    uint32_t _valueShiftShift;  // 0x00, 0x01 or 0x02
-    uint32_t _valueShiftMask;   // 0x1f, 0x0f or 0x07
-    uint32_t _wordShift;        // 0x05, 0x04 or 0x03
+    Word     _valueMask;       // 0x01, 0x03 or 0x0f
+    uint32_t _valueShiftShift; // 0x00, 0x01 or 0x02
+    uint32_t _valueShiftMask;  // 0x1f, 0x0f or 0x07
+    uint32_t _wordShift;       // 0x05, 0x04 or 0x03
 
     using DataVector = vespalib::RcuVectorBase<Word>;
     DataVector _wordData;
 
-    T getFromEnum(EnumHandle) const override {
-        return T();
-    }
+    T getFromEnum(EnumHandle) const override { return T(); }
 
 protected:
-    bool findEnum(T, EnumHandle &) const override {
-        return false;
-    }
+    bool findEnum(T, EnumHandle&) const override { return false; }
 
     void set(DocId doc, T v) {
-        Word &word_ref = _wordData[doc >> _wordShift];
+        Word&    word_ref = _wordData[doc >> _wordShift];
         uint32_t valueShift = (doc & _valueShiftMask) << _valueShiftShift;
-        Word word = vespalib::atomic::load_ref_relaxed(word_ref);
-        word = (word & ~(_valueMask << valueShift)) |
-               ((v & _valueMask) << valueShift);
+        Word     word = vespalib::atomic::load_ref_relaxed(word_ref);
+        word = (word & ~(_valueMask << valueShift)) | ((v & _valueMask) << valueShift);
         vespalib::atomic::store_ref_relaxed(word_ref, word);
     }
 
-
 public:
-
-    SingleValueSmallNumericAttribute(const std::string & baseFileName, const Config &c, Word valueMask,
+    SingleValueSmallNumericAttribute(const std::string& baseFileName, const Config& c, Word valueMask,
                                      uint32_t valueShiftShift, uint32_t valueShiftMask, uint32_t wordShift);
 
     ~SingleValueSmallNumericAttribute() override;
@@ -73,66 +67,62 @@ public:
     void onUpdateStat(CommitParam::UpdateStats updateStats) override;
     void reclaim_memory(vespalib::Generation oldest_used_gen) override;
     void before_inc_generation(vespalib::Generation current_gen) override;
-    bool addDoc(DocId & doc) override;
-    bool onLoad(vespalib::Executor *executor) override;
+    bool addDoc(DocId& doc) override;
+    bool onLoad(vespalib::Executor* executor) override;
     std::unique_ptr<AttributeSaver> onInitSave(std::string_view fileName) override;
 
-    std::unique_ptr<attribute::SearchContext>
-    getSearch(std::unique_ptr<QueryTermSimple> term, const attribute::SearchContextParams & params) const override;
+    std::unique_ptr<attribute::SearchContext> getSearch(std::unique_ptr<QueryTermSimple>      term,
+                                                        const attribute::SearchContextParams& params) const override;
 
     T getFast(DocId doc) const {
-        const Word &word = _wordData.acquire_elem_ref(doc >> _wordShift);
-        uint32_t valueShift = (doc & _valueShiftMask) << _valueShiftShift;
+        const Word& word = _wordData.acquire_elem_ref(doc >> _wordShift);
+        uint32_t    valueShift = (doc & _valueShiftMask) << _valueShiftShift;
         return (vespalib::atomic::load_ref_relaxed(word) >> valueShift) & _valueMask;
     }
 
     //-------------------------------------------------------------------------
     // new read api
     //-------------------------------------------------------------------------
-    T get(DocId doc) const override {
-        return getFast(doc);
-    }
-    largeint_t getInt(DocId doc) const override {
-        return static_cast<largeint_t>(getFast(doc));
-    }
-    double getFloat(DocId doc) const override {
-        return static_cast<double>(getFast(doc));
-    }
+    T get(DocId doc) const override { return getFast(doc); }
+    largeint_t getInt(DocId doc) const override { return static_cast<largeint_t>(getFast(doc)); }
+    double getFloat(DocId doc) const override { return static_cast<double>(getFast(doc)); }
     uint32_t getEnum(DocId) const override {
         return std::numeric_limits<uint32_t>::max(); // does not have enum
     }
-    uint32_t get(DocId doc, largeint_t * v, uint32_t sz) const override {
+    uint32_t get(DocId doc, largeint_t* v, uint32_t sz) const override {
         if (sz > 0) {
             v[0] = static_cast<largeint_t>(getFast(doc));
         }
         return 1;
     }
-    uint32_t get(DocId doc, double * v, uint32_t sz) const override {
+    uint32_t get(DocId doc, double* v, uint32_t sz) const override {
         if (sz > 0) {
             v[0] = static_cast<double>(getFast(doc));
         }
         return 1;
     }
-    uint32_t get(DocId doc, EnumHandle * e, uint32_t sz) const override {
+    uint32_t get(DocId doc, EnumHandle* e, uint32_t sz) const override {
         if (sz > 0) {
             e[0] = getEnum(doc);
         }
         return 1;
     }
-    uint32_t get(DocId doc, WeightedInt * v, uint32_t sz) const override {
+    uint32_t get(DocId doc, WeightedInt* v, uint32_t sz) const override {
         if (sz > 0) {
             v[0] = WeightedInt(static_cast<largeint_t>(getFast(doc)));
         }
         return 1;
     }
-    uint32_t get(DocId doc, WeightedFloat * v, uint32_t sz) const override {
+    uint32_t get(DocId doc, WeightedFloat* v, uint32_t sz) const override {
         if (sz > 0) {
             v[0] = WeightedFloat(static_cast<double>(getFast(doc)));
         }
         return 1;
     }
-    uint32_t get(DocId doc, WeightedEnum * e, uint32_t sz) const override {
-        (void) doc; (void) e; (void) sz;
+    uint32_t get(DocId doc, WeightedEnum* e, uint32_t sz) const override {
+        (void)doc;
+        (void)e;
+        (void)sz;
         return 0;
     }
 
@@ -141,17 +131,14 @@ public:
     uint64_t getEstimatedSaveByteSize() const override;
 };
 
-class SingleValueSemiNibbleNumericAttribute : public SingleValueSmallNumericAttribute
-{
+class SingleValueSemiNibbleNumericAttribute : public SingleValueSmallNumericAttribute {
 public:
-    SingleValueSemiNibbleNumericAttribute(const std::string & baseFileName, const GrowStrategy & grow);
+    SingleValueSemiNibbleNumericAttribute(const std::string& baseFileName, const GrowStrategy& grow);
 };
 
-class SingleValueNibbleNumericAttribute : public SingleValueSmallNumericAttribute
-{
+class SingleValueNibbleNumericAttribute : public SingleValueSmallNumericAttribute {
 public:
-    SingleValueNibbleNumericAttribute(const std::string & baseFileName, const GrowStrategy & grow);
+    SingleValueNibbleNumericAttribute(const std::string& baseFileName, const GrowStrategy& grow);
 };
 
-}
-
+} // namespace search

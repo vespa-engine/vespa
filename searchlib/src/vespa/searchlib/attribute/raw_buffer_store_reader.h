@@ -4,6 +4,7 @@
 
 #include <vespa/vespalib/datastore/entryref.h>
 #include <vespa/vespalib/stllike/allocator.h>
+
 #include <vector>
 
 namespace search::attribute {
@@ -15,15 +16,15 @@ class RawBufferStore;
  * Class for reading raw values into a raw buffer store from a
  * BlobSequenceReader.
  */
-class RawBufferStoreReader
-{
-    RawBufferStore&     _store;
-    BlobSequenceReader& _reader;
+class RawBufferStoreReader {
+    RawBufferStore&                                    _store;
+    BlobSequenceReader&                                _reader;
     std::vector<char, vespalib::allocator_large<char>> _buffer;
+
 public:
     RawBufferStoreReader(RawBufferStore& store, BlobSequenceReader& reader);
     ~RawBufferStoreReader();
     vespalib::datastore::EntryRef read();
 };
 
-}
+} // namespace search::attribute

@@ -3,16 +3,18 @@
 #pragma once
 
 #include <vespa/searchcommon/attribute/hit_estimate.h>
+
 #include <memory>
 
 namespace search::queryeval {
-    class SearchIterator;
-    class ExecuteInfo;
+class SearchIterator;
+class ExecuteInfo;
+} // namespace search::queryeval
+namespace search::fef {
+class TermFieldMatchData;
 }
-namespace search::fef { class TermFieldMatchData; }
 
 namespace search::attribute {
-
 
 /**
  * Interface for search context helper classes to create attribute
@@ -22,17 +24,17 @@ namespace search::attribute {
  * force searches for nonexisting values.
  */
 
-class IPostingListSearchContext
-{
+class IPostingListSearchContext {
 protected:
-    IPostingListSearchContext() { }
+    IPostingListSearchContext() {}
     virtual ~IPostingListSearchContext() = default;
 
 public:
-    virtual void fetchPostings(const queryeval::ExecuteInfo & execInfo, bool strict) = 0;
-    virtual std::unique_ptr<queryeval::SearchIterator> createPostingIterator(fef::TermFieldMatchData *matchData, bool strict) = 0;
+    virtual void fetchPostings(const queryeval::ExecuteInfo& execInfo, bool strict) = 0;
+    virtual std::unique_ptr<queryeval::SearchIterator> createPostingIterator(fef::TermFieldMatchData* matchData,
+                                                                             bool                     strict) = 0;
     virtual HitEstimate calc_hit_estimate() const = 0;
     virtual double posting_list_merge_factor() const = 0;
 };
 
-}
+} // namespace search::attribute

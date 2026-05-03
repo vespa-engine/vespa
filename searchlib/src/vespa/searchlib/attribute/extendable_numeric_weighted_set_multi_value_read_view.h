@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchcommon/attribute/i_multi_value_read_view.h>
+
 #include <vector>
 
 namespace search::attribute {
@@ -15,16 +16,18 @@ namespace search::attribute {
  * @tparam BaseType The base type of the raw data to access.
  */
 template <typename MultiValueType, typename BaseType>
-class ExtendableNumericWeightedSetMultiValueReadView : public attribute::IMultiValueReadView<MultiValueType>
-{
+class ExtendableNumericWeightedSetMultiValueReadView : public attribute::IMultiValueReadView<MultiValueType> {
     const std::vector<BaseType>&        _data;
     const std::vector<uint32_t>&        _idx;
     const std::vector<int32_t>&         _weights;
     mutable std::vector<MultiValueType> _copy;
+
 public:
-    ExtendableNumericWeightedSetMultiValueReadView(const std::vector<BaseType>& data, const std::vector<uint32_t>& idx, const std::vector<int32_t>& weights);
+    ExtendableNumericWeightedSetMultiValueReadView(const std::vector<BaseType>& data,
+                                                   const std::vector<uint32_t>& idx,
+                                                   const std::vector<int32_t>&  weights);
     ~ExtendableNumericWeightedSetMultiValueReadView() override;
     std::span<const MultiValueType> get_values(uint32_t doc_id) const override;
 };
 
-}
+} // namespace search::attribute

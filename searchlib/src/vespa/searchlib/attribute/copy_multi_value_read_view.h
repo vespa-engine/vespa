@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include "multi_value_mapping_read_view.h"
 #include "enumstore.h"
+#include "multi_value_mapping_read_view.h"
+
 #include <vespa/searchcommon/attribute/i_multi_value_read_view.h>
 #include <vespa/searchcommon/attribute/multi_value_traits.h>
 
@@ -16,16 +17,17 @@ namespace search::attribute {
  * @tparam RawMultiValueType The multi-value type of the raw data to access.
  */
 template <typename MultiValueType, typename RawMultiValueType>
-class CopyMultiValueReadView : public IMultiValueReadView<MultiValueType>
-{
-    static_assert(std::is_same_v<multivalue::ValueType_t<MultiValueType>, multivalue::ValueType_t<RawMultiValueType>>);
+class CopyMultiValueReadView : public IMultiValueReadView<MultiValueType> {
+    static_assert(
+        std::is_same_v<multivalue::ValueType_t<MultiValueType>, multivalue::ValueType_t<RawMultiValueType>>);
     using ValueType = multivalue::ValueType_t<MultiValueType>;
     MultiValueMappingReadView<RawMultiValueType> _mv_mapping_read_view;
     mutable std::vector<MultiValueType>          _copy;
+
 public:
     CopyMultiValueReadView(MultiValueMappingReadView<RawMultiValueType> mv_mapping_read_view);
     ~CopyMultiValueReadView() override;
     std::span<const MultiValueType> get_values(uint32_t docid) const override;
 };
 
-}
+} // namespace search::attribute

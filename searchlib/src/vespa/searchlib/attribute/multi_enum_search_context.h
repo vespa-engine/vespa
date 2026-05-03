@@ -2,9 +2,10 @@
 
 #pragma once
 
-#include "numeric_search_context.h"
 #include "enumstore.h"
 #include "multi_value_mapping_read_view.h"
+#include "numeric_search_context.h"
+
 #include <vespa/searchcommon/attribute/multivalue.h>
 
 namespace search::attribute {
@@ -14,28 +15,25 @@ namespace search::attribute {
  * a query term on a multi value enumerated attribute vector.
  * This class should be considered to be an abstract class.
  */
-template <typename T, typename BaseSC, typename M>
-class MultiEnumSearchContext : public BaseSC
-{
+template <typename T, typename BaseSC, typename M> class MultiEnumSearchContext : public BaseSC {
 protected:
     using DocId = ISearchContext::DocId;
     MultiValueMappingReadView<M> _mv_mapping_read_view;
     const EnumStoreT<T>&         _enum_store;
 
-    int32_t onFind(DocId docId, int32_t elemId, int32_t & weight) const override {
+    int32_t onFind(DocId docId, int32_t elemId, int32_t& weight) const override {
         return find(docId, elemId, weight);
     }
 
-    int32_t onFind(DocId docId, int32_t elemId) const override {
-        return find(docId, elemId);
-    }
+    int32_t onFind(DocId docId, int32_t elemId) const override { return find(docId, elemId); }
 
-    MultiEnumSearchContext(typename BaseSC::MatcherType&& matcher, const AttributeVector& toBeSearched, MultiValueMappingReadView<M> mv_mapping_read_view, const EnumStoreT<T>& enum_store);
+    MultiEnumSearchContext(typename BaseSC::MatcherType&& matcher, const AttributeVector& toBeSearched,
+                           MultiValueMappingReadView<M> mv_mapping_read_view, const EnumStoreT<T>& enum_store);
     MultiEnumSearchContext(MultiEnumSearchContext&& rhs) noexcept = default;
     ~MultiEnumSearchContext() override;
 
 public:
-    int32_t find(DocId doc, int32_t elemId, int32_t & weight) const {
+    int32_t find(DocId doc, int32_t elemId, int32_t& weight) const {
         auto indices(_mv_mapping_read_view.get(doc));
         for (uint32_t i(elemId); i < indices.size(); i++) {
             T v = _enum_store.get_value(multivalue::get_value_ref(indices[i]).load_acquire());
@@ -59,9 +57,9 @@ public:
         return -1;
     }
 
-    std::unique_ptr<queryeval::SearchIterator>
-    createFilterIterator(fef::TermFieldMatchData* matchData, bool strict) override;
+    std::unique_ptr<queryeval::SearchIterator> createFilterIterator(fef::TermFieldMatchData* matchData,
+                                                                    bool                     strict) override;
     uint32_t get_committed_docid_limit() const noexcept override;
 };
 
-}
+} // namespace search::attribute

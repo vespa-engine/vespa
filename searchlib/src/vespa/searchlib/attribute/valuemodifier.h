@@ -4,19 +4,21 @@
 
 #include "interlock.h"
 
-namespace search { class AttributeVector; }
+namespace search {
+class AttributeVector;
+}
 
 namespace search::attribute {
 
-class ValueModifier
-{
+class ValueModifier {
 public:
-    ValueModifier(AttributeVector &attr);
-    ValueModifier(const ValueModifier &) = delete;
-    ValueModifier & operator = (const ValueModifier &) = delete;
+    ValueModifier(AttributeVector& attr);
+    ValueModifier(const ValueModifier&) = delete;
+    ValueModifier& operator=(const ValueModifier&) = delete;
     ~ValueModifier();
+
 private:
-    AttributeVector * _attr;
+    AttributeVector* _attr;
 };
 
-}
+} // namespace search::attribute

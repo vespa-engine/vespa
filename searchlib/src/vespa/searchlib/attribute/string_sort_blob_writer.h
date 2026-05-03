@@ -3,9 +3,12 @@
 #pragma once
 
 #include <vespa/searchlib/common/sortspec.h>
+
 #include <optional>
 
-namespace search::common { class BlobConverter; }
+namespace search::common {
+class BlobConverter;
+}
 
 namespace search::attribute {
 
@@ -14,8 +17,7 @@ namespace search::attribute {
  * weighted sets of string with ascending or descending
  * sort order.
  */
-template <bool asc>
-class StringSortBlobWriter {
+template <bool asc> class StringSortBlobWriter {
     using BlobConverter = common::BlobConverter;
     std::optional<size_t>        _best_size;
     unsigned char*               _serialize_to;
@@ -26,6 +28,7 @@ class StringSortBlobWriter {
 
     size_t value_prefix_len() const noexcept { return _value_prefix.has_value() ? 1 : 0; }
     void set_missing_blob(std::string_view value);
+
 public:
     StringSortBlobWriter(const BlobConverter* bc, search::common::sortspec::MissingPolicy policy,
                          std::string_view missing_value, bool multi_value) noexcept;
@@ -35,4 +38,4 @@ public:
     long write();
 };
 
-}
+} // namespace search::attribute

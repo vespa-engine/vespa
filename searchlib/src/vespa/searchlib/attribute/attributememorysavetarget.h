@@ -4,12 +4,16 @@
 
 #include "attributememoryfilewriter.h"
 #include "iattributesavetarget.h"
+
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/vespalib/stllike/hash_fun.h>
+
 #include <memory>
 #include <unordered_map>
 
-namespace search::common { class FileHeaderContext; }
+namespace search::common {
+class FileHeaderContext;
+}
 
 namespace search {
 class AttributeVector;
@@ -22,13 +26,11 @@ private:
     using FileWriterUP = std::unique_ptr<AttributeMemoryFileWriter>;
     struct WriterEntry {
         FileWriterUP writer;
-        std::string desc;
+        std::string  desc;
         WriterEntry(FileWriterUP writer_in, std::string desc_in)
-            : writer(std::move(writer_in)),
-              desc(std::move(desc_in))
-        {}
-        WriterEntry(WriterEntry &&) noexcept = default;
-        WriterEntry & operator=(WriterEntry &&) noexcept = default;
+            : writer(std::move(writer_in)), desc(std::move(desc_in)) {}
+        WriterEntry(WriterEntry&&) noexcept = default;
+        WriterEntry& operator=(WriterEntry&&) noexcept = default;
         ~WriterEntry();
     };
     using WriterMap = std::unordered_map<std::string, WriterEntry, vespalib::hash<std::string>>;
@@ -47,21 +49,19 @@ public:
     /**
      * Write the underlying buffer(s) to file(s).
      **/
-    bool writeToFile(const TuneFileAttributes &tuneFileAttributes,
-                     const common::FileHeaderContext &fileHeaderContext);
+    bool writeToFile(const TuneFileAttributes&        tuneFileAttributes,
+                     const common::FileHeaderContext& fileHeaderContext);
 
     bool setup() override { return true; }
     void close() override {}
-    IAttributeFileWriter &datWriter() override;
-    IAttributeFileWriter &idxWriter() override;
-    IAttributeFileWriter &weightWriter() override;
-    IAttributeFileWriter &udatWriter() override;
+    IAttributeFileWriter& datWriter() override;
+    IAttributeFileWriter& idxWriter() override;
+    IAttributeFileWriter& weightWriter() override;
+    IAttributeFileWriter& udatWriter() override;
 
-    bool setup_writer(const std::string& file_suffix,
-                      const std::string& desc) override;
+    bool setup_writer(const std::string& file_suffix, const std::string& desc) override;
     IAttributeFileWriter& get_writer(const std::string& file_suffix) override;
     uint64_t size_on_disk() const noexcept override;
 };
 
 } // namespace search
-

@@ -4,7 +4,9 @@
 
 #include <memory>
 
-namespace vespalib { class DataBuffer; }
+namespace vespalib {
+class DataBuffer;
+}
 namespace search {
 
 class BufferWriter;
@@ -13,8 +15,7 @@ class BufferWriter;
  * Interface class to write to a single attribute vector file. Used by
  * IAttributSaver.
  */
-class IAttributeFileWriter
-{
+class IAttributeFileWriter {
 public:
     using BufferBuf = vespalib::DataBuffer;
     using Buffer = std::unique_ptr<BufferBuf>;

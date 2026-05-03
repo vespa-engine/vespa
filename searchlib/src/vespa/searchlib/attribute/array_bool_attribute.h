@@ -4,10 +4,12 @@
 
 #include "array_bool_attribute_access.h"
 #include "raw_buffer_store.h"
+
 #include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
 #include <vespa/searchlib/attribute/search_context.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/vespalib/util/rcuvector.h>
+
 #include <cstring>
 
 namespace search::attribute {
@@ -23,18 +25,19 @@ namespace search::attribute {
  * Values are set directly per document (no change vector), similar to
  * SingleRawAttribute and tensor attributes.
  */
-class ArrayBoolAttribute : public ArrayBoolAttributeAccess
-{
+class ArrayBoolAttribute : public ArrayBoolAttributeAccess {
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using EntryRef = vespalib::datastore::EntryRef;
     using RefVector = vespalib::RcuVectorBase<AtomicEntryRef>;
 
-    RefVector        _ref_vector;
-    RawBufferStore   _raw_store;
-    uint64_t         _total_values;
+    RefVector      _ref_vector;
+    RawBufferStore _raw_store;
+    uint64_t       _total_values;
 
     vespalib::MemoryUsage update_stat();
-    EntryRef acquire_entry_ref(DocId docid) const noexcept { return _ref_vector.acquire_elem_ref(docid).load_acquire(); }
+    EntryRef acquire_entry_ref(DocId docid) const noexcept {
+        return _ref_vector.acquire_elem_ref(docid).load_acquire();
+    }
 
     bool onLoad(vespalib::Executor* executor) override;
     std::unique_ptr<AttributeSaver> onInitSave(std::string_view fileName) override;
@@ -60,8 +63,8 @@ public:
     uint64_t getEstimatedSaveByteSize() const override;
 
     // Search
-    std::unique_ptr<SearchContext>
-    getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams& params) const override;
+    std::unique_ptr<SearchContext> getSearch(QueryTermSimpleUP                     term,
+                                             const attribute::SearchContextParams& params) const override;
 
     // IMultiValueAttribute
     const IArrayBoolReadView* make_read_view(ArrayBoolTag, vespalib::Stash&) const override;
@@ -69,8 +72,8 @@ public:
 
 class ArrayBoolSearchContext : public SearchContext {
     const ArrayBoolAttribute& _attr;
-    bool _want_true;
-    bool _valid;
+    bool                      _want_true;
+    bool                      _valid;
 
     bool valid() const override { return _valid; }
 
@@ -92,11 +95,7 @@ class ArrayBoolSearchContext : public SearchContext {
 
 public:
     ArrayBoolSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const ArrayBoolAttribute& attr)
-        : SearchContext(attr),
-          _attr(attr),
-          _want_true(true),
-          _valid(qTerm->isValid())
-    {
+        : SearchContext(attr), _attr(attr), _want_true(true), _valid(qTerm->isValid()) {
         if ((strcmp("0", qTerm->getTerm()) == 0) || (strcasecmp("false", qTerm->getTerm()) == 0)) {
             _want_true = false;
         } else if ((strcmp("1", qTerm->getTerm()) != 0) && (strcasecmp("true", qTerm->getTerm()) != 0)) {
@@ -108,9 +107,7 @@ public:
         return _valid ? HitEstimate(_attr.getCommittedDocIdLimit()) : HitEstimate(0);
     }
 
-    uint32_t get_committed_docid_limit() const noexcept override {
-        return _attr.getCommittedDocIdLimit();
-    }
+    uint32_t get_committed_docid_limit() const noexcept override { return _attr.getCommittedDocIdLimit(); }
 
     const ArrayBoolSearchContext* as_array_bool_search_context() const override { return this; }
 
@@ -119,4 +116,4 @@ public:
     bool get_valid() const { return _valid; }
 };
 
-}
+} // namespace search::attribute

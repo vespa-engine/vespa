@@ -8,6 +8,7 @@
 #include <vespa/searchcommon/attribute/hnsw_index_params.h>
 #include <vespa/searchcommon/attribute/predicate_params.h>
 #include <vespa/vespalib/data/fileheader.h>
+
 #include <chrono>
 #include <optional>
 #include <string>
@@ -20,65 +21,59 @@ namespace search::attribute {
  **/
 class AttributeHeader {
 private:
-    std::string _fileName;
-    BasicType _basicType;
-    CollectionType _collectionType;
-    vespalib::eval::ValueType _tensorType;
-    bool        _enumerated;
-    bool        _collectionTypeParamsSet;
-    bool        _predicateParamsSet;
-    PersistentPredicateParams _predicateParams;
-    std::optional<HnswIndexParams> _hnsw_index_params;
-    uint32_t    _numDocs;
-    uint64_t    _uniqueValueCount;
-    uint64_t    _totalValueCount;
-    uint64_t    _memory_usage;
-    uint64_t    _createSerialNum;
-    uint32_t    _version;
+    std::string                         _fileName;
+    BasicType                           _basicType;
+    CollectionType                      _collectionType;
+    vespalib::eval::ValueType           _tensorType;
+    bool                                _enumerated;
+    bool                                _collectionTypeParamsSet;
+    bool                                _predicateParamsSet;
+    PersistentPredicateParams           _predicateParams;
+    std::optional<HnswIndexParams>      _hnsw_index_params;
+    uint32_t                            _numDocs;
+    uint64_t                            _uniqueValueCount;
+    uint64_t                            _totalValueCount;
+    uint64_t                            _memory_usage;
+    uint64_t                            _createSerialNum;
+    uint32_t                            _version;
     std::chrono::steady_clock::duration _flush_duration;
-    vespalib::GenericHeader _extra_tags;
+    vespalib::GenericHeader             _extra_tags;
 
-    void internalExtractTags(const vespalib::GenericHeader &header);
+    void internalExtractTags(const vespalib::GenericHeader& header);
+
 public:
     AttributeHeader();
     AttributeHeader(std::string fileName);
-    AttributeHeader(std::string fileName,
-                    BasicType basicType,
-                    CollectionType collectionType,
-                    const vespalib::eval::ValueType &tensorType,
-                    bool enumerated,
-                    const PersistentPredicateParams &predicateParams,
-                    const std::optional<HnswIndexParams>& hnsw_index_params,
-                    uint32_t numDocs,
-                    uint64_t uniqueValueCount,
-                    uint64_t totalValueCount,
-                    uint64_t memory_usage,
-                    uint64_t createSerialNum,
-                    uint32_t version);
+    AttributeHeader(std::string fileName, BasicType basicType, CollectionType collectionType,
+                    const vespalib::eval::ValueType& tensorType, bool enumerated,
+                    const PersistentPredicateParams&      predicateParams,
+                    const std::optional<HnswIndexParams>& hnsw_index_params, uint32_t numDocs,
+                    uint64_t uniqueValueCount, uint64_t totalValueCount, uint64_t memory_usage,
+                    uint64_t createSerialNum, uint32_t version);
     ~AttributeHeader();
 
-    const std::string & getFileName() const { return _fileName; }
-    const BasicType & getBasicType() const { return _basicType; }
-    const CollectionType &getCollectionType() const { return _collectionType; }
-    const vespalib::eval::ValueType &getTensorType() const { return _tensorType; }
+    const std::string& getFileName() const { return _fileName; }
+    const BasicType& getBasicType() const { return _basicType; }
+    const CollectionType& getCollectionType() const { return _collectionType; }
+    const vespalib::eval::ValueType& getTensorType() const { return _tensorType; }
     bool hasMultiValue() const;
     bool hasWeightedSetType() const;
     bool needs_idx_file() const;
     uint32_t getNumDocs() const { return _numDocs; }
     bool getEnumerated() const { return _enumerated; }
     uint64_t getCreateSerialNum() const { return _createSerialNum; }
-    uint32_t getVersion() const  { return _version; }
+    uint32_t getVersion() const { return _version; }
     uint64_t get_total_value_count() const { return _totalValueCount; }
     uint64_t get_unique_value_count() const { return _uniqueValueCount; }
-    const PersistentPredicateParams &getPredicateParams() const { return _predicateParams; }
+    const PersistentPredicateParams& getPredicateParams() const { return _predicateParams; }
     bool getPredicateParamsSet() const { return _predicateParamsSet; }
     bool getCollectionTypeParamsSet() const { return _collectionTypeParamsSet; }
     const std::optional<HnswIndexParams>& get_hnsw_index_params() const { return _hnsw_index_params; }
-    static AttributeHeader extractTags(const vespalib::GenericHeader &header, const std::string &file_name);
-    void addTags(vespalib::GenericHeader &header) const;
+    static AttributeHeader extractTags(const vespalib::GenericHeader& header, const std::string& file_name);
+    void addTags(vespalib::GenericHeader& header) const;
     vespalib::GenericHeader& get_extra_tags() noexcept { return _extra_tags; }
     std::chrono::steady_clock::duration get_flush_duration() const noexcept { return _flush_duration; }
     uint64_t get_memory_usage() const noexcept { return _memory_usage; }
 };
 
-}
+} // namespace search::attribute

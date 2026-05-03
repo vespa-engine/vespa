@@ -4,14 +4,16 @@
 
 #include <memory>
 
-namespace search::common { struct FieldSortSpec; }
+namespace search::common {
+struct FieldSortSpec;
+}
 
 namespace search::attribute {
 
 class IAttributeVector;
 class ISortBlobWriter;
 
-std::unique_ptr<ISortBlobWriter>
-make_sort_blob_writer(const IAttributeVector* vector, const search::common::FieldSortSpec& field_sort_spec);
+std::unique_ptr<ISortBlobWriter> make_sort_blob_writer(const IAttributeVector*              vector,
+                                                       const search::common::FieldSortSpec& field_sort_spec);
 
-}
+} // namespace search::attribute

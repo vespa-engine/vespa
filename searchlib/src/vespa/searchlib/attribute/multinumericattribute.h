@@ -2,11 +2,13 @@
 
 #pragma once
 
-#include "integerbase.h"
 #include "floatbase.h"
+#include "integerbase.h"
 #include "multivalueattribute.h"
 #include "search_context.h"
+
 #include <vespa/searchcommon/attribute/config.h>
+
 #include <limits>
 
 namespace search {
@@ -18,8 +20,7 @@ namespace search {
  * B: Base class
  * M: MultiValueType
  */
-template <typename B, typename M>
-class MultiValueNumericAttribute : public MultiValueAttribute<B, M> {
+template <typename B, typename M> class MultiValueNumericAttribute : public MultiValueAttribute<B, M> {
 private:
     using T = typename B::BaseType;
     using DocId = typename B::DocId;
@@ -37,45 +38,46 @@ private:
     using MultiValueMapping = typename MultiValueAttribute<B, M>::MultiValueMapping;
     using MultiValueType = typename MultiValueAttribute<B, M>::MultiValueType; // = B::BaseType
 
-    bool extractChangeData(const Change & c, MValueType & data) override {
+    bool extractChangeData(const Change& c, MValueType& data) override {
         data = static_cast<MValueType>(c._data.get());
         return true;
     }
 
     T getFromEnum(EnumHandle e) const override;
-    bool findEnum(T value, EnumHandle & e) const override;
+    bool findEnum(T value, EnumHandle& e) const override;
 
 protected:
     using WType = MultiValueType;
-    uint32_t get(DocId doc, const WType * & values) const {
+    uint32_t get(DocId doc, const WType*& values) const {
         MultiValueArrayRef array(this->_mvMapping.get(doc));
         values = array.data();
         return array.size();
     }
 
     bool is_sortable() const noexcept override;
-    std::unique_ptr<attribute::ISortBlobWriter> make_sort_blob_writer(bool ascending, const common::BlobConverter* converter,
+    std::unique_ptr<attribute::ISortBlobWriter> make_sort_blob_writer(bool                            ascending,
+                                                                      const common::BlobConverter*    converter,
                                                                       common::sortspec::MissingPolicy policy,
                                                                       std::string_view missing_value) const override;
 
 public:
-    MultiValueNumericAttribute(const std::string & baseFileName, const AttributeVector::Config & c =
-                               AttributeVector::Config(AttributeVector::BasicType::fromType(T()),
-                                                       attribute::CollectionType::ARRAY));
+    MultiValueNumericAttribute(const std::string&             baseFileName,
+                               const AttributeVector::Config& c = AttributeVector::Config(
+                                   AttributeVector::BasicType::fromType(T()), attribute::CollectionType::ARRAY));
     uint32_t getValueCount(DocId doc) const override;
     void onCommit() override;
     void onUpdateStat(CommitParam::UpdateStats updateStats) override;
     void reclaim_memory(vespalib::Generation oldest_used_gen) override;
 
     void before_inc_generation(vespalib::Generation current_gen) override;
-    bool onLoad(vespalib::Executor *executor) override;
-    virtual bool onLoadEnumerated(ReaderBase &attrReader);
+    bool onLoad(vespalib::Executor* executor) override;
+    virtual bool onLoadEnumerated(ReaderBase& attrReader);
 
-    std::unique_ptr<attribute::SearchContext>
-    getSearch(std::unique_ptr<QueryTermSimple> term, const attribute::SearchContextParams & params) const override;
+    std::unique_ptr<attribute::SearchContext> getSearch(std::unique_ptr<QueryTermSimple>      term,
+                                                        const attribute::SearchContextParams& params) const override;
 
     virtual void clearOldValues(DocId doc);
-    virtual void setNewValues(DocId doc, const std::vector<WType> & values);
+    virtual void setNewValues(DocId doc, const std::vector<WType>& values);
 
     //-------------------------------------------------------------------------
     // new read api
@@ -93,51 +95,41 @@ public:
         return static_cast<double>((values.size() > 0) ? multivalue::get_value(values[0]) : T());
     }
     EnumHandle getEnum(DocId doc) const override {
-        (void) doc;
+        (void)doc;
         return std::numeric_limits<uint32_t>::max(); // does not have enum
     }
-    uint32_t get(DocId doc, largeint_t * v, uint32_t sz) const override {
-        return getHelper(doc, v, sz);
-    }
-    uint32_t get(DocId doc, double * v, uint32_t sz) const override {
-        return getHelper(doc, v, sz);
-    }
-    template <typename BufferType>
-    uint32_t getHelper(DocId doc, BufferType * buffer, uint32_t sz) const {
+    uint32_t get(DocId doc, largeint_t* v, uint32_t sz) const override { return getHelper(doc, v, sz); }
+    uint32_t get(DocId doc, double* v, uint32_t sz) const override { return getHelper(doc, v, sz); }
+    template <typename BufferType> uint32_t getHelper(DocId doc, BufferType* buffer, uint32_t sz) const {
         MultiValueArrayRef handle(this->_mvMapping.get(doc));
-        uint32_t ret = handle.size();
-        for(size_t i(0), m(std::min(sz, ret)); i < m; i++) {
+        uint32_t           ret = handle.size();
+        for (size_t i(0), m(std::min(sz, ret)); i < m; i++) {
             buffer[i] = static_cast<BufferType>(multivalue::get_value(handle[i]));
         }
         return ret;
     }
-    uint32_t get(DocId doc, EnumHandle * e, uint32_t sz) const override {
-        return getEnumHelper(doc, e, sz);
-    }
-    uint32_t get(DocId doc, WeightedEnum * e, uint32_t sz) const override {
-        return getEnumHelper(doc, e, sz);
-    }
-    template <typename E>
-    uint32_t getEnumHelper(DocId doc, E * e, uint32_t sz) const {
+    uint32_t get(DocId doc, EnumHandle* e, uint32_t sz) const override { return getEnumHelper(doc, e, sz); }
+    uint32_t get(DocId doc, WeightedEnum* e, uint32_t sz) const override { return getEnumHelper(doc, e, sz); }
+    template <typename E> uint32_t getEnumHelper(DocId doc, E* e, uint32_t sz) const {
         MultiValueArrayRef values(this->_mvMapping.get(doc));
-        uint32_t available = values.size();
-        uint32_t num2Read = std::min(available, sz);
+        uint32_t           available = values.size();
+        uint32_t           num2Read = std::min(available, sz);
         for (uint32_t i = 0; i < num2Read; ++i) {
             e[i] = E(std::numeric_limits<uint32_t>::max()); // does not have enum
         }
         return available;
     }
-    uint32_t get(DocId doc, WeightedInt * v, uint32_t sz) const override {
+    uint32_t get(DocId doc, WeightedInt* v, uint32_t sz) const override {
         return getWeightedHelper<WeightedInt, largeint_t>(doc, v, sz);
     }
-    uint32_t get(DocId doc, WeightedFloat * v, uint32_t sz) const override {
+    uint32_t get(DocId doc, WeightedFloat* v, uint32_t sz) const override {
         return getWeightedHelper<WeightedFloat, double>(doc, v, sz);
     }
     template <typename WeightedType, typename ValueType>
-    uint32_t getWeightedHelper(DocId doc, WeightedType * buffer, uint32_t sz) const {
+    uint32_t getWeightedHelper(DocId doc, WeightedType* buffer, uint32_t sz) const {
         MultiValueArrayRef handle(this->_mvMapping.get(doc));
-        uint32_t ret = handle.size();
-        for(size_t i(0), m(std::min(sz, ret)); i < m; i++) {
+        uint32_t           ret = handle.size();
+        for (size_t i(0), m(std::min(sz, ret)); i < m; i++) {
             buffer[i] = WeightedType(static_cast<ValueType>(multivalue::get_value(handle[i])),
                                      multivalue::get_weight(handle[i]));
         }
@@ -147,4 +139,4 @@ public:
     std::unique_ptr<AttributeSaver> onInitSave(std::string_view fileName) override;
 };
 
-}
+} // namespace search

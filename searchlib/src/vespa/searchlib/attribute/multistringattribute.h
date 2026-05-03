@@ -2,11 +2,12 @@
 
 #pragma once
 
-#include "stringbase.h"
 #include "enumattribute.h"
 #include "enumstore.h"
-#include "multienumattribute.h"
 #include "multi_value_mapping.h"
+#include "multienumattribute.h"
+#include "stringbase.h"
+
 #include <vespa/searchcommon/attribute/multivalue.h>
 
 namespace search {
@@ -21,8 +22,7 @@ namespace search {
  * M: IEnumStore::Index (array) or
  *    multivalue::WeightedValue<IEnumStore::Index> (weighted set)
  */
-template <typename B, typename M>
-class MultiValueStringAttributeT : public MultiValueEnumAttribute<B, M> {
+template <typename B, typename M> class MultiValueStringAttributeT : public MultiValueEnumAttribute<B, M> {
 protected:
     using DocIndices = typename MultiValueAttribute<B, M>::DocumentValues;
     using EnumIndex = typename MultiValueAttribute<B, M>::ValueType;
@@ -42,13 +42,14 @@ protected:
     using WeightedEnum = StringAttribute::WeightedEnum;
     using WeightedString = StringAttribute::WeightedString;
 
-    std::unique_ptr<attribute::ISortBlobWriter> make_sort_blob_writer(bool ascending, const common::BlobConverter* converter,
+    std::unique_ptr<attribute::ISortBlobWriter> make_sort_blob_writer(bool                            ascending,
+                                                                      const common::BlobConverter*    converter,
                                                                       common::sortspec::MissingPolicy policy,
                                                                       std::string_view missing_value) const override;
 
 public:
-    MultiValueStringAttributeT(const std::string & name, const AttributeVector::Config & c);
-    MultiValueStringAttributeT(const std::string & name);
+    MultiValueStringAttributeT(const std::string& name, const AttributeVector::Config& c);
+    MultiValueStringAttributeT(const std::string& name);
     ~MultiValueStringAttributeT();
 
     void freezeEnumDictionary() override;
@@ -56,7 +57,7 @@ public:
     //-------------------------------------------------------------------------
     // new read api
     //-------------------------------------------------------------------------
-    const char * get(DocId doc) const  override {
+    const char* get(DocId doc) const override {
         WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
         if (indices.size() == 0) {
             return nullptr;
@@ -65,56 +66,52 @@ public:
         }
     }
 
-    std::vector<EnumHandle> findFoldedEnums(const char *value) const override {
+    std::vector<EnumHandle> findFoldedEnums(const char* value) const override {
         return this->_enumStore.find_folded_enums(value);
     }
 
-    const char * getStringFromEnum(EnumHandle e) const override {
-        return this->_enumStore.get_value(e);
-    }
-    template <typename BufferType>
-    uint32_t getHelper(DocId doc, BufferType * buffer, uint32_t sz) const {
+    const char* getStringFromEnum(EnumHandle e) const override { return this->_enumStore.get_value(e); }
+    template <typename BufferType> uint32_t getHelper(DocId doc, BufferType* buffer, uint32_t sz) const {
         WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
-        uint32_t valueCount = indices.size();
-        for(uint32_t i = 0, m = std::min(sz, valueCount); i < m; i++) {
+        uint32_t              valueCount = indices.size();
+        for (uint32_t i = 0, m = std::min(sz, valueCount); i < m; i++) {
             buffer[i] = this->_enumStore.get_value(multivalue::get_value_ref(indices[i]).load_acquire());
         }
         return valueCount;
     }
-    uint32_t get(DocId doc, std::string * v, uint32_t sz) const override {
-        return getHelper(doc, v, sz);
-    }
-    uint32_t get(DocId doc, const char ** v, uint32_t sz) const override {
-        return getHelper(doc, v, sz);
-    }
+    uint32_t get(DocId doc, std::string* v, uint32_t sz) const override { return getHelper(doc, v, sz); }
+    uint32_t get(DocId doc, const char** v, uint32_t sz) const override { return getHelper(doc, v, sz); }
 
     /// Weighted interface
-    template <typename WeightedType>
-    uint32_t getWeightedHelper(DocId doc, WeightedType * buffer, uint32_t sz) const {
+    template <typename WeightedType> uint32_t getWeightedHelper(DocId doc, WeightedType* buffer, uint32_t sz) const {
         WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
-        uint32_t valueCount = indices.size();
+        uint32_t              valueCount = indices.size();
         for (uint32_t i = 0, m = std::min(sz, valueCount); i < m; ++i) {
-            buffer[i] = WeightedType(this->_enumStore.get_value(multivalue::get_value_ref(indices[i]).load_acquire()), multivalue::get_weight(indices[i]));
+            buffer[i] = WeightedType(this->_enumStore.get_value(multivalue::get_value_ref(indices[i]).load_acquire()),
+                                     multivalue::get_weight(indices[i]));
         }
         return valueCount;
     }
-    uint32_t get(DocId doc, WeightedString * v, uint32_t sz) const override {
-        return getWeightedHelper(doc, v, sz);
-    }
-    uint32_t get(DocId doc, WeightedConstChar * v, uint32_t sz) const override {
+    uint32_t get(DocId doc, WeightedString* v, uint32_t sz) const override { return getWeightedHelper(doc, v, sz); }
+    uint32_t get(DocId doc, WeightedConstChar* v, uint32_t sz) const override {
         return getWeightedHelper(doc, v, sz);
     }
 
-    std::unique_ptr<attribute::SearchContext>
-    getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
+    std::unique_ptr<attribute::SearchContext> getSearch(QueryTermSimpleUP                     term,
+                                                        const attribute::SearchContextParams& params) const override;
 
     // Implements attribute::IMultiValueAttribute
-    const attribute::IArrayReadView<const char*>* make_read_view(attribute::IMultiValueAttribute::ArrayTag<const char*>, vespalib::Stash& stash) const override;
-    const attribute::IWeightedSetReadView<const char*>* make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<const char*>, vespalib::Stash& stash) const override;
+    const attribute::IArrayReadView<const char*>*
+    make_read_view(attribute::IMultiValueAttribute::ArrayTag<const char*>, vespalib::Stash& stash) const override;
+    const attribute::IWeightedSetReadView<const char*>*
+    make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<const char*>,
+                   vespalib::Stash& stash) const override;
 };
 
+using ArrayStringAttribute =
+    MultiValueStringAttributeT<EnumAttribute<StringAttribute>, vespalib::datastore::AtomicEntryRef>;
+using WeightedSetStringAttribute =
+    MultiValueStringAttributeT<EnumAttribute<StringAttribute>,
+                               multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef>>;
 
-using ArrayStringAttribute = MultiValueStringAttributeT<EnumAttribute<StringAttribute>, vespalib::datastore::AtomicEntryRef>;
-using WeightedSetStringAttribute = MultiValueStringAttributeT<EnumAttribute<StringAttribute>, multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef> >;
-
-}
+} // namespace search
