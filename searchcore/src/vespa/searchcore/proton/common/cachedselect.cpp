@@ -1,49 +1,48 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "cachedselect.h"
+
 #include "attributefieldvaluenode.h"
 #include "select_utils.h"
 #include "selectcontext.h"
 #include "selectpruner.h"
+
 #include <vespa/document/select/parser.h>
-#include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
+#include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
+
 #include <cassert>
 
 namespace proton {
 
-using search::AttributeVector;
-using search::AttributeGuard;
 using document::select::FieldValueNode;
-using search::attribute::CollectionType;
+using search::AttributeGuard;
+using search::AttributeVector;
 using search::attribute::BasicType;
+using search::attribute::CollectionType;
 
 using NodeUP = std::unique_ptr<document::select::Node>;
 
 namespace {
 
-class AttrVisitor : public document::select::CloningVisitor
-{
+class AttrVisitor : public document::select::CloningVisitor {
 public:
     using AttrMap = std::map<std::string, uint32_t>;
 
-    AttrMap _amap;
-    const search::IAttributeManager &_amgr;
-    CachedSelect::AttributeVectors &_attributes;
-    uint32_t _svAttrs;
-    uint32_t _mvAttrs;
-    uint32_t _complexAttrs;
+    AttrMap                          _amap;
+    const search::IAttributeManager& _amgr;
+    CachedSelect::AttributeVectors&  _attributes;
+    uint32_t                         _svAttrs;
+    uint32_t                         _mvAttrs;
+    uint32_t                         _complexAttrs;
 
     [[nodiscard]] uint32_t getFieldNodes() const { return _fieldNodes; }
 
-    constexpr static uint32_t invalidIdx() noexcept {
-        return std::numeric_limits<uint32_t>::max();
-    }
-    
-    AttrVisitor(const search::IAttributeManager &amgr, CachedSelect::AttributeVectors &attributes);
-    AttrVisitor(const search::IAttributeManager &amgr,
-                CachedSelect::AttributeVectors &attributes,
+    constexpr static uint32_t invalidIdx() noexcept { return std::numeric_limits<uint32_t>::max(); }
+
+    AttrVisitor(const search::IAttributeManager& amgr, CachedSelect::AttributeVectors& attributes);
+    AttrVisitor(const search::IAttributeManager& amgr, CachedSelect::AttributeVectors& attributes,
                 AttrMap existing_attr_map);
     ~AttrVisitor() override;
 
@@ -51,22 +50,14 @@ public:
      * Mutate field value nodes representing single value attributes into
      * attribute field valulue nodes.
      */
-    void visitFieldValueNode(const FieldValueNode &expr) override;
+    void visitFieldValueNode(const FieldValueNode& expr) override;
 };
 
+AttrVisitor::AttrVisitor(const search::IAttributeManager& amgr, CachedSelect::AttributeVectors& attributes)
+    : CloningVisitor(), _amap(), _amgr(amgr), _attributes(attributes), _svAttrs(0u), _mvAttrs(0u), _complexAttrs(0u) {
+}
 
-AttrVisitor::AttrVisitor(const search::IAttributeManager &amgr, CachedSelect::AttributeVectors &attributes)
-    : CloningVisitor(),
-      _amap(),
-      _amgr(amgr),
-      _attributes(attributes),
-      _svAttrs(0u),
-      _mvAttrs(0u),
-      _complexAttrs(0u)
-{}
-
-AttrVisitor::AttrVisitor(const search::IAttributeManager &amgr,
-                         CachedSelect::AttributeVectors &attributes,
+AttrVisitor::AttrVisitor(const search::IAttributeManager& amgr, CachedSelect::AttributeVectors& attributes,
                          AttrMap existing_attr_map)
     : CloningVisitor(),
       _amap(std::move(existing_attr_map)),
@@ -74,8 +65,8 @@ AttrVisitor::AttrVisitor(const search::IAttributeManager &amgr,
       _attributes(attributes),
       _svAttrs(0u),
       _mvAttrs(0u),
-      _complexAttrs(0u)
-{}
+      _complexAttrs(0u) {
+}
 
 AttrVisitor::~AttrVisitor() = default;
 
@@ -83,13 +74,11 @@ bool isSingleValueThatWeHandle(BasicType type) {
     return (type != BasicType::PREDICATE) && (type != BasicType::REFERENCE) && (type != BasicType::RAW);
 }
 
-void
-AttrVisitor::visitFieldValueNode(const FieldValueNode &expr)
-{
+void AttrVisitor::visitFieldValueNode(const FieldValueNode& expr) {
     ++_fieldNodes;
     // Expression has survived select pruner, thus we know that field is
     // valid for document type.
-    bool complex = false;
+    bool        complex = false;
     std::string name = SelectUtils::extractFieldName(expr, complex);
 
     auto av = _amgr.readable_attribute_vector(name);
@@ -101,12 +90,12 @@ AttrVisitor::visitFieldValueNode(const FieldValueNode &expr)
             _priority = FieldValuePriority;
             return;
         }
-        auto guard = av->makeReadGuard(false);
+        auto        guard = av->makeReadGuard(false);
         const auto* attr = guard->attribute();
         if (attr->getCollectionType() == CollectionType::SINGLE) {
             if (isSingleValueThatWeHandle(attr->getBasicType())) {
                 ++_svAttrs;
-                auto it(_amap.find(name));
+                auto     it(_amap.find(name));
                 uint32_t idx(invalidIdx());
                 if (it == _amap.end()) {
                     // Allocate new location for guard
@@ -135,43 +124,33 @@ AttrVisitor::visitFieldValueNode(const FieldValueNode &expr)
     _priority = FieldValuePriority;
 }
 
-}
+} // namespace
 
 CachedSelect::Session::Session(std::unique_ptr<document::select::Node> docSelect,
                                std::unique_ptr<document::select::Node> preDocOnlySelect,
                                std::unique_ptr<document::select::Node> preDocSelect)
     : _docSelect(std::move(docSelect)),
       _preDocOnlySelect(std::move(preDocOnlySelect)),
-      _preDocSelect(std::move(preDocSelect))
-{
+      _preDocSelect(std::move(preDocSelect)) {
 }
 
-bool
-CachedSelect::Session::contains_pre_doc(const SelectContext &context) const
-{
+bool CachedSelect::Session::contains_pre_doc(const SelectContext& context) const {
     if (_preDocSelect && (_preDocSelect->contains(context) == document::select::Result::False)) {
         return false;
     }
     return (!_preDocOnlySelect) ||
-            (_preDocOnlySelect && (_preDocOnlySelect->contains(context) == document::select::Result::True));
+           (_preDocOnlySelect && (_preDocOnlySelect->contains(context) == document::select::Result::True));
 }
 
-bool
-CachedSelect::Session::contains_doc(const SelectContext &context) const
-{
-    return (_preDocOnlySelect) ||
-            (_docSelect && (_docSelect->contains(context) == document::select::Result::True));
+bool CachedSelect::Session::contains_doc(const SelectContext& context) const {
+    return (_preDocOnlySelect) || (_docSelect && (_docSelect->contains(context) == document::select::Result::True));
 }
 
-const document::select::Node &
-CachedSelect::Session::selectNode() const
-{
+const document::select::Node& CachedSelect::Session::selectNode() const {
     return (_docSelect ? *_docSelect : *_preDocOnlySelect);
 }
 
-void
-CachedSelect::setDocumentSelect(SelectPruner &docsPruner)
-{
+void CachedSelect::setDocumentSelect(SelectPruner& docsPruner) {
     _always_false = docsPruner.isFalse();
     _always_true = docsPruner.isTrue();
     _always_invalid = docsPruner.isInvalid();
@@ -182,10 +161,7 @@ CachedSelect::setDocumentSelect(SelectPruner &docsPruner)
     _document_id_nodes = docsPruner.get_document_id_nodes();
 }
 
-void
-CachedSelect::setPreDocumentSelect(const search::IAttributeManager &attrMgr,
-                                   SelectPruner &noDocsPruner)
-{
+void CachedSelect::setPreDocumentSelect(const search::IAttributeManager& attrMgr, SelectPruner& noDocsPruner) {
     _attributes.clear();
     AttrVisitor allAttrVisitor(attrMgr, _attributes);
     _docSelect->visit(allAttrVisitor);
@@ -201,7 +177,7 @@ CachedSelect::setPreDocumentSelect(const search::IAttributeManager &attrMgr,
         // would not resolve to anything, as these do not exist in the concrete document itself.
         _docSelect = std::move(allAttrVisitor.getNode());
         [[maybe_unused]] size_t attrs_before = _attributes.size();
-        AttrVisitor someAttrVisitor(attrMgr, _attributes, std::move(allAttrVisitor._amap));
+        AttrVisitor             someAttrVisitor(attrMgr, _attributes, std::move(allAttrVisitor._amap));
         assert(_attributes.size() == attrs_before);
         noDocsPruner.getNode()->visit(someAttrVisitor);
         _preDocSelect = std::move(someAttrVisitor.getNode());
@@ -221,19 +197,16 @@ CachedSelect::CachedSelect()
       _doc_select_resultset(),
       _pre_doc_select_resultset(),
       _preDocOnlySelect(),
-      _preDocSelect()
-{ }
+      _preDocSelect() {
+}
 
 CachedSelect::~CachedSelect() = default;
 
-void
-CachedSelect::set(const std::string &selection,
-                  const document::IDocumentTypeRepo &repo)
-{
+void CachedSelect::set(const std::string& selection, const document::IDocumentTypeRepo& repo) {
     try {
         document::select::Parser parser(repo, document::BucketIdFactory());
         _docSelect = parser.parse(selection);
-    } catch (document::select::ParsingFailedException &) {
+    } catch (document::select::ParsingFailedException&) {
         _docSelect.reset();
     }
     _always_false = !_docSelect;
@@ -241,16 +214,9 @@ CachedSelect::set(const std::string &selection,
     _always_invalid = false;
 }
 
-                  
-void
-CachedSelect::set(const std::string &selection,
-                  const std::string &docTypeName,
-                  const document::Document &emptyDoc,
-                  const document::IDocumentTypeRepo &repo,
-                  const search::IAttributeManager *amgr,
-                  bool hasFields,
-                  bool has_document_ids)
-{                  
+void CachedSelect::set(const std::string& selection, const std::string& docTypeName,
+                       const document::Document& emptyDoc, const document::IDocumentTypeRepo& repo,
+                       const search::IAttributeManager* amgr, bool hasFields, bool has_document_ids) {
     set(selection, repo);
     NodeUP parsed(std::move(_docSelect));
     if (!parsed) {
@@ -268,13 +234,10 @@ CachedSelect::set(const std::string &selection,
     setPreDocumentSelect(*amgr, noDocsPruner);
 }
 
-std::unique_ptr<CachedSelect::Session>
-CachedSelect::createSession() const
-{
+std::unique_ptr<CachedSelect::Session> CachedSelect::createSession() const {
     return std::make_unique<Session>((_docSelect ? _docSelect->clone() : NodeUP()),
                                      (_preDocOnlySelect ? _preDocOnlySelect->clone() : NodeUP()),
                                      (_preDocSelect ? _preDocSelect->clone() : NodeUP()));
 }
 
-}
-
+} // namespace proton

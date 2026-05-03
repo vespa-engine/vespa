@@ -16,4 +16,4 @@ public:
     virtual uint64_t get_reserved_disk_space() const = 0;
 };
 
-}
+} // namespace proton

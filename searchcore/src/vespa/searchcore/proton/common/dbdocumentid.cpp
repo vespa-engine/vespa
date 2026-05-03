@@ -4,18 +4,13 @@
 
 namespace proton {
 
-vespalib::nbostream &
-operator<<(vespalib::nbostream &os, const DbDocumentId &dbdId)
-{
+vespalib::nbostream& operator<<(vespalib::nbostream& os, const DbDocumentId& dbdId) {
     os << dbdId._subDbId;
     os << dbdId._lid;
     return os;
 }
 
-
-vespalib::nbostream &
-operator>>(vespalib::nbostream &is, DbDocumentId &dbdId)
-{
+vespalib::nbostream& operator>>(vespalib::nbostream& is, DbDocumentId& dbdId) {
     is >> dbdId._subDbId;
     is >> dbdId._lid;
     return is;

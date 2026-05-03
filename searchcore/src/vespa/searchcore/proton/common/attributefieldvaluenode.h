@@ -3,26 +3,25 @@
 
 #include <vespa/document/select/valuenodes.h>
 
-namespace search { class ReadableAttributeVector; }
+namespace search {
+class ReadableAttributeVector;
+}
 namespace proton {
 
 /*
  * Document select node used to get a field value from an attribute vector. This might allow evaluation of the
  * document select expression without retrieving the full document from backing store.
  */
-class AttributeFieldValueNode : public document::select::FieldValueNode
-{
+class AttributeFieldValueNode : public document::select::FieldValueNode {
     using Context = document::select::Context;
     uint32_t _attr_guard_index;
 
 public:
     // Precondition: attribute must be of a single-value type.
-    AttributeFieldValueNode(const std::string& doctype,
-                            const std::string& field,
-                            uint32_t attr_guard_index);
+    AttributeFieldValueNode(const std::string& doctype, const std::string& field, uint32_t attr_guard_index);
 
-    std::unique_ptr<document::select::Value> getValue(const Context &context) const override;
-    std::unique_ptr<document::select::Value> traceValue(const Context &context, std::ostream& out) const override;
+    std::unique_ptr<document::select::Value> getValue(const Context& context) const override;
+    std::unique_ptr<document::select::Value> traceValue(const Context& context, std::ostream& out) const override;
     document::select::ValueNode::UP clone() const override;
 };
 

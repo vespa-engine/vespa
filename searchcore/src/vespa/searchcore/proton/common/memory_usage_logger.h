@@ -15,4 +15,4 @@ class MemoryUsageLogger {
 public:
     static void log(const std::string& step, const std::string& label);
 };
-}
+} // namespace proton

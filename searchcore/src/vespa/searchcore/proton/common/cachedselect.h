@@ -2,21 +2,26 @@
 #pragma once
 
 #include <vespa/document/select/resultset.h>
+
 #include <memory>
 #include <string>
 #include <vector>
 
 namespace document {
-    class IDocumentTypeRepo;
-    class Document;
-    namespace select { class Node; }
+class IDocumentTypeRepo;
+class Document;
+namespace select {
+class Node;
 }
+} // namespace document
 namespace search {
-    class AttributeVector;
-    class IAttributeManager;
-}
+class AttributeVector;
+class IAttributeManager;
+} // namespace search
 
-namespace search::attribute { class ReadableAttributeVector; }
+namespace search::attribute {
+class ReadableAttributeVector;
+}
 
 namespace proton {
 
@@ -27,8 +32,7 @@ class SelectPruner;
  * Cached selection expression, to avoid pruning expression for each
  * new bucket.
  */
-class CachedSelect
-{
+class CachedSelect {
 public:
     using SP = std::shared_ptr<CachedSelect>;
 
@@ -50,15 +54,15 @@ public:
          * Precondition: select context must have a valid _lid. If the document retriever told that it can populate
          * document metadata docid then _docId must also be valid in the select context.
          */
-        [[nodiscard]] bool contains_pre_doc(const SelectContext &context) const;
+        [[nodiscard]] bool contains_pre_doc(const SelectContext& context) const;
         /*
          * Check if document select expression contains the document after getting the document from the
          * backing store.
          *
          * Precondition: context must have non-nullptr _doc
          */
-        [[nodiscard]] bool contains_doc(const SelectContext &context) const;
-        [[nodiscard]] const document::select::Node &selectNode() const;
+        [[nodiscard]] bool contains_doc(const SelectContext& context) const;
+        [[nodiscard]] const document::select::Node& selectNode() const;
     };
 
     using AttributeVectors = std::vector<std::shared_ptr<search::attribute::ReadableAttributeVector>>;
@@ -69,15 +73,15 @@ private:
 
     // Pruned selection expression, specific for a document type
     std::unique_ptr<document::select::Node> _docSelect;
-    uint32_t _fieldNodes;
-    uint32_t _attrFieldNodes;
-    uint32_t _document_id_nodes;
-    uint32_t _svAttrFieldNodes;
-    bool _always_false;
-    bool _always_true;
-    bool _always_invalid;
-    document::select::ResultSet _doc_select_resultset;
-    document::select::ResultSet _pre_doc_select_resultset;
+    uint32_t                                _fieldNodes;
+    uint32_t                                _attrFieldNodes;
+    uint32_t                                _document_id_nodes;
+    uint32_t                                _svAttrFieldNodes;
+    bool                                    _always_false;
+    bool                                    _always_true;
+    bool                                    _always_invalid;
+    document::select::ResultSet             _doc_select_resultset;
+    document::select::ResultSet             _pre_doc_select_resultset;
 
     /**
      * If expression doesn't reference multi value attributes or
@@ -94,15 +98,14 @@ private:
      */
     std::unique_ptr<document::select::Node> _preDocSelect;
 
-    void setDocumentSelect(SelectPruner &docsPruner);
-    void setPreDocumentSelect(const search::IAttributeManager &amgr,
-                              SelectPruner &noDocsPruner);
+    void setDocumentSelect(SelectPruner& docsPruner);
+    void setPreDocumentSelect(const search::IAttributeManager& amgr, SelectPruner& noDocsPruner);
 
 public:
     CachedSelect();
     ~CachedSelect();
 
-    [[nodiscard]] const AttributeVectors &attributes() const noexcept { return _attributes; }
+    [[nodiscard]] const AttributeVectors& attributes() const noexcept { return _attributes; }
     [[nodiscard]] uint32_t fieldNodes() const noexcept { return _fieldNodes; }
     [[nodiscard]] uint32_t attrFieldNodes() const noexcept { return _attrFieldNodes; }
     [[nodiscard]] uint32_t document_id_nodes() const noexcept { return _document_id_nodes; }
@@ -119,24 +122,17 @@ public:
     }
 
     // Should only be used for unit testing
-    const std::unique_ptr<document::select::Node> &docSelect() const { return _docSelect; }
-    const std::unique_ptr<document::select::Node> &preDocOnlySelect() const { return _preDocOnlySelect; }
-    const std::unique_ptr<document::select::Node> &preDocSelect() const { return _preDocSelect; }
+    const std::unique_ptr<document::select::Node>& docSelect() const { return _docSelect; }
+    const std::unique_ptr<document::select::Node>& preDocOnlySelect() const { return _preDocOnlySelect; }
+    const std::unique_ptr<document::select::Node>& preDocSelect() const { return _preDocSelect; }
 
-    void set(const std::string &selection,
-             const document::IDocumentTypeRepo &repo);
-                  
-    void set(const std::string &selection,
-             const std::string &docTypeName,
-             const document::Document &emptyDoc,
-             const document::IDocumentTypeRepo &repo,
-             const search::IAttributeManager *amgr,
-             bool hasFields,
+    void set(const std::string& selection, const document::IDocumentTypeRepo& repo);
+
+    void set(const std::string& selection, const std::string& docTypeName, const document::Document& emptyDoc,
+             const document::IDocumentTypeRepo& repo, const search::IAttributeManager* amgr, bool hasFields,
              bool has_document_ids);
 
     std::unique_ptr<Session> createSession() const;
-
 };
 
-}
-
+} // namespace proton
