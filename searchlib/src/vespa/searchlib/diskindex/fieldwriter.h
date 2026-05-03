@@ -29,9 +29,9 @@ public:
     using PostingListParams = index::PostingListParams;
 
     FieldWriter(const FieldWriter& rhs) = delete;
-    FieldWriter(const FieldWriter&& rhs) = delete;
+    FieldWriter(FieldWriter&& rhs) = delete;
     FieldWriter& operator=(const FieldWriter& rhs) = delete;
-    FieldWriter& operator=(const FieldWriter&& rhs) = delete;
+    FieldWriter& operator=(FieldWriter&& rhs) = delete;
     FieldWriter(uint32_t docIdLimit, uint64_t numWordIds, std::string_view prefix);
     ~FieldWriter();
 

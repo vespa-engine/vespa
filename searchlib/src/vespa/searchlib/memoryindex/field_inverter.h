@@ -244,9 +244,9 @@ public:
     FieldInverter(const index::Schema& schema, uint32_t fieldId, FieldIndexRemover& remover,
                   IOrderedFieldIndexInserter& inserter, index::FieldLengthCalculator& calculator);
     FieldInverter(const FieldInverter&) = delete;
-    FieldInverter(const FieldInverter&&) = delete;
+    FieldInverter(FieldInverter&&) = delete;
     FieldInverter& operator=(const FieldInverter&) = delete;
-    FieldInverter& operator=(const FieldInverter&&) = delete;
+    FieldInverter& operator=(FieldInverter&&) = delete;
     ~FieldInverter() override;
 
     /**

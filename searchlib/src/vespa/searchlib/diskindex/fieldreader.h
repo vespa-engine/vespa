@@ -60,9 +60,9 @@ protected:
 
 public:
     FieldReader(const FieldReader& rhs) = delete;
-    FieldReader(const FieldReader&& rhs) = delete;
+    FieldReader(FieldReader&& rhs) = delete;
     FieldReader& operator=(const FieldReader& rhs) = delete;
-    FieldReader& operator=(const FieldReader&& rhs) = delete;
+    FieldReader& operator=(FieldReader&& rhs) = delete;
 
     FieldReader();
 
