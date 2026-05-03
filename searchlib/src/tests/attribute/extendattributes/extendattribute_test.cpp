@@ -1,5 +1,4 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
@@ -9,11 +8,12 @@
 #include <vespa/searchlib/attribute/single_raw_ext_attribute.h>
 #include <vespa/searchlib/tensor/tensor_ext_attribute.h>
 #include <vespa/searchlib/tensor/vector_bundle.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
-using search::attribute::Config;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
+using search::attribute::Config;
 using search::attribute::SingleRawExtAttribute;
 using search::tensor::TensorExtAttribute;
 using vespalib::eval::FastValueBuilderFactory;
@@ -40,29 +40,24 @@ std::vector<double> as_vector(std::span<const double> value) {
 std::string vec_2d_spec("tensor(x[2])");
 std::string vec_mixed_2d_spec("tensor(a{},x[2])");
 
-TensorSpec
-vec_2d(double x0, double x1)
-{
+TensorSpec vec_2d(double x0, double x1) {
     return TensorSpec(vec_2d_spec).add({{"x", 0}}, x0).add({{"x", 1}}, x1);
 }
 
-TensorSpec
-vec_mixed_2d(std::vector<std::vector<double>> val)
-{
+TensorSpec vec_mixed_2d(std::vector<std::vector<double>> val) {
     TensorSpec spec(vec_mixed_2d_spec);
     for (uint32_t a = 0; a < val.size(); ++a) {
         vespalib::asciistream a_stream;
         a_stream << a;
         std::string a_as_string = a_stream.str();
         for (uint32_t x = 0; x < val[a].size(); ++x) {
-            spec.add({{"a", a_as_string.c_str()},{"x", x}}, val[a][x]);
-	}
+            spec.add({{"a", a_as_string.c_str()}, {"x", x}}, val[a][x]);
+        }
     }
     return spec;
 }
 
-void add_doc(AttributeVector& attr, uint32_t exp_docid)
-{
+void add_doc(AttributeVector& attr, uint32_t exp_docid) {
     uint32_t docid(0);
     EXPECT_EQ(exp_docid, attr.getNumDocs());
     attr.addDoc(docid);
@@ -70,34 +65,27 @@ void add_doc(AttributeVector& attr, uint32_t exp_docid)
     EXPECT_EQ(exp_docid + 1, attr.getNumDocs());
 }
 
-class ExtendAttributeTest : public ::testing::Test
-{
+class ExtendAttributeTest : public ::testing::Test {
     std::vector<std::unique_ptr<Value>> _tensors;
+
 protected:
     ExtendAttributeTest() = default;
     ~ExtendAttributeTest() override = default;
-    template <typename Attribute>
-    void testExtendInteger(Attribute & attr);
-    template <typename Attribute>
-    void testExtendFloat(Attribute & attr);
-    template <typename Attribute>
-    void testExtendString(Attribute & attr);
+    template <typename Attribute> void testExtendInteger(Attribute& attr);
+    template <typename Attribute> void testExtendFloat(Attribute& attr);
+    template <typename Attribute> void testExtendString(Attribute& attr);
     void testExtendRaw(AttributeVector& attr);
     void testExtendTensor(AttributeVector& attr);
-    const Value& create_tensor(const TensorSpec &spec);
+    const Value& create_tensor(const TensorSpec& spec);
 };
 
-const Value&
-ExtendAttributeTest::create_tensor(const TensorSpec &spec)
-{
+const Value& ExtendAttributeTest::create_tensor(const TensorSpec& spec) {
     auto value = value_from_spec(spec, FastValueBuilderFactory::get());
     _tensors.emplace_back(std::move(value));
     return *_tensors.back();
 }
 
-template <typename Attribute>
-void ExtendAttributeTest::testExtendInteger(Attribute & attr)
-{
+template <typename Attribute> void ExtendAttributeTest::testExtendInteger(Attribute& attr) {
     add_doc(attr, 0);
     attr.add(1, 10);
     EXPECT_EQ(attr.getInt(0), 1);
@@ -105,7 +93,7 @@ void ExtendAttributeTest::testExtendInteger(Attribute & attr)
     EXPECT_EQ(attr.getInt(0), attr.hasMultiValue() ? 1 : 2);
     if (attr.hasMultiValue()) {
         AttributeVector::WeightedInt v[2];
-        EXPECT_EQ((static_cast<AttributeVector &>(attr)).get(0, v, 2), 2u);
+        EXPECT_EQ((static_cast<AttributeVector&>(attr)).get(0, v, 2), 2u);
         EXPECT_EQ(v[0].getValue(), 1);
         EXPECT_EQ(v[1].getValue(), 2);
         if (attr.hasWeightedSetType()) {
@@ -118,7 +106,7 @@ void ExtendAttributeTest::testExtendInteger(Attribute & attr)
     EXPECT_EQ(attr.getInt(1), 3);
     if (attr.hasMultiValue()) {
         AttributeVector::WeightedInt v[1];
-        EXPECT_EQ((static_cast<AttributeVector &>(attr)).get(1, v, 1), 1u);
+        EXPECT_EQ((static_cast<AttributeVector&>(attr)).get(1, v, 1), 1u);
         EXPECT_EQ(v[0].getValue(), 3);
         if (attr.hasWeightedSetType()) {
             EXPECT_EQ(v[0].getWeight(), 30);
@@ -126,9 +114,7 @@ void ExtendAttributeTest::testExtendInteger(Attribute & attr)
     }
 }
 
-template <typename Attribute>
-void ExtendAttributeTest::testExtendFloat(Attribute & attr)
-{
+template <typename Attribute> void ExtendAttributeTest::testExtendFloat(Attribute& attr) {
     add_doc(attr, 0);
     attr.add(1.7, 10);
     EXPECT_EQ(attr.getInt(0), 1);
@@ -137,7 +123,7 @@ void ExtendAttributeTest::testExtendFloat(Attribute & attr)
     EXPECT_EQ(attr.getFloat(0), attr.hasMultiValue() ? 1.7 : 2.3);
     if (attr.hasMultiValue()) {
         AttributeVector::WeightedFloat v[2];
-        EXPECT_EQ((static_cast<AttributeVector &>(attr)).get(0, v, 2), 2u);
+        EXPECT_EQ((static_cast<AttributeVector&>(attr)).get(0, v, 2), 2u);
         EXPECT_EQ(v[0].getValue(), 1.7);
         EXPECT_EQ(v[1].getValue(), 2.3);
         if (attr.hasWeightedSetType()) {
@@ -150,7 +136,7 @@ void ExtendAttributeTest::testExtendFloat(Attribute & attr)
     EXPECT_EQ(attr.getFloat(1), 3.6);
     if (attr.hasMultiValue()) {
         AttributeVector::WeightedFloat v[1];
-        EXPECT_EQ((static_cast<AttributeVector &>(attr)).get(1, v, 1), 1u);
+        EXPECT_EQ((static_cast<AttributeVector&>(attr)).get(1, v, 1), 1u);
         EXPECT_EQ(v[0].getValue(), 3.6);
         if (attr.hasWeightedSetType()) {
             EXPECT_EQ(v[0].getWeight(), 30);
@@ -158,9 +144,7 @@ void ExtendAttributeTest::testExtendFloat(Attribute & attr)
     }
 }
 
-template <typename Attribute>
-void ExtendAttributeTest::testExtendString(Attribute & attr)
-{
+template <typename Attribute> void ExtendAttributeTest::testExtendString(Attribute& attr) {
     add_doc(attr, 0);
     attr.add("1.7", 10);
     auto buf = attr.get_raw(0);
@@ -170,7 +154,7 @@ void ExtendAttributeTest::testExtendString(Attribute & attr)
     EXPECT_EQ(std::string(buf.data(), buf.size()), attr.hasMultiValue() ? "1.7" : "2.3");
     if (attr.hasMultiValue()) {
         AttributeVector::WeightedString v[2];
-        EXPECT_EQ((static_cast<AttributeVector &>(attr)).get(0, v, 2), 2u);
+        EXPECT_EQ((static_cast<AttributeVector&>(attr)).get(0, v, 2), 2u);
         EXPECT_EQ(v[0].getValue(), "1.7");
         EXPECT_EQ(v[1].getValue(), "2.3");
         if (attr.hasWeightedSetType()) {
@@ -184,7 +168,7 @@ void ExtendAttributeTest::testExtendString(Attribute & attr)
     EXPECT_EQ(std::string(buf.data(), buf.size()), "3.6");
     if (attr.hasMultiValue()) {
         AttributeVector::WeightedString v[1];
-        EXPECT_EQ((static_cast<AttributeVector &>(attr)).get(1, v, 1), 1u);
+        EXPECT_EQ((static_cast<AttributeVector&>(attr)).get(1, v, 1), 1u);
         EXPECT_EQ(v[0].getValue(), "3.6");
         if (attr.hasWeightedSetType()) {
             EXPECT_EQ(v[0].getWeight(), 30);
@@ -192,11 +176,10 @@ void ExtendAttributeTest::testExtendString(Attribute & attr)
     }
 }
 
-void ExtendAttributeTest::testExtendRaw(AttributeVector& attr)
-{
+void ExtendAttributeTest::testExtendRaw(AttributeVector& attr) {
     std::vector<char> empty;
     std::vector<char> zeros{10, 0, 0, 11};
-    auto* ext_attr = attr.getExtendInterface();
+    auto*             ext_attr = attr.getExtendInterface();
     EXPECT_NE(nullptr, ext_attr);
     add_doc(attr, 0);
     ext_attr->add(as_vector("1.7"sv));
@@ -224,14 +207,13 @@ void ExtendAttributeTest::testExtendRaw(AttributeVector& attr)
     EXPECT_EQ(empty, as_vector(buf));
 }
 
-void ExtendAttributeTest::testExtendTensor(AttributeVector& attr)
-{
+void ExtendAttributeTest::testExtendTensor(AttributeVector& attr) {
     std::vector<double> empty_cells{0, 0};
     std::vector<double> spec0_dense_cells{1.0, 2.0};
     std::vector<double> spec0_mixed_cells0{3.0, 4.0};
     std::vector<double> spec0_mixed_cells1{5.0, 6.0};
-    bool dense = attr.getConfig().tensorType().is_dense();
-    auto* ext_attr = attr.getExtendInterface();
+    bool                dense = attr.getConfig().tensorType().is_dense();
+    auto*               ext_attr = attr.getExtendInterface();
     EXPECT_NE(nullptr, ext_attr);
     auto* tensor_attr = attr.asTensorAttribute();
     EXPECT_NE(nullptr, tensor_attr);
@@ -269,94 +251,82 @@ void ExtendAttributeTest::testExtendTensor(AttributeVector& attr)
     EXPECT_EQ(nullptr, tensor_attr->getTensor(1).get());
 }
 
-TEST_F(ExtendAttributeTest, single_integer_ext_attribute)
-{
+TEST_F(ExtendAttributeTest, single_integer_ext_attribute) {
     SingleIntegerExtAttribute siattr("si1");
-    EXPECT_TRUE( ! siattr.hasMultiValue() );
+    EXPECT_TRUE(!siattr.hasMultiValue());
     testExtendInteger(siattr);
 }
 
-TEST_F(ExtendAttributeTest, array_integer_ext_attribute)
-{
+TEST_F(ExtendAttributeTest, array_integer_ext_attribute) {
     MultiIntegerExtAttribute miattr("mi1");
-    EXPECT_TRUE( miattr.hasMultiValue() );
+    EXPECT_TRUE(miattr.hasMultiValue());
     testExtendInteger(miattr);
 }
 
-TEST_F(ExtendAttributeTest, weighted_set_integer_ext_attribute)
-{
+TEST_F(ExtendAttributeTest, weighted_set_integer_ext_attribute) {
     WeightedSetIntegerExtAttribute wsiattr("wsi1");
-    EXPECT_TRUE( wsiattr.hasWeightedSetType() );
+    EXPECT_TRUE(wsiattr.hasWeightedSetType());
     testExtendInteger(wsiattr);
 }
 
-TEST_F(ExtendAttributeTest, single_float_ext_attribute)
-{
+TEST_F(ExtendAttributeTest, single_float_ext_attribute) {
     SingleFloatExtAttribute sdattr("sd1");
-    EXPECT_TRUE( ! sdattr.hasMultiValue() );
+    EXPECT_TRUE(!sdattr.hasMultiValue());
     testExtendFloat(sdattr);
 }
 
-TEST_F(ExtendAttributeTest, array_float_ext_attribute)
-{
+TEST_F(ExtendAttributeTest, array_float_ext_attribute) {
     MultiFloatExtAttribute mdattr("md1");
-    EXPECT_TRUE( mdattr.hasMultiValue() );
+    EXPECT_TRUE(mdattr.hasMultiValue());
     testExtendFloat(mdattr);
 }
 
-TEST_F(ExtendAttributeTest, weighted_set_float_ext_attribute)
-{
+TEST_F(ExtendAttributeTest, weighted_set_float_ext_attribute) {
     WeightedSetFloatExtAttribute wsdattr("wsd1");
-    EXPECT_TRUE( wsdattr.hasWeightedSetType() );
+    EXPECT_TRUE(wsdattr.hasWeightedSetType());
     testExtendFloat(wsdattr);
 }
 
-TEST_F(ExtendAttributeTest, single_string_ext_attribute)
-{
+TEST_F(ExtendAttributeTest, single_string_ext_attribute) {
     SingleStringExtAttribute ssattr("ss1");
-    EXPECT_TRUE( ! ssattr.hasMultiValue() );
+    EXPECT_TRUE(!ssattr.hasMultiValue());
     testExtendString(ssattr);
 }
 
-TEST_F(ExtendAttributeTest, array_string_ext_attribute)
-{
+TEST_F(ExtendAttributeTest, array_string_ext_attribute) {
     MultiStringExtAttribute msattr("ms1");
-    EXPECT_TRUE( msattr.hasMultiValue() );
+    EXPECT_TRUE(msattr.hasMultiValue());
     testExtendString(msattr);
 }
 
-TEST_F(ExtendAttributeTest, weighted_set_string_ext_attribute)
-{
+TEST_F(ExtendAttributeTest, weighted_set_string_ext_attribute) {
     WeightedSetStringExtAttribute wssattr("wss1");
-    EXPECT_TRUE( wssattr.hasWeightedSetType() );
+    EXPECT_TRUE(wssattr.hasWeightedSetType());
     testExtendString(wssattr);
 }
 
-TEST_F(ExtendAttributeTest, single_raw_ext_attribute)
-{
+TEST_F(ExtendAttributeTest, single_raw_ext_attribute) {
     SingleRawExtAttribute srattr("sr1");
-    EXPECT_TRUE(! srattr.hasMultiValue());
+    EXPECT_TRUE(!srattr.hasMultiValue());
     testExtendRaw(srattr);
 }
 
-TEST_F(ExtendAttributeTest, tensor_ext_attribute_dense)
-{
+TEST_F(ExtendAttributeTest, tensor_ext_attribute_dense) {
     Config cfg(BasicType::TENSOR, CollectionType::SINGLE);
     cfg.setTensorType(ValueType::from_spec(vec_2d_spec));
     TensorExtAttribute tattr("td1", cfg);
-    EXPECT_TRUE(! tattr.hasMultiValue());
+    EXPECT_TRUE(!tattr.hasMultiValue());
     testExtendTensor(tattr);
 }
 
-TEST_F(ExtendAttributeTest, tensor_ext_attribute_mixed)
-{
+TEST_F(ExtendAttributeTest, tensor_ext_attribute_mixed) {
     Config cfg(BasicType::TENSOR, CollectionType::SINGLE);
     cfg.setTensorType(ValueType::from_spec(vec_mixed_2d_spec));
     TensorExtAttribute tattr("tm1", cfg);
-    EXPECT_TRUE(! tattr.hasMultiValue());
+    EXPECT_TRUE(!tattr.hasMultiValue());
     testExtendTensor(tattr);
 }
 
-}
+} // namespace search
 
 GTEST_MAIN_RUN_ALL_TESTS()

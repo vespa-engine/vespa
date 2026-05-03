@@ -4,8 +4,7 @@
 
 namespace search::features::rankingexpression {
 
-IntrinsicExpression::~IntrinsicExpression()
-{
+IntrinsicExpression::~IntrinsicExpression() {
 }
 
 } // namespace search::features::rankingexpression

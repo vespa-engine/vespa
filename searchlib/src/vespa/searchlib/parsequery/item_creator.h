@@ -17,4 +17,4 @@ enum class ItemCreator {
     CREA_FILTER    // Automatically applied filter (no specific type)
 };
 
-}
+} // namespace search::parseitem

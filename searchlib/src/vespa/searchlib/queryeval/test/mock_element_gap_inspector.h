@@ -11,10 +11,11 @@ namespace search::queryeval::test {
  */
 class MockElementGapInspector : public IElementGapInspector {
     search::fef::ElementGap _element_gap;
+
 public:
     MockElementGapInspector(search::fef::ElementGap element_gap);
     ~MockElementGapInspector() override;
     search::fef::ElementGap get_element_gap(uint32_t field_id) const noexcept override;
 };
 
-}
+} // namespace search::queryeval::test
