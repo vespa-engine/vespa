@@ -4,12 +4,21 @@
 
 #include <vespa/searchlib/common/stringmap.h>
 #include <vespa/vespalib/util/featureset.h>
+
 #include <vector>
 
-namespace vespalib { class Doom; };
-namespace vespalib { struct ThreadBundle; };
-namespace search::queryeval { class SearchIterator; }
-namespace search::fef { class RankProgram; }
+namespace vespalib {
+class Doom;
+};
+namespace vespalib {
+struct ThreadBundle;
+};
+namespace search::queryeval {
+class SearchIterator;
+}
+namespace search::fef {
+class RankProgram;
+}
 
 namespace proton::matching {
 
@@ -28,15 +37,18 @@ struct ExtractFeatures {
      * documents (must be in ascending order) using unpack information
      * from a search.
      **/
-    static FeatureSet::UP get_feature_set(SearchIterator &search, RankProgram &rank_program, const std::vector<uint32_t> &docs, const vespalib::Doom &doom, const StringStringMap &renames);
+    static FeatureSet::UP get_feature_set(SearchIterator& search, RankProgram& rank_program,
+                                          const std::vector<uint32_t>& docs, const vespalib::Doom& doom,
+                                          const StringStringMap& renames);
 
     // first: docid, second: result index (must be sorted on docid)
-    using OrderedDocs = std::vector<std::pair<uint32_t,uint32_t>>;
+    using OrderedDocs = std::vector<std::pair<uint32_t, uint32_t>>;
 
     /**
      * Extract match features using multiple threads.
      **/
-    static FeatureValues get_match_features(const MatchToolsFactory &mtf, const OrderedDocs &docs, ThreadBundle &thread_bundle);
+    static FeatureValues get_match_features(const MatchToolsFactory& mtf, const OrderedDocs& docs,
+                                            ThreadBundle& thread_bundle);
 };
 
-}
+} // namespace proton::matching

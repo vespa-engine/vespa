@@ -9,12 +9,14 @@
 #include <vector>
 
 namespace search::queryeval {
-    class Searchable;
-    class IRequestContext;
-    class SearchIterator;
-    class Blueprint;
+class Searchable;
+class IRequestContext;
+class SearchIterator;
+class Blueprint;
+} // namespace search::queryeval
+namespace search::fef {
+class MatchData;
 }
-namespace search::fef { class MatchData; }
 
 namespace proton::matching {
 
@@ -28,32 +30,32 @@ class RangeQueryLocator;
  * of hits, so this class just lets the first thread requesting a
  * search decide the number of hits in the underlying blueprint.
  **/
-class AttributeLimiter
-{
+class AttributeLimiter {
 public:
     using SearchIterator = search::queryeval::SearchIterator;
-    enum DiversityCutoffStrategy { LOOSE, STRICT};
-    AttributeLimiter(const RangeQueryLocator & _rangeQueryLocator,
-                     search::queryeval::Searchable &searchable_attributes,
-                     const search::queryeval::IRequestContext & requestContext,
-                     const std::string &attribute_name, bool descending,
-                     const std::string &diversity_attribute,
-                     double diversityCutoffFactor,
+    enum DiversityCutoffStrategy { LOOSE, STRICT };
+    AttributeLimiter(const RangeQueryLocator&                  _rangeQueryLocator,
+                     search::queryeval::Searchable&            searchable_attributes,
+                     const search::queryeval::IRequestContext& requestContext, const std::string& attribute_name,
+                     bool descending, const std::string& diversity_attribute, double diversityCutoffFactor,
                      DiversityCutoffStrategy diversityCutoffStrategy);
     ~AttributeLimiter();
-    std::unique_ptr<SearchIterator> create_search(size_t want_hits, size_t max_group_size, double hit_rate, bool strictSearch);
+    std::unique_ptr<SearchIterator> create_search(size_t want_hits, size_t max_group_size, double hit_rate,
+                                                  bool strictSearch);
     bool was_used() const;
     ssize_t getEstimatedHits() const;
     static DiversityCutoffStrategy toDiversityCutoffStrategy(std::string_view strategy);
+
 private:
-    using BlueprintAndMatchData = std::pair<search::queryeval::Blueprint &, search::fef::MatchData &>;
-    BlueprintAndMatchData create_match_data(size_t want_hits, size_t max_group_size, double hit_rate, bool strictSearch);
-    search::queryeval::Searchable                      & _searchable_attributes;
-    const search::queryeval::IRequestContext           & _requestContext;
-    const RangeQueryLocator                            & _rangeQueryLocator;
-    std::string                                     _attribute_name;
+    using BlueprintAndMatchData = std::pair<search::queryeval::Blueprint&, search::fef::MatchData&>;
+    BlueprintAndMatchData create_match_data(size_t want_hits, size_t max_group_size, double hit_rate,
+                                            bool strictSearch);
+    search::queryeval::Searchable&                       _searchable_attributes;
+    const search::queryeval::IRequestContext&            _requestContext;
+    const RangeQueryLocator&                             _rangeQueryLocator;
+    std::string                                          _attribute_name;
     bool                                                 _descending;
-    std::string                                     _diversity_attribute;
+    std::string                                          _diversity_attribute;
     std::mutex                                           _lock;
     std::vector<std::unique_ptr<search::fef::MatchData>> _match_datas;
     std::unique_ptr<search::queryeval::Blueprint>        _blueprint;
@@ -62,4 +64,4 @@ private:
     DiversityCutoffStrategy                              _diversityCutoffStrategy;
 };
 
-}
+} // namespace proton::matching

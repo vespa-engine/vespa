@@ -12,29 +12,37 @@
 #include "querylimiter.h"
 #include "requestcontext.h"
 #include "viewresolver.h"
+
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
-#include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/common/idocumentmetastore.h>
 #include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/common/stringmap.h>
+#include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/idiversifier.h>
 #include <vespa/vespalib/util/doom.h>
 
-namespace vespalib { class ExecutionProfiler; }
-namespace vespalib { struct ThreadBundle; }
+namespace vespalib {
+class ExecutionProfiler;
+}
+namespace vespalib {
+struct ThreadBundle;
+}
 
-namespace search::engine { class Trace; }
-namespace search::features { class FirstPhaseRankLookup; }
+namespace search::engine {
+class Trace;
+}
+namespace search::features {
+class FirstPhaseRankLookup;
+}
 
 namespace search::fef {
-    class RankProgram;
-    class RankSetup;
-}
+class RankProgram;
+class RankSetup;
+} // namespace search::fef
 
 namespace proton::matching {
 
-class MatchTools
-{
+class MatchTools {
 private:
     using IRequestContext = search::queryeval::IRequestContext;
     using SearchIterator = search::queryeval::SearchIterator;
@@ -44,46 +52,42 @@ private:
     using RankProgram = search::fef::RankProgram;
     using RankSetup = search::fef::RankSetup;
     using ExecutionProfiler = vespalib::ExecutionProfiler;
-    QueryLimiter                    &_queryLimiter;
+    QueryLimiter&                    _queryLimiter;
     const vespalib::Doom             _doom;
-    const Query                     &_query;
-    MaybeMatchPhaseLimiter          &_match_limiter;
-    const QueryEnvironment          &_queryEnv;
-    const RankSetup                 &_rankSetup;
-    const Properties                &_featureOverrides;
+    const Query&                     _query;
+    MaybeMatchPhaseLimiter&          _match_limiter;
+    const QueryEnvironment&          _queryEnv;
+    const RankSetup&                 _rankSetup;
+    const Properties&                _featureOverrides;
     std::unique_ptr<MatchData>       _match_data;
     std::unique_ptr<RankProgram>     _rank_program;
     std::unique_ptr<SearchIterator>  _search;
     HandleRecorder::HandleMap        _used_handles;
     const HandleRecorder::HandleMap& _needed_handles;
     bool                             _search_has_changed;
-    void setup(std::unique_ptr<RankProgram>, ExecutionProfiler *profiler, double termwise_limit = 1.0);
+    void setup(std::unique_ptr<RankProgram>, ExecutionProfiler* profiler, double termwise_limit = 1.0);
+
 public:
     using UP = std::unique_ptr<MatchTools>;
-    MatchTools(const MatchTools &) = delete;
-    MatchTools & operator = (const MatchTools &) = delete;
-    MatchTools(QueryLimiter & queryLimiter,
-               const vespalib::Doom & doom,
-               const Query &query,
-               MaybeMatchPhaseLimiter &match_limiter_in,
-               const QueryEnvironment &queryEnv,
-               const MatchDataLayout &mdl,
-               const RankSetup &rankSetup,
-               const Properties &featureOverrides,
+    MatchTools(const MatchTools&) = delete;
+    MatchTools& operator=(const MatchTools&) = delete;
+    MatchTools(QueryLimiter& queryLimiter, const vespalib::Doom& doom, const Query& query,
+               MaybeMatchPhaseLimiter& match_limiter_in, const QueryEnvironment& queryEnv, const MatchDataLayout& mdl,
+               const RankSetup& rankSetup, const Properties& featureOverrides,
                const HandleRecorder::HandleMap& needed_handles);
     ~MatchTools();
-    const vespalib::Doom &getDoom() const { return _doom; }
-    QueryLimiter & getQueryLimiter() { return _queryLimiter; }
-    MaybeMatchPhaseLimiter &match_limiter() { return _match_limiter; }
+    const vespalib::Doom& getDoom() const { return _doom; }
+    QueryLimiter& getQueryLimiter() { return _queryLimiter; }
+    MaybeMatchPhaseLimiter& match_limiter() { return _match_limiter; }
     bool has_second_phase_rank() const;
-    const MatchData &match_data() const { return *_match_data; }
-    RankProgram &rank_program() { return *_rank_program; }
-    SearchIterator &search() { return *_search; }
+    const MatchData& match_data() const { return *_match_data; }
+    RankProgram& rank_program() { return *_rank_program; }
+    SearchIterator& search() { return *_search; }
     std::unique_ptr<SearchIterator> borrow_search() { return std::move(_search); }
     void give_back_search(std::unique_ptr<SearchIterator> search_in) { _search = std::move(search_in); }
     void tag_search_as_changed() { _search_has_changed = true; }
-    void setup_first_phase(ExecutionProfiler *profiler);
-    void setup_second_phase(ExecutionProfiler *profiler);
+    void setup_first_phase(ExecutionProfiler* profiler);
+    void setup_second_phase(ExecutionProfiler* profiler);
     void setup_match_features();
     void setup_summary();
     void setup_dump();
@@ -101,20 +105,19 @@ public:
 class AttributeOperationTask {
 public:
     using IAttributeFunctor = search::attribute::IAttributeFunctor;
-    AttributeOperationTask(const RequestContext & requestContext,
-                           std::string_view attribute, std::string_view operation);
-    template<typename Hits>
-    void run(Hits hits) const;
+    AttributeOperationTask(const RequestContext& requestContext, std::string_view attribute,
+                           std::string_view operation);
+    template <typename Hits> void run(Hits hits) const;
+
 private:
     search::attribute::BasicType getAttributeType() const;
-    const std::string & getOperation() const { return _operation; }
-    const RequestContext & _requestContext;
-    std::string _attribute;
-    std::string _operation;
+    const std::string& getOperation() const { return _operation; }
+    const RequestContext& _requestContext;
+    std::string           _attribute;
+    std::string           _operation;
 };
 
-class MatchToolsFactory
-{
+class MatchToolsFactory {
 private:
     using IAttributeFunctor = search::attribute::IAttributeFunctor;
     using IAttributeContext = search::attribute::IAttributeContext;
@@ -127,7 +130,7 @@ private:
     using IIndexEnvironment = search::fef::IIndexEnvironment;
     using IDiversifier = search::queryeval::IDiversifier;
     using FirstPhaseRankLookup = search::features::FirstPhaseRankLookup;
-    QueryLimiter                     & _queryLimiter;
+    QueryLimiter&                      _queryLimiter;
     CreateBlueprintParams              _create_blueprint_params;
     Query                              _query;
     MaybeMatchPhaseLimiter::UP         _match_limiter;
@@ -135,42 +138,33 @@ private:
     QueryEnvironment                   _queryEnv;
     RequestContext                     _requestContext;
     MatchDataLayout                    _mdl;
-    const RankSetup                  & _rankSetup;
-    const Properties                 & _featureOverrides;
+    const RankSetup&                   _rankSetup;
+    const Properties&                  _featureOverrides;
     DiversityParams                    _diversityParams;
     bool                               _valid;
     IObjectStore*                      _object_store;
-    const search::IDocumentMetaStore & _metaStore;
+    const search::IDocumentMetaStore&  _metaStore;
     HandleRecorder::HandleMap          _needed_handles;
 
-    std::unique_ptr<AttributeOperationTask>
-    createTask(std::string_view attribute, std::string_view operation) const;
+    std::unique_ptr<AttributeOperationTask> createTask(std::string_view attribute, std::string_view operation) const;
+
 public:
     using UP = std::unique_ptr<MatchToolsFactory>;
     using BasicType = search::attribute::BasicType;
     using StringStringMap = search::StringStringMap;
 
-    MatchToolsFactory(QueryLimiter & queryLimiter,
-                      const vespalib::Doom & softDoom,
-                      const AnnDeadlineConfiguration& ann_deadline_config,
-                      ISearchContext &searchContext,
-                      IAttributeContext &attributeContext,
-                      search::engine::Trace & root_trace,
-                      const search::SerializedQueryTree & queryTree,
-                      const std::string &location,
-                      const ViewResolver &viewResolver,
-                      const search::IDocumentMetaStore &metaStore,
-                      const IIndexEnvironment &indexEnv,
-                      const RankSetup &rankSetup,
-                      const Properties &rankProperties,
-                      const Properties &featureOverrides,
-                      vespalib::ThreadBundle &thread_bundle,
-                      const search::IDocumentMetaStoreContext::IReadGuard::SP * metaStoreReadGuard,
-                      uint32_t maxNumHits,
-                      bool is_search);
+    MatchToolsFactory(QueryLimiter& queryLimiter, const vespalib::Doom& softDoom,
+                      const AnnDeadlineConfiguration& ann_deadline_config, ISearchContext& searchContext,
+                      IAttributeContext& attributeContext, search::engine::Trace& root_trace,
+                      const search::SerializedQueryTree& queryTree, const std::string& location,
+                      const ViewResolver& viewResolver, const search::IDocumentMetaStore& metaStore,
+                      const IIndexEnvironment& indexEnv, const RankSetup& rankSetup, const Properties& rankProperties,
+                      const Properties& featureOverrides, vespalib::ThreadBundle& thread_bundle,
+                      const search::IDocumentMetaStoreContext::IReadGuard::SP* metaStoreReadGuard,
+                      uint32_t maxNumHits, bool is_search);
     ~MatchToolsFactory();
     bool valid() const { return _valid; }
-    const MaybeMatchPhaseLimiter &match_limiter() const { return *_match_limiter; }
+    const MaybeMatchPhaseLimiter& match_limiter() const { return *_match_limiter; }
     MatchTools::UP createMatchTools() const;
     bool should_diversify() const { return _diversityParams.enabled(); }
     std::unique_ptr<IDiversifier> createDiversifier(uint32_t heapSize) const;
@@ -183,31 +177,30 @@ public:
     std::unique_ptr<AttributeOperationTask> createOnSecondPhaseTask() const;
     std::unique_ptr<AttributeOperationTask> createOnSummaryTask() const;
 
-    const Query & query() const { return _query; }
-    const RequestContext & get_request_context() const { return _requestContext; }
+    const Query& query() const { return _query; }
+    const RequestContext& get_request_context() const { return _requestContext; }
     // Hand the QueryEvalStats object to the query, which further hands it to the blueprint tree
-    void install_stats(search::queryeval::QueryEvalStats &stats) { _query.install_stats(stats); }
+    void install_stats(search::queryeval::QueryEvalStats& stats) { _query.install_stats(stats); }
 
-    const StringStringMap & get_feature_rename_map() const;
+    const StringStringMap& get_feature_rename_map() const;
 
     /**
      * Extracts create blueprint parameters from the rank-profile and query.
      *
-     * The global filter parameters are expected to be in the range [0.0, 1.0], which matches the range of the estimated hit ratio of the query.
-     * When searchable-copies > 1, we must scale the parameters to match the effective range of the estimated hit ratio.
-     * This is done by multiplying with the active hit ratio (active docids / docid limit).
+     * The global filter parameters are expected to be in the range [0.0, 1.0], which matches the range of the
+     * estimated hit ratio of the query. When searchable-copies > 1, we must scale the parameters to match the
+     * effective range of the estimated hit ratio. This is done by multiplying with the active hit ratio (active
+     * docids / docid limit).
      */
-    static CreateBlueprintParams
-    extract_create_blueprint_params(const RankSetup& rank_setup, const Properties& rank_properties,
-                                    uint32_t active_docids, uint32_t docid_limit);
+    static CreateBlueprintParams extract_create_blueprint_params(const RankSetup&  rank_setup,
+                                                                 const Properties& rank_properties,
+                                                                 uint32_t active_docids, uint32_t docid_limit);
     IObjectStore* object_store() const noexcept { return _object_store; }
-    const search::IDocumentMetaStore & metaStore() const noexcept { return _metaStore; }
+    const search::IDocumentMetaStore& metaStore() const noexcept { return _metaStore; }
     FieldIdToNameMapper getFieldIdToNameMapper() const {
         return FieldIdToNameMapper(_queryEnv.getIndexEnvironment());
     }
-    search::fef::MatchData::UP createMatchData() const {
-        return _mdl.createMatchData();
-    }
+    search::fef::MatchData::UP createMatchData() const { return _mdl.createMatchData(); }
 };
 
-}
+} // namespace proton::matching

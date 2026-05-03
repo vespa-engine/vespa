@@ -5,25 +5,26 @@
 #include <vespa/searchlib/fef/iqueryenvironment.h>
 #include <vespa/searchlib/fef/properties.h>
 
-namespace search::index { class IFieldLengthInspector; }
+namespace search::index {
+class IFieldLengthInspector;
+}
 
 namespace proton::matching {
 
 /**
  * Query environment implementation for the proton matching pipeline.
  **/
-class QueryEnvironment : public search::fef::IQueryEnvironment
-{
+class QueryEnvironment : public search::fef::IQueryEnvironment {
 private:
-    const search::fef::IIndexEnvironment       &_indexEnv;
-    const search::attribute::IAttributeContext &_attrContext;
+    const search::fef::IIndexEnvironment&       _indexEnv;
+    const search::attribute::IAttributeContext& _attrContext;
     search::fef::Properties                     _properties;
     GeoLocationSpecPtrs                         _locations;
-    std::vector<const search::fef::ITermData *> _terms;
-    const search::index::IFieldLengthInspector &_field_length_inspector;
+    std::vector<const search::fef::ITermData*>  _terms;
+    const search::index::IFieldLengthInspector& _field_length_inspector;
 
-    QueryEnvironment(const QueryEnvironment &);
-    QueryEnvironment &operator=(const QueryEnvironment &);
+    QueryEnvironment(const QueryEnvironment&);
+    QueryEnvironment& operator=(const QueryEnvironment&);
 
 public:
     /**
@@ -33,10 +34,10 @@ public:
      * @param attrContext attribute context; referenced, not copied
      * @param properties properties; copied
      **/
-    QueryEnvironment(const search::fef::IIndexEnvironment &indexEnv,
-                     const search::attribute::IAttributeContext &attrContext,
-                     const search::fef::Properties &properties,
-                     const search::index::IFieldLengthInspector &field_length_inspector);
+    QueryEnvironment(const search::fef::IIndexEnvironment&       indexEnv,
+                     const search::attribute::IAttributeContext& attrContext,
+                     const search::fef::Properties&              properties,
+                     const search::index::IFieldLengthInspector& field_length_inspector);
 
     /**
      * Used to edit the list of terms by the one setting up this query
@@ -44,7 +45,7 @@ public:
      *
      * @return modifiable list of terms data pointers
      **/
-    std::vector<const search::fef::ITermData *> &terms() { return _terms; }
+    std::vector<const search::fef::ITermData*>& terms() { return _terms; }
 
     /**
      * Used to edit the list of locations by the one setting up this
@@ -55,33 +56,29 @@ public:
      *
      * @return modifiable list of location data pointers
      **/
-    GeoLocationSpecPtrs &locations() {
-        return _locations;
-    }
+    GeoLocationSpecPtrs& locations() { return _locations; }
 
     // inherited from search::fef::IQueryEnvironment
-    const search::fef::Properties &getProperties() const override;
+    const search::fef::Properties& getProperties() const override;
 
     // inherited from search::fef::IQueryEnvironment
     uint32_t getNumTerms() const override;
 
     // inherited from search::fef::IQueryEnvironment
-    const search::fef::ITermData *getTerm(uint32_t idx) const override;
+    const search::fef::ITermData* getTerm(uint32_t idx) const override;
 
     // inherited from search::fef::IQueryEnvironment
-    GeoLocationSpecPtrs getAllLocations() const override {
-        return _locations;
-    }
+    GeoLocationSpecPtrs getAllLocations() const override { return _locations; }
 
     // inherited from search::fef::IQueryEnvironment
-    const search::attribute::IAttributeContext & getAttributeContext() const override;
+    const search::attribute::IAttributeContext& getAttributeContext() const override;
 
-    search::index::FieldLengthInfo get_field_length_info(const std::string &field_name) const override;
+    search::index::FieldLengthInfo get_field_length_info(const std::string& field_name) const override;
 
     // inherited from search::fef::IQueryEnvironment
-    const search::fef::IIndexEnvironment & getIndexEnvironment() const override;
+    const search::fef::IIndexEnvironment& getIndexEnvironment() const override;
 
     ~QueryEnvironment() override;
 };
 
-}
+} // namespace proton::matching

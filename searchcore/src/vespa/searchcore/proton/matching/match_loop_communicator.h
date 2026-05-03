@@ -3,23 +3,26 @@
 #pragma once
 
 #include "i_match_loop_communicator.h"
+
 #include <vespa/searchlib/fef/objectstore.h>
 #include <vespa/searchlib/queryeval/idiversifier.h>
 #include <vespa/vespalib/util/rendezvous.h>
+
 #include <functional>
 
-namespace search::features { class FirstPhaseRankLookup; }
+namespace search::features {
+class FirstPhaseRankLookup;
+}
 
 namespace proton::matching {
 
-class MatchLoopCommunicator final : public IMatchLoopCommunicator
-{
+class MatchLoopCommunicator final : public IMatchLoopCommunicator {
 private:
     using FirstPhaseRankLookup = search::features::FirstPhaseRankLookup;
     using IDiversifier = search::queryeval::IDiversifier;
     using IObjectStore = search::fef::IObjectStore;
     struct BestDropped {
-        bool valid = false;
+        bool              valid = false;
         search::feature_t score = 0.0;
     };
     struct EstimateMatchFrequency : vespalib::Rendezvous<Matches, double> {
@@ -27,39 +30,37 @@ private:
         void mingle() override;
     };
     struct GetSecondPhaseWork : vespalib::Rendezvous<SortedHitSequence, TaggedHits, true> {
-        size_t topN;
-        Range &best_scores;
-        BestDropped &best_dropped;
+        size_t                        topN;
+        Range&                        best_scores;
+        BestDropped&                  best_dropped;
         std::unique_ptr<IDiversifier> _diversifier;
-        IObjectStore* _object_store;
-        FirstPhaseRankLookup* _first_phase_rank_lookup;
-        double* _first_phase_max;
-        std::function<void()> _before_second_phase;
-        GetSecondPhaseWork(size_t n, size_t topN_in, Range &best_scores_in, BestDropped &best_dropped_in, std::unique_ptr<IDiversifier> diversifier, IObjectStore* object_store, std::function<void()> before_second_phase);
+        IObjectStore*                 _object_store;
+        FirstPhaseRankLookup*         _first_phase_rank_lookup;
+        double*                       _first_phase_max;
+        std::function<void()>         _before_second_phase;
+        GetSecondPhaseWork(size_t n, size_t topN_in, Range& best_scores_in, BestDropped& best_dropped_in,
+                           std::unique_ptr<IDiversifier> diversifier, IObjectStore* object_store,
+                           std::function<void()> before_second_phase);
         ~GetSecondPhaseWork() override;
         void mingle() override;
-        template<typename Q, typename R>
-        void mingle(Q &queue, R register_first_phase_rank);
-        template<typename Q, typename F, typename R>
-        void mingle(Q &queue, F &&accept, R register_first_phase_rank);
-        bool cmp(uint32_t a, uint32_t b) {
-            return (in(a).get().second > in(b).get().second);
-        }
+        template <typename Q, typename R> void mingle(Q& queue, R register_first_phase_rank);
+        template <typename Q, typename F, typename R> void mingle(Q& queue, F&& accept, R register_first_phase_rank);
+        bool cmp(uint32_t a, uint32_t b) { return (in(a).get().second > in(b).get().second); }
     };
     struct SelectCmp {
-        GetSecondPhaseWork &sb;
-        SelectCmp(GetSecondPhaseWork &sb_in) : sb(sb_in) {}
-        bool operator()(uint32_t a, uint32_t b) const {
-            return (sb.cmp(a, b));
-        }
+        GetSecondPhaseWork& sb;
+        SelectCmp(GetSecondPhaseWork& sb_in) : sb(sb_in) {}
+        bool operator()(uint32_t a, uint32_t b) const { return (sb.cmp(a, b)); }
     };
-    struct CompleteSecondPhase : vespalib::Rendezvous<TaggedHits, std::pair<Hits,RangePair>, true> {
-        size_t topN;
-        const Range &best_scores;
-        const BestDropped &best_dropped;
-        CompleteSecondPhase(size_t n, size_t topN_in, const Range &best_scores_in, const BestDropped &best_dropped_in)
-            : vespalib::Rendezvous<TaggedHits, std::pair<Hits,RangePair>, true>(n),
-              topN(topN_in), best_scores(best_scores_in), best_dropped(best_dropped_in) {}
+    struct CompleteSecondPhase : vespalib::Rendezvous<TaggedHits, std::pair<Hits, RangePair>, true> {
+        size_t             topN;
+        const Range&       best_scores;
+        const BestDropped& best_dropped;
+        CompleteSecondPhase(size_t n, size_t topN_in, const Range& best_scores_in, const BestDropped& best_dropped_in)
+            : vespalib::Rendezvous<TaggedHits, std::pair<Hits, RangePair>, true>(n),
+              topN(topN_in),
+              best_scores(best_scores_in),
+              best_dropped(best_dropped_in) {}
         void mingle() override;
     };
 
@@ -71,12 +72,13 @@ private:
 
 public:
     MatchLoopCommunicator(size_t threads, size_t topN);
-    MatchLoopCommunicator(size_t threads, size_t topN, std::unique_ptr<IDiversifier>, IObjectStore* object_store, std::function<void()> before_second_phsae);
+    MatchLoopCommunicator(size_t threads, size_t topN, std::unique_ptr<IDiversifier>, IObjectStore* object_store,
+                          std::function<void()> before_second_phsae);
     ~MatchLoopCommunicator();
 
-    double estimate_match_frequency(const Matches &matches) override;
+    double estimate_match_frequency(const Matches& matches) override;
     TaggedHits get_second_phase_work(SortedHitSequence sortedHits, size_t thread_id) override;
-    std::pair<Hits,RangePair> complete_second_phase(TaggedHits my_results, size_t thread_id) override;
+    std::pair<Hits, RangePair> complete_second_phase(TaggedHits my_results, size_t thread_id) override;
 };
 
-}
+} // namespace proton::matching

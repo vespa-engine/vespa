@@ -5,9 +5,12 @@
 #include <vespa/searchlib/fef/handle.h>
 #include <vespa/searchlib/fef/match_data_details.h>
 #include <vespa/vespalib/stllike/hash_map.h>
+
 #include <vespa/vespalib/util/noncopyable.hpp>
 
-namespace search::fef { class MatchData; }
+namespace search::fef {
+class MatchData;
+}
 
 namespace proton::matching {
 
@@ -19,13 +22,12 @@ namespace proton::matching {
  * After the Binders has gone out of scope this recorder has a list of all feature handles that might be
  * by this query. This can then be used to avoid a lot of unpacking of data.
  */
-class HandleRecorder
-{
+class HandleRecorder {
 public:
     using HandleMap = vespalib::hash_map<search::fef::TermFieldHandle, search::fef::MatchDataDetails>;
     class Binder : public vespalib::noncopyable {
     public:
-        Binder(HandleRecorder & recorder);
+        Binder(HandleRecorder& recorder);
         ~Binder();
     };
     class Asserter : public vespalib::noncopyable {
@@ -38,15 +40,13 @@ public:
     ~HandleRecorder();
     const HandleMap& get_handles() const { return _handles; }
     HandleMap steal_handles() && { return std::move(_handles); }
-    static void register_handle(search::fef::TermFieldHandle handle,
-                                search::fef::MatchDataDetails requested_details);
+    static void register_handle(search::fef::TermFieldHandle handle, search::fef::MatchDataDetails requested_details);
     std::string to_string() const;
-    void tag_match_data(search::fef::MatchData &match_data);
+    void tag_match_data(search::fef::MatchData& match_data);
+
 private:
-    void add(search::fef::TermFieldHandle handle,
-             search::fef::MatchDataDetails requested_details);
+    void add(search::fef::TermFieldHandle handle, search::fef::MatchDataDetails requested_details);
     HandleMap _handles;
 };
 
-}
-
+} // namespace proton::matching
