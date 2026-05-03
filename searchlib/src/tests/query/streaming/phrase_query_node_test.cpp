@@ -9,21 +9,20 @@
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
-using search::query::QueryBuilder;
 using search::query::Node;
+using search::query::QueryBuilder;
 using search::query::SimpleQueryNodeTypes;
 using search::query::StackDumpCreator;
 using search::query::Weight;
 using search::streaming::HitList;
 using search::streaming::PhraseQueryNode;
 using search::streaming::Query;
-using search::streaming::QueryTerm;
 using search::streaming::QueryNodeRefList;
 using search::streaming::QueryNodeResultFactory;
+using search::streaming::QueryTerm;
 using search::streaming::QueryTermList;
 
-TEST(PhraseQueryNodeTest, test_phrase_evaluate)
-{
+TEST(PhraseQueryNodeTest, test_phrase_evaluate) {
     QueryBuilder<SimpleQueryNodeTypes> builder;
     builder.addPhrase(3, "", 0, Weight(0));
     {
@@ -31,12 +30,12 @@ TEST(PhraseQueryNodeTest, test_phrase_evaluate)
         builder.addStringTerm("b", "", 0, Weight(0));
         builder.addStringTerm("c", "", 0, Weight(0));
     }
-    Node::UP node = builder.build();
-    auto serializedQueryTree = StackDumpCreator::createSerializedQueryTree(*node);
+    Node::UP               node = builder.build();
+    auto                   serializedQueryTree = StackDumpCreator::createSerializedQueryTree(*node);
     QueryNodeResultFactory empty;
-    Query q(empty, *serializedQueryTree);
-    auto& p = dynamic_cast<PhraseQueryNode&>(q.getRoot());
-    auto& terms = p.get_terms();
+    Query                  q(empty, *serializedQueryTree);
+    auto&                  p = dynamic_cast<PhraseQueryNode&>(q.getRoot());
+    auto&                  terms = p.get_terms();
     for (auto& qt : terms) {
         qt->resizeFieldId(1);
     }

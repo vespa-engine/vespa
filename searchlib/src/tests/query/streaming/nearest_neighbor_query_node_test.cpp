@@ -18,10 +18,10 @@ using search::fef::MatchDataLayout;
 using search::fef::TermFieldHandle;
 using search::fef::TermFieldMatchData;
 using search::fef::test::IndexEnvironment;
-using search::query::Weight;
 using search::query::QueryBuilder;
 using search::query::SimpleQueryNodeTypes;
 using search::query::StackDumpCreator;
+using search::query::Weight;
 using search::streaming::NearestNeighborQueryNode;
 using search::streaming::Query;
 using search::streaming::QueryTerm;
@@ -29,30 +29,23 @@ using search::streaming::QueryTermData;
 using search::streaming::QueryTermDataFactory;
 using search::streaming::QueryTermList;
 
-class NearestNeighborQueryNodeTest : public testing::Test
-{
+class NearestNeighborQueryNodeTest : public testing::Test {
 protected:
-    QueryTermDataFactory _factory;
+    QueryTermDataFactory   _factory;
     std::unique_ptr<Query> _query;
 
     NearestNeighborQueryNodeTest();
     ~NearestNeighborQueryNodeTest() override;
 
-    void build_query(QueryBuilder<SimpleQueryNodeTypes> &builder);
+    void build_query(QueryBuilder<SimpleQueryNodeTypes>& builder);
 };
 
-NearestNeighborQueryNodeTest::NearestNeighborQueryNodeTest()
-    : testing::Test(),
-      _factory(nullptr, nullptr),
-      _query()
-{
+NearestNeighborQueryNodeTest::NearestNeighborQueryNodeTest() : testing::Test(), _factory(nullptr, nullptr), _query() {
 }
 
 NearestNeighborQueryNodeTest::~NearestNeighborQueryNodeTest() = default;
 
-void
-NearestNeighborQueryNodeTest::build_query(QueryBuilder<SimpleQueryNodeTypes> &builder)
-{
+void NearestNeighborQueryNodeTest::build_query(QueryBuilder<SimpleQueryNodeTypes>& builder) {
     auto build_node = builder.build();
     auto serializedQueryTree = StackDumpCreator::createSerializedQueryTree(*build_node);
     _query = std::make_unique<Query>(_factory, *serializedQueryTree);
@@ -65,21 +58,21 @@ public:
     double to_raw_score(double distance) override { return distance * 2; }
 };
 
-}
+} // namespace
 
-TEST_F(NearestNeighborQueryNodeTest, unpack_match_data_for_nearest_neighbor_query_node)
-{
-    QueryBuilder<SimpleQueryNodeTypes> builder;
-    constexpr double distance_threshold = 35.5;
-    constexpr int32_t id = 42;
-    constexpr int32_t weight = 1;
-    constexpr uint32_t target_num_hits = 100;
-    constexpr bool allow_approximate = false;
-    constexpr uint32_t explore_additional_hits = 800;
+TEST_F(NearestNeighborQueryNodeTest, unpack_match_data_for_nearest_neighbor_query_node) {
+    QueryBuilder<SimpleQueryNodeTypes>             builder;
+    constexpr double                               distance_threshold = 35.5;
+    constexpr int32_t                              id = 42;
+    constexpr int32_t                              weight = 1;
+    constexpr uint32_t                             target_num_hits = 100;
+    constexpr bool                                 allow_approximate = false;
+    constexpr uint32_t                             explore_additional_hits = 800;
     search::query::NearestNeighborTerm::HnswParams hnsw_params;
     hnsw_params.distance_threshold = distance_threshold;
     hnsw_params.explore_additional_hits = explore_additional_hits;
-    builder.add_nearest_neighbor_term("qtensor", "field", id, Weight(weight), target_num_hits, allow_approximate, hnsw_params);
+    builder.add_nearest_neighbor_term("qtensor", "field", id, Weight(weight), target_num_hits, allow_approximate,
+                                      hnsw_params);
     build_query(builder);
     QueryTermList term_list;
     _query->getLeaves(term_list);
@@ -88,16 +81,16 @@ TEST_F(NearestNeighborQueryNodeTest, unpack_match_data_for_nearest_neighbor_quer
     EXPECT_NE(nullptr, node);
     MockRawScoreCalculator calc;
     node->set_raw_score_calc(&calc);
-    auto& qtd = static_cast<QueryTermData &>(node->getQueryItem());
-    auto& td = qtd.getTermData();
-    MatchDataLayout mdl;
+    auto&              qtd = static_cast<QueryTermData&>(node->getQueryItem());
+    auto&              td = qtd.getTermData();
+    MatchDataLayout    mdl;
     constexpr uint32_t field0 = 0;
     constexpr uint32_t existing_handles = 27;
     for (uint32_t i = 0; i < existing_handles; ++i) {
-        (void) mdl.allocTermField(field0);
+        (void)mdl.allocTermField(field0);
     }
     constexpr uint32_t field12 = 12;
-    TermFieldHandle handle27 = mdl.allocTermField(field12);
+    TermFieldHandle    handle27 = mdl.allocTermField(field12);
     td.addField(field12).setHandle(handle27);
     auto md = mdl.createMatchData();
     auto tfmd = md->resolveTermField(handle27);

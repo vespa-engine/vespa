@@ -4,16 +4,14 @@
 #include <vespa/vespalib/gtest/gtest.h>
 
 using search::streaming::Hit;
-using search::streaming::HitList;
 using search::streaming::HitIterator;
+using search::streaming::HitList;
 
 using FieldElement = HitIterator::FieldElement;
 
 namespace {
 
-HitList
-make_hit_list()
-{
+HitList make_hit_list() {
     HitList hl;
     hl.emplace_back(11, 0, 10, 0);
     hl.emplace_back(11, 0, 10, 5);
@@ -24,26 +22,22 @@ make_hit_list()
     return hl;
 }
 
-void
-check_seek_to_field_elem(HitIterator& it, const FieldElement& field_element, const Hit* exp_ptr, const std::string& label)
-{
+void check_seek_to_field_elem(HitIterator& it, const FieldElement& field_element, const Hit* exp_ptr,
+                              const std::string& label) {
     SCOPED_TRACE(label);
     EXPECT_TRUE(it.seek_to_field_element(field_element));
     EXPECT_TRUE(it.valid());
     EXPECT_EQ(exp_ptr, &*it);
 }
 
-void
-check_seek_to_field_elem_failure(HitIterator& it, const FieldElement& field_element, const std::string& label)
-{
+void check_seek_to_field_elem_failure(HitIterator& it, const FieldElement& field_element, const std::string& label) {
     SCOPED_TRACE(label);
     EXPECT_FALSE(it.seek_to_field_element(field_element));
     EXPECT_FALSE(it.valid());
 }
 
-void
-check_step_in_field_element(HitIterator& it, FieldElement& field_element, bool exp_success, const Hit* exp_ptr, const std::string& label)
-{
+void check_step_in_field_element(HitIterator& it, FieldElement& field_element, bool exp_success, const Hit* exp_ptr,
+                                 const std::string& label) {
     SCOPED_TRACE(label);
     EXPECT_EQ(exp_success, it.step_in_field_element(field_element));
     if (exp_ptr) {
@@ -55,9 +49,8 @@ check_step_in_field_element(HitIterator& it, FieldElement& field_element, bool e
     }
 }
 
-void
-check_seek_in_field_element(HitIterator& it, uint32_t position, FieldElement& field_element, bool exp_success, const Hit* exp_ptr, const std::string& label)
-{
+void check_seek_in_field_element(HitIterator& it, uint32_t position, FieldElement& field_element, bool exp_success,
+                                 const Hit* exp_ptr, const std::string& label) {
     SCOPED_TRACE(label);
     EXPECT_EQ(exp_success, it.seek_in_field_element(position, field_element));
     if (exp_ptr) {
@@ -69,11 +62,10 @@ check_seek_in_field_element(HitIterator& it, uint32_t position, FieldElement& fi
     }
 }
 
-}
+} // namespace
 
-TEST(HitIteratorTest, seek_to_field_element)
-{
-    auto hl = make_hit_list();
+TEST(HitIteratorTest, seek_to_field_element) {
+    auto        hl = make_hit_list();
     HitIterator it(hl);
     EXPECT_TRUE(it.valid());
     EXPECT_EQ(&hl[0], &*it);
@@ -87,11 +79,10 @@ TEST(HitIteratorTest, seek_to_field_element)
     check_seek_to_field_elem_failure(it, FieldElement(13, 0), "(13, 0)");
 }
 
-TEST(HitIteratorTest, step_in_field_element)
-{
-    auto hl = make_hit_list();
+TEST(HitIteratorTest, step_in_field_element) {
+    auto        hl = make_hit_list();
     HitIterator it(hl);
-    auto field_element = it.get_field_element();
+    auto        field_element = it.get_field_element();
     check_step_in_field_element(it, field_element, true, &hl[1], "1");
     check_step_in_field_element(it, field_element, false, &hl[2], "2");
     check_step_in_field_element(it, field_element, true, &hl[3], "3");
@@ -100,11 +91,10 @@ TEST(HitIteratorTest, step_in_field_element)
     check_step_in_field_element(it, field_element, false, nullptr, "end");
 }
 
-TEST(HitIteratorTest, seek_in_field_elem)
-{
-    auto hl = make_hit_list();
+TEST(HitIteratorTest, seek_in_field_elem) {
+    auto        hl = make_hit_list();
     HitIterator it(hl);
-    auto field_element = it.get_field_element();
+    auto        field_element = it.get_field_element();
     check_seek_in_field_element(it, 0, field_element, true, &hl[0], "0a");
     check_seek_in_field_element(it, 2, field_element, true, &hl[1], "2");
     check_seek_in_field_element(it, 5, field_element, true, &hl[1], "5");
