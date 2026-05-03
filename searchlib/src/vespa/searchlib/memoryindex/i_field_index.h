@@ -4,16 +4,17 @@
 
 #include <vespa/vespalib/util/generation_guard.h>
 #include <vespa/vespalib/util/memoryusage.h>
+
 #include <memory>
 
 namespace search::queryeval {
-    struct SimpleLeafBlueprint;
-    class FieldSpec;
-}
+struct SimpleLeafBlueprint;
+class FieldSpec;
+} // namespace search::queryeval
 namespace search::index {
 class FieldLengthCalculator;
 class FieldIndexBuilder;
-}
+} // namespace search::index
 
 namespace search::memoryindex {
 
@@ -39,13 +40,12 @@ public:
     virtual void compactFeatures() = 0;
     virtual void dump(search::index::FieldIndexBuilder& builder) = 0;
 
-    virtual std::unique_ptr<queryeval::SimpleLeafBlueprint> make_term_blueprint(const std::string& term,
-                                                                                const queryeval::FieldSpec& field,
-                                                                                uint32_t field_id) = 0;
+    virtual std::unique_ptr<queryeval::SimpleLeafBlueprint>
+    make_term_blueprint(const std::string& term, const queryeval::FieldSpec& field, uint32_t field_id) = 0;
 
     // Should only be directly used by unit tests
     virtual vespalib::GenerationGuard takeGenerationGuard() = 0;
     virtual void commit() = 0;
 };
 
-}
+} // namespace search::memoryindex

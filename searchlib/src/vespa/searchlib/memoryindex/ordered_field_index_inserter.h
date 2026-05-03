@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include "i_ordered_field_index_inserter.h"
 #include "field_index.h"
+#include "i_ordered_field_index_inserter.h"
+
 #include <limits>
 
 namespace search::memoryindex {
@@ -21,12 +22,11 @@ class IFieldIndexInsertListener;
  *
  * The template parameter specifies whether the posting lists of the field index have interleaved features or not.
  */
-template <bool interleaved_features>
-class OrderedFieldIndexInserter : public IOrderedFieldIndexInserter {
+template <bool interleaved_features> class OrderedFieldIndexInserter : public IOrderedFieldIndexInserter {
 private:
     std::string_view _word;
-    uint32_t _prevDocId;
-    bool     _prevAdd;
+    uint32_t         _prevDocId;
+    bool             _prevAdd;
     using FieldIndexType = FieldIndex<interleaved_features>;
     using DictionaryTree = typename FieldIndexType::DictionaryTree;
     using PostingListStore = typename FieldIndexType::PostingListStore;
@@ -34,17 +34,17 @@ private:
     using WordKey = typename FieldIndexType::WordKey;
     using PostingListEntryType = typename FieldIndexType::PostingListEntryType;
     using PostingListKeyDataType = typename FieldIndexType::PostingListKeyDataType;
-    FieldIndexType& _fieldIndex;
+    FieldIndexType&                   _fieldIndex;
     typename DictionaryTree::Iterator _dItr;
-    IFieldIndexInsertListener &_listener;
+    IFieldIndexInsertListener&        _listener;
 
     // Pending changes to posting list for (_word)
-    std::vector<uint32_t>    _removes;
+    std::vector<uint32_t>               _removes;
     std::vector<PostingListKeyDataType> _adds;
     using WordEntry = std::tuple<std::string_view, size_t, size_t>;
     std::vector<WordEntry> _word_entries;
-    size_t _removes_offset;
-    size_t _adds_offset;
+    size_t                 _removes_offset;
+    size_t                 _adds_offset;
 
     static constexpr uint32_t noFieldId = std::numeric_limits<uint32_t>::max();
     static constexpr uint32_t noDocId = std::numeric_limits<uint32_t>::max();
@@ -60,7 +60,7 @@ public:
     OrderedFieldIndexInserter(FieldIndexType& fieldIndex);
     ~OrderedFieldIndexInserter() override;
     void setNextWord(const std::string_view word) override;
-    void add(uint32_t docId, const index::DocIdAndFeatures &features) override;
+    void add(uint32_t docId, const index::DocIdAndFeatures& features) override;
     void remove(uint32_t docId) override;
 
     /**
@@ -70,7 +70,6 @@ public:
      * _dItr is located at correct position.
      */
     void flush() override;
-
 
     void commit() override;
 
@@ -82,4 +81,4 @@ public:
     vespalib::datastore::EntryRef getWordRef() const override;
 };
 
-}
+} // namespace search::memoryindex

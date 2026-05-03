@@ -10,11 +10,10 @@ namespace search::memoryindex {
  * Context for pushing inverted data to memory index structure for a set
  * of fields and uri fields. Currently used by PushTask.
  */
-class PushContext : public BundledFieldsContext
-{
+class PushContext : public BundledFieldsContext {
 public:
     PushContext(vespalib::ISequencedTaskExecutor::ExecutorId id);
     ~PushContext();
 };
 
-}
+} // namespace search::memoryindex

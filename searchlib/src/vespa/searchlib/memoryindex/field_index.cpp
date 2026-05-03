@@ -1,14 +1,18 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "field_index.h"
+
 #include "ordered_field_index_inserter.h"
 #include "posting_iterator.h"
+
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
 #include <vespa/searchlib/queryeval/filter_wrapper.h>
 #include <vespa/searchlib/queryeval/flow_tuning.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
+#include <vespa/vespalib/objects/visit.h>
+
 #include <vespa/vespalib/btree/btree.hpp>
 #include <vespa/vespalib/btree/btreeiterator.hpp>
 #include <vespa/vespalib/btree/btreenode.hpp>
@@ -17,7 +21,6 @@
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
-#include <vespa/vespalib/objects/visit.h>
 #include <vespa/vespalib/util/array.hpp>
 
 #include <vespa/log/log.h>
@@ -41,30 +44,24 @@ using vespalib::datastore::EntryRef;
 
 template <bool interleaved_features>
 FieldIndex<interleaved_features>::FieldIndex(const index::Schema& schema, uint32_t fieldId)
-    : FieldIndex(schema, fieldId, index::FieldLengthInfo())
-{
+    : FieldIndex(schema, fieldId, index::FieldLengthInfo()) {
 }
 
 template <bool interleaved_features>
 FieldIndex<interleaved_features>::FieldIndex(const index::Schema& schema, uint32_t fieldId,
                                              const index::FieldLengthInfo& info)
-    : FieldIndexBase(schema, fieldId, info),
-      _postingListStore()
-{
+    : FieldIndexBase(schema, fieldId, info), _postingListStore() {
     using InserterType = OrderedFieldIndexInserter<interleaved_features>;
     _inserter = std::make_unique<InserterType>(*this);
 }
 
-template <bool interleaved_features>
-FieldIndex<interleaved_features>::~FieldIndex()
-{
+template <bool interleaved_features> FieldIndex<interleaved_features>::~FieldIndex() {
     _postingListStore.disableFreeLists();
     _postingListStore.disable_entry_hold_list();
     _dict.disableFreeLists();
     _dict.disable_entry_hold_list();
     // XXX: Kludge
-    for (DictionaryTree::Iterator it = _dict.begin();
-         it.valid(); ++it) {
+    for (DictionaryTree::Iterator it = _dict.begin(); it.valid(); ++it) {
         EntryRef pidx(it.getData().load_relaxed());
         if (pidx.valid()) {
             _postingListStore.clear(pidx);
@@ -72,10 +69,10 @@ FieldIndex<interleaved_features>::~FieldIndex()
         }
     }
     _postingListStore.clearBuilder();
-    freeze();   // Flush all pending posting list tree freezes
+    freeze(); // Flush all pending posting list tree freezes
     assign_generation();
-    _dict.clear();  // Clear dictionary
-    freeze();   // Flush pending freeze for dictionary tree.
+    _dict.clear(); // Clear dictionary
+    freeze();      // Flush pending freeze for dictionary tree.
     assign_generation();
     incGeneration();
     reclaim_memory();
@@ -83,8 +80,7 @@ FieldIndex<interleaved_features>::~FieldIndex()
 
 template <bool interleaved_features>
 typename FieldIndex<interleaved_features>::PostingList::Iterator
-FieldIndex<interleaved_features>::find(const std::string_view word) const
-{
+FieldIndex<interleaved_features>::find(const std::string_view word) const {
     DictionaryTree::Iterator itr = _dict.find(WordKey(EntryRef()), KeyComp(_wordStore, word));
     if (itr.valid()) {
         return _postingListStore.begin(itr.getData().load_relaxed());
@@ -94,8 +90,7 @@ FieldIndex<interleaved_features>::find(const std::string_view word) const
 
 template <bool interleaved_features>
 typename FieldIndex<interleaved_features>::PostingList::ConstIterator
-FieldIndex<interleaved_features>::findFrozen(const std::string_view word) const
-{
+FieldIndex<interleaved_features>::findFrozen(const std::string_view word) const {
     auto itr = _dict.getFrozenView().find(WordKey(EntryRef()), KeyComp(_wordStore, word));
     if (itr.valid()) {
         return _postingListStore.beginFrozen(itr.getData().load_acquire());
@@ -103,12 +98,9 @@ FieldIndex<interleaved_features>::findFrozen(const std::string_view word) const
     return typename PostingList::ConstIterator();
 }
 
-template <bool interleaved_features>
-void
-FieldIndex<interleaved_features>::compactFeatures()
-{
-    auto compacting_buffers = _featureStore.start_compact();
-    auto itr = _dict.begin();
+template <bool interleaved_features> void FieldIndex<interleaved_features>::compactFeatures() {
+    auto     compacting_buffers = _featureStore.start_compact();
+    auto     itr = _dict.begin();
     uint32_t packedIndex = _fieldId;
     for (; itr.valid(); ++itr) {
         typename PostingListStore::RefType pidx(itr.getData().load_relaxed());
@@ -117,8 +109,8 @@ FieldIndex<interleaved_features>::compactFeatures()
         }
         uint32_t clusterSize = _postingListStore.getClusterSize(pidx);
         if (clusterSize == 0) {
-            const PostingList *tree = _postingListStore.getTreeEntry(pidx);
-            auto pitr = tree->begin(_postingListStore.getAllocator());
+            const PostingList* tree = _postingListStore.getTreeEntry(pidx);
+            auto               pitr = tree->begin(_postingListStore.getAllocator());
             for (; pitr.valid(); ++pitr) {
                 const PostingListEntryType& posting_entry(pitr.getData());
 
@@ -130,9 +122,9 @@ FieldIndex<interleaved_features>::compactFeatures()
                 posting_entry.update_features(newFeatures);
             }
         } else {
-            const PostingListKeyDataType *shortArray = _postingListStore.getKeyDataEntry(pidx, clusterSize);
-            const PostingListKeyDataType *ite = shortArray + clusterSize;
-            for (const PostingListKeyDataType *it = shortArray; it < ite; ++it) {
+            const PostingListKeyDataType* shortArray = _postingListStore.getKeyDataEntry(pidx, clusterSize);
+            const PostingListKeyDataType* ite = shortArray + clusterSize;
+            for (const PostingListKeyDataType* it = shortArray; it < ite; ++it) {
                 const PostingListEntryType& posting_entry(it->getData());
 
                 // Filter on which buffers to move features from when
@@ -150,16 +142,14 @@ FieldIndex<interleaved_features>::compactFeatures()
 }
 
 template <bool interleaved_features>
-void
-FieldIndex<interleaved_features>::dump(search::index::FieldIndexBuilder & indexBuilder)
-{
-    std::string_view word;
+void FieldIndex<interleaved_features>::dump(search::index::FieldIndexBuilder& indexBuilder) {
+    std::string_view                  word;
     FeatureStore::DecodeContextCooked decoder(nullptr);
-    DocIdAndFeatures features;
-    vespalib::Array<uint32_t> wordMap(_numUniqueWords + 1, 0);
+    DocIdAndFeatures                  features;
+    vespalib::Array<uint32_t>         wordMap(_numUniqueWords + 1, 0);
     _featureStore.setupForField(_fieldId, decoder);
     for (auto itr = _dict.begin(); itr.valid(); ++itr) {
-        const WordKey & wk = itr.getKey();
+        const WordKey&                     wk = itr.getKey();
         typename PostingListStore::RefType plist(itr.getData().load_relaxed());
         word = _wordStore.getWord(wk._wordRef);
         if (!plist.valid()) {
@@ -168,12 +158,12 @@ FieldIndex<interleaved_features>::dump(search::index::FieldIndexBuilder & indexB
         indexBuilder.startWord(word);
         uint32_t clusterSize = _postingListStore.getClusterSize(plist);
         if (clusterSize == 0) {
-            const PostingList *tree = _postingListStore.getTreeEntry(plist);
-            auto pitr = tree->begin(_postingListStore.getAllocator());
+            const PostingList* tree = _postingListStore.getTreeEntry(plist);
+            auto               pitr = tree->begin(_postingListStore.getAllocator());
             assert(pitr.valid());
             for (; pitr.valid(); ++pitr) {
                 features.set_doc_id(pitr.getKey());
-                const PostingListEntryType &entry(pitr.getData());
+                const PostingListEntryType& entry(pitr.getData());
                 features.set_num_occs(entry.get_num_occs());
                 features.set_field_length(entry.get_field_length());
                 _featureStore.setupForReadFeatures(entry.get_features_relaxed(), decoder);
@@ -181,12 +171,11 @@ FieldIndex<interleaved_features>::dump(search::index::FieldIndexBuilder & indexB
                 indexBuilder.add_document(features);
             }
         } else {
-            const PostingListKeyDataType *kd =
-                _postingListStore.getKeyDataEntry(plist, clusterSize);
-            const PostingListKeyDataType *kde = kd + clusterSize;
+            const PostingListKeyDataType* kd = _postingListStore.getKeyDataEntry(plist, clusterSize);
+            const PostingListKeyDataType* kde = kd + clusterSize;
             for (; kd != kde; ++kd) {
                 features.set_doc_id(kd->_key);
-                const PostingListEntryType &entry(kd->getData());
+                const PostingListEntryType& entry(kd->getData());
                 features.set_num_occs(entry.get_num_occs());
                 features.set_field_length(entry.get_field_length());
                 _featureStore.setupForReadFeatures(entry.get_features_relaxed(), decoder);
@@ -198,10 +187,7 @@ FieldIndex<interleaved_features>::dump(search::index::FieldIndexBuilder & indexB
     }
 }
 
-template <bool interleaved_features>
-vespalib::MemoryUsage
-FieldIndex<interleaved_features>::getMemoryUsage() const
-{
+template <bool interleaved_features> vespalib::MemoryUsage FieldIndex<interleaved_features>::getMemoryUsage() const {
     vespalib::MemoryUsage usage;
     usage.merge(_wordStore.getMemoryUsage());
     usage.merge(_dict.getMemoryUsage());
@@ -211,10 +197,7 @@ FieldIndex<interleaved_features>::getMemoryUsage() const
     return usage;
 }
 
-template <bool interleaved_features>
-void
-FieldIndex<interleaved_features>::commit()
-{
+template <bool interleaved_features> void FieldIndex<interleaved_features>::commit() {
     _remover.flush();
     freeze();
     assign_generation();
@@ -224,37 +207,30 @@ FieldIndex<interleaved_features>::commit()
 
 template <bool interleaved_features>
 queryeval::SearchIterator::UP
-FieldIndex<interleaved_features>::make_search_iterator(const std::string& term,
-                                                       uint32_t field_id,
-                                                       fef::TermFieldMatchDataArray match_data) const
-{
-    return search::memoryindex::make_search_iterator<interleaved_features>
-            (find(term), getFeatureStore(), field_id, std::move(match_data));
+FieldIndex<interleaved_features>::make_search_iterator(const std::string& term, uint32_t field_id,
+                                                       fef::TermFieldMatchDataArray match_data) const {
+    return search::memoryindex::make_search_iterator<interleaved_features>(find(term), getFeatureStore(), field_id,
+                                                                           std::move(match_data));
 }
 
 namespace {
 
-template <bool interleaved_features>
-class MemoryTermBlueprint : public SimpleLeafBlueprint {
+template <bool interleaved_features> class MemoryTermBlueprint : public SimpleLeafBlueprint {
 private:
     using FieldIndexType = FieldIndex<interleaved_features>;
     using PostingListIteratorType = typename FieldIndexType::PostingList::ConstIterator;
-    GenerationGuard _guard;
+    GenerationGuard            _guard;
     const queryeval::FieldSpec _field;
-    PostingListIteratorType _posting_itr;
-    const FeatureStore& _feature_store;
-    const uint32_t _field_id;
-    const std::string _query_term;
-    const bool _use_bit_vector;
+    PostingListIteratorType    _posting_itr;
+    const FeatureStore&        _feature_store;
+    const uint32_t             _field_id;
+    const std::string          _query_term;
+    const bool                 _use_bit_vector;
 
 public:
-    MemoryTermBlueprint(GenerationGuard&& guard,
-                        PostingListIteratorType posting_itr,
-                        const FeatureStore& feature_store,
-                        const queryeval::FieldSpec& field,
-                        uint32_t field_id,
-                        const std::string& query_term,
-                        bool use_bit_vector)
+    MemoryTermBlueprint(GenerationGuard&& guard, PostingListIteratorType posting_itr,
+                        const FeatureStore& feature_store, const queryeval::FieldSpec& field, uint32_t field_id,
+                        const std::string& query_term, bool use_bit_vector)
         : SimpleLeafBlueprint(field),
           _guard(),
           _field(field),
@@ -262,8 +238,7 @@ public:
           _feature_store(feature_store),
           _field_id(field_id),
           _query_term(query_term),
-          _use_bit_vector(use_bit_vector)
-    {
+          _use_bit_vector(use_bit_vector) {
         _guard = std::move(guard);
         HitEstimate estimate(_posting_itr.size(), !_posting_itr.valid());
         setEstimate(estimate);
@@ -274,22 +249,21 @@ public:
         double rel_est = abs_to_rel_est(_posting_itr.size(), docid_limit);
         return {rel_est, btree_cost(rel_est), btree_strict_cost(rel_est)};
     }
-    
+
     SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray& tfmda) const override {
         auto result = make_search_iterator<interleaved_features>(_posting_itr, _feature_store, _field_id, tfmda);
         if (_use_bit_vector) {
-            LOG(debug, "Return BooleanMatchIteratorWrapper: field_id(%u), doc_count(%zu)",
-                _field_id, _posting_itr.size());
+            LOG(debug, "Return BooleanMatchIteratorWrapper: field_id(%u), doc_count(%zu)", _field_id,
+                _posting_itr.size());
             return std::make_unique<BooleanMatchIteratorWrapper>(std::move(result), tfmda);
         }
-        LOG(debug, "Return PostingIterator: field_id(%u), doc_count(%zu)",
-            _field_id, _posting_itr.size());
+        LOG(debug, "Return PostingIterator: field_id(%u), doc_count(%zu)", _field_id, _posting_itr.size());
         return result;
     }
 
     SearchIterator::UP createFilterSearchImpl(FilterConstraint) const override {
-        auto wrapper = std::make_unique<queryeval::FilterWrapper>(getState().numFields());
-        auto & tfmda = wrapper->tfmda();
+        auto  wrapper = std::make_unique<queryeval::FilterWrapper>(getState().numFields());
+        auto& tfmda = wrapper->tfmda();
         wrapper->wrap(make_search_iterator<interleaved_features>(_posting_itr, _feature_store, _field_id, tfmda));
         return wrapper;
     }
@@ -301,102 +275,61 @@ public:
     }
 };
 
-template <bool interleaved_features>
-MemoryTermBlueprint<interleaved_features>::~MemoryTermBlueprint() = default;
+template <bool interleaved_features> MemoryTermBlueprint<interleaved_features>::~MemoryTermBlueprint() = default;
 
-}
+} // namespace
 
 template <bool interleaved_features>
 std::unique_ptr<queryeval::SimpleLeafBlueprint>
-FieldIndex<interleaved_features>::make_term_blueprint(const std::string& term,
-                                                      const queryeval::FieldSpec& field,
-                                                      uint32_t field_id)
-{
+FieldIndex<interleaved_features>::make_term_blueprint(const std::string& term, const queryeval::FieldSpec& field,
+                                                      uint32_t field_id) {
     auto guard = takeGenerationGuard();
     auto posting_itr = findFrozen(term);
     bool use_bit_vector = field.isFilter();
-    return std::make_unique<MemoryTermBlueprint<interleaved_features>>
-            (std::move(guard), std::move(posting_itr), getFeatureStore(), field, field_id, term, use_bit_vector);
+    return std::make_unique<MemoryTermBlueprint<interleaved_features>>(
+        std::move(guard), std::move(posting_itr), getFeatureStore(), field, field_id, term, use_bit_vector);
 }
 
 template class FieldIndex<false>;
 template class FieldIndex<true>;
 
-}
+} // namespace search::memoryindex
 
 using search::memoryindex::FieldIndexBase;
 
 namespace vespalib::btree {
 
-template
-class BTreeNodeDataWrap<FieldIndexBase::WordKey, BTreeDefaultTraits::LEAF_SLOTS>;
+template class BTreeNodeDataWrap<FieldIndexBase::WordKey, BTreeDefaultTraits::LEAF_SLOTS>;
 
-template
-class BTreeNodeT<FieldIndexBase::WordKey, BTreeDefaultTraits::INTERNAL_SLOTS>;
+template class BTreeNodeT<FieldIndexBase::WordKey, BTreeDefaultTraits::INTERNAL_SLOTS>;
 
-template
-class BTreeNodeTT<FieldIndexBase::WordKey,
-                  vespalib::datastore::EntryRef,
-                  NoAggregated,
-                  BTreeDefaultTraits::INTERNAL_SLOTS>;
+template class BTreeNodeTT<FieldIndexBase::WordKey, vespalib::datastore::EntryRef, NoAggregated,
+                           BTreeDefaultTraits::INTERNAL_SLOTS>;
 
-template
-class BTreeNodeTT<FieldIndexBase::WordKey,
-                  FieldIndexBase::PostingListPtr,
-                  NoAggregated,
-                  BTreeDefaultTraits::LEAF_SLOTS>;
+template class BTreeNodeTT<FieldIndexBase::WordKey, FieldIndexBase::PostingListPtr, NoAggregated,
+                           BTreeDefaultTraits::LEAF_SLOTS>;
 
-template
-class BTreeInternalNode<FieldIndexBase::WordKey,
-                        NoAggregated,
-                        BTreeDefaultTraits::INTERNAL_SLOTS>;
+template class BTreeInternalNode<FieldIndexBase::WordKey, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS>;
 
-template
-class BTreeLeafNode<FieldIndexBase::WordKey,
-                    FieldIndexBase::PostingListPtr,
-                    NoAggregated,
-                    BTreeDefaultTraits::LEAF_SLOTS>;
+template class BTreeLeafNode<FieldIndexBase::WordKey, FieldIndexBase::PostingListPtr, NoAggregated,
+                             BTreeDefaultTraits::LEAF_SLOTS>;
 
-template
-class BTreeNodeStore<FieldIndexBase::WordKey,
-                     FieldIndexBase::PostingListPtr,
-                     NoAggregated,
-                     BTreeDefaultTraits::INTERNAL_SLOTS,
-                     BTreeDefaultTraits::LEAF_SLOTS>;
+template class BTreeNodeStore<FieldIndexBase::WordKey, FieldIndexBase::PostingListPtr, NoAggregated,
+                              BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS>;
 
-template
-class BTreeIterator<FieldIndexBase::WordKey,
-                    FieldIndexBase::PostingListPtr,
-                    NoAggregated,
-                    const FieldIndexBase::KeyComp,
-                    BTreeDefaultTraits>;
+template class BTreeIterator<FieldIndexBase::WordKey, FieldIndexBase::PostingListPtr, NoAggregated,
+                             const FieldIndexBase::KeyComp, BTreeDefaultTraits>;
 
-template
-class BTree<FieldIndexBase::WordKey,
-            FieldIndexBase::PostingListPtr,
-            NoAggregated,
-            const FieldIndexBase::KeyComp,
-            BTreeDefaultTraits>;
+template class BTree<FieldIndexBase::WordKey, FieldIndexBase::PostingListPtr, NoAggregated,
+                     const FieldIndexBase::KeyComp, BTreeDefaultTraits>;
 
-template
-class BTreeRoot<FieldIndexBase::WordKey,
-                FieldIndexBase::PostingListPtr,
-                NoAggregated,
-                const FieldIndexBase::KeyComp,
-                BTreeDefaultTraits>;
+template class BTreeRoot<FieldIndexBase::WordKey, FieldIndexBase::PostingListPtr, NoAggregated,
+                         const FieldIndexBase::KeyComp, BTreeDefaultTraits>;
 
-template
-class BTreeRootBase<FieldIndexBase::WordKey,
-                    FieldIndexBase::PostingListPtr,
-                    NoAggregated,
-                    BTreeDefaultTraits::INTERNAL_SLOTS,
-                    BTreeDefaultTraits::LEAF_SLOTS>;
+template class BTreeRootBase<FieldIndexBase::WordKey, FieldIndexBase::PostingListPtr, NoAggregated,
+                             BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS>;
 
-template
-class BTreeNodeAllocator<FieldIndexBase::WordKey,
-                         FieldIndexBase::PostingListPtr,
-                         NoAggregated,
-                         BTreeDefaultTraits::INTERNAL_SLOTS,
-                         BTreeDefaultTraits::LEAF_SLOTS>;
+template class BTreeNodeAllocator<FieldIndexBase::WordKey, FieldIndexBase::PostingListPtr, NoAggregated,
+                                  BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS>;
 
-}
+} // namespace vespalib::btree

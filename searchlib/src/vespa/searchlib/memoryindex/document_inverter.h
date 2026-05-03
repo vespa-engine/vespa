@@ -9,14 +9,16 @@
 #include <vector>
 
 namespace document {
-    class DataType;
-    class Document;
-    class DocumentType;
-    class Field;
-    class FieldValue;
-}
+class DataType;
+class Document;
+class DocumentType;
+class Field;
+class FieldValue;
+} // namespace document
 
-namespace vespalib { class IDestructorCallback; }
+namespace vespalib {
+class IDestructorCallback;
+}
 
 namespace search::memoryindex {
 
@@ -32,15 +34,15 @@ class IFieldIndexCollection;
  */
 class DocumentInverter {
 private:
-    DocumentInverter(const DocumentInverter &) = delete;
-    DocumentInverter &operator=(const DocumentInverter &) = delete;
+    DocumentInverter(const DocumentInverter&) = delete;
+    DocumentInverter& operator=(const DocumentInverter&) = delete;
 
     DocumentInverterContext& _context;
 
     using LidVector = std::vector<uint32_t>;
     using OnWriteDoneType = std::shared_ptr<vespalib::IDestructorCallback>;
 
-    std::vector<std::unique_ptr<FieldInverter>> _inverters;
+    std::vector<std::unique_ptr<FieldInverter>>    _inverters;
     std::vector<std::unique_ptr<UrlFieldInverter>> _urlInverters;
     vespalib::MonitoredRefCount                    _ref_count;
 
@@ -75,7 +77,7 @@ public:
      * For each text and uri field in the document a task for inverting and adding that
      * field (using a field inverter) is added to the 'invert threads' executor, then this function returns.
      **/
-    void invertDocument(uint32_t docId, const document::Document &doc, const OnWriteDoneType& on_write_done);
+    void invertDocument(uint32_t docId, const document::Document& doc, const OnWriteDoneType& on_write_done);
 
     /**
      * Remove the given document.
@@ -87,9 +89,7 @@ public:
     void removeDocument(uint32_t docId);
     void removeDocuments(LidVector lids);
 
-    FieldInverter *getInverter(uint32_t fieldId) const {
-        return _inverters[fieldId].get();
-    }
+    FieldInverter* getInverter(uint32_t fieldId) const { return _inverters[fieldId].get(); }
 
     uint32_t getNumFields() const { return _inverters.size(); }
     void wait_for_zero_ref_count() { _ref_count.waitForZeroRefCount(); }
@@ -97,4 +97,4 @@ public:
     vespalib::MonitoredRefCount& get_ref_count() noexcept { return _ref_count; }
 };
 
-}
+} // namespace search::memoryindex

@@ -4,6 +4,7 @@
 
 #include "field_index_base.h"
 #include "posting_list_entry.h"
+
 #include <vespa/searchlib/index/indexbuilder.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/vespalib/btree/btree.h>
@@ -30,18 +31,16 @@ class IOrderedFieldIndexInserter;
  *
  * The template parameter specifies whether the underlying posting lists have interleaved features or not.
  */
-template <bool interleaved_features>
-class FieldIndex : public FieldIndexBase {
+template <bool interleaved_features> class FieldIndex : public FieldIndexBase {
 public:
     static constexpr bool has_interleaved_features = interleaved_features;
 
     // Mapping from docid -> feature ref
     using PostingListEntryType = PostingListEntry<interleaved_features>;
     using PostingList = vespalib::btree::BTreeRoot<uint32_t, PostingListEntryType, vespalib::btree::NoAggregated>;
-    using PostingListStore = vespalib::btree::BTreeStore<uint32_t, PostingListEntryType,
-                                               vespalib::btree::NoAggregated,
-                                               std::less<uint32_t>,
-                                               vespalib::btree::BTreeDefaultTraits>;
+    using PostingListStore =
+        vespalib::btree::BTreeStore<uint32_t, PostingListEntryType, vespalib::btree::NoAggregated,
+                                    std::less<uint32_t>, vespalib::btree::BTreeDefaultTraits>;
     using PostingListKeyDataType = typename PostingListStore::KeyDataType;
 
 private:
@@ -66,9 +65,7 @@ private:
         _featureStore.assign_generation(generation);
     }
 
-    void incGeneration() {
-        _generationHandler.incGeneration();
-    }
+    void incGeneration() { _generationHandler.incGeneration(); }
 
 public:
     FieldIndex(const index::Schema& schema, uint32_t fieldId);
@@ -80,10 +77,10 @@ public:
 
     void compactFeatures() override;
 
-    void dump(search::index::FieldIndexBuilder & indexBuilder) override;
+    void dump(search::index::FieldIndexBuilder& indexBuilder) override;
 
     vespalib::MemoryUsage getMemoryUsage() const override;
-    PostingListStore &getPostingListStore() { return _postingListStore; }
+    PostingListStore& getPostingListStore() { return _postingListStore; }
 
     void commit() override;
 
@@ -93,86 +90,54 @@ public:
     queryeval::SearchIterator::UP make_search_iterator(const std::string& term, uint32_t field_id,
                                                        fef::TermFieldMatchDataArray match_data) const;
 
-    std::unique_ptr<queryeval::SimpleLeafBlueprint> make_term_blueprint(const std::string& term,
-                                                                        const queryeval::FieldSpec& field,
-                                                                        uint32_t field_id) override;
+    std::unique_ptr<queryeval::SimpleLeafBlueprint>
+    make_term_blueprint(const std::string& term, const queryeval::FieldSpec& field, uint32_t field_id) override;
 };
 
-}
+} // namespace search::memoryindex
 
 namespace vespalib::btree {
 
-extern template
-class BTreeNodeDataWrap<search::memoryindex::FieldIndexBase::WordKey,
-                        BTreeDefaultTraits::LEAF_SLOTS>;
+extern template class BTreeNodeDataWrap<search::memoryindex::FieldIndexBase::WordKey, BTreeDefaultTraits::LEAF_SLOTS>;
 
-extern template
-class BTreeNodeT<search::memoryindex::FieldIndexBase::WordKey,
-                 BTreeDefaultTraits::INTERNAL_SLOTS>;
+extern template class BTreeNodeT<search::memoryindex::FieldIndexBase::WordKey, BTreeDefaultTraits::INTERNAL_SLOTS>;
 
-extern template
-class BTreeNodeTT<search::memoryindex::FieldIndexBase::WordKey,
-                  vespalib::datastore::EntryRef,
-                  NoAggregated,
-                  BTreeDefaultTraits::INTERNAL_SLOTS>;
+extern template class BTreeNodeTT<search::memoryindex::FieldIndexBase::WordKey, vespalib::datastore::EntryRef,
+                                  NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS>;
 
-extern template
-class BTreeNodeTT<search::memoryindex::FieldIndexBase::WordKey,
-                  search::memoryindex::FieldIndexBase::PostingListPtr,
-                  NoAggregated,
-                  BTreeDefaultTraits::LEAF_SLOTS>;
+extern template class BTreeNodeTT<search::memoryindex::FieldIndexBase::WordKey,
+                                  search::memoryindex::FieldIndexBase::PostingListPtr, NoAggregated,
+                                  BTreeDefaultTraits::LEAF_SLOTS>;
 
-extern template
-class BTreeInternalNode<search::memoryindex::FieldIndexBase::WordKey,
-                        NoAggregated,
-                        BTreeDefaultTraits::INTERNAL_SLOTS>;
+extern template class BTreeInternalNode<search::memoryindex::FieldIndexBase::WordKey, NoAggregated,
+                                        BTreeDefaultTraits::INTERNAL_SLOTS>;
 
-extern template
-class BTreeLeafNode<search::memoryindex::FieldIndexBase::WordKey,
-                    search::memoryindex::FieldIndexBase::PostingListPtr,
-                    NoAggregated,
-                    BTreeDefaultTraits::LEAF_SLOTS>;
+extern template class BTreeLeafNode<search::memoryindex::FieldIndexBase::WordKey,
+                                    search::memoryindex::FieldIndexBase::PostingListPtr, NoAggregated,
+                                    BTreeDefaultTraits::LEAF_SLOTS>;
 
-extern template
-class BTreeNodeStore<search::memoryindex::FieldIndexBase::WordKey,
-                     search::memoryindex::FieldIndexBase::PostingListPtr,
-                     NoAggregated,
-                     BTreeDefaultTraits::INTERNAL_SLOTS,
-                     BTreeDefaultTraits::LEAF_SLOTS>;
+extern template class BTreeNodeStore<search::memoryindex::FieldIndexBase::WordKey,
+                                     search::memoryindex::FieldIndexBase::PostingListPtr, NoAggregated,
+                                     BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS>;
 
-extern template
-class BTreeIterator<search::memoryindex::FieldIndexBase::WordKey,
-                    search::memoryindex::FieldIndexBase::PostingListPtr,
-                    NoAggregated,
-                    const search::memoryindex::FieldIndexBase::KeyComp,
-                    BTreeDefaultTraits>;
+extern template class BTreeIterator<search::memoryindex::FieldIndexBase::WordKey,
+                                    search::memoryindex::FieldIndexBase::PostingListPtr, NoAggregated,
+                                    const search::memoryindex::FieldIndexBase::KeyComp, BTreeDefaultTraits>;
 
-extern template
-class BTree<search::memoryindex::FieldIndexBase::WordKey,
-            search::memoryindex::FieldIndexBase::PostingListPtr,
-            NoAggregated,
-            const search::memoryindex::FieldIndexBase::KeyComp,
-            BTreeDefaultTraits>;
+extern template class BTree<search::memoryindex::FieldIndexBase::WordKey,
+                            search::memoryindex::FieldIndexBase::PostingListPtr, NoAggregated,
+                            const search::memoryindex::FieldIndexBase::KeyComp, BTreeDefaultTraits>;
 
-extern template
-class BTreeRoot<search::memoryindex::FieldIndexBase::WordKey,
-                search::memoryindex::FieldIndexBase::PostingListPtr,
-                NoAggregated,
-                const search::memoryindex::FieldIndexBase::KeyComp,
-                BTreeDefaultTraits>;
+extern template class BTreeRoot<search::memoryindex::FieldIndexBase::WordKey,
+                                search::memoryindex::FieldIndexBase::PostingListPtr, NoAggregated,
+                                const search::memoryindex::FieldIndexBase::KeyComp, BTreeDefaultTraits>;
 
-extern template
-class BTreeRootBase<search::memoryindex::FieldIndexBase::WordKey,
-                    search::memoryindex::FieldIndexBase::PostingListPtr,
-                    NoAggregated,
-                    BTreeDefaultTraits::INTERNAL_SLOTS,
-                    BTreeDefaultTraits::LEAF_SLOTS>;
+extern template class BTreeRootBase<search::memoryindex::FieldIndexBase::WordKey,
+                                    search::memoryindex::FieldIndexBase::PostingListPtr, NoAggregated,
+                                    BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS>;
 
-extern template
-class BTreeNodeAllocator<search::memoryindex::FieldIndexBase::WordKey,
-                         search::memoryindex::FieldIndexBase::PostingListPtr,
-                         NoAggregated,
-                         BTreeDefaultTraits::INTERNAL_SLOTS,
-                         BTreeDefaultTraits::LEAF_SLOTS>;
+extern template class BTreeNodeAllocator<search::memoryindex::FieldIndexBase::WordKey,
+                                         search::memoryindex::FieldIndexBase::PostingListPtr, NoAggregated,
+                                         BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS>;
 
-}
+} // namespace vespalib::btree

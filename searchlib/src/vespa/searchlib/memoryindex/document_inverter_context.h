@@ -2,9 +2,11 @@
 
 #pragma once
 
-#include <vespa/searchlib/index/schema_index_fields.h>
 #include "invert_context.h"
 #include "push_context.h"
+
+#include <vespa/searchlib/index/schema_index_fields.h>
+
 #include <memory>
 #include <vector>
 
@@ -25,11 +27,10 @@ class DocumentInverterContext {
     std::vector<InvertContext>        _invert_contexts;
     std::vector<PushContext>          _push_contexts;
     void setup_contexts();
+
 public:
-    DocumentInverterContext(const index::Schema &schema,
-                            vespalib::ISequencedTaskExecutor &invert_threads,
-                            vespalib::ISequencedTaskExecutor &push_threads,
-                            IFieldIndexCollection& field_indexes);
+    DocumentInverterContext(const index::Schema& schema, vespalib::ISequencedTaskExecutor& invert_threads,
+                            vespalib::ISequencedTaskExecutor& push_threads, IFieldIndexCollection& field_indexes);
     ~DocumentInverterContext();
     const index::Schema& get_schema() const noexcept { return _schema; }
     const index::SchemaIndexFields& get_schema_index_fields() const noexcept { return _schema_index_fields; }
@@ -40,4 +41,4 @@ public:
     const std::vector<PushContext>& get_push_contexts() const noexcept { return _push_contexts; }
 };
 
-}
+} // namespace search::memoryindex
