@@ -1,105 +1,91 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_field_writer.h"
+
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchcommon/attribute/i_array_bool_read_view.h>
 #include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/util/stash.h>
+
 #include <cassert>
 
 using search::attribute::BasicType;
-using search::attribute::IAttributeVector;
 using search::attribute::getUndefined;
 using search::attribute::IArrayReadView;
+using search::attribute::IAttributeVector;
 using vespalib::slime::Cursor;
 
 namespace search::docsummary {
 
-AttributeFieldWriter::AttributeFieldWriter(vespalib::Memory fieldName)
-    : _fieldName(fieldName)
-{
+AttributeFieldWriter::AttributeFieldWriter(vespalib::Memory fieldName) : _fieldName(fieldName) {
 }
 
 AttributeFieldWriter::~AttributeFieldWriter() = default;
 
 namespace {
 
-template <class BasicType>
-class WriteField : public AttributeFieldWriter
-{
+template <class BasicType> class WriteField : public AttributeFieldWriter {
 protected:
-    const IArrayReadView<BasicType>*   _array_read_view;
-    std::span<const BasicType> _content;
+    const IArrayReadView<BasicType>* _array_read_view;
+    std::span<const BasicType>       _content;
 
-    WriteField(vespalib::Memory fieldName, const IAttributeVector& attr, vespalib::Stash &stash);
+    WriteField(vespalib::Memory fieldName, const IAttributeVector& attr, vespalib::Stash& stash);
     ~WriteField() override;
+
 private:
     uint32_t fetch(uint32_t docId) override;
 };
 
-class WriteStringField : public WriteField<const char*>
-{
+class WriteStringField : public WriteField<const char*> {
 public:
     WriteStringField(vespalib::Memory fieldName, const IAttributeVector& attr, vespalib::Stash& stash);
     ~WriteStringField() override;
-    void print(uint32_t idx, Cursor &cursor) override;
+    void print(uint32_t idx, Cursor& cursor) override;
 };
 
-class WriteStringFieldNeverSkip : public WriteField<const char*>
-{
+class WriteStringFieldNeverSkip : public WriteField<const char*> {
 public:
     WriteStringFieldNeverSkip(vespalib::Memory fieldName, const IAttributeVector& attr, vespalib::Stash& stash)
         : WriteField(fieldName, attr, stash) {}
     ~WriteStringFieldNeverSkip() override = default;
-    void print(uint32_t idx, Cursor &cursor) override;
+    void print(uint32_t idx, Cursor& cursor) override;
 };
 
-template <typename BasicType>
-class WriteFloatField : public WriteField<BasicType>
-{
+template <typename BasicType> class WriteFloatField : public WriteField<BasicType> {
 public:
     WriteFloatField(vespalib::Memory fieldName, const IAttributeVector& attr, vespalib::Stash& stash);
     ~WriteFloatField() override;
-    void print(uint32_t idx, Cursor &cursor) override;
+    void print(uint32_t idx, Cursor& cursor) override;
 };
 
-template <typename BasicType>
-class WriteIntField : public WriteField<BasicType>
-{
+template <typename BasicType> class WriteIntField : public WriteField<BasicType> {
 public:
     WriteIntField(vespalib::Memory fieldName, const IAttributeVector& attr, vespalib::Stash& stash);
     ~WriteIntField() override;
-    void print(uint32_t idx, Cursor &cursor) override;
+    void print(uint32_t idx, Cursor& cursor) override;
 };
 
 template <typename BasicType>
-const search::attribute::IArrayReadView<BasicType>*
-make_array_read_view(const IAttributeVector& attribute, vespalib::Stash& stash)
-{
+const search::attribute::IArrayReadView<BasicType>* make_array_read_view(const IAttributeVector& attribute,
+                                                                         vespalib::Stash&        stash) {
     auto multi_value_attribute = attribute.as_multi_value_attribute();
     if (multi_value_attribute != nullptr) {
-        return multi_value_attribute->make_read_view(search::attribute::IMultiValueAttribute::ArrayTag<BasicType>(), stash);
+        return multi_value_attribute->make_read_view(search::attribute::IMultiValueAttribute::ArrayTag<BasicType>(),
+                                                     stash);
     }
     return nullptr;
 }
 
 template <class BasicType>
 WriteField<BasicType>::WriteField(vespalib::Memory fieldName, const IAttributeVector& attr, vespalib::Stash& stash)
-    : AttributeFieldWriter(fieldName),
-      _array_read_view(make_array_read_view<BasicType>(attr, stash)),
-      _content()
-{
+    : AttributeFieldWriter(fieldName), _array_read_view(make_array_read_view<BasicType>(attr, stash)), _content() {
 }
 
-template <class BasicType>
-WriteField<BasicType>::~WriteField() = default;
+template <class BasicType> WriteField<BasicType>::~WriteField() = default;
 
-template <class BasicType>
-uint32_t
-WriteField<BasicType>::fetch(uint32_t docId)
-{
+template <class BasicType> uint32_t WriteField<BasicType>::fetch(uint32_t docId) {
     if (_array_read_view) {
         _content = _array_read_view->get_values(docId);
     }
@@ -107,28 +93,23 @@ WriteField<BasicType>::fetch(uint32_t docId)
 }
 
 WriteStringField::WriteStringField(vespalib::Memory fieldName, const IAttributeVector& attr, vespalib::Stash& stash)
-    : WriteField(fieldName, attr, stash)
-{
+    : WriteField(fieldName, attr, stash) {
 }
 
 WriteStringField::~WriteStringField() = default;
 
-void
-WriteStringField::print(uint32_t idx, Cursor &cursor)
-{
+void WriteStringField::print(uint32_t idx, Cursor& cursor) {
     if (idx < _content.size()) {
-        const char *s = _content[idx];
+        const char* s = _content[idx];
         if (s[0] != '\0') {
             cursor.setString(_fieldName, vespalib::Memory(s));
         }
     }
 }
 
-void
-WriteStringFieldNeverSkip::print(uint32_t idx, Cursor &cursor)
-{
+void WriteStringFieldNeverSkip::print(uint32_t idx, Cursor& cursor) {
     if (idx < _content.size()) {
-        const char *s = _content[idx];
+        const char* s = _content[idx];
         cursor.setString(_fieldName, vespalib::Memory(s));
     } else {
         cursor.setString(_fieldName, vespalib::Memory(""));
@@ -136,18 +117,14 @@ WriteStringFieldNeverSkip::print(uint32_t idx, Cursor &cursor)
 }
 
 template <typename BasicType>
-WriteFloatField<BasicType>::WriteFloatField(vespalib::Memory fieldName, const IAttributeVector& attr, vespalib::Stash& stash)
-    : WriteField<BasicType>(fieldName, attr, stash)
-{
+WriteFloatField<BasicType>::WriteFloatField(vespalib::Memory fieldName, const IAttributeVector& attr,
+                                            vespalib::Stash& stash)
+    : WriteField<BasicType>(fieldName, attr, stash) {
 }
 
-template <typename BasicType>
-WriteFloatField<BasicType>::~WriteFloatField() = default;
+template <typename BasicType> WriteFloatField<BasicType>::~WriteFloatField() = default;
 
-template <typename BasicType>
-void
-WriteFloatField<BasicType>::print(uint32_t idx, Cursor &cursor)
-{
+template <typename BasicType> void WriteFloatField<BasicType>::print(uint32_t idx, Cursor& cursor) {
     if (idx < this->_content.size()) {
         double val = this->_content[idx];
         if (!search::attribute::isUndefined(val)) {
@@ -157,18 +134,14 @@ WriteFloatField<BasicType>::print(uint32_t idx, Cursor &cursor)
 }
 
 template <typename BasicType>
-WriteIntField<BasicType>::WriteIntField(vespalib::Memory fieldName, const IAttributeVector& attr, vespalib::Stash& stash)
-    : WriteField<BasicType>(fieldName, attr, stash)
-{
+WriteIntField<BasicType>::WriteIntField(vespalib::Memory fieldName, const IAttributeVector& attr,
+                                        vespalib::Stash& stash)
+    : WriteField<BasicType>(fieldName, attr, stash) {
 }
 
-template <typename BasicType>
-WriteIntField<BasicType>::~WriteIntField() = default;
+template <typename BasicType> WriteIntField<BasicType>::~WriteIntField() = default;
 
-template <typename BasicType>
-void
-WriteIntField<BasicType>::print(uint32_t idx, Cursor &cursor)
-{
+template <typename BasicType> void WriteIntField<BasicType>::print(uint32_t idx, Cursor& cursor) {
     if (idx < this->_content.size()) {
         auto val = this->_content[idx];
         if (val != getUndefined<BasicType>()) {
@@ -177,10 +150,10 @@ WriteIntField<BasicType>::print(uint32_t idx, Cursor &cursor)
     }
 }
 
-class WriteBoolField : public AttributeFieldWriter
-{
+class WriteBoolField : public AttributeFieldWriter {
     const search::attribute::IArrayBoolReadView* _read_view;
-    vespalib::BitSpan _content;
+    vespalib::BitSpan                            _content;
+
 public:
     WriteBoolField(vespalib::Memory fieldName, const IAttributeVector& attr, vespalib::Stash& stash);
     ~WriteBoolField() override;
@@ -189,40 +162,33 @@ public:
 };
 
 WriteBoolField::WriteBoolField(vespalib::Memory fieldName, const IAttributeVector& attr, vespalib::Stash& stash)
-    : AttributeFieldWriter(fieldName),
-      _read_view(nullptr),
-      _content()
-{
+    : AttributeFieldWriter(fieldName), _read_view(nullptr), _content() {
     auto multi_value_attribute = attr.as_multi_value_attribute();
     if (multi_value_attribute != nullptr) {
-        _read_view = multi_value_attribute->make_read_view(search::attribute::IMultiValueAttribute::ArrayBoolTag(), stash);
+        _read_view =
+            multi_value_attribute->make_read_view(search::attribute::IMultiValueAttribute::ArrayBoolTag(), stash);
     }
 }
 
 WriteBoolField::~WriteBoolField() = default;
 
-uint32_t
-WriteBoolField::fetch(uint32_t docId)
-{
+uint32_t WriteBoolField::fetch(uint32_t docId) {
     if (_read_view) {
         _content = _read_view->get_values(docId);
     }
     return _content.size();
 }
 
-void
-WriteBoolField::print(uint32_t idx, Cursor& cursor)
-{
+void WriteBoolField::print(uint32_t idx, Cursor& cursor) {
     if (idx < _content.size()) {
         cursor.setBool(_fieldName, _content[idx]);
     }
 }
 
-}
+} // namespace
 
-AttributeFieldWriter&
-AttributeFieldWriter::create(vespalib::Memory fieldName, const IAttributeVector& attr, vespalib::Stash& stash, bool keep_empty_strings)
-{
+AttributeFieldWriter& AttributeFieldWriter::create(vespalib::Memory fieldName, const IAttributeVector& attr,
+                                                   vespalib::Stash& stash, bool keep_empty_strings) {
     switch (attr.getBasicType()) {
     case BasicType::INT8:
         return stash.create<WriteIntField<int8_t>>(fieldName, attr, stash);
@@ -249,4 +215,4 @@ AttributeFieldWriter::create(vespalib::Memory fieldName, const IAttributeVector&
     }
 }
 
-}
+} // namespace search::docsummary

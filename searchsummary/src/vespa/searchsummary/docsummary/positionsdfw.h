@@ -4,66 +4,55 @@
 
 #include "attributedfw.h"
 #include "resultconfig.h"
+
 #include <vespa/searchlib/common/geo_location_spec.h>
 
 namespace search::docsummary {
 
-class LocationAttrDFW : public AttrDFW
-{
+class LocationAttrDFW : public AttrDFW {
 public:
     using GeoLoc = search::common::GeoLocation;
 
-    explicit LocationAttrDFW(const std::string & attrName)
-        : AttrDFW(attrName)
-    {}
+    explicit LocationAttrDFW(const std::string& attrName) : AttrDFW(attrName) {}
 
     struct AllLocations {
-        std::vector<const GeoLoc *> matching;
-        std::vector<const GeoLoc *> other;
+        std::vector<const GeoLoc*> matching;
+        std::vector<const GeoLoc*> other;
 
         AllLocations();
         ~AllLocations();
 
-        bool empty() const {
-            return matching.empty() && other.empty();
-        }
-        const std::vector<const GeoLoc *> & best() const {
-            return matching.empty() ? other : matching;
-        }
+        bool empty() const { return matching.empty() && other.empty(); }
+        const std::vector<const GeoLoc*>& best() const { return matching.empty() ? other : matching; }
     };
     AllLocations getAllLocations(GetDocsumsState& state) const;
 };
 
-class AbsDistanceDFW : public LocationAttrDFW
-{
+class AbsDistanceDFW : public LocationAttrDFW {
 private:
     uint64_t findMinDistance(uint32_t docid, GetDocsumsState& state,
-                             const std::vector<const GeoLoc *> &locations) const;
+                             const std::vector<const GeoLoc*>& locations) const;
+
 public:
-    explicit AbsDistanceDFW(const std::string & attrName);
+    explicit AbsDistanceDFW(const std::string& attrName);
 
     bool isGenerated() const override { return true; }
     void insert_field(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
-                      search::common::ElementIds selected_elements,
-                      vespalib::slime::Inserter &target) const override;
+                      search::common::ElementIds selected_elements, vespalib::slime::Inserter& target) const override;
 
-    static std::unique_ptr<DocsumFieldWriter> create(const char *attribute_name, const IAttributeManager *index_man);
-
+    static std::unique_ptr<DocsumFieldWriter> create(const char* attribute_name, const IAttributeManager* index_man);
 };
 
 //--------------------------------------------------------------------------
 
-class PositionsDFW : public AttrDFW
-{
+class PositionsDFW : public AttrDFW {
 public:
     using UP = std::unique_ptr<PositionsDFW>;
-    PositionsDFW(const std::string & attrName);
+    PositionsDFW(const std::string& attrName);
     bool isGenerated() const override { return true; }
     void insert_field(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
-                      search::common::ElementIds selected_elements,
-                      vespalib::slime::Inserter &target) const override;
-    static UP create(const char *attribute_name, const IAttributeManager *index_man);
+                      search::common::ElementIds selected_elements, vespalib::slime::Inserter& target) const override;
+    static UP create(const char* attribute_name, const IAttributeManager* index_man);
 };
 
-
-}
+} // namespace search::docsummary

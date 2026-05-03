@@ -1,30 +1,31 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "geoposdfw.h"
-#include <vespa/searchlib/common/documentlocations.h>
+
 #include <vespa/searchlib/attribute/iattributemanager.h>
+#include <vespa/searchlib/common/documentlocations.h>
 #include <vespa/searchlib/common/location.h>
-#include <vespa/vespalib/util/jsonwriter.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/issue.h>
-#include <climits>
+#include <vespa/vespalib/util/jsonwriter.h>
+
 #include <cassert>
+#include <climits>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.geoposdfw");
 
-using search::attribute::IAttributeVector;
 using search::attribute::IAttributeContext;
+using search::attribute::IAttributeVector;
 using search::common::ElementIds;
 using vespalib::Issue;
 
 namespace search::docsummary {
 
-GeoPositionDFW::GeoPositionDFW(const std::string & attrName) :
-    AttrDFW(attrName)
-{ }
+GeoPositionDFW::GeoPositionDFW(const std::string& attrName) : AttrDFW(attrName) {
+}
 
 namespace {
 
@@ -33,60 +34,59 @@ double to_degrees(int32_t microDegrees) {
     return d;
 }
 
-void fmtZcurve(int64_t zval, vespalib::slime::Inserter &target, bool) {
+void fmtZcurve(int64_t zval, vespalib::slime::Inserter& target, bool) {
     int32_t docx = 0;
     int32_t docy = 0;
     vespalib::geo::ZCurve::decode(zval, &docx, &docy);
     if (docx == 0 && docy == INT_MIN) {
         LOG(spam, "skipping empty zcurve value");
     } else {
-        vespalib::slime::Cursor &obj = target.insertObject();
-        double degrees_ns = to_degrees(docy);
-        double degrees_ew = to_degrees(docx);
+        vespalib::slime::Cursor& obj = target.insertObject();
+        double                   degrees_ns = to_degrees(docy);
+        double                   degrees_ew = to_degrees(docx);
         obj.setDouble("lat", degrees_ns);
         obj.setDouble("lng", degrees_ew);
     }
 }
 
-}
+} // namespace
 
-void
-GeoPositionDFW::insert_field(uint32_t docid, const IDocsumStoreDocument*, GetDocsumsState& dsState,
-                             ElementIds selected_elements, vespalib::slime::Inserter &target) const
-{
+void GeoPositionDFW::insert_field(uint32_t docid, const IDocsumStoreDocument*, GetDocsumsState& dsState,
+                                  ElementIds selected_elements, vespalib::slime::Inserter& target) const {
+    using vespalib::slime::ArrayInserter;
     using vespalib::slime::Cursor;
     using vespalib::slime::ObjectSymbolInserter;
     using vespalib::slime::Symbol;
-    using vespalib::slime::ArrayInserter;
 
-    (void) selected_elements;
+    (void)selected_elements;
     const auto& attribute = get_attribute(dsState);
     if (attribute.hasMultiValue()) {
         uint32_t entries = attribute.getValueCount(docid);
-        if (entries == 0) return;
-        Cursor &arr = target.insertArray();
+        if (entries == 0)
+            return;
+        Cursor& arr = target.insertArray();
         if (attribute.hasWeightedSetType()) {
-            Symbol isym = arr.resolve("item");
-            Symbol wsym = arr.resolve("weight");
+            Symbol                                     isym = arr.resolve("item");
+            Symbol                                     wsym = arr.resolve("weight");
             std::vector<IAttributeVector::WeightedInt> elements(entries);
             entries = attribute.get(docid, &elements[0], entries);
             for (uint32_t i = 0; i < entries; ++i) {
-                Cursor &elem = arr.addObject();
-                int64_t pos = elements[i].getValue();
+                Cursor&              elem = arr.addObject();
+                int64_t              pos = elements[i].getValue();
                 ObjectSymbolInserter obj(elem, isym);
                 fmtZcurve(pos, obj, true);
                 elem.setLong(wsym, elements[i].getWeight());
             }
         } else {
             std::vector<IAttributeVector::largeint_t> elements(16);
-            uint32_t numValues = attribute.get(docid, &elements[0], elements.size());
+            uint32_t                                  numValues = attribute.get(docid, &elements[0], elements.size());
             if (numValues > elements.size()) {
                 elements.resize(numValues);
                 numValues = attribute.get(docid, &elements[0], elements.size());
                 assert(numValues <= elements.size());
             }
             for (uint32_t i = 0; i < numValues; i++) {
-                int64_t pos = elements[i];
+                int64_t       pos = elements[i];
                 ArrayInserter obj(arr);
                 fmtZcurve(pos, obj, true);
             }
@@ -97,10 +97,7 @@ GeoPositionDFW::insert_field(uint32_t docid, const IDocsumStoreDocument*, GetDoc
     }
 }
 
-GeoPositionDFW::UP
-GeoPositionDFW::create(const char *attribute_name,
-                       const IAttributeManager *attribute_manager)
-{
+GeoPositionDFW::UP GeoPositionDFW::create(const char* attribute_name, const IAttributeManager* attribute_manager) {
     if (attribute_manager != nullptr) {
         if (!attribute_name) {
             LOG(warning, "create: missing attribute name '%p'", attribute_name);
@@ -111,7 +108,7 @@ GeoPositionDFW::create(const char *attribute_name,
             LOG(warning, "create: could not create context from attribute manager");
             return {};
         }
-        const IAttributeVector *attribute = context->getAttribute(attribute_name);
+        const IAttributeVector* attribute = context->getAttribute(attribute_name);
         if (!attribute) {
             Issue::report("GeoPositionDFW::create: could not get attribute '%s' from context", attribute_name);
             return {};
@@ -120,4 +117,4 @@ GeoPositionDFW::create(const char *attribute_name,
     return std::make_unique<GeoPositionDFW>(attribute_name);
 }
 
-}
+} // namespace search::docsummary

@@ -13,12 +13,11 @@ class IQueryTermFilter;
  * Interface class for creating an instance of IQueryTermFilter for a
  * specific input field.
  */
-class IQueryTermFilterFactory
-{
+class IQueryTermFilterFactory {
 public:
     virtual ~IQueryTermFilterFactory() = default;
 
     virtual std::shared_ptr<const IQueryTermFilter> make(std::string_view input_field) const = 0;
 };
 
-}
+} // namespace search::docsummary

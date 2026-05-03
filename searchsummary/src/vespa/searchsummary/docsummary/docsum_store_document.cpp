@@ -1,8 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "docsum_store_document.h"
+
 #include "annotation_converter.h"
 #include "slime_filler.h"
+
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/document.h>
@@ -13,19 +15,16 @@ using search::common::ElementIds;
 namespace search::docsummary {
 
 DocsumStoreDocument::DocsumStoreDocument(std::unique_ptr<document::Document> document)
-    : _document(std::move(document))
-{
+    : _document(std::move(document)) {
 }
 
 DocsumStoreDocument::~DocsumStoreDocument() = default;
 
-DocsumStoreFieldValue
-DocsumStoreDocument::get_field_value(const std::string& field_name) const
-{
+DocsumStoreFieldValue DocsumStoreDocument::get_field_value(const std::string& field_name) const {
     if (_document) {
         try {
             const document::Field& field = _document->getField(field_name);
-            auto value(field.getDataType().createFieldValue());
+            auto                   value(field.getDataType().createFieldValue());
             if (value) {
                 if (_document->getValue(field, *value)) {
                     return DocsumStoreFieldValue(std::move(value));
@@ -38,18 +37,18 @@ DocsumStoreDocument::get_field_value(const std::string& field_name) const
     return DocsumStoreFieldValue();
 }
 
-void
-DocsumStoreDocument::insert_summary_field(const std::string& field_name, ElementIds selected_elements, vespalib::slime::Inserter& inserter, IStringFieldConverter* converter) const
-{
+void DocsumStoreDocument::insert_summary_field(const std::string& field_name, ElementIds selected_elements,
+                                               vespalib::slime::Inserter& inserter,
+                                               IStringFieldConverter*     converter) const {
     auto field_value = get_field_value(field_name);
     if (field_value) {
         SlimeFiller::insert_summary_field(*field_value, selected_elements, inserter, converter);
     }
 }
 
-void
-DocsumStoreDocument::insert_juniper_field(const std::string& field_name, ElementIds selected_elements, vespalib::slime::Inserter& inserter, IJuniperConverter& converter) const
-{
+void DocsumStoreDocument::insert_juniper_field(const std::string& field_name, ElementIds selected_elements,
+                                               vespalib::slime::Inserter& inserter,
+                                               IJuniperConverter&         converter) const {
     auto field_value = get_field_value(field_name);
     if (field_value) {
         AnnotationConverter stacked_converter(converter);
@@ -57,11 +56,9 @@ DocsumStoreDocument::insert_juniper_field(const std::string& field_name, Element
     }
 }
 
-bool
-DocsumStoreDocument::insert_document_id(vespalib::slime::Inserter& inserter) const
-{
+bool DocsumStoreDocument::insert_document_id(vespalib::slime::Inserter& inserter) const {
     if (_document) {
-        auto id = _document->getId().toString();
+        auto             id = _document->getId().toString();
         vespalib::Memory id_view(id.data(), id.size());
         inserter.insertString(id_view);
         return true;
@@ -69,4 +66,4 @@ DocsumStoreDocument::insert_document_id(vespalib::slime::Inserter& inserter) con
     return false;
 }
 
-}
+} // namespace search::docsummary

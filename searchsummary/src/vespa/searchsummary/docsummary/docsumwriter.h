@@ -7,11 +7,16 @@
 #include "juniperproperties.h"
 #include "resultclass.h"
 #include "resultconfig.h"
+
 #include <string>
 
-namespace search { class IAttributeManager; }
+namespace search {
+class IAttributeManager;
+}
 
-namespace vespalib { class Slime; }
+namespace vespalib {
+class Slime;
+}
 
 namespace search::docsummary {
 
@@ -20,48 +25,45 @@ static constexpr uint32_t SLIME_MAGIC_ID = 0x55555555;
 /**
  * Interface for writing a docsum payload (in Slime) for a given document.
  */
-class IDocsumWriter
-{
+class IDocsumWriter {
 public:
     using Inserter = vespalib::slime::Inserter;
     struct ResolveClassInfo {
-        bool all_fields_generated;
+        bool               all_fields_generated;
         const ResultClass* res_class;
-        ResolveClassInfo()
-            : all_fields_generated(false),
-              res_class(nullptr)
-        { }
+        ResolveClassInfo() : all_fields_generated(false), res_class(nullptr) {}
     };
 
     virtual ~IDocsumWriter() = default;
-    virtual void initState(const search::IAttributeManager & attrMan, GetDocsumsState& state, const ResolveClassInfo& rci) = 0;
-    virtual void insertDocsum(const ResolveClassInfo & rci, uint32_t docid, GetDocsumsState& state,
-                              IDocsumStore &docinfos, Inserter & target) = 0;
-    virtual ResolveClassInfo resolveClassInfo(std::string_view class_name,
+    virtual void initState(const search::IAttributeManager& attrMan, GetDocsumsState& state,
+                           const ResolveClassInfo& rci) = 0;
+    virtual void insertDocsum(const ResolveClassInfo& rci, uint32_t docid, GetDocsumsState& state,
+                              IDocsumStore& docinfos, Inserter& target) = 0;
+    virtual ResolveClassInfo resolveClassInfo(std::string_view                       class_name,
                                               const vespalib::hash_set<std::string>& fields) const = 0;
 };
 
 //--------------------------------------------------------------------------
 
-class DynamicDocsumWriter : public IDocsumWriter
-{
+class DynamicDocsumWriter : public IDocsumWriter {
 private:
-    std::unique_ptr<ResultConfig>                         _resultConfig;
+    std::unique_ptr<ResultConfig> _resultConfig;
 
 public:
     DynamicDocsumWriter(std::unique_ptr<ResultConfig> config);
-    DynamicDocsumWriter(const DynamicDocsumWriter &) = delete;
-    DynamicDocsumWriter& operator=(const DynamicDocsumWriter &) = delete;
+    DynamicDocsumWriter(const DynamicDocsumWriter&) = delete;
+    DynamicDocsumWriter& operator=(const DynamicDocsumWriter&) = delete;
     ~DynamicDocsumWriter() override;
 
-    const ResultConfig *GetResultConfig() { return _resultConfig.get(); }
+    const ResultConfig* GetResultConfig() { return _resultConfig.get(); }
 
-    void initState(const search::IAttributeManager & attrMan, GetDocsumsState& state, const ResolveClassInfo& rci) override;
-    void insertDocsum(const ResolveClassInfo & outputClassInfo, uint32_t docid, GetDocsumsState& state,
-                      IDocsumStore &docinfos, Inserter & inserter) override;
+    void initState(const search::IAttributeManager& attrMan, GetDocsumsState& state,
+                   const ResolveClassInfo& rci) override;
+    void insertDocsum(const ResolveClassInfo& outputClassInfo, uint32_t docid, GetDocsumsState& state,
+                      IDocsumStore& docinfos, Inserter& inserter) override;
 
-    ResolveClassInfo resolveClassInfo(std::string_view class_name,
+    ResolveClassInfo resolveClassInfo(std::string_view                       class_name,
                                       const vespalib::hash_set<std::string>& fields) const override;
 };
 
-}
+} // namespace search::docsummary

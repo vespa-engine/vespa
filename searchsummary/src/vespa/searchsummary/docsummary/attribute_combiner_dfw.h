@@ -3,11 +3,16 @@
 #pragma once
 
 #include "docsum_field_writer.h"
+
 #include <memory>
 
-namespace search::attribute { class IAttributeContext; }
+namespace search::attribute {
+class IAttributeContext;
+}
 
-namespace vespalib { class Stash; }
+namespace vespalib {
+class Stash;
+}
 
 namespace search::docsummary {
 
@@ -18,24 +23,23 @@ class DynamicDocsumWriter;
  * This class reads values from multiple struct field attributes and
  * inserts them as an array of struct or a map of struct.
  */
-class AttributeCombinerDFW : public DocsumFieldWriter
-{
+class AttributeCombinerDFW : public DocsumFieldWriter {
 protected:
     uint32_t _stateIndex;
     AttributeCombinerDFW();
+
 protected:
     virtual DocsumFieldWriterState* allocFieldWriterState(search::attribute::IAttributeContext& context,
-                                                          vespalib::Stash& stash) const = 0;
+                                                          vespalib::Stash&                      stash) const = 0;
+
 public:
     ~AttributeCombinerDFW() override;
     bool isGenerated() const override { return true; }
     bool setFieldWriterStateIndex(uint32_t fieldWriterStateIndex) override;
-    static std::unique_ptr<DocsumFieldWriter> create(const std::string &fieldName,
-                                                     search::attribute::IAttributeContext &attrCtx);
+    static std::unique_ptr<DocsumFieldWriter> create(const std::string&                    fieldName,
+                                                     search::attribute::IAttributeContext& attrCtx);
     void insert_field(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
-                      search::common::ElementIds selected_elements,
-                      vespalib::slime::Inserter &target) const override;
+                      search::common::ElementIds selected_elements, vespalib::slime::Inserter& target) const override;
 };
 
-}
-
+} // namespace search::docsummary

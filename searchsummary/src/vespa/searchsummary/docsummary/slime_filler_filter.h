@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/hash_map.h>
+
 #include <optional>
 #include <string>
 
@@ -20,10 +21,11 @@ public:
     class Iterator {
     private:
         friend class SlimeFillerFilter;
-        bool _should_render;
+        bool                     _should_render;
         const SlimeFillerFilter* _next;
         explicit Iterator(bool should_render_in) noexcept;
         explicit Iterator(const SlimeFillerFilter* next) noexcept;
+
     public:
         Iterator check_field(std::string_view field_name) const;
         bool should_render() const noexcept { return _should_render; }
@@ -58,4 +60,4 @@ public:
     static Iterator all();
 };
 
-}
+} // namespace search::docsummary

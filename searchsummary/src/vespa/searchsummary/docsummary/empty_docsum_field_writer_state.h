@@ -10,12 +10,11 @@ namespace search::docsummary {
  * Class used as fallback when no suitable field writer state could be
  * instantiated. insertField() is a noop.
  */
-class EmptyDocsumFieldWriterState : public DocsumFieldWriterState
-{
+class EmptyDocsumFieldWriterState : public DocsumFieldWriterState {
 public:
     EmptyDocsumFieldWriterState();
     ~EmptyDocsumFieldWriterState() override;
     void insertField(uint32_t, search::common::ElementIds selected_elements, vespalib::slime::Inserter&) override;
 };
 
-}
+} // namespace search::docsummary

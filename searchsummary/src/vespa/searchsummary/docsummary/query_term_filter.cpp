@@ -1,14 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "query_term_filter.h"
+
 #include <vespa/vespalib/stllike/hash_set.hpp>
 
 namespace search::docsummary {
 
-QueryTermFilter::QueryTermFilter(StringSet views)
-    : IQueryTermFilter(),
-      _views(std::move(views))
-{
+QueryTermFilter::QueryTermFilter(StringSet views) : IQueryTermFilter(), _views(std::move(views)) {
     if (_views.contains("default")) {
         _views.insert("");
     }
@@ -16,10 +14,8 @@ QueryTermFilter::QueryTermFilter(StringSet views)
 
 QueryTermFilter::~QueryTermFilter() = default;
 
-bool
-QueryTermFilter::use_view(std::string_view view) const
-{
+bool QueryTermFilter::use_view(std::string_view view) const {
     return _views.contains(view);
 }
 
-}
+} // namespace search::docsummary

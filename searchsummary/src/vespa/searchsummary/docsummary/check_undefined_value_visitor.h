@@ -11,8 +11,7 @@ namespace search::docsummary {
  * undefined values string/double/float attribute vectors or empty
  * array/map/weighted set.
  */
-class CheckUndefinedValueVisitor : public document::ConstFieldValueVisitor
-{
+class CheckUndefinedValueVisitor : public document::ConstFieldValueVisitor {
     bool _is_undefined;
     void visit(const document::AnnotationReferenceFieldValue&) override;
     void visit(const document::ArrayFieldValue& value) override;
@@ -32,10 +31,11 @@ class CheckUndefinedValueVisitor : public document::ConstFieldValueVisitor
     void visit(const document::WeightedSetFieldValue& value) override;
     void visit(const document::TensorFieldValue&) override;
     void visit(const document::ReferenceFieldValue&) override;
+
 public:
     CheckUndefinedValueVisitor();
     ~CheckUndefinedValueVisitor() override;
     bool is_undefined() const noexcept { return _is_undefined; }
 };
 
-}
+} // namespace search::docsummary

@@ -15,10 +15,11 @@ class SummaryElementsSelector;
  **/
 class ResConfigEntry {
 private:
-    std::string _name;
+    std::string                              _name;
     std::unique_ptr<SummaryElementsSelector> _elements_selector;
-    std::unique_ptr<DocsumFieldWriter> _writer;
-    bool _generated;
+    std::unique_ptr<DocsumFieldWriter>       _writer;
+    bool                                     _generated;
+
 public:
     ResConfigEntry(const std::string& name_in) noexcept;
     ~ResConfigEntry();
@@ -31,4 +32,4 @@ public:
     bool is_generated() const { return _generated; }
 };
 
-}
+} // namespace search::docsummary

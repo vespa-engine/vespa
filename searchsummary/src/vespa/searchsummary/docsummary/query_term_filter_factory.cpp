@@ -1,17 +1,18 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "query_term_filter_factory.h"
+
 #include "query_term_filter.h"
+
 #include <vespa/searchcommon/common/schema.h>
+
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/stllike/hash_set.hpp>
 
 namespace search::docsummary {
 
 QueryTermFilterFactory::QueryTermFilterFactory(const search::index::Schema& schema)
-    : IQueryTermFilterFactory(),
-      _view_map()
-{
+    : IQueryTermFilterFactory(), _view_map() {
     for (uint32_t i = 0; i < schema.getNumFieldSets(); ++i) {
         auto& field_set = schema.getFieldSet(i);
         auto& fields = field_set.getFields();
@@ -24,9 +25,7 @@ QueryTermFilterFactory::QueryTermFilterFactory(const search::index::Schema& sche
 
 QueryTermFilterFactory::~QueryTermFilterFactory() = default;
 
-std::shared_ptr<const IQueryTermFilter>
-QueryTermFilterFactory::make(std::string_view input_field) const
-{
+std::shared_ptr<const IQueryTermFilter> QueryTermFilterFactory::make(std::string_view input_field) const {
     vespalib::hash_set<std::string> views;
     views.insert(std::string(input_field));
     auto itr = _view_map.find(input_field);
@@ -38,4 +37,4 @@ QueryTermFilterFactory::make(std::string_view input_field) const
     return std::make_shared<QueryTermFilter>(std::move(views));
 }
 
-}
+} // namespace search::docsummary
