@@ -5,12 +5,11 @@ namespace storage::distributor {
 
 struct DelegatedStatusRequest;
 
-class StatusDelegator
-{
+class StatusDelegator {
 public:
     virtual ~StatusDelegator() = default;
 
     virtual bool handleStatusRequest(const DelegatedStatusRequest& request) const = 0;
 };
 
-} // storage::distributor
+} // namespace storage::distributor

@@ -7,6 +7,7 @@
 #include "operation_routing_snapshot.h"
 #include "outdated_nodes_map.h"
 #include "pendingclusterstate.h"
+
 #include <vespa/document/bucket/bucket.h>
 #include <vespa/storage/common/message_guard.h>
 #include <vespa/storageapi/message/bucket.h>
@@ -14,6 +15,7 @@
 #include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/storageframework/generic/status/statusreporter.h>
 #include <vespa/vdslib/state/clusterstate.h>
+
 #include <atomic>
 #include <list>
 #include <mutex>
@@ -21,7 +23,7 @@
 namespace vespalib::xml {
 class XmlOutputStream;
 class XmlAttribute;
-}
+} // namespace vespalib::xml
 
 namespace storage::lib {
 struct BucketSpaceDistributionConfigs;
@@ -36,26 +38,22 @@ class NodeSupportedFeaturesRepo;
 class StripeAccessor;
 class StripeAccessGuard;
 
-class TopLevelBucketDBUpdater : public framework::StatusReporter,
-                                public api::MessageHandler
-{
+class TopLevelBucketDBUpdater : public framework::StatusReporter, public api::MessageHandler {
 public:
     using OutdatedNodesMap = dbtransition::OutdatedNodesMap;
-    TopLevelBucketDBUpdater(const DistributorNodeContext& node_ctx,
-                            DistributorOperationContext& op_ctx,
-                            DistributorInterface& distributor_interface,
-                            DistributorMessageSender& nested_msg_sender,
-                            ChainedMessageSender& chained_sender,
+    TopLevelBucketDBUpdater(const DistributorNodeContext& node_ctx, DistributorOperationContext& op_ctx,
+                            DistributorInterface& distributor_interface, DistributorMessageSender& nested_msg_sender,
+                            ChainedMessageSender&                    chained_sender,
                             std::shared_ptr<const lib::Distribution> bootstrap_distribution,
-                            StripeAccessor& stripe_accessor,
-                            ClusterStateBundleActivationListener* state_activation_listener);
+                            StripeAccessor&                          stripe_accessor,
+                            ClusterStateBundleActivationListener*    state_activation_listener);
     ~TopLevelBucketDBUpdater() override;
 
     void flush();
 
     bool onSetSystemState(const std::shared_ptr<api::SetSystemStateCommand>& cmd) override;
     bool onActivateClusterStateVersion(const std::shared_ptr<api::ActivateClusterStateVersionCommand>& cmd) override;
-    bool onRequestBucketInfoReply(const std::shared_ptr<api::RequestBucketInfoReply> & repl) override;
+    bool onRequestBucketInfoReply(const std::shared_ptr<api::RequestBucketInfoReply>& repl) override;
 
     std::string getReportContentType(const framework::HttpUrlPath&) const override;
     bool reportStatus(std::ostream&, const framework::HttpUrlPath&) const override;
@@ -72,12 +70,9 @@ public:
     void set_stale_reads_enabled(bool enabled) noexcept {
         _stale_reads_enabled.store(enabled, std::memory_order_relaxed);
     }
-    bool stale_reads_enabled() const noexcept {
-        return _stale_reads_enabled.load(std::memory_order_relaxed);
-    }
+    bool stale_reads_enabled() const noexcept { return _stale_reads_enabled.load(std::memory_order_relaxed); }
 
 private:
-
     friend class DistributorStripeTestUtil;
     friend class TopLevelDistributorTestUtil;
     // Only to be used by tests that want to ensure both the TopLevelBucketDBUpdater _and_ the Distributor
@@ -95,18 +90,16 @@ private:
     void ensure_transition_timer_started();
     void complete_transition_timer();
 
-    void storage_distribution_changed_impl(StripeAccessGuard& guard,
+    void storage_distribution_changed_impl(StripeAccessGuard&                         guard,
                                            const lib::BucketSpaceDistributionConfigs& configs,
-                                           bool inhibit_request_sending);
+                                           bool                                       inhibit_request_sending);
 
-    void remove_superfluous_buckets(StripeAccessGuard& guard,
-                                    const lib::ClusterStateBundle& new_state,
+    void remove_superfluous_buckets(StripeAccessGuard& guard, const lib::ClusterStateBundle& new_state,
                                     bool is_distribution_config_change);
 
     void reply_to_previous_pending_cluster_state_if_any();
-    void reply_to_activation_with_actual_version(
-            const api::ActivateClusterStateVersionCommand& cmd,
-            uint32_t actualVersion);
+    void reply_to_activation_with_actual_version(const api::ActivateClusterStateVersionCommand& cmd,
+                                                 uint32_t                                       actualVersion);
 
     void enable_current_cluster_state_bundle_in_distributor_and_stripes(StripeAccessGuard& guard);
     void add_current_state_to_cluster_state_history();
@@ -117,21 +110,21 @@ private:
     void maybe_inject_simulated_db_merging_delay();
 
     // TODO STRIPE remove once distributor component dependencies have been pruned
-    StripeAccessor& _stripe_accessor;
+    StripeAccessor&                       _stripe_accessor;
     ClusterStateBundleActivationListener* _state_activation_listener;
-    lib::ClusterStateBundle _active_state_bundle;
+    lib::ClusterStateBundle               _active_state_bundle;
 
-    const DistributorNodeContext& _node_ctx;
-    DistributorOperationContext& _op_ctx;
-    DistributorInterface& _distributor_interface;
-    std::unique_ptr<PendingClusterState> _pending_cluster_state;
-    std::list<PendingClusterState::Summary> _history;
-    DistributorMessageSender& _sender;
-    ChainedMessageSender& _chained_sender;
-    OutdatedNodesMap         _outdated_nodes_map;
-    framework::MilliSecTimer _transition_timer;
+    const DistributorNodeContext&                    _node_ctx;
+    DistributorOperationContext&                     _op_ctx;
+    DistributorInterface&                            _distributor_interface;
+    std::unique_ptr<PendingClusterState>             _pending_cluster_state;
+    std::list<PendingClusterState::Summary>          _history;
+    DistributorMessageSender&                        _sender;
+    ChainedMessageSender&                            _chained_sender;
+    OutdatedNodesMap                                 _outdated_nodes_map;
+    framework::MilliSecTimer                         _transition_timer;
     std::shared_ptr<const NodeSupportedFeaturesRepo> _node_supported_features_repo;
-    std::atomic<bool> _stale_reads_enabled;
+    std::atomic<bool>                                _stale_reads_enabled;
 };
 
-}
+} // namespace storage::distributor

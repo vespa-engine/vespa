@@ -3,19 +3,17 @@
 
 #include <cassert>
 
-namespace storage::lib { class ClusterState; }
+namespace storage::lib {
+class ClusterState;
+}
 
 namespace storage::distributor {
 
-class BucketOwnership
-{
+class BucketOwnership {
     const lib::ClusterState* _checkedState;
-    bool _owned;
+    bool                     _owned;
 
-    BucketOwnership(const lib::ClusterState& checkedState) noexcept
-        : _checkedState(&checkedState),
-          _owned(false)
-    { }
+    BucketOwnership(const lib::ClusterState& checkedState) noexcept : _checkedState(&checkedState), _owned(false) {}
 
 public:
     constexpr BucketOwnership() noexcept : _checkedState(nullptr), _owned(true) {}
@@ -35,13 +33,9 @@ public:
         return *_checkedState;
     }
 
-    static constexpr BucketOwnership createOwned() noexcept {
-        return BucketOwnership();
-    }
+    static constexpr BucketOwnership createOwned() noexcept { return BucketOwnership(); }
 
-    static BucketOwnership createNotOwnedInState(const lib::ClusterState& s) noexcept {
-        return BucketOwnership(s);
-    }
+    static BucketOwnership createNotOwnedInState(const lib::ClusterState& s) noexcept { return BucketOwnership(s); }
 };
 
-}
+} // namespace storage::distributor

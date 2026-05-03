@@ -19,4 +19,4 @@ public:
     [[nodiscard]] virtual ContentNodeMessageStatsTracker::NodeStats content_node_stats() const = 0;
 };
 
-}
+} // namespace storage::distributor

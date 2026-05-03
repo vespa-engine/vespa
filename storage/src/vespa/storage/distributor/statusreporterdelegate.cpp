@@ -4,39 +4,28 @@
 
 namespace storage::distributor {
 
-StatusReporterDelegate::StatusReporterDelegate(
-        framework::ComponentRegister& compReg,
-        const StatusDelegator& delegator,
-        const framework::StatusReporter& target)
+StatusReporterDelegate::StatusReporterDelegate(framework::ComponentRegister&    compReg,
+                                               const StatusDelegator&           delegator,
+                                               const framework::StatusReporter& target)
     : framework::StatusReporter(target.getId(), target.getName()),
       _delegator(delegator),
       _target(target),
-      _component(compReg, std::string(target.getId()) + "_status")
-{
+      _component(compReg, std::string(target.getId()) + "_status") {
 }
 
 StatusReporterDelegate::~StatusReporterDelegate() = default;
 
-std::string
-StatusReporterDelegate::getReportContentType(const framework::HttpUrlPath& path) const
-{
+std::string StatusReporterDelegate::getReportContentType(const framework::HttpUrlPath& path) const {
     // Implementation must be data race free.
     return _target.getReportContentType(path);
 }
 
-bool
-StatusReporterDelegate::reportStatus(std::ostream& out,
-                                     const framework::HttpUrlPath& path) const
-{
-    return _delegator.handleStatusRequest(
-            DelegatedStatusRequest(_target, path, out));
+bool StatusReporterDelegate::reportStatus(std::ostream& out, const framework::HttpUrlPath& path) const {
+    return _delegator.handleStatusRequest(DelegatedStatusRequest(_target, path, out));
 }
 
-void
-StatusReporterDelegate::registerStatusPage()
-{
+void StatusReporterDelegate::registerStatusPage() {
     _component.registerStatusPage(*this);
 }
 
-}
-
+} // namespace storage::distributor

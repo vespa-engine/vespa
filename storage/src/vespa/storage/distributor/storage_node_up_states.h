@@ -11,4 +11,4 @@ constexpr const char* storage_node_up_states() noexcept {
     return "uri";
 }
 
-}
+} // namespace storage::distributor

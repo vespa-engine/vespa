@@ -6,6 +6,7 @@
 #include "distributor_interface.h"
 #include "distributor_node_context.h"
 #include "distributor_operation_context.h"
+
 #include <vespa/storage/common/distributorcomponent.h>
 
 namespace storage::distributor {
@@ -25,16 +26,14 @@ private:
     DistributorInterface& _distributor;
     BucketSpaceStateMap   _bucket_space_states;
 
-
 public:
-    DistributorComponent(DistributorInterface& distributor,
-                         DistributorComponentRegister& comp_reg,
+    DistributorComponent(DistributorInterface& distributor, DistributorComponentRegister& comp_reg,
                          const std::string& name);
 
     ~DistributorComponent() override;
 
-    // TODO STRIPE: Unify implementation of this interface between DistributorComponent and DistributorStripeComponent?
-    // Implements DistributorNodeContext
+    // TODO STRIPE: Unify implementation of this interface between DistributorComponent and
+    // DistributorStripeComponent? Implements DistributorNodeContext
     const framework::Clock& clock() const noexcept override { return getClock(); }
     const std::string* cluster_name_ptr() const noexcept override { return cluster_context().cluster_name_ptr(); }
     const document::BucketIdFactory& bucket_id_factory() const noexcept override { return getBucketIdFactory(); }
@@ -42,18 +41,12 @@ public:
     api::StorageMessageAddress node_address(uint16_t node_index) const noexcept override;
 
     // Implements DistributorOperationContext
-    api::Timestamp generate_unique_timestamp() override {
-        return getUniqueTimestamp();
-    }
-    const BucketSpaceStateMap& bucket_space_states() const noexcept override {
-        return _bucket_space_states;
-    }
-    BucketSpaceStateMap& bucket_space_states() noexcept override {
-        return _bucket_space_states;
-    }
+    api::Timestamp generate_unique_timestamp() override { return getUniqueTimestamp(); }
+    const BucketSpaceStateMap& bucket_space_states() const noexcept override { return _bucket_space_states; }
+    BucketSpaceStateMap& bucket_space_states() noexcept override { return _bucket_space_states; }
     const storage::DistributorConfiguration& distributor_config() const noexcept override {
         return _distributor.config();
     }
 };
 
-}
+} // namespace storage::distributor

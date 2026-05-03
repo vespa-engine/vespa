@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "distributormetricsset.h"
+
 #include <vespa/vespalib/util/memoryusage.h>
 
 namespace storage::distributor {
@@ -7,9 +8,8 @@ namespace storage::distributor {
 using metrics::MetricSet;
 
 BucketDbMetrics::BucketDbMetrics(const std::string& db_type, metrics::MetricSet* owner)
-    : metrics::MetricSet("bucket_db", {{"bucket_db_type", db_type}}, "", owner),
-      memory_usage(this)
-{}
+    : metrics::MetricSet("bucket_db", {{"bucket_db_type", db_type}}, "", owner), memory_usage(this) {
+}
 
 BucketDbMetrics::~BucketDbMetrics() = default;
 
@@ -29,34 +29,40 @@ DistributorMetricSet::DistributorMetricSet()
       getbucketlists("getbucketlists", this),
       visits(this),
       stateTransitionTime("state_transition_time", {},
-              "Time it takes to complete a cluster state transition. If a "
-              "state transition is preempted before completing, its elapsed "
-              "time is counted as part of the total time spent for the final, "
-              "completed state transition", this),
+                          "Time it takes to complete a cluster state transition. If a "
+                          "state transition is preempted before completing, its elapsed "
+                          "time is counted as part of the total time spent for the final, "
+                          "completed state transition",
+                          this),
       set_cluster_state_processing_time("set_cluster_state_processing_time", {},
-              "Elapsed time in which the distributor thread is blocked on processing "
-              "its bucket database upon receiving a new cluster state", this),
-      activate_cluster_state_processing_time("activate_cluster_state_processing_time", {},
-              "Elapsed time in which the distributor thread is blocked on merging pending "
-              "bucket info into its bucket database upon activating a cluster state", this),
+                                        "Elapsed time in which the distributor thread is blocked on processing "
+                                        "its bucket database upon receiving a new cluster state",
+                                        this),
+      activate_cluster_state_processing_time(
+          "activate_cluster_state_processing_time", {},
+          "Elapsed time in which the distributor thread is blocked on merging pending "
+          "bucket info into its bucket database upon activating a cluster state",
+          this),
       recoveryModeTime("recoverymodeschedulingtime", {},
-              "Time spent scheduling operations in recovery mode "
-              "after receiving new cluster state", this),
-      docsStored("docsstored",
-              {{"logdefault"},{"yamasdefault"}},
-              "Number of documents stored in all buckets controlled by "
-              "this distributor", this),
-      bytesStored("bytesstored",
-              {{"logdefault"},{"yamasdefault"}},
-              "Number of bytes stored in all buckets controlled by "
-              "this distributor", this),
+                       "Time spent scheduling operations in recovery mode "
+                       "after receiving new cluster state",
+                       this),
+      docsStored("docsstored", {{"logdefault"}, {"yamasdefault"}},
+                 "Number of documents stored in all buckets controlled by "
+                 "this distributor",
+                 this),
+      bytesStored("bytesstored", {{"logdefault"}, {"yamasdefault"}},
+                  "Number of bytes stored in all buckets controlled by "
+                  "this distributor",
+                  this),
       mutatating_op_memory_usage("mutating_op_memory_usage", {},
-             "Estimated amount of memory used by active mutating operations "
-             "across all distributor stripes, in bytes", this),
+                                 "Estimated amount of memory used by active mutating operations "
+                                 "across all distributor stripes, in bytes",
+                                 this),
       mutable_dbs("mutable", this),
-      read_only_dbs("read_only", this)
-{}
+      read_only_dbs("read_only", this) {
+}
 
 DistributorMetricSet::~DistributorMetricSet() = default;
 
-} // storage
+} // namespace storage::distributor

@@ -1,8 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "distributor_stripe.h"
+
 #include "blockingoperationstarter.h"
 #include "distributor_bucket_space.h"
-#include "distributor_stripe.h"
 #include "distributormetricsset.h"
 #include "idealstatemetricsset.h"
 #include "node_supported_features_repo.h"
@@ -11,17 +12,19 @@
 #include "storage_node_up_states.h"
 #include "stripe_host_info_notifier.h"
 #include "throttlingoperationstarter.h"
+
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/storage/common/node_identity.h>
 #include <vespa/storage/common/nodestateupdater.h>
+#include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
 #include <vespa/storage/distributor/operations/cancel_scope.h>
 #include <vespa/storage/distributor/operations/idealstate/garbagecollectionoperation.h>
-#include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storageframework/generic/status/xmlstatusreporter.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/distribution/global_bucket_space_distribution_converter.h>
 #include <vespa/vespalib/util/memoryusage.h>
+
 #include <algorithm>
 
 #include <vespa/log/log.h>
@@ -31,15 +34,12 @@ using namespace std::chrono_literals;
 
 namespace storage::distributor {
 
-DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
-                                     DistributorMetricSet& metrics,
-                                     IdealStateMetricSet& ideal_state_metrics,
-                                     const NodeIdentity& node_identity,
-                                     ChainedMessageSender& messageSender,
+DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg, DistributorMetricSet& metrics,
+                                     IdealStateMetricSet& ideal_state_metrics, const NodeIdentity& node_identity,
+                                     ChainedMessageSender&   messageSender,
                                      StripeHostInfoNotifier& stripe_host_info_notifier,
-                                     MemoryUsageTracker& shared_memory_usage_tracker,
-                                     const bool& done_initializing_ref,
-                                     uint32_t stripe_index)
+                                     MemoryUsageTracker&     shared_memory_usage_tracker,
+                                     const bool& done_initializing_ref, uint32_t stripe_index)
     : DistributorStripeInterface(),
       _clusterStateBundle(lib::ClusterState()),
       _bucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>(node_identity.node_index())),
@@ -56,18 +56,17 @@ DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
       _messageSender(messageSender),
       _stripe_host_info_notifier(stripe_host_info_notifier),
       _shared_memory_usage_tracker(shared_memory_usage_tracker),
-      _externalOperationHandler(_component, _component, getMetrics(), getMessageSender(),
-                                *_operation_sequencer, *this, _component,
-                                _idealStateManager, _operationOwner),
+      _externalOperationHandler(_component, _component, getMetrics(), getMessageSender(), *_operation_sequencer,
+                                *this, _component, _idealStateManager, _operationOwner),
       _external_message_mutex(),
       _done_initializing_ref(done_initializing_ref),
       _bucketPriorityDb(std::make_unique<SimpleBucketPriorityDatabase>()),
       _scanner(std::make_unique<SimpleMaintenanceScanner>(*_bucketPriorityDb, _idealStateManager, *_bucketSpaceRepo)),
       _throttlingStarter(std::make_unique<ThrottlingOperationStarter>(_maintenanceOperationOwner)),
-      _blockingStarter(std::make_unique<BlockingOperationStarter>(_component, *_operation_sequencer,
-                                                                  *_throttlingStarter)),
-      _scheduler(std::make_unique<MaintenanceScheduler>(_idealStateManager, *_bucketPriorityDb,
-                                                        *_throttlingStarter, *_blockingStarter)),
+      _blockingStarter(
+          std::make_unique<BlockingOperationStarter>(_component, *_operation_sequencer, *_throttlingStarter)),
+      _scheduler(std::make_unique<MaintenanceScheduler>(_idealStateManager, *_bucketPriorityDb, *_throttlingStarter,
+                                                        *_blockingStarter)),
       _schedulingMode(MaintenanceScheduler::NORMAL_SCHEDULING_MODE),
       _recoveryTimeStarted(_component.getClock()),
       _tickResult(framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN),
@@ -83,44 +82,34 @@ DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
       _inhibited_maintenance_tick_count(0),
       _stripe_index(stripe_index),
       _non_activation_maintenance_is_inhibited(false),
-      _must_send_updated_host_info(false)
-{
+      _must_send_updated_host_info(false) {
     propagateDefaultDistribution(_component.getDistribution());
     propagateClusterStates();
 }
 
 DistributorStripe::~DistributorStripe() = default;
 
-int
-DistributorStripe::getDistributorIndex() const
-{
+int DistributorStripe::getDistributorIndex() const {
     return _component.getIndex();
 }
 
-const PendingMessageTracker&
-DistributorStripe::getPendingMessageTracker() const
-{
+const PendingMessageTracker& DistributorStripe::getPendingMessageTracker() const {
     return _pendingMessageTracker;
 }
 
-const lib::ClusterState*
-DistributorStripe::pendingClusterStateOrNull(const document::BucketSpace& space) const {
+const lib::ClusterState* DistributorStripe::pendingClusterStateOrNull(const document::BucketSpace& space) const {
     return _bucketDBUpdater.pendingClusterStateOrNull(space);
 }
 
-void
-DistributorStripe::sendCommand(const std::shared_ptr<api::StorageCommand>& cmd)
-{
+void DistributorStripe::sendCommand(const std::shared_ptr<api::StorageCommand>& cmd) {
     if (cmd->getType() == api::MessageType::MERGEBUCKET) {
-        auto & merge(static_cast<api::MergeBucketCommand&>(*cmd));
+        auto& merge(static_cast<api::MergeBucketCommand&>(*cmd));
         _idealStateManager.getMetrics().nodesPerMerge.addValue(merge.getNodes().size());
     }
     send_up_with_tracking(cmd);
 }
 
-void
-DistributorStripe::sendReply(const std::shared_ptr<api::StorageReply>& reply)
-{
+void DistributorStripe::sendReply(const std::shared_ptr<api::StorageReply>& reply) {
     send_up_with_tracking(reply);
 }
 
@@ -160,20 +149,17 @@ void DistributorStripe::send_up_without_tracking(const std::shared_ptr<api::Stor
     _messageSender.sendUp(msg);
 }
 
-void
-DistributorStripe::send_up_with_tracking(const std::shared_ptr<api::StorageMessage>& msg)
-{
+void DistributorStripe::send_up_with_tracking(const std::shared_ptr<api::StorageMessage>& msg) {
     _pendingMessageTracker.insert(msg);
     send_up_without_tracking(msg);
 }
 
-bool
-DistributorStripe::handle_or_enqueue_message(const std::shared_ptr<api::StorageMessage>& msg)
-{
+bool DistributorStripe::handle_or_enqueue_message(const std::shared_ptr<api::StorageMessage>& msg) {
     if (_externalOperationHandler.try_handle_message_outside_main_thread(msg)) {
         return true;
     }
-    MBUS_TRACE(msg->getTrace(), 9, vespalib::make_string("DistributorStripe[%u]: Added to message queue.", _stripe_index));
+    MBUS_TRACE(msg->getTrace(), 9,
+               vespalib::make_string("DistributorStripe[%u]: Added to message queue.", _stripe_index));
     {
         std::lock_guard lock(_external_message_mutex);
         _messageQueue.push_back(msg);
@@ -182,21 +168,15 @@ DistributorStripe::handle_or_enqueue_message(const std::shared_ptr<api::StorageM
     return true;
 }
 
-std::shared_ptr<Operation>
-DistributorStripe::maintenance_op_from_message_id(uint64_t msg_id) const noexcept
-{
+std::shared_ptr<Operation> DistributorStripe::maintenance_op_from_message_id(uint64_t msg_id) const noexcept {
     return _maintenanceOperationOwner.find_by_id(msg_id);
 }
 
-void
-DistributorStripe::handleCompletedMerge(const std::shared_ptr<api::MergeBucketReply>& reply)
-{
+void DistributorStripe::handleCompletedMerge(const std::shared_ptr<api::MergeBucketReply>& reply) {
     _maintenanceOperationOwner.handleReply(reply);
 }
 
-bool
-DistributorStripe::isMaintenanceReply(const api::StorageReply& reply)
-{
+bool DistributorStripe::isMaintenanceReply(const api::StorageReply& reply) {
     switch (reply.getType().getId()) {
     case api::MessageType::CREATEBUCKET_REPLY_ID:
     case api::MessageType::MERGEBUCKET_REPLY_ID:
@@ -212,14 +192,11 @@ DistributorStripe::isMaintenanceReply(const api::StorageReply& reply)
     }
 }
 
-bool
-DistributorStripe::handleReply(const std::shared_ptr<api::StorageReply>& reply)
-{
+bool DistributorStripe::handleReply(const std::shared_ptr<api::StorageReply>& reply) {
     document::Bucket bucket = _pendingMessageTracker.reply(*reply);
 
     if (reply->getResult().getResult() == api::ReturnCode::BUCKET_NOT_FOUND &&
-        bucket.getBucketId() != document::BucketId(0) &&
-        reply->getAddress())
+        bucket.getBucketId() != document::BucketId(0) && reply->getAddress())
     {
         // Won't be triggered for replies of cancelled ops since they will be missing
         // from `_pendingMessageTracker` and thus `bucket` will be zero.
@@ -253,15 +230,11 @@ DistributorStripe::handleReply(const std::shared_ptr<api::StorageReply>& reply)
     return isMaintenanceReply(*reply);
 }
 
-bool
-DistributorStripe::generateOperation(const std::shared_ptr<api::StorageMessage>& msg, Operation::SP& operation)
-{
+bool DistributorStripe::generateOperation(const std::shared_ptr<api::StorageMessage>& msg, Operation::SP& operation) {
     return _externalOperationHandler.handleMessage(msg, operation);
 }
 
-bool
-DistributorStripe::handleMessage(const std::shared_ptr<api::StorageMessage>& msg)
-{
+bool DistributorStripe::handleMessage(const std::shared_ptr<api::StorageMessage>& msg) {
     if (msg->getType().isReply()) {
         auto reply = std::dynamic_pointer_cast<api::StorageReply>(msg);
         if (handleReply(reply)) {
@@ -284,15 +257,11 @@ DistributorStripe::handleMessage(const std::shared_ptr<api::StorageMessage>& msg
     return false;
 }
 
-const lib::ClusterStateBundle&
-DistributorStripe::getClusterStateBundle() const
-{
+const lib::ClusterStateBundle& DistributorStripe::getClusterStateBundle() const {
     return _clusterStateBundle;
 }
 
-void
-DistributorStripe::cancel_single_message_by_id_if_found(uint64_t msg_id, const CancelScope& cancel_scope)
-{
+void DistributorStripe::cancel_single_message_by_id_if_found(uint64_t msg_id, const CancelScope& cancel_scope) {
     // In descending order of likelihood:
     if (_operationOwner.try_cancel_by_id(msg_id, cancel_scope)) {
         return;
@@ -303,23 +272,20 @@ DistributorStripe::cancel_single_message_by_id_if_found(uint64_t msg_id, const C
     (void)_bucketDBUpdater.cancel_message_by_id(msg_id);
 }
 
-void
-DistributorStripe::handle_node_down_edge_with_cancellations(uint16_t node_index, std::span<const uint64_t> msg_ids)
-{
+void DistributorStripe::handle_node_down_edge_with_cancellations(uint16_t                  node_index,
+                                                                 std::span<const uint64_t> msg_ids) {
     auto cancel_scope = CancelScope::of_node_subset({node_index});
     for (const auto msg_id : msg_ids) {
         cancel_single_message_by_id_if_found(msg_id, cancel_scope);
     }
 }
 
-void
-DistributorStripe::cancel_ops_for_buckets_no_longer_owned(document::BucketSpace bucket_space,
-                                                          const lib::ClusterState& new_state)
-{
+void DistributorStripe::cancel_ops_for_buckets_no_longer_owned(document::BucketSpace    bucket_space,
+                                                               const lib::ClusterState& new_state) {
     // Note: we explicitly do not simply reuse the set of buckets removed from the bucket database
     // when deciding which operations to cancel. This is because that would depend on every candidate
     // bucket to cancel already being present in the DB, which is hard to guarantee always holds.
-    const auto& distribution = _bucketSpaceRepo->get(bucket_space).getDistribution();
+    const auto&               distribution = _bucketSpaceRepo->get(bucket_space).getDistribution();
     BucketOwnershipCalculator ownership_calc(new_state, distribution, getDistributorIndex());
 
     auto bucket_not_owned_in_new_state = [&](const document::Bucket& bucket) {
@@ -331,17 +297,15 @@ DistributorStripe::cancel_ops_for_buckets_no_longer_owned(document::BucketSpace 
     _pendingMessageTracker.enumerate_matching_pending_bucket_ops(bucket_not_owned_in_new_state, cancel_op_by_msg_id);
 }
 
-void
-DistributorStripe::cancel_ops_for_unavailable_nodes(const lib::ClusterStateBundle& old_state_bundle,
-                                                    const lib::ClusterStateBundle& new_state_bundle)
-{
+void DistributorStripe::cancel_ops_for_unavailable_nodes(const lib::ClusterStateBundle& old_state_bundle,
+                                                         const lib::ClusterStateBundle& new_state_bundle) {
     // TODO we should probably only consider a node as unavailable if it is unavailable in
     //  _all_ bucket spaces. Consider: implicit maintenance mode for global merges (although
     //  that _should_ only be triggered by the CC when the node was already down...).
-    const auto& baseline_state    = *new_state_bundle.getBaselineClusterState();
+    const auto&    baseline_state = *new_state_bundle.getBaselineClusterState();
     const uint16_t old_node_count = old_state_bundle.getBaselineClusterState()->getNodeCount(lib::NodeType::STORAGE);
     const uint16_t new_node_count = baseline_state.getNodeCount(lib::NodeType::STORAGE);
-    const auto& distribution      = _bucketSpaceRepo->get(document::FixedBucketSpaces::default_space()).getDistribution();
+    const auto& distribution = _bucketSpaceRepo->get(document::FixedBucketSpaces::default_space()).getDistribution();
 
     for (uint16_t i = 0; i < std::max(old_node_count, new_node_count); ++i) {
         // Handle both the case where a node may be gone from the cluster state and from the config.
@@ -360,10 +324,8 @@ DistributorStripe::cancel_ops_for_unavailable_nodes(const lib::ClusterStateBundl
 }
 
 // TODO remove once cancellation support has proven itself worthy of prime time
-void
-DistributorStripe::legacy_erase_ops_for_unavailable_nodes(const lib::ClusterStateBundle& old_state_bundle,
-                                                          const lib::ClusterStateBundle& new_state_bundle)
-{
+void DistributorStripe::legacy_erase_ops_for_unavailable_nodes(const lib::ClusterStateBundle& old_state_bundle,
+                                                               const lib::ClusterStateBundle& new_state_bundle) {
     const auto& baseline_state = *new_state_bundle.getBaselineClusterState();
     // Clear all active messages on nodes that are down.
     const uint16_t old_node_count = old_state_bundle.getBaselineClusterState()->getNodeCount(lib::NodeType::STORAGE);
@@ -374,16 +336,14 @@ DistributorStripe::legacy_erase_ops_for_unavailable_nodes(const lib::ClusterStat
             std::vector<uint64_t> msgIds = _pendingMessageTracker.clearMessagesForNode(i);
             LOG(debug, "Node %u is down, clearing %zu pending maintenance operations", i, msgIds.size());
 
-            for (const auto & msgId : msgIds) {
+            for (const auto& msgId : msgIds) {
                 (void)_maintenanceOperationOwner.erase(msgId);
             }
         }
     }
 }
 
-void
-DistributorStripe::enableClusterStateBundle(const lib::ClusterStateBundle& state)
-{
+void DistributorStripe::enableClusterStateBundle(const lib::ClusterStateBundle& state) {
     lib::ClusterStateBundle old_state = _clusterStateBundle;
     _clusterStateBundle = state;
 
@@ -401,9 +361,7 @@ OperationRoutingSnapshot DistributorStripe::read_snapshot_for_bucket(const docum
     return _bucketDBUpdater.read_snapshot_for_bucket(bucket);
 }
 
-void
-DistributorStripe::notifyDistributionChangeEnabled()
-{
+void DistributorStripe::notifyDistributionChangeEnabled() {
     LOG(debug, "Pending cluster state for distribution change has been enabled");
     // Trigger a re-scan of bucket database, just like we do when a new cluster
     // state has been enabled.
@@ -414,9 +372,7 @@ DistributorStripe::notifyDistributionChangeEnabled()
     }
 }
 
-void
-DistributorStripe::enterRecoveryMode()
-{
+void DistributorStripe::enterRecoveryMode() {
     LOG(debug, "Entering recovery mode");
     _schedulingMode = MaintenanceScheduler::RECOVERY_SCHEDULING_MODE;
     (void)_scanner->fetch_and_reset(); // Just drop accumulated stats on the floor.
@@ -430,9 +386,7 @@ DistributorStripe::enterRecoveryMode()
     _recoveryTimeStarted = framework::MilliSecTimer(_component.getClock());
 }
 
-void
-DistributorStripe::leaveRecoveryMode()
-{
+void DistributorStripe::leaveRecoveryMode() {
     if (isInRecoveryMode()) {
         LOG(debug, "Leaving recovery mode");
         // FIXME don't use shared metric for this
@@ -444,9 +398,7 @@ DistributorStripe::leaveRecoveryMode()
     _schedulingMode = MaintenanceScheduler::NORMAL_SCHEDULING_MODE;
 }
 
-void
-DistributorStripe::invalidate_internal_db_dependent_stats()
-{
+void DistributorStripe::invalidate_internal_db_dependent_stats() {
     _bucketDBMetricUpdater.reset();
     {
         std::lock_guard guard(_metricLock);
@@ -476,9 +428,8 @@ BucketSpacesStatsProvider::BucketSpacesStats DistributorStripe::make_invalid_sta
     return invalid_space_stats;
 }
 
-void
-DistributorStripe::invalidate_bucket_spaces_stats([[maybe_unused]] std::lock_guard<std::mutex>& held_metric_lock)
-{
+void DistributorStripe::invalidate_bucket_spaces_stats(
+    [[maybe_unused]] std::lock_guard<std::mutex>& held_metric_lock) {
     _bucketSpacesStats = BucketSpacesStatsProvider::PerNodeBucketSpacesStats();
     auto invalid_space_stats = make_invalid_stats_per_configured_space();
 
@@ -488,34 +439,29 @@ DistributorStripe::invalidate_bucket_spaces_stats([[maybe_unused]] std::lock_gua
     });
 }
 
-void
-DistributorStripe::invalidate_min_replica_stats([[maybe_unused]] std::lock_guard<std::mutex>& held_metric_lock)
-{
+void DistributorStripe::invalidate_min_replica_stats([[maybe_unused]] std::lock_guard<std::mutex>& held_metric_lock) {
     _bucketDbStats._minBucketReplica.clear();
     // Insert an explicit zero value for all nodes that are up in the pending/current cluster state
     const auto& baseline = *_clusterStateBundle.getBaselineClusterState();
-    for_each_available_content_node_in(baseline, [this](const lib::Node& node) {
-        _bucketDbStats._minBucketReplica[node.getIndex()] = 0;
-    });
+    for_each_available_content_node_in(
+        baseline, [this](const lib::Node& node) { _bucketDbStats._minBucketReplica[node.getIndex()] = 0; });
 }
 
-void
-DistributorStripe::recheckBucketInfo(uint16_t nodeIdx, const document::Bucket &bucket) {
+void DistributorStripe::recheckBucketInfo(uint16_t nodeIdx, const document::Bucket& bucket) {
     _bucketDBUpdater.recheckBucketInfo(nodeIdx, bucket);
 }
 
 namespace {
 
-class SplitChecker : public PendingMessageTracker::Checker
-{
+class SplitChecker : public PendingMessageTracker::Checker {
 public:
-    bool found;
+    bool    found;
     uint8_t maxPri;
 
     explicit SplitChecker(uint8_t maxP) : found(false), maxPri(maxP) {};
 
     bool check(uint32_t msgType, uint16_t node, uint8_t pri) override {
-        (void) node;
+        (void)node;
         if (msgType == api::MessageType::SPLITBUCKET_ID && pri <= maxPri) {
             found = true;
             return false;
@@ -525,20 +471,20 @@ public:
     }
 };
 
-}
+} // namespace
 
-void
-DistributorStripe::checkBucketForSplit(document::BucketSpace bucketSpace, const BucketDatabase::Entry& e, uint8_t priority)
-{
+void DistributorStripe::checkBucketForSplit(document::BucketSpace bucketSpace, const BucketDatabase::Entry& e,
+                                            uint8_t priority) {
     if (!getConfig().doInlineSplit()) {
-       return;
+        return;
     }
 
     // Verify that there are no existing pending splits at the
     // appropriate priority.
     SplitChecker checker(priority);
     for (uint32_t i = 0; i < e->getNodeCount(); ++i) {
-        _pendingMessageTracker.checkPendingMessages(e->getNodeRef(i).getNode(), document::Bucket(bucketSpace, e.getBucketId()), checker);
+        _pendingMessageTracker.checkPendingMessages(e->getNodeRef(i).getNode(),
+                                                    document::Bucket(bucketSpace, e.getBucketId()), checker);
         if (checker.found) {
             return;
         }
@@ -552,9 +498,7 @@ DistributorStripe::checkBucketForSplit(document::BucketSpace bucketSpace, const 
 }
 
 // TODO STRIPE must be invoked by top-level bucket db updater probably
-void
-DistributorStripe::propagateDefaultDistribution(std::shared_ptr<const lib::Distribution> distribution)
-{
+void DistributorStripe::propagateDefaultDistribution(std::shared_ptr<const lib::Distribution> distribution) {
     auto global_distr = lib::GlobalBucketSpaceDistributionConverter::convert_to_global(*distribution);
     for (auto* repo : {_bucketSpaceRepo.get(), _readOnlyBucketSpaceRepo.get()}) {
         repo->get(document::FixedBucketSpaces::default_space()).setDistribution(distribution);
@@ -563,10 +507,9 @@ DistributorStripe::propagateDefaultDistribution(std::shared_ptr<const lib::Distr
 }
 
 // Only called when stripe is in rendezvous freeze
-void
-DistributorStripe::update_distribution_config(const lib::BucketSpaceDistributionConfigs& new_configs) {
+void DistributorStripe::update_distribution_config(const lib::BucketSpaceDistributionConfigs& new_configs) {
     auto default_distr = new_configs.get_or_nullptr(document::FixedBucketSpaces::default_space());
-    auto global_distr  = new_configs.get_or_nullptr(document::FixedBucketSpaces::global_space());
+    auto global_distr = new_configs.get_or_nullptr(document::FixedBucketSpaces::global_space());
     assert(default_distr && global_distr);
 
     for (auto* repo : {_bucketSpaceRepo.get(), _readOnlyBucketSpaceRepo.get()}) {
@@ -575,23 +518,17 @@ DistributorStripe::update_distribution_config(const lib::BucketSpaceDistribution
     }
 }
 
-void
-DistributorStripe::propagateClusterStates()
-{
+void DistributorStripe::propagateClusterStates() {
     for (auto* repo : {_bucketSpaceRepo.get(), _readOnlyBucketSpaceRepo.get()}) {
         repo->enable_cluster_state_bundle(_clusterStateBundle);
     }
 }
 
-void
-DistributorStripe::signalWorkWasDone()
-{
+void DistributorStripe::signalWorkWasDone() {
     _tickResult = framework::ThreadWaitInfo::MORE_WORK_ENQUEUED;
 }
 
-bool
-DistributorStripe::workWasDone() const noexcept
-{
+bool DistributorStripe::workWasDone() const noexcept {
     return !_tickResult.waitWanted();
 }
 
@@ -617,12 +554,13 @@ bool is_client_request(const api::StorageMessage& msg) noexcept {
     }
 }
 
-}
+} // namespace
 
 void DistributorStripe::handle_or_propagate_message(const std::shared_ptr<api::StorageMessage>& msg) {
     if (!handleMessage(msg)) {
-        MBUS_TRACE(msg->getTrace(), 9,
-                   vespalib::make_string("DistributorStripe[%u]: Not handling it. Sending further down", _stripe_index));
+        MBUS_TRACE(
+            msg->getTrace(), 9,
+            vespalib::make_string("DistributorStripe[%u]: Not handling it. Sending further down", _stripe_index));
         _messageSender.sendDown(msg);
     }
 }
@@ -631,11 +569,13 @@ void DistributorStripe::startExternalOperations() {
     for (auto& msg : _fetchedMessages) {
         if (is_client_request(*msg)) {
             MBUS_TRACE(msg->getTrace(), 9,
-                       vespalib::make_string("DistributorStripe[%u]: Adding to client request priority queue", _stripe_index));
+                       vespalib::make_string("DistributorStripe[%u]: Adding to client request priority queue",
+                                             _stripe_index));
             _client_request_priority_queue.emplace(std::move(msg));
         } else {
-            MBUS_TRACE(msg->getTrace(), 9,
-                       vespalib::make_string("DistributorStripe[%u]: Grabbed from queue to be processed", _stripe_index));
+            MBUS_TRACE(
+                msg->getTrace(), 9,
+                vespalib::make_string("DistributorStripe[%u]: Grabbed from queue to be processed", _stripe_index));
             handle_or_propagate_message(msg);
         }
     }
@@ -645,7 +585,8 @@ void DistributorStripe::startExternalOperations() {
         const auto& msg = _client_request_priority_queue.top();
         MBUS_TRACE(msg->getTrace(), 9,
                    vespalib::make_string("DistributorStripe[%u]: Grabbed from "
-                   "client request priority queue to be processed", _stripe_index));
+                                         "client request priority queue to be processed",
+                                         _stripe_index));
         handle_or_propagate_message(msg);
         _client_request_priority_queue.pop();
     }
@@ -656,43 +597,32 @@ void DistributorStripe::startExternalOperations() {
     _fetchedMessages.clear();
 }
 
-MinReplicaMap
-DistributorStripe::getMinReplica() const
-{
+MinReplicaMap DistributorStripe::getMinReplica() const {
     std::lock_guard guard(_metricLock);
     return _bucketDbStats._minBucketReplica;
 }
 
-BucketSpacesStatsProvider::PerNodeBucketSpacesStats
-DistributorStripe::per_node_bucket_spaces_stats() const
-{
+BucketSpacesStatsProvider::PerNodeBucketSpacesStats DistributorStripe::per_node_bucket_spaces_stats() const {
     std::lock_guard guard(_metricLock);
     return _bucketSpacesStats;
 }
 
-DistributorGlobalStats
-DistributorStripe::distributor_global_stats() const
-{
+DistributorGlobalStats DistributorStripe::distributor_global_stats() const {
     std::lock_guard guard(_metricLock);
     return _global_stats;
 }
 
-ContentNodeMessageStatsTracker::NodeStats
-DistributorStripe::content_node_stats() const
-{
+ContentNodeMessageStatsTracker::NodeStats DistributorStripe::content_node_stats() const {
     // Thread safety is ensured by PendingMessageTracker
     return _pendingMessageTracker.content_node_stats();
 }
 
-SimpleMaintenanceScanner::PendingMaintenanceStats
-DistributorStripe::pending_maintenance_stats() const {
+SimpleMaintenanceScanner::PendingMaintenanceStats DistributorStripe::pending_maintenance_stats() const {
     std::lock_guard guard(_metricLock);
     return _maintenanceStats;
 }
 
-void
-DistributorStripe::propagateInternalScanMetricsToExternal()
-{
+void DistributorStripe::propagateInternalScanMetricsToExternal() {
     std::lock_guard guard(_metricLock);
 
     // All shared values are written when _metricLock is held, so no races.
@@ -706,26 +636,22 @@ DistributorStripe::propagateInternalScanMetricsToExternal()
         ideal_state_metrics.buckets_replicas_copying_in.set(total_stats.copyingIn);
         ideal_state_metrics.buckets_replicas_syncing.set(total_stats.syncing);
         ideal_state_metrics.max_observed_time_since_last_gc_sec.set(
-                _maintenanceStats.perNodeStats.max_observed_time_since_last_gc().count());
+            _maintenanceStats.perNodeStats.max_observed_time_since_last_gc().count());
     }
 }
 
 namespace {
 
-BucketSpaceStats
-toBucketSpaceStats(const NodeMaintenanceStats &stats)
-{
+BucketSpaceStats toBucketSpaceStats(const NodeMaintenanceStats& stats) {
     return {stats.total, stats.syncing + stats.copyingIn};
 }
 
 using PerNodeBucketSpacesStats = BucketSpacesStatsProvider::PerNodeBucketSpacesStats;
 
-PerNodeBucketSpacesStats
-toBucketSpacesStats(const NodeMaintenanceStatsTracker &maintenanceStats)
-{
+PerNodeBucketSpacesStats toBucketSpacesStats(const NodeMaintenanceStatsTracker& maintenanceStats) {
     PerNodeBucketSpacesStats result;
-    for (const auto &entry : maintenanceStats.perNodeStats()) {
-        const std::string & bucketSpace(document::FixedBucketSpaces::to_string(entry.first.bucketSpace()));
+    for (const auto& entry : maintenanceStats.perNodeStats()) {
+        const std::string& bucketSpace(document::FixedBucketSpaces::to_string(entry.first.bucketSpace()));
         result[entry.first.node()][bucketSpace] = toBucketSpaceStats(entry.second);
     }
     return result;
@@ -752,11 +678,9 @@ bool merge_no_longer_pending_edge(const PerNodeBucketSpacesStats& prev_stats,
     return curr_pending < prev_pending;
 }
 
-}
+} // namespace
 
-void
-DistributorStripe::updateInternalMetricsForCompletedScan()
-{
+void DistributorStripe::updateInternalMetricsForCompletedScan() {
     std::lock_guard guard(_metricLock);
 
     _bucketDBMetricUpdater.completeRound();
@@ -788,23 +712,20 @@ void DistributorStripe::maybe_update_bucket_db_memory_usage_stats() {
     }
 }
 
-void
-DistributorStripe::scanAllBuckets()
-{
+void DistributorStripe::scanAllBuckets() {
     enterRecoveryMode();
-    while (!scanNextBucket().isDone()) {}
+    while (!scanNextBucket().isDone()) {
+    }
 }
 
-MaintenanceScanner::ScanResult
-DistributorStripe::scanNextBucket()
-{
+MaintenanceScanner::ScanResult DistributorStripe::scanNextBucket() {
     MaintenanceScanner::ScanResult scanResult(_scanner->scanNext());
     if (scanResult.isDone()) {
         updateInternalMetricsForCompletedScan();
         leaveRecoveryMode();
         send_updated_host_info_if_required();
     } else {
-        const auto &distribution(_bucketSpaceRepo->get(scanResult.getBucketSpace()).getDistribution());
+        const auto& distribution(_bucketSpaceRepo->get(scanResult.getBucketSpace()).getDistribution());
         _bucketDBMetricUpdater.visit(scanResult.getEntry(), distribution.getRedundancy());
     }
     return scanResult;
@@ -817,21 +738,17 @@ void DistributorStripe::send_updated_host_info_if_required() {
     }
 }
 
-void
-DistributorStripe::startNextMaintenanceOperation()
-{
+void DistributorStripe::startNextMaintenanceOperation() {
     _throttlingStarter->setMaxPendingRange(getConfig().getMinPendingMaintenanceOps(),
                                            getConfig().getMaxPendingMaintenanceOps());
     auto effective_scheduling_mode = ((_schedulingMode == MaintenanceScheduler::RECOVERY_SCHEDULING_MODE) ||
                                       non_activation_maintenance_is_inhibited())
-                                              ? MaintenanceScheduler::RECOVERY_SCHEDULING_MODE
-                                              : MaintenanceScheduler::NORMAL_SCHEDULING_MODE;
+                                         ? MaintenanceScheduler::RECOVERY_SCHEDULING_MODE
+                                         : MaintenanceScheduler::NORMAL_SCHEDULING_MODE;
     _scheduler->tick(effective_scheduling_mode);
 }
 
-framework::ThreadWaitInfo
-DistributorStripe::doNonCriticalTick(framework::ThreadIndex)
-{
+framework::ThreadWaitInfo DistributorStripe::doNonCriticalTick(framework::ThreadIndex) {
     _tickResult = framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN;
     {
         std::lock_guard lock(_external_message_mutex);
@@ -866,8 +783,8 @@ bool DistributorStripe::tick() {
 }
 
 bool DistributorStripe::should_inhibit_current_maintenance_scan_tick() const noexcept {
-    return (workWasDone() && (_inhibited_maintenance_tick_count
-                              < getConfig().max_consecutively_inhibited_maintenance_ticks()));
+    return (workWasDone() &&
+            (_inhibited_maintenance_tick_count < getConfig().max_consecutively_inhibited_maintenance_ticks()));
 }
 
 void DistributorStripe::mark_current_maintenance_tick_as_inhibited() noexcept {
@@ -886,11 +803,9 @@ bool config_change_has_gc_enable_edge(const DistributorConfiguration& old_config
             (new_config.getGarbageCollectionInterval().count() != 0));
 }
 
-}
+} // namespace
 
-void
-DistributorStripe::update_total_distributor_config(std::shared_ptr<const DistributorConfiguration> config)
-{
+void DistributorStripe::update_total_distributor_config(std::shared_ptr<const DistributorConfiguration> config) {
     auto old_config = std::move(_total_config);
     _total_config = std::move(config);
     propagate_config_snapshot_to_internal_components();
@@ -900,54 +815,39 @@ DistributorStripe::update_total_distributor_config(std::shared_ptr<const Distrib
     }
 }
 
-void
-DistributorStripe::propagate_config_snapshot_to_internal_components()
-{
+void DistributorStripe::propagate_config_snapshot_to_internal_components() {
     _bucketDBMetricUpdater.setMinimumReplicaCountingMode(getConfig().getMinimumReplicaCountingMode());
     _ownershipSafeTimeCalc->setMaxClusterClockSkew(getConfig().getMaxClusterClockSkew());
     _pendingMessageTracker.setNodeBusyDuration(getConfig().getInhibitMergesOnBusyNodeDuration());
     _bucketDBUpdater.set_stale_reads_enabled(getConfig().allowStaleReadsDuringClusterStateTransitions());
-    _externalOperationHandler.set_concurrent_gets_enabled(
-            getConfig().allowStaleReadsDuringClusterStateTransitions());
+    _externalOperationHandler.set_concurrent_gets_enabled(getConfig().allowStaleReadsDuringClusterStateTransitions());
     _externalOperationHandler.set_use_weak_internal_read_consistency_for_gets(
-            getConfig().use_weak_internal_read_consistency_for_client_gets());
+        getConfig().use_weak_internal_read_consistency_for_client_gets());
 }
 
-void
-DistributorStripe::fetchExternalMessages()
-{
+void DistributorStripe::fetchExternalMessages() {
     assert(_fetchedMessages.empty());
     _fetchedMessages.swap(_messageQueue);
 }
 
-std::string
-DistributorStripe::getActiveIdealStateOperations() const
-{
+std::string DistributorStripe::getActiveIdealStateOperations() const {
     return _maintenanceOperationOwner.toString();
 }
 
-StripeAccessGuard::PendingOperationStats
-DistributorStripe::pending_operation_stats() const
-{
+StripeAccessGuard::PendingOperationStats DistributorStripe::pending_operation_stats() const {
     return {_operationOwner.size(), _maintenanceOperationOwner.size()};
 }
 
-void
-DistributorStripe::set_pending_cluster_state_bundle(const lib::ClusterStateBundle& pending_state)
-{
+void DistributorStripe::set_pending_cluster_state_bundle(const lib::ClusterStateBundle& pending_state) {
     getBucketSpaceRepo().set_pending_cluster_state_bundle(pending_state);
 }
 
-void
-DistributorStripe::clear_pending_cluster_state_bundle()
-{
+void DistributorStripe::clear_pending_cluster_state_bundle() {
     getBucketSpaceRepo().clear_pending_cluster_state_bundle();
 }
 
-void
-DistributorStripe::enable_cluster_state_bundle(const lib::ClusterStateBundle& new_state,
-                                               bool has_bucket_ownership_change)
-{
+void DistributorStripe::enable_cluster_state_bundle(const lib::ClusterStateBundle& new_state,
+                                                    bool                           has_bucket_ownership_change) {
     // TODO STRIPE replace legacy func
     enableClusterStateBundle(new_state);
     if (has_bucket_ownership_change) {
@@ -957,94 +857,69 @@ DistributorStripe::enable_cluster_state_bundle(const lib::ClusterStateBundle& ne
     _bucketDBUpdater.handle_activated_cluster_state_bundle(); // Triggers resending of queued requests
 }
 
-void
-DistributorStripe::notify_distribution_change_enabled()
-{
+void DistributorStripe::notify_distribution_change_enabled() {
     // TODO STRIPE replace legacy func
     notifyDistributionChangeEnabled();
 }
 
-PotentialDataLossReport
-DistributorStripe::remove_superfluous_buckets(document::BucketSpace bucket_space,
-                                              const lib::ClusterState& new_state,
-                                              bool is_distribution_change)
-{
+PotentialDataLossReport DistributorStripe::remove_superfluous_buckets(document::BucketSpace    bucket_space,
+                                                                      const lib::ClusterState& new_state,
+                                                                      bool is_distribution_change) {
     if (_total_config->enable_operation_cancellation()) {
         cancel_ops_for_buckets_no_longer_owned(bucket_space, new_state);
     }
     return bucket_db_updater().remove_superfluous_buckets(bucket_space, new_state, is_distribution_change);
 }
 
-void
-DistributorStripe::merge_entries_into_db(document::BucketSpace bucket_space,
-                                         api::Timestamp gathered_at_timestamp,
-                                         const lib::Distribution& distribution,
-                                         const lib::ClusterState& new_state,
-                                         const char* storage_up_states,
-                                         const OutdatedNodes& outdated_nodes,
-                                         const std::vector<dbtransition::Entry>& entries)
-{
-    bucket_db_updater().merge_entries_into_db(bucket_space, gathered_at_timestamp, distribution,
-                                               new_state, storage_up_states, outdated_nodes, entries);
+void DistributorStripe::merge_entries_into_db(document::BucketSpace    bucket_space,
+                                              api::Timestamp           gathered_at_timestamp,
+                                              const lib::Distribution& distribution,
+                                              const lib::ClusterState& new_state, const char* storage_up_states,
+                                              const OutdatedNodes&                    outdated_nodes,
+                                              const std::vector<dbtransition::Entry>& entries) {
+    bucket_db_updater().merge_entries_into_db(bucket_space, gathered_at_timestamp, distribution, new_state,
+                                              storage_up_states, outdated_nodes, entries);
 }
 
-void
-DistributorStripe::update_read_snapshot_before_db_pruning()
-{
+void DistributorStripe::update_read_snapshot_before_db_pruning() {
     bucket_db_updater().update_read_snapshot_before_db_pruning();
 }
 
-void
-DistributorStripe::update_read_snapshot_after_db_pruning(const lib::ClusterStateBundle& new_state)
-{
+void DistributorStripe::update_read_snapshot_after_db_pruning(const lib::ClusterStateBundle& new_state) {
     bucket_db_updater().update_read_snapshot_after_db_pruning(new_state);
 }
 
-void
-DistributorStripe::update_read_snapshot_after_activation(const lib::ClusterStateBundle& activated_state)
-{
+void DistributorStripe::update_read_snapshot_after_activation(const lib::ClusterStateBundle& activated_state) {
     bucket_db_updater().update_read_snapshot_after_activation(activated_state);
 }
 
-void
-DistributorStripe::clear_read_only_bucket_repo_databases()
-{
+void DistributorStripe::clear_read_only_bucket_repo_databases() {
     bucket_db_updater().clearReadOnlyBucketRepoDatabases();
 }
 
-void
-DistributorStripe::update_node_supported_features_repo(std::shared_ptr<const NodeSupportedFeaturesRepo> features_repo)
-{
+void DistributorStripe::update_node_supported_features_repo(
+    std::shared_ptr<const NodeSupportedFeaturesRepo> features_repo) {
     _node_supported_features_repo = std::move(features_repo);
 }
 
-void
-DistributorStripe::report_bucket_db_status(document::BucketSpace bucket_space, std::ostream& out) const
-{
+void DistributorStripe::report_bucket_db_status(document::BucketSpace bucket_space, std::ostream& out) const {
     ideal_state_manager().dump_bucket_space_db_status(bucket_space, out);
 }
 
-void
-DistributorStripe::report_single_bucket_requests(vespalib::xml::XmlOutputStream& xos) const
-{
+void DistributorStripe::report_single_bucket_requests(vespalib::xml::XmlOutputStream& xos) const {
     bucket_db_updater().report_single_bucket_requests(xos);
 }
 
-void
-DistributorStripe::report_delayed_single_bucket_requests(vespalib::xml::XmlOutputStream& xos) const
-{
+void DistributorStripe::report_delayed_single_bucket_requests(vespalib::xml::XmlOutputStream& xos) const {
     bucket_db_updater().report_delayed_single_bucket_requests(xos);
 }
 
-const NodeSupportedFeaturesRepo&
-DistributorStripe::node_supported_features_repo() const noexcept
-{
+const NodeSupportedFeaturesRepo& DistributorStripe::node_supported_features_repo() const noexcept {
     return *_node_supported_features_repo;
 }
 
-MemoryUsageToken
-DistributorStripe::make_memory_usage_token(uint32_t bytes_used) noexcept {
+MemoryUsageToken DistributorStripe::make_memory_usage_token(uint32_t bytes_used) noexcept {
     return MemoryUsageToken(_shared_memory_usage_tracker, bytes_used);
 }
 
-}
+} // namespace storage::distributor

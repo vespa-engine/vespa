@@ -25,4 +25,4 @@ public:
     IdealStateMetricSet& stripe(uint32_t stripe_index) { return *_stripes_metrics[stripe_index]; }
 };
 
-}
+} // namespace storage::distributor

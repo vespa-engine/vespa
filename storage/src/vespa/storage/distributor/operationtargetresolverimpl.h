@@ -2,9 +2,11 @@
 
 #pragma once
 
-#include "operationtargetresolver.h"
 #include "ideal_service_layer_nodes_bundle.h"
+#include "operationtargetresolver.h"
+
 #include <vespa/storage/bucketdb/bucketdatabase.h>
+
 #include <algorithm>
 
 namespace storage::distributor {
@@ -21,11 +23,9 @@ struct BucketInstance : public vespalib::AsciiPrintable {
     bool               _exists;
 
     BucketInstance() noexcept
-        : _ideal_location_priority(0xffff), _db_entry_order(0xffff), _trusted(false), _exists(false)
-    {}
-    BucketInstance(const document::BucketId& id, const api::BucketInfo& info,
-                   lib::Node node, uint16_t ideal_location_priority,
-                   uint16_t db_entry_order, bool trusted, bool exist) noexcept;
+        : _ideal_location_priority(0xffff), _db_entry_order(0xffff), _trusted(false), _exists(false) {}
+    BucketInstance(const document::BucketId& id, const api::BucketInfo& info, lib::Node node,
+                   uint16_t ideal_location_priority, uint16_t db_entry_order, bool trusted, bool exist) noexcept;
 
     void print(vespalib::asciistream& out, const PrintProperties&) const override;
 };
@@ -44,10 +44,9 @@ class BucketInstanceList : public vespalib::AsciiPrintable {
      * Postconditions:
      *   <return value>.contains(mostSpecificId)
      */
-    static document::BucketId
-    leastSpecificLeafBucketInSubtree(const document::BucketId& candidateId,
-                                     const document::BucketId& mostSpecificId,
-                                     const BucketDatabase& db);
+    static document::BucketId leastSpecificLeafBucketInSubtree(const document::BucketId& candidateId,
+                                                               const document::BucketId& mostSpecificId,
+                                                               const BucketDatabase&     db);
 
 public:
     void add(const BucketInstance& instance) { _instances.push_back(instance); }
@@ -61,16 +60,14 @@ public:
      *   _instances.size() >= configured redundancy level, unless insufficient
      *   number of nodes are available
      */
-    void extendToEnoughCopies(const DistributorBucketSpace& distributor_bucket_space,
-                              const BucketDatabase& db,
+    void extendToEnoughCopies(const DistributorBucketSpace& distributor_bucket_space, const BucketDatabase& db,
                               const document::BucketId& targetIfNonPreExisting,
                               const document::BucketId& mostSpecificId);
 
     void populate(const document::BucketId&, const DistributorBucketSpace&, BucketDatabase&);
-    void add(const BucketDatabase::Entry& e, const IdealServiceLayerNodesBundle::Node2Index & idealState);
+    void add(const BucketDatabase::Entry& e, const IdealServiceLayerNodesBundle::Node2Index& idealState);
 
-    template <typename Order>
-    void sort(const Order& order) {
+    template <typename Order> void sort(const Order& order) {
         std::sort(_instances.begin(), _instances.end(), order);
     }
 
@@ -81,29 +78,24 @@ public:
 
 class OperationTargetResolverImpl : public OperationTargetResolver {
     const DistributorBucketSpace& _distributor_bucket_space;
-    BucketDatabase&       _bucketDatabase;
-    uint32_t              _minUsedBucketBits;
-    uint16_t              _redundancy;
-    document::BucketSpace _bucketSpace;
-    bool                  _symmetric_replica_selection;
+    BucketDatabase&               _bucketDatabase;
+    uint32_t                      _minUsedBucketBits;
+    uint16_t                      _redundancy;
+    document::BucketSpace         _bucketSpace;
+    bool                          _symmetric_replica_selection;
 
 public:
     OperationTargetResolverImpl(const DistributorBucketSpace& distributor_bucket_space,
-                                BucketDatabase& bucketDatabase,
-                                uint32_t minUsedBucketBits,
-                                uint16_t redundancy,
+                                BucketDatabase& bucketDatabase, uint32_t minUsedBucketBits, uint16_t redundancy,
                                 document::BucketSpace bucketSpace)
         : _distributor_bucket_space(distributor_bucket_space),
           _bucketDatabase(bucketDatabase),
           _minUsedBucketBits(minUsedBucketBits),
           _redundancy(redundancy),
           _bucketSpace(bucketSpace),
-          _symmetric_replica_selection(true)
-    {}
+          _symmetric_replica_selection(true) {}
 
-    void use_symmetric_replica_selection(bool symmetry) noexcept {
-        _symmetric_replica_selection = symmetry;
-    }
+    void use_symmetric_replica_selection(bool symmetry) noexcept { _symmetric_replica_selection = symmetry; }
 
     BucketInstanceList getAllInstances(OperationType type, const document::BucketId& id);
     BucketInstanceList getInstances(OperationType type, const document::BucketId& id) {
@@ -117,4 +109,4 @@ public:
     }
 };
 
-}
+} // namespace storage::distributor

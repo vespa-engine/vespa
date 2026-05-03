@@ -13,10 +13,8 @@ public:
     explicit UpdateMetricSet(MetricSet* owner = nullptr);
     ~UpdateMetricSet() override;
 
-    MetricSet* clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
-                     MetricSet* owner, bool includeUnused) const override;
+    MetricSet* clone(std::vector<Metric::UP>& ownerList, CopyType copyType, MetricSet* owner,
+                     bool includeUnused) const override;
 };
 
-} // storage
-
-
+} // namespace storage::distributor

@@ -10,26 +10,26 @@ VisitorMetricSet::VisitorMetricSet(MetricSet* owner)
     : PersistenceOperationMetricSet("visitor", owner),
       buckets_per_visitor("buckets_per_visitor", {},
                           "The number of sub buckets visited as part of a "
-                          "single client visitor command", this),
+                          "single client visitor command",
+                          this),
       docs_per_visitor("docs_per_visitor", {},
                        "The number of documents visited on content nodes as "
-                       "part of a single client visitor command", this),
+                       "part of a single client visitor command",
+                       this),
       bytes_per_visitor("bytes_per_visitor", {},
                         "The number of bytes visited on content nodes as part "
-                        "of a single client visitor command", this)
-{
+                        "of a single client visitor command",
+                        this) {
 }
 
 VisitorMetricSet::~VisitorMetricSet() = default;
 
-MetricSet *
-VisitorMetricSet::clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
-                        MetricSet* owner, bool includeUnused) const
-{
+MetricSet* VisitorMetricSet::clone(std::vector<Metric::UP>& ownerList, CopyType copyType, MetricSet* owner,
+                                   bool includeUnused) const {
     if (copyType == INACTIVE) {
         return MetricSet::clone(ownerList, INACTIVE, owner, includeUnused);
     }
-    return (VisitorMetricSet*) (new VisitorMetricSet(owner))->assignValues(*this);
+    return (VisitorMetricSet*)(new VisitorMetricSet(owner))->assignValues(*this);
 }
 
-}
+} // namespace storage::distributor

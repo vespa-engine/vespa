@@ -1,8 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "distributor_stripe_pool.h"
+
 #include "distributor_stripe_thread.h"
+
 #include <vespa/storage/common/bucket_stripe_utils.h>
 #include <vespa/vespalib/util/size_literals.h>
+
 #include <cassert>
 
 namespace storage::distributor {
@@ -17,12 +20,11 @@ DistributorStripePool::DistributorStripePool(bool test_mode, PrivateCtorTag)
       _bootstrap_tick_wait_duration(vespalib::adjustTimeoutByDetectedHz(1ms)),
       _bootstrap_ticks_before_wait(10),
       _single_threaded_test_mode(test_mode),
-      _stopped(false)
-{}
+      _stopped(false) {
+}
 
-DistributorStripePool::DistributorStripePool()
-    : DistributorStripePool(false, PrivateCtorTag())
-{}
+DistributorStripePool::DistributorStripePool() : DistributorStripePool(false, PrivateCtorTag()) {
+}
 
 DistributorStripePool::~DistributorStripePool() {
     if (!_stopped) {
@@ -30,8 +32,7 @@ DistributorStripePool::~DistributorStripePool() {
     }
 }
 
-std::unique_ptr<DistributorStripePool>
-DistributorStripePool::make_non_threaded_pool_for_testing() {
+std::unique_ptr<DistributorStripePool> DistributorStripePool::make_non_threaded_pool_for_testing() {
     return std::make_unique<DistributorStripePool>(true, PrivateCtorTag());
 }
 
@@ -45,7 +46,7 @@ void DistributorStripePool::park_all_threads() noexcept {
         s->signal_wants_park();
     }
     std::unique_lock lock(_mutex);
-    _parker_cond.wait(lock, [this]{ return (_parked_threads == _threads.size()); });
+    _parker_cond.wait(lock, [this] { return (_parked_threads == _threads.size()); });
 }
 
 void DistributorStripePool::unpark_all_threads() noexcept {
@@ -62,7 +63,7 @@ void DistributorStripePool::unpark_all_threads() noexcept {
     // It's fully possibly to avoid this, but requires a somewhat more finicky solution for
     // cross-thread coordination.
     std::unique_lock lock(_mutex);
-    _parker_cond.wait(lock, [this]{ return (_parked_threads == 0); });
+    _parker_cond.wait(lock, [this] { return (_parked_threads == 0); });
 }
 
 const TickableStripe& DistributorStripePool::stripe_of_key(uint64_t key) const noexcept {
@@ -118,7 +119,7 @@ void DistributorStripePool::start(const std::vector<TickableStripe*>& stripes) {
     }
     std::unique_lock lock(_mutex); // Ensure _threads is visible to all started threads
     for (auto& s : _stripes) {
-        _threads.start([ptr = s.get()](){ ptr->run(); });
+        _threads.start([ptr = s.get()]() { ptr->run(); });
     }
 }
 
@@ -148,4 +149,4 @@ void DistributorStripePool::set_ticks_before_wait(uint32_t new_ticks_before_wait
     }
 }
 
-}
+} // namespace storage::distributor

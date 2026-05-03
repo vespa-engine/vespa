@@ -3,14 +3,15 @@
 #pragma once
 
 #include "content_node_message_stats.h"
+
 #include <vespa/vespalib/stllike/hash_map.h>
 
 namespace storage::distributor {
 
 /**
-*  Maintains per content node message statistics. These statistics are kept for the
-*  lifetime of the distributor process, which enables higher-level components to
-*  easily perform deltas on the current vs. previous statistics snapshots.
+ *  Maintains per content node message statistics. These statistics are kept for the
+ *  lifetime of the distributor process, which enables higher-level components to
+ *  easily perform deltas on the current vs. previous statistics snapshots.
  *
  * Not thread safe.
  */
@@ -50,8 +51,9 @@ public:
     // Returned references only valid until next call to stats_for()
     [[nodiscard]] ContentNodeMessageStats& stats_for(uint16_t node);
     [[nodiscard]] const ContentNodeMessageStats& stats_for(uint16_t node) const;
+
 private:
     NodeStats _node_stats;
 };
 
-}
+} // namespace storage::distributor

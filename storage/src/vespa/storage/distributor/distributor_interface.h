@@ -2,9 +2,12 @@
 #pragma once
 
 #include "distributormessagesender.h"
+
 #include <vespa/vdslib/distribution/distribution.h>
 
-namespace storage { class DistributorConfiguration; }
+namespace storage {
+class DistributorConfiguration;
+}
 
 namespace storage::distributor {
 
@@ -23,7 +26,8 @@ public:
     // the storage component should be _ignored_, as the cluster controller is the lone source of
     // truth for distribution config.
     // Returns true iff `distribution` differs from the existing config.
-    [[nodiscard]] virtual bool receive_distribution_from_cluster_controller(std::shared_ptr<const lib::Distribution> distribution) = 0;
+    [[nodiscard]] virtual bool
+    receive_distribution_from_cluster_controller(std::shared_ptr<const lib::Distribution> distribution) = 0;
 
     // Whether this distributor treats the CC as the source of truth for distribution config, and
     // thus ignores node-internal distribution config changes.
@@ -38,4 +42,4 @@ public:
     virtual void revert_distribution_source_of_truth_to_node_internal_config() = 0;
 };
 
-}
+} // namespace storage::distributor

@@ -11,15 +11,13 @@ namespace storage::distributor {
  * due to all bucket replicas no longer being present.
  */
 struct PotentialDataLossReport {
-    size_t buckets   = 0;
+    size_t buckets = 0;
     size_t documents = 0;
 
     constexpr PotentialDataLossReport() noexcept = default;
 
     constexpr PotentialDataLossReport(size_t buckets_, size_t documents_) noexcept
-        : buckets(buckets_),
-          documents(documents_)
-    {}
+        : buckets(buckets_), documents(documents_) {}
 
     void merge(const PotentialDataLossReport& other) noexcept {
         buckets += other.buckets;
@@ -27,4 +25,4 @@ struct PotentialDataLossReport {
     }
 };
 
-}
+} // namespace storage::distributor

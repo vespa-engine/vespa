@@ -11,20 +11,14 @@ class MaintenanceOperationGenerator;
 class BucketPriorityDatabase;
 class PendingWindowChecker;
 
-class MaintenanceScheduler
-{
+class MaintenanceScheduler {
 public:
-    enum SchedulingMode {
-        RECOVERY_SCHEDULING_MODE,
-        NORMAL_SCHEDULING_MODE
-    };
+    enum SchedulingMode { RECOVERY_SCHEDULING_MODE, NORMAL_SCHEDULING_MODE };
 
     using WaitTimeMs = int;
 
-    MaintenanceScheduler(MaintenanceOperationGenerator& operationGenerator,
-                         BucketPriorityDatabase& priorityDb,
-                         const PendingWindowChecker& pending_window_checker,
-                         OperationStarter& operationStarter);
+    MaintenanceScheduler(MaintenanceOperationGenerator& operationGenerator, BucketPriorityDatabase& priorityDb,
+                         const PendingWindowChecker& pending_window_checker, OperationStarter& operationStarter);
 
     WaitTimeMs tick(SchedulingMode currentMode);
 
@@ -46,4 +40,4 @@ private:
     OperationStarter&              _operationStarter;
 };
 
-}
+} // namespace storage::distributor

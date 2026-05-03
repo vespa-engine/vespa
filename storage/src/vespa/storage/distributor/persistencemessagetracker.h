@@ -4,10 +4,11 @@
 #include "distributor_stripe_component.h"
 #include "distributormetricsset.h"
 #include "messagetracker.h"
+
 #include <vespa/storage/distributor/operations/cancel_scope.h>
-#include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/storageapi/messageapi/bucketinfocommand.h>
 #include <vespa/storageapi/messageapi/bucketinforeply.h>
+#include <vespa/storageframework/generic/clock/timer.h>
 
 namespace storage::distributor {
 
@@ -15,10 +16,8 @@ class PersistenceMessageTracker final : public MessageTracker {
 public:
     using ToSend = MessageTracker::ToSend;
 
-    PersistenceMessageTracker(PersistenceOperationMetricSet& metric,
-                              std::shared_ptr<api::BucketInfoReply> reply,
-                              const DistributorNodeContext& node_ctx,
-                              DistributorStripeOperationContext& op_ctx,
+    PersistenceMessageTracker(PersistenceOperationMetricSet& metric, std::shared_ptr<api::BucketInfoReply> reply,
+                              const DistributorNodeContext& node_ctx, DistributorStripeOperationContext& op_ctx,
                               CancelScope& cancel_scope);
     ~PersistenceMessageTracker();
 
@@ -45,7 +44,7 @@ public:
     void add_trace_tree_to_reply(vespalib::Trace trace);
 
 private:
-    using MessageBatch  = std::vector<uint64_t>;
+    using MessageBatch = std::vector<uint64_t>;
     using BucketInfoMap = std::map<document::Bucket, std::vector<BucketCopy>>;
 
     BucketInfoMap                         _remapBucketInfo;
@@ -62,10 +61,7 @@ private:
     uint8_t                               _priority;
     bool                                  _success;
 
-    enum class PostPruningStatus {
-        ReplicasStillPresent,
-        NoReplicasPresent
-    };
+    enum class PostPruningStatus { ReplicasStillPresent, NoReplicasPresent };
 
     constexpr static bool still_has_replicas(PostPruningStatus status) {
         return status == PostPruningStatus::ReplicasStillPresent;
@@ -73,7 +69,7 @@ private:
 
     // Returns ReplicasStillPresent iff `bucket_and_replicas` has at least 1 usable entry after pruning,
     // otherwise returns NoReplicasPresent
-    [[nodiscard]] static PostPruningStatus prune_cancelled_nodes_if_present(BucketInfoMap& bucket_and_replicas,
+    [[nodiscard]] static PostPruningStatus prune_cancelled_nodes_if_present(BucketInfoMap&     bucket_and_replicas,
                                                                             const CancelScope& cancel_scope);
     [[nodiscard]] bool canSendReplyEarly() const;
     void addBucketInfoFromReply(uint16_t node, const api::BucketInfoReply& reply);
@@ -89,4 +85,4 @@ private:
     void transfer_trace_state_to_reply();
 };
 
-}
+} // namespace storage::distributor

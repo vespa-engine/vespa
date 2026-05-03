@@ -3,8 +3,9 @@
 
 #include "distributor_stripe_component.h"
 #include "statechecker.h"
-#include <vespa/storage/distributor/maintenance/maintenanceprioritygenerator.h>
+
 #include <vespa/storage/distributor/maintenance/maintenanceoperationgenerator.h>
+#include <vespa/storage/distributor/maintenance/maintenanceprioritygenerator.h>
 
 namespace storage::distributor {
 
@@ -27,13 +28,9 @@ class SplitBucketStateChecker;
    may generate Operations. Once one does so, the rest of the state checkers
    aren't run.
 */
-class IdealStateManager : public MaintenancePriorityGenerator,
-                          public MaintenanceOperationGenerator
-{
+class IdealStateManager : public MaintenancePriorityGenerator, public MaintenanceOperationGenerator {
 public:
-
-    IdealStateManager(const DistributorNodeContext& node_ctx,
-                      DistributorStripeOperationContext& op_ctx,
+    IdealStateManager(const DistributorNodeContext& node_ctx, DistributorStripeOperationContext& op_ctx,
                       IdealStateMetricSet& metrics);
 
     ~IdealStateManager() override;
@@ -41,21 +38,22 @@ public:
     static void print(std::ostream& out, bool verbose, const std::string& indent);
 
     // MaintenancePriorityGenerator interface
-    MaintenancePriorityAndType prioritize(const document::Bucket& bucket,
+    MaintenancePriorityAndType prioritize(const document::Bucket&      bucket,
                                           NodeMaintenanceStatsTracker& statsTracker) const override;
 
     // MaintenanceOperationGenerator
     MaintenanceOperation::SP generate(const document::Bucket& bucket) const override;
 
     // MaintenanceOperationGenerator
-    std::vector<MaintenanceOperation::SP> generateAll(const document::Bucket& bucket,
+    std::vector<MaintenanceOperation::SP> generateAll(const document::Bucket&      bucket,
                                                       NodeMaintenanceStatsTracker& statsTracker) const override;
 
     /**
      * If the given bucket is too large, generate a split operation for it,
      * with higher priority than the given one.
      */
-    IdealStateOperation::SP generateInterceptingSplit(document::BucketSpace bucketSpace, const BucketDatabase::Entry& e,
+    IdealStateOperation::SP generateInterceptingSplit(document::BucketSpace         bucketSpace,
+                                                      const BucketDatabase::Entry&  e,
                                                       api::StorageMessage::Priority pri);
 
     IdealStateMetricSet& getMetrics() noexcept { return _metrics; }
@@ -67,12 +65,13 @@ public:
     const DistributorNodeContext& node_context() const noexcept { return _node_ctx; }
     DistributorStripeOperationContext& operation_context() noexcept { return _op_ctx; }
     const DistributorStripeOperationContext& operation_context() const noexcept { return _op_ctx; }
-    DistributorBucketSpaceRepo &getBucketSpaceRepo() noexcept { return _op_ctx.bucket_space_repo(); }
-    const DistributorBucketSpaceRepo &getBucketSpaceRepo() const noexcept { return _op_ctx.bucket_space_repo(); }
+    DistributorBucketSpaceRepo& getBucketSpaceRepo() noexcept { return _op_ctx.bucket_space_repo(); }
+    const DistributorBucketSpaceRepo& getBucketSpaceRepo() const noexcept { return _op_ctx.bucket_space_repo(); }
 
 private:
     void verify_only_live_nodes_in_context(const StateChecker::Context& c) const;
-    StateChecker::Result generateHighestPriority(const document::Bucket& bucket, NodeMaintenanceStatsTracker& statsTracker) const;
+    StateChecker::Result generateHighestPriority(const document::Bucket&      bucket,
+                                                 NodeMaintenanceStatsTracker& statsTracker) const;
     StateChecker::Result runStateCheckers(const StateChecker::Context& c) const;
 
     IdealStateMetricSet&               _metrics;
@@ -89,6 +88,7 @@ private:
         const IdealStateManager&    _ism;
         document::BucketSpace       _bucketSpace;
         std::ostream&               _out;
+
     public:
         StatusBucketVisitor(const IdealStateManager& ism, document::BucketSpace bucketSpace, std::ostream& out)
             : _statsTracker(), _ism(ism), _bucketSpace(bucketSpace), _out(out) {}
@@ -103,4 +103,4 @@ private:
                          NodeMaintenanceStatsTracker& statsTracker, std::ostream& out) const;
 };
 
-}
+} // namespace storage::distributor

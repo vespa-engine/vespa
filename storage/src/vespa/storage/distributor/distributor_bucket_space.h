@@ -1,11 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "bucketownership.h"
 #include "bucket_ownership_flags.h"
+#include "bucketownership.h"
 #include "ideal_service_layer_nodes_bundle.h"
+
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/vespalib/stllike/hash_map.h>
+
 #include <memory>
 #include <vector>
 
@@ -14,9 +16,9 @@ class BucketDatabase;
 }
 
 namespace storage::lib {
-    class ClusterState;
-    class Distribution;
-}
+class ClusterState;
+class Distribution;
+} // namespace storage::lib
 
 namespace storage::distributor {
 
@@ -40,12 +42,16 @@ class DistributorBucketSpace {
     bool                                     _merges_inhibited;
     std::shared_ptr<const lib::ClusterState> _pending_cluster_state;
     std::vector<bool>                        _available_nodes;
-    mutable vespalib::hash_map<document::BucketId, BucketOwnershipFlags, document::BucketId::hash>  _ownerships;
-    mutable vespalib::hash_map<document::BucketId, std::unique_ptr<IdealServiceLayerNodesBundle>, document::BucketId::hash> _ideal_nodes;
+    mutable vespalib::hash_map<document::BucketId, BucketOwnershipFlags, document::BucketId::hash> _ownerships;
+    mutable vespalib::hash_map<document::BucketId, std::unique_ptr<IdealServiceLayerNodesBundle>,
+                               document::BucketId::hash>
+        _ideal_nodes;
 
     void clear();
     void enumerate_available_nodes();
-    bool owns_bucket_in_state(const lib::Distribution& distribution, const lib::ClusterState& cluster_state, document::BucketId bucket) const;
+    bool owns_bucket_in_state(const lib::Distribution& distribution, const lib::ClusterState& cluster_state,
+                              document::BucketId bucket) const;
+
 public:
     explicit DistributorBucketSpace();
     explicit DistributorBucketSpace(uint16_t node_index);
@@ -67,31 +73,21 @@ public:
 
     void setClusterState(std::shared_ptr<const lib::ClusterState> clusterState);
 
-    const lib::ClusterState &getClusterState() const noexcept { return *_clusterState; }
-    const std::shared_ptr<const lib::ClusterState>& cluster_state_sp() const noexcept {
-        return _clusterState;
-    }
+    const lib::ClusterState& getClusterState() const noexcept { return *_clusterState; }
+    const std::shared_ptr<const lib::ClusterState>& cluster_state_sp() const noexcept { return _clusterState; }
 
     void setDistribution(std::shared_ptr<const lib::Distribution> distribution);
 
     // Precondition: setDistribution has been called at least once prior.
-    const lib::Distribution& getDistribution() const noexcept {
-        return *_distribution;
-    }
-    const std::shared_ptr<const lib::Distribution>& distribution_sp() const noexcept {
-        return _distribution;
-    }
+    const lib::Distribution& getDistribution() const noexcept { return *_distribution; }
+    const std::shared_ptr<const lib::Distribution>& distribution_sp() const noexcept { return _distribution; }
 
     void set_pending_cluster_state(std::shared_ptr<const lib::ClusterState> pending_cluster_state);
     bool has_pending_cluster_state() const noexcept { return static_cast<bool>(_pending_cluster_state); }
     const lib::ClusterState& get_pending_cluster_state() const noexcept { return *_pending_cluster_state; }
 
-    void set_merges_inhibited(bool inhibited) noexcept {
-        _merges_inhibited = inhibited;
-    }
-    [[nodiscard]] bool merges_inhibited() const noexcept {
-        return _merges_inhibited;
-    }
+    void set_merges_inhibited(bool inhibited) noexcept { _merges_inhibited = inhibited; }
+    [[nodiscard]] bool merges_inhibited() const noexcept { return _merges_inhibited; }
 
     /**
      * Returns true if this distributor owns the given bucket in the
@@ -105,7 +101,7 @@ public:
     /**
      * Returns the ideal nodes bundle for the given bucket.
      */
-    const IdealServiceLayerNodesBundle &get_ideal_service_layer_nodes_bundle(document::BucketId bucket) const;
+    const IdealServiceLayerNodesBundle& get_ideal_service_layer_nodes_bundle(document::BucketId bucket) const;
 
     /*
      * Return bucket ownership flags for the given bucket. Bucket is always
@@ -121,4 +117,4 @@ public:
     BucketOwnership check_ownership_in_pending_and_current_state(document::BucketId bucket) const;
 };
 
-}
+} // namespace storage::distributor

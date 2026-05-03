@@ -1,18 +1,22 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "node_supported_features.h"
-#include "pending_bucket_space_db_transition_entry.h"
 #include "clusterinformation.h"
+#include "node_supported_features.h"
 #include "outdated_nodes_map.h"
+#include "pending_bucket_space_db_transition_entry.h"
+
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
-#include <vespa/vespalib/util/xmlserializable.h>
 #include <vespa/vespalib/stllike/hash_map.h>
+#include <vespa/vespalib/util/xmlserializable.h>
+
 #include <deque>
 
-namespace storage::framework { struct Clock; }
+namespace storage::framework {
+struct Clock;
+}
 
 namespace storage::distributor {
 
@@ -31,51 +35,42 @@ public:
     using OutdatedNodesMap = dbtransition::OutdatedNodesMap;
     struct Summary {
         Summary(std::string prevClusterState, std::string newClusterState, vespalib::duration processingTime);
-        Summary(const Summary &);
-        Summary & operator = (const Summary &);
-        Summary(Summary &&) noexcept = default;
-        Summary & operator = (Summary &&) noexcept = default;
+        Summary(const Summary&);
+        Summary& operator=(const Summary&);
+        Summary(Summary&&) noexcept = default;
+        Summary& operator=(Summary&&) noexcept = default;
         ~Summary();
 
-        std::string _prevClusterState;
-        std::string _newClusterState;
+        std::string        _prevClusterState;
+        std::string        _newClusterState;
         vespalib::duration _processingTime;
     };
 
-    static std::unique_ptr<PendingClusterState> createForClusterStateChange(
-            const framework::Clock& clock,
-            const ClusterInformation::CSP& clusterInfo,
-            DistributorMessageSender& sender,
-            const BucketSpaceStateMap& bucket_space_states,
-            const std::shared_ptr<api::SetSystemStateCommand>& newStateCmd,
-            const OutdatedNodesMap& outdatedNodesMap,
-            api::Timestamp creationTimestamp)
-    {
+    static std::unique_ptr<PendingClusterState>
+    createForClusterStateChange(const framework::Clock& clock, const ClusterInformation::CSP& clusterInfo,
+                                DistributorMessageSender& sender, const BucketSpaceStateMap& bucket_space_states,
+                                const std::shared_ptr<api::SetSystemStateCommand>& newStateCmd,
+                                const OutdatedNodesMap& outdatedNodesMap, api::Timestamp creationTimestamp) {
         // Naked new due to private constructor
         return std::unique_ptr<PendingClusterState>(new PendingClusterState(
-                clock, clusterInfo, sender, bucket_space_states,
-                newStateCmd, outdatedNodesMap, creationTimestamp));
+            clock, clusterInfo, sender, bucket_space_states, newStateCmd, outdatedNodesMap, creationTimestamp));
     }
 
     /**
      * Distribution changes always need to ask all storage nodes, so no
      * need to do an union of existing outdated nodes; implicit complete set.
      */
-    static std::unique_ptr<PendingClusterState> createForDistributionChange(
-            const framework::Clock& clock,
-            const ClusterInformation::CSP& clusterInfo,
-            DistributorMessageSender& sender,
-            const BucketSpaceStateMap& bucket_space_states,
-            api::Timestamp creationTimestamp,
-            bool inhibit_request_sending)
-    {
+    static std::unique_ptr<PendingClusterState>
+    createForDistributionChange(const framework::Clock& clock, const ClusterInformation::CSP& clusterInfo,
+                                DistributorMessageSender& sender, const BucketSpaceStateMap& bucket_space_states,
+                                api::Timestamp creationTimestamp, bool inhibit_request_sending) {
         // Naked new due to private constructor
         return std::unique_ptr<PendingClusterState>(new PendingClusterState(
-                clock, clusterInfo, sender, bucket_space_states, creationTimestamp, inhibit_request_sending));
+            clock, clusterInfo, sender, bucket_space_states, creationTimestamp, inhibit_request_sending));
     }
 
-    PendingClusterState(const PendingClusterState &) = delete;
-    PendingClusterState & operator = (const PendingClusterState &) = delete;
+    PendingClusterState(const PendingClusterState&) = delete;
+    PendingClusterState& operator=(const PendingClusterState&) = delete;
     ~PendingClusterState() override;
 
     /**
@@ -100,42 +95,25 @@ public:
      * Returns true if all the nodes we requested have replied to
      * the request bucket info commands.
      */
-    [[nodiscard]] bool done() const noexcept {
-        return _sentMessages.empty() && _delayedRequests.empty();
-    }
+    [[nodiscard]] bool done() const noexcept { return _sentMessages.empty() && _delayedRequests.empty(); }
 
-    bool hasBucketOwnershipTransfer() const noexcept {
-        return _bucketOwnershipTransfer;
-    }
+    bool hasBucketOwnershipTransfer() const noexcept { return _bucketOwnershipTransfer; }
 
-    bool hasCommand() const noexcept {
-        return (_cmd.get() != nullptr);
-    }
+    bool hasCommand() const noexcept { return (_cmd.get() != nullptr); }
 
-    std::shared_ptr<api::SetSystemStateCommand> getCommand() const noexcept {
-        return _cmd;
-    }
+    std::shared_ptr<api::SetSystemStateCommand> getCommand() const noexcept { return _cmd; }
 
-    bool isVersionedTransition() const noexcept {
-        return _isVersionedTransition;
-    }
+    bool isVersionedTransition() const noexcept { return _isVersionedTransition; }
 
-    uint32_t clusterStateVersion() const noexcept {
-        return _clusterStateVersion;
-    }
+    uint32_t clusterStateVersion() const noexcept { return _clusterStateVersion; }
 
     bool isDeferred() const noexcept {
-        return (isVersionedTransition()
-                && _newClusterStateBundle.deferredActivation());
+        return (isVersionedTransition() && _newClusterStateBundle.deferredActivation());
     }
 
-    void clearCommand() noexcept {
-        _cmd.reset();
-    }
+    void clearCommand() noexcept { _cmd.reset(); }
 
-    const lib::ClusterStateBundle& getNewClusterStateBundle() const {
-        return _newClusterStateBundle;
-    }
+    const lib::ClusterStateBundle& getNewClusterStateBundle() const { return _newClusterStateBundle; }
 
     /**
      * Returns the union set of the outdated node set provided at construction
@@ -172,39 +150,27 @@ private:
      * Creates a pending cluster state that represents
      * a set system state command from the cluster controller.
      */
-    PendingClusterState(
-            const framework::Clock&,
-            const ClusterInformation::CSP& clusterInfo,
-            DistributorMessageSender& sender,
-            const BucketSpaceStateMap& bucket_space_states,
-            const std::shared_ptr<api::SetSystemStateCommand>& newStateCmd,
-            const OutdatedNodesMap& outdatedNodesMap,
-            api::Timestamp creationTimestamp);
+    PendingClusterState(const framework::Clock&, const ClusterInformation::CSP& clusterInfo,
+                        DistributorMessageSender& sender, const BucketSpaceStateMap& bucket_space_states,
+                        const std::shared_ptr<api::SetSystemStateCommand>& newStateCmd,
+                        const OutdatedNodesMap& outdatedNodesMap, api::Timestamp creationTimestamp);
 
     /**
      * Creates a pending cluster state that represents a distribution
      * change.
      */
-    PendingClusterState(
-            const framework::Clock&,
-            const ClusterInformation::CSP& clusterInfo,
-            DistributorMessageSender& sender,
-            const BucketSpaceStateMap& bucket_space_states,
-            api::Timestamp creationTimestamp,
-            bool inhibit_request_sending);
+    PendingClusterState(const framework::Clock&, const ClusterInformation::CSP& clusterInfo,
+                        DistributorMessageSender& sender, const BucketSpaceStateMap& bucket_space_states,
+                        api::Timestamp creationTimestamp, bool inhibit_request_sending);
 
     struct BucketSpaceAndNode {
         document::BucketSpace bucketSpace;
         uint16_t              node;
         BucketSpaceAndNode(document::BucketSpace bucketSpace_, uint16_t node_)
-            : bucketSpace(bucketSpace_),
-              node(node_)
-        {
-        }
+            : bucketSpace(bucketSpace_), node(node_) {}
     };
 
-    void initializeBucketSpaceTransitions(bool distributionChanged,
-                                          const OutdatedNodesMap& outdatedNodesMap,
+    void initializeBucketSpaceTransitions(bool distributionChanged, const OutdatedNodesMap& outdatedNodesMap,
                                           bool inhibit_request_sending);
     void logConstructionInformation() const;
     void requestNode(BucketSpaceAndNode bucketSpaceAndNode);
@@ -221,19 +187,21 @@ private:
     void update_reply_failure_statistics(const api::ReturnCode& result, const BucketSpaceAndNode& source);
     void update_node_supported_features_from_reply(uint16_t node, const api::RequestBucketInfoReply& reply);
 
-    using SentMessages       = std::map<uint64_t, BucketSpaceAndNode>;
-    using DelayedRequests    = std::deque<std::pair<vespalib::steady_time , BucketSpaceAndNode>>;
-    using PendingTransitions = std::unordered_map<document::BucketSpace, std::unique_ptr<PendingBucketSpaceDbTransition>, document::BucketSpace::hash>;
-    using NodeFeatures       = vespalib::hash_map<uint16_t, NodeSupportedFeatures>;
+    using SentMessages = std::map<uint64_t, BucketSpaceAndNode>;
+    using DelayedRequests = std::deque<std::pair<vespalib::steady_time, BucketSpaceAndNode>>;
+    using PendingTransitions =
+        std::unordered_map<document::BucketSpace, std::unique_ptr<PendingBucketSpaceDbTransition>,
+                           document::BucketSpace::hash>;
+    using NodeFeatures = vespalib::hash_map<uint16_t, NodeSupportedFeatures>;
 
     std::shared_ptr<api::SetSystemStateCommand> _cmd;
 
-    SentMessages               _sentMessages;
-    std::vector<bool>          _requestedNodes;
-    DelayedRequests            _delayedRequests;
+    SentMessages      _sentMessages;
+    std::vector<bool> _requestedNodes;
+    DelayedRequests   _delayedRequests;
 
-    lib::ClusterStateBundle    _prevClusterStateBundle;
-    lib::ClusterStateBundle    _newClusterStateBundle;
+    lib::ClusterStateBundle _prevClusterStateBundle;
+    lib::ClusterStateBundle _newClusterStateBundle;
 
     const framework::Clock&    _clock;
     ClusterInformation::CSP    _clusterInfo;
@@ -247,4 +215,4 @@ private:
     NodeFeatures               _node_features;
 };
 
-}
+} // namespace storage::distributor

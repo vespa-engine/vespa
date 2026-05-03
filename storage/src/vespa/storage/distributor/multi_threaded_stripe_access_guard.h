@@ -22,9 +22,9 @@ class TickableStripe;
 class MultiThreadedStripeAccessGuard : public StripeAccessGuard {
     MultiThreadedStripeAccessor& _accessor;
     DistributorStripePool&       _stripe_pool;
+
 public:
-    MultiThreadedStripeAccessGuard(MultiThreadedStripeAccessor& accessor,
-                                   DistributorStripePool& stripe_pool);
+    MultiThreadedStripeAccessGuard(MultiThreadedStripeAccessor& accessor, DistributorStripePool& stripe_pool);
     ~MultiThreadedStripeAccessGuard() override;
 
     void flush_and_close() override;
@@ -35,18 +35,15 @@ public:
     void set_pending_cluster_state_bundle(const lib::ClusterStateBundle& pending_state) override;
     void clear_pending_cluster_state_bundle() override;
     void enable_cluster_state_bundle(const lib::ClusterStateBundle& new_state,
-                                     bool has_bucket_ownership_change) override;
+                                     bool                           has_bucket_ownership_change) override;
     void notify_distribution_change_enabled() override;
 
-    PotentialDataLossReport remove_superfluous_buckets(document::BucketSpace bucket_space,
+    PotentialDataLossReport remove_superfluous_buckets(document::BucketSpace    bucket_space,
                                                        const lib::ClusterState& new_state,
-                                                       bool is_distribution_change) override;
-    void merge_entries_into_db(document::BucketSpace bucket_space,
-                               api::Timestamp gathered_at_timestamp,
-                               const lib::Distribution& distribution,
-                               const lib::ClusterState& new_state,
-                               const char* storage_up_states,
-                               const OutdatedNodes & outdated_nodes,
+                                                       bool                     is_distribution_change) override;
+    void merge_entries_into_db(document::BucketSpace bucket_space, api::Timestamp gathered_at_timestamp,
+                               const lib::Distribution& distribution, const lib::ClusterState& new_state,
+                               const char* storage_up_states, const OutdatedNodes& outdated_nodes,
                                const std::vector<dbtransition::Entry>& entries) override;
 
     void update_read_snapshot_before_db_pruning() override;
@@ -62,11 +59,9 @@ public:
     void report_delayed_single_bucket_requests(vespalib::xml::XmlOutputStream& xos) const override;
 
 private:
-    template <typename Func>
-    void for_each_stripe(Func&& f);
+    template <typename Func> void for_each_stripe(Func&& f);
 
-    template <typename Func>
-    void for_each_stripe(Func&& f) const;
+    template <typename Func> void for_each_stripe(Func&& f) const;
 };
 
 /**
@@ -78,16 +73,16 @@ class MultiThreadedStripeAccessor : public StripeAccessor {
     bool                   _guard_held;
 
     friend class MultiThreadedStripeAccessGuard;
+
 public:
     explicit MultiThreadedStripeAccessor(DistributorStripePool& stripe_pool)
-        : _stripe_pool(stripe_pool),
-          _guard_held(false)
-    {}
+        : _stripe_pool(stripe_pool), _guard_held(false) {}
     ~MultiThreadedStripeAccessor() override = default;
 
     std::unique_ptr<StripeAccessGuard> rendezvous_and_hold_all() override;
+
 private:
     void mark_guard_released();
 };
 
-}
+} // namespace storage::distributor

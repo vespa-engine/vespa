@@ -14,15 +14,16 @@
 #include "stripe_access_guard.h"
 #include "stripe_bucket_db_updater.h"
 #include "tickable_stripe.h"
+
 #include <vespa/storage/common/doneinitializehandler.h>
 #include <vespa/storage/common/messagesender.h>
 #include <vespa/storage/distributor/bucketdb/bucketdbmetricupdater.h>
 #include <vespa/storage/distributor/distributor_stripe_component.h>
 #include <vespa/storage/distributor/maintenance/maintenancescheduler.h>
 #include <vespa/storageapi/message/state.h>
+#include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
 #include <vespa/storageframework/generic/thread/tickingthread.h>
-#include <vespa/storageframework/generic/clock/timer.h>
 
 #include <atomic>
 #include <mutex>
@@ -31,10 +32,10 @@
 #include <unordered_map>
 
 namespace storage {
-    struct DoneInitializeHandler;
-    class HostInfo;
-    class NodeIdentity;
-}
+struct DoneInitializeHandler;
+class HostInfo;
+class NodeIdentity;
+} // namespace storage
 
 namespace storage::distributor {
 
@@ -55,53 +56,37 @@ class ThrottlingOperationStarter;
  * Each distributor stripe is responsible for a completely disjoint subset of the bucket space of all
  * other distributor stripes in the process (and transitively, in the entire cluster).
  */
-class DistributorStripe final
-    : public DistributorStripeInterface,
-      public MinReplicaProvider,
-      public BucketSpacesStatsProvider,
-      public ContentNodeStatsProvider,
-      public NonTrackingMessageSender,
-      public TickableStripe
-{
+class DistributorStripe final : public DistributorStripeInterface,
+                                public MinReplicaProvider,
+                                public BucketSpacesStatsProvider,
+                                public ContentNodeStatsProvider,
+                                public NonTrackingMessageSender,
+                                public TickableStripe {
 public:
-    DistributorStripe(DistributorComponentRegister&,
-                      DistributorMetricSet& metrics,
-                      IdealStateMetricSet& ideal_state_metrics,
-                      const NodeIdentity& node_identity,
-                      ChainedMessageSender& messageSender,
-                      StripeHostInfoNotifier& stripe_host_info_notifier,
-                      MemoryUsageTracker& shared_memory_usage_tracker,
-                      const bool& done_initializing_ref,
+    DistributorStripe(DistributorComponentRegister&, DistributorMetricSet& metrics,
+                      IdealStateMetricSet& ideal_state_metrics, const NodeIdentity& node_identity,
+                      ChainedMessageSender& messageSender, StripeHostInfoNotifier& stripe_host_info_notifier,
+                      MemoryUsageTracker& shared_memory_usage_tracker, const bool& done_initializing_ref,
                       uint32_t stripe_index = 0);
 
     ~DistributorStripe() override;
 
-    const ClusterContext& cluster_context() const override {
-        return _component.cluster_context();
-    }
+    const ClusterContext& cluster_context() const override { return _component.cluster_context(); }
     void flush_and_close() override;
     bool handle_or_enqueue_message(const std::shared_ptr<api::StorageMessage>&);
     void send_up_with_tracking(const std::shared_ptr<api::StorageMessage>&);
     // Bypasses message tracker component. Thread safe.
     void send_up_without_tracking(const std::shared_ptr<api::StorageMessage>&) override;
 
-    ChainedMessageSender& getMessageSender() override {
-        return _messageSender;
-    }
+    ChainedMessageSender& getMessageSender() override { return _messageSender; }
 
     DistributorMetricSet& getMetrics() override { return _metrics; }
 
-    PendingMessageTracker& getPendingMessageTracker() override {
-        return _pendingMessageTracker;
-    }
+    PendingMessageTracker& getPendingMessageTracker() override { return _pendingMessageTracker; }
 
-    const OperationSequencer& operation_sequencer() const noexcept override {
-        return *_operation_sequencer;
-    }
+    const OperationSequencer& operation_sequencer() const noexcept override { return *_operation_sequencer; }
 
-    OperationSequencer& operation_sequencer() noexcept override {
-        return *_operation_sequencer;
-    }
+    OperationSequencer& operation_sequencer() noexcept override { return *_operation_sequencer; }
 
     const lib::ClusterState* pendingClusterStateOrNull(const document::BucketSpace&) const override;
 
@@ -119,7 +104,7 @@ public:
      */
     void notifyDistributionChangeEnabled() override;
 
-    void recheckBucketInfo(uint16_t nodeIdx, const document::Bucket &bucket) override;
+    void recheckBucketInfo(uint16_t nodeIdx, const document::Bucket& bucket) override;
 
     bool handleReply(const std::shared_ptr<api::StorageReply>& reply) override;
 
@@ -133,8 +118,7 @@ public:
      * Checks whether a bucket needs to be split, and sends a split
      * if so.
      */
-    void checkBucketForSplit(document::BucketSpace bucketSpace,
-                             const BucketDatabase::Entry& e,
+    void checkBucketForSplit(document::BucketSpace bucketSpace, const BucketDatabase::Entry& e,
                              uint8_t priority) override;
 
     const lib::ClusterStateBundle& getClusterStateBundle() const override;
@@ -148,13 +132,9 @@ public:
      */
     void handleCompletedMerge(const std::shared_ptr<api::MergeBucketReply>& reply) override;
 
-    bool initializing() const override {
-        return !_done_initializing_ref;
-    }
+    bool initializing() const override { return !_done_initializing_ref; }
 
-    const DistributorConfiguration& getConfig() const override {
-        return *_total_config;
-    }
+    const DistributorConfiguration& getConfig() const override { return *_total_config; }
 
     bool isInRecoveryMode() const noexcept {
         return _schedulingMode == MaintenanceScheduler::RECOVERY_SCHEDULING_MODE;
@@ -165,10 +145,7 @@ public:
     void sendCommand(const std::shared_ptr<api::StorageCommand>&) override;
     void sendReply(const std::shared_ptr<api::StorageReply>&) override;
 
-    const BucketGcTimeCalculator::BucketIdHasher&
-    getBucketIdHasher() const override {
-        return *_bucketIdHasher;
-    }
+    const BucketGcTimeCalculator::BucketIdHasher& getBucketIdHasher() const override { return *_bucketIdHasher; }
 
     const NodeSupportedFeaturesRepo& node_supported_features_repo() const noexcept override;
 
@@ -179,12 +156,10 @@ public:
     ExternalOperationHandler& external_operation_handler() { return _externalOperationHandler; }
     const ExternalOperationHandler& external_operation_handler() const { return _externalOperationHandler; }
 
-    DistributorBucketSpaceRepo &getBucketSpaceRepo() noexcept { return *_bucketSpaceRepo; }
-    const DistributorBucketSpaceRepo &getBucketSpaceRepo() const noexcept { return *_bucketSpaceRepo; }
+    DistributorBucketSpaceRepo& getBucketSpaceRepo() noexcept { return *_bucketSpaceRepo; }
+    const DistributorBucketSpaceRepo& getBucketSpaceRepo() const noexcept { return *_bucketSpaceRepo; }
 
-    DistributorBucketSpaceRepo& getReadOnlyBucketSpaceRepo() noexcept {
-        return *_readOnlyBucketSpaceRepo;
-    }
+    DistributorBucketSpaceRepo& getReadOnlyBucketSpaceRepo() noexcept { return *_readOnlyBucketSpaceRepo; }
     const DistributorBucketSpaceRepo& getReadyOnlyBucketSpaceRepo() const noexcept {
         return *_readOnlyBucketSpaceRepo;
     }
@@ -261,7 +236,8 @@ private:
 
     void cancel_single_message_by_id_if_found(uint64_t msg_id, const CancelScope& cancel_scope);
     void handle_node_down_edge_with_cancellations(uint16_t node_index, std::span<const uint64_t> msg_ids);
-    void cancel_ops_for_buckets_no_longer_owned(document::BucketSpace bucket_space, const lib::ClusterState& new_state);
+    void cancel_ops_for_buckets_no_longer_owned(document::BucketSpace    bucket_space,
+                                                const lib::ClusterState& new_state);
     // Note: old and new state bundles may be the same if this is called for distribution config changes
     void cancel_ops_for_unavailable_nodes(const lib::ClusterStateBundle& old_state_bundle,
                                           const lib::ClusterStateBundle& new_state_bundle);
@@ -272,15 +248,14 @@ private:
     // Tries to generate an operation from the given message. Returns true
     // if we either returned an operation, or the message was otherwise handled
     // (for instance, wrong distribution).
-    bool generateOperation(const std::shared_ptr<api::StorageMessage>& msg,
-                           Operation::SP& operation);
+    bool generateOperation(const std::shared_ptr<api::StorageMessage>& msg, Operation::SP& operation);
 
-    void propagateDefaultDistribution(std::shared_ptr<const lib::Distribution>); // TODO STRIPE remove once legacy is gone
+    void propagateDefaultDistribution(
+        std::shared_ptr<const lib::Distribution>); // TODO STRIPE remove once legacy is gone
     void propagateClusterStates();
 
     BucketSpacesStatsProvider::BucketSpacesStats make_invalid_stats_per_configured_space() const;
-    template <typename NodeFunctor>
-    void for_each_available_content_node_in(const lib::ClusterState&, NodeFunctor&&);
+    template <typename NodeFunctor> void for_each_available_content_node_in(const lib::ClusterState&, NodeFunctor&&);
     void invalidate_internal_db_dependent_stats();
     void invalidate_bucket_spaces_stats(std::lock_guard<std::mutex>& held_metric_lock);
     void invalidate_min_replica_stats(std::lock_guard<std::mutex>& held_metric_lock);
@@ -293,17 +268,14 @@ private:
     void set_pending_cluster_state_bundle(const lib::ClusterStateBundle& pending_state) override;
     void clear_pending_cluster_state_bundle() override;
     void enable_cluster_state_bundle(const lib::ClusterStateBundle& new_state,
-                                     bool has_bucket_ownership_change) override;
+                                     bool                           has_bucket_ownership_change) override;
     void notify_distribution_change_enabled() override;
-    PotentialDataLossReport remove_superfluous_buckets(document::BucketSpace bucket_space,
+    PotentialDataLossReport remove_superfluous_buckets(document::BucketSpace    bucket_space,
                                                        const lib::ClusterState& new_state,
-                                                       bool is_distribution_change) override;
-    void merge_entries_into_db(document::BucketSpace bucket_space,
-                               api::Timestamp gathered_at_timestamp,
-                               const lib::Distribution& distribution,
-                               const lib::ClusterState& new_state,
-                               const char* storage_up_states,
-                               const OutdatedNodes & outdated_nodes,
+                                                       bool                     is_distribution_change) override;
+    void merge_entries_into_db(document::BucketSpace bucket_space, api::Timestamp gathered_at_timestamp,
+                               const lib::Distribution& distribution, const lib::ClusterState& new_state,
+                               const char* storage_up_states, const OutdatedNodes& outdated_nodes,
                                const std::vector<dbtransition::Entry>& entries) override;
     void update_read_snapshot_before_db_pruning() override;
     void update_read_snapshot_after_db_pruning(const lib::ClusterStateBundle& new_state) override;
@@ -315,76 +287,73 @@ private:
     void report_delayed_single_bucket_requests(vespalib::xml::XmlOutputStream& xos) const override;
     MemoryUsageToken make_memory_usage_token(uint32_t bytes_used) noexcept override;
 
-    lib::ClusterStateBundle _clusterStateBundle;
+    lib::ClusterStateBundle                     _clusterStateBundle;
     std::unique_ptr<DistributorBucketSpaceRepo> _bucketSpaceRepo;
     // Read-only bucket space repo with DBs that only contain buckets transiently
     // during cluster state transitions. Bucket set does not overlap that of _bucketSpaceRepo
     // and the DBs are empty during non-transition phases.
-    std::unique_ptr<DistributorBucketSpaceRepo> _readOnlyBucketSpaceRepo;
-    DistributorStripeComponent _component;
+    std::unique_ptr<DistributorBucketSpaceRepo>     _readOnlyBucketSpaceRepo;
+    DistributorStripeComponent                      _component;
     std::shared_ptr<const DistributorConfiguration> _total_config;
-    DistributorMetricSet& _metrics;
+    DistributorMetricSet&                           _metrics;
 
     OperationOwner _operationOwner;
     OperationOwner _maintenanceOperationOwner;
 
     std::unique_ptr<OperationSequencer> _operation_sequencer;
-    PendingMessageTracker _pendingMessageTracker;
-    StripeBucketDBUpdater _bucketDBUpdater;
-    IdealStateManager _idealStateManager;
-    ChainedMessageSender& _messageSender;
-    StripeHostInfoNotifier& _stripe_host_info_notifier;
-    MemoryUsageTracker& _shared_memory_usage_tracker;
-    ExternalOperationHandler _externalOperationHandler;
+    PendingMessageTracker               _pendingMessageTracker;
+    StripeBucketDBUpdater               _bucketDBUpdater;
+    IdealStateManager                   _idealStateManager;
+    ChainedMessageSender&               _messageSender;
+    StripeHostInfoNotifier&             _stripe_host_info_notifier;
+    MemoryUsageTracker&                 _shared_memory_usage_tracker;
+    ExternalOperationHandler            _externalOperationHandler;
 
     std::shared_ptr<lib::Distribution> _distribution;
 
     using MessageQueue = std::vector<std::shared_ptr<api::StorageMessage>>;
     struct IndirectHigherPriority {
-        template <typename Lhs, typename Rhs>
-        bool operator()(const Lhs& lhs, const Rhs& rhs) const noexcept {
+        template <typename Lhs, typename Rhs> bool operator()(const Lhs& lhs, const Rhs& rhs) const noexcept {
             return lhs->getPriority() > rhs->getPriority();
         }
     };
-    using ClientRequestPriorityQueue = std::priority_queue<
-            std::shared_ptr<api::StorageMessage>,
-            std::vector<std::shared_ptr<api::StorageMessage>>,
-            IndirectHigherPriority
-    >;
-    mutable std::mutex _external_message_mutex;
-    MessageQueue _messageQueue;
+    using ClientRequestPriorityQueue =
+        std::priority_queue<std::shared_ptr<api::StorageMessage>, std::vector<std::shared_ptr<api::StorageMessage>>,
+                            IndirectHigherPriority>;
+    mutable std::mutex         _external_message_mutex;
+    MessageQueue               _messageQueue;
     ClientRequestPriorityQueue _client_request_priority_queue;
-    MessageQueue _fetchedMessages;
-    const bool& _done_initializing_ref;
+    MessageQueue               _fetchedMessages;
+    const bool&                _done_initializing_ref;
 
-    std::unique_ptr<BucketPriorityDatabase> _bucketPriorityDb;
-    std::unique_ptr<SimpleMaintenanceScanner> _scanner;
-    std::unique_ptr<ThrottlingOperationStarter> _throttlingStarter;
-    std::unique_ptr<BlockingOperationStarter> _blockingStarter;
-    std::unique_ptr<MaintenanceScheduler> _scheduler;
-    MaintenanceScheduler::SchedulingMode _schedulingMode;
-    framework::MilliSecTimer _recoveryTimeStarted;
-    framework::ThreadWaitInfo _tickResult;
-    BucketDBMetricUpdater _bucketDBMetricUpdater;
+    std::unique_ptr<BucketPriorityDatabase>                 _bucketPriorityDb;
+    std::unique_ptr<SimpleMaintenanceScanner>               _scanner;
+    std::unique_ptr<ThrottlingOperationStarter>             _throttlingStarter;
+    std::unique_ptr<BlockingOperationStarter>               _blockingStarter;
+    std::unique_ptr<MaintenanceScheduler>                   _scheduler;
+    MaintenanceScheduler::SchedulingMode                    _schedulingMode;
+    framework::MilliSecTimer                                _recoveryTimeStarted;
+    framework::ThreadWaitInfo                               _tickResult;
+    BucketDBMetricUpdater                                   _bucketDBMetricUpdater;
     std::unique_ptr<BucketGcTimeCalculator::BucketIdHasher> _bucketIdHasher;
-    std::shared_ptr<const NodeSupportedFeaturesRepo> _node_supported_features_repo;
-    mutable std::mutex _metricLock;
+    std::shared_ptr<const NodeSupportedFeaturesRepo>        _node_supported_features_repo;
+    mutable std::mutex                                      _metricLock;
     /**
      * Maintenance stats for last completed database scan iteration.
      * Access must be protected by _metricLock as it is read by metric
      * manager thread but written by distributor thread.
      */
-    SimpleMaintenanceScanner::PendingMaintenanceStats _maintenanceStats;
-    BucketSpacesStatsProvider::PerNodeBucketSpacesStats _bucketSpacesStats;
-    DistributorGlobalStats _global_stats;
-    BucketDBMetricUpdater::Stats _bucketDbStats;
+    SimpleMaintenanceScanner::PendingMaintenanceStats         _maintenanceStats;
+    BucketSpacesStatsProvider::PerNodeBucketSpacesStats       _bucketSpacesStats;
+    DistributorGlobalStats                                    _global_stats;
+    BucketDBMetricUpdater::Stats                              _bucketDbStats;
     std::unique_ptr<OwnershipTransferSafeTimePointCalculator> _ownershipSafeTimeCalc;
-    std::chrono::steady_clock::duration _db_memory_sample_interval;
-    std::chrono::steady_clock::time_point _last_db_memory_sample_time_point;
-    size_t _inhibited_maintenance_tick_count;
-    uint32_t _stripe_index;
-    std::atomic<bool> _non_activation_maintenance_is_inhibited;
-    bool _must_send_updated_host_info;
+    std::chrono::steady_clock::duration                       _db_memory_sample_interval;
+    std::chrono::steady_clock::time_point                     _last_db_memory_sample_time_point;
+    size_t                                                    _inhibited_maintenance_tick_count;
+    uint32_t                                                  _stripe_index;
+    std::atomic<bool>                                         _non_activation_maintenance_is_inhibited;
+    bool                                                      _must_send_updated_host_info;
 };
 
-}
+} // namespace storage::distributor
