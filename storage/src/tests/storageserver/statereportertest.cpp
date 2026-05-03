@@ -1,20 +1,22 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <tests/common/dummystoragelink.h>
-#include <tests/common/storage_config_set.h>
-#include <tests/common/teststorageapp.h>
-#include <tests/common/testhelper.h>
-#include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
+#include <vespa/config/common/exceptions.h>
+#include <vespa/metrics/metricmanager.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/storage/persistence/filestorage/filestormetrics.h>
 #include <vespa/storage/storageserver/applicationgenerationfetcher.h>
 #include <vespa/storage/storageserver/statereporter.h>
-#include <vespa/metrics/metricmanager.h>
-#include <vespa/config/common/exceptions.h>
-#include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
 #include <vespa/vespalib/data/simple_buffer.h>
+#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/size_literals.h>
+
+#include <tests/common/dummystoragelink.h>
+#include <tests/common/storage_config_set.h>
+#include <tests/common/testhelper.h>
+#include <tests/common/teststorageapp.h>
+
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -32,14 +34,14 @@ public:
 
 struct StateReporterTest : Test {
     framework::defaultimplementation::FakeClock* _clock;
-    std::unique_ptr<TestServiceLayerApp> _node;
-    std::unique_ptr<DummyStorageLink> _top;
-    DummyApplicationGenerationFether _generationFetcher;
-    std::unique_ptr<StateReporter> _stateReporter;
-    std::unique_ptr<StorageConfigSet> _config;
-    std::unique_ptr<metrics::MetricSet> _topSet;
-    std::unique_ptr<metrics::MetricManager> _metricManager;
-    std::shared_ptr<FileStorMetrics> _filestorMetrics;
+    std::unique_ptr<TestServiceLayerApp>         _node;
+    std::unique_ptr<DummyStorageLink>            _top;
+    DummyApplicationGenerationFether             _generationFetcher;
+    std::unique_ptr<StateReporter>               _stateReporter;
+    std::unique_ptr<StorageConfigSet>            _config;
+    std::unique_ptr<metrics::MetricSet>          _topSet;
+    std::unique_ptr<metrics::MetricManager>      _metricManager;
+    std::shared_ptr<FileStorMetrics>             _filestorMetrics;
 
     StateReporterTest();
     ~StateReporterTest() override;
@@ -50,20 +52,15 @@ struct StateReporterTest : Test {
 
 namespace {
 
-struct MetricClock : public metrics::MetricManager::Timer
-{
+struct MetricClock : public metrics::MetricManager::Timer {
     framework::Clock& _clock;
     explicit MetricClock(framework::Clock& c) : _clock(c) {}
     [[nodiscard]] metrics::time_point getTime() const override { return _clock.getSystemTime(); }
 };
 
-}
+} // namespace
 
-StateReporterTest::StateReporterTest()
-    : _clock(nullptr),
-      _top(),
-      _stateReporter()
-{
+StateReporterTest::StateReporterTest() : _clock(nullptr), _top(), _stateReporter() {
 }
 
 StateReporterTest::~StateReporterTest() = default;
@@ -83,8 +80,8 @@ void StateReporterTest::SetUp() {
         _metricManager->registerMetric(guard, *_topSet);
     }
 
-    _stateReporter = std::make_unique<StateReporter>(_node->getComponentRegister(), *_metricManager,
-                                                     _generationFetcher, "status");
+    _stateReporter =
+        std::make_unique<StateReporter>(_node->getComponentRegister(), *_metricManager, _generationFetcher, "status");
 
     _filestorMetrics = std::make_shared<FileStorMetrics>();
     _filestorMetrics->initDiskMetrics(1, 1);
@@ -104,54 +101,53 @@ void StateReporterTest::TearDown() {
     _filestorMetrics.reset();
 }
 
-#define PARSE_JSON(jsonData) \
-vespalib::Slime slime; \
-{ \
-    using namespace vespalib::slime; \
-    size_t parsed = JsonFormat::decode(vespalib::Memory(jsonData), slime); \
-    vespalib::SimpleBuffer buffer;                                      \
-    JsonFormat::encode(slime, buffer, false); \
-    if (parsed == 0) { \
-        ASSERT_EQ(jsonData.size(), parsed) << "Failed to parse JSON: '\n" \
-              << jsonData << "':" << buffer.get().make_string(); \
-    } \
-}
+#define PARSE_JSON(jsonData)                                                                      \
+    vespalib::Slime slime;                                                                        \
+    {                                                                                             \
+        using namespace vespalib::slime;                                                          \
+        size_t                 parsed = JsonFormat::decode(vespalib::Memory(jsonData), slime);    \
+        vespalib::SimpleBuffer buffer;                                                            \
+        JsonFormat::encode(slime, buffer, false);                                                 \
+        if (parsed == 0) {                                                                        \
+            ASSERT_EQ(jsonData.size(), parsed) << "Failed to parse JSON: '\n"                     \
+                                               << jsonData << "':" << buffer.get().make_string(); \
+        }                                                                                         \
+    }
 
-#define ASSERT_GENERATION(jsonData, component, generation) \
-{ \
-    PARSE_JSON(jsonData); \
-    ASSERT_EQ(generation, slime.get()["config"][component]["generation"].asDouble()); \
-}
+#define ASSERT_GENERATION(jsonData, component, generation)                                \
+    {                                                                                     \
+        PARSE_JSON(jsonData);                                                             \
+        ASSERT_EQ(generation, slime.get()["config"][component]["generation"].asDouble()); \
+    }
 
-#define ASSERT_NODE_STATUS(jsonData, code, message) \
-{ \
-    PARSE_JSON(jsonData); \
-    ASSERT_EQ(std::string(code), slime.get()["status"]["code"].asString().make_string()); \
-    ASSERT_EQ(std::string(message), slime.get()["status"]["message"].asString().make_string()); \
-}
+#define ASSERT_NODE_STATUS(jsonData, code, message)                                                 \
+    {                                                                                               \
+        PARSE_JSON(jsonData);                                                                       \
+        ASSERT_EQ(std::string(code), slime.get()["status"]["code"].asString().make_string());       \
+        ASSERT_EQ(std::string(message), slime.get()["status"]["message"].asString().make_string()); \
+    }
 
-#define ASSERT_METRIC_GET_PUT(jsonData, expGetCount, expPutCount) \
-{ \
-    PARSE_JSON(jsonData); \
-    double getCount = -1; \
-    double putCount = -1; \
-    size_t metricCount = slime.get()["metrics"]["values"].children(); \
-    for (size_t j=0; j<metricCount; j++) { \
-        const std::string name = slime.get()["metrics"]["values"][j]["name"].asString().make_string(); \
-        if (name.compare("vds.filestor.allthreads.get.count") == 0) { \
-            getCount = slime.get()["metrics"]["values"][j]["values"]["count"].asDouble(); \
-        } else if (name.compare("vds.filestor.allthreads.put.count") == 0) { \
-            putCount = slime.get()["metrics"]["values"][j]["values"]["count"].asDouble(); \
-        } \
-    } \
-    ASSERT_EQ(expGetCount, getCount); \
-    ASSERT_EQ(expPutCount, putCount); \
-    ASSERT_GT(metricCount, 100); \
-}
-
+#define ASSERT_METRIC_GET_PUT(jsonData, expGetCount, expPutCount)                                          \
+    {                                                                                                      \
+        PARSE_JSON(jsonData);                                                                              \
+        double getCount = -1;                                                                              \
+        double putCount = -1;                                                                              \
+        size_t metricCount = slime.get()["metrics"]["values"].children();                                  \
+        for (size_t j = 0; j < metricCount; j++) {                                                         \
+            const std::string name = slime.get()["metrics"]["values"][j]["name"].asString().make_string(); \
+            if (name.compare("vds.filestor.allthreads.get.count") == 0) {                                  \
+                getCount = slime.get()["metrics"]["values"][j]["values"]["count"].asDouble();              \
+            } else if (name.compare("vds.filestor.allthreads.put.count") == 0) {                           \
+                putCount = slime.get()["metrics"]["values"][j]["values"]["count"].asDouble();              \
+            }                                                                                              \
+        }                                                                                                  \
+        ASSERT_EQ(expGetCount, getCount);                                                                  \
+        ASSERT_EQ(expPutCount, putCount);                                                                  \
+        ASSERT_GT(metricCount, 100);                                                                       \
+    }
 
 TEST_F(StateReporterTest, report_config_generation) {
-    std::ostringstream ost;
+    std::ostringstream     ost;
     framework::HttpUrlPath path("/state/v1/config");
     _stateReporter->reportStatus(ost, path);
     std::string jsonData = ost.str();
@@ -159,37 +155,25 @@ TEST_F(StateReporterTest, report_config_generation) {
 }
 
 TEST_F(StateReporterTest, report_health) {
-    const int stateCount = 7;
-    const lib::NodeState nodeStates[stateCount] = {
-        lib::NodeState(lib::NodeType::STORAGE, lib::State::UNKNOWN),
-        lib::NodeState(lib::NodeType::STORAGE, lib::State::MAINTENANCE),
-        lib::NodeState(lib::NodeType::STORAGE, lib::State::DOWN),
-        lib::NodeState(lib::NodeType::STORAGE, lib::State::STOPPING),
-        lib::NodeState(lib::NodeType::STORAGE, lib::State::INITIALIZING),
-        lib::NodeState(lib::NodeType::STORAGE, lib::State::RETIRED),
-        lib::NodeState(lib::NodeType::STORAGE, lib::State::UP)
-    };
-    const char* codes[stateCount] = {
-        "down",
-        "down",
-        "down",
-        "down",
-        "down",
-        "down",
-        "up"
-    };
-    const char* messages[stateCount] = {
-        "Node state: Unknown",
-        "Node state: Maintenance",
-        "Node state: Down",
-        "Node state: Stopping",
-        "Node state: Initializing, init progress 0",
-        "Node state: Retired",
-        ""
-    };
+    const int            stateCount = 7;
+    const lib::NodeState nodeStates[stateCount] = {lib::NodeState(lib::NodeType::STORAGE, lib::State::UNKNOWN),
+                                                   lib::NodeState(lib::NodeType::STORAGE, lib::State::MAINTENANCE),
+                                                   lib::NodeState(lib::NodeType::STORAGE, lib::State::DOWN),
+                                                   lib::NodeState(lib::NodeType::STORAGE, lib::State::STOPPING),
+                                                   lib::NodeState(lib::NodeType::STORAGE, lib::State::INITIALIZING),
+                                                   lib::NodeState(lib::NodeType::STORAGE, lib::State::RETIRED),
+                                                   lib::NodeState(lib::NodeType::STORAGE, lib::State::UP)};
+    const char*          codes[stateCount] = {"down", "down", "down", "down", "down", "down", "up"};
+    const char*          messages[stateCount] = {"Node state: Unknown",
+                                                 "Node state: Maintenance",
+                                                 "Node state: Down",
+                                                 "Node state: Stopping",
+                                                 "Node state: Initializing, init progress 0",
+                                                 "Node state: Retired",
+                                                 ""};
 
     framework::HttpUrlPath path("/state/v1/health");
-    for (int i=0; i<stateCount; i++) {
+    for (int i = 0; i < stateCount; i++) {
         _node->getStateUpdater().setCurrentNodeState(nodeStates[i]);
         std::ostringstream ost;
         ASSERT_TRUE(_stateReporter->reportStatus(ost, path));
@@ -218,19 +202,16 @@ TEST_F(StateReporterTest, report_metrics) {
 
     thread0.put.count.inc(1);
 
-    const int pathCount = 2;
-    const char* paths[pathCount] = {
-        "/state/v1/metrics",
-        "/state/v1/metrics?consumer=status"
-    };
+    const int   pathCount = 2;
+    const char* paths[pathCount] = {"/state/v1/metrics", "/state/v1/metrics?consumer=status"};
 
-    for (auto & path_str : paths) {
+    for (auto& path_str : paths) {
         framework::HttpUrlPath path(path_str);
-        std::ostringstream ost;
+        std::ostringstream     ost;
         _stateReporter->reportStatus(ost, path);
         std::string jsonData = ost.str();
         ASSERT_METRIC_GET_PUT(jsonData, 1.0, 0.0);
     }
- }
+}
 
-} // storage
+} // namespace storage

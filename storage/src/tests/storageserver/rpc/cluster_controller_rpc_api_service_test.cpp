@@ -1,18 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <tests/common/storage_config_set.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/storage/storageserver/message_dispatcher.h>
-#include <vespa/storage/storageserver/rpcrequestwrapper.h>
 #include <vespa/storage/storageserver/rpc/cluster_controller_api_rpc_service.h>
 #include <vespa/storage/storageserver/rpc/shared_rpc_resources.h>
 #include <vespa/storage/storageserver/rpc/slime_cluster_state_bundle_codec.h>
+#include <vespa/storage/storageserver/rpcrequestwrapper.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+
+#include <tests/common/storage_config_set.h>
+
 #include <vector>
 
 namespace storage::rpc {
@@ -20,20 +22,15 @@ namespace storage::rpc {
 using document::FixedBucketSpaces;
 using namespace ::testing;
 
-struct ClusterControllerApiRpcServiceTest : Test {
-};
+struct ClusterControllerApiRpcServiceTest : Test {};
 
 namespace {
 
 struct MockOperationDispatcher : MessageDispatcher {
     std::vector<std::shared_ptr<api::StorageMessage>> _enqueued;
 
-    void dispatch_sync(std::shared_ptr<api::StorageMessage> msg) override {
-        _enqueued.emplace_back(std::move(msg));
-    }
-    void dispatch_async(std::shared_ptr<api::StorageMessage> msg) override {
-        _enqueued.emplace_back(std::move(msg));
-    }
+    void dispatch_sync(std::shared_ptr<api::StorageMessage> msg) override { _enqueued.emplace_back(std::move(msg)); }
+    void dispatch_async(std::shared_ptr<api::StorageMessage> msg) override { _enqueued.emplace_back(std::move(msg)); }
 };
 
 struct DummyReturnHandler : FRT_IReturnHandler {
@@ -42,18 +39,16 @@ struct DummyReturnHandler : FRT_IReturnHandler {
 };
 
 struct FixtureBase {
-    mbus::Slobrok slobrok;
-    std::unique_ptr<StorageConfigSet> config;
-    MockOperationDispatcher dispatcher;
-    std::unique_ptr<SharedRpcResources> shared_rpc_resources;
+    mbus::Slobrok                                   slobrok;
+    std::unique_ptr<StorageConfigSet>               config;
+    MockOperationDispatcher                         dispatcher;
+    std::unique_ptr<SharedRpcResources>             shared_rpc_resources;
     std::unique_ptr<ClusterControllerApiRpcService> cc_service;
-    DummyReturnHandler return_handler;
-    bool request_is_detached{false};
-    FRT_RPCRequest* bound_request{nullptr};
+    DummyReturnHandler                              return_handler;
+    bool                                            request_is_detached{false};
+    FRT_RPCRequest*                                 bound_request{nullptr};
 
-    FixtureBase()
-        : config(StorageConfigSet::make_storage_node_config())
-    {
+    FixtureBase() : config(StorageConfigSet::make_storage_node_config()) {
         config->set_node_index(1);
         config->set_slobrok_config_port(slobrok.port());
 
@@ -134,51 +129,49 @@ std::string make_compressable_state_string() {
     for (int i = 0; i < 99; ++i) {
         ss << " ." << i << ".s:d";
     }
-    return vespalib::make_string("version:123 distributor:100%s storage:100%s",
-                                 ss.view().data(), ss.view().data());
+    return vespalib::make_string("version:123 distributor:100%s storage:100%s", ss.view().data(), ss.view().data());
 }
 
-} // anon namespace
+} // namespace
 
 TEST_F(ClusterControllerApiRpcServiceTest, baseline_set_distribution_states_rpc_enqueues_command_with_state_bundle) {
     SetStateFixture f;
-    auto baseline = f.dummy_baseline_bundle();
+    auto            baseline = f.dummy_baseline_bundle();
 
     f.assert_request_received_and_propagated(baseline);
 }
 
-TEST_F(ClusterControllerApiRpcServiceTest, set_distribution_states_rpc_with_derived_enqueues_command_with_state_bundle) {
-    SetStateFixture f;
+TEST_F(ClusterControllerApiRpcServiceTest,
+       set_distribution_states_rpc_with_derived_enqueues_command_with_state_bundle) {
+    SetStateFixture         f;
     lib::ClusterStateBundle spaces_bundle(
-            lib::ClusterState("version:123 distributor:3 storage:3"),
-            {{FixedBucketSpaces::default_space(), state_of("version:123 distributor:3 storage:3 .0.s:d")},
-             {FixedBucketSpaces::global_space(), state_of("version:123 distributor:3 .1.s:d storage:3")}});
+        lib::ClusterState("version:123 distributor:3 storage:3"),
+        {{FixedBucketSpaces::default_space(), state_of("version:123 distributor:3 storage:3 .0.s:d")},
+         {FixedBucketSpaces::global_space(), state_of("version:123 distributor:3 .1.s:d storage:3")}});
 
     f.assert_request_received_and_propagated(spaces_bundle);
 }
 
 TEST_F(ClusterControllerApiRpcServiceTest, set_distribution_states_rpc_with_feed_block_state) {
-    SetStateFixture f;
-    lib::ClusterStateBundle bundle(
-            lib::ClusterState("version:123 distributor:3 storage:3"), {},
-            lib::ClusterStateBundle::FeedBlock(true, "full disk"), true);
+    SetStateFixture         f;
+    lib::ClusterStateBundle bundle(lib::ClusterState("version:123 distributor:3 storage:3"), {},
+                                   lib::ClusterStateBundle::FeedBlock(true, "full disk"), true);
 
     f.assert_request_received_and_propagated(bundle);
 }
 
 TEST_F(ClusterControllerApiRpcServiceTest, can_receive_cluster_state_bundle_with_embedded_distribution_config) {
     auto distr_cfg = lib::DistributionConfigBundle::of(lib::Distribution::getDefaultDistributionConfig(3, 14));
-    SetStateFixture f;
-    lib::ClusterStateBundle bundle(
-            std::make_shared<const lib::ClusterState>("version:123 distributor:3 storage:3"),
-            {}, std::nullopt, std::move(distr_cfg), false);
+    SetStateFixture         f;
+    lib::ClusterStateBundle bundle(std::make_shared<const lib::ClusterState>("version:123 distributor:3 storage:3"),
+                                   {}, std::nullopt, std::move(distr_cfg), false);
 
     f.assert_request_received_and_propagated(bundle);
 }
 
 TEST_F(ClusterControllerApiRpcServiceTest, compressed_bundle_is_transparently_uncompressed) {
-    SetStateFixture f;
-    auto state_str = make_compressable_state_string();
+    SetStateFixture         f;
+    auto                    state_str = make_compressable_state_string();
     lib::ClusterStateBundle compressable_bundle{lib::ClusterState(state_str)};
 
     f.create_request(compressable_bundle);
@@ -198,14 +191,14 @@ TEST_F(ClusterControllerApiRpcServiceTest, set_distribution_rpc_is_immediately_f
 
 TEST_F(ClusterControllerApiRpcServiceTest, overly_large_uncompressed_bundle_size_parameter_returns_rpc_error) {
     SetStateFixture f;
-    auto encoded_bundle = f.codec.encode(f.dummy_baseline_bundle());
+    auto            encoded_bundle = f.codec.encode(f.dummy_baseline_bundle());
     f.bind_request_params(encoded_bundle, ClusterControllerApiRpcService::StateBundleMaxUncompressedSize + 1);
     f.assert_request_returns_error_response(RPCRequestWrapper::ERR_BAD_REQUEST);
 }
 
 TEST_F(ClusterControllerApiRpcServiceTest, mismatching_uncompressed_bundle_size_parameter_returns_rpc_error) {
     SetStateFixture f;
-    auto encoded_bundle = f.codec.encode(f.dummy_baseline_bundle());
+    auto            encoded_bundle = f.codec.encode(f.dummy_baseline_bundle());
     f.bind_request_params(encoded_bundle, encoded_bundle._buffer->getDataLen() + 100);
     f.assert_request_returns_error_response(RPCRequestWrapper::ERR_BAD_REQUEST);
 }
@@ -213,7 +206,6 @@ TEST_F(ClusterControllerApiRpcServiceTest, mismatching_uncompressed_bundle_size_
 TEST_F(ClusterControllerApiRpcServiceTest, true_deferred_activation_flag_can_be_roundtrip_encoded) {
     SetStateFixture f;
     f.assert_request_received_and_propagated(f.dummy_baseline_bundle_with_deferred_activation(true));
-
 }
 
 TEST_F(ClusterControllerApiRpcServiceTest, false_deferred_activation_flag_can_be_roundtrip_encoded) {
@@ -259,4 +251,4 @@ TEST_F(ClusterControllerApiRpcServiceTest, activate_cluster_state_version_rpc_en
     f.assert_request_received_and_propagated(1234567);
 }
 
-}
+} // namespace storage::rpc

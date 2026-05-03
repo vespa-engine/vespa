@@ -8,9 +8,8 @@
 namespace storage {
 namespace util {
 
-void
-reporterToSlime(HostReporter &hostReporter, vespalib::Slime &slime);
+void reporterToSlime(HostReporter& hostReporter, vespalib::Slime& slime);
 }
-}
+} // namespace storage
 
 #endif // VESPA_STORAGE_COMMON_UTIL

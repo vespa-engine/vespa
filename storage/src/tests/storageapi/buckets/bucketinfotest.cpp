@@ -1,13 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/storageapi/buckets/bucketinfo.h>
+
 #include <gtest/gtest.h>
 
 namespace storage::api {
 
 /** Tests simple operations */
-TEST(BucketInfoTest, testSimple)
-{
+TEST(BucketInfoTest, testSimple) {
     BucketInfo info;
 
     EXPECT_FALSE(info.valid());
@@ -25,4 +25,4 @@ TEST(BucketInfoTest, testSimple)
     EXPECT_EQ(64000u, info.getTotalDocumentSize());
 };
 
-}
+} // namespace storage::api

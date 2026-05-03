@@ -4,12 +4,13 @@
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/document/update/documentupdate.h>
-#include <vespa/document/fieldvalue/document.h>
 #include <vespa/documentapi/documentapi.h>
+#include <vespa/documentapi/messagebus/messages/testandsetcondition.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/error.h>
 #include <vespa/storage/common/bucket_resolver.h>
@@ -20,7 +21,6 @@
 #include <vespa/storageapi/message/stat.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/test_path.h>
-#include <vespa/documentapi/messagebus/messages/testandsetcondition.h>
 
 using document::Bucket;
 using document::BucketId;
@@ -37,26 +37,26 @@ using namespace std::chrono_literals;
 
 namespace storage {
 
-const DocumentId defaultDocId("id:test:text/html::0");
-const BucketSpace defaultBucketSpace(5);
-const std::string defaultSpaceName("myspace");
-const Bucket defaultBucket(defaultBucketSpace, BucketId(0));
+const DocumentId          defaultDocId("id:test:text/html::0");
+const BucketSpace         defaultBucketSpace(5);
+const std::string         defaultSpaceName("myspace");
+const Bucket              defaultBucket(defaultBucketSpace, BucketId(0));
 const TestAndSetCondition my_condition("my condition");
 
 struct MockBucketResolver : public BucketResolver {
-    Bucket bucketFromId(const DocumentId &documentId) const override {
+    Bucket bucketFromId(const DocumentId& documentId) const override {
         if (documentId.getDocType() == "text/html") {
             return defaultBucket;
         }
         return Bucket(BucketSpace(0), BucketId(0));
     }
-    BucketSpace bucketSpaceFromName(const std::string &bucketSpace) const override {
+    BucketSpace bucketSpaceFromName(const std::string& bucketSpace) const override {
         if (bucketSpace == defaultSpaceName) {
             return defaultBucketSpace;
         }
         return BucketSpace(0);
     }
-    std::string nameFromBucketSpace(const document::BucketSpace &bucketSpace) const override {
+    std::string nameFromBucketSpace(const document::BucketSpace& bucketSpace) const override {
         if (bucketSpace == defaultBucketSpace) {
             return defaultSpaceName;
         }
@@ -65,21 +65,17 @@ struct MockBucketResolver : public BucketResolver {
 };
 
 struct DocumentApiConverterTest : Test {
-    std::shared_ptr<MockBucketResolver> _bucketResolver;
-    std::unique_ptr<DocumentApiConverter> _converter;
+    std::shared_ptr<MockBucketResolver>           _bucketResolver;
+    std::unique_ptr<DocumentApiConverter>         _converter;
     const std::shared_ptr<const DocumentTypeRepo> _repo;
-    const DataType& _html_type;
+    const DataType&                               _html_type;
 
     DocumentApiConverterTest()
         : _bucketResolver(std::make_shared<MockBucketResolver>()),
           _repo(std::make_shared<DocumentTypeRepo>(readDocumenttypesConfig(TEST_PATH("../config-doctypes.cfg")))),
-          _html_type(*_repo->getDocumentType("text/html"))
-    {
-    }
+          _html_type(*_repo->getDocumentType("text/html")) {}
 
-    void SetUp() override {
-        _converter = std::make_unique<DocumentApiConverter>(_bucketResolver);
-    };
+    void SetUp() override { _converter = std::make_unique<DocumentApiConverter>(_bucketResolver); };
 
     template <typename DerivedT, typename BaseT>
     std::unique_ptr<DerivedT> dynamic_unique_ptr_cast(std::unique_ptr<BaseT> base) {
@@ -89,21 +85,17 @@ struct DocumentApiConverterTest : Test {
         return std::unique_ptr<DerivedT>(derived);
     }
 
-    template <typename T>
-    std::unique_ptr<T> toStorageAPI(documentapi::DocumentMessage &msg) {
+    template <typename T> std::unique_ptr<T> toStorageAPI(documentapi::DocumentMessage& msg) {
         auto result = _converter->toStorageAPI(msg);
         return dynamic_unique_ptr_cast<T>(std::move(result));
     }
 
-    template <typename T>
-    std::unique_ptr<T> toStorageAPI(mbus::Reply &fromReply,
-                                    api::StorageCommand &fromCommand) {
+    template <typename T> std::unique_ptr<T> toStorageAPI(mbus::Reply& fromReply, api::StorageCommand& fromCommand) {
         auto result = _converter->toStorageAPI(static_cast<documentapi::DocumentReply&>(fromReply), fromCommand);
         return dynamic_unique_ptr_cast<T>(std::move(result));
     }
 
-    template <typename T>
-    std::unique_ptr<T> toDocumentAPI(api::StorageCommand &cmd) {
+    template <typename T> std::unique_ptr<T> toDocumentAPI(api::StorageCommand& cmd) {
         auto result = _converter->toDocumentAPI(cmd);
         return dynamic_unique_ptr_cast<T>(std::move(result));
     }
@@ -150,8 +142,8 @@ TEST_F(DocumentApiConverterTest, put_with_create) {
 TEST_F(DocumentApiConverterTest, forwarded_put) {
     auto doc = std::make_shared<Document>(*_repo, _html_type, DocumentId("id:ns:" + _html_type.getName() + "::test"));
 
-    auto putmsg = std::make_unique<documentapi::PutDocumentMessage>(doc);
-    auto* putmsg_raw = putmsg.get();
+    auto                         putmsg = std::make_unique<documentapi::PutDocumentMessage>(doc);
+    auto*                        putmsg_raw = putmsg.get();
     std::unique_ptr<mbus::Reply> reply(putmsg->createReply());
     reply->setMessage(std::unique_ptr<mbus::Message>(putmsg.release()));
 
@@ -277,12 +269,12 @@ TEST_F(DocumentApiConverterTest, create_visitor_high_timeout) {
 TEST_F(DocumentApiConverterTest, create_visitor_reply_not_ready) {
     documentapi::CreateVisitorMessage cv("mylib", "myinstance", "control-dest", "data-dest");
 
-    auto cmd = toStorageAPI<api::CreateVisitorCommand>(cv);
+    auto                    cmd = toStorageAPI<api::CreateVisitorCommand>(cv);
     api::CreateVisitorReply cvr(*cmd);
     cvr.setResult(api::ReturnCode(api::ReturnCode::NOT_READY, "not ready"));
 
     std::unique_ptr<documentapi::CreateVisitorReply> reply(
-            dynamic_cast<documentapi::CreateVisitorReply*>(cv.createReply().release()));
+        dynamic_cast<documentapi::CreateVisitorReply*>(cv.createReply().release()));
     ASSERT_TRUE(reply.get());
     _converter->transferReplyState(cvr, *reply);
     EXPECT_EQ(documentapi::DocumentProtocol::ERROR_NODE_NOT_READY, reply->getError(0).getCode());
@@ -292,11 +284,11 @@ TEST_F(DocumentApiConverterTest, create_visitor_reply_not_ready) {
 TEST_F(DocumentApiConverterTest, create_visitor_reply_last_bucket) {
     documentapi::CreateVisitorMessage cv("mylib", "myinstance", "control-dest", "data-dest");
 
-    auto cmd = toStorageAPI<api::CreateVisitorCommand>(cv);
+    auto                    cmd = toStorageAPI<api::CreateVisitorCommand>(cv);
     api::CreateVisitorReply cvr(*cmd);
     cvr.setLastBucket(document::BucketId(123));
     std::unique_ptr<documentapi::CreateVisitorReply> reply(
-            dynamic_cast<documentapi::CreateVisitorReply*>(cv.createReply().release()));
+        dynamic_cast<documentapi::CreateVisitorReply*>(cv.createReply().release()));
 
     ASSERT_TRUE(reply.get());
     _converter->transferReplyState(cvr, *reply);
@@ -311,7 +303,7 @@ TEST_F(DocumentApiConverterTest, destroy_visitor) {
 }
 
 TEST_F(DocumentApiConverterTest, visitor_info) {
-    api::VisitorInfoCommand vicmd;
+    api::VisitorInfoCommand                                   vicmd;
     std::vector<api::VisitorInfoCommand::BucketTimestampPair> bucketsCompleted;
     bucketsCompleted.emplace_back(document::BucketId(16, 1), 0);
     bucketsCompleted.emplace_back(document::BucketId(16, 2), 0);
@@ -351,8 +343,8 @@ TEST_F(DocumentApiConverterTest, get_bucket_list) {
 }
 
 TEST_F(DocumentApiConverterTest, remove_location) {
-    document::BucketIdFactory factory;
-    document::select::Parser parser(*_repo, factory);
+    document::BucketIdFactory          factory;
+    document::select::Parser           parser(*_repo, factory);
     documentapi::RemoveLocationMessage msg(factory, parser, "id.group == \"mygroup\"");
     msg.setBucketSpace(defaultSpaceName);
 
@@ -371,11 +363,11 @@ struct ReplacementMockBucketResolver : public MockBucketResolver {
     }
 };
 
-}
+} // namespace
 
 TEST_F(DocumentApiConverterTest, can_replace_bucket_resolver_after_construction) {
     documentapi::GetDocumentMessage get_msg(DocumentId("id::testdoctype1::baz"), "foo bar");
-    auto cmd = toStorageAPI<api::GetCommand>(get_msg);
+    auto                            cmd = toStorageAPI<api::GetCommand>(get_msg);
 
     EXPECT_EQ(BucketSpace(0), cmd->getBucket().getBucketSpace());
 
@@ -385,4 +377,4 @@ TEST_F(DocumentApiConverterTest, can_replace_bucket_resolver_after_construction)
     EXPECT_EQ(defaultBucketSpace, cmd->getBucket().getBucketSpace());
 }
 
-}
+} // namespace storage

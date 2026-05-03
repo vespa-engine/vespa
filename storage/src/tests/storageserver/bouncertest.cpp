@@ -1,12 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <tests/common/dummystoragelink.h>
-#include <tests/common/storage_config_set.h>
-#include <tests/common/testhelper.h>
-#include <tests/common/teststorageapp.h>
 #include <vespa/config/common/exceptions.h>
-#include <memory>
-#include <vespa/config/helper/configgetter.hpp>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/test/make_document_bucket.h>
@@ -21,6 +15,15 @@
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
+#include <vespa/config/helper/configgetter.hpp>
+
+#include <tests/common/dummystoragelink.h>
+#include <tests/common/storage_config_set.h>
+#include <tests/common/testhelper.h>
+#include <tests/common/teststorageapp.h>
+
+#include <memory>
+
 using document::test::makeDocumentBucket;
 using namespace ::testing;
 
@@ -28,10 +31,10 @@ namespace storage {
 
 struct BouncerTest : public Test {
     std::unique_ptr<StorageConfigSet> _config;
-    std::unique_ptr<TestStorageApp> _node;
+    std::unique_ptr<TestStorageApp>   _node;
     std::unique_ptr<DummyStorageLink> _upper;
-    Bouncer* _manager;
-    DummyStorageLink* _lower;
+    Bouncer*                          _manager;
+    DummyStorageLink*                 _lower;
 
     BouncerTest();
 
@@ -50,12 +53,7 @@ struct BouncerTest : public Test {
     void expectMessageNotBounced() const;
 };
 
-BouncerTest::BouncerTest()
-    : _node(),
-      _upper(),
-      _manager(nullptr),
-      _lower(nullptr)
-{
+BouncerTest::BouncerTest() : _node(), _upper(), _manager(nullptr), _lower(nullptr) {
 }
 
 void BouncerTest::setUpAsNode(const lib::NodeType& type) {
@@ -68,7 +66,7 @@ void BouncerTest::setUpAsNode(const lib::NodeType& type) {
     _upper = std::make_unique<DummyStorageLink>();
     using StorBouncerConfig = vespa::config::content::core::StorBouncerConfig;
     auto& cfg_uri = _config->config_uri();
-    auto cfg = config::ConfigGetter<StorBouncerConfig>::getConfig(cfg_uri.getConfigId(), cfg_uri.getContext());
+    auto  cfg = config::ConfigGetter<StorBouncerConfig>::getConfig(cfg_uri.getConfigId(), cfg_uri.getContext());
     _manager = new Bouncer(_node->getComponentRegister(), *cfg);
     _lower = new DummyStorageLink();
     _upper->push_back(std::unique_ptr<StorageLink>(_manager));
@@ -77,13 +75,11 @@ void BouncerTest::setUpAsNode(const lib::NodeType& type) {
     _node->getClock().setAbsoluteTimeInSeconds(10);
 }
 
-void
-BouncerTest::SetUp() {
+void BouncerTest::SetUp() {
     setUpAsNode(lib::NodeType::STORAGE);
 }
 
-void
-BouncerTest::TearDown() {
+void BouncerTest::TearDown() {
     _manager = nullptr;
     _lower = nullptr;
     if (_upper) {
@@ -94,35 +90,26 @@ BouncerTest::TearDown() {
     _node.reset();
 }
 
-std::shared_ptr<api::StorageCommand>
-createDummyFeedMessage(api::Timestamp timestamp,
-                       api::StorageMessage::Priority priority = 0)
-{
-    auto cmd = std::make_shared<api::RemoveCommand>(
-            makeDocumentBucket(document::BucketId(0)),
-            document::DocumentId("id:ns:foo::bar"),
-            timestamp);
+std::shared_ptr<api::StorageCommand> createDummyFeedMessage(api::Timestamp                timestamp,
+                                                            api::StorageMessage::Priority priority = 0) {
+    auto cmd = std::make_shared<api::RemoveCommand>(makeDocumentBucket(document::BucketId(0)),
+                                                    document::DocumentId("id:ns:foo::bar"), timestamp);
     cmd->setPriority(priority);
     return cmd;
 }
 
-std::shared_ptr<api::StorageCommand>
-createDummyFeedMessage(api::Timestamp timestamp,
-                       document::BucketSpace bucketSpace)
-{
-    auto cmd = std::make_shared<api::RemoveCommand>(
-            document::Bucket(bucketSpace, document::BucketId(0)),
-            document::DocumentId("id:ns:foo::bar"),
-            timestamp);
+std::shared_ptr<api::StorageCommand> createDummyFeedMessage(api::Timestamp        timestamp,
+                                                            document::BucketSpace bucketSpace) {
+    auto cmd = std::make_shared<api::RemoveCommand>(document::Bucket(bucketSpace, document::BucketId(0)),
+                                                    document::DocumentId("id:ns:foo::bar"), timestamp);
     cmd->setPriority(BouncerTest::Priority(0));
     return cmd;
 }
 
 std::shared_ptr<api::StorageCommand> create_dummy_get_message() {
     return std::make_shared<api::GetCommand>(
-            document::Bucket(document::FixedBucketSpaces::default_space(), document::BucketId(0)),
-            document::DocumentId("id:ns:foo::bar"),
-            document::AllFields::NAME);
+        document::Bucket(document::FixedBucketSpaces::default_space(), document::BucketId(0)),
+        document::DocumentId("id:ns:foo::bar"), document::AllFields::NAME);
 }
 
 TEST_F(BouncerTest, future_timestamp) {
@@ -163,23 +150,19 @@ TEST_F(BouncerTest, allow_notify_bucket_change_even_when_distributor_down) {
     lib::NodeState state(lib::NodeType::DISTRIBUTOR, lib::State::DOWN);
     _node->getNodeStateUpdater().setReportedNodeState(state);
     // Trigger Bouncer state update
-    auto clusterState = std::make_shared<lib::ClusterState>(
-            "distributor:3 storage:3");
+    auto clusterState = std::make_shared<lib::ClusterState>("distributor:3 storage:3");
     _node->getNodeStateUpdater().setClusterState(clusterState);
-            
-    
+
     document::BucketId bucket(16, 1234);
-    api::BucketInfo info(0x1, 0x2, 0x3);
-    auto cmd = std::make_shared<api::NotifyBucketChangeCommand>(makeDocumentBucket(bucket), info);
+    api::BucketInfo    info(0x1, 0x2, 0x3);
+    auto               cmd = std::make_shared<api::NotifyBucketChangeCommand>(makeDocumentBucket(bucket), info);
     _upper->sendDown(cmd);
 
     EXPECT_EQ(0, _upper->getNumReplies());
     EXPECT_EQ(1, _lower->getNumCommands());
 }
 
-void
-BouncerTest::expectMessageBouncedWithRejection() const
-{
+void BouncerTest::expectMessageBouncedWithRejection() const {
     ASSERT_EQ(1, _upper->getNumReplies());
     EXPECT_EQ(0, _upper->getNumCommands());
     EXPECT_EQ(api::ReturnCode::REJECTED,
@@ -187,22 +170,17 @@ BouncerTest::expectMessageBouncedWithRejection() const
     EXPECT_EQ(size_t(0), _lower->getNumCommands());
 }
 
-void
-BouncerTest::expect_message_bounced_with_node_down_abort() const
-{
+void BouncerTest::expect_message_bounced_with_node_down_abort() const {
     ASSERT_EQ(1, _upper->getNumReplies());
     EXPECT_EQ(0, _upper->getNumCommands());
     auto& reply = dynamic_cast<api::StorageReply&>(*_upper->getReply(0));
-    EXPECT_EQ(api::ReturnCode(api::ReturnCode::ABORTED,
-              "We don't allow command of type MessageType(12, Remove) "
-              "when node is in state Down (on storage.2)"),
+    EXPECT_EQ(api::ReturnCode(api::ReturnCode::ABORTED, "We don't allow command of type MessageType(12, Remove) "
+                                                        "when node is in state Down (on storage.2)"),
               reply.getResult());
     EXPECT_EQ(0, _lower->getNumCommands());
 }
 
-void
-BouncerTest::expect_message_bounced_with_shutdown_abort() const
-{
+void BouncerTest::expect_message_bounced_with_shutdown_abort() const {
     ASSERT_EQ(1, _upper->getNumReplies());
     EXPECT_EQ(0, _upper->getNumCommands());
     auto& reply = dynamic_cast<api::StorageReply&>(*_upper->getReply(0));
@@ -210,9 +188,7 @@ BouncerTest::expect_message_bounced_with_shutdown_abort() const
     EXPECT_EQ(0, _lower->getNumCommands());
 }
 
-void
-BouncerTest::expectMessageNotBounced() const
-{
+void BouncerTest::expectMessageNotBounced() const {
     EXPECT_EQ(size_t(0), _upper->getNumReplies());
     EXPECT_EQ(size_t(1), _lower->getNumCommands());
 }
@@ -233,8 +209,8 @@ TEST_F(BouncerTest, read_only_operations_are_not_rejected) {
 
 TEST_F(BouncerTest, internal_operations_are_not_rejected) {
     document::BucketId bucket(16, 1234);
-    api::BucketInfo info(0x1, 0x2, 0x3);
-    auto cmd = std::make_shared<api::NotifyBucketChangeCommand>(makeDocumentBucket(bucket), info);
+    api::BucketInfo    info(0x1, 0x2, 0x3);
+    auto               cmd = std::make_shared<api::NotifyBucketChangeCommand>(makeDocumentBucket(bucket), info);
     cmd->setPriority(Priority(2));
     _upper->sendDown(cmd);
     expectMessageNotBounced();
@@ -243,21 +219,24 @@ TEST_F(BouncerTest, internal_operations_are_not_rejected) {
 namespace {
 
 std::shared_ptr<const lib::ClusterStateBundle>
-makeClusterStateBundle(const std::string &baselineState, const std::map<document::BucketSpace, std::string> &derivedStates)
-{
+makeClusterStateBundle(const std::string&                                  baselineState,
+                       const std::map<document::BucketSpace, std::string>& derivedStates) {
     lib::ClusterStateBundle::BucketSpaceStateMapping derivedBucketSpaceStates;
-    for (const auto &entry : derivedStates) {
+    for (const auto& entry : derivedStates) {
         derivedBucketSpaceStates[entry.first] = std::make_shared<const lib::ClusterState>(entry.second);
     }
-    return std::make_shared<const lib::ClusterStateBundle>(lib::ClusterState(baselineState), std::move(derivedBucketSpaceStates));
+    return std::make_shared<const lib::ClusterStateBundle>(lib::ClusterState(baselineState),
+                                                           std::move(derivedBucketSpaceStates));
 }
 
-}
+} // namespace
 
 TEST_F(BouncerTest, abort_request_when_derived_bucket_space_node_state_is_marked_down) {
     EXPECT_EQ(0, _manager->metrics().unavailable_node_aborts.getValue());
 
-    auto state = makeClusterStateBundle("distributor:3 storage:3", {{ document::FixedBucketSpaces::default_space(), "distributor:3 storage:3 .2.s:d" }});
+    auto state =
+        makeClusterStateBundle("distributor:3 storage:3",
+                               {{document::FixedBucketSpaces::default_space(), "distributor:3 storage:3 .2.s:d"}});
     _node->getNodeStateUpdater().setClusterStateBundle(state);
     _upper->sendDown(createDummyFeedMessage(11 * 1000000, document::FixedBucketSpaces::default_space()));
     expect_message_bounced_with_node_down_abort();
@@ -307,12 +286,11 @@ namespace {
 std::shared_ptr<api::RemoveCommand> make_remove_with_used_bits(uint8_t n_bits) {
     auto id = document::DocumentId("id:ns:foo::bar");
     auto raw_bucket = id.getGlobalId().convertToBucketId();
-    return std::make_shared<api::RemoveCommand>(
-            makeDocumentBucket(document::BucketId(n_bits, raw_bucket.getRawId())),
-            id, api::Timestamp(1000));
+    return std::make_shared<api::RemoveCommand>(makeDocumentBucket(document::BucketId(n_bits, raw_bucket.getRawId())),
+                                                id, api::Timestamp(1000));
 }
 
-}
+} // namespace
 
 TEST_F(BouncerTest, operation_with_too_few_bucket_bits_is_rejected) {
     auto cmd = make_remove_with_used_bits(spi::BucketLimits::MinUsedBits - 1);
@@ -344,5 +322,4 @@ TEST_F(BouncerTest, replies_are_swallowed_after_close) {
     EXPECT_EQ(0, _lower->getNumReplies());
 }
 
-} // storage
-
+} // namespace storage

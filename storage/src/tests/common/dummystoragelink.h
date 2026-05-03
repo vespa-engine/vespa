@@ -2,11 +2,12 @@
 
 #pragma once
 
-#include <list>
-#include <sstream>
-#include <vespa/storageapi/messageapi/storagecommand.h>
 #include <vespa/storage/common/storagelink.h>
 #include <vespa/storageapi/message/internal.h>
+#include <vespa/storageapi/messageapi/storagecommand.h>
+
+#include <list>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -14,17 +15,17 @@ namespace storage {
 
 class DummyStorageLink : public StorageLink {
 
-    mutable std::mutex _lock; // to protect below containers:
+    mutable std::mutex                   _lock; // to protect below containers:
     std::vector<api::StorageMessage::SP> _commands;
     std::vector<api::StorageMessage::SP> _replies;
-    std::list<api::StorageMessage::SP> _injected;
+    std::list<api::StorageMessage::SP>   _injected;
 
-    bool _autoReply;
-    bool _useDispatch;
-    bool _ignore;
+    bool                     _autoReply;
+    bool                     _useDispatch;
+    bool                     _ignore;
     static DummyStorageLink* _last;
-    std::mutex _waitMonitor;
-    std::condition_variable _waitCond;
+    std::mutex               _waitMonitor;
+    std::condition_variable  _waitCond;
 
 public:
     DummyStorageLink();
@@ -33,16 +34,12 @@ public:
     bool onDown(const api::StorageMessage::SP&) override;
     bool onUp(const api::StorageMessage::SP&) override;
 
-    void addOnTopOfChain(StorageLink& link) {
-        link.addTestLinkOnTop(this);
-    }
+    void addOnTopOfChain(StorageLink& link) { link.addTestLinkOnTop(this); }
 
-    void print(std::ostream& ost, bool verbose, const std::string& indent) const override
-    {
-        (void) verbose;
+    void print(std::ostream& ost, bool verbose, const std::string& indent) const override {
+        (void)verbose;
         ost << indent << "DummyStorageLink("
-            << "autoreply = " << (_autoReply ? "on" : "off")
-            << ", dispatch = " << (_useDispatch ? "on" : "off")
+            << "autoreply = " << (_autoReply ? "on" : "off") << ", dispatch = " << (_useDispatch ? "on" : "off")
             << ", " << _commands.size() << " commands"
             << ", " << _replies.size() << " replies";
         if (_injected.size() > 0)
@@ -60,12 +57,12 @@ public:
     void waitForMessage(const api::MessageType&, int timeout = -1);
 
     api::StorageMessage::SP getCommand(size_t i) const {
-        std::lock_guard guard(_lock);
+        std::lock_guard         guard(_lock);
         api::StorageMessage::SP ret = _commands[i];
         return ret;
     }
     api::StorageMessage::SP getReply(size_t i) const {
-        std::lock_guard guard(_lock);
+        std::lock_guard         guard(_lock);
         api::StorageMessage::SP ret = _replies[i];
         return ret;
     }
@@ -78,13 +75,11 @@ public:
         return _replies.size();
     }
 
-    const std::vector<api::StorageMessage::SP>& getCommands() const
-        { return _commands; }
-    const std::vector<api::StorageMessage::SP>& getReplies() const
-        { return _replies; }
+    const std::vector<api::StorageMessage::SP>& getCommands() const { return _commands; }
+    const std::vector<api::StorageMessage::SP>& getReplies() const { return _replies; }
 
     std::vector<api::StorageMessage::SP> getCommandsOnce() {
-        std::lock_guard lock(_waitMonitor);
+        std::lock_guard                      lock(_waitMonitor);
         std::vector<api::StorageMessage::SP> retval;
         {
             std::lock_guard guard(_lock);
@@ -94,7 +89,7 @@ public:
     }
 
     std::vector<api::StorageMessage::SP> getRepliesOnce() {
-        std::lock_guard lock(_waitMonitor);
+        std::lock_guard                      lock(_waitMonitor);
         std::vector<api::StorageMessage::SP> retval;
         {
             std::lock_guard guard(_lock);
@@ -106,6 +101,7 @@ public:
     api::StorageMessage::SP getAndRemoveMessage(const api::MessageType&);
 
     static DummyStorageLink* getLast() { return _last; }
+
 private:
     /**
      * Auto-reply with an injected message if one is available and return
@@ -114,5 +110,4 @@ private:
     bool handleInjectedReply();
 };
 
-}
-
+} // namespace storage
