@@ -1,5 +1,28 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/config-attributes.h>
+#include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/datatype/mapdatatype.h>
+#include <vespa/document/datatype/tensor_data_type.h>
+#include <vespa/document/fieldvalue/arrayfieldvalue.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/intfieldvalue.h>
+#include <vespa/document/fieldvalue/mapfieldvalue.h>
+#include <vespa/document/fieldvalue/predicatefieldvalue.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/document/fieldvalue/tensorfieldvalue.h>
+#include <vespa/document/predicate/predicate_slime_builder.h>
+#include <vespa/document/repo/newconfigbuilder.h>
+#include <vespa/document/update/arithmeticvalueupdate.h>
+#include <vespa/document/update/assignvalueupdate.h>
+#include <vespa/document/update/documentupdate.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/test/value_compare.h>
+#include <vespa/eval/eval/value.h>
+#include <vespa/searchcommon/attribute/attributecontent.h>
+#include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchcore/proton/attribute/attribute_collection_spec_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
@@ -23,30 +46,6 @@
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/searchlib/test/doc_builder.h>
-#include <vespa/searchcommon/attribute/attributecontent.h>
-#include <vespa/searchcommon/attribute/iattributevector.h>
-#include <vespa/searchcommon/attribute/config.h>
-#include <vespa/config-attributes.h>
-#include <vespa/document/datatype/documenttype.h>
-#include <vespa/document/datatype/mapdatatype.h>
-#include <vespa/document/datatype/tensor_data_type.h>
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/fieldvalue/arrayfieldvalue.h>
-#include <vespa/document/fieldvalue/intfieldvalue.h>
-#include <vespa/document/fieldvalue/mapfieldvalue.h>
-#include <vespa/document/fieldvalue/predicatefieldvalue.h>
-#include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/document/fieldvalue/tensorfieldvalue.h>
-#include <vespa/document/predicate/predicate_slime_builder.h>
-#include <vespa/document/repo/newconfigbuilder.h>
-#include <vespa/document/update/arithmeticvalueupdate.h>
-#include <vespa/document/update/assignvalueupdate.h>
-#include <vespa/document/update/documentupdate.h>
-#include <vespa/eval/eval/simple_value.h>
-#include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/eval/eval/test/value_compare.h>
-#include <vespa/eval/eval/value.h>
-#include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -57,10 +56,16 @@
 #include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/vespalib/util/sequencedtaskexecutorobserver.h>
 
+#include <vespa/vespalib/btree/btreeroot.hpp>
+
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_test");
 
-namespace vespa { namespace config { namespace search {}}}
+namespace vespa {
+namespace config {
+namespace search {}
+} // namespace config
+} // namespace vespa
 
 using namespace config;
 using namespace document;
@@ -91,15 +96,15 @@ using search::test::DocBuilder;
 using std::string;
 using vespalib::ForegroundTaskExecutor;
 using vespalib::ForegroundThreadExecutor;
+using vespalib::GateCallback;
+using vespalib::HwInfo;
+using vespalib::IDestructorCallback;
 using vespalib::SequencedTaskExecutorObserver;
 using vespalib::datastore::CompactionStrategy;
 using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
-using vespalib::GateCallback;
-using vespalib::IDestructorCallback;
-using vespalib::HwInfo;
 
 using AVBasicType = search::attribute::BasicType;
 using AVCollectionType = search::attribute::CollectionType;
@@ -112,25 +117,20 @@ constexpr uint64_t createSerialNum = 42u;
 
 }
 
-AVConfig
-unregister(const AVConfig & cfg)
-{
+AVConfig unregister(const AVConfig& cfg) {
     AVConfig retval = cfg;
     return retval;
 }
 
-const string test_dir = "test_output";
+const string   test_dir = "test_output";
 const AVConfig INT32_SINGLE = unregister(AVConfig(AVBasicType::INT32));
 
-void
-fillAttribute(const AttributeVector::SP &attr, uint32_t numDocs, int64_t value, uint64_t lastSyncToken)
-{
+void fillAttribute(const AttributeVector::SP& attr, uint32_t numDocs, int64_t value, uint64_t lastSyncToken) {
     AttributeUtils::fillAttribute(*attr, numDocs, value, lastSyncToken);
 }
 
-void
-fillAttribute(const AttributeVector::SP &attr, uint32_t from, uint32_t to, int64_t value, uint64_t lastSyncToken)
-{
+void fillAttribute(const AttributeVector::SP& attr, uint32_t from, uint32_t to, int64_t value,
+                   uint64_t lastSyncToken) {
     AttributeUtils::fillAttribute(*attr, from, to, value, lastSyncToken);
 }
 
@@ -138,21 +138,15 @@ const std::shared_ptr<IDestructorCallback> emptyCallback;
 
 class AttributeWriterTest : public ::testing::Test {
 public:
-    DirectoryHandler _dirHandler;
-    std::unique_ptr<ForegroundTaskExecutor> _attributeFieldWriterReal;
+    DirectoryHandler                               _dirHandler;
+    std::unique_ptr<ForegroundTaskExecutor>        _attributeFieldWriterReal;
     std::unique_ptr<SequencedTaskExecutorObserver> _attributeFieldWriter;
-    ForegroundThreadExecutor _shared;
-    std::shared_ptr<MockAttributeManager> _mgr;
-    std::unique_ptr<AttributeWriter> _aw;
+    ForegroundThreadExecutor                       _shared;
+    std::shared_ptr<MockAttributeManager>          _mgr;
+    std::unique_ptr<AttributeWriter>               _aw;
 
     AttributeWriterTest()
-        : _dirHandler(test_dir),
-          _attributeFieldWriterReal(),
-          _attributeFieldWriter(),
-          _shared(),
-          _mgr(),
-          _aw()
-    {
+        : _dirHandler(test_dir), _attributeFieldWriterReal(), _attributeFieldWriter(), _shared(), _mgr(), _aw() {
         setup(1);
     }
     ~AttributeWriterTest() override;
@@ -165,30 +159,25 @@ public:
         _mgr->set_shared_executor(_shared);
         allocAttributeWriter();
     }
-    void allocAttributeWriter() {
-        _aw = std::make_unique<AttributeWriter>(_mgr);
-    }
-    AttributeVector::SP addAttribute(const std::string &name) {
+    void allocAttributeWriter() { _aw = std::make_unique<AttributeWriter>(_mgr); }
+    AttributeVector::SP addAttribute(const std::string& name) {
         return addAttribute({name, AVConfig(AVBasicType::INT32)});
     }
-    AttributeVector::SP addAttribute(const AttributeSpec &spec) {
-        auto ret = _mgr->addAttribute(spec.getName(),
-                                      AttributeFactory::createAttribute(spec.getName(), spec.getConfig()));
+    AttributeVector::SP addAttribute(const AttributeSpec& spec) {
+        auto ret =
+            _mgr->addAttribute(spec.getName(), AttributeFactory::createAttribute(spec.getName(), spec.getConfig()));
         return ret;
     }
-    void add_attribute(AttributeVector::SP attr) {
-        _mgr->addAttribute(attr->getName(), std::move(attr));
-    }
-    void put(SerialNum serialNum, const Document &doc, DocumentIdT lid) {
+    void add_attribute(AttributeVector::SP attr) { _mgr->addAttribute(attr->getName(), std::move(attr)); }
+    void put(SerialNum serialNum, const Document& doc, DocumentIdT lid) {
         _aw->put(serialNum, doc, lid, emptyCallback);
         commit(serialNum);
     }
-    void update(SerialNum serialNum, const DocumentUpdate &upd,
-                DocumentIdT lid, IFieldUpdateCallback & onUpdate) {
+    void update(SerialNum serialNum, const DocumentUpdate& upd, DocumentIdT lid, IFieldUpdateCallback& onUpdate) {
         _aw->update(serialNum, upd, lid, emptyCallback, onUpdate);
         commit(serialNum);
     }
-    void update(SerialNum serialNum, const Document &doc, DocumentIdT lid) {
+    void update(SerialNum serialNum, const Document& doc, DocumentIdT lid) {
         _aw->update(serialNum, doc, lid, emptyCallback);
         commit(serialNum);
     }
@@ -196,7 +185,7 @@ public:
         _aw->remove(serialNum, lid, emptyCallback);
         commit(serialNum);
     }
-    void remove(const LidVector &lidVector, SerialNum serialNum) {
+    void remove(const LidVector& lidVector, SerialNum serialNum) {
         _aw->remove(lidVector, serialNum, emptyCallback);
         commit(serialNum);
     }
@@ -209,9 +198,9 @@ public:
         includeCommit.insert(includeCommit.end(), expExecuteHistory.begin(), expExecuteHistory.end());
         EXPECT_EQ(includeCommit, _attributeFieldWriter->getExecuteHistory());
     }
-    SerialNum test_force_commit(AttributeVector &attr, SerialNum serialNum) {
+    SerialNum test_force_commit(AttributeVector& attr, SerialNum serialNum) {
         vespalib::Gate gate;
-        CommitParam commit_param(serialNum, CommitParam::UpdateStats::SKIP);
+        CommitParam    commit_param(serialNum, CommitParam::UpdateStats::SKIP);
         _aw->forceCommit(commit_param, std::make_shared<GateCallback>(gate));
         gate.await();
         return attr.getStatus().getLastSyncToken();
@@ -220,22 +209,22 @@ public:
 
 AttributeWriterTest::~AttributeWriterTest() = default;
 
-TEST_F(AttributeWriterTest, handles_put)
-{
-    DocBuilder db([](auto& builder, auto& header)
-                  { auto int_array = header.createArray(builder.intTypeRef()).ref();
-                      header.addField("a1", builder.intTypeRef())
-                          .addField("a2", int_array)
-                          .addField("a3", builder.floatTypeRef())
-                          .addField("a4", builder.stringTypeRef()); });
-    auto a1 = addAttribute("a1");
-    auto a2 = addAttribute({"a2", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)});
-    auto a3 = addAttribute({"a3", AVConfig(AVBasicType::FLOAT)});
-    auto a4 = addAttribute({"a4", AVConfig(AVBasicType::STRING)});
+TEST_F(AttributeWriterTest, handles_put) {
+    DocBuilder db([](auto& builder, auto& header) {
+        auto int_array = header.createArray(builder.intTypeRef()).ref();
+        header.addField("a1", builder.intTypeRef())
+            .addField("a2", int_array)
+            .addField("a3", builder.floatTypeRef())
+            .addField("a4", builder.stringTypeRef());
+    });
+    auto       a1 = addAttribute("a1");
+    auto       a2 = addAttribute({"a2", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)});
+    auto       a3 = addAttribute({"a3", AVConfig(AVBasicType::FLOAT)});
+    auto       a4 = addAttribute({"a4", AVConfig(AVBasicType::STRING)});
     allocAttributeWriter();
 
-    attribute::IntegerContent ibuf;
-    attribute::FloatContent fbuf;
+    attribute::IntegerContent   ibuf;
+    attribute::FloatContent     fbuf;
     attribute::ConstCharContent sbuf;
     { // empty document should give default values
         EXPECT_EQ(1u, a1->getNumDocs());
@@ -266,7 +255,7 @@ TEST_F(AttributeWriterTest, handles_put)
         auto int_array = db.make_array("a2");
         int_array.add(IntFieldValue(20));
         int_array.add(IntFieldValue(30));
-        doc->setValue("a2",int_array);
+        doc->setValue("a2", int_array);
         put(2, *doc, 2);
         EXPECT_EQ(3u, a1->getNumDocs());
         EXPECT_EQ(3u, a2->getNumDocs());
@@ -289,7 +278,7 @@ TEST_F(AttributeWriterTest, handles_put)
         int_array.add(IntFieldValue(200));
         int_array.add(IntFieldValue(300));
         int_array.add(IntFieldValue(400));
-        doc->setValue("a2",int_array);
+        doc->setValue("a2", int_array);
         put(3, *doc, 2);
         EXPECT_EQ(3u, a1->getNumDocs());
         EXPECT_EQ(3u, a2->getNumDocs());
@@ -308,13 +297,12 @@ TEST_F(AttributeWriterTest, handles_put)
     }
 }
 
-TEST_F(AttributeWriterTest, handles_predicate_put)
-{
+TEST_F(AttributeWriterTest, handles_predicate_put) {
     DocBuilder db([](auto& builder, auto& header) { header.addField("a1", builder.predicateTypeRef()); });
-    auto a1 = addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)});
+    auto       a1 = addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)});
     allocAttributeWriter();
 
-    PredicateIndex &index = static_cast<PredicateAttribute &>(*a1).getIndex();
+    PredicateIndex& index = static_cast<PredicateAttribute&>(*a1).getIndex();
 
     // empty document should give default values
     EXPECT_EQ(1u, a1->getNumDocs());
@@ -325,7 +313,7 @@ TEST_F(AttributeWriterTest, handles_predicate_put)
 
     // document with single value attribute
     PredicateSlimeBuilder builder;
-    auto doc = db.make_document("id:ns:searchdocument::2");
+    auto                  doc = db.make_document("id:ns:searchdocument::2");
     doc->setValue("a1", PredicateFieldValue(builder.true_predicate().build()));
     put(2, *doc, 2);
     EXPECT_EQ(3u, a1->getNumDocs());
@@ -346,22 +334,19 @@ TEST_F(AttributeWriterTest, handles_predicate_put)
     EXPECT_TRUE(it.valid());
 }
 
-void
-assertUndefined(const IAttributeVector &attr, uint32_t docId)
-{
+void assertUndefined(const IAttributeVector& attr, uint32_t docId) {
     EXPECT_TRUE(search::attribute::isUndefined<int32_t>(attr.getInt(docId)));
 }
 
-TEST_F(AttributeWriterTest, handles_remove)
-{
-    auto a1 = addAttribute("a1");
-    auto a2 = addAttribute("a2");
+TEST_F(AttributeWriterTest, handles_remove) {
+    auto                a1 = addAttribute("a1");
+    auto                a2 = addAttribute("a2");
     constexpr SerialNum fill_serial_num = 2;
     allocAttributeWriter();
     fillAttribute(a1, 1, 10, fill_serial_num);
     fillAttribute(a2, 1, 20, fill_serial_num);
     remove(fill_serial_num - 1, 1); // lower sync token than during fill => ignored
-    remove(fill_serial_num, 1); // same sync token as during fill  => ignored
+    remove(fill_serial_num, 1);     // same sync token as during fill  => ignored
     EXPECT_EQ(10, a1->getInt(1));
     EXPECT_EQ(20, a2->getInt(1));
     remove(fill_serial_num + 1, 1); // newer sync token => not ignored
@@ -369,15 +354,14 @@ TEST_F(AttributeWriterTest, handles_remove)
     assertUndefined(*a2, 1);
 }
 
-TEST_F(AttributeWriterTest, handles_batch_remove)
-{
+TEST_F(AttributeWriterTest, handles_batch_remove) {
     auto a1 = addAttribute("a1");
     auto a2 = addAttribute("a2");
     allocAttributeWriter();
     fillAttribute(a1, 4, 22, 1);
     fillAttribute(a2, 4, 33, 1);
 
-    LidVector lidsToRemove = {1,3};
+    LidVector lidsToRemove = {1, 3};
     remove(lidsToRemove, 2);
 
     assertUndefined(*a1, 1);
@@ -388,17 +372,14 @@ TEST_F(AttributeWriterTest, handles_batch_remove)
     assertUndefined(*a2, 3);
 }
 
-void
-verifyAttributeContent(const AttributeVector & v, uint32_t lid, std::string_view expected)
-{
+void verifyAttributeContent(const AttributeVector& v, uint32_t lid, std::string_view expected) {
     attribute::ConstCharContent sbuf;
     sbuf.fill(v, lid);
     EXPECT_EQ(1u, sbuf.size());
     EXPECT_EQ(expected, sbuf[0]);
 }
 
-TEST_F(AttributeWriterTest, visibility_delay_is_honoured)
-{
+TEST_F(AttributeWriterTest, visibility_delay_is_honoured) {
     auto a1 = addAttribute({"a1", AVConfig(AVBasicType::STRING)});
     allocAttributeWriter();
 
@@ -444,27 +425,25 @@ TEST_F(AttributeWriterTest, visibility_delay_is_honoured)
     verifyAttributeContent(*a1, 2, "30");
 }
 
-TEST_F(AttributeWriterTest, handles_predicate_remove)
-{
+TEST_F(AttributeWriterTest, handles_predicate_remove) {
     auto a1 = addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)});
     allocAttributeWriter();
 
     DocBuilder db([](auto& builder, auto& header) { header.addField("a1", builder.predicateTypeRef()); });
 
     PredicateSlimeBuilder builder;
-    auto doc = db.make_document("id:ns:searchdocument::1");
+    auto                  doc = db.make_document("id:ns:searchdocument::1");
     doc->setValue("a1", PredicateFieldValue(builder.true_predicate().build()));
     put(1, *doc, 1);
     EXPECT_EQ(2u, a1->getNumDocs());
 
-    PredicateIndex &index = static_cast<PredicateAttribute &>(*a1).getIndex();
+    PredicateIndex& index = static_cast<PredicateAttribute&>(*a1).getIndex();
     EXPECT_EQ(1u, index.getZeroConstraintDocs().size());
     remove(2, 1);
     EXPECT_EQ(0u, index.getZeroConstraintDocs().size());
 }
 
-TEST_F(AttributeWriterTest, handles_update)
-{
+TEST_F(AttributeWriterTest, handles_update) {
     auto a1 = addAttribute("a1");
     auto a2 = addAttribute("a2");
     allocAttributeWriter();
@@ -472,14 +451,14 @@ TEST_F(AttributeWriterTest, handles_update)
     fillAttribute(a1, 1, 10, 1);
     fillAttribute(a2, 1, 20, 1);
 
-    DocBuilder db([](auto& builder, auto& header)
-                            { header.addField("a1", builder.intTypeRef())
-                                    .addField("a2", builder.intTypeRef()); });
+    DocBuilder     db([](auto& builder, auto& header) {
+        header.addField("a1", builder.intTypeRef()).addField("a2", builder.intTypeRef());
+    });
     DocumentUpdate upd(db.get_repo(), db.get_document_type(), DocumentId("id:ns:searchdocument::1"));
     upd.addUpdate(FieldUpdate(upd.getType().getField("a1"))
-                  .addUpdate(std::make_unique<ArithmeticValueUpdate>(ArithmeticValueUpdate::Add, 5)));
+                      .addUpdate(std::make_unique<ArithmeticValueUpdate>(ArithmeticValueUpdate::Add, 5)));
     upd.addUpdate(FieldUpdate(upd.getType().getField("a2"))
-                  .addUpdate(std::make_unique<ArithmeticValueUpdate>(ArithmeticValueUpdate::Add, 10)));
+                      .addUpdate(std::make_unique<ArithmeticValueUpdate>(ArithmeticValueUpdate::Add, 10)));
 
     DummyFieldUpdateCallback onUpdate;
     update(2, upd, 1, onUpdate);
@@ -495,29 +474,29 @@ TEST_F(AttributeWriterTest, handles_update)
     update(2, upd, 1, onUpdate); // same sync token as previous
     try {
         update(1, upd, 1, onUpdate); // lower sync token than previous
-        EXPECT_TRUE(true);  // update is ignored
-    } catch (vespalib::IllegalStateException & e) {
+        EXPECT_TRUE(true);           // update is ignored
+    } catch (vespalib::IllegalStateException& e) {
         LOG(info, "Got expected exception: '%s'", e.getMessage().c_str());
         EXPECT_TRUE(true);
     }
 }
 
-TEST_F(AttributeWriterTest, handles_predicate_update)
-{
+TEST_F(AttributeWriterTest, handles_predicate_update) {
     auto a1 = addAttribute({"a1", AVConfig(AVBasicType::PREDICATE)});
     allocAttributeWriter();
-    DocBuilder db([](auto& builder, auto& header) { header.addField("a1", builder.predicateTypeRef()); });
+    DocBuilder            db([](auto& builder, auto& header) { header.addField("a1", builder.predicateTypeRef()); });
     PredicateSlimeBuilder builder;
-    auto doc = db.make_document("id:ns:searchdocument::1");
+    auto                  doc = db.make_document("id:ns:searchdocument::1");
     doc->setValue("a1", PredicateFieldValue(builder.true_predicate().build()));
     put(1, *doc, 1);
     EXPECT_EQ(2u, a1->getNumDocs());
 
     DocumentUpdate upd(db.get_repo(), db.get_document_type(), DocumentId("id:ns:searchdocument::1"));
     upd.addUpdate(FieldUpdate(upd.getType().getField("a1"))
-                  .addUpdate(std::make_unique<AssignValueUpdate>(std::make_unique<PredicateFieldValue>(builder.feature("foo").value("bar").build()))));
+                      .addUpdate(std::make_unique<AssignValueUpdate>(
+                          std::make_unique<PredicateFieldValue>(builder.feature("foo").value("bar").build()))));
 
-    PredicateIndex &index = static_cast<PredicateAttribute &>(*a1).getIndex();
+    PredicateIndex& index = static_cast<PredicateAttribute&>(*a1).getIndex();
     EXPECT_EQ(1u, index.getZeroConstraintDocs().size());
     EXPECT_FALSE(index.getIntervalIndex().lookup(PredicateHash::hash64("foo=bar")).valid());
     DummyFieldUpdateCallback onUpdate;
@@ -528,17 +507,15 @@ TEST_F(AttributeWriterTest, handles_predicate_update)
 
 class AttributeCollectionSpecTest : public ::testing::Test {
 public:
-    AttributesConfigBuilder _builder;
+    AttributesConfigBuilder        _builder;
     AttributeCollectionSpecFactory _factory;
     AttributeCollectionSpecTest(bool fastAccessOnly)
-        : _builder(),
-          _factory(AllocStrategy(search::GrowStrategy(), CompactionStrategy(), 100), fastAccessOnly)
-    {
+        : _builder(), _factory(AllocStrategy(search::GrowStrategy(), CompactionStrategy(), 100), fastAccessOnly) {
         addAttribute("a1", false, false, false);
         addAttribute("a2", true, true, false);
         addAttribute("a3", true, false, true);
     }
-    void addAttribute(const std::string &name, bool fastAccess, bool fast_search, bool enable_hnsw) {
+    void addAttribute(const std::string& name, bool fastAccess, bool fast_search, bool enable_hnsw) {
         AttributesConfigBuilder::Attribute attr;
         attr.datatype = AttributesConfigBuilder::Attribute::Datatype::INT64;
         attr.name = name;
@@ -561,13 +538,11 @@ public:
     NormalAttributeCollectionSpecTest() : AttributeCollectionSpecTest(false) {}
 };
 
-struct FastAccessAttributeCollectionSpecTest : public AttributeCollectionSpecTest
-{
+struct FastAccessAttributeCollectionSpecTest : public AttributeCollectionSpecTest {
     FastAccessAttributeCollectionSpecTest() : AttributeCollectionSpecTest(true) {}
 };
 
-TEST_F(NormalAttributeCollectionSpecTest, spec_can_be_created)
-{
+TEST_F(NormalAttributeCollectionSpecTest, spec_can_be_created) {
     auto spec = create(10, 20);
     EXPECT_EQ(3u, spec->getAttributes().size());
     EXPECT_EQ("a1", spec->getAttributes()[0].getName());
@@ -583,8 +558,7 @@ TEST_F(NormalAttributeCollectionSpecTest, spec_can_be_created)
     EXPECT_EQ(20u, spec->getCurrentSerialNum());
 }
 
-TEST_F(FastAccessAttributeCollectionSpecTest, spec_can_be_created)
-{
+TEST_F(FastAccessAttributeCollectionSpecTest, spec_can_be_created) {
     auto spec = create(10, 20);
     EXPECT_EQ(2u, spec->getAttributes().size());
     EXPECT_EQ("a2", spec->getAttributes()[0].getName());
@@ -615,22 +589,16 @@ public:
           _attributeFieldWriter(),
           _shared(),
           _hwInfo(),
-          _baseMgr(new proton::AttributeManager(test_dir, "test.subdb",
-                                                TuneFileAttributes(),
-                                                _fileHeaderContext,
+          _baseMgr(new proton::AttributeManager(test_dir, "test.subdb", TuneFileAttributes(), _fileHeaderContext,
                                                 std::make_shared<search::attribute::Interlock>(),
-                                                _attributeFieldWriter,
-                                                _shared,
-                                                _hwInfo)),
-          _filterMgr(ACCEPTED_ATTRIBUTES, _baseMgr)
-    {
+                                                _attributeFieldWriter, _shared, _hwInfo)),
+          _filterMgr(ACCEPTED_ATTRIBUTES, _baseMgr) {
         _baseMgr->addAttribute({"a1", INT32_SINGLE}, createSerialNum);
         _baseMgr->addAttribute({"a2", INT32_SINGLE}, createSerialNum);
-   }
+    }
 };
 
-TEST_F(FilterAttributeManagerTest, filter_attributes)
-{
+TEST_F(FilterAttributeManagerTest, filter_attributes) {
     EXPECT_TRUE(_filterMgr.getAttribute("a1").get() == nullptr);
     EXPECT_TRUE(_filterMgr.getAttribute("a2").get() != nullptr);
     std::vector<AttributeGuard> attrs;
@@ -643,15 +611,13 @@ TEST_F(FilterAttributeManagerTest, filter_attributes)
     EXPECT_EQ("attribute.shrink.a2", targets[1]->getName());
 }
 
-TEST_F(FilterAttributeManagerTest, returns_flushed_serial_number)
-{
+TEST_F(FilterAttributeManagerTest, returns_flushed_serial_number) {
     _baseMgr->flushAll(100);
     EXPECT_EQ(0u, _filterMgr.getFlushedSerialNum("a1"));
     EXPECT_EQ(100u, _filterMgr.getFlushedSerialNum("a2"));
 }
 
-TEST_F(FilterAttributeManagerTest, readable_attribute_vector_filters_attributes)
-{
+TEST_F(FilterAttributeManagerTest, readable_attribute_vector_filters_attributes) {
     auto av = _filterMgr.readable_attribute_vector("a2");
     ASSERT_TRUE(av);
     EXPECT_EQ("a2", av->makeReadGuard(false)->attribute()->getName());
@@ -662,72 +628,65 @@ TEST_F(FilterAttributeManagerTest, readable_attribute_vector_filters_attributes)
 
 namespace {
 
-Value::UP make_tensor(const TensorSpec &spec) {
+Value::UP make_tensor(const TensorSpec& spec) {
     return SimpleValue::from_spec(spec);
 }
 
 const std::string sparse_tensor = "tensor(x{},y{})";
 
-AttributeVector::SP
-createTensorAttribute(AttributeWriterTest &t) {
+AttributeVector::SP createTensorAttribute(AttributeWriterTest& t) {
     AVConfig cfg(AVBasicType::TENSOR);
     cfg.setTensorType(ValueType::from_spec(sparse_tensor));
     auto ret = t.addAttribute({"a1", cfg});
     return ret;
 }
 
-Document::UP
-createTensorPutDoc(DocBuilder& builder, const Value &tensor) {
-    auto doc = builder.make_document("id:ns:searchdocument::1");
+Document::UP createTensorPutDoc(DocBuilder& builder, const Value& tensor) {
+    auto             doc = builder.make_document("id:ns:searchdocument::1");
     TensorFieldValue fv(*doc->getField("a1").getDataType().cast_tensor());
     fv = SimpleValue::from_value(tensor);
     doc->setValue("a1", fv);
     return doc;
 }
 
-}
+} // namespace
 
-TEST_F(AttributeWriterTest, can_write_to_tensor_attribute)
-{
+TEST_F(AttributeWriterTest, can_write_to_tensor_attribute) {
     auto a1 = createTensorAttribute(*this);
     allocAttributeWriter();
-    DocBuilder builder([](auto& /*builder*/, auto& header) { header.addTensorField("a1", sparse_tensor); });
-    auto tensor = make_tensor(TensorSpec(sparse_tensor)
-                              .add({{"x", "4"}, {"y", "5"}}, 7));
+    DocBuilder   builder([](auto& /*builder*/, auto& header) { header.addTensorField("a1", sparse_tensor); });
+    auto         tensor = make_tensor(TensorSpec(sparse_tensor).add({{"x", "4"}, {"y", "5"}}, 7));
     Document::UP doc = createTensorPutDoc(builder, *tensor);
     put(1, *doc, 1);
     EXPECT_EQ(2u, a1->getNumDocs());
-    auto *tensorAttribute = dynamic_cast<TensorAttribute *>(a1.get());
+    auto* tensorAttribute = dynamic_cast<TensorAttribute*>(a1.get());
     EXPECT_TRUE(tensorAttribute != nullptr);
     auto tensor2 = tensorAttribute->getTensor(1);
     EXPECT_TRUE(static_cast<bool>(tensor2));
     EXPECT_EQ(*tensor, *tensor2);
 }
 
-TEST_F(AttributeWriterTest, handles_tensor_assign_update)
-{
+TEST_F(AttributeWriterTest, handles_tensor_assign_update) {
     auto a1 = createTensorAttribute(*this);
     allocAttributeWriter();
     DocBuilder builder([](auto& /*builder*/, auto& header) { header.addTensorField("a1", sparse_tensor); });
-    auto tensor = make_tensor(TensorSpec(sparse_tensor)
-                              .add({{"x", "6"}, {"y", "7"}}, 9));
-    auto doc = createTensorPutDoc(builder, *tensor);
+    auto       tensor = make_tensor(TensorSpec(sparse_tensor).add({{"x", "6"}, {"y", "7"}}, 9));
+    auto       doc = createTensorPutDoc(builder, *tensor);
     put(1, *doc, 1);
     EXPECT_EQ(2u, a1->getNumDocs());
-    auto *tensorAttribute = dynamic_cast<TensorAttribute *>(a1.get());
+    auto* tensorAttribute = dynamic_cast<TensorAttribute*>(a1.get());
     EXPECT_TRUE(tensorAttribute != nullptr);
     auto tensor2 = tensorAttribute->getTensor(1);
     EXPECT_TRUE(static_cast<bool>(tensor2));
     EXPECT_EQ(*tensor, *tensor2);
 
     DocumentUpdate upd(builder.get_repo(), builder.get_document_type(), DocumentId("id:ns:searchdocument::1"));
-    auto new_tensor = make_tensor(TensorSpec(sparse_tensor)
-                                  .add({{"x", "8"}, {"y", "9"}}, 11));
+    auto           new_tensor = make_tensor(TensorSpec(sparse_tensor).add({{"x", "8"}, {"y", "9"}}, 11));
     TensorDataType xySparseTensorDataType(vespalib::eval::ValueType::from_spec(sparse_tensor));
-    auto new_value = std::make_unique<TensorFieldValue>(xySparseTensorDataType);
+    auto           new_value = std::make_unique<TensorFieldValue>(xySparseTensorDataType);
     *new_value = SimpleValue::from_value(*new_tensor);
     upd.addUpdate(FieldUpdate(upd.getType().getField("a1"))
-                  .addUpdate(std::make_unique<AssignValueUpdate>(std::move(new_value))));
+                      .addUpdate(std::make_unique<AssignValueUpdate>(std::move(new_value))));
     DummyFieldUpdateCallback onUpdate;
     update(2, upd, 1, onUpdate);
     EXPECT_EQ(2u, a1->getNumDocs());
@@ -740,9 +699,7 @@ TEST_F(AttributeWriterTest, handles_tensor_assign_update)
 
 namespace {
 
-void
-assertPutDone(AttributeVector &attr, int32_t expVal)
-{
+void assertPutDone(AttributeVector& attr, int32_t expVal) {
     EXPECT_EQ(2u, attr.getNumDocs());
     EXPECT_EQ(1u, attr.getStatus().getLastSyncToken());
     attribute::IntegerContent ibuf;
@@ -751,9 +708,7 @@ assertPutDone(AttributeVector &attr, int32_t expVal)
     EXPECT_EQ(expVal, ibuf[0]);
 }
 
-void
-putAttributes(AttributeWriterTest &t, std::vector<uint32_t> expExecuteHistory)
-{
+void putAttributes(AttributeWriterTest& t, std::vector<uint32_t> expExecuteHistory) {
     // Since executor distribution depends on the unspecified hash function in vespalib,
     // decouple attribute names from their usage to allow for picking names that hash
     // more evenly for a particular implementation.
@@ -761,10 +716,11 @@ putAttributes(AttributeWriterTest &t, std::vector<uint32_t> expExecuteHistory)
     std::string a2_name = "a2x";
     std::string a3_name = "a3y";
 
-    DocBuilder db([&](auto& builder, auto& header)
-                  { header.addField(a1_name, builder.intTypeRef())
-                          .addField(a2_name, builder.intTypeRef())
-                          .addField(a3_name, builder.intTypeRef()); });
+    DocBuilder db([&](auto& builder, auto& header) {
+        header.addField(a1_name, builder.intTypeRef())
+            .addField(a2_name, builder.intTypeRef())
+            .addField(a3_name, builder.intTypeRef());
+    });
 
     auto a1 = t.addAttribute(a1_name);
     auto a2 = t.addAttribute(a2_name);
@@ -785,27 +741,24 @@ putAttributes(AttributeWriterTest &t, std::vector<uint32_t> expExecuteHistory)
     t.assertExecuteHistory(expExecuteHistory);
 }
 
-}
+} // namespace
 
-TEST_F(AttributeWriterTest, spreads_write_over_1_write_context)
-{
+TEST_F(AttributeWriterTest, spreads_write_over_1_write_context) {
     putAttributes(*this, {0});
 }
 
-TEST_F(AttributeWriterTest, spreads_write_over_2_write_contexts)
-{
+TEST_F(AttributeWriterTest, spreads_write_over_2_write_contexts) {
     setup(2);
     putAttributes(*this, {0, 1});
 }
 
-TEST_F(AttributeWriterTest, spreads_write_over_3_write_contexts)
-{
+TEST_F(AttributeWriterTest, spreads_write_over_3_write_contexts) {
     setup(8);
     putAttributes(*this, {4, 5, 6});
 }
 
 struct MockPrepareResult : public PrepareResult {
-    uint32_t docid;
+    uint32_t     docid;
     const Value& tensor;
     MockPrepareResult(uint32_t docid_in, const Value& tensor_in) : docid(docid_in), tensor(tensor_in) {}
 };
@@ -814,8 +767,8 @@ class MockDenseTensorAttribute : public DenseTensorAttribute {
 public:
     mutable size_t prepare_set_tensor_cnt;
     mutable size_t complete_set_tensor_cnt;
-    size_t clear_doc_cnt;
-    const Value* exp_tensor;
+    size_t         clear_doc_cnt;
+    const Value*   exp_tensor;
 
     MockDenseTensorAttribute(std::string_view name, const AVConfig& cfg)
         : DenseTensorAttribute(name, cfg),
@@ -835,7 +788,8 @@ public:
         return std::make_unique<MockPrepareResult>(docid, tensor);
     }
 
-    void complete_set_tensor(DocId docid, const Value& tensor, std::unique_ptr<PrepareResult> prepare_result) override {
+    void complete_set_tensor(DocId docid, const Value& tensor,
+                             std::unique_ptr<PrepareResult> prepare_result) override {
         ++complete_set_tensor_cnt;
         assert(prepare_result);
         auto* mock_result = dynamic_cast<MockPrepareResult*>(prepare_result.get());
@@ -847,24 +801,20 @@ public:
 
 const std::string dense_tensor = "tensor(x[2])";
 
-AVConfig
-get_tensor_config(bool multi_threaded_indexing)
-{
+AVConfig get_tensor_config(bool multi_threaded_indexing) {
     AVConfig cfg(AVBasicType::TENSOR);
     cfg.setTensorType(ValueType::from_spec(dense_tensor));
     cfg.set_hnsw_index_params(HnswIndexParams(4, 4, DistanceMetric::Euclidean, multi_threaded_indexing));
     return cfg;
 }
 
-std::shared_ptr<MockDenseTensorAttribute>
-make_mock_tensor_attribute(const std::string& name, bool multi_threaded_indexing)
-{
+std::shared_ptr<MockDenseTensorAttribute> make_mock_tensor_attribute(const std::string& name,
+                                                                     bool               multi_threaded_indexing) {
     auto cfg = get_tensor_config(multi_threaded_indexing);
     return std::make_shared<MockDenseTensorAttribute>(name, cfg);
 }
 
-TEST_F(AttributeWriterTest, tensor_attributes_using_two_phase_put_are_in_separate_write_contexts)
-{
+TEST_F(AttributeWriterTest, tensor_attributes_using_two_phase_put_are_in_separate_write_contexts) {
     addAttribute("a1");
     addAttribute({"t1", get_tensor_config(true)});
     addAttribute({"t2", get_tensor_config(true)});
@@ -887,54 +837,46 @@ TEST_F(AttributeWriterTest, tensor_attributes_using_two_phase_put_are_in_separat
 
 class TwoPhasePutTest : public AttributeWriterTest {
 public:
-    DocBuilder builder;
-    std::string doc_id;
+    DocBuilder                                builder;
+    std::string                               doc_id;
     std::shared_ptr<MockDenseTensorAttribute> attr;
-    std::unique_ptr<Value> tensor;
+    std::unique_ptr<Value>                    tensor;
 
     TwoPhasePutTest()
         : AttributeWriterTest(),
           builder([&](auto& /*bldr*/, auto& header) { header.addTensorField("a1", dense_tensor); }),
           doc_id("id:ns:searchdocument::1"),
-          attr()
-    {
+          attr() {
         setup(2);
         attr = make_mock_tensor_attribute("a1", true);
         add_attribute(attr);
         AttributeManager::padAttribute(*attr, 4);
         attr->clear_doc_cnt = 0;
-        tensor = make_tensor(TensorSpec(dense_tensor)
-                                     .add({{"x", 0}}, 3).add({{"x", 1}}, 5));
+        tensor = make_tensor(TensorSpec(dense_tensor).add({{"x", 0}}, 3).add({{"x", 1}}, 5));
         attr->exp_tensor = tensor.get();
         allocAttributeWriter();
     }
-    void expect_tensor_attr_calls(size_t exp_prepare_cnt,
-                                  size_t exp_complete_cnt,
-                                  size_t exp_clear_doc_cnt = 0) {
+    void expect_tensor_attr_calls(size_t exp_prepare_cnt, size_t exp_complete_cnt, size_t exp_clear_doc_cnt = 0) {
         EXPECT_EQ(exp_prepare_cnt, attr->prepare_set_tensor_cnt);
         EXPECT_EQ(exp_complete_cnt, attr->complete_set_tensor_cnt);
         EXPECT_EQ(exp_clear_doc_cnt, attr->clear_doc_cnt);
     }
-    Document::UP make_doc() {
-        return createTensorPutDoc(builder, *tensor);
-    }
-    Document::UP make_no_field_doc() {
-        return builder.make_document(doc_id);
-    }
+    Document::UP make_doc() { return createTensorPutDoc(builder, *tensor); }
+    Document::UP make_no_field_doc() { return builder.make_document(doc_id); }
     Document::UP make_no_tensor_doc() {
-        auto doc = builder.make_document(doc_id);
+        auto             doc = builder.make_document(doc_id);
         TensorFieldValue fv(*doc->getField("a1").getDataType().cast_tensor());
         doc->setValue("a1", fv);
         return doc;
     }
     DocumentUpdate::UP make_assign_update() {
-       auto upd = std::make_unique<DocumentUpdate>(builder.get_repo(),
-                                                   builder.get_document_type(),
-                                                   DocumentId(doc_id));
+        auto upd =
+            std::make_unique<DocumentUpdate>(builder.get_repo(), builder.get_document_type(), DocumentId(doc_id));
         TensorDataType tensor_type(vespalib::eval::ValueType::from_spec(dense_tensor));
-        auto tensor_value = std::make_unique<TensorFieldValue>(tensor_type);
+        auto           tensor_value = std::make_unique<TensorFieldValue>(tensor_type);
         *tensor_value = SimpleValue::from_value(*tensor);
-        upd->addUpdate(FieldUpdate(upd->getType().getField("a1")).addUpdate(std::make_unique<AssignValueUpdate>(std::move(tensor_value))));
+        upd->addUpdate(FieldUpdate(upd->getType().getField("a1"))
+                           .addUpdate(std::make_unique<AssignValueUpdate>(std::move(tensor_value))));
         return upd;
     }
     void expect_shared_executor_tasks(size_t exp_accepted_tasks) {
@@ -944,8 +886,7 @@ public:
     }
 };
 
-TEST_F(TwoPhasePutTest, handles_put_in_two_phases_when_specified_for_tensor_attribute)
-{
+TEST_F(TwoPhasePutTest, handles_put_in_two_phases_when_specified_for_tensor_attribute) {
     auto doc = make_doc();
 
     put(1, *doc, 1);
@@ -959,8 +900,7 @@ TEST_F(TwoPhasePutTest, handles_put_in_two_phases_when_specified_for_tensor_attr
     assertExecuteHistory({0, 0});
 }
 
-TEST_F(TwoPhasePutTest, put_is_ignored_when_serial_number_is_older_or_equal_to_attribute)
-{
+TEST_F(TwoPhasePutTest, put_is_ignored_when_serial_number_is_older_or_equal_to_attribute) {
     auto doc = make_doc();
     attr->commit(CommitParam(7, CommitParam::UpdateStats::SKIP));
     put(7, *doc, 1);
@@ -969,8 +909,7 @@ TEST_F(TwoPhasePutTest, put_is_ignored_when_serial_number_is_older_or_equal_to_a
     assertExecuteHistory({0});
 }
 
-TEST_F(TwoPhasePutTest, document_is_cleared_if_field_is_not_set)
-{
+TEST_F(TwoPhasePutTest, document_is_cleared_if_field_is_not_set) {
     auto doc = make_no_field_doc();
     put(1, *doc, 1);
     expect_tensor_attr_calls(0, 0, 1);
@@ -978,8 +917,7 @@ TEST_F(TwoPhasePutTest, document_is_cleared_if_field_is_not_set)
     assertExecuteHistory({0});
 }
 
-TEST_F(TwoPhasePutTest, document_is_cleared_if_tensor_in_field_is_not_set)
-{
+TEST_F(TwoPhasePutTest, document_is_cleared_if_tensor_in_field_is_not_set) {
     auto doc = make_no_tensor_doc();
     put(1, *doc, 1);
     expect_tensor_attr_calls(0, 0, 1);
@@ -987,8 +925,7 @@ TEST_F(TwoPhasePutTest, document_is_cleared_if_tensor_in_field_is_not_set)
     assertExecuteHistory({0});
 }
 
-TEST_F(TwoPhasePutTest, handles_assign_update_as_two_phase_put_when_specified_for_tensor_attribute)
-{
+TEST_F(TwoPhasePutTest, handles_assign_update_as_two_phase_put_when_specified_for_tensor_attribute) {
     auto upd = make_assign_update();
 
     DummyFieldUpdateCallback on_update;
@@ -1003,34 +940,27 @@ TEST_F(TwoPhasePutTest, handles_assign_update_as_two_phase_put_when_specified_fo
     assertExecuteHistory({0, 0});
 }
 
-
-ImportedAttributeVector::SP
-createImportedAttribute(const std::string &name)
-{
+ImportedAttributeVector::SP createImportedAttribute(const std::string& name) {
     auto result = ImportedAttributeVectorFactory::create(name, {}, {}, {}, {}, true);
     result->getSearchCache()->insert("foo", {});
     return result;
 }
 
-ImportedAttributesRepo::UP
-createImportedAttributesRepo()
-{
+ImportedAttributesRepo::UP createImportedAttributesRepo() {
     auto result = std::make_unique<ImportedAttributesRepo>();
     result->add("imported_a", createImportedAttribute("imported_a"));
     result->add("imported_b", createImportedAttribute("imported_b"));
     return result;
 }
 
-TEST_F(AttributeWriterTest, forceCommit_clears_search_cache_in_imported_attribute_vectors)
-{
+TEST_F(AttributeWriterTest, forceCommit_clears_search_cache_in_imported_attribute_vectors) {
     _mgr->setImportedAttributes(createImportedAttributesRepo());
     commit(10);
     EXPECT_EQ(0u, _mgr->getImportedAttributes()->get("imported_a")->getSearchCache()->size());
     EXPECT_EQ(0u, _mgr->getImportedAttributes()->get("imported_b")->getSearchCache()->size());
 }
 
-TEST_F(AttributeWriterTest, ignores_force_commit_serial_not_greater_than_create_serial)
-{
+TEST_F(AttributeWriterTest, ignores_force_commit_serial_not_greater_than_create_serial) {
     auto a1 = addAttribute("a1");
     allocAttributeWriter();
     a1->setCreateSerialNum(100);
@@ -1041,25 +971,19 @@ TEST_F(AttributeWriterTest, ignores_force_commit_serial_not_greater_than_create_
 
 class StructWriterTestBase : public AttributeWriterTest {
 public:
-    DocumentType _type;
-    const Field _valueField;
+    DocumentType   _type;
+    const Field    _valueField;
     StructDataType _structFieldType;
 
     StructWriterTestBase()
-        : AttributeWriterTest(),
-          _type("test"),
-          _valueField("value", 2, *DataType::INT),
-          _structFieldType("struct")
-    {
+        : AttributeWriterTest(), _type("test"), _valueField("value", 2, *DataType::INT), _structFieldType("struct") {
         addAttribute({"value", AVConfig(AVBasicType::INT32, AVCollectionType::SINGLE)});
         _type.addField(_valueField);
         _structFieldType.addField(_valueField);
     }
     ~StructWriterTestBase() override;
 
-    std::unique_ptr<StructFieldValue> makeStruct() {
-        return std::make_unique<StructFieldValue>(_structFieldType);
-    }
+    std::unique_ptr<StructFieldValue> makeStruct() { return std::make_unique<StructFieldValue>(_structFieldType); }
 
     std::unique_ptr<StructFieldValue> makeStruct(const int32_t value) {
         auto ret = makeStruct();
@@ -1067,9 +991,7 @@ public:
         return ret;
     }
 
-    std::unique_ptr<Document> makeDoc() {
-        return Document::make_without_repo(_type, DocumentId("id::test::1"));
-    }
+    std::unique_ptr<Document> makeDoc() { return Document::make_without_repo(_type, DocumentId("id::test::1")); }
 };
 
 StructWriterTestBase::~StructWriterTestBase() = default;
@@ -1078,29 +1000,28 @@ class StructArrayWriterTest : public StructWriterTestBase {
 public:
     using StructWriterTestBase::makeDoc;
     const ArrayDataType _structArrayFieldType;
-    const Field _structArrayField;
+    const Field         _structArrayField;
 
     StructArrayWriterTest()
         : StructWriterTestBase(),
           _structArrayFieldType(_structFieldType),
-          _structArrayField("array", _structArrayFieldType)
-    {
+          _structArrayField("array", _structArrayFieldType) {
         addAttribute({"array.value", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)});
         _type.addField(_structArrayField);
     }
     ~StructArrayWriterTest() override;
 
-    std::unique_ptr<Document> makeDoc(int32_t value, const std::vector<int32_t> &arrayValues) {
+    std::unique_ptr<Document> makeDoc(int32_t value, const std::vector<int32_t>& arrayValues) {
         auto doc = makeDoc();
         doc->setValue(_valueField, IntFieldValue(value));
         ArrayFieldValue s(_structArrayFieldType);
-        for (const auto &arrayValue : arrayValues) {
+        for (const auto& arrayValue : arrayValues) {
             s.add(*makeStruct(arrayValue));
         }
         doc->setValue(_structArrayField, s);
         return doc;
     }
-    void checkAttrs(uint32_t lid, int32_t value, const std::vector<int32_t> &arrayValues) {
+    void checkAttrs(uint32_t lid, int32_t value, const std::vector<int32_t>& arrayValues) {
         auto valueAttr = _mgr->getAttribute("value")->getSP();
         auto arrayValueAttr = _mgr->getAttribute("array.value")->getSP();
         EXPECT_EQ(value, valueAttr->getInt(lid));
@@ -1115,10 +1036,9 @@ public:
 
 StructArrayWriterTest::~StructArrayWriterTest() = default;
 
-TEST_F(StructArrayWriterTest, update_with_doc_argument_updates_struct_field_attributes)
-{
+TEST_F(StructArrayWriterTest, update_with_doc_argument_updates_struct_field_attributes) {
     allocAttributeWriter();
-    auto doc = makeDoc(10,  {11, 12});
+    auto doc = makeDoc(10, {11, 12});
     put(10, *doc, 1);
     checkAttrs(1, 10, {11, 12});
     doc = makeDoc(20, {21});
@@ -1130,30 +1050,29 @@ class StructMapWriterTest : public StructWriterTestBase {
 public:
     using StructWriterTestBase::makeDoc;
     const MapDataType _structMapFieldType;
-    const Field _structMapField;
+    const Field       _structMapField;
 
     StructMapWriterTest()
         : StructWriterTestBase(),
           _structMapFieldType(*DataType::INT, _structFieldType),
-          _structMapField("map", _structMapFieldType)
-    {
+          _structMapField("map", _structMapFieldType) {
         addAttribute({"map.value.value", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)});
         addAttribute({"map.key", AVConfig(AVBasicType::INT32, AVCollectionType::ARRAY)});
         _type.addField(_structMapField);
     }
 
-    std::unique_ptr<Document> makeDoc(int32_t value, const std::map<int32_t, int32_t> &mapValues) {
+    std::unique_ptr<Document> makeDoc(int32_t value, const std::map<int32_t, int32_t>& mapValues) {
         auto doc = makeDoc();
         doc->setValue(_valueField, IntFieldValue(value));
         MapFieldValue s(_structMapFieldType);
-        for (const auto &mapValue : mapValues) {
+        for (const auto& mapValue : mapValues) {
             s.put(IntFieldValue(mapValue.first), *makeStruct(mapValue.second));
         }
         doc->setValue(_structMapField, s);
         return doc;
     }
 
-    void checkAttrs(uint32_t lid, int32_t expValue, const std::map<int32_t, int32_t> &expMap) {
+    void checkAttrs(uint32_t lid, int32_t expValue, const std::map<int32_t, int32_t>& expMap) {
         auto valueAttr = _mgr->getAttribute("value")->getSP();
         auto mapKeyAttr = _mgr->getAttribute("map.key")->getSP();
         auto mapValueAttr = _mgr->getAttribute("map.value.value")->getSP();
@@ -1165,7 +1084,7 @@ public:
         EXPECT_EQ(expMap.size(), mapValues.size());
         EXPECT_EQ(expMap.size(), mapKeys.size());
         size_t i = 0;
-        for (const auto &expMapElem : expMap) {
+        for (const auto& expMapElem : expMap) {
             EXPECT_EQ(expMapElem.first, mapKeys[i]);
             EXPECT_EQ(expMapElem.second, mapValues[i]);
             ++i;
@@ -1173,10 +1092,9 @@ public:
     }
 };
 
-TEST_F(StructMapWriterTest, update_with_doc_argument_updates_struct_field_attributes)
-{
+TEST_F(StructMapWriterTest, update_with_doc_argument_updates_struct_field_attributes) {
     allocAttributeWriter();
-    auto doc = makeDoc(10,  {{1, 11}, {2, 12}});
+    auto doc = makeDoc(10, {{1, 11}, {2, 12}});
     put(10, *doc, 1);
     checkAttrs(1, 10, {{1, 11}, {2, 12}});
     doc = makeDoc(20, {{42, 21}});
