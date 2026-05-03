@@ -20,9 +20,9 @@ private:
 public:
     static void transactionLogReplayComplete(const string& domainName, vespalib::duration elapsedTime);
     static void populateAttributeStart(const std::vector<string>& names);
-    static void populateAttributeComplete(const std::vector<string>& names, int64_t documentsVisisted);
+    static void populateAttributeComplete(const std::vector<string>& names, int64_t documentsPopulated);
     static void populateDocumentFieldStart(const string& fieldName);
-    static void populateDocumentFieldComplete(const string& fieldName, int64_t documentsVisisted);
+    static void populateDocumentFieldComplete(const string& fieldName, int64_t documentsPopulated);
     static void lidSpaceCompactionStart(const string& subDbName, uint32_t lidBloat, uint32_t allowedLidBloat,
                                         double lidBloatFactor, double allowedLidBloatFactor, uint32_t lidLimit,
                                         uint32_t lowestFreeLid);

@@ -19,7 +19,7 @@ public:
         _read = value;
         return *this;
     }
-    FieldIndexIoStats& cached_read(DiskIoStats& value) {
+    FieldIndexIoStats& cached_read(const DiskIoStats& value) {
         _cached_read = value;
         return *this;
     }

@@ -30,7 +30,7 @@ private:
     bool                  _enableDebugging;
     std::vector<uint32_t> _debugLidList; // List of lids to dump when feeding/replaying log.
     std::vector<document::DocumentId>
-        _debugDocIdList; // List of docids("id:ns:doctype::xyz" to dump when feeding/replaying log.
+        _debugDocIdList; // List of docids("id:ns:doctype::xyz") to dump when feeding/replaying log.
 };
 
 } // namespace proton
