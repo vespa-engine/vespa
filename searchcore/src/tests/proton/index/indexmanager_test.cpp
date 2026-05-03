@@ -867,7 +867,7 @@ struct EnableInterleavedFeaturesParam {
     enum class Restart { NONE, RESTART1, RESTART2 };
     std::string name = "no_restart";
     Restart     restart = Restart::NONE;
-    bool        doc = false;           // Feed doc after enabling interleaved fatures
+    bool        doc = false;           // Feed doc after enabling interleaved features
     bool        pruned_config = false; // Original config has been pruned
 
     EnableInterleavedFeaturesParam() noexcept;
@@ -993,7 +993,7 @@ TEST_P(IndexManagerEnableInterleavedFeaturesTest, enable_interleaved_features) {
         config_serial_num = schema_change_serial_num;
     }
     if (enable_params.restart == Restart::RESTART2) {
-        // Restart after flushing 2nd memory index with interleaved fatures
+        // Restart after flushing 2nd memory index with interleaved features
         resetIndexManager(config_serial_num);
         assert_urgent("after restart2", old_config_docs, false, old_config_docs);
         EXPECT_EQ(disk2_serial_num, _serial_num);

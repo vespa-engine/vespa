@@ -35,12 +35,12 @@ using RemoveEntry = MockGidToLidChangeHandler::RemoveEntry;
 using AddVector = std::vector<AddEntry>;
 using RemoveVector = std::vector<RemoveEntry>;
 
-class GidToLidChangeRregistratorTest : public ::testing::Test {
+class GidToLidChangeRegistratorTest : public ::testing::Test {
     std::shared_ptr<MockGidToLidChangeHandler> _handler;
 
 protected:
-    GidToLidChangeRregistratorTest();
-    ~GidToLidChangeRregistratorTest() override;
+    GidToLidChangeRegistratorTest();
+    ~GidToLidChangeRegistratorTest() override;
 
     std::unique_ptr<GidToLidChangeRegistrator> getRegistrator(const std::string& docTypeName) {
         return std::make_unique<GidToLidChangeRegistrator>(_handler, docTypeName);
@@ -50,13 +50,13 @@ protected:
     const RemoveVector& get_removes() const noexcept { return _handler->get_removes(); }
 };
 
-GidToLidChangeRregistratorTest::GidToLidChangeRregistratorTest()
+GidToLidChangeRegistratorTest::GidToLidChangeRegistratorTest()
     : ::testing::Test(), _handler(std::make_shared<MockGidToLidChangeHandler>()) {
 }
 
-GidToLidChangeRregistratorTest::~GidToLidChangeRregistratorTest() = default;
+GidToLidChangeRegistratorTest::~GidToLidChangeRegistratorTest() = default;
 
-TEST_F(GidToLidChangeRregistratorTest, we_can_register_a_listener) {
+TEST_F(GidToLidChangeRegistratorTest, we_can_register_a_listener) {
     auto registrator = getRegistrator("testdoc");
     EXPECT_EQ(AddVector{}, get_adds());
     EXPECT_EQ(RemoveVector{}, get_removes());
@@ -68,7 +68,7 @@ TEST_F(GidToLidChangeRregistratorTest, we_can_register_a_listener) {
     EXPECT_EQ((RemoveVector{{"testdoc", {"f1"}}}), get_removes());
 }
 
-TEST_F(GidToLidChangeRregistratorTest, we_can_register_multiple_listeners) {
+TEST_F(GidToLidChangeRegistratorTest, we_can_register_multiple_listeners) {
     auto registrator = getRegistrator("testdoc");
     EXPECT_EQ(AddVector{}, get_adds());
     EXPECT_EQ(RemoveVector{}, get_removes());

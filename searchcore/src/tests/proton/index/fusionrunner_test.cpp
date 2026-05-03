@@ -237,7 +237,7 @@ TEST_F(FusionRunnerTest, require_that_no_disk_indexes_give_id_0) {
     EXPECT_EQ(0u, fusion_id);
 }
 
-TEST_F(FusionRunnerTest, rquire_that_one_disk_index_causes_copy) {
+TEST_F(FusionRunnerTest, require_that_one_disk_index_causes_copy) {
     createIndex(base_dir, disk_id[0]);
     uint32_t fusion_id = _fusion_runner->fuse(_fusion_spec, 0u, _ops, std::make_shared<search::FlushToken>());
     EXPECT_EQ(disk_id[0], fusion_id);
