@@ -6,22 +6,17 @@ namespace storage {
 
 // DummyServiceLayerProcess implementation
 
-DummyServiceLayerProcess::DummyServiceLayerProcess(const config::ConfigUri & configUri)
-    : ServiceLayerProcess(configUri, vespalib::HwInfo())
-{
+DummyServiceLayerProcess::DummyServiceLayerProcess(const config::ConfigUri& configUri)
+    : ServiceLayerProcess(configUri, vespalib::HwInfo()) {
 }
 
-void
-DummyServiceLayerProcess::shutdown()
-{
+void DummyServiceLayerProcess::shutdown() {
     ServiceLayerProcess::shutdown();
     _provider.reset();
 }
 
-void
-DummyServiceLayerProcess::setupProvider()
-{
+void DummyServiceLayerProcess::setupProvider() {
     _provider = std::make_unique<spi::dummy::DummyPersistence>(getTypeRepo());
 }
 
-} // storage
+} // namespace storage
