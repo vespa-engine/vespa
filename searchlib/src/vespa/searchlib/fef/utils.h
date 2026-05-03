@@ -38,7 +38,7 @@ struct Utils {
     /*
      * Extract features names for the given feature resolver.
      */
-    std::vector<std::string> static extract_feature_names(const FeatureResolver&         resolver,
+    static std::vector<std::string> extract_feature_names(const FeatureResolver&         resolver,
                                                           const search::StringStringMap& renames);
 
     /*
