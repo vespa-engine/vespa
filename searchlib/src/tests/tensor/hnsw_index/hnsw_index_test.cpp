@@ -2,26 +2,28 @@
 
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/searchlib/common/bitvector.h>
-#include <vespa/searchlib/test/vector_buffer_reader.h>
-#include <vespa/searchlib/test/vector_buffer_writer.h>
+#include <vespa/searchlib/queryeval/global_filter.h>
 #include <vespa/searchlib/tensor/distance_functions.h>
 #include <vespa/searchlib/tensor/doc_vector_access.h>
-#include <vespa/searchlib/tensor/hnsw_index.h>
-#include <vespa/searchlib/tensor/hnsw_index_loader.hpp>
-#include <vespa/searchlib/tensor/hnsw_index_saver.h>
-#include <vespa/searchlib/tensor/random_level_generator.h>
-#include <vespa/searchlib/tensor/inv_log_level_generator.h>
-#include <vespa/searchlib/tensor/subspace_type.h>
 #include <vespa/searchlib/tensor/empty_subspace.h>
+#include <vespa/searchlib/tensor/hnsw_index.h>
+#include <vespa/searchlib/tensor/hnsw_index_saver.h>
+#include <vespa/searchlib/tensor/inv_log_level_generator.h>
+#include <vespa/searchlib/tensor/random_level_generator.h>
+#include <vespa/searchlib/tensor/subspace_type.h>
 #include <vespa/searchlib/tensor/vector_bundle.h>
-#include <vespa/searchlib/queryeval/global_filter.h>
+#include <vespa/searchlib/test/vector_buffer_reader.h>
+#include <vespa/searchlib/test/vector_buffer_writer.h>
+#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/datastore/compaction_spec.h>
 #include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/net/http/state_explorer.h>
-#include <vespa/vespalib/util/fake_deadline.h>
-#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/fake_deadline.h>
+
+#include <vespa/searchlib/tensor/hnsw_index_loader.hpp>
+
 #include <type_traits>
 #include <vector>
 
@@ -31,20 +33,19 @@ LOG_SETUP("hnsw_index_test");
 using vespalib::MemoryUsage;
 using namespace search::tensor;
 using namespace vespalib::slime;
-using vespalib::Slime;
 using search::BitVector;
 using search::BufferWriter;
-using vespalib::GenerationGuard;
-using vespalib::eval::get_cell_type;
-using vespalib::eval::ValueType;
-using vespalib::datastore::CompactionSpec;
-using vespalib::datastore::CompactionStrategy;
 using search::queryeval::GlobalFilter;
 using search::test::VectorBufferReader;
 using search::test::VectorBufferWriter;
+using vespalib::GenerationGuard;
+using vespalib::Slime;
+using vespalib::datastore::CompactionSpec;
+using vespalib::datastore::CompactionStrategy;
+using vespalib::eval::get_cell_type;
+using vespalib::eval::ValueType;
 
-template <typename FloatType>
-class MyDocVectorAccess : public DocVectorAccess {
+template <typename FloatType> class MyDocVectorAccess : public DocVectorAccess {
 private:
     using Vector = std::vector<FloatType>;
     using ArrayRef = std::span<const FloatType>;
@@ -62,9 +63,7 @@ public:
           _empty(_subspace_type),
           _get_vector_count(0),
           _schedule_clear_tensor(0),
-          _cleared_tensor_docid(0)
-    {
-    }
+          _cleared_tensor_docid(0) {}
     MyDocVectorAccess& set(uint32_t docid, const Vector& vec) {
         if (docid >= _vectors.size()) {
             _vectors.resize(docid + 1);
@@ -111,22 +110,13 @@ class MyBoundDistanceFunction : public BoundDistanceFunction {
     std::unique_ptr<BoundDistanceFunction> _real;
 
 public:
-    explicit MyBoundDistanceFunction(std::unique_ptr<BoundDistanceFunction> real)
-        : _real(std::move(real))
-    {
-    }
+    explicit MyBoundDistanceFunction(std::unique_ptr<BoundDistanceFunction> real) : _real(std::move(real)) {}
 
     ~MyBoundDistanceFunction() override;
 
-    double convert_threshold(double threshold) const noexcept override {
-        return _real->convert_threshold(threshold);
-    }
-    double to_rawscore(double distance) const noexcept override {
-        return _real->to_rawscore(distance);
-    }
-    double to_distance(double rawscore) const noexcept override {
-        return _real->to_distance(rawscore);
-    }
+    double convert_threshold(double threshold) const noexcept override { return _real->convert_threshold(threshold); }
+    double to_rawscore(double distance) const noexcept override { return _real->to_rawscore(distance); }
+    double to_distance(double rawscore) const noexcept override { return _real->to_distance(rawscore); }
 
     double min_rawscore() const noexcept override { return _real->min_rawscore(); }
 
@@ -143,14 +133,11 @@ public:
 
 MyBoundDistanceFunction::~MyBoundDistanceFunction() = default;
 
-class MyDistanceFunctionFactory : public DistanceFunctionFactory
-{
+class MyDistanceFunctionFactory : public DistanceFunctionFactory {
     std::unique_ptr<DistanceFunctionFactory> _real;
+
 public:
-    explicit MyDistanceFunctionFactory(std::unique_ptr<DistanceFunctionFactory> real)
-        : _real(std::move(real))
-    {
-    }
+    explicit MyDistanceFunctionFactory(std::unique_ptr<DistanceFunctionFactory> real) : _real(std::move(real)) {}
 
     ~MyDistanceFunctionFactory() override;
 
@@ -175,13 +162,12 @@ struct LevelGenerator : public RandomLevelGenerator {
 
 using FloatVectors = MyDocVectorAccess<float>;
 
-template <typename IndexType>
-class HnswIndexTest : public ::testing::Test {
+template <typename IndexType> class HnswIndexTest : public ::testing::Test {
 public:
-    FloatVectors vectors;
-    std::shared_ptr<GlobalFilter> global_filter;
-    LevelGenerator* level_generator;
-    std::unique_ptr<IndexType> index;
+    FloatVectors                            vectors;
+    std::shared_ptr<GlobalFilter>           global_filter;
+    LevelGenerator*                         level_generator;
+    std::unique_ptr<IndexType>              index;
     std::unique_ptr<vespalib::FakeDeadline> _doom;
 
     HnswIndexTest()
@@ -189,30 +175,31 @@ public:
           global_filter(GlobalFilter::create()),
           level_generator(),
           index(),
-          _doom(std::make_unique<vespalib::FakeDeadline>())
-    {
-        vectors.set(1, {2, 2}).set(2, {3, 2}).set(3, {2, 3})
-               .set(4, {1, 2}).set(5, {8, 3}).set(6, {7, 2})
-               .set(7, {3, 5}).set(8, {0, 3}).set(9, {4, 5});
+          _doom(std::make_unique<vespalib::FakeDeadline>()) {
+        vectors.set(1, {2, 2})
+            .set(2, {3, 2})
+            .set(3, {2, 3})
+            .set(4, {1, 2})
+            .set(5, {8, 3})
+            .set(6, {7, 2})
+            .set(7, {3, 5})
+            .set(8, {0, 3})
+            .set(9, {4, 5});
     }
 
     ~HnswIndexTest() override;
 
     auto dff_real() {
-        return search::tensor::make_distance_function_factory(
-                search::attribute::DistanceMetric::Euclidean,
-                vespalib::eval::CellType::FLOAT);
+        return search::tensor::make_distance_function_factory(search::attribute::DistanceMetric::Euclidean,
+                                                              vespalib::eval::CellType::FLOAT);
     }
 
-    auto dff() {
-        return std::make_unique<MyDistanceFunctionFactory>(dff_real());
-    }
+    auto dff() { return std::make_unique<MyDistanceFunctionFactory>(dff_real()); }
 
     void init(bool heuristic_select_neighbors) {
         auto generator = std::make_unique<LevelGenerator>();
         level_generator = generator.get();
-        index = std::make_unique<IndexType>(vectors, dff(),
-                                            std::move(generator),
+        index = std::make_unique<IndexType>(vectors, dff(), std::move(generator),
                                             HnswIndexConfig(5, 2, 10, 0, heuristic_select_neighbors));
     }
     void add_document(uint32_t docid, uint32_t max_level = 0) {
@@ -232,12 +219,8 @@ public:
         uint32_t sz = 10;
         global_filter = GlobalFilter::create(docids, sz);
     }
-    GenerationGuard take_read_guard() {
-        return index->make_generation_read_guard();
-    }
-    MemoryUsage memory_usage() const {
-        return index->memory_usage();
-    }
+    GenerationGuard take_read_guard() { return index->make_generation_read_guard(); }
+    MemoryUsage memory_usage() const { return index->memory_usage(); }
     MemoryUsage commit_and_update_stat() {
         commit();
         CompactionStrategy compaction_strategy;
@@ -263,16 +246,19 @@ public:
     }
     void expect_top_3_by_docid(const std::string& label, std::vector<float> qv, const std::vector<uint32_t>& exp) {
         SCOPED_TRACE(label);
-        uint32_t k = 3;
-        uint32_t explore_k = 100;
-        double exploration_slack = 0.0;
-        std::span<float> qv_ref(qv);
-        vespalib::eval::TypedCells qv_cells(qv_ref);
+        uint32_t                    k = 3;
+        uint32_t                    explore_k = 100;
+        double                      exploration_slack = 0.0;
+        std::span<float>            qv_ref(qv);
+        vespalib::eval::TypedCells  qv_cells(qv_ref);
         NearestNeighborIndex::Stats stats;
-        auto df = index->distance_function_factory().for_query_vector(qv_cells);
-        auto got_by_docid = (global_filter->is_active()) ?
-                            index->find_top_k_with_filter(stats, k, *df, *global_filter, false, 0.3, explore_k, exploration_slack, false, _doom->get_deadline(), 10000.0) :
-                            index->find_top_k(stats, k, *df, explore_k, exploration_slack, false, _doom->get_deadline(), 10000.0);
+        auto                        df = index->distance_function_factory().for_query_vector(qv_cells);
+        auto                        got_by_docid =
+            (global_filter->is_active())
+                                       ? index->find_top_k_with_filter(stats, k, *df, *global_filter, false, 0.3, explore_k,
+                                                                       exploration_slack, false, _doom->get_deadline(), 10000.0)
+                                       : index->find_top_k(stats, k, *df, explore_k, exploration_slack, false, _doom->get_deadline(),
+                                                           10000.0);
         std::vector<uint32_t> act;
         act.reserve(got_by_docid.size());
         for (auto& hit : got_by_docid) {
@@ -280,15 +266,19 @@ public:
         }
         EXPECT_EQ(exp, act);
     }
-    void expect_top_3(uint32_t docid, std::vector<uint32_t> exp_hits, bool filter_first = false, double exploration_slack = 0.0) {
-        uint32_t k = 3;
-        auto qv = vectors.get_vector(docid, 0);
+    void expect_top_3(uint32_t docid, std::vector<uint32_t> exp_hits, bool filter_first = false,
+                      double exploration_slack = 0.0) {
+        uint32_t                    k = 3;
+        auto                        qv = vectors.get_vector(docid, 0);
         NearestNeighborIndex::Stats stats;
-        auto df = index->distance_function_factory().for_query_vector(qv);
-        auto rv = index->top_k_candidates(stats, *df, k, exploration_slack, false, global_filter->ptr_if_active(), filter_first, 0.3, _doom->get_deadline()).peek();
+        auto                        df = index->distance_function_factory().for_query_vector(qv);
+        auto                        rv = index
+                      ->top_k_candidates(stats, *df, k, exploration_slack, false, global_filter->ptr_if_active(),
+                                         filter_first, 0.3, _doom->get_deadline())
+                      .peek();
         std::sort(rv.begin(), rv.end(), LesserDistance());
         size_t idx = 0;
-        for (const auto & hit : rv) {
+        for (const auto& hit : rv) {
             if (idx < exp_hits.size()) {
                 EXPECT_EQ(index->get_docid(hit.nodeid), exp_hits[idx++]);
             }
@@ -296,7 +286,8 @@ public:
         if (exp_hits.size() == k) {
             std::vector<uint32_t> expected_by_docid = exp_hits;
             std::sort(expected_by_docid.begin(), expected_by_docid.end());
-            auto got_by_docid = index->find_top_k(stats, k, *df, k, exploration_slack, false, _doom->get_deadline(), 100100.25);
+            auto got_by_docid =
+                index->find_top_k(stats, k, *df, k, exploration_slack, false, _doom->get_deadline(), 100100.25);
             for (idx = 0; idx < k; ++idx) {
                 EXPECT_EQ(expected_by_docid[idx], got_by_docid[idx].docid);
             }
@@ -306,35 +297,43 @@ public:
         }
     }
     // Run a search and return the collected statistics for the search
-    NearestNeighborIndex::Stats stats_for_search(uint32_t k, uint32_t explore_k, std::vector<float> qv, const bool filter_first) {
-        double exploration_slack = 0.0;
-        std::span<float> qv_ref(qv);
-        vespalib::eval::TypedCells qv_cells(qv_ref);
+    NearestNeighborIndex::Stats stats_for_search(uint32_t k, uint32_t explore_k, std::vector<float> qv,
+                                                 const bool filter_first) {
+        double                      exploration_slack = 0.0;
+        std::span<float>            qv_ref(qv);
+        vespalib::eval::TypedCells  qv_cells(qv_ref);
         NearestNeighborIndex::Stats stats;
-        auto df = index->distance_function_factory().for_query_vector(qv_cells);
-        auto got_by_docid = (global_filter->is_active()) ?
-                            index->find_top_k_with_filter(stats, k, *df, *global_filter, filter_first, 0.3, explore_k, exploration_slack, false, _doom->get_deadline(), 10000.0) :
-                            index->find_top_k(stats, k, *df, explore_k, exploration_slack, false, _doom->get_deadline(), 10000.0);
+        auto                        df = index->distance_function_factory().for_query_vector(qv_cells);
+        auto                        got_by_docid =
+            (global_filter->is_active())
+                                       ? index->find_top_k_with_filter(stats, k, *df, *global_filter, filter_first, 0.3, explore_k,
+                                                                       exploration_slack, false, _doom->get_deadline(), 10000.0)
+                                       : index->find_top_k(stats, k, *df, explore_k, exploration_slack, false, _doom->get_deadline(),
+                                                           10000.0);
         return stats;
     }
     void check_with_distance_threshold(uint32_t docid, double exploration_slack = 0.0) {
-        auto qv = vectors.get_vector(docid, 0);
+        auto                        qv = vectors.get_vector(docid, 0);
         NearestNeighborIndex::Stats stats;
-        auto df = index->distance_function_factory().for_query_vector(qv);
-        uint32_t k = 3;
-        auto rv = index->top_k_candidates(stats, *df, k, exploration_slack, false, global_filter->ptr_if_active(), false, 0.3, _doom->get_deadline()).peek();
+        auto                        df = index->distance_function_factory().for_query_vector(qv);
+        uint32_t                    k = 3;
+        auto                        rv = index
+                      ->top_k_candidates(stats, *df, k, exploration_slack, false, global_filter->ptr_if_active(),
+                                         false, 0.3, _doom->get_deadline())
+                      .peek();
         std::sort(rv.begin(), rv.end(), LesserDistance());
         EXPECT_EQ(rv.size(), 3);
         EXPECT_LE(rv[0].distance, rv[1].distance);
         double thr = (rv[0].distance + rv[1].distance) * 0.5;
-        auto got_by_docid = (global_filter->is_active())
-            ? index->find_top_k_with_filter(stats, k, *df, *global_filter, false, 0.3, k, exploration_slack, false, _doom->get_deadline(), thr)
-            : index->find_top_k(stats, k, *df, k, exploration_slack, false, _doom->get_deadline(), thr);
+        auto   got_by_docid =
+            (global_filter->is_active())
+                  ? index->find_top_k_with_filter(stats, k, *df, *global_filter, false, 0.3, k, exploration_slack,
+                                                  false, _doom->get_deadline(), thr)
+                  : index->find_top_k(stats, k, *df, k, exploration_slack, false, _doom->get_deadline(), thr);
         EXPECT_EQ(got_by_docid.size(), 1);
         EXPECT_EQ(got_by_docid[0].docid, index->get_docid(rv[0].nodeid));
-        for (const auto & hit : got_by_docid) {
-            LOG(debug, "from docid=%u found docid=%u dist=%g (threshold %g)\n",
-                docid, hit.docid, hit.distance, thr);
+        for (const auto& hit : got_by_docid) {
+            LOG(debug, "from docid=%u found docid=%u dist=%g (threshold %g)\n", docid, hit.docid, hit.distance, thr);
         }
     }
 
@@ -342,13 +341,12 @@ public:
 
     uint32_t get_single_nodeid(uint32_t docid) {
         auto& id_mapping = index->get_id_mapping();
-        auto nodeids = id_mapping.get_ids(docid);
+        auto  nodeids = id_mapping.get_ids(docid);
         EXPECT_EQ(1, nodeids.size());
         return nodeids[0];
     }
 
-    void make_savetest_index()
-    {
+    void make_savetest_index() {
         this->add_document(7);
         this->add_document(4);
     }
@@ -359,32 +357,30 @@ public:
         auto nodeid_for_doc_4 = get_single_nodeid(4);
         EXPECT_EQ(is_single ? 7 : 1, nodeid_for_doc_7);
         EXPECT_EQ(is_single ? 4 : 2, nodeid_for_doc_4);
-        this->expect_level_0(nodeid_for_doc_7, { nodeid_for_doc_4 });
-        this->expect_level_0(nodeid_for_doc_4, { nodeid_for_doc_7 });
+        this->expect_level_0(nodeid_for_doc_7, {nodeid_for_doc_4});
+        this->expect_level_0(nodeid_for_doc_4, {nodeid_for_doc_7});
     }
 
     std::vector<char> save_index() const {
-        HnswIndexSaver saver(index->get_graph());
+        HnswIndexSaver     saver(index->get_graph());
         VectorBufferWriter vector_writer;
         saver.save(vector_writer);
         return vector_writer.output;
     }
 
     void load_index(std::vector<char> data) {
-        auto& graph = index->get_graph();
-        auto& id_mapping = index->get_id_mapping();
-        HnswIndexLoader<VectorBufferReader, IndexType::index_type> loader(graph, id_mapping, std::make_unique<VectorBufferReader>(data));
-        while (loader.load_next()) {}
+        auto&                                                      graph = index->get_graph();
+        auto&                                                      id_mapping = index->get_id_mapping();
+        HnswIndexLoader<VectorBufferReader, IndexType::index_type> loader(graph, id_mapping,
+                                                                          std::make_unique<VectorBufferReader>(data));
+        while (loader.load_next()) {
+        }
     }
-    void reset_doom() {
-        _doom = std::make_unique<vespalib::FakeDeadline>();
-    }
+    void reset_doom() { _doom = std::make_unique<vespalib::FakeDeadline>(); }
     void reset_doom(vespalib::steady_time::duration time_to_doom) {
         _doom = std::make_unique<vespalib::FakeDeadline>(time_to_doom);
     }
-    uint32_t get_active_nodes() const noexcept {
-        return index->get_active_nodes();
-    }
+    uint32_t get_active_nodes() const noexcept { return index->get_active_nodes(); }
 
     /*
      * Simulate race where writer has cleared a tensor while read thread still
@@ -400,15 +396,13 @@ public:
     static constexpr bool is_single = std::is_same_v<IndexType, HnswIndex<HnswIndexType::SINGLE>>;
 };
 
-template <typename IndexType>
-HnswIndexTest<IndexType>::~HnswIndexTest() = default;
+template <typename IndexType> HnswIndexTest<IndexType>::~HnswIndexTest() = default;
 
 using HnswIndexTestTypes = ::testing::Types<HnswIndex<HnswIndexType::SINGLE>, HnswIndex<HnswIndexType::MULTI>>;
 
 TYPED_TEST_SUITE(HnswIndexTest, HnswIndexTestTypes);
 
-TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_level_0_graph_with_simple_select_neighbors)
-{
+TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_level_0_graph_with_simple_select_neighbors) {
     this->init(false);
     EXPECT_EQ(0, this->get_active_nodes());
 
@@ -471,7 +465,7 @@ TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_level_0_graph_with_simple_selec
     this->expect_top_3(8, {4, 3, 1});
     this->expect_top_3(9, {7, 3, 2});
 
-    this->set_filter({2,3,4,6});
+    this->set_filter({2, 3, 4, 6});
     this->expect_top_3(2, {2, 3});
     this->expect_top_3(4, {4, 3});
     this->expect_top_3(5, {6, 2});
@@ -493,7 +487,7 @@ TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_level_0_graph_filter_first_sear
     this->add_document(6);
     this->add_document(7);
 
-    this->set_filter({2,3,4,6});
+    this->set_filter({2, 3, 4, 6});
     this->expect_top_3(2, {2, 3}, true);
     this->expect_top_3(4, {4, 3}, true);
     this->expect_top_3(5, {6, 2}, true);
@@ -505,8 +499,7 @@ TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_level_0_graph_filter_first_sear
     this->expect_top_3(2, {}, true);
 }
 
-TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_level_0_graph_exploration_slack)
-{
+TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_level_0_graph_exploration_slack) {
     this->init(false);
     this->add_document(1);
     this->add_document(2);
@@ -530,7 +523,7 @@ TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_level_0_graph_exploration_slack
         this->expect_top_3(9, {7, 3, 2}, false, slack);
     }
 
-    this->set_filter({2,3,4,6});
+    this->set_filter({2, 3, 4, 6});
     for (double slack : slack_values) {
         this->reset_doom();
 
@@ -559,7 +552,7 @@ TYPED_TEST(HnswIndexTest, stats_are_collected_during_search) {
 
     // With traditional HNSW, the number of distance computations is the number of nodes visited
     // With large enough k, this should be the whole graph
-    auto stats = this->stats_for_search(100, 0, {0, 0}, false);
+    auto     stats = this->stats_for_search(100, 0, {0, 0}, false);
     uint32_t nodes = this->index->get_active_nodes();
     EXPECT_EQ(nodes, stats.distances_computed());
     EXPECT_EQ(nodes, stats.nodes_visited());
@@ -585,7 +578,7 @@ TYPED_TEST(HnswIndexTest, stats_are_collected_during_search) {
     EXPECT_GT(nodes, stats.nodes_visited());
     EXPECT_LT(0, stats.nodes_visited());
 
-    this->set_filter({2,3,4,6});
+    this->set_filter({2, 3, 4, 6});
 
     // With large k and traditional HNSW, we will explore the whole graph and compute all distances :(
     stats = this->stats_for_search(100, 0, {0, 0}, false);
@@ -598,14 +591,13 @@ TYPED_TEST(HnswIndexTest, stats_are_collected_during_search) {
     EXPECT_EQ(5, stats.distances_computed());
     EXPECT_EQ(nodes, stats.nodes_visited());
 
-    this->set_filter({2,3});
+    this->set_filter({2, 3});
     stats = this->stats_for_search(100, 0, {0, 0}, true);
     EXPECT_EQ(3, stats.distances_computed());
     EXPECT_EQ(nodes, stats.nodes_visited());
 }
 
-TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_and_removed)
-{
+TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_and_removed) {
     this->init(false);
     EXPECT_EQ(0, this->get_active_nodes());
 
@@ -643,8 +635,7 @@ TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_and_removed)
     EXPECT_EQ(0, this->get_active_nodes());
 }
 
-TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic_select_neighbors)
-{
+TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic_select_neighbors) {
     this->init(true);
     EXPECT_EQ(0, this->get_active_nodes());
 
@@ -718,12 +709,12 @@ TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic
     this->expect_level_0(7, {3, 6});
     EXPECT_EQ(7, this->get_active_nodes());
     {
-        Slime actualSlime;
+        Slime         actualSlime;
         SlimeInserter inserter(actualSlime);
-        auto explorer = this->index->make_state_explorer();
+        auto          explorer = this->index->make_state_explorer();
         ASSERT_TRUE(explorer);
         explorer->get_state(inserter, true);
-        const auto &root = actualSlime.get();
+        const auto& root = actualSlime.get();
         EXPECT_EQ(0, root["memory_usage"]["onHold"].asLong());
         EXPECT_EQ(8, root["nodeid_limit"].asLong());
         EXPECT_EQ(7, root["nodes"].asLong());
@@ -735,7 +726,7 @@ TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic
         EXPECT_EQ(3, root["level_0_links_histogram"][2].asLong());
         EXPECT_EQ(3, root["level_0_links_histogram"][3].asLong());
         EXPECT_EQ(0, root["level_0_links_histogram"][4].asLong());
-        const auto &reachability = root["reachability_analysis"];
+        const auto& reachability = root["reachability_analysis"];
         EXPECT_TRUE(reachability["completed"].asBool());
         EXPECT_DOUBLE_EQ(100.0, reachability["links_explored_pct"].asDouble());
         EXPECT_DOUBLE_EQ(100.0, reachability["nodes_found_pct"].asDouble());
@@ -755,12 +746,12 @@ TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic
     this->expect_level_0(7, {3, 6});
     EXPECT_EQ(6, this->get_active_nodes());
     {
-        Slime actualSlime;
+        Slime         actualSlime;
         SlimeInserter inserter(actualSlime);
-        auto explorer = this->index->make_state_explorer();
+        auto          explorer = this->index->make_state_explorer();
         ASSERT_TRUE(explorer);
         explorer->get_state(inserter, true);
-        const auto &root = actualSlime.get();
+        const auto& root = actualSlime.get();
         EXPECT_EQ(0, root["memory_usage"]["onHold"].asLong());
         EXPECT_EQ(8, root["nodeid_limit"].asLong());
         EXPECT_EQ(6, root["nodes"].asLong());
@@ -772,7 +763,7 @@ TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic
         EXPECT_EQ(2, root["level_0_links_histogram"][2].asLong());
         EXPECT_EQ(3, root["level_0_links_histogram"][3].asLong());
         EXPECT_EQ(0, root["level_0_links_histogram"][4].asLong());
-        const auto &reachability = root["reachability_analysis"];
+        const auto& reachability = root["reachability_analysis"];
         EXPECT_TRUE(reachability["completed"].asBool());
         EXPECT_DOUBLE_EQ(100.0, reachability["links_explored_pct"].asDouble());
         EXPECT_DOUBLE_EQ(100.0, reachability["nodes_found_pct"].asDouble());
@@ -782,8 +773,7 @@ TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic
     }
 }
 
-TYPED_TEST(HnswIndexTest, manual_insert)
-{
+TYPED_TEST(HnswIndexTest, manual_insert) {
     this->init(false);
     EXPECT_EQ(0, this->get_active_nodes());
 
@@ -792,35 +782,34 @@ TYPED_TEST(HnswIndexTest, manual_insert)
     this->index->set_node(2, std::vector<uint32_t>());
     EXPECT_EQ(2, this->get_active_nodes());
 
-    HnswTestNode three{{1,2}};
+    HnswTestNode three{{1, 2}};
     this->index->set_node(3, three);
     this->expect_level_0(1, {3});
     this->expect_level_0(2, {3});
-    this->expect_level_0(3, {1,2});
+    this->expect_level_0(3, {1, 2});
     EXPECT_EQ(3, this->get_active_nodes());
 
     this->expect_entry_point(1, 0);
 
-    HnswTestNode twolevels{{{1},std::vector<uint32_t>()}};
+    HnswTestNode twolevels{{{1}, std::vector<uint32_t>()}};
     this->index->set_node(4, twolevels);
 
     this->expect_entry_point(4, 1);
-    this->expect_level_0(1, {3,4});
+    this->expect_level_0(1, {3, 4});
     EXPECT_EQ(4, this->get_active_nodes());
 
-    HnswTestNode five{{{1,2}, {4}}};
+    HnswTestNode five{{{1, 2}, {4}}};
     this->index->set_node(5, five);
 
-    this->expect_levels(1, {{3,4,5}});
-    this->expect_levels(2, {{3,5}});
-    this->expect_levels(3, {{1,2}});
+    this->expect_levels(1, {{3, 4, 5}});
+    this->expect_levels(2, {{3, 5}});
+    this->expect_levels(3, {{1, 2}});
     this->expect_levels(4, {{1}, {5}});
-    this->expect_levels(5, {{1,2}, {4}});
+    this->expect_levels(5, {{1, 2}, {4}});
     EXPECT_EQ(5, this->get_active_nodes());
 }
 
-TYPED_TEST(HnswIndexTest, memory_is_reclaimed_when_doing_changes_to_graph)
-{
+TYPED_TEST(HnswIndexTest, memory_is_reclaimed_when_doing_changes_to_graph) {
     this->init(false);
 
     this->add_document(1);
@@ -828,9 +817,9 @@ TYPED_TEST(HnswIndexTest, memory_is_reclaimed_when_doing_changes_to_graph)
     auto mem_1 = this->memory_usage();
 
     this->add_document(2);
-    this->expect_level_0(1, {2,3});
-    this->expect_level_0(2, {1,3});
-    this->expect_level_0(3, {1,2});
+    this->expect_level_0(1, {2, 3});
+    this->expect_level_0(2, {1, 3});
+    this->expect_level_0(3, {1, 2});
     EXPECT_EQ(3, this->get_active_nodes());
     auto mem_2 = this->memory_usage();
     // We should use more memory with larger link arrays and extra document.
@@ -858,8 +847,7 @@ TYPED_TEST(HnswIndexTest, memory_is_reclaimed_when_doing_changes_to_graph)
     EXPECT_EQ(2, this->get_active_nodes());
 }
 
-TYPED_TEST(HnswIndexTest, memory_is_put_on_hold_while_read_guard_is_held)
-{
+TYPED_TEST(HnswIndexTest, memory_is_put_on_hold_while_read_guard_is_held) {
     this->init(true);
 
     this->add_document(1);
@@ -876,8 +864,7 @@ TYPED_TEST(HnswIndexTest, memory_is_put_on_hold_while_read_guard_is_held)
     EXPECT_EQ(0, mem.allocatedBytesOnHold());
 }
 
-TYPED_TEST(HnswIndexTest, shrink_called_simple)
-{
+TYPED_TEST(HnswIndexTest, shrink_called_simple) {
     this->init(false);
     HnswTestNode empty{std::vector<uint32_t>()};
     this->index->set_node(1, empty);
@@ -886,23 +873,23 @@ TYPED_TEST(HnswIndexTest, shrink_called_simple)
     this->index->set_node(3, nb1);
     this->index->set_node(4, nb1);
     this->index->set_node(5, nb1);
-    this->expect_level_0(1, {2,3,4,5});
+    this->expect_level_0(1, {2, 3, 4, 5});
     this->index->set_node(6, nb1);
-    this->expect_level_0(1, {2,3,4,5,6});
+    this->expect_level_0(1, {2, 3, 4, 5, 6});
     this->expect_level_0(2, {1});
     this->expect_level_0(3, {1});
     this->expect_level_0(4, {1});
     this->expect_level_0(5, {1});
     this->expect_level_0(6, {1});
     this->index->set_node(7, nb1);
-    this->expect_level_0(1, {2,3,4,6,7});
+    this->expect_level_0(1, {2, 3, 4, 6, 7});
     this->expect_level_0(5, {});
     this->expect_level_0(6, {1});
     this->index->set_node(8, nb1);
-    this->expect_level_0(1, {2,3,4,7,8});
+    this->expect_level_0(1, {2, 3, 4, 7, 8});
     this->expect_level_0(6, {});
     this->index->set_node(9, nb1);
-    this->expect_level_0(1, {2,3,4,7,8});
+    this->expect_level_0(1, {2, 3, 4, 7, 8});
     this->expect_level_0(2, {1});
     this->expect_level_0(3, {1});
     this->expect_level_0(4, {1});
@@ -914,8 +901,7 @@ TYPED_TEST(HnswIndexTest, shrink_called_simple)
     EXPECT_TRUE(this->index->check_link_symmetry());
 }
 
-TYPED_TEST(HnswIndexTest, shrink_called_heuristic)
-{
+TYPED_TEST(HnswIndexTest, shrink_called_heuristic) {
     this->init(true);
     HnswTestNode empty{std::vector<uint32_t>()};
     this->index->set_node(1, empty);
@@ -924,16 +910,16 @@ TYPED_TEST(HnswIndexTest, shrink_called_heuristic)
     this->index->set_node(3, nb1);
     this->index->set_node(4, nb1);
     this->index->set_node(5, nb1);
-    this->expect_level_0(1, {2,3,4,5});
+    this->expect_level_0(1, {2, 3, 4, 5});
     this->index->set_node(6, nb1);
-    this->expect_level_0(1, {2,3,4,5,6});
+    this->expect_level_0(1, {2, 3, 4, 5, 6});
     this->expect_level_0(2, {1});
     this->expect_level_0(3, {1});
     this->expect_level_0(4, {1});
     this->expect_level_0(5, {1});
     this->expect_level_0(6, {1});
     this->index->set_node(7, nb1);
-    this->expect_level_0(1, {2,3,4});
+    this->expect_level_0(1, {2, 3, 4});
     this->expect_level_0(2, {1});
     this->expect_level_0(3, {1});
     this->expect_level_0(4, {1});
@@ -942,24 +928,21 @@ TYPED_TEST(HnswIndexTest, shrink_called_heuristic)
     this->expect_level_0(7, {});
     this->index->set_node(8, nb1);
     this->index->set_node(9, nb1);
-    this->expect_level_0(1, {2,3,4,8,9});
+    this->expect_level_0(1, {2, 3, 4, 8, 9});
     EXPECT_TRUE(this->index->check_link_symmetry());
 }
 
 namespace {
 
-template <class ResultGraph, HnswIndexType type>
-ResultGraph
-make_graph_helper(HnswIndex<type>& index)
-{
+template <class ResultGraph, HnswIndexType type> ResultGraph make_graph_helper(HnswIndex<type>& index) {
     using LevelArrayRef = typename HnswGraph<type>::LevelArrayRef;
     using LinkArrayRef = typename HnswGraph<type>::LinkArrayRef;
-    auto& graph = index.get_graph();
+    auto&       graph = index.get_graph();
     ResultGraph result(graph.size());
     assert(!graph.get_levels_ref(0).valid());
     for (uint32_t doc_id = 1; doc_id < graph.size(); ++doc_id) {
         auto& node = result[doc_id];
-        auto levels_ref = graph.get_levels_ref(doc_id);
+        auto  levels_ref = graph.get_levels_ref(doc_id);
         if constexpr (std::is_same_v<std::remove_reference_t<decltype(node)>, uint32_t>) {
             node = levels_ref.ref();
         } else {
@@ -979,41 +962,31 @@ make_graph_helper(HnswIndex<type>& index)
 
 using LinkGraph = std::vector<std::vector<std::vector<uint32_t>>>;
 
-template <HnswIndexType type>
-LinkGraph
-make_link_graph(HnswIndex<type>& index)
-{
+template <HnswIndexType type> LinkGraph make_link_graph(HnswIndex<type>& index) {
     return make_graph_helper<LinkGraph, type>(index);
 }
 
 using LinkArrayRefGraph = std::vector<std::vector<uint32_t>>;
 
-template <HnswIndexType type>
-LinkArrayRefGraph
-make_link_array_refs(HnswIndex<type>& index)
-{
+template <HnswIndexType type> LinkArrayRefGraph make_link_array_refs(HnswIndex<type>& index) {
     return make_graph_helper<LinkArrayRefGraph, type>(index);
 }
 
 using LevelArrayRefGraph = std::vector<uint32_t>;
 
-template <HnswIndexType type>
-LevelArrayRefGraph
-make_level_array_refs(HnswIndex<type>& index)
-{
+template <HnswIndexType type> LevelArrayRefGraph make_level_array_refs(HnswIndex<type>& index) {
     return make_graph_helper<LevelArrayRefGraph, type>(index);
 }
 
-}
+} // namespace
 
-TYPED_TEST(HnswIndexTest, hnsw_graph_is_compacted)
-{
+TYPED_TEST(HnswIndexTest, hnsw_graph_is_compacted) {
     this->init(true);
     this->get_vectors().clear();
     uint32_t doc_id = 1;
     for (uint32_t x = 0; x < 100; ++x) {
         for (uint32_t y = 0; y < 50; ++y) {
-            this->get_vectors().set(doc_id, { float(x), float(y) });
+            this->get_vectors().set(doc_id, {float(x), float(y)});
             ++doc_id;
         }
     }
@@ -1036,9 +1009,9 @@ TYPED_TEST(HnswIndexTest, hnsw_graph_is_compacted)
     for (uint32_t i = 0; i < 10; ++i) {
         mem_1 = mem_2;
         // Forced compaction to move things around
-        CompactionSpec compaction_spec(true, false);
+        CompactionSpec     compaction_spec(true, false);
         CompactionStrategy compaction_strategy;
-        auto& graph = this->index->get_graph();
+        auto&              graph = this->index->get_graph();
         graph.links_store.set_compaction_spec(compaction_spec);
         graph.levels_store.set_compaction_spec(compaction_spec);
         this->index->compact_link_arrays(compaction_strategy);
@@ -1065,8 +1038,7 @@ TYPED_TEST(HnswIndexTest, hnsw_graph_is_compacted)
     }
 }
 
-TYPED_TEST(HnswIndexTest, hnsw_graph_can_be_saved_and_loaded)
-{
+TYPED_TEST(HnswIndexTest, hnsw_graph_can_be_saved_and_loaded) {
     this->init(false);
     this->make_savetest_index();
     this->check_savetest_index("before save");
@@ -1076,16 +1048,14 @@ TYPED_TEST(HnswIndexTest, hnsw_graph_can_be_saved_and_loaded)
     this->check_savetest_index("after load");
 }
 
-TYPED_TEST(HnswIndexTest, search_during_remove)
-{
+TYPED_TEST(HnswIndexTest, search_during_remove) {
     this->init(false);
     this->make_savetest_index();
     this->writer_clears_tensor(4);
     this->expect_top_3_by_docid("{0, 0}", {0, 0}, {7});
 }
 
-TYPED_TEST(HnswIndexTest, inconsistent_index)
-{
+TYPED_TEST(HnswIndexTest, inconsistent_index) {
     this->init(false);
     this->vectors.clear();
     this->vectors.set(1, {1, 3}).set(2, {7, 1}).set(3, {6, 5}).set(4, {8, 3}).set(5, {10, 3});
@@ -1121,12 +1091,10 @@ namespace {
 class MyGlobalFilter : public GlobalFilter {
     std::shared_ptr<GlobalFilter> _filter;
     mutable uint32_t              _max_docid;
+
 public:
     explicit MyGlobalFilter(std::shared_ptr<GlobalFilter> filter) noexcept
-        : _filter(std::move(filter)),
-          _max_docid(0)
-    {
-    }
+        : _filter(std::move(filter)), _max_docid(0) {}
     bool is_active() const override { return _filter->is_active(); }
     uint32_t size() const override { return _filter->size(); }
     uint32_t count() const override { return _filter->count(); }
@@ -1137,16 +1105,11 @@ public:
     uint32_t max_docid() const noexcept { return _max_docid; }
 };
 
-}
+} // namespace
 
-TEST_F(HnswMultiIndexTest, duplicate_docid_is_removed)
-{
+TEST_F(HnswMultiIndexTest, duplicate_docid_is_removed) {
     this->init(false);
-    this->vectors
-        .set(1, {0, 0, 0, 2})
-        .set(2, {1, 0})
-        .set(3, {1, 2})
-        .set(4, {2, 0, 2, 2});
+    this->vectors.set(1, {0, 0, 0, 2}).set(2, {1, 0}).set(3, {1, 2}).set(4, {2, 0, 2, 2});
     /*
      * Graph showing documents at column x row y, origo in lower left corner.
      *
@@ -1175,16 +1138,14 @@ TEST_F(HnswMultiIndexTest, duplicate_docid_is_removed)
     EXPECT_EQ(2, filter->max_docid());
 }
 
-TEST_F(HnswMultiIndexTest, docid_with_empty_tensor_can_be_removed)
-{
+TEST_F(HnswMultiIndexTest, docid_with_empty_tensor_can_be_removed) {
     this->init(false);
     this->vectors.set(1, {});
     this->add_document(1);
     this->remove_document(1);
 }
 
-TEST_F(HnswMultiIndexTest, docid_with_empty_tensor_can_be_removed_after_restart)
-{
+TEST_F(HnswMultiIndexTest, docid_with_empty_tensor_can_be_removed_after_restart) {
     this->init(false);
     this->vectors.set(1, {});
     this->add_document(1);
@@ -1194,70 +1155,72 @@ TEST_F(HnswMultiIndexTest, docid_with_empty_tensor_can_be_removed_after_restart)
     this->remove_document(1);
 }
 
-TEST(LevelGeneratorTest, gives_various_levels)
-{
-    InvLogLevelGenerator generator(4);
+TEST(LevelGeneratorTest, gives_various_levels) {
+    InvLogLevelGenerator  generator(4);
     std::vector<uint32_t> got_levels(16);
-    for (auto & v : got_levels) { v = generator.max_level(); }
-    EXPECT_EQ(got_levels, std::vector<uint32_t>({
-        2, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0
-    }));
-    for (auto & v : got_levels) { v = generator.max_level(); }
-    EXPECT_EQ(got_levels, std::vector<uint32_t>({
-        0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-    }));
-    for (auto & v : got_levels) { v = generator.max_level(); }
-    EXPECT_EQ(got_levels, std::vector<uint32_t>({
-        0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 2, 0
-    }));
-    for (auto & v : got_levels) { v = generator.max_level(); }
-    EXPECT_EQ(got_levels, std::vector<uint32_t>({
-        0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1
-    }));
-    for (auto & v : got_levels) { v = generator.max_level(); }
-    EXPECT_EQ(got_levels, std::vector<uint32_t>({
-        0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 2
-    }));
-    for (auto & v : got_levels) { v = generator.max_level(); }
-    EXPECT_EQ(got_levels, std::vector<uint32_t>({
-        0, 1, 1, 0, 3, 1, 2, 0, 0, 1, 0, 0, 0, 0, 0, 0
-    }));
+    for (auto& v : got_levels) {
+        v = generator.max_level();
+    }
+    EXPECT_EQ(got_levels, std::vector<uint32_t>({2, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0}));
+    for (auto& v : got_levels) {
+        v = generator.max_level();
+    }
+    EXPECT_EQ(got_levels, std::vector<uint32_t>({0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}));
+    for (auto& v : got_levels) {
+        v = generator.max_level();
+    }
+    EXPECT_EQ(got_levels, std::vector<uint32_t>({0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 2, 0}));
+    for (auto& v : got_levels) {
+        v = generator.max_level();
+    }
+    EXPECT_EQ(got_levels, std::vector<uint32_t>({0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1}));
+    for (auto& v : got_levels) {
+        v = generator.max_level();
+    }
+    EXPECT_EQ(got_levels, std::vector<uint32_t>({0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 2}));
+    for (auto& v : got_levels) {
+        v = generator.max_level();
+    }
+    EXPECT_EQ(got_levels, std::vector<uint32_t>({0, 1, 1, 0, 3, 1, 2, 0, 0, 1, 0, 0, 0, 0, 0, 0}));
 
-    uint32_t left = 1000000;
+    uint32_t              left = 1000000;
     std::vector<uint32_t> hist;
     for (uint32_t i = 0; i < left; ++i) {
         uint32_t l = generator.max_level();
         if (hist.size() <= l) {
-            hist.resize(l+1);
+            hist.resize(l + 1);
         }
         hist[l]++;
     }
     for (unsigned int l : hist) {
         double expected = left * 0.75;
-        EXPECT_TRUE(l < expected*1.01 + 100);
-        EXPECT_TRUE(l > expected*0.99 - 100);
+        EXPECT_TRUE(l < expected * 1.01 + 100);
+        EXPECT_TRUE(l > expected * 0.99 - 100);
         left *= 0.25;
     }
     EXPECT_TRUE(hist.size() < 14);
 }
 
-template <typename IndexType>
-class TwoPhaseTest : public HnswIndexTest<IndexType> {
+template <typename IndexType> class TwoPhaseTest : public HnswIndexTest<IndexType> {
 public:
-    TwoPhaseTest()
-        : HnswIndexTest<IndexType>()
-    {
+    TwoPhaseTest() : HnswIndexTest<IndexType>() {
         this->init(true);
-        this->vectors.set(4, {1, 3}).set(5, {13, 3}).set(6, {7, 13})
-               .set(1, {3, 7}).set(2, {7, 1}).set(3, {11, 7})
-               .set(7, {6, 5}).set(8, {5, 5}).set(9, {6, 6});
+        this->vectors.set(4, {1, 3})
+            .set(5, {13, 3})
+            .set(6, {7, 13})
+            .set(1, {3, 7})
+            .set(2, {7, 1})
+            .set(3, {11, 7})
+            .set(7, {6, 5})
+            .set(8, {5, 5})
+            .set(9, {6, 6});
     }
     ~TwoPhaseTest() override;
     using UP = std::unique_ptr<PrepareResult>;
     UP prepare_add(uint32_t docid, uint32_t max_level = 0) {
         this->level_generator->level = max_level;
         GenerationGuard dummy;
-        auto vectors_to_add = this->vectors.get_vectors(docid);
+        auto            vectors_to_add = this->vectors.get_vectors(docid);
         return this->index->prepare_add_document(docid, vectors_to_add, dummy);
     }
     void complete_add(uint32_t docid, UP up) {
@@ -1265,17 +1228,17 @@ public:
         this->commit();
     }
 
-    uint32_t prepare_insert_during_remove_pass(bool heuristic_select_neighbors, uint32_t schedule_clear_tensor, const std::string& label);
+    uint32_t prepare_insert_during_remove_pass(bool heuristic_select_neighbors, uint32_t schedule_clear_tensor,
+                                               const std::string& label);
     void prepare_insert_during_remove(bool heuristic_select_neighbors);
 };
 
-template <typename IndexType>
-TwoPhaseTest<IndexType>::~TwoPhaseTest() = default;
+template <typename IndexType> TwoPhaseTest<IndexType>::~TwoPhaseTest() = default;
 
 template <typename IndexType>
-uint32_t
-TwoPhaseTest<IndexType>::prepare_insert_during_remove_pass(bool heuristic_select_neighbors, uint32_t schedule_clear_tensor, const std::string& label)
-{
+uint32_t TwoPhaseTest<IndexType>::prepare_insert_during_remove_pass(bool               heuristic_select_neighbors,
+                                                                    uint32_t           schedule_clear_tensor,
+                                                                    const std::string& label) {
     SCOPED_TRACE(label);
     this->init(heuristic_select_neighbors);
     this->vectors.clear();
@@ -1296,21 +1259,19 @@ TwoPhaseTest<IndexType>::prepare_insert_during_remove_pass(bool heuristic_select
 }
 
 template <typename IndexType>
-void
-TwoPhaseTest<IndexType>::prepare_insert_during_remove(bool heuristic_select_neighbors)
-{
+void TwoPhaseTest<IndexType>::prepare_insert_during_remove(bool heuristic_select_neighbors) {
     auto get_vector_counts = prepare_insert_during_remove_pass(heuristic_select_neighbors, 0, "No clear tensor");
     for (uint32_t schedule_clear_tensor = 1; schedule_clear_tensor <= get_vector_counts; ++schedule_clear_tensor) {
         vespalib::asciistream os;
-        os << "Writer thread cleared tensor for get_vector (" << schedule_clear_tensor << " of " << get_vector_counts << ")";
+        os << "Writer thread cleared tensor for get_vector (" << schedule_clear_tensor << " of " << get_vector_counts
+           << ")";
         prepare_insert_during_remove_pass(heuristic_select_neighbors, schedule_clear_tensor, os.str());
     }
 }
 
 TYPED_TEST_SUITE(TwoPhaseTest, HnswIndexTestTypes);
 
-TYPED_TEST(TwoPhaseTest, two_phase_add)
-{
+TYPED_TEST(TwoPhaseTest, two_phase_add) {
     this->add_document(1);
     this->add_document(2);
     this->add_document(3);
@@ -1320,13 +1281,13 @@ TYPED_TEST(TwoPhaseTest, two_phase_add)
     this->add_document(6, 2);
     this->expect_entry_point(6, 2);
 
-    this->expect_level_0(1, {2,4,6});
-    this->expect_level_0(2, {1,3,4,5});
-    this->expect_level_0(3, {2,5,6});
+    this->expect_level_0(1, {2, 4, 6});
+    this->expect_level_0(2, {1, 3, 4, 5});
+    this->expect_level_0(3, {2, 5, 6});
 
-    this->expect_levels(4, {{1,2}, {5,6}});
-    this->expect_levels(5, {{2,3}, {4,6}});
-    this->expect_levels(6, {{1,3}, {4,5}, {}});
+    this->expect_levels(4, {{1, 2}, {5, 6}});
+    this->expect_levels(5, {{2, 3}, {4, 6}});
+    this->expect_levels(6, {{1, 3}, {4, 5}, {}});
     EXPECT_EQ(6, this->get_active_nodes());
 
     auto up = this->prepare_add(7, 1);
@@ -1344,20 +1305,18 @@ TYPED_TEST(TwoPhaseTest, two_phase_add)
     EXPECT_EQ(8, this->get_active_nodes());
 
     auto& id_mapping = this->index->get_id_mapping();
-    auto nodeids = id_mapping.get_ids(7);
+    auto  nodeids = id_mapping.get_ids(7);
     EXPECT_EQ(1, nodeids.size());
     // 1 filtered out because it was removed
     // 5 filtered out because it was updated
     this->expect_levels(nodeids[0], {{2}, {4}});
 }
 
-TYPED_TEST(TwoPhaseTest, prepare_insert_during_remove_simple_select_neighbors)
-{
+TYPED_TEST(TwoPhaseTest, prepare_insert_during_remove_simple_select_neighbors) {
     this->prepare_insert_during_remove(false);
 }
 
-TYPED_TEST(TwoPhaseTest, prepare_insert_during_remove_heuristic_select_neighbors)
-{
+TYPED_TEST(TwoPhaseTest, prepare_insert_during_remove_heuristic_select_neighbors) {
     this->prepare_insert_during_remove(true);
 }
 
