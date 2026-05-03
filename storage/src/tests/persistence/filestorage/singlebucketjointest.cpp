@@ -1,12 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/log.h>
+#include <vespa/document/test/make_document_bucket.h>
+#include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
-#include <tests/persistence/common/persistenceproviderwrapper.h>
-#include <vespa/persistence/dummyimpl/dummypersistence.h>
+
 #include <tests/persistence/common/filestortestfixture.h>
-#include <vespa/document/test/make_document_bucket.h>
+#include <tests/persistence/common/persistenceproviderwrapper.h>
+
+#include <vespa/log/log.h>
 
 LOG_SETUP(".singlebucketjointest");
 
@@ -15,13 +17,12 @@ using namespace ::testing;
 
 namespace storage {
 
-struct SingleBucketJoinTest : FileStorTestFixture {
-};
+struct SingleBucketJoinTest : FileStorTestFixture {};
 
 TEST_F(SingleBucketJoinTest, persistence_can_handle_single_bucket_join) {
     TestFileStorComponents c(*this);
-    document::BucketId targetBucket(16, 1);
-    document::BucketId sourceBucket(17, 1);
+    document::BucketId     targetBucket(16, 1);
+    document::BucketId     sourceBucket(17, 1);
 
     createBucket(sourceBucket);
     // Make sure it's not empty

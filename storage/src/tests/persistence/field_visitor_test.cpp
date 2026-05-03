@@ -3,8 +3,10 @@
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/storage/persistence/fieldvisitor.h>
-#include <gtest/gtest.h>
+
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
 #include <algorithm>
 #include <memory>
 #include <string>
@@ -20,8 +22,8 @@ struct FieldVisitorTest : Test {
 
     [[nodiscard]] std::vector<std::string> fields_in_selection(const std::string& selection) const {
         document::BucketIdFactory id_factory;
-        document::select::Parser parser(_test_doc_mgr.getTypeRepo(), id_factory);
-        auto* doc_type = _test_doc_mgr.getTypeRepo().getDocumentType("testdoctype1");
+        document::select::Parser  parser(_test_doc_mgr.getTypeRepo(), id_factory);
+        auto*                     doc_type = _test_doc_mgr.getTypeRepo().getDocumentType("testdoctype1");
         assert(doc_type);
         FieldVisitor visitor(*doc_type);
 
@@ -53,4 +55,4 @@ TEST_F(FieldVisitorTest, fields_are_resolved_below_unary_operators) {
     EXPECT_THAT(fields_in_selection("not testdoctype1.boolfield"), ElementsAre("boolfield"));
 }
 
-} // storage
+} // namespace storage

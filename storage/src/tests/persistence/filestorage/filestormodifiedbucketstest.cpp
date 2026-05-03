@@ -1,12 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <tests/persistence/common/filestortestfixture.h>
-#include <tests/persistence/common/persistenceproviderwrapper.h>
-#include <vespa/config/helper/configgetter.hpp>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/storage/persistence/filestorage/modifiedbucketchecker.h>
 #include <vespa/storageapi/message/bucket.h>
+
+#include <vespa/config/helper/configgetter.hpp>
+
+#include <tests/persistence/common/filestortestfixture.h>
+#include <tests/persistence/common/persistenceproviderwrapper.h>
 
 using storage::spi::test::makeSpiBucket;
 using namespace ::testing;
@@ -27,52 +29,40 @@ struct FileStorModifiedBucketsTest : FileStorTestFixture {
 
 namespace {
 
-struct BucketCheckerInjector : FileStorTestFixture::StorageLinkInjector
-{
+struct BucketCheckerInjector : FileStorTestFixture::StorageLinkInjector {
     TestServiceLayerApp& _node;
     FileStorTestFixture& _fixture;
-    BucketCheckerInjector(TestServiceLayerApp& node,
-                          FileStorTestFixture& fixture)
-        : _node(node),
-          _fixture(fixture)
-    {}
+    BucketCheckerInjector(TestServiceLayerApp& node, FileStorTestFixture& fixture) : _node(node), _fixture(fixture) {}
     void inject(DummyStorageLink& link) const override {
         using vespa::config::content::core::StorServerConfig;
         auto cfg = config_from<StorServerConfig>(_fixture._config->config_uri());
-       link.push_back(std::make_unique<ModifiedBucketChecker>(
-               _node.getComponentRegister(), _node.getPersistenceProvider(), *cfg));
+        link.push_back(std::make_unique<ModifiedBucketChecker>(_node.getComponentRegister(),
+                                                               _node.getPersistenceProvider(), *cfg));
     }
 };
 
-void
-assertIsNotifyCommandWithActiveBucket(api::StorageMessage& msg)
-{
+void assertIsNotifyCommandWithActiveBucket(api::StorageMessage& msg) {
     auto& cmd = dynamic_cast<api::NotifyBucketChangeCommand&>(msg);
     ASSERT_TRUE(cmd.getBucketInfo().isActive());
-    ASSERT_EQ(
-            std::string("StorageMessageAddress(Storage protocol, "
-                             "cluster storage, nodetype distributor, index 0)"),
-            cmd.getAddress()->toString());
+    ASSERT_EQ(std::string("StorageMessageAddress(Storage protocol, "
+                          "cluster storage, nodetype distributor, index 0)"),
+              cmd.getAddress()->toString());
 }
 
-}
+} // namespace
 
-void
-FileStorModifiedBucketsTest::modifyBuckets(uint32_t first, uint32_t count)
-{
+void FileStorModifiedBucketsTest::modifyBuckets(uint32_t first, uint32_t count) {
     spi::BucketIdListResult::List buckets;
     for (uint32_t i = 0; i < count; ++i) {
         buckets.push_back(document::BucketId(16, first + i));
-        _node->getPersistenceProvider().setActiveState(
-                makeSpiBucket(buckets[i]),
-                spi::BucketInfo::ACTIVE);
+        _node->getPersistenceProvider().setActiveState(makeSpiBucket(buckets[i]), spi::BucketInfo::ACTIVE);
     }
 
     getDummyPersistence().setModifiedBuckets(std::move(buckets));
 }
 
 TEST_F(FileStorModifiedBucketsTest, modified_buckets_send_notify_bucket_change) {
-    BucketCheckerInjector bcj(*_node, *this);
+    BucketCheckerInjector  bcj(*_node, *this);
     TestFileStorComponents c(*this, bcj);
     setClusterState("storage:1 distributor:1");
 
@@ -93,15 +83,14 @@ TEST_F(FileStorModifiedBucketsTest, modified_buckets_send_notify_bucket_change) 
         ASSERT_NO_FATAL_FAILURE(assertIsNotifyCommandWithActiveBucket(*c.top.getReply(i)));
 
         StorBucketDatabase::WrappedEntry entry(
-                _node->getStorageBucketDatabase().get(
-                        document::BucketId(16, i), "foo"));
+            _node->getStorageBucketDatabase().get(document::BucketId(16, i), "foo"));
 
         EXPECT_TRUE(entry->info.isActive());
     }
 }
 
 TEST_F(FileStorModifiedBucketsTest, file_stor_replies_to_recheck_bucket_commands) {
-    BucketCheckerInjector bcj(*_node, *this);
+    BucketCheckerInjector  bcj(*_node, *this);
     TestFileStorComponents c(*this, bcj);
     setClusterState("storage:1 distributor:1");
 
@@ -124,5 +113,4 @@ TEST_F(FileStorModifiedBucketsTest, file_stor_replies_to_recheck_bucket_commands
     ASSERT_NO_FATAL_FAILURE(assertIsNotifyCommandWithActiveBucket(*c.top.getReply(0)));
 }
 
-} // storage
-
+} // namespace storage

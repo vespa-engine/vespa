@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/document/test/make_document_bucket.h>
+#include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/storageapi/message/bucket.h>
-#include <vespa/persistence/dummyimpl/dummypersistence.h>
+
 #include <tests/persistence/common/filestortestfixture.h>
+
 #include <vector>
 
 using document::test::makeDocumentBucket;
@@ -22,57 +24,46 @@ struct MergeBlockingTest : public FileStorTestFixture {
     void SetUp() override;
 };
 
-void
-MergeBlockingTest::SetUp()
-{
+void MergeBlockingTest::SetUp() {
     setupDisks();
 }
 
 namespace {
 
-api::StorageMessageAddress
-makeAddress() {
+api::StorageMessageAddress makeAddress() {
     static std::string _storage("storage");
     return api::StorageMessageAddress(&_storage, lib::NodeType::STORAGE, 0);
 }
 
-void
-assignCommandMeta(api::StorageCommand& msg) {
+void assignCommandMeta(api::StorageCommand& msg) {
     msg.setAddress(makeAddress());
     msg.setSourceIndex(0);
 }
 
-std::vector<api::MergeBucketCommand::Node>
-getNodes() {
+std::vector<api::MergeBucketCommand::Node> getNodes() {
     return std::vector<api::MergeBucketCommand::Node>({0, 1});
 }
 
-std::vector<api::MergeBucketCommand::Node>
-getNodesWithForwarding() {
+std::vector<api::MergeBucketCommand::Node> getNodesWithForwarding() {
     return std::vector<api::MergeBucketCommand::Node>({0, 1, 2});
 }
 
-std::shared_ptr<api::MergeBucketCommand>
-createMerge(const document::BucketId& bucket) {
-    auto cmd = std::make_shared<api::MergeBucketCommand>(
-            makeDocumentBucket(bucket), getNodes(), api::Timestamp(1000));
+std::shared_ptr<api::MergeBucketCommand> createMerge(const document::BucketId& bucket) {
+    auto cmd =
+        std::make_shared<api::MergeBucketCommand>(makeDocumentBucket(bucket), getNodes(), api::Timestamp(1000));
     assignCommandMeta(*cmd);
     return cmd;
 }
 
-std::shared_ptr<api::GetBucketDiffCommand>
-createGetDiff(const document::BucketId& bucket,
-              const std::vector<api::MergeBucketCommand::Node>& nodes)
-{
-    auto cmd = std::make_shared<api::GetBucketDiffCommand>(
-            makeDocumentBucket(bucket), nodes, api::Timestamp(1000));
+std::shared_ptr<api::GetBucketDiffCommand> createGetDiff(const document::BucketId&                         bucket,
+                                                         const std::vector<api::MergeBucketCommand::Node>& nodes) {
+    auto cmd = std::make_shared<api::GetBucketDiffCommand>(makeDocumentBucket(bucket), nodes, api::Timestamp(1000));
     assignCommandMeta(*cmd);
     return cmd;
 }
 
 std::shared_ptr<api::ApplyBucketDiffCommand>
-createApplyDiff(const document::BucketId& bucket,
-                const std::vector<api::MergeBucketCommand::Node>& nodes) {
+createApplyDiff(const document::BucketId& bucket, const std::vector<api::MergeBucketCommand::Node>& nodes) {
     auto cmd = std::make_shared<api::ApplyBucketDiffCommand>(makeDocumentBucket(bucket), nodes);
     assignCommandMeta(*cmd);
     return cmd;
@@ -82,7 +73,7 @@ const document::BucketId leafBucket(17, 1);
 const document::BucketId innerBucket(16, 1);
 const document::BucketId innerBucket2(15, 1);
 
-}
+} // namespace
 
 TEST_F(MergeBlockingTest, reject_merge_for_inconsistent_inner_bucket) {
     TestFileStorComponents c(*this);
@@ -137,7 +128,7 @@ TEST_F(MergeBlockingTest, reject_apply_diff_reply_when_bucket_has_become_inconsi
     c.top.sendDown(applyDiff);
     c.top.waitForMessages(1, MSG_WAIT_TIME);
 
-    auto fwdDiff = c.top.getAndRemoveMessage(api::MessageType::APPLYBUCKETDIFF);
+    auto  fwdDiff = c.top.getAndRemoveMessage(api::MessageType::APPLYBUCKETDIFF);
     auto& diffCmd = dynamic_cast<api::ApplyBucketDiffCommand&>(*fwdDiff);
 
     auto diffReply = std::make_shared<api::ApplyBucketDiffReply>(diffCmd);
@@ -155,8 +146,8 @@ TEST_F(MergeBlockingTest, reject_get_diff_reply_when_bucket_has_become_inconsist
     c.top.sendDown(getDiff);
     c.top.waitForMessages(1, MSG_WAIT_TIME);
 
-    auto fwdDiff = c.top.getAndRemoveMessage(api::MessageType::GETBUCKETDIFF);
-    auto& diffCmd =  dynamic_cast<api::GetBucketDiffCommand&>(*fwdDiff);
+    auto  fwdDiff = c.top.getAndRemoveMessage(api::MessageType::GETBUCKETDIFF);
+    auto& diffCmd = dynamic_cast<api::GetBucketDiffCommand&>(*fwdDiff);
 
     auto diffReply = std::make_shared<api::GetBucketDiffReply>(diffCmd);
     createBucket(innerBucket2);
@@ -184,4 +175,4 @@ TEST_F(MergeBlockingTest, reject_merge_when_low_used_bit_count) {
     EXPECT_FALSE(bucketExistsInDb(subBucket));
 }
 
-} // ns storage
+} // namespace storage
