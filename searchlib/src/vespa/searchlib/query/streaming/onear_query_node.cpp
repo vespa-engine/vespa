@@ -102,7 +102,6 @@ bool ONearQueryNode::evaluate() {
 void ONearQueryNode::get_element_ids(std::vector<uint32_t>& element_ids) {
     // Retrieve the elements that matched
     ElementIdMatchResult match_result(element_ids);
-    ;
     evaluate_helper(match_result);
     match_result.maybe_sort_element_ids();
 }
@@ -110,7 +109,6 @@ void ONearQueryNode::get_element_ids(std::vector<uint32_t>& element_ids) {
 void ONearQueryNode::get_match_spans(std::vector<MatchSpan>& match_spans) {
     // Retrieve the matching spans
     SpanMatchResult match_result(match_spans);
-    ;
     evaluate_helper(match_result);
 }
 
