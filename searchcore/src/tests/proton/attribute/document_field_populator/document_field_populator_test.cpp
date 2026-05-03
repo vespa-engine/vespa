@@ -21,27 +21,21 @@ using search::test::DocBuilder;
 using AVConfig = search::attribute::Config;
 using AVBasicType = search::attribute::BasicType;
 
-struct DocContext
-{
+struct DocContext {
     DocBuilder _builder;
-    DocContext()
-        : _builder([](auto& builder, auto& header) { header.addField("a1", builder.intTypeRef()); })
-    {
-    }
+    DocContext() : _builder([](auto& builder, auto& header) { header.addField("a1", builder.intTypeRef()); }) {}
     Document::UP create(uint32_t id) {
-        std::string docId =
-                vespalib::make_string("id:searchdocument:searchdocument::%u", id);
+        std::string docId = vespalib::make_string("id:searchdocument:searchdocument::%u", id);
         return _builder.make_document(docId);
     }
 };
 
-class DocumentFieldPopulatorTest : public ::testing::Test
-{
+class DocumentFieldPopulatorTest : public ::testing::Test {
 protected:
-    AttributeVector::SP _attr;
-    IntegerAttribute &_intAttr;
+    AttributeVector::SP    _attr;
+    IntegerAttribute&      _intAttr;
     DocumentFieldPopulator _pop;
-    DocContext _ctx;
+    DocContext             _ctx;
 
     DocumentFieldPopulatorTest();
     ~DocumentFieldPopulatorTest() override;
@@ -49,10 +43,9 @@ protected:
 
 DocumentFieldPopulatorTest::DocumentFieldPopulatorTest()
     : _attr(search::AttributeFactory::createAttribute("a1", AVConfig(AVBasicType::INT32))),
-      _intAttr(dynamic_cast<IntegerAttribute &>(*_attr)),
+      _intAttr(dynamic_cast<IntegerAttribute&>(*_attr)),
       _pop("a1", _attr, "test"),
-      _ctx()
-{
+      _ctx() {
     _intAttr.addDocs(2);
     _intAttr.update(1, 100);
     _intAttr.commit();
@@ -60,8 +53,7 @@ DocumentFieldPopulatorTest::DocumentFieldPopulatorTest()
 
 DocumentFieldPopulatorTest::~DocumentFieldPopulatorTest() = default;
 
-TEST_F(DocumentFieldPopulatorTest, require_that_document_field_is_populated_based_on_attribute_content)
-{
+TEST_F(DocumentFieldPopulatorTest, require_that_document_field_is_populated_based_on_attribute_content) {
     // NOTE: DocumentFieldRetriever (used by DocumentFieldPopulator) is fully tested
     // with all data types in searchcore/src/tests/proton/server/documentretriever_test.cpp.
     {

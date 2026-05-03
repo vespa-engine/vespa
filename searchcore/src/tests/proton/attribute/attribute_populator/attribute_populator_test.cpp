@@ -1,18 +1,18 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchcore/proton/attribute/attribute_populator.h>
-#include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/searchcore/proton/attribute/attributemanager.h>
-#include <vespa/searchcore/proton/test/test.h>
-#include <vespa/searchlib/attribute/interlock.h>
-#include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/searchlib/test/directory_handler.h>
-#include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/repo/newconfigbuilder.h>
+#include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchcore/proton/attribute/attribute_populator.h>
+#include <vespa/searchcore/proton/attribute/attributemanager.h>
+#include <vespa/searchcore/proton/test/test.h>
+#include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/searchlib/attribute/interlock.h>
+#include <vespa/searchlib/index/dummyfileheadercontext.h>
+#include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/foreground_thread_executor.h>
 #include <vespa/vespalib/util/foregroundtaskexecutor.h>
@@ -36,50 +36,40 @@ using AVBasicType = search::attribute::BasicType;
 using AVConfig = search::attribute::Config;
 
 const std::string TEST_DIR = "testdir";
-const uint64_t CREATE_SERIAL_NUM = 8u;
+const uint64_t    CREATE_SERIAL_NUM = 8u;
 
-std::unique_ptr<const DocumentTypeRepo>
-makeDocTypeRepo()
-{
+std::unique_ptr<const DocumentTypeRepo> makeDocTypeRepo() {
     NewConfigBuilder builder;
-    auto& doc = builder.document("searchdocument", -645763131);
+    auto&            doc = builder.document("searchdocument", -645763131);
     doc.addField("a1", builder.intTypeRef());
     return std::make_unique<DocumentTypeRepo>(builder.config());
 }
 
-struct DocContext
-{
+struct DocContext {
     std::unique_ptr<const DocumentTypeRepo> _repo;
-    DocContext()
-        : _repo(makeDocTypeRepo())
-    {
-    }
+    DocContext() : _repo(makeDocTypeRepo()) {}
     std::shared_ptr<Document> create(uint32_t id, int64_t fieldValue) {
-        std::string docId =
-                vespalib::make_string("id:searchdocument:searchdocument::%u", id);
+        std::string docId = vespalib::make_string("id:searchdocument:searchdocument::%u", id);
         auto doc = std::make_shared<Document>(*_repo, *_repo->getDocumentType("searchdocument"), DocumentId(docId));
         doc->setValue("a1", IntFieldValue(fieldValue));
         return doc;
     }
 };
 
-class AttributePopulatorTest : public ::testing::Test
-{
+class AttributePopulatorTest : public ::testing::Test {
 protected:
-    DirectoryHandler _testDir;
-    DummyFileHeaderContext _fileHeader;
-    ForegroundTaskExecutor _attributeFieldWriter;
-    ForegroundThreadExecutor _shared;
-    vespalib::HwInfo         _hwInfo;
-    AttributeManager::SP _mgr;
+    DirectoryHandler                    _testDir;
+    DummyFileHeaderContext              _fileHeader;
+    ForegroundTaskExecutor              _attributeFieldWriter;
+    ForegroundThreadExecutor            _shared;
+    vespalib::HwInfo                    _hwInfo;
+    AttributeManager::SP                _mgr;
     std::unique_ptr<AttributePopulator> _pop;
-    DocContext _ctx;
+    DocContext                          _ctx;
     AttributePopulatorTest();
     ~AttributePopulatorTest() override;
     static void SetUpTestSuite();
-    AttributeGuard::UP getAttr() {
-        return _mgr->getAttribute("a1");
-    }
+    AttributeGuard::UP getAttr() { return _mgr->getAttribute("a1"); }
 };
 
 AttributePopulatorTest::AttributePopulatorTest()
@@ -89,26 +79,22 @@ AttributePopulatorTest::AttributePopulatorTest()
       _attributeFieldWriter(),
       _shared(),
       _hwInfo(),
-      _mgr(std::make_shared<AttributeManager>(TEST_DIR, "test.subdb", TuneFileAttributes(),
-                                              _fileHeader, std::make_shared<search::attribute::Interlock>(),
-                                              _attributeFieldWriter, _shared, _hwInfo)),
+      _mgr(std::make_shared<AttributeManager>(TEST_DIR, "test.subdb", TuneFileAttributes(), _fileHeader,
+                                              std::make_shared<search::attribute::Interlock>(), _attributeFieldWriter,
+                                              _shared, _hwInfo)),
       _pop(),
-      _ctx()
-{
-    _mgr->addAttribute({ "a1", AVConfig(AVBasicType::INT32)}, CREATE_SERIAL_NUM);
+      _ctx() {
+    _mgr->addAttribute({"a1", AVConfig(AVBasicType::INT32)}, CREATE_SERIAL_NUM);
     _pop = std::make_unique<AttributePopulator>(_mgr, 1, "test", CREATE_SERIAL_NUM);
 }
 
 AttributePopulatorTest::~AttributePopulatorTest() = default;
 
-void
-AttributePopulatorTest::SetUpTestSuite()
-{
+void AttributePopulatorTest::SetUpTestSuite() {
     std::filesystem::remove_all(std::filesystem::path(TEST_DIR));
 }
 
-TEST_F(AttributePopulatorTest, require_that_reprocess_with_document_populates_attribute)
-{
+TEST_F(AttributePopulatorTest, require_that_reprocess_with_document_populates_attribute) {
     AttributeGuard::UP attr = getAttr();
     EXPECT_EQ(1u, attr->get()->getNumDocs());
 

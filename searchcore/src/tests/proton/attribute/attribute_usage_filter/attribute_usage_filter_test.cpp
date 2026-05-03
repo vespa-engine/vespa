@@ -13,38 +13,29 @@ using proton::IAttributeUsageListener;
 using search::AddressSpaceUsage;
 using vespalib::AddressSpace;
 
-namespace
-{
+namespace {
 
 class MyListener : public IAttributeUsageListener {
 public:
     AttributeUsageStats stats;
     MyListener() : stats() {}
-    void notify_attribute_usage(const AttributeUsageStats &stats_in) override {
-        stats = stats_in;
-    }
+    void notify_attribute_usage(const AttributeUsageStats& stats_in) override { stats = stats_in; }
 };
 
-class AttributeUsageFilterTest : public  ::testing::Test
-{
+class AttributeUsageFilterTest : public ::testing::Test {
 protected:
     AttributeUsageFilter filter;
-    const MyListener* listener;
+    const MyListener*    listener;
     using State = AttributeUsageFilter::State;
     using Config = AttributeUsageFilter::Config;
 
     AttributeUsageFilterTest();
     ~AttributeUsageFilterTest() override;
 
-    void setAttributeStats(const AttributeUsageStats &stats) {
-        filter.setAttributeStats(stats);
-    }
+    void setAttributeStats(const AttributeUsageStats& stats) { filter.setAttributeStats(stats); }
 };
 
-AttributeUsageFilterTest::AttributeUsageFilterTest()
-    : filter(),
-      listener(nullptr)
-{
+AttributeUsageFilterTest::AttributeUsageFilterTest() : filter(), listener(nullptr) {
     auto my_listener = std::make_unique<MyListener>();
     listener = my_listener.get();
     filter.set_listener(std::move(my_listener));
@@ -52,16 +43,15 @@ AttributeUsageFilterTest::AttributeUsageFilterTest()
 
 AttributeUsageFilterTest::~AttributeUsageFilterTest() = default;
 
-}
+} // namespace
 
-TEST_F(AttributeUsageFilterTest, listener_is_updated_when_attribute_stats_change)
-{
-   AttributeUsageStats stats;
-   AddressSpaceUsage usage;
-   usage.set("my_comp", AddressSpace(12, 10, 15));
-   stats.merge(usage, "my_attr", "my_subdb");
-   setAttributeStats(stats);
-   EXPECT_EQ(stats, listener->stats);
+TEST_F(AttributeUsageFilterTest, listener_is_updated_when_attribute_stats_change) {
+    AttributeUsageStats stats;
+    AddressSpaceUsage   usage;
+    usage.set("my_comp", AddressSpace(12, 10, 15));
+    stats.merge(usage, "my_attr", "my_subdb");
+    setAttributeStats(stats);
+    EXPECT_EQ(stats, listener->stats);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

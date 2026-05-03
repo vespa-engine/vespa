@@ -9,6 +9,7 @@
 #include <vespa/searchcore/proton/test/attribute_utils.h>
 #include <vespa/searchsummary/docsummary/docsum_field_writer_commands.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <string>
 
 #include <vespa/log/log.h>
@@ -26,18 +27,17 @@ using namespace search::docsummary;
 
 namespace vespa::config::search::internal {
 
-std::ostream &operator<<(std::ostream &os, const SummaryConfig::Classes::Fields &field) {
+std::ostream& operator<<(std::ostream& os, const SummaryConfig::Classes::Fields& field) {
     return os << "{name=" << field.name << ", command=" << field.command << ", source=" << field.source << "}";
 }
 
-}
+} // namespace vespa::config::search::internal
 
 namespace proton {
 
 namespace {
 
-AttributesConfig::Attribute make_sv_cfg(const std::string &name, AttributesConfig::Attribute::Datatype dataType)
-{
+AttributesConfig::Attribute make_sv_cfg(const std::string& name, AttributesConfig::Attribute::Datatype dataType) {
     AttributesConfig::Attribute attr;
     attr.name = name;
     attr.datatype = dataType;
@@ -45,12 +45,11 @@ AttributesConfig::Attribute make_sv_cfg(const std::string &name, AttributesConfi
     return attr;
 }
 
-AttributesConfig::Attribute make_sv_cfg(AttributesConfig::Attribute::Datatype dataType)
-{
+AttributesConfig::Attribute make_sv_cfg(AttributesConfig::Attribute::Datatype dataType) {
     return make_sv_cfg("a", dataType);
 }
 
-AttributesConfig::Attribute make_int32_sv_cfg(const std::string &name) {
+AttributesConfig::Attribute make_int32_sv_cfg(const std::string& name) {
     return make_sv_cfg(name, AttributesConfig::Attribute::Datatype::INT32);
 }
 
@@ -62,48 +61,42 @@ AttributesConfig::Attribute make_string_sv_cfg() {
     return make_sv_cfg(AttributesConfig::Attribute::Datatype::STRING);
 }
 
-AttributesConfig::Attribute make_predicate_cfg(uint32_t arity)
-{
+AttributesConfig::Attribute make_predicate_cfg(uint32_t arity) {
     auto attr = make_sv_cfg(AttributesConfig::Attribute::Datatype::PREDICATE);
     attr.arity = arity;
     return attr;
 }
 
-AttributesConfig::Attribute make_tensor_cfg(const std::string &spec)
-{
+AttributesConfig::Attribute make_tensor_cfg(const std::string& spec) {
     auto attr = make_sv_cfg(AttributesConfig::Attribute::Datatype::TENSOR);
     attr.tensortype = spec;
     return attr;
 }
 
-AttributesConfig::Attribute make_reference_cfg()
-{
+AttributesConfig::Attribute make_reference_cfg() {
     return make_sv_cfg(AttributesConfig::Attribute::Datatype::REFERENCE);
 }
 
-AttributesConfig attrCfg(std::vector<AttributesConfig::Attribute> attributes)
-{
+AttributesConfig attrCfg(std::vector<AttributesConfig::Attribute> attributes) {
     AttributesConfigBuilder result;
     result.attribute = attributes;
     return result;
 }
 
-AttributesConfig::Attribute make_fa(const AttributesConfig::Attribute &cfg)
-{
+AttributesConfig::Attribute make_fa(const AttributesConfig::Attribute& cfg) {
     AttributesConfig::Attribute attr(cfg);
     attr.fastaccess = true;
     return attr;
 }
 
-SummaryConfig::Classes::Fields make_summary_field(const std::string &name)
-{
+SummaryConfig::Classes::Fields make_summary_field(const std::string& name) {
     SummaryConfig::Classes::Fields field;
     field.name = name;
     return field;
 }
 
-SummaryConfig::Classes::Fields make_summary_field(const std::string &name, const std::string& command, const std::string& source)
-{
+SummaryConfig::Classes::Fields make_summary_field(const std::string& name, const std::string& command,
+                                                  const std::string& source) {
     SummaryConfig::Classes::Fields field;
     field.name = name;
     field.command = command;
@@ -111,8 +104,7 @@ SummaryConfig::Classes::Fields make_summary_field(const std::string &name, const
     return field;
 }
 
-SummaryConfig sCfg(std::vector<SummaryConfig::Classes::Fields> fields)
-{
+SummaryConfig sCfg(std::vector<SummaryConfig::Classes::Fields> fields) {
     SummaryConfigBuilder result;
     result.classes.resize(1);
     result.classes.back().id = 0;
@@ -121,20 +113,15 @@ SummaryConfig sCfg(std::vector<SummaryConfig::Classes::Fields> fields)
     return result;
 }
 
-class MyInspector : public IDocumentTypeInspector
-{
+class MyInspector : public IDocumentTypeInspector {
     std::set<std::string> _unchanged;
+
 public:
-    bool hasUnchangedField(const std::string &name) const override {
-        return _unchanged.count(name) > 0;
-    }
-    MyInspector()
-        : _unchanged()
-    {
-    }
+    bool hasUnchangedField(const std::string& name) const override { return _unchanged.count(name) > 0; }
+    MyInspector() : _unchanged() {}
     ~MyInspector() override;
-    void addFields(const std::vector<std::string> &fields) {
-        for (const auto &field : fields) {
+    void addFields(const std::vector<std::string>& fields) {
+        for (const auto& field : fields) {
             _unchanged.insert(field);
         }
     }
@@ -142,43 +129,33 @@ public:
 
 MyInspector::~MyInspector() = default;
 
-}
+} // namespace
 
 class DelayerTest : public ::testing::Test {
 private:
-    MyInspector _inspector;
+    MyInspector              _inspector;
     IndexschemaConfigBuilder _oldIndexSchema;
-    AttributeAspectDelayer _delayer;
+    AttributeAspectDelayer   _delayer;
 
 public:
-    DelayerTest()
-        : _inspector(),
-          _delayer()
-    {
-    }
+    DelayerTest() : _inspector(), _delayer() {}
     ~DelayerTest() override;
-    void addFields(const std::vector<std::string> &fields) {
-        _inspector.addFields(fields);
-    }
-    void addOldIndexField(const std::string &name) {
+    void addFields(const std::vector<std::string>& fields) { _inspector.addFields(fields); }
+    void addOldIndexField(const std::string& name) {
         IndexschemaConfig::Indexfield field;
         field.name = name;
         _oldIndexSchema.indexfield.emplace_back(field);
     }
-    void setup(const AttributesConfig &oldAttributesConfig,
-               const AttributesConfig &newAttributesConfig, const SummaryConfig &newSummaryConfig) {
+    void setup(const AttributesConfig& oldAttributesConfig, const AttributesConfig& newAttributesConfig,
+               const SummaryConfig& newSummaryConfig) {
         IndexschemaInspector indexschemaInspector(_oldIndexSchema);
-        _delayer.setup(oldAttributesConfig,
-                       newAttributesConfig, newSummaryConfig,
-                       indexschemaInspector, _inspector);
+        _delayer.setup(oldAttributesConfig, newAttributesConfig, newSummaryConfig, indexschemaInspector, _inspector);
     }
-    void assertAttributeConfig(const std::vector<AttributesConfig::Attribute> &exp)
-    {
+    void assertAttributeConfig(const std::vector<AttributesConfig::Attribute>& exp) {
         auto actConfig = _delayer.getAttributesConfig();
         EXPECT_EQ(exp, actConfig->attribute);
     }
-    void assertSummaryConfig(const std::vector<SummaryConfig::Classes::Fields> &exp)
-    {
+    void assertSummaryConfig(const std::vector<SummaryConfig::Classes::Fields>& exp) {
         auto summaryConfig = _delayer.getSummaryConfig();
         ASSERT_EQ(1, summaryConfig->classes.size());
         EXPECT_EQ(exp, summaryConfig->classes[0].fields);
@@ -187,41 +164,34 @@ public:
 
 DelayerTest::~DelayerTest() = default;
 
-TEST_F(DelayerTest, require_that_empty_config_is_ok)
-{
+TEST_F(DelayerTest, require_that_empty_config_is_ok) {
     setup(attrCfg({}), attrCfg({}), sCfg({}));
     assertAttributeConfig({});
     assertSummaryConfig({});
 }
 
-TEST_F(DelayerTest, require_that_simple_attribute_config_is_ok)
-{
+TEST_F(DelayerTest, require_that_simple_attribute_config_is_ok) {
     setup(attrCfg({make_int32_sv_cfg()}), attrCfg({make_int32_sv_cfg()}),
           sCfg({make_summary_field("a", command::attribute, "a")}));
     assertAttributeConfig({make_int32_sv_cfg()});
     assertSummaryConfig({make_summary_field("a", command::attribute, "a")});
 }
 
-TEST_F(DelayerTest, require_that_adding_attribute_aspect_is_delayed_if_field_type_is_unchanged)
-{
+TEST_F(DelayerTest, require_that_adding_attribute_aspect_is_delayed_if_field_type_is_unchanged) {
     addFields({"a"});
-    setup(attrCfg({}), attrCfg({make_int32_sv_cfg()}),
-          sCfg({make_summary_field("a", command::attribute, "a")}));
+    setup(attrCfg({}), attrCfg({make_int32_sv_cfg()}), sCfg({make_summary_field("a", command::attribute, "a")}));
     assertAttributeConfig({});
     assertSummaryConfig({make_summary_field("a")});
 }
 
-TEST_F(DelayerTest, require_that_adding_attribute_aspect_is_delayed_if_field_type_is_unchanged_geopos_override)
-{
+TEST_F(DelayerTest, require_that_adding_attribute_aspect_is_delayed_if_field_type_is_unchanged_geopos_override) {
     addFields({"a"});
-    setup(attrCfg({}), attrCfg({make_int32_sv_cfg()}),
-          sCfg({make_summary_field("a", command::geo_position, "a")}));
+    setup(attrCfg({}), attrCfg({make_int32_sv_cfg()}), sCfg({make_summary_field("a", command::geo_position, "a")}));
     assertAttributeConfig({});
     assertSummaryConfig({make_summary_field("a", command::geo_position, "a")});
 }
 
-TEST_F(DelayerTest, require_that_adding_attribute_aspect_is_delayed_if_field_type_is_unchanged_mapped_summary)
-{
+TEST_F(DelayerTest, require_that_adding_attribute_aspect_is_delayed_if_field_type_is_unchanged_mapped_summary) {
     addFields({"a"});
     setup(attrCfg({}), attrCfg({make_int32_sv_cfg()}),
           sCfg({make_summary_field("a_mapped", command::attribute, "a")}));
@@ -229,47 +199,42 @@ TEST_F(DelayerTest, require_that_adding_attribute_aspect_is_delayed_if_field_typ
     assertSummaryConfig({make_summary_field("a_mapped", command::copy, "a")});
 }
 
-TEST_F(DelayerTest, require_that_adding_attribute_is_not_delayed_if_field_type_changed)
-{
-    setup(attrCfg({}), attrCfg({make_int32_sv_cfg()}),
-          sCfg({make_summary_field("a", command::attribute, "a")}));
+TEST_F(DelayerTest, require_that_adding_attribute_is_not_delayed_if_field_type_changed) {
+    setup(attrCfg({}), attrCfg({make_int32_sv_cfg()}), sCfg({make_summary_field("a", command::attribute, "a")}));
     assertAttributeConfig({make_int32_sv_cfg()});
     assertSummaryConfig({make_summary_field("a", command::attribute, "a")});
 }
 
-TEST_F(DelayerTest, require_that_removing_attribute_aspect_is_delayed_if_field_type_is_unchanged)
-{
+TEST_F(DelayerTest, require_that_removing_attribute_aspect_is_delayed_if_field_type_is_unchanged) {
     addFields({"a"});
     setup(attrCfg({make_int32_sv_cfg()}), attrCfg({}), sCfg({make_summary_field("a")}));
     assertAttributeConfig({make_int32_sv_cfg()});
     assertSummaryConfig({make_summary_field("a", command::attribute, "a")});
 }
 
-TEST_F(DelayerTest, require_that_summary_map_override_is_removed_when_summary_aspect_is_removed_even_if_removing_attribute_aspect_is_delayed)
-{
+TEST_F(
+    DelayerTest,
+    require_that_summary_map_override_is_removed_when_summary_aspect_is_removed_even_if_removing_attribute_aspect_is_delayed) {
     addFields({"a"});
     setup(attrCfg({make_int32_sv_cfg()}), attrCfg({}), sCfg({}));
     assertAttributeConfig({make_int32_sv_cfg()});
     assertSummaryConfig({});
 }
 
-TEST_F(DelayerTest, require_that_removing_attribute_aspect_is_delayed_if_field_type_is_unchanged_gepos_override)
-{
+TEST_F(DelayerTest, require_that_removing_attribute_aspect_is_delayed_if_field_type_is_unchanged_gepos_override) {
     addFields({"a"});
     setup(attrCfg({make_int32_sv_cfg()}), attrCfg({}), sCfg({}));
     assertAttributeConfig({make_int32_sv_cfg()});
     assertSummaryConfig({});
 }
 
-TEST_F(DelayerTest, require_that_removing_attribute_aspect_is_not_delayed_if_field_type_changed)
-{
+TEST_F(DelayerTest, require_that_removing_attribute_aspect_is_not_delayed_if_field_type_changed) {
     setup(attrCfg({make_int32_sv_cfg()}), attrCfg({}), sCfg({make_summary_field("a")}));
     assertAttributeConfig({});
     assertSummaryConfig({make_summary_field("a")});
 }
 
-TEST_F(DelayerTest, require_that_removing_attribute_aspect_is_not_delayed_if_also_indexed)
-{
+TEST_F(DelayerTest, require_that_removing_attribute_aspect_is_not_delayed_if_also_indexed) {
     addFields({"a"});
     addOldIndexField("a");
     setup(attrCfg({make_string_sv_cfg()}), attrCfg({}), sCfg({make_summary_field("a")}));
@@ -277,43 +242,36 @@ TEST_F(DelayerTest, require_that_removing_attribute_aspect_is_not_delayed_if_als
     assertSummaryConfig({make_summary_field("a")});
 }
 
-TEST_F(DelayerTest, require_that_adding_attribute_aspect_is_delayed_for_tensor_field)
-{
+TEST_F(DelayerTest, require_that_adding_attribute_aspect_is_delayed_for_tensor_field) {
     addFields({"a"});
-    setup(attrCfg({}),
-          attrCfg({make_tensor_cfg("tensor(x[10])")}),
+    setup(attrCfg({}), attrCfg({make_tensor_cfg("tensor(x[10])")}),
           sCfg({make_summary_field("a", command::attribute, "a")}));
     assertAttributeConfig({});
     assertSummaryConfig({make_summary_field("a")});
 }
 
-TEST_F(DelayerTest, require_that_removing_attribute_aspect_is_delayed_for_tensor_field)
-{
+TEST_F(DelayerTest, require_that_removing_attribute_aspect_is_delayed_for_tensor_field) {
     addFields({"a"});
-    setup(attrCfg({make_tensor_cfg("tensor(x[10])")}),
-          attrCfg({}), sCfg({make_summary_field("a")}));
+    setup(attrCfg({make_tensor_cfg("tensor(x[10])")}), attrCfg({}), sCfg({make_summary_field("a")}));
     assertAttributeConfig({make_tensor_cfg("tensor(x[10])")});
     assertSummaryConfig({make_summary_field("a", command::attribute, "a")});
 }
 
-TEST_F(DelayerTest, require_that_removing_attribute_aspect_is_not_delayed_for_predicate)
-{
+TEST_F(DelayerTest, require_that_removing_attribute_aspect_is_not_delayed_for_predicate) {
     addFields({"a"});
     setup(attrCfg({make_predicate_cfg(4)}), attrCfg({}), sCfg({make_summary_field("a")}));
     assertAttributeConfig({});
     assertSummaryConfig({make_summary_field("a")});
 }
 
-TEST_F(DelayerTest, require_that_removing_attribute_aspect_is_not_delayed_for_reference)
-{
+TEST_F(DelayerTest, require_that_removing_attribute_aspect_is_not_delayed_for_reference) {
     addFields({"a"});
     setup(attrCfg({make_reference_cfg()}), attrCfg({}), sCfg({make_summary_field("a")}));
     assertAttributeConfig({});
     assertSummaryConfig({make_summary_field("a")});
 }
 
-TEST_F(DelayerTest, require_that_fast_access_flag_change_is_delayed_false_true_edge)
-{
+TEST_F(DelayerTest, require_that_fast_access_flag_change_is_delayed_false_true_edge) {
     addFields({"a"});
     setup(attrCfg({make_int32_sv_cfg()}), attrCfg({make_fa(make_int32_sv_cfg())}),
           sCfg({make_summary_field("a", command::attribute, "a")}));
@@ -321,8 +279,7 @@ TEST_F(DelayerTest, require_that_fast_access_flag_change_is_delayed_false_true_e
     assertSummaryConfig({make_summary_field("a", command::attribute, "a")});
 }
 
-TEST_F(DelayerTest, require_that_fast_access_flag_change_is_delayed_true_false_edge)
-{
+TEST_F(DelayerTest, require_that_fast_access_flag_change_is_delayed_true_false_edge) {
     addFields({"a"});
     setup(attrCfg({make_fa(make_int32_sv_cfg())}), attrCfg({make_int32_sv_cfg()}),
           sCfg({make_summary_field("a", command::attribute, "a")}));
@@ -330,8 +287,7 @@ TEST_F(DelayerTest, require_that_fast_access_flag_change_is_delayed_true_false_e
     assertSummaryConfig({make_summary_field("a", command::attribute, "a")});
 }
 
-TEST_F(DelayerTest, require_that_fast_access_flag_change_is_delayed_false_true_edge_on_tensor_attribute)
-{
+TEST_F(DelayerTest, require_that_fast_access_flag_change_is_delayed_false_true_edge_on_tensor_attribute) {
     addFields({"a"});
     setup(attrCfg({make_tensor_cfg("tensor(x[10])")}), attrCfg({make_fa(make_tensor_cfg("tensor(x[10])"))}),
           sCfg({make_summary_field("a", command::attribute, "a")}));
@@ -339,18 +295,16 @@ TEST_F(DelayerTest, require_that_fast_access_flag_change_is_delayed_false_true_e
     assertSummaryConfig({make_summary_field("a", command::attribute, "a")});
 }
 
-TEST_F(DelayerTest, require_that_fast_access_flag_change_is_delayed_true_false_edge_on_tensor_attribute)
-{
+TEST_F(DelayerTest, require_that_fast_access_flag_change_is_delayed_true_false_edge_on_tensor_attribute) {
     addFields({"a"});
-    setup(attrCfg({make_fa(make_tensor_cfg("tensor(x[10])"))}),
-          attrCfg({make_tensor_cfg("tensor(x[10])")}),
+    setup(attrCfg({make_fa(make_tensor_cfg("tensor(x[10])"))}), attrCfg({make_tensor_cfg("tensor(x[10])")}),
           sCfg({make_summary_field("a", command::attribute, "a")}));
     assertAttributeConfig({make_fa(make_tensor_cfg("tensor(x[10])"))});
     assertSummaryConfig({make_summary_field("a", command::attribute, "a")});
 }
 
-TEST_F(DelayerTest, require_that_fast_access_flag_change_is_not_delayed_true_false_edge_on_string_attribute_indexed_field)
-{
+TEST_F(DelayerTest,
+       require_that_fast_access_flag_change_is_not_delayed_true_false_edge_on_string_attribute_indexed_field) {
     addFields({"a"});
     addOldIndexField("a");
     setup(attrCfg({make_fa(make_string_sv_cfg())}), attrCfg({make_string_sv_cfg()}),
@@ -359,16 +313,14 @@ TEST_F(DelayerTest, require_that_fast_access_flag_change_is_not_delayed_true_fal
     assertSummaryConfig({make_summary_field("a", command::attribute, "a")});
 }
 
-TEST_F(DelayerTest, require_that_adding_attribute_aspect_to_struct_field_is_not_delayed_if_field_type_is_changed)
-{
+TEST_F(DelayerTest, require_that_adding_attribute_aspect_to_struct_field_is_not_delayed_if_field_type_is_changed) {
     setup(attrCfg({}), attrCfg({make_int32_sv_cfg("array.a")}),
           sCfg({make_summary_field("array", command::attribute_combiner, "array")}));
     assertAttributeConfig({make_int32_sv_cfg("array.a")});
     assertSummaryConfig({make_summary_field("array", command::attribute_combiner, "array")});
 }
 
-TEST_F(DelayerTest, require_that_adding_attribute_aspect_to_struct_field_is_delayed_if_field_type_is_unchanged)
-{
+TEST_F(DelayerTest, require_that_adding_attribute_aspect_to_struct_field_is_delayed_if_field_type_is_unchanged) {
     addFields({"array.a"});
     setup(attrCfg({}), attrCfg({make_int32_sv_cfg("array.a")}),
           sCfg({make_summary_field("array", command::attribute_combiner, "array")}));
@@ -376,14 +328,13 @@ TEST_F(DelayerTest, require_that_adding_attribute_aspect_to_struct_field_is_dela
     assertSummaryConfig({make_summary_field("array")});
 }
 
-TEST_F(DelayerTest, require_that_removing_attribute_aspect_from_struct_field_is_not_delayed)
-{
+TEST_F(DelayerTest, require_that_removing_attribute_aspect_from_struct_field_is_not_delayed) {
     addFields({"array.a"});
     setup(attrCfg({make_int32_sv_cfg("array.a")}), attrCfg({}), sCfg({make_summary_field("array")}));
     assertAttributeConfig({});
     assertSummaryConfig({make_summary_field("array")});
 }
 
-}
+} // namespace proton
 
 GTEST_MAIN_RUN_ALL_TESTS()

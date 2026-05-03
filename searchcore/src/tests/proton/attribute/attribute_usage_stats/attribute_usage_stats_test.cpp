@@ -7,11 +7,8 @@ using proton::AttributeUsageStats;
 using search::AddressSpaceUsage;
 using vespalib::AddressSpace;
 
-void
-expect_max_usage(size_t used, const std::string& attr_name,
-                 const std::string& comp_name, const std::string& sub_name,
-                 const AttributeUsageStats& stats)
-{
+void expect_max_usage(size_t used, const std::string& attr_name, const std::string& comp_name,
+                      const std::string& sub_name, const AttributeUsageStats& stats) {
     const auto& max = stats.max_address_space_usage();
     EXPECT_EQ(used, max.getUsage().used());
     EXPECT_EQ(attr_name, max.getAttributeName());
@@ -19,8 +16,7 @@ expect_max_usage(size_t used, const std::string& attr_name,
     EXPECT_EQ(sub_name, max.getSubDbName());
 }
 
-TEST(AttributeUsageStatsTest, tracks_max_address_space_usage)
-{
+TEST(AttributeUsageStatsTest, tracks_max_address_space_usage) {
     AttributeUsageStats stats;
     {
         AddressSpaceUsage usage;

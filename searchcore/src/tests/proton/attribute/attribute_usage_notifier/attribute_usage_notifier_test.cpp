@@ -5,6 +5,7 @@
 #include <vespa/searchcore/proton/attribute/i_attribute_usage_listener.h>
 #include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <atomic>
 
 using proton::AttributeUsageNotifier;
@@ -14,19 +15,12 @@ using vespalib::AddressSpace;
 
 namespace {
 
-struct MyAttributeUsageListener : public IAttributeUsageListener
-{
+struct MyAttributeUsageListener : public IAttributeUsageListener {
     mutable std::mutex  _lock;
     size_t              _update_count;
     AttributeUsageStats _usage;
 
-    MyAttributeUsageListener()
-        : IAttributeUsageListener(),
-          _lock(),
-          _update_count(0u),
-          _usage()
-    {
-    }
+    MyAttributeUsageListener() : IAttributeUsageListener(), _lock(), _update_count(0u), _usage() {}
 
     void notify_attribute_usage(const AttributeUsageStats& attribute_usage) override {
         std::lock_guard guard(_lock);
@@ -43,10 +37,9 @@ struct MyAttributeUsageListener : public IAttributeUsageListener
     }
 };
 
-}
+} // namespace
 
-class AttributeUsageNotifierTest : public ::testing::Test
-{
+class AttributeUsageNotifierTest : public ::testing::Test {
 protected:
     std::shared_ptr<MyAttributeUsageListener> _listener;
     std::shared_ptr<AttributeUsageNotifier>   _notifier;
@@ -55,9 +48,7 @@ public:
     AttributeUsageNotifierTest()
         : testing::Test(),
           _listener(std::make_shared<MyAttributeUsageListener>()),
-          _notifier(std::make_shared<AttributeUsageNotifier>(_listener))
-    {
-    }
+          _notifier(std::make_shared<AttributeUsageNotifier>(_listener)) {}
 
     ~AttributeUsageNotifierTest() override;
 
@@ -69,16 +60,12 @@ AttributeUsageNotifierTest::~AttributeUsageNotifierTest() = default;
 
 namespace {
 
-struct NamedAttribute
-{
+struct NamedAttribute {
     std::string subdb;
     std::string attribute;
 
     NamedAttribute(const std::string& subdb_in, const std::string& attribute_in)
-        : subdb(subdb_in),
-          attribute(attribute_in)
-    {
-    }
+        : subdb(subdb_in), attribute(attribute_in) {}
 };
 
 NamedAttribute ready_a1("0.ready", "a1");
@@ -87,14 +74,10 @@ NamedAttribute ready_a2("0.ready", "a2");
 
 constexpr size_t usage_limit = 1024;
 
-struct AttributeUsageStatsBuilder
-{
+struct AttributeUsageStatsBuilder {
     AttributeUsageStats stats;
 
-    AttributeUsageStatsBuilder(const std::string& document_type)
-        : stats(document_type)
-    {
-    }
+    AttributeUsageStatsBuilder(const std::string& document_type) : stats(document_type) {}
 
     ~AttributeUsageStatsBuilder();
 
@@ -106,15 +89,13 @@ struct AttributeUsageStatsBuilder
     AttributeUsageStatsBuilder& merge(const NamedAttribute& named_attribute, size_t used_address_space);
 
     AttributeUsageStats build() { return stats; }
-
 };
 
 AttributeUsageStatsBuilder::~AttributeUsageStatsBuilder() = default;
 
-AttributeUsageStatsBuilder&
-AttributeUsageStatsBuilder::merge(const NamedAttribute& named_attribute, size_t used_address_space)
-{
-    AddressSpace address_space_usage(used_address_space, 0, usage_limit);
+AttributeUsageStatsBuilder& AttributeUsageStatsBuilder::merge(const NamedAttribute& named_attribute,
+                                                              size_t                used_address_space) {
+    AddressSpace              address_space_usage(used_address_space, 0, usage_limit);
     search::AddressSpaceUsage as_usage;
     as_usage.set("comp", address_space_usage);
     stats.merge(as_usage, named_attribute.attribute, named_attribute.subdb);
@@ -122,9 +103,7 @@ AttributeUsageStatsBuilder::merge(const NamedAttribute& named_attribute, size_t 
 }
 
 AttributeUsageStats make_stats(const std::string& document_type, const std::string& subdb,
-                               const std::string& attribute,
-                               size_t used_address_space)
-{
+                               const std::string& attribute, size_t used_address_space) {
     AttributeUsageStats stats(document_type);
     if (!document_type.empty()) {
         search::AddressSpaceUsage usage;
@@ -134,12 +113,11 @@ AttributeUsageStats make_stats(const std::string& document_type, const std::stri
     return stats;
 }
 
-}
+} // namespace
 
-TEST_F(AttributeUsageNotifierTest, aggregates_attribute_usage)
-{
-    auto aul1 = _notifier->make_attribute_usage_listener("doctype1");
-    auto aul2 = _notifier->make_attribute_usage_listener("doctype2");
+TEST_F(AttributeUsageNotifierTest, aggregates_attribute_usage) {
+    auto                       aul1 = _notifier->make_attribute_usage_listener("doctype1");
+    auto                       aul2 = _notifier->make_attribute_usage_listener("doctype2");
     AttributeUsageStatsBuilder b1("doctype1");
     AttributeUsageStatsBuilder b2("doctype2");
     b1.merge(ready_a1, 10).merge(ready_a2, 5);
@@ -162,10 +140,9 @@ TEST_F(AttributeUsageNotifierTest, aggregates_attribute_usage)
     EXPECT_EQ(make_stats("doctype2", "0.ready", "a1", 15), get_usage());
 }
 
-TEST_F(AttributeUsageNotifierTest, can_skip_scan_when_aggregating_attributes)
-{
-    auto aul1 = _notifier->make_attribute_usage_listener("doctype1");
-    auto aul2 = _notifier->make_attribute_usage_listener("doctype2");
+TEST_F(AttributeUsageNotifierTest, can_skip_scan_when_aggregating_attributes) {
+    auto                       aul1 = _notifier->make_attribute_usage_listener("doctype1");
+    auto                       aul2 = _notifier->make_attribute_usage_listener("doctype2");
     AttributeUsageStatsBuilder b1("doctype1");
     AttributeUsageStatsBuilder b2("doctype2");
     b1.merge(ready_a1, 20).merge(ready_a2, 5);
