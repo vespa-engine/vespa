@@ -1,15 +1,18 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/document/test/make_document_bucket.h>
+#include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/storageapi/message/bucket.h>
-#include <tests/persistence/common/persistenceproviderwrapper.h>
-#include <vespa/persistence/dummyimpl/dummypersistence.h>
-#include <tests/persistence/common/filestortestfixture.h>
-#include <vespa/document/test/make_document_bucket.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/barrier.h>
 #include <vespa/vespalib/util/thread.h>
+
 #include <vespa/vespalib/stllike/hash_set_insert.hpp>
-#include <vespa/vespalib/gtest/gtest.h>
+
+#include <tests/persistence/common/filestortestfixture.h>
+#include <tests/persistence/common/persistenceproviderwrapper.h>
+
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -26,31 +29,28 @@ VESPA_THREAD_STACK_TAG(test_thread);
 
 // Exploit the fact that PersistenceProviderWrapper already provides a forwarding
 // implementation of all SPI calls, so we can selectively override.
-class BlockingMockProvider : public PersistenceProviderWrapper
-{
+class BlockingMockProvider : public PersistenceProviderWrapper {
     vespalib::Barrier& _queueBarrier;
     vespalib::Barrier& _completionBarrier;
+
 public:
     using UP = std::unique_ptr<BlockingMockProvider>;
 
     mutable std::atomic<uint32_t> _bucketInfoInvocations;
-    std::atomic<uint32_t> _createBucketInvocations;
-    std::atomic<uint32_t> _deleteBucketInvocations;
+    std::atomic<uint32_t>         _createBucketInvocations;
+    std::atomic<uint32_t>         _deleteBucketInvocations;
 
-    BlockingMockProvider(spi::PersistenceProvider& wrappedProvider,
-                         vespalib::Barrier& queueBarrier,
+    BlockingMockProvider(spi::PersistenceProvider& wrappedProvider, vespalib::Barrier& queueBarrier,
                          vespalib::Barrier& completionBarrier)
         : PersistenceProviderWrapper(wrappedProvider),
           _queueBarrier(queueBarrier),
           _completionBarrier(completionBarrier),
           _bucketInfoInvocations(0),
           _createBucketInvocations(0),
-          _deleteBucketInvocations(0)
-    {}
+          _deleteBucketInvocations(0) {}
 
-    void
-    putAsync(const spi::Bucket&, spi::Timestamp, document::Document::SP, spi::OperationComplete::UP onComplete) override
-    {
+    void putAsync(const spi::Bucket&, spi::Timestamp, document::Document::SP,
+                  spi::OperationComplete::UP onComplete) override {
         _queueBarrier.await();
         // message abort stage with active opertion in disk queue
         std::this_thread::sleep_for(75ms);
@@ -69,20 +69,19 @@ public:
         PersistenceProviderWrapper::createBucketAsync(bucket, std::move(onComplete));
     }
 
-    void
-    deleteBucketAsync(const spi::Bucket& bucket, spi::OperationComplete::UP onComplete) noexcept override {
+    void deleteBucketAsync(const spi::Bucket& bucket, spi::OperationComplete::UP onComplete) noexcept override {
         ++_deleteBucketInvocations;
         PersistenceProviderWrapper::deleteBucketAsync(bucket, std::move(onComplete));
     }
 };
 
-}
+} // namespace
 
 struct OperationAbortingTest : FileStorTestFixture {
     std::unique_ptr<spi::dummy::DummyPersistence> _dummyProvider;
-    BlockingMockProvider * _blockingProvider;
-    std::unique_ptr<vespalib::Barrier> _queueBarrier;
-    std::unique_ptr<vespalib::Barrier> _completionBarrier;
+    BlockingMockProvider*                         _blockingProvider;
+    std::unique_ptr<vespalib::Barrier>            _queueBarrier;
+    std::unique_ptr<vespalib::Barrier>            _completionBarrier;
 
     void setupProviderAndBarriers(uint32_t queueBarrierThreads) {
         FileStorTestFixture::setupPersistenceThreads(1);
@@ -90,7 +89,8 @@ struct OperationAbortingTest : FileStorTestFixture {
         _dummyProvider->initialize();
         _queueBarrier = std::make_unique<vespalib::Barrier>(queueBarrierThreads);
         _completionBarrier = std::make_unique<vespalib::Barrier>(2);
-        auto blockingProvider = std::make_unique<BlockingMockProvider>(*_dummyProvider, *_queueBarrier, *_completionBarrier);
+        auto blockingProvider =
+            std::make_unique<BlockingMockProvider>(*_dummyProvider, *_queueBarrier, *_completionBarrier);
         _blockingProvider = blockingProvider.get();
         _node->setPersistenceProvider(std::move(blockingProvider));
     }
@@ -100,7 +100,7 @@ struct OperationAbortingTest : FileStorTestFixture {
                          const std::vector<document::BucketId>& abortedGetDiffs);
 
     void doTestSpecificOperationsNotAborted(const std::vector<api::StorageMessage::SP>& msgs,
-                                            bool shouldCreateBucketInitially);
+                                            bool                                        shouldCreateBucketInitially);
 
     api::BucketInfo getBucketInfoFromDB(const document::BucketId&) const;
 
@@ -109,24 +109,18 @@ struct OperationAbortingTest : FileStorTestFixture {
 
 namespace {
 
-template <typename T, typename Collection>
-bool
-existsIn(const T& elem, const Collection& collection) {
+template <typename T, typename Collection> bool existsIn(const T& elem, const Collection& collection) {
     return (std::find(collection.begin(), collection.end(), elem) != collection.end());
 }
 
+} // namespace
+
+void OperationAbortingTest::SetUp() {
 }
 
-void
-OperationAbortingTest::SetUp()
-{
-}
-
-void
-OperationAbortingTest::validateReplies(DummyStorageLink& link, size_t repliesTotal,
-                                       const std::vector<document::BucketId>& okReplies,
-                                       const std::vector<document::BucketId>& abortedGetDiffs)
-{
+void OperationAbortingTest::validateReplies(DummyStorageLink& link, size_t repliesTotal,
+                                            const std::vector<document::BucketId>& okReplies,
+                                            const std::vector<document::BucketId>& abortedGetDiffs) {
     link.waitForMessages(repliesTotal, MSG_WAIT_TIME);
     ASSERT_EQ(repliesTotal, link.getNumReplies());
 
@@ -140,8 +134,7 @@ OperationAbortingTest::validateReplies(DummyStorageLink& link, size_t repliesTot
         case api::MessageType::GET_REPLY_ID:
             ASSERT_EQ(api::ReturnCode::OK, resultOf(reply));
             break;
-        case api::MessageType::GETBUCKETDIFF_REPLY_ID:
-        {
+        case api::MessageType::GETBUCKETDIFF_REPLY_ID: {
             auto& gr = static_cast<api::GetBucketDiffReply&>(reply);
             if (existsIn(gr.getBucketId(), abortedGetDiffs)) {
                 ASSERT_EQ(api::ReturnCode::ABORTED, resultOf(reply));
@@ -166,41 +159,34 @@ class ExplicitBucketSetPredicate : public AbortBucketOperationsCommand::AbortPre
     using BucketSet = vespalib::hash_set<document::BucketId, document::BucketId::hash>;
     BucketSet _bucketsToAbort;
 
-    bool doShouldAbort(const document::Bucket &bucket) const override;
+    bool doShouldAbort(const document::Bucket& bucket) const override;
+
 public:
     ~ExplicitBucketSetPredicate() override;
 
     template <typename Iterator>
-    ExplicitBucketSetPredicate(Iterator first, Iterator last)
-        : _bucketsToAbort(first, last)
-    {}
+    ExplicitBucketSetPredicate(Iterator first, Iterator last) : _bucketsToAbort(first, last) {}
 
-    const BucketSet& getBucketsToAbort() const {
-        return _bucketsToAbort;
-    }
+    const BucketSet& getBucketsToAbort() const { return _bucketsToAbort; }
 };
 
-bool
-ExplicitBucketSetPredicate::doShouldAbort(const document::Bucket &bucket) const {
+bool ExplicitBucketSetPredicate::doShouldAbort(const document::Bucket& bucket) const {
     return _bucketsToAbort.find(bucket.getBucketId()) != _bucketsToAbort.end();
 }
 
 ExplicitBucketSetPredicate::~ExplicitBucketSetPredicate() = default;
 
-template <typename Container>
-AbortBucketOperationsCommand::SP
-makeAbortCmd(const Container& buckets)
-{
+template <typename Container> AbortBucketOperationsCommand::SP makeAbortCmd(const Container& buckets) {
     auto pred = std::make_unique<ExplicitBucketSetPredicate>(buckets.begin(), buckets.end());
     return std::make_shared<AbortBucketOperationsCommand>(std::move(pred));
 }
 
-}
+} // namespace
 
 TEST_F(OperationAbortingTest, abort_message_clears_relevant_queued_operations) {
     setupProviderAndBarriers(2);
     TestFileStorComponents c(*this);
-    document::BucketId bucket(16, 1);
+    document::BucketId     bucket(16, 1);
     createBucket(bucket);
     LOG(debug, "Sending put to trigger thread barrier");
     c.sendPut(bucket, DocumentIndex(0), PutTimestamp(1000));
@@ -214,14 +200,8 @@ TEST_F(OperationAbortingTest, abort_message_clears_relevant_queued_operations) {
      * Cannot abort the bucket we're blocking the thread on since we'll
      * deadlock the test if we do.
      */
-    std::vector<document::BucketId> bucketsToAbort = {
-        document::BucketId(16, 3),
-        document::BucketId(16, 5)
-    };
-    std::vector<document::BucketId> bucketsToKeep = {
-        document::BucketId(16, 2),
-        document::BucketId(16, 4)
-    };
+    std::vector<document::BucketId> bucketsToAbort = {document::BucketId(16, 3), document::BucketId(16, 5)};
+    std::vector<document::BucketId> bucketsToKeep = {document::BucketId(16, 2), document::BucketId(16, 4)};
 
     for (uint32_t i = 0; i < bucketsToAbort.size(); ++i) {
         createBucket(bucketsToAbort[i]);
@@ -253,19 +233,14 @@ namespace {
  * do any operations to trigger the operation to complete after the send in
  * the same thread as we're sending in...
  */
-class SendTask : public vespalib::Runnable
-{
+class SendTask : public vespalib::Runnable {
     AbortBucketOperationsCommand::SP _abortCmd;
-    vespalib::Barrier& _queueBarrier;
-    StorageLink& _downLink;
+    vespalib::Barrier&               _queueBarrier;
+    StorageLink&                     _downLink;
+
 public:
-    SendTask(const AbortBucketOperationsCommand::SP& abortCmd,
-             vespalib::Barrier& queueBarrier,
-             StorageLink& downLink)
-        : _abortCmd(abortCmd),
-          _queueBarrier(queueBarrier),
-          _downLink(downLink)
-    {}
+    SendTask(const AbortBucketOperationsCommand::SP& abortCmd, vespalib::Barrier& queueBarrier, StorageLink& downLink)
+        : _abortCmd(abortCmd), _queueBarrier(queueBarrier), _downLink(downLink) {}
 
     void run() override {
         // Best-effort synchronized starting
@@ -274,7 +249,7 @@ public:
     }
 };
 
-}
+} // namespace
 
 /**
  * This test basically is not fully deterministic in that it tests cross-thread
@@ -292,11 +267,11 @@ TEST_F(OperationAbortingTest, wait_for_current_operation_completion_for_aborted_
     LOG(debug, "Sending put to trigger thread barrier");
     c.sendPut(bucket, DocumentIndex(0), PutTimestamp(1000));
 
-    std::vector<document::BucketId> abortSet { bucket };
-    auto abortCmd = makeAbortCmd(abortSet);
+    std::vector<document::BucketId> abortSet{bucket};
+    auto                            abortCmd = makeAbortCmd(abortSet);
 
     SendTask sendTask(abortCmd, *_queueBarrier, c.top);
-    auto thread = vespalib::thread::start(sendTask, test_thread);
+    auto     thread = vespalib::thread::start(sendTask, test_thread);
 
     LOG(debug, "waiting for threads to reach barriers");
     _queueBarrier->await();
@@ -316,7 +291,7 @@ TEST_F(OperationAbortingTest, wait_for_current_operation_completion_for_aborted_
 }
 
 TEST_F(OperationAbortingTest, do_not_abort_create_bucket_commands) {
-    document::BucketId bucket(16, 1);
+    document::BucketId                   bucket(16, 1);
     std::vector<api::StorageMessage::SP> msgs;
     msgs.emplace_back(std::make_shared<api::CreateBucketCommand>(makeDocumentBucket(bucket)));
 
@@ -325,7 +300,7 @@ TEST_F(OperationAbortingTest, do_not_abort_create_bucket_commands) {
 }
 
 TEST_F(OperationAbortingTest, do_not_abort_recheck_bucket_commands) {
-    document::BucketId bucket(16, 1);
+    document::BucketId                   bucket(16, 1);
     std::vector<api::StorageMessage::SP> msgs;
     msgs.emplace_back(std::make_shared<RecheckBucketInfoCommand>(makeDocumentBucket(bucket)));
 
@@ -333,17 +308,15 @@ TEST_F(OperationAbortingTest, do_not_abort_recheck_bucket_commands) {
     doTestSpecificOperationsNotAborted(msgs, shouldCreateBucketInitially);
 }
 
-api::BucketInfo
-OperationAbortingTest::getBucketInfoFromDB(const document::BucketId& id) const
-{
+api::BucketInfo OperationAbortingTest::getBucketInfoFromDB(const document::BucketId& id) const {
     StorBucketDatabase::WrappedEntry entry(
-            _node->getStorageBucketDatabase().get(id, "foo", StorBucketDatabase::CREATE_IF_NONEXISTING));
+        _node->getStorageBucketDatabase().get(id, "foo", StorBucketDatabase::CREATE_IF_NONEXISTING));
     assert(entry.exists());
     return entry->info;
 }
 
 TEST_F(OperationAbortingTest, do_not_abort_delete_bucket_commands) {
-    document::BucketId bucket(16, 1);
+    document::BucketId                   bucket(16, 1);
     std::vector<api::StorageMessage::SP> msgs;
     msgs.emplace_back(std::make_shared<api::DeleteBucketCommand>(makeDocumentBucket(bucket)));
 
@@ -351,14 +324,12 @@ TEST_F(OperationAbortingTest, do_not_abort_delete_bucket_commands) {
     doTestSpecificOperationsNotAborted(msgs, shouldCreateBucketInitially);
 }
 
-void
-OperationAbortingTest::doTestSpecificOperationsNotAborted(const std::vector<api::StorageMessage::SP>& msgs,
-                                                          bool shouldCreateBucketInitially)
-{
+void OperationAbortingTest::doTestSpecificOperationsNotAborted(const std::vector<api::StorageMessage::SP>& msgs,
+                                                               bool shouldCreateBucketInitially) {
     setupProviderAndBarriers(2);
     TestFileStorComponents c(*this);
-    document::BucketId bucket(16, 1);
-    document::BucketId blockerBucket(16, 2);    
+    document::BucketId     bucket(16, 1);
+    document::BucketId     blockerBucket(16, 2);
 
     if (shouldCreateBucketInitially) {
         createBucket(bucket);
@@ -380,11 +351,10 @@ OperationAbortingTest::doTestSpecificOperationsNotAborted(const std::vector<api:
         case api::MessageType::CREATEBUCKET_ID:
             ++expectedCreateBuckets;
             break;
-        case api::MessageType::DELETEBUCKET_ID:
-            {
-                auto& delCmd = dynamic_cast<api::DeleteBucketCommand&>(*msgs[i]);
-                delCmd.setBucketInfo(getBucketInfoFromDB(delCmd.getBucketId()));
-            }
+        case api::MessageType::DELETEBUCKET_ID: {
+            auto& delCmd = dynamic_cast<api::DeleteBucketCommand&>(*msgs[i]);
+            delCmd.setBucketInfo(getBucketInfoFromDB(delCmd.getBucketId()));
+        }
             ++expectedDeleteBuckets;
             ++expectedBucketInfoInvocations;
             break;
@@ -398,7 +368,7 @@ OperationAbortingTest::doTestSpecificOperationsNotAborted(const std::vector<api:
         c.top.sendDown(msgs[i]);
     }
 
-    std::vector<document::BucketId> abortSet { bucket };
+    std::vector<document::BucketId>  abortSet{bucket};
     AbortBucketOperationsCommand::SP abortCmd(makeAbortCmd(abortSet));
     c.top.sendDown(abortCmd);
 
@@ -425,5 +395,5 @@ OperationAbortingTest::doTestSpecificOperationsNotAborted(const std::vector<api:
               _blockingProvider->_createBucketInvocations);
     ASSERT_EQ(expectedDeleteBuckets, _blockingProvider->_deleteBucketInvocations);
 }
-    
-} // storage
+
+} // namespace storage

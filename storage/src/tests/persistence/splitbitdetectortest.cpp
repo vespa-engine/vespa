@@ -1,13 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/storage/persistence/splitbitdetector.h>
-#include <vespa/vespalib/io/fileutil.h>
-#include <vespa/persistence/dummyimpl/dummypersistence.h>
-#include <vespa/persistence/spi/test.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/bucket/bucketidfactory.h>
+#include <vespa/persistence/dummyimpl/dummypersistence.h>
+#include <vespa/persistence/spi/test.h>
+#include <vespa/storage/persistence/splitbitdetector.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/util/stringfmt.h>
+
 #include <algorithm>
 
 using storage::spi::test::makeSpiBucket;
@@ -18,17 +19,16 @@ namespace storage {
 using DocEntryList = std::vector<spi::DocEntry::UP>;
 
 struct SplitBitDetectorTest : Test {
-    document::TestDocMan testDocMan;
+    document::TestDocMan         testDocMan;
     spi::dummy::DummyPersistence provider;
-    spi::Bucket bucket;
-    spi::Context context;
+    spi::Bucket                  bucket;
+    spi::Context                 context;
 
     SplitBitDetectorTest()
         : testDocMan(),
           provider(testDocMan.getTypeRepoSP()),
           bucket(makeSpiBucket(document::BucketId(1, 1))),
-          context(spi::Priority(0), spi::Trace::TraceLevel(0))
-    {
+          context(spi::Priority(0), spi::Trace::TraceLevel(0)) {
         provider.initialize();
         provider.createBucket(bucket);
     }
@@ -70,8 +70,9 @@ TEST_F(SplitBitDetectorTest, max_bits) {
 
     DocEntryList entries;
     for (uint32_t seed = 0; seed < 10; ++seed) {
-        int location = 1;
-        document::Document::SP doc(testDocMan.createRandomDocumentAtLocation(location, seed, minContentSize, maxContentSize));
+        int                    location = 1;
+        document::Document::SP doc(
+            testDocMan.createRandomDocumentAtLocation(location, seed, minContentSize, maxContentSize));
         provider.put(bucket, spi::Timestamp(1000 + seed), doc);
     }
 
@@ -83,19 +84,19 @@ TEST_F(SplitBitDetectorTest, max_bits) {
 
 TEST_F(SplitBitDetectorTest, max_bits_one_below_max) {
     spi::Bucket my_bucket(makeSpiBucket(document::BucketId(15, 1)));
-    int minContentSize = 1, maxContentSize = 1;
+    int         minContentSize = 1, maxContentSize = 1;
 
     provider.createBucket(my_bucket);
 
     DocEntryList entries;
     for (uint32_t seed = 0; seed < 10; ++seed) {
-        int location = 1 | (seed % 2 == 0 ? 0x8000 : 0);
-        document::Document::SP doc(testDocMan.createRandomDocumentAtLocation(location, seed, minContentSize, maxContentSize));
+        int                    location = 1 | (seed % 2 == 0 ? 0x8000 : 0);
+        document::Document::SP doc(
+            testDocMan.createRandomDocumentAtLocation(location, seed, minContentSize, maxContentSize));
         provider.put(my_bucket, spi::Timestamp(1000 + seed), doc);
     }
 
-    SplitBitDetector::Result result(
-            SplitBitDetector::detectSplit(provider, my_bucket, 15, context));
+    SplitBitDetector::Result result(SplitBitDetector::detectSplit(provider, my_bucket, 15, context));
     EXPECT_EQ("SplitTargets(error: No use in trying to split "
               "Bucket(0x3c00000000000001) when max split"
               " bit is set to 15.)",
@@ -162,4 +163,4 @@ TEST_F(SplitBitDetectorTest, zero_doc_limit_falls_back_to_one_bit_increase_on_gi
               result.toString());
 }
 
-}
+} // namespace storage

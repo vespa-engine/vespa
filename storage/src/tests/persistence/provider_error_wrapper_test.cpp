@@ -1,17 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <tests/common/storage_config_set.h>
 #include <vespa/persistence/spi/test.h>
-#include <tests/persistence/persistencetestutils.h>
-#include <tests/persistence/common/persistenceproviderwrapper.h>
 #include <vespa/storage/persistence/provider_error_wrapper.h>
+
+#include <tests/common/storage_config_set.h>
+#include <tests/persistence/common/persistenceproviderwrapper.h>
+#include <tests/persistence/persistencetestutils.h>
 
 using storage::spi::test::makeSpiBucket;
 
 namespace storage {
 
-struct ProviderErrorWrapperTest : PersistenceTestUtils {
-};
+struct ProviderErrorWrapperTest : PersistenceTestUtils {};
 
 namespace {
 
@@ -27,32 +27,29 @@ struct MockErrorListener : ProviderErrorListener {
 
     std::string _fatal_error;
     std::string _resource_exhaustion_error;
-    bool _seen_fatal_error{false};
-    bool _seen_resource_exhaustion_error{false};
+    bool        _seen_fatal_error{false};
+    bool        _seen_resource_exhaustion_error{false};
 };
 
 struct Fixture {
     // We wrap the wrapper. It's turtles all the way down!
-    PersistenceProviderWrapper providerWrapper;
+    PersistenceProviderWrapper        providerWrapper;
     std::unique_ptr<StorageConfigSet> config;
-    TestServiceLayerApp app;
-    ServiceLayerComponent component;
-    ProviderErrorWrapper errorWrapper;
+    TestServiceLayerApp               app;
+    ServiceLayerComponent             component;
+    ProviderErrorWrapper              errorWrapper;
 
     Fixture(spi::PersistenceProvider& provider)
         : providerWrapper(provider),
           config(StorageConfigSet::make_storage_node_config()),
           app(config->config_uri()),
           component(app.getComponentRegister(), "dummy"),
-          errorWrapper(providerWrapper)
-    {
+          errorWrapper(providerWrapper) {
         providerWrapper.setFailureMask(PersistenceProviderWrapper::FAIL_ALL_OPERATIONS);
     }
     ~Fixture() {}
 
-    void perform_spi_operation() {
-        errorWrapper.getBucketInfo(makeSpiBucket(document::BucketId(16, 1234)));
-    }
+    void perform_spi_operation() { errorWrapper.getBucketInfo(makeSpiBucket(document::BucketId(16, 1234))); }
 
     void check_no_listener_invoked_for_error(MockErrorListener& listener, spi::Result::ErrorType error) {
         providerWrapper.setResult(spi::Result(error, "beep boop"));
@@ -62,11 +59,11 @@ struct Fixture {
     }
 };
 
-}
+} // namespace
 
 TEST_F(ProviderErrorWrapperTest, fatal_error_invokes_listener) {
     Fixture f(getPersistenceProvider());
-    auto listener = std::make_shared<MockErrorListener>();
+    auto    listener = std::make_shared<MockErrorListener>();
     f.errorWrapper.register_error_listener(listener);
     f.providerWrapper.setResult(spi::Result(spi::Result::ErrorType::FATAL_ERROR, "eject! eject!"));
 
@@ -80,7 +77,7 @@ TEST_F(ProviderErrorWrapperTest, fatal_error_invokes_listener) {
 
 TEST_F(ProviderErrorWrapperTest, resource_exhaustion_error_invokes_listener) {
     Fixture f(getPersistenceProvider());
-    auto listener = std::make_shared<MockErrorListener>();
+    auto    listener = std::make_shared<MockErrorListener>();
     f.errorWrapper.register_error_listener(listener);
     f.providerWrapper.setResult(spi::Result(spi::Result::ErrorType::RESOURCE_EXHAUSTED, "out of juice"));
 
@@ -94,7 +91,7 @@ TEST_F(ProviderErrorWrapperTest, resource_exhaustion_error_invokes_listener) {
 
 TEST_F(ProviderErrorWrapperTest, listener_not_invoked_on_success) {
     Fixture f(getPersistenceProvider());
-    auto listener = std::make_shared<MockErrorListener>();
+    auto    listener = std::make_shared<MockErrorListener>();
     f.errorWrapper.register_error_listener(listener);
     f.perform_spi_operation();
 
@@ -104,17 +101,19 @@ TEST_F(ProviderErrorWrapperTest, listener_not_invoked_on_success) {
 
 TEST_F(ProviderErrorWrapperTest, listener_not_invoked_on_regular_errors) {
     Fixture f(getPersistenceProvider());
-    auto listener = std::make_shared<MockErrorListener>();
+    auto    listener = std::make_shared<MockErrorListener>();
     f.errorWrapper.register_error_listener(listener);
 
-    EXPECT_NO_FATAL_FAILURE(f.check_no_listener_invoked_for_error(*listener, spi::Result::ErrorType::TRANSIENT_ERROR));
-    EXPECT_NO_FATAL_FAILURE(f.check_no_listener_invoked_for_error(*listener, spi::Result::ErrorType::PERMANENT_ERROR));
+    EXPECT_NO_FATAL_FAILURE(
+        f.check_no_listener_invoked_for_error(*listener, spi::Result::ErrorType::TRANSIENT_ERROR));
+    EXPECT_NO_FATAL_FAILURE(
+        f.check_no_listener_invoked_for_error(*listener, spi::Result::ErrorType::PERMANENT_ERROR));
 }
 
 TEST_F(ProviderErrorWrapperTest, multiple_listeners_can_be_registered) {
     Fixture f(getPersistenceProvider());
-    auto listener1 = std::make_shared<MockErrorListener>();
-    auto listener2 = std::make_shared<MockErrorListener>();
+    auto    listener1 = std::make_shared<MockErrorListener>();
+    auto    listener2 = std::make_shared<MockErrorListener>();
     f.errorWrapper.register_error_listener(listener1);
     f.errorWrapper.register_error_listener(listener2);
 
@@ -125,6 +124,4 @@ TEST_F(ProviderErrorWrapperTest, multiple_listeners_can_be_registered) {
     EXPECT_TRUE(listener2->_seen_resource_exhaustion_error);
 }
 
-} // ns storage
-
-
+} // namespace storage

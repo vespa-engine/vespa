@@ -16,8 +16,8 @@ struct ForwardingMessageSender : public MessageSender {
 
     ForwardingMessageSender(StorageLink& l) : link(l) {}
 
-    void sendCommand(const std::shared_ptr<api::StorageCommand> & cmd) override { link.sendUp(cmd); }
-    void sendReply(const std::shared_ptr<api::StorageReply> & reply) override { link.sendUp(reply); }
+    void sendCommand(const std::shared_ptr<api::StorageCommand>& cmd) override { link.sendUp(cmd); }
+    void sendReply(const std::shared_ptr<api::StorageReply>& reply) override { link.sendUp(reply); }
 };
 
-} // storage
+} // namespace storage
