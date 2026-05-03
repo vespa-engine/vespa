@@ -11,19 +11,14 @@ namespace search {
  * Class representing the relative naming of a underlying file for a
  * data store.
  */
-class DataStoreFileChunkId
-{
+class DataStoreFileChunkId {
     uint64_t _nameId;
+
 public:
-    DataStoreFileChunkId(uint64_t nameId_in)
-        : _nameId(nameId_in)
-    {
-    }
-    uint64_t nameId() const               { return _nameId; }
-    std::string createName(const std::string &baseName) const;
-    bool operator<(const DataStoreFileChunkId &rhs) const noexcept {
-        return _nameId < rhs._nameId;
-    }
+    DataStoreFileChunkId(uint64_t nameId_in) : _nameId(nameId_in) {}
+    uint64_t nameId() const { return _nameId; }
+    std::string createName(const std::string& baseName) const;
+    bool operator<(const DataStoreFileChunkId& rhs) const noexcept { return _nameId < rhs._nameId; }
 };
 
 } // namespace search

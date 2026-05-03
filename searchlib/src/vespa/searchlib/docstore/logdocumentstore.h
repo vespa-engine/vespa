@@ -4,30 +4,31 @@
 
 #include "documentstore.h"
 #include "logdatastore.h"
+
 #include <vespa/searchlib/common/tunefileinfo.h>
 
 namespace search {
 
-namespace common { class FileHeaderContext; }
+namespace common {
+class FileHeaderContext;
+}
 
 /**
  * Simple document store that contains serialized Document instances.
  * updates will be held in memory until flush() is called.
  * Uses a Local ID as key.
  **/
-class LogDocumentStore : public DocumentStore
-{
+class LogDocumentStore : public DocumentStore {
 public:
     class Config : public DocumentStore::Config {
     public:
-        Config() : DocumentStore::Config(), _logConfig() { }
-        Config(const DocumentStore::Config & base, const LogDataStore::Config & log) :
-            DocumentStore::Config(base),
-            _logConfig(log)
-        { }
-        const LogDataStore::Config & getLogConfig() const { return _logConfig; }
-        bool operator == (const Config & rhs) const;
-        bool operator != (const Config & rhs) const { return ! (*this == rhs); }
+        Config() : DocumentStore::Config(), _logConfig() {}
+        Config(const DocumentStore::Config& base, const LogDataStore::Config& log)
+            : DocumentStore::Config(base), _logConfig(log) {}
+        const LogDataStore::Config& getLogConfig() const { return _logConfig; }
+        bool operator==(const Config& rhs) const;
+        bool operator!=(const Config& rhs) const { return !(*this == rhs); }
+
     private:
         LogDataStore::Config _logConfig;
     };
@@ -43,17 +44,17 @@ public:
      *                          The caller must keep it alive for the semantic
      *                          lifetime of the log data store.
      */
-    LogDocumentStore(vespalib::Executor & executor, const std::string & baseDir, const Config & config,
-                     const GrowStrategy & growStrategy, const TuneFileSummary &tuneFileSummary,
-                     const common::FileHeaderContext &fileHeaderContext,
-                     transactionlog::SyncProxy &tlSyncer, IBucketizer::SP bucketizer);
+    LogDocumentStore(vespalib::Executor& executor, const std::string& baseDir, const Config& config,
+                     const GrowStrategy& growStrategy, const TuneFileSummary& tuneFileSummary,
+                     const common::FileHeaderContext& fileHeaderContext, transactionlog::SyncProxy& tlSyncer,
+                     IBucketizer::SP bucketizer);
     ~LogDocumentStore() override;
-    void reconfigure(const Config & config);
+    void reconfigure(const Config& config);
+
 private:
-    void compactBloat(uint64_t syncToken) override  { _backingStore.compactBloat(syncToken); }
+    void compactBloat(uint64_t syncToken) override { _backingStore.compactBloat(syncToken); }
     void compactSpread(uint64_t syncToken) override { _backingStore.compactSpread(syncToken); }
     LogDataStore _backingStore;
 };
 
 } // namespace search
-

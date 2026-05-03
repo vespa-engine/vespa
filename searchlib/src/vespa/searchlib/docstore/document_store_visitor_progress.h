@@ -5,14 +5,13 @@
 
 namespace search {
 
-class DocumentStoreVisitorProgress : public IDocumentStoreVisitorProgress
-{
+class DocumentStoreVisitorProgress : public IDocumentStoreVisitorProgress {
     double _progress;
+
 public:
     DocumentStoreVisitorProgress();
     void updateProgress(double progress) override;
     virtual double getProgress() const;
 };
 
-} // namespace proton
-
+} // namespace search
