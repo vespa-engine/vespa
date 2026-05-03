@@ -2,6 +2,7 @@
 
 #include <vespa/searchcore/proton/flushengine/reserved_disk_space_calculator.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <limits>
 
 using proton::flushengine::ReservedDiskSpaceCalculator;
@@ -21,15 +22,13 @@ ReservedDiskSpaceCalculatorTest::ReservedDiskSpaceCalculatorTest()
     : testing::Test(),
       _type(IFlushTarget::Type::OTHER),
       _component(IFlushTarget::Component::OTHER),
-      _max_summary_file_size(std::numeric_limits<uint64_t>::max())
-{
+      _max_summary_file_size(std::numeric_limits<uint64_t>::max()) {
 }
 
 ReservedDiskSpaceCalculatorTest::~ReservedDiskSpaceCalculatorTest() = default;
 
-uint64_t
-ReservedDiskSpaceCalculatorTest::calc_reserved_disk_space(size_t concurrent, std::vector<IFlushTarget::DiskGain> gains)
-{
+uint64_t ReservedDiskSpaceCalculatorTest::calc_reserved_disk_space(size_t                              concurrent,
+                                                                   std::vector<IFlushTarget::DiskGain> gains) {
     ReservedDiskSpaceCalculator calc(concurrent, _max_summary_file_size);
     for (auto& gain : gains) {
         calc.track_disk_gain(gain, _type, _component);
@@ -37,8 +36,7 @@ ReservedDiskSpaceCalculatorTest::calc_reserved_disk_space(size_t concurrent, std
     return calc.get_reserved_disk();
 }
 
-TEST_F(ReservedDiskSpaceCalculatorTest, calc_reserved_disk_space)
-{
+TEST_F(ReservedDiskSpaceCalculatorTest, calc_reserved_disk_space) {
     EXPECT_EQ(0, calc_reserved_disk_space(1, {}));
     EXPECT_EQ(20, calc_reserved_disk_space(1, {{20, 20}}));
     EXPECT_EQ(30, calc_reserved_disk_space(1, {{10, 20}}));
@@ -61,8 +59,7 @@ TEST_F(ReservedDiskSpaceCalculatorTest, calc_reserved_disk_space)
     EXPECT_EQ(2330, calc_reserved_disk_space(3, {{10, 20}, {100, 200}, {2000, 2000}}));
 }
 
-TEST_F(ReservedDiskSpaceCalculatorTest, capped_reserved_flush_size_for_document_store_compaction)
-{
+TEST_F(ReservedDiskSpaceCalculatorTest, capped_reserved_flush_size_for_document_store_compaction) {
     _max_summary_file_size = 1000000;
     EXPECT_EQ(4000000, calc_reserved_disk_space(1, {{4000000, 4000000}}));
     EXPECT_EQ(5000000, calc_reserved_disk_space(1, {{3000000, 4000000}}));

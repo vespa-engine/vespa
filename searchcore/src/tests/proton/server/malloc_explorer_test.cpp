@@ -3,10 +3,12 @@
 #include <vespa/searchcore/proton/server/malloc_info_explorer.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
+#include <dlfcn.h>
+
 #include <atomic>
 #include <cassert>
 #include <string>
-#include <dlfcn.h>
 
 namespace {
 std::atomic<bool> override_stats = false;
@@ -15,7 +17,7 @@ std::atomic<bool> override_stats = false;
 extern "C" {
 
 using mi_output_fun = void(const char* msg, void* aux_arg);
-using mi_stats_fun_ptr = void(*)(mi_output_fun*, void*);
+using mi_stats_fun_ptr = void (*)(mi_output_fun*, void*);
 
 // Override the symbol exported by mimalloc shared library with our own (which is in
 // the test executable and thus has precedence), causing the state explorer to get mocked
@@ -42,8 +44,8 @@ void mi_stats_print_out(mi_output_fun* out_fn, void* arg) {
 } // extern "C"
 
 TEST(MallocExplorerTest, mimalloc_internal_stats_are_emitted) {
-    proton::MallocInfoExplorer explorer;
-    vespalib::Slime result;
+    proton::MallocInfoExplorer     explorer;
+    vespalib::Slime                result;
     vespalib::slime::SlimeInserter inserter(result);
     override_stats = true;
     explorer.get_state(inserter, true);

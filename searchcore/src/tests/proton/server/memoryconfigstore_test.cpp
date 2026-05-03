@@ -14,23 +14,17 @@ using namespace proton;
 
 namespace {
 
-DocumentDBConfig::SP
-getConfig(int64_t generation, std::shared_ptr<const Schema> schema)
-{
+DocumentDBConfig::SP getConfig(int64_t generation, std::shared_ptr<const Schema> schema) {
     return test::DocumentDBConfigBuilder(generation, std::move(schema), "client", "test").build();
 }
 
-
-DocumentDBConfig::SP
-getConfig(int64_t generation)
-{
+DocumentDBConfig::SP getConfig(int64_t generation) {
     return getConfig(generation, {});
 }
 
-
 TEST(MemoryConfigStoreTest, require_that_configs_can_be_stored_and_loaded) {
     MemoryConfigStore config_store;
-    SerialNum serial(12);
+    SerialNum         serial(12);
     config_store.saveConfig(*getConfig(10), serial);
     DocumentDBConfig::SP config;
     config_store.loadConfig(*getConfig(14), serial, config);
@@ -90,10 +84,11 @@ TEST(MemoryConfigStoreTest, require_that_prune_removes_old_configs) {
     EXPECT_FALSE(config_store.hasValidSerial(6));
 }
 
-TEST(MemoryConfigStoreTest, require_that_MemoryConfigStores_preserves_state_of_MemoryConfigStore_between_instantiations) {
+TEST(MemoryConfigStoreTest,
+     require_that_MemoryConfigStores_preserves_state_of_MemoryConfigStore_between_instantiations) {
     MemoryConfigStores config_stores;
-    const std::string name("foo");
-    ConfigStore::UP config_store = config_stores.getConfigStore(name);
+    const std::string  name("foo");
+    ConfigStore::UP    config_store = config_stores.getConfigStore(name);
     config_store->saveConfig(*getConfig(10), 5);
     EXPECT_TRUE(config_store->hasValidSerial(5));
     config_store.reset();
@@ -101,4 +96,4 @@ TEST(MemoryConfigStoreTest, require_that_MemoryConfigStores_preserves_state_of_M
     EXPECT_TRUE(config_store->hasValidSerial(5));
 }
 
-}  // namespace
+} // namespace

@@ -2,12 +2,13 @@
 
 #include <vespa/searchcore/proton/documentmetastore/lid_allocator.h>
 #include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
-#include <vespa/searchlib/queryeval/blueprint.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/generationholder.h>
 #include <vespa/vespalib/util/time.h>
-#include <vespa/vespalib/gtest/gtest.h>
+
 #include <iostream>
 
 using search::fef::MatchData;
@@ -23,18 +24,12 @@ namespace proton {
 
 using documentmetastore::LidAllocator;
 
-class LidAllocatorTest : public ::testing::Test
-{
+class LidAllocatorTest : public ::testing::Test {
 protected:
     GenerationHolder _gen_hold;
     LidAllocator     _allocator;
 
-    LidAllocatorTest()
-        : ::testing::Test(),
-          _gen_hold(),
-          _allocator(100, 100, _gen_hold)
-    {
-    }
+    LidAllocatorTest() : ::testing::Test(), _gen_hold(), _allocator(100, 100, _gen_hold) {}
 
     ~LidAllocatorTest() override;
 
@@ -64,22 +59,16 @@ protected:
             _allocator.updateActiveLids(lid, active);
         }
     }
-    
-    void unregister_lids(const std::vector<uint32_t>& lids) {
-         _allocator.unregister_lids(lids);
-    }
 
-    void hold_lids(const std::vector<uint32_t>& lids) {
-        _allocator.holdLids(lids, get_size(), Generation(0));
-    }
+    void unregister_lids(const std::vector<uint32_t>& lids) { _allocator.unregister_lids(lids); }
 
-    void reclaim_memory() {
-        _allocator.reclaim_memory(Generation(1));
-    }
-    
+    void hold_lids(const std::vector<uint32_t>& lids) { _allocator.holdLids(lids, get_size(), Generation(0)); }
+
+    void reclaim_memory() { _allocator.reclaim_memory(Generation(1)); }
+
     std::vector<uint32_t> get_valid_lids() {
         std::vector<uint32_t> result;
-        auto size = get_size();
+        auto                  size = get_size();
         for (uint32_t lid = 1; lid < size; ++lid) {
             if (_allocator.validLid(lid)) {
                 result.emplace_back(lid);
@@ -90,8 +79,8 @@ protected:
 
     std::vector<uint32_t> get_active_lids() {
         std::vector<uint32_t> result;
-        const auto &active_lids = _allocator.getActiveLids();
-        uint32_t lid = active_lids.getNextTrueBit(1);
+        const auto&           active_lids = _allocator.getActiveLids();
+        uint32_t              lid = active_lids.getNextTrueBit(1);
         while (lid < active_lids.size()) {
             if (active_lids.testBit(lid)) {
                 result.emplace_back(lid);
@@ -100,17 +89,17 @@ protected:
         }
         return result;
     }
-    
+
     Blueprint::UP make_whitelist_blueprint(bool strict, uint32_t docid_limit) {
         auto blueprint = _allocator.createWhiteListBlueprint();
         blueprint->basic_plan(strict, docid_limit);
         return blueprint;
     }
-    
+
     SimpleResult get_active_lids_in_search_iterator(uint32_t docid_limit, bool filter) {
-        auto blueprint = make_whitelist_blueprint(true, docid_limit);
+        auto                            blueprint = make_whitelist_blueprint(true, docid_limit);
         std::unique_ptr<SearchIterator> iterator;
-        MatchData md(MatchData::params());
+        MatchData                       md(MatchData::params());
         if (filter) {
             iterator = blueprint->createFilterSearch(Blueprint::FilterConstraint::UPPER_BOUND);
         } else {
@@ -127,27 +116,18 @@ protected:
         return iterator->matches_any();
     }
 
-    void
-    assert_valid_lids(const std::vector<uint32_t>& exp_lids) {
-        EXPECT_EQ(exp_lids, get_valid_lids());
-    }
+    void assert_valid_lids(const std::vector<uint32_t>& exp_lids) { EXPECT_EQ(exp_lids, get_valid_lids()); }
 
-    void
-    assert_active_lids(const std::vector<uint32_t>& exp_lids) {
-        EXPECT_EQ(exp_lids, get_active_lids());
-    }
-
+    void assert_active_lids(const std::vector<uint32_t>& exp_lids) { EXPECT_EQ(exp_lids, get_active_lids()); }
 };
 
-LidAllocatorTest::~LidAllocatorTest()
-{
+LidAllocatorTest::~LidAllocatorTest() {
     _gen_hold.reclaim_all();
 }
 
-TEST_F(LidAllocatorTest, unregister_lids)
-{
-    register_lids({ 1, 2, 3, 4, 5, 6 });
-    activate_lids({ 4, 5, 6 }, true);
+TEST_F(LidAllocatorTest, unregister_lids) {
+    register_lids({1, 2, 3, 4, 5, 6});
+    activate_lids({4, 5, 6}, true);
     assert_valid_lids({1, 2, 3, 4, 5, 6});
     assert_active_lids({4, 5, 6});
     construct_free_list();
@@ -159,28 +139,25 @@ TEST_F(LidAllocatorTest, unregister_lids)
     EXPECT_EQ((std::vector<uint32_t>{1, 3, 5, 7, 8}), alloc_lids(5));
 }
 
-TEST_F(LidAllocatorTest, active_lids_are_available_in_search_iterator)
-{
-    register_lids({ 1, 2, 3, 4 });
-    activate_lids({ 1, 2, 4 }, true);
+TEST_F(LidAllocatorTest, active_lids_are_available_in_search_iterator) {
+    register_lids({1, 2, 3, 4});
+    activate_lids({1, 2, 4}, true);
     EXPECT_EQ(Trinary::Undefined, filter_search_iterator_matches_any(5));
     EXPECT_EQ(SimpleResult({1, 2, 4}), get_active_lids_in_search_iterator(5, true));
     EXPECT_EQ(SimpleResult({1, 2, 4}), get_active_lids_in_search_iterator(5, false));
 }
 
-TEST_F(LidAllocatorTest, filter_search_iterator_matches_all_when_all_lids_are_active)
-{
-    register_lids({ 1, 2, 3, 4 });
-    activate_lids({ 1, 2, 3, 4 }, true);
+TEST_F(LidAllocatorTest, filter_search_iterator_matches_all_when_all_lids_are_active) {
+    register_lids({1, 2, 3, 4});
+    activate_lids({1, 2, 3, 4}, true);
     EXPECT_EQ(Trinary::True, filter_search_iterator_matches_any(6));
     EXPECT_EQ(SimpleResult({1, 2, 3, 4, 5}), get_active_lids_in_search_iterator(6, true));
     EXPECT_EQ(SimpleResult({1, 2, 3, 4}), get_active_lids_in_search_iterator(6, false));
 }
 
-TEST_F(LidAllocatorTest, whitelist_blueprint_can_maximize_relative_estimate)
-{
-    register_lids({ 1, 2, 3, 4 });
-    activate_lids({ 1, 2, 3, 4 }, true);
+TEST_F(LidAllocatorTest, whitelist_blueprint_can_maximize_relative_estimate) {
+    register_lids({1, 2, 3, 4});
+    activate_lids({1, 2, 3, 4}, true);
     // the number of hits are overestimated based on the number of
     // documents that could be active (100 in this test fixture)
     EXPECT_EQ(make_whitelist_blueprint(true, 1000)->estimate(), 0.1);
@@ -188,28 +165,24 @@ TEST_F(LidAllocatorTest, whitelist_blueprint_can_maximize_relative_estimate)
     EXPECT_EQ(make_whitelist_blueprint(true, 5)->estimate(), 1.0);
 }
 
-class LidAllocatorPerformanceTest : public LidAllocatorTest,
-                                    public testing::WithParamInterface<bool>
-{
-};
+class LidAllocatorPerformanceTest : public LidAllocatorTest, public testing::WithParamInterface<bool> {};
 
-TEST_P(LidAllocatorPerformanceTest, unregister_lids_performance)
-{
+TEST_P(LidAllocatorPerformanceTest, unregister_lids_performance) {
     constexpr uint32_t test_size = 1000000;
     _allocator.ensureSpace(test_size + 1, test_size + 1);
     std::vector<std::vector<uint32_t>> buckets;
     buckets.resize(1000);
-    auto reserve_size = (test_size + (buckets.size() - 1)) / buckets.size(); 
-for (auto& bucket : buckets) {
-    bucket.reserve(reserve_size);
-}
+    auto reserve_size = (test_size + (buckets.size() - 1)) / buckets.size();
+    for (auto& bucket : buckets) {
+        bucket.reserve(reserve_size);
+    }
     for (uint32_t i = 0; i < test_size; ++i) {
         _allocator.registerLid(i + 1);
         buckets[i % buckets.size()].emplace_back(i + 1);
     }
     construct_free_list();
     Timer timer;
-    for (auto& bucket: buckets) {
+    for (auto& bucket : buckets) {
         if (GetParam()) {
             unregister_lids(bucket);
         } else {
@@ -222,8 +195,9 @@ for (auto& bucket : buckets) {
     std::cout << "Unregister rate: " << std::fixed << rate << std::endl;
 }
 
-INSTANTIATE_TEST_SUITE_P(LidAllocatorParameterizedPerformanceTest, LidAllocatorPerformanceTest, testing::Values(false, true));
+INSTANTIATE_TEST_SUITE_P(LidAllocatorParameterizedPerformanceTest, LidAllocatorPerformanceTest,
+                         testing::Values(false, true));
 
-}
+} // namespace proton
 
 GTEST_MAIN_RUN_ALL_TESTS()

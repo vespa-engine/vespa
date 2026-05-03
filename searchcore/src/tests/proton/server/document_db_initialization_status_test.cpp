@@ -13,16 +13,14 @@ using proton::DDBState;
 using proton::DocumentDBInitializationStatus;
 
 class DummyReplayProgressProducer : public proton::IReplayProgressProducer {
-    float getProgress() const override {
-        return 0.23f;
-    }
+    float getProgress() const override { return 0.23f; }
 };
 
 class DocumentDBInitializationStatusTest : public ::testing::Test {
 protected:
     std::shared_ptr<DummyReplayProgressProducer> _producer;
-    std::shared_ptr<DDBState> _state;
-    DocumentDBInitializationStatus _status;
+    std::shared_ptr<DDBState>                    _state;
+    DocumentDBInitializationStatus               _status;
 
     std::shared_ptr<AttributeInitializationStatus> _queued_attribute1;
     std::shared_ptr<AttributeInitializationStatus> _queued_attribute2;
@@ -58,17 +56,19 @@ protected:
         _reprocessed_attribute->set_reprocessing_percentage(0.42f);
         _reprocessed_attribute->end_reprocessing();
 
-        _reprocessed_loaded_attribute = std::make_shared<AttributeInitializationStatus>("reprocessed_loaded_attribute");
+        _reprocessed_loaded_attribute =
+            std::make_shared<AttributeInitializationStatus>("reprocessed_loaded_attribute");
         _reprocessed_loaded_attribute->start_loading();
         _reprocessed_loaded_attribute->start_reprocessing();
         _reprocessed_loaded_attribute->set_reprocessing_percentage(0.42f);
         _reprocessed_loaded_attribute->end_reprocessing();
         _reprocessed_loaded_attribute->end_loading();
     }
-    ~DocumentDBInitializationStatusTest() override __attribute__((noinline)) = default; // Avoid warning about inline-unit-growth limit
+    ~DocumentDBInitializationStatusTest() override
+        __attribute__((noinline)) = default; // Avoid warning about inline-unit-growth limit
 
     void expect_children_and_state(size_t children, const std::string& state) const {
-        vespalib::Slime slime;
+        vespalib::Slime                slime;
         vespalib::slime::SlimeInserter inserter(slime);
         _status.report_initialization_status(inserter);
 
@@ -82,7 +82,7 @@ TEST_F(DocumentDBInitializationStatusTest, test_reporting_initializing) {
     _status.set_replay_progress_producer(_producer);
     _state->enterLoadState();
 
-    vespalib::Slime slime;
+    vespalib::Slime                slime;
     vespalib::slime::SlimeInserter inserter(slime);
     _status.report_initialization_status(inserter);
 
@@ -110,7 +110,7 @@ TEST_F(DocumentDBInitializationStatusTest, test_reporting_initializing) {
 
 TEST_F(DocumentDBInitializationStatusTest, test_reporting_initializing_with_attributes) {
     _status.set_replay_progress_producer(_producer);
-    std::vector<std::shared_ptr<AttributeInitializationStatus> > attributes;
+    std::vector<std::shared_ptr<AttributeInitializationStatus>> attributes;
     attributes.push_back(_queued_attribute1);
     attributes.push_back(_queued_attribute2);
     attributes.push_back(_loading_attribute);
@@ -122,7 +122,7 @@ TEST_F(DocumentDBInitializationStatusTest, test_reporting_initializing_with_attr
 
     _state->enterLoadState();
 
-    vespalib::Slime slime;
+    vespalib::Slime                slime;
     vespalib::slime::SlimeInserter inserter(slime);
     _status.report_initialization_status(inserter);
 
@@ -157,7 +157,7 @@ TEST_F(DocumentDBInitializationStatusTest, test_reporting_initializing_with_attr
 
 TEST_F(DocumentDBInitializationStatusTest, test_reporting_online_with_attributes) {
     _status.set_replay_progress_producer(_producer);
-    std::vector<std::shared_ptr<AttributeInitializationStatus> > attributes;
+    std::vector<std::shared_ptr<AttributeInitializationStatus>> attributes;
     attributes.push_back(_loaded_attribute);
     attributes.push_back(_reprocessed_loaded_attribute);
     _status.set_attribute_initialization_statuses(std::move(attributes));
@@ -168,7 +168,7 @@ TEST_F(DocumentDBInitializationStatusTest, test_reporting_online_with_attributes
     _state->enterReprocessState();
     _state->enterOnlineState();
 
-    vespalib::Slime slime;
+    vespalib::Slime                slime;
     vespalib::slime::SlimeInserter inserter(slime);
     _status.report_initialization_status(inserter);
 
@@ -202,7 +202,7 @@ TEST_F(DocumentDBInitializationStatusTest, test_reporting_online_with_attributes
 }
 
 TEST_F(DocumentDBInitializationStatusTest, test_reporting_without_progress_producer) {
-    std::vector<std::shared_ptr<AttributeInitializationStatus> > attributes;
+    std::vector<std::shared_ptr<AttributeInitializationStatus>> attributes;
     attributes.push_back(_loaded_attribute);
     attributes.push_back(_reprocessed_loaded_attribute);
     _status.set_attribute_initialization_statuses(std::move(attributes));
@@ -210,7 +210,7 @@ TEST_F(DocumentDBInitializationStatusTest, test_reporting_without_progress_produ
     _state->enterLoadState();
     _state->enterReplayTransactionLogState();
 
-    vespalib::Slime slime;
+    vespalib::Slime                slime;
     vespalib::slime::SlimeInserter inserter(slime);
     _status.report_initialization_status(inserter);
 

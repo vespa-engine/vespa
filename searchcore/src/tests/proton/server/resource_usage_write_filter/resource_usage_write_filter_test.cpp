@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchcore/proton/server/resource_usage_write_filter.h>
 #include <vespa/searchcore/proton/server/resource_usage_notifier.h>
 #include <vespa/searchcore/proton/server/resource_usage_with_limit.h>
+#include <vespa/searchcore/proton/server/resource_usage_write_filter.h>
 #include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -10,8 +10,8 @@
 #include <vespa/vespalib/util/size_literals.h>
 
 using namespace proton;
-using search::AddressSpaceUsage;
 using search::AddressSpaceComponents;
+using search::AddressSpaceUsage;
 using search::queryeval::ISourceSelector;
 using searchcorespi::common::ResourceUsage;
 using searchcorespi::common::TransientResourceUsage;
@@ -29,13 +29,9 @@ vespalib::AddressSpace source_selector_overload(250, 0, ISourceSelector::SOURCE_
 
 constexpr uint64_t zero_size_on_disk = 0;
 
-class MyAttributeStats : public AttributeUsageStats
-{
+class MyAttributeStats : public AttributeUsageStats {
 public:
-    MyAttributeStats()
-        : AttributeUsageStats("test")
-    {
-    }
+    MyAttributeStats() : AttributeUsageStats("test") {}
     void triggerEnumStoreLimit() {
         AddressSpaceUsage usage;
         usage.set(AddressSpaceComponents::enum_store, enumStoreOverLoad);
@@ -52,27 +48,23 @@ public:
         AddressSpaceUsage usage;
         usage.set("", source_selector_overload);
         merge(usage, "index_shards", "");
-
     }
 };
 
-}
+} // namespace
 
-struct ResourceUsageWriteFilterTest : public ::testing::Test
-{
+struct ResourceUsageWriteFilterTest : public ::testing::Test {
     ResourceUsageWriteFilter _filter;
-    ResourceUsageNotifier _notifier;
+    ResourceUsageNotifier    _notifier;
     using State = ResourceUsageWriteFilter::State;
     using Config = ResourceUsageNotifier::Config;
 
     ResourceUsageWriteFilterTest()
-        : _filter(HwInfo(HwInfo::Disk(100, false, false), HwInfo::Memory(1000), HwInfo::Cpu(0))),
-          _notifier(_filter)
-    {
+        : _filter(HwInfo(HwInfo::Disk(100, false, false), HwInfo::Memory(1000), HwInfo::Cpu(0))), _notifier(_filter) {
         _notifier.set_resource_usage(ResourceUsage(), vespalib::ProcessMemoryStats(297, 298, 300), 20, 0);
     }
 
-    void testWrite(const std::string &exp) {
+    void testWrite(const std::string& exp) {
         if (exp.empty()) {
             EXPECT_TRUE(_filter.acceptWriteOperation());
             State state = _filter.getAcceptState();
@@ -90,47 +82,38 @@ struct ResourceUsageWriteFilterTest : public ::testing::Test
         _notifier.set_resource_usage(_notifier.get_resource_usage(), _notifier.getMemoryStats(), 90, 0);
     }
 
-    void triggerMemoryLimit()
-    {
+    void triggerMemoryLimit() {
         _notifier.set_resource_usage(ResourceUsage(), vespalib::ProcessMemoryStats(897, 898, 900),
                                      _notifier.getDiskUsedSize(), 0);
     }
 
-    void notify_attribute_usage(const AttributeUsageStats& usage) {
-        _notifier.notify_attribute_usage(usage);
-    }
+    void notify_attribute_usage(const AttributeUsageStats& usage) { _notifier.notify_attribute_usage(usage); }
 };
 
-TEST_F(ResourceUsageWriteFilterTest, default_filter_allows_write)
-{
+TEST_F(ResourceUsageWriteFilterTest, default_filter_allows_write) {
     testWrite("");
 }
 
-TEST_F(ResourceUsageWriteFilterTest, stats_are_wired_through)
-{
+TEST_F(ResourceUsageWriteFilterTest, stats_are_wired_through) {
     EXPECT_EQ(297u, _notifier.getMemoryStats().getVirt());
     triggerMemoryLimit();
     EXPECT_EQ(897u, _notifier.getMemoryStats().getVirt());
 }
 
-void
-assertResourceUsage(double usage, double limit, double utilization, const ResourceUsageWithLimit &state)
-{
+void assertResourceUsage(double usage, double limit, double utilization, const ResourceUsageWithLimit& state) {
     EXPECT_EQ(usage, state.usage());
     EXPECT_EQ(limit, state.limit());
     EXPECT_DOUBLE_EQ(utilization, state.utilization());
 }
 
-TEST_F(ResourceUsageWriteFilterTest, reconfig_with_identical_config_is_noop)
-{
+TEST_F(ResourceUsageWriteFilterTest, reconfig_with_identical_config_is_noop) {
     EXPECT_TRUE(_notifier.setConfig(Config(1.0, 0.8, 0.0, AttributeUsageFilterConfig())));
     assertResourceUsage(0.2, 0.8, 0.25, _notifier.usageState().diskState());
     EXPECT_FALSE(_notifier.setConfig(Config(1.0, 0.8, 0.0, AttributeUsageFilterConfig())));
     assertResourceUsage(0.2, 0.8, 0.25, _notifier.usageState().diskState());
 }
 
-TEST_F(ResourceUsageWriteFilterTest, disk_limit_can_be_reached)
-{
+TEST_F(ResourceUsageWriteFilterTest, disk_limit_can_be_reached) {
     EXPECT_TRUE(_notifier.setConfig(Config(1.0, 0.8, 0.0, AttributeUsageFilterConfig())));
     assertResourceUsage(0.2, 0.8, 0.25, _notifier.usageState().diskState());
     triggerDiskLimit();
@@ -142,8 +125,7 @@ TEST_F(ResourceUsageWriteFilterTest, disk_limit_can_be_reached)
     assertResourceUsage(0.9, 0.8, 1.125, _notifier.usageState().diskState());
 }
 
-TEST_F(ResourceUsageWriteFilterTest, memory_limit_can_be_reached)
-{
+TEST_F(ResourceUsageWriteFilterTest, memory_limit_can_be_reached) {
     EXPECT_TRUE(_notifier.setConfig(Config(0.8, 1.0, 0.0, AttributeUsageFilterConfig())));
     assertResourceUsage(0.3, 0.8, 0.375, _notifier.usageState().memoryState());
     triggerMemoryLimit();
@@ -157,8 +139,7 @@ TEST_F(ResourceUsageWriteFilterTest, memory_limit_can_be_reached)
     assertResourceUsage(0.9, 0.8, 1.125, _notifier.usageState().memoryState());
 }
 
-TEST_F(ResourceUsageWriteFilterTest, both_disk_limit_and_memory_limit_can_be_reached)
-{
+TEST_F(ResourceUsageWriteFilterTest, both_disk_limit_and_memory_limit_can_be_reached) {
     EXPECT_TRUE(_notifier.setConfig(Config(0.8, 0.8, 0.0, AttributeUsageFilterConfig())));
     triggerMemoryLimit();
     triggerDiskLimit();
@@ -176,8 +157,7 @@ TEST_F(ResourceUsageWriteFilterTest, both_disk_limit_and_memory_limit_can_be_rea
               "capacity: 100, used: 90, diskUsed: 0.9, diskLimit: 0.8}}");
 }
 
-TEST_F(ResourceUsageWriteFilterTest, transient_and_non_transient_disk_usage_tracked_in_usage_state_and_metrics)
-{
+TEST_F(ResourceUsageWriteFilterTest, transient_and_non_transient_disk_usage_tracked_in_usage_state_and_metrics) {
     _notifier.set_resource_usage(ResourceUsage{TransientResourceUsage{15, 0}, zero_size_on_disk},
                                  _notifier.getMemoryStats(), _notifier.getDiskUsedSize(), 0);
     EXPECT_DOUBLE_EQ(0.15, _notifier.usageState().transient_disk_usage());
@@ -186,8 +166,7 @@ TEST_F(ResourceUsageWriteFilterTest, transient_and_non_transient_disk_usage_trac
     EXPECT_DOUBLE_EQ(0.05, _notifier.get_metrics().non_transient_disk_usage());
 }
 
-TEST_F(ResourceUsageWriteFilterTest, transient_and_non_transient_memory_usage_tracked_in_usage_state_and_metrics)
-{
+TEST_F(ResourceUsageWriteFilterTest, transient_and_non_transient_memory_usage_tracked_in_usage_state_and_metrics) {
     _notifier.set_resource_usage(ResourceUsage{TransientResourceUsage{0, 100}, zero_size_on_disk},
                                  _notifier.getMemoryStats(), _notifier.getDiskUsedSize(), 0);
     EXPECT_DOUBLE_EQ(0.1, _notifier.usageState().transient_memory_usage());
@@ -196,8 +175,7 @@ TEST_F(ResourceUsageWriteFilterTest, transient_and_non_transient_memory_usage_tr
     EXPECT_DOUBLE_EQ(0.2, _notifier.get_metrics().non_transient_memory_usage());
 }
 
-TEST_F(ResourceUsageWriteFilterTest, check_that_enum_store_limit_can_be_reached)
-{
+TEST_F(ResourceUsageWriteFilterTest, check_that_enum_store_limit_can_be_reached) {
     EXPECT_TRUE(_notifier.setConfig(Config(0.8, 0.8, 0.0, AttributeUsageFilterConfig(0.8))));
     MyAttributeStats stats;
     stats.triggerEnumStoreLimit();
@@ -214,8 +192,7 @@ TEST_F(ResourceUsageWriteFilterTest, check_that_enum_store_limit_can_be_reached)
               "attributeName: \"enumeratedName\", componentName: \"enum-store\", subdb: \"ready\"}");
 }
 
-TEST_F(ResourceUsageWriteFilterTest, Check_that_multivalue_limit_can_be_reached)
-{
+TEST_F(ResourceUsageWriteFilterTest, Check_that_multivalue_limit_can_be_reached) {
     EXPECT_TRUE(_notifier.setConfig(Config(0.8, 0.8, 0.0, AttributeUsageFilterConfig(0.8))));
     MyAttributeStats stats;
     stats.triggerMultiValueLimit();
@@ -232,8 +209,7 @@ TEST_F(ResourceUsageWriteFilterTest, Check_that_multivalue_limit_can_be_reached)
               "attributeName: \"multiValueName\", componentName: \"multi-value\", subdb: \"ready\"}");
 }
 
-TEST_F(ResourceUsageWriteFilterTest, Check_that_source_selector_limit_can_be_reached)
-{
+TEST_F(ResourceUsageWriteFilterTest, Check_that_source_selector_limit_can_be_reached) {
     EXPECT_TRUE(_notifier.setConfig(Config(0.8, 0.8, 0.0, AttributeUsageFilterConfig(0.8))));
     MyAttributeStats stats;
     stats.trigger_source_selector_limit();
