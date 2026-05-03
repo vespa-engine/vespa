@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include <vespa/storageapi/message/internal.h>
 #include <vespa/storage/visiting/config-stor-visitor.h>
+#include <vespa/storageapi/message/internal.h>
 
 namespace storage {
 
@@ -20,12 +20,12 @@ namespace storage {
  */
 class PropagateVisitorConfig : public api::InternalCommand {
     vespa::config::content::core::StorVisitorConfig _config;
+
 public:
     static const uint32_t ID = 3001;
 
     PropagateVisitorConfig(const vespa::config::content::core::StorVisitorConfig& config)
-        : api::InternalCommand(ID),
-          _config(config) {}
+        : api::InternalCommand(ID), _config(config) {}
 
     std::unique_ptr<api::StorageReply> makeReply() override;
     const vespa::config::content::core::StorVisitorConfig& getConfig() const { return _config; }
@@ -48,9 +48,7 @@ class PropagateVisitorConfigReply : public api::InternalReply {
 public:
     static const int ID = 3002;
 
-    PropagateVisitorConfigReply(const PropagateVisitorConfig& cmd)
-        : api::InternalReply(ID, cmd)
-    {}
+    PropagateVisitorConfigReply(const PropagateVisitorConfig& cmd) : api::InternalReply(ID, cmd) {}
     void print(std::ostream& out, bool verbose, const std::string& indent) const override {
         out << "PropagateVisitorConfigReply()";
 
@@ -61,11 +59,8 @@ public:
     }
 };
 
-inline std::unique_ptr<api::StorageReply>
-PropagateVisitorConfig::makeReply()
-{
-    return std::unique_ptr<api::StorageReply>(
-            new PropagateVisitorConfigReply(*this));
+inline std::unique_ptr<api::StorageReply> PropagateVisitorConfig::makeReply() {
+    return std::unique_ptr<api::StorageReply>(new PropagateVisitorConfigReply(*this));
 }
 
-} // storage
+} // namespace storage

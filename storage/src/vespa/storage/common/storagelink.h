@@ -20,29 +20,28 @@
 #pragma once
 
 #include "messagesender.h"
+
+#include <vespa/document/util/printable.h>
 #include <vespa/storageapi/messageapi/messagehandler.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
-#include <vespa/document/util/printable.h>
+
 #include <atomic>
-#include <queue>
-#include <mutex>
 #include <condition_variable>
+#include <mutex>
+#include <queue>
 
 namespace storage {
 
 struct FileStorManagerTest;
 
-class StorageLink : public document::Printable,
-                    public ChainedMessageSender,
-                    protected api::MessageHandler
-{
+class StorageLink : public document::Printable, public ChainedMessageSender, protected api::MessageHandler {
 public:
     using UP = std::unique_ptr<StorageLink>;
 
     enum State { CREATED, OPENED, CLOSING, FLUSHINGDOWN, FLUSHINGUP, CLOSED };
 
     enum class MsgDownOnFlush { Allowed, Disallowed };
-    enum class MsgUpOnClosed  { Allowed, Disallowed };
+    enum class MsgUpOnClosed { Allowed, Disallowed };
 
 private:
     const std::string            _name;
@@ -53,29 +52,24 @@ private:
     const MsgUpOnClosed          _msg_up_during_closed;
 
 public:
-    StorageLink(const std::string& name,
-                MsgDownOnFlush allow_msg_down_during_flushing,
+    StorageLink(const std::string& name, MsgDownOnFlush allow_msg_down_during_flushing,
                 MsgUpOnClosed allow_msg_up_during_closed);
     explicit StorageLink(const std::string& name);
 
-    StorageLink(const StorageLink &) = delete;
-    StorageLink & operator = (const StorageLink &) = delete;
+    StorageLink(const StorageLink&) = delete;
+    StorageLink& operator=(const StorageLink&) = delete;
     ~StorageLink() override;
 
     const std::string& getName() const noexcept { return _name; }
     [[nodiscard]] bool isTop() const noexcept { return !_up; }
     [[nodiscard]] bool isBottom() const noexcept { return !_down; }
-    [[nodiscard]] unsigned int size() const noexcept {
-        return (isBottom() ? 1 : _down->size() + 1);
-    }
+    [[nodiscard]] unsigned int size() const noexcept { return (isBottom() ? 1 : _down->size() + 1); }
 
     /** Adds the link to the end of the chain. */
     void push_back(StorageLink::UP);
 
     /** Get the current state of the storage link. */
-    [[nodiscard]] State getState() const noexcept {
-        return _state.load(std::memory_order_relaxed);
-    }
+    [[nodiscard]] State getState() const noexcept { return _state.load(std::memory_order_relaxed); }
 
     /**
      * Called by storage server after the storage chain have been created.
@@ -186,7 +180,7 @@ private:
      * upwards the chain. After this has been done, no messages/operations
      * should remain in the process.
      */
-    virtual void onFlush(bool downwards) { (void) downwards; }
+    virtual void onFlush(bool downwards) { (void)downwards; }
 
     /**
      * Some unit tests wants access to private functions. They can do this
@@ -227,4 +221,4 @@ public:
 
 std::ostream& operator<<(std::ostream& out, StorageLink& link);
 
-}
+} // namespace storage

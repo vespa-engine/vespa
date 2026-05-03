@@ -6,7 +6,7 @@
 namespace storage {
 
 // Reports Vtag.
-class VersionReporter: public HostReporter {
+class VersionReporter : public HostReporter {
 public:
     VersionReporter() = default;
     ~VersionReporter() override = default;

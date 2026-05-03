@@ -8,27 +8,26 @@
 #pragma once
 
 #include "storagecomponentregisterimpl.h"
+
 #include <vespa/storage/common/distributorcomponent.h>
 #include <vespa/storage/common/nodestateupdater.h>
 
 namespace storage::lib {
-    class ClusterState;
+class ClusterState;
 }
 
 namespace storage {
 
-class DistributorComponentRegisterImpl
-        : public virtual DistributorComponentRegister,
-          public virtual StorageComponentRegisterImpl,
-          private StateListener
-{
-    std::mutex _componentLock;
+class DistributorComponentRegisterImpl : public virtual DistributorComponentRegister,
+                                         public virtual StorageComponentRegisterImpl,
+                                         private StateListener {
+    std::mutex                                _componentLock;
     std::vector<DistributorManagedComponent*> _components;
 
-    UniqueTimeCalculator* _timeCalculator;
+    UniqueTimeCalculator*                     _timeCalculator;
     std::unique_ptr<DistributorManagerConfig> _distributorConfig;
-    std::unique_ptr<VisitorDispatcherConfig> _visitorConfig;
-    std::shared_ptr<lib::ClusterState> _clusterState;
+    std::unique_ptr<VisitorDispatcherConfig>  _visitorConfig;
+    std::shared_ptr<lib::ClusterState>        _clusterState;
 
 public:
     using UP = std::unique_ptr<DistributorComponentRegisterImpl>;
@@ -40,9 +39,10 @@ public:
     void setTimeCalculator(UniqueTimeCalculator& calc);
     void setDistributorConfig(const DistributorManagerConfig&);
     void setVisitorConfig(const VisitorDispatcherConfig&);
+
 private:
     void handleNewState() noexcept override;
     void setNodeStateUpdater(NodeStateUpdater& updater) override;
 };
 
-}
+} // namespace storage

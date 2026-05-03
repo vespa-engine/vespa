@@ -4,6 +4,7 @@
 
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/persistence/spi/bucket_limits.h>
+
 #include <cassert>
 
 namespace storage {
@@ -22,4 +23,4 @@ inline uint64_t get_super_bucket_key(const document::BucketId& bucket_id) noexce
     return (bucket_id.toKey() >> (64 - spi::BucketLimits::MinUsedBits));
 }
 
-}
+} // namespace storage

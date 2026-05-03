@@ -3,6 +3,7 @@
 
 #include <vespa/document/bucket/bucketspace.h>
 #include <vespa/storage/bucketdb/storbucketdb.h>
+
 #include <mutex>
 
 namespace storage {
@@ -10,7 +11,7 @@ namespace storage {
 namespace lib {
 class ClusterState;
 class Distribution;
-}
+} // namespace lib
 
 struct ClusterStateAndDistribution {
     std::shared_ptr<const lib::ClusterState> _cluster_state;
@@ -25,14 +26,18 @@ struct ClusterStateAndDistribution {
 
     // Precondition: valid() == true
     [[nodiscard]] const lib::ClusterState& cluster_state() const noexcept { return *_cluster_state; }
-    [[nodiscard]] const std::shared_ptr<const lib::ClusterState>& cluster_state_sp() const noexcept { return _cluster_state; }
-    [[nodiscard]] const lib::Distribution& distribution() const noexcept { return  *_distribution; }
-    [[nodiscard]] const std::shared_ptr<const lib::Distribution>& distribution_sp() const noexcept { return  _distribution; }
+    [[nodiscard]] const std::shared_ptr<const lib::ClusterState>& cluster_state_sp() const noexcept {
+        return _cluster_state;
+    }
+    [[nodiscard]] const lib::Distribution& distribution() const noexcept { return *_distribution; }
+    [[nodiscard]] const std::shared_ptr<const lib::Distribution>& distribution_sp() const noexcept {
+        return _distribution;
+    }
 
-    [[nodiscard]] std::shared_ptr<const ClusterStateAndDistribution> with_new_state(
-            std::shared_ptr<const lib::ClusterState> cluster_state) const;
-    [[nodiscard]] std::shared_ptr<const ClusterStateAndDistribution> with_new_distribution(
-            std::shared_ptr<const lib::Distribution> distribution) const;
+    [[nodiscard]] std::shared_ptr<const ClusterStateAndDistribution>
+    with_new_state(std::shared_ptr<const lib::ClusterState> cluster_state) const;
+    [[nodiscard]] std::shared_ptr<const ClusterStateAndDistribution>
+    with_new_distribution(std::shared_ptr<const lib::Distribution> distribution) const;
 };
 
 /**
@@ -40,19 +45,19 @@ struct ClusterStateAndDistribution {
  */
 class ContentBucketSpace {
 private:
-    document::BucketSpace _bucketSpace;
-    StorBucketDatabase _bucketDatabase;
-    mutable std::mutex _lock;
+    document::BucketSpace                              _bucketSpace;
+    StorBucketDatabase                                 _bucketDatabase;
+    mutable std::mutex                                 _lock;
     std::shared_ptr<const ClusterStateAndDistribution> _state_and_distribution;
-    bool _nodeUpInLastNodeStateSeenByProvider;
-    bool _nodeMaintenanceInLastNodeStateSeenByProvider;
+    bool                                               _nodeUpInLastNodeStateSeenByProvider;
+    bool                                               _nodeMaintenanceInLastNodeStateSeenByProvider;
 
 public:
     using UP = std::unique_ptr<ContentBucketSpace>;
     explicit ContentBucketSpace(document::BucketSpace bucketSpace, const ContentBucketDbOptions& db_opts);
 
     document::BucketSpace bucketSpace() const noexcept { return _bucketSpace; }
-    StorBucketDatabase &bucketDatabase() { return _bucketDatabase; }
+    StorBucketDatabase& bucketDatabase() { return _bucketDatabase; }
 
     void set_state_and_distribution(std::shared_ptr<const ClusterStateAndDistribution> state_and_distr) noexcept;
     [[nodiscard]] std::shared_ptr<const ClusterStateAndDistribution> state_and_distribution() const noexcept;
@@ -63,4 +68,4 @@ public:
     void setNodeMaintenanceInLastNodeStateSeenByProvider(bool nodeMaintenanceInLastNodeStateSeenByProvider);
 };
 
-}
+} // namespace storage

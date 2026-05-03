@@ -9,6 +9,7 @@
 #pragma once
 
 #include <vespa/vdslib/container/parameters.h>
+
 #include <map>
 
 namespace storage {
@@ -31,9 +32,8 @@ public:
 
     virtual std::shared_ptr<VisitorEnvironment> makeVisitorEnvironment(StorageComponent&) = 0;
 
-    virtual storage::Visitor *makeVisitor(
-            StorageComponent&, VisitorEnvironment& env,
-            const vdslib::Parameters& params) = 0;
+    virtual storage::Visitor* makeVisitor(StorageComponent&, VisitorEnvironment& env,
+                                          const vdslib::Parameters& params) = 0;
 };
 
-} // storage
+} // namespace storage

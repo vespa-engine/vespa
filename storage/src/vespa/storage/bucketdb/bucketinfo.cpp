@@ -1,7 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "bucketinfo.h"
+
 #include "bucketinfo.hpp"
+
 #include <vespa/storage/storageutil/utils.h>
+
 #include <algorithm>
 
 namespace storage {
@@ -9,11 +12,12 @@ namespace storage {
 template class BucketInfoBase<std::vector<BucketCopy>>;
 template class BucketInfoBase<std::span<const BucketCopy>>;
 
-BucketInfo::BucketInfo() noexcept : BucketInfoBase() {}
+BucketInfo::BucketInfo() noexcept : BucketInfoBase() {
+}
 
 BucketInfo::BucketInfo(uint32_t lastGarbageCollection, std::vector<BucketCopy> nodes) noexcept
-    : BucketInfoBase(lastGarbageCollection, std::move(nodes))
-{}
+    : BucketInfoBase(lastGarbageCollection, std::move(nodes)) {
+}
 
 BucketInfo::~BucketInfo() = default;
 
@@ -22,8 +26,7 @@ BucketInfo& BucketInfo::operator=(const BucketInfo&) = default;
 BucketInfo::BucketInfo(BucketInfo&&) noexcept = default;
 BucketInfo& BucketInfo::operator=(BucketInfo&&) noexcept = default;
 
-void
-BucketInfo::updateTrusted() noexcept {
+void BucketInfo::updateTrusted() noexcept {
     if (validAndConsistent()) {
         for (uint32_t i = 0; i < _nodes.size(); i++) {
             _nodes[i].setTrusted();
@@ -50,8 +53,7 @@ BucketInfo::updateTrusted() noexcept {
     }
 }
 
-void
-BucketInfo::resetTrusted() noexcept {
+void BucketInfo::resetTrusted() noexcept {
     for (uint32_t i = 0; i < _nodes.size(); i++) {
         _nodes[i].clearTrusted();
     }
@@ -63,10 +65,9 @@ namespace {
 struct Sorter {
     const std::vector<uint16_t>& _order;
 
-    Sorter(const std::vector<uint16_t>& recommendedOrder) noexcept :
-        _order(recommendedOrder) {}
+    Sorter(const std::vector<uint16_t>& recommendedOrder) noexcept : _order(recommendedOrder) {}
 
-    bool operator() (const BucketCopy& a, const BucketCopy& b) noexcept {
+    bool operator()(const BucketCopy& a, const BucketCopy& b) noexcept {
         int order_a = -1;
         for (uint32_t i = 0; i < _order.size(); i++) {
             if (_order[i] == a.getNode()) {
@@ -96,11 +97,9 @@ struct Sorter {
     }
 };
 
-}
+} // namespace
 
-void
-BucketInfo::updateNode(const BucketCopy& newCopy)
-{
+void BucketInfo::updateNode(const BucketCopy& newCopy) {
     BucketCopy* found = getNodeInternal(newCopy.getNode());
 
     if (found) {
@@ -109,11 +108,8 @@ BucketInfo::updateNode(const BucketCopy& newCopy)
     }
 }
 
-void
-BucketInfo::addNodes(const std::vector<BucketCopy>& newCopies,
-                     const std::vector<uint16_t>& recommendedOrder,
-                     TrustedUpdate update)
-{
+void BucketInfo::addNodes(const std::vector<BucketCopy>& newCopies, const std::vector<uint16_t>& recommendedOrder,
+                          TrustedUpdate update) {
     for (uint32_t i = 0; i < newCopies.size(); ++i) {
         BucketCopy* found = getNodeInternal(newCopies[i].getNode());
 
@@ -133,15 +129,11 @@ BucketInfo::addNodes(const std::vector<BucketCopy>& newCopies,
     }
 }
 
-void
-BucketInfo::addNode(const BucketCopy& newCopy, const std::vector<uint16_t>& recommendedOrder)
-{
+void BucketInfo::addNode(const BucketCopy& newCopy, const std::vector<uint16_t>& recommendedOrder) {
     addNodes(toVector<BucketCopy>(newCopy), recommendedOrder);
 }
 
-bool
-BucketInfo::removeNode(unsigned short node, TrustedUpdate update)
-{
+bool BucketInfo::removeNode(unsigned short node, TrustedUpdate update) {
     for (auto iter = _nodes.begin(); iter != _nodes.end(); ++iter) {
         if (iter->getNode() == node) {
             _nodes.erase(iter);
@@ -154,10 +146,8 @@ BucketInfo::removeNode(unsigned short node, TrustedUpdate update)
     return false;
 }
 
-BucketCopy*
-BucketInfo::getNodeInternal(uint16_t node)
-{
-    for (BucketCopy & copy : _nodes) {
+BucketCopy* BucketInfo::getNodeInternal(uint16_t node) {
+    for (BucketCopy& copy : _nodes) {
         if (copy.getNode() == node) {
             return &copy;
         }
@@ -165,4 +155,4 @@ BucketInfo::getNodeInternal(uint16_t node)
     return nullptr;
 }
 
-}
+} // namespace storage

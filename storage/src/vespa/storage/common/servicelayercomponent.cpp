@@ -10,18 +10,14 @@ using document::BucketSpace;
 
 namespace storage {
 
-const ContentBucketSpaceRepo &
-ServiceLayerComponent::getBucketSpaceRepo() const
-{
+const ContentBucketSpaceRepo& ServiceLayerComponent::getBucketSpaceRepo() const {
     assert(_bucketSpaceRepo != nullptr);
     return *_bucketSpaceRepo;
 }
 
-StorBucketDatabase&
-ServiceLayerComponent::getBucketDatabase(BucketSpace bucketSpace) const
-{
+StorBucketDatabase& ServiceLayerComponent::getBucketDatabase(BucketSpace bucketSpace) const {
     assert(_bucketSpaceRepo != nullptr);
     return _bucketSpaceRepo->get(bucketSpace).bucketDatabase();
 }
 
-} // storage
+} // namespace storage

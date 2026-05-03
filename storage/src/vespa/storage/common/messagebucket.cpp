@@ -1,21 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "messagebucket.h"
+
 #include "statusmessages.h"
+
+#include <vespa/storage/persistence/messages.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
-#include <vespa/storage/persistence/messages.h>
 #include <vespa/storageapi/message/stat.h>
-
 #include <vespa/vespalib/util/exceptions.h>
 
 namespace storage {
 
-document::Bucket
-getStorageMessageBucket(const api::StorageMessage& msg)
-{
+document::Bucket getStorageMessageBucket(const api::StorageMessage& msg) {
     switch (msg.getType().getId()) {
     case api::MessageType::GET_ID:
         return static_cast<const api::GetCommand&>(msg).getBucket();
@@ -50,7 +49,7 @@ getStorageMessageBucket(const api::StorageMessage& msg)
     case api::MessageType::SETBUCKETSTATE_ID:
         return static_cast<const api::SetBucketStateCommand&>(msg).getBucket();
     case api::MessageType::INTERNAL_ID:
-        switch(static_cast<const api::InternalCommand&>(msg).getType()) {
+        switch (static_cast<const api::InternalCommand&>(msg).getType()) {
         case RequestStatusPage::ID:
             return document::Bucket();
         case GetIterCommand::ID:
@@ -67,10 +66,10 @@ getStorageMessageBucket(const api::StorageMessage& msg)
     default:
         break;
     }
-    throw vespalib::IllegalArgumentException(
-            "Message of type " + msg.toString() + " was not expected. Don't "
-            "know how to calculate bucket this message operates on.",
-            VESPA_STRLOC);
+    throw vespalib::IllegalArgumentException("Message of type " + msg.toString() +
+                                                 " was not expected. Don't "
+                                                 "know how to calculate bucket this message operates on.",
+                                             VESPA_STRLOC);
 }
 
-}
+} // namespace storage

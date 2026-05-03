@@ -1,20 +1,19 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "statusmessages.h"
+
 #include <ostream>
 
 namespace storage {
 
 RequestStatusPage::RequestStatusPage(const framework::HttpUrlPath& path)
-    : api::InternalCommand(ID),
-      _path(path),
-      _sortToken()
-{ }
+    : api::InternalCommand(ID), _path(path), _sortToken() {
+}
 
-RequestStatusPage::~RequestStatusPage() { }
+RequestStatusPage::~RequestStatusPage() {
+}
 
-void
-RequestStatusPage::print(std::ostream& out, bool verbose, const std::string& indent) const {
+void RequestStatusPage::print(std::ostream& out, bool verbose, const std::string& indent) const {
     out << "RequestStatusPage()";
 
     if (verbose) {
@@ -24,15 +23,13 @@ RequestStatusPage::print(std::ostream& out, bool verbose, const std::string& ind
 }
 
 RequestStatusPageReply::RequestStatusPageReply(const RequestStatusPage& cmd, const std::string& status)
-    : api::InternalReply(ID, cmd),
-      _status(status),
-      _sortToken(cmd.getSortToken())
-{ }
+    : api::InternalReply(ID, cmd), _status(status), _sortToken(cmd.getSortToken()) {
+}
 
-RequestStatusPageReply::~RequestStatusPageReply() { }
+RequestStatusPageReply::~RequestStatusPageReply() {
+}
 
-void
-RequestStatusPageReply::print(std::ostream& out, bool verbose, const std::string& indent) const {
+void RequestStatusPageReply::print(std::ostream& out, bool verbose, const std::string& indent) const {
     out << "RequestStatusPageReply()";
 
     if (verbose) {
@@ -41,10 +38,8 @@ RequestStatusPageReply::print(std::ostream& out, bool verbose, const std::string
     }
 }
 
-std::unique_ptr<api::StorageReply>
-RequestStatusPage::makeReply()
-{
+std::unique_ptr<api::StorageReply> RequestStatusPage::makeReply() {
     return std::make_unique<RequestStatusPageReply>(*this, "");
 }
 
-}
+} // namespace storage

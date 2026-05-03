@@ -25,5 +25,4 @@ struct RealAppKiller : public AppKiller {
     void kill() override;
 };
 
-} // storage
-
+} // namespace storage

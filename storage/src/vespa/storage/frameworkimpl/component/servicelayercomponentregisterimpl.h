@@ -8,20 +8,19 @@
 #pragma once
 
 #include "storagecomponentregisterimpl.h"
+
 #include <vespa/storage/bucketdb/minimumusedbitstracker.h>
 #include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/storage/common/servicelayercomponent.h>
 
 namespace storage {
 
-class ServiceLayerComponentRegisterImpl
-        : public virtual ServiceLayerComponentRegister,
-          public virtual StorageComponentRegisterImpl
-{
-    std::mutex _componentLock;
+class ServiceLayerComponentRegisterImpl : public virtual ServiceLayerComponentRegister,
+                                          public virtual StorageComponentRegisterImpl {
+    std::mutex                                 _componentLock;
     std::vector<ServiceLayerManagedComponent*> _components;
-    ContentBucketSpaceRepo _bucketSpaceRepo;
-    MinimumUsedBitsTracker _minUsedBitsTracker;
+    ContentBucketSpaceRepo                     _bucketSpaceRepo;
+    MinimumUsedBitsTracker                     _minUsedBitsTracker;
 
 public:
     using UP = std::unique_ptr<ServiceLayerComponentRegisterImpl>;
@@ -29,12 +28,10 @@ public:
     explicit ServiceLayerComponentRegisterImpl(const ContentBucketDbOptions&);
 
     ContentBucketSpaceRepo& getBucketSpaceRepo() { return _bucketSpaceRepo; }
-    MinimumUsedBitsTracker& getMinUsedBitsTracker() {
-        return _minUsedBitsTracker;
-    }
+    MinimumUsedBitsTracker& getMinUsedBitsTracker() { return _minUsedBitsTracker; }
 
     void registerServiceLayerComponent(ServiceLayerManagedComponent&) override;
     void setDistribution(std::shared_ptr<const lib::Distribution> distribution) override;
 };
 
-} // storage
+} // namespace storage

@@ -35,4 +35,4 @@ struct ReindexingVisitorFactory : public VisitorFactory {
     }
 };
 
-}
+} // namespace storage

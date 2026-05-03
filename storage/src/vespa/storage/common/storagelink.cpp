@@ -1,42 +1,39 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "storagelink.h"
+
+#include <vespa/log/bufferedlogger.h>
 #include <vespa/storageapi/messageapi/storagecommand.h>
 #include <vespa/storageapi/messageapi/storagereply.h>
 #include <vespa/vespalib/util/backtrace.h>
-#include <sstream>
-#include <cassert>
 
-#include <vespa/log/bufferedlogger.h>
+#include <cassert>
+#include <sstream>
 LOG_SETUP(".application.link");
 
 using namespace storage::api;
 
 namespace storage {
 
-StorageLink::StorageLink(const std::string& name,
-                         MsgDownOnFlush allow_msg_down_during_flushing,
+StorageLink::StorageLink(const std::string& name, MsgDownOnFlush allow_msg_down_during_flushing,
                          MsgUpOnClosed allow_msg_up_during_closed)
     : _name(name),
       _up(nullptr),
       _down(),
       _state(CREATED),
       _msg_down_during_flushing(allow_msg_down_during_flushing),
-      _msg_up_during_closed(allow_msg_up_during_closed)
-{
+      _msg_up_during_closed(allow_msg_up_during_closed) {
 }
 
 StorageLink::StorageLink(const std::string& name)
-    : StorageLink(name, MsgDownOnFlush::Disallowed, MsgUpOnClosed::Disallowed)
-{
+    : StorageLink(name, MsgDownOnFlush::Disallowed, MsgUpOnClosed::Disallowed) {
 }
 
 StorageLink::~StorageLink() {
     LOG(debug, "Destructing link %s.", toString().c_str());
 }
 
-void StorageLink::push_back(StorageLink::UP link)
-{
+void StorageLink::push_back(StorageLink::UP link) {
     if (getState() != CREATED) {
         LOG(error, "Attempted to alter chain by adding link %s after link %s while state is %s",
             link->toString().c_str(), toString().c_str(), stateToString(getState()));
@@ -51,16 +48,15 @@ void StorageLink::push_back(StorageLink::UP link)
     }
 }
 
-void StorageLink::open()
-{
+void StorageLink::open() {
     // First tag all states as opened, as components are allowed to send
     // messages both ways in onOpen call, in case any component send message
     // up, the link receiving them should have their state as opened.
     StorageLink* link = this;
     while (true) {
         if (link->getState() != CREATED) {
-            LOG(error, "During open(), link %s should be in CREATED state, not in state %s.",
-                toString().c_str(), stateToString(link->getState()));
+            LOG(error, "During open(), link %s should be in CREATED state, not in state %s.", toString().c_str(),
+                stateToString(link->getState()));
             assert(false);
         }
         link->_state = OPENED;
@@ -79,8 +75,7 @@ void StorageLink::open()
     }
 }
 
-void StorageLink::doneInit()
-{
+void StorageLink::doneInit() {
     StorageLink* link = this;
     while (true) {
         link->onDoneInit();
@@ -91,8 +86,7 @@ void StorageLink::doneInit()
     }
 }
 
-void StorageLink::close()
-{
+void StorageLink::close() {
     _state = CLOSING;
     LOG(debug, "Start close link %s.", toString().c_str());
     onClose();
@@ -108,11 +102,10 @@ void StorageLink::closeNextLink() {
     LOG(debug, "End closeNextLink link %s.", toString().c_str());
 }
 
-void StorageLink::flush()
-{
+void StorageLink::flush() {
     if (getState() != CLOSING) {
-        LOG(error, "During flush(), link %s should be in CLOSING state, not in state %s.",
-            toString().c_str(), stateToString(getState()));
+        LOG(error, "During flush(), link %s should be in CLOSING state, not in state %s.", toString().c_str(),
+            stateToString(getState()));
         assert(false);
     }
     // First flush down to get all requests out of the system.
@@ -138,35 +131,33 @@ void StorageLink::flush()
     LOG(debug, "Link %s is now closed and should do nothing more.", toString().c_str());
 }
 
-void StorageLink::sendDown(const StorageMessage::SP& msg)
-{
+void StorageLink::sendDown(const StorageMessage::SP& msg) {
     // Verify acceptable state to send messages down
-    switch(getState()) {
-        case OPENED:
-        case CLOSING:
-        case FLUSHINGDOWN:
+    switch (getState()) {
+    case OPENED:
+    case CLOSING:
+    case FLUSHINGDOWN:
+        break;
+    case FLUSHINGUP:
+        if (_msg_down_during_flushing == MsgDownOnFlush::Allowed) {
             break;
-        case FLUSHINGUP:
-            if (_msg_down_during_flushing == MsgDownOnFlush::Allowed) {
-                break;
-            }
-            [[fallthrough]];
-        default:
-            LOG(error, "Link %s trying to send %s down while in state %s. Stacktrace: %s",
-                toString().c_str(), msg->toString().c_str(), stateToString(getState()),
-                vespalib::getStackTrace(0).c_str());
-            assert(false);
+        }
+        [[fallthrough]];
+    default:
+        LOG(error, "Link %s trying to send %s down while in state %s. Stacktrace: %s", toString().c_str(),
+            msg->toString().c_str(), stateToString(getState()), vespalib::getStackTrace(0).c_str());
+        assert(false);
     }
     assert(msg);
     LOG(spam, "Storage Link %s to handle %s", toString().c_str(), msg->toString().c_str());
     if (isBottom()) {
         LOG(spam, "Storage link %s at bottom of chain got message %s.", toString().c_str(), msg->toString().c_str());
         std::ostringstream ost;
-        ost << "Unhandled message at bottom of chain " << *msg << " (message type "
-            << msg->getType().getName() << "). " << vespalib::getStackTrace(0);
+        ost << "Unhandled message at bottom of chain " << *msg << " (message type " << msg->getType().getName()
+            << "). " << vespalib::getStackTrace(0);
         if (!msg->getType().isReply()) {
             LOGBP(warning, "%s", ost.str().c_str());
-            auto& cmd = dynamic_cast<StorageCommand&>(*msg);
+            auto&                         cmd = dynamic_cast<StorageCommand&>(*msg);
             std::shared_ptr<StorageReply> reply(cmd.makeReply());
 
             if (reply) {
@@ -180,30 +171,27 @@ void StorageLink::sendDown(const StorageMessage::SP& msg)
     } else if (!_down->onDown(msg)) {
         _down->sendDown(msg);
     } else {
-        LOG(spam, "Storage link %s handled message %s.",
-            _down->toString().c_str(), msg->toString().c_str());
+        LOG(spam, "Storage link %s handled message %s.", _down->toString().c_str(), msg->toString().c_str());
     }
 }
 
-void StorageLink::sendUp(const std::shared_ptr<StorageMessage> & msg)
-{
+void StorageLink::sendUp(const std::shared_ptr<StorageMessage>& msg) {
     // Verify acceptable state to send messages up
-    switch(getState()) {
-        case OPENED:
-        case CLOSING:
-        case FLUSHINGDOWN:
-        case FLUSHINGUP:
+    switch (getState()) {
+    case OPENED:
+    case CLOSING:
+    case FLUSHINGDOWN:
+    case FLUSHINGUP:
+        break;
+    case CLOSED:
+        if (_msg_up_during_closed == MsgUpOnClosed::Allowed) {
             break;
-        case CLOSED:
-            if (_msg_up_during_closed == MsgUpOnClosed::Allowed) {
-                break;
-            }
-            [[fallthrough]];
-        default:
-            LOG(error, "Link %s trying to send %s up while in state %s. Stacktrace: %s",
-                toString().c_str(), msg->toString(true).c_str(), stateToString(getState()),
-                vespalib::getStackTrace(0).c_str());
-            assert(false);
+        }
+        [[fallthrough]];
+    default:
+        LOG(error, "Link %s trying to send %s up while in state %s. Stacktrace: %s", toString().c_str(),
+            msg->toString(true).c_str(), stateToString(getState()), vespalib::getStackTrace(0).c_str());
+        assert(false);
     }
     assert(msg);
     if (isTop()) {
@@ -212,7 +200,7 @@ void StorageLink::sendUp(const std::shared_ptr<StorageMessage> & msg)
         ost << vespalib::getStackTrace(0);
         if (!msg->getType().isReply()) {
             LOGBP(warning, "%s", ost.str().c_str());
-            auto& cmd = dynamic_cast<StorageCommand&>(*msg);
+            auto&                         cmd = dynamic_cast<StorageCommand&>(*msg);
             std::shared_ptr<StorageReply> reply(cmd.makeReply());
 
             if (reply.get()) {
@@ -230,36 +218,32 @@ void StorageLink::sendUp(const std::shared_ptr<StorageMessage> & msg)
 
 void StorageLink::printChain(std::ostream& out, std::string indent) const {
     out << indent << "StorageChain(" << size();
-    if (!isTop()) out << ", not top";
+    if (!isTop())
+        out << ", not top";
     out << ")";
     const StorageLink* lastlink = _up;
     for (const StorageLink* link = this; link != nullptr; link = link->_down.get()) {
         out << "\n";
         link->print(out, false, indent + "  ");
-        if (link->_up != lastlink) out << ", broken linkage";
+        if (link->_up != lastlink)
+            out << ", broken linkage";
         lastlink = link;
     }
 }
 
-bool StorageLink::onDown(const std::shared_ptr<StorageMessage> & msg)
-{
+bool StorageLink::onDown(const std::shared_ptr<StorageMessage>& msg) {
     return msg->callHandler(*this, msg);
 }
 
-bool StorageLink::onUp(const std::shared_ptr<StorageMessage> & msg)
-{
+bool StorageLink::onUp(const std::shared_ptr<StorageMessage>& msg) {
     return msg->callHandler(*this, msg);
 }
 
-void
-StorageLink::print(std::ostream& out, bool, const std::string&) const
-{
+void StorageLink::print(std::ostream& out, bool, const std::string&) const {
     out << getName();
 }
 
-const char*
-StorageLink::stateToString(State state)
-{
+const char* StorageLink::stateToString(State state) {
     switch (state) {
     case CREATED:
         return "CREATED";
@@ -278,8 +262,7 @@ StorageLink::stateToString(State state)
     }
 }
 
-std::ostream&
-operator<<(std::ostream& out, StorageLink& link) {
+std::ostream& operator<<(std::ostream& out, StorageLink& link) {
     link.printChain(out);
     return out;
 }
@@ -287,10 +270,9 @@ operator<<(std::ostream& out, StorageLink& link) {
 Queue::Queue() = default;
 Queue::~Queue() = default;
 
-bool
-Queue::getNext(std::shared_ptr<api::StorageMessage>& msg, vespalib::duration timeout) {
+bool Queue::getNext(std::shared_ptr<api::StorageMessage>& msg, vespalib::duration timeout) {
     std::unique_lock sync(_lock);
-    bool first = true;
+    bool             first = true;
     while (true) { // Max twice
         if (!_queue.empty()) {
             LOG(spam, "Picking message from queue");
@@ -308,23 +290,20 @@ Queue::getNext(std::shared_ptr<api::StorageMessage>& msg, vespalib::duration tim
     return false;
 }
 
-void
-Queue::enqueue(std::shared_ptr<api::StorageMessage> msg) {
+void Queue::enqueue(std::shared_ptr<api::StorageMessage> msg) {
     std::lock_guard sync(_lock);
     _queue.emplace(std::move(msg));
     _cond.notify_one();
 }
 
-void
-Queue::signal() {
+void Queue::signal() {
     std::lock_guard sync(_lock);
     _cond.notify_one();
 }
 
-size_t
-Queue::size() const {
+size_t Queue::size() const {
     std::lock_guard guard(_lock);
     return _queue.size();
 }
 
-}
+} // namespace storage

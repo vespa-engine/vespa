@@ -8,7 +8,9 @@
 #pragma once
 
 #include "storagelink.h"
+
 #include <vespa/storageframework/generic/thread/runnable.h>
+
 #include <condition_variable>
 #include <deque>
 #include <limits>
@@ -17,10 +19,10 @@
 namespace storage {
 
 namespace framework {
-    struct ComponentRegister;
-    class Component;
-    class Thread;
-}
+struct ComponentRegister;
+class Component;
+class Thread;
+} // namespace framework
 
 class StorageLinkQueued : public StorageLink {
 public:
@@ -34,9 +36,7 @@ public:
     void dispatchUp(const std::shared_ptr<api::StorageMessage>&);
 
     /** Remember to call this method if you override it. */
-    void onClose() override {
-        _closeState |= 1;
-    }
+    void onClose() override { _closeState |= 1; }
 
     /** Remember to call this method if you override it. */
     void onFlush(bool downwards) override {
@@ -54,9 +54,7 @@ public:
     framework::ComponentRegister& getComponentRegister() { return _compReg; }
 
 private:
-    template<typename Message>
-    class Dispatcher : public framework::Runnable
-    {
+    template <typename Message> class Dispatcher : public framework::Runnable {
     protected:
         StorageLinkQueued&                    _parent;
         unsigned int                          _maxQueueSize;
@@ -80,19 +78,14 @@ private:
         void add(const std::shared_ptr<Message>&);
         void flush();
 
-        virtual void send(const std::shared_ptr<Message> & ) = 0;
+        virtual void send(const std::shared_ptr<Message>&) = 0;
     };
 
     class ReplyDispatcher : public Dispatcher<api::StorageMessage> {
     public:
         explicit ReplyDispatcher(StorageLinkQueued& parent)
-            : Dispatcher<api::StorageMessage>(
-                    parent, std::numeric_limits<unsigned int>::max(), true)
-        {
-        }
-        void send(const std::shared_ptr<api::StorageMessage> & reply) override {
-            _parent.sendUp(reply);
-        }
+            : Dispatcher<api::StorageMessage>(parent, std::numeric_limits<unsigned int>::max(), true) {}
+        void send(const std::shared_ptr<api::StorageMessage>& reply) override { _parent.sendUp(reply); }
     };
 
     framework::ComponentRegister& _compReg;
@@ -100,4 +93,4 @@ private:
     uint16_t                      _closeState;
 };
 
-}
+} // namespace storage

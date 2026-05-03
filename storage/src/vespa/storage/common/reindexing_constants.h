@@ -7,4 +7,4 @@ const char* reindexing_bucket_lock_bypass_prefix() noexcept;
 
 const char* reindexing_bucket_lock_visitor_parameter_key() noexcept;
 
-}
+} // namespace storage

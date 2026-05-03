@@ -1,26 +1,22 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dumpvisitorsingle.h"
-#include <vespa/persistence/spi/docentry.h>
-#include <vespa/document/update/documentupdate.h>
+
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/documentapi/messagebus/messages/putdocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
+#include <vespa/persistence/spi/docentry.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".visitor.instance.dumpvisitorsingle");
 
 namespace storage {
 
-DumpVisitorSingle::DumpVisitorSingle(StorageComponent& component, const vdslib::Parameters&)
-    : Visitor(component)
-{
+DumpVisitorSingle::DumpVisitorSingle(StorageComponent& component, const vdslib::Parameters&) : Visitor(component) {
 }
 
-void DumpVisitorSingle::handleDocuments(const document::BucketId&,
-                                        DocEntryList& entries,
-                                        HitCounter& hitCounter)
-{
+void DumpVisitorSingle::handleDocuments(const document::BucketId&, DocEntryList& entries, HitCounter& hitCounter) {
     LOG(debug, "Visitor %s handling block of %zu documents.", _id.c_str(), entries.size());
 
     for (auto& entry : entries) {
@@ -40,4 +36,4 @@ void DumpVisitorSingle::handleDocuments(const document::BucketId&,
     }
 }
 
-}
+} // namespace storage

@@ -3,10 +3,11 @@
 
 #include "const_iterator.h"
 #include "db_merger.h"
+
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/vespalib/btree/btree.h>
-#include <vespa/vespalib/btree/minmaxaggregated.h>
 #include <vespa/vespalib/btree/minmaxaggrcalc.h>
+#include <vespa/vespalib/btree/minmaxaggregated.h>
 #include <vespa/vespalib/datastore/atomic_value_wrapper.h>
 #include <vespa/vespalib/util/generationhandler.h>
 
@@ -37,13 +38,12 @@ namespace storage::bucketdb {
  * The in-order traversal invariant is fundamental to many of the algorithms that operate
  * on the bucket tree.
  */
-template <typename DataStoreTraitsT>
-class GenericBTreeBucketDatabase {
+template <typename DataStoreTraitsT> class GenericBTreeBucketDatabase {
 public:
-    using DataStoreType      = typename DataStoreTraitsT::DataStoreType;
-    using ValueType          = typename DataStoreTraitsT::ValueType;
-    using ConstValueRef      = typename DataStoreTraitsT::ConstValueRef;
-    using GenerationHandler  = vespalib::GenerationHandler;
+    using DataStoreType = typename DataStoreTraitsT::DataStoreType;
+    using ValueType = typename DataStoreTraitsT::ValueType;
+    using ConstValueRef = typename DataStoreTraitsT::ConstValueRef;
+    using GenerationHandler = vespalib::GenerationHandler;
     using AtomicValueWrapper = vespalib::datastore::AtomicValueWrapper<uint64_t>;
 
     struct KeyUsedBitsMinMaxAggrCalc : vespalib::btree::MinMaxAggrCalc {
@@ -64,12 +64,9 @@ public:
     // This means updates that don't change the set of buckets leave the B-tree node structure
     // itself entirely untouched.
     // This requires great care to be taken when writing and reading to ensure memory visibility.
-    using BTree = vespalib::btree::BTree<uint64_t,
-                                         vespalib::datastore::AtomicValueWrapper<uint64_t>,
-                                         vespalib::btree::MinMaxAggregated,
-                                         std::less<>,
-                                         vespalib::btree::BTreeDefaultTraits,
-                                         KeyUsedBitsMinMaxAggrCalc>;
+    using BTree = vespalib::btree::BTree<uint64_t, vespalib::datastore::AtomicValueWrapper<uint64_t>,
+                                         vespalib::btree::MinMaxAggregated, std::less<>,
+                                         vespalib::btree::BTreeDefaultTraits, KeyUsedBitsMinMaxAggrCalc>;
     using BTreeConstIterator = typename BTree::ConstIterator;
 
     BTree             _tree;
@@ -78,8 +75,7 @@ public:
 
     template <typename... DataStoreArgs>
     explicit GenericBTreeBucketDatabase(DataStoreArgs&&... data_store_args)
-        : _store(std::forward<DataStoreArgs>(data_store_args)...)
-    {
+        : _store(std::forward<DataStoreArgs>(data_store_args)...) {
         DataStoreTraitsT::init_data_store(_store);
     }
 
@@ -114,7 +110,8 @@ public:
     bool update(const document::BucketId& bucket, const ValueType& new_entry);
     bool update_by_raw_key(uint64_t bucket_key, const ValueType& new_entry);
     template <typename EntryUpdateProcessor>
-    void process_update(const document::BucketId &bucket, EntryUpdateProcessor& processor, bool create_if_nonexisting);
+    void process_update(const document::BucketId& bucket, EntryUpdateProcessor& processor,
+                        bool create_if_nonexisting);
 
     template <typename IterValueExtractor, typename Func>
     void find_parents_and_self(const document::BucketId& bucket, Func func) const;
@@ -134,11 +131,12 @@ public:
     friend class ReadSnapshot;
     // See ReadGuard class comments for semantics.
     class ReadSnapshot {
-        const GenericBTreeBucketDatabase*  _db;
-        vespalib::GenerationGuard          _guard;
-        typename BTree::FrozenView         _frozen_view;
+        const GenericBTreeBucketDatabase* _db;
+        vespalib::GenerationGuard         _guard;
+        typename BTree::FrozenView        _frozen_view;
 
         class ConstIteratorImpl;
+
     public:
         explicit ReadSnapshot(const GenericBTreeBucketDatabase& db);
         ~ReadSnapshot();
@@ -150,24 +148,21 @@ public:
         void find_parents_and_self(const document::BucketId& bucket, Func func) const;
         template <typename IterValueExtractor, typename Func>
         void find_parents_self_and_children(const document::BucketId& bucket, Func func) const;
-        template <typename IterValueExtractor, typename Func>
-        void for_each(Func func) const;
+        template <typename IterValueExtractor, typename Func> void for_each(Func func) const;
         std::unique_ptr<ConstIterator<ConstValueRef>> create_iterator() const;
     };
+
 private:
     // Functor is called for each found element in key order, with raw u64 keys and values.
     template <typename IterValueExtractor, typename Func>
     BTreeConstIterator find_parents_internal(const typename BTree::FrozenView& frozen_view,
-                                             const document::BucketId& bucket,
-                                             Func func) const;
+                                             const document::BucketId& bucket, Func func) const;
     template <typename IterValueExtractor, typename Func>
     void find_parents_and_self_internal(const typename BTree::FrozenView& frozen_view,
-                                        const document::BucketId& bucket,
-                                        Func func) const;
+                                        const document::BucketId& bucket, Func func) const;
     template <typename IterValueExtractor, typename Func>
     void find_parents_self_and_children_internal(const typename BTree::FrozenView& frozen_view,
-                                                 const document::BucketId& bucket,
-                                                 Func func) const;
+                                                 const document::BucketId& bucket, Func func) const;
 
     void commit_tree_changes();
 
@@ -178,4 +173,4 @@ private:
 uint8_t getMinDiffBits(uint16_t minBits, const document::BucketId& a, const document::BucketId& b);
 uint8_t next_parent_bit_seek_level(uint8_t minBits, const document::BucketId& a, const document::BucketId& b);
 
-}
+} // namespace storage::bucketdb
