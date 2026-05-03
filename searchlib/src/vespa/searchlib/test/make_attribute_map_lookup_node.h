@@ -12,4 +12,4 @@ namespace search::expression::test {
 
 std::unique_ptr<AttributeNode> makeAttributeMapLookupNode(std::string_view attributeName);
 
-}
+} // namespace search::expression::test
