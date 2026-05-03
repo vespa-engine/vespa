@@ -31,7 +31,7 @@ private:
 
 public:
     /**
-     * Creates a  used for disk-access. An
+     * Creates a FileReader used for disk access. An
      * internal buffer of 5120 bytes is also created.
      **/
     FileReader();
