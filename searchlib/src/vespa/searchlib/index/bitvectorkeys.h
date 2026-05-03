@@ -11,24 +11,11 @@ struct BitVectorWordSingleKey {
     uint32_t _numDocs;
     uint32_t _pad;
 
-    BitVectorWordSingleKey() noexcept
-        : _wordNum(0),
-          _numDocs(0),
-          _pad(0)
-    {
-    }
+    BitVectorWordSingleKey() noexcept : _wordNum(0), _numDocs(0), _pad(0) {}
 
-    bool
-    operator<(const BitVectorWordSingleKey &rhs) const noexcept
-    {
-        return  _wordNum < rhs._wordNum;
-    }
+    bool operator<(const BitVectorWordSingleKey& rhs) const noexcept { return _wordNum < rhs._wordNum; }
 
-    bool
-    operator==(const BitVectorWordSingleKey &rhs) const noexcept
-    {
-        return _wordNum == rhs._wordNum;
-    }
+    bool operator==(const BitVectorWordSingleKey& rhs) const noexcept { return _wordNum == rhs._wordNum; }
 };
 
-}
+} // namespace search::index

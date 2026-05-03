@@ -14,11 +14,8 @@ struct PostingListFileRange {
     uint64_t end_offset;
 
     PostingListFileRange(uint64_t start_offset_in, uint64_t end_offset_in)
-        : start_offset(start_offset_in),
-          end_offset(end_offset_in)
-    {
-    }
+        : start_offset(start_offset_in), end_offset(end_offset_in) {}
     uint64_t size() const noexcept { return end_offset - start_offset; }
 };
 
-}
+} // namespace search::index

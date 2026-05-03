@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "uri_field.h"
+
 #include <cassert>
 
 namespace search::index {
@@ -13,17 +14,14 @@ UriField::UriField()
       _path(Schema::UNKNOWN_FIELD_ID),
       _query(Schema::UNKNOWN_FIELD_ID),
       _fragment(Schema::UNKNOWN_FIELD_ID),
-      _hostname(Schema::UNKNOWN_FIELD_ID)
-{
+      _hostname(Schema::UNKNOWN_FIELD_ID) {
 }
 
-bool
-UriField::valid(const Schema &schema, uint32_t fieldId, const Schema::CollectionType &collectionType)
-{
+bool UriField::valid(const Schema& schema, uint32_t fieldId, const Schema::CollectionType& collectionType) {
     if (fieldId == Schema::UNKNOWN_FIELD_ID) {
         return false;
     }
-    const Schema::IndexField &field = schema.getIndexField(fieldId);
+    const Schema::IndexField& field = schema.getIndexField(fieldId);
     if (field.getDataType() != schema::DataType::STRING) {
         return false;
     }
@@ -33,33 +31,21 @@ UriField::valid(const Schema &schema, uint32_t fieldId, const Schema::Collection
     return true;
 }
 
-bool
-UriField::broken(const Schema &schema, const Schema::CollectionType & collectionType) const
-{
-    return !valid(schema, _all, collectionType) &&
-        valid(schema, _scheme, collectionType) &&
-        valid(schema, _host, collectionType) &&
-        valid(schema, _port, collectionType) &&
-        valid(schema, _path, collectionType) &&
-        valid(schema, _query, collectionType) &&
-        valid(schema, _fragment, collectionType);
+bool UriField::broken(const Schema& schema, const Schema::CollectionType& collectionType) const {
+    return !valid(schema, _all, collectionType) && valid(schema, _scheme, collectionType) &&
+           valid(schema, _host, collectionType) && valid(schema, _port, collectionType) &&
+           valid(schema, _path, collectionType) && valid(schema, _query, collectionType) &&
+           valid(schema, _fragment, collectionType);
 }
 
-bool
-UriField::valid(const Schema &schema, const Schema::CollectionType & collectionType) const
-{
-    return valid(schema, _all, collectionType) &&
-        valid(schema, _scheme, collectionType) &&
-        valid(schema, _host, collectionType) &&
-        valid(schema, _port, collectionType) &&
-        valid(schema, _path, collectionType) &&
-        valid(schema, _query, collectionType) &&
-        valid(schema, _fragment, collectionType);
+bool UriField::valid(const Schema& schema, const Schema::CollectionType& collectionType) const {
+    return valid(schema, _all, collectionType) && valid(schema, _scheme, collectionType) &&
+           valid(schema, _host, collectionType) && valid(schema, _port, collectionType) &&
+           valid(schema, _path, collectionType) && valid(schema, _query, collectionType) &&
+           valid(schema, _fragment, collectionType);
 }
 
-void
-UriField::setup(const Schema &schema, const std::string &field)
-{
+void UriField::setup(const Schema& schema, const std::string& field) {
     _all = schema.getIndexFieldId(field);
     _scheme = schema.getIndexFieldId(field + ".scheme");
     _host = schema.getIndexFieldId(field + ".host");
@@ -70,8 +56,7 @@ UriField::setup(const Schema &schema, const std::string &field)
     _hostname = schema.getIndexFieldId(field + ".hostname");
 }
 
-bool
-UriField::mightBePartofUri(std::string_view name) {
+bool UriField::mightBePartofUri(std::string_view name) {
     size_t dotPos = name.find('.');
     if ((dotPos != 0) && (dotPos != std::string::npos)) {
         std::string_view suffix = name.substr(dotPos + 1);
@@ -81,9 +66,7 @@ UriField::mightBePartofUri(std::string_view name) {
     return false;
 }
 
-void
-UriField::markUsed(UsedFieldsMap &usedFields, uint32_t field)
-{
+void UriField::markUsed(UsedFieldsMap& usedFields, uint32_t field) {
     if (field == Schema::UNKNOWN_FIELD_ID) {
         return;
     }
@@ -91,9 +74,7 @@ UriField::markUsed(UsedFieldsMap &usedFields, uint32_t field)
     usedFields[field] = true;
 }
 
-void
-UriField::markUsed(UsedFieldsMap &usedFields) const
-{
+void UriField::markUsed(UsedFieldsMap& usedFields) const {
     markUsed(usedFields, _all);
     markUsed(usedFields, _scheme);
     markUsed(usedFields, _host);
@@ -104,4 +85,4 @@ UriField::markUsed(UsedFieldsMap &usedFields) const
     markUsed(usedFields, _hostname);
 }
 
-}
+} // namespace search::index
