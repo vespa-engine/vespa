@@ -12,10 +12,10 @@ class IBmDistribution;
 /*
  * Fake cluster controller that sets cluster state to be up.
  */
-class BmClusterController
-{
-    const BmCluster&                  _cluster;
-    const IBmDistribution&            _distribution;
+class BmClusterController {
+    const BmCluster&       _cluster;
+    const IBmDistribution& _distribution;
+
 public:
     BmClusterController(BmCluster& cluster, const IBmDistribution& distribution);
     void propagate_cluster_state(uint32_t node_idx, bool distributor);
@@ -23,4 +23,4 @@ public:
     void propagate_cluster_state();
 };
 
-}
+} // namespace search::bmcluster

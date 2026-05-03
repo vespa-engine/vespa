@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bm_cluster_params.h"
+
 #include <iostream>
 
 namespace search::bmcluster {
@@ -15,8 +16,8 @@ BmClusterParams::BmClusterParams()
       _enable_service_layer(false),
       _groups(0),
       _indexing_sequencer(),
-      _max_merges_per_node(16),     // Same default as in stor-server.def
-      _max_merge_queue_size(1024),  // Same default as in stor-server.def
+      _max_merges_per_node(16),    // Same default as in stor-server.def
+      _max_merge_queue_size(1024), // Same default as in stor-server.def
       _mbus_distributor_node_max_pending_count(),
       _num_nodes(1),
       _nodes_per_group(1),
@@ -29,16 +30,13 @@ BmClusterParams::BmClusterParams()
       _use_async_message_handling_on_schedule(false),
       _use_document_api(false),
       _use_message_bus(false),
-      _use_storage_chain(false)
-{
+      _use_storage_chain(false) {
     recalc_nodes();
 }
 
 BmClusterParams::~BmClusterParams() = default;
 
-bool
-BmClusterParams::check() const
-{
+bool BmClusterParams::check() const {
     if (_response_threads < 1) {
         std::cerr << "Too few response threads: " << _response_threads << std::endl;
         return false;
@@ -52,30 +50,25 @@ BmClusterParams::check() const
         return false;
     }
     if (_nodes_per_group < _redundancy) {
-        std::cerr << "Too high redundancy " << _redundancy << " with " << _nodes_per_group << " nodes per group" << std::endl;
+        std::cerr << "Too high redundancy " << _redundancy << " with " << _nodes_per_group << " nodes per group"
+                  << std::endl;
         return false;
     }
     return true;
 }
 
-void
-BmClusterParams::recalc_nodes()
-{
+void BmClusterParams::recalc_nodes() {
     _num_nodes = std::max(1u, _groups) * _nodes_per_group;
 }
 
-void
-BmClusterParams::set_groups(uint32_t value)
-{
+void BmClusterParams::set_groups(uint32_t value) {
     _groups = value;
     recalc_nodes();
 }
 
-void
-BmClusterParams::set_nodes_per_group(uint32_t value)
-{
+void BmClusterParams::set_nodes_per_group(uint32_t value) {
     _nodes_per_group = value;
     recalc_nodes();
 }
 
-}
+} // namespace search::bmcluster

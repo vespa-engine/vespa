@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bm_node.h"
+
 #include "bm_cluster.h"
 #include "bm_cluster_params.h"
 #include "bm_message_bus.h"
@@ -9,7 +10,25 @@
 #include "bm_storage_link_context.h"
 #include "i_bm_distribution.h"
 #include "storage_api_rpc_bm_feed_handler.h"
-#include <vespa/searchcore/proton/test/dummydbowner.h>
+
+#include <vespa/config-attributes.h>
+#include <vespa/config-bucketspaces.h>
+#include <vespa/config-imported-fields.h>
+#include <vespa/config-indexschema.h>
+#include <vespa/config-persistence.h>
+#include <vespa/config-rank-profiles.h>
+#include <vespa/config-slobroks.h>
+#include <vespa/config-stor-filestor.h>
+#include <vespa/config-summary.h>
+#include <vespa/config-upgrading.h>
+#include <vespa/config/common/configcontext.h>
+#include <vespa/document/bucket/bucketspace.h>
+#include <vespa/document/repo/document_type_repo_factory.h>
+#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/test/make_bucket_space.h>
+#include <vespa/messagebus/config-messagebus.h>
+#include <vespa/messagebus/testlib/slobrok.h>
+#include <vespa/metrics/config-metricsmanager.h>
 #include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchcore/proton/metrics/dummy_wire_service.h>
@@ -24,8 +43,9 @@
 #include <vespa/searchcore/proton/server/fileconfigmanager.h>
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
 #include <vespa/searchcore/proton/server/persistencehandlerproxy.h>
-#include <vespa/searchcore/proton/test/resource_usage_notifier.h>
+#include <vespa/searchcore/proton/test/dummydbowner.h>
 #include <vespa/searchcore/proton/test/mock_shared_threading_service.h>
+#include <vespa/searchcore/proton/test/resource_usage_notifier.h>
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
@@ -35,32 +55,15 @@
 #include <vespa/storage/config/config-stor-prioritymapping.h>
 #include <vespa/storage/config/config-stor-status.h>
 #include <vespa/storage/config/config-stor-visitordispatcher.h>
-#include <vespa/storage/visiting/config-stor-visitor.h>
 #include <vespa/storage/distributor/bucket_spaces_stats_provider.h>
 #include <vespa/storage/storageserver/mergethrottler.h>
 #include <vespa/storage/storageserver/rpc/shared_rpc_resources.h>
+#include <vespa/storage/visiting/config-stor-visitor.h>
 #include <vespa/storageserver/app/distributorprocess.h>
 #include <vespa/storageserver/app/servicelayerprocess.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/config-attributes.h>
-#include <vespa/config-bucketspaces.h>
-#include <vespa/config-imported-fields.h>
-#include <vespa/config-indexschema.h>
-#include <vespa/config-rank-profiles.h>
-#include <vespa/config-slobroks.h>
-#include <vespa/config-summary.h>
-#include <vespa/config-upgrading.h>
-#include <vespa/config-stor-filestor.h>
-#include <vespa/config-persistence.h>
-#include <vespa/config/common/configcontext.h>
-#include <vespa/document/bucket/bucketspace.h>
-#include <vespa/document/repo/document_type_repo_factory.h>
-#include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/document/test/make_bucket_space.h>
-#include <vespa/messagebus/config-messagebus.h>
-#include <vespa/messagebus/testlib/slobrok.h>
-#include <vespa/metrics/config-metricsmanager.h>
+
 #include <filesystem>
 
 #include <vespa/log/log.h>
@@ -109,15 +112,14 @@ using vespa::config::search::SummaryConfig;
 using vespa::config::search::core::ProtonConfig;
 using vespa::config::search::core::ProtonConfigBuilder;
 using vespa::config::search::summary::JuniperrcConfig;
-using vespalib::compression::CompressionConfig;
 using vespalib::HwInfo;
+using vespalib::compression::CompressionConfig;
 
 namespace search::bmcluster {
 
 namespace {
 
-enum PortBias
-{
+enum PortBias {
     TLS_LISTEN_PORT,
     SERVICE_LAYER_MBUS_PORT,
     SERVICE_LAYER_RPC_PORT,
@@ -129,16 +131,13 @@ enum PortBias
 
 };
 
-int port_number(int base_port, PortBias bias)
-{
+int port_number(int base_port, PortBias bias) {
     return base_port + static_cast<int>(bias);
 }
 
-template <class ChainLink, class Process>
-ChainLink* extract_chain_link(Process &process)
-{
+template <class ChainLink, class Process> ChainLink* extract_chain_link(Process& process) {
     auto& node = process.getNode();
-    auto *link = node.getChain();
+    auto* link = node.getChain();
     while (link != nullptr) {
         link = link->getNextLink();
         auto chain_link = dynamic_cast<ChainLink*>(link);
@@ -149,10 +148,10 @@ ChainLink* extract_chain_link(Process &process)
     return nullptr;
 }
 
-}
+} // namespace
 
 std::shared_ptr<AttributesConfig> make_attributes_config() {
-    AttributesConfigBuilder builder;
+    AttributesConfigBuilder     builder;
     AttributesConfig::Attribute attribute;
     attribute.name = "int";
     attribute.datatype = AttributesConfig::Attribute::Datatype::INT32;
@@ -160,70 +159,50 @@ std::shared_ptr<AttributesConfig> make_attributes_config() {
     return std::make_shared<AttributesConfig>(builder);
 }
 
-std::shared_ptr<DocumentDBConfig> make_document_db_config(std::shared_ptr<DocumenttypesConfig> document_types, std::shared_ptr<const DocumentTypeRepo> repo, const DocTypeName& doc_type_name)
-{
+std::shared_ptr<DocumentDBConfig> make_document_db_config(std::shared_ptr<DocumenttypesConfig>    document_types,
+                                                          std::shared_ptr<const DocumentTypeRepo> repo,
+                                                          const DocTypeName&                      doc_type_name) {
     auto indexschema = std::make_shared<IndexschemaConfig>();
     auto attributes = make_attributes_config();
     auto summary = std::make_shared<SummaryConfig>();
     auto schema = DocumentDBConfig::build_schema(*attributes, *indexschema);
     return std::make_shared<DocumentDBConfig>(
-            1,
-            std::make_shared<RankProfilesConfig>(),
-            std::make_shared<search::fef::RankingConstants>(),
-            std::make_shared<search::fef::RankingExpressions>(),
-            std::make_shared<search::fef::OnnxModels>(),
-            indexschema,
-            attributes,
-            summary,
-            std::make_shared<JuniperrcConfig>(),
-            document_types,
-            repo,
-            std::make_shared<ImportedFieldsConfig>(),
-            std::make_shared<TuneFileDocumentDB>(),
-            schema,
-            std::make_shared<proton::DocumentDBMaintenanceConfig>(),
-            search::LogDocumentStore::Config(),
-            proton::ThreadingServiceConfig::make(),
-            proton::AllocConfig::makeDefault(),
-            proton::DocumentMetaStoreConfig::make(),
-            "client",
-            doc_type_name.getName());
+        1, std::make_shared<RankProfilesConfig>(), std::make_shared<search::fef::RankingConstants>(),
+        std::make_shared<search::fef::RankingExpressions>(), std::make_shared<search::fef::OnnxModels>(), indexschema,
+        attributes, summary, std::make_shared<JuniperrcConfig>(), document_types, repo,
+        std::make_shared<ImportedFieldsConfig>(), std::make_shared<TuneFileDocumentDB>(), schema,
+        std::make_shared<proton::DocumentDBMaintenanceConfig>(), search::LogDocumentStore::Config(),
+        proton::ThreadingServiceConfig::make(), proton::AllocConfig::makeDefault(),
+        proton::DocumentMetaStoreConfig::make(), "client", doc_type_name.getName());
 }
 
-void
-make_slobroks_config(SlobroksConfigBuilder& slobroks, int slobrok_port)
-{
+void make_slobroks_config(SlobroksConfigBuilder& slobroks, int slobrok_port) {
     SlobroksConfigBuilder::Slobrok slobrok;
     slobrok.connectionspec = vespalib::make_string("tcp/localhost:%d", slobrok_port);
     slobroks.slobrok.push_back(std::move(slobrok));
 }
 
-void
-make_bucketspaces_config(BucketspacesConfigBuilder& bucketspaces)
-{
+void make_bucketspaces_config(BucketspacesConfigBuilder& bucketspaces) {
     BucketspacesConfigBuilder::Documenttype bucket_space_map;
     bucket_space_map.name = "test";
     bucket_space_map.bucketspace = "default";
     bucketspaces.documenttype.emplace_back(std::move(bucket_space_map));
 }
 
-class MyPersistenceEngineOwner : public proton::IPersistenceEngineOwner
-{
-    void setClusterState(BucketSpace, const storage::spi::ClusterState&) override { }
+class MyPersistenceEngineOwner : public proton::IPersistenceEngineOwner {
+    void setClusterState(BucketSpace, const storage::spi::ClusterState&) override {}
 };
 
-struct MyResourceWriteFilter : public proton::IResourceWriteFilter
-{
+struct MyResourceWriteFilter : public proton::IResourceWriteFilter {
     bool acceptWriteOperation() const override { return true; }
     State getAcceptState() const override { return IResourceWriteFilter::State(); }
 };
 
 class MyServiceLayerProcess : public storage::ServiceLayerProcess {
-    PersistenceProvider&    _provider;
+    PersistenceProvider& _provider;
 
 public:
-    MyServiceLayerProcess(const config::ConfigUri&  configUri,
-                          PersistenceProvider& provider,
+    MyServiceLayerProcess(const config::ConfigUri& configUri, PersistenceProvider& provider,
                           std::unique_ptr<storage::IStorageChainBuilder> chain_builder);
     ~MyServiceLayerProcess() override { shutdown(); }
 
@@ -232,52 +211,44 @@ public:
     PersistenceProvider& getProvider() override;
 };
 
-MyServiceLayerProcess::MyServiceLayerProcess(const config::ConfigUri&  configUri,
-                                             PersistenceProvider& provider,
+MyServiceLayerProcess::MyServiceLayerProcess(const config::ConfigUri& configUri, PersistenceProvider& provider,
                                              std::unique_ptr<storage::IStorageChainBuilder> chain_builder)
-    : ServiceLayerProcess(configUri, vespalib::HwInfo()),
-      _provider(provider)
-{
+    : ServiceLayerProcess(configUri, vespalib::HwInfo()), _provider(provider) {
     if (chain_builder) {
         set_storage_chain_builder(std::move(chain_builder));
     }
 }
 
-void
-MyServiceLayerProcess::shutdown()
-{
+void MyServiceLayerProcess::shutdown() {
     ServiceLayerProcess::shutdown();
 }
 
-void
-MyServiceLayerProcess::setupProvider()
-{
+void MyServiceLayerProcess::setupProvider() {
 }
 
-PersistenceProvider&
-MyServiceLayerProcess::getProvider()
-{
+PersistenceProvider& MyServiceLayerProcess::getProvider() {
     return _provider;
 }
 
-struct StorageConfigSet
-{
-    std::string              config_id;
-    DocumenttypesConfigBuilder    documenttypes;
-    StorDistributionConfigBuilder stor_distribution;
-    StorBouncerConfigBuilder      stor_bouncer;
+struct StorageConfigSet {
+    std::string                           config_id;
+    DocumenttypesConfigBuilder            documenttypes;
+    StorDistributionConfigBuilder         stor_distribution;
+    StorBouncerConfigBuilder              stor_bouncer;
     StorCommunicationmanagerConfigBuilder stor_communicationmanager;
-    StorPrioritymappingConfigBuilder stor_prioritymapping;
-    UpgradingConfigBuilder        upgrading;
-    StorServerConfigBuilder       stor_server;
-    StorStatusConfigBuilder       stor_status;
-    BucketspacesConfigBuilder     bucketspaces;
-    MetricsmanagerConfigBuilder   metricsmanager;
-    SlobroksConfigBuilder         slobroks;
-    MessagebusConfigBuilder       messagebus;
+    StorPrioritymappingConfigBuilder      stor_prioritymapping;
+    UpgradingConfigBuilder                upgrading;
+    StorServerConfigBuilder               stor_server;
+    StorStatusConfigBuilder               stor_status;
+    BucketspacesConfigBuilder             bucketspaces;
+    MetricsmanagerConfigBuilder           metricsmanager;
+    SlobroksConfigBuilder                 slobroks;
+    MessagebusConfigBuilder               messagebus;
 
-    StorageConfigSet(const std::string &base_dir, uint32_t node_idx, bool distributor, const std::string& config_id_in, const IBmDistribution& distribution, const DocumenttypesConfig& documenttypes_in,
-                     int slobrok_port, int mbus_port, int rpc_port, int status_port, const BmClusterParams& params)
+    StorageConfigSet(const std::string& base_dir, uint32_t node_idx, bool distributor,
+                     const std::string& config_id_in, const IBmDistribution& distribution,
+                     const DocumenttypesConfig& documenttypes_in, int slobrok_port, int mbus_port, int rpc_port,
+                     int status_port, const BmClusterParams& params)
         : config_id(config_id_in),
           documenttypes(documenttypes_in),
           stor_distribution(),
@@ -290,8 +261,7 @@ struct StorageConfigSet
           bucketspaces(),
           metricsmanager(),
           slobroks(),
-          messagebus()
-    {
+          messagebus() {
         stor_distribution = distribution.get_distribution_config();
         stor_server.nodeIndex = node_idx;
         stor_server.isDistributor = distributor;
@@ -308,7 +278,8 @@ struct StorageConfigSet
         stor_communicationmanager.rpc.eventsBeforeWakeup = params.get_rpc_events_before_wakeup();
         stor_communicationmanager.rpc.numTargetsPerNode = params.get_rpc_targets_per_node();
         if (params.get_mbus_distributor_node_max_pending_count().has_value()) {
-            stor_communicationmanager.mbusDistributorNodeMaxPendingCount = params.get_mbus_distributor_node_max_pending_count().value();
+            stor_communicationmanager.mbusDistributorNodeMaxPendingCount =
+                params.get_mbus_distributor_node_max_pending_count().value();
         }
         stor_communicationmanager.mbusport = mbus_port;
         stor_communicationmanager.rpcport = rpc_port;
@@ -337,19 +308,20 @@ struct StorageConfigSet
 
 StorageConfigSet::~StorageConfigSet() = default;
 
-struct ServiceLayerConfigSet : public StorageConfigSet
-{
-    PersistenceConfigBuilder      persistence;
-    StorFilestorConfigBuilder     stor_filestor;
-    StorVisitorConfigBuilder      stor_visitor;
+struct ServiceLayerConfigSet : public StorageConfigSet {
+    PersistenceConfigBuilder  persistence;
+    StorFilestorConfigBuilder stor_filestor;
+    StorVisitorConfigBuilder  stor_visitor;
 
-    ServiceLayerConfigSet(const std::string& base_dir, uint32_t node_idx, const std::string& config_id_in, const IBmDistribution& distribution, const DocumenttypesConfig& documenttypes_in,
-                         int slobrok_port, int mbus_port, int rpc_port, int status_port, const BmClusterParams& params)
-        : StorageConfigSet(base_dir, node_idx, false, config_id_in, distribution, documenttypes_in, slobrok_port, mbus_port, rpc_port, status_port, params),
+    ServiceLayerConfigSet(const std::string& base_dir, uint32_t node_idx, const std::string& config_id_in,
+                          const IBmDistribution& distribution, const DocumenttypesConfig& documenttypes_in,
+                          int slobrok_port, int mbus_port, int rpc_port, int status_port,
+                          const BmClusterParams& params)
+        : StorageConfigSet(base_dir, node_idx, false, config_id_in, distribution, documenttypes_in, slobrok_port,
+                           mbus_port, rpc_port, status_port, params),
           persistence(),
           stor_filestor(),
-          stor_visitor()
-    {
+          stor_visitor() {
         stor_filestor.numResponseThreads = params.get_response_threads();
         stor_filestor.numNetworkThreads = params.get_rpc_network_threads();
         stor_filestor.useAsyncMessageHandlingOnSchedule = params.get_use_async_message_handling_on_schedule();
@@ -367,17 +339,18 @@ struct ServiceLayerConfigSet : public StorageConfigSet
 
 ServiceLayerConfigSet::~ServiceLayerConfigSet() = default;
 
-struct DistributorConfigSet : public StorageConfigSet
-{
+struct DistributorConfigSet : public StorageConfigSet {
     StorDistributormanagerConfigBuilder stor_distributormanager;
     StorVisitordispatcherConfigBuilder  stor_visitordispatcher;
 
-    DistributorConfigSet(const std::string& base_dir, uint32_t node_idx, const std::string& config_id_in, const IBmDistribution& distribution, const DocumenttypesConfig& documenttypes_in,
-                         int slobrok_port, int mbus_port, int rpc_port, int status_port, const BmClusterParams& params)
-        : StorageConfigSet(base_dir, node_idx, true, config_id_in, distribution, documenttypes_in, slobrok_port, mbus_port, rpc_port, status_port, params),
+    DistributorConfigSet(const std::string& base_dir, uint32_t node_idx, const std::string& config_id_in,
+                         const IBmDistribution& distribution, const DocumenttypesConfig& documenttypes_in,
+                         int slobrok_port, int mbus_port, int rpc_port, int status_port,
+                         const BmClusterParams& params)
+        : StorageConfigSet(base_dir, node_idx, true, config_id_in, distribution, documenttypes_in, slobrok_port,
+                           mbus_port, rpc_port, status_port, params),
           stor_distributormanager(),
-          stor_visitordispatcher()
-    {
+          stor_visitordispatcher() {
         stor_distributormanager.inhibitMergeSendingOnBusyNodeDurationSec = params.get_distributor_merge_busy_wait();
         stor_distributormanager.numDistributorStripes = params.get_distributor_stripes();
     }
@@ -397,54 +370,55 @@ BmNode::BmNode() = default;
 
 BmNode::~BmNode() = default;
 
-class MyBmNode : public BmNode
-{
-    BmCluster&                                 _cluster;
-    std::shared_ptr<DocumenttypesConfig>       _document_types;
-    std::shared_ptr<const DocumentTypeRepo>    _repo;
-    proton::DocTypeName                        _doc_type_name;
-    std::shared_ptr<DocumentDBConfig>          _document_db_config;
-    std::string                           _base_dir;
-    search::index::DummyFileHeaderContext      _file_header_context;
-    uint32_t                                   _node_idx;
-    int                                        _tls_listen_port;
-    int                                        _slobrok_port;
-    int                                        _service_layer_mbus_port;
-    int                                        _service_layer_rpc_port;
-    int                                        _service_layer_status_port;
-    int                                        _distributor_mbus_port;
-    int                                        _distributor_rpc_port;
-    int                                        _distributor_status_port;
-    std::string                           _tls_spec;
-    proton::matching::QueryLimiter             _query_limiter;
-    proton::DummyWireService                   _metrics_wire_service;
-    proton::MemoryConfigStores                 _config_stores;
-    vespalib::ThreadStackExecutor              _summary_executor;
-    proton::MockSharedThreadingService         _shared_service;
-    TransLogServer                             _tls;
-    proton::DummyDBOwner                       _document_db_owner;
-    BucketSpace                                _bucket_space;
-    std::shared_ptr<DocumentDB>                _document_db;
-    MyPersistenceEngineOwner                   _persistence_owner;
-    MyResourceWriteFilter                      _write_filter;
-    proton::test::ResourceUsageNotifier        _resource_usage_notifier;
-    std::shared_ptr<proton::PersistenceEngine> _persistence_engine;
-    ServiceLayerConfigSet                      _service_layer_config;
-    DistributorConfigSet                       _distributor_config;
-    ConfigSet                                  _config_set;
-    std::shared_ptr<config::IConfigContext>    _config_context;
-    std::unique_ptr<mbus::Slobrok>             _slobrok;
-    std::shared_ptr<BmStorageLinkContext>      _service_layer_chain_context;
-    std::unique_ptr<MyServiceLayerProcess>     _service_layer;
-    MergeThrottler*                            _merge_throttler;
-    std::shared_ptr<BmStorageLinkContext>      _distributor_chain_context;
+class MyBmNode : public BmNode {
+    BmCluster&                                   _cluster;
+    std::shared_ptr<DocumenttypesConfig>         _document_types;
+    std::shared_ptr<const DocumentTypeRepo>      _repo;
+    proton::DocTypeName                          _doc_type_name;
+    std::shared_ptr<DocumentDBConfig>            _document_db_config;
+    std::string                                  _base_dir;
+    search::index::DummyFileHeaderContext        _file_header_context;
+    uint32_t                                     _node_idx;
+    int                                          _tls_listen_port;
+    int                                          _slobrok_port;
+    int                                          _service_layer_mbus_port;
+    int                                          _service_layer_rpc_port;
+    int                                          _service_layer_status_port;
+    int                                          _distributor_mbus_port;
+    int                                          _distributor_rpc_port;
+    int                                          _distributor_status_port;
+    std::string                                  _tls_spec;
+    proton::matching::QueryLimiter               _query_limiter;
+    proton::DummyWireService                     _metrics_wire_service;
+    proton::MemoryConfigStores                   _config_stores;
+    vespalib::ThreadStackExecutor                _summary_executor;
+    proton::MockSharedThreadingService           _shared_service;
+    TransLogServer                               _tls;
+    proton::DummyDBOwner                         _document_db_owner;
+    BucketSpace                                  _bucket_space;
+    std::shared_ptr<DocumentDB>                  _document_db;
+    MyPersistenceEngineOwner                     _persistence_owner;
+    MyResourceWriteFilter                        _write_filter;
+    proton::test::ResourceUsageNotifier          _resource_usage_notifier;
+    std::shared_ptr<proton::PersistenceEngine>   _persistence_engine;
+    ServiceLayerConfigSet                        _service_layer_config;
+    DistributorConfigSet                         _distributor_config;
+    ConfigSet                                    _config_set;
+    std::shared_ptr<config::IConfigContext>      _config_context;
+    std::unique_ptr<mbus::Slobrok>               _slobrok;
+    std::shared_ptr<BmStorageLinkContext>        _service_layer_chain_context;
+    std::unique_ptr<MyServiceLayerProcess>       _service_layer;
+    MergeThrottler*                              _merge_throttler;
+    std::shared_ptr<BmStorageLinkContext>        _distributor_chain_context;
     std::unique_ptr<storage::DistributorProcess> _distributor;
-    BucketSpacesStatsProvider*                 _bucket_spaces_stats_provider;
-    std::mutex                                 _lock;
+    BucketSpacesStatsProvider*                   _bucket_spaces_stats_provider;
+    std::mutex                                   _lock;
 
-    void create_document_db(const BmClusterParams&  params);
+    void create_document_db(const BmClusterParams& params);
+
 public:
-    MyBmNode(const std::string &base_dir, int base_port, uint32_t node_idx, BmCluster& cluster, const BmClusterParams& params, std::shared_ptr<DocumenttypesConfig> document_types, int slobrok_port);
+    MyBmNode(const std::string& base_dir, int base_port, uint32_t node_idx, BmCluster& cluster,
+             const BmClusterParams& params, std::shared_ptr<DocumenttypesConfig> document_types, int slobrok_port);
     ~MyBmNode() override;
     void initialize_persistence_provider() override;
     void create_bucket(const document::Bucket& bucket) override;
@@ -458,10 +432,12 @@ public:
     std::shared_ptr<BmStorageLinkContext> get_storage_link_context(bool distributor) override;
     bool has_storage_layer(bool distributor) const override;
     PersistenceProvider* get_persistence_provider() override;
-    void merge_node_stats(std::vector<BmNodeStats>& node_stats, storage::lib::ClusterState &baseline_state) override;
+    void merge_node_stats(std::vector<BmNodeStats>& node_stats, storage::lib::ClusterState& baseline_state) override;
 };
 
-MyBmNode::MyBmNode(const std::string& base_dir, int base_port, uint32_t node_idx, BmCluster& cluster, const BmClusterParams& params, std::shared_ptr<DocumenttypesConfig> document_types, int slobrok_port)
+MyBmNode::MyBmNode(const std::string& base_dir, int base_port, uint32_t node_idx, BmCluster& cluster,
+                   const BmClusterParams& params, std::shared_ptr<DocumenttypesConfig> document_types,
+                   int slobrok_port)
     : BmNode(),
       _cluster(cluster),
       _document_types(std::move(document_types)),
@@ -493,8 +469,12 @@ MyBmNode::MyBmNode(const std::string& base_dir, int base_port, uint32_t node_idx
       _write_filter(),
       _resource_usage_notifier(),
       _persistence_engine(),
-      _service_layer_config(_base_dir, _node_idx, "bm-servicelayer", cluster.get_distribution(), *_document_types, _slobrok_port, _service_layer_mbus_port, _service_layer_rpc_port, _service_layer_status_port, params),
-      _distributor_config(_base_dir, _node_idx, "bm-distributor", cluster.get_distribution(), *_document_types, _slobrok_port, _distributor_mbus_port, _distributor_rpc_port, _distributor_status_port, params),
+      _service_layer_config(_base_dir, _node_idx, "bm-servicelayer", cluster.get_distribution(), *_document_types,
+                            _slobrok_port, _service_layer_mbus_port, _service_layer_rpc_port,
+                            _service_layer_status_port, params),
+      _distributor_config(_base_dir, _node_idx, "bm-distributor", cluster.get_distribution(), *_document_types,
+                          _slobrok_port, _distributor_mbus_port, _distributor_rpc_port, _distributor_status_port,
+                          params),
       _config_set(),
       _config_context(std::make_shared<config::ConfigContext>(_config_set)),
       _slobrok(),
@@ -504,9 +484,9 @@ MyBmNode::MyBmNode(const std::string& base_dir, int base_port, uint32_t node_idx
       _distributor_chain_context(),
       _distributor(),
       _bucket_spaces_stats_provider(nullptr),
-      _lock()
-{
-    _persistence_engine = std::make_unique<proton::PersistenceEngine>(_persistence_owner, _write_filter, _resource_usage_notifier, -1, false);
+      _lock() {
+    _persistence_engine = std::make_unique<proton::PersistenceEngine>(_persistence_owner, _write_filter,
+                                                                      _resource_usage_notifier, -1, false);
     create_document_db(params);
     auto proxy = std::make_shared<proton::PersistenceHandlerProxy>(_document_db);
     _persistence_engine->putHandler(_persistence_engine->getWLock(), _bucket_space, _doc_type_name, proxy);
@@ -514,8 +494,7 @@ MyBmNode::MyBmNode(const std::string& base_dir, int base_port, uint32_t node_idx
     _distributor_config.add_builders(_config_set);
 }
 
-MyBmNode::~MyBmNode()
-{
+MyBmNode::~MyBmNode() {
     if (_persistence_engine) {
         _persistence_engine->destroyIterators();
         _persistence_engine->removeHandler(_persistence_engine->getWLock(), _bucket_space, _doc_type_name);
@@ -525,9 +504,7 @@ MyBmNode::~MyBmNode()
     }
 }
 
-void
-MyBmNode::create_document_db(const BmClusterParams& params)
-{
+void MyBmNode::create_document_db(const BmClusterParams& params) {
     std::filesystem::create_directory(std::filesystem::path(_base_dir));
     std::filesystem::create_directory(std::filesystem::path(_base_dir + "/" + _doc_type_name.getName()));
     std::string input_cfg = _base_dir + "/" + _doc_type_name.getName() + "/baseconfig";
@@ -535,79 +512,63 @@ MyBmNode::create_document_db(const BmClusterParams& params)
         proton::FileConfigManager fileCfg(_shared_service.transport(), input_cfg, "", _doc_type_name.getName());
         fileCfg.saveConfig(*_document_db_config, 1);
     }
-    config::DirSpec spec(input_cfg + "/config-1");
-    auto tuneFileDocDB = std::make_shared<TuneFileDocumentDB>();
+    config::DirSpec                spec(input_cfg + "/config-1");
+    auto                           tuneFileDocDB = std::make_shared<TuneFileDocumentDB>();
     proton::DocumentDBConfigHelper mgr(spec, _doc_type_name.getName());
-    auto protonCfg = std::make_shared<ProtonConfigBuilder>();
-    if ( ! params.get_indexing_sequencer().empty()) {
+    auto                           protonCfg = std::make_shared<ProtonConfigBuilder>();
+    if (!params.get_indexing_sequencer().empty()) {
         std::string sequencer = params.get_indexing_sequencer();
-        std::transform(sequencer.begin(), sequencer.end(), sequencer.begin(), [](unsigned char c){ return std::toupper(c); });
+        std::transform(sequencer.begin(), sequencer.end(), sequencer.begin(),
+                       [](unsigned char c) { return std::toupper(c); });
         protonCfg->indexing.optimize = ProtonConfig::Indexing::getOptimize(sequencer);
     }
     protonCfg->summary.log.chunk.compression.level = params.get_doc_store_chunk_compression_level();
     protonCfg->summary.log.chunk.maxbytes = params.get_doc_store_chunk_maxbytes();
-    auto bootstrap_config = std::make_shared<BootstrapConfig>(1,
-                                                              _document_types,
-                                                              _repo,
-                                                              std::move(protonCfg),
-                                                              std::make_shared<FiledistributorrpcConfig>(),
-                                                              std::make_shared<BucketspacesConfig>(),
-                                                              tuneFileDocDB, HwInfo());
+    auto bootstrap_config = std::make_shared<BootstrapConfig>(
+        1, _document_types, _repo, std::move(protonCfg), std::make_shared<FiledistributorrpcConfig>(),
+        std::make_shared<BucketspacesConfig>(), tuneFileDocDB, HwInfo());
     mgr.forwardConfig(bootstrap_config);
     mgr.nextGeneration(_shared_service.transport(), 0ms);
-    _document_db = DocumentDB::create(_base_dir, mgr.getConfig(), _tls_spec, _query_limiter, _doc_type_name,
-                                      _bucket_space, *bootstrap_config->getProtonConfigSP(), _document_db_owner,
-                                      _shared_service, _tls,
-                                      _metrics_wire_service, _file_header_context,
-                                      std::make_shared<search::attribute::Interlock>(),
-                                      _config_stores.getConfigStore(_doc_type_name.toString()),
-                                      std::make_shared<vespalib::ThreadStackExecutor>(16), HwInfo(),
-                                      std::shared_ptr<search::diskindex::IPostingListCache>());
+    _document_db = DocumentDB::create(
+        _base_dir, mgr.getConfig(), _tls_spec, _query_limiter, _doc_type_name, _bucket_space,
+        *bootstrap_config->getProtonConfigSP(), _document_db_owner, _shared_service, _tls, _metrics_wire_service,
+        _file_header_context, std::make_shared<search::attribute::Interlock>(),
+        _config_stores.getConfigStore(_doc_type_name.toString()), std::make_shared<vespalib::ThreadStackExecutor>(16),
+        HwInfo(), std::shared_ptr<search::diskindex::IPostingListCache>());
     _document_db->start();
     _document_db->waitForOnlineState();
 }
 
-void
-MyBmNode::initialize_persistence_provider()
-{
+void MyBmNode::initialize_persistence_provider() {
     get_persistence_provider()->initialize();
 }
 
-void
-MyBmNode::create_bucket(const document::Bucket& bucket)
-{
+void MyBmNode::create_bucket(const document::Bucket& bucket) {
     get_persistence_provider()->createBucket(storage::spi::Bucket(bucket));
 }
 
-void
-MyBmNode::start_service_layer(const BmClusterParams& params)
-{
-    config::ConfigUri config_uri("bm-servicelayer", _config_context);
+void MyBmNode::start_service_layer(const BmClusterParams& params) {
+    config::ConfigUri                      config_uri("bm-servicelayer", _config_context);
     std::unique_ptr<BmStorageChainBuilder> chain_builder;
     if (params.get_use_storage_chain() && !params.needs_distributor()) {
         chain_builder = std::make_unique<BmStorageChainBuilder>();
         _service_layer_chain_context = chain_builder->get_context();
     }
-    _service_layer = std::make_unique<MyServiceLayerProcess>(config_uri,
-                                                             *_persistence_engine,
-                                                             std::move(chain_builder));
+    _service_layer =
+        std::make_unique<MyServiceLayerProcess>(config_uri, *_persistence_engine, std::move(chain_builder));
     _service_layer->setupConfig(100ms);
     _service_layer->createNode();
-    auto merge_throttler = extract_chain_link<MergeThrottler>(*_service_layer);
+    auto                        merge_throttler = extract_chain_link<MergeThrottler>(*_service_layer);
     std::lock_guard<std::mutex> guard(_lock);
     _merge_throttler = merge_throttler;
 }
 
-void
-MyBmNode::wait_service_layer()
-{
+void MyBmNode::wait_service_layer() {
     _service_layer->getNode().waitUntilInitialized();
 }
 
-void
-MyBmNode::start_distributor(const BmClusterParams& params)
-{
-    config::ConfigUri config_uri("bm-distributor", _config_context);
+void MyBmNode::start_distributor(const BmClusterParams& params) {
+    config::ConfigUri                      config_uri("bm-distributor", _config_context);
     std::unique_ptr<BmStorageChainBuilder> chain_builder;
     if (params.get_use_storage_chain() && !params.get_use_document_api()) {
         chain_builder = std::make_unique<BmStorageChainBuilder>();
@@ -624,9 +585,7 @@ MyBmNode::start_distributor(const BmClusterParams& params)
     _bucket_spaces_stats_provider = bucket_spaces_stats_provider;
 }
 
-void
-MyBmNode::shutdown_distributor()
-{
+void MyBmNode::shutdown_distributor() {
     if (_distributor) {
         LOG(info, "stop distributor");
         {
@@ -638,9 +597,7 @@ MyBmNode::shutdown_distributor()
     }
 }
 
-void
-MyBmNode::shutdown_service_layer()
-{
+void MyBmNode::shutdown_service_layer() {
     if (_service_layer) {
         LOG(info, "stop service layer");
         {
@@ -652,27 +609,19 @@ MyBmNode::shutdown_service_layer()
     }
 }
 
-std::shared_ptr<BmStorageLinkContext>
-MyBmNode::get_storage_link_context(bool distributor)
-{
+std::shared_ptr<BmStorageLinkContext> MyBmNode::get_storage_link_context(bool distributor) {
     return distributor ? _distributor_chain_context : _service_layer_chain_context;
 }
 
-bool
-MyBmNode::has_storage_layer(bool distributor) const
-{
+bool MyBmNode::has_storage_layer(bool distributor) const {
     return distributor ? static_cast<bool>(_distributor) : static_cast<bool>(_service_layer);
 }
 
-PersistenceProvider*
-MyBmNode::get_persistence_provider()
-{
+PersistenceProvider* MyBmNode::get_persistence_provider() {
     return _persistence_engine.get();
 }
 
-void
-MyBmNode::wait_service_layer_slobrok()
-{
+void MyBmNode::wait_service_layer_slobrok() {
     vespalib::asciistream s;
     s << "storage/cluster.storage/storage/" << _node_idx;
     _cluster.wait_slobrok(s.str());
@@ -680,9 +629,7 @@ MyBmNode::wait_service_layer_slobrok()
     _cluster.wait_slobrok(s.str());
 }
 
-void
-MyBmNode::wait_distributor_slobrok()
-{
+void MyBmNode::wait_distributor_slobrok() {
     vespalib::asciistream s;
     s << "storage/cluster.storage/distributor/" << _node_idx;
     _cluster.wait_slobrok(s.str());
@@ -690,33 +637,31 @@ MyBmNode::wait_distributor_slobrok()
     _cluster.wait_slobrok(s.str());
 }
 
-unsigned int
-BmNode::num_ports()
-{
+unsigned int BmNode::num_ports() {
     return static_cast<unsigned int>(PortBias::NUM_PORTS);
 }
 
-void
-MyBmNode::merge_node_stats(std::vector<BmNodeStats>& node_stats, storage::lib::ClusterState &baseline_state)
-{
-    auto& storage_node_state = baseline_state.getNodeState(storage::lib::Node(storage::lib::NodeType::STORAGE, _node_idx));
+void MyBmNode::merge_node_stats(std::vector<BmNodeStats>& node_stats, storage::lib::ClusterState& baseline_state) {
+    auto& storage_node_state =
+        baseline_state.getNodeState(storage::lib::Node(storage::lib::NodeType::STORAGE, _node_idx));
     if (storage_node_state.getState().oneOf("uir")) {
         if (_document_db) {
             proton::DocumentMetaStoreReadGuards dmss(_document_db->getDocumentSubDBs());
-            uint32_t active_docs = dmss.numActiveDocs();
-            uint32_t ready_docs = dmss.numReadyDocs();
-            uint32_t total_docs = dmss.numTotalDocs();
-            uint32_t removed_docs = dmss.numRemovedDocs();
+            uint32_t                            active_docs = dmss.numActiveDocs();
+            uint32_t                            ready_docs = dmss.numReadyDocs();
+            uint32_t                            total_docs = dmss.numTotalDocs();
+            uint32_t                            removed_docs = dmss.numRemovedDocs();
 
             if (_node_idx < node_stats.size()) {
-                node_stats[_node_idx].set_document_db_stats(BmDocumentDbStats(active_docs, ready_docs, total_docs, removed_docs));
+                node_stats[_node_idx].set_document_db_stats(
+                    BmDocumentDbStats(active_docs, ready_docs, total_docs, removed_docs));
             }
         }
         std::lock_guard<std::mutex> guard(_lock);
         if (_merge_throttler) {
-            auto& state_lock = _merge_throttler->getStateLock();
-            auto& active_merges = _merge_throttler->getActiveMerges();
-            auto& merge_queue = _merge_throttler->getMergeQueue();
+            auto&    state_lock = _merge_throttler->getStateLock();
+            auto&    active_merges = _merge_throttler->getActiveMerges();
+            auto&    merge_queue = _merge_throttler->getMergeQueue();
             uint32_t active_merges_size = 0;
             uint32_t merge_queue_size = 0;
             {
@@ -729,7 +674,8 @@ MyBmNode::merge_node_stats(std::vector<BmNodeStats>& node_stats, storage::lib::C
             }
         }
     }
-    auto& distributor_node_state = baseline_state.getNodeState(storage::lib::Node(storage::lib::NodeType::DISTRIBUTOR, _node_idx));
+    auto& distributor_node_state =
+        baseline_state.getNodeState(storage::lib::Node(storage::lib::NodeType::DISTRIBUTOR, _node_idx));
     if (distributor_node_state.getState().oneOf("u")) {
         std::optional<BucketSpacesStatsProvider::PerNodeBucketSpacesStats> per_node_bucket_spaces_stats;
         {
@@ -739,16 +685,17 @@ MyBmNode::merge_node_stats(std::vector<BmNodeStats>& node_stats, storage::lib::C
             }
         }
         if (per_node_bucket_spaces_stats.has_value()) {
-            for (auto &node_idx_and_stats : per_node_bucket_spaces_stats.value()) {
+            for (auto& node_idx_and_stats : per_node_bucket_spaces_stats.value()) {
                 uint32_t node_idx = node_idx_and_stats.first;
                 if (node_idx < node_stats.size()) {
                     auto& stats = node_idx_and_stats.second;
-                    for (auto &bucket_space_and_stat : stats) {
-                        auto& stat = bucket_space_and_stat.second;
+                    for (auto& bucket_space_and_stat : stats) {
+                        auto&    stat = bucket_space_and_stat.second;
                         uint32_t buckets = stat.bucketsTotal();
                         uint32_t buckets_pending = stat.bucketsPending();
-                        bool buckets_valid = stat.valid();
-                        node_stats[node_idx].merge_bucket_stats(BmBucketsStats(buckets, buckets_pending, buckets_valid));
+                        bool     buckets_valid = stat.valid();
+                        node_stats[node_idx].merge_bucket_stats(
+                            BmBucketsStats(buckets, buckets_pending, buckets_valid));
                     }
                 }
             }
@@ -761,10 +708,11 @@ MyBmNode::merge_node_stats(std::vector<BmNodeStats>& node_stats, storage::lib::C
     }
 }
 
-std::unique_ptr<BmNode>
-BmNode::create(const std::string& base_dir, int base_port, uint32_t node_idx, BmCluster &cluster, const BmClusterParams& params, std::shared_ptr<DocumenttypesConfig> document_types, int slobrok_port)
-{
-    return std::make_unique<MyBmNode>(base_dir, base_port, node_idx, cluster, params, std::move(document_types), slobrok_port);
+std::unique_ptr<BmNode> BmNode::create(const std::string& base_dir, int base_port, uint32_t node_idx,
+                                       BmCluster& cluster, const BmClusterParams& params,
+                                       std::shared_ptr<DocumenttypesConfig> document_types, int slobrok_port) {
+    return std::make_unique<MyBmNode>(base_dir, base_port, node_idx, cluster, params, std::move(document_types),
+                                      slobrok_port);
 }
 
-}
+} // namespace search::bmcluster

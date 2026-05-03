@@ -4,6 +4,7 @@
 
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
+
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -15,10 +16,14 @@ class DocumentTypeRepo;
 class DocumentType;
 class Field;
 
-};
+}; // namespace document
 
-namespace storage::lib { class ClusterState; }
-namespace storage::spi { struct PersistenceProvider; }
+namespace storage::lib {
+class ClusterState;
+}
+namespace storage::spi {
+struct PersistenceProvider;
+}
 
 namespace search::bmcluster {
 
@@ -34,8 +39,8 @@ class IBMDistribution;
  */
 class BmNode {
 protected:
-
     BmNode();
+
 public:
     virtual ~BmNode();
     virtual void initialize_persistence_provider() = 0;
@@ -49,10 +54,13 @@ public:
     virtual void wait_distributor_slobrok() = 0;
     virtual std::shared_ptr<BmStorageLinkContext> get_storage_link_context(bool distributor) = 0;
     virtual bool has_storage_layer(bool distributor) const = 0;
-    virtual storage::spi::PersistenceProvider *get_persistence_provider() = 0;
-    virtual void merge_node_stats(std::vector<BmNodeStats>& node_stats, storage::lib::ClusterState &baseline_state) = 0;
+    virtual storage::spi::PersistenceProvider* get_persistence_provider() = 0;
+    virtual void merge_node_stats(std::vector<BmNodeStats>&   node_stats,
+                                  storage::lib::ClusterState& baseline_state) = 0;
     static unsigned int num_ports();
-    static std::unique_ptr<BmNode> create(const std::string &base_dir, int base_port, uint32_t node_idx, BmCluster& cluster, const BmClusterParams& params, std::shared_ptr<DocumenttypesConfig> document_types, int slobrok_port);
+    static std::unique_ptr<BmNode> create(const std::string& base_dir, int base_port, uint32_t node_idx,
+                                          BmCluster& cluster, const BmClusterParams& params,
+                                          std::shared_ptr<DocumenttypesConfig> document_types, int slobrok_port);
 };
 
-}
+} // namespace search::bmcluster

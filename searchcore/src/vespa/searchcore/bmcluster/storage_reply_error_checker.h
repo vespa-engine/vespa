@@ -4,7 +4,9 @@
 
 #include <atomic>
 
-namespace storage::api { class StorageMessage; }
+namespace storage::api {
+class StorageMessage;
+}
 
 namespace search::bmcluster {
 
@@ -14,11 +16,12 @@ namespace search::bmcluster {
 class StorageReplyErrorChecker {
 protected:
     std::atomic<uint32_t> _errors;
+
 public:
     StorageReplyErrorChecker();
     ~StorageReplyErrorChecker();
-    void check_error(const storage::api::StorageMessage &msg);
+    void check_error(const storage::api::StorageMessage& msg);
     uint32_t get_error_count() const { return _errors; }
 };
 
-}
+} // namespace search::bmcluster
