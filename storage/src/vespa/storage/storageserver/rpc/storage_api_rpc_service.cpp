@@ -1,11 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "storage_api_rpc_service.h"
+
 #include "caching_rpc_target_resolver.h"
 #include "message_codec_provider.h"
 #include "metadata_propagator.h"
 #include "rpc_envelope_proto.h"
 #include "shared_rpc_resources.h"
-#include "storage_api_rpc_service.h"
+
 #include <vespa/fnet/frt/require_capabilities.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
@@ -15,49 +17,46 @@
 #include <vespa/storage/storageserver/message_dispatcher.h>
 #include <vespa/storage/storageserver/rpcrequestwrapper.h>
 #include <vespa/storageapi/mbusprot/protocolserialization7.h>
-#include <vespa/storageapi/messageapi/storagecommand.h>
 #include <vespa/storageapi/messageapi/metadata_extractor.h>
 #include <vespa/storageapi/messageapi/metadata_injector.h>
+#include <vespa/storageapi/messageapi/storagecommand.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/trace/tracelevel.h>
 #include <vespa/vespalib/util/compressor.h>
 #include <vespa/vespalib/util/stringfmt.h>
+
 #include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".storage.storage_api_rpc_service");
 
-using vespalib::compression::CompressionConfig;
 using vespalib::TraceLevel;
+using vespalib::compression::CompressionConfig;
 
 namespace storage::rpc {
 
-StorageApiRpcService::StorageApiRpcService(MessageDispatcher& message_dispatcher,
-                                           SharedRpcResources& rpc_resources,
-                                           MessageCodecProvider& message_codec_provider,
-                                           const Params& params)
+StorageApiRpcService::StorageApiRpcService(MessageDispatcher& message_dispatcher, SharedRpcResources& rpc_resources,
+                                           MessageCodecProvider& message_codec_provider, const Params& params)
     : _message_dispatcher(message_dispatcher),
       _rpc_resources(rpc_resources),
       _message_codec_provider(message_codec_provider),
       _params(params),
-      _target_resolver(std::make_unique<CachingRpcTargetResolver>(_rpc_resources.slobrok_mirror(), _rpc_resources.target_factory(),
-                                                                  params.num_rpc_targets_per_node))
-{
+      _target_resolver(std::make_unique<CachingRpcTargetResolver>(
+          _rpc_resources.slobrok_mirror(), _rpc_resources.target_factory(), params.num_rpc_targets_per_node)) {
     register_server_methods(rpc_resources);
 }
 
 StorageApiRpcService::~StorageApiRpcService() = default;
 
-StorageApiRpcService::Params::Params()
-    : compression_config(),
-      num_rpc_targets_per_node(1)
-{}
+StorageApiRpcService::Params::Params() : compression_config(), num_rpc_targets_per_node(1) {
+}
 
 StorageApiRpcService::Params::~Params() = default;
 
 void StorageApiRpcService::register_server_methods(SharedRpcResources& rpc_resources) {
     FRT_ReflectionBuilder rb(&rpc_resources.supervisor());
-    rb.DefineMethod(rpc_v1_method_name(), "bixbix", "bixbix", FRT_METHOD(StorageApiRpcService::RPC_rpc_v1_send), this);
+    rb.DefineMethod(rpc_v1_method_name(), "bixbix", "bixbix", FRT_METHOD(StorageApiRpcService::RPC_rpc_v1_send),
+                    this);
     rb.RequestAccessFilter(FRT_RequireCapabilities::of(vespalib::net::tls::Capability::content_storage_api()));
     rb.MethodDesc("V1 of StorageAPI direct RPC protocol");
     rb.ParamDesc("header_encoding", "0=raw, 6=lz4");
@@ -66,15 +65,16 @@ void StorageApiRpcService::register_server_methods(SharedRpcResources& rpc_resou
     rb.ParamDesc("body_encoding", "0=raw, 6=lz4");
     rb.ParamDesc("body_decoded_size", "Uncompressed body blob size");
     rb.ParamDesc("body_payload", "The message body blob");
-    rb.ReturnDesc("header_encoding",  "0=raw, 6=lz4");
+    rb.ReturnDesc("header_encoding", "0=raw, 6=lz4");
     rb.ReturnDesc("header_decoded_size", "Uncompressed header blob size");
     rb.ReturnDesc("header_payload", "The reply header blob");
-    rb.ReturnDesc("body_encoding",  "0=raw, 6=lz4");
+    rb.ReturnDesc("body_encoding", "0=raw, 6=lz4");
     rb.ReturnDesc("body_decoded_size", "Uncompressed body blob size");
     rb.ReturnDesc("body_payload", "The reply body blob");
 }
 
-void StorageApiRpcService::detach_and_forward_to_enqueuer(std::shared_ptr<api::StorageMessage> cmd, FRT_RPCRequest* req) {
+void StorageApiRpcService::detach_and_forward_to_enqueuer(std::shared_ptr<api::StorageMessage> cmd,
+                                                          FRT_RPCRequest*                      req) {
     // Create a request object to avoid needing a separate transport type
     cmd->setTransportContext(std::make_unique<StorageTransportContext>(std::make_unique<RPCRequestWrapper>(req)));
     req->Detach();
@@ -84,22 +84,18 @@ void StorageApiRpcService::detach_and_forward_to_enqueuer(std::shared_ptr<api::S
 namespace {
 
 struct SubRefDeleter {
-    template <typename T>
-    void operator()(T* v) const noexcept {
-        v->internal_subref();
-    }
+    template <typename T> void operator()(T* v) const noexcept { v->internal_subref(); }
 };
 
-template <typename HeaderType>
-bool decode_header_from_rpc_params(const FRT_Values& params, HeaderType& hdr) {
-    const auto compression_type = CompressionConfig::toType(params[0]._intval8);
+template <typename HeaderType> bool decode_header_from_rpc_params(const FRT_Values& params, HeaderType& hdr) {
+    const auto     compression_type = CompressionConfig::toType(params[0]._intval8);
     const uint32_t uncompressed_length = params[1]._intval32;
 
     if (compression_type == CompressionConfig::NONE) {
         // Fast-path in the common case where request header is not compressed.
         return hdr.ParseFromArray(params[2]._data._buf, params[2]._data._len);
     } else {
-        vespalib::DataBuffer uncompressed(params[2]._data._buf, params[2]._data._len);
+        vespalib::DataBuffer     uncompressed(params[2]._data._buf, params[2]._data._len);
         vespalib::ConstBufferRef blob(params[2]._data._buf, params[2]._data._len);
         decompress(compression_type, uncompressed_length, blob, uncompressed, true);
         assert(uncompressed_length == uncompressed.getDataLen());
@@ -108,8 +104,7 @@ bool decode_header_from_rpc_params(const FRT_Values& params, HeaderType& hdr) {
 }
 
 // Must be done prior to adding payload
-template <typename HeaderType>
-void encode_header_into_rpc_params(HeaderType& hdr, FRT_Values& params) {
+template <typename HeaderType> void encode_header_into_rpc_params(HeaderType& hdr, FRT_Values& params) {
     // Headers may contain sensitive key/value data and must therefore never be
     // compressed. This is to prevent compression oracle attacks (a-la CRIME/BREACH)
     // that can be used to deduce the value of secret tokens from observing the
@@ -123,13 +118,12 @@ void encode_header_into_rpc_params(HeaderType& hdr, FRT_Values& params) {
     assert(header_buf + header_size == header_end);
 }
 
-void compress_and_add_payload_to_rpc_params(mbus::BlobRef payload,
-                                            FRT_Values& params,
+void compress_and_add_payload_to_rpc_params(mbus::BlobRef payload, FRT_Values& params,
                                             const CompressionConfig& compression_cfg) {
     assert(payload.size() <= UINT32_MAX);
     vespalib::ConstBufferRef to_compress(payload.data(), payload.size());
-    vespalib::DataBuffer buf(vespalib::roundUp2inN(payload.size()));
-    auto comp_type = compress(compression_cfg, to_compress, buf, false);
+    vespalib::DataBuffer     buf(vespalib::roundUp2inN(payload.size()));
+    auto                     comp_type = compress(compression_cfg, to_compress, buf, false);
     assert(buf.getDataLen() <= UINT32_MAX);
 
     params.AddInt8(comp_type);
@@ -139,10 +133,9 @@ void compress_and_add_payload_to_rpc_params(mbus::BlobRef payload,
 
 class ProtobufMetadataInjector final : public api::MetadataInjector {
     protobuf::RequestHeader& _proto_hdr;
+
 public:
-    explicit ProtobufMetadataInjector(protobuf::RequestHeader& proto_hdr) noexcept
-        : _proto_hdr(proto_hdr)
-    {}
+    explicit ProtobufMetadataInjector(protobuf::RequestHeader& proto_hdr) noexcept : _proto_hdr(proto_hdr) {}
     ~ProtobufMetadataInjector() override = default;
 
     void inject_key_value(std::string_view key, std::string_view value) override {
@@ -152,20 +145,19 @@ public:
 
 class ProtobufMetadataExtractor final : public api::MetadataExtractor {
     const protobuf::RequestHeader& _proto_hdr;
+
 public:
-    explicit ProtobufMetadataExtractor(const protobuf::RequestHeader& proto_hdr) noexcept
-        : _proto_hdr(proto_hdr)
-    {}
+    explicit ProtobufMetadataExtractor(const protobuf::RequestHeader& proto_hdr) noexcept : _proto_hdr(proto_hdr) {}
     ~ProtobufMetadataExtractor() override = default;
 
     std::optional<std::string> extract_value(std::string_view key) const override {
         const auto& kvs = _proto_hdr.header_kvs();
-        auto iter = kvs.find(key);
+        auto        iter = kvs.find(key);
         return iter != kvs.end() ? std::optional(iter->second) : std::nullopt;
     }
 };
 
-} // anon ns
+} // namespace
 
 template <typename MessageType>
 void StorageApiRpcService::encode_and_compress_rpc_payload(const MessageType& msg, FRT_Values& params) {
@@ -176,14 +168,11 @@ void StorageApiRpcService::encode_and_compress_rpc_payload(const MessageType& ms
 }
 
 template <typename PayloadCodecCallback>
-bool StorageApiRpcService::uncompress_rpc_payload(
-        const FRT_Values& params,
-        PayloadCodecCallback payload_callback)
-{
-    const auto compression_type = CompressionConfig::toType(params[3]._intval8);
+bool StorageApiRpcService::uncompress_rpc_payload(const FRT_Values& params, PayloadCodecCallback payload_callback) {
+    const auto     compression_type = CompressionConfig::toType(params[3]._intval8);
     const uint32_t uncompressed_length = params[4]._intval32;
     // TODO fast path if uncompressed?
-    vespalib::DataBuffer uncompressed(params[5]._data._buf, params[5]._data._len);
+    vespalib::DataBuffer     uncompressed(params[5]._data._buf, params[5]._data._len);
     vespalib::ConstBufferRef blob(params[5]._data._buf, params[5]._data._len);
     decompress(compression_type, uncompressed_length, blob, uncompressed, true);
     assert(uncompressed_length == uncompressed.getDataLen());
@@ -202,14 +191,14 @@ bool StorageApiRpcService::uncompress_rpc_payload(
 void StorageApiRpcService::RPC_rpc_v1_send(FRT_RPCRequest* req) {
     LOG(spam, "Server: received rpc.v1 request");
     // TODO do we need to manually check the parameter/return spec here?
-    const auto& params = *req->GetParams();
+    const auto&             params = *req->GetParams();
     protobuf::RequestHeader hdr;
     if (!decode_header_from_rpc_params(params, hdr)) {
         req->SetError(FRTE_RPC_METHOD_FAILED, "Unable to decode RPC request header protobuf");
         return;
     }
     std::unique_ptr<mbusprot::StorageCommand> cmd;
-    uint32_t uncompressed_size = 0;
+    uint32_t                                  uncompressed_size = 0;
     bool ok = uncompress_rpc_payload(params, [&cmd, &uncompressed_size](auto& codec, auto payload) {
         cmd = codec.decodeCommand(payload);
         uncompressed_size = static_cast<uint32_t>(payload.size());
@@ -226,12 +215,11 @@ void StorageApiRpcService::RPC_rpc_v1_send(FRT_RPCRequest* req) {
         }
         req->DiscardBlobs();
         if (scmd->getTrace().shouldTrace(TraceLevel::SEND_RECEIVE)) {
-            scmd->getTrace().trace(TraceLevel::SEND_RECEIVE,
-                                   vespalib::make_string("Request received at '%s' (tcp/%s:%d) with %u bytes of payload",
-                                                         _rpc_resources.handle().c_str(),
-                                                         _rpc_resources.hostname().c_str(),
-                                                         _rpc_resources.listen_port(),
-                                                         uncompressed_size));
+            scmd->getTrace().trace(
+                TraceLevel::SEND_RECEIVE,
+                vespalib::make_string("Request received at '%s' (tcp/%s:%d) with %u bytes of payload",
+                                      _rpc_resources.handle().c_str(), _rpc_resources.hostname().c_str(),
+                                      _rpc_resources.listen_port(), uncompressed_size));
         }
         detach_and_forward_to_enqueuer(std::move(scmd), req);
     } else {
@@ -258,12 +246,11 @@ void StorageApiRpcService::encode_rpc_v1_response(FRT_RPCRequest& request, api::
 }
 
 void StorageApiRpcService::send_rpc_v1_request(std::shared_ptr<api::StorageCommand> cmd) {
-    LOG(spam, "Client: sending rpc.v1 request for message of type %s to %s",
-        cmd->getType().getName().c_str(), cmd->getAddress()->toString().c_str());
+    LOG(spam, "Client: sending rpc.v1 request for message of type %s to %s", cmd->getType().getName().c_str(),
+        cmd->getAddress()->toString().c_str());
 
     assert(cmd->getAddress() != nullptr);
-    auto target = _target_resolver->resolve_rpc_target(*cmd->getAddress(),
-                                                       get_super_bucket_key(cmd->getBucketId()));
+    auto target = _target_resolver->resolve_rpc_target(*cmd->getAddress(), get_super_bucket_key(cmd->getBucketId()));
     if (!target) {
         auto reply = cmd->makeReply();
         reply->setResult(make_no_address_for_service_error(*cmd->getAddress()));
@@ -276,11 +263,12 @@ void StorageApiRpcService::send_rpc_v1_request(std::shared_ptr<api::StorageComma
         return;
     }
     if (cmd->getTrace().shouldTrace(TraceLevel::SEND_RECEIVE)) {
-        cmd->getTrace().trace(TraceLevel::SEND_RECEIVE,
-                              vespalib::make_string("Sending request from '%s' to '%s' (%s) with timeout of %g seconds",
-                                                    _rpc_resources.handle().c_str(),
-                                                    CachingRpcTargetResolver::address_to_slobrok_id(*cmd->getAddress()).c_str(),
-                                                    target->spec().c_str(), vespalib::to_s(cmd->getTimeout())));
+        cmd->getTrace().trace(
+            TraceLevel::SEND_RECEIVE,
+            vespalib::make_string("Sending request from '%s' to '%s' (%s) with timeout of %g seconds",
+                                  _rpc_resources.handle().c_str(),
+                                  CachingRpcTargetResolver::address_to_slobrok_id(*cmd->getAddress()).c_str(),
+                                  target->spec().c_str(), vespalib::to_s(cmd->getTimeout())));
     }
     std::unique_ptr<FRT_RPCRequest, SubRefDeleter> req(_rpc_resources.supervisor().AllocRPCRequest());
     req->SetMethodName(rpc_v1_method_name());
@@ -314,14 +302,14 @@ void StorageApiRpcService::RequestDone(FRT_RPCRequest* raw_req) {
         return;
     }
     LOG(spam, "Client: received rpc.v1 OK response");
-    const auto& ret = *req->GetReturn();
+    const auto&              ret = *req->GetReturn();
     protobuf::ResponseHeader hdr;
     if (!decode_header_from_rpc_params(ret, hdr)) {
         handle_request_done_decode_error(*req_ctx, "Failed to decode RPC response header protobuf");
         return;
     }
     std::unique_ptr<mbusprot::StorageReply> wrapped_reply;
-    uint32_t uncompressed_size = 0;
+    uint32_t                                uncompressed_size = 0;
     bool ok = uncompress_rpc_payload(ret, [&wrapped_reply, &uncompressed_size, req_ctx](auto& codec, auto payload) {
         wrapped_reply = codec.decodeReply(payload, *req_ctx->_originator_cmd);
         uncompressed_size = payload.size();
@@ -342,8 +330,7 @@ void StorageApiRpcService::RequestDone(FRT_RPCRequest* raw_req) {
     if (cmd.getTrace().shouldTrace(TraceLevel::SEND_RECEIVE)) {
         cmd.getTrace().trace(TraceLevel::SEND_RECEIVE,
                              vespalib::make_string("Response received at '%s' with %u bytes of payload",
-                                                   _rpc_resources.handle().c_str(),
-                                                   uncompressed_size));
+                                                   _rpc_resources.handle().c_str(), uncompressed_size));
     }
     reply->getTrace().swap(cmd.getTrace());
     reply->setApproxByteSize(uncompressed_size);
@@ -353,13 +340,13 @@ void StorageApiRpcService::RequestDone(FRT_RPCRequest* raw_req) {
     _message_dispatcher.dispatch_sync(std::move(reply));
 }
 
-void StorageApiRpcService::handle_request_done_rpc_error(FRT_RPCRequest& req,
-                                                         const RpcRequestContext& req_ctx) {
-    auto& cmd = *req_ctx._originator_cmd;
+void StorageApiRpcService::handle_request_done_rpc_error(FRT_RPCRequest& req, const RpcRequestContext& req_ctx) {
+    auto&           cmd = *req_ctx._originator_cmd;
     api::ReturnCode error;
     if (req.GetErrorCode() == FRTE_RPC_NO_SUCH_METHOD) {
-        error = api::ReturnCode(api::ReturnCode::NOT_CONNECTED, "Legacy MessageBus StorageAPI transport is no longer supported. "
-                                                                "Old nodes must be upgraded to a newer Vespa version.");
+        error = api::ReturnCode(api::ReturnCode::NOT_CONNECTED,
+                                "Legacy MessageBus StorageAPI transport is no longer supported. "
+                                "Old nodes must be upgraded to a newer Vespa version.");
     } else {
         error = map_frt_error_to_storage_api_error(req, req_ctx);
     }
@@ -367,17 +354,17 @@ void StorageApiRpcService::handle_request_done_rpc_error(FRT_RPCRequest& req,
 }
 
 void StorageApiRpcService::handle_request_done_decode_error(const RpcRequestContext& req_ctx,
-                                                            std::string_view description) {
+                                                            std::string_view         description) {
     auto& cmd = *req_ctx._originator_cmd;
     assert(cmd.has_transport_context()); // Otherwise, reply already (destructively) generated by codec
-    create_and_dispatch_error_reply(cmd, api::ReturnCode(
-            static_cast<api::ReturnCode::Result>(mbus::ErrorCode::DECODE_ERROR), description));
+    create_and_dispatch_error_reply(
+        cmd, api::ReturnCode(static_cast<api::ReturnCode::Result>(mbus::ErrorCode::DECODE_ERROR), description));
 }
 
 void StorageApiRpcService::create_and_dispatch_error_reply(api::StorageCommand& cmd, api::ReturnCode error) {
     auto error_reply = cmd.makeReply();
-    LOG(debug, "Client: rpc.v1 failed for target '%s': '%s'",
-        cmd.getAddress()->toString().c_str(), error.toString().c_str());
+    LOG(debug, "Client: rpc.v1 failed for target '%s': '%s'", cmd.getAddress()->toString().c_str(),
+        error.toString().c_str());
     error_reply->getTrace().swap(cmd.getTrace());
     if (error_reply->getTrace().shouldTrace(TraceLevel::ERROR)) {
         error_reply->getTrace().trace(TraceLevel::ERROR, std::string(error.getMessage()));
@@ -386,28 +373,25 @@ void StorageApiRpcService::create_and_dispatch_error_reply(api::StorageCommand& 
     _message_dispatcher.dispatch_sync(std::move(error_reply));
 }
 
-api::ReturnCode
-StorageApiRpcService::map_frt_error_to_storage_api_error(FRT_RPCRequest& req,
-                                                         const RpcRequestContext& req_ctx) {
+api::ReturnCode StorageApiRpcService::map_frt_error_to_storage_api_error(FRT_RPCRequest&          req,
+                                                                         const RpcRequestContext& req_ctx) {
     // TODO determine all codes that must be (re)mapped. Current remapping is adapted from RPCSend
     const auto& cmd = *req_ctx._originator_cmd;
-    auto target_service = CachingRpcTargetResolver::address_to_slobrok_id(*cmd.getAddress());
+    auto        target_service = CachingRpcTargetResolver::address_to_slobrok_id(*cmd.getAddress());
     switch (req.GetErrorCode()) {
     case FRTE_RPC_TIMEOUT:
         return api::ReturnCode(
-                static_cast<api::ReturnCode::Result>(mbus::ErrorCode::TIMEOUT),
-                vespalib::make_string("A timeout occurred while waiting for '%s' (%g seconds expired); %s",
-                                      target_service.c_str(), vespalib::to_s(cmd.getTimeout()), req.GetErrorMessage()));
+            static_cast<api::ReturnCode::Result>(mbus::ErrorCode::TIMEOUT),
+            vespalib::make_string("A timeout occurred while waiting for '%s' (%g seconds expired); %s",
+                                  target_service.c_str(), vespalib::to_s(cmd.getTimeout()), req.GetErrorMessage()));
     case FRTE_RPC_CONNECTION:
-        return api::ReturnCode(
-                static_cast<api::ReturnCode::Result>(mbus::ErrorCode::CONNECTION_ERROR),
-                vespalib::make_string("A connection error occurred for '%s'; %s",
-                                      target_service.c_str(), req.GetErrorMessage()));
+        return api::ReturnCode(static_cast<api::ReturnCode::Result>(mbus::ErrorCode::CONNECTION_ERROR),
+                               vespalib::make_string("A connection error occurred for '%s'; %s",
+                                                     target_service.c_str(), req.GetErrorMessage()));
     default:
-        return api::ReturnCode(
-                static_cast<api::ReturnCode::Result>(mbus::ErrorCode::NETWORK_ERROR),
-                vespalib::make_string("A network error occurred for '%s'; %s",
-                                      target_service.c_str(), req.GetErrorMessage()));
+        return api::ReturnCode(static_cast<api::ReturnCode::Result>(mbus::ErrorCode::NETWORK_ERROR),
+                               vespalib::make_string("A network error occurred for '%s'; %s", target_service.c_str(),
+                                                     req.GetErrorMessage()));
     }
 }
 
@@ -415,24 +399,20 @@ api::ReturnCode
 StorageApiRpcService::make_no_address_for_service_error(const api::StorageMessageAddress& addr) const {
     auto error_code = static_cast<api::ReturnCode::Result>(mbus::ErrorCode::NO_ADDRESS_FOR_SERVICE);
     auto error_msg = vespalib::make_string(
-            "The address of service '%s' could not be resolved. It is not currently "
-            "registered with the Vespa name server. "
-            "The service must be having problems, or the routing configuration is wrong. "
-            "Address resolution attempted from host '%s'",
-            CachingRpcTargetResolver::address_to_slobrok_id(addr).c_str(),
-            _rpc_resources.hostname().c_str());
+        "The address of service '%s' could not be resolved. It is not currently "
+        "registered with the Vespa name server. "
+        "The service must be having problems, or the routing configuration is wrong. "
+        "Address resolution attempted from host '%s'",
+        CachingRpcTargetResolver::address_to_slobrok_id(addr).c_str(), _rpc_resources.hostname().c_str());
     return api::ReturnCode(error_code, std::move(error_msg));
 }
 
-bool
-StorageApiRpcService::address_visible_in_slobrok_uncached(
-        const api::StorageMessageAddress& addr) const noexcept
-{
+bool StorageApiRpcService::address_visible_in_slobrok_uncached(
+    const api::StorageMessageAddress& addr) const noexcept {
     auto sb_id = CachingRpcTargetResolver::address_to_slobrok_id(addr);
     auto specs = _rpc_resources.slobrok_mirror().lookup(sb_id);
     return !specs.empty();
 }
-
 
 /*
  * Major TODOs:
@@ -442,4 +422,4 @@ StorageApiRpcService::address_visible_in_slobrok_uncached(
  *   - everything else! :3
  */
 
-}
+} // namespace storage::rpc

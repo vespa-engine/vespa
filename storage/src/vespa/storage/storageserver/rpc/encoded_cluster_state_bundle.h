@@ -12,8 +12,8 @@ namespace storage::rpc {
  */
 struct EncodedClusterStateBundle {
     vespalib::compression::CompressionConfig::Type _compression_type;
-    uint32_t _uncompressed_length;
-    std::unique_ptr<vespalib::DataBuffer> _buffer;
+    uint32_t                                       _uncompressed_length;
+    std::unique_ptr<vespalib::DataBuffer>          _buffer;
 };
 
-}
+} // namespace storage::rpc

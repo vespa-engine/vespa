@@ -17,5 +17,4 @@ public:
     virtual std::unique_ptr<RpcTarget> make_target(const std::string& connection_spec) const = 0;
 };
 
-}
-
+} // namespace storage::rpc

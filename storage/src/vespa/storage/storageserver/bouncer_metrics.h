@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/metrics/metricset.h>
 #include <vespa/metrics/countmetric.h>
+#include <vespa/metrics/metricset.h>
 
 namespace storage {
 
@@ -15,4 +15,4 @@ struct BouncerMetrics : metrics::MetricSet {
     ~BouncerMetrics() override;
 };
 
-}
+} // namespace storage

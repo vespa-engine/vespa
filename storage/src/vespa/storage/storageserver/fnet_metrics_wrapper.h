@@ -2,16 +2,14 @@
 
 #pragma once
 
+#include <vespa/fnet/connection.h>
 #include <vespa/metrics/metricset.h>
 #include <vespa/metrics/valuemetric.h>
-
-#include <vespa/fnet/connection.h>
 
 namespace storage {
 
 // Simple wrapper around low-level fnet network metrics
-class FnetMetricsWrapper : public metrics::MetricSet
-{
+class FnetMetricsWrapper : public metrics::MetricSet {
 private:
     metrics::LongValueMetric _num_connections;
 
@@ -21,4 +19,4 @@ public:
     void update_metrics();
 };
 
-}
+} // namespace storage

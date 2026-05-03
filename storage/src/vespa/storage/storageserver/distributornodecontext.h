@@ -38,6 +38,4 @@ private:
     ComponentRegister& _componentRegister;
 };
 
-} // storage
-
-
+} // namespace storage

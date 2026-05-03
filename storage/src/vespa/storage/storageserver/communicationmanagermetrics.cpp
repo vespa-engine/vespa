@@ -11,18 +11,18 @@ CommunicationManagerMetrics::CommunicationManagerMetrics(MetricSet* owner)
       messageProcessTime("messageprocesstime", {}, "Time transport thread uses to process a single message", this),
       exceptionMessageProcessTime("exceptionmessageprocesstime", {},
                                   "Time transport thread uses to process a single message "
-                                  "that fails with an exception thrown into communication manager", this),
-      failedDueToTooLittleMemory("toolittlememory", {}, "Number of messages failed due to too little memory available", this),
+                                  "that fails with an exception thrown into communication manager",
+                                  this),
+      failedDueToTooLittleMemory("toolittlememory", {},
+                                 "Number of messages failed due to too little memory available", this),
       convertToStorageAPIFailures("convertfailures", {},
                                   "Number of messages that failed to get converted to storage API messages", this),
       bucketSpaceMappingFailures("bucket_space_mapping_failures", {},
                                  "Number of messages that could not be resolved to a known bucket space", this),
       sendCommandLatency("sendcommandlatency", {}, "Average ms used to send commands to MBUS", this),
-      sendReplyLatency("sendreplylatency", {}, "Average ms used to send replies to MBUS", this)
-{
+      sendReplyLatency("sendreplylatency", {}, "Average ms used to send replies to MBUS", this) {
 }
 
 CommunicationManagerMetrics::~CommunicationManagerMetrics() = default;
 
-}
-
+} // namespace storage

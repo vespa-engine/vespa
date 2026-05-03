@@ -1,29 +1,27 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "changedbucketownershiphandler.h"
-#include <vespa/storageapi/message/state.h>
+
+#include <vespa/config/subscription/configuri.h>
+#include <vespa/log/bufferedlogger.h>
+#include <vespa/metrics/metrictimer.h>
 #include <vespa/storage/bucketdb/storbucketdb.h>
-#include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/vdslib/state/cluster_state_bundle.h>
-#include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/storage/common/messagebucket.h>
 #include <vespa/storage/common/nodestateupdater.h>
-#include <vespa/storage/common/content_bucket_space_repo.h>
+#include <vespa/storageapi/message/state.h>
+#include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/vdslib/state/cluster_state_bundle.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/metrics/metrictimer.h>
-#include <vespa/config/subscription/configuri.h>
+
 #include <vespa/config/helper/configfetcher.hpp>
-
-
-
-#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".bucketownershiphandler");
 
 namespace storage {
 
-ChangedBucketOwnershipHandler::ChangedBucketOwnershipHandler(
-        const PersistenceConfig& bootstrap_config,
-        ServiceLayerComponentRegister& compReg)
+ChangedBucketOwnershipHandler::ChangedBucketOwnershipHandler(const PersistenceConfig&       bootstrap_config,
+                                                             ServiceLayerComponentRegister& compReg)
     : StorageLink("Changed bucket ownership handler"),
       _component(compReg, "changedbucketownershiphandler"),
       _metrics(),
@@ -31,43 +29,32 @@ ChangedBucketOwnershipHandler::ChangedBucketOwnershipHandler(
       _stateLock(),
       _currentState(), // Not set yet, so ownership will not be valid
       _currentOwnership(std::make_shared<OwnershipState>(
-              _currentState, lib::DistributionConfigBundle::of(_component.getDistribution()))),
+          _currentState, lib::DistributionConfigBundle::of(_component.getDistribution()))),
       _abortQueuedAndPendingOnStateChange(false),
       _abortMutatingIdealStateOps(false),
       _abortMutatingExternalLoadOps(false),
-      _receiving_distribution_config_from_cc(false)
-{
+      _receiving_distribution_config_from_cc(false) {
     on_configure(bootstrap_config);
     _component.registerMetric(_metrics);
 }
 
 ChangedBucketOwnershipHandler::~ChangedBucketOwnershipHandler() = default;
 
-void
-ChangedBucketOwnershipHandler::on_configure(const vespa::config::content::PersistenceConfig& config)
-{
-    _abortQueuedAndPendingOnStateChange.store(
-            config.abortOperationsWithChangedBucketOwnership,
-            std::memory_order_relaxed);
-    _abortMutatingIdealStateOps.store(
-            config.abortOutdatedMutatingIdealStateOps,
-            std::memory_order_relaxed);
-    _abortMutatingExternalLoadOps.store(
-            config.abortOutdatedMutatingExternalLoadOps,
-            std::memory_order_relaxed);
+void ChangedBucketOwnershipHandler::on_configure(const vespa::config::content::PersistenceConfig& config) {
+    _abortQueuedAndPendingOnStateChange.store(config.abortOperationsWithChangedBucketOwnership,
+                                              std::memory_order_relaxed);
+    _abortMutatingIdealStateOps.store(config.abortOutdatedMutatingIdealStateOps, std::memory_order_relaxed);
+    _abortMutatingExternalLoadOps.store(config.abortOutdatedMutatingExternalLoadOps, std::memory_order_relaxed);
 }
 
-void
-ChangedBucketOwnershipHandler::reloadClusterState()
-{
+void ChangedBucketOwnershipHandler::reloadClusterState() {
     std::lock_guard guard(_stateLock);
-    const auto clusterStateBundle = _component.getStateUpdater().getClusterStateBundle();
+    const auto      clusterStateBundle = _component.getStateUpdater().getClusterStateBundle();
     setCurrentOwnershipWithStateNoLock(std::move(clusterStateBundle));
 }
 
-void
-ChangedBucketOwnershipHandler::setCurrentOwnershipWithStateNoLock(std::shared_ptr<const lib::ClusterStateBundle> new_state)
-{
+void ChangedBucketOwnershipHandler::setCurrentOwnershipWithStateNoLock(
+    std::shared_ptr<const lib::ClusterStateBundle> new_state) {
     LOG(debug, "Setting new ownership state bundle: %s", new_state->toString().c_str());
     std::shared_ptr<const lib::DistributionConfigBundle> distributions;
     _currentState = std::move(new_state);
@@ -89,10 +76,9 @@ ChangedBucketOwnershipHandler::setCurrentOwnershipWithStateNoLock(std::shared_pt
 
 namespace {
 
-bool
-allDistributorsDownInState(const lib::ClusterState& state) {
-    using lib::NodeType;
+bool allDistributorsDownInState(const lib::ClusterState& state) {
     using lib::Node;
+    using lib::NodeType;
     uint16_t nodeCount(state.getNodeCount(NodeType::DISTRIBUTOR));
     for (uint16_t i = 0; i < nodeCount; ++i) {
         if (state.getNodeState(Node(NodeType::DISTRIBUTOR, i)).getState().oneOf("ui")) {
@@ -102,96 +88,84 @@ allDistributorsDownInState(const lib::ClusterState& state) {
     return true;
 }
 
-}
+} // namespace
 
 ChangedBucketOwnershipHandler::Metrics::Metrics(metrics::MetricSet* owner)
     : metrics::MetricSet("changedbucketownershiphandler", {}, "", owner),
-      averageAbortProcessingTime("avg_abort_processing_time", {}, "Average time spent aborting operations for changed buckets", this),
+      averageAbortProcessingTime("avg_abort_processing_time", {},
+                                 "Average time spent aborting operations for changed buckets", this),
       idealStateOpsAborted("ideal_state_ops_aborted", {}, "Number of outdated ideal state operations aborted", this),
-      externalLoadOpsAborted("external_load_ops_aborted", {}, "Number of outdated external load operations aborted", this)
-{}
+      externalLoadOpsAborted("external_load_ops_aborted", {}, "Number of outdated external load operations aborted",
+                             this) {
+}
 ChangedBucketOwnershipHandler::Metrics::~Metrics() = default;
 
-ChangedBucketOwnershipHandler::OwnershipState::OwnershipState(std::shared_ptr<const lib::ClusterStateBundle> state,
-                                                              std::shared_ptr<const lib::DistributionConfigBundle> distributions) noexcept
-    : _state(std::move(state)),
-      _distributions(std::move(distributions))
-{
+ChangedBucketOwnershipHandler::OwnershipState::OwnershipState(
+    std::shared_ptr<const lib::ClusterStateBundle>       state,
+    std::shared_ptr<const lib::DistributionConfigBundle> distributions) noexcept
+    : _state(std::move(state)), _distributions(std::move(distributions)) {
 }
-
 
 ChangedBucketOwnershipHandler::OwnershipState::~OwnershipState() = default;
 
-
-const lib::ClusterState&
-ChangedBucketOwnershipHandler::OwnershipState::getBaselineState() const
-{
+const lib::ClusterState& ChangedBucketOwnershipHandler::OwnershipState::getBaselineState() const {
     assert(valid());
     return *_state->getBaselineClusterState();
 }
 
-uint16_t
-ChangedBucketOwnershipHandler::OwnershipState::ownerOf(const document::Bucket& bucket) const
-{
+uint16_t ChangedBucketOwnershipHandler::OwnershipState::ownerOf(const document::Bucket& bucket) const {
     const auto* distribution = _distributions->bucket_space_distribution_or_nullptr_raw(bucket.getBucketSpace());
     assert(distribution);
     const auto& derivedState = *_state->getDerivedClusterState(bucket.getBucketSpace());
     try {
         return distribution->getIdealDistributorNode(derivedState, bucket.getBucketId());
     } catch (lib::TooFewBucketBitsInUseException& e) {
-        LOGBP(debug, "Too few bucket bits used for %s to be assigned to a distributor.",
-              bucket.toString().c_str());
+        LOGBP(debug, "Too few bucket bits used for %s to be assigned to a distributor.", bucket.toString().c_str());
     } catch (lib::NoDistributorsAvailableException& e) {
         LOGBP(warning,
               "Got exception with no distributors available when checking "
               "bucket owner; this should not happen as we explicitly check "
               "for available distributors before reaching this code path! "
               "Cluster state is '%s', distribution is '%s'",
-              derivedState.toString().c_str(),
-              distribution->toString().c_str());
+              derivedState.toString().c_str(), distribution->toString().c_str());
     } catch (const std::exception& e) {
         LOG(error, "Got unknown exception while resolving distributor: %s", e.what());
     }
     return FAILED_TO_RESOLVE;
 }
 
-bool
-ChangedBucketOwnershipHandler::OwnershipState::storageNodeUp(document::BucketSpace bucketSpace, uint16_t nodeIndex) const
-{
-    const auto &derivedState = *_state->getDerivedClusterState(bucketSpace);
-    lib::Node node(lib::NodeType::STORAGE, nodeIndex);
+bool ChangedBucketOwnershipHandler::OwnershipState::storageNodeUp(document::BucketSpace bucketSpace,
+                                                                  uint16_t              nodeIndex) const {
+    const auto& derivedState = *_state->getDerivedClusterState(bucketSpace);
+    lib::Node   node(lib::NodeType::STORAGE, nodeIndex);
     return derivedState.getNodeState(node).getState().oneOf("uir");
 }
 
-void
-ChangedBucketOwnershipHandler::logTransition(const lib::ClusterState& currentState, const lib::ClusterState& newState)
-{
+void ChangedBucketOwnershipHandler::logTransition(const lib::ClusterState& currentState,
+                                                  const lib::ClusterState& newState) {
     LOG(debug,
         "State transition '%s' -> '%s' changes distributor bucket ownership, "
         "so must abort queued operations for the affected buckets.",
-        currentState.toString().c_str(),
-        newState.toString().c_str());
+        currentState.toString().c_str(), newState.toString().c_str());
 }
 
 namespace {
 
-class StateDiffLazyAbortPredicate
-    : public AbortBucketOperationsCommand::AbortPredicate
-{
+class StateDiffLazyAbortPredicate : public AbortBucketOperationsCommand::AbortPredicate {
     // Ownership states wrap a couple of shared_ptrs and are thus cheap to
     // copy and store.
     ChangedBucketOwnershipHandler::OwnershipState _oldState;
     ChangedBucketOwnershipHandler::OwnershipState _newState;
     // Fast path to avoid trying (and failing) to compute owner in a state
     // where all distributors are down.
-    bool _allDistributorsHaveGoneDown;
+    bool     _allDistributorsHaveGoneDown;
     uint16_t _nodeIndex;
 
     bool contentNodeUpInBucketSpace(document::BucketSpace bucketSpace) const {
         return _newState.storageNodeUp(bucketSpace, _nodeIndex);
     }
 
-    bool doShouldAbort(const document::Bucket &bucket) const override {
+    bool doShouldAbort(const document::Bucket& bucket) const override {
         if (_allDistributorsHaveGoneDown) {
             return true;
         }
@@ -201,49 +175,39 @@ class StateDiffLazyAbortPredicate
         uint16_t oldOwner(_oldState.ownerOf(bucket));
         uint16_t newOwner(_newState.ownerOf(bucket));
         if (oldOwner != newOwner) {
-            LOG(spam, "Owner of %s was %u, now %u. Operation should be aborted",
-                bucket.toString().c_str(), oldOwner, newOwner);
+            LOG(spam, "Owner of %s was %u, now %u. Operation should be aborted", bucket.toString().c_str(), oldOwner,
+                newOwner);
             return true;
         }
         return false;
     }
+
 public:
-    StateDiffLazyAbortPredicate(
-            const ChangedBucketOwnershipHandler::OwnershipState& oldState,
-            const ChangedBucketOwnershipHandler::OwnershipState& newState,
-            uint16_t nodeIndex)
+    StateDiffLazyAbortPredicate(const ChangedBucketOwnershipHandler::OwnershipState& oldState,
+                                const ChangedBucketOwnershipHandler::OwnershipState& newState, uint16_t nodeIndex)
         : _oldState(oldState),
           _newState(newState),
-          _allDistributorsHaveGoneDown(
-                  allDistributorsDownInState(newState.getBaselineState())),
-          _nodeIndex(nodeIndex)
-    {
-    }
+          _allDistributorsHaveGoneDown(allDistributorsDownInState(newState.getBaselineState())),
+          _nodeIndex(nodeIndex) {}
 };
 
-}
+} // namespace
 
 std::unique_ptr<AbortBucketOperationsCommand::AbortPredicate>
-ChangedBucketOwnershipHandler::makeLazyAbortPredicate(
-        const OwnershipState::CSP& oldOwnership,
-        const OwnershipState::CSP& newOwnership) const
-{
+ChangedBucketOwnershipHandler::makeLazyAbortPredicate(const OwnershipState::CSP& oldOwnership,
+                                                      const OwnershipState::CSP& newOwnership) const {
     return std::unique_ptr<AbortBucketOperationsCommand::AbortPredicate>(
-            new StateDiffLazyAbortPredicate(*oldOwnership, *newOwnership,
-                                            _component.getIndex()));
+        new StateDiffLazyAbortPredicate(*oldOwnership, *newOwnership, _component.getIndex()));
 }
 
-class ChangedBucketOwnershipHandler::ClusterStateSyncAndApplyTask
-    : public vespalib::Executor::Task
-{
-    ChangedBucketOwnershipHandler& _owner;
+class ChangedBucketOwnershipHandler::ClusterStateSyncAndApplyTask : public vespalib::Executor::Task {
+    ChangedBucketOwnershipHandler&              _owner;
     std::shared_ptr<api::SetSystemStateCommand> _command;
+
 public:
-    ClusterStateSyncAndApplyTask(ChangedBucketOwnershipHandler& owner,
+    ClusterStateSyncAndApplyTask(ChangedBucketOwnershipHandler&              owner,
                                  std::shared_ptr<api::SetSystemStateCommand> command) noexcept
-        : _owner(owner),
-          _command(std::move(command))
-    {}
+        : _owner(owner), _command(std::move(command)) {}
 
     /*
      * If we go from:
@@ -290,8 +254,8 @@ public:
         logTransition(old_ownership->getBaselineState(), new_ownership->getBaselineState());
 
         metrics::MetricTimer duration_timer;
-        auto predicate = _owner.makeLazyAbortPredicate(old_ownership, new_ownership);
-        auto abort_cmd = std::make_shared<AbortBucketOperationsCommand>(std::move(predicate));
+        auto                 predicate = _owner.makeLazyAbortPredicate(old_ownership, new_ownership);
+        auto                 abort_cmd = std::make_shared<AbortBucketOperationsCommand>(std::move(predicate));
 
         // Will not return until all operation aborts have been performed
         // on the lower level links, at which point it is safe to send down
@@ -306,10 +270,7 @@ public:
     }
 };
 
-bool
-ChangedBucketOwnershipHandler::onSetSystemState(
-        const std::shared_ptr<api::SetSystemStateCommand>& stateCmd)
-{
+bool ChangedBucketOwnershipHandler::onSetSystemState(const std::shared_ptr<api::SetSystemStateCommand>& stateCmd) {
     if (!enabledOperationAbortingOnStateChange()) {
         LOG(debug, "Operation aborting is config-disabled");
         return false; // Early out.
@@ -317,7 +278,8 @@ ChangedBucketOwnershipHandler::onSetSystemState(
     // Dispatch to background worker. This indirection is because operations such as lid-space compaction
     // may cause the implicit operation abort waiting step to block the caller for a relatively long time.
     // It is very important that the executor only has 1 thread, which means this has FIFO behavior.
-    [[maybe_unused]] auto rejected_task = _state_sync_executor.execute(std::make_unique<ClusterStateSyncAndApplyTask>(*this, stateCmd));
+    [[maybe_unused]] auto rejected_task =
+        _state_sync_executor.execute(std::make_unique<ClusterStateSyncAndApplyTask>(*this, stateCmd));
     // If this fails, we have processed a message _after_ onClose has been called, which should not happen.
     assert(!rejected_task);
     return true;
@@ -327,20 +289,16 @@ ChangedBucketOwnershipHandler::onSetSystemState(
  * Invoked whenever a distribution config change happens and is called in the
  * context of the config updater thread (which is why we have to lock).
  */
- // TODO remove this when there are no more state bundles without distribution config
-void
-ChangedBucketOwnershipHandler::storageDistributionChanged()
-{
+// TODO remove this when there are no more state bundles without distribution config
+void ChangedBucketOwnershipHandler::storageDistributionChanged() {
     std::lock_guard guard(_stateLock);
     if (!_receiving_distribution_config_from_cc) {
         _currentOwnership = std::make_shared<OwnershipState>(
-                _currentState, lib::DistributionConfigBundle::of(_component.getDistribution()));
+            _currentState, lib::DistributionConfigBundle::of(_component.getDistribution()));
     }
 }
 
-bool
-ChangedBucketOwnershipHandler::isMutatingIdealStateOperation(const api::StorageMessage& msg)
-{
+bool ChangedBucketOwnershipHandler::isMutatingIdealStateOperation(const api::StorageMessage& msg) {
     switch (msg.getType().getId()) {
     case api::MessageType::CREATEBUCKET_ID:
     case api::MessageType::MERGEBUCKET_ID:
@@ -357,10 +315,7 @@ ChangedBucketOwnershipHandler::isMutatingIdealStateOperation(const api::StorageM
     }
 }
 
-
-bool
-ChangedBucketOwnershipHandler::isMutatingExternalOperation(const api::StorageMessage& msg)
-{
+bool ChangedBucketOwnershipHandler::isMutatingExternalOperation(const api::StorageMessage& msg) {
     switch (msg.getType().getId()) {
     case api::MessageType::PUT_ID:
     case api::MessageType::REMOVE_ID:
@@ -371,21 +326,15 @@ ChangedBucketOwnershipHandler::isMutatingExternalOperation(const api::StorageMes
     }
 }
 
-ChangedBucketOwnershipHandler::OwnershipState::CSP
-ChangedBucketOwnershipHandler::getCurrentOwnershipState() const
-{
+ChangedBucketOwnershipHandler::OwnershipState::CSP ChangedBucketOwnershipHandler::getCurrentOwnershipState() const {
     std::lock_guard guard(_stateLock);
     return _currentOwnership;
 }
 
-bool
-ChangedBucketOwnershipHandler::sendingDistributorOwnsBucketInCurrentState(
-        const api::StorageCommand& cmd) const
-{
+bool ChangedBucketOwnershipHandler::sendingDistributorOwnsBucketInCurrentState(const api::StorageCommand& cmd) const {
     OwnershipState::CSP current(getCurrentOwnershipState());
     if (!current->valid()) {
-        LOG(debug, "No cluster state received yet, must bounce message '%s'",
-            cmd.toString().c_str());
+        LOG(debug, "No cluster state received yet, must bounce message '%s'", cmd.toString().c_str());
         return false;
     }
 
@@ -402,14 +351,11 @@ ChangedBucketOwnershipHandler::sendingDistributorOwnsBucketInCurrentState(
     return false; // Unreachable statement.
 }
 
-void
-ChangedBucketOwnershipHandler::abortOperation(api::StorageCommand& cmd)
-{
+void ChangedBucketOwnershipHandler::abortOperation(api::StorageCommand& cmd) {
     api::StorageReply::SP reply(cmd.makeReply());
-    reply->setResult(api::ReturnCode(
-            api::ReturnCode::ABORTED,
-            "Operation aborted to prevent inconsistencies caused by a "
-            "change in bucket ownership"));
+    reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED,
+                                     "Operation aborted to prevent inconsistencies caused by a "
+                                     "change in bucket ownership"));
     sendUp(reply);
     if (isMutatingIdealStateOperation(cmd)) {
         _metrics.idealStateOpsAborted.inc();
@@ -418,9 +364,7 @@ ChangedBucketOwnershipHandler::abortOperation(api::StorageCommand& cmd)
     }
 }
 
-bool
-ChangedBucketOwnershipHandler::isMutatingCommandAndNeedsChecking(const api::StorageMessage& msg) const
-{
+bool ChangedBucketOwnershipHandler::isMutatingCommandAndNeedsChecking(const api::StorageMessage& msg) const {
     if (enabledIdealStateAborting() && isMutatingIdealStateOperation(msg)) {
         return true;
     }
@@ -430,10 +374,7 @@ ChangedBucketOwnershipHandler::isMutatingCommandAndNeedsChecking(const api::Stor
     return false;
 }
 
-bool
-ChangedBucketOwnershipHandler::onDown(
-        const std::shared_ptr<api::StorageMessage>& msg)
-{
+bool ChangedBucketOwnershipHandler::onDown(const std::shared_ptr<api::StorageMessage>& msg) {
     if (msg->getType() == api::MessageType::SETSYSTEMSTATE) {
         return onSetSystemState(std::static_pointer_cast<api::SetSystemStateCommand>(msg));
     }
@@ -448,36 +389,25 @@ ChangedBucketOwnershipHandler::onDown(
     return false;
 }
 
-bool
-ChangedBucketOwnershipHandler::enabledOperationAbortingOnStateChange() const
-{
+bool ChangedBucketOwnershipHandler::enabledOperationAbortingOnStateChange() const {
     return _abortQueuedAndPendingOnStateChange.load(std::memory_order_relaxed);
 }
 
-bool
-ChangedBucketOwnershipHandler::enabledIdealStateAborting() const
-{
+bool ChangedBucketOwnershipHandler::enabledIdealStateAborting() const {
     return _abortMutatingIdealStateOps.load(std::memory_order_relaxed);
 }
 
-bool
-ChangedBucketOwnershipHandler::enabledExternalLoadAborting() const
-{
+bool ChangedBucketOwnershipHandler::enabledExternalLoadAborting() const {
     return _abortMutatingExternalLoadOps.load(std::memory_order_relaxed);
 }
 
-bool
-ChangedBucketOwnershipHandler::onInternalReply(
-        const std::shared_ptr<api::InternalReply>& reply)
-{
+bool ChangedBucketOwnershipHandler::onInternalReply(const std::shared_ptr<api::InternalReply>& reply) {
     // Just swallow reply, we don't do anything with it.
     return (reply->getType() == AbortBucketOperationsReply::ID);
 }
 
-void
-ChangedBucketOwnershipHandler::onClose()
-{
+void ChangedBucketOwnershipHandler::onClose() {
     _state_sync_executor.shutdown().sync();
 }
 
-}
+} // namespace storage

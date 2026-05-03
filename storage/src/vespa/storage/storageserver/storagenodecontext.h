@@ -31,16 +31,14 @@ struct StorageNodeContext {
     ~StorageNodeContext();
 
 protected:
-        // Initialization has been split in two as subclass needs to initialize
-        // component register before sending it on.
+    // Initialization has been split in two as subclass needs to initialize
+    // component register before sending it on.
     StorageNodeContext(std::unique_ptr<ComponentRegister>, std::unique_ptr<framework::Clock>);
 
 private:
     std::unique_ptr<ComponentRegister>               _componentRegister;
     std::unique_ptr<framework::Clock>                _clock;
     framework::defaultimplementation::ThreadPoolImpl _threadPool;
-
 };
 
-} // storage
-
+} // namespace storage

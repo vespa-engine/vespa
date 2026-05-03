@@ -6,7 +6,7 @@ namespace storage::api {
 class MetadataExtractor;
 class MetadataInjector;
 class StorageCommand;
-}
+} // namespace storage::api
 
 namespace storage::rpc {
 
@@ -48,4 +48,4 @@ public:
     virtual void on_receive_command(api::StorageCommand& cmd, const api::MetadataExtractor& extractor) const = 0;
 };
 
-}
+} // namespace storage::rpc

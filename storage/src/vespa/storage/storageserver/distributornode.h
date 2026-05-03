@@ -4,31 +4,31 @@
 #include "distributornodecontext.h"
 #include "storagenode.h"
 #include "vespa/vespalib/util/jsonstream.h"
+
 #include <vespa/storage/common/distributorcomponent.h>
 #include <vespa/storageframework/generic/thread/tickingthread.h>
+
 #include <mutex>
 
 namespace storage {
 
-namespace distributor { class DistributorStripePool; }
+namespace distributor {
+class DistributorStripePool;
+}
 
 class Bouncer;
 class IStorageChainBuilder;
 
-class DistributorNode
-      : public StorageNode,
-        private UniqueTimeCalculator,
-        private NodeStateReporter
-{
-    framework::TickingThreadPool::UP _threadPool;
+class DistributorNode : public StorageNode, private UniqueTimeCalculator, private NodeStateReporter {
+    framework::TickingThreadPool::UP                    _threadPool;
     std::unique_ptr<distributor::DistributorStripePool> _stripe_pool;
-    DistributorNodeContext& _context;
-    std::mutex _timestamp_mutex;
-    uint64_t _timestamp_second_counter;
-    uint32_t _intra_second_pseudo_usec_counter;
-    uint32_t _num_distributor_stripes;
-    std::unique_ptr<StorageLink> _retrievedCommunicationManager;
-    Bouncer* _bouncer;
+    DistributorNodeContext&                             _context;
+    std::mutex                                          _timestamp_mutex;
+    uint64_t                                            _timestamp_second_counter;
+    uint32_t                                            _intra_second_pseudo_usec_counter;
+    uint32_t                                            _num_distributor_stripes;
+    std::unique_ptr<StorageLink>                        _retrievedCommunicationManager;
+    Bouncer*                                            _bouncer;
 
     // If the current wall clock is more than the below number of seconds into the
     // past when compared to the highest recorded wall clock second time stamp, abort
@@ -40,26 +40,23 @@ class DistributorNode
 public:
     using UP = std::unique_ptr<DistributorNode>;
 
-    DistributorNode(const config::ConfigUri & configUri,
-                    DistributorNodeContext&,
-                    BootstrapConfigs bootstrap_configs,
-                    ApplicationGenerationFetcher& generationFetcher,
-                    uint32_t num_distributor_stripes,
-                    std::unique_ptr<StorageLink> communicationManager,
+    DistributorNode(const config::ConfigUri& configUri, DistributorNodeContext&, BootstrapConfigs bootstrap_configs,
+                    ApplicationGenerationFetcher& generationFetcher, uint32_t num_distributor_stripes,
+                    std::unique_ptr<StorageLink>          communicationManager,
                     std::unique_ptr<IStorageChainBuilder> storage_chain_builder);
     ~DistributorNode() override;
 
     const lib::NodeType& getNodeType() const override { return lib::NodeType::DISTRIBUTOR; }
     ResumeGuard pause() override;
 
-    void handleConfigChange(DistributorManagerConfig &);
+    void handleConfigChange(DistributorManagerConfig&);
     void handleConfigChange(VisitorDispatcherConfig&);
 
 private:
-    void report(vespalib::JsonStream &) const override { /* no-op */ }
+    void report(vespalib::JsonStream&) const override { /* no-op */ }
     void perform_post_chain_creation_init_steps() override { /* no-op */ }
     void initializeNodeSpecific() override;
-    void createChain(IStorageChainBuilder &builder) override;
+    void createChain(IStorageChainBuilder& builder) override;
     api::Timestamp generate_unique_timestamp() override;
     void on_bouncer_config_changed() override;
 
@@ -70,4 +67,4 @@ private:
     void shutdownDistributor();
 };
 
-} // storage
+} // namespace storage

@@ -8,19 +8,19 @@
 
 #pragma once
 
+#include <vespa/metrics/countmetric.h>
 #include <vespa/metrics/metricset.h>
 #include <vespa/metrics/valuemetric.h>
-#include <vespa/metrics/countmetric.h>
 
 namespace storage {
 
 struct CommunicationManagerMetrics : public metrics::MetricSet {
-    metrics::LongAverageMetric queueSize;
+    metrics::LongAverageMetric   queueSize;
     metrics::DoubleAverageMetric messageProcessTime;
     metrics::DoubleAverageMetric exceptionMessageProcessTime;
-    metrics::LongCountMetric failedDueToTooLittleMemory;
-    metrics::LongCountMetric convertToStorageAPIFailures;
-    metrics::LongCountMetric bucketSpaceMappingFailures;
+    metrics::LongCountMetric     failedDueToTooLittleMemory;
+    metrics::LongCountMetric     convertToStorageAPIFailures;
+    metrics::LongCountMetric     bucketSpaceMappingFailures;
     metrics::DoubleAverageMetric sendCommandLatency;
     metrics::DoubleAverageMetric sendReplyLatency;
 
@@ -28,5 +28,4 @@ struct CommunicationManagerMetrics : public metrics::MetricSet {
     ~CommunicationManagerMetrics();
 };
 
-}
-
+} // namespace storage

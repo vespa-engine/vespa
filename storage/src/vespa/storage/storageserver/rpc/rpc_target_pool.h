@@ -23,9 +23,9 @@ public:
     using RpcTargetVector = std::vector<std::shared_ptr<RpcTarget>>;
 
 private:
-    RpcTargetVector _targets;
+    RpcTargetVector   _targets;
     const std::string _spec;
-    uint32_t _slobrok_gen;
+    uint32_t          _slobrok_gen;
 
 public:
     RpcTargetPool(RpcTargetVector&& targets, const std::string& spec, uint32_t slobrok_gen);
@@ -35,4 +35,4 @@ public:
     std::shared_ptr<RpcTarget> get_target(uint64_t bucket_id) const;
 };
 
-}
+} // namespace storage::rpc

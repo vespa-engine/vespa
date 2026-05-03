@@ -1,19 +1,23 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bouncer.h"
+
 #include "bouncer_metrics.h"
+
+#include <vespa/log/bufferedlogger.h>
+#include <vespa/persistence/spi/bucket_limits.h>
+#include <vespa/storageapi/message/persistence.h>
+#include <vespa/storageapi/message/state.h>
 #include <vespa/storageframework/generic/clock/clock.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/persistence/spi/bucket_limits.h>
-#include <vespa/storageapi/message/state.h>
-#include <vespa/storageapi/message/persistence.h>
-#include <vespa/config/helper/configfetcher.hpp>
 #include <vespa/vespalib/util/stringfmt.h>
+
+#include <vespa/config/helper/configfetcher.hpp>
+
 #include <sstream>
 
 #include <vespa/log/log.h>
-#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".bouncer");
 
 namespace storage {
@@ -27,39 +31,31 @@ Bouncer::Bouncer(StorageComponentRegister& compReg, const StorBouncerConfig& boo
       _derivedNodeStates(),
       _clusterState(&lib::State::UP),
       _metrics(std::make_unique<BouncerMetrics>()),
-      _closed(false)
-{
+      _closed(false) {
     _component.getStateUpdater().addStateListener(*this);
     _component.registerMetric(*_metrics);
 }
 
-Bouncer::~Bouncer()
-{
+Bouncer::~Bouncer() {
     closeNextLink();
     LOG(debug, "Deleting link %s.", toString().c_str());
 }
 
-void
-Bouncer::print(std::ostream& out, bool verbose,
-               const std::string& indent) const
-{
-    (void) verbose; (void) indent;
+void Bouncer::print(std::ostream& out, bool verbose, const std::string& indent) const {
+    (void)verbose;
+    (void)indent;
     std::lock_guard guard(_lock);
     out << "Bouncer(" << _baselineNodeState << ")";
 }
 
-void
-Bouncer::onClose()
-{
+void Bouncer::onClose() {
     _component.getStateUpdater().removeStateListener(*this);
     std::lock_guard guard(_lock);
     _closed = true;
 }
 
-void
-Bouncer::on_configure(const vespa::config::content::core::StorBouncerConfig& config)
-{
-    auto new_config = std::make_unique<StorBouncerConfig>(config);
+void Bouncer::on_configure(const vespa::config::content::core::StorBouncerConfig& config) {
+    auto            new_config = std::make_unique<StorBouncerConfig>(config);
     std::lock_guard lock(_lock);
     _config = std::move(new_config);
 }
@@ -72,30 +68,24 @@ void Bouncer::append_node_identity(std::ostream& target_stream) const {
     target_stream << " (on " << _component.getNodeType() << '.' << _component.getIndex() << ")";
 }
 
-void
-Bouncer::abortCommandForUnavailableNode(api::StorageMessage& msg, const lib::State& state)
-{
+void Bouncer::abortCommandForUnavailableNode(api::StorageMessage& msg, const lib::State& state) {
     // If we're not up or retired, fail due to this nodes state.
     std::shared_ptr<api::StorageReply> reply(static_cast<api::StorageCommand&>(msg).makeReply());
-    std::ostringstream ost;
-    ost << "We don't allow command of type " << msg.getType()
-        << " when node is in state " << state.toString(true);
+    std::ostringstream                 ost;
+    ost << "We don't allow command of type " << msg.getType() << " when node is in state " << state.toString(true);
     append_node_identity(ost);
     reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED, ost.str()));
     _metrics->unavailable_node_aborts.inc();
     sendUp(reply);
 }
 
-void
-Bouncer::rejectCommandWithTooHighClockSkew(api::StorageMessage& msg, int maxClockSkewInSeconds)
-{
-    auto& as_cmd = dynamic_cast<api::StorageCommand&>(msg);
+void Bouncer::rejectCommandWithTooHighClockSkew(api::StorageMessage& msg, int maxClockSkewInSeconds) {
+    auto&              as_cmd = dynamic_cast<api::StorageCommand&>(msg);
     std::ostringstream ost;
-    ost << "Message " << msg.getType() << " is more than "
-        << maxClockSkewInSeconds << " seconds in the future, set up NTP.";
+    ost << "Message " << msg.getType() << " is more than " << maxClockSkewInSeconds
+        << " seconds in the future, set up NTP.";
     append_node_identity(ost);
-    LOGBP(warning, "Rejecting operation from distributor %u: %s",
-          as_cmd.getSourceIndex(), ost.str().c_str());
+    LOGBP(warning, "Rejecting operation from distributor %u: %s", as_cmd.getSourceIndex(), ost.str().c_str());
     _metrics->clock_skew_aborts.inc();
 
     std::shared_ptr<api::StorageReply> reply(as_cmd.makeReply());
@@ -103,21 +93,16 @@ Bouncer::rejectCommandWithTooHighClockSkew(api::StorageMessage& msg, int maxCloc
     sendUp(reply);
 }
 
-void
-Bouncer::abortCommandDueToClusterDown(api::StorageMessage& msg, const lib::State& cluster_state)
-{
+void Bouncer::abortCommandDueToClusterDown(api::StorageMessage& msg, const lib::State& cluster_state) {
     std::shared_ptr<api::StorageReply> reply(static_cast<api::StorageCommand&>(msg).makeReply());
-    std::ostringstream ost;
-    ost << "We don't allow external load while cluster is in state "
-        << cluster_state.toString(true);
+    std::ostringstream                 ost;
+    ost << "We don't allow external load while cluster is in state " << cluster_state.toString(true);
     append_node_identity(ost);
     reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED, ost.str()));
     sendUp(reply);
 }
 
-bool
-Bouncer::clusterIsUp(const lib::State& cluster_state)
-{
+bool Bouncer::clusterIsUp(const lib::State& cluster_state) {
     return (cluster_state == lib::State::UP);
 }
 
@@ -125,9 +110,7 @@ bool Bouncer::isDistributor() const {
     return (_component.getNodeType() == lib::NodeType::DISTRIBUTOR);
 }
 
-uint64_t
-Bouncer::extractMutationTimestampIfAny(const api::StorageMessage& msg)
-{
+uint64_t Bouncer::extractMutationTimestampIfAny(const api::StorageMessage& msg) {
     switch (msg.getType().getId()) {
     case api::MessageType::PUT_ID:
         return static_cast<const api::PutCommand&>(msg).getTimestamp();
@@ -140,9 +123,7 @@ Bouncer::extractMutationTimestampIfAny(const api::StorageMessage& msg)
     }
 }
 
-bool
-Bouncer::isExternalLoad(const api::MessageType& type) noexcept
-{
+bool Bouncer::isExternalLoad(const api::MessageType& type) noexcept {
     switch (type.getId()) {
     case api::MessageType::PUT_ID:
     case api::MessageType::REMOVE_ID:
@@ -156,8 +137,7 @@ Bouncer::isExternalLoad(const api::MessageType& type) noexcept
     }
 }
 
-bool
-Bouncer::isExternalWriteOperation(const api::MessageType& type) noexcept {
+bool Bouncer::isExternalWriteOperation(const api::MessageType& type) noexcept {
     switch (type.getId()) {
     case api::MessageType::PUT_ID:
     case api::MessageType::REMOVE_ID:
@@ -168,16 +148,13 @@ Bouncer::isExternalWriteOperation(const api::MessageType& type) noexcept {
     }
 }
 
-void
-Bouncer::rejectDueToInsufficientPriority(
-        api::StorageMessage& msg,
-        api::StorageMessage::Priority feedPriorityLowerBound)
-{
+void Bouncer::rejectDueToInsufficientPriority(api::StorageMessage&          msg,
+                                              api::StorageMessage::Priority feedPriorityLowerBound) {
     std::shared_ptr<api::StorageReply> reply(static_cast<api::StorageCommand&>(msg).makeReply());
-    std::ostringstream ost;
-    ost << "Operation priority (" << int(msg.getPriority())
-        << ") is lower than currently configured threshold ("
-        << int(feedPriorityLowerBound) << ") -- note that lower numbers "
+    std::ostringstream                 ost;
+    ost << "Operation priority (" << int(msg.getPriority()) << ") is lower than currently configured threshold ("
+        << int(feedPriorityLowerBound)
+        << ") -- note that lower numbers "
            "mean a higher priority. This usually means your application "
            "has been reconfigured to deal with a transient upgrade or "
            "load event";
@@ -185,39 +162,35 @@ Bouncer::rejectDueToInsufficientPriority(
     sendUp(reply);
 }
 
-void
-Bouncer::reject_due_to_too_few_bucket_bits(api::StorageMessage& msg) {
+void Bouncer::reject_due_to_too_few_bucket_bits(api::StorageMessage& msg) {
     std::shared_ptr<api::StorageReply> reply(dynamic_cast<api::StorageCommand&>(msg).makeReply());
-    reply->setResult(api::ReturnCode(api::ReturnCode::REJECTED,
-                                     vespalib::make_string("Operation bucket %s has too few bits used (%u < minimum of %u)",
-                                                           msg.getBucketId().toString().c_str(),
-                                                           msg.getBucketId().getUsedBits(),
-                                                           spi::BucketLimits::MinUsedBits)));
+    reply->setResult(
+        api::ReturnCode(api::ReturnCode::REJECTED,
+                        vespalib::make_string("Operation bucket %s has too few bits used (%u < minimum of %u)",
+                                              msg.getBucketId().toString().c_str(), msg.getBucketId().getUsedBits(),
+                                              spi::BucketLimits::MinUsedBits)));
     sendUp(reply);
 }
 
-void
-Bouncer::reject_due_to_node_shutdown(api::StorageMessage& msg) {
+void Bouncer::reject_due_to_node_shutdown(api::StorageMessage& msg) {
     std::shared_ptr<api::StorageReply> reply(dynamic_cast<api::StorageCommand&>(msg).makeReply());
     reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED, "Node is shutting down"));
     sendUp(reply);
 }
 
-bool
-Bouncer::onDown(const std::shared_ptr<api::StorageMessage>& msg)
-{
+bool Bouncer::onDown(const std::shared_ptr<api::StorageMessage>& msg) {
     const lib::State* state;
-    int maxClockSkewInSeconds;
-    bool isInAvailableState;
-    bool closed;
+    int               maxClockSkewInSeconds;
+    bool              isInAvailableState;
+    bool              closed;
     const lib::State* cluster_state;
     {
         std::lock_guard lock(_lock);
-        state                    = &getDerivedNodeState(msg->getBucket().getBucketSpace()).getState();
-        maxClockSkewInSeconds    = _config->maxClockSkewSeconds;
-        cluster_state            = _clusterState;
-        isInAvailableState       = state->oneOf("uri");
-        closed                   = _closed;
+        state = &getDerivedNodeState(msg->getBucket().getBucketSpace()).getState();
+        maxClockSkewInSeconds = _config->maxClockSkewSeconds;
+        cluster_state = _clusterState;
+        isInAvailableState = state->oneOf("uri");
+        closed = _closed;
     }
     const api::MessageType& type = msg->getType();
     // If the node is shutting down, we want to prevent _any_ messages from reaching
@@ -247,7 +220,9 @@ Bouncer::onDown(const std::shared_ptr<api::StorageMessage>& msg)
 
     // Special case for point lookup Gets while node is in maintenance mode
     // to allow reads to complete during two-phase cluster state transitions
-    if ((*state == lib::State::MAINTENANCE) && (type.getId() == api::MessageType::GET_ID) && clusterIsUp(*cluster_state)) {
+    if ((*state == lib::State::MAINTENANCE) && (type.getId() == api::MessageType::GET_ID) &&
+        clusterIsUp(*cluster_state))
+    {
         MBUS_TRACE(msg->getTrace(), 7, "Bouncer: node is in Maintenance mode, but letting Get through");
         return false;
     }
@@ -289,10 +264,7 @@ Bouncer::onDown(const std::shared_ptr<api::StorageMessage>& msg)
 
 namespace {
 
-lib::NodeState
-deriveNodeState(const lib::NodeState &reportedNodeState,
-                const lib::NodeState &currentNodeState)
-{
+lib::NodeState deriveNodeState(const lib::NodeState& reportedNodeState, const lib::NodeState& currentNodeState) {
     // If current node state is more strict than our own reported state,
     // set node state to our current state
     if (reportedNodeState.getState().maySetWantedStateForThisNodeState(currentNodeState.getState())) {
@@ -301,28 +273,24 @@ deriveNodeState(const lib::NodeState &reportedNodeState,
     return reportedNodeState;
 }
 
-}
+} // namespace
 
-void
-Bouncer::handleNewState() noexcept
-{
+void Bouncer::handleNewState() noexcept {
     std::lock_guard lock(_lock);
-    const auto reportedNodeState  = *_component.getStateUpdater().getReportedNodeState();
-    const auto clusterStateBundle = _component.getStateUpdater().getClusterStateBundle();
-    const auto& clusterState      = *clusterStateBundle->getBaselineClusterState();
+    const auto      reportedNodeState = *_component.getStateUpdater().getReportedNodeState();
+    const auto      clusterStateBundle = _component.getStateUpdater().getClusterStateBundle();
+    const auto&     clusterState = *clusterStateBundle->getBaselineClusterState();
     _clusterState = &clusterState.getClusterState();
     const lib::Node node(_component.getNodeType(), _component.getIndex());
     _baselineNodeState = deriveNodeState(reportedNodeState, clusterState.getNodeState(node));
     _derivedNodeStates.clear();
-    for (const auto &derivedClusterState : clusterStateBundle->getDerivedClusterStates()) {
+    for (const auto& derivedClusterState : clusterStateBundle->getDerivedClusterStates()) {
         _derivedNodeStates[derivedClusterState.first] =
             deriveNodeState(reportedNodeState, derivedClusterState.second->getNodeState(node));
     }
 }
 
-const lib::NodeState &
-Bouncer::getDerivedNodeState(document::BucketSpace bucketSpace) const
-{
+const lib::NodeState& Bouncer::getDerivedNodeState(document::BucketSpace bucketSpace) const {
     auto itr = _derivedNodeStates.find(bucketSpace);
     if (itr != _derivedNodeStates.end()) {
         return itr->second;
@@ -331,4 +299,4 @@ Bouncer::getDerivedNodeState(document::BucketSpace bucketSpace) const
     }
 }
 
-} // storage
+} // namespace storage
