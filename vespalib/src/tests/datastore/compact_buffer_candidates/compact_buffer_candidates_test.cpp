@@ -12,7 +12,7 @@ constexpr double   default_ratio = 0.2 / 2;
 constexpr size_t   default_slack = 1000;
 constexpr double   default_active_buffers_ratio = 1.0;
 
-}; // namespace
+} // namespace
 
 class CompactBufferCandidatesTest : public ::testing::Test {
 public:

@@ -6,6 +6,7 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 #include <filesystem>
 

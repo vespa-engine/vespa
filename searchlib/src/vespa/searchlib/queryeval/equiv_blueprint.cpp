@@ -35,7 +35,7 @@ public:
     }
 };
 
-}; // namespace
+} // namespace
 
 EquivBlueprint::EquivBlueprint(FieldSpecBaseList fields, fef::MatchDataLayout subtree_mdl)
     : ComplexLeafBlueprint(std::move(fields)), _estimate(), _layout(std::move(subtree_mdl)), _terms(), _exactness() {

@@ -376,7 +376,7 @@ TEST_P(MultiValueReadViewTest, test_imported_enumerated_array) {
     test_imported_attribute_vector(CollectionType::Type::ARRAY, true);
 };
 
-TEST_P(MultiValueReadViewTest, test_importe_weighted_set) {
+TEST_P(MultiValueReadViewTest, test_imported_weighted_set) {
     test_imported_attribute_vector(CollectionType::Type::WSET, false);
 };
 

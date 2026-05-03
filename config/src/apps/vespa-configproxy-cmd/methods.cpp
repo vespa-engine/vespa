@@ -41,4 +41,4 @@ void dump() {
     std::cerr << std::endl;
 }
 
-}; // namespace methods
+} // namespace methods

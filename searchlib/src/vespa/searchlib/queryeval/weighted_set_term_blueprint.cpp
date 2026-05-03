@@ -106,7 +106,7 @@ SearchIterator::UP WeightedSetTermBlueprint::createLeafSearch(const fef::TermFie
     assert(tfmda.size() == 1);
     if ((_terms.size() == 1) && tfmda[0]->isNotNeeded()) {
         if (const LeafBlueprint* leaf = _terms[0]->asLeaf(); leaf != nullptr) {
-            // Always returnin a strict iterator independently of what was required,
+            // Always returning a strict iterator independently of what was required,
             // as that is what we do with all the children when there are more.
             return leaf->createLeafSearch(tfmda);
         }

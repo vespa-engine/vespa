@@ -178,7 +178,7 @@ TEST(MemoryFlushConfigUpdaterTest,
 }
 
 TEST(MemoryFlushConfigUpdaterTest,
-     require_that_last_config_if_remembered_when_setting_new_disk_and_memory_usage_state) {
+     require_that_last_config_is_remembered_when_setting_new_disk_and_memory_usage_state) {
     Fixture f;
     f.updater.setConfig(getConfig(6, 3, 30));
     f.notifyDiskMemUsage(aboveLimit(), belowLimit());
@@ -242,5 +242,5 @@ TEST(MemoryFlushConfigUpdaterTest,
     f.set_node_retired_or_maintenance(true);
     f.assertStrategyDiskConfig("2nd notify", (0.8 - ((0.3 / 0.7) * (1 - DEFAULT_DISK_BLOAT))) / 0.8, 1.0);
     f.notifyDiskMemUsage(belowLimit(), belowLimit());
-    f.assertStrategyDiskConfig("erd notify", DEFAULT_DISK_BLOAT, DEFAULT_DISK_BLOAT);
+    f.assertStrategyDiskConfig("3rd notify", DEFAULT_DISK_BLOAT, DEFAULT_DISK_BLOAT);
 }

@@ -36,4 +36,4 @@ public:
     void commit_cluster_state_change();
 };
 
-}; // namespace search::bmcluster
+} // namespace search::bmcluster

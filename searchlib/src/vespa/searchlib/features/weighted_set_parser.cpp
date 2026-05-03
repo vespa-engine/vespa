@@ -5,4 +5,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".features.weighted_set_parser");
 
-namespace search::features {}
+namespace search::features {
+
+// currently, class implementation is completely header-only.
+
+} // namespace search::features

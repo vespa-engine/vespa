@@ -13,7 +13,7 @@
 #include <string>
 
 #include <vespa/log/log.h>
-LOG_SETUP("attibute_aspect_delayer_test");
+LOG_SETUP("attribute_aspect_delayer_test");
 
 using search::attribute::Config;
 using vespa::config::search::AttributesConfig;

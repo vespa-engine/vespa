@@ -151,7 +151,7 @@ void BitVectorCache::populate(Key2Index& newKeys, CondensedBitVector& chunk, con
             } else {
                 LOG(error,
                     "Unable to to find a valid iterator for feature %" PRIu64
-                    " and %ld bits set at while populating bitvector %2d. This should in theory be impossible.",
+                    " (and %ld bits set) while populating bitvector %2d. This should in theory be impossible.",
                     e.first, m.bitCount(), index);
             }
             index++;
