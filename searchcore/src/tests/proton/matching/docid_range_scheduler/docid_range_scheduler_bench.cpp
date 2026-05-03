@@ -3,8 +3,8 @@
 #include <vespa/searchcore/proton/matching/docid_range_scheduler.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/nexus.h>
-#include <vespa/vespalib/util/rendezvous.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
+#include <vespa/vespalib/util/rendezvous.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -35,13 +35,12 @@ size_t do_work(size_t cost) {
 
 //-----------------------------------------------------------------------------
 
-TEST(DocidRangeSchedulerBench, measure_do_work_overhead_for_different_cost_inputs)
-{
-    for (size_t cost: {0, 1, 10, 100, 1000}) {
+TEST(DocidRangeSchedulerBench, measure_do_work_overhead_for_different_cost_inputs) {
+    for (size_t cost : {0, 1, 10, 100, 1000}) {
         BenchmarkTimer timer(1.0);
         while (timer.has_budget()) {
             timer.before();
-            (void) do_work(cost);
+            (void)do_work(cost);
             timer.after();
         }
         double min_time_s = timer.min_time();
@@ -62,26 +61,25 @@ struct UniformWork : public Work {
     size_t cost;
     UniformWork(size_t cost_in) : cost(cost_in) {}
     std::string desc() const override { return make_string("uniform(%zu)", cost); }
-    void perform(uint32_t) const override { (void) do_work(cost); }
+    void perform(uint32_t) const override { (void)do_work(cost); }
 };
 
 struct TriangleWork : public Work {
     size_t div;
     TriangleWork(size_t div_in) : div(div_in) {}
     std::string desc() const override { return make_string("triangle(docid/%zu)", div); }
-    void perform(uint32_t docid) const override { (void) do_work(docid/div); }
+    void perform(uint32_t docid) const override { (void)do_work(docid / div); }
 };
 
 struct SpikeWork : public Work {
     uint32_t begin;
     uint32_t end;
-    size_t cost;
-    SpikeWork(uint32_t begin_in, uint32_t end_in, size_t cost_in)
-        : begin(begin_in), end(end_in), cost(cost_in) {}
+    size_t   cost;
+    SpikeWork(uint32_t begin_in, uint32_t end_in, size_t cost_in) : begin(begin_in), end(end_in), cost(cost_in) {}
     std::string desc() const override { return make_string("spike(%u,%u,%zu)", begin, end, cost); }
     void perform(uint32_t docid) const override {
         if ((docid >= begin) && (docid < end)) {
-            (void) do_work(cost);
+            (void)do_work(cost);
         }
     }
 };
@@ -106,7 +104,7 @@ struct WorkList {
 
 struct SchedulerFactory {
     using UP = std::unique_ptr<SchedulerFactory>;
-    virtual std::string desc() const = 0;    
+    virtual std::string desc() const = 0;
     virtual DocidRangeScheduler::UP create(uint32_t docid_limit) const = 0;
     virtual ~SchedulerFactory() = default;
 };
@@ -125,7 +123,9 @@ struct TaskSchedulerFactory : public SchedulerFactory {
     size_t num_tasks;
     TaskSchedulerFactory(size_t num_threads_in, size_t num_tasks_in)
         : num_threads(num_threads_in), num_tasks(num_tasks_in) {}
-    std::string desc() const override { return make_string("task(threads:%zu,num_tasks:%zu)", num_threads, num_tasks); }
+    std::string desc() const override {
+        return make_string("task(threads:%zu,num_tasks:%zu)", num_threads, num_tasks);
+    }
     DocidRangeScheduler::UP create(uint32_t docid_limit) const override {
         return std::make_unique<TaskDocidRangeScheduler>(num_threads, num_tasks, docid_limit);
     }
@@ -136,7 +136,9 @@ struct AdaptiveSchedulerFactory : public SchedulerFactory {
     size_t min_task;
     AdaptiveSchedulerFactory(size_t num_threads_in, size_t min_task_in)
         : num_threads(num_threads_in), min_task(min_task_in) {}
-    std::string desc() const override { return make_string("adaptive(threads:%zu,min_task:%zu)", num_threads, min_task); }
+    std::string desc() const override {
+        return make_string("adaptive(threads:%zu,min_task:%zu)", num_threads, min_task);
+    }
     DocidRangeScheduler::UP create(uint32_t docid_limit) const override {
         return std::make_unique<AdaptiveDocidRangeScheduler>(num_threads, min_task, docid_limit);
     }
@@ -171,11 +173,10 @@ struct WorkTracker {
     }
 };
 
-void worker(DocidRangeScheduler &scheduler, const Work &work, size_t thread_id, WorkTracker &tracker) {
+void worker(DocidRangeScheduler& scheduler, const Work& work, size_t thread_id, WorkTracker& tracker) {
     IdleObserver observer = scheduler.make_idle_observer();
     if (observer.is_always_zero()) {
-        for (DocidRange range = scheduler.first_range(thread_id);
-             !range.empty();
+        for (DocidRange range = scheduler.first_range(thread_id); !range.empty();
              range = scheduler.next_range(thread_id))
         {
             do_work(10); // represents init-range cost
@@ -185,8 +186,7 @@ void worker(DocidRangeScheduler &scheduler, const Work &work, size_t thread_id, 
             }
         }
     } else {
-        for (DocidRange range = scheduler.first_range(thread_id);
-             !range.empty();
+        for (DocidRange range = scheduler.first_range(thread_id); !range.empty();
              range = scheduler.next_range(thread_id))
         {
             do_work(10); // represents init-range cost
@@ -203,21 +203,21 @@ void worker(DocidRangeScheduler &scheduler, const Work &work, size_t thread_id, 
 
 //-----------------------------------------------------------------------------
 
-struct RangeChecker : vespalib::Rendezvous<std::reference_wrapper<const WorkTracker>,bool> {
+struct RangeChecker : vespalib::Rendezvous<std::reference_wrapper<const WorkTracker>, bool> {
     size_t docid_limit;
     RangeChecker(size_t num_threads, size_t docid_limit_in)
-        : vespalib::Rendezvous<std::reference_wrapper<const WorkTracker>,bool>(num_threads), docid_limit(docid_limit_in) {}
+        : vespalib::Rendezvous<std::reference_wrapper<const WorkTracker>, bool>(num_threads),
+          docid_limit(docid_limit_in) {}
     ~RangeChecker() override;
     void mingle() override {
         std::vector<DocidRange> ranges;
         for (size_t i = 0; i < size(); ++i) {
             ranges.insert(ranges.end(), in(i).get().ranges.begin(), in(i).get().ranges.end());
         }
-        std::sort(ranges.begin(), ranges.end(), [](const auto &a, const auto &b)
-                  { return (a.begin < b.begin); });
+        std::sort(ranges.begin(), ranges.end(), [](const auto& a, const auto& b) { return (a.begin < b.begin); });
         bool overlap = false;
         ASSERT_TRUE(!ranges.empty());
-        auto pos = ranges.begin();
+        auto       pos = ranges.begin();
         DocidRange cover = *pos++;
         for (; pos != ranges.end(); ++pos) {
             if (pos->begin < cover.end) {
@@ -238,14 +238,13 @@ RangeChecker::~RangeChecker() = default;
 
 const size_t my_docid_limit = 100001;
 
-TEST(DocidRangeSchedulerBench, benchmark_different_combinations_of_schedulers_and_work_loads)
-{
-    constexpr size_t num_threads = 8;
+TEST(DocidRangeSchedulerBench, benchmark_different_combinations_of_schedulers_and_work_loads) {
+    constexpr size_t                     num_threads = 8;
     std::unique_ptr<DocidRangeScheduler> f1;
-    SchedulerList f2(num_threads);
-    WorkList f3;
-    RangeChecker f4(num_threads, my_docid_limit);
-    auto task = [&f1,&f2,&f3,&f4](Nexus& ctx) {
+    SchedulerList                        f2(num_threads);
+    WorkList                             f3;
+    RangeChecker                         f4(num_threads, my_docid_limit);
+    auto                                 task = [&f1, &f2, &f3, &f4](Nexus& ctx) {
         auto thread_id = ctx.thread_id();
         if (thread_id == 0) {
             fprintf(stderr, "Benchmarking with %zu threads:\n", num_threads);
@@ -253,9 +252,8 @@ TEST(DocidRangeSchedulerBench, benchmark_different_combinations_of_schedulers_an
         for (size_t scheduler = 0; scheduler < f2.factory_list.size(); ++scheduler) {
             for (size_t work = 0; work < f3.work_list.size(); ++work) {
                 if (thread_id == 0) {
-                    fprintf(stderr, "  scheduler: %s, work load: %s ",
-                            f2.factory_list[scheduler]->desc().c_str(),
-                            f3.work_list[work]->desc().c_str());
+                    fprintf(stderr, "  scheduler: %s, work load: %s ", f2.factory_list[scheduler]->desc().c_str(),
+                                                            f3.work_list[work]->desc().c_str());
                 }
                 BenchmarkTimer timer(1.0);
                 for (size_t i = 0; i < 5; ++i) {

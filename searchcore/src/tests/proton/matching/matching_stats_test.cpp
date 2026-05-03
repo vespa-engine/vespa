@@ -1,13 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchlib/queryeval/queryeval_stats.h>
 #include <vespa/searchcore/proton/matching/matching_stats.h>
+#include <vespa/searchlib/queryeval/queryeval_stats.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace proton::matching;
 
-TEST(MatchingStatsTest, requireThatDocCountsAddUp)
-{
+TEST(MatchingStatsTest, requireThatDocCountsAddUp) {
     MatchingStats stats;
     EXPECT_EQ(0u, stats.docidSpaceCovered());
     EXPECT_EQ(0u, stats.docsMatched());
@@ -45,8 +44,14 @@ TEST(MatchingStatsTest, requireThatDocCountsAddUp)
     EXPECT_EQ(10u, stats.approximate_nns_nodes_visited());
     EXPECT_EQ(2u, stats.queries());
     EXPECT_EQ(1u, stats.limited_queries());
-    EXPECT_EQ(&stats.add(MatchingStats().docidSpaceCovered(10000).docsMatched(1000).docsRanked(100)
-                            .docsReRanked(10).queries(2).limited_queries(1)), &stats);
+    EXPECT_EQ(&stats.add(MatchingStats()
+                             .docidSpaceCovered(10000)
+                             .docsMatched(1000)
+                             .docsRanked(100)
+                             .docsReRanked(10)
+                             .queries(2)
+                             .limited_queries(1)),
+              &stats);
     EXPECT_EQ(20000u, stats.docidSpaceCovered());
     EXPECT_EQ(2000u, stats.docsMatched());
     EXPECT_EQ(200u, stats.docsRanked());
@@ -55,8 +60,7 @@ TEST(MatchingStatsTest, requireThatDocCountsAddUp)
     EXPECT_EQ(2u, stats.limited_queries());
 }
 
-TEST(MatchingStatsTest, requireThatAverageTimesAreRecorded)
-{
+TEST(MatchingStatsTest, requireThatAverageTimesAreRecorded) {
     MatchingStats stats;
     EXPECT_NEAR(0.0, stats.matchTimeAvg(), 0.00001);
     EXPECT_NEAR(0.0, stats.groupingTimeAvg(), 0.00001);
@@ -74,22 +78,26 @@ TEST(MatchingStatsTest, requireThatAverageTimesAreRecorded)
     EXPECT_NEAR(0.5, stats.rerankTimeAvg(), 0.00001);
     EXPECT_NEAR(2.0, stats.querySetupTimeAvg(), 0.00001);
     EXPECT_NEAR(1.0, stats.queryLatencyAvg(), 0.00001);
-    stats.add(MatchingStats().matchTime(0.03).groupingTime(0.3).rerankTime(1.5).querySetupTime(6.0).queryLatency(3.0));
+    stats.add(
+        MatchingStats().matchTime(0.03).groupingTime(0.3).rerankTime(1.5).querySetupTime(6.0).queryLatency(3.0));
     EXPECT_NEAR(0.02, stats.matchTimeAvg(), 0.00001);
     EXPECT_NEAR(0.2, stats.groupingTimeAvg(), 0.00001);
     EXPECT_NEAR(1.0, stats.rerankTimeAvg(), 0.00001);
     EXPECT_NEAR(4.0, stats.querySetupTimeAvg(), 0.00001);
     EXPECT_NEAR(2.0, stats.queryLatencyAvg(), 0.00001);
-    stats.add(MatchingStats().matchTime(0.05)
-              .groupingTime(0.5)
-              .rerankTime(2.5)
-              .querySetupTime(10.0)
-              .queryLatency(5.0));
-    stats.add(MatchingStats().matchTime(0.05).matchTime(0.03)
-              .groupingTime(0.5).groupingTime(0.3)
-              .rerankTime(2.5).rerankTime(1.5)
-              .querySetupTime(10.0).querySetupTime(6.0)
-              .queryLatency(5.0).queryLatency(3.0));
+    stats.add(
+        MatchingStats().matchTime(0.05).groupingTime(0.5).rerankTime(2.5).querySetupTime(10.0).queryLatency(5.0));
+    stats.add(MatchingStats()
+                  .matchTime(0.05)
+                  .matchTime(0.03)
+                  .groupingTime(0.5)
+                  .groupingTime(0.3)
+                  .rerankTime(2.5)
+                  .rerankTime(1.5)
+                  .querySetupTime(10.0)
+                  .querySetupTime(6.0)
+                  .queryLatency(5.0)
+                  .queryLatency(3.0));
     EXPECT_NEAR(0.03, stats.matchTimeAvg(), 0.00001);
     EXPECT_NEAR(0.3, stats.groupingTimeAvg(), 0.00001);
     EXPECT_NEAR(1.5, stats.rerankTimeAvg(), 0.00001);
@@ -102,8 +110,7 @@ TEST(MatchingStatsTest, requireThatAverageTimesAreRecorded)
     EXPECT_EQ(4u, stats.queryLatencyCount());
 }
 
-TEST(MatchingStatsTest, requireThatMinMaxTimesAreRecorded)
-{
+TEST(MatchingStatsTest, requireThatMinMaxTimesAreRecorded) {
     MatchingStats stats;
     EXPECT_NEAR(0.0, stats.matchTimeMin(), 0.00001);
     EXPECT_NEAR(0.0, stats.groupingTimeMin(), 0.00001);
@@ -126,7 +133,8 @@ TEST(MatchingStatsTest, requireThatMinMaxTimesAreRecorded)
     EXPECT_NEAR(0.5, stats.rerankTimeMax(), 0.00001);
     EXPECT_NEAR(2.0, stats.querySetupTimeMax(), 0.00001);
     EXPECT_NEAR(1.0, stats.queryLatencyMax(), 0.00001);
-    stats.add(MatchingStats().matchTime(0.03).groupingTime(0.3).rerankTime(1.5).querySetupTime(6.0).queryLatency(3.0));
+    stats.add(
+        MatchingStats().matchTime(0.03).groupingTime(0.3).rerankTime(1.5).querySetupTime(6.0).queryLatency(3.0));
     EXPECT_NEAR(0.01, stats.matchTimeMin(), 0.00001);
     EXPECT_NEAR(0.1, stats.groupingTimeMin(), 0.00001);
     EXPECT_NEAR(0.5, stats.rerankTimeMin(), 0.00001);
@@ -137,16 +145,19 @@ TEST(MatchingStatsTest, requireThatMinMaxTimesAreRecorded)
     EXPECT_NEAR(1.5, stats.rerankTimeMax(), 0.00001);
     EXPECT_NEAR(6.0, stats.querySetupTimeMax(), 0.00001);
     EXPECT_NEAR(3.0, stats.queryLatencyMax(), 0.00001);
-    stats.add(MatchingStats().matchTime(0.05)
-              .groupingTime(0.5)
-              .rerankTime(2.5)
-              .querySetupTime(10.0)
-              .queryLatency(5.0));
-    stats.add(MatchingStats().matchTime(0.05).matchTime(0.03)
-              .groupingTime(0.5).groupingTime(0.3)
-              .rerankTime(2.5).rerankTime(1.5)
-              .querySetupTime(10.0).querySetupTime(6.0)
-              .queryLatency(5.0).queryLatency(3.0));
+    stats.add(
+        MatchingStats().matchTime(0.05).groupingTime(0.5).rerankTime(2.5).querySetupTime(10.0).queryLatency(5.0));
+    stats.add(MatchingStats()
+                  .matchTime(0.05)
+                  .matchTime(0.03)
+                  .groupingTime(0.5)
+                  .groupingTime(0.3)
+                  .rerankTime(2.5)
+                  .rerankTime(1.5)
+                  .querySetupTime(10.0)
+                  .querySetupTime(6.0)
+                  .queryLatency(5.0)
+                  .queryLatency(3.0));
     EXPECT_NEAR(0.01, stats.matchTimeMin(), 0.00001);
     EXPECT_NEAR(0.1, stats.groupingTimeMin(), 0.00001);
     EXPECT_NEAR(0.5, stats.rerankTimeMin(), 0.00001);
@@ -159,8 +170,7 @@ TEST(MatchingStatsTest, requireThatMinMaxTimesAreRecorded)
     EXPECT_NEAR(5.0, stats.queryLatencyMax(), 0.00001);
 }
 
-TEST(MatchingStatsTest, requireThatPartitionsAreAddedCorrectly)
-{
+TEST(MatchingStatsTest, requireThatPartitionsAreAddedCorrectly) {
     MatchingStats all1;
     EXPECT_EQ(0u, all1.docidSpaceCovered());
     EXPECT_EQ(0u, all1.docsMatched());
@@ -169,8 +179,7 @@ TEST(MatchingStatsTest, requireThatPartitionsAreAddedCorrectly)
     EXPECT_EQ(vespalib::duration::zero(), all1.doomOvertime());
 
     MatchingStats::Partition subPart;
-    subPart.docsCovered(7).docsMatched(3).docsRanked(2).docsReRanked(1)
-        .active_time(1.0).wait_time(0.5);
+    subPart.docsCovered(7).docsMatched(3).docsRanked(2).docsReRanked(1).active_time(1.0).wait_time(0.5);
     EXPECT_EQ(0u, subPart.softDoomed());
     EXPECT_EQ(0u, subPart.softDoomed(false).softDoomed());
     EXPECT_EQ(1u, subPart.softDoomed(true).softDoomed());
@@ -219,8 +228,14 @@ TEST(MatchingStatsTest, requireThatPartitionsAreAddedCorrectly)
     EXPECT_EQ(1000ns, all1.getPartition(0).doomOvertime());
 
     MatchingStats::Partition otherSubPart;
-    otherSubPart.docsCovered(7).docsMatched(3).docsRanked(2).docsReRanked(1)
-            .active_time(0.5).wait_time(1.0).softDoomed(true).doomOvertime(300ns);
+    otherSubPart.docsCovered(7)
+        .docsMatched(3)
+        .docsRanked(2)
+        .docsReRanked(1)
+        .active_time(0.5)
+        .wait_time(1.0)
+        .softDoomed(true)
+        .doomOvertime(300ns);
     all1.merge_partition(otherSubPart, 1);
     EXPECT_EQ(1u, all1.softDoomed());
     EXPECT_EQ(1000ns, all1.doomOvertime());
@@ -289,8 +304,7 @@ TEST(MatchingStatsTest, requireThatPartitionsAreAddedCorrectly)
     EXPECT_EQ(1000ns, all1.getPartition(1).doomOvertime());
 }
 
-TEST(MatchingStatsTest, requireThatSoftDoomIsSetAndAdded)
-{
+TEST(MatchingStatsTest, requireThatSoftDoomIsSetAndAdded) {
     MatchingStats stats;
     MatchingStats stats2;
     EXPECT_EQ(0ul, stats.softDoomed());
@@ -301,11 +315,10 @@ TEST(MatchingStatsTest, requireThatSoftDoomIsSetAndAdded)
     EXPECT_EQ(0.7, stats.softDoomFactor());
     stats2.add(stats);
     EXPECT_EQ(3ul, stats2.softDoomed());
-    EXPECT_EQ(0.5, stats2.softDoomFactor());  // Not affected by add
+    EXPECT_EQ(0.5, stats2.softDoomFactor()); // Not affected by add
 }
 
-TEST(MatchingStatsTest, requireThatSoftDoomFacorIsComputedCorrectlyForDownAdjustment)
-{
+TEST(MatchingStatsTest, requireThatSoftDoomFacorIsComputedCorrectlyForDownAdjustment) {
     MatchingStats stats;
     EXPECT_EQ(0ul, stats.softDoomed());
     EXPECT_EQ(0.5, stats.softDoomFactor());
@@ -316,19 +329,18 @@ TEST(MatchingStatsTest, requireThatSoftDoomFacorIsComputedCorrectlyForDownAdjust
     stats.updatesoftDoomFactor(1000ms, 500ms, 2000ms);
     EXPECT_EQ(1ul, stats.softDoomed());
     EXPECT_DOUBLE_EQ(0.44, stats.softDoomFactor());
-    stats.updatesoftDoomFactor(900us, 500ms, 2000ms);   // hard limits less than 1ms should be ignored
+    stats.updatesoftDoomFactor(900us, 500ms, 2000ms); // hard limits less than 1ms should be ignored
     EXPECT_EQ(1ul, stats.softDoomed());
     EXPECT_DOUBLE_EQ(0.44, stats.softDoomFactor());
-    stats.updatesoftDoomFactor(1000ms, 900us, 2000ms);   // soft limits less than 1ms should be ignored
+    stats.updatesoftDoomFactor(1000ms, 900us, 2000ms); // soft limits less than 1ms should be ignored
     EXPECT_EQ(1ul, stats.softDoomed());
     EXPECT_DOUBLE_EQ(0.44, stats.softDoomFactor());
-    stats.updatesoftDoomFactor(1000ms, 500ms, 10s);      // Prevent changes above 10%
+    stats.updatesoftDoomFactor(1000ms, 500ms, 10s); // Prevent changes above 10%
     EXPECT_EQ(1ul, stats.softDoomed());
     EXPECT_DOUBLE_EQ(0.396, stats.softDoomFactor());
 }
 
-TEST(MatchingStatsTest, requireThatSoftDoomFacorIsComputedCorrectlyForUpAdjustment)
-{
+TEST(MatchingStatsTest, requireThatSoftDoomFacorIsComputedCorrectlyForUpAdjustment) {
     MatchingStats stats;
     EXPECT_EQ(0ul, stats.softDoomed());
     EXPECT_EQ(0.5, stats.softDoomFactor());
@@ -339,20 +351,19 @@ TEST(MatchingStatsTest, requireThatSoftDoomFacorIsComputedCorrectlyForUpAdjustme
     stats.updatesoftDoomFactor(1s, 900ms, 100ms);
     EXPECT_EQ(1ul, stats.softDoomed());
     EXPECT_DOUBLE_EQ(0.516, stats.softDoomFactor());
-    stats.updatesoftDoomFactor(900us, 900ms, 100ms);   // hard limits less than 1ms should be ignored
+    stats.updatesoftDoomFactor(900us, 900ms, 100ms); // hard limits less than 1ms should be ignored
     EXPECT_EQ(1ul, stats.softDoomed());
     EXPECT_DOUBLE_EQ(0.516, stats.softDoomFactor());
-    stats.updatesoftDoomFactor(1s, 900us, 100ms);   // soft limits less than 1ms should be ignored
+    stats.updatesoftDoomFactor(1s, 900us, 100ms); // soft limits less than 1ms should be ignored
     EXPECT_EQ(1ul, stats.softDoomed());
     EXPECT_DOUBLE_EQ(0.516, stats.softDoomFactor());
     stats.softDoomFactor(0.1);
-    stats.updatesoftDoomFactor(1s, 900ms, 1ms);      // Prevent changes above 5%
+    stats.updatesoftDoomFactor(1s, 900ms, 1ms); // Prevent changes above 5%
     EXPECT_EQ(1ul, stats.softDoomed());
     EXPECT_DOUBLE_EQ(0.105, stats.softDoomFactor());
 }
 
-TEST(MatchingStatsTest, requireThatFactor_is_capped_at_minimum_1_percent)
-{
+TEST(MatchingStatsTest, requireThatFactor_is_capped_at_minimum_1_percent) {
     MatchingStats stats;
     stats.softDoomFactor(0.01001);
     EXPECT_EQ(0.01001, stats.softDoomFactor());

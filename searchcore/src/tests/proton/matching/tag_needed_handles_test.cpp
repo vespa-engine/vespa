@@ -8,6 +8,7 @@
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <ostream>
 #include <type_traits>
 
@@ -17,8 +18,8 @@ using proton::matching::ProtonNodeTypes;
 using proton::matching::ProtonSameElement;
 using proton::matching::ProtonTermData;
 using proton::matching::ResolveViewVisitor;
-using proton::matching::ViewResolver;
 using proton::matching::tag_needed_handles;
+using proton::matching::ViewResolver;
 using search::fef::FieldInfo;
 using search::fef::FieldType;
 using search::fef::FilterThreshold;
@@ -57,7 +58,7 @@ std::ostream& operator<<(std::ostream& os, MatchDataDetails details) {
     return os;
 }
 
-}
+} // namespace search::fef
 
 inline namespace need_normal_features_visitor_test {
 
@@ -66,72 +67,62 @@ const std::string mixed_view = "mixed_view";
 const std::string field1 = "field1";
 const std::string field2 = "field2";
 const std::string field3 = "field3";
-constexpr int term_id = 154;
+constexpr int     term_id = 154;
 const std::string foo_term = "foo";
 const std::string bar_term = "bar";
 const std::string baz_term = "baz";
-const Weight string_weight(4);
+const Weight      string_weight(4);
 
 class ExtractThresholdsVisitor : public TemplateTermVisitor<ExtractThresholdsVisitor, ProtonNodeTypes> {
     ThresholdVector& _thresholds;
 
     void extract_thresholds(const ProtonTermData& n);
+
 public:
     ExtractThresholdsVisitor(std::vector<float>& thresholds);
     ~ExtractThresholdsVisitor() override;
-    template <class TermNode>
-    void visitTerm(TermNode& n) { extract_thresholds(n); }
+    template <class TermNode> void visitTerm(TermNode& n) { extract_thresholds(n); }
     void visit(ProtonNodeTypes::Equiv& n) override;
     void visit(ProtonNodeTypes::Phrase& n) override;
     void visit(ProtonNodeTypes::SameElement& n) override;
 };
 
 ExtractThresholdsVisitor::ExtractThresholdsVisitor(ThresholdVector& thresholds)
-    : TemplateTermVisitor<ExtractThresholdsVisitor, ProtonNodeTypes>(),
-      _thresholds(thresholds)
-{
-
+    : TemplateTermVisitor<ExtractThresholdsVisitor, ProtonNodeTypes>(), _thresholds(thresholds) {
 }
 
 ExtractThresholdsVisitor::~ExtractThresholdsVisitor() = default;
 
-void
-ExtractThresholdsVisitor::extract_thresholds(const ProtonTermData& n)
-{
+void ExtractThresholdsVisitor::extract_thresholds(const ProtonTermData& n) {
     auto num_fields = n.numFields();
     for (uint32_t i = 0; i < num_fields; ++i) {
         _thresholds.emplace_back(n.field(i).fieldSpec().get_filter_threshold().threshold());
     }
 }
 
-void
-ExtractThresholdsVisitor::visit(ProtonNodeTypes::Equiv& n)
-{
+void ExtractThresholdsVisitor::visit(ProtonNodeTypes::Equiv& n) {
     extract_thresholds(n);
     visitChildren(n);
 }
 
-void
-ExtractThresholdsVisitor::visit(ProtonNodeTypes::Phrase& n)
-{
+void ExtractThresholdsVisitor::visit(ProtonNodeTypes::Phrase& n) {
     extract_thresholds(n);
     visitChildren(n);
 }
 
-void
-ExtractThresholdsVisitor::visit(ProtonNodeTypes::SameElement& n)
-{
+void ExtractThresholdsVisitor::visit(ProtonNodeTypes::SameElement& n) {
     extract_thresholds(n);
     visitChildren(n);
 }
 
-}
+} // namespace need_normal_features_visitor_test
 
 class TagNeededHandlesTest : public ::testing::Test {
     static std::unique_ptr<IndexEnvironment> _index_env;
     static std::unique_ptr<ViewResolver>     _view_resolver;
     std::unique_ptr<MatchDataLayout>         _mdl;
     std::unique_ptr<HandleRecorder>          _handle_recorder;
+
 protected:
     TagNeededHandlesTest();
     ~TagNeededHandlesTest() override;
@@ -143,20 +134,14 @@ protected:
 };
 
 std::unique_ptr<IndexEnvironment> TagNeededHandlesTest::_index_env;
-std::unique_ptr<ViewResolver> TagNeededHandlesTest::_view_resolver;
+std::unique_ptr<ViewResolver>     TagNeededHandlesTest::_view_resolver;
 
-TagNeededHandlesTest::TagNeededHandlesTest()
-    : ::testing::Test(),
-      _mdl(),
-      _handle_recorder()
-{
+TagNeededHandlesTest::TagNeededHandlesTest() : ::testing::Test(), _mdl(), _handle_recorder() {
 }
 
 TagNeededHandlesTest::~TagNeededHandlesTest() = default;
 
-void
-TagNeededHandlesTest::SetUpTestSuite()
-{
+void TagNeededHandlesTest::SetUpTestSuite() {
     _index_env = std::make_unique<IndexEnvironment>();
     auto& fields = _index_env->getFields();
     fields.emplace_back(FieldType::INDEX, CollectionType::ARRAY, field1, 0);
@@ -172,16 +157,12 @@ TagNeededHandlesTest::SetUpTestSuite()
     resolver.add(mixed_view, field3);
 }
 
-void
-TagNeededHandlesTest::TearDownTestSuite()
-{
+void TagNeededHandlesTest::TearDownTestSuite() {
     _index_env.reset();
     _view_resolver.reset();
 }
 
-void
-TagNeededHandlesTest::prepare(Node& query)
-{
+void TagNeededHandlesTest::prepare(Node& query) {
     ResolveViewVisitor resolve_visitor(*_view_resolver, *_index_env);
     query.accept(resolve_visitor);
     _mdl = std::make_unique<MatchDataLayout>();
@@ -191,9 +172,7 @@ TagNeededHandlesTest::prepare(Node& query)
     tag_needed_handles(query, *_handle_recorder, *_index_env);
 }
 
-HandleSet
-TagNeededHandlesTest::normal_features_handles()
-{
+HandleSet TagNeededHandlesTest::normal_features_handles() {
     HandleSet result;
     for (auto kv : _handle_recorder->get_handles()) {
         EXPECT_EQ(MatchDataDetails::Normal, kv.second);
@@ -202,19 +181,16 @@ TagNeededHandlesTest::normal_features_handles()
     return result;
 }
 
-ThresholdVector
-TagNeededHandlesTest::extract_thresholds(Node& query)
-{
-    ThresholdVector thresholds;
+ThresholdVector TagNeededHandlesTest::extract_thresholds(Node& query) {
+    ThresholdVector          thresholds;
     ExtractThresholdsVisitor visitor(thresholds);
     query.accept(visitor);
     return thresholds;
 }
 
-TEST_F(TagNeededHandlesTest, no_unpack_for_and_children)
-{
+TEST_F(TagNeededHandlesTest, no_unpack_for_and_children) {
     QueryBuilder<ProtonNodeTypes> query_builder;
-    constexpr uint32_t term_count = 2;
+    constexpr uint32_t            term_count = 2;
     query_builder.addOr(term_count);
     query_builder.addStringTerm(foo_term, view, term_id, string_weight);
     query_builder.addStringTerm(bar_term, view, term_id + 1, string_weight);
@@ -225,10 +201,9 @@ TEST_F(TagNeededHandlesTest, no_unpack_for_and_children)
     EXPECT_EQ((ThresholdVector{0.0, 0.5, 0.0, 0.5}), extract_thresholds(*root));
 }
 
-TEST_F(TagNeededHandlesTest, hidden_unpack_for_equiv_children)
-{
+TEST_F(TagNeededHandlesTest, hidden_unpack_for_equiv_children) {
     QueryBuilder<ProtonNodeTypes> query_builder;
-    constexpr uint32_t term_count = 2;
+    constexpr uint32_t            term_count = 2;
     query_builder.addEquiv(term_count, term_id, string_weight);
     query_builder.addStringTerm(foo_term, view, term_id + 1, string_weight);
     query_builder.addStringTerm(bar_term, view, term_id + 2, string_weight);
@@ -238,11 +213,10 @@ TEST_F(TagNeededHandlesTest, hidden_unpack_for_equiv_children)
     EXPECT_EQ((ThresholdVector{1.0, 1.0, 0.0, 0.5, 0.0, 0.5}), extract_thresholds(*root));
 }
 
-TEST_F(TagNeededHandlesTest, unpack_for_near_children)
-{
+TEST_F(TagNeededHandlesTest, unpack_for_near_children) {
     QueryBuilder<ProtonNodeTypes> query_builder;
-    constexpr uint32_t term_count = 2;
-    constexpr uint32_t distance = 7;
+    constexpr uint32_t            term_count = 2;
+    constexpr uint32_t            distance = 7;
     query_builder.addNear(term_count, distance, 0, 0);
     query_builder.addStringTerm(foo_term, view, term_id, string_weight);
     query_builder.addStringTerm(bar_term, view, term_id + 1, string_weight);
@@ -252,11 +226,10 @@ TEST_F(TagNeededHandlesTest, unpack_for_near_children)
     EXPECT_EQ((ThresholdVector{1.0, 1.0, 1.0, 1.0}), extract_thresholds(*root));
 }
 
-TEST_F(TagNeededHandlesTest, partial_unpack_for_near_children)
-{
+TEST_F(TagNeededHandlesTest, partial_unpack_for_near_children) {
     QueryBuilder<ProtonNodeTypes> query_builder;
-    constexpr uint32_t term_count = 2;
-    constexpr uint32_t distance = 7;
+    constexpr uint32_t            term_count = 2;
+    constexpr uint32_t            distance = 7;
     query_builder.addNear(term_count, distance, 0, 0);
     query_builder.addStringTerm(foo_term, mixed_view, term_id, string_weight);
     query_builder.addStringTerm(bar_term, mixed_view, term_id + 1, string_weight);
@@ -266,12 +239,11 @@ TEST_F(TagNeededHandlesTest, partial_unpack_for_near_children)
     EXPECT_EQ((ThresholdVector{1.0, 1.0, 1.0, 1.0}), extract_thresholds(*root));
 }
 
-TEST_F(TagNeededHandlesTest, unpack_for_near_children_with_equiv)
-{
+TEST_F(TagNeededHandlesTest, unpack_for_near_children_with_equiv) {
     QueryBuilder<ProtonNodeTypes> query_builder;
-    constexpr uint32_t near_term_count = 2;
-    constexpr uint32_t equiv_term_count = 2;
-    constexpr uint32_t distance = 7;
+    constexpr uint32_t            near_term_count = 2;
+    constexpr uint32_t            equiv_term_count = 2;
+    constexpr uint32_t            distance = 7;
     query_builder.addNear(near_term_count, distance, 0, 0);
     query_builder.addStringTerm(foo_term, view, term_id, string_weight);
     query_builder.addEquiv(equiv_term_count, term_id + 1, string_weight);
@@ -284,11 +256,10 @@ TEST_F(TagNeededHandlesTest, unpack_for_near_children_with_equiv)
     EXPECT_EQ((ThresholdVector{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}), extract_thresholds(*root));
 }
 
-TEST_F(TagNeededHandlesTest, unpack_for_onear_children)
-{
+TEST_F(TagNeededHandlesTest, unpack_for_onear_children) {
     QueryBuilder<ProtonNodeTypes> query_builder;
-    constexpr uint32_t term_count = 2;
-    constexpr uint32_t distance = 7;
+    constexpr uint32_t            term_count = 2;
+    constexpr uint32_t            distance = 7;
     query_builder.addONear(term_count, distance, 0, 0);
     query_builder.addStringTerm(foo_term, view, term_id, string_weight);
     query_builder.addStringTerm(bar_term, view, term_id + 1, string_weight);
@@ -298,10 +269,9 @@ TEST_F(TagNeededHandlesTest, unpack_for_onear_children)
     EXPECT_EQ((ThresholdVector{1.0, 1.0, 1.0, 1.0}), extract_thresholds(*root));
 }
 
-TEST_F(TagNeededHandlesTest, hidden_unpack_for_phrase_children)
-{
+TEST_F(TagNeededHandlesTest, hidden_unpack_for_phrase_children) {
     QueryBuilder<ProtonNodeTypes> query_builder;
-    constexpr uint32_t term_count = 2;
+    constexpr uint32_t            term_count = 2;
     query_builder.addPhrase(term_count, view, term_id, string_weight);
     query_builder.addStringTerm(foo_term, view, term_id + 1, string_weight);
     query_builder.addStringTerm(bar_term, view, term_id + 2, string_weight);
@@ -312,10 +282,9 @@ TEST_F(TagNeededHandlesTest, hidden_unpack_for_phrase_children)
     EXPECT_EQ((ThresholdVector{0.0, 0.5}), extract_thresholds(*root));
 }
 
-TEST_F(TagNeededHandlesTest, unpack_for_same_element_children)
-{
+TEST_F(TagNeededHandlesTest, unpack_for_same_element_children) {
     QueryBuilder<ProtonNodeTypes> query_builder;
-    constexpr uint32_t term_count = 2;
+    constexpr uint32_t            term_count = 2;
     query_builder.addSameElement(term_count, view, term_id, string_weight);
     query_builder.addStringTerm(foo_term, view, term_id + 1, string_weight);
     query_builder.addStringTerm(bar_term, view, term_id + 2, string_weight);
@@ -328,11 +297,10 @@ TEST_F(TagNeededHandlesTest, unpack_for_same_element_children)
     EXPECT_EQ((HandleVector{0, 1, 2, 3}), se->descendants_index_handles);
 }
 
-TEST_F(TagNeededHandlesTest, unpack_for_same_element_with_phrase_child)
-{
+TEST_F(TagNeededHandlesTest, unpack_for_same_element_with_phrase_child) {
     QueryBuilder<ProtonNodeTypes> query_builder;
-    constexpr uint32_t term_count = 2;
-    constexpr uint32_t phrase_term_count = 2;
+    constexpr uint32_t            term_count = 2;
+    constexpr uint32_t            phrase_term_count = 2;
     query_builder.addSameElement(term_count, view, term_id, string_weight);
     query_builder.addStringTerm(foo_term, view, term_id + 1, string_weight);
     query_builder.addPhrase(phrase_term_count, view, term_id, string_weight);
@@ -347,13 +315,12 @@ TEST_F(TagNeededHandlesTest, unpack_for_same_element_with_phrase_child)
     EXPECT_EQ((HandleVector{0, 1, 2, 3}), se->descendants_index_handles);
 }
 
-TEST_F(TagNeededHandlesTest, unpack_for_same_element_with_near_child)
-{
+TEST_F(TagNeededHandlesTest, unpack_for_same_element_with_near_child) {
     QueryBuilder<ProtonNodeTypes> query_builder;
-    constexpr uint32_t term_count = 2;
-    constexpr uint32_t near_term_count = 2;
-    constexpr uint32_t near_distance = 5;
-    constexpr uint32_t exclusion_distance = 2;
+    constexpr uint32_t            term_count = 2;
+    constexpr uint32_t            near_term_count = 2;
+    constexpr uint32_t            near_distance = 5;
+    constexpr uint32_t            exclusion_distance = 2;
     for (uint32_t near_negative_term_count = 0; near_negative_term_count < 2; ++near_negative_term_count) {
         SCOPED_TRACE("negative_terms=" + std::to_string(near_negative_term_count));
         query_builder.addSameElement(term_count, view, term_id, string_weight);
@@ -365,7 +332,7 @@ TEST_F(TagNeededHandlesTest, unpack_for_same_element_with_near_child)
         prepare(*root);
         EXPECT_EQ((HandleSet{0, 1, 2, 3, 4, 5}), normal_features_handles());
         EXPECT_EQ((ThresholdVector{0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}), extract_thresholds(*root));
-        auto *se = dynamic_cast<ProtonSameElement *>(root.get());
+        auto* se = dynamic_cast<ProtonSameElement*>(root.get());
         ASSERT_NE(nullptr, se);
         if (near_negative_term_count == 0) {
             EXPECT_EQ((HandleVector{0, 1, 2, 3, 4, 5}), se->descendants_index_handles);
@@ -375,10 +342,9 @@ TEST_F(TagNeededHandlesTest, unpack_for_same_element_with_near_child)
     }
 }
 
-TEST_F(TagNeededHandlesTest, unpack_for_same_element_children_one_unranked)
-{
+TEST_F(TagNeededHandlesTest, unpack_for_same_element_children_one_unranked) {
     QueryBuilder<ProtonNodeTypes> query_builder;
-    constexpr uint32_t term_count = 2;
+    constexpr uint32_t            term_count = 2;
     query_builder.addSameElement(term_count, view, term_id, string_weight);
     query_builder.addStringTerm(foo_term, view, term_id + 1, string_weight);
     query_builder.addStringTerm(bar_term, view, term_id + 2, string_weight).setRanked(false);
@@ -391,10 +357,9 @@ TEST_F(TagNeededHandlesTest, unpack_for_same_element_children_one_unranked)
     EXPECT_EQ((HandleVector{0, 1}), se->descendants_index_handles);
 }
 
-TEST_F(TagNeededHandlesTest, unpack_for_same_element_children_one_hidden)
-{
+TEST_F(TagNeededHandlesTest, unpack_for_same_element_children_one_hidden) {
     QueryBuilder<ProtonNodeTypes> query_builder;
-    constexpr uint32_t term_count = 1;
+    constexpr uint32_t            term_count = 1;
     query_builder.addSameElement(term_count, view, term_id, string_weight);
     query_builder.addAndNot(2);
     query_builder.addStringTerm(foo_term, view, term_id + 1, string_weight);
