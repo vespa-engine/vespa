@@ -6,6 +6,7 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+
 #include <filesystem>
 
 using search::diskindex::PageDict4FileSeqRead;
@@ -16,14 +17,12 @@ using search::index::PostingListCounts;
 using search::index::PostingListOffsetAndCounts;
 using search::index::PostingListParams;
 
-
 namespace {
 
 std::string test_dir("long_words_dir");
 std::string dict(test_dir + "/dict");
 
-PostingListCounts make_counts()
-{
+PostingListCounts make_counts() {
     PostingListCounts counts;
     counts._bitLength = 100;
     counts._numDocs = 1;
@@ -31,17 +30,15 @@ PostingListCounts make_counts()
     return counts;
 }
 
-std::string
-make_word(int i)
-{
+std::string make_word(int i) {
     vespalib::asciistream os;
-    std::string word(5_Ki, 'a');
+    std::string           word(5_Ki, 'a');
     os << vespalib::setfill('0') << vespalib::setw(8) << i;
     word.append(os.view());
     return word;
 }
 
-}
+} // namespace
 
 /*
  * A long word that don't fit into a 4 KiB 'page' causes a fallback to
@@ -67,16 +64,15 @@ make_word(int i)
  *
  * These overflows are fixed.
  */
-TEST(PageDict4LongWordsTest, test_many_long_words)
-{
-    int num_words = 9_Mi;
+TEST(PageDict4LongWordsTest, test_many_long_words) {
+    int  num_words = 9_Mi;
     auto counts = make_counts();
     std::filesystem::remove_all(std::filesystem::path(test_dir));
     std::filesystem::create_directories(std::filesystem::path(test_dir));
 
-    auto dw = std::make_unique<PageDict4FileSeqWrite>();
-    DummyFileHeaderContext file_header_context;
-    PostingListParams params;
+    auto                     dw = std::make_unique<PageDict4FileSeqWrite>();
+    DummyFileHeaderContext   file_header_context;
+    PostingListParams        params;
     search::TuneFileSeqWrite tune_file_write;
     params.set("numWordIds", num_words);
     params.set("minChunkDocs", 256_Ki);
@@ -89,17 +85,17 @@ TEST(PageDict4LongWordsTest, test_many_long_words)
     EXPECT_TRUE(dw->close());
     dw.reset();
 
-    auto drr = std::make_unique<PageDict4RandRead>();
+    auto                     drr = std::make_unique<PageDict4RandRead>();
     search::TuneFileRandRead tune_file_rand_read;
     EXPECT_TRUE(drr->open(dict, tune_file_rand_read));
     PostingListOffsetAndCounts offset_and_counts;
-    uint64_t exp_offset = 0;
-    uint64_t exp_acc_num_docs = 0;
+    uint64_t                   exp_offset = 0;
+    uint64_t                   exp_acc_num_docs = 0;
     for (int i = 0; i < num_words; ++i) {
-        auto word = make_word(i);
+        auto     word = make_word(i);
         uint64_t check_word_num = 0;
         EXPECT_TRUE(drr->lookup(word, check_word_num, offset_and_counts));
-        EXPECT_EQ(i + 1, (int) check_word_num);
+        EXPECT_EQ(i + 1, (int)check_word_num);
         EXPECT_EQ(exp_offset, offset_and_counts._offset);
         EXPECT_EQ(exp_acc_num_docs, offset_and_counts._accNumDocs);
         EXPECT_EQ(counts, offset_and_counts._counts);
@@ -109,16 +105,16 @@ TEST(PageDict4LongWordsTest, test_many_long_words)
     EXPECT_TRUE(drr->close());
     drr.reset();
 
-    auto dr = std::make_unique<PageDict4FileSeqRead>();
+    auto                    dr = std::make_unique<PageDict4FileSeqRead>();
     search::TuneFileSeqRead tune_file_read;
     EXPECT_TRUE(dr->open(dict, tune_file_read));
-    std::string check_word;
+    std::string       check_word;
     PostingListCounts check_counts;
     for (int i = 0; i < num_words; ++i) {
         uint64_t check_word_num = 0;
         check_word.clear();
         dr->readWord(check_word, check_word_num, check_counts);
-        EXPECT_EQ(i + 1, (int) check_word_num);
+        EXPECT_EQ(i + 1, (int)check_word_num);
         EXPECT_EQ(make_word(i), check_word);
         EXPECT_EQ(counts, check_counts);
     }
