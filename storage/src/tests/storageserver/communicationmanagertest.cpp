@@ -1,10 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <tests/common/dummystoragelink.h>
-#include <tests/common/storage_config_set.h>
-#include <tests/common/testhelper.h>
-#include <tests/common/teststorageapp.h>
-#include <vespa/config/helper/configgetter.hpp>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/test/make_document_bucket.h>
@@ -18,8 +13,16 @@
 #include <vespa/storage/storageserver/communicationmanager.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <thread>
+
+#include <vespa/config/helper/configgetter.hpp>
+
 #include <gtest/gtest.h>
+#include <tests/common/dummystoragelink.h>
+#include <tests/common/storage_config_set.h>
+#include <tests/common/testhelper.h>
+#include <tests/common/teststorageapp.h>
+
+#include <thread>
 
 using document::test::makeDocumentBucket;
 using namespace ::testing;
@@ -37,9 +40,9 @@ struct CommunicationManagerTest : Test {
     void doTestConfigPropagation(bool isContentNode);
 
     static std::shared_ptr<api::StorageCommand> createDummyCommand(api::StorageMessage::Priority priority) {
-        auto cmd = std::make_shared<api::GetCommand>(makeDocumentBucket(document::BucketId(0)),
-                                                     document::DocumentId("id:ns:mytype::mydoc"),
-                                                     document::AllFields::NAME);
+        auto cmd =
+            std::make_shared<api::GetCommand>(makeDocumentBucket(document::BucketId(0)),
+                                              document::DocumentId("id:ns:mytype::mydoc"), document::AllFields::NAME);
         cmd->setAddress(api::StorageMessageAddress::create(&_storage, lib::NodeType::STORAGE, 1));
         cmd->setPriority(priority);
         return cmd;
@@ -48,10 +51,7 @@ struct CommunicationManagerTest : Test {
 
 namespace {
 
-void
-wait_for_slobrok_visibility(const CommunicationManager& mgr,
-                            const api::StorageMessageAddress& addr)
-{
+void wait_for_slobrok_visibility(const CommunicationManager& mgr, const api::StorageMessageAddress& addr) {
     const auto deadline = vespalib::steady_clock::now() + 60s;
     do {
         if (mgr.address_visible_in_slobrok(addr)) {
@@ -62,12 +62,12 @@ wait_for_slobrok_visibility(const CommunicationManager& mgr,
     FAIL() << "Timed out waiting for address " << addr.toString() << " to be visible in Slobrok";
 }
 
-}
+} // namespace
 
 TEST_F(CommunicationManagerTest, simple) {
     mbus::Slobrok slobrok;
-    auto dist_config = StorageConfigSet::make_distributor_node_config();
-    auto stor_config = StorageConfigSet::make_storage_node_config();
+    auto          dist_config = StorageConfigSet::make_distributor_node_config();
+    auto          stor_config = StorageConfigSet::make_storage_node_config();
     dist_config->set_node_index(1);
     stor_config->set_node_index(1);
     dist_config->set_slobrok_config_port(slobrok.port());
@@ -79,20 +79,20 @@ TEST_F(CommunicationManagerTest, simple) {
     // Set up a "distributor" and a "storage" node with communication
     // managers and a dummy storage link below we can use for testing.
     TestServiceLayerApp storNode(stor_cfg_uri);
-    TestDistributorApp distNode(dist_cfg_uri);
+    TestDistributorApp  distNode(dist_cfg_uri);
 
     CommunicationManager distributor(distNode.getComponentRegister(), dist_cfg_uri,
                                      *config_from<CommunicationManagerConfig>(dist_cfg_uri));
     CommunicationManager storage(storNode.getComponentRegister(), stor_cfg_uri,
                                  *config_from<CommunicationManagerConfig>(stor_cfg_uri));
-    auto* distributorLink = new DummyStorageLink();
-    auto* storageLink = new DummyStorageLink();
+    auto*                distributorLink = new DummyStorageLink();
+    auto*                storageLink = new DummyStorageLink();
     distributor.push_back(std::unique_ptr<StorageLink>(distributorLink));
     storage.push_back(std::unique_ptr<StorageLink>(storageLink));
     distributor.open();
     storage.open();
 
-    auto stor_addr  = api::StorageMessageAddress::create(&_storage, lib::NodeType::STORAGE, 1);
+    auto stor_addr = api::StorageMessageAddress::create(&_storage, lib::NodeType::STORAGE, 1);
     auto distr_addr = api::StorageMessageAddress::create(&_storage, lib::NodeType::DISTRIBUTOR, 1);
     // It is undefined when the logical nodes will be visible in each others Slobrok
     // mirrors, so explicitly wait until mutual visibility is ensured. Failure to do this
@@ -102,8 +102,9 @@ TEST_F(CommunicationManagerTest, simple) {
     ASSERT_NO_FATAL_FAILURE(wait_for_slobrok_visibility(storage, distr_addr));
 
     // Send a message through from distributor to storage
-    auto cmd = std::make_shared<api::GetCommand>(
-            makeDocumentBucket(document::BucketId(0)), document::DocumentId("id:ns:mytype::mydoc"), document::AllFields::NAME);
+    auto cmd =
+        std::make_shared<api::GetCommand>(makeDocumentBucket(document::BucketId(0)),
+                                          document::DocumentId("id:ns:mytype::mydoc"), document::AllFields::NAME);
     cmd->setAddress(stor_addr);
     distributorLink->sendUp(cmd);
     storageLink->waitForMessages(1, MESSAGE_WAIT_TIME_SEC);
@@ -120,11 +121,9 @@ TEST_F(CommunicationManagerTest, simple) {
     EXPECT_FALSE(reply2->wasFound());
 }
 
-void
-CommunicationManagerTest::doTestConfigPropagation(bool isContentNode)
-{
+void CommunicationManagerTest::doTestConfigPropagation(bool isContentNode) {
     mbus::Slobrok slobrok;
-    auto config = StorageConfigSet::make_node_config(isContentNode);
+    auto          config = StorageConfigSet::make_node_config(isContentNode);
     config->set_node_index(1);
     config->set_slobrok_config_port(slobrok.port());
     config->communication_manager_config().mbusContentNodeMaxPendingCount = 12345;
@@ -142,7 +141,7 @@ CommunicationManagerTest::doTestConfigPropagation(bool isContentNode)
 
     CommunicationManager commMgr(node->getComponentRegister(), cfg_uri,
                                  *config_from<CommunicationManagerConfig>(cfg_uri));
-    auto* storageLink = new DummyStorageLink();
+    auto*                storageLink = new DummyStorageLink();
     commMgr.push_back(std::unique_ptr<StorageLink>(storageLink));
     commMgr.open();
 
@@ -180,15 +179,15 @@ TEST_F(CommunicationManagerTest, stor_pending_limit_configs_are_propagated_to_me
 
 TEST_F(CommunicationManagerTest, commands_are_dequeued_in_fifo_order) {
     mbus::Slobrok slobrok;
-    auto config = StorageConfigSet::make_storage_node_config();
+    auto          config = StorageConfigSet::make_storage_node_config();
     config->set_node_index(1);
     config->set_slobrok_config_port(slobrok.port());
-    auto& cfg_uri = config->config_uri();
+    auto&               cfg_uri = config->config_uri();
     TestServiceLayerApp storNode(cfg_uri);
 
     CommunicationManager storage(storNode.getComponentRegister(), cfg_uri,
                                  *config_from<CommunicationManagerConfig>(cfg_uri));
-    auto* storageLink = new DummyStorageLink();
+    auto*                storageLink = new DummyStorageLink();
     storage.push_back(std::unique_ptr<StorageLink>(storageLink));
     storage.open();
 
@@ -206,23 +205,21 @@ TEST_F(CommunicationManagerTest, commands_are_dequeued_in_fifo_order) {
     for (size_t i = 0; i < pris.size(); ++i) {
         // Casting is just to avoid getting mismatched values printed to the
         // output verbatim as chars.
-        EXPECT_EQ(
-                uint32_t(pris[i]),
-                uint32_t(storageLink->getCommand(i)->getPriority()));
+        EXPECT_EQ(uint32_t(pris[i]), uint32_t(storageLink->getCommand(i)->getPriority()));
     }
 }
 
 TEST_F(CommunicationManagerTest, replies_are_dequeued_in_fifo_order) {
     mbus::Slobrok slobrok;
-    auto config = StorageConfigSet::make_storage_node_config();
+    auto          config = StorageConfigSet::make_storage_node_config();
     config->set_node_index(1);
     config->set_slobrok_config_port(slobrok.port());
-    auto& cfg_uri = config->config_uri();
+    auto&               cfg_uri = config->config_uri();
     TestServiceLayerApp storNode(cfg_uri);
 
     CommunicationManager storage(storNode.getComponentRegister(), cfg_uri,
                                  *config_from<CommunicationManagerConfig>(cfg_uri));
-    auto* storageLink = new DummyStorageLink();
+    auto*                storageLink = new DummyStorageLink();
     storage.push_back(std::unique_ptr<StorageLink>(storageLink));
     storage.open();
 
@@ -234,31 +231,25 @@ TEST_F(CommunicationManagerTest, replies_are_dequeued_in_fifo_order) {
 
     // Want FIFO order for replies, not priority-sorted order.
     for (size_t i = 0; i < pris.size(); ++i) {
-        EXPECT_EQ(
-                uint32_t(pris[i]),
-                uint32_t(storageLink->getCommand(i)->getPriority()));
+        EXPECT_EQ(uint32_t(pris[i]), uint32_t(storageLink->getCommand(i)->getPriority()));
     }
 }
 
 struct MockMbusReplyHandler : mbus::IReplyHandler {
     std::vector<std::unique_ptr<mbus::Reply>> replies;
 
-    void handleReply(std::unique_ptr<mbus::Reply> msg) override {
-        replies.emplace_back(std::move(msg));
-    }
+    void handleReply(std::unique_ptr<mbus::Reply> msg) override { replies.emplace_back(std::move(msg)); }
 };
 
 struct CommunicationManagerFixture {
-    std::unique_ptr<StorageConfigSet> config;
-    MockMbusReplyHandler reply_handler;
-    mbus::Slobrok slobrok;
-    std::unique_ptr<TestServiceLayerApp> node;
+    std::unique_ptr<StorageConfigSet>     config;
+    MockMbusReplyHandler                  reply_handler;
+    mbus::Slobrok                         slobrok;
+    std::unique_ptr<TestServiceLayerApp>  node;
     std::unique_ptr<CommunicationManager> comm_mgr;
-    DummyStorageLink* bottom_link;
+    DummyStorageLink*                     bottom_link;
 
-    CommunicationManagerFixture()
-        : config(StorageConfigSet::make_storage_node_config())
-    {
+    CommunicationManagerFixture() : config(StorageConfigSet::make_storage_node_config()) {
         config->set_node_index(1);
         config->set_slobrok_config_port(slobrok.port());
         auto& cfg_uri = config->config_uri();
@@ -272,19 +263,18 @@ struct CommunicationManagerFixture {
     }
     ~CommunicationManagerFixture();
 
-    template <typename T>
-    std::unique_ptr<T> documentapi_message_for_space(const char *space) {
+    template <typename T> std::unique_ptr<T> documentapi_message_for_space(const char* space) {
         auto cmd = std::make_unique<T>(document::DocumentId(vespalib::make_string("id::%s::stuff", space)));
         // Bind reply handling to our own mock handler
         cmd->pushHandler(reply_handler);
         return cmd;
     }
 
-    std::unique_ptr<documentapi::RemoveDocumentMessage> documentapi_remove_message_for_space(const char *space) {
+    std::unique_ptr<documentapi::RemoveDocumentMessage> documentapi_remove_message_for_space(const char* space) {
         return documentapi_message_for_space<documentapi::RemoveDocumentMessage>(space);
     }
 
-    std::unique_ptr<documentapi::GetDocumentMessage> documentapi_get_message_for_space(const char *space) {
+    std::unique_ptr<documentapi::GetDocumentMessage> documentapi_get_message_for_space(const char* space) {
         return documentapi_message_for_space<documentapi::GetDocumentMessage>(space);
     }
 };
@@ -302,11 +292,11 @@ BucketspacesConfigBuilder::Documenttype doc_type(std::string_view name, std::str
     return dt;
 }
 
-}
+} // namespace
 
 TEST_F(CommunicationManagerTest, bucket_space_config_can_be_updated_live) {
     CommunicationManagerFixture f;
-    BucketspacesConfigBuilder config;
+    BucketspacesConfigBuilder   config;
     config.documenttype.emplace_back(doc_type("foo", "default"));
     config.documenttype.emplace_back(doc_type("bar", "global"));
     f.comm_mgr->updateBucketSpacesConfig(config);
@@ -345,7 +335,8 @@ TEST_F(CommunicationManagerTest, unmapped_bucket_space_documentapi_request_retur
     ASSERT_EQ(1, f.reply_handler.replies.size());
     auto& reply = *f.reply_handler.replies[0];
     ASSERT_TRUE(reply.hasErrors());
-    EXPECT_EQ(static_cast<uint32_t>(documentapi::DocumentProtocol::ERROR_DOCUMENT_NOT_FOUND), reply.getError(0).getCode());
+    EXPECT_EQ(static_cast<uint32_t>(documentapi::DocumentProtocol::ERROR_DOCUMENT_NOT_FOUND),
+              reply.getError(0).getCode());
 
     EXPECT_EQ(uint64_t(1), f.comm_mgr->metrics().bucketSpaceMappingFailures.getValue());
 }
@@ -361,15 +352,16 @@ TEST_F(CommunicationManagerTest, unmapped_bucket_space_for_get_documentapi_reque
     ASSERT_EQ(1, f.reply_handler.replies.size());
     auto& reply = *f.reply_handler.replies[0];
     ASSERT_TRUE(reply.hasErrors());
-    EXPECT_EQ(static_cast<uint32_t>(documentapi::DocumentProtocol::ERROR_DOCUMENT_NOT_FOUND), reply.getError(0).getCode());
+    EXPECT_EQ(static_cast<uint32_t>(documentapi::DocumentProtocol::ERROR_DOCUMENT_NOT_FOUND),
+              reply.getError(0).getCode());
     EXPECT_EQ(uint64_t(1), f.comm_mgr->metrics().bucketSpaceMappingFailures.getValue());
 }
 
 TEST_F(CommunicationManagerTest, communication_manager_swallows_internal_replies) {
     CommunicationManagerFixture f;
-    auto msg = std::make_unique<RecheckBucketInfoCommand>(makeDocumentBucket({16, 1}));
-    auto reply = std::shared_ptr<api::StorageReply>(msg->makeReply());
+    auto                        msg = std::make_unique<RecheckBucketInfoCommand>(makeDocumentBucket({16, 1}));
+    auto                        reply = std::shared_ptr<api::StorageReply>(msg->makeReply());
     EXPECT_TRUE(f.comm_mgr->onUp(reply)); // true == handled by storage link
 }
 
-} // storage
+} // namespace storage

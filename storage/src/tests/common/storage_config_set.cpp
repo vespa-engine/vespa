@@ -1,12 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "storage_config_set.h"
+
 #include <vespa/config-bucketspaces.h>
 #include <vespa/config-persistence.h>
 #include <vespa/config-slobroks.h>
 #include <vespa/config-stor-distribution.h>
 #include <vespa/config-stor-filestor.h>
 #include <vespa/config-upgrading.h>
+#include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/repo/document_type_repo_factory.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/messagebus/config-messagebus.h>
@@ -20,7 +22,6 @@
 #include <vespa/storage/config/config-stor-status.h>
 #include <vespa/storage/config/config-stor-visitordispatcher.h>
 #include <vespa/storage/visiting/config-stor-visitor.h>
-#include <vespa/document/base/testdocrepo.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 namespace storage {
@@ -45,8 +46,7 @@ StorageConfigSet::StorageConfigSet(std::string config_id_str, bool is_storage_no
       _visitor_dispatcher_config(std::make_unique<StorVisitordispatcherConfigBuilder>()),
       _config_id_str(std::move(config_id_str)),
       _config_ctx(std::make_shared<config::ConfigContext>(_config_set)),
-      _config_uri(_config_id_str, _config_ctx)
-{
+      _config_uri(_config_id_str, _config_ctx) {
     _config_set.addBuilder(_config_id_str, _document_type_config.get());
     _config_set.addBuilder(_config_id_str, _slobroks_config.get());
     _config_set.addBuilder(_config_id_str, _messagebus_config.get());
@@ -82,13 +82,13 @@ void StorageConfigSet::init_default_configs(bool is_storage_node) {
     add_distribution_config(50);
     add_bucket_space_mapping("testdoctype1", "default");
 
-    _communication_manager_config->rpcport  = 0;
+    _communication_manager_config->rpcport = 0;
     _communication_manager_config->mbusport = 0;
 
     _distributor_manager_config->splitcount = 1000;
-    _distributor_manager_config->splitsize  = 10000000;
-    _distributor_manager_config->joincount  = 500;
-    _distributor_manager_config->joinsize   = 5000000;
+    _distributor_manager_config->splitsize = 10000000;
+    _distributor_manager_config->joincount = 500;
+    _distributor_manager_config->joinsize = 5000000;
     _distributor_manager_config->maxClusterClockSkewSec = 0;
 
     _filestor_config->numThreads = 1;
@@ -149,4 +149,4 @@ void StorageConfigSet::set_slobrok_config_port(int slobrok_port) {
     _slobroks_config->slobrok.emplace_back(std::move(slobrok));
 }
 
-} // storage
+} // namespace storage

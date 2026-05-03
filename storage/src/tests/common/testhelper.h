@@ -6,10 +6,8 @@
 
 namespace storage {
 
-template <typename ConfigT>
-std::unique_ptr<ConfigT> config_from(const ::config::ConfigUri& cfg_uri) {
+template <typename ConfigT> std::unique_ptr<ConfigT> config_from(const ::config::ConfigUri& cfg_uri) {
     return ::config::ConfigGetter<ConfigT>::getConfig(cfg_uri.getConfigId(), cfg_uri.getContext());
 }
 
-} // storage
-
+} // namespace storage

@@ -1,34 +1,37 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <tests/common/dummystoragelink.h>
-#include <tests/common/storage_config_set.h>
-#include <tests/common/testhelper.h>
-#include <tests/common/teststorageapp.h>
 #include <vespa/config/common/exceptions.h>
-#include <vespa/config/helper/configgetter.hpp>
+#include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/documentapi/messagebus/messages/putdocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/visitor.h>
+#include <vespa/persistence/spi/docentry.h>
 #include <vespa/storage/common/reindexing_constants.h>
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/storage/visiting/visitormanager.h>
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <tests/storageserver/testvisitormessagesession.h>
-#include <vespa/persistence/spi/docentry.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
+#include <vespa/config/helper/configgetter.hpp>
+
+#include <sys/stat.h>
+#include <tests/common/dummystoragelink.h>
+#include <tests/common/storage_config_set.h>
+#include <tests/common/testhelper.h>
+#include <tests/common/teststorageapp.h>
+#include <tests/storageserver/testvisitormessagesession.h>
+
 #include <filesystem>
 #include <thread>
-#include <sys/stat.h>
 
 using namespace std::chrono_literals;
-using document::test::makeBucketSpace;
 using document::Document;
 using document::DocumentId;
+using document::test::makeBucketSpace;
 using namespace ::testing;
 
 namespace storage {
@@ -51,8 +54,8 @@ struct TestParams {
         return *this;
     }
 
-    uint32_t _maxVisitorMemoryUsage {UINT32_MAX};
-    uint32_t _parallelBuckets {1};
+    uint32_t    _maxVisitorMemoryUsage{UINT32_MAX};
+    uint32_t    _parallelBuckets{1};
     mbus::Error _autoReplyError;
 };
 
@@ -68,18 +71,18 @@ struct MessageMeta {
 MessageMeta::MessageMeta() = default;
 MessageMeta::~MessageMeta() = default;
 
-}
+} // namespace
 
 struct VisitorTest : Test {
     static uint32_t docCount;
 
-    std::unique_ptr<StorageConfigSet> _config;
-    std::vector<Document::SP> _documents;
+    std::unique_ptr<StorageConfigSet>                 _config;
+    std::vector<Document::SP>                         _documents;
     std::unique_ptr<TestVisitorMessageSessionFactory> _messageSessionFactory;
-    std::unique_ptr<TestServiceLayerApp> _node;
-    std::unique_ptr<DummyStorageLink> _top;
-    DummyStorageLink* _bottom;
-    VisitorManager* _manager;
+    std::unique_ptr<TestServiceLayerApp>              _node;
+    std::unique_ptr<DummyStorageLink>                 _top;
+    DummyStorageLink*                                 _bottom;
+    VisitorManager*                                   _manager;
 
     VisitorTest();
     ~VisitorTest() override;
@@ -100,44 +103,30 @@ struct VisitorTest : Test {
 
     constexpr static api::StorageMessage::Priority DefaultPriority = 123;
 
-    std::shared_ptr<api::CreateVisitorCommand> makeCreateVisitor(
-            const VisitorOptions& options = VisitorOptions());
+    std::shared_ptr<api::CreateVisitorCommand> makeCreateVisitor(const VisitorOptions& options = VisitorOptions());
     void TearDown() override;
     bool waitUntilNoActiveVisitors();
     TestVisitorMessageSession& getSession(uint32_t n);
-    void verifyCreateVisitorReply(
-            api::ReturnCode::Result expectedResult,
-            int checkStatsDocsVisited = -1,
-            int checkStatsBytesVisited = -1,
-            uint64_t* message_id_out = nullptr);
-    void getMessagesAndReply(
-            size_t expectedCount,
-            TestVisitorMessageSession& session,
-            MessageMeta& meta,
-            api::ReturnCode::Result returnCode = api::ReturnCode::OK);
+    void verifyCreateVisitorReply(api::ReturnCode::Result expectedResult, int checkStatsDocsVisited = -1,
+                                  int checkStatsBytesVisited = -1, uint64_t* message_id_out = nullptr);
+    void getMessagesAndReply(size_t expectedCount, TestVisitorMessageSession& session, MessageMeta& meta,
+                             api::ReturnCode::Result returnCode = api::ReturnCode::OK);
     uint32_t getMatchingDocuments(std::vector<Document::SP>& docs);
 
 protected:
-    void doTestVisitorInstanceHasConsistencyLevel(
-            std::string_view visitorType,
-            spi::ReadConsistency expectedConsistency);
+    void doTestVisitorInstanceHasConsistencyLevel(std::string_view     visitorType,
+                                                  spi::ReadConsistency expectedConsistency);
 
     template <typename T>
-    void fetchMultipleCommands(DummyStorageLink& link, size_t count,
-                               std::vector<std::shared_ptr<T>>& commands_out);
+    void fetchMultipleCommands(DummyStorageLink& link, size_t count, std::vector<std::shared_ptr<T>>& commands_out);
 
-    template <typename T>
-    void fetchSingleCommand(DummyStorageLink& link, std::shared_ptr<T>& msg_out);
+    template <typename T> void fetchSingleCommand(DummyStorageLink& link, std::shared_ptr<T>& msg_out);
 
-    void sendGetIterReply(GetIterCommand& cmd,
-                          const api::ReturnCode& result =
-                          api::ReturnCode(api::ReturnCode::OK),
-                          uint32_t maxDocuments = 0,
-                          bool overrideCompleted = false);
+    void sendGetIterReply(GetIterCommand& cmd, const api::ReturnCode& result = api::ReturnCode(api::ReturnCode::OK),
+                          uint32_t maxDocuments = 0, bool overrideCompleted = false);
     void sendCreateIteratorReply(uint64_t iteratorId = 1234);
-    void doCompleteVisitingSession(
-            const std::shared_ptr<api::CreateVisitorCommand>& cmd,
-            std::shared_ptr<api::CreateVisitorReply>& reply_out);
+    void doCompleteVisitingSession(const std::shared_ptr<api::CreateVisitorCommand>& cmd,
+                                   std::shared_ptr<api::CreateVisitorReply>&         reply_out);
 
     void sendInitialCreateVisitorAndGetIterRound();
 
@@ -158,9 +147,7 @@ uint32_t VisitorTest::docCount = 10;
 VisitorTest::VisitorTest() = default;
 VisitorTest::~VisitorTest() = default;
 
-void
-VisitorTest::initializeTest(const TestParams& params)
-{
+void VisitorTest::initializeTest(const TestParams& params) {
     _config = StorageConfigSet::make_storage_node_config();
     _config->visitor_config().visitorthreads = 1;
     _config->visitor_config().defaultparalleliterators = params._parallelBuckets;
@@ -175,64 +162,60 @@ VisitorTest::initializeTest(const TestParams& params)
     _top = std::make_unique<DummyStorageLink>();
     using vespa::config::content::core::StorVisitorConfig;
     auto bootstrap_cfg = config_from<StorVisitorConfig>(_config->config_uri());
-    _top->push_back(std::unique_ptr<StorageLink>(_manager
-            = new VisitorManager(*bootstrap_cfg, _node->getComponentRegister(), *_messageSessionFactory)));
+    _top->push_back(std::unique_ptr<StorageLink>(
+        _manager = new VisitorManager(*bootstrap_cfg, _node->getComponentRegister(), *_messageSessionFactory)));
     _bottom = new DummyStorageLink();
     _top->push_back(std::unique_ptr<StorageLink>(_bottom));
     _manager->setTimeBetweenTicks(10);
     _top->open();
 
-    std::string content(
-            "To be, or not to be: that is the question:\n"
-            "Whether 'tis nobler in the mind to suffer\n"
-            "The slings and arrows of outrageous fortune,\n"
-            "Or to take arms against a sea of troubles,\n"
-            "And by opposing end them? To die: to sleep;\n"
-            "No more; and by a sleep to say we end\n"
-            "The heart-ache and the thousand natural shocks\n"
-            "That flesh is heir to, 'tis a consummation\n"
-            "Devoutly to be wish'd. To die, to sleep;\n"
-            "To sleep: perchance to dream: ay, there's the rub;\n"
-            "For in that sleep of death what dreams may come\n"
-            "When we have shuffled off this mortal coil,\n"
-            "Must give us pause: there's the respect\n"
-            "That makes calamity of so long life;\n"
-            "For who would bear the whips and scorns of time,\n"
-            "The oppressor's wrong, the proud man's contumely,\n"
-            "The pangs of despised love, the law's delay,\n"
-            "The insolence of office and the spurns\n"
-            "That patient merit of the unworthy takes,\n"
-            "When he himself might his quietus make\n"
-            "With a bare bodkin? who would fardels bear,\n"
-            "To grunt and sweat under a weary life,\n"
-            "But that the dread of something after death,\n"
-            "The undiscover'd country from whose bourn\n"
-            "No traveller returns, puzzles the will\n"
-            "And makes us rather bear those ills we have\n"
-            "Than fly to others that we know not of?\n"
-            "Thus conscience does make cowards of us all;\n"
-            "And thus the native hue of resolution\n"
-            "Is sicklied o'er with the pale cast of thought,\n"
-            "And enterprises of great pith and moment\n"
-            "With this regard their currents turn awry,\n"
-            "And lose the name of action. - Soft you now!\n"
-            "The fair Ophelia! Nymph, in thy orisons\n"
-            "Be all my sins remember'd.\n");
+    std::string content("To be, or not to be: that is the question:\n"
+                        "Whether 'tis nobler in the mind to suffer\n"
+                        "The slings and arrows of outrageous fortune,\n"
+                        "Or to take arms against a sea of troubles,\n"
+                        "And by opposing end them? To die: to sleep;\n"
+                        "No more; and by a sleep to say we end\n"
+                        "The heart-ache and the thousand natural shocks\n"
+                        "That flesh is heir to, 'tis a consummation\n"
+                        "Devoutly to be wish'd. To die, to sleep;\n"
+                        "To sleep: perchance to dream: ay, there's the rub;\n"
+                        "For in that sleep of death what dreams may come\n"
+                        "When we have shuffled off this mortal coil,\n"
+                        "Must give us pause: there's the respect\n"
+                        "That makes calamity of so long life;\n"
+                        "For who would bear the whips and scorns of time,\n"
+                        "The oppressor's wrong, the proud man's contumely,\n"
+                        "The pangs of despised love, the law's delay,\n"
+                        "The insolence of office and the spurns\n"
+                        "That patient merit of the unworthy takes,\n"
+                        "When he himself might his quietus make\n"
+                        "With a bare bodkin? who would fardels bear,\n"
+                        "To grunt and sweat under a weary life,\n"
+                        "But that the dread of something after death,\n"
+                        "The undiscover'd country from whose bourn\n"
+                        "No traveller returns, puzzles the will\n"
+                        "And makes us rather bear those ills we have\n"
+                        "Than fly to others that we know not of?\n"
+                        "Thus conscience does make cowards of us all;\n"
+                        "And thus the native hue of resolution\n"
+                        "Is sicklied o'er with the pale cast of thought,\n"
+                        "And enterprises of great pith and moment\n"
+                        "With this regard their currents turn awry,\n"
+                        "And lose the name of action. - Soft you now!\n"
+                        "The fair Ophelia! Nymph, in thy orisons\n"
+                        "Be all my sins remember'd.\n");
     _documents.clear();
-    for (uint32_t i=0; i<docCount; ++i) {
+    for (uint32_t i = 0; i < docCount; ++i) {
         std::ostringstream uri;
         uri << "id:test:testdoctype1:n=" << i % 10 << ":http://www.ntnu.no/" << i << ".html";
 
-        _documents.push_back(Document::SP(
-                _node->getTestDocMan().createDocument(content, uri.str())));
+        _documents.push_back(Document::SP(_node->getTestDocMan().createDocument(content, uri.str())));
         const document::DocumentType& type(_documents.back()->getType());
         _documents.back()->setValue(type.getField("headerval"), document::IntFieldValue(i % 4));
     }
 }
 
-void
-VisitorTest::TearDown()
-{
+void VisitorTest::TearDown() {
     if (_top) {
         _top->close();
         _top->flush();
@@ -243,9 +226,7 @@ VisitorTest::TearDown()
     _manager = nullptr;
 }
 
-bool
-VisitorTest::waitUntilNoActiveVisitors()
-{
+bool VisitorTest::waitUntilNoActiveVisitors() {
     int i = 0;
     for (; i < 1000; ++i) {
         if (_manager->getActiveVisitorCount() == 0) {
@@ -256,13 +237,11 @@ VisitorTest::waitUntilNoActiveVisitors()
     return false;
 }
 
-TestVisitorMessageSession&
-VisitorTest::getSession(uint32_t n)
-{
+TestVisitorMessageSession& VisitorTest::getSession(uint32_t n) {
     // Wait until we have started the visitor
     const std::vector<TestVisitorMessageSession*>& sessions(_messageSessionFactory->_visitorSessions);
-    framework::defaultimplementation::RealClock clock;
-    vespalib::steady_time endTime = clock.getMonotonicTime() + 30s;
+    framework::defaultimplementation::RealClock    clock;
+    vespalib::steady_time                          endTime = clock.getMonotonicTime() + 30s;
     while (true) {
         {
             std::lock_guard lock(_messageSessionFactory->_accessLock);
@@ -271,21 +250,15 @@ VisitorTest::getSession(uint32_t n)
             }
         }
         if (clock.getMonotonicTime() > endTime) {
-            throw vespalib::IllegalStateException(
-                    "Timed out waiting for visitor session", VESPA_STRLOC);
+            throw vespalib::IllegalStateException("Timed out waiting for visitor session", VESPA_STRLOC);
         }
         std::this_thread::sleep_for(10ms);
     }
     abort();
 }
 
-void
-VisitorTest::getMessagesAndReply(
-        size_t expectedCount,
-        TestVisitorMessageSession& session,
-        MessageMeta& meta,
-        api::ReturnCode::Result result)
-{
+void VisitorTest::getMessagesAndReply(size_t expectedCount, TestVisitorMessageSession& session, MessageMeta& meta,
+                                      api::ReturnCode::Result result) {
     for (size_t i = 0; i < expectedCount; i++) {
         session.waitForMessages(1);
         mbus::Reply::UP reply;
@@ -327,13 +300,8 @@ VisitorTest::getMessagesAndReply(
     }
 }
 
-void
-VisitorTest::verifyCreateVisitorReply(
-        api::ReturnCode::Result expectedResult,
-        int checkStatsDocsVisited,
-        int checkStatsBytesVisited,
-        uint64_t* message_id_out)
-{
+void VisitorTest::verifyCreateVisitorReply(api::ReturnCode::Result expectedResult, int checkStatsDocsVisited,
+                                           int checkStatsBytesVisited, uint64_t* message_id_out) {
     _top->waitForMessages(1, 60);
     const msg_ptr_vector replies = _top->getRepliesOnce();
     ASSERT_EQ(1, replies.size());
@@ -347,12 +315,10 @@ VisitorTest::verifyCreateVisitorReply(
     ASSERT_EQ(expectedResult, reply->getResult().getResult());
 
     if (checkStatsDocsVisited >= 0) {
-        ASSERT_EQ(checkStatsDocsVisited,
-                  reply->getVisitorStatistics().getDocumentsVisited());
+        ASSERT_EQ(checkStatsDocsVisited, reply->getVisitorStatistics().getDocumentsVisited());
     }
     if (checkStatsBytesVisited >= 0) {
-        ASSERT_EQ(checkStatsBytesVisited,
-                  reply->getVisitorStatistics().getBytesVisited());
+        ASSERT_EQ(checkStatsBytesVisited, reply->getVisitorStatistics().getBytesVisited());
     }
 
     if (message_id_out) {
@@ -360,14 +326,11 @@ VisitorTest::verifyCreateVisitorReply(
     }
 }
 
-uint32_t
-VisitorTest::getMatchingDocuments(std::vector<Document::SP >& docs) {
+uint32_t VisitorTest::getMatchingDocuments(std::vector<Document::SP>& docs) {
     uint32_t equalCount = 0;
-    for (auto & doc : docs) {
-        for (auto & _document : _documents) {
-            if (*doc == *_document &&
-                doc->getId() == _document->getId())
-            {
+    for (auto& doc : docs) {
+        for (auto& _document : _documents) {
+            if (*doc == *_document && doc->getId() == _document->getId()) {
                 equalCount++;
             }
         }
@@ -376,12 +339,8 @@ VisitorTest::getMatchingDocuments(std::vector<Document::SP >& docs) {
     return equalCount;
 }
 
-void
-VisitorTest::sendGetIterReply(GetIterCommand& cmd,
-                              const api::ReturnCode& result,
-                              uint32_t maxDocuments,
-                              bool overrideCompleted)
-{
+void VisitorTest::sendGetIterReply(GetIterCommand& cmd, const api::ReturnCode& result, uint32_t maxDocuments,
+                                   bool overrideCompleted) {
     GetIterReply::SP reply(new GetIterReply(cmd));
     if (result.failed()) {
         reply->setResult(result);
@@ -391,7 +350,8 @@ VisitorTest::sendGetIterReply(GetIterCommand& cmd,
     assert(maxDocuments < _documents.size());
     size_t documentCount = maxDocuments != 0 ? maxDocuments : _documents.size();
     for (size_t i = 0; i < documentCount; ++i) {
-        reply->getEntries().push_back(spi::DocEntry::create(spi::Timestamp(1000 + i), Document::UP(_documents[i]->clone())));
+        reply->getEntries().push_back(
+            spi::DocEntry::create(spi::Timestamp(1000 + i), Document::UP(_documents[i]->clone())));
     }
     if (documentCount == _documents.size() || overrideCompleted) {
         reply->setCompleted();
@@ -400,20 +360,14 @@ VisitorTest::sendGetIterReply(GetIterCommand& cmd,
 }
 
 template <typename T>
-void
-VisitorTest::fetchMultipleCommands(DummyStorageLink& link, size_t count,
-                                   std::vector<std::shared_ptr<T>>& commands_out)
-{
+void VisitorTest::fetchMultipleCommands(DummyStorageLink& link, size_t count,
+                                        std::vector<std::shared_ptr<T>>& commands_out) {
     link.waitForMessages(count, 60);
     std::vector<api::StorageMessage::SP> msgs(link.getCommandsOnce());
-    std::vector<std::shared_ptr<T>> fetched;
+    std::vector<std::shared_ptr<T>>      fetched;
     if (msgs.size() != count) {
         std::ostringstream oss;
-        oss << "Expected "
-            << count
-            << " messages, got "
-            << msgs.size()
-            << ":\n";
+        oss << "Expected " << count << " messages, got " << msgs.size() << ":\n";
         for (size_t i = 0; i < msgs.size(); ++i) {
             oss << i << ": " << *msgs[i] << "\n";
         }
@@ -423,10 +377,7 @@ VisitorTest::fetchMultipleCommands(DummyStorageLink& link, size_t count,
         auto ret = std::dynamic_pointer_cast<T>(msgs[i]);
         if (!ret) {
             std::ostringstream oss;
-            oss << "Expected message of type "
-                << typeid(T).name()
-                << ", but got "
-                << msgs[0]->toString();
+            oss << "Expected message of type " << typeid(T).name() << ", but got " << msgs[0]->toString();
             FAIL() << oss.str();
         }
         fetched.push_back(ret);
@@ -434,22 +385,16 @@ VisitorTest::fetchMultipleCommands(DummyStorageLink& link, size_t count,
     commands_out = std::move(fetched);
 }
 
-template <typename T>
-void
-VisitorTest::fetchSingleCommand(DummyStorageLink& link, std::shared_ptr<T>& msg_out)
-{
+template <typename T> void VisitorTest::fetchSingleCommand(DummyStorageLink& link, std::shared_ptr<T>& msg_out) {
     std::vector<std::shared_ptr<T>> ret;
     ASSERT_NO_FATAL_FAILURE(fetchMultipleCommands<T>(link, 1, ret));
     msg_out = std::move(ret[0]);
 }
 
-std::shared_ptr<api::CreateVisitorCommand>
-VisitorTest::makeCreateVisitor(const VisitorOptions& options)
-{
-    static std::string _storage("storage");
+std::shared_ptr<api::CreateVisitorCommand> VisitorTest::makeCreateVisitor(const VisitorOptions& options) {
+    static std::string         _storage("storage");
     api::StorageMessageAddress address(&_storage, lib::NodeType::STORAGE, 0);
-    auto cmd = std::make_shared<api::CreateVisitorCommand>(
-            makeBucketSpace(), options.visitorType, "testvis", "");
+    auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), options.visitorType, "testvis", "");
     cmd->addBucketToBeVisited(document::BucketId(16, 3));
     cmd->setAddress(address);
     cmd->setMaximumPendingReplyCount(UINT32_MAX);
@@ -458,24 +403,22 @@ VisitorTest::makeCreateVisitor(const VisitorOptions& options)
     return cmd;
 }
 
-void
-VisitorTest::sendCreateIteratorReply(uint64_t iteratorId)
-{
+void VisitorTest::sendCreateIteratorReply(uint64_t iteratorId) {
     CreateIteratorCommand::SP createCmd;
     ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<CreateIteratorCommand>(*_bottom, createCmd));
     spi::IteratorId id(iteratorId);
-    auto reply = std::make_shared<CreateIteratorReply>(*createCmd, id);
+    auto            reply = std::make_shared<CreateIteratorReply>(*createCmd, id);
     _bottom->sendUp(reply);
 }
 
-void
-VisitorTest::fetch_create_visitor_reply(std::shared_ptr<api::CreateVisitorReply>& out_reply) const {
+void VisitorTest::fetch_create_visitor_reply(std::shared_ptr<api::CreateVisitorReply>& out_reply) const {
     _top->waitForMessages(1, 60);
     const msg_ptr_vector replies = _top->getRepliesOnce();
     ASSERT_EQ(1u, replies.size()) << "Expected exactly one CreateVisitor reply";
 
     std::shared_ptr<api::StorageMessage> message(replies[0]);
-    ASSERT_EQ(api::MessageType::VISITOR_CREATE_REPLY, message->getType()) << "Unexpected reply message type: " << message->toString();
+    ASSERT_EQ(api::MessageType::VISITOR_CREATE_REPLY, message->getType())
+        << "Unexpected reply message type: " << message->toString();
 
     auto reply = std::dynamic_pointer_cast<api::CreateVisitorReply>(message);
     ASSERT_TRUE(reply) << "Dynamic cast to CreateVisitorReply failed";
@@ -493,7 +436,7 @@ TEST_F(VisitorTest, normal_usage) {
     ASSERT_EQ(static_cast<int>(DefaultPriority),
               static_cast<int>(createCmd->getPriority())); // Inherit pri
     spi::IteratorId id(1234);
-    auto reply = std::make_shared<CreateIteratorReply>(*createCmd, id);
+    auto            reply = std::make_shared<CreateIteratorReply>(*createCmd, id);
     _bottom->sendUp(reply);
 
     GetIterCommand::SP getIterCmd;
@@ -524,7 +467,7 @@ TEST_F(VisitorTest, failed_create_iterator) {
     CreateIteratorCommand::SP createCmd;
     ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<CreateIteratorCommand>(*_bottom, createCmd));
     spi::IteratorId id(0);
-    auto reply = std::make_shared<CreateIteratorReply>(*createCmd, id);
+    auto            reply = std::make_shared<CreateIteratorReply>(*createCmd, id);
     reply->setResult(api::ReturnCode(api::ReturnCode::INTERNAL_FAILURE));
     _bottom->sendUp(reply);
 
@@ -542,8 +485,7 @@ TEST_F(VisitorTest, failed_get_iter) {
     ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<GetIterCommand>(*_bottom, getIterCmd));
     ASSERT_EQ(spi::IteratorId(1234), getIterCmd->getIteratorId());
 
-    sendGetIterReply(*getIterCmd,
-                     api::ReturnCode(api::ReturnCode::BUCKET_NOT_FOUND));
+    sendGetIterReply(*getIterCmd, api::ReturnCode(api::ReturnCode::BUCKET_NOT_FOUND));
 
     DestroyIteratorCommand::SP destroyIterCmd;
     ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<DestroyIteratorCommand>(*_bottom, destroyIterCmd));
@@ -590,8 +532,7 @@ TEST_F(VisitorTest, document_api_client_error) {
 
 TEST_F(VisitorTest, no_document_api_resending_for_failed_visitor) {
     ASSERT_NO_FATAL_FAILURE(initializeTest());
-    std::shared_ptr<api::CreateVisitorCommand> cmd(
-            makeCreateVisitor());
+    std::shared_ptr<api::CreateVisitorCommand> cmd(makeCreateVisitor());
     _top->sendDown(cmd);
     sendCreateIteratorReply();
 
@@ -629,13 +570,13 @@ TEST_F(VisitorTest, iterator_created_for_failed_visitor) {
     ASSERT_NO_FATAL_FAILURE(fetchMultipleCommands<CreateIteratorCommand>(*_bottom, 2, createCmds));
     {
         spi::IteratorId id(0);
-        auto reply = std::make_shared<CreateIteratorReply>(*createCmds[0], id);
+        auto            reply = std::make_shared<CreateIteratorReply>(*createCmds[0], id);
         reply->setResult(api::ReturnCode(api::ReturnCode::INTERNAL_FAILURE));
         _bottom->sendUp(reply);
     }
     {
         spi::IteratorId id(1234);
-        auto reply = std::make_shared<CreateIteratorReply>(*createCmds[1], id);
+        auto            reply = std::make_shared<CreateIteratorReply>(*createCmds[1], id);
         _bottom->sendUp(reply);
     }
     // Want to immediately receive destroyiterator for newly created
@@ -654,9 +595,8 @@ TEST_F(VisitorTest, iterator_created_for_failed_visitor) {
  * as pending.
  */
 TEST_F(VisitorTest, failed_document_api_send) {
-    ASSERT_NO_FATAL_FAILURE(initializeTest(TestParams().autoReplyError(
-                mbus::Error(mbus::ErrorCode::HANDSHAKE_FAILED,
-                    "abandon ship!"))));
+    ASSERT_NO_FATAL_FAILURE(
+        initializeTest(TestParams().autoReplyError(mbus::Error(mbus::ErrorCode::HANDSHAKE_FAILED, "abandon ship!"))));
     auto cmd = makeCreateVisitor();
     cmd->addBucketToBeVisited(document::BucketId(16, 4));
     _top->sendDown(cmd);
@@ -670,20 +610,15 @@ TEST_F(VisitorTest, failed_document_api_send) {
     DestroyIteratorCommand::SP destroyIterCmd;
     ASSERT_NO_FATAL_FAILURE(fetchSingleCommand<DestroyIteratorCommand>(*_bottom, destroyIterCmd));
 
-    ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(
-            static_cast<api::ReturnCode::Result>(
-                    mbus::ErrorCode::HANDSHAKE_FAILED),
-            0,
-            0));
+    ASSERT_NO_FATAL_FAILURE(
+        verifyCreateVisitorReply(static_cast<api::ReturnCode::Result>(mbus::ErrorCode::HANDSHAKE_FAILED), 0, 0));
     ASSERT_TRUE(waitUntilNoActiveVisitors());
     // We currently don't count failures to send in this metric; send failures
     // indicate a message bus problem and already log a warning when they happen
     ASSERT_EQ(0, getFailedVisitorDestinationReplyCount());
 }
 
-void
-VisitorTest::sendInitialCreateVisitorAndGetIterRound()
-{
+void VisitorTest::sendInitialCreateVisitorAndGetIterRound() {
     auto cmd = makeCreateVisitor();
     _top->sendDown(cmd);
     sendCreateIteratorReply();
@@ -718,8 +653,8 @@ TEST_F(VisitorTest, no_visitor_notification_for_transient_failures) {
     getMessagesAndReply(1, getSession(0), meta, api::ReturnCode::WRONG_DISTRIBUTION);
     ASSERT_EQ(0, meta.infoMessages.size());
     // OVERLOAD should not be reported (TODO reconsider this?)
-    getMessagesAndReply(1, getSession(0), meta, static_cast<api::ReturnCode::Result>(
-            documentapi::DocumentProtocol::ERROR_OVERLOAD));
+    getMessagesAndReply(1, getSession(0), meta,
+                        static_cast<api::ReturnCode::Result>(documentapi::DocumentProtocol::ERROR_OVERLOAD));
     ASSERT_EQ(0, meta.infoMessages.size());
 
     // Complete message successfully to finish the visitor.
@@ -760,11 +695,8 @@ TEST_F(VisitorTest, notification_sent_if_transient_error_retried_many_times) {
     ASSERT_TRUE(waitUntilNoActiveVisitors());
 }
 
-void
-VisitorTest::doCompleteVisitingSession(
-        const std::shared_ptr<api::CreateVisitorCommand>& cmd,
-        std::shared_ptr<api::CreateVisitorReply>& reply_out)
-{
+void VisitorTest::doCompleteVisitingSession(const std::shared_ptr<api::CreateVisitorCommand>& cmd,
+                                            std::shared_ptr<api::CreateVisitorReply>&         reply_out) {
     _top->sendDown(cmd);
     sendCreateIteratorReply();
 
@@ -801,15 +733,14 @@ TEST_F(VisitorTest, reply_contains_trace_if_trace_level_above_zero) {
     ASSERT_NO_FATAL_FAILURE(initializeTest());
     std::shared_ptr<api::CreateVisitorCommand> cmd(makeCreateVisitor());
     cmd->getTrace().setLevel(1);
-    cmd->getTrace().trace(1,"at least one trace.");
+    cmd->getTrace().trace(1, "at least one trace.");
     std::shared_ptr<api::CreateVisitorReply> reply;
     ASSERT_NO_FATAL_FAILURE(doCompleteVisitingSession(cmd, reply));
     EXPECT_FALSE(reply->getTrace().isEmpty());
 }
 
 TEST_F(VisitorTest, no_more_iterators_sent_while_memory_used_above_limit) {
-    initializeTest(TestParams().maxVisitorMemoryUsage(1)
-                               .parallelBuckets(1));
+    initializeTest(TestParams().maxVisitorMemoryUsage(1).parallelBuckets(1));
     auto cmd = makeCreateVisitor();
     _top->sendDown(cmd);
     sendCreateIteratorReply();
@@ -845,14 +776,10 @@ TEST_F(VisitorTest, no_more_iterators_sent_while_memory_used_above_limit) {
     ASSERT_TRUE(waitUntilNoActiveVisitors());
 }
 
-void
-VisitorTest::doTestVisitorInstanceHasConsistencyLevel(
-        std::string_view visitorType,
-        spi::ReadConsistency expectedConsistency)
-{
+void VisitorTest::doTestVisitorInstanceHasConsistencyLevel(std::string_view     visitorType,
+                                                           spi::ReadConsistency expectedConsistency) {
     ASSERT_NO_FATAL_FAILURE(initializeTest());
-    std::shared_ptr<api::CreateVisitorCommand> cmd(
-            makeCreateVisitor(VisitorOptions().withVisitorType(visitorType)));
+    std::shared_ptr<api::CreateVisitorCommand> cmd(makeCreateVisitor(VisitorOptions().withVisitorType(visitorType)));
     _top->sendDown(cmd);
 
     CreateIteratorCommand::SP createCmd;
@@ -861,8 +788,7 @@ VisitorTest::doTestVisitorInstanceHasConsistencyLevel(
 }
 
 TEST_F(VisitorTest, dump_visitor_invokes_strong_read_consistency_iteration) {
-    doTestVisitorInstanceHasConsistencyLevel(
-            "dumpvisitor", spi::ReadConsistency::STRONG);
+    doTestVisitorInstanceHasConsistencyLevel("dumpvisitor", spi::ReadConsistency::STRONG);
 }
 
 TEST_F(VisitorTest, document_api_failure_error_message_includes_doc_id) {
@@ -898,8 +824,7 @@ TEST_F(VisitorTest, document_api_failure_error_message_includes_doc_id) {
 // visitor subclass might report its own read consistency requirement and that
 // this is carried along to the CreateIteratorCommand.
 TEST_F(VisitorTest, test_visitor_invokes_weak_read_consistency_iteration) {
-    doTestVisitorInstanceHasConsistencyLevel(
-            "testvisitor", spi::ReadConsistency::WEAK);
+    doTestVisitorInstanceHasConsistencyLevel("testvisitor", spi::ReadConsistency::WEAK);
 }
 
 struct ReindexingVisitorTest : VisitorTest {
@@ -945,7 +870,6 @@ TEST_F(ReindexingVisitorTest, puts_are_sent_with_tas_condition) {
     ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::OK));
     ASSERT_TRUE(waitUntilNoActiveVisitors());
 }
-
 
 TEST_F(ReindexingVisitorTest, tas_responses_fail_the_visitor_and_are_rewritten_to_aborted) {
     ASSERT_NO_FATAL_FAILURE(initializeTest());

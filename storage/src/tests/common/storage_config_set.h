@@ -5,20 +5,29 @@
 #include <vespa/config/common/configcontext.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/config/subscription/sourcespec.h>
+
 #include <memory>
 
 // FIXME "internal" here is very counter-productive since it precludes easy fwd decls.
 //  Currently have to punch holes in internal abstractions to make this work at all.
-namespace cloud::config::internal { class InternalSlobroksType; }
-namespace messagebus::internal { class InternalMessagebusType; }
-namespace metrics::internal { class InternalMetricsmanagerType; }
-namespace document::config::internal { class InternalDocumenttypesType; }
+namespace cloud::config::internal {
+class InternalSlobroksType;
+}
+namespace messagebus::internal {
+class InternalMessagebusType;
+}
+namespace metrics::internal {
+class InternalMetricsmanagerType;
+}
+namespace document::config::internal {
+class InternalDocumenttypesType;
+}
 namespace vespa::config::content::internal {
 class InternalPersistenceType;
 class InternalStorDistributionType;
 class InternalStorFilestorType;
 class InternalUpgradingType;
-}
+} // namespace vespa::config::content::internal
 namespace vespa::config::content::core::internal {
 class InternalBucketspacesType;
 class InternalStorBouncerType;
@@ -29,28 +38,31 @@ class InternalStorServerType;
 class InternalStorStatusType;
 class InternalStorVisitorType;
 class InternalStorVisitordispatcherType;
-}
+} // namespace vespa::config::content::core::internal
 
 namespace storage {
 
 class StorageConfigSet {
-    using SlobroksConfigBuilder                 = cloud::config::internal::InternalSlobroksType;
-    using MessagebusConfigBuilder               = messagebus::internal::InternalMessagebusType;
-    using MetricsmanagerConfigBuilder           = metrics::internal::InternalMetricsmanagerType;
-    using DocumenttypesConfigBuilder            = document::config::internal::InternalDocumenttypesType;
-    using PersistenceConfigBuilder              = vespa::config::content::internal::InternalPersistenceType;
-    using StorDistributionConfigBuilder         = vespa::config::content::internal::InternalStorDistributionType;
-    using StorFilestorConfigBuilder             = vespa::config::content::internal::InternalStorFilestorType;
-    using UpgradingConfigBuilder                = vespa::config::content::internal::InternalUpgradingType;
-    using BucketspacesConfigBuilder             = vespa::config::content::core::internal::InternalBucketspacesType;
-    using StorBouncerConfigBuilder              = vespa::config::content::core::internal::InternalStorBouncerType;
-    using StorCommunicationmanagerConfigBuilder = vespa::config::content::core::internal::InternalStorCommunicationmanagerType;
-    using StorDistributormanagerConfigBuilder   = vespa::config::content::core::internal::InternalStorDistributormanagerType;
-    using StorPrioritymappingConfigBuilder      = vespa::config::content::core::internal::InternalStorPrioritymappingType;
-    using StorServerConfigBuilder               = vespa::config::content::core::internal::InternalStorServerType;
-    using StorStatusConfigBuilder               = vespa::config::content::core::internal::InternalStorStatusType;
-    using StorVisitorConfigBuilder              = vespa::config::content::core::internal::InternalStorVisitorType;
-    using StorVisitordispatcherConfigBuilder    = vespa::config::content::core::internal::InternalStorVisitordispatcherType;
+    using SlobroksConfigBuilder = cloud::config::internal::InternalSlobroksType;
+    using MessagebusConfigBuilder = messagebus::internal::InternalMessagebusType;
+    using MetricsmanagerConfigBuilder = metrics::internal::InternalMetricsmanagerType;
+    using DocumenttypesConfigBuilder = document::config::internal::InternalDocumenttypesType;
+    using PersistenceConfigBuilder = vespa::config::content::internal::InternalPersistenceType;
+    using StorDistributionConfigBuilder = vespa::config::content::internal::InternalStorDistributionType;
+    using StorFilestorConfigBuilder = vespa::config::content::internal::InternalStorFilestorType;
+    using UpgradingConfigBuilder = vespa::config::content::internal::InternalUpgradingType;
+    using BucketspacesConfigBuilder = vespa::config::content::core::internal::InternalBucketspacesType;
+    using StorBouncerConfigBuilder = vespa::config::content::core::internal::InternalStorBouncerType;
+    using StorCommunicationmanagerConfigBuilder =
+        vespa::config::content::core::internal::InternalStorCommunicationmanagerType;
+    using StorDistributormanagerConfigBuilder =
+        vespa::config::content::core::internal::InternalStorDistributormanagerType;
+    using StorPrioritymappingConfigBuilder = vespa::config::content::core::internal::InternalStorPrioritymappingType;
+    using StorServerConfigBuilder = vespa::config::content::core::internal::InternalStorServerType;
+    using StorStatusConfigBuilder = vespa::config::content::core::internal::InternalStorStatusType;
+    using StorVisitorConfigBuilder = vespa::config::content::core::internal::InternalStorVisitorType;
+    using StorVisitordispatcherConfigBuilder =
+        vespa::config::content::core::internal::InternalStorVisitordispatcherType;
 
     std::unique_ptr<DocumenttypesConfigBuilder>            _document_type_config;
     std::unique_ptr<SlobroksConfigBuilder>                 _slobroks_config;
@@ -70,7 +82,7 @@ class StorageConfigSet {
     std::unique_ptr<StorVisitorConfigBuilder>              _visitor_config;
     std::unique_ptr<StorVisitordispatcherConfigBuilder>    _visitor_dispatcher_config;
 
-    std::string                       _config_id_str;
+    std::string                            _config_id_str;
     config::ConfigSet                      _config_set;
     std::shared_ptr<config::ConfigContext> _config_ctx;
     config::ConfigUri                      _config_uri;
@@ -86,25 +98,27 @@ public:
     void set_slobrok_config_port(int slobrok_port);
     void set_node_index(uint16_t node_index);
 
-    [[nodiscard]] const config::ConfigUri& config_uri() const noexcept {
-        return _config_uri;
-    }
+    [[nodiscard]] const config::ConfigUri& config_uri() const noexcept { return _config_uri; }
 
-    DocumenttypesConfigBuilder&            document_type_config() noexcept { return *_document_type_config; }
-    SlobroksConfigBuilder&                 slobroks_config() noexcept { return *_slobroks_config; }
-    MessagebusConfigBuilder&               messagebus_config() noexcept {return *_messagebus_config; }
-    MetricsmanagerConfigBuilder&           metrics_config() noexcept { return *_metrics_config; }
-    PersistenceConfigBuilder&              persistence_config() noexcept { return *_persistence_config; }
-    StorDistributionConfigBuilder&         distribution_config() noexcept { return *_distribution_config; }
-    StorFilestorConfigBuilder&             filestor_config() noexcept { return *_filestor_config; }
-    BucketspacesConfigBuilder&             bucket_spaces_config() noexcept { return *_bucket_spaces_config; }
-    StorBouncerConfigBuilder&              bouncer_config() noexcept { return *_bouncer_config; };
-    StorCommunicationmanagerConfigBuilder& communication_manager_config() noexcept { return *_communication_manager_config; }
-    StorDistributormanagerConfigBuilder&   distributor_manager_config() noexcept { return *_distributor_manager_config; }
-    StorServerConfigBuilder&               server_config() noexcept { return *_server_config; }
-    StorStatusConfigBuilder&               status_config() noexcept { return *_status_config; }
-    StorVisitorConfigBuilder&              visitor_config() noexcept { return *_visitor_config; }
-    StorVisitordispatcherConfigBuilder&    visitor_dispatcher_config() noexcept {  return *_visitor_dispatcher_config; }
+    DocumenttypesConfigBuilder& document_type_config() noexcept { return *_document_type_config; }
+    SlobroksConfigBuilder& slobroks_config() noexcept { return *_slobroks_config; }
+    MessagebusConfigBuilder& messagebus_config() noexcept { return *_messagebus_config; }
+    MetricsmanagerConfigBuilder& metrics_config() noexcept { return *_metrics_config; }
+    PersistenceConfigBuilder& persistence_config() noexcept { return *_persistence_config; }
+    StorDistributionConfigBuilder& distribution_config() noexcept { return *_distribution_config; }
+    StorFilestorConfigBuilder& filestor_config() noexcept { return *_filestor_config; }
+    BucketspacesConfigBuilder& bucket_spaces_config() noexcept { return *_bucket_spaces_config; }
+    StorBouncerConfigBuilder& bouncer_config() noexcept { return *_bouncer_config; };
+    StorCommunicationmanagerConfigBuilder& communication_manager_config() noexcept {
+        return *_communication_manager_config;
+    }
+    StorDistributormanagerConfigBuilder& distributor_manager_config() noexcept {
+        return *_distributor_manager_config;
+    }
+    StorServerConfigBuilder& server_config() noexcept { return *_server_config; }
+    StorStatusConfigBuilder& status_config() noexcept { return *_status_config; }
+    StorVisitorConfigBuilder& visitor_config() noexcept { return *_visitor_config; }
+    StorVisitordispatcherConfigBuilder& visitor_dispatcher_config() noexcept { return *_visitor_dispatcher_config; }
 
     [[nodiscard]] static std::unique_ptr<StorageConfigSet> make_node_config(bool is_storage_node) {
         return std::make_unique<StorageConfigSet>("my-node", is_storage_node);
@@ -119,4 +133,4 @@ public:
     }
 };
 
-}
+} // namespace storage

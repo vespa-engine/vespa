@@ -1,27 +1,28 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <tests/common/teststorageapp.h>
-#include <tests/common/testhelper.h>
-#include <tests/common/dummystoragelink.h>
-#include <tests/common/storage_config_set.h>
-#include <vespa/config/helper/configgetter.hpp>
 #include <vespa/document/base/testdocman.h>
+#include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/test/make_document_bucket.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storage/persistence/messages.h>
-#include <vespa/storageapi/message/state.h>
+#include <vespa/storage/storageserver/changedbucketownershiphandler.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
-#include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/document/update/documentupdate.h>
-#include <vespa/document/datatype/documenttype.h>
-#include <vespa/document/test/make_document_bucket.h>
-#include <vespa/storage/storageserver/changedbucketownershiphandler.h>
+#include <vespa/storageapi/message/removelocation.h>
+#include <vespa/storageapi/message/state.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
-
 #include <vespa/vespalib/gtest/gtest.h>
+
+#include <vespa/config/helper/configgetter.hpp>
+
+#include <tests/common/dummystoragelink.h>
+#include <tests/common/storage_config_set.h>
+#include <tests/common/testhelper.h>
+#include <tests/common/teststorageapp.h>
 
 using document::test::makeDocumentBucket;
 using namespace ::testing;
@@ -38,10 +39,8 @@ struct ChangedBucketOwnershipHandlerTest : Test {
 
     // TODO test: down edge triggered on cluster state with cluster down?
 
-    std::vector<document::BucketId> insertBuckets(
-            uint32_t numBuckets,
-            uint16_t wantedOwner,
-            const lib::ClusterState& state);
+    std::vector<document::BucketId> insertBuckets(uint32_t numBuckets, uint16_t wantedOwner,
+                                                  const lib::ClusterState& state);
 
     std::shared_ptr<api::SetSystemStateCommand> createStateCmd(const lib::ClusterState& state) const {
         return std::make_shared<api::SetSystemStateCommand>(state);
@@ -55,10 +54,8 @@ struct ChangedBucketOwnershipHandlerTest : Test {
     void applyClusterState(const lib::ClusterState&);
     void apply_cluster_state_bundle(std::shared_ptr<const lib::ClusterStateBundle>);
 
-    document::BucketId nextOwnedBucket(
-            uint16_t wantedOwner,
-            const lib::ClusterState& state,
-            const document::BucketId& lastId) const;
+    document::BucketId nextOwnedBucket(uint16_t wantedOwner, const lib::ClusterState& state,
+                                       const document::BucketId& lastId) const;
 
     document::Bucket getBucketToAbort() const;
     document::Bucket getBucketToAllow() const;
@@ -66,10 +63,10 @@ struct ChangedBucketOwnershipHandlerTest : Test {
     void sendAndExpectAbortedCreateBucket(uint16_t fromDistributorIndex);
 
     template <typename MsgType, typename... MsgParams>
-    void expectChangeAbortsMessage(bool expected, MsgParams&& ... params);
+    void expectChangeAbortsMessage(bool expected, MsgParams&&... params);
 
     template <typename MsgType, typename... MsgParams>
-    void expectDownAbortsMessage(bool expected, MsgParams&& ... params);
+    void expectDownAbortsMessage(bool expected, MsgParams&&... params);
 
     std::shared_ptr<AbortBucketOperationsCommand> fetch_dispatched_abort_operations_command() {
         _bottom->waitForMessages(2, 60); // abort cmd + set cluster state cmd
@@ -77,9 +74,7 @@ struct ChangedBucketOwnershipHandlerTest : Test {
         return std::dynamic_pointer_cast<AbortBucketOperationsCommand>(_bottom->getCommand(0));
     }
 
-    static lib::ClusterState getDefaultTestClusterState() {
-        return lib::ClusterState("distributor:4 storage:1");
-    }
+    static lib::ClusterState getDefaultTestClusterState() { return lib::ClusterState("distributor:4 storage:1"); }
 
     static lib::ClusterState getStorageDownTestClusterState() {
         return lib::ClusterState("distributor:4 storage:1 .0.s:d");
@@ -89,31 +84,23 @@ struct ChangedBucketOwnershipHandlerTest : Test {
         return lib::DistributionConfigBundle::of(lib::Distribution::getDefaultDistributionConfig(1, node_count));
     }
 
-    static std::shared_ptr<const lib::ClusterStateBundle> make_state_bundle_with_config(
-            std::string_view state_str, uint16_t node_count)
-    {
-        return std::make_shared<const lib::ClusterStateBundle>(
-                std::make_shared<const lib::ClusterState>(state_str),
-                lib::ClusterStateBundle::BucketSpaceStateMapping{},
-                std::nullopt,
-                make_distr_bundle(node_count),
-                false);
+    static std::shared_ptr<const lib::ClusterStateBundle> make_state_bundle_with_config(std::string_view state_str,
+                                                                                        uint16_t         node_count) {
+        return std::make_shared<const lib::ClusterStateBundle>(std::make_shared<const lib::ClusterState>(state_str),
+                                                               lib::ClusterStateBundle::BucketSpaceStateMapping{},
+                                                               std::nullopt, make_distr_bundle(node_count), false);
     }
 
     void SetUp() override;
 };
 
-document::BucketId
-ChangedBucketOwnershipHandlerTest::nextOwnedBucket(
-        uint16_t wantedOwner,
-        const lib::ClusterState& state,
-        const document::BucketId& lastId) const
-{
-    uint32_t idx(lastId.getId() + 1); 
+document::BucketId ChangedBucketOwnershipHandlerTest::nextOwnedBucket(uint16_t                  wantedOwner,
+                                                                      const lib::ClusterState&  state,
+                                                                      const document::BucketId& lastId) const {
+    uint32_t idx(lastId.getId() + 1);
     while (true) {
         document::BucketId candidate(16, idx);
-        uint16_t owner(_app->getDistribution()->getIdealDistributorNode(
-                state, candidate));
+        uint16_t           owner(_app->getDistribution()->getIdealDistributorNode(state, candidate));
         if (owner == wantedOwner) {
             return candidate;
         }
@@ -122,13 +109,11 @@ ChangedBucketOwnershipHandlerTest::nextOwnedBucket(
     assert(!"should never get here");
 }
 
-std::vector<document::BucketId>
-ChangedBucketOwnershipHandlerTest::insertBuckets(uint32_t numBuckets,
-                                                 uint16_t wantedOwner,
-                                                 const lib::ClusterState& state)
-{
+std::vector<document::BucketId> ChangedBucketOwnershipHandlerTest::insertBuckets(uint32_t                 numBuckets,
+                                                                                 uint16_t                 wantedOwner,
+                                                                                 const lib::ClusterState& state) {
     std::vector<document::BucketId> inserted;
-    document::BucketId bucket;
+    document::BucketId              bucket;
     while (inserted.size() < numBuckets) {
         bucket = nextOwnedBucket(wantedOwner, state, bucket);
 
@@ -140,9 +125,7 @@ ChangedBucketOwnershipHandlerTest::insertBuckets(uint32_t numBuckets,
     return inserted;
 }
 
-void
-ChangedBucketOwnershipHandlerTest::SetUp()
-{
+void ChangedBucketOwnershipHandlerTest::SetUp() {
     using vespa::config::content::PersistenceConfig;
 
     _config = StorageConfigSet::make_storage_node_config();
@@ -165,15 +148,11 @@ ChangedBucketOwnershipHandlerTest::SetUp()
 
 namespace {
 
-template <typename Set, typename K>
-bool has(const Set& s, const K& key) {
+template <typename Set, typename K> bool has(const Set& s, const K& key) {
     return s.find(key) != s.end();
 }
 
-template <typename Vec>
-bool
-hasAbortedAllOf(const AbortBucketOperationsCommand::SP& cmd, const Vec& v)
-{
+template <typename Vec> bool hasAbortedAllOf(const AbortBucketOperationsCommand::SP& cmd, const Vec& v) {
     for (auto& b : v) {
         if (!cmd->shouldAbort(makeDocumentBucket(b))) {
             return false;
@@ -182,10 +161,7 @@ hasAbortedAllOf(const AbortBucketOperationsCommand::SP& cmd, const Vec& v)
     return true;
 }
 
-template <typename Vec>
-bool
-hasAbortedNoneOf(const AbortBucketOperationsCommand::SP& cmd, const Vec& v)
-{
+template <typename Vec> bool hasAbortedNoneOf(const AbortBucketOperationsCommand::SP& cmd, const Vec& v) {
     for (auto& b : v) {
         if (cmd->shouldAbort(makeDocumentBucket(b))) {
             return false;
@@ -194,37 +170,30 @@ hasAbortedNoneOf(const AbortBucketOperationsCommand::SP& cmd, const Vec& v)
     return true;
 }
 
-bool
-hasOnlySetSystemStateCmdQueued(DummyStorageLink& link) {
+bool hasOnlySetSystemStateCmdQueued(DummyStorageLink& link) {
     link.waitForMessages(1, 60);
     if (link.getNumCommands() != 1) {
-        std::cerr << "expected 1 command, found"
-                  << link.getNumCommands() << "\n";
+        std::cerr << "expected 1 command, found" << link.getNumCommands() << "\n";
     }
     auto cmd = std::dynamic_pointer_cast<api::SetSystemStateCommand>(link.getCommand(0));
     return static_cast<bool>(cmd);
 }
 
-}
+} // namespace
 
-void
-ChangedBucketOwnershipHandlerTest::applyDistribution(Redundancy redundancy, NodeCount nodeCount)
-{
+void ChangedBucketOwnershipHandlerTest::applyDistribution(Redundancy redundancy, NodeCount nodeCount) {
     // TODO set distribution via state bundle instead
     _app->setDistribution(redundancy, nodeCount);
     _handler->storageDistributionChanged();
 }
 
-void
-ChangedBucketOwnershipHandlerTest::applyClusterState(const lib::ClusterState& state)
-{
+void ChangedBucketOwnershipHandlerTest::applyClusterState(const lib::ClusterState& state) {
     _app->setClusterState(state);
     _handler->reloadClusterState();
 }
 
-void
-ChangedBucketOwnershipHandlerTest::apply_cluster_state_bundle(std::shared_ptr<const lib::ClusterStateBundle> state_bundle)
-{
+void ChangedBucketOwnershipHandlerTest::apply_cluster_state_bundle(
+    std::shared_ptr<const lib::ClusterStateBundle> state_bundle) {
     _app->set_cluster_state_bundle(std::move(state_bundle));
     _handler->reloadClusterState();
 }
@@ -238,7 +207,7 @@ TEST_F(ChangedBucketOwnershipHandlerTest, enumerate_buckets_belonging_on_changed
     // Add some buckets that will not be part of the change set
     auto node0Buckets(insertBuckets(3, 0, stateBefore));
     auto node2Buckets(insertBuckets(2, 2, stateBefore));
-    
+
     _top->sendDown(createStateCmd("distributor:4 .1.s:d .3.s:d storage:1"));
     auto cmd = fetch_dispatched_abort_operations_command();
     ASSERT_TRUE(cmd);
@@ -259,7 +228,7 @@ TEST_F(ChangedBucketOwnershipHandlerTest, no_pre_existing_cluster_state) {
     insertBuckets(2, 1, stateBefore);
     insertBuckets(3, 0, stateBefore);
     insertBuckets(2, 2, stateBefore);
-    
+
     _top->sendDown(createStateCmd("distributor:4 .1.s:d .3.s:d storage:1"));
     EXPECT_TRUE(hasOnlySetSystemStateCmdQueued(*_bottom));
 }
@@ -300,9 +269,9 @@ TEST_F(ChangedBucketOwnershipHandlerTest, down_edge_to_no_available_distributors
     lib::ClusterState insertedState("distributor:3 storage:1");
     applyDistribution(Redundancy(1), NodeCount(3));
     applyClusterState(insertedState);
-    auto node0Buckets(insertBuckets(2, 0, insertedState));
-    auto node1Buckets(insertBuckets(2, 1, insertedState));
-    auto node2Buckets(insertBuckets(2, 2, insertedState));
+    auto              node0Buckets(insertBuckets(2, 0, insertedState));
+    auto              node1Buckets(insertBuckets(2, 1, insertedState));
+    auto              node2Buckets(insertBuckets(2, 2, insertedState));
     lib::ClusterState downState("distributor:3 .0.s:d .1.s:s .2.s:s storage:1");
 
     _top->sendDown(createStateCmd(downState));
@@ -315,10 +284,8 @@ TEST_F(ChangedBucketOwnershipHandlerTest, down_edge_to_no_available_distributors
 }
 
 TEST_F(ChangedBucketOwnershipHandlerTest, ownership_changed_on_distributor_up_edge) {
-    lib::ClusterState stateBefore(
-            "version:10 distributor:4 .1.s:d storage:4 .1.s:d");
-    lib::ClusterState stateAfter(
-            "version:11 distributor:4 .1.t:1369990247 storage:4 .1.s:d");
+    lib::ClusterState stateBefore("version:10 distributor:4 .1.s:d storage:4 .1.s:d");
+    lib::ClusterState stateAfter("version:11 distributor:4 .1.t:1369990247 storage:4 .1.s:d");
     applyDistribution(Redundancy(1), NodeCount(4));
     applyClusterState(stateBefore);
     // Add buckets that will belong to distributor 1 after it has come back up
@@ -326,7 +293,7 @@ TEST_F(ChangedBucketOwnershipHandlerTest, ownership_changed_on_distributor_up_ed
     // Add some buckets that will not be part of the change set
     auto node0Buckets(insertBuckets(3, 0, stateAfter));
     auto node2Buckets(insertBuckets(2, 2, stateAfter));
-    
+
     _top->sendDown(createStateCmd(stateAfter));
     auto cmd = fetch_dispatched_abort_operations_command();
     ASSERT_TRUE(cmd);
@@ -340,11 +307,9 @@ TEST_F(ChangedBucketOwnershipHandlerTest, ownership_changed_on_distributor_up_ed
     EXPECT_EQ(0, _top->getNumReplies());
 }
 
-void
-ChangedBucketOwnershipHandlerTest::sendAndExpectAbortedCreateBucket(uint16_t fromDistributorIndex)
-{
+void ChangedBucketOwnershipHandlerTest::sendAndExpectAbortedCreateBucket(uint16_t fromDistributorIndex) {
     document::BucketId bucket(16, 6786);
-    auto msg = std::make_shared<api::CreateBucketCommand>(makeDocumentBucket(bucket));
+    auto               msg = std::make_shared<api::CreateBucketCommand>(makeDocumentBucket(bucket));
     msg->setSourceIndex(fromDistributorIndex);
 
     _top->sendDown(msg);
@@ -386,10 +351,11 @@ TEST_F(ChangedBucketOwnershipHandlerTest, ignore_internal_config_once_state_bund
     sendAndExpectAbortedCreateBucket(2);
 }
 
-TEST_F(ChangedBucketOwnershipHandlerTest, revert_to_internal_config_if_distribution_no_longer_received_in_state_bundle) {
+TEST_F(ChangedBucketOwnershipHandlerTest,
+       revert_to_internal_config_if_distribution_no_longer_received_in_state_bundle) {
     apply_cluster_state_bundle(make_state_bundle_with_config("version:2 distributor:1 storage:3", 3));
 
-    applyDistribution(Redundancy(1), NodeCount(1)); // not yet used
+    applyDistribution(Redundancy(1), NodeCount(1));                            // not yet used
     applyClusterState(lib::ClusterState("version:3 distributor:3 storage:3")); // no bundle config; revert to internal
 
     sendAndExpectAbortedCreateBucket(2);
@@ -403,9 +369,7 @@ TEST_F(ChangedBucketOwnershipHandlerTest, revert_to_internal_config_if_distribut
  * owned by distributor 1 in this state to trigger an abort.
  */
 template <typename MsgType, typename... MsgParams>
-void
-ChangedBucketOwnershipHandlerTest::expectChangeAbortsMessage(bool expected, MsgParams&&... params)
-{
+void ChangedBucketOwnershipHandlerTest::expectChangeAbortsMessage(bool expected, MsgParams&&... params) {
     auto msg = std::make_shared<MsgType>(std::forward<MsgParams>(params)...);
     msg->setSourceIndex(1);
 
@@ -434,18 +398,18 @@ ChangedBucketOwnershipHandlerTest::expectChangeAbortsMessage(bool expected, MsgP
  * node is down. This means that any abortable message will trigger an abort.
  */
 template <typename MsgType, typename... MsgParams>
-void
-ChangedBucketOwnershipHandlerTest::expectDownAbortsMessage(bool expected, MsgParams&&... params)
-{
-    (void) _top->getRepliesOnce();
-    (void) _bottom->getCommandsOnce();
-    ASSERT_NO_FATAL_FAILURE((expectChangeAbortsMessage<MsgType, MsgParams...>(false, std::forward<MsgParams>(params)...)));
+void ChangedBucketOwnershipHandlerTest::expectDownAbortsMessage(bool expected, MsgParams&&... params) {
+    (void)_top->getRepliesOnce();
+    (void)_bottom->getCommandsOnce();
+    ASSERT_NO_FATAL_FAILURE(
+        (expectChangeAbortsMessage<MsgType, MsgParams...>(false, std::forward<MsgParams>(params)...)));
     _top->sendDown(createStateCmd(getStorageDownTestClusterState()));
     _bottom->waitForMessages(3, 60);
     ASSERT_EQ(_bottom->getNumCommands(), 3);
     auto setSystemStateCommand = std::dynamic_pointer_cast<api::SetSystemStateCommand>(_bottom->getCommand(2));
     ASSERT_TRUE(setSystemStateCommand);
-    auto abortBucketOperationsCommand = std::dynamic_pointer_cast<AbortBucketOperationsCommand>(_bottom->getCommand(1));
+    auto abortBucketOperationsCommand =
+        std::dynamic_pointer_cast<AbortBucketOperationsCommand>(_bottom->getCommand(1));
     ASSERT_TRUE(abortBucketOperationsCommand);
     auto testCommand = _bottom->getCommand(0);
     ASSERT_TRUE(testCommand);
@@ -456,9 +420,7 @@ ChangedBucketOwnershipHandlerTest::expectDownAbortsMessage(bool expected, MsgPar
  * Returns a bucket that is not owned by the sending distributor (1). More
  * specifically, it returns a bucket that is owned by distributor 2.
  */
-document::Bucket
-ChangedBucketOwnershipHandlerTest::getBucketToAbort() const
-{
+document::Bucket ChangedBucketOwnershipHandlerTest::getBucketToAbort() const {
     lib::ClusterState state(getDefaultTestClusterState());
     return makeDocumentBucket(nextOwnedBucket(2, state, document::BucketId()));
 }
@@ -467,9 +429,7 @@ ChangedBucketOwnershipHandlerTest::getBucketToAbort() const
  * Returns a bucket that _is_ owned by distributor 1 and should thus be
  * allowed through.
  */
-document::Bucket
-ChangedBucketOwnershipHandlerTest::getBucketToAllow() const
-{
+document::Bucket ChangedBucketOwnershipHandlerTest::getBucketToAllow() const {
     lib::ClusterState state(getDefaultTestClusterState());
     return makeDocumentBucket(nextOwnedBucket(1, state, document::BucketId()));
 }
@@ -485,10 +445,10 @@ TEST_F(ChangedBucketOwnershipHandlerTest, abort_outdated_join) {
 }
 
 TEST_F(ChangedBucketOwnershipHandlerTest, abort_outdated_set_bucket_state) {
-    expectChangeAbortsMessage<api::SetBucketStateCommand>(
-            true, getBucketToAbort(), api::SetBucketStateCommand::ACTIVE);
-    expectChangeAbortsMessage<api::SetBucketStateCommand>(
-            false, getBucketToAllow(), api::SetBucketStateCommand::ACTIVE);
+    expectChangeAbortsMessage<api::SetBucketStateCommand>(true, getBucketToAbort(),
+                                                          api::SetBucketStateCommand::ACTIVE);
+    expectChangeAbortsMessage<api::SetBucketStateCommand>(false, getBucketToAllow(),
+                                                          api::SetBucketStateCommand::ACTIVE);
 }
 
 TEST_F(ChangedBucketOwnershipHandlerTest, abort_outdated_create_bucket) {
@@ -534,7 +494,7 @@ TEST_F(ChangedBucketOwnershipHandlerTest, abort_outdated_put_operation) {
 
 TEST_F(ChangedBucketOwnershipHandlerTest, abort_outdated_update_command) {
     const document::DocumentType* docType(_testDocRepo.getTypeRepo().getDocumentType("testdoctype1"));
-    document::DocumentId docId("id:foo:testdoctype1::bar");
+    document::DocumentId          docId("id:foo:testdoctype1::bar");
     auto update(std::make_shared<document::DocumentUpdate>(_testDocRepo.getTypeRepo(), *docType, docId));
     expectChangeAbortsMessage<api::UpdateCommand>(true, getBucketToAbort(), update, api::Timestamp(1234));
     expectChangeAbortsMessage<api::UpdateCommand>(false, getBucketToAllow(), update, api::Timestamp(1234));
@@ -554,8 +514,7 @@ TEST_F(ChangedBucketOwnershipHandlerTest, ideal_state_abort_updates_metric) {
 
 TEST_F(ChangedBucketOwnershipHandlerTest, external_load_op_abort_updates_metric) {
     document::DocumentId docId("id:foo:testdoctype1::bar");
-    expectChangeAbortsMessage<api::RemoveCommand>(
-            true, getBucketToAbort(), docId, api::Timestamp(1234));
+    expectChangeAbortsMessage<api::RemoveCommand>(true, getBucketToAbort(), docId, api::Timestamp(1234));
     EXPECT_EQ(0, _handler->getMetrics().idealStateOpsAborted.getValue());
     EXPECT_EQ(1, _handler->getMetrics().externalLoadOpsAborted.getValue());
 }
@@ -566,16 +525,13 @@ TEST_F(ChangedBucketOwnershipHandlerTest, external_load_op_aborts_are_configurab
     _handler->on_configure(*config);
     // Should not abort operation, even when ownership has changed.
     document::DocumentId docId("id:foo:testdoctype1::bar");
-    expectChangeAbortsMessage<api::RemoveCommand>(
-            false, getBucketToAbort(), docId, api::Timestamp(1234));
+    expectChangeAbortsMessage<api::RemoveCommand>(false, getBucketToAbort(), docId, api::Timestamp(1234));
 }
 
 TEST_F(ChangedBucketOwnershipHandlerTest, abort_commands_when_storage_node_is_down) {
     document::Document::SP doc(_testDocRepo.createRandomDocumentAtLocation(1));
-    expectDownAbortsMessage<api::PutCommand>(
-            true, getBucketToAllow(), doc, api::Timestamp(1234));
-    expectDownAbortsMessage<api::SetBucketStateCommand>(
-            true, getBucketToAllow(), api::SetBucketStateCommand::ACTIVE);
+    expectDownAbortsMessage<api::PutCommand>(true, getBucketToAllow(), doc, api::Timestamp(1234));
+    expectDownAbortsMessage<api::SetBucketStateCommand>(true, getBucketToAllow(), api::SetBucketStateCommand::ACTIVE);
 }
 
-} // storage
+} // namespace storage
