@@ -4,6 +4,7 @@
 
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
 #include <vespa/vespalib/stllike/allocator.h>
+
 #include <vector>
 
 namespace search::enumstore {
@@ -15,4 +16,4 @@ using Index = vespalib::datastore::EntryRef;
 using IndexVector = std::vector<Index, vespalib::allocator_large<Index>>;
 using InternalIndex = vespalib::datastore::EntryRefT<22>;
 
-}
+} // namespace search::enumstore

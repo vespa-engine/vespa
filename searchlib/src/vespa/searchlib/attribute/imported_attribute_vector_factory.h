@@ -5,7 +5,9 @@
 #include <memory>
 #include <string>
 
-namespace search { struct IDocumentMetaStoreContext; }
+namespace search {
+struct IDocumentMetaStoreContext;
+}
 
 namespace search::attribute {
 
@@ -21,20 +23,17 @@ class ReferenceAttribute;
 class ImportedAttributeVectorFactory {
 public:
     static std::shared_ptr<ImportedAttributeVector>
-    create(std::string_view name,
-           std::shared_ptr<ReferenceAttribute> reference_attribute,
-           std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
+    create(std::string_view name, std::shared_ptr<ReferenceAttribute> reference_attribute,
+           std::shared_ptr<IDocumentMetaStoreContext>          document_meta_store,
            std::shared_ptr<attribute::ReadableAttributeVector> target_attribute,
-           std::shared_ptr<const IDocumentMetaStoreContext> target_document_meta_store,
-           bool use_search_cache);
+           std::shared_ptr<const IDocumentMetaStoreContext> target_document_meta_store, bool use_search_cache);
 
     static std::shared_ptr<ImportedAttributeVector>
-    create(std::string_view name,
-           std::shared_ptr<ReferenceAttribute> reference_attribute,
-           std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
+    create(std::string_view name, std::shared_ptr<ReferenceAttribute> reference_attribute,
+           std::shared_ptr<IDocumentMetaStoreContext>          document_meta_store,
            std::shared_ptr<attribute::ReadableAttributeVector> target_attribute,
-           std::shared_ptr<const IDocumentMetaStoreContext> target_document_meta_store,
-           std::shared_ptr<BitVectorSearchCache> search_cache);
+           std::shared_ptr<const IDocumentMetaStoreContext>    target_document_meta_store,
+           std::shared_ptr<BitVectorSearchCache>               search_cache);
 };
 
-}
+} // namespace search::attribute

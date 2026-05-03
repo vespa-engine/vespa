@@ -3,6 +3,7 @@
 #pragma once
 
 #include "i_enum_store.h"
+
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/vespalib/datastore/entry_comparator_wrapper.h>
 #include <vespa/vespalib/datastore/unique_store_dictionary.h>
@@ -14,14 +15,12 @@ class BufferWriter;
 using EnumTreeTraits = vespalib::btree::BTreeTraits<16, 16, 10, true>;
 
 using EnumTree = vespalib::btree::BTree<vespalib::datastore::AtomicEntryRef, vespalib::btree::BTreeNoLeafData,
-                              vespalib::btree::NoAggregated,
-                              const vespalib::datastore::EntryComparatorWrapper,
-                              EnumTreeTraits>;
+                                        vespalib::btree::NoAggregated,
+                                        const vespalib::datastore::EntryComparatorWrapper, EnumTreeTraits>;
 
-using EnumPostingTree = vespalib::btree::BTree<vespalib::datastore::AtomicEntryRef, vespalib::datastore::AtomicEntryRef,
-                                     vespalib::btree::NoAggregated,
-                                     const vespalib::datastore::EntryComparatorWrapper,
-                                     EnumTreeTraits>;
+using EnumPostingTree = vespalib::btree::BTree<vespalib::datastore::AtomicEntryRef,
+                                               vespalib::datastore::AtomicEntryRef, vespalib::btree::NoAggregated,
+                                               const vespalib::datastore::EntryComparatorWrapper, EnumTreeTraits>;
 
 /**
  * Interface for the dictionary used by an enum store.
@@ -52,7 +51,8 @@ public:
     virtual void collect_folded(Index idx, EntryRef root, const std::function<void(EntryRef)>& callback) const = 0;
     virtual Index remap_index(Index idx) = 0;
     virtual void clear_all_posting_lists(std::function<void(EntryRef)> clearer) = 0;
-    virtual void update_posting_list(Index idx, const EntryComparator& cmp, std::function<EntryRef(EntryRef)> updater) = 0;
+    virtual void update_posting_list(Index idx, const EntryComparator& cmp,
+                                     std::function<EntryRef(EntryRef)> updater) = 0;
     /*
      * Scan dictionary and call normalize function for each value. If
      * returned value is different then write back the modified value to
@@ -65,14 +65,16 @@ public:
      * Used by compaction of posting lists when moving short arrays,
      * bitvectors or btree roots.
      */
-    virtual bool normalize_posting_lists(std::function<void(std::vector<EntryRef>&)> normalize, const EntryRefFilter& filter) = 0;
+    virtual bool normalize_posting_lists(std::function<void(std::vector<EntryRef>&)> normalize,
+                                         const EntryRefFilter&                       filter) = 0;
     /*
      * Scan dictionary and call callback function for batches of values
      * that pass the filter. Used by compaction of posting lists when
      * moving btree nodes.
      */
-    virtual void foreach_posting_list(std::function<void(const std::vector<EntryRef>&)> callback, const EntryRefFilter& filter) = 0;
+    virtual void foreach_posting_list(std::function<void(const std::vector<EntryRef>&)> callback,
+                                      const EntryRefFilter&                             filter) = 0;
     virtual const EnumPostingTree& get_posting_dictionary() const = 0;
 };
 
-}
+} // namespace search

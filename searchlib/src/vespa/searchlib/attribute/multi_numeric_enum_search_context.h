@@ -13,12 +13,13 @@ namespace search::attribute {
  * a query term on a multi value numeric enumerated attribute vector.
  */
 template <typename T, typename M>
-class MultiNumericEnumSearchContext : public MultiEnumSearchContext<T, NumericSearchContext<NumericRangeMatcher<T>>, M>
-{
+class MultiNumericEnumSearchContext
+    : public MultiEnumSearchContext<T, NumericSearchContext<NumericRangeMatcher<T>>, M> {
 public:
-    MultiNumericEnumSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, MultiValueMappingReadView<M> mv_mapping_read_view, const EnumStoreT<T>& enum_store);
+    MultiNumericEnumSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched,
+                                  MultiValueMappingReadView<M> mv_mapping_read_view, const EnumStoreT<T>& enum_store);
     MultiNumericEnumSearchContext(MultiNumericEnumSearchContext&& rhs) noexcept = default;
     ~MultiNumericEnumSearchContext() override;
 };
 
-}
+} // namespace search::attribute

@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "search_context.h"
 #include "enumstore.h"
+#include "search_context.h"
 
 namespace search::attribute {
 
@@ -12,45 +12,42 @@ namespace search::attribute {
  * a query term on a single value enumerated attribute vector.
  * This class should be considered to be an abstract class.
  */
-template <typename T, typename BaseSC>
-class SingleEnumSearchContext : public BaseSC
-{
+template <typename T, typename BaseSC> class SingleEnumSearchContext : public BaseSC {
 protected:
     using DocId = ISearchContext::DocId;
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using EnumIndices = std::span<const AtomicEntryRef>;
-    EnumIndices                 _enum_indices;
-    const EnumStoreT<T>&        _enum_store;
+    EnumIndices          _enum_indices;
+    const EnumStoreT<T>& _enum_store;
 
-    int32_t onFind(DocId docId, int32_t elemId, int32_t & weight) const final {
-        return find(docId, elemId, weight);
-    }
+    int32_t onFind(DocId docId, int32_t elemId, int32_t& weight) const final { return find(docId, elemId, weight); }
 
-    int32_t onFind(DocId docId, int32_t elemId) const final {
-        return find(docId, elemId);
-    }
+    int32_t onFind(DocId docId, int32_t elemId) const final { return find(docId, elemId); }
 
 public:
-    SingleEnumSearchContext(typename BaseSC::MatcherType&& matcher, const AttributeVector& toBeSearched, EnumIndices enum_indices, const EnumStoreT<T>& enum_store);
+    SingleEnumSearchContext(typename BaseSC::MatcherType&& matcher, const AttributeVector& toBeSearched,
+                            EnumIndices enum_indices, const EnumStoreT<T>& enum_store);
     SingleEnumSearchContext(SingleEnumSearchContext&& rhs) noexcept = default;
     ~SingleEnumSearchContext() override;
 
-    int32_t find(DocId docId, int32_t elemId, int32_t & weight) const {
-        if ( elemId != 0) return -1;
+    int32_t find(DocId docId, int32_t elemId, int32_t& weight) const {
+        if (elemId != 0)
+            return -1;
         T v = _enum_store.get_value(_enum_indices[docId].load_acquire());
         weight = 1;
         return this->match(v) ? 0 : -1;
     }
 
     int32_t find(DocId docId, int32_t elemId) const {
-        if ( elemId != 0) return -1;
+        if (elemId != 0)
+            return -1;
         T v = _enum_store.get_value(_enum_indices[docId].load_acquire());
         return this->match(v) ? 0 : -1;
     }
 
-    std::unique_ptr<queryeval::SearchIterator>
-    createFilterIterator(fef::TermFieldMatchData* matchData, bool strict) override;
+    std::unique_ptr<queryeval::SearchIterator> createFilterIterator(fef::TermFieldMatchData* matchData,
+                                                                    bool                     strict) override;
     uint32_t get_committed_docid_limit() const noexcept override;
 };
 
-}
+} // namespace search::attribute

@@ -14,20 +14,20 @@ class IAttributeVector;
  */
 class AttributeReadGuard {
 private:
-    const IAttributeVector *_attr;
+    const IAttributeVector* _attr;
 
 protected:
-    AttributeReadGuard(const IAttributeVector *attr);
+    AttributeReadGuard(const IAttributeVector* attr);
 
 public:
-    AttributeReadGuard(const AttributeReadGuard &) = delete;
-    AttributeReadGuard &operator=(const AttributeReadGuard &) = delete;
-    AttributeReadGuard(AttributeReadGuard &&) = delete;
-    AttributeReadGuard &operator=(AttributeReadGuard &&) = delete;
+    AttributeReadGuard(const AttributeReadGuard&) = delete;
+    AttributeReadGuard& operator=(const AttributeReadGuard&) = delete;
+    AttributeReadGuard(AttributeReadGuard&&) = delete;
+    AttributeReadGuard& operator=(AttributeReadGuard&&) = delete;
     virtual ~AttributeReadGuard();
-    const IAttributeVector *operator->() const { return _attr; }
-    const IAttributeVector &operator*()  const { return *_attr; }
-    const IAttributeVector *attribute() const { return _attr; }
+    const IAttributeVector* operator->() const { return _attr; }
+    const IAttributeVector& operator*() const { return *_attr; }
+    const IAttributeVector* attribute() const { return _attr; }
 };
 
-}
+} // namespace search::attribute

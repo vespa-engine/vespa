@@ -5,26 +5,25 @@
 #include "attributesaver.h"
 #include "save_utils.h"
 
-namespace search::attribute { class MultiValueMappingBase; }
+namespace search::attribute {
+class MultiValueMappingBase;
+}
 
 namespace search {
 
 /*
  * Base class for saving a multivalue attribute (e.g. weighted set of int).
  */
-class MultiValueAttributeSaver : public AttributeSaver
-{
+class MultiValueAttributeSaver : public AttributeSaver {
 protected:
     using MvMappingBase = attribute::MultiValueMappingBase;
     attribute::EntryRefVector _frozenIndices;
 
 public:
-    MultiValueAttributeSaver(vespalib::GenerationGuard &&guard,
-                             const attribute::AttributeHeader &header,
-                             const MvMappingBase &mvMapping);
+    MultiValueAttributeSaver(vespalib::GenerationGuard&& guard, const attribute::AttributeHeader& header,
+                             const MvMappingBase& mvMapping);
 
     virtual ~MultiValueAttributeSaver();
 };
-
 
 } // namespace search

@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/vespalib/util/generation_guard.h>
+
 #include <memory>
 
 namespace search {
@@ -9,33 +10,32 @@ namespace search {
 /**
  * General class for guarding a component that is using an underlying generation handler.
  **/
-template <typename T>
-class ComponentGuard
-{
+template <typename T> class ComponentGuard {
 private:
     using Component = std::shared_ptr<T>;
     Component                 _component;
     vespalib::GenerationGuard _generationGuard;
+
 public:
     ComponentGuard();
-    ComponentGuard(ComponentGuard &&);
-    ComponentGuard & operator = (ComponentGuard &&);
-    ComponentGuard(const ComponentGuard &);
-    ComponentGuard & operator = (const ComponentGuard &);
+    ComponentGuard(ComponentGuard&&);
+    ComponentGuard& operator=(ComponentGuard&&);
+    ComponentGuard(const ComponentGuard&);
+    ComponentGuard& operator=(const ComponentGuard&);
     virtual ~ComponentGuard();
     /**
      * Creates a guard for the shared pointer of the given component.
      **/
-    ComponentGuard(const Component & component);
-    const T * get()          const { return _component.get(); }
+    ComponentGuard(const Component& component);
+    const T* get() const { return _component.get(); }
 
-    const Component & getSP() const { return _component; }
-    const T * operator -> () const { return _component.get(); }
-    const T & operator * ()  const { return *_component.get(); }
-    T * get()                      { return _component.get(); }
-    T * operator -> ()             { return _component.get(); }
-    T & operator * ()              { return *_component.get(); }
-    bool valid()             const { return _component.get() != nullptr; }
+    const Component& getSP() const { return _component; }
+    const T* operator->() const { return _component.get(); }
+    const T& operator*() const { return *_component.get(); }
+    T* get() { return _component.get(); }
+    T* operator->() { return _component.get(); }
+    T& operator*() { return *_component.get(); }
+    bool valid() const { return _component.get() != nullptr; }
 };
 
-}
+} // namespace search

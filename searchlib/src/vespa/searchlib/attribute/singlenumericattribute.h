@@ -2,17 +2,18 @@
 
 #pragma once
 
-#include "integerbase.h"
 #include "floatbase.h"
+#include "integerbase.h"
 #include "search_context.h"
+
 #include <vespa/vespalib/util/atomic.h>
 #include <vespa/vespalib/util/rcuvector.h>
+
 #include <limits>
 
 namespace search {
 
-template <typename B>
-class SingleValueNumericAttribute final : public B {
+template <typename B> class SingleValueNumericAttribute final : public B {
 private:
     using T = typename B::BaseType;
     using DataVector = vespalib::RcuVectorBase<T>;
@@ -29,19 +30,20 @@ private:
     DataVector _data;
 
     T getFromEnum(EnumHandle e) const override {
-        (void) e;
+        (void)e;
         return T();
     }
 
 protected:
-    bool findEnum(T value, EnumHandle & e) const override {
-        (void) value; (void) e;
+    bool findEnum(T value, EnumHandle& e) const override {
+        (void)value;
+        (void)e;
         return false;
     }
 
 public:
-    explicit SingleValueNumericAttribute(const std::string & baseFileName);  // Only for testing
-    SingleValueNumericAttribute(const std::string & baseFileName, const AttributeVector::Config & c);
+    explicit SingleValueNumericAttribute(const std::string& baseFileName); // Only for testing
+    SingleValueNumericAttribute(const std::string& baseFileName, const AttributeVector::Config& c);
 
     ~SingleValueNumericAttribute() override;
 
@@ -56,65 +58,57 @@ public:
     void onUpdateStat(CommitParam::UpdateStats updateStats) override;
     void reclaim_memory(vespalib::Generation oldest_used_gen) override;
     void before_inc_generation(vespalib::Generation current_gen) override;
-    bool addDoc(DocId & doc) override;
-    bool onLoad(vespalib::Executor *executor) override;
+    bool addDoc(DocId& doc) override;
+    bool onLoad(vespalib::Executor* executor) override;
 
-    bool onLoadEnumerated(ReaderBase &attrReader);
+    bool onLoadEnumerated(ReaderBase& attrReader);
 
-    std::unique_ptr<attribute::SearchContext>
-    getSearch(std::unique_ptr<QueryTermSimple> term, const attribute::SearchContextParams & params) const override;
+    std::unique_ptr<attribute::SearchContext> getSearch(std::unique_ptr<QueryTermSimple>      term,
+                                                        const attribute::SearchContextParams& params) const override;
 
-    void set(DocId doc, T v) {
-        vespalib::atomic::store_ref_relaxed(_data[doc], v);
-    }
+    void set(DocId doc, T v) { vespalib::atomic::store_ref_relaxed(_data[doc], v); }
 
-    T getFast(DocId doc) const {
-        return vespalib::atomic::load_ref_relaxed(_data.acquire_elem_ref(doc));
-    }
+    T getFast(DocId doc) const { return vespalib::atomic::load_ref_relaxed(_data.acquire_elem_ref(doc)); }
 
     //-------------------------------------------------------------------------
     // new read api
     //-------------------------------------------------------------------------
-    T get(DocId doc) const override {
-        return getFast(doc);
-    }
-    largeint_t getInt(DocId doc) const override {
-        return static_cast<largeint_t>(getFast(doc));
-    }
-    double getFloat(DocId doc) const override {
-        return static_cast<double>(getFast(doc));
-    }
+    T get(DocId doc) const override { return getFast(doc); }
+    largeint_t getInt(DocId doc) const override { return static_cast<largeint_t>(getFast(doc)); }
+    double getFloat(DocId doc) const override { return static_cast<double>(getFast(doc)); }
     uint32_t getEnum(DocId doc) const override {
-        (void) doc;
+        (void)doc;
         return std::numeric_limits<uint32_t>::max(); // does not have enum
     }
-    uint32_t get(DocId doc, largeint_t * v, uint32_t sz) const override {
-        (void) sz;
+    uint32_t get(DocId doc, largeint_t* v, uint32_t sz) const override {
+        (void)sz;
         v[0] = static_cast<largeint_t>(getFast(doc));
         return 1;
     }
-    uint32_t get(DocId doc, double * v, uint32_t sz) const override {
-        (void) sz;
+    uint32_t get(DocId doc, double* v, uint32_t sz) const override {
+        (void)sz;
         v[0] = static_cast<double>(getFast(doc));
         return 1;
     }
-    uint32_t get(DocId doc, EnumHandle * e, uint32_t sz) const override {
-        (void) sz;
+    uint32_t get(DocId doc, EnumHandle* e, uint32_t sz) const override {
+        (void)sz;
         e[0] = getEnum(doc);
         return 1;
     }
-    uint32_t get(DocId doc, WeightedInt * v, uint32_t sz) const override {
-        (void) sz;
+    uint32_t get(DocId doc, WeightedInt* v, uint32_t sz) const override {
+        (void)sz;
         v[0] = WeightedInt(static_cast<largeint_t>(getFast(doc)));
         return 1;
     }
-    uint32_t get(DocId doc, WeightedFloat * v, uint32_t sz) const override {
-        (void) sz;
+    uint32_t get(DocId doc, WeightedFloat* v, uint32_t sz) const override {
+        (void)sz;
         v[0] = WeightedFloat(static_cast<double>(getFast(doc)));
         return 1;
     }
-    uint32_t get(DocId doc, WeightedEnum * e, uint32_t sz) const override {
-        (void) doc; (void) e; (void) sz;
+    uint32_t get(DocId doc, WeightedEnum* e, uint32_t sz) const override {
+        (void)doc;
+        (void)e;
+        (void)sz;
         return 0;
     }
 
@@ -123,5 +117,4 @@ public:
     std::unique_ptr<AttributeSaver> onInitSave(std::string_view fileName) override;
 };
 
-}
-
+} // namespace search

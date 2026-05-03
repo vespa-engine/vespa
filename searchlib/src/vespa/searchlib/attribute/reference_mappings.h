@@ -5,6 +5,7 @@
 #include <vespa/vespalib/btree/btreestore.h>
 #include <vespa/vespalib/datastore/atomic_value_wrapper.h>
 #include <vespa/vespalib/util/rcuvector.h>
+
 #include <atomic>
 
 namespace search::attribute {
@@ -14,19 +15,17 @@ class Reference;
 /*
  * Class representing mappings in a reference attribute.
  */
-class ReferenceMappings
-{
+class ReferenceMappings {
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using AtomicTargetLid = vespalib::datastore::AtomicValueWrapper<uint32_t>;
     using GenerationHolder = vespalib::GenerationHolder;
     using EntryRef = vespalib::datastore::EntryRef;
     // Classes used to map from target lid to source lids
     using ReverseMappingIndices = vespalib::RcuVectorBase<AtomicEntryRef>;
-    using ReverseMapping = vespalib::btree::BTreeStore<uint32_t, vespalib::btree::BTreeNoLeafData,
-                                             vespalib::btree::NoAggregated,
-                                             std::less<uint32_t>,
-                                             vespalib::btree::BTreeDefaultTraits,
-                                             vespalib::btree::NoAggrCalc>;
+    using ReverseMapping =
+        vespalib::btree::BTreeStore<uint32_t, vespalib::btree::BTreeNoLeafData, vespalib::btree::NoAggregated,
+                                    std::less<uint32_t>, vespalib::btree::BTreeDefaultTraits,
+                                    vespalib::btree::NoAggrCalc>;
 
     // Vector containing references to trees of lids referencing given
     // target lid.
@@ -38,24 +37,24 @@ class ReferenceMappings
     ReverseMapping _reverseMapping;
     // vector containing target lid given source lid
     vespalib::RcuVectorBase<AtomicTargetLid> _targetLids;
-    const std::atomic<uint32_t>& _committedDocIdLimit;
+    const std::atomic<uint32_t>&             _committedDocIdLimit;
 
-    void syncForwardMapping(const Reference &entry);
-    void syncReverseMappingIndices(const Reference &entry);
+    void syncForwardMapping(const Reference& entry);
+    void syncReverseMappingIndices(const Reference& entry);
 
 public:
     using TargetLids = std::span<const AtomicTargetLid>;
     // Class used to map from target lid to source lids
     using ReverseMappingRefs = std::span<const AtomicEntryRef>;
 
-    ReferenceMappings(GenerationHolder &genHolder, const std::atomic<uint32_t>& committedDocIdLimit,
+    ReferenceMappings(GenerationHolder& genHolder, const std::atomic<uint32_t>& committedDocIdLimit,
                       const vespalib::alloc::Alloc& initial_alloc);
 
     ~ReferenceMappings();
 
     // Cleanup helpers, to free resources
     void clearBuilder() { _reverseMapping.clearBuilder(); }
-    void clearMapping(const Reference &entry);
+    void clearMapping(const Reference& entry);
 
     // Hold list management & freezing
     void reclaim_memory(vespalib::Generation oldest_used_gen) { _reverseMapping.reclaim_memory(oldest_used_gen); }
@@ -63,10 +62,10 @@ public:
     void assign_generation(vespalib::Generation current_gen) { _reverseMapping.assign_generation(current_gen); }
 
     // Handle mapping changes
-    void notifyReferencedPut(const Reference &entry, uint32_t targetLid);
-    void notifyReferencedRemove(const Reference &entry);
-    void removeReverseMapping(const Reference &entry, uint32_t lid);
-    void addReverseMapping(const Reference &entry, uint32_t lid);
+    void notifyReferencedPut(const Reference& entry, uint32_t targetLid);
+    void notifyReferencedRemove(const Reference& entry);
+    void removeReverseMapping(const Reference& entry, uint32_t lid);
+    void addReverseMapping(const Reference& entry, uint32_t lid);
 
     // Maintain size of mapping from lid to target lid
     void onAddDocs(uint32_t docIdLimit);
@@ -75,14 +74,12 @@ public:
     void shrink(uint32_t docIdLimit);
 
     // Setup mapping after load
-    void buildReverseMapping(const Reference &entry, const std::vector<ReverseMapping::KeyDataType> &adds);
+    void buildReverseMapping(const Reference& entry, const std::vector<ReverseMapping::KeyDataType>& adds);
 
     vespalib::MemoryUsage getMemoryUsage();
 
     // Reader API, reader must hold generation guard
-    template <typename FunctionType>
-    void
-    foreach_lid(uint32_t targetLid, FunctionType &&func) const;
+    template <typename FunctionType> void foreach_lid(uint32_t targetLid, FunctionType&& func) const;
 
     TargetLids getTargetLids() const {
         uint32_t committedDocIdLimit = _committedDocIdLimit.load(std::memory_order_acquire);
@@ -97,17 +94,14 @@ public:
         uint32_t targetLidLimit = _targetLidLimit.load(std::memory_order_acquire);
         return ReverseMappingRefs(&_reverseMappingIndices.acquire_elem_ref(0), targetLidLimit);
     }
-    const ReverseMapping &getReverseMapping() const { return _reverseMapping; }
+    const ReverseMapping& getReverseMapping() const { return _reverseMapping; }
 };
 
-template <typename FunctionType>
-void
-ReferenceMappings::foreach_lid(uint32_t targetLid, FunctionType &&func) const
-{
+template <typename FunctionType> void ReferenceMappings::foreach_lid(uint32_t targetLid, FunctionType&& func) const {
     if (targetLid < _targetLidLimit.load(std::memory_order_acquire)) {
         EntryRef revMapIdx = _reverseMappingIndices.acquire_elem_ref(targetLid).load_acquire();
         _reverseMapping.foreach_frozen_key(revMapIdx, std::forward<FunctionType>(func));
     }
 }
 
-}
+} // namespace search::attribute

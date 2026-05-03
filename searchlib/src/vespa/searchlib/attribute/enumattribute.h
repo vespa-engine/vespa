@@ -3,21 +3,19 @@
 #pragma once
 
 #include "attributevector.h"
-#include "loadedenumvalue.h"
 #include "enumstore.h"
+#include "loadedenumvalue.h"
 #include "no_loaded_vector.h"
 
 namespace search {
 
-template <typename B>
-class EnumAttribute : public B
-{
+template <typename B> class EnumAttribute : public B {
 protected:
     using BaseClass = B;
     using Change = typename B::Change;
     using ChangeVector = typename B::ChangeVector;
     using DocId = typename B::DocId;
-    using EnumEntryType = typename B::EnumEntryType;  // Template argument for enum store
+    using EnumEntryType = typename B::EnumEntryType; // Template argument for enum store
     using EnumHandle = typename B::EnumHandle;
     using ValueModifier = typename B::ValueModifier;
 
@@ -41,7 +39,7 @@ protected:
     IEnumStore* getEnumStoreBase() override { return &_enumStore; }
     EnumEntryType getFromEnum(EnumHandle e) const override { return _enumStore.get_value(e); }
 
-    void load_posting_lists(LoadedVector& loaded) override { (void) loaded; }
+    void load_posting_lists(LoadedVector& loaded) override { (void)loaded; }
     void load_enum_store(LoadedVector& loaded) override;
     uint64_t getUniqueValueCount() const override;
 
@@ -52,15 +50,16 @@ protected:
      * Insert the new unique values into the EnumStore.
      */
     void insertNewUniqueValues(EnumStoreBatchUpdater& updater);
-    virtual void considerAttributeChange(const Change & c, EnumStoreBatchUpdater & inserter) = 0;
+    virtual void considerAttributeChange(const Change& c, EnumStoreBatchUpdater& inserter) = 0;
     vespalib::MemoryUsage getEnumStoreValuesMemoryUsage() const override;
     void populate_address_space_usage(AddressSpaceUsage& usage) const override;
+
 public:
-    EnumAttribute(const std::string & baseFileName, const AttributeVector::Config & cfg);
+    EnumAttribute(const std::string& baseFileName, const AttributeVector::Config& cfg);
     ~EnumAttribute();
-    bool findEnum(EnumEntryType v, EnumHandle & e) const override { return _enumStore.find_enum(v, e); }
-    const EnumStore & getEnumStore() const { return _enumStore; }
-    EnumStore &       getEnumStore()       { return _enumStore; }
+    bool findEnum(EnumEntryType v, EnumHandle& e) const override { return _enumStore.find_enum(v, e); }
+    const EnumStore& getEnumStore() const { return _enumStore; }
+    EnumStore& getEnumStore() { return _enumStore; }
 };
 
 } // namespace search

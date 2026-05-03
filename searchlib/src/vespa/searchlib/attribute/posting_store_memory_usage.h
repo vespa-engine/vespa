@@ -14,20 +14,13 @@ struct PostingStoreMemoryUsage {
     vespalib::MemoryUsage short_arrays;
     vespalib::MemoryUsage bitvectors;
     vespalib::MemoryUsage total;
-    PostingStoreMemoryUsage(vespalib::MemoryUsage btrees_in,
-                            vespalib::MemoryUsage short_arrays_in,
+    PostingStoreMemoryUsage(vespalib::MemoryUsage btrees_in, vespalib::MemoryUsage short_arrays_in,
                             vespalib::MemoryUsage bitvectors_in)
-        : btrees(btrees_in),
-          short_arrays(short_arrays_in),
-          bitvectors(bitvectors_in),
-          total()
-    {
+        : btrees(btrees_in), short_arrays(short_arrays_in), bitvectors(bitvectors_in), total() {
         total.merge(btrees);
         total.merge(short_arrays);
         total.merge(bitvectors);
     }
-
 };
 
-}
-
+} // namespace search::attribute

@@ -12,9 +12,7 @@ namespace search::attribute {
  * Performs lid mapping.
  * @tparam MultiValueType The multi-value type of the data to access.
  */
-template <typename MultiValueType>
-class ImportedMultiValueReadView : public IMultiValueReadView<MultiValueType>
-{
+template <typename MultiValueType> class ImportedMultiValueReadView : public IMultiValueReadView<MultiValueType> {
     using AtomicTargetLid = vespalib::datastore::AtomicValueWrapper<uint32_t>;
     using TargetLids = std::span<const AtomicTargetLid>;
     TargetLids                                 _target_lids;
@@ -24,10 +22,11 @@ class ImportedMultiValueReadView : public IMultiValueReadView<MultiValueType>
         // Check range to avoid reading memory beyond end of mapping array
         return lid < _target_lids.size() ? _target_lids[lid].load_acquire() : 0u;
     }
+
 public:
     ImportedMultiValueReadView(TargetLids target_lids, const IMultiValueReadView<MultiValueType>* target_read_view);
     ~ImportedMultiValueReadView() override;
     std::span<const MultiValueType> get_values(uint32_t docid) const override;
 };
 
-}
+} // namespace search::attribute

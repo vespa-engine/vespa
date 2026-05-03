@@ -21,83 +21,80 @@ namespace search {
 template <typename B, typename T>
 class MultiValueStringPostingAttributeT
     : public MultiValueStringAttributeT<B, T>,
-      protected PostingListAttributeSubBase<AttributeWeightPosting,
-                                            typename B::LoadedVector,
-                                            typename B::LoadedValueType,
-                                            typename B::EnumStore>
-{
+      protected PostingListAttributeSubBase<AttributeWeightPosting, typename B::LoadedVector,
+                                            typename B::LoadedValueType, typename B::EnumStore> {
 public:
     using EnumStore = typename MultiValueStringAttributeT<B, T>::EnumStore;
     using EnumStoreBatchUpdater = typename EnumStore::BatchUpdater;
 
 private:
     using LoadedVector = typename B::LoadedVector;
-    using PostingParent = PostingListAttributeSubBase<AttributeWeightPosting,
-                                                      LoadedVector,
-                                                      typename B::LoadedValueType,
-                                                      typename B::EnumStore>;
+    using PostingParent = PostingListAttributeSubBase<AttributeWeightPosting, LoadedVector,
+                                                      typename B::LoadedValueType, typename B::EnumStore>;
 
     using ComparatorType = typename EnumStore::ComparatorType;
     using DocId = typename MultiValueStringAttributeT<B, T>::DocId;
     using DocIndices = typename MultiValueStringAttributeT<B, T>::DocIndices;
     using Posting = typename PostingParent::Posting;
     using PostingMap = typename PostingParent::PostingMap;
+
 public:
     using PostingStore = typename PostingParent::PostingStore;
+
 private:
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
     using SelfType = MultiValueStringPostingAttributeT<B, T>;
     using WeightedIndex = typename MultiValueStringAttributeT<B, T>::WeightedIndex;
 
-    using DirectPostingStoreAdapterType = attribute::StringDirectPostingStoreAdapter<IDocidWithWeightPostingStore,
-                                                                                     PostingStore, EnumStore>;
+    using DirectPostingStoreAdapterType =
+        attribute::StringDirectPostingStoreAdapter<IDocidWithWeightPostingStore, PostingStore, EnumStore>;
     DirectPostingStoreAdapterType _posting_store_adapter;
 
     using PostingParent::_posting_store;
     using PostingParent::clearAllPostings;
+    using PostingParent::forwardedOnAddDoc;
     using PostingParent::handle_load_posting_lists;
     using PostingParent::handle_load_posting_lists_and_update_enum_store;
-    using PostingParent::forwardedOnAddDoc;
 
     void freezeEnumDictionary() override;
-    void mergeMemoryStats(vespalib::MemoryUsage & total) override;
-    void applyValueChanges(const DocIndices& docIndices, EnumStoreBatchUpdater& updater) override ;
+    void mergeMemoryStats(vespalib::MemoryUsage& total) override;
+    void applyValueChanges(const DocIndices& docIndices, EnumStoreBatchUpdater& updater) override;
 
 public:
     using PostingParent::get_posting_store;
     using Dictionary = EnumPostingTree;
 
-    MultiValueStringPostingAttributeT(const std::string & name, const AttributeVector::Config & c);
-    MultiValueStringPostingAttributeT(const std::string & name);
+    MultiValueStringPostingAttributeT(const std::string& name, const AttributeVector::Config& c);
+    MultiValueStringPostingAttributeT(const std::string& name);
     ~MultiValueStringPostingAttributeT();
 
     void reclaim_memory(vespalib::Generation oldest_used_gen) override;
     void before_inc_generation(vespalib::Generation current_gen) override;
 
-    std::unique_ptr<attribute::SearchContext>
-    getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
+    std::unique_ptr<attribute::SearchContext> getSearch(QueryTermSimpleUP                     term,
+                                                        const attribute::SearchContextParams& params) const override;
 
-    const IDocidWithWeightPostingStore *as_docid_with_weight_posting_store() const override;
+    const IDocidWithWeightPostingStore* as_docid_with_weight_posting_store() const override;
 
     bool onAddDoc(DocId doc) override {
         return forwardedOnAddDoc(doc, this->_mvMapping.getNumKeys(), this->_mvMapping.getCapacityKeys());
     }
 
-    void load_posting_lists(LoadedVector& loaded) override {
-        handle_load_posting_lists(loaded);
-    }
+    void load_posting_lists(LoadedVector& loaded) override { handle_load_posting_lists(loaded); }
 
-    attribute::IPostingListAttributeBase * getIPostingListAttributeBase() override { return this; }
+    attribute::IPostingListAttributeBase* getIPostingListAttributeBase() override { return this; }
 
-    const attribute::IPostingListAttributeBase * getIPostingListAttributeBase()  const override { return this; }
+    const attribute::IPostingListAttributeBase* getIPostingListAttributeBase() const override { return this; }
 
     void load_posting_lists_and_update_enum_store(enumstore::EnumeratedPostingsLoader& loader) override {
         handle_load_posting_lists_and_update_enum_store(loader);
     }
 };
 
-using ArrayStringPostingAttribute = MultiValueStringPostingAttributeT<EnumAttribute<StringAttribute>, vespalib::datastore::AtomicEntryRef>;
-using WeightedSetStringPostingAttribute = MultiValueStringPostingAttributeT<EnumAttribute<StringAttribute>, multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef> >;
+using ArrayStringPostingAttribute =
+    MultiValueStringPostingAttributeT<EnumAttribute<StringAttribute>, vespalib::datastore::AtomicEntryRef>;
+using WeightedSetStringPostingAttribute =
+    MultiValueStringPostingAttributeT<EnumAttribute<StringAttribute>,
+                                      multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef>>;
 
 } // namespace search
-

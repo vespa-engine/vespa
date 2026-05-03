@@ -3,8 +3,8 @@
 #pragma once
 
 #include "multienumattribute.h"
-#include "numericbase.h"
 #include "numeric_range_matcher.h"
+#include "numericbase.h"
 #include "primitivereader.h"
 #include "search_context.h"
 
@@ -18,8 +18,7 @@ namespace search {
  * B: EnumAttribute<BaseClass>
  * M: MultiValueType (MultiValueMapping template argument)
  */
-template <typename B, typename M>
-class MultiValueNumericEnumAttribute : public MultiValueEnumAttribute<B, M> {
+template <typename B, typename M> class MultiValueNumericEnumAttribute : public MultiValueEnumAttribute<B, M> {
 public:
     using T = typename B::BaseClass::BaseType;
 
@@ -43,18 +42,20 @@ protected:
     using largeint_t = typename B::BaseClass::largeint_t;
 
     bool is_sortable() const noexcept override;
-    std::unique_ptr<attribute::ISortBlobWriter> make_sort_blob_writer(bool ascending, const common::BlobConverter* converter,
+    std::unique_ptr<attribute::ISortBlobWriter> make_sort_blob_writer(bool                            ascending,
+                                                                      const common::BlobConverter*    converter,
                                                                       common::sortspec::MissingPolicy policy,
                                                                       std::string_view missing_value) const override;
+
 public:
-    MultiValueNumericEnumAttribute(const std::string & baseFileName, const AttributeVector::Config & cfg);
+    MultiValueNumericEnumAttribute(const std::string& baseFileName, const AttributeVector::Config& cfg);
 
-    bool onLoad(vespalib::Executor *executor) override;
+    bool onLoad(vespalib::Executor* executor) override;
 
-    bool onLoadEnumerated(ReaderBase &attrReader);
+    bool onLoadEnumerated(ReaderBase& attrReader);
 
-    std::unique_ptr<attribute::SearchContext>
-    getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
+    std::unique_ptr<attribute::SearchContext> getSearch(QueryTermSimpleUP                     term,
+                                                        const attribute::SearchContextParams& params) const override;
 
     //-------------------------------------------------------------------------
     // Attribute read API
@@ -67,51 +68,48 @@ public:
             return this->_enumStore.get_value(multivalue::get_value_ref(indices[0]).load_acquire());
         }
     }
-    largeint_t getInt(DocId doc) const override {
-        return static_cast<largeint_t>(get(doc));
-    }
-    double getFloat(DocId doc) const override {
-        return static_cast<double>(get(doc));
-    }
+    largeint_t getInt(DocId doc) const override { return static_cast<largeint_t>(get(doc)); }
+    double getFloat(DocId doc) const override { return static_cast<double>(get(doc)); }
 
-    template <typename BufferType>
-    uint32_t getHelper(DocId doc, BufferType * buffer, uint32_t sz) const {
+    template <typename BufferType> uint32_t getHelper(DocId doc, BufferType* buffer, uint32_t sz) const {
         WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
-        uint32_t valueCount = indices.size();
-        for(uint32_t i = 0, m = std::min(sz, valueCount); i < m; i++) {
-            buffer[i] = static_cast<BufferType>(this->_enumStore.get_value(multivalue::get_value_ref(indices[i]).load_acquire()));
+        uint32_t              valueCount = indices.size();
+        for (uint32_t i = 0, m = std::min(sz, valueCount); i < m; i++) {
+            buffer[i] = static_cast<BufferType>(
+                this->_enumStore.get_value(multivalue::get_value_ref(indices[i]).load_acquire()));
         }
         return valueCount;
     }
-    uint32_t get(DocId doc, largeint_t * v, uint32_t sz) const override {
-        return getHelper(doc, v, sz);
-    }
-    uint32_t get(DocId doc, double * v, uint32_t sz) const override {
-        return getHelper(doc, v, sz);
-    }
+    uint32_t get(DocId doc, largeint_t* v, uint32_t sz) const override { return getHelper(doc, v, sz); }
+    uint32_t get(DocId doc, double* v, uint32_t sz) const override { return getHelper(doc, v, sz); }
 
     template <typename WeightedType, typename ValueType>
-    uint32_t getWeightedHelper(DocId doc, WeightedType * buffer, uint32_t sz) const {
+    uint32_t getWeightedHelper(DocId doc, WeightedType* buffer, uint32_t sz) const {
         WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
-        uint32_t valueCount = indices.size();
+        uint32_t              valueCount = indices.size();
         for (uint32_t i = 0, m = std::min(sz, valueCount); i < m; ++i) {
-            buffer[i] = WeightedType(static_cast<ValueType>(this->_enumStore.get_value(multivalue::get_value_ref(indices[i]).load_acquire())), multivalue::get_weight(indices[i]));
+            buffer[i] = WeightedType(static_cast<ValueType>(this->_enumStore.get_value(
+                                         multivalue::get_value_ref(indices[i]).load_acquire())),
+                                     multivalue::get_weight(indices[i]));
         }
         return valueCount;
     }
-    uint32_t get(DocId doc, WeightedInt * v, uint32_t sz) const override {
+    uint32_t get(DocId doc, WeightedInt* v, uint32_t sz) const override {
         return getWeightedHelper<WeightedInt, largeint_t>(doc, v, sz);
     }
-    uint32_t get(DocId doc, WeightedFloat * v, uint32_t sz) const override {
+    uint32_t get(DocId doc, WeightedFloat* v, uint32_t sz) const override {
         return getWeightedHelper<WeightedFloat, double>(doc, v, sz);
     }
 
     // Implements attribute::IMultiValueAttribute
-    const attribute::IArrayReadView<T>* make_read_view(attribute::IMultiValueAttribute::ArrayTag<T>, vespalib::Stash& stash) const override;
-    const attribute::IWeightedSetReadView<T>* make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<T>, vespalib::Stash& stash) const override;
+    const attribute::IArrayReadView<T>* make_read_view(attribute::IMultiValueAttribute::ArrayTag<T>,
+                                                       vespalib::Stash& stash) const override;
+    const attribute::IWeightedSetReadView<T>* make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<T>,
+                                                             vespalib::Stash& stash) const override;
+
 private:
     using AttributeReader = PrimitiveReader<typename B::LoadedValueType>;
-    void loadAllAtOnce(AttributeReader & attrReader, size_t numDocs, size_t numValues);
+    void loadAllAtOnce(AttributeReader& attrReader, size_t numDocs, size_t numValues);
 };
 
 } // namespace search

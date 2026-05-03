@@ -4,13 +4,18 @@
 
 #include <vespa/searchcommon/attribute/i_document_meta_store_context.h>
 #include <vespa/vespalib/stllike/hash_map.h>
+
 #include <atomic>
 #include <memory>
 #include <shared_mutex>
 #include <string>
 
-namespace search { class BitVector; }
-namespace vespalib { class MemoryUsage; }
+namespace search {
+class BitVector;
+}
+namespace vespalib {
+class MemoryUsage;
+}
 
 namespace search::attribute {
 
@@ -29,7 +34,7 @@ public:
         // in the bit vector are re-used until the guard is released.
         ReadGuardSP dmsReadGuard;
         BitVectorSP bitVector;
-        uint32_t docIdLimit;
+        uint32_t    docIdLimit;
         Entry(ReadGuardSP dmsReadGuard_, BitVectorSP bitVector_, uint32_t docIdLimit_) noexcept
             : dmsReadGuard(std::move(dmsReadGuard_)), bitVector(std::move(bitVector_)), docIdLimit(docIdLimit_) {}
     };
@@ -40,16 +45,16 @@ private:
     mutable std::shared_mutex _mutex;
     std::atomic<uint64_t>     _size;
     size_t                    _entries_extra_memory_usage;
-    Cache _cache;
+    Cache                     _cache;
 
 public:
     BitVectorSearchCache();
     ~BitVectorSearchCache();
-    void insert(const std::string &term, std::shared_ptr<Entry> entry);
-    std::shared_ptr<Entry> find(const std::string &term) const;
+    void insert(const std::string& term, std::shared_ptr<Entry> entry);
+    std::shared_ptr<Entry> find(const std::string& term) const;
     size_t size() const { return _size.load(std::memory_order_relaxed); }
     vespalib::MemoryUsage get_memory_usage() const;
     void clear();
 };
 
-}
+} // namespace search::attribute

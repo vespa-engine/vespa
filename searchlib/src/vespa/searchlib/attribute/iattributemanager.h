@@ -3,7 +3,9 @@
 #pragma once
 
 #include "attributeguard.h"
+
 #include <vespa/searchcommon/attribute/iattributecontext.h>
+
 #include <vector>
 
 namespace search {
@@ -11,15 +13,15 @@ namespace search {
 namespace attribute {
 class AttributeReadGuard;
 class ReadableAttributeVector;
-}
+} // namespace attribute
 
 /**
  * This is an interface used to access all registered attribute vectors.
  **/
 class IAttributeManager : public attribute::IAttributeExecutor {
 public:
-    IAttributeManager(const IAttributeManager &) = delete;
-    IAttributeManager & operator = (const IAttributeManager &) = delete;
+    IAttributeManager(const IAttributeManager&) = delete;
+    IAttributeManager& operator=(const IAttributeManager&) = delete;
     using SP = std::shared_ptr<IAttributeManager>;
     using string = std::string;
 
@@ -43,14 +45,15 @@ public:
      * @param stableEnumGuard flag to block enumeration changes during use of the attribute vector via the view.
      * @return read view of the attribute vector if the attribute vector exists
      **/
-    virtual std::unique_ptr<attribute::AttributeReadGuard> getAttributeReadGuard(std::string_view name, bool stableEnumGuard) const = 0;
+    virtual std::unique_ptr<attribute::AttributeReadGuard> getAttributeReadGuard(std::string_view name,
+                                                                                 bool stableEnumGuard) const = 0;
 
     /**
      * Fill the given list with all attribute vectors registered in this manager.
      *
      * @param list the list to fill in attribute vectors.
      **/
-    virtual void getAttributeList(std::vector<AttributeGuard> & list) const = 0;
+    virtual void getAttributeList(std::vector<AttributeGuard>& list) const = 0;
 
     /**
      * Creates a per thread attribute context used to provide read access to attributes.
@@ -66,12 +69,13 @@ public:
      * @param name name of the attribute vector.
      * @return The attribute vector, or an empty shared_ptr if no vector was found with the given name.
      */
-    virtual std::shared_ptr<attribute::ReadableAttributeVector> readable_attribute_vector(std::string_view name) const = 0;
+    virtual std::shared_ptr<attribute::ReadableAttributeVector>
+    readable_attribute_vector(std::string_view name) const = 0;
 
     ~IAttributeManager() override = default;
+
 protected:
     IAttributeManager() = default;
 };
 
 } // namespace search
-

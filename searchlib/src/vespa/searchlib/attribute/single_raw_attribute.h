@@ -4,6 +4,7 @@
 
 #include "raw_attribute.h"
 #include "raw_buffer_store.h"
+
 #include <vespa/vespalib/util/rcuvector.h>
 
 namespace search::attribute {
@@ -11,21 +12,23 @@ namespace search::attribute {
 /**
  * Attribute vector storing a single raw value per document.
  */
-class SingleRawAttribute : public RawAttribute
-{
+class SingleRawAttribute : public RawAttribute {
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     using EntryRef = vespalib::datastore::EntryRef;
     using RefVector = vespalib::RcuVectorBase<AtomicEntryRef>;
 
-    RefVector                           _ref_vector;
-    RawBufferStore                      _raw_store;
-    std::atomic<uint64_t>               _raw_bytes_stats;
+    RefVector             _ref_vector;
+    RawBufferStore        _raw_store;
+    std::atomic<uint64_t> _raw_bytes_stats;
 
     vespalib::MemoryUsage update_stat();
-    EntryRef acquire_entry_ref(DocId docid) const noexcept { return _ref_vector.acquire_elem_ref(docid).load_acquire(); }
-    bool onLoad(vespalib::Executor *executor) override;
+    EntryRef acquire_entry_ref(DocId docid) const noexcept {
+        return _ref_vector.acquire_elem_ref(docid).load_acquire();
+    }
+    bool onLoad(vespalib::Executor* executor) override;
     std::unique_ptr<AttributeSaver> onInitSave(std::string_view fileName) override;
     void populate_address_space_usage(AddressSpaceUsage& usage) const override;
+
 public:
     SingleRawAttribute(const std::string& name, const Config& config);
     ~SingleRawAttribute() override;
@@ -33,14 +36,17 @@ public:
     void onUpdateStat(CommitParam::UpdateStats updateStats) override;
     void reclaim_memory(vespalib::Generation oldest_used_gen) override;
     void before_inc_generation(vespalib::Generation current_gen) override;
-    bool addDoc(DocId &docId) override;
+    bool addDoc(DocId& docId) override;
     std::span<const char> get_raw(DocId docid) const override;
     void set_raw(DocId docid, std::span<const char> raw);
-    bool update(DocId docid, std::span<const char> raw) { set_raw(docid, raw); return true; }
+    bool update(DocId docid, std::span<const char> raw) {
+        set_raw(docid, raw);
+        return true;
+    }
     bool append(DocId docid, std::span<const char> raw, int32_t weight) {
-        (void) docid;
-        (void) raw;
-        (void) weight;
+        (void)docid;
+        (void)raw;
+        (void)weight;
         return false;
     }
     bool isUndefined(DocId docid) const override;
@@ -49,4 +55,4 @@ public:
     uint64_t get_raw_bytes_stats() const noexcept { return _raw_bytes_stats.load(std::memory_order_relaxed); }
 };
 
-}
+} // namespace search::attribute

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "i_direct_posting_store.h"
+
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/flow_tuning.h>
 
@@ -27,4 +28,4 @@ struct DirectPostingStoreFlowStatsAdapter {
     }
 };
 
-}
+} // namespace search::attribute

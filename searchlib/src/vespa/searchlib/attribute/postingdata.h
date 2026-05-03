@@ -9,5 +9,4 @@ namespace search {
 using AttributePosting = vespalib::btree::BTreeKeyData<uint32_t, vespalib::btree::BTreeNoLeafData>;
 using AttributeWeightPosting = vespalib::btree::BTreeKeyData<uint32_t, int32_t>;
 
-}
-
+} // namespace search

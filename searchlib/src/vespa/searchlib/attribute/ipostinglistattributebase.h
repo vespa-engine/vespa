@@ -3,16 +3,20 @@
 #pragma once
 
 #include "posting_store_memory_usage.h"
+
 #include <vespa/searchcommon/attribute/iattributevector.h>
 
-namespace vespalib::datastore { class CompactionStrategy; }
+namespace vespalib::datastore {
+class CompactionStrategy;
+}
 
-namespace vespalib { class MemoryUsage; }
+namespace vespalib {
+class MemoryUsage;
+}
 
 namespace search::attribute {
 
-class IPostingListAttributeBase
-{
+class IPostingListAttributeBase {
 public:
     using CompactionStrategy = vespalib::datastore::CompactionStrategy;
     virtual ~IPostingListAttributeBase() = default;
@@ -23,5 +27,4 @@ public:
     virtual bool consider_compact_worst_buffers(const CompactionStrategy& compaction_strategy) = 0;
 };
 
-}
-
+} // namespace search::attribute

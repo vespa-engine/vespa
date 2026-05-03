@@ -18,20 +18,15 @@ namespace search {
 template <typename B>
 class SingleValueStringPostingAttributeT
     : public SingleValueStringAttributeT<B>,
-      protected PostingListAttributeSubBase<AttributePosting,
-                                            typename B::LoadedVector,
-                                            typename B::LoadedValueType,
-                                            typename B::EnumStore>
-{
+      protected PostingListAttributeSubBase<AttributePosting, typename B::LoadedVector, typename B::LoadedValueType,
+                                            typename B::EnumStore> {
 public:
     using EnumStore = typename SingleValueStringAttributeT<B>::EnumStore;
     using EnumStoreBatchUpdater = typename EnumStore::BatchUpdater;
 
 private:
     using LoadedVector = typename B::LoadedVector;
-    using PostingParent = PostingListAttributeSubBase<AttributePosting,
-                                                      LoadedVector,
-                                                      typename B::LoadedValueType,
+    using PostingParent = PostingListAttributeSubBase<AttributePosting, LoadedVector, typename B::LoadedValueType,
                                                       typename B::EnumStore>;
 
     using Change = StringAttribute::Change;
@@ -46,9 +41,9 @@ private:
 
     using PostingParent::_posting_store;
     using PostingParent::clearAllPostings;
+    using PostingParent::forwardedOnAddDoc;
     using PostingParent::handle_load_posting_lists;
     using PostingParent::handle_load_posting_lists_and_update_enum_store;
-    using PostingParent::forwardedOnAddDoc;
 
 public:
     using PostingStore = typename PostingParent::PostingStore;
@@ -56,32 +51,29 @@ public:
     using PostingParent::get_posting_store;
 
 private:
-    using DirectPostingStoreAdapterType = attribute::StringDirectPostingStoreAdapter<IDocidPostingStore,
-                                                                                     PostingStore, EnumStore>;
+    using DirectPostingStoreAdapterType =
+        attribute::StringDirectPostingStoreAdapter<IDocidPostingStore, PostingStore, EnumStore>;
     DirectPostingStoreAdapterType _posting_store_adapter;
 
     void freezeEnumDictionary() override;
-    void mergeMemoryStats(vespalib::MemoryUsage & total) override;
-    void applyUpdateValueChange(const Change & c,
-                                EnumStore & enumStore,
-                                std::map<DocId, EnumIndex> &currEnumIndices);
+    void mergeMemoryStats(vespalib::MemoryUsage& total) override;
+    void applyUpdateValueChange(const Change& c, EnumStore& enumStore, std::map<DocId, EnumIndex>& currEnumIndices);
 
-    void makePostingChange(const vespalib::datastore::EntryComparator &cmp,
-                           IEnumStoreDictionary& dictionary,
-                           const std::map<DocId, EnumIndex> &currEnumIndices,
-                           PostingMap &changePost);
+    void makePostingChange(const vespalib::datastore::EntryComparator& cmp, IEnumStoreDictionary& dictionary,
+                           const std::map<DocId, EnumIndex>& currEnumIndices, PostingMap& changePost);
 
     void applyValueChanges(EnumStoreBatchUpdater& updater) override;
+
 public:
-    SingleValueStringPostingAttributeT(const std::string & name, const AttributeVector::Config & c);
-    SingleValueStringPostingAttributeT(const std::string & name);
+    SingleValueStringPostingAttributeT(const std::string& name, const AttributeVector::Config& c);
+    SingleValueStringPostingAttributeT(const std::string& name);
     ~SingleValueStringPostingAttributeT();
 
     void reclaim_memory(vespalib::Generation oldest_used_gen) override;
     void before_inc_generation(vespalib::Generation current_gen) override;
 
-    std::unique_ptr<attribute::SearchContext>
-    getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
+    std::unique_ptr<attribute::SearchContext> getSearch(QueryTermSimpleUP                     term,
+                                                        const attribute::SearchContextParams& params) const override;
 
     const IDocidPostingStore* as_docid_posting_store() const override { return &_posting_store_adapter; }
 
@@ -93,23 +85,17 @@ public:
         forwardedOnAddDoc(lidLimit, this->_enumIndices.size(), this->_enumIndices.capacity());
     }
 
-    void load_posting_lists(LoadedVector& loaded) override {
-        handle_load_posting_lists(loaded);
-    }
+    void load_posting_lists(LoadedVector& loaded) override { handle_load_posting_lists(loaded); }
 
-    attribute::IPostingListAttributeBase * getIPostingListAttributeBase() override {
-        return this;
-    }
+    attribute::IPostingListAttributeBase* getIPostingListAttributeBase() override { return this; }
 
-    const attribute::IPostingListAttributeBase * getIPostingListAttributeBase() const override {
-        return this;
-    }
+    const attribute::IPostingListAttributeBase* getIPostingListAttributeBase() const override { return this; }
 
     void load_posting_lists_and_update_enum_store(enumstore::EnumeratedPostingsLoader& loader) override {
         handle_load_posting_lists_and_update_enum_store(loader);
     }
 };
 
-using SingleValueStringPostingAttribute = SingleValueStringPostingAttributeT<EnumAttribute<StringAttribute> >;
+using SingleValueStringPostingAttribute = SingleValueStringPostingAttributeT<EnumAttribute<StringAttribute>>;
 
 } // namespace search

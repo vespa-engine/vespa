@@ -1,9 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "i_direct_posting_store.h"
+
 #include <vespa/searchlib/queryeval/searchiterator.h>
 
-namespace search::fef { class MatchData; }
+namespace search::fef {
+class MatchData;
+}
 namespace search::attribute {
 
 /**
@@ -11,17 +14,19 @@ namespace search::attribute {
  *
  * Used during calculation of global filter for DotProduct and WandTerm.
  */
-class MultiTermOrFilterSearch : public queryeval::SearchIterator
-{
+class MultiTermOrFilterSearch : public queryeval::SearchIterator {
 protected:
     MultiTermOrFilterSearch() = default;
+
 public:
     static std::unique_ptr<SearchIterator> create(std::vector<DocidIterator>&& children);
-    static std::unique_ptr<SearchIterator> create(std::vector<DocidIterator>&& children, fef::TermFieldMatchData& tfmd);
+    static std::unique_ptr<SearchIterator> create(std::vector<DocidIterator>&& children,
+                                                  fef::TermFieldMatchData&     tfmd);
     static std::unique_ptr<SearchIterator> create(std::vector<DocidWithWeightIterator>&& children);
-    static std::unique_ptr<SearchIterator> create(std::vector<DocidWithWeightIterator>&& children, fef::TermFieldMatchData& tfmd);
-    static std::unique_ptr<SearchIterator> create(const std::vector<SearchIterator *>& children,
-                                                  std::unique_ptr<fef::MatchData> md);
+    static std::unique_ptr<SearchIterator> create(std::vector<DocidWithWeightIterator>&& children,
+                                                  fef::TermFieldMatchData&               tfmd);
+    static std::unique_ptr<SearchIterator> create(const std::vector<SearchIterator*>& children,
+                                                  std::unique_ptr<fef::MatchData>     md);
 };
 
-}
+} // namespace search::attribute

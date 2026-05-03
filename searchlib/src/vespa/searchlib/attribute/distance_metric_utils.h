@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchcommon/attribute/distance_metric.h>
+
 #include <string>
 
 namespace search::attribute {
@@ -13,4 +14,4 @@ public:
     static DistanceMetric to_distance_metric(const std::string& metric);
 };
 
-}
+} // namespace search::attribute

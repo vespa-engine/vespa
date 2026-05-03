@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include "numeric_direct_posting_store_adapter.h"
-#include "multinumericenumattribute.h"
-#include "postinglistattribute.h"
 #include "i_docid_with_weight_posting_store.h"
+#include "multinumericenumattribute.h"
+#include "numeric_direct_posting_store_adapter.h"
+#include "postinglistattribute.h"
 
 namespace search {
 
@@ -22,11 +22,8 @@ namespace search {
 template <typename B, typename M>
 class MultiValueNumericPostingAttribute
     : public MultiValueNumericEnumAttribute<B, M>,
-      protected PostingListAttributeSubBase<AttributeWeightPosting,
-                                            typename B::LoadedVector,
-                                            typename B::LoadedValueType,
-                                            typename B::EnumStore>
-{
+      protected PostingListAttributeSubBase<AttributeWeightPosting, typename B::LoadedVector,
+                                            typename B::LoadedValueType, typename B::EnumStore> {
 public:
     using EnumStore = typename B::EnumStore;
     using EnumIndex = typename EnumStore::Index;
@@ -34,13 +31,12 @@ public:
 
 private:
     friend class PostingListAttributeTest;
-    template <typename, typename, typename>
-    friend class attribute::PostingSearchContext; // getEnumStore()
+    template <typename, typename, typename> friend class attribute::PostingSearchContext; // getEnumStore()
 
     using SelfType = MultiValueNumericPostingAttribute<B, M>;
     using LoadedVector = typename B::LoadedVector;
-    using PostingParent = PostingListAttributeSubBase<AttributeWeightPosting, LoadedVector,
-                                                      typename B::LoadedValueType, EnumStore>;
+    using PostingParent =
+        PostingListAttributeSubBase<AttributeWeightPosting, LoadedVector, typename B::LoadedValueType, EnumStore>;
 
     using ComparatorType = typename EnumStore::ComparatorType;
     using Dictionary = EnumPostingTree;
@@ -54,53 +50,45 @@ private:
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
     using WeightedIndex = typename MultiValueNumericEnumAttribute<B, M>::WeightedIndex;
 
-    using DirectPostingStoreAdapterType = attribute::NumericDirectPostingStoreAdapter<IDocidWithWeightPostingStore,
-                                                                                      PostingStore, EnumStore>;
+    using DirectPostingStoreAdapterType =
+        attribute::NumericDirectPostingStoreAdapter<IDocidWithWeightPostingStore, PostingStore, EnumStore>;
     DirectPostingStoreAdapterType _posting_store_adapter;
 
     using PostingParent::_posting_store;
     using PostingParent::clearAllPostings;
+    using PostingParent::forwardedOnAddDoc;
     using PostingParent::handle_load_posting_lists;
     using PostingParent::handle_load_posting_lists_and_update_enum_store;
-    using PostingParent::forwardedOnAddDoc;
 
     void freezeEnumDictionary() override;
-    void mergeMemoryStats(vespalib::MemoryUsage & total) override;
+    void mergeMemoryStats(vespalib::MemoryUsage& total) override;
     void applyValueChanges(const DocIndices& docIndices, EnumStoreBatchUpdater& updater) override;
 
 public:
-    MultiValueNumericPostingAttribute(const std::string & name, const AttributeVector::Config & cfg);
+    MultiValueNumericPostingAttribute(const std::string& name, const AttributeVector::Config& cfg);
     ~MultiValueNumericPostingAttribute();
 
     void reclaim_memory(vespalib::Generation oldest_used_gen) override;
     void before_inc_generation(vespalib::Generation current_gen) override;
 
-    std::unique_ptr<attribute::SearchContext>
-    getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
+    std::unique_ptr<attribute::SearchContext> getSearch(QueryTermSimpleUP                     term,
+                                                        const attribute::SearchContextParams& params) const override;
 
-    const IDocidWithWeightPostingStore *as_docid_with_weight_posting_store() const override;
+    const IDocidWithWeightPostingStore* as_docid_with_weight_posting_store() const override;
 
     bool onAddDoc(DocId doc) override {
         return forwardedOnAddDoc(doc, this->_mvMapping.getNumKeys(), this->_mvMapping.getCapacityKeys());
     }
 
-    void load_posting_lists(LoadedVector& loaded) override {
-        handle_load_posting_lists(loaded);
-    }
+    void load_posting_lists(LoadedVector& loaded) override { handle_load_posting_lists(loaded); }
 
-    attribute::IPostingListAttributeBase *getIPostingListAttributeBase() override {
-        return this;
-    }
+    attribute::IPostingListAttributeBase* getIPostingListAttributeBase() override { return this; }
 
-    const attribute::IPostingListAttributeBase *getIPostingListAttributeBase() const override {
-        return this;
-    }
+    const attribute::IPostingListAttributeBase* getIPostingListAttributeBase() const override { return this; }
 
     void load_posting_lists_and_update_enum_store(enumstore::EnumeratedPostingsLoader& loader) override {
         handle_load_posting_lists_and_update_enum_store(loader);
     }
 };
 
-
 } // namespace search
-

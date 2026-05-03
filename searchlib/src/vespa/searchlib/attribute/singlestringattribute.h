@@ -14,8 +14,7 @@ namespace search {
  *
  * B: EnumAttribute<StringAttribute>
  */
-template <typename B>
-class SingleValueStringAttributeT : public SingleValueEnumAttribute<B> {
+template <typename B> class SingleValueStringAttributeT : public SingleValueEnumAttribute<B> {
 protected:
     using Change = StringAttribute::Change;
     using ChangeVector = StringAttribute::ChangeVector;
@@ -31,8 +30,8 @@ protected:
     using WeightedString = StringAttribute::WeightedString;
 
 public:
-    SingleValueStringAttributeT(const std::string & name, const AttributeVector::Config & c);
-    SingleValueStringAttributeT(const std::string & name);
+    SingleValueStringAttributeT(const std::string& name, const AttributeVector::Config& c);
+    SingleValueStringAttributeT(const std::string& name);
     ~SingleValueStringAttributeT();
 
     void freezeEnumDictionary() override;
@@ -41,45 +40,42 @@ public:
     // Attribute read API
     //-------------------------------------------------------------------------
     bool isUndefined(DocId doc) const override { return get(doc)[0] == '\0'; }
-    const char * get(DocId doc) const override {
+    const char* get(DocId doc) const override {
         return this->_enumStore.get_value(this->acquire_enum_entry_ref(doc));
     }
-    std::vector<EnumHandle> findFoldedEnums(const char *value) const override {
+    std::vector<EnumHandle> findFoldedEnums(const char* value) const override {
         return this->_enumStore.find_folded_enums(value);
     }
-    const char * getStringFromEnum(EnumHandle e) const override {
-        return this->_enumStore.get_value(e);
-    }
-    uint32_t get(DocId doc, std::string * v, uint32_t sz) const override {
+    const char* getStringFromEnum(EnumHandle e) const override { return this->_enumStore.get_value(e); }
+    uint32_t get(DocId doc, std::string* v, uint32_t sz) const override {
         if (sz > 0) {
             v[0] = get(doc);
         }
         return 1;
     }
-    uint32_t get(DocId doc, const char ** v, uint32_t sz) const override {
+    uint32_t get(DocId doc, const char** v, uint32_t sz) const override {
         if (sz > 0) {
             v[0] = get(doc);
         }
         return 1;
     }
-    uint32_t get(DocId doc, WeightedString * v, uint32_t sz) const override{
+    uint32_t get(DocId doc, WeightedString* v, uint32_t sz) const override {
         if (sz > 0) {
             v[0] = WeightedString(get(doc), 1);
         }
         return 1;
     }
-    uint32_t get(DocId doc, WeightedConstChar * v, uint32_t sz) const override{
+    uint32_t get(DocId doc, WeightedConstChar* v, uint32_t sz) const override {
         if (sz > 0) {
             v[0] = WeightedConstChar(get(doc), 1);
         }
         return 1;
     }
 
-    std::unique_ptr<attribute::SearchContext>
-    getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
+    std::unique_ptr<attribute::SearchContext> getSearch(QueryTermSimpleUP                     term,
+                                                        const attribute::SearchContextParams& params) const override;
 };
 
-using SingleValueStringAttribute = SingleValueStringAttributeT<EnumAttribute<StringAttribute> >;
+using SingleValueStringAttribute = SingleValueStringAttributeT<EnumAttribute<StringAttribute>>;
 
 } // namespace search
-

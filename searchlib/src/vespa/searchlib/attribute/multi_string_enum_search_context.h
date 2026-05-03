@@ -4,6 +4,7 @@
 
 #include "multi_enum_search_context.h"
 #include "string_search_context.h"
+
 #include <vespa/vespalib/fuzzy/fuzzy_matching_algorithm.h>
 
 namespace search::attribute {
@@ -13,16 +14,15 @@ namespace search::attribute {
  * a query term on a multi value string enumerated attribute vector.
  */
 template <typename M>
-class MultiStringEnumSearchContext : public MultiEnumSearchContext<const char*, StringSearchContext, M>
-{
+class MultiStringEnumSearchContext : public MultiEnumSearchContext<const char*, StringSearchContext, M> {
 public:
     MultiStringEnumSearchContext(std::unique_ptr<QueryTermSimple> qTerm, bool cased,
                                  vespalib::FuzzyMatchingAlgorithm fuzzy_matching_algorithm,
-                                 const AttributeVector& toBeSearched,
-                                 MultiValueMappingReadView<M> mv_mapping_read_view,
-                                 const EnumStoreT<const char*>& enum_store);
+                                 const AttributeVector&           toBeSearched,
+                                 MultiValueMappingReadView<M>     mv_mapping_read_view,
+                                 const EnumStoreT<const char*>&   enum_store);
     MultiStringEnumSearchContext(MultiStringEnumSearchContext&& rhs) noexcept = default;
     ~MultiStringEnumSearchContext() override;
 };
 
-}
+} // namespace search::attribute
