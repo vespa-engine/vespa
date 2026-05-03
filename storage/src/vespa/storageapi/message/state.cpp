@@ -1,8 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "state.h"
+
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/vdslib/state/clusterstate.h>
+
 #include <ostream>
 
 namespace storage::api {
@@ -15,15 +17,10 @@ IMPLEMENT_COMMAND(ActivateClusterStateVersionCommand, ActivateClusterStateVersio
 IMPLEMENT_REPLY(ActivateClusterStateVersionReply)
 
 GetNodeStateCommand::GetNodeStateCommand(lib::NodeState::UP expectedState)
-    : StorageCommand(MessageType::GETNODESTATE),
-      _expectedState(std::move(expectedState))
-{
+    : StorageCommand(MessageType::GETNODESTATE), _expectedState(std::move(expectedState)) {
 }
 
-void
-GetNodeStateCommand::print(std::ostream& out, bool verbose,
-                           const std::string& indent) const
-{
+void GetNodeStateCommand::print(std::ostream& out, bool verbose, const std::string& indent) const {
     out << "GetNodeStateCommand(";
     if (_expectedState.get() != nullptr) {
         out << "Expected state: " << *_expectedState;
@@ -35,23 +32,14 @@ GetNodeStateCommand::print(std::ostream& out, bool verbose,
     }
 }
 
-GetNodeStateReply::GetNodeStateReply(const GetNodeStateCommand& cmd)
-    : StorageReply(cmd),
-      _state()
-{
+GetNodeStateReply::GetNodeStateReply(const GetNodeStateCommand& cmd) : StorageReply(cmd), _state() {
 }
 
-GetNodeStateReply::GetNodeStateReply(const GetNodeStateCommand& cmd,
-                                     const lib::NodeState& state)
-    : StorageReply(cmd),
-      _state(std::make_unique<lib::NodeState>(state))
-{
+GetNodeStateReply::GetNodeStateReply(const GetNodeStateCommand& cmd, const lib::NodeState& state)
+    : StorageReply(cmd), _state(std::make_unique<lib::NodeState>(state)) {
 }
 
-void
-GetNodeStateReply::print(std::ostream& out, bool verbose,
-                         const std::string& indent) const
-{
+void GetNodeStateReply::print(std::ostream& out, bool verbose, const std::string& indent) const {
     out << "GetNodeStateReply(";
     if (_state.get()) {
         out << "State: " << *_state;
@@ -64,29 +52,20 @@ GetNodeStateReply::print(std::ostream& out, bool verbose,
 }
 
 SetSystemStateCommand::SetSystemStateCommand(std::shared_ptr<const lib::ClusterStateBundle> state)
-    : StorageCommand(MessageType::SETSYSTEMSTATE),
-      _state(std::move(state))
-{
+    : StorageCommand(MessageType::SETSYSTEMSTATE), _state(std::move(state)) {
 }
 
 SetSystemStateCommand::SetSystemStateCommand(const lib::ClusterStateBundle& state)
-    : StorageCommand(MessageType::SETSYSTEMSTATE),
-      _state(std::make_shared<const lib::ClusterStateBundle>(state))
-{
+    : StorageCommand(MessageType::SETSYSTEMSTATE), _state(std::make_shared<const lib::ClusterStateBundle>(state)) {
 }
 
 SetSystemStateCommand::SetSystemStateCommand(const lib::ClusterState& state)
-    : StorageCommand(MessageType::SETSYSTEMSTATE),
-      _state(std::make_shared<const lib::ClusterStateBundle>(state))
-{
+    : StorageCommand(MessageType::SETSYSTEMSTATE), _state(std::make_shared<const lib::ClusterStateBundle>(state)) {
 }
 
 SetSystemStateCommand::~SetSystemStateCommand() = default;
 
-void
-SetSystemStateCommand::print(std::ostream& out, bool verbose,
-                             const std::string& indent) const
-{
+void SetSystemStateCommand::print(std::ostream& out, bool verbose, const std::string& indent) const {
     out << "SetSystemStateCommand(" << *_state->getBaselineClusterState() << ")";
     if (verbose) {
         out << " : ";
@@ -95,15 +74,10 @@ SetSystemStateCommand::print(std::ostream& out, bool verbose,
 }
 
 SetSystemStateReply::SetSystemStateReply(const SetSystemStateCommand& cmd)
-    : StorageReply(cmd),
-      _state(cmd.cluster_state_bundle_ptr())
-{
+    : StorageReply(cmd), _state(cmd.cluster_state_bundle_ptr()) {
 }
 
-void
-SetSystemStateReply::print(std::ostream& out, bool verbose,
-                           const std::string& indent) const
-{
+void SetSystemStateReply::print(std::ostream& out, bool verbose, const std::string& indent) const {
     out << "SetSystemStateReply()";
     if (verbose) {
         out << " : ";
@@ -112,14 +86,10 @@ SetSystemStateReply::print(std::ostream& out, bool verbose,
 }
 
 ActivateClusterStateVersionCommand::ActivateClusterStateVersionCommand(uint32_t version)
-    : StorageCommand(MessageType::ACTIVATE_CLUSTER_STATE_VERSION),
-      _version(version)
-{
+    : StorageCommand(MessageType::ACTIVATE_CLUSTER_STATE_VERSION), _version(version) {
 }
 
-void ActivateClusterStateVersionCommand::print(std::ostream& out, bool verbose,
-                                               const std::string& indent) const
-{
+void ActivateClusterStateVersionCommand::print(std::ostream& out, bool verbose, const std::string& indent) const {
     out << "ActivateClusterStateVersionCommand(" << _version << ")";
     if (verbose) {
         out << " : ";
@@ -134,15 +104,12 @@ ActivateClusterStateVersionReply::ActivateClusterStateVersionReply(const Activat
 {
 }
 
-void ActivateClusterStateVersionReply::print(std::ostream& out, bool verbose,
-                                             const std::string& indent) const
-{
-    out << "ActivateClusterStateVersionReply(activate " << _activateVersion
-        << ", actual " << _actualVersion << ")";
+void ActivateClusterStateVersionReply::print(std::ostream& out, bool verbose, const std::string& indent) const {
+    out << "ActivateClusterStateVersionReply(activate " << _activateVersion << ", actual " << _actualVersion << ")";
     if (verbose) {
         out << " : ";
         StorageReply::print(out, verbose, indent);
     }
 }
 
-} // storage::api
+} // namespace storage::api

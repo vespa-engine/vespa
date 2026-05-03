@@ -2,9 +2,10 @@
 #pragma once
 
 #include "visitor.h"
+
+#include <vespa/storageapi/defs.h>
 #include <vespa/storageapi/messageapi/storagecommand.h>
 #include <vespa/storageapi/messageapi/storagereply.h>
-#include <vespa/storageapi/defs.h>
 
 namespace storage::api {
 
@@ -20,6 +21,7 @@ namespace storage::api {
  */
 class MapVisitorCommand : public StorageCommand {
     vdslib::Parameters _statistics;
+
 public:
     MapVisitorCommand();
     vdslib::Parameters& getData() { return _statistics; };
@@ -54,6 +56,7 @@ public:
  */
 class EmptyBucketsCommand : public StorageCommand {
     std::vector<document::BucketId> _buckets;
+
 public:
     EmptyBucketsCommand(const std::vector<document::BucketId>&);
     const std::vector<document::BucketId>& getBuckets() const { return _buckets; }
@@ -74,4 +77,4 @@ public:
     DECLARE_STORAGEREPLY(EmptyBucketsReply, onEmptyBucketsReply)
 };
 
-}
+} // namespace storage::api

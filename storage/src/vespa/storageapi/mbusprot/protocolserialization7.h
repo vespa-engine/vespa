@@ -12,6 +12,7 @@ namespace storage::mbusprot {
  */
 class ProtocolSerialization7 final : public ProtocolSerialization {
     const std::shared_ptr<const document::DocumentTypeRepo> _repo;
+
 public:
     explicit ProtocolSerialization7(std::shared_ptr<const document::DocumentTypeRepo> repo);
 
@@ -138,4 +139,4 @@ private:
     std::unique_ptr<api::StorageReply> decode_bucket_info_response(document::ByteBuffer& in_buf, Func&& f) const;
 };
 
-}
+} // namespace storage::mbusprot

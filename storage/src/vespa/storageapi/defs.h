@@ -8,11 +8,11 @@
 
 #include <cstdint>
 
-namespace storage:: api {
+namespace storage::api {
 
 using Timestamp = uint64_t;
 using VisitorId = uint32_t;
 
 constexpr Timestamp MAX_TIMESTAMP = (Timestamp)-1LL;
 
-}
+} // namespace storage::api

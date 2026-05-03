@@ -2,12 +2,12 @@
 #pragma once
 
 #include "protocolserialization7.h"
+
 #include <vespa/messagebus/iprotocol.h>
 
 namespace storage::mbusprot {
 
-class StorageProtocol final : public mbus::IProtocol
-{
+class StorageProtocol final : public mbus::IProtocol {
 public:
     using SP = std::shared_ptr<StorageProtocol>;
 
@@ -20,8 +20,9 @@ public:
     mbus::IRoutingPolicy::UP createPolicy(const mbus::string& name, const mbus::string& param) const override;
     mbus::Blob encode(const vespalib::Version&, const mbus::Routable&) const override;
     mbus::Routable::UP decode(const vespalib::Version&, mbus::BlobRef) const override;
+
 private:
-    ProtocolSerialization7   _serializer7_0;
+    ProtocolSerialization7 _serializer7_0;
 };
 
-}
+} // namespace storage::mbusprot

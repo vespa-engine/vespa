@@ -8,23 +8,20 @@
 
 #pragma once
 
-#include "storagereply.h"
 #include "bucketcommand.h"
+#include "storagereply.h"
 
 namespace storage::api {
 
 class BucketCommand;
 
 class BucketReply : public StorageReply {
-    document::Bucket _bucket;
+    document::Bucket   _bucket;
     document::BucketId _originalBucket;
 
 protected:
     BucketReply(const BucketCommand& cmd)
-        : StorageReply(cmd),
-          _bucket(cmd.getBucket()),
-          _originalBucket(cmd.getOriginalBucketId())
-    { }
+        : StorageReply(cmd), _bucket(cmd.getBucket()), _originalBucket(cmd.getOriginalBucketId()) {}
 
 public:
     DECLARE_POINTER_TYPEDEFS(BucketReply);
@@ -39,4 +36,4 @@ public:
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
-}
+} // namespace storage::api

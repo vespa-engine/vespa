@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "stat.h"
+
 #include <ostream>
 
 namespace storage::api {
@@ -10,45 +11,32 @@ IMPLEMENT_REPLY(StatBucketReply)
 IMPLEMENT_COMMAND(GetBucketListCommand, GetBucketListReply)
 IMPLEMENT_REPLY(GetBucketListReply)
 
-StatBucketCommand::StatBucketCommand(const document::Bucket& bucket,
-                                     std::string_view documentSelection)
-    : BucketCommand(MessageType::STATBUCKET, bucket),
-      _docSelection(documentSelection)
-{
+StatBucketCommand::StatBucketCommand(const document::Bucket& bucket, std::string_view documentSelection)
+    : BucketCommand(MessageType::STATBUCKET, bucket), _docSelection(documentSelection) {
 }
 
 StatBucketCommand::~StatBucketCommand() = default;
 
-void
-StatBucketCommand::print(std::ostream& out, bool verbose,
-                         const std::string& indent) const
-{
-    out << "StatBucketCommand(" << getBucketId()
-        << ", selection: " << _docSelection << ")";
+void StatBucketCommand::print(std::ostream& out, bool verbose, const std::string& indent) const {
+    out << "StatBucketCommand(" << getBucketId() << ", selection: " << _docSelection << ")";
     if (verbose) {
         out << " : ";
         BucketCommand::print(out, verbose, indent);
     }
 }
 
-StatBucketReply::StatBucketReply(const StatBucketCommand& cmd,
-                                 std::string_view results)
-    : BucketReply(cmd),
-      _results(results)
-{
+StatBucketReply::StatBucketReply(const StatBucketCommand& cmd, std::string_view results)
+    : BucketReply(cmd), _results(results) {
 }
 
-void
-StatBucketReply::print(std::ostream& out, bool verbose,
-                       const std::string& indent) const
-{
+void StatBucketReply::print(std::ostream& out, bool verbose, const std::string& indent) const {
     out << "StatBucketReply(" << getBucketId();
     if (verbose) {
         out << ", result: " << _results << ") : ";
         BucketReply::print(out, verbose, indent);
     } else {
         std::string::size_type pos = _results.find('\n');
-        std::string overview;
+        std::string            overview;
         if (pos != std::string::npos) {
             overview = _results.substr(0, pos) + " ...";
         } else {
@@ -58,15 +46,11 @@ StatBucketReply::print(std::ostream& out, bool verbose,
     }
 }
 
-GetBucketListCommand::GetBucketListCommand(const document::Bucket &bucket)
-    : BucketCommand(MessageType::GETBUCKETLIST, bucket)
-{
+GetBucketListCommand::GetBucketListCommand(const document::Bucket& bucket)
+    : BucketCommand(MessageType::GETBUCKETLIST, bucket) {
 }
 
-void
-GetBucketListCommand::print(std::ostream& out, bool verbose,
-                            const std::string& indent) const
-{
+void GetBucketListCommand::print(std::ostream& out, bool verbose, const std::string& indent) const {
     out << "GetBucketList(" << getBucketId() << ")";
     if (verbose) {
         out << " : ";
@@ -74,31 +58,23 @@ GetBucketListCommand::print(std::ostream& out, bool verbose,
     }
 }
 
-GetBucketListReply::GetBucketListReply(const GetBucketListCommand& cmd)
-    : BucketReply(cmd),
-      _buckets()
-{}
+GetBucketListReply::GetBucketListReply(const GetBucketListCommand& cmd) : BucketReply(cmd), _buckets() {
+}
 
-GetBucketListReply::~GetBucketListReply() {}
+GetBucketListReply::~GetBucketListReply() {
+}
 
-void
-GetBucketListReply::print(std::ostream& out, bool verbose,
-                          const std::string& indent) const
-{
-    out << "GetBucketListReply(" << getBucketId() << ", Info on "
-        << _buckets.size() << " buckets)";
+void GetBucketListReply::print(std::ostream& out, bool verbose, const std::string& indent) const {
+    out << "GetBucketListReply(" << getBucketId() << ", Info on " << _buckets.size() << " buckets)";
     if (verbose) {
         out << " : ";
         BucketReply::print(out, verbose, indent);
     }
 }
 
-std::ostream&
-operator<<(std::ostream& out, const GetBucketListReply::BucketInfo& instance)
-{
-    out << "BucketInfo(" << instance._bucket << ": "
-        << instance._bucketInformation << ")";
+std::ostream& operator<<(std::ostream& out, const GetBucketListReply::BucketInfo& instance) {
+    out << "BucketInfo(" << instance._bucket << ": " << instance._bucketInformation << ")";
     return out;
 }
 
-}
+} // namespace storage::api

@@ -3,17 +3,18 @@
 
 #include "storagemessage.h"
 #include "storageprotocol.h"
+
 #include <vespa/messagebus/reply.h>
 #include <vespa/storageapi/messageapi/storagereply.h>
 
 namespace storage::mbusprot {
 
 class StorageReply : public mbus::Reply, public StorageMessage {
-    const ProtocolSerialization* _serializer;
-    size_t   _sz;
+    const ProtocolSerialization*   _serializer;
+    size_t                         _sz;
     mutable vespalib::alloc::Alloc _buffer;
-    uint32_t _mbusType;
-    mutable api::StorageReply::SP _reply;
+    uint32_t                       _mbusType;
+    mutable api::StorageReply::SP  _reply;
 
 public:
     using UP = std::unique_ptr<StorageReply>;
@@ -26,11 +27,23 @@ public:
 
     uint32_t getType() const override { return _mbusType; }
 
-    const api::StorageReply::SP& getReply() { deserialize(); return _reply; }
-    api::StorageReply::CSP getReply() const { deserialize(); return _reply; }
+    const api::StorageReply::SP& getReply() {
+        deserialize();
+        return _reply;
+    }
+    api::StorageReply::CSP getReply() const {
+        deserialize();
+        return _reply;
+    }
 
-    api::StorageMessage::SP getInternalMessage() override { deserialize(); return _reply; }
-    api::StorageMessage::CSP getInternalMessage() const override { deserialize(); return _reply; }
+    api::StorageMessage::SP getInternalMessage() override {
+        deserialize();
+        return _reply;
+    }
+    api::StorageMessage::CSP getInternalMessage() const override {
+        deserialize();
+        return _reply;
+    }
 
     uint8_t priority() const override {
         if (_reply) {
@@ -43,4 +56,4 @@ private:
     void deserialize() const;
 };
 
-}
+} // namespace storage::mbusprot

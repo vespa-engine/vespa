@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "queryresult.h"
+
 #include <ostream>
 
 namespace storage {
@@ -9,16 +10,10 @@ namespace api {
 IMPLEMENT_COMMAND(QueryResultCommand, QueryResultReply)
 IMPLEMENT_REPLY(QueryResultReply)
 
-QueryResultCommand::QueryResultCommand()
-    : StorageCommand(MessageType::QUERYRESULT),
-      _searchResult(),
-      _summary()
-{ }
+QueryResultCommand::QueryResultCommand() : StorageCommand(MessageType::QUERYRESULT), _searchResult(), _summary() {
+}
 
-void
-QueryResultCommand::print(std::ostream& out, bool verbose,
-                           const std::string& indent) const
-{
+void QueryResultCommand::print(std::ostream& out, bool verbose, const std::string& indent) const {
     out << "QueryResultCommand(" << _searchResult.getHitCount() << " hits)";
     if (verbose) {
         out << " : ";
@@ -26,14 +21,10 @@ QueryResultCommand::print(std::ostream& out, bool verbose,
     }
 }
 
-QueryResultReply::QueryResultReply(const QueryResultCommand& cmd)
-    : StorageReply(cmd)
-{ }
+QueryResultReply::QueryResultReply(const QueryResultCommand& cmd) : StorageReply(cmd) {
+}
 
-void
-QueryResultReply::print(std::ostream& out, bool verbose,
-                         const std::string& indent) const
-{
+void QueryResultReply::print(std::ostream& out, bool verbose, const std::string& indent) const {
     out << "QueryResultReply()";
     if (verbose) {
         out << " : ";
@@ -41,5 +32,5 @@ QueryResultReply::print(std::ostream& out, bool verbose,
     }
 }
 
-} // api
-} // storage
+} // namespace api
+} // namespace storage

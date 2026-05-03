@@ -7,14 +7,14 @@
 #include <vespa/storageapi/message/bucket.h>
 
 namespace document {
-    class ByteBuffer;
+class ByteBuffer;
 }
 namespace mbus {
-    class Blob;
-    class BlobRef;
-}
+class Blob;
+class BlobRef;
+} // namespace mbus
 namespace vespalib {
-    class GrowableByteBuffer;
+class GrowableByteBuffer;
 }
 namespace storage::api {
 class StorageCommand;
@@ -50,7 +50,7 @@ class SetBucketStateReply;
 class CreateVisitorCommand;
 class RemoveLocationCommand;
 class RemoveLocationReply;
-}
+} // namespace storage::api
 
 namespace storage::mbusprot {
 
@@ -62,8 +62,8 @@ class ProtocolSerialization {
 public:
     virtual mbus::Blob encode(const api::StorageMessage&) const;
     virtual std::unique_ptr<StorageCommand> decodeCommand(mbus::BlobRef) const;
-    virtual std::unique_ptr<StorageReply> decodeReply(
-                            mbus::BlobRef, const api::StorageCommand&) const;
+    virtual std::unique_ptr<StorageReply> decodeReply(mbus::BlobRef, const api::StorageCommand&) const;
+
 protected:
     ProtocolSerialization() = default;
     virtual ~ProtocolSerialization() = default;
@@ -150,4 +150,4 @@ protected:
     virtual SRep::UP onDecodeStatBucketReply(const SCmd&, BBuf&) const = 0;
 };
 
-}
+} // namespace storage::mbusprot
