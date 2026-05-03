@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_writer.h"
+
 #include "attributemanager.h"
 #include "document_field_extractor.h"
 #include "ifieldupdatecallback.h"
 #include "imported_attributes_repo.h"
+
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
@@ -14,11 +16,13 @@
 #include <vespa/searchcore/proton/common/attribute_updater.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchlib/tensor/prepare_result.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
+
+#include <vespa/vespalib/stllike/hash_map.hpp>
+
 #include <future>
 
 #include <vespa/log/log.h>
@@ -40,12 +44,9 @@ using LidVector = LidVectorContext::LidVector;
 
 namespace {
 
-bool
-use_two_phase_put_for_attribute(const AttributeVector& attr)
-{
+bool use_two_phase_put_for_attribute(const AttributeVector& attr) {
     const auto& cfg = attr.getConfig();
-    if (cfg.basicType() == search::attribute::BasicType::Type::TENSOR &&
-        cfg.hnsw_index_params().has_value() &&
+    if (cfg.basicType() == search::attribute::BasicType::Type::TENSOR && cfg.hnsw_index_params().has_value() &&
         cfg.hnsw_index_params().value().multi_threaded_indexing())
     {
         return true;
@@ -53,30 +54,27 @@ use_two_phase_put_for_attribute(const AttributeVector& attr)
     return false;
 }
 
-}
+} // namespace
 
-AttributeWriter::WriteField::WriteField(AttributeVector &attribute)
+AttributeWriter::WriteField::WriteField(AttributeVector& attribute)
     : _fieldPath(),
       _attribute(attribute),
       _structFieldAttribute(false),
-      _use_two_phase_put(use_two_phase_put_for_attribute(attribute))
-{
-    const std::string &name = attribute.getName();
+      _use_two_phase_put(use_two_phase_put_for_attribute(attribute)) {
+    const std::string& name = attribute.getName();
     _structFieldAttribute = search::attribute::isStructFieldAttribute(name);
 }
 
 AttributeWriter::WriteField::~WriteField() = default;
 
-void
-AttributeWriter::WriteField::buildFieldPath(const DocumentType &docType) const
-{
-    const std::string &name = _attribute.getName();
-    FieldPath fp;
+void AttributeWriter::WriteField::buildFieldPath(const DocumentType& docType) const {
+    const std::string& name = _attribute.getName();
+    FieldPath          fp;
     try {
         docType.buildFieldPath(fp, name);
-    } catch (document::FieldNotFoundException & e) {
+    } catch (document::FieldNotFoundException& e) {
         fp = FieldPath();
-    } catch (vespalib::IllegalArgumentException &e) {
+    } catch (vespalib::IllegalArgumentException& e) {
         fp = FieldPath();
     }
     _fieldPath = std::move(fp);
@@ -88,19 +86,16 @@ AttributeWriter::WriteContext::WriteContext(ExecutorId executorId) noexcept
       _data_type(nullptr),
       _two_phase_put_field_path(),
       _hasStructFieldAttribute(false),
-      _use_two_phase_put(false)
-{
+      _use_two_phase_put(false) {
 }
 
-AttributeWriter::WriteContext::WriteContext(WriteContext &&rhs) noexcept = default;
+AttributeWriter::WriteContext::WriteContext(WriteContext&& rhs) noexcept = default;
 
 AttributeWriter::WriteContext::~WriteContext() = default;
 
-AttributeWriter::WriteContext &AttributeWriter::WriteContext::operator=(WriteContext &&rhs) noexcept = default;
+AttributeWriter::WriteContext& AttributeWriter::WriteContext::operator=(WriteContext&& rhs) noexcept = default;
 
-void
-AttributeWriter::WriteContext::add(AttributeVector &attr)
-{
+void AttributeWriter::WriteContext::add(AttributeVector& attr) {
     _fields.emplace_back(attr);
     if (_fields.back().isStructFieldAttribute()) {
         _hasStructFieldAttribute = true;
@@ -114,14 +109,12 @@ AttributeWriter::WriteContext::add(AttributeVector &attr)
     }
 }
 
-void
-AttributeWriter::WriteContext::consider_build_field_paths(const Document& doc) const
-{
+void AttributeWriter::WriteContext::consider_build_field_paths(const Document& doc) const {
     auto data_type = doc.getDataType();
     if (_data_type != data_type) {
         _data_type = data_type;
         auto& doc_type = doc.getType();
-        for (auto &field : _fields) {
+        for (auto& field : _fields) {
             field.buildFieldPath(doc_type);
         }
         if (_use_two_phase_put) {
@@ -131,35 +124,27 @@ AttributeWriter::WriteContext::consider_build_field_paths(const Document& doc) c
 }
 
 AttributeWriter::AttributeWithInfo::AttributeWithInfo()
-    : attribute(),
-      executor_id(),
-      use_two_phase_put_for_assign_updates(false)
-{
+    : attribute(), executor_id(), use_two_phase_put_for_assign_updates(false) {
 }
 
 AttributeWriter::AttributeWithInfo::AttributeWithInfo(search::AttributeVector* attribute_in,
-                                                      ExecutorId executor_id_in)
+                                                      ExecutorId               executor_id_in)
     : attribute(attribute_in),
       executor_id(executor_id_in),
-      use_two_phase_put_for_assign_updates(use_two_phase_put_for_attribute(*attribute_in))
-{
+      use_two_phase_put_for_assign_updates(use_two_phase_put_for_attribute(*attribute_in)) {
 }
 
 namespace {
 
-void
-ensureLidSpace(SerialNum serialNum, DocumentIdT lid, AttributeVector &attr)
-{
+void ensureLidSpace(SerialNum serialNum, DocumentIdT lid, AttributeVector& attr) {
     size_t docIdLimit = lid + 1;
     if (attr.getStatus().getLastSyncToken() < serialNum) {
         AttributeManager::padAttribute(attr, docIdLimit);
     }
 }
 
-void
-applyPutToAttribute(SerialNum serialNum, const FieldValue::UP &fieldValue, DocumentIdT lid,
-                    AttributeVector &attr, const AttributeWriter::OnWriteDoneType&)
-{
+void applyPutToAttribute(SerialNum serialNum, const FieldValue::UP& fieldValue, DocumentIdT lid,
+                         AttributeVector& attr, const AttributeWriter::OnWriteDoneType&) {
     ensureLidSpace(serialNum, lid, attr);
     if (fieldValue.get()) {
         AttributeUpdater::handleValue(attr, lid, *fieldValue);
@@ -172,18 +157,12 @@ applyPutToAttribute(SerialNum serialNum, const FieldValue::UP &fieldValue, Docum
 class FieldValueAndPrepareResult {
     std::unique_ptr<const FieldValue> _field_value;
     std::unique_ptr<PrepareResult>    _prepare_result;
+
 public:
     FieldValueAndPrepareResult(std::unique_ptr<const FieldValue> field_value,
-                               std::unique_ptr<PrepareResult> prepare_result)
-        : _field_value(std::move(field_value)),
-          _prepare_result(std::move(prepare_result))
-    {
-    }
-    FieldValueAndPrepareResult()
-        : _field_value(),
-          _prepare_result()
-    {
-    }
+                               std::unique_ptr<PrepareResult>    prepare_result)
+        : _field_value(std::move(field_value)), _prepare_result(std::move(prepare_result)) {}
+    FieldValueAndPrepareResult() : _field_value(), _prepare_result() {}
     ~FieldValueAndPrepareResult();
     FieldValueAndPrepareResult(FieldValueAndPrepareResult&&);
     const std::unique_ptr<const FieldValue>& get_field_value() const noexcept { return _field_value; }
@@ -194,15 +173,11 @@ FieldValueAndPrepareResult::~FieldValueAndPrepareResult() = default;
 
 FieldValueAndPrepareResult::FieldValueAndPrepareResult(FieldValueAndPrepareResult&&) = default;
 
-void
-complete_put_to_attribute(SerialNum serial_num,
-                          uint32_t docid,
-                          AttributeVector& attr,
-                          std::future<FieldValueAndPrepareResult> result_future,
-                          const AttributeWriter::OnWriteDoneType&)
-{
+void complete_put_to_attribute(SerialNum serial_num, uint32_t docid, AttributeVector& attr,
+                               std::future<FieldValueAndPrepareResult> result_future,
+                               const AttributeWriter::OnWriteDoneType&) {
     ensureLidSpace(serial_num, docid, attr);
-    auto result = result_future.get();
+    auto  result = result_future.get();
     auto& field_value = result.get_field_value();
     if (field_value) {
         AttributeUpdater::complete_set_value(attr, docid, *field_value, result.steal_prepare_result());
@@ -211,43 +186,33 @@ complete_put_to_attribute(SerialNum serial_num,
     }
 }
 
-void
-applyRemoveToAttribute(SerialNum serialNum, DocumentIdT lid,
-                       AttributeVector &attr, const AttributeWriter::OnWriteDoneType&)
-{
+void applyRemoveToAttribute(SerialNum serialNum, DocumentIdT lid, AttributeVector& attr,
+                            const AttributeWriter::OnWriteDoneType&) {
     ensureLidSpace(serialNum, lid, attr);
     attr.clearDoc(lid);
 }
 
-void
-applyUpdateToAttribute(SerialNum serialNum, const FieldUpdate &fieldUpd,
-                       DocumentIdT lid, AttributeVector &attr)
-{
+void applyUpdateToAttribute(SerialNum serialNum, const FieldUpdate& fieldUpd, DocumentIdT lid,
+                            AttributeVector& attr) {
     ensureLidSpace(serialNum, lid, attr);
     AttributeUpdater::handleUpdate(attr, lid, fieldUpd);
     attr.commitIfChangeVectorTooLarge();
 }
 
-void
-applyReplayDone(uint32_t docIdLimit, AttributeVector &attr)
-{
+void applyReplayDone(uint32_t docIdLimit, AttributeVector& attr) {
     AttributeManager::padAttribute(attr, docIdLimit);
     attr.compactLidSpace(docIdLimit);
     attr.shrinkLidSpace();
 }
 
-void
-applyHeartBeat(SerialNum serialNum, AttributeVector &attr)
-{
+void applyHeartBeat(SerialNum serialNum, AttributeVector& attr) {
     attr.reclaim_unused_memory();
     if (attr.getStatus().getLastSyncToken() <= serialNum) {
         attr.commit(search::CommitParam(serialNum, search::CommitParam::UpdateStats::SKIP));
     }
 }
 
-void
-applyCommit(CommitParam param, const AttributeWriter::OnWriteDoneType& , AttributeVector &attr)
-{
+void applyCommit(CommitParam param, const AttributeWriter::OnWriteDoneType&, AttributeVector& attr) {
     SerialNum serialNum = param.lastSerialNum();
     if (attr.getStatus().getLastSyncToken() <= serialNum) {
         if (serialNum > attr.getCreateSerialNum()) {
@@ -258,9 +223,7 @@ applyCommit(CommitParam param, const AttributeWriter::OnWriteDoneType& , Attribu
     }
 }
 
-void
-applyCompactLidSpace(uint32_t wantedLidLimit, SerialNum serialNum, AttributeVector &attr)
-{
+void applyCompactLidSpace(uint32_t wantedLidLimit, SerialNum serialNum, AttributeVector& attr) {
     if (attr.getStatus().getLastSyncToken() <= serialNum) {
         /*
          * If the attribute is an empty placeholder attribute due to
@@ -275,102 +238,88 @@ applyCompactLidSpace(uint32_t wantedLidLimit, SerialNum serialNum, AttributeVect
     }
 }
 
-using AttrUpdates = std::vector<std::pair<AttributeVector *, const FieldUpdate *>>;
+using AttrUpdates = std::vector<std::pair<AttributeVector*, const FieldUpdate*>>;
 
 struct BatchUpdateTask : public vespalib::Executor::Task {
 
     BatchUpdateTask(SerialNum serialNum, DocumentIdT lid)
-        : vespalib::Executor::Task(),
-          _serialNum(serialNum),
-          _lid(lid),
-          _onWriteDone()
-    { }
+        : vespalib::Executor::Task(), _serialNum(serialNum), _lid(lid), _onWriteDone() {}
     ~BatchUpdateTask() override;
 
     void run() override {
-        for (const auto & update : _updates) {
+        for (const auto& update : _updates) {
             applyUpdateToAttribute(_serialNum, *update.second, _lid, *update.first);
         }
     }
 
-    SerialNum                        _serialNum;
-    DocumentIdT                      _lid;
-    AttrUpdates                      _updates;
-    vespalib::IDestructorCallback::SP  _onWriteDone;
+    SerialNum                         _serialNum;
+    DocumentIdT                       _lid;
+    AttrUpdates                       _updates;
+    vespalib::IDestructorCallback::SP _onWriteDone;
 };
 
 BatchUpdateTask::~BatchUpdateTask() = default;
 
-class FieldContext
-{
-    std::string   _name;
-    ExecutorId         _executorId;
-    AttributeVector   *_attr;
-    bool               _use_two_phase_put;
+class FieldContext {
+    std::string      _name;
+    ExecutorId       _executorId;
+    AttributeVector* _attr;
+    bool             _use_two_phase_put;
 
 public:
-    FieldContext(ISequencedTaskExecutor &writer, AttributeVector *attr);
+    FieldContext(ISequencedTaskExecutor& writer, AttributeVector* attr);
     ~FieldContext();
-    bool operator<(const FieldContext &rhs) const noexcept;
+    bool operator<(const FieldContext& rhs) const noexcept;
     ExecutorId getExecutorId() const { return _executorId; }
-    AttributeVector *getAttribute() const { return _attr; }
+    AttributeVector* getAttribute() const { return _attr; }
     bool use_two_phase_put() const { return _use_two_phase_put; }
 };
 
-FieldContext::FieldContext(ISequencedTaskExecutor &writer, AttributeVector *attr)
-    :  _name(attr->getName()),
-       _executorId(writer.getExecutorIdFromName(attr->getNamePrefix())),
-       _attr(attr),
-       _use_two_phase_put(use_two_phase_put_for_attribute(*attr))
-{
+FieldContext::FieldContext(ISequencedTaskExecutor& writer, AttributeVector* attr)
+    : _name(attr->getName()),
+      _executorId(writer.getExecutorIdFromName(attr->getNamePrefix())),
+      _attr(attr),
+      _use_two_phase_put(use_two_phase_put_for_attribute(*attr)) {
 }
 
 FieldContext::~FieldContext() = default;
 
-bool
-FieldContext::operator<(const FieldContext &rhs) const noexcept
-{
+bool FieldContext::operator<(const FieldContext& rhs) const noexcept {
     if (_executorId != rhs._executorId) {
         return _executorId < rhs._executorId;
     }
     return _name < rhs._name;
 }
 
-class PutTask : public vespalib::Executor::Task
-{
-    const AttributeWriter::WriteContext  &_wc;
-    const SerialNum      _serialNum;
-    const uint32_t       _lid;
-    const bool           _allAttributes;
+class PutTask : public vespalib::Executor::Task {
+    const AttributeWriter::WriteContext&   _wc;
+    const SerialNum                        _serialNum;
+    const uint32_t                         _lid;
+    const bool                             _allAttributes;
     const AttributeWriter::OnWriteDoneType _onWriteDone;
-    const Document&      _doc;
+    const Document&                        _doc;
+
 public:
-    PutTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, const Document& doc, uint32_t lid, bool allAttributes, const AttributeWriter::OnWriteDoneType& onWriteDone);
+    PutTask(const AttributeWriter::WriteContext& wc, SerialNum serialNum, const Document& doc, uint32_t lid,
+            bool allAttributes, const AttributeWriter::OnWriteDoneType& onWriteDone);
     ~PutTask() override;
     void run() override;
 };
 
-PutTask::PutTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, const Document& doc, uint32_t lid, bool allAttributes, const AttributeWriter::OnWriteDoneType& onWriteDone)
-    : _wc(wc),
-      _serialNum(serialNum),
-      _lid(lid),
-      _allAttributes(allAttributes),
-      _onWriteDone(onWriteDone),
-      _doc(doc)
-{
+PutTask::PutTask(const AttributeWriter::WriteContext& wc, SerialNum serialNum, const Document& doc, uint32_t lid,
+                 bool allAttributes, const AttributeWriter::OnWriteDoneType& onWriteDone)
+    : _wc(wc), _serialNum(serialNum), _lid(lid), _allAttributes(allAttributes), _onWriteDone(onWriteDone), _doc(doc) {
 }
 
 PutTask::~PutTask() = default;
 
-void
-PutTask::run()
-{
+void PutTask::run() {
     _wc.consider_build_field_paths(_doc);
     DocumentFieldExtractor field_extractor(_doc);
-    const auto &fields = _wc.getFields();
+    const auto&            fields = _wc.getFields();
     for (auto field : fields) {
         if (_allAttributes || field.isStructFieldAttribute()) {
-            AttributeVector &attr = field.getAttribute();
+            AttributeVector& attr = field.getAttribute();
             if (attr.getStatus().getLastSyncToken() < _serialNum) {
                 auto fv = field_extractor.getFieldValue(field.getFieldPath());
                 applyPutToAttribute(_serialNum, fv, _lid, attr, _onWriteDone);
@@ -381,36 +330,27 @@ PutTask::run()
 
 class PreparePutTask : public vespalib::Executor::Task {
 private:
-    const SerialNum _serial_num;
-    const uint32_t _docid;
-    AttributeVector& _attr;
-    std::shared_ptr<const FieldPath> _field_path;
-    const Document* const _doc;
-    std::unique_ptr<FieldValue> _field_value;
+    const SerialNum                          _serial_num;
+    const uint32_t                           _docid;
+    AttributeVector&                         _attr;
+    std::shared_ptr<const FieldPath>         _field_path;
+    const Document* const                    _doc;
+    std::unique_ptr<FieldValue>              _field_value;
     std::promise<FieldValueAndPrepareResult> _result_promise;
 
 public:
-    PreparePutTask(SerialNum serial_num,
-                   uint32_t docid,
-                   const AttributeWriter::WriteContext& wc,
+    PreparePutTask(SerialNum serial_num, uint32_t docid, const AttributeWriter::WriteContext& wc,
                    const Document& doc);
-    PreparePutTask(SerialNum serial_num,
-                   uint32_t docid,
-                   AttributeVector& attr,
-                   const FieldValue& field_value);
+    PreparePutTask(SerialNum serial_num, uint32_t docid, AttributeVector& attr, const FieldValue& field_value);
     ~PreparePutTask() override;
     void run() override;
     SerialNum serial_num() const { return _serial_num; }
     uint32_t docid() const { return _docid; }
     AttributeVector& attr() { return _attr; }
-    std::future<FieldValueAndPrepareResult> result_future() {
-        return _result_promise.get_future();
-    }
+    std::future<FieldValueAndPrepareResult> result_future() { return _result_promise.get_future(); }
 };
 
-PreparePutTask::PreparePutTask(SerialNum serial_num,
-                               uint32_t docid,
-                               const AttributeWriter::WriteContext& wc,
+PreparePutTask::PreparePutTask(SerialNum serial_num, uint32_t docid, const AttributeWriter::WriteContext& wc,
                                const Document& doc)
     : _serial_num(serial_num),
       _docid(docid),
@@ -418,13 +358,10 @@ PreparePutTask::PreparePutTask(SerialNum serial_num,
       _field_path(wc.get_two_phase_put_field_path()),
       _doc(&doc),
       _field_value(),
-      _result_promise()
-{
+      _result_promise() {
 }
 
-PreparePutTask::PreparePutTask(SerialNum serial_num,
-                               uint32_t docid,
-                               AttributeVector& attr,
+PreparePutTask::PreparePutTask(SerialNum serial_num, uint32_t docid, AttributeVector& attr,
                                const FieldValue& field_value)
     : _serial_num(serial_num),
       _docid(docid),
@@ -432,15 +369,12 @@ PreparePutTask::PreparePutTask(SerialNum serial_num,
       _field_path(),
       _doc(nullptr),
       _field_value(field_value.clone()),
-      _result_promise()
-{
+      _result_promise() {
 }
 
 PreparePutTask::~PreparePutTask() = default;
 
-void
-PreparePutTask::run()
-{
+void PreparePutTask::run() {
     if (_attr.getStatus().getLastSyncToken() < _serial_num) {
         if (_field_path) {
             DocumentFieldExtractor field_extractor(*_doc);
@@ -448,7 +382,8 @@ PreparePutTask::run()
         }
         if (_field_value.get()) {
             auto& fv = *_field_value;
-            _result_promise.set_value(FieldValueAndPrepareResult(std::move(_field_value), AttributeUpdater::prepare_set_value(_attr, _docid, fv)));
+            _result_promise.set_value(FieldValueAndPrepareResult(
+                std::move(_field_value), AttributeUpdater::prepare_set_value(_attr, _docid, fv)));
         } else {
             _result_promise.set_value(FieldValueAndPrepareResult());
         }
@@ -457,94 +392,79 @@ PreparePutTask::run()
 
 class CompletePutTask : public vespalib::Executor::Task {
 private:
-    const SerialNum _serial_num;
-    const uint32_t _docid;
-    AttributeVector& _attr;
+    const SerialNum                         _serial_num;
+    const uint32_t                          _docid;
+    AttributeVector&                        _attr;
     std::future<FieldValueAndPrepareResult> _result_future;
-    const AttributeWriter::OnWriteDoneType _on_write_done;
+    const AttributeWriter::OnWriteDoneType  _on_write_done;
 
 public:
-    CompletePutTask(PreparePutTask& prepare_task,
-                    const AttributeWriter::OnWriteDoneType& on_write_done);
+    CompletePutTask(PreparePutTask& prepare_task, const AttributeWriter::OnWriteDoneType& on_write_done);
     ~CompletePutTask() override;
     void run() override;
 };
 
-CompletePutTask::CompletePutTask(PreparePutTask& prepare_task,
-                                 const AttributeWriter::OnWriteDoneType& on_write_done)
+CompletePutTask::CompletePutTask(PreparePutTask& prepare_task, const AttributeWriter::OnWriteDoneType& on_write_done)
     : _serial_num(prepare_task.serial_num()),
       _docid(prepare_task.docid()),
       _attr(prepare_task.attr()),
       _result_future(prepare_task.result_future()),
-      _on_write_done(on_write_done)
-{
+      _on_write_done(on_write_done) {
 }
 
 CompletePutTask::~CompletePutTask() = default;
 
-void
-CompletePutTask::run()
-{
+void CompletePutTask::run() {
     if (_attr.getStatus().getLastSyncToken() < _serial_num) {
         complete_put_to_attribute(_serial_num, _docid, _attr, std::move(_result_future), _on_write_done);
     }
 }
 
-class RemoveTask : public vespalib::Executor::Task
-{
-    const AttributeWriter::WriteContext  &_wc;
-    const SerialNum      _serialNum;
-    const uint32_t       _lid;
+class RemoveTask : public vespalib::Executor::Task {
+    const AttributeWriter::WriteContext&   _wc;
+    const SerialNum                        _serialNum;
+    const uint32_t                         _lid;
     const AttributeWriter::OnWriteDoneType _onWriteDone;
+
 public:
-    RemoveTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, uint32_t lid, const AttributeWriter::OnWriteDoneType& onWriteDone);
+    RemoveTask(const AttributeWriter::WriteContext& wc, SerialNum serialNum, uint32_t lid,
+               const AttributeWriter::OnWriteDoneType& onWriteDone);
     ~RemoveTask() override;
     void run() override;
 };
 
-RemoveTask::RemoveTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, uint32_t lid, const AttributeWriter::OnWriteDoneType& onWriteDone)
-    : _wc(wc),
-      _serialNum(serialNum),
-      _lid(lid),
-      _onWriteDone(onWriteDone)
-{
+RemoveTask::RemoveTask(const AttributeWriter::WriteContext& wc, SerialNum serialNum, uint32_t lid,
+                       const AttributeWriter::OnWriteDoneType& onWriteDone)
+    : _wc(wc), _serialNum(serialNum), _lid(lid), _onWriteDone(onWriteDone) {
 }
 
 RemoveTask::~RemoveTask() = default;
 
-void
-RemoveTask::run()
-{
-    const auto &fields = _wc.getFields();
-    for (auto &field : fields) {
-        AttributeVector &attr = field.getAttribute();
+void RemoveTask::run() {
+    const auto& fields = _wc.getFields();
+    for (auto& field : fields) {
+        AttributeVector& attr = field.getAttribute();
         if (attr.getStatus().getLastSyncToken() < _serialNum) {
             applyRemoveToAttribute(_serialNum, _lid, attr, _onWriteDone);
         }
     }
 }
 
-class BatchRemoveTask : public vespalib::Executor::Task
-{
+class BatchRemoveTask : public vespalib::Executor::Task {
 private:
-    const AttributeWriter::WriteContext &_writeCtx;
-    const SerialNum _serialNum;
-    const LidVector _lidsToRemove;
+    const AttributeWriter::WriteContext&   _writeCtx;
+    const SerialNum                        _serialNum;
+    const LidVector                        _lidsToRemove;
     const AttributeWriter::OnWriteDoneType _onWriteDone;
+
 public:
-    BatchRemoveTask(const AttributeWriter::WriteContext &writeCtx,
-                    SerialNum serialNum,
-                    const LidVector &lidsToRemove,
+    BatchRemoveTask(const AttributeWriter::WriteContext& writeCtx, SerialNum serialNum, const LidVector& lidsToRemove,
                     const AttributeWriter::OnWriteDoneType& onWriteDone)
-        : _writeCtx(writeCtx),
-          _serialNum(serialNum),
-          _lidsToRemove(lidsToRemove),
-          _onWriteDone(onWriteDone)
-    {}
+        : _writeCtx(writeCtx), _serialNum(serialNum), _lidsToRemove(lidsToRemove), _onWriteDone(onWriteDone) {}
     ~BatchRemoveTask() override;
     void run() override {
         for (auto field : _writeCtx.getFields()) {
-            auto &attr = field.getAttribute();
+            auto& attr = field.getAttribute();
             if (attr.getStatus().getLastSyncToken() < _serialNum) {
                 for (auto lidToRemove : _lidsToRemove) {
                     applyRemoveToAttribute(_serialNum, lidToRemove, attr, _onWriteDone);
@@ -557,42 +477,36 @@ public:
 
 BatchRemoveTask::~BatchRemoveTask() = default;
 
-class CommitTask : public vespalib::Executor::Task
-{
-    const AttributeWriter::WriteContext  &_wc;
-    const CommitParam                     _param;
+class CommitTask : public vespalib::Executor::Task {
+    const AttributeWriter::WriteContext&   _wc;
+    const CommitParam                      _param;
     const AttributeWriter::OnWriteDoneType _onWriteDone;
+
 public:
-    CommitTask(const AttributeWriter::WriteContext &wc, CommitParam param, const AttributeWriter::OnWriteDoneType& onWriteDone);
+    CommitTask(const AttributeWriter::WriteContext& wc, CommitParam param,
+               const AttributeWriter::OnWriteDoneType& onWriteDone);
     ~CommitTask() override;
     void run() override;
 };
 
-
-CommitTask::CommitTask(const AttributeWriter::WriteContext &wc, CommitParam param, const AttributeWriter::OnWriteDoneType& onWriteDone)
-    : _wc(wc),
-      _param(param),
-      _onWriteDone(onWriteDone)
-{
+CommitTask::CommitTask(const AttributeWriter::WriteContext& wc, CommitParam param,
+                       const AttributeWriter::OnWriteDoneType& onWriteDone)
+    : _wc(wc), _param(param), _onWriteDone(onWriteDone) {
 }
 
 CommitTask::~CommitTask() = default;
 
-void
-CommitTask::run()
-{
-    const auto &fields = _wc.getFields();
-    for (auto &field : fields) {
-        AttributeVector &attr = field.getAttribute();
+void CommitTask::run() {
+    const auto& fields = _wc.getFields();
+    for (auto& field : fields) {
+        AttributeVector& attr = field.getAttribute();
         applyCommit(_param, _onWriteDone, attr);
     }
 }
 
-}
+} // namespace
 
-void
-AttributeWriter::setupWriteContexts()
-{
+void AttributeWriter::setupWriteContexts() {
     std::vector<FieldContext> fieldContexts;
     assert(_writeContexts.empty());
     for (auto attr : getWritableAttributes()) {
@@ -603,8 +517,7 @@ AttributeWriter::setupWriteContexts()
         if (fc.use_two_phase_put()) {
             continue;
         }
-        if (_writeContexts.empty() ||
-            (_writeContexts.back().getExecutorId() != fc.getExecutorId())) {
+        if (_writeContexts.empty() || (_writeContexts.back().getExecutorId() != fc.getExecutorId())) {
             _writeContexts.emplace_back(fc.getExecutorId());
         }
         _writeContexts.back().add(*fc.getAttribute());
@@ -615,18 +528,16 @@ AttributeWriter::setupWriteContexts()
             _writeContexts.back().add(*fc.getAttribute());
         }
     }
-    for (const auto &wc : _writeContexts) {
+    for (const auto& wc : _writeContexts) {
         if (wc.hasStructFieldAttribute()) {
             _hasStructFieldAttribute = true;
         }
     }
 }
 
-void
-AttributeWriter::internalPut(SerialNum serialNum, const Document &doc, DocumentIdT lid,
-                             bool allAttributes, const OnWriteDoneType& onWriteDone)
-{
-    for (const auto &wc : _writeContexts) {
+void AttributeWriter::internalPut(SerialNum serialNum, const Document& doc, DocumentIdT lid, bool allAttributes,
+                                  const OnWriteDoneType& onWriteDone) {
+    for (const auto& wc : _writeContexts) {
         if (allAttributes && wc.use_two_phase_put()) {
             assert(wc.getFields().size() == 1);
             wc.consider_build_field_paths(doc);
@@ -643,10 +554,8 @@ AttributeWriter::internalPut(SerialNum serialNum, const Document &doc, DocumentI
     }
 }
 
-void
-AttributeWriter::internalRemove(SerialNum serialNum, DocumentIdT lid, const OnWriteDoneType& onWriteDone)
-{
-    for (const auto &wc : _writeContexts) {
+void AttributeWriter::internalRemove(SerialNum serialNum, DocumentIdT lid, const OnWriteDoneType& onWriteDone) {
+    for (const auto& wc : _writeContexts) {
         auto removeTask = std::make_unique<RemoveTask>(wc, serialNum, lid, onWriteDone);
         _attributeFieldWriter.executeTask(wc.getExecutorId(), std::move(removeTask));
     }
@@ -658,18 +567,17 @@ AttributeWriter::AttributeWriter(proton::IAttributeManager::SP mgr)
       _shared_executor(_mgr->get_shared_executor()),
       _writeContexts(),
       _hasStructFieldAttribute(false),
-      _attrMap()
-{
+      _attrMap() {
     setupWriteContexts();
     setupAttributeMapping();
 }
 
 void AttributeWriter::setupAttributeMapping() {
     for (auto attr : getWritableAttributes()) {
-        _attrMap[attr->getName()] = AttributeWithInfo(attr, _attributeFieldWriter.getExecutorIdFromName(attr->getNamePrefix()));
+        _attrMap[attr->getName()] =
+            AttributeWithInfo(attr, _attributeFieldWriter.getExecutorIdFromName(attr->getNamePrefix()));
     }
 }
-
 
 AttributeWriter::~AttributeWriter() {
     vespalib::Gate gate;
@@ -677,53 +585,41 @@ AttributeWriter::~AttributeWriter() {
     gate.await();
 }
 
-void
-AttributeWriter::drain(const OnWriteDoneType& onDone) {
+void AttributeWriter::drain(const OnWriteDoneType& onDone) {
 
-    for (const auto &wc : _writeContexts) {
-        _attributeFieldWriter.executeLambda(wc.getExecutorId(), [onDone] () { (void) onDone; });
+    for (const auto& wc : _writeContexts) {
+        _attributeFieldWriter.executeLambda(wc.getExecutorId(), [onDone]() { (void)onDone; });
     }
 }
 
-std::vector<search::AttributeVector *>
-AttributeWriter::getWritableAttributes() const
-{
+std::vector<search::AttributeVector*> AttributeWriter::getWritableAttributes() const {
     return _mgr->getWritableAttributes();
 }
 
-
-search::AttributeVector *
-AttributeWriter::getWritableAttribute(const std::string &name) const
-{
+search::AttributeVector* AttributeWriter::getWritableAttribute(const std::string& name) const {
     return _mgr->getWritableAttribute(name);
 }
 
-void
-AttributeWriter::put(SerialNum serialNum, const Document &doc, DocumentIdT lid, const OnWriteDoneType& onWriteDone)
-{
-    LOG(spam, "Handle put: serial(%" PRIu64 "), docId(%s), lid(%u), document(%s)",
-        serialNum, doc.getId().toString().c_str(), lid, doc.toString(true).c_str());
+void AttributeWriter::put(SerialNum serialNum, const Document& doc, DocumentIdT lid,
+                          const OnWriteDoneType& onWriteDone) {
+    LOG(spam, "Handle put: serial(%" PRIu64 "), docId(%s), lid(%u), document(%s)", serialNum,
+        doc.getId().toString().c_str(), lid, doc.toString(true).c_str());
     internalPut(serialNum, doc, lid, true, onWriteDone);
 }
 
-void
-AttributeWriter::update(SerialNum serialNum, const Document &doc, DocumentIdT lid, const OnWriteDoneType& onWriteDone)
-{
-    LOG(spam, "Handle update: serial(%" PRIu64 "), docId(%s), lid(%u), document(%s)",
-        serialNum, doc.getId().toString().c_str(), lid, doc.toString(true).c_str());
+void AttributeWriter::update(SerialNum serialNum, const Document& doc, DocumentIdT lid,
+                             const OnWriteDoneType& onWriteDone) {
+    LOG(spam, "Handle update: serial(%" PRIu64 "), docId(%s), lid(%u), document(%s)", serialNum,
+        doc.getId().toString().c_str(), lid, doc.toString(true).c_str());
     internalPut(serialNum, doc, lid, false, onWriteDone);
 }
 
-void
-AttributeWriter::remove(SerialNum serialNum, DocumentIdT lid, const OnWriteDoneType& onWriteDone)
-{
+void AttributeWriter::remove(SerialNum serialNum, DocumentIdT lid, const OnWriteDoneType& onWriteDone) {
     internalRemove(serialNum, lid, onWriteDone);
 }
 
-void
-AttributeWriter::remove(const LidVector &lidsToRemove, SerialNum serialNum, const OnWriteDoneType& onWriteDone)
-{
-    for (const auto &writeCtx : _writeContexts) {
+void AttributeWriter::remove(const LidVector& lidsToRemove, SerialNum serialNum, const OnWriteDoneType& onWriteDone) {
+    for (const auto& writeCtx : _writeContexts) {
         auto removeTask = std::make_unique<BatchRemoveTask>(writeCtx, serialNum, lidsToRemove, onWriteDone);
         _attributeFieldWriter.executeTask(writeCtx.getExecutorId(), std::move(removeTask));
     }
@@ -731,40 +627,33 @@ AttributeWriter::remove(const LidVector &lidsToRemove, SerialNum serialNum, cons
 
 namespace {
 
-bool
-is_single_assign_update(const FieldUpdate& update)
-{
-    return (update.getUpdates().size() == 1) &&
-            (update.getUpdates()[0]->getType() == ValueUpdate::Assign) &&
-            (static_cast<const AssignValueUpdate &>(*update.getUpdates()[0]).hasValue());
+bool is_single_assign_update(const FieldUpdate& update) {
+    return (update.getUpdates().size() == 1) && (update.getUpdates()[0]->getType() == ValueUpdate::Assign) &&
+           (static_cast<const AssignValueUpdate&>(*update.getUpdates()[0]).hasValue());
 }
 
-const FieldValue&
-get_single_assign_update_field_value(const FieldUpdate& update)
-{
-    const auto& assign = static_cast<const AssignValueUpdate &>(*update.getUpdates()[0]);
+const FieldValue& get_single_assign_update_field_value(const FieldUpdate& update) {
+    const auto& assign = static_cast<const AssignValueUpdate&>(*update.getUpdates()[0]);
     return assign.getValue();
 }
 
-}
+} // namespace
 
-void
-AttributeWriter::update(SerialNum serialNum, const DocumentUpdate &upd, DocumentIdT lid,
-                        const OnWriteDoneType& onWriteDone, IFieldUpdateCallback & onUpdate)
-{
+void AttributeWriter::update(SerialNum serialNum, const DocumentUpdate& upd, DocumentIdT lid,
+                             const OnWriteDoneType& onWriteDone, IFieldUpdateCallback& onUpdate) {
     LOG(debug, "Inspecting update for document %d.", lid);
     std::vector<std::unique_ptr<BatchUpdateTask>> args;
-    uint32_t numExecutors = _attributeFieldWriter.getNumExecutors();
+    uint32_t                                      numExecutors = _attributeFieldWriter.getNumExecutors();
     args.reserve(numExecutors);
     for (uint32_t i(0); i < numExecutors; i++) {
         args.emplace_back(std::make_unique<BatchUpdateTask>(serialNum, lid));
-        args.back()->_updates.reserve((2*upd.getUpdates().size())/numExecutors);
+        args.back()->_updates.reserve((2 * upd.getUpdates().size()) / numExecutors);
     }
 
-    for (const auto &fupd : upd.getUpdates()) {
+    for (const auto& fupd : upd.getUpdates()) {
         LOG(debug, "Retrieving guard for attribute vector '%s'.", fupd.getField().getName().c_str());
-        auto found = _attrMap.find(fupd.getField().getName());
-        AttributeVector * attrp = (found != _attrMap.end()) ? found->second.attribute : nullptr;
+        auto             found = _attrMap.find(fupd.getField().getName());
+        AttributeVector* attrp = (found != _attrMap.end()) ? found->second.attribute : nullptr;
         onUpdate.onUpdateField(fupd.getField(), attrp);
         if (__builtin_expect(attrp == nullptr, false)) {
             LOG(spam, "Failed to find attribute vector %s", fupd.getField().getName().c_str());
@@ -776,10 +665,11 @@ AttributeWriter::update(SerialNum serialNum, const DocumentUpdate &upd, Document
             continue;
         }
         if (found->second.use_two_phase_put_for_assign_updates && is_single_assign_update(fupd)) {
-            auto prepare_task = std::make_unique<PreparePutTask>(serialNum, lid, *attrp, get_single_assign_update_field_value(fupd));
+            auto prepare_task =
+                std::make_unique<PreparePutTask>(serialNum, lid, *attrp, get_single_assign_update_field_value(fupd));
             auto complete_task = std::make_unique<CompletePutTask>(*prepare_task, onWriteDone);
-            LOG(debug, "About to handle assign update as two phase put for docid %u in attribute vector '%s'",
-                lid, attrp->getName().c_str());
+            LOG(debug, "About to handle assign update as two phase put for docid %u in attribute vector '%s'", lid,
+                attrp->getName().c_str());
             _shared_executor.execute(CpuUsage::wrap(std::move(prepare_task), CpuUsage::Category::WRITE));
             _attributeFieldWriter.executeTask(found->second.executor_id, std::move(complete_task));
         } else {
@@ -790,55 +680,45 @@ AttributeWriter::update(SerialNum serialNum, const DocumentUpdate &upd, Document
     // NOTE: The lifetime of the field update will be ensured by keeping the document update alive
     // in a operation done context object.
     for (uint32_t id(0); id < args.size(); id++) {
-        if ( ! args[id]->_updates.empty()) {
+        if (!args[id]->_updates.empty()) {
             args[id]->_onWriteDone = onWriteDone;
             _attributeFieldWriter.executeTask(ExecutorId(id), std::move(args[id]));
         }
     }
-
 }
 
-void
-AttributeWriter::heartBeat(SerialNum serialNum, const OnWriteDoneType& onDone)
-{
+void AttributeWriter::heartBeat(SerialNum serialNum, const OnWriteDoneType& onDone) {
     for (auto entry : _attrMap) {
-        _attributeFieldWriter.execute(entry.second.executor_id,[serialNum, attr=entry.second.attribute, onDone]() {
-            (void) onDone;
+        _attributeFieldWriter.execute(entry.second.executor_id, [serialNum, attr = entry.second.attribute, onDone]() {
+            (void)onDone;
             applyHeartBeat(serialNum, *attr);
         });
     }
 }
 
-
-void
-AttributeWriter::forceCommit(const CommitParam & param, const OnWriteDoneType& onWriteDone)
-{
+void AttributeWriter::forceCommit(const CommitParam& param, const OnWriteDoneType& onWriteDone) {
     if (_mgr->getImportedAttributes() != nullptr) {
         std::vector<std::shared_ptr<ImportedAttributeVector>> importedAttrs;
         _mgr->getImportedAttributes()->getAll(importedAttrs);
-        for (const auto &attr : importedAttrs) {
+        for (const auto& attr : importedAttrs) {
             attr->clearSearchCache();
         }
     }
-    for (const auto &wc : _writeContexts) {
+    for (const auto& wc : _writeContexts) {
         auto commitTask = std::make_unique<CommitTask>(wc, param, onWriteDone);
         _attributeFieldWriter.executeTask(wc.getExecutorId(), std::move(commitTask));
     }
     _attributeFieldWriter.wakeup();
 }
 
-
-void
-AttributeWriter::onReplayDone(uint32_t docIdLimit)
-{
+void AttributeWriter::onReplayDone(uint32_t docIdLimit) {
     vespalib::Gate gate;
     {
         auto on_write_done = std::make_shared<GateCallback>(gate);
         for (auto entry : _attrMap) {
             _attributeFieldWriter.execute(entry.second.executor_id,
-                                          [docIdLimit, attr = entry.second.attribute, on_write_done]()
-                                          {
-                                              (void) on_write_done;
+                                          [docIdLimit, attr = entry.second.attribute, on_write_done]() {
+                                              (void)on_write_done;
                                               applyReplayDone(docIdLimit, *attr);
                                           });
         }
@@ -846,30 +726,23 @@ AttributeWriter::onReplayDone(uint32_t docIdLimit)
     gate.await();
 }
 
-
-void
-AttributeWriter::compactLidSpace(uint32_t wantedLidLimit, SerialNum serialNum)
-{
+void AttributeWriter::compactLidSpace(uint32_t wantedLidLimit, SerialNum serialNum) {
     vespalib::Gate gate;
     {
         auto on_write_done = std::make_shared<GateCallback>(gate);
         for (auto entry : _attrMap) {
-            _attributeFieldWriter.execute(entry.second.executor_id,
-                                          [wantedLidLimit, serialNum, attr=entry.second.attribute, on_write_done]()
-                                          {
-                                              (void) on_write_done;
-                                              applyCompactLidSpace(wantedLidLimit, serialNum, *attr);
-                                          });
+            _attributeFieldWriter.execute(entry.second.executor_id, [wantedLidLimit, serialNum,
+                                                                     attr = entry.second.attribute, on_write_done]() {
+                (void)on_write_done;
+                applyCompactLidSpace(wantedLidLimit, serialNum, *attr);
+            });
         }
     }
     gate.await();
 }
 
-bool
-AttributeWriter::hasStructFieldAttribute() const
-{
+bool AttributeWriter::hasStructFieldAttribute() const {
     return _hasStructFieldAttribute;
 }
-
 
 } // namespace proton

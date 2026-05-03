@@ -10,8 +10,7 @@ namespace proton {
  * Interface for registering a set of attribute initializers,
  * later to be used to initialize and load the set of attributes.
  */
-struct IAttributeInitializerRegistry
-{
+struct IAttributeInitializerRegistry {
     virtual ~IAttributeInitializerRegistry() = default;
     virtual void add(AttributeInitializer::UP initializer) = 0;
 };

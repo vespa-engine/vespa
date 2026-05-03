@@ -9,14 +9,13 @@ namespace proton {
 /**
  * Concrete factory for creating attribute vectors by using the search::AttributeFactory.
  */
-class AttributeFactory : public IAttributeFactory
-{
+class AttributeFactory : public IAttributeFactory {
 public:
     using SP = std::shared_ptr<AttributeFactory>;
     AttributeFactory();
 
-    AttributeVectorSP create(const std::string &name, const search::attribute::Config &cfg) const override;
-    void setupEmpty(const AttributeVectorSP &vec, std::optional<search::SerialNum> serialNum) const override;
+    AttributeVectorSP create(const std::string& name, const search::attribute::Config& cfg) const override;
+    void setupEmpty(const AttributeVectorSP& vec, std::optional<search::SerialNum> serialNum) const override;
 };
 
-}
+} // namespace proton

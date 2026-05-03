@@ -1,38 +1,34 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attributedisklayout.h"
+
 #include "attribute_directory.h"
+
 #include <vespa/vespalib/io/fileutil.h>
+
 #include <cassert>
 #include <filesystem>
 
 namespace proton {
 
-AttributeDiskLayout::AttributeDiskLayout(const std::string &baseDir, PrivateConstructorTag)
-    : _baseDir(baseDir),
-      _mutex(),
-      _dirs()
-{
+AttributeDiskLayout::AttributeDiskLayout(const std::string& baseDir, PrivateConstructorTag)
+    : _baseDir(baseDir), _mutex(), _dirs() {
     std::filesystem::create_directory(std::filesystem::path(_baseDir));
     vespalib::File::sync(vespalib::dirname(_baseDir));
 }
 
 AttributeDiskLayout::~AttributeDiskLayout() = default;
 
-std::vector<std::string>
-AttributeDiskLayout::listAttributes()
-{
-    std::vector<std::string> attributes;
+std::vector<std::string> AttributeDiskLayout::listAttributes() {
+    std::vector<std::string>            attributes;
     std::shared_lock<std::shared_mutex> guard(_mutex);
-    for (const auto &dir : _dirs)  {
+    for (const auto& dir : _dirs) {
         attributes.emplace_back(dir.first);
     }
     return attributes;
 }
 
-void
-AttributeDiskLayout::scanDir()
-{
+void AttributeDiskLayout::scanDir() {
     std::filesystem::directory_iterator dir_scan{std::filesystem::path(_baseDir)};
     for (auto& entry : dir_scan) {
         if (entry.is_directory()) {
@@ -41,11 +37,9 @@ AttributeDiskLayout::scanDir()
     }
 }
 
-std::shared_ptr<AttributeDirectory>
-AttributeDiskLayout::getAttributeDir(const std::string &name)
-{
+std::shared_ptr<AttributeDirectory> AttributeDiskLayout::getAttributeDir(const std::string& name) {
     std::shared_lock<std::shared_mutex> guard(_mutex);
-    auto itr = _dirs.find(name);
+    auto                                itr = _dirs.find(name);
     if (itr == _dirs.end()) {
         return std::shared_ptr<AttributeDirectory>();
     } else {
@@ -53,11 +47,9 @@ AttributeDiskLayout::getAttributeDir(const std::string &name)
     }
 }
 
-std::shared_ptr<AttributeDirectory>
-AttributeDiskLayout::createAttributeDir(const std::string &name)
-{
+std::shared_ptr<AttributeDirectory> AttributeDiskLayout::createAttributeDir(const std::string& name) {
     std::lock_guard<std::shared_mutex> guard(_mutex);
-    auto itr = _dirs.find(name);
+    auto                               itr = _dirs.find(name);
     if (itr == _dirs.end()) {
         auto dir = std::make_shared<AttributeDirectory>(shared_from_this(), name);
         auto insres = _dirs.insert(std::make_pair(name, dir));
@@ -68,9 +60,7 @@ AttributeDiskLayout::createAttributeDir(const std::string &name)
     }
 }
 
-void
-AttributeDiskLayout::removeAttributeDir(const std::string &name, search::SerialNum serialNum)
-{
+void AttributeDiskLayout::removeAttributeDir(const std::string& name, search::SerialNum serialNum) {
     auto dir = getAttributeDir(name);
     if (dir) {
         auto writer = dir->getWriter();
@@ -79,7 +69,7 @@ AttributeDiskLayout::removeAttributeDir(const std::string &name, search::SerialN
             writer->removeInvalidSnapshots();
             if (writer->removeDiskDir()) {
                 std::lock_guard<std::shared_mutex> guard(_mutex);
-                auto itr = _dirs.find(name);
+                auto                               itr = _dirs.find(name);
                 assert(itr != _dirs.end());
                 assert(dir.get() == itr->second.get());
                 _dirs.erase(itr);
@@ -87,7 +77,7 @@ AttributeDiskLayout::removeAttributeDir(const std::string &name, search::SerialN
             }
         } else {
             std::lock_guard<std::shared_mutex> guard(_mutex);
-            auto itr = _dirs.find(name);
+            auto                               itr = _dirs.find(name);
             if (itr != _dirs.end()) {
                 assert(dir.get() != itr->second.get());
             }
@@ -95,20 +85,15 @@ AttributeDiskLayout::removeAttributeDir(const std::string &name, search::SerialN
     }
 }
 
-std::shared_ptr<AttributeDiskLayout>
-AttributeDiskLayout::create(const std::string &baseDir)
-{
+std::shared_ptr<AttributeDiskLayout> AttributeDiskLayout::create(const std::string& baseDir) {
     auto diskLayout = std::make_shared<AttributeDiskLayout>(baseDir, PrivateConstructorTag());
     diskLayout->scanDir();
     return diskLayout;
 }
 
-std::shared_ptr<AttributeDiskLayout>
-AttributeDiskLayout::createSimple(const std::string &baseDir)
-{
+std::shared_ptr<AttributeDiskLayout> AttributeDiskLayout::createSimple(const std::string& baseDir) {
     auto diskLayout = std::make_shared<AttributeDiskLayout>(baseDir, PrivateConstructorTag());
     return diskLayout;
 }
 
 } // namespace proton
-

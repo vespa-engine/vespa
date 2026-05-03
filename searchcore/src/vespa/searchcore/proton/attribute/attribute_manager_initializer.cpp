@@ -1,10 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_manager_initializer.h"
-#include "attributes_initializer_base.h"
+
 #include "attribute_collection_spec_factory.h"
+#include "attributes_initializer_base.h"
+
 #include <vespa/searchcore/proton/documentmetastore/documentmetastoreattribute.h>
 #include <vespa/searchcorespi/index/i_thread_service.h>
+
 #include <future>
 
 using search::AttributeVector;
@@ -19,21 +22,17 @@ using initializer::InitializerTask;
 
 namespace {
 
-class AttributeInitializerTask : public InitializerTask
-{
+class AttributeInitializerTask : public InitializerTask {
 private:
-    AttributeInitializer::UP _initializer;
+    AttributeInitializer::UP                    _initializer;
     std::shared_ptr<DocumentMetaStoreAttribute> _documentMetaStore;
-    InitializedAttributesResult &_result;
+    InitializedAttributesResult&                _result;
 
 public:
-    AttributeInitializerTask(AttributeInitializer::UP initializer,
+    AttributeInitializerTask(AttributeInitializer::UP                    initializer,
                              std::shared_ptr<DocumentMetaStoreAttribute> documentMetaStore,
-                             InitializedAttributesResult &result)
-        : _initializer(std::move(initializer)),
-          _documentMetaStore(std::move(documentMetaStore)),
-          _result(result)
-    {}
+                             InitializedAttributesResult&                result)
+        : _initializer(std::move(initializer)), _documentMetaStore(std::move(documentMetaStore)), _result(result) {}
 
     void run() override {
         AttributeInitializerResult result = _initializer->init();
@@ -44,116 +43,94 @@ public:
             _result.add(result);
         }
     }
-    size_t get_transient_memory_usage() const override {
-        return _initializer->get_transient_memory_usage();
-    }
-    void accept_visitor(initializer::InitializerTaskVisitor &visitor) override {
+    size_t get_transient_memory_usage() const override { return _initializer->get_transient_memory_usage(); }
+    void accept_visitor(initializer::InitializerTaskVisitor& visitor) override {
         visitor.visit_attribute_initializer(*_initializer);
         InitializerTask::accept_visitor(visitor);
     }
 };
 
-class AttributeManagerInitializerTask : public vespalib::Executor::Task
-{
-    std::promise<void> _promise;
-    search::SerialNum _configSerialNum;
+class AttributeManagerInitializerTask : public vespalib::Executor::Task {
+    std::promise<void>                          _promise;
+    search::SerialNum                           _configSerialNum;
     std::shared_ptr<DocumentMetaStoreAttribute> _documentMetaStore;
-    AttributeManager::SP _attrMgr;
-    InitializedAttributesResult &_attributesResult;
+    AttributeManager::SP                        _attrMgr;
+    InitializedAttributesResult&                _attributesResult;
 
 public:
-    AttributeManagerInitializerTask(std::promise<void> &&promise,
-                                    search::SerialNum configSerialNum,
+    AttributeManagerInitializerTask(std::promise<void>&& promise, search::SerialNum configSerialNum,
                                     std::shared_ptr<DocumentMetaStoreAttribute> documentMetaStore,
-                                    AttributeManager::SP attrMgr,
-                                    InitializedAttributesResult &attributesResult);
+                                    AttributeManager::SP attrMgr, InitializedAttributesResult& attributesResult);
     ~AttributeManagerInitializerTask() override;
     void run() override;
 };
 
-
-AttributeManagerInitializerTask::AttributeManagerInitializerTask(std::promise<void> &&promise,
-                                                                 search::SerialNum configSerialNum,
-                                                                 std::shared_ptr<DocumentMetaStoreAttribute> documentMetaStore,
-                                                                 AttributeManager::SP attrMgr,
-                                                                 InitializedAttributesResult &attributesResult)
+AttributeManagerInitializerTask::AttributeManagerInitializerTask(
+    std::promise<void>&& promise, search::SerialNum configSerialNum,
+    std::shared_ptr<DocumentMetaStoreAttribute> documentMetaStore, AttributeManager::SP attrMgr,
+    InitializedAttributesResult& attributesResult)
     : _promise(std::move(promise)),
       _configSerialNum(configSerialNum),
       _documentMetaStore(std::move(documentMetaStore)),
       _attrMgr(std::move(attrMgr)),
-      _attributesResult(attributesResult)
-{
+      _attributesResult(attributesResult) {
 }
 
 AttributeManagerInitializerTask::~AttributeManagerInitializerTask() = default;
 
-void
-AttributeManagerInitializerTask::run()
-{
+void AttributeManagerInitializerTask::run() {
     _attrMgr->addExtraAttribute(_documentMetaStore);
     _attrMgr->addInitializedAttributes(_attributesResult.get(), 1, _configSerialNum);
     _attrMgr->pruneRemovedFields(_configSerialNum);
     _promise.set_value();
 }
 
-class AttributeInitializerTasksBuilder : public IAttributeInitializerRegistry
-{
+class AttributeInitializerTasksBuilder : public IAttributeInitializerRegistry {
 private:
-    InitializerTask &_attrMgrInitTask;
-    InitializerTask::SP _documentMetaStoreInitTask;
+    InitializerTask&                            _attrMgrInitTask;
+    InitializerTask::SP                         _documentMetaStoreInitTask;
     std::shared_ptr<DocumentMetaStoreAttribute> _documentMetaStore;
-    InitializedAttributesResult &_attributesResult;
+    InitializedAttributesResult&                _attributesResult;
 
 public:
-    AttributeInitializerTasksBuilder(InitializerTask &attrMgrInitTask,
-                                     InitializerTask::SP documentMetaStoreInitTask,
+    AttributeInitializerTasksBuilder(InitializerTask& attrMgrInitTask, InitializerTask::SP documentMetaStoreInitTask,
                                      std::shared_ptr<DocumentMetaStoreAttribute> documentMetaStore,
-                                     InitializedAttributesResult &attributesResult);
+                                     InitializedAttributesResult&                attributesResult);
     ~AttributeInitializerTasksBuilder() override;
     void add(AttributeInitializer::UP initializer) override;
 };
 
-AttributeInitializerTasksBuilder::AttributeInitializerTasksBuilder(InitializerTask &attrMgrInitTask,
-                                                                   InitializerTask::SP documentMetaStoreInitTask,
-                                                                   std::shared_ptr<DocumentMetaStoreAttribute> documentMetaStore,
-                                                                   InitializedAttributesResult &attributesResult)
+AttributeInitializerTasksBuilder::AttributeInitializerTasksBuilder(
+    InitializerTask& attrMgrInitTask, InitializerTask::SP documentMetaStoreInitTask,
+    std::shared_ptr<DocumentMetaStoreAttribute> documentMetaStore, InitializedAttributesResult& attributesResult)
     : _attrMgrInitTask(attrMgrInitTask),
       _documentMetaStoreInitTask(std::move(documentMetaStoreInitTask)),
       _documentMetaStore(std::move(documentMetaStore)),
-      _attributesResult(attributesResult)
-{ }
+      _attributesResult(attributesResult) {
+}
 
 AttributeInitializerTasksBuilder::~AttributeInitializerTasksBuilder() = default;
 
-void
-AttributeInitializerTasksBuilder::add(AttributeInitializer::UP initializer) {
+void AttributeInitializerTasksBuilder::add(AttributeInitializer::UP initializer) {
     InitializerTask::SP attributeInitTask =
-            std::make_shared<AttributeInitializerTask>(std::move(initializer),
-                                                       _documentMetaStore,
-                                                       _attributesResult);
+        std::make_shared<AttributeInitializerTask>(std::move(initializer), _documentMetaStore, _attributesResult);
     attributeInitTask->addDependency(_documentMetaStoreInitTask);
     _attrMgrInitTask.addDependency(attributeInitTask);
 }
 
-}
+} // namespace
 
-std::unique_ptr<AttributeCollectionSpec>
-AttributeManagerInitializer::createAttributeSpec() const
-{
+std::unique_ptr<AttributeCollectionSpec> AttributeManagerInitializer::createAttributeSpec() const {
     uint32_t docIdLimit = 1; // The real docIdLimit is used after attributes are loaded to pad them
     AttributeCollectionSpecFactory factory(_alloc_strategy, _fastAccessAttributesOnly);
     return factory.create(_attrCfg, docIdLimit, _configSerialNum);
 }
 
-AttributeManagerInitializer::AttributeManagerInitializer(SerialNum configSerialNum,
-                                                         initializer::InitializerTask::SP documentMetaStoreInitTask,
-                                                         std::shared_ptr<DocumentMetaStoreAttribute> documentMetaStore,
-                                                         const AttributeManager & baseAttrMgr,
-                                                         const AttributesConfig &attrCfg,
-                                                         const AllocStrategy& alloc_strategy,
-                                                         bool fastAccessAttributesOnly,
-                                                         searchcorespi::index::IThreadService &master,
-                                                         std::shared_ptr<AttributeManager::SP> attrMgrResult)
+AttributeManagerInitializer::AttributeManagerInitializer(
+    SerialNum configSerialNum, initializer::InitializerTask::SP documentMetaStoreInitTask,
+    std::shared_ptr<DocumentMetaStoreAttribute> documentMetaStore, const AttributeManager& baseAttrMgr,
+    const AttributesConfig& attrCfg, const AllocStrategy& alloc_strategy, bool fastAccessAttributesOnly,
+    searchcorespi::index::IThreadService& master, std::shared_ptr<AttributeManager::SP> attrMgrResult)
     : _configSerialNum(configSerialNum),
       _documentMetaStore(documentMetaStore),
       _attrMgr(),
@@ -162,30 +139,25 @@ AttributeManagerInitializer::AttributeManagerInitializer(SerialNum configSerialN
       _fastAccessAttributesOnly(fastAccessAttributesOnly),
       _master(master),
       _attributesResult(),
-      _attrMgrResult(std::move(attrMgrResult))
-{
+      _attrMgrResult(std::move(attrMgrResult)) {
     addDependency(documentMetaStoreInitTask);
-    AttributeInitializerTasksBuilder tasksBuilder(*this, std::move(documentMetaStoreInitTask), std::move(documentMetaStore), _attributesResult);
+    AttributeInitializerTasksBuilder         tasksBuilder(*this, std::move(documentMetaStoreInitTask),
+                                                          std::move(documentMetaStore), _attributesResult);
     std::unique_ptr<AttributeCollectionSpec> attrSpec = createAttributeSpec();
     _attrMgr = std::make_shared<AttributeManager>(baseAttrMgr, std::move(*attrSpec), tasksBuilder);
 }
 
 AttributeManagerInitializer::~AttributeManagerInitializer() = default;
 
-void
-AttributeManagerInitializer::run()
-{
+void AttributeManagerInitializer::run() {
     std::promise<void> promise;
-    auto future = promise.get_future();
+    auto               future = promise.get_future();
     /*
      * Attribute manager and some its members (e.g. _attributeFieldWriter) assumes that work is performed
      * by document db master thread and lacks locking to handle calls from multiple threads.
      */
-    _master.execute(std::make_unique<AttributeManagerInitializerTask>(std::move(promise),
-                                                                      _configSerialNum,
-                                                                      _documentMetaStore,
-                                                                      _attrMgr,
-                                                                      _attributesResult));
+    _master.execute(std::make_unique<AttributeManagerInitializerTask>(
+        std::move(promise), _configSerialNum, _documentMetaStore, _attrMgr, _attributesResult));
     future.wait();
     *_attrMgrResult = _attrMgr;
 }

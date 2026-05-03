@@ -3,12 +3,17 @@
 #pragma once
 
 #include <vespa/searchlib/common/serialnum.h>
+
 #include <memory>
 #include <optional>
 #include <string>
 
-namespace search { class AttributeVector; }
-namespace search::attribute { class Config; }
+namespace search {
+class AttributeVector;
+}
+namespace search::attribute {
+class Config;
+}
 
 namespace proton {
 
@@ -16,16 +21,12 @@ namespace proton {
  * Interface for a factory for creating and setting up attribute vectors used by
  * an attribute manager.
  */
-struct IAttributeFactory
-{
+struct IAttributeFactory {
     using SP = std::shared_ptr<IAttributeFactory>;
     using AttributeVectorSP = std::shared_ptr<search::AttributeVector>;
     virtual ~IAttributeFactory() = default;
-    virtual AttributeVectorSP create(const std::string &name,
-                                     const search::attribute::Config &cfg) const = 0;
-    virtual void setupEmpty(const AttributeVectorSP &vec,
-                            std::optional<search::SerialNum> serialNum) const = 0;
+    virtual AttributeVectorSP create(const std::string& name, const search::attribute::Config& cfg) const = 0;
+    virtual void setupEmpty(const AttributeVectorSP& vec, std::optional<search::SerialNum> serialNum) const = 0;
 };
 
 } // namespace proton
-

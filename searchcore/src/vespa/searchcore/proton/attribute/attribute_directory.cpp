@@ -1,13 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_directory.h"
+
 #include "attributedisklayout.h"
+
 #include <vespa/searchcorespi/common/transient_resource_usage.h>
 #include <vespa/searchlib/util/directory_traverse.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+
 #include <cassert>
 #include <filesystem>
 
@@ -21,20 +24,18 @@ using searchcorespi::common::TransientResourceUsage;
 
 namespace {
 
-std::string
-getSnapshotDirComponent(uint64_t syncToken)
-{
+std::string getSnapshotDirComponent(uint64_t syncToken) {
     vespalib::asciistream os;
     os << "snapshot-" << syncToken;
     return os.str();
 }
 
-}
+} // namespace
 
 namespace proton {
 
-AttributeDirectory::AttributeDirectory(const std::shared_ptr<AttributeDiskLayout> &diskLayout,
-                                       const std::string &name)
+AttributeDirectory::AttributeDirectory(const std::shared_ptr<AttributeDiskLayout>& diskLayout,
+                                       const std::string&                          name)
     : _diskLayout(diskLayout),
       _name(name),
       _last_flush_time(0),
@@ -43,8 +44,7 @@ AttributeDirectory::AttributeDirectory(const std::shared_ptr<AttributeDiskLayout
       _cv(),
       _snapInfo(getDirName()),
       _disk_sizes(),
-      _flushed_serial(0)
-{
+      _flushed_serial(0) {
     _snapInfo.load();
     IndexMetaInfo::Snapshot bestSnap = _snapInfo.getBestSnapshot();
     _flushed_serial.store(bestSnap.valid ? bestSnap.syncToken : 0, std::memory_order_relaxed);
@@ -59,15 +59,12 @@ AttributeDirectory::AttributeDirectory(const std::shared_ptr<AttributeDiskLayout
     }
 }
 
-AttributeDirectory::~AttributeDirectory()
-{
+AttributeDirectory::~AttributeDirectory() {
     std::lock_guard<std::mutex> guard(_mutex);
     assert(_writer == nullptr);
 }
 
-std::string
-AttributeDirectory::getDirName() const
-{
+std::string AttributeDirectory::getDirName() const {
     std::shared_ptr<AttributeDiskLayout> diskLayout;
     {
         std::lock_guard<std::mutex> guard(_mutex);
@@ -81,9 +78,7 @@ AttributeDirectory::getDirName() const
     return diskLayout->getBaseDir() + "/" + _name;
 }
 
-void
-AttributeDirectory::saveSnapInfo()
-{
+void AttributeDirectory::saveSnapInfo() {
     if (!_snapInfo.save()) {
         std::string dirName(getDirName());
         LOG(warning, "Could not save meta-info file for attribute vector '%s' to disk", dirName.c_str());
@@ -93,16 +88,12 @@ AttributeDirectory::saveSnapInfo()
     _flushed_serial.store(bestSnap.valid ? bestSnap.syncToken : 0, std::memory_order_relaxed);
 }
 
-std::string
-AttributeDirectory::getSnapshotDir(search::SerialNum serialNum) const
-{
+std::string AttributeDirectory::getSnapshotDir(search::SerialNum serialNum) const {
     std::string dirName(getDirName());
     return dirName + "/" + getSnapshotDirComponent(serialNum);
 }
 
-void
-AttributeDirectory::createInvalidSnapshot(SerialNum serialNum)
-{
+void AttributeDirectory::createInvalidSnapshot(SerialNum serialNum) {
     IndexMetaInfo::Snapshot newSnap(false, serialNum, getSnapshotDirComponent(serialNum));
     if (empty()) {
         std::string dirName(getDirName());
@@ -117,12 +108,10 @@ AttributeDirectory::createInvalidSnapshot(SerialNum serialNum)
     saveSnapInfo();
 }
 
-void
-AttributeDirectory::markValidSnapshot(SerialNum serialNum)
-{
+void AttributeDirectory::markValidSnapshot(SerialNum serialNum) {
     {
         std::lock_guard<std::mutex> guard(_mutex);
-        auto snap = _snapInfo.getSnapshot(serialNum);
+        auto                        snap = _snapInfo.getSnapshot(serialNum);
         assert(!snap.valid);
         assert(snap.syncToken == serialNum);
         _snapInfo.validateSnapshot(serialNum);
@@ -131,7 +120,7 @@ AttributeDirectory::markValidSnapshot(SerialNum serialNum)
     vespalib::File::sync(snapshotDir);
     vespalib::File::sync(vespalib::dirname(snapshotDir));
     search::DirectoryTraverse dirt(snapshotDir);
-    uint64_t size_on_disk = dirt.GetTreeSize();
+    uint64_t                  size_on_disk = dirt.GetTreeSize();
     {
         std::lock_guard<std::mutex> guard(_mutex);
         _disk_sizes[serialNum] = size_on_disk;
@@ -139,19 +128,17 @@ AttributeDirectory::markValidSnapshot(SerialNum serialNum)
     saveSnapInfo();
 }
 
-void
-AttributeDirectory::invalidateOldSnapshots(uint64_t serialNum)
-{
+void AttributeDirectory::invalidateOldSnapshots(uint64_t serialNum) {
     std::vector<SerialNum> toInvalidate;
     {
         std::lock_guard<std::mutex> guard(_mutex);
-        auto &list = _snapInfo.snapshots();
-        for (const auto &snap : list) {
+        auto&                       list = _snapInfo.snapshots();
+        for (const auto& snap : list) {
             if (snap.valid && snap.syncToken < serialNum) {
                 toInvalidate.emplace_back(snap.syncToken);
             }
         }
-        for (const auto &invalidSerialNum : toInvalidate) {
+        for (const auto& invalidSerialNum : toInvalidate) {
             _snapInfo.invalidateSnapshot(invalidSerialNum);
         }
     }
@@ -160,26 +147,22 @@ AttributeDirectory::invalidateOldSnapshots(uint64_t serialNum)
     }
 }
 
-void
-AttributeDirectory::invalidateOldSnapshots()
-{
+void AttributeDirectory::invalidateOldSnapshots() {
     auto best = _snapInfo.getBestSnapshot();
     if (best.valid) {
         invalidateOldSnapshots(best.syncToken);
     }
 }
 
-void
-AttributeDirectory::removeInvalidSnapshots()
-{
+void AttributeDirectory::removeInvalidSnapshots() {
     std::vector<SerialNum> toRemove;
-    auto &list = _snapInfo.snapshots();
-    for (const auto &snap : list) {
+    auto&                  list = _snapInfo.snapshots();
+    for (const auto& snap : list) {
         if (!snap.valid) {
             toRemove.emplace_back(snap.syncToken);
         }
     }
-    for (const auto &serialNum : toRemove) {
+    for (const auto& serialNum : toRemove) {
         std::string subDir(getSnapshotDir(serialNum));
         std::filesystem::remove_all(std::filesystem::path(subDir));
     }
@@ -187,7 +170,7 @@ AttributeDirectory::removeInvalidSnapshots()
         vespalib::File::sync(getDirName());
         {
             std::lock_guard<std::mutex> guard(_mutex);
-            for (const auto &serialNum : toRemove) {
+            for (const auto& serialNum : toRemove) {
                 _snapInfo.removeSnapshot(serialNum);
                 _disk_sizes.erase(serialNum);
             }
@@ -196,9 +179,7 @@ AttributeDirectory::removeInvalidSnapshots()
     }
 }
 
-bool
-AttributeDirectory::removeDiskDir()
-{
+bool AttributeDirectory::removeDiskDir() {
     if (empty()) {
         std::string dirName(getDirName());
         std::filesystem::remove_all(std::filesystem::path(dirName));
@@ -208,17 +189,13 @@ AttributeDirectory::removeDiskDir()
     return false;
 }
 
-void
-AttributeDirectory::detach()
-{
+void AttributeDirectory::detach() {
     assert(empty());
     std::lock_guard<std::mutex> guard(_mutex);
     _diskLayout.reset();
 }
 
-std::unique_ptr<AttributeDirectory::Writer>
-AttributeDirectory::getWriter()
-{
+std::unique_ptr<AttributeDirectory::Writer> AttributeDirectory::getWriter() {
     std::unique_lock<std::mutex> guard(_mutex);
     while (_writer != nullptr) {
         _cv.wait(guard);
@@ -231,10 +208,8 @@ AttributeDirectory::getWriter()
     }
 }
 
-std::unique_ptr<AttributeDirectory::Writer>
-AttributeDirectory::tryGetWriter()
-{
-    std::lock_guard<std::mutex> guard(_mutex);
+std::unique_ptr<AttributeDirectory::Writer> AttributeDirectory::tryGetWriter() {
+    std::lock_guard<std::mutex>          guard(_mutex);
     std::shared_ptr<AttributeDiskLayout> diskLayout(_diskLayout.lock());
     if (diskLayout && _writer == nullptr) {
         return std::make_unique<Writer>(*this);
@@ -243,43 +218,34 @@ AttributeDirectory::tryGetWriter()
     }
 }
 
-bool
-AttributeDirectory::empty() const
-{
+bool AttributeDirectory::empty() const {
     std::lock_guard<std::mutex> guard(_mutex);
     return _snapInfo.snapshots().empty();
 }
 
-std::string
-AttributeDirectory::getAttributeFileName(SerialNum serialNum)
-{
+std::string AttributeDirectory::getAttributeFileName(SerialNum serialNum) {
     return getSnapshotDir(serialNum) + "/" + _name;
 }
 
-AttributeDirectory::Writer::Writer(AttributeDirectory &dir)
-    : _dir(dir)
-{
+AttributeDirectory::Writer::Writer(AttributeDirectory& dir) : _dir(dir) {
     _dir._writer = this;
 }
 
-AttributeDirectory::Writer::~Writer()
-{
+AttributeDirectory::Writer::~Writer() {
     std::lock_guard<std::mutex> guard(_dir._mutex);
     _dir._writer = nullptr;
     _dir._cv.notify_all();
 }
 
-TransientResourceUsage
-AttributeDirectory::get_transient_resource_usage() const
-{
+TransientResourceUsage AttributeDirectory::get_transient_resource_usage() const {
     // Transient disk usage is measured as the total disk usage of all attribute snapshots
     // that are NOT the valid best one.
     // Transient memory usage is zero.
-    uint64_t total_size_on_disk = 0;
+    uint64_t               total_size_on_disk = 0;
     std::vector<SerialNum> to_traverse;
     {
         std::lock_guard<std::mutex> guard(_mutex);
-        auto best = _snapInfo.getBestSnapshot();
+        auto                        best = _snapInfo.getBestSnapshot();
         // All snapshots except the best one count towards transient disk usage.
         for (const auto& snapshot : _disk_sizes) {
             auto serial_num = snapshot.first;
@@ -301,14 +267,12 @@ AttributeDirectory::get_transient_resource_usage() const
     return {total_size_on_disk, 0};
 }
 
-uint64_t
-AttributeDirectory::get_size_on_disk_overhead(bool permanent_dir) const
-{
+uint64_t AttributeDirectory::get_size_on_disk_overhead(bool permanent_dir) const {
     if (empty()) {
         return permanent_dir ? DiskSpaceCalculator::directory_placeholder_size() : 0;
     }
     DiskSpaceCalculator calc;
-    constexpr uint32_t placeholder_meta_info_txt_size = 1000;
+    constexpr uint32_t  placeholder_meta_info_txt_size = 1000;
     return DiskSpaceCalculator::directory_placeholder_size() + calc(placeholder_meta_info_txt_size);
 }
 

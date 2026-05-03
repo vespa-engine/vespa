@@ -2,10 +2,13 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/hash_map.h>
+
 #include <string>
 #include <vector>
 
-namespace search::attribute { class ImportedAttributeVector; }
+namespace search::attribute {
+class ImportedAttributeVector;
+}
 
 namespace proton {
 
@@ -23,10 +26,10 @@ public:
     using UP = std::unique_ptr<ImportedAttributesRepo>;
     ImportedAttributesRepo();
     ~ImportedAttributesRepo();
-    void add(const std::string &name, std::shared_ptr<ImportedAttributeVector> attr);
-    const std::shared_ptr<ImportedAttributeVector> & get(std::string_view name) const;
-    void getAll(std::vector<std::shared_ptr<ImportedAttributeVector>> &result) const;
+    void add(const std::string& name, std::shared_ptr<ImportedAttributeVector> attr);
+    const std::shared_ptr<ImportedAttributeVector>& get(std::string_view name) const;
+    void getAll(std::vector<std::shared_ptr<ImportedAttributeVector>>& result) const;
     size_t size() const noexcept { return _repo.size(); }
 };
 
-}
+} // namespace proton

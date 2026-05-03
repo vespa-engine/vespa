@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/common/serialnum.h>
+
 #include <memory>
 
 namespace proton {
@@ -19,4 +20,4 @@ public:
     virtual std::shared_ptr<IAttributeManager> create(uint32_t docid_limit, search::SerialNum serial_num) = 0;
 };
 
-}
+} // namespace proton
