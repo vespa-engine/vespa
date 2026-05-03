@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bucketmover_common.h"
-#include <vespa/searchcore/proton/server/documentbucketmover.h>
-#include <vespa/searchcore/proton/common/pendinglidtracker.h>
+
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
+#include <vespa/searchcore/proton/common/pendinglidtracker.h>
+#include <vespa/searchcore/proton/server/documentbucketmover.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace proton;
@@ -11,14 +12,10 @@ using namespace proton::move::test;
 using document::BucketId;
 
 namespace {
-struct MySubDbTwoBuckets : public MySubDb
-{
-    MySubDbTwoBuckets(test::UserDocumentsBuilder &builder,
-                      std::shared_ptr<bucketdb::BucketDBOwner> bucketDB,
-                      uint32_t subDbId,
-                      SubDbType subDbType)
-        : MySubDb(builder.getRepo(), std::move(bucketDB), DocTypeName("searchdoc"), subDbId, subDbType)
-    {
+struct MySubDbTwoBuckets : public MySubDb {
+    MySubDbTwoBuckets(test::UserDocumentsBuilder& builder, std::shared_ptr<bucketdb::BucketDBOwner> bucketDB,
+                      uint32_t subDbId, SubDbType subDbType)
+        : MySubDb(builder.getRepo(), std::move(bucketDB), DocTypeName("searchdoc"), subDbId, subDbType) {
         builder.createDocs(1, 1, 6);
         builder.createDocs(2, 6, 9);
         insertDocs(builder.getDocs());
@@ -29,17 +26,16 @@ struct MySubDbTwoBuckets : public MySubDb
     }
 };
 
-struct DocumentMoverTest : ::testing::Test
-{
-    test::UserDocumentsBuilder _builder;
+struct DocumentMoverTest : ::testing::Test {
+    test::UserDocumentsBuilder               _builder;
     std::shared_ptr<bucketdb::BucketDBOwner> _bucketDB;
-    MyMoveOperationLimiter     _limiter;
-    //TODO When we retire old bucket move job me must make rewrite this test to use the BucketMover directly.
-    DocumentBucketMover        _mover;
-    MySubDbTwoBuckets          _source;
-    bucketdb::BucketDBOwner    _bucketDb;
-    MyMoveHandler              _handler;
-    PendingLidTracker          _pendingLidsForCommit;
+    MyMoveOperationLimiter                   _limiter;
+    // TODO When we retire old bucket move job me must make rewrite this test to use the BucketMover directly.
+    DocumentBucketMover     _mover;
+    MySubDbTwoBuckets       _source;
+    bucketdb::BucketDBOwner _bucketDb;
+    MyMoveHandler           _handler;
+    PendingLidTracker       _pendingLidsForCommit;
     DocumentMoverTest()
         : _builder(),
           _bucketDB(std::make_shared<bucketdb::BucketDBOwner>()),
@@ -47,31 +43,21 @@ struct DocumentMoverTest : ::testing::Test
           _mover(_limiter, _bucketDb),
           _source(_builder, _bucketDB, 0u, SubDbType::READY),
           _bucketDb(),
-          _handler(_bucketDb)
-    {
-    }
-    void setupForBucket(const BucketId &bucket,
-                        uint32_t sourceSubDbId,
-                        uint32_t targetSubDbId) {
-        _source._subDb = MaintenanceDocumentSubDB(_source._subDb.name(),
-                                                  sourceSubDbId,
-                                                  _source._subDb.meta_store(),
-                                                  _source._subDb.retriever(),
-                                                  _source._subDb.feed_view(),
-                                                  &_pendingLidsForCommit);
+          _handler(_bucketDb) {}
+    void setupForBucket(const BucketId& bucket, uint32_t sourceSubDbId, uint32_t targetSubDbId) {
+        _source._subDb =
+            MaintenanceDocumentSubDB(_source._subDb.name(), sourceSubDbId, _source._subDb.meta_store(),
+                                     _source._subDb.retriever(), _source._subDb.feed_view(), &_pendingLidsForCommit);
         _mover.setupForBucket(bucket, &_source._subDb, targetSubDbId, _handler);
     }
-    bool moveDocuments(size_t maxDocsToMove) {
-        return _mover.moveDocuments(maxDocsToMove);
-    }
+    bool moveDocuments(size_t maxDocsToMove) { return _mover.moveDocuments(maxDocsToMove); }
 };
 
-}
+} // namespace
 
-TEST_F(DocumentMoverTest, require_that_initial_bucket_mover_is_done)
-{
+TEST_F(DocumentMoverTest, require_that_initial_bucket_mover_is_done) {
     MyMoveOperationLimiter limiter;
-    DocumentBucketMover mover(limiter, _bucketDb);
+    DocumentBucketMover    mover(limiter, _bucketDb);
     EXPECT_TRUE(mover.bucketDone());
     EXPECT_FALSE(mover.needReschedule());
     mover.moveDocuments(2);
@@ -79,8 +65,7 @@ TEST_F(DocumentMoverTest, require_that_initial_bucket_mover_is_done)
     EXPECT_FALSE(mover.needReschedule());
 }
 
-TEST_F(DocumentMoverTest, require_that_we_can_move_all_documents)
-{
+TEST_F(DocumentMoverTest, require_that_we_can_move_all_documents) {
     setupForBucket(_source.bucket(1), 6, 9);
     EXPECT_TRUE(moveDocuments(5));
     EXPECT_TRUE(_mover.bucketDone());
@@ -91,8 +76,7 @@ TEST_F(DocumentMoverTest, require_that_we_can_move_all_documents)
     }
 }
 
-TEST_F(DocumentMoverTest, require_that_move_is_stalled_if_document_is_pending_commit)
-{
+TEST_F(DocumentMoverTest, require_that_move_is_stalled_if_document_is_pending_commit) {
     setupForBucket(_source.bucket(1), 6, 9);
     {
         IPendingLidTracker::Token token = _pendingLidsForCommit.produce(1);
@@ -108,8 +92,7 @@ TEST_F(DocumentMoverTest, require_that_move_is_stalled_if_document_is_pending_co
     }
 }
 
-TEST_F(DocumentMoverTest, require_that_bucket_is_cached_when_IDocumentMoveHandler_handles_move_operation)
-{
+TEST_F(DocumentMoverTest, require_that_bucket_is_cached_when_IDocumentMoveHandler_handles_move_operation) {
     setupForBucket(_source.bucket(1), 6, 9);
     EXPECT_TRUE(moveDocuments(5));
     EXPECT_TRUE(_mover.bucketDone());
@@ -118,8 +101,7 @@ TEST_F(DocumentMoverTest, require_that_bucket_is_cached_when_IDocumentMoveHandle
     EXPECT_FALSE(_bucketDb.takeGuard()->isCachedBucket(_source.bucket(1)));
 }
 
-TEST_F(DocumentMoverTest, require_that_we_can_move_documents_in_several_steps)
-{
+TEST_F(DocumentMoverTest, require_that_we_can_move_documents_in_several_steps) {
     setupForBucket(_source.bucket(1), 6, 9);
     moveDocuments(2);
     EXPECT_FALSE(_mover.bucketDone());

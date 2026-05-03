@@ -1,17 +1,18 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "lid_space_common.h"
+
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 namespace {
 struct HandlerTest : public ::testing::Test {
-    DocBuilder _docBuilder;
+    DocBuilder                               _docBuilder;
     std::shared_ptr<bucketdb::BucketDBOwner> _bucketDB;
-    MyDocumentStore _docStore;
-    DocTypeName     _doc_type_name;
-    MySubDb _subDb;
-    LidSpaceCompactionHandler _handler;
+    MyDocumentStore                          _docStore;
+    DocTypeName                              _doc_type_name;
+    MySubDb                                  _subDb;
+    LidSpaceCompactionHandler                _handler;
     HandlerTest();
     ~HandlerTest() override;
 };
@@ -22,26 +23,23 @@ HandlerTest::HandlerTest()
       _docStore(),
       _doc_type_name("test"),
       _subDb(_bucketDB, _docStore, _docBuilder.get_repo_sp(), _doc_type_name),
-      _handler(_subDb.maintenance_sub_db, _doc_type_name.getName())
-{
+      _handler(_subDb.maintenance_sub_db, _doc_type_name.getName()) {
     _docStore._readDoc = _docBuilder.make_document(DOC_ID);
 }
 
 HandlerTest::~HandlerTest() = default;
 
-}
+} // namespace
 
-TEST_F(HandlerTest, handler_uses_doctype_and_subdb_name)
-{
+TEST_F(HandlerTest, handler_uses_doctype_and_subdb_name) {
     EXPECT_EQ("test.dummysubdb", _handler.getName());
 }
 
-TEST_F(HandlerTest, createMoveOperation_works_as_expected)
-{
-    const uint32_t moveToLid = 5;
-    const uint32_t moveFromLid = 10;
-    const BucketId bucketId(100);
-    const Timestamp timestamp(200);
+TEST_F(HandlerTest, createMoveOperation_works_as_expected) {
+    const uint32_t   moveToLid = 5;
+    const uint32_t   moveFromLid = 10;
+    const BucketId   bucketId(100);
+    const Timestamp  timestamp(200);
     DocumentMetadata document(moveFromLid, timestamp, bucketId, GlobalId());
     {
         EXPECT_FALSE(_subDb.maintenance_sub_db.lidNeedsCommit(moveFromLid));
@@ -62,4 +60,3 @@ TEST_F(HandlerTest, createMoveOperation_works_as_expected)
     EXPECT_EQ(bucketId, op->getBucketId());
     EXPECT_EQ(timestamp, op->getTimestamp());
 }
-

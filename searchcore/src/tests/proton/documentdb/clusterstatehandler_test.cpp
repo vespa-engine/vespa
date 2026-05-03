@@ -18,18 +18,18 @@ using storage::spi::Result;
 namespace {
 struct MyClusterStateChangedHandler : public IClusterStateChangedHandler {
     std::shared_ptr<IBucketStateCalculator> _calc;
-    void
-    notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculator> &newCalc) override {
+    void notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculator>& newCalc) override {
         _calc = newCalc;
     }
 };
 
-BucketId bucket1(1);
-BucketId bucket2(2);
-BucketId bucket3(3);
+BucketId     bucket1(1);
+BucketId     bucket2(2);
+BucketId     bucket3(3);
 Distribution distribution(Distribution::getDefaultDistributionConfig(3, 3));
 
-ClusterState make_cluster_state(const std::string& state, uint16_t node_index, bool maintenance_in_all_spaces = false) {
+ClusterState make_cluster_state(const std::string& state, uint16_t node_index,
+                                bool maintenance_in_all_spaces = false) {
     return ClusterState(storage::lib::ClusterState(state), node_index, distribution, maintenance_in_all_spaces);
 }
 
@@ -44,12 +44,7 @@ struct ClusterStateHandlerTest : testing::Test {
     test::GenericResultHandler      _genericHandler;
     test::BucketIdListResultHandler _bucketListHandler;
     ClusterStateHandlerTest()
-        : _exec(1),
-          _stateHandler(_exec),
-          _changedHandler(),
-          _genericHandler(),
-          _bucketListHandler()
-    {
+        : _exec(1), _stateHandler(_exec), _changedHandler(), _genericHandler(), _bucketListHandler() {
         _stateHandler.addClusterStateChangedHandler(&_changedHandler);
     }
     ~ClusterStateHandlerTest() override;
@@ -61,15 +56,13 @@ struct ClusterStateHandlerTest : testing::Test {
     }
 };
 
-ClusterStateHandlerTest::~ClusterStateHandlerTest()
-{
+ClusterStateHandlerTest::~ClusterStateHandlerTest() {
     _stateHandler.removeClusterStateChangedHandler(&_changedHandler);
 }
 
-}
+} // namespace
 
-TEST_F(ClusterStateHandlerTest, cluster_state_change_is_notified)
-{
+TEST_F(ClusterStateHandlerTest, cluster_state_change_is_notified) {
     const auto& calc = set_cluster_state(basic_state);
     EXPECT_TRUE(calc.clusterUp());
     EXPECT_TRUE(calc.nodeUp());
@@ -79,29 +72,26 @@ TEST_F(ClusterStateHandlerTest, cluster_state_change_is_notified)
     EXPECT_FALSE(calc.node_retired_or_maintenance());
 }
 
-TEST_F(ClusterStateHandlerTest, node_in_retired_state)
-{
-    const auto &calc = set_cluster_state(node_retired_state);
+TEST_F(ClusterStateHandlerTest, node_in_retired_state) {
+    const auto& calc = set_cluster_state(node_retired_state);
     EXPECT_TRUE(calc.nodeRetired());
     EXPECT_FALSE(calc.nodeMaintenance());
     EXPECT_TRUE(calc.node_retired_or_maintenance());
 }
 
-TEST_F(ClusterStateHandlerTest, node_in_maintenance_state)
-{
-    const auto &calc = set_cluster_state(node_maintenance_state);
+TEST_F(ClusterStateHandlerTest, node_in_maintenance_state) {
+    const auto& calc = set_cluster_state(node_maintenance_state);
     EXPECT_FALSE(calc.nodeRetired());
     EXPECT_TRUE(calc.nodeMaintenance());
     EXPECT_TRUE(calc.node_retired_or_maintenance());
 }
 
-TEST_F(ClusterStateHandlerTest, modified_buckets_are_returned)
-{
+TEST_F(ClusterStateHandlerTest, modified_buckets_are_returned) {
     _stateHandler.handleSetClusterState(basic_state, _genericHandler);
     _exec.sync();
 
     // notify 2 buckets
-    IBucketModifiedHandler &bmh = _stateHandler;
+    IBucketModifiedHandler& bmh = _stateHandler;
     bmh.notifyBucketModified(bucket1);
     bmh.notifyBucketModified(bucket2);
     _stateHandler.handleGetModifiedBuckets(_bucketListHandler);
