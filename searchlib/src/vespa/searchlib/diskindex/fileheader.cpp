@@ -47,7 +47,7 @@ bool FileHeader::taste(const std::string& name, const TuneFileSeqRead& tuneFileR
             (void)headerLen;
         } catch (vespalib::IllegalHeaderException& e) {
             if (e.getMessage() != "Failed to read header info." && e.getMessage() != "Failed to verify magic bits.") {
-                LOG(error, "FileHeader::tastGeneric(\"%s\") exception: %s", name.c_str(), e.getMessage().c_str());
+                LOG(error, "FileHeader::taste(\"%s\") exception: %s", name.c_str(), e.getMessage().c_str());
             }
             return false;
         }
@@ -77,12 +77,12 @@ bool FileHeader::taste(const std::string& name, const TuneFileSeqRead& tuneFileR
     if (header.hasTag("fileBitSize")) {
         _fileBitSize = header.getTag("fileBitSize").asInteger();
         if (_completed && _fileBitSize < 8 * _headerLen) {
-            LOG(error, "FileHeader::taste(\"%s\"): fleBitSize(%" PRIu64 ") < 8 * headerLen(%u)", name.c_str(),
+            LOG(error, "FileHeader::taste(\"%s\"): fileBitSize(%" PRIu64 ") < 8 * headerLen(%u)", name.c_str(),
                 _fileBitSize, _headerLen);
             return false;
         }
         if (_completed && _fileBitSize > 8 * fileSize) {
-            LOG(error, "FileHeader::taste(\"%s\"): fleBitSize(%" PRIu64 ") > 8 * fileSize(%" PRIu64 ")", name.c_str(),
+            LOG(error, "FileHeader::taste(\"%s\"): fileBitSize(%" PRIu64 ") > 8 * fileSize(%" PRIu64 ")", name.c_str(),
                 _fileBitSize, fileSize);
             LOG_ABORT("should not be reached");
         }

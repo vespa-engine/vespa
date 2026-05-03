@@ -37,7 +37,7 @@ IndexStats& IndexStats::add_field_stats(const std::string& name, const FieldInde
 
 std::ostream& operator<<(std::ostream& os, const IndexStats& stats) {
     os << "{memory: " << stats.memoryUsage() << ", docsInMemory: " << stats.docsInMemory()
-       << ", disk: " << stats.sizeOnDisk() << ", " << ", disk_indexes: " << stats.disk_indexes()
+       << ", disk: " << stats.sizeOnDisk() << ", disk_indexes: " << stats.disk_indexes()
        << ", memory_indexes: " << stats.memory_indexes() << ", ";
     os << "fields: {";
     bool first = true;
