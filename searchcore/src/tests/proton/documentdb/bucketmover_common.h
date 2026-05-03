@@ -1,24 +1,24 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
+#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_create_notifier.h>
+#include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
-#include <vespa/searchcore/proton/test/bucketfactory.h>
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
+#include <vespa/searchcore/proton/server/i_maintenance_job.h>
 #include <vespa/searchcore/proton/server/i_move_operation_limiter.h>
+#include <vespa/searchcore/proton/server/ibucketmodifiedhandler.h>
 #include <vespa/searchcore/proton/server/idocumentmovehandler.h>
 #include <vespa/searchcore/proton/server/imaintenancejobrunner.h>
 #include <vespa/searchcore/proton/server/maintenancedocumentsubdb.h>
-#include <vespa/searchcore/proton/server/ibucketmodifiedhandler.h>
-#include <vespa/searchcore/proton/server/i_maintenance_job.h>
+#include <vespa/searchcore/proton/test/bucketfactory.h>
 #include <vespa/searchcore/proton/test/buckethandler.h>
 #include <vespa/searchcore/proton/test/clusterstatehandler.h>
 #include <vespa/searchcore/proton/test/resource_usage_notifier.h>
 #include <vespa/searchcore/proton/test/test.h>
-#include <vespa/document/test/make_bucket_space.h>
 
 namespace proton {
-    class DocumentMetaStore;
+class DocumentMetaStore;
 }
 namespace proton::move::test {
 
@@ -37,35 +37,29 @@ struct MyMoveOperationLimiter : public IMoveOperationLimiter {
 
 struct MyMoveHandler : public IDocumentMoveHandler {
     using MoveOperationVector = std::vector<MoveOperation>;
-    bucketdb::BucketDBOwner &_bucketDb;
-    MoveOperationVector _moves;
-    std::set<uint32_t> _lids2Fail;
-    size_t _numFailedMoves;
-    size_t _numCachedBuckets;
-    bool   _storeMoveDoneContexts;
+    bucketdb::BucketDBOwner& _bucketDb;
+    MoveOperationVector      _moves;
+    std::set<uint32_t>       _lids2Fail;
+    size_t                   _numFailedMoves;
+    size_t                   _numCachedBuckets;
+    bool                     _storeMoveDoneContexts;
 
     std::vector<vespalib::IDestructorCallback::SP> _moveDoneContexts;
 
-    explicit MyMoveHandler(bucketdb::BucketDBOwner &bucketDb) : MyMoveHandler(bucketDb, false){}
-    MyMoveHandler(bucketdb::BucketDBOwner &bucketDb, bool storeMoveDoneContext);
+    explicit MyMoveHandler(bucketdb::BucketDBOwner& bucketDb) : MyMoveHandler(bucketDb, false) {}
+    MyMoveHandler(bucketdb::BucketDBOwner& bucketDb, bool storeMoveDoneContext);
     ~MyMoveHandler() override;
-    MoveResult handleMove(MoveOperation &op, vespalib::IDestructorCallback::SP moveDoneCtx) override;
+    MoveResult handleMove(MoveOperation& op, vespalib::IDestructorCallback::SP moveDoneCtx) override;
 
-    void addLid2Fail(uint32_t lid) {
-        _lids2Fail.insert(lid);
-    }
-    void removeLids2Fail(uint32_t lid) {
-        _lids2Fail.erase(lid);
-    }
+    void addLid2Fail(uint32_t lid) { _lids2Fail.insert(lid); }
+    void removeLids2Fail(uint32_t lid) { _lids2Fail.erase(lid); }
 
     void reset() {
         _moves.clear();
         _numCachedBuckets = 0;
     }
 
-    void clearMoveDoneContexts() {
-        _moveDoneContexts.clear();
-    }
+    void clearMoveDoneContexts() { _moveDoneContexts.clear(); }
 };
 
 struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
@@ -77,26 +71,22 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
     using DocumentVector = std::vector<Document::SP>;
     std::shared_ptr<const DocumentTypeRepo> _repo;
     DocTypeName                             _doc_type_name;
-    DocumentVector _docs;
-    uint32_t _lid2Fail;
+    DocumentVector                          _docs;
+    uint32_t                                _lid2Fail;
 
     explicit MyDocumentRetriever(std::shared_ptr<const DocumentTypeRepo> repo, const DocTypeName& doc_type_name)
-        : _repo(std::move(repo)),
-          _doc_type_name(doc_type_name),
-          _docs(),
-          _lid2Fail(0)
-    {
+        : _repo(std::move(repo)), _doc_type_name(doc_type_name), _docs(), _lid2Fail(0) {
         _docs.push_back(Document::UP()); // lid 0 invalid
     }
 
-    const DocumentTypeRepo &getDocumentTypeRepo() const override { return *_repo; }
+    const DocumentTypeRepo& getDocumentTypeRepo() const override { return *_repo; }
     const DocTypeName& get_doc_type_name() const noexcept override { return _doc_type_name; }
 
     bool can_populate_document_metadata_docid() const noexcept override { return false; }
 
-    void getBucketMetadata(const storage::spi::Bucket &, DocumentMetadata::Vector &, bool) const override {}
+    void getBucketMetadata(const storage::spi::Bucket&, DocumentMetadata::Vector&, bool) const override {}
 
-    DocumentMetadata getDocumentMetadata(const DocumentId &) const override { return {}; }
+    DocumentMetadata getDocumentMetadata(const DocumentId&) const override { return {}; }
 
     Document::UP getFullDocument(DocumentIdT lid) const override {
         return (lid != _lid2Fail) ? Document::UP(_docs[lid]->clone()) : Document::UP();
@@ -105,9 +95,7 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
 
     void failRetrieveForLid(uint32_t lid) { _lid2Fail = lid; }
 
-    CachedSelect::SP parseSelect(const std::string &) const override {
-        return {};
-    }
+    CachedSelect::SP parseSelect(const std::string&) const override { return {}; }
 };
 
 struct MyBucketModifiedHandler : public IBucketModifiedHandler {
@@ -115,7 +103,7 @@ struct MyBucketModifiedHandler : public IBucketModifiedHandler {
     std::vector<BucketId> _modified;
 
     ~MyBucketModifiedHandler() override;
-    void notifyBucketModified(const BucketId &bucket) override;
+    void notifyBucketModified(const BucketId& bucket) override;
 
     void reset() { _modified.clear(); }
 };
@@ -126,48 +114,39 @@ struct MySubDb {
     using DocumentTypeRepo = document::DocumentTypeRepo;
     using DocumentVector = proton::test::DocumentVector;
     using UserDocuments = proton::test::UserDocuments;
-    std::shared_ptr<DocumentMetaStore>    _metaStoreSP;
-    DocumentMetaStore                    &_metaStore;
-    std::shared_ptr<MyDocumentRetriever>  _realRetriever;
-    std::shared_ptr<IDocumentRetriever>   _retriever;
-    MaintenanceDocumentSubDB              _subDb;
-    UserDocuments                         _docs;
-    bucketdb::BucketDBHandler             _bucketDBHandler;
+    std::shared_ptr<DocumentMetaStore>   _metaStoreSP;
+    DocumentMetaStore&                   _metaStore;
+    std::shared_ptr<MyDocumentRetriever> _realRetriever;
+    std::shared_ptr<IDocumentRetriever>  _retriever;
+    MaintenanceDocumentSubDB             _subDb;
+    UserDocuments                        _docs;
+    bucketdb::BucketDBHandler            _bucketDBHandler;
 
-    MySubDb(const std::shared_ptr<const DocumentTypeRepo> &repo, std::shared_ptr<bucketdb::BucketDBOwner> bucketDB,
+    MySubDb(const std::shared_ptr<const DocumentTypeRepo>& repo, std::shared_ptr<bucketdb::BucketDBOwner> bucketDB,
             const DocTypeName& doc_type_name, uint32_t subDbId, SubDbType subDbType);
 
     ~MySubDb();
 
-    void insertDocs(const UserDocuments &docs_);
+    void insertDocs(const UserDocuments& docs_);
 
-    void failRetrieveForLid(uint32_t lid) {
-        _realRetriever->failRetrieveForLid(lid);
-    }
+    void failRetrieveForLid(uint32_t lid) { _realRetriever->failRetrieveForLid(lid); }
 
-    BucketId bucket(uint32_t userId) const {
-        return _docs.getBucket(userId);
-    }
+    BucketId bucket(uint32_t userId) const { return _docs.getBucket(userId); }
 
-    DocumentVector docs(uint32_t userId) const {
-        return _docs.getGidOrderDocs(userId);
-    }
+    DocumentVector docs(uint32_t userId) const { return _docs.getGidOrderDocs(userId); }
 
-    void setBucketState(const BucketId &bucketId, bool active);
+    void setBucketState(const BucketId& bucketId, bool active);
     // Will remove from metastore so it is invisible.
     bool remove(uint32_t subDbId, uint32_t lid);
 };
 
 struct MyCountJobRunner : public IMaintenanceJobRunner {
     uint32_t runCount;
-    explicit MyCountJobRunner(IMaintenanceJob &job) : runCount(0) {
-        job.registerRunner(this);
-    }
+    explicit MyCountJobRunner(IMaintenanceJob& job) : runCount(0) { job.registerRunner(this); }
     void run() override { ++runCount; }
 };
 
-bool
-assertEqual(const document::BucketId &bucket, const proton::test::Document &doc,
-            uint32_t sourceSubDbId, uint32_t targetSubDbId, const MoveOperation &op);
+bool assertEqual(const document::BucketId& bucket, const proton::test::Document& doc, uint32_t sourceSubDbId,
+                 uint32_t targetSubDbId, const MoveOperation& op);
 
-}
+} // namespace proton::move::test
