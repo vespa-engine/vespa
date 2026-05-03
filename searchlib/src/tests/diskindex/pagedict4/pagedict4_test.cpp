@@ -1,20 +1,21 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchlib/bitcompression/compression.h>
-#include <vespa/vespalib/util/rand48.h>
-#include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/bitcompression/countcompression.h>
 #include <vespa/searchlib/bitcompression/pagedict4.h>
-#include <vespa/searchlib/test/diskindex/threelevelcountbuffers.h>
-#include <vespa/searchlib/test/diskindex/pagedict4_mem_writer.h>
-#include <vespa/searchlib/test/diskindex/pagedict4_mem_seq_reader.h>
-#include <vespa/searchlib/test/diskindex/pagedict4_mem_rand_reader.h>
-#include <vespa/searchlib/index/postinglistcounts.h>
-#include <vespa/searchlib/index/dummyfileheadercontext.h>
+#include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/diskindex/pagedict4file.h>
 #include <vespa/searchlib/diskindex/pagedict4randread.h>
-#include <vespa/searchlib/common/tunefileinfo.h>
+#include <vespa/searchlib/index/dummyfileheadercontext.h>
+#include <vespa/searchlib/index/postinglistcounts.h>
+#include <vespa/searchlib/index/schemautil.h>
+#include <vespa/searchlib/test/diskindex/pagedict4_mem_rand_reader.h>
+#include <vespa/searchlib/test/diskindex/pagedict4_mem_seq_reader.h>
+#include <vespa/searchlib/test/diskindex/pagedict4_mem_writer.h>
+#include <vespa/searchlib/test/diskindex/threelevelcountbuffers.h>
+#include <vespa/vespalib/util/rand48.h>
 #include <vespa/vespalib/util/signalhandler.h>
+
 #include <cinttypes>
 #include <cstring>
 #include <optional>
@@ -54,40 +55,27 @@ using Writer = search::diskindex::test::PageDict4MemWriter;
 using SeqReader = search::diskindex::test::PageDict4MemSeqReader;
 using RandReader = search::diskindex::test::PageDict4MemRandReader;
 
-class PageDict4TestApp
-{
+class PageDict4TestApp {
 public:
     vespalib::Rand48 _rnd;
-    bool _stress;
-    bool _emptyWord;
-    bool _firstWordForcedCommon;
-    bool _lastWordForcedCommon;
+    bool             _stress;
+    bool             _emptyWord;
+    bool             _firstWordForcedCommon;
+    bool             _lastWordForcedCommon;
 
     void usage();
-    int main(int argc, char **argv);
+    int main(int argc, char** argv);
     void testWords();
     PageDict4TestApp()
-        : _rnd(),
-          _stress(false),
-          _emptyWord(false),
-          _firstWordForcedCommon(false),
-          _lastWordForcedCommon(false)
-    {
-    }
+        : _rnd(), _stress(false), _emptyWord(false), _firstWordForcedCommon(false), _lastWordForcedCommon(false) {}
 };
 
-
-void
-PageDict4TestApp::usage()
-{
+void PageDict4TestApp::usage() {
     printf("Usage: wordnumbers\n");
     fflush(stdout);
 }
 
-
-int
-PageDict4TestApp::main(int argc, char **argv)
-{
+int PageDict4TestApp::main(int argc, char** argv) {
     if (argc > 0) {
         DummyFileHeaderContext::setCreator(argv[0]);
     }
@@ -104,26 +92,16 @@ PageDict4TestApp::main(int argc, char **argv)
     }
     testWords();
 
-    LOG(info,
-        "_stress is %s",
-        _stress ? "true" : "false");
-    LOG(info,
-        "_emptyWord is %s",
-        _emptyWord ? "true" : "false");
-    LOG(info,
-        "_firstWordForcedCommon is %s",
-        _firstWordForcedCommon ? "true" : "false");
-    LOG(info,
-        "_lastWordForcedCommon is %s",
-        _lastWordForcedCommon ? "true" : "false");
+    LOG(info, "_stress is %s", _stress ? "true" : "false");
+    LOG(info, "_emptyWord is %s", _emptyWord ? "true" : "false");
+    LOG(info, "_firstWordForcedCommon is %s", _firstWordForcedCommon ? "true" : "false");
+    LOG(info, "_lastWordForcedCommon is %s", _lastWordForcedCommon ? "true" : "false");
 
     LOG(info, "SUCCESS");
     return 0;
 }
 
-
-class WordIndexCounts
-{
+class WordIndexCounts {
 public:
     uint32_t _numDocs;
     uint64_t _fileOffset;
@@ -131,85 +109,44 @@ public:
     uint64_t _accNumDocs;
 
     WordIndexCounts(uint64_t bitLength, uint32_t numDocs) noexcept
-        : _numDocs(numDocs),
-          _fileOffset(0),
-          _bitLength(bitLength),
-          _accNumDocs(0)
-    {
-    }
+        : _numDocs(numDocs), _fileOffset(0), _bitLength(bitLength), _accNumDocs(0) {}
 
-    WordIndexCounts() noexcept
-        : _numDocs(0),
-          _fileOffset(0),
-          _bitLength(0),
-          _accNumDocs(0)
-    {
-    }
+    WordIndexCounts() noexcept : _numDocs(0), _fileOffset(0), _bitLength(0), _accNumDocs(0) {}
 };
 
-class WordCounts
-{
+class WordCounts {
 public:
-    std::string _word;
+    std::string     _word;
     WordIndexCounts _counts;
 
-    bool
-    operator!=(const WordCounts &rhs) const noexcept
-    {
-        return _word != rhs._word;
-    }
+    bool operator!=(const WordCounts& rhs) const noexcept { return _word != rhs._word; }
 
-    WordCounts(const std::string &word)
-        : _word(word),
-          _counts()
-    {
-    }
+    WordCounts(const std::string& word) : _word(word), _counts() {}
 
-    bool
-    operator<(const WordCounts &rhs) const noexcept
-    {
-        return _word < rhs._word;
-    }
+    bool operator<(const WordCounts& rhs) const noexcept { return _word < rhs._word; }
 };
 
-
-void
-deDup(std::vector<WordCounts> &v)
-{
+void deDup(std::vector<WordCounts>& v) {
     std::vector<WordCounts> v2;
     std::sort(v.begin(), v.end());
-    for (std::vector<WordCounts>::const_iterator
-             i = v.begin(),
-             ie = v.end();
-         i != ie;
-         ++i) {
+    for (std::vector<WordCounts>::const_iterator i = v.begin(), ie = v.end(); i != ie; ++i) {
         if (v2.empty() || v2.back() != *i)
             v2.push_back(*i);
     }
     std::swap(v, v2);
 }
 
-
-void
-deDup(std::vector<uint32_t> &v)
-{
+void deDup(std::vector<uint32_t>& v) {
     std::vector<uint32_t> v2;
     std::sort(v.begin(), v.end());
-    for (std::vector<uint32_t>::const_iterator
-             i = v.begin(),
-             ie = v.end();
-         i != ie;
-         ++i) {
+    for (std::vector<uint32_t>::const_iterator i = v.begin(), ie = v.end(); i != ie; ++i) {
         if (v2.empty() || v2.back() != *i)
             v2.push_back(*i);
     }
     std::swap(v, v2);
 }
 
-
-static WordIndexCounts
-makeIndex(vespalib::Rand48 &rnd, bool forceCommon)
-{
+static WordIndexCounts makeIndex(vespalib::Rand48& rnd, bool forceCommon) {
     uint64_t bitLength = 10;
     uint32_t numDocs = 1;
     if ((rnd.lrand48() % 150) == 0 || forceCommon) {
@@ -219,25 +156,12 @@ makeIndex(vespalib::Rand48 &rnd, bool forceCommon)
     return WordIndexCounts(bitLength, numDocs);
 }
 
-
-void
-makeIndexes(vespalib::Rand48 &rnd,
-            WordIndexCounts &counts,
-            bool forceCommon)
-{
+void makeIndexes(vespalib::Rand48& rnd, WordIndexCounts& counts, bool forceCommon) {
     counts = makeIndex(rnd, forceCommon);
 }
 
-
-static void
-makeWords(std::vector<WordCounts> &v,
-          vespalib::Rand48 &rnd,
-          uint32_t numWordIds,
-          uint32_t tupleCount,
-          bool emptyWord,
-          bool firstWordForcedCommon,
-          bool lastWordForcedCommon)
-{
+static void makeWords(std::vector<WordCounts>& v, vespalib::Rand48& rnd, uint32_t numWordIds, uint32_t tupleCount,
+                      bool emptyWord, bool firstWordForcedCommon, bool lastWordForcedCommon) {
     v.clear();
     for (unsigned int i = 0; i < tupleCount; ++i) {
         uint64_t word = rnd.lrand48() % numWordIds;
@@ -245,11 +169,11 @@ makeWords(std::vector<WordCounts> &v,
         for (unsigned int j = 0; j < wordCount; ++j) {
             uint64_t nextWord = rnd.lrand48() % numWordIds;
             uint64_t nextWordCount = 0;
-            bool incomplete = true;
+            bool     incomplete = true;
             nextWordCount = rnd.lrand48() % 10;
             incomplete = (rnd.lrand48() % 3) == 0 || nextWordCount == 0;
             for (unsigned int k = 0; k < nextWordCount; ++k) {
-                uint64_t nextNextWord = rnd.lrand48() % numWordIds;
+                uint64_t           nextNextWord = rnd.lrand48() % numWordIds;
                 std::ostringstream w;
                 w << word;
                 w << "-";
@@ -272,22 +196,14 @@ makeWords(std::vector<WordCounts> &v,
     deDup(v);
     if (!v.empty() && emptyWord)
         v.front()._word = "";
-    for (std::vector<WordCounts>::iterator
-             i = v.begin(), ib = v.begin(), ie = v.end();
-         i != ie; ++i) {
+    for (std::vector<WordCounts>::iterator i = v.begin(), ib = v.begin(), ie = v.end(); i != ie; ++i) {
         std::vector<WordIndexCounts> indexes;
-        makeIndexes(rnd, i->_counts,
-                    (i == ib && firstWordForcedCommon) ||
-                    (i + 1 == ie && lastWordForcedCommon));
+        makeIndexes(rnd, i->_counts, (i == ib && firstWordForcedCommon) || (i + 1 == ie && lastWordForcedCommon));
     }
     uint64_t fileOffset = 0;
     uint64_t accNumDocs = 0;
-    for (std::vector<WordCounts>::iterator
-             i = v.begin(),
-             ie = v.end();
-         i != ie;
-         ++i) {
-        WordIndexCounts *f = &i->_counts;
+    for (std::vector<WordCounts>::iterator i = v.begin(), ie = v.end(); i != ie; ++i) {
+        WordIndexCounts* f = &i->_counts;
         assert(f->_numDocs > 0);
         assert(f->_bitLength > 0);
         f->_fileOffset = fileOffset;
@@ -297,14 +213,9 @@ makeWords(std::vector<WordCounts> &v,
     }
 }
 
-
-void
-makeCounts(PostingListCounts &counts,
-           const WordCounts &i,
-           uint32_t chunkSize)
-{
-    PostingListCounts c;
-    const WordIndexCounts *j = &i._counts;
+void makeCounts(PostingListCounts& counts, const WordCounts& i, uint32_t chunkSize) {
+    PostingListCounts      c;
+    const WordIndexCounts* j = &i._counts;
     c._bitLength = j->_bitLength;
     c._numDocs = j->_numDocs;
     c._segments.clear();
@@ -318,8 +229,7 @@ makeCounts(PostingListCounts &counts,
             seg._numDocs = chunkSize;
             seg._lastDoc = (chunkNo + 1) * chunkSize - 1;
             if (chunkNo + 1 == numChunks) {
-                seg._bitLength = c._bitLength -
-                                 (numChunks - 1) * chunkBits;
+                seg._bitLength = c._bitLength - (numChunks - 1) * chunkBits;
                 seg._lastDoc = c._numDocs - 1;
                 seg._numDocs = c._numDocs - (numChunks - 1) * chunkSize;
             }
@@ -329,57 +239,34 @@ makeCounts(PostingListCounts &counts,
     counts = c;
 }
 
-
-void
-checkCounts(const std::string &word,
-            const PostingListCounts &counts,
-            const StartOffset &fileOffset,
-            const WordCounts &i,
-            uint32_t chunkSize)
-{
+void checkCounts(const std::string& word, const PostingListCounts& counts, const StartOffset& fileOffset,
+                 const WordCounts& i, uint32_t chunkSize) {
     PostingListCounts answer;
 
     makeCounts(answer, i, chunkSize);
     assert(word == i._word);
-    (void) word;
-    (void) fileOffset;
-    const WordIndexCounts *j = &i._counts;
-    (void) j;
+    (void)word;
+    (void)fileOffset;
+    const WordIndexCounts* j = &i._counts;
+    (void)j;
     assert(counts._bitLength == j->_bitLength);
     assert(counts._numDocs == j->_numDocs);
     assert(fileOffset._fileOffset == j->_fileOffset);
     assert(fileOffset._accNumDocs == j->_accNumDocs);
     assert(counts._segments == answer._segments);
     assert(counts == answer);
-    (void) counts;
+    (void)counts;
 }
 
-
-void
-testWords(const std::string &logname,
-          vespalib::Rand48 &rnd,
-          std::optional<uint32_t> mmap_file_size_threshold,
-          uint64_t numWordIds,
-          uint32_t tupleCount,
-          uint32_t chunkSize,
-          uint32_t ssPad,
-          uint32_t spPad,
-          uint32_t pPad,
-          bool emptyWord,
-          bool firstWordForcedCommon,
-          bool lastWordForcedCommon)
-{
+void testWords(const std::string& logname, vespalib::Rand48& rnd, std::optional<uint32_t> mmap_file_size_threshold,
+               uint64_t numWordIds, uint32_t tupleCount, uint32_t chunkSize, uint32_t ssPad, uint32_t spPad,
+               uint32_t pPad, bool emptyWord, bool firstWordForcedCommon, bool lastWordForcedCommon) {
     LOG(info, "%s: word test start", logname.c_str());
     std::vector<WordCounts> myrand;
-    makeWords(myrand, rnd, numWordIds, tupleCount,
-              emptyWord, firstWordForcedCommon, lastWordForcedCommon);
+    makeWords(myrand, rnd, numWordIds, tupleCount, emptyWord, firstWordForcedCommon, lastWordForcedCommon);
 
     PostingListCounts xcounts;
-    for (std::vector<WordCounts>::const_iterator
-             i = myrand.begin(),
-             ie = myrand.end();
-         i != ie;
-         ++i) {
+    for (std::vector<WordCounts>::const_iterator i = myrand.begin(), ie = myrand.end(); i != ie; ++i) {
         makeCounts(xcounts, *i, chunkSize);
     }
     LOG(info, "%s: word counts generated", logname.c_str());
@@ -387,24 +274,15 @@ testWords(const std::string &logname,
     Writer w(chunkSize, numWordIds, ssPad, spPad, pPad);
 
     PostingListCounts counts;
-    for (std::vector<WordCounts>::const_iterator
-             i = myrand.begin(),
-             ie = myrand.end();
-         i != ie;
-         ++i) {
+    for (std::vector<WordCounts>::const_iterator i = myrand.begin(), ie = myrand.end(); i != ie; ++i) {
         makeCounts(counts, *i, chunkSize);
         w.addCounts(i->_word, counts);
     }
     w.flush();
 
-    LOG(info,
-        "%s: Used %" PRIu64 "+%" PRIu64 "+%" PRIu64
-        " bits for %d words",
-        logname.c_str(),
-        w._buffers._p.get_file_bit_size(),
-        w._buffers._sp.get_file_bit_size(),
-        w._buffers._ss.get_file_bit_size(),
-        (int) myrand.size());
+    LOG(info, "%s: Used %" PRIu64 "+%" PRIu64 "+%" PRIu64 " bits for %d words", logname.c_str(),
+        w._buffers._p.get_file_bit_size(), w._buffers._sp.get_file_bit_size(), w._buffers._ss.get_file_bit_size(),
+        (int)myrand.size());
 
     StartOffset checkOffset;
 
@@ -413,11 +291,7 @@ testWords(const std::string &logname,
 
         uint64_t wordNum = 1;
         uint64_t checkWordNum = 0;
-        for (std::vector<WordCounts>::const_iterator
-                 i = myrand.begin(),
-                 ie = myrand.end();
-             i != ie;
-             ++i, ++wordNum) {
+        for (std::vector<WordCounts>::const_iterator i = myrand.begin(), ie = myrand.end(); i != ie; ++i, ++wordNum) {
             std::string word;
             counts.clear();
             r.readCounts(word, checkWordNum, counts);
@@ -435,64 +309,46 @@ testWords(const std::string &logname,
 
         uint64_t wordNum = 1;
         uint64_t checkWordNum = 0;
-        for (std::vector<WordCounts>::const_iterator
-                 i = myrand.begin(),
-                 ie = myrand.end();
-             i != ie;
-             ++i, ++wordNum) {
+        for (std::vector<WordCounts>::const_iterator i = myrand.begin(), ie = myrand.end(); i != ie; ++i, ++wordNum) {
             checkWordNum = 0;
-            bool res = rr.lookup(i->_word,
-                                 checkWordNum,
-                                 counts,
-                                 checkOffset);
+            bool res = rr.lookup(i->_word, checkWordNum, counts, checkOffset);
             assert(res);
-            (void) res;
-            checkCounts(i->_word, counts, checkOffset,
-                        *i, chunkSize);
+            (void)res;
+            checkCounts(i->_word, counts, checkOffset, *i, chunkSize);
             assert(checkWordNum == wordNum);
         }
         LOG(info, "%s: word randRead test OK", logname.c_str());
     }
 
-    Schema schema;
+    Schema                schema;
     std::vector<uint32_t> indexes;
     {
         std::ostringstream fn;
         fn << "f0";
-        schema.addIndexField(Schema::
-                             IndexField(fn.str(),
-                                        DataType::STRING,
-                                        CollectionType::SINGLE));
+        schema.addIndexField(Schema::IndexField(fn.str(), DataType::STRING, CollectionType::SINGLE));
         indexes.push_back(0);
     }
     {
-        std::unique_ptr<DictionaryFileSeqWrite>
-            dw(new PageDict4FileSeqWrite);
-        std::vector<uint32_t> wIndexes;
-        std::vector<PostingListCounts> wCounts;
-        search::TuneFileSeqWrite tuneFileWrite;
-        DummyFileHeaderContext fileHeaderContext;
-        PostingListParams params;
+        std::unique_ptr<DictionaryFileSeqWrite> dw(new PageDict4FileSeqWrite);
+        std::vector<uint32_t>                   wIndexes;
+        std::vector<PostingListCounts>          wCounts;
+        search::TuneFileSeqWrite                tuneFileWrite;
+        DummyFileHeaderContext                  fileHeaderContext;
+        PostingListParams                       params;
         params.set("numWordIds", numWordIds);
         params.set("minChunkDocs", chunkSize);
         dw->setParams(params);
-        bool openres = dw->open("fakedict",
-                                tuneFileWrite,
-                                fileHeaderContext);
+        bool openres = dw->open("fakedict", tuneFileWrite, fileHeaderContext);
         assert(openres);
-        (void) openres;
+        (void)openres;
 
-        for (std::vector<WordCounts>::const_iterator
-                 i = myrand.begin(),
-                 ie = myrand.end();
-             i != ie;
-             ++i) {
+        for (std::vector<WordCounts>::const_iterator i = myrand.begin(), ie = myrand.end(); i != ie; ++i) {
             makeCounts(counts, *i, chunkSize);
             dw->writeWord(i->_word, counts);
         }
         bool closeres = dw->close();
         assert(closeres);
-        (void) closeres;
+        (void)closeres;
 
         LOG(info, "%s: pagedict4 written", logname.c_str());
     }
@@ -507,21 +363,16 @@ testWords(const std::string &logname,
         }
         search::TuneFileSeqRead tuneFileRead;
 
-        bool openres = dr->open("fakedict",
-                                tuneFileRead);
+        bool openres = dr->open("fakedict", tuneFileRead);
         assert(openres);
-        (void) openres;
-        std::string lastWord;
-        std::string checkWord;
+        (void)openres;
+        std::string       lastWord;
+        std::string       checkWord;
         PostingListCounts wCounts;
         PostingListCounts rCounts;
-        uint64_t wordNum = 1;
-        uint64_t checkWordNum = 5;
-        for (std::vector<WordCounts>::const_iterator
-                 i = myrand.begin(),
-                 ie = myrand.end();
-             i != ie;
-             ++i, ++wordNum) {
+        uint64_t          wordNum = 1;
+        uint64_t          checkWordNum = 5;
+        for (std::vector<WordCounts>::const_iterator i = myrand.begin(), ie = myrand.end(); i != ie; ++i, ++wordNum) {
             makeCounts(counts, *i, chunkSize);
             wCounts = counts;
             checkWord.clear();
@@ -539,7 +390,7 @@ testWords(const std::string &logname,
         assert(checkWordNum == DictionaryFileSeqRead::noWordNumHigh());
         bool closeres = dr->close();
         assert(closeres);
-        (void) closeres;
+        (void)closeres;
 
         LOG(info, "%s: pagedict4 seqverify OK", logname.c_str());
     }
@@ -553,39 +404,32 @@ testWords(const std::string &logname,
             drr = std::move(my_drr);
         }
         search::TuneFileRandRead tuneFileRead;
-        bool openres = drr->open("fakedict",
-                                 tuneFileRead);
+        bool                     openres = drr->open("fakedict", tuneFileRead);
         assert(openres);
-        (void) openres;
-        std::string lastWord;
-        std::string checkWord;
+        (void)openres;
+        std::string       lastWord;
+        std::string       checkWord;
         PostingListCounts wCounts;
         PostingListCounts rCounts;
-        uint64_t wOffset;
-        uint64_t rOffset;
-        (void) rOffset;
+        uint64_t          wOffset;
+        uint64_t          rOffset;
+        (void)rOffset;
         PostingListOffsetAndCounts rOffsetAndCounts;
-        uint64_t wordNum = 1;
-        uint64_t checkWordNum = 5;
-        std::string missWord;
+        uint64_t                   wordNum = 1;
+        uint64_t                   checkWordNum = 5;
+        std::string                missWord;
         wOffset = 0;
-        for (std::vector<WordCounts>::const_iterator
-                 i = myrand.begin(),
-                 ie = myrand.end();
-             i != ie;
-             ++i, ++wordNum) {
+        for (std::vector<WordCounts>::const_iterator i = myrand.begin(), ie = myrand.end(); i != ie; ++i, ++wordNum) {
             makeCounts(counts, *i, chunkSize);
             wCounts = counts;
 
             checkWordNum = 0;
             rCounts.clear();
             rOffset = 0;
-            bool lres = drr->lookup(i->_word, checkWordNum,
-                                    rOffsetAndCounts);
+            bool lres = drr->lookup(i->_word, checkWordNum, rOffsetAndCounts);
             assert(lres);
-            (void) lres;
-            assert((rOffsetAndCounts._counts._bitLength == 0) ==
-                   (rOffsetAndCounts._counts._numDocs == 0));
+            (void)lres;
+            assert((rOffsetAndCounts._counts._bitLength == 0) == (rOffsetAndCounts._counts._numDocs == 0));
             rOffset = rOffsetAndCounts._offset;
             rCounts = rOffsetAndCounts._counts;
             assert(rCounts == wCounts);
@@ -598,31 +442,27 @@ testWords(const std::string &logname,
             missWord = i->_word;
             missWord.append(1, '\1');
             checkWordNum = 0;
-            lres = drr->lookup(missWord, checkWordNum,
-                               rOffsetAndCounts);
+            lres = drr->lookup(missWord, checkWordNum, rOffsetAndCounts);
             assert(!lres);
             assert(checkWordNum == wordNum + 1);
         }
 
         checkWordNum = 0;
         std::string notfoundword = "Thiswordhasbetternotbeindictionary";
-        bool lres = drr->lookup(notfoundword, checkWordNum,
-                                rOffsetAndCounts);
+        bool        lres = drr->lookup(notfoundword, checkWordNum, rOffsetAndCounts);
         assert(!lres);
         checkWordNum = 0;
         notfoundword = lastWord + "somethingmore";
-        lres = drr->lookup(notfoundword, checkWordNum,
-                           rOffsetAndCounts);
+        lres = drr->lookup(notfoundword, checkWordNum, rOffsetAndCounts);
         assert(!lres);
-        (void) lres;
-        LOG(info, "Lookup beyond dict EOF gave wordnum %d", (int) checkWordNum);
+        (void)lres;
+        LOG(info, "Lookup beyond dict EOF gave wordnum %d", (int)checkWordNum);
 
         if (firstWordForcedCommon) {
             if (!emptyWord) {
                 checkWordNum = 0;
                 notfoundword = "";
-                lres = drr->lookup(notfoundword, checkWordNum,
-                                        rOffsetAndCounts);
+                lres = drr->lookup(notfoundword, checkWordNum, rOffsetAndCounts);
                 assert(!lres);
                 assert(checkWordNum == 1);
             }
@@ -630,8 +470,7 @@ testWords(const std::string &logname,
                 checkWordNum = 0;
                 notfoundword = myrand.front()._word;
                 notfoundword.append(1, '\1');
-                lres = drr->lookup(notfoundword, checkWordNum,
-                                   rOffsetAndCounts);
+                lres = drr->lookup(notfoundword, checkWordNum, rOffsetAndCounts);
                 assert(!lres);
                 assert(checkWordNum == 2);
             }
@@ -641,77 +480,46 @@ testWords(const std::string &logname,
                 checkWordNum = 0;
                 notfoundword = myrand[myrand.size() - 2]._word;
                 notfoundword.append(1, '\1');
-                lres = drr->lookup(notfoundword, checkWordNum,
-                                        rOffsetAndCounts);
+                lres = drr->lookup(notfoundword, checkWordNum, rOffsetAndCounts);
                 assert(!lres);
                 assert(checkWordNum == myrand.size());
             }
             checkWordNum = 0;
             notfoundword = myrand[myrand.size() - 1]._word;
             notfoundword.append(1, '\1');
-            lres = drr->lookup(notfoundword, checkWordNum,
-                               rOffsetAndCounts);
+            lres = drr->lookup(notfoundword, checkWordNum, rOffsetAndCounts);
             assert(!lres);
             assert(checkWordNum == myrand.size() + 1);
         }
         bool closeres = drr->close();
         assert(closeres);
-        (void) closeres;
+        (void)closeres;
         LOG(info, "%s: pagedict4 randverify OK", logname.c_str());
     }
 }
 
-
-void
-PageDict4TestApp::testWords()
-{
-    ::testWords("smallchunkwordsempty", _rnd, std::nullopt,
-                1000000, 0,
-                64, 80, 72, 64,
-                false, false, false);
-    ::testWords("smallchunkwordsempty2", _rnd, std::nullopt,
-                0, 0,
-                64, 80, 72, 64,
-                false, false, false);
-    ::testWords("smallchunkwords", _rnd, std::nullopt,
-                1000000, 100,
-                64, 80, 72, 64,
-                false, false, false);
-    ::testWords("smallchunkwordswithemptyword", _rnd, std::nullopt,
-                1000000, 100,
-                64, 80, 72, 64,
-                true, false, false);
-    ::testWords("smallchunkwordswithcommonfirstword", _rnd, std::nullopt,
-                1000000, 100,
-                64, 80, 72, 64,
-                false, true, false);
-    ::testWords("smallchunkwordswithcommonemptyfirstword", _rnd, std::nullopt,
-                1000000, 100,
-                64, 80, 72, 64,
-                true, true, false);
-    ::testWords("smallchunkwordswithcommonlastword", _rnd, std::nullopt,
-                1000000, 100,
-                64, 80, 72, 64,
-                false, false, true);
-    ::testWords("smallchunkwords2", _rnd, std::nullopt,
-                1000000, _stress ? 10000 : 100,
-                64, 80, 72, 64,
-                _emptyWord, _firstWordForcedCommon, _lastWordForcedCommon);
-    ::testWords("stdwords", _rnd, std::nullopt,
-                1000000, _stress ? 10000 : 100,
-                262144, 80, 72, 64,
-                _emptyWord, _firstWordForcedCommon, _lastWordForcedCommon);
-    ::testWords("stdwordsnommapssdat", _rnd, 500_Mi,
-                1000000, 100,
-                262144, 80, 72, 64,
-                _emptyWord, _firstWordForcedCommon, _lastWordForcedCommon);
-    ::testWords("stdwordsmmapssdat", _rnd, 1,
-                1000000, 100,
-                262144, 80, 72, 64,
-                _emptyWord, _firstWordForcedCommon, _lastWordForcedCommon);
+void PageDict4TestApp::testWords() {
+    ::testWords("smallchunkwordsempty", _rnd, std::nullopt, 1000000, 0, 64, 80, 72, 64, false, false, false);
+    ::testWords("smallchunkwordsempty2", _rnd, std::nullopt, 0, 0, 64, 80, 72, 64, false, false, false);
+    ::testWords("smallchunkwords", _rnd, std::nullopt, 1000000, 100, 64, 80, 72, 64, false, false, false);
+    ::testWords("smallchunkwordswithemptyword", _rnd, std::nullopt, 1000000, 100, 64, 80, 72, 64, true, false, false);
+    ::testWords("smallchunkwordswithcommonfirstword", _rnd, std::nullopt, 1000000, 100, 64, 80, 72, 64, false, true,
+                false);
+    ::testWords("smallchunkwordswithcommonemptyfirstword", _rnd, std::nullopt, 1000000, 100, 64, 80, 72, 64, true,
+                true, false);
+    ::testWords("smallchunkwordswithcommonlastword", _rnd, std::nullopt, 1000000, 100, 64, 80, 72, 64, false, false,
+                true);
+    ::testWords("smallchunkwords2", _rnd, std::nullopt, 1000000, _stress ? 10000 : 100, 64, 80, 72, 64, _emptyWord,
+                _firstWordForcedCommon, _lastWordForcedCommon);
+    ::testWords("stdwords", _rnd, std::nullopt, 1000000, _stress ? 10000 : 100, 262144, 80, 72, 64, _emptyWord,
+                _firstWordForcedCommon, _lastWordForcedCommon);
+    ::testWords("stdwordsnommapssdat", _rnd, 500_Mi, 1000000, 100, 262144, 80, 72, 64, _emptyWord,
+                _firstWordForcedCommon, _lastWordForcedCommon);
+    ::testWords("stdwordsmmapssdat", _rnd, 1, 1000000, 100, 262144, 80, 72, 64, _emptyWord, _firstWordForcedCommon,
+                _lastWordForcedCommon);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     vespalib::SignalHandler::PIPE.ignore();
     PageDict4TestApp app;
     return app.main(argc, argv);
