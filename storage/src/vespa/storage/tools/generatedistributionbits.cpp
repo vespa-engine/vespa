@@ -54,7 +54,7 @@ double generateSkew(uint32_t nodes, uint32_t distributionBits, uint16_t redundan
     lib::ClusterState state(vespalib::make_string("bits:%d storage:%d", distributionBits, nodes));
 
     std::vector<uint32_t> nodeList(nodes);
-    uint32_t              lastbucket = (distributionBits == 32 ? 0xffffffff : (1 << distributionBits) - 1);
+    uint32_t              lastbucket = (distributionBits == 32 ? 0xffffffff : (1u << distributionBits) - 1);
 
     for (uint32_t i = 0; i <= lastbucket; ++i) {
         std::vector<uint16_t> curr(

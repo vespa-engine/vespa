@@ -88,9 +88,9 @@ bool BloomFilter::check(uint32_t hash1, uint32_t hash2, bool add) {
 }
 
 bool BloomFilter::isSet(uint32_t pos, bool add) {
-    if ((_buf[pos >> 5] & (1 << (pos & 31))) == 0) {
+    if ((_buf[pos >> 5] & (1u << (pos & 31))) == 0) {
         if (add) {
-            _buf[pos >> 5] |= (1 << (pos & 31));
+            _buf[pos >> 5] |= (1u << (pos & 31));
         }
         return false;
     }
