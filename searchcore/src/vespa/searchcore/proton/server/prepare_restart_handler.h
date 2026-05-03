@@ -4,6 +4,7 @@
 
 #include <vespa/config-proton.h>
 #include <vespa/searchcore/proton/flushengine/set_strategy_result.h>
+
 #include <condition_variable>
 #include <memory>
 #include <mutex>
@@ -23,11 +24,11 @@ public:
     using ProtonConfig = vespa::config::search::core::internal::InternalProtonType;
 
 private:
-    FlushEngine &_flushEngine;
+    FlushEngine& _flushEngine;
 
 public:
-    PrepareRestartHandler(FlushEngine &flushEngine);
-    flushengine::SetStrategyResult prepare_restart2(const ProtonConfig &protonCfg, uint32_t wait_strategy_id);
+    PrepareRestartHandler(FlushEngine& flushEngine);
+    flushengine::SetStrategyResult prepare_restart2(const ProtonConfig& protonCfg, uint32_t wait_strategy_id);
 };
 
-}
+} // namespace proton

@@ -4,7 +4,9 @@
 
 #include <memory>
 
-namespace document { class BucketSpace; }
+namespace document {
+class BucketSpace;
+}
 
 namespace proton {
 
@@ -13,8 +15,7 @@ class DocumentDBConfig;
 /*
  * Interface class defining reconfigure method for a document db.
  */
-class IDocumentDBConfigOwner
-{
+class IDocumentDBConfigOwner {
 public:
     virtual ~IDocumentDBConfigOwner() = default;
     virtual document::BucketSpace getBucketSpace() const = 0;

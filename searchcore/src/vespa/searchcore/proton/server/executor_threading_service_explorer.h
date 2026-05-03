@@ -4,7 +4,9 @@
 
 #include <vespa/vespalib/net/http/state_explorer.h>
 
-namespace searchcorespi::index { struct IThreadingService; }
+namespace searchcorespi::index {
+struct IThreadingService;
+}
 namespace proton {
 
 class ExecutorThreadingService;
@@ -23,4 +25,4 @@ public:
     void get_state(const vespalib::slime::Inserter& inserter, bool full) const override;
 };
 
-}
+} // namespace proton

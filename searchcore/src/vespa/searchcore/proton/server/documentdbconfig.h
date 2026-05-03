@@ -5,39 +5,41 @@
 #include "document_db_maintenance_config.h"
 #include "document_meta_store_config.h"
 #include "threading_service_config.h"
+
+#include <vespa/config/retriever/configkeyset.h>
+#include <vespa/config/retriever/configsnapshot.h>
+#include <vespa/document/config/documenttypes_config_fwd.h>
+#include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/docstore/logdocumentstore.h>
 #include <vespa/searchlib/fef/onnx_models.h>
 #include <vespa/searchlib/fef/ranking_constants.h>
 #include <vespa/searchlib/fef/ranking_expressions.h>
-#include <vespa/searchcommon/common/schema.h>
-#include <vespa/document/config/documenttypes_config_fwd.h>
-
-#include <vespa/config/retriever/configkeyset.h>
-#include <vespa/config/retriever/configsnapshot.h>
 
 namespace vespa::config::search::internal {
-    class InternalSummaryType;
-    class InternalRankProfilesType;
-    class InternalAttributesType;
-    class InternalIndexschemaType;
-    class InternalImportedFieldsType;
+class InternalSummaryType;
+class InternalRankProfilesType;
+class InternalAttributesType;
+class InternalIndexschemaType;
+class InternalImportedFieldsType;
+} // namespace vespa::config::search::internal
+namespace vespa::config::search::summary {
+namespace internal {
+class InternalJuniperrcType;
 }
-namespace vespa::config::search::summary { namespace internal { class InternalJuniperrcType; } }
+} // namespace vespa::config::search::summary
 
 namespace document {
-    class DocumentTypeRepo;
-    class DocumentType;
-}
+class DocumentTypeRepo;
+class DocumentType;
+} // namespace document
 
 namespace proton {
 
-class DocumentDBConfig
-{
+class DocumentDBConfig {
 public:
-    class ComparisonResult
-    {
+    class ComparisonResult {
     public:
         bool rankProfilesChanged;
         bool rankingConstantsChanged;
@@ -60,38 +62,89 @@ public:
         bool document_meta_store_config_changed;
 
         ComparisonResult();
-        ComparisonResult &setRankProfilesChanged(bool val) { rankProfilesChanged = val; return *this; }
-        ComparisonResult &setRankingConstantsChanged(bool val) { rankingConstantsChanged = val; return *this; }
-        ComparisonResult &setRankingExpressionsChanged(bool val) { rankingExpressionsChanged = val; return *this; }
-        ComparisonResult &setOnnxModelsChanged(bool val) { onnxModelsChanged = val; return *this; }
-        ComparisonResult &setIndexschemaChanged(bool val) { indexschemaChanged = val; return *this; }
-        ComparisonResult &setAttributesChanged(bool val) { attributesChanged = val; return *this; }
-        ComparisonResult &setSummaryChanged(bool val) { summaryChanged = val; return *this; }
-        ComparisonResult &setJuniperrcChanged(bool val) { juniperrcChanged = val; return *this; }
-        ComparisonResult &setDocumenttypesChanged(bool val) { documenttypesChanged = val; return *this; }
-        ComparisonResult &setDocumentTypeRepoChanged(bool val) { documentTypeRepoChanged = val; return *this; }
-        ComparisonResult &setImportedFieldsChanged(bool val) { importedFieldsChanged = val; return *this; }
-        ComparisonResult &setTuneFileDocumentDBChanged(bool val) { tuneFileDocumentDBChanged = val; return *this; }
-        ComparisonResult &setSchemaChanged(bool val) { schemaChanged = val; return *this; }
-        ComparisonResult &setMaintenanceChanged(bool val) { maintenanceChanged = val; return *this; }
-        ComparisonResult &setStoreChanged(bool val) { storeChanged = val; return *this; }
+        ComparisonResult& setRankProfilesChanged(bool val) {
+            rankProfilesChanged = val;
+            return *this;
+        }
+        ComparisonResult& setRankingConstantsChanged(bool val) {
+            rankingConstantsChanged = val;
+            return *this;
+        }
+        ComparisonResult& setRankingExpressionsChanged(bool val) {
+            rankingExpressionsChanged = val;
+            return *this;
+        }
+        ComparisonResult& setOnnxModelsChanged(bool val) {
+            onnxModelsChanged = val;
+            return *this;
+        }
+        ComparisonResult& setIndexschemaChanged(bool val) {
+            indexschemaChanged = val;
+            return *this;
+        }
+        ComparisonResult& setAttributesChanged(bool val) {
+            attributesChanged = val;
+            return *this;
+        }
+        ComparisonResult& setSummaryChanged(bool val) {
+            summaryChanged = val;
+            return *this;
+        }
+        ComparisonResult& setJuniperrcChanged(bool val) {
+            juniperrcChanged = val;
+            return *this;
+        }
+        ComparisonResult& setDocumenttypesChanged(bool val) {
+            documenttypesChanged = val;
+            return *this;
+        }
+        ComparisonResult& setDocumentTypeRepoChanged(bool val) {
+            documentTypeRepoChanged = val;
+            return *this;
+        }
+        ComparisonResult& setImportedFieldsChanged(bool val) {
+            importedFieldsChanged = val;
+            return *this;
+        }
+        ComparisonResult& setTuneFileDocumentDBChanged(bool val) {
+            tuneFileDocumentDBChanged = val;
+            return *this;
+        }
+        ComparisonResult& setSchemaChanged(bool val) {
+            schemaChanged = val;
+            return *this;
+        }
+        ComparisonResult& setMaintenanceChanged(bool val) {
+            maintenanceChanged = val;
+            return *this;
+        }
+        ComparisonResult& setStoreChanged(bool val) {
+            storeChanged = val;
+            return *this;
+        }
 
-        ComparisonResult &setVisibilityDelayChanged(bool val) {
+        ComparisonResult& setVisibilityDelayChanged(bool val) {
             visibilityDelayChanged = val;
             if (val) {
                 maintenanceChanged = true;
             }
             return *this;
         }
-        ComparisonResult &setFlushChanged(bool val) {
+        ComparisonResult& setFlushChanged(bool val) {
             flushChanged = val;
             if (val) {
                 maintenanceChanged = true;
             }
             return *this;
         }
-        ComparisonResult &set_alloc_config_changed(bool val) { alloc_config_changed = val; return *this; }
-        ComparisonResult &set_document_meta_store_config_changed(bool val) { document_meta_store_config_changed = val; return *this; }
+        ComparisonResult& set_alloc_config_changed(bool val) {
+            alloc_config_changed = val;
+            return *this;
+        }
+        ComparisonResult& set_document_meta_store_config_changed(bool val) {
+            document_meta_store_config_changed = val;
+            return *this;
+        }
     };
 
     using SP = std::shared_ptr<DocumentDBConfig>;
@@ -114,124 +167,114 @@ public:
     using ImportedFieldsConfigSP = std::shared_ptr<ImportedFieldsConfig>;
 
 private:
-    std::string                          _configId;
-    std::string                          _docTypeName;
-    int64_t                                   _generation;
-    RankProfilesConfigSP                      _rankProfiles;
-    std::shared_ptr<const RankingConstants>   _rankingConstants;
-    std::shared_ptr<const RankingExpressions> _rankingExpressions;
-    std::shared_ptr<const OnnxModels>         _onnxModels;
-    IndexschemaConfigSP                       _indexschema;
-    AttributesConfigSP                        _attributes;
-    SummaryConfigSP                           _summary;
-    JuniperrcConfigSP                         _juniperrc;
-    DocumenttypesConfigSP                     _documenttypes;
-    std::shared_ptr<const document::DocumentTypeRepo>   _repo;
-    ImportedFieldsConfigSP                    _importedFields;
-    search::TuneFileDocumentDB::SP            _tuneFileDocumentDB;
-    std::shared_ptr<const search::index::Schema> _schema;
-    MaintenanceConfigSP                       _maintenance;
-    search::LogDocumentStore::Config          _storeConfig;
-    const ThreadingServiceConfig              _threading_service_config;
-    const AllocConfig                         _alloc_config;
-    const DocumentMetaStoreConfig             _document_meta_store_config;
-    SP                                        _orig;
-    bool                                      _delayedAttributeAspects;
+    std::string                                       _configId;
+    std::string                                       _docTypeName;
+    int64_t                                           _generation;
+    RankProfilesConfigSP                              _rankProfiles;
+    std::shared_ptr<const RankingConstants>           _rankingConstants;
+    std::shared_ptr<const RankingExpressions>         _rankingExpressions;
+    std::shared_ptr<const OnnxModels>                 _onnxModels;
+    IndexschemaConfigSP                               _indexschema;
+    AttributesConfigSP                                _attributes;
+    SummaryConfigSP                                   _summary;
+    JuniperrcConfigSP                                 _juniperrc;
+    DocumenttypesConfigSP                             _documenttypes;
+    std::shared_ptr<const document::DocumentTypeRepo> _repo;
+    ImportedFieldsConfigSP                            _importedFields;
+    search::TuneFileDocumentDB::SP                    _tuneFileDocumentDB;
+    std::shared_ptr<const search::index::Schema>      _schema;
+    MaintenanceConfigSP                               _maintenance;
+    search::LogDocumentStore::Config                  _storeConfig;
+    const ThreadingServiceConfig                      _threading_service_config;
+    const AllocConfig                                 _alloc_config;
+    const DocumentMetaStoreConfig                     _document_meta_store_config;
+    SP                                                _orig;
+    bool                                              _delayedAttributeAspects;
 
-
-    template <typename T>
-    bool equals(const T * lhs, const T * rhs) const
-    {
+    template <typename T> bool equals(const T* lhs, const T* rhs) const {
         if (lhs == nullptr) {
             return rhs == nullptr;
         }
         return rhs != nullptr && *lhs == *rhs;
     }
-    template <typename T, typename Func>
-    bool equals(const T *lhs, const T *rhs, Func isEqual) const
-    {
+    template <typename T, typename Func> bool equals(const T* lhs, const T* rhs, Func isEqual) const {
         if (lhs == nullptr) {
             return rhs == nullptr;
         }
         return rhs != nullptr && isEqual(*lhs, *rhs);
     }
-public:
-    DocumentDBConfig(int64_t generation,
-                     const RankProfilesConfigSP &rankProfiles,
-                     const std::shared_ptr<const RankingConstants> &rankingConstants,
-                     const std::shared_ptr<const RankingExpressions> &rankingExpressions,
-                     const std::shared_ptr<const OnnxModels> &onnxModels,
-                     const IndexschemaConfigSP &indexschema,
-                     const AttributesConfigSP &attributes,
-                     const SummaryConfigSP &summary,
-                     const JuniperrcConfigSP &juniperrc,
-                     const DocumenttypesConfigSP &documenttypesConfig,
-                     const std::shared_ptr<const document::DocumentTypeRepo> &repo,
-                     const ImportedFieldsConfigSP &importedFields,
-                     const search::TuneFileDocumentDB::SP &tuneFileDocumentDB,
-                     std::shared_ptr<const search::index::Schema> schema,
-                     const DocumentDBMaintenanceConfig::SP &maintenance,
-                     const search::LogDocumentStore::Config & storeConfig,
-                     const ThreadingServiceConfig & threading_service_config,
-                     const AllocConfig & alloc_config,
-                     const DocumentMetaStoreConfig& document_meta_store_config,
-                     const std::string &configId,
-                     const std::string &docTypeName) noexcept;
 
-    DocumentDBConfig(const DocumentDBConfig &cfg) noexcept;
-    DocumentDBConfig & operator=(const DocumentDBConfig &cfg) = delete;
+public:
+    DocumentDBConfig(int64_t generation, const RankProfilesConfigSP& rankProfiles,
+                     const std::shared_ptr<const RankingConstants>&   rankingConstants,
+                     const std::shared_ptr<const RankingExpressions>& rankingExpressions,
+                     const std::shared_ptr<const OnnxModels>& onnxModels, const IndexschemaConfigSP& indexschema,
+                     const AttributesConfigSP& attributes, const SummaryConfigSP& summary,
+                     const JuniperrcConfigSP& juniperrc, const DocumenttypesConfigSP& documenttypesConfig,
+                     const std::shared_ptr<const document::DocumentTypeRepo>& repo,
+                     const ImportedFieldsConfigSP&                            importedFields,
+                     const search::TuneFileDocumentDB::SP&                    tuneFileDocumentDB,
+                     std::shared_ptr<const search::index::Schema>             schema,
+                     const DocumentDBMaintenanceConfig::SP&                   maintenance,
+                     const search::LogDocumentStore::Config&                  storeConfig,
+                     const ThreadingServiceConfig& threading_service_config, const AllocConfig& alloc_config,
+                     const DocumentMetaStoreConfig& document_meta_store_config, const std::string& configId,
+                     const std::string& docTypeName) noexcept;
+
+    DocumentDBConfig(const DocumentDBConfig& cfg) noexcept;
+    DocumentDBConfig& operator=(const DocumentDBConfig& cfg) = delete;
     ~DocumentDBConfig();
 
-    const std::string &getConfigId() const { return _configId; }
-    void setConfigId(const std::string &configId) { _configId = configId; }
+    const std::string& getConfigId() const { return _configId; }
+    void setConfigId(const std::string& configId) { _configId = configId; }
 
-    const std::string &getDocTypeName() const { return _docTypeName; }
+    const std::string& getDocTypeName() const { return _docTypeName; }
 
     int64_t getGeneration() const { return _generation; }
 
-    const RankProfilesConfig &getRankProfilesConfig() const { return *_rankProfiles; }
-    const RankingConstants &getRankingConstants() const { return *_rankingConstants; }
-    const RankingExpressions &getRankingExpressions() const { return *_rankingExpressions; }
-    const OnnxModels &getOnnxModels() const { return *_onnxModels; }
-    const IndexschemaConfig &getIndexschemaConfig() const { return *_indexschema; }
-    const AttributesConfig &getAttributesConfig() const { return *_attributes; }
-    const SummaryConfig &getSummaryConfig() const { return *_summary; }
-    const JuniperrcConfig &getJuniperrcConfig() const { return *_juniperrc; }
-    const DocumenttypesConfig &getDocumenttypesConfig() const { return *_documenttypes; }
-    const RankProfilesConfigSP &getRankProfilesConfigSP() const { return _rankProfiles; }
-    const std::shared_ptr<const RankingConstants> &getRankingConstantsSP() const { return _rankingConstants; }
-    const std::shared_ptr<const RankingExpressions> &getRankingExpressionsSP() const { return _rankingExpressions; }
-    const std::shared_ptr<const OnnxModels> &getOnnxModelsSP() const { return _onnxModels; }
-    const IndexschemaConfigSP &getIndexschemaConfigSP() const { return _indexschema; }
-    const AttributesConfigSP &getAttributesConfigSP() const { return _attributes; }
-    const SummaryConfigSP &getSummaryConfigSP() const { return _summary; }
-    const JuniperrcConfigSP &getJuniperrcConfigSP() const { return _juniperrc; }
-    const DocumenttypesConfigSP &getDocumenttypesConfigSP() const { return _documenttypes; }
-    const std::shared_ptr<const document::DocumentTypeRepo> &getDocumentTypeRepoSP() const { return _repo; }
-    const document::DocumentType *getDocumentType() const;
-    const ImportedFieldsConfig &getImportedFieldsConfig() const { return *_importedFields; }
-    const ImportedFieldsConfigSP &getImportedFieldsConfigSP() const { return _importedFields; }
+    const RankProfilesConfig& getRankProfilesConfig() const { return *_rankProfiles; }
+    const RankingConstants& getRankingConstants() const { return *_rankingConstants; }
+    const RankingExpressions& getRankingExpressions() const { return *_rankingExpressions; }
+    const OnnxModels& getOnnxModels() const { return *_onnxModels; }
+    const IndexschemaConfig& getIndexschemaConfig() const { return *_indexschema; }
+    const AttributesConfig& getAttributesConfig() const { return *_attributes; }
+    const SummaryConfig& getSummaryConfig() const { return *_summary; }
+    const JuniperrcConfig& getJuniperrcConfig() const { return *_juniperrc; }
+    const DocumenttypesConfig& getDocumenttypesConfig() const { return *_documenttypes; }
+    const RankProfilesConfigSP& getRankProfilesConfigSP() const { return _rankProfiles; }
+    const std::shared_ptr<const RankingConstants>& getRankingConstantsSP() const { return _rankingConstants; }
+    const std::shared_ptr<const RankingExpressions>& getRankingExpressionsSP() const { return _rankingExpressions; }
+    const std::shared_ptr<const OnnxModels>& getOnnxModelsSP() const { return _onnxModels; }
+    const IndexschemaConfigSP& getIndexschemaConfigSP() const { return _indexschema; }
+    const AttributesConfigSP& getAttributesConfigSP() const { return _attributes; }
+    const SummaryConfigSP& getSummaryConfigSP() const { return _summary; }
+    const JuniperrcConfigSP& getJuniperrcConfigSP() const { return _juniperrc; }
+    const DocumenttypesConfigSP& getDocumenttypesConfigSP() const { return _documenttypes; }
+    const std::shared_ptr<const document::DocumentTypeRepo>& getDocumentTypeRepoSP() const { return _repo; }
+    const document::DocumentType* getDocumentType() const;
+    const ImportedFieldsConfig& getImportedFieldsConfig() const { return *_importedFields; }
+    const ImportedFieldsConfigSP& getImportedFieldsConfigSP() const { return _importedFields; }
     const std::shared_ptr<const search::index::Schema>& getSchemaSP() const noexcept { return _schema; }
-    const MaintenanceConfigSP &getMaintenanceConfigSP() const { return _maintenance; }
-    const search::TuneFileDocumentDB::SP &getTuneFileDocumentDBSP() const { return _tuneFileDocumentDB; }
+    const MaintenanceConfigSP& getMaintenanceConfigSP() const { return _maintenance; }
+    const search::TuneFileDocumentDB::SP& getTuneFileDocumentDBSP() const { return _tuneFileDocumentDB; }
     bool getDelayedAttributeAspects() const { return _delayedAttributeAspects; }
     const ThreadingServiceConfig& get_threading_service_config() const { return _threading_service_config; }
     const AllocConfig& get_alloc_config() const { return _alloc_config; }
     const DocumentMetaStoreConfig& get_document_meta_store_config() const { return _document_meta_store_config; }
 
-    bool operator==(const DocumentDBConfig &rhs) const;
+    bool operator==(const DocumentDBConfig& rhs) const;
 
-     /**
-      * Compare this snapshot with the given one.
-      */
-    ComparisonResult compare(const DocumentDBConfig &rhs) const;
+    /**
+     * Compare this snapshot with the given one.
+     */
+    ComparisonResult compare(const DocumentDBConfig& rhs) const;
 
     bool valid() const;
 
     /**
      * Only keep configs needed for replay of transaction log.
      */
-    static SP makeReplayConfig(const SP &orig);
+    static SP makeReplayConfig(const SP& orig);
 
     /**
      * Return original config if this is a replay config, otherwise return
@@ -243,26 +286,24 @@ public:
      * Return original config if cfg is a replay config, otherwise return
      * cfg.
      */
-    static SP preferOriginalConfig(const SP &cfg);
+    static SP preferOriginalConfig(const SP& cfg);
 
     /**
      * Create modified attributes config.
      */
-    SP newFromAttributesConfig(const AttributesConfigSP &attributes) const;
+    SP newFromAttributesConfig(const AttributesConfigSP& attributes) const;
 
-    const search::LogDocumentStore::Config & getStoreConfig() const { return _storeConfig; }
+    const search::LogDocumentStore::Config& getStoreConfig() const { return _storeConfig; }
 
     /**
      * Create config with delayed attribute aspect changes if they require
      * reprocessing.
      */
-    static SP makeDelayedAttributeAspectConfig(const SP &newCfg, const DocumentDBConfig &oldCfg);
+    static SP makeDelayedAttributeAspectConfig(const SP& newCfg, const DocumentDBConfig& oldCfg);
     SP make_copy() const;
 
-    static std::shared_ptr<const search::index::Schema>
-    build_schema(const AttributesConfig& attributes_config,
-                 const IndexschemaConfig &indexschema_config);
+    static std::shared_ptr<const search::index::Schema> build_schema(const AttributesConfig&  attributes_config,
+                                                                     const IndexschemaConfig& indexschema_config);
 };
 
 } // namespace proton
-

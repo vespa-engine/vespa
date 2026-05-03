@@ -10,12 +10,11 @@ class IResourceUsageListener;
  * Interface used to request notification when resource usage state
  * has changed.
  */
-class IResourceUsageNotifier
-{
+class IResourceUsageNotifier {
 public:
     virtual ~IResourceUsageNotifier() = default;
-    virtual void add_resource_usage_listener(IResourceUsageListener *listener) = 0;
-    virtual void remove_resource_usage_listener(IResourceUsageListener *listener) = 0;
+    virtual void add_resource_usage_listener(IResourceUsageListener* listener) = 0;
+    virtual void remove_resource_usage_listener(IResourceUsageListener* listener) = 0;
 };
 
 } // namespace proton

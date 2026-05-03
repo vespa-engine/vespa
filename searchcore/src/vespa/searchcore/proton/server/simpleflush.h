@@ -5,27 +5,26 @@
 
 namespace proton {
 
-class SimpleFlush : public IFlushStrategy
-{
+class SimpleFlush : public IFlushStrategy {
 private:
     using IFlushTarget = searchcorespi::IFlushTarget;
     class CompareTarget {
     public:
-        bool operator () (const FlushContext::SP &lhs, const FlushContext::SP &rhs) const {
+        bool operator()(const FlushContext::SP& lhs, const FlushContext::SP& rhs) const {
             return compare(*lhs->getTarget(), *rhs->getTarget());
         }
+
     private:
-        bool compare(const IFlushTarget & lhs, const IFlushTarget & rhs) const;
+        bool compare(const IFlushTarget& lhs, const IFlushTarget& rhs) const;
     };
+
 public:
     SimpleFlush();
 
     // Implements IFlushStrategy
-    FlushContext::List getFlushTargets(const FlushContext::List& targetList,
-                                       const flushengine::TlsStatsMap&,
+    FlushContext::List getFlushTargets(const FlushContext::List& targetList, const flushengine::TlsStatsMap&,
                                        const flushengine::ActiveFlushStats&) const override;
     std::string name() const override;
 };
 
 } // namespace proton
-

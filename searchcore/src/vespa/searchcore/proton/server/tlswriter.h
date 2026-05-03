@@ -3,6 +3,7 @@
 #pragma once
 
 #include "i_operation_storer.h"
+
 #include <vespa/searchlib/common/serialnum.h>
 
 namespace proton {
@@ -17,4 +18,4 @@ struct TlsWriter : public IOperationStorer {
     virtual search::SerialNum sync(search::SerialNum syncTo) = 0;
 };
 
-}
+} // namespace proton

@@ -6,26 +6,35 @@
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/searchlib/util/index_stats.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
+
 #include <optional>
 #include <string>
 
-namespace search::index { class Schema; }
+namespace search::index {
+class Schema;
+}
 
-namespace document { class DocumentId; }
+namespace document {
+class DocumentId;
+}
 
 namespace searchcorespi {
-    class IFlushTarget;
-    class IIndexManager;
+class IFlushTarget;
+class IIndexManager;
+} // namespace searchcorespi
+namespace searchcorespi::common {
+class ResourceUsage;
 }
-namespace searchcorespi::common { class ResourceUsage; }
 
 namespace proton::index {
-    struct IndexConfig;
+struct IndexConfig;
 }
 
 namespace proton {
 
-namespace matching { class SessionManager; }
+namespace matching {
+class SessionManager;
+}
 
 class DocumentDBConfig;
 class DocumentSubDBReconfig;
@@ -57,8 +66,7 @@ struct IDocumentMetaStoreContext;
  * searched via a search view and retrieved via a document retriever.
  * A sub database is separate and independent from other sub databases.
  */
-class IDocumentSubDB
-{
+class IDocumentSubDB {
 public:
     using UP = std::unique_ptr<IDocumentSubDB>;
     using SerialNum = search::SerialNum;
@@ -67,39 +75,42 @@ public:
     using IndexConfig = index::IndexConfig;
     using OnDone = std::shared_ptr<vespalib::IDestructorCallback>;
     using SessionManager = matching::SessionManager;
+
 public:
-    IDocumentSubDB() noexcept { }
+    IDocumentSubDB() noexcept {}
     virtual ~IDocumentSubDB() = default;
     virtual uint32_t getSubDbId() const = 0;
     virtual std::string getName() const = 0;
 
-    virtual std::unique_ptr<DocumentSubDbInitializer>
-    createInitializer(const DocumentDBConfig &configSnapshot, SerialNum configSerialNum,
-                      const IndexConfig &indexCfg) const = 0;
+    virtual std::unique_ptr<DocumentSubDbInitializer> createInitializer(const DocumentDBConfig& configSnapshot,
+                                                                        SerialNum               configSerialNum,
+                                                                        const IndexConfig&      indexCfg) const = 0;
 
     // Called by master thread
-    virtual void setup(const DocumentSubDbInitializerResult &initResult) = 0;
-    virtual void initViews(const DocumentDBConfig &configSnapshot) = 0;
+    virtual void setup(const DocumentSubDbInitializerResult& initResult) = 0;
+    virtual void initViews(const DocumentDBConfig& configSnapshot) = 0;
 
-    virtual std::unique_ptr<DocumentSubDBReconfig>
-    prepare_reconfig(const DocumentDBConfig& new_config_snapshot, const ReconfigParams& reconfig_params, std::optional<SerialNum> serial_num) = 0;
+    virtual std::unique_ptr<DocumentSubDBReconfig> prepare_reconfig(const DocumentDBConfig&  new_config_snapshot,
+                                                                    const ReconfigParams&    reconfig_params,
+                                                                    std::optional<SerialNum> serial_num) = 0;
     virtual void complete_prepare_reconfig(DocumentSubDBReconfig& prepared_reconfig, SerialNum serial_num) = 0;
-    virtual IReprocessingTask::List
-    applyConfig(const DocumentDBConfig &newConfigSnapshot, const DocumentDBConfig &oldConfigSnapshot,
-                SerialNum serialNum, const ReconfigParams &params, IDocumentDBReferenceResolver &resolver, const DocumentSubDBReconfig& prepared_reconfig) = 0;
-    virtual void setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator> &calc, OnDone) = 0;
+    virtual IReprocessingTask::List applyConfig(const DocumentDBConfig& newConfigSnapshot,
+                                                const DocumentDBConfig& oldConfigSnapshot, SerialNum serialNum,
+                                                const ReconfigParams& params, IDocumentDBReferenceResolver& resolver,
+                                                const DocumentSubDBReconfig& prepared_reconfig) = 0;
+    virtual void setBucketStateCalculator(const std::shared_ptr<IBucketStateCalculator>& calc, OnDone) = 0;
 
     virtual std::shared_ptr<ISearchHandler> getSearchView() const = 0;
     virtual std::shared_ptr<IFeedView> getFeedView() const = 0;
     virtual void clearViews() = 0;
-    virtual const std::shared_ptr<ISummaryManager> &getSummaryManager() const = 0;
+    virtual const std::shared_ptr<ISummaryManager>& getSummaryManager() const = 0;
     virtual std::shared_ptr<IAttributeWriter> get_attribute_writer() const = 0;
     virtual std::shared_ptr<IAttributeManager> getAttributeManager() const = 0;
-    virtual const std::shared_ptr<searchcorespi::IIndexManager> &getIndexManager() const = 0;
-    virtual const std::shared_ptr<ISummaryAdapter> &getSummaryAdapter() const = 0;
-    virtual const std::shared_ptr<IIndexWriter> &getIndexWriter() const = 0;
-    virtual IDocumentMetaStoreContext &getDocumentMetaStoreContext() = 0;
-    virtual const IDocumentMetaStoreContext &getDocumentMetaStoreContext() const = 0;
+    virtual const std::shared_ptr<searchcorespi::IIndexManager>& getIndexManager() const = 0;
+    virtual const std::shared_ptr<ISummaryAdapter>& getSummaryAdapter() const = 0;
+    virtual const std::shared_ptr<IIndexWriter>& getIndexWriter() const = 0;
+    virtual IDocumentMetaStoreContext& getDocumentMetaStoreContext() = 0;
+    virtual const IDocumentMetaStoreContext& getDocumentMetaStoreContext() const = 0;
     virtual IFlushTargetList getFlushTargets() = 0;
     virtual size_t getNumDocs() const = 0;
     virtual size_t getNumActiveDocs() const = 0;
@@ -107,7 +118,7 @@ public:
      * Needed by FeedRouter::handleRemove().
      * TODO: remove together with FeedEngine.
      **/
-    virtual bool hasDocument(const document::DocumentId &id) = 0;
+    virtual bool hasDocument(const document::DocumentId& id) = 0;
     virtual void onReplayDone() = 0;
     virtual void onReprocessDone(SerialNum serialNum) = 0;
 
@@ -120,18 +131,18 @@ public:
      * Get newest flushed serial.  Used to validate that we've not lost
      * last part of transaction log.
      */
-    virtual SerialNum getNewestFlushedSerial()  = 0;
+    virtual SerialNum getNewestFlushedSerial() = 0;
     virtual void pruneRemovedFields(SerialNum serialNum) = 0;
     virtual void setIndexSchema(std::shared_ptr<const Schema> schema, SerialNum serialNum) = 0;
     virtual search::IndexStats get_index_stats(bool clear_disk_io_stats) const = 0;
     virtual std::shared_ptr<IDocumentRetriever> getDocumentRetriever() = 0;
 
-    virtual matching::MatchingStats getMatcherStats(const std::string &rankProfile) const = 0;
+    virtual matching::MatchingStats getMatcherStats(const std::string& rankProfile) const = 0;
     virtual void close() = 0;
     virtual std::shared_ptr<IDocumentDBReference> getDocumentDBReference() = 0;
-    virtual void tearDownReferences(IDocumentDBReferenceResolver &resolver) = 0;
-    virtual void validateDocStore(FeedHandler &op, SerialNum serialNum) const = 0;
-    virtual PendingLidTrackerBase & getUncommittedLidsTracker() = 0;
+    virtual void tearDownReferences(IDocumentDBReferenceResolver& resolver) = 0;
+    virtual void validateDocStore(FeedHandler& op, SerialNum serialNum) const = 0;
+    virtual PendingLidTrackerBase& getUncommittedLidsTracker() = 0;
     virtual searchcorespi::common::ResourceUsage get_resource_usage() const = 0;
 };
 

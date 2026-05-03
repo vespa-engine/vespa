@@ -3,8 +3,10 @@
 #pragma once
 
 #include "detached_rpc_request.h"
+
 #include <vespa/fnet/task.h>
 #include <vespa/searchcore/proton/flushengine/flush_strategy_id_listener.h>
+
 #include <chrono>
 #include <memory>
 
@@ -19,10 +21,10 @@ class SetFlushStrategyRpcHandler : public DetachedRpcRequest,
                                    public FNET_Task,
                                    public std::enable_shared_from_this<SetFlushStrategyRpcHandler> {
 protected:
-    uint32_t                _ticks;
-    uint32_t                _wait_strategy_id;
-    uint32_t                _strategy_id;
-    std::atomic<uint8_t>    _completed;
+    uint32_t                              _ticks;
+    uint32_t                              _wait_strategy_id;
+    uint32_t                              _strategy_id;
+    std::atomic<uint8_t>                  _completed;
     std::chrono::steady_clock::time_point _start_time;
     std::chrono::steady_clock::duration   _timeout;
     struct Completed {
@@ -39,12 +41,12 @@ protected:
     bool set_complete(uint8_t value) noexcept;
     uint8_t get_complete() const noexcept { return _completed.load(std::memory_order_acquire); }
     bool is_success() const noexcept { return get_complete() == Completed::done; }
+
 public:
-    SetFlushStrategyRpcHandler(std::shared_ptr<DetachedRpcRequestsOwner> owner,
-                               vespalib::ref_counted<FRT_RPCRequest> req,
+    SetFlushStrategyRpcHandler(std::shared_ptr<DetachedRpcRequestsOwner>             owner,
+                               vespalib::ref_counted<FRT_RPCRequest>                 req,
                                std::shared_ptr<flushengine::FlushStrategyIdNotifier> notifier,
-                               FNET_Scheduler* scheduler,
-                               uint32_t wait_strategy_id,
+                               FNET_Scheduler* scheduler, uint32_t wait_strategy_id,
                                std::chrono::steady_clock::duration timeout);
     ~SetFlushStrategyRpcHandler() override;
     void setup();
@@ -55,4 +57,4 @@ public:
     virtual void make_result() = 0;
 };
 
-}
+} // namespace proton

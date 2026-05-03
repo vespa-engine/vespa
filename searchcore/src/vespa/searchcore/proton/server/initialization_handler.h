@@ -2,9 +2,10 @@
 
 #pragma once
 
+#include <vespa/vespalib/net/connection_auth_context.h>
 #include <vespa/vespalib/net/http/initialization_status_producer.h>
 #include <vespa/vespalib/net/http/json_get_handler.h>
-#include <vespa/vespalib/net/connection_auth_context.h>
+
 #include <map>
 #include <string>
 
@@ -13,16 +14,14 @@ namespace proton {
 /**
  * Handler for serving /state/v1/initialization.
  */
-class InitializationHandler : public vespalib::JsonGetHandler
-{
+class InitializationHandler : public vespalib::JsonGetHandler {
 private:
-    vespalib::InitializationStatusProducer &_initialization_status_producer;
+    vespalib::InitializationStatusProducer& _initialization_status_producer;
+
 public:
-    InitializationHandler(vespalib::InitializationStatusProducer &initialization_status_producer);
-    Response get(const std::string &host,
-                 const std::string &path,
-                 const std::map<std::string,std::string> &params,
-                 const vespalib::net::ConnectionAuthContext &auth_ctx) const override;
+    InitializationHandler(vespalib::InitializationStatusProducer& initialization_status_producer);
+    Response get(const std::string& host, const std::string& path, const std::map<std::string, std::string>& params,
+                 const vespalib::net::ConnectionAuthContext& auth_ctx) const override;
 };
 
 } // namespace proton

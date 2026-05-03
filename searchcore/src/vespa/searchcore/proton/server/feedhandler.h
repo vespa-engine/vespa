@@ -11,15 +11,23 @@
 #include "ipruneremoveddocumentshandler.h"
 #include "tlswriter.h"
 #include "transactionlogmanager.h"
+
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchlib/transactionlog/client_common.h>
+
 #include <shared_mutex>
 
-namespace searchcorespi::index { struct IThreadingService; }
-namespace document { class DocumentTypeRepo; }
-namespace vespalib { class SharedOperationThrottler; }
+namespace searchcorespi::index {
+struct IThreadingService;
+}
+namespace document {
+class DocumentTypeRepo;
+}
+namespace vespalib {
+class SharedOperationThrottler;
+}
 
 namespace proton {
 struct ConfigStore;
@@ -39,25 +47,26 @@ class ReplayThrottlingPolicy;
 class SplitBucketOperation;
 class UpdateOperation;
 
-namespace bucketdb { class IBucketDBHandler; }
+namespace bucketdb {
+class IBucketDBHandler;
+}
 
 /**
  * Class handling all aspects of feeding for a document database.
  * In addition to regular feeding this also includes handling the transaction log.
  */
-class FeedHandler: private search::transactionlog::client::Callback,
-                   public IDocumentMoveHandler,
-                   public IPruneRemovedDocumentsHandler,
-                   public IHeartBeatHandler,
-                   public IOperationStorer,
-                   public IGetSerialNum,
-                   public IIncSerialNum
-{
+class FeedHandler : private search::transactionlog::client::Callback,
+                    public IDocumentMoveHandler,
+                    public IPruneRemovedDocumentsHandler,
+                    public IHeartBeatHandler,
+                    public IOperationStorer,
+                    public IGetSerialNum,
+                    public IIncSerialNum {
 private:
     using Packet = search::transactionlog::Packet;
     using RPC = search::transactionlog::client::RPC;
     using SerialNum = search::SerialNum;
-    using BucketId =  document::BucketId;
+    using BucketId = document::BucketId;
     using FeedStateSP = std::shared_ptr<FeedState>;
     using FeedOperationUP = std::unique_ptr<FeedOperation>;
     using ReadGuard = std::shared_lock<std::shared_mutex>;
@@ -65,37 +74,37 @@ private:
     using IThreadingService = searchcorespi::index::IThreadingService;
     using TlsWriterFactory = search::transactionlog::WriterFactory;
 
-    IThreadingService                     &_writeService;
-    DocTypeName                            _docTypeName;
-    IFeedHandlerOwner                     &_owner;
-    IReplayConfig                         &_replayConfig;
-    TransactionLogManager                  _tlsMgr;
-    const TlsWriterFactory                &_tlsWriterfactory;
-    std::unique_ptr<TlsWriter>             _tlsMgrWriter;
-    TlsWriter                             *_tlsWriter;
-    std::shared_ptr<TlsReplayProgress>     _tlsReplayProgress;
+    IThreadingService&                 _writeService;
+    DocTypeName                        _docTypeName;
+    IFeedHandlerOwner&                 _owner;
+    IReplayConfig&                     _replayConfig;
+    TransactionLogManager              _tlsMgr;
+    const TlsWriterFactory&            _tlsWriterfactory;
+    std::unique_ptr<TlsWriter>         _tlsMgrWriter;
+    TlsWriter*                         _tlsWriter;
+    std::shared_ptr<TlsReplayProgress> _tlsReplayProgress;
     // the serial num of the last feed operation processed by feed handler.
-    std::atomic<SerialNum>                 _serialNum;
+    std::atomic<SerialNum> _serialNum;
     // the serial num considered to be fully procssessed and flushed to stable storage. Used to prune transaction log.
-    SerialNum                              _prunedSerialNum;
+    SerialNum _prunedSerialNum;
     // the serial num of the last feed operation in the transaction log at startup before replay
-    SerialNum                              _replay_end_serial_num;
-    uint64_t                               _prepare_serial_num;
-    FeedOperationCounter                   _numOperations;
-    bool                                   _delayedPrune;
-    mutable std::shared_mutex              _feedLock;
-    FeedStateSP                            _feedState;
+    SerialNum                 _replay_end_serial_num;
+    uint64_t                  _prepare_serial_num;
+    FeedOperationCounter      _numOperations;
+    bool                      _delayedPrune;
+    mutable std::shared_mutex _feedLock;
+    FeedStateSP               _feedState;
     // used by master write thread tasks
-    IFeedView                             *_activeFeedView;
-    const document::DocumentTypeRepo      *_repo;
-    const document::DocumentType          *_documentType;
-    bucketdb::IBucketDBHandler            *_bucketDBHandler;
-    std::mutex                             _syncLock;
-    SerialNum                              _syncedSerialNum; 
-    bool                                   _allowSync; // Sanity check
-    std::atomic<vespalib::steady_time>     _heart_beat_time;
-    mutable std::mutex                     _stats_lock;
-    mutable FeedHandlerStats               _stats;
+    IFeedView*                         _activeFeedView;
+    const document::DocumentTypeRepo*  _repo;
+    const document::DocumentType*      _documentType;
+    bucketdb::IBucketDBHandler*        _bucketDBHandler;
+    std::mutex                         _syncLock;
+    SerialNum                          _syncedSerialNum;
+    bool                               _allowSync; // Sanity check
+    std::atomic<vespalib::steady_time> _heart_beat_time;
+    mutable std::mutex                 _stats_lock;
+    mutable FeedHandlerStats           _stats;
 
     /**
      * Delayed handling of feed operations, in master write thread.
@@ -103,24 +112,24 @@ private:
      */
     void doHandleOperation(FeedToken token, FeedOperationUP op);
 
-    bool considerUpdateOperationForRejection(FeedToken &token, UpdateOperation &op);
+    bool considerUpdateOperationForRejection(FeedToken& token, UpdateOperation& op);
 
     /**
      * Delayed execution of feed operations against feed view, in
      * master write thread.
      */
-    void performPut(FeedToken token, PutOperation &op);
+    void performPut(FeedToken token, PutOperation& op);
 
-    void performUpdate(FeedToken token, UpdateOperation &op);
-    void performInternalUpdate(FeedToken token, UpdateOperation &op);
-    void createNonExistingDocument(FeedToken, const UpdateOperation &op);
+    void performUpdate(FeedToken token, UpdateOperation& op);
+    void performInternalUpdate(FeedToken token, UpdateOperation& op);
+    void createNonExistingDocument(FeedToken, const UpdateOperation& op);
 
-    void performRemove(FeedToken token, RemoveOperation &op);
+    void performRemove(FeedToken token, RemoveOperation& op);
     void performGarbageCollect(FeedToken token);
-    void performCreateBucket(FeedToken token, CreateBucketOperation &op);
-    void performDeleteBucket(FeedToken token, DeleteBucketOperation &op);
-    void performSplit(FeedToken token, SplitBucketOperation &op);
-    void performJoin(FeedToken token, JoinBucketsOperation &op);
+    void performCreateBucket(FeedToken token, CreateBucketOperation& op);
+    void performDeleteBucket(FeedToken token, DeleteBucketOperation& op);
+    void performSplit(FeedToken token, SplitBucketOperation& op);
+    void performJoin(FeedToken token, JoinBucketsOperation& op);
     void performEof();
 
     /**
@@ -135,9 +144,10 @@ private:
     void onCommitDone(size_t numPendingAtStart, vespalib::steady_time start_time);
     void initiateCommit(vespalib::steady_time start_time);
     void enqueCommitTask();
+
 public:
-    FeedHandler(const FeedHandler &) = delete;
-    FeedHandler & operator = (const FeedHandler &) = delete;
+    FeedHandler(const FeedHandler&) = delete;
+    FeedHandler& operator=(const FeedHandler&) = delete;
     /**
      * Create a new feed handler.
      *
@@ -148,13 +158,9 @@ public:
      * @param replayConfig  Reference to interface used for replaying config changes.
      * @param writer        Inject writer for tls, or nullptr to use internal.
      */
-    FeedHandler(IThreadingService &writeService,
-                const std::string &tlsSpec,
-                const DocTypeName &docTypeName,
-                IFeedHandlerOwner &owner,
-                IReplayConfig &replayConfig,
-                const TlsWriterFactory & writer,
-                TlsWriter * tlsWriter = nullptr);
+    FeedHandler(IThreadingService& writeService, const std::string& tlsSpec, const DocTypeName& docTypeName,
+                IFeedHandlerOwner& owner, IReplayConfig& replayConfig, const TlsWriterFactory& writer,
+                TlsWriter* tlsWriter = nullptr);
 
     ~FeedHandler() override;
 
@@ -180,13 +186,9 @@ public:
      * @param config_store            Reference to the config store.
      */
 
-    void
-    replayTransactionLog(SerialNum flushedIndexMgrSerial,
-                         SerialNum flushedSummaryMgrSerial,
-                         SerialNum oldestFlushedSerial,
-                         SerialNum newestFlushedSerial,
-                         ConfigStore &config_store,
-                         std::shared_ptr<vespalib::SharedOperationThrottler> shared_replay_throttler);
+    void replayTransactionLog(SerialNum flushedIndexMgrSerial, SerialNum flushedSummaryMgrSerial,
+                              SerialNum oldestFlushedSerial, SerialNum newestFlushedSerial, ConfigStore& config_store,
+                              std::shared_ptr<vespalib::SharedOperationThrottler> shared_replay_throttler);
 
     /**
      * Called when a flush is done and allows pruning of the transaction log.
@@ -204,11 +206,9 @@ public:
      * Update the active feed view.
      * Always called by the master write thread so locking is not needed.
      */
-    void setActiveFeedView(IFeedView *feedView);
+    void setActiveFeedView(IFeedView* feedView);
 
-    void setBucketDBHandler(bucketdb::IBucketDBHandler *bucketDBHandler) {
-        _bucketDBHandler = bucketDBHandler;
-    }
+    void setBucketDBHandler(bucketdb::IBucketDBHandler* bucketDBHandler) { _bucketDBHandler = bucketDBHandler; }
 
     // Must only be called from writer thread:
     void setSerialNum(SerialNum serialNum) { _serialNum.store(serialNum, std::memory_order_relaxed); }
@@ -223,13 +223,11 @@ public:
     SerialNum get_replay_end_serial_num() const { return _replay_end_serial_num; }
     SerialNum inc_replay_end_serial_num() { return ++_replay_end_serial_num; }
     SerialNum getPrunedSerialNum() const { return _prunedSerialNum; }
-    uint64_t  inc_prepare_serial_num() { return ++_prepare_serial_num; }
+    uint64_t inc_prepare_serial_num() { return ++_prepare_serial_num; }
 
-    const std::shared_ptr<TlsReplayProgress>& get_tls_replay_progress() const { return _tlsReplayProgress;}
+    const std::shared_ptr<TlsReplayProgress>& get_tls_replay_progress() const { return _tlsReplayProgress; }
     bool isDoingReplay() const;
-    float getReplayProgress() const {
-        return _tlsReplayProgress ? _tlsReplayProgress->getProgress() : 0;
-    }
+    float getReplayProgress() const { return _tlsReplayProgress ? _tlsReplayProgress->getProgress() : 0; }
     bool getTransactionLogReplayDone() const;
     std::string getDocTypeName() const { return _docTypeName.getName(); }
     void tlsPrune(SerialNum oldest_to_keep);
@@ -237,17 +235,17 @@ public:
     void performOperation(FeedToken token, FeedOperationUP op);
     void handleOperation(FeedToken token, FeedOperationUP op);
 
-    MoveResult handleMove(MoveOperation &op, std::shared_ptr<vespalib::IDestructorCallback> moveDoneCtx) override;
+    MoveResult handleMove(MoveOperation& op, std::shared_ptr<vespalib::IDestructorCallback> moveDoneCtx) override;
     void heartBeat() override;
 
-    RPC::Result receive(const Packet &packet) override;
+    RPC::Result receive(const Packet& packet) override;
 
     void eof() override;
-    void performPruneRemovedDocuments(PruneRemovedDocumentsOperation &pruneOp) override;
+    void performPruneRemovedDocuments(PruneRemovedDocumentsOperation& pruneOp) override;
     void syncTls(SerialNum syncTo);
-    void appendOperation(const FeedOperation &op, DoneCallback onDone) override;
+    void appendOperation(const FeedOperation& op, DoneCallback onDone) override;
     [[nodiscard]] CommitResult startCommit(DoneCallback onDone) override;
-    [[nodiscard]] CommitResult storeOperationSync(const FeedOperation & op);
+    [[nodiscard]] CommitResult storeOperationSync(const FeedOperation& op);
     void considerDelayedPrune();
     vespalib::steady_time get_heart_beat_time() const;
     FeedHandlerStats get_stats(bool reset_min_max) const;

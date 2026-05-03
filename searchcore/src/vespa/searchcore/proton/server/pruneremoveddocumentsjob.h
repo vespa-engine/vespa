@@ -3,12 +3,18 @@
 
 #include "blockable_maintenance_job.h"
 #include "document_db_maintenance_config.h"
+
 #include <vespa/document/bucket/bucketspace.h>
 #include <vespa/vespalib/util/retain_guard.h>
+
 #include <atomic>
 
-namespace storage::spi { struct BucketExecutor; }
-namespace searchcorespi::index { struct IThreadService; }
+namespace storage::spi {
+struct BucketExecutor;
+}
+namespace searchcorespi::index {
+struct IThreadService;
+}
 
 namespace proton {
 
@@ -21,8 +27,7 @@ struct RawDocumentMetadata;
  * forgotten.
  */
 class PruneRemovedDocumentsJob : public BlockableMaintenanceJob,
-                                 public std::enable_shared_from_this<PruneRemovedDocumentsJob>
-{
+                                 public std::enable_shared_from_this<PruneRemovedDocumentsJob> {
 private:
     class PruneTask;
     using Config = DocumentDBPruneRemovedDocumentsConfig;
@@ -30,36 +35,35 @@ private:
     using IThreadService = searchcorespi::index::IThreadService;
     using DocId = uint32_t;
 
-    const IDocumentMetaStore      &_metaStore;  // external ownership
-    IPruneRemovedDocumentsHandler &_handler;
-    IThreadService                &_master;
-    BucketExecutor                &_bucketExecutor;
-    const std::string         _docTypeName;
+    const IDocumentMetaStore&      _metaStore; // external ownership
+    IPruneRemovedDocumentsHandler& _handler;
+    IThreadService&                _master;
+    BucketExecutor&                _bucketExecutor;
+    const std::string              _docTypeName;
     vespalib::RetainGuard          _dbRetainer;
     const vespalib::duration       _cfgAgeLimit;
     const uint32_t                 _subDbId;
     const document::BucketSpace    _bucketSpace;
 
-    DocId                          _nextLid;
+    DocId _nextLid;
 
-    void remove(uint32_t lid, const RawDocumentMetadata & meta);
+    void remove(uint32_t lid, const RawDocumentMetadata& meta);
 
-    PruneRemovedDocumentsJob(const DocumentDBPruneConfig &config, vespalib::RetainGuard dbRetainer, const IDocumentMetaStore &metaStore,
-                             uint32_t subDbId, document::BucketSpace bucketSpace, const std::string &docTypeName,
-                             IPruneRemovedDocumentsHandler &handler, IThreadService & master,
-                             BucketExecutor & bucketExecutor);
+    PruneRemovedDocumentsJob(const DocumentDBPruneConfig& config, vespalib::RetainGuard dbRetainer,
+                             const IDocumentMetaStore& metaStore, uint32_t subDbId, document::BucketSpace bucketSpace,
+                             const std::string& docTypeName, IPruneRemovedDocumentsHandler& handler,
+                             IThreadService& master, BucketExecutor& bucketExecutor);
     bool run() override;
+
 public:
     static std::shared_ptr<PruneRemovedDocumentsJob>
-    create(const Config &config, vespalib::RetainGuard dbRetainer, const IDocumentMetaStore &metaStore, uint32_t subDbId,
-           document::BucketSpace bucketSpace, const std::string &docTypeName,
-           IPruneRemovedDocumentsHandler &handler, IThreadService & master, BucketExecutor & bucketExecutor)
-   {
+    create(const Config& config, vespalib::RetainGuard dbRetainer, const IDocumentMetaStore& metaStore,
+           uint32_t subDbId, document::BucketSpace bucketSpace, const std::string& docTypeName,
+           IPruneRemovedDocumentsHandler& handler, IThreadService& master, BucketExecutor& bucketExecutor) {
         return std::shared_ptr<PruneRemovedDocumentsJob>(
-                new PruneRemovedDocumentsJob(config, std::move(dbRetainer), metaStore, subDbId, bucketSpace,
-                                             docTypeName, handler, master, bucketExecutor));
+            new PruneRemovedDocumentsJob(config, std::move(dbRetainer), metaStore, subDbId, bucketSpace, docTypeName,
+                                         handler, master, bucketExecutor));
     }
 };
 
 } // namespace proton
-

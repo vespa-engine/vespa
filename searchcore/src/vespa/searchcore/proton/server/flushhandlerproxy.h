@@ -9,13 +9,13 @@ namespace proton {
 
 class DocumentDB;
 
-class FlushHandlerProxy : public IFlushHandler
-{
+class FlushHandlerProxy : public IFlushHandler {
 private:
     std::shared_ptr<DocumentDB> _documentDB;
-    vespalib::RetainGuard _retainGuard;
+    vespalib::RetainGuard       _retainGuard;
+
 public:
-    FlushHandlerProxy(const std::shared_ptr<DocumentDB> &documentDB);
+    FlushHandlerProxy(const std::shared_ptr<DocumentDB>& documentDB);
 
     ~FlushHandlerProxy() override;
 
@@ -29,4 +29,3 @@ public:
 };
 
 } // namespace proton
-

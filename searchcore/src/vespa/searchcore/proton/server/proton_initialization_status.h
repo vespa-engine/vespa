@@ -9,7 +9,9 @@
 #include <mutex>
 #include <vector>
 
-namespace vespalib::slime { struct Inserter; }
+namespace vespalib::slime {
+struct Inserter;
+}
 
 namespace proton {
 
@@ -22,18 +24,15 @@ class DocumentDBInitializationStatus;
  */
 class ProtonInitializationStatus : public vespalib::InitializationStatusProducer {
 public:
-    enum State {
-        INITIALIZING,
-        READY
-    };
+    enum State { INITIALIZING, READY };
     static std::string state_to_string(State state);
 
     using time_point = std::chrono::system_clock::time_point;
 
 private:
     mutable std::mutex _mutex;
-    time_point _start_time;
-    time_point _end_time;
+    time_point         _start_time;
+    time_point         _end_time;
 
     State _state;
 
@@ -53,7 +52,7 @@ public:
     time_point get_start_time() const;
     time_point get_end_time() const;
 
-    void report_initialization_status(const vespalib::slime::Inserter &inserter) const override;
+    void report_initialization_status(const vespalib::slime::Inserter& inserter) const override;
 };
 
-}
+} // namespace proton

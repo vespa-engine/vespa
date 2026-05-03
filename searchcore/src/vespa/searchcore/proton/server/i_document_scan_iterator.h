@@ -10,8 +10,7 @@ namespace proton {
  * Iterator for scanning all documents in a document sub db to find candidates
  * for moving as part of lid space compaction.
  */
-struct IDocumentScanIterator
-{
+struct IDocumentScanIterator {
     using UP = std::unique_ptr<IDocumentScanIterator>;
 
     virtual ~IDocumentScanIterator() = default;
@@ -32,4 +31,3 @@ struct IDocumentScanIterator
 };
 
 } // namespace proton
-

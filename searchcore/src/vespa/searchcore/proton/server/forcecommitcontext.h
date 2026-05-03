@@ -5,7 +5,9 @@
 #include <vespa/searchcore/proton/common/pendinglidtracker.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
 
-namespace vespalib { class Executor; }
+namespace vespalib {
+class Executor;
+}
 
 namespace proton {
 
@@ -21,28 +23,26 @@ class IPendingGidToLidChanges;
  * a larger task before dropping the shared pointer, triggering the
  * callback when all worker threads have completed.
  */
-class ForceCommitContext : public vespalib::IDestructorCallback
-{
+class ForceCommitContext : public vespalib::IDestructorCallback {
     using IDestructorCallback = vespalib::IDestructorCallback;
-    vespalib::Executor                   &_executor;
-    std::unique_ptr<ForceCommitDoneTask>  _task;
-    uint32_t                              _committedDocIdLimit;
-    DocIdLimit                           *_docIdLimit;
-    std::shared_ptr<IDestructorCallback>  _onDone;
-    PendingLidTrackerBase::Snapshot       _lidsToCommit;
+    vespalib::Executor&                  _executor;
+    std::unique_ptr<ForceCommitDoneTask> _task;
+    uint32_t                             _committedDocIdLimit;
+    DocIdLimit*                          _docIdLimit;
+    std::shared_ptr<IDestructorCallback> _onDone;
+    PendingLidTrackerBase::Snapshot      _lidsToCommit;
 
 public:
-    ForceCommitContext(vespalib::Executor &executor,
-                       IDocumentMetaStore &documentMetaStore,
-                       PendingLidTrackerBase::Snapshot lidsToCommit,
+    ForceCommitContext(vespalib::Executor& executor, IDocumentMetaStore& documentMetaStore,
+                       PendingLidTrackerBase::Snapshot          lidsToCommit,
                        std::unique_ptr<IPendingGidToLidChanges> pending_gid_to_lid_changes,
-                       std::shared_ptr<IDestructorCallback> onDone);
+                       std::shared_ptr<IDestructorCallback>     onDone);
 
     ~ForceCommitContext() override;
 
-    void reuseLids(std::vector<uint32_t> &&lids);
+    void reuseLids(std::vector<uint32_t>&& lids);
     void holdUnblockShrinkLidSpace();
-    void registerCommittedDocIdLimit(uint32_t committedDocIdLimit, DocIdLimit *docIdLimit);
+    void registerCommittedDocIdLimit(uint32_t committedDocIdLimit, DocIdLimit* docIdLimit);
 };
 
-}  // namespace proton
+} // namespace proton

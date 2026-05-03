@@ -3,6 +3,7 @@
 #pragma once
 
 #include "operationdonecontext.h"
+
 #include <vespa/searchcore/proton/common/ipendinglidtracker.h>
 
 namespace proton {
@@ -14,13 +15,14 @@ namespace proton {
  * portions of a larger task before dropping the shared pointer,
  * triggering the ack when all worker threads have completed.
  */
-class RemoveDoneContext : public OperationDoneContext
-{
+class RemoveDoneContext : public OperationDoneContext {
     IPendingLidTracker::Token _uncommitted;
 
 public:
-    RemoveDoneContext(std::shared_ptr<feedtoken::IState>, std::shared_ptr<vespalib::IDestructorCallback> done_callback, IPendingLidTracker::Token uncommitted);
+    RemoveDoneContext(std::shared_ptr<feedtoken::IState>,
+                      std::shared_ptr<vespalib::IDestructorCallback> done_callback,
+                      IPendingLidTracker::Token                      uncommitted);
     ~RemoveDoneContext() override;
 };
 
-}  // namespace proton
+} // namespace proton

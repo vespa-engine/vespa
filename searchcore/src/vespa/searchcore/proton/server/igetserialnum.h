@@ -15,4 +15,4 @@ public:
     virtual search::SerialNum getSerialNum() const = 0;
 };
 
-}
+} // namespace proton

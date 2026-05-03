@@ -4,8 +4,7 @@
 
 namespace proton {
 
-class IHeartBeatHandler
-{
+class IHeartBeatHandler {
 public:
     virtual void heartBeat() = 0;
 

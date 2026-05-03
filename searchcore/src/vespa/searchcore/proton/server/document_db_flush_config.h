@@ -15,7 +15,7 @@ class DocumentDBFlushConfig {
 public:
     DocumentDBFlushConfig() noexcept;
     DocumentDBFlushConfig(uint32_t maxFlushed, uint32_t maxFlushedRetired) noexcept;
-    bool operator==(const DocumentDBFlushConfig &rhs) const noexcept;
+    bool operator==(const DocumentDBFlushConfig& rhs) const noexcept;
     uint32_t getMaxFlushed() const noexcept { return _maxFlushed; }
     uint32_t getMaxFlushedRetired() const noexcept { return _maxFlushedRetired; }
 };

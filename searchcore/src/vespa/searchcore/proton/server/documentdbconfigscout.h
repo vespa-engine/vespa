@@ -14,11 +14,10 @@ class DocumentDBConfig;
  * live (supposedly future) config that is safe to apply early during
  * initialization and replay.
  */
-class DocumentDBConfigScout
-{
+class DocumentDBConfigScout {
 public:
-    static std::shared_ptr<DocumentDBConfig>
-    scout(const std::shared_ptr<DocumentDBConfig> &config, const DocumentDBConfig &liveConfig);
+    static std::shared_ptr<DocumentDBConfig> scout(const std::shared_ptr<DocumentDBConfig>& config,
+                                                   const DocumentDBConfig&                  liveConfig);
 };
 
-}
+} // namespace proton

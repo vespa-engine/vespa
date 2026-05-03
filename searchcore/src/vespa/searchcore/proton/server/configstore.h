@@ -3,10 +3,11 @@
 #pragma once
 
 #include "feedconfigstore.h"
+
 #include <vespa/searchcommon/common/schema.h>
 
 namespace vespa::config::search::core::internal {
-    class InternalProtonType;
+class InternalProtonType;
 }
 namespace proton {
 
@@ -25,9 +26,9 @@ struct ConfigStore : FeedConfigStore {
      * @param loadedSnapshot the shared pointer in which to store the
      *                       resulting config snapshot.
      */
-    virtual void loadConfig(const DocumentDBConfig &currentSnapshot, SerialNum serialNum,
-                            std::shared_ptr<DocumentDBConfig> &loadedSnapshot) = 0;
-    virtual void saveConfig(const DocumentDBConfig &snapshot, SerialNum serialNum) = 0;
+    virtual void loadConfig(const DocumentDBConfig& currentSnapshot, SerialNum serialNum,
+                            std::shared_ptr<DocumentDBConfig>& loadedSnapshot) = 0;
+    virtual void saveConfig(const DocumentDBConfig& snapshot, SerialNum serialNum) = 0;
 
     virtual void removeInvalid() = 0;
     /**
@@ -42,9 +43,8 @@ struct ConfigStore : FeedConfigStore {
     virtual SerialNum getOldestSerialNum() const = 0;
     virtual bool hasValidSerial(SerialNum serialNum) const = 0;
     virtual SerialNum getPrevValidSerial(SerialNum serialNum) const = 0;
-    virtual void setProtonConfig(const ProtonConfigSP &protonConfig) = 0;
+    virtual void setProtonConfig(const ProtonConfigSP& protonConfig) = 0;
     virtual uint64_t get_size_on_disk() const = 0;
 };
 
-}  // namespace proton
-
+} // namespace proton
