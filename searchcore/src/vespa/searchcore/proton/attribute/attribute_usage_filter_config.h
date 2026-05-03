@@ -12,19 +12,15 @@ namespace proton {
  *
  * The config is used by AttributeUsageFilter.
  */
-struct AttributeUsageFilterConfig
-{
+struct AttributeUsageFilterConfig {
     double _address_space_limit;
 
-    AttributeUsageFilterConfig() noexcept
-        : _address_space_limit(1.0)
-    {}
+    AttributeUsageFilterConfig() noexcept : _address_space_limit(1.0) {}
 
     explicit AttributeUsageFilterConfig(double address_space_limit) noexcept
-        : _address_space_limit(address_space_limit)
-    {}
+        : _address_space_limit(address_space_limit) {}
 
-    bool operator==(const AttributeUsageFilterConfig &rhs) const noexcept {
+    bool operator==(const AttributeUsageFilterConfig& rhs) const noexcept {
         return (_address_space_limit == rhs._address_space_limit);
     }
 };

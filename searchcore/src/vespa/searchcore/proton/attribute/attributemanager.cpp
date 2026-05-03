@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attributemanager.h"
+
 #include "attribute_directory.h"
 #include "attribute_factory.h"
 #include "attribute_manager_reconfig.h"
@@ -10,8 +11,9 @@
 #include "imported_attributes_context.h"
 #include "imported_attributes_repo.h"
 #include "sequential_attributes_initializer.h"
-#include <vespa/searchcommon/attribute/i_attribute_functor.h>
+
 #include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
@@ -22,12 +24,14 @@
 #include <vespa/searchlib/common/flush_token.h>
 #include <vespa/searchlib/common/threaded_compactable_lid_space.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/vespalib/util/threadexecutor.h>
+
+#include <vespa/vespalib/stllike/hash_map.hpp>
+
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -37,12 +41,12 @@ using search::AttributeContext;
 using search::AttributeGuard;
 using search::AttributeVector;
 using search::DiskSpaceCalculator;
-using search::common::ThreadedCompactableLidSpace;
 using search::TuneFileAttributes;
+using search::attribute::BasicType;
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
 using search::common::FileHeaderContext;
-using search::attribute::BasicType;
+using search::common::ThreadedCompactableLidSpace;
 using searchcorespi::IFlushTarget;
 using searchcorespi::common::ResourceUsage;
 using searchcorespi::common::TransientResourceUsage;
@@ -51,7 +55,7 @@ namespace proton {
 
 namespace {
 
-bool matchingTypes(const AttributeVector::SP &av, const search::attribute::Config &newConfig) {
+bool matchingTypes(const AttributeVector::SP& av, const search::attribute::Config& newConfig) {
     if (av) {
         AttributeTypeMatcher matching_types;
         return matching_types(av->getConfig(), newConfig);
@@ -60,8 +64,7 @@ bool matchingTypes(const AttributeVector::SP &av, const search::attribute::Confi
     }
 }
 
-search::SerialNum estimateShrinkSerialNum(const AttributeVector &attr)
-{
+search::SerialNum estimateShrinkSerialNum(const AttributeVector& attr) {
     search::SerialNum serialNum = attr.getCreateSerialNum();
     if (serialNum > 0) {
         --serialNum;
@@ -69,69 +72,54 @@ search::SerialNum estimateShrinkSerialNum(const AttributeVector &attr)
     return std::max(attr.getStatus().getLastSyncToken(), serialNum);
 }
 
-std::shared_ptr<ShrinkLidSpaceFlushTarget>
-allocShrinker(const AttributeVector::SP &attr, vespalib::ISequencedTaskExecutor & executor, AttributeDiskLayout &diskLayout)
-{
+std::shared_ptr<ShrinkLidSpaceFlushTarget> allocShrinker(const AttributeVector::SP&        attr,
+                                                         vespalib::ISequencedTaskExecutor& executor,
+                                                         AttributeDiskLayout&              diskLayout) {
     using Type = IFlushTarget::Type;
     using Component = IFlushTarget::Component;
 
-    auto shrinkwrap = std::make_shared<ThreadedCompactableLidSpace>(attr, executor,
-                                                                    executor.getExecutorIdFromName(attr->getNamePrefix()));
-    const std::string &name = attr->getName();
-    auto dir = diskLayout.createAttributeDir(name);
-    search::SerialNum shrinkSerialNum = estimateShrinkSerialNum(*attr);
-    return std::make_shared<ShrinkLidSpaceFlushTarget>("attribute.shrink." + name, Type::GC, Component::ATTRIBUTE, shrinkSerialNum, dir->getLastFlushTime(), shrinkwrap);
+    auto shrinkwrap = std::make_shared<ThreadedCompactableLidSpace>(
+        attr, executor, executor.getExecutorIdFromName(attr->getNamePrefix()));
+    const std::string& name = attr->getName();
+    auto               dir = diskLayout.createAttributeDir(name);
+    search::SerialNum  shrinkSerialNum = estimateShrinkSerialNum(*attr);
+    return std::make_shared<ShrinkLidSpaceFlushTarget>("attribute.shrink." + name, Type::GC, Component::ATTRIBUTE,
+                                                       shrinkSerialNum, dir->getLastFlushTime(), shrinkwrap);
 }
 
-}
+} // namespace
 
 AttributeManager::AttributeWrap::AttributeWrap(AttributeVectorSP a, bool isExtra_)
-    : _attr(std::move(a)),
-      _isExtra(isExtra_)
-{
+    : _attr(std::move(a)), _isExtra(isExtra_) {
 }
 
-AttributeManager::AttributeWrap::AttributeWrap()
-    : _attr(),
-      _isExtra(false)
-{
+AttributeManager::AttributeWrap::AttributeWrap() : _attr(), _isExtra(false) {
 }
 
 AttributeManager::AttributeWrap::~AttributeWrap() = default;
 
-AttributeManager::AttributeWrap
-AttributeManager::AttributeWrap::extraAttribute(AttributeVectorSP a)
-{
+AttributeManager::AttributeWrap AttributeManager::AttributeWrap::extraAttribute(AttributeVectorSP a) {
     return {std::move(a), true};
 }
 
-AttributeManager::AttributeWrap
-AttributeManager::AttributeWrap::normalAttribute(AttributeVectorSP a)
-{
+AttributeManager::AttributeWrap AttributeManager::AttributeWrap::normalAttribute(AttributeVectorSP a) {
     return {std::move(a), false};
 }
 
-AttributeManager::FlushableWrap::FlushableWrap()
-    : _flusher(),
-      _shrinker()
-{
+AttributeManager::FlushableWrap::FlushableWrap() : _flusher(), _shrinker() {
 }
 
 AttributeManager::FlushableWrap::FlushableWrap(FlushableAttributeSP flusher, ShrinkerSP shrinker)
-    : _flusher(std::move(flusher)),
-      _shrinker(std::move(shrinker))
-{
+    : _flusher(std::move(flusher)), _shrinker(std::move(shrinker)) {
 }
 
 AttributeManager::FlushableWrap::~FlushableWrap() = default;
 
-AttributeVector::SP
-AttributeManager::internalAddAttribute(AttributeSpec && spec,
-                                       uint64_t serialNum,
-                                       const IAttributeFactory &factory)
-{
-    std::string name = spec.getName();
-    AttributeInitializer initializer(_diskLayout->createAttributeDir(name), _documentSubDbName, std::move(spec), serialNum, factory, _shared_executor);
+AttributeVector::SP AttributeManager::internalAddAttribute(AttributeSpec&& spec, uint64_t serialNum,
+                                                           const IAttributeFactory& factory) {
+    std::string                name = spec.getName();
+    AttributeInitializer       initializer(_diskLayout->createAttributeDir(name), _documentSubDbName, std::move(spec),
+                                           serialNum, factory, _shared_executor);
     AttributeInitializerResult result = initializer.init();
     if (result) {
         result.getAttribute()->setInterlock(_interlock);
@@ -141,53 +129,46 @@ AttributeManager::internalAddAttribute(AttributeSpec && spec,
     return result.getAttribute();
 }
 
-void
-AttributeManager::addAttribute(AttributeWrap attributeWrap, const ShrinkerSP &shrinker)
-{
+void AttributeManager::addAttribute(AttributeWrap attributeWrap, const ShrinkerSP& shrinker) {
     AttributeVector::SP attribute = attributeWrap.getAttribute();
-    bool isExtra = attributeWrap.isExtra();
-    const std::string &name = attribute->getName();
+    bool                isExtra = attributeWrap.isExtra();
+    const std::string&  name = attribute->getName();
     LOG(debug, "Adding attribute vector '%s'", name.c_str());
     _attributes[name] = std::move(attributeWrap);
     assert(attribute->getInterlock() == _interlock);
-    if ( ! isExtra ) {
+    if (!isExtra) {
         // Flushing of extra attributes is handled elsewhere
-        AttributeVector * attributeP = attribute.get();
-        auto flusher = std::make_shared<FlushableAttribute>(std::move(attribute), _diskLayout->createAttributeDir(name), _tuneFileAttributes, _fileHeaderContext, _attributeFieldWriter, _hwInfo);
+        AttributeVector* attributeP = attribute.get();
+        auto             flusher = std::make_shared<FlushableAttribute>(
+            std::move(attribute), _diskLayout->createAttributeDir(name), _tuneFileAttributes, _fileHeaderContext,
+            _attributeFieldWriter, _hwInfo);
         _flushables[name] = FlushableWrap(flusher, shrinker);
         _writableAttributes.push_back(attributeP);
     }
 }
 
-AttributeVector::SP
-AttributeManager::findAttribute(std::string_view name) const
-{
+AttributeVector::SP AttributeManager::findAttribute(std::string_view name) const {
     auto itr = _attributes.find(name);
-    return (itr != _attributes.end())
-        ? itr->second.getAttribute()
-        : AttributeVector::SP();
+    return (itr != _attributes.end()) ? itr->second.getAttribute() : AttributeVector::SP();
 }
 
-const AttributeManager::FlushableWrap *
-AttributeManager::findFlushable(const std::string &name) const
-{
+const AttributeManager::FlushableWrap* AttributeManager::findFlushable(const std::string& name) const {
     auto itr = _flushables.find(name);
     return (itr != _flushables.end()) ? &itr->second : nullptr;
 }
 
 AttributeCollectionSpec::AttributeList
-AttributeManager::transferExistingAttributes(const AttributeManager &currMgr,
-                                             Spec::AttributeList && newAttributes)
-{
+AttributeManager::transferExistingAttributes(const AttributeManager& currMgr, Spec::AttributeList&& newAttributes) {
     Spec::AttributeList toBeAdded;
-    vespalib::Gate gate;
+    vespalib::Gate      gate;
     {
         auto gateCallback = std::make_shared<vespalib::GateCallback>(gate);
-        for (auto &aspec: newAttributes) {
+        for (auto& aspec : newAttributes) {
             AttributeVector::SP av = currMgr.findAttribute(aspec.getName());
             if (matchingTypes(av, aspec.getConfig())) { // transfer attribute
                 LOG(debug,
-                    "Transferring attribute vector '%s' with %u docs and serial number %" PRIu64 " from current manager",
+                    "Transferring attribute vector '%s' with %u docs and serial number %" PRIu64
+                    " from current manager",
                     av->getName().c_str(), av->getNumDocs(), av->getStatus().getLastSyncToken());
                 auto wrap = currMgr.findFlushable(aspec.getName());
                 assert(wrap != nullptr);
@@ -197,7 +178,7 @@ AttributeManager::transferExistingAttributes(const AttributeManager &currMgr,
                 auto id = _attributeFieldWriter.getExecutorIdFromName(av->getNamePrefix());
                 auto cfg = aspec.getConfig();
                 _attributeFieldWriter.execute(id, [av, cfg, gateCallback]() {
-                    (void) gateCallback;
+                    (void)gateCallback;
                     av->update_config(cfg);
                 });
             } else {
@@ -209,18 +190,15 @@ AttributeManager::transferExistingAttributes(const AttributeManager &currMgr,
     return toBeAdded;
 }
 
-void
-AttributeManager::addNewAttributes(const Spec &newSpec,
-                                   Spec::AttributeList && toBeAdded,
-                                   IAttributeInitializerRegistry &initializerRegistry)
-{
-    for (auto &aspec : toBeAdded) {
+void AttributeManager::addNewAttributes(const Spec& newSpec, Spec::AttributeList&& toBeAdded,
+                                        IAttributeInitializerRegistry& initializerRegistry) {
+    for (auto& aspec : toBeAdded) {
         LOG(debug, "Creating initializer for attribute vector '%s': docIdLimit=%u, serialNumber=%" PRIu64,
             aspec.getName().c_str(), newSpec.getDocIdLimit(), newSpec.getCurrentSerialNum().value_or(0));
 
-        auto initializer = std::make_unique<AttributeInitializer>(_diskLayout->createAttributeDir(aspec.getName()),
-                                                                  _documentSubDbName, std::move(aspec), newSpec.getCurrentSerialNum(),
-                                                                  *_factory, _shared_executor);
+        auto initializer = std::make_unique<AttributeInitializer>(
+            _diskLayout->createAttributeDir(aspec.getName()), _documentSubDbName, std::move(aspec),
+            newSpec.getCurrentSerialNum(), *_factory, _shared_executor);
         initializerRegistry.add(std::move(initializer));
 
         // TODO: Might want to use hardlinks to make attribute vector
@@ -234,27 +212,22 @@ AttributeManager::addNewAttributes(const Spec &newSpec,
         // (lid freed and reused by another document) and stale values
         // (lid still used by newer versions of the same document).
     }
-
 }
 
-void
-AttributeManager::transferExtraAttributes(const AttributeManager &currMgr)
-{
-    for (const auto &kv : currMgr._attributes) {
+void AttributeManager::transferExtraAttributes(const AttributeManager& currMgr) {
+    for (const auto& kv : currMgr._attributes) {
         if (kv.second.isExtra()) {
             addAttribute(kv.second, nullptr);
         }
     }
 }
 
-AttributeManager::AttributeManager(const std::string &baseDir,
-                                   const std::string &documentSubDbName,
-                                   const TuneFileAttributes &tuneFileAttributes,
-                                   const FileHeaderContext &fileHeaderContext,
+AttributeManager::AttributeManager(const std::string& baseDir, const std::string& documentSubDbName,
+                                   const TuneFileAttributes&                     tuneFileAttributes,
+                                   const FileHeaderContext&                      fileHeaderContext,
                                    std::shared_ptr<search::attribute::Interlock> interlock,
-                                   vespalib::ISequencedTaskExecutor &attributeFieldWriter,
-                                   vespalib::Executor& shared_executor,
-                                   const vespalib::HwInfo &hwInfo)
+                                   vespalib::ISequencedTaskExecutor&             attributeFieldWriter,
+                                   vespalib::Executor& shared_executor, const vespalib::HwInfo& hwInfo)
     : proton::IAttributeManager(),
       _attributes(),
       _flushables(),
@@ -268,19 +241,16 @@ AttributeManager::AttributeManager(const std::string &baseDir,
       _attributeFieldWriter(attributeFieldWriter),
       _shared_executor(shared_executor),
       _hwInfo(hwInfo),
-      _importedAttributes()
-{
+      _importedAttributes() {
 }
 
-AttributeManager::AttributeManager(const std::string &baseDir,
-                                   const std::string &documentSubDbName,
-                                   const search::TuneFileAttributes &tuneFileAttributes,
-                                   const search::common::FileHeaderContext &fileHeaderContext,
+AttributeManager::AttributeManager(const std::string& baseDir, const std::string& documentSubDbName,
+                                   const search::TuneFileAttributes&             tuneFileAttributes,
+                                   const search::common::FileHeaderContext&      fileHeaderContext,
                                    std::shared_ptr<search::attribute::Interlock> interlock,
-                                   vespalib::ISequencedTaskExecutor &attributeFieldWriter,
-                                   vespalib::Executor& shared_executor,
-                                   IAttributeFactory::SP factory,
-                                   const vespalib::HwInfo &hwInfo)
+                                   vespalib::ISequencedTaskExecutor&             attributeFieldWriter,
+                                   vespalib::Executor& shared_executor, IAttributeFactory::SP factory,
+                                   const vespalib::HwInfo& hwInfo)
     : proton::IAttributeManager(),
       _attributes(),
       _flushables(),
@@ -294,13 +264,11 @@ AttributeManager::AttributeManager(const std::string &baseDir,
       _attributeFieldWriter(attributeFieldWriter),
       _shared_executor(shared_executor),
       _hwInfo(hwInfo),
-      _importedAttributes()
-{
+      _importedAttributes() {
 }
 
-AttributeManager::AttributeManager(const AttributeManager &currMgr,
-                                   Spec && newSpec,
-                                   IAttributeInitializerRegistry &initializerRegistry)
+AttributeManager::AttributeManager(const AttributeManager& currMgr, Spec&& newSpec,
+                                   IAttributeInitializerRegistry& initializerRegistry)
     : proton::IAttributeManager(),
       _attributes(),
       _flushables(),
@@ -314,8 +282,7 @@ AttributeManager::AttributeManager(const AttributeManager &currMgr,
       _attributeFieldWriter(currMgr._attributeFieldWriter),
       _shared_executor(currMgr._shared_executor),
       _hwInfo(currMgr._hwInfo),
-      _importedAttributes()
-{
+      _importedAttributes() {
     Spec::AttributeList toBeAdded = transferExistingAttributes(currMgr, newSpec.stealAttributes());
     addNewAttributes(newSpec, std::move(toBeAdded), initializerRegistry);
     transferExtraAttributes(currMgr);
@@ -323,21 +290,18 @@ AttributeManager::AttributeManager(const AttributeManager &currMgr,
 
 AttributeManager::~AttributeManager() = default;
 
-AttributeVector::SP
-AttributeManager::addAttribute(AttributeSpec && spec, uint64_t serialNum)
-{
+AttributeVector::SP AttributeManager::addAttribute(AttributeSpec&& spec, uint64_t serialNum) {
     return internalAddAttribute(std::move(spec), serialNum, *_factory);
 }
 
-void
-AttributeManager::addInitializedAttributes(const std::vector<AttributeInitializerResult> &attributes, uint32_t docid_limit, SerialNum serial_num)
-{
+void AttributeManager::addInitializedAttributes(const std::vector<AttributeInitializerResult>& attributes,
+                                                uint32_t docid_limit, SerialNum serial_num) {
     /*
      * Called (indirectly) by
      * DocumentSubDBCollection::complete_prepare_reconfig to complete
      * setup of new attribute manager.
      */
-    for (const auto &result : attributes) {
+    for (const auto& result : attributes) {
         assert(result);
         auto attr = result.getAttribute();
         if (attr->getCreateSerialNum() == 0) {
@@ -355,18 +319,14 @@ AttributeManager::addInitializedAttributes(const std::vector<AttributeInitialize
     }
 }
 
-void
-AttributeManager::addExtraAttribute(const AttributeVector::SP &attribute)
-{
+void AttributeManager::addExtraAttribute(const AttributeVector::SP& attribute) {
     attribute->setInterlock(_interlock);
     addAttribute(AttributeWrap::extraAttribute(attribute), ShrinkerSP());
 }
 
-void
-AttributeManager::flushAll(SerialNum currentSerial)
-{
+void AttributeManager::flushAll(SerialNum currentSerial) {
     auto flushTargets = getFlushTargets();
-    for (const auto &ft : flushTargets) {
+    for (const auto& ft : flushTargets) {
         vespalib::Executor::Task::UP task;
         task = ft->initFlush(currentSerial, std::make_shared<search::FlushToken>());
         if (task) {
@@ -375,41 +335,28 @@ AttributeManager::flushAll(SerialNum currentSerial)
     }
 }
 
-FlushableAttribute::SP
-AttributeManager::getFlushable(const std::string &name)
-{
+FlushableAttribute::SP AttributeManager::getFlushable(const std::string& name) {
     auto wrap = findFlushable(name);
     return ((wrap != nullptr) ? wrap->getFlusher() : FlushableAttribute::SP());
 }
 
-AttributeManager::ShrinkerSP
-AttributeManager::getShrinker(const std::string &name)
-{
+AttributeManager::ShrinkerSP AttributeManager::getShrinker(const std::string& name) {
     auto wrap = findFlushable(name);
     return ((wrap != nullptr) ? wrap->getShrinker() : ShrinkerSP());
 }
 
-size_t
-AttributeManager::getNumDocs() const
-{
-    return _attributes.empty()
-        ? 0
-        : _attributes.begin()->second.getAttribute()->getNumDocs();
+size_t AttributeManager::getNumDocs() const {
+    return _attributes.empty() ? 0 : _attributes.begin()->second.getAttribute()->getNumDocs();
 }
 
-void
-AttributeManager::padAttribute(AttributeVector &v, uint32_t docIdLimit)
-{
+void AttributeManager::padAttribute(AttributeVector& v, uint32_t docIdLimit) {
     uint32_t needCommit = 0;
     uint32_t docId(v.getNumDocs());
     while (v.getNumDocs() < docIdLimit) {
         if (!v.addDoc(docId)) {
-            throw vespalib::IllegalStateException
-                (vespalib::make_string("Failed to pad doc %u/%u to "
-                                       "attribute vector '%s'",
-                                       docId,
-                                       docIdLimit,
-                                       v.getName().c_str()));
+            throw vespalib::IllegalStateException(vespalib::make_string("Failed to pad doc %u/%u to "
+                                                                        "attribute vector '%s'",
+                                                                        docId, docIdLimit, v.getName().c_str()));
         }
         v.clearDoc(docId);
         if (++needCommit >= 1024) {
@@ -423,15 +370,12 @@ AttributeManager::padAttribute(AttributeVector &v, uint32_t docIdLimit)
     assert(v.getNumDocs() >= docIdLimit);
 }
 
-AttributeGuard::UP
-AttributeManager::getAttribute(std::string_view name) const
-{
+AttributeGuard::UP AttributeManager::getAttribute(std::string_view name) const {
     return std::make_unique<AttributeGuard>(findAttribute(name));
 }
 
 std::unique_ptr<search::attribute::AttributeReadGuard>
-AttributeManager::getAttributeReadGuard(std::string_view name, bool stableEnumGuard) const
-{
+AttributeManager::getAttributeReadGuard(std::string_view name, bool stableEnumGuard) const {
     auto attribute = findAttribute(name);
     if (attribute) {
         return attribute->makeReadGuard(stableEnumGuard);
@@ -440,11 +384,9 @@ AttributeManager::getAttributeReadGuard(std::string_view name, bool stableEnumGu
     }
 }
 
-void
-AttributeManager::getAttributeList(std::vector<AttributeGuard> &list) const
-{
+void AttributeManager::getAttributeList(std::vector<AttributeGuard>& list) const {
     list.reserve(_attributes.size());
-    for (const auto &kv : _attributes) {
+    for (const auto& kv : _attributes) {
         if (!kv.second.isExtra()) {
             list.emplace_back(kv.second.getAttribute());
         }
@@ -460,27 +402,23 @@ private:
     ImportedAttributesContext _importedCtx;
 
 public:
-    CombinedAttributeContext(const search::IAttributeManager &mgr,
-                             const ImportedAttributesRepo &importedAttributes)
-        : _ctx(mgr),
-          _importedCtx(importedAttributes)
-    {
-    }
-    const IAttributeVector *getAttribute(std::string_view name) const override {
-        const IAttributeVector *result = _ctx.getAttribute(name);
+    CombinedAttributeContext(const search::IAttributeManager& mgr, const ImportedAttributesRepo& importedAttributes)
+        : _ctx(mgr), _importedCtx(importedAttributes) {}
+    const IAttributeVector* getAttribute(std::string_view name) const override {
+        const IAttributeVector* result = _ctx.getAttribute(name);
         if (result == nullptr) {
             result = _importedCtx.getAttribute(name);
         }
         return result;
     }
-    const IAttributeVector *getAttributeStableEnum(std::string_view name) const override {
-        const IAttributeVector *result = _ctx.getAttributeStableEnum(name);
+    const IAttributeVector* getAttributeStableEnum(std::string_view name) const override {
+        const IAttributeVector* result = _ctx.getAttributeStableEnum(name);
         if (result == nullptr) {
             result = _importedCtx.getAttributeStableEnum(name);
         }
         return result;
     }
-    void getAttributeList(std::vector<const IAttributeVector *> &list) const override {
+    void getAttributeList(std::vector<const IAttributeVector*>& list) const override {
         _ctx.getAttributeList(list);
         _importedCtx.getAttributeList(list);
     }
@@ -497,43 +435,35 @@ public:
     }
 };
 
-}
+} // namespace
 
-IAttributeContext::UP
-AttributeManager::createContext() const
-{
+IAttributeContext::UP AttributeManager::createContext() const {
     if (_importedAttributes) {
         return std::make_unique<CombinedAttributeContext>(*this, *_importedAttributes);
     }
     return std::make_unique<AttributeContext>(*this);
 }
 
-std::unique_ptr<IAttributeManagerReconfig>
-AttributeManager::prepare_create(Spec&& spec) const
-{
+std::unique_ptr<IAttributeManagerReconfig> AttributeManager::prepare_create(Spec&& spec) const {
     auto initializer = std::make_unique<SequentialAttributesInitializer>(spec.getDocIdLimit());
     auto result = std::make_shared<AttributeManager>(*this, std::move(spec), *initializer);
     return std::make_unique<AttributeManagerReconfig>(std::move(result), std::move(initializer));
 }
 
-std::vector<IFlushTarget::SP>
-AttributeManager::getFlushTargets() const
-{
+std::vector<IFlushTarget::SP> AttributeManager::getFlushTargets() const {
     std::vector<IFlushTarget::SP> list;
     list.reserve(_flushables.size());
-    for (const auto &kv : _flushables) {
+    for (const auto& kv : _flushables) {
         list.push_back(kv.second.getFlusher());
         list.push_back(kv.second.getShrinker());
     }
     return list;
 }
 
-search::SerialNum
-AttributeManager::getFlushedSerialNum(const std::string &name) const
-{
+search::SerialNum AttributeManager::getFlushedSerialNum(const std::string& name) const {
     auto wrap = findFlushable(name);
     if (wrap != nullptr) {
-        const auto &flusher = wrap->getFlusher();
+        const auto& flusher = wrap->getFlusher();
         if (flusher) {
             return flusher->getFlushedSerialNum();
         }
@@ -541,40 +471,32 @@ AttributeManager::getFlushedSerialNum(const std::string &name) const
     return 0;
 }
 
-search::SerialNum
-AttributeManager::getOldestFlushedSerialNumber() const
-{
+search::SerialNum AttributeManager::getOldestFlushedSerialNumber() const {
     SerialNum num = -1;
-    for (const auto &kv : _flushables) {
+    for (const auto& kv : _flushables) {
         num = std::min(num, kv.second.getFlusher()->getFlushedSerialNum());
     }
     return num;
 }
 
-search::SerialNum
-AttributeManager::getNewestFlushedSerialNumber() const
-{
+search::SerialNum AttributeManager::getNewestFlushedSerialNumber() const {
     SerialNum num = 0;
-    for (const auto &kv : _flushables) {
+    for (const auto& kv : _flushables) {
         num = std::max(num, kv.second.getFlusher()->getFlushedSerialNum());
     }
     return num;
 }
 
-void
-AttributeManager::getAttributeListAll(std::vector<AttributeGuard> &list) const
-{
+void AttributeManager::getAttributeListAll(std::vector<AttributeGuard>& list) const {
     list.reserve(_attributes.size());
-    for (const auto &kv : _attributes) {
+    for (const auto& kv : _attributes) {
         list.emplace_back(kv.second.getAttribute());
     }
 }
 
-void
-AttributeManager::pruneRemovedFields(search::SerialNum serialNum)
-{
+void AttributeManager::pruneRemovedFields(search::SerialNum serialNum) {
     std::vector<std::string> attributes = _diskLayout->listAttributes();
-    for (const auto &attribute : attributes) {
+    for (const auto& attribute : attributes) {
         auto itr = _attributes.find(attribute);
         if (itr == _attributes.end()) {
             _diskLayout->removeAttributeDir(attribute, serialNum);
@@ -582,15 +504,11 @@ AttributeManager::pruneRemovedFields(search::SerialNum serialNum)
     }
 }
 
-vespalib::ISequencedTaskExecutor &
-AttributeManager::getAttributeFieldWriter() const
-{
+vespalib::ISequencedTaskExecutor& AttributeManager::getAttributeFieldWriter() const {
     return _attributeFieldWriter;
 }
 
-AttributeVector *
-AttributeManager::getWritableAttribute(std::string_view name) const
-{
+AttributeVector* AttributeManager::getWritableAttribute(std::string_view name) const {
     auto itr = _attributes.find(name);
     if (itr == _attributes.end() || itr->second.isExtra()) {
         return nullptr;
@@ -598,16 +516,12 @@ AttributeManager::getWritableAttribute(std::string_view name) const
     return itr->second.getAttribute().get();
 }
 
-const std::vector<AttributeVector *> &
-AttributeManager::getWritableAttributes() const
-{
+const std::vector<AttributeVector*>& AttributeManager::getWritableAttributes() const {
     return _writableAttributes;
 }
 
-void
-AttributeManager::asyncForEachAttribute(std::shared_ptr<IConstAttributeFunctor> func) const
-{
-    for (const auto &attr : _attributes) {
+void AttributeManager::asyncForEachAttribute(std::shared_ptr<IConstAttributeFunctor> func) const {
+    for (const auto& attr : _attributes) {
         if (attr.second.isExtra()) {
             // We must skip extra attributes as they must be handled in other threads. (DocumentMetaStore)
             continue;
@@ -618,10 +532,8 @@ AttributeManager::asyncForEachAttribute(std::shared_ptr<IConstAttributeFunctor> 
     }
 }
 
-void
-AttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func, OnDone onDone) const
-{
-    for (const auto &attr : _attributes) {
+void AttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func, OnDone onDone) const {
+    for (const auto& attr : _attributes) {
         if (attr.second.isExtra()) {
             // We must skip extra attributes as they must be handled in other threads.(DocumentMetaStore)
             continue;
@@ -629,33 +541,29 @@ AttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func,
         AttributeVector::SP attrsp = attr.second.getAttribute();
         _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorIdFromName(attrsp->getNamePrefix()),
                                       [attrsp, func, onDone]() {
-            (void) onDone;
-            (*func)(*attrsp);
-        });
+                                          (void)onDone;
+                                          (*func)(*attrsp);
+                                      });
     }
 }
 
-void
-AttributeManager::asyncForAttribute(std::string_view name, std::unique_ptr<IAttributeFunctor> func) const {
+void AttributeManager::asyncForAttribute(std::string_view name, std::unique_ptr<IAttributeFunctor> func) const {
     auto itr = _attributes.find(name);
     if (itr == _attributes.end() || itr->second.isExtra() || !func) {
         return;
     }
     AttributeVector::SP attrsp = itr->second.getAttribute();
-    string attrName(attrsp->getNamePrefix());
+    string              attrName(attrsp->getNamePrefix());
     _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorIdFromName(attrName),
-                                  [attr=std::move(attrsp), func=std::move(func)]() { (*func)(*attr); });
+                                  [attr = std::move(attrsp), func = std::move(func)]() { (*func)(*attr); });
 }
 
-void
-AttributeManager::setImportedAttributes(std::unique_ptr<ImportedAttributesRepo> attributes)
-{
+void AttributeManager::setImportedAttributes(std::unique_ptr<ImportedAttributesRepo> attributes) {
     _importedAttributes = std::move(attributes);
 }
 
 std::shared_ptr<search::attribute::ReadableAttributeVector>
-AttributeManager::readable_attribute_vector(std::string_view name) const
-{
+AttributeManager::readable_attribute_vector(std::string_view name) const {
     auto attribute = findAttribute(name);
     if (attribute || !_importedAttributes) {
         return attribute;
@@ -663,9 +571,7 @@ AttributeManager::readable_attribute_vector(std::string_view name) const
     return _importedAttributes->get(name);
 }
 
-ResourceUsage
-AttributeManager::get_resource_usage() const
-{
+ResourceUsage AttributeManager::get_resource_usage() const {
     ResourceUsage result;
     for (const auto& elem : _flushables) {
         auto usage = elem.second.getFlusher()->get_resource_usage();
@@ -675,9 +581,7 @@ AttributeManager::get_resource_usage() const
     return result;
 }
 
-uint64_t
-AttributeManager::get_size_on_disk_overhead() noexcept
-{
+uint64_t AttributeManager::get_size_on_disk_overhead() noexcept {
     /*
      * The "attribute" directory under the searchable document subdb directory
      * and the fast access document subdb directory, e.g. "0.ready/attribute"

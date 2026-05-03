@@ -1,11 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "document_field_retriever.h"
+
 #include <vespa/document/fieldvalue/fieldvalues.h>
+#include <vespa/eval/eval/value.h>
 #include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
 #include <vespa/searchlib/attribute/single_raw_attribute.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
-#include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
@@ -34,17 +35,13 @@ namespace proton {
 namespace {
 
 template <typename WT, typename T, typename FT>
-void
-setValue(DocumentIdT lid, Document &doc, const document::Field & field, const IAttributeVector &attr);
+void setValue(DocumentIdT lid, Document& doc, const document::Field& field, const IAttributeVector& attr);
 
 template <typename WT, typename T, typename FT>
-void
-setValue(DocumentIdT lid, Document &doc, const document::Field & field, const IAttributeVector &attr)
-{
+void setValue(DocumentIdT lid, Document& doc, const document::Field& field, const IAttributeVector& attr) {
     switch (attr.getCollectionType()) {
-    case CollectionType::SINGLE:
-    {
-        if ( ! attr.isUndefined(lid) ) {
+    case CollectionType::SINGLE: {
+        if (!attr.isUndefined(lid)) {
             if constexpr (std::is_same_v<IAttributeVector::largeint_t, WT>) {
                 doc.setFieldValue(field, std::make_unique<FT>(attr.getInt(lid)));
             } else if constexpr (std::is_same_v<double, WT>) {
@@ -60,8 +57,7 @@ setValue(DocumentIdT lid, Document &doc, const document::Field & field, const IA
         }
         break;
     }
-    case CollectionType::ARRAY:
-    {
+    case CollectionType::ARRAY: {
         Stash stash;
         auto* mva = attr.as_multi_value_attribute();
         if (mva == nullptr) {
@@ -79,19 +75,18 @@ setValue(DocumentIdT lid, Document &doc, const document::Field & field, const IA
             break;
         }
         FieldValue::UP fv = field.getDataType().createFieldValue();
-        if (fv && ! fv->isA(FieldValue::Type::ARRAY)) {
+        if (fv && !fv->isA(FieldValue::Type::ARRAY)) {
             throw IllegalStateException("Field " + field.getName() + " does not contain an array.", VESPA_STRLOC);
         }
-        ArrayFieldValue &array = static_cast<ArrayFieldValue &>(*fv.get());
+        ArrayFieldValue& array = static_cast<ArrayFieldValue&>(*fv.get());
         array.resize(values.size());
         for (uint32_t j(0); j < values.size(); ++j) {
-            static_cast<FT &>(array[j]).setValue(values[j]);
+            static_cast<FT&>(array[j]).setValue(values[j]);
         }
         doc.setValue(field, *fv);
         break;
     }
-    case CollectionType::WSET:
-    {
+    case CollectionType::WSET: {
         if constexpr (std::is_same_v<bool, T>) {
             doc.remove(field);
         } else {
@@ -112,15 +107,15 @@ setValue(DocumentIdT lid, Document &doc, const document::Field & field, const IA
                 break;
             }
             FieldValue::UP fv = field.getDataType().createFieldValue();
-            if (fv &&  ! fv->isA(FieldValue::Type::WSET)) {
+            if (fv && !fv->isA(FieldValue::Type::WSET)) {
                 throw IllegalStateException("Field " + field.getName() + " does not contain a wset.", VESPA_STRLOC);
             }
-            WeightedSetFieldValue & wset(static_cast<WeightedSetFieldValue &>(*fv.get()));
+            WeightedSetFieldValue& wset(static_cast<WeightedSetFieldValue&>(*fv.get()));
             wset.resize(values.size());
             auto it(wset.begin());
             for (uint32_t j(0); j < values.size(); ++j, ++it) {
-                static_cast<FT &>(*it->first).setValue(values[j].value());
-                static_cast<document::IntFieldValue &>(*it->second).setValue(values[j].weight());
+                static_cast<FT&>(*it->first).setValue(values[j].value());
+                static_cast<document::IntFieldValue&>(*it->second).setValue(values[j].weight());
             }
             doc.setValue(field, *fv);
         }
@@ -132,12 +127,9 @@ setValue(DocumentIdT lid, Document &doc, const document::Field & field, const IA
     }
 }
 
-void
-set_raw_value(DocumentIdT lid, Document& doc, const document::Field& field,
-              const IAttributeVector& attr)
-{
+void set_raw_value(DocumentIdT lid, Document& doc, const document::Field& field, const IAttributeVector& attr) {
     auto& raw_attr = static_cast<const SingleRawAttribute&>(attr);
-    auto raw = raw_attr.get_raw(lid);
+    auto  raw = raw_attr.get_raw(lid);
     if (raw.empty()) {
         doc.remove(field);
     } else {
@@ -146,30 +138,22 @@ set_raw_value(DocumentIdT lid, Document& doc, const document::Field& field,
     }
 }
 
-void
-setTensorValue(DocumentIdT lid, Document &doc,
-               const document::Field &field,
-               const IAttributeVector &attr)
-{
-    const auto &tensorAttribute = static_cast<const TensorAttribute &>(attr);
-    auto tensor = tensorAttribute.getTensor(lid);
+void setTensorValue(DocumentIdT lid, Document& doc, const document::Field& field, const IAttributeVector& attr) {
+    const auto& tensorAttribute = static_cast<const TensorAttribute&>(attr);
+    auto        tensor = tensorAttribute.getTensor(lid);
     if (tensor) {
         auto tensorField = field.createValue();
-        dynamic_cast<TensorFieldValue &>(*tensorField) = std::move(tensor);
+        dynamic_cast<TensorFieldValue&>(*tensorField) = std::move(tensor);
         doc.setValue(field, *tensorField);
     } else {
         doc.remove(field);
     }
 }
 
-}
+} // namespace
 
-void
-DocumentFieldRetriever::populate(DocumentIdT lid,
-                                 Document &doc,
-                                 const document::Field & field,
-                                 const IAttributeVector &attr)
-{
+void DocumentFieldRetriever::populate(DocumentIdT lid, Document& doc, const document::Field& field,
+                                      const IAttributeVector& attr) {
     switch (attr.getBasicType()) {
     case BasicType::BOOL:
         return setValue<IAttributeVector::largeint_t, bool, document::BoolFieldValue>(lid, doc, field, attr);
@@ -188,7 +172,7 @@ DocumentFieldRetriever::populate(DocumentIdT lid,
     case BasicType::DOUBLE:
         return setValue<double, double, document::DoubleFieldValue>(lid, doc, field, attr);
     case BasicType::STRING:
-        return setValue<const char *, const char *, document::StringFieldValue>(lid, doc, field, attr);
+        return setValue<const char*, const char*, document::StringFieldValue>(lid, doc, field, attr);
     case BasicType::RAW:
         return set_raw_value(lid, doc, field, attr);
     case BasicType::PREDICATE:

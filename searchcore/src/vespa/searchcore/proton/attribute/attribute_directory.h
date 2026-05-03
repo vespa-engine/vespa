@@ -5,6 +5,7 @@
 #include <vespa/searchlib/common/indexmetainfo.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/vespalib/util/time.h>
+
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
@@ -12,7 +13,9 @@
 #include <string>
 #include <unordered_map>
 
-namespace searchcorespi::common { class TransientResourceUsage; }
+namespace searchcorespi::common {
+class TransientResourceUsage;
+}
 
 namespace proton {
 
@@ -22,8 +25,7 @@ class AttributeDiskLayout;
  * Class used to track changes to a directory containing saved
  * snapshots of an attribute vector.
  */
-class AttributeDirectory
-{
+class AttributeDirectory {
 public:
     class Writer;
     using SerialNum = search::SerialNum;
@@ -33,15 +35,15 @@ private:
     // The disk size is calculated and set when a snapshot is marked as valid.
     using SnapshotDiskSizes = std::unordered_map<SerialNum, std::optional<uint64_t>>;
 
-    std::weak_ptr<AttributeDiskLayout> _diskLayout;
-    const std::string  _name;
+    std::weak_ptr<AttributeDiskLayout>      _diskLayout;
+    const std::string                       _name;
     std::atomic<vespalib::system_time::rep> _last_flush_time;
-    Writer                 *_writer; // current writer
-    mutable std::mutex      _mutex;
-    std::condition_variable _cv;
-    search::IndexMetaInfo   _snapInfo;
-    SnapshotDiskSizes       _disk_sizes;
-    std::atomic<SerialNum>  _flushed_serial;
+    Writer*                                 _writer; // current writer
+    mutable std::mutex                      _mutex;
+    std::condition_variable                 _cv;
+    search::IndexMetaInfo                   _snapInfo;
+    SnapshotDiskSizes                       _disk_sizes;
+    std::atomic<SerialNum>                  _flushed_serial;
 
     void saveSnapInfo();
     std::string getSnapshotDir(SerialNum serialNum) const;
@@ -58,11 +60,10 @@ private:
     std::string getDirName() const;
 
 public:
-    AttributeDirectory(const std::shared_ptr<AttributeDiskLayout> &diskLayout,
-                       const std::string &name);
+    AttributeDirectory(const std::shared_ptr<AttributeDiskLayout>& diskLayout, const std::string& name);
     ~AttributeDirectory();
 
-    const std::string & getAttrName() const { return _name; }
+    const std::string& getAttrName() const { return _name; }
 
     /*
      * Class to make changes to an attribute directory in a
@@ -70,10 +71,10 @@ public:
      * ensure only one active writer at a time for an attribute directory.
      */
     class Writer {
-        AttributeDirectory &_dir;
+        AttributeDirectory& _dir;
 
     public:
-        Writer(AttributeDirectory &dir);
+        Writer(AttributeDirectory& dir);
         ~Writer();
 
         // methods called when saving an attribute.

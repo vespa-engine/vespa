@@ -2,12 +2,14 @@
 
 #pragma once
 
-#include "attribute_usage_stats.h"
 #include "attribute_usage_filter_config.h"
+#include "attribute_usage_stats.h"
+
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
-#include <mutex>
+
 #include <atomic>
 #include <memory>
+#include <mutex>
 
 namespace proton {
 
@@ -26,13 +28,13 @@ public:
     using Config = AttributeUsageFilterConfig;
 
 private:
-    mutable Mutex       _lock; // protect _attributeStats, _config
-    AttributeUsageStats _attributeStats;
-    Config              _config;
-    std::atomic<bool>   _acceptWrite;
+    mutable Mutex                            _lock; // protect _attributeStats, _config
+    AttributeUsageStats                      _attributeStats;
+    Config                                   _config;
+    std::atomic<bool>                        _acceptWrite;
     std::unique_ptr<IAttributeUsageListener> _listener;
 
-    void recalcState(const Guard &guard); // called with _lock held
+    void recalcState(const Guard& guard); // called with _lock held
 public:
     AttributeUsageFilter();
     ~AttributeUsageFilter() override;

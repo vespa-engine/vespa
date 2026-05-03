@@ -4,18 +4,15 @@
 
 namespace proton {
 
-AttributeCollectionSpec::AttributeCollectionSpec(AttributeList && attributes, uint32_t docIdLimit, std::optional<SerialNum> currentSerialNum)
-    : _attributes(std::move(attributes)),
-      _docIdLimit(docIdLimit),
-      _currentSerialNum(currentSerialNum)
-{
+AttributeCollectionSpec::AttributeCollectionSpec(AttributeList&& attributes, uint32_t docIdLimit,
+                                                 std::optional<SerialNum> currentSerialNum)
+    : _attributes(std::move(attributes)), _docIdLimit(docIdLimit), _currentSerialNum(currentSerialNum) {
 }
 
 AttributeCollectionSpec::~AttributeCollectionSpec() = default;
 
-bool
-AttributeCollectionSpec::hasAttribute(const std::string &name) const {
-    for (const auto &attr : _attributes) {
+bool AttributeCollectionSpec::hasAttribute(const std::string& name) const {
+    for (const auto& attr : _attributes) {
         if (attr.getName() == name) {
             return true;
         }
@@ -23,4 +20,4 @@ AttributeCollectionSpec::hasAttribute(const std::string &name) const {
     return false;
 }
 
-}
+} // namespace proton

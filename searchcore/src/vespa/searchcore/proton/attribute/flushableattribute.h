@@ -6,11 +6,19 @@
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/vespalib/util/hw_info.h>
 
-namespace search { class AttributeVector; }
+namespace search {
+class AttributeVector;
+}
 
-namespace search::common { class FileHeaderContext; }
-namespace searchcorespi::common { class ResourceUsage; }
-namespace vespalib { class ISequencedTaskExecutor; }
+namespace search::common {
+class FileHeaderContext;
+}
+namespace searchcorespi::common {
+class ResourceUsage;
+}
+namespace vespalib {
+class ISequencedTaskExecutor;
+}
 
 namespace proton {
 
@@ -19,8 +27,7 @@ class AttributeDirectory;
 /**
  * Implementation of IFlushTarget interface for attribute vectors.
  */
-class FlushableAttribute : public searchcorespi::LeafFlushTarget
-{
+class FlushableAttribute : public searchcorespi::LeafFlushTarget {
 private:
     /**
      * Task performing the actual flushing to disk.
@@ -33,8 +40,8 @@ private:
     bool                                     _cleanUpAfterFlush;
     FlushStats                               _lastStats;
     const search::TuneFileAttributes         _tuneFileAttributes;
-    const search::common::FileHeaderContext &_fileHeaderContext;
-    vespalib::ISequencedTaskExecutor        &_attributeFieldWriter;
+    const search::common::FileHeaderContext& _fileHeaderContext;
+    vespalib::ISequencedTaskExecutor&        _attributeFieldWriter;
     vespalib::HwInfo                         _hwInfo;
     std::shared_ptr<AttributeDirectory>      _attrDir;
     double                                   _replay_operation_cost;
@@ -51,13 +58,10 @@ public:
      *
      * fileHeaderContext must be kept alive by caller.
      **/
-    FlushableAttribute(AttributeVectorSP attr,
-                       const std::shared_ptr<AttributeDirectory> &attrDir,
-                       const search::TuneFileAttributes &tuneFileAttributes,
-                       const search::common::FileHeaderContext &
-                       fileHeaderContext,
-                       vespalib::ISequencedTaskExecutor &attributeFieldWriter,
-                       const vespalib::HwInfo &hwInfo);
+    FlushableAttribute(AttributeVectorSP attr, const std::shared_ptr<AttributeDirectory>& attrDir,
+                       const search::TuneFileAttributes&        tuneFileAttributes,
+                       const search::common::FileHeaderContext& fileHeaderContext,
+                       vespalib::ISequencedTaskExecutor& attributeFieldWriter, const vespalib::HwInfo& hwInfo);
 
     ~FlushableAttribute() override;
 
@@ -79,4 +83,3 @@ public:
 };
 
 } // namespace proton
-

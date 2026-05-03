@@ -2,21 +2,20 @@
 
 #pragma once
 
-namespace search::attribute { class Config; }
+namespace search::attribute {
+class Config;
+}
 
-namespace proton
-{
+namespace proton {
 
 /**
  * Class to check if attribute types are compatible or not.
  */
-class AttributeTypeMatcher
-{
+class AttributeTypeMatcher {
 public:
     AttributeTypeMatcher() = default;
     ~AttributeTypeMatcher() = default;
-    bool operator()(const search::attribute::Config &oldConfig,
-                    const search::attribute::Config &newConfig) const;
+    bool operator()(const search::attribute::Config& oldConfig, const search::attribute::Config& newConfig) const;
 };
 
-}
+} // namespace proton

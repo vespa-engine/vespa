@@ -3,6 +3,7 @@
 #pragma once
 
 #include "attribute_writer.h"
+
 #include <vespa/searchcore/proton/reprocessing/i_reprocessing_reader.h>
 
 namespace proton {
@@ -10,14 +11,13 @@ namespace proton {
 /**
  * Class used to populate attribute vectors based on visiting the content of a document store.
  */
-class AttributePopulator : public IReprocessingReader
-{
+class AttributePopulator : public IReprocessingReader {
 private:
-    AttributeWriter  _writer;
+    AttributeWriter   _writer;
     search::SerialNum _initSerialNum;
     search::SerialNum _currSerialNum;
     search::SerialNum _configSerialNum;
-    std::string  _subDbName;
+    std::string       _subDbName;
 
     search::SerialNum nextSerialNum();
 
@@ -26,17 +26,14 @@ private:
 public:
     using SP = std::shared_ptr<AttributePopulator>;
 
-    AttributePopulator(const proton::IAttributeManager::SP &mgr,
-                       search::SerialNum initSerialNum,
-                       const std::string &subDbName,
-                       search::SerialNum configSerialNum);
+    AttributePopulator(const proton::IAttributeManager::SP& mgr, search::SerialNum initSerialNum,
+                       const std::string& subDbName, search::SerialNum configSerialNum);
     ~AttributePopulator() override;
 
-    const IAttributeWriter &getWriter() const { return _writer; }
+    const IAttributeWriter& getWriter() const { return _writer; }
 
-    void handleExisting(uint32_t lid, const std::shared_ptr<document::Document> &doc) override;
+    void handleExisting(uint32_t lid, const std::shared_ptr<document::Document>& doc) override;
     void done() override;
 };
 
 } // namespace proton
-

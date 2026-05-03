@@ -4,8 +4,9 @@
 
 #include <vespa/searchcore/proton/attribute/attribute_usage_stats.h>
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <mutex>
+
 #include <memory>
+#include <mutex>
 
 namespace proton {
 
@@ -34,4 +35,4 @@ public:
     void close();
 };
 
-}
+} // namespace proton
