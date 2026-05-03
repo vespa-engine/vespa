@@ -15,13 +15,13 @@ const char lid_env_name[] = "VESPA_PROTON_DEBUG_FEED_LID_LIST";
 const char docid_env_name[] = "VESPA_PROTON_DEBUG_FEED_DOCID_LIST";
 
 class EnvSaver {
-    const char *_name;
-    string _value;
-    bool _is_set;
+    const char* _name;
+    string      _value;
+    bool        _is_set;
 
 public:
-    EnvSaver(const char *name) : _name(name) {
-        char *val = getenv(_name);
+    EnvSaver(const char* name) : _name(name) {
+        char* val = getenv(_name);
         _is_set = val;
         if (val) {
             _value = val;
@@ -36,18 +36,16 @@ public:
     }
 };
 
-}
+} // namespace
 
-TEST(FeedDebuggerTest, require_that_when_environment_variable_is_not_set_debugging_is_off)
-{
-    EnvSaver save_lid_env(lid_env_name);
-    EnvSaver save_docid_env(docid_env_name);
+TEST(FeedDebuggerTest, require_that_when_environment_variable_is_not_set_debugging_is_off) {
+    EnvSaver     save_lid_env(lid_env_name);
+    EnvSaver     save_docid_env(docid_env_name);
     FeedDebugger debugger;
     EXPECT_FALSE(debugger.isDebugging());
 }
 
-TEST(FeedDebuggerTest, require_that_setting_an_environment_variable_turns_on_lid_specific_debugging)
-{
+TEST(FeedDebuggerTest, require_that_setting_an_environment_variable_turns_on_lid_specific_debugging) {
     EnvSaver save_lid_env(lid_env_name);
     EnvSaver save_docid_env(docid_env_name);
     setenv(lid_env_name, "1,3,5", true);
@@ -61,8 +59,7 @@ TEST(FeedDebuggerTest, require_that_setting_an_environment_variable_turns_on_lid
     EXPECT_EQ(ns_log::Logger::info, debugger.getDebugLevel(5, nullptr));
 }
 
-TEST(FeedDebuggerTest, require_that_setting_an_environment_variable_turns_on_docid_specific_debugging)
-{
+TEST(FeedDebuggerTest, require_that_setting_an_environment_variable_turns_on_docid_specific_debugging) {
     EnvSaver save_lid_env(lid_env_name);
     EnvSaver save_docid_env(docid_env_name);
     setenv(docid_env_name, "id:ns:type::test:foo,id:ns:type::test:bar,id:ns:type::test:baz", true);

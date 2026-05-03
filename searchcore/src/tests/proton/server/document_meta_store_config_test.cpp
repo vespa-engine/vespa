@@ -24,21 +24,19 @@ public:
         return builder;
     }
 
-    static DocumentMetaStoreConfig make_config() {
-        return DocumentMetaStoreConfig::make(make_proton_config());
-    }
+    static DocumentMetaStoreConfig make_config() { return DocumentMetaStoreConfig::make(make_proton_config()); }
 
     static DocumentMetaStoreConfig make_config(bool store_full_document_ids) {
         return DocumentMetaStoreConfig::make(make_proton_config(store_full_document_ids));
     }
+
 protected:
     DocumentMetaStoreConfig config_false;
     DocumentMetaStoreConfig config_true;
 };
 
 DocumentMetaStoreConfigTest::DocumentMetaStoreConfigTest()
-    : config_false(make_config(false)),
-      config_true(make_config(true)) {
+    : config_false(make_config(false)), config_true(make_config(true)) {
 }
 
 DocumentMetaStoreConfigTest::~DocumentMetaStoreConfigTest() = default;

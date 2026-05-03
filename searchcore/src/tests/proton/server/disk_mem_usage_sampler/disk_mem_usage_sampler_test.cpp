@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/searchcore/proton/common/i_reserved_disk_space_provider.h>
 #include <vespa/searchcore/proton/common/scheduledexecutor.h>
 #include <vespa/searchcore/proton/server/disk_mem_usage_sampler.h>
 #include <vespa/searchcore/proton/server/resource_usage_write_filter.h>
@@ -7,10 +8,10 @@
 #include <vespa/searchcorespi/common/i_resource_usage_provider.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/hw_info.h>
+
 #include <thread>
 
 #include <vespa/log/log.h>
-#include <vespa/searchcore/proton/common/i_reserved_disk_space_provider.h>
 LOG_SETUP("disk_mem_usage_sampler_test");
 
 using searchcorespi::common::IResourceUsageProvider;
@@ -26,12 +27,8 @@ constexpr uint64_t disk_size_bytes = 200000;
 constexpr uint64_t memory_size_bytes = 100000;
 constexpr uint64_t zero_size_on_disk = 0;
 
-HwInfo
-make_hw_info()
-{
-    return HwInfo(HwInfo::Disk(disk_size_bytes, false, true),
-                  HwInfo::Memory(memory_size_bytes),
-                  HwInfo::Cpu(1));
+HwInfo make_hw_info() {
+    return HwInfo(HwInfo::Disk(disk_size_bytes, false, true), HwInfo::Memory(memory_size_bytes), HwInfo::Cpu(1));
 }
 
 class MyProvider : public IResourceUsageProvider {
@@ -41,9 +38,7 @@ private:
 
 public:
     MyProvider(size_t memory_usage, size_t disk_usage) noexcept
-        : _memory_usage(memory_usage),
-          _disk_usage(disk_usage)
-    {}
+        : _memory_usage(memory_usage), _disk_usage(disk_usage) {}
     ResourceUsage get_resource_usage() const override {
         return ResourceUsage{TransientResourceUsage{_disk_usage, _memory_usage}, zero_size_on_disk};
     }
@@ -51,35 +46,32 @@ public:
 
 class MyReservedDiskSpaceProvider : public IReservedDiskSpaceProvider {
 public:
-    MyReservedDiskSpaceProvider() noexcept
-        : IReservedDiskSpaceProvider()
-    {
-    }
+    MyReservedDiskSpaceProvider() noexcept : IReservedDiskSpaceProvider() {}
     ~MyReservedDiskSpaceProvider() override;
     uint64_t get_reserved_disk_space() const override { return 42; }
 };
 
 MyReservedDiskSpaceProvider::~MyReservedDiskSpaceProvider() = default;
 
-}
+} // namespace
 
 struct DiskMemUsageSamplerTest : public ::testing::Test {
-    Transport transport;
-    ScheduledExecutor executor;
-    std::unique_ptr<ResourceUsageWriteFilter> write_filter;
-    std::shared_ptr<ResourceUsageNotifier> notifier;
+    Transport                                   transport;
+    ScheduledExecutor                           executor;
+    std::unique_ptr<ResourceUsageWriteFilter>   write_filter;
+    std::shared_ptr<ResourceUsageNotifier>      notifier;
     std::unique_ptr<IReservedDiskSpaceProvider> reserved_disk_space_provider;
-    std::unique_ptr<DiskMemUsageSampler> sampler;
+    std::unique_ptr<DiskMemUsageSampler>        sampler;
     DiskMemUsageSamplerTest()
         : transport(),
           executor(transport.transport()),
           write_filter(std::make_unique<ResourceUsageWriteFilter>(make_hw_info())),
           notifier(std::make_shared<ResourceUsageNotifier>(*write_filter)),
           reserved_disk_space_provider(std::make_unique<MyReservedDiskSpaceProvider>()),
-          sampler(std::make_unique<DiskMemUsageSampler>(".", *write_filter, *notifier, *reserved_disk_space_provider))
-    {
-        sampler->setConfig(DiskMemUsageSampler::Config(0.8, 0.8, 0.0, AttributeUsageFilterConfig(),
-                                                       50ms, make_hw_info()), executor);
+          sampler(
+              std::make_unique<DiskMemUsageSampler>(".", *write_filter, *notifier, *reserved_disk_space_provider)) {
+        sampler->setConfig(
+            DiskMemUsageSampler::Config(0.8, 0.8, 0.0, AttributeUsageFilterConfig(), 50ms, make_hw_info()), executor);
         sampler->add_resource_usage_provider(std::make_shared<MyProvider>(50, 200));
         sampler->add_resource_usage_provider(std::make_shared<MyProvider>(100, 150));
     }
@@ -91,8 +83,7 @@ DiskMemUsageSamplerTest::~DiskMemUsageSamplerTest() {
     sampler->close(); // Ensure all tasks are stopped
 }
 
-TEST_F(DiskMemUsageSamplerTest, resource_usage_is_sampled)
-{
+TEST_F(DiskMemUsageSamplerTest, resource_usage_is_sampled) {
     // Poll for up to 20 seconds to get a sample.
     size_t i = 0;
     for (; i < static_cast<size_t>(20s / 50ms); ++i) {
@@ -113,4 +104,3 @@ TEST_F(DiskMemUsageSamplerTest, resource_usage_is_sampled)
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
-

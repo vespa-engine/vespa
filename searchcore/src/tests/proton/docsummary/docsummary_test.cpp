@@ -1,6 +1,35 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchcore/proton/test/dummydbowner.h>
+#include <vespa/config-bucketspaces.h>
+#include <vespa/config-summary.h>
+#include <vespa/document/annotation/annotation.h>
+#include <vespa/document/annotation/span.h>
+#include <vespa/document/annotation/spanlist.h>
+#include <vespa/document/annotation/spantree.h>
+#include <vespa/document/config/documenttypes_config_fwd.h>
+#include <vespa/document/datatype/annotationtype.h>
+#include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/datatype/tensor_data_type.h>
+#include <vespa/document/fieldvalue/arrayfieldvalue.h>
+#include <vespa/document/fieldvalue/bytefieldvalue.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/doublefieldvalue.h>
+#include <vespa/document/fieldvalue/floatfieldvalue.h>
+#include <vespa/document/fieldvalue/intfieldvalue.h>
+#include <vespa/document/fieldvalue/longfieldvalue.h>
+#include <vespa/document/fieldvalue/rawfieldvalue.h>
+#include <vespa/document/fieldvalue/shortfieldvalue.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/document/fieldvalue/tensorfieldvalue.h>
+#include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
+#include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/repo/fixedtyperepo.h>
+#include <vespa/document/repo/newconfigbuilder.h>
+#include <vespa/document/test/make_bucket_space.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/test/value_compare.h>
+#include <vespa/eval/eval/value.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/docsummary/docsumcontext.h>
 #include <vespa/searchcore/proton/docsummary/documentstoreadapter.h>
@@ -17,6 +46,7 @@
 #include <vespa/searchcore/proton/server/searchview.h>
 #include <vespa/searchcore/proton/server/summaryadapter.h>
 #include <vespa/searchcore/proton/test/bucketfactory.h>
+#include <vespa/searchcore/proton/test/dummydbowner.h>
 #include <vespa/searchcore/proton/test/mock_shared_threading_service.h>
 #include <vespa/searchcore/proton/test/port_numbers.h>
 #include <vespa/searchlib/attribute/interlock.h>
@@ -24,54 +54,26 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchlib/test/doc_builder.h>
-#include <vespa/searchlib/util/linguisticsannotation.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
+#include <vespa/searchlib/util/linguisticsannotation.h>
 #include <vespa/searchsummary/docsummary/i_docsum_field_writer_factory.h>
 #include <vespa/searchsummary/docsummary/i_docsum_store_document.h>
 #include <vespa/searchsummary/docsummary/i_juniper_converter.h>
 #include <vespa/searchsummary/docsummary/struct_fields_mapper.h>
-#include <vespa/config-bucketspaces.h>
-#include <vespa/config/helper/configgetter.hpp>
-#include <vespa/document/annotation/annotation.h>
-#include <vespa/document/annotation/span.h>
-#include <vespa/document/annotation/spanlist.h>
-#include <vespa/document/annotation/spantree.h>
-#include <vespa/document/config/documenttypes_config_fwd.h>
-#include <vespa/document/datatype/annotationtype.h>
-#include <vespa/document/datatype/documenttype.h>
-#include <vespa/document/datatype/tensor_data_type.h>
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/fieldvalue/arrayfieldvalue.h>
-#include <vespa/document/fieldvalue/bytefieldvalue.h>
-#include <vespa/document/fieldvalue/doublefieldvalue.h>
-#include <vespa/document/fieldvalue/floatfieldvalue.h>
-#include <vespa/document/fieldvalue/intfieldvalue.h>
-#include <vespa/document/fieldvalue/longfieldvalue.h>
-#include <vespa/document/fieldvalue/rawfieldvalue.h>
-#include <vespa/document/fieldvalue/shortfieldvalue.h>
-#include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/document/fieldvalue/tensorfieldvalue.h>
-#include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
-#include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/document/repo/newconfigbuilder.h>
-#include <vespa/document/repo/fixedtyperepo.h>
-#include <vespa/document/test/make_bucket_space.h>
-#include <vespa/eval/eval/simple_value.h>
-#include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/eval/eval/test/value_compare.h>
-#include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/vespalib/data/slime/json_format.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/encoding/base64.h>
+#include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/net/socket_spec.h>
-#include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/test/test_path.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/config-summary.h>
+
+#include <vespa/config/helper/configgetter.hpp>
+
 #include <filesystem>
 #include <regex>
 
@@ -89,7 +91,6 @@ using namespace search::transactionlog;
 using namespace search;
 using namespace std::chrono_literals;
 
-using vespalib::IDestructorCallback;
 using document::test::makeBucketSpace;
 using search::TuneFileDocumentDB;
 using search::common::ElementIds;
@@ -97,14 +98,15 @@ using search::index::DummyFileHeaderContext;
 using search::linguistics::SPANTREE_NAME;
 using search::test::DocBuilder;
 using storage::spi::Timestamp;
-using vespa::config::search::core::ProtonConfig;
 using vespa::config::content::core::BucketspacesConfig;
+using vespa::config::search::core::ProtonConfig;
+using vespalib::GateCallback;
+using vespalib::HwInfo;
+using vespalib::IDestructorCallback;
+using vespalib::Slime;
 using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::ValueType;
-using vespalib::GateCallback;
-using vespalib::HwInfo;
-using vespalib::Slime;
 using vespalib::geo::ZCurve;
 using namespace vespalib::slime;
 
@@ -116,46 +118,38 @@ std::string tls_port_spec() {
     return vespalib::SocketSpec::from_host_port("localhost", tls_port).spec();
 }
 
-}
+} // namespace
 
 namespace proton {
 
-class MockDocsumFieldWriterFactory : public search::docsummary::IDocsumFieldWriterFactory
-{
+class MockDocsumFieldWriterFactory : public search::docsummary::IDocsumFieldWriterFactory {
 public:
-    std::unique_ptr<DocsumFieldWriter> create_docsum_field_writer(const std::string&,
-                                                                  const std::string&,
+    std::unique_ptr<DocsumFieldWriter> create_docsum_field_writer(const std::string&, const std::string&,
                                                                   const std::string&) override {
         return {};
     }
-
 };
 
-class DirMaker
-{
+class DirMaker {
 public:
-    explicit DirMaker(const std::string & dir) :
-        _dir(dir)
-    {
+    explicit DirMaker(const std::string& dir) : _dir(dir) {
         std::filesystem::create_directory(std::filesystem::path(dir));
     }
-    ~DirMaker() {
-        std::filesystem::remove_all(std::filesystem::path(_dir));
-    }
+    ~DirMaker() { std::filesystem::remove_all(std::filesystem::path(_dir)); }
+
 private:
     std::string _dir;
 };
 
-class BuildContext : public DocBuilder
-{
+class BuildContext : public DocBuilder {
 public:
-    DirMaker _dmk;
-    document::FixedTypeRepo                 _fixed_repo;
-    DummyFileHeaderContext _fileHeaderContext;
-    vespalib::ThreadStackExecutor _summaryExecutor;
+    DirMaker                            _dmk;
+    document::FixedTypeRepo             _fixed_repo;
+    DummyFileHeaderContext              _fileHeaderContext;
+    vespalib::ThreadStackExecutor       _summaryExecutor;
     search::transactionlog::NoSyncProxy _noTlSyncer;
-    search::LogDocumentStore _str;
-    uint64_t _serialNum;
+    search::LogDocumentStore            _str;
+    uint64_t                            _serialNum;
 
     explicit BuildContext(AddFieldsType addfields);
 
@@ -163,11 +157,7 @@ public:
 
     const document::FixedTypeRepo& get_fixed_repo() { return _fixed_repo; }
 
-    void
-    put_document(uint32_t docId, std::unique_ptr<Document> doc)
-    {
-        _str.write(_serialNum++, docId, *doc);
-    }
+    void put_document(uint32_t docId, std::unique_ptr<Document> doc) { _str.write(_serialNum++, docId, *doc); }
 
     StringFieldValue make_annotated_string();
 };
@@ -178,31 +168,21 @@ BuildContext::BuildContext(AddFieldsType add_fields)
       _fixed_repo(get_repo(), get_document_type()),
       _summaryExecutor(4),
       _noTlSyncer(),
-      _str(_summaryExecutor, "summary",
-           LogDocumentStore::Config(
-                   DocumentStore::Config(),
-                   LogDataStore::Config()),
-           GrowStrategy(),
-           TuneFileSummary(),
-           _fileHeaderContext,
-           _noTlSyncer,
-           nullptr),
-      _serialNum(1)
-{
+      _str(_summaryExecutor, "summary", LogDocumentStore::Config(DocumentStore::Config(), LogDataStore::Config()),
+           GrowStrategy(), TuneFileSummary(), _fileHeaderContext, _noTlSyncer, nullptr),
+      _serialNum(1) {
 }
 
 BuildContext::~BuildContext() = default;
 
-StringFieldValue
-BuildContext::make_annotated_string()
-{
+StringFieldValue BuildContext::make_annotated_string() {
     auto span_list_up = std::make_unique<SpanList>();
     auto span_list = span_list_up.get();
     auto tree = std::make_unique<SpanTree>(SPANTREE_NAME, std::move(span_list_up));
     tree->annotate(span_list->add(std::make_unique<Span>(0, 3)), *AnnotationType::TERM);
     tree->annotate(span_list->add(std::make_unique<Span>(4, 3)),
                    Annotation(*AnnotationType::TERM, std::make_unique<StringFieldValue>("baz")));
-    StringFieldValue value("foo bar");
+    StringFieldValue            value("foo bar");
     StringFieldValue::SpanTrees trees;
     trees.push_back(std::move(tree));
     value.setSpanTrees(trees, _fixed_repo);
@@ -211,53 +191,50 @@ BuildContext::make_annotated_string()
 
 namespace {
 
-const char *
-getDocTypeName()
-{
+const char* getDocTypeName() {
     return "searchdocument";
 }
 
-vespalib::eval::Value::UP make_tensor(const TensorSpec &spec) {
+vespalib::eval::Value::UP make_tensor(const TensorSpec& spec) {
     return SimpleValue::from_spec(spec);
 }
 
 std::string asVstring(vespalib::Memory str) {
     return std::string(str.data, str.size);
 }
-std::string asVstring(const Inspector &value) {
+std::string asVstring(const Inspector& value) {
     return asVstring(value.asString());
 }
 
-std::string b64encode(const Inspector &value) {
+std::string b64encode(const Inspector& value) {
     vespalib::Memory mem = value.asData();
-    std::string str(mem.data, mem.size);
+    std::string      str(mem.data, mem.size);
     return vespalib::Base64::encode(str);
 }
 
-}  // namespace
+} // namespace
 
-class DBContext : public DummyDBOwner
-{
+class DBContext : public DummyDBOwner {
 public:
-    DirMaker _dmk;
-    DummyFileHeaderContext        _fileHeaderContext;
-    vespalib::ThreadStackExecutor _summaryExecutor;
-    MockSharedThreadingService    _shared_service;
-    TransLogServer                _tls;
-    bool _made_dir;
-    matching::QueryLimiter _queryLimiter;
-    DummyWireService _dummy;
-    ::config::DirSpec _spec;
-    DocumentDBConfigHelper _configMgr;
-    DocumentDBConfig::DocumenttypesConfigSP _documenttypesConfig;
+    DirMaker                                      _dmk;
+    DummyFileHeaderContext                        _fileHeaderContext;
+    vespalib::ThreadStackExecutor                 _summaryExecutor;
+    MockSharedThreadingService                    _shared_service;
+    TransLogServer                                _tls;
+    bool                                          _made_dir;
+    matching::QueryLimiter                        _queryLimiter;
+    DummyWireService                              _dummy;
+    ::config::DirSpec                             _spec;
+    DocumentDBConfigHelper                        _configMgr;
+    DocumentDBConfig::DocumenttypesConfigSP       _documenttypesConfig;
     const std::shared_ptr<const DocumentTypeRepo> _repo;
-    TuneFileDocumentDB::SP _tuneFileDocumentDB;
-    HwInfo _hwInfo;
-    std::shared_ptr<DocumentDB> _ddb;
-    AttributeWriter::UP _aw;
-    ISummaryAdapter::SP _sa;
+    TuneFileDocumentDB::SP                        _tuneFileDocumentDB;
+    HwInfo                                        _hwInfo;
+    std::shared_ptr<DocumentDB>                   _ddb;
+    AttributeWriter::UP                           _aw;
+    ISummaryAdapter::SP                           _sa;
 
-    DBContext(std::shared_ptr<const DocumentTypeRepo> repo, const char *docTypeName)
+    DBContext(std::shared_ptr<const DocumentTypeRepo> repo, const char* docTypeName)
         : _dmk(docTypeName),
           _fileHeaderContext(),
           _summaryExecutor(8),
@@ -274,57 +251,51 @@ public:
           _hwInfo(),
           _ddb(),
           _aw(),
-          _sa()
-    {
-        (void) _made_dir;
-        auto b = std::make_shared<BootstrapConfig>(1, _documenttypesConfig, _repo,
-                                                   std::make_shared<ProtonConfig>(),
-                                                   std::make_shared<FiledistributorrpcConfig>(),
-                                                   std::make_shared<BucketspacesConfig>(),
-                                                   _tuneFileDocumentDB, _hwInfo);
+          _sa() {
+        (void)_made_dir;
+        auto b =
+            std::make_shared<BootstrapConfig>(1, _documenttypesConfig, _repo, std::make_shared<ProtonConfig>(),
+                                              std::make_shared<FiledistributorrpcConfig>(),
+                                              std::make_shared<BucketspacesConfig>(), _tuneFileDocumentDB, _hwInfo);
         _configMgr.forwardConfig(b);
         _configMgr.nextGeneration(_shared_service.transport(), 0ms);
         std::filesystem::create_directory(std::filesystem::path(std::string("tmpdb/") + docTypeName));
-        _ddb = DocumentDB::create("tmpdb", _configMgr.getConfig(), tls_port_spec(), _queryLimiter,
-                                  DocTypeName(docTypeName), makeBucketSpace(), *b->getProtonConfigSP(), *this,
-                                  _shared_service, _tls, _dummy, _fileHeaderContext,
-                                  std::make_shared<search::attribute::Interlock>(),
-                                  std::make_unique<MemoryConfigStore>(),
-                                  std::make_shared<vespalib::ThreadStackExecutor>(16), _hwInfo,
-                                  std::shared_ptr<search::diskindex::IPostingListCache>()),
-            _ddb->start();
+        _ddb = DocumentDB::create(
+            "tmpdb", _configMgr.getConfig(), tls_port_spec(), _queryLimiter, DocTypeName(docTypeName),
+            makeBucketSpace(), *b->getProtonConfigSP(), *this, _shared_service, _tls, _dummy, _fileHeaderContext,
+            std::make_shared<search::attribute::Interlock>(), std::make_unique<MemoryConfigStore>(),
+            std::make_shared<vespalib::ThreadStackExecutor>(16), _hwInfo,
+            std::shared_ptr<search::diskindex::IPostingListCache>()),
+        _ddb->start();
         _ddb->waitForOnlineState();
         _aw = std::make_unique<AttributeWriter>(_ddb->getReadySubDB()->getAttributeManager());
         _sa = _ddb->getReadySubDB()->getSummaryAdapter();
     }
     ~DBContext() override;
 
-    void
-    put(const document::Document &doc, const search::DocumentIdT lid)
-    {
-        const document::DocumentId &docId = doc.getId();
+    void put(const document::Document& doc, const search::DocumentIdT lid) {
+        const document::DocumentId& docId = doc.getId();
         using PutRes = DocumentMetaStore::Result;
-        IDocumentMetaStore &dms = _ddb->getReadySubDB()->getDocumentMetaStoreContext().get();
-        uint32_t docSize = 1;
-        PutRes putRes(dms.put(docId, BucketFactory::getBucketId(docId),
-                              Timestamp(0u), docSize, lid, 0u));
+        IDocumentMetaStore& dms = _ddb->getReadySubDB()->getDocumentMetaStoreContext().get();
+        uint32_t            docSize = 1;
+        PutRes putRes(dms.put(docId, BucketFactory::getBucketId(docId), Timestamp(0u), docSize, lid, 0u));
         LOG_ASSERT(putRes.ok());
         uint64_t serialNum = _ddb->getFeedHandler().inc_serial_num();
         dms.commit(CommitParam(serialNum, CommitParam::UpdateStats::SKIP));
         _aw->put(serialNum, doc, lid, std::shared_ptr<IDestructorCallback>());
         {
             vespalib::Gate gate;
-            CommitParam commit_param(serialNum, CommitParam::UpdateStats::SKIP);
+            CommitParam    commit_param(serialNum, CommitParam::UpdateStats::SKIP);
             _aw->forceCommit(commit_param, std::make_shared<GateCallback>(gate));
             gate.await();
         }
         _sa->put(serialNum, lid, doc);
-        const GlobalId &gid = docId.getGlobalId();
-        BucketId bucketId(gid.convertToBucketId());
+        const GlobalId& gid = docId.getGlobalId();
+        BucketId        bucketId(gid.convertToBucketId());
         bucketId.setUsedBits(8);
         storage::spi::Timestamp ts(0);
-        DbDocumentId dbdId(lid);
-        DbDocumentId prevDbdId(0);
+        DbDocumentId            dbdId(lid);
+        DbDocumentId            prevDbdId(0);
         auto op = std::make_unique<PutOperation>(bucketId, ts, std::make_shared<document::Document>(doc));
         op->setSerialNum(serialNum);
         op->setDbDocumentId(dbdId);
@@ -334,18 +305,17 @@ public:
             _ddb->getFeedHandler().appendOperation(*op, std::make_shared<vespalib::GateCallback>(commitDone));
         }));
         commitDone.await();
-        SearchView *sv(dynamic_cast<SearchView *>(_ddb->getReadySubDB()->getSearchView().get()));
+        SearchView* sv(dynamic_cast<SearchView*>(_ddb->getReadySubDB()->getSearchView().get()));
         if (sv != nullptr) {
             // cf. FeedView::putAttributes()
-            DocIdLimit &docIdLimit = sv->getDocIdLimit();
+            DocIdLimit& docIdLimit = sv->getDocIdLimit();
             if (docIdLimit.get() <= lid)
                 docIdLimit.set(lid + 1);
         }
     }
 };
 
-DBContext::~DBContext()
-{
+DBContext::~DBContext() {
     _sa.reset();
     _aw.reset();
     _ddb.reset();
@@ -353,48 +323,38 @@ DBContext::~DBContext()
     std::filesystem::remove_all(std::filesystem::path("tmpdb"));
 }
 
-class Fixture
-{
+class Fixture {
 private:
     std::unique_ptr<vespa::config::search::SummaryConfig> _summaryCfg;
-    ResultConfig               _resultCfg;
+    ResultConfig                                          _resultCfg;
 
 public:
     Fixture();
     ~Fixture();
 
-    const ResultConfig &getResultConfig() const{
-        return _resultCfg;
-    }
+    const ResultConfig& getResultConfig() const { return _resultCfg; }
 };
 
-class MockJuniperConverter : public IJuniperConverter
-{
+class MockJuniperConverter : public IJuniperConverter {
     std::string _result;
+
 public:
-    void convert(std::string_view input, vespalib::slime::Inserter&) override {
-        _result = input;
-    }
+    void convert(std::string_view input, vespalib::slime::Inserter&) override { _result = input; }
     const std::string& get_result() const noexcept { return _result; }
 };
 
-bool
-assertString(const std::string & exp, const std::string & fieldName,
-             DocumentStoreAdapter &dsa, uint32_t id)
-{
+bool assertString(const std::string& exp, const std::string& fieldName, DocumentStoreAdapter& dsa, uint32_t id) {
     auto res = dsa.get_document(id);
     bool failed = false;
     EXPECT_EQ(exp, res->get_field_value(fieldName)->getAsString()) << (failed = true, "");
     return !failed;
 }
 
-bool
-assertAnnotatedString(const std::string & exp, const std::string & fieldName,
-                      DocumentStoreAdapter &dsa, uint32_t id)
-{
-    auto res = dsa.get_document(id);
-    MockJuniperConverter converter;
-    vespalib::Slime slime;
+bool assertAnnotatedString(const std::string& exp, const std::string& fieldName, DocumentStoreAdapter& dsa,
+                           uint32_t id) {
+    auto                           res = dsa.get_document(id);
+    MockJuniperConverter           converter;
+    vespalib::Slime                slime;
     vespalib::slime::SlimeInserter inserter(slime);
     res->insert_juniper_field(fieldName, ElementIds::select_all(), inserter, converter);
     bool failed = false;
@@ -402,21 +362,18 @@ assertAnnotatedString(const std::string & exp, const std::string & fieldName,
     return !failed;
 }
 
-void
-assertTensor(std::string_view label,
-             const vespalib::eval::Value::UP & exp, const std::string & fieldName,
-             const DocsumReply & reply, uint32_t id)
-{
+void assertTensor(std::string_view label, const vespalib::eval::Value::UP& exp, const std::string& fieldName,
+                  const DocsumReply& reply, uint32_t id) {
     SCOPED_TRACE(label);
-    const auto & root = reply.root();
+    const auto& root = reply.root();
     if (exp) {
         EXPECT_TRUE(root["docsums"].valid());
         EXPECT_TRUE(root["docsums"][id].valid());
         EXPECT_TRUE(root["docsums"][id]["docsum"].valid());
         EXPECT_TRUE(root["docsums"][id]["docsum"][fieldName].valid());
-        vespalib::Memory data = root["docsums"][id]["docsum"][fieldName].asData();
+        vespalib::Memory    data = root["docsums"][id]["docsum"][fieldName].asData();
         vespalib::nbostream x(data.data, data.size);
-        auto tensor = SimpleValue::from_stream(x);
+        auto                tensor = SimpleValue::from_stream(x);
         EXPECT_TRUE(tensor.get() != nullptr);
         EXPECT_EQ(*exp, *tensor);
     } else {
@@ -424,9 +381,9 @@ assertTensor(std::string_view label,
     }
 }
 
-bool assertSlime(const std::string &exp, const DocsumReply &reply) {
+bool assertSlime(const std::string& exp, const DocsumReply& reply) {
     vespalib::Slime expSlime;
-    size_t used = JsonFormat::decode(exp, expSlime);
+    size_t          used = JsonFormat::decode(exp, expSlime);
     EXPECT_TRUE(used > 0);
     bool failed = false;
     EXPECT_TRUE(reply.hasResult()) << (failed = true, "");
@@ -434,25 +391,22 @@ bool assertSlime(const std::string &exp, const DocsumReply &reply) {
     return !failed;
 }
 
-TEST(DocSummaryTest, requireThatAdapterHandlesAllFieldTypes)
-{
-    Fixture f;
-    BuildContext bc([](auto& builder, auto& header)
-                    {
-                        header
-                            .addField("a", builder.byteTypeRef())
-                            .addField("b", builder.shortTypeRef())
-                            .addField("c", builder.intTypeRef())
-                            .addField("d", builder.longTypeRef())
-                            .addField("e", builder.floatTypeRef())
-                            .addField("f", builder.doubleTypeRef())
-                            .addField("g", builder.stringTypeRef())
-                            .addField("h", builder.stringTypeRef())
-                            .addField("i", builder.rawTypeRef())
-                            .addField("j", builder.rawTypeRef())
-                            .addField("k", builder.stringTypeRef())
-                            .addField("l", builder.stringTypeRef());
-                    });
+TEST(DocSummaryTest, requireThatAdapterHandlesAllFieldTypes) {
+    Fixture      f;
+    BuildContext bc([](auto& builder, auto& header) {
+        header.addField("a", builder.byteTypeRef())
+            .addField("b", builder.shortTypeRef())
+            .addField("c", builder.intTypeRef())
+            .addField("d", builder.longTypeRef())
+            .addField("e", builder.floatTypeRef())
+            .addField("f", builder.doubleTypeRef())
+            .addField("g", builder.stringTypeRef())
+            .addField("h", builder.stringTypeRef())
+            .addField("i", builder.rawTypeRef())
+            .addField("j", builder.rawTypeRef())
+            .addField("k", builder.stringTypeRef())
+            .addField("l", builder.stringTypeRef());
+    });
 
     auto doc = bc.make_document("id:ns:searchdocument::0");
     doc->setValue("a", ByteFieldValue(-1));
@@ -470,26 +424,25 @@ TEST(DocSummaryTest, requireThatAdapterHandlesAllFieldTypes)
     bc.put_document(0, std::move(doc));
 
     DocumentStoreAdapter dsa(bc._str, bc.get_repo());
-    auto res = dsa.get_document(0);
-    EXPECT_EQ(-1,          res->get_field_value("a")->getAsInt());
-    EXPECT_EQ(32767,       res->get_field_value("b")->getAsInt());
-    EXPECT_EQ(2147483647,  res->get_field_value("c")->getAsInt());
+    auto                 res = dsa.get_document(0);
+    EXPECT_EQ(-1, res->get_field_value("a")->getAsInt());
+    EXPECT_EQ(32767, res->get_field_value("b")->getAsInt());
+    EXPECT_EQ(2147483647, res->get_field_value("c")->getAsInt());
     EXPECT_EQ(INT64_C(2147483648), res->get_field_value("d")->getAsLong());
-    EXPECT_NEAR(1234.56,    res->get_field_value("e")->getAsFloat(), 10e-5);
-    EXPECT_NEAR(9876.54,    res->get_field_value("f")->getAsDouble(), 10e-5);
-    EXPECT_EQ("foo",       res->get_field_value("g")->getAsString());
-    EXPECT_EQ("bar",       res->get_field_value("h")->getAsString());
-    EXPECT_EQ("baz",       res->get_field_value("i")->getAsString());
-    EXPECT_EQ("qux",       res->get_field_value("j")->getAsString());
-    EXPECT_EQ("<foo>",     res->get_field_value("k")->getAsString());
-    EXPECT_EQ("{foo:10}",  res->get_field_value("l")->getAsString());
+    EXPECT_NEAR(1234.56, res->get_field_value("e")->getAsFloat(), 10e-5);
+    EXPECT_NEAR(9876.54, res->get_field_value("f")->getAsDouble(), 10e-5);
+    EXPECT_EQ("foo", res->get_field_value("g")->getAsString());
+    EXPECT_EQ("bar", res->get_field_value("h")->getAsString());
+    EXPECT_EQ("baz", res->get_field_value("i")->getAsString());
+    EXPECT_EQ("qux", res->get_field_value("j")->getAsString());
+    EXPECT_EQ("<foo>", res->get_field_value("k")->getAsString());
+    EXPECT_EQ("{foo:10}", res->get_field_value("l")->getAsString());
 }
 
-TEST(DocSummaryTest, requireThatAdapterHandlesMultipleDocuments)
-{
-    Fixture f;
+TEST(DocSummaryTest, requireThatAdapterHandlesMultipleDocuments) {
+    Fixture      f;
     BuildContext bc([](auto& builder, auto& header) { header.addField("a", builder.intTypeRef()); });
-    auto doc = bc.make_document("id:ns:searchdocument::0");
+    auto         doc = bc.make_document("id:ns:searchdocument::0");
     doc->setValue("a", IntFieldValue(1000));
     bc.put_document(0, std::move(doc));
     doc = bc.make_document("id:ns:searchdocument::1");
@@ -518,15 +471,14 @@ TEST(DocSummaryTest, requireThatAdapterHandlesMultipleDocuments)
     bc._str.flush(flushToken);
 }
 
-TEST(DocSummaryTest, requireThatAdapterHandlesDocumentIdField)
-{
-    Fixture f;
+TEST(DocSummaryTest, requireThatAdapterHandlesDocumentIdField) {
+    Fixture      f;
     BuildContext bc([](auto&, auto&) noexcept {});
-    auto doc = bc.make_document("id:ns:searchdocument::0");
+    auto         doc = bc.make_document("id:ns:searchdocument::0");
     bc.put_document(0, std::move(doc));
-    DocumentStoreAdapter dsa(bc._str, bc.get_repo());
-    auto res = dsa.get_document(0);
-    vespalib::Slime slime;
+    DocumentStoreAdapter           dsa(bc._str, bc.get_repo());
+    auto                           res = dsa.get_document(0);
+    vespalib::Slime                slime;
     vespalib::slime::SlimeInserter inserter(slime);
     res->insert_document_id(inserter);
     EXPECT_EQ("id:ns:searchdocument::0", slime.get().asString().make_string());
@@ -538,11 +490,10 @@ GlobalId gid3 = DocumentId("id:ns:searchdocument::3").getGlobalId(); // lid 3
 GlobalId gid4 = DocumentId("id:ns:searchdocument::4").getGlobalId(); // lid 4
 GlobalId gid9 = DocumentId("id:ns:searchdocument::9").getGlobalId(); // not existing
 
-TEST(DocSummaryTest, requireThatDocsumRequestIsProcessed)
-{
+TEST(DocSummaryTest, requireThatDocsumRequestIsProcessed) {
     BuildContext bc([](auto& builder, auto& header) { header.addField("a", builder.intTypeRef()); });
-    DBContext dc(bc.get_repo_sp(), getDocTypeName());
-    auto doc = bc.make_document("id:ns:searchdocument::1");
+    DBContext    dc(bc.get_repo_sp(), getDocTypeName());
+    auto         doc = bc.make_document("id:ns:searchdocument::1");
     doc->setValue("a", IntFieldValue(10));
     dc.put(*doc, 1);
     doc = bc.make_document("id:ns:searchdocument::2");
@@ -567,13 +518,12 @@ TEST(DocSummaryTest, requireThatDocsumRequestIsProcessed)
     EXPECT_TRUE(assertSlime("{docsums:[ {docsum:{a:20}}, {docsum:{a:40}}, {} ]}", *rep));
 }
 
-TEST(DocSummaryTest, requireThatRewritersAreUsed)
-{
-    BuildContext bc([](auto& builder, auto& header)
-                    { header.addField("aa", builder.intTypeRef())
-                            .addField("ab", builder.intTypeRef()); });
-    DBContext dc(bc.get_repo_sp(), getDocTypeName());
-    auto doc = bc.make_document("id:ns:searchdocument::1");
+TEST(DocSummaryTest, requireThatRewritersAreUsed) {
+    BuildContext bc([](auto& builder, auto& header) {
+        header.addField("aa", builder.intTypeRef()).addField("ab", builder.intTypeRef());
+    });
+    DBContext    dc(bc.get_repo_sp(), getDocTypeName());
+    auto         doc = bc.make_document("id:ns:searchdocument::1");
     doc->setValue("aa", IntFieldValue(10));
     doc->setValue("ab", IntFieldValue(20));
     dc.put(*doc, 1);
@@ -585,13 +535,12 @@ TEST(DocSummaryTest, requireThatRewritersAreUsed)
     EXPECT_TRUE(assertSlime("{docsums:[ {docsum:{aa:20}} ]}", *rep));
 }
 
-TEST(DocSummaryTest, requireThatSummariesTimeout)
-{
-    BuildContext bc([](auto& builder, auto& header)
-                    { header.addField("aa", builder.intTypeRef())
-                            .addField("ab", builder.intTypeRef()); });
-    DBContext dc(bc.get_repo_sp(), getDocTypeName());
-    auto doc = bc.make_document("id:ns:searchdocument::1");
+TEST(DocSummaryTest, requireThatSummariesTimeout) {
+    BuildContext bc([](auto& builder, auto& header) {
+        header.addField("aa", builder.intTypeRef()).addField("ab", builder.intTypeRef());
+    });
+    DBContext    dc(bc.get_repo_sp(), getDocTypeName());
+    auto         doc = bc.make_document("id:ns:searchdocument::1");
     doc->setValue("aa", IntFieldValue(10));
     doc->setValue("ab", IntFieldValue(20));
     dc.put(*doc, 1);
@@ -602,20 +551,21 @@ TEST(DocSummaryTest, requireThatSummariesTimeout)
     req.resultClassName = "class2";
     req.hits.emplace_back(gid1);
     DocsumReply::UP rep = dc._ddb->getDocsums(req);
-    const auto & root = rep->root();
-    const auto & field = root["errors"];
+    const auto&     root = rep->root();
+    const auto&     field = root["errors"];
     EXPECT_TRUE(field.valid());
     EXPECT_EQ(field[0]["type"].asString(), vespalib::Memory("timeout"));
     auto bufstring = field[0]["message"].asString();
-    EXPECT_TRUE(std::regex_search(bufstring.data, bufstring.data + bufstring.size, std::regex("Timed out 1 summaries with -[0-9]+us left.")));
+    EXPECT_TRUE(std::regex_search(bufstring.data, bufstring.data + bufstring.size,
+                                  std::regex("Timed out 1 summaries with -[0-9]+us left.")));
 }
 
-void verifyFieldListHonoured(DocsumRequest::FieldList fields, const std::string & json) {
-    BuildContext bc([](auto& builder, auto& header)
-                    { header.addField("ba", builder.intTypeRef())
-                            .addField("bb", builder.floatTypeRef()); });
-    DBContext dc(bc.get_repo_sp(), getDocTypeName());
-    auto doc = bc.make_document("id:ns:searchdocument::1");
+void verifyFieldListHonoured(DocsumRequest::FieldList fields, const std::string& json) {
+    BuildContext bc([](auto& builder, auto& header) {
+        header.addField("ba", builder.intTypeRef()).addField("bb", builder.floatTypeRef());
+    });
+    DBContext    dc(bc.get_repo_sp(), getDocTypeName());
+    auto         doc = bc.make_document("id:ns:searchdocument::1");
     doc->setValue("ba", IntFieldValue(10));
     doc->setValue("bb", FloatFieldValue(10.1250));
     dc.put(*doc, 1);
@@ -627,38 +577,37 @@ void verifyFieldListHonoured(DocsumRequest::FieldList fields, const std::string 
     EXPECT_TRUE(assertSlime(json, *rep));
 }
 
-TEST(DocSummaryTest, requireThatFieldListIsHonoured)
-{
+TEST(DocSummaryTest, requireThatFieldListIsHonoured) {
     verifyFieldListHonoured({}, "{docsums:[ {docsum:{ba:10,bb:10.1250}} ]}");
-    verifyFieldListHonoured({"ba","bb"}, "{docsums:[ {docsum:{ba:10,bb:10.1250}} ]}");
+    verifyFieldListHonoured({"ba", "bb"}, "{docsums:[ {docsum:{ba:10,bb:10.1250}} ]}");
     verifyFieldListHonoured({"ba"}, "{docsums:[ {docsum:{ba:10}} ]}");
     verifyFieldListHonoured({"bb"}, "{docsums:[ {docsum:{bb:10.1250}} ]}");
     verifyFieldListHonoured({"unknown"}, "{docsums:[ {docsum:{}} ]}");
     verifyFieldListHonoured({"ba", "unknown"}, "{docsums:[ {docsum:{ba:10}} ]}");
 }
 
-TEST(DocSummaryTest, requireThatAttributesAreUsed)
-{
-    BuildContext bc([](auto& builder, auto& header)
-                    { using namespace document::new_config_builder;
-                        auto int_array = header.createArray(builder.intTypeRef()).ref();
-                        auto float_array = header.createArray(builder.floatTypeRef()).ref();
-                        auto string_array = header.createArray(builder.stringTypeRef()).ref();
-                        auto int_wset = header.createWset(builder.intTypeRef()).ref();
-                        auto float_wset = header.createWset(builder.floatTypeRef()).ref();
-                        auto string_wset = header.createWset(builder.stringTypeRef()).ref();
-                        header.addField("ba", builder.intTypeRef())
-                            .addField("bb", builder.floatTypeRef())
-                            .addField("bc", builder.stringTypeRef())
-                            .addField("bd", int_array)
-                            .addField("be", float_array)
-                            .addField("bf", string_array)
-                            .addField("bg", int_wset)
-                            .addField("bh", float_wset)
-                            .addField("bi", string_wset)
-                            .addTensorField("bj", "tensor(x{},y{})"); });
-    DBContext dc(bc.get_repo_sp(), getDocTypeName());
-    auto doc = bc.make_document("id:ns:searchdocument::1");
+TEST(DocSummaryTest, requireThatAttributesAreUsed) {
+    BuildContext bc([](auto& builder, auto& header) {
+        using namespace document::new_config_builder;
+        auto int_array = header.createArray(builder.intTypeRef()).ref();
+        auto float_array = header.createArray(builder.floatTypeRef()).ref();
+        auto string_array = header.createArray(builder.stringTypeRef()).ref();
+        auto int_wset = header.createWset(builder.intTypeRef()).ref();
+        auto float_wset = header.createWset(builder.floatTypeRef()).ref();
+        auto string_wset = header.createWset(builder.stringTypeRef()).ref();
+        header.addField("ba", builder.intTypeRef())
+            .addField("bb", builder.floatTypeRef())
+            .addField("bc", builder.stringTypeRef())
+            .addField("bd", int_array)
+            .addField("be", float_array)
+            .addField("bf", string_array)
+            .addField("bg", int_wset)
+            .addField("bh", float_wset)
+            .addField("bi", string_wset)
+            .addTensorField("bj", "tensor(x{},y{})");
+    });
+    DBContext    dc(bc.get_repo_sp(), getDocTypeName());
+    auto         doc = bc.make_document("id:ns:searchdocument::1");
     dc.put(*doc, 1); // empty doc
     doc = bc.make_document("id:ns:searchdocument::2");
     doc->setValue("ba", IntFieldValue(10));
@@ -688,10 +637,9 @@ TEST(DocSummaryTest, requireThatAttributesAreUsed)
     string_wset.add(StringFieldValue("quux"), 7);
     string_wset.add(StringFieldValue("qux"), 6);
     doc->setValue("bi", string_wset);
-    TensorDataType tensor_data_type(ValueType::from_spec("tensor(x{},y{})"));
+    TensorDataType   tensor_data_type(ValueType::from_spec("tensor(x{},y{})"));
     TensorFieldValue tensor(tensor_data_type);
-    tensor = make_tensor(TensorSpec("tensor(x{},y{})")
-                         .add({{"x", "f"}, {"y", "g"}}, 3));
+    tensor = make_tensor(TensorSpec("tensor(x{},y{})").add({{"x", "f"}, {"y", "g"}}, 3));
     doc->setValue("bj", tensor);
     dc.put(*doc, 2);
     doc = bc.make_document("id:ns:searchdocument::3");
@@ -713,34 +661,32 @@ TEST(DocSummaryTest, requireThatAttributesAreUsed)
                             "bh:[{item:40.4375,weight:4},{item:50.5625,weight:5}],"
                             "bi:[{item:'quux',weight:7},{item:'qux',weight:6}],"
                             "bj:x01020178017901016601674008000000000000}},"
-                            "{docsum:{}}]}", *rep));
+                            "{docsum:{}}]}",
+                            *rep));
 
-    assertTensor("first", make_tensor(TensorSpec("tensor(x{},y{})")
-                                          .add({{"x", "f"}, {"y", "g"}}, 3)),
-                 "bj", *rep, 0);
+    assertTensor("first", make_tensor(TensorSpec("tensor(x{},y{})").add({{"x", "f"}, {"y", "g"}}, 3)), "bj", *rep, 0);
 
-    proton::IAttributeManager::SP attributeManager = dc._ddb->getReadySubDB()->getAttributeManager();
-    vespalib::ISequencedTaskExecutor &attributeFieldWriter = attributeManager->getAttributeFieldWriter();
-    search::AttributeVector *bjAttr = attributeManager->getWritableAttribute("bj");
-    auto bjTensorAttr = dynamic_cast<search::tensor::TensorAttribute *>(bjAttr);
+    proton::IAttributeManager::SP     attributeManager = dc._ddb->getReadySubDB()->getAttributeManager();
+    vespalib::ISequencedTaskExecutor& attributeFieldWriter = attributeManager->getAttributeFieldWriter();
+    search::AttributeVector*          bjAttr = attributeManager->getWritableAttribute("bj");
+    auto                              bjTensorAttr = dynamic_cast<search::tensor::TensorAttribute*>(bjAttr);
 
     vespalib::Gate gate;
     {
         auto on_write_done = std::make_shared<GateCallback>(gate);
-        attributeFieldWriter.execute(attributeFieldWriter.getExecutorIdFromName(bjAttr->getNamePrefix()),
-                                     [&, on_write_done]() {
-                                         (void) on_write_done;
-                                         bjTensorAttr->setTensor(3, *make_tensor(TensorSpec("tensor(x{},y{})")
-                                                                             .add({{"x", "a"}, {"y", "b"}}, 4)));
-                                         bjTensorAttr->commit();
-                                 });
+        attributeFieldWriter.execute(
+            attributeFieldWriter.getExecutorIdFromName(bjAttr->getNamePrefix()), [&, on_write_done]() {
+                (void)on_write_done;
+                bjTensorAttr->setTensor(3,
+                                        *make_tensor(TensorSpec("tensor(x{},y{})").add({{"x", "a"}, {"y", "b"}}, 4)));
+                bjTensorAttr->commit();
+            });
     }
     gate.await();
 
     DocsumReply::UP rep2 = dc._ddb->getDocsums(req);
-    assertTensor("second", make_tensor(TensorSpec("tensor(x{},y{})")
-                                           .add({{"x", "a"}, {"y", "b"}}, 4)),
-                 "bj", *rep2, 1);
+    assertTensor("second", make_tensor(TensorSpec("tensor(x{},y{})").add({{"x", "a"}, {"y", "b"}}, 4)), "bj", *rep2,
+                 1);
 
     DocsumRequest req3;
     req3.resultClassName = "class3";
@@ -749,15 +695,14 @@ TEST(DocSummaryTest, requireThatAttributesAreUsed)
     EXPECT_TRUE(assertSlime("{docsums:[{docsum:{bj:x01020178017901016101624010000000000000}}]}", *rep3));
 }
 
-TEST(DocSummaryTest, requireThatSummaryAdapterHandlesPutAndRemove)
-{
+TEST(DocSummaryTest, requireThatSummaryAdapterHandlesPutAndRemove) {
     BuildContext bc([](auto& builder, auto& header) { header.addField("f1", builder.stringTypeRef()); });
-    DBContext dc(bc.get_repo_sp(), getDocTypeName());
-    auto exp = bc.make_document("id:ns:searchdocument::1");
+    DBContext    dc(bc.get_repo_sp(), getDocTypeName());
+    auto         exp = bc.make_document("id:ns:searchdocument::1");
     exp->setValue("f1", StringFieldValue("foo"));
     dc._sa->put(1, 1, *exp);
-    IDocumentStore & store = dc._ddb->getReadySubDB()->getSummaryManager()->getBackingStore();
-    Document::UP act = store.read(1, bc.get_repo());
+    IDocumentStore& store = dc._ddb->getReadySubDB()->getSummaryManager()->getBackingStore();
+    Document::UP    act = store.read(1, bc.get_repo());
     EXPECT_TRUE(act.get() != nullptr);
     EXPECT_EQ(exp->getType(), act->getType());
     EXPECT_EQ("foo", act->getValue("f1")->toString());
@@ -771,20 +716,19 @@ const std::string TERM_END = "\357\277\273";
 const std::string TERM_SEP = "\037";
 const std::string TERM_EMPTY;
 
-TEST(DocSummaryTest, requireThatAnnotationsAreUsed)
-{
-    Fixture f;
-    BuildContext bc([](auto& builder, auto& header)
-                    { header.addField("g", builder.stringTypeRef())
-                            .addField("dynamicstring", builder.stringTypeRef()); });
-    DBContext dc(bc.get_repo_sp(), getDocTypeName());
-    auto exp = bc.make_document("id:ns:searchdocument::0");
+TEST(DocSummaryTest, requireThatAnnotationsAreUsed) {
+    Fixture      f;
+    BuildContext bc([](auto& builder, auto& header) {
+        header.addField("g", builder.stringTypeRef()).addField("dynamicstring", builder.stringTypeRef());
+    });
+    DBContext    dc(bc.get_repo_sp(), getDocTypeName());
+    auto         exp = bc.make_document("id:ns:searchdocument::0");
     exp->setValue("g", bc.make_annotated_string());
     exp->setValue("dynamicstring", bc.make_annotated_string());
     dc._sa->put(1, 1, *exp);
 
-    IDocumentStore & store = dc._ddb->getReadySubDB()->getSummaryManager()->getBackingStore();
-    Document::UP act = store.read(1, bc.get_repo());
+    IDocumentStore& store = dc._ddb->getReadySubDB()->getSummaryManager()->getBackingStore();
+    Document::UP    act = store.read(1, bc.get_repo());
     EXPECT_TRUE(act.get() != nullptr);
     EXPECT_EQ(exp->getType(), act->getType());
     EXPECT_EQ("foo bar", act->getValue("g")->getAsString());
@@ -792,25 +736,23 @@ TEST(DocSummaryTest, requireThatAnnotationsAreUsed)
 
     DocumentStoreAdapter dsa(store, bc.get_repo());
     EXPECT_TRUE(assertString("foo bar", "g", dsa, 1));
-    EXPECT_TRUE(assertAnnotatedString(TERM_EMPTY + "foo" + TERM_SEP +
-                                      " " + TERM_SEP +
-                                      TERM_ORIG + "bar" + TERM_INDEX + "baz" + TERM_END +
-                                      TERM_SEP,
+    EXPECT_TRUE(assertAnnotatedString(TERM_EMPTY + "foo" + TERM_SEP + " " + TERM_SEP + TERM_ORIG + "bar" +
+                                          TERM_INDEX + "baz" + TERM_END + TERM_SEP,
                                       "dynamicstring", dsa, 1));
 }
 
-TEST(DocSummaryTest, requireThatUrisAreUsed)
-{
-    Fixture f;
-    BuildContext bc([](auto& builder, auto& header)
-                    { using namespace document::new_config_builder;
-                        auto uri_array = header.createArray(builder.uriTypeRef()).ref();
-                        auto uri_wset = header.createWset(builder.uriTypeRef()).ref();
-                        header.addField("urisingle", builder.uriTypeRef())
-                            .addField("uriarray", uri_array)
-                            .addField("uriwset", uri_wset); });
-    DBContext dc(bc.get_repo_sp(), getDocTypeName());
-    auto exp = bc.make_document("id:ns:searchdocument::0");
+TEST(DocSummaryTest, requireThatUrisAreUsed) {
+    Fixture      f;
+    BuildContext bc([](auto& builder, auto& header) {
+        using namespace document::new_config_builder;
+        auto uri_array = header.createArray(builder.uriTypeRef()).ref();
+        auto uri_wset = header.createWset(builder.uriTypeRef()).ref();
+        header.addField("urisingle", builder.uriTypeRef())
+            .addField("uriarray", uri_array)
+            .addField("uriwset", uri_wset);
+    });
+    DBContext    dc(bc.get_repo_sp(), getDocTypeName());
+    auto         exp = bc.make_document("id:ns:searchdocument::0");
     exp->setValue("urisingle", StringFieldValue("http://www.example.com:81/fluke?ab=2#4"));
     auto uri_array = bc.make_array("uriarray");
     uri_array.add(StringFieldValue("http://www.example.com:82/fluke?ab=2#8"));
@@ -822,30 +764,29 @@ TEST(DocSummaryTest, requireThatUrisAreUsed)
     exp->setValue("uriwset", uri_wset);
     dc._sa->put(1, 1, *exp);
 
-    IDocumentStore & store =
-        dc._ddb->getReadySubDB()->getSummaryManager()->getBackingStore();
-    Document::UP act = store.read(1, bc.get_repo());
+    IDocumentStore& store = dc._ddb->getReadySubDB()->getSummaryManager()->getBackingStore();
+    Document::UP    act = store.read(1, bc.get_repo());
     EXPECT_TRUE(act.get() != nullptr);
     EXPECT_EQ(exp->getType(), act->getType());
 
     DocumentStoreAdapter dsa(store, bc.get_repo());
-    auto res = dsa.get_document(1);
+    auto                 res = dsa.get_document(1);
     {
-        vespalib::Slime slime;
+        vespalib::Slime                slime;
         vespalib::slime::SlimeInserter inserter(slime);
         res->insert_summary_field("urisingle", ElementIds::select_all(), inserter);
         EXPECT_EQ("http://www.example.com:81/fluke?ab=2#4", asVstring(slime.get()));
     }
     {
-        vespalib::Slime slime;
+        vespalib::Slime                slime;
         vespalib::slime::SlimeInserter inserter(slime);
         res->insert_summary_field("uriarray", ElementIds::select_all(), inserter);
         EXPECT_TRUE(slime.get().valid());
-        EXPECT_EQ("http://www.example.com:82/fluke?ab=2#8",  asVstring(slime.get()[0]));
+        EXPECT_EQ("http://www.example.com:82/fluke?ab=2#8", asVstring(slime.get()[0]));
         EXPECT_EQ("http://www.flickr.com:82/fluke?ab=2#9", asVstring(slime.get()[1]));
     }
     {
-        vespalib::Slime slime;
+        vespalib::Slime                slime;
         vespalib::slime::SlimeInserter inserter(slime);
         res->insert_summary_field("uriwset", ElementIds::select_all(), inserter);
         EXPECT_TRUE(slime.get().valid());
@@ -858,17 +799,15 @@ TEST(DocSummaryTest, requireThatUrisAreUsed)
     }
 }
 
-TEST(DocSummaryTest, requireThatPositionsAreUsed)
-{
-    BuildContext bc([](auto& builder, auto& header)
-                    { using namespace document::new_config_builder;
-                        auto long_array = header.createArray(builder.longTypeRef()).ref();
-                        auto long_wset = header.createWset(builder.longTypeRef()).ref();
-                        header.addField("sp2", builder.longTypeRef())
-                            .addField("ap2", long_array)
-                            .addField("wp2", long_wset); });
-    DBContext dc(bc.get_repo_sp(), getDocTypeName());
-    auto exp = bc.make_document("id:ns:searchdocument::1");
+TEST(DocSummaryTest, requireThatPositionsAreUsed) {
+    BuildContext bc([](auto& builder, auto& header) {
+        using namespace document::new_config_builder;
+        auto long_array = header.createArray(builder.longTypeRef()).ref();
+        auto long_wset = header.createWset(builder.longTypeRef()).ref();
+        header.addField("sp2", builder.longTypeRef()).addField("ap2", long_array).addField("wp2", long_wset);
+    });
+    DBContext    dc(bc.get_repo_sp(), getDocTypeName());
+    auto         exp = bc.make_document("id:ns:searchdocument::1");
     exp->setValue("sp2", LongFieldValue(ZCurve::encode(1002, 1003)));
     auto pos_array = bc.make_array("ap2");
     pos_array.add(LongFieldValue(ZCurve::encode(1006, 1007)));
@@ -880,8 +819,8 @@ TEST(DocSummaryTest, requireThatPositionsAreUsed)
     exp->setValue("wp2", pos_wset);
     dc.put(*exp, 1);
 
-    IDocumentStore & store = dc._ddb->getReadySubDB()->getSummaryManager()->getBackingStore();
-    Document::UP act = store.read(1, bc.get_repo());
+    IDocumentStore& store = dc._ddb->getReadySubDB()->getSummaryManager()->getBackingStore();
+    Document::UP    act = store.read(1, bc.get_repo());
     EXPECT_TRUE(act);
     EXPECT_EQ(exp->getType(), act->getType());
 
@@ -898,19 +837,18 @@ TEST(DocSummaryTest, requireThatPositionsAreUsed)
                             ",wp2:[{item:1048370,weight:43},{item:1048382,weight:44}]"
                             ",wp2x:[{ lng:0.001012, lat:0.001013, latlong:'N0.001013;E0.001012'},"
                             "{ lng:0.001014, lat:0.001015, latlong:'N0.001015;E0.001014'}]}"
-                            "}]}", *rep));
+                            "}]}",
+                            *rep));
 }
 
-TEST(DocSummaryTest, requireThatRawFieldsWorks)
-{
-    Fixture f;
-    BuildContext bc([](auto& builder, auto& header)
-                    { using namespace document::new_config_builder;
-                        auto raw_array = header.createArray(builder.rawTypeRef()).ref();
-                        auto raw_wset = header.createWset(builder.rawTypeRef()).ref();
-                        header.addField("i", builder.rawTypeRef())
-                            .addField("araw", raw_array)
-                            .addField("wraw", raw_wset); });
+TEST(DocSummaryTest, requireThatRawFieldsWorks) {
+    Fixture           f;
+    BuildContext      bc([](auto& builder, auto& header) {
+        using namespace document::new_config_builder;
+        auto raw_array = header.createArray(builder.rawTypeRef()).ref();
+        auto raw_wset = header.createWset(builder.rawTypeRef()).ref();
+        header.addField("i", builder.rawTypeRef()).addField("araw", raw_array).addField("wraw", raw_wset);
+    });
     std::vector<char> binaryBlob;
     binaryBlob.push_back('\0');
     binaryBlob.push_back('\2');
@@ -920,19 +858,14 @@ TEST(DocSummaryTest, requireThatRawFieldsWorks)
     std::string raw1a1("Array Raw Element  1");
     std::string raw1w0("Weighted Set Raw Element 0");
     std::string raw1w1("Weighted Set Raw Element  1");
-    raw1s += std::string(&binaryBlob[0],
-                         &binaryBlob[0] + binaryBlob.size());
-    raw1a0 += std::string(&binaryBlob[0],
-                          &binaryBlob[0] + binaryBlob.size());
-    raw1a1 += std::string(&binaryBlob[0],
-                          &binaryBlob[0] + binaryBlob.size());
-    raw1w0 += std::string(&binaryBlob[0],
-                          &binaryBlob[0] + binaryBlob.size());
-    raw1w1 += std::string(&binaryBlob[0],
-                          &binaryBlob[0] + binaryBlob.size());
+    raw1s += std::string(&binaryBlob[0], &binaryBlob[0] + binaryBlob.size());
+    raw1a0 += std::string(&binaryBlob[0], &binaryBlob[0] + binaryBlob.size());
+    raw1a1 += std::string(&binaryBlob[0], &binaryBlob[0] + binaryBlob.size());
+    raw1w0 += std::string(&binaryBlob[0], &binaryBlob[0] + binaryBlob.size());
+    raw1w1 += std::string(&binaryBlob[0], &binaryBlob[0] + binaryBlob.size());
 
     DBContext dc(bc.get_repo_sp(), getDocTypeName());
-    auto exp = bc.make_document("id:ns:searchdocument::0");
+    auto      exp = bc.make_document("id:ns:searchdocument::0");
     exp->setValue("i", RawFieldValue(raw1s));
     auto raw_array = bc.make_array("araw");
     raw_array.add(RawFieldValue(raw1a0));
@@ -944,8 +877,8 @@ TEST(DocSummaryTest, requireThatRawFieldsWorks)
     exp->setValue("wraw", raw_wset);
     dc._sa->put(1, 1, *exp);
 
-    IDocumentStore & store = dc._ddb->getReadySubDB()->getSummaryManager()->getBackingStore();
-    Document::UP act = store.read(1, bc.get_repo());
+    IDocumentStore& store = dc._ddb->getReadySubDB()->getSummaryManager()->getBackingStore();
+    Document::UP    act = store.read(1, bc.get_repo());
     EXPECT_TRUE(act.get() != nullptr);
     EXPECT_EQ(exp->getType(), act->getType());
 
@@ -955,7 +888,7 @@ TEST(DocSummaryTest, requireThatRawFieldsWorks)
 
     auto res = dsa.get_document(1);
     {
-        vespalib::Slime slime;
+        vespalib::Slime                slime;
         vespalib::slime::SlimeInserter inserter(slime);
         res->insert_summary_field("araw", ElementIds::select_all(), inserter);
         EXPECT_TRUE(slime.get().valid());
@@ -963,7 +896,7 @@ TEST(DocSummaryTest, requireThatRawFieldsWorks)
         EXPECT_EQ(vespalib::Base64::encode(raw1a1), b64encode(slime.get()[1]));
     }
     {
-        vespalib::Slime slime;
+        vespalib::Slime                slime;
         vespalib::slime::SlimeInserter inserter(slime);
         res->insert_summary_field("wraw", ElementIds::select_all(), inserter);
         EXPECT_TRUE(slime.get().valid());
@@ -976,10 +909,7 @@ TEST(DocSummaryTest, requireThatRawFieldsWorks)
     }
 }
 
-Fixture::Fixture()
-    : _summaryCfg(),
-      _resultCfg()
-{
+Fixture::Fixture() : _summaryCfg(), _resultCfg() {
     std::string cfgId("summary");
     _summaryCfg = ConfigGetter<vespa::config::search::SummaryConfig>::getConfig(
         cfgId, ::config::FileSpec(TEST_PATH("summary.cfg")));
@@ -989,6 +919,6 @@ Fixture::Fixture()
 
 Fixture::~Fixture() = default;
 
-}
+} // namespace proton
 
 GTEST_MAIN_RUN_ALL_TESTS()
