@@ -31,7 +31,7 @@ void LidVectorContext::addLid(const search::DocumentIdT lid) {
 }
 
 void LidVectorContext::serialize(vespalib::nbostream& os) const {
-    LOG(debug, "serialize: _result.size() = %ld, _docIdLimit = %ld", _result.size(), _docIdLimit);
+    LOG(debug, "serialize: _result.size() = %zu, _docIdLimit = %zu", _result.size(), _docIdLimit);
     os << static_cast<uint64_t>(_docIdLimit);
     // Use of bitvector when > 1/32 of docs
     if (_result.size() > (_docIdLimit / 32)) {

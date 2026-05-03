@@ -53,7 +53,7 @@ void GroupingManager::init(const IAttributeContext& attrCtx, const document::Doc
             grouping.configureStaticStuff(stuff);
             list.push_back(groupingList[i]);
         } catch (const std::exception& e) {
-            Issue::report("Could not locate attribute for grouping number %ld : %s. Ignoring this grouping.", i,
+            Issue::report("Could not locate attribute for grouping number %zd : %s. Ignoring this grouping.", i,
                           e.what());
         }
     }
