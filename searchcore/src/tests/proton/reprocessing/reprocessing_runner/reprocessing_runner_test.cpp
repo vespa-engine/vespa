@@ -9,45 +9,35 @@ LOG_SETUP("reprocessing_runner_test");
 
 using namespace proton;
 
-struct ReprocessingRunnerTest : public  ::testing::Test
-{
+struct ReprocessingRunnerTest : public ::testing::Test {
     ReprocessingRunner _runner;
     ReprocessingRunnerTest();
     ~ReprocessingRunnerTest() override;
 };
 
-ReprocessingRunnerTest::ReprocessingRunnerTest()
-    : ::testing::Test(),
-      _runner()
-{
+ReprocessingRunnerTest::ReprocessingRunnerTest() : ::testing::Test(), _runner() {
 }
 
 ReprocessingRunnerTest::~ReprocessingRunnerTest() = default;
 
 using TaskList = ReprocessingRunner::ReprocessingTasks;
 
-struct MyTask : public IReprocessingTask
-{
-    ReprocessingRunner &_runner;
-    double _initProgress;
-    double _middleProgress;
-    double _finalProgress;
-    double _myProgress;
-    double _weight;
+struct MyTask : public IReprocessingTask {
+    ReprocessingRunner& _runner;
+    double              _initProgress;
+    double              _middleProgress;
+    double              _finalProgress;
+    double              _myProgress;
+    double              _weight;
 
-    MyTask(ReprocessingRunner &runner,
-           double initProgress,
-           double middleProgress,
-           double finalProgress,
+    MyTask(ReprocessingRunner& runner, double initProgress, double middleProgress, double finalProgress,
            double weight) noexcept
         : _runner(runner),
           _initProgress(initProgress),
           _middleProgress(middleProgress),
           _finalProgress(finalProgress),
           _myProgress(0.0),
-          _weight(weight)
-    {
-    }
+          _weight(weight) {}
 
     void run() override {
         ASSERT_EQ(_initProgress, _runner.getProgress());
@@ -57,23 +47,15 @@ struct MyTask : public IReprocessingTask
         ASSERT_EQ(_finalProgress, _runner.getProgress());
     }
 
-    Progress getProgress() const override {
-        return Progress(_myProgress, _weight);
-    }
+    Progress getProgress() const override { return Progress(_myProgress, _weight); }
 
-    static std::shared_ptr<MyTask>
-    create(ReprocessingRunner &runner,
-           double initProgress,
-           double middleProgress,
-           double finalProgress,
-           double weight)
-    {
+    static std::shared_ptr<MyTask> create(ReprocessingRunner& runner, double initProgress, double middleProgress,
+                                          double finalProgress, double weight) {
         return std::make_shared<MyTask>(runner, initProgress, middleProgress, finalProgress, weight);
     }
 };
 
-TEST_F(ReprocessingRunnerTest, require_that_progress_is_calculated_when_tasks_are_executed)
-{
+TEST_F(ReprocessingRunnerTest, require_that_progress_is_calculated_when_tasks_are_executed) {
     TaskList tasks;
     EXPECT_EQ(0.0, _runner.getProgress());
     tasks.push_back(MyTask::create(_runner, 0.0, 0.1, 0.2, 1.0));
@@ -85,9 +67,7 @@ TEST_F(ReprocessingRunnerTest, require_that_progress_is_calculated_when_tasks_ar
     EXPECT_EQ(1.0, _runner.getProgress());
 }
 
-
-TEST_F(ReprocessingRunnerTest, require_that_runner_can_be_reset)
-{
+TEST_F(ReprocessingRunnerTest, require_that_runner_can_be_reset) {
     TaskList tasks;
     EXPECT_EQ(0.0, _runner.getProgress());
     tasks.push_back(MyTask::create(_runner, 0.0, 0.5, 1.0, 1.0));

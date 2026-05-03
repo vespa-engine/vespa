@@ -1,24 +1,25 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/document/base/documentid.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
-#include <vespa/searchcore/proton/server/executor_thread_service.h>
-#include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/searchcore/proton/reference/gid_to_lid_change_handler.h>
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_listener.h>
 #include <vespa/searchcore/proton/reference/i_pending_gid_to_lid_changes.h>
-#include <vespa/searchcore/proton/reference/gid_to_lid_change_handler.h>
+#include <vespa/searchcore/proton/server/executor_thread_service.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
+#include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
+
 #include <map>
 #include <string>
 
 #include <vespa/log/log.h>
 LOG_SETUP("gid_to_lid_change_handler_test");
 
-using document::GlobalId;
 using document::DocumentId;
-using vespalib::makeLambdaTask;
+using document::GlobalId;
 using search::SerialNum;
+using vespalib::makeLambdaTask;
 
 namespace proton {
 
@@ -30,7 +31,7 @@ GlobalId toGid(std::string_view docId) {
 
 std::string doc1("id:test:music::1");
 
-}
+} // namespace
 
 TEST(GidToLidChangeHandlerTest, control_sizeof_PendingGidToLidChange) {
     EXPECT_EQ(48u, sizeof(PendingGidToLidChange));
@@ -38,12 +39,12 @@ TEST(GidToLidChangeHandlerTest, control_sizeof_PendingGidToLidChange) {
 
 class ListenerStats {
     using lock_guard = std::lock_guard<std::mutex>;
-    std::mutex _lock;
-    uint32_t  _putChanges;
-    uint32_t  _removeChanges;
-    uint32_t  _createdListeners;
-    uint32_t  _registeredListeners;
-    uint32_t  _destroyedListeners;
+    std::mutex            _lock;
+    uint32_t              _putChanges;
+    uint32_t              _removeChanges;
+    uint32_t              _createdListeners;
+    uint32_t              _registeredListeners;
+    uint32_t              _destroyedListeners;
     std::vector<GlobalId> _initial_removes;
 
 public:
@@ -54,14 +55,9 @@ public:
           _createdListeners(0u),
           _registeredListeners(0u),
           _destroyedListeners(0u),
-          _initial_removes()
-    {
-    }
+          _initial_removes() {}
 
-    ~ListenerStats()
-    {
-        EXPECT_EQ(_createdListeners, _destroyedListeners);
-    }
+    ~ListenerStats() { EXPECT_EQ(_createdListeners, _destroyedListeners); }
 
     void notifyPutDone() {
         lock_guard guard(_lock);
@@ -71,24 +67,32 @@ public:
         lock_guard guard(_lock);
         ++_removeChanges;
     }
-    void markCreatedListener()    { lock_guard guard(_lock); ++_createdListeners; }
-    void markRegisteredListener(const std::vector<GlobalId>& removes) { lock_guard guard(_lock); ++_registeredListeners; _initial_removes = removes; }
-    void markDestroyedListener()  { lock_guard guard(_lock); ++_destroyedListeners; }
+    void markCreatedListener() {
+        lock_guard guard(_lock);
+        ++_createdListeners;
+    }
+    void markRegisteredListener(const std::vector<GlobalId>& removes) {
+        lock_guard guard(_lock);
+        ++_registeredListeners;
+        _initial_removes = removes;
+    }
+    void markDestroyedListener() {
+        lock_guard guard(_lock);
+        ++_destroyedListeners;
+    }
 
     uint32_t getCreatedListeners() const { return _createdListeners; }
     uint32_t getRegisteredListeners() const { return _registeredListeners; }
     uint32_t getDestroyedListeners() const { return _destroyedListeners; }
 
-    void assertListeners(uint32_t expCreatedListeners, uint32_t expRegisteredListeners, uint32_t expDestroyedListeners,
-                         const std::string &label)
-    {
+    void assertListeners(uint32_t expCreatedListeners, uint32_t expRegisteredListeners,
+                         uint32_t expDestroyedListeners, const std::string& label) {
         SCOPED_TRACE(label);
         EXPECT_EQ(expCreatedListeners, getCreatedListeners());
         EXPECT_EQ(expRegisteredListeners, getRegisteredListeners());
         EXPECT_EQ(expDestroyedListeners, getDestroyedListeners());
     }
-    void assertChanges(uint32_t expPutChanges, uint32_t expRemoveChanges, const std::string& label)
-    {
+    void assertChanges(uint32_t expPutChanges, uint32_t expRemoveChanges, const std::string& label) {
         SCOPED_TRACE(label);
         EXPECT_EQ(expPutChanges, _putChanges);
         EXPECT_EQ(expRemoveChanges, _removeChanges);
@@ -96,54 +100,36 @@ public:
     const std::vector<GlobalId>& get_initial_removes() const noexcept { return _initial_removes; }
 };
 
-class MyListener : public IGidToLidChangeListener
-{
-    ListenerStats         &_stats;
-    std::string  _name;
-    std::string  _docTypeName;
+class MyListener : public IGidToLidChangeListener {
+    ListenerStats& _stats;
+    std::string    _name;
+    std::string    _docTypeName;
+
 public:
-    MyListener(ListenerStats &stats,
-               const std::string &name,
-               const std::string &docTypeName)
-        : IGidToLidChangeListener(),
-          _stats(stats),
-          _name(name),
-          _docTypeName(docTypeName)
-    {
+    MyListener(ListenerStats& stats, const std::string& name, const std::string& docTypeName)
+        : IGidToLidChangeListener(), _stats(stats), _name(name), _docTypeName(docTypeName) {
         _stats.markCreatedListener();
     }
     ~MyListener() override { _stats.markDestroyedListener(); }
     void notifyPutDone(IDestructorCallbackSP, GlobalId, uint32_t) override { _stats.notifyPutDone(); }
     void notifyRemove(IDestructorCallbackSP, GlobalId) override { _stats.notifyRemove(); }
     void notifyRegistered(const std::vector<GlobalId>& removes) override { _stats.markRegisteredListener(removes); }
-    const std::string &getName() const override { return _name; }
-    const std::string &getDocTypeName() const override { return _docTypeName; }
+    const std::string& getName() const override { return _name; }
+    const std::string& getDocTypeName() const override { return _docTypeName; }
 };
 
-struct Fixture
-{
+struct Fixture {
     std::vector<std::shared_ptr<ListenerStats>> _statss;
-    std::shared_ptr<GidToLidChangeHandler>  _real_handler;
-    std::shared_ptr<IGidToLidChangeHandler> _handler;
+    std::shared_ptr<GidToLidChangeHandler>      _real_handler;
+    std::shared_ptr<IGidToLidChangeHandler>     _handler;
 
-    Fixture()
-        : _statss(),
-          _real_handler(std::make_shared<GidToLidChangeHandler>()),
-          _handler(_real_handler)
-    {
-    }
+    Fixture() : _statss(), _real_handler(std::make_shared<GidToLidChangeHandler>()), _handler(_real_handler) {}
 
-    ~Fixture()
-    {
-        close();
-    }
+    ~Fixture() { close(); }
 
-    void close()
-    {
-        _real_handler->close();
-    }
+    void close() { _real_handler->close(); }
 
-    ListenerStats &addStats() {
+    ListenerStats& addStats() {
         _statss.push_back(std::make_shared<ListenerStats>());
         return *_statss.back();
     }
@@ -169,18 +155,15 @@ struct Fixture
         gate.await();
     }
 
-    void removeListeners(const std::string &docTypeName,
-                         const std::set<std::string> &keepNames) {
+    void removeListeners(const std::string& docTypeName, const std::set<std::string>& keepNames) {
         _handler->removeListeners(docTypeName, keepNames);
     }
-
 };
 
-TEST(GidToLidChangeHandlerTest, Test_that_we_can_register_a_listener)
-{
+TEST(GidToLidChangeHandlerTest, Test_that_we_can_register_a_listener) {
     Fixture f;
-    auto &stats = f.addStats();
-    auto listener = std::make_unique<MyListener>(stats, "test", "testdoc");
+    auto&   stats = f.addStats();
+    auto    listener = std::make_unique<MyListener>(stats, "test", "testdoc");
     stats.assertListeners(1, 0, 0, "created");
     f.addListener(std::move(listener));
     stats.assertListeners(1, 1, 0, "registered");
@@ -191,15 +174,14 @@ TEST(GidToLidChangeHandlerTest, Test_that_we_can_register_a_listener)
     stats.assertListeners(1, 1, 1, "destroyed");
 }
 
-TEST(GidToLidChangeHandlerTest, Test_that_we_can_register_multiple_listeners)
-{
+TEST(GidToLidChangeHandlerTest, Test_that_we_can_register_multiple_listeners) {
     Fixture f;
-    auto &stats1 = f.addStats();
-    auto &stats2 = f.addStats();
-    auto &stats3 = f.addStats();
-    auto listener1 = std::make_unique<MyListener>(stats1, "test1", "testdoc");
-    auto listener2 = std::make_unique<MyListener>(stats2, "test2", "testdoc");
-    auto listener3 = std::make_unique<MyListener>(stats3, "test3", "testdoc2");
+    auto&   stats1 = f.addStats();
+    auto&   stats2 = f.addStats();
+    auto&   stats3 = f.addStats();
+    auto    listener1 = std::make_unique<MyListener>(stats1, "test1", "testdoc");
+    auto    listener2 = std::make_unique<MyListener>(stats2, "test2", "testdoc");
+    auto    listener3 = std::make_unique<MyListener>(stats3, "test3", "testdoc2");
     stats1.assertListeners(1, 0, 0, "created 1");
     stats2.assertListeners(1, 0, 0, "created 2");
     stats3.assertListeners(1, 0, 0, "created 3");
@@ -232,11 +214,10 @@ TEST(GidToLidChangeHandlerTest, Test_that_we_can_register_multiple_listeners)
     stats3.assertListeners(1, 1, 1, "destroyed 12");
 }
 
-TEST(GidToLidChangeHandlerTest, Test_that_we_keep_old_listener_when_registering_duplicate)
-{
+TEST(GidToLidChangeHandlerTest, Test_that_we_keep_old_listener_when_registering_duplicate) {
     Fixture f;
-    auto &stats = f.addStats();
-    auto listener = std::make_unique<MyListener>(stats, "test1", "testdoc");
+    auto&   stats = f.addStats();
+    auto    listener = std::make_unique<MyListener>(stats, "test1", "testdoc");
     stats.assertListeners(1, 0, 0, "created");
     f.addListener(std::move(listener));
     stats.assertListeners(1, 1, 0, "registered");
@@ -246,42 +227,32 @@ TEST(GidToLidChangeHandlerTest, Test_that_we_keep_old_listener_when_registering_
     stats.assertListeners(2, 1, 1, "destroyed dup");
 }
 
-TEST(GidToLidChangeHandlerTest, Test_that_pending_removes_are_passed_on_to_new_listener)
-{
+TEST(GidToLidChangeHandlerTest, Test_that_pending_removes_are_passed_on_to_new_listener) {
     Fixture f;
-    auto& stats = f.addStats();
-    auto listener = std::make_unique<MyListener>(stats, "test1", "testdoc");
+    auto&   stats = f.addStats();
+    auto    listener = std::make_unique<MyListener>(stats, "test1", "testdoc");
     f.notifyRemove(toGid(doc1), 20);
     f.addListener(std::move(listener));
-    EXPECT_TRUE((std::vector<GlobalId>{ toGid(doc1) }) == stats.get_initial_removes());
+    EXPECT_TRUE((std::vector<GlobalId>{toGid(doc1)}) == stats.get_initial_removes());
     f.commit();
 }
 
-class StatsFixture : public Fixture
-{
-    ListenerStats &_stats;
+class StatsFixture : public Fixture {
+    ListenerStats& _stats;
 
 public:
-    StatsFixture()
-        : Fixture(),
-          _stats(addStats())
-    {
+    StatsFixture() : Fixture(), _stats(addStats()) {
         addListener(std::make_unique<MyListener>(_stats, "test", "testdoc"));
     }
 
-    ~StatsFixture()
-    {
-        removeListeners("testdoc", {});
-    }
+    ~StatsFixture() { removeListeners("testdoc", {}); }
 
-    void assertChanges(uint32_t expPutChanges, uint32_t expRemoveChanges, const std::string& label)
-    {
+    void assertChanges(uint32_t expPutChanges, uint32_t expRemoveChanges, const std::string& label) {
         _stats.assertChanges(expPutChanges, expRemoveChanges, label);
     }
 };
 
-TEST(GidToLidChangeHandlerTest, Test_that_multiple_puts_are_processed)
-{
+TEST(GidToLidChangeHandlerTest, Test_that_multiple_puts_are_processed) {
     StatsFixture f;
     f.notifyPut(toGid(doc1), 10, 10);
     f.assertChanges(0, 0, "put 1");
@@ -291,8 +262,7 @@ TEST(GidToLidChangeHandlerTest, Test_that_multiple_puts_are_processed)
     f.assertChanges(2, 0, "commit");
 }
 
-TEST(GidToLidChangeHandlerTest, Test_that_put_is_ignored_if_we_have_a_pending_remove)
-{
+TEST(GidToLidChangeHandlerTest, Test_that_put_is_ignored_if_we_have_a_pending_remove) {
     StatsFixture f;
     f.notifyPut(toGid(doc1), 10, 10);
     f.assertChanges(0, 0, "put 1");
@@ -305,8 +275,7 @@ TEST(GidToLidChangeHandlerTest, Test_that_put_is_ignored_if_we_have_a_pending_re
     f.assertChanges(1, 1, "new put and commit");
 }
 
-TEST(GidToLidChangeHandlerTest, Test_that_pending_removes_are_merged)
-{
+TEST(GidToLidChangeHandlerTest, Test_that_pending_removes_are_merged) {
     StatsFixture f;
     f.notifyPut(toGid(doc1), 10, 10);
     f.assertChanges(0, 0, "put 1");
@@ -318,6 +287,6 @@ TEST(GidToLidChangeHandlerTest, Test_that_pending_removes_are_merged)
     f.assertChanges(0, 1, "commit");
 }
 
-}
+} // namespace proton
 
 GTEST_MAIN_RUN_ALL_TESTS()

@@ -4,8 +4,9 @@
 #include <vespa/searchcorespi/index/disk_indexes.h>
 #include <vespa/searchcorespi/index/index_disk_dir.h>
 #include <vespa/searchcorespi/index/indexdisklayout.h>
-#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/size_literals.h>
+
 #include <filesystem>
 #include <fstream>
 
@@ -16,14 +17,13 @@ std::string base_dir("base");
 constexpr uint32_t block_size = 4_Ki;
 constexpr uint32_t placeholder_directory_size = block_size;
 
-}
+} // namespace
 
 namespace searchcorespi::index {
 
-class DiskIndexesTest : public ::testing::Test,
-                              public DiskIndexes
-{
+class DiskIndexesTest : public ::testing::Test, public DiskIndexes {
     IndexDiskLayout _layout;
+
 protected:
     DiskIndexesTest();
     ~DiskIndexesTest() override;
@@ -37,29 +37,20 @@ protected:
     uint64_t transient_size() const { return get_resource_usage(_layout).transient().disk(); }
 };
 
-DiskIndexesTest::DiskIndexesTest()
-    : ::testing::Test(),
-      DiskIndexes(),
-      _layout(base_dir)
-{
+DiskIndexesTest::DiskIndexesTest() : ::testing::Test(), DiskIndexes(), _layout(base_dir) {
 }
 
 DiskIndexesTest::~DiskIndexesTest() = default;
 
-void
-DiskIndexesTest::SetUpTestSuite()
-{
+void DiskIndexesTest::SetUpTestSuite() {
     std::filesystem::remove_all(std::filesystem::path(base_dir));
 }
 
-void
-DiskIndexesTest::TearDownTestSuite()
-{
+void DiskIndexesTest::TearDownTestSuite() {
     std::filesystem::remove_all(std::filesystem::path(base_dir));
 }
 
-TEST_F(DiskIndexesTest, simple_set_active_works)
-{
+TEST_F(DiskIndexesTest, simple_set_active_works) {
     EXPECT_FALSE(isActive("index.flush.1"));
     setActive("index.flush.1", 0);
     EXPECT_TRUE(isActive("index.flush.1"));
@@ -67,8 +58,7 @@ TEST_F(DiskIndexesTest, simple_set_active_works)
     EXPECT_FALSE(isActive("index.flush.1"));
 }
 
-TEST_F(DiskIndexesTest, nested_set_active_works)
-{
+TEST_F(DiskIndexesTest, nested_set_active_works) {
     setActive("index.flush.1", 0);
     setActive("index.flush.1", 0);
     EXPECT_TRUE(isActive("index.flush.1"));
@@ -78,14 +68,12 @@ TEST_F(DiskIndexesTest, nested_set_active_works)
     EXPECT_FALSE(isActive("index.flush.1"));
 }
 
-TEST_F(DiskIndexesTest, is_active_returns_false_for_bad_name)
-{
+TEST_F(DiskIndexesTest, is_active_returns_false_for_bad_name) {
     EXPECT_FALSE(isActive("foo/bar/baz"));
     EXPECT_FALSE(isActive("index.flush.0"));
 }
 
-TEST_F(DiskIndexesTest, remove_works)
-{
+TEST_F(DiskIndexesTest, remove_works) {
     EXPECT_TRUE(remove(IndexDiskDir()));
     auto fusion1 = get_index_disk_dir("index.fusion.1");
     EXPECT_TRUE(remove(fusion1));
@@ -97,8 +85,7 @@ TEST_F(DiskIndexesTest, remove_works)
     EXPECT_TRUE(remove(fusion1));
 }
 
-TEST_F(DiskIndexesTest, basic_get_transient_size_works)
-{
+TEST_F(DiskIndexesTest, basic_get_transient_size_works) {
     /*
      * When starting to use a new fusion index, we have a transient
      * period with two ISearchableIndexCollection instances:
@@ -117,8 +104,7 @@ TEST_F(DiskIndexesTest, basic_get_transient_size_works)
     EXPECT_EQ(0u, transient_size());
 }
 
-TEST_F(DiskIndexesTest, get_transient_size_during_ongoing_fusion)
-{
+TEST_F(DiskIndexesTest, get_transient_size_during_ongoing_fusion) {
     /*
      * During ongoing fusion, we have one ISearchableIndexCollection instance:
      * - old, containing index.fusion.1 and index.flush.2
@@ -141,7 +127,7 @@ TEST_F(DiskIndexesTest, get_transient_size_during_ongoing_fusion)
     EXPECT_EQ(placeholder_directory_size, transient_size());
     constexpr uint32_t seek_pos = 999999;
     {
-        std::string name = dir + "/foo";
+        std::string   name = dir + "/foo";
         std::ofstream ostr(name, std::ios::binary);
         ostr.seekp(seek_pos);
         ostr.write(" ", 1);
@@ -159,8 +145,7 @@ TEST_F(DiskIndexesTest, get_transient_size_during_ongoing_fusion)
     EXPECT_EQ(0, transient_size());
 }
 
-TEST_F(DiskIndexesTest, get_size_on_disk_considers_index_staleness)
-{
+TEST_F(DiskIndexesTest, get_size_on_disk_considers_index_staleness) {
     EXPECT_EQ(DiskIndexes::get_size_on_disk_overhead(), get_size_on_disk(true));
     setActive("index.fusion.1", 1000000);
     EXPECT_EQ(1000000 + DiskIndexes::get_size_on_disk_overhead(), get_size_on_disk(false));
@@ -181,6 +166,6 @@ TEST_F(DiskIndexesTest, get_size_on_disk_considers_index_staleness)
     EXPECT_EQ(1600000 + DiskIndexes::get_size_on_disk_overhead(), get_size_on_disk(true));
 }
 
-}
+} // namespace searchcorespi::index
 
 GTEST_MAIN_RUN_ALL_TESTS()

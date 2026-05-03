@@ -10,19 +10,14 @@ private:
     size_t _receivedCount;
 
 public:
-    LocalTransport()
-        : _receivedCount(0)
-    { }
+    LocalTransport() : _receivedCount(0) {}
 
-    void send(ResultUP, bool) override {
-        _receivedCount++;
-    }
+    void send(ResultUP, bool) override { _receivedCount++; }
 
     size_t getReceivedCount() const { return _receivedCount; }
 };
 
-TEST(FeedTokenTest, test_ack)
-{
+TEST(FeedTokenTest, test_ack) {
     LocalTransport transport;
     {
         FeedToken token = feedtoken::make(transport);
@@ -30,20 +25,16 @@ TEST(FeedTokenTest, test_ack)
     EXPECT_EQ(1u, transport.getReceivedCount());
 }
 
-TEST(FeedTokenTest, test_fail)
-{
+TEST(FeedTokenTest, test_fail) {
     LocalTransport transport;
-    FeedToken token = feedtoken::make(transport);
+    FeedToken      token = feedtoken::make(transport);
     token->fail();
     EXPECT_EQ(1u, transport.getReceivedCount());
 }
 
-TEST(FeedTokenTest, test_handover)
-{
+TEST(FeedTokenTest, test_handover) {
     struct MyHandover {
-        static FeedToken handover(FeedToken token) {
-            return token;
-        }
+        static FeedToken handover(FeedToken token) { return token; }
     };
 
     LocalTransport transport;

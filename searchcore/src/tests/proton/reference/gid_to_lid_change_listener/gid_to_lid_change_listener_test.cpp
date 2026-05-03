@@ -9,17 +9,18 @@
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/monitored_refcount.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
+
 #include <map>
 #include <string>
 
 #include <vespa/log/log.h>
 LOG_SETUP("gid_to_lid_change_listener_test");
 
-using document::GlobalId;
 using document::BucketId;
 using document::DocumentId;
-using search::attribute::Config;
+using document::GlobalId;
 using search::attribute::BasicType;
+using search::attribute::Config;
 using search::attribute::Reference;
 using search::attribute::ReferenceAttribute;
 using search::attribute::test::MockGidToLidMapperFactory;
@@ -38,24 +39,20 @@ std::string doc2("id:test:music::2");
 std::string doc3("id:test:music::3");
 VESPA_THREAD_STACK_TAG(test_executor)
 
-struct MyGidToLidMapperFactory : public MockGidToLidMapperFactory
-{
-    MyGidToLidMapperFactory()
-        : MockGidToLidMapperFactory()
-    {
+struct MyGidToLidMapperFactory : public MockGidToLidMapperFactory {
+    MyGidToLidMapperFactory() : MockGidToLidMapperFactory() {
         _map.insert({toGid(doc1), 10});
         _map.insert({toGid(doc2), 17});
     }
 };
 
-}
+} // namespace
 
-struct GidToLidChangeListenerTest : public ::testing::Test
-{
-    std::shared_ptr<ReferenceAttribute> _attr;
+struct GidToLidChangeListenerTest : public ::testing::Test {
+    std::shared_ptr<ReferenceAttribute>               _attr;
     std::unique_ptr<vespalib::ISequencedTaskExecutor> _writer;
-    MonitoredRefCount _refCount;
-    std::unique_ptr<GidToLidChangeListener>  _listener;
+    MonitoredRefCount                                 _refCount;
+    std::unique_ptr<GidToLidChangeListener>           _listener;
 
     GidToLidChangeListenerTest();
     ~GidToLidChangeListenerTest() override;
@@ -68,15 +65,11 @@ struct GidToLidChangeListenerTest : public ::testing::Test
         }
     }
 
-    void set(uint32_t doc, const GlobalId &gid) {
-        _attr->update(doc, gid);
-    }
+    void set(uint32_t doc, const GlobalId& gid) { _attr->update(doc, gid); }
 
     void commit() { _attr->commit(); }
 
-    const Reference *getRef(uint32_t doc) {
-        return _attr->getReference(doc);
-    }
+    const Reference* getRef(uint32_t doc) { return _attr->getReference(doc); }
 
     void assertTargetLid(uint32_t expLid, uint32_t doc, const std::string& label) {
         SCOPED_TRACE(label);
@@ -95,29 +88,25 @@ struct GidToLidChangeListenerTest : public ::testing::Test
         _listener = std::make_unique<GidToLidChangeListener>(*_writer, _attr, _refCount, "test", "testdoc");
     }
 
-    void notifyPutDone(const GlobalId &gid, uint32_t referencedDoc) {
+    void notifyPutDone(const GlobalId& gid, uint32_t referencedDoc) {
         vespalib::Gate gate;
         _listener->notifyPutDone(std::make_shared<vespalib::GateCallback>(gate), gid, referencedDoc);
         gate.await();
     }
 
-    void notifyListenerRegistered(const std::vector<GlobalId>& removes) {
-        _listener->notifyRegistered(removes);
-    }
+    void notifyListenerRegistered(const std::vector<GlobalId>& removes) { _listener->notifyRegistered(removes); }
 };
 
 GidToLidChangeListenerTest::GidToLidChangeListenerTest()
-     : _attr(std::make_shared<ReferenceAttribute>("test")),
-       _writer(vespalib::SequencedTaskExecutor::create(test_executor, 1)),
-       _refCount(),
-       _listener()
-{
+    : _attr(std::make_shared<ReferenceAttribute>("test")),
+      _writer(vespalib::SequencedTaskExecutor::create(test_executor, 1)),
+      _refCount(),
+      _listener() {
 }
 
 GidToLidChangeListenerTest::~GidToLidChangeListenerTest() = default;
 
-TEST_F(GidToLidChangeListenerTest, Test_that_we_can_use_gid_to_lid_change_listener)
-{
+TEST_F(GidToLidChangeListenerTest, Test_that_we_can_use_gid_to_lid_change_listener) {
     ensureDocIdLimit(4);
     set(1, toGid(doc1));
     set(2, toGid(doc2));
@@ -135,8 +124,7 @@ TEST_F(GidToLidChangeListenerTest, Test_that_we_can_use_gid_to_lid_change_listen
     assertTargetLid(10, 3, "later 3");
 }
 
-TEST_F(GidToLidChangeListenerTest, Test_that_target_lids_are_populated_when_listener_is_registered)
-{
+TEST_F(GidToLidChangeListenerTest, Test_that_target_lids_are_populated_when_listener_is_registered) {
     ensureDocIdLimit(6);
     set(1, toGid(doc1));
     set(2, toGid(doc2));
@@ -148,8 +136,7 @@ TEST_F(GidToLidChangeListenerTest, Test_that_target_lids_are_populated_when_list
     assertTargetLid(0, 3, "initial 3");
     assertTargetLid(0, 4, "initial 4");
     assertNoTargetLid(5, "initial 5");
-    std::shared_ptr<search::IGidToLidMapperFactory> factory =
-        std::make_shared<MyGidToLidMapperFactory>();
+    std::shared_ptr<search::IGidToLidMapperFactory> factory = std::make_shared<MyGidToLidMapperFactory>();
     _attr->setGidToLidMapperFactory(factory);
     allocListener();
     notifyListenerRegistered({});
@@ -160,8 +147,7 @@ TEST_F(GidToLidChangeListenerTest, Test_that_target_lids_are_populated_when_list
     assertNoTargetLid(5, "later 5");
 }
 
-TEST_F(GidToLidChangeListenerTest, Test_that_removed_target_lids_are_pruned_when_listener_is_registered)
-{
+TEST_F(GidToLidChangeListenerTest, Test_that_removed_target_lids_are_pruned_when_listener_is_registered) {
     ensureDocIdLimit(6);
     set(1, toGid(doc1));
     set(2, toGid(doc2));
@@ -173,11 +159,10 @@ TEST_F(GidToLidChangeListenerTest, Test_that_removed_target_lids_are_pruned_when
     assertTargetLid(0, 3, "initial 3");
     assertTargetLid(0, 4, "initial 4");
     assertNoTargetLid(5, "initial 5");
-    std::shared_ptr<search::IGidToLidMapperFactory> factory =
-        std::make_shared<MyGidToLidMapperFactory>();
+    std::shared_ptr<search::IGidToLidMapperFactory> factory = std::make_shared<MyGidToLidMapperFactory>();
     _attr->setGidToLidMapperFactory(factory);
     allocListener();
-    notifyListenerRegistered({ toGid(doc1) });
+    notifyListenerRegistered({toGid(doc1)});
     assertTargetLid(0, 1, "later 1");
     assertTargetLid(17, 2, "later 2");
     assertTargetLid(0, 3, "later 3");
@@ -185,6 +170,6 @@ TEST_F(GidToLidChangeListenerTest, Test_that_removed_target_lids_are_pruned_when
     assertNoTargetLid(5, "later 5");
 }
 
-}
+} // namespace proton
 
 GTEST_MAIN_RUN_ALL_TESTS()
