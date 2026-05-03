@@ -166,7 +166,7 @@ int main(int argc, char** argv) {
             if (firstBitIndex == -1) {
                 firstBitIndex = bitIndex;
             } else {
-                firstBitIndex = false;
+                firstBitCalculated = false;
             }
         }
         bool printedStart = false;
