@@ -8,17 +8,19 @@ namespace search::queryeval::test {
 
 // ---------------- EnnBlueprintFactory --------------------
 
-EnnBlueprintFactory::EnnBlueprintFactory(uint32_t target_hits)
-    : _target_hits(target_hits) {
+EnnBlueprintFactory::EnnBlueprintFactory(AttributeVector::SP attr, Value::UP query, uint32_t target_hits)
+    : _attr(attr),
+      _query(std::move(query)),
+      _target_hits(target_hits) {
 }
 
 EnnBlueprintFactory::~EnnBlueprintFactory() = default;
 
 std::unique_ptr<Blueprint> EnnBlueprintFactory::make_blueprint() {
-    FieldSpec field;
-    auto distance_calc = tensor::DistanceCalculator::make_with_validation();
-    auto enn = std::make_unique<NearestNeighborBlueprint>(field, distance_calc, _target_hits, false, {});
-    return std::move(enn);
+    auto calc = std::make_unique<tensor::DistanceCalculator>(
+              *_attr->asTensorAttribute(), *_query);
+    FieldSpec field("nn", 0, 0);
+    return std::make_unique<NearestNeighborBlueprint>(field, std::move(calc), _target_hits, false, NearestNeighborBlueprint::HnswParams{});
 }
 
 std::string EnnBlueprintFactory::get_name(Blueprint& blueprint) const {

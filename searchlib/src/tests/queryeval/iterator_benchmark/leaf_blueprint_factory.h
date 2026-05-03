@@ -3,18 +3,22 @@
 #pragma once
 
 #include "blueprint_factory_builder.h"
+#include <vespa/eval/eval/value.h>
 
 namespace search::queryeval::test {
+
+using vespalib::eval::Value;
 
 /**
  * Factory that creates an ENN blueprint.
  */
 class EnnBlueprintFactory : public BenchmarkBlueprintFactory {
-    uint32_t _target_hits;
-    // TODO: distance function, more?
+    AttributeVector::SP _attr;
+    Value::UP           _query;
+    uint32_t            _target_hits;
 
 public:
-    explicit EnnBlueprintFactory(uint32_t target_hits);
+    EnnBlueprintFactory(AttributeVector::SP attr, Value::UP query, uint32_t target_hits);
     ~EnnBlueprintFactory() override;
     std::unique_ptr<Blueprint> make_blueprint() override;
     std::string get_name(Blueprint& blueprint) const override;
