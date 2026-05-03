@@ -3,9 +3,7 @@
 
 namespace storage::mbusprot {
 
-StorageCommand::StorageCommand(api::StorageCommand::SP cmd)
-    : mbus::Message(),
-      _cmd(std::move(cmd))
-{ }
-
+StorageCommand::StorageCommand(api::StorageCommand::SP cmd) : mbus::Message(), _cmd(std::move(cmd)) {
 }
+
+} // namespace storage::mbusprot

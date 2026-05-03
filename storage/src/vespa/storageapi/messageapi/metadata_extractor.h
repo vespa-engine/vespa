@@ -2,9 +2,9 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
 #include <string_view>
-#include <optional>
 
 namespace storage::api {
 
@@ -28,4 +28,4 @@ public:
     [[nodiscard]] virtual std::optional<std::string> extract_value(std::string_view key) const = 0;
 };
 
-}
+} // namespace storage::api

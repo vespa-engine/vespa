@@ -36,7 +36,7 @@ public:
 
     uint32_t getType() const { return _type; }
 
-    bool callHandler(MessageHandler& h, const std::shared_ptr<StorageMessage> & m) const override {
+    bool callHandler(MessageHandler& h, const std::shared_ptr<StorageMessage>& m) const override {
         return h.onInternal(std::static_pointer_cast<InternalCommand>(m));
     }
 
@@ -58,12 +58,11 @@ public:
 
     uint32_t getType() const { return _type; }
 
-    bool callHandler(MessageHandler& h, const std::shared_ptr<StorageMessage> & m) const override {
+    bool callHandler(MessageHandler& h, const std::shared_ptr<StorageMessage>& m) const override {
         return h.onInternalReply(std::static_pointer_cast<InternalReply>(m));
     }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
-}
-
+} // namespace storage::api

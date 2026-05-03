@@ -9,8 +9,7 @@
 
 namespace storage::mbusprot {
 
-class SerializationHelper
-{
+class SerializationHelper {
 public:
     static int32_t getInt(document::ByteBuffer& buf) {
         int32_t tmp;
@@ -32,8 +31,8 @@ public:
 
     static std::string_view getString(document::ByteBuffer& buf) {
         uint32_t tmp;
-        buf.getIntNetwork((int32_t&) tmp);
-        const char * p = buf.getBufferAtPos();
+        buf.getIntNetwork((int32_t&)tmp);
+        const char* p = buf.getBufferAtPos();
         buf.incPos(tmp);
         std::string_view s(p, tmp);
         return s;
@@ -41,14 +40,13 @@ public:
 
     static document::GlobalId getGlobalId(document::ByteBuffer& buf) {
         std::vector<char> buffer(getShort(buf));
-        for (uint32_t i=0; i<buffer.size(); ++i) {
+        for (uint32_t i = 0; i < buffer.size(); ++i) {
             buffer[i] = getByte(buf);
         }
         return document::GlobalId(&buffer[0]);
     }
 
-    static document::Document::UP getDocument(document::ByteBuffer& buf, const document::DocumentTypeRepo& repo)
-    {
+    static document::Document::UP getDocument(document::ByteBuffer& buf, const document::DocumentTypeRepo& repo) {
         uint32_t size = getInt(buf);
         if (size == 0) {
             return document::Document::UP();
@@ -59,8 +57,7 @@ public:
         }
     }
 
-    static void putDocument(document::Document* doc, vespalib::GrowableByteBuffer& buf)
-    {
+    static void putDocument(document::Document* doc, vespalib::GrowableByteBuffer& buf) {
         if (doc) {
             vespalib::nbostream stream;
             doc->serialize(stream);
@@ -70,7 +67,6 @@ public:
             buf.putInt(0);
         }
     }
-
 };
 
-}
+} // namespace storage::mbusprot

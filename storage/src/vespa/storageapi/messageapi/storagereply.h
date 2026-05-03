@@ -36,4 +36,4 @@ public:
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
-}
+} // namespace storage::api

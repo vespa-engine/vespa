@@ -12,8 +12,9 @@
 
 #pragma once
 
-#include "bucketreply.h"
 #include "bucketinfocommand.h"
+#include "bucketreply.h"
+
 #include <vespa/storageapi/buckets/bucketinfo.h>
 
 namespace storage::api {
@@ -22,10 +23,7 @@ class BucketInfoReply : public BucketReply {
     BucketInfo _result;
 
 protected:
-    BucketInfoReply(const BucketInfoCommand& cmd)
-        : BucketReply(cmd),
-          _result()
-    {}
+    BucketInfoReply(const BucketInfoCommand& cmd) : BucketReply(cmd), _result() {}
 
 public:
     DECLARE_POINTER_TYPEDEFS(BucketInfoReply);
@@ -35,4 +33,4 @@ public:
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
-}
+} // namespace storage::api

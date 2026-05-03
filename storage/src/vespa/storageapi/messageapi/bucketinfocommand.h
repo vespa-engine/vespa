@@ -18,7 +18,7 @@ namespace storage::api {
 
 class BucketInfoCommand : public BucketCommand {
 protected:
-    BucketInfoCommand(const MessageType& type, const document::Bucket &bucket) noexcept
+    BucketInfoCommand(const MessageType& type, const document::Bucket& bucket) noexcept
         : BucketCommand(type, bucket) {}
 
 public:
@@ -26,5 +26,4 @@ public:
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 };
 
-}
-
+} // namespace storage::api
