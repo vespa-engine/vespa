@@ -2,6 +2,7 @@
 #pragma once
 
 #include "index_searchable_stats.h"
+
 #include <string>
 
 namespace searchcorespi {
@@ -14,13 +15,14 @@ struct IDiskIndex;
  */
 class DiskIndexStats : public IndexSearchableStats {
     std::string _indexDir;
+
 public:
     DiskIndexStats();
-    DiskIndexStats(const IDiskIndex &index);
+    DiskIndexStats(const IDiskIndex& index);
     ~DiskIndexStats();
 
-    const std::string &getIndexdir() const { return _indexDir; }
+    const std::string& getIndexdir() const { return _indexDir; }
 };
 
-} // namespace searchcorespi::index
+} // namespace index
 } // namespace searchcorespi

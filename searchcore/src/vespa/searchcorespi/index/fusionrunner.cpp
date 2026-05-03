@@ -1,47 +1,46 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fusionrunner.h"
+
 #include "eventlogger.h"
 #include "fusionspec.h"
-#include <vespa/searchlib/common/serialnumfileheadercontext.h>
+
 #include <vespa/searchlib/attribute/fixedsourceselector.h>
+#include <vespa/searchlib/common/serialnumfileheadercontext.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchcorespi.index.fusionrunner");
 
 using search::FixedSourceSelector;
+using search::SerialNum;
 using search::TuneFileAttributes;
 using search::TuneFileIndexing;
 using search::common::FileHeaderContext;
 using search::common::SerialNumFileHeaderContext;
+using search::diskindex::SelectorArray;
 using search::index::Schema;
 using search::queryeval::ISourceSelector;
-using search::diskindex::SelectorArray;
-using search::SerialNum;
-using std::vector;
 using std::string;
+using std::vector;
 
 namespace searchcorespi::index {
 
-FusionRunner::FusionRunner(const string &base_dir,
-                           const Schema &schema,
-                           const TuneFileAttributes &tuneFileAttributes,
-                           const FileHeaderContext &fileHeaderContext)
+FusionRunner::FusionRunner(const string& base_dir, const Schema& schema, const TuneFileAttributes& tuneFileAttributes,
+                           const FileHeaderContext& fileHeaderContext)
     : _diskLayout(base_dir),
       _schema(schema),
       _tuneFileAttributes(tuneFileAttributes),
-      _fileHeaderContext(fileHeaderContext)
-{ }
+      _fileHeaderContext(fileHeaderContext) {
+}
 
 FusionRunner::~FusionRunner() = default;
 
 namespace {
 
-void readSelectorArray(const string &selector_name, SelectorArray &selector_array,
-                       const vector<uint8_t> &id_map, uint32_t base_id, uint32_t fusion_id) {
-    FixedSourceSelector::UP selector =
-        FixedSourceSelector::load(selector_name, fusion_id);
+void readSelectorArray(const string& selector_name, SelectorArray& selector_array, const vector<uint8_t>& id_map,
+                       uint32_t base_id, uint32_t fusion_id) {
+    FixedSourceSelector::UP selector = FixedSourceSelector::load(selector_name, fusion_id);
     if (base_id != selector->getBaseId()) {
         selector = selector->cloneAndSubtract("tmp_for_fusion", base_id - selector->getBaseId());
     }
@@ -61,14 +60,10 @@ void readSelectorArray(const string &selector_name, SelectorArray &selector_arra
     }
 }
 
-bool
-writeFusionSelector(const IndexDiskLayout &diskLayout, uint32_t fusion_id,
-                    uint32_t highest_doc_id,
-                    const TuneFileAttributes &tuneFileAttributes,
-                    const FileHeaderContext &fileHeaderContext)
-{
+bool writeFusionSelector(const IndexDiskLayout& diskLayout, uint32_t fusion_id, uint32_t highest_doc_id,
+                         const TuneFileAttributes& tuneFileAttributes, const FileHeaderContext& fileHeaderContext) {
     const search::queryeval::Source default_source = 0;
-    FixedSourceSelector fusion_selector(default_source, "fusion_selector");
+    FixedSourceSelector             fusion_selector(default_source, "fusion_selector");
     fusion_selector.setSource(highest_doc_id, default_source);
     fusion_selector.setBaseId(fusion_id);
     string selector_name = IndexDiskLayout::getSelectorFileName(diskLayout.getFusionDir(fusion_id));
@@ -78,22 +73,19 @@ writeFusionSelector(const IndexDiskLayout &diskLayout, uint32_t fusion_id,
     }
     return true;
 }
-}  // namespace
+} // namespace
 
-uint32_t
-FusionRunner::fuse(const FusionSpec &fusion_spec,
-                   SerialNum lastSerialNum,
-                   IIndexMaintainerOperations &operations,
-                   std::shared_ptr<search::IFlushToken> flush_token)
-{
-    const vector<uint32_t> &ids = fusion_spec.flush_ids;
+uint32_t FusionRunner::fuse(const FusionSpec& fusion_spec, SerialNum lastSerialNum,
+                            IIndexMaintainerOperations&          operations,
+                            std::shared_ptr<search::IFlushToken> flush_token) {
+    const vector<uint32_t>& ids = fusion_spec.flush_ids;
     if (ids.empty()) {
         return 0;
     }
     const uint32_t fusion_id = ids.back();
-    const string fusion_dir = _diskLayout.getFusionDir(fusion_id);
+    const string   fusion_dir = _diskLayout.getFusionDir(fusion_id);
 
-    vector<string> sources;
+    vector<string>  sources;
     vector<uint8_t> id_map(fusion_id + 1);
     if (fusion_spec.last_fusion_id != 0) {
         id_map[0] = sources.size();
@@ -109,7 +101,7 @@ FusionRunner::fuse(const FusionSpec &fusion_spec,
     }
     vespalib::Timer timer;
 
-    const string selector_name = IndexDiskLayout::getSelectorFileName(_diskLayout.getFlushDir(fusion_id));
+    const string  selector_name = IndexDiskLayout::getSelectorFileName(_diskLayout.getFlushDir(fusion_id));
     SelectorArray selector_array;
     readSelectorArray(selector_name, selector_array, id_map, fusion_spec.last_fusion_id, fusion_id);
 
@@ -117,7 +109,7 @@ FusionRunner::fuse(const FusionSpec &fusion_spec,
         return 0;
     }
 
-    const uint32_t highest_doc_id = selector_array.size() - 1;
+    const uint32_t             highest_doc_id = selector_array.size() - 1;
     SerialNumFileHeaderContext fileHeaderContext(_fileHeaderContext, lastSerialNum);
     if (!writeFusionSelector(_diskLayout, fusion_id, highest_doc_id, _tuneFileAttributes, fileHeaderContext)) {
         return 0;
@@ -129,4 +121,4 @@ FusionRunner::fuse(const FusionSpec &fusion_spec,
     return fusion_id;
 }
 
-}
+} // namespace searchcorespi::index

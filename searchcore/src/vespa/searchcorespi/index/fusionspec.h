@@ -13,10 +13,10 @@ namespace searchcorespi::index {
  * Note: All ids in FusionSpec are absolute ids.
  **/
 struct FusionSpec {
-    uint32_t last_fusion_id;
+    uint32_t              last_fusion_id;
     std::vector<uint32_t> flush_ids;
 
     FusionSpec() : last_fusion_id(0), flush_ids() {}
 };
 
-}
+} // namespace searchcorespi::index

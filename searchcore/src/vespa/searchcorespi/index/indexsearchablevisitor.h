@@ -9,18 +9,17 @@ namespace index {
 struct IDiskIndex;
 struct IMemoryIndex;
 
-}
+} // namespace index
 
 /*
  * Interface for visiting an index searchable containing disk and
  * memory indexes.
  */
-class IndexSearchableVisitor
-{
+class IndexSearchableVisitor {
 public:
     virtual ~IndexSearchableVisitor() = default;
-    virtual void visit(const index::IDiskIndex &index) = 0;
-    virtual void visit(const index::IMemoryIndex &index) = 0;
+    virtual void visit(const index::IDiskIndex& index) = 0;
+    virtual void visit(const index::IMemoryIndex& index) = 0;
 };
 
-}  // namespace searchcorespi
+} // namespace searchcorespi

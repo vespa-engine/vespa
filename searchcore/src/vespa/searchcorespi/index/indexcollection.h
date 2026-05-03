@@ -3,6 +3,7 @@
 #pragma once
 
 #include "isearchableindexcollection.h"
+
 #include <vespa/searchlib/util/index_stats.h>
 
 namespace searchcorespi {
@@ -11,15 +12,12 @@ namespace searchcorespi {
  * Holds a set of index searchables with source ids, and a source selector for
  * determining which index to use for each document.
  */
-class IndexCollection : public ISearchableIndexCollection
-{
+class IndexCollection : public ISearchableIndexCollection {
     struct SourceWithId {
-        uint32_t id;
+        uint32_t            id;
         IndexSearchable::SP source_wrapper;
 
-        SourceWithId(uint32_t id_in, const IndexSearchable::SP &source_in)
-            : id(id_in), source_wrapper(source_in)
-        {}
+        SourceWithId(uint32_t id_in, const IndexSearchable::SP& source_in) : id(id_in), source_wrapper(source_in) {}
         SourceWithId() : id(0), source_wrapper() {}
     };
 
@@ -29,36 +27,35 @@ class IndexCollection : public ISearchableIndexCollection
     std::vector<SourceWithId> _sources;
 
 public:
-    IndexCollection(const ISourceSelectorSP & selector);
-    IndexCollection(const ISourceSelectorSP & selector, const ISearchableIndexCollection &sources);
+    IndexCollection(const ISourceSelectorSP& selector);
+    IndexCollection(const ISourceSelectorSP& selector, const ISearchableIndexCollection& sources);
     ~IndexCollection();
 
-    void append(uint32_t id, const IndexSearchable::SP &source) override;
-    void replace(uint32_t id, const IndexSearchable::SP &source) override;
+    void append(uint32_t id, const IndexSearchable::SP& source) override;
+    void replace(uint32_t id, const IndexSearchable::SP& source) override;
     IndexSearchable::SP getSearchableSP(uint32_t i) const override;
-    void setSource(uint32_t docId)  override;
-
+    void setSource(uint32_t docId) override;
 
     // Implements IIndexCollection
-    const ISourceSelector &getSourceSelector() const override;
+    const ISourceSelector& getSourceSelector() const override;
     size_t getSourceCount() const override;
-    IndexSearchable &getSearchable(uint32_t i) const override;
+    IndexSearchable& getSearchable(uint32_t i) const override;
     uint32_t getSourceId(uint32_t i) const override;
 
     // Implements IndexSearchable
     std::unique_ptr<search::queryeval::Blueprint>
-    createBlueprint(const IRequestContext & requestContext, const FieldSpec &field, const Node &term,
-                    search::fef::MatchDataLayout &global_layout) override;
+    createBlueprint(const IRequestContext& requestContext, const FieldSpec& field, const Node& term,
+                    search::fef::MatchDataLayout& global_layout) override;
     std::unique_ptr<search::queryeval::Blueprint>
-    createBlueprint(const IRequestContext & requestContext, const FieldSpecList &fields, const Node &term,
-                    search::fef::MatchDataLayout &global_layout) override;
-    search::IndexStats get_index_stats(bool clear_disk_io_stats) const  override;
+    createBlueprint(const IRequestContext& requestContext, const FieldSpecList& fields, const Node& term,
+                    search::fef::MatchDataLayout& global_layout) override;
+    search::IndexStats get_index_stats(bool clear_disk_io_stats) const override;
     search::SerialNum getSerialNum() const override;
-    void accept(IndexSearchableVisitor &visitor) const override;
+    void accept(IndexSearchableVisitor& visitor) const override;
 
-    static ISearchableIndexCollection::UP
-    replaceAndRenumber(const ISourceSelectorSP & selector, const ISearchableIndexCollection &fsc,
-                       uint32_t id_diff, const IndexSearchable::SP &new_source);
+    static ISearchableIndexCollection::UP replaceAndRenumber(const ISourceSelectorSP&          selector,
+                                                             const ISearchableIndexCollection& fsc, uint32_t id_diff,
+                                                             const IndexSearchable::SP& new_source);
 
     // Implements IFieldLengthInspector
     /**
@@ -67,5 +64,4 @@ public:
     search::index::FieldLengthInfo get_field_length_info(const std::string& field_name) const override;
 };
 
-}  // namespace searchcorespi
-
+} // namespace searchcorespi

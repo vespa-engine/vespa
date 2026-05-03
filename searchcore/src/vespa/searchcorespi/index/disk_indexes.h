@@ -7,7 +7,9 @@
 #include <mutex>
 #include <string>
 
-namespace searchcorespi::common { class ResourceUsage; }
+namespace searchcorespi::common {
+class ResourceUsage;
+}
 
 namespace searchcorespi::index {
 
@@ -29,20 +31,21 @@ class IndexDiskLayout;
  */
 class DiskIndexes {
     std::map<IndexDiskDir, IndexDiskDirState> _active;
-    uint64_t _sum_size_on_disk;
-    uint64_t _sum_stale_size_on_disk;
-    mutable std::mutex _lock;
+    uint64_t                                  _sum_size_on_disk;
+    uint64_t                                  _sum_stale_size_on_disk;
+    mutable std::mutex                        _lock;
 
     void remove_from_sum(const IndexDiskDirState& state);
+
 public:
     using SP = std::shared_ptr<DiskIndexes>;
     DiskIndexes();
     ~DiskIndexes();
-    DiskIndexes(const DiskIndexes &) = delete;
-    DiskIndexes & operator = (const DiskIndexes &) = delete;
-    void setActive(const std::string & index, uint64_t size_on_disk);
-    void notActive(const std::string & index);
-    bool isActive(const std::string & index) const;
+    DiskIndexes(const DiskIndexes&) = delete;
+    DiskIndexes& operator=(const DiskIndexes&) = delete;
+    void setActive(const std::string& index, uint64_t size_on_disk);
+    void notActive(const std::string& index);
+    bool isActive(const std::string& index) const;
     void add_not_active(IndexDiskDir index_disk_dir);
     bool remove(IndexDiskDir index_disk_dir);
     common::ResourceUsage get_resource_usage(const IndexDiskLayout& layout) const;
@@ -50,4 +53,4 @@ public:
     static uint64_t get_size_on_disk_overhead() noexcept;
 };
 
-}
+} // namespace searchcorespi::index

@@ -6,7 +6,7 @@
 class FNET_Transport;
 
 namespace vespalib {
-    class ISequencedTaskExecutor;
+class ISequencedTaskExecutor;
 }
 namespace searchcorespi::index {
 
@@ -47,10 +47,9 @@ namespace searchcorespi::index {
  * writer executor.
  *
  */
-struct IThreadingService
-{
-    IThreadingService(const IThreadingService &) = delete;
-    IThreadingService & operator = (const IThreadingService &) = delete;
+struct IThreadingService {
+    IThreadingService(const IThreadingService&) = delete;
+    IThreadingService& operator=(const IThreadingService&) = delete;
     IThreadingService() = default;
     virtual ~IThreadingService() = default;
 
@@ -60,12 +59,12 @@ struct IThreadingService
      */
     virtual void blocking_master_execute(vespalib::Executor::Task::UP task) = 0;
 
-    virtual ISyncableThreadService &master() = 0;
-    virtual IThreadService &index() = 0;
-    virtual vespalib::ThreadExecutor &summary() = 0;
-    virtual vespalib::Executor &shared() = 0;
-    virtual FNET_Transport &transport() = 0;
-    virtual vespalib::ISequencedTaskExecutor &field_writer() = 0;
+    virtual ISyncableThreadService& master() = 0;
+    virtual IThreadService& index() = 0;
+    virtual vespalib::ThreadExecutor& summary() = 0;
+    virtual vespalib::Executor& shared() = 0;
+    virtual FNET_Transport& transport() = 0;
+    virtual vespalib::ISequencedTaskExecutor& field_writer() = 0;
 };
 
-}
+} // namespace searchcorespi::index

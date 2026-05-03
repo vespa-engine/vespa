@@ -1,18 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "indexmaintainer.h"
+
 #include "disk_index_with_destructor_cleanup.h"
 #include "disk_indexes.h"
 #include "diskindexcleaner.h"
 #include "eventlogger.h"
 #include "fusionrunner.h"
+#include "index_disk_dir.h"
 #include "indexcollection.h"
 #include "indexflushtarget.h"
 #include "indexfusiontarget.h"
 #include "indexmaintainerconfig.h"
 #include "indexreadutilities.h"
 #include "indexwriteutilities.h"
-#include "index_disk_dir.h"
+
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/searchcorespi/flush/lambdaflushtask.h>
@@ -20,11 +22,12 @@
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/lambdatask.h>
-#include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/time.h>
+
 #include <filesystem>
 #include <sstream>
 
@@ -33,22 +36,22 @@ LOG_SETUP(".searchcorespi.index.indexmaintainer");
 
 using document::Document;
 using search::FixedSourceSelector;
+using search::SerialNum;
 using search::TuneFileAttributes;
+using search::common::FileHeaderContext;
 using search::index::Schema;
 using search::index::SchemaUtil;
-using search::common::FileHeaderContext;
 using search::queryeval::ISourceSelector;
 using search::queryeval::Source;
-using search::SerialNum;
 using searchcorespi::common::ResourceUsage;
 using searchcorespi::common::TransientResourceUsage;
-using vespalib::makeLambdaTask;
-using vespalib::makeSharedLambdaCallback;
 using std::ostringstream;
 using std::string;
 using vespalib::Executor;
-using vespalib::Runnable;
 using vespalib::IDestructorCallback;
+using vespalib::makeLambdaTask;
+using vespalib::makeSharedLambdaCallback;
+using vespalib::Runnable;
 namespace fs = std::filesystem;
 
 namespace searchcorespi::index {
@@ -60,91 +63,71 @@ namespace {
 
 class ReconfigRunnable : public Runnable {
 public:
-    bool &_result;
-    Reconfigurer &_reconfigurer;
-    std::unique_ptr<Configure>   _configure;
+    bool&                      _result;
+    Reconfigurer&              _reconfigurer;
+    std::unique_ptr<Configure> _configure;
 
-    ReconfigRunnable(bool &result, Reconfigurer &reconfigurer, std::unique_ptr<Configure> configure)
-        : _result(result),
-          _reconfigurer(reconfigurer),
-          _configure(std::move(configure))
-    { }
+    ReconfigRunnable(bool& result, Reconfigurer& reconfigurer, std::unique_ptr<Configure> configure)
+        : _result(result), _reconfigurer(reconfigurer), _configure(std::move(configure)) {}
 
-    void run() override {
-        _result = _reconfigurer.reconfigure(std::move(_configure));
-    }
+    void run() override { _result = _reconfigurer.reconfigure(std::move(_configure)); }
 };
 
 class ReconfigRunnableTask : public Executor::Task {
 private:
-    Reconfigurer &_reconfigurer;
-    std::unique_ptr<Configure>   _configure;
+    Reconfigurer&              _reconfigurer;
+    std::unique_ptr<Configure> _configure;
+
 public:
-    ReconfigRunnableTask(Reconfigurer &reconfigurer, std::unique_ptr<Configure> configure)
-        : _reconfigurer(reconfigurer),
-          _configure(std::move(configure))
-    { }
+    ReconfigRunnableTask(Reconfigurer& reconfigurer, std::unique_ptr<Configure> configure)
+        : _reconfigurer(reconfigurer), _configure(std::move(configure)) {}
     ~ReconfigRunnableTask() override;
-    void run() override {
-        _reconfigurer.reconfigure(std::move(_configure));
-    }
+    void run() override { _reconfigurer.reconfigure(std::move(_configure)); }
 };
 
 ReconfigRunnableTask::~ReconfigRunnableTask() = default;
 
 SerialNum noSerialNumHigh = std::numeric_limits<SerialNum>::max();
 
-}  // namespace
+} // namespace
 
 IndexMaintainer::FrozenMemoryIndexRef::~FrozenMemoryIndexRef() = default;
 
 IndexMaintainer::FusionArgs::FusionArgs()
-    : _new_fusion_id(0u),
-      _changeGens(),
-      _schema(),
-      _prunedSchema(),
-      _old_source_list()
-{ }
+    : _new_fusion_id(0u), _changeGens(), _schema(), _prunedSchema(), _old_source_list() {
+}
 
 IndexMaintainer::FusionArgs::~FusionArgs() = default;
 
 IndexMaintainer::SetSchemaArgs::SetSchemaArgs() = default;
 IndexMaintainer::SetSchemaArgs::~SetSchemaArgs() = default;
 
-void
-IndexMaintainer::set_id_for_new_memory_index()
-{
+void IndexMaintainer::set_id_for_new_memory_index() {
     _current_index_id = _next_id++ - _last_fusion_id;
     assert(_current_index_id < ISourceSelector::SOURCE_LIMIT);
 }
 
-string
-IndexMaintainer::getFlushDir(uint32_t sourceId) const
-{
+string IndexMaintainer::getFlushDir(uint32_t sourceId) const {
     return _layout->getFlushDir(sourceId);
 }
 
-string
-IndexMaintainer::getFusionDir(uint32_t sourceId) const
-{
+string IndexMaintainer::getFusionDir(uint32_t sourceId) const {
     return _layout->getFusionDir(sourceId);
 }
 
-bool
-IndexMaintainer::reopenDiskIndexes(ISearchableIndexCollection &coll)
-{
+bool IndexMaintainer::reopenDiskIndexes(ISearchableIndexCollection& coll) {
     bool hasReopenedAnything(false);
     assert(_ctx.getThreadingService().master().isCurrentThread());
     uint32_t count = coll.getSourceCount();
     for (uint32_t i = 0; i < count; ++i) {
-        IndexSearchable &is = coll.getSearchable(i);
-        const auto *const d = dynamic_cast<const DiskIndexWithDestructorCleanup *>(&is);
+        IndexSearchable&  is = coll.getSearchable(i);
+        const auto* const d = dynamic_cast<const DiskIndexWithDestructorCleanup*>(&is);
         if (d == nullptr) {
-            continue;	// not a disk index
+            continue; // not a disk index
         }
         const string indexDir = d->getIndexDir();
-        std::string schemaName = IndexDiskLayout::getSchemaFileName(indexDir);
-        Schema trimmedSchema;
+        std::string  schemaName = IndexDiskLayout::getSchemaFileName(indexDir);
+        Schema       trimmedSchema;
         if (!trimmedSchema.loadFromFile(schemaName)) {
             LOG(error, "Could not open schema '%s'", schemaName.c_str());
         }
@@ -157,28 +140,20 @@ IndexMaintainer::reopenDiskIndexes(ISearchableIndexCollection &coll)
     return hasReopenedAnything;
 }
 
-void
-IndexMaintainer::updateDiskIndexSchema(const std::string &indexDir,
-                                       const Schema &schema,
-                                       SerialNum serialNum)
-{
+void IndexMaintainer::updateDiskIndexSchema(const std::string& indexDir, const Schema& schema, SerialNum serialNum) {
     // Called by a flush worker thread OR document db executor thread
     LockGuard lock(_schemaUpdateLock);
     IndexWriteUtilities::updateDiskIndexSchema(indexDir, schema, serialNum);
 }
 
-void
-IndexMaintainer::updateIndexSchemas(IIndexCollection &coll,
-                                    const Schema &schema,
-                                    SerialNum serialNum)
-{
+void IndexMaintainer::updateIndexSchemas(IIndexCollection& coll, const Schema& schema, SerialNum serialNum) {
     assert(_ctx.getThreadingService().master().isCurrentThread());
     uint32_t count = coll.getSourceCount();
     for (uint32_t i = 0; i < count; ++i) {
-        IndexSearchable &is = coll.getSearchable(i);
-        const auto *const d = dynamic_cast<const DiskIndexWithDestructorCleanup *>(&is);
+        IndexSearchable&  is = coll.getSearchable(i);
+        const auto* const d = dynamic_cast<const DiskIndexWithDestructorCleanup*>(&is);
         if (d == nullptr) {
-            IMemoryIndex *const m = dynamic_cast<IMemoryIndex *>(&is);
+            IMemoryIndex* const m = dynamic_cast<IMemoryIndex*>(&is);
             if (m != nullptr) {
                 m->pruneRemovedFields(schema);
             }
@@ -188,9 +163,7 @@ IndexMaintainer::updateIndexSchemas(IIndexCollection &coll,
     }
 }
 
-void
-IndexMaintainer::updateActiveFusionPrunedSchema(const Schema &schema)
-{
+void IndexMaintainer::updateActiveFusionPrunedSchema(const Schema& schema) {
     assert(_ctx.getThreadingService().master().isCurrentThread());
     for (;;) {
         std::shared_ptr<const Schema> activeFusionSchema;
@@ -202,7 +175,7 @@ IndexMaintainer::updateActiveFusionPrunedSchema(const Schema &schema)
             activeFusionPrunedSchema = _activeFusionPrunedSchema;
         }
         if (!activeFusionSchema)
-            return;	// No active fusion
+            return; // No active fusion
         if (!activeFusionPrunedSchema) {
             auto newSchema = Schema::intersect(*activeFusionSchema, schema);
             newActiveFusionPrunedSchema = std::move(newSchema);
@@ -213,9 +186,7 @@ IndexMaintainer::updateActiveFusionPrunedSchema(const Schema &schema)
         {
             LockGuard slock(_state_lock);
             LockGuard ilock(_index_update_lock);
-            if (activeFusionSchema == _activeFusionSchema &&
-                activeFusionPrunedSchema == _activeFusionPrunedSchema)
-            {
+            if (activeFusionSchema == _activeFusionSchema && activeFusionPrunedSchema == _activeFusionPrunedSchema) {
                 _activeFusionPrunedSchema = newActiveFusionPrunedSchema;
                 break;
             }
@@ -223,53 +194,45 @@ IndexMaintainer::updateActiveFusionPrunedSchema(const Schema &schema)
     }
 }
 
-std::shared_ptr<IDiskIndex>
-IndexMaintainer::loadDiskIndex(const string &indexDir)
-{
+std::shared_ptr<IDiskIndex> IndexMaintainer::loadDiskIndex(const string& indexDir) {
     // Called by a flush worker thread OR CTOR (in document db init executor thread)
     if (LOG_WOULD_LOG(event)) {
         EventLogger::diskIndexLoadStart(indexDir);
     }
     vespalib::Timer timer;
-    auto index = _operations.loadDiskIndex(indexDir);
-    auto stats = index->get_index_stats(false);
+    auto            index = _operations.loadDiskIndex(indexDir);
+    auto            stats = index->get_index_stats(false);
     _disk_indexes->setActive(indexDir, stats.sizeOnDisk());
-    auto retval = std::make_shared<DiskIndexWithDestructorCleanup>(_remove_lock, std::move(index),
-                                                                   _layout, _disk_indexes);
+    auto retval =
+        std::make_shared<DiskIndexWithDestructorCleanup>(_remove_lock, std::move(index), _layout, _disk_indexes);
     if (LOG_WOULD_LOG(event)) {
         EventLogger::diskIndexLoadComplete(indexDir, vespalib::count_ms(timer.elapsed()));
     }
     return retval;
 }
 
-std::shared_ptr<IDiskIndex>
-IndexMaintainer::reloadDiskIndex(const IDiskIndex &oldIndex)
-{
+std::shared_ptr<IDiskIndex> IndexMaintainer::reloadDiskIndex(const IDiskIndex& oldIndex) {
     // Called by a flush worker thread OR document db executor thread
     const string indexDir = oldIndex.getIndexDir();
     if (LOG_WOULD_LOG(event)) {
         EventLogger::diskIndexLoadStart(indexDir);
     }
-    vespalib::Timer timer;
-    const IDiskIndex &wrappedDiskIndex = (dynamic_cast<const DiskIndexWithDestructorCleanup &>(oldIndex)).getWrapped();
-    auto index = _operations.reloadDiskIndex(wrappedDiskIndex);
-    auto stats = index->get_index_stats(false);
+    vespalib::Timer   timer;
+    const IDiskIndex& wrappedDiskIndex = (dynamic_cast<const DiskIndexWithDestructorCleanup&>(oldIndex)).getWrapped();
+    auto              index = _operations.reloadDiskIndex(wrappedDiskIndex);
+    auto              stats = index->get_index_stats(false);
     _disk_indexes->setActive(indexDir, stats.sizeOnDisk());
-    auto retval = std::make_shared<DiskIndexWithDestructorCleanup>(_remove_lock, std::move(index),
-                                                                   _layout, _disk_indexes);
+    auto retval =
+        std::make_shared<DiskIndexWithDestructorCleanup>(_remove_lock, std::move(index), _layout, _disk_indexes);
     if (LOG_WOULD_LOG(event)) {
         EventLogger::diskIndexLoadComplete(indexDir, vespalib::count_ms(timer.elapsed()));
     }
     return retval;
 }
 
-std::shared_ptr<IDiskIndex>
-IndexMaintainer::flushMemoryIndex(IMemoryIndex &memoryIndex,
-                                  uint32_t indexId,
-                                  uint32_t docIdLimit,
-                                  SerialNum serialNum,
-                                  FixedSourceSelector::SaveInfo &saveInfo)
-{
+std::shared_ptr<IDiskIndex> IndexMaintainer::flushMemoryIndex(IMemoryIndex& memoryIndex, uint32_t indexId,
+                                                              uint32_t docIdLimit, SerialNum serialNum,
+                                                              FixedSourceSelector::SaveInfo& saveInfo) {
     // Called by a flush worker thread
     const string flushDir = getFlushDir(indexId);
     memoryIndex.flushToDisk(flushDir, docIdLimit, serialNum);
@@ -277,15 +240,14 @@ IndexMaintainer::flushMemoryIndex(IMemoryIndex &memoryIndex,
     if (prunedSchema) {
         updateDiskIndexSchema(flushDir, *prunedSchema, noSerialNumHigh);
     }
-    IndexWriteUtilities::writeSourceSelector(saveInfo, indexId, getAttrTune(),
-                                             _ctx.getFileHeaderContext(), serialNum);
+    IndexWriteUtilities::writeSourceSelector(saveInfo, indexId, getAttrTune(), _ctx.getFileHeaderContext(),
+                                             serialNum);
     IndexWriteUtilities::writeSerialNum(serialNum, flushDir, _ctx.getFileHeaderContext());
     return loadDiskIndex(flushDir);
 }
 
 std::unique_ptr<ISearchableIndexCollection>
-IndexMaintainer::loadDiskIndexes(const FusionSpec &spec, std::unique_ptr<ISearchableIndexCollection> sourceList)
-{
+IndexMaintainer::loadDiskIndexes(const FusionSpec& spec, std::unique_ptr<ISearchableIndexCollection> sourceList) {
     // Called by CTOR (in document db init executor thread)
     uint32_t fusion_id = spec.last_fusion_id;
     if (fusion_id != 0) {
@@ -301,35 +263,33 @@ IndexMaintainer::loadDiskIndexes(const FusionSpec &spec, std::unique_ptr<ISearch
 
 namespace {
 
-    using LockGuard = std::lock_guard<std::mutex>;
+using LockGuard = std::lock_guard<std::mutex>;
 
 std::shared_ptr<ISearchableIndexCollection>
-getLeaf(const LockGuard &newSearchLock, const std::shared_ptr<ISearchableIndexCollection>& is, bool warn=false)
-{
-    if (dynamic_cast<const WarmupIndexCollection *>(is.get()) != nullptr) {
+getLeaf(const LockGuard& newSearchLock, const std::shared_ptr<ISearchableIndexCollection>& is, bool warn = false) {
+    if (dynamic_cast<const WarmupIndexCollection*>(is.get()) != nullptr) {
         if (warn) {
-            LOG(info, "Already warming up an index '%s'. Start using it immediately."
-                      " This is an indication that you have configured your warmup interval too long.",
-                      is->toString().c_str());
+            LOG(info,
+                "Already warming up an index '%s'. Start using it immediately."
+                " This is an indication that you have configured your warmup interval too long.",
+                is->toString().c_str());
         }
-        const WarmupIndexCollection & wic(dynamic_cast<const WarmupIndexCollection &>(*is));
+        const WarmupIndexCollection& wic(dynamic_cast<const WarmupIndexCollection&>(*is));
         return getLeaf(newSearchLock, wic.getNextIndexCollection(), warn);
     } else {
         return is;
     }
 }
 
-}
+} // namespace
 
 /*
  * Caller must hold _state_lock (SL).
  */
-void
-IndexMaintainer::replaceSource(uint32_t sourceId, const std::shared_ptr<IndexSearchable>& source)
-{
+void IndexMaintainer::replaceSource(uint32_t sourceId, const std::shared_ptr<IndexSearchable>& source) {
     assert(_ctx.getThreadingService().master().isCurrentThread());
     LockGuard lock(_new_search_lock);
-    auto indexes = createNewSourceCollection(lock);
+    auto      indexes = createNewSourceCollection(lock);
     indexes->replace(sourceId, source);
     swapInNewIndex(lock, std::move(indexes), *source);
 }
@@ -338,24 +298,22 @@ IndexMaintainer::replaceSource(uint32_t sourceId, const std::shared_ptr<IndexSea
  * Caller must hold _state_lock (SL) and _new_search_lock (NSL), the latter
  * passed as guard.
  */
-void
-IndexMaintainer::swapInNewIndex(LockGuard & guard,
-                                std::shared_ptr<ISearchableIndexCollection> indexes,
-                                IndexSearchable & source)
-{
+void IndexMaintainer::swapInNewIndex(LockGuard& guard, std::shared_ptr<ISearchableIndexCollection> indexes,
+                                     IndexSearchable& source) {
     assert(indexes->valid());
-    (void) guard;
+    (void)guard;
     if (_warmupConfig.getDuration() > vespalib::duration::zero()) {
-        if (dynamic_cast<const IDiskIndex *>(&source) != nullptr) {
+        if (dynamic_cast<const IDiskIndex*>(&source) != nullptr) {
             LOG(debug, "Warming up a disk index.");
-            indexes = std::make_shared<WarmupIndexCollection>
-                      (_warmupConfig, getLeaf(guard, _source_list, true), indexes,
-                       static_cast<IDiskIndex &>(source), _ctx.getWarmupExecutor(), *this);
+            indexes = std::make_shared<WarmupIndexCollection>(_warmupConfig, getLeaf(guard, _source_list, true),
+                                                              indexes, static_cast<IDiskIndex&>(source),
+                                                              _ctx.getWarmupExecutor(), *this);
         } else {
             LOG(debug, "No warmup needed as it is a memory index that is mapped in.");
         }
     }
-    LOG(debug, "Replacing indexcollection :\n%s\nwith\n%s", _source_list->toString().c_str(), indexes->toString().c_str());
+    LOG(debug, "Replacing indexcollection :\n%s\nwith\n%s", _source_list->toString().c_str(),
+        indexes->toString().c_str());
     assert(indexes->valid());
     _source_list = std::move(indexes);
 }
@@ -363,19 +321,16 @@ IndexMaintainer::swapInNewIndex(LockGuard & guard,
 /*
  * Caller must hold _state_lock (SL).
  */
-void
-IndexMaintainer::appendSource(uint32_t sourceId, const std::shared_ptr<IndexSearchable>& source)
-{
+void IndexMaintainer::appendSource(uint32_t sourceId, const std::shared_ptr<IndexSearchable>& source) {
     assert(_ctx.getThreadingService().master().isCurrentThread());
     LockGuard lock(_new_search_lock);
-    auto indexes = createNewSourceCollection(lock);
+    auto      indexes = createNewSourceCollection(lock);
     indexes->append(sourceId, source);
     swapInNewIndex(lock, std::move(indexes), *source);
 }
 
 std::unique_ptr<ISearchableIndexCollection>
-IndexMaintainer::createNewSourceCollection(const LockGuard &newSearchLock)
-{
+IndexMaintainer::createNewSourceCollection(const LockGuard& newSearchLock) {
     auto currentLeaf(getLeaf(newSearchLock, _source_list));
     return std::make_unique<IndexCollection>(_selector, *currentLeaf);
 }
@@ -390,16 +345,13 @@ IndexMaintainer::FlushArgs::FlushArgs()
       _skippedEmptyLast(false),
       _extraIndexes(),
       _changeGens(),
-      _prunedSchema()
-{
+      _prunedSchema() {
 }
 IndexMaintainer::FlushArgs::~FlushArgs() = default;
-IndexMaintainer::FlushArgs::FlushArgs(FlushArgs &&) = default;
-IndexMaintainer::FlushArgs & IndexMaintainer::FlushArgs::operator=(FlushArgs &&) = default;
+IndexMaintainer::FlushArgs::FlushArgs(FlushArgs&&) = default;
+IndexMaintainer::FlushArgs& IndexMaintainer::FlushArgs::operator=(FlushArgs&&) = default;
 
-bool
-IndexMaintainer::doneInitFlush(FlushArgs *args, std::shared_ptr<IMemoryIndex>* new_index)
-{
+bool IndexMaintainer::doneInitFlush(FlushArgs* args, std::shared_ptr<IMemoryIndex>* new_index) {
     // Called by initFlush via reconfigurer
     assert(_ctx.getThreadingService().master().isCurrentThread());
     LockGuard state_lock(_state_lock);
@@ -415,12 +367,11 @@ IndexMaintainer::doneInitFlush(FlushArgs *args, std::shared_ptr<IMemoryIndex>* n
         _frozenMemoryIndexes.clear();
     }
 
-    LOG(debug, "Flushing. Id = %u. Serial num = %llu",
-        args->old_absolute_id, (unsigned long long) args->flush_serial_num);
+    LOG(debug, "Flushing. Id = %u. Serial num = %llu", args->old_absolute_id,
+        (unsigned long long)args->flush_serial_num);
     {
         LockGuard lock(_index_update_lock);
-        if (!_current_index->hasReceivedDocumentInsert() &&
-            _source_selector_changes == 0 &&
+        if (!_current_index->hasReceivedDocumentInsert() && _source_selector_changes == 0 &&
             !_flush_empty_current_index)
         {
             args->_skippedEmptyLast = true; // Skip flush of empty memory index
@@ -445,9 +396,7 @@ IndexMaintainer::doneInitFlush(FlushArgs *args, std::shared_ptr<IMemoryIndex>* n
     return true;
 }
 
-void
-IndexMaintainer::doFlush(FlushArgs args)
-{
+void IndexMaintainer::doFlush(FlushArgs args) {
     // Called by a flush worker thread
     FlushIds flushIds; // Absolute ids of flushed indexes
 
@@ -465,11 +414,9 @@ IndexMaintainer::doFlush(FlushArgs args)
     scheduleFusion(flushIds);
 }
 
-void
-IndexMaintainer::flushFrozenMemoryIndexes(FlushArgs &args, FlushIds &flushIds)
-{
+void IndexMaintainer::flushFrozenMemoryIndexes(FlushArgs& args, FlushIds& flushIds) {
     // Called by a flush worker thread
-    for (FrozenMemoryIndexRef & frozen : args._extraIndexes) {
+    for (FrozenMemoryIndexRef& frozen : args._extraIndexes) {
         assert(frozen._absoluteId < args.old_absolute_id);
         assert(flushIds.empty() || flushIds.back() < frozen._absoluteId);
 
@@ -487,17 +434,13 @@ IndexMaintainer::flushFrozenMemoryIndexes(FlushArgs &args, FlushIds &flushIds)
     }
 }
 
-void
-IndexMaintainer::flushLastMemoryIndex(FlushArgs &args, FlushIds &flushIds)
-{
+void IndexMaintainer::flushLastMemoryIndex(FlushArgs& args, FlushIds& flushIds) {
     // Called by a flush worker thread
     const uint32_t docIdLimit = args.save_info->getHeader()._docIdLimit;
     flushMemoryIndex(args, docIdLimit, *args.save_info, flushIds);
 }
 
-void
-IndexMaintainer::updateFlushStats(const FlushArgs &args)
-{
+void IndexMaintainer::updateFlushStats(const FlushArgs& args) {
     // Called by a flush worker thread
     std::string flushDir;
     if (!args._skippedEmptyLast) {
@@ -509,19 +452,13 @@ IndexMaintainer::updateFlushStats(const FlushArgs &args)
     args.stats->setPath(flushDir);
 }
 
-void
-IndexMaintainer::flushMemoryIndex(FlushArgs &args,
-                                  uint32_t docIdLimit,
-                                  FixedSourceSelector::SaveInfo &saveInfo,
-                                  FlushIds &flushIds)
-{
+void IndexMaintainer::flushMemoryIndex(FlushArgs& args, uint32_t docIdLimit, FixedSourceSelector::SaveInfo& saveInfo,
+                                       FlushIds& flushIds) {
     // Called by a flush worker thread
-    ChangeGens changeGens = getChangeGens();
-    IMemoryIndex &memoryIndex = *args.old_index;
-    auto prunedSchema = memoryIndex.getPrunedSchema();
-    auto diskIndex = flushMemoryIndex(memoryIndex, args.old_absolute_id,
-                                      docIdLimit, args.flush_serial_num,
-                                      saveInfo);
+    ChangeGens    changeGens = getChangeGens();
+    IMemoryIndex& memoryIndex = *args.old_index;
+    auto          prunedSchema = memoryIndex.getPrunedSchema();
+    auto diskIndex = flushMemoryIndex(memoryIndex, args.old_absolute_id, docIdLimit, args.flush_serial_num, saveInfo);
     // Post processing after memory index has been written to disk and
     // opened as disk index.
     args._changeGens = changeGens;
@@ -531,21 +468,17 @@ IndexMaintainer::flushMemoryIndex(FlushArgs &args,
     flushIds.push_back(args.old_absolute_id);
 }
 
-
-void
-IndexMaintainer::reconfigureAfterFlush(FlushArgs &args, std::shared_ptr<IDiskIndex>& diskIndex)
-{
+void IndexMaintainer::reconfigureAfterFlush(FlushArgs& args, std::shared_ptr<IDiskIndex>& diskIndex) {
     // Called by a flush worker thread
     for (;;) {
         // Call reconfig closure for this change
-        auto configure = makeLambdaConfigure([this, argsP=&args, diskIndexP=&diskIndex]() {
-            return doneFlush(argsP, diskIndexP);
-        });
+        auto configure = makeLambdaConfigure(
+            [this, argsP = &args, diskIndexP = &diskIndex]() { return doneFlush(argsP, diskIndexP); });
         if (reconfigure(std::move(configure))) {
             return;
         }
-        ChangeGens changeGens = getChangeGens();
-        auto prunedSchema = args.old_index->getPrunedSchema();
+        ChangeGens   changeGens = getChangeGens();
+        auto         prunedSchema = args.old_index->getPrunedSchema();
         const string indexDir = getFlushDir(args.old_absolute_id);
         if (prunedSchema) {
             updateDiskIndexSchema(indexDir, *prunedSchema, noSerialNumHigh);
@@ -557,18 +490,16 @@ IndexMaintainer::reconfigureAfterFlush(FlushArgs &args, std::shared_ptr<IDiskInd
     }
 }
 
-
-bool
-IndexMaintainer::doneFlush(FlushArgs *args, std::shared_ptr<IDiskIndex> *disk_index) {
+bool IndexMaintainer::doneFlush(FlushArgs* args, std::shared_ptr<IDiskIndex>* disk_index) {
     // Called by doFlush via reconfigurer
     assert(_ctx.getThreadingService().master().isCurrentThread());
-    LockGuard state_lock(_state_lock);
-    IMemoryIndex &memoryIndex = *args->old_index;
+    LockGuard     state_lock(_state_lock);
+    IMemoryIndex& memoryIndex = *args->old_index;
     if (args->_changeGens != getChangeGens()) {
-        return false;    // Must retry operation
+        return false; // Must retry operation
     }
     if (args->_prunedSchema != memoryIndex.getPrunedSchema()) {
-        return false;    // Must retry operation
+        return false; // Must retry operation
     }
     set_flush_serial_num(std::max(flush_serial_num(), args->flush_serial_num));
     vespalib::system_time timeStamp = search::FileKit::getModificationTime((*disk_index)->getIndexDir());
@@ -580,9 +511,7 @@ IndexMaintainer::doneFlush(FlushArgs *args, std::shared_ptr<IDiskIndex> *disk_in
     return true;
 }
 
-void
-IndexMaintainer::scheduleFusion(const FlushIds &flushIds)
-{
+void IndexMaintainer::scheduleFusion(const FlushIds& flushIds) {
     // Called by a flush worker thread
     LOG(debug, "Scheduled fusion for id %u.", flushIds.back());
     LockGuard guard(_fusion_lock);
@@ -591,27 +520,22 @@ IndexMaintainer::scheduleFusion(const FlushIds &flushIds)
     }
 }
 
-bool
-IndexMaintainer::canRunFusion(const FusionSpec &spec) const
-{
-    return spec.flush_ids.size() > 1 ||
-        (spec.flush_ids.size() > 0 && spec.last_fusion_id != 0);
+bool IndexMaintainer::canRunFusion(const FusionSpec& spec) const {
+    return spec.flush_ids.size() > 1 || (spec.flush_ids.size() > 0 && spec.last_fusion_id != 0);
 }
 
-bool
-IndexMaintainer::doneFusion(FusionArgs *args, std::shared_ptr<IDiskIndex>* new_index)
-{
+bool IndexMaintainer::doneFusion(FusionArgs* args, std::shared_ptr<IDiskIndex>* new_index) {
     // Called by runFusion via reconfigurer
     assert(_ctx.getThreadingService().master().isCurrentThread());
     LockGuard state_lock(_state_lock);
     if (args->_changeGens != getChangeGens()) {
-        return false;    // Must retry operation
+        return false; // Must retry operation
     }
     if (args->_prunedSchema != getActiveFusionPrunedSchema()) {
-        return false;    // Must retry operation
+        return false; // Must retry operation
     }
     args->_old_source_list = _source_list; // delays destruction
-    uint32_t id_diff = args->_new_fusion_id - _last_fusion_id;
+    uint32_t      id_diff = args->_new_fusion_id - _last_fusion_id;
     ostringstream ost;
     ost << "sourceselector_fusion(" << args->_new_fusion_id << ")";
     {
@@ -642,9 +566,7 @@ IndexMaintainer::doneFusion(FusionArgs *args, std::shared_ptr<IDiskIndex>* new_i
     return true;
 }
 
-bool
-IndexMaintainer::makeSureAllRemainingWarmupIsDone(std::shared_ptr<WarmupIndexCollection> keepAlive)
-{
+bool IndexMaintainer::makeSureAllRemainingWarmupIsDone(std::shared_ptr<WarmupIndexCollection> keepAlive) {
     // called by warmupDone via reconfigurer, warmupDone() doesn't wait for us
     assert(_ctx.getThreadingService().master().isCurrentThread());
     std::shared_ptr<ISearchableIndexCollection> warmIndex;
@@ -665,13 +587,11 @@ IndexMaintainer::makeSureAllRemainingWarmupIsDone(std::shared_ptr<WarmupIndexCol
     return true;
 }
 
-void
-IndexMaintainer::warmupDone(std::shared_ptr<WarmupIndexCollection> current)
-{
+void IndexMaintainer::warmupDone(std::shared_ptr<WarmupIndexCollection> current) {
     // Called by a search thread
     LockGuard lock(_new_search_lock);
     if (current == _source_list) {
-        auto makeSure = makeLambdaConfigure([this, collection=std::move(current)]() {
+        auto makeSure = makeLambdaConfigure([this, collection = std::move(current)]() {
             return makeSureAllRemainingWarmupIsDone(std::move(collection));
         });
         auto task = std::make_unique<ReconfigRunnableTask>(_ctx.getReconfigurer(), std::move(makeSure));
@@ -682,22 +602,21 @@ IndexMaintainer::warmupDone(std::shared_ptr<WarmupIndexCollection> current)
     }
 }
 
-void
-IndexMaintainer::doneSetSchema(SetSchemaArgs &args, std::shared_ptr<IMemoryIndex>& newIndex, SerialNum serial_num)
-{
+void IndexMaintainer::doneSetSchema(SetSchemaArgs& args, std::shared_ptr<IMemoryIndex>& newIndex,
+                                    SerialNum serial_num) {
     assert(_ctx.getThreadingService().master().isCurrentThread()); // with idle index executor
     LockGuard state_lock(_state_lock);
     using SaveInfo = FixedSourceSelector::SaveInfo;
-    args._oldSchema = _schema;		// Delay destruction
-    args._oldIndex = _current_index;	// Delay destruction
+    args._oldSchema = _schema;          // Delay destruction
+    args._oldIndex = _current_index;    // Delay destruction
     args._oldSourceList = _source_list; // Delay destruction
-    uint32_t oldAbsoluteId = get_absolute_id();
-    string selectorName = IndexDiskLayout::getSelectorFileName(getFlushDir(oldAbsoluteId));
-    SerialNum freezeSerialNum = current_serial_num();
-    bool dropEmptyLast = false;
+    uint32_t                  oldAbsoluteId = get_absolute_id();
+    string                    selectorName = IndexDiskLayout::getSelectorFileName(getFlushDir(oldAbsoluteId));
+    SerialNum                 freezeSerialNum = current_serial_num();
+    bool                      dropEmptyLast = false;
     std::unique_ptr<SaveInfo> saveInfo;
 
-    LOG(info, "Making new schema. Id = %u. Serial num = %llu", oldAbsoluteId, (unsigned long long) freezeSerialNum);
+    LOG(info, "Making new schema. Id = %u. Serial num = %llu", oldAbsoluteId, (unsigned long long)freezeSerialNum);
     {
         LockGuard lock(_index_update_lock);
         _schema = args._newSchema;
@@ -729,47 +648,35 @@ IndexMaintainer::doneSetSchema(SetSchemaArgs &args, std::shared_ptr<IMemoryIndex
     _source_list->setCurrentIndex(_current_index_id);
 }
 
-
-Schema
-IndexMaintainer::getSchema() const
-{
+Schema IndexMaintainer::getSchema() const {
     LockGuard lock(_index_update_lock);
     return _schema;
 }
 
-std::shared_ptr<const Schema>
-IndexMaintainer::getActiveFusionPrunedSchema() const
-{
+std::shared_ptr<const Schema> IndexMaintainer::getActiveFusionPrunedSchema() const {
     LockGuard lock(_index_update_lock);
     return _activeFusionPrunedSchema;
 }
 
-TuneFileAttributes
-IndexMaintainer::getAttrTune()
-{
+TuneFileAttributes IndexMaintainer::getAttrTune() {
     return _tuneFileAttributes;
 }
 
-IndexMaintainer::ChangeGens
-IndexMaintainer::getChangeGens()
-{
+IndexMaintainer::ChangeGens IndexMaintainer::getChangeGens() {
     LockGuard lock(_index_update_lock);
     return _changeGens;
 }
 
-bool
-IndexMaintainer::reconfigure(std::unique_ptr<Configure> configure)
-{
+bool IndexMaintainer::reconfigure(std::unique_ptr<Configure> configure) {
     // Called by a flush engine worker thread
-    bool result = false;
+    bool             result = false;
     ReconfigRunnable runnable(result, _ctx.getReconfigurer(), std::move(configure));
     _ctx.getThreadingService().master().run(runnable);
     return result;
 }
 
-IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
-                                 const IndexMaintainerContext &ctx,
-                                 IIndexMaintainerOperations &operations)
+IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig& config, const IndexMaintainerContext& ctx,
+                                 IIndexMaintainerOperations& operations)
     : _base_dir(config.getBaseDir()),
       _warmupConfig(config.getWarmup()),
       _disk_indexes(std::make_shared<DiskIndexes>()),
@@ -802,8 +709,7 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
       _schemaUpdateLock(),
       _tuneFileAttributes(config.getTuneFileAttributes()),
       _ctx(ctx),
-      _operations(operations)
-{
+      _operations(operations) {
     // Called by document db init executor thread
     _changeGens.bumpPruneGen();
     DiskIndexCleaner::clean(_base_dir, *_disk_indexes);
@@ -812,9 +718,7 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
     _last_fusion_id = spec.last_fusion_id;
 
     if (_next_id > 1) {
-        string latest_index_dir = spec.flush_ids.empty()
-                                  ? getFusionDir(_next_id - 1)
-                                  : getFlushDir(_next_id - 1);
+        string latest_index_dir = spec.flush_ids.empty() ? getFusionDir(_next_id - 1) : getFlushDir(_next_id - 1);
 
         set_flush_serial_num(IndexReadUtilities::readSerialNum(latest_index_dir));
         set_last_flush_time(search::FileKit::getModificationTime(latest_index_dir));
@@ -828,7 +732,7 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
     uint32_t baseId(_selector->getBaseId());
     if (_last_fusion_id != baseId) {
         assert(_last_fusion_id > baseId);
-        uint32_t id_diff = _last_fusion_id - baseId;
+        uint32_t      id_diff = _last_fusion_id - baseId;
         ostringstream ost;
         ost << "sourceselector_fusion(" << _last_fusion_id << ")";
         _selector = getSourceSelector().cloneAndSubtract(ost.str(), id_diff);
@@ -843,66 +747,59 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
     sourceList->setCurrentIndex(_current_index_id);
     _source_list = std::move(sourceList);
     _fusion_spec = spec;
-    _ctx.getThreadingService().master().execute(makeLambdaTask([this,&config]() {
-        pruneRemovedFields(_schema, config.getSerialNum());
-    }));
+    _ctx.getThreadingService().master().execute(
+        makeLambdaTask([this, &config]() { pruneRemovedFields(_schema, config.getSerialNum()); }));
     _ctx.getThreadingService().master().sync();
     consider_initial_urgent_flush();
 }
 
-IndexMaintainer::~IndexMaintainer()
-{
+IndexMaintainer::~IndexMaintainer() {
     _source_list.reset();
     _frozenMemoryIndexes.clear();
     _selector.reset();
 }
 
-std::unique_ptr<FlushTask>
-IndexMaintainer::initFlush(SerialNum serialNum, searchcorespi::FlushStats * stats)
-{
+std::unique_ptr<FlushTask> IndexMaintainer::initFlush(SerialNum serialNum, searchcorespi::FlushStats* stats) {
     assert(_ctx.getThreadingService().master().isCurrentThread()); // while flush engine scheduler thread waits
     {
         LockGuard lock(_index_update_lock);
         set_current_serial_num(std::max(current_serial_num(), serialNum));
     }
 
-    auto new_index(_operations.createMemoryIndex(getSchema(), *_current_index, current_serial_num()));
+    auto      new_index(_operations.createMemoryIndex(getSchema(), *_current_index, current_serial_num()));
     FlushArgs args;
     args.stats = stats;
     // Ensure that all index thread tasks accessing memory index have completed.
     commit_and_wait();
     // Call reconfig closure for this change
-    auto configure = makeLambdaConfigure([this, argsP=&args, indexP=&new_index]() {
-        return doneInitFlush(argsP, indexP);
-    });
+    auto configure =
+        makeLambdaConfigure([this, argsP = &args, indexP = &new_index]() { return doneInitFlush(argsP, indexP); });
     bool success = _ctx.getReconfigurer().reconfigure(std::move(configure));
     assert(success);
-    (void) success;
+    (void)success;
     if (args._skippedEmptyLast && args._extraIndexes.empty()) {
         // No memory index to flush, it was empty
         LockGuard lock(_state_lock);
         set_flush_serial_num(current_serial_num());
         set_last_flush_time(vespalib::system_clock::now());
-        LOG(debug, "No memory index to flush. Update serial number and flush time to current: "
+        LOG(debug,
+            "No memory index to flush. Update serial number and flush time to current: "
             "flushSerialNum(%" PRIu64 "), lastFlushTime(%f)",
             flush_serial_num(), vespalib::to_s(getLastFlushTime().time_since_epoch()));
         return {};
     }
     SerialNum realSerialNum = args.flush_serial_num;
-    return makeLambdaFlushTask([this, myargs=std::move(args)]() mutable { doFlush(std::move(myargs)); }, realSerialNum);
+    return makeLambdaFlushTask([this, myargs = std::move(args)]() mutable { doFlush(std::move(myargs)); },
+                               realSerialNum);
 }
 
-FusionSpec
-IndexMaintainer::getFusionSpec()
-{
+FusionSpec IndexMaintainer::getFusionSpec() {
     // Only called by unit test
     LockGuard guard(_fusion_lock);
     return _fusion_spec;
 }
 
-string
-IndexMaintainer::doFusion(SerialNum serialNum, std::shared_ptr<search::IFlushToken> flush_token)
-{
+string IndexMaintainer::doFusion(SerialNum serialNum, std::shared_ptr<search::IFlushToken> flush_token) {
     // Called by a flush engine worker thread
 
     // Make sure to update serial num in case it is something that does not receive any data.
@@ -926,7 +823,7 @@ IndexMaintainer::doFusion(SerialNum serialNum, std::shared_ptr<search::IFlushTok
     uint32_t new_fusion_id = runFusion(spec, flush_token);
 
     LockGuard lock(_fusion_lock);
-    if (new_fusion_id == spec.last_fusion_id) {  // Error running fusion.
+    if (new_fusion_id == spec.last_fusion_id) { // Error running fusion.
         string fail_dir = getFusionDir(spec.flush_ids.back());
         if (flush_token->stop_requested()) {
             LOG(info, "Fusion stopped for id %u, fusion dir \"%s\".", spec.flush_ids.back(), fail_dir.c_str());
@@ -945,30 +842,27 @@ IndexMaintainer::doFusion(SerialNum serialNum, std::shared_ptr<search::IFlushTok
 namespace {
 
 class RemoveFusionIndexGuard {
-    DiskIndexes*       _disk_indexes;
-    IndexDiskDir       _index_disk_dir;
+    DiskIndexes* _disk_indexes;
+    IndexDiskDir _index_disk_dir;
+
 public:
     RemoveFusionIndexGuard(DiskIndexes& disk_indexes, IndexDiskDir index_disk_dir)
-        : _disk_indexes(&disk_indexes),
-          _index_disk_dir(index_disk_dir)
-    {
+        : _disk_indexes(&disk_indexes), _index_disk_dir(index_disk_dir) {
         _disk_indexes->add_not_active(index_disk_dir);
     }
     ~RemoveFusionIndexGuard() {
         if (_disk_indexes != nullptr) {
-            (void) _disk_indexes->remove(_index_disk_dir);
+            (void)_disk_indexes->remove(_index_disk_dir);
         }
     }
     void reset() { _disk_indexes = nullptr; }
 };
 
-}
+} // namespace
 
-uint32_t
-IndexMaintainer::runFusion(const FusionSpec &fusion_spec, std::shared_ptr<search::IFlushToken> flush_token)
-{
+uint32_t IndexMaintainer::runFusion(const FusionSpec& fusion_spec, std::shared_ptr<search::IFlushToken> flush_token) {
     // Called by a flush engine worker thread
-    FusionArgs args;
+    FusionArgs         args;
     TuneFileAttributes tuneFileAttributes(getAttrTune());
     {
         LockGuard slock(_state_lock);
@@ -977,17 +871,17 @@ IndexMaintainer::runFusion(const FusionSpec &fusion_spec, std::shared_ptr<search
         _activeFusionPrunedSchema.reset();
         args._schema = _schema;
     }
-    string lastFlushDir(getFlushDir(fusion_spec.flush_ids.back()));
-    string lastSerialFile = IndexDiskLayout::getSerialNumFileName(lastFlushDir);
+    string    lastFlushDir(getFlushDir(fusion_spec.flush_ids.back()));
+    string    lastSerialFile = IndexDiskLayout::getSerialNumFileName(lastFlushDir);
     SerialNum serialNum = 0;
     if (fs::exists(fs::path(lastSerialFile))) {
         serialNum = IndexReadUtilities::readSerialNum(lastFlushDir);
     }
-    IndexDiskDir fusion_index_disk_dir(fusion_spec.flush_ids.back(), true);
+    IndexDiskDir           fusion_index_disk_dir(fusion_spec.flush_ids.back(), true);
     RemoveFusionIndexGuard remove_fusion_index_guard(*_disk_indexes, fusion_index_disk_dir);
-    FusionRunner fusion_runner(_base_dir, args._schema, tuneFileAttributes, _ctx.getFileHeaderContext());
-    uint32_t new_fusion_id = fusion_runner.fuse(fusion_spec, serialNum, _operations, flush_token);
-    bool ok = (new_fusion_id != 0);
+    FusionRunner           fusion_runner(_base_dir, args._schema, tuneFileAttributes, _ctx.getFileHeaderContext());
+    uint32_t               new_fusion_id = fusion_runner.fuse(fusion_spec, serialNum, _operations, flush_token);
+    bool                   ok = (new_fusion_id != 0);
     if (ok) {
         ok = IndexWriteUtilities::copySerialNumFile(getFlushDir(fusion_spec.flush_ids.back()),
                                                     getFusionDir(new_fusion_id));
@@ -1011,12 +905,12 @@ IndexMaintainer::runFusion(const FusionSpec &fusion_spec, std::shared_ptr<search
     }
 
     const string new_fusion_dir = getFusionDir(new_fusion_id);
-    auto prunedSchema = getActiveFusionPrunedSchema();
+    auto         prunedSchema = getActiveFusionPrunedSchema();
     if (prunedSchema) {
         updateDiskIndexSchema(new_fusion_dir, *prunedSchema, noSerialNumHigh);
     }
     ChangeGens changeGens = getChangeGens();
-    auto new_index(loadDiskIndex(new_fusion_dir));
+    auto       new_index(loadDiskIndex(new_fusion_dir));
     remove_fusion_index_guard.reset();
 
     // Post processing after fusion operation has completed and new disk
@@ -1027,9 +921,8 @@ IndexMaintainer::runFusion(const FusionSpec &fusion_spec, std::shared_ptr<search
     args._prunedSchema = prunedSchema;
     for (;;) {
         // Call reconfig closure for this change
-        bool success = reconfigure(makeLambdaConfigure([this,argsP=&args,indexP=&new_index]() {
-            return doneFusion(argsP, indexP);
-        }));
+        bool success = reconfigure(
+            makeLambdaConfigure([this, argsP = &args, indexP = &new_index]() { return doneFusion(argsP, indexP); }));
         if (success) {
             break;
         }
@@ -1049,28 +942,24 @@ IndexMaintainer::runFusion(const FusionSpec &fusion_spec, std::shared_ptr<search
     return new_fusion_id;
 }
 
-void
-IndexMaintainer::removeOldDiskIndexes()
-{
+void IndexMaintainer::removeOldDiskIndexes() {
     LockGuard slock(*_remove_lock);
     DiskIndexCleaner::removeOldIndexes(_base_dir, *_disk_indexes);
 }
 
-IndexMaintainer::FlushStats
-IndexMaintainer::getFlushStats() const
-{
+IndexMaintainer::FlushStats IndexMaintainer::getFlushStats() const {
     // Called by flush engine scheduler thread (from getFlushTargets())
     FlushStats stats;
-    uint64_t source_selector_bytes;
-    uint32_t source_selector_changes;
-    uint32_t numFrozen = 0;
+    uint64_t   source_selector_bytes;
+    uint32_t   source_selector_changes;
+    uint32_t   numFrozen = 0;
     {
         LockGuard lock(_index_update_lock);
         source_selector_bytes = _selector->getDocIdLimit() * sizeof(Source);
         stats.memory_before_bytes += _current_index->getMemoryUsage().allocatedBytes() + source_selector_bytes;
         stats.memory_after_bytes += _current_index->getStaticMemoryFootprint() + source_selector_bytes;
         numFrozen = _frozenMemoryIndexes.size();
-        for (const FrozenMemoryIndexRef & frozen : _frozenMemoryIndexes) {
+        for (const FrozenMemoryIndexRef& frozen : _frozenMemoryIndexes) {
             stats.memory_before_bytes += frozen._index->getMemoryUsage().allocatedBytes() + source_selector_bytes;
         }
         source_selector_changes = _source_selector_changes;
@@ -1081,17 +970,15 @@ IndexMaintainer::getFlushStats() const
         stats.disk_write_bytes = 0;
         stats.cpu_time_required = 0;
     } else {
-        stats.disk_write_bytes = stats.memory_before_bytes  + source_selector_bytes - stats.memory_after_bytes;
+        stats.disk_write_bytes = stats.memory_before_bytes + source_selector_bytes - stats.memory_after_bytes;
         stats.cpu_time_required = source_selector_bytes * 3 * (1 + numFrozen) + stats.disk_write_bytes;
     }
     return stats;
 }
 
-IndexMaintainer::FusionStats
-IndexMaintainer::getFusionStats() const
-{
+IndexMaintainer::FusionStats IndexMaintainer::getFusionStats() const {
     // Called by flush engine scheduler thread (from getFlushTargets())
-    FusionStats stats;
+    FusionStats                      stats;
     std::shared_ptr<IndexSearchable> source_list;
 
     {
@@ -1109,23 +996,20 @@ IndexMaintainer::getFusionStats() const
     return stats;
 }
 
-uint32_t
-IndexMaintainer::getNumFrozenMemoryIndexes() const
-{
+uint32_t IndexMaintainer::getNumFrozenMemoryIndexes() const {
     // Called by flush engine scheduler thread (from getFlushTargets())
     LockGuard state_lock(_index_update_lock);
     return _frozenMemoryIndexes.size();
 }
 
-void
-IndexMaintainer::putDocument(uint32_t lid, const Document &doc, SerialNum serialNum, const OnWriteDoneType& on_write_done)
-{
+void IndexMaintainer::putDocument(uint32_t lid, const Document& doc, SerialNum serialNum,
+                                  const OnWriteDoneType& on_write_done) {
     assert(_ctx.getThreadingService().index().isCurrentThread());
     LockGuard lock(_index_update_lock);
     try {
         _current_index->insertDocument(lid, doc, on_write_done);
-    } catch (const vespalib::IllegalStateException & e) {
-        std::string s = "Failed inserting document :\n"  + doc.toXml("  ") + "\n";
+    } catch (const vespalib::IllegalStateException& e) {
+        std::string s = "Failed inserting document :\n" + doc.toXml("  ") + "\n";
         LOG(error, "%s", s.c_str());
         throw vespalib::IllegalStateException(s, e, VESPA_STRLOC);
     }
@@ -1135,9 +1019,7 @@ IndexMaintainer::putDocument(uint32_t lid, const Document &doc, SerialNum serial
     set_current_serial_num(serialNum);
 }
 
-void
-IndexMaintainer::removeDocuments(LidVector lids, SerialNum serialNum)
-{
+void IndexMaintainer::removeDocuments(LidVector lids, SerialNum serialNum) {
     assert(_ctx.getThreadingService().index().isCurrentThread());
     LockGuard lock(_index_update_lock);
     for (uint32_t lid : lids) {
@@ -1149,9 +1031,7 @@ IndexMaintainer::removeDocuments(LidVector lids, SerialNum serialNum)
     _current_index->removeDocuments(std::move(lids));
 }
 
-void
-IndexMaintainer::commit_and_wait()
-{
+void IndexMaintainer::commit_and_wait() {
     assert(_ctx.getThreadingService().master().isCurrentThread());
     vespalib::Gate gate;
     _ctx.getThreadingService().index().execute(makeLambdaTask([this, &gate]() { commit(gate); }));
@@ -1159,35 +1039,27 @@ IndexMaintainer::commit_and_wait()
     gate.await();
 }
 
-void
-IndexMaintainer::commit(vespalib::Gate& gate)
-{
+void IndexMaintainer::commit(vespalib::Gate& gate) {
     // only triggered via commit_and_wait()
     assert(_ctx.getThreadingService().index().isCurrentThread());
     LockGuard lock(_index_update_lock);
     _current_index->commit(std::make_shared<vespalib::GateCallback>(gate), current_serial_num());
 }
 
-void
-IndexMaintainer::commit(SerialNum serialNum, const OnWriteDoneType& onWriteDone)
-{
+void IndexMaintainer::commit(SerialNum serialNum, const OnWriteDoneType& onWriteDone) {
     assert(_ctx.getThreadingService().index().isCurrentThread());
     LockGuard lock(_index_update_lock);
     set_current_serial_num(serialNum);
     _current_index->commit(onWriteDone, serialNum);
 }
 
-void
-IndexMaintainer::heartBeat(SerialNum serialNum)
-{
+void IndexMaintainer::heartBeat(SerialNum serialNum) {
     assert(_ctx.getThreadingService().index().isCurrentThread());
     LockGuard lock(_index_update_lock);
     set_current_serial_num(serialNum);
 }
 
-void
-IndexMaintainer::compactLidSpace(uint32_t lidLimit, SerialNum serialNum)
-{
+void IndexMaintainer::compactLidSpace(uint32_t lidLimit, SerialNum serialNum) {
     assert(_ctx.getThreadingService().index().isCurrentThread());
     LOG(info, "compactLidSpace(%u, %" PRIu64 ")", lidLimit, serialNum);
     LockGuard lock(_index_update_lock);
@@ -1195,9 +1067,7 @@ IndexMaintainer::compactLidSpace(uint32_t lidLimit, SerialNum serialNum)
     _selector->compactLidSpace(lidLimit);
 }
 
-IFlushTarget::List
-IndexMaintainer::getFlushTargets()
-{
+IFlushTarget::List IndexMaintainer::getFlushTargets() {
     // Called by flush engine scheduler thread
     IFlushTarget::List ret;
     ret.reserve(2);
@@ -1206,12 +1076,10 @@ IndexMaintainer::getFlushTargets()
     return ret;
 }
 
-void
-IndexMaintainer::setSchema(const Schema & schema, SerialNum serialNum)
-{
+void IndexMaintainer::setSchema(const Schema& schema, SerialNum serialNum) {
     assert(_ctx.getThreadingService().master().isCurrentThread());
     pruneRemovedFields(schema, serialNum);
-    auto new_index(_operations.createMemoryIndex(schema, *_current_index, current_serial_num()));
+    auto          new_index(_operations.createMemoryIndex(schema, *_current_index, current_serial_num()));
     SetSchemaArgs args;
 
     args._newSchema = schema;
@@ -1223,12 +1091,10 @@ IndexMaintainer::setSchema(const Schema & schema, SerialNum serialNum)
     // as appropriate.
 }
 
-void
-IndexMaintainer::pruneRemovedFields(const Schema &schema, SerialNum serialNum)
-{
+void IndexMaintainer::pruneRemovedFields(const Schema& schema, SerialNum serialNum) {
     assert(_ctx.getThreadingService().master().isCurrentThread());
     std::shared_ptr<ISearchableIndexCollection> new_source_list;
-    auto coll = getSourceCollection();
+    auto                                        coll = getSourceCollection();
     updateIndexSchemas(*coll, schema, serialNum);
     updateActiveFusionPrunedSchema(schema);
     {
@@ -1249,38 +1115,30 @@ IndexMaintainer::pruneRemovedFields(const Schema &schema, SerialNum serialNum)
     }
 }
 
-void
-IndexMaintainer::setMaxFlushed(uint32_t maxFlushed)
-{
+void IndexMaintainer::setMaxFlushed(uint32_t maxFlushed) {
     LockGuard lock(_new_search_lock);
     _maxFlushed = maxFlushed;
 }
 
-void
-IndexMaintainer::consider_urgent_flush(const Schema& old_schema, const Schema& new_schema, uint32_t flush_id)
-{
+void IndexMaintainer::consider_urgent_flush(const Schema& old_schema, const Schema& new_schema, uint32_t flush_id) {
     // Non-matching interleaved features in schemas means that we need to
     // reconstruct or drop interleaved features in posting lists. Schedule
     // urgent flush until all indexes are in sync.
     for (SchemaUtil::IndexIterator itr(new_schema); itr.isValid(); ++itr) {
-        if (itr.hasMatchingOldFields(old_schema) &&
-                !itr.has_matching_use_interleaved_features(old_schema))
-        {
+        if (itr.hasMatchingOldFields(old_schema) && !itr.has_matching_use_interleaved_features(old_schema)) {
             _urgent_flush_id = flush_id;
             break;
         }
     }
 }
 
-void
-IndexMaintainer::consider_initial_urgent_flush()
-{
-    const Schema *prev_schema = nullptr;
-    auto coll = getSourceCollection();
-    uint32_t count = coll->getSourceCount();
+void IndexMaintainer::consider_initial_urgent_flush() {
+    const Schema* prev_schema = nullptr;
+    auto          coll = getSourceCollection();
+    uint32_t      count = coll->getSourceCount();
     for (uint32_t i = 0; i < count; ++i) {
-        IndexSearchable &is = coll->getSearchable(i);
-        const auto *const d = dynamic_cast<const DiskIndexWithDestructorCleanup *>(&is);
+        IndexSearchable&  is = coll->getSearchable(i);
+        const auto* const d = dynamic_cast<const DiskIndexWithDestructorCleanup*>(&is);
         if (d != nullptr) {
             auto schema = &d->getSchema();
             if (prev_schema != nullptr) {
@@ -1291,16 +1149,12 @@ IndexMaintainer::consider_initial_urgent_flush()
     }
 }
 
-uint32_t
-IndexMaintainer::get_urgent_flush_id() const
-{
+uint32_t IndexMaintainer::get_urgent_flush_id() const {
     LockGuard lock(_index_update_lock);
     return _urgent_flush_id;
 }
 
-bool
-IndexMaintainer::urgent_memory_index_flush() const
-{
+bool IndexMaintainer::urgent_memory_index_flush() const {
     LockGuard lock(_index_update_lock);
     for (auto& frozen : _frozenMemoryIndexes) {
         if (frozen._absoluteId == _urgent_flush_id) {
@@ -1313,39 +1167,31 @@ IndexMaintainer::urgent_memory_index_flush() const
     return false;
 }
 
-bool
-IndexMaintainer::urgent_disk_index_fusion() const
-{
-    uint32_t urgent_flush_id = get_urgent_flush_id();
+bool IndexMaintainer::urgent_disk_index_fusion() const {
+    uint32_t  urgent_flush_id = get_urgent_flush_id();
     LockGuard lock(_fusion_lock);
-    auto& flush_ids = _fusion_spec.flush_ids;
+    auto&     flush_ids = _fusion_spec.flush_ids;
     return std::find(flush_ids.begin(), flush_ids.end(), urgent_flush_id) != std::end(flush_ids);
 }
 
-bool
-IndexMaintainer::has_pending_urgent_flush() const
-{
-    uint32_t urgent_flush_id = get_urgent_flush_id();
+bool IndexMaintainer::has_pending_urgent_flush() const {
+    uint32_t  urgent_flush_id = get_urgent_flush_id();
     LockGuard lock(_fusion_lock);
     return urgent_flush_id > _fusion_spec.last_fusion_id;
 }
 
-search::IndexStats
-IndexMaintainer::get_index_stats(bool clear_disk_io_stats) const
-{
+search::IndexStats IndexMaintainer::get_index_stats(bool clear_disk_io_stats) const {
     std::unique_lock lock(_new_search_lock);
-    auto stats = _source_list->get_index_stats(clear_disk_io_stats);
+    auto             stats = _source_list->get_index_stats(clear_disk_io_stats);
     return stats;
 }
 
-ResourceUsage
-IndexMaintainer::get_resource_usage() const
-{
+ResourceUsage IndexMaintainer::get_resource_usage() const {
     auto disk_indexes_resource_usage = _disk_indexes->get_resource_usage(*_layout);
     auto stats = get_index_stats(false);
-    return ResourceUsage{TransientResourceUsage{disk_indexes_resource_usage.transient().disk(),
-                                                stats.memoryUsage().allocatedBytes()},
-                         disk_indexes_resource_usage.disk()};
+    return ResourceUsage{
+        TransientResourceUsage{disk_indexes_resource_usage.transient().disk(), stats.memoryUsage().allocatedBytes()},
+        disk_indexes_resource_usage.disk()};
 }
 
-}
+} // namespace searchcorespi::index

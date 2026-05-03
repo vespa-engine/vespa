@@ -2,6 +2,7 @@
 #pragma once
 
 #include "indexmaintainer.h"
+
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 
 namespace searchcorespi::index {
@@ -11,24 +12,24 @@ namespace searchcorespi::index {
  **/
 class IndexFusionTarget : public LeafFlushTarget {
 private:
-    IndexMaintainer &_indexMaintainer;
+    IndexMaintainer&             _indexMaintainer;
     IndexMaintainer::FusionStats _fusionStats;
-    FlushStats _lastStats;
+    FlushStats                   _lastStats;
 
 public:
-    IndexFusionTarget(IndexMaintainer &indexMaintainer);
+    IndexFusionTarget(IndexMaintainer& indexMaintainer);
     ~IndexFusionTarget() override;
 
     // Implements IFlushTarget
     MemoryGain getApproxMemoryGain() const override;
-    DiskGain   getApproxDiskGain() const override;
+    DiskGain getApproxDiskGain() const override;
     SerialNum getFlushedSerialNum() const override;
-    Time    getLastFlushTime() const override;
-    bool           needUrgentFlush() const override;
+    Time getLastFlushTime() const override;
+    bool needUrgentFlush() const override;
 
     Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
     FlushStats getLastFlushStats() const override { return _lastStats; }
     uint64_t getApproxBytesToWriteToDisk() const override;
 };
 
-}
+} // namespace searchcorespi::index

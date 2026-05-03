@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "indexcollection.h"
+
 #include "indexsearchablevisitor.h"
-#include <vespa/searchlib/queryeval/isourceselector.h>
+
 #include <vespa/searchlib/queryeval/create_blueprint_visitor_helper.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
+#include <vespa/searchlib/queryeval/isourceselector.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 
 #include <vespa/log/log.h>
@@ -17,17 +19,11 @@ using search::index::FieldLengthInfo;
 
 namespace searchcorespi {
 
-IndexCollection::IndexCollection(const ISourceSelector::SP & selector)
-    : _source_selector(selector),
-      _sources()
-{
+IndexCollection::IndexCollection(const ISourceSelector::SP& selector) : _source_selector(selector), _sources() {
 }
 
-IndexCollection::IndexCollection(const ISourceSelector::SP & selector,
-                                 const ISearchableIndexCollection &sources)
-    : _source_selector(selector),
-      _sources()
-{
+IndexCollection::IndexCollection(const ISourceSelector::SP& selector, const ISearchableIndexCollection& sources)
+    : _source_selector(selector), _sources() {
     for (size_t i(0), m(sources.getSourceCount()); i < m; i++) {
         append(sources.getSourceId(i), sources.getSearchableSP(i));
     }
@@ -36,19 +32,15 @@ IndexCollection::IndexCollection(const ISourceSelector::SP & selector,
 
 IndexCollection::~IndexCollection() = default;
 
-void
-IndexCollection::setSource(uint32_t docId)
-{
-    assert( valid() );
+void IndexCollection::setSource(uint32_t docId) {
+    assert(valid());
     _source_selector->setSource(docId, getCurrentIndex());
 }
 
-ISearchableIndexCollection::UP
-IndexCollection::replaceAndRenumber(const ISourceSelector::SP & selector,
-                                    const ISearchableIndexCollection &fsc,
-                                    uint32_t id_diff,
-                                    const IndexSearchable::SP &new_source)
-{
+ISearchableIndexCollection::UP IndexCollection::replaceAndRenumber(const ISourceSelector::SP&        selector,
+                                                                   const ISearchableIndexCollection& fsc,
+                                                                   uint32_t                          id_diff,
+                                                                   const IndexSearchable::SP&        new_source) {
     auto new_fsc = std::make_unique<IndexCollection>(selector);
     new_fsc->append(0, new_source);
     for (size_t i = 0; i < fsc.getSourceCount(); ++i) {
@@ -59,21 +51,15 @@ IndexCollection::replaceAndRenumber(const ISourceSelector::SP & selector,
     return new_fsc;
 }
 
-void
-IndexCollection::append(uint32_t id, const IndexSearchable::SP &fs)
-{
+void IndexCollection::append(uint32_t id, const IndexSearchable::SP& fs) {
     _sources.push_back(SourceWithId(id, fs));
 }
 
-IndexSearchable::SP
-IndexCollection::getSearchableSP(uint32_t i) const
-{
+IndexSearchable::SP IndexCollection::getSearchableSP(uint32_t i) const {
     return _sources[i].source_wrapper;
 }
 
-void
-IndexCollection::replace(uint32_t id, const IndexSearchable::SP &fs)
-{
+void IndexCollection::replace(uint32_t id, const IndexSearchable::SP& fs) {
     for (size_t i = 0; i < _sources.size(); ++i) {
         if (_sources[i].id == id) {
             _sources[i].source_wrapper = fs;
@@ -84,33 +70,23 @@ IndexCollection::replace(uint32_t id, const IndexSearchable::SP &fs)
     append(id, fs);
 }
 
-const ISourceSelector &
-IndexCollection::getSourceSelector() const
-{
+const ISourceSelector& IndexCollection::getSourceSelector() const {
     return *_source_selector;
 }
 
-size_t
-IndexCollection::getSourceCount() const
-{
+size_t IndexCollection::getSourceCount() const {
     return _sources.size();
 }
 
-IndexSearchable &
-IndexCollection::getSearchable(uint32_t i) const
-{
+IndexSearchable& IndexCollection::getSearchable(uint32_t i) const {
     return *_sources[i].source_wrapper;
 }
 
-uint32_t
-IndexCollection::getSourceId(uint32_t i) const
-{
+uint32_t IndexCollection::getSourceId(uint32_t i) const {
     return _sources[i].id;
 }
 
-search::IndexStats
-IndexCollection::get_index_stats(bool clear_disk_io_stats) const
-{
+search::IndexStats IndexCollection::get_index_stats(bool clear_disk_io_stats) const {
     search::IndexStats stats;
     for (size_t i = 0; i < _sources.size(); ++i) {
         stats.merge(_sources[i].source_wrapper->get_index_stats(clear_disk_io_stats));
@@ -118,21 +94,16 @@ IndexCollection::get_index_stats(bool clear_disk_io_stats) const
     return stats;
 }
 
-search::SerialNum
-IndexCollection::getSerialNum() const
-{
+search::SerialNum IndexCollection::getSerialNum() const {
     search::SerialNum serialNum = 0;
-    for (auto &source : _sources) {
+    for (auto& source : _sources) {
         serialNum = std::max(serialNum, source.source_wrapper->getSerialNum());
     }
     return serialNum;
 }
 
-
-void
-IndexCollection::accept(IndexSearchableVisitor &visitor) const
-{
-    for (auto &source : _sources) {
+void IndexCollection::accept(IndexSearchableVisitor& visitor) const {
+    for (auto& source : _sources) {
         source.source_wrapper->accept(visitor);
     }
 }
@@ -140,14 +111,13 @@ IndexCollection::accept(IndexSearchableVisitor &visitor) const
 namespace {
 
 struct Mixer {
-    const ISourceSelector                &_selector;
+    const ISourceSelector&                  _selector;
     std::unique_ptr<SourceBlenderBlueprint> _blender;
 
-    Mixer(const ISourceSelector &selector)
-        : _selector(selector), _blender() {}
+    Mixer(const ISourceSelector& selector) : _selector(selector), _blender() {}
 
     void addIndex(Blueprint::UP index) {
-        if ( ! _blender) {
+        if (!_blender) {
             _blender = std::make_unique<SourceBlenderBlueprint>(_selector);
         }
         _blender->addChild(std::move(index));
@@ -163,58 +133,56 @@ struct Mixer {
 
 class CreateBlueprintVisitor : public search::query::QueryVisitor {
 private:
-    const IIndexCollection  &_indexes;
-    const FieldSpecList     &_fields;
-    const IRequestContext   &_requestContext;
-    search::fef::MatchDataLayout &_global_layout;
-    Blueprint::UP            _result;
+    const IIndexCollection&       _indexes;
+    const FieldSpecList&          _fields;
+    const IRequestContext&        _requestContext;
+    search::fef::MatchDataLayout& _global_layout;
+    Blueprint::UP                 _result;
 
-    template <typename NodeType>
-    void visitTerm(NodeType &n) {
+    template <typename NodeType> void visitTerm(NodeType& n) {
         Mixer mixer(_indexes.getSourceSelector());
         for (size_t i = 0; i < _indexes.getSourceCount(); ++i) {
-            Blueprint::UP blueprint = _indexes.getSearchable(i).createBlueprint(_requestContext, _fields, n, _global_layout);
+            Blueprint::UP blueprint =
+                _indexes.getSearchable(i).createBlueprint(_requestContext, _fields, n, _global_layout);
             blueprint->setSourceId(_indexes.getSourceId(i));
             mixer.addIndex(std::move(blueprint));
         }
         _result = mixer.mix();
     }
 
-    void visit(And &)         override { }
-    void visit(AndNot &)      override { }
-    void visit(Or &)          override { }
-    void visit(WeakAnd &)     override { }
-    void visit(Equiv &)       override { }
-    void visit(Rank &)        override { }
-    void visit(Near &)        override { }
-    void visit(ONear &)       override { }
-    void visit(SameElement &) override { }
-    void visit(TrueQueryNode &)    override {}
-    void visit(FalseQueryNode &)   override {}
+    void visit(And&) override {}
+    void visit(AndNot&) override {}
+    void visit(Or&) override {}
+    void visit(WeakAnd&) override {}
+    void visit(Equiv&) override {}
+    void visit(Rank&) override {}
+    void visit(Near&) override {}
+    void visit(ONear&) override {}
+    void visit(SameElement&) override {}
+    void visit(TrueQueryNode&) override {}
+    void visit(FalseQueryNode&) override {}
 
-    void visit(WeightedSetTerm &n) override { visitTerm(n); }
-    void visit(DotProduct &n)      override { visitTerm(n); }
-    void visit(WandTerm &n)        override { visitTerm(n); }
-    void visit(Phrase &n)          override { visitTerm(n); }
-    void visit(NumberTerm &n)      override { visitTerm(n); }
-    void visit(LocationTerm &n)    override { visitTerm(n); }
-    void visit(PrefixTerm &n)      override { visitTerm(n); }
-    void visit(RangeTerm &n)       override { visitTerm(n); }
-    void visit(StringTerm &n)      override { visitTerm(n); }
-    void visit(SubstringTerm &n)   override { visitTerm(n); }
-    void visit(SuffixTerm &n)      override { visitTerm(n); }
-    void visit(PredicateQuery &n)  override { visitTerm(n); }
-    void visit(RegExpTerm &n)      override { visitTerm(n); }
-    void visit(NearestNeighborTerm &n) override { visitTerm(n); }
-    void visit(FuzzyTerm &n) override { visitTerm(n); }
-    void visit(InTerm& n)          override { visitTerm(n); }
+    void visit(WeightedSetTerm& n) override { visitTerm(n); }
+    void visit(DotProduct& n) override { visitTerm(n); }
+    void visit(WandTerm& n) override { visitTerm(n); }
+    void visit(Phrase& n) override { visitTerm(n); }
+    void visit(NumberTerm& n) override { visitTerm(n); }
+    void visit(LocationTerm& n) override { visitTerm(n); }
+    void visit(PrefixTerm& n) override { visitTerm(n); }
+    void visit(RangeTerm& n) override { visitTerm(n); }
+    void visit(StringTerm& n) override { visitTerm(n); }
+    void visit(SubstringTerm& n) override { visitTerm(n); }
+    void visit(SuffixTerm& n) override { visitTerm(n); }
+    void visit(PredicateQuery& n) override { visitTerm(n); }
+    void visit(RegExpTerm& n) override { visitTerm(n); }
+    void visit(NearestNeighborTerm& n) override { visitTerm(n); }
+    void visit(FuzzyTerm& n) override { visitTerm(n); }
+    void visit(InTerm& n) override { visitTerm(n); }
     void visit(WordAlternatives& n) override { visitTerm(n); }
 
 public:
-    CreateBlueprintVisitor(const IIndexCollection &indexes,
-                           const FieldSpecList &fields,
-                           const IRequestContext & requestContext,
-                           search::fef::MatchDataLayout &global_layout)
+    CreateBlueprintVisitor(const IIndexCollection& indexes, const FieldSpecList& fields,
+                           const IRequestContext& requestContext, search::fef::MatchDataLayout& global_layout)
         : _indexes(indexes),
           _fields(fields),
           _requestContext(requestContext),
@@ -224,37 +192,27 @@ public:
     Blueprint::UP getResult() { return std::move(_result); }
 };
 
-}
+} // namespace
 
-Blueprint::UP
-IndexCollection::createBlueprint(const IRequestContext & requestContext,
-                                 const FieldSpec &field,
-                                 const Node &term,
-                                 search::fef::MatchDataLayout &global_layout)
-{
+Blueprint::UP IndexCollection::createBlueprint(const IRequestContext& requestContext, const FieldSpec& field,
+                                               const Node& term, search::fef::MatchDataLayout& global_layout) {
     FieldSpecList fields;
     fields.add(field);
     return createBlueprint(requestContext, fields, term, global_layout);
 }
 
-Blueprint::UP
-IndexCollection::createBlueprint(const IRequestContext & requestContext,
-                                 const FieldSpecList &fields,
-                                 const Node &term,
-                                 search::fef::MatchDataLayout &global_layout)
-{
+Blueprint::UP IndexCollection::createBlueprint(const IRequestContext& requestContext, const FieldSpecList& fields,
+                                               const Node& term, search::fef::MatchDataLayout& global_layout) {
     CreateBlueprintVisitor visitor(*this, fields, requestContext, global_layout);
-    const_cast<Node &>(term).accept(visitor);
+    const_cast<Node&>(term).accept(visitor);
     return visitor.getResult();
 }
 
-FieldLengthInfo
-IndexCollection::get_field_length_info(const std::string& field_name) const
-{
+FieldLengthInfo IndexCollection::get_field_length_info(const std::string& field_name) const {
     if (_sources.empty()) {
         return FieldLengthInfo();
     }
     return _sources.back().source_wrapper->get_field_length_info(field_name);
 }
 
-}  // namespace searchcorespi
+} // namespace searchcorespi

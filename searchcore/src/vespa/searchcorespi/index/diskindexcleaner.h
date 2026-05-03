@@ -15,12 +15,9 @@ struct DiskIndexCleaner {
     /**
      * Deletes all indexes with id lower than the most recent fusion id.
      */
-    static void clean(const std::string &index_dir,
-                      DiskIndexes& disk_indexes);
-    static void removeOldIndexes(const std::string &index_dir,
-                                 DiskIndexes& disk_indexes);
+    static void clean(const std::string& index_dir, DiskIndexes& disk_indexes);
+    static void removeOldIndexes(const std::string& index_dir, DiskIndexes& disk_indexes);
 };
 
-}  // namespace index
-}  // namespace searchcorespi
-
+} // namespace index
+} // namespace searchcorespi

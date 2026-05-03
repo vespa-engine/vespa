@@ -2,9 +2,11 @@
 #pragma once
 
 #include "warmupconfig.h"
-#include <vespa/searchlib/common/tunefileinfo.h>
-#include <vespa/searchlib/common/serialnum.h>
+
 #include <vespa/searchcommon/common/schema.h>
+#include <vespa/searchlib/common/serialnum.h>
+#include <vespa/searchlib/common/tunefileinfo.h>
+
 #include <string>
 
 namespace searchcorespi::index {
@@ -14,51 +16,40 @@ namespace searchcorespi::index {
  */
 class IndexMaintainerConfig {
 private:
-    const std::string _baseDir;
-    const WarmupConfig _warmup;
-    const size_t _maxFlushed;
-    const search::index::Schema _schema;
-    const search::SerialNum _serialNum;
+    const std::string                _baseDir;
+    const WarmupConfig               _warmup;
+    const size_t                     _maxFlushed;
+    const search::index::Schema      _schema;
+    const search::SerialNum          _serialNum;
     const search::TuneFileAttributes _tuneFileAttributes;
 
 public:
-    IndexMaintainerConfig(const std::string &baseDir,
-                          const WarmupConfig & warmup,
-                          size_t maxFlushed,
-                          const search::index::Schema &schema,
-                          const search::SerialNum serialNum,
-                          const search::TuneFileAttributes &tuneFileAttributes);
+    IndexMaintainerConfig(const std::string& baseDir, const WarmupConfig& warmup, size_t maxFlushed,
+                          const search::index::Schema& schema, const search::SerialNum serialNum,
+                          const search::TuneFileAttributes& tuneFileAttributes);
 
     ~IndexMaintainerConfig();
 
     /**
      * Returns the base directory in which the maintainer will store its indexes.
      */
-    const std::string &getBaseDir() const {
-        return _baseDir;
-    }
+    const std::string& getBaseDir() const { return _baseDir; }
 
     WarmupConfig getWarmup() const { return _warmup; }
 
     /**
      * Returns the initial schema containing all current index fields.
      */
-    const search::index::Schema &getSchema() const {
-        return _schema;
-    }
+    const search::index::Schema& getSchema() const { return _schema; }
 
     search::SerialNum getSerialNum() const { return _serialNum; }
 
     /**
      * Returns the specification on how to read/write attribute vector data files.
      */
-    const search::TuneFileAttributes &getTuneFileAttributes() const {
-        return _tuneFileAttributes;
-    }
+    const search::TuneFileAttributes& getTuneFileAttributes() const { return _tuneFileAttributes; }
 
-    size_t getMaxFlushed() const {
-        return _maxFlushed;
-    }
+    size_t getMaxFlushed() const { return _maxFlushed; }
 };
 
-}
+} // namespace searchcorespi::index

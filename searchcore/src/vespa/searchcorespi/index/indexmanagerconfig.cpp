@@ -4,16 +4,12 @@
 
 namespace searchcorespi {
 
-IndexManagerConfig::IndexManagerConfig(const std::string &configId,
-                                       const config::ConfigSnapshot &configSnapshot,
+IndexManagerConfig::IndexManagerConfig(const std::string& configId, const config::ConfigSnapshot& configSnapshot,
                                        size_t numSearcherThreads)
-    : _configId(configId),
-      _configSnapshot(configSnapshot),
-      _numSearcherThreads(numSearcherThreads)
-{
+    : _configId(configId), _configSnapshot(configSnapshot), _numSearcherThreads(numSearcherThreads) {
 }
 
-IndexManagerConfig::~IndexManagerConfig() { }
+IndexManagerConfig::~IndexManagerConfig() {
+}
 
 } // namespace searchcorespi
-
