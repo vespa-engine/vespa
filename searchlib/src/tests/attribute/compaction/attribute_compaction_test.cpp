@@ -236,7 +236,7 @@ TEST(AttributeCompactionTest, Compaction_is_not_executed_when_free_lists_are_use
     EXPECT_EQ(1000 + f.reserved_multi_value_address_space(), afterSpace.dead());
 }
 
-TEST(AttributeCompactionTest, Compaction_is_peformed_when_compaction_strategy_is_changed_to_enable_compaction) {
+TEST(AttributeCompactionTest, Compaction_is_performed_when_compaction_strategy_is_changed_to_enable_compaction) {
     Fixture f(compactAddressSpaceAttributeConfig(false));
     populate_and_hammer(f, true);
     AddressSpace after1 = f.getMultiValueAddressSpaceUsage("after1");

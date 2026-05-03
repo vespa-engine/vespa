@@ -241,7 +241,7 @@ TEST(DotProductTest, test_eager_empty_child) {
     EXPECT_EQ(0, mock->seekCnt);
 }
 
-TEST(DotProductTest, test_eager_empty_cildren) {
+TEST(DotProductTest, test_eager_empty_children) {
     MockFixture     f1(search::endDocId);
     MockSearch*     mock = f1.mock;
     SearchIterator& search = *f1.search;
