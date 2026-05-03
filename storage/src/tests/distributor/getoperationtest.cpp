@@ -1,30 +1,33 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <tests/distributor/distributor_stripe_test_util.h>
 #include <vespa/config/helper/configgetter.h>
-#include <vespa/config/helper/configgetter.hpp>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/fieldset/fieldsets.h>
-#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/bucketdb/bucketdatabase.h>
-#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/storage/distributor/externaloperationhandler.h>
 #include <vespa/storage/distributor/operations/external/getoperation.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <iomanip>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/test_path.h>
+
+#include <vespa/config/helper/configgetter.hpp>
+
 #include <gmock/gmock.h>
+#include <tests/distributor/distributor_stripe_test_util.h>
+
+#include <iomanip>
 
 using config::ConfigGetter;
 using config::FileSpec;
-using document::test::makeDocumentBucket;
 using document::BucketId;
+using document::test::makeDocumentBucket;
 using documentapi::TestAndSetCondition;
 using namespace ::testing;
 
@@ -33,18 +36,16 @@ namespace storage::distributor {
 struct GetOperationTest : Test, DistributorStripeTestUtil {
 
     std::shared_ptr<const document::DocumentTypeRepo> _repo;
-    document::DocumentId docId;
-    BucketId bucketId;
-    std::unique_ptr<GetOperation> op;
+    document::DocumentId                              docId;
+    BucketId                                          bucketId;
+    std::unique_ptr<GetOperation>                     op;
 
     GetOperationTest();
     ~GetOperationTest() override;
 
     void SetUp() override {
-        _repo.reset(
-                new document::DocumentTypeRepo(*ConfigGetter<DocumenttypesConfig>::
-                        getConfig("config-doctypes",
-                                  FileSpec(TEST_PATH("../config-doctypes.cfg")))));
+        _repo.reset(new document::DocumentTypeRepo(*ConfigGetter<DocumenttypesConfig>::getConfig(
+            "config-doctypes", FileSpec(TEST_PATH("../config-doctypes.cfg")))));
         createLinks();
 
         docId = document::DocumentId("id:ns:text/html::uri");
@@ -57,29 +58,22 @@ struct GetOperationTest : Test, DistributorStripeTestUtil {
     }
 
     void start_operation(std::shared_ptr<api::GetCommand> cmd, api::InternalReadConsistency consistency) {
-        op = std::make_unique<GetOperation>(
-                node_context(), getDistributorBucketSpace(),
-                getDistributorBucketSpace().getBucketDatabase().acquire_read_guard(),
-                std::move(cmd), metrics().gets,
-                consistency);
+        op = std::make_unique<GetOperation>(node_context(), getDistributorBucketSpace(),
+                                            getDistributorBucketSpace().getBucketDatabase().acquire_read_guard(),
+                                            std::move(cmd), metrics().gets, consistency);
         op->start(_sender);
     }
 
     void sendGet(api::InternalReadConsistency consistency = api::InternalReadConsistency::Strong) {
-        auto msg = std::make_shared<api::GetCommand>(makeDocumentBucket(BucketId(0)), docId, document::AllFields::NAME);
+        auto msg =
+            std::make_shared<api::GetCommand>(makeDocumentBucket(BucketId(0)), docId, document::AllFields::NAME);
         start_operation(std::move(msg), consistency);
     }
 
     static constexpr uint32_t LastCommand = UINT32_MAX;
 
-    void sendReply(uint32_t idx,
-               api::ReturnCode::Result result,
-               std::string authorVal,
-               uint32_t timestamp,
-               bool is_tombstone = false,
-               bool condition_matched = false,
-               std::string trace_msg = "")
-    {
+    void sendReply(uint32_t idx, api::ReturnCode::Result result, std::string authorVal, uint32_t timestamp,
+                   bool is_tombstone = false, bool condition_matched = false, std::string trace_msg = "") {
         if (idx == LastCommand) {
             idx = _sender.commands().size() - 1;
         }
@@ -95,8 +89,7 @@ struct GetOperationTest : Test, DistributorStripeTestUtil {
             const document::DocumentType* type(_repo->getDocumentType("text/html"));
             doc = std::make_unique<document::Document>(*_repo, *type, docId);
 
-            doc->setValue(doc->getField("author"),
-                          document::StringFieldValue(authorVal));
+            doc->setValue(doc->getField("author"), document::StringFieldValue(authorVal));
         }
 
         auto reply = std::make_shared<api::GetReply>(*tmp, doc, timestamp, false, is_tombstone, condition_matched);
@@ -120,24 +113,17 @@ struct GetOperationTest : Test, DistributorStripeTestUtil {
         sendReply(idx, api::ReturnCode::OK, "", timestamp, false, true, std::move(trace_message));
     }
 
-    void replyWithFailure() {
-        sendReply(LastCommand, api::ReturnCode::IO_FAILURE, "", 0);
-    }
+    void replyWithFailure() { sendReply(LastCommand, api::ReturnCode::IO_FAILURE, "", 0); }
 
-    void replyWithNotFound() {
-        sendReply(LastCommand, api::ReturnCode::OK, "", 0);
-    }
+    void replyWithNotFound() { sendReply(LastCommand, api::ReturnCode::OK, "", 0); }
 
-    void replyWithDocument() {
-        sendReply(LastCommand, api::ReturnCode::OK, "foo", 100);
-    }
+    void replyWithDocument() { sendReply(LastCommand, api::ReturnCode::OK, "foo", 100); }
 
     std::string getLastReplyAuthor() {
         api::StorageMessage& msg = *_sender.replies().back();
 
         if (msg.getType() == api::MessageType::GET_REPLY) {
-            document::Document::SP doc(
-                    dynamic_cast<api::GetReply&>(msg).getDocument());
+            document::Document::SP doc(dynamic_cast<api::GetReply&>(msg).getDocument());
 
             return doc->getValue(doc->getField("author"))->toString();
         } else {
@@ -161,15 +147,13 @@ struct GetOperationTest : Test, DistributorStripeTestUtil {
         return (dynamic_cast<api::GetReply&>(msg).getDocument().get() != nullptr);
     }
 
-    void setClusterState(const std::string& clusterState) {
-        enable_cluster_state(clusterState);
-    }
+    void setClusterState(const std::string& clusterState) { enable_cluster_state(clusterState); }
 
     void do_test_read_consistency_is_propagated(api::InternalReadConsistency consistency);
     void set_up_condition_match_get_operation();
 
-    void do_test_get_document_from_specified_debug_replica_node(uint16_t debug_replica_node_id,
-                                                                std::string authorVal, uint32_t timestamp);
+    void do_test_get_document_from_specified_debug_replica_node(uint16_t debug_replica_node_id, std::string authorVal,
+                                                                uint32_t timestamp);
 };
 
 GetOperationTest::GetOperationTest() = default;
@@ -177,13 +161,12 @@ GetOperationTest::~GetOperationTest() = default;
 
 namespace {
 
-NewestReplica replica_of(api::Timestamp ts, const document::BucketId& bucket_id, uint16_t node,
-                         bool is_tombstone, bool condition_matched)
-{
+NewestReplica replica_of(api::Timestamp ts, const document::BucketId& bucket_id, uint16_t node, bool is_tombstone,
+                         bool condition_matched) {
     return NewestReplica::of(ts, bucket_id, node, is_tombstone, condition_matched);
 }
 
-}
+} // namespace
 
 TEST_F(GetOperationTest, simple) {
     setClusterState("distributor:1 storage:2");
@@ -277,8 +260,7 @@ TEST_F(GetOperationTest, send_to_all_invalid_nodes_when_inconsistent) {
 
     sendGet();
 
-    ASSERT_EQ("Get => 2,Get => 3,Get => 0,Get => 1",
-              _sender.getCommands(true));
+    ASSERT_EQ("Get => 2,Get => 3,Get => 0,Get => 1", _sender.getCommands(true));
 
     ASSERT_NO_FATAL_FAILURE(sendReply(0, api::ReturnCode::OK, "newauthor", 2));
     ASSERT_NO_FATAL_FAILURE(sendReply(1, api::ReturnCode::OK, "oldauthor", 1));
@@ -395,8 +377,7 @@ TEST_F(GetOperationTest, multi_inconsistent_bucket_fail) {
     ASSERT_NO_FATAL_FAILURE(sendReply(0, api::ReturnCode::OK, "newauthor", 1));
     ASSERT_NO_FATAL_FAILURE(sendReply(1, api::ReturnCode::DISK_FAILURE, "", 0));
 
-    ASSERT_EQ("Get(BucketId(0x4000000000000593), id:ns:text/html::uri) => 3",
-              _sender.getLastCommand());
+    ASSERT_EQ("Get(BucketId(0x4000000000000593), id:ns:text/html::uri) => 3", _sender.getLastCommand());
 
     ASSERT_NO_FATAL_FAILURE(replyWithDocument());
 
@@ -431,8 +412,7 @@ TEST_F(GetOperationTest, not_found) {
 
     sendGet();
 
-    ASSERT_EQ("Get(BucketId(0x4000000000000593), id:ns:text/html::uri) => 0",
-              _sender.getLastCommand());
+    ASSERT_EQ("Get(BucketId(0x4000000000000593), id:ns:text/html::uri) => 0", _sender.getLastCommand());
 
     ASSERT_NO_FATAL_FAILURE(replyWithNotFound());
 
@@ -475,13 +455,11 @@ TEST_F(GetOperationTest, resend_on_storage_failure) {
 
     sendGet();
 
-    ASSERT_EQ("Get(BucketId(0x4000000000000593), id:ns:text/html::uri) => 1",
-              _sender.getLastCommand());
+    ASSERT_EQ("Get(BucketId(0x4000000000000593), id:ns:text/html::uri) => 1", _sender.getLastCommand());
 
     ASSERT_NO_FATAL_FAILURE(replyWithFailure());
 
-    ASSERT_EQ("Get(BucketId(0x4000000000000593), id:ns:text/html::uri) => 2",
-              _sender.getLastCommand());
+    ASSERT_EQ("Get(BucketId(0x4000000000000593), id:ns:text/html::uri) => 2", _sender.getLastCommand());
 
     ASSERT_NO_FATAL_FAILURE(replyWithDocument());
 
@@ -522,13 +500,11 @@ TEST_F(GetOperationTest, resend_on_storage_failure_all_fail) {
 
     sendGet();
 
-    ASSERT_EQ("Get(BucketId(0x4000000000000593), id:ns:text/html::uri) => 1",
-              _sender.getLastCommand());
+    ASSERT_EQ("Get(BucketId(0x4000000000000593), id:ns:text/html::uri) => 1", _sender.getLastCommand());
 
     ASSERT_NO_FATAL_FAILURE(replyWithFailure());
 
-    ASSERT_EQ("Get(BucketId(0x4000000000000593), id:ns:text/html::uri) => 2",
-              _sender.getLastCommand());
+    ASSERT_EQ("Get(BucketId(0x4000000000000593), id:ns:text/html::uri) => 2", _sender.getLastCommand());
 
     ASSERT_NO_FATAL_FAILURE(replyWithFailure());
 
@@ -549,8 +525,7 @@ TEST_F(GetOperationTest, send_to_ideal_copy_if_bucket_in_sync) {
     sendGet();
 
     // Should always send to node 1 (follow bucket db order)
-    ASSERT_EQ("Get(BucketId(0x4000000000000593), id:ns:text/html::uri) => 1",
-              _sender.getLastCommand());
+    ASSERT_EQ("Get(BucketId(0x4000000000000593), id:ns:text/html::uri) => 1", _sender.getLastCommand());
 
     ASSERT_NO_FATAL_FAILURE(replyWithDocument());
 
@@ -772,15 +747,13 @@ TEST_F(GetOperationTest, trace_is_aggregated_from_all_sub_replies_and_propagated
     EXPECT_THAT(trace_str, HasSubstr("baz"));
 }
 
-void GetOperationTest::do_test_get_document_from_specified_debug_replica_node(uint16_t debug_replica_node_id,
-                                                                              std::string authorVal, uint32_t timestamp) {
+void GetOperationTest::do_test_get_document_from_specified_debug_replica_node(uint16_t    debug_replica_node_id,
+                                                                              std::string authorVal,
+                                                                              uint32_t    timestamp) {
     setClusterState("distributor:1 storage:3");
     addNodesToBucketDB(bucketId, "0=200,1=201,2=200");
 
-    auto cmd = std::make_shared<api::GetCommand>(
-        makeDocumentBucket(bucketId),
-        docId,
-        document::AllFields::NAME);
+    auto cmd = std::make_shared<api::GetCommand>(makeDocumentBucket(bucketId), docId, document::AllFields::NAME);
     cmd->set_debug_replica_node_id(debug_replica_node_id);
 
     start_operation(cmd, api::InternalReadConsistency::Strong);
@@ -794,9 +767,7 @@ void GetOperationTest::do_test_get_document_from_specified_debug_replica_node(ui
     auto& reply = dynamic_cast<api::GetReply&>(*_sender.replies().back());
     EXPECT_TRUE(reply.had_consistent_replicas());
     ASSERT_TRUE(reply.getDocument());
-    EXPECT_EQ(authorVal,
-              reply.getDocument()->getValue(reply.getDocument()->getField("author"))->toString());
-
+    EXPECT_EQ(authorVal, reply.getDocument()->getValue(reply.getDocument()->getField("author"))->toString());
 }
 
 TEST_F(GetOperationTest, debug_replica_node_id_1_gets_only_node1) {
@@ -811,10 +782,7 @@ TEST_F(GetOperationTest, debug_replica_node_id_nonexistent_node_returns_no_docum
     setClusterState("distributor:1 storage:3");
     addNodesToBucketDB(bucketId, "0=200,1=201,2=200");
 
-    auto cmd = std::make_shared<api::GetCommand>(
-        makeDocumentBucket(bucketId),
-        docId,
-        document::AllFields::NAME);
+    auto cmd = std::make_shared<api::GetCommand>(makeDocumentBucket(bucketId), docId, document::AllFields::NAME);
     cmd->set_debug_replica_node_id(999);
 
     start_operation(cmd, api::InternalReadConsistency::Strong);
@@ -826,4 +794,4 @@ TEST_F(GetOperationTest, debug_replica_node_id_nonexistent_node_returns_no_docum
     EXPECT_FALSE(reply.getDocument());
 }
 
-}
+} // namespace storage::distributor

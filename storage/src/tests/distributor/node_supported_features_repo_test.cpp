@@ -1,8 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/storage/distributor/node_supported_features_repo.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
+
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 using namespace ::testing;
 
@@ -19,9 +20,7 @@ struct NodeSupportedFeaturesRepoTest : Test {
         return f;
     }
 
-    static NodeSupportedFeatures unset_features() noexcept {
-        return {};
-    }
+    static NodeSupportedFeatures unset_features() noexcept { return {}; }
 };
 
 TEST_F(NodeSupportedFeaturesRepoTest, feature_set_is_empty_by_default) {
@@ -69,4 +68,4 @@ TEST_F(NodeSupportedFeaturesRepoTest, features_supported_by_all_nodes_requires_f
     EXPECT_EQ(new_repo->supported_by_all_nodes(), unset_features());
 }
 
-}
+} // namespace storage::distributor

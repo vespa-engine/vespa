@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/storage/distributor/memory_usage_token.h>
+
 #include <gtest/gtest.h>
 
 namespace storage::distributor {
@@ -46,7 +47,7 @@ TEST(MemoryTrackerTest, memory_token_has_scope_semantics) {
 
 TEST(MemoryTrackerTest, can_change_size_of_token) {
     MemoryUsageTracker t;
-    MemoryUsageToken t1(t, 1000);
+    MemoryUsageToken   t1(t, 1000);
     t1.update(1500);
     EXPECT_EQ(t.bytes_total(), 1500);
     EXPECT_EQ(t.max_observed_bytes(), 1500);
@@ -73,4 +74,4 @@ TEST(MemoryTrackerTest, can_reset_max_observed_bytes) {
     EXPECT_EQ(snap.max_observed_bytes, 0);
 }
 
-} // storage::distributor
+} // namespace storage::distributor

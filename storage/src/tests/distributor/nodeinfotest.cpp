@@ -8,7 +8,7 @@ namespace storage::distributor {
 
 TEST(NodeInfoTest, simple) {
     framework::defaultimplementation::FakeClock clock;
-    NodeInfo info(clock);
+    NodeInfo                                    info(clock);
 
     EXPECT_EQ(0, info.getPendingCount(3));
     EXPECT_EQ(0, info.getPendingCount(9));
@@ -45,7 +45,6 @@ TEST(NodeInfoTest, simple) {
     EXPECT_FALSE(info.isBusy(1));
     EXPECT_TRUE(info.isBusy(42));
     EXPECT_FALSE(info.isBusy(7));
-
 }
 
-}
+} // namespace storage::distributor

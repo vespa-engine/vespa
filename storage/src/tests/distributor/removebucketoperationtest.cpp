@@ -1,15 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dummy_cluster_context.h"
-#include <tests/distributor/distributor_stripe_test_util.h>
+
 #include <vespa/document/test/make_document_bucket.h>
-#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storage/distributor/operations/idealstate/removebucketoperation.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
+#include <tests/distributor/distributor_stripe_test_util.h>
 
 using document::test::makeDocumentBucket;
 using namespace ::testing;
@@ -17,17 +19,13 @@ using namespace ::testing;
 namespace storage::distributor {
 
 struct RemoveBucketOperationTest : Test, DistributorStripeTestUtil {
-    void SetUp() override {
-        createLinks();
-    };
+    void SetUp() override { createLinks(); };
 
-    void TearDown() override {
-        close();
-    }
+    void TearDown() override { close(); }
 
     void reject_with_bucket_info(RemoveBucketOperation& op, size_t msg_index) {
-        std::shared_ptr<api::StorageCommand> msg2  = _sender.command(msg_index);
-        std::shared_ptr<api::StorageReply> reply(msg2->makeReply());
+        std::shared_ptr<api::StorageCommand> msg2 = _sender.command(msg_index);
+        std::shared_ptr<api::StorageReply>   reply(msg2->makeReply());
         dynamic_cast<api::DeleteBucketReply&>(*reply).setBucketInfo(api::BucketInfo(10, 200, 1));
         reply->setResult(api::ReturnCode::REJECTED);
         op.receive(_sender, reply);
@@ -35,16 +33,14 @@ struct RemoveBucketOperationTest : Test, DistributorStripeTestUtil {
 };
 
 TEST_F(RemoveBucketOperationTest, simple) {
-    addNodesToBucketDB(document::BucketId(16, 1),
-                       "0=10/100/1/t,"
-                       "1=10/100/1/t,"
-                       "2=10/100/1/t");
+    addNodesToBucketDB(document::BucketId(16, 1), "0=10/100/1/t,"
+                                                  "1=10/100/1/t,"
+                                                  "2=10/100/1/t");
     set_redundancy(1);
     enable_cluster_state("distributor:1 storage:3");
 
     RemoveBucketOperation op(dummy_cluster_context,
-                             BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
-                                            toVector<uint16_t>(1, 2)));
+                             BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)), toVector<uint16_t>(1, 2)));
     op.setIdealStateManager(&getIdealStateManager());
     op.start(_sender);
 
@@ -69,13 +65,12 @@ TEST_F(RemoveBucketOperationTest, bucket_info_mismatch_failure) {
     addNodesToBucketDB(document::BucketId(16, 1), "1=0/0/0/t");
 
     getComponentRegisterImpl().setDistribution(
-            std::make_shared<lib::Distribution>(lib::Distribution::getDefaultDistributionConfig(1, 10)));
+        std::make_shared<lib::Distribution>(lib::Distribution::getDefaultDistributionConfig(1, 10)));
 
     enable_cluster_state("distributor:1 storage:2");
 
     RemoveBucketOperation op(dummy_cluster_context,
-                             BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
-                                     toVector<uint16_t>(1)));
+                             BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)), toVector<uint16_t>(1)));
     op.setIdealStateManager(&getIdealStateManager());
     op.start(_sender);
 
@@ -99,21 +94,20 @@ TEST_F(RemoveBucketOperationTest, fail_with_invalid_bucket_info) {
     addNodesToBucketDB(document::BucketId(16, 1), "1=0/0/0/t");
 
     getComponentRegisterImpl().setDistribution(
-            std::make_shared<lib::Distribution>(lib::Distribution::getDefaultDistributionConfig(1, 10)));
+        std::make_shared<lib::Distribution>(lib::Distribution::getDefaultDistributionConfig(1, 10)));
 
     enable_cluster_state("distributor:1 storage:2");
 
     RemoveBucketOperation op(dummy_cluster_context,
-                             BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
-                                     toVector<uint16_t>(1)));
+                             BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)), toVector<uint16_t>(1)));
     op.setIdealStateManager(&getIdealStateManager());
     op.start(_sender);
 
     ASSERT_EQ("Delete bucket => 1", _sender.getCommands(true));
     ASSERT_EQ(1, _sender.commands().size());
 
-    std::shared_ptr<api::StorageCommand> msg2  = _sender.command(0);
-    std::shared_ptr<api::StorageReply> reply(msg2->makeReply().release());
+    std::shared_ptr<api::StorageCommand> msg2 = _sender.command(0);
+    std::shared_ptr<api::StorageReply>   reply(msg2->makeReply().release());
     reply->setResult(api::ReturnCode::ABORTED);
     op.receive(_sender, reply);
 
@@ -122,8 +116,7 @@ TEST_F(RemoveBucketOperationTest, fail_with_invalid_bucket_info) {
 
 TEST_F(RemoveBucketOperationTest, operation_blocked_when_pending_message_to_target_node) {
     RemoveBucketOperation op(dummy_cluster_context,
-                             BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
-                                            toVector<uint16_t>(1, 3)));
+                             BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)), toVector<uint16_t>(1, 3)));
     // In node target set
     EXPECT_TRUE(op.shouldBlockThisOperation(api::MessageType::PUT_ID, 1, 120));
     EXPECT_TRUE(op.shouldBlockThisOperation(api::MessageType::PUT_ID, 3, 120));
@@ -133,16 +126,14 @@ TEST_F(RemoveBucketOperationTest, operation_blocked_when_pending_message_to_targ
 }
 
 TEST_F(RemoveBucketOperationTest, cancelled_node_does_not_update_bucket_db_upon_rejection) {
-    addNodesToBucketDB(document::BucketId(16, 1),
-                       "0=10/100/1/t,"
-                       "1=10/100/1/t,"
-                       "2=10/100/1/t");
+    addNodesToBucketDB(document::BucketId(16, 1), "0=10/100/1/t,"
+                                                  "1=10/100/1/t,"
+                                                  "2=10/100/1/t");
     set_redundancy(1);
     enable_cluster_state("distributor:1 storage:3");
 
     RemoveBucketOperation op(dummy_cluster_context,
-                             BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)),
-                                            toVector<uint16_t>(1,2)));
+                             BucketAndNodes(makeDocumentBucket(document::BucketId(16, 1)), toVector<uint16_t>(1, 2)));
     op.setIdealStateManager(&getIdealStateManager());
     op.start(_sender);
 
@@ -163,4 +154,4 @@ TEST_F(RemoveBucketOperationTest, cancelled_node_does_not_update_bucket_db_upon_
     EXPECT_FALSE(op.ok());
 }
 
-} // storage::distributor
+} // namespace storage::distributor

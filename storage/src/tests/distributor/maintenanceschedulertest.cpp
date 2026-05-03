@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/document/test/make_document_bucket.h>
-#include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
 #include <vespa/storage/distributor/maintenance/maintenancescheduler.h>
-#include <tests/distributor/maintenancemocks.h>
+#include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
+#include <tests/distributor/maintenancemocks.h>
 
 using document::test::makeDocumentBucket;
 using namespace ::testing;
@@ -26,8 +27,7 @@ struct MaintenanceSchedulerTest : TestWithParam<bool> {
           _operation_generator(),
           _operation_starter(),
           _pending_window_checker(),
-          _scheduler(_operation_generator, _priority_db, _pending_window_checker, _operation_starter)
-    {}
+          _scheduler(_operation_generator, _priority_db, _pending_window_checker, _operation_starter) {}
 };
 
 TEST_P(MaintenanceSchedulerTest, priority_cleared_after_scheduled) {
@@ -52,8 +52,9 @@ TEST_P(MaintenanceSchedulerTest, operation_is_not_scheduled_if_pending_ops_not_a
     _scheduler.tick(MaintenanceScheduler::NORMAL_SCHEDULING_MODE);
     EXPECT_EQ("", _operation_starter.toString());
     // Priority DB entry is not cleared
-    EXPECT_EQ("PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)), pri MEDIUM)\n",
-              _priority_db.toString());
+    EXPECT_EQ(
+        "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)), pri MEDIUM)\n",
+        _priority_db.toString());
 }
 
 TEST_P(MaintenanceSchedulerTest, no_operations_to_schedule) {
@@ -69,10 +70,10 @@ TEST_P(MaintenanceSchedulerTest, suppress_low_priorities_in_emergency_mode) {
     EXPECT_EQ(WaitTimeMs(1), _scheduler.tick(MaintenanceScheduler::RECOVERY_SCHEDULING_MODE));
     EXPECT_EQ("Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000002)), pri 0\n",
               _operation_starter.toString());
-    EXPECT_EQ("PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)), pri VERY_HIGH)\n",
-              _priority_db.toString());
+    EXPECT_EQ(
+        "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)), pri VERY_HIGH)\n",
+        _priority_db.toString());
 }
-
 
 TEST_P(MaintenanceSchedulerTest, priority_cleared_if_operation_not_started_inside_pending_window) {
     if (!GetParam()) {
@@ -85,13 +86,15 @@ TEST_P(MaintenanceSchedulerTest, priority_cleared_if_operation_not_started_insid
     EXPECT_EQ("", _priority_db.toString());
 }
 
-TEST_P(MaintenanceSchedulerTest, priority_not_cleared_if_operation_not_started_inside_pending_window_for_highest_pri) {
+TEST_P(MaintenanceSchedulerTest,
+       priority_not_cleared_if_operation_not_started_inside_pending_window_for_highest_pri) {
     _priority_db.setPriority(PrioritizedBucket(makeDocumentBucket(BucketId(16, 1)), Priority::HIGHEST));
     _operation_starter.setShouldStartOperations(false);
     WaitTimeMs waitMs(_scheduler.tick(MaintenanceScheduler::NORMAL_SCHEDULING_MODE));
     EXPECT_EQ(WaitTimeMs(1), waitMs);
-    EXPECT_EQ("PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)), pri HIGHEST)\n",
-              _priority_db.toString());
+    EXPECT_EQ(
+        "PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)), pri HIGHEST)\n",
+        _priority_db.toString());
 }
 
 TEST_P(MaintenanceSchedulerTest, priority_not_cleared_if_operation_not_started_outside_pending_window) {
@@ -106,4 +109,4 @@ TEST_P(MaintenanceSchedulerTest, priority_not_cleared_if_operation_not_started_o
 
 INSTANTIATE_TEST_SUITE_P(ImplicitClearOfDbPri, MaintenanceSchedulerTest, ::testing::Values(false, true));
 
-}
+} // namespace storage::distributor

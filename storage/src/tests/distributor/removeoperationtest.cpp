@@ -1,23 +1,24 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <tests/distributor/distributor_stripe_test_util.h>
 #include <vespa/document/test/make_document_bucket.h>
-#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/operations/external/removeoperation.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <gtest/gtest.h>
-#include <gmock/gmock.h>
 
-using documentapi::TestAndSetCondition;
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+#include <tests/distributor/distributor_stripe_test_util.h>
+
 using document::test::makeDocumentBucket;
+using documentapi::TestAndSetCondition;
 using namespace ::testing;
 
 namespace storage::distributor {
 
 struct RemoveOperationTest : Test, DistributorStripeTestUtil {
-    document::DocumentId docId;
-    document::BucketId bucketId;
+    document::DocumentId             docId;
+    document::BucketId               bucketId;
     std::unique_ptr<RemoveOperation> op;
 
     void minimal_setup() {
@@ -31,18 +32,11 @@ struct RemoveOperationTest : Test, DistributorStripeTestUtil {
         enable_cluster_state("distributor:1 storage:4");
     };
 
-    void TearDown() override {
-        close();
-    }
+    void TearDown() override { close(); }
 
     void sendRemove(std::shared_ptr<api::RemoveCommand> msg) {
-        op = std::make_unique<RemoveOperation>(
-                node_context(),
-                operation_context(),
-                getDistributorBucketSpace(),
-                msg,
-                metrics().removes,
-                metrics().remove_condition_probes);
+        op = std::make_unique<RemoveOperation>(node_context(), operation_context(), getDistributorBucketSpace(), msg,
+                                               metrics().removes, metrics().remove_condition_probes);
 
         op->start(_sender);
     }
@@ -51,30 +45,23 @@ struct RemoveOperationTest : Test, DistributorStripeTestUtil {
         return std::make_shared<api::RemoveCommand>(makeDocumentBucket(document::BucketId(0)), dId, 100);
     }
 
-    void sendRemove(document::DocumentId dId) {
-        sendRemove(createRemove(dId));
-    }
+    void sendRemove(document::DocumentId dId) { sendRemove(createRemove(dId)); }
 
-    void replyToMessage(RemoveOperation& callback,
-                        uint32_t index,
-                        uint64_t oldTimestamp)
-    {
+    void replyToMessage(RemoveOperation& callback, uint32_t index, uint64_t oldTimestamp) {
         if (index == (uint32_t)-1) {
             index = _sender.commands().size() - 1;
         }
 
-        std::shared_ptr<api::StorageMessage> msg2  = _sender.command(index);
-        auto* removec = dynamic_cast<api::RemoveCommand*>(msg2.get());
-        std::unique_ptr<api::StorageReply> reply(removec->makeReply());
-        auto* removeR = dynamic_cast<api::RemoveReply*>(reply.get());
+        std::shared_ptr<api::StorageMessage> msg2 = _sender.command(index);
+        auto*                                removec = dynamic_cast<api::RemoveCommand*>(msg2.get());
+        std::unique_ptr<api::StorageReply>   reply(removec->makeReply());
+        auto*                                removeR = dynamic_cast<api::RemoveReply*>(reply.get());
         removeR->setOldTimestamp(oldTimestamp);
-        removeR->setBucketInfo(api::BucketInfo(1,2,3,4,5));
+        removeR->setBucketInfo(api::BucketInfo(1, 2, 3, 4, 5));
         callback.onReceive(_sender, std::shared_ptr<api::StorageReply>(reply.release()));
     }
 
-    void sendRemove() {
-        sendRemove(docId);
-    }
+    void sendRemove() { sendRemove(docId); }
 
     void reply_with(auto msg) { op->receive(_sender, std::move(msg)); }
 
@@ -109,14 +96,14 @@ void ExtRemoveOperationTest::set_up_tas_remove_with_2_nodes(ReplicaState replica
     tag_content_node_supports_condition_probing(1, true);
 
     switch (replica_state) {
-        case ReplicaState::CONSISTENT:
-            addNodesToBucketDB(bucketId, "1=10/20/30,0=10/20/30");
-            break;
-        case ReplicaState::INCONSISTENT:
-            addNodesToBucketDB(bucketId, "1=10/20/30,0=20/30/40");
-            break;
-        case ReplicaState::NONE:
-            break;
+    case ReplicaState::CONSISTENT:
+        addNodesToBucketDB(bucketId, "1=10/20/30,0=10/20/30");
+        break;
+    case ReplicaState::INCONSISTENT:
+        addNodesToBucketDB(bucketId, "1=10/20/30,0=20/30/40");
+        break;
+    case ReplicaState::NONE:
+        break;
     }
 
     auto remove = createRemove(docId);
@@ -134,7 +121,7 @@ TEST_F(RemoveOperationTest, simple) {
     sendRemove();
 
     ASSERT_EQ("Remove(BucketId(0x4000000000000593), id:test:test::uri, timestamp 100) => 1",
-            _sender.getLastCommand());
+              _sender.getLastCommand());
 
     replyToMessage(*op, -1, 34);
 
@@ -234,7 +221,8 @@ TEST_F(ExtRemoveOperationTest, matching_condition_probe_sends_unconditional_remo
     reply_with(make_get_reply(0, 50, false, true));
     reply_with(make_get_reply(1, 50, false, true));
 
-    ASSERT_EQ("Get => 1,Get => 0,Remove => 1,Remove => 0", _sender.getCommands(true)); // Note: cumulative message list
+    ASSERT_EQ("Get => 1,Get => 0,Remove => 1,Remove => 0",
+              _sender.getCommands(true)); // Note: cumulative message list
 
     auto remove_n1 = sent_remove_command(2);
     EXPECT_FALSE(remove_n1->hasTestAndSetCondition());
@@ -324,7 +312,6 @@ TEST_F(ExtRemoveOperationTest, cancelled_nodes_are_not_updated_in_db) {
     ASSERT_EQ("RemoveReply(BucketId(0x0000000000000000), "
               "id:test:test::uri, timestamp 100, removed doc from 50) ReturnCode(NONE)",
               _sender.getLastReply());
-
 }
 
 TEST_F(ExtRemoveOperationTest, trace_is_propagated_from_condition_probe_gets_ok_probe_case) {
@@ -364,4 +351,4 @@ TEST_F(ExtRemoveOperationTest, trace_is_propagated_from_condition_probe_gets_fai
     EXPECT_THAT(trace_str, HasSubstr("a foo walks into a zoo"));
 }
 
-} // storage::distributor
+} // namespace storage::distributor

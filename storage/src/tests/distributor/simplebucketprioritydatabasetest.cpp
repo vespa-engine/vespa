@@ -3,6 +3,7 @@
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <string>
 
 using document::test::makeDocumentBucket;
@@ -64,8 +65,7 @@ TEST_F(SimpleBucketPriorityDatabaseTest, multiple_set_priority_for_one_bucket) {
 
 TEST_F(SimpleBucketPriorityDatabaseTest, no_maintenance_needed_clears_bucket_from_database) {
     PrioritizedBucket highPriBucket(makeDocumentBucket(BucketId(16, 1234)), Priority::HIGH);
-    PrioritizedBucket noPriBucket(makeDocumentBucket(BucketId(16, 1234)),
-                                  Priority::NO_MAINTENANCE_NEEDED);
+    PrioritizedBucket noPriBucket(makeDocumentBucket(BucketId(16, 1234)), Priority::NO_MAINTENANCE_NEEDED);
     _queue.setPriority(highPriBucket);
     _queue.setPriority(noPriBucket);
 
@@ -86,7 +86,7 @@ TEST_F(SimpleBucketPriorityDatabaseTest, iterate_over_multiple_buckets_with_mult
     _queue.setPriority(highPriBucket2);
     _queue.setPriority(lowPriBucket1);
 
-    auto iter = _queue.begin();
+    auto              iter = _queue.begin();
     PrioritizedBucket lastBucket(makeDocumentBucket(BucketId()), Priority::PRIORITY_LIMIT);
     for (int i = 0; i < 5; ++i) {
         ASSERT_TRUE(iter != _queue.end());
@@ -111,4 +111,4 @@ TEST_F(SimpleBucketPriorityDatabaseTest, buckets_within_same_priority_class_are_
     EXPECT_EQ(second_bucket, *iter);
 }
 
-}
+} // namespace storage::distributor
