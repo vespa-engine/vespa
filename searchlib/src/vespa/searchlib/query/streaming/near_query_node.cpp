@@ -144,7 +144,6 @@ bool NearQueryNode::evaluate() {
 void NearQueryNode::get_element_ids(std::vector<uint32_t>& element_ids) {
     // Retrieve the elements that matched
     ElementIdMatchResult match_result(element_ids);
-    ;
     evaluate_helper(match_result);
     match_result.maybe_sort_element_ids();
 }
