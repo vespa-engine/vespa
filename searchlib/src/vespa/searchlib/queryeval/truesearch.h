@@ -3,6 +3,7 @@
 #pragma once
 
 #include "searchiterator.h"
+
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 
 namespace search::queryeval {
@@ -11,17 +12,16 @@ namespace search::queryeval {
  * Search iterator for testing, yielding a hit on all documents.
  * Unpacks (sets docid) to the given TermFieldMatchData.
  **/
-class TrueSearch : public SearchIterator
-{
+class TrueSearch : public SearchIterator {
 private:
-    fef::TermFieldMatchData & _tfmd;
+    fef::TermFieldMatchData& _tfmd;
     Trinary is_strict() const override { return Trinary::True; }
     void doSeek(uint32_t) override;
     void doUnpack(uint32_t) override;
 
 public:
-    TrueSearch(fef::TermFieldMatchData & tfmd);
+    TrueSearch(fef::TermFieldMatchData& tfmd);
     ~TrueSearch() override;
 };
 
-}
+} // namespace search::queryeval

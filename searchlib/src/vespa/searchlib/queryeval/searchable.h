@@ -4,8 +4,12 @@
 
 #include <memory>
 
-namespace search::query { class Node; }
-namespace search::fef { class MatchDataLayout; }
+namespace search::query {
+class Node;
+}
+namespace search::fef {
+class MatchDataLayout;
+}
 
 namespace search::queryeval {
 
@@ -21,14 +25,12 @@ class FieldSpecList;
  * is an intermediate query representation that is later used to
  * create the actual search iterators used to produce matches.
  **/
-class Searchable
-{
+class Searchable {
 public:
     using SP = std::shared_ptr<Searchable>;
 
     Searchable() = default;
     virtual ~Searchable() = default;
-
 
     /**
      * Create a blueprint searching a set of fields. The default
@@ -41,10 +43,9 @@ public:
      * @param term the query tree term
      * @param global_layout the global match data layout
      **/
-    virtual std::unique_ptr<Blueprint> createBlueprint(const IRequestContext & requestContext,
-                                                       const FieldSpecList &fields,
-                                                       const search::query::Node &term,
-                                                       search::fef::MatchDataLayout &global_layout);
+    virtual std::unique_ptr<Blueprint> createBlueprint(const IRequestContext& requestContext,
+                                                       const FieldSpecList& fields, const search::query::Node& term,
+                                                       search::fef::MatchDataLayout& global_layout);
     /**
      * Create a blueprint searching a single field.
      *
@@ -54,10 +55,9 @@ public:
      * @param term the query tree term
      * @param global_layout the global match data layout
      **/
-    virtual std::unique_ptr<Blueprint> createBlueprint(const IRequestContext & requestContext,
-                                                       const FieldSpec &field,
-                                                       const search::query::Node &term,
-                                                       search::fef::MatchDataLayout &global_layout) = 0;
+    virtual std::unique_ptr<Blueprint> createBlueprint(const IRequestContext& requestContext, const FieldSpec& field,
+                                                       const search::query::Node&    term,
+                                                       search::fef::MatchDataLayout& global_layout) = 0;
 };
 
-}
+} // namespace search::queryeval

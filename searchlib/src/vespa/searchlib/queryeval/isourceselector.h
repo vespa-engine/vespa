@@ -12,11 +12,11 @@ namespace sourceselector {
 
 class Iterator {
 public:
-    using SourceStore = SingleValueNumericAttribute<IntegerAttributeTemplate<int8_t> >;
+    using SourceStore = SingleValueNumericAttribute<IntegerAttributeTemplate<int8_t>>;
 
-    Iterator(const SourceStore & source) : _source(source) { }
-    Iterator(const Iterator &) = delete;
-    Iterator & operator = (const Iterator &) = delete;
+    Iterator(const SourceStore& source) : _source(source) {}
+    Iterator(const Iterator&) = delete;
+    Iterator& operator=(const Iterator&) = delete;
     virtual ~Iterator() = default;
     /**
      * Obtain the source to be used for the given document. This
@@ -26,26 +26,23 @@ public:
      * @return source id
      * @param docId document id
      **/
-    queryeval::Source getSource(uint32_t docId) const {
-        return _source.getFast(docId);
-    }
+    queryeval::Source getSource(uint32_t docId) const { return _source.getFast(docId); }
 
-    uint32_t getDocIdLimit() const {
-        return _source.getCommittedDocIdLimit();
-    }
+    uint32_t getDocIdLimit() const { return _source.getCommittedDocIdLimit(); }
+
 private:
-    const SourceStore & _source;
+    const SourceStore& _source;
 };
 
-}
+} // namespace sourceselector
 
 /**
  * Component used to select between sources during result blending.
  **/
-class ISourceSelector
-{
+class ISourceSelector {
 protected:
     using SourceStore = sourceselector::Iterator::SourceStore;
+
 public:
     using UP = std::unique_ptr<ISourceSelector>;
     using SP = std::shared_ptr<ISourceSelector>;
@@ -53,9 +50,10 @@ public:
 
 protected:
     ISourceSelector(Source defaultSource);
+
 public:
     void setBaseId(uint32_t baseId) { _baseId = baseId; }
-    uint32_t      getBaseId() const { return _baseId; }
+    uint32_t getBaseId() const { return _baseId; }
     void setDefaultSource(Source source);
     Source getDefaultSource() const { return _defaultSource; }
     /**
@@ -92,9 +90,10 @@ public:
      * empty; defined for safe subclassing.
      **/
     virtual ~ISourceSelector() = default;
+
 private:
     uint32_t _baseId;
     Source   _defaultSource;
 };
 
-}
+} // namespace search::queryeval

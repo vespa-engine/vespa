@@ -3,6 +3,7 @@
 #pragma once
 
 #include "searchiterator.h"
+
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 
 namespace search::queryeval {
@@ -15,11 +16,10 @@ namespace search::queryeval {
  * doUnpack method. The doSeek method will be forwarded to ensure we
  * match the same set of documents.
  **/
-class BooleanMatchIteratorWrapper : public SearchIterator
-{
+class BooleanMatchIteratorWrapper : public SearchIterator {
 private:
     SearchIterator::UP       _search;
-    fef::TermFieldMatchData *_tfmdp;
+    fef::TermFieldMatchData* _tfmdp;
 
 protected:
     void doSeek(uint32_t docid) override;
@@ -46,10 +46,10 @@ public:
      * @param search internal search, must be a term iterator
      * @param match term match data used by the internal iterator
      **/
-    BooleanMatchIteratorWrapper(SearchIterator::UP search, const fef::TermFieldMatchDataArray &matchData);
+    BooleanMatchIteratorWrapper(SearchIterator::UP search, const fef::TermFieldMatchDataArray& matchData);
     ~BooleanMatchIteratorWrapper() override;
 
-    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+    void visitMembers(vespalib::ObjectVisitor& visitor) const override;
 };
 
-}
+} // namespace search::queryeval

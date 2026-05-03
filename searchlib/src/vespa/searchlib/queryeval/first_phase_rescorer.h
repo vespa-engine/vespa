@@ -3,6 +3,7 @@
 #pragma once
 
 #include "scores.h"
+
 #include <cstdint>
 
 namespace search::queryeval {
@@ -14,12 +15,11 @@ namespace search::queryeval {
 class FirstPhaseRescorer {
     double _scale;
     double _adjust;
+
 public:
-    FirstPhaseRescorer(const std::pair<Scores,Scores>& ranges);
-    static bool need_rescore(const std::pair<Scores,Scores>& ranges);
-    double rescore(uint32_t, double score) const noexcept {
-        return ((score * _scale) - _adjust);
-    }
+    FirstPhaseRescorer(const std::pair<Scores, Scores>& ranges);
+    static bool need_rescore(const std::pair<Scores, Scores>& ranges);
+    double rescore(uint32_t, double score) const noexcept { return ((score * _scale) - _adjust); }
 };
 
-}
+} // namespace search::queryeval

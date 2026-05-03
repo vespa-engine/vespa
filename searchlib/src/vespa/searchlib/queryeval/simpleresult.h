@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include <vector>
 #include "searchiterator.h"
+
+#include <vector>
 
 namespace search::queryeval {
 
@@ -11,8 +12,7 @@ namespace search::queryeval {
  * Simple result class containing only document ids. This class will
  * mostly be used for testing.
  **/
-class SimpleResult
-{
+class SimpleResult {
 private:
     std::vector<uint32_t> _hits;
 
@@ -25,7 +25,7 @@ public:
     /**
      * Create a result with the given hits.
      */
-    SimpleResult(const std::vector<uint32_t> &hits) : _hits(hits) {}
+    SimpleResult(const std::vector<uint32_t>& hits) : _hits(hits) {}
 
     /**
      * Obtain the number of hits
@@ -49,7 +49,7 @@ public:
      * @return this object for chaining
      * @param docid hit to add
      **/
-    SimpleResult &addHit(uint32_t docid);
+    SimpleResult& addHit(uint32_t docid);
 
     /**
      * remove all hits
@@ -64,7 +64,7 @@ public:
      * @param sb search object
      * @param docIdLimit the end of the docId range for this search iterator
      **/
-    SimpleResult &search(SearchIterator &sb, uint32_t docIdLimit);
+    SimpleResult& search(SearchIterator& sb, uint32_t docIdLimit);
 
     /**
      * Test of we contain the same hits as rhs.
@@ -72,11 +72,11 @@ public:
      * @return true if the results are equal
      * @param rhs other results
      **/
-    bool operator==(const SimpleResult &rhs) const { return (_hits == rhs._hits); }
+    bool operator==(const SimpleResult& rhs) const { return (_hits == rhs._hits); }
 
     bool contains(const SimpleResult& subset) const;
 };
 
-std::ostream &operator << (std::ostream &out, const SimpleResult &result);
+std::ostream& operator<<(std::ostream& out, const SimpleResult& result);
 
-}
+} // namespace search::queryeval

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "fake_result.h"
+
 #include <map>
 #include <optional>
 #include <string>
@@ -33,8 +34,8 @@ namespace search::queryeval {
  */
 class FakeIndex {
 private:
-    uint32_t _current_doc;
-    uint32_t _current_field;
+    uint32_t                                        _current_doc;
+    uint32_t                                        _current_field;
     std::map<std::pair<char, uint32_t>, FakeResult> _terms;
 
 public:
@@ -76,8 +77,8 @@ public:
      * @param field_ids Optional vector of field IDs to include (nullopt = all fields with this term)
      * @return Vector of streaming Hit objects for this term across specified/all fields
      */
-    std::vector<search::streaming::Hit> get_streaming_hits(char ch, uint32_t docid,
-                                                            std::optional<std::vector<uint32_t>> field_ids = std::nullopt) const;
+    std::vector<search::streaming::Hit>
+    get_streaming_hits(char ch, uint32_t docid, std::optional<std::vector<uint32_t>> field_ids = std::nullopt) const;
 };
 
-}
+} // namespace search::queryeval

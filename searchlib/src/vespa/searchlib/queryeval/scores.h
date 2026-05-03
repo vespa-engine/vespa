@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/common/feature.h>
+
 #include <algorithm>
 
 namespace search::queryeval {
@@ -24,9 +25,7 @@ struct Scores {
             high = score;
         }
     }
-    bool operator==(const Scores& rhs) const {
-        return low == rhs.low && high == rhs.high;
-    }
+    bool operator==(const Scores& rhs) const { return low == rhs.low && high == rhs.high; }
 };
 
-}
+} // namespace search::queryeval
