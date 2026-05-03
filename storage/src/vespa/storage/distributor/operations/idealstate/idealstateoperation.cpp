@@ -1,10 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "idealstateoperation.h"
-#include <vespa/storage/distributor/idealstatemanager.h>
-#include <vespa/storage/distributor/pendingmessagetracker.h>
-#include <vespa/storage/distributor/idealstatemetricsset.h>
+
 #include <vespa/storage/distributor/distributor_bucket_space_repo.h>
+#include <vespa/storage/distributor/idealstatemanager.h>
+#include <vespa/storage/distributor/idealstatemetricsset.h>
 #include <vespa/storage/distributor/operation_sequencer.h>
+#include <vespa/storage/distributor/pendingmessagetracker.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.operations.ideal_state");
@@ -13,16 +14,13 @@ namespace storage::distributor {
 
 using document::BucketSpace;
 
-const uint32_t IdealStateOperation::MAINTENANCE_MESSAGE_TYPES[] =
-{
-    api::MessageType::CREATEBUCKET_ID,
-    api::MessageType::MERGEBUCKET_ID,
-    api::MessageType::DELETEBUCKET_ID,
-    api::MessageType::SPLITBUCKET_ID,
-    api::MessageType::JOINBUCKETS_ID,
-    api::MessageType::SETBUCKETSTATE_ID,
-    0
-};
+const uint32_t IdealStateOperation::MAINTENANCE_MESSAGE_TYPES[] = {api::MessageType::CREATEBUCKET_ID,
+                                                                   api::MessageType::MERGEBUCKET_ID,
+                                                                   api::MessageType::DELETEBUCKET_ID,
+                                                                   api::MessageType::SPLITBUCKET_ID,
+                                                                   api::MessageType::JOINBUCKETS_ID,
+                                                                   api::MessageType::SETBUCKETSTATE_ID,
+                                                                   0};
 
 IdealStateOperation::IdealStateOperation(const BucketAndNodes& bucketAndNodes)
     : _manager(nullptr),
@@ -30,37 +28,27 @@ IdealStateOperation::IdealStateOperation(const BucketAndNodes& bucketAndNodes)
       _bucketAndNodes(bucketAndNodes),
       _detailedReason(),
       _priority(255),
-      _ok(true)
-{
+      _ok(true) {
 }
 
 IdealStateOperation::~IdealStateOperation() = default;
 
-BucketAndNodes::BucketAndNodes(const document::Bucket &bucket, uint16_t node)
-    : _bucket(bucket)
-{
+BucketAndNodes::BucketAndNodes(const document::Bucket& bucket, uint16_t node) : _bucket(bucket) {
     _nodes.push_back(node);
 }
 
-BucketAndNodes::BucketAndNodes(const document::Bucket &bucket,
-                               const std::vector<uint16_t>& nodes)
-    : _bucket(bucket),
-      _nodes(nodes)
-{
+BucketAndNodes::BucketAndNodes(const document::Bucket& bucket, const std::vector<uint16_t>& nodes)
+    : _bucket(bucket), _nodes(nodes) {
     assert(!nodes.empty());
     std::sort(_nodes.begin(), _nodes.end());
 }
 
-void
-BucketAndNodes::setBucketId(const document::BucketId &id)
-{
+void BucketAndNodes::setBucketId(const document::BucketId& id) {
     document::Bucket newBucket(_bucket.getBucketSpace(), id);
     _bucket = newBucket;
 }
 
-std::string
-BucketAndNodes::toString() const
-{
+std::string BucketAndNodes::toString() const {
     std::ostringstream ost;
 
     ost << "[";
@@ -72,20 +60,17 @@ BucketAndNodes::toString() const
         ost << _nodes[i];
     }
 
-    ost <<  "] ";
-    ost <<  _bucket.toString();
+    ost << "] ";
+    ost << _bucket.toString();
     return ost.str();
 }
 
-void
-IdealStateOperation::setIdealStateManager(IdealStateManager* manager) {
+void IdealStateOperation::setIdealStateManager(IdealStateManager* manager) {
     _manager = manager;
     _bucketSpace = &_manager->getBucketSpaceRepo().get(getBucket().getBucketSpace());
 };
 
-void
-IdealStateOperation::done()
-{
+void IdealStateOperation::done() {
     if (_manager) {
         if (ok()) {
             _manager->getMetrics().operations[getType()]->ok.inc(1);
@@ -95,50 +80,37 @@ IdealStateOperation::done()
     }
 }
 
-void
-IdealStateOperation::on_blocked()
-{
+void IdealStateOperation::on_blocked() {
     if (_manager) {
         _manager->getMetrics().operations[getType()]->blocked.inc(1);
     }
 }
 
-void
-IdealStateOperation::on_throttled()
-{
+void IdealStateOperation::on_throttled() {
     if (_manager) {
         _manager->getMetrics().operations[getType()]->throttled.inc(1);
     }
 }
 
-uint32_t
-IdealStateOperation::memorySize() const noexcept
-{
-   return sizeof(*this) + _detailedReason.size();
+uint32_t IdealStateOperation::memorySize() const noexcept {
+    return sizeof(*this) + _detailedReason.size();
 }
 
-void
-IdealStateOperation::setCommandMeta(api::MaintenanceCommand& cmd) const
-{
+void IdealStateOperation::setCommandMeta(api::MaintenanceCommand& cmd) const {
     cmd.setPriority(_priority);
     cmd.setReason(_detailedReason);
 }
 
 namespace {
 
-class IdealStateOpChecker : public PendingMessageTracker::Checker
-{
+class IdealStateOpChecker : public PendingMessageTracker::Checker {
 public:
-    bool blocked;
+    bool                       blocked;
     const IdealStateOperation& op;
 
-    IdealStateOpChecker(const IdealStateOperation& o)
-        : blocked(false), op(o)
-    {
-    }
+    IdealStateOpChecker(const IdealStateOperation& o) : blocked(false), op(o) {}
 
-    bool check(uint32_t messageType, uint16_t node, uint8_t priority) override
-    {
+    bool check(uint32_t messageType, uint16_t node, uint8_t priority) override {
         if (op.shouldBlockThisOperation(messageType, node, priority)) {
             blocked = true;
             return false;
@@ -148,20 +120,15 @@ public:
     }
 };
 
-class RequestBucketInfoChecker : public PendingMessageTracker::Checker
-{
+class RequestBucketInfoChecker : public PendingMessageTracker::Checker {
 public:
     bool blocked;
 
-    RequestBucketInfoChecker()
-        : blocked(false)
-    {
-    }
+    RequestBucketInfoChecker() : blocked(false) {}
 
-    bool check(uint32_t messageType, uint16_t node, uint8_t priority) override
-    {
-        (void) node;
-        (void) priority;
+    bool check(uint32_t messageType, uint16_t node, uint8_t priority) override {
+        (void)node;
+        (void)priority;
         // Always block for RequestBucketInfo pending to a node involved
         // in the ideal state operation.
         if (messageType == api::MessageType::REQUESTBUCKETINFO_ID) {
@@ -172,20 +139,17 @@ public:
     }
 };
 
-}
+} // namespace
 
-bool
-IdealStateOperation::checkBlock(const document::Bucket &bucket,
-                                const DistributorStripeOperationContext& ctx,
-                                const OperationSequencer& seq) const
-{
+bool IdealStateOperation::checkBlock(const document::Bucket& bucket, const DistributorStripeOperationContext& ctx,
+                                     const OperationSequencer& seq) const {
     if (seq.is_blocked(bucket)) {
         return true;
     }
     if (ctx.pending_cluster_state_or_null(bucket.getBucketSpace())) {
         return true;
     }
-    IdealStateOpChecker ichk(*this);
+    IdealStateOpChecker          ichk(*this);
     const std::vector<uint16_t>& nodes(getNodes());
     for (auto node : nodes) {
         ctx.pending_message_tracker().checkPendingMessages(node, bucket, ichk);
@@ -196,12 +160,9 @@ IdealStateOperation::checkBlock(const document::Bucket &bucket,
     return false;
 }
 
-bool
-IdealStateOperation::checkBlockForAllNodes(
-        const document::Bucket &bucket,
-        const DistributorStripeOperationContext& ctx,
-        const OperationSequencer& seq) const
-{
+bool IdealStateOperation::checkBlockForAllNodes(const document::Bucket&                  bucket,
+                                                const DistributorStripeOperationContext& ctx,
+                                                const OperationSequencer&                seq) const {
     if (seq.is_blocked(bucket)) {
         return true;
     }
@@ -214,27 +175,20 @@ IdealStateOperation::checkBlockForAllNodes(
     return ichk.blocked;
 }
 
-bool
-IdealStateOperation::isBlocked(const DistributorStripeOperationContext& ctx, const OperationSequencer& op_seq) const
-{
+bool IdealStateOperation::isBlocked(const DistributorStripeOperationContext& ctx,
+                                    const OperationSequencer&                op_seq) const {
     return checkBlock(getBucket(), ctx, op_seq);
 }
 
-std::string
-IdealStateOperation::toString() const
-{
+std::string IdealStateOperation::toString() const {
     std::ostringstream ost;
-    ost << getName() << " to " << _bucketAndNodes.toString()
-        << " (pri " << (int)_priority << ")";
+    ost << getName() << " to " << _bucketAndNodes.toString() << " (pri " << (int)_priority << ")";
 
     return ost.str();
 }
 
-bool
-IdealStateOperation::shouldBlockThisOperation(uint32_t messageType,
-                                              [[maybe_unused]] uint16_t node,
-                                              uint8_t) const
-{
+bool IdealStateOperation::shouldBlockThisOperation(uint32_t messageType, [[maybe_unused]] uint16_t node,
+                                                   uint8_t) const {
     for (uint32_t i = 0; MAINTENANCE_MESSAGE_TYPES[i] != 0; ++i) {
         if (messageType == MAINTENANCE_MESSAGE_TYPES[i]) {
             return true;
@@ -250,4 +204,4 @@ IdealStateOperation::shouldBlockThisOperation(uint32_t messageType,
     return false;
 }
 
-}
+} // namespace storage::distributor

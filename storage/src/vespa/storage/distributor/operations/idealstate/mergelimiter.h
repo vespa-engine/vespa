@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/storage/distributor/operations/idealstate/mergemetadata.h>
+
 #include <vector>
 
 namespace storage::distributor {
@@ -18,4 +19,4 @@ public:
     void limitMergeToMaxNodes(NodeArray&);
 };
 
-} // storage::distributor
+} // namespace storage::distributor

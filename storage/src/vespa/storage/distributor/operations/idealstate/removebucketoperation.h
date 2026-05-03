@@ -2,18 +2,17 @@
 #pragma once
 
 #include "idealstateoperation.h"
+
 #include <vespa/storage/distributor/messagetracker.h>
 
 namespace storage::distributor {
 
 class PendingMessageTracker;
 
-class RemoveBucketOperation : public IdealStateOperation
-{
+class RemoveBucketOperation : public IdealStateOperation {
 public:
-    RemoveBucketOperation(const ClusterContext &cluster_context, const BucketAndNodes& nodes)
-        : IdealStateOperation(nodes), _tracker(cluster_context)
-    {}
+    RemoveBucketOperation(const ClusterContext& cluster_context, const BucketAndNodes& nodes)
+        : IdealStateOperation(nodes), _tracker(cluster_context) {}
     ~RemoveBucketOperation() override;
 
     /**
@@ -26,14 +25,15 @@ public:
     */
     void onStart(DistributorStripeMessageSender& sender) override;
 
-    bool onReceiveInternal(const std::shared_ptr<api::StorageReply> &);
+    bool onReceiveInternal(const std::shared_ptr<api::StorageReply>&);
 
-    void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> &) override;
+    void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply>&) override;
     const char* getName() const noexcept override { return "remove"; };
     Type getType() const noexcept override { return DELETE_BUCKET; }
-    bool shouldBlockThisOperation(uint32_t, uint16_t, uint8_t) const  override;
+    bool shouldBlockThisOperation(uint32_t, uint16_t, uint8_t) const override;
+
 protected:
     MessageTracker _tracker;
 };
 
-}
+} // namespace storage::distributor

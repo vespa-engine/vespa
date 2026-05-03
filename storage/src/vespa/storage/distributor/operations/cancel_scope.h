@@ -22,6 +22,7 @@ namespace storage::distributor {
 class CancelScope {
 public:
     using CancelledNodeSet = vespalib::hash_set<uint16_t>;
+
 private:
     CancelledNodeSet _cancelled_nodes;
     bool             _fully_cancelled;
@@ -30,6 +31,7 @@ private:
 
     explicit CancelScope(fully_cancelled_ctor_tag) noexcept;
     explicit CancelScope(CancelledNodeSet nodes) noexcept;
+
 public:
     CancelScope();
     ~CancelScope();
@@ -44,19 +46,15 @@ public:
     void merge(const CancelScope& other);
 
     [[nodiscard]] bool fully_cancelled() const noexcept { return _fully_cancelled; }
-    [[nodiscard]] bool is_cancelled() const noexcept {
-        return (_fully_cancelled || !_cancelled_nodes.empty());
-    }
+    [[nodiscard]] bool is_cancelled() const noexcept { return (_fully_cancelled || !_cancelled_nodes.empty()); }
     [[nodiscard]] bool node_is_cancelled(uint16_t node) const noexcept {
         return (fully_cancelled() || _cancelled_nodes.contains(node));
     }
 
-    [[nodiscard]] const CancelledNodeSet& cancelled_nodes() const noexcept {
-        return _cancelled_nodes;
-    }
+    [[nodiscard]] const CancelledNodeSet& cancelled_nodes() const noexcept { return _cancelled_nodes; }
 
     static CancelScope of_fully_cancelled() noexcept;
     static CancelScope of_node_subset(CancelledNodeSet nodes) noexcept;
 };
 
-}
+} // namespace storage::distributor

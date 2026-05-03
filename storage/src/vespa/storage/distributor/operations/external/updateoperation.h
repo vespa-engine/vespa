@@ -3,38 +3,34 @@
 
 #include <vespa/storage/distributor/persistencemessagetracker.h>
 
-namespace document { class Document; }
+namespace document {
+class Document;
+}
 
 namespace storage::api {
 class UpdateCommand;
 class CreateBucketReply;
-}
+} // namespace storage::api
 
 namespace storage::distributor {
 
 class DistributorBucketSpace;
 class UpdateMetricSet;
 
-class UpdateOperation : public Operation
-{
+class UpdateOperation : public Operation {
 public:
-    UpdateOperation(const DistributorNodeContext& node_ctx,
-                    DistributorStripeOperationContext& op_ctx,
-                    DistributorBucketSpace& bucketSpace,
-                    const std::shared_ptr<api::UpdateCommand>& msg,
-                    std::vector<BucketDatabase::Entry> entries,
-                    UpdateMetricSet& metric);
+    UpdateOperation(const DistributorNodeContext& node_ctx, DistributorStripeOperationContext& op_ctx,
+                    DistributorBucketSpace& bucketSpace, const std::shared_ptr<api::UpdateCommand>& msg,
+                    std::vector<BucketDatabase::Entry> entries, UpdateMetricSet& metric);
     ~UpdateOperation() override;
 
     void onStart(DistributorStripeMessageSender& sender) override;
     const char* getName() const noexcept override { return "update"; };
     std::string getStatus() const override { return ""; };
-    void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg) override;
+    void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply>& msg) override;
     void onClose(DistributorStripeMessageSender& sender) override;
 
-    std::pair<document::BucketId, uint16_t> getNewestTimestampLocation() const {
-        return _newestTimestampLocation;
-    }
+    std::pair<document::BucketId, uint16_t> getNewestTimestampLocation() const { return _newestTimestampLocation; }
 
 private:
     PersistenceMessageTracker               _tracker;
@@ -52,22 +48,22 @@ private:
 
     class PreviousDocumentVersion {
     public:
-        PreviousDocumentVersion(document::BucketId b, const api::BucketInfo& info, uint64_t o, uint16_t node) noexcept :
-            bucketId(b), bucketInfo(info), oldTs(o), nodeId(node) {}
+        PreviousDocumentVersion(document::BucketId b, const api::BucketInfo& info, uint64_t o, uint16_t node) noexcept
+            : bucketId(b), bucketInfo(info), oldTs(o), nodeId(node) {}
 
         document::BucketId bucketId;
-        api::BucketInfo bucketInfo;
-        uint64_t oldTs;
-        uint16_t nodeId;
+        api::BucketInfo    bucketInfo;
+        uint64_t           oldTs;
+        uint16_t           nodeId;
     };
 
     std::vector<PreviousDocumentVersion> _results;
-    UpdateMetricSet& _metrics;
+    UpdateMetricSet&                     _metrics;
 
     api::Timestamp adjusted_received_old_timestamp(api::Timestamp old_ts_from_node) const;
-    void log_inconsistency_warning(const api::UpdateReply& reply,
+    void log_inconsistency_warning(const api::UpdateReply&        reply,
                                    const PreviousDocumentVersion& highest_timestamped_version,
                                    const PreviousDocumentVersion& low_timestamped_version);
 };
 
-}
+} // namespace storage::distributor

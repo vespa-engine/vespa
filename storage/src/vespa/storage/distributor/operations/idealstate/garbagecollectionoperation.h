@@ -2,12 +2,14 @@
 #pragma once
 
 #include "idealstateoperation.h"
+
 #include <vespa/document/base/documentid.h>
 #include <vespa/persistence/spi/id_and_timestamp.h>
 #include <vespa/storage/bucketdb/bucketcopy.h>
 #include <vespa/storage/distributor/messagetracker.h>
 #include <vespa/storage/distributor/operation_sequencer.h>
 #include <vespa/vespalib/stllike/hash_map.h>
+
 #include <vector>
 
 namespace storage::distributor {
@@ -16,12 +18,11 @@ class PendingMessageTracker;
 
 class GarbageCollectionOperation final : public IdealStateOperation {
 public:
-    GarbageCollectionOperation(const ClusterContext& cluster_ctx,
-                               const BucketAndNodes& nodes);
+    GarbageCollectionOperation(const ClusterContext& cluster_ctx, const BucketAndNodes& nodes);
     ~GarbageCollectionOperation() override;
 
     void onStart(DistributorStripeMessageSender& sender) override;
-    void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> &) override;
+    void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply>&) override;
     const char* getName() const noexcept override { return "garbagecollection"; };
     Type getType() const noexcept override { return GARBAGE_COLLECTION; }
     bool shouldBlockThisOperation(uint32_t, uint16_t, uint8_t) const override;
@@ -32,13 +33,9 @@ public:
 
 protected:
     MessageTracker _tracker;
+
 private:
-    enum class Phase {
-        NotStarted,
-        LegacySinglePhase,
-        ReadMetadataPhase,
-        WriteRemovesPhase
-    };
+    enum class Phase { NotStarted, LegacySinglePhase, ReadMetadataPhase, WriteRemovesPhase };
 
     static const char* to_string(Phase phase) noexcept;
 
@@ -76,4 +73,4 @@ private:
     void transition_to(Phase new_phase);
 };
 
-}
+} // namespace storage::distributor
