@@ -5,6 +5,8 @@
 #include <vespa/vespalib/stllike/hash_map.h>
 
 #include <string>
+#include <string_view>
+#include <vector>
 
 namespace search::index {
 class Schema;
