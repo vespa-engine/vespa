@@ -543,4 +543,13 @@ schema rankexpression {
         expression: if (attribute(surl) == query(undeclaredinput), 0.75, 0.25)
       }
   }
+
+  rank-profile with_avg_field_length {
+      first-phase {
+        expression: bm25(textchunks)
+      }
+      rank-features { averageFieldLength(textchunks) }
+      match-features { averageFieldLength(textchunks) }
+      summary-features { averageFieldLength(textchunks) }
+  }
 }
