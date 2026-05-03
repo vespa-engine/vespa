@@ -4,11 +4,11 @@
 #include <vespa/vespalib/util/thread_bundle.h>
 
 namespace search::engine {
-    class SearchRequest;
-    class SearchReply;
-    class DocsumRequest;
-    class DocsumReply;
-}
+class SearchRequest;
+class SearchReply;
+class DocsumRequest;
+class DocsumReply;
+} // namespace search::engine
 
 namespace proton {
 
@@ -25,21 +25,20 @@ protected:
     using SearchRequest = search::engine::SearchRequest;
     using DocsumRequest = search::engine::DocsumRequest;
     using ThreadBundle = vespalib::ThreadBundle;
+
 public:
     using SP = std::shared_ptr<ISearchHandler>;
 
-    ISearchHandler(const ISearchHandler &) = delete;
-    ISearchHandler & operator = (const ISearchHandler &) = delete;
+    ISearchHandler(const ISearchHandler&) = delete;
+    ISearchHandler& operator=(const ISearchHandler&) = delete;
     virtual ~ISearchHandler() = default;
 
     /**
      * @return Use the request and produce the document summary result.
      */
-    virtual std::unique_ptr<DocsumReply> getDocsums(const DocsumRequest & request) = 0;
+    virtual std::unique_ptr<DocsumReply> getDocsums(const DocsumRequest& request) = 0;
 
-    virtual std::unique_ptr<SearchReply>
-    match(const SearchRequest &req, ThreadBundle &threadBundle) const = 0;
+    virtual std::unique_ptr<SearchReply> match(const SearchRequest& req, ThreadBundle& threadBundle) const = 0;
 };
 
 } // namespace proton
-

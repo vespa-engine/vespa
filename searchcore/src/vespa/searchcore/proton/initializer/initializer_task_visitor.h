@@ -2,7 +2,7 @@
 #pragma once
 
 namespace proton {
-    class AttributeInitializer;
+class AttributeInitializer;
 }
 
 namespace proton::initializer {

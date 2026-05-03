@@ -12,5 +12,4 @@ namespace search::grouping {
  **/
 using SessionId = std::string;
 
-}
-
+} // namespace search::grouping

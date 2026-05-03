@@ -5,8 +5,7 @@
 
 namespace proton {
 
-class CompactLidSpaceOperation : public FeedOperation
-{
+class CompactLidSpaceOperation : public FeedOperation {
 private:
     uint32_t _subDbId;
     uint32_t _lidLimit;
@@ -19,9 +18,9 @@ public:
     uint32_t getSubDbId() const { return _subDbId; }
     uint32_t getLidLimit() const { return _lidLimit; }
 
-    void serialize(vespalib::nbostream &os) const override;
-    void deserialize(vespalib::nbostream &is, const document::DocumentTypeRepo &) override;
+    void serialize(vespalib::nbostream& os) const override;
+    void deserialize(vespalib::nbostream& is, const document::DocumentTypeRepo&) override;
     std::string toString() const override;
 };
 
-}
+} // namespace proton
