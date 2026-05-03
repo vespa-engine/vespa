@@ -44,13 +44,11 @@ void PrintTo(const CollectionType& ct, std::ostream* os) {
     *os << ct.asString();
 }
 
-}
+} // namespace search::attribute
 
-std::string
-param_as_string(const testing::TestParamInfo<std::tuple<BasicType, CollectionType, bool, bool>>& info)
-{
+std::string param_as_string(const testing::TestParamInfo<std::tuple<BasicType, CollectionType, bool, bool>>& info) {
     std::ostringstream os;
-    auto& param = info.param;
+    auto&              param = info.param;
     os << std::get<0>(param).asString() << "_";
     os << std::get<1>(param).asString();
     os << (std::get<2>(param) ? "_fs" : "");
@@ -58,106 +56,68 @@ param_as_string(const testing::TestParamInfo<std::tuple<BasicType, CollectionTyp
     return os.str();
 }
 
-class BitVectorTest : public ::testing::TestWithParam<std::tuple<BasicType, CollectionType, bool, bool>>
-{
+class BitVectorTest : public ::testing::TestWithParam<std::tuple<BasicType, CollectionType, bool, bool>> {
 public:
     using AttributePtr = AttributeVector::SP;
 
     BitVectorTest();
     ~BitVectorTest() override;
 
-    template <typename VectorType>
-    VectorType & as(AttributePtr &v);
-    IntegerAttribute & asInt(AttributePtr &v);
-    StringAttribute & asString(AttributePtr &v);
-    FloatingPointAttribute & asFloat(AttributePtr &v);
+    template <typename VectorType> VectorType& as(AttributePtr& v);
+    IntegerAttribute& asInt(AttributePtr& v);
+    StringAttribute& asString(AttributePtr& v);
+    FloatingPointAttribute& asFloat(AttributePtr& v);
 
-    AttributePtr make(Config cfg, const std::string &pref, bool fastSearch, bool filter);
+    AttributePtr make(Config cfg, const std::string& pref, bool fastSearch, bool filter);
 
-    void addDocs(const AttributePtr &v, size_t sz);
+    void addDocs(const AttributePtr& v, size_t sz);
 
-    template <typename VectorType>
-    void populate(VectorType &v, uint32_t low, uint32_t high, bool set);
+    template <typename VectorType> void populate(VectorType& v, uint32_t low, uint32_t high, bool set);
 
-    template <typename VectorType>
-    void populateAll(VectorType &v, uint32_t low, uint32_t high, bool set);
+    template <typename VectorType> void populateAll(VectorType& v, uint32_t low, uint32_t high, bool set);
 
-    void buildTermQuery(std::vector<char> & buffer, const std::string & index, const std::string & term, bool prefix);
+    void buildTermQuery(std::vector<char>& buffer, const std::string& index, const std::string& term, bool prefix);
 
-    template <typename V>
-    std::string getSearchStr();
+    template <typename V> std::string getSearchStr();
 
     template <typename V, typename T>
-    SearchContextPtr getSearch(const V & vec, const T & term, bool prefix, bool useBitVector);
+    SearchContextPtr getSearch(const V& vec, const T& term, bool prefix, bool useBitVector);
 
-    template <typename V>
-    SearchContextPtr getSearch(const V & vec, bool useBitVector);
+    template <typename V> SearchContextPtr getSearch(const V& vec, bool useBitVector);
 
-    void
-    checkSearch(AttributePtr v,
-                SearchBasePtr sb,
-                TermFieldMatchData &md,
-                uint32_t expFirstDocId,
-                uint32_t expFastDocId,
-                uint32_t expDocFreq,
-                bool weights,
-                bool checkStride);
+    void checkSearch(AttributePtr v, SearchBasePtr sb, TermFieldMatchData& md, uint32_t expFirstDocId,
+                     uint32_t expFastDocId, uint32_t expDocFreq, bool weights, bool checkStride);
 
-    void
-    checkSearch(AttributePtr v,
-                SearchContextPtr sc,
-                uint32_t expFirstDocId,
-                uint32_t expLastDocId,
-                uint32_t expDocFreq,
-                bool weights,
-                bool checkStride);
+    void checkSearch(AttributePtr v, SearchContextPtr sc, uint32_t expFirstDocId, uint32_t expLastDocId,
+                     uint32_t expDocFreq, bool weights, bool checkStride);
 
     template <typename VectorType>
-    void
-    test(BasicType bt, CollectionType ct, const std::string &pref, bool fastSearch, bool filter);
+    void test(BasicType bt, CollectionType ct, const std::string& pref, bool fastSearch, bool filter);
 };
 
 BitVectorTest::BitVectorTest() = default;
 BitVectorTest::~BitVectorTest() = default;
 
-
-template <typename VectorType>
-VectorType &
-BitVectorTest::as(AttributePtr &v)
-{
-    auto *res = dynamic_cast<VectorType *>(v.get());
+template <typename VectorType> VectorType& BitVectorTest::as(AttributePtr& v) {
+    auto* res = dynamic_cast<VectorType*>(v.get());
     assert(res != nullptr);
     return *res;
 }
 
-
-IntegerAttribute &
-BitVectorTest::asInt(AttributePtr &v)
-{
+IntegerAttribute& BitVectorTest::asInt(AttributePtr& v) {
     return as<IntegerAttribute>(v);
 }
 
-
-StringAttribute &
-BitVectorTest::asString(AttributePtr &v)
-{
+StringAttribute& BitVectorTest::asString(AttributePtr& v) {
     return as<StringAttribute>(v);
 }
 
-
-FloatingPointAttribute &
-BitVectorTest::asFloat(AttributePtr &v)
-{
+FloatingPointAttribute& BitVectorTest::asFloat(AttributePtr& v) {
     return as<FloatingPointAttribute>(v);
 }
 
-
-void
-BitVectorTest::buildTermQuery(std::vector<char> &buffer,
-                                   const std::string &index,
-                                   const std::string &term,
-                                   bool prefix)
-{
+void BitVectorTest::buildTermQuery(std::vector<char>& buffer, const std::string& index, const std::string& term,
+                                   bool prefix) {
     uint32_t indexLen = index.size();
     uint32_t termLen = term.size();
     uint32_t queryPacketSize = 1 + 2 * 4 + indexLen + termLen;
@@ -173,80 +133,52 @@ BitVectorTest::buildTermQuery(std::vector<char> &buffer,
     buffer.resize(p);
 }
 
-
-template <>
-std::string
-BitVectorTest::getSearchStr<IntegerAttribute>()
-{
+template <> std::string BitVectorTest::getSearchStr<IntegerAttribute>() {
     return "[-42;-42]";
 }
 
-template <>
-std::string
-BitVectorTest::getSearchStr<FloatingPointAttribute>()
-{
+template <> std::string BitVectorTest::getSearchStr<FloatingPointAttribute>() {
     return "[-42.0;-42.0]";
 }
 
-template <>
-std::string
-BitVectorTest::getSearchStr<StringAttribute>()
-{
+template <> std::string BitVectorTest::getSearchStr<StringAttribute>() {
     return "foo";
 }
 
-
 template <typename V, typename T>
-SearchContextPtr
-BitVectorTest::getSearch(const V &vec, const T &term, bool prefix, bool useBitVector)
-{
-    std::vector<char> query;
+SearchContextPtr BitVectorTest::getSearch(const V& vec, const T& term, bool prefix, bool useBitVector) {
+    std::vector<char>     query;
     vespalib::asciistream ss;
     ss << term;
     buildTermQuery(query, vec.getName(), ss.str(), prefix);
 
-    return (static_cast<const AttributeVector &>(vec)).
-        getSearch(std::string_view(&query[0], query.size()),
-                  SearchContextParams().useBitVector(useBitVector));
+    return (static_cast<const AttributeVector&>(vec))
+        .getSearch(std::string_view(&query[0], query.size()), SearchContextParams().useBitVector(useBitVector));
 }
 
-
 template <>
-SearchContextPtr
-BitVectorTest::getSearch<IntegerAttribute>(const IntegerAttribute &v, bool useBitVector)
-{
+SearchContextPtr BitVectorTest::getSearch<IntegerAttribute>(const IntegerAttribute& v, bool useBitVector) {
     return getSearch<IntegerAttribute>(v, "[-42;-42]", false, useBitVector);
 }
 
 template <>
-SearchContextPtr
-BitVectorTest::
-getSearch<FloatingPointAttribute>(const FloatingPointAttribute &v, bool useBitVector)
-{
+SearchContextPtr BitVectorTest::getSearch<FloatingPointAttribute>(const FloatingPointAttribute& v,
+                                                                  bool                          useBitVector) {
     return getSearch<FloatingPointAttribute>(v, "[-42.0;-42.0]", false, useBitVector);
 }
 
-template <>
-SearchContextPtr
-BitVectorTest::getSearch<StringAttribute>(const StringAttribute &v, bool useBitVector)
-{
-    return getSearch<StringAttribute, const std::string &>(v, "foo", false, useBitVector);
+template <> SearchContextPtr BitVectorTest::getSearch<StringAttribute>(const StringAttribute& v, bool useBitVector) {
+    return getSearch<StringAttribute, const std::string&>(v, "foo", false, useBitVector);
 }
 
-
-BitVectorTest::AttributePtr
-BitVectorTest::make(Config cfg, const std::string &pref, bool fastSearch, bool filter)
-{
+BitVectorTest::AttributePtr BitVectorTest::make(Config cfg, const std::string& pref, bool fastSearch, bool filter) {
     cfg.setFastSearch(fastSearch);
     cfg.setIsFilter(filter);
     AttributePtr v = AttributeFactory::createAttribute(pref, cfg);
     return v;
 }
 
-
-void
-BitVectorTest::addDocs(const AttributePtr &v, size_t sz)
-{
+void BitVectorTest::addDocs(const AttributePtr& v, size_t sz) {
     while (v->getNumDocs() < sz) {
         AttributeVector::DocId docId = 0;
         EXPECT_TRUE(v->addDoc(docId));
@@ -256,12 +188,8 @@ BitVectorTest::addDocs(const AttributePtr &v, size_t sz)
     v->commit(CommitParam::UpdateStats::FORCE);
 }
 
-
-template <>
-void
-BitVectorTest::populate(IntegerAttribute &v, uint32_t low, uint32_t high, bool set)
-{
-    for (size_t i(low), m(high); i < m; i+= 5) {
+template <> void BitVectorTest::populate(IntegerAttribute& v, uint32_t low, uint32_t high, bool set) {
+    for (size_t i(low), m(high); i < m; i += 5) {
         if (!set) {
             v.clearDoc(i);
         } else if (v.hasMultiValue()) {
@@ -275,12 +203,8 @@ BitVectorTest::populate(IntegerAttribute &v, uint32_t low, uint32_t high, bool s
     v.commit();
 }
 
-
-template <>
-void
-BitVectorTest::populate(FloatingPointAttribute &v, uint32_t low, uint32_t high, bool set)
-{
-    for (size_t i(low), m(high); i < m; i+= 5) {
+template <> void BitVectorTest::populate(FloatingPointAttribute& v, uint32_t low, uint32_t high, bool set) {
+    for (size_t i(low), m(high); i < m; i += 5) {
         if (!set) {
             v.clearDoc(i);
         } else if (v.hasMultiValue()) {
@@ -294,12 +218,8 @@ BitVectorTest::populate(FloatingPointAttribute &v, uint32_t low, uint32_t high, 
     v.commit();
 }
 
-
-template <>
-void
-BitVectorTest::populate(StringAttribute &v, uint32_t low, uint32_t high, bool set)
-{
-    for (size_t i(low), m(high); i < m; i+= 5) {
+template <> void BitVectorTest::populate(StringAttribute& v, uint32_t low, uint32_t high, bool set) {
+    for (size_t i(low), m(high); i < m; i += 5) {
         if (!set) {
             v.clearDoc(i);
         } else if (v.hasMultiValue()) {
@@ -313,10 +233,7 @@ BitVectorTest::populate(StringAttribute &v, uint32_t low, uint32_t high, bool se
     v.commit();
 }
 
-template <>
-void
-BitVectorTest::populateAll(IntegerAttribute &v, uint32_t low, uint32_t high, bool set)
-{
+template <> void BitVectorTest::populateAll(IntegerAttribute& v, uint32_t low, uint32_t high, bool set) {
     for (size_t i(low), m(high); i < m; ++i) {
         if (!set) {
             v.clearDoc(i);
@@ -332,11 +249,7 @@ BitVectorTest::populateAll(IntegerAttribute &v, uint32_t low, uint32_t high, boo
     v.commit();
 }
 
-
-template <>
-void
-BitVectorTest::populateAll(FloatingPointAttribute &v, uint32_t low, uint32_t high, bool set)
-{
+template <> void BitVectorTest::populateAll(FloatingPointAttribute& v, uint32_t low, uint32_t high, bool set) {
     for (size_t i(low), m(high); i < m; ++i) {
         if (!set) {
             v.clearDoc(i);
@@ -352,11 +265,7 @@ BitVectorTest::populateAll(FloatingPointAttribute &v, uint32_t low, uint32_t hig
     v.commit();
 }
 
-
-template <>
-void
-BitVectorTest::populateAll(StringAttribute &v, uint32_t low, uint32_t high, bool set)
-{
+template <> void BitVectorTest::populateAll(StringAttribute& v, uint32_t low, uint32_t high, bool set) {
     for (size_t i(low), m(high); i < m; ++i) {
         if (!set) {
             v.clearDoc(i);
@@ -372,18 +281,9 @@ BitVectorTest::populateAll(StringAttribute &v, uint32_t low, uint32_t high, bool
     v.commit();
 }
 
-
-void
-BitVectorTest::checkSearch(AttributePtr v,
-                           SearchBasePtr sb,
-                           TermFieldMatchData &md,
-                           uint32_t expFirstDocId,
-                           uint32_t expLastDocId,
-                           uint32_t expDocFreq,
-                           bool weights,
-                           bool checkStride)
-{
-    (void) checkStride;
+void BitVectorTest::checkSearch(AttributePtr v, SearchBasePtr sb, TermFieldMatchData& md, uint32_t expFirstDocId,
+                                uint32_t expLastDocId, uint32_t expDocFreq, bool weights, bool checkStride) {
+    (void)checkStride;
     sb->initRange(1, v->getCommittedDocIdLimit());
     sb->seek(1u);
     uint32_t docId = sb->getDocId();
@@ -392,8 +292,7 @@ BitVectorTest::checkSearch(AttributePtr v,
     EXPECT_EQ(expFirstDocId, docId);
     while (docId != search::endDocId) {
         lastDocId = docId;
-        ++docFreq,
-        assert(!checkStride || (docId % 5) == 2u);
+        ++docFreq, assert(!checkStride || (docId % 5) == 2u);
         sb->unpack(docId);
         EXPECT_TRUE(md.has_ranking_data(docId));
         if (v->getCollectionType() == CollectionType::SINGLE || !weights) {
@@ -414,33 +313,20 @@ BitVectorTest::checkSearch(AttributePtr v,
     EXPECT_EQ(expDocFreq, docFreq);
 }
 
-
-void
-BitVectorTest::checkSearch(AttributePtr v,
-                           SearchContextPtr sc,
-                           uint32_t expFirstDocId,
-                           uint32_t expLastDocId,
-                           uint32_t expDocFreq,
-                           bool weights,
-                           bool checkStride)
-{
+void BitVectorTest::checkSearch(AttributePtr v, SearchContextPtr sc, uint32_t expFirstDocId, uint32_t expLastDocId,
+                                uint32_t expDocFreq, bool weights, bool checkStride) {
     TermFieldMatchData md;
     sc->fetchPostings(search::queryeval::ExecuteInfo::FULL, true);
     SearchBasePtr sb = sc->createIterator(&md, true);
-    checkSearch(std::move(v), std::move(sb), md,
-                expFirstDocId, expLastDocId, expDocFreq, weights,
-                checkStride);
+    checkSearch(std::move(v), std::move(sb), md, expFirstDocId, expLastDocId, expDocFreq, weights, checkStride);
 }
 
-
 template <typename VectorType>
-void
-BitVectorTest::test(BasicType bt, CollectionType ct, const std::string &pref, bool fastSearch, bool filter)
-{
-    Config cfg(bt, ct);
+void BitVectorTest::test(BasicType bt, CollectionType ct, const std::string& pref, bool fastSearch, bool filter) {
+    Config       cfg(bt, ct);
     AttributePtr v = make(cfg, pref, fastSearch, filter);
     addDocs(v, 1024);
-    auto &tv = as<VectorType>(v);
+    auto& tv = as<VectorType>(v);
     populate(tv, 2, 1023, true);
 
     SearchContextPtr sc = getSearch<VectorType>(tv, true);
@@ -453,7 +339,7 @@ BitVectorTest::test(BasicType bt, CollectionType ct, const std::string &pref, bo
         auto lres = dww->lookup(getSearchStr<VectorType>(), dww->get_dictionary_snapshot());
         using DWSI = search::queryeval::DocidWithWeightSearchIterator;
         TermFieldMatchData md;
-        auto dwsi = std::make_unique<DWSI>(md, *dww, lres);
+        auto               dwsi = std::make_unique<DWSI>(md, *dww, lres);
         if (!filter) {
             SCOPED_TRACE("dww without filter");
             checkSearch(v, std::move(dwsi), md, 2, 1022, 205, !filter, true);
@@ -476,13 +362,12 @@ BitVectorTest::test(BasicType bt, CollectionType ct, const std::string &pref, bo
     checkSearch(v, std::move(sc), 2, 14999, 14992, !fastSearch && !filter, false);
 }
 
-TEST_P(BitVectorTest, test_bitvectors)
-{
-    const auto& param = GetParam();
-    auto bt = std::get<0>(param);
-    auto ct = std::get<1>(param);
-    auto fast_search = std::get<2>(param);
-    auto filter = std::get<3>(param);
+TEST_P(BitVectorTest, test_bitvectors) {
+    const auto&           param = GetParam();
+    auto                  bt = std::get<0>(param);
+    auto                  ct = std::get<1>(param);
+    auto                  fast_search = std::get<2>(param);
+    auto                  filter = std::get<3>(param);
     vespalib::asciistream pref;
     pref << bt.asString() << "_" << ct.asString();
     switch (bt.type()) {
@@ -500,7 +385,10 @@ TEST_P(BitVectorTest, test_bitvectors)
     }
 }
 
-auto test_values = testing::Combine(testing::Values(BasicType::INT32, BasicType::DOUBLE, BasicType::STRING), testing::Values(CollectionType::SINGLE, CollectionType::ARRAY, CollectionType::WSET),testing::Bool(), testing::Bool());
+auto test_values =
+    testing::Combine(testing::Values(BasicType::INT32, BasicType::DOUBLE, BasicType::STRING),
+                     testing::Values(CollectionType::SINGLE, CollectionType::ARRAY, CollectionType::WSET),
+                     testing::Bool(), testing::Bool());
 
 INSTANTIATE_TEST_SUITE_P(Attributes, BitVectorTest, test_values, param_as_string);
 
@@ -514,19 +402,16 @@ public:
     }
 
 private:
-    bool _inverted;
+    bool                       _inverted;
     mutable TermFieldMatchData _tfmd;
-    BitVector::UP _bv;
+    BitVector::UP              _bv;
 };
 
-Verifier::Verifier(bool inverted)
-    : _inverted(inverted),
-      _bv(BitVector::create(getDocIdLimit()))
-{
+Verifier::Verifier(bool inverted) : _inverted(inverted), _bv(BitVector::create(getDocIdLimit())) {
     if (inverted) {
         _bv->setInterval(0, getDocIdLimit());
     }
-    for (uint32_t docId: getExpectedDocIds()) {
+    for (uint32_t docId : getExpectedDocIds()) {
         if (inverted) {
             _bv->clearBit(docId);
         } else {
@@ -536,8 +421,7 @@ Verifier::Verifier(bool inverted)
 }
 Verifier::~Verifier() = default;
 
-TEST(BitVectorVerifierTest, test_that_bitvector_iterators_adheres_to_SearchIterator_requirements)
-{
+TEST(BitVectorVerifierTest, test_that_bitvector_iterators_adheres_to_SearchIterator_requirements) {
     {
         Verifier searchIteratorVerifier(false);
         searchIteratorVerifier.verify();

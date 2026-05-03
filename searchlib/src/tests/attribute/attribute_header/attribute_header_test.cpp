@@ -16,9 +16,9 @@ using namespace search::attribute;
 using HnswIPO = std::optional<HnswIndexParams>;
 using vespalib::eval::ValueType;
 
-const Config tensor_cfg(BasicType::TENSOR, CollectionType::SINGLE);
-const std::string file_name = "my_file_name";
-const ValueType tensor_type = ValueType::from_spec("tensor<float>(x[4])");
+const Config       tensor_cfg(BasicType::TENSOR, CollectionType::SINGLE);
+const std::string  file_name = "my_file_name";
+const ValueType    tensor_type = ValueType::from_spec("tensor<float>(x[4])");
 constexpr uint32_t num_docs = 23;
 constexpr uint64_t unique_value_count = 11;
 constexpr uint64_t total_value_count = 13;
@@ -26,31 +26,17 @@ constexpr uint64_t memory_usage = 420042;
 constexpr uint64_t create_serial_num = 17;
 constexpr uint32_t version = 19;
 
-vespalib::GenericHeader
-populate_header(const HnswIPO& hnsw_params)
-{
-    AttributeHeader header(file_name,
-                           tensor_cfg.basicType(),
-                           tensor_cfg.collectionType(),
-                           tensor_type,
-                           false,
-                           PersistentPredicateParams(),
-                           hnsw_params,
-                           num_docs,
-                           unique_value_count,
-                           total_value_count,
-                           memory_usage,
-                           create_serial_num,
-                           version);
+vespalib::GenericHeader populate_header(const HnswIPO& hnsw_params) {
+    AttributeHeader header(file_name, tensor_cfg.basicType(), tensor_cfg.collectionType(), tensor_type, false,
+                           PersistentPredicateParams(), hnsw_params, num_docs, unique_value_count, total_value_count,
+                           memory_usage, create_serial_num, version);
 
     vespalib::GenericHeader result;
     header.addTags(result);
     return result;
 }
 
-void
-verify_roundtrip_serialization(const HnswIPO& hnsw_params_in)
-{
+void verify_roundtrip_serialization(const HnswIPO& hnsw_params_in) {
     auto gen_header = populate_header(hnsw_params_in);
     auto attr_header = AttributeHeader::extractTags(gen_header, file_name);
 
@@ -71,8 +57,7 @@ verify_roundtrip_serialization(const HnswIPO& hnsw_params_in)
     }
 }
 
-TEST(AttributeHeaderTest, can_be_added_to_and_extracted_from_generic_header)
-{
+TEST(AttributeHeaderTest, can_be_added_to_and_extracted_from_generic_header) {
     verify_roundtrip_serialization(HnswIPO({16, 100, DistanceMetric::Euclidean}));
     verify_roundtrip_serialization(HnswIPO({16, 100, DistanceMetric::Angular}));
     verify_roundtrip_serialization(HnswIPO({16, 100, DistanceMetric::GeoDegrees}));
@@ -84,7 +69,7 @@ TEST(AttributeHeaderTest, can_be_added_to_and_extracted_from_generic_header)
 
 TEST(UndefinedValues, isUndefined) {
     EXPECT_TRUE(isUndefined(""));
-    EXPECT_TRUE(isUndefined(static_cast<const char *>(nullptr)));
+    EXPECT_TRUE(isUndefined(static_cast<const char*>(nullptr)));
     EXPECT_FALSE(isUndefined(" "));
 
     EXPECT_FALSE(isUndefined<int8_t>(0));
@@ -103,4 +88,3 @@ TEST(UndefinedValues, isUndefined) {
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
-

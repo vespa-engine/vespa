@@ -1,17 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchlib/util/randomgenerator.h>
-#include <vespa/searchlib/attribute/attribute.h>
-#include <vespa/searchlib/attribute/attributeguard.h>
-#include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchcommon/attribute/config.h>
-#include <thread>
-#include <vespa/vespalib/util/signalhandler.h>
-#include <iostream>
 #include "attributesearcher.h"
 #include "attributeupdater.h"
+
+#include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchlib/attribute/attribute.h>
+#include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/attribute/attributeguard.h>
+#include <vespa/searchlib/util/randomgenerator.h>
+#include <vespa/vespalib/util/signalhandler.h>
+
 #include <sys/resource.h>
 #include <unistd.h>
+
+#include <iostream>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attributebenchmark");
@@ -29,54 +32,69 @@ namespace search {
 using AttributePtr = AttributeVector::SP;
 using DocId = AttributeVector::DocId;
 
-class AttributeBenchmark
-{
+class AttributeBenchmark {
 private:
     class Config {
     public:
         std::string _attribute;
-        uint32_t _numDocs;
-        uint32_t _numUpdates;
-        uint32_t _numValues;
-        uint32_t _numSearchers;
-        uint32_t _numQueries;
-        bool _searchersOnly;
-        bool _validate;
-        uint32_t _populateRuns;
-        uint32_t _updateRuns;
-        uint32_t _commitFreq;
-        uint32_t _minValueCount;
-        uint32_t _maxValueCount;
-        uint32_t _minStringLen;
-        uint32_t _maxStringLen;
-        uint32_t _seed;
-        bool _writeAttribute;
-        int64_t _rangeStart;
-        int64_t _rangeEnd;
-        int64_t _rangeDelta;
-        bool _rangeSearch;
-        uint32_t _prefixLength;
-        bool _prefixSearch;
+        uint32_t    _numDocs;
+        uint32_t    _numUpdates;
+        uint32_t    _numValues;
+        uint32_t    _numSearchers;
+        uint32_t    _numQueries;
+        bool        _searchersOnly;
+        bool        _validate;
+        uint32_t    _populateRuns;
+        uint32_t    _updateRuns;
+        uint32_t    _commitFreq;
+        uint32_t    _minValueCount;
+        uint32_t    _maxValueCount;
+        uint32_t    _minStringLen;
+        uint32_t    _maxStringLen;
+        uint32_t    _seed;
+        bool        _writeAttribute;
+        int64_t     _rangeStart;
+        int64_t     _rangeEnd;
+        int64_t     _rangeDelta;
+        bool        _rangeSearch;
+        uint32_t    _prefixLength;
+        bool        _prefixSearch;
 
-
-        Config() : _attribute(""), _numDocs(0), _numUpdates(0), _numValues(0),
-        _numSearchers(0), _numQueries(0), _searchersOnly(true), _validate(false), _populateRuns(0), _updateRuns(0),
-        _commitFreq(0), _minValueCount(0), _maxValueCount(0), _minStringLen(0), _maxStringLen(0), _seed(0),
-        _writeAttribute(false), _rangeStart(0), _rangeEnd(0), _rangeDelta(0), _rangeSearch(false),
-        _prefixLength(0), _prefixSearch(false) {}
+        Config()
+            : _attribute(""),
+              _numDocs(0),
+              _numUpdates(0),
+              _numValues(0),
+              _numSearchers(0),
+              _numQueries(0),
+              _searchersOnly(true),
+              _validate(false),
+              _populateRuns(0),
+              _updateRuns(0),
+              _commitFreq(0),
+              _minValueCount(0),
+              _maxValueCount(0),
+              _minStringLen(0),
+              _maxStringLen(0),
+              _seed(0),
+              _writeAttribute(false),
+              _rangeStart(0),
+              _rangeEnd(0),
+              _rangeDelta(0),
+              _rangeSearch(false),
+              _prefixLength(0),
+              _prefixSearch(false) {}
         void printXML() const;
     };
 
     class Resource {
     private:
         std::vector<struct rusage> _usages;
-        struct rusage _reset;
+        struct rusage              _reset;
 
     public:
         Resource() : _usages(), _reset() { reset(); };
-        void reset() {
-            getrusage(0, &_reset);
-        }
+        void reset() { getrusage(0, &_reset); }
         void saveUsage() {
             struct rusage now;
             getrusage(0, &now);
@@ -84,59 +102,52 @@ private:
             _usages.push_back(usage);
         }
         void printLastXML(uint32_t opCount) {
-            (void) opCount;
-            struct rusage & usage = _usages.back();
-            std::cout << "<ru_utime>" << usage.ru_utime.tv_sec * 1000 + usage.ru_utime.tv_usec / 1000
-                << "</ru_utime>" << std::endl;
-            std::cout << "<ru_stime>" << usage.ru_stime.tv_sec * 1000 + usage.ru_stime.tv_usec / 1000
-                << "</ru_stime>" << std::endl;
+            (void)opCount;
+            struct rusage& usage = _usages.back();
+            std::cout << "<ru_utime>" << usage.ru_utime.tv_sec * 1000 + usage.ru_utime.tv_usec / 1000 << "</ru_utime>"
+                      << std::endl;
+            std::cout << "<ru_stime>" << usage.ru_stime.tv_sec * 1000 + usage.ru_stime.tv_usec / 1000 << "</ru_stime>"
+                      << std::endl;
             std::cout << "<ru_nvcsw>" << usage.ru_nvcsw << "</ru_nvcsw>" << std::endl;
             std::cout << "<ru_nivcsw>" << usage.ru_nivcsw << "</ru_nivcsw>" << std::endl;
         }
-        static struct rusage computeDifference(struct rusage & first, struct rusage & second);
+        static struct rusage computeDifference(struct rusage& first, struct rusage& second);
     };
 
-    Config _config;
+    Config          _config;
     RandomGenerator _rndGen;
 
-    void init(const Config & config);
+    void init(const Config& config);
     void usage();
 
     // benchmark helper methods
-    void addDocs(const AttributePtr & ptr, uint32_t numDocs);
+    void addDocs(const AttributePtr& ptr, uint32_t numDocs);
     template <typename Vector, typename T, typename BT>
-    void benchmarkPopulate(const AttributePtr & ptr, const std::vector<T> & values, uint32_t id);
+    void benchmarkPopulate(const AttributePtr& ptr, const std::vector<T>& values, uint32_t id);
     template <typename Vector, typename T, typename BT>
-    void benchmarkUpdate(const AttributePtr & ptr, const std::vector<T> & values, uint32_t id);
+    void benchmarkUpdate(const AttributePtr& ptr, const std::vector<T>& values, uint32_t id);
 
-    template <typename T>
-    std::vector<std::string> prepareForPrefixSearch(const std::vector<T> & values) const;
-    template <typename T>
-    void benchmarkSearch(const AttributePtr & ptr, const std::vector<T> & values);
+    template <typename T> std::vector<std::string> prepareForPrefixSearch(const std::vector<T>& values) const;
+    template <typename T> void benchmarkSearch(const AttributePtr& ptr, const std::vector<T>& values);
     template <typename Vector, typename T, typename BT>
-    void benchmarkSearchWithUpdater(const AttributePtr & ptr,
-                                    const std::vector<T> & values);
+    void benchmarkSearchWithUpdater(const AttributePtr& ptr, const std::vector<T>& values);
 
     template <typename Vector, typename T, typename BT>
-    void benchmarkAttribute(const AttributePtr & ptr, const std::vector<T> & values);
+    void benchmarkAttribute(const AttributePtr& ptr, const std::vector<T>& values);
 
     // Numeric Attribute
-    void benchmarkNumeric(const AttributePtr & ptr);
+    void benchmarkNumeric(const AttributePtr& ptr);
 
     // String Attribute
-    void benchmarkString(const AttributePtr & ptr);
-
+    void benchmarkString(const AttributePtr& ptr);
 
 public:
     AttributeBenchmark() : _config(), _rndGen() {}
     ~AttributeBenchmark() = default;
-    int main(int argc, char **argv);
+    int main(int argc, char** argv);
 };
 
-
-void
-AttributeBenchmark::Config::printXML() const
-{
+void AttributeBenchmark::Config::printXML() const {
     std::cout << "<config>" << std::endl;
     std::cout << "<attribute>" << _attribute << "</attribute>" << std::endl;
     std::cout << "<num-docs>" << _numDocs << "</num-docs>" << std::endl;
@@ -163,78 +174,62 @@ AttributeBenchmark::Config::printXML() const
     std::cout << "</config>" << std::endl;
 }
 
-void
-AttributeBenchmark::init(const Config & config)
-{
+void AttributeBenchmark::init(const Config& config) {
     _config = config;
     _rndGen.srand(_config._seed);
 }
 
-
 //-----------------------------------------------------------------------------
 // Benchmark helper methods
 //-----------------------------------------------------------------------------
-void
-AttributeBenchmark::addDocs(const AttributePtr & ptr, uint32_t numDocs)
-{
+void AttributeBenchmark::addDocs(const AttributePtr& ptr, uint32_t numDocs) {
     DocId startDoc;
     DocId lastDoc;
-    bool success = ptr->addDocs(startDoc, lastDoc, numDocs);
+    bool  success = ptr->addDocs(startDoc, lastDoc, numDocs);
     assert(success);
-    (void) success;
+    (void)success;
     assert(startDoc == 0);
     assert(lastDoc + 1 == numDocs);
     assert(ptr->getNumDocs() == numDocs);
 }
 
 template <typename Vector, typename T, typename BT>
-void
-AttributeBenchmark::benchmarkPopulate(const AttributePtr & ptr, const std::vector<T> & values, uint32_t id)
-{
+void AttributeBenchmark::benchmarkPopulate(const AttributePtr& ptr, const std::vector<T>& values, uint32_t id) {
     std::cout << "<!-- Populate " << _config._numDocs << " documents -->" << std::endl;
-    AttributeUpdater<Vector, T, BT>
-        updater(ptr, values, _rndGen, _config._validate, _config._commitFreq,
-                _config._minValueCount, _config._maxValueCount);
+    AttributeUpdater<Vector, T, BT> updater(ptr, values, _rndGen, _config._validate, _config._commitFreq,
+                                            _config._minValueCount, _config._maxValueCount);
     updater.populate();
     std::cout << "<populate id='" << id << "'>" << std::endl;
     updater.getStatus().printXML();
     std::cout << "</populate>" << std::endl;
     if (_config._validate) {
-        std::cout << "<!-- All " << updater.getValidator().getTotalCnt()
-            << " asserts passed -->" << std::endl;
+        std::cout << "<!-- All " << updater.getValidator().getTotalCnt() << " asserts passed -->" << std::endl;
     }
 }
 
 template <typename Vector, typename T, typename BT>
-void
-AttributeBenchmark::benchmarkUpdate(const AttributePtr & ptr, const std::vector<T> & values, uint32_t id)
-{
+void AttributeBenchmark::benchmarkUpdate(const AttributePtr& ptr, const std::vector<T>& values, uint32_t id) {
     std::cout << "<!-- Apply " << _config._numUpdates << " updates -->" << std::endl;
-    AttributeUpdater<Vector, T, BT>
-        updater(ptr, values, _rndGen, _config._validate, _config._commitFreq,
-                _config._minValueCount, _config._maxValueCount);
+    AttributeUpdater<Vector, T, BT> updater(ptr, values, _rndGen, _config._validate, _config._commitFreq,
+                                            _config._minValueCount, _config._maxValueCount);
     updater.update(_config._numUpdates);
     std::cout << "<update id='" << id << "'>" << std::endl;
     updater.getStatus().printXML();
     std::cout << "</update>" << std::endl;
     if (_config._validate) {
-        std::cout << "<!-- All " << updater.getValidator().getTotalCnt()
-            << " asserts passed -->" << std::endl;
+        std::cout << "<!-- All " << updater.getValidator().getTotalCnt() << " asserts passed -->" << std::endl;
     }
 }
 
 template <typename T>
-std::vector<std::string>
-AttributeBenchmark::prepareForPrefixSearch(const std::vector<T> & values) const
-{
-    (void) values;
+std::vector<std::string> AttributeBenchmark::prepareForPrefixSearch(const std::vector<T>& values) const {
+    (void)values;
     return std::vector<std::string>();
 }
 
 template <>
 std::vector<std::string>
-AttributeBenchmark::prepareForPrefixSearch(const std::vector<AttributeVector::WeightedString> & values) const
-{
+AttributeBenchmark::prepareForPrefixSearch(const std::vector<AttributeVector::WeightedString>& values) const {
     std::vector<std::string> retval;
     retval.reserve(values.size());
     for (size_t i = 0; i < values.size(); ++i) {
@@ -244,13 +239,11 @@ AttributeBenchmark::prepareForPrefixSearch(const std::vector<AttributeVector::We
 }
 
 template <typename T>
-void
-AttributeBenchmark::benchmarkSearch(const AttributePtr & ptr, const std::vector<T> & values)
-{
-    std::vector<AttributeSearcher *> searchers;
+void AttributeBenchmark::benchmarkSearch(const AttributePtr& ptr, const std::vector<T>& values) {
+    std::vector<AttributeSearcher*> searchers;
     if (_config._numSearchers > 0) {
-        std::cout << "<!-- Starting " << _config._numSearchers << " searcher threads with "
-            << _config._numQueries << " queries each -->" << std::endl;
+        std::cout << "<!-- Starting " << _config._numSearchers << " searcher threads with " << _config._numQueries
+                  << " queries each -->" << std::endl;
 
         std::vector<std::string> prefixStrings = prepareForPrefixSearch(values);
 
@@ -285,15 +278,11 @@ AttributeBenchmark::benchmarkSearch(const AttributePtr & ptr, const std::vector<
 }
 
 template <typename Vector, typename T, typename BT>
-void
-AttributeBenchmark::benchmarkSearchWithUpdater(const AttributePtr & ptr,
-                                               const std::vector<T> & values)
-{
+void AttributeBenchmark::benchmarkSearchWithUpdater(const AttributePtr& ptr, const std::vector<T>& values) {
     if (_config._numSearchers > 0) {
         std::cout << "<!-- Starting 1 updater thread -->" << std::endl;
-        AttributeUpdaterThread<Vector, T, BT>
-            updater(ptr, values, _rndGen, _config._validate, _config._commitFreq,
-                    _config._minValueCount, _config._maxValueCount);
+        AttributeUpdaterThread<Vector, T, BT> updater(ptr, values, _rndGen, _config._validate, _config._commitFreq,
+                                                      _config._minValueCount, _config._maxValueCount);
         updater.start();
         benchmarkSearch(ptr, values);
         updater.stop();
@@ -302,16 +291,13 @@ AttributeBenchmark::benchmarkSearchWithUpdater(const AttributePtr & ptr,
         updater.getStatus().printXML();
         std::cout << "</updater-summary>" << std::endl;
         if (_config._validate) {
-            std::cout << "<!-- All " << updater.getValidator().getTotalCnt()
-                << " asserts passed -->" << std::endl;
+            std::cout << "<!-- All " << updater.getValidator().getTotalCnt() << " asserts passed -->" << std::endl;
         }
     }
 }
 
 template <typename Vector, typename T, typename BT>
-void
-AttributeBenchmark::benchmarkAttribute(const AttributePtr & ptr, const std::vector<T> & values)
-{
+void AttributeBenchmark::benchmarkAttribute(const AttributePtr& ptr, const std::vector<T>& values) {
     addDocs(ptr, _config._numDocs);
 
     // populate
@@ -334,13 +320,10 @@ AttributeBenchmark::benchmarkAttribute(const AttributePtr & ptr, const std::vect
     }
 }
 
-
 //-----------------------------------------------------------------------------
 // Numeric Attribute
 //-----------------------------------------------------------------------------
-void
-AttributeBenchmark::benchmarkNumeric(const AttributePtr & ptr)
-{
+void AttributeBenchmark::benchmarkNumeric(const AttributePtr& ptr) {
     NumVector values;
     if (_config._rangeSearch) {
         values.reserve(_config._numValues);
@@ -363,17 +346,14 @@ AttributeBenchmark::benchmarkNumeric(const AttributePtr & ptr)
             weightedVector.push_back(AttributeVector::WeightedInt(values[i], weights[i]));
         }
     }
-    benchmarkAttribute<IntegerAttribute, AttributeVector::WeightedInt, AttributeVector::WeightedInt>
-        (ptr, weightedVector);
+    benchmarkAttribute<IntegerAttribute, AttributeVector::WeightedInt, AttributeVector::WeightedInt>(ptr,
+                                                                                                     weightedVector);
 }
-
 
 //-----------------------------------------------------------------------------
 // String Attribute
 //-----------------------------------------------------------------------------
-void
-AttributeBenchmark::benchmarkString(const AttributePtr & ptr)
-{
+void AttributeBenchmark::benchmarkString(const AttributePtr& ptr) {
     StringVector strings;
     _rndGen.fillRandomStrings(strings, _config._numValues, _config._minStringLen, _config._maxStringLen);
 
@@ -389,17 +369,14 @@ AttributeBenchmark::benchmarkString(const AttributePtr & ptr)
             weightedVector.push_back(AttributeVector::WeightedString(strings[i], weights[i]));
         }
     }
-    benchmarkAttribute<StringAttribute, AttributeVector::WeightedString, AttributeVector::WeightedString>
-        (ptr, weightedVector);
+    benchmarkAttribute<StringAttribute, AttributeVector::WeightedString, AttributeVector::WeightedString>(
+        ptr, weightedVector);
 }
-
 
 //-----------------------------------------------------------------------------
 // Resource utilization
 //-----------------------------------------------------------------------------
-struct rusage
-AttributeBenchmark::Resource::computeDifference(struct rusage & first, struct rusage & second)
-{
+struct rusage AttributeBenchmark::Resource::computeDifference(struct rusage& first, struct rusage& second) {
     struct rusage result;
     // utime
     uint64_t firstutime = first.ru_utime.tv_sec * 1000000 + first.ru_utime.tv_usec;
@@ -416,9 +393,9 @@ AttributeBenchmark::Resource::computeDifference(struct rusage & first, struct ru
     result.ru_stime.tv_usec = resultstime % 1000000;
 
     result.ru_maxrss = second.ru_maxrss; // - first.ru_maxrss;
-    result.ru_ixrss = second.ru_ixrss; // - first.ru_ixrss;
-    result.ru_idrss = second.ru_idrss; // - first.ru_idrss;
-    result.ru_isrss = second.ru_isrss; // - first.ru_isrss;
+    result.ru_ixrss = second.ru_ixrss;   // - first.ru_ixrss;
+    result.ru_idrss = second.ru_idrss;   // - first.ru_idrss;
+    result.ru_isrss = second.ru_isrss;   // - first.ru_isrss;
     result.ru_minflt = second.ru_minflt - first.ru_minflt;
     result.ru_majflt = second.ru_majflt - first.ru_majflt;
     result.ru_nswap = second.ru_nswap - first.ru_nswap;
@@ -433,16 +410,16 @@ AttributeBenchmark::Resource::computeDifference(struct rusage & first, struct ru
     return result;
 }
 
-
-void
-AttributeBenchmark::usage()
-{
+void AttributeBenchmark::usage() {
     std::cout << "usage: attributebenchmark [-n numDocs] [-u numUpdates] [-v numValues]" << std::endl;
-    std::cout << "                          [-s numSearchers] [-q numQueries] [-p populateRuns] [-r updateRuns]" << std::endl;
+    std::cout << "                          [-s numSearchers] [-q numQueries] [-p populateRuns] [-r updateRuns]"
+              << std::endl;
     std::cout << "                          [-c commitFrequency] [-l minValueCount] [-h maxValueCount]" << std::endl;
     std::cout << "                          [-i minStringLen] [-a maxStringLen] [-e seed]" << std::endl;
-    std::cout << "                          [-S rangeStart] [-E rangeEnd] [-D rangeDelta] [-L prefixLength]" << std::endl;
-    std::cout << "                          [-b (searchers with updater)] [-R (range search)] [-P (prefix search)]" << std::endl;
+    std::cout << "                          [-S rangeStart] [-E rangeEnd] [-D rangeDelta] [-L prefixLength]"
+              << std::endl;
+    std::cout << "                          [-b (searchers with updater)] [-R (range search)] [-P (prefix search)]"
+              << std::endl;
     std::cout << "                          [-t (validate updates)] [-w (write attribute to disk)]" << std::endl;
     std::cout << "                          <attribute>" << std::endl;
     std::cout << " <attribute> : s-uint32, a-uint32, ws-uint32" << std::endl;
@@ -452,9 +429,7 @@ AttributeBenchmark::usage()
     std::cout << "               s-fs-string, a-fs-string, ws-fs-string ws-frs-string" << std::endl;
 }
 
-int
-AttributeBenchmark::main(int argc, char **argv)
-{
+int AttributeBenchmark::main(int argc, char** argv) {
     Config dc;
     dc._numDocs = 50000;
     dc._numUpdates = 50000;
@@ -479,7 +454,7 @@ AttributeBenchmark::main(int argc, char **argv)
     dc._prefixLength = 2;
     dc._prefixSearch = false;
 
-    int opt;
+    int  opt;
     bool optError = false;
     while ((opt = getopt(argc, argv, "n:u:v:s:q:p:r:c:l:h:i:a:e:S:E:D:L:bRPtw")) != -1) {
         switch (opt) {
@@ -639,7 +614,6 @@ AttributeBenchmark::main(int argc, char **argv)
         cfg.setFastSearch(true);
         ptr = AttributeFactory::createAttribute("ws-fs-string", cfg);
         benchmarkString(ptr);
-
     }
 
     if (dc._writeAttribute) {
@@ -651,11 +625,10 @@ AttributeBenchmark::main(int argc, char **argv)
 
     return 0;
 }
-}
+} // namespace search
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     vespalib::SignalHandler::PIPE.ignore();
     search::AttributeBenchmark myapp;
     return myapp.main(argc, argv);
 }
-

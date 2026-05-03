@@ -1,18 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/btree/btreenodeallocator.hpp>
-#include <vespa/vespalib/btree/btreenode.hpp>
-#include <vespa/vespalib/btree/btreenodestore.hpp>
-#include <vespa/vespalib/btree/btreeiterator.hpp>
-#include <vespa/vespalib/btree/btreeroot.hpp>
-#include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/datastore/datastore.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/rand48.h>
-#include <vespa/vespalib/gtest/gtest.h>
-#include <set>
-#include <map>
+
+#include <vespa/vespalib/btree/btreeiterator.hpp>
+#include <vespa/vespalib/btree/btreenode.hpp>
+#include <vespa/vespalib/btree/btreenodeallocator.hpp>
+#include <vespa/vespalib/btree/btreenodestore.hpp>
+#include <vespa/vespalib/btree/btreeroot.hpp>
+#include <vespa/vespalib/btree/btreestore.hpp>
+
 #include <cinttypes>
+#include <map>
+#include <set>
 
 #include <vespa/log/log.h>
 LOG_SETUP("postinglist_test");
@@ -26,191 +28,119 @@ using vespalib::GenerationHandler;
  * TODO: Make it pass MALLOC_OPTIONS=AJ on freebsd and valgrind on Linux.
  */
 
-class AttributePostingListTest : public ::testing::Test
-{
+class AttributePostingListTest : public ::testing::Test {
 protected:
     /* Limited STL version for validation of full version */
     using STLPostingList = std::set<uint32_t>;
     using STLValueTree = std::map<int, STLPostingList>;
 
-    class RandomValue
-    {
+    class RandomValue {
     public:
         uint32_t _docId;
-        int _value;
+        int      _value;
         uint32_t _order;
 
-        RandomValue()
-            : _docId(0),
-              _value(0u),
-              _order(0u)
-        {
-        }
+        RandomValue() : _docId(0), _value(0u), _order(0u) {}
 
-        RandomValue(uint32_t docId, uint32_t value, uint32_t order)
-            : _docId(docId),
-              _value(value),
-              _order(order)
-        {
-        }
+        RandomValue(uint32_t docId, uint32_t value, uint32_t order) : _docId(docId), _value(value), _order(order) {}
 
-        bool
-        operator<(const RandomValue &rhs) const
-        {
+        bool operator<(const RandomValue& rhs) const {
             return (_value < rhs._value ||
-                    (_value == rhs._value &&
-                     (_docId < rhs._docId ||
-                      (_docId == rhs._docId &&
-                       _order < rhs._order))));
+                    (_value == rhs._value && (_docId < rhs._docId || (_docId == rhs._docId && _order < rhs._order))));
         }
 
-        bool
-        operator>(const RandomValue &rhs) const
-        {
+        bool operator>(const RandomValue& rhs) const {
             return (_value > rhs._value ||
-                    (_value == rhs._value &&
-                     (_docId > rhs._docId ||
-                      (_docId == rhs._docId &&
-                       _order > rhs._order))));
+                    (_value == rhs._value && (_docId > rhs._docId || (_docId == rhs._docId && _order > rhs._order))));
         }
 
-        bool
-        operator==(const RandomValue &rhs) const
-        {
-            return (_value == rhs._value &&
-                    _docId == rhs._docId &&
-                    _order == rhs._order);
+        bool operator==(const RandomValue& rhs) const {
+            return (_value == rhs._value && _docId == rhs._docId && _order == rhs._order);
         }
     };
 
-    class CompareOrder
-    {
+    class CompareOrder {
     public:
-        bool
-        operator()(const RandomValue &a, const RandomValue &b)
-        {
+        bool operator()(const RandomValue& a, const RandomValue& b) {
             return (a._order < b._order ||
-                    (a._order == b._order &&
-                     (a._value < b._value ||
-                      (a._value == b._value &&
-                       a._docId < b._docId))));
+                    (a._order == b._order && (a._value < b._value || (a._value == b._value && a._docId < b._docId))));
         }
     };
     std::vector<RandomValue> _randomValues;
 
     using IntKeyStore = vespalib::datastore::DataStore<int>;
     using AttributePosting = vespalib::btree::BTreeKeyData<uint32_t, vespalib::btree::BTreeNoLeafData>;
-    using PostingList = vespalib::btree::BTreeStore<uint32_t,
-                              vespalib::btree::BTreeNoLeafData,
-                              vespalib::btree::NoAggregated,
-                              std::less<uint32_t>,
-                              vespalib::btree::BTreeDefaultTraits>;
+    using PostingList =
+        vespalib::btree::BTreeStore<uint32_t, vespalib::btree::BTreeNoLeafData, vespalib::btree::NoAggregated,
+                                    std::less<uint32_t>, vespalib::btree::BTreeDefaultTraits>;
     using PostingListNodeAllocator = PostingList::NodeAllocatorType;
     using PostingIdx = vespalib::datastore::EntryRef;
     using StoreIndex = vespalib::datastore::EntryRef;
 
     class IntComp {
     private:
-        const IntKeyStore & _store;
-        int                 _value;
-        int getValue(const StoreIndex & idx) const {
+        const IntKeyStore& _store;
+        int                _value;
+        int getValue(const StoreIndex& idx) const {
             if (idx.valid()) {
                 return _store.getEntry(idx);
             }
             return _value;
         }
+
     public:
-        IntComp(const IntKeyStore & store) : _store(store), _value(0) {}
-        IntComp(const IntKeyStore & store, int value) : _store(store), _value(value) {}
-        bool operator() (const StoreIndex & lhs, const StoreIndex & rhs) const {
-            return getValue(lhs) < getValue(rhs);
-        }
+        IntComp(const IntKeyStore& store) : _store(store), _value(0) {}
+        IntComp(const IntKeyStore& store, int value) : _store(store), _value(value) {}
+        bool operator()(const StoreIndex& lhs, const StoreIndex& rhs) const { return getValue(lhs) < getValue(rhs); }
     };
 
-    using IntEnumTree = vespalib::btree::BTreeRoot<StoreIndex, PostingIdx,
-                             vespalib::btree::NoAggregated,
-                             const IntComp &>;
+    using IntEnumTree =
+        vespalib::btree::BTreeRoot<StoreIndex, PostingIdx, vespalib::btree::NoAggregated, const IntComp&>;
     using IntEnumNodeAllocator = IntEnumTree::NodeAllocatorType;
     using Tree = IntEnumTree;
     using TreeManager = IntEnumNodeAllocator;
     using ValueHandle = IntKeyStore;
     using RandomValuesVector = std::vector<RandomValue>;
 
-    GenerationHandler _handler;
-    IntKeyStore *_intKeyStore;
-    IntEnumNodeAllocator *_intNodeAlloc;
-    IntEnumTree *_intTree;
-    PostingList *_intPostings;
-    STLValueTree *_stlTree;
+    GenerationHandler     _handler;
+    IntKeyStore*          _intKeyStore;
+    IntEnumNodeAllocator* _intNodeAlloc;
+    IntEnumTree*          _intTree;
+    PostingList*          _intPostings;
+    STLValueTree*         _stlTree;
 
     vespalib::Rand48 _randomGenerator;
-    uint32_t _generation;
+    uint32_t         _generation;
 
-    void
-    allocTree();
+    void allocTree();
 
-    void
-    freeTree(bool verbose);
+    void freeTree(bool verbose);
 
-    void
-    fillRandomValues(unsigned int count,
-                     unsigned int mvcount);
+    void fillRandomValues(unsigned int count, unsigned int mvcount);
 
-    void
-    insertRandomValues(Tree &tree,
-                       TreeManager &treeMgr,
-                       ValueHandle &valueHandle,
-                       PostingList &postings,
-                       STLValueTree *stlTree,
-                       RandomValuesVector &values);
+    void insertRandomValues(Tree& tree, TreeManager& treeMgr, ValueHandle& valueHandle, PostingList& postings,
+                            STLValueTree* stlTree, RandomValuesVector& values);
 
-    void
-    removeRandomValues(Tree &tree,
-                       TreeManager &treeMgr,
-                       ValueHandle &valueHandle,
-                       PostingList &postings,
-                       STLValueTree *stlTree,
-                       RandomValuesVector &values);
+    void removeRandomValues(Tree& tree, TreeManager& treeMgr, ValueHandle& valueHandle, PostingList& postings,
+                            STLValueTree* stlTree, RandomValuesVector& values);
 
-    void
-    lookupRandomValues(Tree &tree,
-                       TreeManager &treeMgr,
-                       const ValueHandle &valueHandle,
-                       PostingList &postings,
-                       STLValueTree *stlTree,
-                       RandomValuesVector &values);
+    void lookupRandomValues(Tree& tree, TreeManager& treeMgr, const ValueHandle& valueHandle, PostingList& postings,
+                            STLValueTree* stlTree, RandomValuesVector& values);
 
-    void
-    sortRandomValues();
+    void sortRandomValues();
 
-    void
-    doCompactEnumStore(Tree &tree,
-                       TreeManager &treeMgr,
-                       ValueHandle &valueHandle);
+    void doCompactEnumStore(Tree& tree, TreeManager& treeMgr, ValueHandle& valueHandle);
 
-    void
-    doCompactPostingList(Tree &tree,
-                         TreeManager &treeMgr,
-                         PostingList &postings,
-                         PostingListNodeAllocator &postingsAlloc);
+    void doCompactPostingList(Tree& tree, TreeManager& treeMgr, PostingList& postings,
+                              PostingListNodeAllocator& postingsAlloc);
 
-    void
-    bumpGeneration(Tree &tree,
-                   ValueHandle &valueHandle,
-                   PostingList &postings,
-                   PostingListNodeAllocator &postingsAlloc);
+    void bumpGeneration(Tree& tree, ValueHandle& valueHandle, PostingList& postings,
+                        PostingListNodeAllocator& postingsAlloc);
 
-    void
-    reclaim_memory(Tree &tree,
-                         ValueHandle &valueHandle,
-                         PostingList &postings,
-                         PostingListNodeAllocator &postingsAlloc);
+    void reclaim_memory(Tree& tree, ValueHandle& valueHandle, PostingList& postings,
+                        PostingListNodeAllocator& postingsAlloc);
 
-    static const char *
-    frozenName(bool frozen)
-    {
-        return frozen ? "frozen" : "thawed";
-    }
+    static const char* frozenName(bool frozen) { return frozen ? "frozen" : "thawed"; }
     AttributePostingListTest();
     ~AttributePostingListTest() override;
 };
@@ -224,14 +154,12 @@ AttributePostingListTest::AttributePostingListTest()
       _intTree(nullptr),
       _intPostings(nullptr),
       _stlTree(nullptr),
-      _randomGenerator()
-{}
+      _randomGenerator() {
+}
 
 AttributePostingListTest::~AttributePostingListTest() = default;
 
-void
-AttributePostingListTest::allocTree()
-{
+void AttributePostingListTest::allocTree() {
     _intKeyStore = new IntKeyStore;
     _intNodeAlloc = new IntEnumNodeAllocator();
     _intTree = new IntEnumTree();
@@ -239,11 +167,8 @@ AttributePostingListTest::allocTree()
     _stlTree = new STLValueTree;
 }
 
-
-void
-AttributePostingListTest::freeTree(bool verbose)
-{
-    (void) verbose;
+void AttributePostingListTest::freeTree(bool verbose) {
+    (void)verbose;
     LOG(info,
         "freeTree before clear: %" PRIu64 " (%" PRIu64 " held)"
         ", %zu leaves",
@@ -251,8 +176,7 @@ AttributePostingListTest::freeTree(bool verbose)
         static_cast<uint64_t>(_intNodeAlloc->getMemoryUsage().allocatedBytesOnHold()),
         _intTree->size(*_intNodeAlloc));
     _intTree->clear(*_intNodeAlloc);
-    LOG(info,
-        "freeTree before unhold: %" PRIu64 " (%" PRIu64 " held)",
+    LOG(info, "freeTree before unhold: %" PRIu64 " (%" PRIu64 " held)",
         static_cast<uint64_t>(_intNodeAlloc->getMemoryUsage().allocatedBytes()),
         static_cast<uint64_t>(_intNodeAlloc->getMemoryUsage().allocatedBytesOnHold()));
     _intNodeAlloc->freeze();
@@ -263,8 +187,7 @@ AttributePostingListTest::freeTree(bool verbose)
     _handler.incGeneration();
     _intNodeAlloc->reclaim_memory(_handler.get_oldest_used_generation());
     _intPostings->reclaim_memory(_handler.get_oldest_used_generation());
-    LOG(info,
-        "freeTree after unhold: %" PRIu64 " (%" PRIu64 " held)",
+    LOG(info, "freeTree after unhold: %" PRIu64 " (%" PRIu64 " held)",
         static_cast<uint64_t>(_intNodeAlloc->getMemoryUsage().allocatedBytes()),
         static_cast<uint64_t>(_intNodeAlloc->getMemoryUsage().allocatedBytesOnHold()));
     delete _stlTree;
@@ -279,12 +202,7 @@ AttributePostingListTest::freeTree(bool verbose)
     _intPostings = nullptr;
 }
 
-
-void
-AttributePostingListTest::
-fillRandomValues(unsigned int count,
-                 unsigned int mvcount)
-{
+void AttributePostingListTest::fillRandomValues(unsigned int count, unsigned int mvcount) {
     unsigned int i;
     unsigned int j;
     unsigned int mv;
@@ -294,12 +212,11 @@ fillRandomValues(unsigned int count,
 
     mvmax = 100;
     mvcount2 = mvcount * (mvmax * (mvmax - 1)) / 2;
-    LOG(info,
-        "Filling %u+%u random values", count, mvcount2);
+    LOG(info, "Filling %u+%u random values", count, mvcount2);
     _randomValues.clear();
     _randomValues.reserve(count);
     _randomGenerator.srand48(42);
-    for (i = 0; i <count; i++) {
+    for (i = 0; i < count; i++) {
         uint32_t docId = _randomGenerator.lrand48();
         uint32_t val = _randomGenerator.lrand48();
         uint32_t order = _randomGenerator.lrand48();
@@ -316,8 +233,7 @@ fillRandomValues(unsigned int count,
         }
     }
     mvcount3 = 0;
-    for (mv = 10; mv < 4000; mv = mv * 3)
-    {
+    for (mv = 10; mv < 4000; mv = mv * 3) {
         mvcount3 += mv * 2;
         for (j = 0; j < mv; j++) {
             uint32_t val = _randomGenerator.lrand48();
@@ -330,24 +246,14 @@ fillRandomValues(unsigned int count,
             _randomValues.push_back(RandomValue(docId, val, order));
         }
     }
-    std::sort(_randomValues.begin(),
-              _randomValues.end(),
-              CompareOrder());
+    std::sort(_randomValues.begin(), _randomValues.end(), CompareOrder());
 
     EXPECT_TRUE(_randomValues.size() == count + mvcount2 + mvcount3);
 }
 
-
-void
-AttributePostingListTest::
-insertRandomValues(Tree &tree,
-                   TreeManager &treeMgr,
-                   ValueHandle &valueHandle,
-                   PostingList &postings,
-                   STLValueTree *stlTree,
-                   RandomValuesVector &
-                   values)
-{
+void AttributePostingListTest::insertRandomValues(Tree& tree, TreeManager& treeMgr, ValueHandle& valueHandle,
+                                                  PostingList& postings, STLValueTree* stlTree,
+                                                  RandomValuesVector& values) {
     RandomValuesVector::iterator i;
     RandomValuesVector::iterator ie;
 
@@ -370,15 +276,14 @@ insertRandomValues(Tree &tree,
         EXPECT_EQ(i->_value, valueHandle.getEntry(itr.getKey()));
 
         /* TODO: Insert docid to postinglist */
-        PostingIdx oldIdx = itr.getData();
-        PostingIdx newIdx = oldIdx;
-        AttributePosting newPosting(i->_docId,
-                                    vespalib::btree::BTreeNoLeafData());
+        PostingIdx                    oldIdx = itr.getData();
+        PostingIdx                    newIdx = oldIdx;
+        AttributePosting              newPosting(i->_docId, vespalib::btree::BTreeNoLeafData());
         std::vector<AttributePosting> additions;
-        std::vector<uint32_t> removals;
+        std::vector<uint32_t>         removals;
         additions.push_back(newPosting);
-        postings.apply(newIdx, additions.data(), additions.data() + additions.size(),
-                       removals.data(), removals.data() + removals.size());
+        postings.apply(newIdx, additions.data(), additions.data() + additions.size(), removals.data(),
+                       removals.data() + removals.size());
         std::atomic_thread_fence(std::memory_order_release);
         itr.writeData(newIdx);
 
@@ -386,11 +291,9 @@ insertRandomValues(Tree &tree,
             STLValueTree::iterator it;
             it = stlTree->find(i->_value);
             if (it == stlTree->end()) {
-                std::pair<STLValueTree::iterator,bool> ir =
-                    stlTree->insert(std::make_pair(i->_value,
-                                    STLPostingList()));
-                ASSERT_TRUE(ir.second && ir.first != stlTree->end() &&
-                            ir.first->first == i->_value);
+                std::pair<STLValueTree::iterator, bool> ir =
+                    stlTree->insert(std::make_pair(i->_value, STLPostingList()));
+                ASSERT_TRUE(ir.second && ir.first != stlTree->end() && ir.first->first == i->_value);
                 it = ir.first;
             }
             ASSERT_TRUE(it != stlTree->end() && it->first == i->_value);
@@ -404,8 +307,7 @@ insertRandomValues(Tree &tree,
 
                 ASSERT_TRUE(itr.valid());
                 postingsize = postings.size(newIdx);
-                ASSERT_TRUE(postingsize > 0 &&
-                            postingsize == it->second.size());
+                ASSERT_TRUE(postingsize > 0 && postingsize == it->second.size());
                 STLPostingList::iterator it3;
                 STLPostingList::iterator it3b;
                 STLPostingList::iterator it3e;
@@ -431,16 +333,9 @@ insertRandomValues(Tree &tree,
     LOG(info, "insertRandomValues done");
 }
 
-
-void
-AttributePostingListTest::
-removeRandomValues(Tree &tree,
-                   TreeManager &treeMgr,
-                   ValueHandle &valueHandle,
-                   PostingList &postings,
-                   STLValueTree *stlTree,
-                   RandomValuesVector &values)
-{
+void AttributePostingListTest::removeRandomValues(Tree& tree, TreeManager& treeMgr, ValueHandle& valueHandle,
+                                                  PostingList& postings, STLValueTree* stlTree,
+                                                  RandomValuesVector& values) {
     RandomValuesVector::iterator i;
     RandomValuesVector::iterator ie;
 
@@ -448,7 +343,7 @@ removeRandomValues(Tree &tree,
     ie = values.end();
     for (i = values.begin(); i != ie; ++i) {
         Tree::Iterator itr = tree.find(StoreIndex(), treeMgr, IntComp(valueHandle, i->_value));
-        PostingIdx newIdx;
+        PostingIdx     newIdx;
         /*
          * TODO: Remove docid from postinglist, and only remove
          *       value from tree if postinglist is empty
@@ -457,10 +352,10 @@ removeRandomValues(Tree &tree,
             PostingIdx oldIdx = itr.getData();
             newIdx = oldIdx;
             std::vector<AttributePosting> additions;
-            std::vector<uint32_t> removals;
+            std::vector<uint32_t>         removals;
             removals.push_back(i->_docId);
-            postings.apply(newIdx, additions.data(), additions.data() + additions.size(),
-                           removals.data(), removals.data() + removals.size());
+            postings.apply(newIdx, additions.data(), additions.data() + additions.size(), removals.data(),
+                           removals.data() + removals.size());
             if (newIdx != oldIdx) {
                 std::atomic_thread_fence(std::memory_order_release);
                 itr.writeData(newIdx);
@@ -477,8 +372,7 @@ removeRandomValues(Tree &tree,
             ASSERT_TRUE(it != stlTree->end() && it->first == i->_value);
             STLPostingList::iterator it2;
             it2 = it->second.find(i->_docId);
-            ASSERT_TRUE(it2 != it->second.end() &&
-                        *it2 == i->_docId);
+            ASSERT_TRUE(it2 != it->second.end() && *it2 == i->_docId);
             it->second.erase(it2);
 
             if (it->second.empty()) {
@@ -489,8 +383,7 @@ removeRandomValues(Tree &tree,
 
                 ASSERT_TRUE(itr.valid());
                 postingsize = postings.size(newIdx);
-                ASSERT_TRUE(postingsize > 0 &&
-                            postingsize == it->second.size());
+                ASSERT_TRUE(postingsize > 0 && postingsize == it->second.size());
                 STLPostingList::iterator it3;
                 STLPostingList::iterator it3b;
                 STLPostingList::iterator it3e;
@@ -516,16 +409,9 @@ removeRandomValues(Tree &tree,
     LOG(info, "removeRandomValues done");
 }
 
-
-void
-AttributePostingListTest::
-lookupRandomValues(Tree &tree,
-                   TreeManager &treeMgr,
-                   const ValueHandle &valueHandle,
-                   PostingList &postings,
-                   STLValueTree *stlTree,
-                   RandomValuesVector &values)
-{
+void AttributePostingListTest::lookupRandomValues(Tree& tree, TreeManager& treeMgr, const ValueHandle& valueHandle,
+                                                  PostingList& postings, STLValueTree* stlTree,
+                                                  RandomValuesVector& values) {
     RandomValuesVector::iterator i;
     RandomValuesVector::iterator ie;
 
@@ -533,8 +419,7 @@ lookupRandomValues(Tree &tree,
     ie = values.end();
     for (i = values.begin(); i != ie; ++i) {
         Tree::Iterator itr = tree.find(StoreIndex(), treeMgr, IntComp(valueHandle, i->_value));
-        ASSERT_TRUE(itr.valid() &&
-                    valueHandle.getEntry(itr.getKey()) == i->_value);
+        ASSERT_TRUE(itr.valid() && valueHandle.getEntry(itr.getKey()) == i->_value);
         if (stlTree != nullptr) {
             STLValueTree::iterator it;
             it = stlTree->find(i->_value);
@@ -548,8 +433,7 @@ lookupRandomValues(Tree &tree,
 
                 ASSERT_TRUE(itr.valid());
                 postingsize = postings.size(itr.getData());
-                ASSERT_TRUE(postingsize > 0 &&
-                            postingsize == it->second.size());
+                ASSERT_TRUE(postingsize > 0 && postingsize == it->second.size());
                 STLPostingList::iterator it3;
                 STLPostingList::iterator it3b;
                 STLPostingList::iterator it3e;
@@ -574,33 +458,25 @@ lookupRandomValues(Tree &tree,
     LOG(info, "lookupRandomValues done");
 }
 
-
-void
-AttributePostingListTest::doCompactEnumStore(Tree &tree,
-                                             TreeManager &treeMgr,
-                                             ValueHandle &valueHandle)
-{
-    LOG(info,"doCompactEnumStore start");
+void AttributePostingListTest::doCompactEnumStore(Tree& tree, TreeManager& treeMgr, ValueHandle& valueHandle) {
+    LOG(info, "doCompactEnumStore start");
 
     Tree::Iterator i = tree.begin(treeMgr);
 
     std::vector<uint32_t> toHold;
-    valueHandle.for_each_active_buffer([&toHold](uint32_t buffer_id, const vespalib::datastore::BufferState &) {
-        toHold.push_back(buffer_id);
-    });
+    valueHandle.for_each_active_buffer(
+        [&toHold](uint32_t buffer_id, const vespalib::datastore::BufferState&) { toHold.push_back(buffer_id); });
 
     valueHandle.switch_primary_buffer(0, 0u);
 
-    for (; i.valid(); ++i)
-    {
+    for (; i.valid(); ++i) {
         StoreIndex ov = i.getKey();
         StoreIndex nv = valueHandle.addEntry(valueHandle.getEntry(ov));
 
         std::atomic_thread_fence(std::memory_order_release);
         i.writeKey(nv);
     }
-    for (std::vector<uint32_t>::const_iterator
-             it = toHold.begin(), ite = toHold.end(); it != ite; ++it) {
+    for (std::vector<uint32_t>::const_iterator it = toHold.begin(), ite = toHold.end(); it != ite; ++it) {
         valueHandle.holdBuffer(*it);
     }
     Generation generation = _handler.getCurrentGeneration();
@@ -608,80 +484,63 @@ AttributePostingListTest::doCompactEnumStore(Tree &tree,
     _handler.incGeneration();
     valueHandle.reclaim_memory(_handler.get_oldest_used_generation());
 
-    LOG(info,
-        "doCompactEnumStore done");
+    LOG(info, "doCompactEnumStore done");
 }
 
-
-void
-AttributePostingListTest::
-doCompactPostingList(Tree &tree,
-                     TreeManager &treeMgr,
-                     PostingList &postings,
-                     PostingListNodeAllocator &postingsAlloc)
-{
-    LOG(info,
-        "doCompactPostingList start");
+void AttributePostingListTest::doCompactPostingList(Tree& tree, TreeManager& treeMgr, PostingList& postings,
+                                                    PostingListNodeAllocator& postingsAlloc) {
+    LOG(info, "doCompactPostingList start");
 
 #if 0
     Tree::Iterator i(tree.begin(treeMgr));
 
     postings.performCompaction(i, capacityNeeded);
 #else
-    (void) tree;
-    (void) treeMgr;
-    (void) postings;
-    (void) postingsAlloc;
+    (void)tree;
+    (void)treeMgr;
+    (void)postings;
+    (void)postingsAlloc;
 #endif
 
-    LOG(info,
-        "doCompactPostingList done");
+    LOG(info, "doCompactPostingList done");
 }
 
-
-void
-AttributePostingListTest::
-bumpGeneration(Tree &tree,
-               ValueHandle &valueHandle,
-               PostingList &postings,
-               PostingListNodeAllocator &postingsAlloc)
-{
-    (void) tree;
-    (void) valueHandle;
+void AttributePostingListTest::bumpGeneration(Tree& tree, ValueHandle& valueHandle, PostingList& postings,
+                                              PostingListNodeAllocator& postingsAlloc) {
+    (void)tree;
+    (void)valueHandle;
     postingsAlloc.freeze();
     postingsAlloc.assign_generation(_handler.getCurrentGeneration());
     postings.assign_generation(_handler.getCurrentGeneration());
     _handler.incGeneration();
 }
 
-void
-AttributePostingListTest::
-reclaim_memory(Tree &tree,
-                     ValueHandle &valueHandle,
-                     PostingList &postings,
-                     PostingListNodeAllocator &postingsAlloc)
-{
-    (void) tree;
-    (void) valueHandle;
+void AttributePostingListTest::reclaim_memory(Tree& tree, ValueHandle& valueHandle, PostingList& postings,
+                                              PostingListNodeAllocator& postingsAlloc) {
+    (void)tree;
+    (void)valueHandle;
     postingsAlloc.reclaim_memory(_handler.get_oldest_used_generation());
     postings.reclaim_memory(_handler.get_oldest_used_generation());
 }
 
-TEST_F(AttributePostingListTest, test_posting_list)
-{
+TEST_F(AttributePostingListTest, test_posting_list) {
     fillRandomValues(1000, 10);
 
     allocTree();
-    ASSERT_NO_FATAL_FAILURE(insertRandomValues(*_intTree, *_intNodeAlloc, *_intKeyStore, *_intPostings, _stlTree, _randomValues));
-    ASSERT_NO_FATAL_FAILURE(lookupRandomValues(*_intTree, *_intNodeAlloc, *_intKeyStore, *_intPostings, _stlTree, _randomValues));
+    ASSERT_NO_FATAL_FAILURE(
+        insertRandomValues(*_intTree, *_intNodeAlloc, *_intKeyStore, *_intPostings, _stlTree, _randomValues));
+    ASSERT_NO_FATAL_FAILURE(
+        lookupRandomValues(*_intTree, *_intNodeAlloc, *_intKeyStore, *_intPostings, _stlTree, _randomValues));
     _intNodeAlloc->freeze();
     _intNodeAlloc->assign_generation(_handler.getCurrentGeneration());
     doCompactEnumStore(*_intTree, *_intNodeAlloc, *_intKeyStore);
-    ASSERT_NO_FATAL_FAILURE(removeRandomValues(*_intTree, *_intNodeAlloc, *_intKeyStore, *_intPostings, _stlTree, _randomValues));
-    ASSERT_NO_FATAL_FAILURE(insertRandomValues(*_intTree, *_intNodeAlloc, *_intKeyStore, *_intPostings, _stlTree, _randomValues));
+    ASSERT_NO_FATAL_FAILURE(
+        removeRandomValues(*_intTree, *_intNodeAlloc, *_intKeyStore, *_intPostings, _stlTree, _randomValues));
+    ASSERT_NO_FATAL_FAILURE(
+        insertRandomValues(*_intTree, *_intNodeAlloc, *_intKeyStore, *_intPostings, _stlTree, _randomValues));
     freeTree(true);
 }
 
-}
+} // namespace search
 
 GTEST_MAIN_RUN_ALL_TESTS()

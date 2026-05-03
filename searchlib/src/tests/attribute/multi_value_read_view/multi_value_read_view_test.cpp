@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/document/base/documentid.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
 #include <vespa/searchcommon/attribute/multi_value_traits.h>
-#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/array_bool_attribute.h>
-#include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
+#include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/attribute/floatbase.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
@@ -18,8 +18,8 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stash.h>
 
-using document::GlobalId;
 using document::DocumentId;
+using document::GlobalId;
 
 namespace search::attribute {
 
@@ -34,38 +34,31 @@ GlobalId toGid(std::string_view docId) {
 std::string doc1("id:test:music::1");
 std::string doc2("id:test:music::2");
 
-struct MyGidToLidMapperFactory : public MockGidToLidMapperFactory
-{
-    MyGidToLidMapperFactory()
-        : MockGidToLidMapperFactory()
-    {
+struct MyGidToLidMapperFactory : public MockGidToLidMapperFactory {
+    MyGidToLidMapperFactory() : MockGidToLidMapperFactory() {
         _map.insert({toGid(doc1), 1});
         _map.insert({toGid(doc2), 2});
     }
 };
 
 struct MockReadGuard : public IDocumentMetaStoreContext::IReadGuard {
-    const search::IDocumentMetaStore &get() const override {
-        search::IDocumentMetaStore *nullStore = nullptr;
-        return static_cast<search::IDocumentMetaStore &>(*nullStore);
+    const search::IDocumentMetaStore& get() const override {
+        search::IDocumentMetaStore* nullStore = nullptr;
+        return static_cast<search::IDocumentMetaStore&>(*nullStore);
     }
 };
 
-struct MockDocumentMetaStoreContext : public IDocumentMetaStoreContext
-{
+struct MockDocumentMetaStoreContext : public IDocumentMetaStoreContext {
     std::shared_ptr<IReadGuard> getReadGuard() const override;
 };
 
-std::shared_ptr<IDocumentMetaStoreContext::IReadGuard>
-MockDocumentMetaStoreContext::getReadGuard() const
-{
+std::shared_ptr<IDocumentMetaStoreContext::IReadGuard> MockDocumentMetaStoreContext::getReadGuard() const {
     return std::make_shared<MockReadGuard>();
 }
 
-
 std::shared_ptr<ReferenceAttribute>
-create_reference_attribute(const std::string &name, const std::shared_ptr<IGidToLidMapperFactory> gid_to_lid_mapper_factory)
-{
+create_reference_attribute(const std::string&                            name,
+                           const std::shared_ptr<IGidToLidMapperFactory> gid_to_lid_mapper_factory) {
     auto attr = std::make_shared<ReferenceAttribute>(name, Config(BasicType::REFERENCE));
     attr->addReservedDoc();
     while (attr->getNumDocs() < 20u) {
@@ -80,49 +73,41 @@ create_reference_attribute(const std::string &name, const std::shared_ptr<IGidTo
     return attr;
 }
 
-}
+} // namespace
 
 class TestParam {
     BasicType _basic_type;
 
 public:
-    TestParam(BasicType basic_type_in)
-        : _basic_type(basic_type_in)
-    {
-    }
+    TestParam(BasicType basic_type_in) : _basic_type(basic_type_in) {}
 
     BasicType basic_type() const noexcept { return _basic_type; }
 };
 
-std::ostream& operator<<(std::ostream& os, const TestParam& param)
-{
+std::ostream& operator<<(std::ostream& os, const TestParam& param) {
     os << param.basic_type().asString();
     return os;
 }
 
-class MultiValueReadViewTest : public ::testing::TestWithParam<TestParam>
-{
+class MultiValueReadViewTest : public ::testing::TestWithParam<TestParam> {
 protected:
     std::shared_ptr<IGidToLidMapperFactory> _gid_to_lid_mapper_factory;
-    std::shared_ptr<ReferenceAttribute> _reference_attribute;
+    std::shared_ptr<ReferenceAttribute>     _reference_attribute;
     MultiValueReadViewTest()
         : ::testing::TestWithParam<TestParam>(),
           _gid_to_lid_mapper_factory(std::make_shared<MyGidToLidMapperFactory>()),
-          _reference_attribute(create_reference_attribute("ref", _gid_to_lid_mapper_factory))
-    {
-    }
+          _reference_attribute(create_reference_attribute("ref", _gid_to_lid_mapper_factory)) {}
     ~MultiValueReadViewTest() override = default;
 
     template <typename AttributeBaseType, typename BaseType>
     void populate_helper(AttributeVector& attr, const std::vector<BaseType>& values);
     void populate(AttributeVector& attr);
     template <typename MultiValueType>
-    void check_values_helper(const IAttributeVector &attr, const std::vector<multivalue::ValueType_t<MultiValueType>>& exp_values);
-    template <typename BasicType>
-    void check_integer_values(const IAttributeVector &attr);
-    template <typename BasicType>
-    void check_floating_point_values(const IAttributeVector &attr);
-    void check_string_values(const IAttributeVector &attr);
+    void check_values_helper(const IAttributeVector&                                     attr,
+                             const std::vector<multivalue::ValueType_t<MultiValueType>>& exp_values);
+    template <typename BasicType> void check_integer_values(const IAttributeVector& attr);
+    template <typename BasicType> void check_floating_point_values(const IAttributeVector& attr);
+    void check_string_values(const IAttributeVector& attr);
     void check_values(const IAttributeVector& attr);
     std::shared_ptr<AttributeVector> make_attribute(CollectionType collection_type, bool fast_search);
     std::shared_ptr<ReadableAttributeVector> make_imported_attribute(std::shared_ptr<AttributeVector> target);
@@ -133,9 +118,7 @@ protected:
 };
 
 template <typename AttributeBaseType, typename BaseType>
-void
-MultiValueReadViewTest::populate_helper(AttributeVector& attr, const std::vector<BaseType>& values)
-{
+void MultiValueReadViewTest::populate_helper(AttributeVector& attr, const std::vector<BaseType>& values) {
     auto extend_interface = attr.getExtendInterface();
     if (extend_interface == nullptr) {
         attr.addReservedDoc();
@@ -164,9 +147,7 @@ MultiValueReadViewTest::populate_helper(AttributeVector& attr, const std::vector
     }
 }
 
-void
-MultiValueReadViewTest::populate(AttributeVector& attr)
-{
+void MultiValueReadViewTest::populate(AttributeVector& attr) {
     switch (attr.getConfig().basicType().type()) {
     case BasicType::Type::INT8:
     case BasicType::Type::INT16:
@@ -188,32 +169,39 @@ MultiValueReadViewTest::populate(AttributeVector& attr)
 
 namespace {
 
-template <typename BasicType>
-struct CompareValues
-{
-    bool operator()(const BasicType &lhs, const BasicType &rhs) const { return lhs < rhs; }
-    bool operator()(const multivalue::WeightedValue<BasicType>& lhs, const multivalue::WeightedValue<BasicType>& rhs) const { return lhs.value() < rhs.value(); }
-    bool equal(const BasicType &lhs, const BasicType &rhs) const { return lhs == rhs; }
-    bool equal(const multivalue::WeightedValue<BasicType>& lhs, const multivalue::WeightedValue<BasicType>& rhs) const { return lhs.value() == rhs.value(); }
+template <typename BasicType> struct CompareValues {
+    bool operator()(const BasicType& lhs, const BasicType& rhs) const { return lhs < rhs; }
+    bool operator()(const multivalue::WeightedValue<BasicType>& lhs,
+                    const multivalue::WeightedValue<BasicType>& rhs) const {
+        return lhs.value() < rhs.value();
+    }
+    bool equal(const BasicType& lhs, const BasicType& rhs) const { return lhs == rhs; }
+    bool equal(const multivalue::WeightedValue<BasicType>& lhs,
+               const multivalue::WeightedValue<BasicType>& rhs) const {
+        return lhs.value() == rhs.value();
+    }
 };
 
-template <>
-struct CompareValues<const char *>
-{
-    bool operator()(const char *lhs, const char *rhs) const { return strcmp(lhs, rhs) < 0; }
-    bool operator()(const multivalue::WeightedValue<const char *>& lhs, const multivalue::WeightedValue<const char *>& rhs) const { return strcmp(lhs.value(), rhs.value()) < 0; }
-    bool equal(const char *lhs, const char *rhs) const { return strcmp(lhs, rhs) == 0; }
-    bool equal(const multivalue::WeightedValue<const char *>& lhs, const multivalue::WeightedValue<const char *>& rhs) const { return strcmp(lhs.value(), rhs.value()) == 0; }
+template <> struct CompareValues<const char*> {
+    bool operator()(const char* lhs, const char* rhs) const { return strcmp(lhs, rhs) < 0; }
+    bool operator()(const multivalue::WeightedValue<const char*>& lhs,
+                    const multivalue::WeightedValue<const char*>& rhs) const {
+        return strcmp(lhs.value(), rhs.value()) < 0;
+    }
+    bool equal(const char* lhs, const char* rhs) const { return strcmp(lhs, rhs) == 0; }
+    bool equal(const multivalue::WeightedValue<const char*>& lhs,
+               const multivalue::WeightedValue<const char*>& rhs) const {
+        return strcmp(lhs.value(), rhs.value()) == 0;
+    }
 };
 
-}
+} // namespace
 
 template <typename MultiValueType>
-void
-MultiValueReadViewTest::check_values_helper(const IAttributeVector &attr, const std::vector<multivalue::ValueType_t<MultiValueType>>& exp_values)
-{
+void MultiValueReadViewTest::check_values_helper(
+    const IAttributeVector& attr, const std::vector<multivalue::ValueType_t<MultiValueType>>& exp_values) {
     vespalib::Stash stash;
-    auto mv_attr = attr.as_multi_value_attribute();
+    auto            mv_attr = attr.as_multi_value_attribute();
     EXPECT_NE(nullptr, mv_attr);
     auto read_view = mv_attr->make_read_view(IMultiValueAttribute::MultiValueTag<MultiValueType>(), stash);
     EXPECT_NE(nullptr, read_view);
@@ -221,8 +209,8 @@ MultiValueReadViewTest::check_values_helper(const IAttributeVector &attr, const 
     auto values = read_view->get_values(is_imported ? 4 : 1);
     EXPECT_TRUE(values.empty());
     values = read_view->get_values(is_imported ? 11 : 2);
-    std::vector<MultiValueType> values_copy(values.begin(), values.end());
-    bool was_array = true;
+    std::vector<MultiValueType>                            values_copy(values.begin(), values.end());
+    bool                                                   was_array = true;
     CompareValues<multivalue::ValueType_t<MultiValueType>> compare_values;
     if (attr.getCollectionType() == CollectionType::Type::WSET) {
         std::sort(values_copy.begin(), values_copy.end(), compare_values);
@@ -240,35 +228,25 @@ MultiValueReadViewTest::check_values_helper(const IAttributeVector &attr, const 
     }
 }
 
-template <typename BasicType>
-void
-MultiValueReadViewTest::check_integer_values(const IAttributeVector &attr)
-{
+template <typename BasicType> void MultiValueReadViewTest::check_integer_values(const IAttributeVector& attr) {
     std::vector<BasicType> exp_values{42, 44};
     check_values_helper<BasicType>(attr, exp_values);
     check_values_helper<multivalue::WeightedValue<BasicType>>(attr, exp_values);
 }
 
-template <typename BasicType>
-void
-MultiValueReadViewTest::check_floating_point_values(const IAttributeVector &attr)
-{
+template <typename BasicType> void MultiValueReadViewTest::check_floating_point_values(const IAttributeVector& attr) {
     std::vector<BasicType> exp_values{42.0, 44.0};
     check_values_helper<BasicType>(attr, exp_values);
     check_values_helper<multivalue::WeightedValue<BasicType>>(attr, exp_values);
 }
 
-void
-MultiValueReadViewTest::check_string_values(const IAttributeVector &attr)
-{
-    std::vector<const char *> exp_values{"42", "44"};
-    check_values_helper<const char *>(attr, exp_values);
-    check_values_helper<multivalue::WeightedValue<const char *>>(attr, exp_values);
+void MultiValueReadViewTest::check_string_values(const IAttributeVector& attr) {
+    std::vector<const char*> exp_values{"42", "44"};
+    check_values_helper<const char*>(attr, exp_values);
+    check_values_helper<multivalue::WeightedValue<const char*>>(attr, exp_values);
 }
 
-void
-MultiValueReadViewTest::check_values(const IAttributeVector& attr)
-{
+void MultiValueReadViewTest::check_values(const IAttributeVector& attr) {
     switch (attr.getBasicType()) {
     case BasicType::Type::INT8:
         check_integer_values<int8_t>(attr);
@@ -296,10 +274,9 @@ MultiValueReadViewTest::check_values(const IAttributeVector& attr)
     }
 }
 
-std::shared_ptr<AttributeVector>
-MultiValueReadViewTest::make_attribute(CollectionType collection_type, bool fast_search)
-{
-    auto param = GetParam();
+std::shared_ptr<AttributeVector> MultiValueReadViewTest::make_attribute(CollectionType collection_type,
+                                                                        bool           fast_search) {
+    auto   param = GetParam();
     Config config(param.basic_type(), collection_type);
     config.setFastSearch(fast_search);
     auto attr = AttributeFactory::createAttribute("attr", config);
@@ -307,19 +284,13 @@ MultiValueReadViewTest::make_attribute(CollectionType collection_type, bool fast
 }
 
 std::shared_ptr<ReadableAttributeVector>
-MultiValueReadViewTest::make_imported_attribute(std::shared_ptr<AttributeVector> target)
-{
-    return ImportedAttributeVectorFactory::create("imported",
-                                                  _reference_attribute,
-                                                  std::make_shared<MockDocumentMetaStoreContext>(),
-                                                  target,
-                                                  std::make_shared<MockDocumentMetaStoreContext>(),
-                                                  false);
+MultiValueReadViewTest::make_imported_attribute(std::shared_ptr<AttributeVector> target) {
+    return ImportedAttributeVectorFactory::create("imported", _reference_attribute,
+                                                  std::make_shared<MockDocumentMetaStoreContext>(), target,
+                                                  std::make_shared<MockDocumentMetaStoreContext>(), false);
 }
 
-std::shared_ptr<AttributeVector>
-MultiValueReadViewTest::make_extendable_attribute(CollectionType collection_type)
-{
+std::shared_ptr<AttributeVector> MultiValueReadViewTest::make_extendable_attribute(CollectionType collection_type) {
     std::string name("attr");
     // Match strategy in streaming visitor
     switch (collection_type.type()) {
@@ -335,8 +306,7 @@ MultiValueReadViewTest::make_extendable_attribute(CollectionType collection_type
             return std::make_shared<MultiFloatExtAttribute>(name);
         case BasicType::Type::STRING:
             return std::make_shared<MultiStringExtAttribute>(name);
-        default:
-            ;
+        default:;
         }
         break;
     case CollectionType::Type::WSET:
@@ -351,27 +321,21 @@ MultiValueReadViewTest::make_extendable_attribute(CollectionType collection_type
             return std::make_shared<WeightedSetFloatExtAttribute>(name);
         case BasicType::Type::STRING:
             return std::make_shared<WeightedSetStringExtAttribute>(name);
-        default:
-            ;
+        default:;
         }
         break;
-    default:
-        ;
+    default:;
     }
     return {};
 }
 
-void
-MultiValueReadViewTest::test_normal_attribute_vector(CollectionType collection_type, bool fast_search)
-{
+void MultiValueReadViewTest::test_normal_attribute_vector(CollectionType collection_type, bool fast_search) {
     auto attr = make_attribute(collection_type, fast_search);
     populate(*attr);
     check_values(*attr);
 }
 
-void
-MultiValueReadViewTest::test_imported_attribute_vector(CollectionType collection_type, bool fast_search)
-{
+void MultiValueReadViewTest::test_imported_attribute_vector(CollectionType collection_type, bool fast_search) {
     auto attr = make_attribute(collection_type, fast_search);
     populate(*attr);
     auto imported_attr = make_imported_attribute(attr);
@@ -379,9 +343,7 @@ MultiValueReadViewTest::test_imported_attribute_vector(CollectionType collection
     check_values(**guard);
 }
 
-void
-MultiValueReadViewTest::test_extendable_attribute_vector(CollectionType collection_type)
-{
+void MultiValueReadViewTest::test_extendable_attribute_vector(CollectionType collection_type) {
     auto attr = make_extendable_attribute(collection_type);
     if (attr == nullptr) {
         FAIL() << "Cannot create extend attribute";
@@ -390,72 +352,58 @@ MultiValueReadViewTest::test_extendable_attribute_vector(CollectionType collecti
     check_values(*attr);
 }
 
-TEST_P(MultiValueReadViewTest, test_array)
-{
+TEST_P(MultiValueReadViewTest, test_array) {
     test_normal_attribute_vector(CollectionType::Type::ARRAY, false);
 };
 
-TEST_P(MultiValueReadViewTest, test_enumerated_array)
-{
+TEST_P(MultiValueReadViewTest, test_enumerated_array) {
     test_normal_attribute_vector(CollectionType::Type::ARRAY, true);
 };
 
-TEST_P(MultiValueReadViewTest, test_weighted_set)
-{
+TEST_P(MultiValueReadViewTest, test_weighted_set) {
     test_normal_attribute_vector(CollectionType::Type::WSET, false);
 };
 
-TEST_P(MultiValueReadViewTest, test_enumerated_weighted_set)
-{
+TEST_P(MultiValueReadViewTest, test_enumerated_weighted_set) {
     test_normal_attribute_vector(CollectionType::Type::WSET, true);
 };
 
-TEST_P(MultiValueReadViewTest, test_imported_array)
-{
+TEST_P(MultiValueReadViewTest, test_imported_array) {
     test_imported_attribute_vector(CollectionType::Type::ARRAY, false);
 };
 
-TEST_P(MultiValueReadViewTest, test_imported_enumerated_array)
-{
+TEST_P(MultiValueReadViewTest, test_imported_enumerated_array) {
     test_imported_attribute_vector(CollectionType::Type::ARRAY, true);
 };
 
-TEST_P(MultiValueReadViewTest, test_importe_weighted_set)
-{
+TEST_P(MultiValueReadViewTest, test_importe_weighted_set) {
     test_imported_attribute_vector(CollectionType::Type::WSET, false);
 };
 
-TEST_P(MultiValueReadViewTest, test_imported_enumerated_weighted_set)
-{
+TEST_P(MultiValueReadViewTest, test_imported_enumerated_weighted_set) {
     test_imported_attribute_vector(CollectionType::Type::WSET, true);
 };
 
-TEST_P(MultiValueReadViewTest, test_extendable_array)
-{
+TEST_P(MultiValueReadViewTest, test_extendable_array) {
     test_extendable_attribute_vector(CollectionType::Type::ARRAY);
 }
 
-TEST_P(MultiValueReadViewTest, test_extendable_weighted_set)
-{
+TEST_P(MultiValueReadViewTest, test_extendable_weighted_set) {
     test_extendable_attribute_vector(CollectionType::Type::WSET);
 }
 
-auto test_values = ::testing::Values(TestParam(BasicType::Type::INT8),
-                                     TestParam(BasicType::Type::INT16),
-                                     TestParam(BasicType::Type::INT32),
-                                     TestParam(BasicType::Type::INT64),
-                                     TestParam(BasicType::Type::FLOAT),
-                                     TestParam(BasicType::Type::DOUBLE),
+auto test_values = ::testing::Values(TestParam(BasicType::Type::INT8), TestParam(BasicType::Type::INT16),
+                                     TestParam(BasicType::Type::INT32), TestParam(BasicType::Type::INT64),
+                                     TestParam(BasicType::Type::FLOAT), TestParam(BasicType::Type::DOUBLE),
                                      TestParam(BasicType::Type::STRING));
 
-INSTANTIATE_TEST_SUITE_P(ReadView, MultiValueReadViewTest, test_values,testing::PrintToStringParamName());
+INSTANTIATE_TEST_SUITE_P(ReadView, MultiValueReadViewTest, test_values, testing::PrintToStringParamName());
 
-TEST(BoolArrayImportedReadViewTest, test_imported_bool_array)
-{
-    auto gid_to_lid_mapper_factory = std::make_shared<MyGidToLidMapperFactory>();
-    auto reference_attribute = create_reference_attribute("ref", gid_to_lid_mapper_factory);
+TEST(BoolArrayImportedReadViewTest, test_imported_bool_array) {
+    auto   gid_to_lid_mapper_factory = std::make_shared<MyGidToLidMapperFactory>();
+    auto   reference_attribute = create_reference_attribute("ref", gid_to_lid_mapper_factory);
     Config config(BasicType::BOOL, CollectionType::ARRAY);
-    auto attr = std::make_shared<ArrayBoolAttribute>("bool_attr", config);
+    auto   attr = std::make_shared<ArrayBoolAttribute>("bool_attr", config);
     attr->addReservedDoc();
     uint32_t doc_id = 0;
     EXPECT_TRUE(attr->addDoc(doc_id));
@@ -465,16 +413,13 @@ TEST(BoolArrayImportedReadViewTest, test_imported_bool_array)
     const int8_t bools[] = {1, 0, 1};
     attr->set_bools(doc_id, bools);
     attr->commit();
-    auto imported_attr = ImportedAttributeVectorFactory::create("imported_bool",
-                                                                reference_attribute,
-                                                                std::make_shared<MockDocumentMetaStoreContext>(),
-                                                                attr,
-                                                                std::make_shared<MockDocumentMetaStoreContext>(),
-                                                                false);
-    auto guard = imported_attr->makeReadGuard(false);
-    auto& ia = **guard;
+    auto imported_attr = ImportedAttributeVectorFactory::create(
+        "imported_bool", reference_attribute, std::make_shared<MockDocumentMetaStoreContext>(), attr,
+        std::make_shared<MockDocumentMetaStoreContext>(), false);
+    auto            guard = imported_attr->makeReadGuard(false);
+    auto&           ia = **guard;
     vespalib::Stash stash;
-    auto mv_attr = ia.as_multi_value_attribute();
+    auto            mv_attr = ia.as_multi_value_attribute();
     ASSERT_NE(nullptr, mv_attr);
     auto read_view = mv_attr->make_read_view(IMultiValueAttribute::ArrayBoolTag(), stash);
     ASSERT_NE(nullptr, read_view);
@@ -486,6 +431,6 @@ TEST(BoolArrayImportedReadViewTest, test_imported_bool_array)
     EXPECT_TRUE(values[2]);
 }
 
-}
+} // namespace search::attribute
 
 GTEST_MAIN_RUN_ALL_TESTS()
