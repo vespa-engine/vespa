@@ -1,8 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bm_distribution.h"
+
 #include <vespa/document/bucket/bucket.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+
 #include <cassert>
 
 using storage::lib::ClusterState;
@@ -18,9 +20,7 @@ using DistributionConfigBuilder = BmDistribution::DistributionConfigBuilder;
 
 namespace {
 
-void
-add_nodes_to_group(DistributionConfigBuilder::Group &group, uint32_t first_node_idx, uint32_t nodes_per_group)
-{
+void add_nodes_to_group(DistributionConfigBuilder::Group& group, uint32_t first_node_idx, uint32_t nodes_per_group) {
     for (uint32_t i = 0; i < nodes_per_group; ++i) {
         DistributionConfigBuilder::Group::Nodes node;
         node.index = first_node_idx + i;
@@ -28,9 +28,8 @@ add_nodes_to_group(DistributionConfigBuilder::Group &group, uint32_t first_node_
     }
 }
 
-BmDistribution::DistributionConfig
-make_distribution_config(uint32_t nodes_per_group, uint32_t groups, uint32_t redundancy)
-{
+BmDistribution::DistributionConfig make_distribution_config(uint32_t nodes_per_group, uint32_t groups,
+                                                            uint32_t redundancy) {
     DistributionConfigBuilder dc;
     {
         {
@@ -46,7 +45,7 @@ make_distribution_config(uint32_t nodes_per_group, uint32_t groups, uint32_t red
             } else {
                 vespalib::asciistream partitions;
                 for (uint32_t group_idx = 0; group_idx < groups; ++group_idx) {
-                    if (group_idx + 1< groups) {
+                    if (group_idx + 1 < groups) {
                         partitions << redundancy << '|';
                     } else {
                         partitions << '*';
@@ -73,15 +72,13 @@ make_distribution_config(uint32_t nodes_per_group, uint32_t groups, uint32_t red
     return dc;
 }
 
-ClusterState
-make_cluster_state(uint32_t num_nodes)
-{
+ClusterState make_cluster_state(uint32_t num_nodes) {
     vespalib::asciistream s;
     s << "version:2 distributor:" << num_nodes << " storage:" << num_nodes;
     return storage::lib::ClusterState(s.view());
 }
 
-}
+} // namespace
 
 BmDistribution::BmDistribution(uint32_t groups, uint32_t nodes_per_group, uint32_t redundancy)
     : _num_nodes(std::max(1u, groups) * nodes_per_group),
@@ -89,55 +86,40 @@ BmDistribution::BmDistribution(uint32_t groups, uint32_t nodes_per_group, uint32
       _distribution(_distribution_config),
       _pending_cluster_state(make_cluster_state(_num_nodes)),
       _cluster_state_bundle(_pending_cluster_state),
-      _has_pending_cluster_state(false)
-{
+      _has_pending_cluster_state(false) {
 }
 
-BmDistribution::~BmDistribution()
-{
+BmDistribution::~BmDistribution() {
 }
 
-uint32_t
-BmDistribution::get_num_nodes() const
-{
+uint32_t BmDistribution::get_num_nodes() const {
     return _num_nodes;
-
 }
 
-uint32_t
-BmDistribution::get_service_layer_node_idx(const document::Bucket& bucket) const
-{
+uint32_t BmDistribution::get_service_layer_node_idx(const document::Bucket& bucket) const {
     auto cluster_state = _cluster_state_bundle.getDerivedClusterState(bucket.getBucketSpace());
     auto nodes = _distribution.getIdealStorageNodes(*cluster_state, bucket.getBucketId());
     assert(!nodes.empty());
     return nodes[0];
 }
 
-uint32_t
-BmDistribution::get_distributor_node_idx(const document::Bucket& bucket) const
-{
+uint32_t BmDistribution::get_distributor_node_idx(const document::Bucket& bucket) const {
     auto cluster_state = _cluster_state_bundle.getDerivedClusterState(bucket.getBucketSpace());
     return _distribution.getIdealDistributorNode(*cluster_state, bucket.getBucketId());
 }
 
-BmDistribution::DistributionConfig
-BmDistribution::get_distribution_config() const
-{
+BmDistribution::DistributionConfig BmDistribution::get_distribution_config() const {
     return _distribution_config;
 }
 
-ClusterStateBundle
-BmDistribution::get_cluster_state_bundle() const
-{
+ClusterStateBundle BmDistribution::get_cluster_state_bundle() const {
     return _cluster_state_bundle;
 }
 
-void
-BmDistribution::set_node_state(uint32_t node_idx, bool distributor, const State& state)
-{
+void BmDistribution::set_node_state(uint32_t node_idx, bool distributor, const State& state) {
     const NodeType& node_type = distributor ? NodeType::DISTRIBUTOR : NodeType::STORAGE;
-    Node node(node_type, node_idx);
-    NodeState node_state(node_type, state);
+    Node            node(node_type, node_idx);
+    NodeState       node_state(node_type, state);
     _pending_cluster_state.setNodeState(node, node_state);
     if (!_has_pending_cluster_state) {
         _pending_cluster_state.setVersion(_pending_cluster_state.getVersion() + 1);
@@ -145,20 +127,16 @@ BmDistribution::set_node_state(uint32_t node_idx, bool distributor, const State&
     }
 }
 
-void
-BmDistribution::set_node_state(uint32_t node_idx, const State& state)
-{
+void BmDistribution::set_node_state(uint32_t node_idx, const State& state) {
     set_node_state(node_idx, false, state);
     set_node_state(node_idx, true, state);
 }
 
-void
-BmDistribution::commit_cluster_state_change()
-{
+void BmDistribution::commit_cluster_state_change() {
     if (_has_pending_cluster_state) {
         _cluster_state_bundle = ClusterStateBundle(_pending_cluster_state);
         _has_pending_cluster_state = false;
     }
 }
 
-};
+}; // namespace search::bmcluster

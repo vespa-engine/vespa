@@ -3,9 +3,10 @@
 #pragma once
 
 #include <vespa/vespalib/util/threadstackexecutor.h>
+
 #include <chrono>
-#include <mutex>
 #include <condition_variable>
+#include <mutex>
 
 namespace search::bmcluster {
 
@@ -17,19 +18,20 @@ class BmNodeStats;
  * document redistribution.
  */
 class BmNodeStatsReporter {
-    BmCluster&                    _cluster;
-    vespalib::ThreadStackExecutor _executor;
-    std::mutex                    _mutex;
-    std::condition_variable       _cond;
+    BmCluster&                                         _cluster;
+    vespalib::ThreadStackExecutor                      _executor;
+    std::mutex                                         _mutex;
+    std::condition_variable                            _cond;
     std::chrono::time_point<std::chrono::steady_clock> _change_time;
-    std::vector<BmNodeStats>      _prev_node_stats;
-    uint32_t                      _pending_report;
-    bool                          _report_merge_stats;
-    bool                          _started;
-    bool                          _stop;
+    std::vector<BmNodeStats>                           _prev_node_stats;
+    uint32_t                                           _pending_report;
+    bool                                               _report_merge_stats;
+    bool                                               _started;
+    bool                                               _stop;
 
     void report();
     void run_report_loop(std::chrono::milliseconds interval);
+
 public:
     BmNodeStatsReporter(BmCluster& cluster, bool report_merge_stats);
     ~BmNodeStatsReporter();
@@ -39,4 +41,4 @@ public:
     std::chrono::time_point<std::chrono::steady_clock> get_change_time() const noexcept { return _change_time; }
 };
 
-}
+} // namespace search::bmcluster

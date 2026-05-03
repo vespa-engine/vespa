@@ -13,14 +13,14 @@ class BmRange;
  * Parameters for generating synthetic feed of documents and for
  * feeding them to the cluster.
  */
-class BmFeedParams
-{
+class BmFeedParams {
     uint32_t _client_threads;
     uint32_t _documents;
     uint32_t _max_pending;
     uint32_t get_start(uint32_t thread_id) const {
         return (_documents / _client_threads) * thread_id + std::min(thread_id, _documents % _client_threads);
     }
+
 public:
     BmFeedParams();
     ~BmFeedParams();
@@ -34,4 +34,4 @@ public:
     bool check() const;
 };
 
-}
+} // namespace search::bmcluster

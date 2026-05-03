@@ -4,33 +4,22 @@
 
 namespace search::bmcluster {
 
-BmMergeStats::BmMergeStats()
-    : BmMergeStats(0u, 0u)
-{
+BmMergeStats::BmMergeStats() : BmMergeStats(0u, 0u) {
 }
 
-BmMergeStats::BmMergeStats(uint32_t active, uint32_t queued)
-    : _active(active),
-      _queued(queued)
-{
+BmMergeStats::BmMergeStats(uint32_t active, uint32_t queued) : _active(active), _queued(queued) {
 }
-
 
 BmMergeStats::~BmMergeStats() = default;
 
-BmMergeStats&
-BmMergeStats::operator+=(const BmMergeStats& rhs)
-{
+BmMergeStats& BmMergeStats::operator+=(const BmMergeStats& rhs) {
     _active += rhs._active;
     _queued += rhs._queued;
     return *this;
 }
 
-bool
-BmMergeStats::operator==(const BmMergeStats &rhs) const
-{
-    return ((_active == rhs._active) &&
-            (_queued == rhs._queued));
+bool BmMergeStats::operator==(const BmMergeStats& rhs) const {
+    return ((_active == rhs._active) && (_queued == rhs._queued));
 }
 
-}
+} // namespace search::bmcluster

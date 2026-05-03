@@ -25,4 +25,4 @@ public:
     bool valid() const { return _elapsed != 0.0; }
 };
 
-}
+} // namespace search::bmcluster

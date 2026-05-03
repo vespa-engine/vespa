@@ -12,9 +12,9 @@ struct BmStorageLinkContext;
  * Storage chain builder that inserts a BmStorageLink right below the
  * communication manager. This allows sending benchmark feed to chain.
  */
-class BmStorageChainBuilder : public storage::StorageChainBuilder
-{
+class BmStorageChainBuilder : public storage::StorageChainBuilder {
     std::shared_ptr<BmStorageLinkContext> _context;
+
 public:
     BmStorageChainBuilder();
     ~BmStorageChainBuilder() override;
@@ -22,5 +22,4 @@ public:
     void add(std::unique_ptr<storage::StorageLink> link) override;
 };
 
-}
-
+} // namespace search::bmcluster

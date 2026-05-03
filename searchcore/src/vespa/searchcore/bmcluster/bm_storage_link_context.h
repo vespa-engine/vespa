@@ -7,14 +7,10 @@ class BmStorageLink;
 /*
  * This context is initialized by BmStorageChainBuilder.
  */
-struct BmStorageLinkContext
-{
+struct BmStorageLinkContext {
     BmStorageLink* bm_link;
-    BmStorageLinkContext() noexcept
-        : bm_link(nullptr)
-    {
-    }
+    BmStorageLinkContext() noexcept : bm_link(nullptr) {}
     ~BmStorageLinkContext() = default;
 };
 
-}
+} // namespace search::bmcluster

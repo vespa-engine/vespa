@@ -4,12 +4,6 @@
 
 namespace search::bmcluster {
 
-enum class BmFeedOperation
-{
-    PUT_OPERATION,
-    UPDATE_OPERATION,
-    GET_OPERATION,
-    REMOVE_OPERATION
-};
+enum class BmFeedOperation { PUT_OPERATION, UPDATE_OPERATION, GET_OPERATION, REMOVE_OPERATION };
 
 }
