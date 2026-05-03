@@ -14,23 +14,23 @@ SearchReply::SearchReply()
       hits(),
       match_features(),
       request(),
-      my_issues()
-{ }
+      my_issues() {
+}
 
 SearchReply::~SearchReply() = default;
 
-SearchReply::SearchReply(const SearchReply &rhs)
-    : _distributionKey (rhs._distributionKey),
-      totalHitCount    (rhs.totalHitCount),
-      sortIndex        (rhs.sortIndex),
-      sortData         (rhs.sortData),
-      groupResult      (rhs.groupResult),
-      coverage         (rhs.coverage),
-      hits             (rhs.hits),
-      match_features   (rhs.match_features),
-      request(),       // NB not copied
-      my_issues()      // NB not copied
-{ }
-
+SearchReply::SearchReply(const SearchReply& rhs)
+    : _distributionKey(rhs._distributionKey),
+      totalHitCount(rhs.totalHitCount),
+      sortIndex(rhs.sortIndex),
+      sortData(rhs.sortData),
+      groupResult(rhs.groupResult),
+      coverage(rhs.coverage),
+      hits(rhs.hits),
+      match_features(rhs.match_features),
+      request(),  // NB not copied
+      my_issues() // NB not copied
+{
 }
 
+} // namespace search::engine

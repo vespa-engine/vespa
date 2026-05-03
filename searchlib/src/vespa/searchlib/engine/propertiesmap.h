@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/common/mapnames.h>
+#include <vespa/searchlib/fef/properties.h>
 
 namespace search::engine {
 
@@ -11,8 +11,7 @@ namespace search::engine {
  * A simple wrapper class used to hold multiple named collections of
  * properties.
  **/
-class PropertiesMap
-{
+class PropertiesMap {
 private:
     using Props = search::fef::Properties;
     using PropsMap = vespalib::hash_map<std::string, Props>;
@@ -28,15 +27,15 @@ private:
      * @param name name of properties
      * @return the properties
      **/
-    const Props &lookup(std::string_view name) const;
+    const Props& lookup(std::string_view name) const;
 
 public:
     using ITR = PropsMap::const_iterator;
 
     PropertiesMap();
     PropertiesMap(uint32_t sz);
-    PropertiesMap(const PropertiesMap &) = delete;
-    PropertiesMap & operator=(const PropertiesMap &) = delete;
+    PropertiesMap(const PropertiesMap&) = delete;
+    PropertiesMap& operator=(const PropertiesMap&) = delete;
     ~PropertiesMap();
 
     /**
@@ -46,7 +45,7 @@ public:
      * @param name name of properties
      * @return the properties
      **/
-    Props &lookupCreate(std::string_view name);
+    Props& lookupCreate(std::string_view name);
 
     /**
      * Obtain the number of named collection of properties held by
@@ -75,9 +74,7 @@ public:
      *
      * @return rank properties
      **/
-    const Props &rankProperties() const {
-        return lookup(MapNames::RANK);
-    }
+    const Props& rankProperties() const { return lookup(MapNames::RANK); }
 
     /**
      * Obtain feature overrides (used to hardwire the values of
@@ -85,9 +82,7 @@ public:
      *
      * @return feature overrides
      **/
-    const Props &featureOverrides() const {
-        return lookup(MapNames::FEATURE);
-    }
+    const Props& featureOverrides() const { return lookup(MapNames::FEATURE); }
 
     /**
      * Obtain properties used to define additional highlight terms to
@@ -95,45 +90,35 @@ public:
      *
      * @return highlight terms properties
      **/
-    const Props &highlightTerms() const {
-        return lookup(MapNames::HIGHLIGHTTERMS);
-    }
+    const Props& highlightTerms() const { return lookup(MapNames::HIGHLIGHTTERMS); }
 
     /**
      * Obtain match properties (used to tune match evaluation)
      *
      * @return match properties
      **/
-    const Props &matchProperties() const {
-        return lookup(MapNames::MATCH);
-    }
+    const Props& matchProperties() const { return lookup(MapNames::MATCH); }
 
     /**
      * Obtain cache properties (used to tune cache usage)
      *
      * @return cache properties
      **/
-    const Props &cacheProperties() const {
-        return lookup(MapNames::CACHES);
-    }
+    const Props& cacheProperties() const { return lookup(MapNames::CACHES); }
 
     /**
      * Obtain model overrides
      *
      * @return model properties
      **/
-    const Props &modelOverrides() const {
-        return lookup(MapNames::MODEL);
-    }
+    const Props& modelOverrides() const { return lookup(MapNames::MODEL); }
 
     /**
      * Obtain trace
      *
      * @return trace
      **/
-    const Props &trace() const {
-        return lookup(MapNames::TRACE);
-    }
+    const Props& trace() const { return lookup(MapNames::TRACE); }
 };
 
-}
+} // namespace search::engine

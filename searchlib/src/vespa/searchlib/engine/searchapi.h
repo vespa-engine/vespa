@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "searchrequest.h"
 #include "searchreply.h"
+#include "searchrequest.h"
 
 namespace search::engine {
 
@@ -11,8 +11,7 @@ namespace search::engine {
  * A search client is the object being notified of the completion of
  * an asynchronous search operation.
  **/
-class SearchClient
-{
+class SearchClient {
 public:
     /**
      * Invoked by the search server to indicate the completion of an
@@ -32,8 +31,7 @@ public:
  * A search server is an object capable of performing a search
  * operation.
  **/
-class SearchServer
-{
+class SearchServer {
 public:
     /**
      * Initiate a search operation that can be completed either
@@ -52,7 +50,7 @@ public:
      * @param request object containing request parameters
      * @param client the client to be notified of async completion
      **/
-    virtual SearchReply::UP search(SearchRequest::Source request, SearchClient &client) = 0;
+    virtual SearchReply::UP search(SearchRequest::Source request, SearchClient& client) = 0;
 
     /**
      * Empty, needed for subclassing
@@ -60,5 +58,4 @@ public:
     virtual ~SearchServer() = default;
 };
 
-}
-
+} // namespace search::engine

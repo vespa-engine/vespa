@@ -4,18 +4,13 @@
 
 namespace search::engine {
 
-SearchRequest::SearchRequest()
-    : SearchRequest(RelativeTime(std::make_unique<SteadyClock>())) {}
+SearchRequest::SearchRequest() : SearchRequest(RelativeTime(std::make_unique<SteadyClock>())) {
+}
 
 SearchRequest::SearchRequest(RelativeTime relativeTime)
-    : Request(std::move(relativeTime), 5),
-      offset(0),
-      maxhits(10),
-      sortSpec(),
-      groupSpec()
-{
+    : Request(std::move(relativeTime), 5), offset(0), maxhits(10), sortSpec(), groupSpec() {
 }
 
 SearchRequest::~SearchRequest() = default;
 
-}
+} // namespace search::engine

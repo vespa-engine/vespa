@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include "monitorrequest.h"
 #include "monitorreply.h"
+#include "monitorrequest.h"
+
 #include <memory>
 
 namespace search::engine {
@@ -12,8 +13,7 @@ namespace search::engine {
  * A monitor client is the object being notified of the completion of
  * an asynchronous monitor operation.
  **/
-class MonitorClient
-{
+class MonitorClient {
 public:
     /**
      * Invoked by the monitor server to indicate the completion of an
@@ -33,8 +33,7 @@ public:
  * A monitor server is an object capable of performing a monitor
  * operation.
  **/
-class MonitorServer
-{
+class MonitorServer {
 public:
     /**
      * Initiate a monitor operation that can be completed either
@@ -53,7 +52,7 @@ public:
      * @param request object containing request parameters
      * @param client the client to be notified of async completion
      **/
-    virtual std::unique_ptr<MonitorReply> ping(std::unique_ptr<MonitorRequest> request, MonitorClient &client) = 0;
+    virtual std::unique_ptr<MonitorReply> ping(std::unique_ptr<MonitorRequest> request, MonitorClient& client) = 0;
 
     /**
      * Empty, needed for subclassing
@@ -61,4 +60,4 @@ public:
     virtual ~MonitorServer() = default;
 };
 
-}
+} // namespace search::engine

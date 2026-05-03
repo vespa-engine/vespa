@@ -7,4 +7,3 @@ namespace search::engine {
 MonitorRequest::MonitorRequest() = default;
 
 }
-
