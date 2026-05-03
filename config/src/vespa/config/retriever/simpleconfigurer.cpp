@@ -25,7 +25,9 @@ void SimpleConfigurer::start() {
     }
 }
 
-SimpleConfigurer::~SimpleConfigurer() { close(); }
+SimpleConfigurer::~SimpleConfigurer() {
+    close();
+}
 
 void SimpleConfigurer::close() {
     if (!_retriever->isClosed()) {

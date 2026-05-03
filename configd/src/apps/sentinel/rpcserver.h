@@ -22,7 +22,7 @@ public:
     RpcServer(int port, CommandQueue& cmdQ, ModelOwner& modelOwner);
     ~RpcServer();
 
-    int             getPort() const { return _port; }
+    int getPort() const { return _port; }
     FRT_Supervisor& orb() { return _server.supervisor(); }
 };
 

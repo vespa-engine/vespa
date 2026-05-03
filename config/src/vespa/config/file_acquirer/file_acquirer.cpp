@@ -13,7 +13,8 @@ LOG_SETUP(".config.file_acquirer");
 namespace config {
 
 RpcFileAcquirer::RpcFileAcquirer(FNET_Transport& transport, const std::string& spec)
-    : _orb(std::make_unique<FRT_Supervisor>(&transport)), _spec(spec) {}
+    : _orb(std::make_unique<FRT_Supervisor>(&transport)), _spec(spec) {
+}
 
 std::string RpcFileAcquirer::wait_for(const std::string& file_ref, double timeout_s) {
     std::string     path;

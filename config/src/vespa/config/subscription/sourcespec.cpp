@@ -25,13 +25,16 @@ class BuilderMap : public std::map<ConfigKey, ConfigInstance*> {
     using Parent::Parent;
 };
 
-RawSpec::RawSpec(std::string_view config) : _config(config) {}
+RawSpec::RawSpec(std::string_view config) : _config(config) {
+}
 
 std::unique_ptr<SourceFactory> RawSpec::createSourceFactory(const TimingValues&) const {
     return std::make_unique<RawSourceFactory>(_config);
 }
 
-FileSpec::FileSpec(std::string_view fileName) : _fileName(fileName) { verifyName(_fileName); }
+FileSpec::FileSpec(std::string_view fileName) : _fileName(fileName) {
+    verifyName(_fileName);
+}
 
 void FileSpec::verifyName(const std::string& fileName) {
     if (fileName.length() > 4) {
@@ -47,7 +50,8 @@ std::unique_ptr<SourceFactory> FileSpec::createSourceFactory(const TimingValues&
     return std::make_unique<FileSourceFactory>(*this);
 }
 
-DirSpec::DirSpec(std::string_view dirName) : _dirName(dirName) {}
+DirSpec::DirSpec(std::string_view dirName) : _dirName(dirName) {
+}
 
 DirSpec::~DirSpec() = default;
 
@@ -90,7 +94,8 @@ ServerSpec::ServerSpec(HostSpecList hostList)
     : _hostList(std::move(hostList)),
       _protocolVersion(protocol::readProtocolVersion()),
       _traceLevel(protocol::readTraceLevel()),
-      _compressionType(protocol::readProtocolCompressionType()) {}
+      _compressionType(protocol::readProtocolCompressionType()) {
+}
 
 ServerSpec::ServerSpec(std::string_view hostSpec)
     : _hostList(),
@@ -107,7 +112,8 @@ std::unique_ptr<SourceFactory> ServerSpec::createSourceFactory(const TimingValue
         timingValues, _traceLevel, vespaVersion, _compressionType);
 }
 
-ConfigServerSpec::ConfigServerSpec(FNET_Transport& transport) : ServerSpec(), _transport(transport) {}
+ConfigServerSpec::ConfigServerSpec(FNET_Transport& transport) : ServerSpec(), _transport(transport) {
+}
 
 ConfigServerSpec::~ConfigServerSpec() = default;
 
@@ -117,7 +123,8 @@ std::unique_ptr<SourceFactory> ConfigServerSpec::createSourceFactory(const Timin
                                               timingValues, traceLevel(), vespaVersion, compressionType());
 }
 
-ConfigSet::ConfigSet() : _builderMap(std::make_unique<BuilderMap>()) {}
+ConfigSet::ConfigSet() : _builderMap(std::make_unique<BuilderMap>()) {
+}
 
 std::unique_ptr<SourceFactory> ConfigSet::createSourceFactory(const TimingValues&) const {
     return std::make_unique<ConfigSetSourceFactory>(_builderMap);

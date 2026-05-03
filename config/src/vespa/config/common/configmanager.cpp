@@ -17,7 +17,8 @@ ConfigManager::ConfigManager(std::unique_ptr<SourceFactory> sourceFactory, int64
       _sourceFactory(std::move(sourceFactory)),
       _generation(initialGeneration),
       _subscriptionMap(),
-      _lock() {}
+      _lock() {
+}
 
 ConfigManager::~ConfigManager() = default;
 
@@ -41,8 +42,8 @@ ConfigSubscription::SP ConfigManager::subscribe(const ConfigKey& key, vespalib::
     }
     if (!holder->poll()) {
         std::ostringstream oss;
-        oss << "Timed out while subscribing to '" << key.getDefNamespace() << "." << key.getDefName() << "', configid '"
-            << key.getConfigId() << "'";
+        oss << "Timed out while subscribing to '" << key.getDefNamespace() << "." << key.getDefName()
+            << "', configid '" << key.getConfigId() << "'";
         throw ConfigTimeoutException(oss.str());
     }
     LOG(debug, "done subscribing");

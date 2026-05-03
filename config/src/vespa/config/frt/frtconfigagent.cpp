@@ -22,7 +22,8 @@ FRTConfigAgent::FRTConfigAgent(std::shared_ptr<IConfigHolder> holder, const Timi
       _waitTime(0),
       _numConfigured(0),
       _failedRequests(0),
-      _nextTimeout(_timingValues.initialTimeout) {}
+      _nextTimeout(_timingValues.initialTimeout) {
+}
 
 FRTConfigAgent::~FRTConfigAgent() = default;
 
@@ -81,7 +82,8 @@ using vespalib::to_s;
 void FRTConfigAgent::handleErrorResponse(const ConfigRequest& request, std::unique_ptr<ConfigResponse> response) {
     _failedRequests++;
     int multiplier = std::min(_failedRequests, _timingValues.maxDelayMultiplier);
-    setWaitTime(_numConfigured > 0 ? _timingValues.configuredErrorDelay : _timingValues.unconfiguredDelay, multiplier);
+    setWaitTime(_numConfigured > 0 ? _timingValues.configuredErrorDelay : _timingValues.unconfiguredDelay,
+                multiplier);
     _nextTimeout = _timingValues.errorTimeout;
     const ConfigKey& key(request.getKey());
     LOG(info,
@@ -96,8 +98,14 @@ void FRTConfigAgent::setWaitTime(duration delay, int multiplier) {
     LOG(spam, "Adjusting waittime from %f to %f", to_s(prevWait), to_s(_waitTime));
 }
 
-vespalib::duration FRTConfigAgent::getTimeout() const { return _nextTimeout; }
-vespalib::duration FRTConfigAgent::getWaitTime() const { return _waitTime; }
-const ConfigState& FRTConfigAgent::getConfigState() const { return _configState; }
+vespalib::duration FRTConfigAgent::getTimeout() const {
+    return _nextTimeout;
+}
+vespalib::duration FRTConfigAgent::getWaitTime() const {
+    return _waitTime;
+}
+const ConfigState& FRTConfigAgent::getConfigState() const {
+    return _configState;
+}
 
 } // namespace config

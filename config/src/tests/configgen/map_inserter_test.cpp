@@ -1,8 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/config/configgen/map_inserter.hpp>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
+#include <vespa/config/configgen/map_inserter.hpp>
 
 using namespace config;
 using namespace config::internal;

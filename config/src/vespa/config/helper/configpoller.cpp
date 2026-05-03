@@ -14,7 +14,8 @@ ConfigPoller::ConfigPoller(std::shared_ptr<IConfigContext> context)
     : _generation(-1),
       _subscriber(std::make_unique<ConfigSubscriber>(std::move(context))),
       _handleList(),
-      _callbackList() {}
+      _callbackList() {
+}
 
 ConfigPoller::~ConfigPoller() = default;
 
@@ -46,6 +47,8 @@ void ConfigPoller::poll() {
     }
 }
 
-void ConfigPoller::close() { _subscriber->close(); }
+void ConfigPoller::close() {
+    _subscriber->close();
+}
 
 } // namespace config

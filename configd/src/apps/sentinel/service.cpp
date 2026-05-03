@@ -8,18 +8,21 @@
 #include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
-#include <csignal>
-#include <cstdlib>
-#include <cstring>
 #include <fcntl.h>
 #include <sys/wait.h>
 #include <unistd.h>
+
+#include <csignal>
+#include <cstdlib>
+#include <cstring>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".sentinel.service");
 #include <vespa/log/llparser.h>
 
-static bool stop() { return (vespalib::SignalHandler::INT.check() || vespalib::SignalHandler::TERM.check()); }
+static bool stop() {
+    return (vespalib::SignalHandler::INT.check() || vespalib::SignalHandler::TERM.check());
+}
 
 using vespalib::make_string;
 
@@ -159,7 +162,8 @@ void Service::runCommand(const std::string& command) {
     if (ret == -1) {
         LOG(error, "%s: unable to run shutdown command (%s): %s", name().c_str(), command.c_str(), strerror(errno));
     } else if (WIFSIGNALED(ret)) {
-        LOG(error, "%s: shutdown command (%s) terminated by signal %d", name().c_str(), command.c_str(), WTERMSIG(ret));
+        LOG(error, "%s: shutdown command (%s) terminated by signal %d", name().c_str(), command.c_str(),
+            WTERMSIG(ret));
     } else if (ret != 0) {
         LOG(warning, "%s: shutdown command (%s) failed with exit status %d", name().c_str(), command.c_str(),
             WEXITSTATUS(ret));
@@ -259,8 +263,8 @@ void Service::remove() {
 void Service::youExited(int status) {
     // Someone did a waitpid() and figured out that we exited.
     _exitStatus = status;
-    bool expectedDeath =
-        (_state == KILLING || _state == TERMINATING || _state == REMOVING || _state == KILLED || _state == TERMINATED);
+    bool expectedDeath = (_state == KILLING || _state == TERMINATING || _state == REMOVING || _state == KILLED ||
+                          _state == TERMINATED);
     if (WIFEXITED(status)) {
         LOG(debug, "%s: Exited with exit code %d", name().c_str(), WEXITSTATUS(status));
         EV_STOPPED(name().c_str(), _pid, WEXITSTATUS(status));
@@ -299,7 +303,8 @@ void Service::youExited(int status) {
             resetRestartPenalty();
         }
         if (diff < _restartPenalty) {
-            LOG(info, "%s: will delay start by %2.3f seconds", name().c_str(), vespalib::to_s(_restartPenalty - diff));
+            LOG(info, "%s: will delay start by %2.3f seconds", name().c_str(),
+                vespalib::to_s(_restartPenalty - diff));
         }
     }
     if (_isAutomatic && !stop()) {
@@ -357,7 +362,9 @@ void Service::runChild() {
     std::_Exit(EXIT_FAILURE);
 }
 
-const std::string& Service::name() const { return _config->name; }
+const std::string& Service::name() const {
+    return _config->name;
+}
 
 bool Service::isRunning() const {
     switch (_state) {

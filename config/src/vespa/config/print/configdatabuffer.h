@@ -21,10 +21,10 @@ public:
     ConfigDataBuffer& operator=(ConfigDataBuffer&&) noexcept = default;
     ConfigDataBuffer();
     ~ConfigDataBuffer();
-    vespalib::Slime&       slimeObject() { return *_slime; }
+    vespalib::Slime& slimeObject() { return *_slime; }
     const vespalib::Slime& slimeObject() const { return *_slime; }
-    const std::string&     getEncodedString() const { return _encoded; }
-    void                   setEncodedString(std::string_view encoded) { _encoded = encoded; }
+    const std::string& getEncodedString() const { return _encoded; }
+    void setEncodedString(std::string_view encoded) { _encoded = encoded; }
 
 private:
     std::unique_ptr<vespalib::Slime> _slime;

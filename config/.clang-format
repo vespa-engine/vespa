@@ -1,32 +1,39 @@
 AccessModifierOffset: -4
-ColumnLimit: 120
+ColumnLimit: 118
 IndentWidth: 4
 DerivePointerAlignment: false
 PointerAlignment: Left
 ReferenceAlignment: Pointer
-AlignConsecutiveDeclarations: Consecutive
+AlignConsecutiveAssignments: None
+AlignConsecutiveDeclarations:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+  AlignFunctionDeclarations: false
+  AlignFunctionPointers: false
 AlignEscapedNewlines: LeftWithLastLine
+AllowShortFunctionsOnASingleLine: InlineOnly
 PackConstructorInitializers: NextLine
 BreakBeforeBraces: Custom
 BraceWrapping:
-  AfterCaseLabel:        false
-  AfterClass:            false
+  AfterCaseLabel:  false
+  AfterClass:      false
   AfterControlStatement: MultiLine
-  AfterEnum:             false
-  AfterExternBlock:      false
-  AfterFunction:         false
-  AfterNamespace:        false
-  AfterObjCDeclaration:  false
-  AfterStruct:           false
-  AfterUnion:            false
-  BeforeCatch:           false
-  BeforeElse:            false
-  BeforeLambdaBody:      false
-  BeforeWhile:           false
-  IndentBraces:          false
-  SplitEmptyFunction:    false
-  SplitEmptyRecord:      false
-  SplitEmptyNamespace:   false
+  AfterEnum:       false
+  AfterExternBlock: false
+  AfterFunction:   false
+  AfterNamespace:  false
+  AfterObjCDeclaration: false
+  AfterStruct:     false
+  AfterUnion:      false
+  BeforeCatch:     false
+  BeforeElse:      false
+  BeforeLambdaBody: false
+  BeforeWhile:     false
+  IndentBraces:    false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: false
 IncludeBlocks: Regroup
 IncludeCategories:
   - Regex:           '^"'
@@ -34,11 +41,15 @@ IncludeCategories:
     SortPriority:    1
   - Regex:           '^<vespa/log/log[.]h'
     Priority:        9
-  - Regex:           '^<vespa/'
+  - Regex:           '^<vespa/.*[.]h>'
     Priority:        3
-  - Regex:           '<.*[.](h|hpp)>'
+  - Regex:           '^<vespa/'
     Priority:        4
-    SortPriority:    5
+  - Regex:           '<.*[.]h>'
+    Priority:        5
+    SortPriority:    6
+  - Regex:           '<.*[.]hpp>'
+    Priority:        5
+    SortPriority:    7
   - Regex:           '<.*>'
-    Priority:        4
-    SortPriority:    4
+    Priority:        8

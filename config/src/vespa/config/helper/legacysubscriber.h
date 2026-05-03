@@ -15,7 +15,8 @@ public:
     ~LegacySubscriber();
     const std::string& id() const { return _configId; }
 
-    template <typename ConfigType> void subscribe(const std::string& configId, IFetcherCallback<ConfigType>* callback);
+    template <typename ConfigType>
+    void subscribe(const std::string& configId, IFetcherCallback<ConfigType>* callback);
 
     void close();
 

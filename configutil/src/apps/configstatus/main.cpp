@@ -7,8 +7,9 @@
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/signalhandler.h>
 
-#include <iostream>
 #include <unistd.h>
+
+#include <iostream>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-config-status");
@@ -17,20 +18,22 @@ class Application {
     ConfigStatus::Flags _flags;
     std::string         _cfgId;
     std::string         _specString;
-    int                 parseOpts(int argc, char** argv);
-    std::string         getSources();
-    HostFilter          parse_host_set(std::string_view raw_arg) const;
+    int parseOpts(int argc, char** argv);
+    std::string getSources();
+    HostFilter parse_host_set(std::string_view raw_arg) const;
 
 public:
     void usage(const char* self);
-    int  main(int argc, char** argv);
+    int main(int argc, char** argv);
 
     Application();
     ~Application();
 };
 
-Application::Application() : _flags(), _cfgId("admin/model"), _specString("") {}
-Application::~Application() {}
+Application::Application() : _flags(), _cfgId("admin/model"), _specString("") {
+}
+Application::~Application() {
+}
 
 int Application::parseOpts(int argc, char** argv) {
     int c = '?';

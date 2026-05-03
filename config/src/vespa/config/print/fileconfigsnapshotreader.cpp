@@ -11,7 +11,8 @@
 
 namespace config {
 
-FileConfigSnapshotReader::FileConfigSnapshotReader(const std::string& fileName) : _fileName(fileName) {}
+FileConfigSnapshotReader::FileConfigSnapshotReader(const std::string& fileName) : _fileName(fileName) {
+}
 
 ConfigSnapshot FileConfigSnapshotReader::read() {
     std::ifstream file(_fileName.c_str());

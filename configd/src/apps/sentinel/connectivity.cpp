@@ -129,8 +129,8 @@ SpecMap Connectivity::specsFrom(const ModelConfig& model) {
             }
         }
         if (!foundSentinelPort) {
-            LOG(warning, "Did not find 'config-sentinel' RPC port in model for host %s [%zd services]", h.name.c_str(),
-                h.services.size());
+            LOG(warning, "Did not find 'config-sentinel' RPC port in model for host %s [%zd services]",
+                h.name.c_str(), h.services.size());
         }
     }
     return checkSpecs;

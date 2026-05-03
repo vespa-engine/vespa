@@ -10,13 +10,14 @@
 #include <vespa/config/frt/protocol.h>
 #include <vespa/config/print.h>
 #include <vespa/config/retriever/configretriever.h>
-#include <vespa/config/retriever/configsnapshot.hpp>
 #include <vespa/config/retriever/simpleconfigretriever.h>
 #include <vespa/config/retriever/simpleconfigurer.h>
 #include <vespa/config/subscription/configsubscription.h>
 #include <vespa/config/subscription/sourcespec.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
+#include <vespa/config/retriever/configsnapshot.hpp>
 
 #include <atomic>
 #include <thread>
@@ -264,9 +265,11 @@ public:
     std::atomic<bool> throwException;
 };
 
-ConfigurableFixture::ConfigurableFixture() : configured(false), throwException(false) {}
+ConfigurableFixture::ConfigurableFixture() : configured(false), throwException(false) {
+}
 
-ConfigurableFixture::~ConfigurableFixture() {}
+ConfigurableFixture::~ConfigurableFixture() {
+}
 
 TEST(ConfigRetrieverTest, require_that_SimpleConfigurer_usage_works) {
     ConfigurableFixture f1;

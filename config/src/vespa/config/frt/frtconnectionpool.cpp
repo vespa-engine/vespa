@@ -13,7 +13,8 @@ LOG_SETUP(".config.frt.frtconnectionpool");
 namespace config {
 
 FRTConnectionPool::FRTConnectionKey::FRTConnectionKey(int idx, const std::string& hostname)
-    : _idx(idx), _hostname(hostname) {}
+    : _idx(idx), _hostname(hostname) {
+}
 
 int FRTConnectionPool::FRTConnectionKey::operator<(const FRTConnectionPool::FRTConnectionKey& right) const {
     return _idx < right._idx;
@@ -40,7 +41,9 @@ FRTConnectionPool::~FRTConnectionPool() {
     syncTransport();
 }
 
-void FRTConnectionPool::syncTransport() { _supervisor->GetTransport()->sync(); }
+void FRTConnectionPool::syncTransport() {
+    _supervisor->GetTransport()->sync();
+}
 
 Connection* FRTConnectionPool::getCurrent() {
     if (_hostname.compare("") == 0) {
@@ -131,12 +134,17 @@ std::vector<FRTConnection*> FRTConnectionPool::getSuspendedSources() const {
     return suspendedSources;
 }
 
-void FRTConnectionPool::setHostname() { setHostname(vespalib::HostName::get()); }
+void FRTConnectionPool::setHostname() {
+    setHostname(vespalib::HostName::get());
+}
 
-FNET_Scheduler* FRTConnectionPool::getScheduler() { return _supervisor->GetScheduler(); }
+FNET_Scheduler* FRTConnectionPool::getScheduler() {
+    return _supervisor->GetScheduler();
+}
 
 FRTConnectionPoolWithTransport::FRTConnectionPoolWithTransport(std::unique_ptr<FNET_Transport> transport,
-                                                               const ServerSpec& spec, const TimingValues& timingValues)
+                                                               const ServerSpec&               spec,
+                                                               const TimingValues&             timingValues)
     : _transport(std::move(transport)),
       _connectionPool(std::make_unique<FRTConnectionPool>(*_transport, spec, timingValues)) {
     _transport->Start();

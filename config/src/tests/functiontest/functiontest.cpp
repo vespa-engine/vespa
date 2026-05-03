@@ -4,10 +4,11 @@
 
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/configgen/configpayload.h>
-#include <vespa/config/subscription/configsubscriber.hpp>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/test_path.h>
+
+#include <vespa/config/subscription/configsubscriber.hpp>
 
 #include <cinttypes>
 #include <fstream>
@@ -98,8 +99,10 @@ struct LazyTestFixture {
 };
 
 LazyTestFixture::LazyTestFixture(const std::string& dirName)
-    : _spec(TEST_PATH(dirName)), _subscriber(_spec), _handle(_subscriber.subscribe<FunctionTestConfig>("")) {}
-LazyTestFixture::~LazyTestFixture() {}
+    : _spec(TEST_PATH(dirName)), _subscriber(_spec), _handle(_subscriber.subscribe<FunctionTestConfig>("")) {
+}
+LazyTestFixture::~LazyTestFixture() {
+}
 
 struct TestFixture : public LazyTestFixture {
     TestFixture(const std::string& dirName) : LazyTestFixture(dirName) {

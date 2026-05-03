@@ -3,23 +3,27 @@
 #include "modelinspect.h"
 
 #include <vespa/config/common/exceptions.h>
-#include <vespa/config/helper/configgetter.hpp>
 #include <vespa/vespalib/stllike/string.h>
+
+#include <vespa/config/helper/configgetter.hpp>
+
+#include <lib/tags.h>
 
 #include <algorithm>
 #include <cstdlib>
 #include <iostream>
 #include <set>
-#include <lib/tags.h>
 
 using configdefinitions::tagsContain;
 using configdefinitions::upcase;
 
-ModelInspect::Flags::Flags() : verbose(false), makeuri(false), tagfilt(false), tagFilter() {}
+ModelInspect::Flags::Flags() : verbose(false), makeuri(false), tagfilt(false), tagFilter() {
+}
 
 ModelInspect::Flags::Flags(const Flags&) = default;
 ModelInspect::Flags& ModelInspect::Flags::operator=(const Flags&) = default;
-ModelInspect::Flags::~Flags() {}
+ModelInspect::Flags::~Flags() {
+}
 
 ModelInspect::ModelInspect(Flags flags, const config::ConfigUri& uri, std::ostream& out)
     : _cfg(), _flags(flags), _out(out) {

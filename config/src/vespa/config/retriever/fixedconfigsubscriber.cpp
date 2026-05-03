@@ -10,11 +10,17 @@ FixedConfigSubscriber::FixedConfigSubscriber(const ConfigKeySet& keySet, std::sh
     }
 }
 
-bool FixedConfigSubscriber::nextGeneration(vespalib::duration timeout) { return _set.acquireSnapshot(timeout, true); }
+bool FixedConfigSubscriber::nextGeneration(vespalib::duration timeout) {
+    return _set.acquireSnapshot(timeout, true);
+}
 
-void FixedConfigSubscriber::close() { _set.close(); }
+void FixedConfigSubscriber::close() {
+    _set.close();
+}
 
-int64_t FixedConfigSubscriber::getGeneration() const { return _set.getGeneration(); }
+int64_t FixedConfigSubscriber::getGeneration() const {
+    return _set.getGeneration();
+}
 
 ConfigSnapshot FixedConfigSubscriber::getConfigSnapshot() const {
     return ConfigSnapshot(_subscriptionList, _set.getGeneration());

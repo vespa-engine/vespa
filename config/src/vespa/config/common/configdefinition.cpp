@@ -9,9 +9,11 @@ using namespace vespalib::slime;
 
 namespace config {
 
-ConfigDefinition::ConfigDefinition() : _schema() {}
+ConfigDefinition::ConfigDefinition() : _schema() {
+}
 
-ConfigDefinition::ConfigDefinition(StringVector schema) : _schema(std::move(schema)) {}
+ConfigDefinition::ConfigDefinition(StringVector schema) : _schema(std::move(schema)) {
+}
 
 void ConfigDefinition::serialize(Cursor& cursor) const {
     for (auto it(_schema.begin()), mt(_schema.end()); it != mt; it++) {

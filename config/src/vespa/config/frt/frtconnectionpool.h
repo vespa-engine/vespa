@@ -110,8 +110,8 @@ public:
     FRTConnectionPoolWithTransport& operator=(const FRTConnectionPoolWithTransport&) = delete;
     ~FRTConnectionPoolWithTransport() override;
     FNET_Scheduler* getScheduler() override { return _connectionPool->getScheduler(); }
-    void            syncTransport() override { _connectionPool->syncTransport(); }
-    Connection*     getCurrent() override { return _connectionPool->getCurrent(); }
+    void syncTransport() override { _connectionPool->syncTransport(); }
+    Connection* getCurrent() override { return _connectionPool->getCurrent(); }
 
 private:
     std::unique_ptr<FNET_Transport>    _transport;

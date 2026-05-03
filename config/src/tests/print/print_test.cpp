@@ -3,13 +3,14 @@
 #include "config-motd.h"
 #include "config-my.h"
 
-#include <vespa/config/helper/configgetter.hpp>
 #include <vespa/config/print.h>
-#include <vespa/config/print/fileconfigreader.hpp>
-#include <vespa/config/print/istreamconfigreader.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/test_path.h>
 #include <vespa/vespalib/util/exceptions.h>
+
+#include <vespa/config/helper/configgetter.hpp>
+#include <vespa/config/print/fileconfigreader.hpp>
+#include <vespa/config/print/istreamconfigreader.hpp>
 
 #include <sys/stat.h>
 

@@ -10,23 +10,31 @@
 namespace config {
 
 ConfigValue::ConfigValue(StringVector lines, const std::string& xxhash)
-    : _payload(), _lines(std::move(lines)), _xxhash64(xxhash) {}
+    : _payload(), _lines(std::move(lines)), _xxhash64(xxhash) {
+}
 
 ConfigValue::ConfigValue(StringVector lines)
-    : _payload(), _lines(std::move(lines)), _xxhash64(calculateContentXxhash64(_lines)) {}
+    : _payload(), _lines(std::move(lines)), _xxhash64(calculateContentXxhash64(_lines)) {
+}
 
-ConfigValue::ConfigValue() : _payload(), _lines(), _xxhash64() {}
+ConfigValue::ConfigValue() : _payload(), _lines(), _xxhash64() {
+}
 
 ConfigValue::ConfigValue(PayloadPtr payload, const std::string& xxhash)
-    : _payload(std::move(payload)), _lines(), _xxhash64(xxhash) {}
+    : _payload(std::move(payload)), _lines(), _xxhash64(xxhash) {
+}
 
 ConfigValue::ConfigValue(const ConfigValue&) = default;
 ConfigValue& ConfigValue::operator=(const ConfigValue&) = default;
 ConfigValue::~ConfigValue() = default;
 
-int ConfigValue::operator==(const ConfigValue& rhs) const { return (_xxhash64.compare(rhs._xxhash64) == 0); }
+int ConfigValue::operator==(const ConfigValue& rhs) const {
+    return (_xxhash64.compare(rhs._xxhash64) == 0);
+}
 
-int ConfigValue::operator!=(const ConfigValue& rhs) const { return (!(*this == rhs)); }
+int ConfigValue::operator!=(const ConfigValue& rhs) const {
+    return (!(*this == rhs));
+}
 
 StringVector ConfigValue::getLegacyFormat() const {
     StringVector lines;

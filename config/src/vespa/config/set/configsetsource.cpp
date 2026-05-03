@@ -49,7 +49,8 @@ void ConfigSetSource::reload(int64_t generation) {
     _generation = generation;
 }
 
-void ConfigSetSource::close() {}
+void ConfigSetSource::close() {
+}
 
 bool ConfigSetSource::validRequest(const ConfigKey& key) {
     if (_builderMap->find(key) == _builderMap->end())

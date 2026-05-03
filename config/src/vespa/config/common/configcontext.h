@@ -14,7 +14,7 @@ public:
     ConfigContext(const SourceSpec& spec = ServerSpec());
     ConfigContext(const TimingValues& timingValues, const SourceSpec& spec = ServerSpec());
     IConfigManager& getManagerInstance() override;
-    void            reload() override;
+    void reload() override;
 
 private:
     TimingValues                    _timingValues;

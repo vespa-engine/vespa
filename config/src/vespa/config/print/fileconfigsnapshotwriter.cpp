@@ -10,7 +10,8 @@
 
 namespace config {
 
-FileConfigSnapshotWriter::FileConfigSnapshotWriter(const std::string& fileName) : _fileName(fileName) {}
+FileConfigSnapshotWriter::FileConfigSnapshotWriter(const std::string& fileName) : _fileName(fileName) {
+}
 
 bool FileConfigSnapshotWriter::write(const ConfigSnapshot& snapshot) {
     std::ofstream file(_fileName.c_str());

@@ -19,7 +19,8 @@ namespace config {
 
 const int64_t ConfigSnapshot::SNAPSHOT_FORMAT_VERSION = 1;
 
-ConfigSnapshot::ConfigSnapshot() : _valueMap(), _generation(0) {}
+ConfigSnapshot::ConfigSnapshot() : _valueMap(), _generation(0) {
+}
 
 ConfigSnapshot::~ConfigSnapshot() = default;
 
@@ -46,7 +47,8 @@ ConfigSnapshot::ConfigSnapshot(const SubscriptionList& subscriptionList, int64_t
 }
 
 ConfigSnapshot::ConfigSnapshot(const ValueMap& valueMap, int64_t generation)
-    : _valueMap(valueMap), _generation(generation) {}
+    : _valueMap(valueMap), _generation(generation) {
+}
 
 ConfigSnapshot::ValueMap::const_iterator ConfigSnapshot::find(const ConfigKey& key) const {
     ValueMap::const_iterator it(_valueMap.find(key));
@@ -67,9 +69,15 @@ ConfigSnapshot ConfigSnapshot::subset(const ConfigKeySet& keySet) const {
     return ConfigSnapshot(subSet, _generation);
 }
 
-int64_t ConfigSnapshot::getGeneration() const { return _generation; }
-size_t  ConfigSnapshot::size() const { return _valueMap.size(); }
-bool    ConfigSnapshot::empty() const { return _valueMap.empty(); }
+int64_t ConfigSnapshot::getGeneration() const {
+    return _generation;
+}
+size_t ConfigSnapshot::size() const {
+    return _valueMap.size();
+}
+bool ConfigSnapshot::empty() const {
+    return _valueMap.empty();
+}
 
 void ConfigSnapshot::serialize(ConfigDataBuffer& buffer) const {
     Slime&  slime(buffer.slimeObject());

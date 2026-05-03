@@ -17,7 +17,8 @@ using namespace std::chrono_literals;
 
 namespace config::sentinel {
 
-ReportConnectivity::ReportConnectivity(FRT_RPCRequest* req, int timeout_ms, FRT_Supervisor& orb, ModelOwner& modelOwner)
+ReportConnectivity::ReportConnectivity(FRT_RPCRequest* req, int timeout_ms, FRT_Supervisor& orb,
+                                       ModelOwner& modelOwner)
     : _parentRequest(req), _checks() {
     auto cfg = modelOwner.getModelConfig();
     if (cfg.has_value()) {

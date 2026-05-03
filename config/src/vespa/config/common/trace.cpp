@@ -20,13 +20,17 @@ static SystemClock systemClock;
 const Memory Trace::TRACELOG("traceLog");
 const Memory Trace::TRACELEVEL("traceLevel");
 
-Trace::Trace(const Trace& other) : _root(other._root), _traceLevel(other._traceLevel), _clock(other._clock) {}
+Trace::Trace(const Trace& other) : _root(other._root), _traceLevel(other._traceLevel), _clock(other._clock) {
+}
 
-Trace::Trace() : _root(), _traceLevel(0), _clock(systemClock) {}
+Trace::Trace() : _root(), _traceLevel(0), _clock(systemClock) {
+}
 
-Trace::Trace(uint32_t traceLevel) : _traceLevel(traceLevel), _clock(systemClock) {}
+Trace::Trace(uint32_t traceLevel) : _traceLevel(traceLevel), _clock(systemClock) {
+}
 
-Trace::Trace(uint32_t traceLevel, const Clock& clock) : _traceLevel(traceLevel), _clock(clock) {}
+Trace::Trace(uint32_t traceLevel, const Clock& clock) : _traceLevel(traceLevel), _clock(clock) {
+}
 
 void Trace::deserialize(const Inspector& inspector) {
     _traceLevel = inspector[TRACELEVEL].asLong();
@@ -38,7 +42,9 @@ void Trace::deserializeTraceLog(const Inspector& root) {
     _root = deserializer.deserialize();
 }
 
-bool Trace::shouldTrace(uint32_t level) const { return (level <= _traceLevel); }
+bool Trace::shouldTrace(uint32_t level) const {
+    return (level <= _traceLevel);
+}
 
 void Trace::trace(uint32_t level, const std::string& message) {
     if (shouldTrace(level)) {

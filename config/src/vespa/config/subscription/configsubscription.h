@@ -49,15 +49,15 @@ public:
     int64_t getLastGenerationChanged() const noexcept { return _lastGenerationChanged; }
 
     /// Used by ConfigSubscriptionSet
-    SubscriptionId   getSubscriptionId() const noexcept { return _id; }
+    SubscriptionId getSubscriptionId() const noexcept { return _id; }
     const ConfigKey& getKey() const noexcept { return _key; }
-    bool             nextUpdate(int64_t generation, vespalib::steady_time deadline);
-    int64_t          getGeneration() const;
-    bool             hasChanged() const;
-    bool             hasGenerationChanged() const;
-    void             flip();
-    void             reset() noexcept { _isChanged = false; }
-    void             close();
+    bool nextUpdate(int64_t generation, vespalib::steady_time deadline);
+    int64_t getGeneration() const;
+    bool hasChanged() const;
+    bool hasGenerationChanged() const;
+    void flip();
+    void reset() noexcept { _isChanged = false; }
+    void close();
 
     // Used by ConfigManager
     void reload(int64_t generation);

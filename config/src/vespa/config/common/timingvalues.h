@@ -29,8 +29,8 @@ struct TimingValues {
     TimingValues();
     TimingValues(duration initSuccessTimeout, duration initerrorTimeout, duration initInitialTimeout,
                  duration initSubscribeTimeout, duration initFixedDelay, duration initSuccessDelay,
-                 duration initUnconfiguredDelay, duration initConfiguredErrorDelay, unsigned int initMaxDelayMultiplier,
-                 duration initTransientDelay, duration initFatalDelay);
+                 duration initUnconfiguredDelay, duration initConfiguredErrorDelay,
+                 unsigned int initMaxDelayMultiplier, duration initTransientDelay, duration initFatalDelay);
 };
 
 } // namespace config

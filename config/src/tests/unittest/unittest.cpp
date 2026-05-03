@@ -5,8 +5,9 @@
 #include "config-my.h"
 
 #include <vespa/config/common/configcontext.h>
-#include <vespa/config/subscription/configsubscriber.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
+
+#include <vespa/config/subscription/configsubscriber.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("unittest");

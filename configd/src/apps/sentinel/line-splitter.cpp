@@ -4,21 +4,25 @@
 
 #include <vespa/vespalib/util/size_literals.h>
 
-#include <algorithm>
-#include <cstdlib>
 #include <errno.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <algorithm>
+#include <cstdlib>
+
 namespace config {
 namespace sentinel {
 
 LineSplitter::LineSplitter(int fd)
-    : _fd(fd), _size(8_Ki), _buffer(static_cast<char*>(malloc(_size))), _readPos(0), _writePos(0), _eof(false) {}
+    : _fd(fd), _size(8_Ki), _buffer(static_cast<char*>(malloc(_size))), _readPos(0), _writePos(0), _eof(false) {
+}
 
-LineSplitter::~LineSplitter() { free(_buffer); }
+LineSplitter::~LineSplitter() {
+    free(_buffer);
+}
 
 bool LineSplitter::resize() {
     _size = _size * 2;

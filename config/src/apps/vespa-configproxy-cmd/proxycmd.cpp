@@ -11,10 +11,12 @@
 
 Flags::Flags(const Flags&) = default;
 Flags& Flags::operator=(const Flags&) = default;
-Flags::Flags() : method("cache"), args(), targethost("localhost"), portnumber(19090) {}
+Flags::Flags() : method("cache"), args(), targethost("localhost"), portnumber(19090) {
+}
 Flags::~Flags() = default;
 
-ProxyCmd::ProxyCmd(const Flags& flags) : _server(), _target(nullptr), _req(nullptr), _flags(flags) {}
+ProxyCmd::ProxyCmd(const Flags& flags) : _server(), _target(nullptr), _req(nullptr), _flags(flags) {
+}
 
 ProxyCmd::~ProxyCmd() = default;
 

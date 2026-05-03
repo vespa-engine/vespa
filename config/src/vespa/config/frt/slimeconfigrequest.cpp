@@ -20,9 +20,10 @@ using namespace config::protocol::v3;
 
 namespace config {
 
-SlimeConfigRequest::SlimeConfigRequest(Connection* connection, const ConfigKey& key, const std::string& configXxhash64,
-                                       int64_t currentGeneration, const std::string& hostName, duration serverTimeout,
-                                       const Trace& trace, const VespaVersion& vespaVersion, int64_t protocolVersion,
+SlimeConfigRequest::SlimeConfigRequest(Connection* connection, const ConfigKey& key,
+                                       const std::string& configXxhash64, int64_t currentGeneration,
+                                       const std::string& hostName, duration serverTimeout, const Trace& trace,
+                                       const VespaVersion& vespaVersion, int64_t protocolVersion,
                                        const CompressionType& compressionType, const std::string& methodName)
     : FRTConfigRequest(connection, key), _data() {
     populateSlimeRequest(key, configXxhash64, currentGeneration, hostName, serverTimeout, trace, vespaVersion,

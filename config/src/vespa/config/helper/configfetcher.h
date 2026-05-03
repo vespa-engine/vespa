@@ -26,8 +26,8 @@ public:
     void subscribe(const std::string& configId, IFetcherCallback<ConfigType>* callback,
                    vespalib::duration subscribeTimeout = DEFAULT_SUBSCRIBE_TIMEOUT);
 
-    void    start();
-    void    close();
+    void start();
+    void close();
     int64_t getGeneration() const;
 
 private:

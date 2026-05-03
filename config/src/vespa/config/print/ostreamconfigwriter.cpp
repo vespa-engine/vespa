@@ -8,7 +8,8 @@
 
 namespace config {
 
-OstreamConfigWriter::OstreamConfigWriter(std::ostream& os) : _os(os) {}
+OstreamConfigWriter::OstreamConfigWriter(std::ostream& os) : _os(os) {
+}
 
 bool OstreamConfigWriter::write(const ConfigInstance& config, const ConfigFormatter& formatter) {
     ConfigDataBuffer buffer;
@@ -18,6 +19,8 @@ bool OstreamConfigWriter::write(const ConfigInstance& config, const ConfigFormat
     return !_os.fail();
 }
 
-bool OstreamConfigWriter::write(const ConfigInstance& config) { return write(config, FileConfigFormatter()); }
+bool OstreamConfigWriter::write(const ConfigInstance& config) {
+    return write(config, FileConfigFormatter());
+}
 
 } // namespace config

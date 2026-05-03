@@ -16,8 +16,8 @@ StartMetrics::StartMetrics()
       totalRestartsCounter(0),
       startedTime(vespalib::steady_clock::now()),
       sentinel_restarts(metrics->counter("sentinel.restarts", "how many times sentinel restarted a service")),
-      sentinel_totalRestarts(
-          metrics->gauge("sentinel.totalRestarts", "how many times sentinel restarted a service since sentinel start")),
+      sentinel_totalRestarts(metrics->gauge("sentinel.totalRestarts",
+                                            "how many times sentinel restarted a service since sentinel start")),
       sentinel_running(metrics->gauge("sentinel.running", "how many services the sentinel has running currently")),
       sentinel_uptime(metrics->gauge("sentinel.uptime", "how many seconds has the sentinel been running")) {
     // account for the sentinel itself restarting

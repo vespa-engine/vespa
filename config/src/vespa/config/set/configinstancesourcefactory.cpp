@@ -12,8 +12,8 @@ public:
         : _holder(std::move(holder)), _buffer(std::move(buffer)), _generation(-1) {}
     void close() override {}
     void getConfig() override {
-        _holder->handle(
-            std::make_unique<config::ConfigUpdate>(config::ConfigValue(config::getlines(_buffer)), true, _generation));
+        _holder->handle(std::make_unique<config::ConfigUpdate>(config::ConfigValue(config::getlines(_buffer)), true,
+                                                               _generation));
     }
     void reload(int64_t generation) override { _generation = generation; }
 
@@ -28,7 +28,8 @@ private:
 namespace config {
 
 ConfigInstanceSourceFactory::ConfigInstanceSourceFactory(const ConfigKey& key, vespalib::asciistream buffer)
-    : _key(key), _buffer(std::move(buffer)) {}
+    : _key(key), _buffer(std::move(buffer)) {
+}
 
 std::unique_ptr<Source> ConfigInstanceSourceFactory::createSource(std::shared_ptr<IConfigHolder> holder,
                                                                   const ConfigKey&               key) const {

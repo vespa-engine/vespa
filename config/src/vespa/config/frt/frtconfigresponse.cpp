@@ -11,7 +11,9 @@ FRTConfigResponse::FRTConfigResponse(FRT_RPCRequest* request)
     _request->internal_addref();
 }
 
-FRTConfigResponse::~FRTConfigResponse() { _request->internal_subref(); }
+FRTConfigResponse::~FRTConfigResponse() {
+    _request->internal_subref();
+}
 
 bool FRTConfigResponse::validateResponse() {
     if (_request->IsError())
@@ -25,10 +27,18 @@ bool FRTConfigResponse::validateResponse() {
     return (_responseState == OK);
 }
 
-bool FRTConfigResponse::hasValidResponse() const { return (_responseState == OK); }
+bool FRTConfigResponse::hasValidResponse() const {
+    return (_responseState == OK);
+}
 
-std::string FRTConfigResponse::errorMessage() const { return _request->GetErrorMessage(); }
-int         FRTConfigResponse::errorCode() const { return _request->GetErrorCode(); }
-bool        FRTConfigResponse::isError() const { return _request->IsError(); }
+std::string FRTConfigResponse::errorMessage() const {
+    return _request->GetErrorMessage();
+}
+int FRTConfigResponse::errorCode() const {
+    return _request->GetErrorCode();
+}
+bool FRTConfigResponse::isError() const {
+    return _request->IsError();
+}
 
 } // namespace config

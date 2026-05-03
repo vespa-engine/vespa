@@ -3,6 +3,7 @@
 #include "model-owner.h"
 
 #include <vespa/config/common/exceptions.h>
+
 #include <vespa/config/subscription/configsubscriber.hpp>
 
 #include <cinttypes>
@@ -23,7 +24,8 @@ std::optional<ModelConfig> ModelOwner::getModelConfig() {
     }
 }
 
-ModelOwner::ModelOwner(const std::string& configId) : _configId(configId) {}
+ModelOwner::ModelOwner(const std::string& configId) : _configId(configId) {
+}
 
 ModelOwner::~ModelOwner() = default;
 

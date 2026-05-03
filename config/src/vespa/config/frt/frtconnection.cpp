@@ -23,7 +23,8 @@ FRTConnection::FRTConnection(const std::string& address, FRT_Supervisor& supervi
       _suspendedUntil(),
       _suspendWarned(),
       _transientFailures(0),
-      _fatalFailures(0) {}
+      _fatalFailures(0) {
+}
 
 FRTConnection::~FRTConnection() {
     if (_target != nullptr) {
@@ -110,6 +111,8 @@ void FRTConnection::calculateSuspension(ErrorType type) {
     }
 }
 
-FRT_RPCRequest* FRTConnection::allocRPCRequest() { return _supervisor.AllocRPCRequest(); }
+FRT_RPCRequest* FRTConnection::allocRPCRequest() {
+    return _supervisor.AllocRPCRequest();
+}
 
 } // namespace config

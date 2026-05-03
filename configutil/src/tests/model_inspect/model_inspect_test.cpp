@@ -3,8 +3,9 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/test_path.h>
 
-#include <sstream>
 #include <lib/modelinspect.h>
+
+#include <sstream>
 
 class Model {
 public:
@@ -57,7 +58,7 @@ public:
     void listServices() override { _listServices = true; };
     void listClusters() override { _listClusters = true; };
     void listConfigIds() override { _listConfigIds = true; };
-    int  listHost(const std::string) override {
+    int listHost(const std::string) override {
         _listHost = true;
         return 0;
     };

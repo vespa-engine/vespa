@@ -16,8 +16,8 @@ struct Inspector;
 
 namespace config::protocol {
 
-int             readProtocolVersion();
-int             readTraceLevel();
+int readProtocolVersion();
+int readTraceLevel();
 CompressionType readProtocolCompressionType();
 
 struct Payload {

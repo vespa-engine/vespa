@@ -19,7 +19,8 @@ TimingValues::TimingValues()
       configuredErrorDelay(15s),
       maxDelayMultiplier(10),
       transientDelay(60s),
-      fatalDelay(60s) {}
+      fatalDelay(60s) {
+}
 
 TimingValues::TimingValues(duration initSuccessTimeout, duration initErrorTimeout, duration initInitialTimeout,
                            duration initSubscribeTimeout, duration initFixedDelay, duration initSuccessDelay,
@@ -35,6 +36,7 @@ TimingValues::TimingValues(duration initSuccessTimeout, duration initErrorTimeou
       configuredErrorDelay(initConfiguredErrorDelay),
       maxDelayMultiplier(initMaxDelayMultiplier),
       transientDelay(initTransientDelay),
-      fatalDelay(initFatalDelay) {}
+      fatalDelay(initFatalDelay) {
+}
 
 } // namespace config

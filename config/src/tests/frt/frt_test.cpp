@@ -4,7 +4,6 @@
 #include "config-my.h"
 
 #include <vespa/config/common/configdefinition.h>
-#include <vespa/config/common/configvalue.hpp>
 #include <vespa/config/common/trace.h>
 #include <vespa/config/frt/connection.h>
 #include <vespa/config/frt/connectionfactory.h>
@@ -21,8 +20,11 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
-#include <thread>
+#include <vespa/config/common/configvalue.hpp>
+
 #include <lz4.h>
+
+#include <thread>
 
 using namespace config;
 using namespace vespalib;
@@ -42,7 +44,7 @@ struct Response {
     long         generation;
     StringVector payload;
     std::string  ns;
-    void         encodeResponse(FRT_RPCRequest* req) const {
+    void encodeResponse(FRT_RPCRequest* req) const {
         FRT_Values& ret = *req->GetReturn();
 
         ret.AddString(defName.c_str());
@@ -75,7 +77,7 @@ Response::~Response() = default;
 
 struct RPCFixture {
     std::vector<FRT_RPCRequest*> requests;
-    FRT_RPCRequest*              createEmptyRequest() {
+    FRT_RPCRequest* createEmptyRequest() {
         FRT_RPCRequest* req = new FRT_RPCRequest();
         req->SetError(FRTE_NO_ERROR);
         requests.push_back(req);
@@ -113,8 +115,8 @@ struct ConnectionMock : public Connection {
     ConnectionMock(std::unique_ptr<Response> answer);
     ~ConnectionMock() override;
     FRT_RPCRequest* allocRPCRequest() override { return supervisor.AllocRPCRequest(); }
-    void            setError(int ec) override { errorCode = ec; }
-    void            invoke(FRT_RPCRequest* req, duration t, FRT_IRequestWait* waiter) override {
+    void setError(int ec) override { errorCode = ec; }
+    void invoke(FRT_RPCRequest* req, duration t, FRT_IRequestWait* waiter) override {
         timeout = t;
         if (ans != nullptr) {
             ans->encodeResponse(req);
@@ -126,16 +128,17 @@ struct ConnectionMock : public Connection {
 };
 
 ConnectionMock::ConnectionMock(std::unique_ptr<Response> answer)
-    : errorCode(0), timeout(0ms), ans(std::move(answer)), server(), supervisor(server.supervisor()), address() {}
+    : errorCode(0), timeout(0ms), ans(std::move(answer)), server(), supervisor(server.supervisor()), address() {
+}
 ConnectionMock::~ConnectionMock() = default;
 
 struct FactoryMock : public ConnectionFactory {
     ConnectionMock* current;
     FactoryMock(ConnectionMock* c) noexcept : current(c) {}
     ~FactoryMock() override;
-    Connection*     getCurrent() override { return current; }
+    Connection* getCurrent() override { return current; }
     FNET_Scheduler* getScheduler() override { return &current->scheduler; }
-    void            syncTransport() override {}
+    void syncTransport() override {}
 };
 
 FactoryMock::~FactoryMock() = default;
@@ -154,9 +157,9 @@ struct AgentFixture : public ConfigAgent {
     AgentFixture(AgentResultFixture* r) : result(r) {}
 
     const ConfigState& getConfigState() const override { return result->state; }
-    duration           getWaitTime() const override { return result->waitTime; }
-    duration           getTimeout() const override { return result->timeout; }
-    void               handleResponse(const ConfigRequest& request, std::unique_ptr<ConfigResponse> response) override {
+    duration getWaitTime() const override { return result->waitTime; }
+    duration getTimeout() const override { return result->timeout; }
+    void handleResponse(const ConfigRequest& request, std::unique_ptr<ConfigResponse> response) override {
         (void)request;
         (void)response;
         result->notified = true;

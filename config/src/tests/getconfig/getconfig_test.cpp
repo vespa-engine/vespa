@@ -3,9 +3,10 @@
 #include "config-my.h"
 
 #include <vespa/config/common/configcontext.h>
-#include <vespa/config/helper/configgetter.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/test_path.h>
+
+#include <vespa/config/helper/configgetter.hpp>
 
 using namespace config;
 

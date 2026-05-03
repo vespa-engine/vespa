@@ -12,7 +12,9 @@ using namespace config;
 using vespalib::NullCryptoEngine;
 using vespalib::Portal;
 
-auto create_server() { return Portal::create(std::make_shared<NullCryptoEngine>(), 0); }
+auto create_server() {
+    return Portal::create(std::make_shared<NullCryptoEngine>(), 0);
+}
 
 class HTTPStatus : public vespalib::Portal::GetHandler {
 private:
@@ -39,7 +41,9 @@ public:
     ~HTTPStatus() override;
 };
 
-HTTPStatus::~HTTPStatus() { _root.reset(); }
+HTTPStatus::~HTTPStatus() {
+    _root.reset();
+}
 
 class Status {
 public:
@@ -84,7 +88,9 @@ public:
     ~Status() {}
 };
 
-std::string ok_json_at_gen_1() { return "{\"config\": { \"all\": { \"generation\": 1 } }}"; }
+std::string ok_json_at_gen_1() {
+    return "{\"config\": { \"all\": { \"generation\": 1 } }}";
+}
 
 TEST(ConfigStatusTest, all_ok) {
     HTTPStatus f1(ok_json_at_gen_1());

@@ -17,8 +17,12 @@ ConfigSnapshot SimpleConfigRetriever::getConfigs(vespalib::duration timeout) {
     return ConfigSnapshot();
 }
 
-void SimpleConfigRetriever::close() { _set.close(); }
+void SimpleConfigRetriever::close() {
+    _set.close();
+}
 
-bool SimpleConfigRetriever::isClosed() const { return _set.isClosed(); }
+bool SimpleConfigRetriever::isClosed() const {
+    return _set.isClosed();
+}
 
 } // namespace config
