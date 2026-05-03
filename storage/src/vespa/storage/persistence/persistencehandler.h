@@ -9,8 +9,10 @@
 #include "processallhandler.h"
 #include "simplemessagehandler.h"
 #include "splitjoinhandler.h"
+
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
+
 #include <span>
 
 namespace storage {
@@ -22,22 +24,22 @@ class BucketOwnershipNotifier;
  * happens in other handlers, but is forked out after common setup has been done.
  * Currently metrics are updated so each thread should have its own instance.
  */
-class PersistenceHandler : public Types
-{
+class PersistenceHandler : public Types {
 public:
-    PersistenceHandler(vespalib::ISequencedTaskExecutor &, const ServiceLayerComponent & component,
-                      uint32_t mergeChunkSize, bool multibitSplit, spi::PersistenceProvider &,
-                      FileStorHandler &, BucketOwnershipNotifier &, FileStorThreadMetrics&);
+    PersistenceHandler(vespalib::ISequencedTaskExecutor&, const ServiceLayerComponent& component,
+                       uint32_t mergeChunkSize, bool multibitSplit, spi::PersistenceProvider&, FileStorHandler&,
+                       BucketOwnershipNotifier&, FileStorThreadMetrics&);
     ~PersistenceHandler();
 
     void processLockedMessage(FileStorHandler::LockedMessage lock) const;
     void process_locked_message_batch(std::shared_ptr<FileStorHandler::BucketLockInterface> lock,
-                                      std::span<BatchedMessage> bucket_messages);
+                                      std::span<BatchedMessage>                             bucket_messages);
 
-    //TODO Rewrite tests to avoid this api leak
-    const AsyncHandler & asyncHandler() const { return _asyncHandler; }
-    const SplitJoinHandler & splitjoinHandler() const { return _splitJoinHandler; }
-    const SimpleMessageHandler & simpleMessageHandler() const { return _simpleHandler; }
+    // TODO Rewrite tests to avoid this api leak
+    const AsyncHandler& asyncHandler() const { return _asyncHandler; }
+    const SplitJoinHandler& splitjoinHandler() const { return _splitJoinHandler; }
+    const SimpleMessageHandler& simpleMessageHandler() const { return _simpleHandler; }
+
 private:
     // Message handling functions
     MessageTracker::UP handleCommandSplitByType(api::StorageCommand&, MessageTracker::UP tracker) const;
@@ -45,13 +47,13 @@ private:
 
     MessageTracker::UP processMessage(api::StorageMessage& msg, MessageTracker::UP tracker) const;
 
-    const framework::Clock  & _clock;
-    PersistenceUtil           _env;
-    ProcessAllHandler         _processAllHandler;
-    MergeHandler              _mergeHandler;
-    AsyncHandler              _asyncHandler;
-    SplitJoinHandler          _splitJoinHandler;
-    SimpleMessageHandler      _simpleHandler;
+    const framework::Clock& _clock;
+    PersistenceUtil         _env;
+    ProcessAllHandler       _processAllHandler;
+    MergeHandler            _mergeHandler;
+    AsyncHandler            _asyncHandler;
+    SplitJoinHandler        _splitJoinHandler;
+    SimpleMessageHandler    _simpleHandler;
 };
 
-} // storage
+} // namespace storage

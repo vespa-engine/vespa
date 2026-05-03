@@ -1,19 +1,21 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "asynchandler.h"
-#include "persistenceutil.h"
-#include "testandsethelper.h"
+
 #include "bucketownershipnotifier.h"
 #include "bucketprocessor.h"
-#include <vespa/persistence/spi/persistenceprovider.h>
+#include "persistenceutil.h"
+#include "testandsethelper.h"
+
+#include <vespa/document/fieldset/fieldsets.h>
+#include <vespa/document/update/documentupdate.h>
+#include <vespa/persistence/spi/catchresult.h>
 #include <vespa/persistence/spi/docentry.h>
 #include <vespa/persistence/spi/doctype_gid_and_timestamp.h>
-#include <vespa/persistence/spi/catchresult.h>
+#include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/storageapi/message/bucket.h>
-#include <vespa/document/update/documentupdate.h>
-#include <vespa/document/fieldset/fieldsets.h>
-#include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
+#include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
@@ -29,18 +31,16 @@ class ResultTask : public vespalib::Executor::Task {
 public:
     ResultTask() : _result(), _resultHandler(nullptr) {}
 
-    void setResult(spi::Result::UP result) {
-        _result = std::move(result);
-    }
+    void setResult(spi::Result::UP result) { _result = std::move(result); }
 
-    void addResultHandler(const spi::ResultHandler *resultHandler) {
+    void addResultHandler(const spi::ResultHandler* resultHandler) {
         // Only handles a single handler now,
         // Can be extended if necessary later on
         assert(_resultHandler == nullptr);
         _resultHandler = resultHandler;
     }
 
-    void handle(const spi::Result &result) {
+    void handle(const spi::Result& result) {
         if (_resultHandler != nullptr) {
             _resultHandler->handle(result);
         }
@@ -48,16 +48,14 @@ public:
 
 protected:
     spi::Result::UP _result;
+
 private:
-    const spi::ResultHandler *_resultHandler;
+    const spi::ResultHandler* _resultHandler;
 };
 
-template<class FunctionType>
-class LambdaResultTask : public ResultTask {
+template <class FunctionType> class LambdaResultTask : public ResultTask {
 public:
-    explicit LambdaResultTask(FunctionType &&func)
-        : _func(std::move(func))
-    {}
+    explicit LambdaResultTask(FunctionType&& func) : _func(std::move(func)) {}
 
     ~LambdaResultTask() override = default;
 
@@ -70,40 +68,33 @@ private:
     FunctionType _func;
 };
 
-template<class FunctionType>
-std::unique_ptr<ResultTask>
-makeResultTask(FunctionType&& function) {
-    return std::make_unique<LambdaResultTask<std::decay_t<FunctionType>>>
-            (std::forward<FunctionType>(function));
+template <class FunctionType> std::unique_ptr<ResultTask> makeResultTask(FunctionType&& function) {
+    return std::make_unique<LambdaResultTask<std::decay_t<FunctionType>>>(std::forward<FunctionType>(function));
 }
 
 class ResultTaskOperationDone : public spi::OperationComplete {
 public:
-    ResultTaskOperationDone(vespalib::ISequencedTaskExecutor & executor, document::BucketId bucketId,
+    ResultTaskOperationDone(vespalib::ISequencedTaskExecutor& executor, document::BucketId bucketId,
                             std::unique_ptr<ResultTask> task)
-        : _executor(executor),
-          _task(std::move(task)),
-          _executorId(executor.getExecutorId(bucketId.getId()))
-    {
-    }
+        : _executor(executor), _task(std::move(task)), _executorId(executor.getExecutorId(bucketId.getId())) {}
     ~ResultTaskOperationDone() override;
     void onComplete(spi::Result::UP result) noexcept override {
         _task->setResult(std::move(result));
         _executor.executeTask(_executorId, std::move(_task));
     }
-    void addResultHandler(const spi::ResultHandler * resultHandler) override {
+    void addResultHandler(const spi::ResultHandler* resultHandler) override {
         _task->addResultHandler(resultHandler);
     }
+
 private:
-    vespalib::ISequencedTaskExecutor             & _executor;
-    std::unique_ptr<ResultTask>                    _task;
-    vespalib::ISequencedTaskExecutor::ExecutorId   _executorId;
+    vespalib::ISequencedTaskExecutor&            _executor;
+    std::unique_ptr<ResultTask>                  _task;
+    vespalib::ISequencedTaskExecutor::ExecutorId _executorId;
 };
 
 ResultTaskOperationDone::~ResultTaskOperationDone() = default;
 
-bool
-bucketStatesAreSemanticallyEqual(const api::BucketInfo& a, const api::BucketInfo& b) {
+bool bucketStatesAreSemanticallyEqual(const api::BucketInfo& a, const api::BucketInfo& b) {
     // Don't check document sizes, as background moving of documents in Proton
     // may trigger a change in size without any mutations taking place. This will
     // only take place when a document being moved was fed _prior_ to the change
@@ -116,33 +107,31 @@ bucketStatesAreSemanticallyEqual(const api::BucketInfo& a, const api::BucketInfo
 class UnrevertableRemoveEntryProcessor : public BucketProcessor::EntryProcessor {
 public:
     using DocumentIdsAndTimeStamps = std::vector<spi::IdAndTimestamp>;
-    UnrevertableRemoveEntryProcessor(DocumentIdsAndTimeStamps & to_remove)
-        : _to_remove(to_remove)
-    {}
+    UnrevertableRemoveEntryProcessor(DocumentIdsAndTimeStamps& to_remove) : _to_remove(to_remove) {}
 
     void process(std::unique_ptr<spi::DocEntry> entry) override {
         _to_remove.emplace_back(*entry->getDocumentId(), entry->getTimestamp());
     }
+
 private:
-    DocumentIdsAndTimeStamps & _to_remove;
+    DocumentIdsAndTimeStamps& _to_remove;
 };
 
-}
+} // namespace
 
-AsyncHandler::AsyncHandler(const PersistenceUtil & env, spi::PersistenceProvider & spi,
-                           BucketOwnershipNotifier &bucketOwnershipNotifier,
-                           vespalib::ISequencedTaskExecutor & executor,
-                           const document::BucketIdFactory & bucketIdFactory)
+AsyncHandler::AsyncHandler(const PersistenceUtil& env, spi::PersistenceProvider& spi,
+                           BucketOwnershipNotifier&          bucketOwnershipNotifier,
+                           vespalib::ISequencedTaskExecutor& executor,
+                           const document::BucketIdFactory&  bucketIdFactory)
     : _env(env),
       _spi(spi),
       _bucketOwnershipNotifier(bucketOwnershipNotifier),
       _sequencedExecutor(executor),
-      _bucketIdFactory(bucketIdFactory)
-{}
+      _bucketIdFactory(bucketIdFactory) {
+}
 
-MessageTracker::UP
-AsyncHandler::handleRunTask(RunTaskCommand& cmd, MessageTracker::UP tracker) const {
-    auto task = makeResultTask([tracker = std::move(tracker)](spi::Result::UP response) {
+MessageTracker::UP AsyncHandler::handleRunTask(RunTaskCommand& cmd, MessageTracker::UP tracker) const {
+    auto        task = makeResultTask([tracker = std::move(tracker)](spi::Result::UP response) {
         (void)tracker->checkForError(*response);
         tracker->sendReply();
     });
@@ -152,15 +141,15 @@ AsyncHandler::handleRunTask(RunTaskCommand& cmd, MessageTracker::UP tracker) con
     return tracker;
 }
 
-MessageTracker::UP
-AsyncHandler::handlePut(api::PutCommand& cmd, MessageTracker::UP trackerUP) const
-{
-    MessageTracker & tracker = *trackerUP;
-    auto& metrics = _env._metrics.put;
+MessageTracker::UP AsyncHandler::handlePut(api::PutCommand& cmd, MessageTracker::UP trackerUP) const {
+    MessageTracker& tracker = *trackerUP;
+    auto&           metrics = _env._metrics.put;
     tracker.setMetric(metrics);
     metrics.request_size.addValue(cmd.getApproxByteSize());
 
-    if (tasConditionExists(cmd) && !tasConditionMatches(cmd, tracker, tracker.context(), cmd.get_create_if_non_existent())) {
+    if (tasConditionExists(cmd) &&
+        !tasConditionMatches(cmd, tracker, tracker.context(), cmd.get_create_if_non_existent()))
+    {
         // Will also count condition parse failures etc as TaS failures, but
         // those results _will_ increase the error metrics as well.
         metrics.test_and_set_failed.inc();
@@ -168,7 +157,7 @@ AsyncHandler::handlePut(api::PutCommand& cmd, MessageTracker::UP trackerUP) cons
     }
 
     spi::Bucket bucket = _env.getBucket(cmd.getDocumentId(), cmd.getBucket());
-    auto task = makeResultTask([tracker = std::move(trackerUP)](spi::Result::UP response) {
+    auto        task = makeResultTask([tracker = std::move(trackerUP)](spi::Result::UP response) {
         (void)tracker->checkForError(*response);
         tracker->sendReply();
     });
@@ -178,42 +167,44 @@ AsyncHandler::handlePut(api::PutCommand& cmd, MessageTracker::UP trackerUP) cons
     return trackerUP;
 }
 
-MessageTracker::UP
-AsyncHandler::handleCreateBucket(api::CreateBucketCommand& cmd, MessageTracker::UP tracker) const
-{
+MessageTracker::UP AsyncHandler::handleCreateBucket(api::CreateBucketCommand& cmd, MessageTracker::UP tracker) const {
     tracker->setMetric(_env._metrics.createBuckets);
     LOG(debug, "CreateBucket(%s)", cmd.getBucketId().toString().c_str());
     if (_env._fileStorHandler.isMerging(cmd.getBucket())) {
         LOG(warning, "Bucket %s was merging at create time. Unexpected.", cmd.getBucketId().toString().c_str());
     }
     spi::Bucket bucket(cmd.getBucket());
-    auto task = makeResultTask([tracker = std::move(tracker)](spi::Result::UP ignored) mutable {
-        // TODO Even if an non OK response cannot be handled sanely we might probably log a message, or increment a metric
-        (void) ignored;
+    auto        task = makeResultTask([tracker = std::move(tracker)](spi::Result::UP ignored) mutable {
+        // TODO Even if an non OK response cannot be handled sanely we might probably log a message, or increment a
+        // metric
+        (void)ignored;
         tracker->sendReply();
     });
 
     if (cmd.getActive()) {
         _spi.createBucketAsync(bucket, std::make_unique<spi::NoopOperationComplete>());
-        _spi.setActiveStateAsync(bucket, spi::BucketInfo::ACTIVE, std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, bucket, std::move(task)));
+        _spi.setActiveStateAsync(
+            bucket, spi::BucketInfo::ACTIVE,
+            std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, bucket, std::move(task)));
     } else {
-        _spi.createBucketAsync(bucket, std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, bucket, std::move(task)));
+        _spi.createBucketAsync(
+            bucket, std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, bucket, std::move(task)));
     }
 
     return tracker;
 }
 
-void
-AsyncHandler::on_delete_bucket_complete(const document::Bucket& bucket) const {
-    StorBucketDatabase& db(_env.getBucketDatabase(bucket.getBucketSpace()));
+void AsyncHandler::on_delete_bucket_complete(const document::Bucket& bucket) const {
+    StorBucketDatabase&              db(_env.getBucketDatabase(bucket.getBucketSpace()));
     StorBucketDatabase::WrappedEntry entry = db.get(bucket.getBucketId(), "onDeleteBucket");
     if (entry.exists() && entry->getMetaCount() > 0) {
-        LOG(debug, "onDeleteBucket(%s): Bucket DB entry existed. Likely "
-                   "active operation when delete bucket was queued. "
-                   "Updating bucket database to keep it in sync with file. "
-                   "Cannot delete bucket from bucket database at this "
-                   "point, as it can have been intentionally recreated "
-                   "after delete bucket had been sent",
+        LOG(debug,
+            "onDeleteBucket(%s): Bucket DB entry existed. Likely "
+            "active operation when delete bucket was queued. "
+            "Updating bucket database to keep it in sync with file. "
+            "Cannot delete bucket from bucket database at this "
+            "point, as it can have been intentionally recreated "
+            "after delete bucket had been sent",
             bucket.getBucketId().toString().c_str());
         api::BucketInfo info(0, 0, 0);
         // Only set document counts/size; retain ready/active state.
@@ -229,28 +220,24 @@ namespace {
 
 class GatherBucketMetadata : public BucketProcessor::EntryProcessor {
     std::vector<std::unique_ptr<spi::DocEntry>>& _entries;
+
 public:
     explicit GatherBucketMetadata(std::vector<std::unique_ptr<spi::DocEntry>>& entries) noexcept
-        : _entries(entries)
-    {
-    }
+        : _entries(entries) {}
     ~GatherBucketMetadata() override = default;
 
-    void process(std::unique_ptr<spi::DocEntry> entry) override {
-        _entries.emplace_back(std::move(entry));
-    }
+    void process(std::unique_ptr<spi::DocEntry> entry) override { _entries.emplace_back(std::move(entry)); }
 };
 
-}
+} // namespace
 
-MessageTracker::UP
-AsyncHandler::handle_delete_bucket_throttling(api::DeleteBucketCommand& cmd, MessageTracker::UP tracker) const
-{
+MessageTracker::UP AsyncHandler::handle_delete_bucket_throttling(api::DeleteBucketCommand& cmd,
+                                                                 MessageTracker::UP        tracker) const {
     tracker->setMetric(_env._metrics.deleteBuckets);
     LOG(debug, "DeleteBucket(%s) (with throttling)", cmd.getBucketId().toString().c_str());
     if (_env._fileStorHandler.isMerging(cmd.getBucket())) {
-        _env._fileStorHandler.clearMergeStatus(cmd.getBucket(),
-                                               api::ReturnCode(api::ReturnCode::ABORTED, "Bucket was deleted during the merge"));
+        _env._fileStorHandler.clearMergeStatus(
+            cmd.getBucket(), api::ReturnCode(api::ReturnCode::ABORTED, "Bucket was deleted during the merge"));
     }
     spi::Bucket spi_bucket(cmd.getBucket());
     if (!checkProviderBucketInfoMatches(spi_bucket, cmd.getBucketInfo())) {
@@ -260,22 +247,24 @@ AsyncHandler::handle_delete_bucket_throttling(api::DeleteBucketCommand& cmd, Mes
     std::vector<std::unique_ptr<spi::DocEntry>> meta_entries;
     {
         GatherBucketMetadata meta_proc(meta_entries);
-        auto usage = vespalib::CpuUsage::use(CpuUsage::Category::READ);
+        auto                 usage = vespalib::CpuUsage::use(CpuUsage::Category::READ);
         // Note: we only explicitly remove Put entries; tombstones are expected to be
         // cheap and will be purged as part of the subsequent DeleteBucket operation.
         // (Additionally, the SPI does not expose a way to remove a remove...)
-        BucketProcessor::iterateAll(_spi, spi_bucket, "true",
-                                    std::make_shared<document::NoFields>(),
-                                    meta_proc, spi::NEWEST_DOCUMENT_ONLY, tracker->context());
+        BucketProcessor::iterateAll(_spi, spi_bucket, "true", std::make_shared<document::NoFields>(), meta_proc,
+                                    spi::NEWEST_DOCUMENT_ONLY, tracker->context());
     }
-    auto invoke_delete_on_zero_refs = vespalib::makeSharedLambdaCallback([this, spi_bucket, bucket = cmd.getBucket(), tracker = std::move(tracker)]() mutable {
+    auto invoke_delete_on_zero_refs = vespalib::makeSharedLambdaCallback([this, spi_bucket, bucket = cmd.getBucket(),
+                                                                          tracker = std::move(tracker)]() mutable {
         LOG(debug, "%s: about to invoke deleteBucketAsync", bucket.toString().c_str());
-        auto task = makeResultTask([this, tracker = std::move(tracker), bucket]([[maybe_unused]] spi::Result::UP ignored) {
-            LOG(debug, "%s: deleteBucket callback invoked; sending reply", bucket.toString().c_str());
-            on_delete_bucket_complete(bucket);
-            tracker->sendReply();
-        });
-        _spi.deleteBucketAsync(spi_bucket, std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, bucket.getBucketId(), std::move(task)));
+        auto task =
+            makeResultTask([this, tracker = std::move(tracker), bucket]([[maybe_unused]] spi::Result::UP ignored) {
+                LOG(debug, "%s: deleteBucket callback invoked; sending reply", bucket.toString().c_str());
+                on_delete_bucket_complete(bucket);
+                tracker->sendReply();
+            });
+        _spi.deleteBucketAsync(spi_bucket, std::make_unique<ResultTaskOperationDone>(
+                                               _sequencedExecutor, bucket.getBucketId(), std::move(task)));
     });
 
     auto& op_throttler = _env._fileStorHandler.operation_throttler();
@@ -287,12 +276,12 @@ AsyncHandler::handle_delete_bucket_throttling(api::DeleteBucketCommand& cmd, Mes
         auto op_token = op_throttler.blocking_acquire_one();
         auto maintenance_token = maintenance_throttler.blocking_acquire_one();
         remove_by_gid_metric->count.inc();
-        std::vector<spi::DocTypeGidAndTimestamp> to_remove = {{std::string(meta->getDocumentType()), meta->getGid(), meta->getTimestamp()}};
-        auto task = makeResultTask([bucket = cmd.getBucket(),
-                                    tokens = std::make_pair(std::move(op_token), std::move(maintenance_token)),
-                                    invoke_delete_on_zero_refs, remove_by_gid_metric,
-                                    op_timer = framework::MilliSecTimer(_env._component.getClock())]
-            (spi::Result::UP result) {
+        std::vector<spi::DocTypeGidAndTimestamp> to_remove = {
+            {std::string(meta->getDocumentType()), meta->getGid(), meta->getTimestamp()}};
+        auto task = makeResultTask(
+            [bucket = cmd.getBucket(), tokens = std::make_pair(std::move(op_token), std::move(maintenance_token)),
+             invoke_delete_on_zero_refs, remove_by_gid_metric,
+             op_timer = framework::MilliSecTimer(_env._component.getClock())](spi::Result::UP result) {
                 if (result->hasError()) {
                     remove_by_gid_metric->failed.inc();
                 }
@@ -301,55 +290,62 @@ AsyncHandler::handle_delete_bucket_throttling(api::DeleteBucketCommand& cmd, Mes
                 // Nothing else clever to do here. Throttle token and deleteBucket dispatch refs dropped implicitly.
             });
         LOG(spam, "%s: about to invoke removeByGidAsync(%s, %s, %" PRIu64 ")", cmd.getBucket().toString().c_str(),
-            std::string(meta->getDocumentType()).c_str(), meta->getGid().toString().c_str(), meta->getTimestamp().getValue());
-        _spi.removeByGidAsync(spi_bucket, std::move(to_remove), std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, cmd.getBucketId(), std::move(task)));
+            std::string(meta->getDocumentType()).c_str(), meta->getGid().toString().c_str(),
+            meta->getTimestamp().getValue());
+        _spi.removeByGidAsync(
+            spi_bucket, std::move(to_remove),
+            std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, cmd.getBucketId(), std::move(task)));
     }
     // Actual bucket deletion happens when all remove ops have ACKed and dropped their refs to the destructor-invoked
-    // deleteBucket dispatcher. Note: this works transparently when the bucket is empty (no refs; happens immediately).
+    // deleteBucket dispatcher. Note: this works transparently when the bucket is empty (no refs; happens
+    // immediately).
     return tracker;
 }
 
-MessageTracker::UP
-AsyncHandler::handleSetBucketState(api::SetBucketStateCommand& cmd, MessageTracker::UP trackerUP) const
-{
+MessageTracker::UP AsyncHandler::handleSetBucketState(api::SetBucketStateCommand& cmd,
+                                                      MessageTracker::UP          trackerUP) const {
     trackerUP->setMetric(_env._metrics.setBucketStates);
 
-    //LOG(debug, "handleSetBucketState(): %s", cmd.toString().c_str());
-    spi::Bucket bucket(cmd.getBucket());
-    bool shouldBeActive(cmd.getState() == api::SetBucketStateCommand::ACTIVE);
+    // LOG(debug, "handleSetBucketState(): %s", cmd.toString().c_str());
+    spi::Bucket                  bucket(cmd.getBucket());
+    bool                         shouldBeActive(cmd.getState() == api::SetBucketStateCommand::ACTIVE);
     spi::BucketInfo::ActiveState newState(shouldBeActive ? spi::BucketInfo::ACTIVE : spi::BucketInfo::NOT_ACTIVE);
 
     auto task = makeResultTask([this, &cmd, newState, tracker = std::move(trackerUP), bucket,
-                                notifyGuard = std::make_unique<NotificationGuard>(_bucketOwnershipNotifier)](spi::Result::UP response) mutable {
+                                notifyGuard = std::make_unique<NotificationGuard>(_bucketOwnershipNotifier)](
+                                   spi::Result::UP response) mutable {
         if (tracker->checkForError(*response)) {
-            StorBucketDatabase &db(_env.getBucketDatabase(bucket.getBucketSpace()));
-            StorBucketDatabase::WrappedEntry entry = db.get(bucket.getBucketId(),"handleSetBucketState");
+            StorBucketDatabase&              db(_env.getBucketDatabase(bucket.getBucketSpace()));
+            StorBucketDatabase::WrappedEntry entry = db.get(bucket.getBucketId(), "handleSetBucketState");
             if (entry.exists()) {
                 entry->info.setActive(newState == spi::BucketInfo::ACTIVE);
                 notifyGuard->notifyIfOwnershipChanged(cmd.getBucket(), cmd.getSourceIndex(), entry->info);
                 entry.write();
             } else {
-                LOG(warning, "Got OK setCurrentState result from provider for %s, "
-                             "but bucket has disappeared from service layer database",
+                LOG(warning,
+                    "Got OK setCurrentState result from provider for %s, "
+                    "but bucket has disappeared from service layer database",
                     cmd.getBucketId().toString().c_str());
             }
             tracker->setReply(std::make_shared<api::SetBucketStateReply>(cmd));
         }
         tracker->sendReply();
     });
-    _spi.setActiveStateAsync(bucket, newState, std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, cmd.getBucketId(), std::move(task)));
+    _spi.setActiveStateAsync(
+        bucket, newState,
+        std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, cmd.getBucketId(), std::move(task)));
     return trackerUP;
 }
 
-MessageTracker::UP
-AsyncHandler::handleUpdate(api::UpdateCommand& cmd, MessageTracker::UP trackerUP) const
-{
-    MessageTracker & tracker = *trackerUP;
-    auto& metrics = _env._metrics.update;
+MessageTracker::UP AsyncHandler::handleUpdate(api::UpdateCommand& cmd, MessageTracker::UP trackerUP) const {
+    MessageTracker& tracker = *trackerUP;
+    auto&           metrics = _env._metrics.update;
     tracker.setMetric(metrics);
     metrics.request_size.addValue(cmd.getApproxByteSize());
 
-    if (tasConditionExists(cmd) && !tasConditionMatches(cmd, tracker, tracker.context(), cmd.getUpdate()->getCreateIfNonExistent())) {
+    if (tasConditionExists(cmd) &&
+        !tasConditionMatches(cmd, tracker, tracker.context(), cmd.getUpdate()->getCreateIfNonExistent()))
+    {
         metrics.test_and_set_failed.inc();
         return trackerUP;
     }
@@ -366,7 +362,7 @@ AsyncHandler::handleUpdate(api::UpdateCommand& cmd, MessageTracker::UP trackerUP
     }
     // Note that the &cmd capture is OK since its lifetime is guaranteed by the tracker
     auto task = makeResultTask([&cmd, tracker = std::move(trackerUP)](spi::Result::UP responseUP) {
-        auto & response = dynamic_cast<const spi::UpdateResult &>(*responseUP);
+        auto& response = dynamic_cast<const spi::UpdateResult&>(*responseUP);
         if (tracker->checkForError(response)) {
             auto reply = std::make_shared<api::UpdateReply>(cmd);
             reply->setOldTimestamp(response.getExistingTimestamp());
@@ -374,16 +370,15 @@ AsyncHandler::handleUpdate(api::UpdateCommand& cmd, MessageTracker::UP trackerUP
         }
         tracker->sendReply();
     });
-    _spi.updateAsync(bucket, spi::Timestamp(cmd.getTimestamp()), cmd.getUpdate(),
-                     std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, cmd.getBucketId(), std::move(task)));
+    _spi.updateAsync(
+        bucket, spi::Timestamp(cmd.getTimestamp()), cmd.getUpdate(),
+        std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, cmd.getBucketId(), std::move(task)));
     return trackerUP;
 }
 
-MessageTracker::UP
-AsyncHandler::handleRemove(api::RemoveCommand& cmd, MessageTracker::UP trackerUP) const
-{
-    MessageTracker & tracker = *trackerUP;
-    auto& metrics = _env._metrics.remove;
+MessageTracker::UP AsyncHandler::handleRemove(api::RemoveCommand& cmd, MessageTracker::UP trackerUP) const {
+    MessageTracker& tracker = *trackerUP;
+    auto&           metrics = _env._metrics.remove;
     tracker.setMetric(metrics);
     metrics.request_size.addValue(cmd.getApproxByteSize());
 
@@ -396,7 +391,7 @@ AsyncHandler::handleRemove(api::RemoveCommand& cmd, MessageTracker::UP trackerUP
 
     // Note that the &cmd capture is OK since its lifetime is guaranteed by the tracker
     auto task = makeResultTask([&metrics, &cmd, tracker = std::move(trackerUP)](spi::Result::UP responseUP) {
-        auto & response = dynamic_cast<const spi::RemoveResult &>(*responseUP);
+        auto& response = dynamic_cast<const spi::RemoveResult&>(*responseUP);
         if (tracker->checkForError(response)) {
             tracker->setReply(std::make_shared<api::RemoveReply>(cmd, response.wasFound() ? cmd.getTimestamp() : 0));
         }
@@ -405,46 +400,39 @@ AsyncHandler::handleRemove(api::RemoveCommand& cmd, MessageTracker::UP trackerUP
         }
         tracker->sendReply();
     });
-    _spi.removeIfFoundAsync(bucket, spi::Timestamp(cmd.getTimestamp()), cmd.getDocumentId(),
-                            std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, cmd.getBucketId(), std::move(task)));
+    _spi.removeIfFoundAsync(
+        bucket, spi::Timestamp(cmd.getTimestamp()), cmd.getDocumentId(),
+        std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, cmd.getBucketId(), std::move(task)));
     return trackerUP;
 }
 
-api::Timestamp
-AsyncHandler::fetch_existing_document_timestamp(const document::DocumentId& id, const spi::Bucket& bucket, spi::Context& ctx) const
-{
+api::Timestamp AsyncHandler::fetch_existing_document_timestamp(const document::DocumentId& id,
+                                                               const spi::Bucket& bucket, spi::Context& ctx) const {
     return _spi.get(bucket, document::NoFields(), id, ctx).getTimestamp();
 }
 
-bool
-AsyncHandler::is_async_unconditional_message(const api::StorageMessage & cmd) noexcept
-{
+bool AsyncHandler::is_async_unconditional_message(const api::StorageMessage& cmd) noexcept {
     switch (cmd.getType().getId()) {
-        case api::MessageType::PUT_ID:
-        case api::MessageType::UPDATE_ID:
-        case api::MessageType::REMOVE_ID:
-            return ! cmd.hasTestAndSetCondition();
-        default:
-            return false;
+    case api::MessageType::PUT_ID:
+    case api::MessageType::UPDATE_ID:
+    case api::MessageType::REMOVE_ID:
+        return !cmd.hasTestAndSetCondition();
+    default:
+        return false;
     }
 }
 
-bool
-AsyncHandler::tasConditionExists(const api::TestAndSetCommand & cmd) {
+bool AsyncHandler::tasConditionExists(const api::TestAndSetCommand& cmd) {
     return cmd.getCondition().isPresent();
 }
 
-bool
-AsyncHandler::tasConditionMatches(const api::TestAndSetCommand& cmd, MessageTracker& tracker,
-                                  spi::Context& context, bool missingDocumentImpliesMatch) const {
+bool AsyncHandler::tasConditionMatches(const api::TestAndSetCommand& cmd, MessageTracker& tracker,
+                                       spi::Context& context, bool missingDocumentImpliesMatch) const {
     try {
-        LOG(debug, "Evaluating TaS condition %s for document '%s'",
-            cmd.getCondition().to_string().c_str(), cmd.getDocumentId().toString().c_str());
-        TestAndSetHelper helper(_env, _spi, _bucketIdFactory,
-                                cmd.getCondition(),
-                                cmd.getBucket(), cmd.getDocumentId(),
-                                cmd.getDocumentType(),
-                                missingDocumentImpliesMatch);
+        LOG(debug, "Evaluating TaS condition %s for document '%s'", cmd.getCondition().to_string().c_str(),
+            cmd.getDocumentId().toString().c_str());
+        TestAndSetHelper helper(_env, _spi, _bucketIdFactory, cmd.getCondition(), cmd.getBucket(),
+                                cmd.getDocumentId(), cmd.getDocumentType(), missingDocumentImpliesMatch);
 
         auto code = helper.retrieveAndMatch(context);
         if (code.failed()) {
@@ -462,13 +450,11 @@ AsyncHandler::tasConditionMatches(const api::TestAndSetCommand& cmd, MessageTrac
     return true;
 }
 
-bool
-AsyncHandler::checkProviderBucketInfoMatches(const spi::Bucket& bucket, const api::BucketInfo& info) const
-{
+bool AsyncHandler::checkProviderBucketInfoMatches(const spi::Bucket& bucket, const api::BucketInfo& info) const {
     spi::BucketInfoResult result(_spi.getBucketInfo(bucket));
     if (result.hasError()) {
-        LOG(error, "getBucketInfo(%s) failed before deleting bucket; got error '%s'",
-            bucket.toString().c_str(), result.getErrorMessage().c_str());
+        LOG(error, "getBucketInfo(%s) failed before deleting bucket; got error '%s'", bucket.toString().c_str(),
+            result.getErrorMessage().c_str());
         return false;
     }
     api::BucketInfo providerInfo(PersistenceUtil::convertBucketInfo(result.getBucketInfo()));
@@ -489,19 +475,16 @@ AsyncHandler::checkProviderBucketInfoMatches(const spi::Bucket& bucket, const ap
     return true;
 }
 
-MessageTracker::UP
-AsyncHandler::handleRemoveLocation(api::RemoveLocationCommand& cmd, MessageTracker::UP tracker) const
-{
+MessageTracker::UP AsyncHandler::handleRemoveLocation(api::RemoveLocationCommand& cmd,
+                                                      MessageTracker::UP          tracker) const {
     tracker->setMetric(_env._metrics.removeLocation);
 
-    spi::Bucket bucket(cmd.getBucket());
-    const bool is_legacy = (!cmd.only_enumerate_docs() && cmd.explicit_remove_set().empty());
+    spi::Bucket                      bucket(cmd.getBucket());
+    const bool                       is_legacy = (!cmd.only_enumerate_docs() && cmd.explicit_remove_set().empty());
     std::vector<spi::IdAndTimestamp> to_remove;
 
     LOG(debug, "RemoveLocation(%s): using selection '%s' (enumerate only: %s, remove set size: %zu)",
-        bucket.toString().c_str(),
-        cmd.getDocumentSelection().c_str(),
-        (cmd.only_enumerate_docs() ? "yes" : "no"),
+        bucket.toString().c_str(), cmd.getDocumentSelection().c_str(), (cmd.only_enumerate_docs() ? "yes" : "no"),
         cmd.explicit_remove_set().size());
 
     if (is_legacy || cmd.only_enumerate_docs()) {
@@ -509,12 +492,12 @@ AsyncHandler::handleRemoveLocation(api::RemoveLocationCommand& cmd, MessageTrack
         {
             auto usage = vespalib::CpuUsage::use(CpuUsage::Category::READ);
             BucketProcessor::iterateAll(_spi, bucket, cmd.getDocumentSelection(),
-                                        std::make_shared<document::DocIdOnly>(),
-                                        processor, spi::NEWEST_DOCUMENT_ONLY, tracker->context());
+                                        std::make_shared<document::DocIdOnly>(), processor, spi::NEWEST_DOCUMENT_ONLY,
+                                        tracker->context());
         }
         if (!is_legacy) {
-            LOG(debug, "RemoveLocation(%s): returning 1st phase results with %zu entries",
-                bucket.toString().c_str(), to_remove.size());
+            LOG(debug, "RemoveLocation(%s): returning 1st phase results with %zu entries", bucket.toString().c_str(),
+                to_remove.size());
             auto reply = std::make_shared<api::RemoveLocationReply>(cmd, 0); // No docs removed yet
             reply->set_selection_matches(std::move(to_remove));
             tracker->setReply(std::move(reply));
@@ -533,35 +516,39 @@ AsyncHandler::handleRemoveLocation(api::RemoveLocationCommand& cmd, MessageTrack
     // Note that the &cmd capture is OK since its lifetime is guaranteed by the tracker.
     // Always invoked indirectly in the context of a `_sequencedExecutor` callback, or
     // immediately on function return iff `to_remove` is empty.
-    auto send_reply_on_zero_refs = vespalib::makeSharedLambdaCallback([&cmd, tracker = std::move(tracker), shared_error_state,
-                                                                       n_removed = to_remove.size()]() mutable {
-        if (!shared_error_state->maybe_error_result || tracker->checkForError(*shared_error_state->maybe_error_result)) {
-            tracker->setReply(std::make_shared<api::RemoveLocationReply>(cmd, n_removed));
-        }
-        tracker->sendReply();
-    });
+    auto send_reply_on_zero_refs = vespalib::makeSharedLambdaCallback(
+        [&cmd, tracker = std::move(tracker), shared_error_state, n_removed = to_remove.size()]() mutable {
+            if (!shared_error_state->maybe_error_result ||
+                tracker->checkForError(*shared_error_state->maybe_error_result))
+            {
+                tracker->setReply(std::make_shared<api::RemoveLocationReply>(cmd, n_removed));
+            }
+            tracker->sendReply();
+        });
 
     auto& op_throttler = _env._fileStorHandler.operation_throttler();
     auto& maintenance_throttler = _env._fileStorHandler.maintenance_throttler();
     for (auto& rm_entry : to_remove) {
-        auto op_token = op_throttler.blocking_acquire_one();
-        auto maintenance_token = maintenance_throttler.blocking_acquire_one();
+        auto        op_token = op_throttler.blocking_acquire_one();
+        auto        maintenance_token = maintenance_throttler.blocking_acquire_one();
         std::vector single_id = {std::move(rm_entry)};
         // `shared_error_state` by raw ptr is safe, since `send_reply_on_zero_refs` holds a transitive strong ref.
-        auto on_complete = makeResultTask([send_reply_on_zero_refs, error_state = shared_error_state.get(),
-                                           tokens = std::make_pair(std::move(op_token), std::move(maintenance_token))]
-                                           (spi::Result::UP response) mutable {
-            if (response->hasError() && error_state->first_error_set.test_and_set()) {
-                // Visibility depends on shared_ptr release semantics on decref
-                error_state->maybe_error_result = std::move(response);
-            }
-        });
+        auto on_complete =
+            makeResultTask([send_reply_on_zero_refs, error_state = shared_error_state.get(),
+                            tokens = std::make_pair(std::move(op_token), std::move(maintenance_token))](
+                               spi::Result::UP response) mutable {
+                if (response->hasError() && error_state->first_error_set.test_and_set()) {
+                    // Visibility depends on shared_ptr release semantics on decref
+                    error_state->maybe_error_result = std::move(response);
+                }
+            });
         // In the case where a _newer_ mutation exists for a given entry in to_remove, it will be ignored
         // (with no tombstone added) since we only preserve the newest operation for a document.
-        _spi.removeAsync(bucket, std::move(single_id),
-                         std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, cmd.getBucketId(), std::move(on_complete)));
+        _spi.removeAsync(
+            bucket, std::move(single_id),
+            std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, cmd.getBucketId(), std::move(on_complete)));
     }
     return tracker;
 }
 
-}
+} // namespace storage

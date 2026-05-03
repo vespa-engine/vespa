@@ -10,16 +10,17 @@
 #include <vespa/persistence/spi/context.h>
 #include <vespa/persistence/spi/types.h>
 
-namespace document { class FieldSet; }
-namespace storage::spi {
-    struct PersistenceProvider;
-    class DocEntry;
+namespace document {
+class FieldSet;
 }
+namespace storage::spi {
+struct PersistenceProvider;
+class DocEntry;
+} // namespace storage::spi
 
 namespace storage {
 
-class BucketProcessor
-{
+class BucketProcessor {
 public:
     class EntryProcessor {
     public:
@@ -27,14 +28,9 @@ public:
         virtual void process(std::unique_ptr<spi::DocEntry>) = 0;
     };
 
-    static void iterateAll(spi::PersistenceProvider&,
-                           const spi::Bucket&,
-                           const std::string& documentSelection,
-                           std::shared_ptr<document::FieldSet> field_set,
-                           EntryProcessor&,
-                           spi::IncludedVersions,
+    static void iterateAll(spi::PersistenceProvider&, const spi::Bucket&, const std::string& documentSelection,
+                           std::shared_ptr<document::FieldSet> field_set, EntryProcessor&, spi::IncludedVersions,
                            spi::Context&);
 };
 
-}
-
+} // namespace storage
