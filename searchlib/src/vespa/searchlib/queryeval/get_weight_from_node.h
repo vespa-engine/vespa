@@ -11,4 +11,4 @@ namespace search::queryeval {
 
 search::query::Weight getWeightFromNode(const search::query::Node& node);
 
-}
+} // namespace search::queryeval
