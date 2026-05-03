@@ -33,9 +33,9 @@ protected:
 
 public:
     BitVectorIdxFileWrite(const BitVectorIdxFileWrite&) = delete;
-    BitVectorIdxFileWrite(const BitVectorIdxFileWrite&&) = delete;
+    BitVectorIdxFileWrite(BitVectorIdxFileWrite&&) = delete;
     BitVectorIdxFileWrite& operator=(const BitVectorIdxFileWrite&) = delete;
-    BitVectorIdxFileWrite& operator=(const BitVectorIdxFileWrite&&) = delete;
+    BitVectorIdxFileWrite& operator=(BitVectorIdxFileWrite&&) = delete;
     BitVectorIdxFileWrite(BitVectorKeyScope scope);
 
     virtual ~BitVectorIdxFileWrite();

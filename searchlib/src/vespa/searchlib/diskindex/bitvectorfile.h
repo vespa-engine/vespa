@@ -23,9 +23,9 @@ private:
 
 public:
     BitVectorFileWrite(const BitVectorFileWrite&) = delete;
-    BitVectorFileWrite(const BitVectorFileWrite&&) = delete;
+    BitVectorFileWrite(BitVectorFileWrite&&) = delete;
     BitVectorFileWrite& operator=(const BitVectorFileWrite&) = delete;
-    BitVectorFileWrite& operator=(const BitVectorFileWrite&&) = delete;
+    BitVectorFileWrite& operator=(BitVectorFileWrite&&) = delete;
     BitVectorFileWrite(BitVectorKeyScope scope);
     ~BitVectorFileWrite() override;
 
