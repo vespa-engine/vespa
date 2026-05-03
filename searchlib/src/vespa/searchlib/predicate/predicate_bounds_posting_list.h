@@ -3,8 +3,8 @@
 #pragma once
 
 #include "predicate_interval.h"
-#include "predicate_posting_list.h"
 #include "predicate_interval_store.h"
+#include "predicate_posting_list.h"
 
 namespace search::predicate {
 
@@ -12,17 +12,16 @@ namespace search::predicate {
  * PredicatePostingList implementation for range query edge iterators (bounds)
  * from PredicateIndex.
  */
-template<typename Iterator>
-class PredicateBoundsPostingList : public PredicatePostingList {
-    const PredicateIntervalStore &_interval_store;
-    Iterator _iterator;
-    const IntervalWithBounds *_current_interval;
-    uint32_t _interval_count;
-    uint32_t _value_diff;
-    IntervalWithBounds _single_buf;
+template <typename Iterator> class PredicateBoundsPostingList : public PredicatePostingList {
+    const PredicateIntervalStore& _interval_store;
+    Iterator                      _iterator;
+    const IntervalWithBounds*     _current_interval;
+    uint32_t                      _interval_count;
+    uint32_t                      _value_diff;
+    IntervalWithBounds            _single_buf;
 
 public:
-    PredicateBoundsPostingList(const PredicateIntervalStore &interval_store,Iterator it,uint32_t value_diff);
+    PredicateBoundsPostingList(const PredicateIntervalStore& interval_store, Iterator it, uint32_t value_diff);
     bool next(uint32_t doc_id) override;
     bool nextInterval() override;
     VESPA_DLL_LOCAL uint32_t getInterval() const override {
@@ -30,32 +29,29 @@ public:
     }
 };
 
-template<typename Iterator>
-PredicateBoundsPostingList<Iterator>::PredicateBoundsPostingList(
-        const PredicateIntervalStore &interval_store,
-        Iterator it, uint32_t value_diff)
-        : _interval_store(interval_store),
-          _iterator(it),
-          _current_interval(0),
-          _interval_count(0),
-          _value_diff(value_diff) {
+template <typename Iterator>
+PredicateBoundsPostingList<Iterator>::PredicateBoundsPostingList(const PredicateIntervalStore& interval_store,
+                                                                 Iterator it, uint32_t value_diff)
+    : _interval_store(interval_store),
+      _iterator(it),
+      _current_interval(0),
+      _interval_count(0),
+      _value_diff(value_diff) {
 }
 
 namespace {
-    bool checkBounds(uint32_t bounds, uint32_t diff) {
-        if (bounds & 0x80000000) {
-            return diff >= (bounds & 0x3fffffff);
-        } else if (bounds & 0x40000000) {
-            return diff < (bounds & 0x3fffffff);
-        } else {
-            return (diff >= (bounds >> 16)) && (diff < (bounds & 0xffff));
-        }
+bool checkBounds(uint32_t bounds, uint32_t diff) {
+    if (bounds & 0x80000000) {
+        return diff >= (bounds & 0x3fffffff);
+    } else if (bounds & 0x40000000) {
+        return diff < (bounds & 0x3fffffff);
+    } else {
+        return (diff >= (bounds >> 16)) && (diff < (bounds & 0xffff));
     }
-}  // namespace
+}
+} // namespace
 
-template<typename Iterator>
-bool
-PredicateBoundsPostingList<Iterator>::next(uint32_t doc_id) {
+template <typename Iterator> bool PredicateBoundsPostingList<Iterator>::next(uint32_t doc_id) {
     if (_iterator.valid() && _iterator.getKey() <= doc_id) {
         _iterator.linearSeek(doc_id + 1);
     }
@@ -75,9 +71,7 @@ PredicateBoundsPostingList<Iterator>::next(uint32_t doc_id) {
     return true;
 }
 
-template<typename Iterator>
-bool
-PredicateBoundsPostingList<Iterator>::nextInterval() {
+template <typename Iterator> bool PredicateBoundsPostingList<Iterator>::nextInterval() {
     uint32_t next_bounds;
     do {
         if (__builtin_expect(_interval_count == 1, true)) {
@@ -90,4 +84,4 @@ PredicateBoundsPostingList<Iterator>::nextInterval() {
     return true;
 }
 
-}
+} // namespace search::predicate

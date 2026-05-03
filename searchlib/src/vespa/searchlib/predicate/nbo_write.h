@@ -11,11 +11,9 @@ namespace search::predicate {
  * Utility function for writing a scalar value
  * in network byte order via an BufferWriter.
  */
-template <typename T>
-void nbo_write(BufferWriter& writer, T value)
-{
+template <typename T> void nbo_write(BufferWriter& writer, T value) {
     auto value_nbo = vespalib::nbo::n2h(value);
     writer.write(&value_nbo, sizeof(value_nbo));
 }
 
-}
+} // namespace search::predicate

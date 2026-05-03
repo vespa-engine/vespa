@@ -1,90 +1,85 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "document_features_store.h"
+
 #include "document_features_store_saver.h"
 #include "predicate_range_expander.h"
+
 #include <vespa/vespalib/btree/btree.hpp>
-#include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
+#include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/datastore/array_store.hpp>
-#include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <vespa/vespalib/datastore/array_store_dynamic_type_mapper.hpp>
+#include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <vespa/vespalib/datastore/dynamic_array_buffer_type.hpp>
+
 #include <iterator>
 
+using std::unordered_map;
+using std::vector;
+using vespalib::DataBuffer;
+using vespalib::Generation;
 using vespalib::btree::BTreeNoLeafData;
 using vespalib::datastore::ArrayStore;
 using vespalib::datastore::ArrayStoreConfig;
 using vespalib::datastore::EntryRef;
-using vespalib::DataBuffer;
-using vespalib::Generation;
-using std::unordered_map;
-using std::vector;
 
 namespace search::predicate {
 
 namespace {
 
-constexpr double array_store_grow_factor = 1.03;
+constexpr double   array_store_grow_factor = 1.03;
 constexpr uint32_t array_store_max_type_id = 300;
-constexpr float alloc_grow_factor = 0.2;
-constexpr size_t max_buffer_size = ArrayStoreConfig::default_max_buffer_size;
+constexpr float    alloc_grow_factor = 0.2;
+constexpr size_t   max_buffer_size = ArrayStoreConfig::default_max_buffer_size;
 
-}
+} // namespace
 
-DocumentFeaturesStore::FeaturesStoreTypeMapper
-DocumentFeaturesStore::make_features_store_type_mapper()
-{
+DocumentFeaturesStore::FeaturesStoreTypeMapper DocumentFeaturesStore::make_features_store_type_mapper() {
     return FeaturesStoreTypeMapper(array_store_max_type_id, array_store_grow_factor, max_buffer_size);
 }
 
-ArrayStoreConfig
-DocumentFeaturesStore::make_features_store_config()
-{
+ArrayStoreConfig DocumentFeaturesStore::make_features_store_config() {
     auto mapper = make_features_store_type_mapper();
-    auto result = FeaturesStore::optimizedConfigForHugePage(array_store_max_type_id, mapper, vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE, vespalib::alloc::MemoryAllocator::NORMAL_PAGE_SIZE, max_buffer_size, 8_Ki, alloc_grow_factor);
+    auto result = FeaturesStore::optimizedConfigForHugePage(
+        array_store_max_type_id, mapper, vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
+        vespalib::alloc::MemoryAllocator::NORMAL_PAGE_SIZE, max_buffer_size, 8_Ki, alloc_grow_factor);
     result.enable_free_lists(true);
     return result;
 }
 
-DocumentFeaturesStore::RangesStoreTypeMapper
-DocumentFeaturesStore::make_ranges_store_type_mapper()
-{
+DocumentFeaturesStore::RangesStoreTypeMapper DocumentFeaturesStore::make_ranges_store_type_mapper() {
     return RangesStoreTypeMapper(array_store_max_type_id, array_store_grow_factor, max_buffer_size);
 }
 
-ArrayStoreConfig
-DocumentFeaturesStore::make_ranges_store_config()
-{
+ArrayStoreConfig DocumentFeaturesStore::make_ranges_store_config() {
     auto mapper = make_ranges_store_type_mapper();
-    auto result = RangesStore::optimizedConfigForHugePage(array_store_max_type_id, mapper, vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE, vespalib::alloc::MemoryAllocator::NORMAL_PAGE_SIZE, max_buffer_size, 8_Ki, alloc_grow_factor);
+    auto result = RangesStore::optimizedConfigForHugePage(
+        array_store_max_type_id, mapper, vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
+        vespalib::alloc::MemoryAllocator::NORMAL_PAGE_SIZE, max_buffer_size, 8_Ki, alloc_grow_factor);
     result.enable_free_lists(true);
     return result;
 }
 
 DocumentFeaturesStore::DocumentFeaturesStore(uint32_t arity)
     : _refs(),
-      _features(make_features_store_config(),
-                std::shared_ptr<vespalib::alloc::MemoryAllocator>(),
+      _features(make_features_store_config(), std::shared_ptr<vespalib::alloc::MemoryAllocator>(),
                 make_features_store_type_mapper()),
-      _ranges(make_ranges_store_config(),
-                std::shared_ptr<vespalib::alloc::MemoryAllocator>(),
-                make_ranges_store_type_mapper()),
+      _ranges(make_ranges_store_config(), std::shared_ptr<vespalib::alloc::MemoryAllocator>(),
+              make_ranges_store_type_mapper()),
       _word_store(),
       _word_index(),
-      _arity(arity)
-{
+      _arity(arity) {
 }
 
 namespace {
 template <typename KeyComp, typename WordIndex>
-void
-deserializeWords(DataBuffer &buffer, memoryindex::WordStore &word_store, WordIndex &word_index, vector<EntryRef> &word_refs)
-{
+void deserializeWords(DataBuffer& buffer, memoryindex::WordStore& word_store, WordIndex& word_index,
+                      vector<EntryRef>& word_refs) {
     uint32_t word_list_size = buffer.readInt32();
     word_refs.reserve(word_list_size);
     vector<char> word;
-    KeyComp cmp(word_store, "");
+    KeyComp      cmp(word_store, "");
     for (uint32_t i = 0; i < word_list_size; ++i) {
         uint32_t size = buffer.readInt32();
         word.clear();
@@ -96,12 +91,10 @@ deserializeWords(DataBuffer &buffer, memoryindex::WordStore &word_store, WordInd
 }
 
 template <typename RefsVector, typename RangesStore>
-void
-deserialize_ranges(DataBuffer &buffer, vector<EntryRef> &word_refs, RefsVector& refs, RangesStore& ranges)
-{
+void deserialize_ranges(DataBuffer& buffer, vector<EntryRef>& word_refs, RefsVector& refs, RangesStore& ranges) {
     using Range = typename RangesStore::ElemType;
     std::vector<Range> range_vector;
-    uint32_t ranges_size = buffer.readInt32();
+    uint32_t           ranges_size = buffer.readInt32();
     for (uint32_t i = 0; i < ranges_size; ++i) {
         uint32_t doc_id = buffer.readInt32();
         if (doc_id >= refs.size()) {
@@ -124,11 +117,9 @@ deserialize_ranges(DataBuffer &buffer, vector<EntryRef> &word_refs, RefsVector& 
 }
 
 template <typename RefsVector, typename FeaturesStore>
-void
-deserialize_features(DataBuffer &buffer, RefsVector& refs, FeaturesStore &features)
-{
+void deserialize_features(DataBuffer& buffer, RefsVector& refs, FeaturesStore& features) {
     std::vector<typename FeaturesStore::ElemType> feature_vector;
-    uint32_t docs_size = buffer.readInt32();
+    uint32_t                                      docs_size = buffer.readInt32();
     for (uint32_t i = 0; i < docs_size; ++i) {
         uint32_t doc_id = buffer.readInt32();
         if (doc_id >= refs.size()) {
@@ -145,10 +136,9 @@ deserialize_features(DataBuffer &buffer, RefsVector& refs, FeaturesStore &featur
         cur_refs._features = features.add(feature_vector);
     }
 }
-}  // namespace
+} // namespace
 
-DocumentFeaturesStore::DocumentFeaturesStore(DataBuffer &buffer)
-    : DocumentFeaturesStore(0) {
+DocumentFeaturesStore::DocumentFeaturesStore(DataBuffer& buffer) : DocumentFeaturesStore(0) {
     _arity = buffer.readInt16();
 
     vector<EntryRef> word_refs;
@@ -164,18 +154,17 @@ DocumentFeaturesStore::~DocumentFeaturesStore() {
     _word_index.clear();
 }
 
-void
-DocumentFeaturesStore::insert(const PredicateTreeAnnotations &annotations, uint32_t doc_id) {
+void DocumentFeaturesStore::insert(const PredicateTreeAnnotations& annotations, uint32_t doc_id) {
     assert(doc_id != 0);
     if (doc_id >= _refs.size()) {
         _refs.resize(doc_id + 1);
     }
     auto& cur_refs = _refs[doc_id];
     if (!annotations.features.empty()) {
-        auto old_features_ref = cur_refs._features;
-        auto old_features = _features.get(old_features_ref);
+        auto                  old_features_ref = cur_refs._features;
+        auto                  old_features = _features.get(old_features_ref);
         std::vector<uint64_t> features(old_features.begin(), old_features.end());
-        size_t size = features.size();
+        size_t                size = features.size();
         features.resize(size + annotations.features.size());
         memcpy(&features[size], &annotations.features[0],
                annotations.features.size() * sizeof(annotations.features[0]));
@@ -185,13 +174,13 @@ DocumentFeaturesStore::insert(const PredicateTreeAnnotations &annotations, uint3
         }
     }
     if (!annotations.range_features.empty()) {
-        auto old_ranges_ref = cur_refs._ranges;
-        auto old_ranges =  _ranges.get(old_ranges_ref);
+        auto               old_ranges_ref = cur_refs._ranges;
+        auto               old_ranges = _ranges.get(old_ranges_ref);
         std::vector<Range> ranges(old_ranges.begin(), old_ranges.end());
-        for (const auto &range : annotations.range_features) {
-            std::string_view word(range.label.data, range.label.size);
-            KeyComp cmp(_word_store, word);
-            auto word_it = _word_index.find(vespalib::datastore::EntryRef(), cmp);
+        for (const auto& range : annotations.range_features) {
+            std::string_view              word(range.label.data, range.label.size);
+            KeyComp                       cmp(_word_store, word);
+            auto                          word_it = _word_index.find(vespalib::datastore::EntryRef(), cmp);
             vespalib::datastore::EntryRef ref;
             if (word_it.valid()) {
                 ref = word_it.getKey();
@@ -208,8 +197,7 @@ DocumentFeaturesStore::insert(const PredicateTreeAnnotations &annotations, uint3
     }
 }
 
-DocumentFeaturesStore::FeatureSet
-DocumentFeaturesStore::get(uint32_t docId) const {
+DocumentFeaturesStore::FeatureSet DocumentFeaturesStore::get(uint32_t docId) const {
     FeatureSet features;
     if (docId >= _refs.size()) {
         return features;
@@ -222,7 +210,7 @@ DocumentFeaturesStore::get(uint32_t docId) const {
     if (cur_refs._ranges.valid()) {
         auto old_ranges = _ranges.get(cur_refs._ranges);
         for (auto range : old_ranges) {
-            const char *label = _word_store.getWord(range.label_ref);
+            const char* label = _word_store.getWord(range.label_ref);
             PredicateRangeExpander::expandRange(label, range.from, range.to, _arity,
                                                 std::inserter(features, features.end()));
         }
@@ -230,13 +218,12 @@ DocumentFeaturesStore::get(uint32_t docId) const {
     return features;
 }
 
-void
-DocumentFeaturesStore::remove(uint32_t doc_id) {
+void DocumentFeaturesStore::remove(uint32_t doc_id) {
     if (doc_id >= _refs.size()) {
         return;
     }
     auto& cur_refs = _refs[doc_id];
-    auto old_features_ref = cur_refs._features;
+    auto  old_features_ref = cur_refs._features;
     if (old_features_ref.valid()) {
         _features.remove(old_features_ref);
         cur_refs._features = EntryRef();
@@ -248,22 +235,17 @@ DocumentFeaturesStore::remove(uint32_t doc_id) {
     }
 }
 
-void
-DocumentFeaturesStore::reclaim_memory(Generation oldest_used_gen)
-{
+void DocumentFeaturesStore::reclaim_memory(Generation oldest_used_gen) {
     _features.reclaim_memory(oldest_used_gen);
     _ranges.reclaim_memory(oldest_used_gen);
 }
 
-void
-DocumentFeaturesStore::assign_generation(Generation current_gen)
-{
+void DocumentFeaturesStore::assign_generation(Generation current_gen) {
     _features.assign_generation(current_gen);
     _ranges.assign_generation(current_gen);
 }
 
-vespalib::MemoryUsage
-DocumentFeaturesStore::getMemoryUsage() const {
+vespalib::MemoryUsage DocumentFeaturesStore::getMemoryUsage() const {
     vespalib::MemoryUsage usage;
     usage.incAllocatedBytes(_refs.capacity() * sizeof(Refs));
     usage.incUsedBytes(_refs.size() * sizeof(Refs));
@@ -275,10 +257,8 @@ DocumentFeaturesStore::getMemoryUsage() const {
     return usage;
 }
 
-std::unique_ptr<ISaver>
-DocumentFeaturesStore::make_saver() const
-{
+std::unique_ptr<ISaver> DocumentFeaturesStore::make_saver() const {
     return std::make_unique<DocumentFeaturesStoreSaver>(*this);
 }
 
-}
+} // namespace search::predicate

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "predicate_tree_annotator.h"
+
 #include <vespa/searchlib/memoryindex/word_store.h>
 #include <vespa/vespalib/btree/btree.h>
 #include <vespa/vespalib/data/databuffer.h>
@@ -10,6 +11,7 @@
 #include <vespa/vespalib/datastore/array_store_dynamic_type_mapper.h>
 #include <vespa/vespalib/datastore/dynamic_array_buffer_type.h>
 #include <vespa/vespalib/stllike/allocator.h>
+
 #include <unordered_set>
 
 namespace search::predicate {
@@ -28,33 +30,29 @@ class DocumentFeaturesStore {
     using WordStore = memoryindex::WordStore;
     struct Range {
         vespalib::datastore::EntryRef label_ref;
-        int64_t from;
-        int64_t to;
+        int64_t                       from;
+        int64_t                       to;
     };
     // Compares EntryRefs by their corresponding word in a WordStore.
     // To find a word without knowing its EntryRef, set the word in
     // the constructor and search for an illegal EntryRef.
     class KeyComp {
-        const WordStore &_word_store;
+        const WordStore&  _word_store;
         const std::string _word;
 
-        const char *getWord(vespalib::datastore::EntryRef ref) const {
+        const char* getWord(vespalib::datastore::EntryRef ref) const {
             return ref.valid() ? _word_store.getWord(ref) : _word.c_str();
         }
 
     public:
-        KeyComp(const WordStore &word_store, std::string_view word)
-            : _word_store(word_store),
-              _word(word) {
-        }
+        KeyComp(const WordStore& word_store, std::string_view word) : _word_store(word_store), _word(word) {}
 
-        bool operator()(const vespalib::datastore::EntryRef &lhs,
-                        const vespalib::datastore::EntryRef &rhs) const {
+        bool operator()(const vespalib::datastore::EntryRef& lhs, const vespalib::datastore::EntryRef& rhs) const {
             return strcmp(getWord(lhs), getWord(rhs)) < 0;
         }
     };
     using WordIndex = vespalib::btree::BTree<vespalib::datastore::EntryRef, vespalib::btree::BTreeNoLeafData,
-                         vespalib::btree::NoAggregated, const KeyComp &>;
+                                             vespalib::btree::NoAggregated, const KeyComp&>;
     // Array store for features
     using FeaturesRefType = vespalib::datastore::EntryRefT<19>;
     using FeaturesStoreTypeMapper = vespalib::datastore::ArrayStoreDynamicTypeMapper<uint64_t>;
@@ -69,28 +67,29 @@ class DocumentFeaturesStore {
     };
     using RefsVector = std::vector<Refs, vespalib::allocator_large<Refs>>;
 
-    RefsVector          _refs;
-    FeaturesStore       _features;
-    RangesStore         _ranges;
-    WordStore           _word_store;
-    WordIndex           _word_index;
-    uint32_t            _arity;
+    RefsVector    _refs;
+    FeaturesStore _features;
+    RangesStore   _ranges;
+    WordStore     _word_store;
+    WordIndex     _word_index;
+    uint32_t      _arity;
 
     static FeaturesStoreTypeMapper make_features_store_type_mapper();
     static RangesStoreTypeMapper make_ranges_store_type_mapper();
     static vespalib::datastore::ArrayStoreConfig make_features_store_config();
     static vespalib::datastore::ArrayStoreConfig make_ranges_store_config();
+
 public:
     using FeatureSet = std::unordered_set<uint64_t>;
 
     DocumentFeaturesStore(uint32_t arity);
-    DocumentFeaturesStore(vespalib::DataBuffer &buffer);
+    DocumentFeaturesStore(vespalib::DataBuffer& buffer);
     ~DocumentFeaturesStore();
 
-    void insert(const PredicateTreeAnnotations &annotations, uint32_t docId);
+    void insert(const PredicateTreeAnnotations& annotations, uint32_t docId);
     FeatureSet get(uint32_t docId) const;
     void remove(uint32_t docId);
-    void commit() { }
+    void commit() {}
     void reclaim_memory(vespalib::Generation oldest_used_gen);
     void assign_generation(vespalib::Generation current_gen);
     vespalib::MemoryUsage getMemoryUsage() const;
@@ -98,4 +97,4 @@ public:
     std::unique_ptr<ISaver> make_saver() const;
 };
 
-}
+} // namespace search::predicate

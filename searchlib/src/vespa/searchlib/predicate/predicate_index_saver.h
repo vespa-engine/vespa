@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "i_saver.h"
 #include "common.h"
+#include "i_saver.h"
 
 namespace search::predicate {
 
@@ -17,14 +17,13 @@ class PredicateIndexSaver : public ISaver {
     ZeroConstraintDocs      _zero_constraint_docs;
     std::unique_ptr<ISaver> _interval_index_saver;
     std::unique_ptr<ISaver> _bounds_index_saver;
+
 public:
-    PredicateIndexSaver(std::unique_ptr<ISaver> features_store_saver,
-                        uint32_t _arity,
-                        ZeroConstraintDocs zero_constraint_docs,
-                        std::unique_ptr<ISaver> interval_index_saver,
+    PredicateIndexSaver(std::unique_ptr<ISaver> features_store_saver, uint32_t _arity,
+                        ZeroConstraintDocs zero_constraint_docs, std::unique_ptr<ISaver> interval_index_saver,
                         std::unique_ptr<ISaver> bounds_index_saver);
     ~PredicateIndexSaver() override;
     void save(BufferWriter& writer) const override;
 };
 
-}
+} // namespace search::predicate

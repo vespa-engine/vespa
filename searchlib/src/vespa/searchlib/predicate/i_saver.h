@@ -2,7 +2,9 @@
 
 #pragma once
 
-namespace search { class BufferWriter; }
+namespace search {
+class BufferWriter;
+}
 
 namespace search::predicate {
 
@@ -15,4 +17,4 @@ public:
     virtual void save(BufferWriter& writer) const = 0;
 };
 
-}
+} // namespace search::predicate

@@ -4,8 +4,8 @@
 
 namespace search::predicate {
 
-PredicateZeroConstraintPostingList::PredicateZeroConstraintPostingList(Iterator it)
-    : _iterator(it) {}
+PredicateZeroConstraintPostingList::PredicateZeroConstraintPostingList(Iterator it) : _iterator(it) {
+}
 
 bool PredicateZeroConstraintPostingList::next(uint32_t doc_id) {
     if (_iterator.valid() && _iterator.getKey() <= doc_id) {
@@ -18,4 +18,4 @@ bool PredicateZeroConstraintPostingList::next(uint32_t doc_id) {
     return true;
 }
 
-}
+} // namespace search::predicate

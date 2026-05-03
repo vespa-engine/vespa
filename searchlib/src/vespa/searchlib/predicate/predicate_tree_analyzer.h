@@ -3,7 +3,9 @@
 #pragma once
 
 #include "tree_crumbs.h"
+
 #include <vespa/vespalib/data/slime/slime.h>
+
 #include <map>
 
 namespace search::predicate {
@@ -17,24 +19,24 @@ namespace search::predicate {
 class PredicateTreeAnalyzer {
     std::map<std::string, int> _key_counts;
     std::map<std::string, int> _size_map;
-    int _min_feature;
-    bool _has_not;
+    int                        _min_feature;
+    bool                       _has_not;
 
-    bool _negated;
+    bool       _negated;
     TreeCrumbs _crumbs;
-    int _size;
+    int        _size;
 
     // Fills _key_counts, _size_map, and _has_not.
-    void traverseTree(const vespalib::slime::Inspector &in);
-    float findMinFeature(const vespalib::slime::Inspector &in);
+    void traverseTree(const vespalib::slime::Inspector& in);
+    float findMinFeature(const vespalib::slime::Inspector& in);
 
 public:
-    PredicateTreeAnalyzer(const vespalib::slime::Inspector &in);
+    PredicateTreeAnalyzer(const vespalib::slime::Inspector& in);
     ~PredicateTreeAnalyzer();
 
     int getMinFeature() const { return _min_feature; }
     int getSize() const { return _size; }
-    const std::map<std::string, int> &getSizeMap() const { return _size_map; }
+    const std::map<std::string, int>& getSizeMap() const { return _size_map; }
 };
 
-}
+} // namespace search::predicate

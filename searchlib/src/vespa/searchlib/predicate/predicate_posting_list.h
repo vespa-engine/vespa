@@ -3,9 +3,8 @@
 
 #include <vespa/vespalib/util/vespa_dll_local.h>
 
-#include <memory>
 #include <cstdint>
-
+#include <memory>
 
 /**
  * Interface for posting lists used by PredicateSearch.
@@ -17,10 +16,7 @@ class PredicatePostingList {
     uint64_t _subquery;
 
 protected:
-    PredicatePostingList()
-        : _docId(0),
-          _subquery(UINT64_MAX)
-    { }
+    PredicatePostingList() : _docId(0), _subquery(UINT64_MAX) {}
 
     void setDocId(uint32_t docId) { _docId = docId; }
 
@@ -49,4 +45,4 @@ public:
     uint64_t getSubquery() const { return _subquery; }
 };
 
-}
+} // namespace search::predicate
