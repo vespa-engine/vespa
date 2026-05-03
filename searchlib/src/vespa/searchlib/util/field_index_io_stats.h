@@ -13,14 +13,16 @@ class FieldIndexIoStats {
     DiskIoStats _cached_read; // cache hit
 
 public:
-    FieldIndexIoStats() noexcept
-        : _read(),
-          _cached_read()
-    {
-    }
+    FieldIndexIoStats() noexcept : _read(), _cached_read() {}
 
-    FieldIndexIoStats& read(const DiskIoStats& value) { _read = value; return *this; }
-    FieldIndexIoStats& cached_read(DiskIoStats& value) { _cached_read = value; return *this; }
+    FieldIndexIoStats& read(const DiskIoStats& value) {
+        _read = value;
+        return *this;
+    }
+    FieldIndexIoStats& cached_read(DiskIoStats& value) {
+        _cached_read = value;
+        return *this;
+    }
     const DiskIoStats& read() const noexcept { return _read; }
     const DiskIoStats& cached_read() const noexcept { return _cached_read; }
     void merge(const FieldIndexIoStats& rhs) noexcept {
@@ -28,9 +30,8 @@ public:
         _cached_read.merge(rhs.cached_read());
     }
 
-    bool operator==(const FieldIndexIoStats &rhs) const noexcept {
-        return _read == rhs.read() &&
-               _cached_read == rhs.cached_read();
+    bool operator==(const FieldIndexIoStats& rhs) const noexcept {
+        return _read == rhs.read() && _cached_read == rhs.cached_read();
     }
     FieldIndexIoStats read_and_maybe_clear(bool clear_disk_io_stats) noexcept {
         auto result = *this;
@@ -49,4 +50,4 @@ public:
 
 std::ostream& operator<<(std::ostream& os, const FieldIndexIoStats& stats);
 
-}
+} // namespace search

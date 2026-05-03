@@ -10,10 +10,10 @@ namespace search {
 /*
  * Class used to get size of directory tree on disk.
  */
-class DirectoryTraverse
-{
+class DirectoryTraverse {
 private:
     std::filesystem::path _path;
+
 public:
     uint64_t GetTreeSize(); // Returns size of directory in bytes
     explicit DirectoryTraverse(const std::filesystem::path& path);

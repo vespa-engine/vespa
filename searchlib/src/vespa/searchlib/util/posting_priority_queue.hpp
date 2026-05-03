@@ -6,15 +6,12 @@
 
 namespace search {
 
-template <class Reader>
-void
-PostingPriorityQueue<Reader>::adjust()
-{
+template <class Reader> void PostingPriorityQueue<Reader>::adjust() {
     if (!_vec.front().get()->isValid()) {
-        _vec.erase(_vec.begin());   // Iterator no longer valid
+        _vec.erase(_vec.begin()); // Iterator no longer valid
         return;
     }
-    if (_vec.size() == 1) {       // Only one iterator left
+    if (_vec.size() == 1) { // Only one iterator left
         return;
     }
     // Peform binary search to find first element higher than changed value
@@ -28,13 +25,10 @@ PostingPriorityQueue<Reader>::adjust()
         ++from;
         ++to;
     }
-    *to = changed;   // Save changed value at right location
+    *to = changed; // Save changed value at right location
 }
 
-template <class Reader>
-void
-PostingPriorityQueue<Reader>::setup(uint32_t heap_limit)
-{
+template <class Reader> void PostingPriorityQueue<Reader>::setup(uint32_t heap_limit) {
     _heap_limit = heap_limit;
     for (auto ref : _vec) {
         assert(ref.get()->isValid());
@@ -44,4 +38,4 @@ PostingPriorityQueue<Reader>::setup(uint32_t heap_limit)
     }
 }
 
-}
+} // namespace search

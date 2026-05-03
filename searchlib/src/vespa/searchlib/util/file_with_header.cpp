@@ -1,26 +1,27 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "file_with_header.h"
+
 #include "file_settings.h"
 #include "filesizecalculator.h"
+
 #include <vespa/fastos/file_interface.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/vespalib/util/size_literals.h>
+
 #include <cassert>
 
 namespace search {
 
 namespace {
 
-bool
-extract_file_size(const vespalib::GenericHeader& header,
-                  FastOS_FileInterface& file, uint64_t& logical_file_size)
-{
+bool extract_file_size(const vespalib::GenericHeader& header, FastOS_FileInterface& file,
+                       uint64_t& logical_file_size) {
     return FileSizeCalculator::extractFileSize(header, header.getSize(), file.GetFileName(), logical_file_size);
 }
 
-}
+} // namespace
 
 FileWithHeader::FileWithHeader(std::unique_ptr<FastOS_FileInterface> file_in)
     : _file(std::move(file_in)),
@@ -28,8 +29,7 @@ FileWithHeader::FileWithHeader(std::unique_ptr<FastOS_FileInterface> file_in)
       _header_len(0),
       _file_size(0),
       _size_on_disk(0),
-      _flush_duration(std::chrono::steady_clock::duration::zero())
-{
+      _flush_duration(std::chrono::steady_clock::duration::zero()) {
     if (valid()) {
         _header_len = _header.readFile(*_file);
         _file->SetPosition(_header_len);
@@ -46,23 +46,17 @@ FileWithHeader::FileWithHeader(std::unique_ptr<FastOS_FileInterface> file_in)
 
 FileWithHeader::~FileWithHeader() = default;
 
-bool
-FileWithHeader::valid() const
-{
+bool FileWithHeader::valid() const {
     return _file && _file->IsOpened();
 }
 
-void
-FileWithHeader::rewind()
-{
+void FileWithHeader::rewind() {
     _file->SetPosition(_header_len);
 }
 
-void
-FileWithHeader::close()
-{
+void FileWithHeader::close() {
     bool close_ok = _file->Close();
     assert(close_ok);
 }
 
-}
+} // namespace search
