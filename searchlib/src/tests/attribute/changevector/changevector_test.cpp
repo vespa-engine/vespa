@@ -1,20 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchlib/attribute/changevector.hpp>
-#include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/stllike/hash_set.h>
+
+#include <vespa/searchlib/attribute/changevector.hpp>
 
 using namespace search;
 
 using Change = ChangeTemplate<NumericChangeData<long>>;
 using CV = ChangeVectorT<Change>;
 
-template <typename T>
-void verifyStrictOrdering(const T & v) {
+template <typename T> void verifyStrictOrdering(const T& v) {
     vespalib::hash_set<uint32_t> complete;
-    uint32_t prev_doc(0);
-    uint32_t prev_value(0);
-    for (const auto & c : v.getDocIdInsertOrder()) {
+    uint32_t                     prev_doc(0);
+    uint32_t                     prev_value(0);
+    for (const auto& c : v.getDocIdInsertOrder()) {
         if (prev_doc != c._doc) {
             complete.insert(prev_doc);
             EXPECT_FALSE(complete.contains(c._doc));
@@ -28,19 +28,19 @@ void verifyStrictOrdering(const T & v) {
 
 class Accessor {
 public:
-    Accessor(const std::vector<long> & v) : _size(v.size()), _current(v.begin()), _end(v.end()) { }
+    Accessor(const std::vector<long>& v) : _size(v.size()), _current(v.begin()), _end(v.end()) {}
     size_t size() const { return _size; }
     void next() { _current++; }
     long value() const { return *_current; }
     int weight() const { return *_current; }
+
 private:
-    size_t _size;
+    size_t                            _size;
     std::vector<long>::const_iterator _current;
     std::vector<long>::const_iterator _end;
 };
 
-TEST(ChangeVectorTest, require_insert_ordering_is_preserved_for_same_doc)
-{
+TEST(ChangeVectorTest, require_insert_ordering_is_preserved_for_same_doc) {
     CV a;
     a.push_back(Change(Change::NOOP, 7, 1));
     EXPECT_EQ(1u, a.size());
@@ -49,8 +49,7 @@ TEST(ChangeVectorTest, require_insert_ordering_is_preserved_for_same_doc)
     verifyStrictOrdering(a);
 }
 
-TEST(ChangeVectorTest, require_insert_ordering_is_preserved_)
-{
+TEST(ChangeVectorTest, require_insert_ordering_is_preserved_) {
     CV a;
     a.push_back(Change(Change::NOOP, 7, 1));
     EXPECT_EQ(1u, a.size());
@@ -61,8 +60,7 @@ TEST(ChangeVectorTest, require_insert_ordering_is_preserved_)
     verifyStrictOrdering(a);
 }
 
-TEST(ChangeVectorTest, require_insert_ordering_is_preserved_with_mix)
-{
+TEST(ChangeVectorTest, require_insert_ordering_is_preserved_with_mix) {
     CV a;
     a.push_back(Change(Change::NOOP, 7, 1));
     EXPECT_EQ(1u, a.size());
@@ -72,8 +70,8 @@ TEST(ChangeVectorTest, require_insert_ordering_is_preserved_with_mix)
     EXPECT_EQ(3u, a.size());
     a.push_back(Change(Change::NOOP, 6, 10));
     EXPECT_EQ(4u, a.size());
-    std::vector<long> v({4,5,6,7,8});
-    Accessor ac(v);
+    std::vector<long> v({4, 5, 6, 7, 8});
+    Accessor          ac(v);
     a.push_back(5, ac);
     EXPECT_EQ(9u, a.size());
     a.push_back(Change(Change::NOOP, 5, 9));
@@ -82,9 +80,9 @@ TEST(ChangeVectorTest, require_insert_ordering_is_preserved_with_mix)
 }
 
 TEST(ChangeVectorTest, require_that_inserting_empty_vector_does_not_affect_the_vector) {
-    CV a;
+    CV                a;
     std::vector<long> v;
-    Accessor ac(v);
+    Accessor          ac(v);
     a.push_back(1, ac);
     EXPECT_EQ(0u, a.size());
 }

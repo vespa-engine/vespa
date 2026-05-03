@@ -1,22 +1,23 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attribute_blueprint_factory.h>
 #include <vespa/searchlib/attribute/attribute_weighted_set_blueprint.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
+#include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/attribute/singlestringattribute.h>
-#include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
+#include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/queryeval/fake_result.h>
 #include <vespa/searchlib/queryeval/weighted_set_term_search.h>
-#include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/test/mock_attribute_manager.h>
-#include <vespa/searchlib/attribute/enumstore.hpp>
-#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/normalize_class_name.h>
+
+#include <vespa/searchlib/attribute/enumstore.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_weighted_set_blueprint_test");
@@ -31,15 +32,14 @@ using vespalib::normalize_class_name;
 
 namespace {
 
-void
-setupAttributeManager(MockAttributeManager &manager, bool isFilter)
-{
+void setupAttributeManager(MockAttributeManager& manager, bool isFilter) {
     AttributeVector::DocId docId;
     {
-        AttributeVector::SP attr_sp = AttributeFactory::createAttribute("integer", Config(BasicType::INT64).setIsFilter(isFilter));
+        AttributeVector::SP attr_sp =
+            AttributeFactory::createAttribute("integer", Config(BasicType::INT64).setIsFilter(isFilter));
         manager.addAttribute(attr_sp);
 
-        auto *attr = (IntegerAttribute*)(attr_sp.get());
+        auto* attr = (IntegerAttribute*)(attr_sp.get());
         for (size_t i = 1; i < 10; ++i) {
             attr->addDoc(docId);
             assert(i == docId);
@@ -48,10 +48,11 @@ setupAttributeManager(MockAttributeManager &manager, bool isFilter)
         }
     }
     {
-        AttributeVector::SP attr_sp = AttributeFactory::createAttribute("string", Config(BasicType::STRING).setIsFilter(isFilter));
+        AttributeVector::SP attr_sp =
+            AttributeFactory::createAttribute("string", Config(BasicType::STRING).setIsFilter(isFilter));
         manager.addAttribute(attr_sp);
 
-        auto *attr = (StringAttribute*)(attr_sp.get());
+        auto* attr = (StringAttribute*)(attr_sp.get());
         for (size_t i = 1; i < 10; ++i) {
             attr->addDoc(docId);
             assert(i == docId);
@@ -61,9 +62,9 @@ setupAttributeManager(MockAttributeManager &manager, bool isFilter)
     }
     {
         AttributeVector::SP attr_sp = AttributeFactory::createAttribute(
-                "multi", Config(BasicType::INT64, search::attribute::CollectionType::ARRAY).setIsFilter(isFilter));
+            "multi", Config(BasicType::INT64, search::attribute::CollectionType::ARRAY).setIsFilter(isFilter));
         manager.addAttribute(attr_sp);
-        auto *attr = (IntegerAttribute*)(attr_sp.get());
+        auto* attr = (IntegerAttribute*)(attr_sp.get());
         for (size_t i = 1; i < 10; ++i) {
             attr->addDoc(docId);
             assert(i == docId);
@@ -75,73 +76,67 @@ setupAttributeManager(MockAttributeManager &manager, bool isFilter)
 }
 
 struct WS {
-    static const uint32_t fieldId;
-    IAttributeManager & attribute_manager;
-    MatchDataLayout layout;
-    TermFieldHandle handle;
-    std::vector<std::pair<std::string, uint32_t> > tokens;
+    static const uint32_t                         fieldId;
+    IAttributeManager&                            attribute_manager;
+    MatchDataLayout                               layout;
+    TermFieldHandle                               handle;
+    std::vector<std::pair<std::string, uint32_t>> tokens;
 
-    explicit WS(IAttributeManager & manager)
-        : attribute_manager(manager),
-          layout(), handle(layout.allocTermField(fieldId)),
-          tokens()
-    {
+    explicit WS(IAttributeManager& manager)
+        : attribute_manager(manager), layout(), handle(layout.allocTermField(fieldId)), tokens() {
         MatchData::UP tmp = layout.createMatchData();
         EXPECT_EQ(fieldId, tmp->resolveTermField(handle)->getFieldId());
     }
 
-    void add(const std::string &token, uint32_t weight) {
-        tokens.emplace_back(token, weight);
-    }
+    void add(const std::string& token, uint32_t weight) { tokens.emplace_back(token, weight); }
 
     Node::UP createNode() const {
-        auto *node = new SimpleWeightedSetTerm(tokens.size(), "view", 0, Weight(0));
-        for (const auto & token : tokens) {
+        auto* node = new SimpleWeightedSetTerm(tokens.size(), "view", 0, Weight(0));
+        for (const auto& token : tokens) {
             node->addTerm(token.first, Weight(token.second));
         }
         return Node::UP(node);
     }
 
-    SearchIterator::UP
-    createSearch(Searchable &searchable, const std::string &field, bool strict) const {
-        AttributeContext ac(attribute_manager);
+    SearchIterator::UP createSearch(Searchable& searchable, const std::string& field, bool strict) const {
+        AttributeContext   ac(attribute_manager);
         FakeRequestContext requestContext(&ac);
-        Node::UP node = createNode();
-        FieldSpecList fields;
+        Node::UP           node = createNode();
+        FieldSpecList      fields;
         fields.add(FieldSpec(field, fieldId, handle, ac.getAttribute(field)->getIsFilter()));
-        MatchDataLayout mdl;
+        MatchDataLayout          mdl;
         queryeval::Blueprint::UP bp = searchable.createBlueprint(requestContext, fields, *node, mdl);
         EXPECT_TRUE(mdl.empty());
         bp->basic_plan(strict, 100);
         bp->fetchPostings(queryeval::ExecuteInfo::FULL);
-        MatchData::UP md = layout.createMatchData();
+        MatchData::UP      md = layout.createMatchData();
         SearchIterator::UP sb = bp->createSearch(*md);
         return sb;
     }
-    bool isWeightedSetTermSearch(Searchable &searchable, const std::string &field, bool strict) const {
-        return dynamic_cast<WeightedSetTermSearch *>(createSearch(searchable, field, strict).get()) != nullptr;
+    bool isWeightedSetTermSearch(Searchable& searchable, const std::string& field, bool strict) const {
+        return dynamic_cast<WeightedSetTermSearch*>(createSearch(searchable, field, strict).get()) != nullptr;
     }
 
-    FakeResult search(Searchable &searchable, const std::string &field, bool strict) const {
-        AttributeContext ac(attribute_manager);
+    FakeResult search(Searchable& searchable, const std::string& field, bool strict) const {
+        AttributeContext   ac(attribute_manager);
         FakeRequestContext requestContext(&ac);
-        Node::UP node = createNode();
-        FieldSpecList fields;
+        Node::UP           node = createNode();
+        FieldSpecList      fields;
         fields.add(FieldSpec(field, fieldId, handle));
-        MatchDataLayout mdl;
+        MatchDataLayout          mdl;
         queryeval::Blueprint::UP bp = searchable.createBlueprint(requestContext, fields, *node, mdl);
         EXPECT_TRUE(mdl.empty());
         bp->basic_plan(strict, 100);
         bp->fetchPostings(queryeval::ExecuteInfo::FULL);
-        MatchData::UP md = layout.createMatchData();
+        MatchData::UP      md = layout.createMatchData();
         SearchIterator::UP sb = bp->createSearch(*md);
-        FakeResult result;
+        FakeResult         result;
         sb->initRange(1, 10);
         for (uint32_t docId = 1; docId < 10; ++docId) {
             if (sb->seek(docId)) {
                 sb->unpack(docId);
                 result.doc(docId);
-                TermFieldMatchData &data = *md->resolveTermField(handle);
+                TermFieldMatchData&    data = *md->resolveTermField(handle);
                 FieldPositionsIterator itr = data.getIterator();
                 for (; itr.valid(); itr.next()) {
                     result.elem(itr.getElementId());
@@ -156,17 +151,17 @@ struct WS {
 
 const uint32_t WS::fieldId = 42;
 
-} // namespace <unnamed>
+} // namespace
 
-void test_tokens(bool isFilter, const std::vector<uint32_t> & docs) {
+void test_tokens(bool isFilter, const std::vector<uint32_t>& docs) {
     MockAttributeManager manager;
     setupAttributeManager(manager, isFilter);
     AttributeBlueprintFactory adapter;
 
     FakeResult expect = FakeResult();
-    WS ws = WS(manager);
+    WS         ws = WS(manager);
     for (uint32_t doc : docs) {
-        auto docS = vespalib::stringify(doc);
+        auto    docS = vespalib::stringify(doc);
         int32_t weight = doc * 10;
         expect.doc(doc).weight(weight).pos(0);
         ws.add(docS, weight);
@@ -198,17 +193,21 @@ TEST(AttributeWeightedSetBlueprintTest, attribute_weighted_set_single_token_filt
     AttributeBlueprintFactory adapter;
 
     FakeResult expect = FakeResult().doc(3).elem(0).weight(30).pos(0);
-    WS ws(manager);
+    WS         ws(manager);
     ws.add("3", 30);
 
-    EXPECT_EQ("search::FilterAttributeIteratorStrict<search::attribute::SingleNumericSearchContext<long, search::attribute::NumericMatcher<long> > >",
-                 normalize_class_name(ws.createSearch(adapter, "integer", true)->getClassName()));
-    EXPECT_EQ("search::FilterAttributeIteratorT<search::attribute::SingleNumericSearchContext<long, search::attribute::NumericMatcher<long> > >",
-                 normalize_class_name(ws.createSearch(adapter, "integer", false)->getClassName()));
-    EXPECT_EQ("search::FilterAttributeIteratorStrict<search::attribute::SingleEnumSearchContext<char const*, search::attribute::StringSearchContext> >",
-                 normalize_class_name(ws.createSearch(adapter, "string", true)->getClassName()));
-    EXPECT_EQ("search::FilterAttributeIteratorT<search::attribute::SingleEnumSearchContext<char const*, search::attribute::StringSearchContext> >",
-                 normalize_class_name(ws.createSearch(adapter, "string", false)->getClassName()));
+    EXPECT_EQ("search::FilterAttributeIteratorStrict<search::attribute::SingleNumericSearchContext<long, "
+              "search::attribute::NumericMatcher<long> > >",
+              normalize_class_name(ws.createSearch(adapter, "integer", true)->getClassName()));
+    EXPECT_EQ("search::FilterAttributeIteratorT<search::attribute::SingleNumericSearchContext<long, "
+              "search::attribute::NumericMatcher<long> > >",
+              normalize_class_name(ws.createSearch(adapter, "integer", false)->getClassName()));
+    EXPECT_EQ("search::FilterAttributeIteratorStrict<search::attribute::SingleEnumSearchContext<char const*, "
+              "search::attribute::StringSearchContext> >",
+              normalize_class_name(ws.createSearch(adapter, "string", true)->getClassName()));
+    EXPECT_EQ("search::FilterAttributeIteratorT<search::attribute::SingleEnumSearchContext<char const*, "
+              "search::attribute::StringSearchContext> >",
+              normalize_class_name(ws.createSearch(adapter, "string", false)->getClassName()));
     EXPECT_TRUE(ws.isWeightedSetTermSearch(adapter, "multi", true));
     EXPECT_TRUE(ws.isWeightedSetTermSearch(adapter, "multi", false));
 

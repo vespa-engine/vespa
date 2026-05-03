@@ -4,38 +4,30 @@
 
 namespace search::features::rankingexpression {
 
-ExpressionReplacer::~ExpressionReplacer()
-{
+ExpressionReplacer::~ExpressionReplacer() {
 }
 
 //-----------------------------------------------------------------------------
 
-IntrinsicExpression::UP
-NullExpressionReplacer::maybe_replace(const vespalib::eval::Function &,
-                                      const search::fef::IIndexEnvironment &) const
-{
+IntrinsicExpression::UP NullExpressionReplacer::maybe_replace(const vespalib::eval::Function&,
+                                                              const search::fef::IIndexEnvironment&) const {
     return IntrinsicExpression::UP(nullptr);
 }
 
-NullExpressionReplacer::~NullExpressionReplacer()
-{
+NullExpressionReplacer::~NullExpressionReplacer() {
 }
 
 //-----------------------------------------------------------------------------
 
 ListExpressionReplacer::ListExpressionReplacer() = default;
 
-void
-ListExpressionReplacer::add(ExpressionReplacer::UP replacer)
-{
+void ListExpressionReplacer::add(ExpressionReplacer::UP replacer) {
     _list.push_back(std::move(replacer));
 }
 
-IntrinsicExpression::UP
-ListExpressionReplacer::maybe_replace(const vespalib::eval::Function &function,
-                                      const search::fef::IIndexEnvironment &env) const
-{
-    for (const auto &item: _list) {
+IntrinsicExpression::UP ListExpressionReplacer::maybe_replace(const vespalib::eval::Function&       function,
+                                                              const search::fef::IIndexEnvironment& env) const {
+    for (const auto& item : _list) {
         if (auto result = item.get()->maybe_replace(function, env)) {
             return result;
         }
@@ -43,8 +35,7 @@ ListExpressionReplacer::maybe_replace(const vespalib::eval::Function &function,
     return IntrinsicExpression::UP(nullptr);
 }
 
-ListExpressionReplacer::~ListExpressionReplacer()
-{
+ListExpressionReplacer::~ListExpressionReplacer() {
 }
 
 } // namespace search::features::rankingexpression

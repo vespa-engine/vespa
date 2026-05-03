@@ -5,13 +5,12 @@
 
 namespace search {
 
-TEST(AttributeGuardTest, test_attribute_guard)
-{
+TEST(AttributeGuardTest, test_attribute_guard) {
     AttributeVector::SP ssattr(new SingleStringExtAttribute("ss1"));
-    AttributeGuard guard(ssattr);
+    AttributeGuard      guard(ssattr);
     EXPECT_TRUE(guard.valid());
 }
 
-}
+} // namespace search
 
 GTEST_MAIN_RUN_ALL_TESTS()

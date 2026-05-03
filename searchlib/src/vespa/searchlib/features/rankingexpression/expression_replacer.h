@@ -2,12 +2,17 @@
 
 #pragma once
 
-#include <memory>
-#include <vector>
 #include "intrinsic_expression.h"
 
-namespace vespalib::eval { class Function; }
-namespace search::fef { class IIndexEnvironment; }
+#include <memory>
+#include <vector>
+
+namespace vespalib::eval {
+class Function;
+}
+namespace search::fef {
+class IIndexEnvironment;
+}
 
 namespace search::features::rankingexpression {
 
@@ -20,8 +25,8 @@ namespace search::features::rankingexpression {
 struct ExpressionReplacer {
     using UP = std::unique_ptr<ExpressionReplacer>;
     using SP = std::shared_ptr<ExpressionReplacer>;
-    virtual IntrinsicExpression::UP maybe_replace(const vespalib::eval::Function &function,
-                                                  const search::fef::IIndexEnvironment &env) const = 0;
+    virtual IntrinsicExpression::UP maybe_replace(const vespalib::eval::Function&       function,
+                                                  const search::fef::IIndexEnvironment& env) const = 0;
     virtual ~ExpressionReplacer();
 };
 
@@ -29,8 +34,8 @@ struct ExpressionReplacer {
  * Expression Replacer never replacing anything.
  **/
 struct NullExpressionReplacer : public ExpressionReplacer {
-    IntrinsicExpression::UP maybe_replace(const vespalib::eval::Function &function,
-                                          const search::fef::IIndexEnvironment &env) const override;
+    IntrinsicExpression::UP maybe_replace(const vespalib::eval::Function&       function,
+                                          const search::fef::IIndexEnvironment& env) const override;
     ~NullExpressionReplacer();
 };
 
@@ -39,15 +44,15 @@ struct NullExpressionReplacer : public ExpressionReplacer {
  * forwards the replace calls to each of them in order until the
  * expression has been replaced or all of them have been tried.
  **/
-class ListExpressionReplacer : public ExpressionReplacer
-{
+class ListExpressionReplacer : public ExpressionReplacer {
 private:
     std::vector<ExpressionReplacer::UP> _list;
+
 public:
     ListExpressionReplacer();
     void add(ExpressionReplacer::UP replacer);
-    IntrinsicExpression::UP maybe_replace(const vespalib::eval::Function &function,
-                                          const search::fef::IIndexEnvironment &env) const override;
+    IntrinsicExpression::UP maybe_replace(const vespalib::eval::Function&       function,
+                                          const search::fef::IIndexEnvironment& env) const override;
     ~ListExpressionReplacer();
 };
 

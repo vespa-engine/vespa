@@ -8,12 +8,11 @@ namespace search::queryeval::test {
 /**
  * Child iterator that has initial docid > 0.
  **/
-struct EagerChild : public SearchIterator
-{
+struct EagerChild : public SearchIterator {
     EagerChild(uint32_t initial) : SearchIterator() { setDocId(initial); }
     ~EagerChild() override;
     void doSeek(uint32_t) override { setAtEnd(); }
     void doUnpack(uint32_t) override {}
 };
 
-}
+} // namespace search::queryeval::test

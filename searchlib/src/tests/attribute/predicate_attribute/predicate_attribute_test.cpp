@@ -12,19 +12,20 @@
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/exceptions.h>
+
 #include <filesystem>
 #include <memory>
 #include <sstream>
 
 using document::FieldValue;
-using document::PredicateSlimeBuilder;
 using document::PredicateFieldValue;
+using document::PredicateSlimeBuilder;
 using search::AttributeFactory;
 using search::AttributeVector;
 using search::FileSettings;
 using search::PredicateAttribute;
-using search::attribute::Config;
 using search::attribute::BasicType;
+using search::attribute::Config;
 using search::tags::FILE_BIT_SIZE;
 using vespalib::IllegalStateException;
 using Tag = vespalib::GenericHeader::Tag;
@@ -32,7 +33,7 @@ using Tag = vespalib::GenericHeader::Tag;
 namespace {
 
 std::filesystem::path tmp_dir("tmp");
-std::string attr_name("test");
+std::string           attr_name("test");
 
 void remove_tmp_dir() {
     std::filesystem::remove_all(tmp_dir);
@@ -44,18 +45,15 @@ void make_tmp_dir() {
 
 const Config predicate(BasicType::Type::PREDICATE);
 
-Config get_predicate_with_arity(uint32_t arity)
-{
-    Config ret(predicate);
+Config get_predicate_with_arity(uint32_t arity) {
+    Config                             ret(predicate);
     search::attribute::PredicateParams predicateParams;
     predicateParams.setArity(arity);
     ret.setPredicateParams(predicateParams);
     return ret;
 }
 
-std::shared_ptr<AttributeVector>
-make_attribute(std::string_view name, const Config& cfg, bool setup)
-{
+std::shared_ptr<AttributeVector> make_attribute(std::string_view name, const Config& cfg, bool setup) {
     auto attribute = AttributeFactory::createAttribute(name, cfg);
     if (attribute && setup) {
         attribute->addReservedDoc();
@@ -63,37 +61,31 @@ make_attribute(std::string_view name, const Config& cfg, bool setup)
     return attribute;
 }
 
-std::string
-fv_as_string(const FieldValue& val)
-{
+std::string fv_as_string(const FieldValue& val) {
     std::ostringstream os;
     val.print(os, false, "");
     return os.str();
 }
 
-std::shared_ptr<AttributeVector>
-make_sample_predicate_attribute()
-{
-    auto cfg = get_predicate_with_arity(2);
-    auto attr = make_attribute(attr_name, cfg, true);
-    auto& pattr = dynamic_cast<PredicateAttribute&>(*attr);
+std::shared_ptr<AttributeVector> make_sample_predicate_attribute() {
+    auto                  cfg = get_predicate_with_arity(2);
+    auto                  attr = make_attribute(attr_name, cfg, true);
+    auto&                 pattr = dynamic_cast<PredicateAttribute&>(*attr);
     PredicateSlimeBuilder builder;
     builder.neg().feature("foo").value("bar").value("baz");
     PredicateFieldValue val(builder.build());
     EXPECT_EQ("'foo' not in ['bar','baz']\n", fv_as_string(val));
     attr->addDocs(10);
-    pattr.updateValue(1,  val);
+    pattr.updateValue(1, val);
     attr->commit();
     EXPECT_TRUE(attr->isLoaded());
     return attr;
 }
 
-void
-corrupt_file_header(const std::string &name)
-{
+void corrupt_file_header(const std::string& name) {
     vespalib::FileHeader h(FileSettings::DIRECTIO_ALIGNMENT);
-    FastOS_File f;
-    auto file_bit_size = 0;
+    FastOS_File          f;
+    auto                 file_bit_size = 0;
     f.OpenReadWrite(name.c_str());
     h.readFile(f);
     if (h.hasTag(FILE_BIT_SIZE)) {
@@ -105,10 +97,9 @@ corrupt_file_header(const std::string &name)
     assert(sync_ok);
 }
 
-}
+} // namespace
 
-class PredicateAttributeTest : public ::testing::Test
-{
+class PredicateAttributeTest : public ::testing::Test {
 protected:
     PredicateAttributeTest();
     ~PredicateAttributeTest() override;
@@ -120,21 +111,16 @@ PredicateAttributeTest::PredicateAttributeTest() = default;
 
 PredicateAttributeTest::~PredicateAttributeTest() = default;
 
-void
-PredicateAttributeTest::SetUp()
-{
+void PredicateAttributeTest::SetUp() {
     make_tmp_dir();
 }
 
-void
-PredicateAttributeTest::TearDown()
-{
+void PredicateAttributeTest::TearDown() {
     remove_tmp_dir();
 }
 
-TEST_F(PredicateAttributeTest, save_and_load_predicate_attribute)
-{
-    auto attr = make_sample_predicate_attribute();
+TEST_F(PredicateAttributeTest, save_and_load_predicate_attribute) {
+    auto                  attr = make_sample_predicate_attribute();
     std::filesystem::path file_name(tmp_dir);
     file_name.append(attr_name);
     attr->save(file_name.native());
@@ -147,9 +133,8 @@ TEST_F(PredicateAttributeTest, save_and_load_predicate_attribute)
     EXPECT_EQ(attr->size_on_disk(), attr2->size_on_disk());
 }
 
-TEST_F(PredicateAttributeTest, buffer_size_mismatch_is_fatal_during_load)
-{
-    auto attr = make_sample_predicate_attribute();
+TEST_F(PredicateAttributeTest, buffer_size_mismatch_is_fatal_during_load) {
+    auto                  attr = make_sample_predicate_attribute();
     std::filesystem::path file_name(tmp_dir);
     file_name.append(attr_name);
     attr->save(file_name.native());
@@ -160,7 +145,8 @@ TEST_F(PredicateAttributeTest, buffer_size_mismatch_is_fatal_during_load)
         attr2->load();
         FAIL() << "Expected exception not thrown when loading corrupt attribute";
     } catch (IllegalStateException& e) {
-        EXPECT_EQ("Deserialize error when loading predicate attribute 'test', -1 bytes remaining in buffer", e.getMessage());
+        EXPECT_EQ("Deserialize error when loading predicate attribute 'test', -1 bytes remaining in buffer",
+                  e.getMessage());
     }
 }
 
