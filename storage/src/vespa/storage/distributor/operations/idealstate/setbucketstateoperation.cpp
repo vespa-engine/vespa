@@ -1,8 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "setbucketstateoperation.h"
-#include <vespa/storage/distributor/idealstatemanager.h>
+
 #include <vespa/storage/distributor/distributor_bucket_space.h>
+#include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storageapi/message/bucket.h>
 
 #include <vespa/log/log.h>
@@ -10,27 +11,22 @@ LOG_SETUP(".distributor.operations.idealstate.set_bucket_state");
 
 namespace storage::distributor {
 
-SetBucketStateOperation::SetBucketStateOperation(const ClusterContext& cluster_ctx,
-                                                 const BucketAndNodes& nodes,
+SetBucketStateOperation::SetBucketStateOperation(const ClusterContext& cluster_ctx, const BucketAndNodes& nodes,
                                                  const std::vector<uint16_t>& wantedActiveNodes)
-    : IdealStateOperation(nodes),
-      _tracker(cluster_ctx),
-      _wantedActiveNodes(wantedActiveNodes)
-{ }
+    : IdealStateOperation(nodes), _tracker(cluster_ctx), _wantedActiveNodes(wantedActiveNodes) {
+}
 
 SetBucketStateOperation::~SetBucketStateOperation() = default;
 
-void
-SetBucketStateOperation::enqueueSetBucketStateCommand(uint16_t node, bool active) {
+void SetBucketStateOperation::enqueueSetBucketStateCommand(uint16_t node, bool active) {
     auto msg = std::make_shared<api::SetBucketStateCommand>(getBucket(), api::SetBucketStateCommand::toState(active));
-    LOG(debug, "Enqueuing %s for %s to node %u", active ? "Activate" : "Deactivate", getBucketId().toString().c_str(), node);
+    LOG(debug, "Enqueuing %s for %s to node %u", active ? "Activate" : "Deactivate", getBucketId().toString().c_str(),
+        node);
     setCommandMeta(*msg);
     _tracker.queueCommand(std::move(msg), node);
 }
 
-bool
-SetBucketStateOperation::shouldBeActive(uint16_t node) const
-{
+bool SetBucketStateOperation::shouldBeActive(uint16_t node) const {
     for (uint16_t wantedActiveNode : _wantedActiveNodes) {
         if (wantedActiveNode == node) {
             return true;
@@ -39,8 +35,7 @@ SetBucketStateOperation::shouldBeActive(uint16_t node) const
     return false;
 }
 
-void
-SetBucketStateOperation::activateNode(DistributorStripeMessageSender& sender) {
+void SetBucketStateOperation::activateNode(DistributorStripeMessageSender& sender) {
     for (uint16_t wantedActiveNode : _wantedActiveNodes) {
         enqueueSetBucketStateCommand(wantedActiveNode, true);
     }
@@ -48,9 +43,7 @@ SetBucketStateOperation::activateNode(DistributorStripeMessageSender& sender) {
     _ok = true;
 }
 
-
-void
-SetBucketStateOperation::deactivateNodes(DistributorStripeMessageSender& sender) {
+void SetBucketStateOperation::deactivateNodes(DistributorStripeMessageSender& sender) {
     for (uint16_t node : getNodes()) {
         if (!shouldBeActive(node)) {
             enqueueSetBucketStateCommand(node, false);
@@ -59,16 +52,12 @@ SetBucketStateOperation::deactivateNodes(DistributorStripeMessageSender& sender)
     _tracker.flushQueue(sender);
 }
 
-void
-SetBucketStateOperation::onStart(DistributorStripeMessageSender& sender)
-{
+void SetBucketStateOperation::onStart(DistributorStripeMessageSender& sender) {
     activateNode(sender);
 }
 
-void
-SetBucketStateOperation::onReceive(DistributorStripeMessageSender& sender,
-                                   const std::shared_ptr<api::StorageReply>& reply)
-{
+void SetBucketStateOperation::onReceive(DistributorStripeMessageSender&           sender,
+                                        const std::shared_ptr<api::StorageReply>& reply) {
     auto& rep = dynamic_cast<api::SetBucketStateReply&>(*reply);
 
     const uint16_t node = _tracker.handleReply(rep);
@@ -95,17 +84,17 @@ SetBucketStateOperation::onReceive(DistributorStripeMessageSender& sender,
                 }
 
                 entry->updateNode(BucketCopy(_manager->operation_context().generate_unique_timestamp(), node, bInfo)
-                                            .setTrusted(copy->trusted()));
+                                      .setTrusted(copy->trusted()));
 
                 _bucketSpace->getBucketDatabase().update(entry);
             }
         } else {
-            LOG(debug, "%s did not exist when receiving %s",
-                rep.getBucketId().toString().c_str(), rep.toString(true).c_str());
+            LOG(debug, "%s did not exist when receiving %s", rep.getBucketId().toString().c_str(),
+                rep.toString(true).c_str());
         }
     } else {
-        LOG(debug, "Failed setting state for %s on node %u: %s",
-            rep.getBucketId().toString().c_str(), node, reply->getResult().toString().c_str());
+        LOG(debug, "Failed setting state for %s on node %u: %s", rep.getBucketId().toString().c_str(), node,
+            reply->getResult().toString().c_str());
         _ok = false;
     }
     if (deactivate) {
@@ -117,4 +106,4 @@ SetBucketStateOperation::onReceive(DistributorStripeMessageSender& sender,
     }
 }
 
-}
+} // namespace storage::distributor

@@ -3,22 +3,14 @@
 
 namespace storage::distributor {
 
-CancelScope::CancelScope()
-    : _cancelled_nodes(),
-      _fully_cancelled(false)
-{
+CancelScope::CancelScope() : _cancelled_nodes(), _fully_cancelled(false) {
 }
 
-CancelScope::CancelScope(fully_cancelled_ctor_tag) noexcept
-    : _cancelled_nodes(),
-      _fully_cancelled(true)
-{
+CancelScope::CancelScope(fully_cancelled_ctor_tag) noexcept : _cancelled_nodes(), _fully_cancelled(true) {
 }
 
 CancelScope::CancelScope(CancelledNodeSet nodes) noexcept
-    : _cancelled_nodes(std::move(nodes)),
-      _fully_cancelled(false)
-{
+    : _cancelled_nodes(std::move(nodes)), _fully_cancelled(false) {
 }
 
 CancelScope::~CancelScope() = default;
@@ -49,4 +41,4 @@ CancelScope CancelScope::of_node_subset(CancelledNodeSet nodes) noexcept {
     return CancelScope(std::move(nodes));
 }
 
-}
+} // namespace storage::distributor

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "operation.h"
+
 #include <vespa/storage/common/distributorcomponent.h>
 #include <vespa/storageapi/messageapi/storagecommand.h>
 #include <vespa/storageapi/messageapi/storagereply.h>
@@ -11,36 +12,25 @@ LOG_SETUP(".distributor.operations.operation");
 
 namespace storage::distributor {
 
-Operation::Operation()
-    : _startTime(),
-      _cancel_scope()
-{
+Operation::Operation() : _startTime(), _cancel_scope() {
 }
 
 Operation::~Operation() = default;
 
-std::string
-Operation::getStatus() const
-{
+std::string Operation::getStatus() const {
     return vespalib::make_string("%s (started %s)", getName(), vespalib::to_string(_startTime).c_str());
 }
 
-void
-Operation::start(DistributorStripeMessageSender& sender, vespalib::system_time startTime)
-{
+void Operation::start(DistributorStripeMessageSender& sender, vespalib::system_time startTime) {
     _startTime = startTime;
     onStart(sender);
 }
 
-void
-Operation::start(DistributorStripeMessageSender& sender)
-{
+void Operation::start(DistributorStripeMessageSender& sender) {
     start(sender, vespalib::system_time());
 }
 
-void
-Operation::copyMessageSettings(const api::StorageCommand& source, api::StorageCommand& target)
-{
+void Operation::copyMessageSettings(const api::StorageCommand& source, api::StorageCommand& target) {
     target.getTrace().setLevel(source.getTrace().getLevel());
     target.setTimeout(source.getTimeout());
     target.setPriority(source.getPriority());
@@ -51,15 +41,10 @@ void Operation::cancel(DistributorStripeMessageSender& sender, const CancelScope
     on_cancel(sender, cancel_scope);
 }
 
-void
-Operation::on_blocked()
-{
+void Operation::on_blocked() {
 }
 
-void
-Operation::on_throttled()
-{
+void Operation::on_throttled() {
 }
 
-}
-
+} // namespace storage::distributor

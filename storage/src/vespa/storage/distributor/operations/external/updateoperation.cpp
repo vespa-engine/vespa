@@ -1,12 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "updateoperation.h"
+
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/update/documentupdate.h>
+#include <vespa/storage/distributor/distributor_bucket_space.h>
+#include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <vespa/storage/distributor/distributormetricsset.h>
-#include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -18,12 +19,9 @@ using document::BucketSpace;
 
 namespace storage::distributor {
 
-UpdateOperation::UpdateOperation(const DistributorNodeContext& node_ctx,
-                                 DistributorStripeOperationContext& op_ctx,
-                                 DistributorBucketSpace& bucketSpace,
-                                 const std::shared_ptr<api::UpdateCommand>& msg,
-                                 std::vector<BucketDatabase::Entry> entries,
-                                 UpdateMetricSet& metric)
+UpdateOperation::UpdateOperation(const DistributorNodeContext& node_ctx, DistributorStripeOperationContext& op_ctx,
+                                 DistributorBucketSpace& bucketSpace, const std::shared_ptr<api::UpdateCommand>& msg,
+                                 std::vector<BucketDatabase::Entry> entries, UpdateMetricSet& metric)
     : Operation(),
       _tracker(metric, std::make_shared<api::UpdateReply>(*msg), node_ctx, op_ctx, _cancel_scope),
       _msg(msg),
@@ -35,45 +33,33 @@ UpdateOperation::UpdateOperation(const DistributorNodeContext& node_ctx,
       _bucketSpace(bucketSpace),
       _newestTimestampLocation(),
       _infoAtSendTime(),
-      _metrics(metric)
-{
+      _metrics(metric) {
 }
 
 UpdateOperation::~UpdateOperation() = default;
 
-bool
-UpdateOperation::anyStorageNodesAvailable() const
-{
+bool UpdateOperation::anyStorageNodesAvailable() const {
     const auto& clusterState(_bucketSpace.getClusterState());
-    const auto storageNodeCount(
-            clusterState.getNodeCount(lib::NodeType::STORAGE));
+    const auto  storageNodeCount(clusterState.getNodeCount(lib::NodeType::STORAGE));
 
     for (uint16_t i = 0; i < storageNodeCount; ++i) {
-        const auto& ns(clusterState.getNodeState(
-                lib::Node(lib::NodeType::STORAGE, i)));
-        if (ns.getState() == lib::State::UP
-            || ns.getState() == lib::State::RETIRED)
-        {
+        const auto& ns(clusterState.getNodeState(lib::Node(lib::NodeType::STORAGE, i)));
+        if (ns.getState() == lib::State::UP || ns.getState() == lib::State::RETIRED) {
             return true;
         }
     }
     return false;
 }
 
-void
-UpdateOperation::onStart(DistributorStripeMessageSender& sender)
-{
-    LOG(debug, "Received UPDATE %s for bucket %" PRIx64,
-        _msg->getDocumentId().toString().c_str(),
-        _node_ctx.bucket_id_factory().getBucketId(
-                _msg->getDocumentId()).getRawId());
+void UpdateOperation::onStart(DistributorStripeMessageSender& sender) {
+    LOG(debug, "Received UPDATE %s for bucket %" PRIx64, _msg->getDocumentId().toString().c_str(),
+        _node_ctx.bucket_id_factory().getBucketId(_msg->getDocumentId()).getRawId());
 
     // Don't do anything if all nodes are down.
     if (!anyStorageNodesAvailable()) {
         _tracker.fail(sender,
-                      api::ReturnCode(api::ReturnCode::NOT_CONNECTED,
-                                      "Can't store document: No storage nodes "
-                                      "available"));
+                      api::ReturnCode(api::ReturnCode::NOT_CONNECTED, "Can't store document: No storage nodes "
+                                                                      "available"));
         return;
     }
 
@@ -83,9 +69,7 @@ UpdateOperation::onStart(DistributorStripeMessageSender& sender)
     }
 
     if (_entries.empty()) {
-        _tracker.fail(sender,
-                      api::ReturnCode(api::ReturnCode::OK,
-                                      "No buckets found for given document update"));
+        _tracker.fail(sender, api::ReturnCode(api::ReturnCode::OK, "No buckets found for given document update"));
         return;
     }
 
@@ -107,8 +91,9 @@ UpdateOperation::onStart(DistributorStripeMessageSender& sender)
         messages.reserve(nodes.size());
 
         for (uint16_t node : nodes) {
-            auto command = std::make_shared<api::UpdateCommand>(document::Bucket(_msg->getBucket().getBucketSpace(), entry.getBucketId()),
-                                                                _msg->getUpdate(), _msg->getTimestamp());
+            auto command = std::make_shared<api::UpdateCommand>(
+                document::Bucket(_msg->getBucket().getBucketSpace(), entry.getBucketId()), _msg->getUpdate(),
+                _msg->getTimestamp());
             copyMessageSettings(*_msg, *command);
             command->setOldTimestamp(_msg->getOldTimestamp());
             command->setCondition(_msg->getCondition());
@@ -125,10 +110,8 @@ UpdateOperation::onStart(DistributorStripeMessageSender& sender)
     _msg = std::shared_ptr<api::UpdateCommand>();
 };
 
-void
-UpdateOperation::onReceive(DistributorStripeMessageSender& sender,
-                          const std::shared_ptr<api::StorageReply> & msg)
-{
+void UpdateOperation::onReceive(DistributorStripeMessageSender&           sender,
+                                const std::shared_ptr<api::StorageReply>& msg) {
     auto& reply = static_cast<api::UpdateReply&>(*msg);
 
     if (msg->getType() == api::MessageType::UPDATE_REPLY) {
@@ -160,7 +143,7 @@ UpdateOperation::onReceive(DistributorStripeMessageSender& sender,
                     if (_results[i].oldTs < oldTs) {
                         log_inconsistency_warning(reply, _results[goodNode], _results[i]);
                         replyToSend.setNodeWithNewestTimestamp(_results[goodNode].nodeId);
-                        _newestTimestampLocation.first  = _results[goodNode].bucketId;
+                        _newestTimestampLocation.first = _results[goodNode].bucketId;
                         _newestTimestampLocation.second = _results[goodNode].nodeId;
                         _metrics.diverging_timestamp_updates.inc();
                         break;
@@ -175,36 +158,32 @@ UpdateOperation::onReceive(DistributorStripeMessageSender& sender,
     }
 }
 
-void
-UpdateOperation::log_inconsistency_warning(const api::UpdateReply& reply,
-                                           const PreviousDocumentVersion& highest_timestamped_version,
-                                           const PreviousDocumentVersion& low_timestamped_version)
-{
+void UpdateOperation::log_inconsistency_warning(const api::UpdateReply&        reply,
+                                                const PreviousDocumentVersion& highest_timestamped_version,
+                                                const PreviousDocumentVersion& low_timestamped_version) {
     bool low_ts_node_gc = _op_ctx.has_pending_message(low_timestamped_version.nodeId, reply.getBucket(),
                                                       api::MessageType::REMOVELOCATION_ID);
     bool high_ts_node_gc = _op_ctx.has_pending_message(highest_timestamped_version.nodeId, reply.getBucket(),
                                                        api::MessageType::REMOVELOCATION_ID);
 
-    LOG(warning, "Update operation for '%s' in bucket %s updated documents with different timestamps. "
-                 "This should not happen and may indicate undetected replica divergence. "
-                 "Found low ts=%" PRIu64 " on node %u (pending GC: %s), "
-                 "highest ts=%" PRIu64 " on node %u (pending GC: %s)",
-        reply.getDocumentId().toString().c_str(),
-        reply.getBucket().toString().c_str(),
-        low_timestamped_version.oldTs, low_timestamped_version.nodeId, (low_ts_node_gc ? "yes" : "no"),
-        highest_timestamped_version.oldTs, highest_timestamped_version.nodeId, (high_ts_node_gc ? "yes" : "no"));
+    LOG(warning,
+        "Update operation for '%s' in bucket %s updated documents with different timestamps. "
+        "This should not happen and may indicate undetected replica divergence. "
+        "Found low ts=%" PRIu64 " on node %u (pending GC: %s), "
+        "highest ts=%" PRIu64 " on node %u (pending GC: %s)",
+        reply.getDocumentId().toString().c_str(), reply.getBucket().toString().c_str(), low_timestamped_version.oldTs,
+        low_timestamped_version.nodeId, (low_ts_node_gc ? "yes" : "no"), highest_timestamped_version.oldTs,
+        highest_timestamped_version.nodeId, (high_ts_node_gc ? "yes" : "no"));
 
-    LOG(warning, "Bucket info prior to update operation was: %s. After update, "
-                 "info on node %u is %s, info on node %u is %s",
-        _infoAtSendTime.toString().c_str(),
-        low_timestamped_version.nodeId, low_timestamped_version.bucketInfo.toString().c_str(),
-        highest_timestamped_version.nodeId, highest_timestamped_version.bucketInfo.toString().c_str());
-
+    LOG(warning,
+        "Bucket info prior to update operation was: %s. After update, "
+        "info on node %u is %s, info on node %u is %s",
+        _infoAtSendTime.toString().c_str(), low_timestamped_version.nodeId,
+        low_timestamped_version.bucketInfo.toString().c_str(), highest_timestamped_version.nodeId,
+        highest_timestamped_version.bucketInfo.toString().c_str());
 }
 
-void
-UpdateOperation::onClose(DistributorStripeMessageSender& sender)
-{
+void UpdateOperation::onClose(DistributorStripeMessageSender& sender) {
     _tracker.fail(sender, api::ReturnCode(api::ReturnCode::ABORTED, "Process is shutting down"));
 }
 
@@ -223,4 +202,4 @@ api::Timestamp UpdateOperation::adjusted_received_old_timestamp(api::Timestamp o
     return (old_ts_from_node != _new_timestamp) ? old_ts_from_node : api::Timestamp(0);
 }
 
-}
+} // namespace storage::distributor

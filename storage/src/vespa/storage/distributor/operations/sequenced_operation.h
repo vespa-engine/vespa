@@ -2,6 +2,7 @@
 #pragma once
 
 #include "operation.h"
+
 #include <vespa/storage/distributor/operation_sequencer.h>
 
 namespace storage::distributor {
@@ -13,13 +14,12 @@ namespace storage::distributor {
  */
 class SequencedOperation : public Operation {
     SequencingHandle _sequencingHandle;
+
 public:
     SequencedOperation() : Operation(), _sequencingHandle() {}
 
     explicit SequencedOperation(SequencingHandle sequencingHandle)
-        : Operation(),
-          _sequencingHandle(std::move(sequencingHandle)) {
-    }
+        : Operation(), _sequencingHandle(std::move(sequencingHandle)) {}
 };
 
-} // storage::distributor
+} // namespace storage::distributor

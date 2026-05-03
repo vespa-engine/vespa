@@ -2,24 +2,23 @@
 #pragma once
 
 #include "check_condition.h"
+
 #include <vespa/storage/distributor/operations/sequenced_operation.h>
 #include <vespa/storage/distributor/persistencemessagetracker.h>
 
-namespace storage::api { class RemoveCommand; }
+namespace storage::api {
+class RemoveCommand;
+}
 
 namespace storage::distributor {
 
 class DistributorBucketSpace;
 
-class RemoveOperation : public SequencedOperation
-{
+class RemoveOperation : public SequencedOperation {
 public:
-    RemoveOperation(const DistributorNodeContext& node_ctx,
-                    DistributorStripeOperationContext& op_ctx,
-                    DistributorBucketSpace& bucketSpace,
-                    std::shared_ptr<api::RemoveCommand> msg,
-                    PersistenceOperationMetricSet& metric,
-                    PersistenceOperationMetricSet& condition_probe_metrics,
+    RemoveOperation(const DistributorNodeContext& node_ctx, DistributorStripeOperationContext& op_ctx,
+                    DistributorBucketSpace& bucketSpace, std::shared_ptr<api::RemoveCommand> msg,
+                    PersistenceOperationMetricSet& metric, PersistenceOperationMetricSet& condition_probe_metrics,
                     SequencingHandle sequencingHandle = SequencingHandle());
     ~RemoveOperation() override;
 
@@ -27,7 +26,7 @@ public:
     const char* getName() const noexcept override { return "remove"; };
     std::string getStatus() const override { return ""; };
 
-    void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> &) override;
+    void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply>&) override;
     void onClose(DistributorStripeMessageSender& sender) override;
     void on_cancel(DistributorStripeMessageSender& sender, const CancelScope& cancel_scope) override;
 
@@ -46,9 +45,8 @@ private:
 
     void start_direct_remove_dispatch(DistributorStripeMessageSender& sender);
     void start_conditional_remove(DistributorStripeMessageSender& sender);
-    void on_completed_check_condition(CheckCondition::Outcome& outcome,
-                                      DistributorStripeMessageSender& sender);
+    void on_completed_check_condition(CheckCondition::Outcome& outcome, DistributorStripeMessageSender& sender);
     [[nodiscard]] bool has_condition() const noexcept;
 };
 
-}
+} // namespace storage::distributor

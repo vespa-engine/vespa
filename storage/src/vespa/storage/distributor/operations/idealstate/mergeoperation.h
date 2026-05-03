@@ -6,33 +6,31 @@
 #include "mergelimiter.h"
 #include "mergemetadata.h"
 #include "removebucketoperation.h"
+
 #include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/storageapi/message/bucket.h>
 
-namespace storage::lib { class Distribution; }
+namespace storage::lib {
+class Distribution;
+}
 
 namespace storage::distributor {
 
 class MergeBucketMetricSet;
 
-class MergeOperation : public IdealStateOperation
-{
+class MergeOperation : public IdealStateOperation {
 protected:
     bool sourceOnlyCopyChangedDuringMerge(const BucketDatabase::Entry&) const;
 
-    vespalib::steady_time _sentMessageTime;
+    vespalib::steady_time                      _sentMessageTime;
     std::vector<api::MergeBucketCommand::Node> _mnodes;
-    std::unique_ptr<RemoveBucketOperation> _removeOperation;
-    BucketInfo _infoBefore;
-    MergeLimiter _limiter;
+    std::unique_ptr<RemoveBucketOperation>     _removeOperation;
+    BucketInfo                                 _infoBefore;
+    MergeLimiter                               _limiter;
 
 public:
-
     MergeOperation(const BucketAndNodes& nodes, uint16_t maxNodes = 16)
-        : IdealStateOperation(nodes),
-          _sentMessageTime(),
-          _limiter(maxNodes)
-    {}
+        : IdealStateOperation(nodes), _sentMessageTime(), _limiter(maxNodes) {}
 
     ~MergeOperation() override;
 
@@ -43,30 +41,25 @@ public:
     Type getType() const noexcept override { return MERGE_BUCKET; }
 
     /** Generates ordered list of nodes that should be included in the merge */
-    static void generateSortedNodeList(
-            const lib::Distribution&, const lib::ClusterState&,
-            const document::BucketId&, MergeLimiter&,
-            std::vector<MergeMetadata>&);
+    static void generateSortedNodeList(const lib::Distribution&, const lib::ClusterState&, const document::BucketId&,
+                                       MergeLimiter&, std::vector<MergeMetadata>&);
 
     bool shouldBlockThisOperation(uint32_t messageType, uint16_t node, uint8_t pri) const override;
     bool isBlocked(const DistributorStripeOperationContext& ctx, const OperationSequencer&) const override;
+
 private:
-    static void addIdealNodes(
-            const std::vector<uint16_t>& idealNodes,
-            const std::vector<MergeMetadata>& nodes,
-            std::vector<MergeMetadata>& result);
+    static void addIdealNodes(const std::vector<uint16_t>& idealNodes, const std::vector<MergeMetadata>& nodes,
+                              std::vector<MergeMetadata>& result);
 
-    static void addCopiesNotAlreadyAdded(
-            uint16_t redundancy,
-            const std::vector<MergeMetadata>& nodes,
-            std::vector<MergeMetadata>& result);
+    static void addCopiesNotAlreadyAdded(uint16_t redundancy, const std::vector<MergeMetadata>& nodes,
+                                         std::vector<MergeMetadata>& result);
 
-    void deleteSourceOnlyNodes(const BucketDatabase::Entry& currentState,
-                               DistributorStripeMessageSender& sender);
+    void deleteSourceOnlyNodes(const BucketDatabase::Entry& currentState, DistributorStripeMessageSender& sender);
     [[nodiscard]] bool is_global_bucket_merge() const noexcept;
     [[nodiscard]] bool all_involved_nodes_support_unordered_merge_chaining() const noexcept;
-    [[nodiscard]] uint32_t estimate_merge_memory_footprint_upper_bound(const std::vector<MergeMetadata>& nodes) const noexcept;
+    [[nodiscard]] uint32_t
+    estimate_merge_memory_footprint_upper_bound(const std::vector<MergeMetadata>& nodes) const noexcept;
     MergeBucketMetricSet* get_merge_metrics();
 };
 
-}
+} // namespace storage::distributor

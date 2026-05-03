@@ -1,15 +1,18 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "garbagecollectionoperation.h"
+
+#include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storage/distributor/cancelled_replicas_pruner.h>
+#include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storage/distributor/idealstatemetricsset.h>
-#include <vespa/storage/distributor/top_level_distributor.h>
-#include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/node_supported_features_repo.h>
-#include <vespa/storage/config/distributorconfiguration.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storageapi/message/removelocation.h>
+
 #include <vespa/vespalib/stllike/hash_map.hpp>
+
 #include <algorithm>
 
 #include <vespa/log/log.h>
@@ -25,17 +28,21 @@ GarbageCollectionOperation::GarbageCollectionOperation(const ClusterContext& clu
       _remove_candidates(),
       _replica_info(),
       _max_documents_removed(0),
-      _is_done(false)
-{}
+      _is_done(false) {
+}
 
 GarbageCollectionOperation::~GarbageCollectionOperation() = default;
 
 const char* GarbageCollectionOperation::to_string(Phase phase) noexcept {
     switch (phase) {
-    case Phase::NotStarted:        return "NotStarted";
-    case Phase::LegacySinglePhase: return "LegacySinglePhase";
-    case Phase::ReadMetadataPhase: return "ReadMetadataPhase";
-    case Phase::WriteRemovesPhase: return "WriteRemovesPhase";
+    case Phase::NotStarted:
+        return "NotStarted";
+    case Phase::LegacySinglePhase:
+        return "LegacySinglePhase";
+    case Phase::ReadMetadataPhase:
+        return "ReadMetadataPhase";
+    case Phase::WriteRemovesPhase:
+        return "WriteRemovesPhase";
     }
     abort();
 }
@@ -75,8 +82,7 @@ void GarbageCollectionOperation::send_current_phase_remove_locations(Distributor
 
     for (size_t i = 0; i < nodes.size(); ++i) {
         auto command = std::make_shared<api::RemoveLocationCommand>(
-                _manager->operation_context().distributor_config().getGarbageCollectionSelection(),
-                getBucket());
+            _manager->operation_context().distributor_config().getGarbageCollectionSelection(), getBucket());
         if (_phase == Phase::ReadMetadataPhase) {
             command->set_only_enumerate_docs(true);
         } else if (_phase == Phase::WriteRemovesPhase) {
@@ -86,9 +92,10 @@ void GarbageCollectionOperation::send_current_phase_remove_locations(Distributor
                 command->set_explicit_remove_set(std::move(docs_to_remove));
             }
         } // else: legacy command
-        command->setPriority((_phase != Phase::WriteRemovesPhase)
-                             ? _priority
-                             : _manager->operation_context().distributor_config().default_external_feed_priority());
+        command->setPriority(
+            (_phase != Phase::WriteRemovesPhase)
+                ? _priority
+                : _manager->operation_context().distributor_config().default_external_feed_priority());
         _tracker.queueCommand(std::move(command), nodes[i]);
     }
     _tracker.flushQueue(sender);
@@ -110,10 +117,8 @@ void GarbageCollectionOperation::onStart(DistributorStripeMessageSender& sender)
     }
 }
 
-void
-GarbageCollectionOperation::onReceive(DistributorStripeMessageSender& sender,
-                                      const std::shared_ptr<api::StorageReply>& reply)
-{
+void GarbageCollectionOperation::onReceive(DistributorStripeMessageSender&           sender,
+                                           const std::shared_ptr<api::StorageReply>& reply) {
     auto* rep = dynamic_cast<api::RemoveLocationReply*>(reply.get());
     assert(rep != nullptr);
 
@@ -148,9 +153,10 @@ GarbageCollectionOperation::onReceive(DistributorStripeMessageSender& sender,
     }
 }
 
-void GarbageCollectionOperation::update_replica_response_info_from_reply(uint16_t from_node, const api::RemoveLocationReply& reply) {
-    _replica_info.emplace_back(_manager->operation_context().generate_unique_timestamp(),
-                               from_node, reply.getBucketInfo());
+void GarbageCollectionOperation::update_replica_response_info_from_reply(uint16_t                        from_node,
+                                                                         const api::RemoveLocationReply& reply) {
+    _replica_info.emplace_back(_manager->operation_context().generate_unique_timestamp(), from_node,
+                               reply.getBucketInfo());
     _max_documents_removed = std::max(_max_documents_removed, reply.documents_removed());
 }
 
@@ -160,7 +166,7 @@ void GarbageCollectionOperation::handle_ok_legacy_reply(uint16_t from_node, cons
 
 GarbageCollectionOperation::RemoveCandidates
 GarbageCollectionOperation::steal_selection_matches_as_candidates(api::RemoveLocationReply& reply) {
-    auto candidates = reply.steal_selection_matches();
+    auto             candidates = reply.steal_selection_matches();
     RemoveCandidates as_map;
     as_map.resize(candidates.size());
     for (auto& cand : candidates) {
@@ -203,8 +209,7 @@ bool GarbageCollectionOperation::may_start_write_phase() const {
     std::vector<BucketDatabase::Entry> entries;
     _bucketSpace->getBucketDatabase().getAll(getBucketId(), entries);
     if ((entries.size() != 1) || (entries[0].getBucketId() != getBucketId())) {
-        LOG(debug, "GC(%s): not sending write phase; bucket has become inconsistent",
-            getBucket().toString().c_str());
+        LOG(debug, "GC(%s): not sending write phase; bucket has become inconsistent", getBucket().toString().c_str());
         return false;
     }
     return true;
@@ -221,8 +226,8 @@ void GarbageCollectionOperation::on_metadata_read_phase_done(DistributorStripeMe
         auto maybe_seq_token = sender.operation_sequencer().try_acquire(getBucket().getBucketSpace(), cand.first);
         if (maybe_seq_token.valid()) {
             _gc_write_locks.emplace_back(std::move(maybe_seq_token));
-            LOG(spam, "GC(%s): acquired write lock for '%s'; adding to GC set",
-                getBucket().toString().c_str(), cand.first.toString().c_str());
+            LOG(spam, "GC(%s): acquired write lock for '%s'; adding to GC set", getBucket().toString().c_str(),
+                cand.first.toString().c_str());
         } else {
             already_pending_write.emplace_back(cand.first);
             LOG(spam, "GC(%s): failed to acquire write lock for '%s'; not including in GC set",
@@ -237,8 +242,9 @@ void GarbageCollectionOperation::on_metadata_read_phase_done(DistributorStripeMe
         mark_operation_complete();
         return;
     }
-    LOG(debug, "GC(%s): Sending phase 2 GC with %zu entries (with acquired write locks). "
-               "%zu documents had pending writes and could not be GCd at this time",
+    LOG(debug,
+        "GC(%s): Sending phase 2 GC with %zu entries (with acquired write locks). "
+        "%zu documents had pending writes and could not be GCd at this time",
         getBucket().toString().c_str(), _remove_candidates.size(), already_pending_write.size());
     transition_to(Phase::WriteRemovesPhase);
     send_current_phase_remove_locations(sender);
@@ -247,9 +253,10 @@ void GarbageCollectionOperation::on_metadata_read_phase_done(DistributorStripeMe
 void GarbageCollectionOperation::update_last_gc_timestamp_in_db() {
     BucketDatabase::Entry dbentry = _bucketSpace->getBucketDatabase().get(getBucketId());
     if (dbentry.valid()) {
-        dbentry->setLastGarbageCollectionTime(vespalib::count_s(_manager->node_context().clock().getSystemTime().time_since_epoch()));
-        LOG(debug, "GC(%s): Tagging bucket completed at time %u",
-            getBucket().toString().c_str(), dbentry->getLastGarbageCollectionTime());
+        dbentry->setLastGarbageCollectionTime(
+            vespalib::count_s(_manager->node_context().clock().getSystemTime().time_since_epoch()));
+        LOG(debug, "GC(%s): Tagging bucket completed at time %u", getBucket().toString().c_str(),
+            dbentry->getLastGarbageCollectionTime());
         _bucketSpace->getBucketDatabase().update(dbentry);
     }
 }
@@ -285,14 +292,13 @@ void GarbageCollectionOperation::mark_operation_complete() {
 }
 
 void GarbageCollectionOperation::transition_to(Phase new_phase) {
-    LOG(spam, "GC(%s): state transition %s -> %s",
-        getBucket().toString().c_str(), to_string(_phase), to_string(new_phase));
+    LOG(spam, "GC(%s): state transition %s -> %s", getBucket().toString().c_str(), to_string(_phase),
+        to_string(new_phase));
     _phase = new_phase;
 }
 
-bool
-GarbageCollectionOperation::shouldBlockThisOperation(uint32_t, uint16_t, uint8_t) const {
+bool GarbageCollectionOperation::shouldBlockThisOperation(uint32_t, uint16_t, uint8_t) const {
     return true;
 }
 
-}
+} // namespace storage::distributor
