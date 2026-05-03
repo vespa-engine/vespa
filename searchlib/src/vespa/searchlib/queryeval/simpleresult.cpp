@@ -1,28 +1,23 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "simpleresult.h"
+
 #include <cassert>
 #include <ostream>
 
 namespace search::queryeval {
 
-SimpleResult &
-SimpleResult::addHit(uint32_t docid)
-{
+SimpleResult& SimpleResult::addHit(uint32_t docid) {
     _hits.push_back(docid);
     return *this;
 }
 
-void
-SimpleResult::clear()
-{
+void SimpleResult::clear() {
     std::vector<uint32_t> tmp;
     tmp.swap(_hits);
 }
 
-SimpleResult &
-SimpleResult::search(SearchIterator &sb, uint32_t docIdLimit)
-{
+SimpleResult& SimpleResult::search(SearchIterator& sb, uint32_t docIdLimit) {
     clear();
     uint32_t docid = 1;
     sb.initRange(docid, docIdLimit);
@@ -37,9 +32,7 @@ SimpleResult::search(SearchIterator &sb, uint32_t docIdLimit)
     return *this;
 }
 
-bool
-SimpleResult::contains(const SimpleResult& subset) const
-{
+bool SimpleResult::contains(const SimpleResult& subset) const {
     auto hits_itr = _hits.begin();
     for (uint32_t i = 0; i < subset.getHitCount(); ++i) {
         uint32_t subset_hit = subset.getHit(i);
@@ -53,9 +46,7 @@ SimpleResult::contains(const SimpleResult& subset) const
     return true;
 }
 
-std::ostream &
-operator << (std::ostream &out, const SimpleResult &result)
-{
+std::ostream& operator<<(std::ostream& out, const SimpleResult& result) {
     if (result.getHitCount() == 0) {
         out << std::endl << "empty" << std::endl;
     } else {
@@ -67,4 +58,4 @@ operator << (std::ostream &out, const SimpleResult &result)
     return out;
 }
 
-}
+} // namespace search::queryeval

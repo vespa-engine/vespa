@@ -2,20 +2,23 @@
 
 #pragma once
 
+#include <vespa/searchlib/attribute/i_docid_with_weight_posting_store.h>
+#include <vespa/searchlib/attribute/posting_iterator_pack.h>
+#include <vespa/searchlib/features/bm25_utils.h>
 #include <vespa/searchlib/fef/document_frequency.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include <vespa/searchlib/features/bm25_utils.h>
-#include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/queryeval/iterator_pack.h>
-#include <vespa/searchlib/attribute/posting_iterator_pack.h>
+#include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/vespalib/objects/objectvisitor.h>
 #include <vespa/vespalib/util/priority_queue.h>
-#include <vespa/searchlib/attribute/i_docid_with_weight_posting_store.h>
 #include <vespa/vespalib/util/stringfmt.h>
+
 #include <cmath>
 
-namespace search::queryeval { class WeakAndHeap; }
+namespace search::queryeval {
+class WeakAndHeap;
+}
 namespace search::queryeval::wand {
 
 //-----------------------------------------------------------------------------
@@ -51,7 +54,7 @@ public:
     StopWordStrategy(double adjust_limit, double drop_limit, uint32_t docid_limit, bool allow_drop_all) noexcept
         : _adjust_limit(to_abs(adjust_limit, docid_limit)),
           _drop_limit(to_abs(drop_limit, docid_limit)),
-          _allow_drop_all(allow_drop_all){}
+          _allow_drop_all(allow_drop_all) {}
     [[nodiscard]] bool auto_adjust() const noexcept { return _adjust_limit != uint32_t(-1); }
     [[nodiscard]] uint32_t adjust_distance(uint32_t hits) const noexcept {
         return (hits > _adjust_limit) ? (hits - _adjust_limit) : (_adjust_limit - hits);
@@ -65,21 +68,19 @@ public:
 /**
  * Params used to tweak the behavior of the WAND algorithm.
  */
-struct MatchParams
-{
-    WeakAndHeap     &scores;
+struct MatchParams {
+    WeakAndHeap&     scores;
     StopWordStrategy stop_words;
     const uint32_t   scoresAdjustFrequency;
     const uint32_t   docid_limit;
-    MatchParams(WeakAndHeap &scores_in) noexcept
-        : MatchParams(scores_in, StopWordStrategy::none(), DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY, 0)
-    {}
-    MatchParams(WeakAndHeap &scores_in, StopWordStrategy stop_word_strategy, uint32_t scoresAdjustFrequency_in, uint32_t docid_limit_in) noexcept
+    MatchParams(WeakAndHeap& scores_in) noexcept
+        : MatchParams(scores_in, StopWordStrategy::none(), DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY, 0) {}
+    MatchParams(WeakAndHeap& scores_in, StopWordStrategy stop_word_strategy, uint32_t scoresAdjustFrequency_in,
+                uint32_t docid_limit_in) noexcept
         : scores(scores_in),
           stop_words(stop_word_strategy),
           scoresAdjustFrequency(scoresAdjustFrequency_in),
-          docid_limit(docid_limit_in)
-    {}
+          docid_limit(docid_limit_in) {}
 };
 
 /**
@@ -87,16 +88,15 @@ struct MatchParams
  **/
 struct Term {
     // TODO: use unique_ptr for ownership
-    SearchIterator          *search;
+    SearchIterator*          search;
     int32_t                  weight;
     uint32_t                 estHits;
-    fef::TermFieldMatchData *matchData;
+    fef::TermFieldMatchData* matchData;
     score_t                  maxScore = 0.0; // <- only used by rise wand test
-    Term(SearchIterator *s, int32_t w, uint32_t e, fef::TermFieldMatchData *tfmd) noexcept
-        : search(s), weight(w), estHits(e), matchData(tfmd)
-    {}
-    Term() noexcept : Term(nullptr, 0, 0, nullptr){}
-    Term(SearchIterator *s, int32_t w, uint32_t e) noexcept : Term(s, w, e, nullptr) {}
+    Term(SearchIterator* s, int32_t w, uint32_t e, fef::TermFieldMatchData* tfmd) noexcept
+        : search(s), weight(w), estHits(e), matchData(tfmd) {}
+    Term() noexcept : Term(nullptr, 0, 0, nullptr) {}
+    Term(SearchIterator* s, int32_t w, uint32_t e) noexcept : Term(s, w, e, nullptr) {}
     Term(SearchIterator::UP s, int32_t w, uint32_t e) noexcept : Term(s.release(), w, e, nullptr) {}
 };
 using Terms = std::vector<Term>;
@@ -107,7 +107,7 @@ using Terms = std::vector<Term>;
 namespace {
 
 struct Ident {
-    template <typename T> T operator()(const T &t) const noexcept { return t; }
+    template <typename T> T operator()(const T& t) const noexcept { return t; }
 };
 
 struct NumericOrder {
@@ -117,8 +117,7 @@ struct NumericOrder {
     ref_t operator[](size_t idx) const noexcept { return idx; }
 };
 
-template <typename F, typename Order>
-auto assemble(const F &f, const Order &order)->std::vector<decltype(f(0))> {
+template <typename F, typename Order> auto assemble(const F& f, const Order& order) -> std::vector<decltype(f(0))> {
     std::vector<decltype(f(0))> result;
     result.reserve(order.size());
     for (size_t i = 0; i < order.size(); ++i) {
@@ -127,28 +126,30 @@ auto assemble(const F &f, const Order &order)->std::vector<decltype(f(0))> {
     return result;
 }
 
-int32_t get_max_weight(const SearchIterator &search) {
-    const auto *minMax = dynamic_cast<const MinMaxPostingInfo *>(search.getPostingInfo());
+int32_t get_max_weight(const SearchIterator& search) {
+    const auto* minMax = dynamic_cast<const MinMaxPostingInfo*>(search.getPostingInfo());
     return (minMax != nullptr) ? minMax->getMaxWeight() : std::numeric_limits<int32_t>::max();
 }
 
-} // namespace search::wand::<unnamed>
+} // namespace
 
 struct TermInput {
-    const Terms &terms;
-    explicit TermInput(const Terms &terms_in) noexcept : terms(terms_in) {}
-    size_t size() const noexcept  { return terms.size(); }
+    const Terms& terms;
+    explicit TermInput(const Terms& terms_in) noexcept : terms(terms_in) {}
+    size_t size() const noexcept { return terms.size(); }
     int32_t get_weight(ref_t ref) const noexcept { return terms[ref].weight; }
     uint32_t get_est_hits(ref_t ref) const noexcept { return terms[ref].estHits; }
-    int32_t get_max_weight(ref_t ref) const noexcept { return ::search::queryeval::wand::get_max_weight(*(terms[ref].search)); }
+    int32_t get_max_weight(ref_t ref) const noexcept {
+        return ::search::queryeval::wand::get_max_weight(*(terms[ref].search));
+    }
     docid_t get_initial_docid(ref_t ref) const noexcept { return terms[ref].search->getDocId(); }
 };
 
 struct AttrInput {
-    const std::vector<int32_t> &weights;
-    const std::vector<IDirectPostingStore::LookupResult> &dict_entries;
-    AttrInput(const std::vector<int32_t> &weights_in,
-              const std::vector<IDirectPostingStore::LookupResult> &dict_entries_in) noexcept
+    const std::vector<int32_t>&                           weights;
+    const std::vector<IDirectPostingStore::LookupResult>& dict_entries;
+    AttrInput(const std::vector<int32_t>&                           weights_in,
+              const std::vector<IDirectPostingStore::LookupResult>& dict_entries_in) noexcept
         : weights(weights_in), dict_entries(dict_entries_in) {}
     size_t size() const noexcept { return weights.size(); }
     int32_t get_weight(ref_t ref) const noexcept { return weights[ref]; }
@@ -157,25 +158,21 @@ struct AttrInput {
     docid_t get_initial_docid(ref_t) const noexcept { return SearchIterator::beginId(); }
 };
 
-template <typename Input>
-struct MaxSkipOrder {
-    double estNumDocs;
-    const Input &input;
-    const std::vector<score_t> &max_score;
-    MaxSkipOrder(docid_t docIdLimit, const Input &input_in,
-                 const std::vector<score_t> &max_score_in) noexcept
-        : estNumDocs(1.0), input(input_in), max_score(max_score_in)
-    {
+template <typename Input> struct MaxSkipOrder {
+    double                      estNumDocs;
+    const Input&                input;
+    const std::vector<score_t>& max_score;
+    MaxSkipOrder(docid_t docIdLimit, const Input& input_in, const std::vector<score_t>& max_score_in) noexcept
+        : estNumDocs(1.0), input(input_in), max_score(max_score_in) {
         estNumDocs = std::max(estNumDocs, docIdLimit - 1.0);
         for (size_t i = 0; i < input.size(); ++i) {
             estNumDocs = std::max(estNumDocs, (double)input.get_est_hits(i));
         }
     }
-    double p_not_hit(double estHits) const noexcept {
-        return ((estNumDocs - estHits) / (estNumDocs));
-    }
+    double p_not_hit(double estHits) const noexcept { return ((estNumDocs - estHits) / (estNumDocs)); }
     bool operator()(ref_t a, ref_t b) const noexcept {
-        return ((p_not_hit(input.get_est_hits(a)) * max_score[a]) > (p_not_hit(input.get_est_hits(b)) * max_score[b]));
+        return ((p_not_hit(input.get_est_hits(a)) * max_score[a]) >
+                (p_not_hit(input.get_est_hits(b)) * max_score[b]));
     }
 };
 
@@ -184,7 +181,7 @@ struct MaxSkipOrder {
 namespace {
 
 template <typename ITR, typename F>
-std::string do_stringify(const std::string &title, ITR begin, ITR end, const F &f) {
+std::string do_stringify(const std::string& title, ITR begin, ITR end, const F& f) {
     std::string result = vespalib::make_string("[%s]{", title.c_str());
     for (ITR pos = begin; pos != end; ++pos) {
         if (pos != begin) {
@@ -196,13 +193,11 @@ std::string do_stringify(const std::string &title, ITR begin, ITR end, const F &
     return result;
 }
 
-} // namespace searchlib::wand::<unnamed>
+} // namespace
 
 //-----------------------------------------------------------------------------
 
-template <typename IteratorPack>
-class VectorizedState
-{
+template <typename IteratorPack> class VectorizedState {
 private:
     std::vector<docid_t> _docId;
     std::vector<int32_t> _weight;
@@ -211,23 +206,23 @@ private:
 
 public:
     VectorizedState() noexcept;
-    VectorizedState(VectorizedState &&) noexcept;
-    VectorizedState & operator=(VectorizedState &&) noexcept;
+    VectorizedState(VectorizedState&&) noexcept;
+    VectorizedState& operator=(VectorizedState&&) noexcept;
     ~VectorizedState();
 
     template <typename Scorer, typename Input>
-    std::vector<ref_t> init_state(const Input &input, const Scorer & scorer, uint32_t docIdLimit);
+    std::vector<ref_t> init_state(const Input& input, const Scorer& scorer, uint32_t docIdLimit);
 
-    docid_t *docId() { return &(_docId[0]); }
-    const int32_t *weight() const { return &(_weight[0]); }
-    const score_t *maxScore() const { return &(_maxScore[0]); }
+    docid_t* docId() { return &(_docId[0]); }
+    const int32_t* weight() const { return &(_weight[0]); }
+    const score_t* maxScore() const { return &(_maxScore[0]); }
 
-    docid_t &docId(ref_t ref) { return _docId[ref]; }
+    docid_t& docId(ref_t ref) { return _docId[ref]; }
     int32_t weight(ref_t ref) const { return _weight[ref]; }
     score_t maxScore(ref_t ref) const { return _maxScore[ref]; }
 
     size_t size() const { return _docId.size(); }
-    IteratorPack &iteratorPack() { return _iteratorPack; }
+    IteratorPack& iteratorPack() { return _iteratorPack; }
 
     uint32_t seek(uint16_t ref, uint32_t docid) { return _iteratorPack.seek(ref, docid); }
     int32_t get_weight(uint16_t ref, uint32_t docid) { return _iteratorPack.get_weight(ref, docid); }
@@ -236,28 +231,21 @@ public:
 };
 
 template <typename IteratorPack>
-VectorizedState<IteratorPack>::VectorizedState() noexcept
-    : _docId(),
-      _weight(),
-      _maxScore(),
-      _iteratorPack()
-{}
-template <typename IteratorPack>
-VectorizedState<IteratorPack>::~VectorizedState() = default;
+VectorizedState<IteratorPack>::VectorizedState() noexcept : _docId(), _weight(), _maxScore(), _iteratorPack() {
+}
+template <typename IteratorPack> VectorizedState<IteratorPack>::~VectorizedState() = default;
+
+template <typename IteratorPack> VectorizedState<IteratorPack>::VectorizedState(VectorizedState&&) noexcept = default;
 
 template <typename IteratorPack>
-VectorizedState<IteratorPack>::VectorizedState(VectorizedState &&) noexcept = default;
-
-template <typename IteratorPack>
-VectorizedState<IteratorPack> &
-VectorizedState<IteratorPack>::operator=(VectorizedState &&) noexcept = default;
+VectorizedState<IteratorPack>& VectorizedState<IteratorPack>::operator=(VectorizedState&&) noexcept = default;
 
 // Note: parallel wand variants MUST ALWAYS use StopWordStrategy::none() to avoid breaking important invariants
 template <typename IteratorPack>
 template <typename Scorer, typename Input>
-std::vector<ref_t>
-VectorizedState<IteratorPack>::init_state(const Input &input, const Scorer & scorer, uint32_t docIdLimit) {
-    std::vector<ref_t> order;
+std::vector<ref_t> VectorizedState<IteratorPack>::init_state(const Input& input, const Scorer& scorer,
+                                                             uint32_t docIdLimit) {
+    std::vector<ref_t>   order;
     std::vector<score_t> max_scores;
     order.reserve(input.size());
     max_scores.reserve(input.size());
@@ -266,59 +254,53 @@ VectorizedState<IteratorPack>::init_state(const Input &input, const Scorer & sco
         max_scores.push_back(scorer.calculate_max_score(input, i));
     }
     std::sort(order.begin(), order.end(), MaxSkipOrder<Input>(docIdLimit, input, max_scores));
-    _docId = assemble([&input](ref_t ref){ return input.get_initial_docid(ref); }, order);
-    _weight = assemble([&input](ref_t ref){ return input.get_weight(ref); }, order);
-    _maxScore = assemble([&max_scores](ref_t ref){ return max_scores[ref]; }, order);
+    _docId = assemble([&input](ref_t ref) { return input.get_initial_docid(ref); }, order);
+    _weight = assemble([&input](ref_t ref) { return input.get_weight(ref); }, order);
+    _maxScore = assemble([&max_scores](ref_t ref) { return max_scores[ref]; }, order);
     return order;
 }
 
-template <typename IteratorPack>
-std::string
-VectorizedState<IteratorPack>::stringify_docid() const {
+template <typename IteratorPack> std::string VectorizedState<IteratorPack>::stringify_docid() const {
     auto range = assemble(Ident(), NumericOrder(_docId.size()));
-    return do_stringify("state{docid}", range.begin(), range.end(),
-                        [this](ref_t ref)
-                        {
-                            return vespalib::make_string("%u:%u/%u", ref, _docId[ref], _iteratorPack.get_docid(ref));
-                        });
+    return do_stringify("state{docid}", range.begin(), range.end(), [this](ref_t ref) {
+        return vespalib::make_string("%u:%u/%u", ref, _docId[ref], _iteratorPack.get_docid(ref));
+    });
 }
 
 //-----------------------------------------------------------------------------
 
-class VectorizedIteratorTerms : public VectorizedState<SearchIteratorPack>
-{
+class VectorizedIteratorTerms : public VectorizedState<SearchIteratorPack> {
 private:
     Terms _terms; // TODO: want to get rid of this
 
 public:
     template <typename Scorer>
-    VectorizedIteratorTerms(const Terms &t, const Scorer & scorer, uint32_t docIdLimit,
+    VectorizedIteratorTerms(const Terms& t, const Scorer& scorer, uint32_t docIdLimit,
                             fef::MatchData::UP childrenMatchData);
-    VectorizedIteratorTerms(VectorizedIteratorTerms &&) noexcept;
-    VectorizedIteratorTerms & operator=(VectorizedIteratorTerms &&) noexcept;
+    VectorizedIteratorTerms(VectorizedIteratorTerms&&) noexcept;
+    VectorizedIteratorTerms& operator=(VectorizedIteratorTerms&&) noexcept;
 
     ~VectorizedIteratorTerms();
     void unpack(uint16_t ref, uint32_t docid) { iteratorPack().unpack(ref, docid); }
-    void visit_members(vespalib::ObjectVisitor &visitor) const;
-    const Terms &input_terms() const { return _terms; }
+    void visit_members(vespalib::ObjectVisitor& visitor) const;
+    const Terms& input_terms() const { return _terms; }
     void transform_children(std::function<SearchIterator::UP(SearchIterator::UP)> f) {
-        iteratorPack().transform_children([&](auto itr, size_t idx){
-                                              auto ret = f(std::move(itr));
-                                              _terms[idx].search = ret.get();
-                                              return ret;
-                                          });
+        iteratorPack().transform_children([&](auto itr, size_t idx) {
+            auto ret = f(std::move(itr));
+            _terms[idx].search = ret.get();
+            return ret;
+        });
     }
 };
 
 template <typename Scorer>
-VectorizedIteratorTerms::VectorizedIteratorTerms(const Terms &t, const Scorer & scorer, uint32_t docIdLimit,
+VectorizedIteratorTerms::VectorizedIteratorTerms(const Terms& t, const Scorer& scorer, uint32_t docIdLimit,
                                                  fef::MatchData::UP childrenMatchData)
-    : _terms()
-{
+    : _terms() {
     std::vector<ref_t> order = init_state<Scorer>(TermInput(t), scorer, docIdLimit);
-    _terms = assemble([&t](ref_t ref){ return t[ref]; }, order);
-    iteratorPack() = SearchIteratorPack(assemble([&t](ref_t ref){ return t[ref].search; }, order),
-                                        assemble([&t](ref_t ref){ return t[ref].matchData; }, order),
+    _terms = assemble([&t](ref_t ref) { return t[ref]; }, order);
+    iteratorPack() = SearchIteratorPack(assemble([&t](ref_t ref) { return t[ref].search; }, order),
+                                        assemble([&t](ref_t ref) { return t[ref].matchData; }, order),
                                         std::move(childrenMatchData));
 }
 
@@ -326,12 +308,9 @@ VectorizedIteratorTerms::VectorizedIteratorTerms(const Terms &t, const Scorer & 
 
 struct VectorizedAttributeTerms : VectorizedState<DocidWithWeightIteratorPack> {
     template <typename Scorer>
-    VectorizedAttributeTerms(const std::vector<int32_t> &weights,
-                             const std::vector<IDirectPostingStore::LookupResult> &dict_entries,
-                             const IDocidWithWeightPostingStore &attr,
-                             const Scorer & scorer,
-                             docid_t docIdLimit)
-    {
+    VectorizedAttributeTerms(const std::vector<int32_t>&                           weights,
+                             const std::vector<IDirectPostingStore::LookupResult>& dict_entries,
+                             const IDocidWithWeightPostingStore& attr, const Scorer& scorer, docid_t docIdLimit) {
         std::vector<ref_t> order = init_state<Scorer>(AttrInput(weights, dict_entries), scorer, docIdLimit);
         std::vector<DocidWithWeightIterator> iterators;
         iterators.reserve(order.size());
@@ -341,7 +320,7 @@ struct VectorizedAttributeTerms : VectorizedState<DocidWithWeightIteratorPack> {
         }
         iteratorPack() = DocidWithWeightIteratorPack(std::move(iterators));
     }
-    void visit_members(vespalib::ObjectVisitor &) const {}
+    void visit_members(vespalib::ObjectVisitor&) const {}
 };
 
 //-----------------------------------------------------------------------------
@@ -351,36 +330,32 @@ struct VectorizedAttributeTerms : VectorizedState<DocidWithWeightIteratorPack> {
  * id
  **/
 struct DocIdOrder {
-    const docid_t *termPos;
-    explicit DocIdOrder(const docid_t *pos) noexcept : termPos(pos) {}
+    const docid_t* termPos;
+    explicit DocIdOrder(const docid_t* pos) noexcept : termPos(pos) {}
     bool at_end(ref_t ref) const noexcept { return termPos[ref] == search::endDocId; }
     docid_t get_pos(ref_t ref) const noexcept { return termPos[ref]; }
-    bool operator()(ref_t a, ref_t b) const noexcept {
-        return (termPos[a] < termPos[b]);
-    }
+    bool operator()(ref_t a, ref_t b) const noexcept { return (termPos[a] < termPos[b]); }
 };
 
 //-----------------------------------------------------------------------------
 
-template <typename FutureHeap, typename PastHeap>
-class DualHeap
-{
+template <typename FutureHeap, typename PastHeap> class DualHeap {
 private:
     DocIdOrder         _futureCmp;
     std::vector<ref_t> _space;
-    ref_t             *_future;    // start of future heap
-    ref_t             *_present;   // start of present array
-    ref_t             *_past;      // start of past heap
-    ref_t             *_trash;     // end of used data
+    ref_t*             _future;  // start of future heap
+    ref_t*             _present; // start of present array
+    ref_t*             _past;    // start of past heap
+    ref_t*             _trash;   // end of used data
     size_t             _size;
 
 public:
-    DualHeap(const DocIdOrder &futureCmp, size_t size);
+    DualHeap(const DocIdOrder& futureCmp, size_t size);
     ~DualHeap();
     void init();
-    bool has_future() const { return (_future != _present);}
-    bool has_present() const { return (_present != _past);}
-    bool has_past() const { return (_past != _trash);}
+    bool has_future() const { return (_future != _present); }
+    bool has_present() const { return (_present != _past); }
+    bool has_past() const { return (_past != _trash); }
     ref_t future() const { return FutureHeap::front(_future, _present); }
     ref_t first_present() const { return *_present; }
     ref_t last_present() const { return *(_past - 1); }
@@ -391,38 +366,33 @@ public:
     void pop_past() { PastHeap::pop(_past++, _trash, std::less<ref_t>()); }
     void pop_any_past() { _past++; }
     void discard_last_present() {
-        memmove((_past - 1), _past,
-                (_trash - _past) * sizeof(ref_t));
+        memmove((_past - 1), _past, (_trash - _past) * sizeof(ref_t));
         --_past;
         --_trash;
     }
-    ref_t *present_begin() const { return _present; }
-    ref_t *present_end() const { return _past; }
+    ref_t* present_begin() const { return _present; }
+    ref_t* present_end() const { return _past; }
     std::string stringify() const;
 };
 
 template <typename FutureHeap, typename PastHeap>
-DualHeap<FutureHeap, PastHeap>::DualHeap(const DocIdOrder &futureCmp, size_t size)
+DualHeap<FutureHeap, PastHeap>::DualHeap(const DocIdOrder& futureCmp, size_t size)
     : _futureCmp(futureCmp),
       _space(),
       _future(nullptr),
       _present(nullptr),
       _past(nullptr),
       _trash(nullptr),
-      _size(size)
-{
+      _size(size) {
     FutureHeap::require_left_heap();
     PastHeap::require_right_heap();
     _space.reserve(size);
     init();
 }
 
-template <typename FutureHeap, typename PastHeap>
-DualHeap<FutureHeap, PastHeap>::~DualHeap() = default;
+template <typename FutureHeap, typename PastHeap> DualHeap<FutureHeap, PastHeap>::~DualHeap() = default;
 
-template <typename FutureHeap, typename PastHeap>
-void
-DualHeap<FutureHeap, PastHeap>::init() {
+template <typename FutureHeap, typename PastHeap> void DualHeap<FutureHeap, PastHeap>::init() {
     _space.clear();
     _future = _space.data();
     _present = _future;
@@ -437,42 +407,39 @@ DualHeap<FutureHeap, PastHeap>::init() {
     assert(_future == _space.data()); // space has not moved
 }
 
-template <typename FutureHeap, typename PastHeap>
-std::string
-DualHeap<FutureHeap, PastHeap>::stringify() const {
-    return "Heaps: "
-           + do_stringify("future", _future, _present,
-                          [this](ref_t ref){ return vespalib::make_string("%u@%u", ref, _futureCmp.get_pos(ref)); })
-           + " " + do_stringify("present", _present, _past,
-                                [this](ref_t ref){ return vespalib::make_string("%u@%u", ref, _futureCmp.get_pos(ref)); })
-           + " " + do_stringify("past", _past, _trash,
-                                [this](ref_t ref){ return vespalib::make_string("%u@%u", ref, _futureCmp.get_pos(ref)); });
+template <typename FutureHeap, typename PastHeap> std::string DualHeap<FutureHeap, PastHeap>::stringify() const {
+    return "Heaps: " +
+           do_stringify("future", _future, _present,
+                        [this](ref_t ref) { return vespalib::make_string("%u@%u", ref, _futureCmp.get_pos(ref)); }) +
+           " " +
+           do_stringify("present", _present, _past,
+                        [this](ref_t ref) { return vespalib::make_string("%u@%u", ref, _futureCmp.get_pos(ref)); }) +
+           " " + do_stringify("past", _past, _trash, [this](ref_t ref) {
+               return vespalib::make_string("%u@%u", ref, _futureCmp.get_pos(ref));
+           });
 }
 //-----------------------------------------------------------------------------
 
 constexpr double TermFrequencyScorer_TERM_SCORE_FACTOR = 1000000.0;
 
-class Bm25TermFrequencyScorer
-{
+class Bm25TermFrequencyScorer {
 public:
     using Bm25Utils = features::Bm25Utils;
-    Bm25TermFrequencyScorer(uint32_t num_docs) noexcept
-        : _num_docs(num_docs)
-    { }
+    Bm25TermFrequencyScorer(uint32_t num_docs) noexcept : _num_docs(num_docs) {}
     // weight * scaled_bm25_idf, scaled to fixedpoint
     score_t calculateMaxScore(double estHits, double weight) const noexcept {
         return score_t(TermFrequencyScorer_TERM_SCORE_FACTOR * weight *
                        Bm25Utils::calculate_inverse_document_frequency({static_cast<uint64_t>(estHits), _num_docs}));
     }
 
-    score_t calculateMaxScore(const Term &term) const noexcept {
+    score_t calculateMaxScore(const Term& term) const noexcept {
         return calculateMaxScore(term.estHits, term.weight) + 1;
     }
 
-    template <typename Input>
-    score_t calculate_max_score(const Input &input, ref_t ref) const noexcept {
+    template <typename Input> score_t calculate_max_score(const Input& input, ref_t ref) const noexcept {
         return calculateMaxScore(input.get_est_hits(ref), input.get_weight(ref)) + 1;
     }
+
 private:
     uint32_t _num_docs;
 };
@@ -483,13 +450,12 @@ private:
  * Scorer used with WeakAndAlgorithm that calculates a real dot product upper
  * bound as max score and dot product component score per term.
  */
-struct DotProductScorer
-{
-    static score_t calculateMaxScore(const Term &term) {
-        int32_t maxWeight = std::numeric_limits<int32_t>::max();
-        const PostingInfo *postingInfo = term.search->getPostingInfo();
+struct DotProductScorer {
+    static score_t calculateMaxScore(const Term& term) {
+        int32_t            maxWeight = std::numeric_limits<int32_t>::max();
+        const PostingInfo* postingInfo = term.search->getPostingInfo();
         if (postingInfo != nullptr) {
-            const auto *minMax = dynamic_cast<const MinMaxPostingInfo *>(postingInfo);
+            const auto* minMax = dynamic_cast<const MinMaxPostingInfo*>(postingInfo);
             if (minMax != nullptr) {
                 maxWeight = minMax->getMaxWeight();
             }
@@ -497,18 +463,17 @@ struct DotProductScorer
         return (score_t)term.weight * maxWeight;
     }
 
-    template <typename Input>
-    static score_t calculate_max_score(const Input &input, ref_t ref) {
-        return input.get_weight(ref) * (score_t) input.get_max_weight(ref);
+    template <typename Input> static score_t calculate_max_score(const Input& input, ref_t ref) {
+        return input.get_weight(ref) * (score_t)input.get_max_weight(ref);
     }
 
-    static score_t calculateScore(const Term &term, docid_t docId) {
+    static score_t calculateScore(const Term& term, docid_t docId) {
         term.search->doUnpack(docId);
         return (score_t)term.weight * term.matchData->getWeight();
     }
 
     template <typename VectorizedTerms>
-    static score_t calculateScore(VectorizedTerms &terms, ref_t ref, docid_t docId) {
+    static score_t calculateScore(VectorizedTerms& terms, ref_t ref, docid_t docId) {
         return terms.weight(ref) * (score_t)terms.get_weight(ref, docId);
     }
 };
@@ -531,22 +496,20 @@ struct GreaterThanEqual {
 
 //-----------------------------------------------------------------------------
 
-class Algorithm
-{
+class Algorithm {
 private:
     docid_t _candidate;
     score_t _upperBound;
     score_t _maxUpperBound;
     score_t _partial_score;
 
-    template <typename VectorizedTerms>
-    bool step_term(VectorizedTerms &terms, ref_t ref) {
+    template <typename VectorizedTerms> bool step_term(VectorizedTerms& terms, ref_t ref) {
         terms.docId(ref) = terms.seek(ref, _candidate);
         return (terms.docId(ref) == _candidate);
     }
 
     template <typename VectorizedTerms, typename Heaps>
-    void evict_last_present(VectorizedTerms &terms, Heaps &heaps) {
+    void evict_last_present(VectorizedTerms& terms, Heaps& heaps) {
         _maxUpperBound -= terms.maxScore(heaps.last_present());
         if (terms.docId(heaps.last_present()) != search::endDocId) {
             heaps.swap_presents();
@@ -556,16 +519,14 @@ private:
         }
     }
 
-    template <typename Heaps>
-    void discard_candidate(Heaps &heaps) {
+    template <typename Heaps> void discard_candidate(Heaps& heaps) {
         while (heaps.has_present()) {
             heaps.push_past();
         }
         _upperBound = 0;
     }
 
-    template <typename VectorizedTerms, typename Heaps>
-    void step_optimal_term(VectorizedTerms &terms, Heaps &heaps) {
+    template <typename VectorizedTerms, typename Heaps> void step_optimal_term(VectorizedTerms& terms, Heaps& heaps) {
         heaps.pop_past();
         if (step_term(terms, heaps.last_present())) {
             _upperBound += terms.maxScore(heaps.last_present());
@@ -574,8 +535,7 @@ private:
         }
     }
 
-    template <typename VectorizedTerms, typename Heaps>
-    void step_candidate(VectorizedTerms &terms, Heaps &heaps) {
+    template <typename VectorizedTerms, typename Heaps> void step_candidate(VectorizedTerms& terms, Heaps& heaps) {
         discard_candidate(heaps); // will reset upper bound
         _candidate = terms.docId(heaps.future());
         do {
@@ -586,9 +546,10 @@ private:
     }
 
     template <typename VectorizedTerms, typename Heaps, typename Scorer, typename AboveThreshold>
-    bool check_present_score(VectorizedTerms &terms, Heaps &heaps, score_t &max_score, const Scorer & scorer, AboveThreshold &&aboveThreshold) {
-        ref_t *end = heaps.present_end();
-        for (ref_t *ref = heaps.present_begin(); ref != end; ++ref) {
+    bool check_present_score(VectorizedTerms& terms, Heaps& heaps, score_t& max_score, const Scorer& scorer,
+                             AboveThreshold&& aboveThreshold) {
+        ref_t* end = heaps.present_end();
+        for (ref_t* ref = heaps.present_begin(); ref != end; ++ref) {
             score_t term_score = scorer.calculateScore(terms, *ref, _candidate);
             _partial_score += term_score;
             max_score -= (terms.maxScore(*ref) - term_score);
@@ -600,7 +561,8 @@ private:
     }
 
     template <typename VectorizedTerms, typename Heaps, typename Scorer, typename AboveThreshold>
-    bool check_past_score(VectorizedTerms &terms, Heaps &heaps, score_t &max_score, const Scorer & scorer, AboveThreshold &&aboveThreshold) {
+    bool check_past_score(VectorizedTerms& terms, Heaps& heaps, score_t& max_score, const Scorer& scorer,
+                          AboveThreshold&& aboveThreshold) {
         while (heaps.has_past() && !aboveThreshold(_partial_score)) {
             heaps.pop_past();
             if (step_term(terms, heaps.last_present())) {
@@ -629,7 +591,7 @@ public:
     Algorithm() : _candidate(SearchIterator::beginId()), _upperBound(0), _maxUpperBound(0), _partial_score(0) {}
 
     template <typename VectorizedTerms, typename Heaps>
-    void init_range(VectorizedTerms &terms, Heaps &heaps, uint32_t begin_id, uint32_t end_id) {
+    void init_range(VectorizedTerms& terms, Heaps& heaps, uint32_t begin_id, uint32_t end_id) {
         reset();
         terms.iteratorPack().initRange(begin_id, end_id);
         for (size_t i = 0; i < terms.size(); ++i) {
@@ -642,7 +604,7 @@ public:
     score_t get_upper_bound() const { return _upperBound; }
 
     template <typename VectorizedTerms, typename Heaps>
-    void set_candidate(VectorizedTerms &terms, Heaps &heaps, docid_t candidate) {
+    void set_candidate(VectorizedTerms& terms, Heaps& heaps, docid_t candidate) {
         _candidate = candidate;
         while (heaps.has_future() && terms.docId(heaps.future()) < candidate) {
             heaps.pop_future();
@@ -657,7 +619,7 @@ public:
     }
 
     template <typename VectorizedTerms, typename Heaps, typename AboveThreshold>
-    bool solve_wand_constraint(VectorizedTerms &terms, Heaps &heaps, AboveThreshold &&aboveThreshold) {
+    bool solve_wand_constraint(VectorizedTerms& terms, Heaps& heaps, AboveThreshold&& aboveThreshold) {
         while (!aboveThreshold(_upperBound)) {
             if (aboveThreshold(_maxUpperBound)) {
                 step_optimal_term(terms, heaps);
@@ -671,7 +633,7 @@ public:
     }
 
     template <typename VectorizedTerms, typename Heaps, typename AboveThreshold>
-    bool check_wand_constraint(VectorizedTerms &terms, Heaps &heaps, AboveThreshold &&aboveThreshold) {
+    bool check_wand_constraint(VectorizedTerms& terms, Heaps& heaps, AboveThreshold&& aboveThreshold) {
         while (!aboveThreshold(_upperBound)) {
             if (aboveThreshold(_maxUpperBound)) {
                 step_optimal_term(terms, heaps);
@@ -683,7 +645,7 @@ public:
     }
 
     template <typename VectorizedTerms, typename Heaps, typename Scorer, typename AboveThreshold>
-    bool check_score(VectorizedTerms &terms, Heaps &heaps, const Scorer &scorer, AboveThreshold &&aboveThreshold) {
+    bool check_score(VectorizedTerms& terms, Heaps& heaps, const Scorer& scorer, AboveThreshold&& aboveThreshold) {
         _partial_score = 0;
         score_t max_score = _maxUpperBound;
         if (check_present_score(terms, heaps, max_score, scorer, aboveThreshold)) {
@@ -695,7 +657,7 @@ public:
     }
 
     template <typename VectorizedTerms, typename Heaps, typename Scorer>
-    score_t get_full_score(VectorizedTerms &terms, Heaps &heaps, const Scorer & scorer) {
+    score_t get_full_score(VectorizedTerms& terms, Heaps& heaps, const Scorer& scorer) {
         score_t score = _partial_score;
         while (heaps.has_past()) {
             heaps.pop_any_past();
@@ -709,7 +671,7 @@ public:
     }
 
     template <typename VectorizedTerms, typename Heaps>
-    void find_matching_terms(VectorizedTerms &terms, Heaps &heaps) {
+    void find_matching_terms(VectorizedTerms& terms, Heaps& heaps) {
         while (heaps.has_past()) {
             heaps.pop_any_past();
             if (step_term(terms, heaps.last_present())) {
@@ -723,11 +685,10 @@ public:
 
 //-----------------------------------------------------------------------------
 
-}
+} // namespace search::queryeval::wand
 
 //-----------------------------------------------------------------------------
 
-void visit(vespalib::ObjectVisitor &self, const std::string &name,
-           const search::queryeval::wand::Term &obj);
+void visit(vespalib::ObjectVisitor& self, const std::string& name, const search::queryeval::wand::Term& obj);
 
 //-----------------------------------------------------------------------------

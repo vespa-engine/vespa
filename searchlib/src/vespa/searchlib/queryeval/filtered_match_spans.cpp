@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "filtered_match_spans.h"
+
 #include <vespa/searchcommon/common/element_ids.h>
+
 #include <algorithm>
 #include <limits>
 #include <optional>
@@ -18,21 +20,19 @@ class ElementIdMatchSpanFilter {
     MatchSpanPos                        _first;
     MatchSpanPos                        _last;
     bool                                _valid;
+
 public:
     ElementIdMatchSpanFilter(std::span<const uint32_t> element_ids) noexcept
         : _element_ids(element_ids),
           _element_ids_itr(),
           _first(MatchSpanPos(0, 0)),
           _last(MatchSpanPos(0, 0)),
-          _valid(false)
-    {
-    }
+          _valid(false) {}
     void new_field() noexcept {
         _element_ids_itr = _element_ids.begin();
         step();
     }
-    void step() noexcept
-    {
+    void step() noexcept {
         _valid = false;
         if (_element_ids_itr != _element_ids.end()) {
             _valid = true;
@@ -51,27 +51,22 @@ public:
         }
         return _valid;
     }
-    [[nodiscard]] bool is_after(uint32_t, const MatchSpanPos& last_pos) noexcept {
-        return _first > last_pos;
-    }
+    [[nodiscard]] bool is_after(uint32_t, const MatchSpanPos& last_pos) noexcept { return _first > last_pos; }
     [[nodiscard]] bool valid() const noexcept { return _valid; }
     [[nodiscard]] const MatchSpanPos& first() const noexcept { return _first; }
     [[nodiscard]] const MatchSpanPos& last() const noexcept { return _last; }
 };
 
-}
+} // namespace
 
-FilteredMatchSpans::FilteredMatchSpans() noexcept
-    : _filtered_spans()
-{
+FilteredMatchSpans::FilteredMatchSpans() noexcept : _filtered_spans() {
 }
 
 FilteredMatchSpans::~FilteredMatchSpans() = default;
 
 template <typename MatchSpanFilter>
-std::span<const MatchSpan>
-FilteredMatchSpans::intersection_helper(std::span<const MatchSpan> spans, MatchSpanFilter filter)
-{
+std::span<const MatchSpan> FilteredMatchSpans::intersection_helper(std::span<const MatchSpan> spans,
+                                                                   MatchSpanFilter            filter) {
     _filtered_spans.clear();
     std::optional<uint32_t> field_id;
     for (auto& match_span : spans) {
@@ -103,9 +98,8 @@ FilteredMatchSpans::intersection_helper(std::span<const MatchSpan> spans, MatchS
     return _filtered_spans;
 }
 
-std::span<const MatchSpan>
-FilteredMatchSpans::intersection(std::span<const MatchSpan> spans, ElementIds element_ids)
-{
+std::span<const MatchSpan> FilteredMatchSpans::intersection(std::span<const MatchSpan> spans,
+                                                            ElementIds                 element_ids) {
     if (element_ids.all_elements()) {
         return spans;
     }
@@ -115,4 +109,4 @@ FilteredMatchSpans::intersection(std::span<const MatchSpan> spans, ElementIds el
     return intersection_helper(spans, ElementIdMatchSpanFilter({element_ids.begin(), element_ids.end()}));
 }
 
-}
+} // namespace search::queryeval

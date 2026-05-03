@@ -1,55 +1,59 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "nearest_neighbor_blueprint.h"
+
 #include "emptysearch.h"
 #include "exact_nearest_neighbor_iterator.h"
 #include "nns_index_iterator.h"
 #include "queryeval_stats.h"
+
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/distance_function_factory.h>
 #include <vespa/vespalib/objects/objectvisitor.h>
+
 #include <vespa/log/log.h>
 
 LOG_SETUP(".searchlib.queryeval.nearest_neighbor_blueprint");
 
 using vespalib::eval::Value;
 
-namespace vespalib { class Doom; }
+namespace vespalib {
+class Doom;
+}
 
 namespace search::queryeval {
 
 namespace {
 
-std::string
-to_string(NearestNeighborBlueprint::Algorithm algorithm)
-{
+std::string to_string(NearestNeighborBlueprint::Algorithm algorithm) {
     using NNBA = NearestNeighborBlueprint::Algorithm;
     switch (algorithm) {
-        case NNBA::EXACT: return "exact";
-        case NNBA::EXACT_FALLBACK: return "exact fallback";
-        case NNBA::INDEX_TOP_K: return "index top k";
-        case NNBA::INDEX_TOP_K_WITH_FILTER: return "index top k using filter";
+    case NNBA::EXACT:
+        return "exact";
+    case NNBA::EXACT_FALLBACK:
+        return "exact fallback";
+    case NNBA::INDEX_TOP_K:
+        return "index top k";
+    case NNBA::INDEX_TOP_K_WITH_FILTER:
+        return "index top k using filter";
     }
     return "unknown";
 }
 
-} // namespace <unnamed>
+} // namespace
 
-double
-NearestNeighborBlueprint::convert_distance_threshold(double distance_threshold,
-                                                     const search::tensor::DistanceCalculator& distance_calc)
-{
+double NearestNeighborBlueprint::convert_distance_threshold(double distance_threshold,
+                                                            const search::tensor::DistanceCalculator& distance_calc) {
     if (distance_threshold < std::numeric_limits<double>::max()) {
         return distance_calc.function().convert_threshold(distance_threshold);
     }
     return std::numeric_limits<double>::max();
 }
 
-NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& field,
+NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec&                         field,
                                                    std::unique_ptr<search::tensor::DistanceCalculator> distance_calc,
-                                                   uint32_t target_hits,
-                                                   bool approximate,
+                                                   uint32_t target_hits, bool approximate,
                                                    const HnswParams& hnsw_params)
     : ComplexLeafBlueprint(field),
       _distance_calc(std::move(distance_calc)),
@@ -81,20 +85,17 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
       _pending_index_search(false),
       _matching_phase(MatchingPhase::FIRST_PHASE),
       _nni_stats(),
-      _stats()
-{
+      _stats() {
     _distance_heap.set_distance_threshold(_hnsw_params.distance_threshold);
     uint32_t est_hits = _attr_tensor.get_num_docs();
     // Default to the expensive cost tier to allow the WhiteListBlueprint to come before this blueprint.
-    // If we decide to use HNSW (INDEX_TOP_K, INDEX_TOP_K_WITH_FILTER) or exact search with a global filter (EXACT_FALLBACK),
-    // we move the blueprint to the normal cost tier.
+    // If we decide to use HNSW (INDEX_TOP_K, INDEX_TOP_K_WITH_FILTER) or exact search with a global filter
+    // (EXACT_FALLBACK), we move the blueprint to the normal cost tier.
     set_cost_tier(State::COST_TIER_EXPENSIVE);
     setEstimate(HitEstimate(est_hits, false));
 }
 
-bool
-NearestNeighborBlueprint::want_global_filter(GlobalFilterLimits& limits) const
-{
+bool NearestNeighborBlueprint::want_global_filter(GlobalFilterLimits& limits) const {
     auto nns_index = _attr_tensor.nearest_neighbor_index();
     if (nns_index && _approximate) {
         limits.lower_limit = _hnsw_params.global_filter_lower_limit;
@@ -104,9 +105,7 @@ NearestNeighborBlueprint::want_global_filter(GlobalFilterLimits& limits) const
     return false;
 }
 
-void
-NearestNeighborBlueprint::set_global_filter(const GlobalFilter &global_filter, double estimated_hit_ratio)
-{
+void NearestNeighborBlueprint::set_global_filter(const GlobalFilter& global_filter, double estimated_hit_ratio) {
     _algorithm = Algorithm::EXACT;
     _pending_index_search = false;
     _global_filter = global_filter.shared_from_this();
@@ -125,11 +124,13 @@ NearestNeighborBlueprint::set_global_filter(const GlobalFilter &global_filter, d
             }
         } else { // post-filtering case
             // The goal is to expose 'targetHits' hits to first-phase ranking.
-            // We try to achieve this by adjusting targetHits based on the estimated hit ratio of the query before post-filtering.
-            // However, this is bound by 'target-hits-max-adjustment-factor' to limit the cost of searching the HNSW index.
+            // We try to achieve this by adjusting targetHits based on the estimated hit ratio of the query before
+            // post-filtering. However, this is bound by 'target-hits-max-adjustment-factor' to limit the cost of
+            // searching the HNSW index.
             if (estimated_hit_ratio > 0.0) {
-                _adjusted_target_hits = std::min(static_cast<double>(_target_hits) / estimated_hit_ratio,
-                                                 static_cast<double>(_target_hits) * _hnsw_params.target_hits_max_adjustment_factor);
+                _adjusted_target_hits =
+                    std::min(static_cast<double>(_target_hits) / estimated_hit_ratio,
+                             static_cast<double>(_target_hits) * _hnsw_params.target_hits_max_adjustment_factor);
             }
         }
         if (_algorithm != Algorithm::EXACT_FALLBACK) {
@@ -141,29 +142,25 @@ NearestNeighborBlueprint::set_global_filter(const GlobalFilter &global_filter, d
     }
 }
 
-void
-NearestNeighborBlueprint::set_lazy_filter(const GlobalFilter &lazy_filter) {
+void NearestNeighborBlueprint::set_lazy_filter(const GlobalFilter& lazy_filter) {
     _lazy_filter = lazy_filter.shared_from_this();
 }
 
-bool
-NearestNeighborBlueprint::pending_index_search() const {
+bool NearestNeighborBlueprint::pending_index_search() const {
     return _pending_index_search;
 }
 
-void
-NearestNeighborBlueprint::perform_index_search(const vespalib::Deadline &doom) {
+void NearestNeighborBlueprint::perform_index_search(const vespalib::Deadline& doom) {
     if (_pending_index_search) {
         perform_top_k(_attr_tensor.nearest_neighbor_index(), doom);
         _pending_index_search = false;
     }
 }
 
-void
-NearestNeighborBlueprint::perform_top_k(const search::tensor::NearestNeighborIndex* nns_index, const vespalib::Deadline &doom)
-{
-    uint32_t k = _adjusted_target_hits;
-    const auto &df = _distance_calc->function();
+void NearestNeighborBlueprint::perform_top_k(const search::tensor::NearestNeighborIndex* nns_index,
+                                             const vespalib::Deadline&                   doom) {
+    uint32_t    k = _adjusted_target_hits;
+    const auto& df = _distance_calc->function();
     if (_lazy_filter && _lazy_filter->is_active()) { // Global filter might or might not be active
         std::shared_ptr<const GlobalFilter> use_filter = _lazy_filter;
         if (_global_filter->is_active()) { // Both global filter and lazy filter
@@ -172,49 +169,51 @@ NearestNeighborBlueprint::perform_top_k(const search::tensor::NearestNeighborInd
         _lazy_filter_hits = use_filter->count();
         _lazy_filter_hit_ratio = static_cast<double>(_lazy_filter_hits.value()) / _attr_tensor.get_num_docs();
         _low_hit_ratio = _lazy_filter_hit_ratio.value() < _hnsw_params.filter_first_upper_limit;
-        _found_hits = nns_index->find_top_k_with_filter(_nni_stats, k, df, *use_filter, _low_hit_ratio, _hnsw_params.filter_first_exploration,
-                                                        k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _hnsw_params.prefetch_tensors, doom, _hnsw_params.distance_threshold);
+        _found_hits = nns_index->find_top_k_with_filter(
+            _nni_stats, k, df, *use_filter, _low_hit_ratio, _hnsw_params.filter_first_exploration,
+            k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _hnsw_params.prefetch_tensors,
+            doom, _hnsw_params.distance_threshold);
         _algorithm = Algorithm::INDEX_TOP_K_WITH_FILTER;
     } else if (_global_filter->is_active()) {
         _low_hit_ratio = _global_filter_hit_ratio.value() < _hnsw_params.filter_first_upper_limit;
-        _found_hits = nns_index->find_top_k_with_filter(_nni_stats, k, df, *_global_filter, _low_hit_ratio, _hnsw_params.filter_first_exploration,
-                                                        k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _hnsw_params.prefetch_tensors, doom, _hnsw_params.distance_threshold);
+        _found_hits = nns_index->find_top_k_with_filter(
+            _nni_stats, k, df, *_global_filter, _low_hit_ratio, _hnsw_params.filter_first_exploration,
+            k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _hnsw_params.prefetch_tensors,
+            doom, _hnsw_params.distance_threshold);
         _algorithm = Algorithm::INDEX_TOP_K_WITH_FILTER;
     } else {
-        _found_hits = nns_index->find_top_k(_nni_stats, k, df, k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _hnsw_params.prefetch_tensors, doom, _hnsw_params.distance_threshold);
+        _found_hits = nns_index->find_top_k(_nni_stats, k, df, k + _hnsw_params.explore_additional_hits,
+                                            _hnsw_params.exploration_slack, _hnsw_params.prefetch_tensors, doom,
+                                            _hnsw_params.distance_threshold);
         _algorithm = Algorithm::INDEX_TOP_K;
     }
 
     // Flush collected statistics if a QueryEvalStats object is already installed.
-    // (This is not the case in the matching pipeline as of now. The stats will be flushed later when install_stats() is called.)
+    // (This is not the case in the matching pipeline as of now. The stats will be flushed later when install_stats()
+    // is called.)
     flush_stats();
 }
 
-void
-NearestNeighborBlueprint::sort(InFlow in_flow)
-{
+void NearestNeighborBlueprint::sort(InFlow in_flow) {
     resolve_strict(in_flow);
 }
 
 std::unique_ptr<SearchIterator>
-NearestNeighborBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray& tfmda) const
-{
+NearestNeighborBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray& tfmda) const {
     assert(tfmda.size() == 1);
-    fef::TermFieldMatchData &tfmd = *tfmda[0]; // always search in only one field
+    fef::TermFieldMatchData& tfmd = *tfmda[0]; // always search in only one field
     switch (_algorithm) {
     case Algorithm::INDEX_TOP_K_WITH_FILTER:
     case Algorithm::INDEX_TOP_K:
         return NnsIndexIterator::create(tfmd, _found_hits, _distance_calc->function());
-    default:
-        ;
+    default:;
     }
-    return ExactNearestNeighborIterator::create(_stats, strict(), tfmd,
-                                                std::make_unique<search::tensor::DistanceCalculator>(_attr_tensor, _query_tensor),
-                                                _distance_heap, *_global_filter,
-                                                _matching_phase != MatchingPhase::FIRST_PHASE);
+    return ExactNearestNeighborIterator::create(
+        _stats, strict(), tfmd, std::make_unique<search::tensor::DistanceCalculator>(_attr_tensor, _query_tensor),
+        _distance_heap, *_global_filter, _matching_phase != MatchingPhase::FIRST_PHASE);
 }
 
-void NearestNeighborBlueprint::install_stats(QueryEvalStats &stats) {
+void NearestNeighborBlueprint::install_stats(QueryEvalStats& stats) {
     _stats = stats.shared_from_this();
 
     // Flush statistics collected so far
@@ -229,9 +228,7 @@ void NearestNeighborBlueprint::flush_stats() {
     }
 }
 
-void
-NearestNeighborBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) const
-{
+void NearestNeighborBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) const {
     ComplexLeafBlueprint::visitMembers(visitor);
     visitor.visitString("attribute_tensor", _attr_tensor.getTensorType().to_spec());
     visitor.visitString("query_tensor", _query_tensor.type().to_spec());
@@ -277,15 +274,11 @@ NearestNeighborBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) const
     visitor.closeStruct();
 }
 
-bool
-NearestNeighborBlueprint::always_needs_unpack() const
-{
+bool NearestNeighborBlueprint::always_needs_unpack() const {
     return true;
 }
 
-void
-NearestNeighborBlueprint::set_matching_phase(MatchingPhase matching_phase) noexcept
-{
+void NearestNeighborBlueprint::set_matching_phase(MatchingPhase matching_phase) noexcept {
     _matching_phase = matching_phase;
     if (matching_phase != MatchingPhase::FIRST_PHASE) {
         /*
@@ -304,11 +297,9 @@ NearestNeighborBlueprint::set_matching_phase(MatchingPhase matching_phase) noexc
     }
 }
 
-std::ostream&
-operator<<(std::ostream& out, NearestNeighborBlueprint::Algorithm algorithm)
-{
+std::ostream& operator<<(std::ostream& out, NearestNeighborBlueprint::Algorithm algorithm) {
     out << to_string(algorithm);
     return out;
 }
 
-}
+} // namespace search::queryeval

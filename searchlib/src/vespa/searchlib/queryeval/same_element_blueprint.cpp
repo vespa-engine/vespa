@@ -1,13 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "same_element_blueprint.h"
+
 #include "array_bool_blueprint.h"
 #include "array_bool_search.h"
-#include "same_element_search.h"
 #include "field_spec.hpp"
+#include "same_element_search.h"
+
 #include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
+
 #include <vespa/vespalib/objects/visit.hpp>
+
 #include <algorithm>
 #include <cassert>
 #include <map>
@@ -18,49 +22,38 @@ using search::fef::TermFieldMatchData;
 
 namespace search::queryeval {
 
-SameElementBlueprint::SameElementBlueprint(const FieldSpec &field,
+SameElementBlueprint::SameElementBlueprint(const FieldSpec&                                 field,
                                            const std::vector<search::fef::TermFieldHandle>& descendants_index_handles,
-                                           bool expensive,
-                                           bool expose_match_data_for_same_element,
+                                           bool expensive, bool expose_match_data_for_same_element,
                                            std::vector<uint32_t> element_filter)
     : IntermediateBlueprint(),
       _field(field),
       _descendants_index_handles(descendants_index_handles),
       _expensive(expensive),
       _expose_match_data_for_same_element(expose_match_data_for_same_element),
-      _element_filter(std::move(element_filter))
-{
+      _element_filter(std::move(element_filter)) {
 }
 
 SameElementBlueprint::~SameElementBlueprint() = default;
 
-AnyFlow
-SameElementBlueprint::my_flow(InFlow in_flow) const
-{
+AnyFlow SameElementBlueprint::my_flow(InFlow in_flow) const {
     return AnyFlow::create<AndFlow>(in_flow);
 }
 
-FlowStats
-SameElementBlueprint::calculate_flow_stats(uint32_t) const
-{
-    auto& children = get_children();
+FlowStats SameElementBlueprint::calculate_flow_stats(uint32_t) const {
+    auto&  children = get_children();
     double est = AndFlow::estimate_of(children);
-    return {est,
-            AndFlow::cost_of(children, false) + est * children.size(),
+    return {est, AndFlow::cost_of(children, false) + est * children.size(),
             AndFlow::cost_of(children, true) + est * children.size()};
 }
 
-bool
-SameElementBlueprint::always_needs_unpack() const
-{
+bool SameElementBlueprint::always_needs_unpack() const {
     return true; // Need unpack to filter match data for descendants
 };
 
-uint8_t
-SameElementBlueprint::calculate_cost_tier() const
-{
+uint8_t SameElementBlueprint::calculate_cost_tier() const {
     uint8_t cost_tier = State::COST_TIER_MAX;
-    auto& children = get_children();
+    auto&   children = get_children();
     for (auto& child : children) {
         cost_tier = std::min(cost_tier, child->getState().cost_tier());
     }
@@ -70,29 +63,23 @@ SameElementBlueprint::calculate_cost_tier() const
     return cost_tier;
 }
 
-std::unique_ptr<SearchIterator>
-SameElementBlueprint::createSearchImpl(MatchData& md) const
-{
+std::unique_ptr<SearchIterator> SameElementBlueprint::createSearchImpl(MatchData& md) const {
     auto* tfmd = md.resolveTermField(_field.getHandle());
     assert(tfmd != nullptr);
     return create_same_element_search(md, *tfmd);
 }
 
-Blueprint::HitEstimate
-SameElementBlueprint::combine(const std::vector<HitEstimate>& data) const
-{
+Blueprint::HitEstimate SameElementBlueprint::combine(const std::vector<HitEstimate>& data) const {
     return min(data);
 }
 
-FieldSpecBaseList SameElementBlueprint::exposeFields() const
-{
+FieldSpecBaseList SameElementBlueprint::exposeFields() const {
     FieldSpecBaseList fields;
     fields.add(_field);
     return fields;
 }
 
-void SameElementBlueprint::sort(Children& children, InFlow in_flow) const
-{
+void SameElementBlueprint::sort(Children& children, InFlow in_flow) const {
     if (opt_sort_by_cost()) {
         AndFlow::sort(children, in_flow.strict());
         if (opt_allow_force_strict()) {
@@ -103,31 +90,28 @@ void SameElementBlueprint::sort(Children& children, InFlow in_flow) const
     }
 }
 
-std::unique_ptr<SearchIterator>
-SameElementBlueprint::createIntermediateSearch(MultiSearch::Children, MatchData&) const
-{
+std::unique_ptr<SearchIterator> SameElementBlueprint::createIntermediateSearch(MultiSearch::Children,
+                                                                               MatchData&) const {
     abort(); // Handled by createSearchImpl and create_same_element_search
 }
 
-std::unique_ptr<SameElementSearch>
-SameElementBlueprint::create_same_element_search(MatchData& md, TermFieldMatchData& tfmd) const
-{
+std::unique_ptr<SameElementSearch> SameElementBlueprint::create_same_element_search(MatchData&          md,
+                                                                                    TermFieldMatchData& tfmd) const {
     MultiSearch::Children sub_searches;
-    auto& children = get_children();
+    auto&                 children = get_children();
     sub_searches.reserve(children.size());
-    for (const auto & child : children) {
+    for (const auto& child : children) {
         if (!_element_filter.empty()) {
             const attribute::ISearchContext* search_context = child->get_attribute_search_context();
             if (search_context) {
-                const attribute::ArrayBoolSearchContext* array_bool_context = search_context->as_array_bool_search_context();
+                const attribute::ArrayBoolSearchContext* array_bool_context =
+                    search_context->as_array_bool_search_context();
                 const auto& state = child->getState();
                 if (state.numFields() == 1 && array_bool_context && array_bool_context->get_valid()) {
 
-                    sub_searches.push_back(ArrayBoolSearch::create(array_bool_context->get_attribute(),
-                                                                   _element_filter,
-                                                                   array_bool_context->get_want_true(),
-                                                                   child->strict(),
-                                                                   state.field(0).resolve(md)));
+                    sub_searches.push_back(ArrayBoolSearch::create(
+                        array_bool_context->get_attribute(), _element_filter, array_bool_context->get_want_true(),
+                        child->strict(), state.field(0).resolve(md)));
                     continue;
                 }
             }
@@ -146,15 +130,11 @@ SameElementBlueprint::create_same_element_search(MatchData& md, TermFieldMatchDa
                                                _element_filter); // Copy element filter, do not move it
 }
 
-SearchIterator::UP
-SameElementBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
-{
+SearchIterator::UP SameElementBlueprint::createFilterSearchImpl(FilterConstraint constraint) const {
     return create_atmost_and_filter(get_children(), constraint);
 }
 
-void
-SameElementBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
-{
+void SameElementBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) const {
     IntermediateBlueprint::visitMembers(visitor);
     visitor.visitInt("element_filter.size", _element_filter.size());
 }
@@ -163,17 +143,17 @@ Blueprint::UP SameElementBlueprint::get_replacement() {
     // If this blueprint is used for indexing into a bool array (and only that), replace it by an ArrayBoolBlueprint
     auto& children = get_children();
     if (children.size() == 1 && !_element_filter.empty()) {
-        const auto& only_child = children[0];
+        const auto&                      only_child = children[0];
         const attribute::ISearchContext* search_context = only_child->get_attribute_search_context();
         if (search_context) {
-            const auto& state = only_child->getState();
-            const attribute::ArrayBoolSearchContext* array_bool_context = search_context->as_array_bool_search_context();
+            const auto&                              state = only_child->getState();
+            const attribute::ArrayBoolSearchContext* array_bool_context =
+                search_context->as_array_bool_search_context();
             if (state.numFields() == 1 && array_bool_context && array_bool_context->get_valid()) {
 
-                return std::make_unique<ArrayBoolBlueprint>(_expose_match_data_for_same_element ? _field : state.field(0),
-                                                            array_bool_context->get_attribute(),
-                                                            _element_filter,
-                                                            array_bool_context->get_want_true());
+                return std::make_unique<ArrayBoolBlueprint>(
+                    _expose_match_data_for_same_element ? _field : state.field(0),
+                    array_bool_context->get_attribute(), _element_filter, array_bool_context->get_want_true());
             }
         }
     }
@@ -181,4 +161,4 @@ Blueprint::UP SameElementBlueprint::get_replacement() {
     return {};
 }
 
-}
+} // namespace search::queryeval
