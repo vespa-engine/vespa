@@ -4,10 +4,11 @@
 #include <vespa/searchcore/proton/common/scheduled_forward_executor.h>
 #include <vespa/searchcore/proton/common/scheduledexecutor.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/util/count_down_latch.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
-#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/test/time_bomb.h>
+#include <vespa/vespalib/util/count_down_latch.h>
+#include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
+
 #include <thread>
 
 using vespalib::Executor;
@@ -19,20 +20,21 @@ namespace {
 
 class TestTask : public Task {
 private:
-    vespalib::CountDownLatch &_latch;
+    vespalib::CountDownLatch& _latch;
+
 public:
-    TestTask(vespalib::CountDownLatch & latch) : _latch(latch) { }
+    TestTask(vespalib::CountDownLatch& latch) : _latch(latch) {}
     void run() override { _latch.countDown(); }
 };
 
-}
+} // namespace
 
 template <typename T>
 std::unique_ptr<T> make_scheduled_executor(FNET_Transport& transport, vespalib::Executor& executor);
 
 template <>
-std::unique_ptr<ScheduledExecutor>
-make_scheduled_executor<ScheduledExecutor>(FNET_Transport& transport, vespalib::Executor&) {
+std::unique_ptr<ScheduledExecutor> make_scheduled_executor<ScheduledExecutor>(FNET_Transport& transport,
+                                                                              vespalib::Executor&) {
     return std::make_unique<ScheduledExecutor>(transport);
 }
 
@@ -42,26 +44,20 @@ make_scheduled_executor<ScheduledForwardExecutor>(FNET_Transport& transport, ves
     return std::make_unique<ScheduledForwardExecutor>(transport, executor);
 }
 
-template <typename ScheduledT>
-class ScheduledExecutorTest : public testing::Test {
+template <typename ScheduledT> class ScheduledExecutorTest : public testing::Test {
 public:
-    FNET_Transport transport;
+    FNET_Transport                transport;
     vespalib::ThreadStackExecutor executor;
-    std::unique_ptr<ScheduledT> timer;
+    std::unique_ptr<ScheduledT>   timer;
 
-    ScheduledExecutorTest()
-        : transport(),
-          executor(1)
-    {
+    ScheduledExecutorTest() : transport(), executor(1) {
         transport.Start();
         timer = make_scheduled_executor<ScheduledT>(transport, executor);
     }
     ~ScheduledExecutorTest() override;
 };
 
-template <typename ScheduledT>
-ScheduledExecutorTest<ScheduledT>::~ScheduledExecutorTest()
-{
+template <typename ScheduledT> ScheduledExecutorTest<ScheduledT>::~ScheduledExecutorTest() {
     transport.ShutDown(true);
 }
 
@@ -80,7 +76,7 @@ TYPED_TEST(ScheduledExecutorTest, test_scheduling) {
 
 TYPED_TEST(ScheduledExecutorTest, test_drop_handle) {
     vespalib::CountDownLatch latch1(2);
-    auto handleA = this->timer->scheduleAtFixedRate(std::make_unique<TestTask>(latch1), 2s, 3s);
+    auto                     handleA = this->timer->scheduleAtFixedRate(std::make_unique<TestTask>(latch1), 2s, 3s);
     handleA.reset();
     EXPECT_TRUE(!latch1.await(3s));
     auto handleB = this->timer->scheduleAtFixedRate(std::make_unique<TestTask>(latch1), 200ms, 300ms);
@@ -88,34 +84,49 @@ TYPED_TEST(ScheduledExecutorTest, test_drop_handle) {
 }
 
 TYPED_TEST(ScheduledExecutorTest, test_only_one_instance_running) {
-    vespalib::TimeBomb time_bomb(120s);
-    vespalib::Gate latch;
+    vespalib::TimeBomb    time_bomb(120s);
+    vespalib::Gate        latch;
     std::atomic<uint64_t> counter = 0;
-    auto handleA = this->timer->scheduleAtFixedRate(makeLambdaTask([&]() { counter++; latch.await();}), 0ms, 1ms);
+    auto                  handleA = this->timer->scheduleAtFixedRate(makeLambdaTask([&]() {
+                                                        counter++;
+                                                        latch.await();
+                                                    }),
+                                                                     0ms, 1ms);
     std::this_thread::sleep_for(2s);
     EXPECT_EQ(1, counter);
     latch.countDown();
-    while (counter <= 10) { std::this_thread::sleep_for(1ms); }
+    while (counter <= 10) {
+        std::this_thread::sleep_for(1ms);
+    }
     EXPECT_GT(counter, 10);
 }
 
 TYPED_TEST(ScheduledExecutorTest, test_sync_delete) {
-    vespalib::TimeBomb time_bomb(120s);
-    vespalib::Gate latch;
+    vespalib::TimeBomb    time_bomb(120s);
+    vespalib::Gate        latch;
     std::atomic<uint64_t> counter = 0;
     std::atomic<uint64_t> reset_counter = 0;
-    std::mutex handleLock;
-    auto handleA = this->timer->scheduleAtFixedRate(makeLambdaTask([&]() { counter++; latch.await();}), 0ms, 1ms);
-    auto handleB = this->timer->scheduleAtFixedRate(makeLambdaTask([&]() {
-        std::lock_guard guard(handleLock);
-        handleA.reset();
-        reset_counter++;
-    }), 0ms, 1ms);
-    while (counter < 1) { std::this_thread::sleep_for(1ms); }
+    std::mutex            handleLock;
+    auto                  handleA = this->timer->scheduleAtFixedRate(makeLambdaTask([&]() {
+                                                        counter++;
+                                                        latch.await();
+                                                    }),
+                                                                     0ms, 1ms);
+    auto                  handleB = this->timer->scheduleAtFixedRate(makeLambdaTask([&]() {
+                                                        std::lock_guard guard(handleLock);
+                                                        handleA.reset();
+                                                        reset_counter++;
+                                                    }),
+                                                                     0ms, 1ms);
+    while (counter < 1) {
+        std::this_thread::sleep_for(1ms);
+    }
     EXPECT_EQ(1, counter);
     EXPECT_EQ(0, reset_counter);
     latch.countDown();
-    while (reset_counter <= 10) { std::this_thread::sleep_for(1ms); }
+    while (reset_counter <= 10) {
+        std::this_thread::sleep_for(1ms);
+    }
     EXPECT_EQ(1, counter);
     std::lock_guard guard(handleLock);
     EXPECT_EQ(nullptr, handleA.get());

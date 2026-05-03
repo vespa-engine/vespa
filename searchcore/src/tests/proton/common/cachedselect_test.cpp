@@ -8,8 +8,8 @@
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
-#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/select/cloningvisitor.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/eval/eval/simple_value.h>
@@ -21,12 +21,13 @@
 #include <vespa/searchlib/attribute/enumcomparator.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/postinglistattribute.h>
-#include <vespa/searchlib/attribute/singleenumattribute.hpp>
-#include <vespa/searchlib/attribute/singlenumericenumattribute.hpp>
 #include <vespa/searchlib/attribute/singlenumericpostattribute.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchlib/test/mock_attribute_manager.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
+#include <vespa/searchlib/attribute/singleenumattribute.hpp>
+#include <vespa/searchlib/attribute/singlenumericenumattribute.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".cachedselect_test");
@@ -38,8 +39,8 @@ using document::DocumentType;
 using document::DocumentTypeRepo;
 using document::IntFieldValue;
 using document::StringFieldValue;
-using document::TensorFieldValue;
 using document::TensorDataType;
+using document::TensorFieldValue;
 using document::new_config_builder::NewConfigBuilder;
 using document::select::CloningVisitor;
 using document::select::Context;
@@ -55,16 +56,16 @@ using search::AttributePosting;
 using search::AttributeVector;
 using search::EnumAttribute;
 using search::IntegerAttribute;
-using search::tensor::TensorAttribute;
 using search::IntegerAttributeTemplate;
 using search::SingleValueNumericPostingAttribute;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::attribute::IAttributeContext;
 using search::attribute::test::MockAttributeManager;
-using vespalib::eval::TensorSpec;
-using vespalib::eval::SimpleValue;
+using search::tensor::TensorAttribute;
 using std::string;
+using vespalib::eval::SimpleValue;
+using vespalib::eval::TensorSpec;
 
 using IATint32 = IntegerAttributeTemplate<int32_t>;
 using IntEnumAttribute = EnumAttribute<IATint32>;
@@ -76,45 +77,40 @@ using SvIntAttr = SingleValueNumericPostingAttribute<IntEnumAttribute>;
 namespace {
 
 const int32_t doc_type_id = 787121340;
-const string type_name = "test";
-const string type_name_2 = "test_2";
+const string  type_name = "test";
+const string  type_name_2 = "test_2";
 
 const int32_t noIntVal = std::numeric_limits<int32_t>::min();
 
-
-std::unique_ptr<const DocumentTypeRepo>
-makeDocTypeRepo()
-{
+std::unique_ptr<const DocumentTypeRepo> makeDocTypeRepo() {
     NewConfigBuilder builder;
-    auto& doc = builder.document(type_name, doc_type_id);
+    auto&            doc = builder.document(type_name, doc_type_id);
 
     // Create nested struct
-    auto pair_struct = doc.createStruct("pair")
-           .addField("x", builder.stringTypeRef())
-           .addField("y", builder.stringTypeRef()).ref();
+    auto pair_struct =
+        doc.createStruct("pair").addField("x", builder.stringTypeRef()).addField("y", builder.stringTypeRef()).ref();
 
     // Create collection types
     auto string_array = doc.createArray(builder.stringTypeRef()).ref();
     auto string_wset = doc.createWset(builder.stringTypeRef()).ref();
-    auto string_string_map = doc.createMap(builder.stringTypeRef(),
-                                           builder.stringTypeRef()).ref();
+    auto string_string_map = doc.createMap(builder.stringTypeRef(), builder.stringTypeRef()).ref();
     auto int_array = doc.createArray(builder.intTypeRef()).ref();
     auto int_wset = doc.createWset(builder.intTypeRef()).ref();
 
     // Add fields
     doc.addField("ia", builder.stringTypeRef())
-       .addField("ib", builder.stringTypeRef())
-       .addField("ibs", pair_struct)
-       .addField("iba", string_array)
-       .addField("ibw", string_wset)
-       .addField("ibm", string_string_map)
-       .addField("aa", builder.intTypeRef())
-       .addField("aaa", int_array)
-       .addField("aaw", int_wset)
-       .addField("ab", builder.intTypeRef())
-       .addTensorField("dense_tensor", "tensor(x[2])")
-       .addTensorField("sparse_tensor", "tensor(x{})")
-       .imported_field("my_imported_field");
+        .addField("ib", builder.stringTypeRef())
+        .addField("ibs", pair_struct)
+        .addField("iba", string_array)
+        .addField("ibw", string_wset)
+        .addField("ibm", string_string_map)
+        .addField("aa", builder.intTypeRef())
+        .addField("aaa", int_array)
+        .addField("aaw", int_wset)
+        .addField("ab", builder.intTypeRef())
+        .addTensorField("dense_tensor", "tensor(x[2])")
+        .addTensorField("sparse_tensor", "tensor(x{})")
+        .imported_field("my_imported_field");
 
     // Create second document type
     auto& doc2 = builder.document(type_name_2, doc_type_id + 1);
@@ -126,17 +122,10 @@ makeDocTypeRepo()
     return std::unique_ptr<const DocumentTypeRepo>(new DocumentTypeRepo(builder.config()));
 }
 
-
-Document::UP
-makeDoc(const DocumentTypeRepo &repo,
-        const string &docId,
-        const string &ia,
-        const string &ib,
-        int32_t aa,
-        int32_t ab)
-{
-    const DocumentType *docType = repo.getDocumentType("test");
-    auto doc = std::make_unique<Document>(repo, *docType, DocumentId(docId));
+Document::UP makeDoc(const DocumentTypeRepo& repo, const string& docId, const string& ia, const string& ib,
+                     int32_t aa, int32_t ab) {
+    const DocumentType* docType = repo.getDocumentType("test");
+    auto                doc = std::make_unique<Document>(repo, *docType, DocumentId(docId));
     if (ia != "null")
         doc->setValue("ia", StringFieldValue(ia));
     if (ib != "null")
@@ -148,11 +137,7 @@ makeDoc(const DocumentTypeRepo &repo,
     return doc;
 }
 
-bool
-checkSelect(const NodeUP &sel,
-            const Context &ctx,
-            const Result &exp)
-{
+bool checkSelect(const NodeUP& sel, const Context& ctx, const Result& exp) {
     bool failed = false;
     EXPECT_TRUE(sel->contains(ctx) == exp) << (failed = true, "");
     if (!failed) {
@@ -164,12 +149,7 @@ checkSelect(const NodeUP &sel,
     return false;
 }
 
-void
-checkSelect(const CachedSelect::SP &cs,
-            uint32_t docId,
-            const Document &doc,
-            const Result &exp)
-{
+void checkSelect(const CachedSelect::SP& cs, uint32_t docId, const Document& doc, const Result& exp) {
     SCOPED_TRACE("docId=" + std::to_string(docId));
     SelectContext ctx(*cs);
     ctx._lid = docId;
@@ -180,13 +160,8 @@ checkSelect(const CachedSelect::SP &cs,
     EXPECT_EQ(expSessionContains, cs->createSession()->contains_doc(ctx));
 }
 
-void
-checkSelect(const CachedSelect::SP &cs,
-            uint32_t docId,
-            const DocumentId &document_id,
-            const Result &exp,
-            bool exp_session_contains)
-{
+void checkSelect(const CachedSelect::SP& cs, uint32_t docId, const DocumentId& document_id, const Result& exp,
+                 bool exp_session_contains) {
     SCOPED_TRACE("docId=" + std::to_string(docId));
     SelectContext ctx(*cs);
     ctx._lid = docId;
@@ -200,12 +175,7 @@ checkSelect(const CachedSelect::SP &cs,
     EXPECT_EQ(exp_session_contains, cs->createSession()->contains_pre_doc(ctx));
 }
 
-void
-checkSelect(const CachedSelect::SP &cs,
-            uint32_t docId,
-            const Result &exp,
-            bool expSessionContains)
-{
+void checkSelect(const CachedSelect::SP& cs, uint32_t docId, const Result& exp, bool expSessionContains) {
     SCOPED_TRACE("docId=" + std::to_string(docId));
     SelectContext ctx(*cs);
     ctx._lid = docId;
@@ -218,15 +188,11 @@ checkSelect(const CachedSelect::SP &cs,
     EXPECT_EQ(expSessionContains, cs->createSession()->contains_pre_doc(ctx));
 }
 
-void
-checkSelect(const CachedSelect::SP &cs,
-            uint32_t docId,
-            const Result &exp)
-{
+void checkSelect(const CachedSelect::SP& cs, uint32_t docId, const Result& exp) {
     checkSelect(cs, docId, exp, (exp == Result::True));
 }
 
-void print_expression(const std::string& label, const Node *node) {
+void print_expression(const std::string& label, const Node* node) {
     std::cout << label << ": " << std::string(20 - label.size(), ' ');
     if (node == nullptr) {
         std::cout << "nullptr";
@@ -242,110 +208,71 @@ void print_cs_expressions(const CachedSelect& cs) {
     print_expression("preDocOnlySelect", cs.preDocOnlySelect().get());
 }
 
-class MyIntAv : public SvIntAttr
-{
+class MyIntAv : public SvIntAttr {
     mutable uint32_t _gets;
+
 public:
-    MyIntAv(const string &name)
-        : SvIntAttr(name, Config(BasicType::INT32,
-                                 CollectionType::SINGLE,
-                                 true)),
-          _gets(0)
-    {
-    }
+    MyIntAv(const string& name) : SvIntAttr(name, Config(BasicType::INT32, CollectionType::SINGLE, true)), _gets(0) {}
     ~MyIntAv() override;
 
-    largeint_t
-    getInt(AttributeVector::DocId doc) const override
-    {
+    largeint_t getInt(AttributeVector::DocId doc) const override {
         ++_gets;
         return SvIntAttr::get(doc);
     }
 
-    uint32_t
-    getGets() const
-    {
-        return _gets;
-    }
+    uint32_t getGets() const { return _gets; }
 };
 
 MyIntAv::~MyIntAv() = default;
 
-class MyAttributeManager : public MockAttributeManager
-{
+class MyAttributeManager : public MockAttributeManager {
 public:
     using MockAttributeManager::addAttribute;
-    void addAttribute(const std::string &name) {
+    void addAttribute(const std::string& name) {
         if (findAttribute(name).get() != nullptr) {
             return;
         }
         AttributeVector::SP av(new MyIntAv(name));
         MockAttributeManager::addAttribute(name, av);
     }
-    MyIntAv *getAsMyIntAttribute(const std::string &name) const {
-        return (dynamic_cast<MyIntAv *>(findAttribute(name).get()));
+    MyIntAv* getAsMyIntAttribute(const std::string& name) const {
+        return (dynamic_cast<MyIntAv*>(findAttribute(name).get()));
     }
 };
 
-
-class MyDB
-{
+class MyDB {
 public:
     using UP = std::unique_ptr<MyDB>;
 
-    const DocumentTypeRepo &_repo;
-    MyAttributeManager &_amgr;
+    const DocumentTypeRepo& _repo;
+    MyAttributeManager&     _amgr;
     using DocIdToLid = std::map<string, uint32_t>;
     using LidToDocSP = std::map<uint32_t, Document::SP>;
     DocIdToLid _docIdToLid;
     LidToDocSP _lidToDocSP;
 
-    MyDB(const DocumentTypeRepo &repo,
-         MyAttributeManager &amgr)
-        : _repo(repo),
-          _amgr(amgr)
-    {
-    }
+    MyDB(const DocumentTypeRepo& repo, MyAttributeManager& amgr) : _repo(repo), _amgr(amgr) {}
 
-    void
-    addDoc(uint32_t lid,
-           const string &docId,
-           const string &ia,
-           const string &ib,
-           int32_t aa,
-           int32_t ab);
+    void addDoc(uint32_t lid, const string& docId, const string& ia, const string& ib, int32_t aa, int32_t ab);
 
-    void
-    add_tensor_doc(uint32_t lid,
-                   const string& doc_id,
-                   bool dense_attr_present,
-                   bool sparse_field_present);
+    void add_tensor_doc(uint32_t lid, const string& doc_id, bool dense_attr_present, bool sparse_field_present);
 
-    const Document &
-    getDoc(uint32_t lid) const;
+    const Document& getDoc(uint32_t lid) const;
 };
 
-
-void
-MyDB::addDoc(uint32_t lid,
-             const string &docId,
-             const string &ia,
-             const string &ib,
-             int32_t aa,
-             int32_t ab)
-{
+void MyDB::addDoc(uint32_t lid, const string& docId, const string& ia, const string& ib, int32_t aa, int32_t ab) {
     Document::UP doc(makeDoc(_repo, docId, ia, ib, aa, ab));
 
     _docIdToLid[docId] = lid;
     _lidToDocSP[lid] = std::move(doc);
     auto add_attr_value = [lid, aa](auto guard) {
-        AttributeVector &av = *guard->get();
+        AttributeVector& av = *guard->get();
         if (lid >= av.getNumDocs()) {
             AttributeVector::DocId checkDocId(0u);
             ASSERT_TRUE(av.addDoc(checkDocId));
             ASSERT_EQ(lid, checkDocId);
         }
-        auto &iav(dynamic_cast<IntegerAttribute &>(av));
+        auto&                       iav(dynamic_cast<IntegerAttribute&>(av));
         AttributeVector::largeint_t laa(aa);
         EXPECT_TRUE(iav.update(lid, laa));
         av.commit();
@@ -355,12 +282,7 @@ MyDB::addDoc(uint32_t lid,
     add_attr_value(_amgr.getAttribute("my_imported_field"));
 }
 
-void
-MyDB::add_tensor_doc(uint32_t lid,
-                     const string& doc_id,
-                     bool dense_attr_present,
-                     bool sparse_field_present)
-{
+void MyDB::add_tensor_doc(uint32_t lid, const string& doc_id, bool dense_attr_present, bool sparse_field_present) {
     Document::UP doc(makeDoc(_repo, doc_id, "foo", "bar", 30, 40));
     if (sparse_field_present) {
         const auto& tensor_type = dynamic_cast<const TensorDataType&>(doc->getField("sparse_tensor").getDataType());
@@ -371,7 +293,7 @@ MyDB::add_tensor_doc(uint32_t lid,
     _docIdToLid[doc_id] = lid;
     _lidToDocSP[lid] = std::move(doc);
     if (dense_attr_present) {
-        auto guard = _amgr.getAttribute("dense_tensor");
+        auto             guard = _amgr.getAttribute("dense_tensor");
         AttributeVector& av = *guard->get();
         if (lid >= av.getNumDocs()) {
             AttributeVector::DocId checkDocId(0u);
@@ -379,50 +301,36 @@ MyDB::add_tensor_doc(uint32_t lid,
             ASSERT_EQ(lid, checkDocId);
         }
         auto& ta = dynamic_cast<TensorAttribute&>(av);
-        ta.setTensor(lid, *SimpleValue::from_spec(TensorSpec("tensor(x[2])")
-                .add({{"x", 0}}, 1.0).add({{"x", 1}}, 2.0)));
+        ta.setTensor(lid,
+                     *SimpleValue::from_spec(TensorSpec("tensor(x[2])").add({{"x", 0}}, 1.0).add({{"x", 1}}, 2.0)));
         av.commit();
     }
 }
 
-const Document &
-MyDB::getDoc(uint32_t lid) const
-{
+const Document& MyDB::getDoc(uint32_t lid) const {
     auto it = _lidToDocSP.find(lid);
     assert(it != _lidToDocSP.end());
     return *it->second;
 }
 
-
-class TestFixture
-{
+class TestFixture {
 public:
     std::unique_ptr<const DocumentTypeRepo> _repoUP;
-    bool _hasFields;
-    bool _has_document_ids;
-    MyAttributeManager _amgr;
-    MyDB::UP _db;
+    bool                                    _hasFields;
+    bool                                    _has_document_ids;
+    MyAttributeManager                      _amgr;
+    MyDB::UP                                _db;
 
     TestFixture();
 
     ~TestFixture();
 
-    CachedSelect::SP
-    testParse(const string &selection,
-              const string &docTypeName);
+    CachedSelect::SP testParse(const string& selection, const string& docTypeName);
 
-    MyDB &db() { return *_db; }
-
+    MyDB& db() { return *_db; }
 };
 
-
-TestFixture::TestFixture()
-    : _repoUP(),
-      _hasFields(true),
-      _has_document_ids(false),
-      _amgr(),
-      _db()
-{
+TestFixture::TestFixture() : _repoUP(), _hasFields(true), _has_document_ids(false), _amgr(), _db() {
     _repoUP = makeDocTypeRepo();
 
     _amgr.addAttribute("aa");
@@ -433,23 +341,20 @@ TestFixture::TestFixture()
     _amgr.addAttribute("dense_tensor", AttributeFactory::createAttribute("dense_tensor", tensor_cfg));
     // `sparse_tensor` is not an attribute.
     // "Faked" imported attribute, as in `selectpruner_test.cpp`
-    _amgr.addAttribute("my_imported_field", AttributeFactory::createAttribute("my_imported_field", { BasicType::INT32 }));
+    _amgr.addAttribute("my_imported_field",
+                       AttributeFactory::createAttribute("my_imported_field", {BasicType::INT32}));
 
     _db = std::make_unique<MyDB>(*_repoUP, _amgr);
 }
 
-
 TestFixture::~TestFixture() = default;
 
-CachedSelect::SP
-TestFixture::testParse(const string &selection,
-                       const string &docTypeName)
-{
-    const DocumentTypeRepo &repo(*_repoUP);
+CachedSelect::SP TestFixture::testParse(const string& selection, const string& docTypeName) {
+    const DocumentTypeRepo& repo(*_repoUP);
 
     CachedSelect::SP res(new CachedSelect);
 
-    const DocumentType *docType = repo.getDocumentType(docTypeName);
+    const DocumentType* docType = repo.getDocumentType(docTypeName);
     assert(docType != nullptr);
     auto emptyDoc = std::make_unique<Document>(repo, *docType, DocumentId());
 
@@ -461,12 +366,12 @@ TestFixture::testParse(const string &selection,
 
 class Stats {
 private:
-    bool _preDocOnlySelect;
-    bool _preDocSelect;
-    bool _always_false;
-    bool _always_true;
-    bool _always_invalid;
-    bool _needs_document;
+    bool     _preDocOnlySelect;
+    bool     _preDocSelect;
+    bool     _always_false;
+    bool     _always_true;
+    bool     _always_invalid;
+    bool     _needs_document;
     uint32_t _fieldNodes;
     uint32_t _attrFieldNodes;
     uint32_t _svAttrFieldNodes;
@@ -483,20 +388,49 @@ public:
           _fieldNodes(0),
           _attrFieldNodes(0),
           _svAttrFieldNodes(0),
-          _document_id_nodes(0)
-    {}
-    Stats &preDocOnlySelect() { _preDocOnlySelect = true; return *this; }
-    Stats &preDocSelect() { _preDocSelect = true; return *this; }
-    Stats &always_false() { _always_false = true; return *this; }
-    Stats &always_true() { _always_true = true; return *this; }
-    Stats &always_invalid() { _always_invalid = true; return *this; }
-    Stats &needs_document() { _needs_document = true; return *this; }
-    Stats &fieldNodes(uint32_t value) { _fieldNodes = value; return *this; }
-    Stats &attrFieldNodes(uint32_t value) { _attrFieldNodes = value; return *this; }
-    Stats &svAttrFieldNodes(uint32_t value) { _svAttrFieldNodes = value; return *this; }
-    Stats &document_id_nodes(uint32_t value) { _document_id_nodes = value; return *this; }
+          _document_id_nodes(0) {}
+    Stats& preDocOnlySelect() {
+        _preDocOnlySelect = true;
+        return *this;
+    }
+    Stats& preDocSelect() {
+        _preDocSelect = true;
+        return *this;
+    }
+    Stats& always_false() {
+        _always_false = true;
+        return *this;
+    }
+    Stats& always_true() {
+        _always_true = true;
+        return *this;
+    }
+    Stats& always_invalid() {
+        _always_invalid = true;
+        return *this;
+    }
+    Stats& needs_document() {
+        _needs_document = true;
+        return *this;
+    }
+    Stats& fieldNodes(uint32_t value) {
+        _fieldNodes = value;
+        return *this;
+    }
+    Stats& attrFieldNodes(uint32_t value) {
+        _attrFieldNodes = value;
+        return *this;
+    }
+    Stats& svAttrFieldNodes(uint32_t value) {
+        _svAttrFieldNodes = value;
+        return *this;
+    }
+    Stats& document_id_nodes(uint32_t value) {
+        _document_id_nodes = value;
+        return *this;
+    }
 
-    void assertEquals(const CachedSelect &select) const {
+    void assertEquals(const CachedSelect& select) const {
         EXPECT_EQ(_preDocOnlySelect, (bool)select.preDocOnlySelect());
         EXPECT_EQ(_preDocSelect, (bool)select.preDocSelect());
         EXPECT_EQ(_always_false, select.is_always_false());
@@ -510,18 +444,14 @@ public:
     }
 };
 
-void
-assertEquals(const Stats &stats, const CachedSelect &select)
-{
+void assertEquals(const Stats& stats, const CachedSelect& select) {
     stats.assertEquals(select);
 }
 
-
-TEST(CachedSelectTest, Test_that_test_setup_is_OK)
-{
-    TestFixture f;
-    const DocumentTypeRepo &repo = *f._repoUP;
-    const DocumentType *docType = repo.getDocumentType("test");
+TEST(CachedSelectTest, Test_that_test_setup_is_OK) {
+    TestFixture             f;
+    const DocumentTypeRepo& repo = *f._repoUP;
+    const DocumentType*     docType = repo.getDocumentType("test");
     ASSERT_TRUE(docType);
     EXPECT_EQ(12u, docType->getFieldCount());
     EXPECT_EQ("String", docType->getField("ia").getDataType().getName());
@@ -530,9 +460,7 @@ TEST(CachedSelectTest, Test_that_test_setup_is_OK)
     EXPECT_EQ("Int", docType->getField("ab").getDataType().getName());
 }
 
-
-TEST(CachedSelectTest, Test_that_simple_parsing_works)
-{
+TEST(CachedSelectTest, Test_that_simple_parsing_works) {
     TestFixture f;
     f.testParse("not ((test))", "test");
     f.testParse("not ((test and (test.aa > 3999)))", "test");
@@ -541,10 +469,8 @@ TEST(CachedSelectTest, Test_that_simple_parsing_works)
     f.testParse("not ((test_2 and (test_2.af > 3999)))", "test");
 }
 
-
-TEST(CachedSelectTest, Test_that_const_is_flagged)
-{
-    TestFixture f;
+TEST(CachedSelectTest, Test_that_const_is_flagged) {
+    TestFixture      f;
     CachedSelect::SP cs;
 
     cs = f.testParse("false", "test");
@@ -571,11 +497,9 @@ TEST(CachedSelectTest, Test_that_const_is_flagged)
     EXPECT_EQ(1u, cs->svAttrFieldNodes());
 }
 
-
-TEST(CachedSelectTest, Test_that_basic_select_works)
-{
+TEST(CachedSelectTest, Test_that_basic_select_works) {
     TestFixture f;
-    MyDB &db(*f._db);
+    MyDB&       db(*f._db);
 
     db.addDoc(1u, "id:ns:test::1", "hello", "null", 45, 37);
     db.addDoc(2u, "id:ns:test::2", "gotcha", "foo", 3, 25);
@@ -716,25 +640,23 @@ TEST(CachedSelectTest, Test_that_basic_select_works)
         checkSelect(cs, 4u, Result::Invalid, false);
     }
 
-    MyIntAv *v = f._amgr.getAsMyIntAttribute("aa");
+    MyIntAv* v = f._amgr.getAsMyIntAttribute("aa");
     EXPECT_TRUE(v != nullptr);
     EXPECT_EQ(8u, v->getGets());
 }
 
 struct PreDocSelectFixture : public TestFixture {
-    PreDocSelectFixture()
-        : TestFixture()
-    {
+    PreDocSelectFixture() : TestFixture() {
         db().addDoc(1u, "id:ns:test::1", "foo", "null", 3, 5);
         db().addDoc(2u, "id:ns:test::1", "bar", "null", 3, 5);
         db().addDoc(3u, "id:ns:test::2", "foo", "null", 7, 5);
     }
 };
 
-TEST(CachedSelectTest, Test_that_single_value_attribute_combined_with_non_attribute_field_results_in_pre_document_select_pruner)
-{
+TEST(CachedSelectTest,
+     Test_that_single_value_attribute_combined_with_non_attribute_field_results_in_pre_document_select_pruner) {
     PreDocSelectFixture f;
-    CachedSelect::SP cs = f.testParse("test.aa == 3 AND test.ia == \"foo\"", "test");
+    CachedSelect::SP    cs = f.testParse("test.aa == 3 AND test.ia == \"foo\"", "test");
     assertEquals(Stats().preDocSelect().fieldNodes(2).attrFieldNodes(1).svAttrFieldNodes(1).needs_document(), *cs);
 
     checkSelect(cs, 1u, Result::Invalid, true);
@@ -745,10 +667,10 @@ TEST(CachedSelectTest, Test_that_single_value_attribute_combined_with_non_attrib
     checkSelect(cs, 3u, f.db().getDoc(3u), Result::False);
 }
 
-TEST(CachedSelectTest, Test_that_single_value_attribute_with_complex_attribute_field_results_in_pre_document_select_pruner)
-{
+TEST(CachedSelectTest,
+     Test_that_single_value_attribute_with_complex_attribute_field_results_in_pre_document_select_pruner) {
     PreDocSelectFixture f;
-    CachedSelect::SP cs = f.testParse("test.aa == 3 AND test.aaa[0] == 5", "test");
+    CachedSelect::SP    cs = f.testParse("test.aa == 3 AND test.aaa[0] == 5", "test");
     assertEquals(Stats().preDocSelect().fieldNodes(2).attrFieldNodes(2).svAttrFieldNodes(1).needs_document(), *cs);
 
     checkSelect(cs, 1u, Result::Invalid, true);
@@ -759,14 +681,13 @@ TEST(CachedSelectTest, Test_that_single_value_attribute_with_complex_attribute_f
     checkSelect(cs, 3u, f.db().getDoc(3u), Result::False);
 }
 
-TEST(CachedSelectTest, Imported_field_can_be_used_in_pre_doc_selections_with_only_attribute_fields)
-{
+TEST(CachedSelectTest, Imported_field_can_be_used_in_pre_doc_selections_with_only_attribute_fields) {
     PreDocSelectFixture f;
-    auto cs = f.testParse("test.my_imported_field == 3", "test");
+    auto                cs = f.testParse("test.my_imported_field == 3", "test");
     assertEquals(Stats().preDocOnlySelect().fieldNodes(1).attrFieldNodes(1).svAttrFieldNodes(1), *cs);
 
-    checkSelect(cs, 1u, Result::True,  true);
-    checkSelect(cs, 2u, Result::True,  true);
+    checkSelect(cs, 1u, Result::True, true);
+    checkSelect(cs, 2u, Result::True, true);
     checkSelect(cs, 3u, Result::False, false);
     // Cannot match against document here since preDocOnly is set; will just return false.
     checkSelect(cs, 1u, f.db().getDoc(1u), Result::False);
@@ -774,17 +695,16 @@ TEST(CachedSelectTest, Imported_field_can_be_used_in_pre_doc_selections_with_onl
     checkSelect(cs, 3u, f.db().getDoc(3u), Result::False);
 }
 
-TEST(CachedSelectTest, Imported_field_can_be_used_in_doc_selections_with_mixed_attribute_and_non_attribute_fields)
-{
+TEST(CachedSelectTest, Imported_field_can_be_used_in_doc_selections_with_mixed_attribute_and_non_attribute_fields) {
     PreDocSelectFixture f;
     // `id.namespace` requires a doc store fetch and cannot be satisfied by attributes alone
     auto cs = f.testParse("test.my_imported_field == 3 and id.namespace != 'foo'", "test");
     assertEquals(Stats().preDocSelect().fieldNodes(2).attrFieldNodes(1).svAttrFieldNodes(1).needs_document(), *cs);
 
     // 2 first checks cannot be completed in pre-doc stage alone
-    checkSelect(cs, 1u, Result::Invalid, true);  // -> doc eval stage
-    checkSelect(cs, 2u, Result::Invalid, true);  // -> doc eval stage
-    checkSelect(cs, 3u, Result::False,   false); // short-circuited since attr value 7 != 3
+    checkSelect(cs, 1u, Result::Invalid, true); // -> doc eval stage
+    checkSelect(cs, 2u, Result::Invalid, true); // -> doc eval stage
+    checkSelect(cs, 3u, Result::False, false);  // short-circuited since attr value 7 != 3
     // When matching against a concrete document, it's crucial that the selection AST contains
     // attribute references for at least all imported fields, or we'll implicitly fall back to
     // returning null for all imported fields (as they do not exist in the document itself).
@@ -793,10 +713,9 @@ TEST(CachedSelectTest, Imported_field_can_be_used_in_doc_selections_with_mixed_a
     checkSelect(cs, 3u, f.db().getDoc(3u), Result::False);
 }
 
-TEST(CachedSelectTest, Test_performance_when_using_attributes)
-{
+TEST(CachedSelectTest, Test_performance_when_using_attributes) {
     TestFixture f;
-    MyDB &db(*f._db);
+    MyDB&       db(*f._db);
 
     db.addDoc(1u, "id:ns:test::1", "hello", "null", 45, 37);
     db.addDoc(2u, "id:ns:test::2", "gotcha", "foo", 3, 25);
@@ -809,8 +728,8 @@ TEST(CachedSelectTest, Test_performance_when_using_attributes)
 
     SelectContext ctx(*cs);
     ctx.getAttributeGuards();
-    const NodeUP &sel(cs->preDocOnlySelect());
-    uint32_t i;
+    const NodeUP&  sel(cs->preDocOnlySelect());
+    uint32_t       i;
     const uint32_t loopcnt = 30000;
     LOG(info, "Starting minibm loop, %u ierations of 4 docs each", loopcnt);
     vespalib::Timer sw;
@@ -830,16 +749,13 @@ TEST(CachedSelectTest, Test_performance_when_using_attributes)
     }
     vespalib::duration elapsed = sw.elapsed();
     EXPECT_EQ(loopcnt, i);
-    LOG(info,
-        "Elapsed time for %u iterations of 4 docs each: %" PRId64 " ns, %8.4f ns/doc",
-        i, vespalib::count_ns(elapsed), static_cast<double>(vespalib::count_ns(elapsed)) / ( 4 * i));
-
+    LOG(info, "Elapsed time for %u iterations of 4 docs each: %" PRId64 " ns, %8.4f ns/doc", i,
+        vespalib::count_ns(elapsed), static_cast<double>(vespalib::count_ns(elapsed)) / (4 * i));
 }
 
-TEST(CachedSelectTest, can_check_for_pre_doc_only_attribute_tensor_presence_in_selections)
-{
+TEST(CachedSelectTest, can_check_for_pre_doc_only_attribute_tensor_presence_in_selections) {
     TestFixture f;
-    MyDB &db(*f._db);
+    MyDB&       db(*f._db);
 
     db.add_tensor_doc(1u, "id:ns:test::1", true, false);
     db.add_tensor_doc(2u, "id:ns:test::2", false, false);
@@ -859,10 +775,9 @@ TEST(CachedSelectTest, can_check_for_pre_doc_only_attribute_tensor_presence_in_s
     checkSelect(cs, 2u, Result::True, true);
 }
 
-TEST(CachedSelectTest, can_check_for_non_pre_doc_only_attribute_tensor_presence_in_selections)
-{
+TEST(CachedSelectTest, can_check_for_non_pre_doc_only_attribute_tensor_presence_in_selections) {
     TestFixture f;
-    MyDB &db(*f._db);
+    MyDB&       db(*f._db);
 
     db.add_tensor_doc(1u, "id:ns:test::1", true, false);
     db.add_tensor_doc(2u, "id:ns:test::2", false, false);
@@ -888,7 +803,7 @@ TEST(CachedSelectTest, can_check_for_non_pre_doc_only_attribute_tensor_presence_
 
 TEST(CachedSelectTest, can_check_for_non_attribute_tensor_presence_in_selections) {
     TestFixture f;
-    MyDB &db(*f._db);
+    MyDB&       db(*f._db);
 
     db.add_tensor_doc(1u, "id:ns:test::1", false, true);
     db.add_tensor_doc(2u, "id:ns:test::2", false, false);
@@ -907,7 +822,7 @@ TEST(CachedSelectTest, can_check_for_non_attribute_tensor_presence_in_selections
 
 TEST(CachedSelectTest, can_check_docid_if_available) {
     TestFixture f;
-    MyDB &db(*f._db);
+    MyDB&       db(*f._db);
 
     db.addDoc(1u, "id:ns:test::1", "hello", "null", 45, 37);
     db.addDoc(2u, "id:ns2:test::1", "hello", "null", 46, 38);
@@ -983,17 +898,16 @@ TEST(CachedSelectTest, can_check_docid_if_available) {
             checkSelect(cs, 1u, db.getDoc(1u), Result::Invalid);
             checkSelect(cs, 2u, db.getDoc(2u), Result::False);
         }
-
     }
 }
 
 TEST(CachedSelectTest, replaced_attribute_field_value_node_gets_field_value_priority) {
     TestFixture f;
     f._has_document_ids = true;
-    auto cs = f.testParse("id.namespace = \"ns\" and test.aa > 5", "test");
+    auto               cs = f.testParse("id.namespace = \"ns\" and test.aa > 5", "test");
     std::ostringstream os;
     cs->preDocOnlySelect()->print(os, true, "");
     EXPECT_EQ("id.namespace = \"ns\" and test.aa > 5", os.str());
 }
 
-}
+} // namespace

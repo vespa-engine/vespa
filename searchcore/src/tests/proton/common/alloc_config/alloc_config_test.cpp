@@ -22,13 +22,12 @@ AllocStrategy make_alloc_strategy(uint32_t initial_docs) {
     return AllocStrategy(make_grow_strategy(initial_docs), baseline_compaction_strategy, 10000);
 }
 
-};
+}; // namespace
 
-TEST(AllocConfigTest, can_make_allocation_strategy_for_sub_dbs)
-{
+TEST(AllocConfigTest, can_make_allocation_strategy_for_sub_dbs) {
     AllocConfig config(make_alloc_strategy(10000000), 5, 2);
     EXPECT_EQ(make_alloc_strategy(20000000), config.make_alloc_strategy(SubDbType::READY));
-    EXPECT_EQ(make_alloc_strategy(100000),  config.make_alloc_strategy(SubDbType::REMOVED));
+    EXPECT_EQ(make_alloc_strategy(100000), config.make_alloc_strategy(SubDbType::REMOVED));
     EXPECT_EQ(make_alloc_strategy(30000000), config.make_alloc_strategy(SubDbType::NOTREADY));
 }
 

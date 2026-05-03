@@ -20,40 +20,34 @@ using vespalib::Slime;
 namespace {
 
 constexpr uint32_t MIN_NUM_BITS = 8u;
-const GlobalId GID_1("111111111111");
-const BucketId BUCKET_1(MIN_NUM_BITS, GID_1.convertToBucketId().getRawId());
-const Timestamp TIME_1(1u);
-const Timestamp TIME_2(2u);
-const Timestamp TIME_3(3u);
+const GlobalId     GID_1("111111111111");
+const BucketId     BUCKET_1(MIN_NUM_BITS, GID_1.convertToBucketId().getRawId());
+const Timestamp    TIME_1(1u);
+const Timestamp    TIME_2(2u);
+const Timestamp    TIME_3(3u);
 constexpr uint32_t DOCSIZE_1(4096u);
 constexpr uint32_t DOCSIZE_2(10000u);
 
 using RS = BucketInfo::ReadyState;
 using SDT = SubDbType;
 
-
 constexpr uint32_t bucket_bits = 16;
 
-uint32_t num_buckets() { return (1u << bucket_bits); }
+uint32_t num_buckets() {
+    return (1u << bucket_bits);
+}
 
 BucketId make_bucket_id(uint32_t n) {
     return BucketId(bucket_bits, n & (num_buckets() - 1));
 }
 
-GlobalId make_gid(uint32_t n, uint32_t i)
-{
+GlobalId make_gid(uint32_t n, uint32_t i) {
     DocumentId id(vespalib::make_string("id::test:n=%u:%u", n & (num_buckets() - 1), i));
     return id.getGlobalId();
 }
 
-
-void
-assertDocCount(std::string_view label,
-               uint32_t ready,
-               uint32_t notReady,
-               uint32_t removed,
-               const BucketState &state)
-{
+void assertDocCount(std::string_view label, uint32_t ready, uint32_t notReady, uint32_t removed,
+                    const BucketState& state) {
     SCOPED_TRACE(label);
     EXPECT_EQ(ready, state.getReadyCount());
     EXPECT_EQ(notReady, state.getNotReadyCount());
@@ -63,13 +57,7 @@ assertDocCount(std::string_view label,
     EXPECT_EQ(ready + notReady + removed, info.getEntryCount());
 }
 
-void
-assertDocSizes(std::string_view label,
-               size_t ready,
-               size_t notReady,
-               size_t removed,
-               const BucketState &state)
-{
+void assertDocSizes(std::string_view label, size_t ready, size_t notReady, size_t removed, const BucketState& state) {
     SCOPED_TRACE(label);
     EXPECT_EQ(ready, state.getReadyDocSizes());
     EXPECT_EQ(notReady, state.getNotReadyDocSizes());
@@ -79,46 +67,40 @@ assertDocSizes(std::string_view label,
     EXPECT_EQ(ready + notReady + removed, info.getUsedSize());
 }
 
-void
-assertReady(bool expReady,
-            const BucketInfo &info)
-{
+void assertReady(bool expReady, const BucketInfo& info) {
     EXPECT_EQ(expReady, info.isReady());
 }
 
-struct Fixture
-{
+struct Fixture {
     BucketDB _db;
-    Fixture()
-        : _db()
-    {}
-    void add(const GlobalId &gid, const Timestamp &timestamp, uint32_t docSize, SubDbType subDbType) {
+    Fixture() : _db() {}
+    void add(const GlobalId& gid, const Timestamp& timestamp, uint32_t docSize, SubDbType subDbType) {
         BucketId bucket(bucket_bits, gid.convertToBucketId().getRawId());
         _db.add(gid, bucket, timestamp, docSize, subDbType);
         ASSERT_TRUE(_db.validateIntegrity());
     }
-    const BucketState &add(const Timestamp &timestamp, uint32_t docSize, SubDbType subDbType) {
-        const auto & state = _db.add(GID_1, BUCKET_1, timestamp, docSize, subDbType);
+    const BucketState& add(const Timestamp& timestamp, uint32_t docSize, SubDbType subDbType) {
+        const auto& state = _db.add(GID_1, BUCKET_1, timestamp, docSize, subDbType);
         EXPECT_TRUE(_db.validateIntegrity());
         return state;
     }
-    const BucketState &add(const Timestamp &timestamp, SubDbType subDbType) {
+    const BucketState& add(const Timestamp& timestamp, SubDbType subDbType) {
         return add(timestamp, DOCSIZE_1, subDbType);
     }
-    void remove(const GlobalId& gid, const Timestamp &timestamp, uint32_t docSize, SubDbType subDbType) {
+    void remove(const GlobalId& gid, const Timestamp& timestamp, uint32_t docSize, SubDbType subDbType) {
         BucketId bucket(bucket_bits, gid.convertToBucketId().getRawId());
         _db.remove(gid, bucket, timestamp, docSize, subDbType);
         ASSERT_TRUE(_db.validateIntegrity());
     }
-    BucketState remove(const Timestamp &timestamp, uint32_t docSize, SubDbType subDbType) {
+    BucketState remove(const Timestamp& timestamp, uint32_t docSize, SubDbType subDbType) {
         _db.remove(GID_1, BUCKET_1, timestamp, docSize, subDbType);
         EXPECT_TRUE(_db.validateIntegrity());
         return get();
     }
-    BucketState remove(const Timestamp &timestamp, SubDbType subDbType) {
+    BucketState remove(const Timestamp& timestamp, SubDbType subDbType) {
         return remove(timestamp, DOCSIZE_1, subDbType);
     }
-    void remove_batch(const std::vector<RemoveBatchEntry> &removed, SubDbType sub_db_type) {
+    void remove_batch(const std::vector<RemoveBatchEntry>& removed, SubDbType sub_db_type) {
         _db.remove_batch(removed, sub_db_type);
         ASSERT_TRUE(_db.validateIntegrity());
     }
@@ -126,25 +108,22 @@ struct Fixture
         EXPECT_TRUE(_db.validateIntegrity());
         return _db.get(bucket_id);
     }
-    BucketState get() const {
-        return get(BUCKET_1);
-    }
-    BucketChecksum getChecksum(const Timestamp &timestamp, uint32_t docSize, SubDbType subDbType) {
-        BucketDB db;
+    BucketState get() const { return get(BUCKET_1); }
+    BucketChecksum getChecksum(const Timestamp& timestamp, uint32_t docSize, SubDbType subDbType) {
+        BucketDB       db;
         BucketChecksum retval = db.add(GID_1, BUCKET_1, timestamp, docSize, subDbType).getChecksum();
         // Must ensure empty bucket db before destruction.
         db.remove(GID_1, BUCKET_1, timestamp, docSize, subDbType);
         return retval;
     }
-    BucketChecksum getChecksum(const Timestamp &timestamp, SubDbType subDbType) {
+    BucketChecksum getChecksum(const Timestamp& timestamp, SubDbType subDbType) {
         return getChecksum(timestamp, DOCSIZE_1, subDbType);
     }
 };
 
-}
+} // namespace
 
-TEST(BucketDBTest, require_that_bucket_db_tracks_doc_counts_per_sub_db_type)
-{
+TEST(BucketDBTest, require_that_bucket_db_tracks_doc_counts_per_sub_db_type) {
     Fixture f;
     assertDocCount("initial", 0, 0, 0, f.get());
     assertDocCount("first add", 1, 0, 0, f.add(TIME_1, SDT::READY));
@@ -155,9 +134,8 @@ TEST(BucketDBTest, require_that_bucket_db_tracks_doc_counts_per_sub_db_type)
     assertDocCount("third remove", 0, 0, 0, f.remove(TIME_3, SDT::REMOVED));
 }
 
-TEST(BucketDBTest, require_that_bucket_db_tracks_doc_sizes_per_sub_db_type)
-{
-    Fixture f;
+TEST(BucketDBTest, require_that_bucket_db_tracks_doc_sizes_per_sub_db_type) {
+    Fixture          f;
     constexpr size_t S = DOCSIZE_1;
     assertDocSizes("initial", 0, 0, 0, f.get());
     assertDocSizes("first add", S, 0, 0, f.add(TIME_1, DOCSIZE_1, SDT::READY));
@@ -168,29 +146,26 @@ TEST(BucketDBTest, require_that_bucket_db_tracks_doc_sizes_per_sub_db_type)
     assertDocSizes("third remove", 0, 0, 0, f.remove(TIME_3, DOCSIZE_1, SDT::REMOVED));
 }
 
-TEST(BucketDBTest, require_that_bucket_checksum_is_a_combination_of_sub_db_types)
-{
-    Fixture f;
+TEST(BucketDBTest, require_that_bucket_checksum_is_a_combination_of_sub_db_types) {
+    Fixture        f;
     BucketChecksum zero(0u);
     BucketChecksum ready = f.getChecksum(TIME_1, SDT::READY);
     BucketChecksum notReady = f.getChecksum(TIME_2, SDT::NOTREADY);
 
     EXPECT_EQ(zero, f.get().getChecksum());
-    EXPECT_EQ(ready,            f.add(TIME_1, SDT::READY).getChecksum());
+    EXPECT_EQ(ready, f.add(TIME_1, SDT::READY).getChecksum());
     EXPECT_EQ(BucketState::addChecksum(ready, notReady), f.add(TIME_2, SDT::NOTREADY).getChecksum());
     EXPECT_EQ(BucketState::addChecksum(ready, notReady), f.add(TIME_3, SDT::REMOVED).getChecksum());
     EXPECT_EQ(notReady, f.remove(TIME_1, SDT::READY).getChecksum());
-    EXPECT_EQ(zero,     f.remove(TIME_2, SDT::NOTREADY).getChecksum());
-    EXPECT_EQ(zero,     f.remove(TIME_3, SDT::REMOVED).getChecksum());
+    EXPECT_EQ(zero, f.remove(TIME_2, SDT::NOTREADY).getChecksum());
+    EXPECT_EQ(zero, f.remove(TIME_3, SDT::REMOVED).getChecksum());
 }
 
-TEST(BucketDBTest, require_that_BucketState_follows_checksum_type)
-{
+TEST(BucketDBTest, require_that_BucketState_follows_checksum_type) {
     EXPECT_EQ(48u, sizeof(BucketState));
 }
 
-TEST(BucketDBTest, require_that_bucket_is_ready_when_not_having_docs_in_notready_sub_db)
-{
+TEST(BucketDBTest, require_that_bucket_is_ready_when_not_having_docs_in_notready_sub_db) {
     Fixture f;
     assertReady(true, f.get());
     assertReady(true, f.add(TIME_1, SDT::READY));
@@ -201,8 +176,7 @@ TEST(BucketDBTest, require_that_bucket_is_ready_when_not_having_docs_in_notready
     assertReady(true, f.remove(TIME_3, SDT::REMOVED));
 }
 
-TEST(BucketDBTest, require_that_bucket_can_be_cached)
-{
+TEST(BucketDBTest, require_that_bucket_can_be_cached) {
     Fixture f;
     f.add(TIME_1, SDT::READY);
     EXPECT_FALSE(f._db.isCachedBucket(BUCKET_1));
@@ -222,10 +196,9 @@ TEST(BucketDBTest, require_that_bucket_can_be_cached)
     f.remove(TIME_2, SDT::NOTREADY);
 }
 
-TEST(BucketDBTest, require_that_bucket_checksum_ignores_document_sizes)
-{
+TEST(BucketDBTest, require_that_bucket_checksum_ignores_document_sizes) {
     Fixture f;
-    auto state1 = f.add(TIME_1, DOCSIZE_1, SDT::READY);
+    auto    state1 = f.add(TIME_1, DOCSIZE_1, SDT::READY);
     f.remove(TIME_1, DOCSIZE_1, SDT::READY);
     auto state2 = f.add(TIME_1, DOCSIZE_2, SDT::READY);
     f.remove(TIME_1, DOCSIZE_2, SDT::READY);
@@ -233,8 +206,7 @@ TEST(BucketDBTest, require_that_bucket_checksum_ignores_document_sizes)
     EXPECT_EQ(state1.getChecksum(), state2.getChecksum());
 }
 
-TEST(BucketDBTest, require_that_remove_batch_works)
-{
+TEST(BucketDBTest, require_that_remove_batch_works) {
     Fixture f;
     f.add(make_gid(4, 1), Timestamp(10), 100, SDT::READY);
     f.add(make_gid(4, 2), Timestamp(11), 104, SDT::READY);
@@ -264,35 +236,33 @@ TEST(BucketDBTest, require_that_remove_batch_works)
     f.remove(make_gid(5, 6), Timestamp(15), 1000, SDT::READY);
 }
 
-TEST(BucketDBTest, require_that_bucket_db_can_be_explored)
-{
-    BucketDBOwner db;
-    const BucketState & expectedState = db.takeGuard()->add(GID_1, BUCKET_1, TIME_1, DOCSIZE_1, SDT::READY);
+TEST(BucketDBTest, require_that_bucket_db_can_be_explored) {
+    BucketDBOwner      db;
+    const BucketState& expectedState = db.takeGuard()->add(GID_1, BUCKET_1, TIME_1, DOCSIZE_1, SDT::READY);
     {
-        BucketDBExplorer explorer(db.takeGuard());
-        Slime expectSlime;
+        BucketDBExplorer      explorer(db.takeGuard());
+        Slime                 expectSlime;
         vespalib::asciistream expectJson;
-        expectJson <<
-            "{"
-            "  numBuckets: 1,"
-            "  buckets: ["
-            "    {"
-            "      id: '0x2000000000000031',"
-            "      checksum: '0x"
-            << vespalib::hex << expectedState.getChecksum() <<
-            "',"
-            "      readyCount: 1,"
-            "      notReadyCount: 0,"
-            "      removedCount: 0,"
-            "      readyDocSizes: 4096,"
-            "      notReadyDocSizes: 0,"
-            "      removedDocSizes: 0,"
-            "      active: false"
-            "    }"
-            "  ]"
-            "}";
+        expectJson << "{"
+                      "  numBuckets: 1,"
+                      "  buckets: ["
+                      "    {"
+                      "      id: '0x2000000000000031',"
+                      "      checksum: '0x"
+                   << vespalib::hex << expectedState.getChecksum()
+                   << "',"
+                      "      readyCount: 1,"
+                      "      notReadyCount: 0,"
+                      "      removedCount: 0,"
+                      "      readyDocSizes: 4096,"
+                      "      notReadyDocSizes: 0,"
+                      "      removedDocSizes: 0,"
+                      "      active: false"
+                      "    }"
+                      "  ]"
+                      "}";
         EXPECT_TRUE(JsonFormat::decode(expectJson.view(), expectSlime) > 0);
-        Slime actualSlime;
+        Slime         actualSlime;
         SlimeInserter inserter(actualSlime);
         explorer.get_state(inserter, true);
 
@@ -303,10 +273,9 @@ TEST(BucketDBTest, require_that_bucket_db_can_be_explored)
     db.takeGuard()->remove(GID_1, BUCKET_1, TIME_1, DOCSIZE_1, SDT::READY);
 }
 
-BucketChecksum
-verifyChecksumCompliance(ChecksumAggregator::ChecksumType type) {
-    GlobalId gid1("aaaaaaaaaaaa");
-    GlobalId gid2("bbbbbbbbbbbb");
+BucketChecksum verifyChecksumCompliance(ChecksumAggregator::ChecksumType type) {
+    GlobalId  gid1("aaaaaaaaaaaa");
+    GlobalId  gid2("bbbbbbbbbbbb");
     Timestamp t1(0);
     Timestamp t2(1);
     BucketState::setChecksumType(type);
@@ -315,17 +284,17 @@ verifyChecksumCompliance(ChecksumAggregator::ChecksumType type) {
     EXPECT_EQ(0u, bs.getChecksum());
     bs.add(gid1, t1, 1, SubDbType::READY);
     BucketChecksum afterAdd = bs.getChecksum();
-    EXPECT_NE(0u, afterAdd);                   // add Changes checksum
+    EXPECT_NE(0u, afterAdd); // add Changes checksum
     bs.remove(gid1, t1, 1, SubDbType::READY);
-    EXPECT_EQ(0u, bs.getChecksum());          // add/remove are symmetrical
+    EXPECT_EQ(0u, bs.getChecksum()); // add/remove are symmetrical
     bs.add(gid1, t2, 1, SubDbType::READY);
     EXPECT_NE(afterAdd, bs.getChecksum()); // timestamp changes checksum
     bs.remove(gid1, t2, 1, SubDbType::READY);
-    EXPECT_EQ(0u, bs.getChecksum());          // add/remove are symmetrical
+    EXPECT_EQ(0u, bs.getChecksum()); // add/remove are symmetrical
     bs.add(gid2, t1, 1, SubDbType::READY);
     EXPECT_NE(afterAdd, bs.getChecksum()); // gid changes checksum
     bs.remove(gid2, t1, 1, SubDbType::READY);
-    EXPECT_EQ(0u, bs.getChecksum());          // add/remove are symmetrical
+    EXPECT_EQ(0u, bs.getChecksum()); // add/remove are symmetrical
 
     {
         // Verify order does not matter, only current content. A,B == B,A
@@ -345,31 +314,28 @@ verifyChecksumCompliance(ChecksumAggregator::ChecksumType type) {
         bs.remove(gid2, t2, 1, SubDbType::READY);
         EXPECT_EQ(after1AddOfGid1, bs.getChecksum());
         bs.remove(gid1, t1, 1, SubDbType::READY);
-        EXPECT_EQ(0u, bs.getChecksum());          // add/remove are symmetrical
+        EXPECT_EQ(0u, bs.getChecksum()); // add/remove are symmetrical
     }
 
     bs.add(gid1, t1, 1, SubDbType::READY); // Add something so we can verify it does not change between releases.
     return bs.getChecksum();
 }
 
-TEST(BucketDBTest, test_that_legacy_checksum_complies)
-{
+TEST(BucketDBTest, test_that_legacy_checksum_complies) {
     BucketChecksum cksum = verifyChecksumCompliance(ChecksumAggregator::ChecksumType::LEGACY);
     EXPECT_EQ(0x24242423u, cksum);
 }
 
-TEST(BucketDBTest, test_that_xxhash64_checksum_complies)
-{
+TEST(BucketDBTest, test_that_xxhash64_checksum_complies) {
     BucketChecksum cksum = verifyChecksumCompliance(ChecksumAggregator::ChecksumType::XXHASH64);
     EXPECT_EQ(0xd26fca9au, cksum);
 }
 
-TEST(BucketDBTest, test_that_BucketState_can_count_active_Documents)
-{
-    GlobalId gid1("aaaaaaaaaaaa");
-    GlobalId gid2("bbbbbbbbbbbb");
-    GlobalId gid3("cccccccccccc");
-    Timestamp t1;
+TEST(BucketDBTest, test_that_BucketState_can_count_active_Documents) {
+    GlobalId    gid1("aaaaaaaaaaaa");
+    GlobalId    gid2("bbbbbbbbbbbb");
+    GlobalId    gid3("cccccccccccc");
+    Timestamp   t1;
     BucketState bs;
     EXPECT_FALSE(bs.isActive());
     EXPECT_EQ(0u, bs.getDocumentCount());
@@ -393,30 +359,29 @@ TEST(BucketDBTest, test_that_BucketState_can_count_active_Documents)
     EXPECT_EQ(0u, bs.getActiveDocumentCount());
 }
 
-TEST(BucketDBTest, test_BucketDB_active_document_tracking)
-{
-    Fixture f;
+TEST(BucketDBTest, test_BucketDB_active_document_tracking) {
+    Fixture   f;
     Timestamp t1;
     EXPECT_EQ(0u, f._db.getNumActiveDocs());
-    f.add(make_gid(4,1), t1, 3, SubDbType::READY);
+    f.add(make_gid(4, 1), t1, 3, SubDbType::READY);
     EXPECT_EQ(0u, f._db.getNumActiveDocs());
     f._db.setBucketState(make_bucket_id(4), true);
     EXPECT_EQ(1u, f._db.getNumActiveDocs());
 
     BucketState bs;
-    bs.add(make_gid(5,1), Timestamp(1), 3, SubDbType::NOTREADY);
-    bs.add(make_gid(5,2), Timestamp(2), 3, SubDbType::NOTREADY);
+    bs.add(make_gid(5, 1), Timestamp(1), 3, SubDbType::NOTREADY);
+    bs.add(make_gid(5, 2), Timestamp(2), 3, SubDbType::NOTREADY);
     f._db.add(make_bucket_id(5), bs);
     EXPECT_EQ(1u, f._db.getNumActiveDocs());
     f._db.setBucketState(make_bucket_id(5), true);
     EXPECT_EQ(3u, f._db.getNumActiveDocs());
-    BucketState * writeableBS = f._db.getBucketStatePtr(make_bucket_id(5));
+    BucketState* writeableBS = f._db.getBucketStatePtr(make_bucket_id(5));
     writeableBS->setActive(false);
-    EXPECT_EQ(3u, f._db.getNumActiveDocs());  // Incorrect until integrity restored
+    EXPECT_EQ(3u, f._db.getNumActiveDocs()); // Incorrect until integrity restored
     f._db.restoreIntegrity();
     EXPECT_EQ(1u, f._db.getNumActiveDocs());
 
-    f.remove(make_gid(4,1), t1, 3, SubDbType::READY);
+    f.remove(make_gid(4, 1), t1, 3, SubDbType::READY);
     f._db.unloadBucket(make_bucket_id(5), bs);
     EXPECT_EQ(0u, f._db.getNumActiveDocs());
 }

@@ -11,32 +11,26 @@ using namespace proton;
 namespace {
 
 struct DummyMetricSet : public metrics::MetricSet {
-    DummyMetricSet(const std::string &name) : metrics::MetricSet(name, {}, "", nullptr) {}
+    DummyMetricSet(const std::string& name) : metrics::MetricSet(name, {}, "", nullptr) {}
 };
 
 class MetricsEngineTest : public ::testing::Test {
 protected:
-    MetricsEngine engine;
-    DummyMetricSet parent;
+    MetricsEngine    engine;
+    DummyMetricSet   parent;
     AttributeMetrics attributes;
-    IndexMetrics indexes;
+    IndexMetrics     indexes;
 
     MetricsEngineTest();
     ~MetricsEngineTest() override;
 
-    void set_attributes(std::vector<std::string> field_names) {
-        engine.set_attributes(attributes, field_names);
-    }
+    void set_attributes(std::vector<std::string> field_names) { engine.set_attributes(attributes, field_names); }
 
-    void set_index_fields(std::vector<std::string> field_names) {
-        engine.set_index_fields(indexes, field_names);
-    }
+    void set_index_fields(std::vector<std::string> field_names) { engine.set_index_fields(indexes, field_names); }
 
-    size_t count_registered_metrics() const {
-        return parent.getRegisteredMetrics().size();
-    }
+    size_t count_registered_metrics() const { return parent.getRegisteredMetrics().size(); }
 
-    bool has_attribute_metrics(const std::string &field_name) {
+    bool has_attribute_metrics(const std::string& field_name) {
         return attributes.get_field_metrics_entry(field_name).get() != nullptr;
     }
 
@@ -46,26 +40,19 @@ protected:
 };
 
 MetricsEngineTest::MetricsEngineTest()
-    : ::testing::Test(),
-      engine(),
-      parent("parent"),
-      attributes(&parent),
-      indexes(&parent)
-{
+    : ::testing::Test(), engine(), parent("parent"), attributes(&parent), indexes(&parent) {
 }
 
 MetricsEngineTest::~MetricsEngineTest() = default;
 
-TEST_F(MetricsEngineTest, require_that_attribute_metrics_can_be_added)
-{
+TEST_F(MetricsEngineTest, require_that_attribute_metrics_can_be_added) {
     EXPECT_EQ(0, count_registered_metrics());
     set_attributes({"foo"});
     EXPECT_EQ(1, count_registered_metrics());
     EXPECT_TRUE(has_attribute_metrics("foo"));
 }
 
-TEST_F(MetricsEngineTest, require_that_attribute_metrics_can_be_removed)
-{
+TEST_F(MetricsEngineTest, require_that_attribute_metrics_can_be_removed) {
     EXPECT_EQ(0, count_registered_metrics());
     set_attributes({"foo"});
     EXPECT_EQ(1, count_registered_metrics());
@@ -77,8 +64,7 @@ TEST_F(MetricsEngineTest, require_that_attribute_metrics_can_be_removed)
     EXPECT_TRUE(has_attribute_metrics("bar"));
 }
 
-TEST_F(MetricsEngineTest, require_that_all_attribute_metrics_can_be_cleaned)
-{
+TEST_F(MetricsEngineTest, require_that_all_attribute_metrics_can_be_cleaned) {
     EXPECT_EQ(0, count_registered_metrics());
     set_attributes({"foo", "bar"});
     EXPECT_EQ(2, count_registered_metrics());
@@ -88,16 +74,14 @@ TEST_F(MetricsEngineTest, require_that_all_attribute_metrics_can_be_cleaned)
     EXPECT_FALSE(has_attribute_metrics("bar"));
 }
 
-TEST_F(MetricsEngineTest, require_that_index_metrics_can_be_added)
-{
+TEST_F(MetricsEngineTest, require_that_index_metrics_can_be_added) {
     EXPECT_EQ(0, count_registered_metrics());
     set_index_fields({"foo"});
     EXPECT_EQ(1, count_registered_metrics());
     EXPECT_TRUE(has_index_metrics("foo"));
 }
 
-TEST_F(MetricsEngineTest, require_that_index_metrics_can_be_removed)
-{
+TEST_F(MetricsEngineTest, require_that_index_metrics_can_be_removed) {
     EXPECT_EQ(0, count_registered_metrics());
     set_index_fields({"foo"});
     set_index_fields({"foo", "bar"});
@@ -108,8 +92,7 @@ TEST_F(MetricsEngineTest, require_that_index_metrics_can_be_removed)
     EXPECT_TRUE(has_index_metrics("bar"));
 }
 
-TEST_F(MetricsEngineTest, require_that_all_index_metrics_can_be_cleaned)
-{
+TEST_F(MetricsEngineTest, require_that_all_index_metrics_can_be_cleaned) {
     EXPECT_EQ(0, count_registered_metrics());
     set_index_fields({"foo", "bar"});
     EXPECT_EQ(2, count_registered_metrics());
@@ -119,4 +102,4 @@ TEST_F(MetricsEngineTest, require_that_all_index_metrics_can_be_cleaned)
     EXPECT_FALSE(has_index_metrics("bar"));
 }
 
-}
+} // namespace

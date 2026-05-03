@@ -4,8 +4,7 @@
 
 namespace proton {
 
-TEST(StatusReportTest, require_that_default_status_report_works)
-{
+TEST(StatusReportTest, require_that_default_status_report_works) {
     StatusReport sr(StatusReport::Params("foo"));
 
     EXPECT_EQ("foo", sr.getComponent());
@@ -17,14 +16,13 @@ TEST(StatusReportTest, require_that_default_status_report_works)
     EXPECT_EQ("state=", sr.getInternalStatesStr());
 }
 
-TEST(StatusReportTest, require_that_custom_status_report_works)
-{
-    StatusReport sr(StatusReport::Params("foo").
-            state(StatusReport::UPOK).
-            internalState("mystate").
-            internalConfigState("myconfigstate").
-            progress(65).
-            message("mymessage"));
+TEST(StatusReportTest, require_that_custom_status_report_works) {
+    StatusReport sr(StatusReport::Params("foo")
+                        .state(StatusReport::UPOK)
+                        .internalState("mystate")
+                        .internalConfigState("myconfigstate")
+                        .progress(65)
+                        .message("mymessage"));
 
     EXPECT_EQ("foo", sr.getComponent());
     EXPECT_EQ(StatusReport::UPOK, sr.getState());
@@ -36,4 +34,4 @@ TEST(StatusReportTest, require_that_custom_status_report_works)
     EXPECT_EQ("state=mystate configstate=myconfigstate", sr.getInternalStatesStr());
 }
 
-}  // namespace proton
+} // namespace proton
