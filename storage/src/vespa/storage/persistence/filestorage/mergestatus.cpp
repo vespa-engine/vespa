@@ -142,4 +142,4 @@ void MergeStatus::check_delayed_error(api::ReturnCode& return_code) {
     }
 }
 
-}; // namespace storage
+} // namespace storage
