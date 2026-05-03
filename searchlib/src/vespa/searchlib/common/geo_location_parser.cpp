@@ -1,11 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "geo_location_parser.h"
-#include <limits>
-#include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/data/slime/json_format.h>
 
+#include <vespa/vespalib/data/slime/json_format.h>
+#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/util/issue.h>
+
+#include <limits>
 using vespalib::Issue;
 
 #include <vespa/log/log.h>
@@ -13,9 +14,9 @@ LOG_SETUP(".searchlib.common.geo_location_parser");
 
 namespace {
 
-int getInt(const char * &p) {
+int getInt(const char*& p) {
     uint32_t val;
-    bool isminus;
+    bool     isminus;
     val = 0;
     isminus = false;
     if (*p == '-') {
@@ -26,10 +27,10 @@ int getInt(const char * &p) {
         val *= 10;
         val += (*p++ - '0');
     }
-    return isminus ? - val : val;
+    return isminus ? -val : val;
 }
 
-} // namespace <unnamed>
+} // namespace
 
 namespace search::common {
 
@@ -46,11 +47,10 @@ GeoLocationParser::GeoLocationParser()
       _max_x(std::numeric_limits<int32_t>::max()),
       _min_y(std::numeric_limits<int32_t>::min()),
       _max_y(std::numeric_limits<int32_t>::max()),
-      _parseError(nullptr)
-{}
+      _parseError(nullptr) {
+}
 
-bool
-GeoLocationParser::correctDimensionalitySkip(const char * &p) {
+bool GeoLocationParser::correctDimensionalitySkip(const char*& p) {
     if (*p == '2') {
         p++;
         if (*p != ',') {
@@ -64,13 +64,11 @@ GeoLocationParser::correctDimensionalitySkip(const char * &p) {
     return false;
 }
 
-bool
-GeoLocationParser::parseOldFormat(std::string_view locStr)
-{
-    bool foundBoundingBox = false;
-    bool foundLoc = false;
-    const char *p = locStr.data();
-    const char * end = p + locStr.size();
+bool GeoLocationParser::parseOldFormat(std::string_view locStr) {
+    bool        foundBoundingBox = false;
+    bool        foundLoc = false;
+    const char* p = locStr.data();
+    const char* end = p + locStr.size();
     while (p != end) {
         if (*p == '[') {
             p++;
@@ -134,19 +132,19 @@ GeoLocationParser::parseOldFormat(std::string_view locStr)
                 return false;
             }
             p++;
-            /* _tableID = */ (void) getInt(p);
+            /* _tableID = */ (void)getInt(p);
             if (*p != ',') {
                 _parseError = "Missing ',' after tableID";
                 return false;
             }
             p++;
-            /* _rankMultiplier = */ (void) getInt(p);
+            /* _rankMultiplier = */ (void)getInt(p);
             if (*p != ',') {
                 _parseError = "Missing ',' after rank multiplier";
                 return false;
             }
             p++;
-            /* _rankOnlyOnDistance = */ (void) getInt(p);
+            /* _rankOnlyOnDistance = */ (void)getInt(p);
             if (*p == ',') {
                 p++;
                 _x_aspect = getInt(p);
@@ -174,21 +172,17 @@ GeoLocationParser::parseOldFormat(std::string_view locStr)
     return _valid;
 }
 
-bool
-GeoLocationParser::parseWithField(std::string_view str)
-{
-     auto sep = str.find(':');
-     if (sep == std::string::npos) {
-         _parseError = "Location string lacks field specification";
-         return false;
-     }
-     _field_name = str.substr(0, sep);
-     return parseNoField(str.substr(sep + 1));
+bool GeoLocationParser::parseWithField(std::string_view str) {
+    auto sep = str.find(':');
+    if (sep == std::string::npos) {
+        _parseError = "Location string lacks field specification";
+        return false;
+    }
+    _field_name = str.substr(0, sep);
+    return parseNoField(str.substr(sep + 1));
 }
 
-bool
-GeoLocationParser::parseNoField(std::string_view str)
-{
+bool GeoLocationParser::parseNoField(std::string_view str) {
     if (str.empty()) {
         _parseError = "Location string is empty";
         return false;
@@ -203,24 +197,21 @@ GeoLocationParser::parseNoField(std::string_view str)
     return parseJsonFormat(str);
 }
 
-bool
-GeoLocationParser::parseJsonFormat(std::string_view str)
-{
+bool GeoLocationParser::parseJsonFormat(std::string_view str) {
     vespalib::Slime slime;
-    size_t decoded = vespalib::slime::JsonFormat::decode(str, slime);
+    size_t          decoded = vespalib::slime::JsonFormat::decode(str, slime);
     if (decoded == 0) {
         Issue::report("GeoLocationParser: bad location JSON: %s\n>> %s <<",
-                      slime.get()["error_message"].asString().make_string().c_str(),
-                      std::string(str).c_str());
+                      slime.get()["error_message"].asString().make_string().c_str(), std::string(str).c_str());
         _parseError = "Failed decoding JSON format location";
         return false;
     }
- // fprintf(stderr, "parsed location JSON %s -> %s\n", str.c_str(), slime.toString().c_str());
-    const auto &root = slime.get();
-    const auto &point = root["p"];
-    const auto &radius = root["r"];
-    const auto &aspect = root["a"];
-    const auto &bbox = root["b"];
+    // fprintf(stderr, "parsed location JSON %s -> %s\n", str.c_str(), slime.toString().c_str());
+    const auto& root = slime.get();
+    const auto& point = root["p"];
+    const auto& radius = root["r"];
+    const auto& aspect = root["a"];
+    const auto& bbox = root["b"];
 
     if (point.valid()) {
         _x = point["x"].asLong();
@@ -248,17 +239,15 @@ GeoLocationParser::parseJsonFormat(std::string_view str)
     return _valid;
 }
 
-GeoLocation
-GeoLocationParser::getGeoLocation() const
-{
-    if (! _valid) {
+GeoLocation GeoLocationParser::getGeoLocation() const {
+    if (!_valid) {
         return {};
     }
     GeoLocation::Aspect aspect(_x_aspect);
     if (_has_bounding_box) {
         GeoLocation::Range x_range{_min_x, _max_x};
         GeoLocation::Range y_range{_min_y, _max_y};
-        GeoLocation::Box bounding_box{x_range, y_range};
+        GeoLocation::Box   bounding_box{x_range, y_range};
         if (_has_point) {
             GeoLocation::Point point{_x, _y};
             if (_radius == GeoLocation::radius_inf) {
@@ -278,4 +267,4 @@ GeoLocationParser::getGeoLocation() const
     return {};
 }
 
-} // namespace
+} // namespace search::common

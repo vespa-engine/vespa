@@ -9,8 +9,7 @@ namespace search {
 /**
  * A simple wrapper class for the named maps of properties.
  **/
-struct MapNames
-{
+struct MapNames {
     /** name of rank feature property collection **/
     static const std::string RANK;
 

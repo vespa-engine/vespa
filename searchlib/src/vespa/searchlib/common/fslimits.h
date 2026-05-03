@@ -3,4 +3,3 @@
 #pragma once
 
 #define SEARCHLIB_FEF_UNKNOWN_FIELD_LENGTH 1000000u
-

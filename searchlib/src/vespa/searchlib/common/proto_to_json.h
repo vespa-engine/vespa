@@ -6,6 +6,6 @@
 
 namespace search::common {
 
-std::string protobuf_message_to_json(const google::protobuf::Message & message);
+std::string protobuf_message_to_json(const google::protobuf::Message& message);
 
 }

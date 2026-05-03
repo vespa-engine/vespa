@@ -10,4 +10,3 @@ namespace search {
 using SerialNum = uint64_t;
 
 } // namespace search
-

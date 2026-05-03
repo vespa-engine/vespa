@@ -4,9 +4,7 @@
 
 namespace search {
 
-TuneFileRandRead
-TuneFileRandRead::consider_force_memory_map(bool force_memory_map) const noexcept
-{
+TuneFileRandRead TuneFileRandRead::consider_force_memory_map(bool force_memory_map) const noexcept {
     TuneFileRandRead result = *this;
     if (force_memory_map) {
         result.setWantMemoryMap();

@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 
 namespace search::common {
 
@@ -35,4 +35,4 @@ struct ICompactableLidSpace {
     virtual void shrinkLidSpace() = 0;
 };
 
-}
+} // namespace search::common

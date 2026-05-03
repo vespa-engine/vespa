@@ -11,8 +11,7 @@ namespace search {
  * of the full space. All operations concerning the whole vector will only
  * be conducted on this smaller area.
  */
-class PartialBitVector : public BitVector
-{
+class PartialBitVector : public BitVector {
 public:
     /**
      * Class constructor specifying startindex and endindex.
@@ -23,15 +22,14 @@ public:
      *
      */
     PartialBitVector(Index start, Index end);
-    PartialBitVector(const BitVector & org, Index start, Index end);
+    PartialBitVector(const BitVector& org, Index start, Index end);
 
     ~PartialBitVector() override;
 
     size_t get_allocated_bytes(bool include_self) const noexcept override;
 
 private:
-    vespalib::alloc::Alloc  _alloc;
+    vespalib::alloc::Alloc _alloc;
 };
 
 } // namespace search
-

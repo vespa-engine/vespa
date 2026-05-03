@@ -2,6 +2,7 @@
 #pragma once
 
 #include "vespa/vespalib/util/idestructorcallback.h"
+
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
 
 namespace search {
@@ -13,15 +14,15 @@ namespace search {
  * larger task before dropping the shared pointer, triggering the
  * callback when all worker threads have completed.
  */
-class ScheduleSequencedTaskCallback : public vespalib::IDestructorCallback
-{
+class ScheduleSequencedTaskCallback : public vespalib::IDestructorCallback {
     vespalib::ISequencedTaskExecutor&            _executor;
     vespalib::ISequencedTaskExecutor::ExecutorId _id;
     std::unique_ptr<vespalib::Executor::Task>    _task;
+
 public:
-    ScheduleSequencedTaskCallback(vespalib::ISequencedTaskExecutor& executor,
+    ScheduleSequencedTaskCallback(vespalib::ISequencedTaskExecutor&            executor,
                                   vespalib::ISequencedTaskExecutor::ExecutorId id,
-                                  std::unique_ptr<vespalib::Executor::Task> task) noexcept;
+                                  std::unique_ptr<vespalib::Executor::Task>    task) noexcept;
     ~ScheduleSequencedTaskCallback() override;
 };
 
