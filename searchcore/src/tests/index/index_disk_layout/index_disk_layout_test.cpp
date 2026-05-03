@@ -1,30 +1,27 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchcorespi/index/indexdisklayout.h>
 #include <vespa/searchcorespi/index/index_disk_dir.h>
+#include <vespa/searchcorespi/index/indexdisklayout.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 namespace searchcorespi::index {
 
 namespace {
 
-void expect_index_disk_dir(IndexDiskDir exp, const std::string& dir)
-{
+void expect_index_disk_dir(IndexDiskDir exp, const std::string& dir) {
     auto act = IndexDiskLayout::get_index_disk_dir(dir);
     ASSERT_TRUE(act.valid());
     ASSERT_EQ(exp, act);
 }
 
-void expect_bad_index_disk_dir(const std::string& dir)
-{
+void expect_bad_index_disk_dir(const std::string& dir) {
     auto act = IndexDiskLayout::get_index_disk_dir(dir);
     ASSERT_FALSE(act.valid());
 }
 
-}
+} // namespace
 
-TEST(IndexDiskLayoutTest, get_index_disk_dir_works)
-{
+TEST(IndexDiskLayoutTest, get_index_disk_dir_works) {
     {
         SCOPED_TRACE("index.fusion.1");
         expect_index_disk_dir(IndexDiskDir(1, true), "index.fusion.1");
@@ -55,6 +52,6 @@ TEST(IndexDiskLayoutTest, get_index_disk_dir_works)
     }
 }
 
-}
+} // namespace searchcorespi::index
 
 GTEST_MAIN_RUN_ALL_TESTS()
