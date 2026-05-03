@@ -1,26 +1,26 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/fastos/file.h>
 #include <vespa/searchlib/util/fileheadertk.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/fastos/file.h>
 
 using namespace search;
 using namespace vespalib;
 
-void writeHeader(const FileHeader &header, const std::string &fileName) {
+void writeHeader(const FileHeader& header, const std::string& fileName) {
     FastOS_File file;
     ASSERT_TRUE(file.OpenWriteOnlyTruncate(fileName.c_str()));
     ASSERT_EQ(header.getSize(), header.writeFile(file));
 }
 
-std::string readFile(const std::string &fileName) {
+std::string readFile(const std::string& fileName) {
     FastOS_File file;
-    bool success = file.OpenReadOnly(fileName.c_str());
+    bool        success = file.OpenReadOnly(fileName.c_str());
     assert(success);
 
-    char buf[4_Ki];
+    char     buf[4_Ki];
     uint32_t len = file.Read(buf, sizeof(buf));
     EXPECT_LT(len, sizeof(buf)); // make sure we got everything
 
@@ -44,7 +44,8 @@ TEST(VespaFileheaderInspectTest, testDelimiter) {
     FileHeader header;
     header.putTag(FileHeader::Tag("string", "string"));
     writeHeader(header, "fileheader.dat");
-    EXPECT_TRUE(system("../../apps/vespa-fileheader-inspect/vespa-fileheader-inspect -d i -q fileheader.dat > out") == 0);
+    EXPECT_TRUE(system("../../apps/vespa-fileheader-inspect/vespa-fileheader-inspect -d i -q fileheader.dat > out") ==
+                0);
     EXPECT_EQ("str\\ingistr\\ingistr\\ing\n", readFile("out"));
 }
 
@@ -56,8 +57,8 @@ TEST(VespaFileheaderInspectTest, testQuiet) {
     std::string str = readFile("out");
     EXPECT_TRUE(!str.empty());
     for (uint32_t i = 0, numTags = header.getNumTags(); i < numTags; ++i) {
-        const FileHeader::Tag &tag = header.getTag(i);
-        size_t pos = str.find(tag.getName());
+        const FileHeader::Tag& tag = header.getTag(i);
+        size_t                 pos = str.find(tag.getName());
         EXPECT_TRUE(pos != std::string::npos);
 
         vespalib::asciistream out;
@@ -74,7 +75,7 @@ TEST(VespaFileheaderInspectTest, testVerbose) {
     std::string str = readFile("out");
     EXPECT_TRUE(!str.empty());
     for (uint32_t i = 0, numTags = header.getNumTags(); i < numTags; ++i) {
-        const FileHeader::Tag &tag = header.getTag(i);
+        const FileHeader::Tag& tag = header.getTag(i);
         EXPECT_TRUE(str.find(tag.getName()) != std::string::npos);
 
         vespalib::asciistream out;
