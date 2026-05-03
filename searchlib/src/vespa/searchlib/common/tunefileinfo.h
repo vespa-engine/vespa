@@ -101,7 +101,7 @@ public:
     }
 
     bool operator!=(const TuneFileRandRead& rhs) const noexcept {
-        return (_tuneControl != rhs._tuneControl) && (_mmapFlags == rhs._mmapFlags);
+        return (_tuneControl != rhs._tuneControl) || (_mmapFlags != rhs._mmapFlags);
     }
     TuneFileRandRead consider_force_memory_map(bool force_memory_map) const noexcept;
 };
