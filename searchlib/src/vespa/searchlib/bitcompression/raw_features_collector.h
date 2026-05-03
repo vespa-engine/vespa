@@ -3,7 +3,9 @@
 #pragma once
 
 #include "compression.h"
+
 #include <vespa/searchlib/index/docidandfeatures.h>
+
 #include <cassert>
 #include <limits>
 
@@ -16,8 +18,8 @@ namespace search::bitcompression {
  * improve fusion speed, cf. FieldMerger::select_cooked_or_raw_features.
  */
 class RawFeaturesCollector {
-    uint64_t                         _start_offset;
-    const uint64_t*                  _raw_features;
+    uint64_t        _start_offset;
+    const uint64_t* _raw_features;
 
     void collect(search::index::DocIdAndFeatures& features, const uint64_t* compr) {
         auto& blob = features.blob();
@@ -30,9 +32,7 @@ class RawFeaturesCollector {
 
 public:
     RawFeaturesCollector(const DecodeContext64Base& dc, search::index::DocIdAndFeatures& features)
-        : _start_offset(dc.getReadOffset()),
-          _raw_features(dc.getCompr())
-    {
+        : _start_offset(dc.getReadOffset()), _raw_features(dc.getCompr()) {
         features.clear_features(dc.getBitOffset());
         features.set_has_raw_data(true);
     }
@@ -41,9 +41,7 @@ public:
         collect(features, dc._valI);
     }
 
-    void fixup_after_read_compr_buffer(const DecodeContext64Base& dc) {
-        _raw_features = dc._valI;
-    }
+    void fixup_after_read_compr_buffer(const DecodeContext64Base& dc) { _raw_features = dc._valI; }
 
     void finish(const DecodeContext64Base& dc, search::index::DocIdAndFeatures& features) {
         collect(features, dc._valI);
@@ -58,4 +56,4 @@ public:
     }
 };
 
-}
+} // namespace search::bitcompression

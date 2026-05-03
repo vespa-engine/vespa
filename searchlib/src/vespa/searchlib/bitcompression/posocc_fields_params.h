@@ -3,15 +3,15 @@
 #pragma once
 
 #include "posocc_field_params.h"
+
 #include <vector>
 
 namespace search::bitcompression {
 
-class PosOccFieldsParams
-{
+class PosOccFieldsParams {
     // Cache pointers.
-    uint32_t _numFields;
-    const PosOccFieldParams *_fieldParams;
+    uint32_t                 _numFields;
+    const PosOccFieldParams* _fieldParams;
 
     // Storage
     std::vector<PosOccFieldParams> _params;
@@ -21,10 +21,10 @@ public:
     using Schema = index::Schema;
 
     PosOccFieldsParams();
-    PosOccFieldsParams(const PosOccFieldsParams &rhs);
+    PosOccFieldsParams(const PosOccFieldsParams& rhs);
 
-    PosOccFieldsParams &operator=(const PosOccFieldsParams &rhs);
-    bool operator==(const PosOccFieldsParams &rhs) const;
+    PosOccFieldsParams& operator=(const PosOccFieldsParams& rhs);
+    bool operator==(const PosOccFieldsParams& rhs) const;
 
     void cacheParamsRef() {
         _numFields = _params.size();
@@ -34,13 +34,13 @@ public:
     void assertCachedParamsRef() const;
 
     uint32_t getNumFields() const { return _numFields; }
-    const PosOccFieldParams *getFieldParams() const { return _fieldParams; }
-    void getParams(PostingListParams &params) const;
-    void setParams(const PostingListParams &params);
-    void setSchemaParams(const Schema &schema, const uint32_t indexId);
-    void readHeader(const vespalib::GenericHeader &header, const std::string &prefix);
-    void writeHeader(vespalib::GenericHeader &header, const std::string &prefix) const;
-    void set_field_length_info(const index::FieldLengthInfo &field_length_info);
+    const PosOccFieldParams* getFieldParams() const { return _fieldParams; }
+    void getParams(PostingListParams& params) const;
+    void setParams(const PostingListParams& params);
+    void setSchemaParams(const Schema& schema, const uint32_t indexId);
+    void readHeader(const vespalib::GenericHeader& header, const std::string& prefix);
+    void writeHeader(vespalib::GenericHeader& header, const std::string& prefix) const;
+    void set_field_length_info(const index::FieldLengthInfo& field_length_info);
 };
 
-}
+} // namespace search::bitcompression
