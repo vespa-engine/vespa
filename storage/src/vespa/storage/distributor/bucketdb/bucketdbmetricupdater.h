@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include <vespa/storage/distributor/min_replica_provider.h>
 #include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/storage/config/replica_counting_mode.h>
-#include <vespa/vespalib/util/memoryusage.h>
+#include <vespa/storage/distributor/min_replica_provider.h>
 #include <vespa/vespalib/stllike/hash_map.h>
+#include <vespa/vespalib/util/memoryusage.h>
 
 namespace storage::distributor {
 
@@ -17,20 +17,20 @@ class BucketDBMetricUpdater {
 public:
     /** Bucket statistics for a single database iteration */
     struct Stats {
-        uint64_t _docCount;
-        uint64_t _byteCount;
-        uint64_t _tooFewCopies;
-        uint64_t _tooManyCopies;
-        uint64_t _noTrusted;
-        uint64_t _totalBuckets;
+        uint64_t              _docCount;
+        uint64_t              _byteCount;
+        uint64_t              _tooFewCopies;
+        uint64_t              _tooManyCopies;
+        uint64_t              _noTrusted;
+        uint64_t              _totalBuckets;
         vespalib::MemoryUsage _mutable_db_mem_usage;
         vespalib::MemoryUsage _read_only_db_mem_usage;
 
         Stats() noexcept;
-        Stats(Stats &&rhs) noexcept;
-        Stats & operator=(Stats &&rhs) noexcept;
-        Stats(const Stats &rhs);
-        Stats & operator=(const Stats &rhs);
+        Stats(Stats&& rhs) noexcept;
+        Stats& operator=(Stats&& rhs) noexcept;
+        Stats(const Stats& rhs);
+        Stats& operator=(const Stats& rhs);
         ~Stats();
 
         /**
@@ -67,12 +67,8 @@ public:
     BucketDBMetricUpdater() noexcept;
     ~BucketDBMetricUpdater();
 
-    void setMinimumReplicaCountingMode(ReplicaCountingMode mode) noexcept {
-        _replicaCountingMode = mode;
-    }
-    ReplicaCountingMode getMinimumReplicaCountingMode() const noexcept {
-        return _replicaCountingMode;
-    }
+    void setMinimumReplicaCountingMode(ReplicaCountingMode mode) noexcept { _replicaCountingMode = mode; }
+    ReplicaCountingMode getMinimumReplicaCountingMode() const noexcept { return _replicaCountingMode; }
 
     void visit(const BucketDatabase::Entry& e, uint32_t redundancy);
     /**
@@ -91,13 +87,9 @@ public:
     /**
      * Returns true iff completeRound() has been called at least once.
      */
-    bool hasCompletedRound() const noexcept {
-        return _hasCompleteStats;
-    }
+    bool hasCompletedRound() const noexcept { return _hasCompleteStats; }
 
-    const Stats & getLastCompleteStats() const noexcept {
-        return _lastCompleteStats;
-    }
+    const Stats& getLastCompleteStats() const noexcept { return _lastCompleteStats; }
 
     void update_db_memory_usage(const vespalib::MemoryUsage& mem_usage, bool is_mutable_db);
 
@@ -107,4 +99,4 @@ private:
     void resetStats();
 };
 
-} // storage::distributor
+} // namespace storage::distributor
