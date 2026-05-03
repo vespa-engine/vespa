@@ -12,14 +12,13 @@ namespace proton {
  */
 class PrepareRestartRpcHandler : public SetFlushStrategyRpcHandler {
 public:
-    PrepareRestartRpcHandler(std::shared_ptr<DetachedRpcRequestsOwner> owner,
-                             vespalib::ref_counted<FRT_RPCRequest> req,
+    PrepareRestartRpcHandler(std::shared_ptr<DetachedRpcRequestsOwner>             owner,
+                             vespalib::ref_counted<FRT_RPCRequest>                 req,
                              std::shared_ptr<flushengine::FlushStrategyIdNotifier> notifier,
-                             FNET_Scheduler* scheduler,
-                             uint32_t wait_strategy_id,
+                             FNET_Scheduler* scheduler, uint32_t wait_strategy_id,
                              std::chrono::steady_clock::duration timeout_time);
     ~PrepareRestartRpcHandler() override;
     void make_result() override;
 };
 
-}
+} // namespace proton

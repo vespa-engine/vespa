@@ -10,8 +10,7 @@ namespace proton {
  * Interface used to receive notification when resource usage state
  * has changed.
  */
-class IResourceUsageListener
-{
+class IResourceUsageListener {
 public:
     virtual ~IResourceUsageListener() = default;
     virtual void notify_resource_usage(const ResourceUsageState& state) = 0;

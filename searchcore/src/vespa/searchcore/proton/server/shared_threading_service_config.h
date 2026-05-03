@@ -2,9 +2,12 @@
 #pragma once
 
 #include "threading_service_config.h"
+
 #include <vespa/vespalib/util/hw_info.h>
 
-namespace vespa::config::search::core::internal { class InternalProtonType; }
+namespace vespa::config::search::core::internal {
+class InternalProtonType;
+}
 
 namespace proton {
 
@@ -16,17 +19,15 @@ public:
     using ProtonConfig = const vespa::config::search::core::internal::InternalProtonType;
 
 private:
-    uint32_t _shared_threads;
-    uint32_t _shared_task_limit;
-    uint32_t _field_writer_threads;
-    double   _feeding_niceness;
+    uint32_t               _shared_threads;
+    uint32_t               _shared_task_limit;
+    uint32_t               _field_writer_threads;
+    double                 _feeding_niceness;
     ThreadingServiceConfig _field_writer_config;
 
 public:
-    SharedThreadingServiceConfig(uint32_t shared_threads_in,
-                                 uint32_t shared_task_limit_in,
-                                 uint32_t field_writer_threads_in,
-                                 double feed_niceness_in,
+    SharedThreadingServiceConfig(uint32_t shared_threads_in, uint32_t shared_task_limit_in,
+                                 uint32_t field_writer_threads_in, double feed_niceness_in,
                                  const ThreadingServiceConfig& field_writer_config_in);
 
     static SharedThreadingServiceConfig make(const ProtonConfig& cfg, const vespalib::HwInfo::Cpu& cpu_info);
@@ -38,5 +39,4 @@ public:
     const ThreadingServiceConfig& field_writer_config() const { return _field_writer_config; }
 };
 
-}
-
+} // namespace proton

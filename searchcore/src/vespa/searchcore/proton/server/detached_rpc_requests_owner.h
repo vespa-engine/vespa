@@ -11,13 +11,15 @@ namespace proton {
 class DetachedRpcRequest;
 
 /*
- * Owner of rpc request to proton rpc interface that has been detached. It must be closed when rpc interface is closed.
+ * Owner of rpc request to proton rpc interface that has been detached. It must be closed when rpc interface is
+ * closed.
  */
 class DetachedRpcRequestsOwner {
     using DetachedRequests = std::vector<std::shared_ptr<DetachedRpcRequest>>;
-    std::mutex _lock;
+    std::mutex       _lock;
     DetachedRequests _detached_requests;
-    bool _closed;
+    bool             _closed;
+
 public:
     DetachedRpcRequestsOwner();
     ~DetachedRpcRequestsOwner();
@@ -26,4 +28,4 @@ public:
     void close();
 };
 
-}
+} // namespace proton

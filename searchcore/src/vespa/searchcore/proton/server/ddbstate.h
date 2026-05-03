@@ -16,8 +16,7 @@ namespace proton {
  * Note that SHUTDOWN state can be entered from almost any state.
  */
 
-class DDBState
-{
+class DDBState {
 public:
     enum class State {
         CONSTRUCT,
@@ -31,22 +30,19 @@ public:
         DEAD
     };
 
-    enum class ConfigState {
-        OK,
-        NEED_RESTART
-    };
+    enum class ConfigState { OK, NEED_RESTART };
 
     using time_point = std::chrono::system_clock::time_point;
-private:
 
+private:
     std::atomic<State>       _state;
     std::atomic<ConfigState> _configState;
 
     using Mutex = std::mutex;
     using Guard = std::lock_guard<Mutex>;
     using GuardLock = std::unique_lock<Mutex>;
-    Mutex     _lock;  // protects state transition
-    std::condition_variable       _cond;
+    Mutex                   _lock; // protects state transition
+    std::condition_variable _cond;
 
     std::atomic<time_point> _load_time;
     std::atomic<time_point> _online_time;
@@ -64,7 +60,7 @@ public:
     /**
      * Try to enter LOAD state.  Fail and return false if document db is
      * being shut down.
-     */ 
+     */
     bool enterLoadState();
     bool enterReplayTransactionLogState();
     bool enterRedoReprocessState();
@@ -75,7 +71,7 @@ public:
     void enterDeadState();
     State getState() const noexcept { return _state.load(std::memory_order_acquire); }
     static std::string getStateString(State state);
-    
+
     bool getClosed() const noexcept {
         State state(getState());
         return state >= State::SHUTDOWN;
@@ -90,11 +86,9 @@ public:
         State state(getState());
         return state == State::ONLINE;
     }
-    
-    static bool getDelayedConfig(ConfigState state) noexcept {
-        return state != ConfigState::OK;
-    }
-    
+
+    static bool getDelayedConfig(ConfigState state) noexcept { return state != ConfigState::OK; }
+
     bool getDelayedConfig() const noexcept {
         ConfigState state(getConfigState());
         return getDelayedConfig(state);
@@ -111,17 +105,11 @@ public:
     void setConfigState(ConfigState newConfigState);
     void waitForOnlineState();
 
-    time_point get_load_time() const {
-        return _load_time;
-    }
+    time_point get_load_time() const { return _load_time; }
 
-    time_point get_replay_time() const {
-        return _replay_time;
-    }
+    time_point get_replay_time() const { return _replay_time; }
 
-    time_point get_online_time() const {
-        return _online_time;
-    }
+    time_point get_online_time() const { return _online_time; }
 };
 
 } // namespace proton

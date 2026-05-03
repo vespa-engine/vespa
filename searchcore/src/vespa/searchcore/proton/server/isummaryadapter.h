@@ -1,16 +1,21 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/query/base.h>
 #include <vespa/searchlib/common/serialnum.h>
+#include <vespa/searchlib/query/base.h>
+
 #include <memory>
 
 namespace document {
-    class Document;
-    class DocumentTypeRepo;
+class Document;
+class DocumentTypeRepo;
+} // namespace document
+namespace search {
+class IDocumentStore;
 }
-namespace search { class IDocumentStore; }
-namespace vespalib { class nbostream; }
+namespace vespalib {
+class nbostream;
+}
 
 namespace proton {
 
@@ -29,12 +34,12 @@ public:
     virtual ~ISummaryAdapter() = default;
 
     // feed interface
-    virtual void put(SerialNum serialNum, const DocumentIdT lid, const Document &doc) = 0;
-    virtual void put(SerialNum serialNum, const DocumentIdT lid, const vespalib::nbostream & os) = 0;
+    virtual void put(SerialNum serialNum, const DocumentIdT lid, const Document& doc) = 0;
+    virtual void put(SerialNum serialNum, const DocumentIdT lid, const vespalib::nbostream& os) = 0;
     virtual void remove(SerialNum serialNum, const DocumentIdT lid) = 0;
     virtual void heartBeat(SerialNum serialNum) = 0;
-    virtual const search::IDocumentStore &getDocumentStore() const = 0;
-    virtual std::unique_ptr<Document> get(const DocumentIdT lid, const DocumentTypeRepo &repo) = 0;
+    virtual const search::IDocumentStore& getDocumentStore() const = 0;
+    virtual std::unique_ptr<Document> get(const DocumentIdT lid, const DocumentTypeRepo& repo) = 0;
     virtual void compactLidSpace(uint32_t wantedDocIdLimit) = 0;
 };
 

@@ -22,11 +22,8 @@ public:
         JOB_TOKEN = 5
     };
 
-    IBlockableMaintenanceJob(const std::string &name,
-                             vespalib::duration delay,
-                             vespalib::duration interval)
-        : IMaintenanceJob(name, delay, interval)
-    {}
+    IBlockableMaintenanceJob(const std::string& name, vespalib::duration delay, vespalib::duration interval)
+        : IMaintenanceJob(name, delay, interval) {}
 
     /**
      * Block this job due to the given reason.
@@ -42,7 +39,7 @@ public:
 
     virtual void got_token(std::shared_ptr<MaintenanceJobToken> token, bool sync) = 0;
 
-    IBlockableMaintenanceJob *asBlockable() override { return this; }
+    IBlockableMaintenanceJob* asBlockable() override { return this; }
 };
 
-}
+} // namespace proton

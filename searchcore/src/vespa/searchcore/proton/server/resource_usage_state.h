@@ -3,7 +3,9 @@
 #pragma once
 
 #include "resource_usage_with_limit.h"
+
 #include <vespa/searchcore/proton/attribute/attribute_usage_stats.h>
+
 #include <algorithm>
 
 namespace proton {
@@ -12,8 +14,7 @@ namespace proton {
  * Class used to describe state of resource usage relative to configured limits.
  * In addition, relative transient disk and memory usage are tracked.
  */
-class ResourceUsageState
-{
+class ResourceUsageState {
     ResourceUsageWithLimit _diskState;
     ResourceUsageWithLimit _memoryState;
     double                 _non_transient_disk_usage;
@@ -27,31 +28,22 @@ class ResourceUsageState
 
 public:
     ResourceUsageState();
-    ResourceUsageState(const ResourceUsageWithLimit &diskState_,
-                       const ResourceUsageWithLimit &memoryState_);
-    ResourceUsageState(const ResourceUsageWithLimit &diskState_,
-                       const ResourceUsageWithLimit &memoryState_,
-                       double non_transient_disk_usage_,
-                       double non_transient_memory_usage_,
-                       double reserved_disk_space_,
-                       double reserved_disk_space_factor_,
-                       double transient_disk_usage_,
+    ResourceUsageState(const ResourceUsageWithLimit& diskState_, const ResourceUsageWithLimit& memoryState_);
+    ResourceUsageState(const ResourceUsageWithLimit& diskState_, const ResourceUsageWithLimit& memoryState_,
+                       double non_transient_disk_usage_, double non_transient_memory_usage_,
+                       double reserved_disk_space_, double reserved_disk_space_factor_, double transient_disk_usage_,
                        double transient_memory_usage_);
-    ResourceUsageState(const ResourceUsageWithLimit &diskState_,
-                       const ResourceUsageWithLimit &memoryState_,
-                       double non_transient_disk_usage_,
-                       double non_transient_memory_usage_,
-                       double reserved_disk_space_,
-                       double reserved_disk_space_factor_,
-                       double transient_disk_usage_,
-                       double transient_memory_usage_,
+    ResourceUsageState(const ResourceUsageWithLimit& diskState_, const ResourceUsageWithLimit& memoryState_,
+                       double non_transient_disk_usage_, double non_transient_memory_usage_,
+                       double reserved_disk_space_, double reserved_disk_space_factor_, double transient_disk_usage_,
+                       double                        transient_memory_usage_,
                        const ResourceUsageWithLimit& max_attribute_address_space_state,
-                       const AttributeUsageStats& attribute_usage);
+                       const AttributeUsageStats&    attribute_usage);
     ~ResourceUsageState();
-    bool operator==(const ResourceUsageState &rhs) const;
-    bool operator!=(const ResourceUsageState &rhs) const;
-    const ResourceUsageWithLimit &diskState() const noexcept { return _diskState; }
-    const ResourceUsageWithLimit &memoryState() const noexcept { return _memoryState; }
+    bool operator==(const ResourceUsageState& rhs) const;
+    bool operator!=(const ResourceUsageState& rhs) const;
+    const ResourceUsageWithLimit& diskState() const noexcept { return _diskState; }
+    const ResourceUsageWithLimit& memoryState() const noexcept { return _memoryState; }
     double reserved_disk_space() const noexcept { return _reserved_disk_space; }
     double reserved_disk_space_factor() const noexcept { return _reserved_disk_space_factor; }
     double transient_disk_usage() const noexcept { return _transient_disk_usage; }

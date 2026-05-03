@@ -9,8 +9,12 @@
 #include <string>
 #include <vector>
 
-namespace search::attribute { class AttributeInitializationStatus; }
-namespace vespalib::slime { struct Inserter; }
+namespace search::attribute {
+class AttributeInitializationStatus;
+}
+namespace vespalib::slime {
+struct Inserter;
+}
 
 using search::attribute::AttributeInitializationStatus;
 
@@ -27,24 +31,25 @@ class IReplayProgressProducer;
  */
 class DocumentDBInitializationStatus : public vespalib::InitializationStatusProducer {
 private:
-    const std::string                        _name;
+    const std::string                              _name;
     std::shared_ptr<const DDBState>                _state;
     std::shared_ptr<const IReplayProgressProducer> _replay_progress_producer;
 
-    mutable std::mutex _mutex;  // protects vector below
+    mutable std::mutex                                          _mutex; // protects vector below
     std::vector<std::shared_ptr<AttributeInitializationStatus>> _attribute_initialization_statuses;
 
 public:
     DocumentDBInitializationStatus(const std::string& name, const std::shared_ptr<const DDBState>& state);
     ~DocumentDBInitializationStatus() override __attribute__((noinline)) = default; // Avoid warning about inlining
 
-    void set_attribute_initialization_statuses(std::vector<std::shared_ptr<AttributeInitializationStatus>>&& attribute_initialization_statuses);
+    void set_attribute_initialization_statuses(
+        std::vector<std::shared_ptr<AttributeInitializationStatus>>&& attribute_initialization_statuses);
 
-    void set_replay_progress_producer(const std::shared_ptr<const IReplayProgressProducer> &replay_progress_producer);
+    void set_replay_progress_producer(const std::shared_ptr<const IReplayProgressProducer>& replay_progress_producer);
 
     const DDBState& get_state() const { return *_state; }
 
-    void report_initialization_status(const vespalib::slime::Inserter &inserter) const override;
+    void report_initialization_status(const vespalib::slime::Inserter& inserter) const override;
 };
 
-}
+} // namespace proton

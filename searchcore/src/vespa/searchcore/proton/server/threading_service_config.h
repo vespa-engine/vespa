@@ -5,9 +5,12 @@
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/hw_info.h>
 #include <vespa/vespalib/util/time.h>
+
 #include <cstdint>
 
-namespace vespa::config::search::core::internal { class InternalProtonType; }
+namespace vespa::config::search::core::internal {
+class InternalProtonType;
+}
 namespace proton {
 
 /**
@@ -24,11 +27,11 @@ private:
     bool               _is_task_limit_hard;
     OptimizeFor        _optimize;
     uint32_t           _kindOfWatermark;
-    vespalib::duration _reactionTime;         // Maximum reaction time to new tasks
+    vespalib::duration _reactionTime; // Maximum reaction time to new tasks
 
 private:
-    ThreadingServiceConfig(uint32_t master_task_limit_, int32_t defaultTaskLimit_,
-                           OptimizeFor optimize_, uint32_t kindOfWatermark_, vespalib::duration reactionTime_);
+    ThreadingServiceConfig(uint32_t master_task_limit_, int32_t defaultTaskLimit_, OptimizeFor optimize_,
+                           uint32_t kindOfWatermark_, vespalib::duration reactionTime_);
 
 public:
     static ThreadingServiceConfig make(const ProtonConfig& cfg);
@@ -40,7 +43,7 @@ public:
     OptimizeFor optimize() const { return _optimize; }
     uint32_t kindOfwatermark() const { return _kindOfWatermark; }
     vespalib::duration reactionTime() const { return _reactionTime; }
-    bool operator==(const ThreadingServiceConfig &rhs) const;
+    bool operator==(const ThreadingServiceConfig& rhs) const;
 };
 
-}
+} // namespace proton

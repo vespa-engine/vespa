@@ -3,6 +3,7 @@
 #pragma once
 
 #include "ifeedview.h"
+
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
 #include <vespa/searchcore/proton/persistenceengine/i_document_retriever.h>
 
@@ -14,26 +15,21 @@ class ILidCommitState;
  * The view of a document sub db as seen from the maintenance controller
  * and various maintenance jobs.
  */
-class MaintenanceDocumentSubDB
-{
+class MaintenanceDocumentSubDB {
 private:
-    std::string       _name;
+    std::string            _name;
     uint32_t               _sub_db_id;
     IDocumentMetaStore::SP _meta_store;
     IDocumentRetriever::SP _retriever;
     IFeedView::SP          _feed_view;
-    const ILidCommitState *_pendingLidsForCommit;
+    const ILidCommitState* _pendingLidsForCommit;
 
 public:
     MaintenanceDocumentSubDB();
     ~MaintenanceDocumentSubDB();
 
-    MaintenanceDocumentSubDB(const std::string& name,
-                             uint32_t sub_db_id,
-                             IDocumentMetaStore::SP meta_store,
-                             IDocumentRetriever::SP retriever,
-                             IFeedView::SP feed_view,
-                             const ILidCommitState *);
+    MaintenanceDocumentSubDB(const std::string& name, uint32_t sub_db_id, IDocumentMetaStore::SP meta_store,
+                             IDocumentRetriever::SP retriever, IFeedView::SP feed_view, const ILidCommitState*);
 
     const std::string& name() const { return _name; }
     uint32_t sub_db_id() const { return _sub_db_id; }
@@ -47,4 +43,4 @@ public:
     void clear();
 };
 
-}
+} // namespace proton

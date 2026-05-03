@@ -2,18 +2,15 @@
 
 #pragma once
 
-namespace proton
-{
-
+namespace proton {
 
 /*
  * Interface class for syncing transaction log server in a safe manner.
  */
-class ITlsSyncer
-{
+class ITlsSyncer {
 public:
     virtual ~ITlsSyncer() = default;
     virtual void sync() = 0;
 };
 
-}
+} // namespace proton

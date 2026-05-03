@@ -3,11 +3,14 @@
 #pragma once
 
 #include "operationdonecontext.h"
-#include <vespa/searchcore/proton/common/ipendinglidtracker.h>
+
 #include <vespa/document/base/globalid.h>
+#include <vespa/searchcore/proton/common/ipendinglidtracker.h>
 #include <vespa/searchlib/common/serialnum.h>
 
-namespace document { class Document; }
+namespace document {
+class Document;
+}
 
 namespace proton {
 
@@ -20,21 +23,20 @@ class DocIdLimit;
  * a larger task before dropping the shared pointer, triggering the
  * ack when all worker threads have completed.
  */
-class PutDoneContext : public OperationDoneContext
-{
-    IPendingLidTracker::Token _uncommitted;
-    uint32_t                  _lid;
-    DocIdLimit               *_docIdLimit;
+class PutDoneContext : public OperationDoneContext {
+    IPendingLidTracker::Token                 _uncommitted;
+    uint32_t                                  _lid;
+    DocIdLimit*                               _docIdLimit;
     std::shared_ptr<const document::Document> _doc;
 
 public:
-    PutDoneContext(std::shared_ptr<feedtoken::IState> token,
+    PutDoneContext(std::shared_ptr<feedtoken::IState>             token,
                    std::shared_ptr<vespalib::IDestructorCallback> done_callback,
-                   IPendingLidTracker::Token uncommitted,
-                   std::shared_ptr<const document::Document> doc, uint32_t lid);
+                   IPendingLidTracker::Token uncommitted, std::shared_ptr<const document::Document> doc,
+                   uint32_t lid);
     ~PutDoneContext() override;
 
-    void registerPutLid(DocIdLimit *docIdLimit) { _docIdLimit = docIdLimit; }
+    void registerPutLid(DocIdLimit* docIdLimit) { _docIdLimit = docIdLimit; }
 };
 
-}  // namespace proton
+} // namespace proton

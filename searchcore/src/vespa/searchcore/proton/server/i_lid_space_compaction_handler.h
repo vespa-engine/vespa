@@ -3,13 +3,20 @@
 #pragma once
 
 #include <vespa/searchlib/common/lid_usage_stats.h>
+
 #include <memory>
 #include <string>
 #include <vector>
 
-namespace vespalib { class IDestructorCallback; }
-namespace search { struct DocumentMetadata; }
-namespace proton::documentmetastore { class OperationListener; }
+namespace vespalib {
+class IDestructorCallback;
+}
+namespace search {
+struct DocumentMetadata;
+}
+namespace proton::documentmetastore {
+class OperationListener;
+}
 
 namespace proton {
 
@@ -22,8 +29,7 @@ struct IDocumentScanIterator;
  *
  * An implementation of this interface is typically working over a single document sub db.
  */
-struct ILidSpaceCompactionHandler
-{
+struct ILidSpaceCompactionHandler {
     using SP = std::shared_ptr<ILidSpaceCompactionHandler>;
     using Vector = std::vector<SP>;
 
@@ -64,17 +70,19 @@ struct ILidSpaceCompactionHandler
     /**
      * Creates a move operation for moving the given document to the given lid.
      */
-    virtual std::unique_ptr<MoveOperation> createMoveOperation(const search::DocumentMetadata &document, uint32_t moveToLid) const = 0;
+    virtual std::unique_ptr<MoveOperation> createMoveOperation(const search::DocumentMetadata& document,
+                                                               uint32_t                        moveToLid) const = 0;
 
     /**
      * Performs the actual move operation.
      */
-    virtual void handleMove(const MoveOperation &op, std::shared_ptr<vespalib::IDestructorCallback> moveDoneCtx) = 0;
+    virtual void handleMove(const MoveOperation& op, std::shared_ptr<vespalib::IDestructorCallback> moveDoneCtx) = 0;
 
     /**
      * Compacts the underlying lid space by starting using the new lid limit.
      */
-    virtual void handleCompactLidSpace(const CompactLidSpaceOperation &op, std::shared_ptr<vespalib::IDestructorCallback> compact_done_context) = 0;
+    virtual void handleCompactLidSpace(const CompactLidSpaceOperation&                op,
+                                       std::shared_ptr<vespalib::IDestructorCallback> compact_done_context) = 0;
 };
 
 } // namespace proton

@@ -10,5 +10,4 @@ struct FeedConfigStore : NewConfigOperation::IStreamHandler {
     ~FeedConfigStore() override = default;
 };
 
-}  // namespace proton
-
+} // namespace proton

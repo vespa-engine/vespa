@@ -11,18 +11,16 @@ struct IDocumentMetaStore;
 /**
  * Iterator for scanning all documents in a document meta store.
  */
-class DocumentScanIterator : public IDocumentScanIterator
-{
+class DocumentScanIterator : public IDocumentScanIterator {
 private:
-    const IDocumentMetaStore &_metaStore;
+    const IDocumentMetaStore& _metaStore;
     uint32_t                  _lastLid;
     bool                      _itrValid;
 
 public:
-    DocumentScanIterator(const IDocumentMetaStore &_metaStore);
+    DocumentScanIterator(const IDocumentMetaStore& _metaStore);
     bool valid() const override;
     search::DocumentMetadata next(uint32_t compactLidLimit) override;
 };
 
 } // namespace proton
-

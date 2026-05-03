@@ -9,8 +9,7 @@ namespace proton {
 /**
  * Class used to initialize a collection of document sub databases.
  */
-class DocumentSubDbCollectionInitializer : public initializer::InitializerTask
-{
+class DocumentSubDbCollectionInitializer : public initializer::InitializerTask {
 private:
     std::vector<DocumentSubDbInitializer::SP> _subDbInitializers;
 
@@ -26,4 +25,3 @@ public:
 };
 
 } // namespace proton
-

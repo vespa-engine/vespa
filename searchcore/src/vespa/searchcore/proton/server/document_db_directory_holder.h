@@ -9,12 +9,11 @@ namespace proton {
 /*
  * class holding onto a document db directory.
  */
-class DocumentDBDirectoryHolder
-{
+class DocumentDBDirectoryHolder {
 public:
     DocumentDBDirectoryHolder();
     ~DocumentDBDirectoryHolder();
-    static void waitUntilDestroyed(const std::weak_ptr<DocumentDBDirectoryHolder> &holder);
+    static void waitUntilDestroyed(const std::weak_ptr<DocumentDBDirectoryHolder>& holder);
 };
 
 } // namespace proton

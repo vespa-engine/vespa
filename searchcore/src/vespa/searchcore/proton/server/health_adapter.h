@@ -7,15 +7,13 @@
 
 namespace proton {
 
-class HealthAdapter : public vespalib::HealthProducer
-{
+class HealthAdapter : public vespalib::HealthProducer {
 private:
-    const StatusProducer &_statusProducer;
+    const StatusProducer& _statusProducer;
 
 public:
-    HealthAdapter(const StatusProducer &sp);
+    HealthAdapter(const StatusProducer& sp);
     Health getHealth() const override;
 };
 
 } // namespace proton
-

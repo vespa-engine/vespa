@@ -3,6 +3,7 @@
 
 #include <vespa/searchcorespi/index/i_thread_service.h>
 #include <vespa/vespalib/util/threadexecutor.h>
+
 #include <thread>
 
 namespace proton {
@@ -11,14 +12,13 @@ namespace proton {
  * Implementation of IThreadService using an underlying thread stack executor
  * with a single thread.
  */
-class ExecutorThreadService : public searchcorespi::index::IThreadService
-{
+class ExecutorThreadService : public searchcorespi::index::IThreadService {
 private:
-    vespalib::ThreadExecutor &_executor;
-    std::thread::id _threadId;
+    vespalib::ThreadExecutor& _executor;
+    std::thread::id           _threadId;
 
 public:
-    ExecutorThreadService(vespalib::ThreadExecutor &executor);
+    ExecutorThreadService(vespalib::ThreadExecutor& executor);
     ~ExecutorThreadService();
 
     vespalib::ExecutorStats getStats() override;
@@ -26,7 +26,7 @@ public:
     vespalib::Executor::Task::UP execute(vespalib::Executor::Task::UP task) override {
         return _executor.execute(std::move(task));
     }
-    void run(vespalib::Runnable &runnable) override;
+    void run(vespalib::Runnable& runnable) override;
 
     bool isCurrentThread() const override;
     size_t getNumThreads() const override { return _executor.getNumThreads(); }
@@ -36,14 +36,13 @@ public:
     void wakeup() override;
 };
 
-class SyncableExecutorThreadService : public searchcorespi::index::ISyncableThreadService
-{
+class SyncableExecutorThreadService : public searchcorespi::index::ISyncableThreadService {
 private:
-    vespalib::SyncableThreadExecutor &_executor;
-    std::thread::id _threadId;
+    vespalib::SyncableThreadExecutor& _executor;
+    std::thread::id                   _threadId;
 
 public:
-    SyncableExecutorThreadService(vespalib::SyncableThreadExecutor &executor);
+    SyncableExecutorThreadService(vespalib::SyncableThreadExecutor& executor);
     ~SyncableExecutorThreadService();
 
     vespalib::ExecutorStats getStats() override;
@@ -51,8 +50,8 @@ public:
     vespalib::Executor::Task::UP execute(vespalib::Executor::Task::UP task) override {
         return _executor.execute(std::move(task));
     }
-    void run(vespalib::Runnable &runnable) override;
-    vespalib::Syncable &sync() override {
+    void run(vespalib::Runnable& runnable) override;
+    vespalib::Syncable& sync() override {
         _executor.sync();
         return *this;
     }

@@ -10,8 +10,7 @@ class ResourceUsageState;
  * Class containing disk and memory usage in a form suitable for
  * metrics reporting.
  */
-class DiskMemUsageMetrics
-{
+class DiskMemUsageMetrics {
     double _total_disk_usage;
     double _total_disk_utilization;
     double _transient_disk_usage;

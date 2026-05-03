@@ -4,15 +4,19 @@
 
 #include "bootstrapconfigmanager.h"
 #include "i_document_db_config_owner.h"
-#include <vespa/searchcore/proton/common/doctypename.h>
+
 #include <vespa/config/retriever/configretriever.h>
 #include <vespa/config/subscription/configuri.h>
+#include <vespa/searchcore/proton/common/doctypename.h>
+
 #include <deque>
 #include <thread>
 
 class FNET_Transport;
 
-namespace document { class DocumentTypeRepo; }
+namespace document {
+class DocumentTypeRepo;
+}
 
 namespace proton {
 
@@ -24,12 +28,12 @@ class IProtonConfigurer;
  * A ProtonConfigFetcher monitors all config in proton and document dbs for change
  * and starts proton reconfiguration if config has been reloaded.
  */
-class ProtonConfigFetcher
-{
+class ProtonConfigFetcher {
 public:
     using BootstrapConfigSP = std::shared_ptr<BootstrapConfig>;
 
-    ProtonConfigFetcher(FNET_Transport & transport, const config::ConfigUri & configUri, IProtonConfigurer &owner, vespalib::duration subscribeTimeout);
+    ProtonConfigFetcher(FNET_Transport& transport, const config::ConfigUri& configUri, IProtonConfigurer& owner,
+                        vespalib::duration subscribeTimeout);
     ~ProtonConfigFetcher();
     /**
      * Get the current config generation.
@@ -53,25 +57,24 @@ private:
     using OldDocumentTypeRepo = std::pair<vespalib::steady_time, std::shared_ptr<const document::DocumentTypeRepo>>;
     using lock_guard = std::lock_guard<std::mutex>;
 
+    FNET_Transport&         _transport;
+    BootstrapConfigManager  _bootstrapConfigManager;
+    config::ConfigRetriever _retriever;
+    IProtonConfigurer&      _owner;
 
-    FNET_Transport          & _transport;
-    BootstrapConfigManager    _bootstrapConfigManager;
-    config::ConfigRetriever   _retriever;
-    IProtonConfigurer       & _owner;
+    mutable std::mutex      _mutex; // Protects maps
+    std::condition_variable _cond;
+    DBManagerMap            _dbManagerMap;
+    bool                    _running;
+    std::thread             _thread;
 
-    mutable std::mutex        _mutex; // Protects maps
-    std::condition_variable   _cond;
-    DBManagerMap              _dbManagerMap;
-    bool                      _running;
-    std::thread               _thread;
-    
     std::deque<OldDocumentTypeRepo>                   _oldDocumentTypeRepos;
     std::shared_ptr<const document::DocumentTypeRepo> _currentDocumentTypeRepo;
 
     void fetchConfigs();
-    void updateDocumentDBConfigs(const BootstrapConfigSP & config, const config::ConfigSnapshot & snapshot);
+    void updateDocumentDBConfigs(const BootstrapConfigSP& config, const config::ConfigSnapshot& snapshot);
     void reconfigure();
-    const config::ConfigKeySet pruneManagerMap(const BootstrapConfigSP & config);
+    const config::ConfigKeySet pruneManagerMap(const BootstrapConfigSP& config);
     void rememberDocumentTypeRepo(std::shared_ptr<const document::DocumentTypeRepo> repo);
 };
 

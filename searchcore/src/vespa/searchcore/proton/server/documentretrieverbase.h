@@ -2,20 +2,20 @@
 
 #pragma once
 
-#include <vespa/searchcore/proton/persistenceengine/i_document_retriever.h>
-#include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/document/fieldvalue/document.h>
-#include <vespa/vespalib/stllike/lrucache_map.h>
+#include <vespa/searchcore/proton/common/doctypename.h>
+#include <vespa/searchcore/proton/persistenceengine/i_document_retriever.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
+#include <vespa/vespalib/stllike/lrucache_map.h>
+
 #include <mutex>
 
 namespace proton {
 
-class DocumentRetrieverBase : public IDocumentRetriever
-{
-    const DocTypeName                &_docTypeName;
-    const document::DocumentTypeRepo &_repo;
-    const IDocumentMetaStoreContext  &_meta_store;
+class DocumentRetrieverBase : public IDocumentRetriever {
+    const DocTypeName&                _docTypeName;
+    const document::DocumentTypeRepo& _repo;
+    const IDocumentMetaStoreContext&  _meta_store;
     const bool                        _can_populate_document_metadata_docid;
 
     using SelectCache = vespalib::lrucache_map<vespalib::LruParam<std::string, CachedSelect::SP>>;
@@ -26,26 +26,23 @@ class DocumentRetrieverBase : public IDocumentRetriever
     const bool             _hasFields;
 
 protected:
-    virtual const search::IAttributeManager * getAttrMgr() const { return nullptr; }
-    const document::DocumentType & getDocumentType() const {
-        return _emptyDoc->getType();
-    }
+    virtual const search::IAttributeManager* getAttrMgr() const { return nullptr; }
+    const document::DocumentType& getDocumentType() const { return _emptyDoc->getType(); }
+
 public:
-    DocumentRetrieverBase(const DocTypeName &docTypeName,
-                          const document::DocumentTypeRepo &repo,
-                          const IDocumentMetaStoreContext &meta_store,
-                          bool hasFields);
+    DocumentRetrieverBase(const DocTypeName& docTypeName, const document::DocumentTypeRepo& repo,
+                          const IDocumentMetaStoreContext& meta_store, bool hasFields);
     ~DocumentRetrieverBase() override;
 
-    const document::DocumentTypeRepo &getDocumentTypeRepo() const override { return _repo; }
+    const document::DocumentTypeRepo& getDocumentTypeRepo() const override { return _repo; }
     const DocTypeName& get_doc_type_name() const noexcept override { return _docTypeName; }
     virtual bool can_populate_document_metadata_docid() const noexcept override;
-    void getBucketMetadata(const storage::spi::Bucket &bucket, search::DocumentMetadata::Vector &result, bool populate_docid) const override;
-    search::DocumentMetadata getDocumentMetadata(const document::DocumentId &id) const override;
-    CachedSelect::SP parseSelect(const std::string &selection) const override;
+    void getBucketMetadata(const storage::spi::Bucket& bucket, search::DocumentMetadata::Vector& result,
+                           bool populate_docid) const override;
+    search::DocumentMetadata getDocumentMetadata(const document::DocumentId& id) const override;
+    CachedSelect::SP parseSelect(const std::string& selection) const override;
     ReadGuard getReadGuard() const override { return _meta_store.getReadGuard(); }
     uint32_t getDocIdLimit() const override { return _meta_store.getReadGuard()->get().getCommittedDocIdLimit(); }
 };
 
-}  // namespace proton
-
+} // namespace proton

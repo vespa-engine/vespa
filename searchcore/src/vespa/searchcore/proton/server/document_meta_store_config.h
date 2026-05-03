@@ -3,7 +3,9 @@
 
 #include <vespa/config-proton.h>
 
-namespace vespa::config::search::core::internal { class InternalProtonType; }
+namespace vespa::config::search::core::internal {
+class InternalProtonType;
+}
 namespace proton {
 
 /**
@@ -27,4 +29,4 @@ public:
     bool operator==(const DocumentMetaStoreConfig& rhs) const;
 };
 
-}
+} // namespace proton
