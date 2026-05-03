@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include "predicate_posting_list.h"
-#include "predicate_interval_store.h"
 #include "predicate_interval.h"
+#include "predicate_interval_store.h"
+#include "predicate_posting_list.h"
 
 namespace search::predicate {
 
@@ -12,16 +12,15 @@ namespace search::predicate {
  * PredicatePostingList implementation for regular interval iterators
  * from PredicateIndex.
  */
-template<typename Iterator>
-class PredicateIntervalPostingList : public PredicatePostingList {
-    const PredicateIntervalStore &_interval_store;
+template <typename Iterator> class PredicateIntervalPostingList : public PredicatePostingList {
+    const PredicateIntervalStore& _interval_store;
     Iterator                      _iterator;
-    const Interval               *_current_interval;
+    const Interval*               _current_interval;
     uint32_t                      _interval_count;
     Interval                      _single_buf;
 
 public:
-    PredicateIntervalPostingList(const PredicateIntervalStore &interval_store, Iterator it);
+    PredicateIntervalPostingList(const PredicateIntervalStore& interval_store, Iterator it);
     bool next(uint32_t doc_id) override;
     VESPA_DLL_LOCAL bool nextInterval() override {
         if (_interval_count == 1) {
@@ -37,18 +36,13 @@ public:
     }
 };
 
-template<typename Iterator>
-PredicateIntervalPostingList<Iterator>::PredicateIntervalPostingList(
-        const PredicateIntervalStore &interval_store, Iterator it)
-        : _interval_store(interval_store),
-          _iterator(it),
-          _current_interval(nullptr),
-          _interval_count(0) {
+template <typename Iterator>
+PredicateIntervalPostingList<Iterator>::PredicateIntervalPostingList(const PredicateIntervalStore& interval_store,
+                                                                     Iterator                      it)
+    : _interval_store(interval_store), _iterator(it), _current_interval(nullptr), _interval_count(0) {
 }
 
-template<typename Iterator>
-bool
-PredicateIntervalPostingList<Iterator>::next(uint32_t doc_id) {
+template <typename Iterator> bool PredicateIntervalPostingList<Iterator>::next(uint32_t doc_id) {
     if (!_iterator.valid()) {
         return false;
     }
@@ -63,4 +57,4 @@ PredicateIntervalPostingList<Iterator>::next(uint32_t doc_id) {
     return true;
 }
 
-}
+} // namespace search::predicate

@@ -18,7 +18,7 @@ public:
     void setChild(size_t number, char delimiter = ':') {
         _buffer.push_back(delimiter);
         char buf[10];
-        int i = 0;
+        int  i = 0;
         while (number > 0) {
             buf[i++] = (number % 10) + '0';
             number /= 10;
@@ -41,4 +41,4 @@ public:
     }
 };
 
-}
+} // namespace search::predicate

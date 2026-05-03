@@ -1,43 +1,43 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "predicate_index.h"
+
 #include "document_features_store_saver.h"
 #include "predicate_hash.h"
 #include "predicate_index_saver.h"
 #include "simple_index_saver.h"
-#include <vespa/searchlib/util/data_buffer_writer.h>
-#include <utility>
-#include <vespa/vespalib/datastore/buffer_type.hpp>
-#include <vespa/vespalib/btree/btree.hpp>
-#include <vespa/vespalib/btree/btreeroot.hpp>
-#include <vespa/vespalib/btree/btreeiterator.hpp>
-#include <vespa/vespalib/btree/btreestore.hpp>
-#include <vespa/vespalib/btree/btreenodeallocator.hpp>
 
+#include <vespa/searchlib/util/data_buffer_writer.h>
+
+#include <vespa/vespalib/btree/btree.hpp>
+#include <vespa/vespalib/btree/btreeiterator.hpp>
+#include <vespa/vespalib/btree/btreenodeallocator.hpp>
+#include <vespa/vespalib/btree/btreeroot.hpp>
+#include <vespa/vespalib/btree/btreestore.hpp>
+#include <vespa/vespalib/datastore/buffer_type.hpp>
+
+#include <utility>
+
+using vespalib::DataBuffer;
 using vespalib::Generation;
 using vespalib::datastore::EntryRef;
-using vespalib::DataBuffer;
 
 namespace search::predicate {
 
-template <>
-void
-PredicateIndex::addPosting<Interval>(uint64_t feature, uint32_t doc_id, EntryRef ref) {
+template <> void PredicateIndex::addPosting<Interval>(uint64_t feature, uint32_t doc_id, EntryRef ref) {
     _interval_index.addPosting(feature, doc_id, ref);
 }
-template <>
-void
-PredicateIndex::addPosting<IntervalWithBounds>(uint64_t feature, uint32_t doc_id, EntryRef ref) {
+template <> void PredicateIndex::addPosting<IntervalWithBounds>(uint64_t feature, uint32_t doc_id, EntryRef ref) {
     _bounds_index.addPosting(feature, doc_id, ref);
 }
 
 template <typename IntervalT>
-void
-PredicateIndex::indexDocumentFeatures(uint32_t doc_id, const PredicateIndex::FeatureMap<IntervalT> &interval_map) {
-    for (const auto &map_entry : interval_map) {
-        uint64_t feature = map_entry.first;
-        const auto &interval_list = map_entry.second;
-        EntryRef ref = _interval_store.insert(interval_list);
+void PredicateIndex::indexDocumentFeatures(uint32_t                                     doc_id,
+                                           const PredicateIndex::FeatureMap<IntervalT>& interval_map) {
+    for (const auto& map_entry : interval_map) {
+        uint64_t    feature = map_entry.first;
+        const auto& interval_list = map_entry.second;
+        EntryRef    ref = _interval_store.insert(interval_list);
         assert(ref.valid());
         addPosting<IntervalT>(feature, doc_id, ref);
         _cache.set(feature, doc_id, true);
@@ -49,15 +49,15 @@ constexpr double THRESHOLD_USE_BIT_VECTOR_CACHE = 0.1;
 
 // PostingSaver that writes intervals from interval store based
 // on the EntryRef that is to be saved.
-template <typename IntervalT>
-class IntervalSaver : public PostingSaver<EntryRef> {
-    const PredicateIntervalStore &_store;
+template <typename IntervalT> class IntervalSaver : public PostingSaver<EntryRef> {
+    const PredicateIntervalStore& _store;
+
 public:
-    explicit IntervalSaver(const PredicateIntervalStore &store) : _store(store) {}
-    void save(const EntryRef &ref, BufferWriter& writer) const override {
-        uint32_t size;
-        IntervalT single_buf;
-        const IntervalT *interval = _store.get(ref, size, &single_buf);
+    explicit IntervalSaver(const PredicateIntervalStore& store) : _store(store) {}
+    void save(const EntryRef& ref, BufferWriter& writer) const override {
+        uint32_t         size;
+        IntervalT        single_buf;
+        const IntervalT* interval = _store.get(ref, size, &single_buf);
         nbo_write<uint16_t>(writer, size);
         for (uint32_t i = 0; i < size; ++i) {
             interval[i].save(writer);
@@ -67,14 +67,14 @@ public:
 
 // PostingDeserializer that writes intervals to interval store and
 // returns an EntryRef to be stored in the PredicateIndex.
-template <typename IntervalT>
-class IntervalDeserializer : public PostingDeserializer<EntryRef> {
-    PredicateIntervalStore &_store;
+template <typename IntervalT> class IntervalDeserializer : public PostingDeserializer<EntryRef> {
+    PredicateIntervalStore& _store;
+
 public:
-    explicit IntervalDeserializer(PredicateIntervalStore &store) : _store(store) {}
-    EntryRef deserialize(DataBuffer &buffer) override {
+    explicit IntervalDeserializer(PredicateIntervalStore& store) : _store(store) {}
+    EntryRef deserialize(DataBuffer& buffer) override {
         std::vector<IntervalT> intervals;
-        size_t size = buffer.readInt16();
+        size_t                 size = buffer.readInt16();
         for (uint32_t i = 0; i < size; ++i) {
             intervals.push_back(IntervalT::deserialize(buffer));
         }
@@ -82,11 +82,10 @@ public:
     }
 };
 
-}  // namespace
+} // namespace
 
-PredicateIndex::PredicateIndex(GenerationHolder &genHolder,
-                               const DocIdLimitProvider &limit_provider,
-                               const SimpleIndexConfig &simple_index_config, uint32_t arity)
+PredicateIndex::PredicateIndex(GenerationHolder& genHolder, const DocIdLimitProvider& limit_provider,
+                               const SimpleIndexConfig& simple_index_config, uint32_t arity)
     : _arity(arity),
       _limit_provider(limit_provider),
       _interval_index(genHolder, limit_provider, simple_index_config),
@@ -94,14 +93,12 @@ PredicateIndex::PredicateIndex(GenerationHolder &genHolder,
       _interval_store(),
       _zero_constraint_docs(),
       _features_store(arity),
-      _cache(genHolder)
-{
+      _cache(genHolder) {
 }
 
-PredicateIndex::PredicateIndex(GenerationHolder &genHolder,
-                               const DocIdLimitProvider &limit_provider,
-                               const SimpleIndexConfig &simple_index_config, DataBuffer &buffer,
-                               SimpleIndexDeserializeObserver<> & observer, uint32_t version)
+PredicateIndex::PredicateIndex(GenerationHolder& genHolder, const DocIdLimitProvider& limit_provider,
+                               const SimpleIndexConfig& simple_index_config, DataBuffer& buffer,
+                               SimpleIndexDeserializeObserver<>& observer, uint32_t version)
     : _arity(0),
       _limit_provider(limit_provider),
       _interval_index(genHolder, limit_provider, simple_index_config),
@@ -109,10 +106,9 @@ PredicateIndex::PredicateIndex(GenerationHolder &genHolder,
       _interval_store(),
       _zero_constraint_docs(),
       _features_store(buffer),
-      _cache(genHolder)
-{
+      _cache(genHolder) {
     _arity = buffer.readInt16();
-    uint32_t zero_constraint_doc_count = buffer.readInt32();
+    uint32_t                   zero_constraint_doc_count = buffer.readInt32();
     typename BTreeSet::Builder builder(_zero_constraint_docs.getAllocator());
     for (size_t i = 0; i < zero_constraint_doc_count; ++i) {
         uint32_t raw_id = buffer.readInt32();
@@ -130,40 +126,31 @@ PredicateIndex::PredicateIndex(GenerationHolder &genHolder,
 
 PredicateIndex::~PredicateIndex() = default;
 
-std::unique_ptr<ISaver>
-PredicateIndex::make_saver() const
-{
-    return std::make_unique<PredicateIndexSaver>(_features_store.make_saver(),
-                                                 _arity,
-                                                 _zero_constraint_docs.getFrozenView(),
-                                                 _interval_index.make_saver(std::make_unique<IntervalSaver<Interval>>(_interval_store)),
-                                                 _bounds_index.make_saver(std::make_unique<IntervalSaver<IntervalWithBounds>>(_interval_store)));
+std::unique_ptr<ISaver> PredicateIndex::make_saver() const {
+    return std::make_unique<PredicateIndexSaver>(
+        _features_store.make_saver(), _arity, _zero_constraint_docs.getFrozenView(),
+        _interval_index.make_saver(std::make_unique<IntervalSaver<Interval>>(_interval_store)),
+        _bounds_index.make_saver(std::make_unique<IntervalSaver<IntervalWithBounds>>(_interval_store)));
 }
 
-void
-PredicateIndex::onDeserializationCompleted() {
+void PredicateIndex::onDeserializationCompleted() {
     _interval_index.promoteOverThresholdVectors();
     _bounds_index.promoteOverThresholdVectors();
 }
 
-void
-PredicateIndex::indexDocument(uint32_t doc_id, const PredicateTreeAnnotations &annotations) {
+void PredicateIndex::indexDocument(uint32_t doc_id, const PredicateTreeAnnotations& annotations) {
     indexDocumentFeatures(doc_id, annotations.interval_map);
     indexDocumentFeatures(doc_id, annotations.bounds_map);
     _features_store.insert(annotations, doc_id);
 }
 
-void
-PredicateIndex::indexEmptyDocument(uint32_t doc_id)
-{
+void PredicateIndex::indexEmptyDocument(uint32_t doc_id) {
     _zero_constraint_docs.insert(doc_id, vespalib::btree::BTreeNoLeafData::_instance);
 }
 
 namespace {
-void
-removeFromIndex(uint64_t feature, uint32_t doc_id, SimpleIndex<EntryRef> &index,
-                PredicateIntervalStore &interval_store)
-{
+void removeFromIndex(uint64_t feature, uint32_t doc_id, SimpleIndex<EntryRef>& index,
+                     PredicateIntervalStore& interval_store) {
     auto result = index.removeFromPostingList(feature, doc_id);
     if (result.second) { // Posting was removed
         auto ref = result.first;
@@ -176,7 +163,7 @@ class DocIdIterator : public PopulateInterface::Iterator {
 public:
     using BTreeIterator = SimpleIndex<EntryRef>::BTreeIterator;
 
-    explicit DocIdIterator(BTreeIterator it) : _it(std::move(it)) { }
+    explicit DocIdIterator(BTreeIterator it) : _it(std::move(it)) {}
     int32_t getNext() override {
         if (_it.valid()) {
             uint32_t docId = _it.getKey();
@@ -185,14 +172,14 @@ public:
         }
         return -1;
     }
+
 private:
     BTreeIterator _it;
 };
 
-}  // namespace
+} // namespace
 
-void
-PredicateIndex::removeDocument(uint32_t doc_id) {
+void PredicateIndex::removeDocument(uint32_t doc_id) {
     _zero_constraint_docs.remove(doc_id);
 
     auto features = _features_store.get(doc_id);
@@ -206,16 +193,14 @@ PredicateIndex::removeDocument(uint32_t doc_id) {
     _features_store.remove(doc_id);
 }
 
-void
-PredicateIndex::commit() {
+void PredicateIndex::commit() {
     _interval_index.commit();
     _bounds_index.commit();
     _zero_constraint_docs.getAllocator().freeze();
     _features_store.commit();
 }
 
-void
-PredicateIndex::reclaim_memory(Generation oldest_used_gen) {
+void PredicateIndex::reclaim_memory(Generation oldest_used_gen) {
     _interval_index.reclaim_memory(oldest_used_gen);
     _bounds_index.reclaim_memory(oldest_used_gen);
     _interval_store.reclaim_memory(oldest_used_gen);
@@ -223,8 +208,7 @@ PredicateIndex::reclaim_memory(Generation oldest_used_gen) {
     _features_store.reclaim_memory(oldest_used_gen);
 }
 
-void
-PredicateIndex::assign_generation(Generation current_gen) {
+void PredicateIndex::assign_generation(Generation current_gen) {
     _interval_index.assign_generation(current_gen);
     _bounds_index.assign_generation(current_gen);
     _interval_store.assign_generation(current_gen);
@@ -232,8 +216,7 @@ PredicateIndex::assign_generation(Generation current_gen) {
     _features_store.assign_generation(current_gen);
 }
 
-vespalib::MemoryUsage
-PredicateIndex::getMemoryUsage() const {
+vespalib::MemoryUsage PredicateIndex::getMemoryUsage() const {
     // TODO Include bit vector cache memory usage
     vespalib::MemoryUsage combined;
     combined.merge(_interval_index.getMemoryUsage());
@@ -244,9 +227,7 @@ PredicateIndex::getMemoryUsage() const {
     return combined;
 }
 
-PopulateInterface::Iterator::UP
-PredicateIndex::lookup(uint64_t key) const
-{
+PopulateInterface::Iterator::UP PredicateIndex::lookup(uint64_t key) const {
     auto dictIterator = _interval_index.lookup(key);
     if (dictIterator.valid()) {
         auto it = _interval_index.getBTreePostingList(dictIterator.getData());
@@ -257,21 +238,17 @@ PredicateIndex::lookup(uint64_t key) const
     return {};
 }
 
-void
-PredicateIndex::populateIfNeeded(size_t doc_id_limit)
-{
-    if ( _cache.needPopulation()) {
+void PredicateIndex::populateIfNeeded(size_t doc_id_limit) {
+    if (_cache.needPopulation()) {
         _cache.populate(doc_id_limit, *this);
     }
 }
 
-BitVectorCache::KeySet
-PredicateIndex::lookupCachedSet(const BitVectorCache::KeyAndCountSet & keys) const
-{
+BitVectorCache::KeySet PredicateIndex::lookupCachedSet(const BitVectorCache::KeyAndCountSet& keys) const {
     // Don't count documents using bit vector if combined length is less than threshold
     uint64_t total_length = 0;
-    auto cached_keys = _cache.lookupCachedSet(keys);
-    for (const auto &p : keys) {
+    auto     cached_keys = _cache.lookupCachedSet(keys);
+    for (const auto& p : keys) {
         if (cached_keys.find(p.first) != cached_keys.end()) {
             total_length += p.second;
         }
@@ -283,17 +260,12 @@ PredicateIndex::lookupCachedSet(const BitVectorCache::KeyAndCountSet & keys) con
     return cached_keys;
 }
 
-void
-PredicateIndex::computeCountVector(BitVectorCache::KeySet & keys, std::span<uint8_t> v) const
-{
+void PredicateIndex::computeCountVector(BitVectorCache::KeySet& keys, std::span<uint8_t> v) const {
     _cache.computeCountVector(keys, v);
 }
 
-
-void
-PredicateIndex::adjustDocIdLimit(uint32_t docId)
-{
+void PredicateIndex::adjustDocIdLimit(uint32_t docId) {
     _cache.adjustDocIdLimit(docId);
 }
 
-}
+} // namespace search::predicate

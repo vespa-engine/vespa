@@ -11,9 +11,9 @@ using ZeroConstraintDocs = BTreeSet::FrozenView;
 
 struct Constants {
     static const std::string z_star_attribute_name;
-    static const uint64_t         z_star_hash;
+    static const uint64_t    z_star_hash;
     static const std::string z_star_compressed_attribute_name;
-    static const uint64_t         z_star_compressed_hash;
+    static const uint64_t    z_star_compressed_hash;
 };
 
 struct DocIdLimitProvider {
@@ -22,4 +22,4 @@ struct DocIdLimitProvider {
     virtual ~DocIdLimitProvider() = default;
 };
 
-}
+} // namespace search::predicate
