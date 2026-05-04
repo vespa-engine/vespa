@@ -1043,12 +1043,12 @@ TEST(IteratorBenchmark, analyze_AND_plan_variants_ENN) {
         run_plan("term-alone", term_factory, hr);
         run_plan("enn-alone", enn_factory, hr);
         double t_term_first = run_plan("AND[term,enn]", and_(term_factory, enn_factory), hr);
-        double t_enn_first  = run_plan("AND[enn,term]", and_(enn_factory, term_factory), hr);
+        double t_enn_first = run_plan("AND[enn,term]", and_(enn_factory, term_factory), hr);
 
-        double best    = std::min(t_term_first, t_enn_first);
-        double worst   = std::max(t_term_first, t_enn_first);
+        double best = std::min(t_term_first, t_enn_first);
+        double worst = std::max(t_term_first, t_enn_first);
         double penalty = (best > 0) ? (worst / best) : 0.0;
-        max_penalty    = std::max(max_penalty, penalty);
+        max_penalty = std::max(max_penalty, penalty);
         std::println("  worst/best ratio={:.4f}", penalty);
     }
     std::println("max worst-plan penalty={:.4f}", max_penalty);
