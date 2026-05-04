@@ -1,26 +1,25 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "job_tracked_flush_target.h"
+
 #include "job_tracked_flush_task.h"
 
-using searchcorespi::IFlushTarget;
 using searchcorespi::FlushTask;
+using searchcorespi::IFlushTarget;
 
 namespace proton {
 
-JobTrackedFlushTarget::JobTrackedFlushTarget(std::shared_ptr<IJobTracker> tracker,
+JobTrackedFlushTarget::JobTrackedFlushTarget(std::shared_ptr<IJobTracker>  tracker,
                                              std::shared_ptr<IFlushTarget> target)
     : IFlushTarget(target->getName(), target->getType(), target->getComponent()),
       _tracker(std::move(tracker)),
-      _target(std::move(target))
-{
+      _target(std::move(target)) {
 }
 
 JobTrackedFlushTarget::~JobTrackedFlushTarget() = default;
 
-FlushTask::UP
-JobTrackedFlushTarget::initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token)
-{
+FlushTask::UP JobTrackedFlushTarget::initFlush(SerialNum                            currentSerial,
+                                               std::shared_ptr<search::IFlushToken> flush_token) {
     _tracker->start();
     FlushTask::UP targetTask = _target->initFlush(currentSerial, std::move(flush_token));
     _tracker->end();
@@ -30,15 +29,11 @@ JobTrackedFlushTarget::initFlush(SerialNum currentSerial, std::shared_ptr<search
     return FlushTask::UP();
 }
 
-uint64_t
-JobTrackedFlushTarget::get_approx_bytes_to_read_from_disk() const noexcept
-{
+uint64_t JobTrackedFlushTarget::get_approx_bytes_to_read_from_disk() const noexcept {
     return _target->get_approx_bytes_to_read_from_disk();
 }
 
-std::chrono::steady_clock::duration
-JobTrackedFlushTarget::last_flush_duration() const noexcept
-{
+std::chrono::steady_clock::duration JobTrackedFlushTarget::last_flush_duration() const noexcept {
     return _target->last_flush_duration();
 }
 

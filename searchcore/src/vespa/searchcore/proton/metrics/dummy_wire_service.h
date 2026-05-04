@@ -18,4 +18,4 @@ struct DummyWireService : public MetricsWireService {
     void cleanRankProfiles(DocumentDBTaggedMetrics&) override;
 };
 
-}
+} // namespace proton

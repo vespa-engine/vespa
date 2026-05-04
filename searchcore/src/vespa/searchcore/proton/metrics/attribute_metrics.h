@@ -11,8 +11,7 @@ namespace proton {
  * Class containing metrics for the attribute aspect of multiple fields, i.e.
  * attribute vectors.
  */
-class AttributeMetrics : public FieldMetrics<AttributeMetricsEntry>
-{
+class AttributeMetrics : public FieldMetrics<AttributeMetricsEntry> {
 public:
     AttributeMetrics(metrics::MetricSet* parent);
     ~AttributeMetrics();

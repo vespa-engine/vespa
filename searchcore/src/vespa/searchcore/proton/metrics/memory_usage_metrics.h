@@ -4,7 +4,9 @@
 
 #include <vespa/metrics/common/memory_usage_metrics.h>
 
-namespace vespalib { class MemoryUsage; }
+namespace vespalib {
+class MemoryUsage;
+}
 
 namespace proton {
 

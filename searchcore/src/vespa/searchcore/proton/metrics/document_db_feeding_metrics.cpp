@@ -5,11 +5,9 @@
 namespace proton {
 
 DocumentDBFeedingMetrics::DocumentDBFeedingMetrics(metrics::MetricSet* parent)
-    : MetricSet("feeding", {}, "feeding metrics in a document database", parent),
-      commit(this)
-{
+    : MetricSet("feeding", {}, "feeding metrics in a document database", parent), commit(this) {
 }
 
 DocumentDBFeedingMetrics::~DocumentDBFeedingMetrics() = default;
 
-}
+} // namespace proton

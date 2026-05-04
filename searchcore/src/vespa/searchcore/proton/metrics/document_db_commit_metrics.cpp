@@ -7,10 +7,9 @@ namespace proton {
 DocumentDBCommitMetrics::DocumentDBCommitMetrics(metrics::MetricSet* parent)
     : MetricSet("commit", {}, "commit metrics for feeding in a document database", parent),
       operations("operations", {}, "Number of operations included in a commit", this),
-      latency("latency", {}, "Latency for commit", this)
-{
+      latency("latency", {}, "Latency for commit", this) {
 }
 
 DocumentDBCommitMetrics::~DocumentDBCommitMetrics() = default;
 
-}
+} // namespace proton

@@ -10,8 +10,7 @@ namespace proton {
 /**
  * Usage metrics for various resources in this search engine.
  */
-struct ResourceUsageMetrics : metrics::MetricSet
-{
+struct ResourceUsageMetrics : metrics::MetricSet {
     struct CpuUtilMetrics : metrics::MetricSet {
         metrics::DoubleValueMetric setup;
         metrics::DoubleValueMetric read;
@@ -19,7 +18,7 @@ struct ResourceUsageMetrics : metrics::MetricSet
         metrics::DoubleValueMetric compact;
         metrics::DoubleValueMetric other;
 
-        CpuUtilMetrics(metrics::MetricSet *parent);
+        CpuUtilMetrics(metrics::MetricSet* parent);
         ~CpuUtilMetrics();
     };
 
@@ -48,7 +47,7 @@ struct ResourceUsageMetrics : metrics::MetricSet
     metrics::LongValueMetric    mallocArena;
     CpuUtilMetrics              cpu_util;
 
-    ResourceUsageMetrics(metrics::MetricSet *parent);
+    ResourceUsageMetrics(metrics::MetricSet* parent);
     ~ResourceUsageMetrics();
 };
 

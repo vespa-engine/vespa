@@ -9,11 +9,10 @@ namespace {
 const std::string entry_name("attribute");
 const std::string entry_description("Metrics for a given attribute vector");
 
-}
+} // namespace
 
 AttributeMetricsEntry::AttributeMetricsEntry(const std::string& field_name)
-    : FieldMetricsEntry(entry_name, field_name, entry_description)
-{
+    : FieldMetricsEntry(entry_name, field_name, entry_description) {
 }
 
 AttributeMetricsEntry::~AttributeMetricsEntry() = default;

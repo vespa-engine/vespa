@@ -12,8 +12,7 @@ class ExecutorThreadingServiceStats;
  * Metrics for executor threading service, i.e. tasks
  * accepted/rejected, queue len for each executor in a document db.
  */
-struct ExecutorThreadingServiceMetrics : metrics::MetricSet
-{
+struct ExecutorThreadingServiceMetrics : metrics::MetricSet {
     ExecutorMetrics master;
     ExecutorMetrics index;
     ExecutorMetrics summary;
@@ -21,9 +20,9 @@ struct ExecutorThreadingServiceMetrics : metrics::MetricSet
     ExecutorMetrics indexFieldWriter;
     ExecutorMetrics attributeFieldWriter;
 
-    void update(const ExecutorThreadingServiceStats &stats);
-    ExecutorThreadingServiceMetrics(const std::string &name, metrics::MetricSet *parent);
+    void update(const ExecutorThreadingServiceStats& stats);
+    ExecutorThreadingServiceMetrics(const std::string& name, metrics::MetricSet* parent);
     ~ExecutorThreadingServiceMetrics();
 };
 
-}
+} // namespace proton

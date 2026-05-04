@@ -7,23 +7,16 @@ namespace proton {
 DummyWireService::DummyWireService() = default;
 DummyWireService::~DummyWireService() = default;
 
-void
-DummyWireService::set_attributes(AttributeMetrics&, std::vector<std::string>)
-{
+void DummyWireService::set_attributes(AttributeMetrics&, std::vector<std::string>) {
 }
 
-void
-DummyWireService::set_index_fields(IndexMetrics&, std::vector<std::string>)
-{
+void DummyWireService::set_index_fields(IndexMetrics&, std::vector<std::string>) {
 }
 
-void
-DummyWireService::addRankProfile(DocumentDBTaggedMetrics&, const std::string&, size_t)
-{
+void DummyWireService::addRankProfile(DocumentDBTaggedMetrics&, const std::string&, size_t) {
 }
 
-void DummyWireService::cleanRankProfiles(DocumentDBTaggedMetrics&)
-{
+void DummyWireService::cleanRankProfiles(DocumentDBTaggedMetrics&) {
 }
 
-}
+} // namespace proton

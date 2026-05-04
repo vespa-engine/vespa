@@ -5,8 +5,8 @@
 #include "cache_metrics.h"
 #include "executor_metrics.h"
 #include "resource_usage_metrics.h"
-#include "trans_log_server_metrics.h"
 #include "sessionmanager_metrics.h"
+#include "trans_log_server_metrics.h"
 
 namespace proton {
 
@@ -18,8 +18,7 @@ namespace proton {
  * For instance, all document db metrics use the dimension "documenttype":"mydoctype"
  * instead of using the document type name as part of metric names.
  */
-struct ContentProtonMetrics : metrics::MetricSet
-{
+struct ContentProtonMetrics : metrics::MetricSet {
     struct ProtonExecutorMetrics : metrics::MetricSet {
 
         ExecutorMetrics proton;
@@ -27,10 +26,10 @@ struct ContentProtonMetrics : metrics::MetricSet
         ExecutorMetrics match;
         ExecutorMetrics docsum;
         ExecutorMetrics shared;
-        ExecutorMetrics warmup; //TODO not used anymore, remove
+        ExecutorMetrics warmup; // TODO not used anymore, remove
         ExecutorMetrics field_writer;
 
-        explicit ProtonExecutorMetrics(metrics::MetricSet *parent);
+        explicit ProtonExecutorMetrics(metrics::MetricSet* parent);
         ~ProtonExecutorMetrics() override;
     };
 
@@ -38,7 +37,7 @@ struct ContentProtonMetrics : metrics::MetricSet
         SessionManagerMetrics search;
         SessionManagerMetrics grouping;
 
-        explicit SessionCacheMetrics(metrics::MetricSet *parent);
+        explicit SessionCacheMetrics(metrics::MetricSet* parent);
         ~SessionCacheMetrics() override;
     };
 
@@ -52,21 +51,21 @@ struct ContentProtonMetrics : metrics::MetricSet
             ~CacheMetrics() override;
         };
 
-        CacheMetrics     cache;
+        CacheMetrics cache;
 
         explicit IndexMetrics(metrics::MetricSet* parent);
         ~IndexMetrics() override;
     };
 
     metrics::LongValueMetric configGeneration;
-    TransLogServerMetrics transactionLog;
-    ResourceUsageMetrics resourceUsage;
-    ProtonExecutorMetrics executor;
-    SessionCacheMetrics sessionCache;
-    IndexMetrics        index;
+    TransLogServerMetrics    transactionLog;
+    ResourceUsageMetrics     resourceUsage;
+    ProtonExecutorMetrics    executor;
+    SessionCacheMetrics      sessionCache;
+    IndexMetrics             index;
 
     ContentProtonMetrics();
     ~ContentProtonMetrics() override;
 };
 
-}
+} // namespace proton
