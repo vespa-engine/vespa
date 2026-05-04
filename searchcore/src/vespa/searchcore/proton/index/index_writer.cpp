@@ -30,15 +30,17 @@ void IndexWriter::put(search::SerialNum serialNum, const document::Document& doc
     ns_log::Logger::LogLevel level = getDebugLevel(lid, doc.getId());
     if (LOG_WOULD_VLOG(level)) {
         std::string s1(doc.toString(true));
+        std::string idString = doc.getId().toString();
         VLOG(level, "Handle put: serial(%" PRIu64 "), docId(%s), lid(%u), document(sz=%ld)", serialNum,
-             doc.getId().toString().c_str(), lid, s1.size());
+             idString.c_str(), lid, s1.size());
         const size_t chunksize(30000);
+        const char *dataStart = s1.data();
         for (size_t accum(0); accum < s1.size(); accum += chunksize) {
             VLOG(level,
                  "Handle put continued...: serial(%" PRIu64
                  "), docId(%s), lid(%u), document(sz=%ld{%ld, %ld}) {\n%.30000s\n}",
-                 serialNum, doc.getId().toString().c_str() + accum, lid, s1.size(), accum,
-                 std::min(accum + chunksize, s1.size()), s1.c_str());
+                 serialNum, idString.c_str(), lid, s1.size(), accum,
+                 std::min(accum + chunksize, s1.size()), dataStart + accum);
         }
     }
     _mgr->putDocument(lid, doc, serialNum, on_write_done);
