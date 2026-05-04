@@ -11,6 +11,7 @@
 #include <vespa/searchlib/queryeval/nearest_neighbor_blueprint.h>
 
 #include <format>
+#include <limits>
 #include <random>
 
 using search::attribute::BasicType;
@@ -55,8 +56,9 @@ EnnBlueprintFactory::~EnnBlueprintFactory() = default;
 std::unique_ptr<Blueprint> EnnBlueprintFactory::make_blueprint() {
     auto      calc = std::make_unique<tensor::DistanceCalculator>(*_attr->asTensorAttribute(), *_query);
     FieldSpec field("nn", 0, 0);
-    return std::make_unique<NearestNeighborBlueprint>(field, std::move(calc), _target_hits, false,
-                                                      NearestNeighborBlueprint::HnswParams{});
+    NearestNeighborBlueprint::HnswParams hnsw_params{};
+    hnsw_params.distance_threshold = std::numeric_limits<double>::max();
+    return std::make_unique<NearestNeighborBlueprint>(field, std::move(calc), _target_hits, false, hnsw_params);
 }
 
 std::string EnnBlueprintFactory::get_name(Blueprint& blueprint) const {

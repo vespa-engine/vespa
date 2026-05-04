@@ -1020,19 +1020,38 @@ TEST(IteratorBenchmark, btree_vs_array_nonstrict_crossover) {
     }
 }
 
-TEST(IteratorBenchmark, spec_factory_test) {
-    auto tree = and_(term(int32_fs, num_docs, 0, 0.01), term(str_fs, num_docs, 0, 0.3),
-                     enn({.num_docs = num_docs, .target_hits = 100}));
+TEST(IteratorBenchmark, analyze_AND_plan_variants_ENN) {
+    auto enn_factory = enn({.num_docs = num_docs, .target_hits = 100});
+    auto term_hit_ratios = gen_ratios(0.01, 10.0, 7);
 
-    auto res = benchmark_search(*tree, num_docs + 1,
-                                /*strict*/ true,
-                                /*force_strict*/ false,
-                                /*unpack_iterator*/ false,
-                                /*filter_hit_ratio*/ 1.0, PlanningAlgo::Cost);
+    auto run_plan = [&](const std::string& tag, FactoryPtr root, double term_hit_ratio) {
+        auto res = benchmark_search(*root, num_docs + 1, /*strict*/ true, /*force_strict*/ false,
+                                    /*unpack_iterator*/ false, /*filter_hit_ratio*/ 1.0, PlanningAlgo::Order);
+        std::println("  {:>14} | term_hr={:>8.5f} | hits={:>8} | seeks={:>8} | time_ms={:>8.3f} | plan={}", tag,
+                     term_hit_ratio, res.hits, res.seeks, res.time_ms, res.blueprint_name);
+        return res.time_ms;
+    };
 
-    std::cout << tree->get_name(/*unused*/ *tree->make_blueprint()) << "\n";
-    std::cout << "time_ms=" << res.time_ms << " seeks=" << res.seeks << " hits=" << res.hits
-              << " actual_cost=" << res.actual_cost << "\n";
+    std::println("Plan variants for AND(term{{int32_fs}}, ENN{{num_docs={},target_hits=100,dim=2}})", num_docs);
+    std::println("Single-child baselines + 2 AND child orderings, all forced via PlanningAlgo::Order.");
+
+    double max_penalty = 0.0;
+    for (double hr : term_hit_ratios) {
+        auto term_factory = term(int32_fs, num_docs, 0, hr);
+
+        std::println("----- term_hit_ratio={} -----", hr);
+        run_plan("term-alone", term_factory, hr);
+        run_plan("enn-alone", enn_factory, hr);
+        double t_tf = run_plan("AND[term,enn]", and_(term_factory, enn_factory), hr);
+        double t_ef = run_plan("AND[enn,term]", and_(enn_factory, term_factory), hr);
+
+        double best = std::min(t_tf, t_ef);
+        double worst = std::max(t_tf, t_ef);
+        double penalty = (best > 0) ? (worst / best) : 0.0;
+        max_penalty = std::max(max_penalty, penalty);
+        std::println("  worst/best ratio={:.4f}", penalty);
+    }
+    std::println("max worst-plan penalty={:.4f}", max_penalty);
 }
 
 int main(int argc, char** argv) {
