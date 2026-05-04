@@ -4,29 +4,24 @@
 
 namespace search::queryeval {
 
-WeakAndPriorityQueue::WeakAndPriorityQueue(uint32_t scoresToTrack) :
-    WeakAndHeap(scoresToTrack),
-    _bestScores()
-{ }
+WeakAndPriorityQueue::WeakAndPriorityQueue(uint32_t scoresToTrack) : WeakAndHeap(scoresToTrack), _bestScores() {
+}
 
 WeakAndPriorityQueue::~WeakAndPriorityQueue() = default;
 
-std::unique_ptr<WeakAndPriorityQueue>
-WeakAndPriorityQueue::createHeap(uint32_t scoresToTrack, bool thread_safe) {
+std::unique_ptr<WeakAndPriorityQueue> WeakAndPriorityQueue::createHeap(uint32_t scoresToTrack, bool thread_safe) {
     if (thread_safe) {
         return std::make_unique<queryeval::SharedWeakAndPriorityQueue>(scoresToTrack);
     }
     return std::make_unique<WeakAndPriorityQueue>(scoresToTrack);
 }
 
-void
-WeakAndPriorityQueue::adjust(score_t *begin, score_t *end)
-{
+void WeakAndPriorityQueue::adjust(score_t* begin, score_t* end) {
     if (getScoresToTrack() == 0) {
         return;
     }
 
-    for (score_t *itr = begin; itr != end; ++itr) {
+    for (score_t* itr = begin; itr != end; ++itr) {
         score_t score = *itr;
         if (!is_full()) {
             _bestScores.push(score);
@@ -41,16 +36,14 @@ WeakAndPriorityQueue::adjust(score_t *begin, score_t *end)
 }
 
 SharedWeakAndPriorityQueue::SharedWeakAndPriorityQueue(uint32_t scoresToTrack)
-    : WeakAndPriorityQueue(scoresToTrack),
-      _lock()
-{ }
+    : WeakAndPriorityQueue(scoresToTrack), _lock() {
+}
 
 SharedWeakAndPriorityQueue::~SharedWeakAndPriorityQueue() = default;
 
-void
-SharedWeakAndPriorityQueue::adjust(score_t *begin, score_t *end) {
+void SharedWeakAndPriorityQueue::adjust(score_t* begin, score_t* end) {
     std::lock_guard guard(_lock);
     WeakAndPriorityQueue::adjust(begin, end);
 }
 
-}
+} // namespace search::queryeval

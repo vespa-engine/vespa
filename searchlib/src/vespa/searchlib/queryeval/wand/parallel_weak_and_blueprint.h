@@ -3,9 +3,11 @@
 
 #include "wand_parts.h"
 #include "weak_and_heap.h"
-#include <vespa/searchlib/queryeval/blueprint.h>
+
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
+#include <vespa/searchlib/queryeval/blueprint.h>
+
 #include <memory>
 #include <vector>
 
@@ -14,8 +16,7 @@ namespace search::queryeval {
 /**
  * Blueprint for the parallel weak and search operator.
  */
-class ParallelWeakAndBlueprint : public ComplexLeafBlueprint
-{
+class ParallelWeakAndBlueprint : public ComplexLeafBlueprint {
 private:
     using score_t = wand::score_t;
 
@@ -29,14 +30,13 @@ private:
     MatchingPhase                         _matching_phase;
 
 public:
-    ParallelWeakAndBlueprint(const ParallelWeakAndBlueprint &) = delete;
-    ParallelWeakAndBlueprint &operator=(const ParallelWeakAndBlueprint &) = delete;
-    ParallelWeakAndBlueprint(FieldSpecBase field, uint32_t scoresToTrack,
-                             score_t scoreThreshold, double thresholdBoostFactor,
-                             bool thread_safe);
+    ParallelWeakAndBlueprint(const ParallelWeakAndBlueprint&) = delete;
+    ParallelWeakAndBlueprint& operator=(const ParallelWeakAndBlueprint&) = delete;
+    ParallelWeakAndBlueprint(FieldSpecBase field, uint32_t scoresToTrack, score_t scoreThreshold,
+                             double thresholdBoostFactor, bool thread_safe);
     ~ParallelWeakAndBlueprint() override;
 
-    const WeakAndHeap &getScores() const { return *_scores; }
+    const WeakAndHeap& getScores() const { return *_scores; }
     score_t getScoreThreshold() const { return _scoreThreshold; }
     double getThresholdBoostFactor() const { return _thresholdBoostFactor; }
 
@@ -47,7 +47,7 @@ public:
 
     // Used by create visitor
     void reserve(size_t num_children);
-    void addTerm(Blueprint::UP term, int32_t weight, HitEstimate & estimate);
+    void addTerm(Blueprint::UP term, int32_t weight, HitEstimate& estimate);
     void complete(HitEstimate estimate) {
         setEstimate(estimate);
         set_tree_size(_terms.size() + 1);
@@ -55,13 +55,13 @@ public:
 
     void sort(InFlow in_flow) override;
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
-    
-    SearchIterator::UP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda) const override;
+
+    SearchIterator::UP createLeafSearch(const fef::TermFieldMatchDataArray& tfmda) const override;
     std::unique_ptr<SearchIterator> createFilterSearchImpl(FilterConstraint constraint) const override;
-    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    void fetchPostings(const ExecuteInfo &execInfo) override;
+    void visitMembers(vespalib::ObjectVisitor& visitor) const override;
+    void fetchPostings(const ExecuteInfo& execInfo) override;
     bool always_needs_unpack() const override;
     void set_matching_phase(MatchingPhase matching_phase) noexcept override;
 };
 
-}
+} // namespace search::queryeval

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "get_weight_from_node.h"
+
 #include <vespa/searchlib/query/tree/intermediatenodes.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/templatetermvisitor.h>
@@ -18,23 +19,18 @@ struct WeightExtractor : public TemplateTermVisitor<WeightExtractor, SimpleQuery
 
     WeightExtractor() : weight(0) {}
 
-    template <class TermType>
-    void visitTerm(TermType &n) {
-        weight = n.getWeight();
-    }
+    template <class TermType> void visitTerm(TermType& n) { weight = n.getWeight(); }
 
     // Treat Equiv nodes as terms.
-    void visit(search::query::Equiv &n) override { visitTerm(n); }
+    void visit(search::query::Equiv& n) override { visitTerm(n); }
 };
 
-} // namespace search::queryeval::<unnamed>
+} // namespace
 
-Weight
-getWeightFromNode(const Node &node)
-{
+Weight getWeightFromNode(const Node& node) {
     WeightExtractor extractor;
-    const_cast<Node &>(node).accept(extractor);
+    const_cast<Node&>(node).accept(extractor);
     return extractor.weight;
 }
 
-}
+} // namespace search::queryeval

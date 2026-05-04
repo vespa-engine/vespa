@@ -7,13 +7,11 @@ namespace search::queryeval {
 
 const ExecuteInfo ExecuteInfo::FULL(1.0, Doom::never(), vespalib::ThreadBundle::trivial());
 
-ExecuteInfo::ExecuteInfo() noexcept
-    : ExecuteInfo(1.0, Doom::never(), vespalib::ThreadBundle::trivial())
-{ }
+ExecuteInfo::ExecuteInfo() noexcept : ExecuteInfo(1.0, Doom::never(), vespalib::ThreadBundle::trivial()) {
+}
 
-ExecuteInfo
-ExecuteInfo::createForTest(double hitRate) noexcept {
+ExecuteInfo ExecuteInfo::createForTest(double hitRate) noexcept {
     return createForTest(hitRate, Doom::never());
 }
 
-}
+} // namespace search::queryeval

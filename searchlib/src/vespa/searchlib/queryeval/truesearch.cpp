@@ -4,25 +4,18 @@
 
 namespace search::queryeval {
 
-void
-TrueSearch::doSeek(uint32_t docid)
-{
+void TrueSearch::doSeek(uint32_t docid) {
     setDocId(docid);
 }
 
-void
-TrueSearch::doUnpack(uint32_t docid)
-{
+void TrueSearch::doUnpack(uint32_t docid) {
     _tfmd.resetOnlyDocId(docid);
 }
 
-TrueSearch::TrueSearch(fef::TermFieldMatchData & tfmd) :
-    SearchIterator(),
-    _tfmd(tfmd)
-{
+TrueSearch::TrueSearch(fef::TermFieldMatchData& tfmd) : SearchIterator(), _tfmd(tfmd) {
     _tfmd.resetOnlyDocId(0);
 }
 
 TrueSearch::~TrueSearch() = default;
 
-}
+} // namespace search::queryeval

@@ -6,18 +6,14 @@ namespace search::queryeval {
 
 RankSearch::~RankSearch() = default;
 
-void
-RankSearch::doSeek(uint32_t docid)
-{
-    SearchIterator & firstChild(**getChildren().begin());
+void RankSearch::doSeek(uint32_t docid) {
+    SearchIterator& firstChild(**getChildren().begin());
     if (firstChild.seek(docid)) {
         setDocId(docid);
     }
 }
 
-void
-RankSearch::get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids)
-{
+void RankSearch::get_element_ids(uint32_t docid, std::vector<uint32_t>& element_ids) {
     auto& children = getChildren();
     if (children.empty()) {
         return;
@@ -29,8 +25,7 @@ namespace {
 /**
  * A simple implementation of the strict Rank search operation.
  **/
-class RankSearchStrict : public RankSearch
-{
+class RankSearchStrict : public RankSearch {
 protected:
     void doSeek(uint32_t docid) override;
     UP andWith(UP filter, uint32_t estimate) override;
@@ -44,28 +39,23 @@ public:
      *
      * @param children the search objects we are rank'ing
      **/
-    RankSearchStrict(Children children) : RankSearch(std::move(children)) { }
+    RankSearchStrict(Children children) : RankSearch(std::move(children)) {}
     ~RankSearchStrict() override;
 };
 
 RankSearchStrict::~RankSearchStrict() = default;
 
-SearchIterator::UP
-RankSearchStrict::andWith(UP filter, uint32_t estimate)
-{
+SearchIterator::UP RankSearchStrict::andWith(UP filter, uint32_t estimate) {
     return getChildren()[0]->andWith(std::move(filter), estimate);
 }
 
-void
-RankSearchStrict::doSeek(uint32_t docid)
-{
-    SearchIterator & firstChild(**getChildren().begin());
+void RankSearchStrict::doSeek(uint32_t docid) {
+    SearchIterator& firstChild(**getChildren().begin());
     setDocId(firstChild.seek(docid) ? docid : firstChild.getDocId());
 }
-}  // namespace
+} // namespace
 
-SearchIterator::UP
-RankSearch::create(ChildrenIterators children, bool strict) {
+SearchIterator::UP RankSearch::create(ChildrenIterators children, bool strict) {
     if (strict) {
         return UP(new RankSearchStrict(std::move(children)));
     } else {
@@ -73,4 +63,4 @@ RankSearch::create(ChildrenIterators children, bool strict) {
     }
 }
 
-}
+} // namespace search::queryeval
