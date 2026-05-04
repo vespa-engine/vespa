@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "distributormetricsset.h"
+
 #include <vespa/storageapi/messageapi/returncode.h>
+
 #include <vespa/metrics/summetric.hpp>
 
 namespace storage::distributor {
@@ -10,27 +12,36 @@ using metrics::MetricSet;
 
 PersistenceFailuresMetricSet::PersistenceFailuresMetricSet(MetricSet* owner)
     : MetricSet("failures", {}, "Detailed failure statistics", owner),
-      sum("total", {{"logdefault"},{"yamasdefault"}}, "Sum of all failures", this),
+      sum("total", {{"logdefault"}, {"yamasdefault"}}, "Sum of all failures", this),
       notready("notready", {}, "The number of operations discarded because distributor was not ready", this),
-      notconnected("notconnected", {}, "The number of operations discarded because there were no available storage nodes to send to", this),
-      wrongdistributor("wrongdistributor", {}, "The number of operations discarded because they were sent to the wrong distributor", this),
+      notconnected("notconnected", {},
+                   "The number of operations discarded because there were no available storage nodes to send to",
+                   this),
+      wrongdistributor("wrongdistributor", {},
+                       "The number of operations discarded because they were sent to the wrong distributor", this),
       safe_time_not_reached("safe_time_not_reached", {},
                             "The number of operations that were transiently"
                             " failed due to them arriving before the safe "
                             "time point for bucket ownership handovers has "
-                            "passed", this),
+                            "passed",
+                            this),
       storagefailure("storagefailure", {}, "The number of operations that failed in storage", this),
-      timeout("timeout", {}, "The number of operations that failed because the operation timed out towards storage", this),
+      timeout("timeout", {}, "The number of operations that failed because the operation timed out towards storage",
+              this),
       busy("busy", {}, "The number of messages from storage that failed because the storage node was busy", this),
       inconsistent_bucket("inconsistent_bucket", {},
                           "The number of operations failed due to buckets "
-                          "being in an inconsistent state or not found", this),
+                          "being in an inconsistent state or not found",
+                          this),
       notfound("notfound", {}, "The number of operations that failed because the document did not exist", this),
-      concurrent_mutations("concurrent_mutations", {}, "The number of operations that were transiently failed due "
-                           "to a mutating operation already being in progress for its document ID", this),
-      test_and_set_failed("test_and_set_failed", {}, "The number of mutating operations that failed because "
-                          "they specified a test-and-set condition that did not match the existing document", this)
-{
+      concurrent_mutations("concurrent_mutations", {},
+                           "The number of operations that were transiently failed due "
+                           "to a mutating operation already being in progress for its document ID",
+                           this),
+      test_and_set_failed("test_and_set_failed", {},
+                          "The number of mutating operations that failed because "
+                          "they specified a test-and-set condition that did not match the existing document",
+                          this) {
     sum.addMetricToSum(notready);
     sum.addMetricToSum(notconnected);
     sum.addMetricToSum(wrongdistributor);
@@ -51,45 +62,40 @@ PersistenceFailuresMetricSet::PersistenceFailuresMetricSet(MetricSet* owner)
 
 PersistenceFailuresMetricSet::~PersistenceFailuresMetricSet() = default;
 
-MetricSet *
-PersistenceFailuresMetricSet::clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
-                                    MetricSet* owner, bool includeUnused) const
-{
+MetricSet* PersistenceFailuresMetricSet::clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
+                                               MetricSet* owner, bool includeUnused) const {
     if (copyType == INACTIVE) {
         return MetricSet::clone(ownerList, INACTIVE, owner, includeUnused);
     }
     return dynamic_cast<PersistenceFailuresMetricSet*>(
-            (new PersistenceFailuresMetricSet(owner))->assignValues(*this));
+        (new PersistenceFailuresMetricSet(owner))->assignValues(*this));
 }
 
 PersistenceOperationMetricSet::PersistenceOperationMetricSet(const std::string& name, MetricSet* owner)
     : MetricSet(name, {}, vespalib::make_string("Statistics for the %s command", name.c_str()), owner),
-      latency("latency", {{"yamasdefault"}}, vespalib::make_string("The average latency of %s operations", name.c_str()), this),
-      ok("ok", {{"logdefault"},{"yamasdefault"}}, vespalib::make_string("The number of successful %s operations performed", name.c_str()), this),
-      failures(this)
-{ }
+      latency("latency", {{"yamasdefault"}},
+              vespalib::make_string("The average latency of %s operations", name.c_str()), this),
+      ok("ok", {{"logdefault"}, {"yamasdefault"}},
+         vespalib::make_string("The number of successful %s operations performed", name.c_str()), this),
+      failures(this) {
+}
 
 PersistenceOperationMetricSet::PersistenceOperationMetricSet(const std::string& name)
-    : PersistenceOperationMetricSet(name, nullptr)
-{
+    : PersistenceOperationMetricSet(name, nullptr) {
 }
 
 PersistenceOperationMetricSet::~PersistenceOperationMetricSet() = default;
 
-MetricSet *
-PersistenceOperationMetricSet::clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
-                                     MetricSet* owner, bool includeUnused) const
-{   
+MetricSet* PersistenceOperationMetricSet::clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
+                                                MetricSet* owner, bool includeUnused) const {
     if (copyType == INACTIVE) {
         return MetricSet::clone(ownerList, INACTIVE, owner, includeUnused);
     }
     return dynamic_cast<PersistenceOperationMetricSet*>(
-            (new PersistenceOperationMetricSet(getName(), owner))->assignValues(*this));
+        (new PersistenceOperationMetricSet(getName(), owner))->assignValues(*this));
 }
 
-void
-PersistenceOperationMetricSet::updateFromResult(const api::ReturnCode& result)
-{
+void PersistenceOperationMetricSet::updateFromResult(const api::ReturnCode& result) {
     if (result.success()) {
         ok.inc();
     } else if (result.getResult() == api::ReturnCode::WRONG_DISTRIBUTION) {
@@ -111,4 +117,4 @@ PersistenceOperationMetricSet::updateFromResult(const api::ReturnCode& result)
     }
 }
 
-} // storage::distributor
+} // namespace storage::distributor

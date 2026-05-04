@@ -3,9 +3,12 @@
 #pragma once
 
 #include "storage_node_up_states.h"
+
 #include <vespa/storageapi/defs.h>
 
-namespace storage { class DistributorConfiguration; }
+namespace storage {
+class DistributorConfiguration;
+}
 
 namespace storage::distributor {
 
@@ -24,4 +27,4 @@ public:
     virtual const DistributorConfiguration& distributor_config() const noexcept = 0;
 };
 
-}
+} // namespace storage::distributor

@@ -1,15 +1,19 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "externaloperationhandler.h"
+
 #include "bucket_space_distribution_context.h"
 #include "crypto_uuid_generator.h"
-#include "top_level_distributor.h"
 #include "distributor_bucket_space.h"
-#include "externaloperationhandler.h"
 #include "node_supported_features_repo.h"
 #include "operation_sequencer.h"
+#include "top_level_distributor.h"
+
 #include <vespa/document/base/documentid.h>
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/document/util/feed_reject_helper.h>
 #include <vespa/storage/common/reindexing_constants.h>
+#include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storage/distributor/operations/external/getoperation.h>
 #include <vespa/storage/distributor/operations/external/putoperation.h>
 #include <vespa/storage/distributor/operations/external/read_for_write_visitor_operation.h>
@@ -19,27 +23,23 @@
 #include <vespa/storage/distributor/operations/external/statbucketoperation.h>
 #include <vespa/storage/distributor/operations/external/twophaseupdateoperation.h>
 #include <vespa/storage/distributor/operations/external/visitoroperation.h>
-#include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageapi/message/stat.h>
 
 #include <vespa/log/log.h>
-#include <vespa/document/bucket/fixed_bucket_spaces.h>
 
 LOG_SETUP(".distributor.external_operation_handler");
 
 namespace storage::distributor {
 
 class DirectDispatchSender : public DistributorStripeMessageSender {
-    DistributorNodeContext& _node_ctx;
+    DistributorNodeContext&   _node_ctx;
     NonTrackingMessageSender& _msg_sender;
+
 public:
-    DirectDispatchSender(DistributorNodeContext& node_ctx,
-                         NonTrackingMessageSender& msg_sender)
-        : _node_ctx(node_ctx),
-          _msg_sender(msg_sender)
-    {}
+    DirectDispatchSender(DistributorNodeContext& node_ctx, NonTrackingMessageSender& msg_sender)
+        : _node_ctx(node_ctx), _msg_sender(msg_sender) {}
     ~DirectDispatchSender() override = default;
 
     void sendCommand(const std::shared_ptr<api::StorageCommand>& cmd) override {
@@ -48,12 +48,8 @@ public:
     void sendReply(const std::shared_ptr<api::StorageReply>& reply) override {
         _msg_sender.send_up_without_tracking(reply);
     }
-    int getDistributorIndex() const override {
-        return _node_ctx.node_index();
-    }
-    const ClusterContext & cluster_context() const override {
-        return _node_ctx;
-    }
+    int getDistributorIndex() const override { return _node_ctx.node_index(); }
+    const ClusterContext& cluster_context() const override { return _node_ctx; }
     PendingMessageTracker& getPendingMessageTracker() override {
         abort(); // Never called by the messages using this component.
     }
@@ -68,15 +64,11 @@ public:
     }
 };
 
-ExternalOperationHandler::ExternalOperationHandler(DistributorNodeContext& node_ctx,
-                                                   DistributorStripeOperationContext& op_ctx,
-                                                   DistributorMetricSet& metrics,
-                                                   ChainedMessageSender& msg_sender,
-                                                   OperationSequencer& operation_sequencer,
-                                                   NonTrackingMessageSender& non_tracking_sender,
-                                                   DocumentSelectionParser& parser,
-                                                   const MaintenanceOperationGenerator& gen,
-                                                   OperationOwner& operation_owner)
+ExternalOperationHandler::ExternalOperationHandler(
+    DistributorNodeContext& node_ctx, DistributorStripeOperationContext& op_ctx, DistributorMetricSet& metrics,
+    ChainedMessageSender& msg_sender, OperationSequencer& operation_sequencer,
+    NonTrackingMessageSender& non_tracking_sender, DocumentSelectionParser& parser,
+    const MaintenanceOperationGenerator& gen, OperationOwner& operation_owner)
     : _node_ctx(node_ctx),
       _op_ctx(op_ctx),
       _metrics(metrics),
@@ -91,15 +83,12 @@ ExternalOperationHandler::ExternalOperationHandler(DistributorNodeContext& node_
       _non_main_thread_ops_owner(*_direct_dispatch_sender, _node_ctx.clock()),
       _uuid_generator(std::make_unique<CryptoUuidGenerator>()),
       _concurrent_gets_enabled(false),
-      _use_weak_internal_read_consistency_for_gets(false)
-{
+      _use_weak_internal_read_consistency_for_gets(false) {
 }
 
 ExternalOperationHandler::~ExternalOperationHandler() = default;
 
-bool
-ExternalOperationHandler::handleMessage(const std::shared_ptr<api::StorageMessage>& msg, Operation::SP& op)
-{
+bool ExternalOperationHandler::handleMessage(const std::shared_ptr<api::StorageMessage>& msg, Operation::SP& op) {
     _op.reset();
     bool retVal = msg->callHandler(*this, msg);
     op = std::move(_op); // Don't maintain any strong refs in _op after we've passed it on.
@@ -112,21 +101,17 @@ void ExternalOperationHandler::close_pending() {
     _non_main_thread_ops_owner.onClose();
 }
 
-api::ReturnCode
-ExternalOperationHandler::makeSafeTimeRejectionResult(TimePoint unsafeTime)
-{
+api::ReturnCode ExternalOperationHandler::makeSafeTimeRejectionResult(TimePoint unsafeTime) {
     std::ostringstream ss;
-    auto now_sec(std::chrono::duration_cast<std::chrono::seconds>(unsafeTime.time_since_epoch()));
-    auto future_sec(std::chrono::duration_cast<std::chrono::seconds>(_rejectFeedBeforeTimeReached.time_since_epoch()));
+    auto               now_sec(std::chrono::duration_cast<std::chrono::seconds>(unsafeTime.time_since_epoch()));
+    auto               future_sec(
+        std::chrono::duration_cast<std::chrono::seconds>(_rejectFeedBeforeTimeReached.time_since_epoch()));
     ss << "Operation received at time " << now_sec.count()
-       << ", which is before bucket ownership transfer safe time of "
-       << future_sec.count();
+       << ", which is before bucket ownership transfer safe time of " << future_sec.count();
     return api::ReturnCode(api::ReturnCode::STALE_TIMESTAMP, ss.str());
 }
 
-bool
-ExternalOperationHandler::checkSafeTimeReached(api::StorageCommand& cmd)
-{
+bool ExternalOperationHandler::checkSafeTimeReached(api::StorageCommand& cmd) {
     vespalib::system_time now = _node_ctx.clock().getSystemTime();
     if (now < _rejectFeedBeforeTimeReached) {
         api::StorageReply::UP reply(cmd.makeReply());
@@ -145,14 +130,13 @@ void ExternalOperationHandler::bounce_with_result(api::StorageCommand& cmd, cons
 
 void ExternalOperationHandler::bounce_with_feed_blocked(api::StorageCommand& cmd) {
     const auto& feed_block = _op_ctx.cluster_state_bundle().feed_block();
-    bounce_with_result(cmd, api::ReturnCode(api::ReturnCode::NO_SPACE,
-                                            "External feed is blocked due to resource exhaustion: " +
-                                                    feed_block->description()));
+    bounce_with_result(
+        cmd, api::ReturnCode(api::ReturnCode::NO_SPACE,
+                             "External feed is blocked due to resource exhaustion: " + feed_block->description()));
 }
 
-void ExternalOperationHandler::bounce_with_wrong_distribution(api::StorageCommand& cmd,
-                                                              const lib::ClusterState& cluster_state)
-{
+void ExternalOperationHandler::bounce_with_wrong_distribution(api::StorageCommand&     cmd,
+                                                              const lib::ClusterState& cluster_state) {
     // Distributor ownership is equal across bucket spaces, so always send back default space state.
     // This also helps client avoid getting confused by possibly observing different actual
     // (derived) state strings for global/non-global document types for the same state version.
@@ -161,8 +145,8 @@ void ExternalOperationHandler::bounce_with_wrong_distribution(api::StorageComman
     // TODO consider NOT_READY instead of BUSY once we're sure this won't cause any other issues.
     if (cluster_state.getVersion() != 0) {
         auto cluster_state_str = cluster_state.toString();
-        LOG(debug, "Got %s with wrong distribution, sending back state '%s'",
-            cmd.toString().c_str(), cluster_state_str.c_str());
+        LOG(debug, "Got %s with wrong distribution, sending back state '%s'", cmd.toString().c_str(),
+            cluster_state_str.c_str());
         bounce_with_result(cmd, api::ReturnCode(api::ReturnCode::WRONG_DISTRIBUTION, cluster_state_str));
     } else { // Only valid for empty startup state
         LOG(debug, "Got %s with wrong distribution, but no cluster state activated yet. Sending back BUSY",
@@ -172,36 +156,32 @@ void ExternalOperationHandler::bounce_with_wrong_distribution(api::StorageComman
 }
 
 void ExternalOperationHandler::bounce_with_wrong_distribution(api::StorageCommand& cmd) {
-    const auto& cluster_state = _op_ctx.bucket_space_repo().get(document::FixedBucketSpaces::default_space()).getClusterState();
+    const auto& cluster_state =
+        _op_ctx.bucket_space_repo().get(document::FixedBucketSpaces::default_space()).getClusterState();
     bounce_with_wrong_distribution(cmd, cluster_state);
 }
 
-void ExternalOperationHandler::bounce_with_busy_during_state_transition(
-        api::StorageCommand& cmd,
-        const lib::ClusterState& current_state,
-        const lib::ClusterState& pending_state)
-{
+void ExternalOperationHandler::bounce_with_busy_during_state_transition(api::StorageCommand&     cmd,
+                                                                        const lib::ClusterState& current_state,
+                                                                        const lib::ClusterState& pending_state) {
     auto status_str = vespalib::make_string("Currently pending cluster state transition"
                                             " from version %u to %u",
                                             current_state.getVersion(), pending_state.getVersion());
 
     api::StorageReply::UP reply(cmd.makeReply());
-    api::ReturnCode ret(api::ReturnCode::BUSY, status_str);
+    api::ReturnCode       ret(api::ReturnCode::BUSY, status_str);
     reply->setResult(ret);
     _msg_sender.sendUp(std::shared_ptr<api::StorageMessage>(reply.release()));
 }
 
-bool
-ExternalOperationHandler::checkTimestampMutationPreconditions(api::StorageCommand& cmd,
-                                                              const document::BucketId &bucketId,
-                                                              PersistenceOperationMetricSet& persistenceMetrics)
-{
-    auto &bucket_space(_op_ctx.bucket_space_repo().get(cmd.getBucket().getBucketSpace()));
-    auto bucket_ownership_flags = bucket_space.get_bucket_ownership_flags(bucketId);
+bool ExternalOperationHandler::checkTimestampMutationPreconditions(
+    api::StorageCommand& cmd, const document::BucketId& bucketId, PersistenceOperationMetricSet& persistenceMetrics) {
+    auto& bucket_space(_op_ctx.bucket_space_repo().get(cmd.getBucket().getBucketSpace()));
+    auto  bucket_ownership_flags = bucket_space.get_bucket_ownership_flags(bucketId);
     if (!bucket_ownership_flags.owned_in_current_state()) {
         document::Bucket bucket(cmd.getBucket().getBucketSpace(), bucketId);
-        LOG(debug, "Distributor manager received %s, bucket %s with wrong distribution",
-            cmd.toString().c_str(), bucket.toString().c_str());
+        LOG(debug, "Distributor manager received %s, bucket %s with wrong distribution", cmd.toString().c_str(),
+            bucket.toString().c_str());
         bounce_with_wrong_distribution(cmd);
         persistenceMetrics.failures.wrongdistributor.inc();
         return false;
@@ -223,12 +203,9 @@ ExternalOperationHandler::checkTimestampMutationPreconditions(api::StorageComman
     return true;
 }
 
-std::shared_ptr<api::StorageMessage>
-ExternalOperationHandler::make_concurrent_mutation_rejection_reply(api::StorageCommand& cmd,
-                                                                   const document::DocumentId& doc_id,
-                                                                   const SequencingHandle& blocked_handle,
-                                                                   PersistenceOperationMetricSet& persistence_metrics)
-{
+std::shared_ptr<api::StorageMessage> ExternalOperationHandler::make_concurrent_mutation_rejection_reply(
+    api::StorageCommand& cmd, const document::DocumentId& doc_id, const SequencingHandle& blocked_handle,
+    PersistenceOperationMetricSet& persistence_metrics) {
     std::string err_msg;
     if (blocked_handle.is_blocked_by_pending_operation()) {
         err_msg = vespalib::make_string("A mutating operation for document '%s' is already in progress",
@@ -249,17 +226,13 @@ bool ExternalOperationHandler::allowMutation(const SequencingHandle& handle) con
 }
 
 template <typename Func>
-void ExternalOperationHandler::bounce_or_invoke_read_only_op(
-        api::StorageCommand& cmd,
-        const document::Bucket& bucket,
-        PersistenceOperationMetricSet& metrics,
-        Func func)
-{
-    auto &bucket_space(_op_ctx.bucket_space_repo().get(bucket.getBucketSpace()));
-    auto bucket_ownership_flags = bucket_space.get_bucket_ownership_flags(bucket.getBucketId());
+void ExternalOperationHandler::bounce_or_invoke_read_only_op(api::StorageCommand& cmd, const document::Bucket& bucket,
+                                                             PersistenceOperationMetricSet& metrics, Func func) {
+    auto& bucket_space(_op_ctx.bucket_space_repo().get(bucket.getBucketSpace()));
+    auto  bucket_ownership_flags = bucket_space.get_bucket_ownership_flags(bucket.getBucketId());
     if (!bucket_ownership_flags.owned_in_current_state()) {
-        LOG(debug, "Distributor manager received %s, bucket %s with wrong distribution",
-            cmd.toString().c_str(), bucket.toString().c_str());
+        LOG(debug, "Distributor manager received %s, bucket %s with wrong distribution", cmd.toString().c_str(),
+            bucket.toString().c_str());
         bounce_with_wrong_distribution(cmd);
         metrics.failures.wrongdistributor.inc();
         return;
@@ -303,14 +276,14 @@ bool put_is_from_reindexing_visitor(const api::PutCommand& cmd) {
 // Precondition: put_is_from_reindexing_visitor(cmd) == true
 std::string extract_reindexing_token(const api::PutCommand& cmd) {
     const auto& tas_str = cmd.getCondition().getSelection();
-    auto eq_idx = tas_str.find_first_of('=');
+    auto        eq_idx = tas_str.find_first_of('=');
     if (eq_idx != std::string::npos) {
         return tas_str.substr(eq_idx + 1);
     }
     return "";
 }
 
-}
+} // namespace
 
 bool ExternalOperationHandler::message_size_is_above_put_or_update_limit(uint32_t msg_size) const noexcept {
     return (msg_size > _op_ctx.distributor_config().max_document_operation_message_size_bytes());
@@ -318,9 +291,10 @@ bool ExternalOperationHandler::message_size_is_above_put_or_update_limit(uint32_
 
 void ExternalOperationHandler::reject_as_oversized_message(api::StorageCommand& cmd) {
     const uint32_t limit = _op_ctx.distributor_config().max_document_operation_message_size_bytes();
-    std::string msg = vespalib::make_string("Message size (%u bytes) exceeds maximum configured limit (%u bytes), "
-                                            "see https://docs.vespa.ai/en/reference/services/content.html#max-document-size for how to configure",
-                                            cmd.getApproxByteSize(), limit);
+    std::string    msg = vespalib::make_string(
+        "Message size (%u bytes) exceeds maximum configured limit (%u bytes), "
+           "see https://docs.vespa.ai/en/reference/services/content.html#max-document-size for how to configure",
+        cmd.getApproxByteSize(), limit);
     // TODO increment a metric
     bounce_with_result(cmd, api::ReturnCode(api::ReturnCode::REJECTED, std::move(msg)));
 }
@@ -335,8 +309,9 @@ bool ExternalOperationHandler::onPut(const std::shared_ptr<api::PutCommand>& cmd
         // We let reindexing puts through since they're sent by the content nodes and not a
         // regular external client, and the document was already part of the cluster corpus.
         const uint32_t limit = _op_ctx.distributor_config().max_document_operation_message_size_bytes();
-        LOG(warning, "Accepted an oversized reindexing Put for document '%s' "
-                     "(put was %u bytes, configured limit is %u)",
+        LOG(warning,
+            "Accepted an oversized reindexing Put for document '%s' "
+            "(put was %u bytes, configured limit is %u)",
             cmd->getDocumentId().toString().c_str(), cmd->getApproxByteSize(), limit);
     }
     if (_op_ctx.cluster_state_bundle().block_feed_in_cluster()) [[unlikely]] {
@@ -345,7 +320,9 @@ bool ExternalOperationHandler::onPut(const std::shared_ptr<api::PutCommand>& cmd
     }
 
     auto& metrics = getMetrics().puts;
-    if (!checkTimestampMutationPreconditions(*cmd, _op_ctx.make_split_bit_constrained_bucket_id(cmd->getDocumentId()), metrics)) {
+    if (!checkTimestampMutationPreconditions(*cmd, _op_ctx.make_split_bit_constrained_bucket_id(cmd->getDocumentId()),
+                                             metrics))
+    {
         return true;
     }
     normalize_tas_condition(*cmd);
@@ -355,17 +332,19 @@ bool ExternalOperationHandler::onPut(const std::shared_ptr<api::PutCommand>& cmd
     }
 
     const auto bucket_space = cmd->getBucket().getBucketSpace();
-    auto handle = _operation_sequencer.try_acquire(bucket_space, cmd->getDocumentId());
-    bool allow = allowMutation(handle);
+    auto       handle = _operation_sequencer.try_acquire(bucket_space, cmd->getDocumentId());
+    bool       allow = allowMutation(handle);
     if (is_from_reindexing) {
         auto expect_token = extract_reindexing_token(*cmd);
         if (!allow && handle.is_blocked_by_bucket()) {
             if (handle.is_bucket_blocked_with_token(expect_token)) {
-                cmd->setCondition(documentapi::TestAndSetCondition()); // Must clear TaS or the backend will reject the op
+                cmd->setCondition(
+                    documentapi::TestAndSetCondition()); // Must clear TaS or the backend will reject the op
                 allow = true;
             } else {
-                bounce_with_result(*cmd, api::ReturnCode(api::ReturnCode::TEST_AND_SET_CONDITION_FAILED,
-                                                         "Expected bucket lock token did not match actual lock token"));
+                bounce_with_result(*cmd,
+                                   api::ReturnCode(api::ReturnCode::TEST_AND_SET_CONDITION_FAILED,
+                                                   "Expected bucket lock token did not match actual lock token"));
                 return true;
             }
         } else {
@@ -376,10 +355,8 @@ bool ExternalOperationHandler::onPut(const std::shared_ptr<api::PutCommand>& cmd
         }
     }
     if (allow) {
-        _op = std::make_shared<PutOperation>(_node_ctx, _op_ctx,
-                                             _op_ctx.bucket_space_repo().get(bucket_space),
-                                             std::move(cmd),
-                                             getMetrics().puts, getMetrics().put_condition_probes,
+        _op = std::make_shared<PutOperation>(_node_ctx, _op_ctx, _op_ctx.bucket_space_repo().get(bucket_space),
+                                             std::move(cmd), getMetrics().puts, getMetrics().put_condition_probes,
                                              std::move(handle));
     } else {
         _msg_sender.sendUp(make_concurrent_mutation_rejection_reply(*cmd, cmd->getDocumentId(), handle, metrics));
@@ -387,7 +364,6 @@ bool ExternalOperationHandler::onPut(const std::shared_ptr<api::PutCommand>& cmd
 
     return true;
 }
-
 
 bool ExternalOperationHandler::onUpdate(const std::shared_ptr<api::UpdateCommand>& cmd) {
     if (message_size_is_above_put_or_update_limit(cmd->getApproxByteSize())) [[unlikely]] {
@@ -402,7 +378,9 @@ bool ExternalOperationHandler::onUpdate(const std::shared_ptr<api::UpdateCommand
     }
 
     auto& metrics = getMetrics().updates;
-    if (!checkTimestampMutationPreconditions(*cmd, _op_ctx.make_split_bit_constrained_bucket_id(cmd->getDocumentId()), metrics)) {
+    if (!checkTimestampMutationPreconditions(*cmd, _op_ctx.make_split_bit_constrained_bucket_id(cmd->getDocumentId()),
+                                             metrics))
+    {
         return true;
     }
     normalize_tas_condition(*cmd);
@@ -411,11 +389,11 @@ bool ExternalOperationHandler::onUpdate(const std::shared_ptr<api::UpdateCommand
         cmd->setTimestamp(_op_ctx.generate_unique_timestamp());
     }
     const auto bucket_space = cmd->getBucket().getBucketSpace();
-    auto handle = _operation_sequencer.try_acquire(bucket_space, cmd->getDocumentId());
+    auto       handle = _operation_sequencer.try_acquire(bucket_space, cmd->getDocumentId());
     if (allowMutation(handle)) {
         _op = std::make_shared<TwoPhaseUpdateOperation>(_node_ctx, _op_ctx, _parser,
-                                                        _op_ctx.bucket_space_repo().get(bucket_space),
-                                                        std::move(cmd), getMetrics(), std::move(handle));
+                                                        _op_ctx.bucket_space_repo().get(bucket_space), std::move(cmd),
+                                                        getMetrics(), std::move(handle));
     } else {
         _msg_sender.sendUp(make_concurrent_mutation_rejection_reply(*cmd, cmd->getDocumentId(), handle, metrics));
     }
@@ -423,10 +401,11 @@ bool ExternalOperationHandler::onUpdate(const std::shared_ptr<api::UpdateCommand
     return true;
 }
 
-
 bool ExternalOperationHandler::onRemove(const std::shared_ptr<api::RemoveCommand>& cmd) {
     auto& metrics = getMetrics().removes;
-    if (!checkTimestampMutationPreconditions(*cmd, _op_ctx.make_split_bit_constrained_bucket_id(cmd->getDocumentId()), metrics)) {
+    if (!checkTimestampMutationPreconditions(*cmd, _op_ctx.make_split_bit_constrained_bucket_id(cmd->getDocumentId()),
+                                             metrics))
+    {
         return true;
     }
     normalize_tas_condition(*cmd);
@@ -435,9 +414,9 @@ bool ExternalOperationHandler::onRemove(const std::shared_ptr<api::RemoveCommand
         cmd->setTimestamp(_op_ctx.generate_unique_timestamp());
     }
     const auto bucket_space = cmd->getBucket().getBucketSpace();
-    auto handle = _operation_sequencer.try_acquire(bucket_space, cmd->getDocumentId());
+    auto       handle = _operation_sequencer.try_acquire(bucket_space, cmd->getDocumentId());
     if (allowMutation(handle)) {
-        auto &distributorBucketSpace(_op_ctx.bucket_space_repo().get(bucket_space));
+        auto& distributorBucketSpace(_op_ctx.bucket_space_repo().get(bucket_space));
 
         _op = std::make_shared<RemoveOperation>(_node_ctx, _op_ctx, distributorBucketSpace, std::move(cmd),
                                                 getMetrics().removes, getMetrics().remove_condition_probes,
@@ -459,22 +438,23 @@ bool ExternalOperationHandler::onRemoveLocation(const std::shared_ptr<api::Remov
         return true;
     }
 
-    _op = std::make_shared<RemoveLocationOperation>(_node_ctx, _op_ctx, _parser,
-                                                    _op_ctx.bucket_space_repo().get(cmd->getBucket().getBucketSpace()),
-                                                    std::move(cmd), getMetrics().removelocations);
+    _op = std::make_shared<RemoveLocationOperation>(
+        _node_ctx, _op_ctx, _parser, _op_ctx.bucket_space_repo().get(cmd->getBucket().getBucketSpace()),
+        std::move(cmd), getMetrics().removelocations);
     return true;
 }
 
 api::InternalReadConsistency ExternalOperationHandler::desired_get_read_consistency() const noexcept {
-    return (use_weak_internal_read_consistency_for_gets()
-            ? api::InternalReadConsistency::Weak
-            : api::InternalReadConsistency::Strong);
+    return (use_weak_internal_read_consistency_for_gets() ? api::InternalReadConsistency::Weak
+                                                          : api::InternalReadConsistency::Strong);
 }
 
-std::shared_ptr<Operation> ExternalOperationHandler::try_generate_get_operation(const std::shared_ptr<api::GetCommand>& cmd) {
-    document::Bucket bucket(cmd->getBucket().getBucketSpace(), _op_ctx.make_split_bit_constrained_bucket_id(cmd->getDocumentId()));
-    auto& metrics = getMetrics().gets;
-    auto snapshot = _op_ctx.read_snapshot_for_bucket(bucket);
+std::shared_ptr<Operation>
+ExternalOperationHandler::try_generate_get_operation(const std::shared_ptr<api::GetCommand>& cmd) {
+    document::Bucket bucket(cmd->getBucket().getBucketSpace(),
+                            _op_ctx.make_split_bit_constrained_bucket_id(cmd->getDocumentId()));
+    auto&            metrics = getMetrics().gets;
+    auto             snapshot = _op_ctx.read_snapshot_for_bucket(bucket);
     if (!snapshot.is_routable()) {
         const auto& ctx = snapshot.context();
         if (ctx.has_pending_state_transition()) {
@@ -490,8 +470,7 @@ std::shared_ptr<Operation> ExternalOperationHandler::try_generate_get_operation(
     const auto* space_repo = snapshot.bucket_space_repo();
     assert(space_repo != nullptr);
     return std::make_shared<GetOperation>(_node_ctx, space_repo->get(bucket.getBucketSpace()),
-                                          snapshot.steal_read_guard(), cmd, metrics,
-                                          desired_get_read_consistency());
+                                          snapshot.steal_read_guard(), cmd, metrics, desired_get_read_consistency());
 }
 
 bool ExternalOperationHandler::onGet(const std::shared_ptr<api::GetCommand>& cmd) {
@@ -513,29 +492,32 @@ bool ExternalOperationHandler::onGetBucketList(const std::shared_ptr<api::GetBuc
     bounce_or_invoke_read_only_op(*cmd, cmd->getBucket(), metrics, [&](auto& bucket_space_repo) {
         auto& bucket_space = bucket_space_repo.get(cmd->getBucket().getBucketSpace());
         auto& bucket_database = bucket_space.getBucketDatabase();
-        _op = std::make_shared<StatBucketListOperation>(bucket_database, _operationGenerator, _node_ctx.node_index(), cmd);
+        _op = std::make_shared<StatBucketListOperation>(bucket_database, _operationGenerator, _node_ctx.node_index(),
+                                                        cmd);
     });
     return true;
 }
 
 bool ExternalOperationHandler::onCreateVisitor(const std::shared_ptr<api::CreateVisitorCommand>& cmd) {
     // TODO same handling as Gets (VisitorOperation needs to change)
-    const auto& config(_op_ctx.distributor_config());
-    VisitorOperation::Config visitorConfig(config.getMinBucketsPerVisitor(), config.getMaxVisitorsPerNodePerClientVisitor());
-    auto &distributorBucketSpace(_op_ctx.bucket_space_repo().get(cmd->getBucket().getBucketSpace()));
-    auto visit_op = std::make_shared<VisitorOperation>(_node_ctx, _op_ctx, distributorBucketSpace, cmd, visitorConfig, getMetrics().visits);
+    const auto&              config(_op_ctx.distributor_config());
+    VisitorOperation::Config visitorConfig(config.getMinBucketsPerVisitor(),
+                                           config.getMaxVisitorsPerNodePerClientVisitor());
+    auto& distributorBucketSpace(_op_ctx.bucket_space_repo().get(cmd->getBucket().getBucketSpace()));
+    auto visit_op = std::make_shared<VisitorOperation>(_node_ctx, _op_ctx, distributorBucketSpace, cmd, visitorConfig,
+                                                       getMetrics().visits);
     if (visit_op->is_read_for_write()) {
-        _op = std::make_shared<ReadForWriteVisitorOperationStarter>(std::move(visit_op), _operation_sequencer,
-                                                                    _distributor_operation_owner,
-                                                                    _op_ctx.pending_message_tracker(),
-                                                                    *_uuid_generator);
+        _op = std::make_shared<ReadForWriteVisitorOperationStarter>(
+            std::move(visit_op), _operation_sequencer, _distributor_operation_owner,
+            _op_ctx.pending_message_tracker(), *_uuid_generator);
     } else {
         _op = std::move(visit_op);
     }
     return true;
 }
 
-bool ExternalOperationHandler::try_handle_message_outside_main_thread(const std::shared_ptr<api::StorageMessage>& msg) {
+bool ExternalOperationHandler::try_handle_message_outside_main_thread(
+    const std::shared_ptr<api::StorageMessage>& msg) {
     const auto type_id = msg->getType().getId();
     if (type_id == api::MessageType::GET_ID) {
         // Only do this check for Get _requests_ to avoid the following case:
@@ -565,4 +547,4 @@ bool ExternalOperationHandler::try_handle_message_outside_main_thread(const std:
     return false;
 }
 
-}
+} // namespace storage::distributor

@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/storage/bucketdb/bucketdatabase.h>
+
 #include <memory>
 
 namespace storage::distributor {
@@ -26,17 +27,20 @@ class DistributorBucketSpaceRepo;
  */
 class OperationRoutingSnapshot {
     std::shared_ptr<const BucketSpaceDistributionContext> _context;
-    std::shared_ptr<BucketDatabase::ReadGuard> _read_guard;
-    const DistributorBucketSpaceRepo* _bucket_space_repo;
+    std::shared_ptr<BucketDatabase::ReadGuard>            _read_guard;
+    const DistributorBucketSpaceRepo*                     _bucket_space_repo;
+
 public:
     OperationRoutingSnapshot(std::shared_ptr<const BucketSpaceDistributionContext> context,
-                             std::shared_ptr<BucketDatabase::ReadGuard> read_guard,
-                             const DistributorBucketSpaceRepo* bucket_space_repo);
+                             std::shared_ptr<BucketDatabase::ReadGuard>            read_guard,
+                             const DistributorBucketSpaceRepo*                     bucket_space_repo);
 
-    static OperationRoutingSnapshot make_not_routable_in_state(std::shared_ptr<const BucketSpaceDistributionContext> context);
-    static OperationRoutingSnapshot make_routable_with_guard(std::shared_ptr<const BucketSpaceDistributionContext> context,
-                                                             std::shared_ptr<BucketDatabase::ReadGuard> read_guard,
-                                                             const DistributorBucketSpaceRepo& bucket_space_repo);
+    static OperationRoutingSnapshot
+    make_not_routable_in_state(std::shared_ptr<const BucketSpaceDistributionContext> context);
+    static OperationRoutingSnapshot
+    make_routable_with_guard(std::shared_ptr<const BucketSpaceDistributionContext> context,
+                             std::shared_ptr<BucketDatabase::ReadGuard>            read_guard,
+                             const DistributorBucketSpaceRepo&                     bucket_space_repo);
 
     OperationRoutingSnapshot(const OperationRoutingSnapshot&) noexcept = default;
     OperationRoutingSnapshot& operator=(const OperationRoutingSnapshot&) noexcept = default;
@@ -46,15 +50,9 @@ public:
     ~OperationRoutingSnapshot();
 
     const BucketSpaceDistributionContext& context() const noexcept { return *_context; }
-    std::shared_ptr<BucketDatabase::ReadGuard> steal_read_guard() noexcept {
-        return std::move(_read_guard);
-    }
-    bool is_routable() const noexcept {
-        return (_read_guard.get() != nullptr);
-    }
-    const DistributorBucketSpaceRepo* bucket_space_repo() const noexcept {
-        return _bucket_space_repo;
-    }
+    std::shared_ptr<BucketDatabase::ReadGuard> steal_read_guard() noexcept { return std::move(_read_guard); }
+    bool is_routable() const noexcept { return (_read_guard.get() != nullptr); }
+    const DistributorBucketSpaceRepo* bucket_space_repo() const noexcept { return _bucket_space_repo; }
 };
 
-}
+} // namespace storage::distributor

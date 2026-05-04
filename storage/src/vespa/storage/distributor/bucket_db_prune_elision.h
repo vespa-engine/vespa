@@ -20,8 +20,6 @@ namespace storage::distributor {
  *     info re-fetches if the distributor observes a higher startup timestamp
  *     than it currently was aware of, but does not need any pruning.
  */
-bool db_pruning_may_be_elided(const lib::ClusterState& a,
-                              const lib::ClusterState& b,
-                              const char* up_states = "uri");
+bool db_pruning_may_be_elided(const lib::ClusterState& a, const lib::ClusterState& b, const char* up_states = "uri");
 
-}
+} // namespace storage::distributor

@@ -6,29 +6,21 @@
 
 namespace storage::distributor {
 
-class MaintenancePriorityAndType
-{
-    MaintenancePriority _priority;
+class MaintenancePriorityAndType {
+    MaintenancePriority        _priority;
     MaintenanceOperation::Type _type;
+
 public:
-    constexpr MaintenancePriorityAndType(MaintenancePriority pri,
-                                         MaintenanceOperation::Type type) noexcept
-        : _priority(pri),
-          _type(type)
-    {}
+    constexpr MaintenancePriorityAndType(MaintenancePriority pri, MaintenanceOperation::Type type) noexcept
+        : _priority(pri), _type(type) {}
 
-    constexpr MaintenancePriority getPriority() const noexcept {
-        return _priority;
-    }
+    constexpr MaintenancePriority getPriority() const noexcept { return _priority; }
 
-    constexpr MaintenanceOperation::Type getType() const noexcept {
-        return _type;
-    }
+    constexpr MaintenanceOperation::Type getType() const noexcept { return _type; }
 
     constexpr bool requiresMaintenance() const noexcept {
-        return (_priority.getPriority()
-                != MaintenancePriority::NO_MAINTENANCE_NEEDED);
+        return (_priority.getPriority() != MaintenancePriority::NO_MAINTENANCE_NEEDED);
     }
 };
 
-} // storage::distributor
+} // namespace storage::distributor

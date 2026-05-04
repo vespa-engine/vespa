@@ -4,22 +4,19 @@
 
 namespace storage::distributor {
 
-std::ostream&
-operator<<(std::ostream& out, const BucketSpaceStats& stats)
-{
-    out << "{valid=" << stats.valid() << ", bucketsTotal=" << stats.bucketsTotal() << ", bucketsPending=" << stats.bucketsPending() << "}";
+std::ostream& operator<<(std::ostream& out, const BucketSpaceStats& stats) {
+    out << "{valid=" << stats.valid() << ", bucketsTotal=" << stats.bucketsTotal()
+        << ", bucketsPending=" << stats.bucketsPending() << "}";
     return out;
 }
 
 bool BucketSpaceStats::operator==(const BucketSpaceStats& rhs) const noexcept = default;
 
-void
-merge_bucket_spaces_stats(BucketSpacesStatsProvider::BucketSpacesStats& dest,
-                          const BucketSpacesStatsProvider::BucketSpacesStats& src)
-{
+void merge_bucket_spaces_stats(BucketSpacesStatsProvider::BucketSpacesStats&       dest,
+                               const BucketSpacesStatsProvider::BucketSpacesStats& src) {
     for (const auto& entry : src) {
         const auto& bucket_space_name = entry.first;
-        auto itr = dest.find(bucket_space_name);
+        auto        itr = dest.find(bucket_space_name);
         if (itr != dest.end()) {
             itr->second.merge(entry.second);
         } else {
@@ -29,14 +26,12 @@ merge_bucket_spaces_stats(BucketSpacesStatsProvider::BucketSpacesStats& dest,
     }
 }
 
-void
-merge_per_node_bucket_spaces_stats(BucketSpacesStatsProvider::PerNodeBucketSpacesStats& dest,
-                                   const BucketSpacesStatsProvider::PerNodeBucketSpacesStats& src)
-{
+void merge_per_node_bucket_spaces_stats(BucketSpacesStatsProvider::PerNodeBucketSpacesStats&       dest,
+                                        const BucketSpacesStatsProvider::PerNodeBucketSpacesStats& src) {
     for (const auto& entry : src) {
         auto node_index = entry.first;
         merge_bucket_spaces_stats(dest[node_index], entry.second);
     }
 }
 
-}
+} // namespace storage::distributor

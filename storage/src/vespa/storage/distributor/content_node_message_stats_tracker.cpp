@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "content_node_message_stats_tracker.h"
+
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/stllike/hash_map_equal.hpp>
 
@@ -10,9 +11,9 @@ ContentNodeMessageStatsTracker::NodeStats::NodeStats() = default;
 ContentNodeMessageStatsTracker::NodeStats::~NodeStats() = default;
 
 ContentNodeMessageStatsTracker::NodeStats::NodeStats(
-        std::initializer_list<std::pair<uint16_t, ContentNodeMessageStats>> node_stats)
-    : per_node(node_stats)
-{}
+    std::initializer_list<std::pair<uint16_t, ContentNodeMessageStats>> node_stats)
+    : per_node(node_stats) {
+}
 
 ContentNodeMessageStatsTracker::NodeStats::NodeStats(const NodeStats&) = default;
 ContentNodeMessageStatsTracker::NodeStats&
@@ -50,8 +51,7 @@ bool ContentNodeMessageStatsTracker::NodeStats::operator==(const NodeStats&) con
 ContentNodeMessageStatsTracker::ContentNodeMessageStatsTracker() = default;
 ContentNodeMessageStatsTracker::~ContentNodeMessageStatsTracker() = default;
 
-ContentNodeMessageStatsTracker::NodeStats
-ContentNodeMessageStatsTracker::node_stats() const {
+ContentNodeMessageStatsTracker::NodeStats ContentNodeMessageStatsTracker::node_stats() const {
     return _node_stats;
 }
 
@@ -62,8 +62,8 @@ ContentNodeMessageStats& ContentNodeMessageStatsTracker::stats_for(uint16_t node
 // TODO needed?
 const ContentNodeMessageStats& ContentNodeMessageStatsTracker::stats_for(uint16_t node) const {
     static const ContentNodeMessageStats empty_sentinel;
-    auto it = _node_stats.per_node.find(node);
+    auto                                 it = _node_stats.per_node.find(node);
     return (it != _node_stats.per_node.end() ? it->second : empty_sentinel);
 }
 
-}
+} // namespace storage::distributor

@@ -4,9 +4,12 @@
 #include "persistence_operation_metric_set.h"
 #include "update_metric_set.h"
 #include "visitormetricsset.h"
+
 #include <vespa/metrics/common/memory_usage_metrics.h>
 
-namespace vespalib { class MemoryUsage; }
+namespace vespalib {
+class MemoryUsage;
+}
 
 namespace storage::distributor {
 
@@ -46,5 +49,4 @@ public:
     ~DistributorMetricSet() override;
 };
 
-}
-
+} // namespace storage::distributor

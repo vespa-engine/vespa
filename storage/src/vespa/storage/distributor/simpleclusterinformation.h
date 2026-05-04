@@ -2,37 +2,27 @@
 #pragma once
 
 #include "clusterinformation.h"
+
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 
 namespace storage::distributor {
 
-class SimpleClusterInformation : public ClusterInformation
-{
+class SimpleClusterInformation : public ClusterInformation {
 public:
-    SimpleClusterInformation(uint16_t myIndex,
-                             const lib::ClusterStateBundle& clusterStateBundle,
+    SimpleClusterInformation(uint16_t myIndex, const lib::ClusterStateBundle& clusterStateBundle,
                              const char* storageUpStates)
-        : _myIndex(myIndex),
-          _clusterStateBundle(clusterStateBundle),
-          _storageUpStates(storageUpStates)
-    {}
+        : _myIndex(myIndex), _clusterStateBundle(clusterStateBundle), _storageUpStates(storageUpStates) {}
 
-    uint16_t getDistributorIndex() const override {
-        return _myIndex;
-    }
+    uint16_t getDistributorIndex() const override { return _myIndex; }
 
-    const lib::ClusterStateBundle& getClusterStateBundle() const override {
-        return _clusterStateBundle;
-    }
+    const lib::ClusterStateBundle& getClusterStateBundle() const override { return _clusterStateBundle; }
 
-    const char* getStorageUpStates() const override {
-        return _storageUpStates;
-    }
+    const char* getStorageUpStates() const override { return _storageUpStates; }
 
 private:
-    uint16_t _myIndex;
+    uint16_t                _myIndex;
     lib::ClusterStateBundle _clusterStateBundle;
-    const char* _storageUpStates;
+    const char*             _storageUpStates;
 };
 
-}
+} // namespace storage::distributor

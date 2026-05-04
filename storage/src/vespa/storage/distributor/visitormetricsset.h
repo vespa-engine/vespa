@@ -13,8 +13,8 @@ struct VisitorMetricSet : public PersistenceOperationMetricSet {
     VisitorMetricSet(MetricSet* owner = nullptr);
     ~VisitorMetricSet() override;
 
-    MetricSet * clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
-                      MetricSet* owner, bool includeUnused) const override;
+    MetricSet* clone(std::vector<Metric::UP>& ownerList, CopyType copyType, MetricSet* owner,
+                     bool includeUnused) const override;
 };
 
-} // storage::distributor
+} // namespace storage::distributor

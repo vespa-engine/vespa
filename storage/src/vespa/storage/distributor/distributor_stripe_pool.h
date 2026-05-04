@@ -1,8 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/util/thread.h>
+#include <vespa/vespalib/util/time.h>
+
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
@@ -34,7 +35,7 @@ class TickableStripe;
  * running stripe threads in a thread-safe, lock-free manner.
  */
 class DistributorStripePool {
-    using StripeVector       = std::vector<std::unique_ptr<DistributorStripeThread>>;
+    using StripeVector = std::vector<std::unique_ptr<DistributorStripeThread>>;
 
     uint8_t                 _n_stripe_bits;
     StripeVector            _stripes;
@@ -48,7 +49,8 @@ class DistributorStripePool {
     bool                    _stopped;
 
     friend class DistributorStripeThread;
-    struct PrivateCtorTag{};
+    struct PrivateCtorTag {};
+
 public:
     using const_iterator = StripeVector::const_iterator;
 
@@ -67,20 +69,16 @@ public:
     void stop_and_join();
 
     const_iterator begin() const noexcept { return _stripes.begin(); }
-    const_iterator end() const noexcept   { return _stripes.end(); }
+    const_iterator end() const noexcept { return _stripes.end(); }
 
     const_iterator cbegin() const noexcept { return _stripes.cbegin(); }
-    const_iterator cend() const noexcept   { return _stripes.cend(); }
+    const_iterator cend() const noexcept { return _stripes.cend(); }
 
     void park_all_threads() noexcept;
     void unpark_all_threads() noexcept;
 
-    [[nodiscard]] const DistributorStripeThread& stripe_thread(size_t idx) const noexcept {
-        return *_stripes[idx];
-    }
-    [[nodiscard]] DistributorStripeThread& stripe_thread(size_t idx) noexcept {
-        return *_stripes[idx];
-    }
+    [[nodiscard]] const DistributorStripeThread& stripe_thread(size_t idx) const noexcept { return *_stripes[idx]; }
+    [[nodiscard]] DistributorStripeThread& stripe_thread(size_t idx) noexcept { return *_stripes[idx]; }
     void notify_stripe_event_has_triggered(size_t stripe_idx) noexcept;
     [[nodiscard]] const TickableStripe& stripe_of_key(uint64_t key) const noexcept;
     [[nodiscard]] TickableStripe& stripe_of_key(uint64_t key) noexcept;
@@ -90,8 +88,9 @@ public:
     // Applies to all threads. May be called both before and after start(). Thread safe.
     void set_tick_wait_duration(vespalib::duration new_tick_wait_duration) noexcept;
     void set_ticks_before_wait(uint32_t new_ticks_before_wait) noexcept;
+
 private:
     void park_thread_until_released(DistributorStripeThread& thread) noexcept;
 };
 
-}
+} // namespace storage::distributor

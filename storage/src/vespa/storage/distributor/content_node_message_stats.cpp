@@ -1,40 +1,36 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "content_node_message_stats_tracker.h"
+
 #include <ostream>
 
 namespace storage::distributor {
 
 std::ostream& operator<<(std::ostream& os, const ContentNodeMessageStats& s) {
     os << "Snapshot("
-       << "sent="                   << s.sent
-       << ", recv_ok="              << s.recv_ok
-       << ", recv_rpc_error="       << s.recv_network_error
-       << ", recv_time_sync_error=" << s.recv_clock_skew_error
-       << ", recv_other_error="     << s.recv_other_error
-       << ", cancelled="            << s.cancelled
-       << ")";
+       << "sent=" << s.sent << ", recv_ok=" << s.recv_ok << ", recv_rpc_error=" << s.recv_network_error
+       << ", recv_time_sync_error=" << s.recv_clock_skew_error << ", recv_other_error=" << s.recv_other_error
+       << ", cancelled=" << s.cancelled << ")";
     return os;
 }
 
 void ContentNodeMessageStats::merge(const ContentNodeMessageStats& other) noexcept {
-    sent                  += other.sent;
-    recv_ok               += other.recv_ok;
-    recv_network_error    += other.recv_network_error;
+    sent += other.sent;
+    recv_ok += other.recv_ok;
+    recv_network_error += other.recv_network_error;
     recv_clock_skew_error += other.recv_clock_skew_error;
-    recv_other_error      += other.recv_other_error;
-    cancelled             += other.cancelled;
+    recv_other_error += other.recv_other_error;
+    cancelled += other.cancelled;
 }
 
-ContentNodeMessageStats
-ContentNodeMessageStats::subtracted(const ContentNodeMessageStats& rhs) const noexcept {
+ContentNodeMessageStats ContentNodeMessageStats::subtracted(const ContentNodeMessageStats& rhs) const noexcept {
     ContentNodeMessageStats s;
-    s.sent                  = sent - rhs.sent;
-    s.recv_ok               = recv_ok - rhs.recv_ok;
-    s.recv_network_error    = recv_network_error - rhs.recv_network_error;
+    s.sent = sent - rhs.sent;
+    s.recv_ok = recv_ok - rhs.recv_ok;
+    s.recv_network_error = recv_network_error - rhs.recv_network_error;
     s.recv_clock_skew_error = recv_clock_skew_error - rhs.recv_clock_skew_error;
-    s.recv_other_error      = recv_other_error - rhs.recv_other_error;
-    s.cancelled             = cancelled - rhs.cancelled;
+    s.recv_other_error = recv_other_error - rhs.recv_other_error;
+    s.cancelled = cancelled - rhs.cancelled;
     return s;
 }
 
@@ -101,12 +97,10 @@ constexpr bool is_non_failure_error_code(api::ReturnCode::Result res) noexcept {
     }
 }
 
-} // anon ns
+} // namespace
 
-void
-ContentNodeMessageStats::observe_incoming_response_result(api::MessageType::Id msg_type_id,
-                                                          api::ReturnCode::Result result) noexcept
-{
+void ContentNodeMessageStats::observe_incoming_response_result(api::MessageType::Id    msg_type_id,
+                                                               api::ReturnCode::Result result) noexcept {
     if ((result == api::ReturnCode::Result::OK) || is_non_failure_error_code(result)) [[likely]] {
         ++recv_ok;
         return;
@@ -126,4 +120,4 @@ ContentNodeMessageStats::observe_incoming_response_result(api::MessageType::Id m
     }
 }
 
-}
+} // namespace storage::distributor

@@ -3,19 +3,18 @@
 
 #include "delegatedstatusrequest.h"
 #include "statusdelegator.h"
+
 #include <vespa/storageframework/generic/component/component.h>
 
 namespace storage::distributor {
 
-class StatusReporterDelegate
-    : public framework::StatusReporter
-{
-    const StatusDelegator& _delegator;
+class StatusReporterDelegate : public framework::StatusReporter {
+    const StatusDelegator&           _delegator;
     const framework::StatusReporter& _target;
-    framework::Component _component;
+    framework::Component             _component;
+
 public:
-    StatusReporterDelegate(framework::ComponentRegister& compReg,
-                           const StatusDelegator& delegator,
+    StatusReporterDelegate(framework::ComponentRegister& compReg, const StatusDelegator& delegator,
                            const framework::StatusReporter& target);
     ~StatusReporterDelegate() override;
 
@@ -24,4 +23,4 @@ public:
     bool reportStatus(std::ostream&, const framework::HttpUrlPath&) const override;
 };
 
-} // storage::distributor
+} // namespace storage::distributor

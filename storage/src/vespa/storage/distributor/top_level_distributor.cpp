@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 //
+#include "top_level_distributor.h"
+
 #include "blockingoperationstarter.h"
 #include "content_node_message_stats_tracker.h"
-#include "top_level_bucket_db_updater.h"
-#include "top_level_distributor.h"
 #include "distributor_bucket_space.h"
 #include "distributor_status.h"
 #include "distributor_stripe.h"
@@ -15,13 +15,15 @@
 #include "ownership_transfer_safe_time_point_calculator.h"
 #include "stats_tracking_sender.h"
 #include "throttlingoperationstarter.h"
+#include "top_level_bucket_db_updater.h"
+
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/storage/common/bucket_stripe_utils.h>
 #include <vespa/storage/common/hostreporter/hostinfo.h>
 #include <vespa/storage/common/node_identity.h>
 #include <vespa/storage/common/nodestateupdater.h>
-#include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storage/config/config-stor-distributormanager.h>
+#include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/storageframework/generic/status/xmlstatusreporter.h>
@@ -29,6 +31,7 @@
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/distribution/global_bucket_space_distribution_converter.h>
 #include <vespa/vespalib/util/memoryusage.h>
+
 #include <algorithm>
 
 #include <vespa/log/log.h>
@@ -38,14 +41,10 @@ using namespace std::chrono_literals;
 
 namespace storage::distributor {
 
-TopLevelDistributor::TopLevelDistributor(DistributorComponentRegister& compReg,
-                                         const NodeIdentity& node_identity,
-                                         framework::TickingThreadPool& threadPool,
-                                         DistributorStripePool& stripe_pool,
-                                         DoneInitializeHandler& done_init_handler,
-                                         uint32_t num_distributor_stripes,
-                                         HostInfo& hostInfoReporterRegistrar,
-                                         ChainedMessageSender* messageSender)
+TopLevelDistributor::TopLevelDistributor(DistributorComponentRegister& compReg, const NodeIdentity& node_identity,
+                                         framework::TickingThreadPool& threadPool, DistributorStripePool& stripe_pool,
+                                         DoneInitializeHandler& done_init_handler, uint32_t num_distributor_stripes,
+                                         HostInfo& hostInfoReporterRegistrar, ChainedMessageSender* messageSender)
     : StorageLink("distributor"),
       framework::StatusReporter("distributor", "Distributor"),
       _node_identity(node_identity),
@@ -86,29 +85,23 @@ TopLevelDistributor::TopLevelDistributor(DistributorComponentRegister& compReg,
       _hostInfoReporter(*this, *this, *this),
       _distribution(),
       _next_distribution(),
-      _current_internal_config_generation(_component.internal_config_generation())
-{
+      _current_internal_config_generation(_component.internal_config_generation()) {
     _component.registerMetric(*_total_metrics);
     _ideal_state_component.registerMetric(*_ideal_state_total_metrics);
     _component.registerMetricUpdateHook(_metricUpdateHook, 0s);
 
     assert(num_distributor_stripes == adjusted_num_stripes(num_distributor_stripes));
     _n_stripe_bits = calc_num_stripe_bits(num_distributor_stripes);
-    LOG(debug, "Setting up distributor with %u stripes using %u stripe bits",
-        num_distributor_stripes, _n_stripe_bits);
+    LOG(debug, "Setting up distributor with %u stripes using %u stripe bits", num_distributor_stripes,
+        _n_stripe_bits);
     _stripe_accessor = std::make_unique<MultiThreadedStripeAccessor>(_stripe_pool);
-    _bucket_db_updater = std::make_unique<TopLevelBucketDBUpdater>(_component, _component,
-                                                                   *this, *_stats_tracking_sender, *this,
-                                                                   _component.getDistribution(),
-                                                                   *_stripe_accessor,
-                                                                   this);
+    _bucket_db_updater =
+        std::make_unique<TopLevelBucketDBUpdater>(_component, _component, *this, *_stats_tracking_sender, *this,
+                                                  _component.getDistribution(), *_stripe_accessor, this);
     for (size_t i = 0; i < num_distributor_stripes; ++i) {
-        _stripes.emplace_back(std::make_unique<DistributorStripe>(compReg,
-                                                                  _total_metrics->stripe(i),
-                                                                  _ideal_state_total_metrics->stripe(i),
-                                                                  node_identity,
-                                                                  *this, *this, _shared_memory_usage_tracker,
-                                                                  _done_initializing, i));
+        _stripes.emplace_back(std::make_unique<DistributorStripe>(
+            compReg, _total_metrics->stripe(i), _ideal_state_total_metrics->stripe(i), node_identity, *this, *this,
+            _shared_memory_usage_tracker, _done_initializing, i));
     }
     _stripe_scan_stats.resize(num_distributor_stripes);
     _distributorStatusDelegate.registerStatusPage();
@@ -119,30 +112,23 @@ TopLevelDistributor::TopLevelDistributor(DistributorComponentRegister& compReg,
     propagate_default_distribution_thread_unsafe(_component.getDistribution()); // Stripes not started yet
 }
 
-TopLevelDistributor::~TopLevelDistributor()
-{
+TopLevelDistributor::~TopLevelDistributor() {
     // XXX: why is there no _component.unregisterMetricUpdateHook()?
     closeNextLink();
 }
 
-DistributorMetricSet&
-TopLevelDistributor::getMetrics()
-{
+DistributorMetricSet& TopLevelDistributor::getMetrics() {
     return _total_metrics->top_level_metrics();
 }
 
-void
-TopLevelDistributor::setNodeStateUp()
-{
+void TopLevelDistributor::setNodeStateUp() {
     NodeStateUpdater::Lock::SP lock(_component.getStateUpdater().grabStateChangeLock());
-    lib::NodeState ns(*_component.getStateUpdater().getReportedNodeState());
+    lib::NodeState             ns(*_component.getStateUpdater().getReportedNodeState());
     ns.setState(lib::State::UP);
     _component.getStateUpdater().setReportedNodeState(ns);
 }
 
-void
-TopLevelDistributor::onOpen()
-{
+void TopLevelDistributor::onOpen() {
     LOG(debug, "Distributor::onOpen invoked");
     setNodeStateUp();
     if (_component.getDistributorConfig().startDistributorThread) {
@@ -172,9 +158,7 @@ void TopLevelDistributor::onClose() {
     _bucket_db_updater->flush();
 }
 
-void
-TopLevelDistributor::start_stripe_pool()
-{
+void TopLevelDistributor::start_stripe_pool() {
     std::vector<TickableStripe*> pool_stripes;
     for (auto& stripe : _stripes) {
         pool_stripes.push_back(stripe.get());
@@ -182,9 +166,7 @@ TopLevelDistributor::start_stripe_pool()
     _stripe_pool.start(pool_stripes); // If unit testing, this won't actually start any OS threads
 }
 
-void
-TopLevelDistributor::sendUp(const std::shared_ptr<api::StorageMessage>& msg)
-{
+void TopLevelDistributor::sendUp(const std::shared_ptr<api::StorageMessage>& msg) {
     if (_messageSender) {
         _messageSender->sendUp(msg);
     } else {
@@ -192,9 +174,7 @@ TopLevelDistributor::sendUp(const std::shared_ptr<api::StorageMessage>& msg)
     }
 }
 
-void
-TopLevelDistributor::sendDown(const std::shared_ptr<api::StorageMessage>& msg)
-{
+void TopLevelDistributor::sendDown(const std::shared_ptr<api::StorageMessage>& msg) {
     if (_messageSender) {
         _messageSender->sendDown(msg);
     } else {
@@ -219,43 +199,42 @@ bool should_be_handled_by_top_level_bucket_db_updater(const api::StorageMessage&
     }
 }
 
-document::BucketId
-get_bucket_id_for_striping(const api::StorageMessage& msg, const DistributorNodeContext& node_ctx)
-{
+document::BucketId get_bucket_id_for_striping(const api::StorageMessage&    msg,
+                                              const DistributorNodeContext& node_ctx) {
     if (!msg.getBucketId().isSet()) {
-        // Calculate a bucket id (dependent on the message type) to dispatch the message to the correct distributor stripe.
+        // Calculate a bucket id (dependent on the message type) to dispatch the message to the correct distributor
+        // stripe.
         switch (msg.getType().getId()) {
-            case api::MessageType::PUT_ID:
-            case api::MessageType::UPDATE_ID:
-            case api::MessageType::REMOVE_ID:
-                return node_ctx.bucket_id_factory().getBucketId(dynamic_cast<const api::TestAndSetCommand&>(msg).getDocumentId());
-            case api::MessageType::REQUESTBUCKETINFO_REPLY_ID:
-                return dynamic_cast<const api::RequestBucketInfoReply&>(msg).super_bucket_id();
-            case api::MessageType::GET_ID:
-                return node_ctx.bucket_id_factory().getBucketId(dynamic_cast<const api::GetCommand&>(msg).getDocumentId());
-            case api::MessageType::VISITOR_CREATE_ID:
-                return dynamic_cast<const api::CreateVisitorCommand&>(msg).super_bucket_id();
-            case api::MessageType::VISITOR_CREATE_REPLY_ID:
-                return dynamic_cast<const api::CreateVisitorReply&>(msg).super_bucket_id();
-            default:
-                return msg.getBucketId();
+        case api::MessageType::PUT_ID:
+        case api::MessageType::UPDATE_ID:
+        case api::MessageType::REMOVE_ID:
+            return node_ctx.bucket_id_factory().getBucketId(
+                dynamic_cast<const api::TestAndSetCommand&>(msg).getDocumentId());
+        case api::MessageType::REQUESTBUCKETINFO_REPLY_ID:
+            return dynamic_cast<const api::RequestBucketInfoReply&>(msg).super_bucket_id();
+        case api::MessageType::GET_ID:
+            return node_ctx.bucket_id_factory().getBucketId(
+                dynamic_cast<const api::GetCommand&>(msg).getDocumentId());
+        case api::MessageType::VISITOR_CREATE_ID:
+            return dynamic_cast<const api::CreateVisitorCommand&>(msg).super_bucket_id();
+        case api::MessageType::VISITOR_CREATE_REPLY_ID:
+            return dynamic_cast<const api::CreateVisitorReply&>(msg).super_bucket_id();
+        default:
+            return msg.getBucketId();
         }
     }
     return msg.getBucketId();
 }
 
-}
+} // namespace
 
-uint32_t
-TopLevelDistributor::random_stripe_idx()
-{
+uint32_t TopLevelDistributor::random_stripe_idx() {
     std::lock_guard lock(_random_stripe_gen_mutex);
     return _random_stripe_gen.nextUint32() % _stripes.size();
 }
 
-uint32_t
-TopLevelDistributor::stripe_of_bucket_id(const document::BucketId& bucket_id, const api::StorageMessage& msg)
-{
+uint32_t TopLevelDistributor::stripe_of_bucket_id(const document::BucketId&  bucket_id,
+                                                  const api::StorageMessage& msg) {
     if (!bucket_id.isSet()) {
         LOG(error, "Message (%s) has a bucket id (%s) that is not set. Cannot route to stripe",
             msg.toString(true).c_str(), bucket_id.toString().c_str());
@@ -271,14 +250,12 @@ TopLevelDistributor::stripe_of_bucket_id(const document::BucketId& bucket_id, co
     return storage::stripe_of_bucket_key(bucket_id.toKey(), _n_stripe_bits);
 }
 
-bool
-TopLevelDistributor::onDown(const std::shared_ptr<api::StorageMessage>& msg)
-{
+bool TopLevelDistributor::onDown(const std::shared_ptr<api::StorageMessage>& msg) {
     if (should_be_handled_by_top_level_bucket_db_updater(*msg)) {
         dispatch_to_main_distributor_thread_queue(msg);
         return true;
     }
-    auto bucket_id = get_bucket_id_for_striping(*msg, _component);
+    auto     bucket_id = get_bucket_id_for_striping(*msg, _component);
     uint32_t stripe_idx = stripe_of_bucket_id(bucket_id, *msg);
     MBUS_TRACE(msg->getTrace(), 9,
                vespalib::make_string("Distributor::onDown(): Dispatch message to stripe %u", stripe_idx));
@@ -289,31 +266,24 @@ TopLevelDistributor::onDown(const std::shared_ptr<api::StorageMessage>& msg)
     return handled;
 }
 
-const DistributorConfiguration&
-TopLevelDistributor::config() const
-{
+const DistributorConfiguration& TopLevelDistributor::config() const {
     return *_total_config;
 }
 
-void
-TopLevelDistributor::sendCommand(const std::shared_ptr<api::StorageCommand>& cmd)
-{
+void TopLevelDistributor::sendCommand(const std::shared_ptr<api::StorageCommand>& cmd) {
     sendUp(cmd);
 }
 
-void
-TopLevelDistributor::sendReply(const std::shared_ptr<api::StorageReply>& reply)
-{
+void TopLevelDistributor::sendReply(const std::shared_ptr<api::StorageReply>& reply) {
     sendUp(reply);
 }
 
-void
-TopLevelDistributor::storageDistributionChanged()
-{
+void TopLevelDistributor::storageDistributionChanged() {
     std::lock_guard guard(_distribution_mutex);
     if (_cc_is_distribution_source_of_truth) {
-        LOG(debug, "Received changed distribution config %s, but ignoring it since we have received "
-                   "at least one config injection from the cluster controller",
+        LOG(debug,
+            "Received changed distribution config %s, but ignoring it since we have received "
+            "at least one config injection from the cluster controller",
             _component.getDistribution()->toString().c_str());
         return;
     }
@@ -327,9 +297,7 @@ TopLevelDistributor::storageDistributionChanged()
     }
 }
 
-void
-TopLevelDistributor::enable_next_distribution_if_changed()
-{
+void TopLevelDistributor::enable_next_distribution_if_changed() {
     std::lock_guard guard(_distribution_mutex);
     if (_next_distribution) {
         _distribution = _next_distribution;
@@ -339,12 +307,12 @@ TopLevelDistributor::enable_next_distribution_if_changed()
     }
 }
 
-bool
-TopLevelDistributor::receive_distribution_from_cluster_controller(std::shared_ptr<const lib::Distribution> distribution)
-{
+bool TopLevelDistributor::receive_distribution_from_cluster_controller(
+    std::shared_ptr<const lib::Distribution> distribution) {
     std::lock_guard guard(_distribution_mutex);
-    LOG(debug, "Received distribution config '%s' from the cluster controller. Any subsequent "
-               "distribution configs that do NOT originate from the cluster controller will be ignored.",
+    LOG(debug,
+        "Received distribution config '%s' from the cluster controller. Any subsequent "
+        "distribution configs that do NOT originate from the cluster controller will be ignored.",
         distribution->toString().c_str());
     // Signal that from now on we should explicitly ignore distribution config that is not received
     // from the cluster controller. Otherwise, we'd introduce at least as many race conditions as
@@ -355,16 +323,12 @@ TopLevelDistributor::receive_distribution_from_cluster_controller(std::shared_pt
     return changed;
 }
 
-bool
-TopLevelDistributor::cluster_controller_is_distribution_source_of_truth() const noexcept
-{
+bool TopLevelDistributor::cluster_controller_is_distribution_source_of_truth() const noexcept {
     std::lock_guard guard(_distribution_mutex);
     return _cc_is_distribution_source_of_truth;
 }
 
-void
-TopLevelDistributor::revert_distribution_source_of_truth_to_node_internal_config()
-{
+void TopLevelDistributor::revert_distribution_source_of_truth_to_node_internal_config() {
     {
         std::lock_guard guard(_distribution_mutex);
         LOG(debug, "Reverting to use node-internal config as distribution config source of truth");
@@ -374,10 +338,8 @@ TopLevelDistributor::revert_distribution_source_of_truth_to_node_internal_config
     storageDistributionChanged();
 }
 
-void
-TopLevelDistributor::propagate_default_distribution_thread_unsafe(
-        std::shared_ptr<const lib::Distribution> distribution)
-{
+void TopLevelDistributor::propagate_default_distribution_thread_unsafe(
+    std::shared_ptr<const lib::Distribution> distribution) {
     // Should only be called at ctor time, at which point the pool is not yet running.
     assert(_stripe_pool.stripe_count() == 0);
     auto new_configs = lib::BucketSpaceDistributionConfigs::from_default_distribution(std::move(distribution));
@@ -386,9 +348,7 @@ TopLevelDistributor::propagate_default_distribution_thread_unsafe(
     }
 }
 
-MinReplicaMap
-TopLevelDistributor::getMinReplica() const
-{
+MinReplicaMap TopLevelDistributor::getMinReplica() const {
     MinReplicaMap result;
     for (const auto& stripe : _stripes) {
         merge_min_replica_stats(result, stripe->getMinReplica());
@@ -396,9 +356,7 @@ TopLevelDistributor::getMinReplica() const
     return result;
 }
 
-BucketSpacesStatsProvider::PerNodeBucketSpacesStats
-TopLevelDistributor::per_node_bucket_spaces_stats() const
-{
+BucketSpacesStatsProvider::PerNodeBucketSpacesStats TopLevelDistributor::per_node_bucket_spaces_stats() const {
     BucketSpacesStatsProvider::PerNodeBucketSpacesStats result;
     for (const auto& stripe : _stripes) {
         merge_per_node_bucket_spaces_stats(result, stripe->per_node_bucket_spaces_stats());
@@ -406,9 +364,7 @@ TopLevelDistributor::per_node_bucket_spaces_stats() const
     return result;
 }
 
-DistributorGlobalStats
-TopLevelDistributor::distributor_global_stats() const
-{
+DistributorGlobalStats TopLevelDistributor::distributor_global_stats() const {
     auto result = DistributorGlobalStats::make_empty_but_valid();
     for (const auto& stripe : _stripes) {
         result.merge(stripe->distributor_global_stats());
@@ -416,9 +372,7 @@ TopLevelDistributor::distributor_global_stats() const
     return result;
 }
 
-ContentNodeMessageStatsTracker::NodeStats
-TopLevelDistributor::content_node_stats() const
-{
+ContentNodeMessageStatsTracker::NodeStats TopLevelDistributor::content_node_stats() const {
     auto stats = _stats_tracking_sender->node_stats(); // start with our own top-level stats
     for (const auto& stripe : _stripes) {
         stats.merge(stripe->content_node_stats());
@@ -426,9 +380,7 @@ TopLevelDistributor::content_node_stats() const
     return stats;
 }
 
-void
-TopLevelDistributor::propagate_and_aggregate_metrics_from_stripes()
-{
+void TopLevelDistributor::propagate_and_aggregate_metrics_from_stripes() {
     for (auto& stripe : _stripes) {
         stripe->propagateInternalScanMetricsToExternal();
     }
@@ -436,46 +388,38 @@ TopLevelDistributor::propagate_and_aggregate_metrics_from_stripes()
     _ideal_state_total_metrics->aggregate();
 }
 
-void
-TopLevelDistributor::update_top_level_metrics() {
+void TopLevelDistributor::update_top_level_metrics() {
     // We only track current and max, so pretend min == current
     auto mut_mem_usage = _shared_memory_usage_tracker.relaxed_snapshot();
     _shared_memory_usage_tracker.reset_max_observed_bytes(); // Destructive sampling of max
     // It's a bit of a cheat to have last != max with count == 1 (since diverging values
     // should only be observable with multiple metric samples), but it is what it is.
     // These will be emitted as distinct time series at a higher level either way.
-    metrics().mutatating_op_memory_usage.addTotalValueBatch(
-            mut_mem_usage.bytes_total, 1, mut_mem_usage.bytes_total, mut_mem_usage.max_observed_bytes);
+    metrics().mutatating_op_memory_usage.addTotalValueBatch(mut_mem_usage.bytes_total, 1, mut_mem_usage.bytes_total,
+                                                            mut_mem_usage.max_observed_bytes);
     // Must be done _after_ setting top-level metrics explicitly, since aggregation patches
     // in the combined view of top-level and strip-level metrics.
     propagate_and_aggregate_metrics_from_stripes();
 }
 
-void
-TopLevelDistributor::dispatch_to_main_distributor_thread_queue(const std::shared_ptr<api::StorageMessage>& msg)
-{
+void TopLevelDistributor::dispatch_to_main_distributor_thread_queue(const std::shared_ptr<api::StorageMessage>& msg) {
     MBUS_TRACE(msg->getTrace(), 9, "Distributor: Added to main thread message queue");
     framework::TickingLockGuard guard(_threadPool.freezeCriticalTicks());
     _message_queue.emplace_back(msg);
     guard.broadcast();
 }
 
-void
-TopLevelDistributor::fetch_external_messages()
-{
+void TopLevelDistributor::fetch_external_messages() {
     assert(_fetched_messages.empty());
     _fetched_messages.swap(_message_queue);
 }
 
-void
-TopLevelDistributor::process_fetched_external_messages()
-{
+void TopLevelDistributor::process_fetched_external_messages() {
     for (auto& msg : _fetched_messages) {
         if (msg->getType().isReply()) {
             const auto& as_reply = static_cast<const api::StorageReply&>(*msg);
             _stats_tracking_sender->observe_incoming_response_result(
-                    as_reply.getAddress()->getIndex(), as_reply.getType().getId(),
-                    as_reply.getResult().getResult());
+                as_reply.getAddress()->getIndex(), as_reply.getType().getId(), as_reply.getResult().getResult());
         }
         MBUS_TRACE(msg->getTrace(), 9, "Distributor: Processing message in main thread");
         if (!msg->callHandler(*_bucket_db_updater, msg)) {
@@ -489,9 +433,7 @@ TopLevelDistributor::process_fetched_external_messages()
     }
 }
 
-framework::ThreadWaitInfo
-TopLevelDistributor::doCriticalTick([[maybe_unused]] framework::ThreadIndex idx)
-{
+framework::ThreadWaitInfo TopLevelDistributor::doCriticalTick([[maybe_unused]] framework::ThreadIndex idx) {
     _tickResult = framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN;
     enable_next_distribution_if_changed();
     fetch_status_requests();
@@ -503,9 +445,7 @@ TopLevelDistributor::doCriticalTick([[maybe_unused]] framework::ThreadIndex idx)
     return _tickResult;
 }
 
-framework::ThreadWaitInfo
-TopLevelDistributor::doNonCriticalTick([[maybe_unused]] framework::ThreadIndex idx)
-{
+framework::ThreadWaitInfo TopLevelDistributor::doNonCriticalTick([[maybe_unused]] framework::ThreadIndex idx) {
     _tickResult = framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN;
     handle_status_requests();
     process_fetched_external_messages();
@@ -514,9 +454,7 @@ TopLevelDistributor::doNonCriticalTick([[maybe_unused]] framework::ThreadIndex i
     return _tickResult;
 }
 
-void
-TopLevelDistributor::enable_next_config_if_changed()
-{
+void TopLevelDistributor::enable_next_config_if_changed() {
     // Only lazily trigger a config propagation and internal update if something has _actually changed_.
     if (_component.internal_config_generation() != _current_internal_config_generation) {
         _total_config = _component.total_distributor_config_sp();
@@ -529,9 +467,7 @@ TopLevelDistributor::enable_next_config_if_changed()
     }
 }
 
-void
-TopLevelDistributor::un_inhibit_maintenance_if_safe_time_passed()
-{
+void TopLevelDistributor::un_inhibit_maintenance_if_safe_time_passed() {
     if (vespalib::count_s(_maintenance_safe_time_point.time_since_epoch()) != 0) {
         const auto now = _component.clock().getSystemTime();
         if (now >= _maintenance_safe_time_point) {
@@ -545,9 +481,7 @@ TopLevelDistributor::un_inhibit_maintenance_if_safe_time_passed()
     }
 }
 
-void
-TopLevelDistributor::notify_stripe_wants_to_send_host_info(uint16_t stripe_index)
-{
+void TopLevelDistributor::notify_stripe_wants_to_send_host_info(uint16_t stripe_index) {
     assert(_done_initializing);
     LOG(debug, "Stripe %u has signalled an intent to send host info out-of-band", stripe_index);
     std::lock_guard lock(_stripe_scan_notify_mutex);
@@ -559,9 +493,8 @@ TopLevelDistributor::notify_stripe_wants_to_send_host_info(uint16_t stripe_index
     //  every nth millisecond anyway. Not really an issue for out-of-band CC notifications.
 }
 
-bool
-TopLevelDistributor::may_send_host_info_on_behalf_of_stripes([[maybe_unused]] std::lock_guard<std::mutex>& held_lock) noexcept
-{
+bool TopLevelDistributor::may_send_host_info_on_behalf_of_stripes(
+    [[maybe_unused]] std::lock_guard<std::mutex>& held_lock) noexcept {
     bool any_stripe_wants_to_send = false;
     for (const auto& stats : _stripe_scan_stats) {
         if (!stats.has_reported_in_at_least_once) {
@@ -576,10 +509,8 @@ TopLevelDistributor::may_send_host_info_on_behalf_of_stripes([[maybe_unused]] st
     return any_stripe_wants_to_send;
 }
 
-void
-TopLevelDistributor::send_host_info_if_appropriate()
-{
-    const auto now = _component.getClock().getMonotonicTime();
+void TopLevelDistributor::send_host_info_if_appropriate() {
+    const auto      now = _component.getClock().getMonotonicTime();
     std::lock_guard lock(_stripe_scan_notify_mutex);
 
     if (may_send_host_info_on_behalf_of_stripes(lock)) {
@@ -594,18 +525,18 @@ TopLevelDistributor::send_host_info_if_appropriate()
     }
 }
 
-void
-TopLevelDistributor::on_cluster_state_bundle_activated(const lib::ClusterStateBundle& new_bundle,
-                                                       bool has_bucket_ownership_transfer)
-{
+void TopLevelDistributor::on_cluster_state_bundle_activated(const lib::ClusterStateBundle& new_bundle,
+                                                            bool has_bucket_ownership_transfer) {
     lib::Node my_node(lib::NodeType::DISTRIBUTOR, getDistributorIndex());
-    if (!_done_initializing && (new_bundle.getBaselineClusterState()->getNodeState(my_node).getState() == lib::State::UP)) {
+    if (!_done_initializing &&
+        (new_bundle.getBaselineClusterState()->getNodeState(my_node).getState() == lib::State::UP))
+    {
         _done_initializing = true;
         _done_init_handler.notifyDoneInitializing();
     }
     if (has_bucket_ownership_transfer && _maintenance_safe_time_delay.count() > 0) {
         OwnershipTransferSafeTimePointCalculator safe_time_calc(_maintenance_safe_time_delay);
-        const auto now = _component.getClock().getSystemTime();
+        const auto                               now = _component.getClock().getSystemTime();
         _maintenance_safe_time_point = safe_time_calc.safeTimePoint(now);
         // All stripes are in a waiting pattern and will observe this on their next tick.
         // Memory visibility enforced by all stripes being held under a mutex by our caller.
@@ -616,17 +547,13 @@ TopLevelDistributor::on_cluster_state_bundle_activated(const lib::ClusterStateBu
     LOG(debug, "Activated new state version in distributor: %s", new_bundle.toString().c_str());
 }
 
-void
-TopLevelDistributor::fetch_status_requests()
-{
+void TopLevelDistributor::fetch_status_requests() {
     if (_fetched_status_requests.empty()) {
         _fetched_status_requests.swap(_status_to_do);
     }
 }
 
-void
-TopLevelDistributor::handle_status_requests()
-{
+void TopLevelDistributor::handle_status_requests() {
     for (auto& s : _fetched_status_requests) {
         s->getReporter().reportStatus(s->getStream(), s->getPath());
         s->notifyCompleted();
@@ -637,21 +564,15 @@ TopLevelDistributor::handle_status_requests()
     }
 }
 
-void
-TopLevelDistributor::signal_work_was_done()
-{
+void TopLevelDistributor::signal_work_was_done() {
     _tickResult = framework::ThreadWaitInfo::MORE_WORK_ENQUEUED;
 }
 
-bool
-TopLevelDistributor::work_was_done() const noexcept
-{
+bool TopLevelDistributor::work_was_done() const noexcept {
     return !_tickResult.waitWanted();
 }
 
-std::string
-TopLevelDistributor::getReportContentType(const framework::HttpUrlPath& path) const
-{
+std::string TopLevelDistributor::getReportContentType(const framework::HttpUrlPath& path) const {
     if (path.hasAttribute("page")) {
         if (path.getAttribute("page") == "buckets") {
             return "text/html";
@@ -663,10 +584,7 @@ TopLevelDistributor::getReportContentType(const framework::HttpUrlPath& path) co
     }
 }
 
-bool
-TopLevelDistributor::reportStatus(std::ostream& out,
-                                  const framework::HttpUrlPath& path) const
-{
+bool TopLevelDistributor::reportStatus(std::ostream& out, const framework::HttpUrlPath& path) const {
     if (!path.hasAttribute("page") || path.getAttribute("page") == "buckets") {
         framework::PartlyHtmlStatusReporter htmlReporter(*this);
         htmlReporter.reportHtmlHeader(out, path);
@@ -677,10 +595,11 @@ TopLevelDistributor::reportStatus(std::ostream& out,
                 << "<a href=\"?page=buckets\">List all buckets, highlight non-ideal state</a><br>\n"
                 << "</p>\n";
         } else {
-            auto guard = _stripe_accessor->rendezvous_and_hold_all();
+            auto        guard = _stripe_accessor->rendezvous_and_hold_all();
             const auto& op_ctx = _component;
             for (const auto& space : op_ctx.bucket_space_states()) {
-                out << "<h2>" << document::FixedBucketSpaces::to_string(space.first) << " - " << space.first << "</h2>\n";
+                out << "<h2>" << document::FixedBucketSpaces::to_string(space.first) << " - " << space.first
+                    << "</h2>\n";
                 guard->report_bucket_db_status(space.first, out);
             }
         }
@@ -693,18 +612,14 @@ TopLevelDistributor::reportStatus(std::ostream& out,
         if (page == "pending") {
             auto guard = _stripe_accessor->rendezvous_and_hold_all();
             auto stats = guard->pending_operation_stats();
-            xmlReporter << XmlTag("pending")
-                        << XmlAttribute("externalload", stats.external_load_operations)
-                        << XmlAttribute("maintenance", stats.maintenance_operations)
-                        << XmlEndTag();
+            xmlReporter << XmlTag("pending") << XmlAttribute("externalload", stats.external_load_operations)
+                        << XmlAttribute("maintenance", stats.maintenance_operations) << XmlEndTag();
         }
     }
     return true;
 }
 
-bool
-TopLevelDistributor::handleStatusRequest(const DelegatedStatusRequest& request) const
-{
+bool TopLevelDistributor::handleStatusRequest(const DelegatedStatusRequest& request) const {
     auto wrappedRequest = std::make_shared<DistributorStatus>(request);
     {
         framework::TickingLockGuard guard(_threadPool.freezeCriticalTicks());
@@ -715,4 +630,4 @@ TopLevelDistributor::handleStatusRequest(const DelegatedStatusRequest& request) 
     return true;
 }
 
-}
+} // namespace storage::distributor

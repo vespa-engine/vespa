@@ -18,16 +18,13 @@ class MemoryUsageToken {
     // for a single tracked operation. Operations with fan-outs are expected to use shared_ptrs
     // to Document instances etc. that are common across messages to avoid duplication.
     uint32_t _bytes_used;
+
 public:
     MemoryUsageToken(MemoryUsageTracker& tracker, uint32_t bytes_used) noexcept
-        : _tracker(tracker),
-          _bytes_used(bytes_used)
-    {
+        : _tracker(tracker), _bytes_used(bytes_used) {
         _tracker.add_bytes_used(bytes_used);
     }
-    ~MemoryUsageToken() {
-        _tracker.sub_bytes_used(_bytes_used);
-    }
+    ~MemoryUsageToken() { _tracker.sub_bytes_used(_bytes_used); }
 
     [[nodiscard]] uint32_t bytes_used() const noexcept { return _bytes_used; }
 
@@ -37,4 +34,4 @@ public:
     }
 };
 
-} // storage::distributor
+} // namespace storage::distributor

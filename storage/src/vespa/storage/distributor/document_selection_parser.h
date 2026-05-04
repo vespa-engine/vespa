@@ -5,7 +5,9 @@
 #include <memory>
 #include <string>
 
-namespace document::select { class Node; }
+namespace document::select {
+class Node;
+}
 
 namespace storage::distributor {
 
@@ -18,4 +20,4 @@ public:
     virtual std::unique_ptr<document::select::Node> parse_selection(const std::string& str) const = 0;
 };
 
-}
+} // namespace storage::distributor
