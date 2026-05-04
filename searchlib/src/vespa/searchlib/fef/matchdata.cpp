@@ -1,26 +1,27 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "matchdata.h"
+#include "matchdatalayout.h"
 
 namespace search {
 namespace fef {
 
-MatchData::MatchData(const Params& cparams) : _termFields(cparams.numTermFields()), _termwise_limit(1.0) {
+MatchData::MatchData(vespalib::tdl::DataKey key) : MatchDataBase(key), _termwise_limit(1.0) {
 }
 
 void MatchData::soft_reset() {
-    for (auto& tfmd : _termFields) {
+    for (auto& tfmd : all_of<TermFieldMatchData>()) {
         tfmd.resetOnlyDocId(TermFieldMatchData::invalidId());
     }
     _termwise_limit = 1.0;
 }
 
 MatchData::UP MatchData::makeTestInstance(uint32_t numTermFields, uint32_t fieldIdLimit) {
-    MatchData::UP data(new MatchData(Params().numTermFields(numTermFields)));
+    MatchDataLayout layout;
     for (uint32_t i = 0; i < numTermFields; ++i) {
-        data->resolveTermField(i)->setFieldId(i % fieldIdLimit);
+        layout.allocTermField(i % fieldIdLimit);
     }
-    return data;
+    return layout.createMatchData();
 }
 
 } // namespace fef

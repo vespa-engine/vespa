@@ -258,8 +258,8 @@ namespace detail {
 
 template <typename... Ts, typename Target> struct DataDeleter<Domain<Ts...>, Target> {
     using MyDomain = Domain<Ts...>;
-    static_assert(std::derived_from<Target, Data<MyDomain>>);
     void operator()(Target* ptr) noexcept {
+        static_assert(std::derived_from<Target, Data<MyDomain>>);
         auto destruct_array = [&]<typename T>() {
             for (auto& obj : ptr->template all_of<T>()) {
                 obj.~T();
@@ -277,7 +277,6 @@ template <typename... Ts, typename Target> class Layout<Domain<Ts...>, Target> {
 private:
     using MyDomain = Domain<Ts...>;
     std::array<uint32_t, MyDomain::num_types> counts{};
-    static_assert(std::derived_from<Target, Data<MyDomain>>);
 
 public:
     using DataUP = std::unique_ptr<Target, detail::DataDeleter<MyDomain, Target>>;
@@ -296,6 +295,7 @@ public:
         return ArrayHandle::make<I>(0, counts[I]);
     }
     DataUP create_data() const {
+        static_assert(std::derived_from<Target, Data<MyDomain>>);
         size_t need_size = sizeof(Target);
         [&]<size_t... Is>(std::index_sequence<Is...>) {
             auto handle_array = [&]<typename T, size_t I>() {

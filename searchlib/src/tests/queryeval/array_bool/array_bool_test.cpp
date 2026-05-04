@@ -131,7 +131,7 @@ struct TestMatchData {
     TermFieldHandle                  handle;
     TermFieldHandle                  handle2;
     TermFieldHandle                  handle3;
-    std::unique_ptr<MatchData>       md;
+    MatchData::UP                    md;
     TermFieldMatchData*              tfmd;
     TermFieldMatchData*              tfmd2;
     TermFieldMatchData*              tfmd3;

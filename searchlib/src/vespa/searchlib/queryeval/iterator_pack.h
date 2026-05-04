@@ -4,17 +4,14 @@
 
 #include "searchiterator.h"
 
+#include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
-
-namespace search::fef {
-class MatchData;
-}
 
 namespace search::queryeval {
 
 class SearchIteratorPack {
 private:
-    using MatchDataUP = std::unique_ptr<fef::MatchData>;
+    using MatchDataUP = fef::MatchData::UP;
     std::vector<SearchIterator::UP>       _children;
     std::vector<fef::TermFieldMatchData*> _childMatch;
     MatchDataUP                           _md;

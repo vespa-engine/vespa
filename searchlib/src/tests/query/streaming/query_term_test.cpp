@@ -54,7 +54,7 @@ protected:
     MatchDataLayout            _mdl;
     TermFieldHandle            _normal_handle;
     TermFieldHandle            _filter_handle;
-    std::unique_ptr<MatchData> _md;
+    MatchData::UP              _md;
     TermFieldMatchData*        _tfmd;
 
     QueryTermTest();

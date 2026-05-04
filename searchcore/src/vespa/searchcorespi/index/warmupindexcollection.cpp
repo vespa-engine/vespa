@@ -71,7 +71,7 @@ private:
     void run() override;
     std::shared_ptr<WarmupIndexCollection>        _warmup;
     vespalib::RetainGuard                         _retainGuard;
-    std::unique_ptr<MatchData>                    _matchData;
+    MatchData::UP                                 _matchData;
     std::unique_ptr<search::queryeval::Blueprint> _bluePrint;
     WarmupRequestContext                          _requestContext;
     MatchDataLayout                               _mdl;
