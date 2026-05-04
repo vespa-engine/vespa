@@ -9,15 +9,12 @@ namespace proton {
  * Class implementing "flush" everything strategy.  Targets are just
  * sorted on age.
  */
-class FlushAllStrategy : public IFlushStrategy
-{
+class FlushAllStrategy : public IFlushStrategy {
 public:
     FlushAllStrategy();
 
-    FlushContext::List
-    getFlushTargets(const FlushContext::List &targetList,
-                    const flushengine::TlsStatsMap&,
-                    const flushengine::ActiveFlushStats&) const override;
+    FlushContext::List getFlushTargets(const FlushContext::List& targetList, const flushengine::TlsStatsMap&,
+                                       const flushengine::ActiveFlushStats&) const override;
     std::string name() const override;
 };
 

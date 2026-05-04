@@ -2,28 +2,29 @@
 #pragma once
 
 #include <vespa/searchcorespi/flush/iflushtarget.h>
+
 #include <atomic>
 
-namespace search::common { struct ICompactableLidSpace; }
+namespace search::common {
+struct ICompactableLidSpace;
+}
 
 namespace proton {
-
 
 /**
  * Implements a flush target that shrinks lid space in target.
  */
-class ShrinkLidSpaceFlushTarget : public searchcorespi::LeafFlushTarget
-{
+class ShrinkLidSpaceFlushTarget : public searchcorespi::LeafFlushTarget {
     /**
      * Task representing that shrinking has been performed.
      **/
     class Flusher;
     using ICompactableLidSpace = search::common::ICompactableLidSpace;
     using FlushStats = searchcorespi::FlushStats;
-    std::shared_ptr<ICompactableLidSpace> _target;
-    std::atomic<SerialNum>                _flushedSerialNum;
+    std::shared_ptr<ICompactableLidSpace>   _target;
+    std::atomic<SerialNum>                  _flushedSerialNum;
     std::atomic<vespalib::system_time::rep> _last_flush_time;
-    FlushStats                            _lastStats;
+    FlushStats                              _lastStats;
 
     void set_flushed_serial_num(SerialNum flushed_serial_num) noexcept {
         _flushedSerialNum.store(flushed_serial_num, std::memory_order_relaxed);
@@ -42,12 +43,8 @@ public:
      * @param flushedSerialNum    When target shrank lid space last time
      * @param target              The target supporting lid space compaction
      */
-    ShrinkLidSpaceFlushTarget(const std::string &name,
-                              Type type,
-                              Component component,
-                              SerialNum flushedSerialNum,
-                              Time lastFlushTime,
-                              std::shared_ptr<ICompactableLidSpace> target);
+    ShrinkLidSpaceFlushTarget(const std::string& name, Type type, Component component, SerialNum flushedSerialNum,
+                              Time lastFlushTime, std::shared_ptr<ICompactableLidSpace> target);
 
     // Implements IFlushTarget.
     MemoryGain getApproxMemoryGain() const override;

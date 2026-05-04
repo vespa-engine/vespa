@@ -15,17 +15,9 @@ class ReservedDiskSpaceCalculator {
         uint64_t _reserved;
 
     public:
-        explicit Candidate(uint64_t reserved_in) noexcept
-            : _reserved(reserved_in)
-        {
-        }
-        Candidate() noexcept
-            : Candidate(0)
-        {
-        }
-        bool operator<(const Candidate& rhs) const noexcept {
-            return _reserved > rhs._reserved;
-        }
+        explicit Candidate(uint64_t reserved_in) noexcept : _reserved(reserved_in) {}
+        Candidate() noexcept : Candidate(0) {}
+        bool operator<(const Candidate& rhs) const noexcept { return _reserved > rhs._reserved; }
         uint64_t reserved() const noexcept { return _reserved; }
     };
 
@@ -43,4 +35,4 @@ public:
     uint64_t get_reserved_disk();
 };
 
-}
+} // namespace proton::flushengine

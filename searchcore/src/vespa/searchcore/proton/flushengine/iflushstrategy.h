@@ -1,15 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "iflushhandler.h"
 #include "flushcontext.h"
+#include "iflushhandler.h"
 
 namespace proton {
 
 namespace flushengine {
 class ActiveFlushStats;
 class TlsStatsMap;
-}
+} // namespace flushengine
 
 /**
  * This class represents a strategy used by the FlushEngine to make decisions on
@@ -18,11 +18,12 @@ class TlsStatsMap;
 class IFlushStrategy {
 protected:
     uint32_t _id;
+
 public:
     using SP = std::shared_ptr<IFlushStrategy>;
 
-    IFlushStrategy(const IFlushStrategy &) = delete;
-    IFlushStrategy & operator = (const IFlushStrategy &) = delete;
+    IFlushStrategy(const IFlushStrategy&) = delete;
+    IFlushStrategy& operator=(const IFlushStrategy&) = delete;
 
     virtual ~IFlushStrategy() = default;
 
@@ -31,21 +32,18 @@ public:
      * a list of targets sorted according to priority strategy.
      * @param targetList The list of possible flush targets.
      * @param tlsStatsMap Statistics per domain in the TLS. A domain matches a flush handler.
-     * @parma active_flushes Statistics of active (ongoing) flushes per flush handler.
+     * @param active_flushes Statistics of active (ongoing) flushes per flush handler.
      * @return A prioritized list of targets to flush.
      */
-    virtual FlushContext::List getFlushTargets(const FlushContext::List& targetList,
-                                               const flushengine::TlsStatsMap& tlsStatsMap,
+    virtual FlushContext::List getFlushTargets(const FlushContext::List&            targetList,
+                                               const flushengine::TlsStatsMap&      tlsStatsMap,
                                                const flushengine::ActiveFlushStats& active_flushes) const = 0;
     virtual std::string name() const = 0;
     void set_id(uint32_t id) noexcept { _id = id; }
     uint32_t get_id() const noexcept { return _id; }
 
 protected:
-    IFlushStrategy()
-        : _id(0u)
-    {}
+    IFlushStrategy() : _id(0u) {}
 };
 
-}
-
+} // namespace proton

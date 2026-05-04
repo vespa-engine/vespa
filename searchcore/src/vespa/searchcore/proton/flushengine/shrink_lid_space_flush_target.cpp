@@ -1,90 +1,71 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "shrink_lid_space_flush_target.h"
+
 #include <vespa/searchlib/common/i_compactable_lid_space.h>
 
 namespace proton {
 
-using searchcorespi::IFlushTarget;
-using searchcorespi::LeafFlushTarget;
 using searchcorespi::FlushStats;
 using searchcorespi::FlushTask;
+using searchcorespi::IFlushTarget;
+using searchcorespi::LeafFlushTarget;
 
-class ShrinkLidSpaceFlushTarget::Flusher : public FlushTask
-{
-    ShrinkLidSpaceFlushTarget &_target;
-    SerialNum _flushSerialNum;
+class ShrinkLidSpaceFlushTarget::Flusher : public FlushTask {
+    ShrinkLidSpaceFlushTarget& _target;
+    SerialNum                  _flushSerialNum;
+
 public:
-    Flusher(ShrinkLidSpaceFlushTarget &target, SerialNum flushSerialNum);
+    Flusher(ShrinkLidSpaceFlushTarget& target, SerialNum flushSerialNum);
     void run() override;
     search::SerialNum getFlushSerial() const override;
 };
 
-ShrinkLidSpaceFlushTarget::Flusher::Flusher(ShrinkLidSpaceFlushTarget &target, SerialNum flushSerialNum)
-    : FlushTask(),
-      _target(target),
-      _flushSerialNum(flushSerialNum)
-{
+ShrinkLidSpaceFlushTarget::Flusher::Flusher(ShrinkLidSpaceFlushTarget& target, SerialNum flushSerialNum)
+    : FlushTask(), _target(target), _flushSerialNum(flushSerialNum) {
     _target._target->shrinkLidSpace();
 }
 
-void
-ShrinkLidSpaceFlushTarget::Flusher::run()
-{
+void ShrinkLidSpaceFlushTarget::Flusher::run() {
     _target.set_flushed_serial_num(_flushSerialNum);
     _target.set_last_flush_time(vespalib::system_clock::now());
 }
 
-search::SerialNum
-ShrinkLidSpaceFlushTarget::Flusher::getFlushSerial() const
-{
+search::SerialNum ShrinkLidSpaceFlushTarget::Flusher::getFlushSerial() const {
     return _flushSerialNum;
 }
 
-ShrinkLidSpaceFlushTarget::ShrinkLidSpaceFlushTarget(const std::string &name,
-                                                     Type type,
-                                                     Component component,
-                                                     SerialNum flushedSerialNum,
-                                                     Time lastFlushTime,
+ShrinkLidSpaceFlushTarget::ShrinkLidSpaceFlushTarget(const std::string& name, Type type, Component component,
+                                                     SerialNum flushedSerialNum, Time lastFlushTime,
                                                      std::shared_ptr<ICompactableLidSpace> target)
     : LeafFlushTarget(name, type, component),
 
       _target(std::move(target)),
       _flushedSerialNum(flushedSerialNum),
       _last_flush_time(lastFlushTime.time_since_epoch().count()),
-      _lastStats()
-{
+      _lastStats() {
 }
 
-IFlushTarget::MemoryGain
-ShrinkLidSpaceFlushTarget::getApproxMemoryGain() const
-{
+IFlushTarget::MemoryGain ShrinkLidSpaceFlushTarget::getApproxMemoryGain() const {
     int64_t canFree = _target->getEstimatedShrinkLidSpaceGain();
     return MemoryGain(canFree, 0);
 }
 
-IFlushTarget::DiskGain
-ShrinkLidSpaceFlushTarget::getApproxDiskGain() const
-{
+IFlushTarget::DiskGain ShrinkLidSpaceFlushTarget::getApproxDiskGain() const {
     return DiskGain(0, 0);
 }
 
-IFlushTarget::SerialNum
-ShrinkLidSpaceFlushTarget::getFlushedSerialNum() const
-{
+IFlushTarget::SerialNum ShrinkLidSpaceFlushTarget::getFlushedSerialNum() const {
     return _flushedSerialNum.load(std::memory_order_relaxed);
 }
 
-IFlushTarget::Time
-ShrinkLidSpaceFlushTarget::getLastFlushTime() const
-{
+IFlushTarget::Time ShrinkLidSpaceFlushTarget::getLastFlushTime() const {
     auto ticks = _last_flush_time.load(std::memory_order_relaxed);
     return vespalib::system_time(vespalib::system_clock::duration(ticks));
 }
 
-IFlushTarget::Task::UP
-ShrinkLidSpaceFlushTarget::initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken>)
-{
+IFlushTarget::Task::UP ShrinkLidSpaceFlushTarget::initFlush(SerialNum currentSerial,
+                                                            std::shared_ptr<search::IFlushToken>) {
     if (currentSerial < _flushedSerialNum.load(std::memory_order_relaxed)) {
         set_last_flush_time(vespalib::system_clock::now());
         return IFlushTarget::Task::UP();
@@ -97,15 +78,11 @@ ShrinkLidSpaceFlushTarget::initFlush(SerialNum currentSerial, std::shared_ptr<se
     }
 }
 
-FlushStats
-ShrinkLidSpaceFlushTarget::getLastFlushStats() const
-{
+FlushStats ShrinkLidSpaceFlushTarget::getLastFlushStats() const {
     return _lastStats;
 }
 
-uint64_t
-ShrinkLidSpaceFlushTarget::getApproxBytesToWriteToDisk() const
-{
+uint64_t ShrinkLidSpaceFlushTarget::getApproxBytesToWriteToDisk() const {
     return 0;
 }
 

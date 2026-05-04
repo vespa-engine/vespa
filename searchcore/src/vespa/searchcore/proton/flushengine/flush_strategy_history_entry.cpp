@@ -4,9 +4,8 @@
 
 namespace proton::flushengine {
 
-FlushStrategyHistoryEntry::FlushStrategyHistoryEntry(std::string name_in, uint32_t id_in,
-                                     bool priority_strategy_in, time_point start_time_in,
-                                     uint32_t inherited_flushes_in)
+FlushStrategyHistoryEntry::FlushStrategyHistoryEntry(std::string name_in, uint32_t id_in, bool priority_strategy_in,
+                                                     time_point start_time_in, uint32_t inherited_flushes_in)
     : _name(std::move(name_in)),
       _id(id_in),
       _priority_strategy(priority_strategy_in),
@@ -14,27 +13,22 @@ FlushStrategyHistoryEntry::FlushStrategyHistoryEntry(std::string name_in, uint32
       _switch_time(),
       _finish_time(),
       _last_flush_finish_time(),
-      _flush_counts(inherited_flushes_in)
-{
+      _flush_counts(inherited_flushes_in) {
 }
 
-FlushStrategyHistoryEntry::FlushStrategyHistoryEntry(const FlushStrategyHistoryEntry &) = default;
-FlushStrategyHistoryEntry::FlushStrategyHistoryEntry(FlushStrategyHistoryEntry &&) noexcept = default;
+FlushStrategyHistoryEntry::FlushStrategyHistoryEntry(const FlushStrategyHistoryEntry&) = default;
+FlushStrategyHistoryEntry::FlushStrategyHistoryEntry(FlushStrategyHistoryEntry&&) noexcept = default;
 
 FlushStrategyHistoryEntry::~FlushStrategyHistoryEntry() = default;
 
-FlushStrategyHistoryEntry& FlushStrategyHistoryEntry::operator=(const FlushStrategyHistoryEntry &) = default;
-FlushStrategyHistoryEntry& FlushStrategyHistoryEntry::operator=(FlushStrategyHistoryEntry &&) noexcept = default;
+FlushStrategyHistoryEntry& FlushStrategyHistoryEntry::operator=(const FlushStrategyHistoryEntry&) = default;
+FlushStrategyHistoryEntry& FlushStrategyHistoryEntry::operator=(FlushStrategyHistoryEntry&&) noexcept = default;
 
-void
-FlushStrategyHistoryEntry::start_flush() noexcept
-{
+void FlushStrategyHistoryEntry::start_flush() noexcept {
     ++_flush_counts._started;
 }
 
-void
-FlushStrategyHistoryEntry::finish_flush(uint32_t strategy_id, time_point now) noexcept
-{
+void FlushStrategyHistoryEntry::finish_flush(uint32_t strategy_id, time_point now) noexcept {
     if (strategy_id < _id) {
         ++_flush_counts._inherited_finished;
         _last_flush_finish_time = now;
@@ -44,16 +38,12 @@ FlushStrategyHistoryEntry::finish_flush(uint32_t strategy_id, time_point now) no
     }
 }
 
-bool
-FlushStrategyHistoryEntry::is_flush_all() const noexcept
-{
+bool FlushStrategyHistoryEntry::is_flush_all() const noexcept {
     return _name == "flush_all";
 }
 
-bool
-FlushStrategyHistoryEntry::is_prepare_restart() const noexcept
-{
+bool FlushStrategyHistoryEntry::is_prepare_restart() const noexcept {
     return _name == "prepare_restart";
 }
 
-}
+} // namespace proton::flushengine
