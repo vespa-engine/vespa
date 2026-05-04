@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "lid_hold_list.h"
+
 #include "lidstatevector.h"
+
 #include <cassert>
 
 using vespalib::Generation;
@@ -11,22 +13,18 @@ namespace proton {
 LidHoldList::LidHoldList() = default;
 LidHoldList::~LidHoldList() = default;
 
-void
-LidHoldList::add(const uint32_t data, Generation generation) {
+void LidHoldList::add(const uint32_t data, Generation generation) {
     if (!_holdList.empty()) {
         assert(generation >= _holdList.back().second);
     }
     _holdList.emplace_back(data, generation);
 }
 
-void
-LidHoldList::clear() {
+void LidHoldList::clear() {
     _holdList.clear();
 }
 
-void
-LidHoldList::reclaim_memory(Generation oldest_used_gen, LidStateVector &freeLids)
-{
+void LidHoldList::reclaim_memory(Generation oldest_used_gen, LidStateVector& freeLids) {
     while (!_holdList.empty() && _holdList.front().second < oldest_used_gen) {
         uint32_t lid = _holdList.front().first;
         freeLids.setBit(lid);
@@ -34,4 +32,4 @@ LidHoldList::reclaim_memory(Generation oldest_used_gen, LidStateVector &freeLids
     }
 }
 
-}
+} // namespace proton

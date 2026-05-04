@@ -1,12 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "lid_allocator.h"
+
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/flow_tuning.h>
 #include <vespa/searchlib/queryeval/full_search.h>
+
 #include <mutex>
 
 #include <vespa/log/log.h>
@@ -25,23 +27,20 @@ using namespace search::queryeval::flow;
 
 namespace proton::documentmetastore {
 
-LidAllocator::LidAllocator(uint32_t size,
-                           uint32_t capacity,
-                           GenerationHolder &genHolder)
+LidAllocator::LidAllocator(uint32_t size, uint32_t capacity, GenerationHolder& genHolder)
     : _holdLids(),
       _freeLids(size, capacity, genHolder, true, false),
       _usedLids(size, capacity, genHolder, false, true),
       _pendingHoldLids(size, capacity, genHolder, false, false),
       _activeLids(size, capacity, genHolder, false, false),
       _numActiveLids(0u),
-      _lidFreeListConstructed(false)
-{ }
+      _lidFreeListConstructed(false) {
+}
 
-vespalib::MemoryUsage
-LidAllocator::getMemoryUsage() const {
+vespalib::MemoryUsage LidAllocator::getMemoryUsage() const {
     vespalib::MemoryUsage usage;
-    size_t allocated = sizeof(*this) + _freeLids.byteSize() + _usedLids.byteSize() +
-                       _pendingHoldLids.byteSize() + _activeLids.byteSize() + _holdLids.size();
+    size_t allocated = sizeof(*this) + _freeLids.byteSize() + _usedLids.byteSize() + _pendingHoldLids.byteSize() +
+                       _activeLids.byteSize() + _holdLids.size();
     usage.incAllocatedBytes(allocated);
     usage.incUsedBytes(allocated);
     return usage;
@@ -49,9 +48,7 @@ LidAllocator::getMemoryUsage() const {
 
 LidAllocator::~LidAllocator() = default;
 
-LidAllocator::DocId
-LidAllocator::getFreeLid(DocId lidLimit)
-{
+LidAllocator::DocId LidAllocator::getFreeLid(DocId lidLimit) {
     DocId lid = _freeLids.getLowest();
     if (lid >= lidLimit) {
         lid = lidLimit;
@@ -61,9 +58,7 @@ LidAllocator::getFreeLid(DocId lidLimit)
     return lid;
 }
 
-LidAllocator::DocId
-LidAllocator::peekFreeLid(DocId lidLimit)
-{
+LidAllocator::DocId LidAllocator::peekFreeLid(DocId lidLimit) {
     DocId lid = _freeLids.getLowest();
     if (lid >= lidLimit) {
         lid = lidLimit;
@@ -71,18 +66,14 @@ LidAllocator::peekFreeLid(DocId lidLimit)
     return lid;
 }
 
-void
-LidAllocator::ensureSpace(uint32_t newSize, uint32_t newCapacity)
-{
+void LidAllocator::ensureSpace(uint32_t newSize, uint32_t newCapacity) {
     _freeLids.resizeVector(newSize, newCapacity);
     _usedLids.resizeVector(newSize, newCapacity);
     _pendingHoldLids.resizeVector(newSize, newCapacity);
     _activeLids.resizeVector(newSize, newCapacity);
 }
 
-void
-LidAllocator::unregisterLid(DocId lid)
-{
+void LidAllocator::unregisterLid(DocId lid) {
     assert(!_pendingHoldLids.testBit(lid));
     if (isFreeListConstructed()) {
         _pendingHoldLids.setBit(lid);
@@ -94,13 +85,12 @@ LidAllocator::unregisterLid(DocId lid)
     }
 }
 
-void
-LidAllocator::unregister_lids(const std::vector<DocId>& lids)
-{
+void LidAllocator::unregister_lids(const std::vector<DocId>& lids) {
     if (lids.empty()) {
         return;
     }
-    auto high = isFreeListConstructed() ? _pendingHoldLids.set_bits(lids) : _pendingHoldLids.assert_not_set_bits(lids);
+    auto high =
+        isFreeListConstructed() ? _pendingHoldLids.set_bits(lids) : _pendingHoldLids.assert_not_set_bits(lids);
     assert(high < _usedLids.size());
     _usedLids.clear_bits(lids);
     assert(high < _activeLids.size());
@@ -108,10 +98,8 @@ LidAllocator::unregister_lids(const std::vector<DocId>& lids)
     _numActiveLids.store(_activeLids.count(), std::memory_order_relaxed);
 }
 
-void
-LidAllocator::moveLidBegin(DocId fromLid, DocId toLid)
-{
-    (void) fromLid;
+void LidAllocator::moveLidBegin(DocId fromLid, DocId toLid) {
+    (void)fromLid;
     assert(!_pendingHoldLids.testBit(fromLid));
     assert(!_pendingHoldLids.testBit(toLid));
     if (isFreeListConstructed()) {
@@ -121,9 +109,7 @@ LidAllocator::moveLidBegin(DocId fromLid, DocId toLid)
     }
 }
 
-void
-LidAllocator::moveLidEnd(DocId fromLid, DocId toLid)
-{
+void LidAllocator::moveLidEnd(DocId fromLid, DocId toLid) {
     if (isFreeListConstructed()) {
         // old lid must be scheduled for hold by caller
         _pendingHoldLids.setBit(fromLid);
@@ -136,11 +122,9 @@ LidAllocator::moveLidEnd(DocId fromLid, DocId toLid)
     }
 }
 
-void
-LidAllocator::holdLids(const std::vector<DocId> &lids, DocId lidLimit, Generation currentGeneration)
-{
-    (void) lidLimit;
-    for (const auto &lid : lids) {
+void LidAllocator::holdLids(const std::vector<DocId>& lids, DocId lidLimit, Generation currentGeneration) {
+    (void)lidLimit;
+    for (const auto& lid : lids) {
         assert(lid > 0);
         assert(holdLidOK(lid, lidLimit));
         _pendingHoldLids.clearBit(lid);
@@ -148,15 +132,9 @@ LidAllocator::holdLids(const std::vector<DocId> &lids, DocId lidLimit, Generatio
     }
 }
 
-bool
-LidAllocator::holdLidOK(DocId lid, DocId lidLimit) const
-{
-    if (_lidFreeListConstructed &&
-        lid != 0 &&
-        lid < lidLimit &&
-        lid < _usedLids.size() &&
-        lid < _pendingHoldLids.size() &&
-        _pendingHoldLids.testBit(lid))
+bool LidAllocator::holdLidOK(DocId lid, DocId lidLimit) const {
+    if (_lidFreeListConstructed && lid != 0 && lid < lidLimit && lid < _usedLids.size() &&
+        lid < _pendingHoldLids.size() && _pendingHoldLids.testBit(lid))
     {
         return true;
     }
@@ -166,20 +144,13 @@ LidAllocator::holdLidOK(DocId lid, DocId lidLimit) const
         "_usedLids.size()=%d, "
         "_pendingHoldLids.size()=%d, "
         "_pendingHoldLids bit=%s",
-        lid, lidLimit,
-        _lidFreeListConstructed ? "true" : "false",
-        (int) _usedLids.size(),
-        (int) _pendingHoldLids.size(),
-        lid < _pendingHoldLids.size() ?
-        (_pendingHoldLids.testBit(lid) ?
-         "true" : "false" ) : "invalid"
-        );
+        lid, lidLimit, _lidFreeListConstructed ? "true" : "false", (int)_usedLids.size(),
+        (int)_pendingHoldLids.size(),
+        lid < _pendingHoldLids.size() ? (_pendingHoldLids.testBit(lid) ? "true" : "false") : "invalid");
     return false;
 }
 
-void
-LidAllocator::constructFreeList(DocId lidLimit)
-{
+void LidAllocator::constructFreeList(DocId lidLimit) {
     assert(!isFreeListConstructed());
     _holdLids.clear();
     for (uint32_t lid = 1; lid < lidLimit; ++lid) {
@@ -191,13 +162,12 @@ LidAllocator::constructFreeList(DocId lidLimit)
 
 namespace {
 
-class WhiteListBlueprint : public SimpleLeafBlueprint
-{
+class WhiteListBlueprint : public SimpleLeafBlueprint {
 private:
-    const search::BitVector &_activeLids;
-    bool _all_lids_active;
-    mutable std::mutex _lock;
-    mutable std::vector<search::fef::TermFieldMatchData *> _matchDataVector;
+    const search::BitVector&                              _activeLids;
+    bool                                                  _all_lids_active;
+    mutable std::mutex                                    _lock;
+    mutable std::vector<search::fef::TermFieldMatchData*> _matchDataVector;
 
     std::unique_ptr<SearchIterator> create_search_helper(bool strict) const {
         auto tfmd = new search::fef::TermFieldMatchData;
@@ -212,21 +182,19 @@ private:
         double do_not_make_me_strict = 1000.0;
         return {rel_est, bitvector_cost(), do_not_make_me_strict * bitvector_strict_cost(rel_est)};
     }
-    SearchIterator::UP
-    createLeafSearch(const TermFieldMatchDataArray &tfmda) const override
-    {
+    SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray& tfmda) const override {
         assert(tfmda.size() == 0);
-        (void) tfmda;
+        (void)tfmda;
         return create_search_helper(strict());
     }
+
 public:
-    WhiteListBlueprint(const search::BitVector &activeLids, bool all_lids_active, uint32_t numActiveLids)
+    WhiteListBlueprint(const search::BitVector& activeLids, bool all_lids_active, uint32_t numActiveLids)
         : SimpleLeafBlueprint(),
           _activeLids(activeLids),
           _all_lids_active(all_lids_active),
           _lock(),
-          _matchDataVector()
-    {
+          _matchDataVector() {
         set_cost_tier(State::COST_TIER_EXPENSIVE);
         // account for DocId 0 (considered active for estimation purposes)
         setEstimate(HitEstimate(numActiveLids + 1, false));
@@ -248,19 +216,14 @@ public:
     }
 };
 
-}
+} // namespace
 
-Blueprint::UP
-LidAllocator::createWhiteListBlueprint() const
-{
-    return std::make_unique<WhiteListBlueprint>(_activeLids.getBitVector(),
-                                                (getNumUsedLids() == getNumActiveLids()),
+Blueprint::UP LidAllocator::createWhiteListBlueprint() const {
+    return std::make_unique<WhiteListBlueprint>(_activeLids.getBitVector(), (getNumUsedLids() == getNumActiveLids()),
                                                 getNumActiveLids());
 }
 
-void
-LidAllocator::updateActiveLids(DocId lid, bool active)
-{
+void LidAllocator::updateActiveLids(DocId lid, bool active) {
     bool oldActive = _activeLids.testBit(lid);
     if (oldActive != active) {
         if (active) {
@@ -272,18 +235,14 @@ LidAllocator::updateActiveLids(DocId lid, bool active)
     }
 }
 
-void
-LidAllocator::clearDocs(DocId lidLow, DocId lidLimit)
-{
-    (void) lidLow;
-    (void) lidLimit;
+void LidAllocator::clearDocs(DocId lidLow, DocId lidLimit) {
+    (void)lidLow;
+    (void)lidLimit;
     assert(_usedLids.getNextTrueBit(lidLow) >= lidLimit);
 }
 
-void
-LidAllocator::shrinkLidSpace(DocId committedDocIdLimit)
-{
+void LidAllocator::shrinkLidSpace(DocId committedDocIdLimit) {
     ensureSpace(committedDocIdLimit, committedDocIdLimit);
 }
 
-}
+} // namespace proton::documentmetastore

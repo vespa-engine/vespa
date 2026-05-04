@@ -3,18 +3,17 @@
 #pragma once
 
 #include "raw_document_metadata.h"
+
 #include <vespa/document/base/globalid.h>
 #include <vespa/document/bucket/bucketid.h>
 
 namespace proton::documentmetastore {
 
-
 /**
  * Interface for storing information about mapping between global document id (gid)
  * and local document id (lid) with additional metadata per document.
  **/
-struct IStore
-{
+struct IStore {
     using DocId = uint32_t;
     using GlobalId = document::GlobalId;
     using BucketId = document::BucketId;
@@ -23,21 +22,14 @@ struct IStore
     /**
      * Result after lookup in the store.
      */
-    struct Result
-    {
-        DocId     _lid;
-        bool      _success;
+    struct Result {
+        DocId _lid;
+        bool  _success;
         // Info about previous state.
-        bool      _found; // gid was known (due to earlier put or remove)
+        bool      _found;     // gid was known (due to earlier put or remove)
         Timestamp _timestamp; // previous timestamp
 
-        Result()
-            : _lid(0u),
-              _success(false),
-              _found(false),
-              _timestamp()
-        {
-        }
+        Result() : _lid(0u), _success(false), _found(false), _timestamp() {}
         void setLid(DocId lid) { _lid = lid; }
         DocId getLid() const { return _lid; }
         bool ok() const { return _success; }
@@ -54,35 +46,29 @@ struct IStore
      * Inspect the metadata associated with the given gid.
      * If the gid is not found the result is not valid.
      */
-    virtual Result inspectExisting(const GlobalId &gid, uint64_t prepare_serial_num) = 0;
+    virtual Result inspectExisting(const GlobalId& gid, uint64_t prepare_serial_num) = 0;
 
     /**
      * Inspect the metadata associated with the given gid.
      * If the gid is not found the next available lid is returned in the result.
      * This lid can be used if calling put() right afterwards.
      */
-    virtual Result inspect(const GlobalId &gid, uint64_t prepare_serial_num) = 0;
+    virtual Result inspect(const GlobalId& gid, uint64_t prepare_serial_num) = 0;
 
     /**
      * Puts the given <lid, metadata> pair to this store.
      * This function should assert that the given lid is the same
      * as returned from inspect().
      **/
-    virtual Result put(const document::DocumentId& docid,
-                       const BucketId &bucketId,
-                       Timestamp timestamp,
-                       uint32_t docSize,
-                       DocId lid,
-                       uint64_t prepare_serial_num) = 0;
+    virtual Result put(const document::DocumentId& docid, const BucketId& bucketId, Timestamp timestamp,
+                       uint32_t docSize, DocId lid, uint64_t prepare_serial_num) = 0;
 
     /*
      * Update the metadata associated with the given lid.
      * Used when handling partial updates.
      * Returns false if there is no entry for the given lid.
      */
-    virtual bool updateMetadata(DocId lid,
-                                const BucketId &bucketId,
-                                Timestamp timestamp) = 0;
+    virtual bool updateMetadata(DocId lid, const BucketId& bucketId, Timestamp timestamp) = 0;
 
     /**
      * Removes the <lid, metadata> pair with the given lid from this
@@ -118,12 +104,12 @@ struct IStore
      * Removes a list of lids.
      * The caller must call removes_complete() after documents removal is done.
      */
-    virtual void removeBatch(const std::vector<DocId> &lidsToRemove, const DocId docIdLimit) = 0;
+    virtual void removeBatch(const std::vector<DocId>& lidsToRemove, const DocId docIdLimit) = 0;
 
     /**
      * Returns the raw metadata stored for the given lid.
      */
-    virtual const RawDocumentMetadata &getRawMetadata(DocId lid) const = 0;
+    virtual const RawDocumentMetadata& getRawMetadata(DocId lid) const = 0;
 
     /**
      * Check if free list is active.
@@ -133,5 +119,4 @@ struct IStore
     virtual bool getFreeListActive() const = 0;
 };
 
-}
-
+} // namespace proton::documentmetastore
