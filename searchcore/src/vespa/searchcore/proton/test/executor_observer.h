@@ -2,21 +2,18 @@
 #pragma once
 
 #include <vespa/vespalib/util/executor.h>
+
 #include <cstdint>
 
 namespace proton::test {
 
-class ExecutorObserver : public vespalib::Executor
-{
+class ExecutorObserver : public vespalib::Executor {
 private:
-    vespalib::Executor &_executor;
-    uint32_t _executeCnt;
+    vespalib::Executor& _executor;
+    uint32_t            _executeCnt;
 
 public:
-    ExecutorObserver(vespalib::Executor &executor)
-        : _executor(executor),
-          _executeCnt(0)
-    {}
+    ExecutorObserver(vespalib::Executor& executor) : _executor(executor), _executeCnt(0) {}
 
     uint32_t getExecuteCnt() const { return _executeCnt; }
 
@@ -27,6 +24,4 @@ public:
     }
 };
 
-}
-
-
+} // namespace proton::test

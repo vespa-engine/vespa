@@ -1,11 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchcore/proton/reference/i_document_db_reference.h>
 #include <vespa/searchcore/proton/reference/gid_to_lid_change_registrator.h>
+#include <vespa/searchcore/proton/reference/i_document_db_reference.h>
 
-namespace search::attribute { class ReadableAttributeVector; }
-namespace search { class IGidToLidMapperFactory; }
+namespace search::attribute {
+class ReadableAttributeVector;
+}
+namespace search {
+class IGidToLidMapperFactory;
+}
 
 namespace proton::test {
 
@@ -23,9 +27,9 @@ struct MockDocumentDBReference : public IDocumentDBReference {
     std::shared_ptr<search::IGidToLidMapperFactory> getGidToLidMapperFactory() override {
         return std::shared_ptr<search::IGidToLidMapperFactory>();
     }
-    std::unique_ptr<GidToLidChangeRegistrator> makeGidToLidChangeRegistrator(const std::string &) override {
+    std::unique_ptr<GidToLidChangeRegistrator> makeGidToLidChangeRegistrator(const std::string&) override {
         return std::unique_ptr<GidToLidChangeRegistrator>();
     }
 };
 
-}
+} // namespace proton::test

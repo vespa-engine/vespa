@@ -4,12 +4,12 @@
 
 namespace proton::test {
 
-DummyFlushTarget::DummyFlushTarget(const std::string &name) noexcept
-    : searchcorespi::LeafFlushTarget(name, Type::OTHER, Component::OTHER)
-{}
-DummyFlushTarget::DummyFlushTarget(const std::string &name, const Type &type, const Component &component) noexcept
-    : searchcorespi::LeafFlushTarget(name, type, component)
-{}
+DummyFlushTarget::DummyFlushTarget(const std::string& name) noexcept
+    : searchcorespi::LeafFlushTarget(name, Type::OTHER, Component::OTHER) {
+}
+DummyFlushTarget::DummyFlushTarget(const std::string& name, const Type& type, const Component& component) noexcept
+    : searchcorespi::LeafFlushTarget(name, type, component) {
+}
 DummyFlushTarget::~DummyFlushTarget() = default;
 
-}
+} // namespace proton::test

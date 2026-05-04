@@ -3,23 +3,26 @@
 
 #include <cstdint>
 
-namespace search { class AttributeVector; }
-namespace search::attribute { class Config; }
+namespace search {
+class AttributeVector;
+}
+namespace search::attribute {
+class Config;
+}
 
 namespace proton::test {
 
-struct AttributeUtils
-{
+struct AttributeUtils {
     using Config = search::attribute::Config;
-    static void fillAttribute(search::AttributeVector &attr, uint32_t numDocs, int64_t value, uint64_t lastSyncToken);
-    static void fillAttribute(search::AttributeVector &attr, uint32_t from, uint32_t to, int64_t value, uint64_t lastSyncToken);
-    static const Config & getInt32Config();
-    static const Config & getInt32ArrayConfig();
-    static const Config & getStringConfig();
-    static const Config & getPredicateConfig();
-    static const Config & getTensorConfig();
+    static void fillAttribute(search::AttributeVector& attr, uint32_t numDocs, int64_t value, uint64_t lastSyncToken);
+    static void fillAttribute(search::AttributeVector& attr, uint32_t from, uint32_t to, int64_t value,
+                              uint64_t lastSyncToken);
+    static const Config& getInt32Config();
+    static const Config& getInt32ArrayConfig();
+    static const Config& getStringConfig();
+    static const Config& getPredicateConfig();
+    static const Config& getTensorConfig();
     static const Config& get_bool_config();
 };
 
-}
-
+} // namespace proton::test

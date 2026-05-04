@@ -5,10 +5,9 @@
 
 namespace proton::test {
 
-struct DummyFlushTarget : public searchcorespi::LeafFlushTarget
-{
-    DummyFlushTarget(const std::string &name) noexcept;
-    DummyFlushTarget(const std::string &name, const Type &type, const Component &component) noexcept;
+struct DummyFlushTarget : public searchcorespi::LeafFlushTarget {
+    DummyFlushTarget(const std::string& name) noexcept;
+    DummyFlushTarget(const std::string& name, const Type& type, const Component& component) noexcept;
     ~DummyFlushTarget() override;
     MemoryGain getApproxMemoryGain() const override { return MemoryGain(0, 0); }
     DiskGain getApproxDiskGain() const override { return DiskGain(0, 0); }
@@ -17,13 +16,9 @@ struct DummyFlushTarget : public searchcorespi::LeafFlushTarget
     searchcorespi::FlushTask::UP initFlush(SerialNum, std::shared_ptr<search::IFlushToken>) override {
         return searchcorespi::FlushTask::UP();
     }
-    searchcorespi::FlushStats getLastFlushStats() const override {
-        return searchcorespi::FlushStats();
-    }
+    searchcorespi::FlushStats getLastFlushStats() const override { return searchcorespi::FlushStats(); }
 
-    uint64_t getApproxBytesToWriteToDisk() const override {
-        return 0;
-    }
+    uint64_t getApproxBytesToWriteToDisk() const override { return 0; }
 };
 
-}
+} // namespace proton::test

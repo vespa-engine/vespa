@@ -8,29 +8,22 @@ namespace proton::test {
 /**
  * Mock of the IIndexManager interface used for unit testing.
  */
-struct MockIndexManager : public searchcorespi::IIndexManager
-{
+struct MockIndexManager : public searchcorespi::IIndexManager {
     ~MockIndexManager() override;
-    void putDocument(uint32_t, const Document &, SerialNum, const OnWriteDoneType&) override {}
+    void putDocument(uint32_t, const Document&, SerialNum, const OnWriteDoneType&) override {}
     void removeDocuments(LidVector, SerialNum) override {}
     void commit(SerialNum, const OnWriteDoneType&) override {}
     SerialNum getCurrentSerialNum() const override { return 0; }
     SerialNum getFlushedSerialNum() const override { return 0; }
-    searchcorespi::IndexSearchable::SP getSearchable() const override {
-        return searchcorespi::IndexSearchable::SP();
-    }
-    search::IndexStats get_index_stats(bool) const override {
-        return search::IndexStats();
-    }
+    searchcorespi::IndexSearchable::SP getSearchable() const override { return searchcorespi::IndexSearchable::SP(); }
+    search::IndexStats get_index_stats(bool) const override { return search::IndexStats(); }
     searchcorespi::common::ResourceUsage get_resource_usage() const override;
-    searchcorespi::IFlushTarget::List getFlushTargets() override {
-        return searchcorespi::IFlushTarget::List();
-    }
-    void setSchema(const Schema &, SerialNum) override {}
+    searchcorespi::IFlushTarget::List getFlushTargets() override { return searchcorespi::IFlushTarget::List(); }
+    void setSchema(const Schema&, SerialNum) override {}
     void heartBeat(SerialNum) override {}
     void compactLidSpace(uint32_t, SerialNum) override {}
-    void setMaxFlushed(uint32_t) override { }
+    void setMaxFlushed(uint32_t) override {}
     bool has_pending_urgent_flush() const override { return false; }
 };
 
-}
+} // namespace proton::test

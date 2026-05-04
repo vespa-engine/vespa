@@ -14,9 +14,8 @@ namespace proton {
 class BucketFactory {
 public:
     static uint32_t getNumBucketBits() { return 8u; }
-    static document::BucketId getBucketId(const document::DocumentId &docId);
-    static storage::spi::Bucket getBucket(const document::DocumentId &docId);
+    static document::BucketId getBucketId(const document::DocumentId& docId);
+    static storage::spi::Bucket getBucket(const document::DocumentId& docId);
 };
 
 } // namespace proton
-
