@@ -4,6 +4,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/test_path.h>
 #include <vespa/vespalib/util/size_literals.h>
+
 #include <string>
 #include <vector>
 
@@ -15,17 +16,15 @@ using namespace search::fef;
 struct ParamList {
     std::vector<std::string> list;
     ParamList() : list() {}
-    ParamList(const std::vector<std::string> &l) : list(l) {}
-    ParamList &add(const std::string &str) {
+    ParamList(const std::vector<std::string>& l) : list(l) {}
+    ParamList& add(const std::string& str) {
         list.push_back(str);
         return *this;
     }
-    bool operator==(const ParamList &rhs) const {
-        return rhs.list == list;
-    }
+    bool operator==(const ParamList& rhs) const { return rhs.list == list; }
 };
 
-std::ostream &operator<<(std::ostream &os, const ParamList &pl) {
+std::ostream& operator<<(std::ostream& os, const ParamList& pl) {
     os << std::endl;
     for (uint32_t i = 0; i < pl.list.size(); ++i) {
         os << "  " << pl.list[i] << std::endl;
@@ -33,16 +32,12 @@ std::ostream &operator<<(std::ostream &os, const ParamList &pl) {
     return os;
 }
 
-bool
-testParse(const std::string &input, bool valid,
-          const std::string &base, ParamList pl,
-          const std::string &output)
-{
-    bool ok = true;
+bool testParse(const std::string& input, bool valid, const std::string& base, ParamList pl,
+               const std::string& output) {
+    bool              ok = true;
     FeatureNameParser parser(input);
     if (!parser.valid()) {
-        LOG(warning, "parse error: input:'%s', rest:'%s'",
-            input.c_str(), input.substr(parser.parsedBytes()).c_str());
+        LOG(warning, "parse error: input:'%s', rest:'%s'", input.c_str(), input.substr(parser.parsedBytes()).c_str());
     }
     EXPECT_EQ(parser.valid(), valid) << (ok = false, "");
     EXPECT_EQ(parser.baseName(), base) << (ok = false, "");
@@ -51,12 +46,10 @@ testParse(const std::string &input, bool valid,
     return ok;
 }
 
-void
-testFile(const std::string &name)
-{
-    char buf[4_Ki];
+void testFile(const std::string& name) {
+    char     buf[4_Ki];
     uint32_t lineN = 0;
-    FILE *f = fopen(name.c_str(), "r");
+    FILE*    f = fopen(name.c_str(), "r");
     ASSERT_TRUE(f != nullptr);
     while (fgets(buf, sizeof(buf), f) != nullptr) {
         ++lineN;
@@ -68,18 +61,16 @@ testFile(const std::string &name)
             continue;
         }
         uint32_t idx = line.find("<=>");
-        bool failed = false;
+        bool     failed = false;
         EXPECT_TRUE(idx < line.size()) << (failed = true, "");
         if (failed) {
-            LOG(error, "(%s:%u): malformed line: '%s'",
-                name.c_str(), lineN, line.c_str());
+            LOG(error, "(%s:%u): malformed line: '%s'", name.c_str(), lineN, line.c_str());
         } else {
             std::string input = line.substr(0, idx);
             std::string expect = line.substr(idx + strlen("<=>"));
             EXPECT_EQ(FeatureNameParser(input).featureName(), expect) << (failed = true, "");
             if (failed) {
-                LOG(error, "(%s:%u): test failed: '%s'",
-                    name.c_str(), lineN, line.c_str());
+                LOG(error, "(%s:%u): test failed: '%s'", name.c_str(), lineN, line.c_str());
             }
         }
     }
@@ -87,8 +78,7 @@ testFile(const std::string &name)
     fclose(f);
 }
 
-TEST(FeatureNameParserTest, test_normal_cases)
-{
+TEST(FeatureNameParserTest, test_normal_cases) {
     // normal cases
     EXPECT_TRUE(testParse("foo", true, "foo", ParamList(), ""));
     EXPECT_TRUE(testParse("foo.out", true, "foo", ParamList(), "out"));
@@ -97,8 +87,7 @@ TEST(FeatureNameParserTest, test_normal_cases)
     EXPECT_TRUE(testParse("foo(a,b).out", true, "foo", ParamList().add("a").add("b"), "out"));
 }
 
-TEST(FeatureNameParserTest, test_0_in_feature_name)
-{
+TEST(FeatureNameParserTest, test_0_in_feature_name) {
     // @ in feature name (for macros)
     EXPECT_TRUE(testParse("foo@", true, "foo@", ParamList(), ""));
     EXPECT_TRUE(testParse("foo@.out", true, "foo@", ParamList(), "out"));
@@ -107,8 +96,7 @@ TEST(FeatureNameParserTest, test_0_in_feature_name)
     EXPECT_TRUE(testParse("foo@(a,b).out", true, "foo@", ParamList().add("a").add("b"), "out"));
 }
 
-TEST(FeatureNameParserTest, test_dollar_in_feature_name)
-{
+TEST(FeatureNameParserTest, test_dollar_in_feature_name) {
     // $ in feature name (for macros)
     EXPECT_TRUE(testParse("foo$", true, "foo$", ParamList(), ""));
     EXPECT_TRUE(testParse("foo$.out", true, "foo$", ParamList(), "out"));
@@ -117,8 +105,7 @@ TEST(FeatureNameParserTest, test_dollar_in_feature_name)
     EXPECT_TRUE(testParse("foo$(a,b).out", true, "foo$", ParamList().add("a").add("b"), "out"));
 }
 
-TEST(FeatureNameParserTest, test_de_quoting_of_parameters)
-{
+TEST(FeatureNameParserTest, test_de_quoting_of_parameters) {
     // de-quoting of parameters
     EXPECT_TRUE(testParse("foo(a,\"b\")", true, "foo", ParamList().add("a").add("b"), ""));
     EXPECT_TRUE(testParse("foo(a,\" b \")", true, "foo", ParamList().add("a").add(" b "), ""));
@@ -126,15 +113,13 @@ TEST(FeatureNameParserTest, test_de_quoting_of_parameters)
     EXPECT_TRUE(testParse("foo(\"\\\"\\\\\\t\\n\\r\\f\\x20\")", true, "foo", ParamList().add("\"\\\t\n\r\f "), ""));
 }
 
-TEST(FeatureNameParserTest, test_no_default_output_when_ending_with_dot)
-{
+TEST(FeatureNameParserTest, test_no_default_output_when_ending_with_dot) {
     // only default output if '.' not specified
     EXPECT_TRUE(testParse("foo.", false, "", ParamList(), ""));
     EXPECT_TRUE(testParse("foo(a,b).", false, "", ParamList(), ""));
 }
 
-TEST(FeatureNameParserTest, test_string_cannot_end_in_parmeter_list)
-{
+TEST(FeatureNameParserTest, test_string_cannot_end_in_parmeter_list) {
     // string cannot end in parameter list
     EXPECT_TRUE(testParse("foo(", false, "", ParamList(), ""));
     EXPECT_TRUE(testParse("foo(a", false, "", ParamList(), ""));
@@ -144,8 +129,7 @@ TEST(FeatureNameParserTest, test_string_cannot_end_in_parmeter_list)
     EXPECT_TRUE(testParse("foo(a,b", false, "", ParamList(), ""));
 }
 
-TEST(FeatureNameParserTest, test_empty_parameters)
-{
+TEST(FeatureNameParserTest, test_empty_parameters) {
     // empty parameters
     EXPECT_TRUE(testParse("foo()", true, "foo", ParamList().add(""), ""));
     EXPECT_TRUE(testParse("foo(,)", true, "foo", ParamList().add("").add(""), ""));
@@ -156,8 +140,7 @@ TEST(FeatureNameParserTest, test_empty_parameters)
     EXPECT_TRUE(testParse("foo( \t , \n , \r , \f )", true, "foo", ParamList().add("").add("").add("").add(""), ""));
 }
 
-TEST(FeatureNameParserTest, test_cases_from_file)
-{
+TEST(FeatureNameParserTest, test_cases_from_file) {
     testFile(TEST_PATH("parsetest.txt"));
 }
 

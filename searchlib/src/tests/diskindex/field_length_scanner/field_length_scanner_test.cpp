@@ -6,27 +6,19 @@
 
 using search::index::DocIdAndFeatures;
 
-
 namespace search::diskindex {
 
-
-class FieldLengthScannerTest : public ::testing::Test
-{
+class FieldLengthScannerTest : public ::testing::Test {
 protected:
     FieldLengthScanner _scanner;
-    FieldLengthScannerTest()
-        : _scanner(3)
-    {
-    }
+    FieldLengthScannerTest() : _scanner(3) {}
 };
 
-TEST_F(FieldLengthScannerTest, require_that_no_scan_gives_empty_length)
-{
+TEST_F(FieldLengthScannerTest, require_that_no_scan_gives_empty_length) {
     EXPECT_EQ(0, _scanner.get_field_length(1));
 }
 
-TEST_F(FieldLengthScannerTest, require_that_single_length_is_registered)
-{
+TEST_F(FieldLengthScannerTest, require_that_single_length_is_registered) {
     DocIdAndFeatures features;
     features.set_doc_id(1);
     features.elements().emplace_back(0, 1, 5);
@@ -34,8 +26,7 @@ TEST_F(FieldLengthScannerTest, require_that_single_length_is_registered)
     EXPECT_EQ(5u, _scanner.get_field_length(1));
 }
 
-TEST_F(FieldLengthScannerTest, require_that_duplicate_element_is_ignored)
-{
+TEST_F(FieldLengthScannerTest, require_that_duplicate_element_is_ignored) {
     DocIdAndFeatures features;
     features.set_doc_id(1);
     features.elements().emplace_back(10, 1, 5);
@@ -52,8 +43,7 @@ TEST_F(FieldLengthScannerTest, require_that_duplicate_element_is_ignored)
     EXPECT_EQ(56u, _scanner.get_field_length(1));
 }
 
-TEST_F(FieldLengthScannerTest, require_that_documents_are_not_mixed)
-{
+TEST_F(FieldLengthScannerTest, require_that_documents_are_not_mixed) {
     DocIdAndFeatures features1;
     DocIdAndFeatures features2;
     features1.set_doc_id(1);
@@ -68,6 +58,6 @@ TEST_F(FieldLengthScannerTest, require_that_documents_are_not_mixed)
     EXPECT_EQ(16u, _scanner.get_field_length(2));
 }
 
-}
+} // namespace search::diskindex
 
 GTEST_MAIN_RUN_ALL_TESTS()

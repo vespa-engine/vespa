@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchlib/expression/resultvector.h>
-#include <vespa/searchlib/expression/integerresultnode.h>
-#include <vespa/searchlib/expression/stringresultnode.h>
 #include <vespa/searchlib/expression/floatresultnode.h>
+#include <vespa/searchlib/expression/integerresultnode.h>
+#include <vespa/searchlib/expression/resultvector.h>
+#include <vespa/searchlib/expression/stringresultnode.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 #include <algorithm>
@@ -99,7 +99,7 @@ TEST_F(ResultVectorIteratorTest, test_iterator_equality) {
 }
 
 TEST_F(ResultVectorIteratorTest, test_polymorphic_iteration) {
-    auto vec = create_int_vector({1, 2, 3, 4, 5});
+    auto              vec = create_int_vector({1, 2, 3, 4, 5});
     ResultNodeVector* poly_vec = &vec;
 
     // Test that we can iterate through the polymorphic base class pointer

@@ -1,18 +1,19 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchlib/queryeval/nearsearch.h>
-#include <vespa/searchlib/queryeval/searchable.h>
+#include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/searchlib/fef/matchdatalayout.h>
+#include <vespa/searchlib/queryeval/fake_index.h>
 #include <vespa/searchlib/queryeval/i_element_gap_inspector.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/match_span.h>
 #include <vespa/searchlib/queryeval/near_search_flags.h>
-#include <vespa/searchlib/queryeval/fake_index.h>
+#include <vespa/searchlib/queryeval/nearsearch.h>
+#include <vespa/searchlib/queryeval/searchable.h>
 #include <vespa/searchlib/queryeval/test/mock_element_gap_inspector.h>
-#include <vespa/searchlib/fef/matchdata.h>
-#include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stringfmt.h>
+
 #include <optional>
 #include <vector>
 
@@ -21,11 +22,11 @@ LOG_SETUP("nearsearch_test");
 
 using search::fef::ElementGap;
 using search::fef::TermFieldHandle;
+using search::queryeval::IElementGapInspector;
 using search::queryeval::MatchSpan;
 using search::queryeval::MatchSpanPos;
-using search::queryeval::NearSearchFlags;
-using search::queryeval::IElementGapInspector;
 using search::queryeval::NearSearchBase;
+using search::queryeval::NearSearchFlags;
 using search::queryeval::test::MockElementGapInspector;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -53,61 +54,44 @@ public:
         return *this;
     }
 
-    template <typename... Positions>
-    MyTerm& pos(Positions... positions) {
+    template <typename... Positions> MyTerm& pos(Positions... positions) {
         (_result.pos(positions), ...);
         return *this;
     }
 
-    search::queryeval::Blueprint::UP
-    make_blueprint(uint32_t fieldId, TermFieldHandle handle) const
-    {
+    search::queryeval::Blueprint::UP make_blueprint(uint32_t fieldId, TermFieldHandle handle) const {
         return search::queryeval::Blueprint::UP(
-                new search::queryeval::FakeBlueprint(
-                        search::queryeval::FieldSpec("<field>", fieldId, handle),
-                        _result));
+            new search::queryeval::FakeBlueprint(search::queryeval::FieldSpec("<field>", fieldId, handle), _result));
     }
 };
 
 class MyQuery {
 private:
-    std::vector<MyTerm*> _terms;
-    bool                 _ordered;
-    uint32_t             _window;
-    uint32_t             _num_negative_terms;
-    uint32_t             _exclusion_distance;
+    std::vector<MyTerm*>    _terms;
+    bool                    _ordered;
+    uint32_t                _window;
+    uint32_t                _num_negative_terms;
+    uint32_t                _exclusion_distance;
     MockElementGapInspector _element_gap_inspector;
 
 public:
     MyQuery(bool ordered, uint32_t window);
     ~MyQuery();
 
-    MyQuery &addTerm(MyTerm &term) {
+    MyQuery& addTerm(MyTerm& term) {
         _terms.push_back(&term);
         return *this;
     }
 
-    uint32_t getNumTerms() const {
-        return _terms.size();
-    }
+    uint32_t getNumTerms() const { return _terms.size(); }
 
-    MyTerm &getTerm(uint32_t i) {
-        return *_terms[i];
-    }
+    MyTerm& getTerm(uint32_t i) { return *_terms[i]; }
 
-    bool isOrdered() const {
-        return _ordered;
-    }
+    bool isOrdered() const { return _ordered; }
 
-    uint32_t getWindow() const {
-        return _window;
-    }
-    uint32_t getNumNegativeTerms() const {
-        return _num_negative_terms;
-    }
-    uint32_t getExclusionDistance() const {
-        return _exclusion_distance;
-    }
+    uint32_t getWindow() const { return _window; }
+    uint32_t getNumNegativeTerms() const { return _num_negative_terms; }
+    uint32_t getExclusionDistance() const { return _exclusion_distance; }
     const IElementGapInspector& get_element_gap_inspector() const noexcept { return _element_gap_inspector; }
     MyQuery& set_element_gap(ElementGap element_gap) {
         _element_gap_inspector = MockElementGapInspector(element_gap);
@@ -126,8 +110,8 @@ MyQuery::MyQuery(bool ordered, uint32_t window)
       _window(window),
       _num_negative_terms(0),
       _exclusion_distance(0),
-      _element_gap_inspector(std::nullopt)
-{}
+      _element_gap_inspector(std::nullopt) {
+}
 
 MyQuery::~MyQuery() = default;
 
@@ -141,23 +125,27 @@ class NearSearchTest : public ::testing::Test {
 protected:
     void testNearSearch(MyQuery& query, uint32_t matchId, const std::string& label);
     void test_near_search(MyQuery& query, uint32_t matchId, std::optional<std::vector<uint32_t>> exp_element_ids,
-                          std::optional<std::vector<uint32_t>> and_element_ids,
+                          std::optional<std::vector<uint32_t>>  and_element_ids,
                           std::optional<std::vector<MatchSpan>> exp_match_spans,
                           std::optional<std::vector<uint32_t>> exp_occs, const std::string& label);
     static MatchSpan match_span(uint32_t field_id, uint32_t first_elem, uint32_t first_pos, uint32_t last_elem,
                                 uint32_t last_pos);
 
     struct NearSpec {
-        std::string _positive_terms;
-        uint32_t _window;
-        std::string _negative_terms;
-        uint32_t _exclusion_distance;
-        bool _ordered;
+        std::string             _positive_terms;
+        uint32_t                _window;
+        std::string             _negative_terms;
+        uint32_t                _exclusion_distance;
+        bool                    _ordered;
         search::fef::ElementGap _element_gap;
-        NearSearchTest* _test;
+        NearSearchTest*         _test;
 
         NearSpec(const std::string& positive_terms, uint32_t window, bool ordered, NearSearchTest* test)
-            : _positive_terms(positive_terms), _window(window), _exclusion_distance(0), _ordered(ordered), _test(test) {}
+            : _positive_terms(positive_terms),
+              _window(window),
+              _exclusion_distance(0),
+              _ordered(ordered),
+              _test(test) {}
         ~NearSpec();
 
         NearSpec& avoid(const std::string& terms, uint32_t exclusion_distance) {
@@ -184,24 +172,20 @@ protected:
         }
 
         void verify_common(const search::queryeval::FakeIndex& index, uint32_t expected_docid,
-                           std::optional<std::vector<uint32_t>> expected_elements,
+                           std::optional<std::vector<uint32_t>>  expected_elements,
                            std::optional<std::vector<MatchSpan>> expected_match_spans,
-                           std::optional<std::vector<uint32_t>> expected_occs);
+                           std::optional<std::vector<uint32_t>>  expected_occs);
         void verify(const search::queryeval::FakeIndex& index, uint32_t expected_docid,
                     const std::vector<uint32_t>& expected_elements);
         void verify_spans(const search::queryeval::FakeIndex& index, uint32_t expected_docid,
                           const std::vector<MatchSpan>& expected_match_spans);
         void verify_occs(const search::queryeval::FakeIndex& index, uint32_t expected_docid,
-                         const std::vector<uint32_t> &expected_occs);
+                         const std::vector<uint32_t>& expected_occs);
     };
 
-    NearSpec near(const std::string& terms, uint32_t window) {
-        return NearSpec(terms, window, false, this);
-    }
+    NearSpec near(const std::string& terms, uint32_t window) { return NearSpec(terms, window, false, this); }
 
-    NearSpec onear(const std::string& terms, uint32_t window) {
-        return NearSpec(terms, window, true, this);
-    }
+    NearSpec onear(const std::string& terms, uint32_t window) { return NearSpec(terms, window, true, this); }
 
     search::queryeval::FakeIndex index() { return {}; }
 
@@ -211,17 +195,13 @@ protected:
 
 NearSearchTest::NearSpec::~NearSpec() = default;
 
-NearSearchTest::NearSearchTest()
-    : ::testing::Test()
-{
+NearSearchTest::NearSearchTest() : ::testing::Test() {
 }
 
 NearSearchTest::~NearSearchTest() = default;
 
-MatchSpan
-NearSearchTest::match_span(uint32_t field_id, uint32_t first_elem, uint32_t first_pos, uint32_t last_elem,
-                            uint32_t last_pos)
-{
+MatchSpan NearSearchTest::match_span(uint32_t field_id, uint32_t first_elem, uint32_t first_pos, uint32_t last_elem,
+                                     uint32_t last_pos) {
     return MatchSpan(field_id, MatchSpanPos(first_elem, first_pos), MatchSpanPos(last_elem, last_pos));
 }
 
@@ -231,29 +211,25 @@ NearSearchTest::match_span(uint32_t field_id, uint32_t first_elem, uint32_t firs
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-TEST_F(NearSearchTest, basic_near)
-{
+TEST_F(NearSearchTest, basic_near) {
     auto foo = MyTerm().doc(69).elem(0, 100).pos(6, 11);
     for (uint32_t i = 0; i <= 1; ++i) {
         SCOPED_TRACE(vespalib::make_string("i = %u", i));
         testNearSearch(MyQuery(false, i).addTerm(foo), 69, "near 1");
-        testNearSearch(MyQuery(true,  i).addTerm(foo), 69, "onear 1");
+        testNearSearch(MyQuery(true, i).addTerm(foo), 69, "onear 1");
     }
 
-    auto bar = MyTerm().doc(68).elem(0, 100).pos(7, 10)
-                       .doc(69).elem(0, 100).pos(7, 10)
-                       .doc(70).elem(0, 100).pos(7, 10);
+    auto bar =
+        MyTerm().doc(68).elem(0, 100).pos(7, 10).doc(69).elem(0, 100).pos(7, 10).doc(70).elem(0, 100).pos(7, 10);
     testNearSearch(MyQuery(false, 0).addTerm(foo).addTerm(bar), 0, "near 2");
-    testNearSearch(MyQuery(true,  0).addTerm(foo).addTerm(bar), 0, "onear 2");
+    testNearSearch(MyQuery(true, 0).addTerm(foo).addTerm(bar), 0, "onear 2");
     for (uint32_t i = 1; i <= 2; ++i) {
         SCOPED_TRACE(vespalib::make_string("i = %u", i));
         testNearSearch(MyQuery(false, i).addTerm(foo).addTerm(bar), 69, "near 3");
-        testNearSearch(MyQuery(true,  i).addTerm(foo).addTerm(bar), 69, "onear 3");
+        testNearSearch(MyQuery(true, i).addTerm(foo).addTerm(bar), 69, "onear 3");
     }
 
-    auto baz = MyTerm().doc(69).elem(0, 100).pos(8, 9)
-                       .doc(70).elem(0, 100).pos(8, 9)
-                       .doc(71).elem(0, 100).pos(8, 9);
+    auto baz = MyTerm().doc(69).elem(0, 100).pos(8, 9).doc(70).elem(0, 100).pos(8, 9).doc(71).elem(0, 100).pos(8, 9);
     for (uint32_t i = 0; i <= 1; ++i) {
         SCOPED_TRACE(vespalib::make_string("i = %u", i));
         testNearSearch(MyQuery(false, i).addTerm(foo).addTerm(bar).addTerm(baz), 0, "near 10");
@@ -262,12 +238,12 @@ TEST_F(NearSearchTest, basic_near)
         testNearSearch(MyQuery(false, i).addTerm(bar).addTerm(foo).addTerm(baz), 0, "near 13");
         testNearSearch(MyQuery(false, i).addTerm(baz).addTerm(foo).addTerm(bar), 0, "near 14");
         testNearSearch(MyQuery(false, i).addTerm(baz).addTerm(bar).addTerm(foo), 0, "near 15");
-        testNearSearch(MyQuery(true,  i).addTerm(foo).addTerm(bar).addTerm(baz), 0, "onear 10");
-        testNearSearch(MyQuery(true,  i).addTerm(foo).addTerm(baz).addTerm(bar), 0, "onear 11");
-        testNearSearch(MyQuery(true,  i).addTerm(bar).addTerm(baz).addTerm(foo), 0, "onear 12");
-        testNearSearch(MyQuery(true,  i).addTerm(bar).addTerm(foo).addTerm(baz), 0, "onear 13");
-        testNearSearch(MyQuery(true,  i).addTerm(baz).addTerm(foo).addTerm(bar), 0, "onear 14");
-        testNearSearch(MyQuery(true,  i).addTerm(baz).addTerm(bar).addTerm(foo), 0, "onear 15");
+        testNearSearch(MyQuery(true, i).addTerm(foo).addTerm(bar).addTerm(baz), 0, "onear 10");
+        testNearSearch(MyQuery(true, i).addTerm(foo).addTerm(baz).addTerm(bar), 0, "onear 11");
+        testNearSearch(MyQuery(true, i).addTerm(bar).addTerm(baz).addTerm(foo), 0, "onear 12");
+        testNearSearch(MyQuery(true, i).addTerm(bar).addTerm(foo).addTerm(baz), 0, "onear 13");
+        testNearSearch(MyQuery(true, i).addTerm(baz).addTerm(foo).addTerm(bar), 0, "onear 14");
+        testNearSearch(MyQuery(true, i).addTerm(baz).addTerm(bar).addTerm(foo), 0, "onear 15");
     }
     for (uint32_t i = 2; i <= 3; ++i) {
         SCOPED_TRACE(vespalib::make_string("i = %u", i));
@@ -277,21 +253,18 @@ TEST_F(NearSearchTest, basic_near)
         testNearSearch(MyQuery(false, i).addTerm(bar).addTerm(foo).addTerm(baz), 69, "near 23");
         testNearSearch(MyQuery(false, i).addTerm(baz).addTerm(foo).addTerm(bar), 69, "near 24");
         testNearSearch(MyQuery(false, i).addTerm(baz).addTerm(bar).addTerm(foo), 69, "near 25");
-        testNearSearch(MyQuery(true,  i).addTerm(foo).addTerm(bar).addTerm(baz), 69, "onear 20");
-        testNearSearch(MyQuery(true,  i).addTerm(foo).addTerm(baz).addTerm(bar), 0, "onear 21");
-        testNearSearch(MyQuery(true,  i).addTerm(bar).addTerm(baz).addTerm(foo), 0, "onear 22");
-        testNearSearch(MyQuery(true,  i).addTerm(bar).addTerm(foo).addTerm(baz), 0, "onear 23");
-        testNearSearch(MyQuery(true,  i).addTerm(baz).addTerm(foo).addTerm(bar), 0, "onear 24");
-        testNearSearch(MyQuery(true,  i).addTerm(baz).addTerm(bar).addTerm(foo), 69, "onear 25");
+        testNearSearch(MyQuery(true, i).addTerm(foo).addTerm(bar).addTerm(baz), 69, "onear 20");
+        testNearSearch(MyQuery(true, i).addTerm(foo).addTerm(baz).addTerm(bar), 0, "onear 21");
+        testNearSearch(MyQuery(true, i).addTerm(bar).addTerm(baz).addTerm(foo), 0, "onear 22");
+        testNearSearch(MyQuery(true, i).addTerm(bar).addTerm(foo).addTerm(baz), 0, "onear 23");
+        testNearSearch(MyQuery(true, i).addTerm(baz).addTerm(foo).addTerm(bar), 0, "onear 24");
+        testNearSearch(MyQuery(true, i).addTerm(baz).addTerm(bar).addTerm(foo), 69, "onear 25");
     }
 }
 
-TEST_F(NearSearchTest, element_boundary)
-{
+TEST_F(NearSearchTest, element_boundary) {
     auto foo = MyTerm().doc(69).elem(0, 5).pos(0);
-    auto bar = MyTerm().doc(69).elem(1, 5).pos(1)
-                       .doc(70).elem(1, 5).pos(1)
-                       .doc(71).elem(1, 5).pos(1);
+    auto bar = MyTerm().doc(69).elem(1, 5).pos(1).doc(70).elem(1, 5).pos(1).doc(71).elem(1, 5).pos(1);
     testNearSearch(MyQuery(false, 20).addTerm(foo).addTerm(bar), 0, "near 1");
     testNearSearch(MyQuery(true, 20).addTerm(foo).addTerm(bar), 0, "onear 1");
     testNearSearch(MyQuery(false, 20).addTerm(foo).addTerm(bar).set_element_gap(0), 69, "near 1");
@@ -302,90 +275,117 @@ TEST_F(NearSearchTest, element_boundary)
     testNearSearch(MyQuery(true, 20).addTerm(foo).addTerm(bar).set_element_gap(15), 0, "onear 3");
 }
 
-TEST_F(NearSearchTest, repeated_terms)
-{
+TEST_F(NearSearchTest, repeated_terms) {
     auto foo = MyTerm().doc(69).elem(0, 100).pos(1, 2, 3);
     testNearSearch(MyQuery(false, 0).addTerm(foo).addTerm(foo), 69, "near 50");
-    testNearSearch(MyQuery(true,  0).addTerm(foo).addTerm(foo), 0, "onear 50");
+    testNearSearch(MyQuery(true, 0).addTerm(foo).addTerm(foo), 0, "onear 50");
     for (uint32_t i = 1; i <= 2; ++i) {
         SCOPED_TRACE(vespalib::make_string("i = %u", i));
         testNearSearch(MyQuery(false, i).addTerm(foo).addTerm(foo), 69, "near 51");
-        testNearSearch(MyQuery(true,  i).addTerm(foo).addTerm(foo), 69, "onear 51");
+        testNearSearch(MyQuery(true, i).addTerm(foo).addTerm(foo), 69, "onear 51");
     }
 
     for (uint32_t i = 0; i <= 1; ++i) {
         SCOPED_TRACE(vespalib::make_string("i = %u", i));
         testNearSearch(MyQuery(false, i).addTerm(foo).addTerm(foo).addTerm(foo), 69, "near 52");
-        testNearSearch(MyQuery(true,  i).addTerm(foo).addTerm(foo).addTerm(foo), 0, "onear 52");
+        testNearSearch(MyQuery(true, i).addTerm(foo).addTerm(foo).addTerm(foo), 0, "onear 52");
     }
     for (uint32_t i = 2; i <= 3; ++i) {
         SCOPED_TRACE(vespalib::make_string("i = %u", i));
         testNearSearch(MyQuery(false, i).addTerm(foo).addTerm(foo).addTerm(foo), 69, "near 53");
-        testNearSearch(MyQuery(true,  i).addTerm(foo).addTerm(foo).addTerm(foo), 69, "onear 53");
+        testNearSearch(MyQuery(true, i).addTerm(foo).addTerm(foo).addTerm(foo), 69, "onear 53");
     }
 }
 
-TEST_F(NearSearchTest, get_element_ids)
-{
+TEST_F(NearSearchTest, get_element_ids) {
     auto foo = MyTerm().doc(69).elem(3, 5).pos(2).elem(7, 5).pos(2);
-    auto bar = MyTerm().doc(69).elem(3, 5).pos(4).elem(7, 5).pos(0)
-                       .doc(70).elem(3, 5).pos(4).elem(7, 5).pos(0)
-                       .doc(71).elem(3, 5).pos(4).elem(7, 5).pos(0);
+    auto bar = MyTerm()
+                   .doc(69)
+                   .elem(3, 5)
+                   .pos(4)
+                   .elem(7, 5)
+                   .pos(0)
+                   .doc(70)
+                   .elem(3, 5)
+                   .pos(4)
+                   .elem(7, 5)
+                   .pos(0)
+                   .doc(71)
+                   .elem(3, 5)
+                   .pos(4)
+                   .elem(7, 5)
+                   .pos(0);
     test_near_search(MyQuery(false, 4).addTerm(foo).addTerm(bar), 69, {{3, 7}}, {}, {}, {}, "near 61");
     test_near_search(MyQuery(true, 4).addTerm(foo).addTerm(bar), 69, {{3}}, {}, {}, {}, "onear 61");
     test_near_search(MyQuery(false, 4).addTerm(bar).addTerm(foo), 69, {{3, 7}}, {}, {}, {}, "near 62");
     test_near_search(MyQuery(true, 4).addTerm(bar).addTerm(foo), 69, {{7}}, {}, {}, {}, "onear 62");
 }
 
-TEST_F(NearSearchTest, and_element_ids_into)
-{
+TEST_F(NearSearchTest, and_element_ids_into) {
     auto foo = MyTerm().doc(69).elem(3, 5).pos(2).elem(7, 5).pos(2);
-    auto bar = MyTerm().doc(69).elem(3, 5).pos(4).elem(7, 5).pos(0)
-                       .doc(70).elem(3, 5).pos(4).elem(7, 5).pos(0)
-                       .doc(71).elem(3, 5).pos(4).elem(7, 5).pos(0);
+    auto bar = MyTerm()
+                   .doc(69)
+                   .elem(3, 5)
+                   .pos(4)
+                   .elem(7, 5)
+                   .pos(0)
+                   .doc(70)
+                   .elem(3, 5)
+                   .pos(4)
+                   .elem(7, 5)
+                   .pos(0)
+                   .doc(71)
+                   .elem(3, 5)
+                   .pos(4)
+                   .elem(7, 5)
+                   .pos(0);
     const std::vector<uint32_t> no_element_ids;
-    test_near_search(MyQuery(false, 4).addTerm(foo).addTerm(bar), 69, {{3, 7}}, {{1, 3, 5, 7, 9}}, {}, {}, "near 711");
+    test_near_search(MyQuery(false, 4).addTerm(foo).addTerm(bar), 69, {{3, 7}}, {{1, 3, 5, 7, 9}}, {}, {},
+                     "near 711");
     test_near_search(MyQuery(false, 4).addTerm(foo).addTerm(bar), 69, {{3}}, {{1, 3, 5, 9}}, {}, {}, "near 712");
     test_near_search(MyQuery(false, 4).addTerm(foo).addTerm(bar), 69, {{7}}, {{1, 5, 7, 9}}, {}, {}, "near 713");
-    test_near_search(MyQuery(false, 4).addTerm(foo).addTerm(bar), 69, no_element_ids, {{1, 5, 9}}, {}, {}, "near 714");
+    test_near_search(MyQuery(false, 4).addTerm(foo).addTerm(bar), 69, no_element_ids, {{1, 5, 9}}, {}, {},
+                     "near 714");
     test_near_search(MyQuery(true, 4).addTerm(foo).addTerm(bar), 69, {{3}}, {{1, 3, 5, 7, 9}}, {}, {}, "onear 711");
-    test_near_search(MyQuery(true, 4).addTerm(foo).addTerm(bar), 69, no_element_ids, {{1, 5, 7, 9}}, {}, {}, "onear 713");
-    test_near_search(MyQuery(false, 4).addTerm(bar).addTerm(foo), 69, {{3, 7}}, {{1, 3, 5, 7, 9}}, {}, {}, "near 721");
+    test_near_search(MyQuery(true, 4).addTerm(foo).addTerm(bar), 69, no_element_ids, {{1, 5, 7, 9}}, {}, {},
+                     "onear 713");
+    test_near_search(MyQuery(false, 4).addTerm(bar).addTerm(foo), 69, {{3, 7}}, {{1, 3, 5, 7, 9}}, {}, {},
+                     "near 721");
     test_near_search(MyQuery(false, 4).addTerm(bar).addTerm(foo), 69, {{3}}, {{1, 3, 5, 9}}, {}, {}, "near 722");
     test_near_search(MyQuery(false, 4).addTerm(bar).addTerm(foo), 69, {{7}}, {{1, 5, 7, 9}}, {}, {}, "near 723");
-    test_near_search(MyQuery(false, 4).addTerm(bar).addTerm(foo), 69, no_element_ids, {{1, 5, 9}}, {}, {}, "near 724");
+    test_near_search(MyQuery(false, 4).addTerm(bar).addTerm(foo), 69, no_element_ids, {{1, 5, 9}}, {}, {},
+                     "near 724");
     test_near_search(MyQuery(true, 4).addTerm(bar).addTerm(foo), 69, {{7}}, {{1, 3, 5, 7, 9}}, {}, {}, "onear 721");
-    test_near_search(MyQuery(true, 4).addTerm(bar).addTerm(foo), 69, no_element_ids, {{1, 3, 5, 9}}, {}, {}, "onear 722");
+    test_near_search(MyQuery(true, 4).addTerm(bar).addTerm(foo), 69, no_element_ids, {{1, 3, 5, 9}}, {}, {},
+                     "onear 722");
 }
 
-void
-NearSearchTest::testNearSearch(MyQuery &query, uint32_t matchId, const std::string& label)
-{
+void NearSearchTest::testNearSearch(MyQuery& query, uint32_t matchId, const std::string& label) {
     test_near_search(query, matchId, std::nullopt, std::nullopt, std::nullopt, std::nullopt, label);
 }
 
-void
-NearSearchTest::test_near_search(MyQuery &query, uint32_t matchId,
-                                 std::optional<std::vector<uint32_t>> exp_element_ids,
-                                 std::optional<std::vector<uint32_t>> and_element_ids,
-                                 std::optional<std::vector<MatchSpan>> exp_match_spans,
-                                 std::optional<std::vector<uint32_t>> exp_occs, const std::string &label)
-{
+void NearSearchTest::test_near_search(MyQuery& query, uint32_t matchId,
+                                      std::optional<std::vector<uint32_t>>  exp_element_ids,
+                                      std::optional<std::vector<uint32_t>>  and_element_ids,
+                                      std::optional<std::vector<MatchSpan>> exp_match_spans,
+                                      std::optional<std::vector<uint32_t>> exp_occs, const std::string& label) {
     SCOPED_TRACE(vespalib::make_string("%s - %u", label.c_str(), matchId));
-    search::queryeval::IntermediateBlueprint *near_b = nullptr;
+    search::queryeval::IntermediateBlueprint* near_b = nullptr;
     if (query.isOrdered()) {
-        near_b = new search::queryeval::ONearBlueprint(query.getWindow(), query.getNumNegativeTerms(),
-                                                        query.getExclusionDistance(), query.get_element_gap_inspector());
+        near_b =
+            new search::queryeval::ONearBlueprint(query.getWindow(), query.getNumNegativeTerms(),
+                                                  query.getExclusionDistance(), query.get_element_gap_inspector());
     } else {
-        near_b = new search::queryeval::NearBlueprint(query.getWindow(), query.getNumNegativeTerms(),
-                                                       query.getExclusionDistance(), query.get_element_gap_inspector());
+        near_b =
+            new search::queryeval::NearBlueprint(query.getWindow(), query.getNumNegativeTerms(),
+                                                 query.getExclusionDistance(), query.get_element_gap_inspector());
     }
     search::queryeval::Blueprint::UP bp(near_b);
-    search::fef::MatchDataLayout layout;
-    std::vector<TermFieldHandle> positive_handles;
+    search::fef::MatchDataLayout     layout;
+    std::vector<TermFieldHandle>     positive_handles;
     for (uint32_t i = 0; i < query.getNumTerms(); ++i) {
         uint32_t fieldId = 0;
-        auto handle = layout.allocTermField(fieldId);
+        auto     handle = layout.allocTermField(fieldId);
         if (i + query.getNumNegativeTerms() < query.getNumTerms()) {
             positive_handles.emplace_back(handle);
         }
@@ -394,11 +394,11 @@ NearSearchTest::test_near_search(MyQuery &query, uint32_t matchId,
     bp->setDocIdLimit(1000);
     bp = search::queryeval::Blueprint::optimize_and_sort(std::move(bp));
     bp->fetchPostings(search::queryeval::ExecuteInfo::FULL);
-    search::fef::MatchData::UP md(layout.createMatchData());
+    search::fef::MatchData::UP            md(layout.createMatchData());
     search::queryeval::SearchIterator::UP near = bp->createSearch(*md);
     near->initFullRange();
     bool foundMatch = false;
-    for (near->seek(1u); ! near->isAtEnd(); near->seek(near->getDocId() + 1)) {
+    for (near->seek(1u); !near->isAtEnd(); near->seek(near->getDocId() + 1)) {
         uint32_t docId = near->getDocId();
         if (docId == matchId) {
             foundMatch = true;
@@ -414,7 +414,7 @@ NearSearchTest::test_near_search(MyQuery &query, uint32_t matchId,
             }
             if (exp_match_spans.has_value()) {
                 std::vector<MatchSpan> act_match_spans;
-                auto& near_base = dynamic_cast<NearSearchBase&>(*near);
+                auto&                  near_base = dynamic_cast<NearSearchBase&>(*near);
                 near_base.get_match_spans(docId, act_match_spans);
                 EXPECT_EQ(exp_match_spans.value(), act_match_spans);
             }
@@ -447,14 +447,12 @@ NearSearchTest::test_near_search(MyQuery &query, uint32_t matchId,
     }
 }
 
-void
-NearSearchTest::NearSpec::verify_common(const search::queryeval::FakeIndex& index, uint32_t expected_docid,
-                                        std::optional<std::vector<uint32_t>> expected_elements,
-                                        std::optional<std::vector<MatchSpan>> expected_match_spans,
-                                        std::optional<std::vector<uint32_t>> expected_occs)
-{
+void NearSearchTest::NearSpec::verify_common(const search::queryeval::FakeIndex& index, uint32_t expected_docid,
+                                             std::optional<std::vector<uint32_t>>  expected_elements,
+                                             std::optional<std::vector<MatchSpan>> expected_match_spans,
+                                             std::optional<std::vector<uint32_t>>  expected_occs) {
     std::vector<MyTerm> terms;
-    std::string all_terms = _positive_terms + _negative_terms;
+    std::string         all_terms = _positive_terms + _negative_terms;
     for (char ch : all_terms) {
         terms.emplace_back(index.lookup(ch));
     }
@@ -470,40 +468,30 @@ NearSearchTest::NearSpec::verify_common(const search::queryeval::FakeIndex& inde
         query.set_element_gap(_element_gap);
     }
 
-    _test->test_near_search(query, expected_docid, expected_elements, {}, expected_match_spans, expected_occs, make_label());
+    _test->test_near_search(query, expected_docid, expected_elements, {}, expected_match_spans, expected_occs,
+                            make_label());
 }
 
-void
-NearSearchTest::NearSpec::verify(const search::queryeval::FakeIndex& index, uint32_t expected_docid,
-                                 const std::vector<uint32_t> &expected_elements)
-{
+void NearSearchTest::NearSpec::verify(const search::queryeval::FakeIndex& index, uint32_t expected_docid,
+                                      const std::vector<uint32_t>& expected_elements) {
     verify_common(index, expected_docid, expected_elements, std::nullopt, std::nullopt);
 }
 
-void
-NearSearchTest::NearSpec::verify_spans(const search::queryeval::FakeIndex& index, uint32_t expected_docid,
-                                       const std::vector<MatchSpan> &expected_match_spans)
-{
+void NearSearchTest::NearSpec::verify_spans(const search::queryeval::FakeIndex& index, uint32_t expected_docid,
+                                            const std::vector<MatchSpan>& expected_match_spans) {
     verify_common(index, expected_docid, std::nullopt, expected_match_spans, std::nullopt);
 }
 
-void
-NearSearchTest::NearSpec::verify_occs(const search::queryeval::FakeIndex& index, uint32_t expected_docid,
-                                      const std::vector<uint32_t> &expected_occs)
-{
+void NearSearchTest::NearSpec::verify_occs(const search::queryeval::FakeIndex& index, uint32_t expected_docid,
+                                           const std::vector<uint32_t>& expected_occs) {
     verify_common(index, expected_docid, std::nullopt, std::nullopt, expected_occs);
 }
 
-
-TEST_F(NearSearchTest, with_visual_setup)
-{
-    auto docs = index().doc(69)
-        .elem(1, "..A.B.C..")
-        .elem(2, "..A.C.B..")
-        .elem(3, "..A.B..C.");
+TEST_F(NearSearchTest, with_visual_setup) {
+    auto docs = index().doc(69).elem(1, "..A.B.C..").elem(2, "..A.C.B..").elem(3, "..A.B..C.");
     near("ABC", 4).verify(docs, 69, {1, 2});
     onear("ABC", 4).verify(docs, 69, {1});
-    near("ABC", 4).verify_spans(docs, 69, {match_span(0, 1, 2, 1, 6), match_span(0, 2, 2, 2,6)});
+    near("ABC", 4).verify_spans(docs, 69, {match_span(0, 1, 2, 1, 6), match_span(0, 2, 2, 2, 6)});
     onear("ABC", 4).verify_spans(docs, 69, {match_span(0, 1, 2, 1, 6)});
     onear("ABC", 5).verify_spans(docs, 69, {match_span(0, 1, 2, 1, 6), match_span(0, 3, 2, 3, 7)});
     onear("CA", 6).element_gap(1).verify_spans(docs, 69, {match_span(0, 1, 6, 2, 2)});
@@ -521,20 +509,18 @@ TEST_F(NearSearchTest, with_visual_setup)
     }
 }
 
-TEST_F(NearSearchTest, merged_match_spans)
-{
-    auto docs = index().doc(69)
-        .elem(1, "..A.B.A.B.")
-        .elem(2, "A.B.");
+TEST_F(NearSearchTest, merged_match_spans) {
+    auto docs = index().doc(69).elem(1, "..A.B.A.B.").elem(2, "A.B.");
     near("AB", 2).verify_spans(docs, 69, {match_span(0, 1, 2, 1, 8), match_span(0, 2, 0, 2, 2)});
     near("AB", 2).element_gap(0).verify_spans(docs, 69, {match_span(0, 1, 2, 2, 2)});
-    onear("AB", 2).verify_spans(docs, 69, {match_span(0, 1, 2, 1, 4), match_span(0, 1, 6, 1, 8), match_span(0, 2, 0, 2, 2)});
+    onear("AB", 2).verify_spans(docs, 69,
+                                {match_span(0, 1, 2, 1, 4), match_span(0, 1, 6, 1, 8), match_span(0, 2, 0, 2, 2)});
     // Test with element gap 0 instead of infinity
-    onear("AB", 2).element_gap(0).verify_spans(docs, 69, {match_span(0, 1, 2, 1, 4), match_span(0, 1, 6, 1, 8), match_span(0, 2, 0, 2, 2)});
+    onear("AB", 2).element_gap(0).verify_spans(
+        docs, 69, {match_span(0, 1, 2, 1, 4), match_span(0, 1, 6, 1, 8), match_span(0, 2, 0, 2, 2)});
 }
 
-TEST_F(NearSearchTest, extended_match_span)
-{
+TEST_F(NearSearchTest, extended_match_span) {
     {
         SCOPED_TRACE("span and negative term in same element");
         auto docs = index().doc(69).elem(0, "AABAA.C");
@@ -608,59 +594,40 @@ TEST_F(NearSearchTest, extended_match_span)
     }
 }
 
-TEST_F(NearSearchTest, non_matching_negative_term)
-{
-    for (uint32_t id: {1, 69}) {
+TEST_F(NearSearchTest, non_matching_negative_term) {
+    for (uint32_t id : {1, 69}) {
         auto docs = index().doc(id).elem(1, "AB");
         near("AB", 4).avoid("X", 3).verify(docs, id, {1});
         onear("AB", 4).avoid("X", 3).verify(docs, id, {1});
     }
 }
 
-TEST_F(NearSearchTest, negative_term_retry_window)
-{
-    auto docs = index().doc(69)
-        .elem(1, "X.A.A.B...X")
-        .elem(2, "X.A.A.B..X.");
+TEST_F(NearSearchTest, negative_term_retry_window) {
+    auto docs = index().doc(69).elem(1, "X.A.A.B...X").elem(2, "X.A.A.B..X.");
     near("AB", 4).avoid("X", 3).verify(docs, 69, {1});
     onear("AB", 4).avoid("X", 3).verify(docs, 69, {1});
 }
 
-TEST_F(NearSearchTest, quantum_brick)
-{
-    auto docs = index().doc(69)
-        .elem(1, "AB").elem(2, "X").elem(3, "AB")
-        .elem(4, "AB").elem(5, " X ").elem(6, "BA");
+TEST_F(NearSearchTest, quantum_brick) {
+    auto docs = index().doc(69).elem(1, "AB").elem(2, "X").elem(3, "AB").elem(4, "AB").elem(5, " X ").elem(6, "BA");
     near("AB", 1).avoid("X", 2).element_gap(1).verify(docs, 69, {4, 6});
     onear("AB", 1).avoid("X", 2).element_gap(1).verify(docs, 69, {4});
 }
 
-TEST_F(NearSearchTest, zero_exclusion_distance)
-{
-    auto docs = index().doc(69)
-        .elem(1, "xAxBx")
-        .elem(2, "xA.Bx");
+TEST_F(NearSearchTest, zero_exclusion_distance) {
+    auto docs = index().doc(69).elem(1, "xAxBx").elem(2, "xA.Bx");
     near("AB", 2).avoid("x", 0).verify(docs, 69, {2});
     onear("AB", 2).avoid("x", 0).verify(docs, 69, {2});
 }
 
-TEST_F(NearSearchTest, multiple_negative_terms)
-{
-    auto docs = index().doc(69)
-        .elem(1, "yxyAxByxy")
-        .elem(2, "xyxAyBxyx")
-        .elem(3, "yxyA.Byxy")
-        .elem(4, "xyxB.Axyx");
-    near("AB", 2).avoid("xy", 0).verify(docs, 69, {3,4});
+TEST_F(NearSearchTest, multiple_negative_terms) {
+    auto docs = index().doc(69).elem(1, "yxyAxByxy").elem(2, "xyxAyBxyx").elem(3, "yxyA.Byxy").elem(4, "xyxB.Axyx");
+    near("AB", 2).avoid("xy", 0).verify(docs, 69, {3, 4});
     onear("AB", 2).avoid("xy", 0).verify(docs, 69, {3});
 }
 
-TEST_F(NearSearchTest, single_positive_term)
-{
-    auto docs = index().doc(69)
-        .elem(1, "XX..A...X")
-        .elem(2, "X...A..XX")
-        .elem(3, "X...A...X");
+TEST_F(NearSearchTest, single_positive_term) {
+    auto docs = index().doc(69).elem(1, "XX..A...X").elem(2, "X...A..XX").elem(3, "X...A...X");
     near("A", 1).avoid("X", 3).verify(docs, 69, {3});
     onear("A", 1).avoid("X", 3).verify(docs, 69, {3});
 }

@@ -2,10 +2,11 @@
 
 #include <vespa/eval/eval/typed_cells.h>
 #include <vespa/searchlib/common/geo_gcd.h>
-#include <vespa/searchlib/tensor/distance_functions.h>
 #include <vespa/searchlib/tensor/distance_function_factory.h>
+#include <vespa/searchlib/tensor/distance_functions.h>
 #include <vespa/searchlib/tensor/mips_distance_transform.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <numbers>
 #include <vector>
 
@@ -19,41 +20,39 @@ using vespalib::eval::CellType;
 using vespalib::eval::Int8Float;
 using vespalib::eval::TypedCells;
 
-template <typename T>
-TypedCells t(const std::vector<T> &v) { return TypedCells(v); }
+template <typename T> TypedCells t(const std::vector<T>& v) {
+    return TypedCells(v);
+}
 
-template<typename T>
-struct EmptyCells {
+template <typename T> struct EmptyCells {
     explicit EmptyCells(size_t elems) : _zero(elems, 0), cells(_zero) { cells.size = 0; }
     std::vector<T> _zero;
-    TypedCells cells;
+    TypedCells     cells;
 };
 
-template <typename T>
-EmptyCells<T> e(size_t elems) { return EmptyCells<T>(elems); }
+template <typename T> EmptyCells<T> e(size_t elems) {
+    return EmptyCells<T>(elems);
+}
 
-void verify_geo_miles(const std::vector<double> &p1,
-                      const std::vector<double> &p2,
-                      double exp_miles)
-{
+void verify_geo_miles(const std::vector<double>& p1, const std::vector<double>& p2, double exp_miles) {
     static GeoDistanceFunctionFactory dff;
-    TypedCells t1(p1);
-    TypedCells t2(p2);
-    auto dist_fun = dff.for_query_vector(t1);
-    double abstract_distance = dist_fun->calc(t2);
+    TypedCells                        t1(p1);
+    TypedCells                        t2(p2);
+    auto                              dist_fun = dff.for_query_vector(t1);
+    double                            abstract_distance = dist_fun->calc(t2);
     EXPECT_EQ(dff.for_insertion_vector(t1)->calc(t2), abstract_distance);
     EXPECT_FLOAT_EQ(dff.for_query_vector(t2)->calc(t1), abstract_distance);
     double raw_score = dist_fun->to_rawscore(abstract_distance);
-    double km = ((1.0/raw_score)-1.0);
+    double km = ((1.0 / raw_score) - 1.0);
     double d_miles = km / 1.609344;
     if (exp_miles != 0.0) {
-        EXPECT_GE(d_miles, exp_miles*0.99);
-        EXPECT_LE(d_miles, exp_miles*1.01);
+        EXPECT_GE(d_miles, exp_miles * 0.99);
+        EXPECT_LE(d_miles, exp_miles * 1.01);
         double threshold = dist_fun->convert_threshold(km);
         EXPECT_DOUBLE_EQ(threshold, abstract_distance);
         // compare with common Great Circle Distance implementation:
         search::common::GeoGcd gp1{p1[0], p1[1]};
-        double km_gcd = gp1.km_great_circle_distance(p2[0], p2[1]);
+        double                 km_gcd = gp1.km_great_circle_distance(p2[0], p2[1]);
         EXPECT_NEAR(km, km_gcd, 1e-9); // EXPECT_DOUBLE_EQ does not work on arm64 for some reason
     } else {
         EXPECT_LE(d_miles, 7e-13);
@@ -61,50 +60,50 @@ void verify_geo_miles(const std::vector<double> &p1,
     }
 }
 
-template<typename T>
-void verifyInvalidQueryVector(DistanceFunctionFactory & dff, double expected_distance_to_origo) {
-    std::vector<T> origo = {0,0,0};
+template <typename T> void verifyInvalidQueryVector(DistanceFunctionFactory& dff, double expected_distance_to_origo) {
+    std::vector<T> origo = {0, 0, 0};
     EXPECT_FLOAT_EQ(expected_distance_to_origo, dff.for_query_vector(t(origo))->calc(e<double>(origo.size()).cells));
     EXPECT_FLOAT_EQ(expected_distance_to_origo, dff.for_query_vector(t(origo))->calc(e<float>(origo.size()).cells));
-    EXPECT_FLOAT_EQ(expected_distance_to_origo, dff.for_query_vector(t(origo))->calc(e<Int8Float>(origo.size()).cells));
-    EXPECT_FLOAT_EQ(expected_distance_to_origo, dff.for_query_vector(t(origo))->calc(e<vespalib::BFloat16>(origo.size()).cells));
+    EXPECT_FLOAT_EQ(expected_distance_to_origo,
+                    dff.for_query_vector(t(origo))->calc(e<Int8Float>(origo.size()).cells));
+    EXPECT_FLOAT_EQ(expected_distance_to_origo,
+                    dff.for_query_vector(t(origo))->calc(e<vespalib::BFloat16>(origo.size()).cells));
 }
 
 double computeEuclideanChecked(TypedCells a, TypedCells b) {
     static EuclideanDistanceFunctionFactory<Int8Float> i8f_dff;
-    static EuclideanDistanceFunctionFactory<float> flt_dff;
-    static EuclideanDistanceFunctionFactory<double> dbl_dff;
-    auto d_n = dbl_dff.for_query_vector(a);
-    auto d_f = flt_dff.for_query_vector(a);
-    auto d_r = dbl_dff.for_query_vector(b);
-    auto d_i = dbl_dff.for_insertion_vector(a);
+    static EuclideanDistanceFunctionFactory<float>     flt_dff;
+    static EuclideanDistanceFunctionFactory<double>    dbl_dff;
+    auto                                               d_n = dbl_dff.for_query_vector(a);
+    auto                                               d_f = flt_dff.for_query_vector(a);
+    auto                                               d_r = dbl_dff.for_query_vector(b);
+    auto                                               d_i = dbl_dff.for_insertion_vector(a);
     // normal:
     double result = d_n->calc(b);
-     // insert is exactly same:
+    // insert is exactly same:
     EXPECT_EQ(d_i->calc(b), result);
     // reverse:
     EXPECT_DOUBLE_EQ(d_r->calc(a), result);
     // float factory:
     EXPECT_FLOAT_EQ(d_f->calc(b), result);
-    if (a.type == vespalib::eval::CellType::INT8 ||
-        b.type == vespalib::eval::CellType::INT8)
-    {
+    if (a.type == vespalib::eval::CellType::INT8 || b.type == vespalib::eval::CellType::INT8) {
         auto d_8 = i8f_dff.for_query_vector(a);
         EXPECT_DOUBLE_EQ(d_8->calc(b), result);
     }
     return result;
 }
 
-namespace { const double sq_root_half = std::sqrt(0.5); }
+namespace {
+const double sq_root_half = std::sqrt(0.5);
+}
 
-TEST(DistanceFunctionsTest, euclidean_gives_expected_score)
-{
+TEST(DistanceFunctionsTest, euclidean_gives_expected_score) {
     std::vector<double> p0{0.0, 0.0, 0.0};
     std::vector<double> p1{1.0, 0.0, 0.0};
     std::vector<double> p2{0.0, 1.0, 0.0};
     std::vector<double> p3{0.0, 0.0, 1.0};
     std::vector<double> p4{0.5, 0.5, sq_root_half};
-    std::vector<double> p5{0.0,-1.0, 0.0};
+    std::vector<double> p5{0.0, -1.0, 0.0};
     std::vector<double> p6{1.0, 2.0, 2.0};
 
     double n4 = computeEuclideanChecked(t(p0), t(p4));
@@ -115,7 +114,7 @@ TEST(DistanceFunctionsTest, euclidean_gives_expected_score)
     EuclideanDistanceFunctionFactory<double> dff;
     verifyInvalidQueryVector<double>(dff, 0.0);
     auto euclid = dff.for_query_vector(t(p0));
-    EXPECT_DOUBLE_EQ(euclid->to_rawscore(d12), 1.0/(1.0 + sqrt(2.0)));
+    EXPECT_DOUBLE_EQ(euclid->to_rawscore(d12), 1.0 / (1.0 + sqrt(2.0)));
     double threshold = euclid->convert_threshold(8.0);
     EXPECT_EQ(threshold, 64.0);
     threshold = euclid->convert_threshold(0.5);
@@ -160,11 +159,10 @@ TEST(DistanceFunctionsTest, euclidean_gives_expected_score)
     EXPECT_EQ(computeEuclideanChecked(t(bf16v), t(p6)), 2.0);
 }
 
-TEST(DistanceFunctionsTest, euclidean_int8_smoketest)
-{
+TEST(DistanceFunctionsTest, euclidean_int8_smoketest) {
     std::vector<Int8Float> p0{0.0, 0.0, 0.0};
     std::vector<Int8Float> p1{1.0, 0.0, 0.0};
-    std::vector<Int8Float> p5{0.0,-1.0, 0.0};
+    std::vector<Int8Float> p5{0.0, -1.0, 0.0};
     std::vector<Int8Float> p7{-1.0, 2.0, -2.0};
 
     EXPECT_DOUBLE_EQ(1.0, computeEuclideanChecked(t(p0), t(p1)));
@@ -177,15 +175,15 @@ TEST(DistanceFunctionsTest, euclidean_int8_smoketest)
 }
 
 double computeAngularChecked(TypedCells a, TypedCells b) {
-    static AngularDistanceFunctionFactory<float> flt_dff;
+    static AngularDistanceFunctionFactory<float>  flt_dff;
     static AngularDistanceFunctionFactory<double> dbl_dff;
-    auto d_n = dbl_dff.for_query_vector(a);
-    auto d_f = flt_dff.for_query_vector(a);
-    auto d_r = dbl_dff.for_query_vector(b);
-    auto d_i = dbl_dff.for_insertion_vector(a);
+    auto                                          d_n = dbl_dff.for_query_vector(a);
+    auto                                          d_f = flt_dff.for_query_vector(a);
+    auto                                          d_r = dbl_dff.for_query_vector(b);
+    auto                                          d_i = dbl_dff.for_insertion_vector(a);
     // normal:
     double result = d_n->calc(b);
-     // insert is exactly same:
+    // insert is exactly same:
     EXPECT_EQ(d_i->calc(b), result);
     // reverse:
     EXPECT_DOUBLE_EQ(d_r->calc(a), result);
@@ -194,49 +192,48 @@ double computeAngularChecked(TypedCells a, TypedCells b) {
     return result;
 }
 
-TEST(DistanceFunctionsTest, angular_gives_expected_score)
-{
+TEST(DistanceFunctionsTest, angular_gives_expected_score) {
     std::vector<double> p0{0.0, 0.0, 0.0};
     std::vector<double> p1{1.0, 0.0, 0.0};
     std::vector<double> p2{0.0, 1.0, 0.0};
     std::vector<double> p3{0.0, 0.0, 1.0};
     std::vector<double> p4{0.5, 0.5, sq_root_half};
-    std::vector<double> p5{0.0,-1.0, 0.0};
+    std::vector<double> p5{0.0, -1.0, 0.0};
     std::vector<double> p6{1.0, 2.0, 2.0};
 
     AngularDistanceFunctionFactory<double> dff;
-    auto angular = dff.for_query_vector(t(p0));
+    auto                                   angular = dff.for_query_vector(t(p0));
 
     verifyInvalidQueryVector<double>(dff, 1.0);
     constexpr double pi = 3.14159265358979323846;
-    double a12 = computeAngularChecked(t(p1), t(p2));
-    double a13 = computeAngularChecked(t(p1), t(p3));
-    double a23 = computeAngularChecked(t(p2), t(p3));
+    double           a12 = computeAngularChecked(t(p1), t(p2));
+    double           a13 = computeAngularChecked(t(p1), t(p3));
+    double           a23 = computeAngularChecked(t(p2), t(p3));
     EXPECT_DOUBLE_EQ(a12, 1.0);
     EXPECT_DOUBLE_EQ(a13, 1.0);
     EXPECT_DOUBLE_EQ(a23, 1.0);
-    EXPECT_FLOAT_EQ(angular->to_rawscore(a12), 1.0/(1.0 + pi/2));
+    EXPECT_FLOAT_EQ(angular->to_rawscore(a12), 1.0 / (1.0 + pi / 2));
 
-    double threshold = angular->convert_threshold(pi/2);
+    double threshold = angular->convert_threshold(pi / 2);
     EXPECT_DOUBLE_EQ(threshold, 1.0);
 
     double a14 = computeAngularChecked(t(p1), t(p4));
     double a24 = computeAngularChecked(t(p2), t(p4));
     EXPECT_FLOAT_EQ(a14, 0.5);
     EXPECT_FLOAT_EQ(a24, 0.5);
-    EXPECT_FLOAT_EQ(angular->to_rawscore(a14), 1.0/(1.0 + pi/3));
-    threshold = angular->convert_threshold(pi/3);
+    EXPECT_FLOAT_EQ(angular->to_rawscore(a14), 1.0 / (1.0 + pi / 3));
+    threshold = angular->convert_threshold(pi / 3);
     EXPECT_DOUBLE_EQ(threshold, 0.5);
 
     double a34 = computeAngularChecked(t(p3), t(p4));
     EXPECT_FLOAT_EQ(a34, (1.0 - sq_root_half));
-    EXPECT_FLOAT_EQ(angular->to_rawscore(a34), 1.0/(1.0 + pi/4));
-    threshold = angular->convert_threshold(pi/4);
+    EXPECT_FLOAT_EQ(angular->to_rawscore(a34), 1.0 / (1.0 + pi / 4));
+    threshold = angular->convert_threshold(pi / 4);
     EXPECT_FLOAT_EQ(threshold, a34);
 
     double a25 = computeAngularChecked(t(p2), t(p5));
     EXPECT_DOUBLE_EQ(a25, 2.0);
-    EXPECT_FLOAT_EQ(angular->to_rawscore(a25), 1.0/(1.0 + pi));
+    EXPECT_FLOAT_EQ(angular->to_rawscore(a25), 1.0 / (1.0 + pi));
     threshold = angular->convert_threshold(pi);
     EXPECT_FLOAT_EQ(threshold, 2.0);
 
@@ -255,16 +252,16 @@ TEST(DistanceFunctionsTest, angular_gives_expected_score)
     double a16 = computeAngularChecked(t(p1), t(p6));
     double a26 = computeAngularChecked(t(p2), t(p6));
     double a36 = computeAngularChecked(t(p3), t(p6));
-    EXPECT_FLOAT_EQ(a16, 1.0 - (1.0/3.0));
-    EXPECT_FLOAT_EQ(a26, 1.0 - (2.0/3.0));
-    EXPECT_FLOAT_EQ(a36, 1.0 - (2.0/3.0));
+    EXPECT_FLOAT_EQ(a16, 1.0 - (1.0 / 3.0));
+    EXPECT_FLOAT_EQ(a26, 1.0 - (2.0 / 3.0));
+    EXPECT_FLOAT_EQ(a36, 1.0 - (2.0 / 3.0));
 
     // check also that cell type conversion works:
     std::vector<Int8Float> iv0{0.0, 0.0, 0.0};
     std::vector<Int8Float> iv1{1.0, 0.0, 0.0};
     std::vector<Int8Float> iv2{0.0, 1.0, 0.0};
     std::vector<Int8Float> iv3{0.0, 0.0, 1.0};
-    std::vector<Int8Float> iv5{0.0,-1.0, 0.0};
+    std::vector<Int8Float> iv5{0.0, -1.0, 0.0};
     std::vector<Int8Float> iv6{1.0, 2.0, 2.0};
 
     EXPECT_DOUBLE_EQ(a12, computeAngularChecked(t(iv1), t(iv2)));
@@ -279,11 +276,10 @@ TEST(DistanceFunctionsTest, angular_gives_expected_score)
     EXPECT_DOUBLE_EQ(a66, computeAngularChecked(t(iv6), t(iv6)));
 }
 
-TEST(DistanceFunctionsTest, conversion_to_internal_distance_threshold_is_capped)
-{
+TEST(DistanceFunctionsTest, conversion_to_internal_distance_threshold_is_capped) {
     AngularDistanceFunctionFactory<double> dff;
-    std::vector<double> p0{0.0, 0.0};
-    auto angular = dff.for_query_vector(t(p0));
+    std::vector<double>                    p0{0.0, 0.0};
+    auto                                   angular = dff.for_query_vector(t(p0));
     // threshold < 0.0 is treated as threshold == 0.0
     EXPECT_DOUBLE_EQ(0.0, angular->convert_threshold(-0.1));
     EXPECT_DOUBLE_EQ(0.0, angular->convert_threshold(0.0));
@@ -295,15 +291,15 @@ TEST(DistanceFunctionsTest, conversion_to_internal_distance_threshold_is_capped)
 }
 
 double computePrenormalizedAngularChecked(TypedCells a, TypedCells b) {
-    static PrenormalizedAngularDistanceFunctionFactory<float> flt_dff;
+    static PrenormalizedAngularDistanceFunctionFactory<float>  flt_dff;
     static PrenormalizedAngularDistanceFunctionFactory<double> dbl_dff;
-    auto d_n = dbl_dff.for_query_vector(a);
-    auto d_f = flt_dff.for_query_vector(a);
-    auto d_r = dbl_dff.for_query_vector(b);
-    auto d_i = dbl_dff.for_insertion_vector(a);
+    auto                                                       d_n = dbl_dff.for_query_vector(a);
+    auto                                                       d_f = flt_dff.for_query_vector(a);
+    auto                                                       d_r = dbl_dff.for_query_vector(b);
+    auto                                                       d_i = dbl_dff.for_insertion_vector(a);
     // normal:
     double result = d_n->calc(b);
-     // insert is exactly same:
+    // insert is exactly same:
     EXPECT_EQ(d_i->calc(b), result);
     // note: for this distance, reverse is not necessarily equal,
     // since we normalize based on length of LHS only
@@ -322,14 +318,13 @@ double computePrenormalizedAngularChecked(TypedCells a, TypedCells b) {
     return result;
 }
 
-TEST(DistanceFunctionsTest, prenormalized_angular_gives_expected_score)
-{
+TEST(DistanceFunctionsTest, prenormalized_angular_gives_expected_score) {
     std::vector<double> p0{0.0, 0.0, 0.0};
     std::vector<double> p1{1.0, 0.0, 0.0};
     std::vector<double> p2{0.0, 1.0, 0.0};
     std::vector<double> p3{0.0, 0.0, 1.0};
     std::vector<double> p4{0.5, 0.5, sq_root_half};
-    std::vector<double> p5{0.0,-1.0, 0.0};
+    std::vector<double> p5{0.0, -1.0, 0.0};
     std::vector<double> p6{1.0, 2.0, 2.0};
     std::vector<double> p7{2.0, -1.0, -2.0};
     std::vector<double> p8{3.0, 0.0, 0.0};
@@ -378,22 +373,14 @@ TEST(DistanceFunctionsTest, prenormalized_angular_gives_expected_score)
     EXPECT_DOUBLE_EQ(threshold, 1.0);
 }
 
-
-TEST(DistanceFunctionsTest, hamming_gives_expected_score)
-{
+TEST(DistanceFunctionsTest, hamming_gives_expected_score) {
     HammingDistanceFunctionFactory<double> dff;
     verifyInvalidQueryVector<double>(dff, 0.0);
-    std::vector<std::vector<double>>
-        points{{0.0, 0.0, 0.0},
-               {1.0, 0.0, 0.0},
-               {0.0, 1.0, 1.0},
-               {2.0, 2.0, 2.0},
-               {0.5, 0.5, 0.5},
-               {0.0,-1.0, 1.0},
-               {1.0, 1.0, 1.0}};
-    auto hamming = dff.for_query_vector(t(points[0]));
-    for (const auto & p : points) {
-        auto dist_fun = dff.for_query_vector(t(p));
+    std::vector<std::vector<double>> points{{0.0, 0.0, 0.0}, {1.0, 0.0, 0.0},  {0.0, 1.0, 1.0}, {2.0, 2.0, 2.0},
+                                            {0.5, 0.5, 0.5}, {0.0, -1.0, 1.0}, {1.0, 1.0, 1.0}};
+    auto                             hamming = dff.for_query_vector(t(points[0]));
+    for (const auto& p : points) {
+        auto   dist_fun = dff.for_query_vector(t(p));
         double h0 = dist_fun->calc(t(p));
         EXPECT_EQ(h0, 0.0);
         EXPECT_EQ(dist_fun->to_rawscore(h0), 1.0);
@@ -401,23 +388,23 @@ TEST(DistanceFunctionsTest, hamming_gives_expected_score)
 
     double d12 = dff.for_query_vector(t(points[1]))->calc(t(points[2]));
     EXPECT_EQ(d12, 3.0);
-    EXPECT_DOUBLE_EQ(hamming->to_rawscore(d12), 1.0/(1.0 + 3.0));
+    EXPECT_DOUBLE_EQ(hamming->to_rawscore(d12), 1.0 / (1.0 + 3.0));
 
     double d16 = dff.for_query_vector(t(points[1]))->calc(t(points[6]));
     EXPECT_EQ(d16, 2.0);
-    EXPECT_DOUBLE_EQ(hamming->to_rawscore(d16), 1.0/(1.0 + 2.0));
+    EXPECT_DOUBLE_EQ(hamming->to_rawscore(d16), 1.0 / (1.0 + 2.0));
 
     double d23 = dff.for_query_vector(t(points[2]))->calc(t(points[3]));
     EXPECT_EQ(d23, 3.0);
-    EXPECT_DOUBLE_EQ(hamming->to_rawscore(d23), 1.0/(1.0 + 3.0));
+    EXPECT_DOUBLE_EQ(hamming->to_rawscore(d23), 1.0 / (1.0 + 3.0));
 
     double d24 = dff.for_query_vector(t(points[2]))->calc(t(points[4]));
     EXPECT_EQ(d24, 3.0);
-    EXPECT_DOUBLE_EQ(hamming->to_rawscore(d24), 1.0/(1.0 + 3.0));
+    EXPECT_DOUBLE_EQ(hamming->to_rawscore(d24), 1.0 / (1.0 + 3.0));
 
     double d25 = dff.for_query_vector(t(points[2]))->calc(t(points[5]));
     EXPECT_EQ(d25, 1.0);
-    EXPECT_DOUBLE_EQ(hamming->to_rawscore(d25), 1.0/(1.0 + 1.0));
+    EXPECT_DOUBLE_EQ(hamming->to_rawscore(d25), 1.0 / (1.0 + 1.0));
 
     double threshold = hamming->convert_threshold(0.25);
     EXPECT_DOUBLE_EQ(threshold, 0.25);
@@ -426,16 +413,15 @@ TEST(DistanceFunctionsTest, hamming_gives_expected_score)
     threshold = hamming->convert_threshold(1.0);
     EXPECT_DOUBLE_EQ(threshold, 1.0);
 
-    std::vector<Int8Float> bytes_a = { 0, 1, 2, 4, 8, 16, 32, 64, -128,  0, 1, 2, 4, 8, 16, 32, 64, -128, 0, 1, 2 };
-    std::vector<Int8Float> bytes_b = { 1, 2, 2, 4, 8, 16, 32, 65, -128,  0, 1, 0, 4, 8, 16, 32, 64, -128, 0, 1, -1 };
+    std::vector<Int8Float> bytes_a = {0, 1, 2, 4, 8, 16, 32, 64, -128, 0, 1, 2, 4, 8, 16, 32, 64, -128, 0, 1, 2};
+    std::vector<Int8Float> bytes_b = {1, 2, 2, 4, 8, 16, 32, 65, -128, 0, 1, 0, 4, 8, 16, 32, 64, -128, 0, 1, -1};
     // expect diff:                    1  2                    1               1                                7
     HammingDistanceFunctionFactory<Int8Float> factory_int8;
-    auto dist_fun = factory_int8.for_query_vector(TypedCells(bytes_a));
+    auto                                      dist_fun = factory_int8.for_query_vector(TypedCells(bytes_a));
     EXPECT_EQ(dist_fun->calc(TypedCells(bytes_b)), 12.0);
 }
 
-TEST(GeoDegreesTest, gives_expected_score)
-{
+TEST(GeoDegreesTest, gives_expected_score) {
     std::vector<double> g1_sfo{37.61, -122.38};
     std::vector<double> g2_lhr{51.47, -0.46};
     std::vector<double> g3_osl{60.20, 11.08};
@@ -446,10 +432,10 @@ TEST(GeoDegreesTest, gives_expected_score)
     std::vector<double> g8_lax{33.94, -118.41};
     std::vector<double> g9_jfk{40.64, -73.78};
 
-    auto geodeg = GeoDistanceFunctionFactory().for_query_vector(t(g6_trd));
+    auto   geodeg = GeoDistanceFunctionFactory().for_query_vector(t(g6_trd));
     double g63_a = geodeg->calc(t(g3_osl));
     double g63_r = geodeg->to_rawscore(g63_a);
-    double g63_km = ((1.0/g63_r)-1.0);
+    double g63_km = ((1.0 / g63_r) - 1.0);
     EXPECT_GT(g63_km, 350);
     EXPECT_LT(g63_km, 375);
 
@@ -548,11 +534,10 @@ TEST(GeoDegreesTest, gives_expected_score)
     verify_geo_miles(g9_jfk, g9_jfk, 0);
 }
 
-TEST(GeoDegreesTest, conversion_to_internal_distance_threshold_is_capped)
-{
+TEST(GeoDegreesTest, conversion_to_internal_distance_threshold_is_capped) {
     GeoDistanceFunctionFactory dff;
-    std::vector<double> p0{0.0, 0.0};
-    auto geo = dff.for_query_vector(t(p0));
+    std::vector<double>        p0{0.0, 0.0};
+    auto                       geo = dff.for_query_vector(t(p0));
     // threshold < 0.0 is treated as theshold == 0.0
     EXPECT_DOUBLE_EQ(0.0, geo->convert_threshold(-0.1));
     EXPECT_DOUBLE_EQ(0.0, geo->convert_threshold(0.0));
@@ -566,7 +551,7 @@ TEST(GeoDegreesTest, conversion_to_internal_distance_threshold_is_capped)
 }
 
 double computeTransformedMipsChecked(TypedCells a, TypedCells b, bool check_insert = true) {
-    MipsDistanceFunctionFactory<float> flt_dff;
+    MipsDistanceFunctionFactory<float>  flt_dff;
     MipsDistanceFunctionFactory<double> dbl_dff;
 
     auto d_n = dbl_dff.for_query_vector(a);
@@ -594,13 +579,12 @@ double computeTransformedMipsChecked(TypedCells a, TypedCells b, bool check_inse
     return result;
 }
 
-TEST(DistanceFunctionsTest, transformed_mips_basic_scores)
-{
+TEST(DistanceFunctionsTest, transformed_mips_basic_scores) {
     std::vector<double> p1{1.0, 0.0, 0.0};
     std::vector<double> p2{0.0, 1.0, 0.0};
     std::vector<double> p3{0.0, 0.0, 1.0};
     std::vector<double> p4{0.5, 0.5, sq_root_half};
-    std::vector<double> p5{0.0,-1.0, 0.0};
+    std::vector<double> p5{0.0, -1.0, 0.0};
 
     MipsDistanceFunctionFactory<double> dff;
     verifyInvalidQueryVector<double>(dff, 0.0);
@@ -626,9 +610,9 @@ TEST(DistanceFunctionsTest, transformed_mips_basic_scores)
     double i44 = computeTransformedMipsChecked(t(p4), t(p4));
     EXPECT_DOUBLE_EQ(i44, -1.0);
 
-    std::vector<double> p6{ 0.0,  4.0, -4.0};
-    std::vector<double> p7{-4.0,  0.0,  4.0};
-    std::vector<double> p8{ 4.0, -4.0,  0.0};
+    std::vector<double> p6{0.0, 4.0, -4.0};
+    std::vector<double> p7{-4.0, 0.0, 4.0};
+    std::vector<double> p8{4.0, -4.0, 0.0};
 
     double i66 = computeTransformedMipsChecked(t(p6), t(p6));
     EXPECT_DOUBLE_EQ(i66, -32.0);
@@ -643,17 +627,16 @@ TEST(DistanceFunctionsTest, transformed_mips_basic_scores)
     EXPECT_DOUBLE_EQ(i78, 16.0);
 }
 
-TEST(DistanceFunctionsTest, transformed_mips_growing_norm)
-{
+TEST(DistanceFunctionsTest, transformed_mips_growing_norm) {
     std::vector<double> p1{1.0, 0.0, 0.0};
     std::vector<double> p2{0.0, 1.0, 0.0};
     std::vector<double> p3{0.0, 0.0, 1.0};
-    std::vector<double> p6{ 0.0,  4.0, -4.0};
-    std::vector<double> p7{-4.0,  0.0,  4.0};
-    std::vector<double> p8{ 4.0, -4.0,  0.0};
+    std::vector<double> p6{0.0, 4.0, -4.0};
+    std::vector<double> p7{-4.0, 0.0, 4.0};
+    std::vector<double> p8{4.0, -4.0, 0.0};
 
     MipsDistanceFunctionFactory<double> dff;
-    auto f = dff.for_insertion_vector(t(p1));
+    auto                                f = dff.for_insertion_vector(t(p1));
     EXPECT_DOUBLE_EQ(-1.0, f->calc(t(p1)));
     EXPECT_DOUBLE_EQ(0.0, f->calc(t(p2)));
     EXPECT_DOUBLE_EQ(0.0, f->calc(t(p3)));
@@ -719,53 +702,46 @@ TEST(DistanceFunctionsTest, transformed_mips_growing_norm)
 }
 
 template <typename FloatType>
-void
-expect_reference_insertion_vector(FloatType exp_dist, DistanceMetric metric, CellType cell_type)
-{
+void expect_reference_insertion_vector(FloatType exp_dist, DistanceMetric metric, CellType cell_type) {
     std::vector<FloatType> lhs{0.0, 1.0};
     std::vector<FloatType> rhs{0.0, 1.0};
-    auto factory = make_distance_function_factory(metric, cell_type);
-    auto func = factory->for_insertion_vector(t(lhs));
+    auto                   factory = make_distance_function_factory(metric, cell_type);
+    auto                   func = factory->for_insertion_vector(t(lhs));
     // Updating the insertion vector should be reflected in the calculation.
     lhs[0] = 1.0;
     lhs[1] = 0.0;
     EXPECT_EQ(exp_dist, func->calc(t(rhs)));
 }
 
-TEST(DistanceFunctionsTest, angular_can_reference_insertion_vector)
-{
+TEST(DistanceFunctionsTest, angular_can_reference_insertion_vector) {
     expect_reference_insertion_vector<float>(1.0, DistanceMetric::Angular, CellType::FLOAT);
     expect_reference_insertion_vector<double>(1.0, DistanceMetric::Angular, CellType::DOUBLE);
     expect_reference_insertion_vector<Int8Float>(1.0, DistanceMetric::Angular, CellType::INT8);
     expect_reference_insertion_vector<BFloat16>(1.0, DistanceMetric::Angular, CellType::BFLOAT16);
 }
 
-TEST(DistanceFunctionsTest, prenormalized_angular_can_reference_insertion_vector)
-{
+TEST(DistanceFunctionsTest, prenormalized_angular_can_reference_insertion_vector) {
     expect_reference_insertion_vector<float>(1.0, DistanceMetric::PrenormalizedAngular, CellType::FLOAT);
     expect_reference_insertion_vector<double>(1.0, DistanceMetric::PrenormalizedAngular, CellType::DOUBLE);
     expect_reference_insertion_vector<Int8Float>(1.0, DistanceMetric::PrenormalizedAngular, CellType::INT8);
     expect_reference_insertion_vector<BFloat16>(1.0, DistanceMetric::PrenormalizedAngular, CellType::BFLOAT16);
 }
 
-TEST(DistanceFunctionsTest, euclidean_can_reference_insertion_vector)
-{
+TEST(DistanceFunctionsTest, euclidean_can_reference_insertion_vector) {
     expect_reference_insertion_vector<float>(2.0, DistanceMetric::Euclidean, CellType::FLOAT);
     expect_reference_insertion_vector<double>(2.0, DistanceMetric::Euclidean, CellType::DOUBLE);
     expect_reference_insertion_vector<Int8Float>(2.0, DistanceMetric::Euclidean, CellType::INT8);
     expect_reference_insertion_vector<BFloat16>(2.0, DistanceMetric::Euclidean, CellType::BFLOAT16);
 }
 
-TEST(DistanceFunctionsTest, dotproduct_can_reference_insertion_vector)
-{
+TEST(DistanceFunctionsTest, dotproduct_can_reference_insertion_vector) {
     expect_reference_insertion_vector<float>(0.0, DistanceMetric::Dotproduct, CellType::FLOAT);
     expect_reference_insertion_vector<double>(0.0, DistanceMetric::Dotproduct, CellType::DOUBLE);
     expect_reference_insertion_vector<Int8Float>(0.0, DistanceMetric::Dotproduct, CellType::INT8);
     expect_reference_insertion_vector<BFloat16>(0.0, DistanceMetric::Dotproduct, CellType::BFLOAT16);
 }
 
-TEST(DistanceFunctionsTest, hamming_can_reference_insertion_vector)
-{
+TEST(DistanceFunctionsTest, hamming_can_reference_insertion_vector) {
     expect_reference_insertion_vector<float>(2.0, DistanceMetric::Hamming, CellType::FLOAT);
     expect_reference_insertion_vector<double>(2.0, DistanceMetric::Hamming, CellType::DOUBLE);
     expect_reference_insertion_vector<Int8Float>(2.0, DistanceMetric::Hamming, CellType::INT8);
@@ -773,4 +749,3 @@ TEST(DistanceFunctionsTest, hamming_can_reference_insertion_vector)
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
-

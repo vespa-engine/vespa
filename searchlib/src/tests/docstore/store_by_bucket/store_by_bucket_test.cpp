@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/bucket/bucketid.h>
 #include <vespa/document/base/documentid.h>
+#include <vespa/document/bucket/bucketid.h>
 #include <vespa/searchlib/docstore/compacter.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -15,39 +15,38 @@ using namespace search::docstore;
 using document::BucketId;
 using vespalib::compression::CompressionConfig;
 
-std::string
-createPayload(BucketId b) {
-    constexpr const char * BUF = "Buffer for testing Bucket drain order.";
+std::string createPayload(BucketId b) {
+    constexpr const char* BUF = "Buffer for testing Bucket drain order.";
     vespalib::asciistream os;
     os << BUF << " " << b;
     return os.str();
 }
-uint32_t userId(size_t i) { return i%100; }
+uint32_t userId(size_t i) {
+    return i % 100;
+}
 
-BucketId
-createBucketId(size_t i) {
-    constexpr size_t USED_BITS=5;
+BucketId createBucketId(size_t i) {
+    constexpr size_t      USED_BITS = 5;
     vespalib::asciistream os;
     os << "id:a:b:n=" << userId(i) << ":" << i;
     document::DocumentId docId(os.view());
-    BucketId b = docId.getGlobalId().convertToBucketId();
+    BucketId             b = docId.getGlobalId().convertToBucketId();
     EXPECT_EQ(userId(i), docId.getGlobalId().getLocationSpecificBits());
     b.setUsedBits(USED_BITS);
     return b;
 }
-void
-add(StoreByBucket & sbb, size_t i) {
-    BucketId b = createBucketId(i);
+void add(StoreByBucket& sbb, size_t i) {
+    BucketId    b = createBucketId(i);
     std::string s = createPayload(b);
-    sbb.add(b, i%10, i, {s.c_str(), s.size()});
+    sbb.add(b, i % 10, i, {s.c_str(), s.size()});
 }
 
 class VerifyBucketOrder : public StoreByBucket::IWrite {
 public:
-    VerifyBucketOrder() : _lastLid(0), _lastBucketId(0), _uniqueUser(), _uniqueBucket(){ }
+    VerifyBucketOrder() : _lastLid(0), _lastBucketId(0), _uniqueUser(), _uniqueBucket() {}
     ~VerifyBucketOrder() override;
     void write(BucketId bucketId, uint32_t chunkId, uint32_t lid, vespalib::ConstBufferRef data) override {
-        (void) chunkId;
+        (void)chunkId;
         EXPECT_LE(_lastBucketId.toKey(), bucketId.toKey());
         if (_lastBucketId != bucketId) {
             EXPECT_TRUE(_uniqueBucket.find(bucketId.getRawId()) == _uniqueBucket.end());
@@ -63,46 +62,38 @@ public:
     }
 
 private:
-    uint32_t _lastLid;
-    BucketId _lastBucketId;
+    uint32_t                     _lastLid;
+    BucketId                     _lastBucketId;
     vespalib::hash_set<uint32_t> _uniqueUser;
     vespalib::hash_set<uint64_t> _uniqueBucket;
-
 };
 
 VerifyBucketOrder::~VerifyBucketOrder() = default;
 
 struct StoreIndex : public StoreByBucket::StoreIndex {
     ~StoreIndex() override;
-    void store(const StoreByBucket::Index &index) override {
-        _where.push_back(index);
-    }
+    void store(const StoreByBucket::Index& index) override { _where.push_back(index); }
     std::vector<StoreByBucket::Index> _where;
 };
 StoreIndex::~StoreIndex() = default;
 
 struct Iterator : public StoreByBucket::IndexIterator {
-    explicit Iterator(const std::vector<StoreByBucket::Index> & where) : _where(where), _current(0) {}
+    explicit Iterator(const std::vector<StoreByBucket::Index>& where) : _where(where), _current(0) {}
 
-    bool has_next() noexcept override {
-        return _current < _where.size();
-    }
+    bool has_next() noexcept override { return _current < _where.size(); }
 
-    StoreByBucket::Index next() noexcept override {
-        return _where[_current++];
-    }
+    StoreByBucket::Index next() noexcept override { return _where[_current++]; }
 
-    const std::vector<StoreByBucket::Index> & _where;
-    uint32_t _current;
+    const std::vector<StoreByBucket::Index>& _where;
+    uint32_t                                 _current;
 };
 
-TEST(StoreByBucketTest, require_that_StoreByBucket_gives_bucket_by_bucket_and_ordered_within)
-{
-    std::mutex backing_lock;
-    vespalib::MemoryDataStore backing(vespalib::alloc::Alloc::alloc(256), &backing_lock);
+TEST(StoreByBucketTest, require_that_StoreByBucket_gives_bucket_by_bucket_and_ordered_within) {
+    std::mutex                    backing_lock;
+    vespalib::MemoryDataStore     backing(vespalib::alloc::Alloc::alloc(256), &backing_lock);
     vespalib::ThreadStackExecutor executor(8);
-    StoreIndex storeIndex;
-    StoreByBucket sbb(storeIndex, backing, executor, CompressionConfig::LZ4);
+    StoreIndex                    storeIndex;
+    StoreByBucket                 sbb(storeIndex, backing, executor, CompressionConfig::LZ4);
     for (size_t i(1); i <= 500u; i++) {
         add(sbb, i);
     }
@@ -113,15 +104,14 @@ TEST(StoreByBucketTest, require_that_StoreByBucket_gives_bucket_by_bucket_and_or
     std::sort(storeIndex._where.begin(), storeIndex._where.end());
     EXPECT_EQ(1000u, storeIndex._where.size());
     VerifyBucketOrder vbo;
-    Iterator all(storeIndex._where);
+    Iterator          all(storeIndex._where);
     sbb.drain(vbo, all);
 }
 
 constexpr uint32_t NUM_PARTS = 3;
 
-void
-verifyIter(BucketIndexStore &store, uint32_t partId, uint32_t expected_count) {
-    auto iter = store.createIterator(partId);
+void verifyIter(BucketIndexStore& store, uint32_t partId, uint32_t expected_count) {
+    auto     iter = store.createIterator(partId);
     uint32_t count(0);
     while (iter->has_next()) {
         StoreByBucket::Index idx = iter->next();

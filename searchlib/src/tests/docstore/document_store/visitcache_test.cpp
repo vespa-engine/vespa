@@ -7,7 +7,7 @@ using namespace search;
 using namespace search::docstore;
 
 TEST(VisitCacheTest, require_that_KeySet_compares_well) {
-    KeySet a({2,1,4,3,9,6});
+    KeySet a({2, 1, 4, 3, 9, 6});
     EXPECT_TRUE(a.contains(1));
     EXPECT_TRUE(a.contains(2));
     EXPECT_TRUE(a.contains(3));
@@ -15,24 +15,24 @@ TEST(VisitCacheTest, require_that_KeySet_compares_well) {
     EXPECT_TRUE(a.contains(6));
     EXPECT_TRUE(a.contains(9));
     EXPECT_EQ(1u, a.hash());
-    EXPECT_TRUE(a.contains(KeySet({4,1,9})));
-    EXPECT_FALSE(a.contains(KeySet({4,1,9,5})));
-    EXPECT_TRUE(a.contains(KeySet({4,1,9,2,3,6})));
-    EXPECT_FALSE(a.contains(KeySet({11,4,1,9,2,3,6})));
+    EXPECT_TRUE(a.contains(KeySet({4, 1, 9})));
+    EXPECT_FALSE(a.contains(KeySet({4, 1, 9, 5})));
+    EXPECT_TRUE(a.contains(KeySet({4, 1, 9, 2, 3, 6})));
+    EXPECT_FALSE(a.contains(KeySet({11, 4, 1, 9, 2, 3, 6})));
 
-    EXPECT_TRUE(KeySet({1,5,7}) == KeySet({7,1,5}));
-    EXPECT_FALSE(KeySet({1,5,7}) == KeySet({7,1,5,4}));
-    EXPECT_FALSE(KeySet({1,5,7}) == KeySet({7,1,5,9}));
-    EXPECT_FALSE(KeySet({1,5,7,9}) == KeySet({7,1,5}));
-    EXPECT_FALSE(KeySet({1,5,7,9}) == KeySet({7,1,5,8}));
+    EXPECT_TRUE(KeySet({1, 5, 7}) == KeySet({7, 1, 5}));
+    EXPECT_FALSE(KeySet({1, 5, 7}) == KeySet({7, 1, 5, 4}));
+    EXPECT_FALSE(KeySet({1, 5, 7}) == KeySet({7, 1, 5, 9}));
+    EXPECT_FALSE(KeySet({1, 5, 7, 9}) == KeySet({7, 1, 5}));
+    EXPECT_FALSE(KeySet({1, 5, 7, 9}) == KeySet({7, 1, 5, 8}));
 
-    EXPECT_FALSE(KeySet({1,3,5}) < KeySet({1,3,5}));
-    EXPECT_TRUE(KeySet({1,3}) < KeySet({1,3,5}));
-    EXPECT_FALSE(KeySet({1,3,5}) < KeySet({1,3}));
-    EXPECT_TRUE(KeySet({1,3,5}) < KeySet({1,4}));
-    EXPECT_FALSE(KeySet({1,3,5}) < KeySet({1,2}));
-    EXPECT_TRUE(KeySet({1,2}) < KeySet({1,3,5}));
-    EXPECT_FALSE(KeySet({1,4}) < KeySet({1,3,5}));
+    EXPECT_FALSE(KeySet({1, 3, 5}) < KeySet({1, 3, 5}));
+    EXPECT_TRUE(KeySet({1, 3}) < KeySet({1, 3, 5}));
+    EXPECT_FALSE(KeySet({1, 3, 5}) < KeySet({1, 3}));
+    EXPECT_TRUE(KeySet({1, 3, 5}) < KeySet({1, 4}));
+    EXPECT_FALSE(KeySet({1, 3, 5}) < KeySet({1, 2}));
+    EXPECT_TRUE(KeySet({1, 2}) < KeySet({1, 3, 5}));
+    EXPECT_FALSE(KeySet({1, 4}) < KeySet({1, 3, 5}));
     EXPECT_EQ(1u, a.getKeys()[0]);
     EXPECT_EQ(2u, a.getKeys()[1]);
     EXPECT_EQ(3u, a.getKeys()[2]);
@@ -43,7 +43,7 @@ TEST(VisitCacheTest, require_that_KeySet_compares_well) {
 
 namespace {
 
-void verifyAB(const BlobSet & a) {
+void verifyAB(const BlobSet& a) {
     EXPECT_EQ(0u, a.get(8).size());
     EXPECT_EQ(6u, a.get(7).size());
     EXPECT_EQ(5u, a.get(9).size());
@@ -53,18 +53,18 @@ void verifyAB(const BlobSet & a) {
     EXPECT_EQ(0, strncmp(a.getBuffer().c_str(), "aaaaaabbbbb", 11));
 }
 
-}
+} // namespace
 
-using B=vespalib::ConstBufferRef;
+using B = vespalib::ConstBufferRef;
 TEST(VisitCacheTest, require_that_BlobSet_can_be_built) {
     using CompressionConfig = vespalib::compression::CompressionConfig;
     BlobSet a;
-    a.append(7, B("aaaaaa",6));
-    a.append(9, B("bbbbb",5));
+    a.append(7, B("aaaaaa", 6));
+    a.append(9, B("bbbbb", 5));
     verifyAB(a);
     CompressionConfig cfg(CompressionConfig::LZ4);
     CompressedBlobSet ca(cfg, std::move(a));
-    BlobSet b = ca.getBlobSet();
+    BlobSet           b = ca.getBlobSet();
     verifyAB(b);
 }
 

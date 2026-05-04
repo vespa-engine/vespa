@@ -1,33 +1,35 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchlib/diskindex/fusion.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/searchlib/common/flush_token.h>
 #include <vespa/searchlib/diskindex/diskindex.h>
+#include <vespa/searchlib/diskindex/fusion.h>
 #include <vespa/searchlib/diskindex/indexbuilder.h>
 #include <vespa/searchlib/diskindex/zcposoccrandread.h>
 #include <vespa/searchlib/fef/fieldpositionsiterator.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/document/repo/newconfigbuilder.h>
-#include <vespa/searchlib/test/doc_builder.h>
-#include <vespa/searchlib/test/schema_builder.h>
-#include <vespa/searchlib/test/string_field_builder.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/memoryindex/document_inverter.h>
 #include <vespa/searchlib/memoryindex/document_inverter_context.h>
 #include <vespa/searchlib/memoryindex/field_index_collection.h>
 #include <vespa/searchlib/memoryindex/posting_iterator.h>
+#include <vespa/searchlib/test/doc_builder.h>
 #include <vespa/searchlib/test/index/mock_field_length_inspector.h>
-#include <vespa/vespalib/btree/btreenodeallocator.hpp>
-#include <vespa/vespalib/util/gate.h>
-#include <vespa/vespalib/util/destructor_callbacks.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
-#include <vespa/vespalib/util/sequencedtaskexecutor.h>
+#include <vespa/searchlib/test/schema_builder.h>
+#include <vespa/searchlib/test/string_field_builder.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
+#include <vespa/vespalib/util/gate.h>
+#include <vespa/vespalib/util/sequencedtaskexecutor.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
+
+#include <vespa/vespalib/btree/btreenodeallocator.hpp>
+
 #include <filesystem>
 
 #include <vespa/log/log.h>
@@ -69,43 +71,42 @@ class MyMockFieldLengthInspector : public IFieldLengthInspector {
     }
 };
 
-class FusionTest : public ::testing::Test
-{
+class FusionTest : public ::testing::Test {
 protected:
     Schema _schema;
     bool   _force_small_merge_chunk;
-    const Schema & getSchema() const { return _schema; }
+    const Schema& getSchema() const { return _schema; }
 
-    void requireThatFusionIsWorking(const std::string &prefix, bool directio, bool readmmap, bool force_short_merge_chunk);
-    void make_simple_index(const std::string &dump_dir, const IFieldLengthInspector &field_length_inspector);
-    bool try_merge_simple_indexes(const std::string &dump_dir, const std::vector<std::string> &sources, std::shared_ptr<IFlushToken> flush_token);
-    void merge_simple_indexes(const std::string &dump_dir, const std::vector<std::string> &sources);
+    void requireThatFusionIsWorking(const std::string& prefix, bool directio, bool readmmap,
+                                    bool force_short_merge_chunk);
+    void make_simple_index(const std::string& dump_dir, const IFieldLengthInspector& field_length_inspector);
+    bool try_merge_simple_indexes(const std::string& dump_dir, const std::vector<std::string>& sources,
+                                  std::shared_ptr<IFlushToken> flush_token);
+    void merge_simple_indexes(const std::string& dump_dir, const std::vector<std::string>& sources);
     void reconstruct_interleaved_features();
+
 public:
     FusionTest();
 };
 
 namespace {
 
-void
-myPushDocument(DocumentInverter &inv)
-{
+void myPushDocument(DocumentInverter& inv) {
     vespalib::Gate gate;
     inv.pushDocuments(std::make_shared<vespalib::GateCallback>(gate));
     gate.await();
 }
 
-}
+} // namespace
 
-std::string
-toString(FieldPositionsIterator posItr, bool hasElements = false, bool hasWeights = false)
-{
+std::string toString(FieldPositionsIterator posItr, bool hasElements = false, bool hasWeights = false) {
     vespalib::asciistream ss;
     ss << "{";
     ss << posItr.getFieldLength() << ":";
     bool first = true;
     for (; posItr.valid(); posItr.next()) {
-        if (!first) ss << ",";
+        if (!first)
+            ss << ",";
         ss << posItr.getPosition();
         first = false;
         if (hasElements) {
@@ -119,10 +120,8 @@ toString(FieldPositionsIterator posItr, bool hasElements = false, bool hasWeight
     return ss.str();
 }
 
-std::unique_ptr<Document>
-make_doc10(DocBuilder &b)
-{
-    auto doc = b.make_document("id:ns:searchdocument::10");
+std::unique_ptr<Document> make_doc10(DocBuilder& b) {
+    auto               doc = b.make_document("id:ns:searchdocument::10");
     StringFieldBuilder sfb(b);
     doc->setValue("f0", sfb.tokenize("a b c d e f z").build());
     doc->setValue("f1", sfb.tokenize("w x y z").build());
@@ -136,35 +135,31 @@ make_doc10(DocBuilder &b)
     return doc;
 }
 
-DocBuilder::AddFieldsType
-make_add_fields()
-{
-    return [](auto& builder, auto& doc) noexcept { using namespace document::new_config_builder;
+DocBuilder::AddFieldsType make_add_fields() {
+    return [](auto& builder, auto& doc) noexcept {
+        using namespace document::new_config_builder;
         auto string_array = doc.createArray(builder.stringTypeRef()).ref();
         auto string_wset = doc.createWset(builder.stringTypeRef()).ref();
         doc.addField("f0", builder.stringTypeRef())
             .addField("f1", builder.stringTypeRef())
             .addField("f2", string_array)
             .addField("f3", string_wset);
-            };
+    };
 }
 
-Schema
-make_schema(bool interleaved_features)
-{
+Schema make_schema(bool interleaved_features) {
     DocBuilder db(make_add_fields());
     return SchemaBuilder(db).add_all_indexes(interleaved_features).build();
 }
 
-void
-assert_interleaved_features(DiskIndex &d, const std::string &field, const std::string &term, uint32_t doc_id, uint32_t exp_num_occs, uint32_t exp_field_length)
-{
-    const Schema &schema = d.getSchema();
-    uint32_t field_id(schema.getIndexFieldId(field));
-    auto& field_index = d.get_field_index(field_id);
-    auto lookup_result(d.lookup(field_id, term));
-    auto handle(field_index.read_posting_list(lookup_result));
-    TermFieldMatchData tfmd;
+void assert_interleaved_features(DiskIndex& d, const std::string& field, const std::string& term, uint32_t doc_id,
+                                 uint32_t exp_num_occs, uint32_t exp_field_length) {
+    const Schema&           schema = d.getSchema();
+    uint32_t                field_id(schema.getIndexFieldId(field));
+    auto&                   field_index = d.get_field_index(field_id);
+    auto                    lookup_result(d.lookup(field_id, term));
+    auto                    handle(field_index.read_posting_list(lookup_result));
+    TermFieldMatchData      tfmd;
     TermFieldMatchDataArray tfmda;
     tfmda.add(&tfmd);
     auto sbap(field_index.create_iterator(lookup_result, handle, tfmda));
@@ -175,17 +170,15 @@ assert_interleaved_features(DiskIndex &d, const std::string &field, const std::s
     EXPECT_EQ(exp_field_length, tfmd.getFieldLength());
 }
 
-void
-validateDiskIndex(DiskIndex &dw, bool f2HasElements, bool f3HasWeights)
-{
-    const Schema &schema(dw.getSchema());
+void validateDiskIndex(DiskIndex& dw, bool f2HasElements, bool f3HasWeights) {
+    const Schema& schema(dw.getSchema());
 
     {
-        uint32_t id1(schema.getIndexFieldId("f0"));
-        auto& field_index = dw.get_field_index(id1);
-        auto lr1(dw.lookup(id1, "c"));
-        auto wh1(field_index.read_posting_list(lr1));
-        TermFieldMatchData f0;
+        uint32_t                id1(schema.getIndexFieldId("f0"));
+        auto&                   field_index = dw.get_field_index(id1);
+        auto                    lr1(dw.lookup(id1, "c"));
+        auto                    wh1(field_index.read_posting_list(lr1));
+        TermFieldMatchData      f0;
         TermFieldMatchDataArray a;
         a.add(&f0);
         auto sbap(field_index.create_iterator(lr1, wh1, a));
@@ -196,11 +189,11 @@ validateDiskIndex(DiskIndex &dw, bool f2HasElements, bool f3HasWeights)
         EXPECT_EQ(std::string("{7:2}"), toString(f0.getIterator()));
     }
     {
-        uint32_t id1(schema.getIndexFieldId("f2"));
-        auto& field_index = dw.get_field_index(id1);
-        auto lr1(dw.lookup(id1, "ax"));
-        auto wh1(field_index.read_posting_list(lr1));
-        TermFieldMatchData f2;
+        uint32_t                id1(schema.getIndexFieldId("f2"));
+        auto&                   field_index = dw.get_field_index(id1);
+        auto                    lr1(dw.lookup(id1, "ax"));
+        auto                    wh1(field_index.read_posting_list(lr1));
+        TermFieldMatchData      f2;
         TermFieldMatchDataArray a;
         a.add(&f2);
         auto sbap(field_index.create_iterator(lr1, wh1, a));
@@ -209,19 +202,17 @@ validateDiskIndex(DiskIndex &dw, bool f2HasElements, bool f3HasWeights)
         EXPECT_TRUE(sbap->seek(10));
         sbap->unpack(10);
         if (f2HasElements) {
-            EXPECT_EQ(std::string("{3:0[e=0,l=3],0[e=1,l=1]}"),
-                      toString(f2.getIterator(), true));
+            EXPECT_EQ(std::string("{3:0[e=0,l=3],0[e=1,l=1]}"), toString(f2.getIterator(), true));
         } else {
-            EXPECT_EQ(std::string("{3:0[e=0,l=3]}"),
-                      toString(f2.getIterator(), true));
+            EXPECT_EQ(std::string("{3:0[e=0,l=3]}"), toString(f2.getIterator(), true));
         }
     }
     {
-        uint32_t id1(schema.getIndexFieldId("f3"));
-        auto& field_index = dw.get_field_index(id1);
-        auto lr1(dw.lookup(id1, "wx"));
-        auto wh1(field_index.read_posting_list(lr1));
-        TermFieldMatchData f3;
+        uint32_t                id1(schema.getIndexFieldId("f3"));
+        auto&                   field_index = dw.get_field_index(id1);
+        auto                    lr1(dw.lookup(id1, "wx"));
+        auto                    wh1(field_index.read_posting_list(lr1));
+        TermFieldMatchData      f3;
         TermFieldMatchDataArray a;
         a.add(&f3);
         auto sbap(field_index.create_iterator(lr1, wh1, a));
@@ -230,19 +221,17 @@ validateDiskIndex(DiskIndex &dw, bool f2HasElements, bool f3HasWeights)
         EXPECT_TRUE(sbap->seek(10));
         sbap->unpack(10);
         if (f3HasWeights) {
-            EXPECT_EQ(std::string("{2:0[e=0,w=4,l=2]}"),
-                      toString(f3.getIterator(), true, true));
+            EXPECT_EQ(std::string("{2:0[e=0,w=4,l=2]}"), toString(f3.getIterator(), true, true));
         } else {
-            EXPECT_EQ(std::string("{2:0[e=0,w=1,l=2]}"),
-                      toString(f3.getIterator(), true, true));
+            EXPECT_EQ(std::string("{2:0[e=0,w=1,l=2]}"), toString(f3.getIterator(), true, true));
         }
     }
     {
-        uint32_t id1(schema.getIndexFieldId("f3"));
-        auto& field_index = dw.get_field_index(id1);
-        auto lr1(dw.lookup(id1, "zz"));
-        auto wh1(field_index.read_posting_list(lr1));
-        TermFieldMatchData f3;
+        uint32_t                id1(schema.getIndexFieldId("f3"));
+        auto&                   field_index = dw.get_field_index(id1);
+        auto                    lr1(dw.lookup(id1, "zz"));
+        auto                    wh1(field_index.read_posting_list(lr1));
+        TermFieldMatchData      f3;
         TermFieldMatchDataArray a;
         a.add(&f3);
         auto sbap(field_index.create_iterator(lr1, wh1, a));
@@ -251,19 +240,17 @@ validateDiskIndex(DiskIndex &dw, bool f2HasElements, bool f3HasWeights)
         EXPECT_TRUE(sbap->seek(11));
         sbap->unpack(11);
         if (f3HasWeights) {
-            EXPECT_EQ(std::string("{1:0[e=0,w=-27,l=1]}"),
-                      toString(f3.getIterator(), true, true));
+            EXPECT_EQ(std::string("{1:0[e=0,w=-27,l=1]}"), toString(f3.getIterator(), true, true));
         } else {
-            EXPECT_EQ(std::string("{1:0[e=0,w=1,l=1]}"),
-                      toString(f3.getIterator(), true, true));
+            EXPECT_EQ(std::string("{1:0[e=0,w=1,l=1]}"), toString(f3.getIterator(), true, true));
         }
     }
     {
-        uint32_t id1(schema.getIndexFieldId("f3"));
-        auto& field_index = dw.get_field_index(id1);
-        auto lr1(dw.lookup(id1, "zz0"));
-        auto wh1(field_index.read_posting_list(lr1));
-        TermFieldMatchData f3;
+        uint32_t                id1(schema.getIndexFieldId("f3"));
+        auto&                   field_index = dw.get_field_index(id1);
+        auto                    lr1(dw.lookup(id1, "zz0"));
+        auto                    wh1(field_index.read_posting_list(lr1));
+        TermFieldMatchData      f3;
         TermFieldMatchDataArray a;
         a.add(&f3);
         auto sbap(field_index.create_iterator(lr1, wh1, a));
@@ -272,11 +259,9 @@ validateDiskIndex(DiskIndex &dw, bool f2HasElements, bool f3HasWeights)
         EXPECT_TRUE(sbap->seek(12));
         sbap->unpack(12);
         if (f3HasWeights) {
-            EXPECT_EQ(std::string("{1:0[e=0,w=0,l=1]}"),
-                         toString(f3.getIterator(), true, true));
+            EXPECT_EQ(std::string("{1:0[e=0,w=0,l=1]}"), toString(f3.getIterator(), true, true));
         } else {
-            EXPECT_EQ(std::string("{1:0[e=0,w=1,l=1]}"),
-                      toString(f3.getIterator(), true, true));
+            EXPECT_EQ(std::string("{1:0[e=0,w=1,l=1]}"), toString(f3.getIterator(), true, true));
         }
     }
 }
@@ -284,47 +269,35 @@ validateDiskIndex(DiskIndex &dw, bool f2HasElements, bool f3HasWeights)
 VESPA_THREAD_STACK_TAG(invert_executor)
 VESPA_THREAD_STACK_TAG(push_executor)
 
-void
-FusionTest::requireThatFusionIsWorking(const std::string &prefix, bool directio, bool readmmap, bool force_small_merge_chunk)
-{
+void FusionTest::requireThatFusionIsWorking(const std::string& prefix, bool directio, bool readmmap,
+                                            bool force_small_merge_chunk) {
     Schema schema;
     Schema schema2;
     Schema schema3;
     for (SchemaUtil::IndexIterator it(getSchema()); it.isValid(); ++it) {
-        const Schema::IndexField &iField = _schema.getIndexField(it.getIndex());
-        schema.addIndexField(Schema::IndexField(iField.getName(),
-                                     iField.getDataType(),
-                                     iField.getCollectionType()));
+        const Schema::IndexField& iField = _schema.getIndexField(it.getIndex());
+        schema.addIndexField(Schema::IndexField(iField.getName(), iField.getDataType(), iField.getCollectionType()));
         if (iField.getCollectionType() == CollectionType::WEIGHTEDSET) {
-            schema2.addIndexField(Schema::IndexField(iField.getName(),
-                                                     iField.getDataType(),
-                                                     CollectionType::ARRAY));
+            schema2.addIndexField(Schema::IndexField(iField.getName(), iField.getDataType(), CollectionType::ARRAY));
         } else {
-            schema2.addIndexField(Schema::IndexField(iField.getName(),
-                                                     iField.getDataType(),
-                                                     iField.getCollectionType()));
+            schema2.addIndexField(
+                Schema::IndexField(iField.getName(), iField.getDataType(), iField.getCollectionType()));
         }
-        schema3.addIndexField(Schema::IndexField(iField.getName(),
-                                      iField.getDataType(),
-                                      CollectionType::SINGLE));
+        schema3.addIndexField(Schema::IndexField(iField.getName(), iField.getDataType(), CollectionType::SINGLE));
     }
     schema3.addIndexField(Schema::IndexField("f4", search::index::schema::DataType::STRING));
-    schema.addFieldSet(Schema::FieldSet("nc0").
-                              addField("f0").addField("f1"));
-    schema2.addFieldSet(Schema::FieldSet("nc0").
-                               addField("f1").addField("f0"));
-    schema3.addFieldSet(Schema::FieldSet("nc2").
-                               addField("f0").addField("f1").
-                               addField("f2").addField("f3").
-                               addField("f4"));
-    FieldIndexCollection fic(schema, MockFieldLengthInspector());
-    DocBuilder b(make_add_fields());
-    StringFieldBuilder sfb(b);
-    auto invertThreads = SequencedTaskExecutor::create(invert_executor, 2);
-    auto pushThreads = SequencedTaskExecutor::create(push_executor, 2);
+    schema.addFieldSet(Schema::FieldSet("nc0").addField("f0").addField("f1"));
+    schema2.addFieldSet(Schema::FieldSet("nc0").addField("f1").addField("f0"));
+    schema3.addFieldSet(
+        Schema::FieldSet("nc2").addField("f0").addField("f1").addField("f2").addField("f3").addField("f4"));
+    FieldIndexCollection    fic(schema, MockFieldLengthInspector());
+    DocBuilder              b(make_add_fields());
+    StringFieldBuilder      sfb(b);
+    auto                    invertThreads = SequencedTaskExecutor::create(invert_executor, 2);
+    auto                    pushThreads = SequencedTaskExecutor::create(push_executor, 2);
     DocumentInverterContext inv_context(schema, *invertThreads, *pushThreads, fic);
-    DocumentInverter inv(inv_context);
-    Document::UP doc;
+    DocumentInverter        inv(inv_context);
+    Document::UP            doc;
 
     doc = make_doc10(b);
     inv.invertDocument(10, *doc, {});
@@ -348,15 +321,14 @@ FusionTest::requireThatFusionIsWorking(const std::string &prefix, bool directio,
     inv.invertDocument(12, *doc, {});
     myPushDocument(inv);
 
-
-    const std::string dump2dir = prefix + "dump2";
+    const std::string  dump2dir = prefix + "dump2";
     constexpr uint32_t numDocs = 12 + 1;
 
-    const uint32_t numWords = fic.getNumUniqueWords();
+    const uint32_t           numWords = fic.getNumUniqueWords();
     MockFieldLengthInspector mock_field_length_inspector;
-    TuneFileIndexing tuneFileIndexing;
-    TuneFileSearch tuneFileSearch;
-    DummyFileHeaderContext fileHeaderContext;
+    TuneFileIndexing         tuneFileIndexing;
+    TuneFileSearch           tuneFileSearch;
+    DummyFileHeaderContext   fileHeaderContext;
     if (directio) {
         tuneFileIndexing._read.setWantDirectIO();
         tuneFileIndexing._write.setWantDirectIO();
@@ -366,8 +338,8 @@ FusionTest::requireThatFusionIsWorking(const std::string &prefix, bool directio,
         tuneFileSearch._read.setWantMemoryMap();
     }
     {
-        IndexBuilder ib(schema, dump2dir, numDocs, numWords,
-                        mock_field_length_inspector, tuneFileIndexing, fileHeaderContext);
+        IndexBuilder ib(schema, dump2dir, numDocs, numWords, mock_field_length_inspector, tuneFileIndexing,
+                        fileHeaderContext);
         fic.dump(ib);
     }
     vespalib::ThreadStackExecutor executor(4);
@@ -380,10 +352,9 @@ FusionTest::requireThatFusionIsWorking(const std::string &prefix, bool directio,
 
     do {
         std::vector<std::string> sources;
-        SelectorArray selector(numDocs, 0);
+        SelectorArray            selector(numDocs, 0);
         sources.push_back(prefix + "dump2");
-        Fusion fusion(schema, prefix + "dump3", sources, selector,
-                      tuneFileIndexing,fileHeaderContext);
+        Fusion fusion(schema, prefix + "dump3", sources, selector, tuneFileIndexing, fileHeaderContext);
         fusion.set_force_small_merge_chunk(force_small_merge_chunk);
         ASSERT_TRUE(fusion.merge(executor, std::make_shared<FlushToken>()));
     } while (0);
@@ -394,10 +365,9 @@ FusionTest::requireThatFusionIsWorking(const std::string &prefix, bool directio,
     } while (0);
     do {
         std::vector<std::string> sources;
-        SelectorArray selector(numDocs, 0);
+        SelectorArray            selector(numDocs, 0);
         sources.push_back(prefix + "dump3");
-        Fusion fusion(schema2, prefix + "dump4", sources, selector,
-                      tuneFileIndexing, fileHeaderContext);
+        Fusion fusion(schema2, prefix + "dump4", sources, selector, tuneFileIndexing, fileHeaderContext);
         fusion.set_force_small_merge_chunk(force_small_merge_chunk);
         ASSERT_TRUE(fusion.merge(executor, std::make_shared<FlushToken>()));
     } while (0);
@@ -408,10 +378,9 @@ FusionTest::requireThatFusionIsWorking(const std::string &prefix, bool directio,
     } while (0);
     do {
         std::vector<std::string> sources;
-        SelectorArray selector(numDocs, 0);
+        SelectorArray            selector(numDocs, 0);
         sources.push_back(prefix + "dump3");
-        Fusion fusion(schema3, prefix + "dump5", sources, selector,
-                      tuneFileIndexing, fileHeaderContext);
+        Fusion fusion(schema3, prefix + "dump5", sources, selector, tuneFileIndexing, fileHeaderContext);
         fusion.set_force_small_merge_chunk(force_small_merge_chunk);
         ASSERT_TRUE(fusion.merge(executor, std::make_shared<FlushToken>()));
     } while (0);
@@ -422,10 +391,9 @@ FusionTest::requireThatFusionIsWorking(const std::string &prefix, bool directio,
     } while (0);
     do {
         std::vector<std::string> sources;
-        SelectorArray selector(numDocs, 0);
+        SelectorArray            selector(numDocs, 0);
         sources.push_back(prefix + "dump3");
-        Fusion fusion(schema, prefix + "dump6", sources, selector,
-                      tuneFileIndexing, fileHeaderContext);
+        Fusion fusion(schema, prefix + "dump6", sources, selector, tuneFileIndexing, fileHeaderContext);
         fusion.set_dynamic_k_pos_index_format(true);
         fusion.set_force_small_merge_chunk(force_small_merge_chunk);
         ASSERT_TRUE(fusion.merge(executor, std::make_shared<FlushToken>()));
@@ -437,10 +405,9 @@ FusionTest::requireThatFusionIsWorking(const std::string &prefix, bool directio,
     } while (0);
     do {
         std::vector<std::string> sources;
-        SelectorArray selector(numDocs, 0);
+        SelectorArray            selector(numDocs, 0);
         sources.push_back(prefix + "dump2");
-        Fusion fusion(schema, prefix + "dump3", sources, selector,
-                      tuneFileIndexing, fileHeaderContext);
+        Fusion fusion(schema, prefix + "dump3", sources, selector, tuneFileIndexing, fileHeaderContext);
         fusion.set_force_small_merge_chunk(force_small_merge_chunk);
         ASSERT_TRUE(fusion.merge(executor, std::make_shared<FlushToken>()));
     } while (0);
@@ -451,91 +418,76 @@ FusionTest::requireThatFusionIsWorking(const std::string &prefix, bool directio,
     } while (0);
 }
 
-void
-FusionTest::make_simple_index(const std::string &dump_dir, const IFieldLengthInspector &field_length_inspector)
-{
-    FieldIndexCollection fic(_schema, field_length_inspector);
-    constexpr  uint32_t numDocs = 20;
-    constexpr uint32_t numWords = 1000;
-    DocBuilder b(make_add_fields());
-    auto invertThreads = SequencedTaskExecutor::create(invert_executor, 2);
-    auto pushThreads = SequencedTaskExecutor::create(push_executor, 2);
+void FusionTest::make_simple_index(const std::string& dump_dir, const IFieldLengthInspector& field_length_inspector) {
+    FieldIndexCollection    fic(_schema, field_length_inspector);
+    constexpr uint32_t      numDocs = 20;
+    constexpr uint32_t      numWords = 1000;
+    DocBuilder              b(make_add_fields());
+    auto                    invertThreads = SequencedTaskExecutor::create(invert_executor, 2);
+    auto                    pushThreads = SequencedTaskExecutor::create(push_executor, 2);
     DocumentInverterContext inv_context(_schema, *invertThreads, *pushThreads, fic);
-    DocumentInverter inv(inv_context);
+    DocumentInverter        inv(inv_context);
 
     auto doc10 = make_doc10(b);
     inv.invertDocument(10, *doc10, {});
     myPushDocument(inv);
 
-    TuneFileIndexing tuneFileIndexing;
+    TuneFileIndexing       tuneFileIndexing;
     DummyFileHeaderContext fileHeaderContext;
-    IndexBuilder ib(_schema, dump_dir, numDocs, numWords, field_length_inspector, tuneFileIndexing, fileHeaderContext);
+    IndexBuilder           ib(_schema, dump_dir, numDocs, numWords, field_length_inspector, tuneFileIndexing,
+                              fileHeaderContext);
     fic.dump(ib);
 }
 
-bool
-FusionTest::try_merge_simple_indexes(const std::string &dump_dir, const std::vector<std::string> &sources, std::shared_ptr<IFlushToken> flush_token)
-{
+bool FusionTest::try_merge_simple_indexes(const std::string& dump_dir, const std::vector<std::string>& sources,
+                                          std::shared_ptr<IFlushToken> flush_token) {
     vespalib::ThreadStackExecutor executor(4);
-    TuneFileIndexing tuneFileIndexing;
-    DummyFileHeaderContext fileHeaderContext;
-    SelectorArray selector(20, 0);
-    Fusion fusion(_schema, dump_dir, sources, selector, tuneFileIndexing, fileHeaderContext);
+    TuneFileIndexing              tuneFileIndexing;
+    DummyFileHeaderContext        fileHeaderContext;
+    SelectorArray                 selector(20, 0);
+    Fusion                        fusion(_schema, dump_dir, sources, selector, tuneFileIndexing, fileHeaderContext);
     fusion.set_force_small_merge_chunk(_force_small_merge_chunk);
     return fusion.merge(executor, flush_token);
 }
 
-void
-FusionTest::merge_simple_indexes(const std::string &dump_dir, const std::vector<std::string> &sources)
-{
+void FusionTest::merge_simple_indexes(const std::string& dump_dir, const std::vector<std::string>& sources) {
     ASSERT_TRUE(try_merge_simple_indexes(dump_dir, sources, std::make_shared<FlushToken>()));
 }
 
-FusionTest::FusionTest()
-    : ::testing::Test(),
-      _schema(make_schema(false)),
-      _force_small_merge_chunk(false)
-{
+FusionTest::FusionTest() : ::testing::Test(), _schema(make_schema(false)), _force_small_merge_chunk(false) {
 }
 
-TEST_F(FusionTest, require_that_normal_fusion_is_working)
-{
+TEST_F(FusionTest, require_that_normal_fusion_is_working) {
     requireThatFusionIsWorking("", false, false, false);
 }
 
-TEST_F(FusionTest, require_that_directio_fusion_is_working)
-{
+TEST_F(FusionTest, require_that_directio_fusion_is_working) {
     requireThatFusionIsWorking("d", true, false, false);
 }
 
-TEST_F(FusionTest, require_that_mmap_fusion_is_working)
-{
+TEST_F(FusionTest, require_that_mmap_fusion_is_working) {
     requireThatFusionIsWorking("m", false, true, false);
 }
 
-TEST_F(FusionTest, require_that_directiommap_fusion_is_working)
-{
+TEST_F(FusionTest, require_that_directiommap_fusion_is_working) {
     requireThatFusionIsWorking("dm", true, true, false);
 }
 
-TEST_F(FusionTest, require_that_small_merge_chunk_fusion_is_working)
-{
+TEST_F(FusionTest, require_that_small_merge_chunk_fusion_is_working) {
     requireThatFusionIsWorking("s", false, false, true);
 }
 
 namespace {
 
-void clean_field_length_testdirs()
-{
+void clean_field_length_testdirs() {
     std::filesystem::remove_all(std::filesystem::path("fldump2"));
     std::filesystem::remove_all(std::filesystem::path("fldump3"));
     std::filesystem::remove_all(std::filesystem::path("fldump4"));
 }
 
-}
+} // namespace
 
-TEST_F(FusionTest, require_that_average_field_length_is_preserved)
-{
+TEST_F(FusionTest, require_that_average_field_length_is_preserved) {
     clean_field_length_testdirs();
     make_simple_index("fldump2", MockFieldLengthInspector());
     make_simple_index("fldump3", MyMockFieldLengthInspector());
@@ -546,9 +498,7 @@ TEST_F(FusionTest, require_that_average_field_length_is_preserved)
     clean_field_length_testdirs();
 }
 
-void
-FusionTest::reconstruct_interleaved_features()
-{
+void FusionTest::reconstruct_interleaved_features() {
     clean_field_length_testdirs();
     make_simple_index("fldump2", MockFieldLengthInspector());
     _schema = make_schema(true); // want interleaved features
@@ -563,54 +513,43 @@ FusionTest::reconstruct_interleaved_features()
     clean_field_length_testdirs();
 }
 
-TEST_F(FusionTest, require_that_interleaved_features_can_be_reconstructed)
-{
+TEST_F(FusionTest, require_that_interleaved_features_can_be_reconstructed) {
     reconstruct_interleaved_features();
 }
 
-TEST_F(FusionTest, require_that_interleaved_features_can_be_reconstructed_with_small_merge_chunk)
-{
+TEST_F(FusionTest, require_that_interleaved_features_can_be_reconstructed_with_small_merge_chunk) {
     _force_small_merge_chunk = true;
     reconstruct_interleaved_features();
 }
 
 namespace {
 
-void clean_stopped_fusion_testdirs()
-{
+void clean_stopped_fusion_testdirs() {
     std::filesystem::remove_all(std::filesystem::path("stopdump2"));
     std::filesystem::remove_all(std::filesystem::path("stopdump3"));
 }
 
-class MyFlushToken : public FlushToken
-{
+class MyFlushToken : public FlushToken {
     mutable std::atomic<size_t> _checks;
-    const size_t        _limit;
+    const size_t                _limit;
+
 public:
-    MyFlushToken(size_t limit)
-        : FlushToken(),
-          _checks(0u),
-          _limit(limit)
-    {
-    }
+    MyFlushToken(size_t limit) : FlushToken(), _checks(0u), _limit(limit) {}
     ~MyFlushToken() override = default;
     bool stop_requested() const noexcept override;
     size_t get_checks() const noexcept { return _checks; }
 };
 
-bool
-MyFlushToken::stop_requested() const noexcept
-{
+bool MyFlushToken::stop_requested() const noexcept {
     if (++_checks >= _limit) {
-        const_cast<MyFlushToken *>(this)->request_stop();
+        const_cast<MyFlushToken*>(this)->request_stop();
     }
     return FlushToken::stop_requested();
 }
 
-}
+} // namespace
 
-TEST_F(FusionTest, require_that_fusion_can_be_stopped)
-{
+TEST_F(FusionTest, require_that_fusion_can_be_stopped) {
     clean_stopped_fusion_testdirs();
     auto flush_token = std::make_shared<MyFlushToken>(10000);
     make_simple_index("stopdump2", MockFieldLengthInspector());
@@ -627,13 +566,11 @@ TEST_F(FusionTest, require_that_fusion_can_be_stopped)
     clean_stopped_fusion_testdirs();
 }
 
-}
+} // namespace diskindex
 
-}
+} // namespace search
 
-int
-main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
     if (argc > 0) {
         search::index::DummyFileHeaderContext::setCreator(argv[0]);
     }

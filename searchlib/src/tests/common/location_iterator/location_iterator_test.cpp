@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributevector.h>
@@ -7,8 +8,8 @@
 #include <vespa/searchlib/common/geo_location.h>
 #include <vespa/searchlib/common/location.h>
 #include <vespa/searchlib/common/locationiterators.h>
-#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <cinttypes>
 
 #include <vespa/log/log.h>
@@ -45,35 +46,33 @@ constexpr double udeg_to_km = 1.0e-6 * (pi / 180.0) * 6371.0088;
 class SingleIteratorTest : public ::testing::Test {
 private:
     AttributeVector::SP   _attr;
-    IntegerAttribute *    _api;
+    IntegerAttribute*     _api;
     TermFieldMatchData    _tfmd;
     std::vector<Position> _positions;
 
-    void set_doc(IntegerAttribute *ia, uint32_t docid, const Position &p) {
-	ia->clearDoc(docid);
-	int64_t value = vespalib::geo::ZCurve::encode(p.first, p.second);
-	LOG(debug, "single: value for docid %u is %" PRId64, docid, value);
-	ia->update(docid, value);
-	ia->commit();
+    void set_doc(IntegerAttribute* ia, uint32_t docid, const Position& p) {
+        ia->clearDoc(docid);
+        int64_t value = vespalib::geo::ZCurve::encode(p.first, p.second);
+        LOG(debug, "single: value for docid %u is %" PRId64, docid, value);
+        ia->update(docid, value);
+        ia->commit();
         if (docid >= _positions.size()) {
-            _positions.resize(1+docid);
+            _positions.resize(1 + docid);
         }
         _positions[docid] = p;
     }
 
-    void populate_single(IntegerAttribute *ia) {
-	Position invalid(0, 0x80000000);
-	set_doc(ia, 1, Position(10000, 15000));
-	set_doc(ia, 3, invalid);
-	set_doc(ia, 5, Position(20000, -25000));
-	set_doc(ia, 7, Position(-30000, 35000));
+    void populate_single(IntegerAttribute* ia) {
+        Position invalid(0, 0x80000000);
+        set_doc(ia, 1, Position(10000, 15000));
+        set_doc(ia, 3, invalid);
+        set_doc(ia, 5, Position(20000, -25000));
+        set_doc(ia, 7, Position(-30000, 35000));
     }
 
 public:
     SingleIteratorTest()
-      : _attr(make_attribute(CollectionType::SINGLE, true)),
-        _api(dynamic_cast<IntegerAttribute *>(_attr.get()))
-    {
+        : _attr(make_attribute(CollectionType::SINGLE, true)), _api(dynamic_cast<IntegerAttribute*>(_attr.get())) {
         EXPECT_TRUE(_api != nullptr);
         add_docs(_attr);
         populate_single(_api);
@@ -98,11 +97,10 @@ public:
             EXPECT_NE(_tfmd.getRawScore(), 0.0);
             int32_t dx = geo.point.x - _positions[d].first;
             int32_t dy = geo.point.y - _positions[d].second;
-            double sq_distance = dx*dx + dy*dy;
-            double dist = std::sqrt(sq_distance);
-            double score = 1.0 / (1.0 + (udeg_to_km * dist));
-            LOG(info, "distance[%u] = %.2f, rawscore = %.6f / expected %.6f",
-                d, dist, _tfmd.getRawScore(), score);
+            double  sq_distance = dx * dx + dy * dy;
+            double  dist = std::sqrt(sq_distance);
+            double  score = 1.0 / (1.0 + (udeg_to_km * dist));
+            LOG(info, "distance[%u] = %.2f, rawscore = %.6f / expected %.6f", d, dist, _tfmd.getRawScore(), score);
             EXPECT_DOUBLE_EQ(_tfmd.getRawScore(), score);
         }
         EXPECT_EQ(hits, hit_vector.cend());
@@ -110,9 +108,8 @@ public:
     }
 };
 
-
 TEST_F(SingleIteratorTest, finds_locations_sets_rawscore) {
-    GeoLocation origin({0, 0}, 1u<<30);
+    GeoLocation origin({0, 0}, 1u << 30);
     expect_hits(origin, {1, 5, 7});
 
     GeoLocation exact({20000, -25000}, 0);

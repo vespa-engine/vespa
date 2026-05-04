@@ -2,7 +2,6 @@
 
 #include <vespa/searchlib/expression/and_predicate_node.h>
 #include <vespa/searchlib/expression/constantnode.h>
-#include <vespa/searchlib/expression/stringresultnode.h>
 #include <vespa/searchlib/expression/filter_predicate_node.h>
 #include <vespa/searchlib/expression/floatresultnode.h>
 #include <vespa/searchlib/expression/integerresultnode.h>
@@ -11,6 +10,7 @@
 #include <vespa/searchlib/expression/or_predicate_node.h>
 #include <vespa/searchlib/expression/range_predicate_node.h>
 #include <vespa/searchlib/expression/regex_predicate_node.h>
+#include <vespa/searchlib/expression/stringresultnode.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -32,21 +32,20 @@ public:
 
     FilterPredicateNodesTest& set_node(std::unique_ptr<FilterPredicateNode> node);
 
-    static std::unique_ptr<FilterPredicateNode> make_regex(const std::string& regex_value,
+    static std::unique_ptr<FilterPredicateNode> make_regex(const std::string&              regex_value,
                                                            std::unique_ptr<ExpressionNode> result_node);
 
-    static std::unique_ptr<FilterPredicateNode> make_range(double lower, double upper, std::unique_ptr<ExpressionNode> result_node,
+    static std::unique_ptr<FilterPredicateNode> make_range(double lower, double upper,
+                                                           std::unique_ptr<ExpressionNode> result_node,
                                                            bool lower_inclusive, bool upper_inclusive);
 
     static std::unique_ptr<FilterPredicateNode> make_istrue(std::unique_ptr<ExpressionNode> result_node);
 
     static std::unique_ptr<FilterPredicateNode> make_not(std::unique_ptr<FilterPredicateNode> filter_node);
 
-    template<typename... Nodes>
-    static std::unique_ptr<FilterPredicateNode> make_or(Nodes... nodes);
+    template <typename... Nodes> static std::unique_ptr<FilterPredicateNode> make_or(Nodes... nodes);
 
-    template<typename... Nodes>
-    static std::unique_ptr<FilterPredicateNode> make_and(Nodes... nodes);
+    template <typename... Nodes> static std::unique_ptr<FilterPredicateNode> make_and(Nodes... nodes);
 
     static std::unique_ptr<ExpressionNode> make_result(const std::string& value);
 
@@ -68,33 +67,36 @@ FilterPredicateNodesTest& FilterPredicateNodesTest::set_node(std::unique_ptr<Fil
     return *this;
 }
 
-std::unique_ptr<FilterPredicateNode> FilterPredicateNodesTest::make_regex(const std::string& regex_value,
-                                                                          std::unique_ptr<ExpressionNode> result_node) {
+std::unique_ptr<FilterPredicateNode>
+FilterPredicateNodesTest::make_regex(const std::string& regex_value, std::unique_ptr<ExpressionNode> result_node) {
     return std::make_unique<RegexPredicateNode>(regex_value, std::move(result_node));
 }
 
-std::unique_ptr<FilterPredicateNode> FilterPredicateNodesTest::make_range(double lower, double upper, std::unique_ptr<ExpressionNode> result_node,
-                                                                          bool lower_inclusive, bool upper_inclusive) {
-    return std::make_unique<RangePredicateNode>(lower, upper, std::move(result_node), lower_inclusive, upper_inclusive);
+std::unique_ptr<FilterPredicateNode> FilterPredicateNodesTest::make_range(double lower, double upper,
+                                                                          std::unique_ptr<ExpressionNode> result_node,
+                                                                          bool lower_inclusive,
+                                                                          bool upper_inclusive) {
+    return std::make_unique<RangePredicateNode>(lower, upper, std::move(result_node), lower_inclusive,
+                                                upper_inclusive);
 }
 
-std::unique_ptr<FilterPredicateNode> FilterPredicateNodesTest::make_istrue(std::unique_ptr<ExpressionNode> result_node) {
+std::unique_ptr<FilterPredicateNode>
+FilterPredicateNodesTest::make_istrue(std::unique_ptr<ExpressionNode> result_node) {
     return std::make_unique<IsTruePredicateNode>(std::move(result_node));
 }
 
-std::unique_ptr<FilterPredicateNode> FilterPredicateNodesTest::make_not(std::unique_ptr<FilterPredicateNode> filter_node) {
+std::unique_ptr<FilterPredicateNode>
+FilterPredicateNodesTest::make_not(std::unique_ptr<FilterPredicateNode> filter_node) {
     return std::make_unique<NotPredicateNode>(std::move(filter_node));
 }
 
-template<typename... Nodes>
-std::unique_ptr<FilterPredicateNode> FilterPredicateNodesTest::make_or(Nodes... nodes) {
+template <typename... Nodes> std::unique_ptr<FilterPredicateNode> FilterPredicateNodesTest::make_or(Nodes... nodes) {
     auto or_predicate = std::make_unique<OrPredicateNode>();
     (or_predicate->args().emplace_back(std::move(nodes)), ...);
     return or_predicate;
 }
 
-template<typename... Nodes>
-std::unique_ptr<FilterPredicateNode> FilterPredicateNodesTest::make_and(Nodes... nodes) {
+template <typename... Nodes> std::unique_ptr<FilterPredicateNode> FilterPredicateNodesTest::make_and(Nodes... nodes) {
     auto and_predicate = std::make_unique<AndPredicateNode>();
     (and_predicate->args().emplace_back(std::move(nodes)), ...);
     return and_predicate;
@@ -120,30 +122,30 @@ TEST_F(FilterPredicateNodesTest, test_regex_match) {
 
 TEST_F(FilterPredicateNodesTest, test_range_match_inside_range) {
     EXPECT_TRUE(set_node(make_range(0, 100, make_result(6.0), false, false)).evaluate());
-    EXPECT_TRUE(set_node(make_range(0, 100, make_result(6.0), true,  false)).evaluate());
+    EXPECT_TRUE(set_node(make_range(0, 100, make_result(6.0), true, false)).evaluate());
     EXPECT_TRUE(set_node(make_range(0, 100, make_result(6.0), false, true)).evaluate());
-    EXPECT_TRUE(set_node(make_range(0, 100, make_result(6.0), true,  true)).evaluate());
+    EXPECT_TRUE(set_node(make_range(0, 100, make_result(6.0), true, true)).evaluate());
 }
 
 TEST_F(FilterPredicateNodesTest, test_range_match_outside_range) {
-    EXPECT_FALSE(set_node(make_range(50, 100, make_result(6.0),   false, false)).evaluate());
-    EXPECT_FALSE(set_node(make_range(50, 100, make_result(6.0),   true,  false)).evaluate());
-    EXPECT_FALSE(set_node(make_range(50, 100, make_result(6.0),   false, true)).evaluate());
-    EXPECT_FALSE(set_node(make_range(50, 100, make_result(6.0),   true,  true)).evaluate());
+    EXPECT_FALSE(set_node(make_range(50, 100, make_result(6.0), false, false)).evaluate());
+    EXPECT_FALSE(set_node(make_range(50, 100, make_result(6.0), true, false)).evaluate());
+    EXPECT_FALSE(set_node(make_range(50, 100, make_result(6.0), false, true)).evaluate());
+    EXPECT_FALSE(set_node(make_range(50, 100, make_result(6.0), true, true)).evaluate());
     EXPECT_FALSE(set_node(make_range(50, 100, make_result(101.0), false, false)).evaluate());
-    EXPECT_FALSE(set_node(make_range(50, 100, make_result(101.0), true,  false)).evaluate());
+    EXPECT_FALSE(set_node(make_range(50, 100, make_result(101.0), true, false)).evaluate());
     EXPECT_FALSE(set_node(make_range(50, 100, make_result(101.0), false, true)).evaluate());
-    EXPECT_FALSE(set_node(make_range(50, 100, make_result(101.0), true,  true)).evaluate());
+    EXPECT_FALSE(set_node(make_range(50, 100, make_result(101.0), true, true)).evaluate());
 }
 
 TEST_F(FilterPredicateNodesTest, test_range_match_lower_bound) {
-    EXPECT_TRUE(set_node(make_range(0, 100, make_result(0.0),  true, false)).evaluate());
+    EXPECT_TRUE(set_node(make_range(0, 100, make_result(0.0), true, false)).evaluate());
     EXPECT_FALSE(set_node(make_range(0, 100, make_result(0.0), false, false)).evaluate());
 }
 
 TEST_F(FilterPredicateNodesTest, test_range_match_upper_bound) {
-    EXPECT_FALSE(set_node(make_range(0, 100, make_result(100.0), true,  false)).evaluate());
-    EXPECT_TRUE(set_node(make_range(0, 100, make_result(100.0),  true,  true)).evaluate());
+    EXPECT_FALSE(set_node(make_range(0, 100, make_result(100.0), true, false)).evaluate());
+    EXPECT_TRUE(set_node(make_range(0, 100, make_result(100.0), true, true)).evaluate());
 }
 
 TEST_F(FilterPredicateNodesTest, test_not_predicate) {
@@ -153,78 +155,53 @@ TEST_F(FilterPredicateNodesTest, test_not_predicate) {
 }
 
 TEST_F(FilterPredicateNodesTest, test_or_no_match) {
-    EXPECT_FALSE(
-        set_node(make_or(
-            make_regex("foo", make_result("foobar")),
-            make_regex("bar", make_result("foobar")))).
-        evaluate());
+    EXPECT_FALSE(set_node(make_or(make_regex("foo", make_result("foobar")), make_regex("bar", make_result("foobar"))))
+                     .evaluate());
 }
 
 TEST_F(FilterPredicateNodesTest, test_or_one_match) {
     EXPECT_TRUE(
-        set_node(make_or(
-            make_regex("foo", make_result("foobar")),
-            make_regex("foobar", make_result("foobar")))).
-        evaluate());
+        set_node(make_or(make_regex("foo", make_result("foobar")), make_regex("foobar", make_result("foobar"))))
+            .evaluate());
     EXPECT_TRUE(
-        set_node(make_or(
-            make_regex("foobar", make_result("foobar")),
-            make_regex("bar", make_result("foobar")))).
-        evaluate());
+        set_node(make_or(make_regex("foobar", make_result("foobar")), make_regex("bar", make_result("foobar"))))
+            .evaluate());
 }
 
 TEST_F(FilterPredicateNodesTest, test_or_three_arguments) {
     EXPECT_TRUE(
-        set_node(make_or(
-            make_regex("foo", make_result("foobar")),
-            make_regex("foobar", make_result("foobar")),
-            make_regex("baz", make_result("foobar")))).
-        evaluate());
-    EXPECT_FALSE(
-        set_node(make_or(
-            make_regex("foo", make_result("foobar")),
-            make_regex("bar", make_result("foobar")),
-            make_regex("baz", make_result("foobar")))).
-        evaluate());
+        set_node(make_or(make_regex("foo", make_result("foobar")), make_regex("foobar", make_result("foobar")),
+                         make_regex("baz", make_result("foobar"))))
+            .evaluate());
+    EXPECT_FALSE(set_node(make_or(make_regex("foo", make_result("foobar")), make_regex("bar", make_result("foobar")),
+                                  make_regex("baz", make_result("foobar"))))
+                     .evaluate());
 }
 
 TEST_F(FilterPredicateNodesTest, test_and_no_match) {
     EXPECT_FALSE(
-        set_node(make_and(
-            make_regex("foo", make_result("foobar")),
-            make_regex("bar", make_result("foobar")))).
-        evaluate());
+        set_node(make_and(make_regex("foo", make_result("foobar")), make_regex("bar", make_result("foobar"))))
+            .evaluate());
 }
 
 TEST_F(FilterPredicateNodesTest, test_and_one_match) {
     EXPECT_FALSE(
-        set_node(make_and(
-            make_regex("foobar", make_result("foobar")),
-            make_regex("bar", make_result("foobar")))).
-        evaluate());
+        set_node(make_and(make_regex("foobar", make_result("foobar")), make_regex("bar", make_result("foobar"))))
+            .evaluate());
 }
 
 TEST_F(FilterPredicateNodesTest, test_and_all_match) {
     EXPECT_TRUE(
-        set_node(make_and(
-            make_regex("foo", make_result("foo")),
-            make_regex("bar", make_result("bar")))).
-        evaluate());
+        set_node(make_and(make_regex("foo", make_result("foo")), make_regex("bar", make_result("bar")))).evaluate());
 }
 
 TEST_F(FilterPredicateNodesTest, test_and_three_arguments) {
-    EXPECT_TRUE(
-        set_node(make_and(
-            make_regex("foo", make_result("foo")),
-            make_regex("bar", make_result("bar")),
-            make_regex("baz", make_result("baz")))).
-        evaluate());
-    EXPECT_FALSE(
-        set_node(make_and(
-            make_regex("foo", make_result("foo")),
-            make_regex("bar", make_result("bar")),
-            make_regex("baz", make_result("foobar")))).
-        evaluate());
+    EXPECT_TRUE(set_node(make_and(make_regex("foo", make_result("foo")), make_regex("bar", make_result("bar")),
+                                  make_regex("baz", make_result("baz"))))
+                    .evaluate());
+    EXPECT_FALSE(set_node(make_and(make_regex("foo", make_result("foo")), make_regex("bar", make_result("bar")),
+                                   make_regex("baz", make_result("foobar"))))
+                     .evaluate());
 }
 
 TEST_F(FilterPredicateNodesTest, test_istrue_with_true_value) {
@@ -236,17 +213,21 @@ TEST_F(FilterPredicateNodesTest, test_istrue_with_false_value) {
 }
 
 TEST_F(FilterPredicateNodesTest, test_istrue_with_double_value_throws) {
-    EXPECT_THROW({
-        set_node(make_istrue(make_result(42.0)));
-        [[maybe_unused]] bool result = evaluate();
-    }, vespalib::IllegalArgumentException);
+    EXPECT_THROW(
+        {
+            set_node(make_istrue(make_result(42.0)));
+            [[maybe_unused]] bool result = evaluate();
+        },
+        vespalib::IllegalArgumentException);
 }
 
 TEST_F(FilterPredicateNodesTest, test_istrue_with_string_value_throws) {
-    EXPECT_THROW({
-        set_node(make_istrue(make_result("foo")));
-        [[maybe_unused]] bool result = evaluate();
-    }, vespalib::IllegalArgumentException);
+    EXPECT_THROW(
+        {
+            set_node(make_istrue(make_result("foo")));
+            [[maybe_unused]] bool result = evaluate();
+        },
+        vespalib::IllegalArgumentException);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

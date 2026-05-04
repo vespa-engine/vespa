@@ -35,19 +35,16 @@ struct Fixture {
 };
 
 Fixture::Fixture()
-    :  _builder([](auto& builder, auto& doc) noexcept
-                {  doc.addField(field_name, doc.createArray(builder.doubleTypeRef()).ref()); }),
-       _doc(_builder.make_document("id:ns:searchdocument::0")),
-       _node()
-{
+    : _builder([](auto& builder, auto& doc) noexcept {
+          doc.addField(field_name, doc.createArray(builder.doubleTypeRef()).ref());
+      }),
+      _doc(_builder.make_document("id:ns:searchdocument::0")),
+      _node() {
 }
 
 Fixture::~Fixture() = default;
 
-
-Fixture&
-Fixture::setup_doc(std::vector<double> field_value)
-{
+Fixture& Fixture::setup_doc(std::vector<double> field_value) {
     auto array = _builder.make_array(field_name);
     for (auto& v : field_value) {
         array.add(DoubleFieldValue(v));
@@ -56,27 +53,21 @@ Fixture::setup_doc(std::vector<double> field_value)
     return *this;
 }
 
-Fixture&
-Fixture::setup_node(double lookup_value)
-{
-    _node = std::make_unique<InterpolatedDocumentFieldLookupNode>(field_name, std::make_unique<ConstantNode>(std::make_unique<FloatResultNode>(lookup_value)));
+Fixture& Fixture::setup_node(double lookup_value) {
+    _node = std::make_unique<InterpolatedDocumentFieldLookupNode>(
+        field_name, std::make_unique<ConstantNode>(std::make_unique<FloatResultNode>(lookup_value)));
     _node->prepare(true);
     _node->setDocType(_doc->getType());
     _node->setDoc(*_doc);
     return *this;
 }
 
-double
-Fixture::evaluate()
-{
+double Fixture::evaluate() {
     _node->execute();
     return _node->getResult()->getFloat();
 }
 
-
-class InterpolatedDocumentFieldLookupNodeTest : public Fixture,
-                                                public ::testing::Test
-{
+class InterpolatedDocumentFieldLookupNodeTest : public Fixture, public ::testing::Test {
 protected:
     InterpolatedDocumentFieldLookupNodeTest();
     ~InterpolatedDocumentFieldLookupNodeTest() override;
@@ -85,14 +76,13 @@ protected:
 InterpolatedDocumentFieldLookupNodeTest::InterpolatedDocumentFieldLookupNodeTest() = default;
 InterpolatedDocumentFieldLookupNodeTest::~InterpolatedDocumentFieldLookupNodeTest() = default;
 
-TEST_F(InterpolatedDocumentFieldLookupNodeTest, test_interpolated_lookup_in_document_field)
-{
-    EXPECT_EQ(0.0, setup_doc({ 2, 10 }).setup_node(1.0).evaluate());
+TEST_F(InterpolatedDocumentFieldLookupNodeTest, test_interpolated_lookup_in_document_field) {
+    EXPECT_EQ(0.0, setup_doc({2, 10}).setup_node(1.0).evaluate());
     EXPECT_EQ(0.0, setup_node(2.0).evaluate());
     EXPECT_EQ(0.3125, setup_node(4.5).evaluate());
     EXPECT_EQ(1.0, setup_node(10).evaluate());
     EXPECT_EQ(1.0, setup_node(11).evaluate());
-    EXPECT_EQ(2.5, setup_doc({1.5, 5.25, 8.0, 14.0 }).evaluate());
+    EXPECT_EQ(2.5, setup_doc({1.5, 5.25, 8.0, 14.0}).evaluate());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

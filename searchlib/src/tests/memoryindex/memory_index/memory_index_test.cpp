@@ -47,9 +47,9 @@ using search::test::DocBuilder;
 using search::test::SchemaBuilder;
 using search::test::StringFieldBuilder;
 using vespalib::ISequencedTaskExecutor;
+using vespalib::makeLambdaTask;
 using vespalib::SequencedTaskExecutor;
 using vespalib::Slime;
-using vespalib::makeLambdaTask;
 using vespalib::slime::JsonFormat;
 using vespalib::slime::SlimeInserter;
 
@@ -61,11 +61,11 @@ using namespace search::queryeval;
 //-----------------------------------------------------------------------------
 
 struct MySetup : public IFieldLengthInspector {
-    std::vector<std::string> fields;
+    std::vector<std::string>               fields;
     std::map<std::string, FieldLengthInfo> field_lengths;
     MySetup();
     ~MySetup() override;
-    MySetup &field(const std::string &name) {
+    MySetup& field(const std::string& name) {
         fields.emplace_back(name);
         return *this;
     }
@@ -82,7 +82,7 @@ struct MySetup : public IFieldLengthInspector {
     }
 
     void add_fields(document::new_config_builder::NewConfigBuilder& builder,
-                    document::new_config_builder::NewDocTypeRep& doc) const {
+                    document::new_config_builder::NewDocTypeRep&    doc) const {
         for (auto& field : fields) {
             doc.addField(field, builder.stringTypeRef());
         }
@@ -92,7 +92,6 @@ struct MySetup : public IFieldLengthInspector {
         DocBuilder db([this](auto& builder, auto& doc) noexcept { add_fields(builder, doc); });
         return SchemaBuilder(db).add_all_indexes().build();
     }
-
 };
 
 MySetup::MySetup() = default;
@@ -101,18 +100,18 @@ MySetup::~MySetup() = default;
 //-----------------------------------------------------------------------------
 
 struct Index {
-    vespalib::ThreadStackExecutor _executor;
+    vespalib::ThreadStackExecutor           _executor;
     std::unique_ptr<ISequencedTaskExecutor> _invertThreads;
     std::unique_ptr<ISequencedTaskExecutor> _pushThreads;
-    MemoryIndex  index;
-    DocBuilder builder;
-    StringFieldBuilder sfb;
-    std::unique_ptr<Document> builder_doc;
-    uint32_t     docid;
-    std::string  currentField;
-    bool         add_space;
+    MemoryIndex                             index;
+    DocBuilder                              builder;
+    StringFieldBuilder                      sfb;
+    std::unique_ptr<Document>               builder_doc;
+    uint32_t                                docid;
+    std::string                             currentField;
+    bool                                    add_space;
 
-    Index(const MySetup &setup);
+    Index(const MySetup& setup);
     ~Index();
     void closeField() {
         if (!currentField.empty()) {
@@ -120,18 +119,18 @@ struct Index {
             currentField.clear();
         }
     }
-    Index &doc(uint32_t id) {
+    Index& doc(uint32_t id) {
         docid = id;
         builder_doc = builder.make_document(vespalib::make_string("id:ns:searchdocument::%u", id));
         return *this;
     }
-    Index &field(const std::string &name) {
+    Index& field(const std::string& name) {
         closeField();
         currentField = name;
         add_space = false;
         return *this;
     }
-    Index &add(const std::string &token) {
+    Index& add(const std::string& token) {
         if (add_space) {
             sfb.space();
         }
@@ -141,9 +140,7 @@ struct Index {
     }
     void internalSyncCommit() {
         vespalib::Gate gate;
-        index.commit(std::make_shared<ScheduleTaskCallback>
-                     (_executor,
-                      makeLambdaTask([&]() { gate.countDown(); })));
+        index.commit(std::make_shared<ScheduleTaskCallback>(_executor, makeLambdaTask([&]() { gate.countDown(); })));
         gate.await();
     }
     Document::UP commit() {
@@ -153,7 +150,7 @@ struct Index {
         internalSyncCommit();
         return d;
     }
-    Index &remove(uint32_t id) {
+    Index& remove(uint32_t id) {
         std::vector<uint32_t> lids;
         lids.push_back(id);
         index.removeDocuments(std::move(lids));
@@ -162,14 +159,14 @@ struct Index {
     }
 
 private:
-    Index(const Index &index);
-    Index &operator=(const Index &index);
+    Index(const Index& index);
+    Index& operator=(const Index& index);
 };
 
 VESPA_THREAD_STACK_TAG(invert_executor)
 VESPA_THREAD_STACK_TAG(push_executor)
 
-Index::Index(const MySetup &setup)
+Index::Index(const MySetup& setup)
     : _executor(1),
       _invertThreads(SequencedTaskExecutor::create(invert_executor, 2)),
       _pushThreads(SequencedTaskExecutor::create(push_executor, 2)),
@@ -179,18 +176,17 @@ Index::Index(const MySetup &setup)
       builder_doc(),
       docid(1),
       currentField(),
-      add_space(false)
-{
+      add_space(false) {
 }
 Index::~Index() = default;
 //-----------------------------------------------------------------------------
 
-std::string toString(SearchIterator & search)
-{
+std::string toString(SearchIterator& search) {
     std::ostringstream oss;
-    bool first = true;
-    for (search.seek(1); ! search.isAtEnd(); search.seek(search.getDocId() + 1)) {
-        if (!first) oss << ",";
+    bool               first = true;
+    for (search.seek(1); !search.isAtEnd(); search.seek(search.getDocId() + 1)) {
+        if (!first)
+            oss << ",";
         oss << search.getDocId();
         first = false;
     }
@@ -206,19 +202,14 @@ const std::string bar("bar");
 
 //-----------------------------------------------------------------------------
 
-bool
-verifyResult(const FakeResult &expect,
-             Searchable &index,
-             std::string fieldName,
-             const Node &term)
-{
-    uint32_t fieldId = 0;
+bool verifyResult(const FakeResult& expect, Searchable& index, std::string fieldName, const Node& term) {
+    uint32_t           fieldId = 0;
     FakeRequestContext requestContext;
 
     MatchDataLayout mdl;
     TermFieldHandle handle = mdl.allocTermField(fieldId);
 
-    FieldSpec field(fieldName, fieldId, handle);
+    FieldSpec     field(fieldName, fieldId, handle);
     FieldSpecList fields;
     fields.add(field);
 
@@ -233,16 +224,16 @@ verifyResult(const FakeResult &expect,
 
     result->basic_plan(true, 100);
     result->fetchPostings(search::queryeval::ExecuteInfo::FULL);
-    MatchData::UP match_data = mdl.createMatchData();
+    MatchData::UP      match_data = mdl.createMatchData();
     SearchIterator::UP search = result->createSearch(*match_data);
-    bool valid_search = search.get() != nullptr;
+    bool               valid_search = search.get() != nullptr;
     EXPECT_TRUE(valid_search);
     if (!valid_search) {
         return false;
     }
-    TermFieldMatchData &tmd = *match_data->resolveTermField(handle);
+    TermFieldMatchData& tmd = *match_data->resolveTermField(handle);
 
-    FakeResult actual;
+    FakeResult   actual;
     SimpleResult exp_simple;
     search->initFullRange();
     for (search->seek(1); !search->isAtEnd(); search->seek(search->getDocId() + 1)) {
@@ -259,10 +250,10 @@ verifyResult(const FakeResult &expect,
     bool success = true;
     EXPECT_EQ(expect, actual) << (success = false, "");
     using FilterConstraint = search::queryeval::Blueprint::FilterConstraint;
-    for (auto constraint : { FilterConstraint::LOWER_BOUND, FilterConstraint::UPPER_BOUND }) {
+    for (auto constraint : {FilterConstraint::LOWER_BOUND, FilterConstraint::UPPER_BOUND}) {
         constexpr uint32_t docid_limit = 10u;
-        auto filter_search = result->createFilterSearch(constraint);
-        auto act_simple = SimpleResult().search(*filter_search, docid_limit);
+        auto               filter_search = result->createFilterSearch(constraint);
+        auto               act_simple = SimpleResult().search(*filter_search, docid_limit);
         if (constraint == FilterConstraint::LOWER_BOUND) {
             EXPECT_TRUE(exp_simple.contains(act_simple)) << (success = false, "");
         }
@@ -270,7 +261,8 @@ verifyResult(const FakeResult &expect,
             EXPECT_TRUE(act_simple.contains(exp_simple)) << (success = false, "");
         }
         if (dynamic_cast<FakeBlueprint*>(result.get()) == nullptr &&
-            dynamic_cast<SimplePhraseBlueprint*>(result.get()) == nullptr) {
+            dynamic_cast<SimplePhraseBlueprint*>(result.get()) == nullptr)
+        {
             EXPECT_EQ(exp_simple, act_simple) << (success = false, "");
         }
     }
@@ -278,75 +270,55 @@ verifyResult(const FakeResult &expect,
 }
 
 namespace {
-SimpleStringTerm makeTerm(const std::string &term) {
+SimpleStringTerm makeTerm(const std::string& term) {
     return SimpleStringTerm(term, "field", 0, search::query::Weight(0));
 }
 
-Node::UP makePhrase(const std::string &term1, const std::string &term2) {
+Node::UP makePhrase(const std::string& term1, const std::string& term2) {
     auto phrase = std::make_unique<SimplePhrase>("field", 0, search::query::Weight(0));
     phrase->append(std::make_unique<SimpleStringTerm>(makeTerm(term1)));
     phrase->append(std::make_unique<SimpleStringTerm>(makeTerm(term2)));
     return phrase;
 }
 
-}  // namespace
+} // namespace
 
 // tests basic usage; index some documents in docid order and perform
 // some searches.
-TEST(MemoryIndexTest, test_index_and_search)
-{
+TEST(MemoryIndexTest, test_index_and_search) {
     Index index(MySetup().field(title).field(body));
-    index.doc(1)
-        .field(title).add(foo).add(bar).add(foo)
-        .field(body).add(foo).add(foo).add(foo)
-        .commit();
-    index.doc(2)
-        .field(title).add(bar).add(foo)
-        .field(body).add(bar).add(bar).add(bar).add(bar)
-        .commit();
+    index.doc(1).field(title).add(foo).add(bar).add(foo).field(body).add(foo).add(foo).add(foo).commit();
+    index.doc(2).field(title).add(bar).add(foo).field(body).add(bar).add(bar).add(bar).add(bar).commit();
 
     // search for "foo" in "title"
-    EXPECT_TRUE(verifyResult(FakeResult()
-                            .doc(1).len(3).pos(0).pos(2)
-                            .doc(2).len(2).pos(1),
-                            index.index, title, makeTerm(foo)));
+    EXPECT_TRUE(verifyResult(FakeResult().doc(1).len(3).pos(0).pos(2).doc(2).len(2).pos(1), index.index, title,
+                             makeTerm(foo)));
 
     // search for "bar" in "title"
-    EXPECT_TRUE(verifyResult(FakeResult()
-                            .doc(1).len(3).pos(1)
-                            .doc(2).len(2).pos(0),
-                            index.index, title, makeTerm(bar)));
+    EXPECT_TRUE(
+        verifyResult(FakeResult().doc(1).len(3).pos(1).doc(2).len(2).pos(0), index.index, title, makeTerm(bar)));
 
     // search for "foo" in "body"
-    EXPECT_TRUE(verifyResult(FakeResult()
-                            .doc(1).len(3).pos(0).pos(1).pos(2),
-                            index.index, body, makeTerm(foo)));
+    EXPECT_TRUE(verifyResult(FakeResult().doc(1).len(3).pos(0).pos(1).pos(2), index.index, body, makeTerm(foo)));
 
     // search for "bar" in "body"
-    EXPECT_TRUE(verifyResult(FakeResult()
-                            .doc(2).len(4).pos(0).pos(1).pos(2).pos(3),
-                            index.index, body, makeTerm(bar)));
+    EXPECT_TRUE(
+        verifyResult(FakeResult().doc(2).len(4).pos(0).pos(1).pos(2).pos(3), index.index, body, makeTerm(bar)));
 
     // search for "bogus" in "title"
-    EXPECT_TRUE(verifyResult(FakeResult(),
-                            index.index, title, makeTerm("bogus")));
+    EXPECT_TRUE(verifyResult(FakeResult(), index.index, title, makeTerm("bogus")));
 
     // search for "foo" in "bogus"
-    EXPECT_TRUE(verifyResult(FakeResult(),
-                            index.index, "bogus", makeTerm(foo)));
+    EXPECT_TRUE(verifyResult(FakeResult(), index.index, "bogus", makeTerm(foo)));
 
     // search for "bar foo" in "title"
-    EXPECT_TRUE(verifyResult(FakeResult()
-                            .doc(1).len(3).pos(1)
-                            .doc(2).len(2).pos(0),
-                            index.index, title, *makePhrase(bar, foo)));
-
+    EXPECT_TRUE(verifyResult(FakeResult().doc(1).len(3).pos(1).doc(2).len(2).pos(0), index.index, title,
+                             *makePhrase(bar, foo)));
 }
 
 // tests index update behavior; remove/update and unordered docid
 // indexing.
-TEST(MemoryIndexTest, require_that_documents_can_be_removed_and_updated)
-{
+TEST(MemoryIndexTest, require_that_documents_can_be_removed_and_updated) {
     Index index(MySetup().field(title));
 
     // add unordered
@@ -354,88 +326,61 @@ TEST(MemoryIndexTest, require_that_documents_can_be_removed_and_updated)
     Document::UP doc1 = index.doc(1).field(title).add(foo).commit();
     Document::UP doc2 = index.doc(2).field(title).add(foo).add(foo).commit();
 
-    EXPECT_TRUE(verifyResult(FakeResult()
-                            .doc(1).len(1).pos(0)
-                            .doc(2).len(2).pos(0).pos(1)
-                            .doc(3).len(3).pos(0).pos(1).pos(2),
-                            index.index, title, makeTerm(foo)));
+    EXPECT_TRUE(
+        verifyResult(FakeResult().doc(1).len(1).pos(0).doc(2).len(2).pos(0).pos(1).doc(3).len(3).pos(0).pos(1).pos(2),
+                     index.index, title, makeTerm(foo)));
 
     // remove document
     index.remove(2);
 
-    EXPECT_TRUE(verifyResult(FakeResult()
-                            .doc(1).len(1).pos(0)
-                            .doc(3).len(3).pos(0).pos(1).pos(2),
-                            index.index, title, makeTerm(foo)));
+    EXPECT_TRUE(verifyResult(FakeResult().doc(1).len(1).pos(0).doc(3).len(3).pos(0).pos(1).pos(2), index.index, title,
+                             makeTerm(foo)));
 
     // update document
     index.doc(1).field(title).add(bar).add(foo).add(foo).commit();
 
-    EXPECT_TRUE(verifyResult(FakeResult()
-                            .doc(1).len(3).pos(1).pos(2)
-                            .doc(3).len(3).pos(0).pos(1).pos(2),
-                            index.index, title, makeTerm(foo)));
+    EXPECT_TRUE(verifyResult(FakeResult().doc(1).len(3).pos(1).pos(2).doc(3).len(3).pos(0).pos(1).pos(2), index.index,
+                             title, makeTerm(foo)));
 }
 
 // test the fake field source here, to make sure it acts similar to
 // the memory index field source.
-TEST(MemoryIndexTest, test_fake_searchable)
-{
+TEST(MemoryIndexTest, test_fake_searchable) {
     Index index(MySetup().field(title).field(body));
 
     // setup fake field source with predefined results
     FakeSearchable fakeSource;
-    fakeSource.addResult(title, foo,
-                         FakeResult()
-                         .doc(1).len(3).pos(0).pos(2)
-                         .doc(2).len(2).pos(1));
-    fakeSource.addResult(title, bar,
-                         FakeResult()
-                         .doc(1).len(3).pos(1)
-                         .doc(2).len(2).pos(0));
-    fakeSource.addResult(body, foo,
-                         FakeResult()
-                         .doc(1).len(3).pos(0).pos(1).pos(2));
-    fakeSource.addResult(body, bar,
-                         FakeResult()
-                         .doc(2).len(4).pos(0).pos(1).pos(2).pos(3));
+    fakeSource.addResult(title, foo, FakeResult().doc(1).len(3).pos(0).pos(2).doc(2).len(2).pos(1));
+    fakeSource.addResult(title, bar, FakeResult().doc(1).len(3).pos(1).doc(2).len(2).pos(0));
+    fakeSource.addResult(body, foo, FakeResult().doc(1).len(3).pos(0).pos(1).pos(2));
+    fakeSource.addResult(body, bar, FakeResult().doc(2).len(4).pos(0).pos(1).pos(2).pos(3));
 
     // search for "foo" in "title"
-    EXPECT_TRUE(verifyResult(FakeResult()
-                            .doc(1).len(3).pos(0).pos(2)
-                            .doc(2).len(2).pos(1),
-                            fakeSource, title, makeTerm(foo)));
+    EXPECT_TRUE(verifyResult(FakeResult().doc(1).len(3).pos(0).pos(2).doc(2).len(2).pos(1), fakeSource, title,
+                             makeTerm(foo)));
 
     // search for "bar" in "title"
-    EXPECT_TRUE(verifyResult(FakeResult()
-                            .doc(1).len(3).pos(1)
-                            .doc(2).len(2).pos(0),
-                            fakeSource, title, makeTerm(bar)));
+    EXPECT_TRUE(
+        verifyResult(FakeResult().doc(1).len(3).pos(1).doc(2).len(2).pos(0), fakeSource, title, makeTerm(bar)));
 
     // search for "foo" in "body"
-    EXPECT_TRUE(verifyResult(FakeResult()
-                            .doc(1).len(3).pos(0).pos(1).pos(2),
-                            fakeSource, body, makeTerm(foo)));
+    EXPECT_TRUE(verifyResult(FakeResult().doc(1).len(3).pos(0).pos(1).pos(2), fakeSource, body, makeTerm(foo)));
 
     // search for "bar" in "body"
-    EXPECT_TRUE(verifyResult(FakeResult()
-                            .doc(2).len(4).pos(0).pos(1).pos(2).pos(3),
-                            fakeSource, body, makeTerm(bar)));
+    EXPECT_TRUE(
+        verifyResult(FakeResult().doc(2).len(4).pos(0).pos(1).pos(2).pos(3), fakeSource, body, makeTerm(bar)));
 
     // search for "bogus" in "title"
-    EXPECT_TRUE(verifyResult(FakeResult(),
-                            fakeSource, title, makeTerm("bogus")));
+    EXPECT_TRUE(verifyResult(FakeResult(), fakeSource, title, makeTerm("bogus")));
 
     // search for foo in "bogus"
-    EXPECT_TRUE(verifyResult(FakeResult(),
-                            fakeSource, "bogus", makeTerm(foo)));
+    EXPECT_TRUE(verifyResult(FakeResult(), fakeSource, "bogus", makeTerm(foo)));
 }
 
-TEST(MemoryIndexTest, require_that_frozen_index_ignores_updates)
-{
-    Index index(MySetup().field(title));
+TEST(MemoryIndexTest, require_that_frozen_index_ignores_updates) {
+    Index        index(MySetup().field(title));
     Document::UP doc1 = index.doc(1).field(title).add(foo).add(bar).commit();
-    FakeResult ffr = FakeResult().doc(1).len(2).pos(0);
+    FakeResult   ffr = FakeResult().doc(1).len(2).pos(0);
     EXPECT_TRUE(verifyResult(ffr, index.index, title, makeTerm(foo)));
     EXPECT_TRUE(!index.index.isFrozen());
     index.index.freeze();
@@ -446,8 +391,7 @@ TEST(MemoryIndexTest, require_that_frozen_index_ignores_updates)
     EXPECT_TRUE(verifyResult(ffr, index.index, title, makeTerm(foo)));
 }
 
-TEST(MemoryIndexTest, require_that_num_docs_and_doc_id_limit_is_returned)
-{
+TEST(MemoryIndexTest, require_that_num_docs_and_doc_id_limit_is_returned) {
     Index index(MySetup().field(title));
     EXPECT_EQ(0u, index.index.getNumDocs());
     EXPECT_EQ(1u, index.index.getDocIdLimit());
@@ -472,20 +416,18 @@ TEST(MemoryIndexTest, require_that_num_docs_and_doc_id_limit_is_returned)
 
 namespace {
 
-FieldIndexStats get_field_stats(const IndexStats &stats, const std::string& field_name)
-{
+FieldIndexStats get_field_stats(const IndexStats& stats, const std::string& field_name) {
     auto itr = stats.get_field_stats().find(field_name);
     return itr == stats.get_field_stats().end() ? FieldIndexStats() : itr->second;
 }
 
-}
-TEST(MemoryIndexTest, require_that_we_understand_the_memory_footprint)
-{
+} // namespace
+TEST(MemoryIndexTest, require_that_we_understand_the_memory_footprint) {
     constexpr size_t BASE_ALLOCATED = 360936u;
     constexpr size_t BASE_USED = 150676u;
     {
         MySetup setup;
-        Index index(setup);
+        Index   index(setup);
         EXPECT_EQ(0u, index.index.getStaticMemoryFootprint());
         EXPECT_EQ(index.index.getStaticMemoryFootprint(), index.index.getMemoryUsage().allocatedBytes());
         EXPECT_EQ(0u, index.index.getMemoryUsage().usedBytes());
@@ -508,8 +450,7 @@ TEST(MemoryIndexTest, require_that_we_understand_the_memory_footprint)
     }
 }
 
-TEST(MemoryIndexTest, require_that_num_words_is_returned)
-{
+TEST(MemoryIndexTest, require_that_num_words_is_returned) {
     Index index(MySetup().field(title));
     EXPECT_EQ(0u, index.index.getNumWords());
     index.doc(1).field(title).add(foo).commit();
@@ -518,43 +459,43 @@ TEST(MemoryIndexTest, require_that_num_words_is_returned)
     EXPECT_EQ(3u, index.index.getNumWords());
 }
 
-TEST(MemoryIndexTest, require_that_we_can_fake_bit_vector)
-{
+TEST(MemoryIndexTest, require_that_we_can_fake_bit_vector) {
     Index index(MySetup().field(title));
     index.doc(1).field(title).add(foo).commit();
     index.doc(3).field(title).add(foo).commit();
     {
         uint32_t fieldId = 0;
 
-        MatchDataLayout mdl;
+        MatchDataLayout    mdl;
         FakeRequestContext requestContext;
-        TermFieldHandle handle = mdl.allocTermField(fieldId);
+        TermFieldHandle    handle = mdl.allocTermField(fieldId);
 
         // filter field
-        FieldSpec field(title, fieldId, handle, true);
+        FieldSpec     field(title, fieldId, handle, true);
         FieldSpecList fields;
         fields.add(field);
 
-        Searchable &searchable = index.index;
-        auto res = searchable.createBlueprint(requestContext, fields, makeTerm(foo), mdl);
+        Searchable& searchable = index.index;
+        auto        res = searchable.createBlueprint(requestContext, fields, makeTerm(foo), mdl);
         EXPECT_TRUE(res);
 
         res->basic_plan(true, 100);
         res->fetchPostings(search::queryeval::ExecuteInfo::FULL);
-        MatchData::UP match_data = mdl.createMatchData();
+        MatchData::UP      match_data = mdl.createMatchData();
         SearchIterator::UP search = res->createSearch(*match_data);
         EXPECT_TRUE(search);
-        EXPECT_TRUE(dynamic_cast<BooleanMatchIteratorWrapper *>(search.get()) != nullptr);
+        EXPECT_TRUE(dynamic_cast<BooleanMatchIteratorWrapper*>(search.get()) != nullptr);
         search->initFullRange();
         EXPECT_EQ("1,3", toString(*search));
     }
 }
 
-TEST(MemoryIndexTest, field_length_info_can_be_retrieved_per_field)
-{
-    Index index(MySetup().field(title).field(body)
-                        .field_length("title", FieldLengthInfo(3.0, 3.0, 5))
-                        .field_length("body", FieldLengthInfo(7.0, 7.0, 11)));
+TEST(MemoryIndexTest, field_length_info_can_be_retrieved_per_field) {
+    Index index(MySetup()
+                    .field(title)
+                    .field(body)
+                    .field_length("title", FieldLengthInfo(3.0, 3.0, 5))
+                    .field_length("body", FieldLengthInfo(7.0, 7.0, 11)));
 
     EXPECT_EQ(3, index.index.get_field_length_info("title").get_average_field_length());
     EXPECT_EQ(5, index.index.get_field_length_info("title").get_num_samples());
@@ -566,17 +507,17 @@ TEST(MemoryIndexTest, field_length_info_can_be_retrieved_per_field)
     EXPECT_EQ(0, index.index.get_field_length_info("na").get_num_samples());
 }
 
-TEST(MemoryIndexTest, write_context_state_as_slime)
-{
-    Index index(MySetup().field(title).field(body));
-    Slime act;
+TEST(MemoryIndexTest, write_context_state_as_slime) {
+    Index         index(MySetup().field(title).field(body));
+    Slime         act;
     SlimeInserter inserter(act);
     index.index.insert_write_context_state(inserter.insertObject());
     Slime exp;
     JsonFormat::decode("{\"invert\": [{\"executor_id\": 0, \"fields\": [\"body\"]},"
-                                     "{\"executor_id\": 1, \"fields\": [\"title\"]}],"
-                        "\"push\": [{\"executor_id\": 0, \"fields\": [\"body\"]},"
-                                   "{\"executor_id\": 1, \"fields\": [\"title\"]}]}", exp);
+                       "{\"executor_id\": 1, \"fields\": [\"title\"]}],"
+                       "\"push\": [{\"executor_id\": 0, \"fields\": [\"body\"]},"
+                       "{\"executor_id\": 1, \"fields\": [\"title\"]}]}",
+                       exp);
     EXPECT_EQ(exp, act);
 }
 

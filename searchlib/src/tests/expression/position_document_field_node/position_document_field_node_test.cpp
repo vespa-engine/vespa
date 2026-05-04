@@ -30,14 +30,14 @@ const std::string field_name("pos");
 namespace {
 
 StructFieldValue make_position(int32_t x, int32_t y) {
-    auto fv = PositionDataType::getInstance().createFieldValue();
+    auto  fv = PositionDataType::getInstance().createFieldValue();
     auto& pos = dynamic_cast<StructFieldValue&>(*fv);
     pos.setValue(PositionDataType::FIELD_X, IntFieldValue::make(x));
     pos.setValue(PositionDataType::FIELD_Y, IntFieldValue::make(y));
     return pos;
 }
 
-}
+} // namespace
 
 struct SingleValueFixture {
     DocBuilder                            _builder;
@@ -53,8 +53,7 @@ struct SingleValueFixture {
 };
 
 SingleValueFixture::SingleValueFixture()
-    : _builder([](auto& builder, auto& doc) noexcept
-               { doc.addField(field_name, builder.positionType()); }),
+    : _builder([](auto& builder, auto& doc) noexcept { doc.addField(field_name, builder.positionType()); }),
       _doc(_builder.make_document("id:ns:searchdocument::0")) {
 }
 

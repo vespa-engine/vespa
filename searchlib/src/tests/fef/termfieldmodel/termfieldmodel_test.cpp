@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 #include <algorithm>
 
@@ -11,40 +11,40 @@ using namespace search::fef;
 struct State {
     SimpleTermData          term;
     MatchData::UP           md;
-    TermFieldMatchData     *f3;
-    TermFieldMatchData     *f5;
-    TermFieldMatchData     *f7;
+    TermFieldMatchData*     f3;
+    TermFieldMatchData*     f5;
+    TermFieldMatchData*     f7;
     TermFieldMatchDataArray array;
 
     State();
     ~State();
 
-    void setArray(TermFieldMatchDataArray value) {
-        array = std::move(value);
-    }
+    void setArray(TermFieldMatchDataArray value) { array = std::move(value); }
 };
 
-State::State() : term(), md(), f3(nullptr), f5(nullptr), f7(nullptr), array() {}
+State::State() : term(), md(), f3(nullptr), f5(nullptr), f7(nullptr), array() {
+}
 State::~State() = default;
 
 /**
  * convenience adapter for easy iteration
  **/
-class SimpleTermFieldRangeAdapter
-{
+class SimpleTermFieldRangeAdapter {
     SimpleTermData& _ref;
-    size_t _idx;
-    size_t _lim;
+    size_t          _idx;
+    size_t          _lim;
+
 public:
-    explicit SimpleTermFieldRangeAdapter(SimpleTermData& ref)
-            : _ref(ref), _idx(0), _lim(ref.numFields())
-    {}
+    explicit SimpleTermFieldRangeAdapter(SimpleTermData& ref) : _ref(ref), _idx(0), _lim(ref.numFields()) {}
 
     [[nodiscard]] bool valid() const { return (_idx < _lim); }
 
-    [[nodiscard]] SimpleTermFieldData& get() const  { return _ref.field(_idx); }
+    [[nodiscard]] SimpleTermFieldData& get() const { return _ref.field(_idx); }
 
-    void next() { assert(valid()); ++_idx; }
+    void next() {
+        assert(valid());
+        ++_idx;
+    }
 };
 
 void testInvalidId() {
@@ -52,11 +52,11 @@ void testInvalidId() {
     using search::queryeval::SearchIterator;
 
     EXPECT_TRUE(empty.has_invalid_docid());
-    EXPECT_TRUE(TermFieldMatchData::invalidId() < (SearchIterator::beginId() + 1 ) ||
-               TermFieldMatchData::invalidId() > (search::endDocId - 1));
+    EXPECT_TRUE(TermFieldMatchData::invalidId() < (SearchIterator::beginId() + 1) ||
+                TermFieldMatchData::invalidId() > (search::endDocId - 1));
 }
 
-void testSetup(State &state) {
+void testSetup(State& state) {
     MatchDataLayout layout;
 
     state.term.addField(3); // docfreq = 1
@@ -88,8 +88,8 @@ void testSetup(State &state) {
         for (FRA iter(state.term); iter.valid(); iter.next()) {
             const ITermFieldData& tfd = iter.get();
 
-            TermFieldHandle handle = tfd.getHandle();
-            TermFieldMatchData *data = state.md->resolveTermField(handle);
+            TermFieldHandle     handle = tfd.getHandle();
+            TermFieldMatchData* data = state.md->resolveTermField(handle);
             switch (tfd.getFieldId()) {
             case 3:
                 state.f3 = data;
@@ -115,7 +115,7 @@ void testSetup(State &state) {
     EXPECT_EQ(true, state.array.valid());
 }
 
-void testGenerate(State &state) {
+void testGenerate(State& state) {
     // verify array
     EXPECT_EQ(3u, state.array.size());
     EXPECT_EQ(state.f3, state.array[0]);
@@ -136,10 +136,8 @@ void testGenerate(State &state) {
     }
     state.f5->reset(6);
     EXPECT_TRUE(state.f5->has_ranking_data(6u));
-    EXPECT_EQ(FieldPositionsIterator::UNKNOWN_LENGTH,
-               state.f5->getIterator().getFieldLength());
+    EXPECT_EQ(FieldPositionsIterator::UNKNOWN_LENGTH, state.f5->getIterator().getFieldLength());
     EXPECT_EQ(0u, state.f5->getIterator().size());
-
 
     // fresh unpacked data
     state.f3->reset(10);
@@ -148,8 +146,7 @@ void testGenerate(State &state) {
         pos.setPosition(3);
         pos.setElementId(0);
         pos.setElementLen(10);
-        EXPECT_EQ(FieldPositionsIterator::UNKNOWN_LENGTH,
-                   state.f3->getIterator().getFieldLength());
+        EXPECT_EQ(FieldPositionsIterator::UNKNOWN_LENGTH, state.f3->getIterator().getFieldLength());
         state.f3->appendPosition(pos);
         EXPECT_EQ(10u, state.f3->getIterator().getFieldLength());
     }
@@ -174,7 +171,7 @@ void testGenerate(State &state) {
     state.f7->setRawScore(10, 5.0);
 }
 
-void testAnalyze(State &state) {
+void testAnalyze(State& state) {
     EXPECT_TRUE(state.f3->has_ranking_data(10u));
     EXPECT_FALSE(state.f5->has_data(10u));
     EXPECT_TRUE(state.f7->has_ranking_data(10u));
@@ -274,48 +271,48 @@ TEST(TermFieldModelTest, Access_subqueries) {
 TEST(TermFieldModelTest, require_that_TermFieldMatchData_can_be_tagged_as_needed_or_not) {
     TermFieldMatchData tfmd;
     tfmd.setFieldId(123);
-    EXPECT_EQ(tfmd.getFieldId(),123u);
+    EXPECT_EQ(tfmd.getFieldId(), 123u);
     EXPECT_TRUE(!tfmd.isNotNeeded());
     EXPECT_TRUE(tfmd.needs_normal_features());
     EXPECT_TRUE(tfmd.needs_interleaved_features());
     tfmd.tagAsNotNeeded();
-    EXPECT_EQ(tfmd.getFieldId(),123u);
+    EXPECT_EQ(tfmd.getFieldId(), 123u);
     EXPECT_TRUE(tfmd.isNotNeeded());
     EXPECT_TRUE(!tfmd.needs_normal_features());
     EXPECT_TRUE(!tfmd.needs_interleaved_features());
     tfmd.setNeedNormalFeatures(true);
-    EXPECT_EQ(tfmd.getFieldId(),123u);
+    EXPECT_EQ(tfmd.getFieldId(), 123u);
     EXPECT_TRUE(!tfmd.isNotNeeded());
     EXPECT_TRUE(tfmd.needs_normal_features());
     EXPECT_TRUE(!tfmd.needs_interleaved_features());
     tfmd.setNeedInterleavedFeatures(true);
-    EXPECT_EQ(tfmd.getFieldId(),123u);
+    EXPECT_EQ(tfmd.getFieldId(), 123u);
     EXPECT_TRUE(!tfmd.isNotNeeded());
     EXPECT_TRUE(tfmd.needs_normal_features());
     EXPECT_TRUE(tfmd.needs_interleaved_features());
     tfmd.setNeedNormalFeatures(false);
-    EXPECT_EQ(tfmd.getFieldId(),123u);
+    EXPECT_EQ(tfmd.getFieldId(), 123u);
     EXPECT_TRUE(!tfmd.isNotNeeded());
     EXPECT_TRUE(!tfmd.needs_normal_features());
     EXPECT_TRUE(tfmd.needs_interleaved_features());
     tfmd.setNeedInterleavedFeatures(false);
-    EXPECT_EQ(tfmd.getFieldId(),123u);
+    EXPECT_EQ(tfmd.getFieldId(), 123u);
     EXPECT_TRUE(tfmd.isNotNeeded());
     EXPECT_TRUE(!tfmd.needs_normal_features());
     EXPECT_TRUE(!tfmd.needs_interleaved_features());
 }
 
 TEST(TermFieldModelTest, require_that_MatchData_soft_reset_retains_appropriate_state) {
-    MatchDataLayout mdl;
+    MatchDataLayout    mdl;
     constexpr uint32_t field0 = 0;
     constexpr uint32_t field7 = 7;
     for (uint32_t i = 0; i < 7; ++i) {
-        (void) mdl.allocTermField(field0);
+        (void)mdl.allocTermField(field0);
     }
     auto handle7 = mdl.allocTermField(field7);
     auto md = mdl.createMatchData();
     md->set_termwise_limit(0.5);
-    auto *old_term = md->resolveTermField(handle7);
+    auto* old_term = md->resolveTermField(handle7);
     old_term->tagAsNotNeeded();
     old_term->populate_fixed()->setElementWeight(21);
     old_term->resetOnlyDocId(42);
@@ -325,7 +322,7 @@ TEST(TermFieldModelTest, require_that_MatchData_soft_reset_retains_appropriate_s
     EXPECT_EQ(old_term->getWeight(), 21);
     EXPECT_TRUE(old_term->has_ranking_data(42u));
     md->soft_reset();
-    auto *new_term = md->resolveTermField(handle7);
+    auto* new_term = md->resolveTermField(handle7);
     EXPECT_EQ(new_term, old_term);
     EXPECT_EQ(md->get_termwise_limit(), 1.0);
     EXPECT_TRUE(new_term->isNotNeeded());
@@ -335,31 +332,30 @@ TEST(TermFieldModelTest, require_that_MatchData_soft_reset_retains_appropriate_s
 }
 
 TEST(TermFieldModelTest, require_that_compareWithExactness_implements_a_strict_weak_ordering) {
-   TermFieldMatchDataPosition a(0, 1, 100, 1);
-   TermFieldMatchDataPosition b(0, 2, 100, 1);
-   TermFieldMatchDataPosition c(0, 2, 100, 1);
-   TermFieldMatchDataPosition d(0, 3, 100, 3);
-   TermFieldMatchDataPosition e(0, 3, 100, 3);
-   TermFieldMatchDataPosition f(0, 4, 100, 1);
+    TermFieldMatchDataPosition a(0, 1, 100, 1);
+    TermFieldMatchDataPosition b(0, 2, 100, 1);
+    TermFieldMatchDataPosition c(0, 2, 100, 1);
+    TermFieldMatchDataPosition d(0, 3, 100, 3);
+    TermFieldMatchDataPosition e(0, 3, 100, 3);
+    TermFieldMatchDataPosition f(0, 4, 100, 1);
 
-   d.setMatchExactness(0.75);
-   e.setMatchExactness(0.5);
+    d.setMatchExactness(0.75);
+    e.setMatchExactness(0.5);
 
-   bool (*cmp)(const TermFieldMatchDataPosition &a,
-               const TermFieldMatchDataPosition &b) = TermFieldMatchDataPosition::compareWithExactness;
+    bool (*cmp)(const TermFieldMatchDataPosition& a, const TermFieldMatchDataPosition& b) =
+        TermFieldMatchDataPosition::compareWithExactness;
 
-   EXPECT_EQ(true, cmp(a, b));
-   EXPECT_EQ(false, cmp(b, c));
-   EXPECT_EQ(true, cmp(c, d));
-   EXPECT_EQ(true, cmp(d, e));
-   EXPECT_EQ(true, cmp(e, f));
+    EXPECT_EQ(true, cmp(a, b));
+    EXPECT_EQ(false, cmp(b, c));
+    EXPECT_EQ(true, cmp(c, d));
+    EXPECT_EQ(true, cmp(d, e));
+    EXPECT_EQ(true, cmp(e, f));
 
-   EXPECT_EQ(false, cmp(b, a));
-   EXPECT_EQ(false, cmp(c, b));
-   EXPECT_EQ(false, cmp(d, c));
-   EXPECT_EQ(false, cmp(e, d));
-   EXPECT_EQ(false, cmp(f, e));
+    EXPECT_EQ(false, cmp(b, a));
+    EXPECT_EQ(false, cmp(c, b));
+    EXPECT_EQ(false, cmp(d, c));
+    EXPECT_EQ(false, cmp(e, d));
+    EXPECT_EQ(false, cmp(f, e));
 }
-
 
 GTEST_MAIN_RUN_ALL_TESTS()
