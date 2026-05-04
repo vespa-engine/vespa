@@ -150,16 +150,17 @@ class HttpFeedClient implements FeedClient {
     private void verifyConnection(FeedClientBuilderImpl builder, ClusterFactory clusterFactory) throws IOException {
         Instant start = Instant.now();
         try (Cluster cluster = clusterFactory.create()) {
+            var timeout = Duration.ofSeconds(30);
             HttpRequest request = new HttpRequest("POST",
                                                   getPath(DocumentId.of("feeder", "handshake", "dummy")),
                                                   getQuery(empty(), true),
                                                   requestHeaders,
                                                   null,
-                                                  Duration.ofSeconds(30),
+                                                  timeout,
                                                   nanoClock);
             CompletableFuture<HttpResponse> future = new CompletableFuture<>();
             cluster.dispatch(request, future);
-            HttpResponse response = future.get(20, TimeUnit.SECONDS);
+            HttpResponse response = future.get(timeout.plus(Duration.ofSeconds(5)).getSeconds(), TimeUnit.SECONDS);
             if (response.code() != 200) {
                 String message;
                 if (response.body() != null) switch (response.contentType()) {
