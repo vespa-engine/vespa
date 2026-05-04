@@ -30,7 +30,9 @@ using namespace vespalib;
 
 using search::fef::MatchData;
 using search::index::Schema;
-
+using vespalib::eval::SimpleValue;
+using vespalib::eval::TensorSpec;
+using vespalib::eval::ValueType;
 using vespalib::make_string_short::fmt;
 
 const std::string field_name = "myfield";
@@ -1026,9 +1028,6 @@ TEST(IteratorBenchmark, btree_vs_array_nonstrict_crossover) {
 }
 
 TEST(IteratorBenchmark, spec_factory_test) {
-    using vespalib::eval::SimpleValue;
-    using vespalib::eval::TensorSpec;
-    using vespalib::eval::ValueType;
     search::attribute::Config tensor_cfg(BasicType::TENSOR);
     tensor_cfg.setTensorType(ValueType::from_spec("tensor<float>(x[2])"));
     tensor_cfg.set_distance_metric(DistanceMetric::Euclidean);
