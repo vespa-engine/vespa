@@ -1,12 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "documentstoreadapter.h"
-#include <vespa/searchsummary/docsummary/docsum_store_document.h>
+
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/eval/eval/value_codec.h>
-#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
+#include <vespa/eval/eval/value_codec.h>
+#include <vespa/searchsummary/docsummary/docsum_store_document.h>
+#include <vespa/vespalib/objects/nbostream.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.docsummary.documentstoreadapter");
@@ -16,21 +17,15 @@ using namespace search::docsummary;
 
 namespace proton {
 
-DocumentStoreAdapter::
-DocumentStoreAdapter(const search::IDocumentStore & docStore,
-                     const DocumentTypeRepo &repo)
-    : _docStore(docStore),
-      _repo(repo)
-{
+DocumentStoreAdapter::DocumentStoreAdapter(const search::IDocumentStore& docStore, const DocumentTypeRepo& repo)
+    : _docStore(docStore), _repo(repo) {
 }
 
 DocumentStoreAdapter::~DocumentStoreAdapter() = default;
 
-std::unique_ptr<const IDocsumStoreDocument>
-DocumentStoreAdapter::get_document(uint32_t docId)
-{
+std::unique_ptr<const IDocsumStoreDocument> DocumentStoreAdapter::get_document(uint32_t docId) {
     auto document = _docStore.read(docId, _repo);
-    if ( ! document) {
+    if (!document) {
         LOG(debug, "Did not find summary document for docId %u. Returning empty docsum", docId);
         return {};
     }
