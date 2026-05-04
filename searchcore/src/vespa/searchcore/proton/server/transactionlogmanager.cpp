@@ -58,8 +58,8 @@ void getStatus(TransLogClient& client, const std::string& domainName, search::Se
     std::unique_ptr<Session> session = client.open(domainName);
     if (!session) {
         throw IllegalStateException(make_string("Could not open session with domain '%s' on TLS '%s'",
-                                                session->getDomain().c_str(),
-                                                session->getTLC().getRPCTarget().c_str()));
+                                                domainName.c_str(),
+                                                client.getRPCTarget().c_str()));
     }
     getStatus(*session, serialBegin, serialEnd, count);
 }
