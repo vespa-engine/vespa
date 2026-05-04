@@ -2,28 +2,28 @@
 
 #pragma once
 
-#include "load_utils.h"
 #include "attributevector.h"
+#include "load_utils.h"
+
 #include <vespa/searchcommon/attribute/multivalue.h>
+
 #include <cassert>
 
 namespace search::attribute {
 
 template <class MvMapping, class Saver>
-uint32_t
-loadFromEnumeratedMultiValue(MvMapping & mapping,
-                             ReaderBase & attrReader,
-                             std::span<const atomic_utils::NonAtomicValue_t<multivalue::ValueType_t<typename MvMapping::MultiValueType>>> enumValueToValueMap,
-                             std::span<const uint32_t> enum_value_remapping,
-                             Saver saver)
-{
+uint32_t loadFromEnumeratedMultiValue(
+    MvMapping& mapping, ReaderBase& attrReader,
+    std::span<const atomic_utils::NonAtomicValue_t<multivalue::ValueType_t<typename MvMapping::MultiValueType>>>
+                              enumValueToValueMap,
+    std::span<const uint32_t> enum_value_remapping, Saver saver) {
     mapping.prepareLoadFromMultiValue();
     using MultiValueType = typename MvMapping::MultiValueType;
     using ValueType = multivalue::ValueType_t<MultiValueType>;
     using NonAtomicValueType = atomic_utils::NonAtomicValue_t<ValueType>;
     std::vector<MultiValueType> indices;
-    uint32_t numDocs = attrReader.getNumIdx() - 1;
-    uint64_t numValues = attrReader.getEnumCount();
+    uint32_t                    numDocs = attrReader.getNumIdx() - 1;
+    uint64_t                    numValues = attrReader.getEnumCount();
 
     uint64_t totalValueCount = 0;
     uint32_t maxValueCount = 0;
@@ -40,9 +40,11 @@ loadFromEnumeratedMultiValue(MvMapping & mapping,
             }
             int32_t weight = multivalue::is_WeightedValue_v<MultiValueType> ? attrReader.getNextWeight() : 1;
             if constexpr (std::is_same_v<ValueType, NonAtomicValueType>) {
-                indices.emplace_back(multivalue::ValueBuilder<MultiValueType>::build(enumValueToValueMap[enumValue], weight));
+                indices.emplace_back(
+                    multivalue::ValueBuilder<MultiValueType>::build(enumValueToValueMap[enumValue], weight));
             } else {
-                indices.emplace_back(multivalue::ValueBuilder<MultiValueType>::build(ValueType(enumValueToValueMap[enumValue]), weight));
+                indices.emplace_back(multivalue::ValueBuilder<MultiValueType>::build(
+                    ValueType(enumValueToValueMap[enumValue]), weight));
             }
             saver.save(enumValue, doc, weight);
         }
@@ -53,19 +55,15 @@ loadFromEnumeratedMultiValue(MvMapping & mapping,
     }
     assert(totalValueCount == numValues);
     mapping.doneLoadFromMultiValue();
-    (void) numValues;
+    (void)numValues;
     return maxValueCount;
 }
 
 template <class Vector, class Saver>
-void
-loadFromEnumeratedSingleValue(Vector &vector,
-                              vespalib::GenerationHolder &genHolder,
-                              ReaderBase &attrReader,
-                              std::span<const atomic_utils::NonAtomicValue_t<typename Vector::ValueType>> enumValueToValueMap,
-                              std::span<const uint32_t> enum_value_remapping,
-                              Saver saver)
-{
+void loadFromEnumeratedSingleValue(
+    Vector& vector, vespalib::GenerationHolder& genHolder, ReaderBase& attrReader,
+    std::span<const atomic_utils::NonAtomicValue_t<typename Vector::ValueType>> enumValueToValueMap,
+    std::span<const uint32_t> enum_value_remapping, Saver saver) {
     using ValueType = typename Vector::ValueType;
     using NonAtomicValueType = atomic_utils::NonAtomicValue_t<ValueType>;
     uint32_t numDocs = attrReader.getEnumCount();
@@ -87,4 +85,4 @@ loadFromEnumeratedSingleValue(Vector &vector,
     }
 }
 
-}
+} // namespace search::attribute

@@ -5,10 +5,12 @@
 #include "direct_multi_term_blueprint.h"
 #include "direct_posting_store_flow_stats_adapter.h"
 #include "multi_term_or_filter_search.h"
+
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/filter_wrapper.h>
 #include <vespa/searchlib/queryeval/orsearch.h>
+
 #include <cmath>
 #include <memory>
 #include <type_traits>
@@ -16,22 +18,23 @@
 using search::queryeval::FilterWrapper;
 using search::queryeval::SearchIterator;
 
-namespace search::queryeval { class WeightedSetTermSearch; }
+namespace search::queryeval {
+class WeightedSetTermSearch;
+}
 
 namespace search::attribute {
 
 template <typename PostingStoreType, typename SearchType>
-DirectMultiTermBlueprint<PostingStoreType, SearchType>::DirectMultiTermBlueprint(const queryeval::FieldSpec &field,
-                                                                                 const IAttributeVector &iattr,
-                                                                                 const PostingStoreType &attr,
+DirectMultiTermBlueprint<PostingStoreType, SearchType>::DirectMultiTermBlueprint(const queryeval::FieldSpec& field,
+                                                                                 const IAttributeVector&     iattr,
+                                                                                 const PostingStoreType&     attr,
                                                                                  size_t size_hint)
     : ComplexLeafBlueprint(field),
       _weights(),
       _terms(),
       _iattr(iattr),
       _attr(attr),
-      _dictionary_snapshot(_attr.get_dictionary_snapshot())
-{
+      _dictionary_snapshot(_attr.get_dictionary_snapshot()) {
     set_allow_termwise_eval(true);
     _weights.reserve(size_hint);
     _terms.reserve(size_hint);
@@ -40,11 +43,8 @@ DirectMultiTermBlueprint<PostingStoreType, SearchType>::DirectMultiTermBlueprint
 template <typename PostingStoreType, typename SearchType>
 DirectMultiTermBlueprint<PostingStoreType, SearchType>::~DirectMultiTermBlueprint() = default;
 
-
 template <typename PostingStoreType, typename SearchType>
-bool
-DirectMultiTermBlueprint<PostingStoreType, SearchType>::use_hash_filter(bool strict) const
-{
+bool DirectMultiTermBlueprint<PostingStoreType, SearchType>::use_hash_filter(bool strict) const {
     if (strict || _iattr.hasMultiValue()) {
         return false;
     }
@@ -54,21 +54,24 @@ DirectMultiTermBlueprint<PostingStoreType, SearchType>::use_hash_filter(bool str
     //
     // The following 25 test cases were used to calculate the cost of using btree iterators (strict):
     // op_hits_ratios = [5, 10, 50, 100, 200] * tokens_in_op = [1, 5, 10, 100, 1000]
-    // For each case we calculate the latency difference against the case with tokens_in_op=1 and the same op_hits_ratio.
-    // This indicates the extra time used to produce the same number of hits when having multiple tokens in the operator.
-    // The latency diff is divided with the number of hits produced and convert to nanoseconds:
+    // For each case we calculate the latency difference against the case with tokens_in_op=1 and the same
+    // op_hits_ratio. This indicates the extra time used to produce the same number of hits when having multiple
+    // tokens in the operator. The latency diff is divided with the number of hits produced and convert to
+    // nanoseconds:
     //   10M * (op_hits_ratio / 1000) * 1000 * 1000
     // Based on the numbers we can approximate the cost per document (in nanoseconds) as:
     //   8.0 (ns) * log2(tokens_in_op).
-    // NOTE: This is very simplified. Ideally we should also take into consideration the hit estimate of this blueprint,
+    // NOTE: This is very simplified. Ideally we should also take into consideration the hit estimate of this
+    // blueprint,
     //       as the cost per document will be lower when producing few hits.
     //
     // In addition, the following 28 test cases were used to calculate the cost of using the hash filter (non-strict).
     // filter_hits_ratios = [1, 5, 10, 50, 100, 150, 200] x op_hits_ratios = [200] x tokens_in_op = [5, 10, 100, 1000]
     // The code was altered to always using the hash filter for non-strict iterators.
-    // For each case we calculate the latency difference against a case from above with tokens_in_op=1 that produce a similar number of hits.
-    // This indicates the extra time used to produce the same number of hits when using the hash filter.
-    // The latency diff is divided with the number of hits the test filter produces and convert to nanoseconds:
+    // For each case we calculate the latency difference against a case from above with tokens_in_op=1 that produce a
+    // similar number of hits. This indicates the extra time used to produce the same number of hits when using the
+    // hash filter. The latency diff is divided with the number of hits the test filter produces and convert to
+    // nanoseconds:
     //   10M * (filter_hits_ratio / 1000) * 1000 * 1000
     // Based on the numbers we calculate the average cost per document (in nanoseconds) as 26.0 ns.
 
@@ -79,10 +82,9 @@ DirectMultiTermBlueprint<PostingStoreType, SearchType>::use_hash_filter(bool str
 
 template <typename PostingStoreType, typename SearchType>
 typename DirectMultiTermBlueprint<PostingStoreType, SearchType>::IteratorWeights
-DirectMultiTermBlueprint<PostingStoreType, SearchType>::create_iterators(std::vector<IteratorType>& btree_iterators,
-                                                                         std::vector<std::unique_ptr<SearchIterator>>& bitvectors,
-                                                                         bool use_bitvector_when_available,
-                                                                         fef::TermFieldMatchData& tfmd, bool strict) const
+DirectMultiTermBlueprint<PostingStoreType, SearchType>::create_iterators(
+    std::vector<IteratorType>& btree_iterators, std::vector<std::unique_ptr<SearchIterator>>& bitvectors,
+    bool use_bitvector_when_available, fef::TermFieldMatchData& tfmd, bool strict) const
 
 {
     std::vector<int32_t> result_weights;
@@ -112,11 +114,9 @@ DirectMultiTermBlueprint<PostingStoreType, SearchType>::create_iterators(std::ve
 }
 
 template <typename PostingStoreType, typename SearchType>
-std::unique_ptr<SearchIterator>
-DirectMultiTermBlueprint<PostingStoreType, SearchType>::combine_iterators(std::unique_ptr<SearchIterator> multi_term_iterator,
-                                                                          std::vector<std::unique_ptr<SearchIterator>>&& bitvectors,
-                                                                          bool strict) const
-{
+std::unique_ptr<SearchIterator> DirectMultiTermBlueprint<PostingStoreType, SearchType>::combine_iterators(
+    std::unique_ptr<SearchIterator> multi_term_iterator, std::vector<std::unique_ptr<SearchIterator>>&& bitvectors,
+    bool strict) const {
     if (!bitvectors.empty()) {
         if (multi_term_iterator) {
             bitvectors.push_back(std::move(multi_term_iterator));
@@ -129,31 +129,30 @@ DirectMultiTermBlueprint<PostingStoreType, SearchType>::combine_iterators(std::u
 template <typename PostingStoreType, typename SearchType>
 template <bool filter_search, bool allow_hash_filter>
 std::unique_ptr<queryeval::SearchIterator>
-DirectMultiTermBlueprint<PostingStoreType, SearchType>::create_search_helper(const fef::TermFieldMatchDataArray& tfmda,
-                                                                             bool strict) const
-{
+DirectMultiTermBlueprint<PostingStoreType, SearchType>::create_search_helper(
+    const fef::TermFieldMatchDataArray& tfmda, bool strict) const {
     if (_terms.empty()) {
         return std::make_unique<queryeval::EmptySearch>();
     }
     auto& tfmd = *tfmda[0];
-    bool field_is_filter = getState().fields()[0].isFilter();
+    bool  field_is_filter = getState().fields()[0].isFilter();
     if constexpr (SearchType::supports_hash_filter) {
         if (allow_hash_filter && use_hash_filter(strict)) {
-            return SearchType::create_hash_filter(tfmd, (filter_search || field_is_filter),
-                                                  _weights, _terms,
-                                                  _iattr, _attr, _dictionary_snapshot);
+            return SearchType::create_hash_filter(tfmd, (filter_search || field_is_filter), _weights, _terms, _iattr,
+                                                  _attr, _dictionary_snapshot);
         }
     }
-    std::vector<IteratorType> btree_iterators;
+    std::vector<IteratorType>                  btree_iterators;
     std::vector<queryeval::SearchIterator::UP> bitvectors;
-    const size_t num_children = _terms.size();
+    const size_t                               num_children = _terms.size();
     btree_iterators.reserve(num_children);
     bool use_bit_vector_when_available = filter_search || !_attr.has_always_btree_iterator();
     auto weights = create_iterators(btree_iterators, bitvectors, use_bit_vector_when_available, tfmd, strict);
     if constexpr (!SearchType::require_btree_iterators) {
-        auto multi_term = !btree_iterators.empty() ?
-                SearchType::create(tfmd, (filter_search || field_is_filter), std::move(weights), std::move(btree_iterators))
-                : std::unique_ptr<SearchIterator>();
+        auto multi_term = !btree_iterators.empty()
+                              ? SearchType::create(tfmd, (filter_search || field_is_filter), std::move(weights),
+                                                   std::move(btree_iterators))
+                              : std::unique_ptr<SearchIterator>();
         return combine_iterators(std::move(multi_term), std::move(bitvectors), strict);
     } else {
         // In this case we should only have btree iterators.
@@ -164,9 +163,8 @@ DirectMultiTermBlueprint<PostingStoreType, SearchType>::create_search_helper(con
 }
 
 template <typename PostingStoreType, typename SearchType>
-std::unique_ptr<queryeval::SearchIterator>
-DirectMultiTermBlueprint<PostingStoreType, SearchType>::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda) const
-{
+std::unique_ptr<queryeval::SearchIterator> DirectMultiTermBlueprint<PostingStoreType, SearchType>::createLeafSearch(
+    const fef::TermFieldMatchDataArray& tfmda) const {
     assert(tfmda.size() == 1);
     assert(getState().numFields() == 1);
     return create_search_helper<SearchType::filter_search, true>(tfmda, strict());
@@ -174,8 +172,7 @@ DirectMultiTermBlueprint<PostingStoreType, SearchType>::createLeafSearch(const f
 
 template <typename PostingStoreType, typename SearchType>
 std::unique_ptr<queryeval::SearchIterator>
-DirectMultiTermBlueprint<PostingStoreType, SearchType>::createFilterSearchImpl(FilterConstraint) const
-{
+DirectMultiTermBlueprint<PostingStoreType, SearchType>::createFilterSearchImpl(FilterConstraint) const {
     assert(getState().numFields() == 1);
     auto wrapper = std::make_unique<FilterWrapper>(getState().numFields());
     wrapper->wrap(create_search_helper<true, false>(wrapper->tfmda(), strict()));
@@ -184,8 +181,7 @@ DirectMultiTermBlueprint<PostingStoreType, SearchType>::createFilterSearchImpl(F
 
 template <typename PostingStoreType, typename SearchType>
 queryeval::FlowStats
-DirectMultiTermBlueprint<PostingStoreType, SearchType>::calculate_flow_stats(uint32_t docid_limit) const
-{
+DirectMultiTermBlueprint<PostingStoreType, SearchType>::calculate_flow_stats(uint32_t docid_limit) const {
     using OrFlow = search::queryeval::OrFlow;
     using MyAdapter = DirectPostingStoreFlowStatsAdapter;
     double est = OrFlow::estimate_of(MyAdapter(docid_limit), _terms);
@@ -194,20 +190,23 @@ DirectMultiTermBlueprint<PostingStoreType, SearchType>::calculate_flow_stats(uin
     // Program used: searchlib/src/tests/queryeval/iterator_benchmark
     // Tests: analyze_and_with_filter_vs_in(), analyze_and_with_filter_vs_in_array()
     double non_strict_cost = (SearchType::supports_hash_filter && !_iattr.hasMultiValue())
-            ? queryeval::flow::reverse_hash_lookup()
-            : OrFlow::cost_of(MyAdapter(docid_limit), _terms, false);
-    return {est, non_strict_cost, OrFlow::cost_of(MyAdapter(docid_limit), _terms, true) + queryeval::flow::heap_cost(est, _terms.size())};
+                                 ? queryeval::flow::reverse_hash_lookup()
+                                 : OrFlow::cost_of(MyAdapter(docid_limit), _terms, false);
+    return {est, non_strict_cost,
+            OrFlow::cost_of(MyAdapter(docid_limit), _terms, true) + queryeval::flow::heap_cost(est, _terms.size())};
 }
 
 template <typename PostingStoreType, typename SearchType>
 std::unique_ptr<queryeval::MatchingElementsSearch>
-DirectMultiTermBlueprint<PostingStoreType, SearchType>::create_matching_elements_search(const MatchingElementsFields &fields) const
-{
+DirectMultiTermBlueprint<PostingStoreType, SearchType>::create_matching_elements_search(
+    const MatchingElementsFields& fields) const {
     if (fields.has_field(_iattr.getName())) {
-        return queryeval::MatchingElementsSearch::create(_iattr, fields.enclosing_field(_iattr.getName()), _dictionary_snapshot, std::span<const IDirectPostingStore::LookupResult>(_terms));
+        return queryeval::MatchingElementsSearch::create(_iattr, fields.enclosing_field(_iattr.getName()),
+                                                         _dictionary_snapshot,
+                                                         std::span<const IDirectPostingStore::LookupResult>(_terms));
     } else {
         return {};
     }
 }
 
-}
+} // namespace search::attribute

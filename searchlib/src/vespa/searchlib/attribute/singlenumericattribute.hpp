@@ -6,49 +6,45 @@
 #include "numeric_matcher.h"
 #include "numeric_range_matcher.h"
 #include "primitivereader.h"
+#include "single_numeric_search_context.h"
 #include "singlenumericattribute.h"
 #include "singlenumericattributesaver.h"
-#include "single_numeric_search_context.h"
 #include "valuemodifier.h"
-#include <vespa/searchlib/query/query_term_simple.h>
+
 #include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchlib/query/query_term_simple.h>
 
 namespace search {
 
 template <typename B>
-SingleValueNumericAttribute<B>::
-SingleValueNumericAttribute(const std::string & baseFileName)
-    : SingleValueNumericAttribute(baseFileName, attribute::Config(attribute::BasicType::fromType(T()),
-                                                                  attribute::CollectionType::SINGLE))
-{ }
-
-template <typename B>
-SingleValueNumericAttribute<B>::
-SingleValueNumericAttribute(const std::string & baseFileName, const AttributeVector::Config & c)
-    : B(baseFileName, c),
-      _data(c.getGrowStrategy(), getGenerationHolder(), this->get_initial_alloc())
-{ }
-
-template <typename B>
-SingleValueNumericAttribute<B>::~SingleValueNumericAttribute()
-{
-    getGenerationHolder().reclaim_all();
+SingleValueNumericAttribute<B>::SingleValueNumericAttribute(const std::string& baseFileName)
+    : SingleValueNumericAttribute(
+          baseFileName, attribute::Config(attribute::BasicType::fromType(T()), attribute::CollectionType::SINGLE)) {
 }
 
 template <typename B>
-void
-SingleValueNumericAttribute<B>::onCommit()
-{
+SingleValueNumericAttribute<B>::SingleValueNumericAttribute(const std::string&             baseFileName,
+                                                            const AttributeVector::Config& c)
+    : B(baseFileName, c), _data(c.getGrowStrategy(), getGenerationHolder(), this->get_initial_alloc()) {
+}
+
+template <typename B> SingleValueNumericAttribute<B>::~SingleValueNumericAttribute() {
+    getGenerationHolder().reclaim_all();
+}
+
+template <typename B> void SingleValueNumericAttribute<B>::onCommit() {
     this->checkSetMaxValueCount(1);
 
     {
         // apply updates
         typename B::ValueModifier valueGuard(this->getValueModifier());
-        for (const auto & change : this->_changes.getInsertOrder()) {
+        for (const auto& change : this->_changes.getInsertOrder()) {
             if (change._type == ChangeBase::UPDATE) {
                 vespalib::atomic::store_ref_relaxed(_data[change._doc], change._data);
             } else if (change._type >= ChangeBase::ADD && change._type <= ChangeBase::DIV) {
-                vespalib::atomic::store_ref_relaxed(_data[change._doc], this->template applyArithmetic<T, typename B::Change::DataType>(_data[change._doc], change._data.getArithOperand(), change._type));
+                vespalib::atomic::store_ref_relaxed(
+                    _data[change._doc], this->template applyArithmetic<T, typename B::Change::DataType>(
+                                            _data[change._doc], change._data.getArithOperand(), change._type));
             } else if (change._type == ChangeBase::CLEARDOC) {
                 vespalib::atomic::store_ref_relaxed(_data[change._doc], this->_defaultValue._data);
             }
@@ -60,30 +56,23 @@ SingleValueNumericAttribute<B>::onCommit()
     this->_changes.clear();
 }
 
-template <typename B>
-void
-SingleValueNumericAttribute<B>::onUpdateStat(CommitParam::UpdateStats updateStats)
-{
+template <typename B> void SingleValueNumericAttribute<B>::onUpdateStat(CommitParam::UpdateStats updateStats) {
     if (updateStats == CommitParam::UpdateStats::SIZES_ONLY) {
         this->updateSizes(_data.size(), _data.size());
     } else if (updateStats == CommitParam::UpdateStats::FORCE) {
         vespalib::MemoryUsage usage = _data.getMemoryUsage();
         usage.mergeGenerationHeldBytes(getGenerationHolder().get_held_bytes());
         usage.merge(this->getChangeVectorMemoryUsage());
-        this->updateStatistics(_data.size(), _data.size(),
-                               usage.allocatedBytes(), usage.usedBytes(), usage.deadBytes(), usage.allocatedBytesOnHold());
+        this->updateStatistics(_data.size(), _data.size(), usage.allocatedBytes(), usage.usedBytes(),
+                               usage.deadBytes(), usage.allocatedBytesOnHold());
     }
 }
 
-template <typename B>
-void
-SingleValueNumericAttribute<B>::onAddDocs(DocId lidLimit) {
+template <typename B> void SingleValueNumericAttribute<B>::onAddDocs(DocId lidLimit) {
     _data.reserve(lidLimit);
 }
 
-template <typename B>
-bool
-SingleValueNumericAttribute<B>::addDoc(DocId & doc) {
+template <typename B> bool SingleValueNumericAttribute<B>::addDoc(DocId& doc) {
     bool incGen = _data.isFull();
     _data.push_back(B::defaultValue());
     std::atomic_thread_fence(std::memory_order_release);
@@ -97,24 +86,15 @@ SingleValueNumericAttribute<B>::addDoc(DocId & doc) {
     return true;
 }
 
-template <typename B>
-void
-SingleValueNumericAttribute<B>::reclaim_memory(vespalib::Generation oldest_used_gen)
-{
+template <typename B> void SingleValueNumericAttribute<B>::reclaim_memory(vespalib::Generation oldest_used_gen) {
     getGenerationHolder().reclaim(oldest_used_gen);
 }
 
-template <typename B>
-void
-SingleValueNumericAttribute<B>::before_inc_generation(vespalib::Generation current_gen)
-{
+template <typename B> void SingleValueNumericAttribute<B>::before_inc_generation(vespalib::Generation current_gen) {
     getGenerationHolder().assign_generation(current_gen);
 }
 
-template <typename B>
-bool
-SingleValueNumericAttribute<B>::onLoadEnumerated(ReaderBase &attrReader)
-{
+template <typename B> bool SingleValueNumericAttribute<B>::onLoadEnumerated(ReaderBase& attrReader) {
     uint32_t numDocs = attrReader.getEnumCount();
 
     this->setNumDocs(numDocs);
@@ -125,20 +105,15 @@ SingleValueNumericAttribute<B>::onLoadEnumerated(ReaderBase &attrReader)
     assert((udatBuffer->size() % sizeof(T)) == 0);
     this->set_size_on_disk(attrReader.size_on_disk() + udatBuffer->size_on_disk());
     this->set_last_flush_duration(attrReader.flush_duration());
-    std::span<const T> map(reinterpret_cast<const T *>(udatBuffer->buffer()),
-                                   udatBuffer->size() / sizeof(T));
-    attribute::loadFromEnumeratedSingleValue(_data, getGenerationHolder(), attrReader,
-                                             map, std::span<const uint32_t>(), attribute::NoSaveLoadedEnum());
+    std::span<const T> map(reinterpret_cast<const T*>(udatBuffer->buffer()), udatBuffer->size() / sizeof(T));
+    attribute::loadFromEnumeratedSingleValue(_data, getGenerationHolder(), attrReader, map,
+                                             std::span<const uint32_t>(), attribute::NoSaveLoadedEnum());
     return true;
 }
 
-
-template <typename B>
-bool
-SingleValueNumericAttribute<B>::onLoad(vespalib::Executor *)
-{
+template <typename B> bool SingleValueNumericAttribute<B>::onLoad(vespalib::Executor*) {
     PrimitiveReader<T> attrReader(*this);
-    bool ok(attrReader.getHasLoadData());
+    bool               ok(attrReader.getHasLoadData());
 
     if (!ok) {
         return false;
@@ -148,7 +123,7 @@ SingleValueNumericAttribute<B>::onLoad(vespalib::Executor *)
 
     if (attrReader.getEnumerated())
         return onLoadEnumerated(attrReader);
-    
+
     const size_t sz(attrReader.getDataCount());
     getGenerationHolder().reclaim_all();
     _data.reset();
@@ -167,27 +142,25 @@ SingleValueNumericAttribute<B>::onLoad(vespalib::Executor *)
 
 template <typename B>
 std::unique_ptr<attribute::SearchContext>
-SingleValueNumericAttribute<B>::getSearch(QueryTermSimple::UP qTerm,
-                                          const attribute::SearchContextParams & params) const
-{
-    (void) params;
+SingleValueNumericAttribute<B>::getSearch(QueryTermSimple::UP                   qTerm,
+                                          const attribute::SearchContextParams& params) const {
+    (void)params;
     QueryTermSimple::RangeResult<T> res = qTerm->getRange<T>();
-    auto data = _data.make_read_view(this->getCommittedDocIdLimit());
+    auto                            data = _data.make_read_view(this->getCommittedDocIdLimit());
     if (res.isEqual()) {
-        return std::make_unique<attribute::SingleNumericSearchContext<T, attribute::NumericMatcher<T>>>(std::move(qTerm), *this, data);
+        return std::make_unique<attribute::SingleNumericSearchContext<T, attribute::NumericMatcher<T>>>(
+            std::move(qTerm), *this, data);
     } else {
-        return std::make_unique<attribute::SingleNumericSearchContext<T, attribute::NumericRangeMatcher<T>>>(std::move(qTerm), *this, data);
+        return std::make_unique<attribute::SingleNumericSearchContext<T, attribute::NumericRangeMatcher<T>>>(
+            std::move(qTerm), *this, data);
     }
 }
 
-
 template <typename B>
-void
-SingleValueNumericAttribute<B>::clearDocs(DocId lidLow, DocId lidLimit, bool in_shrink_lid_space)
-{
+void SingleValueNumericAttribute<B>::clearDocs(DocId lidLow, DocId lidLimit, bool in_shrink_lid_space) {
     assert(lidLow <= lidLimit);
     assert(lidLimit <= this->getNumDocs());
-    uint32_t count = 0;
+    uint32_t           count = 0;
     constexpr uint32_t commit_interval = 1000;
     for (DocId lid = lidLow; lid < lidLimit; ++lid) {
         if (!attribute::isUndefined(_data[lid])) {
@@ -202,10 +175,7 @@ SingleValueNumericAttribute<B>::clearDocs(DocId lidLow, DocId lidLimit, bool in_
     }
 }
 
-template <typename B>
-void
-SingleValueNumericAttribute<B>::onShrinkLidSpace()
-{
+template <typename B> void SingleValueNumericAttribute<B>::onShrinkLidSpace() {
     uint32_t committedDocIdLimit = this->getCommittedDocIdLimit();
     assert(_data.size() >= committedDocIdLimit);
     _data.shrink(committedDocIdLimit);
@@ -213,14 +183,11 @@ SingleValueNumericAttribute<B>::onShrinkLidSpace()
 }
 
 template <typename B>
-std::unique_ptr<AttributeSaver>
-SingleValueNumericAttribute<B>::onInitSave(std::string_view fileName)
-{
+std::unique_ptr<AttributeSaver> SingleValueNumericAttribute<B>::onInitSave(std::string_view fileName) {
     const uint32_t numDocs(this->getCommittedDocIdLimit());
     assert(numDocs <= _data.size());
-    return std::make_unique<SingleValueNumericAttributeSaver>
-        (this->createAttributeHeader(fileName), &_data[0], numDocs * sizeof(T));
+    return std::make_unique<SingleValueNumericAttributeSaver>(this->createAttributeHeader(fileName), &_data[0],
+                                                              numDocs * sizeof(T));
 }
 
-}
-
+} // namespace search

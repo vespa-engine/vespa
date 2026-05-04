@@ -2,54 +2,41 @@
 
 #pragma once
 
-#include "singleenumattribute.h"
+#include "enum_store_loaders.h"
 #include "enumattribute.hpp"
 #include "ipostinglistattributebase.h"
-#include "singleenumattributesaver.h"
 #include "load_utils.h"
-#include "enum_store_loaders.h"
+#include "singleenumattribute.h"
+#include "singleenumattributesaver.h"
 #include "valuemodifier.h"
+
 #include <vespa/vespalib/datastore/unique_store_remapper.h>
 
 namespace search {
 
 template <typename B>
-SingleValueEnumAttribute<B>::
-SingleValueEnumAttribute(const std::string &baseFileName,
-                         const AttributeVector::Config &cfg)
-    : B(baseFileName, cfg),
-      SingleValueEnumAttributeBase(cfg, getGenerationHolder(), this->get_initial_alloc())
-{
+SingleValueEnumAttribute<B>::SingleValueEnumAttribute(const std::string&             baseFileName,
+                                                      const AttributeVector::Config& cfg)
+    : B(baseFileName, cfg), SingleValueEnumAttributeBase(cfg, getGenerationHolder(), this->get_initial_alloc()) {
 }
 
-template <typename B>
-SingleValueEnumAttribute<B>::~SingleValueEnumAttribute()
-{
+template <typename B> SingleValueEnumAttribute<B>::~SingleValueEnumAttribute() {
     getGenerationHolder().reclaim_all();
 }
 
-template <typename B>
-bool
-SingleValueEnumAttribute<B>::onAddDoc(DocId doc)
-{
+template <typename B> bool SingleValueEnumAttribute<B>::onAddDoc(DocId doc) {
     if (doc < _enumIndices.capacity()) {
-        _enumIndices.reserve(doc+1);
+        _enumIndices.reserve(doc + 1);
         return true;
     }
     return false;
 }
 
-template <typename B>
-void
-SingleValueEnumAttribute<B>::onAddDocs(DocId limit)
-{
+template <typename B> void SingleValueEnumAttribute<B>::onAddDocs(DocId limit) {
     _enumIndices.reserve(limit);
 }
 
-template <typename B>
-bool
-SingleValueEnumAttribute<B>::addDoc(DocId & doc)
-{
+template <typename B> bool SingleValueEnumAttribute<B>::addDoc(DocId& doc) {
     bool incGen = false;
     doc = SingleValueEnumAttributeBase::addDoc(incGen);
     if (doc > 0u) {
@@ -70,20 +57,14 @@ SingleValueEnumAttribute<B>::addDoc(DocId & doc)
     return true;
 }
 
-template <typename B>
-uint32_t
-SingleValueEnumAttribute<B>::getValueCount(DocId doc) const
-{
+template <typename B> uint32_t SingleValueEnumAttribute<B>::getValueCount(DocId doc) const {
     if (doc >= this->getNumDocs()) {
         return 0;
     }
     return 1;
 }
 
-template <typename B>
-void
-SingleValueEnumAttribute<B>::onCommit()
-{
+template <typename B> void SingleValueEnumAttribute<B>::onCommit() {
     this->checkSetMaxValueCount(1);
 
     // update enum store
@@ -108,7 +89,7 @@ SingleValueEnumAttribute<B>::onCommit()
         this->incGeneration();
         this->updateStat(CommitParam::UpdateStats::FORCE);
     }
-    auto *pab = this->getIPostingListAttributeBase();
+    auto* pab = this->getIPostingListAttributeBase();
     if (pab != nullptr) {
         if (pab->consider_compact_worst_btree_nodes(this->getConfig().getCompactionStrategy())) {
             this->incGeneration();
@@ -121,10 +102,7 @@ SingleValueEnumAttribute<B>::onCommit()
     }
 }
 
-template <typename B>
-void
-SingleValueEnumAttribute<B>::onUpdateStat(CommitParam::UpdateStats updateStats)
-{
+template <typename B> void SingleValueEnumAttribute<B>::onUpdateStat(CommitParam::UpdateStats updateStats) {
     if (updateStats == CommitParam::UpdateStats::SKIP) {
         return;
     }
@@ -134,19 +112,17 @@ SingleValueEnumAttribute<B>::onUpdateStat(CommitParam::UpdateStats updateStats)
     }
     // update statistics
     vespalib::MemoryUsage total = _enumIndices.getMemoryUsage();
-    auto& compaction_strategy = this->getConfig().getCompactionStrategy();
+    auto&                 compaction_strategy = this->getConfig().getCompactionStrategy();
     total.mergeGenerationHeldBytes(getGenerationHolder().get_held_bytes());
     total.merge(this->_enumStore.update_stat(compaction_strategy));
     total.merge(this->getChangeVectorMemoryUsage());
     mergeMemoryStats(total);
     this->updateStatistics(_enumIndices.size(), this->_enumStore.get_num_uniques(), total.allocatedBytes(),
-                     total.usedBytes(), total.deadBytes(), total.allocatedBytesOnHold());
+                           total.usedBytes(), total.deadBytes(), total.allocatedBytesOnHold());
 }
 
 template <typename B>
-void
-SingleValueEnumAttribute<B>::considerUpdateAttributeChange(const Change & c, EnumStoreBatchUpdater & inserter)
-{
+void SingleValueEnumAttribute<B>::considerUpdateAttributeChange(const Change& c, EnumStoreBatchUpdater& inserter) {
     EnumIndex idx;
     if (!this->_enumStore.find_index(c._data.raw(), idx)) {
         c.set_entry_ref(inserter.insert(c._data.raw()).ref());
@@ -157,9 +133,7 @@ SingleValueEnumAttribute<B>::considerUpdateAttributeChange(const Change & c, Enu
 }
 
 template <typename B>
-void
-SingleValueEnumAttribute<B>::considerAttributeChange(const Change & c, EnumStoreBatchUpdater & inserter)
-{
+void SingleValueEnumAttribute<B>::considerAttributeChange(const Change& c, EnumStoreBatchUpdater& inserter) {
     if (c._type == ChangeBase::UPDATE) {
         considerUpdateAttributeChange(c, inserter);
     } else if (c._type >= ChangeBase::ADD && c._type <= ChangeBase::DIV) {
@@ -170,9 +144,7 @@ SingleValueEnumAttribute<B>::considerAttributeChange(const Change & c, EnumStore
 }
 
 template <typename B>
-void
-SingleValueEnumAttribute<B>::applyUpdateValueChange(const Change& c, EnumStoreBatchUpdater& updater)
-{
+void SingleValueEnumAttribute<B>::applyUpdateValueChange(const Change& c, EnumStoreBatchUpdater& updater) {
     EnumIndex oldIdx = _enumIndices[c._doc].load_relaxed();
     EnumIndex newIdx;
     if (c.has_entry_ref()) {
@@ -183,10 +155,7 @@ SingleValueEnumAttribute<B>::applyUpdateValueChange(const Change& c, EnumStoreBa
     updateEnumRefCounts(c._doc, newIdx, oldIdx, updater);
 }
 
-template <typename B>
-void
-SingleValueEnumAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& updater)
-{
+template <typename B> void SingleValueEnumAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& updater) {
     ValueModifier valueGuard(this->getValueModifier());
     for (const auto& change : this->_changes.getInsertOrder()) {
         if (change._type == ChangeBase::UPDATE) {
@@ -202,10 +171,8 @@ SingleValueEnumAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& updater)
 }
 
 template <typename B>
-void
-SingleValueEnumAttribute<B>::updateEnumRefCounts(DocId doc, EnumIndex newIdx, EnumIndex oldIdx,
-                                                 EnumStoreBatchUpdater& updater)
-{
+void SingleValueEnumAttribute<B>::updateEnumRefCounts(DocId doc, EnumIndex newIdx, EnumIndex oldIdx,
+                                                      EnumStoreBatchUpdater& updater) {
     updater.inc_ref_count(newIdx);
     _enumIndices[doc].store_release(newIdx);
     if (oldIdx.valid()) {
@@ -213,10 +180,7 @@ SingleValueEnumAttribute<B>::updateEnumRefCounts(DocId doc, EnumIndex newIdx, En
     }
 }
 
-template <typename B>
-void
-SingleValueEnumAttribute<B>::fillValues(LoadedVector & loaded)
-{
+template <typename B> void SingleValueEnumAttribute<B>::fillValues(LoadedVector& loaded) {
     if constexpr (!std::is_same_v<LoadedVector, NoLoadedVector>) {
         uint32_t numDocs = this->getNumDocs();
         getGenerationHolder().reclaim_all();
@@ -229,33 +193,22 @@ SingleValueEnumAttribute<B>::fillValues(LoadedVector & loaded)
 }
 
 template <typename B>
-void
-SingleValueEnumAttribute<B>::load_enumerated_data(ReaderBase& attrReader,
-                                                  enumstore::EnumeratedPostingsLoader& loader,
-                                                  size_t num_values)
-{
+void SingleValueEnumAttribute<B>::load_enumerated_data(ReaderBase&                          attrReader,
+                                                       enumstore::EnumeratedPostingsLoader& loader,
+                                                       size_t                               num_values) {
     loader.reserve_loaded_enums(num_values);
-    attribute::loadFromEnumeratedSingleValue(_enumIndices,
-                                             getGenerationHolder(),
-                                             attrReader,
-                                             loader.get_enum_indexes(),
-                                             loader.get_enum_value_remapping(),
+    attribute::loadFromEnumeratedSingleValue(_enumIndices, getGenerationHolder(), attrReader,
+                                             loader.get_enum_indexes(), loader.get_enum_value_remapping(),
                                              attribute::SaveLoadedEnum(loader.get_loaded_enums()));
     loader.free_enum_value_remapping();
     loader.sort_loaded_enums();
 }
-    
+
 template <typename B>
-void
-SingleValueEnumAttribute<B>::load_enumerated_data(ReaderBase& attrReader,
-                                                  enumstore::EnumeratedLoader& loader)
-{
+void SingleValueEnumAttribute<B>::load_enumerated_data(ReaderBase& attrReader, enumstore::EnumeratedLoader& loader) {
     loader.allocate_enums_histogram();
-    attribute::loadFromEnumeratedSingleValue(_enumIndices,
-                                             getGenerationHolder(),
-                                             attrReader,
-                                             loader.get_enum_indexes(),
-                                             loader.get_enum_value_remapping(),
+    attribute::loadFromEnumeratedSingleValue(_enumIndices, getGenerationHolder(), attrReader,
+                                             loader.get_enum_indexes(), loader.get_enum_value_remapping(),
                                              attribute::SaveEnumHist(loader.get_enums_histogram()));
     loader.free_enum_value_remapping();
     loader.set_ref_counts();
@@ -263,18 +216,12 @@ SingleValueEnumAttribute<B>::load_enumerated_data(ReaderBase& attrReader,
     loader.free_unused_values();
 }
 
-template <typename B>
-void
-SingleValueEnumAttribute<B>::reclaim_memory(vespalib::Generation oldest_used_gen)
-{
+template <typename B> void SingleValueEnumAttribute<B>::reclaim_memory(vespalib::Generation oldest_used_gen) {
     this->_enumStore.reclaim_memory(oldest_used_gen);
     getGenerationHolder().reclaim(oldest_used_gen);
 }
 
-template <typename B>
-void
-SingleValueEnumAttribute<B>::before_inc_generation(vespalib::Generation current_gen)
-{
+template <typename B> void SingleValueEnumAttribute<B>::before_inc_generation(vespalib::Generation current_gen) {
     /*
      * Freeze tree before generation is increased in attribute vector
      * but after generation is increased in tree. This ensures that
@@ -286,13 +233,9 @@ SingleValueEnumAttribute<B>::before_inc_generation(vespalib::Generation current_
     this->_enumStore.assign_generation(current_gen);
 }
 
-
-template <typename B>
-void
-SingleValueEnumAttribute<B>::clearDocs(DocId lidLow, DocId lidLimit, bool)
-{
+template <typename B> void SingleValueEnumAttribute<B>::clearDocs(DocId lidLow, DocId lidLimit, bool) {
     EnumHandle e(0);
-    bool findDefaultEnumRes(this->findEnum(this->getDefaultEnumTypeValue(), e));
+    bool       findDefaultEnumRes(this->findEnum(this->getDefaultEnumTypeValue(), e));
     if (!findDefaultEnumRes) {
         e = EnumHandle();
     }
@@ -305,17 +248,13 @@ SingleValueEnumAttribute<B>::clearDocs(DocId lidLow, DocId lidLimit, bool)
     }
 }
 
-
-template <typename B>
-void
-SingleValueEnumAttribute<B>::onShrinkLidSpace()
-{
+template <typename B> void SingleValueEnumAttribute<B>::onShrinkLidSpace() {
     EnumHandle e(0);
-    bool findDefaultEnumRes(this->findEnum(this->getDefaultEnumTypeValue(), e));
+    bool       findDefaultEnumRes(this->findEnum(this->getDefaultEnumTypeValue(), e));
     assert(findDefaultEnumRes);
     uint32_t committedDocIdLimit = this->getCommittedDocIdLimit();
     assert(_enumIndices.size() >= committedDocIdLimit);
-    attribute::IPostingListAttributeBase *pab = this->getIPostingListAttributeBase();
+    attribute::IPostingListAttributeBase* pab = this->getIPostingListAttributeBase();
     if (pab != nullptr) {
         pab->clearPostings(e, committedDocIdLimit, _enumIndices.size());
     }
@@ -335,15 +274,12 @@ SingleValueEnumAttribute<B>::onShrinkLidSpace()
 }
 
 template <typename B>
-std::unique_ptr<AttributeSaver>
-SingleValueEnumAttribute<B>::onInitSave(std::string_view fileName)
-{
+std::unique_ptr<AttributeSaver> SingleValueEnumAttribute<B>::onInitSave(std::string_view fileName) {
     auto guard = this->getGenerationHandler().takeGuard();
-    return std::make_unique<SingleValueEnumAttributeSaver>
-        (std::move(guard),
-         this->createAttributeHeader(fileName),
-         attribute::make_entry_ref_vector_snapshot(this->_enumIndices, this->getCommittedDocIdLimit()),
-         this->_enumStore);
+    return std::make_unique<SingleValueEnumAttributeSaver>(
+        std::move(guard), this->createAttributeHeader(fileName),
+        attribute::make_entry_ref_vector_snapshot(this->_enumIndices, this->getCommittedDocIdLimit()),
+        this->_enumStore);
 }
 
 } // namespace search
