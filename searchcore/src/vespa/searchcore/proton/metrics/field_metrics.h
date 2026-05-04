@@ -3,6 +3,7 @@
 #pragma once
 
 #include "memory_usage_metrics.h"
+
 #include <map>
 
 namespace proton {
@@ -10,13 +11,11 @@ namespace proton {
 /*
  * Class containing metrics for an aspect (attribute or index) of multiple fields.
  */
-template <typename Entry>
-class FieldMetrics
-{
+template <typename Entry> class FieldMetrics {
     using Map = std::map<std::string, std::shared_ptr<Entry>>;
 
-    metrics::MetricSet *_parent;
-    Map _fields;
+    metrics::MetricSet* _parent;
+    Map                 _fields;
 
 public:
     FieldMetrics(metrics::MetricSet* parent);

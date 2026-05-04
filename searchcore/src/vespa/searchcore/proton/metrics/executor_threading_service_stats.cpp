@@ -4,16 +4,13 @@
 
 namespace proton {
 
-ExecutorThreadingServiceStats::ExecutorThreadingServiceStats(Stats masterExecutorStats,
-                                                             Stats indexExecutorStats,
+ExecutorThreadingServiceStats::ExecutorThreadingServiceStats(Stats masterExecutorStats, Stats indexExecutorStats,
                                                              Stats summaryExecutorStats)
     : _masterExecutorStats(masterExecutorStats),
       _indexExecutorStats(indexExecutorStats),
-      _summaryExecutorStats(summaryExecutorStats)
-{
+      _summaryExecutorStats(summaryExecutorStats) {
 }
 
 ExecutorThreadingServiceStats::~ExecutorThreadingServiceStats() = default;
 
-
-}
+} // namespace proton

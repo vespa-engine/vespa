@@ -4,9 +4,7 @@
 
 namespace proton {
 
-AttributeMetrics::AttributeMetrics(metrics::MetricSet* parent)
-    : FieldMetrics(parent)
-{
+AttributeMetrics::AttributeMetrics(metrics::MetricSet* parent) : FieldMetrics(parent) {
 }
 
 AttributeMetrics::~AttributeMetrics() = default;

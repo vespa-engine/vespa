@@ -7,8 +7,7 @@ namespace proton {
 /**
  * Interface for tracking the start and end of jobs.
  */
-struct IJobTracker
-{
+struct IJobTracker {
     virtual ~IJobTracker() = default;
 
     virtual void start() = 0;
@@ -16,4 +15,3 @@ struct IJobTracker
 };
 
 } // namespace proton
-

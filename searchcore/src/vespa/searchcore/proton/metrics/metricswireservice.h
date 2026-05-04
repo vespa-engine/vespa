@@ -16,8 +16,9 @@ struct MetricsWireService {
     virtual ~MetricsWireService();
     virtual void set_attributes(AttributeMetrics& subAttributes, std::vector<std::string> field_names) = 0;
     virtual void set_index_fields(IndexMetrics& index_fields, std::vector<std::string> field_names) = 0;
-    virtual void addRankProfile(DocumentDBTaggedMetrics& owner, const std::string& name, size_t numDocIdPartitions) = 0;
+    virtual void addRankProfile(DocumentDBTaggedMetrics& owner, const std::string& name,
+                                size_t numDocIdPartitions) = 0;
     virtual void cleanRankProfiles(DocumentDBTaggedMetrics& owner) = 0;
 };
 
-}
+} // namespace proton

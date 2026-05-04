@@ -8,12 +8,11 @@ namespace proton {
 /*
  * Metrics for feeding within a document db.
  */
-struct DocumentDBFeedingMetrics : metrics::MetricSet
-{
+struct DocumentDBFeedingMetrics : metrics::MetricSet {
     DocumentDBCommitMetrics commit;
 
     DocumentDBFeedingMetrics(metrics::MetricSet* parent);
     ~DocumentDBFeedingMetrics() override;
 };
 
-}
+} // namespace proton
