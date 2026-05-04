@@ -10,7 +10,7 @@
 
 namespace metrics {
 class Metric;
-class Metricmanager;
+class MetricManager;
 class UpdateHook;
 } // namespace metrics
 
