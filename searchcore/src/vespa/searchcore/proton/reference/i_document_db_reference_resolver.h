@@ -2,9 +2,13 @@
 #pragma once
 
 #include <vespa/vespalib/util/time.h>
+
 #include <memory>
 
-namespace search { class IAttributeManager; struct IDocumentMetaStoreContext; }
+namespace search {
+class IAttributeManager;
+struct IDocumentMetaStoreContext;
+} // namespace search
 
 namespace proton {
 
@@ -15,11 +19,11 @@ class ImportedAttributesRepo;
  */
 struct IDocumentDBReferenceResolver {
     virtual ~IDocumentDBReferenceResolver() = default;
-    virtual std::unique_ptr<ImportedAttributesRepo> resolve(const search::IAttributeManager &newAttrMgr,
-                                                            const search::IAttributeManager &oldAttrMgr,
-                                                            const std::shared_ptr<search::IDocumentMetaStoreContext> &documentMetaStore,
-                                                            vespalib::duration visibilityDelay) = 0;
-    virtual void teardown(const search::IAttributeManager &oldAttrMgr) = 0;
+    virtual std::unique_ptr<ImportedAttributesRepo>
+    resolve(const search::IAttributeManager& newAttrMgr, const search::IAttributeManager& oldAttrMgr,
+            const std::shared_ptr<search::IDocumentMetaStoreContext>& documentMetaStore,
+            vespalib::duration                                        visibilityDelay) = 0;
+    virtual void teardown(const search::IAttributeManager& oldAttrMgr) = 0;
 };
 
-}
+} // namespace proton

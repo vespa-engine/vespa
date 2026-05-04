@@ -1,70 +1,64 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "document_db_reference_resolver.h"
+
 #include "gid_to_lid_change_listener.h"
 #include "gid_to_lid_change_registrator.h"
 #include "i_document_db_reference.h"
 #include "i_document_db_reference_registry.h"
-#include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
+
+#include <vespa/config-imported-fields.h>
+#include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/datatype/referencedatatype.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
+#include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector_factory.h>
 #include <vespa/searchlib/attribute/reference_attribute.h>
-#include <vespa/config-imported-fields.h>
-#include <vespa/document/datatype/documenttype.h>
-#include <vespa/document/datatype/referencedatatype.h>
 
 using document::DataType;
 using document::DocumentType;
 using document::DocumentTypeRepo;
 using document::ReferenceDataType;
+using search::AttributeGuard;
+using search::AttributeVector;
+using search::IAttributeManager;
+using search::NotImplementedAttribute;
 using search::attribute::BasicType;
 using search::attribute::Config;
 using search::attribute::IAttributeVector;
 using search::attribute::ImportedAttributeVectorFactory;
 using search::attribute::ReferenceAttribute;
-using search::AttributeGuard;
-using search::AttributeVector;
-using search::IAttributeManager;
-using search::NotImplementedAttribute;
+using vespa::config::search::ImportedFieldsConfig;
 using vespalib::ISequencedTaskExecutor;
 using vespalib::MonitoredRefCount;
 using vespalib::RetainGuard;
-using vespa::config::search::ImportedFieldsConfig;
 
 namespace proton {
 
 namespace {
 
-std::string
-getTargetDocTypeName(const std::string &attrName,
-                     const DocumentType &thisDocType)
-{
-    const DataType &attrType = thisDocType.getField(attrName).getDataType();
-    const ReferenceDataType *refType = dynamic_cast<const ReferenceDataType *>(&attrType);
+std::string getTargetDocTypeName(const std::string& attrName, const DocumentType& thisDocType) {
+    const DataType&          attrType = thisDocType.getField(attrName).getDataType();
+    const ReferenceDataType* refType = dynamic_cast<const ReferenceDataType*>(&attrType);
     assert(refType != nullptr);
     return refType->getTargetType().getName();
 }
 
-ReferenceAttribute::SP
-getReferenceAttribute(const std::string &name, const IAttributeManager &attrMgr)
-{
+ReferenceAttribute::SP getReferenceAttribute(const std::string& name, const IAttributeManager& attrMgr) {
     AttributeGuard::UP guard = attrMgr.getAttribute(name);
     assert(guard.get());
     assert(guard->get()->getBasicType() == BasicType::REFERENCE);
     return std::dynamic_pointer_cast<ReferenceAttribute>(guard->getSP());
 }
 
-
-std::vector<ReferenceAttribute::SP>
-getReferenceAttributes(const IAttributeManager &attrMgr)
-{
+std::vector<ReferenceAttribute::SP> getReferenceAttributes(const IAttributeManager& attrMgr) {
     std::vector<ReferenceAttribute::SP> result;
-    std::vector<AttributeGuard> attributeList;
+    std::vector<AttributeGuard>         attributeList;
     attrMgr.getAttributeList(attributeList);
-    for (auto &guard : attributeList) {
-        AttributeVector &attr = *guard;
+    for (auto& guard : attributeList) {
+        AttributeVector& attr = *guard;
         if (attr.getBasicType() == BasicType::REFERENCE) {
             auto refAttr = std::dynamic_pointer_cast<ReferenceAttribute>(guard.getSP());
             assert(refAttr);
@@ -74,42 +68,34 @@ getReferenceAttributes(const IAttributeManager &attrMgr)
     return result;
 }
 
-}
+} // namespace
 
-GidToLidChangeRegistrator &
-DocumentDBReferenceResolver::getRegistrator(const std::string &docTypeName)
-{
-    auto &result = _registrators[docTypeName];
+GidToLidChangeRegistrator& DocumentDBReferenceResolver::getRegistrator(const std::string& docTypeName) {
+    auto& result = _registrators[docTypeName];
     if (!result) {
         result = _registry.get(docTypeName)->makeGidToLidChangeRegistrator(_thisDocType.getName());
     }
     return *result;
 }
 
-IDocumentDBReference::SP
-DocumentDBReferenceResolver::getTargetDocumentDB(const std::string &refAttrName) const
-{
+IDocumentDBReference::SP DocumentDBReferenceResolver::getTargetDocumentDB(const std::string& refAttrName) const {
     return _registry.get(getTargetDocTypeName(refAttrName, _thisDocType));
 }
 
-void
-DocumentDBReferenceResolver::connectReferenceAttributesToGidMapper(const IAttributeManager &attrMgr)
-{
+void DocumentDBReferenceResolver::connectReferenceAttributesToGidMapper(const IAttributeManager& attrMgr) {
     auto refAttrs(getReferenceAttributes(attrMgr));
-    for (auto &attrSP : refAttrs) {
-        auto &attr = *attrSP;
+    for (auto& attrSP : refAttrs) {
+        auto&                    attr = *attrSP;
         IDocumentDBReference::SP targetDB = getTargetDocumentDB(attr.getName());
         attr.setGidToLidMapperFactory(targetDB->getGidToLidMapperFactory());
     }
 }
 
-void
-DocumentDBReferenceResolver::detectOldListeners(const IAttributeManager &attrMgr)
-{
+void DocumentDBReferenceResolver::detectOldListeners(const IAttributeManager& attrMgr) {
     auto refAttrs(getReferenceAttributes(attrMgr));
-    for (auto &attrSP : refAttrs) {
+    for (auto& attrSP : refAttrs) {
         std::string docTypeName = getTargetDocTypeName(attrSP->getName(), _prevThisDocType);
-        auto &registratorUP = _registrators[docTypeName];
+        auto&       registratorUP = _registrators[docTypeName];
         if (!registratorUP) {
             auto reference = _registry.tryGet(docTypeName);
             if (reference) {
@@ -119,35 +105,31 @@ DocumentDBReferenceResolver::detectOldListeners(const IAttributeManager &attrMgr
     }
 }
 
-void
-DocumentDBReferenceResolver::listenToGidToLidChanges(const IAttributeManager &attrMgr)
-{
+void DocumentDBReferenceResolver::listenToGidToLidChanges(const IAttributeManager& attrMgr) {
     auto refAttrs(getReferenceAttributes(attrMgr));
-    for (auto &attrSP : refAttrs) {
-        auto &attr = *attrSP;
-        std::string docTypeName = getTargetDocTypeName(attr.getName(), _thisDocType);
-        GidToLidChangeRegistrator &registrator = getRegistrator(docTypeName);
-        auto listener = std::make_unique<GidToLidChangeListener>(_attributeFieldWriter, attrSP,
-                                                                 RetainGuard(_refCount),
-                                                                 attr.getName(), _thisDocType.getName());
+    for (auto& attrSP : refAttrs) {
+        auto&                      attr = *attrSP;
+        std::string                docTypeName = getTargetDocTypeName(attr.getName(), _thisDocType);
+        GidToLidChangeRegistrator& registrator = getRegistrator(docTypeName);
+        auto                       listener = std::make_unique<GidToLidChangeListener>(
+            _attributeFieldWriter, attrSP, RetainGuard(_refCount), attr.getName(), _thisDocType.getName());
         registrator.addListener(std::move(listener));
     }
 }
 
-ImportedAttributesRepo::UP
-DocumentDBReferenceResolver::createImportedAttributesRepo(const IAttributeManager &attrMgr,
-                                                          const std::shared_ptr<search::IDocumentMetaStoreContext> &documentMetaStore,
-                                                          bool useSearchCache)
-{
+ImportedAttributesRepo::UP DocumentDBReferenceResolver::createImportedAttributesRepo(
+    const IAttributeManager& attrMgr, const std::shared_ptr<search::IDocumentMetaStoreContext>& documentMetaStore,
+    bool useSearchCache) {
     auto result = std::make_unique<ImportedAttributesRepo>();
     if (_useReferences) {
-        for (const auto &attr : _importedFieldsCfg.attribute) {
+        for (const auto& attr : _importedFieldsCfg.attribute) {
             ReferenceAttribute::SP refAttr = getReferenceAttribute(attr.referencefield, attrMgr);
-            auto targetDocumentDB = getTargetDocumentDB(refAttr->getName());
-            auto targetAttr = targetDocumentDB->getAttribute(attr.targetfield);
+            auto                   targetDocumentDB = getTargetDocumentDB(refAttr->getName());
+            auto                   targetAttr = targetDocumentDB->getAttribute(attr.targetfield);
             if (targetAttr) {
                 auto targetDocumentMetaStore = targetDocumentDB->getDocumentMetaStore();
-                auto importedAttr = ImportedAttributeVectorFactory::create(attr.name, refAttr, documentMetaStore, targetAttr, targetDocumentMetaStore, useSearchCache);
+                auto importedAttr = ImportedAttributeVectorFactory::create(
+                    attr.name, refAttr, documentMetaStore, targetAttr, targetDocumentMetaStore, useSearchCache);
                 result->add(importedAttr->getName(), importedAttr);
             }
         }
@@ -155,13 +137,10 @@ DocumentDBReferenceResolver::createImportedAttributesRepo(const IAttributeManage
     return result;
 }
 
-DocumentDBReferenceResolver::DocumentDBReferenceResolver(const IDocumentDBReferenceRegistry &registry,
-                                                         const DocumentType &thisDocType,
-                                                         const ImportedFieldsConfig &importedFieldsCfg,
-                                                         const document::DocumentType &prevThisDocType,
-                                                         MonitoredRefCount &refCount,
-                                                         ISequencedTaskExecutor &attributeFieldWriter,
-                                                         bool useReferences)
+DocumentDBReferenceResolver::DocumentDBReferenceResolver(
+    const IDocumentDBReferenceRegistry& registry, const DocumentType& thisDocType,
+    const ImportedFieldsConfig& importedFieldsCfg, const document::DocumentType& prevThisDocType,
+    MonitoredRefCount& refCount, ISequencedTaskExecutor& attributeFieldWriter, bool useReferences)
     : _registry(registry),
       _thisDocType(thisDocType),
       _importedFieldsCfg(importedFieldsCfg),
@@ -169,30 +148,26 @@ DocumentDBReferenceResolver::DocumentDBReferenceResolver(const IDocumentDBRefere
       _refCount(refCount),
       _attributeFieldWriter(attributeFieldWriter),
       _useReferences(useReferences),
-      _registrators()
-{
+      _registrators() {
 }
 
 DocumentDBReferenceResolver::~DocumentDBReferenceResolver() = default;
 
 ImportedAttributesRepo::UP
-DocumentDBReferenceResolver::resolve(const IAttributeManager &newAttrMgr,
-                                     const IAttributeManager &oldAttrMgr,
-                                     const std::shared_ptr<search::IDocumentMetaStoreContext> &documentMetaStore,
-                                     vespalib::duration visibilityDelay)
-{
+DocumentDBReferenceResolver::resolve(const IAttributeManager& newAttrMgr, const IAttributeManager& oldAttrMgr,
+                                     const std::shared_ptr<search::IDocumentMetaStoreContext>& documentMetaStore,
+                                     vespalib::duration                                        visibilityDelay) {
     detectOldListeners(oldAttrMgr);
     if (_useReferences) {
         connectReferenceAttributesToGidMapper(newAttrMgr);
         listenToGidToLidChanges(newAttrMgr);
     }
-    return createImportedAttributesRepo(newAttrMgr, documentMetaStore, (visibilityDelay > vespalib::duration::zero()));
+    return createImportedAttributesRepo(newAttrMgr, documentMetaStore,
+                                        (visibilityDelay > vespalib::duration::zero()));
 }
 
-void
-DocumentDBReferenceResolver::teardown(const IAttributeManager &oldAttrMgr)
-{
+void DocumentDBReferenceResolver::teardown(const IAttributeManager& oldAttrMgr) {
     detectOldListeners(oldAttrMgr);
 }
 
-}
+} // namespace proton

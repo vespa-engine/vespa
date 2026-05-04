@@ -3,11 +3,15 @@
 #pragma once
 
 #include "i_gid_to_lid_change_listener.h"
+
 #include <vespa/searchlib/common/serialnum.h>
+
 #include <set>
 #include <vector>
 
-namespace document { class GlobalId; }
+namespace document {
+class GlobalId;
+}
 
 namespace proton {
 
@@ -17,8 +21,7 @@ class IPendingGidToLidChanges;
  * Interface class for registering listeners that get notification when
  * gid to lid mapping changes.
  */
-class IGidToLidChangeHandler
-{
+class IGidToLidChangeHandler {
 public:
     using IDestructorCallbackSP = IGidToLidChangeListener::IDestructorCallbackSP;
     using SerialNum = search::SerialNum;
@@ -36,8 +39,7 @@ public:
      * Remove listeners with matching docTypeName unless name is present in
      * keepNames.
      */
-    virtual void removeListeners(const std::string &docTypeName,
-                                 const std::set<std::string> &keepNames) = 0;
+    virtual void removeListeners(const std::string& docTypeName, const std::set<std::string>& keepNames) = 0;
     /**
      * Notify pending gid to lid mapping change. Passed on to listeners later
      * when force commit has made changes visible.
@@ -47,7 +49,8 @@ public:
      * Notify removal of gid. Passed on to listeners at once.
      */
     void notifyRemove(IDestructorCallbackSP context, GlobalId gid, SerialNum serialNum);
-    virtual void notifyRemoves(IDestructorCallbackSP context, const std::vector<GlobalId> & gids, SerialNum serialNum) = 0;
+    virtual void notifyRemoves(IDestructorCallbackSP context, const std::vector<GlobalId>& gids,
+                               SerialNum serialNum) = 0;
     virtual std::unique_ptr<IPendingGidToLidChanges> grab_pending_changes() = 0;
 };
 
