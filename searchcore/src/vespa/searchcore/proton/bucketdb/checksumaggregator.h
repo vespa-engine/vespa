@@ -12,10 +12,10 @@ namespace proton::bucketdb {
  **/
 class ChecksumAggregator {
 public:
-    enum class ChecksumType {LEGACY, XXHASH64};
+    enum class ChecksumType { LEGACY, XXHASH64 };
     using GlobalId = document::GlobalId;
     using Timestamp = storage::spi::Timestamp;
     using BucketChecksum = storage::spi::BucketChecksum;
 };
 
-}
+} // namespace proton::bucketdb

@@ -12,25 +12,24 @@ class IBucketCreateNotifier;
  * Base class for split/join handling utility classes that bundles temporary
  * variables used during the operation.
  */
-class BucketSessionBase
-{
+class BucketSessionBase {
 public:
     using GlobalId = document::GlobalId;
     using BucketId = document::BucketId;
     using Timestamp = storage::spi::Timestamp;
 
 protected:
-    Guard _bucketDB;
-    IBucketCreateNotifier &_bucketCreateNotifier;
+    Guard                  _bucketDB;
+    IBucketCreateNotifier& _bucketCreateNotifier;
 
 public:
-    BucketSessionBase(BucketDBOwner &bucketDB, IBucketCreateNotifier &bucketCreateNotifier);
-    BucketSessionBase(const BucketSessionBase &) = delete;
-    BucketSessionBase & operator =(const BucketSessionBase &) = delete;
+    BucketSessionBase(BucketDBOwner& bucketDB, IBucketCreateNotifier& bucketCreateNotifier);
+    BucketSessionBase(const BucketSessionBase&) = delete;
+    BucketSessionBase& operator=(const BucketSessionBase&) = delete;
     ~BucketSessionBase();
-    bool extractInfo(const BucketId &bucket, BucketState *&info);
+    bool extractInfo(const BucketId& bucket, BucketState*& info);
 
-    static bool calcFixupNeed(BucketState *state, bool wantActive, bool fixup);
+    static bool calcFixupNeed(BucketState* state, bool wantActive, bool fixup);
 };
 
-}
+} // namespace proton::bucketdb
