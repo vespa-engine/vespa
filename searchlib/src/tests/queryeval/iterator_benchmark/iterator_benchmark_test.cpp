@@ -1024,35 +1024,31 @@ TEST(IteratorBenchmark, analyze_AND_plan_variants_ENN) {
     auto enn_factory = enn({.num_docs = num_docs, .target_hits = 100});
     auto term_hit_ratios = gen_ratios(0.01, 10.0, 7);
 
-    auto run_plan = [&](const std::string& tag, FactoryPtr root, double term_hit_ratio, PlanningAlgo algo) {
+    auto run_plan = [&](const std::string& tag, FactoryPtr root, double term_hit_ratio) {
         auto res = benchmark_search(*root, num_docs + 1, /*strict*/ true, /*force_strict*/ false,
-                                    /*unpack_iterator*/ false, /*filter_hit_ratio*/ 1.0, algo);
-        std::println("  {:>22} | term_hr={:>8.5f} | hits={:>8} | seeks={:>8} | time_ms={:>8.3f} | plan={}", tag,
-                     term_hit_ratio, res.hits, res.seeks, res.time_ms, res.blueprint_name);
+                                    /*unpack_iterator*/ false, /*filter_hit_ratio*/ 1.0, PlanningAlgo::Order);
+        std::println("  {:>16} | term_hr={:>8.5f} | hits={:>8} | time_ms={:>8.3f} | plan={}", tag, term_hit_ratio,
+                     res.hits, res.time_ms, res.blueprint_name);
         return res.time_ms;
     };
 
     std::println("Plan variants for AND(term{{int32_fs}}, ENN{{num_docs={},target_hits=100,dim=2}})", num_docs);
-    std::println("Singles + 2 child orderings × {{Order, CostForceStrict}}.");
+    std::println("term-alone, enn-alone are baselines. AND rows force build order via PlanningAlgo::Order.");
 
     double max_penalty = 0.0;
     for (double hr : term_hit_ratios) {
         auto term_factory = term(int32_fs, num_docs, 0, hr);
 
         std::println("----- term_hit_ratio={} -----", hr);
-        run_plan("term-alone", term_factory, hr, PlanningAlgo::Order);
-        run_plan("enn-alone", enn_factory, hr, PlanningAlgo::Order);
-        double t_te_o = run_plan("AND[term,enn] ordr", and_(term_factory, enn_factory), hr, PlanningAlgo::Order);
-        double t_te_f =
-            run_plan("AND[term,enn] forc", and_(term_factory, enn_factory), hr, PlanningAlgo::CostForceStrict);
-        double t_et_o = run_plan("AND[enn,term] ordr", and_(enn_factory, term_factory), hr, PlanningAlgo::Order);
-        double t_et_f =
-            run_plan("AND[enn,term] forc", and_(enn_factory, term_factory), hr, PlanningAlgo::CostForceStrict);
+        run_plan("term-alone", term_factory, hr);
+        run_plan("enn-alone", enn_factory, hr);
+        double t_term_first = run_plan("AND[term,enn]", and_(term_factory, enn_factory), hr);
+        double t_enn_first  = run_plan("AND[enn,term]", and_(enn_factory, term_factory), hr);
 
-        double best = std::min({t_te_o, t_te_f, t_et_o, t_et_f});
-        double worst = std::max({t_te_o, t_te_f, t_et_o, t_et_f});
+        double best    = std::min(t_term_first, t_enn_first);
+        double worst   = std::max(t_term_first, t_enn_first);
         double penalty = (best > 0) ? (worst / best) : 0.0;
-        max_penalty = std::max(max_penalty, penalty);
+        max_penalty    = std::max(max_penalty, penalty);
         std::println("  worst/best ratio={:.4f}", penalty);
     }
     std::println("max worst-plan penalty={:.4f}", max_penalty);
