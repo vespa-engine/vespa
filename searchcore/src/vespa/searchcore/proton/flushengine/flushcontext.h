@@ -2,6 +2,7 @@
 #pragma once
 
 #include "iflushhandler.h"
+
 #include <vespa/vespalib/util/executor.h>
 
 namespace proton {
@@ -13,17 +14,17 @@ namespace proton {
 class FlushContext {
 private:
     using IFlushTarget = searchcorespi::IFlushTarget;
-    std::string               _name;
-    IFlushHandler::SP              _handler;
-    IFlushTarget::SP               _target;
-    searchcorespi::FlushTask::UP   _task;
-    search::SerialNum              _lastSerial;
+    std::string                  _name;
+    IFlushHandler::SP            _handler;
+    IFlushTarget::SP             _target;
+    searchcorespi::FlushTask::UP _task;
+    search::SerialNum            _lastSerial;
 
 public:
     using SP = std::shared_ptr<FlushContext>;
     using List = std::vector<SP>;
-    FlushContext(const FlushContext &) = delete;
-    FlushContext & operator = (const FlushContext &) = delete;
+    FlushContext(const FlushContext&) = delete;
+    FlushContext& operator=(const FlushContext&) = delete;
 
     /**
      * Create a name of the handler and the target.
@@ -32,13 +33,12 @@ public:
      * @param target  The target to flush.
      * @return the name created.
      */
-    static std::string createName(const IFlushHandler & handler, const IFlushTarget & target);
+    static std::string createName(const IFlushHandler& handler, const IFlushTarget& target);
 
     /**
      * Create a combined name of the handler name and the target name.
      */
-    static std::string create_name(const std::string& handler_name,
-                                        const std::string& target_name);
+    static std::string create_name(const std::string& handler_name, const std::string& target_name);
 
     /**
      * Constructs a new instance of this class.
@@ -46,9 +46,7 @@ public:
      * @param handler The flush handler that contains the given target.
      * @param target  The target to flush.
      */
-    FlushContext(const IFlushHandler::SP &handler,
-                 const IFlushTarget::SP &target,
-                 search::SerialNum lastSerial);
+    FlushContext(const IFlushHandler::SP& handler, const IFlushTarget::SP& target, search::SerialNum lastSerial);
 
     /**
      * Destructor. Will log a warning if it contains an unexecuted task.
@@ -70,21 +68,21 @@ public:
      *
      * @return The name of this.
      */
-    const std::string & getName() const { return _name; }
+    const std::string& getName() const { return _name; }
 
     /**
      * Returns the flush handler of this context.
      *
      * @return The handler.
      */
-    const IFlushHandler::SP & getHandler() const { return _handler; }
+    const IFlushHandler::SP& getHandler() const { return _handler; }
 
     /**
      * Returns the flush target of this context.
      *
      * @return The target.
      */
-    const IFlushTarget::SP & getTarget() const { return _target; }
+    const IFlushTarget::SP& getTarget() const { return _target; }
 
     /**
      * Returns the last serial number.
@@ -100,8 +98,6 @@ public:
      * @return The flush completion task.
      */
     searchcorespi::FlushTask::UP getTask() { return std::move(_task); }
-
 };
 
 } // namespace proton
-

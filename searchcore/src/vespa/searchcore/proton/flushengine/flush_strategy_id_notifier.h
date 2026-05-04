@@ -21,6 +21,7 @@ class FlushStrategyIdNotifier {
     uint32_t                _strategy_id;
     bool                    _closed;
     Listeners               _listeners;
+
 public:
     FlushStrategyIdNotifier(uint32_t strategy_id);
     ~FlushStrategyIdNotifier();
@@ -31,4 +32,4 @@ public:
     void remove_strategy_id_listener(std::shared_ptr<FlushStrategyIdListener> listener);
 };
 
-}
+} // namespace proton::flushengine

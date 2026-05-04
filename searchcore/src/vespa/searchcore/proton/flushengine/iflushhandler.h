@@ -20,16 +20,14 @@ public:
      * Convenience typedefs.
      */
     using SP = std::shared_ptr<IFlushHandler>;
-    IFlushHandler(const IFlushHandler &) = delete;
-    IFlushHandler & operator = (const IFlushHandler &) = delete;
+    IFlushHandler(const IFlushHandler&) = delete;
+    IFlushHandler& operator=(const IFlushHandler&) = delete;
     /**
      * Constructs a new instance of this class.
      *
      * @param name The unique name of this handler.
      */
-    IFlushHandler(const std::string &name) noexcept
-        : _name(name)
-    { }
+    IFlushHandler(const std::string& name) noexcept : _name(name) {}
 
     /**
      * Virtual destructor required for inheritance.
@@ -41,7 +39,7 @@ public:
      *
      * @return The name of this.
      */
-    const std::string & getName() const { return _name; }
+    const std::string& getName() const { return _name; }
 
     /**
      * Returns a list of the flush targets that belong to this handler. This
@@ -79,4 +77,3 @@ public:
 };
 
 } // namespace proton
-

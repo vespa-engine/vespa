@@ -30,15 +30,15 @@ class FlushHistoryEntry {
 
 public:
     FlushHistoryEntry(std::string name_in, std::string strategy_in, uint32_t strategy_id_in,
-                      bool priority_strategy_in, time_point create_time_in,
+                      bool priority_strategy_in, time_point create_time_in, duration last_flush_duration_in,
+                      uint32_t id_in);
+    FlushHistoryEntry(std::string name_in, const FlushStrategyHistoryEntry& strategy_entry, time_point create_time_in,
                       duration last_flush_duration_in, uint32_t id_in);
-    FlushHistoryEntry(std::string name_in, const FlushStrategyHistoryEntry& strategy_entry,
-                      time_point create_time_in, duration last_flush_duration_in, uint32_t id_in);
-    FlushHistoryEntry(const FlushHistoryEntry &);
-    FlushHistoryEntry(FlushHistoryEntry &&) noexcept;
+    FlushHistoryEntry(const FlushHistoryEntry&);
+    FlushHistoryEntry(FlushHistoryEntry&&) noexcept;
     ~FlushHistoryEntry();
-    FlushHistoryEntry& operator=(const FlushHistoryEntry &);
-    FlushHistoryEntry& operator=(FlushHistoryEntry &&) noexcept;
+    FlushHistoryEntry& operator=(const FlushHistoryEntry&);
+    FlushHistoryEntry& operator=(FlushHistoryEntry&&) noexcept;
     const std::string& name() const noexcept { return _name; }
     const std::string& strategy() const noexcept { return _strategy; }
     uint32_t strategy_id() const noexcept { return _strategy_id; }
@@ -57,4 +57,4 @@ public:
     void prune_done(time_point prune_time_in) noexcept;
 };
 
-}
+} // namespace proton::flushengine

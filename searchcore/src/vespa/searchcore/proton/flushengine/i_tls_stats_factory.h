@@ -17,4 +17,4 @@ public:
     virtual TlsStatsMap create() = 0;
 };
 
-}
+} // namespace proton::flushengine

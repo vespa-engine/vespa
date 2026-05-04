@@ -14,16 +14,16 @@ class CachedFlushTarget : public searchcorespi::IFlushTarget {
 private:
     using FlushStats = searchcorespi::FlushStats;
     using IFlushTarget = searchcorespi::IFlushTarget;
-    IFlushTarget::SP  _target;
-    SerialNum         _flushedSerialNum;
-    Time              _lastFlushTime;
-    MemoryGain        _memoryGain;
-    DiskGain          _diskGain;
-    uint64_t          _approxBytesToWriteToDisk;
-    uint64_t          _approx_bytes_to_read_from_disk;
-    double            _replay_operation_cost;
-    bool              _needUrgentFlush;
-    Priority          _priority;
+    IFlushTarget::SP                    _target;
+    SerialNum                           _flushedSerialNum;
+    Time                                _lastFlushTime;
+    MemoryGain                          _memoryGain;
+    DiskGain                            _diskGain;
+    uint64_t                            _approxBytesToWriteToDisk;
+    uint64_t                            _approx_bytes_to_read_from_disk;
+    double                              _replay_operation_cost;
+    bool                                _needUrgentFlush;
+    Priority                            _priority;
     std::chrono::steady_clock::duration _last_flush_duration;
 
 public:
@@ -34,7 +34,7 @@ public:
      *
      * @param target The target to decorate.
      */
-    CachedFlushTarget(const IFlushTarget::SP &target);
+    CachedFlushTarget(const IFlushTarget::SP& target);
     ~CachedFlushTarget() override;
 
     /**
@@ -44,14 +44,14 @@ public:
      *
      * @return The decorated flush target.
      */
-    const IFlushTarget::SP & getFlushTarget() { return _target; }
+    const IFlushTarget::SP& getFlushTarget() { return _target; }
 
     // Implements IFlushTarget.
     MemoryGain getApproxMemoryGain() const override { return _memoryGain; }
-    DiskGain   getApproxDiskGain() const override { return _diskGain; }
+    DiskGain getApproxDiskGain() const override { return _diskGain; }
     SerialNum getFlushedSerialNum() const override { return _flushedSerialNum; }
-    Time    getLastFlushTime() const override { return _lastFlushTime; }
-    bool     needUrgentFlush() const override { return _needUrgentFlush; }
+    Time getLastFlushTime() const override { return _lastFlushTime; }
+    bool needUrgentFlush() const override { return _needUrgentFlush; }
     Priority getPriority() const override { return _priority; }
     double get_replay_operation_cost() const override { return _replay_operation_cost; }
 
@@ -66,4 +66,3 @@ public:
 };
 
 } // namespace proton
-
