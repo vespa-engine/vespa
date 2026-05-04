@@ -2,36 +2,34 @@
 #pragma once
 
 #include "document.h"
-#include <cassert>
+
 #include <algorithm>
+#include <cassert>
 
 namespace proton::test {
 
 /**
  * Collection of documents contained in the same bucket.
  */
-class BucketDocuments
-{
+class BucketDocuments {
 private:
     DocumentVector _docs;
+
 public:
-    BucketDocuments()
-        : _docs()
-    {
-    }
+    BucketDocuments() : _docs() {}
     document::BucketId getBucket() const {
         if (!_docs.empty()) {
             return _docs.back().getBucket();
         }
         return document::BucketId();
     }
-    const DocumentVector &getDocs() const { return _docs; }
+    const DocumentVector& getDocs() const { return _docs; }
     DocumentVector getGidOrderDocs() const {
         DocumentVector retval = _docs;
         std::sort(retval.begin(), retval.end(), DocumentGidOrderCmp());
         return retval;
     }
-    void addDoc(const Document &doc) {
+    void addDoc(const Document& doc) {
         if (!_docs.empty()) {
             assert(_docs.back().getBucket() == doc.getBucket());
         }
@@ -39,4 +37,4 @@ public:
     }
 };
 
-}
+} // namespace proton::test

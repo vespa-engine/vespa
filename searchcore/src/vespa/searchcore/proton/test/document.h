@@ -10,27 +10,20 @@ namespace proton::test {
 /**
  * Representation of a test document.
  */
-class Document
-{
+class Document {
 private:
     document::Document::SP  _doc;
     search::DocumentIdT     _lid;
     storage::spi::Timestamp _tstamp;
     uint32_t                _numUsedBits;
+
 public:
-    Document(document::Document::SP doc,
-             search::DocumentIdT lid,
-             storage::spi::Timestamp tstamp,
+    Document(document::Document::SP doc, search::DocumentIdT lid, storage::spi::Timestamp tstamp,
              uint32_t numUsedBits = 8u)
-        : _doc(doc),
-          _lid(lid),
-          _tstamp(tstamp),
-          _numUsedBits(numUsedBits)
-    {
-    }
-    const document::Document::SP &getDoc() const { return _doc; }
-    const document::DocumentId &getDocId() const { return _doc->getId(); }
-    const document::GlobalId &getGid() const { return getDocId().getGlobalId(); }
+        : _doc(doc), _lid(lid), _tstamp(tstamp), _numUsedBits(numUsedBits) {}
+    const document::Document::SP& getDoc() const { return _doc; }
+    const document::DocumentId& getDocId() const { return _doc->getId(); }
+    const document::GlobalId& getGid() const { return getDocId().getGlobalId(); }
     document::BucketId getBucket() const {
         document::BucketId retval = getGid().convertToBucketId();
         retval.setUsedBits(_numUsedBits);
@@ -43,13 +36,11 @@ public:
 
 using DocumentVector = std::vector<Document>;
 
-struct DocumentGidOrderCmp
-{
-    bool operator()(const Document &lhs, const Document &rhs) const {
+struct DocumentGidOrderCmp {
+    bool operator()(const Document& lhs, const Document& rhs) const {
         document::GlobalId::BucketOrderCmp cmp;
         return cmp(lhs.getGid(), rhs.getGid());
     }
 };
 
-
-}
+} // namespace proton::test

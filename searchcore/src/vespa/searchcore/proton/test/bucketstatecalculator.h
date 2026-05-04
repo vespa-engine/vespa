@@ -1,11 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchcore/proton/server/ibucketstatecalculator.h>
-#include <vespa/document/bucket/bucketidlist.h>
 #include <vespa/document/bucket/bucket.h>
-#include <set>
+#include <vespa/document/bucket/bucketidlist.h>
+#include <vespa/searchcore/proton/server/ibucketstatecalculator.h>
+
 #include <memory>
+#include <set>
 
 namespace proton::test {
 
@@ -13,8 +14,7 @@ using BucketIdVector = document::bucket::BucketIdList;
 
 using BucketIdSet = std::set<document::BucketId>;
 
-class BucketStateCalculator : public IBucketStateCalculator
-{
+class BucketStateCalculator : public IBucketStateCalculator {
 private:
     BucketIdSet            _ready;
     mutable BucketIdVector _asked;
@@ -25,32 +25,25 @@ private:
 
 public:
     using SP = std::shared_ptr<BucketStateCalculator>;
-    BucketStateCalculator() noexcept :
-        _ready(),
-        _asked(),
-        _clusterUp(true),
-        _nodeUp(true),
-        _nodeRetired(false),
-        _nodeMaintenance(false)
-    {
-    }
-    BucketStateCalculator(BucketStateCalculator &&) noexcept = default;
-    BucketStateCalculator & operator =(BucketStateCalculator &&) noexcept = default;
+    BucketStateCalculator() noexcept
+        : _ready(), _asked(), _clusterUp(true), _nodeUp(true), _nodeRetired(false), _nodeMaintenance(false) {}
+    BucketStateCalculator(BucketStateCalculator&&) noexcept = default;
+    BucketStateCalculator& operator=(BucketStateCalculator&&) noexcept = default;
     ~BucketStateCalculator() override;
-    BucketStateCalculator &addReady(const document::BucketId &bucket) {
+    BucketStateCalculator& addReady(const document::BucketId& bucket) {
         _ready.insert(bucket);
         return *this;
     }
-    BucketStateCalculator &remReady(const document::BucketId &bucket) {
+    BucketStateCalculator& remReady(const document::BucketId& bucket) {
         _ready.erase(bucket);
         return *this;
     }
-    BucketStateCalculator &setClusterUp(bool value) noexcept {
+    BucketStateCalculator& setClusterUp(bool value) noexcept {
         _clusterUp = value;
         return *this;
     }
 
-    BucketStateCalculator & setNodeUp(bool value) noexcept {
+    BucketStateCalculator& setNodeUp(bool value) noexcept {
         _nodeUp = value;
         return *this;
     }
@@ -69,11 +62,11 @@ public:
         return *this;
     }
 
-    const BucketIdVector &asked() const noexcept { return _asked; }
+    const BucketIdVector& asked() const noexcept { return _asked; }
     void resetAsked() { _asked.clear(); }
 
     // Implements IBucketStateCalculator
-    vespalib::Trinary shouldBeReady(const document::Bucket &bucket) const override {
+    vespalib::Trinary shouldBeReady(const document::Bucket& bucket) const override {
         _asked.push_back(bucket.getBucketId());
         return (_ready.count(bucket.getBucketId()) == 1) ? vespalib::Trinary::True : vespalib::Trinary::False;
     }
@@ -86,4 +79,4 @@ public:
     bool node_retired_or_maintenance() const noexcept override { return _nodeRetired || _nodeMaintenance; }
 };
 
-}
+} // namespace proton::test

@@ -1,34 +1,34 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "documentdb_config_builder.h"
-#include <vespa/config-summary.h>
-#include <vespa/config-rank-profiles.h>
+
 #include <vespa/config-attributes.h>
+#include <vespa/config-imported-fields.h>
 #include <vespa/config-indexschema.h>
+#include <vespa/config-rank-profiles.h>
+#include <vespa/config-summary.h>
+#include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/searchsummary/config/config-juniperrc.h>
-#include <vespa/document/config/config-documenttypes.h>
-#include <vespa/config-imported-fields.h>
 #include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/server/threading_service_config.h>
+#include <vespa/searchsummary/config/config-juniperrc.h>
 
+using proton::ThreadingServiceConfig;
 using search::TuneFileDocumentDB;
 using search::index::Schema;
-using vespa::config::search::RankProfilesConfig;
-using vespa::config::search::IndexschemaConfig;
 using vespa::config::search::AttributesConfig;
+using vespa::config::search::ImportedFieldsConfig;
+using vespa::config::search::IndexschemaConfig;
+using vespa::config::search::RankProfilesConfig;
 using vespa::config::search::SummaryConfig;
 using vespa::config::search::summary::JuniperrcConfig;
-using vespa::config::search::ImportedFieldsConfig;
-using proton::ThreadingServiceConfig;
 
 namespace proton::test {
 
-DocumentDBConfigBuilder::DocumentDBConfigBuilder(int64_t generation,
+DocumentDBConfigBuilder::DocumentDBConfigBuilder(int64_t                                      generation,
                                                  std::shared_ptr<const search::index::Schema> schema,
-                                                 const std::string &configId,
-                                                 const std::string &docTypeName)
+                                                 const std::string& configId, const std::string& docTypeName)
     : _generation(generation),
       _rankProfiles(std::make_shared<RankProfilesConfig>()),
       _rankingConstants(std::make_shared<search::fef::RankingConstants>()),
@@ -49,11 +49,10 @@ DocumentDBConfigBuilder::DocumentDBConfigBuilder(int64_t generation,
       _alloc_config(AllocConfig::makeDefault()),
       _document_meta_store_config(DocumentMetaStoreConfig::make()),
       _configId(configId),
-      _docTypeName(docTypeName)
-{ }
+      _docTypeName(docTypeName) {
+}
 
-
-DocumentDBConfigBuilder::DocumentDBConfigBuilder(const DocumentDBConfig &cfg)
+DocumentDBConfigBuilder::DocumentDBConfigBuilder(const DocumentDBConfig& cfg)
     : _generation(cfg.getGeneration()),
       _rankProfiles(cfg.getRankProfilesConfigSP()),
       _rankingConstants(cfg.getRankingConstantsSP()),
@@ -74,36 +73,16 @@ DocumentDBConfigBuilder::DocumentDBConfigBuilder(const DocumentDBConfig &cfg)
       _alloc_config(cfg.get_alloc_config()),
       _document_meta_store_config(cfg.get_document_meta_store_config()),
       _configId(cfg.getConfigId()),
-      _docTypeName(cfg.getDocTypeName())
-{}
+      _docTypeName(cfg.getDocTypeName()) {
+}
 
 DocumentDBConfigBuilder::~DocumentDBConfigBuilder() = default;
 
-DocumentDBConfig::SP
-DocumentDBConfigBuilder::build()
-{
+DocumentDBConfig::SP DocumentDBConfigBuilder::build() {
     return std::make_shared<DocumentDBConfig>(
-            _generation,
-            _rankProfiles,
-            _rankingConstants,
-            _rankingExpressions,
-            _onnxModels,
-            _indexschema,
-            _attributes,
-            _summary,
-            _juniperrc,
-            _documenttypes,
-            _repo,
-            _importedFields,
-            _tuneFileDocumentDB,
-            _schema,
-            _maintenance,
-            _store,
-            _threading_service_config,
-            _alloc_config,
-            _document_meta_store_config,
-            _configId,
-            _docTypeName);
+        _generation, _rankProfiles, _rankingConstants, _rankingExpressions, _onnxModels, _indexschema, _attributes,
+        _summary, _juniperrc, _documenttypes, _repo, _importedFields, _tuneFileDocumentDB, _schema, _maintenance,
+        _store, _threading_service_config, _alloc_config, _document_meta_store_config, _configId, _docTypeName);
 }
 
-}
+} // namespace proton::test

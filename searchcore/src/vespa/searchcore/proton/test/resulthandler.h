@@ -5,41 +5,39 @@
 
 namespace proton::test {
 
-class GenericResultHandler : public IGenericResultHandler
-{
+class GenericResultHandler : public IGenericResultHandler {
 private:
     std::unique_ptr<storage::spi::Result> _result;
+
 public:
     ~GenericResultHandler() override;
-    void handle(const storage::spi::Result &result) override;
+    void handle(const storage::spi::Result& result) override;
     bool valid() const { return static_cast<bool>(_result); }
-    const storage::spi::Result &getResult() const { return *_result; }
+    const storage::spi::Result& getResult() const { return *_result; }
 };
 
-
-class BucketInfoResultHandler : public IBucketInfoResultHandler
-{
+class BucketInfoResultHandler : public IBucketInfoResultHandler {
 private:
     std::unique_ptr<storage::spi::BucketInfoResult> _result;
+
 public:
     ~BucketInfoResultHandler() override;
-    void handle(const storage::spi::BucketInfoResult &result) override;
+    void handle(const storage::spi::BucketInfoResult& result) override;
     bool valid() const { return static_cast<bool>(_result); }
-    const storage::spi::BucketInfoResult &getResult() const { return *_result; }
-    const storage::spi::BucketInfo &getInfo() const { return getResult().getBucketInfo(); }
+    const storage::spi::BucketInfoResult& getResult() const { return *_result; }
+    const storage::spi::BucketInfo& getInfo() const { return getResult().getBucketInfo(); }
 };
 
-
-class BucketIdListResultHandler : public IBucketIdListResultHandler
-{
+class BucketIdListResultHandler : public IBucketIdListResultHandler {
 private:
     std::unique_ptr<storage::spi::BucketIdListResult> _result;
+
 public:
     ~BucketIdListResultHandler() override;
     void handle(storage::spi::BucketIdListResult result) override;
     bool valid() const { return static_cast<bool>(_result); }
-    const storage::spi::BucketIdListResult &getResult() const { return *_result; }
-    const storage::spi::BucketIdListResult::List &getList() const { return getResult().getList(); }
+    const storage::spi::BucketIdListResult& getResult() const { return *_result; }
+    const storage::spi::BucketIdListResult::List& getList() const { return getResult().getList(); }
 };
 
-}
+} // namespace proton::test

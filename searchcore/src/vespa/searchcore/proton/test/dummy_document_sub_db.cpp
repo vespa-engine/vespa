@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dummy_document_sub_db.h"
+
 #include <vespa/searchcorespi/common/resource_usage.h>
 
 using searchcorespi::common::ResourceUsage;
@@ -15,15 +16,13 @@ DummyDocumentSubDb::DummyDocumentSubDb(std::shared_ptr<bucketdb::BucketDBOwner> 
       _summaryAdapter(),
       _indexWriter(),
       _service(1),
-      _pendingLidTracker()
-{ }
+      _pendingLidTracker() {
+}
 
 DummyDocumentSubDb::~DummyDocumentSubDb() = default;
 
-ResourceUsage
-DummyDocumentSubDb::get_resource_usage() const
-{
+ResourceUsage DummyDocumentSubDb::get_resource_usage() const {
     return {};
 }
 
-}
+} // namespace proton::test
