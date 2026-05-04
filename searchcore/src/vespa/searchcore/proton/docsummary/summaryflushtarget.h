@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/docstore/idocumentstore.h>
 #include <vespa/searchcorespi/flush/iflushtarget.h>
+#include <vespa/searchlib/docstore/idocumentstore.h>
 
 namespace proton {
 
@@ -12,15 +12,14 @@ namespace proton {
 class SummaryFlushTarget : public searchcorespi::LeafFlushTarget {
 private:
     using FlushStats = searchcorespi::FlushStats;
-    search::IDocumentStore & _docStore;
-    vespalib::Executor     & _summaryService;
-    FlushStats               _lastStats;
+    search::IDocumentStore& _docStore;
+    vespalib::Executor&     _summaryService;
+    FlushStats              _lastStats;
 
     Task::UP internalInitFlush(SerialNum currentSerial);
 
 public:
-    SummaryFlushTarget(search::IDocumentStore & docStore,
-                       vespalib::Executor & summaryService);
+    SummaryFlushTarget(search::IDocumentStore& docStore, vespalib::Executor& summaryService);
 
     MemoryGain getApproxMemoryGain() const override;
     DiskGain getApproxDiskGain() const override { return DiskGain(0, 0); }
@@ -35,4 +34,3 @@ public:
 };
 
 } // namespace proton
-

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "summaryflushtarget.h"
+
 #include <vespa/vespalib/util/lambdatask.h>
 
 using search::IDocumentStore;
@@ -14,17 +15,13 @@ namespace {
 
 class Flusher : public searchcorespi::FlushTask {
 private:
-    IDocumentStore & _docStore;
-    FlushStats     & _stats;
-    SerialNum        _currSerial;
+    IDocumentStore& _docStore;
+    FlushStats&     _stats;
+    SerialNum       _currSerial;
+
 public:
-    Flusher(IDocumentStore & docStore,
-            FlushStats & stats,
-            SerialNum currSerial)
-        : _docStore(docStore),
-          _stats(stats),
-          _currSerial(currSerial)
-    {
+    Flusher(IDocumentStore& docStore, FlushStats& stats, SerialNum currSerial)
+        : _docStore(docStore), _stats(stats), _currSerial(currSerial) {
         _currSerial = _docStore.initFlush(currSerial);
     }
     void run() override {
@@ -39,56 +36,40 @@ public:
     SerialNum getFlushSerial() const override { return _currSerial; }
 };
 
-}
+} // namespace
 
-SummaryFlushTarget::SummaryFlushTarget(IDocumentStore & docStore,
-                                       vespalib::Executor & summaryService)
+SummaryFlushTarget::SummaryFlushTarget(IDocumentStore& docStore, vespalib::Executor& summaryService)
     : LeafFlushTarget("summary.flush", Type::SYNC, Component::DOCUMENT_STORE),
       _docStore(docStore),
       _summaryService(summaryService),
-      _lastStats()
-{
+      _lastStats() {
     _lastStats.setPathElementsToLog(6);
 }
 
-IFlushTarget::MemoryGain
-SummaryFlushTarget::getApproxMemoryGain() const
-{
+IFlushTarget::MemoryGain SummaryFlushTarget::getApproxMemoryGain() const {
     return MemoryGain(_docStore.memoryUsed(), _docStore.memoryMeta());
 }
 
-IFlushTarget::Time
-SummaryFlushTarget::getLastFlushTime() const
-{
+IFlushTarget::Time SummaryFlushTarget::getLastFlushTime() const {
     return _docStore.getLastFlushTime();
 }
 
-SerialNum
-SummaryFlushTarget::getFlushedSerialNum() const
-{
+SerialNum SummaryFlushTarget::getFlushedSerialNum() const {
     return _docStore.lastSyncToken();
 }
 
-IFlushTarget::Task::UP
-SummaryFlushTarget::internalInitFlush(SerialNum currentSerial) {
+IFlushTarget::Task::UP SummaryFlushTarget::internalInitFlush(SerialNum currentSerial) {
     return std::make_unique<Flusher>(_docStore, _lastStats, currentSerial);
 }
-IFlushTarget::Task::UP
-SummaryFlushTarget::initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken>)
-{
+IFlushTarget::Task::UP SummaryFlushTarget::initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken>) {
     // Called by document db executor
     std::promise<Task::UP> promise;
-    std::future<Task::UP> future = promise.get_future();
-    _summaryService.execute(vespalib::makeLambdaTask(
-                                  [&]() { promise.set_value(
-                                          internalInitFlush(currentSerial));
-                                  }));
+    std::future<Task::UP>  future = promise.get_future();
+    _summaryService.execute(vespalib::makeLambdaTask([&]() { promise.set_value(internalInitFlush(currentSerial)); }));
     return future.get();
 }
 
-std::chrono::steady_clock::duration
-SummaryFlushTarget::last_flush_duration() const noexcept
-{
+std::chrono::steady_clock::duration SummaryFlushTarget::last_flush_duration() const noexcept {
     return 200ms; // placeholder value.
 }
 
