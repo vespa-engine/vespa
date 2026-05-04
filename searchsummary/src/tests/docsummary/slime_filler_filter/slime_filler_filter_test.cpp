@@ -104,7 +104,7 @@ TEST_F(SlimeFillerFilterTest, simple_remaining_path_allows_all_sub_fields) {
     check_render_all_sub_fields();
 }
 
-TEST_F(SlimeFillerFilterTest, composite_remainig_paths_filter_sub_fields) {
+TEST_F(SlimeFillerFilterTest, composite_remaining_paths_filter_sub_fields) {
     add_remaining("z.a").add_remaining("z.b.c");
     check_render_some_sub_fields();
 }

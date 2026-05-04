@@ -133,7 +133,7 @@ TEST_F(AttributeDFWTest, outputs_slime_for_array_of_bool) {
     expect_field("null", 2);
 }
 
-TEST_F(AttributeDFWTest, filteres_matched_elements_in_array_bool_attribute) {
+TEST_F(AttributeDFWTest, filters_matched_elements_in_array_bool_attribute) {
     setup("array_bool", true);
     expect_filtered({}, "null");
     expect_filtered({0}, "[ true ]");
@@ -166,7 +166,7 @@ TEST_F(AttributeDFWTest, matched_elements_fields_is_populated) {
     EXPECT_TRUE(matching_elements_fields.has_field("array_str"));
 }
 
-TEST_F(AttributeDFWTest, filteres_matched_elements_in_array_attribute) {
+TEST_F(AttributeDFWTest, filters_matched_elements_in_array_attribute) {
     setup("array_str", true);
     expect_filtered({}, "null");
     expect_filtered({0}, "[ 'a' ]");
@@ -174,7 +174,7 @@ TEST_F(AttributeDFWTest, filteres_matched_elements_in_array_attribute) {
     expect_filtered({3}, "null");
 }
 
-TEST_F(AttributeDFWTest, filteres_matched_elements_in_wset_attribute) {
+TEST_F(AttributeDFWTest, filters_matched_elements_in_wset_attribute) {
     setup("wset_str", true);
     expect_filtered({}, "null");
     expect_filtered({0}, "[ {'item':'a', 'weight':1} ]");

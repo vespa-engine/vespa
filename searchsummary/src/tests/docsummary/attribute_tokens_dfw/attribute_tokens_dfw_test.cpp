@@ -95,7 +95,7 @@ TEST_F(AttributeTokensDFWTest, single_string) {
     expect_field("[ '' ]", 2);
 }
 
-TEST_F(AttributeTokensDFWTest, missing_atribute) {
+TEST_F(AttributeTokensDFWTest, missing_attribute) {
     setup("delayed_add_attribute_aspect");
     expect_field("null", 1);
 }
