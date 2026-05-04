@@ -2,6 +2,7 @@
 #pragma once
 
 #include "forwarder.h"
+
 #include <memory>
 #include <string>
 
@@ -17,7 +18,7 @@ struct Metrics;
 class EmptyForwarder : public Forwarder {
 private:
     Metrics& _metrics;
-    int _badLines;
+    int      _badLines;
 
 public:
     EmptyForwarder(Metrics& metrics);
@@ -30,4 +31,4 @@ public:
     void resetBadLines() override { _badLines = 0; }
 };
 
-}
+} // namespace logdemon

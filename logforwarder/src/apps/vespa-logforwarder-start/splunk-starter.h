@@ -3,6 +3,7 @@
 
 #include "cf-handler.h"
 #include "child-handler.h"
+
 #include <vespa/config-logforwarder.h>
 
 using cloud::config::LogforwarderConfig;
@@ -10,10 +11,10 @@ using cloud::config::LogforwarderConfig;
 class SplunkStarter : public CfHandler {
 private:
     ChildHandler _childHandler;
+
 public:
     SplunkStarter();
     virtual ~SplunkStarter();
     void stop();
     void gotConfig(const LogforwarderConfig& config) override;
 };
-

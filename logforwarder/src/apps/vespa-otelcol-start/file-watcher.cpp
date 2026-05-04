@@ -2,16 +2,18 @@
 
 #include "file-watcher.h"
 
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 namespace {
 
-time_t lastModTime(const std::string &fn) {
-    if (fn.empty()) return 0;
+time_t lastModTime(const std::string& fn) {
+    if (fn.empty())
+        return 0;
     struct stat info;
-    if (stat(fn.c_str(), &info) != 0) return 0;
+    if (stat(fn.c_str(), &info) != 0)
+        return 0;
     return info.st_mtime;
 }
 
@@ -19,7 +21,7 @@ time_t lastModTime(const std::string &fn) {
 
 bool FileWatcher::anyChanged() {
     bool result = false;
-    for (auto &entry : watchedFiles) {
+    for (auto& entry : watchedFiles) {
         time_t updated = lastModTime(entry.pathName);
         if (updated != entry.seenModTime) {
             result = true;
@@ -29,7 +31,7 @@ bool FileWatcher::anyChanged() {
     return result;
 }
 
-void FileWatcher::init(const config::StringVector &pathList) {
+void FileWatcher::init(const config::StringVector& pathList) {
     watchedFiles.clear();
     for (const auto& path : pathList) {
         watchedFiles.emplace_back(path, lastModTime(path));

@@ -2,10 +2,11 @@
 
 #pragma once
 
-#include <vespa/log/log.h>
 #include <map>
 #include <memory>
 #include <string_view>
+
+#include <vespa/log/log.h>
 
 namespace logdemon {
 
@@ -25,4 +26,4 @@ public:
     virtual void resetBadLines() = 0;
 };
 
-}
+} // namespace logdemon

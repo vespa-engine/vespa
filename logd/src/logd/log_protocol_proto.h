@@ -3,4 +3,3 @@
 #pragma once
 
 #include <logd/log_protocol.pb.h>
-

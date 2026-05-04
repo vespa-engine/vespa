@@ -1,21 +1,23 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "wrapper.h"
+
 #include "child-handler.h"
+
+#include <vespa/defaults.h>
 
 #include <dirent.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include <vespa/defaults.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".wrapper");
 
 namespace {
 
-std::string fixDir(const std::string &parent, const std::string &subdir) {
+std::string fixDir(const std::string& parent, const std::string& subdir) {
     auto dirname = parent + "/" + subdir;
-    DIR *dp = opendir(dirname.c_str());
+    DIR* dp = opendir(dirname.c_str());
     if (dp == nullptr) {
         if (errno != ENOENT || mkdir(dirname.c_str(), 0755) != 0) {
             LOG(warning, "Could not create directory '%s'", dirname.c_str());
@@ -33,10 +35,10 @@ std::string cfFilePath() {
     return path + "/" + "config.yaml";
 }
 
-void  writeConfig(const std::string &config, const std::string &path) {
+void writeConfig(const std::string& config, const std::string& path) {
     LOG(info, "got config, writing %s", path.c_str());
     std::string tmpPath = path + ".new";
-    FILE *fp = fopen(tmpPath.c_str(), "w");
+    FILE*       fp = fopen(tmpPath.c_str(), "w");
     if (fp == nullptr) {
         LOG(warning, "could not open '%s' for write", tmpPath.c_str());
         return;
@@ -46,12 +48,10 @@ void  writeConfig(const std::string &config, const std::string &path) {
     rename(tmpPath.c_str(), path.c_str());
 }
 
-} // namespace <unnamed>
+} // namespace
 
-Wrapper::Wrapper(const std::string &configId)
-  : CfHandler(configId),
-    _childHandler()
-{}
+Wrapper::Wrapper(const std::string& configId) : CfHandler(configId), _childHandler() {
+}
 
 Wrapper::~Wrapper() = default;
 

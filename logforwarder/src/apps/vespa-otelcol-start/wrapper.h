@@ -9,8 +9,9 @@
 class Wrapper : public CfHandler {
 private:
     ChildHandler _childHandler;
+
 public:
-    Wrapper(const std::string &configId);
+    Wrapper(const std::string& configId);
     ~Wrapper();
     void check();
     void stop();
