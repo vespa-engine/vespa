@@ -80,7 +80,7 @@ TYPED_TEST(HnswBestNeighborsTest, distance_limit_is_enforced) {
 
 using HnswSingleBestNeighborsTest = HnswBestNeighborsTest<HnswSingleBestNeighbors>;
 
-TEST_F(HnswSingleBestNeighborsTest, duplicate_docids_are_not_elimiated) {
+TEST_F(HnswSingleBestNeighborsTest, duplicate_docids_are_not_eliminated) {
     EXPECT_EQ(4, size());
     assert_neighbors({{1, 1.0}, {2, 5.0}, {2, 10.0}, {3, 7.0}}, 40, 40.0);
 }
