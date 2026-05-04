@@ -13,8 +13,9 @@ StartMetrics::StartMetrics()
     : metrics(SimpleMetricsManager::create(SimpleManagerConfig())),
       producer(metrics),
       currentlyRunningServices(0),
-      totalRestartsCounter(0),
+      totalRestartsByService(),
       startedTime(vespalib::steady_clock::now()),
+      service_dim(metrics->dimension("service")),
       sentinel_restarts(metrics->counter("sentinel.restarts", "how many times sentinel restarted a service")),
       sentinel_totalRestarts(metrics->gauge("sentinel.totalRestarts",
                                             "how many times sentinel restarted a service since sentinel start")),
@@ -33,18 +34,24 @@ void StartMetrics::maybeLog() {
     if (curTime - lastRestartTime > 2h) {
         reset();
     }
-    sentinel_totalRestarts.sample(totalRestartsCounter);
+    for (const auto& entry : totalRestartsByService) {
+        sentinel_totalRestarts.sample(entry.second.count, entry.second.point);
+    }
     sentinel_running.sample(currentlyRunningServices);
     sentinel_uptime.sample(vespalib::to_s(curTime - startedTime));
 }
 
-void StartMetrics::incRestartsCounter() {
-    ++totalRestartsCounter;
+void StartMetrics::incRestartsCounter(const std::string& serviceName) {
+    auto [it, inserted] = totalRestartsByService.try_emplace(serviceName);
+    if (inserted) {
+        it->second.point = metrics->pointBuilder().bind(service_dim, serviceName);
+    }
+    ++it->second.count;
     lastRestartTime = vespalib::steady_clock::now();
 }
 
 void StartMetrics::reset() {
-    totalRestartsCounter = 0;
+    totalRestartsByService.clear();
     lastRestartTime = vespalib::steady_clock::now();
 }
 
