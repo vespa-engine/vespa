@@ -4,17 +4,16 @@
 
 #include <vespa/document/bucket/bucketspace.h>
 
-namespace storage::spi { class ClusterState; }
+namespace storage::spi {
+class ClusterState;
+}
 
 namespace proton {
 
-class IPersistenceEngineOwner
-{
+class IPersistenceEngineOwner {
 public:
     virtual ~IPersistenceEngineOwner() = default;
-    virtual void
-    setClusterState(document::BucketSpace bucketSpace, const storage::spi::ClusterState &calc) = 0;
+    virtual void setClusterState(document::BucketSpace bucketSpace, const storage::spi::ClusterState& calc) = 0;
 };
 
 } // namespace proton
-
