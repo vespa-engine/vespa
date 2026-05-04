@@ -16,20 +16,14 @@ private:
     size_t   _memory;
 
 public:
-    TransientResourceUsage() noexcept
-        : _disk(0),
-          _memory(0)
-    {}
-    TransientResourceUsage(uint64_t disk_in, size_t memory_in) noexcept
-        : _disk(disk_in),
-          _memory(memory_in)
-    {}
+    TransientResourceUsage() noexcept : _disk(0), _memory(0) {}
+    TransientResourceUsage(uint64_t disk_in, size_t memory_in) noexcept : _disk(disk_in), _memory(memory_in) {}
     uint64_t disk() const noexcept { return _disk; }
     size_t memory() const noexcept { return _memory; }
-    void merge(const TransientResourceUsage& rhs) noexcept{
+    void merge(const TransientResourceUsage& rhs) noexcept {
         _disk += rhs.disk();
         _memory += rhs.memory();
     }
 };
 
-}
+} // namespace searchcorespi::common

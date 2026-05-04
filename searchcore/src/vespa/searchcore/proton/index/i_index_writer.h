@@ -2,8 +2,8 @@
 #pragma once
 
 #include <vespa/searchcorespi/index/iindexmanager.h>
-#include <vespa/searchlib/query/base.h>
 #include <vespa/searchlib/common/serialnum.h>
+#include <vespa/searchlib/query/base.h>
 
 namespace proton {
 
@@ -21,10 +21,11 @@ public:
 
     virtual ~IIndexWriter() = default;
 
-    virtual const std::shared_ptr<IIndexManager> &getIndexManager() const = 0;
+    virtual const std::shared_ptr<IIndexManager>& getIndexManager() const = 0;
 
     // feed interface
-    virtual void put(search::SerialNum serialNum, const document::Document &doc, const search::DocumentIdT lid, const OnWriteDoneType& on_write_done) = 0;
+    virtual void put(search::SerialNum serialNum, const document::Document& doc, const search::DocumentIdT lid,
+                     const OnWriteDoneType& on_write_done) = 0;
     void remove(search::SerialNum serialNum, search::DocumentIdT lid) {
         LidVector lids;
         lids.push_back(lid);
@@ -37,4 +38,3 @@ public:
 };
 
 } // namespace proton
-

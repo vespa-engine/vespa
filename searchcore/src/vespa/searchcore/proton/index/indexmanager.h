@@ -7,17 +7,16 @@
 #include <vespa/searchcorespi/index/ithreadingservice.h>
 #include <vespa/searchcorespi/index/warmupconfig.h>
 
-namespace search::diskindex { class IPostingListCache; }
+namespace search::diskindex {
+class IPostingListCache;
+}
 
 namespace proton::index {
 
 struct IndexConfig {
     using WarmupConfig = searchcorespi::index::WarmupConfig;
-    IndexConfig() : IndexConfig(WarmupConfig(), 2) { }
-    IndexConfig(WarmupConfig warmup_, size_t maxFlushed_)
-        : warmup(warmup_),
-          maxFlushed(maxFlushed_)
-    { }
+    IndexConfig() : IndexConfig(WarmupConfig(), 2) {}
+    IndexConfig(WarmupConfig warmup_, size_t maxFlushed_) : warmup(warmup_), maxFlushed(maxFlushed_) {}
 
     const WarmupConfig warmup;
     const size_t       maxFlushed;
@@ -29,65 +28,55 @@ struct IndexConfig {
  * across all indexes, and manages the set of indexes through flushing
  * of memory indexes and fusion of disk indexes.
  */
-class IndexManager : public searchcorespi::IIndexManager
-{
+class IndexManager : public searchcorespi::IIndexManager {
 public:
     class MaintainerOperations : public searchcorespi::index::IIndexMaintainerOperations {
     private:
         using IDiskIndex = searchcorespi::index::IDiskIndex;
         using IMemoryIndex = searchcorespi::index::IMemoryIndex;
         std::shared_ptr<search::diskindex::IPostingListCache> _posting_list_cache;
-        const search::common::FileHeaderContext &_fileHeaderContext;
-        const search::TuneFileIndexing _tuneFileIndexing;
-        const search::TuneFileSearch _tuneFileSearch;
-        searchcorespi::index::IThreadingService &_threadingService;
+        const search::common::FileHeaderContext&              _fileHeaderContext;
+        const search::TuneFileIndexing                        _tuneFileIndexing;
+        const search::TuneFileSearch                          _tuneFileSearch;
+        searchcorespi::index::IThreadingService&              _threadingService;
 
     public:
-        MaintainerOperations(const search::common::FileHeaderContext &fileHeaderContext,
-                             const search::TuneFileIndexManager &tuneFileIndexManager,
+        MaintainerOperations(const search::common::FileHeaderContext&              fileHeaderContext,
+                             const search::TuneFileIndexManager&                   tuneFileIndexManager,
                              std::shared_ptr<search::diskindex::IPostingListCache> posting_list_cache,
-                             searchcorespi::index::IThreadingService &threadingService);
+                             searchcorespi::index::IThreadingService&              threadingService);
 
-        IMemoryIndex::SP createMemoryIndex(const Schema& schema,
-                                           const IFieldLengthInspector& inspector,
+        IMemoryIndex::SP createMemoryIndex(const Schema& schema, const IFieldLengthInspector& inspector,
                                            SerialNum serialNum) override;
-        IDiskIndex::SP loadDiskIndex(const std::string &indexDir) override;
-        IDiskIndex::SP reloadDiskIndex(const IDiskIndex &oldIndex) override;
-        bool runFusion(const Schema &schema, const std::string &outputDir,
-                       const std::vector<std::string> &sources,
-                       const SelectorArray &docIdSelector,
-                       search::SerialNum lastSerialNum,
+        IDiskIndex::SP loadDiskIndex(const std::string& indexDir) override;
+        IDiskIndex::SP reloadDiskIndex(const IDiskIndex& oldIndex) override;
+        bool runFusion(const Schema& schema, const std::string& outputDir, const std::vector<std::string>& sources,
+                       const SelectorArray& docIdSelector, search::SerialNum lastSerialNum,
                        std::shared_ptr<search::IFlushToken> flush_token) override;
     };
 
 private:
-    MaintainerOperations     _operations;
+    MaintainerOperations                  _operations;
     searchcorespi::index::IndexMaintainer _maintainer;
 
 public:
-    IndexManager(const IndexManager &) = delete;
-    IndexManager & operator = (const IndexManager &) = delete;
-    IndexManager(const std::string &baseDir,
-                 std::shared_ptr<search::diskindex::IPostingListCache> posting_list_cache,
-                 const IndexConfig & indexConfig,
-                 const Schema &schema,
-                 SerialNum serialNum,
-                 Reconfigurer &reconfigurer,
-                 searchcorespi::index::IThreadingService &threadingService,
-                 vespalib::Executor & warmupExecutor,
-                 const search::TuneFileIndexManager &tuneFileIndexManager,
-                 const search::TuneFileAttributes &tuneFileAttributes,
-                 const search::common::FileHeaderContext &fileHeaderContext);
+    IndexManager(const IndexManager&) = delete;
+    IndexManager& operator=(const IndexManager&) = delete;
+    IndexManager(const std::string& baseDir, std::shared_ptr<search::diskindex::IPostingListCache> posting_list_cache,
+                 const IndexConfig& indexConfig, const Schema& schema, SerialNum serialNum,
+                 Reconfigurer& reconfigurer, searchcorespi::index::IThreadingService& threadingService,
+                 vespalib::Executor& warmupExecutor, const search::TuneFileIndexManager& tuneFileIndexManager,
+                 const search::TuneFileAttributes&        tuneFileAttributes,
+                 const search::common::FileHeaderContext& fileHeaderContext);
     ~IndexManager() override;
 
-    searchcorespi::index::IndexMaintainer &getMaintainer() {
-        return _maintainer;
-    }
+    searchcorespi::index::IndexMaintainer& getMaintainer() { return _maintainer; }
 
     /**
      * Implements searchcorespi::IIndexManager
      **/
-    void putDocument(uint32_t lid, const Document &doc, SerialNum serialNum, const OnWriteDoneType& on_write_done) override {
+    void putDocument(uint32_t lid, const Document& doc, SerialNum serialNum,
+                     const OnWriteDoneType& on_write_done) override {
         _maintainer.putDocument(lid, doc, serialNum, on_write_done);
     }
 
@@ -99,22 +88,14 @@ public:
         _maintainer.commit(serialNum, onWriteDone);
     }
 
-    void heartBeat(SerialNum serialNum) override {
-        _maintainer.heartBeat(serialNum);
-    }
+    void heartBeat(SerialNum serialNum) override { _maintainer.heartBeat(serialNum); }
     void compactLidSpace(uint32_t lidLimit, SerialNum serialNum) override;
 
-    SerialNum getCurrentSerialNum() const override {
-        return _maintainer.getCurrentSerialNum();
-    }
+    SerialNum getCurrentSerialNum() const override { return _maintainer.getCurrentSerialNum(); }
 
-    SerialNum getFlushedSerialNum() const override {
-        return _maintainer.getFlushedSerialNum();
-    }
+    SerialNum getFlushedSerialNum() const override { return _maintainer.getFlushedSerialNum(); }
 
-    searchcorespi::IndexSearchable::SP getSearchable() const override {
-        return _maintainer.getSearchable();
-    }
+    searchcorespi::IndexSearchable::SP getSearchable() const override { return _maintainer.getSearchable(); }
 
     search::IndexStats get_index_stats(bool clear_disk_io_stats) const override {
         return _maintainer.get_index_stats(clear_disk_io_stats);
@@ -122,20 +103,11 @@ public:
 
     searchcorespi::common::ResourceUsage get_resource_usage() const override;
 
-    searchcorespi::IFlushTarget::List getFlushTargets() override {
-        return _maintainer.getFlushTargets();
-    }
+    searchcorespi::IFlushTarget::List getFlushTargets() override { return _maintainer.getFlushTargets(); }
 
-    void setSchema(const Schema &schema, SerialNum serialNum) override {
-        _maintainer.setSchema(schema, serialNum);
-    }
-    void setMaxFlushed(uint32_t maxFlushed) override {
-        _maintainer.setMaxFlushed(maxFlushed);
-    }
-    bool has_pending_urgent_flush() const override {
-        return _maintainer.has_pending_urgent_flush();
-    }
+    void setSchema(const Schema& schema, SerialNum serialNum) override { _maintainer.setSchema(schema, serialNum); }
+    void setMaxFlushed(uint32_t maxFlushed) override { _maintainer.setMaxFlushed(maxFlushed); }
+    bool has_pending_urgent_flush() const override { return _maintainer.has_pending_urgent_flush(); }
 };
 
-} // namespace proton
-
+} // namespace proton::index

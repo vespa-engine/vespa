@@ -12,15 +12,11 @@ namespace searchcorespi::common {
 class ResourceUsage {
     TransientResourceUsage _transient;
     uint64_t               _disk;
+
 public:
-    ResourceUsage() noexcept
-        : _transient(),
-          _disk(0)
-    {}
+    ResourceUsage() noexcept : _transient(), _disk(0) {}
     explicit ResourceUsage(const TransientResourceUsage& transient_in, uint64_t disk_in) noexcept
-        : _transient(transient_in),
-          _disk(disk_in)
-    {}
+        : _transient(transient_in), _disk(disk_in) {}
 
     const TransientResourceUsage& transient() const noexcept { return _transient; }
     uint64_t transient_disk() const noexcept { return _transient.disk(); }
@@ -32,4 +28,4 @@ public:
     }
 };
 
-}
+} // namespace searchcorespi::common
