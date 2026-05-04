@@ -15,6 +15,7 @@
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/md5.h>
+
 #include <cctype>
 #include <cmath>
 #include <iomanip>
@@ -34,34 +35,34 @@ using namespace vespalib;
 
 struct AggrGetter {
     virtual ~AggrGetter() = default;
-    virtual const ResultNode &operator()(const AggregationResult &r) const = 0;
+    virtual const ResultNode& operator()(const AggregationResult& r) const = 0;
 };
 
 AttributeGuard createInt64Attribute();
 AttributeGuard createInt32Attribute();
 AttributeGuard createInt16Attribute();
 AttributeGuard createInt8Attribute();
-template<typename T>
-void testCmp(const T & small, const T & medium, const T & large);
+template <typename T> void testCmp(const T& small, const T& medium, const T& large);
 
-void testMin(const ResultNode & a, const ResultNode & b, const std::string& label) {
+void testMin(const ResultNode& a, const ResultNode& b, const std::string& label) {
     SCOPED_TRACE(label);
     ASSERT_TRUE(a.cmp(b) < 0);
     MinFunctionNode func;
     func.appendArg(MU<ConstantNode>(ResultNode::UP(a.clone())))
-        .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone()))).prepare(false);
+        .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone())))
+        .prepare(false);
     ASSERT_NO_THROW(func.execute());
     ASSERT_TRUE(func.getResult()->cmp(a) == 0);
 
     MinFunctionNode funcR;
     funcR.appendArg(MU<ConstantNode>(ResultNode::UP(b.clone())))
-         .appendArg(MU<ConstantNode>(ResultNode::UP(a.clone()))).prepare(false);
+        .appendArg(MU<ConstantNode>(ResultNode::UP(a.clone())))
+        .prepare(false);
     ASSERT_NO_THROW(funcR.execute());
     ASSERT_TRUE(funcR.getResult()->cmp(a) == 0);
 }
 
-ExpressionNode::UP
-createVectorFloat(const std::vector<double> & v) {
+ExpressionNode::UP createVectorFloat(const std::vector<double>& v) {
     std::unique_ptr<FloatResultNodeVector> r = MU<FloatResultNodeVector>();
     r->reserve(v.size());
     for (double d : v) {
@@ -70,8 +71,7 @@ createVectorFloat(const std::vector<double> & v) {
     return MU<ConstantNode>(std::move(r));
 }
 
-ExpressionNode::UP
-createVectorInt(const std::vector<double> & v) {
+ExpressionNode::UP createVectorInt(const std::vector<double>& v) {
     std::unique_ptr<IntegerResultNodeVector> r = MU<IntegerResultNodeVector>();
     r->reserve(v.size());
     for (double d : v) {
@@ -88,21 +88,23 @@ TEST(PerDocExprTest, testMin) {
     testMin(RawResultNode("-67", 2), RawResultNode("68", 2), "min raw 2");
     testMin(RawResultNode("abc", 3), RawResultNode("abd", 3), "min raw 3");
     testMin(RawResultNode("abc", 3), RawResultNode("abcd", 4), "min raw 4");
-    testMin(RawResultNode("abcd", 4), RawResultNode("abd", 3),"min raw 5");
+    testMin(RawResultNode("abcd", 4), RawResultNode("abd", 3), "min raw 5");
 }
 
-void testMax(const ResultNode & a, const ResultNode & b, const std::string& label) {
+void testMax(const ResultNode& a, const ResultNode& b, const std::string& label) {
     SCOPED_TRACE(label);
     ASSERT_TRUE(a.cmp(b) < 0);
     MaxFunctionNode func;
     func.appendArg(MU<ConstantNode>(ResultNode::UP(a.clone())))
-        .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone()))).prepare(false);
+        .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone())))
+        .prepare(false);
     ASSERT_NO_THROW(func.execute());
     ASSERT_TRUE(func.getResult()->cmp(b) == 0);
 
     MaxFunctionNode funcR;
     funcR.appendArg(MU<ConstantNode>(ResultNode::UP(a.clone())))
-         .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone()))).prepare(false);
+        .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone())))
+        .prepare(false);
     ASSERT_NO_THROW(funcR.execute());
     ASSERT_TRUE(funcR.getResult()->cmp(b) == 0);
 }
@@ -120,14 +122,12 @@ TEST(PerDocExprTest, testMax) {
 
 ExpressionCountAggregationResult getExpressionCountWithNormalSketch() {
     nbostream stream;
-    stream << (uint32_t)ExpressionCountAggregationResult::classId
-           << (char)0 << (uint32_t)0
-           << (uint32_t)NormalSketch<>::classId
-           << NormalSketch<>::BUCKET_COUNT << NormalSketch<>::BUCKET_COUNT;
+    stream << (uint32_t)ExpressionCountAggregationResult::classId << (char)0 << (uint32_t)0
+           << (uint32_t)NormalSketch<>::classId << NormalSketch<>::BUCKET_COUNT << NormalSketch<>::BUCKET_COUNT;
     for (size_t i = 0; i < NormalSketch<>::BUCKET_COUNT; ++i) {
         stream << static_cast<char>(0);
     }
-    NBOSerializer serializer(stream);
+    NBOSerializer                    serializer(stream);
     ExpressionCountAggregationResult result;
     serializer >> result;
     EXPECT_EQ(0u, stream.size());
@@ -135,16 +135,16 @@ ExpressionCountAggregationResult getExpressionCountWithNormalSketch() {
     return result;
 }
 
-void testExpressionCount(const ResultNode &a, uint32_t bucket, uint8_t val) {
+void testExpressionCount(const ResultNode& a, uint32_t bucket, uint8_t val) {
     ExpressionCountAggregationResult func = getExpressionCountWithNormalSketch();
     func.setExpression(MU<ConstantNode>(ResultNode::UP(a.clone())));
     func.aggregate(DocId(42), HitRank(21));
 
-    const auto &sketch = func.getSketch();
-    auto normal = dynamic_cast<const NormalSketch<>&>(sketch);
+    const auto& sketch = func.getSketch();
+    auto        normal = dynamic_cast<const NormalSketch<>&>(sketch);
     for (uint32_t i = 0; i < sketch.BUCKET_COUNT; ++i) {
         SCOPED_TRACE(make_string("Bucket %u. Expected bucket %u=%u", i, bucket, val).c_str());
-        EXPECT_EQ(i == bucket? val : 0, (int) normal.bucket[i]);
+        EXPECT_EQ(i == bucket ? val : 0, (int)normal.bucket[i]);
     }
 }
 
@@ -165,10 +165,10 @@ TEST(PerDocExprTest, require_that_expression_counts_can_be_merged) {
     EXPECT_EQ(2, func1.getRank().getInteger());
     func1.merge(func2);
     EXPECT_EQ(3, func1.getRank().getInteger());
-    const auto &sketch = func1.getSketch();
-    auto normal = dynamic_cast<const NormalSketch<>&>(sketch);
+    const auto& sketch = func1.getSketch();
+    auto        normal = dynamic_cast<const NormalSketch<>&>(sketch);
     EXPECT_EQ(2, normal.bucket[98]);  // from func1
-    EXPECT_EQ(1, normal.bucket[545]);  // from func2
+    EXPECT_EQ(1, normal.bucket[545]); // from func2
 }
 
 TEST(PerDocExprTest, require_that_expression_counts_can_be_serialized) {
@@ -176,11 +176,11 @@ TEST(PerDocExprTest, require_that_expression_counts_can_be_serialized) {
     func.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(67))).aggregate(DocId(42), HitRank(21));
     func.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(68))).aggregate(DocId(42), HitRank(21));
 
-    nbostream os;
+    nbostream     os;
     NBOSerializer nos(os);
     nos << func;
     Identifiable::UP obj = Identifiable::create(nos);
-    auto *func2 = dynamic_cast<ExpressionCountAggregationResult *>(obj.get());
+    auto*            func2 = dynamic_cast<ExpressionCountAggregationResult*>(obj.get());
     ASSERT_TRUE(func2);
     EXPECT_EQ(func.getSketch(), func2->getSketch());
 }
@@ -198,12 +198,10 @@ TEST(PerDocExprTest, require_that_expression_count_estimates_rank) {
 
 TEST(PerDocExprTest, require_that_StandardDeviationAggregationResult_can_be_merged) {
     StandardDeviationAggregationResult aggr1;
-    aggr1.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(8))).
-            aggregate(DocId(42), HitRank(21));
+    aggr1.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(8))).aggregate(DocId(42), HitRank(21));
 
     StandardDeviationAggregationResult aggr2;
-    aggr2.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(10))).
-            aggregate(DocId(43), HitRank(8));
+    aggr2.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(10))).aggregate(DocId(43), HitRank(8));
 
     aggr1.merge(aggr2);
     EXPECT_EQ(2u, aggr1.getCount());
@@ -213,14 +211,13 @@ TEST(PerDocExprTest, require_that_StandardDeviationAggregationResult_can_be_merg
 
 TEST(PerDocExprTest, require_that_StandardDeviationAggregationResult_can_be_serialized) {
     StandardDeviationAggregationResult aggr1;
-    aggr1.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(8))).
-            aggregate(DocId(42), HitRank(21));
+    aggr1.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(8))).aggregate(DocId(42), HitRank(21));
 
-    nbostream os;
+    nbostream     os;
     NBOSerializer nos(os);
     nos << aggr1;
     Identifiable::UP obj = Identifiable::create(nos);
-    auto *aggr2 = dynamic_cast<StandardDeviationAggregationResult *>(obj.get());
+    auto*            aggr2 = dynamic_cast<StandardDeviationAggregationResult*>(obj.get());
     ASSERT_TRUE(aggr2);
     EXPECT_TRUE(os.empty());
     EXPECT_EQ(aggr1.getSumOfSquared(), aggr2->getSumOfSquared());
@@ -228,25 +225,20 @@ TEST(PerDocExprTest, require_that_StandardDeviationAggregationResult_can_be_seri
     EXPECT_EQ(aggr1.getCount(), aggr2->getCount());
 }
 
-TEST(PerDocExprTest, require_that_StandardDeviationAggregationResult_rank_is_the_standard_deviation_of_aggregated_values) {
+TEST(PerDocExprTest,
+     require_that_StandardDeviationAggregationResult_rank_is_the_standard_deviation_of_aggregated_values) {
     StandardDeviationAggregationResult aggr;
-    aggr.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(101))).
-            aggregate(DocId(1), HitRank(21));
-    aggr.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(13))).
-            aggregate(DocId(2), HitRank(8));
-    aggr.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(15))).
-            aggregate(DocId(3), HitRank(30));
+    aggr.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(101))).aggregate(DocId(1), HitRank(21));
+    aggr.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(13))).aggregate(DocId(2), HitRank(8));
+    aggr.setExpression(MU<ConstantNode>(MU<Int64ResultNode>(15))).aggregate(DocId(3), HitRank(30));
     EXPECT_NEAR(41.0203, aggr.getRank().getFloat(), 0.01);
 }
 
 TEST(PerDocExprTest, require_that_StandardDeviationAggregationResult_aggregates_multiple_expressions_correctly) {
     StandardDeviationAggregationResult aggr;
-    aggr.setExpression(MU<ConstantNode>(MU<FloatResultNode>(1.5))).
-            aggregate(DocId(1), HitRank(21));
-    aggr.setExpression(MU<ConstantNode>(MU<FloatResultNode>(100.25))).
-            aggregate(DocId(2), HitRank(8));
-    aggr.setExpression(MU<ConstantNode>(MU<FloatResultNode>(30.125))).
-            aggregate(DocId(3), HitRank(40));
+    aggr.setExpression(MU<ConstantNode>(MU<FloatResultNode>(1.5))).aggregate(DocId(1), HitRank(21));
+    aggr.setExpression(MU<ConstantNode>(MU<FloatResultNode>(100.25))).aggregate(DocId(2), HitRank(8));
+    aggr.setExpression(MU<ConstantNode>(MU<FloatResultNode>(30.125))).aggregate(DocId(3), HitRank(40));
 
     EXPECT_EQ(3u, aggr.getCount());
     EXPECT_NEAR(131.875, aggr.getSum(), 0.01);
@@ -256,8 +248,8 @@ TEST(PerDocExprTest, require_that_StandardDeviationAggregationResult_aggregates_
 
 TEST(PerDocExprTest, require_that_StandardDeviationAggregationResult_aggregates_multi_value_expression_correctly) {
     StandardDeviationAggregationResult aggr;
-    aggr.setExpression(createVectorFloat(std::vector<double>({1.5, 100.25, 30.125}))).
-            aggregate(DocId(42), HitRank(21));
+    aggr.setExpression(createVectorFloat(std::vector<double>({1.5, 100.25, 30.125})))
+        .aggregate(DocId(42), HitRank(21));
 
     EXPECT_EQ(3u, aggr.getCount());
     EXPECT_NEAR(131.875, aggr.getSum(), 0.01);
@@ -265,10 +257,11 @@ TEST(PerDocExprTest, require_that_StandardDeviationAggregationResult_aggregates_
     EXPECT_NEAR(41.5, aggr.getRank().getFloat(), 0.1);
 }
 
-void testAdd(const ResultNode &a, const ResultNode &b, const ResultNode &c) {
+void testAdd(const ResultNode& a, const ResultNode& b, const ResultNode& c) {
     AddFunctionNode func;
     func.appendArg(MU<ConstantNode>(ResultNode::UP(a.clone())))
-        .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone()))).prepare(false);
+        .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone())))
+        .prepare(false);
     ASSERT_NO_THROW(func.execute());
     EXPECT_EQ(func.getResult()->asString(), c.asString());
     EXPECT_EQ(func.getResult()->cmp(c), 0);
@@ -276,16 +269,17 @@ void testAdd(const ResultNode &a, const ResultNode &b, const ResultNode &c) {
 }
 
 TEST(PerDocExprTest, testAdd) {
-    testAdd(Int64ResultNode(67), Int64ResultNode(68), Int64ResultNode(67+68));
-    testAdd(FloatResultNode(67), FloatResultNode(68), FloatResultNode(67+68));
+    testAdd(Int64ResultNode(67), Int64ResultNode(68), Int64ResultNode(67 + 68));
+    testAdd(FloatResultNode(67), FloatResultNode(68), FloatResultNode(67 + 68));
     testAdd(StringResultNode("67"), StringResultNode("68"), StringResultNode("lo"));
     testAdd(RawResultNode("67", 2), RawResultNode("68", 2), RawResultNode("lo", 2));
 }
 
-void testDivide(const ResultNode &a, const ResultNode &b, const ResultNode &c) {
+void testDivide(const ResultNode& a, const ResultNode& b, const ResultNode& c) {
     DivideFunctionNode func;
     func.appendArg(MU<ConstantNode>(ResultNode::UP(a.clone())))
-        .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone()))).prepare(false);
+        .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone())))
+        .prepare(false);
     ASSERT_NO_THROW(func.execute());
     EXPECT_EQ(func.getResult()->asString(), c.asString());
     EXPECT_EQ(func.getResult()->getFloat(), c.getFloat());
@@ -299,10 +293,11 @@ TEST(PerDocExprTest, testDivide) {
     testDivide(Int64ResultNode(6), Int64ResultNode(0), Int64ResultNode(0));
 }
 
-void testModulo(const ResultNode &a, const ResultNode &b, const ResultNode &c) {
+void testModulo(const ResultNode& a, const ResultNode& b, const ResultNode& c) {
     ModuloFunctionNode func;
     func.appendArg(MU<ConstantNode>(ResultNode::UP(a.clone())))
-        .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone()))).prepare(false);
+        .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone())))
+        .prepare(false);
     ASSERT_NO_THROW(func.execute());
     EXPECT_EQ(func.getResult()->asString(), c.asString());
     EXPECT_EQ(func.getResult()->getFloat(), c.getFloat());
@@ -323,10 +318,10 @@ TEST(PerDocExprTest, testModulo) {
     testModulo(Int64ResultNode(6), Int64ResultNode(0), Int64ResultNode(0));
 
     testModulo(FloatResultNode(2), Int64ResultNode(6), FloatResultNode(2));
-    testModulo(Int64ResultNode(3),   FloatResultNode(6), FloatResultNode(3));
+    testModulo(Int64ResultNode(3), FloatResultNode(6), FloatResultNode(3));
 }
 
-void testNegate(const ResultNode & a, const ResultNode & b) {
+void testNegate(const ResultNode& a, const ResultNode& b) {
     NegateFunctionNode func;
     func.appendArg(MU<ConstantNode>(ResultNode::UP(a.clone()))).prepare(false);
     ASSERT_NO_THROW(func.execute());
@@ -339,14 +334,13 @@ TEST(PerDocExprTest, testNegate) {
     testNegate(Int64ResultNode(67), Int64ResultNode(-67));
     testNegate(FloatResultNode(67.0), FloatResultNode(-67.0));
 
-    char strnorm[4] = { 102, 111, 111, 0 };
-    char strneg[4] = { (char)-102, (char)-111, (char)-111, 0 };
+    char strnorm[4] = {102, 111, 111, 0};
+    char strneg[4] = {(char)-102, (char)-111, (char)-111, 0};
     testNegate(StringResultNode(strnorm), StringResultNode(strneg));
     testNegate(RawResultNode(strnorm, 3), RawResultNode(strneg, 3));
 }
 
-template <typename T>
-void testBuckets(const T * b) {
+template <typename T> void testBuckets(const T* b) {
     EXPECT_TRUE(b[0].cmp(b[1]) < 0);
     EXPECT_TRUE(b[1].cmp(b[2]) < 0);
     EXPECT_TRUE(b[2].cmp(b[3]) < 0);
@@ -385,8 +379,8 @@ void testBuckets(const T * b) {
 }
 
 TEST(PerDocExprTest, testBuckets) {
-    IntegerBucketResultNodeVector iv;
-    IntegerBucketResultNodeVector::Vector & ib = iv.getVector();
+    IntegerBucketResultNodeVector          iv;
+    IntegerBucketResultNodeVector::Vector& ib = iv.getVector();
     EXPECT_EQ(nullptr, iv.find(Int64ResultNode(6)));
     ib.resize(1);
     ib[0] = IntegerBucketResultNode(7, 9);
@@ -422,8 +416,8 @@ TEST(PerDocExprTest, testBuckets) {
     EXPECT_EQ(nullptr, iv.find(Int64ResultNode(33)));
     EXPECT_EQ(nullptr, iv.find(Int64ResultNode(50)));
 
-    FloatBucketResultNodeVector fv;
-    FloatBucketResultNodeVector::Vector & fb = fv.getVector();
+    FloatBucketResultNodeVector          fv;
+    FloatBucketResultNodeVector::Vector& fb = fv.getVector();
     fb.resize(6);
     fb[0] = FloatBucketResultNode(7, 9);
     fb[1] = FloatBucketResultNode(13, 17);
@@ -450,8 +444,8 @@ TEST(PerDocExprTest, testBuckets) {
     EXPECT_EQ(nullptr, fv.find(FloatResultNode(33)));
     EXPECT_EQ(nullptr, fv.find(FloatResultNode(50)));
 
-    StringBucketResultNodeVector sv;
-    StringBucketResultNodeVector::Vector & sb = sv.getVector();
+    StringBucketResultNodeVector          sv;
+    StringBucketResultNodeVector::Vector& sb = sv.getVector();
     sb.resize(6);
     sb[0] = StringBucketResultNode("07", "09");
     sb[1] = StringBucketResultNode("13", "17");
@@ -479,8 +473,7 @@ TEST(PerDocExprTest, testBuckets) {
     EXPECT_EQ(nullptr, sv.find(StringResultNode("50")));
 }
 
-template<typename T>
-void testCmp(const T & small, const T & medium, const T & large) {
+template <typename T> void testCmp(const T& small, const T& medium, const T& large) {
     EXPECT_TRUE(small.cmp(medium) < 0);
     EXPECT_TRUE(small.cmp(large) < 0);
     EXPECT_TRUE(medium.cmp(large) < 0);
@@ -490,8 +483,8 @@ void testCmp(const T & small, const T & medium, const T & large) {
 }
 
 TEST(PerDocExprTest, testResultNodes) {
-    Int64ResultNode i(89);
-    char mem[64];
+    Int64ResultNode       i(89);
+    char                  mem[64];
     ResultNode::BufferRef buf(&mem, sizeof(mem));
     EXPECT_EQ(i.getInteger(), 89);
     EXPECT_EQ(i.getFloat(), 89.0);
@@ -506,8 +499,8 @@ TEST(PerDocExprTest, testResultNodes) {
     EXPECT_EQ(s.getString(buf).c_str(), std::string("17.89hjkljly"));
     RawResultNode r("hjgasfdg", 9);
     EXPECT_EQ(r.getString(buf).c_str(), std::string("hjgasfdg"));
-    int64_t j(789);
-    double d(786324.78);
+    int64_t   j(789);
+    double    d(786324.78);
     nbostream os;
     os << j << d;
     RawResultNode r1(os.data(), sizeof(j));
@@ -534,8 +527,7 @@ TEST(PerDocExprTest, testResultNodes) {
     }
 
     {
-        FloatResultNode i1(-1), i2(0), i3(1), notanumber(std::nan("")),
-            minusInf(-INFINITY), plussInf(INFINITY);
+        FloatResultNode i1(-1), i2(0), i3(1), notanumber(std::nan("")), minusInf(-INFINITY), plussInf(INFINITY);
         EXPECT_EQ(i1.cmp(i1), 0);
         EXPECT_EQ(i2.cmp(i2), 0);
         EXPECT_EQ(i3.cmp(i3), 0);
@@ -551,8 +543,7 @@ TEST(PerDocExprTest, testResultNodes) {
         testCmp(notanumber, minusInf, plussInf);
     }
     {
-        FloatBucketResultNode
-            i1(-1, 3), i2(188000, 188500), i3(1630000, 1630500),
+        FloatBucketResultNode i1(-1, 3), i2(188000, 188500), i3(1630000, 1630500),
             notanumber(-std::nan(""), std::nan("")), inf(-INFINITY, INFINITY);
         EXPECT_EQ(i1.cmp(i1), 0);
         EXPECT_EQ(i2.cmp(i2), 0);
@@ -567,14 +558,14 @@ TEST(PerDocExprTest, testResultNodes) {
     }
 }
 
-void testStreaming(const Identifiable &v) {
-    nbostream os;
+void testStreaming(const Identifiable& v) {
+    nbostream     os;
     NBOSerializer nos(os);
     nos << v;
     Identifiable::UP s = Identifiable::create(nos);
     ASSERT_NE(nullptr, s.get());
     ASSERT_TRUE(v.cmp(*s) == 0);
-    nbostream os2, os3;
+    nbostream     os2, os3;
     NBOSerializer nos2(os2), nos3(os3);
     nos2 << v;
     nos3 << *s;
@@ -591,50 +582,44 @@ TEST(PerDocExprTest, testTimeStamp) {
 
 namespace {
 
-std::string
-getVespaChecksumV2(const std::string& ymumid, int fid, const std::string& flags_str)
-{
+std::string getVespaChecksumV2(const std::string& ymumid, int fid, const std::string& flags_str) {
     if (fid == 6 || fid == 0 || fid == 5) {
         return {};
     }
 
     std::list<char> flags_list;
     flags_list.clear();
-    for (unsigned int i = 0; i< flags_str.length();i++) {
+    for (unsigned int i = 0; i < flags_str.length(); i++) {
         if (std::isalpha(static_cast<unsigned char>(flags_str[i]))) {
             flags_list.push_back(flags_str[i]);
         }
     }
     flags_list.sort();
 
-    std::string new_flags_str ="";
+    std::string               new_flags_str = "";
     std::list<char>::iterator it;
-    for (it = flags_list.begin();it!=flags_list.end();it++)
+    for (it = flags_list.begin(); it != flags_list.end(); it++)
         new_flags_str += *it;
 
     uint32_t networkFid = htonl(fid);
 
-    int length = ymumid.length()+
-                 sizeof(networkFid)+
-                 new_flags_str.length();
+    int length = ymumid.length() + sizeof(networkFid) + new_flags_str.length();
 
     // GNU extension: Variable-length automatic array
     unsigned char buffer[length];
     memset(buffer, 0x00, length);
     memcpy(buffer, ymumid.c_str(), ymumid.length());
-    memcpy(buffer + ymumid.length(),
-           (const char*)&networkFid, sizeof(networkFid));
-    memcpy(buffer+ymumid.length()+sizeof(networkFid), new_flags_str.c_str(),
-           new_flags_str.length());
+    memcpy(buffer + ymumid.length(), (const char*)&networkFid, sizeof(networkFid));
+    memcpy(buffer + ymumid.length() + sizeof(networkFid), new_flags_str.c_str(), new_flags_str.length());
 
     return std::string((char*)buffer, length);
 }
-}  // namespace
+} // namespace
 
 TEST(PerDocExprTest, testMailChecksumExpression) {
     document::TestDocMan testDocMan;
 
-    int folder = 32;
+    int         folder = 32;
     std::string flags = "RWA";
     std::string ymumid = "barmuda";
 
@@ -660,20 +645,20 @@ TEST(PerDocExprTest, testMailChecksumExpression) {
 
     MD5BitFunctionNode node(std::move(e), 32);
 
-    CatFunctionNode &cfn = static_cast<CatFunctionNode&>(*node.expressionNodeVector()[0]);
-    MultiArgFunctionNode::ExpressionNodeVector &xe = cfn.expressionNodeVector();
+    CatFunctionNode&                            cfn = static_cast<CatFunctionNode&>(*node.expressionNodeVector()[0]);
+    MultiArgFunctionNode::ExpressionNodeVector& xe = cfn.expressionNodeVector();
 
     for (uint32_t i = 0; i < xe.size(); i++) {
-        DocumentAccessorNode* rf = dynamic_cast<DocumentAccessorNode *>(xe[i].get());
+        DocumentAccessorNode* rf = dynamic_cast<DocumentAccessorNode*>(xe[i].get());
         if (rf) {
             rf->setDocType(doc->getType());
             rf->prepare(true);
             rf->setDoc(*doc);
         } else {
-            MultiArgFunctionNode * mf = dynamic_cast<MultiArgFunctionNode *>(xe[i].get());
+            MultiArgFunctionNode*                       mf = dynamic_cast<MultiArgFunctionNode*>(xe[i].get());
             MultiArgFunctionNode::ExpressionNodeVector& se = mf->expressionNodeVector();
             for (uint32_t j = 0; j < se.size(); j++) {
-                DocumentAccessorNode* tf = dynamic_cast<DocumentAccessorNode *>(se[j].get());
+                DocumentAccessorNode* tf = dynamic_cast<DocumentAccessorNode*>(se[j].get());
                 tf->setDocType(doc->getType());
                 tf->prepare(true);
                 tf->setDoc(*doc);
@@ -685,7 +670,7 @@ TEST(PerDocExprTest, testMailChecksumExpression) {
     cfn.prepare(false);
 
     ASSERT_NO_THROW(cfn.execute());
-    ConstBufferRef ref = static_cast<const RawResultNode &>(*cfn.getResult()).get();
+    ConstBufferRef ref = static_cast<const RawResultNode&>(*cfn.getResult()).get();
 
     std::string cmp = getVespaChecksumV2(ymumid, folder, flags);
 
@@ -693,8 +678,7 @@ TEST(PerDocExprTest, testMailChecksumExpression) {
     EXPECT_EQ(cmp.size(), ref.size());
 
     for (uint32_t i = 0; i < ref.size(); i++) {
-        std::cerr << i << ": " << (int)ref.c_str()[i] << "/" << (int)cmp[i]
-                  << "\n";
+        std::cerr << i << ": " << (int)ref.c_str()[i] << "/" << (int)cmp[i] << "\n";
     }
 
     EXPECT_TRUE(memcmp(cmp.c_str(), ref.c_str(), cmp.size()) == 0);
@@ -702,8 +686,7 @@ TEST(PerDocExprTest, testMailChecksumExpression) {
     node.prepare(true);
     ASSERT_NO_THROW(node.execute());
 
-    ConstBufferRef ref2 =
-        static_cast<const RawResultNode &>(*node.getResult()).get();
+    ConstBufferRef ref2 = static_cast<const RawResultNode&>(*node.getResult()).get();
 
     for (uint32_t i = 0; i < ref2.size(); i++) {
         std::cerr << i << ": " << (int)ref2.c_str()[i] << "\n";
@@ -721,7 +704,7 @@ TEST(PerDocExprTest, testDebugFunction) {
         vespalib::Timer timer;
         ASSERT_NO_THROW(n.execute());
         EXPECT_TRUE(timer.elapsed() > 1s);
-        EXPECT_EQ(static_cast<const Int64ResultNode &>(*n.getResult()).get(), 7);
+        EXPECT_EQ(static_cast<const Int64ResultNode&>(*n.getResult()).get(), 7);
     }
     {
         std::unique_ptr<AddFunctionNode> add = MU<AddFunctionNode>();
@@ -733,13 +716,11 @@ TEST(PerDocExprTest, testDebugFunction) {
         vespalib::Timer timer;
         ASSERT_NO_THROW(n.execute());
         EXPECT_TRUE(timer.elapsed() > 1s);
-        EXPECT_EQ(static_cast<const Int64ResultNode &>(*n.getResult()).get(), 7);
+        EXPECT_EQ(static_cast<const Int64ResultNode&>(*n.getResult()).get(), 7);
     }
 }
 
-template<typename V>
-ResultNode::UP
-createIntRV(std::vector<int64_t> values) {
+template <typename V> ResultNode::UP createIntRV(std::vector<int64_t> values) {
     using T = typename V::BaseType;
     std::unique_ptr<V> r = MU<V>();
     for (int64_t v : values) {
@@ -753,40 +734,40 @@ TEST(PerDocExprTest, testDivExpressions) {
         StrLenFunctionNode e(MU<ConstantNode>(MU<Int64ResultNode>(238686)));
         e.prepare(false);
         ASSERT_NO_THROW(e.execute());
-        EXPECT_EQ(static_cast<const Int64ResultNode &>(*e.getResult()).get(), 6);
+        EXPECT_EQ(static_cast<const Int64ResultNode&>(*e.getResult()).get(), 6);
     }
     {
         NormalizeSubjectFunctionNode e(MU<ConstantNode>(MU<StringResultNode>("Re: Your mail")));
         e.prepare(false);
         ASSERT_NO_THROW(e.execute());
-        EXPECT_EQ(static_cast<const StringResultNode &>(*e.getResult()).get(), "Your mail");
+        EXPECT_EQ(static_cast<const StringResultNode&>(*e.getResult()).get(), "Your mail");
     }
     {
         NormalizeSubjectFunctionNode e(MU<ConstantNode>(MU<StringResultNode>("Your mail")));
         e.prepare(false);
         ASSERT_NO_THROW(e.execute());
-        EXPECT_EQ(static_cast<const StringResultNode &>(*e.getResult()).get(), "Your mail");
+        EXPECT_EQ(static_cast<const StringResultNode&>(*e.getResult()).get(), "Your mail");
     }
     {
         StrCatFunctionNode e(MU<ConstantNode>(MU<Int64ResultNode>(238686)));
         e.appendArg(MU<ConstantNode>(MU<StringResultNode>("ARG 2")));
         e.prepare(false);
         ASSERT_NO_THROW(e.execute());
-        EXPECT_EQ(static_cast<const StringResultNode &>(*e.getResult()).get(), "238686ARG 2");
+        EXPECT_EQ(static_cast<const StringResultNode&>(*e.getResult()).get(), "238686ARG 2");
     }
 
     {
         ToStringFunctionNode e(MU<ConstantNode>(MU<Int64ResultNode>(238686)));
         e.prepare(false);
         ASSERT_NO_THROW(e.execute());
-        EXPECT_EQ(strcmp(static_cast<const StringResultNode &>(*e.getResult()).get().c_str(), "238686"), 0);
+        EXPECT_EQ(strcmp(static_cast<const StringResultNode&>(*e.getResult()).get().c_str(), "238686"), 0);
     }
 
     {
         ToRawFunctionNode e(MU<ConstantNode>(MU<Int64ResultNode>(238686)));
         e.prepare(false);
         ASSERT_NO_THROW(e.execute());
-        auto raw_result = static_cast<const RawResultNode &>(*e.getResult()).get();
+        auto raw_result = static_cast<const RawResultNode&>(*e.getResult()).get();
         EXPECT_EQ(6u, raw_result.size());
         EXPECT_EQ(strncmp(raw_result.c_str(), "238686", 6u), 0);
     }
@@ -795,65 +776,61 @@ TEST(PerDocExprTest, testDivExpressions) {
         CatFunctionNode e(MU<ConstantNode>(MU<Int64ResultNode>(238686)));
         e.prepare(false);
         ASSERT_NO_THROW(e.execute());
-        EXPECT_EQ(static_cast<const RawResultNode &>(*e.getResult()).get().size(), 8u);
+        EXPECT_EQ(static_cast<const RawResultNode&>(*e.getResult()).get().size(), 8u);
     }
     {
         CatFunctionNode e(MU<ConstantNode>(MU<Int32ResultNode>(23886)));
         e.prepare(false);
         ASSERT_NO_THROW(e.execute());
-        EXPECT_EQ(static_cast<const RawResultNode &>(*e.getResult()).get().size(), 4u);
+        EXPECT_EQ(static_cast<const RawResultNode&>(*e.getResult()).get().size(), 4u);
     }
     {
-        const uint8_t buf[4] = { 0, 0, 0, 7 };
-        MD5BitFunctionNode e(MU<ConstantNode>(MU<RawResultNode>(buf, sizeof(buf))), 16*8);
+        const uint8_t      buf[4] = {0, 0, 0, 7};
+        MD5BitFunctionNode e(MU<ConstantNode>(MU<RawResultNode>(buf, sizeof(buf))), 16 * 8);
         e.prepare(false);
         ASSERT_NO_THROW(e.execute());
         ASSERT_TRUE(e.getResult()->getClass().inherits(RawResultNode::classId));
-        const RawResultNode &r(static_cast<const RawResultNode &>(*e.getResult()));
+        const RawResultNode& r(static_cast<const RawResultNode&>(*e.getResult()));
         EXPECT_EQ(r.get().size(), 16u);
     }
     {
-        const uint8_t buf[4] = { 0, 0, 0, 7 };
-        MD5BitFunctionNode e(MU<ConstantNode>(MU<RawResultNode>(buf, sizeof(buf))), 2*8);
+        const uint8_t      buf[4] = {0, 0, 0, 7};
+        MD5BitFunctionNode e(MU<ConstantNode>(MU<RawResultNode>(buf, sizeof(buf))), 2 * 8);
         e.prepare(false);
         ASSERT_NO_THROW(e.execute());
-        EXPECT_EQ(static_cast<const RawResultNode &>(*e.getResult()).get().size(), 2u);
+        EXPECT_EQ(static_cast<const RawResultNode&>(*e.getResult()).get().size(), 2u);
     }
     {
-        const uint8_t buf[4] = { 0, 0, 0, 7 };
-        XorBitFunctionNode e(MU<ConstantNode>(MU<RawResultNode>(buf, sizeof(buf))), 1*8);
+        const uint8_t      buf[4] = {0, 0, 0, 7};
+        XorBitFunctionNode e(MU<ConstantNode>(MU<RawResultNode>(buf, sizeof(buf))), 1 * 8);
         e.prepare(false);
         ASSERT_NO_THROW(e.execute());
-        EXPECT_EQ(static_cast<const RawResultNode &>(*e.getResult()).get().size(), 1u);
-        EXPECT_EQ(static_cast<const RawResultNode &>(*e.getResult()).get().c_str()[0], 0x7);
+        EXPECT_EQ(static_cast<const RawResultNode&>(*e.getResult()).get().size(), 1u);
+        EXPECT_EQ(static_cast<const RawResultNode&>(*e.getResult()).get().c_str()[0], 0x7);
     }
     {
-        const uint8_t buf[4] = { 6, 0, 7, 7 };
-        XorBitFunctionNode e(MU<ConstantNode>(MU<RawResultNode>(buf, sizeof(buf))), 2*8);
+        const uint8_t      buf[4] = {6, 0, 7, 7};
+        XorBitFunctionNode e(MU<ConstantNode>(MU<RawResultNode>(buf, sizeof(buf))), 2 * 8);
         e.prepare(false);
         ASSERT_NO_THROW(e.execute());
-        EXPECT_EQ(static_cast<const RawResultNode &>(*e.getResult()).get().size(), 2u);
-        EXPECT_EQ((int)static_cast<const RawResultNode &>(*e.getResult()).get().c_str()[0], 0x1);
-        EXPECT_EQ((int)static_cast<const RawResultNode &>(*e.getResult()).get().c_str()[1], 0x7);
+        EXPECT_EQ(static_cast<const RawResultNode&>(*e.getResult()).get().size(), 2u);
+        EXPECT_EQ((int)static_cast<const RawResultNode&>(*e.getResult()).get().c_str()[0], 0x1);
+        EXPECT_EQ((int)static_cast<const RawResultNode&>(*e.getResult()).get().c_str()[1], 0x7);
     }
     {
-        const uint8_t wantedBuf[14]  =
-            { 98, 97, 114, 109, 117, 100, 97, 0, 0, 0, 32, 65, 82, 87 };
-        const uint8_t md5facit[16] =
-            { 0x22, 0x5, 0x22, 0x1c, 0x49, 0xff, 0x90, 0x25, 0xad, 0xbf,
-              0x4e, 0x51, 0xdb, 0xca, 0x2a, 0xc5 };
-        const uint8_t thomasBuf[22] =
-            { 0, 0, 0, 7, 98, 97, 114, 109, 117, 100, 97, 0, 0, 0, 32, 0,
-              0, 0, 3, 65, 82, 87 };
-        const uint8_t currentBuf[26] =
-            { 0, 0, 0, 22, 0, 0, 0, 7, 98, 97, 114, 109, 117, 100, 97, 0,
-              0, 0, 32, 0 , 0, 0, 3, 65, 82, 87 };
+        const uint8_t wantedBuf[14] = {98, 97, 114, 109, 117, 100, 97, 0, 0, 0, 32, 65, 82, 87};
+        const uint8_t md5facit[16] = {0x22, 0x5,  0x22, 0x1c, 0x49, 0xff, 0x90, 0x25,
+                                      0xad, 0xbf, 0x4e, 0x51, 0xdb, 0xca, 0x2a, 0xc5};
+        const uint8_t thomasBuf[22] = {0, 0, 0, 7,  98, 97, 114, 109, 117, 100, 97,
+                                       0, 0, 0, 32, 0,  0,  0,   3,   65,  82,  87};
+        const uint8_t currentBuf[26] = {0,   0,  0, 22, 0, 0,  0, 7, 98, 97, 114, 109, 117,
+                                        100, 97, 0, 0,  0, 32, 0, 0, 0,  3,  65,  82,  87};
 
-        MD5BitFunctionNode e(MU<ConstantNode>(MU<RawResultNode>(wantedBuf, sizeof(wantedBuf))), 16*8);
+        MD5BitFunctionNode e(MU<ConstantNode>(MU<RawResultNode>(wantedBuf, sizeof(wantedBuf))), 16 * 8);
         e.prepare(false);
         ASSERT_NO_THROW(e.execute());
         ASSERT_TRUE(e.getResult()->getClass().inherits(RawResultNode::classId));
-        const RawResultNode &r(static_cast<const RawResultNode &>(*e.getResult()));
+        const RawResultNode& r(static_cast<const RawResultNode&>(*e.getResult()));
         EXPECT_EQ(r.get().size(), 16u);
         uint8_t md5[16];
         fastc_md5sum(currentBuf, sizeof(currentBuf), md5);
@@ -870,7 +847,7 @@ TEST(PerDocExprTest, testDivExpressions) {
         MD5BitFunctionNode finalCheck(std::move(cat), 32);
         finalCheck.prepare(false);
         ASSERT_NO_THROW(finalCheck.execute());
-        const RawResultNode &rr(static_cast<const RawResultNode &>(*finalCheck.getResult()));
+        const RawResultNode& rr(static_cast<const RawResultNode&>(*finalCheck.getResult()));
         EXPECT_EQ(rr.get().size(), 4u);
         fastc_md5sum(wantedBuf, sizeof(wantedBuf), md5);
         EXPECT_TRUE(memcmp(md5facit, md5, sizeof(md5)) == 0);
@@ -880,19 +857,19 @@ TEST(PerDocExprTest, testDivExpressions) {
         CatFunctionNode e(MU<ConstantNode>(MU<Int16ResultNode>(23886)));
         e.prepare(false);
         ASSERT_NO_THROW(e.execute());
-        EXPECT_EQ(static_cast<const RawResultNode &>(*e.getResult()).get().size(), 2u);
+        EXPECT_EQ(static_cast<const RawResultNode&>(*e.getResult()).get().size(), 2u);
     }
     {
         CatFunctionNode e(MU<ConstantNode>(createIntRV<Int8ResultNodeVector>({86, 14})));
         e.prepare(false);
         ASSERT_NO_THROW(e.execute());
-        EXPECT_EQ(static_cast<const RawResultNode &>(*e.getResult()).get().size(), 1*2u);
+        EXPECT_EQ(static_cast<const RawResultNode&>(*e.getResult()).get().size(), 1 * 2u);
     }
     {
-        CatFunctionNode e(MU<ConstantNode>(createIntRV<Int32ResultNodeVector>({238686,2133214})));
+        CatFunctionNode e(MU<ConstantNode>(createIntRV<Int32ResultNodeVector>({238686, 2133214})));
         e.prepare(false);
         ASSERT_NO_THROW(e.execute());
-        EXPECT_EQ(static_cast<const RawResultNode &>(*e.getResult()).get().size(), 4*2u);
+        EXPECT_EQ(static_cast<const RawResultNode&>(*e.getResult()).get().size(), 4 * 2u);
     }
     {
         NumElemFunctionNode e(MU<ConstantNode>(MU<Int64ResultNode>(238686)));
@@ -901,23 +878,22 @@ TEST(PerDocExprTest, testDivExpressions) {
         EXPECT_EQ(e.getResult()->getInteger(), 1);
     }
     {
-        NumElemFunctionNode e(MU<ConstantNode>(createIntRV<Int32ResultNodeVector>({238686,2133214})));
+        NumElemFunctionNode e(MU<ConstantNode>(createIntRV<Int32ResultNodeVector>({238686, 2133214})));
         e.prepare(false);
         ASSERT_NO_THROW(e.execute());
         EXPECT_EQ(e.getResult()->getInteger(), 2);
     }
     {
-        NumElemFunctionNode e(MU<ConstantNode>(createIntRV<Int32ResultNodeVector>({238686,2133214})));
+        NumElemFunctionNode e(MU<ConstantNode>(createIntRV<Int32ResultNodeVector>({238686, 2133214})));
         e.prepare(false);
         ASSERT_NO_THROW(e.execute());
         EXPECT_EQ(e.getResult()->getInteger(), 2);
     }
 }
 
-bool test1MultivalueExpression(const MultiArgFunctionNode &exprConst, ExpressionNode::UP mv,
-                               const ResultNode & expected)
-{
-    MultiArgFunctionNode &expr(const_cast<MultiArgFunctionNode &>(exprConst));
+bool test1MultivalueExpression(const MultiArgFunctionNode& exprConst, ExpressionNode::UP mv,
+                               const ResultNode& expected) {
+    MultiArgFunctionNode& expr(const_cast<MultiArgFunctionNode&>(exprConst));
     expr.appendArg(std::move(mv));
     expr.prepare(false);
 
@@ -926,127 +902,116 @@ bool test1MultivalueExpression(const MultiArgFunctionNode &exprConst, Expression
     EXPECT_EQ(0, expr.getResult()->cmp(expected)) << (ok = false, "");
     if (!ok) {
         std::cerr << "Expected:" << expected.asString() << std::endl
-            << "Got: " << expr.getResult()->asString() << std::endl;
+                  << "Got: " << expr.getResult()->asString() << std::endl;
     }
     return ok;
 }
 
-bool test1MultivalueExpressionException(const MultiArgFunctionNode & exprConst,
-                                        ExpressionNode::UP mv,
-                                        const char * expected) {
-   try {
-       test1MultivalueExpression(exprConst, std::move(mv), NullResultNode());
-       ADD_FAILURE() << "Exception " << std::quoted(expected) << " not thrown";
-       return false;
-   } catch (std::runtime_error & e) {
-       bool success = true;
-       EXPECT_TRUE(std::string(e.what()).find(expected) != std::string::npos) << (success = false, "");
-       return success;
-   }
+bool test1MultivalueExpressionException(const MultiArgFunctionNode& exprConst, ExpressionNode::UP mv,
+                                        const char* expected) {
+    try {
+        test1MultivalueExpression(exprConst, std::move(mv), NullResultNode());
+        ADD_FAILURE() << "Exception " << std::quoted(expected) << " not thrown";
+        return false;
+    } catch (std::runtime_error& e) {
+        bool success = true;
+        EXPECT_TRUE(std::string(e.what()).find(expected) != std::string::npos) << (success = false, "");
+        return success;
+    }
 }
 
 TEST(PerDocExprTest, testMultivalueExpression) {
     std::vector<int64_t> IV = {7, 17, 117};
 
-   EXPECT_TRUE(test1MultivalueExpression(AddFunctionNode(),
-                                         MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
-                                         Int64ResultNode(7 + 17 + 117)));
-   EXPECT_TRUE(test1MultivalueExpression(MultiplyFunctionNode(),
-                                         MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
-                                         Int64ResultNode(7 * 17 * 117)));
-   EXPECT_TRUE(test1MultivalueExpressionException(DivideFunctionNode(),
-                                                  MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
-                                                  "DivideFunctionNode"));
-   EXPECT_TRUE(test1MultivalueExpressionException(ModuloFunctionNode(),
-                                                  MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
-                                                  "ModuloFunctionNode"));
-   EXPECT_TRUE(test1MultivalueExpression(MinFunctionNode(),
-                                         MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
-                                         Int64ResultNode(7)));
-   EXPECT_TRUE(test1MultivalueExpression(MaxFunctionNode(),
-                                         MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
-                                         Int64ResultNode(117)));
+    EXPECT_TRUE(test1MultivalueExpression(AddFunctionNode(), MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
+                                          Int64ResultNode(7 + 17 + 117)));
+    EXPECT_TRUE(test1MultivalueExpression(MultiplyFunctionNode(),
+                                          MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
+                                          Int64ResultNode(7 * 17 * 117)));
+    EXPECT_TRUE(test1MultivalueExpressionException(
+        DivideFunctionNode(), MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)), "DivideFunctionNode"));
+    EXPECT_TRUE(test1MultivalueExpressionException(
+        ModuloFunctionNode(), MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)), "ModuloFunctionNode"));
+    EXPECT_TRUE(test1MultivalueExpression(MinFunctionNode(), MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
+                                          Int64ResultNode(7)));
+    EXPECT_TRUE(test1MultivalueExpression(MaxFunctionNode(), MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
+                                          Int64ResultNode(117)));
 
-   EXPECT_TRUE(
-           test1MultivalueExpression(
-                   FixedWidthBucketFunctionNode()
-                   .setWidth(Int64ResultNode(1)),
-                   MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
-                   IntegerBucketResultNodeVector()
-                   .push_back(IntegerBucketResultNode(7,8))
-                   .push_back(IntegerBucketResultNode(17,18))
-                   .push_back(IntegerBucketResultNode(117,118))));
+    EXPECT_TRUE(test1MultivalueExpression(FixedWidthBucketFunctionNode().setWidth(Int64ResultNode(1)),
+                                          MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
+                                          IntegerBucketResultNodeVector()
+                                              .push_back(IntegerBucketResultNode(7, 8))
+                                              .push_back(IntegerBucketResultNode(17, 18))
+                                              .push_back(IntegerBucketResultNode(117, 118))));
 
-   EXPECT_TRUE(
-           test1MultivalueExpression(
-                   RangeBucketPreDefFunctionNode()
-                   .setBucketList(
-                           IntegerBucketResultNodeVector()
-                           .push_back(IntegerBucketResultNode(0,10))
-                           .push_back(IntegerBucketResultNode(20,30))
-                           .push_back(IntegerBucketResultNode(100,120))),
-                   MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
-                   IntegerBucketResultNodeVector()
-                   .push_back(IntegerBucketResultNode(0,10))
-                   .push_back(IntegerBucketResultNode(0,0))
-                   .push_back(IntegerBucketResultNode(100,120))));
+    EXPECT_TRUE(test1MultivalueExpression(
+        RangeBucketPreDefFunctionNode().setBucketList(IntegerBucketResultNodeVector()
+                                                          .push_back(IntegerBucketResultNode(0, 10))
+                                                          .push_back(IntegerBucketResultNode(20, 30))
+                                                          .push_back(IntegerBucketResultNode(100, 120))),
+        MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
+        IntegerBucketResultNodeVector()
+            .push_back(IntegerBucketResultNode(0, 10))
+            .push_back(IntegerBucketResultNode(0, 0))
+            .push_back(IntegerBucketResultNode(100, 120))));
 
-   EXPECT_TRUE(
-           test1MultivalueExpression(
-                   TimeStampFunctionNode()
-                   .setTimePart(TimeStampFunctionNode::Second),
-                   MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
-                   IntegerResultNodeVector()
-                   .push_back(Int64ResultNode(7))
-                   .push_back(Int64ResultNode(17))
-                   .push_back(Int64ResultNode(117%60))));
+    EXPECT_TRUE(test1MultivalueExpression(TimeStampFunctionNode().setTimePart(TimeStampFunctionNode::Second),
+                                          MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
+                                          IntegerResultNodeVector()
+                                              .push_back(Int64ResultNode(7))
+                                              .push_back(Int64ResultNode(17))
+                                              .push_back(Int64ResultNode(117 % 60))));
 
-   EXPECT_TRUE(
-           test1MultivalueExpression(NegateFunctionNode(),
-                                     MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
-                                     IntegerResultNodeVector()
-                                     .push_back(Int64ResultNode(-7))
-                                     .push_back(Int64ResultNode(-17))
-                                     .push_back(Int64ResultNode(-117))));
-   EXPECT_TRUE(test1MultivalueExpression(SortFunctionNode(),
-                                         MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
-                                         IntegerResultNodeVector()
-                                         .push_back(Int64ResultNode(7))
-                                         .push_back(Int64ResultNode(17))
-                                         .push_back(Int64ResultNode(117))));
-   EXPECT_TRUE(test1MultivalueExpression(ReverseFunctionNode(),
-                                         MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
-                                         IntegerResultNodeVector()
-                                         .push_back(Int64ResultNode(117))
-                                         .push_back(Int64ResultNode(17))
-                                         .push_back(Int64ResultNode(7))));
-   EXPECT_TRUE(test1MultivalueExpression(SortFunctionNode(),
-                                         MU<ReverseFunctionNode>(MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV))),
-                                         IntegerResultNodeVector()
-                                         .push_back(Int64ResultNode(7))
-                                         .push_back(Int64ResultNode(17))
-                                         .push_back(Int64ResultNode(117))));
-   EXPECT_TRUE(test1MultivalueExpression(AndFunctionNode(),
-                                         MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
-                                         Int64ResultNode(7 & 17 & 117)));
-   EXPECT_TRUE(test1MultivalueExpression(OrFunctionNode(),
-                                         MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
-                                         Int64ResultNode(7 | 17 | 117)));
-   EXPECT_TRUE(test1MultivalueExpression(XorFunctionNode(),
-                                         MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
-                                         Int64ResultNode(7 ^ 17 ^ 117)));
+    EXPECT_TRUE(test1MultivalueExpression(NegateFunctionNode(),
+                                          MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
+                                          IntegerResultNodeVector()
+                                              .push_back(Int64ResultNode(-7))
+                                              .push_back(Int64ResultNode(-17))
+                                              .push_back(Int64ResultNode(-117))));
+    EXPECT_TRUE(test1MultivalueExpression(SortFunctionNode(),
+                                          MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
+                                          IntegerResultNodeVector()
+                                              .push_back(Int64ResultNode(7))
+                                              .push_back(Int64ResultNode(17))
+                                              .push_back(Int64ResultNode(117))));
+    EXPECT_TRUE(test1MultivalueExpression(ReverseFunctionNode(),
+                                          MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
+                                          IntegerResultNodeVector()
+                                              .push_back(Int64ResultNode(117))
+                                              .push_back(Int64ResultNode(17))
+                                              .push_back(Int64ResultNode(7))));
+    EXPECT_TRUE(test1MultivalueExpression(
+        SortFunctionNode(), MU<ReverseFunctionNode>(MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV))),
+        IntegerResultNodeVector()
+            .push_back(Int64ResultNode(7))
+            .push_back(Int64ResultNode(17))
+            .push_back(Int64ResultNode(117))));
+    EXPECT_TRUE(test1MultivalueExpression(AndFunctionNode(), MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
+                                          Int64ResultNode(7 & 17 & 117)));
+    EXPECT_TRUE(test1MultivalueExpression(OrFunctionNode(), MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
+                                          Int64ResultNode(7 | 17 | 117)));
+    EXPECT_TRUE(test1MultivalueExpression(XorFunctionNode(), MU<ConstantNode>(createIntRV<Int64ResultNodeVector>(IV)),
+                                          Int64ResultNode(7 ^ 17 ^ 117)));
 }
 
-ExpressionNode::UP createScalarInt(int64_t v) { return MU<ConstantNode>(MU<Int64ResultNode>(v)); }
-ExpressionNode::UP createScalarFloat(double v) { return MU<ConstantNode>(MU<FloatResultNode>(v)); }
-ExpressionNode::UP createScalarString(const char * v) { return MU<ConstantNode>(MU<StringResultNode>(v)); }
-ExpressionNode::UP createScalarRaw(const char * v) { return MU<ConstantNode>(MU<RawResultNode>(v, strlen(v))); }
+ExpressionNode::UP createScalarInt(int64_t v) {
+    return MU<ConstantNode>(MU<Int64ResultNode>(v));
+}
+ExpressionNode::UP createScalarFloat(double v) {
+    return MU<ConstantNode>(MU<FloatResultNode>(v));
+}
+ExpressionNode::UP createScalarString(const char* v) {
+    return MU<ConstantNode>(MU<StringResultNode>(v));
+}
+ExpressionNode::UP createScalarRaw(const char* v) {
+    return MU<ConstantNode>(MU<RawResultNode>(v, strlen(v)));
+}
 
 TEST(PerDocExprTest, testArithmeticNodes) {
-    AttributeGuard attr1 = createInt64Attribute();
-    constexpr int64_t I1 = 1, I2 = 2;
-    constexpr double F1 = 1.1, F2 = 9.9;
-    constexpr const char * S2 = "2";
+    AttributeGuard        attr1 = createInt64Attribute();
+    constexpr int64_t     I1 = 1, I2 = 2;
+    constexpr double      F1 = 1.1, F2 = 9.9;
+    constexpr const char* S2 = "2";
 
     AddFunctionNode add1;
     add1.appendArg(createScalarInt(I1));
@@ -1088,9 +1053,8 @@ TEST(PerDocExprTest, testArithmeticNodes) {
     EXPECT_TRUE(add6.getResult()->getClass().inherits(FloatResultNode::classId));
 }
 
-void testArith(MultiArgFunctionNode &op, ExpressionNode::UP arg1, ExpressionNode::UP arg2,
-               int64_t intResult, double floatResult)
-{
+void testArith(MultiArgFunctionNode& op, ExpressionNode::UP arg1, ExpressionNode::UP arg2, int64_t intResult,
+               double floatResult) {
     op.appendArg(std::move(arg1));
     op.appendArg(std::move(arg2));
     op.prepare(false);
@@ -1100,48 +1064,35 @@ void testArith(MultiArgFunctionNode &op, ExpressionNode::UP arg1, ExpressionNode
     EXPECT_EQ(floatResult, op.getResult()->getFloat());
 }
 
-void testAdd(ExpressionNode::UP arg1, ExpressionNode::UP arg2,
-             int64_t intResult, double floatResult)
-{
+void testAdd(ExpressionNode::UP arg1, ExpressionNode::UP arg2, int64_t intResult, double floatResult) {
     AddFunctionNode add;
     testArith(add, std::move(arg1), std::move(arg2), intResult, floatResult);
 }
 
-void testMultiply(ExpressionNode::UP arg1, ExpressionNode::UP arg2,
-                  int64_t intResult, double floatResult)
-{
+void testMultiply(ExpressionNode::UP arg1, ExpressionNode::UP arg2, int64_t intResult, double floatResult) {
     MultiplyFunctionNode add;
     testArith(add, std::move(arg1), std::move(arg2), intResult, floatResult);
 }
 
-void testDivide(ExpressionNode::UP arg1, ExpressionNode::UP arg2,
-                int64_t intResult, double floatResult)
-{
+void testDivide(ExpressionNode::UP arg1, ExpressionNode::UP arg2, int64_t intResult, double floatResult) {
     DivideFunctionNode add;
     testArith(add, std::move(arg1), std::move(arg2), intResult, floatResult);
 }
 
-void testModulo(ExpressionNode::UP arg1, ExpressionNode::UP arg2,
-                int64_t intResult, double floatResult)
-{
+void testModulo(ExpressionNode::UP arg1, ExpressionNode::UP arg2, int64_t intResult, double floatResult) {
     ModuloFunctionNode add;
     testArith(add, std::move(arg1), std::move(arg2), intResult, floatResult);
 }
 
-
-
-void testArithmeticArguments(NumericFunctionNode &function,
-                             const std::vector<double> & arg1,
-                             const std::vector<double> & arg2,
-                             const std::vector<double> & result,
-                             double flattenResult)
-{
+void testArithmeticArguments(NumericFunctionNode& function, const std::vector<double>& arg1,
+                             const std::vector<double>& arg2, const std::vector<double>& result,
+                             double flattenResult) {
     IntegerResultNodeVector ir;
-    for (size_t i(0), m(result.size()); i<m; i++) {
+    for (size_t i(0), m(result.size()); i < m; i++) {
         ir.push_back(Int64ResultNode((int64_t)result[i]));
     }
     FloatResultNodeVector fr;
-    for (size_t i(0), m(result.size()); i<m; i++) {
+    for (size_t i(0), m(result.size()); i < m; i++) {
         fr.push_back(FloatResultNode(result[i]));
     }
     function.appendArg(createScalarInt(arg1[0])).appendArg(createScalarInt(arg2[0]));
@@ -1197,7 +1148,7 @@ void testArithmeticArguments(NumericFunctionNode &function,
     EXPECT_TRUE(function.getResult()->getClass().equal(IntegerResultNodeVector::classId));
     ASSERT_NO_THROW(function.execute());
     EXPECT_TRUE(function.getResult()->getClass().equal(IntegerResultNodeVector::classId));
-    EXPECT_EQ(static_cast<const IntegerResultNodeVector &>(*function.getResult()).size(), 7u);
+    EXPECT_EQ(static_cast<const IntegerResultNodeVector&>(*function.getResult()).size(), 7u);
     EXPECT_EQ(0, function.getResult()->cmp(ir));
 
     function.reset();
@@ -1207,7 +1158,7 @@ void testArithmeticArguments(NumericFunctionNode &function,
     EXPECT_TRUE(function.getResult()->getClass().equal(FloatResultNodeVector::classId));
     ASSERT_NO_THROW(function.execute());
     EXPECT_TRUE(function.getResult()->getClass().equal(FloatResultNodeVector::classId));
-    EXPECT_EQ(static_cast<const FloatResultNodeVector &>(*function.getResult()).size(), 7u);
+    EXPECT_EQ(static_cast<const FloatResultNodeVector&>(*function.getResult()).size(), 7u);
     EXPECT_EQ(0, function.getResult()->cmp(fr));
 
     function.reset();
@@ -1217,7 +1168,7 @@ void testArithmeticArguments(NumericFunctionNode &function,
     EXPECT_TRUE(function.getResult()->getClass().equal(FloatResultNodeVector::classId));
     ASSERT_NO_THROW(function.execute());
     EXPECT_TRUE(function.getResult()->getClass().equal(FloatResultNodeVector::classId));
-    EXPECT_EQ(static_cast<const FloatResultNodeVector &>(*function.getResult()).size(), 7u);
+    EXPECT_EQ(static_cast<const FloatResultNodeVector&>(*function.getResult()).size(), 7u);
     EXPECT_EQ(0, function.getResult()->cmp(fr));
 
     function.reset();
@@ -1227,22 +1178,23 @@ void testArithmeticArguments(NumericFunctionNode &function,
     EXPECT_TRUE(function.getResult()->getClass().equal(FloatResultNodeVector::classId));
     ASSERT_NO_THROW(function.execute());
     EXPECT_TRUE(function.getResult()->getClass().equal(FloatResultNodeVector::classId));
-    EXPECT_EQ(static_cast<const FloatResultNodeVector &>(*function.getResult()).size(), 7u);
+    EXPECT_EQ(static_cast<const FloatResultNodeVector&>(*function.getResult()).size(), 7u);
     EXPECT_EQ(0, function.getResult()->cmp(fr));
 }
 
 TEST(PerDocExprTest, testArithmeticOperations) {
     constexpr int64_t I1 = 1793253241;
     constexpr int64_t I2 = 1676521321;
-    constexpr double F1 = 1.1109876;
-    constexpr double F2 = 9.767681239;
+    constexpr double  F1 = 1.1109876;
+    constexpr double  F2 = 9.767681239;
 
     testAdd(createScalarInt(I1), createScalarInt(I2), 3469774562ull, 3469774562ull);
     testAdd(createScalarInt(I1), createScalarFloat(F2), 1793253251ull, 1793253250.767681239);
-    testAdd(createScalarFloat(F1), createScalarFloat(F2), 11, 10.878668839 );
-    testMultiply(createScalarInt(I1), createScalarInt(I2), 3006427292488851361ull, static_cast<double>(3006427292488851361ull));
-    testMultiply(createScalarInt(I1), createScalarFloat(F2), 17515926039ull, 1793253241.0*9.767681239);
-    testMultiply(createScalarFloat(F1), createScalarFloat(F2), 11, 10.8517727372816364 );
+    testAdd(createScalarFloat(F1), createScalarFloat(F2), 11, 10.878668839);
+    testMultiply(createScalarInt(I1), createScalarInt(I2), 3006427292488851361ull,
+                 static_cast<double>(3006427292488851361ull));
+    testMultiply(createScalarInt(I1), createScalarFloat(F2), 17515926039ull, 1793253241.0 * 9.767681239);
+    testMultiply(createScalarFloat(F1), createScalarFloat(F2), 11, 10.8517727372816364);
 
     std::vector<double> a(5), b(7);
     a[0] = b[0] = 1;
@@ -1262,7 +1214,7 @@ TEST(PerDocExprTest, testArithmeticOperations) {
         r[5] = a[0] + b[5];
         r[6] = a[1] + b[6];
         AddFunctionNode f;
-        testArithmeticArguments(f, a, b, r, a[0]+a[1]+a[2]+a[3]+a[4]);
+        testArithmeticArguments(f, a, b, r, a[0] + a[1] + a[2] + a[3] + a[4]);
     }
     {
         r[0] = a[0] * b[0];
@@ -1273,18 +1225,22 @@ TEST(PerDocExprTest, testArithmeticOperations) {
         r[5] = a[0] * b[5];
         r[6] = a[1] * b[6];
         MultiplyFunctionNode f;
-        testArithmeticArguments(f, a, b, r, a[0]*a[1]*a[2]*a[3]*a[4]);
+        testArithmeticArguments(f, a, b, r, a[0] * a[1] * a[2] * a[3] * a[4]);
     }
 }
 
-ExpressionNode::UP createCountAggr(int64_t initial) { return MU<CountAggregationResult>(initial); }
-ExpressionNode::UP createMinAggr(const SingleResultNode & initial) { return MU<MinAggregationResult>(initial); }
+ExpressionNode::UP createCountAggr(int64_t initial) {
+    return MU<CountAggregationResult>(initial);
+}
+ExpressionNode::UP createMinAggr(const SingleResultNode& initial) {
+    return MU<MinAggregationResult>(initial);
+}
 
 constexpr int64_t I1 = 7, I2 = 3, I4 = 22;
 
 ExpressionNode::UP createSumAggr() {
     std::unique_ptr<SumAggregationResult> s = MU<SumAggregationResult>();
-    AggregationResult::Configure conf;
+    AggregationResult::Configure          conf;
     s->setExpression(createScalarInt(I4)).select(conf, conf);
     s->aggregate(0, 0);
     return s;
@@ -1293,7 +1249,6 @@ ExpressionNode::UP createSumAggr() {
 TEST(PerDocExprTest, testAggregatorsInExpressions) {
     Int64ResultNode r1(I1);
     Int64ResultNode r2(I4);
-
 
     testAdd(createScalarInt(I1), createCountAggr(I2), 10, 10);
     testMultiply(createScalarInt(I1), createCountAggr(I2), 21, 21);
@@ -1307,56 +1262,52 @@ TEST(PerDocExprTest, testAggregatorsInExpressions) {
     testAdd(MU<MinAggregationResult>(r2), MU<MaxAggregationResult>(r1), 29, 29);
 
     AggregationResult::Configure conf;
-    XorAggregationResult *x = new XorAggregationResult();
+    XorAggregationResult*        x = new XorAggregationResult();
     x->setExpression(createScalarInt(I4)).select(conf, conf);
     x->aggregate(0, 0);
     testAdd(ExpressionNode::UP(x), createScalarInt(I1), 29, 29);
 
-    AverageAggregationResult *avg = new AverageAggregationResult();
+    AverageAggregationResult* avg = new AverageAggregationResult();
     avg->setExpression(createScalarInt(I4)).select(conf, conf);
     avg->aggregate(0, 0);
     testAdd(ExpressionNode::UP(avg), createScalarInt(I1), 29, 29);
 }
 
-void testAggregationResult(AggregationResult & aggr, const AggrGetter & g,
-                           const ResultNode & v, const ResultNode & i,
-                           const ResultNode & m, const ResultNode & s) {
+void testAggregationResult(AggregationResult& aggr, const AggrGetter& g, const ResultNode& v, const ResultNode& i,
+                           const ResultNode& m, const ResultNode& s) {
     AggregationResult::Configure conf;
     aggr.setExpression(MU<ConstantNode>(ResultNode::UP(v.clone()))).select(conf, conf);
     EXPECT_TRUE(g(aggr).getClass().equal(i.getClass().id()));
     EXPECT_EQ(0, i.cmp(g(aggr)));
-    aggr.aggregate(0,0);
+    aggr.aggregate(0, 0);
     EXPECT_TRUE(g(aggr).getClass().equal(i.getClass().id()));
     EXPECT_EQ(0, m.cmp(g(aggr)));
-    aggr.aggregate(1,0);
+    aggr.aggregate(1, 0);
     EXPECT_TRUE(g(aggr).getClass().equal(i.getClass().id()));
     EXPECT_EQ(0, s.cmp(g(aggr)));
 }
 
 TEST(PerDocExprTest, testAggregationResults) {
     struct SumGetter : AggrGetter {
-        const ResultNode &operator()(const AggregationResult & r) const override
-        { return static_cast<const SumAggregationResult &>(r).getSum(); }
+        const ResultNode& operator()(const AggregationResult& r) const override {
+            return static_cast<const SumAggregationResult&>(r).getSum();
+        }
     };
     SumAggregationResult sum;
-    testAggregationResult(sum, SumGetter(), Int64ResultNode(7),
-                          Int64ResultNode(0), Int64ResultNode(7),
+    testAggregationResult(sum, SumGetter(), Int64ResultNode(7), Int64ResultNode(0), Int64ResultNode(7),
                           Int64ResultNode(14));
-    testAggregationResult(sum, SumGetter(), FloatResultNode(7.77),
-                          FloatResultNode(0), FloatResultNode(7.77),
+    testAggregationResult(sum, SumGetter(), FloatResultNode(7.77), FloatResultNode(0), FloatResultNode(7.77),
                           FloatResultNode(15.54));
     IntegerResultNodeVector v;
     v.push_back(Int64ResultNode(7)).push_back(Int64ResultNode(8));
-    testAggregationResult(sum, SumGetter(), v, Int64ResultNode(0),
-                          Int64ResultNode(15), Int64ResultNode(30));
-    testAggregationResult(sum, SumGetter(), FloatResultNode(7.77),
-                          FloatResultNode(0), FloatResultNode(7.77),
+    testAggregationResult(sum, SumGetter(), v, Int64ResultNode(0), Int64ResultNode(15), Int64ResultNode(30));
+    testAggregationResult(sum, SumGetter(), FloatResultNode(7.77), FloatResultNode(0), FloatResultNode(7.77),
                           FloatResultNode(15.54));
 }
 
 TEST(PerDocExprTest, test_Average_over_integer) {
     AggregationResult::Configure conf;
-    AverageAggregationResult avg;
+    AverageAggregationResult     avg;
     avg.setExpression(createScalarInt(I4)).select(conf, conf);
     avg.aggregate(0, 0);
     EXPECT_EQ(I4, avg.getAverage().getInteger());
@@ -1364,7 +1315,7 @@ TEST(PerDocExprTest, test_Average_over_integer) {
 
 TEST(PerDocExprTest, test_Average_over_float) {
     AggregationResult::Configure conf;
-    AverageAggregationResult avg;
+    AverageAggregationResult     avg;
     avg.setExpression(createScalarFloat(I4)).select(conf, conf);
     avg.aggregate(0, 0);
     EXPECT_EQ(I4, avg.getAverage().getInteger());
@@ -1372,7 +1323,7 @@ TEST(PerDocExprTest, test_Average_over_float) {
 
 TEST(PerDocExprTest, test_Average_over_numeric_string) {
     AggregationResult::Configure conf;
-    AverageAggregationResult avg;
+    AverageAggregationResult     avg;
     avg.setExpression(createScalarString("7.8")).select(conf, conf);
     avg.aggregate(0, 0);
     EXPECT_EQ(7.8, avg.getAverage().getFloat());
@@ -1380,7 +1331,7 @@ TEST(PerDocExprTest, test_Average_over_numeric_string) {
 
 TEST(PerDocExprTest, test_Average_over_non_numeric_string) {
     AggregationResult::Configure conf;
-    AverageAggregationResult avg;
+    AverageAggregationResult     avg;
     avg.setExpression(createScalarString("ABC")).select(conf, conf);
     avg.aggregate(0, 0);
     EXPECT_EQ(0, avg.getAverage().getInteger());
@@ -1388,138 +1339,132 @@ TEST(PerDocExprTest, test_Average_over_non_numeric_string) {
 
 TEST(PerDocExprTest, test_Sum_over_integer) {
     AggregationResult::Configure conf;
-    SumAggregationResult sum;
+    SumAggregationResult         sum;
     sum.setExpression(createScalarInt(I4)).select(conf, conf);
     sum.aggregate(0, 0);
     sum.aggregate(0, 0);
-    EXPECT_EQ(I4*2, sum.getSum().getInteger());
+    EXPECT_EQ(I4 * 2, sum.getSum().getInteger());
 }
 
 TEST(PerDocExprTest, test_Sum_over_float) {
     AggregationResult::Configure conf;
-    SumAggregationResult sum;
+    SumAggregationResult         sum;
     sum.setExpression(createScalarFloat(I4)).select(conf, conf);
     sum.aggregate(0, 0);
     sum.aggregate(0, 0);
-    EXPECT_EQ(I4*2, sum.getSum().getInteger());
+    EXPECT_EQ(I4 * 2, sum.getSum().getInteger());
 }
 
 TEST(PerDocExprTest, test_Sum_over_numeric_string) {
     AggregationResult::Configure conf;
-    SumAggregationResult sum;
+    SumAggregationResult         sum;
     sum.setExpression(createScalarString("7.8")).select(conf, conf);
     sum.aggregate(0, 0);
     sum.aggregate(0, 0);
-    EXPECT_EQ(7.8*2, sum.getSum().getFloat());
+    EXPECT_EQ(7.8 * 2, sum.getSum().getFloat());
 }
 
 TEST(PerDocExprTest, test_Sum_over_non_numeric_string) {
     AggregationResult::Configure conf;
-    SumAggregationResult sum;
+    SumAggregationResult         sum;
     sum.setExpression(createScalarString("ABC")).select(conf, conf);
     sum.aggregate(0, 0);
     sum.aggregate(0, 0);
     EXPECT_EQ(0, sum.getSum().getInteger());
 }
 
-
 TEST(PerDocExprTest, testGrouping) {
-    AttributeGuard attr1 = createInt64Attribute();
+    AttributeGuard     attr1 = createInt64Attribute();
     ExpressionNode::UP result1(new CountAggregationResult());
-    (static_cast<AggregationResult &>(*result1)).setExpression(MU<AttributeNode>(*attr1));
-    ExpressionNode::UP result2( new SumAggregationResult());
-    (static_cast<AggregationResult &>(*result2)).setExpression(MU<AttributeNode>(*attr1));
+    (static_cast<AggregationResult&>(*result1)).setExpression(MU<AttributeNode>(*attr1));
+    ExpressionNode::UP result2(new SumAggregationResult());
+    (static_cast<AggregationResult&>(*result2)).setExpression(MU<AttributeNode>(*attr1));
 
     Grouping grouping;
-    grouping.setFirstLevel(0)
-            .setLastLevel(1)
-            .addLevel(std::move(GroupingLevel()
-                                        .setExpression(MU<AttributeNode>(*attr1))
-                                        .addResult(std::move(result1))
-                                        .addResult(std::move(result2))));
+    grouping.setFirstLevel(0).setLastLevel(1).addLevel(std::move(GroupingLevel()
+                                                                     .setExpression(MU<AttributeNode>(*attr1))
+                                                                     .addResult(std::move(result1))
+                                                                     .addResult(std::move(result2))));
 
     grouping.configureStaticStuff(ConfigureStaticParams(nullptr, nullptr));
     grouping.aggregate(0u, 10u);
-    const Group::GroupList &groups = grouping.getRoot().groups();
+    const Group::GroupList& groups = grouping.getRoot().groups();
     EXPECT_EQ(grouping.getRoot().getChildrenSize(), 9u);
     ASSERT_TRUE(groups[0]->getAggregationResult(0).getClass().id() == CountAggregationResult::classId);
     ASSERT_TRUE(groups[0]->getAggregationResult(1).getClass().id() == SumAggregationResult::classId);
     EXPECT_EQ(groups[0]->getId().getInteger(), 6u);
-    EXPECT_EQ(static_cast<const CountAggregationResult &>(groups[0]->getAggregationResult(0)).getCount(), 1u);
-    EXPECT_EQ(static_cast<const SumAggregationResult &>(groups[0]->getAggregationResult(1)).getSum().getInteger(), 6);
+    EXPECT_EQ(static_cast<const CountAggregationResult&>(groups[0]->getAggregationResult(0)).getCount(), 1u);
+    EXPECT_EQ(static_cast<const SumAggregationResult&>(groups[0]->getAggregationResult(1)).getSum().getInteger(), 6);
     EXPECT_EQ(groups[1]->getId().getInteger(), 7u);
-    EXPECT_EQ(static_cast<const CountAggregationResult &>(groups[1]->getAggregationResult(0)).getCount(), 1u);
-    EXPECT_EQ(static_cast<const SumAggregationResult &>(groups[1]->getAggregationResult(1)).getSum().getInteger(), 7);
+    EXPECT_EQ(static_cast<const CountAggregationResult&>(groups[1]->getAggregationResult(0)).getCount(), 1u);
+    EXPECT_EQ(static_cast<const SumAggregationResult&>(groups[1]->getAggregationResult(1)).getSum().getInteger(), 7);
     EXPECT_EQ(groups[2]->getId().getInteger(), 11u);
-    EXPECT_EQ(static_cast<const CountAggregationResult &>(groups[2]->getAggregationResult(0)).getCount(), 1u);
-    EXPECT_EQ(static_cast<const SumAggregationResult &>(groups[2]->getAggregationResult(1)).getSum().getInteger(), 11);
+    EXPECT_EQ(static_cast<const CountAggregationResult&>(groups[2]->getAggregationResult(0)).getCount(), 1u);
+    EXPECT_EQ(static_cast<const SumAggregationResult&>(groups[2]->getAggregationResult(1)).getSum().getInteger(), 11);
     EXPECT_EQ(groups[3]->getId().getInteger(), 13u);
-    EXPECT_EQ(static_cast<const CountAggregationResult &>(groups[3]->getAggregationResult(0)).getCount(), 2u);
-    EXPECT_EQ(static_cast<const SumAggregationResult &>(groups[3]->getAggregationResult(1)).getSum().getInteger(), 26);
+    EXPECT_EQ(static_cast<const CountAggregationResult&>(groups[3]->getAggregationResult(0)).getCount(), 2u);
+    EXPECT_EQ(static_cast<const SumAggregationResult&>(groups[3]->getAggregationResult(1)).getSum().getInteger(), 26);
     EXPECT_EQ(groups[4]->getId().getInteger(), 17u);
-    EXPECT_EQ(static_cast<const CountAggregationResult &>(groups[4]->getAggregationResult(0)).getCount(), 1u);
-    EXPECT_EQ(static_cast<const SumAggregationResult &>(groups[4]->getAggregationResult(1)).getSum().getInteger(), 17);
+    EXPECT_EQ(static_cast<const CountAggregationResult&>(groups[4]->getAggregationResult(0)).getCount(), 1u);
+    EXPECT_EQ(static_cast<const SumAggregationResult&>(groups[4]->getAggregationResult(1)).getSum().getInteger(), 17);
     EXPECT_EQ(groups[5]->getId().getInteger(), 27u);
-    EXPECT_EQ(static_cast<const CountAggregationResult &>(groups[5]->getAggregationResult(0)).getCount(), 1u);
-    EXPECT_EQ(static_cast<const SumAggregationResult &>(groups[5]->getAggregationResult(1)).getSum().getInteger(), 27);
+    EXPECT_EQ(static_cast<const CountAggregationResult&>(groups[5]->getAggregationResult(0)).getCount(), 1u);
+    EXPECT_EQ(static_cast<const SumAggregationResult&>(groups[5]->getAggregationResult(1)).getSum().getInteger(), 27);
     EXPECT_EQ(groups[6]->getId().getInteger(), 34u);
-    EXPECT_EQ(static_cast<const CountAggregationResult &>(groups[6]->getAggregationResult(0)).getCount(), 1u);
-    EXPECT_EQ(static_cast<const SumAggregationResult &>(groups[6]->getAggregationResult(1)).getSum().getInteger(), 34);
+    EXPECT_EQ(static_cast<const CountAggregationResult&>(groups[6]->getAggregationResult(0)).getCount(), 1u);
+    EXPECT_EQ(static_cast<const SumAggregationResult&>(groups[6]->getAggregationResult(1)).getSum().getInteger(), 34);
     EXPECT_EQ(groups[7]->getId().getInteger(), 67891u);
-    EXPECT_EQ(static_cast<const CountAggregationResult &>(groups[7]->getAggregationResult(0)).getCount(), 1u);
-    EXPECT_EQ(static_cast<const SumAggregationResult &>(groups[7]->getAggregationResult(1)).getSum().getInteger(), 67891);
+    EXPECT_EQ(static_cast<const CountAggregationResult&>(groups[7]->getAggregationResult(0)).getCount(), 1u);
+    EXPECT_EQ(static_cast<const SumAggregationResult&>(groups[7]->getAggregationResult(1)).getSum().getInteger(),
+              67891);
     EXPECT_EQ(groups[8]->getId().getInteger(), 67892u);
-    EXPECT_EQ(static_cast<const CountAggregationResult &>(groups[8]->getAggregationResult(0)).getCount(), 1u);
-    EXPECT_EQ(static_cast<const SumAggregationResult &>(groups[8]->getAggregationResult(1)).getSum().getInteger(), 67892);
+    EXPECT_EQ(static_cast<const CountAggregationResult&>(groups[8]->getAggregationResult(0)).getCount(), 1u);
+    EXPECT_EQ(static_cast<const SumAggregationResult&>(groups[8]->getAggregationResult(1)).getSum().getInteger(),
+              67892);
     testStreaming(grouping);
 }
 
-
-ExpressionNode::UP
-createPredefRangeBucket(const AttributeGuard & guard) {
-    RangeBucketPreDefFunctionNode *predef(new RangeBucketPreDefFunctionNode(MU<AttributeNode>(*guard)));
-    IntegerBucketResultNodeVector prevec;
-    prevec.getVector().push_back(IntegerBucketResultNode(6,7));
-    prevec.getVector().push_back(IntegerBucketResultNode(7,14));
-    prevec.getVector().push_back(IntegerBucketResultNode(18,50)); //30
-    prevec.getVector().push_back(IntegerBucketResultNode(80,50000000000ull)); //30
+ExpressionNode::UP createPredefRangeBucket(const AttributeGuard& guard) {
+    RangeBucketPreDefFunctionNode* predef(new RangeBucketPreDefFunctionNode(MU<AttributeNode>(*guard)));
+    IntegerBucketResultNodeVector  prevec;
+    prevec.getVector().push_back(IntegerBucketResultNode(6, 7));
+    prevec.getVector().push_back(IntegerBucketResultNode(7, 14));
+    prevec.getVector().push_back(IntegerBucketResultNode(18, 50));             // 30
+    prevec.getVector().push_back(IntegerBucketResultNode(80, 50000000000ull)); // 30
     predef->setBucketList(prevec);
     return ExpressionNode::UP(predef);
 }
 
 TEST(PerDocExprTest, testGrouping2) {
-    AttributeGuard attr1 = createInt64Attribute();
-    ExpressionNode::UP result1( new CountAggregationResult());
-    (static_cast<AggregationResult &>(*result1)).setExpression(createPredefRangeBucket(attr1));
+    AttributeGuard     attr1 = createInt64Attribute();
+    ExpressionNode::UP result1(new CountAggregationResult());
+    (static_cast<AggregationResult&>(*result1)).setExpression(createPredefRangeBucket(attr1));
 
     Grouping grouping;
-    grouping.setFirstLevel(0)
-            .setLastLevel(1)
-            .addLevel(std::move(GroupingLevel()
-                              .setExpression(createPredefRangeBucket(attr1))
-                              .addResult(std::move(result1))));
+    grouping.setFirstLevel(0).setLastLevel(1).addLevel(
+        std::move(GroupingLevel().setExpression(createPredefRangeBucket(attr1)).addResult(std::move(result1))));
 
     grouping.configureStaticStuff(ConfigureStaticParams(nullptr, nullptr));
     grouping.aggregate(0u, 10u);
-    const Group::GroupList &groups = grouping.getRoot().groups();
+    const Group::GroupList& groups = grouping.getRoot().groups();
     EXPECT_EQ(grouping.getRoot().getChildrenSize(), 5u);
     ASSERT_TRUE(groups[0]->getAggregationResult(0).getClass().id() == CountAggregationResult::classId);
     EXPECT_EQ(groups[0]->getId().getInteger(), 0u);
-    EXPECT_EQ(static_cast<const CountAggregationResult &>(groups[0]->getAggregationResult(0)).getCount(), 1u);
+    EXPECT_EQ(static_cast<const CountAggregationResult&>(groups[0]->getAggregationResult(0)).getCount(), 1u);
     EXPECT_EQ(groups[1]->getId().getInteger(), 0u);
-    EXPECT_EQ(static_cast<const CountAggregationResult &>(groups[1]->getAggregationResult(0)).getCount(), 1u);
+    EXPECT_EQ(static_cast<const CountAggregationResult&>(groups[1]->getAggregationResult(0)).getCount(), 1u);
     EXPECT_EQ(groups[2]->getId().getInteger(), 0u);
-    EXPECT_EQ(static_cast<const CountAggregationResult &>(groups[2]->getAggregationResult(0)).getCount(), 4u);
+    EXPECT_EQ(static_cast<const CountAggregationResult&>(groups[2]->getAggregationResult(0)).getCount(), 4u);
     EXPECT_EQ(groups[3]->getId().getInteger(), 0u);
-    EXPECT_EQ(static_cast<const CountAggregationResult &>(groups[3]->getAggregationResult(0)).getCount(), 2u);
+    EXPECT_EQ(static_cast<const CountAggregationResult&>(groups[3]->getAggregationResult(0)).getCount(), 2u);
     EXPECT_EQ(groups[4]->getId().getInteger(), 0u);
-    EXPECT_EQ(static_cast<const CountAggregationResult &>(groups[4]->getAggregationResult(0)).getCount(), 2u);
+    EXPECT_EQ(static_cast<const CountAggregationResult&>(groups[4]->getAggregationResult(0)).getCount(), 2u);
     testStreaming(grouping);
 }
 
 AttributeGuard createInt64Attribute() {
-    SingleInt64ExtAttribute *selectAttr1(new SingleInt64ExtAttribute("selectAttr1"));
-    DocId docId(0);
+    SingleInt64ExtAttribute* selectAttr1(new SingleInt64ExtAttribute("selectAttr1"));
+    DocId                    docId(0);
     selectAttr1->addDoc(docId);
     selectAttr1->add(7);
     selectAttr1->addDoc(docId);
@@ -1542,13 +1487,13 @@ AttributeGuard createInt64Attribute() {
     selectAttr1->add(67892);
 
     AttributeVector::SP spSelectAttr1(selectAttr1);
-    AttributeGuard attr1( spSelectAttr1 );
+    AttributeGuard      attr1(spSelectAttr1);
     return attr1;
 }
 
 AttributeGuard createInt32Attribute() {
-    SingleInt32ExtAttribute *selectAttr1(new SingleInt32ExtAttribute("selectAttr1"));
-    DocId docId(0);
+    SingleInt32ExtAttribute* selectAttr1(new SingleInt32ExtAttribute("selectAttr1"));
+    DocId                    docId(0);
     selectAttr1->addDoc(docId);
     selectAttr1->add(7);
     selectAttr1->addDoc(docId);
@@ -1571,13 +1516,13 @@ AttributeGuard createInt32Attribute() {
     selectAttr1->add(67892);
 
     AttributeVector::SP spSelectAttr1(selectAttr1);
-    AttributeGuard attr1( spSelectAttr1 );
+    AttributeGuard      attr1(spSelectAttr1);
     return attr1;
 }
 
 AttributeGuard createInt16Attribute() {
-    SingleInt16ExtAttribute *selectAttr1(new SingleInt16ExtAttribute("selectAttr1"));
-    DocId docId(0);
+    SingleInt16ExtAttribute* selectAttr1(new SingleInt16ExtAttribute("selectAttr1"));
+    DocId                    docId(0);
     selectAttr1->addDoc(docId);
     selectAttr1->add(7);
     selectAttr1->addDoc(docId);
@@ -1600,13 +1545,13 @@ AttributeGuard createInt16Attribute() {
     selectAttr1->add(67892);
 
     AttributeVector::SP spSelectAttr1(selectAttr1);
-    AttributeGuard attr1( spSelectAttr1 );
+    AttributeGuard      attr1(spSelectAttr1);
     return attr1;
 }
 
 AttributeGuard createInt8Attribute() {
-    SingleInt8ExtAttribute *selectAttr1(new SingleInt8ExtAttribute("selectAttr1"));
-    DocId docId(0);
+    SingleInt8ExtAttribute* selectAttr1(new SingleInt8ExtAttribute("selectAttr1"));
+    DocId                   docId(0);
     selectAttr1->addDoc(docId);
     selectAttr1->add(7);
     selectAttr1->addDoc(docId);
@@ -1629,13 +1574,13 @@ AttributeGuard createInt8Attribute() {
     selectAttr1->add(67892);
 
     AttributeVector::SP spSelectAttr1(selectAttr1);
-    AttributeGuard attr1( spSelectAttr1 );
+    AttributeGuard      attr1(spSelectAttr1);
     return attr1;
 }
 
 AttributeGuard createBoolAttribute() {
-    SingleBoolAttribute *selectAttr1(new SingleBoolAttribute("selectAttr1", search::GrowStrategy(), false));
-    DocId docId(0);
+    SingleBoolAttribute* selectAttr1(new SingleBoolAttribute("selectAttr1", search::GrowStrategy(), false));
+    DocId                docId(0);
     selectAttr1->addDoc(docId);
     selectAttr1->setBit(docId, true);
     selectAttr1->addDoc(docId);
@@ -1646,9 +1591,8 @@ AttributeGuard createBoolAttribute() {
     selectAttr1->addDoc(docId);
     selectAttr1->setBit(docId, true);
 
-
     AttributeVector::SP spSelectAttr1(selectAttr1);
-    AttributeGuard attr1( spSelectAttr1 );
+    AttributeGuard      attr1(spSelectAttr1);
     return attr1;
 }
 
@@ -1675,28 +1619,52 @@ TEST(PerDocExprTest, testIntegerTypes) {
               uint32_t(Int64ResultNode::classId));
 
     EXPECT_EQ(AttributeNode(*AttributeGuard(std::make_shared<MultiInt8ExtAttribute>("test")))
-              .prepare(false).getResult()->getClass().id(),
+                  .prepare(false)
+                  .getResult()
+                  ->getClass()
+                  .id(),
               uint32_t(Int64ResultNodeVector::classId));
     EXPECT_EQ(AttributeNode(*AttributeGuard(std::make_shared<MultiInt8ExtAttribute>("test")))
-              .prepare(true).getResult()->getClass().id(),
+                  .prepare(true)
+                  .getResult()
+                  ->getClass()
+                  .id(),
               uint32_t(Int8ResultNodeVector::classId));
     EXPECT_EQ(AttributeNode(*AttributeGuard(std::make_shared<MultiInt16ExtAttribute>("test")))
-              .prepare(false).getResult()->getClass().id(),
+                  .prepare(false)
+                  .getResult()
+                  ->getClass()
+                  .id(),
               uint32_t(Int64ResultNodeVector::classId));
     EXPECT_EQ(AttributeNode(*AttributeGuard(std::make_shared<MultiInt16ExtAttribute>("test")))
-              .prepare(true).getResult()->getClass().id(),
+                  .prepare(true)
+                  .getResult()
+                  ->getClass()
+                  .id(),
               uint32_t(Int16ResultNodeVector::classId));
     EXPECT_EQ(AttributeNode(*AttributeGuard(std::make_shared<MultiInt32ExtAttribute>("test")))
-              .prepare(false).getResult()->getClass().id(),
+                  .prepare(false)
+                  .getResult()
+                  ->getClass()
+                  .id(),
               uint32_t(Int64ResultNodeVector::classId));
     EXPECT_EQ(AttributeNode(*AttributeGuard(std::make_shared<MultiInt32ExtAttribute>("test")))
-              .prepare(true).getResult()->getClass().id(),
+                  .prepare(true)
+                  .getResult()
+                  ->getClass()
+                  .id(),
               uint32_t(Int32ResultNodeVector::classId));
     EXPECT_EQ(AttributeNode(*AttributeGuard(std::make_shared<MultiInt64ExtAttribute>("test")))
-              .prepare(false).getResult()->getClass().id(),
+                  .prepare(false)
+                  .getResult()
+                  ->getClass()
+                  .id(),
               uint32_t(Int64ResultNodeVector::classId));
     EXPECT_EQ(AttributeNode(*AttributeGuard(std::make_shared<MultiInt64ExtAttribute>("test")))
-              .prepare(true).getResult()->getClass().id(),
+                  .prepare(true)
+                  .getResult()
+                  ->getClass()
+                  .id(),
               uint32_t(Int64ResultNodeVector::classId));
 }
 
@@ -1716,12 +1684,12 @@ struct Airports {
     [[nodiscard]] int64_t operator[](Airport a) const { return positions.at(a); }
 };
 
-}
+} // namespace
 
 TEST(PerDocExprTest, testGeoDistance) {
     Airports airports;
 
-    auto posAttr = std::make_shared<SingleInt64ExtAttribute>("pos");
+    auto  posAttr = std::make_shared<SingleInt64ExtAttribute>("pos");
     DocId docId = 0;
     posAttr->addDoc(docId);
     posAttr->add(airports[Airports::TRD]);
@@ -1738,7 +1706,7 @@ TEST(PerDocExprTest, testGeoDistance) {
         func.appendArg(MU<AttributeNode>(*guard))
             .appendArg(MU<ConstantNode>(MU<FloatResultNode>(lat)))
             .appendArg(MU<ConstantNode>(MU<FloatResultNode>(lon)));
-        ExpressionTree tree(func);
+        ExpressionTree            tree(func);
         ExpressionTree::Configure conf;
         tree.select(conf, conf);
         return tree;
@@ -1776,7 +1744,7 @@ TEST(PerDocExprTest, testGeoDistance) {
 TEST(PerDocExprTest, testGeoDistanceMultiValue) {
     Airports airports;
 
-    auto posAttr = std::make_shared<MultiInt64ExtAttribute>("pos");
+    auto  posAttr = std::make_shared<MultiInt64ExtAttribute>("pos");
     DocId docId = 0;
     posAttr->addDoc(docId);
     posAttr->add(airports[Airports::TRD]);
@@ -1795,7 +1763,7 @@ TEST(PerDocExprTest, testGeoDistanceMultiValue) {
         func.appendArg(MU<AttributeNode>(*guard))
             .appendArg(MU<ConstantNode>(MU<FloatResultNode>(lat)))
             .appendArg(MU<ConstantNode>(MU<FloatResultNode>(lon)));
-        ExpressionTree tree(func);
+        ExpressionTree            tree(func);
         ExpressionTree::Configure conf;
         tree.select(conf, conf);
         return tree;
