@@ -215,7 +215,7 @@ public class Flags {
 
     public static final UnboundDoubleFlag DOCPROC_HANDLER_THREADPOOL = defineDoubleFlag(
             "docproc-handler-threadpool", 1.0,
-            List.of("johsol"), "2025-10-17", "2026-05-01",
+            List.of("johsol"), "2025-10-17", "2026-06-01",
             "Adjust document processor handler threadpool size (scale the number of threads with cpu cores, 1 means same number of threads as cpu cores))",
             "Takes effect at redeployment",
             APPLICATION);
