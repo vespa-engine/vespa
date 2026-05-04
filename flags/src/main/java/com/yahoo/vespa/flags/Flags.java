@@ -139,7 +139,7 @@ public class Flags {
 
     public static final UnboundIntFlag MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS = defineIntFlag(
             "max-activation-inhibited-out-of-sync-groups", 0,
-            List.of("vekterli"), "2021-02-19", "2026-05-01",
+            List.of("vekterli"), "2021-02-19", "2026-10-01",
             "Allows replicas in up to N content groups to not be activated " +
             "for query visibility if they are out of sync with a majority of other replicas",
             "Takes effect at redeployment",
@@ -147,7 +147,7 @@ public class Flags {
 
     public static final UnboundStringFlag CORE_ENCRYPTION_PUBLIC_KEY_ID = defineStringFlag(
             "core-encryption-public-key-id", "",
-            List.of("vekterli"), "2022-11-03", "2026-05-01",
+            List.of("vekterli"), "2022-11-03", "2027-05-01",
             "Specifies which public key to use for core dump encryption.",
             "Takes effect on the next tick.",
             NODE_TYPE, HOSTNAME);
@@ -293,7 +293,7 @@ public class Flags {
 
     public static final UnboundIntFlag MAX_CONTENT_NODE_MAINTENANCE_OP_CONCURRENCY = defineIntFlag(
             "max-content-node-maintenance-op-concurrency", -1,
-            List.of("vekterli"), "2025-03-07", "2026-05-01",
+            List.of("vekterli"), "2025-03-07", "2026-10-01",
             "Sets the maximum concurrency for maintenance-related operations on content nodes. " +
             "Only intended as a manual emergency brake feature if a system is suddenly incapable of handling " +
             "regular maintenance pressure.",
