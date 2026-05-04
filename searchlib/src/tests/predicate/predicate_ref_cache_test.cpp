@@ -3,6 +3,7 @@
 
 #include <vespa/searchlib/predicate/predicate_ref_cache.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <cassert>
 #include <vector>
 
@@ -13,17 +14,17 @@ namespace {
 
 struct MyBufferStore {
     std::vector<uint32_t> store;
-    const uint32_t *getBuffer(uint32_t ref) const {
+    const uint32_t* getBuffer(uint32_t ref) const {
         assert(ref < store.size());
         return &store[ref];
     }
     uint32_t insert(uint32_t value) {
         size_t size = store.size();
         store.push_back(value);
-        return size | 0x01000000;  // size = 1
+        return size | 0x01000000; // size = 1
     }
     uint32_t insert(std::vector<uint32_t> data) {
-        size_t size = store.size();
+        size_t  size = store.size();
         uint8_t data_size = data.size();
         if (data.size() >= 0xff) {
             store.push_back(data.size());
@@ -35,7 +36,7 @@ struct MyBufferStore {
 };
 
 TEST(PredicateRefCacheTest, require_that_single_entries_are_cached) {
-    MyBufferStore store;
+    MyBufferStore                    store;
     PredicateRefCache<MyBufferStore> cache(store);
 
     uint32_t ref = store.insert(42);
@@ -52,13 +53,13 @@ TEST(PredicateRefCacheTest, require_that_single_entries_are_cached) {
 }
 
 TEST(PredicateRefCacheTest, require_that_multivalue_entries_are_cached) {
-    MyBufferStore store;
+    MyBufferStore                    store;
     PredicateRefCache<MyBufferStore> cache(store);
 
     std::vector<uint32_t> data1 = {1, 2, 3, 4, 5};
     std::vector<uint32_t> data2 = {1, 2, 3, 4, 6};
-    uint32_t ref = store.insert(data1);
-    uint32_t new_ref = cache.insert(ref);
+    uint32_t              ref = store.insert(data1);
+    uint32_t              new_ref = cache.insert(ref);
     EXPECT_EQ(ref, new_ref);
 
     uint32_t ref2 = store.insert(data1);
@@ -71,7 +72,7 @@ TEST(PredicateRefCacheTest, require_that_multivalue_entries_are_cached) {
 }
 
 TEST(PredicateRefCacheTest, require_that_entries_can_be_looked_up) {
-    MyBufferStore store;
+    MyBufferStore                    store;
     PredicateRefCache<MyBufferStore> cache(store);
 
     uint32_t data = 42;
@@ -82,7 +83,7 @@ TEST(PredicateRefCacheTest, require_that_entries_can_be_looked_up) {
 }
 
 TEST(PredicateRefCacheTest, require_that_cache_handles_large_entries) {
-    MyBufferStore store;
+    MyBufferStore                    store;
     PredicateRefCache<MyBufferStore> cache(store);
 
     std::vector<uint32_t> data1(300);
@@ -98,4 +99,4 @@ TEST(PredicateRefCacheTest, require_that_cache_handles_large_entries) {
     EXPECT_EQ(ref2, cache.find(&data2[0], data2.size()));
 }
 
-}  // namespace
+} // namespace

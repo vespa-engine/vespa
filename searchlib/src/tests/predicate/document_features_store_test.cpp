@@ -2,11 +2,11 @@
 // Unit tests for document_features_store.
 
 #include <vespa/searchlib/predicate/document_features_store.h>
-#include <vespa/searchlib/util/data_buffer_writer.h>
 #include <vespa/searchlib/predicate/document_features_store_saver.h>
+#include <vespa/searchlib/predicate/predicate_hash.h>
 #include <vespa/searchlib/predicate/predicate_index.h>
 #include <vespa/searchlib/predicate/predicate_tree_annotator.h>
-#include <vespa/searchlib/predicate/predicate_hash.h>
+#include <vespa/searchlib/util/data_buffer_writer.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using namespace search;
@@ -19,9 +19,7 @@ const uint64_t hash1 = 0x12345678;
 const uint64_t hash2 = 0x123456789a;
 const uint32_t doc_id = 42;
 
-void
-save_document_features_store(DocumentFeaturesStore& store, vespalib::DataBuffer& buffer)
-{
+void save_document_features_store(DocumentFeaturesStore& store, vespalib::DataBuffer& buffer) {
     store.commit();
     DataBufferWriter writer(buffer);
     store.make_saver()->save(writer);
@@ -29,7 +27,7 @@ save_document_features_store(DocumentFeaturesStore& store, vespalib::DataBuffer&
 }
 
 TEST(DocumentFeaturesStoreTest, require_that_DocumentFeaturesStore_can_store_features) {
-    DocumentFeaturesStore features_store(10);
+    DocumentFeaturesStore    features_store(10);
     PredicateTreeAnnotations annotations;
     annotations.features.push_back(hash1);
     annotations.features.push_back(hash2);
@@ -45,15 +43,14 @@ TEST(DocumentFeaturesStoreTest, require_that_DocumentFeaturesStore_can_store_fea
     EXPECT_TRUE(features.empty());
 }
 
-template <typename Set>
-void expectHash(const string &label, const Set &set) {
+template <typename Set> void expectHash(const string& label, const Set& set) {
     SCOPED_TRACE(label);
     uint64_t hash = PredicateHash::hash64(label);
     EXPECT_EQ(1u, set.count(hash));
 }
 
 TEST(DocumentFeaturesStoreTest, require_that_DocumentFeaturesStore_can_store_ranges) {
-    DocumentFeaturesStore features_store(10);
+    DocumentFeaturesStore    features_store(10);
     PredicateTreeAnnotations annotations;
     annotations.range_features.push_back({"foo", 2, 4});
     annotations.range_features.push_back({"bar", 7, 13});
@@ -86,7 +83,7 @@ TEST(DocumentFeaturesStoreTest, require_that_DocumentFeaturesStore_can_store_ran
 }
 
 TEST(DocumentFeaturesStoreTest, require_that_DocumentFeaturesStore_can_store_large_ranges) {
-    DocumentFeaturesStore features_store(10);
+    DocumentFeaturesStore    features_store(10);
     PredicateTreeAnnotations annotations;
     annotations.range_features.push_back({"foo", 10, 199});
     annotations.range_features.push_back({"bar", 100, 239});
@@ -117,7 +114,7 @@ TEST(DocumentFeaturesStoreTest, require_that_DocumentFeaturesStore_can_store_lar
 }
 
 TEST(DocumentFeaturesStoreTest, require_that_DocumentFeaturesStore_can_use_very_large_ranges) {
-    DocumentFeaturesStore features_store(2);
+    DocumentFeaturesStore    features_store(2);
     PredicateTreeAnnotations annotations;
     annotations.range_features.push_back({"foo", LLONG_MIN, 39});
     features_store.insert(annotations, doc_id);
@@ -131,7 +128,7 @@ TEST(DocumentFeaturesStoreTest, require_that_DocumentFeaturesStore_can_use_very_
 }
 
 TEST(DocumentFeaturesStoreTest, require_that_duplicate_range_features_are_removed) {
-    DocumentFeaturesStore features_store(10);
+    DocumentFeaturesStore    features_store(10);
     PredicateTreeAnnotations annotations;
     annotations.range_features.push_back({"foo", 80, 199});
     annotations.range_features.push_back({"foo", 85, 199});
@@ -147,7 +144,7 @@ TEST(DocumentFeaturesStoreTest, require_that_duplicate_range_features_are_remove
 }
 
 TEST(DocumentFeaturesStoreTest, require_that_only_unique_features_are_returned) {
-    DocumentFeaturesStore features_store(10);
+    DocumentFeaturesStore    features_store(10);
     PredicateTreeAnnotations annotations;
     annotations.range_features.push_back({"foo", 100, 199});
     annotations.features.push_back(PredicateHash::hash64("foo=100-199"));
@@ -159,7 +156,7 @@ TEST(DocumentFeaturesStoreTest, require_that_only_unique_features_are_returned) 
 }
 
 TEST(DocumentFeaturesStoreTest, require_that_both_features_and_ranges_are_removed_by_remove) {
-    DocumentFeaturesStore features_store(10);
+    DocumentFeaturesStore    features_store(10);
     PredicateTreeAnnotations annotations;
     annotations.range_features.push_back({"foo", 100, 199});
     annotations.features.push_back(PredicateHash::hash64("foo=100-199"));
@@ -171,7 +168,7 @@ TEST(DocumentFeaturesStoreTest, require_that_both_features_and_ranges_are_remove
 }
 
 TEST(DocumentFeaturesStoreTest, require_that_both_features_and_ranges_counts_towards_memory_usage) {
-    constexpr size_t BASE_USED = 557152u;
+    constexpr size_t      BASE_USED = 557152u;
     DocumentFeaturesStore features_store(10);
     EXPECT_EQ(BASE_USED, features_store.getMemoryUsage().usedBytes());
 
@@ -187,7 +184,7 @@ TEST(DocumentFeaturesStoreTest, require_that_both_features_and_ranges_counts_tow
 }
 
 TEST(DocumentFeaturesStoreTest, require_that_DocumentFeaturesStore_can_be_serialized) {
-    DocumentFeaturesStore features_store(10);
+    DocumentFeaturesStore    features_store(10);
     PredicateTreeAnnotations annotations;
     annotations.range_features.push_back({"foo", 100, 199});
     annotations.features.push_back(PredicateHash::hash64("foo=bar"));
@@ -209,15 +206,15 @@ TEST(DocumentFeaturesStoreTest, require_that_DocumentFeaturesStore_can_be_serial
 }
 
 TEST(DocumentFeaturesStoreTest, require_that_serialization_cleans_up_wordstore) {
-    constexpr size_t BASE_USED = 557592u;
-    DocumentFeaturesStore features_store(10);
+    constexpr size_t         BASE_USED = 557592u;
+    DocumentFeaturesStore    features_store(10);
     PredicateTreeAnnotations annotations;
     annotations.range_features.push_back({"foo", 100, 199});
     features_store.insert(annotations, doc_id);
     EXPECT_EQ(BASE_USED, features_store.getMemoryUsage().usedBytes());
     annotations.range_features.push_back({"bar", 100, 199});
     features_store.insert(annotations, doc_id + 1);
-    EXPECT_EQ(BASE_USED +60u, features_store.getMemoryUsage().usedBytes());
+    EXPECT_EQ(BASE_USED + 60u, features_store.getMemoryUsage().usedBytes());
     features_store.remove(doc_id + 1);
     EXPECT_EQ(BASE_USED + 60u, features_store.getMemoryUsage().usedBytes());
 
@@ -227,4 +224,4 @@ TEST(DocumentFeaturesStoreTest, require_that_serialization_cleans_up_wordstore) 
     EXPECT_EQ(BASE_USED, features_store2.getMemoryUsage().usedBytes());
 }
 
-}  // namespace
+} // namespace
