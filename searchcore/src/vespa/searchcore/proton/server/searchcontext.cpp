@@ -7,28 +7,20 @@ using searchcorespi::IndexSearchable;
 
 namespace proton {
 
-IndexSearchable &
-SearchContext::getIndexes()
-{
+IndexSearchable& SearchContext::getIndexes() {
     return *_indexSearchable;
 }
 
-Searchable &
-SearchContext::getAttributes()
-{
+Searchable& SearchContext::getAttributes() {
     return _attributeBlueprintFactory;
 }
 
-uint32_t SearchContext::getDocIdLimit()
-{
+uint32_t SearchContext::getDocIdLimit() {
     return _docIdLimit;
 }
 
-SearchContext::SearchContext(const std::shared_ptr<IndexSearchable> &indexSearchable, uint32_t docIdLimit)
-    : _indexSearchable(indexSearchable),
-      _attributeBlueprintFactory(),
-      _docIdLimit(docIdLimit)
-{
+SearchContext::SearchContext(const std::shared_ptr<IndexSearchable>& indexSearchable, uint32_t docIdLimit)
+    : _indexSearchable(indexSearchable), _attributeBlueprintFactory(), _docIdLimit(docIdLimit) {
 }
 
 SearchContext::~SearchContext() = default;

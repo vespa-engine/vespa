@@ -1,9 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "proton_disk_layout.h"
-#include <vespa/vespalib/io/fileutil.h>
+
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchlib/transactionlog/translogclient.h>
+#include <vespa/vespalib/io/fileutil.h>
+
 #include <filesystem>
 
 #include <vespa/log/log.h>
@@ -15,22 +17,16 @@ namespace proton {
 
 namespace {
 
-struct DocumentDBDirMeta
-{
+struct DocumentDBDirMeta {
     bool normal;
     bool removed;
 
-    DocumentDBDirMeta()
-        : normal(false),
-          removed(false)
-    {
-    }
+    DocumentDBDirMeta() : normal(false), removed(false) {}
 };
 
 using DocumentDBDirScan = std::map<DocTypeName, DocumentDBDirMeta>;
 
-std::string getDocumentsDir(const std::string &baseDir)
-{
+std::string getDocumentsDir(const std::string& baseDir) {
     return baseDir + "/documents";
 }
 
@@ -40,20 +36,18 @@ std::string getNormalName(const std::string removedName) {
     return removedName.substr(0, removedName.size() - removedSuffix.size());
 }
 
-std::string getRemovedName(const std::string &normalName)
-{
+std::string getRemovedName(const std::string& normalName) {
     return normalName + removedSuffix;
 }
 
-bool isRemovedName(const std::string &dirName)
-{
-    return dirName.size() > removedSuffix.size() && dirName.substr(dirName.size() - removedSuffix.size()) == removedSuffix;
+bool isRemovedName(const std::string& dirName) {
+    return dirName.size() > removedSuffix.size() &&
+           dirName.substr(dirName.size() - removedSuffix.size()) == removedSuffix;
 }
 
-void scanDir(const std::string documentsDir, DocumentDBDirScan &dirs)
-{
+void scanDir(const std::string documentsDir, DocumentDBDirScan& dirs) {
     auto names = vespalib::listDirectory(documentsDir);
-    for (const auto &name : names) {
+    for (const auto& name : names) {
         if (std::filesystem::is_directory(std::filesystem::path(documentsDir + "/" + name))) {
             if (isRemovedName(name)) {
                 dirs[DocTypeName(getNormalName(name))].removed = true;
@@ -64,21 +58,16 @@ void scanDir(const std::string documentsDir, DocumentDBDirScan &dirs)
     }
 }
 
-}
+} // namespace
 
-ProtonDiskLayout::ProtonDiskLayout(FNET_Transport & transport, const std::string &baseDir, const std::string &tlsSpec)
-    : _transport(transport),
-      _baseDir(baseDir),
-      _tlsSpec(tlsSpec)
-{
+ProtonDiskLayout::ProtonDiskLayout(FNET_Transport& transport, const std::string& baseDir, const std::string& tlsSpec)
+    : _transport(transport), _baseDir(baseDir), _tlsSpec(tlsSpec) {
     std::filesystem::create_directories(std::filesystem::path(getDocumentsDir(_baseDir)));
 }
 
 ProtonDiskLayout::~ProtonDiskLayout() = default;
 
-void
-ProtonDiskLayout::remove(const DocTypeName &docTypeName)
-{
+void ProtonDiskLayout::remove(const DocTypeName& docTypeName) {
     std::string documentsDir(getDocumentsDir(_baseDir));
     std::string name(docTypeName.toString());
     std::string normalDir(documentsDir + "/" + name);
@@ -96,13 +85,11 @@ ProtonDiskLayout::remove(const DocTypeName &docTypeName)
     vespalib::File::sync(documentsDir);
 }
 
-void
-ProtonDiskLayout::initAndPruneUnused(const std::set<DocTypeName> &docTypeNames)
-{
-    std::string documentsDir(getDocumentsDir(_baseDir));
+void ProtonDiskLayout::initAndPruneUnused(const std::set<DocTypeName>& docTypeNames) {
+    std::string       documentsDir(getDocumentsDir(_baseDir));
     DocumentDBDirScan dirs;
     scanDir(documentsDir, dirs);
-    for (const auto &dir : dirs) {
+    for (const auto& dir : dirs) {
         if (dir.second.removed) {
             // Complete interrupted removal
             if (dir.second.normal) {
@@ -119,4 +106,3 @@ ProtonDiskLayout::initAndPruneUnused(const std::set<DocTypeName> &docTypeNames)
 }
 
 } // namespace proton
-

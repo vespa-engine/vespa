@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "memoryconfigstore.h"
+
 #include "documentdbconfig.h"
+
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -11,46 +13,37 @@ namespace proton {
 
 ConfigMaps::~ConfigMaps() = default;
 
-MemoryConfigStore::MemoryConfigStore() : _maps(std::make_shared<ConfigMaps>()) {}
-MemoryConfigStore::MemoryConfigStore(ConfigMaps::SP maps) : _maps(std::move(maps)) {}
+MemoryConfigStore::MemoryConfigStore() : _maps(std::make_shared<ConfigMaps>()) {
+}
+MemoryConfigStore::MemoryConfigStore(ConfigMaps::SP maps) : _maps(std::move(maps)) {
+}
 MemoryConfigStore::~MemoryConfigStore() = default;
 
-ConfigStore::SerialNum
-MemoryConfigStore::getBestSerialNum() const {
+ConfigStore::SerialNum MemoryConfigStore::getBestSerialNum() const {
     return _maps->_valid.empty() ? 0 : *_maps->_valid.rbegin();
 }
-ConfigStore::SerialNum
-MemoryConfigStore::getOldestSerialNum() const {
+ConfigStore::SerialNum MemoryConfigStore::getOldestSerialNum() const {
     return _maps->_valid.empty() ? 0 : *_maps->_valid.begin();
 }
-bool
-MemoryConfigStore::hasValidSerial(SerialNum serial) const {
+bool MemoryConfigStore::hasValidSerial(SerialNum serial) const {
     return _maps->_valid.find(serial) != _maps->_valid.end();
 }
-ConfigStore::SerialNum
-MemoryConfigStore::getPrevValidSerial(SerialNum serial) const {
-    if (_maps->_valid.empty() ||
-        *_maps->_valid.begin() >= serial) {
+ConfigStore::SerialNum MemoryConfigStore::getPrevValidSerial(SerialNum serial) const {
+    if (_maps->_valid.empty() || *_maps->_valid.begin() >= serial) {
         return 0;
     }
     return *(--(_maps->_valid.lower_bound(serial)));
 }
-void
-MemoryConfigStore::saveConfig(const DocumentDBConfig &config, SerialNum serial)
-{
+void MemoryConfigStore::saveConfig(const DocumentDBConfig& config, SerialNum serial) {
     _maps->configs[serial] = config.make_copy();
     _maps->_valid.insert(serial);
 }
-void
-MemoryConfigStore::loadConfig(const DocumentDBConfig &, SerialNum serial,
-                              std::shared_ptr<DocumentDBConfig> &loaded_config)
-{
+void MemoryConfigStore::loadConfig(const DocumentDBConfig&, SerialNum serial,
+                                   std::shared_ptr<DocumentDBConfig>& loaded_config) {
     assert(hasValidSerial(serial));
     loaded_config = _maps->configs[serial];
 }
-void
-MemoryConfigStore::removeInvalid()
-{
+void MemoryConfigStore::removeInvalid() {
     // Note: Depends on C++11 semantics for erase
     for (auto it = _maps->configs.begin(); it != _maps->configs.end();) {
         if (!hasValidSerial(it->first)) {
@@ -61,41 +54,32 @@ MemoryConfigStore::removeInvalid()
     }
 }
 
-void
-MemoryConfigStore::prune(SerialNum serial) {
-    _maps->configs.erase(_maps->configs.begin(),
-                         _maps->configs.upper_bound(serial));
-    _maps->_valid.erase(_maps->_valid.begin(),
-                        _maps->_valid.upper_bound(serial));
+void MemoryConfigStore::prune(SerialNum serial) {
+    _maps->configs.erase(_maps->configs.begin(), _maps->configs.upper_bound(serial));
+    _maps->_valid.erase(_maps->_valid.begin(), _maps->_valid.upper_bound(serial));
 }
 
-void
-MemoryConfigStore::serializeConfig(SerialNum, vespalib::nbostream &) {
+void MemoryConfigStore::serializeConfig(SerialNum, vespalib::nbostream&) {
     LOG(info, "Serialization of config not implemented.");
 }
-void
-MemoryConfigStore::deserializeConfig(SerialNum, vespalib::nbostream &) {
+void MemoryConfigStore::deserializeConfig(SerialNum, vespalib::nbostream&) {
     assert(!"Not implemented");
 }
-void
-MemoryConfigStore::setProtonConfig(const ProtonConfigSP &) { }
+void MemoryConfigStore::setProtonConfig(const ProtonConfigSP&) {
+}
 
-uint64_t
-MemoryConfigStore::get_size_on_disk() const
-{
+uint64_t MemoryConfigStore::get_size_on_disk() const {
     return 0;
 }
 
 MemoryConfigStores::MemoryConfigStores() = default;
 MemoryConfigStores::~MemoryConfigStores() = default;
 
-ConfigStore::UP
-MemoryConfigStores::getConfigStore(const std::string &type) {
+ConfigStore::UP MemoryConfigStores::getConfigStore(const std::string& type) {
     if (!_config_maps[type].get()) {
         _config_maps[type].reset(new ConfigMaps);
     }
     return std::make_unique<MemoryConfigStore>(_config_maps[type]);
 }
 
-}  // namespace proton
-
+} // namespace proton

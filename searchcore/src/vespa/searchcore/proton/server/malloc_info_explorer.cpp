@@ -1,8 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "malloc_info_explorer.h"
+
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/util/size_literals.h>
+
 #include <cassert>
 #include <cstdio>
 #include <ranges>
@@ -23,7 +25,6 @@ void vespamalloc_dump_info(FILE* out_file) __attribute__((weak));
 // From https://microsoft.github.io/mimalloc/group__extended.html:
 using mi_output_fun = void(const char* msg, void* aux_arg);
 void mi_stats_print_out(mi_output_fun* out, void* aux_arg) __attribute__((weak));
-
 }
 
 namespace proton {
@@ -35,11 +36,7 @@ namespace {
 
 #ifdef __linux__
 
-enum class MallocImpl {
-    LibcOrUnknown,
-    VespaMalloc,
-    MiMalloc
-};
+enum class MallocImpl { LibcOrUnknown, VespaMalloc, MiMalloc };
 
 [[nodiscard]]
 MallocImpl detect_malloc_impl() noexcept {
@@ -55,9 +52,12 @@ MallocImpl detect_malloc_impl() noexcept {
 [[nodiscard]]
 std::string_view to_string(MallocImpl mi) noexcept {
     switch (mi) {
-    case MallocImpl::VespaMalloc:   return "vespamalloc";
-    case MallocImpl::MiMalloc:      return "mimalloc";
-    case MallocImpl::LibcOrUnknown: return "libc_or_unknown";
+    case MallocImpl::VespaMalloc:
+        return "vespamalloc";
+    case MallocImpl::MiMalloc:
+        return "mimalloc";
+    case MallocImpl::LibcOrUnknown:
+        return "libc_or_unknown";
     }
     abort();
 }
@@ -70,9 +70,9 @@ void fclose_helper(FILE* f) {
 std::string get_vespamalloc_info_dump() {
 #ifdef _POSIX_C_SOURCE // For open_memstream()
     constexpr size_t max_buf_size = 16_Ki;
-    auto buf = std::make_unique<char[]>(max_buf_size);
+    auto             buf = std::make_unique<char[]>(max_buf_size);
 
-    char* buf_loc = buf.get();
+    char*  buf_loc = buf.get();
     size_t buf_size = max_buf_size;
     {
         // buf_loc and buf_size will be updated on fclose().
@@ -113,13 +113,13 @@ void dump_mallinfo_impl(Cursor& object, const auto& info) {
     // mallinfo fields are so confusingly named, it's actually sort of impressive.
     // TODO consider if we want to massage the names/output a bit instead of emitting verbatim...
     //  - for deprecated mallinfo() vespamalloc will divide by 1 Mi for all byte-counting fields to avoid overflow
-    object.setLong("arena",    static_cast<int64_t>(info.arena));
-    object.setLong("ordblks",  static_cast<int64_t>(info.ordblks));
-    object.setLong("smblks",   static_cast<int64_t>(info.smblks));
-    object.setLong("hblks",    static_cast<int64_t>(info.hblks));
-    object.setLong("hblkhd",   static_cast<int64_t>(info.hblkhd));
-    object.setLong("usmblks",  static_cast<int64_t>(info.usmblks));
-    object.setLong("fsmblks",  static_cast<int64_t>(info.fsmblks));
+    object.setLong("arena", static_cast<int64_t>(info.arena));
+    object.setLong("ordblks", static_cast<int64_t>(info.ordblks));
+    object.setLong("smblks", static_cast<int64_t>(info.smblks));
+    object.setLong("hblks", static_cast<int64_t>(info.hblks));
+    object.setLong("hblkhd", static_cast<int64_t>(info.hblkhd));
+    object.setLong("usmblks", static_cast<int64_t>(info.usmblks));
+    object.setLong("fsmblks", static_cast<int64_t>(info.fsmblks));
     object.setLong("uordblks", static_cast<int64_t>(info.uordblks));
     object.setLong("fordblks", static_cast<int64_t>(info.fordblks));
     object.setLong("keepcost", static_cast<int64_t>(info.keepcost));
@@ -148,7 +148,7 @@ void emit_malloc_internal_info_dump(Cursor& parent, std::string_view info_dump) 
 
 #endif // __linux__
 
-} // anon ns
+} // namespace
 
 void MallocInfoExplorer::get_state(const Inserter& inserter, bool full) const {
     Cursor& object = inserter.insertObject();
@@ -167,8 +167,8 @@ void MallocInfoExplorer::get_state(const Inserter& inserter, bool full) const {
         emit_malloc_internal_info_dump(object, get_mimalloc_info_dump());
     }
 #else
-    (void) object;
+    (void)object;
 #endif // __linux__
 }
 
-} // proton
+} // namespace proton
