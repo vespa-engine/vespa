@@ -11,13 +11,13 @@ namespace proton {
  * Class for mapping from gid to lid. Instances should be short lived
  * due to read guards preventing resource reuse.
  */
-class GidToLidMapper : public search::IGidToLidMapper
-{
+class GidToLidMapper : public search::IGidToLidMapper {
     search::IDocumentMetaStoreContext::IReadGuard::SP _guard;
+
 public:
-    GidToLidMapper(const search::IDocumentMetaStoreContext &dmsContext);
+    GidToLidMapper(const search::IDocumentMetaStoreContext& dmsContext);
     ~GidToLidMapper() override;
-    void foreach(const search::IGidToLidMapperVisitor &visitor) const override;
+    void foreach (const search::IGidToLidMapperVisitor& visitor) const override;
 };
 
 } // namespace proton

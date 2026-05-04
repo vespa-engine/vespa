@@ -4,11 +4,17 @@
 
 #include "i_gid_to_lid_change_handler.h"
 #include "pending_gid_to_lid_change.h"
-#include <vespa/vespalib/stllike/hash_map.h>
-#include <vector>
-#include <mutex>
 
-namespace searchcorespi { namespace index { struct IThreadService; } }
+#include <vespa/vespalib/stllike/hash_map.h>
+
+#include <mutex>
+#include <vector>
+
+namespace searchcorespi {
+namespace index {
+struct IThreadService;
+}
+} // namespace searchcorespi
 
 namespace proton {
 
@@ -18,8 +24,7 @@ namespace proton {
  * to be executed by master thread service.
  */
 class GidToLidChangeHandler : public std::enable_shared_from_this<GidToLidChangeHandler>,
-                              public IGidToLidChangeHandler
-{
+                              public IGidToLidChangeHandler {
     using lock_guard = std::lock_guard<std::mutex>;
     using Listeners = std::vector<std::unique_ptr<IGidToLidChangeListener>>;
     struct PendingRemoveEntry {
@@ -28,33 +33,28 @@ class GidToLidChangeHandler : public std::enable_shared_from_this<GidToLidChange
         uint32_t  refCount;
 
         PendingRemoveEntry(SerialNum removeSerialNum_)
-            : removeSerialNum(removeSerialNum_),
-              putSerialNum(0),
-              refCount(1)
-        {
-        }
+            : removeSerialNum(removeSerialNum_), putSerialNum(0), refCount(1) {}
 
-        PendingRemoveEntry()
-            : PendingRemoveEntry(0)
-        {
-        }
+        PendingRemoveEntry() : PendingRemoveEntry(0) {}
     };
 
-    std::mutex _lock;
-    Listeners  _listeners;
-    bool       _closed;
+    std::mutex                                                       _lock;
+    Listeners                                                        _listeners;
+    bool                                                             _closed;
     vespalib::hash_map<GlobalId, PendingRemoveEntry, GlobalId::hash> _pendingRemove;
-    std::vector<PendingGidToLidChange> _pending_changes;
+    std::vector<PendingGidToLidChange>                               _pending_changes;
 
     void notifyPutDone(IDestructorCallbackSP context, GlobalId gid, uint32_t lid);
     void notifyRemove(IDestructorCallbackSP context, GlobalId gid);
+
 public:
     GidToLidChangeHandler();
     ~GidToLidChangeHandler() override;
 
     void notifyPut(IDestructorCallbackSP context, GlobalId gid, uint32_t lid, SerialNum serial_num) override;
     void notifyPutDone(IDestructorCallbackSP context, GlobalId gid, uint32_t lid, SerialNum serialNum);
-    void notifyRemoves(IDestructorCallbackSP context, const std::vector<GlobalId> & gids, SerialNum serialNum) override;
+    void notifyRemoves(IDestructorCallbackSP context, const std::vector<GlobalId>& gids,
+                       SerialNum serialNum) override;
     void notifyRemoveDone(GlobalId gid, SerialNum serialNum);
     std::unique_ptr<IPendingGidToLidChanges> grab_pending_changes() override;
 
@@ -64,7 +64,7 @@ public:
     void close();
 
     void addListener(std::unique_ptr<IGidToLidChangeListener> listener) override;
-    void removeListeners(const std::string &docTypeName, const std::set<std::string> &keepNames) override;
+    void removeListeners(const std::string& docTypeName, const std::set<std::string>& keepNames) override;
 };
 
 } // namespace proton
