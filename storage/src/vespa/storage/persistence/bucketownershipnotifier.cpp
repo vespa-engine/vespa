@@ -2,13 +2,14 @@
 
 #include "bucketownershipnotifier.h"
 
-#include <vespa/log/bufferedlogger.h>
 #include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/vespalib/util/backtrace.h>
+
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".persistence.bucketownershipnotifier");
 
 using document::BucketSpace;

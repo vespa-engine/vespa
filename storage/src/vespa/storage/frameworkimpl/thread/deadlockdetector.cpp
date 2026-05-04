@@ -4,12 +4,13 @@
 
 #include "htmltable.h"
 
-#include <vespa/log/bufferedlogger.h>
 #include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/storageframework/generic/clock/clock.h>
 #include <vespa/storageframework/generic/thread/thread.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".deadlock.detector");
 
 using document::BucketSpace;

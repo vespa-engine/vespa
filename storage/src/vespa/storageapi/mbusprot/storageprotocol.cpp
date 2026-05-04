@@ -7,11 +7,12 @@
 
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/document/util/stringutil.h>
-#include <vespa/log/bufferedlogger.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <cassert>
 #include <sstream>
+
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".storage.api.mbusprot.protocol");
 
 namespace storage::mbusprot {

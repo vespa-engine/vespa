@@ -7,12 +7,13 @@
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/fieldset/fieldsets.h>
-#include <vespa/log/bufferedlogger.h>
 #include <vespa/persistence/spi/docentry.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
 
 #include <cassert>
 #include <sstream>
+
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".persistence.split.bitdetector");
 
 namespace storage {

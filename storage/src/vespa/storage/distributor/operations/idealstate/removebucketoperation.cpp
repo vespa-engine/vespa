@@ -2,10 +2,11 @@
 
 #include "removebucketoperation.h"
 
-#include <vespa/log/bufferedlogger.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storage/distributor/top_level_distributor.h>
+
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".distributor.operations.idealstate.remove_bucket");
 
 namespace storage::distributor {

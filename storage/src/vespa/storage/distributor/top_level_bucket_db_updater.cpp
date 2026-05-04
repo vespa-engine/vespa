@@ -12,7 +12,6 @@
 #include "top_level_distributor.h"
 
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
-#include <vespa/log/bufferedlogger.h>
 #include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
@@ -23,6 +22,8 @@
 #include <vespa/vespalib/util/xmlstream.h>
 
 #include <thread>
+
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".distributor.top_level_bucket_db_updater");
 
 using document::BucketSpace;

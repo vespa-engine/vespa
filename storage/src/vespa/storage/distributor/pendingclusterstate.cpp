@@ -7,12 +7,13 @@
 #include "top_level_bucket_db_updater.h"
 
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
-#include <vespa/log/bufferedlogger.h>
 #include <vespa/storageframework/defaultimplementation/clock/realclock.h>
 #include <vespa/vdslib/distribution/distribution.h>
 
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/xmlstream.hpp>
+
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".distributor.pending_cluster_state");
 
 using document::BucketSpace;

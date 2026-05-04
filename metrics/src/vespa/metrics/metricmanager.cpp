@@ -7,7 +7,6 @@
 #include "valuemetric.h"
 
 #include <vespa/config/print/ostreamconfigwriter.h>
-#include <vespa/log/bufferedlogger.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -20,6 +19,8 @@
 #include <cinttypes>
 #include <set>
 #include <sstream>
+
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".metrics.manager");
 
 namespace metrics {

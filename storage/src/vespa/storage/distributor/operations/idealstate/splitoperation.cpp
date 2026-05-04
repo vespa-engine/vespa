@@ -2,10 +2,11 @@
 
 #include "splitoperation.h"
 
-#include <vespa/log/bufferedlogger.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
+
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".distributor.operations.idealstate.split");
 
 using namespace storage::distributor;

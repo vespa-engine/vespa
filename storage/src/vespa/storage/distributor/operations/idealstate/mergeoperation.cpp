@@ -2,7 +2,6 @@
 #include "mergeoperation.h"
 
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
-#include <vespa/log/bufferedlogger.h>
 #include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/idealstatemanager.h>
@@ -15,6 +14,8 @@
 #include <vespa/vespalib/stllike/hash_set.h>
 
 #include <array>
+
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".distributor.operations.idealstate.merge");
 
 using vespalib::to_string;

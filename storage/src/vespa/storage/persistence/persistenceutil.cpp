@@ -3,10 +3,11 @@
 #include "persistenceutil.h"
 
 #include <vespa/document/base/documentid.h>
-#include <vespa/log/bufferedlogger.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <vespa/storageapi/messageapi/bucketinforeply.h>
 #include <vespa/vespalib/util/exceptions.h>
+
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".persistence.util");
 
 namespace storage {

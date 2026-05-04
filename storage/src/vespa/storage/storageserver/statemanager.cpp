@@ -6,7 +6,6 @@
 
 #include <vespa/defaults.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
-#include <vespa/log/bufferedlogger.h>
 #include <vespa/metrics/jsonwriter.h>
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/metrics/metricset.h>
@@ -24,6 +23,8 @@
 
 #include <fstream>
 #include <ranges>
+
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".state.manager");
 
 using vespalib::make_string_short::fmt;

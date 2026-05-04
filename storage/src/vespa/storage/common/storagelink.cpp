@@ -2,13 +2,14 @@
 
 #include "storagelink.h"
 
-#include <vespa/log/bufferedlogger.h>
 #include <vespa/storageapi/messageapi/storagecommand.h>
 #include <vespa/storageapi/messageapi/storagereply.h>
 #include <vespa/vespalib/util/backtrace.h>
 
 #include <cassert>
 #include <sstream>
+
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".application.link");
 
 using namespace storage::api;

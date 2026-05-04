@@ -12,13 +12,14 @@
 #include <vespa/documentapi/messagebus/docapi_feed.pb.h>
 #include <vespa/documentapi/messagebus/docapi_inspect.pb.h>
 #include <vespa/documentapi/messagebus/docapi_visiting.pb.h>
-#include <vespa/log/bufferedlogger.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <optional>
 #include <string_view>
+
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".documentapi.messagebus.routable_factories_8");
 
 namespace documentapi::messagebus {

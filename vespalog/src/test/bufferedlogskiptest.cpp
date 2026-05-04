@@ -1,6 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/log/bufferedlogger.h>
 #include <vespa/log/internal.h>
 
 #include <unistd.h>
@@ -9,6 +8,7 @@
 #include <fstream>
 #include <iostream>
 
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP("bufferedlogskiptest");
 
 using namespace std::literals::chrono_literals;
