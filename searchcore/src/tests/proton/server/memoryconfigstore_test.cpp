@@ -85,7 +85,7 @@ TEST(MemoryConfigStoreTest, require_that_prune_removes_old_configs) {
 }
 
 TEST(MemoryConfigStoreTest,
-     require_that_MemoryConfigStores_preserves_state_of_MemoryConfigStore_between_instantiations) {
+     require_that_MemoryConfigStore_preserves_state_of_MemoryConfigStore_between_instantiations) {
     MemoryConfigStores config_stores;
     const std::string  name("foo");
     ConfigStore::UP    config_store = config_stores.getConfigStore(name);

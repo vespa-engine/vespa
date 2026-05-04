@@ -645,7 +645,7 @@ struct Lookup : public IFieldInfo {
     mutable unsigned _count;
 };
 
-TEST(DocumentRetrieverTest, require_that_fieldset_can_figure_out_their_attributeness_and_rember_it) {
+TEST(DocumentRetrieverTest, require_that_fieldset_can_figure_out_their_attributeness_and_remember_it) {
     Lookup               lookup;
     FieldSetAttributeDB  fsDB(lookup);
     document::Field      attr1("attr1", 1, *document::DataType::LONG);

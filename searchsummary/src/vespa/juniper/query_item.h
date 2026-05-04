@@ -23,4 +23,4 @@ public:
     virtual ItemCreator get_creator() const = 0;
 };
 
-}; // namespace juniper
+} // namespace juniper

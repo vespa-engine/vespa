@@ -14,4 +14,4 @@ namespace methods {
 const Method find(const std::string& name);
 void dump();
 
-}; // namespace methods
+} // namespace methods

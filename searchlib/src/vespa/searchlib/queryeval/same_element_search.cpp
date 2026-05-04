@@ -109,7 +109,7 @@ void SameElementSearch::doUnpack(uint32_t docid) {
     for (const auto& child : _children) {
         child->unpack(docid);
     }
-    // Need to filter descendants again due to FakeSearch and SimplePhraseSearch overwrititing filtered match data
+    // Need to filter descendants again due to FakeSearch and SimplePhraseSearch overwriting filtered match data
     filter_descendants_match_data(docid, _matchingElements);
 }
 

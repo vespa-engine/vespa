@@ -130,15 +130,12 @@ BucketHandlerTest::BucketHandlerTest()
       _bucketInfo(),
       _genResult(std::make_shared<test::GenericResultHandler>()) {
     // bucket 2 & 3 & 4 & 7 in ready
-    _ready.insertDocs(_builder.createDocs(2, 1, 3)
-                          . // 2 docs
-                      createDocs(3, 3, 6)
-                          . // 3 docs
-                      createDocs(4, 6, 10)
-                          . // 4 docs
-                      createDocs(7, 10, 11)
-                          . // 1 doc
-                      getDocs());
+    _ready.insertDocs(_builder
+                          .createDocs(2, 1, 3)   // 2 docs
+                          .createDocs(3, 3, 6)   // 3 docs
+                          .createDocs(4, 6, 10)  // 4 docs
+                          .createDocs(7, 10, 11) // 1 doc
+                          .getDocs());
     // bucket 2 in removed
     _removed.insertDocs(_builder.clearDocs().createDocs(2, 16, 20). // 4 docs
                         getDocs());

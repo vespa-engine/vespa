@@ -172,7 +172,7 @@ TEST_F(AttributesStateExplorerTest, require_that_imported_attribute_shows_memory
     EXPECT_LT(0, slime[cache_memory_usage]["used"].asLong());
 }
 
-TEST_F(AttributesStateExplorerTest, require_that_bool_attibute_shows_bitvector) {
+TEST_F(AttributesStateExplorerTest, require_that_bool_attribute_shows_bitvector) {
     std::string bitvector("bitvector");
     add_bool_attribute("bool");
     auto slime = explore_attribute("bool");

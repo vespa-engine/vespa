@@ -22,7 +22,7 @@ namespace string_allocator {
 extern std::vector<size_t> array_sizes;
 uint32_t get_type_id(size_t string_len);
 
-}; // namespace string_allocator
+} // namespace string_allocator
 
 /*
  * Entry type for small strings. array_size is passed to constructors and

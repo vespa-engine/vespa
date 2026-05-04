@@ -101,4 +101,4 @@ ResourceUsageTracker::remove_listener()
     _listener = nullptr;
 }
 
-};
+} // namespace proton

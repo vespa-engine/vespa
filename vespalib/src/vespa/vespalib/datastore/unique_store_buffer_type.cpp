@@ -22,4 +22,4 @@ template class UniqueStoreBufferType<UniqueStoreEntry<uint32_t>>;
 template class UniqueStoreBufferType<UniqueStoreEntry<float>>;
 template class UniqueStoreBufferType<UniqueStoreEntry<double>>;
 
-}; // namespace vespalib::datastore
+} // namespace vespalib::datastore

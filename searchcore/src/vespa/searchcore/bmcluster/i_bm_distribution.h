@@ -35,4 +35,4 @@ public:
     virtual storage::lib::ClusterStateBundle get_cluster_state_bundle() const = 0;
 };
 
-}; // namespace search::bmcluster
+} // namespace search::bmcluster

@@ -192,7 +192,7 @@ TEST_F(ResourceUsageWriteFilterTest, check_that_enum_store_limit_can_be_reached)
               "attributeName: \"enumeratedName\", componentName: \"enum-store\", subdb: \"ready\"}");
 }
 
-TEST_F(ResourceUsageWriteFilterTest, Check_that_multivalue_limit_can_be_reached) {
+TEST_F(ResourceUsageWriteFilterTest, check_that_multivalue_limit_can_be_reached) {
     EXPECT_TRUE(_notifier.setConfig(Config(0.8, 0.8, 0.0, AttributeUsageFilterConfig(0.8))));
     MyAttributeStats stats;
     stats.triggerMultiValueLimit();
@@ -209,7 +209,7 @@ TEST_F(ResourceUsageWriteFilterTest, Check_that_multivalue_limit_can_be_reached)
               "attributeName: \"multiValueName\", componentName: \"multi-value\", subdb: \"ready\"}");
 }
 
-TEST_F(ResourceUsageWriteFilterTest, Check_that_source_selector_limit_can_be_reached) {
+TEST_F(ResourceUsageWriteFilterTest, check_that_source_selector_limit_can_be_reached) {
     EXPECT_TRUE(_notifier.setConfig(Config(0.8, 0.8, 0.0, AttributeUsageFilterConfig(0.8))));
     MyAttributeStats stats;
     stats.trigger_source_selector_limit();

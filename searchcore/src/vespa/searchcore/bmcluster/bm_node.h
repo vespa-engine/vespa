@@ -16,7 +16,7 @@ class DocumentTypeRepo;
 class DocumentType;
 class Field;
 
-}; // namespace document
+} // namespace document
 
 namespace storage::lib {
 class ClusterState;
