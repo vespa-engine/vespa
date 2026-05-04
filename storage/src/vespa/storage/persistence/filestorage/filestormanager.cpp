@@ -5,7 +5,6 @@
 #include "filestorhandlerimpl.h"
 
 #include <vespa/config-stor-filestor.h>
-#include <vespa/log/bufferedlogger.h>
 #include <vespa/storage/bucketdb/minimumusedbitstracker.h>
 #include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/storage/common/doneinitializehandler.h>
@@ -34,6 +33,8 @@
 #include <vespa/config/helper/configfetcher.hpp>
 
 #include <thread>
+
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".persistence.filestor.manager");
 
 using document::BucketSpace;

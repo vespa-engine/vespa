@@ -3,7 +3,6 @@
 #include "bufferedlogtest.logger1.h"
 #include "bufferedlogtest.logger2.h"
 
-#include <vespa/log/bufferedlogger.h>
 #include <vespa/log/internal.h>
 
 #include <unistd.h>
@@ -12,6 +11,7 @@
 #include <fstream>
 #include <iostream>
 
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP("bufferedlogtest");
 
 using namespace std::literals::chrono_literals;

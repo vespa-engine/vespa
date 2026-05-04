@@ -6,7 +6,6 @@
 
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/documentapi/messagebus/messages/wrongdistributionreply.h>
-#include <vespa/log/bufferedlogger.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/network/rpcnetworkparams.h>
 #include <vespa/messagebus/rpcmessagebus.h>
@@ -27,6 +26,8 @@
 #include <vespa/config/helper/configfetcher.hpp>
 
 #include <string_view>
+
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".communication.manager");
 
 using document::FixedBucketSpaces;

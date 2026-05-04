@@ -11,7 +11,6 @@
 #include <vespa/document/fieldvalue/referencefieldvalue.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/util/stringutil.h>
-#include <vespa/log/bufferedlogger.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/util/md5.h>
 
@@ -20,6 +19,8 @@
 #include <cassert>
 #include <iomanip>
 #include <string>
+
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".document.select.valuenode");
 
 namespace document::select {

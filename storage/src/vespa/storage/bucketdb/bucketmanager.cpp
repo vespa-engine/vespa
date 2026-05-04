@@ -5,7 +5,6 @@
 #include "minimumusedbitstracker.h"
 
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
-#include <vespa/log/bufferedlogger.h>
 #include <vespa/metrics/jsonwriter.h>
 #include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/storage/common/nodestateupdater.h>
@@ -29,6 +28,8 @@
 #include <iomanip>
 #include <ranges>
 #include <thread>
+
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".storage.bucketdb.manager");
 
 using document::BucketSpace;

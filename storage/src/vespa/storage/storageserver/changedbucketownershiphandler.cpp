@@ -3,7 +3,6 @@
 #include "changedbucketownershiphandler.h"
 
 #include <vespa/config/subscription/configuri.h>
-#include <vespa/log/bufferedlogger.h>
 #include <vespa/metrics/metrictimer.h>
 #include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storage/common/content_bucket_space_repo.h>
@@ -16,6 +15,8 @@
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/config/helper/configfetcher.hpp>
+
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".bucketownershiphandler");
 
 namespace storage {

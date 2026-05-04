@@ -4,7 +4,6 @@
 
 #include "bouncer_metrics.h"
 
-#include <vespa/log/bufferedlogger.h>
 #include <vespa/persistence/spi/bucket_limits.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/state.h>
@@ -17,6 +16,7 @@
 
 #include <sstream>
 
+#include <vespa/log/bufferedlogger.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".bouncer");
 

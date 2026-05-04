@@ -5,10 +5,11 @@
 #include "rpcrequest.h"
 
 #include <vespa/fnet/connection.h>
-#include <vespa/log/bufferedlogger.h>
 #include <vespa/vespalib/net/connection_auth_context.h>
 #include <vespa/vespalib/net/tls/capability_env_config.h>
 #include <vespa/vespalib/net/tls/statistics.h>
+
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".fnet.frt.require_capabilities");
 
 using namespace vespalib::net::tls;

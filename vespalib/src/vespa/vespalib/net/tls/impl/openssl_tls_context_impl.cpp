@@ -5,7 +5,6 @@
 #include "iana_cipher_map.h"
 #include "openssl_crypto_codec_impl.h"
 
-#include <vespa/log/bufferedlogger.h>
 #include <vespa/vespalib/crypto/crypto_exception.h>
 #include <vespa/vespalib/crypto/openssl_typedefs.h>
 #include <vespa/vespalib/net/tls/statistics.h>
@@ -24,6 +23,8 @@
 #include <mutex>
 #include <stdexcept>
 #include <vector>
+
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".vespalib.net.tls.openssl_tls_context_impl");
 
 #if (OPENSSL_VERSION_NUMBER < 0x10000000L)

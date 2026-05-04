@@ -6,7 +6,6 @@
 
 #include <vespa/config-stor-distribution.h>
 #include <vespa/config/print/asciiconfigwriter.h>
-#include <vespa/log/bufferedlogger.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vdslib/state/random.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -18,6 +17,8 @@
 
 #include <cassert>
 #include <cmath>
+
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".vdslib.distribution");
 
 namespace storage::lib {

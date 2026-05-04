@@ -4,12 +4,13 @@
 
 #include "threadpoolimpl.h"
 
-#include <vespa/log/bufferedlogger.h>
 #include <vespa/storageframework/generic/clock/clock.h>
 #include <vespa/vespalib/util/atomic.h>
 #include <vespa/vespalib/util/signalhandler.h>
 
 #include <cinttypes>
+
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".framework.thread.impl");
 
 using namespace vespalib::atomic;
