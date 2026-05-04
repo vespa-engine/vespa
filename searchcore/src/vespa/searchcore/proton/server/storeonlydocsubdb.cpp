@@ -364,6 +364,8 @@ void StoreOnlyDocSubDB::validateDocStore(FeedHandler& feedHandler, SerialNum ser
     if (validator.getInvalidCount() != 0u) {
         validator.performRemoves(feedHandler, docStore, *_iFeedView.get()->getDocumentTypeRepo());
     }
+
+    validator.increase_serial_number_if_necessary(feedHandler);
 }
 
 void StoreOnlyDocSubDB::initFeedView(const DocumentDBConfig& configSnapshot) {

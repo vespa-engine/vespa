@@ -8,6 +8,7 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/feedoperation/lidvectorcontext.h>
+#include <vespa/searchcore/proton/feedoperation/noopoperation.h>
 #include <vespa/searchcore/proton/feedoperation/removeoperation.h>
 #include <vespa/searchlib/common/bitvector.h>
 
@@ -22,7 +23,8 @@ DocStoreValidator::DocStoreValidator(IDocumentMetaStore& dms)
       _invalid(search::BitVector::create(_docIdLimit)),
       _orphans(search::BitVector::create(_docIdLimit)),
       _visitCount(0u),
-      _visitEmptyCount(0u) {
+      _visitEmptyCount(0u),
+      _updated_doc_id(false) {
     for (uint32_t lid = 1; lid < _docIdLimit; ++lid) {
         if (_dms.validLid(lid)) {
             _invalid->setBit(lid);
@@ -58,6 +60,7 @@ void DocStoreValidator::visit(uint32_t lid, const std::shared_ptr<document::Docu
         if (metadata.docid.empty()) {
             // document id is missing, we have to add it
             _dms.update_docid_string(lid, doc->getId().toString());
+            _updated_doc_id = true;
         } else if (metadata.docid != doc->getId().toString()) {
             // document id is there but does not match the one from the docstore
             _invalid->setBit(lid);
@@ -131,6 +134,15 @@ void DocStoreValidator::performRemoves(FeedHandler& feedHandler, const search::I
                 metadata.bucketId, storage::spi::Timestamp(metadata.timestamp), gid, document->getType().getName());
             feedHandler.performOperation(FeedToken(), std::move(remove));
         }
+    }
+}
+
+void DocStoreValidator::increase_serial_number_if_necessary(FeedHandler& feedHandler) const {
+    if (_updated_doc_id) {
+        NoopOperation op;
+        op.setSerialNum(feedHandler.inc_serial_num());
+        (void)feedHandler.storeOperationSync(op);
+        feedHandler.syncTls(op.getSerialNum());
     }
 }
 

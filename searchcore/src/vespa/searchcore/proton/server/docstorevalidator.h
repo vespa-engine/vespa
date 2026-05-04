@@ -20,6 +20,7 @@ class DocStoreValidator : public search::IDocumentStoreReadVisitor {
     std::unique_ptr<search::BitVector> _orphans;
     uint32_t                           _visitCount;
     uint32_t                           _visitEmptyCount;
+    bool                               _updated_doc_id;
 
 public:
     DocStoreValidator(IDocumentMetaStore& dms);
@@ -37,6 +38,9 @@ public:
     std::shared_ptr<LidVectorContext> getInvalidLids() const;
     void performRemoves(FeedHandler& feedHandler, const search::IDocumentStore& store,
                         const document::DocumentTypeRepo& repo) const;
+    // If the validation updated a document id string, calling this method adds a noop
+    // operation to the feed handler to increase its serial number.
+    void increase_serial_number_if_necessary(FeedHandler& feedHandler) const;
 };
 
 } // namespace proton
