@@ -8,6 +8,7 @@ vespa_add_executable(searchlib_iterator_benchmark_test_app TEST
     disk_index_builder.cpp
     intermediate_blueprint_factory.cpp
     iterator_benchmark_test.cpp
+    leaf_blueprint_factory.cpp
 
     DEPENDS
     vespa_searchlib

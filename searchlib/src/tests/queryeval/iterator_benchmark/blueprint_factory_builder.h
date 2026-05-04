@@ -9,10 +9,17 @@
 #include "benchmark_blueprint_factory.h"
 #include "common.h"
 #include "intermediate_blueprint_factory.h"
+#include "leaf_blueprint_factory.h"
+
+#include <vespa/eval/eval/value.h>
 
 namespace search::queryeval::test {
 
+using vespalib::eval::Value;
+
 using FactoryPtr = std::shared_ptr<BenchmarkBlueprintFactory>;
+
+FactoryPtr enn(const EnnConfig& cfg = {});
 
 FactoryPtr term(FieldConfig field, uint32_t num_docs, uint32_t default_values_per_document, double hit_ratio);
 
