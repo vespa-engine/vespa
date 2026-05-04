@@ -1,8 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "filereader.h"
-#include <iostream>
-#include <unistd.h>
+
 #include <vespa/vespalib/util/size_literals.h>
+
+#include <unistd.h>
+
+#include <iostream>
 
 FileReader::FileReader()
     : _backing(),
@@ -12,75 +15,57 @@ FileReader::FileReader()
       _lastReadPos(0),
       _nextReadPos(0),
       _bufused(0),
-      _bufpos(0)
-{
+      _bufpos(0) {
 }
 
-FileReader::~FileReader()
-{
+FileReader::~FileReader() {
 }
 
-bool
-FileReader::Open(const char *filename)
-{
+bool FileReader::Open(const char* filename) {
     _backing = std::make_unique<std::ifstream>(filename);
     _file = _backing.get();
     return (bool)*_file;
 }
 
-bool
-FileReader::OpenStdin()
-{
+bool FileReader::OpenStdin() {
     _file = &std::cin;
     return true;
 }
 
-bool
-FileReader::Reset()
-{
+bool FileReader::Reset() {
     _file->clear();
     return SetFilePos(0);
 }
 
-bool
-FileReader::SetFilePos(int64_t pos)
-{
+bool FileReader::SetFilePos(int64_t pos) {
     _bufused = _bufpos = 0;
     _lastReadPos = _nextReadPos = pos;
     _file->seekg(pos);
     return bool(*_file);
 }
 
-int64_t
-FileReader::GetFileSize()
-{
-    _file->seekg (0, std::ifstream::end);
+int64_t FileReader::GetFileSize() {
+    _file->seekg(0, std::ifstream::end);
     return _file->tellg();
 }
 
-uint64_t
-FileReader::FindNextLine(int64_t pos)
-{
+uint64_t FileReader::FindNextLine(int64_t pos) {
     char buf[100];
     SetFilePos(pos);
     ReadLine(buf, 100);
     return GetFilePos();
 }
 
-void
-FileReader::FillBuffer()
-{
+void FileReader::FillBuffer() {
     _lastReadPos = _nextReadPos;
     _file->read(&_buf[0], _bufsize);
     auto wasRead = _file->gcount(); // may be -1
     _nextReadPos += wasRead;
     _bufused = wasRead;
-    _bufpos  = 0;
+    _bufpos = 0;
 }
 
-ssize_t
-FileReader::ReadLine(char *buf, size_t bufsize)
-{
+ssize_t FileReader::ReadLine(char* buf, size_t bufsize) {
     int    c;
     size_t len;
 
@@ -96,20 +81,16 @@ FileReader::ReadLine(char *buf, size_t bufsize)
     }
     if (_bufpos == _bufused)
         FillBuffer();
-    if ((_bufused > _bufpos) &&
-        ((c == '\n' && _buf[_bufpos] == '\r') ||
-         (c == '\r' && _buf[_bufpos] == '\n')))
+    if ((_bufused > _bufpos) && ((c == '\n' && _buf[_bufpos] == '\r') || (c == '\r' && _buf[_bufpos] == '\n')))
         _bufpos++;
     if (len < bufsize)
-        buf[len] = '\0';         // terminate string
+        buf[len] = '\0'; // terminate string
     else
         buf[bufsize - 1] = '\0'; // terminate string
     return len;
 }
 
-void
-FileReader::Close()
-{
+void FileReader::Close() {
     if (_backing) {
         _backing->close();
     }

@@ -255,7 +255,7 @@ public:
      * thread. This method simply posts an event on the transport thread
      * event queue. NOTE: in order to post async events regarding I/O
      * components, an extra reference to the component needs to be
-     * allocated. The needRef flag indicates wether the caller already
+     * allocated. The needRef flag indicates whether the caller already
      * has done this.
      *
      * @param comp the component you want to add.
@@ -272,7 +272,7 @@ public:
      * transport thread. This method simply posts an event on the
      * transport thread event queue. NOTE: in order to post async events
      * regarding I/O components, an extra reference to the component
-     * needs to be allocated. The needRef flag indicates wether the
+     * needs to be allocated. The needRef flag indicates whether the
      * caller already has done this.
      *
      * @param comp the component that wants write events.
@@ -290,7 +290,7 @@ public:
      * the transport thread event queue. NOTE: in order to post async
      * events regarding I/O components, an extra reference to the
      * component needs to be allocated. The needRef flag indicates
-     * wether the caller already has done this.
+     * whether the caller already has done this.
      *
      * @param comp the component to signal about operation completion
      * @param needRef should be set to false if the caller of this
@@ -306,7 +306,7 @@ public:
      * transport thread. This method simply posts an event on the
      * transport thread event queue. NOTE: in order to post async events
      * regarding I/O components, an extra reference to the component
-     * needs to be allocated. The needRef flag indicates wether the
+     * needs to be allocated. The needRef flag indicates whether the
      * caller already has done this.
      *
      * @param comp the component you want to close (and remove).

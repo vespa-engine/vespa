@@ -55,34 +55,34 @@ public:
     /** Returns the name of the protocol whose routing table to use. */
     const std::string& getProtocol() const { return _protocol; }
 
-    /** Sets wether or not to print all hops. */
+    /** Sets whether or not to print all hops. */
     void setListHops(bool lst) { _lstHops = lst; }
 
-    /** Returns wether or not to print all hops. */
+    /** Returns whether or not to print all hops. */
     bool getListHops() const { return _lstHops; }
 
-    /** Sets wether or not to print all routes. */
+    /** Sets whether or not to print all routes. */
     void setListRoutes(bool lst) { _lstRoutes = lst; }
 
-    /** Returns wether or not to print all routes. */
+    /** Returns whether or not to print all routes. */
     bool getListRoutes() const { return _lstRoutes; }
 
-    /** Sets wether or not to print all services. */
+    /** Sets whether or not to print all services. */
     void setListServices(bool lst) { _lstServices = lst; }
 
-    /** Returns wether or not to print all services. */
+    /** Returns whether or not to print all services. */
     bool getListServices() const { return _lstServices; }
 
-    /** Sets wether or not to print the full routing table content. */
+    /** Sets whether or not to print the full routing table content. */
     void setDump(bool dump) { _dump = dump; }
 
-    /** Returns wether or not to print the full routing table content. */
+    /** Returns whether or not to print the full routing table content. */
     bool getDump() const { return _dump; }
 
-    /** Sets wether or not to verify service names. */
+    /** Sets whether or not to verify service names. */
     void setVerify(bool verify) { _verify = verify; }
 
-    /** Returns wether or not to verify service names. */
+    /** Returns whether or not to verify service names. */
     bool getVerify() const { return _verify; }
 
     const std::string& getSlobrokConfigId() const { return _slobrokConfigId; }

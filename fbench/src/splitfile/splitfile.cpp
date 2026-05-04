@@ -1,10 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <util/filereader.h>
-#include <fstream>
-#include <vector>
-#include <memory>
-#include <cassert>
 #include <unistd.h>
+#include <util/filereader.h>
+
+#include <cassert>
+#include <fstream>
+#include <memory>
+#include <vector>
 
 /**
  * Split a text file randomly in a number of parts.  Process an input
@@ -13,19 +14,17 @@
  * and a filename pattern.
  **/
 
-int
-main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
     // parameters with default values.
     std::string pattern = "query%03d.txt";
-    int linebufsize = 10240;
+    int         linebufsize = 10240;
 
     // parse options and override defaults.
-    int         opt;
-    bool        optError = false;
+    int  opt;
+    bool optError = false;
 
-    while((opt = getopt(argc, argv, "p:m:")) != -1) {
-        switch(opt) {
+    while ((opt = getopt(argc, argv, "p:m:")) != -1) {
+        switch (opt) {
         case 'p':
             if (optarg == nullptr) {
                 printf("Missing 'pattern' argument to -p option !\n");
@@ -65,7 +64,7 @@ main(int argc, char** argv)
         return -1;
     }
 
-    std::unique_ptr<FileReader> input = std::make_unique<FileReader>();
+    std::unique_ptr<FileReader>                input = std::make_unique<FileReader>();
     std::vector<std::unique_ptr<std::ostream>> output;
 
     if (argc > (optind + 1)) {
@@ -84,10 +83,11 @@ main(int argc, char** argv)
     output.reserve(outcnt);
     for (int i = 0; i < outcnt; i++) {
         char filename[1024];
-        int written = snprintf(filename, sizeof(filename), pattern.c_str(), i);
+        int  written = snprintf(filename, sizeof(filename), pattern.c_str(), i);
         assert(written < int(sizeof(filename)));
-        output.emplace_back(std::make_unique<std::ofstream>(filename, std::ofstream::out | std::ofstream::binary | std::ofstream::trunc));
-        if (! output.back()) {
+        output.emplace_back(std::make_unique<std::ofstream>(filename, std::ofstream::out | std::ofstream::binary |
+                                                                          std::ofstream::trunc));
+        if (!output.back()) {
             printf("could not open output file: %s\n", filename);
             input->Close();
             return -1;
@@ -96,7 +96,7 @@ main(int argc, char** argv)
 
     // split file
     std::vector<char> linebuf(linebufsize);
-    int res;
+    int               res;
     while ((res = input->ReadLine(&linebuf[0], linebufsize - 1)) >= 0) {
         if (res < linebufsize - 1) {
             linebuf[res] = '\n';

@@ -1013,7 +1013,7 @@ TEST_F(VisitorOperationTest, no_client_reply_before_all_storage_replies_received
     EXPECT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
               "ReturnCode(BUCKET_NOT_FOUND)",
               _sender.getLastReply());
-    // XXX we should consider wether we want BUSY to be returned instead.
+    // XXX we should consider whether we want BUSY to be returned instead.
     // Non-critical error codes are currently converted to a generic "not found"
     // code to let the client silently retry until the bucket has hopefully
     // become consistent/available.

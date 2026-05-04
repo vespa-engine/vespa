@@ -11,7 +11,7 @@
  * This class implements a queue of packets. Being in a queue does not
  * affect the packet's internal data. This is the superclass of the
  * @ref FNET_PacketQueue. As seen by its name, this class has no
- * locking. All functionallity offered by this class is also available
+ * locking. All functionality offered by this class is also available
  * in the subclass. However, this class may be a good lightweight
  * alternative to the heavier subclass in single threaded applications
  * or where the surrounding code handles thread-safety.

@@ -11,33 +11,32 @@
  * aggregate runtime statistics. It is also used to record warnings
  * and errors.
  **/
-struct ClientStatus
-{
+struct ClientStatus {
     /**
-     * Indicates wether a fatal error has occurred.
+     * Indicates whether a fatal error has occurred.
      **/
-    bool   _error;
+    bool _error;
 
     /**
      * Message explaining the error indicated by _error.
      **/
-    std::string  _errorMsg;
+    std::string _errorMsg;
 
     /**
      * The number of requests that has been skipped.
      **/
-    long   _skipCnt;
+    long _skipCnt;
 
     /**
      * The number of requests that have failed.
      **/
-    long   _failCnt;
+    long _failCnt;
 
     /**
      * The number of requests that had response time greater than the
      * cycle time.
      **/
-    long   _overtimeCnt;
+    long _overtimeCnt;
 
     /**
      * Total response time for all requests.
@@ -54,14 +53,14 @@ struct ClientStatus
      * Total number of (successful) requests. Overtime requests are
      * counted with, but not failed or skipped ones.
      **/
-    long   _requestCnt;
+    long _requestCnt;
 
     /**
      * Resolution of timetable. A resolution of 1 means each entry in
      * the timetable is 1 millisecond. A resolution of 10 means each
      * entry is 1/10th of a millisecond.
      **/
-    const int    _timetableResolution;
+    const int _timetableResolution;
 
     /**
      * Table where _timetable[i] is the number of requests with response
@@ -73,7 +72,7 @@ struct ClientStatus
      * Number of requests with response time greater than or equal
      * _timetableSize divided by _timetableResolution milliseconds.
      **/
-    long   _higherCnt;
+    long _higherCnt;
 
     /**
      * The minimum response time measured.
@@ -95,7 +94,7 @@ struct ClientStatus
     /**
      * The number of zero hit queries
      **/
-    long   _zeroHitQueries;
+    long _zeroHitQueries;
 
     /**
      * The request status distribution. Key=Status, Value=Count.
@@ -174,7 +173,7 @@ struct ClientStatus
      *
      * @param status The ClientStatus that should be merged into this one.
      **/
-    void Merge(const ClientStatus & status);
+    void Merge(const ClientStatus& status);
 
     /**
      * @return the minimum response time.
@@ -214,6 +213,6 @@ struct ClientStatus
     double GetPercentile(double percent);
 
 private:
-    ClientStatus(const ClientStatus &);
-    ClientStatus &operator=(const ClientStatus &);
+    ClientStatus(const ClientStatus&);
+    ClientStatus& operator=(const ClientStatus&);
 };
