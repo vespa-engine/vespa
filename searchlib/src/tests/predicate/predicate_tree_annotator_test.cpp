@@ -3,11 +3,12 @@
 
 #include <vespa/document/predicate/predicate.h>
 #include <vespa/document/predicate/predicate_slime_builder.h>
+#include <vespa/searchlib/predicate/predicate_hash.h>
 #include <vespa/searchlib/predicate/predicate_index.h>
 #include <vespa/searchlib/predicate/predicate_tree_annotator.h>
-#include <vespa/searchlib/predicate/predicate_hash.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <sstream>
 
 using document::Predicate;
@@ -22,68 +23,64 @@ using namespace search::predicate;
 using namespace document::predicate_slime_builder;
 
 namespace {
-Cursor &makeAndNode(Cursor &obj) {
+Cursor& makeAndNode(Cursor& obj) {
     obj.setLong(Predicate::NODE_TYPE, Predicate::TYPE_CONJUNCTION);
     return obj.setArray(Predicate::CHILDREN);
 }
 
-Cursor &makeOrNode(Cursor &obj) {
+Cursor& makeOrNode(Cursor& obj) {
     obj.setLong(Predicate::NODE_TYPE, Predicate::TYPE_DISJUNCTION);
     return obj.setArray(Predicate::CHILDREN);
 }
 
-void makeFeatureSet(Cursor &obj, const string &key, const string &value) {
+void makeFeatureSet(Cursor& obj, const string& key, const string& value) {
     obj.setLong(Predicate::NODE_TYPE, Predicate::TYPE_FEATURE_SET);
     obj.setString(Predicate::KEY, key);
-    Cursor &set = obj.setArray(Predicate::SET);
+    Cursor& set = obj.setArray(Predicate::SET);
     set.addString(value);
 }
 
-void makeHashedFeatureRange(Cursor &obj, const string &key,
-                            const vector<string> &partitions,
-                            const vector<vector<int64_t> >& edge_partitions) {
+void makeHashedFeatureRange(Cursor& obj, const string& key, const vector<string>& partitions,
+                            const vector<vector<int64_t>>& edge_partitions) {
     obj.setLong(Predicate::NODE_TYPE, Predicate::TYPE_FEATURE_RANGE);
     obj.setString(Predicate::KEY, key);
-    Cursor &p = obj.setArray(Predicate::HASHED_PARTITIONS);
+    Cursor& p = obj.setArray(Predicate::HASHED_PARTITIONS);
     for (auto partition : partitions) {
         p.addLong(PredicateHash::hash64(partition));
     }
-    Cursor &e = obj.setArray(Predicate::HASHED_EDGE_PARTITIONS);
+    Cursor& e = obj.setArray(Predicate::HASHED_EDGE_PARTITIONS);
     for (auto edge_partition : edge_partitions) {
         ostringstream label;
         label << key << "=" << edge_partition[0];
         uint64_t hash = PredicateHash::hash64(label.str());
-        int64_t value = edge_partition[1];
-        int64_t payload = edge_partition[2];
+        int64_t  value = edge_partition[1];
+        int64_t  payload = edge_partition[2];
 
-        Cursor &o = e.addObject();
+        Cursor& o = e.addObject();
         o.setLong(Predicate::HASH, hash);
         o.setLong(Predicate::VALUE, value);
         o.setLong(Predicate::PAYLOAD, payload);
     }
 }
 
-void checkInterval(const PredicateTreeAnnotations &result,
-                   const string &feature, vector<uint32_t> expected) {
+void checkInterval(const PredicateTreeAnnotations& result, const string& feature, vector<uint32_t> expected) {
     SCOPED_TRACE("Check interval: " + feature);
     uint64_t hash = PredicateHash::hash64(feature);
-    auto it = result.interval_map.find(hash);
+    auto     it = result.interval_map.find(hash);
     ASSERT_TRUE(it != result.interval_map.end());
-    const auto &intervals = it->second;
+    const auto& intervals = it->second;
     ASSERT_EQ(expected.size(), intervals.size());
     for (size_t i = 0; i < expected.size(); ++i) {
         EXPECT_EQ(expected[i], intervals[i].interval);
     }
 }
 
-void checkBounds(const PredicateTreeAnnotations &result,
-                 const string &feature,
-                 vector<IntervalWithBounds> expected) {
+void checkBounds(const PredicateTreeAnnotations& result, const string& feature, vector<IntervalWithBounds> expected) {
     SCOPED_TRACE("Check bounds: " + feature);
     uint64_t hash = PredicateHash::hash64(feature);
-    auto it = result.bounds_map.find(hash);
+    auto     it = result.bounds_map.find(hash);
     ASSERT_TRUE(it != result.bounds_map.end());
-    const auto &intervals = it->second;
+    const auto& intervals = it->second;
     ASSERT_EQ(expected.size(), intervals.size());
     for (size_t i = 0; i < expected.size(); ++i) {
         EXPECT_EQ(expected[i].interval, intervals[i].interval);
@@ -92,8 +89,8 @@ void checkBounds(const PredicateTreeAnnotations &result,
 }
 
 TEST(PredicateTreeAnnotatorTest, require_that_OR_intervals_are_the_same) {
-    Slime slime;
-    Cursor &children = makeOrNode(slime.setObject());
+    Slime   slime;
+    Cursor& children = makeOrNode(slime.setObject());
     makeFeatureSet(children.addObject(), "key1", "value1");
     makeFeatureSet(children.addObject(), "key2", "value2");
 
@@ -108,12 +105,9 @@ TEST(PredicateTreeAnnotatorTest, require_that_OR_intervals_are_the_same) {
 }
 
 TEST(PredicateTreeAnnotatorTest, require_that_ANDs_below_ORs_get_different_intervals) {
-    auto slime = orNode({andNode({featureSet("key1", {"value1"}),
-                                  featureSet("key1", {"value1"}),
-                                  featureSet("key1", {"value1"})}),
-                         andNode({featureSet("key2", {"value2"}),
-                                  featureSet("key2", {"value2"}),
-                                  featureSet("key2", {"value2"})})});
+    auto slime = orNode(
+        {andNode({featureSet("key1", {"value1"}), featureSet("key1", {"value1"}), featureSet("key1", {"value1"})}),
+         andNode({featureSet("key2", {"value2"}), featureSet("key2", {"value2"}), featureSet("key2", {"value2"})})});
     PredicateTreeAnnotations result;
     PredicateTreeAnnotator::annotate(slime->get(), result);
 
@@ -125,54 +119,44 @@ TEST(PredicateTreeAnnotatorTest, require_that_ANDs_below_ORs_get_different_inter
 }
 
 TEST(PredicateTreeAnnotatorTest, require_that_NOTs_get_correct_intervals) {
-    auto slime = andNode({featureSet("key", {"value"}),
-                          neg(featureSet("key", {"value"})),
-                          featureSet("key", {"value"}),
-                          neg(featureSet("key", {"value"}))});
+    auto                     slime = andNode({featureSet("key", {"value"}), neg(featureSet("key", {"value"})),
+                                              featureSet("key", {"value"}), neg(featureSet("key", {"value"}))});
     PredicateTreeAnnotations result;
     PredicateTreeAnnotator::annotate(slime->get(), result);
 
-    EXPECT_EQ(2u, result.min_feature);  // needs key=value and z-star
+    EXPECT_EQ(2u, result.min_feature); // needs key=value and z-star
     EXPECT_EQ(6u, result.interval_range);
     EXPECT_EQ(2u, result.interval_map.size());
-    checkInterval(result, "key=value",
-                  {0x00010001, 0x00020002, 0x00040004, 0x00050005});
-    checkInterval(result, Constants::z_star_compressed_attribute_name,
-                  {0x00020001, 0x00050004});
+    checkInterval(result, "key=value", {0x00010001, 0x00020002, 0x00040004, 0x00050005});
+    checkInterval(result, Constants::z_star_compressed_attribute_name, {0x00020001, 0x00050004});
 }
 
 TEST(PredicateTreeAnnotatorTest, require_that_NOT_inverts_ANDs_and_ORs) {
-    auto slime = neg(andNode({featureSet("key", {"value"}),
-                              neg(featureSet("key", {"value"}))}));
+    auto                     slime = neg(andNode({featureSet("key", {"value"}), neg(featureSet("key", {"value"}))}));
     PredicateTreeAnnotations result;
     PredicateTreeAnnotator::annotate(slime->get(), result);
 
-    EXPECT_EQ(1u, result.min_feature);  // needs key=value or z-star
+    EXPECT_EQ(1u, result.min_feature); // needs key=value or z-star
     EXPECT_EQ(3u, result.interval_range);
     EXPECT_EQ(2u, result.interval_map.size());
-    checkInterval(result, "key=value",
-                  {0x00010002, 0x00010003});
-    checkInterval(result, Constants::z_star_compressed_attribute_name,
-                  {0x00020000});
+    checkInterval(result, "key=value", {0x00010002, 0x00010003});
+    checkInterval(result, Constants::z_star_compressed_attribute_name, {0x00020000});
 }
 
 TEST(PredicateTreeAnnotatorTest, require_that_final_first_NOT_interval_is_extended) {
-    auto slime = neg(featureSet("key", {"A"}));
+    auto                     slime = neg(featureSet("key", {"A"}));
     PredicateTreeAnnotations result;
     PredicateTreeAnnotator::annotate(slime->get(), result);
     EXPECT_EQ(1u, result.min_feature);
     EXPECT_EQ(2u, result.interval_range);
     EXPECT_EQ(2u, result.interval_map.size());
     checkInterval(result, "key=A", {0x00010001});
-    checkInterval(result, Constants::z_star_compressed_attribute_name,
-                  {0x00010000});
+    checkInterval(result, Constants::z_star_compressed_attribute_name, {0x00010000});
 }
 
 TEST(PredicateTreeAnnotatorTest, show_different_types_of_NOT_intervals) {
-    auto slime = andNode({orNode({andNode({featureSet("key", {"A"}),
-                                           neg(featureSet("key", {"B"}))}),
-                                  andNode({neg(featureSet("key", {"C"})),
-                                           featureSet("key", {"D"})})}),
+    auto slime = andNode({orNode({andNode({featureSet("key", {"A"}), neg(featureSet("key", {"B"}))}),
+                                  andNode({neg(featureSet("key", {"C"})), featureSet("key", {"D"})})}),
                           featureSet("foo", {"bar"})});
     PredicateTreeAnnotations result;
     PredicateTreeAnnotator::annotate(slime->get(), result);
@@ -184,11 +168,9 @@ TEST(PredicateTreeAnnotatorTest, show_different_types_of_NOT_intervals) {
     checkInterval(result, "key=B", {0x00020002});
     checkInterval(result, "key=C", {0x00010004});
     checkInterval(result, "key=D", {0x00060006});
-    checkInterval(result, Constants::z_star_compressed_attribute_name,
-                  {0x00020001, 0x00000006, 0x00040000});
+    checkInterval(result, Constants::z_star_compressed_attribute_name, {0x00020001, 0x00000006, 0x00040000});
 
-    slime = orNode({neg(featureSet("key", {"A"})),
-                    neg(featureSet("key", {"B"}))});
+    slime = orNode({neg(featureSet("key", {"A"})), neg(featureSet("key", {"B"}))});
     result = PredicateTreeAnnotations();
     PredicateTreeAnnotator::annotate(slime->get(), result);
     EXPECT_EQ(1u, result.min_feature);
@@ -196,13 +178,10 @@ TEST(PredicateTreeAnnotatorTest, show_different_types_of_NOT_intervals) {
     EXPECT_EQ(3u, result.interval_map.size());
     checkInterval(result, "key=A", {0x00010003});
     checkInterval(result, "key=B", {0x00010003});
-    checkInterval(result, Constants::z_star_compressed_attribute_name,
-                  {0x00030000, 0x00030000});
+    checkInterval(result, Constants::z_star_compressed_attribute_name, {0x00030000, 0x00030000});
 
-    slime = orNode({andNode({neg(featureSet("key", {"A"})),
-                             neg(featureSet("key", {"B"}))}),
-                    andNode({neg(featureSet("key", {"C"})),
-                             neg(featureSet("key", {"D"}))})});
+    slime = orNode({andNode({neg(featureSet("key", {"A"})), neg(featureSet("key", {"B"}))}),
+                    andNode({neg(featureSet("key", {"C"})), neg(featureSet("key", {"D"}))})});
     result = PredicateTreeAnnotations();
     PredicateTreeAnnotator::annotate(slime->get(), result);
     EXPECT_EQ(1u, result.min_feature);
@@ -213,15 +192,14 @@ TEST(PredicateTreeAnnotatorTest, show_different_types_of_NOT_intervals) {
     checkInterval(result, "key=C", {0x00010005});
     checkInterval(result, "key=D", {0x00070007});
     checkInterval(result, Constants::z_star_compressed_attribute_name,
-                  {0x00010000, 0x00070002, 0x00050000,0x00070006});
-
+                  {0x00010000, 0x00070002, 0x00050000, 0x00070006});
 }
 
 TEST(PredicateTreeAnnotatorTest, require_short_edge_partitions_to_get_correct_intervals_and_features) {
-    Slime slime;
-    Cursor &children = makeAndNode(slime.setObject());
-    makeHashedFeatureRange(children.addObject(), "key",{}, {{0, 5, -1}, {30, 0, 3}});
-    makeHashedFeatureRange(children.addObject(), "foo",{}, {{0, 5, -1}, {30, 0, 3}});
+    Slime   slime;
+    Cursor& children = makeAndNode(slime.setObject());
+    makeHashedFeatureRange(children.addObject(), "key", {}, {{0, 5, -1}, {30, 0, 3}});
+    makeHashedFeatureRange(children.addObject(), "foo", {}, {{0, 5, -1}, {30, 0, 3}});
 
     PredicateTreeAnnotations result;
     PredicateTreeAnnotator::annotate(slime.get(), result);
@@ -244,14 +222,10 @@ TEST(PredicateTreeAnnotatorTest, require_short_edge_partitions_to_get_correct_in
 }
 
 TEST(PredicateTreeAnnotatorTest, require_that_hashed_ranges_get_correct_intervals) {
-    Slime slime;
-    Cursor &children = makeAndNode(slime.setObject());
-    makeHashedFeatureRange(
-            children.addObject(), "key",
-            {"key=10-19", "key=20-29"}, {{0, 5, -1}, {30, 0, 3}});
-    makeHashedFeatureRange(
-            children.addObject(), "foo",
-            {"foo=10-19", "foo=20-29"}, {{0, 5, -1}, {30, 0, 3}});
+    Slime   slime;
+    Cursor& children = makeAndNode(slime.setObject());
+    makeHashedFeatureRange(children.addObject(), "key", {"key=10-19", "key=20-29"}, {{0, 5, -1}, {30, 0, 3}});
+    makeHashedFeatureRange(children.addObject(), "foo", {"foo=10-19", "foo=20-29"}, {{0, 5, -1}, {30, 0, 3}});
 
     PredicateTreeAnnotations result;
     PredicateTreeAnnotator::annotate(slime.get(), result);
@@ -275,20 +249,14 @@ TEST(PredicateTreeAnnotatorTest, require_that_hashed_ranges_get_correct_interval
 }
 
 TEST(PredicateTreeAnnotatorTest, require_that_extreme_ranges_works) {
-    Slime slime;
-    Cursor &children = makeAndNode(slime.setObject());
-    makeHashedFeatureRange(
-            children.addObject(), "max range",
-            {"max range=9223372036854775806-9223372036854775807"}, {});
-    makeHashedFeatureRange(
-            children.addObject(), "max edge",
-            {}, {{9223372036854775807, 0, 0x40000001}});
-    makeHashedFeatureRange(
-            children.addObject(), "min range",
-            {"min range=-9223372036854775807-9223372036854775806"}, {});
-    makeHashedFeatureRange(
-            children.addObject(), "min edge",
-            {}, {{LLONG_MIN, 0, 0x40000001}});
+    Slime   slime;
+    Cursor& children = makeAndNode(slime.setObject());
+    makeHashedFeatureRange(children.addObject(), "max range", {"max range=9223372036854775806-9223372036854775807"},
+                           {});
+    makeHashedFeatureRange(children.addObject(), "max edge", {}, {{9223372036854775807, 0, 0x40000001}});
+    makeHashedFeatureRange(children.addObject(), "min range", {"min range=-9223372036854775807-9223372036854775806"},
+                           {});
+    makeHashedFeatureRange(children.addObject(), "min edge", {}, {{LLONG_MIN, 0, 0x40000001}});
 
     PredicateTreeAnnotations result;
     PredicateTreeAnnotator::annotate(slime.get(), result);
@@ -297,30 +265,22 @@ TEST(PredicateTreeAnnotatorTest, require_that_extreme_ranges_works) {
     EXPECT_EQ(4u, result.interval_range);
     EXPECT_EQ(2u, result.interval_map.size());
     EXPECT_EQ(2u, result.bounds_map.size());
-    checkInterval(result, "max range=9223372036854775806-9223372036854775807",
-                  {0x00010001});
-    checkBounds(result, "max edge=9223372036854775807",
-                {{0x00020002, 0x40000001}});
-    checkInterval(result, "min range=-9223372036854775807-9223372036854775806",
-                  {0x00030003});
-    checkBounds(result, "min edge=-9223372036854775808",
-                {{0x00040004, 0x40000001}});
+    checkInterval(result, "max range=9223372036854775806-9223372036854775807", {0x00010001});
+    checkBounds(result, "max edge=9223372036854775807", {{0x00020002, 0x40000001}});
+    checkInterval(result, "min range=-9223372036854775807-9223372036854775806", {0x00030003});
+    checkBounds(result, "min edge=-9223372036854775808", {{0x00040004, 0x40000001}});
 }
 
 TEST(PredicateTreeAnnotatorTest, require_that_unique_features_and_all_ranges_are_collected) {
-    auto slime = andNode({featureSet("key1", {"value1"}),
-                          featureSet("key1", {"value1"}),
-                          featureRange("key2", 9, 40),
+    auto slime = andNode({featureSet("key1", {"value1"}), featureSet("key1", {"value1"}), featureRange("key2", 9, 40),
                           featureRange("key2", 9, 40)});
-    Cursor &c1 = slime->get()[Predicate::CHILDREN][2]
-                 .setArray(Predicate::HASHED_PARTITIONS);
+    Cursor& c1 = slime->get()[Predicate::CHILDREN][2].setArray(Predicate::HASHED_PARTITIONS);
     c1.addLong(PredicateHash::hash64("key2=10-19"));
     c1.addLong(PredicateHash::hash64("key2=20-29"));
     c1.addLong(PredicateHash::hash64("key2=30-39"));
     c1.addLong(PredicateHash::hash64("key2=0"));
     c1.addLong(PredicateHash::hash64("key2=40"));
-    Cursor &c2 = slime->get()[Predicate::CHILDREN][3]
-                 .setArray(Predicate::HASHED_PARTITIONS);
+    Cursor& c2 = slime->get()[Predicate::CHILDREN][3].setArray(Predicate::HASHED_PARTITIONS);
     c2.addLong(PredicateHash::hash64("key2=10-19"));
     c2.addLong(PredicateHash::hash64("key2=20-29"));
     c2.addLong(PredicateHash::hash64("key2=30-39"));
@@ -332,8 +292,7 @@ TEST(PredicateTreeAnnotatorTest, require_that_unique_features_and_all_ranges_are
 
     EXPECT_EQ(4u, result.interval_range);
     ASSERT_EQ(1u, result.features.size());
-    EXPECT_EQ(static_cast<uint64_t>(PredicateHash::hash64("key1=value1")),
-                 result.features[0]);
+    EXPECT_EQ(static_cast<uint64_t>(PredicateHash::hash64("key1=value1")), result.features[0]);
     ASSERT_EQ(2u, result.range_features.size());
     EXPECT_EQ("key2", result.range_features[0].label.make_string());
     EXPECT_EQ(9, result.range_features[0].from);
@@ -344,10 +303,8 @@ TEST(PredicateTreeAnnotatorTest, require_that_unique_features_and_all_ranges_are
 }
 
 TEST(PredicateTreeAnnotatorTest, require_that_z_star_feature_is_only_registered_once) {
-    auto slime = andNode({neg(featureSet("key1", {"value1"})),
-                          neg(featureRange("key2", 10, 19))});
-    Cursor &c = slime->get()[Predicate::CHILDREN][1][Predicate::CHILDREN][0]
-                .setArray(Predicate::HASHED_PARTITIONS);
+    auto    slime = andNode({neg(featureSet("key1", {"value1"})), neg(featureRange("key2", 10, 19))});
+    Cursor& c = slime->get()[Predicate::CHILDREN][1][Predicate::CHILDREN][0].setArray(Predicate::HASHED_PARTITIONS);
     c.addLong(PredicateHash::hash64("key2=10-19"));
 
     // simple range will be stored as a feature.
@@ -363,8 +320,8 @@ TEST(PredicateTreeAnnotatorTest, require_that_z_star_feature_is_only_registered_
 }
 
 TEST(PredicateTreeAnnotatorTest, require_that_default_open_range_works) {
-    auto slime = lessEqual("foo", 39);
-    Cursor &c = slime->get().setArray(Predicate::HASHED_PARTITIONS);
+    auto    slime = lessEqual("foo", 39);
+    Cursor& c = slime->get().setArray(Predicate::HASHED_PARTITIONS);
     c.addLong(PredicateHash::hash64("foo=-9223372036854775808"));
     c.addLong(PredicateHash::hash64("foo=-9223372036854775807-0"));
     c.addLong(PredicateHash::hash64("foo=0-31"));
@@ -382,8 +339,8 @@ TEST(PredicateTreeAnnotatorTest, require_that_default_open_range_works) {
 }
 
 TEST(PredicateTreeAnnotatorTest, require_that_open_range_works) {
-    auto slime = lessEqual("foo", 39);
-    Cursor &c = slime->get().setArray(Predicate::HASHED_PARTITIONS);
+    auto    slime = lessEqual("foo", 39);
+    Cursor& c = slime->get().setArray(Predicate::HASHED_PARTITIONS);
     c.addLong(PredicateHash::hash64("foo=8-15"));
     c.addLong(PredicateHash::hash64("foo=16-31"));
     c.addLong(PredicateHash::hash64("foo=32-39"));
@@ -399,4 +356,4 @@ TEST(PredicateTreeAnnotatorTest, require_that_open_range_works) {
     EXPECT_EQ(39, result.range_features[0].to);
 }
 
-}  // namespace
+} // namespace
