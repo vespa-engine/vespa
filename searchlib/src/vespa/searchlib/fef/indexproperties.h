@@ -471,6 +471,43 @@ struct SortBlueprintsByCost {
     static bool check(const Properties& props) { return check(props, DEFAULT_VALUE); }
     static bool check(const Properties& props, bool fallback);
 };
+
+/**
+ * Specifies a time budget for ANN in milliseconds.
+ */
+struct AnnTimeBudget {
+    static const std::string NAME;
+    static const uint32_t    DEFAULT_VALUE;
+    static uint32_t lookup(const Properties& props);
+    static uint32_t lookup(const Properties& props, uint32_t default_value);
+    static bool is_present(const Properties& props);
+};
+
+namespace anntimeout {
+/**
+ * Enables or disables the ANN timeout.
+ * Default is off.
+ * TODO: Make on the default once controllable from the outside.
+ */
+struct Enabled {
+    static const std::string NAME;
+    static const bool        DEFAULT_VALUE;
+    static bool lookup(const Properties& props);
+    static bool lookup(const Properties& props, bool default_value);
+};
+
+/**
+ * Specifies the ANN timeout as a factor of the soft-timeout used by the backend.
+ */
+struct Factor {
+    static const std::string NAME;
+    static const double      DEFAULT_VALUE;
+    static double lookup(const Properties& props);
+    static double lookup(const Properties& props, double default_value);
+};
+
+} // namespace anntimeout
+
 } // namespace matching
 
 namespace softtimeout {

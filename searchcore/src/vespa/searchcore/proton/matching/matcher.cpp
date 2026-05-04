@@ -154,13 +154,30 @@ Matcher::create_match_tools_factory(const search::engine::Request& request, ISea
                                              : _stats.softDoomFactor())
                         : 0.95;
     vespalib::duration    safeLeft = std::chrono::duration_cast<vespalib::duration>(request.getTimeLeft() * factor);
-    vespalib::steady_time safeDoom(_now_ref.load(std::memory_order_relaxed) + safeLeft);
+    vespalib::steady_time now(_now_ref.load(std::memory_order_relaxed));
+    vespalib::steady_time safeDoom(now + safeLeft);
     if (softTimeoutEnabled) {
         LOG(debug, "Soft-timeout computed factor=%1.3f, used factor=%1.3f, userSupplied=%d, softTimeout=%" PRId64,
             _stats.softDoomFactor(), factor, hasFactorOverride, vespalib::count_ns(safeLeft));
     }
+    bool                  ann_timeout_enabled = softTimeoutEnabled && anntimeout::Enabled::lookup(rankProperties);
+    double                ann_timeout_factor = ann_timeout_enabled ? anntimeout::Factor::lookup(rankProperties) : 1.0;
+    vespalib::duration    ann_left = std::chrono::duration_cast<vespalib::duration>(safeLeft * ann_timeout_factor);
+    vespalib::steady_time ann_timeout(now + ann_left);
+    if (ann_timeout_enabled) {
+        LOG(debug, "ANN timeout: enabled=%d, factor=%1.3f, left=%" PRId64, ann_timeout_enabled, ann_timeout_factor,
+            vespalib::count_ns(ann_left));
+    }
+    bool               ann_timebudget_specified = AnnTimeBudget::is_present(rankProperties);
+    vespalib::duration ann_timebudget =
+        ann_timebudget_specified
+            ? std::chrono::duration_cast<vespalib::duration>(1ms * AnnTimeBudget::lookup(rankProperties))
+            : vespalib::duration::max();
+    if (ann_timebudget_specified) {
+        LOG(debug, "ANN timebudget=%" PRId64, vespalib::count_ns(ann_timebudget));
+    }
     vespalib::Doom           doom(_now_ref, safeDoom, request.getTimeOfDoom(), hasFactorOverride);
-    AnnDeadlineConfiguration ann_deadline_config(safeDoom);
+    AnnDeadlineConfiguration ann_deadline_config(ann_timebudget, ann_timeout_enabled, ann_timeout);
     const auto&              queryTree = request.getSerializedQueryTree();
     return std::make_unique<MatchToolsFactory>(_queryLimiter, doom, ann_deadline_config, searchContext, attrContext,
                                                request.trace(), queryTree, request.location, _viewResolver, metaStore,
