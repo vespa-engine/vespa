@@ -4,10 +4,7 @@
 
 namespace searchcorespi {
 
-FlushStats::FlushStats() :
-    _path(),
-    _pathElementsToLog(6)
-{
+FlushStats::FlushStats() : _path(), _pathElementsToLog(6) {
 }
 
 } // namespace searchcorespi

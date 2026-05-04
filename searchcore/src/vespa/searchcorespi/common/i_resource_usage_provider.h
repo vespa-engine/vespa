@@ -18,4 +18,4 @@ public:
     virtual ResourceUsage get_resource_usage() const = 0;
 };
 
-}
+} // namespace searchcorespi::common

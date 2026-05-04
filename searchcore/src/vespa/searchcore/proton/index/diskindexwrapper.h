@@ -11,24 +11,22 @@ namespace proton {
 class DiskIndexWrapper : public searchcorespi::index::IDiskIndex {
 private:
     search::diskindex::DiskIndex _index;
-    search::SerialNum _serialNum;
+    search::SerialNum            _serialNum;
 
 public:
-    DiskIndexWrapper(const std::string &indexDir,
-                     const search::TuneFileSearch &tuneFileSearch,
+    DiskIndexWrapper(const std::string& indexDir, const search::TuneFileSearch& tuneFileSearch,
                      std::shared_ptr<search::diskindex::IPostingListCache> posting_list_cache);
 
-    DiskIndexWrapper(const DiskIndexWrapper &oldIndex,
-                     const search::TuneFileSearch &tuneFileSearch);
+    DiskIndexWrapper(const DiskIndexWrapper& oldIndex, const search::TuneFileSearch& tuneFileSearch);
 
     std::unique_ptr<search::queryeval::Blueprint>
-    createBlueprint(const IRequestContext & requestContext, const FieldSpec &field, const Node &term,
-                    search::fef::MatchDataLayout &global_layout) override {
+    createBlueprint(const IRequestContext& requestContext, const FieldSpec& field, const Node& term,
+                    search::fef::MatchDataLayout& global_layout) override {
         return _index.createBlueprint(requestContext, field, term, global_layout);
     }
     std::unique_ptr<search::queryeval::Blueprint>
-    createBlueprint(const IRequestContext & requestContext, const FieldSpecList &fields, const Node &term,
-                    search::fef::MatchDataLayout &global_layout) override {
+    createBlueprint(const IRequestContext& requestContext, const FieldSpecList& fields, const Node& term,
+                    search::fef::MatchDataLayout& global_layout) override {
         return _index.createBlueprint(requestContext, fields, term, global_layout);
     }
     search::IndexStats get_index_stats(bool clear_disk_io_stats) const override {
@@ -37,11 +35,10 @@ public:
 
     search::SerialNum getSerialNum() const override;
 
-    void accept(searchcorespi::IndexSearchableVisitor &visitor) const override;
+    void accept(searchcorespi::IndexSearchableVisitor& visitor) const override;
     search::index::FieldLengthInfo get_field_length_info(const std::string& field_name) const override;
-    const std::string &getIndexDir() const override { return _index.getIndexDir(); }
-    const search::index::Schema &getSchema() const override { return _index.getSchema(); }
+    const std::string& getIndexDir() const override { return _index.getIndexDir(); }
+    const search::index::Schema& getSchema() const override { return _index.getSchema(); }
 };
 
-}  // namespace proton
-
+} // namespace proton
