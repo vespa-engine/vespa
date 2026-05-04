@@ -22,7 +22,7 @@ class ReferenceAttribute;
 } // namespace search::attribute
 namespace vespa::config::search::internal {
 class InternalImportedFieldsType;
-}
+} // namespace vespa::config::search::internal
 
 namespace vespalib {
 
