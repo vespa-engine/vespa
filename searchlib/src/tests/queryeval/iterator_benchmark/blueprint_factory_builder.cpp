@@ -6,8 +6,8 @@
 
 namespace search::queryeval::test {
 
-FactoryPtr enn(AttributeVector::SP attr, Value::UP query, uint32_t target_hits) {
-    return std::make_unique<EnnBlueprintFactory>(attr, std::move(query), target_hits);
+FactoryPtr enn(const EnnConfig& cfg) {
+    return std::make_unique<EnnBlueprintFactory>(cfg);
 }
 
 FactoryPtr term(FieldConfig field, uint32_t num_docs, uint32_t default_values_per_document, double hit_ratio) {

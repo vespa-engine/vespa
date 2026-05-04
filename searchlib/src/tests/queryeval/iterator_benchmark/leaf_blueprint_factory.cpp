@@ -2,14 +2,52 @@
 
 #include "leaf_blueprint_factory.h"
 
+#include "attribute_ctx_builder.h"
+
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/value_type.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/queryeval/nearest_neighbor_blueprint.h>
+
+#include <format>
+#include <random>
+
+using search::attribute::BasicType;
+using search::attribute::Config;
+using vespalib::eval::SimpleValue;
+using vespalib::eval::TensorSpec;
+using vespalib::eval::Value;
+using vespalib::eval::ValueType;
 
 namespace search::queryeval::test {
 
+namespace {
+
+Value::UP make_random_vec(const std::string& type_spec, uint32_t dim, std::mt19937& gen) {
+    std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
+    TensorSpec                            spec(type_spec);
+    for (uint32_t i = 0; i < dim; i++) {
+        spec.add({{"x", i}}, dist(gen));
+    }
+    return SimpleValue::from_spec(spec);
+}
+
+} // namespace
+
 // ---------------- EnnBlueprintFactory --------------------
 
-EnnBlueprintFactory::EnnBlueprintFactory(AttributeVector::SP attr, Value::UP query, uint32_t target_hits)
-    : _attr(attr), _query(std::move(query)), _target_hits(target_hits) {
+EnnBlueprintFactory::EnnBlueprintFactory(const EnnConfig& cfg) : _attr(), _query(), _target_hits(cfg.target_hits) {
+    auto   type_spec = std::format("tensor<float>(x[{}])", cfg.dim);
+    Config tensor_cfg(BasicType::TENSOR);
+    tensor_cfg.setTensorType(ValueType::from_spec(type_spec));
+    tensor_cfg.set_distance_metric(cfg.distance_metric);
+
+    std::mt19937            gen(cfg.seed);
+    AttributeContextBuilder builder;
+    _attr = builder.add_tensor(tensor_cfg, "nn", cfg.num_docs,
+                               [&](uint32_t) { return make_random_vec(type_spec, cfg.dim, gen); });
+    _query = make_random_vec(type_spec, cfg.dim, gen);
 }
 
 EnnBlueprintFactory::~EnnBlueprintFactory() = default;
