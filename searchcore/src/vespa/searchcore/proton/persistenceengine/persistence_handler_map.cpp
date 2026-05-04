@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "persistence_handler_map.h"
+
 #include "ipersistencehandler.h"
 
 namespace proton {
@@ -8,23 +9,17 @@ namespace proton {
 using HandlerSnapshot = PersistenceHandlerMap::HandlerSnapshot;
 using UnsafeHandlerSnapshot = PersistenceHandlerMap::UnsafeHandlerSnapshot;
 
-PersistenceHandlerMap::PersistenceHandlerMap()
-    : _map()
-{
+PersistenceHandlerMap::PersistenceHandlerMap() : _map() {
 }
 
-IPersistenceHandler::SP
-PersistenceHandlerMap::putHandler(document::BucketSpace bucketSpace,
-                                  const DocTypeName &docType,
-                                  const IPersistenceHandler::SP &handler)
-{
+IPersistenceHandler::SP PersistenceHandlerMap::putHandler(document::BucketSpace          bucketSpace,
+                                                          const DocTypeName&             docType,
+                                                          const IPersistenceHandler::SP& handler) {
     return _map[bucketSpace].putHandler(docType, handler);
 }
 
-IPersistenceHandler *
-PersistenceHandlerMap::getHandler(document::BucketSpace bucketSpace,
-                                  const DocTypeName &docType) const
-{
+IPersistenceHandler* PersistenceHandlerMap::getHandler(document::BucketSpace bucketSpace,
+                                                       const DocTypeName&    docType) const {
     auto itr = _map.find(bucketSpace);
     if (itr != _map.end()) {
         return itr->second.getHandlerPtr(docType);
@@ -32,10 +27,8 @@ PersistenceHandlerMap::getHandler(document::BucketSpace bucketSpace,
     return nullptr;
 }
 
-IPersistenceHandler::SP
-PersistenceHandlerMap::removeHandler(document::BucketSpace bucketSpace,
-                                     const DocTypeName &docType)
-{
+IPersistenceHandler::SP PersistenceHandlerMap::removeHandler(document::BucketSpace bucketSpace,
+                                                             const DocTypeName&    docType) {
     auto itr = _map.find(bucketSpace);
     if (itr != _map.end()) {
         return itr->second.removeHandler(docType);
@@ -43,9 +36,7 @@ PersistenceHandlerMap::removeHandler(document::BucketSpace bucketSpace,
     return IPersistenceHandler::SP();
 }
 
-HandlerSnapshot
-PersistenceHandlerMap::getHandlerSnapshot() const
-{
+HandlerSnapshot PersistenceHandlerMap::getHandlerSnapshot() const {
     std::vector<IPersistenceHandler::SP> handlers;
     for (auto spaceItr : _map) {
         for (auto handlerItr : spaceItr.second) {
@@ -55,9 +46,7 @@ PersistenceHandlerMap::getHandlerSnapshot() const
     return HandlerSnapshot(DocTypeToHandlerMap::Snapshot(std::move(handlers)));
 }
 
-HandlerSnapshot
-PersistenceHandlerMap::getHandlerSnapshot(document::BucketSpace bucketSpace) const
-{
+HandlerSnapshot PersistenceHandlerMap::getHandlerSnapshot(document::BucketSpace bucketSpace) const {
     auto itr = _map.find(bucketSpace);
     if (itr != _map.end()) {
         return HandlerSnapshot(itr->second.snapshot());
@@ -65,9 +54,7 @@ PersistenceHandlerMap::getHandlerSnapshot(document::BucketSpace bucketSpace) con
     return HandlerSnapshot();
 }
 
-UnsafeHandlerSnapshot
-PersistenceHandlerMap::getUnsafeHandlerSnapshot(document::BucketSpace bucketSpace) const
-{
+UnsafeHandlerSnapshot PersistenceHandlerMap::getUnsafeHandlerSnapshot(document::BucketSpace bucketSpace) const {
     auto itr = _map.find(bucketSpace);
     if (itr != _map.end()) {
         return UnsafeHandlerSnapshot(itr->second.unsafeSnapshot());
@@ -78,4 +65,4 @@ PersistenceHandlerMap::getUnsafeHandlerSnapshot(document::BucketSpace bucketSpac
 PersistenceHandlerMap::HandlerSnapshot::~HandlerSnapshot() = default;
 PersistenceHandlerMap::UnsafeHandlerSnapshot::~UnsafeHandlerSnapshot() = default;
 
-}
+} // namespace proton
