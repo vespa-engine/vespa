@@ -15,15 +15,10 @@ private:
 public:
     static const int TRUSTED = 1;
 
-    BucketCopy() noexcept
-        : _timestamp(0), _flags(0), _node(0xffff) {}
+    BucketCopy() noexcept : _timestamp(0), _flags(0), _node(0xffff) {}
 
     BucketCopy(uint64_t timestamp, uint16_t nodeIdx, const api::BucketInfo& info) noexcept
-        : _timestamp(timestamp),
-          _info(info),
-          _flags(0),
-          _node(nodeIdx)
-    { }
+        : _timestamp(timestamp), _info(info), _flags(0), _node(nodeIdx) {}
 
     bool trusted() const noexcept { return _flags & TRUSTED; }
 
@@ -42,9 +37,7 @@ public:
     bool valid() const noexcept { return getBucketInfo().valid(); }
     bool empty() const noexcept { return getBucketInfo().empty(); }
     bool wasRecentlyCreated() const noexcept {
-        return (getChecksum() == 1
-                && getDocumentCount() == 0
-                && getTotalDocumentSize() == 0);
+        return (getChecksum() == 1 && getDocumentCount() == 0 && getTotalDocumentSize() == 0);
     }
 
     static BucketCopy recentlyCreatedCopy(uint64_t timestamp, uint16_t nodeIdx) noexcept {
@@ -69,15 +62,12 @@ public:
         _timestamp = timestamp;
     }
 
-    void setActive(bool setactive) noexcept {
-        _info.setActive(setactive);
-    }
+    void setActive(bool setactive) noexcept { _info.setActive(setactive); }
 
     bool consistentWith(const BucketCopy& other) const noexcept {
         // If both are valid, check checksum and doc count.
         if (valid() && other.valid()) {
-            return (getChecksum() == other.getChecksum()
-                    && getDocumentCount() == other.getDocumentCount());
+            return (getChecksum() == other.getChecksum() && getDocumentCount() == other.getDocumentCount());
         }
 
         return false;
@@ -92,5 +82,4 @@ public:
     }
 };
 
-}
-
+} // namespace storage

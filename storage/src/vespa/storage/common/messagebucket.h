@@ -16,6 +16,4 @@ class StorageMessage;
  */
 document::Bucket getStorageMessageBucket(const api::StorageMessage& msg);
 
-}
-
-
+} // namespace storage

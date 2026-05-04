@@ -2,12 +2,13 @@
 #pragma once
 
 #include "replica_counting_mode.h"
+
 #include <vespa/vespalib/util/time.h>
 
 namespace vespa::config::content::core::internal {
-    class InternalStorDistributormanagerType;
-    class InternalStorVisitordispatcherType;
-}
+class InternalStorDistributormanagerType;
+class InternalStorVisitordispatcherType;
+} // namespace vespa::config::content::core::internal
 
 namespace storage {
 
@@ -21,18 +22,18 @@ public:
     ~DistributorConfiguration();
 
     struct MaintenancePriorities {
-        uint8_t mergeMoveToIdealNode {165};
-        uint8_t mergeOutOfSyncCopies {120};
-        uint8_t mergeTooFewCopies {120};
-        uint8_t mergeGlobalBuckets {115};
-        uint8_t activateNoExistingActive {100};
-        uint8_t activateWithExistingActive {100};
-        uint8_t deleteBucketCopy {120};
-        uint8_t joinBuckets {120};
-        uint8_t splitDistributionBits {200};
-        uint8_t splitLargeBucket {120};
-        uint8_t splitInconsistentBucket {110};
-        uint8_t garbageCollection {200};
+        uint8_t mergeMoveToIdealNode{165};
+        uint8_t mergeOutOfSyncCopies{120};
+        uint8_t mergeTooFewCopies{120};
+        uint8_t mergeGlobalBuckets{115};
+        uint8_t activateNoExistingActive{100};
+        uint8_t activateWithExistingActive{100};
+        uint8_t deleteBucketCopy{120};
+        uint8_t joinBuckets{120};
+        uint8_t splitDistributionBits{200};
+        uint8_t splitLargeBucket{120};
+        uint8_t splitInconsistentBucket{110};
+        uint8_t garbageCollection{200};
     };
     using DistributorManagerConfig = vespa::config::content::core::internal::InternalStorDistributormanagerType;
     using VisitorDispatcherConfig = vespa::config::content::core::internal::InternalStorVisitordispatcherType;
@@ -40,13 +41,9 @@ public:
     void configure(const DistributorManagerConfig& config);
     void configure(const VisitorDispatcherConfig& config);
 
-    const std::string& getGarbageCollectionSelection() const {
-        return _garbageCollectionSelection;
-    }
+    const std::string& getGarbageCollectionSelection() const { return _garbageCollectionSelection; }
 
-    vespalib::duration getGarbageCollectionInterval() const {
-        return _garbageCollectionInterval;
-    }
+    vespalib::duration getGarbageCollectionInterval() const { return _garbageCollectionInterval; }
 
     void setGarbageCollection(const std::string& selection, vespalib::duration interval) {
         _garbageCollectionSelection = selection;
@@ -57,13 +54,9 @@ public:
         _lastGarbageCollectionChange = lastChangeTime;
     }
 
-    void setDoInlineSplit(bool value) {
-        _doInlineSplit = value;
-    }
-    
-    bool doInlineSplit() const {
-        return _doInlineSplit;
-    }
+    void setDoInlineSplit(bool value) { _doInlineSplit = value; }
+
+    bool doInlineSplit() const { return _doInlineSplit; }
 
     /**
        Sets the number of documents needed for a bucket to be split.
@@ -103,16 +96,12 @@ public:
     */
     void setMinimalBucketSplit(int splitBits) { _minimalBucketSplit = splitBits; };
 
-    void setMaintenancePriorities(const MaintenancePriorities& mp) {
-        _maintenancePriorities = mp;
-    }
+    void setMaintenancePriorities(const MaintenancePriorities& mp) { _maintenancePriorities = mp; }
 
-    const MaintenancePriorities& getMaintenancePriorities() const {
-        return _maintenancePriorities;
-    }
+    const MaintenancePriorities& getMaintenancePriorities() const { return _maintenancePriorities; }
 
     uint8_t default_external_feed_priority() const noexcept { return 120; }
-    
+
     /**
        @see setSplitCount
     */
@@ -138,55 +127,31 @@ public:
     */
     uint32_t getMinimalBucketSplit() const { return _minimalBucketSplit; };
 
-    uint32_t getMinPendingMaintenanceOps() const {
-        return _minPendingMaintenanceOps;
-    }
+    uint32_t getMinPendingMaintenanceOps() const { return _minPendingMaintenanceOps; }
     void setMinPendingMaintenanceOps(uint32_t minPendingMaintenanceOps) {
         _minPendingMaintenanceOps = minPendingMaintenanceOps;
     }
-    uint32_t getMaxPendingMaintenanceOps() const {
-        return _maxPendingMaintenanceOps;
-    }
+    uint32_t getMaxPendingMaintenanceOps() const { return _maxPendingMaintenanceOps; }
     void setMaxPendingMaintenanceOps(uint32_t maxPendingMaintenanceOps) {
         _maxPendingMaintenanceOps = maxPendingMaintenanceOps;
     }
 
-    uint32_t getMaxVisitorsPerNodePerClientVisitor() const {
-        return _maxVisitorsPerNodePerClientVisitor;
-    }
-    uint32_t getMinBucketsPerVisitor() const {
-        return _minBucketsPerVisitor;
-    }
+    uint32_t getMaxVisitorsPerNodePerClientVisitor() const { return _maxVisitorsPerNodePerClientVisitor; }
+    uint32_t getMinBucketsPerVisitor() const { return _minBucketsPerVisitor; }
 
-    uint32_t getMaxNodesPerMerge() const {
-        return _maxNodesPerMerge;
-    }
-    bool getEnableJoinForSiblingLessBuckets() const {
-        return _enableJoinForSiblingLessBuckets;
-    }
-    bool getEnableInconsistentJoin() const noexcept {
-        return _enableInconsistentJoin;
-    }
+    uint32_t getMaxNodesPerMerge() const { return _maxNodesPerMerge; }
+    bool getEnableJoinForSiblingLessBuckets() const { return _enableJoinForSiblingLessBuckets; }
+    bool getEnableInconsistentJoin() const noexcept { return _enableInconsistentJoin; }
 
-    ReplicaCountingMode getMinimumReplicaCountingMode() const noexcept {
-        return _minimumReplicaCountingMode;
-    }
-    bool isBucketActivationDisabled() const noexcept {
-        return _disableBucketActivation;
-    }
-    std::chrono::seconds getMaxClusterClockSkew() const noexcept {
-        return _maxClusterClockSkew;
-    }
+    ReplicaCountingMode getMinimumReplicaCountingMode() const noexcept { return _minimumReplicaCountingMode; }
+    bool isBucketActivationDisabled() const noexcept { return _disableBucketActivation; }
+    std::chrono::seconds getMaxClusterClockSkew() const noexcept { return _maxClusterClockSkew; }
     std::chrono::seconds getInhibitMergesOnBusyNodeDuration() const noexcept {
         return _inhibitMergeSendingOnBusyNodeDuration;
     }
 
-    std::chrono::milliseconds simulated_db_pruning_latency() const noexcept {
-        return _simulated_db_pruning_latency;
-    }
-    std::chrono::milliseconds simulated_db_merging_latency() const noexcept {
-        return _simulated_db_merging_latency;
-    }
+    std::chrono::milliseconds simulated_db_pruning_latency() const noexcept { return _simulated_db_pruning_latency; }
+    std::chrono::milliseconds simulated_db_merging_latency() const noexcept { return _simulated_db_merging_latency; }
 
     bool allowStaleReadsDuringClusterStateTransitions() const noexcept {
         return _allowStaleReadsDuringClusterStateTransitions;
@@ -195,16 +160,10 @@ public:
         _allowStaleReadsDuringClusterStateTransitions = allow;
     }
 
-    bool update_fast_path_restart_enabled() const noexcept {
-        return _update_fast_path_restart_enabled;
-    }
-    void set_update_fast_path_restart_enabled(bool enabled) noexcept {
-        _update_fast_path_restart_enabled = enabled;
-    }
+    bool update_fast_path_restart_enabled() const noexcept { return _update_fast_path_restart_enabled; }
+    void set_update_fast_path_restart_enabled(bool enabled) noexcept { _update_fast_path_restart_enabled = enabled; }
 
-    bool merge_operations_disabled() const noexcept {
-        return _merge_operations_disabled;
-    }
+    bool merge_operations_disabled() const noexcept { return _merge_operations_disabled; }
 
     void set_use_weak_internal_read_consistency_for_client_gets(bool use_weak) noexcept {
         _use_weak_internal_read_consistency_for_client_gets = use_weak;
@@ -239,9 +198,7 @@ public:
         _max_document_operation_message_size_bytes = std::min(max_size_bytes, static_cast<uint32_t>(INT32_MAX));
     }
 
-    [[nodiscard]] bool enable_operation_cancellation() const noexcept {
-        return _enable_operation_cancellation;
-    }
+    [[nodiscard]] bool enable_operation_cancellation() const noexcept { return _enable_operation_cancellation; }
     [[nodiscard]] bool symmetric_put_and_activate_replica_selection() const noexcept {
         return _symmetric_put_and_activate_replica_selection;
     }
@@ -250,7 +207,7 @@ public:
 
 private:
     StorageComponent& _component;
-    
+
     uint32_t _byteCountSplitLimit;
     uint32_t _docCountSplitLimit;
     uint32_t _byteCountJoinLimit;
@@ -272,9 +229,9 @@ private:
     uint32_t _maxVisitorsPerNodePerClientVisitor;
     uint32_t _minBucketsPerVisitor;
 
-    MaintenancePriorities _maintenancePriorities;
-    std::chrono::seconds _maxClusterClockSkew;
-    std::chrono::seconds _inhibitMergeSendingOnBusyNodeDuration;
+    MaintenancePriorities     _maintenancePriorities;
+    std::chrono::seconds      _maxClusterClockSkew;
+    std::chrono::seconds      _inhibitMergeSendingOnBusyNodeDuration;
     std::chrono::milliseconds _simulated_db_pruning_latency;
     std::chrono::milliseconds _simulated_db_merging_latency;
 
@@ -283,16 +240,14 @@ private:
     bool _enableInconsistentJoin;
     bool _disableBucketActivation;
     bool _allowStaleReadsDuringClusterStateTransitions;
-    bool _update_fast_path_restart_enabled; //TODO Rewrite tests and GC
+    bool _update_fast_path_restart_enabled; // TODO Rewrite tests and GC
     bool _merge_operations_disabled;
     bool _use_weak_internal_read_consistency_for_client_gets;
-    bool _enable_metadata_only_fetch_phase_for_inconsistent_updates; //TODO Rewrite tests and GC
+    bool _enable_metadata_only_fetch_phase_for_inconsistent_updates; // TODO Rewrite tests and GC
     bool _enable_operation_cancellation;
     bool _symmetric_put_and_activate_replica_selection;
 
     ReplicaCountingMode _minimumReplicaCountingMode;
 };
 
-}
-
-
+} // namespace storage

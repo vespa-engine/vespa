@@ -3,20 +3,23 @@
 
 #include "btree_lockable_map.h"
 #include "generic_btree_bucket_database.hpp"
+
 #include <vespa/vespalib/btree/btreebuilder.h>
-#include <vespa/vespalib/btree/btreenodeallocator.hpp>
-#include <vespa/vespalib/btree/btreenode.hpp>
-#include <vespa/vespalib/btree/btreenodestore.hpp>
-#include <vespa/vespalib/btree/btreeiterator.hpp>
-#include <vespa/vespalib/btree/btreeroot.hpp>
-#include <vespa/vespalib/btree/btreebuilder.hpp>
-#include <vespa/vespalib/btree/btree.hpp>
-#include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/datastore/datastore.h>
+
+#include <vespa/vespalib/btree/btree.hpp>
+#include <vespa/vespalib/btree/btreebuilder.hpp>
+#include <vespa/vespalib/btree/btreeiterator.hpp>
+#include <vespa/vespalib/btree/btreenode.hpp>
+#include <vespa/vespalib/btree/btreenodeallocator.hpp>
+#include <vespa/vespalib/btree/btreenodestore.hpp>
+#include <vespa/vespalib/btree/btreeroot.hpp>
+#include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/stllike/hash_set.hpp>
-#include <thread>
+
 #include <sstream>
+#include <thread>
 
 // Major TODOs in the short term:
 //  - Introduce snapshotting for readers
@@ -26,105 +29,89 @@
 
 namespace storage::bucketdb {
 
-using vespalib::datastore::EntryRef;
 using document::BucketId;
+using vespalib::datastore::EntryRef;
 
-template <typename T>
-struct BTreeLockableMap<T>::ValueTraits {
-    using ValueType     = T;
+template <typename T> struct BTreeLockableMap<T>::ValueTraits {
+    using ValueType = T;
     using ConstValueRef = const T&;
     using DataStoreType = vespalib::datastore::DataStore<ValueType>;
 
-    static void init_data_store(DataStoreType& store) {
-        store.enableFreeLists();
-    }
-    static EntryRef entry_ref_from_value(uint64_t value) {
-        return EntryRef(value & 0xffffffffULL);
-    }
-    static ValueType make_invalid_value() {
-        return ValueType();
-    }
+    static void init_data_store(DataStoreType& store) { store.enableFreeLists(); }
+    static EntryRef entry_ref_from_value(uint64_t value) { return EntryRef(value & 0xffffffffULL); }
+    static ValueType make_invalid_value() { return ValueType(); }
     static uint64_t wrap_and_store_value(DataStoreType& store, const ValueType& value) noexcept {
         return store.addEntry(value).ref();
     }
     static void remove_by_wrapped_value(DataStoreType& store, uint64_t value) noexcept {
         store.hold_entry(entry_ref_from_value(value));
     }
-    static ValueType unwrap_from_key_value(const DataStoreType& store, [[maybe_unused]] uint64_t key, uint64_t value) {
+    static ValueType unwrap_from_key_value(const DataStoreType& store, [[maybe_unused]] uint64_t key,
+                                           uint64_t value) {
         return store.getEntry(entry_ref_from_value(value));
     }
-    static ConstValueRef unwrap_const_ref_from_key_value(const DataStoreType& store, [[maybe_unused]] uint64_t key, uint64_t value) {
+    static ConstValueRef unwrap_const_ref_from_key_value(const DataStoreType& store, [[maybe_unused]] uint64_t key,
+                                                         uint64_t value) {
         return store.getEntry(entry_ref_from_value(value));
     }
 };
 
 template <typename T>
 BTreeLockableMap<T>::BTreeLockableMap()
-    : _impl(std::make_unique<GenericBTreeBucketDatabase<ValueTraits>>(1024/*data store array count*/))
-{}
+    : _impl(std::make_unique<GenericBTreeBucketDatabase<ValueTraits>>(1024 /*data store array count*/)) {
+}
 
-template <typename T>
-BTreeLockableMap<T>::~BTreeLockableMap() = default;
+template <typename T> BTreeLockableMap<T>::~BTreeLockableMap() = default;
 
-template <typename T>
-BTreeLockableMap<T>::LockIdSet::LockIdSet() : Hash() {}
+template <typename T> BTreeLockableMap<T>::LockIdSet::LockIdSet() : Hash() {
+}
 
-template <typename T>
-BTreeLockableMap<T>::LockIdSet::~LockIdSet() = default;
+template <typename T> BTreeLockableMap<T>::LockIdSet::~LockIdSet() = default;
 
-template <typename T>
-size_t BTreeLockableMap<T>::LockIdSet::getMemoryUsage() const {
+template <typename T> size_t BTreeLockableMap<T>::LockIdSet::getMemoryUsage() const {
     return Hash::getMemoryConsumption();
 }
 
-template <typename T>
-BTreeLockableMap<T>::LockWaiters::LockWaiters() : _id(0), _map() {}
+template <typename T> BTreeLockableMap<T>::LockWaiters::LockWaiters() : _id(0), _map() {
+}
 
-template <typename T>
-BTreeLockableMap<T>::LockWaiters::~LockWaiters() = default;
+template <typename T> BTreeLockableMap<T>::LockWaiters::~LockWaiters() = default;
 
-template <typename T>
-size_t BTreeLockableMap<T>::LockWaiters::insert(const LockId & lid) {
+template <typename T> size_t BTreeLockableMap<T>::LockWaiters::insert(const LockId& lid) {
     Key id(_id++);
     _map.insert(typename WaiterMap::value_type(id, lid));
     return id;
 }
 
-template <typename T>
-size_t BTreeLockableMap<T>::size() const noexcept {
+template <typename T> size_t BTreeLockableMap<T>::size() const noexcept {
     std::lock_guard guard(_lock);
     return _impl->size();
 }
 
-template <typename T>
-size_t BTreeLockableMap<T>::getMemoryUsage() const noexcept {
+template <typename T> size_t BTreeLockableMap<T>::getMemoryUsage() const noexcept {
     std::lock_guard guard(_lock);
-    const auto impl_usage = _impl->memory_usage();
-    return (impl_usage.allocatedBytes() + _lockedKeys.getMemoryUsage() +
-            sizeof(std::mutex) + sizeof(std::condition_variable));
+    const auto      impl_usage = _impl->memory_usage();
+    return (impl_usage.allocatedBytes() + _lockedKeys.getMemoryUsage() + sizeof(std::mutex) +
+            sizeof(std::condition_variable));
 }
 
-template <typename T>
-vespalib::MemoryUsage BTreeLockableMap<T>::detailed_memory_usage() const noexcept {
+template <typename T> vespalib::MemoryUsage BTreeLockableMap<T>::detailed_memory_usage() const noexcept {
     std::lock_guard guard(_lock);
     return _impl->memory_usage();
 }
 
-template <typename T>
-bool BTreeLockableMap<T>::empty() const noexcept {
+template <typename T> bool BTreeLockableMap<T>::empty() const noexcept {
     std::lock_guard guard(_lock);
     return _impl->empty();
 }
 
-template <typename T>
-void BTreeLockableMap<T>::swap(BTreeLockableMap& other) {
+template <typename T> void BTreeLockableMap<T>::swap(BTreeLockableMap& other) {
     std::lock_guard guard(_lock);
     std::lock_guard guard2(other._lock);
     _impl.swap(other._impl);
 }
 
-template <typename T>
-void BTreeLockableMap<T>::acquireKey(const LockId& lid, std::unique_lock<std::mutex>& guard) {
+template <typename T> void BTreeLockableMap<T>::acquireKey(const LockId& lid, std::unique_lock<std::mutex>& guard) {
     if (_lockedKeys.exists(lid)) {
         auto waitId = _lockWaiters.insert(lid);
         while (_lockedKeys.exists(lid)) {
@@ -135,9 +122,9 @@ void BTreeLockableMap<T>::acquireKey(const LockId& lid, std::unique_lock<std::mu
 }
 
 template <typename T>
-typename BTreeLockableMap<T>::WrappedEntry
-BTreeLockableMap<T>::get(const key_type& key, const char* clientId, bool createIfNonExisting) {
-    LockId lid(key, clientId);
+typename BTreeLockableMap<T>::WrappedEntry BTreeLockableMap<T>::get(const key_type& key, const char* clientId,
+                                                                    bool createIfNonExisting) {
+    LockId           lid(key, clientId);
     std::unique_lock guard(_lock);
     acquireKey(lid, guard);
     auto iter = _impl->find(key);
@@ -156,9 +143,8 @@ BTreeLockableMap<T>::get(const key_type& key, const char* clientId, bool createI
     return WrappedEntry(*this, key, _impl->entry_from_iterator(iter), clientId, preExisted);
 }
 
-template <typename T>
-bool BTreeLockableMap<T>::erase(const key_type& key, const char* client_id, bool has_lock) {
-    LockId lid(key, client_id);
+template <typename T> bool BTreeLockableMap<T>::erase(const key_type& key, const char* client_id, bool has_lock) {
+    LockId           lid(key, client_id);
     std::unique_lock guard(_lock);
     if (!has_lock) {
         acquireKey(lid, guard);
@@ -167,10 +153,9 @@ bool BTreeLockableMap<T>::erase(const key_type& key, const char* client_id, bool
 }
 
 template <typename T>
-void BTreeLockableMap<T>::insert(const key_type& key, const mapped_type& value,
-                                 const char* clientId, bool has_lock, bool& pre_existed)
-{
-    LockId lid(key, clientId);
+void BTreeLockableMap<T>::insert(const key_type& key, const mapped_type& value, const char* clientId, bool has_lock,
+                                 bool& pre_existed) {
+    LockId           lid(key, clientId);
     std::unique_lock guard(_lock);
     if (!has_lock) {
         acquireKey(lid, guard);
@@ -178,17 +163,14 @@ void BTreeLockableMap<T>::insert(const key_type& key, const mapped_type& value,
     pre_existed = _impl->update_by_raw_key(key, value);
 }
 
-template <typename T>
-void BTreeLockableMap<T>::clear() {
+template <typename T> void BTreeLockableMap<T>::clear() {
     std::lock_guard guard(_lock);
     _impl->clear();
 }
 
 template <typename T>
-bool BTreeLockableMap<T>::findNextKey(key_type& key, mapped_type& val,
-                                      const char* clientId,
-                                      std::unique_lock<std::mutex> &guard)
-{
+bool BTreeLockableMap<T>::findNextKey(key_type& key, mapped_type& val, const char* clientId,
+                                      std::unique_lock<std::mutex>& guard) {
     // Wait for next value to unlock.
     auto it = _impl->lower_bound(key);
     while (it.valid() && _lockedKeys.exists(LockId(it.getKey(), ""))) {
@@ -205,10 +187,7 @@ bool BTreeLockableMap<T>::findNextKey(key_type& key, mapped_type& val,
     return false;
 }
 
-template <typename T>
-bool BTreeLockableMap<T>::handleDecision(key_type& key, mapped_type& val,
-                                         Decision decision)
-{
+template <typename T> bool BTreeLockableMap<T>::handleDecision(key_type& key, mapped_type& val, Decision decision) {
     switch (decision) {
     case Decision::UPDATE:
         _impl->update_by_raw_key(key, val);
@@ -229,10 +208,9 @@ bool BTreeLockableMap<T>::handleDecision(key_type& key, mapped_type& val,
 
 template <typename T>
 void BTreeLockableMap<T>::do_for_each_mutable_unordered(std::function<Decision(uint64_t, mapped_type&)> func,
-                                                        const char* clientId)
-{
-    key_type key = 0;
-    mapped_type val;
+                                                        const char*                                     clientId) {
+    key_type         key = 0;
+    mapped_type      val;
     std::unique_lock guard(_lock);
     while (true) {
         if (findNextKey(key, val, clientId, guard)) {
@@ -248,10 +226,9 @@ void BTreeLockableMap<T>::do_for_each_mutable_unordered(std::function<Decision(u
 
 template <typename T>
 void BTreeLockableMap<T>::do_for_each(std::function<Decision(uint64_t, const mapped_type&)> func,
-                                      const char* clientId)
-{
-    key_type key = 0;
-    mapped_type val;
+                                      const char*                                           clientId) {
+    key_type         key = 0;
+    mapped_type      val;
     std::unique_lock guard(_lock);
     while (true) {
         if (findNextKey(key, val, clientId, guard)) {
@@ -267,12 +244,9 @@ void BTreeLockableMap<T>::do_for_each(std::function<Decision(uint64_t, const map
 }
 
 template <typename T>
-bool BTreeLockableMap<T>::processNextChunk(std::function<Decision(uint64_t, const mapped_type&)>& func,
-                                           key_type& key,
-                                           const char* client_id,
-                                           const uint32_t chunk_size)
-{
-    mapped_type val;
+bool BTreeLockableMap<T>::processNextChunk(std::function<Decision(uint64_t, const mapped_type&)>& func, key_type& key,
+                                           const char* client_id, const uint32_t chunk_size) {
+    mapped_type      val;
     std::unique_lock guard(_lock);
     for (uint32_t processed = 0; processed < chunk_size; ++processed) {
         if (findNextKey(key, val, client_id, guard)) {
@@ -289,10 +263,8 @@ bool BTreeLockableMap<T>::processNextChunk(std::function<Decision(uint64_t, cons
 
 template <typename T>
 void BTreeLockableMap<T>::do_for_each_chunked(std::function<Decision(uint64_t, const mapped_type&)> func,
-                                              const char* client_id,
-                                              vespalib::duration yield_time,
-                                              uint32_t chunk_size)
-{
+                                              const char* client_id, vespalib::duration yield_time,
+                                              uint32_t chunk_size) {
     key_type key{};
     while (processNextChunk(func, key, client_id, chunk_size)) {
         // Rationale: delay iteration for as short a time as possible while
@@ -306,9 +278,9 @@ void BTreeLockableMap<T>::do_for_each_chunked(std::function<Decision(uint64_t, c
     }
 }
 
-template <typename T>
-class BTreeLockableMap<T>::ReadGuardImpl final : public bucketdb::ReadGuard<T> {
+template <typename T> class BTreeLockableMap<T>::ReadGuardImpl final : public bucketdb::ReadGuard<T> {
     typename ImplType::ReadSnapshot _snapshot;
+
 public:
     explicit ReadGuardImpl(const BTreeLockableMap<T>& db);
     ~ReadGuardImpl() override;
@@ -320,22 +292,16 @@ public:
 };
 
 template <typename T>
-BTreeLockableMap<T>::ReadGuardImpl::ReadGuardImpl(const BTreeLockableMap<T>& db)
-    : _snapshot(*db._impl)
-{}
+BTreeLockableMap<T>::ReadGuardImpl::ReadGuardImpl(const BTreeLockableMap<T>& db) : _snapshot(*db._impl) {
+}
+
+template <typename T> BTreeLockableMap<T>::ReadGuardImpl::~ReadGuardImpl() = default;
 
 template <typename T>
-BTreeLockableMap<T>::ReadGuardImpl::~ReadGuardImpl() = default;
-
-template <typename T>
-std::vector<T>
-BTreeLockableMap<T>::ReadGuardImpl::find_parents_and_self(const document::BucketId& bucket) const {
+std::vector<T> BTreeLockableMap<T>::ReadGuardImpl::find_parents_and_self(const document::BucketId& bucket) const {
     std::vector<T> entries;
     _snapshot.template find_parents_and_self<ByConstRef>(
-            bucket,
-            [&entries]([[maybe_unused]] uint64_t key, const T& entry){
-                entries.emplace_back(entry);
-            });
+        bucket, [&entries]([[maybe_unused]] uint64_t key, const T& entry) { entries.emplace_back(entry); });
     return entries;
 }
 
@@ -344,10 +310,7 @@ std::vector<T>
 BTreeLockableMap<T>::ReadGuardImpl::find_parents_self_and_children(const document::BucketId& bucket) const {
     std::vector<T> entries;
     _snapshot.template find_parents_self_and_children<ByConstRef>(
-            bucket,
-            [&entries]([[maybe_unused]] uint64_t key, const T& entry){
-                entries.emplace_back(entry);
-            });
+        bucket, [&entries]([[maybe_unused]] uint64_t key, const T& entry) { entries.emplace_back(entry); });
     return entries;
 }
 
@@ -357,27 +320,24 @@ void BTreeLockableMap<T>::ReadGuardImpl::for_each(std::function<void(uint64_t, c
 }
 
 template <typename T>
-std::unique_ptr<ConstIterator<const T&>>
-BTreeLockableMap<T>::ReadGuardImpl::create_iterator() const {
+std::unique_ptr<ConstIterator<const T&>> BTreeLockableMap<T>::ReadGuardImpl::create_iterator() const {
     return _snapshot.create_iterator(); // TODO test
 }
 
-template <typename T>
-std::unique_ptr<ReadGuard<T>> BTreeLockableMap<T>::do_acquire_read_guard() const {
+template <typename T> std::unique_ptr<ReadGuard<T>> BTreeLockableMap<T>::do_acquire_read_guard() const {
     return std::make_unique<ReadGuardImpl>(*this);
 }
 
 template <typename T>
-void BTreeLockableMap<T>::print(std::ostream& out, bool verbose,
-                                const std::string& indent) const
-{
+void BTreeLockableMap<T>::print(std::ostream& out, bool verbose, const std::string& indent) const {
     std::lock_guard guard(_lock);
     out << "BTreeLockableMap {\n" << indent << "  ";
 
     if (verbose) {
         for (auto it = _impl->begin(); it.valid(); ++it) {
             out << "Key: " << BucketId(BucketId::keyToBucketId(it.getKey()))
-                << " Value: " << _impl->entry_from_iterator(it) << "\n" << indent << "  ";
+                << " Value: " << _impl->entry_from_iterator(it) << "\n"
+                << indent << "  ";
         }
         out << "\n" << indent << "  Locked keys: ";
         _lockedKeys.print(out, verbose, indent + "  ");
@@ -386,9 +346,7 @@ void BTreeLockableMap<T>::print(std::ostream& out, bool verbose,
 }
 
 template <typename T>
-void BTreeLockableMap<T>::LockIdSet::print(std::ostream& out, bool verbose,
-                                           const std::string& indent) const
-{
+void BTreeLockableMap<T>::LockIdSet::print(std::ostream& out, bool verbose, const std::string& indent) const {
     out << "hash {";
     for (const auto& entry : *this) {
         if (verbose) {
@@ -404,25 +362,19 @@ void BTreeLockableMap<T>::LockIdSet::print(std::ostream& out, bool verbose,
     out << " }";
 }
 
-
-
-template <typename T>
-void BTreeLockableMap<T>::unlock(const key_type& key) {
+template <typename T> void BTreeLockableMap<T>::unlock(const key_type& key) {
     std::lock_guard guard(_lock);
     _lockedKeys.erase(LockId(key, ""));
     _cond.notify_all();
 }
 
 template <typename T>
-void BTreeLockableMap<T>::addAndLockResults(
-        const std::vector<BucketId::Type>& keys,
-        const char* clientId,
-        std::map<BucketId, WrappedEntry>& results,
-        std::unique_lock<std::mutex> &guard)
-{
+void BTreeLockableMap<T>::addAndLockResults(const std::vector<BucketId::Type>& keys, const char* clientId,
+                                            std::map<BucketId, WrappedEntry>& results,
+                                            std::unique_lock<std::mutex>&     guard) {
     // Wait until all buckets are free to be added, then add them all.
     while (true) {
-        bool allOk = true;
+        bool     allOk = true;
         key_type waitingFor(0);
 
         for (const auto key : keys) {
@@ -442,8 +394,8 @@ void BTreeLockableMap<T>::addAndLockResults(
                 auto iter = _impl->find(key);
                 if (iter.valid()) {
                     _lockedKeys.insert(LockId(key, clientId));
-                    results[BucketId(BucketId::keyToBucketId(key))] = WrappedEntry(
-                            *this, key, _impl->entry_from_iterator(iter), clientId, true);
+                    results[BucketId(BucketId::keyToBucketId(key))] =
+                        WrappedEntry(*this, key, _impl->entry_from_iterator(iter), clientId, true);
                 }
             }
             break;
@@ -452,17 +404,14 @@ void BTreeLockableMap<T>::addAndLockResults(
 }
 
 template <typename T>
-typename BTreeLockableMap<T>::EntryMap
-BTreeLockableMap<T>::getContained(const BucketId& bucket,
-                                  const char* clientId)
-{
-    std::unique_lock guard(_lock);
+typename BTreeLockableMap<T>::EntryMap BTreeLockableMap<T>::getContained(const BucketId& bucket,
+                                                                         const char*     clientId) {
+    std::unique_lock                 guard(_lock);
     std::map<BucketId, WrappedEntry> results;
 
     std::vector<BucketId::Type> keys;
-    _impl->template find_parents_and_self<ByConstRef>(bucket, [&keys](uint64_t key, [[maybe_unused]]const auto& value){
-        keys.emplace_back(key);
-    });
+    _impl->template find_parents_and_self<ByConstRef>(
+        bucket, [&keys](uint64_t key, [[maybe_unused]] const auto& value) { keys.emplace_back(key); });
 
     if (!keys.empty()) {
         addAndLockResults(keys, clientId, results, guard);
@@ -472,24 +421,20 @@ BTreeLockableMap<T>::getContained(const BucketId& bucket,
 }
 
 template <typename T>
-void BTreeLockableMap<T>::getAllWithoutLocking(const BucketId& bucket,
-                                               std::vector<BucketId::Type>& keys)
-{
-    _impl->template find_parents_self_and_children<ByConstRef>(bucket, [&keys](uint64_t key, [[maybe_unused]]const auto& value){
-        keys.emplace_back(key);
-    });
+void BTreeLockableMap<T>::getAllWithoutLocking(const BucketId& bucket, std::vector<BucketId::Type>& keys) {
+    _impl->template find_parents_self_and_children<ByConstRef>(
+        bucket, [&keys](uint64_t key, [[maybe_unused]] const auto& value) { keys.emplace_back(key); });
 }
 
 /**
  * Returns the given bucket, its super buckets and its sub buckets.
  */
 template <typename T>
-typename BTreeLockableMap<T>::EntryMap
-BTreeLockableMap<T>::getAll(const BucketId& bucket, const char* clientId) {
+typename BTreeLockableMap<T>::EntryMap BTreeLockableMap<T>::getAll(const BucketId& bucket, const char* clientId) {
     std::unique_lock guard(_lock);
 
     std::map<BucketId, WrappedEntry> results;
-    std::vector<BucketId::Type> keys;
+    std::vector<BucketId::Type>      keys;
 
     getAllWithoutLocking(bucket, keys);
     addAndLockResults(keys, clientId, results, guard);
@@ -497,32 +442,25 @@ BTreeLockableMap<T>::getAll(const BucketId& bucket, const char* clientId) {
     return results;
 }
 
-template <typename T>
-bool BTreeLockableMap<T>::isConsistent(const BTreeLockableMap::WrappedEntry& entry) const {
+template <typename T> bool BTreeLockableMap<T>::isConsistent(const BTreeLockableMap::WrappedEntry& entry) const {
     std::lock_guard guard(_lock);
-    uint64_t n_buckets = 0;
-    _impl->template find_parents_self_and_children<ByConstRef>(entry.getBucketId(),
-            [&n_buckets]([[maybe_unused]] uint64_t key, [[maybe_unused]] const auto& value) {
-                ++n_buckets;
-            });
+    uint64_t        n_buckets = 0;
+    _impl->template find_parents_self_and_children<ByConstRef>(
+        entry.getBucketId(),
+        [&n_buckets]([[maybe_unused]] uint64_t key, [[maybe_unused]] const auto& value) { ++n_buckets; });
     return (n_buckets == 1);
 }
 
-template <typename T>
-void BTreeLockableMap<T>::showLockClients(vespalib::asciistream& out) const {
+template <typename T> void BTreeLockableMap<T>::showLockClients(vespalib::asciistream& out) const {
     std::lock_guard guard(_lock);
     out << "Currently grabbed locks:";
     for (const auto& locked : _lockedKeys) {
-        out << "\n  "
-            << BucketId(BucketId::keyToBucketId(locked._key))
-            << " - " << locked._owner;
+        out << "\n  " << BucketId(BucketId::keyToBucketId(locked._key)) << " - " << locked._owner;
     }
     out << "\nClients waiting for keys:";
     for (const auto& waiter : _lockWaiters) {
-        out << "\n  "
-            << BucketId(BucketId::keyToBucketId(waiter.second._key))
-            << " - " << waiter.second._owner;
+        out << "\n  " << BucketId(BucketId::keyToBucketId(waiter.second._key)) << " - " << waiter.second._owner;
     }
 }
 
-}
+} // namespace storage::bucketdb

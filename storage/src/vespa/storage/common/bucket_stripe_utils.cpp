@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bucket_stripe_utils.h"
+
 #include <vespa/vespalib/util/alloc.h>
+
 #include <cassert>
 
 namespace storage {
@@ -12,11 +14,9 @@ constexpr uint8_t used_bits_of(uint64_t key) noexcept {
     return static_cast<uint8_t>(key & 0b11'1111ULL);
 }
 
-}
+} // namespace
 
-size_t
-stripe_of_bucket_key(uint64_t key, uint8_t n_stripe_bits) noexcept
-{
+size_t stripe_of_bucket_key(uint64_t key, uint8_t n_stripe_bits) noexcept {
     if (n_stripe_bits == 0) {
         return 0;
     }
@@ -25,9 +25,7 @@ stripe_of_bucket_key(uint64_t key, uint8_t n_stripe_bits) noexcept
     return (key >> (64 - n_stripe_bits));
 }
 
-uint8_t
-calc_num_stripe_bits(uint32_t n_stripes) noexcept
-{
+uint8_t calc_num_stripe_bits(uint32_t n_stripes) noexcept {
     assert(n_stripes > 0);
     if (n_stripes == 1) {
         return 0;
@@ -39,9 +37,7 @@ calc_num_stripe_bits(uint32_t n_stripes) noexcept
     return result;
 }
 
-uint32_t
-adjusted_num_stripes(uint32_t n_stripes) noexcept
-{
+uint32_t adjusted_num_stripes(uint32_t n_stripes) noexcept {
     if (n_stripes > 1) {
         if (n_stripes > MaxStripes) {
             return MaxStripes;
@@ -51,9 +47,7 @@ adjusted_num_stripes(uint32_t n_stripes) noexcept
     return n_stripes;
 }
 
-uint32_t
-tune_num_stripes_based_on_cpu_cores(uint32_t cpu_cores) noexcept
-{
+uint32_t tune_num_stripes_based_on_cpu_cores(uint32_t cpu_cores) noexcept {
     // This should match the calculation used when node flavor is available:
     // config-model/src/main/java/com/yahoo/vespa/model/content/Distributor.java
     if (cpu_cores <= 16) {
@@ -65,4 +59,4 @@ tune_num_stripes_based_on_cpu_cores(uint32_t cpu_cores) noexcept
     }
 }
 
-}
+} // namespace storage

@@ -6,8 +6,8 @@
 #include <vespa/metrics/common/memory_usage_metrics.h>
 #include <vespa/metrics/summetric.h>
 
-#include <unordered_map>
 #include <memory>
+#include <unordered_map>
 
 namespace storage {
 
@@ -39,7 +39,7 @@ struct BucketSpaceMetrics : metrics::MetricSet {
     metrics::LongValueMetric bytes;
     metrics::LongValueMetric active_buckets;
     metrics::LongValueMetric ready_buckets;
-    ContentBucketDbMetrics bucket_db_metrics;
+    ContentBucketDbMetrics   bucket_db_metrics;
 
     BucketSpaceMetrics(const std::string& space_name, metrics::MetricSet* owner);
     ~BucketSpaceMetrics() override;
@@ -50,17 +50,16 @@ class ContentBucketSpaceRepo;
 class BucketManagerMetrics : public metrics::MetricSet {
 public:
     std::shared_ptr<DataStoredMetrics> disk;
-    using BucketSpaceMap = std::unordered_map<document::BucketSpace, std::unique_ptr<BucketSpaceMetrics>, document::BucketSpace::hash>;
-    BucketSpaceMap bucket_spaces;
+    using BucketSpaceMap =
+        std::unordered_map<document::BucketSpace, std::unique_ptr<BucketSpaceMetrics>, document::BucketSpace::hash>;
+    BucketSpaceMap                         bucket_spaces;
     metrics::SumMetric<metrics::MetricSet> total;
-    metrics::LongValueMetric simpleBucketInfoRequestSize;
-    metrics::LongAverageMetric fullBucketInfoRequestSize;
-    metrics::LongAverageMetric fullBucketInfoLatency;
+    metrics::LongValueMetric               simpleBucketInfoRequestSize;
+    metrics::LongAverageMetric             fullBucketInfoRequestSize;
+    metrics::LongAverageMetric             fullBucketInfoLatency;
 
     explicit BucketManagerMetrics(const ContentBucketSpaceRepo& repo);
     ~BucketManagerMetrics() override;
 };
 
-}
-
-
+} // namespace storage

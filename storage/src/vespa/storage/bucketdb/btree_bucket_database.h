@@ -3,6 +3,7 @@
 #pragma once
 
 #include "bucketdatabase.h"
+
 #include <memory>
 
 namespace storage {
@@ -29,6 +30,7 @@ class BTreeBucketDatabase : public BucketDatabase {
     struct ReplicaValueTraits;
     using ImplType = bucketdb::GenericBTreeBucketDatabase<ReplicaValueTraits>;
     std::unique_ptr<ImplType> _impl;
+
 public:
     BTreeBucketDatabase();
     ~BTreeBucketDatabase() override;
@@ -38,31 +40,28 @@ public:
     // Ye olde bucket DB API:
     Entry get(const document::BucketId& bucket) const override;
     void remove(const document::BucketId& bucket) override;
-    void getParents(const document::BucketId& childBucket,
-                    std::vector<Entry>& entries) const override;
-    void getAll(const document::BucketId& bucket,
-                std::vector<Entry>& entries) const override;
+    void getParents(const document::BucketId& childBucket, std::vector<Entry>& entries) const override;
+    void getAll(const document::BucketId& bucket, std::vector<Entry>& entries) const override;
     void update(const Entry& newEntry) override;
-    void process_update(const document::BucketId& bucket, EntryUpdateProcessor &processor, bool create_if_nonexisting) override;
+    void process_update(const document::BucketId& bucket, EntryUpdateProcessor& processor,
+                        bool create_if_nonexisting) override;
     void for_each_lower_bound(EntryProcessor&, const document::BucketId& at_or_after) const override;
     void for_each_upper_bound(EntryProcessor&, const document::BucketId& after) const override;
     Entry upperBound(const document::BucketId& value) const override;
     uint64_t size() const override;
     void clear() override;
-    document::BucketId getAppropriateBucket(
-            uint16_t minBits,
-            const document::BucketId& bid) override;
+    document::BucketId getAppropriateBucket(uint16_t minBits, const document::BucketId& bid) override;
     uint32_t childCount(const document::BucketId&) const override;
-    void print(std::ostream& out, bool verbose,
-               const std::string& indent) const override;
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
 private:
     class ReadGuardImpl;
     friend class ReadGuardImpl;
+
 public:
     std::unique_ptr<bucketdb::ReadGuard<Entry, ConstEntryRef>> acquire_read_guard() const override;
 
     vespalib::MemoryUsage memory_usage() const noexcept override;
 };
 
-}
+} // namespace storage

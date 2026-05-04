@@ -11,12 +11,11 @@ class StorageLink;
 /*
  * Interface class for building a storage chain.
  */
-class IStorageChainBuilder
-{
+class IStorageChainBuilder {
 public:
     virtual ~IStorageChainBuilder() = default;
     virtual void add(std::unique_ptr<StorageLink> link) = 0;
     virtual std::unique_ptr<StorageLink> build() && = 0;
 };
 
-}
+} // namespace storage

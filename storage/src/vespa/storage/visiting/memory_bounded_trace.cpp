@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "memory_bounded_trace.h"
+
 #include <vespa/vespalib/util/stringfmt.h>
 
 namespace storage {
@@ -10,13 +11,10 @@ MemoryBoundedTrace::MemoryBoundedTrace(size_t softMemoryUpperBound)
       _currentMemoryUsed(0),
       _omittedNodes(0),
       _omittedBytes(0),
-      _softMemoryUpperBound(softMemoryUpperBound)
-{
+      _softMemoryUpperBound(softMemoryUpperBound) {
 }
 
-bool
-MemoryBoundedTrace::add(const mbus::TraceNode& node)
-{
+bool MemoryBoundedTrace::add(const mbus::TraceNode& node) {
     const size_t nodeFootprint = node.computeMemoryUsage();
 
     if (_currentMemoryUsed >= _softMemoryUpperBound) {
@@ -29,9 +27,7 @@ MemoryBoundedTrace::add(const mbus::TraceNode& node)
     return true;
 }
 
-bool
-MemoryBoundedTrace::add(mbus::Trace && node)
-{
+bool MemoryBoundedTrace::add(mbus::Trace&& node) {
     const size_t nodeFootprint = node.computeMemoryUsage();
 
     if (_currentMemoryUsed >= _softMemoryUpperBound) {
@@ -44,17 +40,16 @@ MemoryBoundedTrace::add(mbus::Trace && node)
     return true;
 }
 
-void
-MemoryBoundedTrace::moveTraceTo(mbus::Trace& out)
-{
+void MemoryBoundedTrace::moveTraceTo(mbus::Trace& out) {
     if (_trace.isEmpty()) {
         return;
     }
     if (_omittedNodes > 0) {
-        _trace.trace(0, vespalib::make_string(
-                "Trace too large; omitted %zu subsequent trace trees "
-                "containing a total of %zu bytes",
-                _omittedNodes, _omittedBytes), false);
+        _trace.trace(0,
+                     vespalib::make_string("Trace too large; omitted %zu subsequent trace trees "
+                                           "containing a total of %zu bytes",
+                                           _omittedNodes, _omittedBytes),
+                     false);
     }
     out.addChild(std::move(_trace));
     _currentMemoryUsed = 0;
@@ -62,5 +57,4 @@ MemoryBoundedTrace::moveTraceTo(mbus::Trace& out)
     _omittedBytes = 0;
 }
 
-} // storage
-
+} // namespace storage

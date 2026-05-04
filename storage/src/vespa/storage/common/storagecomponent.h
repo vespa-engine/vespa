@@ -32,34 +32,35 @@
 #pragma once
 
 #include "cluster_context.h"
-#include <vespa/storageframework/generic/component/component.h>
-#include <vespa/storageframework/generic/component/componentregister.h>
+
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/storageframework/generic/component/component.h>
+#include <vespa/storageframework/generic/component/componentregister.h>
 #include <vespa/vdslib/state/node.h>
+
 #include <mutex>
 
 namespace document {
-    class DocumentTypeRepo;
-    class FieldSetRepo;
-}
+class DocumentTypeRepo;
+class FieldSetRepo;
+} // namespace document
 
 namespace storage {
 
 namespace lib {
-    class Distribution;
+class Distribution;
 }
 struct NodeStateUpdater;
 struct StorageComponentRegister;
 
-class StorageComponent : public framework::Component
-{
+class StorageComponent : public framework::Component {
 public:
     struct Repos {
         explicit Repos(std::shared_ptr<const document::DocumentTypeRepo> repo);
         ~Repos();
         const std::shared_ptr<const document::DocumentTypeRepo> documentTypeRepo;
-        const std::shared_ptr<const document::FieldSetRepo> fieldSetRepo;
+        const std::shared_ptr<const document::FieldSetRepo>     fieldSetRepo;
     };
     using UP = std::unique_ptr<StorageComponent>;
     using DistributionSP = std::shared_ptr<const lib::Distribution>;
@@ -83,7 +84,7 @@ public:
     StorageComponent(StorageComponentRegister&, std::string_view name);
     ~StorageComponent() override;
 
-    const ClusterContext & cluster_context() const noexcept { return _cluster_ctx; }
+    const ClusterContext& cluster_context() const noexcept { return _cluster_ctx; }
     const lib::NodeType& getNodeType() const { return *_nodeType; }
     uint16_t getIndex() const { return _index; }
     lib::Node getNode() const { return lib::Node(*_nodeType, _index); }
@@ -97,22 +98,22 @@ public:
     DistributionSP getDistribution() const;
     NodeStateUpdater& getStateUpdater() const;
     uint64_t getGeneration() const { return _generation.load(std::memory_order_relaxed); }
+
 private:
-    SimpleClusterContext _cluster_ctx;
-    const lib::NodeType* _nodeType;
-    uint16_t _index;
+    SimpleClusterContext   _cluster_ctx;
+    const lib::NodeType*   _nodeType;
+    uint16_t               _index;
     std::shared_ptr<Repos> _repos;
     // TODO: move _distribution in to _repos so lock will only taken once and only copying one shared_ptr.
     document::BucketIdFactory _bucketIdFactory;
-    DistributionSP _distribution;
-    NodeStateUpdater* _nodeStateUpdater;
-    mutable std::mutex _lock;
-    std::atomic<uint64_t> _generation;
+    DistributionSP            _distribution;
+    NodeStateUpdater*         _nodeStateUpdater;
+    mutable std::mutex        _lock;
+    std::atomic<uint64_t>     _generation;
 };
 
-struct StorageComponentRegister : public virtual framework::ComponentRegister
-{
+struct StorageComponentRegister : public virtual framework::ComponentRegister {
     virtual void registerStorageComponent(StorageComponent&) = 0;
 };
 
-} // storage
+} // namespace storage

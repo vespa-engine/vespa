@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "storagecomponentregisterimpl.h"
+
 #include <vespa/vespalib/util/exceptions.h>
+
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -19,15 +21,12 @@ StorageComponentRegisterImpl::StorageComponentRegisterImpl()
       _bucketIdFactory(),
       _distribution(),
       _nodeStateUpdater(nullptr),
-      _bucketSpacesConfig()
-{
+      _bucketSpacesConfig() {
 }
 
 StorageComponentRegisterImpl::~StorageComponentRegisterImpl() = default;
 
-void
-StorageComponentRegisterImpl::registerStorageComponent(StorageComponent& smc)
-{
+void StorageComponentRegisterImpl::registerStorageComponent(StorageComponent& smc) {
     std::lock_guard lock(_componentLock);
     _components.push_back(&smc);
     assert(_nodeType != nullptr);
@@ -40,11 +39,8 @@ StorageComponentRegisterImpl::registerStorageComponent(StorageComponent& smc)
     smc.setDistribution(_distribution);
 }
 
-void
-StorageComponentRegisterImpl::setNodeInfo(std::string_view clusterName,
-                                          const lib::NodeType& nodeType,
-                                          uint16_t index)
-{
+void StorageComponentRegisterImpl::setNodeInfo(std::string_view clusterName, const lib::NodeType& nodeType,
+                                               uint16_t index) {
     std::lock_guard lock(_componentLock);
     if (_nodeType != nullptr) {
         LOG(warning, "Node info already set. May be valid in tests, but is a "
@@ -55,14 +51,11 @@ StorageComponentRegisterImpl::setNodeInfo(std::string_view clusterName,
     _index = index;
 }
 
-void
-StorageComponentRegisterImpl::setNodeStateUpdater(NodeStateUpdater& updater)
-{
+void StorageComponentRegisterImpl::setNodeStateUpdater(NodeStateUpdater& updater) {
     std::lock_guard lock(_componentLock);
     if (_nodeStateUpdater != nullptr) {
-        throw vespalib::IllegalStateException(
-                "Node state updater already set. Should never be altered live.",
-                VESPA_STRLOC);
+        throw vespalib::IllegalStateException("Node state updater already set. Should never be altered live.",
+                                              VESPA_STRLOC);
     }
     _nodeStateUpdater = &updater;
     for (auto& component : _components) {
@@ -70,9 +63,7 @@ StorageComponentRegisterImpl::setNodeStateUpdater(NodeStateUpdater& updater)
     }
 }
 
-void
-StorageComponentRegisterImpl::setDocumentTypeRepo(std::shared_ptr<const document::DocumentTypeRepo> repo)
-{
+void StorageComponentRegisterImpl::setDocumentTypeRepo(std::shared_ptr<const document::DocumentTypeRepo> repo) {
     std::lock_guard lock(_componentLock);
     _docTypeRepo = repo;
     for (auto& component : _components) {
@@ -80,9 +71,7 @@ StorageComponentRegisterImpl::setDocumentTypeRepo(std::shared_ptr<const document
     }
 }
 
-void
-StorageComponentRegisterImpl::setBucketIdFactory(const document::BucketIdFactory& factory)
-{
+void StorageComponentRegisterImpl::setBucketIdFactory(const document::BucketIdFactory& factory) {
     std::lock_guard lock(_componentLock);
     _bucketIdFactory = factory;
     for (auto& component : _components) {
@@ -90,9 +79,7 @@ StorageComponentRegisterImpl::setBucketIdFactory(const document::BucketIdFactory
     }
 }
 
-void
-StorageComponentRegisterImpl::setDistribution(std::shared_ptr<const lib::Distribution> distribution)
-{
+void StorageComponentRegisterImpl::setDistribution(std::shared_ptr<const lib::Distribution> distribution) {
     std::lock_guard lock(_componentLock);
     _distribution = distribution;
     for (auto& component : _components) {
@@ -100,11 +87,9 @@ StorageComponentRegisterImpl::setDistribution(std::shared_ptr<const lib::Distrib
     }
 }
 
-void
-StorageComponentRegisterImpl::setBucketSpacesConfig(const BucketspacesConfig& config)
-{
+void StorageComponentRegisterImpl::setBucketSpacesConfig(const BucketspacesConfig& config) {
     std::lock_guard lock(_componentLock);
     _bucketSpacesConfig = config;
 }
 
-} // storage
+} // namespace storage

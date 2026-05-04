@@ -1,14 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "deadlockdetector.h"
+
 #include "htmltable.h"
-#include <vespa/storage/bucketdb/storbucketdb.h>
-#include <vespa/storage/common/content_bucket_space_repo.h>
-#include <vespa/storageframework/generic/thread/thread.h>
-#include <vespa/storageframework/generic/clock/clock.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 
 #include <vespa/log/bufferedlogger.h>
+#include <vespa/storage/bucketdb/storbucketdb.h>
+#include <vespa/storage/common/content_bucket_space_repo.h>
+#include <vespa/storageframework/generic/clock/clock.h>
+#include <vespa/storageframework/generic/thread/thread.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 LOG_SETUP(".deadlock.detector");
 
 using document::BucketSpace;
@@ -24,8 +25,7 @@ DeadLockDetector::DeadLockDetector(StorageComponentRegister& compReg, AppKiller:
       _enableWarning(true),
       _enableShutdown(false),
       _processSlack(30s),
-      _waitSlack(5s)
-{
+      _waitSlack(5s) {
     auto* dComp(dynamic_cast<DistributorComponentRegister*>(&compReg));
     if (dComp) {
         _dComponent = std::make_unique<DistributorComponent>(*dComp, "deadlockdetector");
@@ -41,20 +41,16 @@ DeadLockDetector::DeadLockDetector(StorageComponentRegister& compReg, AppKiller:
 }
 
 DeadLockDetector::DeadLockDetector(StorageComponentRegister& compReg)
-    : DeadLockDetector(compReg, std::make_unique<RealAppKiller>())
-{
+    : DeadLockDetector(compReg, std::make_unique<RealAppKiller>()) {
 }
 
-DeadLockDetector::~DeadLockDetector()
-{
+DeadLockDetector::~DeadLockDetector() {
     if (_thread) {
         _thread->interruptAndJoin(_cond);
     }
 }
 
-void
-DeadLockDetector::enableWarning(bool enable)
-{
+void DeadLockDetector::enableWarning(bool enable) {
     if (enable == warning_enabled_relaxed()) {
         return;
     }
@@ -62,9 +58,7 @@ DeadLockDetector::enableWarning(bool enable)
     _enableWarning.store(enable, std::memory_order_relaxed);
 }
 
-void
-DeadLockDetector::enableShutdown(bool enable)
-{
+void DeadLockDetector::enableShutdown(bool enable) {
     if (enable == shutdown_enabled_relaxed()) {
         return;
     }
@@ -73,64 +67,49 @@ DeadLockDetector::enableShutdown(bool enable)
 }
 
 namespace {
-    struct VisitorWrapper : framework::ThreadVisitor {
-        std::map<std::string, DeadLockDetector::State>& _states;
-        DeadLockDetector::ThreadVisitor& _visitor;
+struct VisitorWrapper : framework::ThreadVisitor {
+    std::map<std::string, DeadLockDetector::State>& _states;
+    DeadLockDetector::ThreadVisitor&                _visitor;
 
-        VisitorWrapper(std::map<std::string, DeadLockDetector::State>& s,
-                       DeadLockDetector::ThreadVisitor& visitor)
-            : _states(s),
-              _visitor(visitor)
-        {
-        }
+    VisitorWrapper(std::map<std::string, DeadLockDetector::State>& s, DeadLockDetector::ThreadVisitor& visitor)
+        : _states(s), _visitor(visitor) {}
 
-        void visitThread(const framework::Thread& thread) override {
-            auto state_iter = _states.try_emplace(thread.getId(), DeadLockDetector::State::OK).first;
-            _visitor.visitThread(thread, state_iter->second);
-        }
-    };
-}
+    void visitThread(const framework::Thread& thread) override {
+        auto state_iter = _states.try_emplace(thread.getId(), DeadLockDetector::State::OK).first;
+        _visitor.visitThread(thread, state_iter->second);
+    }
+};
+} // namespace
 
-void
-DeadLockDetector::visitThreads(ThreadVisitor& visitor) const
-{
+void DeadLockDetector::visitThreads(ThreadVisitor& visitor) const {
     VisitorWrapper wrapper(_states, visitor);
     _component->getThreadPool().visitThreads(wrapper);
 }
 
-bool
-DeadLockDetector::isAboveFailThreshold(vespalib::steady_time time,
-                                       const framework::ThreadProperties& tp,
-                                       const framework::ThreadTickData& tick) const
-{
+bool DeadLockDetector::isAboveFailThreshold(vespalib::steady_time time, const framework::ThreadProperties& tp,
+                                            const framework::ThreadTickData& tick) const {
     if (tp.getMaxCycleTime() == vespalib::duration::zero()) {
         return false;
     }
-    vespalib::duration slack(tick._lastTickType == framework::WAIT_CYCLE
-            ? getWaitSlack() : getProcessSlack());
+    vespalib::duration slack(tick._lastTickType == framework::WAIT_CYCLE ? getWaitSlack() : getProcessSlack());
     return (tick._lastTick + tp.getMaxCycleTime() + slack < time);
 }
 
-bool
-DeadLockDetector::isAboveWarnThreshold(vespalib::steady_time time,
-                                       const framework::ThreadProperties& tp,
-                                       const framework::ThreadTickData& tick) const
-{
-    if (tp.getMaxCycleTime() == vespalib::duration::zero()) return false;
-    vespalib::duration slack = tick._lastTickType == framework::WAIT_CYCLE
-            ? getWaitSlack() : getProcessSlack();
+bool DeadLockDetector::isAboveWarnThreshold(vespalib::steady_time time, const framework::ThreadProperties& tp,
+                                            const framework::ThreadTickData& tick) const {
+    if (tp.getMaxCycleTime() == vespalib::duration::zero())
+        return false;
+    vespalib::duration slack = tick._lastTickType == framework::WAIT_CYCLE ? getWaitSlack() : getProcessSlack();
     return (tick._lastTick + tp.getMaxCycleTime() + slack / 4 < time);
 }
 
-std::string
-DeadLockDetector::getBucketLockInfo() const
-{
+std::string DeadLockDetector::getBucketLockInfo() const {
     vespalib::asciistream ost;
     if (_dComponent.get() != nullptr) {
         ost << "No bucket lock information available for distributor\n";
     } else {
-        for (const auto &elem : _slComponent->getBucketSpaceRepo()) {
-            const auto &bucketDatabase = elem.second->bucketDatabase();
+        for (const auto& elem : _slComponent->getBucketSpaceRepo()) {
+            const auto& bucketDatabase = elem.second->bucketDatabase();
             if (bucketDatabase.size() > 0) {
                 bucketDatabase.showLockClients(ost);
             }
@@ -140,54 +119,47 @@ DeadLockDetector::getBucketLockInfo() const
 }
 
 namespace {
-    struct ThreadChecker : DeadLockDetector::ThreadVisitor {
-        DeadLockDetector& _detector;
-        vespalib::steady_time _currentTime;
+struct ThreadChecker : DeadLockDetector::ThreadVisitor {
+    DeadLockDetector&     _detector;
+    vespalib::steady_time _currentTime;
 
-        ThreadChecker(DeadLockDetector& d, vespalib::steady_time time)
-            : _detector(d), _currentTime(time) {}
+    ThreadChecker(DeadLockDetector& d, vespalib::steady_time time) : _detector(d), _currentTime(time) {}
 
-        void visitThread(const framework::Thread& thread,
-                         DeadLockDetector::State& state) override
-        {
-            const auto& id  = thread.getId();
-            const auto& tp  = thread.getProperties();
-            const auto tick = thread.getTickData();
-            // In case we just got a new tick, ignore the thread
-            if (tick._lastTick > _currentTime) return;
-            // If thread is already in halted state, ignore it.
-            if (state == DeadLockDetector::HALTED) return;
+    void visitThread(const framework::Thread& thread, DeadLockDetector::State& state) override {
+        const auto& id = thread.getId();
+        const auto& tp = thread.getProperties();
+        const auto  tick = thread.getTickData();
+        // In case we just got a new tick, ignore the thread
+        if (tick._lastTick > _currentTime)
+            return;
+        // If thread is already in halted state, ignore it.
+        if (state == DeadLockDetector::HALTED)
+            return;
 
-            if (_detector.isAboveFailThreshold(_currentTime, tp, tick)) {
-                state = DeadLockDetector::HALTED;
-                _detector.handleDeadlock(_currentTime, thread, id, tp, tick, false);
-            } else if (_detector.isAboveWarnThreshold(_currentTime, tp, tick)) {
-                state = DeadLockDetector::WARNED;
-                _detector.handleDeadlock(_currentTime, thread, id, tp, tick, true);
-            } else if (state != DeadLockDetector::OK) {
-                vespalib::asciistream ost;
-                ost << "Thread " << id << " has registered tick again.";
-                LOGBP(info, "%s", ost.str().c_str());
-                state = DeadLockDetector::OK;
-            }
+        if (_detector.isAboveFailThreshold(_currentTime, tp, tick)) {
+            state = DeadLockDetector::HALTED;
+            _detector.handleDeadlock(_currentTime, thread, id, tp, tick, false);
+        } else if (_detector.isAboveWarnThreshold(_currentTime, tp, tick)) {
+            state = DeadLockDetector::WARNED;
+            _detector.handleDeadlock(_currentTime, thread, id, tp, tick, true);
+        } else if (state != DeadLockDetector::OK) {
+            vespalib::asciistream ost;
+            ost << "Thread " << id << " has registered tick again.";
+            LOGBP(info, "%s", ost.str().c_str());
+            state = DeadLockDetector::OK;
         }
-    };
-}
+    }
+};
+} // namespace
 
-void
-DeadLockDetector::handleDeadlock(vespalib::steady_time currentTime,
-                                 const framework::Thread& deadlocked_thread,
-                                 const std::string& id,
-                                 const framework::ThreadProperties&,
-                                 const framework::ThreadTickData& tick,
-                                 bool warnOnly)
-{
+void DeadLockDetector::handleDeadlock(vespalib::steady_time currentTime, const framework::Thread& deadlocked_thread,
+                                      const std::string&               id, const framework::ThreadProperties&,
+                                      const framework::ThreadTickData& tick, bool warnOnly) {
     vespalib::asciistream error;
-    error << "Thread " << id << " has gone "
-          << vespalib::count_ms(currentTime - tick._lastTick)
+    error << "Thread " << id << " has gone " << vespalib::count_ms(currentTime - tick._lastTick)
           << " milliseconds without registering a tick.";
     const bool shutdown_enabled = shutdown_enabled_relaxed();
-    const bool warning_enabled  = warning_enabled_relaxed();
+    const bool warning_enabled = warning_enabled_relaxed();
     if (!warnOnly) {
         if (shutdown_enabled) {
             error << " Restarting process due to presumed internal deadlock.";
@@ -214,9 +186,7 @@ DeadLockDetector::handleDeadlock(vespalib::steady_time currentTime,
     }
 }
 
-void
-DeadLockDetector::run(framework::ThreadHandle& thread)
-{
+void DeadLockDetector::run(framework::ThreadHandle& thread) {
     std::unique_lock sync(_lock);
     while (!thread.interrupted()) {
         ThreadChecker checker(*this, _component->getClock().getMonotonicTime());
@@ -227,69 +197,61 @@ DeadLockDetector::run(framework::ThreadHandle& thread)
 }
 
 namespace {
-    struct ThreadTable {
-        HtmlTable _table;
-        LongColumn _msSinceLastTick;
-        LongColumn _maxProcTickTime;
-        LongColumn _maxWaitTickTime;
-        LongColumn _maxProcTickTimeSeen;
-        LongColumn _maxWaitTickTimeSeen;
+struct ThreadTable {
+    HtmlTable  _table;
+    LongColumn _msSinceLastTick;
+    LongColumn _maxProcTickTime;
+    LongColumn _maxWaitTickTime;
+    LongColumn _maxProcTickTimeSeen;
+    LongColumn _maxWaitTickTimeSeen;
 
-        ThreadTable()
-            : _table("Thread name"),
-              _msSinceLastTick("Milliseconds since last tick", " ms", &_table),
-              _maxProcTickTime("Max milliseconds before wait tick", " ms", &_table),
-              _maxWaitTickTime("Max milliseconds before wait tick", " ms", &_table),
-              _maxProcTickTimeSeen("Max processing tick time observed", " ms", &_table),
-              _maxWaitTickTimeSeen("Max wait tick time observed", " ms", &_table)
-        {
-            _maxProcTickTime._alignment = Column::LEFT;
-            _maxProcTickTimeSeen._alignment = Column::LEFT;
-            _maxWaitTickTimeSeen._alignment = Column::LEFT;
-        }
-        ~ThreadTable();
-    };
+    ThreadTable()
+        : _table("Thread name"),
+          _msSinceLastTick("Milliseconds since last tick", " ms", &_table),
+          _maxProcTickTime("Max milliseconds before wait tick", " ms", &_table),
+          _maxWaitTickTime("Max milliseconds before wait tick", " ms", &_table),
+          _maxProcTickTimeSeen("Max processing tick time observed", " ms", &_table),
+          _maxWaitTickTimeSeen("Max wait tick time observed", " ms", &_table) {
+        _maxProcTickTime._alignment = Column::LEFT;
+        _maxProcTickTimeSeen._alignment = Column::LEFT;
+        _maxWaitTickTimeSeen._alignment = Column::LEFT;
+    }
+    ~ThreadTable();
+};
 
-    ThreadTable::~ThreadTable() = default;
+ThreadTable::~ThreadTable() = default;
 
-    struct ThreadStatusWriter : DeadLockDetector::ThreadVisitor {
-        ThreadTable& _table;
-        vespalib::steady_time _time;
+struct ThreadStatusWriter : DeadLockDetector::ThreadVisitor {
+    ThreadTable&          _table;
+    vespalib::steady_time _time;
 
-        ThreadStatusWriter(ThreadTable& table, vespalib::steady_time time)
-            : _table(table), _time(time) {}
+    ThreadStatusWriter(ThreadTable& table, vespalib::steady_time time) : _table(table), _time(time) {}
 
-        template<typename T>
-        std::string toS(const T& val) {
-            vespalib::asciistream ost;
-            ost << val;
-            return ost.str();
-        }
+    template <typename T> std::string toS(const T& val) {
+        vespalib::asciistream ost;
+        ost << val;
+        return ost.str();
+    }
 
-        void visitThread(const framework::Thread& thread,
-                         DeadLockDetector::State& /*state*/) override
-        {
-            _table._table.addRow(thread.getId());
-            uint32_t i = _table._table.getRowCount() - 1;
-            const auto& tp = thread.getProperties();
-            const auto tick = thread.getTickData();
-            _table._msSinceLastTick[i] = vespalib::count_ms(_time - tick._lastTick);
-            _table._maxProcTickTime[i] = vespalib::count_ms(tp.getMaxProcessTime());
-            _table._maxWaitTickTime[i] = vespalib::count_ms(tp.getWaitTime());
-            _table._maxProcTickTimeSeen[i] = vespalib::count_ms(tick._maxProcessingTimeSeen);
-            _table._maxWaitTickTimeSeen[i] = vespalib::count_ms(tick._maxWaitTimeSeen);
-        }
-    };
-}
+    void visitThread(const framework::Thread& thread, DeadLockDetector::State& /*state*/) override {
+        _table._table.addRow(thread.getId());
+        uint32_t    i = _table._table.getRowCount() - 1;
+        const auto& tp = thread.getProperties();
+        const auto  tick = thread.getTickData();
+        _table._msSinceLastTick[i] = vespalib::count_ms(_time - tick._lastTick);
+        _table._maxProcTickTime[i] = vespalib::count_ms(tp.getMaxProcessTime());
+        _table._maxWaitTickTime[i] = vespalib::count_ms(tp.getWaitTime());
+        _table._maxProcTickTimeSeen[i] = vespalib::count_ms(tick._maxProcessingTimeSeen);
+        _table._maxWaitTickTimeSeen[i] = vespalib::count_ms(tick._maxWaitTimeSeen);
+    }
+};
+} // namespace
 
-void
-DeadLockDetector::reportHtmlStatus(std::ostream& os,
-                                   const framework::HttpUrlPath&) const
-{
+void DeadLockDetector::reportHtmlStatus(std::ostream& os, const framework::HttpUrlPath&) const {
     vespalib::asciistream out;
     out << "<h2>Overview of latest thread ticks</h2>\n";
-    ThreadTable threads;
-    std::lock_guard guard(_lock);
+    ThreadTable        threads;
+    std::lock_guard    guard(_lock);
     ThreadStatusWriter writer(threads, _component->getClock().getMonotonicTime());
     visitThreads(writer);
     std::ostringstream ost;
@@ -315,9 +277,8 @@ DeadLockDetector::reportHtmlStatus(std::ostream& os,
         << "here in hopes that it will simplify debugging.</p>\n"
         << "<p>Bucket database</p>\n"
         << "<pre>\n"
-        << getBucketLockInfo()
-        << "</pre>\n";
+        << getBucketLockInfo() << "</pre>\n";
     os << out.view();
 }
 
-} // storage
+} // namespace storage

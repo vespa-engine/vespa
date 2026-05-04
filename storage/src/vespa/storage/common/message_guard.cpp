@@ -13,4 +13,4 @@ MessageGuard::~MessageGuard() {
     }
 }
 
-}
+} // namespace storage

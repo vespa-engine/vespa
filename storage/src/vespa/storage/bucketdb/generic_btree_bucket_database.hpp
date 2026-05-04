@@ -2,22 +2,23 @@
 #pragma once
 
 #include "generic_btree_bucket_database.h"
+
 #include <vespa/vespalib/btree/btreebuilder.h>
-#include <vespa/vespalib/btree/btreenodeallocator.hpp>
-#include <vespa/vespalib/btree/btreenode.hpp>
-#include <vespa/vespalib/btree/btreenodestore.hpp>
-#include <vespa/vespalib/btree/btreeiterator.hpp>
-#include <vespa/vespalib/btree/btreeroot.hpp>
-#include <vespa/vespalib/btree/btreebuilder.hpp>
+
 #include <vespa/vespalib/btree/btree.hpp>
+#include <vespa/vespalib/btree/btreebuilder.hpp>
+#include <vespa/vespalib/btree/btreeiterator.hpp>
+#include <vespa/vespalib/btree/btreenode.hpp>
+#include <vespa/vespalib/btree/btreenodeallocator.hpp>
+#include <vespa/vespalib/btree/btreenodestore.hpp>
+#include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/btree/btreestore.hpp>
 
 namespace storage::bucketdb {
 
 using document::BucketId;
 
-template <typename DataStoreTraitsT>
-GenericBTreeBucketDatabase<DataStoreTraitsT>::~GenericBTreeBucketDatabase() {
+template <typename DataStoreTraitsT> GenericBTreeBucketDatabase<DataStoreTraitsT>::~GenericBTreeBucketDatabase() {
     // If there was a snapshot reader concurrent with the last modify operation
     // on the DB, it's possible for the hold list to be non-empty. Explicitly
     // clean it up now to ensure that we don't try to destroy any data stores
@@ -30,8 +31,7 @@ BucketId GenericBTreeBucketDatabase<DataStoreTraitsT>::bucket_from_valid_iterato
     return BucketId(BucketId::keyToBucketId(iter.getKey()));
 }
 
-template <typename DataStoreTraitsT>
-void GenericBTreeBucketDatabase<DataStoreTraitsT>::commit_tree_changes() {
+template <typename DataStoreTraitsT> void GenericBTreeBucketDatabase<DataStoreTraitsT>::commit_tree_changes() {
     // TODO break up and refactor
     // TODO verify semantics and usage
     // TODO make BTree wrapping API which abstracts away all this stuff via reader/writer interfaces
@@ -48,19 +48,16 @@ void GenericBTreeBucketDatabase<DataStoreTraitsT>::commit_tree_changes() {
     _tree.getAllocator().reclaim_memory(used_gen);
 }
 
-template <typename DataStoreTraitsT>
-void GenericBTreeBucketDatabase<DataStoreTraitsT>::clear() noexcept {
+template <typename DataStoreTraitsT> void GenericBTreeBucketDatabase<DataStoreTraitsT>::clear() noexcept {
     _tree.clear();
     commit_tree_changes();
 }
 
-template <typename DataStoreTraitsT>
-size_t GenericBTreeBucketDatabase<DataStoreTraitsT>::size() const noexcept {
+template <typename DataStoreTraitsT> size_t GenericBTreeBucketDatabase<DataStoreTraitsT>::size() const noexcept {
     return _tree.size();
 }
 
-template <typename DataStoreTraitsT>
-bool GenericBTreeBucketDatabase<DataStoreTraitsT>::empty() const noexcept {
+template <typename DataStoreTraitsT> bool GenericBTreeBucketDatabase<DataStoreTraitsT>::empty() const noexcept {
     return !_tree.begin().valid();
 }
 
@@ -83,7 +80,8 @@ GenericBTreeBucketDatabase<DataStoreTraitsT>::entry_from_iterator(const BTreeCon
 
 template <typename DataStoreTraitsT>
 typename GenericBTreeBucketDatabase<DataStoreTraitsT>::ConstValueRef
-GenericBTreeBucketDatabase<DataStoreTraitsT>::const_value_ref_from_valid_iterator(const BTreeConstIterator& iter) const {
+GenericBTreeBucketDatabase<DataStoreTraitsT>::const_value_ref_from_valid_iterator(
+    const BTreeConstIterator& iter) const {
     const auto value = iter.getData().load_acquire();
     return DataStoreTraitsT::unwrap_const_ref_from_key_value(_store, iter.getKey(), value);
 }
@@ -113,15 +111,13 @@ GenericBTreeBucketDatabase<DataStoreTraitsT>::begin() const noexcept {
 }
 
 struct ByValue {
-    template <typename DB, typename Iter>
-    static typename DB::ValueType apply(const DB& db, const Iter& iter) {
+    template <typename DB, typename Iter> static typename DB::ValueType apply(const DB& db, const Iter& iter) {
         return db.entry_from_iterator(iter);
     };
 };
 
 struct ByConstRef {
-    template <typename DB, typename Iter>
-    static typename DB::ConstValueRef apply(const DB& db, const Iter& iter) {
+    template <typename DB, typename Iter> static typename DB::ConstValueRef apply(const DB& db, const Iter& iter) {
         return db.const_value_ref_from_valid_iterator(iter);
     };
 };
@@ -197,11 +193,8 @@ struct ByConstRef {
 template <typename DataStoreTraitsT>
 template <typename IterValueExtractor, typename Func>
 typename GenericBTreeBucketDatabase<DataStoreTraitsT>::BTreeConstIterator
-GenericBTreeBucketDatabase<DataStoreTraitsT>::find_parents_internal(
-        const typename BTree::FrozenView& frozen_view,
-        const BucketId& bucket,
-        Func func) const
-{
+GenericBTreeBucketDatabase<DataStoreTraitsT>::find_parents_internal(const typename BTree::FrozenView& frozen_view,
+                                                                    const BucketId& bucket, Func func) const {
     const uint64_t bucket_key = bucket.toKey();
     if (frozen_view.empty()) {
         return frozen_view.begin(); // Will be invalid.
@@ -215,7 +208,7 @@ GenericBTreeBucketDatabase<DataStoreTraitsT>::find_parents_internal(
     // greater than the used bits of the queried bucket. If we used the raw ID, we'd
     // end up looking at undefined bits.
     const auto first_key = BucketId(min_db_bits, bucket.getId()).toKey();
-    auto iter = frozen_view.lowerBound(first_key);
+    auto       iter = frozen_view.lowerBound(first_key);
     // Try skipping as many levels of the tree as possible as we go.
     uint32_t bits = min_db_bits;
     while (iter.valid() && (iter.getKey() < bucket_key)) {
@@ -235,10 +228,7 @@ GenericBTreeBucketDatabase<DataStoreTraitsT>::find_parents_internal(
 template <typename DataStoreTraitsT>
 template <typename IterValueExtractor, typename Func>
 void GenericBTreeBucketDatabase<DataStoreTraitsT>::find_parents_and_self_internal(
-        const typename BTree::FrozenView& frozen_view,
-        const BucketId& bucket,
-        Func func) const
-{
+    const typename BTree::FrozenView& frozen_view, const BucketId& bucket, Func func) const {
     auto iter = find_parents_internal<IterValueExtractor>(frozen_view, bucket, func);
     if (iter.valid() && iter.getKey() == bucket.toKey()) {
         func(iter.getKey(), IterValueExtractor::apply(*this, iter));
@@ -247,10 +237,8 @@ void GenericBTreeBucketDatabase<DataStoreTraitsT>::find_parents_and_self_interna
 
 template <typename DataStoreTraitsT>
 template <typename IterValueExtractor, typename Func>
-void GenericBTreeBucketDatabase<DataStoreTraitsT>::find_parents_and_self(
-        const document::BucketId& bucket,
-        Func func) const
-{
+void GenericBTreeBucketDatabase<DataStoreTraitsT>::find_parents_and_self(const document::BucketId& bucket,
+                                                                         Func                      func) const {
     auto view = _tree.getFrozenView();
     find_parents_and_self_internal<IterValueExtractor>(view, bucket, std::move(func));
 }
@@ -258,10 +246,7 @@ void GenericBTreeBucketDatabase<DataStoreTraitsT>::find_parents_and_self(
 template <typename DataStoreTraitsT>
 template <typename IterValueExtractor, typename Func>
 void GenericBTreeBucketDatabase<DataStoreTraitsT>::find_parents_self_and_children_internal(
-        const typename BTree::FrozenView& frozen_view,
-        const BucketId& bucket,
-        Func func) const
-{
+    const typename BTree::FrozenView& frozen_view, const BucketId& bucket, Func func) const {
     auto iter = find_parents_internal<IterValueExtractor>(frozen_view, bucket, func);
     // `iter` is already pointing at, or beyond, one of the bucket's subtrees.
     for (; iter.valid(); ++iter) {
@@ -276,10 +261,8 @@ void GenericBTreeBucketDatabase<DataStoreTraitsT>::find_parents_self_and_childre
 
 template <typename DataStoreTraitsT>
 template <typename IterValueExtractor, typename Func>
-void GenericBTreeBucketDatabase<DataStoreTraitsT>::find_parents_self_and_children(
-        const BucketId& bucket,
-        Func func) const
-{
+void GenericBTreeBucketDatabase<DataStoreTraitsT>::find_parents_self_and_children(const BucketId& bucket,
+                                                                                  Func            func) const {
     auto view = _tree.getFrozenView();
     find_parents_self_and_children_internal<IterValueExtractor>(view, bucket, std::move(func));
 }
@@ -315,11 +298,10 @@ bool GenericBTreeBucketDatabase<DataStoreTraitsT>::remove(const BucketId& bucket
 }
 
 template <typename DataStoreTraitsT>
-bool GenericBTreeBucketDatabase<DataStoreTraitsT>::update_by_raw_key(uint64_t bucket_key,
-                                                                     const ValueType& new_entry)
-{
+bool GenericBTreeBucketDatabase<DataStoreTraitsT>::update_by_raw_key(uint64_t         bucket_key,
+                                                                     const ValueType& new_entry) {
     const auto new_value = DataStoreTraitsT::wrap_and_store_value(_store, new_entry);
-    auto iter = _tree.lowerBound(bucket_key);
+    auto       iter = _tree.lowerBound(bucket_key);
     const bool pre_existed = (iter.valid() && (iter.getKey() == bucket_key));
     if (pre_existed) {
         DataStoreTraitsT::remove_by_wrapped_value(_store, iter.getData().load_relaxed());
@@ -333,20 +315,18 @@ bool GenericBTreeBucketDatabase<DataStoreTraitsT>::update_by_raw_key(uint64_t bu
 }
 
 template <typename DataStoreTraitsT>
-bool GenericBTreeBucketDatabase<DataStoreTraitsT>::update(const BucketId& bucket,
-                                                          const ValueType& new_entry)
-{
+bool GenericBTreeBucketDatabase<DataStoreTraitsT>::update(const BucketId& bucket, const ValueType& new_entry) {
     return update_by_raw_key(bucket.toKey(), new_entry);
 }
 
 template <typename DataStoreTraitsT>
 template <typename EntryUpdateProcessor>
-void
-GenericBTreeBucketDatabase<DataStoreTraitsT>::process_update(const BucketId& bucket, EntryUpdateProcessor& processor, bool create_if_nonexisting)
-{
+void GenericBTreeBucketDatabase<DataStoreTraitsT>::process_update(const BucketId&       bucket,
+                                                                  EntryUpdateProcessor& processor,
+                                                                  bool                  create_if_nonexisting) {
     uint64_t bucket_key = bucket.toKey();
-    auto iter = _tree.lowerBound(bucket_key);
-    bool found = true;
+    auto     iter = _tree.lowerBound(bucket_key);
+    bool     found = true;
     if (!iter.valid() || bucket_key < iter.getKey()) {
         if (!create_if_nonexisting) {
             return;
@@ -354,7 +334,7 @@ GenericBTreeBucketDatabase<DataStoreTraitsT>::process_update(const BucketId& buc
         found = false;
     }
     ValueType entry(found ? entry_from_iterator(iter) : processor.create_entry(bucket));
-    bool keep = processor.process_entry(entry);
+    bool      keep = processor.process_entry(entry);
     if (found) {
         DataStoreTraitsT::remove_by_wrapped_value(_store, iter.getData().load_relaxed()); // Called from writer only
         if (keep) {
@@ -390,7 +370,8 @@ GenericBTreeBucketDatabase<DataStoreTraitsT>::process_update(const BucketId& buc
  * TODO this should be possible to do concurrently
  */
 template <typename DataStoreTraitsT>
-BucketId GenericBTreeBucketDatabase<DataStoreTraitsT>::getAppropriateBucket(uint16_t minBits, const BucketId& bid) const {
+BucketId GenericBTreeBucketDatabase<DataStoreTraitsT>::getAppropriateBucket(uint16_t        minBits,
+                                                                            const BucketId& bid) const {
     // The bucket tree is ordered in such a way that it represents a
     // natural in-order traversal of all buckets, with inner nodes being
     // visited before leaf nodes. This means that a lower bound seek will
@@ -447,10 +428,9 @@ uint32_t GenericBTreeBucketDatabase<DataStoreTraitsT>::child_subtree_count(const
     return 0;
 }
 
-template <typename DataStoreTraitsT>
-struct BTreeBuilderMerger final : Merger<typename DataStoreTraitsT::ValueType> {
-    using DBType           = GenericBTreeBucketDatabase<DataStoreTraitsT>;
-    using ValueType        = typename DataStoreTraitsT::ValueType;
+template <typename DataStoreTraitsT> struct BTreeBuilderMerger final : Merger<typename DataStoreTraitsT::ValueType> {
+    using DBType = GenericBTreeBucketDatabase<DataStoreTraitsT>;
+    using ValueType = typename DataStoreTraitsT::ValueType;
     using BTreeBuilderType = typename DBType::BTree::Builder;
 
     DBType&           _db;
@@ -466,16 +446,11 @@ struct BTreeBuilderMerger final : Merger<typename DataStoreTraitsT::ValueType> {
           _current_key(0),
           _current_value(0),
           _cached_value(),
-          _valid_cached_value(false)
-    {}
+          _valid_cached_value(false) {}
     ~BTreeBuilderMerger() override = default;
 
-    uint64_t bucket_key() const noexcept override {
-        return _current_key;
-    }
-    BucketId bucket_id() const noexcept override {
-        return BucketId(BucketId::keyToBucketId(_current_key));
-    }
+    uint64_t bucket_key() const noexcept override { return _current_key; }
+    BucketId bucket_id() const noexcept override { return BucketId(BucketId::keyToBucketId(_current_key)); }
     ValueType& current_entry() override {
         if (!_valid_cached_value) {
             _cached_value = DataStoreTraitsT::unwrap_from_key_value(_db.store(), _current_key, _current_value);
@@ -499,23 +474,20 @@ struct BTreeBuilderMerger final : Merger<typename DataStoreTraitsT::ValueType> {
 
 template <typename DataStoreTraitsT>
 struct BTreeTrailingInserter final : TrailingInserter<typename DataStoreTraitsT::ValueType> {
-    using DBType           = GenericBTreeBucketDatabase<DataStoreTraitsT>;
-    using ValueType        = typename DataStoreTraitsT::ValueType;
+    using DBType = GenericBTreeBucketDatabase<DataStoreTraitsT>;
+    using ValueType = typename DataStoreTraitsT::ValueType;
     using BTreeBuilderType = typename DBType::BTree::Builder;
 
     DBType&           _db;
     BTreeBuilderType& _builder;
 
-    BTreeTrailingInserter(DBType& db, BTreeBuilderType& builder)
-        : _db(db),
-          _builder(builder)
-    {}
+    BTreeTrailingInserter(DBType& db, BTreeBuilderType& builder) : _db(db), _builder(builder) {}
 
     ~BTreeTrailingInserter() override = default;
 
     void insert_at_end(const BucketId& bucket_id, const ValueType& e) override {
         const uint64_t bucket_key = bucket_id.toKey();
-        const auto new_value = DataStoreTraitsT::wrap_and_store_value(_db.store(), e);
+        const auto     new_value = DataStoreTraitsT::wrap_and_store_value(_db.store(), e);
         _builder.insert(bucket_key, vespalib::datastore::AtomicValueWrapper<uint64_t>(new_value));
     }
 };
@@ -523,7 +495,7 @@ struct BTreeTrailingInserter final : TrailingInserter<typename DataStoreTraitsT:
 // TODO lbound arg?
 template <typename DataStoreTraitsT>
 void GenericBTreeBucketDatabase<DataStoreTraitsT>::merge(MergingProcessor<ValueType>& proc) {
-    typename BTree::Builder builder(_tree.getAllocator());
+    typename BTree::Builder              builder(_tree.getAllocator());
     BTreeBuilderMerger<DataStoreTraitsT> merger(*this, builder);
 
     // TODO for_each instead?
@@ -557,11 +529,8 @@ void GenericBTreeBucketDatabase<DataStoreTraitsT>::merge(MergingProcessor<ValueT
 
 template <typename DataStoreTraitsT>
 GenericBTreeBucketDatabase<DataStoreTraitsT>::ReadSnapshot::ReadSnapshot(
-        const GenericBTreeBucketDatabase<DataStoreTraitsT>& db)
-    : _db(&db),
-      _guard(_db->_generation_handler.takeGuard()),
-      _frozen_view(_db->_tree.getFrozenView())
-{
+    const GenericBTreeBucketDatabase<DataStoreTraitsT>& db)
+    : _db(&db), _guard(_db->_generation_handler.takeGuard()), _frozen_view(_db->_tree.getFrozenView()) {
 }
 
 template <typename DataStoreTraitsT>
@@ -569,19 +538,15 @@ GenericBTreeBucketDatabase<DataStoreTraitsT>::ReadSnapshot::~ReadSnapshot() = de
 
 template <typename DataStoreTraitsT>
 template <typename IterValueExtractor, typename Func>
-void GenericBTreeBucketDatabase<DataStoreTraitsT>::ReadSnapshot::find_parents_and_self(
-        const BucketId& bucket,
-        Func func) const
-{
+void GenericBTreeBucketDatabase<DataStoreTraitsT>::ReadSnapshot::find_parents_and_self(const BucketId& bucket,
+                                                                                       Func            func) const {
     _db->find_parents_and_self_internal<IterValueExtractor>(_frozen_view, bucket, std::move(func));
 }
 
 template <typename DataStoreTraitsT>
 template <typename IterValueExtractor, typename Func>
 void GenericBTreeBucketDatabase<DataStoreTraitsT>::ReadSnapshot::find_parents_self_and_children(
-        const BucketId& bucket,
-        Func func) const
-{
+    const BucketId& bucket, Func func) const {
     _db->find_parents_self_and_children_internal<IterValueExtractor>(_frozen_view, bucket, std::move(func));
 }
 
@@ -596,31 +561,21 @@ void GenericBTreeBucketDatabase<DataStoreTraitsT>::ReadSnapshot::for_each(Func f
 
 template <typename DataStoreTraitsT>
 class GenericBTreeBucketDatabase<DataStoreTraitsT>::ReadSnapshot::ConstIteratorImpl
-    : public ConstIterator<typename DataStoreTraitsT::ConstValueRef>
-{
+    : public ConstIterator<typename DataStoreTraitsT::ConstValueRef> {
     const typename GenericBTreeBucketDatabase<DataStoreTraitsT>::ReadSnapshot& _snapshot;
-    typename BTree::ConstIterator _iter;
+    typename BTree::ConstIterator                                              _iter;
+
 public:
     using ConstValueRef = typename DataStoreTraitsT::ConstValueRef;
 
     explicit ConstIteratorImpl(const GenericBTreeBucketDatabase<DataStoreTraitsT>::ReadSnapshot& snapshot)
-        : _snapshot(snapshot),
-          _iter(_snapshot._frozen_view.begin())
-    {}
+        : _snapshot(snapshot), _iter(_snapshot._frozen_view.begin()) {}
     ~ConstIteratorImpl() override = default;
 
-    void next() noexcept override {
-        ++_iter;
-    }
-    bool valid() const noexcept override {
-        return _iter.valid();
-    }
-    uint64_t key() const noexcept override {
-        return _iter.getKey();
-    }
-    ConstValueRef value() const override {
-        return ByConstRef::apply(*_snapshot._db, _iter);
-    }
+    void next() noexcept override { ++_iter; }
+    bool valid() const noexcept override { return _iter.valid(); }
+    uint64_t key() const noexcept override { return _iter.getKey(); }
+    ConstValueRef value() const override { return ByConstRef::apply(*_snapshot._db, _iter); }
 };
 
 template <typename DataStoreTraitsT>
@@ -629,4 +584,4 @@ GenericBTreeBucketDatabase<DataStoreTraitsT>::ReadSnapshot::create_iterator() co
     return std::make_unique<ConstIteratorImpl>(*this);
 }
 
-}
+} // namespace storage::bucketdb

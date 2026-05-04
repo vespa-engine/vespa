@@ -11,17 +11,16 @@
 
 namespace storage {
 
-template <typename Base>
-class DummyMbusMessage : public Base {
+template <typename Base> class DummyMbusMessage : public Base {
     static const mbus::string NAME;
+
 public:
     const mbus::string& getProtocol() const override { return NAME; }
     uint32_t getType() const override { return 0x1badb007; }
     uint8_t priority() const override { return 255; }
 };
 
-template <typename Base>
-const mbus::string DummyMbusMessage<Base>::NAME = "FooBar";
+template <typename Base> const mbus::string DummyMbusMessage<Base>::NAME = "FooBar";
 
 class DummyMbusRequest final : public DummyMbusMessage<mbus::Message> {
 public:
@@ -39,4 +38,4 @@ public:
 
 class DummyMbusReply final : public DummyMbusMessage<mbus::Reply> {};
 
-}
+} // namespace storage

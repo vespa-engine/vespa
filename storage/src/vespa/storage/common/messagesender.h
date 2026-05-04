@@ -19,10 +19,10 @@
 #include <memory>
 
 namespace storage::api {
-    class StorageCommand;
-    class StorageReply;
-    class StorageMessage;
-}
+class StorageCommand;
+class StorageReply;
+class StorageMessage;
+} // namespace storage::api
 
 namespace storage {
 
@@ -52,4 +52,4 @@ public:
     virtual void send_up_without_tracking(const std::shared_ptr<api::StorageMessage>&) = 0;
 };
 
-} // storage
+} // namespace storage
