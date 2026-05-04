@@ -2,9 +2,11 @@
 
 #pragma once
 
-#include <vespa/searchlib/common/converters.h>
 #include <vespa/searchcommon/common/iblobconverter.h>
+#include <vespa/searchlib/common/converters.h>
+
 #include <unicode/coll.h>
+
 #include <cassert>
 #include <string>
 #include <vector>
@@ -21,23 +23,23 @@ public:
     BlobConverter::UP create(string_view local, string_view strength) const override;
 };
 
-class UcaConverter : public BlobConverter
-{
+class UcaConverter : public BlobConverter {
 public:
     using Collator = icu::Collator;
     UcaConverter(std::string_view locale, std::string_view strength);
     ~UcaConverter() override;
-    const Collator & getCollator() const { return *_collator; }
+    const Collator& getCollator() const { return *_collator; }
+
 private:
     struct Buffer {
         std::string _data;
-        uint8_t *ptr() { return (uint8_t *)_data.data(); }
+        uint8_t* ptr() { return (uint8_t*)_data.data(); }
         int32_t siz() { return _data.size(); }
         Buffer() : _data() {
-            reserve(_data.capacity()-8); // do not cause extra malloc() by default
+            reserve(_data.capacity() - 8); // do not cause extra malloc() by default
         }
         void reserve(size_t size) {
-            _data.reserve(size+8);
+            _data.reserve(size + 8);
             _data.resize(size);
             *(_data.data() + size - 1) = '\0';
             *(_data.data() + size + 2) = '\0';
@@ -54,13 +56,12 @@ private:
             assert(*(_data.data() + siz() + 6) == 'd');
         }
     };
-    int utf8ToUtf16(const ConstBufferRef & src) const;
-    ConstBufferRef onConvert(const ConstBufferRef & src) const override;
-    mutable Buffer               _buffer;
-    mutable std::vector<UChar>   _u16Buffer;
-    std::unique_ptr<Collator>      _collator;
+    int utf8ToUtf16(const ConstBufferRef& src) const;
+    ConstBufferRef onConvert(const ConstBufferRef& src) const override;
+    mutable Buffer             _buffer;
+    mutable std::vector<UChar> _u16Buffer;
+    std::unique_ptr<Collator>  _collator;
 };
 
-}
-}
-
+} // namespace uca
+} // namespace search

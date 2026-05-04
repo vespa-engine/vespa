@@ -1,9 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "ucaconverter.h"
-#include <unicode/ustring.h>
+
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/util/stringfmt.h>
+
+#include <unicode/ustring.h>
+
 #include <mutex>
 #include <string>
 
@@ -20,23 +23,19 @@ namespace {
 std::mutex _GlobalDirtyICUThreadSafeLock;
 }
 
-BlobConverter::UP
-UcaConverterFactory::create(string_view local, string_view strength) const {
+BlobConverter::UP UcaConverterFactory::create(string_view local, string_view strength) const {
     return std::make_unique<UcaConverter>(local, strength);
 }
 
 UcaConverter::UcaConverter(std::string_view locale, std::string_view strength)
-    : _buffer(),
-      _u16Buffer(128),
-      _collator()
-{
+    : _buffer(), _u16Buffer(128), _collator() {
     UErrorCode status = U_ZERO_ERROR;
-    Collator *coll = nullptr;
+    Collator*  coll = nullptr;
     {
         std::lock_guard<std::mutex> guard(_GlobalDirtyICUThreadSafeLock);
         coll = Collator::createInstance(icu::Locale(std::string(locale).c_str()), status);
     }
-    if(U_SUCCESS(status)) {
+    if (U_SUCCESS(status)) {
         _collator.reset(coll);
         if (strength.empty()) {
             _collator->setStrength(Collator::PRIMARY);
@@ -55,30 +54,33 @@ UcaConverter::UcaConverter(std::string_view locale, std::string_view strength)
         }
     } else {
         delete coll;
-        throw std::runtime_error("Failed Collator::createInstance(Locale(std::string(locale).c_str()), status) with locale : " + std::string(locale));
+        throw std::runtime_error(
+            "Failed Collator::createInstance(Locale(std::string(locale).c_str()), status) with locale : " +
+            std::string(locale));
     }
 }
 
-UcaConverter::~UcaConverter() {}
+UcaConverter::~UcaConverter() {
+}
 
-int UcaConverter::utf8ToUtf16(const ConstBufferRef & src) const
-{
+int UcaConverter::utf8ToUtf16(const ConstBufferRef& src) const {
     UErrorCode status = U_ZERO_ERROR;
-    int32_t u16Wanted(0);
-    u_strFromUTF8(&_u16Buffer[0], _u16Buffer.size(), &u16Wanted, static_cast<const char *>(src.data()), -1, &status);
+    int32_t    u16Wanted(0);
+    u_strFromUTF8(&_u16Buffer[0], _u16Buffer.size(), &u16Wanted, static_cast<const char*>(src.data()), -1, &status);
     if (U_SUCCESS(status)) {
     } else if (status == U_INVALID_CHAR_FOUND) {
-        LOG(warning, "ICU was not able to convert the %ld alleged utf8 characters'%s' to utf16", src.size(), src.c_str());
+        LOG(warning, "ICU was not able to convert the %ld alleged utf8 characters'%s' to utf16", src.size(),
+            src.c_str());
     } else if (status == U_BUFFER_OVERFLOW_ERROR) {
-        //Ignore as this is handled on the outside.
+        // Ignore as this is handled on the outside.
     } else {
-        LOG(warning, "ICU made a undefined complaint(%d) about the %ld alleged utf8 characters'%s' to utf16", status, src.size(), src.c_str());
+        LOG(warning, "ICU made a undefined complaint(%d) about the %ld alleged utf8 characters'%s' to utf16", status,
+            src.size(), src.c_str());
     }
     return u16Wanted;
 }
 
-ConstBufferRef UcaConverter::onConvert(const ConstBufferRef & src) const
-{
+ConstBufferRef UcaConverter::onConvert(const ConstBufferRef& src) const {
     int32_t u16Wanted(utf8ToUtf16(src));
     if (u16Wanted > (int)_u16Buffer.size()) {
         _u16Buffer.resize(u16Wanted);
@@ -94,5 +96,5 @@ ConstBufferRef UcaConverter::onConvert(const ConstBufferRef & src) const
     return ConstBufferRef(_buffer.ptr(), wanted);
 }
 
-}
-}
+} // namespace uca
+} // namespace search

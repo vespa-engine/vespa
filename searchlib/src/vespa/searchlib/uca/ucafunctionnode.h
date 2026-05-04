@@ -1,57 +1,62 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/expression/unaryfunctionnode.h>
 #include <vespa/searchlib/common/sortspec.h>
-#include <vespa/searchlib/expression/stringresultnode.h>
 #include <vespa/searchlib/expression/resultvector.h>
-
+#include <vespa/searchlib/expression/stringresultnode.h>
+#include <vespa/searchlib/expression/unaryfunctionnode.h>
 
 namespace search::expression {
 
-class UcaFunctionNode : public UnaryFunctionNode
-{
+class UcaFunctionNode : public UnaryFunctionNode {
 public:
     DECLARE_EXPRESSIONNODE(UcaFunctionNode);
     DECLARE_NBO_SERIALIZE;
     UcaFunctionNode();
     ~UcaFunctionNode() override;
-    UcaFunctionNode(ExpressionNode::UP arg, const std::string & locale, const std::string & strength);
-    UcaFunctionNode(const UcaFunctionNode & rhs);
-    UcaFunctionNode & operator = (const UcaFunctionNode & rhs);
+    UcaFunctionNode(ExpressionNode::UP arg, const std::string& locale, const std::string& strength);
+    UcaFunctionNode(const UcaFunctionNode& rhs);
+    UcaFunctionNode& operator=(const UcaFunctionNode& rhs);
+
 private:
     void onExecute() const override;
     void onPrepareResult() override;
     class Handler {
     public:
-        Handler(const UcaFunctionNode & uca);
+        Handler(const UcaFunctionNode& uca);
         virtual ~Handler() = default;
-        virtual void handle(const ResultNode & arg) = 0;
+        virtual void handle(const ResultNode& arg) = 0;
+
     protected:
-        void handleOne(const ResultNode & arg, RawResultNode & result) const;
+        void handleOne(const ResultNode& arg, RawResultNode& result) const;
+
     private:
-        const common::BlobConverter & _converter;
-        char                          _backingBuffer[32];
-        vespalib::BufferRef           _buffer;
+        const common::BlobConverter& _converter;
+        char                         _backingBuffer[32];
+        vespalib::BufferRef          _buffer;
     };
     class SingleValueHandler : public Handler {
     public:
-        SingleValueHandler(UcaFunctionNode & uca) : Handler(uca), _result(static_cast<RawResultNode &>(uca.updateResult())) { }
-        void handle(const ResultNode & arg) override;
+        SingleValueHandler(UcaFunctionNode& uca)
+            : Handler(uca), _result(static_cast<RawResultNode&>(uca.updateResult())) {}
+        void handle(const ResultNode& arg) override;
+
     private:
-        RawResultNode & _result;
+        RawResultNode& _result;
     };
     class MultiValueHandler : public Handler {
     public:
-        MultiValueHandler(UcaFunctionNode & uca) : Handler(uca), _result(static_cast<RawResultNodeVector &>(uca.updateResult())) { }
-        void handle(const ResultNode & arg) override;
+        MultiValueHandler(UcaFunctionNode& uca)
+            : Handler(uca), _result(static_cast<RawResultNodeVector&>(uca.updateResult())) {}
+        void handle(const ResultNode& arg) override;
+
     private:
-        RawResultNodeVector & _result;
+        RawResultNodeVector& _result;
     };
-    std::string          _locale;
-    std::string          _strength;
+    std::string                            _locale;
+    std::string                            _strength;
     std::shared_ptr<common::BlobConverter> _collator;
-    std::unique_ptr<Handler>    _handler;
+    std::unique_ptr<Handler>               _handler;
 };
 
-}
+} // namespace search::expression
