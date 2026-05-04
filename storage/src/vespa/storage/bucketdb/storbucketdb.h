@@ -25,6 +25,8 @@ public:
     using WrappedEntry = BucketMap::WrappedEntry;
     using EntryMap = BucketMap::EntryMap;
     using BucketId = document::BucketId;
+    using CallBack = std::function<Decision(uint64_t, const Entry&)>;
+    using MutatingCallBack = std::function<Decision(uint64_t, Entry&)>;
 
     enum Flag { NONE = 0, CREATE_IF_NONEXISTING = 1 };
 
@@ -57,12 +59,12 @@ public:
      * thread between each such such to allow other threads to get a chance
      * at acquiring a bucket lock.
      */
-    void for_each_chunked(std::function<Decision(uint64_t, const Entry&)> func, const char* clientId,
-                          vespalib::duration yieldTime = 10us, uint32_t chunkSize = BucketMap::DEFAULT_CHUNK_SIZE);
+    void for_each_chunked(CallBack func, const char* clientId, vespalib::duration yieldTime = 10us,
+                          uint32_t chunkSize = BucketMap::DEFAULT_CHUNK_SIZE);
 
-    void for_each_mutable_unordered(std::function<Decision(uint64_t, Entry&)> func, const char* clientId);
+    void for_each_mutable_unordered(MutatingCallBack func, const char* clientId);
 
-    void for_each(std::function<Decision(uint64_t, const Entry&)> func, const char* clientId);
+    void for_each(CallBack func, const char* clientId);
 
     [[nodiscard]] std::unique_ptr<bucketdb::ReadGuard<Entry>> acquire_read_guard() const;
 

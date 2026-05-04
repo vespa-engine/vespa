@@ -87,18 +87,16 @@ bool StorBucketDatabase::isConsistent(const WrappedEntry& entry) {
     return _impl->isConsistent(entry);
 }
 
-void StorBucketDatabase::for_each_chunked(std::function<Decision(uint64_t, const bucketdb::StorageBucketInfo&)> func,
-                                          const char* clientId, vespalib::duration yieldTime, uint32_t chunkSize) {
+void StorBucketDatabase::for_each_chunked(CallBack func, const char* clientId, vespalib::duration yieldTime,
+                                          uint32_t chunkSize) {
     _impl->for_each_chunked(std::move(func), clientId, yieldTime, chunkSize);
 }
 
-void StorBucketDatabase::for_each_mutable_unordered(
-    std::function<Decision(uint64_t, bucketdb::StorageBucketInfo&)> func, const char* clientId) {
+void StorBucketDatabase::for_each_mutable_unordered(MutatingCallBack func, const char* clientId) {
     _impl->for_each_mutable_unordered(std::move(func), clientId);
 }
 
-void StorBucketDatabase::for_each(std::function<Decision(uint64_t, const bucketdb::StorageBucketInfo&)> func,
-                                  const char*                                                           clientId) {
+void StorBucketDatabase::for_each(CallBack func, const char* clientId) {
     _impl->for_each(std::move(func), clientId);
 }
 
