@@ -1,8 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "memory_flush_config_updater.h"
+
 #include <vespa/vespalib/util/size_literals.h>
+
 #include <cinttypes>
+
 #include <vespa/log/log.h>
 
 LOG_SETUP(".proton.server.memory_flush_config_updater");
@@ -11,21 +14,16 @@ namespace proton {
 
 namespace {
 
-bool
-shouldUseConservativeMode(const ResourceUsageWithLimit &resourceState,
-                          bool currentlyUseConservativeMode,
-                          double high_watermark_factor,
-                          double lowWatermarkFactor)
-{
+bool shouldUseConservativeMode(const ResourceUsageWithLimit& resourceState, bool currentlyUseConservativeMode,
+                               double high_watermark_factor, double lowWatermarkFactor) {
     return resourceState.aboveLimit(high_watermark_factor) ||
            (currentlyUseConservativeMode && resourceState.aboveLimit(lowWatermarkFactor));
 }
 
-}
+} // namespace
 
-void
-MemoryFlushConfigUpdater::considerUseConservativeDiskMode(const LockGuard &guard, MemoryFlush::Config &newConfig)
-{
+void MemoryFlushConfigUpdater::considerUseConservativeDiskMode(const LockGuard&     guard,
+                                                               MemoryFlush::Config& newConfig) {
     if (shouldUseConservativeMode(_currState.diskState(), _useConservativeDiskMode,
                                   _currConfig.conservative.highwatermarkfactor,
                                   _currConfig.conservative.lowwatermarkfactor))
@@ -40,9 +38,7 @@ MemoryFlushConfigUpdater::considerUseConservativeDiskMode(const LockGuard &guard
     }
 }
 
-void
-MemoryFlushConfigUpdater::considerUseConservativeMemoryMode(const LockGuard &, MemoryFlush::Config &newConfig)
-{
+void MemoryFlushConfigUpdater::considerUseConservativeMemoryMode(const LockGuard&, MemoryFlush::Config& newConfig) {
     if (shouldUseConservativeMode(_currState.memoryState(), _useConservativeMemoryMode,
                                   _currConfig.conservative.highwatermarkfactor,
                                   _currConfig.conservative.lowwatermarkfactor))
@@ -55,9 +51,7 @@ MemoryFlushConfigUpdater::considerUseConservativeMemoryMode(const LockGuard &, M
     }
 }
 
-void
-MemoryFlushConfigUpdater::considerUseRelaxedDiskMode(const LockGuard &, MemoryFlush::Config &newConfig)
-{
+void MemoryFlushConfigUpdater::considerUseRelaxedDiskMode(const LockGuard&, MemoryFlush::Config& newConfig) {
     double utilization = _currState.diskState().utilization();
     double bloatMargin = _currConfig.conservative.lowwatermarkfactor - utilization;
     if (bloatMargin > 0.0) {
@@ -66,33 +60,36 @@ MemoryFlushConfigUpdater::considerUseRelaxedDiskMode(const LockGuard &, MemoryFl
         // which is normally the case in a system that has been running for a while.
         double spaceUtilization = utilization * (1 - _currConfig.diskbloatfactor);
         // Then compute how much bloat can allowed given the current space usage and still stay below low watermark
-        double targetBloat = (_currConfig.conservative.lowwatermarkfactor - spaceUtilization) / _currConfig.conservative.lowwatermarkfactor;
+        double targetBloat = (_currConfig.conservative.lowwatermarkfactor - spaceUtilization) /
+                             _currConfig.conservative.lowwatermarkfactor;
         newConfig.diskBloatFactor = 1.0;
         newConfig.globalDiskBloatFactor = std::max(targetBloat, _currConfig.diskbloatfactor);
     }
 }
 
-void
-MemoryFlushConfigUpdater::updateFlushStrategy(const LockGuard &guard, const char * why)
-{
+void MemoryFlushConfigUpdater::updateFlushStrategy(const LockGuard& guard, const char* why) {
     MemoryFlush::Config newConfig = convertConfig(_currConfig, _memory);
     considerUseConservativeDiskMode(guard, newConfig);
     considerUseConservativeMemoryMode(guard, newConfig);
     MemoryFlush::Config currentConfig = _flushStrategy->getConfig();
-    if ( currentConfig != newConfig ) {
+    if (currentConfig != newConfig) {
         _flushStrategy->setConfig(newConfig);
-        LOG(info, "Due to %s (conservative-disk=%d, conservative-memory=%d, retired-or-maintenance=%d) flush config updated to "
-                  "global-disk-bloat(%1.2f), max-tls-size(%" PRIu64 "),max-global-memory(%" PRIu64 "), max-memory-gain(%" PRIu64 ")",
+        LOG(info,
+            "Due to %s (conservative-disk=%d, conservative-memory=%d, retired-or-maintenance=%d) flush config "
+            "updated to "
+            "global-disk-bloat(%1.2f), max-tls-size(%" PRIu64 "),max-global-memory(%" PRIu64
+            "), max-memory-gain(%" PRIu64 ")",
             why, _useConservativeDiskMode, _useConservativeMemoryMode, _node_retired_or_maintenance,
-            newConfig.globalDiskBloatFactor, newConfig.maxGlobalTlsSize,
-            newConfig.maxGlobalMemory, newConfig.maxMemoryGain);
-        LOG(debug, "Old config = %s\nNew config = %s", currentConfig.toString().c_str(), newConfig.toString().c_str());
+            newConfig.globalDiskBloatFactor, newConfig.maxGlobalTlsSize, newConfig.maxGlobalMemory,
+            newConfig.maxMemoryGain);
+        LOG(debug, "Old config = %s\nNew config = %s", currentConfig.toString().c_str(),
+            newConfig.toString().c_str());
     }
 }
 
-MemoryFlushConfigUpdater::MemoryFlushConfigUpdater(const MemoryFlush::SP &flushStrategy,
-                                                   const ProtonConfig::Flush::Memory &config,
-                                                   const vespalib::HwInfo::Memory &memory)
+MemoryFlushConfigUpdater::MemoryFlushConfigUpdater(const MemoryFlush::SP&             flushStrategy,
+                                                   const ProtonConfig::Flush::Memory& config,
+                                                   const vespalib::HwInfo::Memory&    memory)
     : _mutex(),
       _flushStrategy(flushStrategy),
       _currConfig(config),
@@ -100,29 +97,22 @@ MemoryFlushConfigUpdater::MemoryFlushConfigUpdater(const MemoryFlush::SP &flushS
       _currState(),
       _useConservativeDiskMode(false),
       _useConservativeMemoryMode(false),
-      _node_retired_or_maintenance(false)
-{
+      _node_retired_or_maintenance(false) {
 }
 
-void
-MemoryFlushConfigUpdater::setConfig(const ProtonConfig::Flush::Memory &newConfig)
-{
+void MemoryFlushConfigUpdater::setConfig(const ProtonConfig::Flush::Memory& newConfig) {
     LockGuard guard(_mutex);
     _currConfig = newConfig;
     updateFlushStrategy(guard, "new config");
 }
 
-void
-MemoryFlushConfigUpdater::notify_resource_usage(const ResourceUsageState& newState)
-{
+void MemoryFlushConfigUpdater::notify_resource_usage(const ResourceUsageState& newState) {
     LockGuard guard(_mutex);
     _currState = newState;
     updateFlushStrategy(guard, "disk-mem-usage update");
 }
 
-void
-MemoryFlushConfigUpdater::set_node_retired_or_maintenance(bool value)
-{
+void MemoryFlushConfigUpdater::set_node_retired_or_maintenance(bool value) {
     LockGuard guard(_mutex);
     _node_retired_or_maintenance = value;
     updateFlushStrategy(guard, value ? "node retired or in maintenance" : "node NOT retired or in maintenance");
@@ -130,38 +120,33 @@ MemoryFlushConfigUpdater::set_node_retired_or_maintenance(bool value)
 
 namespace {
 
-size_t
-getHardMemoryLimit(const vespalib::HwInfo::Memory &memory)
-{
+size_t getHardMemoryLimit(const vespalib::HwInfo::Memory& memory) {
     return memory.sizeBytes() / 4;
 }
 
-}
+} // namespace
 
-MemoryFlush::Config
-MemoryFlushConfigUpdater::convertConfig(const ProtonConfig::Flush::Memory &config, const vespalib::HwInfo::Memory &memory)
-{
+MemoryFlush::Config MemoryFlushConfigUpdater::convertConfig(const ProtonConfig::Flush::Memory& config,
+                                                            const vespalib::HwInfo::Memory&    memory) {
     const size_t hardMemoryLimit = getHardMemoryLimit(memory);
-    size_t totalMaxMemory = config.maxmemory;
+    size_t       totalMaxMemory = config.maxmemory;
     if (totalMaxMemory > hardMemoryLimit) {
-        LOG(debug, "flush.memory.maxmemory=%" PRId64 " cannot"
+        LOG(debug,
+            "flush.memory.maxmemory=%" PRId64 " cannot"
             " be set above the hard limit of %ld so we cap it to the hard limit",
             config.maxmemory, hardMemoryLimit);
         totalMaxMemory = hardMemoryLimit;
     }
     size_t eachMaxMemory = config.each.maxmemory;
     if (eachMaxMemory > hardMemoryLimit) {
-        LOG(debug, "flush.memory.each.maxmemory=%" PRId64 " cannot"
+        LOG(debug,
+            "flush.memory.each.maxmemory=%" PRId64 " cannot"
             " be set above the hard limit of %ld so we cap it to the hard limit",
             config.maxmemory, hardMemoryLimit);
         eachMaxMemory = hardMemoryLimit;
     }
-    return MemoryFlush::Config(totalMaxMemory,
-                               config.maxtlssize,
-                               config.diskbloatfactor,
-                               eachMaxMemory,
-                               config.each.diskbloatfactor,
-                               vespalib::from_s(config.maxage.time));
+    return MemoryFlush::Config(totalMaxMemory, config.maxtlssize, config.diskbloatfactor, eachMaxMemory,
+                               config.each.diskbloatfactor, vespalib::from_s(config.maxage.time));
 }
 
 } // namespace proton

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "maintenancejobrunner.h"
+
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/lambdatask.h>
 
@@ -13,15 +14,11 @@ using vespalib::makeLambdaTask;
 
 namespace proton {
 
-
-void
-MaintenanceJobRunner::run()
-{
+void MaintenanceJobRunner::run() {
     addExecutorTask();
 }
 
-void
-MaintenanceJobRunner::stop() {
+void MaintenanceJobRunner::stop() {
     {
         Guard guard(_lock);
         _stopped = true;
@@ -29,9 +26,7 @@ MaintenanceJobRunner::stop() {
     _job->stop();
 }
 
-void
-MaintenanceJobRunner::addExecutorTask()
-{
+void MaintenanceJobRunner::addExecutorTask() {
     Guard guard(_lock);
     if (!_stopped && !_job->isBlocked() && !_queued) {
         _queued = true;
@@ -40,9 +35,7 @@ MaintenanceJobRunner::addExecutorTask()
     }
 }
 
-void
-MaintenanceJobRunner::runJobInExecutor()
-{
+void MaintenanceJobRunner::runJobInExecutor() {
     {
         Guard guard(_lock);
         _queued = false;
@@ -53,9 +46,7 @@ MaintenanceJobRunner::runJobInExecutor()
     }
     bool finished = _job->run();
     if (LOG_WOULD_LOG(debug)) {
-        LOG(debug,
-            "runJobInExecutor(): job='%s', task='%p'",
-            _job->getName().c_str(), this);
+        LOG(debug, "runJobInExecutor(): job='%s', task='%p'", _job->getName().c_str(), this);
     }
     if (!finished) {
         addExecutorTask();
@@ -66,20 +57,12 @@ MaintenanceJobRunner::runJobInExecutor()
     }
 }
 
-MaintenanceJobRunner::MaintenanceJobRunner(Executor &executor, IMaintenanceJob::UP job)
-    : _executor(executor),
-      _job(std::move(job)),
-      _stopped(false),
-      _queued(false),
-      _running(false),
-      _lock()
-{
+MaintenanceJobRunner::MaintenanceJobRunner(Executor& executor, IMaintenanceJob::UP job)
+    : _executor(executor), _job(std::move(job)), _stopped(false), _queued(false), _running(false), _lock() {
     _job->registerRunner(this);
 }
 
-bool
-MaintenanceJobRunner::isRunnable() const
-{
+bool MaintenanceJobRunner::isRunnable() const {
     Guard guard(_lock);
     return _running || _queued;
 }

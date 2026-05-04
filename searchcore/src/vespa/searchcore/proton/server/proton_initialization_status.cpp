@@ -4,6 +4,7 @@
 
 #include "ddbstate.h"
 #include "document_db_initialization_status.h"
+
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/data/slime/slime.h>
@@ -12,26 +13,28 @@ namespace proton {
 
 std::string ProtonInitializationStatus::state_to_string(State state) {
     switch (state) {
-        case State::INITIALIZING:
-            return "initializing";
-        case State::READY:
-            return "ready";
+    case State::INITIALIZING:
+        return "initializing";
+    case State::READY:
+        return "ready";
     }
 
     return "initializing";
 }
 
-ProtonInitializationStatus::ProtonInitializationStatus()
-    : _state(State::INITIALIZING) {
+ProtonInitializationStatus::ProtonInitializationStatus() : _state(State::INITIALIZING) {
 }
 
-void ProtonInitializationStatus::addDocumentDBInitializationStatus(const std::shared_ptr<DocumentDBInitializationStatus>& status) {
+void ProtonInitializationStatus::addDocumentDBInitializationStatus(
+    const std::shared_ptr<DocumentDBInitializationStatus>& status) {
     _ddb_initialization_statuses.push_back(status);
 }
 
-void ProtonInitializationStatus::removeDocumentDBInitializationStatus(const std::shared_ptr<DocumentDBInitializationStatus>& status) {
-    _ddb_initialization_statuses.erase(std::remove(_ddb_initialization_statuses.begin(), _ddb_initialization_statuses.end(), status),
-                                   _ddb_initialization_statuses.end());
+void ProtonInitializationStatus::removeDocumentDBInitializationStatus(
+    const std::shared_ptr<DocumentDBInitializationStatus>& status) {
+    _ddb_initialization_statuses.erase(
+        std::remove(_ddb_initialization_statuses.begin(), _ddb_initialization_statuses.end(), status),
+        _ddb_initialization_statuses.end());
 }
 
 ProtonInitializationStatus::State ProtonInitializationStatus::get_state() const {
@@ -60,10 +63,10 @@ ProtonInitializationStatus::time_point ProtonInitializationStatus::get_end_time(
     return _end_time;
 }
 
-void ProtonInitializationStatus::report_initialization_status(const vespalib::slime::Inserter &inserter) const {
+void ProtonInitializationStatus::report_initialization_status(const vespalib::slime::Inserter& inserter) const {
     std::lock_guard<std::mutex> guard(_mutex);
 
-    vespalib::slime::Cursor &cursor = inserter.insertObject();
+    vespalib::slime::Cursor& cursor = inserter.insertObject();
     cursor.setString("state", ProtonInitializationStatus::state_to_string(_state));
     cursor.setString("current_time", timepoint_to_string(std::chrono::system_clock::now()));
     cursor.setString("start_time", timepoint_to_string(_start_time));
@@ -74,16 +77,16 @@ void ProtonInitializationStatus::report_initialization_status(const vespalib::sl
 
     // DB counts
     size_t load(0), replay(0), online(0);
-    for (const auto &status : _ddb_initialization_statuses) {
+    for (const auto& status : _ddb_initialization_statuses) {
         switch (status->get_state().getState()) {
-            case DDBState::State::REPLAY_TRANSACTION_LOG:
-                ++replay;
-                break;
-            case DDBState::State::ONLINE:
-                ++online;
-                break;
-            default:
-                ++load;
+        case DDBState::State::REPLAY_TRANSACTION_LOG:
+            ++replay;
+            break;
+        case DDBState::State::ONLINE:
+            ++online;
+            break;
+        default:
+            ++load;
         }
     }
     cursor.setLong("load", load);
@@ -91,13 +94,12 @@ void ProtonInitializationStatus::report_initialization_status(const vespalib::sl
     cursor.setLong("online", online);
 
     // DBs
-    vespalib::slime::Cursor &dbArrayCursor = cursor.setArray("dbs");
+    vespalib::slime::Cursor&       dbArrayCursor = cursor.setArray("dbs");
     vespalib::slime::ArrayInserter arrayInserter(dbArrayCursor);
 
-    for (const auto &status : _ddb_initialization_statuses) {
+    for (const auto& status : _ddb_initialization_statuses) {
         status->report_initialization_status(arrayInserter);
     }
 }
 
-
-}
+} // namespace proton
