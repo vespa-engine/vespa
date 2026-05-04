@@ -9,11 +9,9 @@ namespace {
 
 class WrappedIterator {
     SlimeFillerFilter::Iterator _iterator;
+
 public:
-    WrappedIterator(const SlimeFillerFilter::Iterator& iterator)
-        : _iterator(iterator)
-    {
-    }
+    WrappedIterator(const SlimeFillerFilter::Iterator& iterator) : _iterator(iterator) {}
     WrappedIterator check_render(std::string_view field_name) {
         auto iterator = _iterator.check_field(field_name);
         EXPECT_TRUE(iterator.should_render());
@@ -26,15 +24,13 @@ public:
     }
 };
 
-}
+} // namespace
 
-class SlimeFillerFilterTest : public testing::Test
-{
+class SlimeFillerFilterTest : public testing::Test {
     std::unique_ptr<SlimeFillerFilter> _filter;
 
-    WrappedIterator get_filter() {
-        return _filter ? _filter->begin() : SlimeFillerFilter::all();
-    }
+    WrappedIterator get_filter() { return _filter ? _filter->begin() : SlimeFillerFilter::all(); }
+
 protected:
     SlimeFillerFilterTest();
     ~SlimeFillerFilterTest() override;
@@ -42,12 +38,8 @@ protected:
     void drop_filter() { _filter.reset(); }
     void reset_filter() { _filter = std::make_unique<SlimeFillerFilter>(); }
 
-    WrappedIterator check_render(std::string_view field_name) {
-        return get_filter().check_render(field_name);
-    }
-    WrappedIterator check_block(std::string_view field_name) {
-        return get_filter().check_block(field_name);
-    }
+    WrappedIterator check_render(std::string_view field_name) { return get_filter().check_render(field_name); }
+    WrappedIterator check_block(std::string_view field_name) { return get_filter().check_block(field_name); }
     void check_render_no_sub_fields() {
         check_block("a");
         check_block("b");
@@ -81,16 +73,12 @@ public:
     }
 };
 
-SlimeFillerFilterTest::SlimeFillerFilterTest()
-    : testing::Test(),
-      _filter(std::make_unique<SlimeFillerFilter>())
-{
+SlimeFillerFilterTest::SlimeFillerFilterTest() : testing::Test(), _filter(std::make_unique<SlimeFillerFilter>()) {
 }
 
 SlimeFillerFilterTest::~SlimeFillerFilterTest() = default;
 
-TEST_F(SlimeFillerFilterTest, block_everything_or_nothing)
-{
+TEST_F(SlimeFillerFilterTest, block_everything_or_nothing) {
     check_render_no_sub_fields();
     drop_filter();
     check_render_all_sub_fields();
@@ -98,14 +86,12 @@ TEST_F(SlimeFillerFilterTest, block_everything_or_nothing)
     check_render_no_sub_fields();
 }
 
-TEST_F(SlimeFillerFilterTest, filter_filters_sub_fields)
-{
+TEST_F(SlimeFillerFilterTest, filter_filters_sub_fields) {
     add("a").add("b.c");
     check_render_some_sub_fields();
 }
 
-TEST_F(SlimeFillerFilterTest, short_paths_shadows_longer_paths)
-{
+TEST_F(SlimeFillerFilterTest, short_paths_shadows_longer_paths) {
     add("a").add("a.f").add("b.c");
     check_render_some_sub_fields();
     reset_filter();
@@ -113,20 +99,17 @@ TEST_F(SlimeFillerFilterTest, short_paths_shadows_longer_paths)
     check_render_some_sub_fields();
 }
 
-TEST_F(SlimeFillerFilterTest, simple_remaining_path_allows_all_sub_fields)
-{
+TEST_F(SlimeFillerFilterTest, simple_remaining_path_allows_all_sub_fields) {
     add_remaining("z");
     check_render_all_sub_fields();
 }
 
-TEST_F(SlimeFillerFilterTest, composite_remainig_paths_filter_sub_fields)
-{
+TEST_F(SlimeFillerFilterTest, composite_remaining_paths_filter_sub_fields) {
     add_remaining("z.a").add_remaining("z.b.c");
     check_render_some_sub_fields();
 }
 
-TEST_F(SlimeFillerFilterTest, short_remaining_path_shadows_longer_remaining_path)
-{
+TEST_F(SlimeFillerFilterTest, short_remaining_path_shadows_longer_remaining_path) {
     add_remaining("z").add_remaining("z.k");
     check_render_all_sub_fields();
     reset_filter();

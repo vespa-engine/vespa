@@ -1,9 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "propreader.h"
+
 #include "juniperdebug.h"
-#include <cctype>
+
 #include <vespa/fastlib/io/bufferedfile.h>
+
+#include <cctype>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".juniper.propreader");
@@ -26,15 +29,19 @@ void PropReader::Process(const char* filename) {
     while ((linep = propfile.ReadLine(line, BUFLEN - 1)) != nullptr) {
         int   i;
         char* key;
-        if (line[0] == '#') continue; // skip comments
+        if (line[0] == '#')
+            continue; // skip comments
 
         // find key
-        for (i = 0; !std::isspace(static_cast<unsigned char>(line[i])); i++) {}
-        if (i == 0) continue; // Skip lines starting with blank
+        for (i = 0; !std::isspace(static_cast<unsigned char>(line[i])); i++) {
+        }
+        if (i == 0)
+            continue; // Skip lines starting with blank
         line[i++] = 0;
         key = line;
 
-        for (; std::isspace(static_cast<unsigned char>(line[i])); i++) {} // Skip blanks
+        for (; std::isspace(static_cast<unsigned char>(line[i])); i++) {
+        } // Skip blanks
 
         // find value
         int   offset = 0;
@@ -52,7 +59,8 @@ void PropReader::Process(const char* filename) {
                             v += (c - 'A' + 10);
                         else
                             v += (c - 'a' + 10);
-                        if (s == 2) break;
+                        if (s == 2)
+                            break;
                     }
                     line[i - offset] = static_cast<char>(v);
                     i += 2;

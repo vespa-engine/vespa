@@ -44,8 +44,8 @@ protected:
 
 private:
     // Helper functions/members for use during construction only.
-    void                    insert(QueryExpr* expr);
-    void                    postprocess_query();
+    void insert(QueryExpr* expr);
+    void postprocess_query();
 
     const IQuery* _fquery; // Temp.pointer to the input query (valid in constructor only..
 

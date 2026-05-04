@@ -8,7 +8,7 @@
 namespace search::attribute {
 
 /**
- * Multi value read view adapter for imported atributes vectors.
+ * Multi value read view adapter for imported attribute vectors.
  * Performs lid mapping.
  * @tparam MultiValueType The multi-value type of the data to access.
  */

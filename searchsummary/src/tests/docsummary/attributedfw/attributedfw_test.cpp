@@ -16,8 +16,8 @@ using search::MatchingElementsFields;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::docsummary::AttributeDFWFactory;
-using search::docsummary::GetDocsumsState;
 using search::docsummary::DocsumFieldWriter;
+using search::docsummary::GetDocsumsState;
 using search::docsummary::SummaryElementsSelector;
 using search::docsummary::test::MockAttributeManager;
 using search::docsummary::test::MockStateCallback;
@@ -31,13 +31,13 @@ std::vector<char> as_vector(std::string_view value) {
 
 class AttributeDFWTest : public ::testing::Test {
 protected:
-    MockAttributeManager _attrs;
-    std::unique_ptr<DocsumFieldWriter> _writer;
-    std::shared_ptr<MatchingElementsFields> _matching_elements_fields;
-    MockStateCallback _callback;
-    GetDocsumsState _state;
+    MockAttributeManager                     _attrs;
+    std::unique_ptr<DocsumFieldWriter>       _writer;
+    std::shared_ptr<MatchingElementsFields>  _matching_elements_fields;
+    MockStateCallback                        _callback;
+    GetDocsumsState                          _state;
     std::unique_ptr<SummaryElementsSelector> _elements_selector;
-    std::string _field_name;
+    std::string                              _field_name;
 
 public:
     AttributeDFWTest()
@@ -47,19 +47,18 @@ public:
           _callback(),
           _state(_callback),
           _elements_selector(),
-          _field_name()
-    {
-        _attrs.build_string_attribute("array_str", { {"a", "b", "c"}, {} });
-        _attrs.build_int_attribute("array_int", BasicType::INT32, { {10, 20, 30}, {} });
-        _attrs.build_float_attribute("array_float", { {10.5, 20.5, 30.5}, {} });
+          _field_name() {
+        _attrs.build_string_attribute("array_str", {{"a", "b", "c"}, {}});
+        _attrs.build_int_attribute("array_int", BasicType::INT32, {{10, 20, 30}, {}});
+        _attrs.build_float_attribute("array_float", {{10.5, 20.5, 30.5}, {}});
 
-        _attrs.build_string_attribute("wset_str", { {"a", "b", "c"}, {} }, CollectionType::WSET);
-        _attrs.build_int_attribute("wset_int", BasicType::INT32, { {10, 20, 30}, {} }, CollectionType::WSET);
-        _attrs.build_float_attribute("wset_float", { {10.5, 20.5, 30.5}, {} }, CollectionType::WSET);
-        _attrs.build_bool_attribute("array_bool", { {1, 0, 1}, {} });
+        _attrs.build_string_attribute("wset_str", {{"a", "b", "c"}, {}}, CollectionType::WSET);
+        _attrs.build_int_attribute("wset_int", BasicType::INT32, {{10, 20, 30}, {}}, CollectionType::WSET);
+        _attrs.build_float_attribute("wset_float", {{10.5, 20.5, 30.5}, {}}, CollectionType::WSET);
+        _attrs.build_bool_attribute("array_bool", {{1, 0, 1}, {}});
 
-        _attrs.build_string_attribute("single_str", { {"world"}, {}}, CollectionType::SINGLE);
-        _attrs.build_raw_attribute("single_raw", { {as_vector("hello")}, {} });
+        _attrs.build_string_attribute("single_str", {{"world"}, {}}, CollectionType::SINGLE);
+        _attrs.build_raw_attribute("single_raw", {{as_vector("hello")}, {}});
         _state._attrCtx = _attrs.mgr().createContext();
         _state._matching_elements_fields = _matching_elements_fields;
     }
@@ -67,7 +66,8 @@ public:
 
     void setup(const std::string& field_name, bool filter_elements) {
         if (filter_elements) {
-            _elements_selector = std::make_unique<SummaryElementsSelector>(SummaryElementsSelector::select_by_match(field_name, {}));
+            _elements_selector =
+                std::make_unique<SummaryElementsSelector>(SummaryElementsSelector::select_by_match(field_name, {}));
         } else {
             _elements_selector = std::make_unique<SummaryElementsSelector>(SummaryElementsSelector::select_all());
         }
@@ -86,7 +86,7 @@ public:
     }
 
     void expect_field(const std::string& exp_slime_as_json, uint32_t docid) {
-        vespalib::Slime act;
+        vespalib::Slime                act;
         vespalib::slime::SlimeInserter inserter(act);
         if (!_writer->isDefaultValue(docid, _state)) {
             _writer->insert_field(docid, nullptr, _state, _elements_selector->get_selected_elements(docid, _state),
@@ -97,7 +97,8 @@ public:
         EXPECT_EQ(exp.slime, act);
     }
 
-    void expect_filtered(const ElementVector& matching_elems, const std::string& exp_slime_as_json, uint32_t docid = 1) {
+    void expect_filtered(const ElementVector& matching_elems, const std::string& exp_slime_as_json,
+                         uint32_t docid = 1) {
         _callback.clear();
         _callback.add_matching_elements(docid, _field_name, matching_elems);
         _state._matching_elements = std::unique_ptr<MatchingElements>();
@@ -108,36 +109,31 @@ public:
 
 AttributeDFWTest::~AttributeDFWTest() = default;
 
-TEST_F(AttributeDFWTest, outputs_slime_for_array_of_string)
-{
+TEST_F(AttributeDFWTest, outputs_slime_for_array_of_string) {
     setup("array_str", false);
     expect_field("[ 'a', 'b', 'c' ]", 1);
     expect_field("null", 2);
 }
 
-TEST_F(AttributeDFWTest, outputs_slime_for_array_of_int)
-{
+TEST_F(AttributeDFWTest, outputs_slime_for_array_of_int) {
     setup("array_int", false);
     expect_field("[ 10, 20, 30 ]", 1);
     expect_field("null", 2);
 }
 
-TEST_F(AttributeDFWTest, outputs_slime_for_array_of_float)
-{
+TEST_F(AttributeDFWTest, outputs_slime_for_array_of_float) {
     setup("array_float", false);
     expect_field("[ 10.5, 20.5, 30.5 ]", 1);
     expect_field("null", 2);
 }
 
-TEST_F(AttributeDFWTest, outputs_slime_for_array_of_bool)
-{
+TEST_F(AttributeDFWTest, outputs_slime_for_array_of_bool) {
     setup("array_bool", false);
     expect_field("[ true, false, true ]", 1);
     expect_field("null", 2);
 }
 
-TEST_F(AttributeDFWTest, filteres_matched_elements_in_array_bool_attribute)
-{
+TEST_F(AttributeDFWTest, filters_matched_elements_in_array_bool_attribute) {
     setup("array_bool", true);
     expect_filtered({}, "null");
     expect_filtered({0}, "[ true ]");
@@ -145,37 +141,32 @@ TEST_F(AttributeDFWTest, filteres_matched_elements_in_array_bool_attribute)
     expect_filtered({3}, "null");
 }
 
-TEST_F(AttributeDFWTest, outputs_slime_for_wset_of_string)
-{
+TEST_F(AttributeDFWTest, outputs_slime_for_wset_of_string) {
     setup("wset_str", false);
     expect_field("[ {'item':'a', 'weight':1}, {'item':'b', 'weight':1}, {'item':'c', 'weight':1} ]", 1);
     expect_field("null", 2);
 }
 
-TEST_F(AttributeDFWTest, outputs_slime_for_wset_of_int)
-{
+TEST_F(AttributeDFWTest, outputs_slime_for_wset_of_int) {
     setup("wset_int", false);
     expect_field("[ {'item':10, 'weight':1}, {'item':20, 'weight':1}, {'item':30, 'weight':1} ]", 1);
     expect_field("null", 2);
 }
 
-TEST_F(AttributeDFWTest, outputs_slime_for_wset_of_float)
-{
+TEST_F(AttributeDFWTest, outputs_slime_for_wset_of_float) {
     setup("wset_float", false);
     expect_field("[ {'item':10.5, 'weight':1}, {'item':20.5, 'weight':1}, {'item':30.5, 'weight':1} ]", 1);
     expect_field("null", 2);
 }
 
-TEST_F(AttributeDFWTest, matched_elements_fields_is_populated)
-{
+TEST_F(AttributeDFWTest, matched_elements_fields_is_populated) {
     setup("array_str", true);
     MatchingElementsFields matching_elements_fields;
     _elements_selector->maybe_apply_to(matching_elements_fields);
     EXPECT_TRUE(matching_elements_fields.has_field("array_str"));
 }
 
-TEST_F(AttributeDFWTest, filteres_matched_elements_in_array_attribute)
-{
+TEST_F(AttributeDFWTest, filters_matched_elements_in_array_attribute) {
     setup("array_str", true);
     expect_filtered({}, "null");
     expect_filtered({0}, "[ 'a' ]");
@@ -183,8 +174,7 @@ TEST_F(AttributeDFWTest, filteres_matched_elements_in_array_attribute)
     expect_filtered({3}, "null");
 }
 
-TEST_F(AttributeDFWTest, filteres_matched_elements_in_wset_attribute)
-{
+TEST_F(AttributeDFWTest, filters_matched_elements_in_wset_attribute) {
     setup("wset_str", true);
     expect_filtered({}, "null");
     expect_filtered({0}, "[ {'item':'a', 'weight':1} ]");
@@ -192,15 +182,13 @@ TEST_F(AttributeDFWTest, filteres_matched_elements_in_wset_attribute)
     expect_filtered({3}, "null");
 }
 
-TEST_F(AttributeDFWTest, single_string)
-{
+TEST_F(AttributeDFWTest, single_string) {
     setup("single_str", false);
     expect_field(R"("world")", 1);
     expect_field("null", 2);
 }
 
-TEST_F(AttributeDFWTest, single_value_raw)
-{
+TEST_F(AttributeDFWTest, single_value_raw) {
     setup("single_raw", false);
     expect_field("x68656C6C6F", 1);
     expect_field("null", 2);

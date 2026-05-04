@@ -61,15 +61,10 @@ public:
         bool  _punctuation; // Is the token a punctuation symbol?
 
         /** Constructors. */
-        Fast_Token(char* begin, char* end, bool punctuation)
-          : first(begin),
-            second(end),
-            _punctuation(punctuation) {}
+        Fast_Token(char* begin, char* end, bool punctuation) : first(begin), second(end), _punctuation(punctuation) {}
         Fast_Token() : first(nullptr), second(nullptr), _punctuation(false) {}
         Fast_Token(const Fast_Token& other)
-          : first(other.first),
-            second(other.second),
-            _punctuation(other._punctuation) {}
+            : first(other.first), second(other.second), _punctuation(other._punctuation) {}
         Fast_Token& operator=(const Fast_Token& other) {
             first = other.first;
             second = other.second;
@@ -102,7 +97,7 @@ public:
      *  (such as extra initialization or statistics gathering or...)
      */
     IsPunctuation& GetIsPunctuation() { return _isPunctuation; }
-    IsSeparator&   GetIsSeparator() { return _isSeparator; }
+    IsSeparator& GetIsSeparator() { return _isSeparator; }
 
 private:
     /** Member variables. */
@@ -126,12 +121,8 @@ private:
 
 template <typename IsSeparator, typename IsPunctuation>
 Fast_LatinTokenizer<IsSeparator, IsPunctuation>::Fast_LatinTokenizer()
-  : _org(nullptr),
-    _next(nullptr),
-    _end(nullptr),
-    _moreTokens(false),
-    _isSeparator(),
-    _isPunctuation() {}
+    : _org(nullptr), _next(nullptr), _end(nullptr), _moreTokens(false), _isSeparator(), _isPunctuation() {
+}
 
 /**
 *****************************************************************************
@@ -143,12 +134,7 @@ Fast_LatinTokenizer<IsSeparator, IsPunctuation>::Fast_LatinTokenizer()
 
 template <typename IsSeparator, typename IsPunctuation>
 Fast_LatinTokenizer<IsSeparator, IsPunctuation>::Fast_LatinTokenizer(char* text)
-  : _org(nullptr),
-    _next(nullptr),
-    _end(nullptr),
-    _moreTokens(false),
-    _isSeparator(),
-    _isPunctuation() {
+    : _org(nullptr), _next(nullptr), _end(nullptr), _moreTokens(false), _isSeparator(), _isPunctuation() {
     SetNewText(text);
 }
 
@@ -163,12 +149,7 @@ Fast_LatinTokenizer<IsSeparator, IsPunctuation>::Fast_LatinTokenizer(char* text)
 
 template <typename IsSeparator, typename IsPunctuation>
 Fast_LatinTokenizer<IsSeparator, IsPunctuation>::Fast_LatinTokenizer(char* text, size_t length)
-  : _org(nullptr),
-    _next(nullptr),
-    _end(nullptr),
-    _moreTokens(false),
-    _isSeparator(),
-    _isPunctuation() {
+    : _org(nullptr), _next(nullptr), _end(nullptr), _moreTokens(false), _isSeparator(), _isPunctuation() {
     SetNewText(text, length);
 }
 
@@ -180,7 +161,8 @@ Fast_LatinTokenizer<IsSeparator, IsPunctuation>::Fast_LatinTokenizer(char* text,
 *****************************************************************************/
 
 template <typename IsSeparator, typename IsPunctuation>
-Fast_LatinTokenizer<IsSeparator, IsPunctuation>::~Fast_LatinTokenizer() {}
+Fast_LatinTokenizer<IsSeparator, IsPunctuation>::~Fast_LatinTokenizer() {
+}
 
 /**
 *****************************************************************************
@@ -227,17 +209,27 @@ void Fast_LatinTokenizer<IsSeparator, IsPunctuation>::SetNewText(char* text, siz
 template <typename IsSeparator, typename IsPunctuation>
 void Fast_LatinTokenizer<IsSeparator, IsPunctuation>::SkipBlanks() {
 
-    if (!_moreTokens) return;
+    if (!_moreTokens)
+        return;
     // Initialized with '\0' terminated buffer?
     if (_end == nullptr) {
-        while (*_next != '\0' && _isSeparator(*_next)) { ++_next; }
-        if (*_next == '\0') { _moreTokens = false; }
+        while (*_next != '\0' && _isSeparator(*_next)) {
+            ++_next;
+        }
+        if (*_next == '\0') {
+            _moreTokens = false;
+        }
     }
 
     // Initialized with specified buffer length.
-    else {
-        while (_next != _end && _isSeparator(*_next)) { ++_next; }
-        if (_next == _end) { _moreTokens = false; }
+    else
+    {
+        while (_next != _end && _isSeparator(*_next)) {
+            ++_next;
+        }
+        if (_next == _end) {
+            _moreTokens = false;
+        }
     }
 }
 
@@ -272,17 +264,23 @@ Fast_LatinTokenizer<IsSeparator, IsPunctuation>::GetNextToken() {
 
     // Initialized with '\0' terminated buffer? Find the next blank or punctuation.
     if (_end == nullptr) {
-        while (*_next != '\0' && !_isSeparator(*_next) && !_isPunctuation(*_next)) { ++_next; }
+        while (*_next != '\0' && !_isSeparator(*_next) && !_isPunctuation(*_next)) {
+            ++_next;
+        }
 
         // Initialized with specified buffer length.
     } else {
-        while (_next != _end && !_isSeparator(*_next) && !_isPunctuation(*_next)) { ++_next; }
+        while (_next != _end && !_isSeparator(*_next) && !_isPunctuation(*_next)) {
+            ++_next;
+        }
     }
 
     // Check if this token is a punctuation symbol, and generate token.
     bool isToken = ((_next - prev == 0) && _isPunctuation(*prev));
 
-    if (isToken) { ++_next; }
+    if (isToken) {
+        ++_next;
+    }
 
     Fast_Token token(prev, _next, isToken);
 

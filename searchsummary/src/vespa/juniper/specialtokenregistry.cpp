@@ -24,18 +24,17 @@ public:
 
 namespace juniper {
 
-SpecialTokenRegistry::CharStream::CharStream(const char* srcBuf, const char* srcEnd, ucs4_t* dstBuf,
-                                             ucs4_t* dstEnd)
-  :
+SpecialTokenRegistry::CharStream::CharStream(const char* srcBuf, const char* srcEnd, ucs4_t* dstBuf, ucs4_t* dstEnd)
+    :
 
-    _srcBuf(srcBuf),
-    _srcItr(srcBuf),
-    _srcEnd(srcEnd),
-    _nextStart(srcBuf),
-    _dstBuf(dstBuf),
-    _dstItr(dstBuf),
-    _dstEnd(dstEnd),
-    _isStartWordChar(false) {
+      _srcBuf(srcBuf),
+      _srcItr(srcBuf),
+      _srcEnd(srcEnd),
+      _nextStart(srcBuf),
+      _dstBuf(dstBuf),
+      _dstItr(dstBuf),
+      _dstEnd(dstEnd),
+      _isStartWordChar(false) {
     if (srcBuf < srcEnd) {
         ucs4_t ch = getNextChar();
         _nextStart = _srcItr;
@@ -61,7 +60,9 @@ bool SpecialTokenRegistry::CharStream::resetAndInc() {
 bool SpecialTokenRegistry::match(const ucs4_t* qsrc, const ucs4_t* qend, CharStream& stream) const {
     for (; (qsrc < qend) && stream.hasMoreChars(); ++qsrc) {
         ucs4_t ch = stream.getNextChar();
-        if (ch != *qsrc) { return false; }
+        if (ch != *qsrc) {
+            return false;
+        }
     }
     return (qsrc == qend);
 }

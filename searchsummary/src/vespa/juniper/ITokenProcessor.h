@@ -24,13 +24,13 @@ public:
         int           curlen;  //!< Size in ucs4_t of the token after conversions
 
         Token(const Token& other)
-          : token(other.token),
-            bytepos(other.bytepos),
-            charpos(other.charpos),
-            wordpos(other.wordpos),
-            bytelen(other.bytelen),
-            charlen(other.charlen),
-            curlen(other.curlen) {}
+            : token(other.token),
+              bytepos(other.bytepos),
+              charpos(other.charpos),
+              wordpos(other.wordpos),
+              bytelen(other.bytelen),
+              charlen(other.charlen),
+              curlen(other.curlen) {}
         Token& operator=(const Token& other) {
             token = other.token;
             bytepos = other.bytepos;

@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "fakerewriter.h"
+
 #include <vespa/vespalib/util/stringfmt.h>
 
 namespace juniper {
@@ -29,13 +30,15 @@ const char* FakeRewriter::Name() const {
 
 RewriteHandle* FakeRewriter::Rewrite(uint32_t langid, const char* term) {
     std::string t(term);
-    if (langid > 4) return nullptr;
+    if (langid > 4)
+        return nullptr;
     return new RewriteHandle(t, langid);
 }
 
 RewriteHandle* FakeRewriter::Rewrite(uint32_t langid, const char* term, size_t length) {
     std::string t(term, length);
-    if (langid > 4) return nullptr;
+    if (langid > 4)
+        return nullptr;
     return new RewriteHandle(t, langid);
 }
 

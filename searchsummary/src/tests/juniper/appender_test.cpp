@@ -2,11 +2,12 @@
 #include <vespa/vespalib/gtest/gtest.h>
 
 #define _NEED_SUMMARY_CONFIG_IMPL
-#include <string>
-#include <vector>
 #include <vespa/juniper/SummaryConfig.h>
 #include <vespa/juniper/appender.h>
 #include <vespa/juniper/juniperdebug.h>
+
+#include <string>
+#include <vector>
 
 using namespace juniper;
 
@@ -15,10 +16,10 @@ struct FixtureBase {
     SummaryConfig _cfg;
     Appender      _appender;
     FixtureBase(ConfigFlag preserve_white_space)
-      : _connectors(""),
-        _cfg("[on]", "[off]", "[dots]", "\x1f", reinterpret_cast<const unsigned char*>(_connectors),
-             ConfigFlag::CF_OFF, preserve_white_space),
-        _appender(&_cfg) {}
+        : _connectors(""),
+          _cfg("[on]", "[off]", "[dots]", "\x1f", reinterpret_cast<const unsigned char*>(_connectors),
+               ConfigFlag::CF_OFF, preserve_white_space),
+          _appender(&_cfg) {}
     void assertString(const std::string& input, const std::string& output) {
         std::vector<char> buf;
         _appender.append(buf, input.c_str(), input.size());

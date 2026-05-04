@@ -2,9 +2,8 @@
 #include "keyocc.h"
 
 key_occ::key_occ(const char* term_, off_t spos, off_t stoken, int len)
-  : MatchElement(spos, stoken),
-    tokenlen(len),
-    _term(term_) {}
+    : MatchElement(spos, stoken), tokenlen(len), _term(term_) {
+}
 
 void key_occ::set_valid() {
     _valid = true;

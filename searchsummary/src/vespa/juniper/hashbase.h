@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <stdio.h>
+
 #include <cassert>
 #include <cstring>
-#include <stdio.h>
 
 // Simple default order that everybody has - pointer order:
 template <typename T> struct PtrComparator {
@@ -24,15 +25,13 @@ protected:
 
 public:
     Fast_HashTableElement(Key key, Fast_HashTableElement<Key, T>* next, T item)
-      : _key(key),
-        _next(next),
-        _item(item) {}
+        : _key(key), _next(next), _item(item) {}
     ~Fast_HashTableElement() {}
 
     inline Fast_HashTableElement<Key, T>* GetNext() { return _next; }
-    inline void                           SetNext(Fast_HashTableElement<Key, T>* next) { _next = next; }
-    inline Key                            GetKey() { return _key; }
-    inline T                              GetItem() { return _item; }
+    inline void SetNext(Fast_HashTableElement<Key, T>* next) { _next = next; }
+    inline Key GetKey() { return _key; }
+    inline T GetItem() { return _item; }
 };
 
 template <typename Key, typename T, int _tableSize> class Fast_HashTableIterator {
@@ -44,9 +43,7 @@ private:
     Fast_HashTableElement<Key, T>*            _runner; // current element in list
 
 protected:
-    Fast_HashTableIterator(const Fast_HashTable<Key, T, _tableSize>& hashTable)
-      : _hashTable(&hashTable),
-        _index(-1) {
+    Fast_HashTableIterator(const Fast_HashTable<Key, T, _tableSize>& hashTable) : _hashTable(&hashTable), _index(-1) {
         _runner = SearchNext();
     };
 
@@ -56,21 +53,24 @@ protected:
         for (++_index; _index < _hashTable->_tableSize; _index++) {
             retVal = _hashTable->_lookupTable[_index];
 
-            if (retVal != nullptr) break;
+            if (retVal != nullptr)
+                break;
         }
 
         return retVal;
     }
 
 public:
-    inline T   GetCurrent() { return _runner->GetItem(); };
+    inline T GetCurrent() { return _runner->GetItem(); };
     inline Key GetCurrentKey() { return _runner->GetKey(); }
 
     inline void Next() {
         if (_runner != nullptr) {
             _runner = _runner->GetNext();
 
-            if (_runner == nullptr) { _runner = SearchNext(); }
+            if (_runner == nullptr) {
+                _runner = SearchNext();
+            }
         }
     };
 
@@ -122,7 +122,8 @@ public:
     inline int ElementCount() { return _numElements; }
 
     inline void Clear() {
-        if (_numElements == 0) return;
+        if (_numElements == 0)
+            return;
         for (int i = 0; i < _tableSize; i++) {
             element *curr, *prev = nullptr;
 
@@ -130,13 +131,15 @@ public:
                 if (prev != nullptr) {
                     delete prev;
                     _numElements--;
-                    if (_numElements == 0) break;
+                    if (_numElements == 0)
+                        break;
                 }
                 prev = curr;
                 _lookupTable[i] = nullptr;
             }
 
-            if (prev != nullptr) delete prev;
+            if (prev != nullptr)
+                delete prev;
         }
     }
 
@@ -180,7 +183,8 @@ public:
         int pos = HashFunction(key);
 
         for (element* curr = _lookupTable[pos]; curr != nullptr; curr = curr->GetNext())
-            if (curr->GetKey() == key) return curr;
+            if (curr->GetKey() == key)
+                return curr;
         return nullptr;
     }
 

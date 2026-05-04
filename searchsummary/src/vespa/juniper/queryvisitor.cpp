@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "queryvisitor.h"
+
 #include "Matcher.h"
 #include "juniperdebug.h"
 #include "query.h"
@@ -23,7 +24,9 @@ void QueryVisitor::insert(QueryExpr* expr) {
     else {
         // Just a sanity check that there are no overflow stack elements
         if (_got_stack && expr) {
-            if (_query && _query->StackComplete()) { LOG(warning, "juniper: Overflow stack element discarded"); }
+            if (_query && _query->StackComplete()) {
+                LOG(warning, "juniper: Overflow stack element discarded");
+            }
             delete expr;
             return;
         }
@@ -35,12 +38,7 @@ void QueryVisitor::insert(QueryExpr* expr) {
 }
 
 QueryVisitor::QueryVisitor(const IQuery& fquery, QueryHandle* qhandle)
-  : _fquery(&fquery),
-    _query(nullptr),
-    _current(nullptr),
-    _qhandle(qhandle),
-    _term_index(0),
-    _got_stack(false) {
+    : _fquery(&fquery), _query(nullptr), _current(nullptr), _qhandle(qhandle), _term_index(0), _got_stack(false) {
     /* Create a query node structure by traversing the input */
     bool ok_stack = fquery.Traverse(this);
 
@@ -71,7 +69,8 @@ void QueryVisitor::postprocess_query() {
         }
     }
     SimplifyStack(_query);
-    if (!_query) return;
+    if (!_query)
+        return;
     // convert special case of one query term to a node with 1 child:
     if (_query->_arity == 0) {
         auto* newroot = new QueryNode(1, _query->_weight, _query->_weight);
@@ -81,7 +80,8 @@ void QueryVisitor::postprocess_query() {
     // Handle limit in root node only for now..
     if (!_current && _qhandle->_options & X_LIMIT) {
         QueryNode* qn = _query->AsNode();
-        if (qn) qn->_limit = _qhandle->_limit;
+        if (qn)
+            qn->_limit = _qhandle->_limit;
     }
     _query->ComputeThreshold();
 }
@@ -202,11 +202,12 @@ void QueryVisitor::visitKeyword(const QueryItem* item, std::string_view keyword,
 
     auto* term = new QueryTerm(keyword, _term_index++, item->get_weight());
     if (prefix) {
-        bool is_wild =
-            std::any_of(keyword.begin(), keyword.end(), [](char c) { return (c == '*') || (c == '?'); });
+        bool is_wild = std::any_of(keyword.begin(), keyword.end(), [](char c) { return (c == '*') || (c == '?'); });
         term->_options |= (is_wild ? X_WILD : X_PREFIX);
     }
-    if (specialToken) { term->_options |= X_SPECIALTOKEN; }
+    if (specialToken) {
+        term->_options |= X_SPECIALTOKEN;
+    }
     insert(term);
 }
 
@@ -214,9 +215,12 @@ namespace juniper {
 
 const char* creator_text(ItemCreator creator) {
     switch (creator) {
-    case ItemCreator::CREA_ORIG:   return "CREA_ORIG";
-    case ItemCreator::CREA_FILTER: return "CREA_FILTER";
-    default:                       return "(unknown creator)";
+    case ItemCreator::CREA_ORIG:
+        return "CREA_ORIG";
+    case ItemCreator::CREA_FILTER:
+        return "CREA_FILTER";
+    default:
+        return "(unknown creator)";
     }
 }
 

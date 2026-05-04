@@ -4,6 +4,7 @@
 #include "juniperdebug.h"
 #include "queryhandle.h"
 #include "tokenizer.h"
+
 #include <memory>
 
 namespace juniper {
@@ -23,12 +24,12 @@ public:
         }
     }
 
-    long     GetRelevancy();
-    size_t   StemMin() const { return _stem_min; }
-    size_t   StemExt() const { return _stem_extend; }
-    size_t   WinSize() const { return _winsize; }
-    double   WinSizeFallbackMultiplier() const { return _winsize_fallback_multiplier; }
-    size_t   MaxMatchCandidates() const { return _max_match_candidates; }
+    long GetRelevancy();
+    size_t StemMin() const { return _stem_min; }
+    size_t StemExt() const { return _stem_extend; }
+    size_t WinSize() const { return _winsize; }
+    double WinSizeFallbackMultiplier() const { return _winsize_fallback_multiplier; }
+    size_t MaxMatchCandidates() const { return _max_match_candidates; }
     Summary* GetTeaser(const Config* alt_config);
     Summary* GetLog();
 

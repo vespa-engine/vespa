@@ -1,25 +1,24 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "config.h"
+
 #include "juniper_separators.h"
 #include "juniperdebug.h"
 #include "rpinterface.h"
 #define _NEED_SUMMARY_CONFIG_IMPL
 #include "SummaryConfig.h"
-#include <cstdlib>
+
 #include <vespa/vespalib/locale/c.h>
 #include <vespa/vespalib/util/casts.h>
+
+#include <cstdlib>
 
 using vespalib::char_p_cast;
 
 namespace juniper {
 
 Config::Config(const char* config_name, const Juniper& juniper)
-  : _docsumparams(),
-    _matcherparams(),
-    _sumconf(nullptr),
-    _config_name(config_name),
-    _juniper(juniper) {
+    : _docsumparams(), _matcherparams(), _sumconf(nullptr), _config_name(config_name), _juniper(juniper) {
     std::string separators = "";
     separators += separators::unit_separator_string;
     separators += separators::group_separator_string;
@@ -39,11 +38,11 @@ Config::Config(const char* config_name, const Juniper& juniper)
     size_t               match_winsize = strtol(GetProp("matcher.winsize", "200"), nullptr, 0);
     size_t               max_match_candidates = atoi(GetProp("matcher.max_match_candidates", "1000"));
     const char*          seps = GetProp("dynsum.separators", separators.c_str());
-    const unsigned char* cons =
-        char_p_cast<unsigned char>(GetProp("dynsum.connectors", separators.c_str()));
-    double proximity_factor = vespalib::locale::c::strtod(GetProp("proximity.factor", "0.25"), nullptr);
+    const unsigned char* cons = char_p_cast<unsigned char>(GetProp("dynsum.connectors", separators.c_str()));
+    double               proximity_factor = vespalib::locale::c::strtod(GetProp("proximity.factor", "0.25"), nullptr);
     // Silently convert to something sensible
-    if (proximity_factor > 1E8 || proximity_factor < 0) proximity_factor = 0.25;
+    if (proximity_factor > 1E8 || proximity_factor < 0)
+        proximity_factor = 0.25;
 
     _sumconf = CreateSummaryConfig(high_on, high_off, contsym, seps, cons, StringToConfigFlag(escape_markup),
                                    StringToConfigFlag(preserve_white_space));

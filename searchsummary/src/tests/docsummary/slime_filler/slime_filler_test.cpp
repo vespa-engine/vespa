@@ -20,8 +20,8 @@
 #include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
 #include <vespa/document/predicate/predicate.h>
-#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/document/repo/fixedtyperepo.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
@@ -30,13 +30,13 @@
 #include <vespa/searchsummary/docsummary/resultconfig.h>
 #include <vespa/searchsummary/docsummary/slime_filler.h>
 #include <vespa/searchsummary/docsummary/slime_filler_filter.h>
+#include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
 #include <vespa/vespalib/data/slime/json_format.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 
 using document::ArrayFieldValue;
 using document::BoolFieldValue;
@@ -83,44 +83,34 @@ using vespalib::slime::SlimeInserter;
 
 namespace {
 
-std::unique_ptr<Value>
-make_tensor(const TensorSpec &spec)
-{
+std::unique_ptr<Value> make_tensor(const TensorSpec& spec) {
     return SimpleValue::from_spec(spec);
 }
 
-std::string
-slime_to_string(const Slime& slime)
-{
+std::string slime_to_string(const Slime& slime) {
     SimpleBuffer buf;
     JsonFormat::encode(slime, buf, true);
     return buf.get().make_string();
 }
 
-std::string
-make_slime_data_string(std::string_view data)
-{
-    Slime slime;
+std::string make_slime_data_string(std::string_view data) {
+    Slime         slime;
     SlimeInserter inserter(slime);
     inserter.insertData({data});
     return slime_to_string(slime);
 }
 
-std::string
-make_slime_tensor_string(const Value& value)
-{
+std::string make_slime_tensor_string(const Value& value) {
     vespalib::nbostream s;
     encode_value(value, s);
     return make_slime_data_string({s.peek(), s.size()});
 }
 
-DocumenttypesConfig
-get_document_types_config()
-{
+DocumenttypesConfig get_document_types_config() {
     using namespace document::new_config_builder;
     NewConfigBuilder builder;
-    const int ref_target_doctype_id = 1234;
-    constexpr int nested_type_id = 1235;
+    const int        ref_target_doctype_id = 1234;
+    constexpr int    nested_type_id = 1235;
 
     auto& target_doc = builder.document("target_dummy_document", ref_target_doctype_id);
 
@@ -128,10 +118,11 @@ get_document_types_config()
 
     // Create nested struct (self-referential)
     auto nested_ref = main_doc.createStruct("nested")
-            .setId(nested_type_id)
-            .addField("a", builder.intTypeRef())
-            .addField("b", builder.intTypeRef())
-            .addField("c", builder.intTypeRef()).ref();
+                          .setId(nested_type_id)
+                          .addField("a", builder.intTypeRef())
+                          .addField("b", builder.intTypeRef())
+                          .addField("c", builder.intTypeRef())
+                          .ref();
 
     // Add self-referential fields to nested struct
     builder.registerStructField(nested_ref, "d", nested_ref);
@@ -145,30 +136,23 @@ get_document_types_config()
     // NOTE: position type is NOT defined here - it will use the built-in PositionDataType
     main_doc.addField("string_array", main_doc.createArray(builder.stringTypeRef()).ref())
         .addField("string_wset", main_doc.createWset(builder.stringTypeRef()).ref())
-        .addField("string_map", main_doc.createMap(builder.stringTypeRef(),
-                                                   builder.stringTypeRef()).ref())
+        .addField("string_map", main_doc.createMap(builder.stringTypeRef(), builder.stringTypeRef()).ref())
         .addField("nested", nested_ref)
         .addField("nested_array", main_doc.createArray(nested_ref).ref())
-        .addField("nested_map", main_doc.createMap(builder.stringTypeRef(),
-                                                   nested_ref).ref())
+        .addField("nested_map", main_doc.createMap(builder.stringTypeRef(), nested_ref).ref())
         .addField("ref", ref_type);
 
     return builder.config();
 }
 
-class MockStringFieldConverter : public IStringFieldConverter
-{
+class MockStringFieldConverter : public IStringFieldConverter {
     std::vector<std::string> _result;
-    bool _render_wset_as_array;
-    bool _insert;
+    bool                     _render_wset_as_array;
+    bool                     _insert;
+
 public:
     MockStringFieldConverter(bool render_wset_as_array, bool insert)
-        : IStringFieldConverter(),
-          _result(),
-          _render_wset_as_array(render_wset_as_array),
-          _insert(insert)
-    {
-    }
+        : IStringFieldConverter(), _result(), _render_wset_as_array(render_wset_as_array), _insert(insert) {}
     ~MockStringFieldConverter() override = default;
     void convert(const document::StringFieldValue& input, vespalib::slime::Inserter& inserter) override {
         _result.emplace_back(input.getValueRef());
@@ -177,15 +161,12 @@ public:
         }
     }
     const std::vector<std::string>& get_result() const noexcept { return _result; }
-    bool render_weighted_set_as_array() const override {
-        return _render_wset_as_array;
-    }
+    bool render_weighted_set_as_array() const override { return _render_wset_as_array; }
 };
 
-}
+} // namespace
 
-class SlimeFillerTest : public testing::Test
-{
+class SlimeFillerTest : public testing::Test {
 protected:
     std::shared_ptr<const DocumentTypeRepo> _repo;
     const DocumentType*                     _document_type;
@@ -203,42 +184,41 @@ protected:
     StructFieldValue make_nested_value(int i);
     void expect_insert(const std::string& exp, const FieldValue& fv, const std::vector<uint32_t>* matching_elems);
     void expect_insert(const std::string& exp, const FieldValue& fv);
-    void expect_insert_filtered(const std::string& exp, const FieldValue& fv, const std::vector<uint32_t>& matching_elems);
+    void expect_insert_filtered(const std::string& exp, const FieldValue& fv,
+                                const std::vector<uint32_t>& matching_elems);
     void expect_insert(const std::string& exp, const FieldValue& fv, SlimeFillerFilter& filter);
     void expect_insert_callback(const std::vector<std::string>& exp, const FieldValue& fv);
     // Following 4 member functions tests static member functions in SlimeFiller
     void expect_insert_summary_field(const std::string& exp, const FieldValue& fv);
-    void expect_insert_summary_field_with_filter(const std::string& exp, const FieldValue& fv, const std::vector<uint32_t>& matching_elems);
-    void expect_insert_summary_field_with_field_filter(const std::string& exp, const FieldValue& fv, const SlimeFillerFilter* filter);
-    void expect_insert_juniper_field(const std::vector<std::string>& exp, const std::string& exp_slime, const FieldValue& fv);
-    void expect_insert_summary_field_with_converter(const std::vector<std::string>& exp, const std::string& exp_slime, const FieldValue& fv, MockStringFieldConverter& converter);
+    void expect_insert_summary_field_with_filter(const std::string& exp, const FieldValue& fv,
+                                                 const std::vector<uint32_t>& matching_elems);
+    void expect_insert_summary_field_with_field_filter(const std::string& exp, const FieldValue& fv,
+                                                       const SlimeFillerFilter* filter);
+    void expect_insert_juniper_field(const std::vector<std::string>& exp, const std::string& exp_slime,
+                                     const FieldValue& fv);
+    void expect_insert_summary_field_with_converter(const std::vector<std::string>& exp, const std::string& exp_slime,
+                                                    const FieldValue& fv, MockStringFieldConverter& converter);
 };
 
 SlimeFillerTest::SlimeFillerTest()
     : testing::Test(),
       _repo(std::make_unique<DocumentTypeRepo>(get_document_types_config())),
-      _document_type(_repo->getDocumentType("indexingdocument"))
-{
+      _document_type(_repo->getDocumentType("indexingdocument")) {
 }
 
 SlimeFillerTest::~SlimeFillerTest() = default;
 
-const DataType&
-SlimeFillerTest::get_data_type(const std::string& name) const
-{
-    const DataType *type = _repo->getDataType(*_document_type, name);
+const DataType& SlimeFillerTest::get_data_type(const std::string& name) const {
+    const DataType* type = _repo->getDataType(*_document_type, name);
     assert(type != nullptr);
     return *type;
 }
 
-const ReferenceDataType&
-SlimeFillerTest::get_as_ref_type(const std::string& name) const {
+const ReferenceDataType& SlimeFillerTest::get_as_ref_type(const std::string& name) const {
     return dynamic_cast<const ReferenceDataType&>(get_data_type(name));
 }
 
-ArrayFieldValue
-SlimeFillerTest::make_array()
-{
+ArrayFieldValue SlimeFillerTest::make_array() {
     ArrayFieldValue array(get_data_type("Array<String>"));
     array.add(StringFieldValue("foo"));
     array.add(StringFieldValue("bar"));
@@ -246,16 +226,12 @@ SlimeFillerTest::make_array()
     return array;
 }
 
-ArrayFieldValue
-SlimeFillerTest::make_empty_array()
-{
+ArrayFieldValue SlimeFillerTest::make_empty_array() {
     ArrayFieldValue array(get_data_type("Array<String>"));
     return array;
 }
 
-WeightedSetFieldValue
-SlimeFillerTest::make_weighted_set()
-{
+WeightedSetFieldValue SlimeFillerTest::make_weighted_set() {
     WeightedSetFieldValue wset(get_data_type("WeightedSet<String>"));
     wset.add(StringFieldValue("foo"), 2);
     wset.add(StringFieldValue("bar"), 4);
@@ -263,16 +239,12 @@ SlimeFillerTest::make_weighted_set()
     return wset;
 }
 
-WeightedSetFieldValue
-SlimeFillerTest::make_empty_weighted_set()
-{
+WeightedSetFieldValue SlimeFillerTest::make_empty_weighted_set() {
     WeightedSetFieldValue wset(get_data_type("WeightedSet<String>"));
     return wset;
 }
 
-MapFieldValue
-SlimeFillerTest::make_map()
-{
+MapFieldValue SlimeFillerTest::make_map() {
     MapFieldValue map(get_data_type("Map<String,String>"));
     map.put(StringFieldValue("key1"), StringFieldValue("value1"));
     map.put(StringFieldValue("key2"), StringFieldValue("value2"));
@@ -280,16 +252,12 @@ SlimeFillerTest::make_map()
     return map;
 }
 
-MapFieldValue
-SlimeFillerTest::make_empty_map()
-{
+MapFieldValue SlimeFillerTest::make_empty_map() {
     MapFieldValue map(get_data_type("Map<String,String>"));
     return map;
 }
 
-StructFieldValue
-SlimeFillerTest::make_nested_value(int i)
-{
+StructFieldValue SlimeFillerTest::make_nested_value(int i) {
     StructFieldValue nested(get_data_type("nested"));
     StructFieldValue nested2(get_data_type("nested"));
     nested.setValue("a", IntFieldValue(42 + 100 * i));
@@ -302,10 +270,9 @@ SlimeFillerTest::make_nested_value(int i)
     return nested;
 }
 
-void
-SlimeFillerTest::expect_insert(const std::string& exp, const FieldValue& fv, const std::vector<uint32_t>* matching_elems)
-{
-    Slime slime;
+void SlimeFillerTest::expect_insert(const std::string& exp, const FieldValue& fv,
+                                    const std::vector<uint32_t>* matching_elems) {
+    Slime         slime;
     SlimeInserter inserter(slime);
     SlimeFiller filler(inserter, matching_elems != nullptr ? ElementIds(*matching_elems) : ElementIds::select_all());
     fv.accept(filler);
@@ -313,36 +280,29 @@ SlimeFillerTest::expect_insert(const std::string& exp, const FieldValue& fv, con
     EXPECT_EQ(exp, act);
 }
 
-void
-SlimeFillerTest::expect_insert_filtered(const std::string& exp, const FieldValue& fv, const std::vector<uint32_t>& matching_elems)
-{
+void SlimeFillerTest::expect_insert_filtered(const std::string& exp, const FieldValue& fv,
+                                             const std::vector<uint32_t>& matching_elems) {
     expect_insert(exp, fv, &matching_elems);
 }
 
-void
-SlimeFillerTest::expect_insert(const std::string& exp, const FieldValue& fv)
-{
+void SlimeFillerTest::expect_insert(const std::string& exp, const FieldValue& fv) {
     expect_insert(exp, fv, nullptr);
 }
 
-void
-SlimeFillerTest::expect_insert(const std::string& exp, const FieldValue& fv, SlimeFillerFilter& filter)
-{
-    Slime slime;
+void SlimeFillerTest::expect_insert(const std::string& exp, const FieldValue& fv, SlimeFillerFilter& filter) {
+    Slime         slime;
     SlimeInserter inserter(slime);
-    SlimeFiller filler(inserter, ElementIds::select_all(), nullptr, filter.begin());
+    SlimeFiller   filler(inserter, ElementIds::select_all(), nullptr, filter.begin());
     fv.accept(filler);
     auto act = slime_to_string(slime);
     EXPECT_EQ(exp, act);
 }
 
-void
-SlimeFillerTest::expect_insert_callback(const std::vector<std::string>& exp, const FieldValue& fv)
-{
-    Slime slime;
-    SlimeInserter inserter(slime);
+void SlimeFillerTest::expect_insert_callback(const std::vector<std::string>& exp, const FieldValue& fv) {
+    Slime                    slime;
+    SlimeInserter            inserter(slime);
     MockStringFieldConverter converter(false, false);
-    SlimeFiller filler(inserter, ElementIds::select_all(), &converter, SlimeFillerFilter::all());
+    SlimeFiller              filler(inserter, ElementIds::select_all(), &converter, SlimeFillerFilter::all());
     fv.accept(filler);
     auto act_null = slime_to_string(slime);
     EXPECT_EQ("null", act_null);
@@ -350,41 +310,36 @@ SlimeFillerTest::expect_insert_callback(const std::vector<std::string>& exp, con
     EXPECT_EQ(exp, act);
 }
 
-void
-SlimeFillerTest::expect_insert_summary_field(const std::string& exp, const FieldValue& fv)
-{
-    Slime slime;
+void SlimeFillerTest::expect_insert_summary_field(const std::string& exp, const FieldValue& fv) {
+    Slime         slime;
     SlimeInserter inserter(slime);
     SlimeFiller::insert_summary_field(fv, ElementIds::select_all(), inserter);
     auto act = slime_to_string(slime);
     EXPECT_EQ(exp, act);
 }
 
-void
-SlimeFillerTest::expect_insert_summary_field_with_filter(const std::string& exp, const FieldValue& fv, const std::vector<uint32_t>& matching_elems)
-{
-    Slime slime;
+void SlimeFillerTest::expect_insert_summary_field_with_filter(const std::string& exp, const FieldValue& fv,
+                                                              const std::vector<uint32_t>& matching_elems) {
+    Slime         slime;
     SlimeInserter inserter(slime);
     SlimeFiller::insert_summary_field(fv, ElementIds(matching_elems), inserter);
     auto act = slime_to_string(slime);
     EXPECT_EQ(exp, act);
 }
 
-void
-SlimeFillerTest::expect_insert_summary_field_with_field_filter(const std::string& exp, const FieldValue& fv, const SlimeFillerFilter* filter)
-{
-    Slime slime;
+void SlimeFillerTest::expect_insert_summary_field_with_field_filter(const std::string& exp, const FieldValue& fv,
+                                                                    const SlimeFillerFilter* filter) {
+    Slime         slime;
     SlimeInserter inserter(slime);
     SlimeFiller::insert_summary_field_with_field_filter(fv, ElementIds::select_all(), inserter, nullptr, filter);
     auto act = slime_to_string(slime);
     EXPECT_EQ(exp, act);
 }
 
-void
-SlimeFillerTest::expect_insert_juniper_field(const std::vector<std::string>& exp, const std::string& exp_slime, const FieldValue& fv)
-{
-    Slime slime;
-    SlimeInserter inserter(slime);
+void SlimeFillerTest::expect_insert_juniper_field(const std::vector<std::string>& exp, const std::string& exp_slime,
+                                                  const FieldValue& fv) {
+    Slime                    slime;
+    SlimeInserter            inserter(slime);
     MockStringFieldConverter converter(false, false);
     SlimeFiller::insert_juniper_field(fv, ElementIds::select_all(), inserter, converter);
     auto act_slime = slime_to_string(slime);
@@ -393,10 +348,10 @@ SlimeFillerTest::expect_insert_juniper_field(const std::vector<std::string>& exp
     EXPECT_EQ(exp, act);
 }
 
-void
-SlimeFillerTest::expect_insert_summary_field_with_converter(const std::vector<std::string>& exp, const std::string& exp_slime, const FieldValue& fv, MockStringFieldConverter& converter)
-{
-    Slime slime;
+void SlimeFillerTest::expect_insert_summary_field_with_converter(const std::vector<std::string>& exp,
+                                                                 const std::string& exp_slime, const FieldValue& fv,
+                                                                 MockStringFieldConverter& converter) {
+    Slime         slime;
     SlimeInserter inserter(slime);
     SlimeFiller::insert_summary_field(fv, ElementIds::select_all(), inserter, &converter);
     auto act_slime = slime_to_string(slime);
@@ -405,8 +360,7 @@ SlimeFillerTest::expect_insert_summary_field_with_converter(const std::vector<st
     EXPECT_EQ(exp, act);
 }
 
-TEST_F(SlimeFillerTest, insert_primitive_values)
-{
+TEST_F(SlimeFillerTest, insert_primitive_values) {
     {
         SCOPED_TRACE("int");
         expect_insert("42", IntFieldValue(42));
@@ -438,8 +392,7 @@ TEST_F(SlimeFillerTest, insert_primitive_values)
     }
 }
 
-TEST_F(SlimeFillerTest, insert_string)
-{
+TEST_F(SlimeFillerTest, insert_string) {
     {
         SCOPED_TRACE("plain string");
         expect_insert(R"("Foo Bar Baz")", StringFieldValue("Foo Bar Baz"));
@@ -450,8 +403,7 @@ TEST_F(SlimeFillerTest, insert_string)
     }
 }
 
-TEST_F(SlimeFillerTest, insert_raw)
-{
+TEST_F(SlimeFillerTest, insert_raw) {
     {
         SCOPED_TRACE("normal raw");
         expect_insert(make_slime_data_string("data"), RawFieldValue("data"));
@@ -462,8 +414,7 @@ TEST_F(SlimeFillerTest, insert_raw)
     }
 }
 
-TEST_F(SlimeFillerTest, insert_position)
-{
+TEST_F(SlimeFillerTest, insert_position) {
     {
         SCOPED_TRACE("normal position");
         StructFieldValue position(get_data_type("position"));
@@ -484,20 +435,18 @@ TEST_F(SlimeFillerTest, insert_position)
     }
 }
 
-TEST_F(SlimeFillerTest, insert_predicate)
-{
-    auto input = std::make_unique<Slime>();
-    Cursor &obj = input->setObject();
+TEST_F(SlimeFillerTest, insert_predicate) {
+    auto    input = std::make_unique<Slime>();
+    Cursor& obj = input->setObject();
     obj.setLong(Predicate::NODE_TYPE, Predicate::TYPE_FEATURE_SET);
     obj.setString(Predicate::KEY, "foo");
-    Cursor &arr = obj.setArray(Predicate::SET);
+    Cursor& arr = obj.setArray(Predicate::SET);
     arr.addString("bar");
     PredicateFieldValue value(std::move(input));
     expect_insert(R"("'foo' in ['bar']\n")", value);
 }
 
-TEST_F(SlimeFillerTest, insert_tensor)
-{
+TEST_F(SlimeFillerTest, insert_tensor) {
     TensorDataType   data_type(ValueType::from_spec("tensor(x{},y{})"));
     TensorFieldValue value(data_type);
     value = make_tensor(TensorSpec("tensor(x{},y{})").add({{"x", "4"}, {"y", "5"}}, 7));
@@ -505,8 +454,7 @@ TEST_F(SlimeFillerTest, insert_tensor)
     expect_insert(R"("0x")", TensorFieldValue());
 }
 
-TEST_F(SlimeFillerTest, insert_reference)
-{
+TEST_F(SlimeFillerTest, insert_reference) {
     {
         SCOPED_TRACE("normal reference");
         ReferenceFieldValue value(get_as_ref_type("Reference<target_dummy_document>"),
@@ -520,14 +468,12 @@ TEST_F(SlimeFillerTest, insert_reference)
     }
 }
 
-TEST_F(SlimeFillerTest, insert_array)
-{
+TEST_F(SlimeFillerTest, insert_array) {
     auto array = make_array();
     expect_insert(R"(["foo","bar","baz"])", array);
 }
 
-TEST_F(SlimeFillerTest, insert_array_filtered)
-{
+TEST_F(SlimeFillerTest, insert_array_filtered) {
     auto array = make_array();
     expect_insert_filtered(R"(["foo","bar","baz"])", array, {0, 1, 2});
     expect_insert_filtered("null", array, {});
@@ -538,16 +484,15 @@ TEST_F(SlimeFillerTest, insert_array_filtered)
     expect_insert_filtered("null", array, {0, 1, 2, 3});
 }
 
-TEST_F(SlimeFillerTest, insert_weighted_set)
-{
+TEST_F(SlimeFillerTest, insert_weighted_set) {
     auto wset = make_weighted_set();
     expect_insert(R"([{"item":"foo","weight":2},{"item":"bar","weight":4},{"item":"baz","weight":6}])", wset);
 }
 
-TEST_F(SlimeFillerTest, insert_weighted_set_filtered)
-{
+TEST_F(SlimeFillerTest, insert_weighted_set_filtered) {
     auto wset = make_weighted_set();
-    expect_insert_filtered(R"([{"item":"foo","weight":2},{"item":"bar","weight":4},{"item":"baz","weight":6}])", wset, {0, 1, 2});
+    expect_insert_filtered(R"([{"item":"foo","weight":2},{"item":"bar","weight":4},{"item":"baz","weight":6}])", wset,
+                           {0, 1, 2});
     expect_insert_filtered("null", wset, {});
     expect_insert_filtered(R"([{"item":"foo","weight":2}])", wset, {0});
     expect_insert_filtered(R"([{"item":"bar","weight":4}])", wset, {1});
@@ -556,16 +501,17 @@ TEST_F(SlimeFillerTest, insert_weighted_set_filtered)
     expect_insert_filtered("null", wset, {0, 1, 2, 3});
 }
 
-TEST_F(SlimeFillerTest, insert_map)
-{
+TEST_F(SlimeFillerTest, insert_map) {
     auto map = make_map();
-    expect_insert(R"([{"key":"key1","value":"value1"},{"key":"key2","value":"value2"},{"key":"key3","value":"value3"}])", map);
+    expect_insert(
+        R"([{"key":"key1","value":"value1"},{"key":"key2","value":"value2"},{"key":"key3","value":"value3"}])", map);
 }
 
-TEST_F(SlimeFillerTest, insert_map_filtered)
-{
+TEST_F(SlimeFillerTest, insert_map_filtered) {
     auto map = make_map();
-    expect_insert_filtered(R"([{"key":"key1","value":"value1"},{"key":"key2","value":"value2"},{"key":"key3","value":"value3"}])", map, {0, 1, 2});
+    expect_insert_filtered(
+        R"([{"key":"key1","value":"value1"},{"key":"key2","value":"value2"},{"key":"key3","value":"value3"}])", map,
+        {0, 1, 2});
     expect_insert_filtered("null", map, {});
     expect_insert_filtered(R"([{"key":"key1","value":"value1"}])", map, {0});
     expect_insert_filtered(R"([{"key":"key2","value":"value2"}])", map, {1});
@@ -574,63 +520,69 @@ TEST_F(SlimeFillerTest, insert_map_filtered)
     expect_insert_filtered("null", map, {0, 1, 2, 3});
 }
 
-TEST_F(SlimeFillerTest, insert_struct)
-{
+TEST_F(SlimeFillerTest, insert_struct) {
     auto nested = make_nested_value(0);
-    // Field order depends on assigned field ids, cf. document::Field::calculateIdV7(), and symbol insertion order in slime
+    // Field order depends on assigned field ids, cf. document::Field::calculateIdV7(), and symbol insertion order in
+    // slime
     expect_insert(R"({"f":{"c":66,"a":62},"c":46,"a":42,"b":44,"d":{"c":66,"a":62}})", nested);
     SlimeFillerFilter filter;
     filter.add("a").add("c").add("f.a").add("d");
     expect_insert(R"({"f":{"a":62},"a":42,"c":46,"d":{"a":62,"c":66}})", nested, filter);
 }
 
-TEST_F(SlimeFillerTest, insert_struct_array)
-{
+TEST_F(SlimeFillerTest, insert_struct_array) {
     ArrayFieldValue array(get_data_type("Array<nested>"));
     for (int i = 0; i < 3; ++i) {
         array.add(make_nested_value(i));
     }
-    expect_insert(R"([{"f":{"c":66,"a":62},"c":46,"a":42,"b":44,"d":{"c":66,"a":62}},{"f":{"c":166,"a":162},"c":146,"a":142,"b":144,"d":{"c":166,"a":162}},{"f":{"c":266,"a":262},"c":246,"a":242,"b":244,"d":{"c":266,"a":262}}])", array);
+    expect_insert(
+        R"([{"f":{"c":66,"a":62},"c":46,"a":42,"b":44,"d":{"c":66,"a":62}},{"f":{"c":166,"a":162},"c":146,"a":142,"b":144,"d":{"c":166,"a":162}},{"f":{"c":266,"a":262},"c":246,"a":242,"b":244,"d":{"c":266,"a":262}}])",
+        array);
     SlimeFillerFilter filter;
     filter.add("a").add("c").add("f.a").add("d");
-    expect_insert(R"([{"f":{"a":62},"a":42,"c":46,"d":{"a":62,"c":66}},{"f":{"a":162},"a":142,"c":146,"d":{"a":162,"c":166}},{"f":{"a":262},"a":242,"c":246,"d":{"a":262,"c":266}}])", array, filter);
+    expect_insert(
+        R"([{"f":{"a":62},"a":42,"c":46,"d":{"a":62,"c":66}},{"f":{"a":162},"a":142,"c":146,"d":{"a":162,"c":166}},{"f":{"a":262},"a":242,"c":246,"d":{"a":262,"c":266}}])",
+        array, filter);
 }
 
-TEST_F(SlimeFillerTest, insert_struct_map)
-{
+TEST_F(SlimeFillerTest, insert_struct_map) {
     MapFieldValue map(get_data_type("Map<String,nested>"));
     for (int i = 0; i < 3; ++i) {
         vespalib::asciistream key;
         key << "key" << (i + 1);
         map.put(StringFieldValue(key.view()), make_nested_value(i));
     }
-    expect_insert(R"([{"key":"key1","value":{"f":{"c":66,"a":62},"c":46,"a":42,"b":44,"d":{"c":66,"a":62}}},{"key":"key2","value":{"f":{"c":166,"a":162},"c":146,"a":142,"b":144,"d":{"c":166,"a":162}}},{"key":"key3","value":{"f":{"c":266,"a":262},"c":246,"a":242,"b":244,"d":{"c":266,"a":262}}}])", map);
+    expect_insert(
+        R"([{"key":"key1","value":{"f":{"c":66,"a":62},"c":46,"a":42,"b":44,"d":{"c":66,"a":62}}},{"key":"key2","value":{"f":{"c":166,"a":162},"c":146,"a":142,"b":144,"d":{"c":166,"a":162}}},{"key":"key3","value":{"f":{"c":266,"a":262},"c":246,"a":242,"b":244,"d":{"c":266,"a":262}}}])",
+        map);
     SlimeFillerFilter filter;
     filter.add("value.a").add("value.c").add("value.f.a").add("value.d");
-    expect_insert(R"([{"key":"key1","value":{"f":{"a":62},"a":42,"c":46,"d":{"a":62,"c":66}}},{"key":"key2","value":{"f":{"a":162},"a":142,"c":146,"d":{"a":162,"c":166}}},{"key":"key3","value":{"f":{"a":262},"a":242,"c":246,"d":{"a":262,"c":266}}}])", map, filter);
+    expect_insert(
+        R"([{"key":"key1","value":{"f":{"a":62},"a":42,"c":46,"d":{"a":62,"c":66}}},{"key":"key2","value":{"f":{"a":162},"a":142,"c":146,"d":{"a":162,"c":166}}},{"key":"key3","value":{"f":{"a":262},"a":242,"c":246,"d":{"a":262,"c":266}}}])",
+        map, filter);
 }
 
-TEST_F(SlimeFillerTest, insert_string_with_callback)
-{
-    std::string exp("Foo Bar Baz");
+TEST_F(SlimeFillerTest, insert_string_with_callback) {
+    std::string      exp("Foo Bar Baz");
     StringFieldValue plain_string(exp);
     expect_insert_callback({exp}, plain_string);
 }
 
-TEST_F(SlimeFillerTest, insert_summary_field)
-{
+TEST_F(SlimeFillerTest, insert_summary_field) {
     expect_insert_summary_field(R"("Hello")", StringFieldValue("Hello"));
     expect_insert_summary_field("null", StringFieldValue(""));
     expect_insert_summary_field(R"(["foo","bar","baz"])", make_array());
     expect_insert_summary_field("null", make_empty_array());
-    expect_insert_summary_field(R"([{"item":"foo","weight":2},{"item":"bar","weight":4},{"item":"baz","weight":6}])", make_weighted_set());
+    expect_insert_summary_field(R"([{"item":"foo","weight":2},{"item":"bar","weight":4},{"item":"baz","weight":6}])",
+                                make_weighted_set());
     expect_insert_summary_field("null", make_empty_weighted_set());
-    expect_insert_summary_field(R"([{"key":"key1","value":"value1"},{"key":"key2","value":"value2"},{"key":"key3","value":"value3"}])", make_map());
+    expect_insert_summary_field(
+        R"([{"key":"key1","value":"value1"},{"key":"key2","value":"value2"},{"key":"key3","value":"value3"}])",
+        make_map());
     expect_insert_summary_field("null", make_empty_map());
 }
 
-TEST_F(SlimeFillerTest, insert_summary_field_with_filter)
-{
+TEST_F(SlimeFillerTest, insert_summary_field_with_filter) {
     expect_insert_summary_field_with_filter(R"(["baz"])", make_array(), {2});
     expect_insert_summary_field_with_filter("null", make_empty_array(), {});
     expect_insert_summary_field_with_filter(R"([{"item":"baz","weight":6}])", make_weighted_set(), {2});
@@ -639,34 +591,36 @@ TEST_F(SlimeFillerTest, insert_summary_field_with_filter)
     expect_insert_summary_field_with_filter("null", make_empty_map(), {});
 }
 
-TEST_F(SlimeFillerTest, insert_summary_field_with_field_filter)
-{
+TEST_F(SlimeFillerTest, insert_summary_field_with_field_filter) {
     auto nested = make_nested_value(0);
-    // Field order depends on assigned field ids, cf. document::Field::calculateIdV7(), and symbol insertion order in slime
-    expect_insert_summary_field_with_field_filter(R"({"f":{"c":66,"a":62},"c":46,"a":42,"b":44,"d":{"c":66,"a":62}})", nested, nullptr);
+    // Field order depends on assigned field ids, cf. document::Field::calculateIdV7(), and symbol insertion order in
+    // slime
+    expect_insert_summary_field_with_field_filter(R"({"f":{"c":66,"a":62},"c":46,"a":42,"b":44,"d":{"c":66,"a":62}})",
+                                                  nested, nullptr);
     SlimeFillerFilter filter;
     filter.add("a").add("c").add("f.a").add("d");
-    expect_insert_summary_field_with_field_filter(R"({"f":{"a":62},"a":42,"c":46,"d":{"a":62,"c":66}})", nested, &filter);
+    expect_insert_summary_field_with_field_filter(R"({"f":{"a":62},"a":42,"c":46,"d":{"a":62,"c":66}})", nested,
+                                                  &filter);
 }
 
-TEST_F(SlimeFillerTest, insert_juniper_field)
-{
+TEST_F(SlimeFillerTest, insert_juniper_field) {
     expect_insert_juniper_field({"Hello"}, "null", StringFieldValue("Hello"));
     expect_insert_juniper_field({}, "null", StringFieldValue(""));
-    expect_insert_juniper_field({"foo","bar","baz"}, "[]", make_array());
+    expect_insert_juniper_field({"foo", "bar", "baz"}, "[]", make_array());
     expect_insert_juniper_field({}, "null", make_empty_array());
 }
 
-TEST_F(SlimeFillerTest, string_field_is_not_converted_for_weighted_set_rendering)
-{
+TEST_F(SlimeFillerTest, string_field_is_not_converted_for_weighted_set_rendering) {
     MockStringFieldConverter cvt_as_wset(false, true);
-    expect_insert_summary_field_with_converter({}, R"([{"item":"foo","weight":2},{"item":"bar","weight":4},{"item":"baz","weight":6}])", make_weighted_set(), cvt_as_wset);
+    expect_insert_summary_field_with_converter(
+        {}, R"([{"item":"foo","weight":2},{"item":"bar","weight":4},{"item":"baz","weight":6}])", make_weighted_set(),
+        cvt_as_wset);
 }
 
-TEST_F(SlimeFillerTest, weighted_set_can_be_rendered_as_array)
-{
+TEST_F(SlimeFillerTest, weighted_set_can_be_rendered_as_array) {
     MockStringFieldConverter cvt_as_array(true, true);
-    expect_insert_summary_field_with_converter({"foo","bar","baz"}, R"(["foo","bar","baz"])", make_weighted_set(), cvt_as_array);
+    expect_insert_summary_field_with_converter({"foo", "bar", "baz"}, R"(["foo","bar","baz"])", make_weighted_set(),
+                                               cvt_as_array);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

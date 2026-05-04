@@ -3,6 +3,8 @@
 
 /* Include most of the stuff that we might need */
 
+#include "queryparser.h"
+
 #include <vespa/fastlib/text/normwordfolder.h>
 #include <vespa/fastlib/text/unicodeutil.h>
 #include <vespa/juniper/Matcher.h>
@@ -14,7 +16,6 @@
 #include <vespa/juniper/propreader.h>
 #include <vespa/juniper/query.h>
 #include <vespa/juniper/queryhandle.h>
-#include "queryparser.h"
 #include <vespa/juniper/queryvisitor.h>
 #include <vespa/juniper/result.h>
 #include <vespa/juniper/rpinterface.h>
@@ -52,7 +53,7 @@ public:
     PropertyMap();
     ~PropertyMap();
     PropertyMap& set(const char* name, const char* value);
-    const char*  GetProperty(const char* name, const char* def = nullptr) const override;
+    const char* GetProperty(const char* name, const char* def = nullptr) const override;
 };
 
 extern Config*  TestConfig;

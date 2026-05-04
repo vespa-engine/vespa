@@ -9,6 +9,7 @@ class Matcher;
 class MatchObject;
 
 #include "queryvisitor.h"
+
 #include <vector>
 
 using queryterm_vector = std::vector<QueryTerm*>;
@@ -29,7 +30,7 @@ public:
     QueryHandle(const IQuery& fquery, const char* options);
     ~QueryHandle();
 
-    void        SetSimpleQuery(Matcher* m);
+    void SetSimpleQuery(Matcher* m);
     inline void SetPrivileged(bool priv) { _privileged_port = priv; }
     inline bool Privileged() { return _privileged_port; }
     inline void SetLog(uint32_t mask) { _log_mask = mask; }
@@ -50,20 +51,20 @@ private:
 public:
     // optional per query parameter override settings
     // (default (-1) means use configured value, other value forces override)
-    int             _dynsum_len;
-    int             _max_matches;
-    int             _surround_max;
-    int             _stem_extend;
-    int             _stem_min;
-    int64_t         _winsize;
-    double          _winsize_fallback_multiplier;
-    int64_t         _max_match_candidates;
+    int     _dynsum_len;
+    int     _max_matches;
+    int     _surround_max;
+    int     _stem_extend;
+    int     _stem_min;
+    int64_t _winsize;
+    double  _winsize_fallback_multiplier;
+    int64_t _max_match_candidates;
 
     // parameter settings that are taken directly from
     // this handle (eg. not overrides for config settings)
     uint32_t _log_mask;
-    int      _options;        // query constraint bitmap as defined in querynode.h
-    int      _limit;          // WITHIN/NEAR limit by parameter
+    int      _options; // query constraint bitmap as defined in querynode.h
+    int      _limit;   // WITHIN/NEAR limit by parameter
 };
 
 void SetDebug(unsigned int mask);

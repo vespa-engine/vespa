@@ -1,14 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "sumdesc.h"
+
 #include "Matcher.h"
 #include "appender.h"
 #include "juniper_separators.h"
 #include "juniperdebug.h"
-#include <cctype>
-#include <cinttypes>
+
 #include <vespa/fastlib/text/unicodeutil.h>
 #include <vespa/vespalib/util/casts.h>
+
+#include <cctype>
+#include <cinttypes>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".juniper.sumdesc");
@@ -108,7 +111,9 @@ int complete_word(const unsigned char* start, ssize_t length, const unsigned cha
     // Make sure we are at the start of a character before doing any
     // comparisons
     int start_off = Fast_UnicodeUtil::UTF8move(start, length, ptr, 0);
-    if (start_off) { LOG(spam, "Offset %d to start of char", start_off); }
+    if (start_off) {
+        LOG(spam, "Offset %d to start of char", start_off);
+    }
 
     // Figure out if a word needs completion or if we are just going
     // to eliminate whitespace. Consider sequence from interlinear
@@ -181,11 +186,15 @@ int complete_word(const unsigned char* start, ssize_t length, const unsigned cha
                     moved += cur_move;
                     continue;
                 } else if (il_ann_terminator_char(ptr)) {
-                    if (increment < 0) { chartest = il_ann_anchor_char; }
+                    if (increment < 0) {
+                        chartest = il_ann_anchor_char;
+                    }
                     moved += cur_move;
                     continue;
                 } else if (il_ann_anchor_char(ptr)) {
-                    if (increment > 0) { chartest = il_ann_terminator_char; }
+                    if (increment > 0) {
+                        chartest = il_ann_terminator_char;
+                    }
                     moved += cur_move;
                     continue;
                 }
@@ -200,7 +209,8 @@ int complete_word(const unsigned char* start, ssize_t length, const unsigned cha
             // since we are then supposed to be pointing to the first
             // char not in the word while going backwards we stop at
             // the start character of the word!
-            if (increment > 0) moved += cur_move;
+            if (increment > 0)
+                moved += cur_move;
             break; // Found first blank/word char..
         }
         moved += cur_move;
@@ -210,10 +220,11 @@ int complete_word(const unsigned char* start, ssize_t length, const unsigned cha
         }
     }
     // Adjust for getting to the start of the start character:
-    if (start_off) moved += increment > 0 ? -start_off : start_off;
+    if (start_off)
+        moved += increment > 0 ? -start_off : start_off;
 
-    LOG(spam, "complete_word: %s %d bytes",
-        (whitespace_elim ? "ws cut" : (increment > 0 ? "appended" : "prepended")), moved);
+    LOG(spam, "complete_word: %s %d bytes", (whitespace_elim ? "ws cut" : (increment > 0 ? "appended" : "prepended")),
+        moved);
     // Make sure pointer is correct as well:
     ptr = orig_ptr + increment * moved;
     moved = (whitespace_elim ? -moved : moved);
@@ -223,31 +234,29 @@ int complete_word(const unsigned char* start, ssize_t length, const unsigned cha
 } // namespace
 
 SummaryDesc::highlight_desc::highlight_desc(off_t pos, ssize_t len, bool highlight)
-  : _pos(pos),
-    _len(len),
-    _highlight(highlight) {
+    : _pos(pos), _len(len), _highlight(highlight) {
     LOG(spam, "-- new desc: pos %" PRId64 " len %ld %s", static_cast<int64_t>(_pos), _len,
         (highlight ? "(highlight)" : ""));
     assert(pos >= 0);
 }
 
 SummaryDesc::SummaryDesc(Matcher* matcher, ssize_t length, ssize_t min_length, int max_matches, int surround_len)
-  : _matcher(matcher),
-    _occ(matcher->OccurrenceList()),
-    _match_results(matcher->OrderedMatchSet()),
-    _length(length),
-    _min_length(min_length),
-    _remaining(length),
-    _surround_len(surround_len),
-    _est_len(0),
-    _hit_len(0),
-    _clist(),
-    _plist(),
-    _sumconf(),
-    _max_matches(max_matches),
-    _match_elems(),
-    _document_length(matcher->DocumentSize()),
-    _fulldoc() {
+    : _matcher(matcher),
+      _occ(matcher->OccurrenceList()),
+      _match_results(matcher->OrderedMatchSet()),
+      _length(length),
+      _min_length(min_length),
+      _remaining(length),
+      _surround_len(surround_len),
+      _est_len(0),
+      _hit_len(0),
+      _clist(),
+      _plist(),
+      _sumconf(),
+      _max_matches(max_matches),
+      _match_elems(),
+      _document_length(matcher->DocumentSize()),
+      _fulldoc() {
     /* Check if the whole document fits within requested length and
      * process this
      */
@@ -257,7 +266,8 @@ SummaryDesc::SummaryDesc(Matcher* matcher, ssize_t length, ssize_t min_length, i
     }
 
     /* Adjust to sensible values */
-    if (_surround_len < MIN_SURROUND_LEN) _surround_len = MIN_SURROUND_LEN;
+    if (_surround_len < MIN_SURROUND_LEN)
+        _surround_len = MIN_SURROUND_LEN;
 
     /* decide what amount of matches to use (stored in _clist) */
     _match_elems = find_matches();
@@ -290,7 +300,8 @@ void SummaryDesc::locate_accidential_matches() {
         print_list::iterator nit = pit;
         bool                 more = (++nit != _plist.end());
 
-        if (d->_highlight) continue; // Ignore already found keywords..
+        if (d->_highlight)
+            continue; // Ignore already found keywords..
 
         /* Now investigate if there are other matches than the best
          * ones that goes within the selected print context
@@ -299,7 +310,8 @@ void SummaryDesc::locate_accidential_matches() {
         /* Advance occurrence iterator until *kit (keyword occurrence)
          * overlap d (current descriptor) or is past d
          */
-        while (kit != _occ.end() && (*kit)->startpos() + (*kit)->tokenlen <= d->_pos) ++kit;
+        while (kit != _occ.end() && (*kit)->startpos() + (*kit)->tokenlen <= d->_pos)
+            ++kit;
 
         if (_matcher->UsesValid()) {
             /* If there are subphrases or other restricting subqueries
@@ -311,7 +323,8 @@ void SummaryDesc::locate_accidential_matches() {
                 ++kit;
         }
 
-        if (kit == _occ.end()) return;
+        if (kit == _occ.end())
+            return;
 
         /* Turn "token cut at start" into "token contained in" case */
         if ((*kit)->startpos() < d->_pos) {
@@ -324,7 +337,8 @@ void SummaryDesc::locate_accidential_matches() {
         /* Split descriptors each time a new occurrence is found
          * within current descriptor */
         for (; kit != _occ.end() && (*kit)->startpos() + (*kit)->tokenlen <= d->_pos + d->_len; ++kit) {
-            if (_matcher->UsesValid() && !(*kit)->valid()) continue;
+            if (_matcher->UsesValid() && !(*kit)->valid())
+                continue;
             /* simple split - occurrence contained in (but maybe at
              * start of) descriptor */
             off_t kpos = (*kit)->startpos();
@@ -336,7 +350,8 @@ void SummaryDesc::locate_accidential_matches() {
                 static_cast<int64_t>(d->_pos), static_cast<int64_t>(start_len), static_cast<int64_t>(kpos),
                 static_cast<int64_t>(klen), static_cast<int64_t>(kpos + klen), static_cast<int64_t>(end_len));
 
-            if (start_len > 0) _plist.insert(pit, highlight_desc(d->_pos, start_len, false));
+            if (start_len > 0)
+                _plist.insert(pit, highlight_desc(d->_pos, start_len, false));
 
             // new keyword
             print_list::iterator kwit = _plist.insert(pit, highlight_desc(kpos, klen, true));
@@ -357,7 +372,8 @@ void SummaryDesc::locate_accidential_matches() {
                 d = &(*kwit);
             }
         }
-        if (kit == _occ.end()) return;
+        if (kit == _occ.end())
+            return;
 
         /* Handle cut end occurrence separately */
         off_t d_end = d->_pos + d->_len;
@@ -385,9 +401,11 @@ void SummaryDesc::locate_accidential_matches() {
             /* Insert new desc after the just processed one */
             pit = _plist.insert(++pit, highlight_desc(kpos, klen, true));
             ++kit;
-            if (kit == _occ.end()) return;
+            if (kit == _occ.end())
+                return;
         }
-        if (pit == _plist.end()) break;
+        if (pit == _plist.end())
+            break;
     } // end for (pit..)
 }
 
@@ -402,7 +420,8 @@ int SummaryDesc::find_matches() {
 
     // Find enough proper matches (without overlap)
     for (MatchCandidate* m : _match_results) {
-        if (overlap(m)) continue;
+        if (overlap(m))
+            continue;
 
         ssize_t size = m->size();
 
@@ -414,7 +433,8 @@ int SummaryDesc::find_matches() {
 
         /* Adjust length in case of lack of prefix context */
         int pre = m->starttoken() - m->ctxt_startpos();
-        if (pre < _surround_len) adjust_len += _surround_len - pre;
+        if (pre < _surround_len)
+            adjust_len += _surround_len - pre;
 
         match_len += size;
 
@@ -428,7 +448,8 @@ int SummaryDesc::find_matches() {
         match_elems += m->elems();
 
         _est_len = match_len - adjust_len + (2 * (_surround_len) + MIN_CONTINUATION) * match_count;
-        if (_est_len >= (int)_min_length && match_count >= _max_matches) break;
+        if (_est_len >= (int)_min_length && match_count >= _max_matches)
+            break;
     }
     LOG(spam, "QHL: %d matches, raw len %d, estimated len %d, elements %d", match_count, match_len, _est_len,
         match_elems);
@@ -466,7 +487,8 @@ int SummaryDesc::complete_extended_token(const unsigned char* start, ssize_t len
         moved += complete_word(start, length, ptr, increment);
 
         // Ensure that there is a quick way out of this at the end:
-        if (start >= ptr || start + length <= ptr || ptr == old_ptr) return moved;
+        if (start >= ptr || start + length <= ptr || ptr == old_ptr)
+            return moved;
 
         // If we end up at the same place as last iteration, we need
         // to bail (done above) to avoid an infinite loop.
@@ -480,7 +502,8 @@ int SummaryDesc::complete_extended_token(const unsigned char* start, ssize_t len
         // "real" break:
         if (increment < 0) {
             prelen = Fast_UnicodeUtil::UTF8move(start, length, preptr, increment);
-            if (!prelen) return moved;
+            if (!prelen)
+                return moved;
         } else {
             prelen = 0;
         }
@@ -495,13 +518,15 @@ int SummaryDesc::complete_extended_token(const unsigned char* start, ssize_t len
 
         // Read the character before/after the connector character:
         int addlen = Fast_UnicodeUtil::UTF8move(start, length, preptr, increment);
-        if (!addlen) return moved; // Not possible to extend anything here
+        if (!addlen)
+            return moved; // Not possible to extend anything here
 
         // Only a single connector character that connects word
         // characters should lead us to include more words in the
         // normal sense:
         if (!wordchar(preptr) && !(increment > 0 && il_ann_anchor_char(preptr)) &&
-            !(increment < 0 && il_ann_terminator_char(preptr))) {
+            !(increment < 0 && il_ann_terminator_char(preptr)))
+        {
             return moved;
         }
 
@@ -518,7 +543,8 @@ int SummaryDesc::complete_extended_token(const unsigned char* start, ssize_t len
         // we have to move forward once here:
         if (increment > 0) {
             addlen = Fast_UnicodeUtil::UTF8move(start, length, preptr, increment);
-            if (!addlen) return moved;
+            if (!addlen)
+                return moved;
             moved += addlen;
         }
         ptr = preptr;
@@ -546,7 +572,8 @@ std::string SummaryDesc::get_summary(const char* buffer, size_t bytes, const Sum
     juniper::Appender a(sumconf);
 
     int reserve_len = static_cast<int>(_est_len * 1.1);
-    if (reserve_len) s.reserve(reserve_len);
+    if (reserve_len)
+        s.reserve(reserve_len);
     print_list::iterator it = _plist.begin();
     print_list::iterator nit = it;
 
@@ -561,7 +588,8 @@ std::string SummaryDesc::get_summary(const char* buffer, size_t bytes, const Sum
      *  build up the result string
      */
     for (; it != _plist.end(); ++it) {
-        if (nit != _plist.end()) ++nit;
+        if (nit != _plist.end())
+            ++nit;
         highlight_desc& d = *it;
         off_t           next_pos = (nit == _plist.end() ? 0x7fffffff : (*nit)._pos);
 
@@ -589,7 +617,8 @@ std::string SummaryDesc::get_summary(const char* buffer, size_t bytes, const Sum
             start_cont = true;
             s.insert(s.end(), sumconf->dots().begin(), sumconf->dots().end());
         }
-        if (d._highlight) s.insert(s.end(), sumconf->highlight_on().begin(), sumconf->highlight_on().end());
+        if (d._highlight)
+            s.insert(s.end(), sumconf->highlight_on().begin(), sumconf->highlight_on().end());
 
         /* Point to current startpoint to check for split
          * word/starting space tokens (only if previous segment is not
@@ -599,12 +628,12 @@ std::string SummaryDesc::get_summary(const char* buffer, size_t bytes, const Sum
         if (!d._highlight && start_cont && prev_end < pos) {
             // Complete beginning word by extending the prefix
             const unsigned char* b = char_p_cast<unsigned char>(buffer);
-            int            moved = complete_extended_token(b, bytes, ptr, -1);
+            int                  moved = complete_extended_token(b, bytes, ptr, -1);
             pos -= moved;
             len += moved;
         } else if (!d._highlight) {
-            LOG(spam, "Not completing word at char %c/0x%x, prev_end %" PRId64 ", pos %" PRId64,
-                printable_char(*ptr), *ptr, static_cast<int64_t>(prev_end), static_cast<int64_t>(pos));
+            LOG(spam, "Not completing word at char %c/0x%x, prev_end %" PRId64 ", pos %" PRId64, printable_char(*ptr),
+                *ptr, static_cast<int64_t>(prev_end), static_cast<int64_t>(pos));
         }
 
         /* Point to "current" endpos to check for split word/ending
@@ -619,7 +648,7 @@ std::string SummaryDesc::get_summary(const char* buffer, size_t bytes, const Sum
             // is taken care of in the next loop..  Complete end of
             // word by appending at the end
             const unsigned char* b = char_p_cast<unsigned char>(buffer);
-            int            moved = complete_extended_token(b, max_len, ptr, +1);
+            int                  moved = complete_extended_token(b, max_len, ptr, +1);
             len += moved;
             if ((pos + len) >= next_pos) {
                 LOG(spam, "Word completion: no space char found - joining at pos %" PRId64,
@@ -641,7 +670,9 @@ std::string SummaryDesc::get_summary(const char* buffer, size_t bytes, const Sum
         len -= add_len;
         pos += add_len;
 
-        if (d._highlight) { s.insert(s.end(), sumconf->highlight_off().begin(), sumconf->highlight_off().end()); }
+        if (d._highlight) {
+            s.insert(s.end(), sumconf->highlight_off().begin(), sumconf->highlight_off().end());
+        }
         prev_end = pos + len;
     }
     if (s.size() > 0 && prev_end < (int)_document_length)
@@ -804,7 +835,8 @@ void SummaryDesc::build_highlight_descs() {
             int max_len = k->startpos() - pos;
             // the same occurrence may appear twice in a match, in
             // which case length will be < 0
-            if (max_len < 0) continue;
+            if (max_len < 0)
+                continue;
 
             if (pos == 0) {
                 // Adding initial segment:
@@ -838,8 +870,7 @@ void SummaryDesc::build_highlight_descs() {
         int max_len = std::min(len_per_elem, static_cast<int>(_matcher->DocumentSize() - pos));
         add_desc(pos, max_len, false);
     }
-    LOG(debug, "Summary: start %" PRId64 " end: %" PRId64, static_cast<int64_t>(startpos),
-        static_cast<int64_t>(pos));
+    LOG(debug, "Summary: start %" PRId64 " end: %" PRId64, static_cast<int64_t>(startpos), static_cast<int64_t>(pos));
 }
 
 /* create description for the complete document */
@@ -861,7 +892,8 @@ void SummaryDesc::build_fulldoc_desc() {
 }
 
 void SummaryDesc::add_desc(off_t pos, ssize_t len, bool highlight) {
-    if (len == 0) return;
+    if (len == 0)
+        return;
     JD_INVAR(JD_DUMP, len > 0, return,
              LOG(info, "add_desc len %ld, %s", static_cast<long>(len), (highlight ? "highlight" : ""));
              assert(false));
