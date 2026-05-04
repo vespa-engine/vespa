@@ -74,9 +74,9 @@ bool FieldSetAttributeDB::areAllFieldsAttributes(uint64_t key, const document::F
     return isAttributeOnly;
 }
 
-DocumentRetriever ::DocumentRetriever(const DocTypeName& docTypeName, const DocumentTypeRepo& repo,
-                                      const Schema& schema, const IDocumentMetaStoreContext& meta_store,
-                                      const IAttributeManager& attr_manager, const IDocumentStore& doc_store)
+DocumentRetriever::DocumentRetriever(const DocTypeName& docTypeName, const DocumentTypeRepo& repo,
+                                     const Schema& schema, const IDocumentMetaStoreContext& meta_store,
+                                     const IAttributeManager& attr_manager, const IDocumentStore& doc_store)
     : DocumentRetrieverBase(docTypeName, repo, meta_store, true),
       _schema(schema),
       _attr_manager(attr_manager),
