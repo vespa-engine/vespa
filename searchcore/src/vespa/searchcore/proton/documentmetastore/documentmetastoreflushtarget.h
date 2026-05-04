@@ -6,8 +6,12 @@
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/vespalib/util/hw_info.h>
 
-namespace search::common { class FileHeaderContext; }
-namespace searchcorespi::common { class ResourceUsage; }
+namespace search::common {
+class FileHeaderContext;
+}
+namespace searchcorespi::common {
+class ResourceUsage;
+}
 
 namespace proton {
 
@@ -19,8 +23,7 @@ class ITlsSyncer;
 /**
  * Implementation of IFlushTarget interface for document meta store.
  **/
-class DocumentMetaStoreFlushTarget : public searchcorespi::LeafFlushTarget
-{
+class DocumentMetaStoreFlushTarget : public searchcorespi::LeafFlushTarget {
 private:
     /**
      * Task performing the actual flushing to disk.
@@ -30,12 +33,12 @@ private:
     using FlushStats = searchcorespi::FlushStats;
 
     DocumentMetaStoreSP                      _dms;
-    ITlsSyncer                              &_tlsSyncer;
-    std::string                         _baseDir;
+    ITlsSyncer&                              _tlsSyncer;
+    std::string                              _baseDir;
     bool                                     _cleanUpAfterFlush;
     FlushStats                               _lastStats;
     const search::TuneFileAttributes         _tuneFileAttributes;
-    const search::common::FileHeaderContext &_fileHeaderContext;
+    const search::common::FileHeaderContext& _fileHeaderContext;
     vespalib::HwInfo                         _hwInfo;
     std::shared_ptr<AttributeDiskLayout>     _diskLayout;
     std::shared_ptr<AttributeDirectory>      _dmsDir;
@@ -47,9 +50,10 @@ public:
      * Creates a new instance using the given attribute vector and the
      * given base dir where all attribute vectors are located.
      **/
-    DocumentMetaStoreFlushTarget(const DocumentMetaStoreSP dms, ITlsSyncer &tlsSyncer,
-                                 const std::string &baseDir, const search::TuneFileAttributes &tuneFileAttributes,
-                                 const search::common::FileHeaderContext &fileHeaderContext, const vespalib::HwInfo &hwInfo);
+    DocumentMetaStoreFlushTarget(const DocumentMetaStoreSP dms, ITlsSyncer& tlsSyncer, const std::string& baseDir,
+                                 const search::TuneFileAttributes&        tuneFileAttributes,
+                                 const search::common::FileHeaderContext& fileHeaderContext,
+                                 const vespalib::HwInfo&                  hwInfo);
 
     ~DocumentMetaStoreFlushTarget() override;
 
@@ -64,10 +68,9 @@ public:
     Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
     FlushStats getLastFlushStats() const override { return _lastStats; }
 
-    static void initCleanup(const std::string &baseDir);
+    static void initCleanup(const std::string& baseDir);
     uint64_t getApproxBytesToWriteToDisk() const override;
     std::chrono::steady_clock::duration last_flush_duration() const noexcept override;
 };
 
 } // namespace proton
-

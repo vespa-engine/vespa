@@ -3,6 +3,7 @@
 #pragma once
 
 #include "i_document_meta_store.h"
+
 #include <vespa/searchcommon/attribute/i_document_meta_store_context.h>
 
 namespace proton {
@@ -20,7 +21,7 @@ struct IDocumentMetaStoreContext : public search::IDocumentMetaStoreContext {
      * Access to write interface.
      * Should only be used by the writer thread.
      */
-    virtual proton::IDocumentMetaStore &get() = 0;
+    virtual proton::IDocumentMetaStore& get() = 0;
     virtual proton::IDocumentMetaStore::SP getSP() const = 0;
 
     /**
@@ -32,4 +33,3 @@ struct IDocumentMetaStoreContext : public search::IDocumentMetaStoreContext {
 };
 
 } // namespace proton
-

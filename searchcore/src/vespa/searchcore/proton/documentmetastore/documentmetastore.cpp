@@ -1,13 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "documentmetastore.h"
+
+#include "document_meta_store_versions.h"
 #include "documentidsaver.h"
 #include "documentmetastoresaver.h"
 #include "operation_listener.h"
 #include "search_context.h"
-#include "document_meta_store_versions.h"
-#include <vespa/fastos/file_interface.h>
+
 #include <vespa/document/base/documentid.h>
+#include <vespa/fastos/file_interface.h>
 #include <vespa/persistence/spi/bucket_limits.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
@@ -22,15 +24,16 @@
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
+#include <vespa/vespalib/datastore/dynamic_array_buffer_type.h>
+#include <vespa/vespalib/util/exceptions.h>
+
 #include <vespa/vespalib/btree/btree.hpp>
 #include <vespa/vespalib/btree/btreebuilder.hpp>
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
 #include <vespa/vespalib/btree/btreenodestore.hpp>
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/datastore/array_store.hpp>
-#include <vespa/vespalib/datastore/dynamic_array_buffer_type.h>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
-#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/rcuvector.hpp>
 
 #include <vespa/log/log.h>
@@ -60,10 +63,10 @@ using vespalib::Generation;
 using vespalib::GenerationGuard;
 using vespalib::GenerationHeldBase;
 using vespalib::IllegalStateException;
+using vespalib::make_string;
 using vespalib::MemoryUsage;
 using vespalib::btree::BTreeNoLeafData;
 using vespalib::datastore::EntryRef;
-using vespalib::make_string;
 
 namespace proton {
 
@@ -74,13 +77,13 @@ std::string VERSION("version");
 
 class Reader {
 private:
-    FileWithHeader _datFile;
-    FileReader<uint32_t> _lidReader;
-    FileReader<GlobalId> _gidReader;
-    FileReader<uint8_t> _bucketUsedBitsReader;
+    FileWithHeader        _datFile;
+    FileReader<uint32_t>  _lidReader;
+    FileReader<GlobalId>  _gidReader;
+    FileReader<uint8_t>   _bucketUsedBitsReader;
     FileReader<Timestamp> _timestampReader;
-    uint32_t _docIdLimit;
-    uint32_t _version;
+    uint32_t              _docIdLimit;
+    uint32_t              _version;
 
 public:
     explicit Reader(std::unique_ptr<FastOS_FileInterface> datFile);
@@ -88,42 +91,30 @@ public:
 
     uint32_t getDocIdLimit() const { return _docIdLimit; }
 
-    uint32_t
-    getNextLid() {
-        return _lidReader.readHostOrder();
-    }
+    uint32_t getNextLid() { return _lidReader.readHostOrder(); }
 
-    GlobalId
-    getNextGid() {
-        return _gidReader.readHostOrder();
-    }
+    GlobalId getNextGid() { return _gidReader.readHostOrder(); }
 
-    uint8_t
-    getNextBucketUsedBits() {
+    uint8_t getNextBucketUsedBits() {
         return std::max(_bucketUsedBitsReader.readHostOrder(), storage::spi::BucketLimits::MinUsedBits);
     }
 
-    Timestamp
-    getNextTimestamp() {
-        return _timestampReader.readHostOrder();
-    }
+    Timestamp getNextTimestamp() { return _timestampReader.readHostOrder(); }
 
     uint32_t getNextDocSize() {
         if (_version == NO_DOCUMENT_SIZE_TRACKING_VERSION) {
             return 1;
         }
-        uint8_t sizeLow;
+        uint8_t  sizeLow;
         uint16_t sizeHigh;
         _datFile.file().ReadBuf(&sizeLow, sizeof(sizeLow));
         _datFile.file().ReadBuf(&sizeHigh, sizeof(sizeHigh));
         return sizeLow + (static_cast<uint32_t>(sizeHigh) << 8);
     }
 
-    size_t
-    getNumElems() const {
+    size_t getNumElems() const {
         return _datFile.data_size() /
-               (sizeof(uint32_t) + sizeof(GlobalId) +
-                sizeof(uint8_t) + sizeof(Timestamp::Type) +
+               (sizeof(uint32_t) + sizeof(GlobalId) + sizeof(uint8_t) + sizeof(Timestamp::Type) +
                 ((_version == NO_DOCUMENT_SIZE_TRACKING_VERSION) ? 0 : 3));
     }
 
@@ -139,8 +130,7 @@ Reader::Reader(std::unique_ptr<FastOS_FileInterface> datFile)
       _gidReader(&_datFile.file()),
       _bucketUsedBitsReader(&_datFile.file()),
       _timestampReader(&_datFile.file()),
-      _docIdLimit(0)
-{
+      _docIdLimit(0) {
     _docIdLimit = _datFile.header().getTag(DOCID_LIMIT).asInteger();
     _version = _datFile.header().getTag(VERSION).asInteger();
 }
@@ -181,43 +171,30 @@ DocIdReader::DocIdReader(std::unique_ptr<FastOS_FileInterface> docid_file)
 }
 DocIdReader::~DocIdReader() = default;
 
-}
+} // namespace documentmetastore
 
 namespace {
-class ShrinkBlockHeld : public GenerationHeldBase
-{
-    DocumentMetaStore &_dms;
+class ShrinkBlockHeld : public GenerationHeldBase {
+    DocumentMetaStore& _dms;
 
 public:
-    explicit ShrinkBlockHeld(DocumentMetaStore &dms)
-        : GenerationHeldBase(0),
-          _dms(dms)
-    { }
+    explicit ShrinkBlockHeld(DocumentMetaStore& dms) : GenerationHeldBase(0), _dms(dms) {}
 
-    ~ShrinkBlockHeld() override {
-        _dms.unblockShrinkLidSpace();
-    }
+    ~ShrinkBlockHeld() override { _dms.unblockShrinkLidSpace(); }
 };
 
-}  // namespace
+} // namespace
 
-
-DocumentMetaStore::DocId
-DocumentMetaStore::getFreeLid()
-{
+DocumentMetaStore::DocId DocumentMetaStore::getFreeLid() {
     return _lidAlloc.getFreeLid(_metadataStore.size());
 }
 
-DocumentMetaStore::DocId
-DocumentMetaStore::peekFreeLid()
-{
+DocumentMetaStore::DocId DocumentMetaStore::peekFreeLid() {
     return _lidAlloc.peekFreeLid(_metadataStore.size());
 }
 
-void
-DocumentMetaStore::ensureSpace(DocId lid)
-{
-    _metadataStore.ensure_size(lid+1, RawDocumentMetadata());
+void DocumentMetaStore::ensureSpace(DocId lid) {
+    _metadataStore.ensure_size(lid + 1, RawDocumentMetadata());
 
     setNumDocs(_metadataStore.size());
     unsigned int newSize = _metadataStore.size();
@@ -225,9 +202,7 @@ DocumentMetaStore::ensureSpace(DocId lid)
     _lidAlloc.ensureSpace(newSize, newCapacity);
 }
 
-void
-DocumentMetaStore::insert(GidToLidMapKey key, const RawDocumentMetadata &metadata)
-{
+void DocumentMetaStore::insert(GidToLidMapKey key, const RawDocumentMetadata& metadata) {
     auto lid = key.get_lid();
     ensureSpace(lid);
     _metadataStore[lid] = metadata;
@@ -238,28 +213,21 @@ DocumentMetaStore::insert(GidToLidMapKey key, const RawDocumentMetadata &metadat
     _lidAlloc.registerLid(lid);
     updateUncommittedDocIdLimit(lid);
     _changesSinceCommit++;
-    const BucketState &state =
-        _bucketDB->takeGuard()->add(metadata.getGid(),
-                      metadata.getBucketId().stripUnused(),
-                      metadata.getTimestamp(),
-                      metadata.getDocSize(),
-                      _subDbType);
+    const BucketState& state =
+        _bucketDB->takeGuard()->add(metadata.getGid(), metadata.getBucketId().stripUnused(), metadata.getTimestamp(),
+                                    metadata.getDocSize(), _subDbType);
     _lidAlloc.updateActiveLids(lid, state.isActive());
     updateCommittedDocIdLimit();
 }
 
-bool
-DocumentMetaStore::consider_compact_gid_to_lid_map()
-{
+bool DocumentMetaStore::consider_compact_gid_to_lid_map() {
     if (_gidToLidMap.getAllocator().getNodeStore().has_held_buffers()) {
         return false;
     }
     return _should_compact_gid_to_lid_map;
 }
 
-void
-DocumentMetaStore::onCommit()
-{
+void DocumentMetaStore::onCommit() {
     if (consider_compact_gid_to_lid_map()) {
         incGeneration();
         _changesSinceCommit = 0;
@@ -274,9 +242,7 @@ DocumentMetaStore::onCommit()
     }
 }
 
-void
-DocumentMetaStore::onUpdateStat(CommitParam::UpdateStats updateStats)
-{
+void DocumentMetaStore::onUpdateStat(CommitParam::UpdateStats updateStats) {
     if (updateStats == CommitParam::UpdateStats::SKIP) {
         return;
     }
@@ -284,7 +250,7 @@ DocumentMetaStore::onUpdateStat(CommitParam::UpdateStats updateStats)
         updateSizes(_metadataStore.size(), _metadataStore.size());
         return;
     }
-    auto &compaction_strategy = getConfig().getCompactionStrategy();
+    auto&                 compaction_strategy = getConfig().getCompactionStrategy();
     vespalib::MemoryUsage usage = _metadataStore.getMemoryUsage();
     usage.merge(_lidAlloc.getMemoryUsage());
     usage.incAllocatedBytesOnHold(getGenerationHolder().get_held_bytes());
@@ -292,17 +258,11 @@ DocumentMetaStore::onUpdateStat(CommitParam::UpdateStats updateStats)
     _should_compact_gid_to_lid_map = compaction_strategy.should_compact_memory(gid_to_lid_map_memory_usage);
     usage.merge(gid_to_lid_map_memory_usage);
     // the free lists are not taken into account here
-    updateStatistics(_metadataStore.size(),
-                     _metadataStore.size(),
-                     usage.allocatedBytes(),
-                     usage.usedBytes(),
-                     usage.deadBytes(),
-                     usage.allocatedBytesOnHold());
+    updateStatistics(_metadataStore.size(), _metadataStore.size(), usage.allocatedBytes(), usage.usedBytes(),
+                     usage.deadBytes(), usage.allocatedBytesOnHold());
 }
 
-void
-DocumentMetaStore::before_inc_generation(Generation current_gen)
-{
+void DocumentMetaStore::before_inc_generation(Generation current_gen) {
     _gidToLidMap.getAllocator().freeze();
     _gidToLidMap.getAllocator().assign_generation(current_gen);
     _docid_store.assign_generation(current_gen);
@@ -310,40 +270,30 @@ DocumentMetaStore::before_inc_generation(Generation current_gen)
     updateStat(CommitParam::UpdateStats::SKIP);
 }
 
-void
-DocumentMetaStore::reclaim_memory(Generation oldest_used_gen)
-{
+void DocumentMetaStore::reclaim_memory(Generation oldest_used_gen) {
     _gidToLidMap.getAllocator().reclaim_memory(oldest_used_gen);
     _docid_store.reclaim_memory(oldest_used_gen);
     _lidAlloc.reclaim_memory(oldest_used_gen);
     getGenerationHolder().reclaim(oldest_used_gen);
 }
 
-std::unique_ptr<search::AttributeSaver>
-DocumentMetaStore::onInitSave(std::string_view fileName)
-{
+std::unique_ptr<search::AttributeSaver> DocumentMetaStore::onInitSave(std::string_view fileName) {
     auto guard(getGuard());
     auto gid_view = _gidToLidMap.getFrozenView();
     auto metadata_view = make_metadata_view();
     auto docid_saver = _store_full_document_id
-                     ? std::make_unique<DocumentIdSaver>(
-                        gid_view.begin(),
-                        metadata_view,
-                        _docid_store)
-                     : std::unique_ptr<DocumentIdSaver>();
-    return std::make_unique<DocumentMetaStoreSaver>
-        (std::move(guard), createAttributeHeader(fileName),
-         gid_view.begin(),
-         metadata_view,
-         std::move(docid_saver));
+                           ? std::make_unique<DocumentIdSaver>(gid_view.begin(), metadata_view, _docid_store)
+                           : std::unique_ptr<DocumentIdSaver>();
+    return std::make_unique<DocumentMetaStoreSaver>(std::move(guard), createAttributeHeader(fileName),
+                                                    gid_view.begin(), metadata_view, std::move(docid_saver));
 }
 
-DocumentMetaStore::DocId
-DocumentMetaStore::readNextDoc(documentmetastore::Reader & reader, documentmetastore::DocIdReader* docid_reader, TreeType::Builder & treeBuilder)
-{
+DocumentMetaStore::DocId DocumentMetaStore::readNextDoc(documentmetastore::Reader&      reader,
+                                                        documentmetastore::DocIdReader* docid_reader,
+                                                        TreeType::Builder&              treeBuilder) {
     uint32_t lid(reader.getNextLid());
     assert(lid < reader.getDocIdLimit());
-    RawDocumentMetadata & meta = _metadataStore[lid];
+    RawDocumentMetadata& meta = _metadataStore[lid];
     meta.setGid(reader.getNextGid());
     meta.setBucketUsedBits(reader.getNextBucketUsedBits());
     meta.setDocSize(reader.getNextDocSize());
@@ -358,9 +308,7 @@ DocumentMetaStore::readNextDoc(documentmetastore::Reader & reader, documentmetas
     return lid;
 }
 
-bool
-DocumentMetaStore::onLoad(vespalib::Executor *)
-{
+bool DocumentMetaStore::onLoad(vespalib::Executor*) {
     std::unique_ptr<documentmetastore::DocIdReader> docid_reader;
     if (_store_full_document_id && LoadUtils::file_exists(*this, DocumentMetaStoreSaver::docid_file_suffix())) {
         auto file = LoadUtils::openFile(*this, DocumentMetaStoreSaver::docid_file_suffix());
@@ -377,10 +325,10 @@ DocumentMetaStore::onLoad(vespalib::Executor *)
 
     // insert gids (already sorted)
     if (numElems > 0) {
-        DocId lid = readNextDoc(reader, docid_reader.get(), treeBuilder);
-        const RawDocumentMetadata * meta = &_metadataStore[lid];
-        BucketId prevId(meta->getBucketId());
-        BucketState state;
+        DocId                      lid = readNextDoc(reader, docid_reader.get(), treeBuilder);
+        const RawDocumentMetadata* meta = &_metadataStore[lid];
+        BucketId                   prevId(meta->getBucketId());
+        BucketState                state;
         state.add(meta->getGid(), meta->getTimestamp(), meta->getDocSize(), _subDbType);
         for (size_t i = 1; i < numElems; ++i) {
             lid = readNextDoc(reader, docid_reader.get(), treeBuilder);
@@ -409,51 +357,36 @@ DocumentMetaStore::onLoad(vespalib::Executor *)
 }
 
 template <typename TreeView>
-typename TreeView::Iterator
-DocumentMetaStore::lowerBound(const BucketId &bucketId,
-                              const TreeView &treeView) const
-{
+typename TreeView::Iterator DocumentMetaStore::lowerBound(const BucketId& bucketId, const TreeView& treeView) const {
     document::GlobalId first(document::GlobalId::calculateFirstInBucket(bucketId));
-    KeyComp lowerComp(first, acquire_unbound_metadata_view());
-    auto find_key = GidToLidMapKey::make_find_key(first);
+    KeyComp            lowerComp(first, acquire_unbound_metadata_view());
+    auto               find_key = GidToLidMapKey::make_find_key(first);
     return treeView.lowerBound(find_key, lowerComp);
 }
 
 template <typename TreeView>
-typename TreeView::Iterator
-DocumentMetaStore::upperBound(const BucketId &bucketId,
-                              const TreeView &treeView) const
-{
+typename TreeView::Iterator DocumentMetaStore::upperBound(const BucketId& bucketId, const TreeView& treeView) const {
     document::GlobalId last(document::GlobalId::calculateLastInBucket(bucketId));
-    KeyComp upperComp(last, acquire_unbound_metadata_view());
-    auto find_key = GidToLidMapKey::make_find_key(last);
+    KeyComp            upperComp(last, acquire_unbound_metadata_view());
+    auto               find_key = GidToLidMapKey::make_find_key(last);
     return treeView.upperBound(find_key, upperComp);
 }
 
-void
-DocumentMetaStore::updateMetadataAndBucketDB(const GlobalId &gid,
-                                             DocId lid,
-                                             const RawDocumentMetadata &newMetadata)
-{
-    RawDocumentMetadata &oldMetadata = _metadataStore[lid];
-    _bucketDB->takeGuard()->modify(gid,
-                     oldMetadata.getBucketId().stripUnused(),
-                     oldMetadata.getTimestamp(), oldMetadata.getDocSize(),
-                     newMetadata.getBucketId().stripUnused(),
-                     newMetadata.getTimestamp(), newMetadata.getDocSize(),
-                     _subDbType);
+void DocumentMetaStore::updateMetadataAndBucketDB(const GlobalId& gid, DocId lid,
+                                                  const RawDocumentMetadata& newMetadata) {
+    RawDocumentMetadata& oldMetadata = _metadataStore[lid];
+    _bucketDB->takeGuard()->modify(gid, oldMetadata.getBucketId().stripUnused(), oldMetadata.getTimestamp(),
+                                   oldMetadata.getDocSize(), newMetadata.getBucketId().stripUnused(),
+                                   newMetadata.getTimestamp(), newMetadata.getDocSize(), _subDbType);
     oldMetadata.setBucketId(newMetadata.getBucketId());
     oldMetadata.setDocSize(newMetadata.getDocSize());
     std::atomic_thread_fence(std::memory_order_release);
     oldMetadata.setTimestamp(newMetadata.getTimestamp());
 }
 
-
 namespace {
 
-void
-unloadBucket(bucketdb::BucketDBOwner &db, const BucketId &id, const BucketState &delta)
-{
+void unloadBucket(bucketdb::BucketDBOwner& db, const BucketId& id, const BucketState& delta) {
     if (!id.valid()) {
         assert(delta.empty());
         return;
@@ -462,20 +395,19 @@ unloadBucket(bucketdb::BucketDBOwner &db, const BucketId &id, const BucketState 
     db.takeGuard()->unloadBucket(id, delta);
 }
 
-}
+} // namespace
 
-void
-DocumentMetaStore::unload()
-{
+void DocumentMetaStore::unload() {
     TreeType::Iterator itr = _gidToLidMap.begin();
-    if ( ! itr.valid() ) return;
-    BucketId prev;
+    if (!itr.valid())
+        return;
+    BucketId    prev;
     BucketState prevDelta;
     for (; itr.valid(); ++itr) {
         uint32_t lid = itr.getKey().get_lid();
         assert(validLid(lid));
-        RawDocumentMetadata &metadata = _metadataStore[lid];
-        BucketId bucketId = metadata.getBucketId();
+        RawDocumentMetadata& metadata = _metadataStore[lid];
+        BucketId             bucketId = metadata.getBucketId();
         if (prev != bucketId) {
             unloadBucket(*_bucketDB, prev, prevDelta);
             prevDelta = BucketState();
@@ -487,34 +419,28 @@ DocumentMetaStore::unload()
 }
 
 DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB)
-    : DocumentMetaStore(std::move(bucketDB), getFixedName())
-{}
+    : DocumentMetaStore(std::move(bucketDB), getFixedName()) {
+}
 
-DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB, const std::string &name)
-    : DocumentMetaStore(std::move(bucketDB), name, search::GrowStrategy())
-{}
+DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB, const std::string& name)
+    : DocumentMetaStore(std::move(bucketDB), name, search::GrowStrategy()) {
+}
 
-DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB,
-                                     const std::string &name,
-                                     const GrowStrategy &grow)
-     : DocumentMetaStore(std::move(bucketDB), name, grow, false, SubDbType::READY)
-{}
+DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB, const std::string& name, const GrowStrategy& grow)
+    : DocumentMetaStore(std::move(bucketDB), name, grow, false, SubDbType::READY) {
+}
 
-DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB,
-                                     const std::string &name,
-                                     const GrowStrategy &grow,
+DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB, const std::string& name, const GrowStrategy& grow,
                                      SubDbType subDbType)
-     : DocumentMetaStore(std::move(bucketDB), name, grow, false, subDbType)
-{}
+    : DocumentMetaStore(std::move(bucketDB), name, grow, false, subDbType) {
+}
 
-DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB,
-                                     const std::string &name,
-                                     const GrowStrategy &grow,
-                                     bool store_full_document_id,
-                                     SubDbType subDbType)
+DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB, const std::string& name, const GrowStrategy& grow,
+                                     bool store_full_document_id, SubDbType subDbType)
     : DocumentMetaStoreAttribute(name),
       _metadataStore(grow, getGenerationHolder()),
-      _docid_store(make_default_docid_array_store_config(), get_memory_allocator(), TypeMapper(array_store_max_type_id, array_store_grow_factor, array_store_max_buffer_size)),
+      _docid_store(make_default_docid_array_store_config(), get_memory_allocator(),
+                   TypeMapper(array_store_max_type_id, array_store_grow_factor, array_store_max_buffer_size)),
       _gidToLidMap(),
       _gid_to_lid_map_write_itr(EntryRef(), _gidToLidMap.getAllocator()),
       _gid_to_lid_map_write_itr_prepare_serial_num(0u),
@@ -526,18 +452,16 @@ DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB,
       _changesSinceCommit(0),
       _op_listener(),
       _should_compact_gid_to_lid_map(false),
-      _store_full_document_id(store_full_document_id)
-{
-    ensureSpace(0);         // lid 0 is reserved
-    setCommittedDocIdLimit(1u);         // lid 0 is reserved
+      _store_full_document_id(store_full_document_id) {
+    ensureSpace(0);                       // lid 0 is reserved
+    setCommittedDocIdLimit(1u);           // lid 0 is reserved
     _gidToLidMap.getAllocator().freeze(); // create initial frozen tree
     auto generation = getGenerationHandler().getCurrentGeneration();
     _gidToLidMap.getAllocator().assign_generation(generation);
     updateStat(CommitParam::UpdateStats::FORCE);
 }
 
-DocumentMetaStore::~DocumentMetaStore()
-{
+DocumentMetaStore::~DocumentMetaStore() {
     // TODO: Properly notify about modified buckets when using shared bucket db
     // between document types
     unload();
@@ -545,13 +469,11 @@ DocumentMetaStore::~DocumentMetaStore()
     assert(get_shrink_lid_space_blockers() == 0);
 }
 
-DocumentMetaStore::Result
-DocumentMetaStore::inspectExisting(const GlobalId &gid, uint64_t prepare_serial_num)
-{
-    Result res;
+DocumentMetaStore::Result DocumentMetaStore::inspectExisting(const GlobalId& gid, uint64_t prepare_serial_num) {
+    Result  res;
     KeyComp comp(gid, get_unbound_metadata_view());
-    auto find_key = GidToLidMapKey::make_find_key(gid);
-    auto& itr = _gid_to_lid_map_write_itr;
+    auto    find_key = GidToLidMapKey::make_find_key(gid);
+    auto&   itr = _gid_to_lid_map_write_itr;
     itr.lower_bound(_gidToLidMap.getRoot(), find_key, comp);
     _gid_to_lid_map_write_itr_prepare_serial_num = prepare_serial_num;
     bool found = itr.valid() && !comp(find_key, itr.getKey());
@@ -563,14 +485,12 @@ DocumentMetaStore::inspectExisting(const GlobalId &gid, uint64_t prepare_serial_
     return res;
 }
 
-DocumentMetaStore::Result
-DocumentMetaStore::inspect(const GlobalId &gid, uint64_t prepare_serial_num)
-{
+DocumentMetaStore::Result DocumentMetaStore::inspect(const GlobalId& gid, uint64_t prepare_serial_num) {
     assert(_lidAlloc.isFreeListConstructed());
-    Result res;
+    Result  res;
     KeyComp comp(gid, get_unbound_metadata_view());
-    auto find_key = GidToLidMapKey::make_find_key(gid);
-    auto& itr = _gid_to_lid_map_write_itr;
+    auto    find_key = GidToLidMapKey::make_find_key(gid);
+    auto&   itr = _gid_to_lid_map_write_itr;
     itr.lower_bound(_gidToLidMap.getRoot(), find_key, comp);
     _gid_to_lid_map_write_itr_prepare_serial_num = prepare_serial_num;
     bool found = itr.valid() && !comp(find_key, itr.getKey());
@@ -586,38 +506,34 @@ DocumentMetaStore::inspect(const GlobalId &gid, uint64_t prepare_serial_num)
     return res;
 }
 
-DocumentMetaStore::Result
-DocumentMetaStore::put(const DocumentId& docid, const BucketId &bucketId, Timestamp timestamp,
-                       uint32_t docSize, DocId lid, uint64_t prepare_serial_num)
-{
-    Result res;
-    auto& gid = docid.getGlobalId();
+DocumentMetaStore::Result DocumentMetaStore::put(const DocumentId& docid, const BucketId& bucketId,
+                                                 Timestamp timestamp, uint32_t docSize, DocId lid,
+                                                 uint64_t prepare_serial_num) {
+    Result              res;
+    auto&               gid = docid.getGlobalId();
     RawDocumentMetadata metadata(gid, bucketId, storage::spi::Timestamp(timestamp), docSize);
-    KeyComp comp(metadata, get_unbound_metadata_view());
-    auto find_key = GidToLidMapKey::make_find_key(gid);
-    auto& itr = _gid_to_lid_map_write_itr;
+    KeyComp             comp(metadata, get_unbound_metadata_view());
+    auto                find_key = GidToLidMapKey::make_find_key(gid);
+    auto&               itr = _gid_to_lid_map_write_itr;
     if (prepare_serial_num == 0u || _gid_to_lid_map_write_itr_prepare_serial_num != prepare_serial_num) {
         itr.lower_bound(_gidToLidMap.getRoot(), find_key, comp);
     }
     bool found = itr.valid() && !comp(find_key, itr.getKey());
     if (!found) {
         if (validLid(lid)) {
-            throw IllegalStateException(
-                    make_string(
-                            "document metadata store"
-                            " or transaction log is corrupt,"
-                            " cannot put"
-                            " document with lid '%u' and gid '%s',"
-                            " gid not found, but lid is used"
-                            " by another gid '%s'",
-                            lid,
-                            gid.toString().c_str(),
-                            _metadataStore[lid].getGid().toString().c_str()));
+            throw IllegalStateException(make_string("document metadata store"
+                                                    " or transaction log is corrupt,"
+                                                    " cannot put"
+                                                    " document with lid '%u' and gid '%s',"
+                                                    " gid not found, but lid is used"
+                                                    " by another gid '%s'",
+                                                    lid, gid.toString().c_str(),
+                                                    _metadataStore[lid].getGid().toString().c_str()));
         }
         if (_lidAlloc.isFreeListConstructed()) {
             DocId freeLid = getFreeLid();
             assert(freeLid == lid);
-            (void) freeLid;
+            (void)freeLid;
         }
         if (_store_full_document_id) {
             const auto ref = _docid_store.add(docid.getScheme().toString());
@@ -627,16 +543,12 @@ DocumentMetaStore::put(const DocumentId& docid, const BucketId &bucketId, Timest
         res.setLid(lid);
         res.markSuccess();
     } else if (lid != itr.getKey().get_lid()) {
-        throw IllegalStateException(
-                make_string(
-                        "document metadata store"
-                        " or transaction log is corrupt,"
-                        " cannot put"
-                        " document with lid '%u' and gid '%s',"
-                        " gid found, but using another lid '%u'",
-                        lid,
-                        gid.toString().c_str(),
-                        itr.getKey().get_lid()));
+        throw IllegalStateException(make_string("document metadata store"
+                                                " or transaction log is corrupt,"
+                                                " cannot put"
+                                                " document with lid '%u' and gid '%s',"
+                                                " gid found, but using another lid '%u'",
+                                                lid, gid.toString().c_str(), itr.getKey().get_lid()));
     } else {
         res.setLid(lid);
         res.fillPrev(_metadataStore[lid].getTimestamp());
@@ -646,52 +558,40 @@ DocumentMetaStore::put(const DocumentId& docid, const BucketId &bucketId, Timest
     return res;
 }
 
-bool
-DocumentMetaStore::updateMetadata(DocId lid, const BucketId &bucketId, Timestamp timestamp)
-{
+bool DocumentMetaStore::updateMetadata(DocId lid, const BucketId& bucketId, Timestamp timestamp) {
     if (!validLid(lid)) {
         return false;
     }
-    RawDocumentMetadata &metadata = _metadataStore[lid];
-    _bucketDB->takeGuard()->modify(metadata.getGid(),
-                     metadata.getBucketId().stripUnused(),
-                     metadata.getTimestamp(),
-                     metadata.getDocSize(),
-                     bucketId.stripUnused(),
-                     storage::spi::Timestamp(timestamp),
-                     metadata.getDocSize(),
-                     _subDbType);
+    RawDocumentMetadata& metadata = _metadataStore[lid];
+    _bucketDB->takeGuard()->modify(metadata.getGid(), metadata.getBucketId().stripUnused(), metadata.getTimestamp(),
+                                   metadata.getDocSize(), bucketId.stripUnused(), storage::spi::Timestamp(timestamp),
+                                   metadata.getDocSize(), _subDbType);
     metadata.setBucketId(bucketId);
     std::atomic_thread_fence(std::memory_order_release);
     metadata.setTimestamp(storage::spi::Timestamp(timestamp));
     return true;
 }
 
-RawDocumentMetadata
-DocumentMetaStore::removeInternal(DocId lid, uint64_t prepare_serial_num)
-{
-    const GlobalId & gid = getRawGid(lid);
-    KeyComp comp(gid, get_unbound_metadata_view());
-    GidToLidMapKey find_key(lid, gid);
-    auto& itr = _gid_to_lid_map_write_itr;
+RawDocumentMetadata DocumentMetaStore::removeInternal(DocId lid, uint64_t prepare_serial_num) {
+    const GlobalId& gid = getRawGid(lid);
+    KeyComp         comp(gid, get_unbound_metadata_view());
+    GidToLidMapKey  find_key(lid, gid);
+    auto&           itr = _gid_to_lid_map_write_itr;
     if (prepare_serial_num == 0u || _gid_to_lid_map_write_itr_prepare_serial_num != prepare_serial_num) {
         itr.lower_bound(_gidToLidMap.getRoot(), find_key, comp);
     }
     if (!itr.valid() || comp(find_key, itr.getKey())) {
-        throw IllegalStateException(make_string(
-                        "document metadata store corrupted,"
-                        " cannot remove"
-                        " document with lid '%u' and gid '%s'",
-                        lid, gid.toString().c_str()));
+        throw IllegalStateException(make_string("document metadata store corrupted,"
+                                                " cannot remove"
+                                                " document with lid '%u' and gid '%s'",
+                                                lid, gid.toString().c_str()));
     }
     _gidToLidMap.remove(itr);
     _lidAlloc.unregisterLid(lid);
     return _metadataStore[lid];
 }
 
-bool
-DocumentMetaStore::remove(DocId lid, uint64_t prepare_serial_num)
-{
+bool DocumentMetaStore::remove(DocId lid, uint64_t prepare_serial_num) {
     if (!validLid(lid)) {
         return false;
     }
@@ -700,8 +600,8 @@ DocumentMetaStore::remove(DocId lid, uint64_t prepare_serial_num)
         _docid_store.remove(meta.get_relaxed_docid_ref());
         _metadataStore[lid].set_docid_ref(EntryRef());
     }
-    _bucketDB->takeGuard()->remove(meta.getGid(), meta.getBucketId().stripUnused(),
-                                   meta.getTimestamp(), meta.getDocSize(), _subDbType);
+    _bucketDB->takeGuard()->remove(meta.getGid(), meta.getBucketId().stripUnused(), meta.getTimestamp(),
+                                   meta.getDocSize(), _subDbType);
     _changesSinceCommit++;
     if (_op_listener) {
         _op_listener->notify_remove();
@@ -709,16 +609,12 @@ DocumentMetaStore::remove(DocId lid, uint64_t prepare_serial_num)
     return true;
 }
 
-void
-DocumentMetaStore::removes_complete(const std::vector<DocId>& lids)
-{
+void DocumentMetaStore::removes_complete(const std::vector<DocId>& lids) {
     _lidAlloc.holdLids(lids, _metadataStore.size(), getCurrentGeneration());
     incGeneration();
 }
 
-void
-DocumentMetaStore::move(DocId fromLid, DocId toLid, uint64_t prepare_serial_num)
-{
+void DocumentMetaStore::move(DocId fromLid, DocId toLid, uint64_t prepare_serial_num) {
     assert(fromLid != 0);
     assert(toLid != 0);
     assert(fromLid > toLid);
@@ -730,10 +626,10 @@ DocumentMetaStore::move(DocId fromLid, DocId toLid, uint64_t prepare_serial_num)
     if (_store_full_document_id) {
         _metadataStore[fromLid].set_docid_ref(EntryRef());
     }
-    const GlobalId & gid = getRawGid(fromLid);
-    KeyComp comp(gid, get_unbound_metadata_view());
-    GidToLidMapKey find_key(fromLid, gid);
-    auto& itr = _gid_to_lid_map_write_itr;
+    const GlobalId& gid = getRawGid(fromLid);
+    KeyComp         comp(gid, get_unbound_metadata_view());
+    GidToLidMapKey  find_key(fromLid, gid);
+    auto&           itr = _gid_to_lid_map_write_itr;
     if (prepare_serial_num == 0u || _gid_to_lid_map_write_itr_prepare_serial_num != prepare_serial_num) {
         itr.lower_bound(_gidToLidMap.getRoot(), find_key, comp);
     }
@@ -745,44 +641,40 @@ DocumentMetaStore::move(DocId fromLid, DocId toLid, uint64_t prepare_serial_num)
     _changesSinceCommit++;
 }
 
-void
-DocumentMetaStore::remove_batch_internal_btree(std::vector<LidAndRawDocumentMetadata>& removed)
-{
+void DocumentMetaStore::remove_batch_internal_btree(std::vector<LidAndRawDocumentMetadata>& removed) {
     // Sort removed array to same order as entries in gid to lid map b-tree
     GlobalId::BucketOrderCmp cmp;
-    std::sort(removed.begin(), removed.end(), [cmp](auto& lhs, auto& rhs) { return cmp(lhs.second.getGid(), rhs.second.getGid()); });
+    std::sort(removed.begin(), removed.end(),
+              [cmp](auto& lhs, auto& rhs) { return cmp(lhs.second.getGid(), rhs.second.getGid()); });
 
     _gid_to_lid_map_write_itr_prepare_serial_num = 0u;
     auto& itr = _gid_to_lid_map_write_itr;
     itr.begin(_gidToLidMap.getRoot());
     for (const auto& lid_and_meta : removed) {
-        auto lid = lid_and_meta.first;
-        auto& meta = lid_and_meta.second;
+        auto            lid = lid_and_meta.first;
+        auto&           meta = lid_and_meta.second;
         const GlobalId& gid = meta.getGid();
-        KeyComp comp(gid, get_unbound_metadata_view());
-        GidToLidMapKey find_key(lid, gid);
+        KeyComp         comp(gid, get_unbound_metadata_view());
+        GidToLidMapKey  find_key(lid, gid);
         if (itr.valid() && comp(itr.getKey(), find_key)) {
             itr.binarySeek(find_key, comp);
         }
         if (!itr.valid() || comp(find_key, itr.getKey())) {
-            throw IllegalStateException(make_string(
-                            "document metadata store corrupted,"
-                            " cannot remove"
-                            " document with lid '%u' and gid '%s'",
-                            lid, gid.toString().c_str()));
+            throw IllegalStateException(make_string("document metadata store corrupted,"
+                                                    " cannot remove"
+                                                    " document with lid '%u' and gid '%s'",
+                                                    lid, gid.toString().c_str()));
         }
         _gidToLidMap.remove(itr);
     }
 }
 
-void
-DocumentMetaStore::removeBatch(const std::vector<DocId> &lidsToRemove, const uint32_t docIdLimit)
-{
+void DocumentMetaStore::removeBatch(const std::vector<DocId>& lidsToRemove, const uint32_t docIdLimit) {
     std::vector<LidAndRawDocumentMetadata> removed;
     removed.reserve(lidsToRemove.size());
-    for (const auto &lid : lidsToRemove) {
+    for (const auto& lid : lidsToRemove) {
         assert(lid > 0 && lid < docIdLimit);
-        (void) docIdLimit;
+        (void)docIdLimit;
 
         assert(validLid(lid));
         removed.emplace_back(lid, _metadataStore[lid]);
@@ -798,8 +690,8 @@ DocumentMetaStore::removeBatch(const std::vector<DocId> &lidsToRemove, const uin
         bdb_removed.reserve(removed.size());
         for (const auto& lid_and_meta : removed) {
             auto& meta = lid_and_meta.second;
-            bdb_removed.emplace_back(meta.getGid(), meta.getBucketId().stripUnused(),
-                                     meta.getTimestamp(), meta.getDocSize());
+            bdb_removed.emplace_back(meta.getGid(), meta.getBucketId().stripUnused(), meta.getTimestamp(),
+                                     meta.getDocSize());
         }
         bucketdb::Guard bucketGuard = _bucketDB->takeGuard();
         bucketGuard->remove_batch(bdb_removed, _subDbType);
@@ -810,9 +702,7 @@ DocumentMetaStore::removeBatch(const std::vector<DocId> &lidsToRemove, const uin
     }
 }
 
-bool
-DocumentMetaStore::getGid(DocId lid, GlobalId &gid) const
-{
+bool DocumentMetaStore::getGid(DocId lid, GlobalId& gid) const {
     if (!validLid(lid)) {
         return false;
     }
@@ -820,15 +710,13 @@ DocumentMetaStore::getGid(DocId lid, GlobalId &gid) const
     return true;
 }
 
-bool
-DocumentMetaStore::getGidEvenIfMoved(DocId lid, GlobalId &gid) const
-{
+bool DocumentMetaStore::getGidEvenIfMoved(DocId lid, GlobalId& gid) const {
     static GlobalId empty = GlobalId();
     if (!validButMaybeUnusedLid(lid)) {
         return false;
     }
     gid = getRawGid(lid);
-    if ( ! validLid(lid) ) {
+    if (!validLid(lid)) {
         uint32_t newLid(0);
         if (!getLid(gid, newLid)) {
             return false;
@@ -840,12 +728,10 @@ DocumentMetaStore::getGidEvenIfMoved(DocId lid, GlobalId &gid) const
     return true;
 }
 
-bool
-DocumentMetaStore::getLid(const GlobalId &gid, DocId &lid) const
-{
-    GlobalId value(gid);
-    KeyComp comp(value, acquire_unbound_metadata_view());
-    auto find_key = GidToLidMapKey::make_find_key(gid);
+bool DocumentMetaStore::getLid(const GlobalId& gid, DocId& lid) const {
+    GlobalId                value(gid);
+    KeyComp                 comp(value, acquire_unbound_metadata_view());
+    auto                    find_key = GidToLidMapKey::make_find_key(gid);
     TreeType::ConstIterator itr = _gidToLidMap.getFrozenView().find(find_key, comp);
     if (!itr.valid()) {
         return false;
@@ -854,44 +740,40 @@ DocumentMetaStore::getLid(const GlobalId &gid, DocId &lid) const
     return true;
 }
 
-void
-DocumentMetaStore::constructFreeList()
-{
+void DocumentMetaStore::constructFreeList() {
     _lidAlloc.constructFreeList(_metadataStore.size());
     incGeneration();
     _lidAlloc.setFreeListConstructed();
 }
 
-bool DocumentMetaStore::can_populate_document_metadata_docid() const noexcept { return _store_full_document_id; }
+bool DocumentMetaStore::can_populate_document_metadata_docid() const noexcept {
+    return _store_full_document_id;
+}
 
-search::DocumentMetadata
-DocumentMetaStore::getMetadata(const GlobalId &gid) const
-{
+search::DocumentMetadata DocumentMetaStore::getMetadata(const GlobalId& gid) const {
     DocId lid = 0;
     if (!getLid(gid, lid) || !validLid(lid)) {
         return {};
     }
-    const RawDocumentMetadata &raw = getRawMetadata(lid);
-    Timestamp timestamp(raw.getTimestamp());
+    const RawDocumentMetadata& raw = getRawMetadata(lid);
+    Timestamp                  timestamp(raw.getTimestamp());
     std::atomic_thread_fence(std::memory_order_acquire);
     return {lid, timestamp, raw.getBucketId(), raw.getGid(), _subDbType == SubDbType::REMOVED, {}};
 }
 
-void
-DocumentMetaStore::getMetadata(const BucketId &bucketId,
-                               search::DocumentMetadata::Vector &result, bool populate_docid) const
-{
-    TreeType::FrozenView frozenTreeView = _gidToLidMap.getFrozenView();
+void DocumentMetaStore::getMetadata(const BucketId& bucketId, search::DocumentMetadata::Vector& result,
+                                    bool populate_docid) const {
+    TreeType::FrozenView    frozenTreeView = _gidToLidMap.getFrozenView();
     TreeType::ConstIterator itr = lowerBound(bucketId, frozenTreeView);
     TreeType::ConstIterator end = upperBound(bucketId, frozenTreeView);
     for (; itr != end; ++itr) {
         DocId lid = itr.getKey().get_lid();
         if (validLid(lid)) {
-            const RawDocumentMetadata &rawData = getRawMetadata(lid);
+            const RawDocumentMetadata& rawData = getRawMetadata(lid);
             if (bucketId.getUsedBits() != rawData.getBucketUsedBits())
                 continue; // Wrong bucket (due to overlapping buckets)
-            Timestamp timestamp(rawData.getTimestamp());
-            auto docid_ref = rawData.acquire_docid_ref();
+            Timestamp        timestamp(rawData.getTimestamp());
+            auto             docid_ref = rawData.acquire_docid_ref();
             std::string_view docid;
             if (populate_docid) {
                 if (!docid_ref.valid()) {
@@ -900,20 +782,19 @@ DocumentMetaStore::getMetadata(const BucketId &bucketId,
                 auto span = _docid_store.get(docid_ref);
                 docid = std::string_view{span.data(), span.size()};
             }
-            result.emplace_back(lid, timestamp, rawData.getBucketId(), rawData.getGid(), _subDbType == SubDbType::REMOVED, docid);
+            result.emplace_back(lid, timestamp, rawData.getBucketId(), rawData.getGid(),
+                                _subDbType == SubDbType::REMOVED, docid);
         }
     }
 }
 
-std::string_view
-DocumentMetaStore::get_docid_string(const GlobalId &gid) const
-{
+std::string_view DocumentMetaStore::get_docid_string(const GlobalId& gid) const {
     DocId lid = 0;
     if (!getLid(gid, lid) || !validLid(lid)) {
         return {};
     }
-    const RawDocumentMetadata &raw = getRawMetadata(lid);
-    auto span = _docid_store.get(raw.acquire_docid_ref());
+    const RawDocumentMetadata& raw = getRawMetadata(lid);
+    auto                       span = _docid_store.get(raw.acquire_docid_ref());
     return {span.data(), span.size()};
 }
 
@@ -922,97 +803,76 @@ std::string_view DocumentMetaStore::get_document_id_string_view(uint32_t lid) co
         return {};
     }
     auto& raw = getRawMetadata(lid);
-    auto span = _docid_store.get(raw.acquire_docid_ref());
+    auto  span = _docid_store.get(raw.acquire_docid_ref());
     return {span.data(), span.size()};
 }
 
-LidUsageStats
-DocumentMetaStore::getLidUsageStats() const
-{
+LidUsageStats DocumentMetaStore::getLidUsageStats() const {
     return {getCommittedDocIdLimit(), getNumUsedLids(), _lidAlloc.getLowestFreeLid(), _lidAlloc.getHighestUsedLid()};
 }
 
-std::unique_ptr<Blueprint>
-DocumentMetaStore::createWhiteListBlueprint() const
-{
+std::unique_ptr<Blueprint> DocumentMetaStore::createWhiteListBlueprint() const {
     return _lidAlloc.createWhiteListBlueprint();
 }
 
-std::unique_ptr<SearchContext>
-DocumentMetaStore::getSearch(std::unique_ptr<search::QueryTermSimple> qTerm, const SearchContextParams &) const
-{
+std::unique_ptr<SearchContext> DocumentMetaStore::getSearch(std::unique_ptr<search::QueryTermSimple> qTerm,
+                                                            const SearchContextParams&) const {
     return std::make_unique<documentmetastore::SearchContext>(std::move(qTerm), *this);
 }
 
-DocumentMetaStore::ConstIterator
-DocumentMetaStore::beginFrozen() const
-{
+DocumentMetaStore::ConstIterator DocumentMetaStore::beginFrozen() const {
     return _gidToLidMap.getFrozenView().begin();
 }
 
-DocumentMetaStore::Iterator
-DocumentMetaStore::begin() const
-{
+DocumentMetaStore::Iterator DocumentMetaStore::begin() const {
     // Called by writer thread
     return _gidToLidMap.begin();
 }
 
-DocumentMetaStore::Iterator
-DocumentMetaStore::lowerBound(const BucketId &bucketId) const
-{
+DocumentMetaStore::Iterator DocumentMetaStore::lowerBound(const BucketId& bucketId) const {
     // Called by writer thread
     return lowerBound(bucketId, _gidToLidMap);
 }
 
-DocumentMetaStore::Iterator
-DocumentMetaStore::upperBound(const BucketId &bucketId) const
-{
+DocumentMetaStore::Iterator DocumentMetaStore::upperBound(const BucketId& bucketId) const {
     // Called by writer thread
     return upperBound(bucketId, _gidToLidMap);
 }
 
-DocumentMetaStore::Iterator
-DocumentMetaStore::lowerBound(const GlobalId &gid) const
-{
+DocumentMetaStore::Iterator DocumentMetaStore::lowerBound(const GlobalId& gid) const {
     // Called by writer thread
     KeyComp comp(gid, get_unbound_metadata_view());
-    auto find_key = GidToLidMapKey::make_find_key(gid);
+    auto    find_key = GidToLidMapKey::make_find_key(gid);
     return _gidToLidMap.lowerBound(find_key, comp);
 }
 
-DocumentMetaStore::Iterator
-DocumentMetaStore::upperBound(const GlobalId &gid) const
-{
+DocumentMetaStore::Iterator DocumentMetaStore::upperBound(const GlobalId& gid) const {
     // Called by writer thread
     KeyComp comp(gid, get_unbound_metadata_view());
-    auto find_key = GidToLidMapKey::make_find_key(gid);
+    auto    find_key = GidToLidMapKey::make_find_key(gid);
     return _gidToLidMap.upperBound(find_key, comp);
 }
 
-void
-DocumentMetaStore::getLids(const BucketId &bucketId, std::vector<DocId> &lids)
-{
+void DocumentMetaStore::getLids(const BucketId& bucketId, std::vector<DocId>& lids) {
     // Called by writer thread
     TreeType::Iterator itr = lowerBound(bucketId);
     TreeType::Iterator end = upperBound(bucketId);
     for (; itr != end; ++itr) {
         DocId lid = itr.getKey().get_lid();
         assert(validLid(lid));
-        const RawDocumentMetadata &metadata = getRawMetadata(lid);
-        uint8_t bucketUsedBits = metadata.getBucketUsedBits();
+        const RawDocumentMetadata& metadata = getRawMetadata(lid);
+        uint8_t                    bucketUsedBits = metadata.getBucketUsedBits();
         assert(BucketId::validUsedBits(bucketUsedBits));
         if (bucketUsedBits != bucketId.getUsedBits())
-            continue;   // Skip document belonging to overlapping bucket
+            continue; // Skip document belonging to overlapping bucket
         lids.push_back(lid);
     }
 }
 
-bucketdb::BucketDeltaPair
-DocumentMetaStore::handleSplit(const bucketdb::SplitBucketSession &session)
-{
-    const BucketId &source(session.getSource());
-    const BucketId &target1(session.getTarget1());
-    const BucketId &target2(session.getTarget2());
+bucketdb::BucketDeltaPair DocumentMetaStore::handleSplit(const bucketdb::SplitBucketSession& session) {
+    const BucketId& source(session.getSource());
+    const BucketId& target1(session.getTarget1());
+    const BucketId& target2(session.getTarget2());
 
     if (_subDbType == SubDbType::READY) {
         if (session.mustFixupTarget1ActiveLids()) {
@@ -1023,14 +883,14 @@ DocumentMetaStore::handleSplit(const bucketdb::SplitBucketSession &session)
         }
     }
 
-    TreeType::Iterator itr = lowerBound(source);
-    TreeType::Iterator end = upperBound(source);
+    TreeType::Iterator        itr = lowerBound(source);
+    TreeType::Iterator        end = upperBound(source);
     bucketdb::BucketDeltaPair deltas;
     for (; itr != end; ++itr) {
         DocId lid = itr.getKey().get_lid();
         assert(validLid(lid));
-        RawDocumentMetadata &metadata = _metadataStore[lid];
-        uint8_t bucketUsedBits = metadata.getBucketUsedBits();
+        RawDocumentMetadata& metadata = _metadataStore[lid];
+        uint8_t              bucketUsedBits = metadata.getBucketUsedBits();
         assert(BucketId::validUsedBits(bucketUsedBits));
         if (bucketUsedBits == source.getUsedBits()) {
             BucketId t1(metadata.getGid().convertToBucketId());
@@ -1043,16 +903,10 @@ DocumentMetaStore::handleSplit(const bucketdb::SplitBucketSession &session)
             }
             if (target1.valid() && t1 == target1) {
                 metadata.setBucketUsedBits(target1.getUsedBits());
-                deltas._delta1.add(metadata.getGid(),
-                                   metadata.getTimestamp(),
-                                   metadata.getDocSize(),
-                                   _subDbType);
+                deltas._delta1.add(metadata.getGid(), metadata.getTimestamp(), metadata.getDocSize(), _subDbType);
             } else if (target2.valid() && t2 == target2) {
                 metadata.setBucketUsedBits(target2.getUsedBits());
-                deltas._delta2.add(metadata.getGid(),
-                                   metadata.getTimestamp(),
-                                   metadata.getDocSize(),
-                                   _subDbType);
+                deltas._delta2.add(metadata.getGid(), metadata.getTimestamp(), metadata.getDocSize(), _subDbType);
             }
         }
     }
@@ -1060,21 +914,18 @@ DocumentMetaStore::handleSplit(const bucketdb::SplitBucketSession &session)
     // Caller can remove source bucket if empty
 }
 
+bucketdb::BucketDeltaPair DocumentMetaStore::handleJoin(const bucketdb::JoinBucketsSession& session) {
+    const BucketId& source1(session.getSource1());
+    const BucketId& source2(session.getSource2());
+    const BucketId& target(session.getTarget());
 
-bucketdb::BucketDeltaPair
-DocumentMetaStore::handleJoin(const bucketdb::JoinBucketsSession &session)
-{
-    const BucketId &source1(session.getSource1());
-    const BucketId &source2(session.getSource2());
-    const BucketId &target(session.getTarget());
-
-    TreeType::Iterator itr = lowerBound(target);
-    TreeType::Iterator end = upperBound(target);
+    TreeType::Iterator        itr = lowerBound(target);
+    TreeType::Iterator        end = upperBound(target);
     bucketdb::BucketDeltaPair deltas;
     for (; itr != end; ++itr) {
         DocId lid = itr.getKey().get_lid();
         assert(validLid(lid));
-        RawDocumentMetadata &metadata = _metadataStore[lid];
+        RawDocumentMetadata& metadata = _metadataStore[lid];
         assert(BucketId::validUsedBits(metadata.getBucketUsedBits()));
         BucketId s(metadata.getBucketId());
         if (source1.valid() && s == source1) {
@@ -1088,8 +939,7 @@ DocumentMetaStore::handleJoin(const bucketdb::JoinBucketsSession &session)
     if (_subDbType == SubDbType::READY) {
         bool movedSource1Docs = deltas._delta1.getReadyCount() != 0;
         bool movedSource2Docs = deltas._delta2.getReadyCount() != 0;
-        if (session.mustFixupTargetActiveLids(movedSource1Docs,
-                                              movedSource2Docs)) {
+        if (session.mustFixupTargetActiveLids(movedSource1Docs, movedSource2Docs)) {
             updateActiveLids(target, session.getWantTargetActive());
         }
     }
@@ -1097,24 +947,19 @@ DocumentMetaStore::handleJoin(const bucketdb::JoinBucketsSession &session)
     // Caller can remove source buckets if they are empty
 }
 
-
-void
-DocumentMetaStore::setBucketState(const BucketId &bucketId, bool active)
-{
+void DocumentMetaStore::setBucketState(const BucketId& bucketId, bool active) {
     updateActiveLids(bucketId, active);
     _bucketDB->takeGuard()->setBucketState(bucketId, active);
 }
 
-void
-DocumentMetaStore::updateActiveLids(const BucketId &bucketId, bool active)
-{
+void DocumentMetaStore::updateActiveLids(const BucketId& bucketId, bool active) {
     TreeType::Iterator itr = lowerBound(bucketId);
     TreeType::Iterator end = upperBound(bucketId);
-    uint8_t bucketUsedBits = bucketId.getUsedBits();
+    uint8_t            bucketUsedBits = bucketId.getUsedBits();
     for (; itr != end; ++itr) {
         DocId lid = itr.getKey().get_lid();
         assert(validLid(lid));
-        RawDocumentMetadata &metadata = _metadataStore[lid];
+        RawDocumentMetadata& metadata = _metadataStore[lid];
         if (metadata.getBucketUsedBits() != bucketUsedBits) {
             continue;
         }
@@ -1122,141 +967,109 @@ DocumentMetaStore::updateActiveLids(const BucketId &bucketId, bool active)
     }
 }
 
-void
-DocumentMetaStore::populateActiveBuckets(BucketId::List buckets)
-{
+void DocumentMetaStore::populateActiveBuckets(BucketId::List buckets) {
     BucketId::List fixupBuckets = _bucketDB->takeGuard()->populateActiveBuckets(std::move(buckets));
 
-    for (const auto &bucketId : fixupBuckets) {
+    for (const auto& bucketId : fixupBuckets) {
         updateActiveLids(bucketId, true);
     }
 }
 
-void
-DocumentMetaStore::clearDocs(DocId lidLow, DocId lidLimit, bool)
-{
+void DocumentMetaStore::clearDocs(DocId lidLow, DocId lidLimit, bool) {
     assert(lidLow <= lidLimit);
     assert(lidLimit <= getNumDocs());
     _lidAlloc.clearDocs(lidLow, lidLimit);
 }
 
-void
-DocumentMetaStore::compactLidSpace(uint32_t wantedLidLimit)
-{
+void DocumentMetaStore::compactLidSpace(uint32_t wantedLidLimit) {
     AttributeVector::compactLidSpace(wantedLidLimit);
     set_shrink_lid_space_blockers(get_shrink_lid_space_blockers() + 1);
 }
 
-void
-DocumentMetaStore::holdUnblockShrinkLidSpace()
-{
+void DocumentMetaStore::holdUnblockShrinkLidSpace() {
     assert(get_shrink_lid_space_blockers() > 0);
     auto hold = std::make_unique<ShrinkBlockHeld>(*this);
     getGenerationHolder().insert(std::move(hold));
     incGeneration();
 }
 
-void
-DocumentMetaStore::unblockShrinkLidSpace()
-{
+void DocumentMetaStore::unblockShrinkLidSpace() {
     auto shrink_lid_space_blockers = get_shrink_lid_space_blockers();
     assert(shrink_lid_space_blockers > 0);
     set_shrink_lid_space_blockers(shrink_lid_space_blockers - 1);
 }
 
-bool
-DocumentMetaStore::canShrinkLidSpace() const
-{
-    return AttributeVector::canShrinkLidSpace() &&
-        get_shrink_lid_space_blockers() == 0;
+bool DocumentMetaStore::canShrinkLidSpace() const {
+    return AttributeVector::canShrinkLidSpace() && get_shrink_lid_space_blockers() == 0;
 }
 
-void
-DocumentMetaStore::set_operation_listener(documentmetastore::OperationListener::SP op_listener)
-{
+void DocumentMetaStore::set_operation_listener(documentmetastore::OperationListener::SP op_listener) {
     _op_listener = std::move(op_listener);
 }
 
-void
-DocumentMetaStore::onShrinkLidSpace()
-{
+void DocumentMetaStore::onShrinkLidSpace() {
     uint32_t committedDocIdLimit = this->getCommittedDocIdLimit();
     _lidAlloc.shrinkLidSpace(committedDocIdLimit);
     _metadataStore.shrink(committedDocIdLimit);
     setNumDocs(committedDocIdLimit);
 }
 
-size_t
-DocumentMetaStore::getEstimatedShrinkLidSpaceGain() const
-{
+size_t DocumentMetaStore::getEstimatedShrinkLidSpaceGain() const {
     size_t canFree = 0;
     if (canShrinkLidSpace()) {
         uint32_t committedDocIdLimit = getCommittedDocIdLimit();
         uint32_t numDocs = getNumDocs();
         if (committedDocIdLimit < numDocs) {
-            canFree = sizeof(RawDocumentMetadata) *
-                      (numDocs - committedDocIdLimit);
+            canFree = sizeof(RawDocumentMetadata) * (numDocs - committedDocIdLimit);
         }
     }
     return canFree;
 }
 
-BucketId
-DocumentMetaStore::getBucketOf(const GenerationGuard &, uint32_t lid) const
-{
+BucketId DocumentMetaStore::getBucketOf(const GenerationGuard&, uint32_t lid) const {
     if (__builtin_expect(validLidFast(lid, getCommittedDocIdLimit()), true)) {
         return getRawMetadata(lid).getBucketId();
     }
     return {};
 }
 
-GenerationGuard
-DocumentMetaStore::getGuard() const
-{
+GenerationGuard DocumentMetaStore::getGuard() const {
     return getGenerationHandler().takeGuard();
 }
 
-uint64_t
-DocumentMetaStore::getEstimatedSaveByteSize() const
-{
+uint64_t DocumentMetaStore::getEstimatedSaveByteSize() const {
     uint32_t numDocs = getNumUsedLids();
     return minHeaderLen + numDocs * entrySize;
 }
 
-uint32_t
-DocumentMetaStore::getVersion() const
-{
-    return _trackDocumentSizes ? documentmetastore::DOCUMENT_SIZE_TRACKING_VERSION : documentmetastore::NO_DOCUMENT_SIZE_TRACKING_VERSION;
+uint32_t DocumentMetaStore::getVersion() const {
+    return _trackDocumentSizes ? documentmetastore::DOCUMENT_SIZE_TRACKING_VERSION
+                               : documentmetastore::NO_DOCUMENT_SIZE_TRACKING_VERSION;
 }
 
-void
-DocumentMetaStore::foreach(const search::IGidToLidMapperVisitor &visitor) const
-{
-    beginFrozen().foreach_key([this,&visitor](GidToLidMapKey key)
-                              { visitor.visit(getRawMetadata(key.get_lid()).getGid(), key.get_lid()); });
+void DocumentMetaStore::foreach (const search::IGidToLidMapperVisitor& visitor) const {
+    beginFrozen().foreach_key([this, &visitor](GidToLidMapKey key) {
+        visitor.visit(getRawMetadata(key.get_lid()).getGid(), key.get_lid());
+    });
 }
 
-bool
-DocumentMetaStore::is_sortable() const noexcept
-{
+bool DocumentMetaStore::is_sortable() const noexcept {
     return true;
 }
 
 namespace {
 
-template <bool ascending>
-class DocumentMetaStoreSortBlobWriter : public search::attribute::ISortBlobWriter {
+template <bool ascending> class DocumentMetaStoreSortBlobWriter : public search::attribute::ISortBlobWriter {
 private:
     const DocumentMetaStore& _dms;
+
 public:
     DocumentMetaStoreSortBlobWriter(const DocumentMetaStore& dms) noexcept : _dms(dms) {}
     long write(uint32_t docid, void* buf, long available) override;
 };
 
 template <bool ascending>
-long
-DocumentMetaStoreSortBlobWriter<ascending>::write(uint32_t docid, void* buf, long available)
-{
+long DocumentMetaStoreSortBlobWriter<ascending>::write(uint32_t docid, void* buf, long available) {
     if (!_dms.validLid(docid)) {
         return 0;
     }
@@ -1267,7 +1080,7 @@ DocumentMetaStoreSortBlobWriter<ascending>::write(uint32_t docid, void* buf, lon
         memcpy(buf, _dms.getRawMetadata(docid).getGid().get(), document::GlobalId::LENGTH);
     } else {
         const auto* src = static_cast<const uint8_t*>(_dms.getRawMetadata(docid).getGid().get());
-        auto* dst = static_cast<uint8_t*>(buf);
+        auto*       dst = static_cast<uint8_t*>(buf);
         for (size_t i = 0; i < document::GlobalId::LENGTH; ++i) {
             dst[i] = 0xff - src[i];
         }
@@ -1275,13 +1088,11 @@ DocumentMetaStoreSortBlobWriter<ascending>::write(uint32_t docid, void* buf, lon
     return document::GlobalId::LENGTH;
 }
 
-}
+} // namespace
 
 std::unique_ptr<search::attribute::ISortBlobWriter>
 DocumentMetaStore::make_sort_blob_writer(bool ascending, const search::common::BlobConverter*,
-                                         search::common::sortspec::MissingPolicy,
-                                         std::string_view) const
-{
+                                         search::common::sortspec::MissingPolicy, std::string_view) const {
     if (ascending) {
         return std::make_unique<DocumentMetaStoreSortBlobWriter<true>>(*this);
     } else {
@@ -1289,26 +1100,26 @@ DocumentMetaStore::make_sort_blob_writer(bool ascending, const search::common::B
     }
 }
 
-vespalib::datastore::ArrayStoreConfig
-DocumentMetaStore::make_default_docid_array_store_config()
-{
-    return DocumentIdStore::optimizedConfigForHugePage(array_store_max_type_id,
-                                                       TypeMapper(array_store_max_type_id, array_store_grow_factor, array_store_max_buffer_size),
-                                                       vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
-                                                       vespalib::alloc::MemoryAllocator::NORMAL_PAGE_SIZE,
-                                                       array_store_max_buffer_size,
-                                                       8_Ki,
-                                                       array_store_alloc_grow_factor);
+vespalib::datastore::ArrayStoreConfig DocumentMetaStore::make_default_docid_array_store_config() {
+    return DocumentIdStore::optimizedConfigForHugePage(
+        array_store_max_type_id,
+        TypeMapper(array_store_max_type_id, array_store_grow_factor, array_store_max_buffer_size),
+        vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE, vespalib::alloc::MemoryAllocator::NORMAL_PAGE_SIZE,
+        array_store_max_buffer_size, 8_Ki, array_store_alloc_grow_factor);
 }
 
-}  // namespace proton
+} // namespace proton
 
 namespace vespalib::btree {
 
-template class BTreeIteratorBase<proton::documentmetastore::GidToLidMapKey, BTreeNoLeafData, NoAggregated, BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS, BTreeDefaultTraits::PATH_SIZE>;
+template class BTreeIteratorBase<proton::documentmetastore::GidToLidMapKey, BTreeNoLeafData, NoAggregated,
+                                 BTreeDefaultTraits::INTERNAL_SLOTS, BTreeDefaultTraits::LEAF_SLOTS,
+                                 BTreeDefaultTraits::PATH_SIZE>;
 
-template class BTreeConstIterator<proton::documentmetastore::GidToLidMapKey, BTreeNoLeafData, NoAggregated, const proton::DocumentMetaStore::KeyComp &>;
+template class BTreeConstIterator<proton::documentmetastore::GidToLidMapKey, BTreeNoLeafData, NoAggregated,
+                                  const proton::DocumentMetaStore::KeyComp&>;
 
-template class BTreeIterator<proton::documentmetastore::GidToLidMapKey, BTreeNoLeafData, NoAggregated, const proton::DocumentMetaStore::KeyComp &>;
+template class BTreeIterator<proton::documentmetastore::GidToLidMapKey, BTreeNoLeafData, NoAggregated,
+                             const proton::DocumentMetaStore::KeyComp&>;
 
-}
+} // namespace vespalib::btree

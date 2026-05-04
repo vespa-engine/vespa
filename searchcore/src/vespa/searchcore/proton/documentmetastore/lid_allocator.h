@@ -4,12 +4,14 @@
 
 #include "lid_hold_list.h"
 #include "lidstatevector.h"
+
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/vespalib/util/memoryusage.h>
+
 #include <atomic>
 
 namespace search::queryeval {
-    class Blueprint;
+class Blueprint;
 }
 namespace proton::documentmetastore {
 
@@ -17,23 +19,20 @@ namespace proton::documentmetastore {
  * Class responsible for allocating lids and managing
  * which lids are used, active and free.
  */
-class LidAllocator
-{
+class LidAllocator {
 private:
     using DocId = uint32_t;
 
-    LidHoldList                 _holdLids;
-    LidStateVector              _freeLids;
-    LidStateVector              _usedLids;
-    LidStateVector              _pendingHoldLids;
-    LidStateVector              _activeLids;
-    std::atomic<uint32_t>       _numActiveLids;
-    bool                        _lidFreeListConstructed;
+    LidHoldList           _holdLids;
+    LidStateVector        _freeLids;
+    LidStateVector        _usedLids;
+    LidStateVector        _pendingHoldLids;
+    LidStateVector        _activeLids;
+    std::atomic<uint32_t> _numActiveLids;
+    bool                  _lidFreeListConstructed;
 
 public:
-    LidAllocator(uint32_t size,
-                 uint32_t capacity,
-                 vespalib::GenerationHolder &genHolder);
+    LidAllocator(uint32_t size, uint32_t capacity, vespalib::GenerationHolder& genHolder);
     ~LidAllocator();
 
     DocId getFreeLid(DocId lidLimit);
@@ -48,8 +47,7 @@ public:
     }
     void moveLidBegin(DocId fromLid, DocId toLid);
     void moveLidEnd(DocId fromLid, DocId toLid);
-    void holdLids(const std::vector<DocId> &lids, DocId lidLimit,
-                  vespalib::Generation currentGeneration);
+    void holdLids(const std::vector<DocId>& lids, DocId lidLimit, vespalib::Generation currentGeneration);
     bool holdLidOK(DocId lid, DocId lidLimit) const;
     void constructFreeList(DocId lidLimit);
     std::unique_ptr<search::queryeval::Blueprint> createWhiteListBlueprint() const;
@@ -57,34 +55,20 @@ public:
     void clearDocs(DocId lidLow, DocId lidLimit);
     void shrinkLidSpace(DocId committedDocIdLimit);
     uint32_t getNumUsedLids() const { return _usedLids.count(); }
-    uint32_t getNumActiveLids() const noexcept {
-        return _numActiveLids.load(std::memory_order_relaxed);
-    }
-    void setFreeListConstructed() {
-        _lidFreeListConstructed = true;
-    }
-    bool isFreeListConstructed() const {
-        return _lidFreeListConstructed;
-    }
-    bool validButMaybeUnusedLid(DocId lid) const {
-        return lid < _usedLids.size();
-    }
+    uint32_t getNumActiveLids() const noexcept { return _numActiveLids.load(std::memory_order_relaxed); }
+    void setFreeListConstructed() { _lidFreeListConstructed = true; }
+    bool isFreeListConstructed() const { return _lidFreeListConstructed; }
+    bool validButMaybeUnusedLid(DocId lid) const { return lid < _usedLids.size(); }
     bool validLid(DocId lid) const {
-        auto &vector = _usedLids.getBitVector();
+        auto& vector = _usedLids.getBitVector();
         return (lid < vector.getSizeAcquire() && vector.testBitAcquire(lid));
     }
-    bool validLid(DocId lid, uint32_t limit) const {
-        return (lid < limit && _usedLids.testBitAcquire(lid));
-    }
-    DocId getLowestFreeLid() const {
-        return _freeLids.getLowest();
-    }
-    DocId getHighestUsedLid() const {
-        return _usedLids.getHighest();
-    }
+    bool validLid(DocId lid, uint32_t limit) const { return (lid < limit && _usedLids.testBitAcquire(lid)); }
+    DocId getLowestFreeLid() const { return _freeLids.getLowest(); }
+    DocId getHighestUsedLid() const { return _usedLids.getHighest(); }
 
-    const search::BitVector &getActiveLids() const { return _activeLids.getBitVector(); }
-    const search::BitVector &getUsedLids() const { return _usedLids.getBitVector(); }
+    const search::BitVector& getActiveLids() const { return _activeLids.getBitVector(); }
+    const search::BitVector& getUsedLids() const { return _usedLids.getBitVector(); }
 };
 
-}
+} // namespace proton::documentmetastore

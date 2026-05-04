@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/vespalib/util/generation.h>
+
 #include <deque>
 
 namespace proton {
@@ -13,8 +14,7 @@ class LidStateVector;
  * A lid is free for reuse if the associated generation < first used
  * generation by readers.
  **/
-class LidHoldList
-{
+class LidHoldList {
 private:
     using Element = std::pair<uint32_t, vespalib::Generation>;
     using ElementDeque = std::deque<Element>;
@@ -46,9 +46,7 @@ public:
     /**
      * Frees up elements with generation < oldest used generation for reuse.
      **/
-    void reclaim_memory(vespalib::Generation oldest_used_gen, LidStateVector &freeLids);
+    void reclaim_memory(vespalib::Generation oldest_used_gen, LidStateVector& freeLids);
 };
 
-
 } // namespace proton
-

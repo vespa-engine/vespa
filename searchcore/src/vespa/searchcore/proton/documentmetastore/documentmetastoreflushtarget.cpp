@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "documentmetastoreflushtarget.h"
+
 #include "documentmetastore.h"
+
+#include <vespa/searchcore/proton/attribute/attribute_directory.h>
 #include <vespa/searchcore/proton/attribute/attributedisklayout.h>
 #include <vespa/searchcore/proton/server/itlssyncer.h>
-#include <vespa/searchcore/proton/attribute/attribute_directory.h>
 #include <vespa/searchcorespi/common/resource_usage.h>
 #include <vespa/searchlib/attribute/attributefilesavetarget.h>
 #include <vespa/searchlib/attribute/attributememorysavetarget.h>
@@ -12,6 +14,7 @@
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/io/fileutil.h>
+
 #include <chrono>
 #include <filesystem>
 #include <fstream>
@@ -23,8 +26,8 @@ using namespace search;
 using namespace vespalib;
 using search::common::FileHeaderContext;
 using search::common::SerialNumFileHeaderContext;
-using searchcorespi::IFlushTarget;
 using searchcorespi::FlushStats;
+using searchcorespi::IFlushTarget;
 using searchcorespi::common::ResourceUsage;
 
 namespace proton {
@@ -53,17 +56,11 @@ public:
     SerialNum getFlushSerial() const override { return _syncToken; }
 };
 
-DocumentMetaStoreFlushTarget::Flusher::
-Flusher(DocumentMetaStoreFlushTarget& dmsft,
-        SerialNum syncToken, std::unique_ptr<AttributeDirectory::Writer> writer)
-    : _dmsft(dmsft),
-      _saver(),
-      _syncToken(syncToken),
-      _flushDir(""),
-      _writer(std::move(writer))
-{
+DocumentMetaStoreFlushTarget::Flusher::Flusher(DocumentMetaStoreFlushTarget& dmsft, SerialNum syncToken,
+                                               std::unique_ptr<AttributeDirectory::Writer> writer)
+    : _dmsft(dmsft), _saver(), _syncToken(syncToken), _flushDir(""), _writer(std::move(writer)) {
     // Called by document db executor
-    DocumentMetaStore &dms = *_dmsft._dms;
+    DocumentMetaStore& dms = *_dmsft._dms;
     dms.commit(CommitParam(syncToken, CommitParam::UpdateStats::SKIP));
     _flushDir = _writer->getSnapshotDir(syncToken);
     std::string newBaseFileName(_flushDir + "/" + dms.getName());
@@ -73,13 +70,11 @@ Flusher(DocumentMetaStoreFlushTarget& dmsft,
 
 DocumentMetaStoreFlushTarget::Flusher::~Flusher() = default;
 
-bool
-DocumentMetaStoreFlushTarget::Flusher::saveDocumentMetaStore()
-{
+bool DocumentMetaStoreFlushTarget::Flusher::saveDocumentMetaStore() {
     std::filesystem::create_directory(std::filesystem::path(_flushDir));
     SerialNumFileHeaderContext fileHeaderContext(_dmsft._fileHeaderContext, _syncToken);
-    bool saveSuccess = false;
-    auto create_time = std::chrono::steady_clock::now();
+    bool                       saveSuccess = false;
+    auto                       create_time = std::chrono::steady_clock::now();
     if (_dmsft._hwInfo.disk().slow()) {
         search::AttributeMemorySaveTarget memorySaveTarget;
         saveSuccess = _saver->save(memorySaveTarget);
@@ -107,9 +102,7 @@ DocumentMetaStoreFlushTarget::Flusher::saveDocumentMetaStore()
     return saveSuccess;
 }
 
-bool
-DocumentMetaStoreFlushTarget::Flusher::flush()
-{
+bool DocumentMetaStoreFlushTarget::Flusher::flush() {
     _writer->createInvalidSnapshot(_syncToken);
     if (!saveDocumentMetaStore()) {
         std::string baseFileName(_flushDir + "/" + _dmsft._dms->getName());
@@ -132,15 +125,11 @@ DocumentMetaStoreFlushTarget::Flusher::flush()
     return true;
 }
 
-void
-DocumentMetaStoreFlushTarget::Flusher::updateStats()
-{
+void DocumentMetaStoreFlushTarget::Flusher::updateStats() {
     _dmsft._lastStats.setPath(_flushDir);
 }
 
-bool
-DocumentMetaStoreFlushTarget::Flusher::cleanUp()
-{
+bool DocumentMetaStoreFlushTarget::Flusher::cleanUp() {
     if (_dmsft._cleanUpAfterFlush) {
         _writer->invalidateOldSnapshots();
         _writer->removeInvalidSnapshots();
@@ -148,9 +137,7 @@ DocumentMetaStoreFlushTarget::Flusher::cleanUp()
     return true;
 }
 
-void
-DocumentMetaStoreFlushTarget::Flusher::run()
-{
+void DocumentMetaStoreFlushTarget::Flusher::run() {
     if (_syncToken <= _dmsft.getFlushedSerialNum()) {
         // another flusher has created an equal or better snapshot
         // after this flusher was created
@@ -165,10 +152,11 @@ DocumentMetaStoreFlushTarget::Flusher::run()
     }
 }
 
-DocumentMetaStoreFlushTarget::
-DocumentMetaStoreFlushTarget(const DocumentMetaStore::SP dms, ITlsSyncer &tlsSyncer,
-                             const std::string & baseDir, const TuneFileAttributes &tuneFileAttributes,
-                             const FileHeaderContext &fileHeaderContext, const vespalib::HwInfo &hwInfo)
+DocumentMetaStoreFlushTarget::DocumentMetaStoreFlushTarget(const DocumentMetaStore::SP dms, ITlsSyncer& tlsSyncer,
+                                                           const std::string&        baseDir,
+                                                           const TuneFileAttributes& tuneFileAttributes,
+                                                           const FileHeaderContext&  fileHeaderContext,
+                                                           const vespalib::HwInfo&   hwInfo)
     : LeafFlushTarget("documentmetastore.flush", Type::SYNC, Component::ATTRIBUTE),
       _dms(dms),
       _tlsSyncer(tlsSyncer),
@@ -187,49 +175,34 @@ DocumentMetaStoreFlushTarget(const DocumentMetaStore::SP dms, ITlsSyncer &tlsSyn
 
 DocumentMetaStoreFlushTarget::~DocumentMetaStoreFlushTarget() = default;
 
-ResourceUsage
-DocumentMetaStoreFlushTarget::get_resource_usage() const
-{
+ResourceUsage DocumentMetaStoreFlushTarget::get_resource_usage() const {
     uint64_t size_on_disk = _dms->size_on_disk() + _dmsDir->get_size_on_disk_overhead(true);
     return ResourceUsage{_dmsDir->get_transient_resource_usage(), size_on_disk};
 }
 
-IFlushTarget::SerialNum
-DocumentMetaStoreFlushTarget::getFlushedSerialNum() const
-{
+IFlushTarget::SerialNum DocumentMetaStoreFlushTarget::getFlushedSerialNum() const {
     return _dmsDir->getFlushedSerialNum();
 }
 
-
-IFlushTarget::MemoryGain
-DocumentMetaStoreFlushTarget::getApproxMemoryGain() const
-{
+IFlushTarget::MemoryGain DocumentMetaStoreFlushTarget::getApproxMemoryGain() const {
     int64_t used(_dms->getStatus().getUsed());
     return MemoryGain(used, used);
 }
 
-
-IFlushTarget::DiskGain
-DocumentMetaStoreFlushTarget::getApproxDiskGain() const
-{
+IFlushTarget::DiskGain DocumentMetaStoreFlushTarget::getApproxDiskGain() const {
     return DiskGain(_dms->size_on_disk(), _dms->getEstimatedSaveByteSize());
 }
 
-
-IFlushTarget::Time
-DocumentMetaStoreFlushTarget::getLastFlushTime() const
-{
+IFlushTarget::Time DocumentMetaStoreFlushTarget::getLastFlushTime() const {
     return _dmsDir->getLastFlushTime();
 }
 
-
-IFlushTarget::Task::UP
-DocumentMetaStoreFlushTarget::initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken>)
-{
+IFlushTarget::Task::UP DocumentMetaStoreFlushTarget::initFlush(SerialNum currentSerial,
+                                                               std::shared_ptr<search::IFlushToken>) {
     // Called by document db executor
     _dms->reclaim_unused_memory();
     SerialNum syncToken = std::max(currentSerial, _dms->getStatus().getLastSyncToken());
-    auto writer = _dmsDir->tryGetWriter();
+    auto      writer = _dmsDir->tryGetWriter();
     if (!writer) {
         return Task::UP();
     }
@@ -242,17 +215,12 @@ DocumentMetaStoreFlushTarget::initFlush(SerialNum currentSerial, std::shared_ptr
     return std::make_unique<Flusher>(*this, syncToken, std::move(writer));
 }
 
-
-uint64_t
-DocumentMetaStoreFlushTarget::getApproxBytesToWriteToDisk() const
-{
+uint64_t DocumentMetaStoreFlushTarget::getApproxBytesToWriteToDisk() const {
     auto guard = _dms->getGuard();
     return _dms->getEstimatedSaveByteSize();
 }
 
-std::chrono::steady_clock::duration
-DocumentMetaStoreFlushTarget::last_flush_duration() const noexcept
-{
+std::chrono::steady_clock::duration DocumentMetaStoreFlushTarget::last_flush_duration() const noexcept {
     return _dms->last_flush_duration();
 }
 
