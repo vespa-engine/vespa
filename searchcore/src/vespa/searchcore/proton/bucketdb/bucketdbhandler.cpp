@@ -1,32 +1,27 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bucketdbhandler.h"
-#include "splitbucketsession.h"
+
 #include "joinbucketssession.h"
+#include "splitbucketsession.h"
+
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
+
 #include <algorithm>
 
 namespace proton::bucketdb {
 
-BucketDBHandler::BucketDBHandler(BucketDBOwner &bucketDB)
-    : _bucketDB(bucketDB),
-      _dmsv(),
-      _bucketCreateNotifier()
-{
+BucketDBHandler::BucketDBHandler(BucketDBOwner& bucketDB) : _bucketDB(bucketDB), _dmsv(), _bucketCreateNotifier() {
 }
 
 BucketDBHandler::~BucketDBHandler() = default;
 
-void
-BucketDBHandler::addDocumentMetaStore(IDocumentMetaStore *dms, search::SerialNum flushedSerialNum)
-{
+void BucketDBHandler::addDocumentMetaStore(IDocumentMetaStore* dms, search::SerialNum flushedSerialNum) {
     _dmsv.push_back(MetaStoreDesc(dms, flushedSerialNum));
 }
 
-void
-BucketDBHandler::handleSplit(search::SerialNum serialNum, const BucketId &source,
-                             const BucketId &target1, const BucketId &target2)
-{
+void BucketDBHandler::handleSplit(search::SerialNum serialNum, const BucketId& source, const BucketId& target1,
+                                  const BucketId& target2) {
     // Called by writer thread
     assert(source.valid());
     assert(target1.valid() || target2.valid());
@@ -45,8 +40,8 @@ BucketDBHandler::handleSplit(search::SerialNum serialNum, const BucketId &source
     }
     SplitBucketSession session(_bucketDB, _bucketCreateNotifier, source, target1, target2);
     session.setup();
-    for (auto &desc : _dmsv) {
-        IDocumentMetaStore *dms = desc._dms;
+    for (auto& desc : _dmsv) {
+        IDocumentMetaStore* dms = desc._dms;
         if (serialNum > desc._flushedSerialNum) {
             BucketDeltaPair deltas = dms->handleSplit(session);
             session.applyDeltas(deltas);
@@ -56,16 +51,13 @@ BucketDBHandler::handleSplit(search::SerialNum serialNum, const BucketId &source
     session.finish();
 }
 
-
-void
-BucketDBHandler::handleJoin(search::SerialNum serialNum, const BucketId &source1,
-                            const BucketId &source2, const BucketId &target)
-{
+void BucketDBHandler::handleJoin(search::SerialNum serialNum, const BucketId& source1, const BucketId& source2,
+                                 const BucketId& target) {
     // Called by writer thread
     JoinBucketsSession session(_bucketDB, _bucketCreateNotifier, source1, source2, target);
     session.setup();
-    for (auto &desc : _dmsv) {
-        IDocumentMetaStore *dms = desc._dms;
+    for (auto& desc : _dmsv) {
+        IDocumentMetaStore* dms = desc._dms;
         if (serialNum > desc._flushedSerialNum) {
             BucketDeltaPair deltas = dms->handleJoin(session);
             session.applyDeltas(deltas);
@@ -75,16 +67,12 @@ BucketDBHandler::handleJoin(search::SerialNum serialNum, const BucketId &source1
     session.finish();
 }
 
-void
-BucketDBHandler::handleCreateBucket(const BucketId &bucketId)
-{
+void BucketDBHandler::handleCreateBucket(const BucketId& bucketId) {
     _bucketDB.takeGuard()->createBucket(bucketId);
 }
 
-void
-BucketDBHandler::handleDeleteBucket(const BucketId &bucketId)
-{
+void BucketDBHandler::handleDeleteBucket(const BucketId& bucketId) {
     _bucketDB.takeGuard()->deleteEmptyBucket(bucketId);
 }
 
-}
+} // namespace proton::bucketdb
