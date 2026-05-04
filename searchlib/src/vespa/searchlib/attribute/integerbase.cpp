@@ -1,22 +1,21 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "integerbase.hpp"
+
 #include "attributevector.hpp"
+
 #include <vespa/document/fieldvalue/fieldvalue.h>
+
 #include <charconv>
 
 namespace search {
 
-IntegerAttribute::IntegerAttribute(const std::string & name, const Config & c) :
-    NumericAttribute(name, c),
-    _changes()
-{
+IntegerAttribute::IntegerAttribute(const std::string& name, const Config& c) : NumericAttribute(name, c), _changes() {
 }
 
 IntegerAttribute::~IntegerAttribute() = default;
 
-uint32_t IntegerAttribute::clearDoc(DocId doc)
-{
+uint32_t IntegerAttribute::clearDoc(DocId doc) {
     uint32_t removed(0);
     if (hasMultiValue() && (doc < getNumDocs())) {
         removed = getValueCount(doc);
@@ -29,72 +28,62 @@ uint32_t IntegerAttribute::clearDoc(DocId doc)
 namespace {
 
 // TODO Move to vespalib::to_string and template on value type
-std::string
-to_string(int64_t v) {
+std::string to_string(int64_t v) {
     char tmp[32];
     auto res = std::to_chars(tmp, tmp + sizeof(tmp) - 1, v, 10);
     return std::string(tmp, res.ptr - tmp);
 }
 
-}
-uint32_t IntegerAttribute::get(DocId doc, WeightedString * s, uint32_t sz) const
-{
-    WeightedInt * v = new WeightedInt[sz];
-    unsigned num(static_cast<const AttributeVector *>(this)->get(doc, v, sz));
-    for(unsigned i(0); i < num; i++) {
+} // namespace
+uint32_t IntegerAttribute::get(DocId doc, WeightedString* s, uint32_t sz) const {
+    WeightedInt* v = new WeightedInt[sz];
+    unsigned     num(static_cast<const AttributeVector*>(this)->get(doc, v, sz));
+    for (unsigned i(0); i < num; i++) {
         s[i] = WeightedString(to_string(v[i].getValue()), v[i].getWeight());
     }
-    delete [] v;
+    delete[] v;
     return num;
 }
 
-uint32_t IntegerAttribute::get(DocId doc, WeightedConstChar * v, uint32_t sz) const
-{
-    (void) doc;
-    (void) v;
-    (void) sz;
+uint32_t IntegerAttribute::get(DocId doc, WeightedConstChar* v, uint32_t sz) const {
+    (void)doc;
+    (void)v;
+    (void)sz;
     return 0;
 }
 
-std::span<const char>
-IntegerAttribute::get_raw(DocId) const
-{
+std::span<const char> IntegerAttribute::get_raw(DocId) const {
     return {};
 }
 
-uint32_t IntegerAttribute::get(DocId doc, std::string * s, uint32_t sz) const
-{
-    largeint_t * v = new largeint_t[sz];
-    unsigned num(static_cast<const AttributeVector *>(this)->get(doc, v, sz));
-    for(unsigned i(0); i < num; i++) {
+uint32_t IntegerAttribute::get(DocId doc, std::string* s, uint32_t sz) const {
+    largeint_t* v = new largeint_t[sz];
+    unsigned    num(static_cast<const AttributeVector*>(this)->get(doc, v, sz));
+    for (unsigned i(0); i < num; i++) {
         s[i] = to_string(v[i]);
     }
-    delete [] v;
+    delete[] v;
     return num;
 }
 
-uint32_t IntegerAttribute::get(DocId doc, const char ** v, uint32_t sz) const
-{
-    (void) doc;
-    (void) v;
-    (void) sz;
+uint32_t IntegerAttribute::get(DocId doc, const char** v, uint32_t sz) const {
+    (void)doc;
+    (void)v;
+    (void)sz;
     return 0;
 }
 
-bool IntegerAttribute::applyWeight(DocId doc, const FieldValue & fv, const ArithmeticValueUpdate & wAdjust)
-{
+bool IntegerAttribute::applyWeight(DocId doc, const FieldValue& fv, const ArithmeticValueUpdate& wAdjust) {
     largeint_t v = fv.getAsLong();
     return AttributeVector::adjustWeight(_changes, doc, NumericChangeData<largeint_t>(v), wAdjust);
 }
 
-bool IntegerAttribute::applyWeight(DocId doc, const FieldValue& fv, const document::AssignValueUpdate& wAdjust)
-{
+bool IntegerAttribute::applyWeight(DocId doc, const FieldValue& fv, const document::AssignValueUpdate& wAdjust) {
     largeint_t v = fv.getAsLong();
     return AttributeVector::adjustWeight(_changes, doc, NumericChangeData<largeint_t>(v), wAdjust);
 }
 
-bool IntegerAttribute::apply(DocId doc, const ArithmeticValueUpdate & op)
-{
+bool IntegerAttribute::apply(DocId doc, const ArithmeticValueUpdate& op) {
     bool retval(doc < getNumDocs());
     if (retval) {
         retval = AttributeVector::applyArithmetic(_changes, doc, NumericChangeData<largeint_t>(0), op);
@@ -102,9 +91,7 @@ bool IntegerAttribute::apply(DocId doc, const ArithmeticValueUpdate & op)
     return retval;
 }
 
-vespalib::MemoryUsage
-IntegerAttribute::getChangeVectorMemoryUsage() const
-{
+vespalib::MemoryUsage IntegerAttribute::getChangeVectorMemoryUsage() const {
     return _changes.getMemoryUsage();
 }
 
@@ -114,8 +101,11 @@ template class IntegerAttributeTemplate<int32_t>;
 template class IntegerAttributeTemplate<int64_t>;
 
 template bool AttributeVector::clearDoc(IntegerAttribute::ChangeVector& changes, DocId doc);
-template bool AttributeVector::update(IntegerAttribute::ChangeVector& changes, DocId doc, const NumericChangeData<largeint_t>& v);
-template bool AttributeVector::append(IntegerAttribute::ChangeVector& changes, DocId doc, const NumericChangeData<largeint_t>& v, int32_t w, bool doCount);
-template bool AttributeVector::remove(IntegerAttribute::ChangeVector& changes, DocId doc, const NumericChangeData<largeint_t>& v, int32_t w);
+template bool AttributeVector::update(IntegerAttribute::ChangeVector& changes, DocId doc,
+                                      const NumericChangeData<largeint_t>& v);
+template bool AttributeVector::append(IntegerAttribute::ChangeVector& changes, DocId doc,
+                                      const NumericChangeData<largeint_t>& v, int32_t w, bool doCount);
+template bool AttributeVector::remove(IntegerAttribute::ChangeVector& changes, DocId doc,
+                                      const NumericChangeData<largeint_t>& v, int32_t w);
 
-}
+} // namespace search

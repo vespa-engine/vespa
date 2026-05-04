@@ -1,13 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "multi_value_mapping.hpp"
+
 #include "attributevector.h"
 #include "i_enum_store.h"
+
 #include <vespa/searchcommon/attribute/multivalue.h>
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
+
 #include <vespa/vespalib/datastore/array_store_dynamic_type_mapper.hpp>
-#include <vespa/vespalib/datastore/dynamic_array_buffer_type.hpp>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
+#include <vespa/vespalib/datastore/dynamic_array_buffer_type.hpp>
 #include <vespa/vespalib/util/array.hpp>
 
 using search::multivalue::WeightedValue;
@@ -29,4 +32,4 @@ template class MultiValueMapping<WeightedValue<float>>;
 template class MultiValueMapping<double>;
 template class MultiValueMapping<WeightedValue<double>>;
 
-}
+} // namespace search::attribute

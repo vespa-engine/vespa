@@ -2,7 +2,4 @@
 
 #include "loadedvalue.h"
 
-namespace search {
-
-} // namespace search
-
+namespace search {} // namespace search

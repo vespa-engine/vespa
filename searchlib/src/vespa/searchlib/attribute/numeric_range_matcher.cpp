@@ -1,6 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-
 #include "numeric_range_matcher.hpp"
 
 namespace search::attribute {
@@ -12,4 +11,4 @@ template class NumericRangeMatcher<int64_t>;
 template class NumericRangeMatcher<float>;
 template class NumericRangeMatcher<double>;
 
-}
+} // namespace search::attribute

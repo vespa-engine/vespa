@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "multi_numeric_search_context.hpp"
+
 #include <vespa/searchcommon/attribute/multivalue.h>
 
 using search::multivalue::WeightedValue;
@@ -21,4 +22,4 @@ template class MultiNumericSearchContext<int64_t, WeightedValue<int64_t>>;
 template class MultiNumericSearchContext<float, WeightedValue<float>>;
 template class MultiNumericSearchContext<double, WeightedValue<double>>;
 
-}
+} // namespace search::attribute

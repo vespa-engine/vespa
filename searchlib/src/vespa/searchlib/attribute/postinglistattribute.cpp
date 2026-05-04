@@ -1,9 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "postinglistattribute.h"
-#include "loadednumericvalue.h"
-#include "enumcomparator.h"
+
 #include "enum_store_loaders.h"
+#include "enumcomparator.h"
+#include "loadednumericvalue.h"
+
 #include <vespa/vespalib/util/array.hpp>
 
 namespace search {
@@ -11,43 +13,31 @@ namespace search {
 using attribute::LoadedNumericValue;
 
 template <typename P>
-PostingListAttributeBase<P>::
-PostingListAttributeBase(AttributeVector &attr,
-                         IEnumStore &enumStore)
+PostingListAttributeBase<P>::PostingListAttributeBase(AttributeVector& attr, IEnumStore& enumStore)
     : attribute::IPostingListAttributeBase(),
-      _posting_store(enumStore.get_dictionary(), attr.getStatus(),
-                     attr.getConfig()),
+      _posting_store(enumStore.get_dictionary(), attr.getStatus(), attr.getConfig()),
       _attr(attr),
-      _dictionary(enumStore.get_dictionary())
-{ }
+      _dictionary(enumStore.get_dictionary()) {
+}
 
-template <typename P>
-PostingListAttributeBase<P>::~PostingListAttributeBase() = default;
+template <typename P> PostingListAttributeBase<P>::~PostingListAttributeBase() = default;
 
-template <typename P>
-void
-PostingListAttributeBase<P>::clearAllPostings()
-{
+template <typename P> void PostingListAttributeBase<P>::clearAllPostings() {
     _posting_store.clearBuilder();
     _attr.incGeneration(); // Force freeze
-    auto clearer = [this](EntryRef posting_idx)
-                   {
-                       _posting_store.clear(posting_idx);
-                   };
+    auto clearer = [this](EntryRef posting_idx) { _posting_store.clear(posting_idx); };
     _dictionary.clear_all_posting_lists(clearer);
     _attr.incGeneration(); // Force freeze
 }
 
-
 template <typename P>
-void
-PostingListAttributeBase<P>::handle_load_posting_lists_and_update_enum_store(enumstore::EnumeratedPostingsLoader& loader)
-{
+void PostingListAttributeBase<P>::handle_load_posting_lists_and_update_enum_store(
+    enumstore::EnumeratedPostingsLoader& loader) {
     clearAllPostings();
-    uint32_t docIdLimit = _attr.getNumDocs();
-    EntryRef newIndex;
+    uint32_t         docIdLimit = _attr.getNumDocs();
+    EntryRef         newIndex;
     PostingChange<P> postings;
-    const auto& loaded_enums = loader.get_loaded_enums();
+    const auto&      loaded_enums = loader.get_loaded_enums();
     if (loaded_enums.empty()) {
         loader.build_empty_dictionary();
         return;
@@ -57,7 +47,7 @@ PostingListAttributeBase<P>::handle_load_posting_lists_and_update_enum_store(enu
 
     std::span<const EnumIndex> enum_indexes(loader.get_enum_indexes());
     assert(!enum_indexes.empty());
-    auto posting_indexes = loader.initialize_empty_posting_indexes();
+    auto     posting_indexes = loader.initialize_empty_posting_indexes();
     uint32_t posting_enum = preve;
     for (const auto& elem : loaded_enums) {
         if (preve != elem.getEnum()) {
@@ -69,13 +59,9 @@ PostingListAttributeBase<P>::handle_load_posting_lists_and_update_enum_store(enu
             if (loader.is_folded_change(enum_indexes[posting_enum], enum_indexes[preve])) {
                 postings.removeDups();
                 newIndex = EntryRef();
-                _posting_store.apply(newIndex,
-                                   postings._additions.data(),
-                                   postings._additions.data() +
-                                   postings._additions.size(),
-                                   postings._removals.data(),
-                                   postings._removals.data() +
-                                   postings._removals.size());
+                _posting_store.apply(
+                    newIndex, postings._additions.data(), postings._additions.data() + postings._additions.size(),
+                    postings._removals.data(), postings._removals.data() + postings._removals.size());
                 posting_indexes[posting_enum] = newIndex;
                 postings.clear();
                 posting_enum = elem.getEnum();
@@ -84,51 +70,40 @@ PostingListAttributeBase<P>::handle_load_posting_lists_and_update_enum_store(enu
         assert(refCount < std::numeric_limits<uint32_t>::max());
         ++refCount;
         assert(elem.getDocId() < docIdLimit);
-        (void) docIdLimit;
+        (void)docIdLimit;
         postings.add(elem.getDocId(), elem.getWeight());
     }
     assert(refCount != 0);
     loader.set_ref_count(enum_indexes[preve], refCount);
     postings.removeDups();
     newIndex = EntryRef();
-    _posting_store.apply(newIndex,
-                       postings._additions.data(),
-                       postings._additions.data() + postings._additions.size(),
-                       postings._removals.data(),
-                       postings._removals.data() + postings._removals.size());
+    _posting_store.apply(newIndex, postings._additions.data(),
+                         postings._additions.data() + postings._additions.size(), postings._removals.data(),
+                         postings._removals.data() + postings._removals.size());
     posting_indexes[posting_enum] = newIndex;
     loader.build_dictionary();
     loader.free_unused_values();
 }
 
 template <typename P>
-void
-PostingListAttributeBase<P>::updatePostings(PostingMap &changePost,
-                                            const vespalib::datastore::EntryComparator &cmp)
-{
+void PostingListAttributeBase<P>::updatePostings(PostingMap&                                 changePost,
+                                                 const vespalib::datastore::EntryComparator& cmp) {
     for (auto& elem : changePost) {
         EnumIndex idx = elem.first.getEnumIdx();
-        auto& change = elem.second;
+        auto&     change = elem.second;
         change.removeDups();
-        auto updater= [this, &change](EntryRef posting_idx) -> EntryRef
-                      {
-                          _posting_store.apply(posting_idx,
-                                             change._additions.data(),
-                                             change._additions.data() + change._additions.size(),
-                                             change._removals.data(),
-                                             change._removals.data() + change._removals.size());
-                          return posting_idx;
-                      };
+        auto updater = [this, &change](EntryRef posting_idx) -> EntryRef {
+            _posting_store.apply(posting_idx, change._additions.data(),
+                                 change._additions.data() + change._additions.size(), change._removals.data(),
+                                 change._removals.data() + change._removals.size());
+            return posting_idx;
+        };
         _dictionary.update_posting_list(idx, cmp, updater);
     }
 }
 
 template <typename P>
-bool
-PostingListAttributeBase<P>::forwardedOnAddDoc(DocId doc,
-                                               size_t wantSize,
-                                               size_t wantCapacity)
-{
+bool PostingListAttributeBase<P>::forwardedOnAddDoc(DocId doc, size_t wantSize, size_t wantCapacity) {
     if (doc >= wantSize) {
         wantSize = doc + 1;
     }
@@ -139,13 +114,8 @@ PostingListAttributeBase<P>::forwardedOnAddDoc(DocId doc,
 }
 
 template <typename P>
-void
-PostingListAttributeBase<P>::
-clearPostings(attribute::IAttributeVector::EnumHandle eidx,
-              uint32_t fromLid,
-              uint32_t toLid,
-              const vespalib::datastore::EntryComparator &cmp)
-{
+void PostingListAttributeBase<P>::clearPostings(attribute::IAttributeVector::EnumHandle eidx, uint32_t fromLid,
+                                                uint32_t toLid, const vespalib::datastore::EntryComparator& cmp) {
     PostingChange<P> postings;
 
     for (uint32_t lid = fromLid; lid < toLid; ++lid) {
@@ -153,77 +123,56 @@ clearPostings(attribute::IAttributeVector::EnumHandle eidx,
     }
 
     EntryRef er(eidx);
-    auto updater = [this, &postings](EntryRef posting_idx) -> EntryRef
-                   {
-                       _posting_store.apply(posting_idx,
-                                          postings._additions.data(),
-                                          postings._additions.data() + postings._additions.size(),
-                                          postings._removals.data(),
-                                          postings._removals.data() + postings._removals.size());
-                       return posting_idx;
-                   };
+    auto     updater = [this, &postings](EntryRef posting_idx) -> EntryRef {
+        _posting_store.apply(posting_idx, postings._additions.data(),
+                                 postings._additions.data() + postings._additions.size(), postings._removals.data(),
+                                 postings._removals.data() + postings._removals.size());
+        return posting_idx;
+    };
     _dictionary.update_posting_list(er, cmp, updater);
 }
 
-template <typename P>
-void
-PostingListAttributeBase<P>::forwardedShrinkLidSpace(uint32_t newSize)
-{
-    (void) _posting_store.resizeBitVectors(newSize, newSize);
+template <typename P> void PostingListAttributeBase<P>::forwardedShrinkLidSpace(uint32_t newSize) {
+    (void)_posting_store.resizeBitVectors(newSize, newSize);
 }
 
-template <typename P>
-attribute::PostingStoreMemoryUsage
-PostingListAttributeBase<P>::getMemoryUsage() const
-{
+template <typename P> attribute::PostingStoreMemoryUsage PostingListAttributeBase<P>::getMemoryUsage() const {
     return _posting_store.getMemoryUsage();
 }
 
 template <typename P>
-bool
-PostingListAttributeBase<P>::consider_compact_worst_btree_nodes(const CompactionStrategy& compaction_strategy)
-{
+bool PostingListAttributeBase<P>::consider_compact_worst_btree_nodes(const CompactionStrategy& compaction_strategy) {
     return _posting_store.consider_compact_worst_btree_nodes(compaction_strategy);
 }
 
 template <typename P>
-bool
-PostingListAttributeBase<P>::consider_compact_worst_buffers(const CompactionStrategy& compaction_strategy)
-{
+bool PostingListAttributeBase<P>::consider_compact_worst_buffers(const CompactionStrategy& compaction_strategy) {
     return _posting_store.consider_compact_worst_buffers(compaction_strategy);
 }
 
-template <typename P, typename LoadedVector, typename LoadedValueType,
-          typename EnumStoreType>
-PostingListAttributeSubBase<P, LoadedVector, LoadedValueType, EnumStoreType>::
-PostingListAttributeSubBase(AttributeVector &attr,
-                            EnumStore &enumStore)
-    : Parent(attr, enumStore),
-      _es(enumStore)
-{
+template <typename P, typename LoadedVector, typename LoadedValueType, typename EnumStoreType>
+PostingListAttributeSubBase<P, LoadedVector, LoadedValueType, EnumStoreType>::PostingListAttributeSubBase(
+    AttributeVector& attr, EnumStore& enumStore)
+    : Parent(attr, enumStore), _es(enumStore) {
 }
 
-template <typename P, typename LoadedVector, typename LoadedValueType,
-          typename EnumStoreType>
-PostingListAttributeSubBase<P, LoadedVector, LoadedValueType, EnumStoreType>::
-~PostingListAttributeSubBase() = default;
+template <typename P, typename LoadedVector, typename LoadedValueType, typename EnumStoreType>
+PostingListAttributeSubBase<P, LoadedVector, LoadedValueType, EnumStoreType>::~PostingListAttributeSubBase() =
+    default;
 
-template <typename P, typename LoadedVector, typename LoadedValueType,
-          typename EnumStoreType>
-void
-PostingListAttributeSubBase<P, LoadedVector, LoadedValueType, EnumStoreType>::
-handle_load_posting_lists(LoadedVector& loaded)
-{
+template <typename P, typename LoadedVector, typename LoadedValueType, typename EnumStoreType>
+void PostingListAttributeSubBase<P, LoadedVector, LoadedValueType, EnumStoreType>::handle_load_posting_lists(
+    LoadedVector& loaded) {
     if constexpr (!std::is_same_v<LoadedVector, NoLoadedVector>) {
         clearAllPostings();
-        EntryRef newIndex;
+        EntryRef         newIndex;
         PostingChange<P> postings;
-        uint32_t docIdLimit = _attr.getNumDocs();
+        uint32_t         docIdLimit = _attr.getNumDocs();
         _posting_store.resizeBitVectors(docIdLimit, docIdLimit);
-        if ( ! loaded.empty() ) {
+        if (!loaded.empty()) {
             vespalib::Array<typename LoadedVector::Type> similarValues;
-            auto value = loaded.read();
-            LoadedValueType prev = value.getValue();
+            auto                                         value = loaded.read();
+            LoadedValueType                              prev = value.getValue();
             for (size_t i(0), m(loaded.size()); i < m; i++, loaded.next()) {
                 value = loaded.read();
                 if (ComparatorType::equal_helper(prev, value.getValue())) {
@@ -237,13 +186,9 @@ handle_load_posting_lists(LoadedVector& loaded)
                 } else {
                     postings.removeDups();
                     newIndex = EntryRef();
-                    _posting_store.apply(newIndex,
-                                       postings._additions.data(),
-                                       postings._additions.data() +
-                                       postings._additions.size(),
-                                       postings._removals.data(),
-                                       postings._removals.data() +
-                                       postings._removals.size());
+                    _posting_store.apply(
+                        newIndex, postings._additions.data(), postings._additions.data() + postings._additions.size(),
+                        postings._removals.data(), postings._removals.data() + postings._removals.size());
                     postings.clear();
                     if (value._docId < docIdLimit) {
                         postings.add(value._docId, value.getWeight());
@@ -259,12 +204,9 @@ handle_load_posting_lists(LoadedVector& loaded)
             }
             postings.removeDups();
             newIndex = EntryRef();
-            _posting_store.apply(newIndex,
-                               postings._additions.data(),
-                               postings._additions.data() +
-                               postings._additions.size(),
-                               postings._removals.data(),
-                               postings._removals.data() + postings._removals.size());
+            _posting_store.apply(newIndex, postings._additions.data(),
+                                 postings._additions.data() + postings._additions.size(), postings._removals.data(),
+                                 postings._removals.data() + postings._removals.size());
             similarValues[0]._pidx = newIndex;
             for (size_t i(0), m(similarValues.size()); i < m; i++) {
                 loaded.write(similarValues[i]);
@@ -273,126 +215,60 @@ handle_load_posting_lists(LoadedVector& loaded)
     }
 }
 
-
-template <typename P, typename LoadedVector, typename LoadedValueType,
-          typename EnumStoreType>
-void
-PostingListAttributeSubBase<P, LoadedVector, LoadedValueType, EnumStoreType>::
-updatePostings(PostingMap &changePost)
-{
+template <typename P, typename LoadedVector, typename LoadedValueType, typename EnumStoreType>
+void PostingListAttributeSubBase<P, LoadedVector, LoadedValueType, EnumStoreType>::updatePostings(
+    PostingMap& changePost) {
     updatePostings(changePost, _es.get_folded_comparator());
 }
 
-
-template <typename P, typename LoadedVector, typename LoadedValueType,
-          typename EnumStoreType>
-void
-PostingListAttributeSubBase<P, LoadedVector, LoadedValueType, EnumStoreType>::
-clearPostings(attribute::IAttributeVector::EnumHandle eidx, uint32_t fromLid, uint32_t toLid)
-{
+template <typename P, typename LoadedVector, typename LoadedValueType, typename EnumStoreType>
+void PostingListAttributeSubBase<P, LoadedVector, LoadedValueType, EnumStoreType>::clearPostings(
+    attribute::IAttributeVector::EnumHandle eidx, uint32_t fromLid, uint32_t toLid) {
     clearPostings(eidx, fromLid, toLid, _es.get_folded_comparator());
 }
-
 
 template class PostingListAttributeBase<AttributePosting>;
 template class PostingListAttributeBase<AttributeWeightPosting>;
 
-using LoadedInt8Vector = SequentialReadModifyWriteInterface<LoadedNumericValue<int8_t> >;
+using LoadedInt8Vector = SequentialReadModifyWriteInterface<LoadedNumericValue<int8_t>>;
 
-using LoadedInt16Vector = SequentialReadModifyWriteInterface<LoadedNumericValue<int16_t> >;
+using LoadedInt16Vector = SequentialReadModifyWriteInterface<LoadedNumericValue<int16_t>>;
 
-using LoadedInt32Vector = SequentialReadModifyWriteInterface<LoadedNumericValue<int32_t> >;
+using LoadedInt32Vector = SequentialReadModifyWriteInterface<LoadedNumericValue<int32_t>>;
 
-using LoadedInt64Vector = SequentialReadModifyWriteInterface<LoadedNumericValue<int64_t> >;
+using LoadedInt64Vector = SequentialReadModifyWriteInterface<LoadedNumericValue<int64_t>>;
 
-using LoadedFloatVector = SequentialReadModifyWriteInterface<LoadedNumericValue<float> >;
+using LoadedFloatVector = SequentialReadModifyWriteInterface<LoadedNumericValue<float>>;
 
-using LoadedDoubleVector = SequentialReadModifyWriteInterface<LoadedNumericValue<double> >;
-                                                       
+using LoadedDoubleVector = SequentialReadModifyWriteInterface<LoadedNumericValue<double>>;
 
-template class
-PostingListAttributeSubBase<AttributePosting,
-                            LoadedInt8Vector,
-                            int8_t,
-                            EnumStoreT<int8_t>>;
+template class PostingListAttributeSubBase<AttributePosting, LoadedInt8Vector, int8_t, EnumStoreT<int8_t>>;
 
-template class
-PostingListAttributeSubBase<AttributePosting,
-                            LoadedInt16Vector,
-                            int16_t,
-                            EnumStoreT<int16_t>>;
+template class PostingListAttributeSubBase<AttributePosting, LoadedInt16Vector, int16_t, EnumStoreT<int16_t>>;
 
-template class
-PostingListAttributeSubBase<AttributePosting,
-                            LoadedInt32Vector,
-                            int32_t,
-                            EnumStoreT<int32_t>>;
+template class PostingListAttributeSubBase<AttributePosting, LoadedInt32Vector, int32_t, EnumStoreT<int32_t>>;
 
-template class
-PostingListAttributeSubBase<AttributePosting,
-                            LoadedInt64Vector,
-                            int64_t,
-                            EnumStoreT<int64_t>>;
+template class PostingListAttributeSubBase<AttributePosting, LoadedInt64Vector, int64_t, EnumStoreT<int64_t>>;
 
-template class
-PostingListAttributeSubBase<AttributePosting,
-                            LoadedFloatVector,
-                            float,
-                            EnumStoreT<float>>;
+template class PostingListAttributeSubBase<AttributePosting, LoadedFloatVector, float, EnumStoreT<float>>;
 
-template class
-PostingListAttributeSubBase<AttributePosting,
-                            LoadedDoubleVector,
-                            double,
-                            EnumStoreT<double>>;
+template class PostingListAttributeSubBase<AttributePosting, LoadedDoubleVector, double, EnumStoreT<double>>;
 
-template class
-PostingListAttributeSubBase<AttributePosting,
-                            NoLoadedVector,
-                            const char*,
-                            EnumStoreT<const char*>>;
+template class PostingListAttributeSubBase<AttributePosting, NoLoadedVector, const char*, EnumStoreT<const char*>>;
 
-template class
-PostingListAttributeSubBase<AttributeWeightPosting,
-                            LoadedInt8Vector,
-                            int8_t,
-                            EnumStoreT<int8_t>>;
+template class PostingListAttributeSubBase<AttributeWeightPosting, LoadedInt8Vector, int8_t, EnumStoreT<int8_t>>;
 
-template class
-PostingListAttributeSubBase<AttributeWeightPosting,
-                            LoadedInt16Vector,
-                            int16_t,
-                            EnumStoreT<int16_t>>;
+template class PostingListAttributeSubBase<AttributeWeightPosting, LoadedInt16Vector, int16_t, EnumStoreT<int16_t>>;
 
-template class
-PostingListAttributeSubBase<AttributeWeightPosting,
-                            LoadedInt32Vector,
-                            int32_t,
-                            EnumStoreT<int32_t>>;
+template class PostingListAttributeSubBase<AttributeWeightPosting, LoadedInt32Vector, int32_t, EnumStoreT<int32_t>>;
 
-template class
-PostingListAttributeSubBase<AttributeWeightPosting,
-                            LoadedInt64Vector,
-                            int64_t,
-                            EnumStoreT<int64_t>>;
+template class PostingListAttributeSubBase<AttributeWeightPosting, LoadedInt64Vector, int64_t, EnumStoreT<int64_t>>;
 
-template class
-PostingListAttributeSubBase<AttributeWeightPosting,
-                            LoadedFloatVector,
-                            float,
-                            EnumStoreT<float>>;
+template class PostingListAttributeSubBase<AttributeWeightPosting, LoadedFloatVector, float, EnumStoreT<float>>;
 
-template class
-PostingListAttributeSubBase<AttributeWeightPosting,
-                            LoadedDoubleVector,
-                            double,
-                            EnumStoreT<double>>;
+template class PostingListAttributeSubBase<AttributeWeightPosting, LoadedDoubleVector, double, EnumStoreT<double>>;
 
-template class
-PostingListAttributeSubBase<AttributeWeightPosting,
-                            NoLoadedVector,
-                            const char*,
-                            EnumStoreT<const char*>>;
+template class PostingListAttributeSubBase<AttributeWeightPosting, NoLoadedVector, const char*,
+                                           EnumStoreT<const char*>>;
 
-
-}
+} // namespace search

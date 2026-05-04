@@ -2,7 +2,4 @@
 
 #include "attribute.h"
 
-namespace search {
-
-} // namespace search
-
+namespace search {} // namespace search

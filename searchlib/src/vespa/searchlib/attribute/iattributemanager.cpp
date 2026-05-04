@@ -2,7 +2,4 @@
 
 #include "iattributemanager.h"
 
-namespace search {
-
-} // namespace search
-
+namespace search {} // namespace search

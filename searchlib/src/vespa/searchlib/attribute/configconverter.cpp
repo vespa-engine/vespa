@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "configconverter.h"
+
 #include <vespa/searchcommon/attribute/config.h>
 
 using namespace vespa::config::search;
@@ -9,15 +10,13 @@ namespace search::attribute {
 
 namespace {
 
-using vespalib::eval::ValueType;
 using vespalib::eval::CellType;
+using vespalib::eval::ValueType;
 
 using DataTypeMap = std::map<AttributesConfig::Attribute::Datatype, BasicType::Type>;
 using CollectionTypeMap = std::map<AttributesConfig::Attribute::Collectiontype, CollectionType::Type>;
 
-DataTypeMap
-getDataTypeMap()
-{
+DataTypeMap getDataTypeMap() {
     DataTypeMap map;
     map[AttributesConfig::Attribute::Datatype::STRING] = BasicType::STRING;
     map[AttributesConfig::Attribute::Datatype::BOOL] = BasicType::BOOL;
@@ -37,9 +36,7 @@ getDataTypeMap()
     return map;
 }
 
-CollectionTypeMap
-getCollectionTypeMap()
-{
+CollectionTypeMap getCollectionTypeMap() {
     CollectionTypeMap map;
     map[AttributesConfig::Attribute::Collectiontype::SINGLE] = CollectionType::SINGLE;
     map[AttributesConfig::Attribute::Collectiontype::ARRAY] = CollectionType::ARRAY;
@@ -47,11 +44,10 @@ getCollectionTypeMap()
     return map;
 }
 
-DataTypeMap _dataTypeMap = getDataTypeMap();
+DataTypeMap       _dataTypeMap = getDataTypeMap();
 CollectionTypeMap _collectionTypeMap = getCollectionTypeMap();
 
-DictionaryConfig::Type
-convert(AttributesConfig::Attribute::Dictionary::Type type_cfg) {
+DictionaryConfig::Type convert(AttributesConfig::Attribute::Dictionary::Type type_cfg) {
     switch (type_cfg) {
     case AttributesConfig::Attribute::Dictionary::Type::BTREE:
         return DictionaryConfig::Type::BTREE;
@@ -63,8 +59,7 @@ convert(AttributesConfig::Attribute::Dictionary::Type type_cfg) {
     assert(false);
 }
 
-DictionaryConfig::Match
-convert(AttributesConfig::Attribute::Dictionary::Match match_cfg) {
+DictionaryConfig::Match convert(AttributesConfig::Attribute::Dictionary::Match match_cfg) {
     switch (match_cfg) {
     case AttributesConfig::Attribute::Dictionary::Match::CASE_SENSITIVE:
     case AttributesConfig::Attribute::Dictionary::Match::CASED:
@@ -76,32 +71,28 @@ convert(AttributesConfig::Attribute::Dictionary::Match match_cfg) {
     assert(false);
 }
 
-DictionaryConfig
-convert_dictionary(const AttributesConfig::Attribute::Dictionary & dictionary) {
+DictionaryConfig convert_dictionary(const AttributesConfig::Attribute::Dictionary& dictionary) {
     return {convert(dictionary.type), convert(dictionary.match)};
 }
 
-Config::Match
-convertMatch(AttributesConfig::Attribute::Match match_cfg) {
+Config::Match convertMatch(AttributesConfig::Attribute::Match match_cfg) {
     switch (match_cfg) {
-        case AttributesConfig::Attribute::Match::CASED:
-            return Config::Match::CASED;
-        case AttributesConfig::Attribute::Match::UNCASED:
-            return Config::Match::UNCASED;
+    case AttributesConfig::Attribute::Match::CASED:
+        return Config::Match::CASED;
+    case AttributesConfig::Attribute::Match::UNCASED:
+        return Config::Match::UNCASED;
     }
     assert(false);
 }
 
-}
+} // namespace
 
-Config
-ConfigConverter::convert(const AttributesConfig::Attribute & cfg)
-{
-    BasicType bType(_dataTypeMap[cfg.datatype]);
+Config ConfigConverter::convert(const AttributesConfig::Attribute& cfg) {
+    BasicType      bType(_dataTypeMap[cfg.datatype]);
     CollectionType cType(_collectionTypeMap[cfg.collectiontype]);
     cType.removeIfZero(cfg.removeifzero);
     cType.createIfNonExistant(cfg.createifnonexistent);
-    Config retval(bType, cType);
+    Config          retval(bType, cType);
     PredicateParams predicateParams;
     retval.setFastSearch(cfg.fastsearch);
     retval.setIsFilter(cfg.enableonlybitvector);
@@ -118,33 +109,33 @@ ConfigConverter::convert(const AttributesConfig::Attribute & cfg)
     using CfgDm = AttributesConfig::Attribute::Distancemetric;
     DistanceMetric dm(DistanceMetric::Euclidean);
     switch (cfg.distancemetric) {
-        case CfgDm::EUCLIDEAN:
-            dm = DistanceMetric::Euclidean;
-            break;
-        case CfgDm::ANGULAR:
-            dm = DistanceMetric::Angular;
-            break;
-        case CfgDm::GEODEGREES:
-            dm = DistanceMetric::GeoDegrees;
-            break;
-        case CfgDm::INNERPRODUCT:
-            dm = DistanceMetric::InnerProduct;
-            break;
-        case CfgDm::HAMMING:
-            dm = DistanceMetric::Hamming;
-            break;
-        case CfgDm::PRENORMALIZED_ANGULAR:
-            dm = DistanceMetric::PrenormalizedAngular;
-            break;
-        case CfgDm::DOTPRODUCT:
-            dm = DistanceMetric::Dotproduct;
-            break;
+    case CfgDm::EUCLIDEAN:
+        dm = DistanceMetric::Euclidean;
+        break;
+    case CfgDm::ANGULAR:
+        dm = DistanceMetric::Angular;
+        break;
+    case CfgDm::GEODEGREES:
+        dm = DistanceMetric::GeoDegrees;
+        break;
+    case CfgDm::INNERPRODUCT:
+        dm = DistanceMetric::InnerProduct;
+        break;
+    case CfgDm::HAMMING:
+        dm = DistanceMetric::Hamming;
+        break;
+    case CfgDm::PRENORMALIZED_ANGULAR:
+        dm = DistanceMetric::PrenormalizedAngular;
+        break;
+    case CfgDm::DOTPRODUCT:
+        dm = DistanceMetric::Dotproduct;
+        break;
     }
     retval.set_distance_metric(dm);
     if (cfg.index.hnsw.enabled) {
         retval.set_hnsw_index_params(HnswIndexParams(cfg.index.hnsw.maxlinkspernode,
-                                                     cfg.index.hnsw.neighborstoexploreatinsert,
-                                                     dm, cfg.index.hnsw.multithreadedindexing));
+                                                     cfg.index.hnsw.neighborstoexploreatinsert, dm,
+                                                     cfg.index.hnsw.multithreadedindexing));
     }
     if (retval.basicType().type() == BasicType::Type::TENSOR) {
         if (!cfg.tensortype.empty()) {
@@ -156,4 +147,4 @@ ConfigConverter::convert(const AttributesConfig::Attribute & cfg)
     return retval;
 }
 
-}
+} // namespace search::attribute

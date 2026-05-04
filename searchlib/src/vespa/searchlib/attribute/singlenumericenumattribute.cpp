@@ -5,7 +5,4 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.single_numeric_enum_attribute");
 
-namespace search {
-
-} // namespace search
-
+namespace search {} // namespace search

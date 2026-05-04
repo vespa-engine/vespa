@@ -11,4 +11,4 @@ template class NumericMatcher<int64_t>;
 template class NumericMatcher<float>;
 template class NumericMatcher<double>;
 
-}
+} // namespace search::attribute

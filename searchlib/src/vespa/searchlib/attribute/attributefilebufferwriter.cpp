@@ -1,33 +1,23 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attributefilebufferwriter.h"
+
 #include <vespa/vespalib/data/databuffer.h>
 
 namespace search {
 
-AttributeFileBufferWriter::
-AttributeFileBufferWriter(IAttributeFileWriter &fileWriter)
-    : BufferWriter(),
-      _buf(),
-      _bytesWritten(0),
-      _incompleteBuffers(0),
-      _fileWriter(fileWriter)
-{
+AttributeFileBufferWriter::AttributeFileBufferWriter(IAttributeFileWriter& fileWriter)
+    : BufferWriter(), _buf(), _bytesWritten(0), _incompleteBuffers(0), _fileWriter(fileWriter) {
     _buf = _fileWriter.allocBuf(BUFFER_SIZE);
     assert(_buf->getFreeLen() >= BUFFER_SIZE);
     setup(_buf->getFree(), BUFFER_SIZE);
 }
 
-
-AttributeFileBufferWriter::~AttributeFileBufferWriter()
-{
+AttributeFileBufferWriter::~AttributeFileBufferWriter() {
     assert(usedLen() == 0);
 }
 
-
-void
-AttributeFileBufferWriter::flush()
-{
+void AttributeFileBufferWriter::flush() {
     assert(_incompleteBuffers == 0); // all previous buffers must have been full
     size_t nowLen = usedLen();
     if (nowLen != BUFFER_SIZE) {

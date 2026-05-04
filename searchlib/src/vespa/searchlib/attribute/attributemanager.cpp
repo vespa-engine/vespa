@@ -1,37 +1,41 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attributemanager.h"
+
 #include "attribute_read_guard.h"
 #include "attributecontext.h"
 #include "attributefactory.h"
 #include "attrvector.h"
 #include "interlock.h"
+
 #include <vespa/searchcommon/attribute/config.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/exceptions.h>
+
+#include <vespa/vespalib/stllike/hash_map.hpp>
+
 #include <condition_variable>
 #include <set>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attributemanager");
 
+using search::attribute::IAttributeContext;
 using std::string;
 using vespalib::IllegalStateException;
-using search::attribute::IAttributeContext;
 
 namespace {
 
-std::mutex baseDirLock;
+std::mutex              baseDirLock;
 std::condition_variable baseDirCond;
 using BaseDirSet = std::set<string>;
 BaseDirSet baseDirSet;
 
-void
-waitBaseDir(const string &baseDir)
-{
-    if (baseDir.empty()) { return; }
+void waitBaseDir(const string& baseDir) {
+    if (baseDir.empty()) {
+        return;
+    }
     std::unique_lock<std::mutex> guard(baseDirLock);
-    bool waited = false;
+    bool                         waited = false;
 
     auto it = baseDirSet.find(baseDir);
     while (it != baseDirSet.end()) {
@@ -49,9 +53,7 @@ waitBaseDir(const string &baseDir)
     }
 }
 
-void
-dropBaseDir(const string &baseDir)
-{
+void dropBaseDir(const string& baseDir) {
     if (baseDir.empty())
         return;
     std::lock_guard<std::mutex> guard(baseDirLock);
@@ -65,53 +67,39 @@ dropBaseDir(const string &baseDir)
     baseDirCond.notify_all();
 }
 
-}
+} // namespace
 
 namespace search {
 
 AttributeManager::AttributeManager()
-    : _attributes(),
-      _loadLock(),
-      _baseDir(),
-      _snapShot(),
-      _interlock(std::make_shared<attribute::Interlock>())
-{
-    LOG(debug, "New attributeManager %p", static_cast<const void *>(this));
+    : _attributes(), _loadLock(), _baseDir(), _snapShot(), _interlock(std::make_shared<attribute::Interlock>()) {
+    LOG(debug, "New attributeManager %p", static_cast<const void*>(this));
 }
 
-
 AttributeManager::AttributeManager(string baseDir)
-    :  _attributes(),
-       _loadLock(),
-       _baseDir(std::move(baseDir)),
-       _snapShot(),
-       _interlock(std::make_shared<attribute::Interlock>())
-{
-    LOG(debug, "New attributeManager %p, baseDir %s", static_cast<const void *>(this), _baseDir.c_str());
+    : _attributes(),
+      _loadLock(),
+      _baseDir(std::move(baseDir)),
+      _snapShot(),
+      _interlock(std::make_shared<attribute::Interlock>()) {
+    LOG(debug, "New attributeManager %p, baseDir %s", static_cast<const void*>(this), _baseDir.c_str());
     waitBaseDir(_baseDir);
 }
 
-
-void
-AttributeManager::setBaseDir(const string & base)
-{
+void AttributeManager::setBaseDir(const string& base) {
     dropBaseDir(_baseDir);
     _baseDir = base;
-    LOG(debug, "attributeManager %p new baseDir %s", static_cast<const void *>(this), _baseDir.c_str());
+    LOG(debug, "attributeManager %p new baseDir %s", static_cast<const void*>(this), _baseDir.c_str());
     waitBaseDir(base);
 }
 
-
-AttributeManager::~AttributeManager()
-{
+AttributeManager::~AttributeManager() {
     _attributes.clear();
-    LOG(debug, "delete attributeManager %p baseDir %s", static_cast<const void *>(this), _baseDir.c_str());
+    LOG(debug, "delete attributeManager %p baseDir %s", static_cast<const void*>(this), _baseDir.c_str());
     dropBaseDir(_baseDir);
 }
 
-
-uint64_t AttributeManager::getMemoryFootprint() const
-{
+uint64_t AttributeManager::getMemoryFootprint() const {
     uint64_t sum(0);
     for (const auto& elem : _attributes) {
         sum += elem.second->getStatus().getAllocated();
@@ -120,47 +108,39 @@ uint64_t AttributeManager::getMemoryFootprint() const
     return sum;
 }
 
-const AttributeManager::VectorHolder *
-AttributeManager::findAndLoadAttribute(std::string_view name) const
-{
-    const VectorHolder * loadedVector(nullptr);
-    auto found = _attributes.find(name);
+const AttributeManager::VectorHolder* AttributeManager::findAndLoadAttribute(std::string_view name) const {
+    const VectorHolder* loadedVector(nullptr);
+    auto                found = _attributes.find(name);
     if (found != _attributes.end()) {
-        AttributeVector & vec = *found->second;
-        if ( ! vec.isLoaded() ) {
+        AttributeVector& vec = *found->second;
+        if (!vec.isLoaded()) {
             std::lock_guard<std::mutex> loadGuard(_loadLock);
-            if ( ! vec.isLoaded() ) {
+            if (!vec.isLoaded()) {
                 vec.load();
             } else {
                 LOG(debug, "Multi load of %s prevented by double checked locking.", vec.getBaseFileName().c_str());
             }
         }
-        loadedVector = & found->second;
+        loadedVector = &found->second;
     }
     return loadedVector;
 }
 
-
-const AttributeManager::VectorHolder *
-AttributeManager::getAttributeRef(std::string_view name) const
-{
+const AttributeManager::VectorHolder* AttributeManager::getAttributeRef(std::string_view name) const {
     return findAndLoadAttribute(name);
 }
 
-AttributeGuard::UP
-AttributeManager::getAttribute(std::string_view name) const
-{
-    const VectorHolder * vh = findAndLoadAttribute(name);
-    if ( vh != nullptr ) {
+AttributeGuard::UP AttributeManager::getAttribute(std::string_view name) const {
+    const VectorHolder* vh = findAndLoadAttribute(name);
+    if (vh != nullptr) {
         return std::make_unique<AttributeGuard>(*vh);
     }
     return std::make_unique<AttributeGuard>();
 }
 
-std::unique_ptr<attribute::AttributeReadGuard>
-AttributeManager::getAttributeReadGuard(std::string_view name, bool stableEnumGuard) const
-{
-    const VectorHolder * vh = findAndLoadAttribute(name);
+std::unique_ptr<attribute::AttributeReadGuard> AttributeManager::getAttributeReadGuard(std::string_view name,
+                                                                                       bool stableEnumGuard) const {
+    const VectorHolder* vh = findAndLoadAttribute(name);
     if (vh != nullptr) {
         return (*vh)->makeReadGuard(stableEnumGuard);
     } else {
@@ -168,9 +148,7 @@ AttributeManager::getAttributeReadGuard(std::string_view name, bool stableEnumGu
     }
 }
 
-bool
-AttributeManager::add(const AttributeManager::VectorHolder & vector)
-{
+bool AttributeManager::add(const AttributeManager::VectorHolder& vector) {
     bool retval(true);
     auto found = _attributes.find(vector->getName());
     if (found == _attributes.end()) {
@@ -181,41 +159,33 @@ AttributeManager::add(const AttributeManager::VectorHolder & vector)
     return retval;
 }
 
-void
-AttributeManager::getAttributeList(AttributeList & list) const
-{
+void AttributeManager::getAttributeList(AttributeList& list) const {
     list.reserve(_attributes.size());
     for (const auto& elem : _attributes) {
         list.emplace_back(elem.second);
     }
 }
 
-IAttributeContext::UP
-AttributeManager::createContext() const
-{
+IAttributeContext::UP AttributeManager::createContext() const {
     return std::make_unique<AttributeContext>(*this);
 }
 
-string
-AttributeManager::createBaseFileName(std::string_view name) const
-{
+string AttributeManager::createBaseFileName(std::string_view name) const {
     std::string dir = getBaseDir();
-    if ( ! getSnapshot().dirName.empty()) {
+    if (!getSnapshot().dirName.empty()) {
         dir += "/";
         dir += getSnapshot().dirName;
     }
     return attribute::BaseName(dir, name);
 }
 
-bool
-AttributeManager::addVector(std::string_view name, const Config & config)
-{
-    bool retval = false;
+bool AttributeManager::addVector(std::string_view name, const Config& config) {
+    bool               retval = false;
     AttributeGuard::UP vector_owner(getAttribute(name));
-    AttributeGuard &vector(*vector_owner);
+    AttributeGuard&    vector(*vector_owner);
 
     if (vector.valid()) {
-        if ((vector->getInternalBasicType() == config.basicType())  &&
+        if ((vector->getInternalBasicType() == config.basicType()) &&
             (vector->getInternalCollectionType() == config.collectionType()))
         {
             retval = true;
@@ -225,16 +195,15 @@ AttributeManager::addVector(std::string_view name, const Config & config)
     } else {
         auto found = _attributes.find(name);
         if (found != _attributes.end()) {
-            const VectorHolder & vh(found->second);
-            if ( vh.get() &&
-                 (vh->getInternalBasicType() == config.basicType()) &&
-                 (vh->getInternalCollectionType() == config.collectionType()))
+            const VectorHolder& vh(found->second);
+            if (vh.get() && (vh->getInternalBasicType() == config.basicType()) &&
+                (vh->getInternalCollectionType() == config.collectionType()))
             {
                 retval = true;
             }
         }
-        if (! retval ) {
-            string baseFileName = createBaseFileName(name);
+        if (!retval) {
+            string       baseFileName = createBaseFileName(name);
             VectorHolder vh(AttributeFactory::createAttribute(baseFileName, config));
             assert(vh.get());
             if (vh->load()) {
@@ -249,14 +218,12 @@ AttributeManager::addVector(std::string_view name, const Config & config)
     return retval;
 }
 
-void
-AttributeManager::asyncForAttribute(std::string_view, std::unique_ptr<attribute::IAttributeFunctor>) const {
+void AttributeManager::asyncForAttribute(std::string_view, std::unique_ptr<attribute::IAttributeFunctor>) const {
     throw std::runtime_error("search::AttributeManager::asyncForAttribute should never be called.");
 }
 
 std::shared_ptr<attribute::ReadableAttributeVector>
-AttributeManager::readable_attribute_vector(std::string_view name) const
-{
+AttributeManager::readable_attribute_vector(std::string_view name) const {
     const auto* attr = findAndLoadAttribute(name);
     if (attr) {
         return *attr;
@@ -264,4 +231,4 @@ AttributeManager::readable_attribute_vector(std::string_view name) const
     return {};
 }
 
-}
+} // namespace search

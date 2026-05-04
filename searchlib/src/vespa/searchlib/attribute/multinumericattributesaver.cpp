@@ -1,34 +1,30 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "multinumericattributesaver.h"
+
 #include "multivalueattributesaverutils.h"
+
 #include <vespa/searchcommon/attribute/multivalue.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 
-using vespalib::GenerationGuard;
 using search::multivalueattributesaver::CountWriter;
 using search::multivalueattributesaver::WeightWriter;
+using vespalib::GenerationGuard;
 
 namespace search {
 
 namespace {
 
-class DatWriter
-{
+class DatWriter {
     std::unique_ptr<search::BufferWriter> _datWriter;
+
 public:
-    explicit DatWriter(IAttributeSaveTarget &saveTarget)
-        : _datWriter(saveTarget.datWriter().allocBufferWriter())
-    { }
+    explicit DatWriter(IAttributeSaveTarget& saveTarget) : _datWriter(saveTarget.datWriter().allocBufferWriter()) {}
 
-    ~DatWriter() {
-        _datWriter->flush();
-    }
+    ~DatWriter() { _datWriter->flush(); }
 
-    template <typename MultiValueT>
-    void
-    writeValues(std::span<const MultiValueT> values) {
-        for (const MultiValueT &valueRef : values) {
+    template <typename MultiValueT> void writeValues(std::span<const MultiValueT> values) {
+        for (const MultiValueT& valueRef : values) {
             using ValueType = multivalue::ValueType_t<MultiValueT>;
             ValueType value(valueRef);
             _datWriter->write(&value, sizeof(ValueType));
@@ -36,33 +32,25 @@ public:
     }
 };
 
-}
+} // namespace
 
 template <typename MultiValueT>
-MultiValueNumericAttributeSaver<MultiValueT>::
-MultiValueNumericAttributeSaver(GenerationGuard &&guard,
-                                const attribute::AttributeHeader &header,
-                                const MultiValueMapping &mvMapping)
-    : Parent(std::move(guard), header, mvMapping),
-      _mvMapping(mvMapping)
-{
+MultiValueNumericAttributeSaver<MultiValueT>::MultiValueNumericAttributeSaver(
+    GenerationGuard&& guard, const attribute::AttributeHeader& header, const MultiValueMapping& mvMapping)
+    : Parent(std::move(guard), header, mvMapping), _mvMapping(mvMapping) {
 }
-
-
 
 template <typename MultiValueT>
 MultiValueNumericAttributeSaver<MultiValueT>::~MultiValueNumericAttributeSaver() = default;
 
 template <typename MultiValueT>
-bool
-MultiValueNumericAttributeSaver<MultiValueT>::onSave(IAttributeSaveTarget &saveTarget)
-{
-    CountWriter countWriter(saveTarget);
+bool MultiValueNumericAttributeSaver<MultiValueT>::onSave(IAttributeSaveTarget& saveTarget) {
+    CountWriter                                                  countWriter(saveTarget);
     WeightWriter<multivalue::is_WeightedValue_v<MultiValueType>> weightWriter(saveTarget);
-    DatWriter datWriter(saveTarget);
+    DatWriter                                                    datWriter(saveTarget);
 
     for (uint32_t docId = 0; docId < _frozenIndices.size(); ++docId) {
-        vespalib::datastore::EntryRef idx = _frozenIndices[docId];
+        vespalib::datastore::EntryRef   idx = _frozenIndices[docId];
         std::span<const MultiValueType> values(_mvMapping.getDataForIdx(idx));
         countWriter.writeCount(values.size());
         weightWriter.writeWeights(values);
@@ -84,4 +72,4 @@ template class MultiValueNumericAttributeSaver<multivalue::WeightedValue<int64_t
 template class MultiValueNumericAttributeSaver<multivalue::WeightedValue<float>>;
 template class MultiValueNumericAttributeSaver<multivalue::WeightedValue<double>>;
 
-}  // namespace search
+} // namespace search

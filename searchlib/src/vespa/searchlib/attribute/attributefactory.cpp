@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attributefactory.h"
+
 #include "attributevector.h"
+
 #include <vespa/searchcommon/attribute/config.h>
 
 #include <vespa/log/log.h>
@@ -11,16 +13,15 @@ namespace search {
 
 using attribute::CollectionType;
 
-AttributeVector::SP
-AttributeFactory::createAttribute(string_view name_view, const Config & cfg)
-{
-    std::string name(name_view);
+AttributeVector::SP AttributeFactory::createAttribute(string_view name_view, const Config& cfg) {
+    std::string         name(name_view);
     AttributeVector::SP ret;
     if (cfg.collectionType().type() == CollectionType::ARRAY) {
         if (cfg.fastSearch()) {
             ret = createArrayFastSearch(name, cfg);
-            if ( ! ret) {
-                LOG(warning, "Cannot apply fastsearch hint on attribute %s of type array<%s>. "
+            if (!ret) {
+                LOG(warning,
+                    "Cannot apply fastsearch hint on attribute %s of type array<%s>. "
                     "Falling back to normal. You should correct your .sd file.",
                     name.c_str(), cfg.basicType().asString());
                 ret = createArrayStd(name, cfg);
@@ -32,8 +33,9 @@ AttributeFactory::createAttribute(string_view name_view, const Config & cfg)
         // Ignore if noupdate has been set.
         if (cfg.fastSearch()) {
             ret = createSetFastSearch(name, cfg);
-            if ( ! ret) {
-                LOG(warning, "Cannot apply fastsearch hint on attribute %s of type set<%s>. "
+            if (!ret) {
+                LOG(warning,
+                    "Cannot apply fastsearch hint on attribute %s of type set<%s>. "
                     "Falling back to normal. You should correct your .sd file.",
                     name.c_str(), cfg.basicType().asString());
                 ret = createSetStd(name, cfg);
@@ -44,8 +46,9 @@ AttributeFactory::createAttribute(string_view name_view, const Config & cfg)
     } else {
         if (cfg.fastSearch()) {
             ret = createSingleFastSearch(name, cfg);
-            if ( ! ret) {
-                LOG(warning, "Cannot apply fastsearch hint on attribute %s of type %s. "
+            if (!ret) {
+                LOG(warning,
+                    "Cannot apply fastsearch hint on attribute %s of type %s. "
                     "Falling back to normal. You should correct your .sd file.",
                     name.c_str(), cfg.basicType().asString());
                 ret = createSingleStd(name, cfg);
@@ -57,4 +60,4 @@ AttributeFactory::createAttribute(string_view name_view, const Config & cfg)
     return ret;
 }
 
-}
+} // namespace search

@@ -6,6 +6,7 @@
 #include "floatbase.h"
 #include "multinumericpostattribute.h"
 #include "multistringpostattribute.h"
+
 #include <vespa/searchcommon/attribute/config.h>
 
 #include <vespa/log/log.h>
@@ -15,18 +16,18 @@ namespace search {
 
 using attribute::BasicType;
 
-#define INTARRAY(T)   MultiValueNumericPostingAttribute< ENUM_ATTRIBUTE(IntegerAttributeTemplate<T>), MULTIVALUE_ENUM_ARG >
-#define FLOATARRAY(T) MultiValueNumericPostingAttribute< ENUM_ATTRIBUTE(FloatingPointAttributeTemplate<T>), MULTIVALUE_ENUM_ARG >
-#define CREATEINTARRAY(T, fname, info) static_cast<AttributeVector *>(new INTARRAY(T)(fname, info))
-#define CREATEFLOATARRAY(T, fname, info) static_cast<AttributeVector *>(new FLOATARRAY(T)(fname, info))
+#define INTARRAY(T)                                                                                     \
+    MultiValueNumericPostingAttribute<ENUM_ATTRIBUTE(IntegerAttributeTemplate<T>), MULTIVALUE_ENUM_ARG>
+#define FLOATARRAY(T)                                                                                         \
+    MultiValueNumericPostingAttribute<ENUM_ATTRIBUTE(FloatingPointAttributeTemplate<T>), MULTIVALUE_ENUM_ARG>
+#define CREATEINTARRAY(T, fname, info) static_cast<AttributeVector*>(new INTARRAY(T)(fname, info))
+#define CREATEFLOATARRAY(T, fname, info) static_cast<AttributeVector*>(new FLOATARRAY(T)(fname, info))
 
-AttributeVector::SP
-AttributeFactory::createArrayFastSearch(std::string name, const Config & info)
-{
+AttributeVector::SP AttributeFactory::createArrayFastSearch(std::string name, const Config& info) {
     assert(info.collectionType().type() == attribute::CollectionType::ARRAY);
     assert(info.fastSearch());
     AttributeVector::SP ret;
-    switch(info.basicType().type()) {
+    switch (info.basicType().type()) {
     case BasicType::BOOL:
     case BasicType::UINT2:
     case BasicType::UINT4:
@@ -58,4 +59,4 @@ AttributeFactory::createArrayFastSearch(std::string name, const Config & info)
     return ret;
 }
 
-}
+} // namespace search

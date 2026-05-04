@@ -4,7 +4,6 @@
 
 namespace search {
 
-template class SingleValueStringAttributeT<EnumAttribute<StringAttribute>>; 
+template class SingleValueStringAttributeT<EnumAttribute<StringAttribute>>;
 
 } // namespace search
-

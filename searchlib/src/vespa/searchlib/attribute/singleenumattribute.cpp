@@ -1,11 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "singleenumattribute.hpp"
-#include "stringbase.h"
-#include "integerbase.h"
-#include "floatbase.h"
+
 #include "enumattribute.h"
 #include "enummodifier.h"
+#include "floatbase.h"
+#include "integerbase.h"
+#include "stringbase.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.single_enum_attribute");
@@ -14,25 +15,20 @@ namespace search {
 
 using attribute::Config;
 
-SingleValueEnumAttributeBase::
-SingleValueEnumAttributeBase(const Config & c, GenerationHolder &genHolder, const vespalib::alloc::Alloc& initial_alloc)
-    : _enumIndices(c.getGrowStrategy(), genHolder, initial_alloc)
-{
+SingleValueEnumAttributeBase::SingleValueEnumAttributeBase(const Config& c, GenerationHolder& genHolder,
+                                                           const vespalib::alloc::Alloc& initial_alloc)
+    : _enumIndices(c.getGrowStrategy(), genHolder, initial_alloc) {
 }
 
 SingleValueEnumAttributeBase::~SingleValueEnumAttributeBase() = default;
 
-AttributeVector::DocId
-SingleValueEnumAttributeBase::addDoc(bool &incGeneration)
-{
+AttributeVector::DocId SingleValueEnumAttributeBase::addDoc(bool& incGeneration) {
     incGeneration = _enumIndices.isFull();
     _enumIndices.push_back(AtomicEntryRef());
     return _enumIndices.size() - 1;
 }
 
-void
-SingleValueEnumAttributeBase::remap_enum_store_refs(const EnumIndexRemapper& remapper, AttributeVector& v)
-{
+void SingleValueEnumAttributeBase::remap_enum_store_refs(const EnumIndexRemapper& remapper, AttributeVector& v) {
     // update _enumIndices with new EnumIndex values after enum store has been compacted.
     v.logEnumStoreEvent("reenumerate", "reserved");
     auto new_indexes = _enumIndices.create_replacement_vector();
@@ -64,4 +60,4 @@ template class SingleValueEnumAttribute<EnumAttribute<IntegerAttributeTemplate<i
 template class SingleValueEnumAttribute<EnumAttribute<FloatingPointAttributeTemplate<float>>>;
 template class SingleValueEnumAttribute<EnumAttribute<FloatingPointAttributeTemplate<double>>>;
 
-}
+} // namespace search

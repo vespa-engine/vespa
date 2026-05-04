@@ -13,19 +13,16 @@ namespace search {
 
 using attribute::BasicType;
 
-#define INTARRAY(T)   MultiValueNumericAttribute< IntegerAttributeTemplate<T>, MULTIVALUE_ARG(T) >
-#define FLOATARRAY(T) MultiValueNumericAttribute< FloatingPointAttributeTemplate<T>, MULTIVALUE_ARG(T) >
+#define INTARRAY(T) MultiValueNumericAttribute<IntegerAttributeTemplate<T>, MULTIVALUE_ARG(T)>
+#define FLOATARRAY(T) MultiValueNumericAttribute<FloatingPointAttributeTemplate<T>, MULTIVALUE_ARG(T)>
 
-#define CREATEINTARRAY(T, fname, info) static_cast<AttributeVector *>(new INTARRAY(T)(fname, info))
-#define CREATEFLOATARRAY(T, fname, info) static_cast<AttributeVector *>(new FLOATARRAY(T)(fname, info))
+#define CREATEINTARRAY(T, fname, info) static_cast<AttributeVector*>(new INTARRAY(T)(fname, info))
+#define CREATEFLOATARRAY(T, fname, info) static_cast<AttributeVector*>(new FLOATARRAY(T)(fname, info))
 
-
-AttributeVector::SP
-AttributeFactory::createArrayStd(std::string name, const Config & info)
-{
+AttributeVector::SP AttributeFactory::createArrayStd(std::string name, const Config& info) {
     assert(info.collectionType().type() == attribute::CollectionType::ARRAY);
     AttributeVector::SP ret;
-    switch(info.basicType().type()) {
+    switch (info.basicType().type()) {
     case BasicType::BOOL:
         ret.reset(new attribute::ArrayBoolAttribute(name, info));
         break;
@@ -51,7 +48,7 @@ AttributeFactory::createArrayStd(std::string name, const Config & info)
         ret.reset(CREATEFLOATARRAY(double, name, info));
         break;
     case BasicType::STRING:
-        ret.reset(static_cast<AttributeVector *>(new ArrayStringAttribute(name, info)));
+        ret.reset(static_cast<AttributeVector*>(new ArrayStringAttribute(name, info)));
         break;
     default:
         break;
@@ -59,4 +56,4 @@ AttributeFactory::createArrayStd(std::string name, const Config & info)
     return ret;
 }
 
-}
+} // namespace search

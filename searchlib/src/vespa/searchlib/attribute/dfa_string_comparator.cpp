@@ -1,20 +1,18 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dfa_string_comparator.h"
+
 #include <vespa/searchlib/util/foldedstringcompare.h>
 
 namespace search::attribute {
 
-DfaStringComparator::DfaStringComparator(const DataStoreType& data_store, const std::vector<uint32_t>& candidate, bool cased) noexcept
-    : ParentType(data_store),
-      _candidate(std::cref(candidate)),
-      _cased(cased)
-{
+DfaStringComparator::DfaStringComparator(const DataStoreType& data_store, const std::vector<uint32_t>& candidate,
+                                         bool cased) noexcept
+    : ParentType(data_store), _candidate(std::cref(candidate)), _cased(cased) {
 }
 
-bool
-DfaStringComparator::less(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const noexcept
-{
+bool DfaStringComparator::less(const vespalib::datastore::EntryRef lhs,
+                               const vespalib::datastore::EntryRef rhs) const noexcept {
     if (lhs.valid()) {
         if (rhs.valid()) {
             if (_cased) {
@@ -42,4 +40,4 @@ DfaStringComparator::less(const vespalib::datastore::EntryRef lhs, const vespali
     }
 }
 
-}
+} // namespace search::attribute

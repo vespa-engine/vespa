@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "single_enum_search_context.hpp"
-#include "string_search_context.h"
+
 #include "numeric_range_matcher.h"
 #include "numeric_search_context.h"
+#include "string_search_context.h"
 
 namespace search::attribute {
 
@@ -15,4 +16,4 @@ template class SingleEnumSearchContext<int64_t, NumericSearchContext<NumericRang
 template class SingleEnumSearchContext<float, NumericSearchContext<NumericRangeMatcher<float>>>;
 template class SingleEnumSearchContext<double, NumericSearchContext<NumericRangeMatcher<double>>>;
 
-}
+} // namespace search::attribute
