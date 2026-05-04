@@ -79,7 +79,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private final Map<ClusterSpec.Type, String> mallocImpl = new HashMap<>();
     private final Map<String, Integer> searchNodeInitializerThreads = new HashMap<>();
     private boolean useTriton = false;
-    private boolean scaleMetricsproxyHeapByNodeCount = false;
     private OptionalInt metricsProxyHeapSizeInMib = OptionalInt.empty();
     private OptionalInt metricsProxyAdminNodeHeapSizeInMib = OptionalInt.empty();
     private boolean ignoreConnectivityChecksAtStartup = false;
@@ -140,7 +139,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     }
     @Override public boolean useTriton() { return useTriton; }
     @Override public ModelContext.FeatureFlag<Boolean> useTritonFlag() { return () -> useTriton; }
-    @Override public boolean scaleMetricsproxyHeapByNodeCount() { return scaleMetricsproxyHeapByNodeCount; }
     @Override public OptionalInt metricsProxyHeapSizeInMib() { return metricsProxyHeapSizeInMib; }
     @Override public OptionalInt metricsProxyAdminNodeHeapSizeInMib() { return metricsProxyAdminNodeHeapSizeInMib; }
     @Override public boolean ignoreConnectivityChecksAtStartup() { return ignoreConnectivityChecksAtStartup; }
@@ -331,11 +329,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setSearchCoreMaxOutstandingMoveOps(int value) {
         this.searchCoreMaxOutstandingMoveOps = value;
-        return this;
-    }
-
-    public TestProperties setScaleMetricsproxyHeapByNodeCount(boolean value) {
-        this.scaleMetricsproxyHeapByNodeCount = value;
         return this;
     }
 

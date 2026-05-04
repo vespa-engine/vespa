@@ -50,7 +50,6 @@ public class MetricsProxyContainer extends Container implements
     private final MetricsProxyContainerCluster cluster;
     private final ApplicationId applicationId;
     private final Zone zone;
-    private final boolean scaleHeapByNodeCount;
     private final OptionalInt metricsProxyHeapSizeInMib;
     private final OptionalInt metricsProxyAdminNodeHeapSizeInMib;
 
@@ -61,7 +60,6 @@ public class MetricsProxyContainer extends Container implements
         this.cluster = cluster;
         this.applicationId = deployState.getApplicationPackage().getApplicationId();
         this.zone = deployState.zone();
-        this.scaleHeapByNodeCount = deployState.featureFlags().scaleMetricsproxyHeapByNodeCount();
         this.metricsProxyHeapSizeInMib = deployState.featureFlags().metricsProxyHeapSizeInMib();
         this.metricsProxyAdminNodeHeapSizeInMib = deployState.featureFlags().metricsProxyAdminNodeHeapSizeInMib();
         setProp("clustertype", "admin");
@@ -176,20 +174,17 @@ public class MetricsProxyContainer extends Container implements
     }
 
     private int calculateHeapSize(boolean adminCluster) {
-        int nodeCount = hostSystem().getHosts().size();
         if (adminCluster) {
-            if (metricsProxyAdminNodeHeapSizeInMib.isPresent()) return metricsProxyAdminNodeHeapSizeInMib.getAsInt();
-            if (!scaleHeapByNodeCount) return 96;
-            // Increase in steps to avoid changes to heap size with small changes in node count.
-            var step = nodeCount / 50;
-            return Math.min(96 + (step * 50), 512);
+            if (metricsProxyAdminNodeHeapSizeInMib.isPresent())
+                return metricsProxyAdminNodeHeapSizeInMib.getAsInt();
+            else
+                return 96;
         }
 
-        if (metricsProxyHeapSizeInMib.isPresent()) return metricsProxyHeapSizeInMib.getAsInt();
-        if (!scaleHeapByNodeCount) return 320;
-        // Increase in steps to avoid changes to heap size with small changes in node count.
-        var step = nodeCount / 50;
-        return Math.min(320 + (step * 2 * 50), 1024);
+        if (metricsProxyHeapSizeInMib.isPresent())
+            return metricsProxyHeapSizeInMib.getAsInt();
+        else
+            return 320;
     }
 
 

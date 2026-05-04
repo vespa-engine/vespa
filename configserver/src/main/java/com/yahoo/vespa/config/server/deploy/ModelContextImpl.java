@@ -254,7 +254,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public Object sidecarsForTest() { return flag(Flags.SIDECARS_FOR_TEST).value(); }
         @Override public boolean useTriton() { return flag(Flags.USE_TRITON).value(); }
         @Override public ModelContext.FeatureFlag<Boolean> useTritonFlag() { return flag(Flags.USE_TRITON); }
-        @Override public boolean scaleMetricsproxyHeapByNodeCount() { return flag(Flags.SCALE_METRICSPROXY_HEAP_BY_NODE_COUNT).value(); }
         @Override public OptionalInt metricsProxyHeapSizeInMib() { return toOptionalInt(flag(Flags.METRICS_PROXY_HEAP_SIZE_IN_MIB).value()); }
         @Override public OptionalInt metricsProxyAdminNodeHeapSizeInMib() { return toOptionalInt(flag(Flags.METRICS_PROXY_ADMIN_HEAP_SIZE_IN_MIB).value()); }
         @Override public boolean ignoreConnectivityChecksAtStartup() { return flag(PermanentFlags.IGNORE_CONNECTIVITY_CHECKS_AT_STARTUP).value(); }
