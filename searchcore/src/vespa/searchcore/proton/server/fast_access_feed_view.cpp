@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fast_access_feed_view.h"
+
 #include "forcecommitcontext.h"
 #include "operationdonecontext.h"
-#include "removedonecontext.h"
 #include "putdonecontext.h"
+#include "removedonecontext.h"
+
 #include <vespa/searchcore/proton/feedoperation/operations.h>
 
 using document::Document;
@@ -18,59 +20,48 @@ namespace proton {
  * instance when we are going to commit as part of handling the operation.
  * Otherwise we can drop it and ack the operation right away.
  */
-void
-FastAccessFeedView::putAttributes(SerialNum serialNum, search::DocumentIdT lid, const Document &doc, const OnPutDoneType& onWriteDone)
-{
+void FastAccessFeedView::putAttributes(SerialNum serialNum, search::DocumentIdT lid, const Document& doc,
+                                       const OnPutDoneType& onWriteDone) {
     _attributeWriter->put(serialNum, doc, lid, onWriteDone);
 }
 
-void
-FastAccessFeedView::updateAttributes(SerialNum serialNum, search::DocumentIdT lid, const DocumentUpdate &upd,
-                                     const OnOperationDoneType& onWriteDone, IFieldUpdateCallback & onUpdate)
-{
+void FastAccessFeedView::updateAttributes(SerialNum serialNum, search::DocumentIdT lid, const DocumentUpdate& upd,
+                                          const OnOperationDoneType& onWriteDone, IFieldUpdateCallback& onUpdate) {
     _attributeWriter->update(serialNum, upd, lid, onWriteDone, onUpdate);
 }
 
-void
-FastAccessFeedView::updateAttributes(SerialNum serialNum, Lid lid, FutureDoc futureDoc, const OnOperationDoneType& onWriteDone)
-{
+void FastAccessFeedView::updateAttributes(SerialNum serialNum, Lid lid, FutureDoc futureDoc,
+                                          const OnOperationDoneType& onWriteDone) {
     if (_attributeWriter->hasStructFieldAttribute()) {
-        const std::unique_ptr<const Document> & doc = futureDoc.get();
+        const std::unique_ptr<const Document>& doc = futureDoc.get();
         if (doc) {
             _attributeWriter->update(serialNum, *doc, lid, onWriteDone);
         }
     }
 }
 
-void
-FastAccessFeedView::removeAttributes(SerialNum serialNum, search::DocumentIdT lid, const OnRemoveDoneType& onWriteDone)
-{
+void FastAccessFeedView::removeAttributes(SerialNum serialNum, search::DocumentIdT lid,
+                                          const OnRemoveDoneType& onWriteDone) {
     _attributeWriter->remove(serialNum, lid, onWriteDone);
 }
 
-void
-FastAccessFeedView::removeAttributes(SerialNum serialNum, const LidVector &lidsToRemove, const OnWriteDoneType& onWriteDone)
-{
+void FastAccessFeedView::removeAttributes(SerialNum serialNum, const LidVector& lidsToRemove,
+                                          const OnWriteDoneType& onWriteDone) {
     _attributeWriter->remove(lidsToRemove, serialNum, onWriteDone);
 }
 
-void
-FastAccessFeedView::heartBeatAttributes(SerialNum serialNum, const DoneCallback& onDone)
-{
+void FastAccessFeedView::heartBeatAttributes(SerialNum serialNum, const DoneCallback& onDone) {
     _attributeWriter->heartBeat(serialNum, onDone);
 }
 
-FastAccessFeedView::FastAccessFeedView(StoreOnlyFeedView::Context storeOnlyCtx, const PersistentParams &params, const Context &ctx)
-    : Parent(std::move(storeOnlyCtx), params),
-      _attributeWriter(ctx._attrWriter),
-      _docIdLimit(ctx._docIdLimit)
-{}
+FastAccessFeedView::FastAccessFeedView(StoreOnlyFeedView::Context storeOnlyCtx, const PersistentParams& params,
+                                       const Context& ctx)
+    : Parent(std::move(storeOnlyCtx), params), _attributeWriter(ctx._attrWriter), _docIdLimit(ctx._docIdLimit) {
+}
 
 FastAccessFeedView::~FastAccessFeedView() = default;
 
-void
-FastAccessFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op, const DoneCallback& onDone)
-{
+void FastAccessFeedView::handleCompactLidSpace(const CompactLidSpaceOperation& op, const DoneCallback& onDone) {
     // Drain pending PutDoneContext and ForceCommitContext objects
     forceCommitAndWait(search::CommitParam(op.getSerialNum(), search::CommitParam::UpdateStats::SKIP));
     _docIdLimit.set(op.getLidLimit());
@@ -78,9 +69,7 @@ FastAccessFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op, co
     Parent::handleCompactLidSpace(op, onDone);
 }
 
-void
-FastAccessFeedView::internalForceCommit(const CommitParam & param, const OnForceCommitDoneType& onCommitDone)
-{
+void FastAccessFeedView::internalForceCommit(const CommitParam& param, const OnForceCommitDoneType& onCommitDone) {
     _attributeWriter->forceCommit(param, onCommitDone);
     onCommitDone->registerCommittedDocIdLimit(_metaStore.getCommittedDocIdLimit(), &_docIdLimit);
     Parent::internalForceCommit(param, onCommitDone);

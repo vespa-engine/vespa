@@ -1,27 +1,22 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "detached_rpc_requests_owner.h"
+
 #include "detached_rpc_request.h"
+
 #include <algorithm>
 #include <cassert>
 
 namespace proton {
 
-DetachedRpcRequestsOwner::DetachedRpcRequestsOwner()
-    : _lock(),
-      _detached_requests(),
-      _closed(false)
-{
+DetachedRpcRequestsOwner::DetachedRpcRequestsOwner() : _lock(), _detached_requests(), _closed(false) {
 }
 
-DetachedRpcRequestsOwner::~DetachedRpcRequestsOwner()
-{
+DetachedRpcRequestsOwner::~DetachedRpcRequestsOwner() {
     close();
 }
 
-bool
-DetachedRpcRequestsOwner::add_detached_request(std::shared_ptr<DetachedRpcRequest> request)
-{
+bool DetachedRpcRequestsOwner::add_detached_request(std::shared_ptr<DetachedRpcRequest> request) {
     std::unique_lock guard(_lock);
     if (_closed) {
         return false;
@@ -35,9 +30,7 @@ DetachedRpcRequestsOwner::add_detached_request(std::shared_ptr<DetachedRpcReques
     return true;
 }
 
-void
-DetachedRpcRequestsOwner::remove_detached_request(std::shared_ptr<DetachedRpcRequest> request)
-{
+void DetachedRpcRequestsOwner::remove_detached_request(std::shared_ptr<DetachedRpcRequest> request) {
     std::unique_lock guard(_lock);
     request->set_detached_request_removed();
     auto it = std::find(_detached_requests.begin(), _detached_requests.end(), request);
@@ -46,9 +39,7 @@ DetachedRpcRequestsOwner::remove_detached_request(std::shared_ptr<DetachedRpcReq
     }
 }
 
-void
-DetachedRpcRequestsOwner::close()
-{
+void DetachedRpcRequestsOwner::close() {
     std::unique_lock guard(_lock);
     _closed = true;
     DetachedRequests detached_requests;
@@ -61,4 +52,4 @@ DetachedRpcRequestsOwner::close()
     }
 }
 
-}
+} // namespace proton

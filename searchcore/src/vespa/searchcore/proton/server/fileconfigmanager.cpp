@@ -1,34 +1,40 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fileconfigmanager.h"
+
 #include "bootstrapconfig.h"
 #include "documentdbconfigmanager.h"
-#include <vespa/searchcore/proton/common/hw_info_sampler.h>
-#include <vespa/config/print/fileconfigwriter.h>
+
+#include <vespa/config-attributes.h>
 #include <vespa/config-bucketspaces.h>
+#include <vespa/config-imported-fields.h>
+#include <vespa/config-indexschema.h>
+#include <vespa/config-rank-profiles.h>
+#include <vespa/config-summary.h>
+#include <vespa/config/print/fileconfigwriter.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/repo/document_type_repo_factory.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
+#include <vespa/searchcore/proton/common/hw_info_sampler.h>
+#include <vespa/searchlib/features/utils.h>
 #include <vespa/searchlib/util/directory_traverse.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
-#include <vespa/vespalib/io/fileutil.h>
-#include <vespa/config-rank-profiles.h>
-#include <vespa/config-attributes.h>
-#include <vespa/config-imported-fields.h>
-#include <vespa/config-indexschema.h>
-#include <vespa/config-summary.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
+#include <vespa/vespalib/io/fileutil.h>
+
 #include <vespa/config/helper/configgetter.hpp>
-#include <filesystem>
-#include <sstream>
-#include <cassert>
-#include <cinttypes>
+
 #include <fcntl.h>
 
+#include <cassert>
+#include <cinttypes>
+#include <filesystem>
+#include <sstream>
+
 #include <vespa/log/log.h>
-#include <vespa/searchlib/features/utils.h>
 LOG_SETUP(".proton.server.fileconfigmanager");
 
+using cloud::config::filedistribution::FiledistributorrpcConfig;
 using document::DocumentTypeRepo;
 using document::DocumentTypeRepoFactory;
 using search::DirectoryTraverse;
@@ -36,14 +42,13 @@ using search::DiskSpaceCalculator;
 using search::IndexMetaInfo;
 using search::SerialNum;
 using search::index::Schema;
-using cloud::config::filedistribution::FiledistributorrpcConfig;
+using vespa::config::content::core::BucketspacesConfig;
 using vespa::config::search::AttributesConfig;
 using vespa::config::search::IndexschemaConfig;
 using vespa::config::search::RankProfilesConfig;
 using vespa::config::search::SummaryConfig;
 using vespa::config::search::core::ProtonConfig;
 using vespa::config::search::summary::JuniperrcConfig;
-using vespa::config::content::core::BucketspacesConfig;
 using vespalib::nbostream;
 
 using SnapshotList = IndexMetaInfo::SnapshotList;
@@ -54,17 +59,13 @@ namespace proton {
 
 namespace {
 
-std::string
-makeSnapDirBaseName(SerialNum serialNum)
-{
+std::string makeSnapDirBaseName(SerialNum serialNum) {
     std::ostringstream os;
     os << "config-" << serialNum;
     return os.str();
 }
 
-void
-fsyncFile(const std::string &fileName)
-{
+void fsyncFile(const std::string& fileName) {
     FastOS_File f;
     f.OpenReadWrite(fileName.c_str());
     if (!f.IsOpened()) {
@@ -76,57 +77,44 @@ fsyncFile(const std::string &fileName)
     }
 }
 
-template <class Config>
-void
-saveHelper(const std::string &snapDir, const std::string &name, const Config &config)
-{
-    std::string fileName(snapDir + "/" + name + ".cfg");
+template <class Config> void saveHelper(const std::string& snapDir, const std::string& name, const Config& config) {
+    std::string              fileName(snapDir + "/" + name + ".cfg");
     config::FileConfigWriter writer(fileName);
-    bool ok = writer.write(config);
+    bool                     ok = writer.write(config);
     assert(ok);
-    (void) ok;
+    (void)ok;
     fsyncFile(fileName);
 }
 
-template <class Config>
-void
-save(const std::string &snapDir, const Config &config)
-{
+template <class Config> void save(const std::string& snapDir, const Config& config) {
     saveHelper(snapDir, config.defName(), config);
 }
 
-class ConfigFile
-{
+class ConfigFile {
     using SP = std::shared_ptr<ConfigFile>;
 
-    std::string      _name;
-    std::vector<char>     _content;
+    std::string       _name;
+    std::vector<char> _content;
 
 public:
     ConfigFile();
     ~ConfigFile();
 
-    ConfigFile(const std::string &name, const std::string &fullName);
+    ConfigFile(const std::string& name, const std::string& fullName);
 
-    nbostream &serialize(nbostream &stream) const;
-    nbostream &deserialize(nbostream &stream);
-    void save(const std::string &snapDir) const;
+    nbostream& serialize(nbostream& stream) const;
+    nbostream& deserialize(nbostream& stream);
+    void save(const std::string& snapDir) const;
 };
 
-ConfigFile::ConfigFile()
-    : _name(),
-      _content()
-{
+ConfigFile::ConfigFile() : _name(), _content() {
 }
 
 ConfigFile::~ConfigFile() = default;
 
-ConfigFile::ConfigFile(const std::string &name, const std::string &fullName)
-    : _name(name),
-      _content()
-{
+ConfigFile::ConfigFile(const std::string& name, const std::string& fullName) : _name(name), _content() {
     FastOS_File file;
-    bool openRes = file.OpenReadOnlyExisting(false, fullName.c_str());
+    bool        openRes = file.OpenReadOnlyExisting(false, fullName.c_str());
     if (!openRes)
         return;
     int64_t fileSize = file.getSize();
@@ -134,21 +122,17 @@ ConfigFile::ConfigFile(const std::string &name, const std::string &fullName)
     file.ReadBuf(_content.data(), fileSize);
 }
 
-nbostream &
-ConfigFile::serialize(nbostream &stream) const
-{
+nbostream& ConfigFile::serialize(nbostream& stream) const {
     assert(strchr(_name.c_str(), '/') == nullptr);
     stream << _name;
-    stream << int64_t(0ul);   // Used to be modtime => unused
+    stream << int64_t(0ul); // Used to be modtime => unused
     uint32_t sz = _content.size();
     stream << sz;
     stream.write(_content.data(), sz);
     return stream;
 }
 
-nbostream &
-ConfigFile::deserialize(nbostream &stream)
-{
+nbostream& ConfigFile::deserialize(nbostream& stream) {
     stream >> _name;
     assert(strchr(_name.c_str(), '/') == nullptr);
     int64_t unused_modTime;
@@ -164,39 +148,31 @@ ConfigFile::deserialize(nbostream &stream)
     return stream;
 }
 
-void
-ConfigFile::save(const std::string &snapDir) const
-{
+void ConfigFile::save(const std::string& snapDir) const {
     std::string fullName = snapDir + "/" + _name;
     FastOS_File file;
-    bool openRes = file.OpenWriteOnlyTruncate(fullName.c_str());
+    bool        openRes = file.OpenWriteOnlyTruncate(fullName.c_str());
     assert(openRes);
-    (void) openRes;
+    (void)openRes;
 
     file.WriteBuf(_content.data(), _content.size());
     bool closeRes = file.Close();
     assert(closeRes);
-    (void) closeRes;
+    (void)closeRes;
 
     fsyncFile(fullName);
 }
 
-nbostream &
-operator<<(nbostream &stream, const ConfigFile &configFile)
-{
+nbostream& operator<<(nbostream& stream, const ConfigFile& configFile) {
     return configFile.serialize(stream);
 }
 
-nbostream &
-operator>>(nbostream &stream, ConfigFile &configFile)
-{
+nbostream& operator>>(nbostream& stream, ConfigFile& configFile) {
     return configFile.deserialize(stream);
 }
 
-std::vector<std::string>
-getFileList(const std::string &snapDir)
-{
-    std::vector<std::string> res;
+std::vector<std::string> getFileList(const std::string& snapDir) {
+    std::vector<std::string>            res;
     std::filesystem::directory_iterator dir_scan{std::filesystem::path(snapDir)};
     for (auto& entry : dir_scan) {
         res.emplace_back(entry.path().filename().string());
@@ -206,8 +182,7 @@ getFileList(const std::string &snapDir)
 }
 
 // add an empty file if it's not already present
-void addEmptyFile(std::string snapDir, std::string fileName)
-{
+void addEmptyFile(std::string snapDir, std::string fileName) {
     std::string path = snapDir + "/" + fileName;
     if (access(path.c_str(), R_OK) == 0) {
         // exists OK
@@ -222,12 +197,10 @@ void addEmptyFile(std::string snapDir, std::string fileName)
     close(fd);
 }
 
-}
+} // namespace
 
-FileConfigManager::FileConfigManager(FNET_Transport & transport,
-                                     const std::string &baseDir,
-                                     const std::string &configId,
-                                     const std::string &docTypeName)
+FileConfigManager::FileConfigManager(FNET_Transport& transport, const std::string& baseDir,
+                                     const std::string& configId, const std::string& docTypeName)
     : _transport(transport),
       _baseDir(baseDir),
       _configId(configId),
@@ -235,8 +208,7 @@ FileConfigManager::FileConfigManager(FNET_Transport & transport,
       _info(baseDir),
       _protonConfig(),
       _config_sizes_on_disk(),
-      _size_on_disk(0)
-{
+      _size_on_disk(0) {
     std::filesystem::create_directory(std::filesystem::path(baseDir));
     vespalib::File::sync(vespalib::dirname(baseDir));
     if (!_info.load())
@@ -248,19 +220,15 @@ FileConfigManager::FileConfigManager(FNET_Transport & transport,
 
 FileConfigManager::~FileConfigManager() = default;
 
-SerialNum
-FileConfigManager::getBestSerialNum() const
-{
+SerialNum FileConfigManager::getBestSerialNum() const {
     Snapshot snap = _info.getBestSnapshot();
     return snap.valid ? snap.syncToken : UINT64_C(0);
 }
 
-SerialNum
-FileConfigManager::getOldestSerialNum() const
-{
-    SerialNum res = 0;
-    const SnapshotList &snaps = _info.snapshots();
-    for (const auto &snap : snaps) {
+SerialNum FileConfigManager::getOldestSerialNum() const {
+    SerialNum           res = 0;
+    const SnapshotList& snaps = _info.snapshots();
+    for (const auto& snap : snaps) {
         if (!snap.valid || snap.syncToken == 0)
             continue;
         if (res == 0 || res > snap.syncToken)
@@ -269,21 +237,18 @@ FileConfigManager::getOldestSerialNum() const
     return res;
 }
 
-void
-FileConfigManager::saveConfig(const DocumentDBConfig &snapshot, SerialNum serialNum)
-{
+void FileConfigManager::saveConfig(const DocumentDBConfig& snapshot, SerialNum serialNum) {
     if (getBestSerialNum() >= serialNum) {
-        LOG(warning, "Config for serial >= %" PRIu64 " already saved",
-            static_cast<uint64_t>(serialNum));
+        LOG(warning, "Config for serial >= %" PRIu64 " already saved", static_cast<uint64_t>(serialNum));
         return;
     }
     std::string snapDirBaseName(makeSnapDirBaseName(serialNum));
     std::string snapDir(_baseDir + "/" + snapDirBaseName);
-    Snapshot snap(false, serialNum, snapDirBaseName);
+    Snapshot    snap(false, serialNum, snapDirBaseName);
     _info.addSnapshot(snap);
     bool saveInvalidSnap = _info.save();
     assert(saveInvalidSnap);
-    (void) saveInvalidSnap;
+    (void)saveInvalidSnap;
     std::filesystem::create_directory(std::filesystem::path(snapDir));
     save(snapDir, snapshot.getRankProfilesConfig());
     save(snapDir, snapshot.getIndexschemaConfig());
@@ -300,18 +265,16 @@ FileConfigManager::saveConfig(const DocumentDBConfig &snapshot, SerialNum serial
 
     bool saveValidSnap = _info.save();
     assert(saveValidSnap);
-    (void) saveValidSnap;
+    (void)saveValidSnap;
     auto size = DirectoryTraverse::get_tree_size(snapDir);
     _config_sizes_on_disk.emplace(serialNum, size);
     _size_on_disk.fetch_add(size);
 }
 
-void
-FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot, search::SerialNum serialNum,
-                              DocumentDBConfig::SP &loadedSnapshot)
-{
-    std::string snapDirBaseName(makeSnapDirBaseName(serialNum));
-    std::string snapDir(_baseDir + "/" + snapDirBaseName);
+void FileConfigManager::loadConfig(const DocumentDBConfig& currentSnapshot, search::SerialNum serialNum,
+                                   DocumentDBConfig::SP& loadedSnapshot) {
+    std::string     snapDirBaseName(makeSnapDirBaseName(serialNum));
+    std::string     snapDir(_baseDir + "/" + snapDirBaseName);
     config::DirSpec spec(snapDir);
 
     addEmptyFile(snapDir, "ranking-constants.cfg");
@@ -323,11 +286,10 @@ FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot, search::S
     DocumentDBConfigHelper dbc(spec, _docTypeName);
 
     using DTC = DocumenttypesConfig;
-    using DTCSP =  DocumentDBConfig::DocumenttypesConfigSP;
-    DTCSP docTypesCfg = config::ConfigGetter<DTC>::getConfig("", spec);
+    using DTCSP = DocumentDBConfig::DocumenttypesConfigSP;
+    DTCSP                                   docTypesCfg = config::ConfigGetter<DTC>::getConfig("", spec);
     std::shared_ptr<const DocumentTypeRepo> repo;
-    if (currentSnapshot.getDocumenttypesConfigSP() &&
-        currentSnapshot.getDocumentTypeRepoSP() &&
+    if (currentSnapshot.getDocumenttypesConfigSP() && currentSnapshot.getDocumentTypeRepoSP() &&
         (currentSnapshot.getDocumenttypesConfig() == *docTypesCfg))
     {
         docTypesCfg = currentSnapshot.getDocumenttypesConfigSP();
@@ -345,16 +307,16 @@ FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot, search::S
      * of default values here instead of the current values from the config
      * server.
      */
-    const ProtonConfig &protonConfig = *_protonConfig;
-    const auto &hwDiskCfg = protonConfig.hwinfo.disk;
-    const auto &hwMemoryCfg = protonConfig.hwinfo.memory;
-    const auto &hwCpuCfg = protonConfig.hwinfo.cpu;
+    const ProtonConfig&   protonConfig = *_protonConfig;
+    const auto&           hwDiskCfg = protonConfig.hwinfo.disk;
+    const auto&           hwMemoryCfg = protonConfig.hwinfo.memory;
+    const auto&           hwCpuCfg = protonConfig.hwinfo.cpu;
     HwInfoSampler::Config samplerCfg(hwDiskCfg.size, hwDiskCfg.writespeed, hwDiskCfg.slowwritespeedlimit,
                                      hwDiskCfg.samplewritesize, hwDiskCfg.shared, hwMemoryCfg.size, hwCpuCfg.cores);
-    HwInfoSampler sampler(protonConfig.basedir, samplerCfg);
-    auto bootstrap = std::make_shared<BootstrapConfig>(1, docTypesCfg, repo, _protonConfig, filedistRpcConf,
-                                                       bucketspaces,currentSnapshot.getTuneFileDocumentDBSP(),
-                                                       sampler.hwInfo());
+    HwInfoSampler         sampler(protonConfig.basedir, samplerCfg);
+    auto                  bootstrap =
+        std::make_shared<BootstrapConfig>(1, docTypesCfg, repo, _protonConfig, filedistRpcConf, bucketspaces,
+                                          currentSnapshot.getTuneFileDocumentDBSP(), sampler.hwInfo());
     dbc.forwardConfig(bootstrap);
     dbc.nextGeneration(_transport, 0ms);
 
@@ -362,50 +324,46 @@ FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot, search::S
     loadedSnapshot->setConfigId(_configId);
 }
 
-void
-FileConfigManager::removeInvalid()
-{
+void FileConfigManager::removeInvalid() {
     using RemVec = std::vector<SerialNum>;
     RemVec toRem;
 
-    const SnapshotList &snaps = _info.snapshots();
-    for (const auto &snap : snaps) {
+    const SnapshotList& snaps = _info.snapshots();
+    for (const auto& snap : snaps) {
         if (!snap.valid)
             toRem.push_back(snap.syncToken);
     }
     if (toRem.empty())
         return;
 
-    for (const auto &serial : toRem) {
+    for (const auto& serial : toRem) {
         std::string snapDirBaseName(makeSnapDirBaseName(serial));
         std::string snapDir(_baseDir + "/" + snapDirBaseName);
         try {
             std::filesystem::remove_all(std::filesystem::path(snapDir));
-        } catch (const std::exception &e) {
+        } catch (const std::exception& e) {
             LOG(warning, "Removing obsolete config directory '%s' failed due to %s", snapDir.c_str(), e.what());
         }
     }
     vespalib::File::sync(_baseDir);
     uint64_t removed_size_on_disk = 0;
-    for (const auto &serial : toRem) {
+    for (const auto& serial : toRem) {
         _info.removeSnapshot(serial);
         removed_size_on_disk += _config_sizes_on_disk[serial];
         _config_sizes_on_disk.erase(serial);
     }
     bool saveRemInvalidSnap = _info.save();
     assert(saveRemInvalidSnap);
-    (void) saveRemInvalidSnap;
+    (void)saveRemInvalidSnap;
     _size_on_disk.fetch_sub(removed_size_on_disk);
 }
 
-void
-FileConfigManager::prune(SerialNum serialNum)
-{
+void FileConfigManager::prune(SerialNum serialNum) {
     using PruneVec = std::vector<SerialNum>;
     PruneVec toPrune;
 
-    const SnapshotList &snaps = _info.snapshots();
-    for (const auto &snap : snaps) {
+    const SnapshotList& snaps = _info.snapshots();
+    for (const auto& snap : snaps) {
         if (snap.valid && snap.syncToken <= serialNum)
             toPrune.push_back(snap.syncToken);
     }
@@ -414,28 +372,24 @@ FileConfigManager::prune(SerialNum serialNum)
         toPrune.pop_back(); // Keep the newest old entry
     if (toPrune.empty())
         return;
-    for (const auto &serial : toPrune) {
+    for (const auto& serial : toPrune) {
         _info.invalidateSnapshot(serial);
     }
     bool saveInvalidSnap = _info.save();
     assert(saveInvalidSnap);
-    (void) saveInvalidSnap;
+    (void)saveInvalidSnap;
     removeInvalid();
 }
 
-bool
-FileConfigManager::hasValidSerial(SerialNum serialNum) const
-{
+bool FileConfigManager::hasValidSerial(SerialNum serialNum) const {
     IndexMetaInfo::Snapshot snap = _info.getSnapshot(serialNum);
     return snap.valid;
 }
 
-SerialNum
-FileConfigManager::getPrevValidSerial(SerialNum serialNum) const
-{
-    SerialNum res = 0;
-    const SnapshotList &snaps = _info.snapshots();
-    for (const auto &snap : snaps) {
+SerialNum FileConfigManager::getPrevValidSerial(SerialNum serialNum) const {
+    SerialNum           res = 0;
+    const SnapshotList& snaps = _info.snapshots();
+    for (const auto& snap : snaps) {
         if (!snap.valid || snap.syncToken >= serialNum)
             continue;
         if (res < snap.syncToken)
@@ -444,26 +398,22 @@ FileConfigManager::getPrevValidSerial(SerialNum serialNum) const
     return res;
 }
 
-void
-FileConfigManager::serializeConfig(SerialNum serialNum, nbostream &stream)
-{
+void FileConfigManager::serializeConfig(SerialNum serialNum, nbostream& stream) {
     std::string snapDirBaseName(makeSnapDirBaseName(serialNum));
     std::string snapDir(_baseDir + "/" + snapDirBaseName);
 
     assert(hasValidSerial(serialNum));
 
     std::vector<std::string> configs = getFileList(snapDir);
-    uint32_t numConfigs = configs.size();
+    uint32_t                 numConfigs = configs.size();
     stream << numConfigs;
-    for (const auto &config : configs) {
+    for (const auto& config : configs) {
         ConfigFile file(config, snapDir + "/" + config);
         stream << file;
     }
 }
 
-void
-FileConfigManager::deserializeConfig(SerialNum serialNum, nbostream &stream)
-{
+void FileConfigManager::deserializeConfig(SerialNum serialNum, nbostream& stream) {
     std::string snapDirBaseName(makeSnapDirBaseName(serialNum));
     std::string snapDir(_baseDir + "/" + snapDirBaseName);
 
@@ -474,7 +424,7 @@ FileConfigManager::deserializeConfig(SerialNum serialNum, nbostream &stream)
         _info.addSnapshot(snap);
         bool saveInvalidSnap = _info.save();
         assert(saveInvalidSnap);
-        (void) saveInvalidSnap;
+        (void)saveInvalidSnap;
         std::filesystem::create_directory(std::filesystem::path(snapDir));
     }
 
@@ -491,24 +441,20 @@ FileConfigManager::deserializeConfig(SerialNum serialNum, nbostream &stream)
         _info.validateSnapshot(serialNum);
         bool saveValidSnap = _info.save();
         assert(saveValidSnap);
-        (void) saveValidSnap;
+        (void)saveValidSnap;
         auto size = DirectoryTraverse::get_tree_size(snapDir);
         _config_sizes_on_disk.emplace(snap.syncToken, size);
         _size_on_disk.fetch_add(size);
     }
 }
 
-void
-FileConfigManager::setProtonConfig(const ProtonConfigSP &protonConfig)
-{
+void FileConfigManager::setProtonConfig(const ProtonConfigSP& protonConfig) {
     _protonConfig = protonConfig;
 }
 
-void
-FileConfigManager::calc_initial_sizes_on_disk()
-{
+void FileConfigManager::calc_initial_sizes_on_disk() {
     DiskSpaceCalculator calc;
-    constexpr uint32_t placeholder_meta_info_txt_size = 1000;
+    constexpr uint32_t  placeholder_meta_info_txt_size = 1000;
     uint64_t size_on_disk = DiskSpaceCalculator::directory_placeholder_size() + calc(placeholder_meta_info_txt_size);
     const auto& snaps = _info.snapshots();
     for (const auto& snap : snaps) {
@@ -522,9 +468,7 @@ FileConfigManager::calc_initial_sizes_on_disk()
     _size_on_disk.store(size_on_disk, std::memory_order_relaxed);
 }
 
-uint64_t
-FileConfigManager::get_size_on_disk() const
-{
+uint64_t FileConfigManager::get_size_on_disk() const {
     return _size_on_disk.load(std::memory_order_relaxed);
 }
 
