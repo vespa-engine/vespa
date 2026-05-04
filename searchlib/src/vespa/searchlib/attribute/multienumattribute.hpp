@@ -2,31 +2,31 @@
 
 #pragma once
 
-#include "multienumattribute.h"
-#include "multienumattributesaver.h"
-#include "load_utils.h"
 #include "enum_store_loaders.h"
 #include "ipostinglistattributebase.h"
+#include "load_utils.h"
+#include "multienumattribute.h"
+#include "multienumattributesaver.h"
 #include "valuemodifier.h"
+
 #include <vespa/searchcommon/attribute/config.h>
-#include <vespa/vespalib/stllike/hashtable.hpp>
 #include <vespa/vespalib/datastore/unique_store_remapper.h>
+
+#include <vespa/vespalib/stllike/hashtable.hpp>
 
 namespace search {
 
 namespace multienumattribute {
 
 template <typename WeightedIndex>
-void
-remap_enum_store_refs(const IEnumStore::EnumIndexRemapper& remapper, AttributeVector& v, attribute::MultiValueMapping<WeightedIndex>& multi_value_mapping);
+void remap_enum_store_refs(const IEnumStore::EnumIndexRemapper& remapper, AttributeVector& v,
+                           attribute::MultiValueMapping<WeightedIndex>& multi_value_mapping);
 
 }
 
 template <typename B, typename M>
-bool
-MultiValueEnumAttribute<B, M>::extractChangeData(const Change & c, EnumIndex & idx)
-{
-    if ( ! c.has_entry_ref() ) {
+bool MultiValueEnumAttribute<B, M>::extractChangeData(const Change& c, EnumIndex& idx) {
+    if (!c.has_entry_ref()) {
         return this->_enumStore.find_index(c._data.raw(), idx);
     }
     idx = EnumIndex(vespalib::datastore::EntryRef(c.get_entry_ref()));
@@ -34,9 +34,7 @@ MultiValueEnumAttribute<B, M>::extractChangeData(const Change & c, EnumIndex & i
 }
 
 template <typename B, typename M>
-void
-MultiValueEnumAttribute<B, M>::considerAttributeChange(const Change & c, EnumStoreBatchUpdater & inserter)
-{
+void MultiValueEnumAttribute<B, M>::considerAttributeChange(const Change& c, EnumStoreBatchUpdater& inserter) {
     if (c._type == ChangeBase::APPEND ||
         (this->getInternalCollectionType().createIfNonExistant() &&
          (c._type >= ChangeBase::INCREASEWEIGHT && c._type <= ChangeBase::SETWEIGHT)))
@@ -51,14 +49,12 @@ MultiValueEnumAttribute<B, M>::considerAttributeChange(const Change & c, EnumSto
 }
 
 template <typename B, typename M>
-void
-MultiValueEnumAttribute<B, M>::applyValueChanges(const DocIndices& docIndices, EnumStoreBatchUpdater& updater)
-{
+void MultiValueEnumAttribute<B, M>::applyValueChanges(const DocIndices& docIndices, EnumStoreBatchUpdater& updater) {
     // set new set of indices for documents with changes
     ValueModifier valueGuard(this->getValueModifier());
     for (const auto& doc_values : docIndices) {
         std::span<const WeightedIndex> oldIndices(this->_mvMapping.get(doc_values.first));
-        uint32_t valueCount = oldIndices.size();
+        uint32_t                       valueCount = oldIndices.size();
         this->_mvMapping.set(doc_values.first, doc_values.second);
         for (uint32_t i = 0; i < doc_values.second.size(); ++i) {
             updater.inc_ref_count(multivalue::get_value_ref(doc_values.second[i]).load_relaxed());
@@ -69,19 +65,19 @@ MultiValueEnumAttribute<B, M>::applyValueChanges(const DocIndices& docIndices, E
     }
 }
 
-template <typename B, typename M>
-void
-MultiValueEnumAttribute<B, M>::fillValues(LoadedVector & loaded)
-{
-    if constexpr(!std::is_same_v<LoadedVector, NoLoadedVector>) {
-        uint32_t numDocs(this->getNumDocs());
-        size_t numValues = loaded.size();
-        size_t count = 0;
+template <typename B, typename M> void MultiValueEnumAttribute<B, M>::fillValues(LoadedVector& loaded) {
+    if constexpr (!std::is_same_v<LoadedVector, NoLoadedVector>) {
+        uint32_t            numDocs(this->getNumDocs());
+        size_t              numValues = loaded.size();
+        size_t              count = 0;
         WeightedIndexVector indices;
         this->_mvMapping.prepareLoadFromMultiValue();
         for (DocId doc = 0; doc < numDocs; ++doc) {
-            for(const auto* v = & loaded.read();(count < numValues) && (v->_docId == doc); count++, loaded.next(), v = & loaded.read()) {
-                indices.push_back(multivalue::ValueBuilder<WeightedIndex>::build(AtomicEntryRef(v->getEidx()), v->getWeight()));
+            for (const auto* v = &loaded.read(); (count < numValues) && (v->_docId == doc);
+                 count++, loaded.next(), v = &loaded.read())
+            {
+                indices.push_back(
+                    multivalue::ValueBuilder<WeightedIndex>::build(AtomicEntryRef(v->getEidx()), v->getWeight()));
             }
             this->checkSetMaxValueCount(indices.size());
             this->_mvMapping.set(doc, indices);
@@ -91,33 +87,26 @@ MultiValueEnumAttribute<B, M>::fillValues(LoadedVector & loaded)
     }
 }
 
-
 template <typename B, typename M>
-void
-MultiValueEnumAttribute<B, M>::load_enumerated_data(ReaderBase& attrReader,
-                                                    enumstore::EnumeratedPostingsLoader& loader,
-                                                    size_t num_values)
-{
+void MultiValueEnumAttribute<B, M>::load_enumerated_data(ReaderBase&                          attrReader,
+                                                         enumstore::EnumeratedPostingsLoader& loader,
+                                                         size_t                               num_values) {
     loader.reserve_loaded_enums(num_values);
-    uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(this->_mvMapping, attrReader,
-                                                             std::span<const EnumIndex>(loader.get_enum_indexes()),
-                                                             loader.get_enum_value_remapping(),
-                                                             attribute::SaveLoadedEnum(loader.get_loaded_enums()));
+    uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(
+        this->_mvMapping, attrReader, std::span<const EnumIndex>(loader.get_enum_indexes()),
+        loader.get_enum_value_remapping(), attribute::SaveLoadedEnum(loader.get_loaded_enums()));
     loader.free_enum_value_remapping();
     loader.sort_loaded_enums();
     this->checkSetMaxValueCount(maxvc);
 }
 
 template <typename B, typename M>
-void
-MultiValueEnumAttribute<B, M>::load_enumerated_data(ReaderBase& attrReader,
-                                                    enumstore::EnumeratedLoader& loader)
-{
+void MultiValueEnumAttribute<B, M>::load_enumerated_data(ReaderBase&                  attrReader,
+                                                         enumstore::EnumeratedLoader& loader) {
     loader.allocate_enums_histogram();
-    uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(this->_mvMapping, attrReader,
-                                                             std::span<const EnumIndex>(loader.get_enum_indexes()),
-                                                             loader.get_enum_value_remapping(),
-                                                             attribute::SaveEnumHist(loader.get_enums_histogram()));
+    uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(
+        this->_mvMapping, attrReader, std::span<const EnumIndex>(loader.get_enum_indexes()),
+        loader.get_enum_value_remapping(), attribute::SaveEnumHist(loader.get_enums_histogram()));
     loader.free_enum_value_remapping();
     loader.set_ref_counts();
     loader.build_dictionary();
@@ -126,17 +115,12 @@ MultiValueEnumAttribute<B, M>::load_enumerated_data(ReaderBase& attrReader,
 }
 
 template <typename B, typename M>
-MultiValueEnumAttribute<B, M>::
-MultiValueEnumAttribute(const std::string &baseFileName,
-                        const AttributeVector::Config & cfg)
-    : MultiValueAttribute<B, M>(baseFileName, cfg)
-{
+MultiValueEnumAttribute<B, M>::MultiValueEnumAttribute(const std::string&             baseFileName,
+                                                       const AttributeVector::Config& cfg)
+    : MultiValueAttribute<B, M>(baseFileName, cfg) {
 }
 
-template <typename B, typename M>
-void
-MultiValueEnumAttribute<B, M>::onCommit()
-{
+template <typename B, typename M> void MultiValueEnumAttribute<B, M>::onCommit() {
     // update enum store
     auto updater = this->_enumStore.make_batch_updater();
     this->insertNewUniqueValues(updater);
@@ -164,7 +148,7 @@ MultiValueEnumAttribute<B, M>::onCommit()
         this->incGeneration();
         this->updateStat(CommitParam::UpdateStats::FORCE);
     }
-    auto *pab = this->getIPostingListAttributeBase();
+    auto* pab = this->getIPostingListAttributeBase();
     if (pab != nullptr) {
         if (pab->consider_compact_worst_btree_nodes(this->getConfig().getCompactionStrategy())) {
             this->incGeneration();
@@ -178,9 +162,7 @@ MultiValueEnumAttribute<B, M>::onCommit()
 }
 
 template <typename B, typename M>
-void
-MultiValueEnumAttribute<B, M>::onUpdateStat(CommitParam::UpdateStats updateStats)
-{
+void MultiValueEnumAttribute<B, M>::onUpdateStat(CommitParam::UpdateStats updateStats) {
     if (updateStats == CommitParam::UpdateStats::SKIP) {
         return;
     }
@@ -190,27 +172,24 @@ MultiValueEnumAttribute<B, M>::onUpdateStat(CommitParam::UpdateStats updateStats
     }
     // update statistics
     vespalib::MemoryUsage total;
-    auto& compaction_strategy = this->getConfig().getCompactionStrategy();
+    auto&                 compaction_strategy = this->getConfig().getCompactionStrategy();
     total.merge(this->_enumStore.update_stat(compaction_strategy));
     total.merge(this->_mvMapping.update_stat(compaction_strategy));
     total.merge(this->getChangeVectorMemoryUsage());
     mergeMemoryStats(total);
-    this->updateStatistics(this->_mvMapping.getTotalValueCnt(), this->_enumStore.get_num_uniques(), total.allocatedBytes(),
-                     total.usedBytes(), total.deadBytes(), total.allocatedBytesOnHold());
+    this->updateStatistics(this->_mvMapping.getTotalValueCnt(), this->_enumStore.get_num_uniques(),
+                           total.allocatedBytes(), total.usedBytes(), total.deadBytes(),
+                           total.allocatedBytesOnHold());
 }
 
 template <typename B, typename M>
-void
-MultiValueEnumAttribute<B, M>::reclaim_memory(vespalib::Generation oldest_used_gen)
-{
+void MultiValueEnumAttribute<B, M>::reclaim_memory(vespalib::Generation oldest_used_gen) {
     this->_enumStore.reclaim_memory(oldest_used_gen);
     this->_mvMapping.reclaim_memory(oldest_used_gen);
 }
 
 template <typename B, typename M>
-void
-MultiValueEnumAttribute<B, M>::before_inc_generation(vespalib::Generation current_gen)
-{
+void MultiValueEnumAttribute<B, M>::before_inc_generation(vespalib::Generation current_gen) {
     /*
      * Freeze tree before generation is increased in attribute vector
      * but after generation is increased in tree. This ensures that
@@ -223,13 +202,10 @@ MultiValueEnumAttribute<B, M>::before_inc_generation(vespalib::Generation curren
 }
 
 template <typename B, typename M>
-std::unique_ptr<AttributeSaver>
-MultiValueEnumAttribute<B, M>::onInitSave(std::string_view fileName)
-{
+std::unique_ptr<AttributeSaver> MultiValueEnumAttribute<B, M>::onInitSave(std::string_view fileName) {
     auto guard = this->getGenerationHandler().takeGuard();
-    return std::make_unique<MultiValueEnumAttributeSaver<WeightedIndex>>
-        (std::move(guard), this->createAttributeHeader(fileName), this->_mvMapping, this->_enumStore);
+    return std::make_unique<MultiValueEnumAttributeSaver<WeightedIndex>>(
+        std::move(guard), this->createAttributeHeader(fileName), this->_mvMapping, this->_enumStore);
 }
 
 } // namespace search
-

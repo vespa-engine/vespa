@@ -2,15 +2,17 @@
 
 #pragma once
 
-#include "multivalueattribute.h"
 #include "address_space_components.h"
-#include "raw_multi_value_read_view.h"
 #include "copy_multi_value_read_view.h"
+#include "multivalueattribute.h"
+#include "raw_multi_value_read_view.h"
+
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/memory_allocator.h>
 #include <vespa/vespalib/util/stash.h>
+
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 using vespalib::datastore::ArrayStoreConfig;
 
@@ -23,55 +25,39 @@ constexpr bool enable_free_lists = true;
 }
 
 template <typename B, typename M>
-MultiValueAttribute<B, M>::
-MultiValueAttribute(const std::string &baseFileName,
-                    const AttributeVector::Config &cfg)
+MultiValueAttribute<B, M>::MultiValueAttribute(const std::string& baseFileName, const AttributeVector::Config& cfg)
     : B(baseFileName, cfg),
-      _mvMapping(MultiValueMapping::optimizedConfigForHugePage(MultiValueMapping::array_store_max_type_id,
-                                                               vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
-                                                               vespalib::alloc::MemoryAllocator::NORMAL_PAGE_SIZE,
-                                                               ArrayStoreConfig::default_max_buffer_size,
-                                                               8 * 1024,
-                                                               cfg.getGrowStrategy().getMultiValueAllocGrowFactor(),
-                                                               multivalueattribute::enable_free_lists),
-                 ArrayStoreConfig::default_max_buffer_size,
-                 cfg.getGrowStrategy(), this->get_memory_allocator())
-{
+      _mvMapping(MultiValueMapping::optimizedConfigForHugePage(
+                     MultiValueMapping::array_store_max_type_id, vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
+                     vespalib::alloc::MemoryAllocator::NORMAL_PAGE_SIZE, ArrayStoreConfig::default_max_buffer_size,
+                     8 * 1024, cfg.getGrowStrategy().getMultiValueAllocGrowFactor(),
+                     multivalueattribute::enable_free_lists),
+                 ArrayStoreConfig::default_max_buffer_size, cfg.getGrowStrategy(), this->get_memory_allocator()) {
 }
 
-template <typename B, typename M>
-MultiValueAttribute<B, M>::~MultiValueAttribute() = default;
+template <typename B, typename M> MultiValueAttribute<B, M>::~MultiValueAttribute() = default;
 
-template <typename B, typename M>
-int32_t MultiValueAttribute<B, M>::getWeight(DocId doc, uint32_t idx) const
-{
+template <typename B, typename M> int32_t MultiValueAttribute<B, M>::getWeight(DocId doc, uint32_t idx) const {
     MultiValueArrayRef values(this->_mvMapping.get(doc));
     return ((idx < values.size()) ? multivalue::get_weight(values[idx]) : 1);
 }
 
 namespace {
 
-template <typename T>
-struct HashFn {
+template <typename T> struct HashFn {
     using type = vespalib::hash<T>;
 };
 
-template <>
-struct HashFn<vespalib::datastore::EntryRef> {
+template <> struct HashFn<vespalib::datastore::EntryRef> {
     struct EntryRefHasher {
-        size_t operator() (const vespalib::datastore::EntryRef& v) const noexcept {
-            return v.ref();
-        }
+        size_t operator()(const vespalib::datastore::EntryRef& v) const noexcept { return v.ref(); }
     };
     using type = EntryRefHasher;
 };
 
-}
+} // namespace
 
-template <typename B, typename M>
-void
-MultiValueAttribute<B, M>::applyAttributeChanges(DocumentValues & docValues)
-{
+template <typename B, typename M> void MultiValueAttribute<B, M>::applyAttributeChanges(DocumentValues& docValues) {
     if (this->hasArrayType()) {
         apply_attribute_changes_to_array(docValues);
         return;
@@ -82,12 +68,10 @@ MultiValueAttribute<B, M>::applyAttributeChanges(DocumentValues & docValues)
 }
 
 template <typename B, typename M>
-void
-MultiValueAttribute<B, M>::apply_attribute_changes_to_array(DocumentValues& docValues)
-{
+void MultiValueAttribute<B, M>::apply_attribute_changes_to_array(DocumentValues& docValues) {
     // compute new values for each document with changes
     auto iterable = this->_changes.getDocIdInsertOrder();
-    for (auto current(iterable.begin()), end(iterable.end()); (current != end); ) {
+    for (auto current(iterable.begin()), end(iterable.end()); (current != end);) {
         DocId doc = current->_doc;
         // find last clear doc
         auto last_clear_doc = end;
@@ -101,7 +85,7 @@ MultiValueAttribute<B, M>::apply_attribute_changes_to_array(DocumentValues& docV
             current = last_clear_doc;
         }
         MultiValueArrayRef old_values(_mvMapping.get(doc));
-        ValueVector new_values(old_values.begin(), old_values.end());
+        ValueVector        new_values(old_values.begin(), old_values.end());
         vespalib::hash_map<NonAtomicValueType, size_t, typename HashFn<NonAtomicValueType>::type> tombstones;
 
         // iterate through all changes for this document
@@ -112,7 +96,7 @@ MultiValueAttribute<B, M>::apply_attribute_changes_to_array(DocumentValues& docV
                 continue;
             }
             NonAtomicValueType data;
-            bool hasData = extractChangeData(*current, data);
+            bool               hasData = extractChangeData(*current, data);
             if (!hasData) {
                 continue;
             }
@@ -120,7 +104,8 @@ MultiValueAttribute<B, M>::apply_attribute_changes_to_array(DocumentValues& docV
                 if constexpr (std::is_same_v<ValueType, NonAtomicValueType>) {
                     new_values.emplace_back(multivalue::ValueBuilder<MultiValueType>::build(data, current->_weight));
                 } else {
-                    new_values.emplace_back(multivalue::ValueBuilder<MultiValueType>::build(ValueType(data), current->_weight));
+                    new_values.emplace_back(
+                        multivalue::ValueBuilder<MultiValueType>::build(ValueType(data), current->_weight));
                 }
             } else if (current->_type == ChangeBase::REMOVE) {
                 // Defer all removals to the very end by tracking when, during value vector build time,
@@ -155,15 +140,13 @@ MultiValueAttribute<B, M>::apply_attribute_changes_to_array(DocumentValues& docV
 }
 
 template <typename B, typename M>
-void
-MultiValueAttribute<B, M>::apply_attribute_changes_to_wset(DocumentValues& docValues)
-{
+void MultiValueAttribute<B, M>::apply_attribute_changes_to_wset(DocumentValues& docValues) {
     // compute new values for each document with changes
     auto iterable = this->_changes.getDocIdInsertOrder();
-    for (auto current(iterable.begin()), end(iterable.end()); (current != end); ) {
+    for (auto current(iterable.begin()), end(iterable.end()); (current != end);) {
         const DocId doc = current->_doc;
         // find last clear doc
-        auto last_clear_doc = end;
+        auto   last_clear_doc = end;
         size_t max_elems_inserted = 0;
         for (auto iter = current; (iter != end) && (iter->_doc == doc); ++iter) {
             if (iter->_type == ChangeBase::CLEARDOC) {
@@ -192,7 +175,7 @@ MultiValueAttribute<B, M>::apply_attribute_changes_to_wset(DocumentValues& docVa
                 continue;
             }
             NonAtomicValueType data;
-            bool hasData = extractChangeData(*current, data);
+            bool               hasData = extractChangeData(*current, data);
             if (!hasData) {
                 continue;
             }
@@ -218,9 +201,14 @@ MultiValueAttribute<B, M>::apply_attribute_changes_to_wset(DocumentValues& docVa
         std::vector<MultiValueType> new_values;
         new_values.reserve(wset_inserted.size());
         if constexpr (std::is_same_v<ValueType, NonAtomicValueType>) {
-            wset_inserted.for_each([&new_values](const auto& e){ new_values.emplace_back(multivalue::ValueBuilder<MultiValueType>::build(e.first, e.second)); });
+            wset_inserted.for_each([&new_values](const auto& e) {
+                new_values.emplace_back(multivalue::ValueBuilder<MultiValueType>::build(e.first, e.second));
+            });
         } else {
-            wset_inserted.for_each([&new_values](const auto& e){ new_values.emplace_back(multivalue::ValueBuilder<MultiValueType>::build(ValueType(e.first), e.second)); });
+            wset_inserted.for_each([&new_values](const auto& e) {
+                new_values.emplace_back(
+                    multivalue::ValueBuilder<MultiValueType>::build(ValueType(e.first), e.second));
+            });
         }
 
         this->checkSetMaxValueCount(new_values.size());
@@ -229,17 +217,12 @@ MultiValueAttribute<B, M>::apply_attribute_changes_to_wset(DocumentValues& docVa
 }
 
 template <typename B, typename M>
-void
-MultiValueAttribute<B, M>::populate_address_space_usage(AddressSpaceUsage& usage) const
-{
+void MultiValueAttribute<B, M>::populate_address_space_usage(AddressSpaceUsage& usage) const {
     B::populate_address_space_usage(usage);
     usage.set(AddressSpaceComponents::multi_value, _mvMapping.getAddressSpaceUsage());
 }
 
-template <typename B, typename M>
-bool
-MultiValueAttribute<B, M>::addDoc(DocId & doc)
-{
+template <typename B, typename M> bool MultiValueAttribute<B, M>::addDoc(DocId& doc) {
     bool incGen = this->_mvMapping.isFull();
     this->_mvMapping.addDoc(doc);
     this->incNumDocs();
@@ -252,17 +235,11 @@ MultiValueAttribute<B, M>::addDoc(DocId & doc)
     return true;
 }
 
-template <typename B, typename M>
-void
-MultiValueAttribute<B, M>::onAddDocs(DocId  lidLimit) {
+template <typename B, typename M> void MultiValueAttribute<B, M>::onAddDocs(DocId lidLimit) {
     this->_mvMapping.reserve(lidLimit);
 }
 
-
-template <typename B, typename M>
-uint32_t
-MultiValueAttribute<B, M>::getValueCount(DocId doc) const
-{
+template <typename B, typename M> uint32_t MultiValueAttribute<B, M>::getValueCount(DocId doc) const {
     if (doc >= this->getNumDocs()) {
         return 0;
     }
@@ -270,60 +247,49 @@ MultiValueAttribute<B, M>::getValueCount(DocId doc) const
     return values.size();
 }
 
-
-template <typename B, typename M>
-uint64_t
-MultiValueAttribute<B, M>::getTotalValueCount() const
-{
+template <typename B, typename M> uint64_t MultiValueAttribute<B, M>::getTotalValueCount() const {
     return _mvMapping.getTotalValueCnt();
 }
 
-
-template <typename B, typename M>
-void
-MultiValueAttribute<B, M>::clearDocs(DocId lidLow, DocId lidLimit, bool)
-{
+template <typename B, typename M> void MultiValueAttribute<B, M>::clearDocs(DocId lidLow, DocId lidLimit, bool) {
     _mvMapping.clearDocs(lidLow, lidLimit, [this](uint32_t docId) { this->clearDoc(docId); });
 }
 
-
-template <typename B, typename M>
-void
-MultiValueAttribute<B, M>::onShrinkLidSpace()
-{
+template <typename B, typename M> void MultiValueAttribute<B, M>::onShrinkLidSpace() {
     uint32_t committedDocIdLimit = this->getCommittedDocIdLimit();
     _mvMapping.shrink(committedDocIdLimit);
     this->setNumDocs(committedDocIdLimit);
 }
 
 template <typename B, typename M>
-const attribute::IMultiValueAttribute*
-MultiValueAttribute<B, M>::as_multi_value_attribute() const
-{
+const attribute::IMultiValueAttribute* MultiValueAttribute<B, M>::as_multi_value_attribute() const {
     return this;
 }
 
 template <typename B, typename M>
 const attribute::IArrayReadView<multivalue::ValueType_t<M>>*
-MultiValueAttribute<B, M>::make_read_view(attribute::IMultiValueAttribute::ArrayTag<ValueType>, vespalib::Stash& stash) const
-{
+MultiValueAttribute<B, M>::make_read_view(attribute::IMultiValueAttribute::ArrayTag<ValueType>,
+                                          vespalib::Stash& stash) const {
     if constexpr (std::is_same_v<MultiValueType, ValueType>) {
-        return &stash.create<attribute::RawMultiValueReadView<MultiValueType>>(this->_mvMapping.make_read_view(this->getCommittedDocIdLimit()));
+        return &stash.create<attribute::RawMultiValueReadView<MultiValueType>>(
+            this->_mvMapping.make_read_view(this->getCommittedDocIdLimit()));
     } else {
-        return &stash.create<attribute::CopyMultiValueReadView<ValueType, MultiValueType>>(this->_mvMapping.make_read_view(this->getCommittedDocIdLimit()));
+        return &stash.create<attribute::CopyMultiValueReadView<ValueType, MultiValueType>>(
+            this->_mvMapping.make_read_view(this->getCommittedDocIdLimit()));
     }
 }
 
 template <typename B, typename M>
 const attribute::IWeightedSetReadView<multivalue::ValueType_t<M>>*
-MultiValueAttribute<B, M>::make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<ValueType>, vespalib::Stash& stash) const
-{
+MultiValueAttribute<B, M>::make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<ValueType>,
+                                          vespalib::Stash& stash) const {
     if constexpr (std::is_same_v<MultiValueType, multivalue::WeightedValue<ValueType>>) {
-        return &stash.create<attribute::RawMultiValueReadView<MultiValueType>>(this->_mvMapping.make_read_view(this->getCommittedDocIdLimit()));
+        return &stash.create<attribute::RawMultiValueReadView<MultiValueType>>(
+            this->_mvMapping.make_read_view(this->getCommittedDocIdLimit()));
     } else {
-        return &stash.create<attribute::CopyMultiValueReadView<multivalue::WeightedValue<ValueType>, MultiValueType>>(this->_mvMapping.make_read_view(this->getCommittedDocIdLimit()));
+        return &stash.create<attribute::CopyMultiValueReadView<multivalue::WeightedValue<ValueType>, MultiValueType>>(
+            this->_mvMapping.make_read_view(this->getCommittedDocIdLimit()));
     }
 }
 
 } // namespace search
-

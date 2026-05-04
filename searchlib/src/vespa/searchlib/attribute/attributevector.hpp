@@ -3,23 +3,23 @@
 
 #include "attributevector.h"
 #include "integerbase.h"
+
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/update/arithmeticvalueupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
+
 #include <cmath>
 
 namespace search {
 
-template<typename T>
-bool
-AttributeVector::adjustWeight(ChangeVectorT< ChangeTemplate<T> > & changes, DocId doc, const T & v,
-                              const ArithmeticValueUpdate & wd)
-{
+template <typename T>
+bool AttributeVector::adjustWeight(ChangeVectorT<ChangeTemplate<T>>& changes, DocId doc, const T& v,
+                                   const ArithmeticValueUpdate& wd) {
     bool retval(hasWeightedSetType() && (doc < getNumDocs()));
     if (retval) {
-        size_t oldSz(changes.size());
+        size_t                          oldSz(changes.size());
         ArithmeticValueUpdate::Operator op(wd.getOperator());
-        int32_t w(static_cast<int32_t>(wd.getOperand()));
+        int32_t                         w(static_cast<int32_t>(wd.getOperand()));
         if (op == ArithmeticValueUpdate::Add) {
             changes.push_back(ChangeTemplate<T>(ChangeBase::INCREASEWEIGHT, doc, v, w));
         } else if (op == ArithmeticValueUpdate::Sub) {
@@ -44,15 +44,14 @@ AttributeVector::adjustWeight(ChangeVectorT< ChangeTemplate<T> > & changes, DocI
     return retval;
 }
 
-template<typename T>
-bool
-AttributeVector::adjustWeight(ChangeVectorT< ChangeTemplate<T> >& changes, DocId doc, const T& v, const document::AssignValueUpdate& wu)
-{
+template <typename T>
+bool AttributeVector::adjustWeight(ChangeVectorT<ChangeTemplate<T>>& changes, DocId doc, const T& v,
+                                   const document::AssignValueUpdate& wu) {
     bool retval(hasWeightedSetType() && (doc < getNumDocs()));
     if (retval) {
         size_t oldSz(changes.size());
         if (wu.hasValue()) {
-            const FieldValue &wv = wu.getValue();
+            const FieldValue& wv = wu.getValue();
             if (wv.isA(FieldValue::Type::INT)) {
                 changes.push_back(ChangeTemplate<T>(ChangeBase::SETWEIGHT, doc, v, wv.getAsInt()));
             } else {
@@ -70,16 +69,15 @@ AttributeVector::adjustWeight(ChangeVectorT< ChangeTemplate<T> >& changes, DocId
     return retval;
 }
 
-template<typename T>
-bool
-AttributeVector::applyArithmetic(ChangeVectorT< ChangeTemplate<T> > & changes, DocId doc, const T &,
-                                 const ArithmeticValueUpdate & arithm)
-{
-    if (hasMultiValue() || (doc >= getNumDocs())) return false;
+template <typename T>
+bool AttributeVector::applyArithmetic(ChangeVectorT<ChangeTemplate<T>>& changes, DocId doc, const T&,
+                                      const ArithmeticValueUpdate& arithm) {
+    if (hasMultiValue() || (doc >= getNumDocs()))
+        return false;
 
-    size_t oldSz(changes.size());
+    size_t                          oldSz(changes.size());
     ArithmeticValueUpdate::Operator op(arithm.getOperator());
-    double aop = arithm.getOperand();
+    double                          aop = arithm.getOperand();
     if (op == ArithmeticValueUpdate::Add) {
         changes.push_back(ChangeTemplate<T>(ChangeBase::ADD, doc, 0, 0));
     } else if (op == ArithmeticValueUpdate::Sub) {
@@ -104,8 +102,7 @@ AttributeVector::applyArithmetic(ChangeVectorT< ChangeTemplate<T> > & changes, D
     return true;
 }
 
-template<typename T>
-bool AttributeVector::clearDoc(ChangeVectorT< ChangeTemplate<T> > & changes, DocId doc) {
+template <typename T> bool AttributeVector::clearDoc(ChangeVectorT<ChangeTemplate<T>>& changes, DocId doc) {
     bool retval(doc < getNumDocs());
     if (retval) {
         changes.push_back(ChangeTemplate<T>(ChangeBase::CLEARDOC, doc, T()));
@@ -115,8 +112,7 @@ bool AttributeVector::clearDoc(ChangeVectorT< ChangeTemplate<T> > & changes, Doc
     return retval;
 }
 
-template<typename T>
-bool AttributeVector::update(ChangeVectorT< ChangeTemplate<T> > & changes, DocId doc, const T & v) {
+template <typename T> bool AttributeVector::update(ChangeVectorT<ChangeTemplate<T>>& changes, DocId doc, const T& v) {
     bool retval(doc < getNumDocs());
     if (retval) {
         if (hasMultiValue()) {
@@ -131,47 +127,47 @@ bool AttributeVector::update(ChangeVectorT< ChangeTemplate<T> > & changes, DocId
     return retval;
 }
 
-template<typename T>
-bool AttributeVector::append(ChangeVectorT< ChangeTemplate<T> > & changes, DocId doc, const T & v, int32_t w, bool doCount) {
+template <typename T>
+bool AttributeVector::append(ChangeVectorT<ChangeTemplate<T>>& changes, DocId doc, const T& v, int32_t w,
+                             bool doCount) {
     bool retval(hasMultiValue() && (doc < getNumDocs()));
     if (retval) {
         changes.push_back(ChangeTemplate<T>(ChangeBase::APPEND, doc, v, w));
         _status.incUpdates();
         updateUncommittedDocIdLimit(doc);
-        if ( hasArrayType() && doCount) {
+        if (hasArrayType() && doCount) {
             _status.incNonIdempotentUpdates();
         }
     }
     return retval;
 }
 
-template<typename T, typename Accessor>
-bool AttributeVector::append(ChangeVectorT< ChangeTemplate<T> > & changes, DocId doc, Accessor & ac) {
+template <typename T, typename Accessor>
+bool AttributeVector::append(ChangeVectorT<ChangeTemplate<T>>& changes, DocId doc, Accessor& ac) {
     bool retval(hasMultiValue() && (doc < getNumDocs()));
     if (retval) {
         changes.push_back(doc, ac);
         _status.incUpdates(ac.size());
         updateUncommittedDocIdLimit(doc);
-        if ( hasArrayType() ) {
+        if (hasArrayType()) {
             _status.incNonIdempotentUpdates(ac.size());
         }
     }
     return retval;
 }
 
-template<typename T>
-bool AttributeVector::remove(ChangeVectorT< ChangeTemplate<T> > & changes, DocId doc, const T & v, int32_t w) {
+template <typename T>
+bool AttributeVector::remove(ChangeVectorT<ChangeTemplate<T>>& changes, DocId doc, const T& v, int32_t w) {
     bool retval(hasMultiValue() && (doc < getNumDocs()));
     if (retval) {
         changes.push_back(ChangeTemplate<T>(ChangeBase::REMOVE, doc, v, w));
         _status.incUpdates();
         updateUncommittedDocIdLimit(doc);
-        if ( hasArrayType() ) {
+        if (hasArrayType()) {
             _status.incNonIdempotentUpdates();
         }
     }
     return retval;
 }
 
-}
-
+} // namespace search
