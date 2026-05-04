@@ -32,7 +32,7 @@ public:
      * a list of targets sorted according to priority strategy.
      * @param targetList The list of possible flush targets.
      * @param tlsStatsMap Statistics per domain in the TLS. A domain matches a flush handler.
-     * @parma active_flushes Statistics of active (ongoing) flushes per flush handler.
+     * @param active_flushes Statistics of active (ongoing) flushes per flush handler.
      * @return A prioritized list of targets to flush.
      */
     virtual FlushContext::List getFlushTargets(const FlushContext::List&            targetList,

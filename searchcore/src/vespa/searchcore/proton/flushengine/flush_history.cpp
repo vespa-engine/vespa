@@ -130,7 +130,7 @@ void FlushHistory::start_flush(const std::string& handler_name, const std::strin
 }
 
 void FlushHistory::flush_done(uint32_t id) {
-    // Note: flush is still considered actuve after flush done, until prune is done.
+    // Note: flush is still considered active after flush done, until prune is done.
     std::lock_guard guard(_mutex);
     auto            it = _active.lower_bound(id);
     assert(it != _active.end() && it->first == id);

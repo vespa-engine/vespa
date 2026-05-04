@@ -160,7 +160,7 @@ public:
      *                        used by strategy to select best flush candiate.
      * @param strategy   The flushing strategy to use.
      * @param numThreads The number of worker threads to use.
-     * @param idleInterval The interval between when flushes are checked whne there are no one progressing.
+     * @param idleInterval The interval between when flushes are checked when there are no one progressing.
      */
     FlushEngine(std::shared_ptr<flushengine::ITlsStatsFactory> tlsStatsFactory, IFlushStrategy::SP strategy,
                 uint32_t numThreads, vespalib::duration idleInterval, uint64_t max_summary_file_size);
