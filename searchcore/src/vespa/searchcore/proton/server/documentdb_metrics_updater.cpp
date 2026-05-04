@@ -1,11 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "documentdb_metrics_updater.h"
+
 #include "document_meta_store_read_guards.h"
 #include "documentsubdbcollection.h"
 #include "executorthreadingservice.h"
 #include "feedhandler.h"
 #include "idocumentsubdb.h"
+
 #include <vespa/searchcommon/attribute/status.h>
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_manager.h>
@@ -16,8 +18,8 @@
 #include <vespa/searchcore/proton/metrics/executor_threading_service_stats.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
-#include <vespa/vespalib/stllike/cache_stats.h>
 #include <vespa/searchlib/util/index_stats.h>
+#include <vespa/vespalib/stllike/cache_stats.h>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/vespalib/util/size_literals.h>
 
@@ -33,18 +35,16 @@ namespace proton {
 
 using matching::MatchingStats;
 
-DocumentDBMetricsUpdater::DocumentDBMetricsUpdater(const DocumentSubDBCollection &subDBs,
-                                                   ExecutorThreadingService &writeService,
-                                                   DocumentDBJobTrackers &jobTrackers,
-                                                   const AttributeUsageFilter &writeFilter,
-                                                   FeedHandler& feed_handler)
+DocumentDBMetricsUpdater::DocumentDBMetricsUpdater(const DocumentSubDBCollection& subDBs,
+                                                   ExecutorThreadingService&      writeService,
+                                                   DocumentDBJobTrackers&         jobTrackers,
+                                                   const AttributeUsageFilter& writeFilter, FeedHandler& feed_handler)
     : _subDBs(subDBs),
       _writeService(writeService),
       _jobTrackers(jobTrackers),
       _writeFilter(writeFilter),
       _feed_handler(feed_handler),
-      _last_feed_handler_stats()
-{
+      _last_feed_handler_stats() {
 }
 
 DocumentDBMetricsUpdater::~DocumentDBMetricsUpdater() = default;
@@ -53,33 +53,27 @@ namespace {
 
 struct TotalStats {
     MemoryUsage memoryUsage;
-    uint64_t diskUsage;
+    uint64_t    diskUsage;
     TotalStats() : memoryUsage(), diskUsage() {}
 };
 
-void
-updateMemoryUsageMetrics(MemoryUsageMetrics &metrics, const MemoryUsage &memoryUsage, TotalStats &totalStats)
-{
+void updateMemoryUsageMetrics(MemoryUsageMetrics& metrics, const MemoryUsage& memoryUsage, TotalStats& totalStats) {
     metrics.update(memoryUsage);
     totalStats.memoryUsage.merge(memoryUsage);
 }
 
-void
-updateDiskUsageMetric(metrics::LongValueMetric &metric, uint64_t diskUsage, TotalStats &totalStats)
-{
+void updateDiskUsageMetric(metrics::LongValueMetric& metric, uint64_t diskUsage, TotalStats& totalStats) {
     metric.set(diskUsage);
     totalStats.diskUsage += diskUsage;
 }
 
-void
-updateIndexMetrics(DocumentDBTaggedMetrics &metrics, const search::IndexStats &stats, TotalStats &totalStats)
-{
-    DocumentDBTaggedMetrics::IndexMetrics &indexMetrics = metrics.index;
+void updateIndexMetrics(DocumentDBTaggedMetrics& metrics, const search::IndexStats& stats, TotalStats& totalStats) {
+    DocumentDBTaggedMetrics::IndexMetrics& indexMetrics = metrics.index;
     updateDiskUsageMetric(indexMetrics.diskUsage, stats.sizeOnDisk(), totalStats);
     updateMemoryUsageMetrics(indexMetrics.memoryUsage, stats.memoryUsage(), totalStats);
     indexMetrics.docsInMemory.set(stats.docsInMemory());
     indexMetrics.indexes.set(stats.disk_indexes() + stats.memory_indexes());
-    auto& field_metrics = metrics.ready.index;
+    auto&                     field_metrics = metrics.ready.index;
     search::FieldIndexIoStats disk_io;
     for (auto& field : stats.get_field_stats()) {
         auto entry = field_metrics.get_field_metrics_entry(field.first);
@@ -93,70 +87,55 @@ updateIndexMetrics(DocumentDBTaggedMetrics &metrics, const search::IndexStats &s
     indexMetrics.disk_io.update(disk_io);
 }
 
-struct TempAttributeMetric
-{
+struct TempAttributeMetric {
     MemoryUsage memoryUsage;
     uint64_t    bitVectors;
     uint64_t    size_on_disk;
 
-    TempAttributeMetric()
-        : memoryUsage(),
-          bitVectors(0),
-          size_on_disk(0)
-    {}
+    TempAttributeMetric() : memoryUsage(), bitVectors(0), size_on_disk(0) {}
 };
 
-struct TempAttributeMetrics
-{
+struct TempAttributeMetrics {
     using AttrMap = std::map<std::string, TempAttributeMetric>;
     TempAttributeMetric total;
-    AttrMap attrs;
+    AttrMap             attrs;
 };
 
-bool
-isReadySubDB(const IDocumentSubDB *subDb, const DocumentSubDBCollection &subDbs)
-{
+bool isReadySubDB(const IDocumentSubDB* subDb, const DocumentSubDBCollection& subDbs) {
     return subDb == subDbs.getReadySubDB();
 }
 
-bool
-isNotReadySubDB(const IDocumentSubDB *subDb, const DocumentSubDBCollection &subDbs)
-{
+bool isNotReadySubDB(const IDocumentSubDB* subDb, const DocumentSubDBCollection& subDbs) {
     return subDb == subDbs.getNotReadySubDB();
 }
 
-void
-fillTempAttributeMetrics(TempAttributeMetrics &metrics, const std::string &attrName,
-                         const MemoryUsage &memoryUsage, uint32_t bitVectors, uint64_t size_on_disk)
-{
+void fillTempAttributeMetrics(TempAttributeMetrics& metrics, const std::string& attrName,
+                              const MemoryUsage& memoryUsage, uint32_t bitVectors, uint64_t size_on_disk) {
     metrics.total.memoryUsage.merge(memoryUsage);
     metrics.total.bitVectors += bitVectors;
     metrics.total.size_on_disk += size_on_disk;
-    TempAttributeMetric &m = metrics.attrs[attrName];
+    TempAttributeMetric& m = metrics.attrs[attrName];
     m.memoryUsage.merge(memoryUsage);
     m.bitVectors += bitVectors;
     m.size_on_disk += size_on_disk;
 }
 
-void
-fillTempAttributeMetrics(TempAttributeMetrics &totalMetrics,
-                         TempAttributeMetrics &readyMetrics,
-                         TempAttributeMetrics &notReadyMetrics,
-                         const DocumentSubDBCollection &subDbs)
-{
+void fillTempAttributeMetrics(TempAttributeMetrics& totalMetrics, TempAttributeMetrics& readyMetrics,
+                              TempAttributeMetrics& notReadyMetrics, const DocumentSubDBCollection& subDbs) {
     for (const auto subDb : subDbs) {
         proton::IAttributeManager::SP attrMgr(subDb->getAttributeManager());
         if (attrMgr) {
-            TempAttributeMetrics *subMetrics =
-                    (isReadySubDB(subDb, subDbs) ? &readyMetrics :
-                     (isNotReadySubDB(subDb, subDbs) ? &notReadyMetrics : nullptr));
+            TempAttributeMetrics* subMetrics =
+                (isReadySubDB(subDb, subDbs) ? &readyMetrics
+                                             : (isNotReadySubDB(subDb, subDbs) ? &notReadyMetrics : nullptr));
             std::vector<search::AttributeGuard> list;
             attrMgr->getAttributeListAll(list);
-            for (const auto &attr : list) {
-                const search::attribute::Status &status = attr->getStatus();
-                MemoryUsage memoryUsage(status.getAllocated(), status.getUsed(), status.getDead(), status.getOnHold());
-                uint32_t bitVectors = status.getBitVectors();
-                uint64_t size_on_disk = attr->size_on_disk();
+            for (const auto& attr : list) {
+                const search::attribute::Status& status = attr->getStatus();
+                MemoryUsage memoryUsage(status.getAllocated(), status.getUsed(), status.getDead(),
+                                        status.getOnHold());
+                uint32_t    bitVectors = status.getBitVectors();
+                uint64_t    size_on_disk = attr->size_on_disk();
                 fillTempAttributeMetrics(totalMetrics, attr->getName(), memoryUsage, bitVectors, size_on_disk);
                 if (subMetrics != nullptr) {
                     fillTempAttributeMetrics(*subMetrics, attr->getName(), memoryUsage, bitVectors, size_on_disk);
@@ -168,9 +147,9 @@ fillTempAttributeMetrics(TempAttributeMetrics &totalMetrics,
                 imported->getAll(i_list);
                 for (const auto& attr : i_list) {
                     auto memory_usage = attr->get_memory_usage();
-                    fillTempAttributeMetrics(totalMetrics,  attr->getName(), memory_usage, 0, 0);
+                    fillTempAttributeMetrics(totalMetrics, attr->getName(), memory_usage, 0, 0);
                     if (subMetrics != nullptr) {
-                        fillTempAttributeMetrics(*subMetrics,  attr->getName(), memory_usage, 0, 0);
+                        fillTempAttributeMetrics(*subMetrics, attr->getName(), memory_usage, 0, 0);
                     }
                 }
             }
@@ -178,10 +157,8 @@ fillTempAttributeMetrics(TempAttributeMetrics &totalMetrics,
     }
 }
 
-void
-updateAttributeMetrics(AttributeMetrics &metrics, const TempAttributeMetrics &tmpMetrics)
-{
-    for (const auto &attr : tmpMetrics.attrs) {
+void updateAttributeMetrics(AttributeMetrics& metrics, const TempAttributeMetrics& tmpMetrics) {
+    for (const auto& attr : tmpMetrics.attrs) {
         auto entry = metrics.get_field_metrics_entry(attr.first);
         if (entry) {
             entry->memoryUsage.update(attr.second.memoryUsage);
@@ -190,9 +167,8 @@ updateAttributeMetrics(AttributeMetrics &metrics, const TempAttributeMetrics &tm
     }
 }
 
-void
-updateAttributeMetrics(DocumentDBTaggedMetrics &metrics, const DocumentSubDBCollection &subDbs, TotalStats &totalStats)
-{
+void updateAttributeMetrics(DocumentDBTaggedMetrics& metrics, const DocumentSubDBCollection& subDbs,
+                            TotalStats& totalStats) {
     TempAttributeMetrics totalMetrics;
     TempAttributeMetrics readyMetrics;
     TempAttributeMetrics notReadyMetrics;
@@ -204,11 +180,10 @@ updateAttributeMetrics(DocumentDBTaggedMetrics &metrics, const DocumentSubDBColl
     updateDiskUsageMetric(metrics.attribute.diskUsage, totalMetrics.total.size_on_disk, totalStats);
 }
 
-void
-updateMatchingMetrics(const metrics::MetricLockGuard & guard, DocumentDBTaggedMetrics &metrics, const IDocumentSubDB &ready)
-{
+void updateMatchingMetrics(const metrics::MetricLockGuard& guard, DocumentDBTaggedMetrics& metrics,
+                           const IDocumentSubDB& ready) {
     MatchingStats totalStats;
-    for (const auto &rankProfile : metrics.matching.rank_profiles) {
+    for (const auto& rankProfile : metrics.matching.rank_profiles) {
         MatchingStats matchingStats = ready.getMatcherStats(rankProfile.first);
         rankProfile.second->update(guard, matchingStats);
 
@@ -217,29 +192,24 @@ updateMatchingMetrics(const metrics::MetricLockGuard & guard, DocumentDBTaggedMe
     metrics.matching.update(totalStats);
 }
 
-void
-updateDocumentsMetrics(DocumentDBTaggedMetrics &metrics, const DocumentSubDBCollection &subDbs)
-{
+void updateDocumentsMetrics(DocumentDBTaggedMetrics& metrics, const DocumentSubDBCollection& subDbs) {
     DocumentMetaStoreReadGuards dms(subDbs);
-    uint32_t active = dms.numActiveDocs();
-    uint32_t ready = dms.numReadyDocs();
-    uint32_t total = dms.numTotalDocs();
-    uint32_t removed = dms.numRemovedDocs();
+    uint32_t                    active = dms.numActiveDocs();
+    uint32_t                    ready = dms.numReadyDocs();
+    uint32_t                    total = dms.numTotalDocs();
+    uint32_t                    removed = dms.numRemovedDocs();
 
-    auto &docsMetrics = metrics.documents;
+    auto& docsMetrics = metrics.documents;
     docsMetrics.active.set(active);
     docsMetrics.ready.set(ready);
     docsMetrics.total.set(total);
     docsMetrics.removed.set(removed);
 }
 
-void
-updateDocumentStoreMetrics(DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreMetrics &metrics,
-                           const IDocumentSubDB *subDb,
-                           TotalStats &totalStats)
-{
-    const ISummaryManager::SP &summaryMgr = subDb->getSummaryManager();
-    search::IDocumentStore &backingStore = summaryMgr->getBackingStore();
+void updateDocumentStoreMetrics(DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreMetrics& metrics,
+                                const IDocumentSubDB* subDb, TotalStats& totalStats) {
+    const ISummaryManager::SP&    summaryMgr = subDb->getSummaryManager();
+    search::IDocumentStore&       backingStore = summaryMgr->getBackingStore();
     search::DataStoreStorageStats storageStats(backingStore.getStorageStats());
     updateDiskUsageMetric(metrics.diskUsage, storageStats.diskUsage(), totalStats);
     metrics.diskBloat.set(storageStats.diskBloat());
@@ -251,19 +221,15 @@ updateDocumentStoreMetrics(DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreM
     metrics.cache.update_metrics(cacheStats);
 }
 
-void
-updateDocumentStoreMetrics(DocumentDBTaggedMetrics &metrics, const DocumentSubDBCollection &subDBs,
-                           TotalStats &totalStats)
-{
+void updateDocumentStoreMetrics(DocumentDBTaggedMetrics& metrics, const DocumentSubDBCollection& subDBs,
+                                TotalStats& totalStats) {
     updateDocumentStoreMetrics(metrics.ready.documentStore, subDBs.getReadySubDB(), totalStats);
     updateDocumentStoreMetrics(metrics.removed.documentStore, subDBs.getRemSubDB(), totalStats);
     updateDocumentStoreMetrics(metrics.notReady.documentStore, subDBs.getNotReadySubDB(), totalStats);
 }
 
 template <typename MetricSetType>
-void
-updateLidSpaceMetrics(MetricSetType &metrics, const search::IDocumentMetaStore &metaStore)
-{
+void updateLidSpaceMetrics(MetricSetType& metrics, const search::IDocumentMetaStore& metaStore) {
     LidUsageStats stats = metaStore.getLidUsageStats();
     metrics.lidLimit.set(stats.getLidLimit());
     metrics.usedLids.set(stats.getUsedLids());
@@ -273,9 +239,8 @@ updateLidSpaceMetrics(MetricSetType &metrics, const search::IDocumentMetaStore &
     metrics.lidFragmentationFactor.set(stats.getLidFragmentationFactor());
 }
 
-void
-update_feeding_metrics(DocumentDBFeedingMetrics& metrics, FeedHandlerStats stats, std::optional<FeedHandlerStats>& last_stats)
-{
+void update_feeding_metrics(DocumentDBFeedingMetrics& metrics, FeedHandlerStats stats,
+                            std::optional<FeedHandlerStats>& last_stats) {
     auto delta_stats = stats;
     if (last_stats.has_value()) {
         delta_stats -= last_stats.value();
@@ -285,7 +250,7 @@ update_feeding_metrics(DocumentDBFeedingMetrics& metrics, FeedHandlerStats stats
     if (commits != 0) {
         double min_operations = delta_stats.get_min_operations().value_or(0);
         double max_operations = delta_stats.get_max_operations().value_or(0);
-        double avg_operations = ((double) delta_stats.get_operations()) / commits;
+        double avg_operations = ((double)delta_stats.get_operations()) / commits;
         metrics.commit.operations.addValueBatch(avg_operations, commits, min_operations, max_operations);
         double min_latency = delta_stats.get_min_latency().value_or(0.0);
         double max_latency = delta_stats.get_max_latency().value_or(0.0);
@@ -294,12 +259,11 @@ update_feeding_metrics(DocumentDBFeedingMetrics& metrics, FeedHandlerStats stats
     }
 }
 
-}
+} // namespace
 
-void
-DocumentDBMetricsUpdater::updateMetrics(const metrics::MetricLockGuard & guard, DocumentDBTaggedMetrics &metrics)
-{
-    TotalStats totalStats;
+void DocumentDBMetricsUpdater::updateMetrics(const metrics::MetricLockGuard& guard,
+                                             DocumentDBTaggedMetrics&        metrics) {
+    TotalStats                    totalStats;
     ExecutorThreadingServiceStats threadingServiceStats = _writeService.getStats();
     updateIndexMetrics(metrics, _subDBs.getReadySubDB()->get_index_stats(true), totalStats);
     updateAttributeMetrics(metrics, _subDBs, totalStats);
@@ -313,19 +277,17 @@ DocumentDBMetricsUpdater::updateMetrics(const metrics::MetricLockGuard & guard, 
     update_feeding_metrics(metrics.feeding, _feed_handler.get_stats(true), _last_feed_handler_stats);
 }
 
-void
-DocumentDBMetricsUpdater::updateAttributeResourceUsageMetrics(DocumentDBTaggedMetrics::AttributeMetrics &metrics)
-{
+void DocumentDBMetricsUpdater::updateAttributeResourceUsageMetrics(
+    DocumentDBTaggedMetrics::AttributeMetrics& metrics) {
     AttributeUsageStats stats = _writeFilter.getAttributeUsageStats();
-    bool feedBlocked = !_writeFilter.acceptWriteOperation();
-    double address_space_used = stats.max_address_space_usage().getUsage().usage();
+    bool                feedBlocked = !_writeFilter.acceptWriteOperation();
+    double              address_space_used = stats.max_address_space_usage().getUsage().usage();
     metrics.resourceUsage.address_space.set(address_space_used);
     metrics.resourceUsage.feedingBlocked.set(feedBlocked ? 1 : 0);
 }
 
-void
-DocumentDBMetricsUpdater::updateMiscMetrics(DocumentDBTaggedMetrics &metrics, const ExecutorThreadingServiceStats &threadingServiceStats)
-{
+void DocumentDBMetricsUpdater::updateMiscMetrics(DocumentDBTaggedMetrics&             metrics,
+                                                 const ExecutorThreadingServiceStats& threadingServiceStats) {
     metrics.threadingService.update(threadingServiceStats);
     _jobTrackers.updateMetrics(metrics.job);
 
@@ -337,4 +299,4 @@ DocumentDBMetricsUpdater::updateMiscMetrics(DocumentDBTaggedMetrics &metrics, co
     updateLidSpaceMetrics(metrics.removed.lidSpace, dmss.remdms->get());
 }
 
-}
+} // namespace proton

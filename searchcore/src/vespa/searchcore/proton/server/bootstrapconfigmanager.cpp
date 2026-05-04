@@ -1,69 +1,65 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bootstrapconfigmanager.h"
+
 #include "bootstrapconfig.h"
+
+#include <vespa/config-bucketspaces.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/repo/document_type_repo_factory.h>
 #include <vespa/searchcore/proton/common/hw_info_sampler.h>
-#include <vespa/config-bucketspaces.h>
-#include <vespa/searchlib/common/tunefileinfo.hpp>
+
 #include <vespa/config/retriever/configsnapshot.hpp>
-#include <filesystem>
+#include <vespa/searchlib/common/tunefileinfo.hpp>
+
 #include <cassert>
+#include <filesystem>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.bootstrapconfigmanager");
 
 using namespace vespa::config::search;
 using namespace config;
-using document::DocumentTypeRepo;
-using search::TuneFileDocumentDB;
-using vespa::config::search::core::ProtonConfig;
 using cloud::config::filedistribution::FiledistributorrpcConfig;
-using vespa::config::content::core::BucketspacesConfig;
+using document::DocumentTypeRepo;
 using document::DocumentTypeRepoFactory;
+using search::TuneFileDocumentDB;
+using vespa::config::content::core::BucketspacesConfig;
+using vespa::config::search::core::ProtonConfig;
 using BucketspacesConfigSP = std::shared_ptr<BucketspacesConfig>;
 
 namespace proton {
 
-BootstrapConfigManager::BootstrapConfigManager(const std::string & configId)
-    : _pendingConfigSnapshot(),
-      _configId(configId),
-      _pendingConfigMutex()
-{ }
+BootstrapConfigManager::BootstrapConfigManager(const std::string& configId)
+    : _pendingConfigSnapshot(), _configId(configId), _pendingConfigMutex() {
+}
 
 BootstrapConfigManager::~BootstrapConfigManager() = default;
 
-
-const ConfigKeySet
-BootstrapConfigManager::createConfigKeySet() const
-{
-    return ConfigKeySet().add<ProtonConfig>(_configId)
-                         .add<DocumenttypesConfig>(_configId)
-                         .add<FiledistributorrpcConfig>(_configId)
-                         .add<BucketspacesConfig>(_configId);
+const ConfigKeySet BootstrapConfigManager::createConfigKeySet() const {
+    return ConfigKeySet()
+        .add<ProtonConfig>(_configId)
+        .add<DocumenttypesConfig>(_configId)
+        .add<FiledistributorrpcConfig>(_configId)
+        .add<BucketspacesConfig>(_configId);
 }
 
-std::shared_ptr<BootstrapConfig>
-BootstrapConfigManager::getConfig() const
-{
+std::shared_ptr<BootstrapConfig> BootstrapConfigManager::getConfig() const {
     std::lock_guard<std::mutex> lock(_pendingConfigMutex);
     return _pendingConfigSnapshot;
 }
 
-void
-BootstrapConfigManager::update(const ConfigSnapshot & snapshot)
-{
+void BootstrapConfigManager::update(const ConfigSnapshot& snapshot) {
     using ProtonConfigSP = BootstrapConfig::ProtonConfigSP;
     using DocumenttypesConfigSP = BootstrapConfig::DocumenttypesConfigSP;
 
-    ProtonConfigSP newProtonConfig;
+    ProtonConfigSP                              newProtonConfig;
     BootstrapConfig::FiledistributorrpcConfigSP newFiledistRpcConfSP;
-    TuneFileDocumentDB::SP newTuneFileDocumentDB;
-    DocumenttypesConfigSP newDocumenttypesConfig;
-    std::shared_ptr<const DocumentTypeRepo> newRepo;
-    BucketspacesConfigSP newBucketspacesConfig;
-    int64_t currentGen = -1;
+    TuneFileDocumentDB::SP                      newTuneFileDocumentDB;
+    DocumenttypesConfigSP                       newDocumenttypesConfig;
+    std::shared_ptr<const DocumentTypeRepo>     newRepo;
+    BucketspacesConfigSP                        newBucketspacesConfig;
+    int64_t                                     currentGen = -1;
 
     BootstrapConfig::SP current = _pendingConfigSnapshot;
     if (current) {
@@ -79,17 +75,19 @@ BootstrapConfigManager::update(const ConfigSnapshot & snapshot)
     if (snapshot.isChanged<ProtonConfig>(_configId, currentGen)) {
         LOG(spam, "Proton config is changed");
         std::unique_ptr<ProtonConfig> protonConfig = snapshot.getConfig<ProtonConfig>(_configId);
-        auto tuneFileDocumentDB = std::make_shared<TuneFileDocumentDB>();
-        TuneFileDocumentDB &tune = *tuneFileDocumentDB;
-        ProtonConfig &conf = *protonConfig;
+        auto                          tuneFileDocumentDB = std::make_shared<TuneFileDocumentDB>();
+        TuneFileDocumentDB&           tune = *tuneFileDocumentDB;
+        ProtonConfig&                 conf = *protonConfig;
         tune._index._indexing._write.setFromConfig<ProtonConfig::Indexing::Write>(conf.indexing.write.io);
         tune._index._indexing._read.setFromConfig<ProtonConfig::Indexing::Read>(conf.indexing.read.io);
         tune._attr._write.setFromConfig<ProtonConfig::Attribute::Write>(conf.attribute.write.io);
-        tune._index._search._read.setFromConfig<ProtonConfig::Search, ProtonConfig::Search::Mmap>(conf.search.io, conf.search.mmap);
+        tune._index._search._read.setFromConfig<ProtonConfig::Search, ProtonConfig::Search::Mmap>(conf.search.io,
+                                                                                                  conf.search.mmap);
         tune._index._search.set_force_memory_map_posting_list(conf.index.cache.postinglist.maxbytes == -1);
         tune._summary._write.setFromConfig<ProtonConfig::Summary::Write>(conf.summary.write.io);
         tune._summary._seqRead.setFromConfig<ProtonConfig::Summary::Read>(conf.summary.read.io);
-        tune._summary._randRead.setFromConfig<ProtonConfig::Summary::Read, ProtonConfig::Summary::Read::Mmap>(conf.summary.read.io, conf.summary.read.mmap);
+        tune._summary._randRead.setFromConfig<ProtonConfig::Summary::Read, ProtonConfig::Summary::Read::Mmap>(
+            conf.summary.read.io, conf.summary.read.mmap);
 
         newProtonConfig = ProtonConfigSP(protonConfig.release());
         newTuneFileDocumentDB = tuneFileDocumentDB;
@@ -116,10 +114,10 @@ BootstrapConfigManager::update(const ConfigSnapshot & snapshot)
     assert(newDocumenttypesConfig);
     assert(newRepo);
 
-    const ProtonConfig &protonConfig = *newProtonConfig;
-    const auto &hwDiskCfg = protonConfig.hwinfo.disk;
-    const auto &hwMemoryCfg = protonConfig.hwinfo.memory;
-    const auto &hwCpuCfg = protonConfig.hwinfo.cpu;
+    const ProtonConfig&   protonConfig = *newProtonConfig;
+    const auto&           hwDiskCfg = protonConfig.hwinfo.disk;
+    const auto&           hwMemoryCfg = protonConfig.hwinfo.memory;
+    const auto&           hwCpuCfg = protonConfig.hwinfo.cpu;
     HwInfoSampler::Config samplerCfg(hwDiskCfg.size, hwDiskCfg.writespeed, hwDiskCfg.slowwritespeedlimit,
                                      hwDiskCfg.samplewritesize, hwDiskCfg.shared, hwMemoryCfg.size, hwCpuCfg.cores);
     std::filesystem::create_directories(std::filesystem::path(protonConfig.basedir));
