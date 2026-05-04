@@ -1,14 +1,18 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "postinglisthandle.h"
 #include "postinglistcountfile.h"
+#include "postinglisthandle.h"
+
 #include <vespa/searchlib/common/tunefileinfo.h>
+
 #include <limits>
 
 class FastOS_FileInterface;
 
-namespace search::common { class FileHeaderContext; }
+namespace search::common {
+class FileHeaderContext;
+}
 
 namespace search::index {
 
@@ -17,20 +21,18 @@ namespace search::index {
  */
 class DictionaryFileSeqRead : public PostingListCountFileSeqRead {
 public:
-    DictionaryFileSeqRead() { }
+    DictionaryFileSeqRead() {}
     ~DictionaryFileSeqRead();
 
     /**
      * Read word and counts.  Only nonzero counts are returned. If at
      * end of dictionary then noWordNumHigh() is returned as word number.
      */
-    virtual void readWord(std::string &word, uint64_t &wordNum, PostingListCounts &counts) = 0;
+    virtual void readWord(std::string& word, uint64_t& wordNum, PostingListCounts& counts) = 0;
 
     static uint64_t noWordNum() { return 0u; }
 
-    static uint64_t noWordNumHigh() {
-        return std::numeric_limits<uint64_t>::max();
-    }
+    static uint64_t noWordNumHigh() { return std::numeric_limits<uint64_t>::max(); }
 };
 
 /**
@@ -38,15 +40,14 @@ public:
  */
 class DictionaryFileSeqWrite : public PostingListCountFileSeqWrite {
 public:
-    DictionaryFileSeqWrite() { }
+    DictionaryFileSeqWrite() {}
     ~DictionaryFileSeqWrite();
 
     /**
      * Write word and counts.  Only nonzero counts should be supplied.
      */
-    virtual void writeWord(std::string_view word, const PostingListCounts &counts) = 0;
+    virtual void writeWord(std::string_view word, const PostingListCounts& counts) = 0;
 };
-
 
 /**
  * Interface for dictionary file containing words and counts.
@@ -55,17 +56,17 @@ class DictionaryFileRandRead {
 protected:
     // Can be examined after open
     bool _memoryMapped;
+
 public:
     DictionaryFileRandRead();
     virtual ~DictionaryFileRandRead();
 
-    virtual bool lookup(std::string_view word, uint64_t &wordNum,
-                        PostingListOffsetAndCounts &offsetAndCounts) = 0;
+    virtual bool lookup(std::string_view word, uint64_t& wordNum, PostingListOffsetAndCounts& offsetAndCounts) = 0;
 
     /**
      * Open dictionary file for random read.
      */
-    virtual bool open(const std::string &name, const TuneFileRandRead &tuneFileRead) = 0;
+    virtual bool open(const std::string& name, const TuneFileRandRead& tuneFileRead) = 0;
 
     /**
      * Close dictionary file.
@@ -75,8 +76,9 @@ public:
     bool getMemoryMapped() const { return _memoryMapped; }
 
     virtual uint64_t getNumWordIds() const = 0;
+
 protected:
-    void afterOpen(FastOS_FileInterface &file);
+    void afterOpen(FastOS_FileInterface& file);
 };
 
-}
+} // namespace search::index

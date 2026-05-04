@@ -13,12 +13,12 @@ class SchemaIndexFields {
 public:
     using FieldIdVector = std::vector<uint32_t>;
     using UriFieldIdVector = std::vector<UriField>;
-    FieldIdVector _textFields;
+    FieldIdVector    _textFields;
     UriFieldIdVector _uriFields;
 
     SchemaIndexFields();
     ~SchemaIndexFields();
-    void setup(const Schema &schema);
+    void setup(const Schema& schema);
 };
 
-}
+} // namespace search::index

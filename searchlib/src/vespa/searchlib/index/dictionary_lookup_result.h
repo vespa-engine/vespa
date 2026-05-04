@@ -11,16 +11,16 @@ namespace search::index {
  **/
 class DictionaryLookupResult {
 public:
-    uint64_t wordNum;
+    uint64_t                 wordNum;
     index::PostingListCounts counts;
-    uint64_t bitOffset;
+    uint64_t                 bitOffset;
 
     DictionaryLookupResult() noexcept;
     ~DictionaryLookupResult();
 
     bool valid() const noexcept { return counts._numDocs > 0; }
 
-    void swap(DictionaryLookupResult &rhs) noexcept {
+    void swap(DictionaryLookupResult& rhs) noexcept {
         std::swap(wordNum, rhs.wordNum);
         counts.swap(rhs.counts);
         std::swap(bitOffset, rhs.bitOffset);
@@ -29,4 +29,4 @@ public:
 
 void swap(DictionaryLookupResult& a, DictionaryLookupResult& b) noexcept;
 
-}
+} // namespace search::index

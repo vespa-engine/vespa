@@ -1,40 +1,33 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dummyfileheadercontext.h"
-#include <vespa/vespalib/data/fileheader.h>
+
 #include <vespa/searchlib/util/fileheadertk.h>
+#include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/util/host_name.h>
-#include <cassert>
+
 #include <unistd.h>
+
+#include <cassert>
 
 namespace search::index {
 
 std::string DummyFileHeaderContext::_creator;
 
 DummyFileHeaderContext::DummyFileHeaderContext()
-    : common::FileHeaderContext(),
-      _disableFileName(false),
-      _hostName(),
-      _pid(getpid())
-{
+    : common::FileHeaderContext(), _disableFileName(false), _hostName(), _pid(getpid()) {
     _hostName = vespalib::HostName::get();
     assert(!_hostName.empty());
 }
 
-DummyFileHeaderContext::~DummyFileHeaderContext()
-{
+DummyFileHeaderContext::~DummyFileHeaderContext() {
 }
 
-void
-DummyFileHeaderContext::disableFileName()
-{
+void DummyFileHeaderContext::disableFileName() {
     _disableFileName = true;
 }
 
-void
-DummyFileHeaderContext::addTags(vespalib::GenericHeader &header,
-                                const std::string &name) const
-{
+void DummyFileHeaderContext::addTags(vespalib::GenericHeader& header, const std::string& name) const {
     using Tag = vespalib::GenericHeader::Tag;
 
     FileHeaderTk::addVersionTags(header);
@@ -50,10 +43,8 @@ DummyFileHeaderContext::addTags(vespalib::GenericHeader &header,
     header.putTag(Tag("DummyFileHeaderContext", "enabled"));
 }
 
-void
-DummyFileHeaderContext::setCreator(const std::string &creator)
-{
+void DummyFileHeaderContext::setCreator(const std::string& creator) {
     _creator = creator;
 }
 
-}
+} // namespace search::index

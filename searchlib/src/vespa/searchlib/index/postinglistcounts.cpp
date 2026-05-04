@@ -4,9 +4,8 @@
 
 namespace search::index {
 
-void swap(PostingListCounts & a, PostingListCounts & b)
-{
+void swap(PostingListCounts& a, PostingListCounts& b) {
     a.swap(b);
 }
 
-}
+} // namespace search::index
