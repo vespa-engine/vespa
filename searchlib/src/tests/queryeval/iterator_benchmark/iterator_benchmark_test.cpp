@@ -1,10 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "attribute_ctx_builder.h"
 #include "benchmark_blueprint_factory.h"
 #include "blueprint_factory_builder.h"
 #include "common.h"
 #include "intermediate_blueprint_factory.h"
 
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/value_type.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -711,7 +716,7 @@ struct BlueprintFactorySetup {
         return std::shared_ptr<BenchmarkBlueprintFactory>(make_factory(num_docs, op_hit_ratio));
     }
     std::string to_string() const {
-        return "field=" + field_cfg.to_string() + ", query=" + test::to_string(query_op) +
+        return "field=" + field_cfg.to_string() + ", query=" + queryeval::test::to_string(query_op) +
                ", children=" + std::to_string(children);
     }
 };
@@ -1021,7 +1026,22 @@ TEST(IteratorBenchmark, btree_vs_array_nonstrict_crossover) {
 }
 
 TEST(IteratorBenchmark, spec_factory_test) {
-    auto tree = and_(term(int32_fs, num_docs, 0, 0.01), term(str_fs, num_docs, 0, 0.3), enn(100));
+    using vespalib::eval::SimpleValue;
+    using vespalib::eval::TensorSpec;
+    using vespalib::eval::ValueType;
+    search::attribute::Config tensor_cfg(BasicType::TENSOR);
+    tensor_cfg.setTensorType(ValueType::from_spec("tensor<float>(x[2])"));
+    tensor_cfg.set_distance_metric(DistanceMetric::Euclidean);
+
+    AttributeContextBuilder builder;
+    auto                    attr = builder.add_tensor(tensor_cfg, "nn", num_docs, [](uint32_t docid) {
+        return SimpleValue::from_spec(
+            TensorSpec("tensor<float>(x[2])").add({{"x", 0}}, double(docid)).add({{"x", 1}}, 0.0));
+    });
+    auto query = SimpleValue::from_spec(TensorSpec("tensor<float>(x[2])").add({{"x", 0}}, 0.0).add({{"x", 1}}, 0.0));
+
+    auto tree =
+        and_(term(int32_fs, num_docs, 0, 0.01), term(str_fs, num_docs, 0, 0.3), enn(attr, std::move(query), 100));
 
     auto res = benchmark_search(*tree, num_docs + 1,
                                 /*strict*/ true,
