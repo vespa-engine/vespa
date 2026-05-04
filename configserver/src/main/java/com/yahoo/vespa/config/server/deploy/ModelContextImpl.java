@@ -224,7 +224,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public double feedNiceness() { return flag(PermanentFlags.FEED_NICENESS).value(); }
         @Override public int mbusNetworkThreads() { return flag(Flags.MBUS_NUM_NETWORK_THREADS).value(); }
         @Override public List<String> allowedAthenzProxyIdentities() { return flag(PermanentFlags.ALLOWED_ATHENZ_PROXY_IDENTITIES).value(); }
-        @Override public int maxActivationInhibitedOutOfSyncGroups() { return flag(Flags.MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS).value(); }
+        @Override public int maxActivationInhibitedOutOfSyncGroups() { return flag(PermanentFlags.MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS).value(); }
         @Override public double resourceLimitDisk() { return flag(PermanentFlags.RESOURCE_LIMIT_DISK).value(); }
         @Override public double resourceLimitMemory() { return flag(PermanentFlags.RESOURCE_LIMIT_MEMORY).value(); }
         @Override public double resourceLimitAddressSpace() { return flag(PermanentFlags.RESOURCE_LIMIT_ADDRESS_SPACE).value(); }
@@ -250,7 +250,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean sendProtobufQuerytree() { return true; }
         @Override public boolean forwardAllLogLevels() { return flag(PermanentFlags.FORWARD_ALL_LOG_LEVELS).value(); }
         @Override public long zookeeperPreAllocSize() { return flag(PermanentFlags.ZOOKEEPER_PRE_ALLOC_SIZE_KIB).value(); }
-        @Override public int maxContentNodeMaintenanceOpConcurrency() { return flag(Flags.MAX_CONTENT_NODE_MAINTENANCE_OP_CONCURRENCY).value(); }
+        @Override public int maxContentNodeMaintenanceOpConcurrency() { return flag(PermanentFlags.MAX_CONTENT_NODE_MAINTENANCE_OP_CONCURRENCY).value(); }
         @Override public Object sidecarsForTest() { return flag(Flags.SIDECARS_FOR_TEST).value(); }
         @Override public boolean useTriton() { return flag(Flags.USE_TRITON).value(); }
         @Override public ModelContext.FeatureFlag<Boolean> useTritonFlag() { return flag(Flags.USE_TRITON); }

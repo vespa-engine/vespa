@@ -712,6 +712,27 @@ public class PermanentFlags {
             TENANT_ID, APPLICATION, INSTANCE_ID, HOSTNAME, CLUSTER_TYPE
     );
 
+    public static final UnboundIntFlag MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS = defineIntFlag(
+            "max-activation-inhibited-out-of-sync-groups", 0,
+            "Allows replicas in up to N content groups to not be activated " +
+            "for query visibility if they are out of sync with a majority of other replicas",
+            "Takes effect at redeployment",
+            INSTANCE_ID);
+
+    public static final UnboundStringFlag CORE_ENCRYPTION_PUBLIC_KEY_ID = defineStringFlag(
+            "core-encryption-public-key-id", "",
+            "Specifies which public key to use for core dump encryption.",
+            "Takes effect on the next tick.",
+            NODE_TYPE, HOSTNAME);
+
+    public static final UnboundIntFlag MAX_CONTENT_NODE_MAINTENANCE_OP_CONCURRENCY = defineIntFlag(
+            "max-content-node-maintenance-op-concurrency", -1,
+            "Sets the maximum concurrency for maintenance-related operations on content nodes. " +
+            "Only intended as a manual emergency brake feature if a system is suddenly incapable of handling " +
+            "regular maintenance pressure.",
+            "Takes effect immediately",
+            INSTANCE_ID);
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(
