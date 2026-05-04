@@ -74,18 +74,17 @@ public class CloudResourceTags {
      * Returns a new instance with all template variables substituted.
      * Throws if any {@code ${...}} placeholders remain after substitution.
      */
-    public CloudResourceTags resolve(String tenant, String application, String instance,
-                                     String environment, String region,
+    public CloudResourceTags resolve(ApplicationId application, Environment environment, RegionName region,
                                      ClusterSpec.Id clusterId, ClusterSpec.Type clusterType) {
         if (tags.isEmpty()) return this;
         Map<String, String> resolved = new LinkedHashMap<>();
         for (var entry : tags.entrySet()) {
             String value = entry.getValue()
-                    .replace("${tenant}", tenant.toLowerCase(Locale.ROOT))
-                    .replace("${application}", application.toLowerCase(Locale.ROOT))
-                    .replace("${instance}", instance.toLowerCase(Locale.ROOT))
-                    .replace("${environment}", environment)
-                    .replace("${region}", region)
+                    .replace("${tenant}", application.tenant().value().toLowerCase(Locale.ROOT))
+                    .replace("${application}", application.application().value().toLowerCase(Locale.ROOT))
+                    .replace("${instance}", application.instance().value().toLowerCase(Locale.ROOT))
+                    .replace("${environment}", environment.value())
+                    .replace("${region}", region.value())
                     .replace("${clustername}", clusterId.value().toLowerCase(Locale.ROOT))
                     .replace("${clustertype}", clusterType.name());
             if (value.contains("${"))

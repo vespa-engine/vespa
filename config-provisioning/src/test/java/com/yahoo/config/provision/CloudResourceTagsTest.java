@@ -189,6 +189,10 @@ class CloudResourceTagsTest {
         assertEquals(3, tags.size());
     }
 
+    private static final ApplicationId testApp = ApplicationId.from("Tenant1", "App1", "Default");
+    private static final Environment testEnv = Environment.prod;
+    private static final RegionName testRegion = RegionName.from("aws-us-east-1c");
+
     @Test
     void resolve_substitutes_all_placeholders() {
         var tags = CloudResourceTags.from(Map.of(
@@ -198,7 +202,7 @@ class CloudResourceTagsTest {
                 "cluster", "${clustername}",
                 "type", "${clustertype}",
                 "combined", "${environment}-${clustername}-${clustertype}"));
-        var resolved = tags.resolve("Tenant1", "App1", "Default", "prod", "aws-us-east-1c",
+        var resolved = tags.resolve(testApp, testEnv, testRegion,
                                     ClusterSpec.Id.from("my-search"), ClusterSpec.Type.content);
         assertEquals("prod", resolved.asMap().get("env"));
         assertEquals("aws-us-east-1c", resolved.asMap().get("loc"));
@@ -211,14 +215,14 @@ class CloudResourceTagsTest {
     @Test
     void resolve_lowercases_tenant_application_instance_and_cluster_id() {
         var tags = CloudResourceTags.from(Map.of("tag", "${tenant}-${clustername}"));
-        var resolved = tags.resolve("MyTenant", "MyApp", "MyInst", "prod", "r",
+        var resolved = tags.resolve(testApp, testEnv, testRegion,
                                     ClusterSpec.Id.from("MyCluster"), ClusterSpec.Type.container);
-        assertEquals("mytenant-mycluster", resolved.asMap().get("tag"));
+        assertEquals("tenant1-mycluster", resolved.asMap().get("tag"));
     }
 
     @Test
     void resolve_on_empty_returns_empty() {
-        var resolved = CloudResourceTags.empty().resolve("t", "a", "i", "prod", "r",
+        var resolved = CloudResourceTags.empty().resolve(testApp, testEnv, testRegion,
                                                          ClusterSpec.Id.from("c"), ClusterSpec.Type.admin);
         assertTrue(resolved.isEmpty());
     }
@@ -226,7 +230,7 @@ class CloudResourceTagsTest {
     @Test
     void resolve_on_tags_without_placeholders() {
         var tags = CloudResourceTags.from(Map.of("env", "prod"));
-        var resolved = tags.resolve("t", "a", "i", "e", "r",
+        var resolved = tags.resolve(testApp, testEnv, testRegion,
                                     ClusterSpec.Id.from("c"), ClusterSpec.Type.content);
         assertEquals("prod", resolved.asMap().get("env"));
     }
