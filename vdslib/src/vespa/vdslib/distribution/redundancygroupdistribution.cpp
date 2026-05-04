@@ -1,82 +1,77 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "redundancygroupdistribution.h"
+
 #include <vespa/vespalib/stllike/lexical_cast.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/exceptions.h>
+
 #include <algorithm>
 #include <cassert>
-#include <string>
 #include <ostream>
+#include <string>
 
 namespace storage::lib {
 
 namespace {
-    void verifyLegal(vespalib::StringTokenizer& st,
-                     std::string_view serialized)
-    {
-        // First, verify sanity of the serialized string
-        uint32_t firstAsterisk = st.size();
-        for (uint32_t i=0; i<st.size(); ++i) {
-            if (i > firstAsterisk) {
-                if (st[i] != "*") {
-                    throw vespalib::IllegalArgumentException(
-                            "Illegal distribution spec \"" + std::string(serialized) + "\". "
-                            "Asterisk specifications must be tailing the "
-                            "specification.", VESPA_STRLOC);
-                }
-                continue;
+void verifyLegal(vespalib::StringTokenizer& st, std::string_view serialized) {
+    // First, verify sanity of the serialized string
+    uint32_t firstAsterisk = st.size();
+    for (uint32_t i = 0; i < st.size(); ++i) {
+        if (i > firstAsterisk) {
+            if (st[i] != "*") {
+                throw vespalib::IllegalArgumentException("Illegal distribution spec \"" + std::string(serialized) +
+                                                             "\". "
+                                                             "Asterisk specifications must be tailing the "
+                                                             "specification.",
+                                                         VESPA_STRLOC);
             }
-            if (i < firstAsterisk && st[i] == "*") {
-                firstAsterisk = i;
-                continue;
-            }
-            uint32_t number = atoi(std::string(st[i]).c_str());
-            if (number <= 0 || number >= 256) {
-                throw vespalib::IllegalArgumentException(
-                    "Illegal distribution spec \"" + std::string(serialized) + "\". "
-                    "Copy counts must be in the range 1-255.", VESPA_STRLOC);
-            }
-            for (vespalib::StringTokenizer::Token::const_iterator it
-                    = st[i].begin(); it != st[i].end(); ++it)
-            {
-                if (*it < '0' || *it > '9') {
-                    throw vespalib::IllegalArgumentException(
-                        "Illegal distribution spec \"" + std::string(serialized) + "\". "
-                        "Token isn't asterisk or number.", VESPA_STRLOC);
-                }
+            continue;
+        }
+        if (i < firstAsterisk && st[i] == "*") {
+            firstAsterisk = i;
+            continue;
+        }
+        uint32_t number = atoi(std::string(st[i]).c_str());
+        if (number <= 0 || number >= 256) {
+            throw vespalib::IllegalArgumentException("Illegal distribution spec \"" + std::string(serialized) +
+                                                         "\". "
+                                                         "Copy counts must be in the range 1-255.",
+                                                     VESPA_STRLOC);
+        }
+        for (vespalib::StringTokenizer::Token::const_iterator it = st[i].begin(); it != st[i].end(); ++it) {
+            if (*it < '0' || *it > '9') {
+                throw vespalib::IllegalArgumentException("Illegal distribution spec \"" + std::string(serialized) +
+                                                             "\". "
+                                                             "Token isn't asterisk or number.",
+                                                         VESPA_STRLOC);
             }
         }
     }
+}
 
-    std::vector<uint16_t> parse(std::string_view serialized) {
-        std::vector<uint16_t> result;
-        if (serialized == "") return result;
-        vespalib::StringTokenizer st(serialized, "|");
-        verifyLegal(st, serialized);
-        for (vespalib::StringTokenizer::Iterator it = st.begin();
-             it != st.end(); ++it)
-        {
-            if (*it == "*") {
-                result.push_back(0);
-            } else {
-                result.push_back(vespalib::lexical_cast<uint16_t>(*it));
-            }
-        }
+std::vector<uint16_t> parse(std::string_view serialized) {
+    std::vector<uint16_t> result;
+    if (serialized == "")
         return result;
+    vespalib::StringTokenizer st(serialized, "|");
+    verifyLegal(st, serialized);
+    for (vespalib::StringTokenizer::Iterator it = st.begin(); it != st.end(); ++it) {
+        if (*it == "*") {
+            result.push_back(0);
+        } else {
+            result.push_back(vespalib::lexical_cast<uint16_t>(*it));
+        }
     }
+    return result;
+}
+} // namespace
+
+RedundancyGroupDistribution::RedundancyGroupDistribution(std::string_view serialized) : _values(parse(serialized)) {
 }
 
-RedundancyGroupDistribution::RedundancyGroupDistribution(
-        std::string_view serialized)
-    : _values(parse(serialized))
-{
-}
-
-RedundancyGroupDistribution::RedundancyGroupDistribution(
-        const RedundancyGroupDistribution& spec,
-        uint16_t redundancy)
-{
+RedundancyGroupDistribution::RedundancyGroupDistribution(const RedundancyGroupDistribution& spec,
+                                                         uint16_t                           redundancy) {
     uint16_t firstAsterisk = spec.getFirstAsteriskIndex();
     // If redundancy is less than the group size, we only get one copy
     // in redundancy groups.
@@ -99,12 +94,10 @@ RedundancyGroupDistribution::RedundancyGroupDistribution(
 
 RedundancyGroupDistribution::~RedundancyGroupDistribution() = default;
 
-void
-RedundancyGroupDistribution::print(std::ostream& out,
-                                   bool, const std::string&) const
-{
-    for (uint32_t i=0; i<_values.size(); ++i) {
-        if (i != 0) out << '|';
+void RedundancyGroupDistribution::print(std::ostream& out, bool, const std::string&) const {
+    for (uint32_t i = 0; i < _values.size(); ++i) {
+        if (i != 0)
+            out << '|';
         if (_values[i] == 0) {
             out << '*';
         } else {
@@ -113,13 +106,9 @@ RedundancyGroupDistribution::print(std::ostream& out,
     }
 }
 
-uint16_t
-RedundancyGroupDistribution::getFirstAsteriskIndex() const
-{
+uint16_t RedundancyGroupDistribution::getFirstAsteriskIndex() const {
     if (_values.empty() || _values.back() != 0) {
-        throw vespalib::IllegalArgumentException(
-                "Invalid spec given. No asterisk entries found.",
-                VESPA_STRLOC);
+        throw vespalib::IllegalArgumentException("Invalid spec given. No asterisk entries found.", VESPA_STRLOC);
     }
     uint16_t firstAsterisk = _values.size() - 1;
     while (firstAsterisk > 0 && _values[firstAsterisk - 1] == 0) {
@@ -128,23 +117,21 @@ RedundancyGroupDistribution::getFirstAsteriskIndex() const
     return firstAsterisk;
 }
 
-uint16_t
-RedundancyGroupDistribution::divideSpecifiedCopies(
-            uint16_t start, uint16_t end,
-            uint16_t redundancy, const std::vector<uint16_t>& maxValues)
-{
+uint16_t RedundancyGroupDistribution::divideSpecifiedCopies(uint16_t start, uint16_t end, uint16_t redundancy,
+                                                            const std::vector<uint16_t>& maxValues) {
     uint16_t lastRedundancy = redundancy;
     while (redundancy > 0) {
-        for (uint16_t i=start; i<end && redundancy > 0; ++i) {
+        for (uint16_t i = start; i < end && redundancy > 0; ++i) {
             if (maxValues[i] == 0 || _values[i] < maxValues[i]) {
                 ++_values[i];
                 --redundancy;
             }
         }
-        if (redundancy == lastRedundancy) break;
+        if (redundancy == lastRedundancy)
+            break;
         lastRedundancy = redundancy;
     }
     return redundancy;
 }
 
-}
+} // namespace storage::lib

@@ -1,25 +1,22 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include "cluster_state_bundle.h"
+
 #include "clusterstate.h"
+
+#include <vespa/document/bucket/fixed_bucket_spaces.h>
+
 #include <iostream>
 #include <sstream>
 
 namespace storage::lib {
 
-ClusterStateBundle::FeedBlock::FeedBlock(bool block_feed_in_cluster_in,
-                                         const std::string& description_in)
-    : _block_feed_in_cluster(block_feed_in_cluster_in),
-      _description(description_in)
-{
+ClusterStateBundle::FeedBlock::FeedBlock(bool block_feed_in_cluster_in, const std::string& description_in)
+    : _block_feed_in_cluster(block_feed_in_cluster_in), _description(description_in) {
 }
 
-bool
-ClusterStateBundle::FeedBlock::operator==(const FeedBlock& rhs) const noexcept
-{
-    return (_block_feed_in_cluster == rhs._block_feed_in_cluster) &&
-            (_description == rhs._description);
+bool ClusterStateBundle::FeedBlock::operator==(const FeedBlock& rhs) const noexcept {
+    return (_block_feed_in_cluster == rhs._block_feed_in_cluster) && (_description == rhs._description);
 }
 
 ClusterStateBundle::ClusterStateBundle(std::shared_ptr<const ClusterState> baseline_cluster_state)
@@ -27,59 +24,51 @@ ClusterStateBundle::ClusterStateBundle(std::shared_ptr<const ClusterState> basel
       _derivedBucketSpaceStates(),
       _feed_block(),
       _distribution_bundle(),
-      _deferredActivation(false)
-{
+      _deferredActivation(false) {
 }
 
 ClusterStateBundle::ClusterStateBundle(const ClusterState& baselineClusterState)
-    : ClusterStateBundle(std::make_shared<const ClusterState>(baselineClusterState))
-{
+    : ClusterStateBundle(std::make_shared<const ClusterState>(baselineClusterState)) {
 }
 
-ClusterStateBundle::ClusterStateBundle(const ClusterState& baselineClusterState,
+ClusterStateBundle::ClusterStateBundle(const ClusterState&     baselineClusterState,
                                        BucketSpaceStateMapping derivedBucketSpaceStates)
     : _baselineClusterState(std::make_shared<const ClusterState>(baselineClusterState)),
       _derivedBucketSpaceStates(std::move(derivedBucketSpaceStates)),
       _feed_block(),
       _distribution_bundle(),
-      _deferredActivation(false)
-{
+      _deferredActivation(false) {
 }
 
-ClusterStateBundle::ClusterStateBundle(const ClusterState& baselineClusterState,
-                                       BucketSpaceStateMapping derivedBucketSpaceStates,
-                                       bool deferredActivation)
+ClusterStateBundle::ClusterStateBundle(const ClusterState&     baselineClusterState,
+                                       BucketSpaceStateMapping derivedBucketSpaceStates, bool deferredActivation)
     : _baselineClusterState(std::make_shared<const ClusterState>(baselineClusterState)),
       _derivedBucketSpaceStates(std::move(derivedBucketSpaceStates)),
       _feed_block(),
       _distribution_bundle(),
-      _deferredActivation(deferredActivation)
-{
+      _deferredActivation(deferredActivation) {
 }
 
-ClusterStateBundle::ClusterStateBundle(const ClusterState& baselineClusterState,
+ClusterStateBundle::ClusterStateBundle(const ClusterState&     baselineClusterState,
                                        BucketSpaceStateMapping derivedBucketSpaceStates,
-                                       const FeedBlock& feed_block_in,
-                                       bool deferredActivation)
+                                       const FeedBlock& feed_block_in, bool deferredActivation)
     : _baselineClusterState(std::make_shared<const ClusterState>(baselineClusterState)),
       _derivedBucketSpaceStates(std::move(derivedBucketSpaceStates)),
       _feed_block(feed_block_in),
       _distribution_bundle(),
-      _deferredActivation(deferredActivation)
-{
+      _deferredActivation(deferredActivation) {
 }
 
-ClusterStateBundle::ClusterStateBundle(std::shared_ptr<const ClusterState> baseline_cluster_state,
-                                       BucketSpaceStateMapping derived_bucket_space_states,
-                                       std::optional<FeedBlock> feed_block_in,
+ClusterStateBundle::ClusterStateBundle(std::shared_ptr<const ClusterState>             baseline_cluster_state,
+                                       BucketSpaceStateMapping                         derived_bucket_space_states,
+                                       std::optional<FeedBlock>                        feed_block_in,
                                        std::shared_ptr<const DistributionConfigBundle> distribution_bundle,
-                                       bool deferred_activation) noexcept
+                                       bool                                            deferred_activation) noexcept
     : _baselineClusterState(std::move(baseline_cluster_state)),
       _derivedBucketSpaceStates(std::move(derived_bucket_space_states)),
       _feed_block(std::move(feed_block_in)),
       _distribution_bundle(std::move(distribution_bundle)),
-      _deferredActivation(deferred_activation)
-{
+      _deferredActivation(deferred_activation) {
 }
 
 ClusterStateBundle::ClusterStateBundle(const ClusterStateBundle&) = default;
@@ -90,21 +79,17 @@ ClusterStateBundle& ClusterStateBundle::operator=(ClusterStateBundle&&) noexcept
 ClusterStateBundle::~ClusterStateBundle() = default;
 
 std::shared_ptr<const ClusterStateBundle>
-ClusterStateBundle::clone_with_new_distribution(std::shared_ptr<const DistributionConfigBundle> distribution) const
-{
+ClusterStateBundle::clone_with_new_distribution(std::shared_ptr<const DistributionConfigBundle> distribution) const {
     return std::make_shared<const ClusterStateBundle>(_baselineClusterState, _derivedBucketSpaceStates, _feed_block,
                                                       std::move(distribution), _deferredActivation);
 }
 
-const std::shared_ptr<const lib::ClusterState>&
-ClusterStateBundle::getBaselineClusterState() const
-{
+const std::shared_ptr<const lib::ClusterState>& ClusterStateBundle::getBaselineClusterState() const {
     return _baselineClusterState;
 }
 
 const std::shared_ptr<const lib::ClusterState>&
-ClusterStateBundle::getDerivedClusterState(document::BucketSpace bucketSpace) const
-{
+ClusterStateBundle::getDerivedClusterState(document::BucketSpace bucketSpace) const {
     auto itr = _derivedBucketSpaceStates.find(bucketSpace);
     if (itr != _derivedBucketSpaceStates.end()) {
         return itr->second;
@@ -120,15 +105,11 @@ ClusterStateBundle::bucket_space_distribution_or_nullptr(document::BucketSpace s
     return _distribution_bundle->bucket_space_distribution_or_nullptr(space);
 }
 
-uint32_t
-ClusterStateBundle::getVersion() const
-{
+uint32_t ClusterStateBundle::getVersion() const {
     return _baselineClusterState->getVersion();
 }
 
-bool
-ClusterStateBundle::operator==(const ClusterStateBundle& rhs) const noexcept
-{
+bool ClusterStateBundle::operator==(const ClusterStateBundle& rhs) const noexcept {
     if (!(*_baselineClusterState == *rhs._baselineClusterState)) {
         return false;
     }
@@ -152,17 +133,14 @@ ClusterStateBundle::operator==(const ClusterStateBundle& rhs) const noexcept
     // of cluster state _values_, not their _pointers_.
     for (auto& lhs_ds : _derivedBucketSpaceStates) {
         auto rhs_iter = rhs._derivedBucketSpaceStates.find(lhs_ds.first);
-        if ((rhs_iter == rhs._derivedBucketSpaceStates.end())
-            || !(*lhs_ds.second == *rhs_iter->second)) {
+        if ((rhs_iter == rhs._derivedBucketSpaceStates.end()) || !(*lhs_ds.second == *rhs_iter->second)) {
             return false;
         }
     }
     return true;
 }
 
-std::string
-ClusterStateBundle::toString() const
-{
+std::string ClusterStateBundle::toString() const {
     std::ostringstream os;
     os << *this;
     return os.str();
@@ -184,8 +162,8 @@ std::ostream& operator<<(std::ostream& os, const ClusterStateBundle& bundle) {
     }
     if (auto* distr = bundle.distribution_config_bundle_or_nullptr()) {
         os << ", distribution config: " << distr->total_leaf_group_count() << " group(s); "
-           << distr->total_node_count() << " node(s); redundancy "
-           << distr->redundancy() << "; searchable-copies " << distr->searchable_copies();
+           << distr->total_node_count() << " node(s); redundancy " << distr->redundancy() << "; searchable-copies "
+           << distr->searchable_copies();
     }
     if (bundle.deferredActivation()) {
         os << " (deferred activation)";
@@ -194,4 +172,4 @@ std::ostream& operator<<(std::ostream& os, const ClusterStateBundle& bundle) {
     return os;
 }
 
-}
+} // namespace storage::lib
