@@ -62,6 +62,10 @@ private:
     bool                                                        _low_hit_ratio;
     bool                                                        _pending_index_search;
     MatchingPhase                                               _matching_phase;
+    vespalib::duration                                          _ann_time_allocated;
+    vespalib::duration                                          _ann_time_used;
+    bool                                                        _ann_terminated_early;
+    bool                                                        _ann_timeout_hit;
     search::tensor::NearestNeighborIndex::Stats                 _nni_stats;
     std::shared_ptr<QueryEvalStats>                             _stats;
 
