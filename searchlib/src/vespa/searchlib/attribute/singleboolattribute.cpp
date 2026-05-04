@@ -1,18 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "singleboolattribute.h"
-#include "single_bool_attribute_saver.h"
+
 #include "attributevector.hpp"
 #include "iattributesavetarget.h"
 #include "ipostinglistsearchcontext.h"
 #include "primitivereader.h"
 #include "search_context.h"
+#include "single_bool_attribute_saver.h"
 #include "valuemodifier.h"
+
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/util/file_settings.h>
-#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/size_literals.h>
 
@@ -23,37 +25,34 @@ using attribute::HitEstimate;
 using attribute::SingleBoolAttributeSaver;
 using vespalib::Generation;
 
-SingleBoolAttribute::
-SingleBoolAttribute(const std::string &baseFileName, const GrowStrategy & grow, bool paged)
-    : IntegerAttributeTemplate<int8_t>(baseFileName, Config(BasicType::BOOL, CollectionType::SINGLE).setGrowStrategy(grow).setPaged(paged), BasicType::BOOL),
+SingleBoolAttribute::SingleBoolAttribute(const std::string& baseFileName, const GrowStrategy& grow, bool paged)
+    : IntegerAttributeTemplate<int8_t>(
+          baseFileName, Config(BasicType::BOOL, CollectionType::SINGLE).setGrowStrategy(grow).setPaged(paged),
+          BasicType::BOOL),
       _init_alloc(get_initial_alloc()),
-      _bv(0, 0, getGenerationHolder(), get_memory_allocator() ? &_init_alloc : nullptr)
-{
+      _bv(0, 0, getGenerationHolder(), get_memory_allocator() ? &_init_alloc : nullptr) {
 }
 
-SingleBoolAttribute::~SingleBoolAttribute()
-{
+SingleBoolAttribute::~SingleBoolAttribute() {
     getGenerationHolder().reclaim_all();
 }
 
-void
-SingleBoolAttribute::ensureRoom(DocId docIdLimit) {
+void SingleBoolAttribute::ensureRoom(DocId docIdLimit) {
     if (_bv.writer().capacity() < docIdLimit) {
-        const GrowStrategy & gs = this->getConfig().getGrowStrategy();
-        uint32_t newSize = docIdLimit + (docIdLimit * gs.getGrowFactor()) + gs.getGrowDelta();
-        bool incGen = _bv.reserve(newSize);
+        const GrowStrategy& gs = this->getConfig().getGrowStrategy();
+        uint32_t            newSize = docIdLimit + (docIdLimit * gs.getGrowFactor()) + gs.getGrowDelta();
+        bool                incGen = _bv.reserve(newSize);
         if (incGen) {
             incGeneration();
         }
     }
 }
 
-bool
-SingleBoolAttribute::addDoc(DocId & doc) {
-    DocId docIdLimit = getNumDocs()+1;
+bool SingleBoolAttribute::addDoc(DocId& doc) {
+    DocId docIdLimit = getNumDocs() + 1;
     ensureRoom(docIdLimit);
     bool incGen = _bv.extend(docIdLimit);
-    assert( ! incGen);
+    assert(!incGen);
     incNumDocs();
     doc = getNumDocs() - 1;
     updateUncommittedDocIdLimit(doc);
@@ -61,20 +60,20 @@ SingleBoolAttribute::addDoc(DocId & doc) {
     return true;
 }
 
-void
-SingleBoolAttribute::onCommit() {
+void SingleBoolAttribute::onCommit() {
     checkSetMaxValueCount(1);
 
-    if ( ! _changes.empty()) {
+    if (!_changes.empty()) {
         // apply updates
         ValueModifier valueGuard(getValueModifier());
-        for (const auto & change : _changes.getInsertOrder()) {
+        for (const auto& change : _changes.getInsertOrder()) {
             if (change._type == ChangeBase::UPDATE) {
                 std::atomic_thread_fence(std::memory_order_release);
                 setBit(change._doc, change._data != 0);
             } else if ((change._type >= ChangeBase::ADD) && (change._type <= ChangeBase::DIV)) {
                 std::atomic_thread_fence(std::memory_order_release);
-                int8_t val = applyArithmetic<int8_t, largeint_t>(getFast(change._doc), change._data.getArithOperand(), change._type);
+                int8_t val = applyArithmetic<int8_t, largeint_t>(getFast(change._doc), change._data.getArithOperand(),
+                                                                 change._type);
                 setBit(change._doc, val != 0);
             } else if (change._type == ChangeBase::CLEARDOC) {
                 std::atomic_thread_fence(std::memory_order_release);
@@ -89,13 +88,11 @@ SingleBoolAttribute::onCommit() {
     _changes.clear();
 }
 
-void
-SingleBoolAttribute::onAddDocs(DocId docIdLimit) {
+void SingleBoolAttribute::onAddDocs(DocId docIdLimit) {
     ensureRoom(docIdLimit);
 }
 
-void
-SingleBoolAttribute::onUpdateStat(CommitParam::UpdateStats updateStats) {
+void SingleBoolAttribute::onUpdateStat(CommitParam::UpdateStats updateStats) {
     if (updateStats == CommitParam::UpdateStats::SKIP) {
         return;
     }
@@ -114,21 +111,20 @@ SingleBoolAttribute::onUpdateStat(CommitParam::UpdateStats updateStats) {
 
 namespace {
 
-class BitVectorSearchContext : public attribute::SearchContext, public attribute::IPostingListSearchContext
-{
+class BitVectorSearchContext : public attribute::SearchContext, public attribute::IPostingListSearchContext {
 private:
-    uint32_t _doc_id_limit;
-    const BitVector & _bv;
-    bool _invert;
-    bool _valid;
+    uint32_t         _doc_id_limit;
+    const BitVector& _bv;
+    bool             _invert;
+    bool             _valid;
     bool valid() const override { return _valid; }
-    int32_t onFind(DocId docId, int32_t elemId, int32_t & weight) const final {
+    int32_t onFind(DocId docId, int32_t elemId, int32_t& weight) const final {
         if ((elemId == 0) && (_invert != _bv.testBit(docId))) {
             weight = 1;
             return 0;
         }
         weight = 0;
-        return  -1;
+        return -1;
     }
 
     int32_t onFind(DocId docId, int32_t elemId) const final {
@@ -136,24 +132,25 @@ private:
     }
 
 public:
-    BitVectorSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const SingleBoolAttribute & attr);
+    BitVectorSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const SingleBoolAttribute& attr);
 
-    std::unique_ptr<queryeval::SearchIterator>
-    createFilterIterator(fef::TermFieldMatchData * matchData, bool strict) override;
-    void fetchPostings(const queryeval::ExecuteInfo &execInfo, bool strict) override;
-    std::unique_ptr<queryeval::SearchIterator> createPostingIterator(fef::TermFieldMatchData *matchData, bool strict) override;
+    std::unique_ptr<queryeval::SearchIterator> createFilterIterator(fef::TermFieldMatchData* matchData,
+                                                                    bool                     strict) override;
+    void fetchPostings(const queryeval::ExecuteInfo& execInfo, bool strict) override;
+    std::unique_ptr<queryeval::SearchIterator> createPostingIterator(fef::TermFieldMatchData* matchData,
+                                                                     bool                     strict) override;
     HitEstimate calc_hit_estimate() const override;
     double posting_list_merge_factor() const override { return 1.0; }
     uint32_t get_committed_docid_limit() const noexcept override;
 };
 
-BitVectorSearchContext::BitVectorSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const SingleBoolAttribute & attr)
+BitVectorSearchContext::BitVectorSearchContext(std::unique_ptr<QueryTermSimple> qTerm,
+                                               const SingleBoolAttribute&       attr)
     : SearchContext(attr),
       _doc_id_limit(attr.getCommittedDocIdLimit()),
       _bv(attr.getBitVector()),
       _invert(false),
-      _valid(qTerm->isValid())
-{
+      _valid(qTerm->isValid()) {
     if ((strcmp("1", qTerm->getTerm()) == 0) || (strcasecmp("true", qTerm->getTerm()) == 0)) {
     } else if ((strcmp("0", qTerm->getTerm()) == 0) || (strcasecmp("false", qTerm->getTerm()) == 0)) {
         _invert = true;
@@ -164,57 +161,47 @@ BitVectorSearchContext::BitVectorSearchContext(std::unique_ptr<QueryTermSimple> 
 }
 
 std::unique_ptr<queryeval::SearchIterator>
-BitVectorSearchContext::createFilterIterator(fef::TermFieldMatchData * matchData, bool strict)
-{
+BitVectorSearchContext::createFilterIterator(fef::TermFieldMatchData* matchData, bool strict) {
     if (!valid()) {
         return std::make_unique<queryeval::EmptySearch>();
     }
     return BitVectorIterator::create(&_bv, _doc_id_limit, *matchData, strict, _invert);
 }
 
-void
-BitVectorSearchContext::fetchPostings(const queryeval::ExecuteInfo &, bool) {
+void BitVectorSearchContext::fetchPostings(const queryeval::ExecuteInfo&, bool) {
 }
 
 std::unique_ptr<queryeval::SearchIterator>
-BitVectorSearchContext::createPostingIterator(fef::TermFieldMatchData *matchData, bool strict) {
+BitVectorSearchContext::createPostingIterator(fef::TermFieldMatchData* matchData, bool strict) {
     return createFilterIterator(matchData, strict);
 }
 
-HitEstimate
-BitVectorSearchContext::calc_hit_estimate() const {
-    return valid()
-        ? (_invert
-            ? HitEstimate(_bv.size() - _bv.countTrueBits())
-            : HitEstimate(_bv.countTrueBits()))
-        : HitEstimate(0);
+HitEstimate BitVectorSearchContext::calc_hit_estimate() const {
+    return valid() ? (_invert ? HitEstimate(_bv.size() - _bv.countTrueBits()) : HitEstimate(_bv.countTrueBits()))
+                   : HitEstimate(0);
 }
 
-uint32_t
-BitVectorSearchContext::get_committed_docid_limit() const noexcept
-{
+uint32_t BitVectorSearchContext::get_committed_docid_limit() const noexcept {
     return _doc_id_limit;
 }
 
-}
+} // namespace
 
 std::unique_ptr<attribute::SearchContext>
-SingleBoolAttribute::getSearch(std::unique_ptr<QueryTermSimple> term, const attribute::SearchContextParams &) const {
+SingleBoolAttribute::getSearch(std::unique_ptr<QueryTermSimple> term, const attribute::SearchContextParams&) const {
     return std::make_unique<BitVectorSearchContext>(std::move(term), *this);
 }
 
-bool
-SingleBoolAttribute::onLoad(vespalib::Executor *)
-{
+bool SingleBoolAttribute::onLoad(vespalib::Executor*) {
     PrimitiveReader<uint32_t> attrReader(*this);
-    bool ok(attrReader.hasData());
+    bool                      ok(attrReader.hasData());
     if (ok) {
         setCreateSerialNum(attrReader.getCreateSerialNum());
         getGenerationHolder().reclaim_all();
         _bv.writer().clear();
         uint32_t numDocs = attrReader.getNextData();
         _bv.extend(numDocs);
-        auto entry_size = BitVector::legacy_num_bytes_with_single_guard_bit(numDocs);
+        auto    entry_size = BitVector::legacy_num_bytes_with_single_guard_bit(numDocs);
         ssize_t bytesRead = attrReader.getReader().read(_bv.writer().getStart(), entry_size);
         assert(bytesRead == entry_size);
         _bv.fixup_after_load();
@@ -227,16 +214,12 @@ SingleBoolAttribute::onLoad(vespalib::Executor *)
     return ok;
 }
 
-std::unique_ptr<AttributeSaver>
-SingleBoolAttribute::onInitSave(std::string_view fileName)
-{
+std::unique_ptr<AttributeSaver> SingleBoolAttribute::onInitSave(std::string_view fileName) {
     return std::make_unique<SingleBoolAttributeSaver>(createAttributeHeader(fileName),
                                                       _bv.make_snapshot(getCommittedDocIdLimit()));
 }
 
-void
-SingleBoolAttribute::clearDocs(DocId lidLow, DocId lidLimit, bool)
-{
+void SingleBoolAttribute::clearDocs(DocId lidLow, DocId lidLimit, bool) {
     assert(lidLow <= lidLimit);
     assert(lidLimit <= getNumDocs());
     for (DocId lid = lidLow; lid < lidLimit; ++lid) {
@@ -246,30 +229,24 @@ SingleBoolAttribute::clearDocs(DocId lidLow, DocId lidLimit, bool)
     }
 }
 
-void
-SingleBoolAttribute::onShrinkLidSpace()
-{
+void SingleBoolAttribute::onShrinkLidSpace() {
     uint32_t committedDocIdLimit = getCommittedDocIdLimit();
     assert(committedDocIdLimit < getNumDocs());
     _bv.shrink(committedDocIdLimit);
     setNumDocs(committedDocIdLimit);
 }
 
-uint64_t
-SingleBoolAttribute::getEstimatedSaveByteSize() const
-{
+uint64_t SingleBoolAttribute::getEstimatedSaveByteSize() const {
     constexpr uint64_t headerSize = FileSettings::DIRECTIO_ALIGNMENT + sizeof(uint32_t);
     return headerSize + BitVector::legacy_num_bytes_with_single_guard_bit(getCommittedDocIdLimit());
 }
 
-void
-SingleBoolAttribute::reclaim_memory(Generation oldest_used_gen) {
+void SingleBoolAttribute::reclaim_memory(Generation oldest_used_gen) {
     getGenerationHolder().reclaim(oldest_used_gen);
 }
 
-void
-SingleBoolAttribute::before_inc_generation(Generation current_gen) {
+void SingleBoolAttribute::before_inc_generation(Generation current_gen) {
     getGenerationHolder().assign_generation(current_gen);
 }
 
-}
+} // namespace search

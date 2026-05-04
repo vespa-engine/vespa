@@ -2,7 +2,4 @@
 
 #include "defines.h"
 
-namespace search {
-
-} // namespace search
-
+namespace search {} // namespace search

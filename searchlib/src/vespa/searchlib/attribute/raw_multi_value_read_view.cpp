@@ -5,18 +5,15 @@
 namespace search::attribute {
 
 template <typename MultiValueType>
-RawMultiValueReadView<MultiValueType>::RawMultiValueReadView(MultiValueMappingReadView<MultiValueType> mv_mapping_read_view)
-    : _mv_mapping_read_view(mv_mapping_read_view)
-{
+RawMultiValueReadView<MultiValueType>::RawMultiValueReadView(
+    MultiValueMappingReadView<MultiValueType> mv_mapping_read_view)
+    : _mv_mapping_read_view(mv_mapping_read_view) {
 }
 
-template <typename MultiValueType>
-RawMultiValueReadView<MultiValueType>::~RawMultiValueReadView() = default;
+template <typename MultiValueType> RawMultiValueReadView<MultiValueType>::~RawMultiValueReadView() = default;
 
 template <typename MultiValueType>
-std::span<const MultiValueType>
-RawMultiValueReadView<MultiValueType>::get_values(uint32_t docid) const
-{
+std::span<const MultiValueType> RawMultiValueReadView<MultiValueType>::get_values(uint32_t docid) const {
     return _mv_mapping_read_view.get(docid);
 }
 
@@ -38,4 +35,4 @@ template class RawMultiValueReadView<WeightedValue<float>>;
 template class RawMultiValueReadView<WeightedValue<double>>;
 template class RawMultiValueReadView<WeightedValue<vespalib::datastore::AtomicEntryRef>>;
 
-}
+} // namespace search::attribute

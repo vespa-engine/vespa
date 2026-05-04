@@ -4,13 +4,10 @@
 
 namespace search::attribute {
 
-AttributeReadGuard::AttributeReadGuard(const IAttributeVector *attr)
-    : _attr(attr)
-{
+AttributeReadGuard::AttributeReadGuard(const IAttributeVector* attr) : _attr(attr) {
 }
 
-AttributeReadGuard::~AttributeReadGuard()
-{
+AttributeReadGuard::~AttributeReadGuard() {
 }
 
-}
+} // namespace search::attribute

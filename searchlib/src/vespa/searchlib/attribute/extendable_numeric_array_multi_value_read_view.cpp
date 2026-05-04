@@ -5,29 +5,26 @@
 namespace search::attribute {
 
 template <class MultiValueType, typename BaseType>
-ExtendableNumericArrayMultiValueReadView<MultiValueType, BaseType>::ExtendableNumericArrayMultiValueReadView(const std::vector<BaseType>& data, const std::vector<uint32_t>& idx)
-    : attribute::IMultiValueReadView<MultiValueType>(),
-      _data(data),
-      _idx(idx),
-      _copy()
-{
+ExtendableNumericArrayMultiValueReadView<MultiValueType, BaseType>::ExtendableNumericArrayMultiValueReadView(
+    const std::vector<BaseType>& data, const std::vector<uint32_t>& idx)
+    : attribute::IMultiValueReadView<MultiValueType>(), _data(data), _idx(idx), _copy() {
 }
 
 template <class MultiValueType, typename BaseType>
-ExtendableNumericArrayMultiValueReadView<MultiValueType, BaseType>::~ExtendableNumericArrayMultiValueReadView() = default;
+ExtendableNumericArrayMultiValueReadView<MultiValueType, BaseType>::~ExtendableNumericArrayMultiValueReadView() =
+    default;
 
 template <class MultiValueType, typename BaseType>
 std::span<const MultiValueType>
-ExtendableNumericArrayMultiValueReadView<MultiValueType, BaseType>::get_values(uint32_t doc_id) const
-{
-    auto offset = _idx[doc_id];
-    auto next_offset = _idx[doc_id + 1];
+ExtendableNumericArrayMultiValueReadView<MultiValueType, BaseType>::get_values(uint32_t doc_id) const {
+    auto                      offset = _idx[doc_id];
+    auto                      next_offset = _idx[doc_id + 1];
     std::span<const BaseType> raw(_data.data() + offset, next_offset - offset);
     if (_copy.size() < raw.size()) {
         _copy.resize(raw.size());
     }
     auto dst = _copy.data();
-    for (auto &src : raw) {
+    for (auto& src : raw) {
         *dst = multivalue::ValueBuilder<MultiValueType>::build(src, 1);
         ++dst;
     }
@@ -45,4 +42,4 @@ template class ExtendableNumericArrayMultiValueReadView<multivalue::WeightedValu
 template class ExtendableNumericArrayMultiValueReadView<multivalue::WeightedValue<int64_t>, int64_t>;
 template class ExtendableNumericArrayMultiValueReadView<multivalue::WeightedValue<double>, double>;
 
-}
+} // namespace search::attribute

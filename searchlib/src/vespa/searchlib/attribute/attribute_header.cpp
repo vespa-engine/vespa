@@ -1,11 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_header.h"
+
 #include "distance_metric_utils.h"
+
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
-#include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/data/databuffer.h>
+#include <vespa/vespalib/data/fileheader.h>
 
 using vespalib::GenericHeader;
 
@@ -34,11 +36,9 @@ const std::string unique_value_count_tag = "uniqueValueCount";
 const std::string total_value_count_tag = "totalValueCount";
 const std::string memory_usage_tag = "memory_usage";
 
-}
+} // namespace
 
-AttributeHeader::AttributeHeader()
-    : AttributeHeader("")
-{
+AttributeHeader::AttributeHeader() : AttributeHeader("") {
 }
 
 AttributeHeader::AttributeHeader(std::string fileName)
@@ -57,23 +57,16 @@ AttributeHeader::AttributeHeader(std::string fileName)
       _memory_usage(0),
       _createSerialNum(0u),
       _version(0),
-      _extra_tags()
-{
+      _extra_tags() {
 }
 
-AttributeHeader::AttributeHeader(std::string fileName,
-                                 attribute::BasicType basicType,
-                                 attribute::CollectionType collectionType,
-                                 const vespalib::eval::ValueType &tensorType,
-                                 bool enumerated,
-                                 const attribute::PersistentPredicateParams &predicateParams,
-                                 const std::optional<HnswIndexParams>& hnsw_index_params,
-                                 uint32_t numDocs,
-                                 uint64_t uniqueValueCount,
-                                 uint64_t totalValueCount,
-                                 uint64_t memory_usage,
-                                 uint64_t createSerialNum,
-                                 uint32_t version)
+AttributeHeader::AttributeHeader(std::string fileName, attribute::BasicType basicType,
+                                 attribute::CollectionType        collectionType,
+                                 const vespalib::eval::ValueType& tensorType, bool enumerated,
+                                 const attribute::PersistentPredicateParams& predicateParams,
+                                 const std::optional<HnswIndexParams>& hnsw_index_params, uint32_t numDocs,
+                                 uint64_t uniqueValueCount, uint64_t totalValueCount, uint64_t memory_usage,
+                                 uint64_t createSerialNum, uint32_t version)
     : _fileName(std::move(fileName)),
       _basicType(basicType),
       _collectionType(collectionType),
@@ -89,15 +82,12 @@ AttributeHeader::AttributeHeader(std::string fileName,
       _memory_usage(memory_usage),
       _createSerialNum(createSerialNum),
       _version(version),
-      _flush_duration(std::chrono::steady_clock::duration::zero())
-{
+      _flush_duration(std::chrono::steady_clock::duration::zero()) {
 }
 
 AttributeHeader::~AttributeHeader() = default;
 
-void
-AttributeHeader::internalExtractTags(const vespalib::GenericHeader &header)
-{
+void AttributeHeader::internalExtractTags(const vespalib::GenericHeader& header) {
     if (header.hasTag(createSerialNumTag)) {
         _createSerialNum = header.getTag(createSerialNumTag).asInteger();
     }
@@ -124,9 +114,10 @@ AttributeHeader::internalExtractTags(const vespalib::GenericHeader &header)
             assert(header.hasTag(hnsw_neighbors_to_explore_tag));
             assert(header.hasTag(hnsw_distance_metric));
 
-            uint32_t max_links = header.getTag(hnsw_max_links_tag).asInteger();
-            uint32_t neighbors_to_explore = header.getTag(hnsw_neighbors_to_explore_tag).asInteger();
-            DistanceMetric distance_metric = DistanceMetricUtils::to_distance_metric(header.getTag(hnsw_distance_metric).asString());
+            uint32_t       max_links = header.getTag(hnsw_max_links_tag).asInteger();
+            uint32_t       neighbors_to_explore = header.getTag(hnsw_neighbors_to_explore_tag).asInteger();
+            DistanceMetric distance_metric =
+                DistanceMetricUtils::to_distance_metric(header.getTag(hnsw_distance_metric).asString());
             _hnsw_index_params.emplace(max_links, neighbors_to_explore, distance_metric);
         }
     }
@@ -164,17 +155,13 @@ AttributeHeader::internalExtractTags(const vespalib::GenericHeader &header)
     _flush_duration = common::FileHeaderContext::get_flush_duration(header);
 }
 
-AttributeHeader
-AttributeHeader::extractTags(const vespalib::GenericHeader &header, const std::string &file_name)
-{
+AttributeHeader AttributeHeader::extractTags(const vespalib::GenericHeader& header, const std::string& file_name) {
     AttributeHeader result(file_name);
     result.internalExtractTags(header);
     return result;
 }
 
-void
-AttributeHeader::addTags(vespalib::GenericHeader &header) const
-{
+void AttributeHeader::addTags(vespalib::GenericHeader& header) const {
     using Tag = vespalib::GenericHeader::Tag;
     header.putTag(Tag(dataTypeTag, _basicType.asString()));
     header.putTag(Tag(collectionTypeTag, _collectionType.asString()));
@@ -206,7 +193,7 @@ AttributeHeader::addTags(vespalib::GenericHeader &header) const
         }
     }
     if (_basicType.type() == attribute::BasicType::Type::PREDICATE) {
-        const auto & params = _predicateParams;
+        const auto& params = _predicateParams;
         header.putTag(Tag(predicateArityTag, params.arity()));
         header.putTag(Tag(predicateLowerBoundTag, params.lower_bound()));
         header.putTag(Tag(predicateUpperBoundTag, params.upper_bound()));
@@ -217,22 +204,16 @@ AttributeHeader::addTags(vespalib::GenericHeader &header) const
     }
 }
 
-bool
-AttributeHeader::hasMultiValue() const
-{
+bool AttributeHeader::hasMultiValue() const {
     return _collectionType.isMultiValue();
 }
 
-bool
-AttributeHeader::hasWeightedSetType() const
-{
+bool AttributeHeader::hasWeightedSetType() const {
     return _collectionType.isWeightedSet();
 }
 
-bool
-AttributeHeader::needs_idx_file() const
-{
+bool AttributeHeader::needs_idx_file() const {
     return IAttributeVector::needs_idx_file(_basicType.type(), _collectionType.type());
 }
 
-}
+} // namespace search::attribute

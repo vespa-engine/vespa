@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "singleenumattributesaver.h"
+
 #include "iattributesavetarget.h"
+
 #include <vespa/searchlib/util/bufferwriter.h>
 
 using search::attribute::EntryRefVector;
@@ -9,26 +11,19 @@ using vespalib::GenerationGuard;
 
 namespace search {
 
-SingleValueEnumAttributeSaver::
-SingleValueEnumAttributeSaver(GenerationGuard &&guard,
-                              const attribute::AttributeHeader &header,
-                              EntryRefVector &&indices,
-                              IEnumStore &enumStore)
-    : AttributeSaver(std::move(guard), header),
-      _indices(std::move(indices)),
-      _enumSaver(enumStore)
-{
+SingleValueEnumAttributeSaver::SingleValueEnumAttributeSaver(GenerationGuard&&                 guard,
+                                                             const attribute::AttributeHeader& header,
+                                                             EntryRefVector&& indices, IEnumStore& enumStore)
+    : AttributeSaver(std::move(guard), header), _indices(std::move(indices)), _enumSaver(enumStore) {
 }
 
 SingleValueEnumAttributeSaver::~SingleValueEnumAttributeSaver() = default;
 
-bool
-SingleValueEnumAttributeSaver::onSave(IAttributeSaveTarget &saveTarget)
-{
+bool SingleValueEnumAttributeSaver::onSave(IAttributeSaveTarget& saveTarget) {
     _enumSaver.writeUdat(saveTarget);
     std::unique_ptr<search::BufferWriter> datWriter(saveTarget.datWriter().allocBufferWriter());
     assert(saveTarget.getEnumerated());
-    auto &enumerator = _enumSaver.get_enumerator();
+    auto& enumerator = _enumSaver.get_enumerator();
     enumerator.enumerateValues();
     for (auto ref : _indices) {
         uint32_t enumValue = enumerator.mapEntryRefToEnumValue(ref);
@@ -43,4 +38,4 @@ SingleValueEnumAttributeSaver::onSave(IAttributeSaveTarget &saveTarget)
     return true;
 }
 
-}  // namespace search
+} // namespace search

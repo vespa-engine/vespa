@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attributefilesavetarget.h"
+
 #include "attributevector.h"
+
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/vespalib/data/databuffer.h>
@@ -19,10 +21,8 @@ namespace search {
 
 using common::FileHeaderContext;
 
-
-AttributeFileSaveTarget::
-AttributeFileSaveTarget(const TuneFileAttributes& tune_file,
-                        const FileHeaderContext& file_header_ctx)
+AttributeFileSaveTarget::AttributeFileSaveTarget(const TuneFileAttributes& tune_file,
+                                                 const FileHeaderContext&  file_header_ctx)
     : IAttributeSaveTarget(),
       _tune_file(tune_file),
       _file_header_ctx(file_header_ctx),
@@ -30,17 +30,14 @@ AttributeFileSaveTarget(const TuneFileAttributes& tune_file,
       _idxWriter(tune_file, file_header_ctx, _header, "Attribute vector idx file"),
       _weightWriter(tune_file, file_header_ctx, _header, "Attribute vector weight file"),
       _udatWriter(tune_file, file_header_ctx, _header, "Attribute vector unique data file"),
-      _writers()
-{
+      _writers() {
 }
 
 AttributeFileSaveTarget::~AttributeFileSaveTarget() = default;
 
-bool
-AttributeFileSaveTarget::setup()
-{
-    const std::string & baseFileName = _header.getFileName();
-    std::string datFileName(baseFileName + ".dat");
+bool AttributeFileSaveTarget::setup() {
+    const std::string& baseFileName = _header.getFileName();
+    std::string        datFileName(baseFileName + ".dat");
     if (!_datWriter.open(datFileName)) {
         return false;
     }
@@ -65,9 +62,7 @@ AttributeFileSaveTarget::setup()
     return true;
 }
 
-void
-AttributeFileSaveTarget::close()
-{
+void AttributeFileSaveTarget::close() {
     _datWriter.close();
     _udatWriter.close();
     _idxWriter.close();
@@ -77,37 +72,25 @@ AttributeFileSaveTarget::close()
     }
 }
 
-IAttributeFileWriter &
-AttributeFileSaveTarget::datWriter()
-{
+IAttributeFileWriter& AttributeFileSaveTarget::datWriter() {
     return _datWriter;
 }
 
-IAttributeFileWriter &
-AttributeFileSaveTarget::idxWriter()
-{
+IAttributeFileWriter& AttributeFileSaveTarget::idxWriter() {
     return _idxWriter;
 }
 
-IAttributeFileWriter &
-AttributeFileSaveTarget::weightWriter()
-{
+IAttributeFileWriter& AttributeFileSaveTarget::weightWriter() {
     return _weightWriter;
 }
 
-IAttributeFileWriter &
-AttributeFileSaveTarget::udatWriter()
-{
+IAttributeFileWriter& AttributeFileSaveTarget::udatWriter() {
     return _udatWriter;
 }
 
-bool
-AttributeFileSaveTarget::setup_writer(const std::string& file_suffix,
-                                      const std::string& desc)
-{
+bool AttributeFileSaveTarget::setup_writer(const std::string& file_suffix, const std::string& desc) {
     std::string file_name(_header.getFileName() + "." + file_suffix);
-    auto writer = std::make_unique<AttributeFileWriter>(_tune_file, _file_header_ctx,
-                                                        _header, desc);
+    auto        writer = std::make_unique<AttributeFileWriter>(_tune_file, _file_header_ctx, _header, desc);
     if (!writer->open(file_name)) {
         return false;
     }
@@ -119,9 +102,7 @@ AttributeFileSaveTarget::setup_writer(const std::string& file_suffix,
     return true;
 }
 
-IAttributeFileWriter&
-AttributeFileSaveTarget::get_writer(const std::string& file_suffix)
-{
+IAttributeFileWriter& AttributeFileSaveTarget::get_writer(const std::string& file_suffix) {
     auto itr = _writers.find(file_suffix);
     if (itr == _writers.end()) {
         throw IllegalArgumentException("File writer with suffix '" + file_suffix + "' does not exist");
@@ -129,16 +110,13 @@ AttributeFileSaveTarget::get_writer(const std::string& file_suffix)
     return *itr->second;
 }
 
-uint64_t
-AttributeFileSaveTarget::size_on_disk() const noexcept
-{
+uint64_t AttributeFileSaveTarget::size_on_disk() const noexcept {
     uint64_t result = _datWriter.size_on_disk() + _idxWriter.size_on_disk() + _weightWriter.size_on_disk() +
                       _udatWriter.size_on_disk() + DiskSpaceCalculator::directory_placeholder_size();
-    for (auto & writer : _writers) {
+    for (auto& writer : _writers) {
         result += writer.second->size_on_disk();
     }
     return result;
 }
 
 } // namespace search
-

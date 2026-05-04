@@ -1,26 +1,24 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "single_bool_attribute_saver.h"
+
 #include <vespa/searchlib/attribute/iattributesavetarget.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/util/bufferwriter.h>
+
 #include <cassert>
 
 using vespalib::GenerationGuard;
 
 namespace search::attribute {
 
-SingleBoolAttributeSaver::SingleBoolAttributeSaver(const AttributeHeader &header, std::unique_ptr<const BitVector> bv)
-    : AttributeSaver(GenerationGuard(), header),
-      _bv(std::move(bv))
-{
+SingleBoolAttributeSaver::SingleBoolAttributeSaver(const AttributeHeader& header, std::unique_ptr<const BitVector> bv)
+    : AttributeSaver(GenerationGuard(), header), _bv(std::move(bv)) {
 }
 
 SingleBoolAttributeSaver::~SingleBoolAttributeSaver() = default;
 
-bool
-SingleBoolAttributeSaver::onSave(IAttributeSaveTarget& saveTarget)
-{
+bool SingleBoolAttributeSaver::onSave(IAttributeSaveTarget& saveTarget) {
     std::unique_ptr<search::BufferWriter> writer(saveTarget.datWriter().allocBufferWriter());
     assert(!saveTarget.getEnumerated());
     assert(_bv->getStartIndex() == 0);
@@ -32,4 +30,4 @@ SingleBoolAttributeSaver::onSave(IAttributeSaveTarget& saveTarget)
     return true;
 }
 
-}
+} // namespace search::attribute

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "single_raw_ext_attribute.h"
+
 #include <vespa/searchcommon/attribute/config.h>
 
 #include <vespa/log/log.h>
@@ -9,29 +10,19 @@ LOG_SETUP(".searchlib.attribute.single_raw_ext_attribute");
 namespace search::attribute {
 
 SingleRawExtAttribute::SingleRawExtAttribute(const std::string& name)
-    : RawAttribute(name, Config(BasicType::RAW, CollectionType::SINGLE)),
-      IExtendAttribute(),
-      _buffer(),
-      _offsets()
-{
+    : RawAttribute(name, Config(BasicType::RAW, CollectionType::SINGLE)), IExtendAttribute(), _buffer(), _offsets() {
 }
 
 SingleRawExtAttribute::~SingleRawExtAttribute() = default;
 
-void
-SingleRawExtAttribute::onCommit()
-{
+void SingleRawExtAttribute::onCommit() {
     LOG_ABORT("should not be reached");
 }
 
-void
-SingleRawExtAttribute::onUpdateStat(CommitParam::UpdateStats)
-{
+void SingleRawExtAttribute::onUpdateStat(CommitParam::UpdateStats) {
 }
 
-bool
-SingleRawExtAttribute::addDoc(DocId& docId)
-{
+bool SingleRawExtAttribute::addDoc(DocId& docId) {
     size_t offset(_buffer.size());
     docId = _offsets.size();
     _offsets.push_back(offset);
@@ -40,9 +31,7 @@ SingleRawExtAttribute::addDoc(DocId& docId)
     return true;
 }
 
-bool
-SingleRawExtAttribute::add(std::span<const char> v, int32_t)
-{
+bool SingleRawExtAttribute::add(std::span<const char> v, int32_t) {
     const size_t start(_offsets.back());
     const size_t sz(v.size());
     _buffer.resize(start + sz);
@@ -52,9 +41,7 @@ SingleRawExtAttribute::add(std::span<const char> v, int32_t)
     return true;
 }
 
-std::span<const char>
-SingleRawExtAttribute::get_raw(DocId docid) const
-{
+std::span<const char> SingleRawExtAttribute::get_raw(DocId docid) const {
     if (docid >= _offsets.size()) {
         return {};
     }
@@ -66,10 +53,8 @@ SingleRawExtAttribute::get_raw(DocId docid) const
     return {_buffer.data() + offset, size};
 }
 
-IExtendAttribute*
-SingleRawExtAttribute::getExtendInterface()
-{
+IExtendAttribute* SingleRawExtAttribute::getExtendInterface() {
     return this;
 }
 
-}
+} // namespace search::attribute

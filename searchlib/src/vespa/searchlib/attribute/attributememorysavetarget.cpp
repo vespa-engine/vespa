@@ -1,8 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attributememorysavetarget.h"
+
 #include "attributefilesavetarget.h"
 #include "attributevector.h"
+
 #include <vespa/vespalib/util/exceptions.h>
 
 namespace search {
@@ -13,45 +15,29 @@ using vespalib::IllegalArgumentException;
 AttributeMemorySaveTarget::WriterEntry::~WriterEntry() = default;
 
 AttributeMemorySaveTarget::AttributeMemorySaveTarget()
-    : _datWriter(),
-      _idxWriter(),
-      _weightWriter(),
-      _udatWriter(),
-      _writers(),
-      _size_on_disk(0)
-{
+    : _datWriter(), _idxWriter(), _weightWriter(), _udatWriter(), _writers(), _size_on_disk(0) {
 }
 
 AttributeMemorySaveTarget::~AttributeMemorySaveTarget() = default;
 
-IAttributeFileWriter &
-AttributeMemorySaveTarget::datWriter()
-{
+IAttributeFileWriter& AttributeMemorySaveTarget::datWriter() {
     return _datWriter;
 }
 
-IAttributeFileWriter &
-AttributeMemorySaveTarget::idxWriter()
-{
+IAttributeFileWriter& AttributeMemorySaveTarget::idxWriter() {
     return _idxWriter;
 }
 
-IAttributeFileWriter &
-AttributeMemorySaveTarget::weightWriter()
-{
+IAttributeFileWriter& AttributeMemorySaveTarget::weightWriter() {
     return _weightWriter;
 }
 
-IAttributeFileWriter &
-AttributeMemorySaveTarget::udatWriter()
-{
+IAttributeFileWriter& AttributeMemorySaveTarget::udatWriter() {
     return _udatWriter;
 }
 
-bool
-AttributeMemorySaveTarget::writeToFile(const TuneFileAttributes &tuneFileAttributes,
-                                       const FileHeaderContext &fileHeaderContext)
-{
+bool AttributeMemorySaveTarget::writeToFile(const TuneFileAttributes& tuneFileAttributes,
+                                            const FileHeaderContext&  fileHeaderContext) {
     AttributeFileSaveTarget saveTarget(tuneFileAttributes, fileHeaderContext);
     saveTarget.setHeader(_header);
     if (!saveTarget.setup()) {
@@ -79,10 +65,7 @@ AttributeMemorySaveTarget::writeToFile(const TuneFileAttributes &tuneFileAttribu
     return true;
 }
 
-bool
-AttributeMemorySaveTarget::setup_writer(const std::string& file_suffix,
-                                        const std::string& desc)
-{
+bool AttributeMemorySaveTarget::setup_writer(const std::string& file_suffix, const std::string& desc) {
     auto writer = std::make_unique<AttributeMemoryFileWriter>();
     auto itr = _writers.find(file_suffix);
     if (itr != _writers.end()) {
@@ -92,9 +75,7 @@ AttributeMemorySaveTarget::setup_writer(const std::string& file_suffix,
     return true;
 }
 
-IAttributeFileWriter&
-AttributeMemorySaveTarget::get_writer(const std::string& file_suffix)
-{
+IAttributeFileWriter& AttributeMemorySaveTarget::get_writer(const std::string& file_suffix) {
     auto itr = _writers.find(file_suffix);
     if (itr == _writers.end()) {
         throw IllegalArgumentException("File writer with suffix '" + file_suffix + "' does not exist");
@@ -102,11 +83,8 @@ AttributeMemorySaveTarget::get_writer(const std::string& file_suffix)
     return *itr->second.writer;
 }
 
-uint64_t
-AttributeMemorySaveTarget::size_on_disk() const noexcept
-{
+uint64_t AttributeMemorySaveTarget::size_on_disk() const noexcept {
     return _size_on_disk;
 }
 
 } // namespace search
-
