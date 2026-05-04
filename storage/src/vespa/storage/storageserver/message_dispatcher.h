@@ -5,7 +5,9 @@
 
 namespace storage {
 
-namespace api { class StorageMessage; }
+namespace api {
+class StorageMessage;
+}
 
 /**
  * Allows for dispatching messages either as a sync or async operation.
@@ -21,4 +23,4 @@ public:
     virtual void dispatch_async(std::shared_ptr<api::StorageMessage> msg) = 0;
 };
 
-}
+} // namespace storage

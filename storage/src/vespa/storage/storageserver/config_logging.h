@@ -2,7 +2,9 @@
 
 #pragma once
 
-namespace config { class ConfigInstance; }
+namespace config {
+class ConfigInstance;
+}
 
 namespace storage {
 

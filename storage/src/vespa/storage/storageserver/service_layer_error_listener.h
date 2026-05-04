@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/storage/persistence/provider_error_wrapper.h>
+
 #include <atomic>
 
 namespace storage {
@@ -21,16 +22,13 @@ class ServiceLayerErrorListener : public ProviderErrorListener {
     StorageComponent& _component;
     MergeThrottler&   _merge_throttler;
     std::atomic<bool> _shutdown_initiated;
+
 public:
-    ServiceLayerErrorListener(StorageComponent& component,
-                              MergeThrottler& merge_throttler) noexcept
-        : _component(component),
-          _merge_throttler(merge_throttler),
-          _shutdown_initiated(false)
-    {}
+    ServiceLayerErrorListener(StorageComponent& component, MergeThrottler& merge_throttler) noexcept
+        : _component(component), _merge_throttler(merge_throttler), _shutdown_initiated(false) {}
 
     void on_fatal_error(std::string_view message) override;
     void on_resource_exhaustion_error(std::string_view message) override;
 };
 
-}
+} // namespace storage

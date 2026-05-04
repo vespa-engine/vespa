@@ -2,10 +2,12 @@
 #pragma once
 
 #include "rpc_target.h"
+
 #include <vespa/fnet/frt/invokable.h>
 #include <vespa/fnet/frt/invoker.h>
 #include <vespa/storageapi/messageapi/returncode.h>
 #include <vespa/vespalib/util/compressionconfig.h>
+
 #include <atomic>
 #include <memory>
 #include <string>
@@ -13,7 +15,9 @@
 class FRT_RPCRequest;
 class FRT_Target;
 
-namespace document { class DocumentTypeRepo; }
+namespace document {
+class DocumentTypeRepo;
+}
 
 namespace storage {
 
@@ -24,7 +28,7 @@ class StorageCommand;
 class StorageMessage;
 class StorageMessageAddress;
 class StorageReply;
-}
+} // namespace api
 
 namespace rpc {
 
@@ -43,17 +47,17 @@ public:
         Params();
         ~Params();
     };
+
 private:
-    MessageDispatcher&    _message_dispatcher;
-    SharedRpcResources&   _rpc_resources;
-    MessageCodecProvider& _message_codec_provider;
-    const Params          _params;
+    MessageDispatcher&                        _message_dispatcher;
+    SharedRpcResources&                       _rpc_resources;
+    MessageCodecProvider&                     _message_codec_provider;
+    const Params                              _params;
     std::unique_ptr<CachingRpcTargetResolver> _target_resolver;
+
 public:
-    StorageApiRpcService(MessageDispatcher& message_dispatcher,
-                         SharedRpcResources& rpc_resources,
-                         MessageCodecProvider& message_codec_provider,
-                         const Params& params);
+    StorageApiRpcService(MessageDispatcher& message_dispatcher, SharedRpcResources& rpc_resources,
+                         MessageCodecProvider& message_codec_provider, const Params& params);
     ~StorageApiRpcService() override;
 
     // Bypasses resolver cache and returns whether local Slobrok mirror has at least 1 spec for the given address.
@@ -63,35 +67,30 @@ public:
     void encode_rpc_v1_response(FRT_RPCRequest& request, api::StorageReply& reply);
     void send_rpc_v1_request(std::shared_ptr<api::StorageCommand> cmd);
 
-    static constexpr const char* rpc_v1_method_name() noexcept {
-        return "storageapi.v1.send";
-    }
+    static constexpr const char* rpc_v1_method_name() noexcept { return "storageapi.v1.send"; }
+
 private:
     void detach_and_forward_to_enqueuer(std::shared_ptr<api::StorageMessage> cmd, FRT_RPCRequest* req);
 
     struct RpcRequestContext {
         std::shared_ptr<api::StorageCommand> _originator_cmd;
 
-        explicit RpcRequestContext(std::shared_ptr<api::StorageCommand> cmd)
-            : _originator_cmd(std::move(cmd))
-        {}
+        explicit RpcRequestContext(std::shared_ptr<api::StorageCommand> cmd) : _originator_cmd(std::move(cmd)) {}
     };
 
     void register_server_methods(SharedRpcResources&);
     template <typename PayloadCodecCallback>
     [[nodiscard]] bool uncompress_rpc_payload(const FRT_Values& params, PayloadCodecCallback payload_callback);
-    template <typename MessageType>
-    void encode_and_compress_rpc_payload(const MessageType& msg, FRT_Values& params);
+    template <typename MessageType> void encode_and_compress_rpc_payload(const MessageType& msg, FRT_Values& params);
     void RequestDone(FRT_RPCRequest* request) override;
 
     void handle_request_done_rpc_error(FRT_RPCRequest& req, const RpcRequestContext& req_ctx);
-    void handle_request_done_decode_error(const RpcRequestContext& req_ctx,
-                                          std::string_view description);
+    void handle_request_done_decode_error(const RpcRequestContext& req_ctx, std::string_view description);
     void create_and_dispatch_error_reply(api::StorageCommand& cmd, api::ReturnCode error);
 
     api::ReturnCode map_frt_error_to_storage_api_error(FRT_RPCRequest& req, const RpcRequestContext& req_ctx);
     api::ReturnCode make_no_address_for_service_error(const api::StorageMessageAddress& addr) const;
 };
 
-} // rpc
-} // storage
+} // namespace rpc
+} // namespace storage

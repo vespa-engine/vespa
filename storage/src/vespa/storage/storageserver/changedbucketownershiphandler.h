@@ -1,32 +1,33 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/document/bucket/bucketid.h>
-#include <vespa/storage/common/storagelink.h>
 #include <vespa/config-persistence.h>
 #include <vespa/config/helper/ifetchercallback.h>
-#include <vespa/storage/common/servicelayercomponent.h>
-#include <vespa/storage/persistence/messages.h>
-#include <vespa/metrics/valuemetric.h>
+#include <vespa/document/bucket/bucketid.h>
 #include <vespa/metrics/countmetric.h>
 #include <vespa/metrics/metricset.h>
+#include <vespa/metrics/valuemetric.h>
+#include <vespa/storage/common/servicelayercomponent.h>
+#include <vespa/storage/common/storagelink.h>
+#include <vespa/storage/persistence/messages.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+
 #include <atomic>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 
 namespace config {
-    class ConfigUri;
-    class ConfigFetcher;
-}
+class ConfigUri;
+class ConfigFetcher;
+} // namespace config
 namespace storage {
 
 namespace lib {
-    class ClusterState;
-    class ClusterStateBundle;
-    class Distribution;
-    class DistributionConfigBundle;
-}
+class ClusterState;
+class ClusterStateBundle;
+class Distribution;
+class DistributionConfigBundle;
+} // namespace lib
 
 /**
  * The changed bucket ownership handler is a storage link that synchronously
@@ -62,8 +63,8 @@ public:
     class Metrics : public metrics::MetricSet {
     public:
         metrics::LongAverageMetric averageAbortProcessingTime;
-        metrics::LongCountMetric idealStateOpsAborted;
-        metrics::LongCountMetric externalLoadOpsAborted;
+        metrics::LongCountMetric   idealStateOpsAborted;
+        metrics::LongCountMetric   externalLoadOpsAborted;
 
         explicit Metrics(metrics::MetricSet* owner = nullptr);
         ~Metrics() override;
@@ -78,21 +79,20 @@ public:
      */
     class OwnershipState {
         using BucketSpace = document::BucketSpace;
-        std::shared_ptr<const lib::ClusterStateBundle> _state;
+        std::shared_ptr<const lib::ClusterStateBundle>       _state;
         std::shared_ptr<const lib::DistributionConfigBundle> _distributions;
+
     public:
         using SP = std::shared_ptr<OwnershipState>;
         using CSP = std::shared_ptr<const OwnershipState>;
 
-        OwnershipState(std::shared_ptr<const lib::ClusterStateBundle> state,
+        OwnershipState(std::shared_ptr<const lib::ClusterStateBundle>       state,
                        std::shared_ptr<const lib::DistributionConfigBundle> distributions) noexcept;
         ~OwnershipState();
 
         static const uint16_t FAILED_TO_RESOLVE = 0xffff;
 
-        [[nodiscard]] bool valid() const noexcept {
-            return (_distributions && _state);
-        }
+        [[nodiscard]] bool valid() const noexcept { return (_distributions && _state); }
 
         /**
          * Precondition: valid() == true.
@@ -128,12 +128,9 @@ private:
     bool                          _receiving_distribution_config_from_cc;
 
     std::unique_ptr<AbortBucketOperationsCommand::AbortPredicate>
-    makeLazyAbortPredicate(
-            const OwnershipState::CSP& oldOwnership,
-            const OwnershipState::CSP& newOwnership) const;
+    makeLazyAbortPredicate(const OwnershipState::CSP& oldOwnership, const OwnershipState::CSP& newOwnership) const;
 
-    static void logTransition(const lib::ClusterState& currentState,
-                              const lib::ClusterState& newState);
+    static void logTransition(const lib::ClusterState& currentState, const lib::ClusterState& newState);
 
     /**
      * Creates a new immutable OwnershipState based on the current distribution
@@ -160,8 +157,7 @@ private:
      * Precondition: cmd is an instance of a message type containing a bucket
      *     identifier.
      */
-    bool sendingDistributorOwnsBucketInCurrentState(
-            const api::StorageCommand& cmd) const;
+    bool sendingDistributorOwnsBucketInCurrentState(const api::StorageCommand& cmd) const;
     /**
      * Creates a reply for cmd, assigns an ABORTED return code and sends the
      * reply back up the storage chain.
@@ -183,8 +179,7 @@ private:
     bool enabledExternalLoadAborting() const;
 
 public:
-    ChangedBucketOwnershipHandler(const PersistenceConfig& bootstrap_config,
-                                  ServiceLayerComponentRegister& compReg);
+    ChangedBucketOwnershipHandler(const PersistenceConfig& bootstrap_config, ServiceLayerComponentRegister& compReg);
     ~ChangedBucketOwnershipHandler() override;
 
     bool onSetSystemState(const std::shared_ptr<api::SetSystemStateCommand>&) override;
@@ -204,4 +199,4 @@ public:
     const Metrics& getMetrics() const { return _metrics; }
 };
 
-}
+} // namespace storage

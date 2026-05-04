@@ -11,14 +11,15 @@
 #pragma once
 
 #include "applicationgenerationfetcher.h"
+
+#include <vespa/metrics/state_api_adapter.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storageframework/generic/status/statusreporter.h>
-#include <vespa/metrics/state_api_adapter.h>
 #include <vespa/vespalib/net/http/metrics_producer.h>
 #include <vespa/vespalib/net/http/state_api.h>
 
 namespace vespalib {
-    class StringTokenizer;
+class StringTokenizer;
 }
 
 namespace storage {
@@ -26,14 +27,10 @@ namespace storage {
 class StateReporter : public framework::StatusReporter,
                       public vespalib::MetricsProducer,
                       public vespalib::HealthProducer,
-                      public vespalib::ComponentConfigProducer
-{
+                      public vespalib::ComponentConfigProducer {
 public:
-    StateReporter(
-            StorageComponentRegister&,
-            metrics::MetricManager&,
-            ApplicationGenerationFetcher& generationFetcher,
-            const std::string& name = "status");
+    StateReporter(StorageComponentRegister&, metrics::MetricManager&, ApplicationGenerationFetcher& generationFetcher,
+                  const std::string& name = "status");
     ~StateReporter() override;
 
     std::string getReportContentType(const framework::HttpUrlPath&) const override;
@@ -44,23 +41,22 @@ public:
     // We only half-heartedly want to support the legacy state v1 mapping via the storagenode
     // status HTTP server; everyone should use the searchnode HTTP server instead.
     CapabilitySet required_capabilities() const noexcept override {
-        return StatusReporter::required_capabilities().union_of(CapabilitySet::of({
-            Capability::content_state_api(),
-            Capability::content_metrics_api()
-        }));
+        return StatusReporter::required_capabilities().union_of(
+            CapabilitySet::of({Capability::content_state_api(), Capability::content_metrics_api()}));
     }
-private:
-    metrics::MetricManager &_manager;
-    metrics::StateApiAdapter _metricsAdapter;
-    vespalib::StateApi _stateApi;
-    StorageComponent _component;
-    ApplicationGenerationFetcher& _generationFetcher;
-    std::string _name;
 
-    std::string getMetrics(const std::string &consumer, ExpositionFormat format) override;
-    std::string getTotalMetrics(const std::string &consumer, ExpositionFormat format) override;
+private:
+    metrics::MetricManager&       _manager;
+    metrics::StateApiAdapter      _metricsAdapter;
+    vespalib::StateApi            _stateApi;
+    StorageComponent              _component;
+    ApplicationGenerationFetcher& _generationFetcher;
+    std::string                   _name;
+
+    std::string getMetrics(const std::string& consumer, ExpositionFormat format) override;
+    std::string getTotalMetrics(const std::string& consumer, ExpositionFormat format) override;
     Health getHealth() const override;
-    void getComponentConfig(Consumer &consumer) override;
+    void getComponentConfig(Consumer& consumer) override;
 };
 
-} // storage
+} // namespace storage

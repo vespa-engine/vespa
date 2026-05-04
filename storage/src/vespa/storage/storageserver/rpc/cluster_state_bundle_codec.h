@@ -4,7 +4,9 @@
 
 #include "encoded_cluster_state_bundle.h"
 
-namespace storage::lib { class ClusterStateBundle; }
+namespace storage::lib {
+class ClusterStateBundle;
+}
 
 namespace storage::rpc {
 
@@ -22,7 +24,8 @@ public:
     virtual ~ClusterStateBundleCodec() = default;
 
     [[nodiscard]] virtual EncodedClusterStateBundle encode(const lib::ClusterStateBundle&) const = 0;
-    [[nodiscard]] virtual std::shared_ptr<const lib::ClusterStateBundle> decode(const EncodedClusterStateBundle&) const = 0;
+    [[nodiscard]] virtual std::shared_ptr<const lib::ClusterStateBundle>
+    decode(const EncodedClusterStateBundle&) const = 0;
 };
 
-}
+} // namespace storage::rpc

@@ -1,11 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "statereporter.h"
-#include <vespa/storageframework/generic/clock/clock.h>
+
 #include <vespa/metrics/jsonwriter.h>
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/metrics/prometheus_writer.h>
 #include <vespa/storage/common/nodestateupdater.h>
+#include <vespa/storageframework/generic/clock/clock.h>
 #include <vespa/vdslib/state/nodestate.h>
 #include <vespa/vespalib/net/connection_auth_context.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -15,37 +16,28 @@ LOG_SETUP(".status.statereporter");
 
 namespace storage {
 
-StateReporter::StateReporter(
-        StorageComponentRegister& compReg,
-        metrics::MetricManager& manager,
-        ApplicationGenerationFetcher& generationFetcher,
-        const std::string& name)
+StateReporter::StateReporter(StorageComponentRegister& compReg, metrics::MetricManager& manager,
+                             ApplicationGenerationFetcher& generationFetcher, const std::string& name)
     : framework::StatusReporter("state", "State reporter"),
       _manager(manager),
       _metricsAdapter(manager),
       _stateApi(*this, *this, *this),
       _component(compReg, "statereporter"),
       _generationFetcher(generationFetcher),
-      _name(name)
-{
+      _name(name) {
     LOG(debug, "Started state reporter");
     _component.registerStatusPage(*this);
 }
 
 StateReporter::~StateReporter() = default;
 
-std::string
-StateReporter::getReportContentType(
-        const framework::HttpUrlPath& /*path*/) const
-{
+std::string StateReporter::getReportContentType(const framework::HttpUrlPath& /*path*/) const {
     return "application/json";
 }
 
 namespace {
 
-std::map<std::string, std::string>
-getParams(const framework::HttpUrlPath &path)
-{
+std::map<std::string, std::string> getParams(const framework::HttpUrlPath& path) {
     std::map<std::string, std::string> params = path.getAttributes();
     if (params.find("consumer") == params.end()) {
         params.insert(std::make_pair("consumer", "statereporter"));
@@ -53,12 +45,9 @@ getParams(const framework::HttpUrlPath &path)
     return params;
 }
 
-}
+} // namespace
 
-bool
-StateReporter::reportStatus(std::ostream& out,
-                            const framework::HttpUrlPath& path) const
-{
+bool StateReporter::reportStatus(std::ostream& out, const framework::HttpUrlPath& path) const {
     // When we get here, capabilities have already been checked at a higher level, so
     // this will never fail unless a state API handler requires other capabilities than
     // we require for this reporter (in which case this will silently fail, but not
@@ -66,19 +55,17 @@ StateReporter::reportStatus(std::ostream& out,
     vespalib::net::ConnectionAuthContext dummy_ctx(vespalib::net::tls::PeerCredentials(), required_capabilities());
     auto status = _stateApi.get(path.getServerSpec(), path.getPath(), getParams(path), dummy_ctx);
     if (status.failed()) {
-        LOG(debug, "State API reporting for path '%s' failed with status HTTP %d: %s",
-            path.getPath().c_str(), status.status_code(), std::string(status.status_message()).c_str());
+        LOG(debug, "State API reporting for path '%s' failed with status HTTP %d: %s", path.getPath().c_str(),
+            status.status_code(), std::string(status.status_message()).c_str());
         return false;
     }
     out << status.payload();
     return true;
 }
 
-std::string
-StateReporter::getMetrics(const std::string &consumer, ExpositionFormat format)
-{
+std::string StateReporter::getMetrics(const std::string& consumer, ExpositionFormat format) {
     metrics::MetricLockGuard guard(_manager.getMetricLock());
-    auto periods = _manager.getSnapshotPeriods(guard);
+    auto                     periods = _manager.getSnapshotPeriods(guard);
     if (periods.empty()) {
         return ""; // no configuration yet
     }
@@ -86,53 +73,44 @@ StateReporter::getMetrics(const std::string &consumer, ExpositionFormat format)
 
     // To get unset metrics, we have to copy active metrics, clear them
     // and then assign the snapshot
-    metrics::MetricSnapshot snapshot(
-            _manager.getMetricSnapshot(guard, interval).getName(), interval,
-            _manager.getActiveMetrics(guard).getMetrics(), true);
+    metrics::MetricSnapshot snapshot(_manager.getMetricSnapshot(guard, interval).getName(), interval,
+                                     _manager.getActiveMetrics(guard).getMetrics(), true);
 
     snapshot.reset();
     _manager.getMetricSnapshot(guard, interval).addToSnapshot(snapshot, _component.getClock().getSystemTime());
 
     vespalib::asciistream out;
     switch (format) {
-    case ExpositionFormat::JSON:
-        {
-            vespalib::JsonStream stream(out);
-            metrics::JsonWriter metricJsonWriter(stream);
-            _manager.visit(guard, snapshot, metricJsonWriter, consumer);
-            stream.finalize();
-            break;
-        }
-    case ExpositionFormat::Prometheus:
-        {
-            metrics::PrometheusWriter writer(out);
-            _manager.visit(guard, snapshot, writer, consumer);
-            break;
-        }
+    case ExpositionFormat::JSON: {
+        vespalib::JsonStream stream(out);
+        metrics::JsonWriter  metricJsonWriter(stream);
+        _manager.visit(guard, snapshot, metricJsonWriter, consumer);
+        stream.finalize();
+        break;
+    }
+    case ExpositionFormat::Prometheus: {
+        metrics::PrometheusWriter writer(out);
+        _manager.visit(guard, snapshot, writer, consumer);
+        break;
+    }
     }
     return out.str();
 }
 
-std::string
-StateReporter::getTotalMetrics(const std::string &consumer, ExpositionFormat format)
-{
+std::string StateReporter::getTotalMetrics(const std::string& consumer, ExpositionFormat format) {
     return _metricsAdapter.getTotalMetrics(consumer, format);
 }
 
-vespalib::HealthProducer::Health
-StateReporter::getHealth() const
-{
+vespalib::HealthProducer::Health StateReporter::getHealth() const {
     lib::NodeState cns(*_component.getStateUpdater().getCurrentNodeState());
-    bool up = cns.getState().oneOf("u");
-    std::string message = up ? "" : "Node state: " + cns.toString(true);
-    return { up, message };
+    bool           up = cns.getState().oneOf("u");
+    std::string    message = up ? "" : "Node state: " + cns.toString(true);
+    return {up, message};
 }
 
-void
-StateReporter::getComponentConfig(Consumer &consumer)
-{
-    consumer.add(ComponentConfigProducer::Config(_generationFetcher.getComponentName(),
-            _generationFetcher.getGeneration()));
+void StateReporter::getComponentConfig(Consumer& consumer) {
+    consumer.add(
+        ComponentConfigProducer::Config(_generationFetcher.getComponentName(), _generationFetcher.getGeneration()));
 }
 
-} // storage
+} // namespace storage

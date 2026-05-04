@@ -1,14 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include "rpc_target.h"
 #include "shared_rpc_resources.h"
+
+#include "rpc_target.h"
+
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
 #include <vespa/fnet/transport.h>
-#include <vespa/slobrok/sbregister.h>
 #include <vespa/slobrok/sbmirror.h>
+#include <vespa/slobrok/sbregister.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/stringfmt.h>
+
 #include <cassert>
 #include <chrono>
 #include <thread>
@@ -17,8 +20,8 @@
 LOG_SETUP(".storage.shared_rpc_resources");
 
 using namespace std::chrono_literals;
-using vespalib::make_string_short::fmt;
 using vespalib::IllegalStateException;
+using vespalib::make_string_short::fmt;
 
 namespace storage::rpc {
 
@@ -29,27 +32,20 @@ class RpcTargetImpl : public RpcTarget {
     std::string _spec;
 
 public:
-    RpcTargetImpl(FRT_Target* target, const std::string& spec)
-        : _target(target),
-          _spec(spec)
-    {}
-    ~RpcTargetImpl() override {
-        _target->internal_subref();
-    }
+    RpcTargetImpl(FRT_Target* target, const std::string& spec) : _target(target), _spec(spec) {}
+    ~RpcTargetImpl() override { _target->internal_subref(); }
     FRT_Target* get() noexcept override { return _target; }
     bool is_valid() const noexcept override { return _target->IsValid(); }
     const std::string& spec() const noexcept override { return _spec; }
 };
 
-}
+} // namespace
 
 class SharedRpcResources::RpcTargetFactoryImpl : public RpcTargetFactory {
     FRT_Supervisor& _orb;
 
 public:
-    RpcTargetFactoryImpl(FRT_Supervisor& orb)
-        : _orb(orb)
-    {}
+    RpcTargetFactoryImpl(FRT_Supervisor& orb) : _orb(orb) {}
     std::unique_ptr<RpcTarget> make_target(const std::string& connection_spec) const override {
         auto* raw_target = _orb.GetTarget(connection_spec.c_str());
         if (raw_target) {
@@ -59,20 +55,18 @@ public:
     }
 };
 
-SharedRpcResources::SharedRpcResources(const config::ConfigUri& config_uri,
-                                       int rpc_server_port,
-                                       size_t rpc_thread_pool_size,
-                                       size_t rpc_events_before_wakeup)
-    : _transport(std::make_unique<FNET_Transport>(fnet::TransportConfig(rpc_thread_pool_size).
-              events_before_wakeup(rpc_events_before_wakeup))),
+SharedRpcResources::SharedRpcResources(const config::ConfigUri& config_uri, int rpc_server_port,
+                                       size_t rpc_thread_pool_size, size_t rpc_events_before_wakeup)
+    : _transport(std::make_unique<FNET_Transport>(
+          fnet::TransportConfig(rpc_thread_pool_size).events_before_wakeup(rpc_events_before_wakeup))),
       _orb(std::make_unique<FRT_Supervisor>(_transport.get())),
       _slobrok_register(std::make_unique<slobrok::api::RegisterAPI>(*_orb, slobrok::ConfiguratorFactory(config_uri))),
       _slobrok_mirror(std::make_unique<slobrok::api::MirrorAPI>(*_orb, slobrok::ConfiguratorFactory(config_uri))),
       _target_factory(std::make_unique<RpcTargetFactoryImpl>(*_orb)),
       _hostname(vespalib::HostName::get()),
       _rpc_server_port(rpc_server_port),
-      _shutdown(false)
-{ }
+      _shutdown(false) {
+}
 
 // TODO make sure init/shutdown is safe for aborted init in comm. mgr.
 
@@ -83,8 +77,8 @@ SharedRpcResources::~SharedRpcResources() {
 }
 
 void SharedRpcResources::start_server_and_register_slobrok(std::string_view my_handle) {
-    LOG(debug, "Starting main RPC supervisor on port %d with handle '%s'",
-        _rpc_server_port, std::string(my_handle).c_str());
+    LOG(debug, "Starting main RPC supervisor on port %d with handle '%s'", _rpc_server_port,
+        std::string(my_handle).c_str());
     if (!_orb->Listen(_rpc_server_port)) {
         throw IllegalStateException(fmt("Failed to listen to RPC port %d", _rpc_server_port), VESPA_STRLOC);
     }
@@ -127,4 +121,4 @@ const RpcTargetFactory& SharedRpcResources::target_factory() const {
     return *_target_factory;
 }
 
-}
+} // namespace storage::rpc
