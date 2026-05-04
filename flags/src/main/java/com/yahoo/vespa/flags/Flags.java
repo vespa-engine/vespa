@@ -177,14 +177,6 @@ public class Flags {
             "Whether to read config server session data from session data blob or from individual paths",
             "Takes effect immediately");
 
-    public static final UnboundBooleanFlag SCALE_METRICSPROXY_HEAP_BY_NODE_COUNT = defineFeatureFlag(
-            "scale-metricsproxy-heap-by-node-count", false,
-            List.of("hmusum"), "2026-02-15", "2026-08-15",
-            "Whether to scale metrics proxy container heap based on total number of nodes in the application." +
-            " Will not have any effect if METRICS_PROXY_HEAP_SIZE_IN_MIB or METRICS_PROXY_ADMIN_HEAP_SIZE_IN_MIB is set",
-            "Takes effect at redeployment",
-            INSTANCE_ID);
-
     public static final UnboundDoubleFlag AUTOSCALER_TARGET_WRITE_CPU_PERCENTAGE = defineDoubleFlag(
             "autoscaler-target-write-cpu-percentage", 0.95,
             List.of("hmusum"), "2026-02-15", "2026-08-15",

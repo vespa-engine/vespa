@@ -193,21 +193,6 @@ public class MetricsProxyContainerTest {
     }
 
     @Test
-    void heapSizeScalesWithNumberOfNodesWhenFlagEnabled() {
-        // Test with 50 nodes - heap should scale in steps of 50 nodes to avoid changes with small node count changes
-        VespaModel model = getModel(hostedServicesWithContent(), self_hosted, new DeployState.Builder(),
-                                    50, new TestProperties().setScaleMetricsproxyHeapByNodeCount(true));
-        int nodeCount = model.hostSystem().getHosts().size();
-        QrStartConfig config = model.getConfig(QrStartConfig.class, CONTAINER_CONFIG_ID);
-
-        // Base heap (320) + (step * 2 MB per node * 50 nodes per step), where step = nodeCount / 50
-        int step = nodeCount / 50;
-        int expectedHeap = 320 + (step * 2 * 50);
-        assertEquals(expectedHeap, config.jvm().heapsize());
-        assertEquals(expectedHeap, config.jvm().minHeapsize());
-    }
-
-    @Test
     void heapSizeUsesExplicitFlagWhenSet() {
         VespaModel model = getModel(hostedServicesWithContent(), self_hosted, new DeployState.Builder(),
                                     1, new TestProperties().setMetricsProxyHeapSizeInMib(512));
@@ -227,26 +212,6 @@ public class MetricsProxyContainerTest {
                 QrStartConfig config = model.getConfig(QrStartConfig.class, CLUSTER_CONFIG_ID + "/" + host.getHostname());
                 assertEquals(256, config.jvm().heapsize());
                 assertEquals(256, config.jvm().minHeapsize());
-                foundAdminNode = true;
-            }
-        }
-        assertTrue(foundAdminNode, "Expected at least one admin cluster node");
-    }
-
-    @Test
-    void adminHeapSizeScalesWithNodeCountWhenFlagEnabled() {
-        int hostCount = 50;
-        VespaModel model = getModel(hostedServicesWithManyNodes(), hosted, new DeployState.Builder(),
-                                    hostCount, new TestProperties().setScaleMetricsproxyHeapByNodeCount(true));
-        int nodeCount = model.hostSystem().getHosts().size();
-        int step = nodeCount / 50;
-        int expectedHeap = 96 + (step * 50);
-        boolean foundAdminNode = false;
-        for (var host : model.hostSystem().getHosts()) {
-            if (host.spec().membership().isPresent() &&
-                host.spec().membership().get().cluster().type() == ClusterSpec.Type.admin) {
-                QrStartConfig config = model.getConfig(QrStartConfig.class, CLUSTER_CONFIG_ID + "/" + host.getHostname());
-                assertEquals(expectedHeap, config.jvm().heapsize());
                 foundAdminNode = true;
             }
         }
