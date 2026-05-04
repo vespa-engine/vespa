@@ -1,8 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "filestormanager.h"
+
 #include "filestorhandlerimpl.h"
-#include <vespa/storageframework/generic/thread/thread.h>
+
+#include <vespa/config-stor-filestor.h>
+#include <vespa/log/bufferedlogger.h>
 #include <vespa/storage/bucketdb/minimumusedbitstracker.h>
 #include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/storage/common/doneinitializehandler.h>
@@ -17,6 +20,7 @@
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageapi/message/stat.h>
 #include <vespa/storageapi/message/state.h>
+#include <vespa/storageframework/generic/thread/thread.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -26,11 +30,10 @@
 #include <vespa/vespalib/util/string_escape.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/tls_linkage.h>
-#include <vespa/config-stor-filestor.h>
-#include <vespa/config/helper/configfetcher.hpp>
-#include <thread>
 
-#include <vespa/log/bufferedlogger.h>
+#include <vespa/config/helper/configfetcher.hpp>
+
+#include <thread>
 LOG_SETUP(".persistence.filestor.manager");
 
 using document::BucketSpace;
@@ -50,22 +53,21 @@ namespace {
 
 class BucketExecutorWrapper : public spi::BucketExecutor {
 public:
-    explicit BucketExecutorWrapper(spi::BucketExecutor & executor) noexcept : _executor(executor) { }
+    explicit BucketExecutorWrapper(spi::BucketExecutor& executor) noexcept : _executor(executor) {}
 
-    void execute(const spi::Bucket &bucket, std::unique_ptr<spi::BucketTask> task) override {
+    void execute(const spi::Bucket& bucket, std::unique_ptr<spi::BucketTask> task) override {
         _executor.execute(bucket, std::move(task));
     }
 
 private:
-    spi::BucketExecutor & _executor;
+    spi::BucketExecutor& _executor;
 };
 
-}
+} // namespace
 
-FileStorManager::
-FileStorManager(const StorFilestorConfig& bootstrap_config, spi::PersistenceProvider& provider,
-                ServiceLayerComponentRegister& compReg, DoneInitializeHandler& init_handler,
-                HostInfo& hostInfoReporterRegistrar)
+FileStorManager::FileStorManager(const StorFilestorConfig& bootstrap_config, spi::PersistenceProvider& provider,
+                                 ServiceLayerComponentRegister& compReg, DoneInitializeHandler& init_handler,
+                                 HostInfo& hostInfoReporterRegistrar)
     : StorageLinkQueued("File store manager", compReg),
       framework::HtmlStatusReporter("filestorman", "File store manager"),
       _compReg(compReg),
@@ -83,8 +85,7 @@ FileStorManager(const StorFilestorConfig& bootstrap_config, spi::PersistenceProv
       _closed(false),
       _lock(),
       _host_info_reporter(_component.getStateUpdater()),
-      _resource_usage_listener_registration(provider.register_resource_usage_listener(_host_info_reporter))
-{
+      _resource_usage_listener_registration(provider.register_resource_usage_listener(_host_info_reporter)) {
     on_configure(bootstrap_config);
     _component.registerMetric(*_metrics);
     _component.registerStatusPage(*this);
@@ -93,20 +94,18 @@ FileStorManager(const StorFilestorConfig& bootstrap_config, spi::PersistenceProv
     propagateClusterStates();
 }
 
-FileStorManager::~FileStorManager()
-{
+FileStorManager::~FileStorManager() {
     closeNextLink();
-    LOG(debug, "Deleting link %s. Giving filestor threads stop signal.",
-        toString().c_str());
+    LOG(debug, "Deleting link %s. Giving filestor threads stop signal.", toString().c_str());
 
-    for (const auto & thread : _threads) {
+    for (const auto& thread : _threads) {
         if (thread) {
             thread->getThread().interrupt();
         }
     }
     LOG(debug, "Closing all filestor queues, answering queued messages. New messages will be refused.");
     _filestorHandler->close();
-    for (const auto & thread : _threads) {
+    for (const auto& thread : _threads) {
         if (thread) {
             thread->getThread().join();
         }
@@ -117,97 +116,88 @@ FileStorManager::~FileStorManager()
     _threads.clear();
 }
 
-void
-FileStorManager::print(std::ostream& out, bool , const std::string& ) const
-{
+void FileStorManager::print(std::ostream& out, bool, const std::string&) const {
     out << "FileStorManager";
 }
 
-ProviderErrorWrapper &
-FileStorManager::error_wrapper() noexcept {
-    return static_cast<ProviderErrorWrapper &>(*_provider);
+ProviderErrorWrapper& FileStorManager::error_wrapper() noexcept {
+    return static_cast<ProviderErrorWrapper&>(*_provider);
 }
 
 namespace {
 
 uint32_t computeNumResponseThreads(int configured) {
-    return (configured <= 0) ? std::max(1u, std::thread::hardware_concurrency()/4) : configured;
+    return (configured <= 0) ? std::max(1u, std::thread::hardware_concurrency() / 4) : configured;
 }
 
-vespalib::Executor::OptimizeFor
-selectSequencer(StorFilestorConfig::ResponseSequencerType sequencerType) {
+vespalib::Executor::OptimizeFor selectSequencer(StorFilestorConfig::ResponseSequencerType sequencerType) {
     switch (sequencerType) {
-        case StorFilestorConfig::ResponseSequencerType::THROUGHPUT:
-            return vespalib::Executor::OptimizeFor::THROUGHPUT;
-        case StorFilestorConfig::ResponseSequencerType::LATENCY:
-            return vespalib::Executor::OptimizeFor::LATENCY;
-        case StorFilestorConfig::ResponseSequencerType::ADAPTIVE:
-        default:
-            return vespalib::Executor::OptimizeFor::ADAPTIVE;
+    case StorFilestorConfig::ResponseSequencerType::THROUGHPUT:
+        return vespalib::Executor::OptimizeFor::THROUGHPUT;
+    case StorFilestorConfig::ResponseSequencerType::LATENCY:
+        return vespalib::Executor::OptimizeFor::LATENCY;
+    case StorFilestorConfig::ResponseSequencerType::ADAPTIVE:
+    default:
+        return vespalib::Executor::OptimizeFor::ADAPTIVE;
     }
 }
 
 vespalib::SharedOperationThrottler::DynamicThrottleParams
-dynamic_throttle_params_from_config(const auto& cfg_params, uint32_t win_size_lbound)
-{
-    auto win_size_incr = std::max(static_cast<uint32_t>(std::max(cfg_params.windowSizeIncrement, 1)), win_size_lbound);
+dynamic_throttle_params_from_config(const auto& cfg_params, uint32_t win_size_lbound) {
+    auto win_size_incr =
+        std::max(static_cast<uint32_t>(std::max(cfg_params.windowSizeIncrement, 1)), win_size_lbound);
 
     vespalib::SharedOperationThrottler::DynamicThrottleParams params;
-    params.window_size_increment        = win_size_incr;
-    params.min_window_size              = std::max(win_size_incr, static_cast<uint32_t>(std::max(1, cfg_params.minWindowSize)));
-    params.max_window_size              = (cfg_params.maxWindowSize > 0)
-                                           ? std::max(static_cast<uint32_t>(cfg_params.maxWindowSize), params.min_window_size)
-                                           : INT_MAX;
-    params.resize_rate                  = cfg_params.resizeRate;
+    params.window_size_increment = win_size_incr;
+    params.min_window_size = std::max(win_size_incr, static_cast<uint32_t>(std::max(1, cfg_params.minWindowSize)));
+    params.max_window_size = (cfg_params.maxWindowSize > 0)
+                                 ? std::max(static_cast<uint32_t>(cfg_params.maxWindowSize), params.min_window_size)
+                                 : INT_MAX;
+    params.resize_rate = cfg_params.resizeRate;
     params.window_size_decrement_factor = cfg_params.windowSizeDecrementFactor;
-    params.window_size_backoff          = cfg_params.windowSizeBackoff;
+    params.window_size_backoff = cfg_params.windowSizeBackoff;
     return params;
 }
 
-thread_local PersistenceHandler * _g_threadLocalHandler TLS_LINKAGE = nullptr;
+thread_local PersistenceHandler* _g_threadLocalHandler TLS_LINKAGE = nullptr;
 
-size_t
-computeAllPossibleHandlerThreads(const vespa::config::content::StorFilestorConfig & cfg) {
-    return cfg.numThreads +
-           computeNumResponseThreads(cfg.numResponseThreads) +
-           cfg.numNetworkThreads +
+size_t computeAllPossibleHandlerThreads(const vespa::config::content::StorFilestorConfig& cfg) {
+    return cfg.numThreads + computeNumResponseThreads(cfg.numResponseThreads) + cfg.numNetworkThreads +
            cfg.numVisitorThreads +
            1; // Async cluster state processing thread (might be a pessimization to include here...)
 }
 
-}
+} // namespace
 
-PersistenceHandler &
-FileStorManager::createRegisteredHandler(const ServiceLayerComponent & component)
-{
+PersistenceHandler& FileStorManager::createRegisteredHandler(const ServiceLayerComponent& component) {
     std::lock_guard guard(_lock);
-    size_t index = _persistenceHandlers.size();
+    size_t          index = _persistenceHandlers.size();
     assert(index < _metrics->threads.size());
-    _persistenceHandlers.push_back(
-            std::make_unique<PersistenceHandler>(*_sequencedExecutor, component, _config->bucketMergeChunkSize,
-                                                 false, *_provider, *_filestorHandler,
-                                                 *_bucketOwnershipNotifier, *_metrics->threads[index]));
+    _persistenceHandlers.push_back(std::make_unique<PersistenceHandler>(
+        *_sequencedExecutor, component, _config->bucketMergeChunkSize, false, *_provider, *_filestorHandler,
+        *_bucketOwnershipNotifier, *_metrics->threads[index]));
     return *_persistenceHandlers.back();
 }
 
-PersistenceHandler &
-FileStorManager::getThreadLocalHandler() {
+PersistenceHandler& FileStorManager::getThreadLocalHandler() {
     if (_g_threadLocalHandler == nullptr) {
-        _g_threadLocalHandler = & createRegisteredHandler(_component);
+        _g_threadLocalHandler = &createRegisteredHandler(_component);
     }
     return *_g_threadLocalHandler;
 }
 
-void
-FileStorManager::on_configure(const StorFilestorConfig& config)
-{
+void FileStorManager::on_configure(const StorFilestorConfig& config) {
     // If true, this is not the first configure.
-    const bool liveUpdate = ! _threads.empty();
+    const bool liveUpdate = !_threads.empty();
 
-    _use_async_message_handling_on_schedule.store(config.useAsyncMessageHandlingOnSchedule, std::memory_order_relaxed);
+    _use_async_message_handling_on_schedule.store(config.useAsyncMessageHandlingOnSchedule,
+                                                  std::memory_order_relaxed);
     _host_info_reporter.set_noise_level(config.resourceUsageReporterNoiseLevel);
-    const bool use_dynamic_operation_throttling = (config.asyncOperationThrottler.type == StorFilestorConfig::AsyncOperationThrottler::Type::DYNAMIC);
-    const bool use_dynamic_maintenance_throttling = (config.maintenanceOperationThrottler.type == StorFilestorConfig::MaintenanceOperationThrottler::Type::DYNAMIC);
+    const bool use_dynamic_operation_throttling =
+        (config.asyncOperationThrottler.type == StorFilestorConfig::AsyncOperationThrottler::Type::DYNAMIC);
+    const bool use_dynamic_maintenance_throttling =
+        (config.maintenanceOperationThrottler.type ==
+         StorFilestorConfig::MaintenanceOperationThrottler::Type::DYNAMIC);
 
     if (!liveUpdate) {
         _config = std::make_unique<StorFilestorConfig>(config);
@@ -215,17 +205,18 @@ FileStorManager::on_configure(const StorFilestorConfig& config)
         uint32_t numStripes = std::max(1u, numThreads / 2);
         _metrics->initDiskMetrics(numStripes, computeAllPossibleHandlerThreads(*_config));
         auto op_dyn_params = dynamic_throttle_params_from_config(_config->asyncOperationThrottler, numThreads);
-        auto maintenance_dyn_params = dynamic_throttle_params_from_config(_config->maintenanceOperationThrottler, numStripes);
+        auto maintenance_dyn_params =
+            dynamic_throttle_params_from_config(_config->maintenanceOperationThrottler, numStripes);
         if (use_dynamic_operation_throttling) {
             LOG(info, "Using maintenance operation throttling: %s", maintenance_dyn_params.to_string().c_str());
         }
 
-        _filestorHandler = std::make_unique<FileStorHandlerImpl>(numThreads, numStripes, *this, *_metrics,
-                                                                 _compReg, op_dyn_params, maintenance_dyn_params);
+        _filestorHandler = std::make_unique<FileStorHandlerImpl>(numThreads, numStripes, *this, *_metrics, _compReg,
+                                                                 op_dyn_params, maintenance_dyn_params);
         uint32_t numResponseThreads = computeNumResponseThreads(_config->numResponseThreads);
-        _sequencedExecutor = vespalib::SequencedTaskExecutor::create(CpuUsage::wrap(response_executor, CpuUsage::Category::WRITE),
-                                                                     numResponseThreads, 10000,
-                                                                     true, selectSequencer(_config->responseSequencerType));
+        _sequencedExecutor = vespalib::SequencedTaskExecutor::create(
+            CpuUsage::wrap(response_executor, CpuUsage::Category::WRITE), numResponseThreads, 10000, true,
+            selectSequencer(_config->responseSequencerType));
         assert(_sequencedExecutor);
         LOG(spam, "Setting up %u persistence threads", numThreads);
         for (uint32_t i = 0; i < numThreads; i++) {
@@ -235,9 +226,11 @@ FileStorManager::on_configure(const StorFilestorConfig& config)
         _bucketExecutorRegistration = _provider->register_executor(std::make_shared<BucketExecutorWrapper>(*this));
     } else {
         assert(_filestorHandler);
-        auto updated_op_dyn_throttle_params = dynamic_throttle_params_from_config(config.asyncOperationThrottler, _threads.size());
+        auto updated_op_dyn_throttle_params =
+            dynamic_throttle_params_from_config(config.asyncOperationThrottler, _threads.size());
         const uint32_t num_stripes = std::max(1u, static_cast<uint32_t>(_threads.size()) / 2);
-        auto updated_maintenance_dyn_throttle_params = dynamic_throttle_params_from_config(_config->maintenanceOperationThrottler, num_stripes);
+        auto           updated_maintenance_dyn_throttle_params =
+            dynamic_throttle_params_from_config(_config->maintenanceOperationThrottler, num_stripes);
         if (use_dynamic_operation_throttling) {
             LOG(info, "Using maintenance operation throttling (reconfig): %s",
                 updated_maintenance_dyn_throttle_params.to_string().c_str());
@@ -254,13 +247,10 @@ FileStorManager::on_configure(const StorFilestorConfig& config)
     }
 }
 
-void
-FileStorManager::replyDroppedOperation(api::StorageMessage& msg, const document::Bucket& bucket,
-                                       api::ReturnCode::Result returnCode, std::string_view reason)
-{
+void FileStorManager::replyDroppedOperation(api::StorageMessage& msg, const document::Bucket& bucket,
+                                            api::ReturnCode::Result returnCode, std::string_view reason) {
     std::ostringstream error;
-    error << "Dropping " << msg.getType() << " to bucket "
-          << bucket.toString() << ". Reason: " << reason;
+    error << "Dropping " << msg.getType() << " to bucket " << bucket.toString() << ". Reason: " << reason;
     LOGBT(debug, bucket.toString(), "%s", error.str().c_str());
     if (!msg.getType().isReply()) {
         std::shared_ptr<api::StorageReply> reply = static_cast<api::StorageCommand&>(msg).makeReply();
@@ -269,29 +259,25 @@ FileStorManager::replyDroppedOperation(api::StorageMessage& msg, const document:
     }
 }
 
-void
-FileStorManager::replyWithBucketNotFound(api::StorageMessage& msg, const document::Bucket& bucket)
-{
+void FileStorManager::replyWithBucketNotFound(api::StorageMessage& msg, const document::Bucket& bucket) {
     replyDroppedOperation(msg, bucket, api::ReturnCode::BUCKET_NOT_FOUND, "bucket does not exist");
 }
 
-StorBucketDatabase::WrappedEntry
-FileStorManager::mapOperationToDisk(api::StorageMessage& msg, const document::Bucket& bucket)
-{
-    StorBucketDatabase::WrappedEntry entry(_component.getBucketDatabase(bucket.getBucketSpace()).get(
-            bucket.getBucketId(), "FileStorManager::mapOperationToDisk"));
+StorBucketDatabase::WrappedEntry FileStorManager::mapOperationToDisk(api::StorageMessage&    msg,
+                                                                     const document::Bucket& bucket) {
+    StorBucketDatabase::WrappedEntry entry(_component.getBucketDatabase(bucket.getBucketSpace())
+                                               .get(bucket.getBucketId(), "FileStorManager::mapOperationToDisk"));
     if (!entry.exists()) {
         replyWithBucketNotFound(msg, bucket);
     }
     return entry;
 }
 
-StorBucketDatabase::WrappedEntry
-FileStorManager::mapOperationToBucketAndDisk(api::BucketCommand& cmd, const document::DocumentId* docId)
-{
-    StorBucketDatabase &database = _component.getBucketDatabase(cmd.getBucket().getBucketSpace());
-    StorBucketDatabase::WrappedEntry entry(database.get(
-            cmd.getBucketId(), "FileStorManager::mapOperationToBucketAndDisk"));
+StorBucketDatabase::WrappedEntry FileStorManager::mapOperationToBucketAndDisk(api::BucketCommand&         cmd,
+                                                                              const document::DocumentId* docId) {
+    StorBucketDatabase&              database = _component.getBucketDatabase(cmd.getBucket().getBucketSpace());
+    StorBucketDatabase::WrappedEntry entry(
+        database.get(cmd.getBucketId(), "FileStorManager::mapOperationToBucketAndDisk"));
     if (!entry.exists()) {
         document::BucketId specific(cmd.getBucketId());
         if (docId) {
@@ -300,23 +286,22 @@ FileStorManager::mapOperationToBucketAndDisk(api::BucketCommand& cmd, const docu
         using BucketMap = std::map<document::BucketId, StorBucketDatabase::WrappedEntry>;
         std::shared_ptr<api::StorageReply> reply;
         {
-            BucketMap results( database.getContained( specific, "FileStorManager::mapOperationToBucketAndDisk-2"));
+            BucketMap results(database.getContained(specific, "FileStorManager::mapOperationToBucketAndDisk-2"));
             if (results.size() == 1) {
                 LOG(debug, "Remapping %s operation to specific %s versus non-existing %s to %s.",
-                    cmd.toString().c_str(), specific.toString().c_str(),
-                    cmd.getBucketId().toString().c_str(),
+                    cmd.toString().c_str(), specific.toString().c_str(), cmd.getBucketId().toString().c_str(),
                     results.begin()->first.toString().c_str());
                 cmd.remapBucketId(results.begin()->first);
                 return std::move(results.begin()->second);
             }
             std::ostringstream error;
-            error << "Dropping " << cmd.getType() << " to bucket "
-                  << cmd.getBucketId().toString() << " since bucket doesnt exist. ";
+            error << "Dropping " << cmd.getType() << " to bucket " << cmd.getBucketId().toString()
+                  << " since bucket doesnt exist. ";
             if (results.size() > 1) {
                 error << "Bucket was inconsistent with " << results.size()
                       << " entries so no automatic remapping done:";
                 auto it = results.begin();
-                for (uint32_t i=0; i <= 4 && it != results.end(); ++it, ++i) {
+                for (uint32_t i = 0; i <= 4 && it != results.end(); ++it, ++i) {
                     error << " " << it->first;
                 }
                 if (it != results.end()) {
@@ -328,61 +313,56 @@ FileStorManager::mapOperationToBucketAndDisk(api::BucketCommand& cmd, const docu
             LOGBT(debug, cmd.getBucketId().toString(), "%s", error.str().c_str());
 
             reply = static_cast<api::StorageCommand&>(cmd).makeReply();
-            reply->setResult( api::ReturnCode( api::ReturnCode::BUCKET_NOT_FOUND, error.str()));
+            reply->setResult(api::ReturnCode(api::ReturnCode::BUCKET_NOT_FOUND, error.str()));
         }
         sendUp(reply);
     }
     return entry;
 }
 
-bool
-FileStorManager::handlePersistenceMessage(const shared_ptr<api::StorageMessage>& msg)
-{
+bool FileStorManager::handlePersistenceMessage(const shared_ptr<api::StorageMessage>& msg) {
     api::ReturnCode errorCode(api::ReturnCode::OK);
     LOG(spam, "Received %s. Attempting to queue it.", msg->getType().getName().c_str());
 
     if (use_async_message_handling_on_schedule()) {
-       auto result = _filestorHandler->schedule_and_get_next_async_message(msg);
-       if (result.was_scheduled()) {
-           if (result.has_async_message()) {
-               getThreadLocalHandler().processLockedMessage(result.release_async_message());
-           }
-           return true;
-       }
+        auto result = _filestorHandler->schedule_and_get_next_async_message(msg);
+        if (result.was_scheduled()) {
+            if (result.has_async_message()) {
+                getThreadLocalHandler().processLockedMessage(result.release_async_message());
+            }
+            return true;
+        }
     } else {
         if (_filestorHandler->schedule(msg)) {
-            LOG(spam, "Received persistence message %s. Queued it to disk",
-                msg->getType().getName().c_str());
+            LOG(spam, "Received persistence message %s. Queued it to disk", msg->getType().getName().c_str());
             return true;
         }
     }
     switch (_filestorHandler->getDiskState()) {
-        case FileStorHandler::CLOSED:
-            errorCode = api::ReturnCode(api::ReturnCode::ABORTED, "Shutting down storage node.");
-            break;
-        case FileStorHandler::AVAILABLE:
-            assert(false);
+    case FileStorHandler::CLOSED:
+        errorCode = api::ReturnCode(api::ReturnCode::ABORTED, "Shutting down storage node.");
+        break;
+    case FileStorHandler::AVAILABLE:
+        assert(false);
     }
     // If we get here, we failed to schedule message. errorCode says why
     // We need to reply to message (while not having bucket lock)
     if (!msg->getType().isReply()) {
         std::shared_ptr<api::StorageReply> reply = static_cast<api::StorageCommand&>(*msg).makeReply();
         reply->setResult(errorCode);
-        LOG(spam, "Received persistence message %s. Returning reply: %s",
-            msg->getType().getName().c_str(), errorCode.toString().c_str());
+        LOG(spam, "Received persistence message %s. Returning reply: %s", msg->getType().getName().c_str(),
+            errorCode.toString().c_str());
         dispatchUp(reply);
     }
     return true;
 }
 
-bool
-FileStorManager::onPut(const shared_ptr<api::PutCommand>& cmd)
-{
+bool FileStorManager::onPut(const shared_ptr<api::PutCommand>& cmd) {
     if (cmd->getTimestamp() == 0) {
         shared_ptr<api::StorageReply> reply = cmd->makeReply();
-        std::string msg("Put command received without timestamp set. "
-                        "Distributor need to set timestamp to ensure equal "
-                        "timestamps between storage nodes. Rejecting.");
+        std::string                   msg("Put command received without timestamp set. "
+                                                            "Distributor need to set timestamp to ensure equal "
+                                                            "timestamps between storage nodes. Rejecting.");
         reply->setResult(api::ReturnCode(api::ReturnCode::REJECTED, msg));
         sendUp(reply);
         return true;
@@ -394,14 +374,12 @@ FileStorManager::onPut(const shared_ptr<api::PutCommand>& cmd)
     return true;
 }
 
-bool
-FileStorManager::onUpdate(const shared_ptr<api::UpdateCommand>& cmd)
-{
+bool FileStorManager::onUpdate(const shared_ptr<api::UpdateCommand>& cmd) {
     if (cmd->getTimestamp() == 0) {
         shared_ptr<api::StorageReply> reply = cmd->makeReply();
-        std::string msg("Update command received without timestamp set. "
-                        "Distributor need to set timestamp to ensure equal "
-                        "timestamps between storage nodes. Rejecting.");
+        std::string                   msg("Update command received without timestamp set. "
+                                                            "Distributor need to set timestamp to ensure equal "
+                                                            "timestamps between storage nodes. Rejecting.");
         reply->setResult(api::ReturnCode(api::ReturnCode::REJECTED, msg));
         sendUp(reply);
         return true;
@@ -413,9 +391,7 @@ FileStorManager::onUpdate(const shared_ptr<api::UpdateCommand>& cmd)
     return true;
 }
 
-bool
-FileStorManager::onGet(const shared_ptr<api::GetCommand>& cmd)
-{
+bool FileStorManager::onGet(const shared_ptr<api::GetCommand>& cmd) {
     StorBucketDatabase::WrappedEntry entry(mapOperationToBucketAndDisk(*cmd, &cmd->getDocumentId()));
     if (entry.exists()) {
         handlePersistenceMessage(cmd);
@@ -423,14 +399,12 @@ FileStorManager::onGet(const shared_ptr<api::GetCommand>& cmd)
     return true;
 }
 
-bool
-FileStorManager::onRemove(const shared_ptr<api::RemoveCommand>& cmd)
-{
+bool FileStorManager::onRemove(const shared_ptr<api::RemoveCommand>& cmd) {
     if (cmd->getTimestamp() == 0) {
         shared_ptr<api::StorageReply> reply = cmd->makeReply();
-        std::string msg("Remove command received without timestamp set. "
-                        "Distributor need to set timestamp to ensure equal "
-                        "timestamps between storage nodes. Rejecting.");
+        std::string                   msg("Remove command received without timestamp set. "
+                                                            "Distributor need to set timestamp to ensure equal "
+                                                            "timestamps between storage nodes. Rejecting.");
         reply->setResult(api::ReturnCode(api::ReturnCode::REJECTED, msg));
         sendUp(reply);
         return true;
@@ -442,9 +416,7 @@ FileStorManager::onRemove(const shared_ptr<api::RemoveCommand>& cmd)
     return true;
 }
 
-bool
-FileStorManager::onRemoveLocation(const std::shared_ptr<api::RemoveLocationCommand>& cmd)
-{
+bool FileStorManager::onRemoveLocation(const std::shared_ptr<api::RemoveLocationCommand>& cmd) {
     StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucket()));
     if (entry.exists()) {
         handlePersistenceMessage(cmd);
@@ -452,9 +424,7 @@ FileStorManager::onRemoveLocation(const std::shared_ptr<api::RemoveLocationComma
     return true;
 }
 
-bool
-FileStorManager::onStatBucket(const std::shared_ptr<api::StatBucketCommand>& cmd)
-{
+bool FileStorManager::onStatBucket(const std::shared_ptr<api::StatBucketCommand>& cmd) {
     StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucket()));
     if (entry.exists()) {
         handlePersistenceMessage(cmd);
@@ -462,21 +432,16 @@ FileStorManager::onStatBucket(const std::shared_ptr<api::StatBucketCommand>& cmd
     return true;
 }
 
-bool
-FileStorManager::onCreateBucket(
-        const std::shared_ptr<api::CreateBucketCommand>& cmd)
-{
+bool FileStorManager::onCreateBucket(const std::shared_ptr<api::CreateBucketCommand>& cmd) {
     api::ReturnCode code(api::ReturnCode::OK);
     {
-        document::Bucket bucket(cmd->getBucket());
-        StorBucketDatabase::WrappedEntry entry(
-                _component.getBucketDatabase(bucket.getBucketSpace()).get(
-                    bucket.getBucketId(), "FileStorManager::onCreateBucket",
-                    StorBucketDatabase::CREATE_IF_NONEXISTING));
+        document::Bucket                 bucket(cmd->getBucket());
+        StorBucketDatabase::WrappedEntry entry(_component.getBucketDatabase(bucket.getBucketSpace())
+                                                   .get(bucket.getBucketId(), "FileStorManager::onCreateBucket",
+                                                        StorBucketDatabase::CREATE_IF_NONEXISTING));
         if (entry.preExisted()) {
             LOG(debug, "Got create bucket request for %s which already exists: %s",
-                cmd->getBucketId().toString().c_str(),
-                entry->getBucketInfo().toString().c_str());
+                cmd->getBucketId().toString().c_str(), entry->getBucketInfo().toString().c_str());
             code = api::ReturnCode(api::ReturnCode::EXISTS, "Bucket already exist");
         } else {
             // Newly created buckets are ready but not active, unless
@@ -485,8 +450,8 @@ FileStorManager::onCreateBucket(
             cmd->setPriority(0);
             handlePersistenceMessage(cmd);
             entry.write();
-            LOG(debug, "Created bucket %s (node index is %d)",
-                cmd->getBucketId().toString().c_str(), _component.getIndex());
+            LOG(debug, "Created bucket %s (node index is %d)", cmd->getBucketId().toString().c_str(),
+                _component.getIndex());
             return true;
         }
     }
@@ -497,13 +462,11 @@ FileStorManager::onCreateBucket(
     return true;
 }
 
-bool
-FileStorManager::onDeleteBucket(const shared_ptr<api::DeleteBucketCommand>& cmd)
-{
+bool FileStorManager::onDeleteBucket(const shared_ptr<api::DeleteBucketCommand>& cmd) {
     {
-        document::Bucket bucket(cmd->getBucket());
-        StorBucketDatabase::WrappedEntry entry(_component.getBucketDatabase(bucket.getBucketSpace()).get(bucket.getBucketId(),
-                                                                                  "FileStorManager::onDeleteBucket"));
+        document::Bucket                 bucket(cmd->getBucket());
+        StorBucketDatabase::WrappedEntry entry(_component.getBucketDatabase(bucket.getBucketSpace())
+                                                   .get(bucket.getBucketId(), "FileStorManager::onDeleteBucket"));
         if (!entry.exists()) {
             LOG(debug, "%s was already deleted", cmd->getBucketId().toString().c_str());
             std::shared_ptr<api::StorageReply> reply = cmd->makeReply();
@@ -514,18 +477,13 @@ FileStorManager::onDeleteBucket(const shared_ptr<api::DeleteBucketCommand>& cmd)
         // If bucket info in command is invalid, it means it was sent by a
         // distributor with an older protocol implementation of
         // DeleteBucketCommand, so we should always allow it to go through
-        if (cmd->getBucketInfo().valid()
-            && (cmd->getBucketInfo().getChecksum()
-                != entry->getBucketInfo().getChecksum()))
+        if (cmd->getBucketInfo().valid() &&
+            (cmd->getBucketInfo().getChecksum() != entry->getBucketInfo().getChecksum()))
         {
             vespalib::asciistream ost;
-            ost << "DeleteBucketCommand("
-                << cmd->getBucketId().toString()
-                << ") did not have up to date bucketinfo. "
-                << "Distributor thought we had "
-                << cmd->getBucketInfo().toString()
-                << ", but storage bucket database contains "
-                << entry->getBucketInfo().toString();
+            ost << "DeleteBucketCommand(" << cmd->getBucketId().toString() << ") did not have up to date bucketinfo. "
+                << "Distributor thought we had " << cmd->getBucketInfo().toString()
+                << ", but storage bucket database contains " << entry->getBucketInfo().toString();
 
             LOG(debug, "Rejecting bucket delete: %s", ost.str().c_str());
             std::shared_ptr<api::StorageReply> reply = cmd->makeReply();
@@ -544,20 +502,18 @@ FileStorManager::onDeleteBucket(const shared_ptr<api::DeleteBucketCommand>& cmd)
         handlePersistenceMessage(cmd);
         entry.remove();
     }
-    _filestorHandler->failOperations(cmd->getBucket(),
-                                     api::ReturnCode(api::ReturnCode::BUCKET_DELETED,
-                                                     fmt("Bucket %s about to be deleted anyway",
-                                                         cmd->getBucketId().toString().c_str())));
+    _filestorHandler->failOperations(cmd->getBucket(), api::ReturnCode(api::ReturnCode::BUCKET_DELETED,
+                                                                       fmt("Bucket %s about to be deleted anyway",
+                                                                           cmd->getBucketId().toString().c_str())));
     return true;
 }
 
-
-
-StorBucketDatabase::WrappedEntry
-FileStorManager::ensureConsistentBucket(const document::Bucket& bucket, api::StorageMessage& msg, const char* callerId)
-{
-    StorBucketDatabase::WrappedEntry entry(_component.getBucketDatabase(bucket.getBucketSpace()).get(
-                    bucket.getBucketId(), callerId, StorBucketDatabase::CREATE_IF_NONEXISTING));
+StorBucketDatabase::WrappedEntry FileStorManager::ensureConsistentBucket(const document::Bucket& bucket,
+                                                                         api::StorageMessage&    msg,
+                                                                         const char*             callerId) {
+    StorBucketDatabase::WrappedEntry entry(
+        _component.getBucketDatabase(bucket.getBucketSpace())
+            .get(bucket.getBucketId(), callerId, StorBucketDatabase::CREATE_IF_NONEXISTING));
     assert(entry.exists());
     if (!_component.getBucketDatabase(bucket.getBucketSpace()).isConsistent(entry)) {
         if (!entry.preExisted()) {
@@ -571,10 +527,9 @@ FileStorManager::ensureConsistentBucket(const document::Bucket& bucket, api::Sto
     return entry;
 }
 
-bool
-FileStorManager::onMergeBucket(const shared_ptr<api::MergeBucketCommand>& cmd)
-{
-    StorBucketDatabase::WrappedEntry entry(ensureConsistentBucket(cmd->getBucket(), *cmd, "FileStorManager::onMergeBucket"));
+bool FileStorManager::onMergeBucket(const shared_ptr<api::MergeBucketCommand>& cmd) {
+    StorBucketDatabase::WrappedEntry entry(
+        ensureConsistentBucket(cmd->getBucket(), *cmd, "FileStorManager::onMergeBucket"));
     if (!entry.exists()) {
         return true;
     }
@@ -593,10 +548,9 @@ FileStorManager::onMergeBucket(const shared_ptr<api::MergeBucketCommand>& cmd)
     return true;
 }
 
-bool
-FileStorManager::onGetBucketDiff(const shared_ptr<api::GetBucketDiffCommand>& cmd)
-{
-    StorBucketDatabase::WrappedEntry entry(ensureConsistentBucket(cmd->getBucket(), *cmd, "FileStorManager::onGetBucketDiff"));
+bool FileStorManager::onGetBucketDiff(const shared_ptr<api::GetBucketDiffCommand>& cmd) {
+    StorBucketDatabase::WrappedEntry entry(
+        ensureConsistentBucket(cmd->getBucket(), *cmd, "FileStorManager::onGetBucketDiff"));
     if (!entry.exists()) {
         return true;
     }
@@ -616,9 +570,8 @@ FileStorManager::onGetBucketDiff(const shared_ptr<api::GetBucketDiffCommand>& cm
     return true;
 }
 
-bool
-FileStorManager::validateApplyDiffCommandBucket(api::StorageMessage& msg, const StorBucketDatabase::WrappedEntry& entry)
-{
+bool FileStorManager::validateApplyDiffCommandBucket(api::StorageMessage&                    msg,
+                                                     const StorBucketDatabase::WrappedEntry& entry) {
     if (!entry.exists()) {
         return false;
     }
@@ -631,26 +584,22 @@ FileStorManager::validateApplyDiffCommandBucket(api::StorageMessage& msg, const 
     return true;
 }
 
-bool
-FileStorManager::validateDiffReplyBucket(const StorBucketDatabase::WrappedEntry& entry,
-                                         const document::Bucket& bucket)
-{
+bool FileStorManager::validateDiffReplyBucket(const StorBucketDatabase::WrappedEntry& entry,
+                                              const document::Bucket&                 bucket) {
     if (!entry.exists()) {
-        _filestorHandler->clearMergeStatus(bucket,
-                api::ReturnCode(api::ReturnCode::BUCKET_NOT_FOUND, "Bucket removed during merge"));
+        _filestorHandler->clearMergeStatus(
+            bucket, api::ReturnCode(api::ReturnCode::BUCKET_NOT_FOUND, "Bucket removed during merge"));
         return false;
     }
     if (!_component.getBucketDatabase(bucket.getBucketSpace()).isConsistent(entry)) {
-        _filestorHandler->clearMergeStatus(bucket,
-                api::ReturnCode(api::ReturnCode::ABORTED, "Bucket became inconsistent during merging"));
+        _filestorHandler->clearMergeStatus(
+            bucket, api::ReturnCode(api::ReturnCode::ABORTED, "Bucket became inconsistent during merging"));
         return false;
     }
     return true;
 }
 
-bool
-FileStorManager::onGetBucketDiffReply(const shared_ptr<api::GetBucketDiffReply>& reply)
-{
+bool FileStorManager::onGetBucketDiffReply(const shared_ptr<api::GetBucketDiffReply>& reply) {
     StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*reply, reply->getBucket()));
     if (validateDiffReplyBucket(entry, reply->getBucket())) {
         handlePersistenceMessage(reply);
@@ -658,9 +607,7 @@ FileStorManager::onGetBucketDiffReply(const shared_ptr<api::GetBucketDiffReply>&
     return true;
 }
 
-bool
-FileStorManager::onApplyBucketDiff(const shared_ptr<api::ApplyBucketDiffCommand>& cmd)
-{
+bool FileStorManager::onApplyBucketDiff(const shared_ptr<api::ApplyBucketDiffCommand>& cmd) {
     StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucket()));
     if (validateApplyDiffCommandBucket(*cmd, entry)) {
         handlePersistenceMessage(cmd);
@@ -668,9 +615,7 @@ FileStorManager::onApplyBucketDiff(const shared_ptr<api::ApplyBucketDiffCommand>
     return true;
 }
 
-bool
-FileStorManager::onApplyBucketDiffReply(const shared_ptr<api::ApplyBucketDiffReply>& reply)
-{
+bool FileStorManager::onApplyBucketDiffReply(const shared_ptr<api::ApplyBucketDiffReply>& reply) {
     StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*reply, reply->getBucket()));
     if (validateDiffReplyBucket(entry, reply->getBucket())) {
         handlePersistenceMessage(reply);
@@ -678,18 +623,14 @@ FileStorManager::onApplyBucketDiffReply(const shared_ptr<api::ApplyBucketDiffRep
     return true;
 }
 
-bool
-FileStorManager::onJoinBuckets(const std::shared_ptr<api::JoinBucketsCommand>& cmd)
-{
-    document::Bucket bucket(cmd->getBucket());
-    StorBucketDatabase::WrappedEntry entry(_component.getBucketDatabase(bucket.getBucketSpace()).get(
-                bucket.getBucketId(), "FileStorManager::onJoinBuckets"));
+bool FileStorManager::onJoinBuckets(const std::shared_ptr<api::JoinBucketsCommand>& cmd) {
+    document::Bucket                 bucket(cmd->getBucket());
+    StorBucketDatabase::WrappedEntry entry(_component.getBucketDatabase(bucket.getBucketSpace())
+                                               .get(bucket.getBucketId(), "FileStorManager::onJoinBuckets"));
     return handlePersistenceMessage(cmd);
 }
 
-bool
-FileStorManager::onSplitBucket(const std::shared_ptr<api::SplitBucketCommand>& cmd)
-{
+bool FileStorManager::onSplitBucket(const std::shared_ptr<api::SplitBucketCommand>& cmd) {
     StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucket()));
     if (entry.exists()) {
         handlePersistenceMessage(cmd);
@@ -697,9 +638,7 @@ FileStorManager::onSplitBucket(const std::shared_ptr<api::SplitBucketCommand>& c
     return true;
 }
 
-bool
-FileStorManager::onSetBucketState(const std::shared_ptr<api::SetBucketStateCommand>& cmd)
-{
+bool FileStorManager::onSetBucketState(const std::shared_ptr<api::SetBucketStateCommand>& cmd) {
     StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucket()));
     if (entry.exists()) {
         handlePersistenceMessage(cmd);
@@ -707,47 +646,40 @@ FileStorManager::onSetBucketState(const std::shared_ptr<api::SetBucketStateComma
     return true;
 }
 
-bool
-FileStorManager::onInternal(const shared_ptr<api::InternalCommand>& msg)
-{
+bool FileStorManager::onInternal(const shared_ptr<api::InternalCommand>& msg) {
     switch (msg->getType()) {
-    case GetIterCommand::ID:
-    {
-        shared_ptr<GetIterCommand> cmd(std::static_pointer_cast<GetIterCommand>(msg));
+    case GetIterCommand::ID: {
+        shared_ptr<GetIterCommand>       cmd(std::static_pointer_cast<GetIterCommand>(msg));
         StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucket()));
         if (entry.exists()) {
             handlePersistenceMessage(cmd);
         }
         return true;
     }
-    case CreateIteratorCommand::ID:
-    {
+    case CreateIteratorCommand::ID: {
         shared_ptr<CreateIteratorCommand> cmd(std::static_pointer_cast<CreateIteratorCommand>(msg));
-        StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucket()));
+        StorBucketDatabase::WrappedEntry  entry(mapOperationToDisk(*cmd, cmd->getBucket()));
         if (entry.exists()) {
             handlePersistenceMessage(cmd);
         }
         return true;
     }
-    case DestroyIteratorCommand::ID:
-    {
-        spi::Context context(msg->getPriority(), msg->getTrace().getLevel());
+    case DestroyIteratorCommand::ID: {
+        spi::Context                       context(msg->getPriority(), msg->getTrace().getLevel());
         shared_ptr<DestroyIteratorCommand> cmd(std::static_pointer_cast<DestroyIteratorCommand>(msg));
         _provider->destroyIterator(cmd->getIteratorId());
         msg->getTrace().addChild(context.steal_trace());
         return true;
     }
-    case RecheckBucketInfoCommand::ID:
-    {
+    case RecheckBucketInfoCommand::ID: {
         shared_ptr<RecheckBucketInfoCommand> cmd(std::static_pointer_cast<RecheckBucketInfoCommand>(msg));
-        StorBucketDatabase::WrappedEntry entry(mapOperationToDisk(*cmd, cmd->getBucket()));
+        StorBucketDatabase::WrappedEntry     entry(mapOperationToDisk(*cmd, cmd->getBucket()));
         if (entry.exists()) {
             handlePersistenceMessage(cmd);
         }
         return true;
     }
-    case AbortBucketOperationsCommand::ID:
-    {
+    case AbortBucketOperationsCommand::ID: {
         shared_ptr<AbortBucketOperationsCommand> cmd(std::static_pointer_cast<AbortBucketOperationsCommand>(msg));
         handleAbortBucketOperations(cmd);
         return true;
@@ -757,19 +689,14 @@ FileStorManager::onInternal(const shared_ptr<api::InternalCommand>& msg)
     }
 }
 
-void
-FileStorManager::handleAbortBucketOperations(const shared_ptr<AbortBucketOperationsCommand>& cmd)
-{
+void FileStorManager::handleAbortBucketOperations(const shared_ptr<AbortBucketOperationsCommand>& cmd) {
     _filestorHandler->abortQueuedOperations(*cmd);
     sendReply(api::StorageReply::SP(cmd->makeReply()));
 }
 
-bool
-FileStorManager::onInternalReply(const shared_ptr<api::InternalReply>& r)
-{
-    switch(r->getType()) {
-    case GetIterReply::ID:
-    {
+bool FileStorManager::onInternalReply(const shared_ptr<api::InternalReply>& r) {
+    switch (r->getType()) {
+    case GetIterReply::ID: {
         sendUp(r);
         return true;
     }
@@ -778,21 +705,18 @@ FileStorManager::onInternalReply(const shared_ptr<api::InternalReply>& r)
     }
 }
 
-void
-FileStorManager::sendCommand(const std::shared_ptr<api::StorageCommand>& cmd)
-{
+void FileStorManager::sendCommand(const std::shared_ptr<api::StorageCommand>& cmd) {
     sendUp(cmd);
 }
 
-void
-FileStorManager::sendReply(const std::shared_ptr<api::StorageReply>& reply)
-{
+void FileStorManager::sendReply(const std::shared_ptr<api::StorageReply>& reply) {
     LOG(spam, "Sending reply %s", reply->toString().c_str());
 
     if (reply->getType() == api::MessageType::INTERNAL_REPLY) {
         std::shared_ptr<api::InternalReply> rep(std::dynamic_pointer_cast<api::InternalReply>(reply));
         assert(rep.get());
-        if (onInternalReply(rep)) return;
+        if (onInternalReply(rep))
+            return;
     }
 
     // Currently we need to dispatch due to replies sent by remapQueue
@@ -801,27 +725,23 @@ FileStorManager::sendReply(const std::shared_ptr<api::StorageReply>& reply)
     dispatchUp(reply);
 }
 
-void
-FileStorManager::sendReplyDirectly(const std::shared_ptr<api::StorageReply>& reply)
-{
+void FileStorManager::sendReplyDirectly(const std::shared_ptr<api::StorageReply>& reply) {
     LOG(spam, "Sending reply %s", reply->toString().c_str());
 
     if (reply->getType() == api::MessageType::INTERNAL_REPLY) {
         std::shared_ptr<api::InternalReply> rep(std::dynamic_pointer_cast<api::InternalReply>(reply));
         assert(rep);
-        if (onInternalReply(rep)) return;
+        if (onInternalReply(rep))
+            return;
     }
     sendUp(reply);
 }
 
-void
-FileStorManager::sendUp(const std::shared_ptr<api::StorageMessage>& msg)
-{
+void FileStorManager::sendUp(const std::shared_ptr<api::StorageMessage>& msg) {
     StorageLinkQueued::sendUp(msg);
 }
 
-void FileStorManager::onClose()
-{
+void FileStorManager::onClose() {
     LOG(debug, "Start closing");
     _bucketExecutorRegistration.reset();
     _resource_usage_listener_registration.reset();
@@ -833,14 +753,13 @@ void FileStorManager::onClose()
     LOG(debug, "Done closing");
 }
 
-void FileStorManager::onFlush(bool downwards)
-{
+void FileStorManager::onFlush(bool downwards) {
     // Don't delete merges first time around, since threads might be
     // processing them
     LOG(debug, "Start Flushing");
     _filestorHandler->flush(!downwards);
     LOG(debug, "Flushed _filestorHandler->flush(!downwards);");
-    for (const auto & thread : _threads) {
+    for (const auto& thread : _threads) {
         if (thread) {
             thread->flush();
             LOG(debug, "flushed thread[%s]", thread->getThread().getId().c_str());
@@ -848,26 +767,25 @@ void FileStorManager::onFlush(bool downwards)
     }
     uint32_t queue_size = _filestorHandler->getQueueSize();
     if (queue_size > 0) {
-        LOG(error, "Operations in persistence layer after flush. This is ok "
-                   "during load, but should not happen when flush is called "
-                   "during shutdown as load then is supposed to have been "
-                   "stopped: Queue size is %u", queue_size);
+        LOG(error,
+            "Operations in persistence layer after flush. This is ok "
+            "during load, but should not happen when flush is called "
+            "during shutdown as load then is supposed to have been "
+            "stopped: Queue size is %u",
+            queue_size);
     }
     StorageLinkQueued::onFlush(downwards);
     LOG(debug, "Done Flushing");
 }
 
-void
-FileStorManager::reportHtmlStatus(std::ostream& out, const framework::HttpUrlPath& path) const
-{
+void FileStorManager::reportHtmlStatus(std::ostream& out, const framework::HttpUrlPath& path) const {
     using vespalib::xml_attribute_escaped;
 
     bool showStatus = !path.hasAttribute("thread");
-    bool verbose    = path.hasAttribute("verbose");
+    bool verbose = path.hasAttribute("verbose");
     // Print menu
     out << "<font size=\"-1\">[ <a href=\"../\">Back to top</a>"
-        << " | <a href=\"?" << (verbose ? "verbose" : "")
-        << "\">Main filestor manager status page</a>"
+        << " | <a href=\"?" << (verbose ? "verbose" : "") << "\">Main filestor manager status page</a>"
         << " | <a href=\"?" << (verbose ? "notverbose" : "verbose");
     if (!showStatus) {
         out << "&thread=" << xml_attribute_escaped(path.get("thread", std::string("")));
@@ -881,20 +799,17 @@ FileStorManager::reportHtmlStatus(std::ostream& out, const framework::HttpUrlPat
 }
 
 namespace {
-    struct Deactivator {
-        StorBucketDatabase::Decision operator() (document::BucketId::Type, StorBucketDatabase::Entry& data) noexcept
-        {
-            data.info.setActive(false);
-            return StorBucketDatabase::Decision::UPDATE;
-        }
-    };
-}
+struct Deactivator {
+    StorBucketDatabase::Decision operator()(document::BucketId::Type, StorBucketDatabase::Entry& data) noexcept {
+        data.info.setActive(false);
+        return StorBucketDatabase::Decision::UPDATE;
+    }
+};
+} // namespace
 
-bool
-FileStorManager::maintenance_in_all_spaces(const lib::Node& node) const noexcept
-{
-    for (const auto& elem :  _component.getBucketSpaceRepo()) {
-        const auto space_state_and_distr = elem.second->state_and_distribution();
+bool FileStorManager::maintenance_in_all_spaces(const lib::Node& node) const noexcept {
+    for (const auto& elem : _component.getBucketSpaceRepo()) {
+        const auto  space_state_and_distr = elem.second->state_and_distribution();
         const auto& derived_cluster_state = space_state_and_distr->cluster_state();
         if (!derived_cluster_state.getNodeState(node).getState().oneOf("m")) {
             return false;
@@ -903,48 +818,43 @@ FileStorManager::maintenance_in_all_spaces(const lib::Node& node) const noexcept
     return true;
 }
 
-bool
-FileStorManager::should_deactivate_buckets(const ContentBucketSpace& space,
-                                           bool node_up_in_space,
-                                           bool maintenance_in_all_spaces) noexcept
-{
+bool FileStorManager::should_deactivate_buckets(const ContentBucketSpace& space, bool node_up_in_space,
+                                                bool maintenance_in_all_spaces) noexcept {
     // Important: this MUST match the semantics in proton::BucketHandler::notifyClusterStateChanged()!
     // Otherwise, the content layer and proton will be out of sync in terms of bucket activation state.
     if (maintenance_in_all_spaces) {
         return false;
     }
-    return ((space.getNodeUpInLastNodeStateSeenByProvider() && !node_up_in_space)
-           || space.getNodeMaintenanceInLastNodeStateSeenByProvider());
+    return ((space.getNodeUpInLastNodeStateSeenByProvider() && !node_up_in_space) ||
+            space.getNodeMaintenanceInLastNodeStateSeenByProvider());
 }
 
-void
-FileStorManager::maybe_log_received_cluster_state()
-{
+void FileStorManager::maybe_log_received_cluster_state() {
     if (LOG_WOULD_LOG(debug)) {
         auto cluster_state_bundle = _component.getStateUpdater().getClusterStateBundle();
         LOG(debug, "FileStorManager received baseline cluster state '%s'", cluster_state_bundle->toString().c_str());
     }
 }
 
-void
-FileStorManager::updateState()
-{
+void FileStorManager::updateState() {
     maybe_log_received_cluster_state();
     const lib::Node node(_component.getNodeType(), _component.getIndex());
-    const bool in_maintenance = maintenance_in_all_spaces(node);
+    const bool      in_maintenance = maintenance_in_all_spaces(node);
 
-    for (const auto &elem : _component.getBucketSpaceRepo()) {
-        BucketSpace bucketSpace(elem.first);
+    for (const auto& elem : _component.getBucketSpaceRepo()) {
+        BucketSpace         bucketSpace(elem.first);
         ContentBucketSpace& contentBucketSpace = *elem.second;
-        auto state_and_distr = contentBucketSpace.state_and_distribution();
+        auto                state_and_distr = contentBucketSpace.state_and_distribution();
         assert(state_and_distr->valid());
         const bool node_up_in_space = state_and_distr->cluster_state().getNodeState(node).getState().oneOf("uir");
         if (should_deactivate_buckets(contentBucketSpace, node_up_in_space, in_maintenance)) {
-            LOG(debug, "Received cluster state where this node is down; de-activating all buckets "
-                       "in database for bucket space %s", bucketSpace.toString().c_str());
+            LOG(debug,
+                "Received cluster state where this node is down; de-activating all buckets "
+                "in database for bucket space %s",
+                bucketSpace.toString().c_str());
             Deactivator deactivator;
-            contentBucketSpace.bucketDatabase().for_each_mutable_unordered(
-                    std::ref(deactivator), "FileStorManager::updateState");
+            contentBucketSpace.bucketDatabase().for_each_mutable_unordered(std::ref(deactivator),
+                                                                           "FileStorManager::updateState");
         }
         contentBucketSpace.setNodeUpInLastNodeStateSeenByProvider(node_up_in_space);
         contentBucketSpace.setNodeMaintenanceInLastNodeStateSeenByProvider(in_maintenance);
@@ -954,28 +864,22 @@ FileStorManager::updateState()
     }
 }
 
-void
-FileStorManager::storageDistributionChanged()
-{
+void FileStorManager::storageDistributionChanged() {
 }
 
-void
-FileStorManager::propagateClusterStates()
-{
+void FileStorManager::propagateClusterStates() {
     auto clusterStateBundle = _component.getStateUpdater().getClusterStateBundle();
     assert(clusterStateBundle->has_distribution_config());
     for (const auto& elem : _component.getBucketSpaceRepo()) {
         elem.second->set_state_and_distribution(std::make_shared<ClusterStateAndDistribution>(
-                clusterStateBundle->getDerivedClusterState(elem.first),
-                clusterStateBundle->bucket_space_distribution_or_nullptr(elem.first)));
+            clusterStateBundle->getDerivedClusterState(elem.first),
+            clusterStateBundle->bucket_space_distribution_or_nullptr(elem.first)));
     }
 }
 
-void
-FileStorManager::handleNewState() noexcept
-{
+void FileStorManager::handleNewState() noexcept {
     propagateClusterStates();
-    //TODO: Don't update if it isn't necessary (distributor-only change)
+    // TODO: Don't update if it isn't necessary (distributor-only change)
     updateState();
 }
 
@@ -989,14 +893,14 @@ void FileStorManager::update_reported_state_after_db_init() {
 
 void FileStorManager::initialize_bucket_databases_from_provider() {
     framework::MilliSecTimer start_time(_component.getClock());
-    size_t bucket_count = 0;
+    size_t                   bucket_count = 0;
     for (const auto& elem : _component.getBucketSpaceRepo()) {
         const auto bucket_space = elem.first;
         const auto bucket_result = _provider->listBuckets(bucket_space);
         assert(!bucket_result.hasError());
         const auto& buckets = bucket_result.getList();
-        LOG(debug, "Fetching bucket info for %zu buckets in space '%s'",
-            buckets.size(), bucket_space.toString().c_str());
+        LOG(debug, "Fetching bucket info for %zu buckets in space '%s'", buckets.size(),
+            bucket_space.toString().c_str());
         auto& db = elem.second->bucketDatabase();
 
         for (const auto& bucket : buckets) {
@@ -1023,10 +927,9 @@ void FileStorManager::complete_internal_initialization() {
     _init_handler.notifyDoneInitializing();
 }
 
-void
-FileStorManager::execute(const spi::Bucket &bucket, std::unique_ptr<spi::BucketTask> task) {
-    StorBucketDatabase::WrappedEntry entry(_component.getBucketDatabase(bucket.getBucketSpace()).get(
-            bucket.getBucketId(), "FileStorManager::execute"));
+void FileStorManager::execute(const spi::Bucket& bucket, std::unique_ptr<spi::BucketTask> task) {
+    StorBucketDatabase::WrappedEntry entry(
+        _component.getBucketDatabase(bucket.getBucketSpace()).get(bucket.getBucketId(), "FileStorManager::execute"));
     if (entry.exists()) {
         auto cmd = std::make_shared<RunTaskCommand>(bucket, std::move(task));
         _filestorHandler->schedule(cmd);
@@ -1035,4 +938,4 @@ FileStorManager::execute(const spi::Bucket &bucket, std::unique_ptr<spi::BucketT
     }
 }
 
-} // storage
+} // namespace storage

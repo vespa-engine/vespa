@@ -10,8 +10,7 @@ namespace storage {
 /*
  * Metrics for active operations with bucket lock at service layer.
  */
-struct ActiveOperationsMetrics : public metrics::MetricSet
-{
+struct ActiveOperationsMetrics : public metrics::MetricSet {
     metrics::DoubleAverageMetric size;
     metrics::DoubleAverageMetric latency;
 
@@ -19,4 +18,4 @@ struct ActiveOperationsMetrics : public metrics::MetricSet
     ~ActiveOperationsMetrics() override;
 };
 
-}
+} // namespace storage
