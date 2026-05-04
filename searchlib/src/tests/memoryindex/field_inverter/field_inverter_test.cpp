@@ -1,22 +1,22 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
+#include <vespa/document/repo/newconfigbuilder.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/index/field_length_calculator.h>
-#include <vespa/document/repo/newconfigbuilder.h>
-#include <vespa/searchlib/test/doc_builder.h>
-#include <vespa/searchlib/test/schema_builder.h>
-#include <vespa/searchlib/test/string_field_builder.h>
 #include <vespa/searchlib/memoryindex/field_index_remover.h>
 #include <vespa/searchlib/memoryindex/field_inverter.h>
 #include <vespa/searchlib/memoryindex/word_store.h>
+#include <vespa/searchlib/test/doc_builder.h>
 #include <vespa/searchlib/test/memoryindex/ordered_field_index_inserter.h>
 #include <vespa/searchlib/test/memoryindex/ordered_field_index_inserter_backend.h>
-#include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/searchlib/test/schema_builder.h>
+#include <vespa/searchlib/test/string_field_builder.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/objects/nbostream.h>
 
 namespace search::memoryindex {
 
@@ -33,72 +33,57 @@ using namespace index;
 
 namespace {
 
-Document::UP
-makeDoc10(DocBuilder &b)
-{
+Document::UP makeDoc10(DocBuilder& b) {
     StringFieldBuilder sfb(b);
-    auto doc = b.make_document("id:ns:searchdocument::10");
+    auto               doc = b.make_document("id:ns:searchdocument::10");
     doc->setValue("f0", sfb.tokenize("a b c d").build());
     return doc;
 }
 
-Document::UP
-makeDoc11(DocBuilder &b)
-{
+Document::UP makeDoc11(DocBuilder& b) {
     StringFieldBuilder sfb(b);
-    auto doc = b.make_document("id:ns:searchdocument::11");
+    auto               doc = b.make_document("id:ns:searchdocument::11");
     doc->setValue("f0", sfb.tokenize("a b e f").build());
     doc->setValue("f1", sfb.tokenize("a g").build());
     return doc;
 }
 
-Document::UP
-makeDoc12(DocBuilder &b)
-{
+Document::UP makeDoc12(DocBuilder& b) {
     StringFieldBuilder sfb(b);
-    auto doc = b.make_document("id:ns:searchdocument::12");
+    auto               doc = b.make_document("id:ns:searchdocument::12");
     doc->setValue("f0", sfb.tokenize("h doc12").build());
     return doc;
 }
 
-Document::UP
-makeDoc13(DocBuilder &b)
-{
+Document::UP makeDoc13(DocBuilder& b) {
     StringFieldBuilder sfb(b);
-    auto doc = b.make_document("id:ns:searchdocument::13");
+    auto               doc = b.make_document("id:ns:searchdocument::13");
     doc->setValue("f0", sfb.tokenize("i doc13").build());
     return doc;
 }
 
-Document::UP
-makeDoc14(DocBuilder &b)
-{
+Document::UP makeDoc14(DocBuilder& b) {
     StringFieldBuilder sfb(b);
-    auto doc = b.make_document("id:ns:searchdocument::14");
+    auto               doc = b.make_document("id:ns:searchdocument::14");
     doc->setValue("f0", sfb.tokenize("j doc14").build());
     return doc;
 }
 
-Document::UP
-makeDoc15(DocBuilder &b)
-{
+Document::UP makeDoc15(DocBuilder& b) {
     return b.make_document("id:ns:searchdocument::15");
 }
 
-Document::UP
-makeDoc16(DocBuilder &b)
-{
+Document::UP makeDoc16(DocBuilder& b) {
     StringFieldBuilder sfb(b);
-    auto doc = b.make_document("id:ns:searchdocument::16");
-    doc->setValue("f0", sfb.tokenize("foo bar baz").alt_word("altbaz").tokenize(" y").alt_word("alty").tokenize(" z").build());
+    auto               doc = b.make_document("id:ns:searchdocument::16");
+    doc->setValue(
+        "f0", sfb.tokenize("foo bar baz").alt_word("altbaz").tokenize(" y").alt_word("alty").tokenize(" z").build());
     return doc;
 }
 
-Document::UP
-makeDoc17(DocBuilder &b)
-{
+Document::UP makeDoc17(DocBuilder& b) {
     StringFieldBuilder sfb(b);
-    auto doc = b.make_document("id:ns:searchdocument::17");
+    auto               doc = b.make_document("id:ns:searchdocument::17");
     doc->setValue("f1", sfb.tokenize("foo0 bar0").build());
     auto string_array = b.make_array("f2");
     string_array.add(sfb.tokenize("foo bar").build());
@@ -113,11 +98,9 @@ makeDoc17(DocBuilder &b)
 
 std::string corruptWord = "corruptWord";
 
-Document::UP
-makeCorruptDocument(DocBuilder &b, size_t wordOffset)
-{
+Document::UP makeCorruptDocument(DocBuilder& b, size_t wordOffset) {
     StringFieldBuilder sfb(b);
-    auto doc = b.make_document("id:ns:searchdocument::18");
+    auto               doc = b.make_document("id:ns:searchdocument::18");
     doc->setValue("f0", sfb.tokenize("before ").word(corruptWord).tokenize(" after z").build());
     vespalib::nbostream stream;
     doc->serialize(stream);
@@ -136,22 +119,18 @@ makeCorruptDocument(DocBuilder &b, size_t wordOffset)
     return std::make_unique<Document>(b.get_repo(), badstream);
 }
 
-std::unique_ptr<Document>
-make_very_long_word_document(DocBuilder& b)
-{
+std::unique_ptr<Document> make_very_long_word_document(DocBuilder& b) {
     StringFieldBuilder sfb(b);
-    auto doc = b.make_document("id:ns:searchdocument::19");
-    std::string long_word(FieldInverter::max_word_len + 1, 'z');
+    auto               doc = b.make_document("id:ns:searchdocument::19");
+    std::string        long_word(FieldInverter::max_word_len + 1, 'z');
     doc->setValue("f0", sfb.tokenize("before ").word(long_word).tokenize(" after").build());
     return doc;
 }
 
-std::unique_ptr<Document>
-make_bad_index_field_document(DocBuilder& b)
-{
+std::unique_ptr<Document> make_bad_index_field_document(DocBuilder& b) {
     StringFieldBuilder sfb(b);
-    auto doc = b.make_document("id:ns:searchdocument::20");
-    auto fv = doc->getField("f4").createValue();
+    auto               doc = b.make_document("id:ns:searchdocument::20");
+    auto               fv = doc->getField("f4").createValue();
     auto& nested_array_type = dynamic_cast<const document::ArrayDataType&>(*fv->getDataType()).getNestedType();
     ArrayFieldValue array(nested_array_type);
     array.add(sfb.tokenize("nested arrays are not indexed").build());
@@ -160,22 +139,21 @@ make_bad_index_field_document(DocBuilder& b)
     return doc;
 }
 
-}
+} // namespace
 
 struct FieldInverterTest : public ::testing::Test {
-    DocBuilder _b;
-    Schema _schema;
-    WordStore                       _word_store;
-    FieldIndexRemover               _remover;
-    test::OrderedFieldIndexInserterBackend _inserter_backend;
-    std::vector<std::unique_ptr<FieldLengthCalculator>> _calculators;
+    DocBuilder                                               _b;
+    Schema                                                   _schema;
+    WordStore                                                _word_store;
+    FieldIndexRemover                                        _remover;
+    test::OrderedFieldIndexInserterBackend                   _inserter_backend;
+    std::vector<std::unique_ptr<FieldLengthCalculator>>      _calculators;
     std::vector<std::unique_ptr<IOrderedFieldIndexInserter>> _inserters;
-    std::vector<std::unique_ptr<FieldInverter> > _inverters;
+    std::vector<std::unique_ptr<FieldInverter>>              _inverters;
 
-    static DocBuilder::AddFieldsType
-    make_add_fields()
-    {
-        return [](auto& builder, auto& doc) noexcept { using namespace document::new_config_builder;
+    static DocBuilder::AddFieldsType make_add_fields() {
+        return [](auto& builder, auto& doc) noexcept {
+            using namespace document::new_config_builder;
             auto string_array = doc.createArray(builder.stringTypeRef()).ref();
             auto string_wset = doc.createWset(builder.stringTypeRef()).ref();
             auto nested_string_array = doc.registerArray(doc.createArray(string_array));
@@ -184,48 +162,45 @@ struct FieldInverterTest : public ::testing::Test {
                 .addField("f2", string_array)
                 .addField("f3", string_wset)
                 .addField("f4", nested_string_array);
-               };
+        };
     }
 
-    static Schema
-    make_schema(DocBuilder& b)
-    {
+    static Schema make_schema(DocBuilder& b) {
         auto schema = SchemaBuilder(b).add_indexes({"f0", "f1", "f2", "f3"}).build();
-        schema.addIndexField({"f4", search::index::schema::DataType::STRING, search::index::schema::CollectionType::ARRAY});
+        schema.addIndexField(
+            {"f4", search::index::schema::DataType::STRING, search::index::schema::CollectionType::ARRAY});
         return schema;
     }
 
     FieldInverterTest();
     ~FieldInverterTest() override;
 
-    void invertDocument(uint32_t docId, const Document &doc) {
+    void invertDocument(uint32_t docId, const Document& doc) {
         uint32_t fieldId = 0;
-        for (auto &inverter : _inverters) {
-            std::string_view fieldName =
-                _schema.getIndexField(fieldId).getName();
+        for (auto& inverter : _inverters) {
+            std::string_view fieldName = _schema.getIndexField(fieldId).getName();
             inverter->invertField(docId, doc.getValue(fieldName), doc);
             ++fieldId;
         }
     }
 
     void pushDocuments() {
-        for (auto &inverter : _inverters) {
+        for (auto& inverter : _inverters) {
             inverter->pushDocuments();
         }
     }
 
     void removeDocument(uint32_t docId) {
-        for (auto &inverter : _inverters) {
+        for (auto& inverter : _inverters) {
             inverter->removeDocument(docId);
         }
     }
 
     void assert_calculator(uint32_t field_id, double exp_avg, uint32_t exp_samples) {
-        const auto &calc = *_calculators[field_id];
+        const auto& calc = *_calculators[field_id];
         EXPECT_DOUBLE_EQ(exp_avg, calc.get_average_field_length());
         EXPECT_EQ(exp_samples, calc.get_num_samples());
     }
-
 };
 
 FieldInverterTest::FieldInverterTest()
@@ -236,18 +211,17 @@ FieldInverterTest::FieldInverterTest()
       _inserter_backend(),
       _calculators(),
       _inserters(),
-      _inverters()
-{
+      _inverters() {
     for (uint32_t fieldId = 0; fieldId < _schema.getNumIndexFields(); ++fieldId) {
         _calculators.emplace_back(std::make_unique<FieldLengthCalculator>());
         _inserters.emplace_back(std::make_unique<test::OrderedFieldIndexInserter>(_inserter_backend, fieldId));
-        _inverters.push_back(std::make_unique<FieldInverter>(_schema, fieldId, _remover, *_inserters.back(), *_calculators.back()));
+        _inverters.push_back(
+            std::make_unique<FieldInverter>(_schema, fieldId, _remover, *_inserters.back(), *_calculators.back()));
     }
 }
 FieldInverterTest::~FieldInverterTest() = default;
 
-TEST_F(FieldInverterTest, require_that_fresh_insert_works)
-{
+TEST_F(FieldInverterTest, require_that_fresh_insert_works) {
     invertDocument(10, *makeDoc10(_b));
     pushDocuments();
     EXPECT_EQ("f=0,w=a,a=10,"
@@ -257,8 +231,7 @@ TEST_F(FieldInverterTest, require_that_fresh_insert_works)
               _inserter_backend.toStr());
 }
 
-TEST_F(FieldInverterTest, require_that_multiple_docs_work)
-{
+TEST_F(FieldInverterTest, require_that_multiple_docs_work) {
     invertDocument(10, *makeDoc10(_b));
     invertDocument(11, *makeDoc11(_b));
     pushDocuments();
@@ -272,8 +245,7 @@ TEST_F(FieldInverterTest, require_that_multiple_docs_work)
               _inserter_backend.toStr());
 }
 
-TEST_F(FieldInverterTest, require_that_remove_works)
-{
+TEST_F(FieldInverterTest, require_that_remove_works) {
     _inverters[0]->remove("b", 10);
     _inverters[0]->remove("a", 10);
     _inverters[0]->remove("b", 11);
@@ -287,8 +259,7 @@ TEST_F(FieldInverterTest, require_that_remove_works)
               _inserter_backend.toStr());
 }
 
-TEST_F(FieldInverterTest, require_that_reput_works)
-{
+TEST_F(FieldInverterTest, require_that_reput_works) {
     invertDocument(10, *makeDoc10(_b));
     invertDocument(10, *makeDoc11(_b));
     pushDocuments();
@@ -301,8 +272,7 @@ TEST_F(FieldInverterTest, require_that_reput_works)
               _inserter_backend.toStr());
 }
 
-TEST_F(FieldInverterTest, require_that_abort_pending_doc_works)
-{
+TEST_F(FieldInverterTest, require_that_abort_pending_doc_works) {
     auto doc10 = makeDoc10(_b);
     auto doc11 = makeDoc11(_b);
     auto doc12 = makeDoc12(_b);
@@ -358,8 +328,7 @@ TEST_F(FieldInverterTest, require_that_abort_pending_doc_works)
               _inserter_backend.toStr());
 }
 
-TEST_F(FieldInverterTest, require_that_mix_of_add_and_remove_works)
-{
+TEST_F(FieldInverterTest, require_that_mix_of_add_and_remove_works) {
     _inverters[0]->remove("a", 11);
     _inverters[0]->remove("c", 9);
     _inverters[0]->remove("d", 10);
@@ -374,16 +343,13 @@ TEST_F(FieldInverterTest, require_that_mix_of_add_and_remove_works)
               _inserter_backend.toStr());
 }
 
-TEST_F(FieldInverterTest, require_that_empty_document_can_be_inverted)
-{
+TEST_F(FieldInverterTest, require_that_empty_document_can_be_inverted) {
     invertDocument(15, *makeDoc15(_b));
     pushDocuments();
-    EXPECT_EQ("",
-              _inserter_backend.toStr());
+    EXPECT_EQ("", _inserter_backend.toStr());
 }
 
-TEST_F(FieldInverterTest, require_that_multiple_words_at_same_position_works)
-{
+TEST_F(FieldInverterTest, require_that_multiple_words_at_same_position_works) {
     invertDocument(16, *makeDoc16(_b));
     _inserter_backend.setVerbose();
     pushDocuments();
@@ -398,8 +364,7 @@ TEST_F(FieldInverterTest, require_that_multiple_words_at_same_position_works)
               _inserter_backend.toStr());
 }
 
-TEST_F(FieldInverterTest, require_that_interleaved_features_are_calculated)
-{
+TEST_F(FieldInverterTest, require_that_interleaved_features_are_calculated) {
     invertDocument(17, *makeDoc17(_b));
     _inserter_backend.setVerbose();
     _inserter_backend.set_show_interleaved_features();
@@ -416,24 +381,22 @@ TEST_F(FieldInverterTest, require_that_interleaved_features_are_calculated)
               _inserter_backend.toStr());
 }
 
-TEST_F(FieldInverterTest, require_that_average_field_length_is_calculated)
-{
+TEST_F(FieldInverterTest, require_that_average_field_length_is_calculated) {
     invertDocument(10, *makeDoc10(_b));
     pushDocuments();
     assert_calculator(0, 4.0, 1);
     assert_calculator(1, 0.0, 0);
     invertDocument(11, *makeDoc11(_b));
     pushDocuments();
-    assert_calculator(0, (4.0 + 4.0)/2, 2);
+    assert_calculator(0, (4.0 + 4.0) / 2, 2);
     assert_calculator(1, 2.0, 1);
     invertDocument(12, *makeDoc12(_b));
     pushDocuments();
-    assert_calculator(0, (4.0 + 4.0 + 2.0)/3, 3);
+    assert_calculator(0, (4.0 + 4.0 + 2.0) / 3, 3);
     assert_calculator(1, 2.0, 1);
 }
 
-TEST_F(FieldInverterTest, require_that_word_with_NUL_byte_is_truncated)
-{
+TEST_F(FieldInverterTest, require_that_word_with_NUL_byte_is_truncated) {
     invertDocument(1, *makeCorruptDocument(_b, 7));
     pushDocuments();
     EXPECT_EQ("f=0,"
@@ -444,8 +407,7 @@ TEST_F(FieldInverterTest, require_that_word_with_NUL_byte_is_truncated)
               _inserter_backend.toStr());
 }
 
-TEST_F(FieldInverterTest, require_that_word_with_NUL_byte_is_dropped_when_truncated_to_zero_length)
-{
+TEST_F(FieldInverterTest, require_that_word_with_NUL_byte_is_dropped_when_truncated_to_zero_length) {
     invertDocument(1, *makeCorruptDocument(_b, 0));
     pushDocuments();
     EXPECT_EQ("f=0,"
@@ -455,8 +417,7 @@ TEST_F(FieldInverterTest, require_that_word_with_NUL_byte_is_dropped_when_trunca
               _inserter_backend.toStr());
 }
 
-TEST_F(FieldInverterTest, very_long_words_are_dropped)
-{
+TEST_F(FieldInverterTest, very_long_words_are_dropped) {
     invertDocument(1, *make_very_long_word_document(_b));
     pushDocuments();
     EXPECT_EQ("f=0,"
@@ -465,13 +426,12 @@ TEST_F(FieldInverterTest, very_long_words_are_dropped)
               _inserter_backend.toStr());
 }
 
-TEST_F(FieldInverterTest, bad_index_field_is_ignored)
-{
+TEST_F(FieldInverterTest, bad_index_field_is_ignored) {
     invertDocument(1, *make_bad_index_field_document(_b));
     pushDocuments();
     EXPECT_EQ("", _inserter_backend.toStr());
 }
 
-}
+} // namespace search::memoryindex
 
 GTEST_MAIN_RUN_ALL_TESTS()

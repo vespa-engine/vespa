@@ -11,18 +11,17 @@ using namespace vespalib::datastore;
 
 namespace search::memoryindex {
 
-TEST(WordStoreTest, words_can_be_added_and_retrieved)
-{
-    std::string w1 = "require";
-    std::string w2 = "that";
-    std::string w3 = "words";
-    WordStore ws;
+TEST(WordStoreTest, words_can_be_added_and_retrieved) {
+    std::string           w1 = "require";
+    std::string           w2 = "that";
+    std::string           w3 = "words";
+    WordStore             ws;
     static constexpr auto buffer_array_size = WordStore::buffer_array_size;
     using Aligner = WordStore::Aligner;
     EntryRef r1 = ws.addWord(w1);
     EntryRef r2 = ws.addWord(w2);
     EntryRef r3 = ws.addWord(w3);
-    uint32_t invp = WordStore::buffer_array_size;   // Reserved as invalid
+    uint32_t invp = WordStore::buffer_array_size; // Reserved as invalid
     uint32_t w1s = w1.size() + 1;
     uint32_t w1p = Aligner::pad(w1s);
     uint32_t w2s = w2.size() + 1;
@@ -38,22 +37,19 @@ TEST(WordStoreTest, words_can_be_added_and_retrieved)
     EXPECT_EQ(std::string("words"), ws.getWord(r3));
 }
 
-TEST(WordStoreTest, add_word_triggers_change_of_buffer)
-{
+TEST(WordStoreTest, add_word_triggers_change_of_buffer) {
     WordStore ws;
-    size_t word = 0;
-    uint32_t lastId = 0;
-    char wordStr[10];
-    for (;;++word) {
+    size_t    word = 0;
+    uint32_t  lastId = 0;
+    char      wordStr[10];
+    for (;; ++word) {
         snprintf(wordStr, sizeof(wordStr), "%6zu", word);
         // all words uses 12 bytes (include padding)
         EntryRef r = ws.addWord(std::string(wordStr));
         EXPECT_EQ(std::string(wordStr), ws.getWord(r));
         uint32_t bufferId = WordStore::RefType(r).bufferId();
         if (bufferId > lastId) {
-            LOG(info,
-                "Changed to bufferId %u after %zu words",
-                bufferId, word);
+            LOG(info, "Changed to bufferId %u after %zu words", bufferId, word);
             lastId = bufferId;
         }
         if (bufferId == 4) {
@@ -66,14 +62,12 @@ TEST(WordStoreTest, add_word_triggers_change_of_buffer)
     EXPECT_EQ(4u, lastId);
 }
 
-TEST(WordStoreTest, long_word_triggers_exception)
-{
-    WordStore ws;
+TEST(WordStoreTest, long_word_triggers_exception) {
+    WordStore   ws;
     std::string word(16_Mi + 1_Ki, 'z');
     EXPECT_THROW(ws.addWord(word), vespalib::OverflowException);
 }
 
-}
+} // namespace search::memoryindex
 
 GTEST_MAIN_RUN_ALL_TESTS()
-

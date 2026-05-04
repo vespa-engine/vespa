@@ -4,6 +4,7 @@
 #include <vespa/searchlib/memoryindex/i_field_index_remove_listener.h>
 #include <vespa/searchlib/memoryindex/word_store.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <algorithm>
 
 #include <vespa/log/log.h>
@@ -14,11 +15,9 @@ using namespace search::memoryindex;
 
 struct WordFieldPair {
     std::string _word;
-    uint32_t _fieldId;
-    WordFieldPair(std::string_view word, uint32_t fieldId) noexcept
-        : _word(word), _fieldId(fieldId)
-    {}
-    bool operator<(const WordFieldPair &rhs) const noexcept {
+    uint32_t    _fieldId;
+    WordFieldPair(std::string_view word, uint32_t fieldId) noexcept : _word(word), _fieldId(fieldId) {}
+    bool operator<(const WordFieldPair& rhs) const noexcept {
         if (_word != rhs._word) {
             return _word < rhs._word;
         }
@@ -28,17 +27,15 @@ struct WordFieldPair {
 
 using WordFieldVector = std::vector<WordFieldPair>;
 
-std::ostream &
-operator<<(std::ostream &os, const WordFieldPair &val)
-{
+std::ostream& operator<<(std::ostream& os, const WordFieldPair& val) {
     os << "{" << val._word << "," << val._fieldId << "}";
     return os;
 }
 
 struct MockRemoveListener : public IFieldIndexRemoveListener {
     WordFieldVector _words;
-    uint32_t _expDocId;
-    uint32_t _fieldId;
+    uint32_t        _expDocId;
+    uint32_t        _fieldId;
     void remove(const std::string_view word, uint32_t docId) override {
         EXPECT_EQ(_expDocId, docId);
         _words.emplace_back(word, _fieldId);
@@ -66,17 +63,17 @@ struct MockRemoveListener : public IFieldIndexRemoveListener {
 };
 
 struct FieldIndexRemoverTest : public ::testing::Test {
-    MockRemoveListener _listener;
-    std::vector<std::unique_ptr<WordStore>> _wordStores;
+    MockRemoveListener                                                _listener;
+    std::vector<std::unique_ptr<WordStore>>                           _wordStores;
     std::vector<std::map<std::string, vespalib::datastore::EntryRef>> _wordToRefMaps;
-    std::vector<std::unique_ptr<FieldIndexRemover>> _removers;
+    std::vector<std::unique_ptr<FieldIndexRemover>>                   _removers;
 
     FieldIndexRemoverTest();
     ~FieldIndexRemoverTest() override;
-    vespalib::datastore::EntryRef getWordRef(const std::string &word, uint32_t fieldId) {
-        auto &wordToRefMap = _wordToRefMaps[fieldId];
-        WordStore &wordStore = *_wordStores[fieldId];
-        auto itr = wordToRefMap.find(word);
+    vespalib::datastore::EntryRef getWordRef(const std::string& word, uint32_t fieldId) {
+        auto&      wordToRefMap = _wordToRefMaps[fieldId];
+        WordStore& wordStore = *_wordStores[fieldId];
+        auto       itr = wordToRefMap.find(word);
         if (itr == wordToRefMap.end()) {
             vespalib::datastore::EntryRef ref = wordStore.addWord(word);
             wordToRefMap[word] = ref;
@@ -84,20 +81,20 @@ struct FieldIndexRemoverTest : public ::testing::Test {
         }
         return itr->second;
     }
-    FieldIndexRemoverTest &insert(const std::string &word, uint32_t fieldId, uint32_t docId) {
+    FieldIndexRemoverTest& insert(const std::string& word, uint32_t fieldId, uint32_t docId) {
         assert(fieldId < _wordStores.size());
         _removers[fieldId]->insert(getWordRef(word, fieldId), docId);
         return *this;
     }
     void flush() {
-        for (auto &remover : _removers) {
+        for (auto& remover : _removers) {
             remover->flush();
         }
     }
     std::string remove(uint32_t docId) {
         _listener.reset(docId);
         uint32_t fieldId = 0;
-        for (auto &remover : _removers) {
+        for (auto& remover : _removers) {
             _listener.setFieldId(fieldId);
             remover->remove(docId, _listener);
             ++fieldId;
@@ -106,12 +103,7 @@ struct FieldIndexRemoverTest : public ::testing::Test {
     }
 };
 
-FieldIndexRemoverTest::FieldIndexRemoverTest()
-    : _listener(),
-      _wordStores(),
-      _wordToRefMaps(),
-      _removers()
-{
+FieldIndexRemoverTest::FieldIndexRemoverTest() : _listener(), _wordStores(), _wordToRefMaps(), _removers() {
     uint32_t numFields = 4;
     for (uint32_t fieldId = 0; fieldId < numFields; ++fieldId) {
         _wordStores.push_back(std::make_unique<WordStore>());
@@ -121,8 +113,7 @@ FieldIndexRemoverTest::FieldIndexRemoverTest()
 }
 FieldIndexRemoverTest::~FieldIndexRemoverTest() = default;
 
-TEST_F(FieldIndexRemoverTest, word_field_id_pairs_for_multiple_doc_ids_can_be_inserted)
-{
+TEST_F(FieldIndexRemoverTest, word_field_id_pairs_for_multiple_doc_ids_can_be_inserted) {
     insert("a", 1, 10).insert("a", 1, 20).insert("a", 1, 30);
     insert("a", 2, 10).insert("a", 2, 20);
     insert("b", 1, 20).insert("b", 1, 30);
@@ -137,8 +128,7 @@ TEST_F(FieldIndexRemoverTest, word_field_id_pairs_for_multiple_doc_ids_can_be_in
     EXPECT_EQ("[{a,1},{b,1},{b,2},{c,3}]", remove(30));
 }
 
-TEST_F(FieldIndexRemoverTest, we_can_insert_after_flush)
-{
+TEST_F(FieldIndexRemoverTest, we_can_insert_after_flush) {
     insert("a", 1, 10).insert("b", 1, 10);
     flush();
     insert("b", 1, 20).insert("b", 2, 20);

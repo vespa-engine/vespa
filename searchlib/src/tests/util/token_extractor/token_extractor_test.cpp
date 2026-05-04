@@ -8,6 +8,7 @@
 #include <vespa/searchlib/util/token_extractor.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/nbostream.h>
+
 #include <variant>
 
 using document::DataType;
@@ -27,11 +28,9 @@ std::string corrupt_word = "corruptWord";
 
 std::string field_name("stringfield");
 
-std::unique_ptr<Document>
-make_corrupted_document(DocBuilder &b, size_t wordOffset)
-{
+std::unique_ptr<Document> make_corrupted_document(DocBuilder& b, size_t wordOffset) {
     StringFieldBuilder sfb(b);
-    auto doc = b.make_document("id:ns:searchdocument::18");
+    auto               doc = b.make_document("id:ns:searchdocument::18");
     doc->setValue(field_name, sfb.tokenize("before ").word(corrupt_word).tokenize(" after").build());
     vespalib::nbostream stream;
     doc->serialize(stream);
@@ -50,7 +49,7 @@ make_corrupted_document(DocBuilder &b, size_t wordOffset)
     return std::make_unique<Document>(b.get_repo(), badstream);
 }
 
-}
+} // namespace
 
 class TokenExtractorTest : public ::testing::Test {
 protected:
@@ -65,9 +64,7 @@ protected:
     TokenExtractorTest();
     ~TokenExtractorTest() override;
 
-    static DocBuilder::AddFieldsType
-    make_add_fields()
-    {
+    static DocBuilder::AddFieldsType make_add_fields() {
         return [](auto& builder, auto& doc) noexcept { doc.addField(field_name, builder.stringTypeRef()); };
     }
 
@@ -78,28 +75,26 @@ TokenExtractorTest::TokenExtractorTest()
     : _doc_builder(make_add_fields()),
       _doc(_doc_builder.make_document("id:ns:searchdocument::0")),
       _token_extractor(field_name, max_word_len),
-      _terms()
-{
+      _terms() {
 }
 
 TokenExtractorTest::~TokenExtractorTest() = default;
 
-Words
-TokenExtractorTest::process(const StringFieldValue& value)
-{
+Words TokenExtractorTest::process(const StringFieldValue& value) {
     Words result;
     _terms.clear();
-    auto span_trees = value.getSpanTrees();
+    auto             span_trees = value.getSpanTrees();
     std::string_view text = value.getValueRef();
     _token_extractor.extract(_terms, span_trees, text, _doc.get());
-    auto it  = _terms.begin();
+    auto it = _terms.begin();
     auto ite = _terms.end();
     auto itn = it;
-    for (; it != ite; ) {
-        for (; itn != ite && itn->span == it->span; ++itn);
+    for (; it != ite;) {
+        for (; itn != ite && itn->span == it->span; ++itn)
+            ;
         if ((itn - it) > 1) {
             auto& alternatives = std::get<0>(result.emplace_back());
-            for (;it != itn; ++it) {
+            for (; it != itn; ++it) {
                 alternatives.emplace_back(it->word);
             }
         } else {
@@ -111,54 +106,48 @@ TokenExtractorTest::process(const StringFieldValue& value)
     return result;
 }
 
-TEST_F(TokenExtractorTest, empty_string)
-{
+TEST_F(TokenExtractorTest, empty_string) {
     EXPECT_EQ((Words{}), process(StringFieldValue("")));
 }
 
-TEST_F(TokenExtractorTest, plain_string)
-{
+TEST_F(TokenExtractorTest, plain_string) {
     EXPECT_EQ((Words{}), process(StringFieldValue("Plain string")));
 }
 
-TEST_F(TokenExtractorTest, normal_string)
-{
+TEST_F(TokenExtractorTest, normal_string) {
     StringFieldBuilder sfb(_doc_builder);
     EXPECT_EQ((Words{"Hello", "world"}), process(sfb.tokenize("Hello world").build()));
 }
 
-TEST_F(TokenExtractorTest, normalized_tokens)
-{
+TEST_F(TokenExtractorTest, normalized_tokens) {
     StringFieldBuilder sfb(_doc_builder);
-    auto value = sfb.token("Hello", false).alt_word("hello").tokenize(" world").build();
+    auto               value = sfb.token("Hello", false).alt_word("hello").tokenize(" world").build();
     EXPECT_EQ("Hello world", value.getValue());
     EXPECT_EQ((Words{"hello", "world"}), process(value));
 }
 
-TEST_F(TokenExtractorTest, alternative_tokens)
-{
+TEST_F(TokenExtractorTest, alternative_tokens) {
     StringFieldBuilder sfb(_doc_builder);
-    auto value = sfb.word("Hello").alt_word("hello").tokenize(" world").build();
+    auto               value = sfb.word("Hello").alt_word("hello").tokenize(" world").build();
     EXPECT_EQ("Hello world", value.getValue());
     EXPECT_EQ((Words{AlternativeWords{"Hello", "hello"}, "world"}), process(value));
 }
 
-TEST_F(TokenExtractorTest, word_with_nul_byte_is_truncated)
-{
+TEST_F(TokenExtractorTest, word_with_nul_byte_is_truncated) {
     auto doc = make_corrupted_document(_doc_builder, 7);
-    EXPECT_EQ((Words{"before", "corrupt", "after"}), process(dynamic_cast<const StringFieldValue&>(*doc->getValue(field_name))));
+    EXPECT_EQ((Words{"before", "corrupt", "after"}),
+              process(dynamic_cast<const StringFieldValue&>(*doc->getValue(field_name))));
 }
 
-TEST_F(TokenExtractorTest, word_with_nul_byte_at_start_is_dropped)
-{
+TEST_F(TokenExtractorTest, word_with_nul_byte_at_start_is_dropped) {
     auto doc = make_corrupted_document(_doc_builder, 0);
     EXPECT_EQ((Words{"before", "after"}), process(dynamic_cast<const StringFieldValue&>(*doc->getValue(field_name))));
 }
 
-TEST_F(TokenExtractorTest, too_long_word_is_dropped)
-{
+TEST_F(TokenExtractorTest, too_long_word_is_dropped) {
     StringFieldBuilder sfb(_doc_builder);
-    EXPECT_EQ((Words{"before", "after"}), process(sfb.tokenize("before veryverylongwordthatwillbedropped after").build()));
+    EXPECT_EQ((Words{"before", "after"}),
+              process(sfb.tokenize("before veryverylongwordthatwillbedropped after").build()));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

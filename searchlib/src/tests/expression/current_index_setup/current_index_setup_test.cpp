@@ -8,8 +8,8 @@ using search::expression::CurrentIndexSetup;
 
 TEST(CurrentIndexSetupTest, bound_names_can_be_resolved) {
     CurrentIndexSetup setup;
-    CurrentIndex foo_idx;
-    CurrentIndex bar_idx;
+    CurrentIndex      foo_idx;
+    CurrentIndex      bar_idx;
     setup.bind("foo", foo_idx);
     setup.bind("foo.bar", bar_idx);
     EXPECT_EQ(setup.resolve("plain"), nullptr);
@@ -23,9 +23,9 @@ TEST(CurrentIndexSetupTest, bound_names_can_be_resolved) {
 }
 
 TEST(CurrentIndexSetupTest, unbound_name_usage_can_be_captured) {
-    CurrentIndexSetup setup;
+    CurrentIndexSetup        setup;
     CurrentIndexSetup::Usage usage;
-    CurrentIndex foo_idx;
+    CurrentIndex             foo_idx;
     setup.bind("foo", foo_idx);
     EXPECT_FALSE(usage.has_single_unbound_name());
     {
@@ -40,9 +40,9 @@ TEST(CurrentIndexSetupTest, unbound_name_usage_can_be_captured) {
 }
 
 TEST(CurrentIndexSetupTest, unbound_plain_can_be_captured) {
-    CurrentIndexSetup setup;
+    CurrentIndexSetup        setup;
     CurrentIndexSetup::Usage usage;
-    CurrentIndex foo_idx;
+    CurrentIndex             foo_idx;
     setup.bind("foo", foo_idx);
     EXPECT_FALSE(usage.has_single_unbound_name());
     {
@@ -56,7 +56,7 @@ TEST(CurrentIndexSetupTest, unbound_plain_can_be_captured) {
 }
 
 TEST(CurrentIndexSetupTest, multi_unbound_name_conflict_can_be_captured) {
-    CurrentIndexSetup setup;
+    CurrentIndexSetup        setup;
     CurrentIndexSetup::Usage usage;
     EXPECT_FALSE(usage.has_single_unbound_name());
     {

@@ -3,11 +3,12 @@
 #include <vespa/searchlib/util/directory_traverse.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/vespalib/gtest/gtest.h>
+
 #include <filesystem>
 #include <fstream>
 
-using search::DiskSpaceCalculator;
 using search::DirectoryTraverse;
+using search::DiskSpaceCalculator;
 
 inline namespace directory_traverse_test {
 
@@ -16,7 +17,7 @@ std::filesystem::path testdir("testdir");
 constexpr uint32_t block_size = 4_Ki;
 constexpr uint32_t directory_placeholder_size = block_size;
 
-}
+} // namespace directory_traverse_test
 
 class DirectoryTraverseTest : public ::testing::Test {
 protected:
@@ -29,41 +30,30 @@ protected:
     }
 };
 
-DirectoryTraverseTest::DirectoryTraverseTest()
-    : ::testing::Test()
-{
-
+DirectoryTraverseTest::DirectoryTraverseTest() : ::testing::Test() {
 }
 
 DirectoryTraverseTest::~DirectoryTraverseTest() = default;
 
-void
-DirectoryTraverseTest::SetUpTestSuite()
-{
+void DirectoryTraverseTest::SetUpTestSuite() {
     std::filesystem::remove_all(testdir);
     std::filesystem::create_directory(testdir);
 }
 
-void
-DirectoryTraverseTest::TearDownTestSuite()
-{
+void DirectoryTraverseTest::TearDownTestSuite() {
     std::filesystem::remove_all(testdir);
 }
 
-
-TEST_F(DirectoryTraverseTest, missing_dir)
-{
+TEST_F(DirectoryTraverseTest, missing_dir) {
     EXPECT_EQ(0, get_tree_size("missing_dir"));
 }
 
-TEST_F(DirectoryTraverseTest, empty_dir)
-{
+TEST_F(DirectoryTraverseTest, empty_dir) {
     EXPECT_EQ(directory_placeholder_size, get_tree_size(testdir));
 }
 
-TEST_F(DirectoryTraverseTest, dir_with_file)
-{
-    auto file_path = testdir / "file";
+TEST_F(DirectoryTraverseTest, dir_with_file) {
+    auto          file_path = testdir / "file";
     std::ofstream of(file_path.string());
     of << "Some text" << std::endl;
     of.close();
@@ -72,8 +62,7 @@ TEST_F(DirectoryTraverseTest, dir_with_file)
     std::filesystem::remove(file_path);
 }
 
-TEST_F(DirectoryTraverseTest, nested_dir_with_file)
-{
+TEST_F(DirectoryTraverseTest, nested_dir_with_file) {
     auto dir_path = testdir / "dir";
     auto file_path = dir_path / "file";
     std::filesystem::create_directory(dir_path);
