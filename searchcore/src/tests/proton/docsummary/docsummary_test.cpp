@@ -480,7 +480,7 @@ TEST(DocSummaryTest, requireThatAdapterHandlesDocumentIdField) {
     auto                           res = dsa.get_document(0);
     vespalib::Slime                slime;
     vespalib::slime::SlimeInserter inserter(slime);
-    res->insert_document_id(inserter);
+    EXPECT_TRUE(res->insert_document_id(inserter));
     EXPECT_EQ("id:ns:searchdocument::0", slime.get().asString().make_string());
 }
 
