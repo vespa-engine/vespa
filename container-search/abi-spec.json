@@ -7371,6 +7371,33 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.query.ranking.AnnTimeout" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "java.lang.Cloneable"
+    ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public static com.yahoo.search.query.profile.types.QueryProfileType getArgumentType()",
+      "public void setEnable(boolean)",
+      "public java.lang.Boolean getEnable()",
+      "public void setFactor(double)",
+      "public java.lang.Double getFactor()",
+      "public void prepare(com.yahoo.search.query.ranking.RankProperties)",
+      "public com.yahoo.search.query.ranking.AnnTimeout clone()",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)",
+      "public bridge synthetic java.lang.Object clone()"
+    ],
+    "fields" : [
+      "public static final java.lang.String ANNTIMEOUT",
+      "public static final java.lang.String ENABLE",
+      "public static final java.lang.String FACTOR"
+    ]
+  },
   "com.yahoo.search.query.ranking.Diversity$CutoffStrategy" : {
     "superClass" : "java.lang.Enum",
     "interfaces" : [ ],
@@ -7533,6 +7560,7 @@
       "public java.lang.Boolean getLazyFilter()",
       "public java.lang.Double getFilterThreshold()",
       "public java.lang.Long getAnnTimeBudget()",
+      "public com.yahoo.search.query.ranking.AnnTimeout getAnnTimeout()",
       "public com.yahoo.search.query.ranking.WeakAnd getWeakAnd()",
       "public void setTermwiselimit(double)",
       "public void setNumThreadsPerSearch(int)",
@@ -7568,6 +7596,7 @@
       "public static final java.lang.String LAZY_FILTER",
       "public static final java.lang.String FILTER_THRESHOLD",
       "public static final java.lang.String ANNTIMEBUDGET",
+      "public static final java.lang.String ANNTIMEOUT",
       "public static final java.lang.String WEAKAND",
       "public java.lang.Double termwiseLimit"
     ]

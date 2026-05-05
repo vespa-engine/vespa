@@ -26,6 +26,7 @@ import com.yahoo.search.query.ranking.GlobalPhase;
 import com.yahoo.search.query.ranking.MatchPhase;
 import com.yahoo.search.query.ranking.Matching;
 import com.yahoo.search.query.ranking.SecondPhase;
+import com.yahoo.search.query.ranking.AnnTimeout;
 import com.yahoo.search.query.ranking.SoftTimeout;
 import com.yahoo.search.query.ranking.Significance;
 import com.yahoo.search.query.ranking.WeakAnd;
@@ -112,6 +113,8 @@ public class QueryProperties extends Properties {
         addDualCasedRM(map, Matching.LAZY_FILTER, GetterSetter.of(query -> query.getRanking().getMatching().getLazyFilter(), (query, value) -> query.getRanking().getMatching().setLazyFilter(asBoolean(value, false))));
         addDualCasedRM(map, Matching.FILTER_THRESHOLD, GetterSetter.of(query -> query.getRanking().getMatching().getFilterThreshold(), (query, value) -> query.getRanking().getMatching().setFilterThreshold(asDouble(value, 1.0))));
         addDualCasedRM(map, Matching.ANNTIMEBUDGET, GetterSetter.of(query -> query.getRanking().getMatching().getAnnTimeBudget(), (query, value) -> query.getRanking().getMatching().setAnnTimeBudget(ParameterParser.asMilliSeconds(value, Long.MAX_VALUE))));
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Matching.MATCHING, Matching.ANNTIMEOUT, AnnTimeout.ENABLE), GetterSetter.of(query -> query.getRanking().getMatching().getAnnTimeout().getEnable(), (query, value) -> query.getRanking().getMatching().getAnnTimeout().setEnable(asBoolean(value, false))));
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Matching.MATCHING, Matching.ANNTIMEOUT, AnnTimeout.FACTOR), GetterSetter.of(query -> query.getRanking().getMatching().getAnnTimeout().getFactor(), (query, value) -> query.getRanking().getMatching().getAnnTimeout().setFactor(asDouble(value, 0.9))));
         map.put(CompoundName.fromComponents(Ranking.RANKING, Matching.MATCHING, Matching.WEAKAND, WeakAnd.STOPWORD_LIMIT), GetterSetter.of(query -> query.getRanking().getMatching().getWeakAnd().getStopwordLimit(), (query, value) -> query.getRanking().getMatching().getWeakAnd().setStopwordLimit(asDouble(value, 1.0))));
         map.put(CompoundName.fromComponents(Ranking.RANKING, Matching.MATCHING, Matching.WEAKAND, WeakAnd.ADJUST_TARGET), GetterSetter.of(query -> query.getRanking().getMatching().getWeakAnd().getAdjustTarget(), (query, value) -> query.getRanking().getMatching().getWeakAnd().setAdjustTarget(asDouble(value, 1.0))));
         map.put(CompoundName.fromComponents(Ranking.RANKING, Matching.MATCHING, Matching.WEAKAND, WeakAnd.ALLOW_DROP_ALL), GetterSetter.of(query -> query.getRanking().getMatching().getWeakAnd().getAllowDropAll(), (query, value) -> query.getRanking().getMatching().getWeakAnd().setAllowDropAll(asBoolean(value, false))));
