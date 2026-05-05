@@ -4,5 +4,14 @@
     "local>vespa-engine/renovate-config"
   ],
   "prHourlyLimit": 20,
-  "prConcurrentLimit": 20
+  "prConcurrentLimit": 20,
+  "packageRules": [
+    {
+      "matchPackageNames": [
+        "net.bytebuddy:byte-buddy",
+        "net.bytebuddy:byte-buddy-agent"
+      ],
+      "ignoredVersions": ["/-jdk5$/"]
+    }
+  ]
 }
