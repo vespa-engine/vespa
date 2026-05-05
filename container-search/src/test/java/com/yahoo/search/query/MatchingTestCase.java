@@ -30,7 +30,7 @@ public class MatchingTestCase {
         assertNull(query.getRanking().getMatching().getWeakAnd().getAdjustTarget());
         assertNull(query.getRanking().getMatching().getWeakAnd().getAllowDropAll());
         query.prepare();
-        assertNull(query.getRanking().getProperties().get("vespa.matching.anntimebudget"));
+        assertNull(query.getRanking().getProperties().get("vespa.matching.nns.anntimebudget"));
     }
 
     @Test
@@ -88,25 +88,25 @@ public class MatchingTestCase {
             Query query = new Query("?query=test&ranking.matching.anntimebudget=25ms");
             assertEquals(Long.valueOf(25), query.getRanking().getMatching().getAnnTimeBudget());
             query.prepare();
-            assertEquals("25", query.getRanking().getProperties().get("vespa.matching.anntimebudget").get(0));
+            assertEquals("25", query.getRanking().getProperties().get("vespa.matching.nns.anntimebudget").get(0));
         }
         {
             Query query = new Query("?query=test&ranking.matching.anntimebudget=2");
             assertEquals(Long.valueOf(2000), query.getRanking().getMatching().getAnnTimeBudget());
             query.prepare();
-            assertEquals("2000", query.getRanking().getProperties().get("vespa.matching.anntimebudget").get(0));
+            assertEquals("2000", query.getRanking().getProperties().get("vespa.matching.nns.anntimebudget").get(0));
         }
         {
             Query query = new Query("?query=test&ranking.matching.anntimebudget=4294967296ms");
             assertEquals(Long.valueOf(4294967295L), query.getRanking().getMatching().getAnnTimeBudget());
             query.prepare();
-            assertEquals("4294967295", query.getRanking().getProperties().get("vespa.matching.anntimebudget").get(0));
+            assertEquals("4294967295", query.getRanking().getProperties().get("vespa.matching.nns.anntimebudget").get(0));
         }
         {
             Query query = new Query("?query=test&ranking.matching.anntimebudget=9223372036854775807ms");
             assertEquals(Long.valueOf(4294967295L), query.getRanking().getMatching().getAnnTimeBudget());
             query.prepare();
-            assertEquals("4294967295", query.getRanking().getProperties().get("vespa.matching.anntimebudget").get(0));
+            assertEquals("4294967295", query.getRanking().getProperties().get("vespa.matching.nns.anntimebudget").get(0));
         }
     }
 

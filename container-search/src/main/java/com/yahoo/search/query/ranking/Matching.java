@@ -182,7 +182,7 @@ public class Matching implements Cloneable {
             rankProperties.put("vespa.matching.filter_threshold", String.valueOf(filterThreshold));
         }
         if (annTimeBudget != null) {
-            rankProperties.put("vespa.matching.anntimebudget", String.valueOf(annTimeBudget));
+            rankProperties.put("vespa.matching.nns.anntimebudget", String.valueOf(annTimeBudget));
         }
         annTimeout.prepare(rankProperties);
         weakAnd.prepare(rankProperties);

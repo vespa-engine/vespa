@@ -28,8 +28,8 @@ public class AnnTimeoutTestCase {
         assertFalse(query.getRanking().getMatching().getAnnTimeout().getEnable());
         assertEquals(Double.valueOf(0.1), query.getRanking().getMatching().getAnnTimeout().getFactor());
         query.prepare();
-        assertNull(query.getRanking().getProperties().get("vespa.matching.anntimeout.enable"));
-        assertEquals("0.1", query.getRanking().getProperties().get("vespa.matching.anntimeout.factor").get(0));
+        assertNull(query.getRanking().getProperties().get("vespa.matching.nns.anntimeout.enable"));
+        assertEquals("0.1", query.getRanking().getProperties().get("vespa.matching.nns.anntimeout.factor").get(0));
     }
 
     @Test
@@ -37,7 +37,7 @@ public class AnnTimeoutTestCase {
         Query query = new Query("?query=test&ranking.matching.anntimeout.enable=false");
         assertFalse(query.getRanking().getMatching().getAnnTimeout().getEnable());
         query.prepare();
-        assertEquals("false", query.getRanking().getProperties().get("vespa.matching.anntimeout.enable").get(0));
+        assertEquals("false", query.getRanking().getProperties().get("vespa.matching.nns.anntimeout.enable").get(0));
     }
 
     @Test
@@ -45,7 +45,7 @@ public class AnnTimeoutTestCase {
         Query query = new Query("?query=test&ranking.matching.anntimeout.enable=true");
         assertTrue(query.getRanking().getMatching().getAnnTimeout().getEnable());
         query.prepare();
-        assertEquals("true", query.getRanking().getProperties().get("vespa.matching.anntimeout.enable").get(0));
+        assertEquals("true", query.getRanking().getProperties().get("vespa.matching.nns.anntimeout.enable").get(0));
     }
 
     private void verifyException(String value) {

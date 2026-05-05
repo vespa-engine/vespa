@@ -59,9 +59,9 @@ public class AnnTimeout implements Cloneable {
     /** Internal operation - DO NOT USE */
     public void prepare(RankProperties rankProperties) {
         if (enabled != null)
-            rankProperties.put("vespa.matching.anntimeout.enable", String.valueOf(enabled));
+            rankProperties.put("vespa.matching.nns.anntimeout.enable", String.valueOf(enabled));
         if (factor != null)
-            rankProperties.put("vespa.matching.anntimeout.factor", String.valueOf(factor));
+            rankProperties.put("vespa.matching.nns.anntimeout.factor", String.valueOf(factor));
     }
 
     @Override
