@@ -16,6 +16,7 @@ GEM
       fiber-annotation
       fiber-local
       json
+    csv (3.3.5)
     em-websocket (0.5.3)
       eventmachine (>= 0.12.9)
       http_parser.rb (~> 0)
@@ -120,6 +121,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
+  csv
   html-proofer
   jekyll (~> 4.3.0)
   jekyll-feed
