@@ -54,7 +54,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag GCP_ENCLAVE_V2 = defineFeatureFlag(
             "gcp-enclave-v2", false,
-            List.of("hakonhall"), "2026-03-05", "2026-05-05",
+            List.of("hakonhall"), "2026-03-05", "2026-07-05",
             "Whether to enable v2 of Vespa Cloud Enclave in GCP",
             "Takes effect on the next host-admin tick.",
             CLOUD_ACCOUNT);
