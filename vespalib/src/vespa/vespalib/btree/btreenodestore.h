@@ -166,13 +166,13 @@ public:
         }
     }
 
-    template <typename FunctionType> void foreach (EntryRef ref, FunctionType func) const {
+    template <typename FunctionType> void foreach(EntryRef ref, FunctionType func) const {
         if (!ref.valid())
             return;
         if (isLeafRef(ref)) {
-            mapLeafRef(ref)->foreach (func);
+            mapLeafRef(ref)->foreach(func);
         } else {
-            mapInternalRef(ref)->foreach (*this, func);
+            mapInternalRef(ref)->foreach(*this, func);
         }
     }
 };

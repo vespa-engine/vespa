@@ -17,7 +17,7 @@ class GidToLidMapper : public search::IGidToLidMapper {
 public:
     GidToLidMapper(const search::IDocumentMetaStoreContext& dmsContext);
     ~GidToLidMapper() override;
-    void foreach (const search::IGidToLidMapperVisitor& visitor) const override;
+    void foreach(const search::IGidToLidMapperVisitor& visitor) const override;
 };
 
 } // namespace proton

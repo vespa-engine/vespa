@@ -232,7 +232,7 @@ private:
     static constexpr size_t MIN_BUFFER_ARRAYS = 128u;
     template <typename FunctionType, bool Frozen> void foreach_key(EntryRef ref, FunctionType func) const;
 
-    template <typename FunctionType, bool Frozen> void foreach (EntryRef ref, FunctionType func) const;
+    template <typename FunctionType, bool Frozen> void foreach(EntryRef ref, FunctionType func) const;
 };
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
@@ -253,16 +253,14 @@ template <typename KeyT, typename DataT, typename AggrT, typename CompareT, type
 template <typename FunctionType>
 void BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::foreach_unfrozen(EntryRef     ref,
                                                                                     FunctionType func) const {
-    foreach
-        <FunctionType, false>(ref, func);
+    foreach<FunctionType, false>(ref, func);
 }
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
 template <typename FunctionType>
 void BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::foreach_frozen(EntryRef     ref,
                                                                                   FunctionType func) const {
-    foreach
-        <FunctionType, true>(ref, func);
+    foreach<FunctionType, true>(ref, func);
 }
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
@@ -287,14 +285,14 @@ void BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::foreach_key(E
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT, typename TraitsT, typename AggrCalcT>
 template <typename FunctionType, bool Frozen>
-void BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::foreach (EntryRef ref, FunctionType func) const {
+void BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::foreach(EntryRef ref, FunctionType func) const {
     if (!ref.valid())
         return;
     RefType  iRef(ref);
     uint32_t clusterSize = getClusterSize(iRef);
     if (clusterSize == 0) {
         const BTreeType* tree = getTreeEntry(iRef);
-        _allocator.getNodeStore().foreach (Frozen ? tree->getFrozenRoot() : tree->getRoot(), func);
+        _allocator.getNodeStore().foreach(Frozen ? tree->getFrozenRoot() : tree->getRoot(), func);
     } else {
         const KeyDataType* p = getKeyDataEntry(iRef, clusterSize);
         const KeyDataType* pe = p + clusterSize;

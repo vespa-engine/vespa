@@ -31,7 +31,7 @@ public:
     WeightedPostingList(std::vector<Posting> entries) noexcept : _entries(std::move(entries)) {}
     ~WeightedPostingList() = default;
 
-    template <typename Func> void foreach (Func func) const {
+    template <typename Func> void foreach(Func func) const {
         for (const auto& posting : _entries) {
             func(posting.lid, posting.weight);
         }

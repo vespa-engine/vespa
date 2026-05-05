@@ -17,7 +17,7 @@ struct MockGidToLidMapper : public search::IGidToLidMapper {
 
     MockGidToLidMapper(const MockGidToLidMap& map) : _map(map) {}
 
-    void foreach (const search::IGidToLidMapperVisitor& visitor) const override {
+    void foreach(const search::IGidToLidMapperVisitor& visitor) const override {
         for (const auto& kv : _map) {
             if (kv.second != 0) {
                 visitor.visit(kv.first, kv.second);

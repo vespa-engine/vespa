@@ -282,7 +282,7 @@ public:
     uint64_t getEstimatedSaveByteSize() const override;
     uint32_t getVersion() const override;
     void setTrackDocumentSizes(bool trackDocumentSizes) { _trackDocumentSizes = trackDocumentSizes; }
-    void foreach (const search::IGidToLidMapperVisitor& visitor) const override;
+    void foreach(const search::IGidToLidMapperVisitor& visitor) const override;
     bool is_sortable() const noexcept override;
     std::unique_ptr<search::attribute::ISortBlobWriter>
     make_sort_blob_writer(bool ascending, const search::common::BlobConverter* converter,

@@ -96,8 +96,7 @@ public:
      */
     template <typename FunctionType>
     void foreach_truebit(FunctionType func, Index start = 0, Index end = std::numeric_limits<Index>::max()) const {
-        foreach (func, [](Word w) { return w; }, start, end)
-            ;
+        foreach(func, [](Word w) { return w; }, start, end);
     }
 
     /**
@@ -109,8 +108,7 @@ public:
      */
     template <typename FunctionType>
     void foreach_falsebit(FunctionType func, Index start = 0, Index end = std::numeric_limits<Index>::max()) const {
-        foreach (func, [](Word w) { return ~w; }, start, end)
-            ;
+        foreach(func, [](Word w) { return ~w; }, start, end);
     }
 
     Index getFirstTrueBit(Index start = 0) const { return getNextTrueBit(std::max(start, getStartIndex())); }
@@ -339,7 +337,7 @@ private:
     Index count() const;
     bool hasTrueBitsInternal() const;
     template <typename FunctionType, typename WordConverter>
-    void foreach (FunctionType func, WordConverter conv, Index start, Index end) const {
+    void foreach(FunctionType func, WordConverter conv, Index start, Index end) const {
         if ((end <= start) || (size() == 0))
             return;
         Index last = std::min(end, size()) - 1;

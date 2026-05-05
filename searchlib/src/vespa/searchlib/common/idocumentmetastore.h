@@ -140,7 +140,7 @@ struct IDocumentMetaStore {
      **/
     virtual vespalib::Generation getCurrentGeneration() const = 0;
 
-    virtual void foreach (const IGidToLidMapperVisitor& visitor) const = 0;
+    virtual void foreach(const IGidToLidMapperVisitor& visitor) const = 0;
 };
 
 } // namespace search

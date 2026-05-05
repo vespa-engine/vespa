@@ -252,7 +252,7 @@ public:
     ReverseMappingPostingList(const ReverseMapping& reverseMapping, EntryRef revMapIdx, int32_t weight)
         : _reverseMapping(reverseMapping), _revMapIdx(revMapIdx), _weight(weight) {}
     ~ReverseMappingPostingList() {}
-    template <typename Func> void foreach (Func func) const {
+    template <typename Func> void foreach(Func func) const {
         int32_t weight = _weight;
         _reverseMapping.foreach_frozen_key(_revMapIdx, [func, weight](uint32_t lid) { func(lid, weight); });
     }

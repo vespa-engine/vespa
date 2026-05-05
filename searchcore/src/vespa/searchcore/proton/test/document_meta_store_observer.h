@@ -126,7 +126,7 @@ struct DocumentMetaStoreObserver : public IDocumentMetaStore {
     void reclaim_unused_memory() override { _store.reclaim_unused_memory(); }
     bool canShrinkLidSpace() const override { return _store.canShrinkLidSpace(); }
     search::SerialNum getLastSerialNum() const override { return _store.getLastSerialNum(); }
-    void foreach (const search::IGidToLidMapperVisitor& visitor) const override { _store.foreach (visitor); }
+    void foreach(const search::IGidToLidMapperVisitor& visitor) const override { _store.foreach(visitor); }
     void set_operation_listener(documentmetastore::OperationListener::SP op_listener) override {
         _store.set_operation_listener(std::move(op_listener));
     }

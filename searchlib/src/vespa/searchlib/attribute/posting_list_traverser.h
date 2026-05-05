@@ -19,7 +19,7 @@ public:
         : _posting_store(posting_store), _pidx(pidx) {}
     ~PostingListTraverser() = default;
 
-    template <typename Func> void foreach (Func func) const { _posting_store.foreach_frozen(_pidx, func); }
+    template <typename Func> void foreach(Func func) const { _posting_store.foreach_frozen(_pidx, func); }
 
     template <typename Func> void foreach_key(Func func) const { _posting_store.foreach_frozen_key(_pidx, func); }
 };

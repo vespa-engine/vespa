@@ -80,8 +80,8 @@ public:
             _allocator->getNodeStore().foreach_key(_frozenRoot, func);
         }
 
-        template <typename FunctionType> void foreach (FunctionType func) const {
-            _allocator->getNodeStore().foreach (_frozenRoot, func);
+        template <typename FunctionType> void foreach(FunctionType func) const {
+            _allocator->getNodeStore().foreach(_frozenRoot, func);
         }
     };
 
