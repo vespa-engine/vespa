@@ -70,7 +70,7 @@
         <assertj.vespa.version>3.27.7</assertj.vespa.version>
 
         <bouncycastle.vespa.version>1.84</bouncycastle.vespa.version>
-        <byte-buddy.vespa.version>1.18.8</byte-buddy.vespa.version>
+        <byte-buddy.vespa.version>1.18.8-jdk5</byte-buddy.vespa.version>
         <checker-qual.vespa.version>3.38.0</checker-qual.vespa.version>
         <commons-beanutils.vespa.version>1.9.4</commons-beanutils.vespa.version>
         <commons-codec.vespa.version>1.21.0</commons-codec.vespa.version>
