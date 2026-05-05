@@ -357,6 +357,13 @@ public class Flags {
             "Takes effect at redeployment",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
+    public static final UnboundBooleanFlag SKIP_AUTOSCALING_WHEN_UPGRADING_CONFIG_SERVERS = defineFeatureFlag(
+            "skip-autoscaling-when-upgrading-config-servers", false,
+            List.of("hmusum"), "2026-05-05", "2026-06-05",
+            "Whether to skip autoscaling when config server upgrades or downgrades.",
+            "Takes effect immediately",
+            HOSTNAME);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
