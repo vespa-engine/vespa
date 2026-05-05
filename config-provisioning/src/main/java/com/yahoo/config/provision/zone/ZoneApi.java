@@ -13,30 +13,8 @@ public interface ZoneApi {
 
     SystemName getSystemName();
 
-    /**
-     * Returns the ID of the zone.
-     *
-     * WARNING: The ID of a controller zone is equal to the ID of a prod zone in the same region.
-     * @see #getVirtualId()
-     */
-    ZoneId getId();
-
-    /** Returns the SYSTEM.ENVIRONMENT.REGION string. */
-    default String getFullName() {
-        return getSystemName().value() + "." + getEnvironment().value() + "." + getRegionName().value();
-    }
-
-    /**
-     * Returns {@link #getId()} for all zones except the controller zone.  Unlike {@link #getId()},
-     * the virtual ID of a controller is distinct from all other zones.
-     */
-    default ZoneId getVirtualId() {
-        return getId();
-    }
-
-    default Environment getEnvironment() { return getId().environment(); }
-
-    default RegionName getRegionName() { return getId().region(); }
+    /** Returns a unique ID across all config server zones (including the controller zone) within the system. */
+    default ZoneId id() { return legacyId(); }
 
     CloudName getCloudName();
 
@@ -45,5 +23,23 @@ public interface ZoneApi {
 
     /** Returns the availability zone within the cloud, e.g. 'use1-az2' in AWS */
     default String getCloudNativeAvailabilityZone() { throw new UnsupportedOperationException(); }
+
+    /**
+     * Returns the legacy ID of the zone.  It is "legacy" because a controller and prod config server gets the same ID.</p>
+     *
+     * @see #id()
+     */
+    ZoneId legacyId();
+
+    /** Returns the SYSTEM.ENVIRONMENT.REGION string. WARNING: Uses {@link #legacyId()} by default. */
+    default String getFullName() {
+        return getSystemName().value() + "." + getEnvironment().value() + "." + getRegionName().value();
+    }
+
+    /** WARNING: Uses {@link #legacyId()} by default. */
+    default Environment getEnvironment() { return legacyId().environment(); }
+
+    /** WARNING: Uses {@link #legacyId()} by default. */
+    default RegionName getRegionName() { return legacyId().region(); }
 
 }

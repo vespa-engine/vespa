@@ -7,7 +7,6 @@ import com.yahoo.config.provision.RegionName;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Provides filters for and access to a list of ZoneIds.
@@ -51,7 +50,7 @@ public interface ZoneList extends ZoneFilter {
 
     /** Returns the ZoneIds of all zones in this list. */
     default List<ZoneId> ids() {
-        return zones().stream().map(ZoneApi::getVirtualId).toList();
+        return zones().stream().map(ZoneApi::id).toList();
     }
 
 }
