@@ -81,8 +81,8 @@ public:
         _alloc.getNodeStore().foreach_key(_tree.getRoot(), func);
     }
 
-    template <typename FunctionType> void foreach (FunctionType func) const {
-        _alloc.getNodeStore().foreach (_tree.getRoot(), func);
+    template <typename FunctionType> void foreach(FunctionType func) const {
+        _alloc.getNodeStore().foreach(_tree.getRoot(), func);
     }
 
 private:

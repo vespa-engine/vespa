@@ -155,8 +155,8 @@ public:
         _nodeStore.foreach_key(ref, func);
     }
 
-    template <typename FunctionType> void foreach (EntryRef ref, FunctionType func) const {
-        _nodeStore.foreach (ref, func);
+    template <typename FunctionType> void foreach(EntryRef ref, FunctionType func) const {
+        _nodeStore.foreach(ref, func);
     }
 
     const NodeStore& getNodeStore() const noexcept { return _nodeStore; }

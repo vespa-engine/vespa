@@ -28,7 +28,7 @@ public:
 class IGidToLidMapper {
 public:
     virtual ~IGidToLidMapper() = default;
-    virtual void foreach (const IGidToLidMapperVisitor& visitor) const = 0;
+    virtual void foreach(const IGidToLidMapperVisitor& visitor) const = 0;
 };
 
 } // namespace search

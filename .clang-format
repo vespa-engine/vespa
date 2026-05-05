@@ -53,3 +53,6 @@ IncludeCategories:
     SortPriority:    7
   - Regex:           '<.*>'
     Priority:        8
+ForEachMacros:
+  - Q_FOREACH
+  - BOOST_FOREACH

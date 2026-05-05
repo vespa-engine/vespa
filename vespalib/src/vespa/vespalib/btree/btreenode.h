@@ -345,7 +345,7 @@ public:
                            FunctionType func) const noexcept;
 
     template <typename NodeStoreType, typename FunctionType>
-    void foreach (NodeStoreType& store, FunctionType func) const noexcept;
+    void foreach(NodeStoreType& store, FunctionType func) const noexcept;
 };
 
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots = 16>
@@ -408,7 +408,7 @@ public:
     template <typename FunctionType>
     void foreach_key_range(uint32_t start_idx, uint32_t end_idx, FunctionType func) const noexcept;
 
-    template <typename FunctionType> void foreach (FunctionType func) const noexcept;
+    template <typename FunctionType> void foreach(FunctionType func) const noexcept;
 };
 
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots = 16>

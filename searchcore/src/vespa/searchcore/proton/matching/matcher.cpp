@@ -76,7 +76,7 @@ struct StupidMetaStore : search::IDocumentMetaStore {
     vespalib::Generation getCurrentGeneration() const override { return vespalib::Generation(0); }
     LidUsageStats getLidUsageStats() const override { return {}; }
     Blueprint::UP createWhiteListBlueprint() const override { return {}; }
-    void foreach (const search::IGidToLidMapperVisitor&) const override {}
+    void foreach(const search::IGidToLidMapperVisitor&) const override {}
 };
 
 const search::AllocatedBitVector StupidMetaStore::_dummy(1);
