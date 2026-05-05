@@ -61,7 +61,13 @@ struct DocumentMetaStoreObserver : public IDocumentMetaStore {
     bool updateMetadata(DocId lid, const BucketId& bucketId, Timestamp timestamp) override {
         return _store.updateMetadata(lid, bucketId, timestamp);
     }
+
     bool remove(DocId lid, uint64_t prepare_serial_num) override { return _store.remove(lid, prepare_serial_num); }
+
+    bool update_docid_string(DocId lid, std::string_view docid) override {
+        return _store.update_docid_string(lid, docid);
+    }
+
     void removes_complete(const std::vector<DocId>& lids) override {
         ++_removes_complete_cnt;
         _removes_complete_lids.insert(_removes_complete_lids.end(), lids.cbegin(), lids.cend());

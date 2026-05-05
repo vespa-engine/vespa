@@ -71,6 +71,12 @@ struct IStore {
     virtual bool updateMetadata(DocId lid, const BucketId& bucketId, Timestamp timestamp) = 0;
 
     /**
+     * Update the document id string associated with the given lid.
+     * Returns false if there is no entry for the given lid.
+     */
+    virtual bool update_docid_string(DocId lid, std::string_view docid) = 0;
+
+    /**
      * Removes the <lid, metadata> pair with the given lid from this
      * store. Returns false if the <lid, metadata> pair was not
      * found or could not be removed.
