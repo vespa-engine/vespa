@@ -21,6 +21,9 @@ gem "kramdown-parser-gfm"
 # Work-around for webrick no longer included in Ruby 3.0 (https://github.com/jekyll/jekyll/issues/8523)
 gem "webrick"
 
+# Work-around for logger no longer included in Ruby 3.5/4.0 stdlib; Jekyll 4.3.3 still requires it.
+gem "logger"
+
 # Get the html-proofer to work
 gem 'rake'
 gem 'html-proofer'
