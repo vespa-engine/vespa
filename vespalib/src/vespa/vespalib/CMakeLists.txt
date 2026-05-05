@@ -1,7 +1,7 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 set(VESPA_LIBSTDCXX_COMPAT "")
 if ((${VESPA_OS_DISTRO} STREQUAL "almalinux" OR ${VESPA_OS_DISTRO} STREQUAL "rocky" OR ${VESPA_OS_DISTRO} STREQUAL "centos") AND
-    ${VESPA_OS_DISTRO_VERSION} VERSION_GREATER_EQUAL 9 AND ${VESPA_OS_DISTRO_VERSION} VERSION_LESS 10)
+    "${VESPA_OS_DISTRO_VERSION}" VERSION_GREATER_EQUAL 9 AND "${VESPA_OS_DISTRO_VERSION}" VERSION_LESS 10)
     set(VESPA_LIBSTDCXX_COMPAT_SOURCE_LIBRARY "/opt/rh/gcc-toolset-15/root/usr/lib/gcc/${CMAKE_SYSTEM_PROCESSOR}-redhat-linux/15/libstdc++.a")
     if (EXISTS "${VESPA_LIBSTDCXX_COMPAT_SOURCE_LIBRARY}")
         # Need to use the version of std::from_chars that comes with gcc-toolset-15 instead ot the version in gcc 11.
