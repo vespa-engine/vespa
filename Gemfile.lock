@@ -10,12 +10,15 @@ GEM
       fiber-annotation
       io-event (~> 1.1)
       timers (~> 4.1)
+    base64 (0.3.0)
+    bigdecimal (4.1.2)
     colorator (1.1.0)
     concurrent-ruby (1.2.2)
     console (1.23.7)
       fiber-annotation
       fiber-local
       json
+    csv (3.3.5)
     em-websocket (0.5.3)
       eventmachine (>= 0.12.9)
       http_parser.rb (~> 0)
@@ -76,6 +79,7 @@ GEM
     listen (3.8.0)
       rb-fsevent (~> 0.10, >= 0.10.3)
       rb-inotify (~> 0.9, >= 0.9.10)
+    logger (1.7.0)
     mercenary (0.4.0)
     minima (2.5.1)
       jekyll (>= 3.5, < 5.0)
@@ -119,11 +123,15 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
+  base64 (~> 0.3.0)
+  bigdecimal (~> 4.1)
+  csv
   html-proofer
   jekyll (~> 4.3.0)
   jekyll-feed
   jekyll-redirect-from
   kramdown-parser-gfm
+  logger
   minima (~> 2.0)
   rake
   webrick
