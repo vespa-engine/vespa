@@ -28,10 +28,11 @@ public final class ClusterSpec {
     private final boolean stateful;
     private final List<SidecarSpec> sidecars;
     private final List<AzName> availabilityZones;
+    private final String profile;
 
     private ClusterSpec(Type type, Id id, Optional<Group> groupId, Version vespaVersion, boolean exclusive,
                         Optional<DockerImage> dockerImageRepo, ZoneEndpoint zoneEndpoint, boolean stateful,
-                        List<SidecarSpec> sidecars, List<AzName> availabilityZones) {
+                        List<SidecarSpec> sidecars, List<AzName> availabilityZones, String profile) {
         this.type = type;
         this.id = id;
         this.groupId = groupId;
@@ -46,6 +47,7 @@ public final class ClusterSpec {
         this.stateful = stateful;
         this.sidecars = sidecars;
         this.availabilityZones = availabilityZones;
+        this.profile = profile;
     }
 
     /** Returns the cluster type */
@@ -87,14 +89,22 @@ public final class ClusterSpec {
      */
     public List<AzName> availabilityZones() { return availabilityZones; }
 
+    /**
+     * Returns a user-specified profile, which maps to hardware, templates, and other specifications depending on the vendor. This member
+     * is not required.
+     */
+    public Optional<String> profile() {
+        return Optional.ofNullable(profile);
+    }
+
     public ClusterSpec with(Optional<Group> newGroup) {
         return new ClusterSpec(type, id, newGroup, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
-                               stateful, sidecars, availabilityZones);
+                               stateful, sidecars, availabilityZones, profile);
     }
 
     public ClusterSpec withExclusivity(boolean exclusive) {
         return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
-                               stateful, sidecars, availabilityZones);
+                               stateful, sidecars, availabilityZones, profile);
     }
 
     /** Creates a ClusterSpec when requesting a cluster */
@@ -120,6 +130,7 @@ public final class ClusterSpec {
         private boolean stateful;
         private List<SidecarSpec> sidecars = List.of();
         private List<AzName> availabilityZones = List.of();
+        private String profile;
 
         private Builder(Type type, Id id) {
             this.type = type;
@@ -129,7 +140,7 @@ public final class ClusterSpec {
 
         public ClusterSpec build() {
             return new ClusterSpec(type, id, groupId, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
-                                   stateful, sidecars, availabilityZones);
+                                   stateful, sidecars, availabilityZones, profile);
         }
 
         public Builder group(Group groupId) {
@@ -177,11 +188,16 @@ public final class ClusterSpec {
             return this;
         }
 
+        public Builder profile(String profile) {
+            this.profile = profile;
+            return this;
+        }
+
     }
 
     @Override
     public String toString() {
-        return type + " " + id + " " + groupId.map(group -> group + " ").orElse("") + vespaVersion + (dockerImageRepo.map(repo -> " " + repo).orElse(""));
+        return type + " " + id + " " + groupId.map(group -> group + " ").orElse("") + vespaVersion + (dockerImageRepo.map(repo -> " " + repo).orElse("")) + (profile != null ? " profile=" + profile : "");
     }
 
     @Override
@@ -196,15 +212,16 @@ public final class ClusterSpec {
                groupId.equals(that.groupId) &&
                vespaVersion.equals(that.vespaVersion) &&
                dockerImageRepo.equals(that.dockerImageRepo) &&
-               zoneEndpoint.equals(that.zoneEndpoint) && 
+               zoneEndpoint.equals(that.zoneEndpoint) &&
                sidecars.equals(that.sidecars) &&
-               availabilityZones.equals(that.availabilityZones);
+               availabilityZones.equals(that.availabilityZones) &&
+               Objects.equals(profile, that.profile);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(type, id, groupId, vespaVersion, exclusive, dockerImageRepo, zoneEndpoint,
-                            stateful, sidecars, availabilityZones);
+                            stateful, sidecars, availabilityZones, profile);
     }
 
     /**
