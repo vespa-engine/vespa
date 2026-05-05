@@ -7,4 +7,4 @@ namespace search::fakedata {
 template class BitDecode64<true>;
 template class BitDecode64<false>;
 
-}
+} // namespace search::fakedata

@@ -4,6 +4,7 @@
 #include <vespa/document/base/globalid.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
+
 #include <map>
 #include <memory>
 
@@ -12,15 +13,12 @@ namespace search::attribute::test {
 using MockGidToLidMap = std::map<document::GlobalId, uint32_t>;
 
 struct MockGidToLidMapper : public search::IGidToLidMapper {
-    const MockGidToLidMap &_map;
+    const MockGidToLidMap& _map;
 
-    MockGidToLidMapper(const MockGidToLidMap &map)
-        : _map(map)
-    {
-    }
+    MockGidToLidMapper(const MockGidToLidMap& map) : _map(map) {}
 
-    void foreach(const search::IGidToLidMapperVisitor &visitor) const override {
-        for (const auto &kv : _map) {
+    void foreach (const search::IGidToLidMapperVisitor& visitor) const override {
+        for (const auto& kv : _map) {
             if (kv.second != 0) {
                 visitor.visit(kv.first, kv.second);
             }
@@ -36,4 +34,4 @@ struct MockGidToLidMapperFactory : public search::IGidToLidMapperFactory {
     }
 };
 
-}
+} // namespace search::attribute::test

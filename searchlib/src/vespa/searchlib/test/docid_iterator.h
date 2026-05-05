@@ -2,15 +2,13 @@
 
 #include <vespa/searchlib/queryeval/searchiterator.h>
 
-
 namespace search::test {
 
 /*
  * Test search iterator used by SearchIteratorVerifier and
  * InitRangeVerifier.
  */
-class DocIdIterator : public search::queryeval::SearchIterator
-{
+class DocIdIterator : public search::queryeval::SearchIterator {
     const bool                  _strict;
     uint32_t                    _currIndex;
     const std::vector<uint32_t> _docIds;
@@ -24,4 +22,4 @@ public:
     vespalib::Trinary is_strict() const override;
 };
 
-}
+} // namespace search::test

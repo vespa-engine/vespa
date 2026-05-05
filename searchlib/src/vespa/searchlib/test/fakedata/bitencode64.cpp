@@ -5,18 +5,14 @@
 namespace search::fakedata {
 
 template <bool bigEndian>
-BitEncode64<bigEndian>::BitEncode64()
-    : bitcompression::EncodeContext64<bigEndian>(),
-      _cbuf(*this)
-{
+BitEncode64<bigEndian>::BitEncode64() : bitcompression::EncodeContext64<bigEndian>(), _cbuf(*this) {
     _cbuf.allocComprBuf(64, 1);
     this->afterWrite(_cbuf, 0, 0);
 }
 
-template <bool bigEndian>
-BitEncode64<bigEndian>::~BitEncode64() = default;
+template <bool bigEndian> BitEncode64<bigEndian>::~BitEncode64() = default;
 
 template class BitEncode64<true>;
 template class BitEncode64<false>;
 
-}
+} // namespace search::fakedata

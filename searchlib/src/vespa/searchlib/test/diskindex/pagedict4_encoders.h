@@ -9,8 +9,7 @@ namespace search::diskindex::test {
 /*
  * Class for writing to memory based pagedict4 structure
  */
-struct PageDict4Encoders
-{
+struct PageDict4Encoders {
     using EC = search::bitcompression::PostingListCountFileEncodeContext;
 
     EC sse;
@@ -21,4 +20,4 @@ struct PageDict4Encoders
     ~PageDict4Encoders();
 };
 
-}
+} // namespace search::diskindex::test

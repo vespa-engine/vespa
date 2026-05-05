@@ -1,8 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "fakeword.h"
 #include "fakeposting.h"
+#include "fakeword.h"
+
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 #include <vespa/searchlib/diskindex/zc4_posting_params.h>
@@ -12,8 +13,7 @@ namespace search::fakedata {
 /*
  * YST style compression of docid list.
  */
-class FakeZcFilterOcc : public FakePosting
-{
+class FakeZcFilterOcc : public FakePosting {
 protected:
     size_t       _docIdsSize;
     size_t       _l1SkipSize;
@@ -23,33 +23,29 @@ protected:
     unsigned int _hitDocs;
     uint32_t     _lastDocId;
 
-    uint64_t                      _compressedBits;
-    std::pair<uint64_t *, size_t> _compressed;
-    vespalib::alloc::Alloc        _compressedAlloc;
-    uint64_t                      _featuresSize;
-    const bitcompression::PosOccFieldsParams &_fieldsParams;
-    bool                          _bigEndian;
-    diskindex::Zc4PostingParams   _posting_params;
-    index::PostingListCounts      _counts;
+    uint64_t                                  _compressedBits;
+    std::pair<uint64_t*, size_t>              _compressed;
+    vespalib::alloc::Alloc                    _compressedAlloc;
+    uint64_t                                  _featuresSize;
+    const bitcompression::PosOccFieldsParams& _fieldsParams;
+    bool                                      _bigEndian;
+    diskindex::Zc4PostingParams               _posting_params;
+    index::PostingListCounts                  _counts;
+
 protected:
-    void setup(const FakeWord &fw);
+    void setup(const FakeWord& fw);
 
-    template <bool bigEndian>
-    void setupT(const FakeWord &fw);
+    template <bool bigEndian> void setupT(const FakeWord& fw);
 
-    template <bool bigEndian>
-    void read_header();
+    template <bool bigEndian> void read_header();
 
-    void validate_read(const FakeWord &fw) const;
-    template <bool bigEndian>
-    void validate_read(const FakeWord &fw) const;
+    void validate_read(const FakeWord& fw) const;
+    template <bool bigEndian> void validate_read(const FakeWord& fw) const;
 
 public:
-    explicit FakeZcFilterOcc(const FakeWord &fw);
-    FakeZcFilterOcc(const FakeWord &fw,
-                    bool bigEndian,
-                    const diskindex::Zc4PostingParams &posting_params,
-                    const char *nameSuffix);
+    explicit FakeZcFilterOcc(const FakeWord& fw);
+    FakeZcFilterOcc(const FakeWord& fw, bool bigEndian, const diskindex::Zc4PostingParams& posting_params,
+                    const char* nameSuffix);
     ~FakeZcFilterOcc() override;
 
     static void forceLink();
@@ -64,9 +60,10 @@ public:
     size_t l4SkipBitSize() const override;
     int lowLevelSinglePostingScan() const override;
     int lowLevelSinglePostingScanUnpack() const override;
-    int lowLevelAndPairPostingScan(const FakePosting &rhs) const override;
-    int lowLevelAndPairPostingScanUnpack(const FakePosting &rhs) const override;
-    std::unique_ptr<queryeval::SearchIterator> createIterator(const fef::TermFieldMatchDataArray &matchData) const override;
+    int lowLevelAndPairPostingScan(const FakePosting& rhs) const override;
+    int lowLevelAndPairPostingScanUnpack(const FakePosting& rhs) const override;
+    std::unique_ptr<queryeval::SearchIterator>
+    createIterator(const fef::TermFieldMatchDataArray& matchData) const override;
 };
 
-}
+} // namespace search::fakedata
