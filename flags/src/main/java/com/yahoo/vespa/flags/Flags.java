@@ -199,14 +199,14 @@ public class Flags {
 
     public static final UnboundStringFlag ENDPOINT_CONFIG = defineStringFlag(
             "endpoint-config", "legacy",
-            List.of("andreer", "olaa"), "2023-10-06", "2026-05-01",
+            List.of("andreer", "olaa"), "2023-10-06", "2026-08-01",
             "Set the endpoint config to use for an application. Must be 'legacy', 'combined' or 'generated'. See EndpointConfig for further details",
             "Takes effect on next deployment through controller",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static UnboundBooleanFlag LOGSERVER_OTELCOL_AGENT = defineFeatureFlag(
             "logserver-otelcol-agent", false,
-            List.of("olaa"), "2024-04-03", "2026-05-01",
+            List.of("olaa"), "2024-04-03", "2026-08-01",
             "Whether logserver container should run otel agent",
             "Takes effect at redeployment",
             TENANT_ID, APPLICATION, INSTANCE_ID);
@@ -251,7 +251,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag SNAPSHOTS_ENABLED = defineFeatureFlag(
             "snapshots-enabled", false,
-            List.of("olaa"), "2024-10-22", "2026-05-01",
+            List.of("olaa"), "2024-10-22", "2026-08-01",
             "Whether node snapshots should be created when host storage is discarded",
             "Takes effect immediately");
 
