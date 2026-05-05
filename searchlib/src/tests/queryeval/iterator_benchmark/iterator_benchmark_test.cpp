@@ -1055,6 +1055,17 @@ TEST(IteratorBenchmark, analyze_AND_plan_variants_ENN) {
 }
 
 int main(int argc, char** argv) {
+    for (int i = 0; i < argc; i++) {
+        std::string_view smoke_test{"--smoke-test"};
+        if (smoke_test == argv[i]) {
+            std::println("Adding --smoke-test filter");
+            const char* smoke_test_filter = "--gtest_filter="
+                                            "IteratorBenchmark.analyze_term_search_in_attributes_strict"
+                                            ":IteratorBenchmark.analyze_OR_strict"
+                                            ":IteratorBenchmark.analyze_AND_plan_variants_ENN";
+            argv[i] = const_cast<char*>(smoke_test_filter);
+        }
+    }
     ::testing::InitGoogleTest(&argc, argv);
     int res = RUN_ALL_TESTS();
     if (!global_summary.empty()) {
