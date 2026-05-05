@@ -520,7 +520,7 @@ bool SortBlueprintsByCost::check(const Properties& props, bool fallback) {
     return lookupBool(props, NAME, fallback);
 }
 
-const std::string AnnTimeBudget::NAME("vespa.matching.anntimebudget");
+const std::string AnnTimeBudget::NAME("vespa.matching.nns.anntimebudget");
 const uint32_t    AnnTimeBudget::DEFAULT_VALUE(std::numeric_limits<uint32_t>::max());
 
 uint32_t AnnTimeBudget::lookup(const Properties& props) {
@@ -537,7 +537,7 @@ bool AnnTimeBudget::is_present(const Properties& props) {
 
 namespace anntimeout {
 
-const std::string Enabled::NAME("vespa.matching.anntimeout.enable");
+const std::string Enabled::NAME("vespa.matching.nns.anntimeout.enable");
 const bool        Enabled::DEFAULT_VALUE(false);
 
 bool Enabled::lookup(const Properties& props) {
@@ -548,7 +548,7 @@ bool Enabled::lookup(const Properties& props, bool default_value) {
     return lookupBool(props, NAME, default_value);
 }
 
-const std::string Factor::NAME("vespa.matching.anntimeout.factor");
+const std::string Factor::NAME("vespa.matching.nns.anntimeout.factor");
 const double      Factor::DEFAULT_VALUE(0.9);
 
 double Factor::lookup(const Properties& props) {

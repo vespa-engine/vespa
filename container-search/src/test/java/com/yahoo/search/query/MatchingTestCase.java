@@ -25,9 +25,12 @@ public class MatchingTestCase {
         assertNull(query.getRanking().getMatching().getApproximateThreshold());
         assertNull(query.getRanking().getMatching().getTargetHitsMaxAdjustmentFactor());
         assertNull(query.getRanking().getMatching().getFilterThreshold());
+        assertNull(query.getRanking().getMatching().getAnnTimeBudget());
         assertNull(query.getRanking().getMatching().getWeakAnd().getStopwordLimit());
         assertNull(query.getRanking().getMatching().getWeakAnd().getAdjustTarget());
         assertNull(query.getRanking().getMatching().getWeakAnd().getAllowDropAll());
+        query.prepare();
+        assertNull(query.getRanking().getProperties().get("vespa.matching.nns.anntimebudget"));
     }
 
     @Test
@@ -80,6 +83,34 @@ public class MatchingTestCase {
     }
 
     @Test
+    void testAnnTimeBudgetOverride() {
+        {
+            Query query = new Query("?query=test&ranking.matching.anntimebudget=25ms");
+            assertEquals(Long.valueOf(25), query.getRanking().getMatching().getAnnTimeBudget());
+            query.prepare();
+            assertEquals("25", query.getRanking().getProperties().get("vespa.matching.nns.anntimebudget").get(0));
+        }
+        {
+            Query query = new Query("?query=test&ranking.matching.anntimebudget=2");
+            assertEquals(Long.valueOf(2000), query.getRanking().getMatching().getAnnTimeBudget());
+            query.prepare();
+            assertEquals("2000", query.getRanking().getProperties().get("vespa.matching.nns.anntimebudget").get(0));
+        }
+        {
+            Query query = new Query("?query=test&ranking.matching.anntimebudget=4294967296ms");
+            assertEquals(Long.valueOf(4294967295L), query.getRanking().getMatching().getAnnTimeBudget());
+            query.prepare();
+            assertEquals("4294967295", query.getRanking().getProperties().get("vespa.matching.nns.anntimebudget").get(0));
+        }
+        {
+            Query query = new Query("?query=test&ranking.matching.anntimebudget=9223372036854775807ms");
+            assertEquals(Long.valueOf(4294967295L), query.getRanking().getMatching().getAnnTimeBudget());
+            query.prepare();
+            assertEquals("4294967295", query.getRanking().getProperties().get("vespa.matching.nns.anntimebudget").get(0));
+        }
+    }
+
+    @Test
     void testBackwardsCompatibleQueryOverrides() {
         // The lowercase aliases are supported to provide backwards compatibility of the properties that was wrongly named in the first place.
         Query query = new Query("?query=test" +
@@ -93,15 +124,18 @@ public class MatchingTestCase {
         assertEquals(Integer.valueOf(3), query.getRanking().getMatching().getMinHitsPerThread());
     }
 
-    private void verifyException(String key, String expectKey, String value) {
+    private void verifyExceptionMessage(String key, String value, String message) {
         try {
             new Query("?query=test&ranking.matching."+key+"="+value);
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("Could not set 'ranking.matching." + key + "': " +
-                         expectKey + " must be in the range [0.0, 1.0], but is " + value,
-                         Exceptions.toMessageString(e));
+            assertEquals("Could not set 'ranking.matching." + key + "': " + message,
+                    Exceptions.toMessageString(e));
         }
+    }
+
+    private void verifyException(String key, String expectKey, String value) {
+        verifyExceptionMessage(key, value, expectKey + " must be in the range [0.0, 1.0], but is " + value);
     }
 
     private void verifyException(String key, String value) {
@@ -118,6 +152,7 @@ public class MatchingTestCase {
         verifyException("weakand.stopwordLimit", "stopwordLimit", "1.1");
         verifyException("weakand.adjustTarget", "adjustTarget", "-0.1");
         verifyException("weakand.adjustTarget", "adjustTarget", "1.1");
+        verifyExceptionMessage("anntimebudget", "-42", "Error parsing '-42': Invalid number '-42'");
     }
 
 }

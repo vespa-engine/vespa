@@ -33,6 +33,8 @@ public class Matching implements Cloneable {
     public static final String TARGET_HITS_MAX_ADJUSTMENT_FACTOR = "targetHitsMaxAdjustmentFactor";
     public static final String LAZY_FILTER = "lazyFilter";
     public static final String FILTER_THRESHOLD = "filterThreshold";
+    public static final String ANNTIMEBUDGET = "anntimebudget";
+    public static final String ANNTIMEOUT = "anntimeout";
     public static final String WEAKAND = "weakand";
 
     static {
@@ -51,6 +53,8 @@ public class Matching implements Cloneable {
         argumentType.addField(new FieldDescription(TARGET_HITS_MAX_ADJUSTMENT_FACTOR, "double"));
         argumentType.addField(new FieldDescription(LAZY_FILTER, "boolean"));
         argumentType.addField(new FieldDescription(FILTER_THRESHOLD, "double"));
+        argumentType.addField(new FieldDescription(ANNTIMEBUDGET, "string"));
+        argumentType.addField(new FieldDescription(ANNTIMEOUT, new QueryProfileFieldType(AnnTimeout.getArgumentType())));
         argumentType.addField(new FieldDescription(WEAKAND, new QueryProfileFieldType(WeakAnd.getArgumentType())));
         argumentType.freeze();
     }
@@ -69,6 +73,8 @@ public class Matching implements Cloneable {
     private Double targetHitsMaxAdjustmentFactor = null;
     private Boolean lazyFilter = null;
     private Double filterThreshold = null;
+    private Long annTimeBudget = null;
+    private AnnTimeout annTimeout = new AnnTimeout();
     private WeakAnd weakAnd = new WeakAnd();
 
     public Double getTermwiseLimit() { return termwiseLimit; }
@@ -83,6 +89,8 @@ public class Matching implements Cloneable {
     public Double getTargetHitsMaxAdjustmentFactor() { return targetHitsMaxAdjustmentFactor; }
     public Boolean getLazyFilter() { return lazyFilter; }
     public Double getFilterThreshold() { return filterThreshold; }
+    public Long getAnnTimeBudget() { return annTimeBudget; }
+    public AnnTimeout getAnnTimeout() { return annTimeout; }
     public WeakAnd getWeakAnd() { return weakAnd; }
 
     private static void validateRange(String field, double v, double lboundIncl, double uboundIncl) {
@@ -131,6 +139,9 @@ public class Matching implements Cloneable {
         validateRange(FILTER_THRESHOLD, threshold, 0.0, 1.0);
         filterThreshold = threshold;
     }
+    public void setAnnTimeBudget(Long budget) {
+        annTimeBudget = budget > 0xFFFF_FFFFL ? 0xFFFF_FFFFL : budget < 0 ? 0 : budget;
+    }
 
     /** Internal operation - DO NOT USE */
     public void prepare(RankProperties rankProperties) {
@@ -170,6 +181,10 @@ public class Matching implements Cloneable {
         if (filterThreshold != null) {
             rankProperties.put("vespa.matching.filter_threshold", String.valueOf(filterThreshold));
         }
+        if (annTimeBudget != null) {
+            rankProperties.put("vespa.matching.nns.anntimebudget", String.valueOf(annTimeBudget));
+        }
+        annTimeout.prepare(rankProperties);
         weakAnd.prepare(rankProperties);
     }
 
@@ -177,6 +192,7 @@ public class Matching implements Cloneable {
     public Matching clone() {
         try {
             var clone =  (Matching) super.clone();
+            clone.annTimeout = this.annTimeout.clone();
             clone.weakAnd = this.weakAnd.clone();
             return clone;
         }
@@ -202,6 +218,8 @@ public class Matching implements Cloneable {
                Objects.equals(targetHitsMaxAdjustmentFactor, matching.targetHitsMaxAdjustmentFactor) &&
                Objects.equals(lazyFilter, matching.lazyFilter) &&
                Objects.equals(filterThreshold, matching.filterThreshold) &&
+               Objects.equals(annTimeBudget, matching.annTimeBudget) &&
+               Objects.equals(annTimeout, matching.annTimeout) &&
                Objects.equals(weakAnd, matching.weakAnd);
     }
 
@@ -209,7 +227,8 @@ public class Matching implements Cloneable {
     public int hashCode() {
         return Objects.hash(termwiseLimit, numThreadsPerSearch, numSearchPartitions, minHitsPerThread,
                             postFilterThreshold, approximateThreshold, filterFirstThreshold, filterFirstExploration,
-                            explorationSlack, targetHitsMaxAdjustmentFactor, lazyFilter, filterThreshold, weakAnd);
+                            explorationSlack, targetHitsMaxAdjustmentFactor, lazyFilter, filterThreshold, annTimeBudget,
+                            annTimeout, weakAnd);
     }
 }
 
