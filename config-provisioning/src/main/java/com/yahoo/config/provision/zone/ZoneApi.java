@@ -11,15 +11,15 @@ import com.yahoo.config.provision.SystemName;
  */
 public interface ZoneApi {
 
-    SystemName getSystemName();
+    SystemName systemName();
 
     /** Returns a unique ID across all config server zones (including the controller zone) within the system. */
     default ZoneId id() { return legacyId(); }
 
-    CloudName getCloudName();
+    CloudName cloudName();
 
     /** Returns the region name within the cloud, e.g. 'us-east-1' in AWS */
-    String getCloudNativeRegionName();
+    String cloudNativeRegionName();
 
     /** Returns the availability zone within the cloud, e.g. 'use1-az2' in AWS */
     default String getCloudNativeAvailabilityZone() { throw new UnsupportedOperationException(); }
@@ -32,8 +32,8 @@ public interface ZoneApi {
     ZoneId legacyId();
 
     /** Returns the SYSTEM.ENVIRONMENT.REGION string. WARNING: Uses {@link #legacyId()} by default. */
-    default String getFullName() {
-        return getSystemName().value() + "." + getEnvironment().value() + "." + getRegionName().value();
+    default String fullName() {
+        return systemName().value() + "." + getEnvironment().value() + "." + getRegionName().value();
     }
 
     /** WARNING: Uses {@link #legacyId()} by default. */
