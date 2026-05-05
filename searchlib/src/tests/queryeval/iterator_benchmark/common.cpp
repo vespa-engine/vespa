@@ -3,6 +3,7 @@
 #include "common.h"
 
 #include <vespa/searchlib/queryeval/blueprint.h>
+#include <vespa/vespalib/util/xoshiro.h>
 
 #include <sstream>
 
@@ -82,12 +83,12 @@ template std::string get_class_name<SearchIterator>(const SearchIterator& obj);
 namespace {
 
 // TODO: Make seed configurable.
-constexpr uint32_t default_seed = 1234;
-std::mt19937       gen(default_seed);
+constexpr uint32_t               default_seed = 1234;
+vespalib::Xoshiro256PlusPlusPrng gen(default_seed);
 
 } // namespace
 
-std::mt19937& get_gen() {
+vespalib::Xoshiro256PlusPlusPrng& get_gen() {
     return gen;
 }
 

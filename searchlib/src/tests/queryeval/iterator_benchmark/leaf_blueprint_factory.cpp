@@ -9,6 +9,7 @@
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/queryeval/nearest_neighbor_blueprint.h>
+#include <vespa/vespalib/util/xoshiro.h>
 
 #include <format>
 #include <limits>
@@ -16,6 +17,7 @@
 
 using search::attribute::BasicType;
 using search::attribute::Config;
+using vespalib::Xoshiro256PlusPlusPrng;
 using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
@@ -25,7 +27,7 @@ namespace search::queryeval::test {
 
 namespace {
 
-Value::UP make_random_vec(const std::string& type_spec, uint32_t dim, std::mt19937& gen) {
+Value::UP make_random_vec(const std::string& type_spec, uint32_t dim, Xoshiro256PlusPlusPrng& gen) {
     std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
     TensorSpec                            spec(type_spec);
     for (uint32_t i = 0; i < dim; i++) {
@@ -44,7 +46,7 @@ EnnBlueprintFactory::EnnBlueprintFactory(const EnnConfig& cfg) : _attr(), _query
     tensor_cfg.setTensorType(ValueType::from_spec(type_spec));
     tensor_cfg.set_distance_metric(cfg.distance_metric);
 
-    std::mt19937            gen(cfg.seed);
+    Xoshiro256PlusPlusPrng  gen(cfg.seed);
     AttributeContextBuilder builder;
     _attr = builder.add_tensor(tensor_cfg, "nn", cfg.num_docs,
                                [&](uint32_t) { return make_random_vec(type_spec, cfg.dim, gen); });
