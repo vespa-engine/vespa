@@ -47,6 +47,18 @@ func (n annNode) makeRows(tab *table) {
 	if top_k_hits := n.root.Field("top_k_hits"); top_k_hits.Valid() {
 		tab.str("found hits").str(fmt.Sprintf("%d", top_k_hits.AsLong())).commit()
 	}
+	if time_allocated := n.root.Field("time_allocated"); time_allocated.Valid() {
+		tab.str("time_allocated").str(fmt.Sprintf("%.3f ms", time_allocated.AsDouble())).commit()
+	}
+	if time_used := n.root.Field("time_used"); time_used.Valid() {
+		tab.str("time_used").str(fmt.Sprintf("%.3f ms", time_used.AsDouble())).commit()
+	}
+	if terminated_early := n.root.Field("terminated_early"); terminated_early.Valid() {
+		tab.str("terminated_early").str(fmt.Sprintf("%t", terminated_early.AsBool())).commit()
+	}
+	if timeout_hit := n.root.Field("timeout_hit"); timeout_hit.Valid() {
+		tab.str("timeout_hit").str(fmt.Sprintf("%t", timeout_hit.AsBool())).commit()
+	}
 }
 
 func (p protonTrace) findAnnNodes() []annNode {

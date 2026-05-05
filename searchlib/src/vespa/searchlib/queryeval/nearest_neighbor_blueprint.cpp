@@ -84,6 +84,10 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec&  
       _low_hit_ratio(false),
       _pending_index_search(false),
       _matching_phase(MatchingPhase::FIRST_PHASE),
+      _ann_time_allocated(vespalib::duration::zero()),
+      _ann_time_used(vespalib::duration::zero()),
+      _ann_terminated_early(false),
+      _ann_timeout_hit(false),
       _nni_stats(),
       _stats() {
     _distance_heap.set_distance_threshold(_hnsw_params.distance_threshold);
@@ -150,9 +154,16 @@ bool NearestNeighborBlueprint::pending_index_search() const {
     return _pending_index_search;
 }
 
-void NearestNeighborBlueprint::perform_index_search(const vespalib::Deadline& doom) {
+void NearestNeighborBlueprint::perform_index_search(const vespalib::Deadline& deadline) {
     if (_pending_index_search) {
-        perform_top_k(_attr_tensor.nearest_neighbor_index(), doom);
+        _ann_time_allocated = deadline.time_left();
+
+        vespalib::Timer timer;
+        perform_top_k(_attr_tensor.nearest_neighbor_index(), deadline);
+        _ann_time_used = timer.elapsed();
+
+        _ann_terminated_early = deadline.was_missed();
+        _ann_timeout_hit = _ann_terminated_early && deadline.type() == vespalib::Deadline::TIMEOUT;
         _pending_index_search = false;
     }
 }
@@ -242,6 +253,10 @@ void NearestNeighborBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) co
         visitor.visitBool("filter_first_heuristic_used", _low_hit_ratio);
     }
     if (_algorithm == Algorithm::INDEX_TOP_K || _algorithm == Algorithm::INDEX_TOP_K_WITH_FILTER) {
+        visitor.visitFloat("time_allocated", vespalib::count_ns(_ann_time_allocated) / 1000000.0);
+        visitor.visitFloat("time_used", vespalib::count_ns(_ann_time_used) / 1000000.0);
+        visitor.visitBool("terminated_early", _ann_terminated_early);
+        visitor.visitBool("timeout_hit", _ann_timeout_hit);
         visitor.visitInt("distances_computed", _nni_stats.distances_computed());
         visitor.visitInt("nodes_visited", _nni_stats.nodes_visited());
         visitor.visitInt("top_k_hits", _found_hits.size());
