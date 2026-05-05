@@ -5,8 +5,8 @@
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/common/bitvector.h>
+#include <vespa/vespalib/util/xoshiro.h>
 
-#include <random>
 #include <variant>
 
 namespace search::queryeval::test {
@@ -68,7 +68,7 @@ public:
 
 std::string get_class_name(const auto& obj);
 
-std::mt19937& get_gen();
+vespalib::Xoshiro256PlusPlusPrng& get_gen();
 
 BitVector::UP random_docids(uint32_t docid_limit, uint32_t count);
 
