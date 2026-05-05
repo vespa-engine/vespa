@@ -8,6 +8,7 @@ import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 
 import com.yahoo.search.query.Model;
+import com.yahoo.search.query.ParameterParser;
 import com.yahoo.search.query.Presentation;
 import com.yahoo.search.query.Properties;
 import com.yahoo.search.query.QueryType;
@@ -110,6 +111,7 @@ public class QueryProperties extends Properties {
         addDualCasedRM(map, Matching.TARGET_HITS_MAX_ADJUSTMENT_FACTOR, GetterSetter.of(query -> query.getRanking().getMatching().getTargetHitsMaxAdjustmentFactor(), (query, value) -> query.getRanking().getMatching().setTargetHitsMaxAdjustmentFactor(asDouble(value, 20.0))));
         addDualCasedRM(map, Matching.LAZY_FILTER, GetterSetter.of(query -> query.getRanking().getMatching().getLazyFilter(), (query, value) -> query.getRanking().getMatching().setLazyFilter(asBoolean(value, false))));
         addDualCasedRM(map, Matching.FILTER_THRESHOLD, GetterSetter.of(query -> query.getRanking().getMatching().getFilterThreshold(), (query, value) -> query.getRanking().getMatching().setFilterThreshold(asDouble(value, 1.0))));
+        addDualCasedRM(map, Matching.ANNTIMEBUDGET, GetterSetter.of(query -> query.getRanking().getMatching().getAnnTimeBudget(), (query, value) -> query.getRanking().getMatching().setAnnTimeBudget(ParameterParser.asMilliSeconds(value, Long.MAX_VALUE))));
         map.put(CompoundName.fromComponents(Ranking.RANKING, Matching.MATCHING, Matching.WEAKAND, WeakAnd.STOPWORD_LIMIT), GetterSetter.of(query -> query.getRanking().getMatching().getWeakAnd().getStopwordLimit(), (query, value) -> query.getRanking().getMatching().getWeakAnd().setStopwordLimit(asDouble(value, 1.0))));
         map.put(CompoundName.fromComponents(Ranking.RANKING, Matching.MATCHING, Matching.WEAKAND, WeakAnd.ADJUST_TARGET), GetterSetter.of(query -> query.getRanking().getMatching().getWeakAnd().getAdjustTarget(), (query, value) -> query.getRanking().getMatching().getWeakAnd().setAdjustTarget(asDouble(value, 1.0))));
         map.put(CompoundName.fromComponents(Ranking.RANKING, Matching.MATCHING, Matching.WEAKAND, WeakAnd.ALLOW_DROP_ALL), GetterSetter.of(query -> query.getRanking().getMatching().getWeakAnd().getAllowDropAll(), (query, value) -> query.getRanking().getMatching().getWeakAnd().setAllowDropAll(asBoolean(value, false))));
