@@ -10,6 +10,8 @@ GEM
       fiber-annotation
       io-event (~> 1.1)
       timers (~> 4.1)
+    base64 (0.3.0)
+    bigdecimal (4.1.2)
     colorator (1.1.0)
     concurrent-ruby (1.2.2)
     console (1.23.7)
@@ -121,6 +123,8 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
+  base64 (~> 0.3.0)
+  bigdecimal (~> 4.1)
   csv
   html-proofer
   jekyll (~> 4.3.0)

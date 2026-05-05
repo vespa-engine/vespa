@@ -31,3 +31,7 @@ gem 'html-proofer'
 gem 'jekyll-redirect-from'
 gem 'jekyll-feed'
 
+
+gem "base64", "~> 0.3.0"
+
+gem "bigdecimal", "~> 4.1"
