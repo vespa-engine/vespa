@@ -136,7 +136,7 @@ public class Matching implements Cloneable {
         filterThreshold = threshold;
     }
     public void setAnnTimeBudget(Long budget) {
-        annTimeBudget = budget;
+        annTimeBudget = budget > 0xFFFF_FFFFL ? 0xFFFF_FFFFL : budget < 0 ? 0 : budget;
     }
 
     /** Internal operation - DO NOT USE */
