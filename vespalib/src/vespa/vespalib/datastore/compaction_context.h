@@ -23,6 +23,7 @@ public:
     CompactionContext(ICompactable& store, std::unique_ptr<CompactingBuffers> compacting_buffers);
     ~CompactionContext() override;
     void compact(std::span<AtomicEntryRef> refs) override;
+    const EntryRefFilter& entry_ref_filter() const override { return _filter; }
 };
 
 } // namespace vespalib::datastore

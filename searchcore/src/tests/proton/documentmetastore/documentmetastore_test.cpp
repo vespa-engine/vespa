@@ -25,6 +25,8 @@
 #include <vespa/vespalib/util/hw_info.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
+#include <vespa/vespalib/btree/btreenodeallocator.hpp>
+
 #include <filesystem>
 #include <thread>
 
@@ -2087,10 +2089,9 @@ void try_compact_document_meta_store(DocumentMetaStore& dms) {
     dms.commit(CommitParam::UpdateStats::FORCE);
 }
 
-} // namespace
-
-TEST(DocumentMetaStoreTest, gid_to_lid_map_can_be_compacted) {
-    auto dms = std::make_shared<DocumentMetaStore>(createBucketDB());
+void verify_that_dms_can_be_compacted(bool store_full_document_id) {
+    auto dms = std::make_shared<DocumentMetaStore>(createBucketDB(), "[documentmetastore]", search::GrowStrategy(),
+                                                   store_full_document_id, SubDbType::READY);
     dms->constructFreeList();
     static constexpr uint32_t full_size = 1000;
     for (uint32_t i = 1; i < full_size; ++i) {
@@ -2133,6 +2134,85 @@ TEST(DocumentMetaStoreTest, gid_to_lid_map_can_be_compacted) {
     EXPECT_GT(status_before.getUsed(), status_after.getUsed());
     EXPECT_GT(status_early.getDead(), status_after.getDead());
     EXPECT_EQ(0, status_after.getOnHold());
+}
+
+// Similar to the function above, but check the memory usage of the actual data structure
+// that should be affected by compaction
+void verify_that_compaction_affects_memory_usage(uint32_t full_size, uint32_t remove_start_lid,
+                                                 uint32_t remove_shrink_target,
+                                                 uint32_t memory_usage_decreases_after_iteration,
+                                                 vespalib::MemoryUsage (DocumentMetaStore::*get_mem_usage)() const) {
+    auto dms = std::make_shared<DocumentMetaStore>(createBucketDB(), "[documentmetastore]", search::GrowStrategy(),
+                                                   true, SubDbType::READY);
+    dms->constructFreeList();
+    for (uint32_t i = 1; i < full_size; ++i) {
+        addLid(*dms, i);
+    }
+    dms->commit(CommitParam::UpdateStats::FORCE);
+    AttributeGuard guard(dms);
+    remove(remove_start_lid, remove_shrink_target, *dms);
+    dms->commit(CommitParam::UpdateStats::FORCE);
+    auto mem_usage_before = (dms.get()->*get_mem_usage)();
+    EXPECT_LT(0, mem_usage_before.allocatedBytesOnHold());
+    guard = AttributeGuard();
+    try_compact_document_meta_store(*dms);
+    auto mem_usage_early = (dms.get()->*get_mem_usage)();
+    EXPECT_LT(mem_usage_before.deadBytes(), mem_usage_early.deadBytes());
+    EXPECT_EQ(0, mem_usage_early.allocatedBytesOnHold());
+    bool compaction_done = false;
+    for (uint32_t i = 0; i < 50 && !compaction_done; ++i) {
+        AttributeGuard guard2(dms);
+        auto           mem_usage_loop_iteration_start = (dms.get()->*get_mem_usage)();
+        try_compact_document_meta_store(*dms);
+        try_compact_document_meta_store(*dms);
+        auto mem_usage_second = (dms.get()->*get_mem_usage)();
+        // How many iterations it takes for the number of used bytes to go down
+        // depends on the data structure we are looking at
+        if (i > memory_usage_decreases_after_iteration) {
+            EXPECT_GT(mem_usage_before.usedBytes(), mem_usage_second.usedBytes());
+        }
+        EXPECT_GT(mem_usage_early.deadBytes(), mem_usage_second.deadBytes());
+        try_compact_document_meta_store(*dms);
+        auto mem_usage_third = (dms.get()->*get_mem_usage)();
+        EXPECT_EQ(mem_usage_second.deadBytes(), mem_usage_third.deadBytes());
+        EXPECT_EQ(mem_usage_second.usedBytes(), mem_usage_third.usedBytes());
+        EXPECT_EQ(mem_usage_second.allocatedBytesOnHold(), mem_usage_third.allocatedBytesOnHold());
+        EXPECT_GE(mem_usage_loop_iteration_start.deadBytes(), mem_usage_third.deadBytes());
+        // Take memory usage not changing as a signal of compaction being done
+        // (and not just number of dead bytes not changing!)
+        if (mem_usage_loop_iteration_start == mem_usage_third) {
+            compaction_done = true;
+        }
+    }
+    EXPECT_TRUE(compaction_done);
+    auto mem_usage_after = dms->get_docid_memory_usage();
+    EXPECT_GT(mem_usage_before.usedBytes(), mem_usage_after.usedBytes());
+    EXPECT_GT(mem_usage_early.deadBytes(), mem_usage_after.deadBytes());
+    EXPECT_EQ(0, mem_usage_after.allocatedBytesOnHold());
+}
+
+} // namespace
+
+TEST(DocumentMetaStoreTest, dms_can_be_compacted) {
+    verify_that_dms_can_be_compacted(false);
+}
+
+TEST(DocumentMetaStoreTest, dms_storing_full_document_ids_can_be_compacted) {
+    verify_that_dms_can_be_compacted(true);
+}
+
+TEST(DocumentMetaStore, document_id_store_can_be_compacted) {
+    static constexpr uint32_t full_size = 10000;
+    // Remove all lids from 1 to full_sizes - 100 to make sure that
+    // compaction of the used ArrayStore actually has to move things around
+    verify_that_compaction_affects_memory_usage(full_size, full_size - 100, 1, 1,
+                                                &DocumentMetaStore::get_docid_memory_usage);
+}
+
+TEST(DocumentMetaStore, gid_to_lid_map_can_be_compacted) {
+    static constexpr uint32_t full_size = 10000;
+    verify_that_compaction_affects_memory_usage(full_size, full_size - 1, 100, 0,
+                                                &DocumentMetaStore::get_gid_to_lid_map_memory_usage);
 }
 
 } // namespace proton

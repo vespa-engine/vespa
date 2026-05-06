@@ -227,6 +227,23 @@ bool DocumentMetaStore::consider_compact_gid_to_lid_map() {
     return _should_compact_gid_to_lid_map;
 }
 
+void DocumentMetaStore::compact_docid_store() {
+    auto context = _docid_store.compact_worst(getConfig().getCompactionStrategy());
+    if (context) {
+        // We cannot use the compact method of the ICompactionContext since we do not have a span of EntryRefs.
+        // We have to move the elements that pass its filter manually.
+        auto& filter = context->entry_ref_filter();
+        for (uint32_t lid = 0; lid < _metadataStore.size(); ++lid) {
+            auto& metadata = _metadataStore[lid];
+            auto  ref = metadata.get_relaxed_docid_ref();
+            if (ref.valid() && filter.has(ref)) {
+                EntryRef new_ref = _docid_store.move_on_compact(ref);
+                metadata.set_docid_ref(new_ref);
+            }
+        }
+    }
+}
+
 void DocumentMetaStore::onCommit() {
     if (consider_compact_gid_to_lid_map()) {
         incGeneration();
@@ -236,7 +253,15 @@ void DocumentMetaStore::onCommit() {
         _gid_to_lid_map_write_itr.begin(_gidToLidMap.getRoot());
         incGeneration();
         updateStat(CommitParam::UpdateStats::FORCE);
-    } else if (_changesSinceCommit > 0) {
+    }
+    if (_docid_store.consider_compact()) [[unlikely]] {
+        incGeneration();
+        _changesSinceCommit = 0;
+        compact_docid_store();
+        incGeneration();
+        updateStat(CommitParam::UpdateStats::FORCE);
+    }
+    if (_changesSinceCommit > 0) {
         incGeneration();
         _changesSinceCommit = 0;
     }
@@ -257,6 +282,8 @@ void DocumentMetaStore::onUpdateStat(CommitParam::UpdateStats updateStats) {
     auto gid_to_lid_map_memory_usage = _gidToLidMap.getMemoryUsage();
     _should_compact_gid_to_lid_map = compaction_strategy.should_compact_memory(gid_to_lid_map_memory_usage);
     usage.merge(gid_to_lid_map_memory_usage);
+    usage.merge(_docid_store.update_stat(
+        compaction_strategy)); // update_stat makes the ArrayStore determine a CompactionSpec internally
     // the free lists are not taken into account here
     updateStatistics(_metadataStore.size(), _metadataStore.size(), usage.allocatedBytes(), usage.usedBytes(),
                      usage.deadBytes(), usage.allocatedBytesOnHold());

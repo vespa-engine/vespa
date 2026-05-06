@@ -103,6 +103,7 @@ private:
     const GlobalId& getRawGid(DocId lid) const { return getRawMetadata(lid).getGid(); }
 
     bool consider_compact_gid_to_lid_map();
+    void compact_docid_store();
     void onCommit() override;
     void onUpdateStat(CommitParam::UpdateStats updateStats) override;
 
@@ -290,6 +291,7 @@ public:
                           std::string_view                        missing_value) const override;
 
     vespalib::MemoryUsage get_docid_memory_usage() const { return _docid_store.getMemoryUsage(); };
+    vespalib::MemoryUsage get_gid_to_lid_map_memory_usage() const { return _gidToLidMap.getMemoryUsage(); };
     static vespalib::datastore::ArrayStoreConfig make_default_docid_array_store_config();
 };
 
