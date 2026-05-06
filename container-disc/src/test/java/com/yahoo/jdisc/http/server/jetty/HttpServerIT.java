@@ -103,6 +103,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -886,11 +887,13 @@ public class HttpServerIT {
                 .newGet("/status.html").addHeader("Host", "localhost").addHeader("Host", "vespa.ai").execute()
                 .expectStatusCode(is(OK));
 
-        // Verify metric was aggregated
-        verify(metricConsumer.mockitoMock())
+        // Two mismatched Host headers trigger both DUPLICATE_HOST_HEADERS and MISMATCHED_AUTHORITY violations.
+        verify(metricConsumer.mockitoMock(), times(2))
                 .add(eq(ContainerMetrics.JETTY_HTTP_COMPLIANCE_VIOLATION.baseName()), eq(1L), Mockito.any());
         verify(metricConsumer.mockitoMock())
                 .createContext(eq(Map.of("mode", "RFC7230_VESPA", "violation", "DUPLICATE_HOST_HEADERS")));
+        verify(metricConsumer.mockitoMock())
+                .createContext(eq(Map.of("mode", "RFC7230_VESPA", "violation", "MISMATCHED_AUTHORITY")));
 
         assertTrue(driver.close());
     }
