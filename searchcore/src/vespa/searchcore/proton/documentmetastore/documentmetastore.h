@@ -290,6 +290,7 @@ public:
                           std::string_view                        missing_value) const override;
 
     vespalib::MemoryUsage get_docid_memory_usage() const { return _docid_store.getMemoryUsage(); };
+    vespalib::MemoryUsage get_gid_to_lid_map_memory_usage() const { return _gidToLidMap.getMemoryUsage(); };
     static vespalib::datastore::ArrayStoreConfig make_default_docid_array_store_config();
 };
 
