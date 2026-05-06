@@ -59,11 +59,12 @@ class Matcher {
     const search::fef::IIndexEnvironment& _index_env;
     HitList                               _hit_list;
     std::vector<uint32_t>                 _elements;
+    const MatchingElementsFields&         _fields;
 
-    const std::string* matching_elements_field(const MatchingElementsFields& fields, FieldIdT field_id);
-    void select_multiterm_children(const MatchingElementsFields& fields, const MultiTerm& multi_term);
-    void select_query_term_node(const MatchingElementsFields& fields, QueryTerm& term);
-    void select_query_nodes(const MatchingElementsFields& fields, QueryNode& query_node);
+    [[nodiscard]] const std::string* matching_elements_field(FieldIdT field_id) const;
+    void select_multiterm_children(const MultiTerm& multi_term);
+    void select_query_term_node(QueryTerm& term);
+    void select_query_nodes(QueryNode& query_node);
     void add_matching_elements(const std::string& field_name, FieldIdT field_id, uint32_t doc_lid,
                                const HitList& hit_list, MatchingElements& matching_elements);
     void find_matching_elements(SameElementQueryNode& same_element, uint32_t doc_lid,
@@ -90,30 +91,32 @@ Matcher::Matcher(FieldIdTSearcherMap& field_searcher_map, const search::fef::IIn
       _sub_field_terms(),
       _field_searcher_map(field_searcher_map),
       _index_env(index_env),
-      _hit_list() {
-    select_query_nodes(fields, query.getRoot());
+      _hit_list(),
+      _elements(),
+      _fields(fields) {
+    select_query_nodes(query.getRoot());
 }
 
 Matcher::~Matcher() = default;
 
-const std::string* Matcher::matching_elements_field(const MatchingElementsFields& fields, FieldIdT field_id) {
+const std::string* Matcher::matching_elements_field(FieldIdT field_id) const {
     auto* field_info = _index_env.getField(field_id);
     if (field_info != nullptr) {
         auto& field_name = field_info->name();
-        if (fields.has_field(field_name)) {
-            return &fields.enclosing_field(field_name);
+        if (_fields.has_field(field_name)) {
+            return &_fields.enclosing_field(field_name);
         }
     }
     return nullptr;
 }
 
-void Matcher::select_multiterm_children(const MatchingElementsFields& fields, const MultiTerm& multi_term) {
+void Matcher::select_multiterm_children(const MultiTerm& multi_term) {
     auto& qtd = dynamic_cast<const QueryTermData&>(multi_term.getQueryItem());
     auto& td = qtd.getTermData();
     auto  num_fields = td.numFields();
     for (size_t i = 0; i < num_fields; ++i) {
         auto  field_id = td.field(i).getFieldId();
-        auto* field = matching_elements_field(fields, field_id);
+        auto* field = matching_elements_field(field_id);
         if (field != nullptr) {
             auto& terms = multi_term.get_terms();
             for (auto& term : terms) {
@@ -123,35 +126,35 @@ void Matcher::select_multiterm_children(const MatchingElementsFields& fields, co
     }
 }
 
-void Matcher::select_query_term_node(const MatchingElementsFields& fields, QueryTerm& query_term) {
+void Matcher::select_query_term_node(QueryTerm& query_term) {
     auto& qtd = dynamic_cast<const QueryTermData&>(query_term.getQueryItem());
     auto& td = qtd.getTermData();
     auto  num_fields = td.numFields();
     for (size_t i = 0; i < num_fields; ++i) {
         auto  field_id = td.field(i).getFieldId();
-        auto* field = matching_elements_field(fields, field_id);
+        auto* field = matching_elements_field(field_id);
         if (field != nullptr) {
             _sub_field_terms.emplace_back(*field, field_id, &query_term);
         }
     }
 }
 
-void Matcher::select_query_nodes(const MatchingElementsFields& fields, QueryNode& query_node) {
+void Matcher::select_query_nodes(QueryNode& query_node) {
     if (auto same_element = as<SameElementQueryNode>(query_node)) {
-        if (fields.has_field(same_element->getIndex())) {
+        if (_fields.has_field(same_element->getIndex())) {
             _same_element_nodes.emplace_back(same_element);
         }
     } else if (auto weighted_set_term = as<WeightedSetTerm>(query_node)) {
-        select_multiterm_children(fields, *weighted_set_term);
+        select_multiterm_children(*weighted_set_term);
     } else if (auto in_term = as<InTerm>(query_node)) {
-        select_multiterm_children(fields, *in_term);
+        select_multiterm_children(*in_term);
     } else if (auto query_term = as<QueryTerm>(query_node)) {
-        select_query_term_node(fields, *query_term);
+        select_query_term_node(*query_term);
     } else if (auto and_not = as<AndNotQueryNode>(query_node)) {
-        select_query_nodes(fields, *(*and_not)[0]);
+        select_query_nodes(*(*and_not)[0]);
     } else if (auto intermediate = as<QueryConnector>(query_node)) {
         for (size_t i = 0; i < intermediate->size(); ++i) {
-            select_query_nodes(fields, *(*intermediate)[i]);
+            select_query_nodes(*(*intermediate)[i]);
         }
     }
 }
