@@ -95,7 +95,7 @@ int64_t my_dot_product_i16(const int16_t* a, const int16_t* b, size_t sz) noexce
 int64_t my_dot_product_i32(const int32_t* a, const int32_t* b, size_t sz) noexcept {
     int64_t sum = 0;
     for (size_t i = 0; i < sz; i++) {
-        sum += (int64_t) a[i] * (int64_t) b[i];
+        sum += (int64_t)a[i] * (int64_t)b[i];
     }
     return sum;
 }

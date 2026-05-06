@@ -177,7 +177,7 @@ void AttributeUpdater::handleUpdateT(V& vec, Accessor, uint32_t lid, const Value
                 updateValue(vec, lid, assign.getValue());
             }
         } else if (op == ValueUpdate::Arithmetic) {
-            const ArithmeticValueUpdate & arithmetic(static_cast<const ArithmeticValueUpdate &>(upd));
+            const ArithmeticValueUpdate& arithmetic(static_cast<const ArithmeticValueUpdate&>(upd));
             if (!vec.apply(lid, arithmetic)) {
                 throw UpdateException(make_string("attribute arithmetic failed: %s[%u]", vec.getName().c_str(), lid));
             }

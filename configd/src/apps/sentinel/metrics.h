@@ -21,17 +21,17 @@ struct StartMetrics {
         unsigned long count{0};
     };
 
-    std::shared_ptr<MetricsManager>              metrics;
-    vespalib::metrics::Producer                  producer;
-    unsigned long                                currentlyRunningServices;
-    std::map<std::string, PerServiceRestarts>    totalRestartsByService;
-    vespalib::steady_time                        startedTime;
-    const Dimension                              service_dim;
-    Counter                                      sentinel_restarts;
-    Gauge                                        sentinel_totalRestarts;
-    Gauge                                        sentinel_running;
-    Gauge                                        sentinel_uptime;
-    vespalib::steady_time                        lastRestartTime;
+    std::shared_ptr<MetricsManager>           metrics;
+    vespalib::metrics::Producer               producer;
+    unsigned long                             currentlyRunningServices;
+    std::map<std::string, PerServiceRestarts> totalRestartsByService;
+    vespalib::steady_time                     startedTime;
+    const Dimension                           service_dim;
+    Counter                                   sentinel_restarts;
+    Gauge                                     sentinel_totalRestarts;
+    Gauge                                     sentinel_running;
+    Gauge                                     sentinel_uptime;
+    vespalib::steady_time                     lastRestartTime;
 
     StartMetrics();
     ~StartMetrics();

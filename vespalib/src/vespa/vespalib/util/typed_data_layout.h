@@ -211,7 +211,7 @@ private:
 
 public:
     constexpr Data(DataKey) noexcept : _allocated{}, _header{} {}
-    
+
     template <typename T> std::span<T> all_of() noexcept {
         static constexpr size_t I = type_id<T, MyDomain>();
         if (_header[I].len == 0) {

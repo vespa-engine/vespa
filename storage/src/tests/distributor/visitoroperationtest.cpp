@@ -1,13 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <tests/distributor/distributor_stripe_test_util.h>
+#include "distributor_stripe_test_util.h"
+
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/storage/common/reindexing_constants.h>
-#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/storage/distributor/operations/external/visitoroperation.h>
 #include <vespa/storage/distributor/operations/external/visitororder.h>
+#include <vespa/storage/distributor/top_level_distributor.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storageapi/message/persistence.h>
@@ -23,37 +24,27 @@ using document::test::makeBucketSpace;
 namespace storage::distributor {
 
 struct VisitorOperationTest : Test, DistributorStripeTestUtil {
-    VisitorOperationTest()
-        : defaultConfig(100, 100)
-    {}
+    VisitorOperationTest() : defaultConfig(100, 100) {}
 
     void SetUp() override {
         createLinks();
         nullId = document::BucketId(0, 0);
     };
 
-    void TearDown() override {
-        close();
-    }
+    void TearDown() override { close(); }
 
-    enum {MAX_PENDING = 2};
+    enum { MAX_PENDING = 2 };
 
-    document::BucketId nullId;
+    document::BucketId       nullId;
     VisitorOperation::Config defaultConfig;
 
     static api::CreateVisitorCommand::SP
-    createVisitorCommand(std::string instanceId,
-                         document::BucketId superBucket,
-                         document::BucketId lastBucket,
-                         uint32_t maxBuckets = 8,
-                         vespalib::duration timeout = 500ms,
-                         bool visitInconsistentBuckets = false,
-                         bool visitRemoves = false,
-                         std::string libraryName = "dumpvisitor",
-                         const std::string& docSelection = "")
-    {
-        auto cmd = std::make_shared<api::CreateVisitorCommand>(
-                makeBucketSpace(), libraryName, instanceId, docSelection);
+    createVisitorCommand(std::string instanceId, document::BucketId superBucket, document::BucketId lastBucket,
+                         uint32_t maxBuckets = 8, vespalib::duration timeout = 500ms,
+                         bool visitInconsistentBuckets = false, bool visitRemoves = false,
+                         std::string libraryName = "dumpvisitor", const std::string& docSelection = "") {
+        auto cmd =
+            std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), libraryName, instanceId, docSelection);
         cmd->setControlDestination("controldestination");
         cmd->setDataDestination("datadestination");
         cmd->setFieldSet(document::AllFields::NAME);
@@ -75,8 +66,7 @@ struct VisitorOperationTest : Test, DistributorStripeTestUtil {
         return cmd;
     }
 
-    std::string
-    serializeVisitorCommand(int idx = -1) {
+    std::string serializeVisitorCommand(int idx = -1) {
         if (idx == -1) {
             idx = _sender.commands().size() - 1;
         }
@@ -94,25 +84,15 @@ struct VisitorOperationTest : Test, DistributorStripeTestUtil {
         return ost.str();
     }
 
-    VisitorMetricSet& defaultVisitorMetrics() {
-        return metrics().visits;
+    VisitorMetricSet& defaultVisitorMetrics() { return metrics().visits; }
+
+    std::unique_ptr<VisitorOperation> createOpWithConfig(api::CreateVisitorCommand::SP   msg,
+                                                         const VisitorOperation::Config& config) {
+        return std::make_unique<VisitorOperation>(node_context(), operation_context(), getDistributorBucketSpace(),
+                                                  msg, config, metrics().visits);
     }
 
-    std::unique_ptr<VisitorOperation> createOpWithConfig(
-            api::CreateVisitorCommand::SP msg,
-            const VisitorOperation::Config& config)
-    {
-        return std::make_unique<VisitorOperation>(
-                node_context(),
-                operation_context(),
-                getDistributorBucketSpace(),
-                msg,
-                config,
-                metrics().visits);
-    }
-
-    std::unique_ptr<VisitorOperation> createOpWithDefaultConfig(api::CreateVisitorCommand::SP msg)
-    {
+    std::unique_ptr<VisitorOperation> createOpWithDefaultConfig(api::CreateVisitorCommand::SP msg) {
         return createOpWithConfig(std::move(msg), defaultConfig);
     }
 
@@ -131,9 +111,8 @@ struct VisitorOperationTest : Test, DistributorStripeTestUtil {
         return cvc.getBuckets();
     }
 
-    std::pair<std::string, std::string>
-    runVisitor(document::BucketId id, document::BucketId lastId, uint32_t maxBuckets);
-
+    std::pair<std::string, std::string> runVisitor(document::BucketId id, document::BucketId lastId,
+                                                   uint32_t maxBuckets);
 
     void doStandardVisitTest(const std::string& clusterState);
 
@@ -146,9 +125,7 @@ TEST_F(VisitorOperationTest, parameter_forwarding) {
     doStandardVisitTest("distributor:1 storage:1");
 }
 
-void
-VisitorOperationTest::doStandardVisitTest(const std::string& clusterState)
-{
+void VisitorOperationTest::doStandardVisitTest(const std::string& clusterState) {
     enable_cluster_state(clusterState);
 
     // Create bucket in bucketdb
@@ -159,8 +136,7 @@ VisitorOperationTest::doStandardVisitTest(const std::string& clusterState)
     std::string instanceId("testParameterForwarding");
     std::string libraryName("dumpvisitor");
     std::string docSelection("");
-    auto msg = std::make_shared<api::CreateVisitorCommand>(
-            makeBucketSpace(), libraryName, instanceId, docSelection);
+    auto msg = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), libraryName, instanceId, docSelection);
     std::string controlDestination("controldestination");
     msg->setControlDestination(controlDestination);
     std::string dataDestination("datadestination");
@@ -185,7 +161,7 @@ VisitorOperationTest::doStandardVisitTest(const std::string& clusterState)
 
     // Receive create visitor command for storage and simulate reply
     api::StorageMessage::SP rep0 = _sender.command(0);
-    auto* cvc = dynamic_cast<CreateVisitorCommand*>(rep0.get());
+    auto*                   cvc = dynamic_cast<CreateVisitorCommand*>(rep0.get());
     ASSERT_TRUE(cvc != nullptr);
     EXPECT_EQ(libraryName, cvc->getLibraryName());
     EXPECT_EQ(instanceId, cvc->getInstanceId().substr(0, instanceId.length()));
@@ -223,8 +199,7 @@ TEST_F(VisitorOperationTest, shutdown) {
     std::string instanceId("testShutdown");
     std::string libraryName("dumpvisitor");
     std::string docSelection("");
-    auto msg = std::make_shared<api::CreateVisitorCommand>(
-            makeBucketSpace(), libraryName, instanceId, docSelection);
+    auto msg = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), libraryName, instanceId, docSelection);
     msg->addBucketToBeVisited(id);
     msg->addBucketToBeVisited(nullId);
 
@@ -245,8 +220,7 @@ TEST_F(VisitorOperationTest, no_bucket) {
     enable_cluster_state("distributor:1 storage:1");
 
     // Send create visitor
-    auto msg = std::make_shared<api::CreateVisitorCommand>(
-            makeBucketSpace(), "dumpvisitor", "instance", "");
+    auto msg = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "dumpvisitor", "instance", "");
 
     EXPECT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
               "ReturnCode(ILLEGAL_PARAMETERS, No buckets in "
@@ -256,8 +230,7 @@ TEST_F(VisitorOperationTest, no_bucket) {
 
 TEST_F(VisitorOperationTest, none_fieldset_is_rejected) {
     enable_cluster_state("distributor:1 storage:1");
-    auto msg = std::make_shared<api::CreateVisitorCommand>(
-            makeBucketSpace(), "dumpvisitor", "instance", "");
+    auto msg = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "dumpvisitor", "instance", "");
     msg->addBucketToBeVisited(document::BucketId(16, 1));
     msg->addBucketToBeVisited(nullId);
     msg->setFieldSet("[none]");
@@ -272,8 +245,8 @@ TEST_F(VisitorOperationTest, only_super_bucket_and_progress_allowed) {
     enable_cluster_state("distributor:1 storage:1");
 
     // Send create visitor
-    api::CreateVisitorCommand::SP msg(new api::CreateVisitorCommand(
-            makeBucketSpace(), "dumpvisitor", "instance", ""));
+    api::CreateVisitorCommand::SP msg(
+        new api::CreateVisitorCommand(makeBucketSpace(), "dumpvisitor", "instance", ""));
     msg->addBucketToBeVisited(nullId);
     msg->addBucketToBeVisited(nullId);
     msg->addBucketToBeVisited(nullId);
@@ -295,8 +268,7 @@ TEST_F(VisitorOperationTest, no_resend_after_timeout_passed) {
     enable_cluster_state("distributor:1 storage:2");
     addNodesToBucketDB(id, "0=1/1/1/t,1=1/1/1/t");
 
-    auto op = createOpWithDefaultConfig(
-            createVisitorCommand("lowtimeoutbusy", id, nullId, 8, 20ms));
+    auto op = createOpWithDefaultConfig(createVisitorCommand("lowtimeoutbusy", id, nullId, 8, 20ms));
 
     op->start(_sender);
 
@@ -323,10 +295,10 @@ TEST_F(VisitorOperationTest, distributor_not_ready) {
 TEST_F(VisitorOperationTest, non_existing_bucket) {
     document::BucketId id(uint64_t(0x400000000000007b));
     enable_cluster_state("distributor:1 storage:1");
-    auto res = runEmptyVisitor(
-            createVisitorCommand("nonExistingBucket", id, nullId));
+    auto res = runEmptyVisitor(createVisitorCommand("nonExistingBucket", id, nullId));
     EXPECT_EQ("CreateVisitorReply(last=BucketId(0x000000007fffffff)) "
-              "ReturnCode(NONE)", res);
+              "ReturnCode(NONE)",
+              res);
 }
 
 TEST_F(VisitorOperationTest, user_single_bucket) {
@@ -337,16 +309,7 @@ TEST_F(VisitorOperationTest, user_single_bucket) {
     addNodesToBucketDB(id, "0=1/1/1/t");
 
     auto op = createOpWithDefaultConfig(
-        createVisitorCommand(
-            "userSingleBucket",
-            userid,
-            nullId,
-            8,
-            500ms,
-            false,
-            false,
-            "dumpvisitor",
-            "true"));
+        createVisitorCommand("userSingleBucket", userid, nullId, 8, 500ms, false, false, "dumpvisitor", "true"));
 
     op->start(_sender);
 
@@ -357,28 +320,16 @@ TEST_F(VisitorOperationTest, user_single_bucket) {
               _sender.getLastReply());
 }
 
-std::pair<std::string, std::string>
-VisitorOperationTest::runVisitor(document::BucketId id,
-                                               document::BucketId lastId,
-                                               uint32_t maxBuckets)
-{
-    auto op = createOpWithDefaultConfig(
-            createVisitorCommand("inconsistentSplit",
-                id,
-                lastId,
-                maxBuckets,
-                500ms,
-                false,
-                false,
-                "dumpvisitor",
-                "true"));
+std::pair<std::string, std::string> VisitorOperationTest::runVisitor(document::BucketId id, document::BucketId lastId,
+                                                                     uint32_t maxBuckets) {
+    auto op = createOpWithDefaultConfig(createVisitorCommand("inconsistentSplit", id, lastId, maxBuckets, 500ms,
+                                                             false, false, "dumpvisitor", "true"));
 
     op->start(_sender);
 
     sendReply(*op);
 
-    std::pair<std::string, std::string> retVal =
-        std::make_pair(serializeVisitorCommand(), _sender.getLastReply());
+    std::pair<std::string, std::string> retVal = std::make_pair(serializeVisitorCommand(), _sender.getLastReply());
 
     _sender.clear();
 
@@ -409,17 +360,16 @@ TEST_F(VisitorOperationTest, user_inconsistently_split_bucket) {
     document::BucketId id(19, 0x40001);
 
     {
-        std::pair<std::string, std::string> val(
-                runVisitor(id, nullId, 100));
+        std::pair<std::string, std::string> val(runVisitor(id, nullId, 100));
 
         EXPECT_EQ("CreateVisitorCommand(dumpvisitor, true, 7 buckets) "
                   "Buckets: [ BucketId(0x4400000000000001) "
-                             "BucketId(0x4800000000000001) "
-                             "BucketId(0x4c00000000040001) "
-                             "BucketId(0x5000000000040001) "
-                             "BucketId(0x5400000000040001) "
-                             "BucketId(0x5400000000140001) "
-                             "BucketId(0x50000000000c0001) ]",
+                  "BucketId(0x4800000000000001) "
+                  "BucketId(0x4c00000000040001) "
+                  "BucketId(0x5000000000040001) "
+                  "BucketId(0x5400000000040001) "
+                  "BucketId(0x5400000000140001) "
+                  "BucketId(0x50000000000c0001) ]",
                   val.first);
 
         EXPECT_EQ("CreateVisitorReply(last=BucketId(0x000000007fffffff)) "
@@ -436,8 +386,7 @@ TEST_F(VisitorOperationTest, bucket_removed_while_visitor_pending) {
 
     addNodesToBucketDB(id, "0=1/1/1/t");
 
-    auto op = createOpWithDefaultConfig(
-            createVisitorCommand("removefrombucketdb", id, nullId));
+    auto op = createOpWithDefaultConfig(createVisitorCommand("removefrombucketdb", id, nullId));
 
     op->start(_sender);
 
@@ -458,8 +407,7 @@ TEST_F(VisitorOperationTest, empty_buckets_visited_when_visiting_removes) {
     document::BucketId id(uint64_t(0x400000000000007b));
     addNodesToBucketDB(id, "0=0/0/0/1/2/t");
 
-    auto op = createOpWithDefaultConfig(
-            createVisitorCommand("emptybucket", id, nullId, 8, 500ms, false, true));
+    auto op = createOpWithDefaultConfig(createVisitorCommand("emptybucket", id, nullId, 8, 500ms, false, true));
 
     op->start(_sender);
 
@@ -473,8 +421,7 @@ TEST_F(VisitorOperationTest, resend_to_other_storage_node_on_failure) {
 
     addNodesToBucketDB(id, "0=1/1/1/t,1=1/1/1/t");
 
-    auto op = createOpWithDefaultConfig(
-            createVisitorCommand("emptyinconsistent", id, nullId));
+    auto op = createOpWithDefaultConfig(createVisitorCommand("emptyinconsistent", id, nullId));
 
     op->start(_sender);
 
@@ -483,8 +430,7 @@ TEST_F(VisitorOperationTest, resend_to_other_storage_node_on_failure) {
     sendReply(*op, -1, api::ReturnCode::NOT_CONNECTED);
     ASSERT_EQ("", _sender.getReplies());
 
-    ASSERT_EQ("Visitor Create => 0,Visitor Create => 1",
-            _sender.getCommands(true));
+    ASSERT_EQ("Visitor Create => 0,Visitor Create => 1", _sender.getCommands(true));
 }
 
 // Since MessageBus handles timeouts for us implicitly, we make the assumption
@@ -499,15 +445,11 @@ TEST_F(VisitorOperationTest, timeout_only_after_reply_from_all_storage_nodes) {
     addNodesToBucketDB(document::BucketId(17, 0x10001), "1=1/1/1/t");
 
     auto op = createOpWithDefaultConfig(
-            createVisitorCommand("timeout2bucketson2nodes",
-                document::BucketId(16, 1),
-                nullId,
-                8));
+        createVisitorCommand("timeout2bucketson2nodes", document::BucketId(16, 1), nullId, 8));
 
     op->start(_sender);
 
-    ASSERT_EQ("Visitor Create => 0,Visitor Create => 1",
-              _sender.getCommands(true));
+    ASSERT_EQ("Visitor Create => 0,Visitor Create => 1", _sender.getCommands(true));
 
     getClock().addMilliSecondsToTime(501);
 
@@ -534,16 +476,12 @@ TEST_F(VisitorOperationTest, timeout_does_not_override_critical_error) {
     addNodesToBucketDB(document::BucketId(17, 0x00001), "0=1/1/1/t");
     addNodesToBucketDB(document::BucketId(17, 0x10001), "1=1/1/1/t");
 
-    auto op = createOpWithDefaultConfig(
-            createVisitorCommand("timeout2bucketson2nodes",
-                document::BucketId(16, 1),
-                nullId,
-                8,
-                500ms)); // ms timeout
+    auto op = createOpWithDefaultConfig(createVisitorCommand("timeout2bucketson2nodes", document::BucketId(16, 1),
+                                                             nullId, 8,
+                                                             500ms)); // ms timeout
 
     op->start(_sender);
-    ASSERT_EQ("Visitor Create => 0,Visitor Create => 1",
-              _sender.getCommands(true));
+    ASSERT_EQ("Visitor Create => 0,Visitor Create => 1", _sender.getCommands(true));
 
     getClock().addMilliSecondsToTime(501);
     // Technically has timed out at this point, but should still report the
@@ -606,15 +544,7 @@ TEST_F(VisitorOperationTest, bucket_high_bit_count) {
               runEmptyVisitor(createVisitorCommand("buckethigbit", id, nullId)));
 
     auto op = createOpWithDefaultConfig(
-            createVisitorCommand("buckethighbitcount",
-                id,
-                nullId,
-                8,
-                500ms,
-                false,
-                false,
-                "dumpvisitor",
-                "true"));
+        createVisitorCommand("buckethighbitcount", id, nullId, 8, 500ms, false, false, "dumpvisitor", "true"));
 
     op->start(_sender);
 
@@ -632,15 +562,7 @@ TEST_F(VisitorOperationTest, bucket_low_bit_count) {
               runEmptyVisitor(createVisitorCommand("bucketlowbit", id, nullId)));
 
     auto op = createOpWithDefaultConfig(
-            createVisitorCommand("buckethighbitcount",
-                id,
-                nullId,
-                8,
-                500ms,
-                false,
-                false,
-                "dumpvisitor",
-                "true"));
+        createVisitorCommand("buckethighbitcount", id, nullId, 8, 500ms, false, false, "dumpvisitor", "true"));
 
     op->start(_sender);
     EXPECT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
@@ -652,16 +574,15 @@ TEST_F(VisitorOperationTest, parallel_visitors_to_one_storage_node) {
     enable_cluster_state("distributor:1 storage:1");
 
     // Create buckets in bucketdb
-    for (int i=0; i<32; i++) {
-        document::BucketId id(21, i*0x10000 + 0x0001);
+    for (int i = 0; i < 32; i++) {
+        document::BucketId id(21, i * 0x10000 + 0x0001);
         addNodesToBucketDB(id, "0=1/1/1/t");
     }
 
     document::BucketId id(16, 1);
 
-    auto op = createOpWithConfig(
-            createVisitorCommand("multiplebuckets", id, nullId, 31),
-            VisitorOperation::Config(1, 4));
+    auto op =
+        createOpWithConfig(createVisitorCommand("multiplebuckets", id, nullId, 31), VisitorOperation::Config(1, 4));
 
     op->start(_sender);
 
@@ -706,9 +627,9 @@ TEST_F(VisitorOperationTest, parallel_visitors_to_one_storage_node) {
 
     uint32_t minBucketsPerVisitor = 1;
     uint32_t maxVisitorsPerNode = 4;
-    auto op2 = createOpWithConfig(
-            createVisitorCommand("multiplebuckets", id, document::BucketId(0x54000000000f0001), 31),
-            VisitorOperation::Config(minBucketsPerVisitor, maxVisitorsPerNode));
+    auto     op2 =
+        createOpWithConfig(createVisitorCommand("multiplebuckets", id, document::BucketId(0x54000000000f0001), 31),
+                           VisitorOperation::Config(minBucketsPerVisitor, maxVisitorsPerNode));
 
     op2->start(_sender);
 
@@ -725,8 +646,8 @@ TEST_F(VisitorOperationTest, parallel_visitors_resend_only_failing) {
     enable_cluster_state("distributor:1 storage:2");
 
     // Create buckets in bucketdb
-    for (int i=0; i<32; i++) {
-        document::BucketId id(21, i*0x10000 + 0x0001);
+    for (int i = 0; i < 32; i++) {
+        document::BucketId id(21, i * 0x10000 + 0x0001);
         addNodesToBucketDB(id, "0=1/1/1/t,1=1/1/1/t");
     }
 
@@ -734,9 +655,8 @@ TEST_F(VisitorOperationTest, parallel_visitors_resend_only_failing) {
 
     uint32_t minBucketsPerVisitor = 5;
     uint32_t maxVisitorsPerNode = 4;
-    auto op = createOpWithConfig(
-            createVisitorCommand("multiplebuckets", id, nullId, 31),
-            VisitorOperation::Config(minBucketsPerVisitor, maxVisitorsPerNode));
+    auto     op = createOpWithConfig(createVisitorCommand("multiplebuckets", id, nullId, 31),
+                                     VisitorOperation::Config(minBucketsPerVisitor, maxVisitorsPerNode));
 
     op->start(_sender);
 
@@ -766,16 +686,15 @@ TEST_F(VisitorOperationTest, parallel_visitors_to_one_storage_node_one_super_buc
     enable_cluster_state("distributor:1 storage:1");
 
     // Create buckets in bucketdb
-    for (int i=0; i<8; i++) {
-        document::BucketId id(0x8c000000e3362b6aULL+i*0x100000000ull);
+    for (int i = 0; i < 8; i++) {
+        document::BucketId id(0x8c000000e3362b6aULL + i * 0x100000000ull);
         addNodesToBucketDB(id, "0=1/1/1/t");
     }
 
     document::BucketId id(16, 0x2b6a);
 
-    auto op = createOpWithConfig(
-            createVisitorCommand("multiplebucketsonesuper", id, nullId),
-            VisitorOperation::Config(5, 4));
+    auto op = createOpWithConfig(createVisitorCommand("multiplebucketsonesuper", id, nullId),
+                                 VisitorOperation::Config(5, 4));
 
     op->start(_sender);
 
@@ -789,7 +708,7 @@ TEST_F(VisitorOperationTest, parallel_visitors_to_one_storage_node_one_super_buc
               serializeVisitorCommand(0));
 
     sendReply(*op);
-    
+
     EXPECT_EQ("CreateVisitorReply(last=BucketId(0x000000007fffffff)) "
               "ReturnCode(NONE)",
               _sender.getLastReply());
@@ -831,9 +750,8 @@ TEST_F(VisitorOperationTest, inconsistency_handling) {
               runEmptyVisitor(createVisitorCommand("testinconsistencyhandling", id, nullId)));
     _sender.clear();
 
-    auto op = createOpWithConfig(
-            createVisitorCommand("multiplebucketsonesuper", id, nullId, 8, 500ms, true),
-            VisitorOperation::Config(5, 4));
+    auto op = createOpWithConfig(createVisitorCommand("multiplebucketsonesuper", id, nullId, 8, 500ms, true),
+                                 VisitorOperation::Config(5, 4));
 
     op->start(_sender);
 
@@ -851,14 +769,13 @@ TEST_F(VisitorOperationTest, visit_ideal_node) {
     enable_cluster_state(lib::ClusterStateBundle(state));
 
     // Create buckets in bucketdb
-    for (int i=0; i<32; i++ ) {
-        document::BucketId id(21, i*0x10000 + 0x0001);
+    for (int i = 0; i < 32; i++) {
+        document::BucketId id(21, i * 0x10000 + 0x0001);
         addIdealNodes(state, id);
     }
 
     document::BucketId id(16, 1);
-    auto op = createOpWithDefaultConfig(
-            createVisitorCommand("multinode", id, nullId, 8));
+    auto               op = createOpWithDefaultConfig(createVisitorCommand("multinode", id, nullId, 8));
 
     op->start(_sender);
 
@@ -882,14 +799,13 @@ TEST_F(VisitorOperationTest, no_resending_on_critical_failure) {
     enable_cluster_state("distributor:1 storage:3");
 
     // Create buckets in bucketdb
-    for (int i=0; i<32; i++ ) {
-        document::BucketId id(21, i*0x10000 + 0x0001);
+    for (int i = 0; i < 32; i++) {
+        document::BucketId id(21, i * 0x10000 + 0x0001);
         addNodesToBucketDB(id, "0=1/1/1/t,1=1/1/1/t");
     }
 
     document::BucketId id(16, 1);
-    auto op = createOpWithDefaultConfig(
-            createVisitorCommand("multinodefailurecritical", id, nullId, 8));
+    auto op = createOpWithDefaultConfig(createVisitorCommand("multinodefailurecritical", id, nullId, 8));
 
     op->start(_sender);
 
@@ -906,14 +822,13 @@ TEST_F(VisitorOperationTest, failure_on_all_nodes) {
     enable_cluster_state("distributor:1 storage:3");
 
     // Create buckets in bucketdb
-    for (int i=0; i<32; i++ ) {
-        document::BucketId id(21, i*0x10000 + 0x0001);
+    for (int i = 0; i < 32; i++) {
+        document::BucketId id(21, i * 0x10000 + 0x0001);
         addNodesToBucketDB(id, "0=1/1/1/t,1=1/1/1/t");
     }
 
     document::BucketId id(16, 1);
-    auto op = createOpWithDefaultConfig(
-            createVisitorCommand("multinodefailurecritical", id, nullId, 8));
+    auto op = createOpWithDefaultConfig(createVisitorCommand("multinodefailurecritical", id, nullId, 8));
 
     op->start(_sender);
 
@@ -976,23 +891,15 @@ TEST_F(VisitorOperationTest, visit_in_chunks) {
               val.second);
 }
 
-std::unique_ptr<VisitorOperation>
-VisitorOperationTest::startOperationWith2StorageNodeVisitors(bool inconsistent)
-{
+std::unique_ptr<VisitorOperation> VisitorOperationTest::startOperationWith2StorageNodeVisitors(bool inconsistent) {
     enable_cluster_state("distributor:1 storage:3");
 
     addNodesToBucketDB(document::BucketId(17, 1), "0=1/1/1/t");
     addNodesToBucketDB(document::BucketId(17, 1ULL << 16 | 1), "1=1/1/1/t");
 
     document::BucketId id(16, 1);
-    auto op = createOpWithDefaultConfig(
-            createVisitorCommand(
-                "multinodefailurecritical",
-                id,
-                nullId,
-                8,
-                500ms,
-                inconsistent));
+    auto               op = createOpWithDefaultConfig(
+        createVisitorCommand("multinodefailurecritical", id, nullId, 8, 500ms, inconsistent));
 
     op->start(_sender);
 
@@ -1042,8 +949,7 @@ TEST_F(VisitorOperationTest, queue_timeout_is_factor_of_total_timeout) {
     enable_cluster_state("distributor:1 storage:2");
     addNodesToBucketDB(id, "0=1/1/1/t,1=1/1/1/t");
 
-    auto op = createOpWithDefaultConfig(
-            createVisitorCommand("foo", id, nullId, 8, 10000ms));
+    auto op = createOpWithDefaultConfig(createVisitorCommand("foo", id, nullId, 8, 10000ms));
 
     op->start(_sender);
     ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
@@ -1052,21 +958,17 @@ TEST_F(VisitorOperationTest, queue_timeout_is_factor_of_total_timeout) {
     EXPECT_EQ(5000ms, cmd.getQueueTimeout());
 }
 
-void
-VisitorOperationTest::do_visitor_roundtrip_with_statistics(
-        const api::ReturnCode& result)
-{
+void VisitorOperationTest::do_visitor_roundtrip_with_statistics(const api::ReturnCode& result) {
     document::BucketId id(0x400000000000007bULL);
     enable_cluster_state("distributor:1 storage:1");
     addNodesToBucketDB(id, "0=1/1/1/t");
 
-    auto op = createOpWithDefaultConfig(
-            createVisitorCommand("metricstats", id, nullId));
+    auto op = createOpWithDefaultConfig(createVisitorCommand("metricstats", id, nullId));
 
     op->start(_sender);
     ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
-    auto& cmd = dynamic_cast<CreateVisitorCommand&>(*_sender.command(0));
-    auto reply = cmd.makeReply();
+    auto&                     cmd = dynamic_cast<CreateVisitorCommand&>(*_sender.command(0));
+    auto                      reply = cmd.makeReply();
     vdslib::VisitorStatistics stats;
     stats.setBucketsVisited(50);
     stats.setDocumentsVisited(100);
@@ -1115,8 +1017,7 @@ TEST_F(VisitorOperationTest, assigning_put_lock_access_token_sets_special_visito
     ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
     auto cmd = std::dynamic_pointer_cast<api::CreateVisitorCommand>(_sender.command(0));
     ASSERT_TRUE(cmd);
-    EXPECT_EQ(cmd->getParameters().get(reindexing_bucket_lock_visitor_parameter_key(),
-                                       std::string_view("")),
+    EXPECT_EQ(cmd->getParameters().get(reindexing_bucket_lock_visitor_parameter_key(), std::string_view("")),
               "its-a me, mario");
 }
 
@@ -1137,4 +1038,4 @@ TEST_F(VisitorOperationTest, searchvisitor_implicitly_gets_priority_boost) {
     EXPECT_EQ(100, static_cast<int>(out_cmd->getPriority()));
 }
 
-}
+} // namespace storage::distributor

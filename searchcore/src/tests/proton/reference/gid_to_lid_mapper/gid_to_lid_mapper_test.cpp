@@ -46,7 +46,7 @@ struct GidCollector : public search::IGidToLidMapperVisitor {
 
 GidMap collectGids(const std::unique_ptr<search::IGidToLidMapper>& mapper) {
     GidMap result;
-    mapper->foreach (GidCollector(result));
+    mapper->foreach(GidCollector(result));
     return result;
 }
 

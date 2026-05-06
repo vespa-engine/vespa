@@ -63,7 +63,7 @@ void PostingStore<DataT>::foreach_frozen(EntryRef ref, FunctionType func) const 
             if (iRef2.valid()) {
                 assert(isBTree(iRef2));
                 const BTreeType* tree = getTreeEntry(iRef2);
-                _allocator.getNodeStore().foreach (tree->getFrozenRoot(), func);
+                _allocator.getNodeStore().foreach(tree->getFrozenRoot(), func);
             } else {
                 const BitVector* bv = &bve->_bv->reader();
                 uint32_t         docIdLimit = bv->size();
@@ -75,7 +75,7 @@ void PostingStore<DataT>::foreach_frozen(EntryRef ref, FunctionType func) const 
             }
         } else {
             const BTreeType* tree = getTreeEntry(iRef);
-            _allocator.getNodeStore().foreach (tree->getFrozenRoot(), func);
+            _allocator.getNodeStore().foreach(tree->getFrozenRoot(), func);
         }
     } else {
         const KeyDataType* p = getKeyDataEntry(iRef, clusterSize);

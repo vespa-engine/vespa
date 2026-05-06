@@ -70,7 +70,7 @@ IMPLEMENT_IDENTIFIABLE(B, A);
 IMPLEMENT_IDENTIFIABLE(C, Identifiable);
 
 TEST_F(IdentifiableTest, test_named_object) {
-    NamedObject a("first"), b("second");
+    NamedObject   a("first"), b("second");
     nbostream     os;
     NBOSerializer nos(os);
     nos << a << b;
