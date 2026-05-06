@@ -17,6 +17,8 @@ import com.yahoo.vespa.config.server.maintenance.ConfigServerMaintenance;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.version.VersionState;
 import com.yahoo.yolean.Exceptions;
+import com.yahoo.yolean.concurrent.Sleeper;
+
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -40,13 +42,14 @@ import static com.yahoo.vespa.config.server.ConfigServerBootstrap.RedeployingApp
 
 /**
  * Main component that bootstraps and starts config server threads.
- *
+ * <p>
  * Starts RPC server without allowing config requests. If config server has been upgraded to a new version since the
  * last time it was running it will redeploy all applications. If that is done successfully the RPC server will start
  * allowing config requests and the health status code will change from 'initializing' to 'up'. If VIP status mode is
  * VIP_STATUS_PROGRAMMATICALLY the config server will be put into rotation (start serving status.html with 200 OK),
  * if the mode is VIP_STATUS_FILE a VIP status file is created or removed by some external program based on the
  * health status code.
+ *</p>
  *
  * @author Ulf Lilleengen
  * @author hmusum
@@ -54,9 +57,10 @@ import static com.yahoo.vespa.config.server.ConfigServerBootstrap.RedeployingApp
 public class ConfigServerBootstrap extends AbstractComponent implements Runnable {
 
     private static final Logger log = Logger.getLogger(ConfigServerBootstrap.class.getName());
+    private static final Sleeper sleeper = Sleeper.DEFAULT;
 
-    enum RedeployingApplicationsFails { EXIT_JVM, CONTINUE }
-    enum VipStatusMode { VIP_STATUS_FILE, VIP_STATUS_PROGRAMMATICALLY }
+    protected enum RedeployingApplicationsFails { EXIT_JVM, CONTINUE }
+    protected enum VipStatusMode { VIP_STATUS_FILE, VIP_STATUS_PROGRAMMATICALLY }
 
     private final ApplicationRepository applicationRepository;
     private final RpcServer server;
@@ -116,12 +120,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     public void run() {
         start();
         do {
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                log.log(Level.SEVERE, "Got interrupted", e);
-                break;
-            }
+            sleeper.sleep(1000);
         } while (server.isRunning());
         down();
     }
@@ -173,12 +172,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
 
         Instant end = clock.instant().plus(Duration.ofSeconds(10));
         while (!server.isRunning() && clock.instant().isBefore(end)) {
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                log.log(Level.SEVERE, "Got interrupted", e);
-                break;
-            }
+            sleeper.sleep(10);
         }
         if (!server.isRunning())
             throw new RuntimeException("RPC server not started in 10 seconds");
@@ -205,7 +199,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
                 if (sleepTime.compareTo(Duration.ofMinutes(10)) > 0)
                     sleepTime = Duration.ofMinutes(10);
                 log.log(Level.INFO, "Redeployment of " + applicationsToRedeploy + " not finished, will retry in " + sleepTime);
-                Thread.sleep(sleepTime.toMillis());
+                sleeper.sleep(sleepTime.toMillis());
             }
         } while ( ! applicationsToRedeploy.isEmpty() && clock.instant().isBefore(end));
 
@@ -220,14 +214,15 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
                                                                 new DaemonThreadFactory("redeploy-apps-"));
         // Keep track of deployment status per application
         Map<ApplicationId, Future<?>> deployments = new HashMap<>();
-        if (applicationIds.size() > 0) {
+        if (!applicationIds.isEmpty()) {
             log.log(Level.FINE, () -> "Redeploying " + applicationIds.size() + " apps " + applicationIds + " with " +
                     configserverConfig.numRedeploymentThreads() + " threads");
             applicationIds.forEach(appId -> deployments.put(appId, executor.submit(() -> {
+                var start = clock.instant();
                 log.log(Level.FINE, () -> "Starting redeployment of " + appId);
                 applicationRepository.deployFromLocalActive(appId, true /* bootstrap */)
                                      .ifPresent(Deployment::activate);
-                log.log(Level.FINE, () -> appId + " redeployed");
+                log.log(Level.INFO, () -> appId + " redeployed in " + Duration.between(start, clock.instant()));
             })));
         }
 
