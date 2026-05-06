@@ -97,7 +97,7 @@ public final class ClusterSpec {
                                stateful, sidecars, availabilityZones);
     }
 
-    /** Creates a ClusterSpec when requesting a cluster */
+    /** Creates a ClusterSpec for when requesting a cluster */
     public static Builder request(Type type, Id id) {
         return new Builder(type, id);
     }
