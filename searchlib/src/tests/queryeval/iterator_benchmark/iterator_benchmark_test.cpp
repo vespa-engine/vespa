@@ -1054,7 +1054,19 @@ TEST(IteratorBenchmark, analyze_AND_plan_variants_ENN) {
     std::println("max worst-plan penalty={:.4f}", max_penalty);
 }
 
+static std::string smoke_test_filter = "--gtest_filter="
+                                       "IteratorBenchmark.analyze_term_search_in_attributes_strict"
+                                       ":IteratorBenchmark.analyze_OR_strict"
+                                       ":IteratorBenchmark.analyze_AND_plan_variants_ENN";
+
 int main(int argc, char** argv) {
+    for (int i = 0; i < argc; i++) {
+        std::string_view smoke_test{"--smoke-test"};
+        if (smoke_test == argv[i]) {
+            std::println(stderr, "Adding --smoke-test filter");
+            argv[i] = smoke_test_filter.data();
+        }
+    }
     ::testing::InitGoogleTest(&argc, argv);
     int res = RUN_ALL_TESTS();
     if (!global_summary.empty()) {
