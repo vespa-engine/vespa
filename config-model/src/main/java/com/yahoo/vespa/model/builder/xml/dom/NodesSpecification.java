@@ -21,6 +21,7 @@ import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
+import java.util.Objects;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
@@ -260,7 +261,7 @@ public class NodesSpecification {
                                                                                            .toList();
         String profile = allContent.stream()
                 .map(spec -> spec.profile().orElse(null))
-                .filter(java.util.Objects::nonNull)
+                .filter(Objects::nonNull)
                 .findFirst()
                 .orElse(null);
         return new NodesSpecification(new ClusterResources(count, 1, resources),
