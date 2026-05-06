@@ -6,6 +6,7 @@
 #include <vespa/document/fieldvalue/fieldvaluevisitor.h>
 #include <vespa/document/fieldvalue/fieldvaluewriter.h>
 #include <vespa/document/update/updatevisitor.h>
+
 #include <cstdint>
 
 namespace vespalib {

@@ -34,13 +34,13 @@ void IndexWriter::put(search::SerialNum serialNum, const document::Document& doc
         VLOG(level, "Handle put: serial(%" PRIu64 "), docId(%s), lid(%u), document(sz=%ld)", serialNum,
              idString.c_str(), lid, s1.size());
         const size_t chunksize(30000);
-        const char *dataStart = s1.data();
+        const char*  dataStart = s1.data();
         for (size_t accum(0); accum < s1.size(); accum += chunksize) {
             VLOG(level,
                  "Handle put continued...: serial(%" PRIu64
                  "), docId(%s), lid(%u), document(sz=%ld{%ld, %ld}) {\n%.30000s\n}",
-                 serialNum, idString.c_str(), lid, s1.size(), accum,
-                 std::min(accum + chunksize, s1.size()), dataStart + accum);
+                 serialNum, idString.c_str(), lid, s1.size(), accum, std::min(accum + chunksize, s1.size()),
+                 dataStart + accum);
         }
     }
     _mgr->putDocument(lid, doc, serialNum, on_write_done);

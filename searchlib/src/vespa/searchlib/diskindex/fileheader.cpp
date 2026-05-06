@@ -82,8 +82,8 @@ bool FileHeader::taste(const std::string& name, const TuneFileSeqRead& tuneFileR
             return false;
         }
         if (_completed && _fileBitSize > 8 * fileSize) {
-            LOG(error, "FileHeader::taste(\"%s\"): fileBitSize(%" PRIu64 ") > 8 * fileSize(%" PRIu64 ")", name.c_str(),
-                _fileBitSize, fileSize);
+            LOG(error, "FileHeader::taste(\"%s\"): fileBitSize(%" PRIu64 ") > 8 * fileSize(%" PRIu64 ")",
+                name.c_str(), _fileBitSize, fileSize);
             LOG_ABORT("should not be reached");
         }
     } else {
