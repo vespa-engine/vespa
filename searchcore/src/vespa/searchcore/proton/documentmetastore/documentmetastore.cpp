@@ -282,7 +282,8 @@ void DocumentMetaStore::onUpdateStat(CommitParam::UpdateStats updateStats) {
     auto gid_to_lid_map_memory_usage = _gidToLidMap.getMemoryUsage();
     _should_compact_gid_to_lid_map = compaction_strategy.should_compact_memory(gid_to_lid_map_memory_usage);
     usage.merge(gid_to_lid_map_memory_usage);
-    usage.merge(_docid_store.update_stat(compaction_strategy)); // update_stat makes the ArrayStore determine a CompactionSpec internally
+    usage.merge(_docid_store.update_stat(
+        compaction_strategy)); // update_stat makes the ArrayStore determine a CompactionSpec internally
     // the free lists are not taken into account here
     updateStatistics(_metadataStore.size(), _metadataStore.size(), usage.allocatedBytes(), usage.usedBytes(),
                      usage.deadBytes(), usage.allocatedBytesOnHold());
