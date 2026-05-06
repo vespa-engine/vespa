@@ -47,7 +47,7 @@ public:
 
     template <typename PostingListType> void addToArray(const PostingListType& postingList) {
         PostingVector& array = _array;
-        postingList.foreach ([&array](uint32_t key, const DataT& data) { array.emplace_back(key, data); });
+        postingList.foreach([&array](uint32_t key, const DataT& data) { array.emplace_back(key, data); });
         if (_startPos.back() < array.size()) {
             _startPos.push_back(array.size());
         }

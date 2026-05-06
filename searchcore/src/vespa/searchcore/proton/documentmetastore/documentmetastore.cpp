@@ -1065,7 +1065,7 @@ uint32_t DocumentMetaStore::getVersion() const {
                                : documentmetastore::NO_DOCUMENT_SIZE_TRACKING_VERSION;
 }
 
-void DocumentMetaStore::foreach (const search::IGidToLidMapperVisitor& visitor) const {
+void DocumentMetaStore::foreach(const search::IGidToLidMapperVisitor& visitor) const {
     beginFrozen().foreach_key([this, &visitor](GidToLidMapKey key) {
         visitor.visit(getRawMetadata(key.get_lid()).getGid(), key.get_lid());
     });

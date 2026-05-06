@@ -374,7 +374,7 @@ void ReferenceAttribute::populateTargetLids(const std::vector<GlobalId>& removes
         std::unique_ptr<IGidToLidMapper> mapperUP = _gidToLidMapperFactory->getMapper();
         const IGidToLidMapper&           mapper = *mapperUP;
         TargetLidPopulator               populator(*this);
-        mapper.foreach (populator);
+        mapper.foreach(populator);
     }
     for (auto& remove : removes) {
         notifyReferencedRemoveNoCommit(remove);

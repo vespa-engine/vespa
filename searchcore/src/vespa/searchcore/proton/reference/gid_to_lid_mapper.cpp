@@ -12,8 +12,8 @@ GidToLidMapper::GidToLidMapper(const search::IDocumentMetaStoreContext& dmsConte
 
 GidToLidMapper::~GidToLidMapper() = default;
 
-void GidToLidMapper::foreach (const search::IGidToLidMapperVisitor& visitor) const {
-    _guard->get().foreach (visitor);
+void GidToLidMapper::foreach(const search::IGidToLidMapperVisitor& visitor) const {
+    _guard->get().foreach(visitor);
 }
 
 } // namespace proton

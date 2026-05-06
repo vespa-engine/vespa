@@ -333,16 +333,16 @@ void BTreeInternalNode<KeyT, AggrT, NumSlots>::foreach_key_range(NodeStoreType& 
 
 template <typename KeyT, typename AggrT, uint32_t NumSlots>
 template <typename NodeStoreType, typename FunctionType>
-void BTreeInternalNode<KeyT, AggrT, NumSlots>::foreach (NodeStoreType& store, FunctionType func) const noexcept {
+void BTreeInternalNode<KeyT, AggrT, NumSlots>::foreach(NodeStoreType& store, FunctionType func) const noexcept {
     const BTreeNode::ChildRef* it = this->_data;
     const BTreeNode::ChildRef* ite = it + _validSlots;
     if (this->getLevel() > 1u) {
         for (; it != ite; ++it) {
-            store.mapInternalRef(it->load_acquire())->foreach (store, func);
+            store.mapInternalRef(it->load_acquire())->foreach(store, func);
         }
     } else {
         for (; it != ite; ++it) {
-            store.mapLeafRef(it->load_acquire())->foreach (func);
+            store.mapLeafRef(it->load_acquire())->foreach(func);
         }
     }
 }
@@ -386,7 +386,7 @@ void BTreeLeafNode<KeyT, DataT, AggrT, NumSlots>::foreach_key_range(uint32_t sta
 
 template <typename KeyT, typename DataT, typename AggrT, uint32_t NumSlots>
 template <typename FunctionType>
-void BTreeLeafNode<KeyT, DataT, AggrT, NumSlots>::foreach (FunctionType func) const noexcept {
+void BTreeLeafNode<KeyT, DataT, AggrT, NumSlots>::foreach(FunctionType func) const noexcept {
     const KeyT* it = _keys;
     const KeyT* ite = it + _validSlots;
     uint32_t    idx = 0;
