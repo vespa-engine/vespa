@@ -230,6 +230,8 @@ bool DocumentMetaStore::consider_compact_gid_to_lid_map() {
 void DocumentMetaStore::compact_docid_store() {
     auto context = _docid_store.compact_worst(getConfig().getCompactionStrategy());
     if (context) {
+        // We cannot use the compact method of the ICompactionContext since we do not have a span of EntryRefs.
+        // We have to move the elements that pass its filter manually.
         auto& filter = context->entry_ref_filter();
         for (uint32_t lid = 0; lid < _metadataStore.size(); ++lid) {
             auto& metadata = _metadataStore[lid];
