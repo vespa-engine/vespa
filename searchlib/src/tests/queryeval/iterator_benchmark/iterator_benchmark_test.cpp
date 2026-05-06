@@ -12,6 +12,8 @@
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <cmath>
+#include <format>
+#include <functional>
 #include <iomanip>
 #include <numeric>
 #include <print>
@@ -157,6 +159,9 @@ public:
     }
     Stats ms_per_actual_cost_stats() const {
         return calc_stats([](const auto& res) { return res.ms_per_actual_cost(); });
+    }
+    Stats actual_cost_stats() const {
+        return calc_stats([](const auto& res) { return res.actual_cost; });
     }
 };
 
@@ -488,9 +493,9 @@ struct BenchmarkCase {
 struct BenchmarkCaseSummary {
     BenchmarkCase       bcase;
     BenchmarkCaseResult result;
-    double              scaled_cost;
+    double              error_ratio;
     BenchmarkCaseSummary(const BenchmarkCase& bcase_in, const BenchmarkCaseResult& result_in)
-        : bcase(bcase_in), result(result_in), scaled_cost(1.0) {}
+        : bcase(bcase_in), result(result_in), error_ratio(1.0) {}
     BenchmarkCaseSummary(const BenchmarkCaseSummary&);
     BenchmarkCaseSummary& operator=(const BenchmarkCaseSummary&);
     ~BenchmarkCaseSummary();
@@ -503,32 +508,86 @@ BenchmarkCaseSummary::~BenchmarkCaseSummary() = default;
 class BenchmarkSummary {
 private:
     std::vector<BenchmarkCaseSummary> _cases;
+    double                            _calibration_constant;
 
 public:
-    BenchmarkSummary() : _cases() {}
+    BenchmarkSummary() : _cases(), _calibration_constant(1.0) {}
     void add(const BenchmarkCase& bcase, const BenchmarkCaseResult& result) { _cases.emplace_back(bcase, result); }
-    void calc_scaled_costs() {
-        std::sort(_cases.begin(), _cases.end(), [](const auto& lhs, const auto& rhs) {
-            return lhs.result.ms_per_actual_cost_stats().average < rhs.result.ms_per_actual_cost_stats().average;
-        });
-        double baseline_ms_per_cost = _cases[0].result.ms_per_actual_cost_stats().average;
-        for (size_t i = 1; i < _cases.size(); ++i) {
-            auto& c = _cases[i];
-            c.scaled_cost = c.result.ms_per_actual_cost_stats().average / baseline_ms_per_cost;
+
+    /**
+     * Calculates the calibration constant and per-case prediction error.
+     *
+     * For each case, the per-case ms-per-cost is computed as the ratio of
+     * average time_ms to average actual_cost across that case's measurements.
+     *
+     * The calibration constant is the median of per-case ms-per-cost across
+     * all cases. Interpreted as the wall-time-per-cost-unit a typical case
+     * spends on this hardware.
+     */
+    void calc_calibration() {
+        auto case_ms_per_cost = [](const BenchmarkCaseResult& result) {
+            return result.time_ms_stats().average / result.actual_cost_stats().average;
+        };
+        std::vector<double> values;
+        for (const auto& c : _cases) {
+            values.push_back(case_ms_per_cost(c.result));
+        }
+        std::sort(values.begin(), values.end());
+        _calibration_constant = calc_median(values);
+        for (auto& c : _cases) {
+            c.error_ratio = case_ms_per_cost(c.result) / _calibration_constant;
         }
     }
+
     const std::vector<BenchmarkCaseSummary>& cases() const { return _cases; }
+    double calibration_constant() const { return _calibration_constant; }
     bool empty() const { return _cases.empty(); }
 };
 
 void print_summary(const BenchmarkSummary& summary) {
-    std::cout << "-------- benchmark summary --------" << std::endl;
+    constexpr double ok_band = 1.4;
+    constexpr double under_threshold = ok_band;
+    constexpr double over_threshold = 1.0 / ok_band;
+
+    auto off_by = [](double error) { return std::max(error, 1.0 / error); };
+    auto classify = [&](double error) -> std::string_view {
+        if (error > under_threshold) {
+            return "UNDER";
+        }
+        if (error < over_threshold) {
+            return "OVER";
+        }
+        return "OK";
+    };
+
+    std::vector<const BenchmarkCaseSummary*> sorted;
+    sorted.reserve(summary.cases().size());
     for (const auto& c : summary.cases()) {
-        std::cout << std::fixed << std::setprecision(3) << "" << std::setw(50) << std::left << c.bcase.to_string()
-                  << ": "
-                  << "ms_per_act_cost=" << std::setw(7) << std::right
-                  << c.result.ms_per_actual_cost_stats().to_string() << ", scaled_cost=" << std::setw(7)
-                  << c.scaled_cost << std::endl;
+        sorted.push_back(&c);
+    }
+    std::sort(sorted.begin(), sorted.end(),
+              [&](const auto* lhs, const auto* rhs) { return off_by(lhs->error_ratio) > off_by(rhs->error_ratio); });
+
+    double sum_off = 0.0;
+    double max_off = 1.0;
+    for (const auto& c : summary.cases()) {
+        double off = off_by(c.error_ratio);
+        sum_off += off;
+        max_off = std::max(max_off, off);
+    }
+    double mean_off = sum_off / summary.cases().size();
+
+    std::println("calibration score: ms_per_cost={:.3f}, max={:.3f}x, mean={:.3f}x ({} cases, ok band [{:.3f}x, "
+                 "{:.3f}x])",
+                 summary.calibration_constant(), max_off, mean_off, summary.cases().size(), over_threshold,
+                 under_threshold);
+    std::println("");
+    std::println("{:<60} {:>12} {:>12} {:>10} {:<7}", "case", "actual_ms", "pred_ms", "error", "class");
+    for (const auto* c : sorted) {
+        double pred_ms = c->result.actual_cost_stats().average * summary.calibration_constant();
+        double actual_ms = c->result.time_ms_stats().average;
+        std::println("{:<60} {:>12.3f} {:>12.3f} {:>9.3f}x {:<7}", c->bcase.to_string(), actual_ms, pred_ms,
+                     c->error_ratio, classify(c->error_ratio));
     }
 }
 
@@ -632,6 +691,8 @@ BenchmarkCaseResult run_benchmark_case(const BenchmarkCaseSetup& setup) {
     return result;
 }
 
+BenchmarkSummary global_summary;
+
 void run_benchmarks(const BenchmarkSetup& setup, BenchmarkSummary& summary) {
     for (const auto& field_cfg : setup.field_cfgs) {
         for (auto query_op : setup.query_ops) {
@@ -646,10 +707,7 @@ void run_benchmarks(const BenchmarkSetup& setup, BenchmarkSummary& summary) {
 }
 
 void run_benchmarks(const BenchmarkSetup& setup) {
-    BenchmarkSummary summary;
-    run_benchmarks(setup, summary);
-    summary.calc_scaled_costs();
-    print_summary(summary);
+    run_benchmarks(setup, global_summary);
 }
 
 //---------------------------------------------------------------------------------------
@@ -829,8 +887,6 @@ const auto                str_array = make_attr_config(BasicType::STRING, Collec
 const auto                str_array_fs = make_attr_config(BasicType::STRING, CollectionType::ARRAY, true);
 const auto                str_wset = make_attr_config(BasicType::STRING, CollectionType::WSET, false);
 const auto                str_index = make_index_config();
-
-BenchmarkSummary global_summary;
 
 TEST(IteratorBenchmark, analyze_term_search_in_disk_index) {
     BenchmarkSetup setup(num_docs, {str_index}, {QueryOperator::Term}, {true, false}, base_hit_ratios);
@@ -1070,7 +1126,7 @@ int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
     int res = RUN_ALL_TESTS();
     if (!global_summary.empty()) {
-        global_summary.calc_scaled_costs();
+        global_summary.calc_calibration();
         print_summary(global_summary);
     }
     return res;
