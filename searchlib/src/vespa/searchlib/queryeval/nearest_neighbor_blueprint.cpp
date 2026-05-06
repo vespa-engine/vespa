@@ -236,6 +236,7 @@ void NearestNeighborBlueprint::flush_stats() {
         _stats->add_to_approximate_nns_distances_computed(_nni_stats.distances_computed());
         _stats->add_to_approximate_nns_nodes_visited(_nni_stats.nodes_visited());
         _nni_stats.reset();
+        _stats->add_to_approximate_nns_time_used(_ann_time_used);
     }
 }
 
