@@ -158,6 +158,7 @@ private:
     using SoftDoomFactor = vespalib::datastore::AtomicValueWrapper<double>;
     SoftDoomFactor         _softDoomFactor;
     Avg                    _querySetupTime;
+    Avg                    _approximate_nns_time;
     Avg                    _queryLatency;
     Avg                    _matchTime;
     Avg                    _groupingTime;
@@ -252,6 +253,11 @@ public:
     size_t querySetupTimeCount() const { return _querySetupTime.count(); }
     double querySetupTimeMin() const { return _querySetupTime.min(); }
     double querySetupTimeMax() const { return _querySetupTime.max(); }
+
+    double approximate_nns_time_avg() const { return _approximate_nns_time.avg(); }
+    size_t approximate_nns_time_count() const { return _approximate_nns_time.count(); }
+    double approximate_nns_time_min() const { return _approximate_nns_time.min(); }
+    double approximate_nns_time_max() const { return _approximate_nns_time.max(); }
 
     MatchingStats& queryLatency(double time_s) {
         _queryLatency.set(time_s);

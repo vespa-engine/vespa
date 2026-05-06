@@ -36,6 +36,7 @@ MatchingStats::MatchingStats(double prev_soft_doom_factor) noexcept
       _doomOvertime(),
       _softDoomFactor(prev_soft_doom_factor),
       _querySetupTime(),
+      _approximate_nns_time(),
       _queryLatency(),
       _matchTime(),
       _groupingTime(),
@@ -83,6 +84,7 @@ MatchingStats& MatchingStats::add(const MatchingStats& rhs) noexcept {
     _doomOvertime.add(rhs._doomOvertime);
 
     _querySetupTime.add(rhs._querySetupTime);
+    _approximate_nns_time.add(rhs._approximate_nns_time);
     _queryLatency.add(rhs._queryLatency);
     _matchTime.add(rhs._matchTime);
     _groupingTime.add(rhs._groupingTime);
