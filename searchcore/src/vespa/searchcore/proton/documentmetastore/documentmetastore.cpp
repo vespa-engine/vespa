@@ -237,7 +237,7 @@ void DocumentMetaStore::onCommit() {
         incGeneration();
         updateStat(CommitParam::UpdateStats::FORCE);
     }
-    if (_docid_store.consider_compact()) {
+    if (_docid_store.consider_compact()) [[unlikely]] {
         incGeneration();
         _changesSinceCommit = 0;
         auto context = _docid_store.compact_worst(getConfig().getCompactionStrategy());
