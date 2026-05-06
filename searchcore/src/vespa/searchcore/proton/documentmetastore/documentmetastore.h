@@ -103,6 +103,7 @@ private:
     const GlobalId& getRawGid(DocId lid) const { return getRawMetadata(lid).getGid(); }
 
     bool consider_compact_gid_to_lid_map();
+    void compact_docid_store();
     void onCommit() override;
     void onUpdateStat(CommitParam::UpdateStats updateStats) override;
 

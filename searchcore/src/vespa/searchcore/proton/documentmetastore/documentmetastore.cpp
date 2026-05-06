@@ -227,6 +227,21 @@ bool DocumentMetaStore::consider_compact_gid_to_lid_map() {
     return _should_compact_gid_to_lid_map;
 }
 
+void DocumentMetaStore::compact_docid_store() {
+    auto context = _docid_store.compact_worst(getConfig().getCompactionStrategy());
+    if (context) {
+        auto& filter = context->entry_ref_filter();
+        for (uint32_t lid = 0; lid < _metadataStore.size(); ++lid) {
+            auto& metadata = _metadataStore[lid];
+            auto  ref = metadata.get_relaxed_docid_ref();
+            if (ref.valid() && filter.has(ref)) {
+                EntryRef new_ref = _docid_store.move_on_compact(ref);
+                metadata.set_docid_ref(new_ref);
+            }
+        }
+    }
+}
+
 void DocumentMetaStore::onCommit() {
     if (consider_compact_gid_to_lid_map()) {
         incGeneration();
@@ -240,18 +255,7 @@ void DocumentMetaStore::onCommit() {
     if (_docid_store.consider_compact()) [[unlikely]] {
         incGeneration();
         _changesSinceCommit = 0;
-        auto context = _docid_store.compact_worst(getConfig().getCompactionStrategy());
-        if (context) {
-            auto& filter = context->entry_ref_filter();
-            for (uint32_t lid = 0; lid < _metadataStore.size(); ++lid) {
-                auto& metadata = _metadataStore[lid];
-                auto  ref = metadata.get_relaxed_docid_ref();
-                if (ref.valid() && filter.has(ref)) {
-                    EntryRef new_ref = _docid_store.move_on_compact(ref);
-                    metadata.set_docid_ref(new_ref);
-                }
-            }
-        }
+        compact_docid_store();
         incGeneration();
         updateStat(CommitParam::UpdateStats::FORCE);
     }
