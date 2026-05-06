@@ -11,9 +11,10 @@
         "net.bytebuddy:byte-buddy",
         "net.bytebuddy:byte-buddy-agent"
       ],
-      "ignoredVersions": [
-        "/-jdk5$/"
+      "allowedVersions": [
+        "!/-jdk5$/"
       ]
     }
   ]
 }
+
