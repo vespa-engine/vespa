@@ -94,6 +94,7 @@ install_config_definition(voyage-ai-embedder.def embedding.voyageai.voyage-ai-em
 install_config_definition(cloud-data-plane-filter.def jdisc.http.filter.security.cloud.config.cloud-data-plane-filter.def)
 install_config_definition(cloud-token-data-plane-filter.def jdisc.http.filter.security.cloud.config.cloud-token-data-plane-filter.def)
 install_config_definition(cors-filter.def jdisc.http.filter.security.cors.config.cors-filter.def)
+install_config_definition(jdisc.http.filter.security.rule.config.rule-based-filter.def)
 install_config_definition(significance.def search.significance.config.significance.def)
 install_config_definition(document-operation-executor.def com.yahoo.document.restapi.document-operation-executor.def)
 install_config_definition(gguf-embedder.def ai.vespa.embedding.config.gguf-embedder.def)
