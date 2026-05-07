@@ -15,6 +15,7 @@
 #include <iomanip>
 #include <numeric>
 #include <print>
+#include <ranges>
 #include <vector>
 
 using namespace search::attribute;
@@ -293,6 +294,46 @@ BenchmarkResult benchmark_search(BenchmarkBlueprintFactory& factory, uint32_t do
         }
     }
 }
+
+//-----------------------------------------------------------------------------
+
+/**
+ * A single row in the BenchmarkStore.
+ *
+ * The id must be unique.
+ */
+class BenchmarkRecord {
+    std::string _id;
+
+public:
+    BenchmarkRecord(const std::string& id) : _id(id) {}
+
+    const std::string& id() const noexcept { return _id; }
+};
+
+/**
+ * A collection of rows.
+ */
+class BenchmarkStore {
+    std::vector<BenchmarkRecord> _records;
+
+public:
+    BenchmarkStore() = default;
+
+    void add(const BenchmarkRecord& record) { _records.push_back(record); }
+
+    // iterator for stdlib integration
+    using iterator = std::vector<BenchmarkRecord>::iterator;
+    using const_iterator = std::vector<BenchmarkRecord>::const_iterator;
+    iterator begin() noexcept { return _records.begin(); }
+    iterator end() noexcept { return _records.end(); }
+    const_iterator begin() const noexcept { return _records.begin(); }
+    const_iterator end() const noexcept { return _records.end(); }
+    const_iterator cbegin() const noexcept { return _records.cbegin(); }
+    const_iterator cend() const noexcept { return _records.cend(); }
+    bool empty() const noexcept { return _records.empty(); }
+    std::size_t size() const noexcept { return _records.size(); }
+};
 
 //-----------------------------------------------------------------------------
 
@@ -1052,6 +1093,27 @@ TEST(IteratorBenchmark, analyze_AND_plan_variants_ENN) {
         std::println("  worst/best ratio={:.4f}", penalty);
     }
     std::println("max worst-plan penalty={:.4f}", max_penalty);
+}
+
+TEST(IteratorBenchmark, record_store_demo) {
+    using std::ranges::fold_left;
+    using std::views::filter;
+    using std::views::transform;
+
+    BenchmarkStore store;
+    store.add(BenchmarkRecord{"foo"});
+    store.add(BenchmarkRecord{"bar"});
+
+    // For each.
+    for (const auto& record : store) {
+        std::println(stderr, "ID: {}", record.id());
+    }
+
+    // Possibilities for modern filter and transformations.
+    auto sizes = store | filter([](const auto& rec) noexcept { return rec.id() == "foo"; }) |
+                 transform([](const auto& rec) noexcept { return rec.id().size(); });
+    auto total = fold_left(sizes, 0, std::plus());
+    std::println(stderr, "filtered transformed total: {}", total);
 }
 
 static std::string smoke_test_filter = "--gtest_filter="
