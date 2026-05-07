@@ -72,7 +72,7 @@ class Matcher {
         return matching_elements_field(field_id) != nullptr;
     };
     [[nodiscard]] bool has_matching_elements_field(QueryTerm& term) const;
-    [[nodiscard]] bool has_matching_elements_field(QueryNode& query_node) const;
+    [[nodiscard]] bool has_matching_elements_field_below_near(QueryNode& query_node) const;
     void select_multiterm_children(const MultiTerm& multi_term);
     void select_near_query_node(NearQueryNode& near);
     void select_query_term_node(QueryTerm& term);
@@ -138,16 +138,16 @@ bool Matcher::has_matching_elements_field(QueryTerm& term) const {
     return false;
 }
 
-bool Matcher::has_matching_elements_field(QueryNode& query_node) const {
+bool Matcher::has_matching_elements_field_below_near(QueryNode& query_node) const {
     if (as<SameElementQueryNode>(query_node) != nullptr) {
         return false;
     } else if (auto query_term = as<QueryTerm>(query_node)) {
         return has_matching_elements_field(*query_term);
     } else if (auto and_not = as<AndNotQueryNode>(query_node)) {
-        return has_matching_elements_field(*(*and_not)[0]);
+        return has_matching_elements_field_below_near(*(*and_not)[0]);
     } else if (auto intermediate = as<QueryConnector>(query_node)) {
         for (size_t i = 0; i < intermediate->size(); ++i) {
-            if (has_matching_elements_field(*(*intermediate)[i])) {
+            if (has_matching_elements_field_below_near(*(*intermediate)[i])) {
                 return true;
             }
         }
@@ -172,7 +172,7 @@ void Matcher::select_multiterm_children(const MultiTerm& multi_term) {
 }
 
 void Matcher::select_near_query_node(NearQueryNode& near_query_node) {
-    if (has_matching_elements_field(near_query_node)) {
+    if (has_matching_elements_field_below_near(near_query_node)) {
         _near_query_nodes.emplace_back(&near_query_node);
     }
 }
