@@ -14,8 +14,8 @@ public class DispatchTuning {
 
     public enum DispatchPolicy {
         ROUNDROBIN,
-        LATENCY_AMORTIZED_OVER_REQUESTS,
-        LATENCY_AMORTIZED_OVER_TIME,
+        LATENCY_AMORTIZED_OVER_REQUESTS, // deprecated
+        LATENCY_AMORTIZED_OVER_TIME, // deprecated
         BEST_OF_RANDOM_2,
         ADAPTIVE
     }
@@ -94,9 +94,11 @@ public class DispatchTuning {
             return switch (policy.toLowerCase(java.util.Locale.ROOT)) {
                 // TODO: Remove support for 'random' on Vespa 9 (already removed from doc)
                 case "adaptive", "random" -> DispatchPolicy.ADAPTIVE;
-                case "round-robin" -> DispatchPolicy.ROUNDROBIN; // TODO: Undocumented, document it or remove it?
-                case "latency-amortized-over-requests" -> DispatchPolicy.LATENCY_AMORTIZED_OVER_REQUESTS; // TODO: Undocumented, document it or remove it?
-                case "latency-amortized-over-time" -> DispatchPolicy.LATENCY_AMORTIZED_OVER_TIME; // TODO: Undocumented, document it or remove it?
+                // TODO: 'round-robin' is undocumented, document it or remove it?
+                case "round-robin" -> DispatchPolicy.ROUNDROBIN;
+                // TODO: Remove support for 'latency-amortized-over-*' (never documented or supported)
+                case "latency-amortized-over-requests" -> DispatchPolicy.LATENCY_AMORTIZED_OVER_REQUESTS;
+                case "latency-amortized-over-time" -> DispatchPolicy.LATENCY_AMORTIZED_OVER_TIME;
                 case "best-of-random-2" -> DispatchPolicy.BEST_OF_RANDOM_2;
                 default -> throw new IllegalArgumentException("Unknown dispatch policy '" + policy + "'");
             };
