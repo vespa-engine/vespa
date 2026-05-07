@@ -7,7 +7,6 @@
 #include <cassert>
 #include <cmath>
 #include <concepts>
-#include <span>
 
 namespace vespalib::quant {
 
