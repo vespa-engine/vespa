@@ -57,14 +57,13 @@ func (k *dummyKeyring) Set(namespace, key, value string) error {
 	if err != nil {
 		return err
 	}
-	if err := os.WriteFile(fn, []byte(value), 0o600); err != nil {
-		if !os.IsPermission(err) {
-			return err
-		}
-		if chmodErr := os.Chmod(fn, 0o600); chmodErr != nil {
-			return err
-		}
-		return os.WriteFile(fn, []byte(value), 0o600)
+	err = os.Remove(fn)
+	if err != nil {
+		return err
+	}
+	err = os.WriteFile(fn, []byte(value), 0o400)
+	if err != nil {
+		return err
 	}
 	return nil
 }
