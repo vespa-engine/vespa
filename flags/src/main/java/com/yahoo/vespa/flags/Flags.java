@@ -309,15 +309,6 @@ public class Flags {
             "Takes effect at next deployment of the application",
             INSTANCE_ID);
 
-    public static final UnboundBooleanFlag USE_VESPA_NODE_CTL = defineFeatureFlag(
-            "use-vespa-node-ctl", true,
-            List.of("hmusum"), "2025-08-12", "2026-06-01",
-            "Whether to use vespa-node-ctl to start, stop, restart, suspend and resume services " +
-            "or do this directly from host-admin.",
-            "Takes effect at next tick",
-            HOSTNAME
-    );
-
     public static final UnboundBooleanFlag RESTART_ON_DEPLOY_MAINTAINER = defineFeatureFlag(
             "restart-on-deploy-maintainer", false,
             List.of("glebashnik"), "2026-04-07", "2026-10-07",
