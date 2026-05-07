@@ -11,6 +11,7 @@
 #include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/searchlib/common/serialized_query_tree.h>
 #include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/query/streaming/query.h>
 #include <vespa/searchlib/query/streaming/query_term_data.h>
 #include <vespa/searchlib/query/streaming/queryterm.h>
@@ -44,6 +45,7 @@ using document::StructFieldValue;
 using search::MatchingElements;
 using search::MatchingElementsFields;
 using search::fef::MatchData;
+using search::fef::MatchDataLayout;
 using search::query::StackDumpCreator;
 using search::query::Weight;
 using search::streaming::Query;
@@ -358,8 +360,8 @@ MatchingElementsFillerTest::MatchingElementsFillerTest()
     auto sdoc =
         std::make_shared<StorageDocument>(_doc_type.make_test_doc(), _env.field_paths, _env.field_paths->size());
     EXPECT_TRUE(sdoc->valid());
-    MatchData md(MatchData::params());
-    _hit_collector.addHit(std::move(sdoc), 1, md, 0.0, nullptr, 0);
+    auto md = MatchDataLayout().createMatchData();
+    _hit_collector.addHit(std::move(sdoc), 1, *md, 0.0, nullptr, 0);
 }
 
 MatchingElementsFillerTest::~MatchingElementsFillerTest() = default;

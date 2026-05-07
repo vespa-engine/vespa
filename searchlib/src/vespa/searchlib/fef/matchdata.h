@@ -4,59 +4,36 @@
 
 #include "handle.h"
 #include "termfieldmatchdata.h"
+#include <vespa/vespalib/util/typed_data_layout.h>
 
 #include <memory>
 #include <vector>
 
 namespace search::fef {
 
+using MatchDataDomain = vespalib::tdl::Domain<TermFieldMatchData>;
+using MatchDataBase = vespalib::tdl::Data<MatchDataDomain>;
+
 /**
  * An object of this class is used to store all basic data and derived
  * features for a single hit.
  **/
-class MatchData {
+class MatchData : public MatchDataBase {
 private:
-    std::vector<TermFieldMatchData> _termFields;
     double                          _termwise_limit;
 
 public:
     /**
-     * Wrapper for constructor parameters
-     **/
-    class Params {
-    private:
-        uint32_t _numTermFields;
-
-        friend class ::search::fef::MatchData;
-        Params() : _numTermFields(0) {}
-
-    public:
-        uint32_t numTermFields() const { return _numTermFields; }
-        Params& numTermFields(uint32_t value) {
-            _numTermFields = value;
-            return *this;
-        }
-    };
-    /**
-     * Avoid C++'s most vexing parse problem.
-     * (reference: http://www.amazon.com/dp/0201749629/)
-     **/
-    static Params params() { return Params(); }
-
-    /**
      * Convenience typedef for an auto-pointer to this class.
      **/
-    using UP = std::unique_ptr<MatchData>;
+    using UP = vespalib::tdl::Layout<MatchDataDomain, MatchData>::DataUP;
 
     /**
-     * Create a new object with the given number of term, attribute, and feature
-     * slots.
-     *
-     * @param numTerms number of term slots
-     * @param numAttributes number of attribute slots
-     * @param numFeatures number of feature slots
+     * The MatchData constructor is not intended to be called directly
+     * and is protected with a DataKey that will be supplied by the
+     * layout planner (MatchDataLayout).
      **/
-    explicit MatchData(const Params& cparams);
+    MatchData(vespalib::tdl::DataKey key);
 
     /**
      * Reset this match data in such a way that it can be re-used with
@@ -86,7 +63,7 @@ public:
      *
      * @return number of term fields allocated
      **/
-    uint32_t getNumTermFields() const { return _termFields.size(); }
+    uint32_t getNumTermFields() const { return all_of<TermFieldMatchData>().size(); }
 
     /**
      * Resolve a term field handle into a pointer to the actual data.
@@ -94,7 +71,7 @@ public:
      * @return term field match data
      * @param handle term field handle
      **/
-    TermFieldMatchData* resolveTermField(TermFieldHandle handle) { return &_termFields[handle]; }
+    TermFieldMatchData* resolveTermField(TermFieldHandle handle) { return &all_of<TermFieldMatchData>()[handle]; }
 
     /**
      * Resolve a term field handle into a pointer to the actual data.
@@ -102,7 +79,7 @@ public:
      * @return term field match data
      * @param handle term field handle
      **/
-    const TermFieldMatchData* resolveTermField(TermFieldHandle handle) const { return &_termFields[handle]; }
+    const TermFieldMatchData* resolveTermField(TermFieldHandle handle) const { return &all_of<TermFieldMatchData>()[handle]; }
 
     static MatchData::UP makeTestInstance(uint32_t numTermFields, uint32_t fieldIdLimit);
 };

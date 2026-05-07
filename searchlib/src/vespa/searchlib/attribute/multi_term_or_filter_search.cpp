@@ -126,7 +126,7 @@ MultiTermOrFilterSearch::create(std::vector<DocidWithWeightIterator>&& children,
 }
 
 std::unique_ptr<queryeval::SearchIterator>
-MultiTermOrFilterSearch::create(const std::vector<SearchIterator*>& children, std::unique_ptr<fef::MatchData> md) {
+MultiTermOrFilterSearch::create(const std::vector<SearchIterator*>& children, fef::MatchData::UP md) {
     if (children.empty()) {
         return std::make_unique<queryeval::EmptySearch>();
     } else {

@@ -2,6 +2,7 @@
 
 #include <vespa/searchcore/proton/documentmetastore/lid_allocator.h>
 #include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
@@ -12,6 +13,7 @@
 #include <iostream>
 
 using search::fef::MatchData;
+using search::fef::MatchDataLayout;
 using search::queryeval::Blueprint;
 using search::queryeval::SearchIterator;
 using search::queryeval::SimpleResult;
@@ -99,11 +101,11 @@ protected:
     SimpleResult get_active_lids_in_search_iterator(uint32_t docid_limit, bool filter) {
         auto                            blueprint = make_whitelist_blueprint(true, docid_limit);
         std::unique_ptr<SearchIterator> iterator;
-        MatchData                       md(MatchData::params());
+        auto                            md = MatchDataLayout().createMatchData();
         if (filter) {
             iterator = blueprint->createFilterSearch(Blueprint::FilterConstraint::UPPER_BOUND);
         } else {
-            iterator = blueprint->createSearch(md);
+            iterator = blueprint->createSearch(*md);
         }
         SimpleResult res;
         res.search(*iterator, docid_limit);

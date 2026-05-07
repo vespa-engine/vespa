@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <vespa/searchlib/fef/matchdata.h>
+
 #include <atomic>
 #include <memory>
 #include <mutex>
@@ -14,9 +16,6 @@ class IRequestContext;
 class SearchIterator;
 class Blueprint;
 } // namespace search::queryeval
-namespace search::fef {
-class MatchData;
-}
 
 namespace proton::matching {
 
@@ -57,7 +56,7 @@ private:
     bool                                                 _descending;
     std::string                                          _diversity_attribute;
     std::mutex                                           _lock;
-    std::vector<std::unique_ptr<search::fef::MatchData>> _match_datas;
+    std::vector<search::fef::MatchData::UP>              _match_datas;
     std::unique_ptr<search::queryeval::Blueprint>        _blueprint;
     std::atomic<ssize_t>                                 _estimatedHits;
     double                                               _diversityCutoffFactor;

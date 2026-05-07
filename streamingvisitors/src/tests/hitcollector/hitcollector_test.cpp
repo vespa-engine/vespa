@@ -8,6 +8,7 @@
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchlib/fef/feature_resolver.h>
 #include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchvisitor/hitcollector.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -101,8 +102,8 @@ void HitCollectorTest::addHit(HitCollector& hc, uint32_t docId, double score, co
     auto doc = document::Document::make_without_repo(_docType, DocumentId("id:ns:testdoc::"));
     auto sdoc = std::make_shared<StorageDocument>(std::move(doc), SharedFieldPathMap(), 0);
     ASSERT_TRUE(sdoc->valid());
-    MatchData md(MatchData::params());
-    hc.addHit(std::move(sdoc), docId, md, score, sortData, sortDataSize);
+    auto md = search::fef::MatchDataLayout().createMatchData();
+    hc.addHit(std::move(sdoc), docId, *md, score, sortData, sortDataSize);
 }
 
 TEST_F(HitCollectorTest, simple) {

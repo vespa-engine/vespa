@@ -78,7 +78,7 @@ SearchIterator::UP SimplePhraseBlueprint::createLeafSearch(const fef::TermFieldM
     for (const auto& child : order_map) {
         eval_order.push_back(child.second);
     }
-    std::unique_ptr<fef::MatchData> md;
+    fef::MatchData::UP md;
     return std::make_unique<SimplePhraseSearch>(std::move(children), std::move(md), std::move(childMatch),
                                                 std::move(eval_order), *tfmda[0], strict());
 }

@@ -59,7 +59,7 @@ private:
     const QueryEnvironment&          _queryEnv;
     const RankSetup&                 _rankSetup;
     const Properties&                _featureOverrides;
-    std::unique_ptr<MatchData>       _match_data;
+    MatchData::UP                    _match_data;
     std::unique_ptr<RankProgram>     _rank_program;
     std::unique_ptr<SearchIterator>  _search;
     HandleRecorder::HandleMap        _used_handles;

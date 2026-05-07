@@ -2,11 +2,9 @@
 
 #include "i_direct_posting_store.h"
 
+#include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 
-namespace search::fef {
-class MatchData;
-}
 namespace search::attribute {
 
 /**
@@ -26,7 +24,7 @@ public:
     static std::unique_ptr<SearchIterator> create(std::vector<DocidWithWeightIterator>&& children,
                                                   fef::TermFieldMatchData&               tfmd);
     static std::unique_ptr<SearchIterator> create(const std::vector<SearchIterator*>& children,
-                                                  std::unique_ptr<fef::MatchData>     md);
+                                                  fef::MatchData::UP                  md);
 };
 
 } // namespace search::attribute
