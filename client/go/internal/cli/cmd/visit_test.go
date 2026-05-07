@@ -2,6 +2,7 @@
 package cmd
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
 	"testing"
@@ -151,7 +152,7 @@ func TestVisitCommand(t *testing.T) {
 const (
 	jsonlDoc1      = `{"put":"id:space:music::1","fields":{"title":"first"}}`
 	jsonlDoc2      = `{"put":"id:space:music::2","fields":{"title":"second"}}`
-	jsonlRemoveDoc = `{"remove":"id:space:music::3","fields":{"title":"third"}}`
+	jsonlRemoveDoc = `{"remove":"id:space:music::3"}`
 	jsonlCont      = `{"continuation":{"token":"JSONL_TOKEN","percentFinished":50.0}}`
 	jsonlDone      = `{"continuation":{"percentFinished":100.0}}`
 	jsonlStats     = `{"sessionStats":{"documentCount":2}}`
@@ -235,6 +236,14 @@ func TestRunOneVisitJSONLUserAcceptHeader(t *testing.T) {
 	assert.Equal(t, "application/json", client.LastRequest.Header.Get("Accept"))
 }
 
+func SetUpCliAndRunVisit(t *testing.T, client *mock.HTTPClient) (stdout *bytes.Buffer, stderr *bytes.Buffer, err error) {
+	cli, stdout, stderr := newTestCLI(t)
+	cli.httpClient = client
+	cli.sleeper = func(d time.Duration) {}
+	err = cli.Run("visit", "--stream", "--json-lines", "--bucket-space", "default", "--content-cluster", "fooCC", "-t", "http://127.0.0.1:8080")
+	return stdout, stderr, err
+}
+
 func TestVisitCommandJSONLTruncatedRetry(t *testing.T) {
 	// First response has no trailing newline — truncated
 	truncatedBody := jsonlDoc1 + "\n" + jsonlCont
@@ -243,10 +252,8 @@ func TestVisitCommandJSONLTruncatedRetry(t *testing.T) {
 	client.NextResponseString(200, handlersResponse)
 	client.NextResponse(jsonlResponse(truncatedBody))
 	client.NextResponse(jsonlResponse(completeBody))
-	cli, stdout, stderr := newTestCLI(t)
-	cli.httpClient = client
-	cli.sleeper = func(d time.Duration) {}
-	assert.Nil(t, cli.Run("visit", "--stream", "--json-lines", "--bucket-space", "default", "--content-cluster", "fooCC", "-t", "http://127.0.0.1:8080"))
+	stdout, stderr, err := SetUpCliAndRunVisit(t, client)
+	assert.Nil(t, err)
 	assert.Contains(t, stdout.String(), jsonlOutDoc1+"\n")
 	assert.Contains(t, stdout.String(), jsonlOutDoc2+"\n")
 	assert.Contains(t, stderr.String(), "truncated")
@@ -263,10 +270,7 @@ func TestVisitCommandJSONLTruncatedAbort(t *testing.T) {
 	for range 5 {
 		client.NextResponse(jsonlResponse(truncatedNoToken))
 	}
-	cli, _, _ := newTestCLI(t)
-	cli.httpClient = client
-	cli.sleeper = func(d time.Duration) {}
-	err := cli.Run("visit", "--stream", "--json-lines", "--bucket-space", "default", "--content-cluster", "fooCC", "-t", "http://127.0.0.1:8080")
+	_, _, err := SetUpCliAndRunVisit(t, client)
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), "truncated")
 	assert.Equal(t, 6, len(client.Requests)) // probe + 5 visit attempts
@@ -275,15 +279,12 @@ func TestVisitCommandJSONLTruncatedAbort(t *testing.T) {
 func TestTruncatedMidJSONLMaxRetries(t *testing.T) {
 	client := &mock.HTTPClient{}
 	client.NextResponseString(200, handlersResponse)
-	// Testing trunctaion with different substrings of document from idx = 1 to idx = 11
+	// Creating responses that truncate at different lengths
 	for i := range 5 {
-		truncation_idx := (i * 5) + 1
-		client.NextResponse(jsonlResponse(jsonlDoc1[0:truncation_idx]))
+		truncationIdx := (i * 5) + 1
+		client.NextResponse(jsonlResponse(jsonlDoc1[0:truncationIdx]))
 	}
-	cli, _, _ := newTestCLI(t)
-	cli.httpClient = client
-	cli.sleeper = func(d time.Duration) {}
-	err := cli.Run("visit", "--stream", "--json-lines", "--bucket-space", "default", "--content-cluster", "fooCC", "-t", "http://127.0.0.1:8080")
+	_, _, err := SetUpCliAndRunVisit(t, client)
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), "truncated")
 	assert.Equal(t, 6, len(client.Requests)) // probe + 5 visit attempts until it does not try retry any more
@@ -293,36 +294,28 @@ func TestTruncatedMidJSONLMaxRetries(t *testing.T) {
 func TestTruncatedMidJSONLSomeRetries(t *testing.T) {
 	client := &mock.HTTPClient{}
 	client.NextResponseString(200, handlersResponse)
-	// Testing trunctaion with different substrings of document from idx = 1 to idx = 11
+	// Creating responses that truncate at different lengths
 	for i := range 2 {
-		truncation_idx := (i * 5) + 1
-		client.NextResponse(jsonlResponse(jsonlDoc1[0:truncation_idx]))
+		truncationIdx := (i * 5) + 1
+		client.NextResponse(jsonlResponse(jsonlDoc1[0:truncationIdx]))
 	}
-	jsonlComplete := jsonlDoc1 + "\n" + jsonlDone
+	jsonlComplete := jsonlDoc1 + "\n" + jsonlDone + "\n"
 	client.NextResponse(jsonlResponse(jsonlComplete))
-	cli, _, _ := newTestCLI(t)
-	cli.httpClient = client
-	cli.sleeper = func(d time.Duration) {}
-	err := cli.Run("visit", "--stream", "--json-lines", "--bucket-space", "default", "--content-cluster", "fooCC", "-t", "http://127.0.0.1:8080")
+	_, _, err := SetUpCliAndRunVisit(t, client)
 	assert.Nil(t, err)
 	assert.Equal(t, 4, len(client.Requests)) // probe + 3 visit attempts where the last one is a valid response
 }
 
-// All remove entreis should be ignored
-func TestRemoveIgnored(t *testing.T) {
+func TestRemoveEntriesAreIgnored(t *testing.T) {
 	client := &mock.HTTPClient{}
 	client.NextResponseString(200, handlersResponse)
-	// Testing trunctaion with different substrings of document from idx = 1 to idx = 11
-	response_doc := jsonlDoc1 + "\n" + jsonlDoc2 + "\n" + jsonlRemoveDoc + "\n" + jsonlDone + "\n"
-	client.NextResponse(jsonlResponse(response_doc))
-	cli, stdout, _ := newTestCLI(t)
-	cli.httpClient = client
-	cli.sleeper = func(d time.Duration) {}
-	err := cli.Run("visit", "--stream", "--json-lines", "--bucket-space", "default", "--content-cluster", "fooCC", "-t", "http://127.0.0.1:8080")
+	responseDoc := jsonlDoc1 + "\n" + jsonlDoc2 + "\n" + jsonlRemoveDoc + "\n" + jsonlDone + "\n"
+	client.NextResponse(jsonlResponse(responseDoc))
+	stdout, _, err := SetUpCliAndRunVisit(t, client)
 	assert.Nil(t, err)
 	// The remove content is ignored
-	assert.NotContains(t, stdout.String(), "third")
-	assert.NotContains(t, stdout.String(), "3")
+	assert.NotContains(t, stdout.String(), "remove")
+	assert.NotContains(t, stdout.String(), "id:space:music::3")
 	assert.Equal(t, 2, len(client.Requests)) // probe + 1 visit
 }
 
@@ -348,7 +341,7 @@ func assertVisitResults(arguments []string, t *testing.T, responses []responseCo
 	assert.Equal(t, "/document/v1/", client.LastRequest.URL.Path)
 	assert.Equal(t, "GET", client.LastRequest.Method)
 
-	assert.Equal(t, len(backoffs), 4)
+	assert.Equal(t, 4, len(backoffs))
 	assert.True(t, inRangeMillis(backoffs[0], 100, 300)) // 200ms +- 100ms
 	assert.True(t, inRangeMillis(backoffs[1], 150, 450)) // 300ms +- 150ms
 	assert.True(t, inRangeMillis(backoffs[2], 225, 675)) // 450ms +- 225ms
