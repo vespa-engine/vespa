@@ -90,7 +90,7 @@ Last updated: 2026-05-07
 
 - Homepage: <https://github.com/ungap/structured-clone#readme>
 - Copyright 2021 Andrea Giammarchi
-- @WebReflection
+-  @WebReflection
 
 ---
 
@@ -200,6 +200,94 @@ Last updated: 2026-05-07
 
 ---
 
+## com.fasterxml.jackson.core 2.21 — Apache 2.0
+
+- Homepage: <https://github.com/FasterXML/jackson>
+- FasterXML
+
+---
+
+## com.fasterxml.jackson.core 2.21.1 — Apache 2.0
+
+- Homepage: <https://github.com/FasterXML/jackson-core>
+- Copyright 2021 The fast_float authors
+-  Switzerland
+- Copyright 2022 Daniel Lemire
+- FasterXML
+- Copyright 2024 Werner Randelshofer
+
+---
+
+## com.github.luben 1.5.7-8 — BSD 2
+
+- Homepage: <https://github.com/luben/zstd-jni>
+
+---
+
+## com.google.code.findbugs 3.0.2 — Apache 2.0
+
+- Homepage: <http://findbugs.sourceforge.net/>
+- Copyright (c)  
+
+---
+
+## com.google.errorprone 2.30.0 — Apache 2.0
+
+- Homepage: <https://errorprone.info>
+- Copyright 2015 The Error Prone Authors
+
+---
+
+## com.google.guava 1.0.1 — Apache 2.0
+
+- Homepage: <https://github.com/google/guava>
+- Copyright Google Inc
+
+---
+
+## com.google.guava 1.0.2 — Apache 2.0
+
+- Homepage: <https://github.com/google/guava>
+- Copyright 2018 The Guava Authors
+
+---
+
+## com.google.guava 32.0.1-jre — Apache 2.0
+
+- Homepage: <https://github.com/google/guava>
+- Copyright 2010 The Guava Authors
+
+---
+
+## com.google.guava 33.2.1-jre — Apache 2.0
+
+- Homepage: <https://github.com/google/guava>
+- Copyright 2010 The Guava Authors
+
+---
+
+## com.google.j2objc 3.0.0 — Apache 2.0
+
+- Homepage: <https://github.com/google/j2objc/>
+- Copyright 1995-2016 International Business Machines Corporation and others
+- Copyright 1999-2007 Apple Inc
+- Copyright 2006-2008 Google Inc
+
+---
+
+## com.jgoodies 1.1-preview — BSD
+
+- Homepage: <http://www.jgoodies.com/>
+
+---
+
+## com.kotcrab.remark 1.0.0 — Apache 2.0
+
+- Homepage: <https://github.com/kotcrab/remark-java/>
+- Copyright 2011 OverZealous Creations, LLC
+
+---
+
 ## com.vladsch.flexmark 0.64.8 — BSD 2
 
 - Homepage: <https://github.com/vsch/flexmark-java>
@@ -210,6 +298,20 @@ Last updated: 2026-05-07
 
 - Homepage: <https://github.com/wooorm/comma-separated-tokens#readme>
 - Copyright 2016 Titus Wormer <tituswormer@gmail.com>
+
+---
+
+## commons-codec 1.21.0 — Apache 2.0
+
+- Homepage: <https://commons.apache.org/proper/commons-codec/>
+- The Apache Software Foundation
+
+---
+
+## commons-io 2.21.0 — Apache 2.0
+
+- Homepage: <https://commons.apache.org/proper/commons-io/>
+- The Apache Software Foundation
 
 ---
 
@@ -376,7 +478,7 @@ Last updated: 2026-05-07
 
 - Homepage: <https://pkg.go.dev/github.com/godbus/dbus/v5@v5.2.2>
 - Copyright 2013 Georg Reinke <guelfey at gmail dot com>
-- Google
+-  Google
 
 ---
 
@@ -562,10 +664,31 @@ Last updated: 2026-05-07
 
 ---
 
+## isorelax 20030108 — MIT
+
+- Copyright 2001-2002 SourceForge ISO-RELAX Project (ASAMI Tomoharu, Daisuke Okajima, Kohsuke Kawaguch
+
+---
+
 ## javax.annotation 1.3.2 — CDDL 1.1
 
 - Homepage: <http://jcp.org/en/jsr/detail?id=250>
 - Copyright 2017 Oracle and/or its affiliates.
+
+---
+
+## javax.inject 1 — Apache 2.0
+
+- Homepage: <http://code.google.com/p/atinject/>
+- Copyright 2009 The JSR-330 Expert Group
+
+---
+
+## jaxen 1.2.0 — BSD 3
+
+- Homepage: <http://www.cafeconleche.org/jaxen>
+- Copyright 2003-2006 The Werken Company
+- The Jaxen Project
 
 ---
 
@@ -731,6 +854,7 @@ Last updated: 2026-05-07
 
 ## mistral-embed 23.12 — Proprietary
 
+
 ---
 
 ## nokogiri 1.19.1 — MIT
@@ -760,10 +884,126 @@ Last updated: 2026-05-07
 
 ---
 
+## org.apache.commons 1.28.0 — Apache 2.0
+
+- Homepage: <https://commons.apache.org/proper/commons-compress/>
+- The Apache Software Foundation
+
+---
+
+## org.apache.commons 3.20.0 — Apache 2.0
+
+- Homepage: <https://commons.apache.org/proper/commons-lang/>
+- The Apache Software Foundation
+
+---
+
+## org.apache.commons 3.4 — Apache 2.0
+
+- Homepage: <http://www.apache.org/>
+- The Apache Software Foundation
+
+---
+
+## org.apache.commons 4.4 — Apache 2.0
+
+- Homepage: <https://commons.apache.org/proper/commons-collections/>
+- The Apache Software Foundation
+
+---
+
+## org.apache.maven 3.6.2 — Apache 2.0
+
+- Homepage: <https://www.apache.org/>
+- The Apache Software Foundation
+
+---
+
+## org.apache.maven.plugin-tools 3.13.1 — Apache 2.0
+
+- Homepage: <https://www.apache.org/>
+- The Apache Software Foundation
+
+---
+
+## org.apache.maven.plugins 3.5.3 — Apache 2.0
+
+- Homepage: <https://www.apache.org/>
+- The Apache Software Foundation
+
+---
+
+## org.apache.maven.resolver 2.0.1 — Apache 2.0
+
+- Homepage: <https://maven.apache.org/resolver/>
+- The Apache Software Foundation
+
+---
+
+## org.apache.maven.shared 3.3.0 — Apache 2.0
+
+- Homepage: <https://www.apache.org/>
+- The Apache Software Foundation
+
+---
+
 ## org.apache.zookeeper 3.9.5 — Apache 2.0
 
 - Homepage: <http://zookeeper.apache.org>
 - The Apache Software Foundation
+
+---
+
+## org.apiguardian 1.1.2 — Apache 2.0
+
+- Homepage: <https://github.com/apiguardian-team/apiguardian>
+- Copyright 2002-2017 Copyright
+
+---
+
+## org.codehaus.plexus 1.29 — Apache 2.0
+
+- Homepage: <https://codehaus-plexus.github.io/plexus-pom/>
+- Codehaus Plexus
+
+---
+
+## org.codehaus.plexus 3.6.0 — Apache 2.0
+
+- Homepage: <https://codehaus-plexus.github.io/plexus-pom/>
+- Codehaus Plexus
+
+---
+
+## org.codehaus.plexus 4.0.3 — Apache 2.0
+
+- Homepage: <https://codehaus-plexus.github.io/plexus-utils/>
+- Copyright 2002 Extreme!
+- Copyright 2006 Javolution http://javolution.org
+- Codehaus Plexus
+
+---
+
+## org.codehaus.plexus 4.1.1 — Apache 2.0
+
+- Homepage: <https://codehaus-plexus.github.io/plexus-xml/>
+- Copyright 2002 Extreme!
+- Copyright 2006 Javolution http://javolution.org
+- Codehaus Plexus
+- Copyright The Codehaus Foundation
+
+---
+
+## org.codehaus.plexus 4.11.0 — Apache 2.0
+
+- Homepage: <https://codehaus-plexus.github.io/plexus-archiver/>
+- Codehaus Plexus
+
+---
+
+## org.eclipse.lemminx 0.28.0 — Eclipse 2.0
+
+- Homepage: <https://github.com/eclipse/lemminx>
 
 ---
 
@@ -774,11 +1014,137 @@ Last updated: 2026-05-07
 
 ---
 
+## org.jdom 2.0.6.1 — Apache 2.0
+
+- Homepage: <http://www.jdom.org>
+- Copyright 2000-2012 Jason Hunter
+
+---
+
+## org.jdom 2.0.6.1 — JDOM
+
+- Homepage: <http://www.jdom.org>
+- Copyright 2000-2012 Jason Hunter
+
+---
+
+## org.jetbrains 13.0 — Apache 2.0
+
+- Homepage: <http://www.jetbrains.org>
+- Copyright 2000-2013 Copyright
+
+---
+
+## org.jetbrains 24.0.0 — Apache 2.0
+
+- Homepage: <https://github.com/JetBrains/java-annotations>
+- Copyright 2000-2016 JetBrains s.r.o
+
+---
+
+## org.jetbrains 24.0.1 — Apache 2.0
+
+- Homepage: <https://github.com/JetBrains/java-annotations>
+- Copyright 2000-2016 JetBrains s.r.o
+
+---
+
+## org.jetbrains.intellij.deps 1.0.20200330 — LGPL 2.1
+
+- Homepage: <https://github.com/JetBrains/intellij-deps-trove4j>
+- Copyright 1999 CERN - European Organization for Nuclear Research
+
+---
+
+## org.jetbrains.kotlin 1.6.10 — Apache 2.0
+
+- Homepage: <https://kotlinlang.org/>
+- Copyright 2010-2016 Copyright
+
+---
+
+## org.jetbrains.kotlin 1.9.24 — Apache 2.0
+
+- Homepage: <https://kotlinlang.org/>
+- Copyright 2000-2018 Copyright
+
+---
+
+## org.jetbrains.kotlinx 1.5.0 — Apache 2.0
+
+- Homepage: <https://github.com/Kotlin/kotlinx.coroutines>
+- Copyright 2016-2021 Copyright
+
+---
+
 ## org.jsoup 1.17.2 — MIT
 
 - Homepage: <https://jhy.io/>
 - Copyright 2009-2023 Jonathan Hedley <https
 - Jonathan Hedley
+
+---
+
+## org.junit.jupiter 5.8.2 — Eclipse 2.0
+
+- Homepage: <https://junit.org/junit5/>
+- Copyright 2015-2021 Copyright
+
+---
+
+## org.junit.platform 1.8.2 — Eclipse 2.0
+
+- Homepage: <https://junit.org/junit5/>
+- Copyright 2015-2021 Copyright
+
+---
+
+## org.opentest4j 1.2.0 — Apache 2.0
+
+- Homepage: <https://github.com/ota4j-team/opentest4j>
+- Copyright 2015-2018 Copyright
+
+---
+
+## org.ow2.asm 9.9.1 — BSD 3
+
+- Homepage: <http://asm.ow2.io/>
+- OW2
+
+---
+
+## org.relaxng 20220510 — BSD 3
+
+- Homepage: <http://www.thaiopensource.com/relaxng/jing.html>
+- Copyright 2001-2003 Thai Open Source Software Center Ltd All rights reserved
+- Copyright 2001-2003 Thai Open Source Software Center Ltd
+
+---
+
+## org.slf4j 1.7.36 — MIT
+
+- Homepage: <http://www.qos.ch>
+- QOS.ch
+
+---
+
+## org.tukaani 1.11 — BSD Zero
+
+- Homepage: <https://tukaani.org/xz/java.html>
+
+---
+
+## org.twdata.maven 2.4.0 — Apache 2.0
+
+- Homepage: <https://mojo-executor.github.io/mojo-executor/>
+- Copyright 2008-2013 Don Brown
+
+---
+
+## org.vafer 2.10 — Apache 2.0
+
+- Homepage: <http://github.com/tcurdt/jdependency>
+- Copyright 2010-2023 Copyright
 
 ---
 
@@ -1145,6 +1511,26 @@ Last updated: 2026-05-07
 
 ---
 
+## xerces 2.12.2 — Apache 2.0
+
+- Homepage: <https://xerces.apache.org/xerces2-j/>
+- Copyright 2000 World Wide Web Consortium
+
+---
+
+## xml-apis 2.0.2 — Apache 1.1
+
+- Copyright 2001-2002 The Apache Software Foundation
+
+---
+
+## xml-resolver 1.2 — Apache 2.0
+
+- Homepage: <http://xml.apache.org/commons/components/resolver/>
+- Copyright The Apache Software Foundation
+
+---
+
 ## yell 2.2.2 — MIT
 
 - Homepage: <https://github.com/rudionrails/yell>
@@ -1164,3 +1550,4 @@ Last updated: 2026-05-07
 
 - Homepage: <https://github.com/wooorm/zwitch#readme>
 - Copyright 2016 Titus Wormer <tituswormer@gmail.com>
+
