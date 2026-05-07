@@ -3,6 +3,7 @@ package com.yahoo.config.provision;
 
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Pattern;
@@ -38,6 +39,10 @@ public class CloudResourceTags {
     /** Key prefixes reserved by the platform. */
     private static final List<String> RESERVED_KEY_PREFIXES = List.of("vai_", "corp_", "bastion_");
 
+    private static final List<String> PLACEHOLDERS = List.of(
+            "${tenant}", "${application}", "${instance}", "${environment}", "${region}",
+            "${clustername}", "${clustertype}");
+
     private final Map<String, String> tags;
 
     private CloudResourceTags(Map<String, String> tags) {
@@ -50,6 +55,45 @@ public class CloudResourceTags {
     public boolean isEmpty() { return tags.isEmpty(); }
 
     public int size() { return tags.size(); }
+
+    /**
+     * Validates that all {@code ${...}} placeholders in tag values are recognized.
+     * Throws on any unknown placeholder. Does not resolve anything.
+     */
+    public void validatePlaceholders() {
+        for (var entry : tags.entrySet()) {
+            String remaining = entry.getValue();
+            for (String p : PLACEHOLDERS) remaining = remaining.replace(p, "");
+            if (remaining.contains("${"))
+                throw new IllegalArgumentException("Unknown template variable in resource tag value for key '" +
+                                                   entry.getKey() + "': " + entry.getValue());
+        }
+    }
+
+    /**
+     * Returns a new instance with all template variables substituted.
+     * Throws if any {@code ${...}} placeholders remain after substitution.
+     */
+    public CloudResourceTags resolve(ApplicationId application, Environment environment, RegionName region,
+                                     ClusterSpec.Id clusterId, ClusterSpec.Type clusterType) {
+        if (tags.isEmpty()) return this;
+        Map<String, String> resolved = new LinkedHashMap<>();
+        for (var entry : tags.entrySet()) {
+            String value = entry.getValue()
+                    .replace("${tenant}", application.tenant().value().toLowerCase(Locale.ROOT))
+                    .replace("${application}", application.application().value().toLowerCase(Locale.ROOT))
+                    .replace("${instance}", application.instance().value().toLowerCase(Locale.ROOT))
+                    .replace("${environment}", environment.value())
+                    .replace("${region}", region.value())
+                    .replace("${clustername}", clusterId.value().toLowerCase(Locale.ROOT))
+                    .replace("${clustertype}", clusterType.name());
+            if (value.contains("${"))
+                throw new IllegalArgumentException("Unresolved template variable in resource tag value for key '" +
+                                                   entry.getKey() + "': " + value);
+            resolved.put(entry.getKey(), value);
+        }
+        return from(resolved);
+    }
 
     /**
      * Returns a new instance with the given tags merged into this.

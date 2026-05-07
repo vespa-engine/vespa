@@ -189,6 +189,68 @@ class CloudResourceTagsTest {
         assertEquals(3, tags.size());
     }
 
+    private static final ApplicationId testApp = ApplicationId.from("Tenant1", "App1", "Default");
+    private static final Environment testEnv = Environment.prod;
+    private static final RegionName testRegion = RegionName.from("aws-us-east-1c");
+
+    @Test
+    void resolve_substitutes_all_placeholders() {
+        var tags = CloudResourceTags.from(Map.of(
+                "env", "${environment}",
+                "loc", "${region}",
+                "team", "${tenant}-${application}-${instance}",
+                "cluster", "${clustername}",
+                "type", "${clustertype}",
+                "combined", "${environment}-${clustername}-${clustertype}"));
+        var resolved = tags.resolve(testApp, testEnv, testRegion,
+                                    ClusterSpec.Id.from("my-search"), ClusterSpec.Type.content);
+        assertEquals("prod", resolved.asMap().get("env"));
+        assertEquals("aws-us-east-1c", resolved.asMap().get("loc"));
+        assertEquals("tenant1-app1-default", resolved.asMap().get("team"));
+        assertEquals("my-search", resolved.asMap().get("cluster"));
+        assertEquals("content", resolved.asMap().get("type"));
+        assertEquals("prod-my-search-content", resolved.asMap().get("combined"));
+    }
+
+    @Test
+    void resolve_lowercases_tenant_application_instance_and_cluster_id() {
+        var tags = CloudResourceTags.from(Map.of("tag", "${tenant}-${clustername}"));
+        var resolved = tags.resolve(testApp, testEnv, testRegion,
+                                    ClusterSpec.Id.from("MyCluster"), ClusterSpec.Type.container);
+        assertEquals("tenant1-mycluster", resolved.asMap().get("tag"));
+    }
+
+    @Test
+    void resolve_on_empty_returns_empty() {
+        var resolved = CloudResourceTags.empty().resolve(testApp, testEnv, testRegion,
+                                                         ClusterSpec.Id.from("c"), ClusterSpec.Type.admin);
+        assertTrue(resolved.isEmpty());
+    }
+
+    @Test
+    void resolve_on_tags_without_placeholders() {
+        var tags = CloudResourceTags.from(Map.of("env", "prod"));
+        var resolved = tags.resolve(testApp, testEnv, testRegion,
+                                    ClusterSpec.Id.from("c"), ClusterSpec.Type.content);
+        assertEquals("prod", resolved.asMap().get("env"));
+    }
+
+    @Test
+    void validate_placeholders_accepts_all_known() {
+        var tags = CloudResourceTags.from(Map.of(
+                "a", "${tenant}-${application}-${instance}",
+                "b", "${environment}-${region}",
+                "c", "${clustername}-${clustertype}"));
+        tags.validatePlaceholders();
+    }
+
+    @Test
+    void validate_placeholders_rejects_unknown() {
+        var tags = CloudResourceTags.from(Map.of("bad", "${unknown}"));
+        var e = assertThrows(IllegalArgumentException.class, tags::validatePlaceholders);
+        assertTrue(e.getMessage().contains("Unknown template variable"));
+    }
+
     @Test
     void to_string() {
         var tags = CloudResourceTags.from(Map.of("env", "prod"));
