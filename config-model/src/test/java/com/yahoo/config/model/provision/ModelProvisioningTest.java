@@ -2738,7 +2738,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void test_profile_for_content_cluster() {
+    public void test_profiles() {
         String xml = """
                 <?xml version='1.0' encoding='utf-8' ?>
                 <services>
@@ -2750,6 +2750,9 @@ public class ModelProvisioningTest {
                     <documents/>
                     <nodes count='2' profile='large-storage'/>
                   </content>
+                  <admin version='4.0'>
+                    <profile>cheap-profile</profile>
+                  </admin>
                 </services>
                 """;
 
@@ -2767,7 +2770,7 @@ public class ModelProvisioningTest {
 
         List<String> adminProfiles = profilesForNodes(model, ClusterSpec.Type.admin);
         assertEquals(3, adminProfiles.size());
-        assertTrue(adminProfiles.stream().allMatch(profile -> profile.equals("large-storage")));
+        assertTrue(adminProfiles.stream().allMatch(profile -> profile.equals("cheap-profile")));
     }
 
     private List<String> profilesForNodes(VespaModel vespaModel, ClusterSpec.Type type) {

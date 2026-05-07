@@ -94,7 +94,6 @@ public class ClusterMembershipTest {
                                          .build();
         ClusterMembership membership = ClusterMembership.from(cluster, 37);
         assertEquals(Optional.of("large-storage"), membership.cluster().profile());
-        // Profile is not part of the string serialization format (it is re-applied each deployment)
         assertEquals("content/id1//37/stateful", membership.stringValue());
     }
 

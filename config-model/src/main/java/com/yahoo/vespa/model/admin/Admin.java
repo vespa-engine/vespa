@@ -83,6 +83,7 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
     private ZooKeepersConfigProvider zooKeepersConfigProvider;
     private final boolean multitenant;
     private final FeatureFlags featureFlags;
+    private final String profile;
 
     public Admin(TreeConfigProducer<AnyConfigProducer> parent,
                  Monitoring monitoring,
@@ -90,7 +91,8 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
                  boolean multitenant,
                  boolean isHostedVespa,
                  ApplicationType applicationType,
-                 FeatureFlags featureFlags) {
+                 FeatureFlags featureFlags,
+                 String profile) {
         super(parent, "admin");
         this.isHostedVespa = isHostedVespa;
         this.monitoring = monitoring;
@@ -99,6 +101,7 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
         this.applicationType = applicationType;
         this.logctlSpecs.addAll(defaultLogctlSpecs());
         this.featureFlags = featureFlags;
+        this.profile = profile;
     }
 
     public Configserver getConfigserver() { return defaultConfigserver; }
@@ -336,6 +339,10 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
     }
     public void addLogctlCommand(String componentSpec, LevelsModSpec levelsModSpec) {
         logctlSpecs.add(new LogctlSpec(componentSpec, levelsModSpec));
+    }
+
+    public String getProfile() {
+        return profile;
     }
 
     private static List<LogctlSpec> defaultLogctlSpecs() {

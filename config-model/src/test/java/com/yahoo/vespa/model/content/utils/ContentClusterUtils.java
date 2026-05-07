@@ -63,7 +63,8 @@ public class ContentClusterUtils {
                                 root.getDeployState().getProperties().multitenant(),
                                 root.getDeployState().isHosted(),
                                 applicationType,
-                                root.getDeployState().featureFlags());
+                                root.getDeployState().featureFlags(),
+                                null);
         Document doc = XML.getDocument(clusterXml);
         ConfigModelContext context = ConfigModelContext.create(applicationType, root.getDeployState(),
                                                                null, null, root, null);

@@ -394,7 +394,8 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
                 NodesSpecification spec = NodesSpecification.requiredFromSharedParents(deployState.zone().environment().isProduction() ? 3 : 1,
                                                                                        NodeResources.unspecified(),
                                                                                        contentElement,
-                                                                                       context);
+                                                                                       context,
+                                                                                       admin.getProfile());
                 Collection<HostResource> hosts = spec.provision(admin.hostSystem(),
                                                                 ClusterSpec.Type.admin,
                                                                 ClusterSpec.Id.from(clusterName),

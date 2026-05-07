@@ -251,7 +251,7 @@ public class NodesSpecification {
      * the OR over all content clusters, and with the given resources.
      */
     public static NodesSpecification requiredFromSharedParents(int count, NodeResources resources,
-                                                               ModelElement element, ConfigModelContext context) {
+                                                               ModelElement element, ConfigModelContext context, String profile) {
         List<NodesSpecification> allContent = findParentByTag("services", element.getXml()).map(services -> XML.getChildren(services, "content"))
                                                                                            .orElse(List.of())
                                                                                            .stream()
@@ -259,11 +259,6 @@ public class NodesSpecification {
                                                                                            .filter(nodes -> nodes != null && nodes.stringAttribute("count") != null)
                                                                                            .map(nodes -> from(nodes, context))
                                                                                            .toList();
-        String profile = allContent.stream()
-                .map(spec -> spec.profile().orElse(null))
-                .filter(Objects::nonNull)
-                .findFirst()
-                .orElse(null);
         return new NodesSpecification(new ClusterResources(count, 1, resources),
                                       new ClusterResources(count, 1, resources),
                                       IntRange.empty(),
