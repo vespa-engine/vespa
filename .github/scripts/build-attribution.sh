@@ -31,10 +31,6 @@ skipped=$(jq -s '
     | select(.license.name == "Requires Review" or (.component.groupId // "") == "")]
   | length
 ' "$@")
-if (( skipped > 0 )); then
-  echo "::notice::Skipped ${skipped} inventory entries with no identified license" >&2
-fi
-
 jq -s -r '
   [ .[] | (.response // [])[]
     | select(.license.name != "Requires Review" and (.component.groupId // "") != "")
