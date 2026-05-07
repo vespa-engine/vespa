@@ -55,6 +55,21 @@ func TestCBORToJSONNoHTMLEscaping(t *testing.T) {
 	assert.Contains(t, gotCompact, `tensor<int8>(x[128])`)
 }
 
+func TestCBORToJSONDeepNesting(t *testing.T) {
+	// Build a nested map deeper than the fxamacker/cbor default MaxNestedLevels of 32.
+	const depth = 100
+	var v interface{} = "leaf"
+	for i := 0; i < depth; i++ {
+		v = map[string]interface{}{"n": v}
+	}
+	data, err := cbor.Marshal(v)
+	assert.Nil(t, err)
+
+	got, err := CBORToJSON(data)
+	assert.Nil(t, err)
+	assert.Contains(t, got, `"leaf"`)
+}
+
 func TestPathExists(t *testing.T) {
 	assert.Equal(t, true, Exists("ioutil.go"))
 	assert.Equal(t, false, Exists("nosuchthing.go"))
