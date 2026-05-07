@@ -86,6 +86,17 @@ public class ClusterMembershipTest {
         assertContentServiceWithGroupAndRetire(ClusterMembership.from("content/id1/4/37/retired/stateful", Vtag.currentVersion, Optional.empty()));
     }
 
+    @Test
+    void testProfilePreservedOnClusterSpec() {
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"))
+                                         .vespaVersion("6.42")
+                                         .profile("large-storage")
+                                         .build();
+        ClusterMembership membership = ClusterMembership.from(cluster, 37);
+        assertEquals(Optional.of("large-storage"), membership.cluster().profile());
+        assertEquals("content/id1//37/stateful", membership.stringValue());
+    }
+
     private void assertContainerService(ClusterMembership instance) {
         assertEquals(ClusterSpec.Type.container, instance.cluster().type());
         assertEquals("id1", instance.cluster().id().value());
