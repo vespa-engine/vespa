@@ -29,6 +29,7 @@
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
+#include <vespa/searchlib/queryeval/fake_index.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
 #include <vespa/searchlib/test/mock_attribute_context.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -186,6 +187,22 @@ std::string make_same_element_stack_dump(const std::string& a1_term, const std::
     return StackDumpCreator::create(*builder.build());
 }
 
+std::string make_near_stack_dump(bool ordered, const std::string& term1, const std::string& term2) {
+    QueryBuilder<ProtonNodeTypes> builder;
+    constexpr int child_count = 2;
+    constexpr size_t distance = 10;
+    constexpr size_t num_negative_children = 0;
+    constexpr size_t exclusion_distance = 0;
+    if (ordered) {
+        builder.addONear(child_count, distance, num_negative_children, exclusion_distance);
+    } else {
+        builder.addNear(child_count, distance, num_negative_children, exclusion_distance);
+    }
+    builder.addStringTerm(term1, "f3", 1, Weight(1));
+    builder.addStringTerm(term2, "f3", 2, Weight(1));
+    return StackDumpCreator::create(*builder.build());
+}
+
 //-----------------------------------------------------------------------------
 
 struct EmptyRankingAssetsRepo : public search::fef::IRankingAssetsRepo {
@@ -218,6 +235,7 @@ struct MyWorld {
         // schema
         schema.addIndexField(Schema::IndexField("f1", DataType::STRING));
         schema.addIndexField(Schema::IndexField("f2", DataType::STRING));
+        schema.addIndexField(Schema::IndexField("f3", DataType::STRING, schema::CollectionType::ARRAY));
         schema.addIndexField(Schema::IndexField("tensor_field", DataType::TENSOR));
         schema.addIndexField(Schema::IndexField("my.f1", DataType::STRING));
         schema.addAttributeField(Schema::AttributeField("a1", DataType::INT32));
@@ -354,6 +372,13 @@ struct MyWorld {
         auto my_f1_0_result = make_elem_result({{10, {2}}, {20, {1, 2}}, {21, {2}}});
         searchContext.attr().addResult("my.a1", my_a1_term, my_a1_result);
         searchContext.idx(0).getFake().addResult("my.f1", my_f1_0_term, my_f1_0_result);
+    }
+
+    void add_near_result() {
+        auto f3_field = get_field_info("f3")->id();
+        auto docs = FakeIndex().field(f3_field).doc(10).elem(1, ".ABC").elem(2, "AC").elem(3, "BA");
+        searchContext.idx(0).getFake().addResult("f3", "A", docs.lookup('A', f3_field));
+        searchContext.idx(0).getFake().addResult("f3", "B", docs.lookup('B', f3_field));
     }
 
     void basicResults() {
@@ -522,6 +547,7 @@ protected:
     static void SetUpTestSuite();
     static void TearDownTestSuite();
     static MatchingTestSharedState& shared_state();
+    void assert_near_elements(bool ordered, std::vector<uint32_t> expected_elements);
 };
 
 MatchingTest::MatchingTest() = default;
@@ -538,6 +564,18 @@ void MatchingTest::TearDownTestSuite() {
 
 MatchingTestSharedState& MatchingTest::shared_state() {
     return *_shared_state;
+}
+
+void MatchingTest::assert_near_elements(bool ordered, std::vector<uint32_t> expected_elements) {
+    MyWorld world(shared_state());
+    world.basicSetup();
+    world.add_near_result();
+    MatchingElementsFields fields;
+    fields.add_field("f3");
+    auto        request = MyWorld::create_docsum_request(make_near_stack_dump(ordered, "A", "B"), {10});
+    auto        result = world.get_matching_elements(*request, fields);
+    const auto& list = result->get_matching_elements(10, "f3");
+    EXPECT_EQ(expected_elements, list);
 }
 
 std::unique_ptr<MatchingTestSharedState> MatchingTest::_shared_state;
@@ -1207,6 +1245,14 @@ TEST_F(MatchingTest, require_that_docsum_matcher_can_extract_matching_elements_f
     ASSERT_EQ(list.size(), 2u);
     EXPECT_EQ(list[0], 2u);
     EXPECT_EQ(list[1], 3u);
+}
+
+TEST_F(MatchingTest, require_that_docsum_matcher_can_extract_matching_elements_from_near_operator) {
+    assert_near_elements(false, {1, 3});
+}
+
+TEST_F(MatchingTest, require_that_docsum_matcher_can_extract_matching_elements_from_onear_operator) {
+    assert_near_elements(true, {1});
 }
 
 using FMA = vespalib::FuzzyMatchingAlgorithm;

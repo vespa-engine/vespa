@@ -8,6 +8,7 @@
 #include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/searchlib/fef/iindexenvironment.h>
 #include <vespa/searchlib/query/streaming/in_term.h>
+#include <vespa/searchlib/query/streaming/near_query_node.h>
 #include <vespa/searchlib/query/streaming/query_term_data.h>
 #include <vespa/searchlib/query/streaming/same_element_query_node.h>
 #include <vespa/searchlib/query/streaming/weighted_set_term.h>
@@ -19,10 +20,13 @@
 
 using search::MatchingElements;
 using search::MatchingElementsFields;
+using search::fef::IllegalFieldId;
+using search::queryeval::MatchSpan;
 using search::streaming::AndNotQueryNode;
 using search::streaming::HitList;
 using search::streaming::InTerm;
 using search::streaming::MultiTerm;
+using search::streaming::NearQueryNode;
 using search::streaming::Query;
 using search::streaming::QueryConnector;
 using search::streaming::QueryNode;
@@ -54,21 +58,30 @@ public:
 
 class Matcher {
     std::vector<SameElementQueryNode*>    _same_element_nodes;
+    std::vector<NearQueryNode*>           _near_query_nodes;
     std::vector<SubFieldTerm>             _sub_field_terms;
     vsm::FieldIdTSearcherMap&             _field_searcher_map;
     const search::fef::IIndexEnvironment& _index_env;
     HitList                               _hit_list;
     std::vector<uint32_t>                 _elements;
+    std::vector<MatchSpan>                _match_spans;
     const MatchingElementsFields&         _fields;
 
     [[nodiscard]] const std::string* matching_elements_field(FieldIdT field_id) const;
+    [[nodiscard]] bool has_matching_elements_field(FieldIdT field_id) const {
+        return matching_elements_field(field_id) != nullptr;
+    };
+    [[nodiscard]] bool has_matching_elements_field(QueryTerm& term) const;
+    [[nodiscard]] bool has_matching_elements_field_below_near(QueryNode& query_node) const;
     void select_multiterm_children(const MultiTerm& multi_term);
+    void select_near_query_node(NearQueryNode& near);
     void select_query_term_node(QueryTerm& term);
     void select_query_nodes(QueryNode& query_node);
     void add_matching_elements(const std::string& field_name, FieldIdT field_id, uint32_t doc_lid,
                                const HitList& hit_list, MatchingElements& matching_elements);
     void find_matching_elements(SameElementQueryNode& same_element, uint32_t doc_lid,
                                 MatchingElements& matching_elements);
+    void find_matching_elements(NearQueryNode& near_query_node, uint32_t doc_lid, MatchingElements& matching_elements);
     void find_matching_elements(const SubFieldTerm& sub_field_term, uint32_t doc_lid,
                                 MatchingElements& matching_elements);
 
@@ -76,7 +89,7 @@ public:
     Matcher(vsm::FieldIdTSearcherMap& field_searcher_map, const search::fef::IIndexEnvironment& index_env,
             const MatchingElementsFields& fields, Query& query);
     ~Matcher();
-    bool empty() const { return _same_element_nodes.empty() && _sub_field_terms.empty(); }
+    bool empty() const { return _same_element_nodes.empty() && _near_query_nodes.empty() && _sub_field_terms.empty(); }
     void find_matching_elements(const vsm::StorageDocument& doc, uint32_t doc_lid,
                                 MatchingElements& matching_elements);
 };
@@ -88,11 +101,13 @@ template <typename T> T* as(QueryNode& query_node) {
 Matcher::Matcher(FieldIdTSearcherMap& field_searcher_map, const search::fef::IIndexEnvironment& index_env,
                  const MatchingElementsFields& fields, Query& query)
     : _same_element_nodes(),
+      _near_query_nodes(),
       _sub_field_terms(),
       _field_searcher_map(field_searcher_map),
       _index_env(index_env),
       _hit_list(),
       _elements(),
+      _match_spans(),
       _fields(fields) {
     select_query_nodes(query.getRoot());
 }
@@ -110,6 +125,36 @@ const std::string* Matcher::matching_elements_field(FieldIdT field_id) const {
     return nullptr;
 }
 
+bool Matcher::has_matching_elements_field(QueryTerm& term) const {
+    auto& qtd = dynamic_cast<const QueryTermData&>(term.getQueryItem());
+    auto& td = qtd.getTermData();
+    auto  num_fields = td.numFields();
+    for (size_t i = 0; i < num_fields; ++i) {
+        auto  field_id = td.field(i).getFieldId();
+        if (has_matching_elements_field(field_id)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool Matcher::has_matching_elements_field_below_near(QueryNode& query_node) const {
+    if (as<SameElementQueryNode>(query_node) != nullptr) {
+        return false;
+    } else if (auto query_term = as<QueryTerm>(query_node)) {
+        return has_matching_elements_field(*query_term);
+    } else if (auto and_not = as<AndNotQueryNode>(query_node)) {
+        return has_matching_elements_field_below_near(*(*and_not)[0]);
+    } else if (auto intermediate = as<QueryConnector>(query_node)) {
+        for (size_t i = 0; i < intermediate->size(); ++i) {
+            if (has_matching_elements_field_below_near(*(*intermediate)[i])) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 void Matcher::select_multiterm_children(const MultiTerm& multi_term) {
     auto& qtd = dynamic_cast<const QueryTermData&>(multi_term.getQueryItem());
     auto& td = qtd.getTermData();
@@ -123,6 +168,12 @@ void Matcher::select_multiterm_children(const MultiTerm& multi_term) {
                 _sub_field_terms.emplace_back(*field, field_id, term.get());
             }
         }
+    }
+}
+
+void Matcher::select_near_query_node(NearQueryNode& near_query_node) {
+    if (has_matching_elements_field_below_near(near_query_node)) {
+        _near_query_nodes.emplace_back(&near_query_node);
     }
 }
 
@@ -148,6 +199,8 @@ void Matcher::select_query_nodes(QueryNode& query_node) {
         select_multiterm_children(*weighted_set_term);
     } else if (auto in_term = as<InTerm>(query_node)) {
         select_multiterm_children(*in_term);
+    } else if (auto near_query_node = as<NearQueryNode>(query_node)) {
+        select_near_query_node(*near_query_node);
     } else if (auto query_term = as<QueryTerm>(query_node)) {
         select_query_term_node(*query_term);
     } else if (auto and_not = as<AndNotQueryNode>(query_node)) {
@@ -184,6 +237,34 @@ void Matcher::find_matching_elements(SameElementQueryNode& same_element, uint32_
     }
 }
 
+void Matcher::find_matching_elements(NearQueryNode& near_query_node, uint32_t doc_lid, MatchingElements& matching_elements) {
+    _match_spans.clear();
+    near_query_node.get_match_spans(_match_spans);
+    uint32_t field_id = IllegalFieldId;
+    _elements.clear();
+    for (auto& match_span : _match_spans) {
+        if (field_id != match_span.field_id()) {
+            if (!_elements.empty()) {
+                auto field = matching_elements_field(field_id);
+                if (field != nullptr) {
+                    matching_elements.add_matching_elements(doc_lid, *field, _elements);
+                }
+                _elements.clear();
+            }
+            field_id = match_span.field_id();
+        }
+        if (_elements.empty() || match_span.first().element_id() > _elements.back()) {
+            _elements.emplace_back(match_span.first().element_id());
+        }
+    }
+    if (!_elements.empty()) {
+        auto field = matching_elements_field(field_id);
+        if (field != nullptr) {
+            matching_elements.add_matching_elements(doc_lid, *field, _elements);
+        }
+    }
+}
+
 void Matcher::find_matching_elements(const SubFieldTerm& sub_field_term, uint32_t doc_lid,
                                      MatchingElements& matching_elements) {
     const HitList& hit_list = sub_field_term.get_term().evaluateHits(_hit_list);
@@ -200,6 +281,9 @@ void Matcher::find_matching_elements(const StorageDocument& doc, uint32_t doc_li
     }
     for (auto* same_element : _same_element_nodes) {
         find_matching_elements(*same_element, doc_lid, matching_elements);
+    }
+    for (auto* near_query_node : _near_query_nodes) {
+        find_matching_elements(*near_query_node, doc_lid, matching_elements);
     }
     for (const auto& term : _sub_field_terms) {
         find_matching_elements(term, doc_lid, matching_elements);

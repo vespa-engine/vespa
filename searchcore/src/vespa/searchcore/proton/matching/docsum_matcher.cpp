@@ -15,6 +15,7 @@
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
 #include <vespa/searchlib/queryeval/matching_elements_search.h>
+#include <vespa/searchlib/queryeval/nearsearch.h>
 #include <vespa/searchlib/queryeval/same_element_blueprint.h>
 #include <vespa/searchlib/queryeval/same_element_search.h>
 
@@ -24,14 +25,19 @@ LOG_SETUP(".proton.matching.docsum_matcher");
 using search::MatchingElements;
 using search::MatchingElementsFields;
 using search::fef::FeatureResolver;
+using search::fef::IllegalFieldId;
 using search::fef::MatchData;
 using search::fef::RankProgram;
 using search::queryeval::AndNotBlueprint;
 using search::queryeval::Blueprint;
 using search::queryeval::EquivBlueprint;
 using search::queryeval::IntermediateBlueprint;
+using search::queryeval::MatchSpan;
 using search::queryeval::MatchingElementsSearch;
 using search::queryeval::MatchingPhase;
+using search::queryeval::NearBlueprint;
+using search::queryeval::NearSearchBase;
+using search::queryeval::ONearBlueprint;
 using search::queryeval::SameElementBlueprint;
 using search::queryeval::SearchIterator;
 using search::queryeval::SourceBlenderBlueprint;
@@ -116,6 +122,76 @@ void find_matching_elements(const std::vector<uint32_t>& docs, const std::string
     }
 }
 
+bool has_matching_elements_field(const IntermediateBlueprint& bp, const MatchingElementsFields& fields, FieldIdToNameMapper id_to_name) {
+    for (size_t i = 0; i < bp.childCnt(); ++i) {
+        const auto& cs = bp.getChild(i).getState();
+        for (size_t j = 0; j < cs.numFields(); ++j) {
+            auto& field_name = id_to_name.lookup(cs.field(j).getFieldId());
+            if (fields.has_field(field_name)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+void extract_matching_elements(uint32_t doc, std::span<const MatchSpan> match_spans,
+                               const MatchingElementsFields& fields, FieldIdToNameMapper id_to_name,
+                               std::vector<uint32_t>& matching_elements, MatchingElements& result) {
+    uint32_t field_id = IllegalFieldId;
+    matching_elements.clear();
+    for (auto& match_span : match_spans) {
+        if (field_id != match_span.field_id()) {
+            if (!matching_elements.empty()) {
+                auto& field_name = id_to_name.lookup(field_id);
+                if (fields.has_field(field_name)) {
+                    result.add_matching_elements(doc, field_name, matching_elements);
+                }
+                matching_elements.clear();
+            }
+            field_id = match_span.field_id();
+        }
+        if (matching_elements.empty() || match_span.first().element_id() > matching_elements.back()) {
+            matching_elements.emplace_back(match_span.first().element_id());
+        }
+    }
+    if (!matching_elements.empty()) {
+        auto& field_name = id_to_name.lookup(field_id);
+        if (fields.has_field(field_name)) {
+            result.add_matching_elements(doc, field_name, matching_elements);
+        }
+    }
+}
+
+void find_matching_elements(const std::vector<uint32_t> &docs, const IntermediateBlueprint& bp,
+                            const MatchingElementsFields& fields,
+                            FieldIdToNameMapper id_to_name,
+                            MatchData& match_data,
+                            MatchingElements &result) {
+    if (!has_matching_elements_field(bp, fields, id_to_name)) {
+        return;
+    }
+    auto search = bp.createSearch(match_data);
+    if (!search) {
+        return;
+    }
+    auto near = dynamic_cast<NearSearchBase*>(search.get());
+    if (near == nullptr) {
+        return;
+    }
+    search->initRange(docs.front(), docs.back() + 1);
+    std::vector<MatchSpan> match_spans;
+    std::vector<uint32_t> matching_elements;
+
+    for (uint32_t doc : docs) {
+        if (search->seek(doc)) {
+            match_spans.clear();
+            near->get_match_spans(doc, match_spans);
+            extract_matching_elements(doc, match_spans, fields, id_to_name, matching_elements, result);
+        }
+    }
+}
+
 struct FindMatchingElements {
     const MatchingElementsFields& fields;
     MatchingElements&             result;
@@ -138,6 +214,10 @@ void FindMatchingElements::process(const std::vector<uint32_t>& docs, const Blue
         }
     } else if (auto and_not = as<AndNotBlueprint>(bp)) {
         process(docs, and_not->getChild(0));
+    } else if (auto near = as<NearBlueprint>(bp)) {
+        find_matching_elements(docs, *near, fields, idToName, matchData, result);
+    } else if (auto onear = as<ONearBlueprint>(bp)) {
+        find_matching_elements(docs, *onear, fields, idToName, matchData, result);
     } else if (auto source_blender = as<SourceBlenderBlueprint>(bp)) {
         const auto& selector = source_blender->getSelector();
         auto        iterator = selector.createIterator();

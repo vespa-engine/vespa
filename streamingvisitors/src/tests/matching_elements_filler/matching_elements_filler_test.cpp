@@ -140,6 +140,7 @@ struct MyDocType {
     const Field          _str_int_map_field;
     const Field          _apples_field;
     const Field          _oranges_field;
+    const Field          _string_array_field;
     DocumentType         _document_type;
 
     MyDocType();
@@ -166,12 +167,14 @@ MyDocType::MyDocType()
       _str_int_map_field("str_int_map", _str_int_map_type),
       _apples_field("apples", _string_array_type),
       _oranges_field("oranges", _string_array_type),
+      _string_array_field("string_array", _string_array_type),
       _document_type("test") {
     _document_type.addField(_elem_array_field);
     _document_type.addField(_elem_map_field);
     _document_type.addField(_str_int_map_field);
     _document_type.addField(_apples_field);
     _document_type.addField(_oranges_field);
+    _document_type.addField(_string_array_field);
 }
 
 MyDocType::~MyDocType() = default;
@@ -238,6 +241,7 @@ std::unique_ptr<document::Document> MyDocType::make_test_doc() const {
         *make_str_int_map({{"@foo", 10}, {"@bar", 20}, {"@baz", 30}, {"@foo@", 40}, {"@zap", 20}, {"@zap@", 20}}));
     doc->setValue("apples", make_str_array({"one", "two", "three"}));
     doc->setValue("oranges", *make_str_array({"three", "two", "one"}));
+    doc->setValue("string_array", make_str_array({"", "a b c", "a c", "b a"}));
     return doc;
 }
 
@@ -252,6 +256,7 @@ vsm::SharedFieldPathMap make_field_path_map(const MyDocType& doc_type) {
     ret->emplace_back(doc_type.make_field_path("str_int_map.value"));
     ret->emplace_back(doc_type.make_field_path("apples"));
     ret->emplace_back(doc_type.make_field_path("oranges"));
+    ret->emplace_back(doc_type.make_field_path("string_array"));
     return ret;
 }
 
@@ -267,6 +272,7 @@ void setup_index_env(streaming::IndexEnvironment& index_env) {
     index_env.addField("str_int_map.value", true, DataType::INT32);
     index_env.addField("apples", true, DataType::STRING);
     index_env.addField("oranges", true, DataType::STRING);
+    index_env.addField("string_array", false, DataType::STRING);
     // Allocate field ids for virtual fields elem_array, elem_map, elem_map.value and str_int_map
     index_env.add_virtual_fields();
 }
@@ -282,6 +288,7 @@ vsm::FieldIdTSearcherMap make_field_searcher_map() {
     ret.emplace_back(std::make_unique<IntFieldSearcher>(6));
     ret.emplace_back(std::make_unique<UTF8StrChrFieldSearcher>(7));
     ret.emplace_back(std::make_unique<UTF8StrChrFieldSearcher>(8));
+    ret.emplace_back(std::make_unique<UTF8StrChrFieldSearcher>(9));
     return ret;
 }
 
@@ -298,6 +305,7 @@ vsm::DocumentTypeIndexFieldMapT make_index_to_field_ids() {
     index_map["apples"] = FieldIdTList{7};
     index_map["oranges"] = FieldIdTList{8};
     index_map["fruit"] = FieldIdTList{7, 8};
+    index_map["string_array"] = FieldIdTList{9};
     return ret;
 }
 
@@ -312,6 +320,7 @@ MatchingElementsFields make_matching_elements_fields() {
     fields.add_mapping("str_int_map", "str_int_map.value");
     fields.add_field("apples");
     fields.add_field("oranges");
+    fields.add_field("string_array");
     return fields;
 }
 
@@ -340,6 +349,7 @@ public:
                              const ElementVector& exp_elements);
     void assert_same_element_single(const std::string& field, const std::string& term,
                                     const ElementVector& exp_elements);
+    void assert_near_elements(bool ordered, std::vector<uint32_t> expected_elements);
 };
 
 MatchingElementsFillerTest::MatchingElementsFillerTest()
@@ -413,6 +423,23 @@ void MatchingElementsFillerTest::assert_same_element_single(const std::string& f
     assert_elements(1, field, exp_elements);
 }
 
+void MatchingElementsFillerTest::assert_near_elements(bool ordered, std::vector<uint32_t> expected_elements) {
+    MyQueryBuilder builder;
+    constexpr int child_count = 2;
+    constexpr size_t distance = 10;
+    constexpr size_t num_negative_children = 0;
+    constexpr size_t exclusion_distance = 0;
+    if (ordered) {
+        builder.addONear(child_count, distance, num_negative_children, exclusion_distance);
+    } else {
+        builder.addNear(child_count, distance, num_negative_children, exclusion_distance);
+    }
+    builder.add_term("string_array:a", 1);
+    builder.add_term("string_array:b", 2);
+    fill_matching_elements(make_query(builder.build()));
+    assert_elements(1, "string_array", expected_elements);
+}
+
 TEST_F(MatchingElementsFillerTest, matching_elements_calculated_for_same_element_operator) {
     assert_same_element("elem_array", "name:bar", "weight:20", {1});
     assert_same_element("elem_array", "name:zap", "weight:20", {4, 5});
@@ -476,6 +503,14 @@ TEST_F(MatchingElementsFillerTest, separate_collection_for_each_field) {
     fill_matching_elements(make_query(builder.build()));
     assert_elements(1, "apples", {0});
     assert_elements(1, "oranges", {2});
+}
+
+TEST_F(MatchingElementsFillerTest, near_search) {
+    assert_near_elements(false, {1, 3});
+}
+
+TEST_F(MatchingElementsFillerTest, onear_search) {
+    assert_near_elements(true, {1});
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
