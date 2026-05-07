@@ -735,47 +735,47 @@ public class PermanentFlags {
 
     private PermanentFlags() {}
 
-    private static UnboundBooleanFlag defineFeatureFlag(
+    public static UnboundBooleanFlag defineFeatureFlag(
             String flagId, boolean defaultValue, String description, String modificationEffect, Dimension... dimensions) {
         return Flags.defineFeatureFlag(flagId, defaultValue, OWNERS, toString(CREATED_AT), toString(EXPIRES_AT), description, modificationEffect, dimensions);
     }
 
-    private static UnboundStringFlag defineStringFlag(
+    public static UnboundStringFlag defineStringFlag(
             String flagId, String defaultValue, String description, String modificationEffect, Dimension... dimensions) {
         return Flags.defineStringFlag(flagId, defaultValue, OWNERS, toString(CREATED_AT), toString(EXPIRES_AT), description, modificationEffect, dimensions);
     }
 
-    private static UnboundStringFlag defineStringFlag(
+    public static UnboundStringFlag defineStringFlag(
             String flagId, String defaultValue, String description, String modificationEffect, Predicate<String> validator, Dimension... dimensions) {
         return Flags.defineStringFlag(flagId, defaultValue, OWNERS, toString(CREATED_AT), toString(EXPIRES_AT), description, modificationEffect, validator, dimensions);
     }
 
-    private static UnboundIntFlag defineIntFlag(
+    public static UnboundIntFlag defineIntFlag(
             String flagId, int defaultValue, String description, String modificationEffect, Dimension... dimensions) {
         return Flags.defineIntFlag(flagId, defaultValue, OWNERS, toString(CREATED_AT), toString(EXPIRES_AT), description, modificationEffect, dimensions);
     }
 
-    private static UnboundLongFlag defineLongFlag(
+    public static UnboundLongFlag defineLongFlag(
             String flagId, long defaultValue, String description, String modificationEffect, Dimension... dimensions) {
         return Flags.defineLongFlag(flagId, defaultValue, OWNERS, toString(CREATED_AT), toString(EXPIRES_AT), description, modificationEffect, dimensions);
     }
 
-    private static UnboundDoubleFlag defineDoubleFlag(
+    public static UnboundDoubleFlag defineDoubleFlag(
             String flagId, double defaultValue, String description, String modificationEffect, Dimension... dimensions) {
         return Flags.defineDoubleFlag(flagId, defaultValue, OWNERS, toString(CREATED_AT), toString(EXPIRES_AT), description, modificationEffect, dimensions);
     }
 
-    private static <T> UnboundJacksonFlag<T> defineJacksonFlag(
+    public static <T> UnboundJacksonFlag<T> defineJacksonFlag(
             String flagId, T defaultValue, Class<T> jacksonClass,  String description, String modificationEffect, Predicate<T> validator, Dimension... dimensions) {
         return Flags.defineJacksonFlag(flagId, defaultValue, jacksonClass, OWNERS, toString(CREATED_AT), toString(EXPIRES_AT), description, modificationEffect, validator, dimensions);
     }
 
-    private static <T> UnboundListFlag<T> defineListFlag(
+    public static <T> UnboundListFlag<T> defineListFlag(
             String flagId, List<T> defaultValue, Class<T> elementClass, String description, String modificationEffect, Dimension... dimensions) {
         return Flags.defineListFlag(flagId, defaultValue, elementClass, OWNERS, toString(CREATED_AT), toString(EXPIRES_AT), description, modificationEffect, dimensions);
     }
 
-    private static <T> UnboundListFlag<T> defineListFlag(
+    public static <T> UnboundListFlag<T> defineListFlag(
             String flagId, List<T> defaultValue, Class<T> elementClass, String description, String modificationEffect, Predicate<List<T>> validator, Dimension... dimensions) {
         return Flags.defineListFlag(flagId, defaultValue, elementClass, OWNERS, toString(CREATED_AT), toString(EXPIRES_AT), description, modificationEffect, validator, dimensions);
     }
