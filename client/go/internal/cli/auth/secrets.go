@@ -3,6 +3,7 @@
 package auth
 
 import (
+	"errors"
 	"os"
 
 	"github.com/zalando/go-keyring"
@@ -58,7 +59,7 @@ func (k *dummyKeyring) Set(namespace, key, value string) error {
 		return err
 	}
 	err = os.Remove(fn)
-	if err != nil {
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return err
 	}
 	err = os.WriteFile(fn, []byte(value), 0o400)
