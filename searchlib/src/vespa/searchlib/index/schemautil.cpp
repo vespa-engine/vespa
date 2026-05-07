@@ -105,7 +105,7 @@ bool SchemaUtil::validateSchema(const Schema& schema) {
             ok = false;
         }
         if (schema.getIndexFieldId(field.getName()) != fieldId) {
-            LOG(error, "Duplcate field %s", field.getName().c_str());
+            LOG(error, "Duplicate field %s", field.getName().c_str());
             ok = false;
         }
     }
