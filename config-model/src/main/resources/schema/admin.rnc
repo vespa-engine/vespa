@@ -19,7 +19,6 @@ AdminV2 =
 AdminV4 =
   element admin {
     attribute version { "4.0"  } &
-    element profile { xsd:string }? &
     AdminV4Slobroks? &
     AdminV4LogServers? &
     GenericConfig* &

@@ -251,7 +251,7 @@ public class NodesSpecification {
      * the OR over all content clusters, and with the given resources.
      */
     public static NodesSpecification requiredFromSharedParents(int count, NodeResources resources,
-                                                               ModelElement element, ConfigModelContext context, String profile) {
+                                                               ModelElement element, ConfigModelContext context) {
         List<NodesSpecification> allContent = findParentByTag("services", element.getXml()).map(services -> XML.getChildren(services, "content"))
                                                                                            .orElse(List.of())
                                                                                            .stream()
@@ -272,7 +272,7 @@ public class NodesSpecification {
                                       context.getDeployState().getProperties().cloudResourceTags(),
                                       context.availabilityZones(),
                                       false,
-                                      profile);
+                                      null);
     }
 
     public ClusterResources minResources() { return min; }

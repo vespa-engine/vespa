@@ -65,20 +65,9 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
     @Override
     protected Admin doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> parent, Element adminElement) {
         Monitoring monitoring = getMonitoring(XML.getChild(adminElement,"monitoring"), deployState.isHosted());
-        Element profileElement = XML.getChild(adminElement, "profile");
-        String profile = profileElement != null ? XML.getValue(profileElement).trim() : "";
         Metrics metrics = new MetricsBuilder(applicationType, PredefinedMetricSets.get())
                                   .buildMetrics(XML.getChild(adminElement, "metrics"));
-        Admin admin = new Admin(
-                parent,
-                monitoring,
-                metrics,
-                multitenant,
-                deployState.isHosted(),
-                applicationType,
-                deployState.featureFlags(),
-                profile.isEmpty() ? null : profile
-        );
+        Admin admin = new Admin(parent, monitoring, metrics, multitenant, deployState.isHosted(), applicationType, deployState.featureFlags());
         doBuildAdmin(deployState, admin, adminElement);
         new ModelConfigProvider(admin);
 
