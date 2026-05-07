@@ -42,6 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CloudTokenDataPlaneFilterTest extends ContainerModelBuilderTestBase {
 
@@ -192,6 +193,32 @@ public class CloudTokenDataPlaneFilterTest extends ContainerModelBuilderTestBase
         createCertificate(certFile);
         var exception = assertThrows(IllegalArgumentException.class, () -> buildModel(Set.of(mtlsEndpoint), defaultTokens, clusterElem));
         assertEquals("Duplicate client ids: [mtls, token1]", exception.getMessage());
+    }
+
+    @Test
+    void token_only_deployment_succeeds_without_cert_client() {
+        var clusterElem = DomBuilderTest.parse("""
+                <container version='1.0'>
+                  <clients>
+                    <client id="token-only" permissions="read,write">
+                        <token id="my-token"/>
+                    </client>
+                  </clients>
+                </container>
+                """);
+        buildModel(Set.of(tokenEndpoint, mtlsEndpoint), defaultTokens, clusterElem);
+
+        var connectorCfg = connectorConfig(8443);
+        assertTrue(connectorCfg.ssl().caCertificate().isEmpty(),
+                "Token-only: mTLS connector must not have a CA certificate configured");
+
+        assertNotNull(connectorConfig(8444));
+
+        var cfg = root.getConfig(CloudTokenDataPlaneFilterConfig.class, filterConfigId);
+        var tokenClient = cfg.clients().stream().filter(c -> c.id().equals("token-only")).findAny().orElse(null);
+        assertNotNull(tokenClient, "token-only client must appear in filter config");
+        assertEquals(List.of("read", "write"), tokenClient.permissions());
+        assertFalse(tokenClient.tokens().isEmpty());
     }
 
     private static CloudTokenDataPlaneFilterConfig.Clients.Tokens tokenConfig(

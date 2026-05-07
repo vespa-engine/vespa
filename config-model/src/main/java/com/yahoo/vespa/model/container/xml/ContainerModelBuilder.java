@@ -597,8 +597,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     .flatMap(elem -> getClient(elem, deployState).stream())
                     .toList();
             boolean atLeastOneClientWithCertificate = clients.stream().anyMatch(client -> !client.certificates().isEmpty());
-            if (!atLeastOneClientWithCertificate)
-                throw new IllegalArgumentException("At least one client must require a certificate");
+            boolean atLeastOneClientWithToken = clients.stream().anyMatch(client -> !client.tokens().isEmpty());
+            if (!atLeastOneClientWithCertificate && !atLeastOneClientWithToken)
+                throw new IllegalArgumentException("At least one client must require a certificate or token");
 
             List<String> duplicates = clients.stream().collect(Collectors.groupingBy(Client::id))
                     .entrySet().stream().filter(entry -> entry.getValue().size() > 1)
@@ -712,11 +713,18 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             boolean isPublic = state.zone().system().isPublicCloudLike();
             List<X509Certificate> clientCertificates = getClientCertificates(cluster);
             if (isPublic) {
-                if (clientCertificates.isEmpty())
-                    throw new IllegalArgumentException("Client certificate authority security/clients.pem is missing - " +
-                                                               "see: https://docs.vespa.ai/en/security/guide.html#data-plane");
-                builder.tlsCaCertificatesPem(X509CertificateUtils.toPem(clientCertificates))
-                        .clientAuth(SslClientAuth.WANT_WITH_ENFORCER);
+                if (clientCertificates.isEmpty()) {
+                    boolean hasTokenClients = cluster.getClients().stream()
+                            .filter(c -> !c.internal())
+                            .anyMatch(c -> !c.tokens().isEmpty());
+                    if (!hasTokenClients)
+                        throw new IllegalArgumentException("Client certificate authority security/clients.pem is missing - " +
+                                                                   "see: https://docs.vespa.ai/en/security/guide.html#data-plane");
+                    builder.clientAuth(SslClientAuth.WANT_WITH_ENFORCER);
+                } else {
+                    builder.tlsCaCertificatesPem(X509CertificateUtils.toPem(clientCertificates))
+                            .clientAuth(SslClientAuth.WANT_WITH_ENFORCER);
+                }
             } else {
                 builder.tlsCaCertificatesPath("/opt/yahoo/share/ssl/certs/athenz_tw_certificate_bundle.pem");
                 var needAuth = cluster.getHttp().getAccessControl()
