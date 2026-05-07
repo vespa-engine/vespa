@@ -21,7 +21,6 @@ import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
-import java.util.Objects;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
