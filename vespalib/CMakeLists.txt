@@ -204,6 +204,7 @@ vespa_define_module(
     src/vespa/vespalib/objects
     src/vespa/vespalib/portal
     src/vespa/vespalib/process
+    src/vespa/vespalib/quant
     src/vespa/vespalib/regex
     src/vespa/vespalib/stllike
     src/vespa/vespalib/test
