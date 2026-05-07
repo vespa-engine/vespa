@@ -1,0 +1,85 @@
+name: Update Third-Party Attributions
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * *" # nightly 03:00 UTC
+  pull_request:
+    branches: [master]
+    paths:
+      - .github/workflows/attribution.yml
+      - .github/scripts/build-attribution.sh
+      - ATTRIBUTIONS.md
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  attribution:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Fetch dependency inventory
+        uses: vespa-engine/gh-actions/mend-inventory@217825ab3497a98c67134a9e8bb30f04329e82fe # v1
+        with:
+          mend-project-name: GH_vespa_master
+          mend-project-uuid: dbdbea81-7f52-426c-974f-975c2848770d
+          mend-user: ${{ vars.MEND_ATTRIBUTION_USER_EMAIL }}
+          mend-api-key: ${{ secrets.MEND_ATTRIBUTION_USER_KEY }}
+          output-path: build/inventory.json
+
+      - name: Build ATTRIBUTIONS.md
+        run: |
+          ./.github/scripts/build-attribution.sh build/inventory.json > ATTRIBUTIONS.md
+          echo "Wrote $(wc -l < ATTRIBUTIONS.md) lines to ATTRIBUTIONS.md"
+
+      # Only uploaded on failure so the raw response is available for debugging
+      # without bloating the artifact list on every successful run.
+      - name: Upload raw inventory JSON (debug, on failure)
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: inventory-debug
+          path: build/inventory.json
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: Upload ATTRIBUTIONS.md
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        with:
+          name: attributions
+          path: ATTRIBUTIONS.md
+          retention-days: 14
+
+      - name: Open PR if changed
+        if: ${{ github.event_name != 'pull_request' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name  "github-actions[bot]"
+
+          git add ATTRIBUTIONS.md
+          if git diff --cached --quiet; then
+            echo "ATTRIBUTIONS.md is up to date — nothing to do."
+            exit 0
+          fi
+
+          BRANCH="chore/update-attributions"
+          git checkout -B "$BRANCH"
+          git commit -m "chore: update third-party attributions"
+          git push --force --set-upstream origin "$BRANCH"
+
+          if gh pr view "$BRANCH" --json state --jq .state 2>/dev/null | grep -q OPEN; then
+            echo "PR for $BRANCH already open — pushed update to existing PR."
+          else
+            gh pr create \
+              --base master \
+              --head "$BRANCH" \
+              --title "chore: update third-party attributions" \
+              --body "Auto-generated update of ATTRIBUTIONS.md."
+          fi
