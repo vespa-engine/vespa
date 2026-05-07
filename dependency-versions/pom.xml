@@ -104,7 +104,7 @@
         <gson.vespa.version>2.14.0</gson.vespa.version>
         <hamcrest.vespa.version>3.0</hamcrest.vespa.version>
         <hdrhistogram.vespa.version>2.2.2</hdrhistogram.vespa.version>
-        <huggingface.vespa.version>0.33.0</huggingface.vespa.version>
+        <huggingface.vespa.version>0.36.0</huggingface.vespa.version>
         <icu4j.vespa.version>75.1</icu4j.vespa.version>
         <io-perfmark.vespa.version>0.27.0</io-perfmark.vespa.version>
         <javax.annotation.vespa.version>1.2</javax.annotation.vespa.version>
