@@ -551,7 +551,7 @@ TEST(DocumentMetaStoreTest, gids_can_be_saved_and_loaded) {
         dms1.remove(lid, 0u);
         dms1.removes_complete({lid});
     }
-    uint64_t expSaveBytesSize = DocumentMetaStore::minHeaderLen + (1000 - 4) * DocumentMetaStore::entrySize;
+    uint64_t expSaveBytesSize = DocumentMetaStore::minHeaderLen + (1000 - 4) * DocumentMetaStore::entry_size(true);
     EXPECT_EQ(expSaveBytesSize, dms1.getEstimatedSaveByteSize());
     TuneFileAttributes      tuneFileAttributes;
     DummyFileHeaderContext  fileHeaderContext;
