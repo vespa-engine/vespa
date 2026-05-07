@@ -493,12 +493,19 @@ struct BenchmarkCase {
 struct BenchmarkCaseSummary {
     BenchmarkCase       bcase;
     BenchmarkCaseResult result;
-    double              error_ratio;
     BenchmarkCaseSummary(const BenchmarkCase& bcase_in, const BenchmarkCaseResult& result_in)
-        : bcase(bcase_in), result(result_in), error_ratio(1.0) {}
+        : bcase(bcase_in), result(result_in) {}
     BenchmarkCaseSummary(const BenchmarkCaseSummary&);
     BenchmarkCaseSummary& operator=(const BenchmarkCaseSummary&);
     ~BenchmarkCaseSummary();
+
+    [[nodiscard]] double average_time_per_average_cost() const {
+        return result.time_ms_stats().average / result.actual_cost_stats().average;
+    }
+
+    [[nodiscard]] double error_ratio(double calibration_constant) const {
+        return average_time_per_average_cost() / calibration_constant;
+    }
 };
 
 BenchmarkCaseSummary::BenchmarkCaseSummary(const BenchmarkCaseSummary&) = default;
@@ -525,18 +532,12 @@ public:
      * spends on this hardware.
      */
     void calc_calibration() {
-        auto case_ms_per_cost = [](const BenchmarkCaseResult& result) {
-            return result.time_ms_stats().average / result.actual_cost_stats().average;
-        };
         std::vector<double> values;
         for (const auto& c : _cases) {
-            values.push_back(case_ms_per_cost(c.result));
+            values.push_back(c.average_time_per_average_cost());
         }
         std::sort(values.begin(), values.end());
         _calibration_constant = calc_median(values);
-        for (auto& c : _cases) {
-            c.error_ratio = case_ms_per_cost(c.result) / _calibration_constant;
-        }
     }
 
     const std::vector<BenchmarkCaseSummary>& cases() const { return _cases; }
@@ -565,13 +566,15 @@ void print_summary(const BenchmarkSummary& summary) {
     for (const auto& c : summary.cases()) {
         sorted.push_back(&c);
     }
-    std::sort(sorted.begin(), sorted.end(),
-              [&](const auto* lhs, const auto* rhs) { return off_by(lhs->error_ratio) > off_by(rhs->error_ratio); });
+    double calibration_constant = summary.calibration_constant();
+    std::sort(sorted.begin(), sorted.end(), [&](const auto* lhs, const auto* rhs) {
+        return off_by(lhs->error_ratio(calibration_constant)) > off_by(rhs->error_ratio(calibration_constant));
+    });
 
     double sum_off = 0.0;
     double max_off = 1.0;
     for (const auto& c : summary.cases()) {
-        double off = off_by(c.error_ratio);
+        double off = off_by(c.error_ratio(calibration_constant));
         sum_off += off;
         max_off = std::max(max_off, off);
     }
@@ -586,8 +589,9 @@ void print_summary(const BenchmarkSummary& summary) {
     for (const auto* c : sorted) {
         double pred_ms = c->result.actual_cost_stats().average * summary.calibration_constant();
         double actual_ms = c->result.time_ms_stats().average;
+        double error_ratio = c->error_ratio(calibration_constant);
         std::println("{:<60} {:>12.3f} {:>12.3f} {:>9.3f}x {:<7}", c->bcase.to_string(), actual_ms, pred_ms,
-                     c->error_ratio, classify(c->error_ratio));
+                     error_ratio, classify(error_ratio));
     }
 }
 
