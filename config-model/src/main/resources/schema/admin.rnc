@@ -94,7 +94,6 @@ Cloudwatch = element cloudwatch {
 }
 
 ClusterControllers = element cluster-controllers {
-    attribute profile { xsd:string }? &
     attribute standalone-zookeeper { xsd:string  }? &
     element cluster-controller {
        service.attlist
