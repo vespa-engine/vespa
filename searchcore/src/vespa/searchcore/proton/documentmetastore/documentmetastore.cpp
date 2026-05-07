@@ -113,9 +113,7 @@ public:
     }
 
     size_t getNumElems() const {
-        return _datFile.data_size() /
-               (sizeof(uint32_t) + sizeof(GlobalId) + sizeof(uint8_t) + sizeof(Timestamp::Type) +
-                ((_version == NO_DOCUMENT_SIZE_TRACKING_VERSION) ? 0 : 3));
+        return _datFile.data_size() / DocumentMetaStore::entry_size(_version != NO_DOCUMENT_SIZE_TRACKING_VERSION);
     }
 
     uint64_t size_on_disk() const noexcept {
@@ -1084,7 +1082,7 @@ GenerationGuard DocumentMetaStore::getGuard() const {
 
 uint64_t DocumentMetaStore::getEstimatedSaveByteSize() const {
     uint32_t numDocs = getNumUsedLids();
-    return minHeaderLen + numDocs * entrySize;
+    return minHeaderLen + numDocs * entry_size(_trackDocumentSizes);
 }
 
 uint32_t DocumentMetaStore::getVersion() const {

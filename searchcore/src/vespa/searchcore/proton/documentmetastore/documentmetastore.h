@@ -155,7 +155,10 @@ public:
     using Iterator = TreeType::Iterator;
     using ConstIterator = TreeType::ConstIterator;
     static constexpr size_t minHeaderLen = 0x1000;
-    static constexpr size_t entrySize = sizeof(uint32_t) + GlobalId::LENGTH + sizeof(uint8_t) + sizeof(Timestamp);
+    static constexpr size_t min_entry_size = sizeof(uint32_t) + GlobalId::LENGTH + sizeof(uint8_t) + sizeof(Timestamp);
+    static constexpr size_t entry_size(bool track_document_sizes) {
+        return min_entry_size + (track_document_sizes ? 3 : 0);
+    }
 
     explicit DocumentMetaStore(BucketDBOwnerSP bucketDB);
     DocumentMetaStore(BucketDBOwnerSP bucketDB, const std::string& name);
