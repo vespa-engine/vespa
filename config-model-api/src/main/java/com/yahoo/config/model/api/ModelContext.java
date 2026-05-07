@@ -77,7 +77,7 @@ public interface ModelContext {
      *   default method with the `removeAfter` set beyond the Vespa version to be released.
      *
      * 3)
-     *  - Remove the default method in FeatureFlags once the oldest config model in use are beyond the `removeAfter` 
+     *  - Remove the default method in FeatureFlags once the oldest config model in use are beyond the `removeAfter`
      */
     interface FeatureFlags {
         @ModelFeatureFlag(owners = {"hakonhall"}) default boolean useNonPublicEndpointForTest() { return false; }
@@ -114,7 +114,8 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej"}) default double clusterControllerNodeMemory() { return 0.0; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useLegacyWandQueryParsing() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useSimpleAnnotations() { return true; }
-        @ModelFeatureFlag(owners = {"arnej"}) default boolean sendProtobufQuerytree() { return true; }
+        @ModelFeatureFlag(owners = {"arnej"}, removeAfter = "8.687") default boolean sendProtobufQuerytree() { return true; }
+        @ModelFeatureFlag(owners = {"arnej"}) default boolean sendOldQueryStack() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean forwardAllLogLevels() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default long zookeeperPreAllocSize() { return 65536L; }
         @ModelFeatureFlag(owners = {"vekterli"}) default int maxContentNodeMaintenanceOpConcurrency() { return -1; }

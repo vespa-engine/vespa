@@ -321,7 +321,7 @@ public class Flags {
     public static final UnboundBooleanFlag APPLY_ON_RESTART_FOR_APPLICATION_METADATA_CONFIG = defineFeatureFlag(
             "apply-on-restart-for-application-metadata-config", false,
             List.of("glebashnik"), "2026-02-13", "2026-08-13",
-            "Whether to set applyOnRestart flag on ApplicationMetadataConfig. " + 
+            "Whether to set applyOnRestart flag on ApplicationMetadataConfig. " +
                     "This might fix deferring config changes until container restart.",
             "Takes effect at redeployment",
             INSTANCE_ID
@@ -347,6 +347,13 @@ public class Flags {
             "Whether to skip autoscaling when config server upgrades or downgrades.",
             "Takes effect immediately",
             HOSTNAME);
+    public static final UnboundBooleanFlag SEND_OLD_QUERY_STACK = defineFeatureFlag(
+            "send-old-query-stack", false,
+            List.of("arnej"), "2026-05-07", "2026-09-01",
+            "If true, send the old query stack format in addition to protobuf serialization.",
+            "Takes effect at redeployment",
+            TENANT_ID, APPLICATION, INSTANCE_ID);
+
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

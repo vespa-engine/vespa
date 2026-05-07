@@ -82,5 +82,8 @@ parserSettings.keepSegmentAnds bool default=false
 ## keep ideographic comma and full stop (default: replace with space)
 parserSettings.keepIdeographicPunctuation bool default=false
 
-## send query tree as protobuf in addition to legacy format
+## send query tree as protobuf (ignored, always true)
 sendProtobufQuerytree bool default=true
+
+## send query stack in legacy format in addition to protobuf format
+sendOldQueryStack bool default=false
