@@ -35,9 +35,9 @@ void setDecoderPosition(PostingListCountFileDecodeContext& ctx, const ComprBuffe
 
 } // namespace
 
-uint32_t PageDict4PageParams::getFileHeaderPad(uint32_t offset) {
-    uint32_t pad = (-offset & getPageBitSize());
-    return pad > getMaxFileHeaderPad() ? 0u : pad;
+uint32_t PageDict4PageParams::getFileHeaderPad(uint32_t offset) noexcept {
+    uint32_t pad = (-offset & (getPageBitSize() - 1));
+    return pad;
 }
 
 using StartOffset = PageDict4StartOffset;

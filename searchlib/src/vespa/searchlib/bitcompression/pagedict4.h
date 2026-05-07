@@ -64,21 +64,20 @@ public:
     using Counts = index::PostingListCounts;
     using StartOffset = PageDict4StartOffset;
 
-    static uint32_t getPageByteSize() { return 4096; }
-    static uint32_t getPageBitSize() { return getPageByteSize() * 8; }
-    static uint32_t getPageHeaderBitSize() { return 15u + 15u + 15u + 12u; }
-    static uint32_t getMaxFileHeaderPad() { return 999u; }
-    static uint32_t getFileHeaderPad(uint32_t offset);
-    static uint32_t getL1SkipStride() { return 16; }
-    static uint32_t getL2SkipStride() { return 8; }
-    static uint32_t getL4SkipStride() { return 16; }
-    static uint32_t getL5SkipStride() { return 8; }
-    static uint32_t getL7SkipStride() { return 8; }
-    static uint32_t noL7Ref() { return std::numeric_limits<uint32_t>::max(); }
-    static uint32_t getL1Entries(uint32_t countsEntries) { return (countsEntries - 1) / getL1SkipStride(); }
-    static uint32_t getL2Entries(uint32_t l1Entries) { return l1Entries / getL2SkipStride(); }
-    static uint32_t getL4Entries(uint32_t l3Entries) { return (l3Entries - 1) / getL4SkipStride(); }
-    static uint32_t getL5Entries(uint32_t l4Entries) { return l4Entries / getL5SkipStride(); }
+    [[nodiscard]] static constexpr uint32_t getPageByteSize() noexcept { return 4096; }
+    [[nodiscard]] static constexpr uint32_t getPageBitSize() noexcept { return getPageByteSize() * 8; }
+    [[nodiscard]] static constexpr uint32_t getPageHeaderBitSize() noexcept { return 15u + 15u + 15u + 12u; }
+    [[nodiscard]] static uint32_t getFileHeaderPad(uint32_t offset) noexcept;
+    [[nodiscard]] static constexpr uint32_t getL1SkipStride() noexcept { return 16; }
+    [[nodiscard]] static constexpr uint32_t getL2SkipStride() noexcept { return 8; }
+    [[nodiscard]] static constexpr uint32_t getL4SkipStride() noexcept { return 16; }
+    [[nodiscard]] static constexpr uint32_t getL5SkipStride() noexcept { return 8; }
+    [[nodiscard]] static constexpr uint32_t getL7SkipStride() noexcept { return 8; }
+    [[nodiscard]] static constexpr uint32_t noL7Ref() noexcept { return std::numeric_limits<uint32_t>::max(); }
+    [[nodiscard]] static constexpr uint32_t getL1Entries(uint32_t countsEntries) noexcept { return (countsEntries - 1) / getL1SkipStride(); }
+    [[nodiscard]] static constexpr uint32_t getL2Entries(uint32_t l1Entries) noexcept { return l1Entries / getL2SkipStride(); }
+    [[nodiscard]] static constexpr uint32_t getL4Entries(uint32_t l3Entries) noexcept { return (l3Entries - 1) / getL4SkipStride(); }
+    [[nodiscard]] static constexpr uint32_t getL5Entries(uint32_t l4Entries) noexcept { return l4Entries / getL5SkipStride(); }
 };
 /*
  * Sparse sparse layout for random access word counts:
