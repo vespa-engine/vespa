@@ -78,7 +78,9 @@ type annProbe struct {
 }
 
 func (p *annProbe) analyze() {
-	p.annTime = p.trace.timeline().durationOf("Handle global filter in query execution plan")
+	p.annTime = p.trace.timeline().durationBetween(
+		"Handle global filter in query execution plan",
+		"Optimize query execution plan to account for global filter")
 	p.nodes = p.trace.findAnnNodes()
 }
 
