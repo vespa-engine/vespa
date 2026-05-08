@@ -46,6 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -68,7 +69,8 @@ public class RpcSearchInvokerTest {
         var request = decompress(holders);
         assertEquals(10, request.getHits());
         assertEquals(3, request.getOffset());
-        assertFalse(request.getQueryTreeBlob().isEmpty());
+        assertTrue(request.getQueryTreeBlob().isEmpty());
+        assertTrue(request.getQueryTree().hasRoot());
 
         var invoker2 = createRpcInvoker(new Node("test", 8, "eight", 1, true), 1000, holders);
         RpcSearchInvoker.SerializedQuery serialized2 = (RpcSearchInvoker.SerializedQuery) invoker2.sendSearchRequest(q, 1.0, serialized1);
