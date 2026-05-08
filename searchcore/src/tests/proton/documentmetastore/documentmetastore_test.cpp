@@ -1948,6 +1948,35 @@ TEST(DocumentMetaStoreTest, full_document_ids_are_saved) {
     std::filesystem::remove(std::filesystem::path("documentmetastore5.docids.dat"));
 }
 
+TEST(DocumentMetaStoreTest, full_document_ids_are_considered_in_estimated_save_byte_size) {
+    DocumentMetaStore dms(createBucketDB(), "[documentmetastore]", search::GrowStrategy(), true, SubDbType::READY);
+    dms.constructFreeList();
+    addLid(dms, 1);
+    addLid(dms, 2);
+    addLid(dms, 3);
+    addLid(dms, 4);
+    addLid(dms, 5);
+
+    // Replace docid for lid 2 to make sure that this is reflected in the estimate
+    std::string replaced_docid = "this:is:not:what:you:expect:from:a:docid";
+    dms.update_docid_string(2, replaced_docid);
+
+    // Remove lid 3 to make sure that this is reflected in the estimate
+    removeLid(dms, 3);
+
+    // Remove lid 5 with removeBatch to make sure that this is reflected in the estimate
+    dms.removeBatch({5}, 6);
+
+    // Commit to update the stats used for estimate
+    dms.commit(CommitParam::UpdateStats::FORCE);
+
+    uint64_t expected_save_bytes_size = DocumentMetaStore::minHeaderLen + 3 * DocumentMetaStore::entry_size(true) +
+                                        DocumentMetaStore::minHeaderLen + 3 * sizeof(size_t) +
+                                        createDocId(1).toString().length() + replaced_docid.length() +
+                                        createDocId(4).toString().length();
+    EXPECT_EQ(expected_save_bytes_size, dms.getEstimatedSaveByteSize());
+}
+
 namespace {
 
 void assertLidGidFound(uint32_t lid, DocumentMetaStore& dms) {
