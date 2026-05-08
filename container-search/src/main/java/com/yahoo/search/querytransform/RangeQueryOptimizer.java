@@ -11,6 +11,7 @@ import com.yahoo.prelude.query.FalseItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.QueryCanonicalizer;
+import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -29,7 +30,6 @@ import java.util.Optional;
  *
  * @author bratseth
  */
-@SuppressWarnings("removal")
 @Before(QueryCanonicalizer.queryCanonicalization)
 @After(PhaseNames.TRANSFORMED_QUERY)
 public class RangeQueryOptimizer extends Searcher {
@@ -38,26 +38,28 @@ public class RangeQueryOptimizer extends Searcher {
     public Result search(Query query, Execution execution) {
         if (execution.context().getIndexFacts() == null) return execution.search(query); // this is a test query
 
-        boolean optimized = recursiveOptimize(query.getModel().getQueryTree(), execution.context().getIndexFacts().newSession(query));
+        boolean optimized = optimize(query.getModel().getQueryTree(), execution.context().getIndexFacts().newSession(query));
         if (optimized)
             query.trace("Optimized query ranges", true, 2);
         return execution.search(query);
     }
 
     /** Recursively performs the range optimization on this query tree and returns whether at least one optimization was done */
-    private boolean recursiveOptimize(Item item, IndexFacts.Session indexFacts) {
+    private boolean optimize(Item item, IndexFacts.Session indexFacts) {
         if ( ! (item instanceof CompositeItem composite)) return false;
 
         boolean optimized = false;
         for (Iterator<Item> i = composite.getItemIterator(); i.hasNext(); )
-            optimized |= recursiveOptimize(i.next(), indexFacts);
+            optimized |= optimize(i.next(), indexFacts);
 
-        if (item instanceof AndItem)
-            optimized |= optimizeAnd((AndItem)item, indexFacts);
+        if (item instanceof AndItem andItem)
+            optimized |= optimizeAnd(andItem, indexFacts);
+        if (item instanceof SameElementItem sameElementItem) // elements are and'ed
+            optimized |= optimizeAnd(sameElementItem, indexFacts);
         return optimized;
     }
 
-    private boolean optimizeAnd(AndItem and, IndexFacts.Session indexFacts) {
+    private boolean optimizeAnd(CompositeItem and, IndexFacts.Session indexFacts) {
         // Find consolidated ranges by collecting a list of compatible ranges
         List<FieldRange> fieldRanges = null;
         for (Iterator<Item> i = and.getItemIterator(); i.hasNext(); ) {

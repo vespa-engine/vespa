@@ -21,9 +21,7 @@ import com.yahoo.search.querytransform.RangeQueryOptimizer;
 import com.yahoo.search.searchchain.Execution;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
-import java.util.Iterator;
-
+import static com.yahoo.search.test.QueryTestCase.httpEncode;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -58,6 +56,10 @@ public class RangeQueryOptimizerTestCase {
         assertOptimized("AND FALSE", "s:>2 AND s:<2");
         assertOptimized("AND s:2", "s:[;2] AND s:[2;]");
         assertOptimized("AND s:2", "s:[2;] AND s:[;2]");
+        assertOptimizedYql("myStruct:{f1:[17;18]}",
+                           "select * from sources * where myStruct contains sameElement(f1>=17, f1<=18)");
+        assertOptimizedYql("myStruct:{f1:[17;] f2:[;18]}",
+                           "select * from sources * where myStruct contains sameElement(f1>=17, f2<=18)");
     }
 
     @Test
@@ -165,7 +167,7 @@ public class RangeQueryOptimizerTestCase {
     }
 
     @Test
-    void assertOptmimizedYQLQuery() {
+    void testOptimizedYQLQuery() {
         Query query = new Query("/?query=select%20%2A%20from%20sources%20%2A%20where%20%28range%28s%2C%20100000%2C%20100000%29%20OR%20range%28t%2C%20-20000000000L%2C%20-20000000000L%29%20OR%20range%28t%2C%2030%2C%2030%29%29%3B&type=yql");
         assertOptimized("YQL usage of the IntItem API works", "OR s:100000 t:-20000000000 t:30", query);
     }
@@ -181,6 +183,11 @@ public class RangeQueryOptimizerTestCase {
         optimized.getModel().getQueryTree().setRoot(parseQuery("s:<15 AND s:>10"));
         assertOptimized("", "AND s:<10;15>", optimized);
         assertTrue(contains("Optimized query ranges", optimized.getContext(true).getTrace().traceNode().descendants(String.class)));
+    }
+
+    void assertOptimizedYql(String expected, String yql) {
+        Query query = new Query("/?type=yql&query=" + httpEncode(yql));
+        assertOptimized("YQL query is optimized", expected, query);
     }
 
     private boolean contains(String prefix, Iterable<String> traceEntries) {
@@ -220,9 +227,15 @@ public class RangeQueryOptimizerTestCase {
         Index singleValue2 = new Index("t");
         Index multiValue = new Index("m");
         multiValue.setMultivalue(true);
+        Index myStruct = new Index("myStruct");
+        Index f1 = new Index("myStruct.f1");
+        Index f2 = new Index("myStruct.f2");
         sd.addIndex(singleValue1);
         sd.addIndex(singleValue2);
         sd.addIndex(multiValue);
+        sd.addIndex(myStruct);
+        sd.addIndex(f1);
+        sd.addIndex(f2);
         return new IndexFacts(new IndexModel(sd));
     }
 
