@@ -25,6 +25,25 @@ func (t *timeline) durationOf(prefix string) float64 {
 	return 0 // Return 0 if the prefix is not found or no next entry exists
 }
 
+func (t *timeline) durationBetween(startPrefix, endPrefix string) float64 {
+	startIdx := -1
+	for i, entry := range t.list {
+		if strings.HasPrefix(entry.what, startPrefix) {
+			startIdx = i
+			break
+		}
+	}
+	if startIdx < 0 {
+		return 0
+	}
+	for i := startIdx + 1; i < len(t.list); i++ {
+		if strings.HasPrefix(t.list[i].what, endPrefix) {
+			return t.list[i].when - t.list[startIdx].when
+		}
+	}
+	return 0
+}
+
 func (t *timeline) impact() float64 {
 	if len(t.list) < 2 {
 		return 0

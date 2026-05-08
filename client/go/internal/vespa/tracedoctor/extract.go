@@ -601,7 +601,9 @@ func (p protonTrace) extractSummary() *protonSummary {
 	res := &protonSummary{name: p.desc()}
 	timeline := p.timeline()
 	res.filterMs = timeline.durationOf("Calculate global filter")
-	res.annMs = timeline.durationOf("Handle global filter in query execution plan")
+	res.annMs = timeline.durationBetween(
+		"Handle global filter in query execution plan",
+		"Optimize query execution plan to account for global filter")
 	if thread, _ := selectSlowestThread(p.findThreadTraces()); thread != nil {
 		res.matchMs = thread.matchTimeMs()
 		res.firstPhaseMs = thread.firstPhaseTimeMs()
