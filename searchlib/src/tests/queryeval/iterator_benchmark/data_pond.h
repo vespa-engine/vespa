@@ -6,6 +6,7 @@
 #include <format>
 #include <functional>
 #include <map>
+#include <sstream>
 #include <string>
 #include <variant>
 #include <vector>
