@@ -283,14 +283,17 @@ TEST(AttributeFlushTest, require_that_flushable_attribute_manages_sync_token_inf
 
     IndexMetaInfo info("flush/a3");
     EXPECT_EQ(0u, fa->getFlushedSerialNum());
+    EXPECT_FALSE(fa->can_flush(0));
     EXPECT_TRUE(fa->initFlush(0, std::make_shared<search::FlushToken>()).get() == nullptr);
     EXPECT_TRUE(!info.load());
 
     av->commit(CommitParam(10, CommitParam::UpdateStats::SKIP)); // last sync token = 10
     EXPECT_EQ(0u, fa->getFlushedSerialNum());
+    EXPECT_TRUE(fa->can_flush(10));
     EXPECT_TRUE(fa->initFlush(10, std::make_shared<search::FlushToken>()).get() != nullptr);
     fa->initFlush(10, std::make_shared<search::FlushToken>())->run();
     EXPECT_EQ(10u, fa->getFlushedSerialNum());
+    EXPECT_FALSE(fa->can_flush(10));
     EXPECT_TRUE(info.load());
     EXPECT_EQ(1u, info.snapshots().size());
     EXPECT_TRUE(info.snapshots()[0].valid);
@@ -298,8 +301,10 @@ TEST(AttributeFlushTest, require_that_flushable_attribute_manages_sync_token_inf
 
     av->commit(CommitParam(20, CommitParam::UpdateStats::SKIP)); // last sync token = 20
     EXPECT_EQ(10u, fa->getFlushedSerialNum());
+    EXPECT_TRUE(fa->can_flush(20));
     fa->initFlush(20, std::make_shared<search::FlushToken>())->run();
     EXPECT_EQ(20u, fa->getFlushedSerialNum());
+    EXPECT_FALSE(fa->can_flush(20));
     EXPECT_TRUE(info.load());
     EXPECT_EQ(1u, info.snapshots().size()); // snapshot 10 removed
     EXPECT_TRUE(info.snapshots()[0].valid);

@@ -173,6 +173,13 @@ public:
      */
     virtual Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) = 0;
 
+    /*
+     * Check if the target can flush data with the specified serial number. If the returned value is false then
+     * the initFlush() will return no task unless the provided serial number is stale (i.e. feed handler having
+     * accepted further feed operations and increased its current serial number).
+     */
+    [[nodiscard]] virtual bool can_flush(SerialNum current_serial) const noexcept = 0;
+
     /**
      * Returns the stats for the last completed flush operation
      * for this flush target.

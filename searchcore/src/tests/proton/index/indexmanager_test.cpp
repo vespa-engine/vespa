@@ -153,7 +153,7 @@ struct IndexManagerTest : public ::testing::Test {
         gate.await();
     }
     void flushIndexManager();
-    void run_fusion();
+    void run_fusion(bool exp_can_flush);
     Document::UP addDocument(uint32_t docid);
     void resetIndexManager(SerialNum serial_num = 1);
     void removeDocument(uint32_t docId, SerialNum serialNum) {
@@ -193,18 +193,20 @@ IndexManagerTest::~IndexManagerTest() {
 }
 
 void IndexManagerTest::flushIndexManager() {
+    IndexFlushTarget             target(_index_manager->getMaintainer());
     vespalib::Executor::Task::UP task;
     SerialNum                    serialNum = _index_manager->getCurrentSerialNum();
-    auto&                        maintainer = _index_manager->getMaintainer();
-    runAsMaster([&]() { task = maintainer.initFlush(serialNum, nullptr); });
+    EXPECT_EQ(serialNum > _index_manager->getFlushedSerialNum(), target.can_flush(serialNum));
+    runAsMaster([&]() { task = target.initFlush(serialNum, std::make_shared<search::FlushToken>()); });
     if (task.get()) {
         task->run();
     }
 }
 
-void IndexManagerTest::run_fusion() {
+void IndexManagerTest::run_fusion(bool exp_can_flush) {
     IndexFusionTarget                         target(_index_manager->getMaintainer());
     std::unique_ptr<vespalib::Executor::Task> task;
+    EXPECT_EQ(exp_can_flush, target.can_flush(0));
     runAsMaster([&]() { task = target.initFlush(0, std::make_shared<search::FlushToken>()); });
     if (task) {
         task->run();
@@ -318,8 +320,10 @@ TEST_F(IndexManagerTest, require_that_memory_index_is_flushed) {
         IndexFlushTarget target(_index_manager->getMaintainer());
         EXPECT_EQ(vespalib::system_time(), target.getLastFlushTime());
         vespalib::Executor::Task::UP flushTask;
+        EXPECT_TRUE(target.can_flush(2));
         runAsMaster([&]() { flushTask = target.initFlush(2, std::make_shared<search::FlushToken>()); });
         flushTask->run();
+        EXPECT_FALSE(target.can_flush(2));
         EXPECT_TRUE(FastOS_File::Stat("test_data/index.flush.1", &stat));
         EXPECT_EQ(stat._modifiedTime, target.getLastFlushTime());
         EXPECT_EQ(2u, target.getFlushedSerialNum());
@@ -1000,7 +1004,7 @@ TEST_P(IndexManagerEnableInterleavedFeaturesTest, enable_interleaved_features) {
         enable_interleaved_features("replay enable interleaved features after restart2", old_config_docs, true,
                                     schema_change_serial_num);
     }
-    run_fusion();
+    run_fusion(initial_disk_index || nonempty_memory_index);
     assert_urgent("after fusion", false, false, false);
 }
 

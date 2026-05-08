@@ -22,6 +22,10 @@ IFlushTarget::Task::UP FlushTargetProxy::initFlush(SerialNum                    
     return _target->initFlush(currentSerial, std::move(flush_token));
 }
 
+bool FlushTargetProxy::can_flush(SerialNum current_serial) const noexcept {
+  return _target->can_flush(current_serial);
+}
+
 uint64_t FlushTargetProxy::get_approx_bytes_to_read_from_disk() const noexcept {
     return _target->get_approx_bytes_to_read_from_disk();
 }

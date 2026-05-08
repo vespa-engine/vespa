@@ -1825,9 +1825,11 @@ TEST(DocumentMetaStoreTest, shrink_via_flush_target_works) {
     EXPECT_TRUE(ft->getApproxMemoryGain().getBefore() > ft->getApproxMemoryGain().getAfter());
 
     vespalib::ThreadStackExecutor exec(1);
+    EXPECT_TRUE(ft->can_flush(11));
     vespalib::Executor::Task::UP  task = ft->initFlush(11, std::make_shared<search::FlushToken>());
     exec.execute(std::move(task));
     exec.sync();
+    EXPECT_FALSE(ft->can_flush(11));
     exec.shutdown();
     assertLidSpace(shrinkTarget, shrinkTarget, shrinkTarget - 1, false, false, *dms);
     EXPECT_EQ(ft->getApproxMemoryGain().getBefore(), ft->getApproxMemoryGain().getAfter());

@@ -16,6 +16,7 @@ struct DummyFlushTarget : public searchcorespi::LeafFlushTarget {
     searchcorespi::FlushTask::UP initFlush(SerialNum, std::shared_ptr<search::IFlushToken>) override {
         return searchcorespi::FlushTask::UP();
     }
+    [[nodiscard]] bool can_flush(SerialNum current_serial) const noexcept override;
     searchcorespi::FlushStats getLastFlushStats() const override { return searchcorespi::FlushStats(); }
 
     uint64_t getApproxBytesToWriteToDisk() const override { return 0; }

@@ -220,6 +220,10 @@ IFlushTarget::Task::UP FlushableAttribute::initFlush(SerialNum currentSerial, st
     return future.get();
 }
 
+bool FlushableAttribute::can_flush(SerialNum current_serial) const noexcept {
+    return current_serial > getFlushedSerialNum();
+}
+
 uint64_t FlushableAttribute::getApproxBytesToWriteToDisk() const {
     return _attr->getEstimatedSaveByteSize();
 }
