@@ -137,17 +137,17 @@ Reader::~Reader() = default;
  **/
 class DocIdReader {
 private:
-    FileWithHeader     _docid_file;
-    FileReader<size_t> _length_reader;
-    FileReader<char>   _char_reader;
-    std::vector<char>  _docid_buffer;
+    FileWithHeader       _docid_file;
+    FileReader<uint32_t> _length_reader;
+    FileReader<char>     _char_reader;
+    std::vector<char>    _docid_buffer;
 
 public:
     explicit DocIdReader(std::unique_ptr<FastOS_FileInterface> docid_file);
     ~DocIdReader();
 
     std::span<const char> get_next_docid() {
-        size_t length = _length_reader.readHostOrder();
+        uint32_t length = _length_reader.readHostOrder();
         _docid_buffer.reserve(length);
         _char_reader.readNHostOrder(_docid_buffer.data(), length);
         return {_docid_buffer.data(), length};
@@ -1098,7 +1098,7 @@ uint64_t DocumentMetaStore::getEstimatedSaveByteSize() const {
     uint32_t numDocs = getNumUsedLids();
     uint64_t estimate = minHeaderLen + numDocs * entry_size(_trackDocumentSizes);
     if (_store_full_document_id) {
-        estimate += minHeaderLen + numDocs * sizeof(size_t) + get_docid_bytes_stats();
+        estimate += minHeaderLen + numDocs * sizeof(uint32_t) + get_docid_bytes_stats();
     }
     return estimate;
 }
