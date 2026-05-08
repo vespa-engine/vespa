@@ -70,7 +70,7 @@ public class HttpListConfigsHandlerTest {
                 .withTenantRepository(tenantRepository)
                 .withConfigserverConfig(configserverConfig)
                 .build();
-        applicationRepository.deploy(testApp, prepareParams());
+        applicationRepository.prepareAndActivate(testApp, prepareParams());
         handler = new HttpListConfigsHandler(HttpListConfigsHandler.testContext(),
                                              tenantRepository,
                                              Zone.defaultZone());

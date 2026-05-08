@@ -85,7 +85,7 @@ public class DeployHandlerLogger implements DeployLogger {
         return new DeployHandlerLogger(TenantRepository.logPre(tenantName), verbose);
     }
 
-    public static DeployHandlerLogger forPrepareParams(PrepareParams prepareParams) {
+    public static DeployHandlerLogger fromPrepareParams(PrepareParams prepareParams) {
         return forApplication(prepareParams.getApplicationId(), prepareParams.isVerbose());
     }
 }

@@ -29,6 +29,7 @@ import com.yahoo.vespa.config.server.MockSecretStore;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
+import com.yahoo.vespa.config.server.http.v2.PrepareAndActivateResult;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
@@ -140,14 +141,14 @@ public class DeployTester {
     /**
      * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
      */
-    public PrepareResult deployApp(String applicationPath, String vespaVersion)  {
+    public PrepareAndActivateResult deployApp(String applicationPath, String vespaVersion)  {
         return deployApp(applicationPath, new PrepareParams.Builder().vespaVersion(vespaVersion));
     }
 
     /**
      * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
      */
-    public PrepareResult deployApp(String applicationPath, PrepareParams.Builder paramsBuilder)  {
+    public PrepareAndActivateResult deployApp(String applicationPath, PrepareParams.Builder paramsBuilder)  {
         String endpoints = """
                 [
                   {
@@ -164,7 +165,7 @@ public class DeployTester {
                      .timeoutBudget(new TimeoutBudget(clock, Duration.ofSeconds(60)))
                      .containerEndpoints(endpoints);
 
-        return applicationRepository.deploy(new File(applicationPath), paramsBuilder.build());
+        return applicationRepository.prepareAndActivate(new File(applicationPath), paramsBuilder.build());
     }
 
     public AllocatedHosts getAllocatedHostsOf(ApplicationId applicationId) {

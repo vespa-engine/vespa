@@ -63,7 +63,7 @@ public class HttpListConfigsHandlerTest {
                 .withTenantRepository(tenantRepository)
                 .withConfigserverConfig(configserverConfig)
                 .build();
-        applicationRepository.deploy(testApp, prepareParams());
+        applicationRepository.prepareAndActivate(testApp, prepareParams());
 
         HttpListConfigsHandler.Context ctx = HttpListConfigsHandler.testContext();
         handler = new HttpListConfigsHandler(ctx, tenantRepository);

@@ -121,7 +121,7 @@ public class TenantHandlerTest {
     public void testDeleteTenantWithActiveApplications() throws IOException {
         tenantRepository.addTenant(a);
         ApplicationId applicationId = ApplicationId.from(a, ApplicationName.from("foo"), InstanceName.defaultName());
-        applicationRepository.deploy(testApp, new PrepareParams.Builder().applicationId(applicationId).build());
+        applicationRepository.prepareAndActivate(testApp, new PrepareParams.Builder().applicationId(applicationId).build());
 
         assertResponse(DELETE, "/application/v2/tenant/a",
                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot delete tenant 'a', it has active applications: [a.foo]\"}");

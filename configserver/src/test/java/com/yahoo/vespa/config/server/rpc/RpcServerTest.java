@@ -63,7 +63,7 @@ public class RpcServerTest {
     public void testRpcServer() throws IOException, SAXException, InterruptedException {
         try (RpcTester tester = new RpcTester(applicationId, temporaryFolder)) {
             ApplicationRepository applicationRepository = tester.applicationRepository();
-            applicationRepository.deploy(testApp, new PrepareParams.Builder().applicationId(applicationId).build());
+            applicationRepository.prepareAndActivate(testApp, new PrepareParams.Builder().applicationId(applicationId).build());
             testPrintStatistics(tester);
             testGetConfig(tester);
             testEnabled(tester);
