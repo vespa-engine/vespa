@@ -10,6 +10,8 @@ import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.core5.util.Timeout;
 
 import java.io.IOException;
+import java.net.NoRouteToHostException;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.time.Duration;
 import java.time.Instant;
@@ -40,17 +42,18 @@ public class LogRetriever {
         HttpGet get = new HttpGet(logServerUri.asURI());
         try {
             return new ProxyResponse(httpClient.execute(get));
-        } catch (UnknownHostException uhe) {
-            // Application has been deleted or a real DNS issue, either way it's not an internal server error
-            // and client should just retry
-            log.log(INFO, "Unknown host " + logServerUri.asURI().getHost() + " when getting logs, returning empty response");
+        } catch (NoRouteToHostException | UnknownHostException | SocketTimeoutException e) {
+            // Application has been deleted or a real DNS issue or host not up yet, either way it's not
+            // an internal server error and client should just retry
+            log.log(INFO, "Communication with host " + logServerUri.asURI().getHost() + " failed when getting logs (" +
+                    e.getClass().getName() + ", returning empty response");
             return new EmptyResponse();
-        } catch (IOException e) {
+        } catch (IOException ioe) {
             if (deployTime.isPresent() && Instant.now().isBefore(deployTime.get().plus(Duration.ofMinutes(5))))
                 return new EmptyResponse();
 
             return new HttpErrorResponse(500, HttpErrorResponse.ErrorCode.INTERNAL_SERVER_ERROR.name(),
-                                         "Failed to retrieve logs from log server: " + e.getMessage());
+                                         "Failed to retrieve logs from log server (" + ioe.getClass().getName() + "): " + ioe.getMessage());
         }
     }
 
