@@ -53,8 +53,10 @@ public class TelemetryExportConfig {
 
         public Exporter(String id, String type, String endpoint, String project,
                         Auth auth, List<String> metricSets, List<String> logFileTypes) {
-            this.id = Objects.requireNonNull(id);
-            this.type = Objects.requireNonNull(type);
+            if (id == null || id.isBlank()) throw new IllegalArgumentException("exporter id must be non-blank");
+            if (type == null || type.isBlank()) throw new IllegalArgumentException("exporter type must be non-blank");
+            this.id = id;
+            this.type = type;
             this.endpoint = Optional.ofNullable(endpoint);
             this.project = Optional.ofNullable(project);
             this.auth = Optional.ofNullable(auth);
@@ -99,8 +101,10 @@ public class TelemetryExportConfig {
 
         public Auth(String type, String vault, String secretName, String header,
                     String usernameSecretName, String passwordSecretName) {
-            this.type = Objects.requireNonNull(type);
-            this.vault = Objects.requireNonNull(vault);
+            if (type == null || type.isBlank()) throw new IllegalArgumentException("auth type must be non-blank");
+            if (vault == null || vault.isBlank()) throw new IllegalArgumentException("auth vault must be non-blank");
+            this.type = type;
+            this.vault = vault;
             this.secretName = Optional.ofNullable(secretName);
             this.header = Optional.ofNullable(header);
             this.usernameSecretName = Optional.ofNullable(usernameSecretName);

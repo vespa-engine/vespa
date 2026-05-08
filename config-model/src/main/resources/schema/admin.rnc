@@ -114,7 +114,7 @@ LogForwarding = element logforwarding {
 
 Telemetry = element telemetry {
     element exporter {
-        attribute id { xsd:string } &
+        attribute id { xsd:Name } &
         attribute type { string "otlp" | string "otlphttp" | string "googlecloud" } &
         attribute endpoint { xsd:anyURI }? &
         attribute project { xsd:string }? &
@@ -137,11 +137,11 @@ Telemetry = element telemetry {
             }
         }? &
         element metric-set {
-            attribute id { xsd:string }
+            attribute id { xsd:Name }
         }* &
         element logs {
             element type {
-                attribute id { xsd:string }
+                attribute id { xsd:Name }
             }+
         }?
     }+

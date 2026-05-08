@@ -42,8 +42,8 @@ public class TelemetryAuth {
     }
 
     public static TelemetryAuth basicAuth(String vault, String usernameSecretName, String passwordSecretName) {
-        if (usernameSecretName == null || usernameSecretName.isBlank()) throw new IllegalArgumentException("basic-auth username-secret must be non-empty");
-        if (passwordSecretName == null || passwordSecretName.isBlank()) throw new IllegalArgumentException("basic-auth password-secret must be non-empty");
+        if (usernameSecretName == null || usernameSecretName.isBlank()) throw new IllegalArgumentException("basic-auth username-secret-name must be non-empty");
+        if (passwordSecretName == null || passwordSecretName.isBlank()) throw new IllegalArgumentException("basic-auth password-secret-name must be non-empty");
         return new TelemetryAuth(Type.basic_auth, vault, null, null, usernameSecretName, passwordSecretName);
     }
 

@@ -4,9 +4,11 @@ package com.yahoo.config.provision.serialization;
 import com.yahoo.config.provision.TelemetryExportConfig;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -144,7 +146,7 @@ public class TelemetryExportConfigSerializerTest {
         var config = new TelemetryExportConfig(List.of(exporter));
 
         byte[] json = TelemetryExportConfigSerializer.toJson(config);
-        String jsonStr = new String(json);
+        String jsonStr = new String(json, StandardCharsets.UTF_8);
         assertTrue(jsonStr.contains("\"id\":\"exp1\""));
         assertTrue(jsonStr.contains("\"type\":\"otlp\""));
         assertTrue(jsonStr.contains("\"endpoint\":\"https://ep.example.com:4317\""));
@@ -152,8 +154,7 @@ public class TelemetryExportConfigSerializerTest {
         assertTrue(jsonStr.contains("\"secretName\":\"key1\""));
         assertTrue(jsonStr.contains("\"header\":\"X-Key\""));
         assertTrue(jsonStr.contains("\"metricSets\":[\"default\"]"));
-        // project not set, should not appear
-        assertTrue(!jsonStr.contains("\"project\""));
+        assertFalse(jsonStr.contains("\"project\""));
     }
 
     @Test
