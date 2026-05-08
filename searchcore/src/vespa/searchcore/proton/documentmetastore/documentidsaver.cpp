@@ -35,8 +35,8 @@ public:
         const RawDocumentMetadata& metadata = _metadata_view[lid];
         auto                       docid_ref = metadata.acquire_docid_ref();
         assert(docid_ref.valid());
-        auto   span = _docid_store.get(docid_ref);
-        size_t size = span.size();
+        auto     span = _docid_store.get(docid_ref);
+        uint32_t size = span.size(); // Document ids have a maximum length of 0x10000, so 4 bytes are enough
         _writer.write(&size, sizeof(size));
         _writer.write(span.data(), size);
     }
