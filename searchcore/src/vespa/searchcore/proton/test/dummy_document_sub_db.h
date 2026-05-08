@@ -85,6 +85,7 @@ struct DummyDocumentSubDb : public IDocumentSubDB {
 
     void tearDownReferences(IDocumentDBReferenceResolver&) override {}
     searchcorespi::common::ResourceUsage get_resource_usage() const override;
+    bool requires_doc_store_validation() const override { return false; }
 };
 
 } // namespace proton::test

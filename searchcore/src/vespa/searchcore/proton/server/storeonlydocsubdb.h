@@ -51,6 +51,7 @@ public:
 
     ~DocSubDB() override = default;
     void close() override {}
+    bool requires_doc_store_validation() const override { return false; }
 };
 
 /**
@@ -238,6 +239,9 @@ public:
     computeCompactionStrategy(vespalib::datastore::CompactionStrategy strategy) const;
     bool is_node_retired_or_maintenance() const { return _node_retired_or_maintenance; }
     searchcorespi::common::ResourceUsage get_resource_usage() const override;
+    bool requires_doc_store_validation() const override {
+        return _dms && _dms->requires_document_ids_from_docstore();
+    }
 };
 
 } // namespace proton

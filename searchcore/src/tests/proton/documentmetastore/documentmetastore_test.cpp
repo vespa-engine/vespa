@@ -560,6 +560,7 @@ TEST(DocumentMetaStoreTest, gids_can_be_saved_and_loaded) {
 
     DocumentMetaStore dms2(createBucketDB(), "documentmetastore2");
     EXPECT_TRUE(dms2.load());
+    EXPECT_FALSE(dms2.requires_document_ids_from_docstore());
     dms2.constructFreeList();
     EXPECT_EQ(numLids + 1, dms2.getNumDocs());
     EXPECT_EQ(numLids - 4, dms2.getNumUsedLids()); // 4 removed
@@ -613,6 +614,7 @@ TEST(DocumentMetaStoreTest, bucket_used_bits_are_lbounded_at_load_time) {
 
     DocumentMetaStore dms2(createBucketDB(), "documentmetastore2");
     ASSERT_TRUE(dms2.load());
+    EXPECT_FALSE(dms2.requires_document_ids_from_docstore());
     ASSERT_EQ(dms2.getNumDocs(), 2); // Incl. zero LID
 
     BucketId expected_bucket(storage::spi::BucketLimits::MinUsedBits, gid.convertToBucketId().getRawId());
@@ -1905,6 +1907,7 @@ TEST(DocumentMetaStoreTest, document_sizes_are_saved) {
 
     DocumentMetaStore dms3(createBucketDB(), "documentmetastore3");
     EXPECT_TRUE(dms3.load());
+    EXPECT_FALSE(dms3.requires_document_ids_from_docstore());
     dms3.constructFreeList();
     assertSize(dms3, 1, 100);
     assertSize(dms3, 2, 10000);
@@ -1912,6 +1915,7 @@ TEST(DocumentMetaStoreTest, document_sizes_are_saved) {
 
     DocumentMetaStore dms4(createBucketDB(), "documentmetastore4");
     EXPECT_TRUE(dms4.load());
+    EXPECT_FALSE(dms4.requires_document_ids_from_docstore());
     dms4.constructFreeList();
     assertSize(dms4, 1, 1);
     assertSize(dms4, 2, 1);
@@ -1936,6 +1940,7 @@ TEST(DocumentMetaStoreTest, full_document_ids_are_saved) {
                                         SubDbType::READY);
     EXPECT_TRUE(dms_loaded_docids.load());
     dms_loaded_docids.constructFreeList();
+    EXPECT_FALSE(dms_loaded_docids.requires_document_ids_from_docstore());
 
     auto d1 = createDocId(1);
     EXPECT_EQ(d1.toString(), dms_loaded_docids.get_docid_string(d1.getGlobalId()));
@@ -1975,6 +1980,28 @@ TEST(DocumentMetaStoreTest, full_document_ids_are_considered_in_estimated_save_b
                                         createDocId(1).toString().length() + replaced_docid.length() +
                                         createDocId(4).toString().length();
     EXPECT_EQ(expected_save_bytes_size, dms.getEstimatedSaveByteSize());
+}
+
+TEST(DocumentMetaStoreTest, dms_complains_about_missing_document_ids) {
+    // DocumentMetaStore not storing full document ids
+    DocumentMetaStore dms(createBucketDB(), "documentmetastore6", search::GrowStrategy(), false, SubDbType::READY);
+    dms.constructFreeList();
+    addLid(dms, 1);
+
+    TuneFileAttributes      tuneFileAttributes;
+    DummyFileHeaderContext  fileHeaderContext;
+    AttributeFileSaveTarget saveTarget(tuneFileAttributes, fileHeaderContext);
+    EXPECT_TRUE(dms.save(saveTarget, "documentmetastore6"));
+
+    // DocumentMetaStore storing full document ids
+    DocumentMetaStore dms_loaded(createBucketDB(), "documentmetastore6", search::GrowStrategy(), true,
+                                 SubDbType::READY);
+
+    // Cannot load document ids since there is no file with them
+    EXPECT_TRUE(dms_loaded.load());
+    EXPECT_TRUE(dms_loaded.requires_document_ids_from_docstore());
+
+    std::filesystem::remove(std::filesystem::path("documentmetastore6.dat"));
 }
 
 namespace {
