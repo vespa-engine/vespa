@@ -1129,6 +1129,7 @@ TEST(IteratorBenchmark, data_pond_test) {
     for (const auto& rec : pond.records()) {
         if (filter.check(rec)) {
         }
+        std::println("{}", rec.to_string());
     }
 }
 

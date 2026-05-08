@@ -3,6 +3,7 @@
 #pragma once
 
 #include <concepts>
+#include <format>
 #include <functional>
 #include <map>
 #include <string>
@@ -33,6 +34,20 @@ public:
             },
             _value);
     }
+
+    std::string to_string() const {
+        return std::visit(
+            [](const auto& val) -> std::string {
+                if constexpr (std::same_as<decltype(val), std::string>) {
+                    return std::format("'{}'", val);
+                } else if constexpr (std::same_as<decltype(val), bool>) {
+                    return val ? "true" : "false";
+                } else {
+                    return std::format("{}", val);
+                }
+            },
+            _value);
+    }
 };
 
 using Pred = std::function<bool(const Field&)>;
@@ -44,6 +59,8 @@ class Record {
     std::map<std::string, Field> _fields;
 
 public:
+    const std::map<std::string, Field>& data() const { return _fields; }
+
     Record& set(const std::string& name, const auto& value) {
         _fields.insert_or_assign(name, Field{value});
         return *this;
@@ -54,6 +71,21 @@ public:
             return pred(it->second);
         }
         return false;
+    }
+
+    std::string to_string() const {
+        std::stringstream ss;
+        ss << "Record{";
+        bool first = true;
+        for (const auto& [name, field] : _fields) {
+            if (!first) {
+                ss << ", ";
+            }
+            ss << name << ": " << field.to_string();
+            first = false;
+        }
+        ss << "}";
+        return ss.str();
     }
 };
 
