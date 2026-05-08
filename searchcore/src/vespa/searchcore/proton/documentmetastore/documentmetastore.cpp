@@ -214,6 +214,16 @@ void DocumentMetaStore::insert(GidToLidMapKey key, const RawDocumentMetadata& me
     updateCommittedDocIdLimit();
 }
 
+DocumentMetaStore::DocumentIdEntryRef DocumentMetaStore::add_docid_string(std::span<const char> docid) {
+    _docid_bytes += docid.size();
+    return _docid_store.add(docid);
+}
+
+void DocumentMetaStore::remove_docid_string(DocumentIdEntryRef ref) {
+    _docid_bytes -= _docid_store.get(ref).size();
+    _docid_store.remove(ref);
+}
+
 bool DocumentMetaStore::consider_compact_gid_to_lid_map() {
     if (_gidToLidMap.getAllocator().getNodeStore().has_held_buffers()) {
         return false;
@@ -320,7 +330,7 @@ DocumentMetaStore::DocId DocumentMetaStore::readNextDoc(documentmetastore::Reade
     meta.setDocSize(reader.getNextDocSize());
     meta.setTimestamp(reader.getNextTimestamp());
     if (docid_reader) {
-        const auto ref = _docid_store.add(docid_reader->get_next_docid());
+        const auto ref = add_docid_string(docid_reader->get_next_docid());
         meta.set_docid_ref(ref);
     }
     treeBuilder.insert(GidToLidMapKey(lid, meta.getGid()), BTreeNoLeafData());
@@ -468,6 +478,7 @@ DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB, const std::string
       _metadataStore(grow, getGenerationHolder()),
       _docid_store(make_default_docid_array_store_config(), get_memory_allocator(),
                    TypeMapper(array_store_max_type_id, array_store_grow_factor, array_store_max_buffer_size)),
+      _docid_bytes(0),
       _gidToLidMap(),
       _gid_to_lid_map_write_itr(EntryRef(), _gidToLidMap.getAllocator()),
       _gid_to_lid_map_write_itr_prepare_serial_num(0u),
@@ -563,7 +574,7 @@ DocumentMetaStore::Result DocumentMetaStore::put(const DocumentId& docid, const 
             (void)freeLid;
         }
         if (_store_full_document_id) {
-            const auto ref = _docid_store.add(docid.getScheme().toString());
+            const auto ref = add_docid_string(docid.getScheme().toString());
             metadata.set_docid_ref(ref);
         }
         insert(GidToLidMapKey(lid, find_key.get_gid_key()), metadata);
@@ -606,12 +617,10 @@ bool DocumentMetaStore::update_docid_string(DocId lid, std::string_view docid) {
 
     if (_store_full_document_id) {
         auto&      metadata = _metadataStore[lid];
-        const auto new_ref = _docid_store.add(docid);
+        const auto new_ref = add_docid_string(docid);
         const auto old_ref = metadata.get_relaxed_docid_ref();
         metadata.set_docid_ref(new_ref);
-        if (old_ref.valid()) {
-            _docid_store.remove(old_ref);
-        }
+        remove_docid_string(old_ref);
     }
 
     return true;
@@ -642,7 +651,7 @@ bool DocumentMetaStore::remove(DocId lid, uint64_t prepare_serial_num) {
     }
     RawDocumentMetadata meta = removeInternal(lid, prepare_serial_num);
     if (_store_full_document_id) {
-        _docid_store.remove(meta.get_relaxed_docid_ref());
+        remove_docid_string(meta.get_relaxed_docid_ref());
         _metadataStore[lid].set_docid_ref(EntryRef());
     }
     _bucketDB->takeGuard()->remove(meta.getGid(), meta.getBucketId().stripUnused(), meta.getTimestamp(),
@@ -724,7 +733,7 @@ void DocumentMetaStore::removeBatch(const std::vector<DocId>& lidsToRemove, cons
         assert(validLid(lid));
         removed.emplace_back(lid, _metadataStore[lid]);
         if (_store_full_document_id) {
-            _docid_store.remove(removed.back().second.get_relaxed_docid_ref());
+            remove_docid_string(removed.back().second.get_relaxed_docid_ref());
             _metadataStore[lid].set_docid_ref(EntryRef());
         }
     }

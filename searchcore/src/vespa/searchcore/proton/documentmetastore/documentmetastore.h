@@ -82,6 +82,7 @@ private:
 
     MetadataStore                   _metadataStore;
     DocumentIdStore                 _docid_store;
+    uint64_t                        _docid_bytes;
     TreeType                        _gidToLidMap;
     Iterator                        _gid_to_lid_map_write_itr; // Iterator used for all updates of _gidToLidMap
     SerialNum                       _gid_to_lid_map_write_itr_prepare_serial_num;
@@ -101,6 +102,11 @@ private:
     void insert(documentmetastore::GidToLidMapKey key, const RawDocumentMetadata& metadata);
 
     const GlobalId& getRawGid(DocId lid) const { return getRawMetadata(lid).getGid(); }
+
+    // Add document id string to _docid_store and update _docid_bytes
+    DocumentIdEntryRef add_docid_string(std::span<const char> docid);
+    // Remove document id string from _docid_store and update _docid_bytes
+    void remove_docid_string(DocumentIdEntryRef ref);
 
     bool consider_compact_gid_to_lid_map();
     void compact_docid_store();
