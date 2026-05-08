@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
+import com.yahoo.component.Version;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -42,6 +43,26 @@ public class DockerImageTest {
         DockerImage image = DockerImage.fromString("registry.example.com/vespa/vespa");
         assertThrows(IllegalArgumentException.class, () -> image.withRegistry(""));
         assertThrows(IllegalArgumentException.class, () -> image.withRegistry("my-registry/path/"));
+    }
+
+    @Test
+    void tag_suffix() {
+        assertEquals("", DockerImage.fromString("registry.example.com/vespa/vespa").tagSuffix());
+        assertEquals("", DockerImage.fromString("registry.example.com/vespa/vespa:7.42").tagSuffix());
+        assertEquals("-alma9", DockerImage.fromString("registry.example.com/vespa/vespa:7.42-alma9").tagSuffix());
+        assertEquals("-alma9-extra", DockerImage.fromString("registry.example.com/vespa/vespa:7.42-alma9-extra").tagSuffix());
+    }
+
+    @Test
+    void with_tag_and_suffix() {
+        DockerImage image = DockerImage.fromString("registry.example.com/vespa/vespa:7.42-alma9");
+        Version version = Version.fromString("8.123.45");
+        assertEquals("registry.example.com/vespa/vespa:8.123.45",
+                     image.withTag(version).asString());
+        assertEquals("registry.example.com/vespa/vespa:8.123.45-alma9",
+                     image.withTag(version, image.tagSuffix()).asString());
+        assertEquals("registry.example.com/vespa/vespa:8.123.45",
+                     image.withTag(version, "").asString());
     }
 
     @Test

@@ -54,9 +54,29 @@ public class DockerImage {
         return tag.map(Version::new).orElse(Version.emptyVersion);
     }
 
+    /**
+     * Returns the suffix part of this image's tag — everything from the first '-' onwards
+     * (including the '-'), or the empty string if the tag has no '-' or is not set.
+     * For example, the suffix of "8.123.45-alma9" is "-alma9".
+     */
+    public String tagSuffix() {
+        return tag.map(t -> {
+            int pos = t.indexOf('-');
+            return pos < 0 ? "" : t.substring(pos);
+        }).orElse("");
+    }
+
     /** Returns a copy of this tagged with the given version */
     public DockerImage withTag(Version version) {
-        return new DockerImage(registry, repository, Optional.of(version.toFullString()));
+        return withTag(version, "");
+    }
+
+    /**
+     * Returns a copy of this tagged with the given version followed by the given suffix.
+     * The suffix is appended verbatim, so callers wanting a separator (e.g. '-') must include it.
+     */
+    public DockerImage withTag(Version version, String tagSuffix) {
+        return new DockerImage(registry, repository, Optional.of(version.toFullString() + tagSuffix));
     }
 
     /** Returns a copy of this with registry set to given value */
