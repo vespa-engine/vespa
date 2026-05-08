@@ -116,9 +116,7 @@ public:
         return _datFile.data_size() / DocumentMetaStore::entry_size(_version != NO_DOCUMENT_SIZE_TRACKING_VERSION);
     }
 
-    uint64_t size_on_disk() const noexcept {
-        return _datFile.size_on_disk() + DiskSpaceCalculator::directory_placeholder_size();
-    }
+    uint64_t size_on_disk() const noexcept { return _datFile.size_on_disk(); }
     std::chrono::steady_clock::duration flush_duration() const noexcept { return _datFile.flush_duration(); }
 };
 
@@ -155,9 +153,7 @@ public:
         return {_docid_buffer.data(), length};
     }
 
-    uint64_t size_on_disk() const noexcept {
-        return _docid_file.size_on_disk() + DiskSpaceCalculator::directory_placeholder_size();
-    }
+    uint64_t size_on_disk() const noexcept { return _docid_file.size_on_disk(); }
     std::chrono::steady_clock::duration flush_duration() const noexcept { return _docid_file.flush_duration(); }
 };
 
@@ -375,8 +371,14 @@ bool DocumentMetaStore::onLoad(vespalib::Executor*) {
 
     setNumDocs(_metadataStore.size());
     setCommittedDocIdLimit(_metadataStore.size());
-    set_size_on_disk(reader.size_on_disk());
-    set_last_flush_duration(reader.flush_duration());
+    uint64_t size_on_disk = DiskSpaceCalculator::directory_placeholder_size() + reader.size_on_disk();
+    std::chrono::steady_clock::duration flush_duration = reader.flush_duration();
+    if (docid_reader) {
+        size_on_disk += docid_reader->size_on_disk();
+        flush_duration += docid_reader->flush_duration();
+    }
+    set_size_on_disk(size_on_disk);
+    set_last_flush_duration(flush_duration);
 
     return true;
 }
