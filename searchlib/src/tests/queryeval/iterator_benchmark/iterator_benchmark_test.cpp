@@ -297,6 +297,8 @@ BenchmarkResult benchmark_search(BenchmarkBlueprintFactory& factory, uint32_t do
 
 //-----------------------------------------------------------------------------
 
+std::ostream& operator<<(std::ostream& dst, InFlow in_flow);
+
 /**
  * A single row in the BenchmarkStore.
  *
@@ -304,11 +306,35 @@ BenchmarkResult benchmark_search(BenchmarkBlueprintFactory& factory, uint32_t do
  */
 class BenchmarkRecord {
     std::string _id;
+    std::string _case;
+    double      _time_ms;
+    uint32_t    _seeks;
+    uint32_t    _hits;
+    InFlow      _in_flow;
 
 public:
-    BenchmarkRecord(const std::string& id) : _id(id) {}
+    BenchmarkRecord(const std::string& id, const std::string& case_, double time_ms, uint32_t seeks, uint32_t hits,
+                    InFlow flow)
+        : _id(id), _case(case_), _time_ms(time_ms), _seeks(seeks), _hits(hits), _in_flow(flow) {}
 
-    const std::string& id() const noexcept { return _id; }
+    [[nodiscard]] const std::string& id() const noexcept { return _id; }
+    [[nodiscard]] double time_ms() const noexcept { return _time_ms; }
+    [[nodiscard]] uint32_t seeks() const noexcept { return _seeks; }
+    [[nodiscard]] uint32_t hits() const noexcept { return _hits; }
+    [[nodiscard]] InFlow in_flow() const noexcept { return _in_flow; }
+
+    std::string to_string() const noexcept {
+        std::stringstream ss;
+        ss << "BenchmarkRecord{";
+        ss << "id=" << _id << ", ";
+        ss << "case=" << _case << ", ";
+        ss << "time_ms=" << _time_ms << ", ";
+        ss << "seeks=" << _seeks << ", ";
+        ss << "hits=" << _hits << ", ";
+        ss << "in_flow=" << _in_flow;
+        ss << "}";
+        return ss.str();
+    }
 };
 
 /**
@@ -321,18 +347,7 @@ public:
     BenchmarkStore() = default;
 
     void add(const BenchmarkRecord& record) { _records.push_back(record); }
-
-    // iterator for stdlib integration
-    using iterator = std::vector<BenchmarkRecord>::iterator;
-    using const_iterator = std::vector<BenchmarkRecord>::const_iterator;
-    iterator begin() noexcept { return _records.begin(); }
-    iterator end() noexcept { return _records.end(); }
-    const_iterator begin() const noexcept { return _records.begin(); }
-    const_iterator end() const noexcept { return _records.end(); }
-    const_iterator cbegin() const noexcept { return _records.cbegin(); }
-    const_iterator cend() const noexcept { return _records.cend(); }
-    bool empty() const noexcept { return _records.empty(); }
-    std::size_t size() const noexcept { return _records.size(); }
+    [[nodiscard]] const std::vector<BenchmarkRecord>& records() const noexcept { return _records; }
 };
 
 //-----------------------------------------------------------------------------
@@ -1096,24 +1111,14 @@ TEST(IteratorBenchmark, analyze_AND_plan_variants_ENN) {
 }
 
 TEST(IteratorBenchmark, record_store_demo) {
-    using std::ranges::fold_left;
-    using std::views::filter;
-    using std::views::transform;
-
     BenchmarkStore store;
-    store.add(BenchmarkRecord{"foo"});
-    store.add(BenchmarkRecord{"bar"});
+    store.add(BenchmarkRecord{"TERM STRICT hit_ratio=0.3", "analyze_term_search_in_disk_index", 42.2, 10, 4, InFlow{true}});
+    store.add(BenchmarkRecord{"TERM NON_STRICT hit_ratio=0.3", "analyze_term_search_in_disk_index", 41.1, 10, 3, InFlow{false, 0.3}});
 
     // For each.
-    for (const auto& record : store) {
-        std::println(stderr, "ID: {}", record.id());
+    for (const auto& record : store.records()) {
+        std::println(stderr, "ID: {}", record.to_string());
     }
-
-    // Possibilities for modern filter and transformations.
-    auto sizes = store | filter([](const auto& rec) noexcept { return rec.id() == "foo"; }) |
-                 transform([](const auto& rec) noexcept { return rec.id().size(); });
-    auto total = fold_left(sizes, 0, std::plus());
-    std::println(stderr, "filtered transformed total: {}", total);
 }
 
 static std::string smoke_test_filter = "--gtest_filter="
