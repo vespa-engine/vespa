@@ -155,4 +155,9 @@ public class MatchingTestCase {
         verifyExceptionMessage("anntimebudget", "-42", "Error parsing '-42': Invalid number '-42'");
     }
 
+    @Test
+    void testIllegalValues() {
+        verifyExceptionMessage("numthreadspersearch", "0", "ranking.matching.numthreadspersearch must be > 0");
+    }
+
 }
