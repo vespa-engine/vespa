@@ -63,7 +63,7 @@ public class ApplicationContentHandlerTest extends ContentHandlerTestBase {
                 .withConfigserverConfig(configserverConfig)
                 .build();
 
-        applicationRepository.deploy(testApp, prepareParams(appId1));
+        applicationRepository.prepareAndActivate(testApp, prepareParams(appId1));
         handler = new ApplicationHandler(ApplicationHandler.testContext(),
                                          Zone.defaultZone(),
                                          applicationRepository);

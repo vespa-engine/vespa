@@ -32,7 +32,6 @@ import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
-import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.maintenance.PendingRestartsMaintainer;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.session.PrepareParams;
@@ -499,7 +498,7 @@ public class HostedDeployTest {
                                            Clock.systemUTC(),
                                            new MockConfigConvergenceChecker(2L, mutableServices));
         var result = tester.deployApp("src/test/apps/hosted/", "6.2.0");
-        DeployHandlerLogger deployLogger = result.deployLogger();
+        DeployHandlerLogger deployLogger = result.prepareResult().deployLogger();
 
         assertLogContainsMessage(deployLogger, "Scheduled service restart of 1 nodes: hostName0");
         assertEquals(Set.of(), tester.applicationRepository().getPendingRestarts(tester.applicationId()).restartsReadyAt(1));
@@ -549,7 +548,7 @@ public class HostedDeployTest {
                 .configConvergenceChecker(new MockConfigConvergenceChecker(2))
                 .hostedConfigserverConfig(prodZone)
                 .build();
-        PrepareResult prepareResult = tester.deployApp("src/test/apps/hosted/", "6.1.0");
+        var prepareResult = tester.deployApp("src/test/apps/hosted/", "6.1.0").prepareResult();
 
         assertEquals(9, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
         assertTrue(prepareResult.configChangeActions().getRestartActions().isEmpty()); // Handled by deployment.

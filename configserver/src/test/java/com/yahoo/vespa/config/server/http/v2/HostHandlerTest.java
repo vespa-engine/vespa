@@ -64,7 +64,7 @@ public class HostHandlerTest {
     @Test
     public void require_correct_tenant_and_application_for_hostname() throws Exception {
         ApplicationId applicationId = applicationId();
-        applicationRepository.deploy(testApp, new PrepareParams.Builder().applicationId(applicationId).build());
+        applicationRepository.prepareAndActivate(testApp, new PrepareParams.Builder().applicationId(applicationId).build());
         String hostname = applicationRepository.getActiveApplicationVersions(applicationId).get().allHosts().iterator().next();
         assertApplicationForHost(hostname, applicationId);
     }

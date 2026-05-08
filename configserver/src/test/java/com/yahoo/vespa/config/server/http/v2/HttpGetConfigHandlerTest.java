@@ -67,7 +67,7 @@ public class HttpGetConfigHandlerTest {
                 .withConfigserverConfig(configserverConfig)
                 .build();
         handler = new HttpGetConfigHandler(HttpGetConfigHandler.testContext(), tenantRepository);
-        applicationRepository.deploy(testApp, prepareParams());
+        applicationRepository.prepareAndActivate(testApp, prepareParams());
     }
 
     @Test

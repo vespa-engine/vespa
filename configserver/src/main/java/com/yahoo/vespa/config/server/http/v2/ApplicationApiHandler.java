@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
-import ai.vespa.utils.BytesQuantity;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.provision.ApplicationId;
@@ -145,7 +144,7 @@ public class ApplicationApiHandler extends SessionHandler {
                 .ifPresent(e -> e.addKeyValue("app.id", prepareParams.getApplicationId().toFullString()));
 
         try (compressedStream) {
-            PrepareAndActivateResult result = applicationRepository.deploy(compressedStream, prepareParams);
+            PrepareAndActivateResult result = applicationRepository.prepareAndActivate(compressedStream, prepareParams);
             return new SessionPrepareAndActivateResponse(result, prepareParams.getApplicationId(), request, zone);
         }
         catch (IOException e) {
