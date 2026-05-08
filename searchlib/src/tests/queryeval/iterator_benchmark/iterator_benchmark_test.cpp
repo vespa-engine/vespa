@@ -3,6 +3,7 @@
 #include "benchmark_blueprint_factory.h"
 #include "blueprint_factory_builder.h"
 #include "common.h"
+#include "data_pond.h"
 #include "intermediate_blueprint_factory.h"
 
 #include <vespa/searchlib/fef/matchdata.h>
@@ -1052,6 +1053,23 @@ TEST(IteratorBenchmark, analyze_AND_plan_variants_ENN) {
         std::println("  worst/best ratio={:.4f}", penalty);
     }
     std::println("max worst-plan penalty={:.4f}", max_penalty);
+}
+
+TEST(IteratorBenchmark, data_pond_test) {
+    DataPond pond;
+    Record   record;
+    record.set("my_int", 10);
+    record.set("my_bool", true);
+    record.set("my_string", "string");
+    record.set("my_float", 3.14);
+
+    pond.add(record);
+
+    Filter filter = Filter().lt("my_float", 2.0).eq("my_string", "str");
+    for (const auto& rec : pond.records()) {
+        if (filter.check(rec)) {
+        }
+    }
 }
 
 static std::string smoke_test_filter = "--gtest_filter="
