@@ -1971,7 +1971,7 @@ TEST(DocumentMetaStoreTest, full_document_ids_are_considered_in_estimated_save_b
     dms.commit(CommitParam::UpdateStats::FORCE);
 
     uint64_t expected_save_bytes_size = DocumentMetaStore::minHeaderLen + 3 * DocumentMetaStore::entry_size(true) +
-                                        DocumentMetaStore::minHeaderLen + 3 * sizeof(size_t) +
+                                        DocumentMetaStore::minHeaderLen + 3 * sizeof(uint32_t) +
                                         createDocId(1).toString().length() + replaced_docid.length() +
                                         createDocId(4).toString().length();
     EXPECT_EQ(expected_save_bytes_size, dms.getEstimatedSaveByteSize());
