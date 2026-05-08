@@ -13,6 +13,7 @@ import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.config.model.deploy.TestProperties;
+import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
@@ -2734,5 +2735,46 @@ public class ModelProvisioningTest {
                 .build();
         var actualSidecarSpec = clusterSpec.get().sidecars().get(0);
         assertEquals(expectedSidecarSpec, actualSidecarSpec);
+    }
+
+    @Test
+    public void test_profiles() {
+        String xml = """
+                <?xml version='1.0' encoding='utf-8' ?>
+                <services>
+                  <container version='1.0' id='container1'>
+                    <nodes count='2' profile='high-cpu'/>
+                  </container>
+                  <content version='1.0' id='content1'>
+                    <redundancy>1</redundancy>
+                    <documents/>
+                    <nodes count='2' profile='large-storage'/>
+                  </content>
+                </services>
+                """;
+
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(9);
+        VespaModel model = tester.createModel(xml, true, deployStateWithClusterEndpoints("container1"));
+
+        List<String> containerProfiles = profilesForNodes(model, ClusterSpec.Type.container);
+        assertEquals(2, containerProfiles.size());
+        assertTrue(containerProfiles.stream().allMatch(profile -> profile.equals("high-cpu")));
+
+        List<String> contentProfiles = profilesForNodes(model, ClusterSpec.Type.content);
+        assertEquals(2, contentProfiles.size());
+        assertTrue(contentProfiles.stream().allMatch(profile -> profile.equals("large-storage")));
+    }
+
+    private List<String> profilesForNodes(VespaModel vespaModel, ClusterSpec.Type type) {
+        List<ClusterMembership> memberships = vespaModel.hostSystem()
+                .getHosts()
+                .stream()
+                .flatMap(h -> h.spec().membership().stream()).toList();
+        return memberships.stream()
+                .filter(m -> m.cluster().type() == type)
+                .map(m -> m.cluster().profile())
+                .flatMap(Optional::stream)
+                .toList();
     }
 }

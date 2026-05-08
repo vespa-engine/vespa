@@ -246,6 +246,7 @@ ContentNodes = element nodes {
     (
       (
         attribute count { xsd:positiveInteger | xsd:string }? &
+        attribute profile { xsd:string }? &
         attribute flavor { xsd:string }? &
         attribute required { xsd:boolean }? &
         attribute exclusive { xsd:boolean }? &

@@ -70,6 +70,8 @@ public class NodesSpecification {
     /** Whether the count attribute is present on the 'nodes' element. */
     private final boolean specifiesNodeCount;
 
+    private final String profile;
+
     private NodesSpecification(ClusterResources min,
                                ClusterResources max,
                                IntRange groupSize,
@@ -79,7 +81,8 @@ public class NodesSpecification {
                                Optional<CloudAccount> cloudAccount,
                                CloudResourceTags cloudResourceTags,
                                List<AzName> availabilityZones,
-                               boolean specifiesNodeCount) {
+                               boolean specifiesNodeCount,
+                               String profile) {
         if (max.smallerThan(min))
             throw new IllegalArgumentException("Max resources must be larger or equal to min resources, but " +
                                                max + " is smaller than " + min);
@@ -107,6 +110,7 @@ public class NodesSpecification {
         this.cloudResourceTags = cloudResourceTags;
         this.availabilityZones = List.copyOf(availabilityZones);
         this.specifiesNodeCount = specifiesNodeCount;
+        this.profile = profile;
     }
 
     static NodesSpecification create(boolean dedicated, boolean canFail, Version version,
@@ -129,7 +133,8 @@ public class NodesSpecification {
                                       cloudAccount,
                                       cloudResourceTags,
                                       availabilityZones,
-                                      hasCountAttribute);
+                                      hasCountAttribute,
+                                      resolvedElement.stringAttribute("profile"));
     }
 
     private static ResourceConstraints toResourceConstraints(ModelElement nodesElement) {
@@ -218,7 +223,8 @@ public class NodesSpecification {
                                       context.getDeployState().getProperties().cloudAccount(),
                                       context.getDeployState().getProperties().cloudResourceTags(),
                                       context.availabilityZones(),
-                                      false);
+                                      false,
+                                      null);
     }
 
     /** Returns a requirement from <code>count</code> dedicated nodes in one group */
@@ -235,7 +241,8 @@ public class NodesSpecification {
                                       context.getDeployState().getProperties().cloudAccount(),
                                       context.getDeployState().getProperties().cloudResourceTags(),
                                       context.availabilityZones(),
-                                      false);
+                                      false,
+                                      null);
     }
 
     /**
@@ -263,7 +270,8 @@ public class NodesSpecification {
                                       context.getDeployState().getProperties().cloudAccount(),
                                       context.getDeployState().getProperties().cloudResourceTags(),
                                       context.availabilityZones(),
-                                      false);
+                                      false,
+                                      null);
     }
 
     public ClusterResources minResources() { return min; }
@@ -286,6 +294,13 @@ public class NodesSpecification {
     /** Returns whether the count attribute was present on the {@code <nodes>} element. */
     public boolean specifiesNodeCount() {
         return specifiesNodeCount;
+    }
+
+    /**
+     * Returns the user-specified profile specified on the {@code <nodes>} element, or empty if not set.
+     */
+    public Optional<String> profile() {
+        return Optional.ofNullable(profile);
     }
 
     public Map<HostResource, ClusterMembership> provision(HostSystem hostSystem,
@@ -313,6 +328,7 @@ public class NodesSpecification {
                 .stateful(stateful)
                 .sidecars(sidecars)
                 .availabilityZones(availabilityZones)
+                .profile(profile)
                 .build();
 
         return hostSystem.allocateHosts(cluster, Capacity.from(min, max, groupSize, required, canFail, cloudAccount, cloudResourceTags, info), logger);
