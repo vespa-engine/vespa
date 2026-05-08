@@ -39,9 +39,10 @@ public:
     std::string to_string() const {
         return std::visit(
             [](const auto& val) -> std::string {
-                if constexpr (std::same_as<std::decay_t<decltype(val)>, std::string>) {
+                using T = decltype(val);
+                if constexpr (std::same_as<T, const std::string&>) {
                     return std::format("'{}'", val);
-                } else if constexpr (std::same_as<decltype(val), bool>) {
+                } else if constexpr (std::same_as<T, const bool&>) {
                     return val ? "true" : "false";
                 } else {
                     return std::format("{}", val);
