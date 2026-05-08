@@ -291,6 +291,7 @@ void DocumentMetaStore::onUpdateStat(CommitParam::UpdateStats updateStats) {
     // the free lists are not taken into account here
     updateStatistics(_metadataStore.size(), _metadataStore.size(), usage.allocatedBytes(), usage.usedBytes(),
                      usage.deadBytes(), usage.allocatedBytesOnHold());
+    update_docid_bytes_stats();
 }
 
 void DocumentMetaStore::before_inc_generation(Generation current_gen) {
@@ -389,6 +390,7 @@ bool DocumentMetaStore::onLoad(vespalib::Executor*) {
     }
     set_size_on_disk(size_on_disk);
     set_last_flush_duration(flush_duration);
+    update_docid_bytes_stats();
 
     return true;
 }
@@ -479,6 +481,7 @@ DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB, const std::string
       _docid_store(make_default_docid_array_store_config(), get_memory_allocator(),
                    TypeMapper(array_store_max_type_id, array_store_grow_factor, array_store_max_buffer_size)),
       _docid_bytes(0),
+      _docid_bytes_stats(0),
       _gidToLidMap(),
       _gid_to_lid_map_write_itr(EntryRef(), _gidToLidMap.getAllocator()),
       _gid_to_lid_map_write_itr_prepare_serial_num(0u),
@@ -1093,7 +1096,11 @@ GenerationGuard DocumentMetaStore::getGuard() const {
 
 uint64_t DocumentMetaStore::getEstimatedSaveByteSize() const {
     uint32_t numDocs = getNumUsedLids();
-    return minHeaderLen + numDocs * entry_size(_trackDocumentSizes);
+    uint64_t estimate = minHeaderLen + numDocs * entry_size(_trackDocumentSizes);
+    if (_store_full_document_id) {
+        estimate += minHeaderLen + numDocs * sizeof(size_t) + get_docid_bytes_stats();
+    }
+    return estimate;
 }
 
 uint32_t DocumentMetaStore::getVersion() const {

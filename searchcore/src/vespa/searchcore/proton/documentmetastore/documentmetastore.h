@@ -83,6 +83,7 @@ private:
     MetadataStore                   _metadataStore;
     DocumentIdStore                 _docid_store;
     uint64_t                        _docid_bytes;
+    std::atomic<uint64_t>           _docid_bytes_stats; // Atomic mirror of _docid_bytes
     TreeType                        _gidToLidMap;
     Iterator                        _gid_to_lid_map_write_itr; // Iterator used for all updates of _gidToLidMap
     SerialNum                       _gid_to_lid_map_write_itr_prepare_serial_num;
@@ -112,6 +113,8 @@ private:
     void compact_docid_store();
     void onCommit() override;
     void onUpdateStat(CommitParam::UpdateStats updateStats) override;
+    void update_docid_bytes_stats() { _docid_bytes_stats.store(_docid_bytes, std::memory_order_relaxed); }
+    uint64_t get_docid_bytes_stats() const noexcept { return _docid_bytes_stats.load(std::memory_order_relaxed); }
 
     // Implements AttributeVector
     void before_inc_generation(vespalib::Generation current_gen) override;
