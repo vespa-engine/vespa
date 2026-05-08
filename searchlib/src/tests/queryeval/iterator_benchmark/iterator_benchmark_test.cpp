@@ -15,7 +15,6 @@
 #include <iomanip>
 #include <numeric>
 #include <print>
-#include <ranges>
 #include <vector>
 
 using namespace search::attribute;
@@ -1112,8 +1111,10 @@ TEST(IteratorBenchmark, analyze_AND_plan_variants_ENN) {
 
 TEST(IteratorBenchmark, record_store_demo) {
     BenchmarkStore store;
-    store.add(BenchmarkRecord{"TERM STRICT hit_ratio=0.3", "analyze_term_search_in_disk_index", 42.2, 10, 4, InFlow{true}});
-    store.add(BenchmarkRecord{"TERM NON_STRICT hit_ratio=0.3", "analyze_term_search_in_disk_index", 41.1, 10, 3, InFlow{false, 0.3}});
+    store.add(
+        BenchmarkRecord{"TERM STRICT hit_ratio=0.3", "analyze_term_search_in_disk_index", 42.2, 10, 4, InFlow{true}});
+    store.add(BenchmarkRecord{"TERM NON_STRICT hit_ratio=0.3", "analyze_term_search_in_disk_index", 41.1, 10, 3,
+                              InFlow{false, 0.3}});
 
     // For each.
     for (const auto& record : store.records()) {
