@@ -357,6 +357,7 @@ bool DocumentMetaStore::onLoad(vespalib::Executor*) {
 
     // insert gids (already sorted)
     if (numElems > 0) {
+        _requires_document_ids_from_docstore = _store_full_document_id && !docid_reader;
         DocId                      lid = readNextDoc(reader, docid_reader.get(), treeBuilder);
         const RawDocumentMetadata* meta = &_metadataStore[lid];
         BucketId                   prevId(meta->getBucketId());
@@ -493,7 +494,8 @@ DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB, const std::string
       _changesSinceCommit(0),
       _op_listener(),
       _should_compact_gid_to_lid_map(false),
-      _store_full_document_id(store_full_document_id) {
+      _store_full_document_id(store_full_document_id),
+      _requires_document_ids_from_docstore(false) {
     ensureSpace(0);                       // lid 0 is reserved
     setCommittedDocIdLimit(1u);           // lid 0 is reserved
     _gidToLidMap.getAllocator().freeze(); // create initial frozen tree

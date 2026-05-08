@@ -96,6 +96,7 @@ private:
     OperationListenerSP             _op_listener;
     bool                            _should_compact_gid_to_lid_map;
     bool                            _store_full_document_id;
+    bool                            _requires_document_ids_from_docstore;
 
     DocId getFreeLid();
     DocId peekFreeLid();
@@ -302,6 +303,14 @@ public:
     make_sort_blob_writer(bool ascending, const search::common::BlobConverter* converter,
                           search::common::sortspec::MissingPolicy policy,
                           std::string_view                        missing_value) const override;
+
+    /*
+     * Returns true if this DocumentMetaStore is supposed to store document id strings,
+     * has some documents, but misses their document ids.
+     * This signalizes that the docstore has to be validated after replay to fill in the missing document ids.
+     * This method continues to return true after the validation, which can be ignored.
+     */
+    bool requires_document_ids_from_docstore() const noexcept { return _requires_document_ids_from_docstore; }
 
     vespalib::MemoryUsage get_docid_memory_usage() const { return _docid_store.getMemoryUsage(); };
     vespalib::MemoryUsage get_gid_to_lid_map_memory_usage() const { return _gidToLidMap.getMemoryUsage(); };
