@@ -37,6 +37,7 @@ import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.concurrent.Memoized;
 import com.yahoo.text.Text;
+import com.yahoo.yolean.concurrent.Sleeper;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -73,7 +74,6 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     private final Supplier<PrepareParams> params;
     private final Optional<Provisioner> provisioner;
     private final Optional<DeploymentConfigStore> deploymentConfigStore;
-    private final Tenant tenant;
     private final DeployLogger deployLogger;
     private final Clock clock;
 
@@ -82,13 +82,12 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
     private Deployment(Session session, ApplicationRepository applicationRepository, Supplier<PrepareParams> params,
                        Optional<Provisioner> provisioner, Optional<DeploymentConfigStore> deploymentConfigStore,
-                       Tenant tenant, DeployLogger deployLogger, Clock clock, boolean prepared) {
+                       DeployLogger deployLogger, Clock clock, boolean prepared) {
         this.session = session;
         this.applicationRepository = applicationRepository;
         this.params = params;
         this.provisioner = provisioner;
         this.deploymentConfigStore = deploymentConfigStore;
-        this.tenant = tenant;
         this.deployLogger = deployLogger;
         this.clock = clock;
         this.prepared = prepared;
@@ -96,16 +95,16 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
     public static Deployment unprepared(Session session, ApplicationRepository applicationRepository,
                                         Optional<Provisioner> provisioner, Optional<DeploymentConfigStore> deploymentConfigStore,
-                                        Tenant tenant, PrepareParams params, DeployLogger logger, Clock clock) {
-        return new Deployment(session, applicationRepository, () -> params, provisioner, deploymentConfigStore, tenant, logger, clock, false);
+                                        PrepareParams params, DeployLogger logger, Clock clock) {
+        return new Deployment(session, applicationRepository, () -> params, provisioner, deploymentConfigStore, logger, clock, false);
     }
 
     public static Deployment unprepared(Session session, ApplicationRepository applicationRepository,
                                         Optional<Provisioner> provisioner, Optional<DeploymentConfigStore> deploymentConfigStore,
-                                        Tenant tenant, DeployLogger logger,
+                                        DeployLogger logger,
                                         Duration timeout, Clock clock, boolean validate, boolean isBootstrap) {
         Supplier<PrepareParams> params = createPrepareParams(clock, timeout, session, true, isBootstrap, !validate, false, true);
-        return new Deployment(session, applicationRepository, params, provisioner, deploymentConfigStore, tenant, logger, clock, false);
+        return new Deployment(session, applicationRepository, params, provisioner, deploymentConfigStore, logger, clock, false);
     }
 
     public static Deployment prepared(Session session, ApplicationRepository applicationRepository,
@@ -113,7 +112,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                                       Tenant tenant, DeployLogger logger,
                                       Duration timeout, Clock clock, boolean isBootstrap, boolean force) {
         Supplier<PrepareParams> params = createPrepareParams(clock, timeout, session, false, isBootstrap, false, force, false);
-        return new Deployment(session, applicationRepository, params, provisioner, deploymentConfigStore, tenant, logger, clock, true);
+        return new Deployment(session, applicationRepository, params, provisioner, deploymentConfigStore, logger, clock, true);
     }
 
     /** Prepares this. This does nothing if this is already prepared */
@@ -122,8 +121,8 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         if (prepared) return;
 
         try (ActionTimer timer = applicationRepository.timerFor(params.get().getApplicationId(), ConfigServerMetrics.DEPLOYMENT_PREPARE_MILLIS.baseName())) {
-            this.configChangeActions = sessionRepository().prepareLocalSession(session, deployLogger, params.get(), clock.instant());
-            this.prepared = true;
+            configChangeActions = sessionRepository().prepareLocalSession(session, deployLogger, params.get(), clock.instant());
+            prepared = true;
         } catch (Exception e) {
             log.log(Level.FINE, "Preparing session " + session.getSessionId() + " failed, deleting it");
             deleteSession();
@@ -131,7 +130,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         }
     }
 
-    /** Activates this. If it is not already prepared, this will call prepare first. */
+    /** Activates this. If it is not already prepared, prepare will be done first. */
     @Override
     public long activate() {
         prepare();
@@ -140,15 +139,15 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         if (sessionAlreadyActive(session))
             return configGeneration();
 
-        waitForResourcesOrTimeout(params.get(), session, provisioner);
+        PrepareParams prepareParams = params.get();
+        waitForResourcesOrTimeout(prepareParams, session, provisioner);
 
-        ApplicationId applicationId = session.getApplicationId();
+        var applicationId = session.getApplicationId();
         try (ActionTimer timer = applicationRepository.timerFor(applicationId, ConfigServerMetrics.DEPLOYMENT_ACTIVATE_MILLIS.baseName())) {
-            TimeoutBudget timeoutBudget = params.get().getTimeoutBudget();
-            timeoutBudget.assertNotTimedOut(() -> "Timeout exceeded when trying to activate '" + applicationId + "'");
+            var timeoutBudget = prepareParams.getTimeoutBudget().assertNotTimedOut(() -> "Timeout exceeded when trying to activate '" + applicationId + "'");
 
             applyDeferredReconfigurationOfClusters();
-            Activation activation = applicationRepository.activate(session, applicationId, tenant, params.get().isBootstrap(), params.get().force());
+            var activation = applicationRepository.activate(session, applicationId, prepareParams.isBootstrap(), prepareParams.force());
             waitForActivation(applicationId, timeoutBudget, activation);
             restartServicesIfNeeded(applicationId);
             storeReindexing(applicationId);
@@ -183,7 +182,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     }
 
     private SessionRepository sessionRepository() {
-        return tenant.getSessionRepository();
+        return applicationRepository.tenantRepository().getTenant(params.get().getApplicationId().tenant()).getSessionRepository();
     }
 
     private void restartServicesIfNeeded(ApplicationId applicationId) {
@@ -356,11 +355,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                 return;
             } catch (ApplicationLockException | TransientException e) {
                 lastException.set(e);
-                try {
-                    Thread.sleep(durationBetweenResourceReadyChecks.toMillis());
-                } catch (InterruptedException e1) {
-                    throw new RuntimeException(e1);
-                }
+                Sleeper.DEFAULT.sleep(durationBetweenResourceReadyChecks.toMillis());
             }
         }
     }

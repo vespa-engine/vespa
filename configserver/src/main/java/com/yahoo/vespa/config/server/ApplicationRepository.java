@@ -394,7 +394,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private Deployment prepare(long sessionId, PrepareParams prepareParams, DeployHandlerLogger logger) {
         Tenant tenant = getTenant(prepareParams.getApplicationId());
         Session session = validateThatLocalSessionIsNotActive(tenant, sessionId);
-        Deployment deployment = Deployment.unprepared(session, this, hostProvisioner, deploymentConfigStore, tenant, prepareParams, logger, clock);
+        Deployment deployment = Deployment.unprepared(session, this, hostProvisioner, deploymentConfigStore, prepareParams, logger, clock);
         deployment.prepare();
         logConfigChangeActions(deployment.configChangeActions(), logger);
         log.log(Level.INFO, TenantRepository.logPre(prepareParams.getApplicationId()) + "Session " + sessionId + " prepared successfully. ");
@@ -496,7 +496,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         DeployLogger logger = new SilentDeployLogger();
         Session newSession = sessionRepository.createSessionFromExisting(activeSession.get(), true, timeoutBudget, logger);
 
-        return Optional.of(Deployment.unprepared(newSession, this, hostProvisioner, deploymentConfigStore, tenant, logger, timeout, clock,
+        return Optional.of(Deployment.unprepared(newSession, this, hostProvisioner, deploymentConfigStore, logger, timeout, clock,
                                                  false /* don't validate as this is already deployed */, bootstrap));
     }
 
@@ -1012,10 +1012,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     // ---------------- Session operations ----------------------------------------------------------------
 
-    public Activation activate(Session session, ApplicationId applicationId, Tenant tenant, boolean isBootstrap, boolean force) {
+    public Activation activate(Session session, ApplicationId applicationId, boolean isBootstrap, boolean force) {
         NestedTransaction transaction = new NestedTransaction();
         Optional<ApplicationTransaction> applicationTransaction = hostProvisioner.map(provisioner -> provisioner.lock(applicationId))
                                                                                  .map(lock -> new ApplicationTransaction(lock, transaction));
+
+        Tenant tenant = tenantRepository().getTenant(applicationId.tenant());
         try (@SuppressWarnings("unused") var sessionLock = tenant.getApplicationRepo().lock(applicationId)) {
             Optional<Session> activeSession = getActiveSession(applicationId);
             var sessionZooKeeperClient = tenant.getSessionRepository().createSessionZooKeeperClient(session.getSessionId());
