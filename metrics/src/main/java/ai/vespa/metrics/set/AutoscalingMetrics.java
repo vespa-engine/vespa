@@ -57,6 +57,13 @@ public class AutoscalingMetrics {
         metrics.add(StorageMetrics.VDS_FILESTOR_ALLTHREADS_REMOVE_COUNT.rate());
         metrics.add(StorageMetrics.VDS_FILESTOR_ALLTHREADS_UPDATE_COUNT.rate());
 
+        // Inference metrics
+        metrics.add(ContainerMetrics.INFERENCE_QUEUE_COMPUTE_RATIO.baseName());
+        metrics.add(ContainerMetrics.INFERENCE_PENDING.baseName());
+        metrics.add(ContainerMetrics.INFERENCE_REQUEST_LATENCY.baseName());
+        metrics.add(ContainerMetrics.INFERENCE_QUEUE_LATENCY.baseName());
+        metrics.add(ContainerMetrics.INFERENCE_REQUEST_RATE.baseName());
+
         return new MetricSet("autoscaling", toMetrics(metrics));
     }
 

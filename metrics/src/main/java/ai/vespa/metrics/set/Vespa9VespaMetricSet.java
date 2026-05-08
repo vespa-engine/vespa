@@ -187,6 +187,14 @@ public class Vespa9VespaMetricSet {
         addMetric(metrics, ContainerMetrics.EMBEDDER_BATCH_QUEUE_TIME, EnumSet.of(max, sum, count));
         addMetric(metrics, ContainerMetrics.EMBEDDER_BATCH_COUNT, EnumSet.of(count));
 
+        addMetric(metrics, ContainerMetrics.INFERENCE_PENDING.baseName());
+        addMetric(metrics, ContainerMetrics.INFERENCE_REQUEST_RATE.baseName());
+        addMetric(metrics, ContainerMetrics.INFERENCE_FAILURE_RATE.baseName());
+        addMetric(metrics, ContainerMetrics.INFERENCE_REQUEST_LATENCY.baseName());
+        addMetric(metrics, ContainerMetrics.INFERENCE_QUEUE_LATENCY.baseName());
+        addMetric(metrics, ContainerMetrics.INFERENCE_COMPUTE_LATENCY.baseName());
+        addMetric(metrics, ContainerMetrics.INFERENCE_QUEUE_COMPUTE_RATIO.baseName());
+
         return metrics;
     }
 
