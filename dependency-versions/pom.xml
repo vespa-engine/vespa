@@ -160,7 +160,7 @@
         <testcontainers.vespa.version>1.21.4</testcontainers.vespa.version>
         <velocity.vespa.version>2.3</velocity.vespa.version>
         <velocity.tools.vespa.version>3.1</velocity.tools.vespa.version>
-        <wiremock.vespa.version>3.9.1</wiremock.vespa.version>
+        <wiremock.vespa.version>3.13.2</wiremock.vespa.version>
         <woodstox.vespa.version>7.1.1</woodstox.vespa.version>
         <stax2-api.vespa.version>4.2.2</stax2-api.vespa.version>
         <xerces.vespa.version>2.12.2</xerces.vespa.version>
