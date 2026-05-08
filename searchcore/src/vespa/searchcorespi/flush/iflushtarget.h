@@ -173,6 +173,8 @@ public:
      */
     virtual Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) = 0;
 
+    [[nodiscard]] virtual bool can_flush(SerialNum current_serial) const noexcept = 0;
+
     /**
      * Returns the stats for the last completed flush operation
      * for this flush target.

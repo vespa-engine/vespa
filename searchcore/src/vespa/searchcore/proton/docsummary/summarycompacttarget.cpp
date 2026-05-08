@@ -97,6 +97,12 @@ IFlushTarget::Task::UP SummaryGCTarget::initFlush(SerialNum currentSerial, std::
     return future.get();
 }
 
+bool
+SummaryGCTarget::can_flush(SerialNum) const noexcept
+{
+    return true;
+}
+
 SummaryCompactBloatTarget::SummaryCompactBloatTarget(vespalib::Executor& summaryService, IDocumentStore& docStore)
     : SummaryGCTarget("summary.compact_bloat", summaryService, docStore) {
 }

@@ -215,6 +215,10 @@ IFlushTarget::Task::UP DocumentMetaStoreFlushTarget::initFlush(SerialNum current
     return std::make_unique<Flusher>(*this, syncToken, std::move(writer));
 }
 
+bool DocumentMetaStoreFlushTarget::can_flush(SerialNum current_serial) const noexcept {
+    return current_serial > getFlushedSerialNum();
+}
+
 uint64_t DocumentMetaStoreFlushTarget::getApproxBytesToWriteToDisk() const {
     auto guard = _dms->getGuard();
     return _dms->getEstimatedSaveByteSize();

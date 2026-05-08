@@ -63,6 +63,7 @@ public:
                                      std::shared_ptr<ICompactableLidSpace> target);
     ~ShrinkSummaryLidSpaceFlushTarget() override;
     Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
+    [[nodiscard]] bool can_flush(SerialNum current_serial) const noexcept override;
 };
 
 ShrinkSummaryLidSpaceFlushTarget::ShrinkSummaryLidSpaceFlushTarget(const std::string& name, Type type,
@@ -83,6 +84,10 @@ IFlushTarget::Task::UP ShrinkSummaryLidSpaceFlushTarget::initFlush(SerialNum    
     _summaryService.execute(makeLambdaTask(
         [&]() { promise.set_value(ShrinkLidSpaceFlushTarget::initFlush(currentSerial, flush_token)); }));
     return future.get();
+}
+
+bool ShrinkSummaryLidSpaceFlushTarget::can_flush(SerialNum) const noexcept {
+    return true;
 }
 
 } // namespace

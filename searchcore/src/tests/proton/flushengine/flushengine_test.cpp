@@ -86,6 +86,10 @@ public:
         }
         return task;
     }
+
+    [[nodiscard]] bool can_flush(SerialNum current_serial) const noexcept override {
+        return _target->can_flush(current_serial);
+    }
 };
 
 using Targets = std::vector<IFlushTarget::SP>;
@@ -270,6 +274,8 @@ public:
         _initDone.countDown();
         return std::move(_task);
     }
+
+    [[nodiscard]] bool can_flush(SerialNum) const noexcept override { return true; }
 };
 
 class GCTarget : public SimpleTarget {

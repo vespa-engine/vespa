@@ -66,6 +66,7 @@ public:
     Time getLastFlushTime() const override;
     SerialNum getFlushedSerialNum() const override;
     Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
+    [[nodiscard]] bool can_flush(SerialNum current_serial) const noexcept override;
     FlushStats getLastFlushStats() const override { return _lastStats; }
 
     static void initCleanup(const std::string& baseDir);
