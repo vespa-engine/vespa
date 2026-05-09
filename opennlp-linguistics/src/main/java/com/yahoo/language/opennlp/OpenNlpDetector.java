@@ -9,6 +9,7 @@ import com.yahoo.language.simple.SimpleDetector;
 import opennlp.tools.langdetect.LanguageDetectorConfig;
 import opennlp.tools.langdetect.LanguageDetectorME;
 import opennlp.tools.langdetect.LanguageDetectorModel;
+import opennlp.tools.util.ext.ExtensionLoader;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -23,7 +24,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 /**
  * Detects text language using patched OpenNLP, with fallback to {@link SimpleDetector} for undetected CJK input.
  *
- * @author jonmv
+ * @author Jon Marius Venstad
  */
 class OpenNlpDetector implements Detector {
 
@@ -35,6 +36,11 @@ class OpenNlpDetector implements Detector {
     private final LanguageDetectorME detector;
     private final LanguageDetectorConfig config;
     private final double confidenceThreshold;
+
+    static {
+        // Needed from OpenNLP 2.5.9
+        ExtensionLoader.registerAllowedPackage("com.yahoo.language.opennlp");
+    }
 
     OpenNlpDetector() { this(2.0); }
 
