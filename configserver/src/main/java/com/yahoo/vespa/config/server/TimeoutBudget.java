@@ -71,15 +71,16 @@ public class TimeoutBudget {
     /**
      * @param message exception message for the exception that will be thrown if there is no time left
      * @param cause   the last exception thrown while waiting for the operation to complete
+     * @return this
      * @throws UncheckedTimeoutException if this has no time left
      */
-    public void assertNotTimedOut(Supplier<String> message, Exception cause) {
-        if (hasTimeLeft()) return;
+    public TimeoutBudget assertNotTimedOut(Supplier<String> message, Exception cause) {
+        if (hasTimeLeft()) return this;
         throw new UncheckedTimeoutException(message.get(), cause);
     }
 
-    public void assertNotTimedOut(Supplier<String> message) {
-        assertNotTimedOut(message, null);
+    public TimeoutBudget assertNotTimedOut(Supplier<String> message) {
+        return assertNotTimedOut(message, null);
     }
 
     private static class Measurement {
