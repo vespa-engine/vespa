@@ -14,7 +14,7 @@ plugins {
 }
 
 ext {
-    snakeYamlVersion = '2.2'
+    snakeYamlVersion = '2.6'
     shadowGradlePluginVersion = '8.1.1'
     log4jVersion = '2.25.4'
 }
