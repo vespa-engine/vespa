@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.AllocatedHosts;
+import com.yahoo.config.provision.TelemetryExportConfig;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 
@@ -99,4 +100,8 @@ public interface Model {
                             clusterNames, version()));
         }
     }
+
+    /** Returns the telemetry export config derived from the admin section of this model, or empty if not configured. */
+    default TelemetryExportConfig telemetryExportConfig() { return TelemetryExportConfig.empty(); }
+
 }

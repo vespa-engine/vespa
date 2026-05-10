@@ -11,6 +11,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.TelemetryExportConfig;
 import com.yahoo.container.logging.LevelsModSpec;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.ConfigProxy;
@@ -25,7 +26,10 @@ import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
+import com.yahoo.vespa.model.admin.telemetry.TelemetryAuth;
 import com.yahoo.vespa.model.admin.telemetry.TelemetryExport;
+import com.yahoo.vespa.model.admin.telemetry.TelemetryExporter;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -362,6 +366,41 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
         var levelSpec = new LevelsModSpec();
         levelSpec.setLevels(levels);
         return levelSpec;
+    }
+
+    public TelemetryExportConfig toTelemetryExportConfig() {
+        return getTelemetryExport()
+                .map(Admin::toTelemetryExportConfig)
+                .orElse(TelemetryExportConfig.empty());
+    }
+
+    private static TelemetryExportConfig toTelemetryExportConfig(TelemetryExport telemetryExport) {
+        var exporters = telemetryExport.exporters()
+                                       .stream()
+                                       .map(Admin::toExporter)
+                                       .toList();
+        return new TelemetryExportConfig(exporters);
+    }
+
+    private static TelemetryExportConfig.Exporter toExporter(TelemetryExporter e) {
+        return new TelemetryExportConfig.Exporter(
+                e.id(),
+                e.type().name(),
+                e.endpoint().orElse(null),
+                e.project().orElse(null),
+                e.auth().map(Admin::toAuth).orElse(null),
+                e.metricSets(),
+                e.logFileTypes());
+    }
+
+    private static TelemetryExportConfig.Auth toAuth(TelemetryAuth a) {
+        return new TelemetryExportConfig.Auth(
+                a.type().name(),
+                a.vault(),
+                a.secretName().orElse(null),
+                a.header().orElse(null),
+                a.usernameSecretName().orElse(null),
+                a.passwordSecretName().orElse(null));
     }
 
 }

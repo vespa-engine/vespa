@@ -12,6 +12,8 @@ import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.TelemetryExportConfig;
+import com.yahoo.config.provision.serialization.TelemetryExportConfigSerializer;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
@@ -49,7 +51,8 @@ public record SessionData(ApplicationId applicationId,
                           Optional<CloudAccount> cloudAccount,
                           CloudResourceTags cloudResourceTags,
                           List<DataplaneToken> dataplaneTokens,
-                          ActivationTriggers activationTriggers) {
+                          ActivationTriggers activationTriggers,
+                          TelemetryExportConfig telemetryExportConfig) {
 
     // NOTE: Any state added here MUST also be done in SessionPreparer.writeStateToZooKeeper
     // and SessionSerializer.read()/write()
@@ -69,6 +72,7 @@ public record SessionData(ApplicationId applicationId,
     static final String DATAPLANE_TOKENS_PATH = "dataplaneTokens";
     static final String SESSION_DATA_PATH = "sessionData";
     static final String ACTIVATION_TRIGGERS_PATH = "activationTriggers";
+    static final String TELEMETRY_EXPORT_CONFIG_PATH = "telemetryExportConfig";
 
     public byte[] toJson() {
         try {
@@ -109,6 +113,9 @@ public record SessionData(ApplicationId applicationId,
         DataplaneTokenSerializer.toSlime(dataplaneTokens, dataplaneTokensArray);
 
         ActivationTriggersSerializer.toSlime(activationTriggers, object.setObject(ACTIVATION_TRIGGERS_PATH));
+
+        if ( ! telemetryExportConfig.isEmpty())
+            TelemetryExportConfigSerializer.toSlime(telemetryExportConfig, object.setObject(TELEMETRY_EXPORT_CONFIG_PATH));
     }
 
     static SessionData fromSlime(Slime slime) {
@@ -131,7 +138,8 @@ public record SessionData(ApplicationId applicationId,
                                optionalString(cursor.field(CLOUD_ACCOUNT_PATH)).map(CloudAccount::from),
                                CloudResourceTagsSerializer.fromSlime(cursor.field(CLOUD_RESOURCE_TAGS_PATH)),
                                DataplaneTokenSerializer.fromSlime(cursor.field(DATAPLANE_TOKENS_PATH)),
-                               ActivationTriggersSerializer.fromSlime(cursor.field(ACTIVATION_TRIGGERS_PATH)));
+                               ActivationTriggersSerializer.fromSlime(cursor.field(ACTIVATION_TRIGGERS_PATH)),
+                               TelemetryExportConfigSerializer.fromSlime(cursor.field(TELEMETRY_EXPORT_CONFIG_PATH)));
     }
 
 }

@@ -9,6 +9,7 @@ import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.model.api.TenantVault;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudResourceTags;
+import com.yahoo.config.provision.TelemetryExportConfig;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
@@ -192,13 +193,48 @@ public class SessionZooKeeperClientTest {
                                              Optional.empty(),
                                              CloudResourceTags.empty(),
                                              List.of(),
-                                             ActivationTriggers.empty()));
+                                             ActivationTriggers.empty(),
+                                             TelemetryExportConfig.empty()));
         Path path = sessionPath(sessionId).append(SESSION_DATA_PATH);
         assertTrue(curator.exists(path));
         String data = Utf8.toString(curator.getData(path).get());
         assertTrue(data.contains("{\"applicationId\":\"default:default:default\",\"applicationPackageReference\":\"foo\",\"version\":\"8.195.1\",\"createTime\":"));
         assertTrue(data.contains(",\"tenantVaults\":[],\"tenantSecretStores\":[],\"operatorCertificates\":[],\"dataplaneTokens\":[]," +
                                  "\"activationTriggers\":{\"nodeRestarts\":[],\"reindexings\":[],\"deferredReconfigurations\":[]}"));
+    }
+
+    @Test
+    public void require_that_telemetry_export_config_is_written_to_and_read_from_zk() {
+        int sessionId = 3;
+        SessionZooKeeperClient zkc = createSessionZKClient(sessionId);
+
+        TelemetryExportConfig config = new TelemetryExportConfig(List.of(
+                new TelemetryExportConfig.Exporter("my-exporter", "otlphttp", "https://otel.example.com/v1", null,
+                        new TelemetryExportConfig.Auth("bearer", "my-vault", "my-token", null, null, null),
+                        List.of("default"), List.of("container_logs"))));
+
+        zkc.writeTelemetryExportConfig(config);
+        TelemetryExportConfig read = zkc.readTelemetryExportConfig();
+
+        assertEquals(config, read);
+        assertEquals(1, read.exporters().size());
+        TelemetryExportConfig.Exporter exporter = read.exporters().get(0);
+        assertEquals("my-exporter", exporter.id());
+        assertEquals("otlphttp", exporter.type());
+        assertEquals("https://otel.example.com/v1", exporter.endpoint().get());
+        assertTrue(exporter.auth().isPresent());
+        assertEquals("bearer", exporter.auth().get().type());
+        assertEquals("my-vault", exporter.auth().get().vault());
+        assertEquals("my-token", exporter.auth().get().secretName().get());
+        assertEquals(List.of("default"), exporter.metricSets());
+        assertEquals(List.of("container_logs"), exporter.logFileTypes());
+    }
+
+    @Test
+    public void require_that_empty_telemetry_export_config_is_returned_when_not_written() {
+        int sessionId = 4;
+        SessionZooKeeperClient zkc = createSessionZKClient(sessionId);
+        assertEquals(TelemetryExportConfig.empty(), zkc.readTelemetryExportConfig());
     }
 
     private void assertApplicationIdParse(long sessionId, String idString, String expectedIdString) {

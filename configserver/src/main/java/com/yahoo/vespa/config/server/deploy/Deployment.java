@@ -244,7 +244,8 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                         cb.window().dateRange().end()))
                 .toList();
 
-        deploymentConfigStore.get().store(applicationId, backup, blockWindows);
+        var telemetryExportConfig = session.telemetryExportConfig();
+        deploymentConfigStore.get().store(applicationId, backup, blockWindows, telemetryExportConfig);
     }
 
     private void applyDeferredReconfigurationOfClusters() {
