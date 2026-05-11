@@ -52,13 +52,6 @@ public class Flags {
 
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
-    public static final UnboundBooleanFlag GCP_ENCLAVE_V2 = defineFeatureFlag(
-            "gcp-enclave-v2", false,
-            List.of("hakonhall"), "2026-03-05", "2026-07-05",
-            "Whether to enable v2 of Vespa Cloud Enclave in GCP",
-            "Takes effect on the next host-admin tick.",
-            CLOUD_ACCOUNT);
-
     public static final UnboundBooleanFlag USE_NON_PUBLIC_ENDPOINT_FOR_TEST = defineFeatureFlag(
             "use-non-public-endpoint-for-test", false,
             List.of("hakonhall"), "2025-03-19", "2026-07-10",
@@ -255,20 +248,6 @@ public class Flags {
             "Takes effect immediately",
             CONSOLE_USER_EMAIL);
 
-    public static final UnboundBooleanFlag ENFORCE_EMAIL_DOMAIN_SSO = defineFeatureFlag(
-            "enforce-email-domain-sso", false,
-            List.of("eirik"), "2024-11-07", "2026-08-01",
-            "Enforce SSO login for an email domain",
-            "Takes effect immediately",
-            CONSOLE_USER_EMAIL);
-
-    public static final UnboundListFlag<String> RESTRICT_USERS_TO_DOMAIN = defineListFlag(
-            "restrict-users-to-domain", List.of(), String.class,
-            List.of("eirik"), "2024-11-07", "2026-08-01",
-            "Only allow adding specific email domains as user to tenant",
-            "Takes effect immediately",
-            TENANT_ID);
-
     public static final UnboundJacksonFlag<Sidecars> SIDECARS_FOR_TEST = defineJacksonFlag(
             "sidecars-for-test", Sidecars.DEFAULT, Sidecars.class,
             List.of("glebashnik"), "2025-04-25", "2026-06-01",
@@ -278,28 +257,12 @@ public class Flags {
             APPLICATION
     );
 
-    public static final UnboundBooleanFlag CREATE_TENANT_ROLES = defineFeatureFlag(
-            "create-tenant-roles", true,
-            List.of("andreer"), "2025-04-28", "2026-06-01",
-            "Whether to create tenant specific roles",
-            "Takes effect immediately",
-            TENANT_ID
-    );
-
     public static final UnboundBooleanFlag USE_TRITON = defineFeatureFlag(
             "use-triton", false,
             List.of("bjorncs", "glebashnik"), "2025-04-30", "2026-06-01",
             "Whether to use Triton as ONNX runtime",
             "Takes effect at redeployment",
             TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_TYPE, CLUSTER_ID, VESPA_VERSION
-    );
-
-    public static final UnboundBooleanFlag DELETE_TENANT_ROLES = defineFeatureFlag(
-            "delete-tenant-roles", false,
-            List.of("andreer"), "2025-05-05", "2026-06-01",
-            "Whether to delete tenant specific roles",
-            "Role deletion happens when tenant is next processed by TenantRoleMaintainer",
-            TENANT_ID
     );
 
     public static final UnboundIntFlag SEARCH_CORE_MAX_OUTSTANDING_MOVE_OPS = defineIntFlag(
