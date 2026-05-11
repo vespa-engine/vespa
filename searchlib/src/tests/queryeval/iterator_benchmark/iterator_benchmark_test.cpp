@@ -1180,16 +1180,16 @@ static std::string smoke_test_filter = "--gtest_filter="
                                        ":IteratorBenchmark.analyze_AND_plan_variants_ENN";
 
 int main(int argc, char** argv) {
-    bool dump_pond = false;
+    bool opt_dump_pond = false;
     for (int i = 0; i < argc; i++) {
         std::string_view smoke_test{"--smoke-test"};
         if (smoke_test == argv[i]) {
             std::println(stderr, "Adding --smoke-test filter");
             argv[i] = smoke_test_filter.data();
         }
-        std::string_view dump_pond_{"--dump-pond"};
-        if (dump_pond_ == argv[i]) {
-            dump_pond = true;
+        std::string_view dump_pond_flag{"--dump-pond"};
+        if (dump_pond_flag == argv[i]) {
+            opt_dump_pond = true;
         }
     }
     ::testing::InitGoogleTest(&argc, argv);
@@ -1198,7 +1198,7 @@ int main(int argc, char** argv) {
         global_summary.calc_calibration();
         print_summary(global_summary);
     }
-    if (dump_pond) {
+    if (opt_dump_pond) {
         dump_pond(global_pond);
     }
     return res;
