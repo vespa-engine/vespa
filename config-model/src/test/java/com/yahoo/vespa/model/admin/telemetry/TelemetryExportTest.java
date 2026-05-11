@@ -8,10 +8,15 @@ import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.config.provision.TelemetryExportConfiguration;
+import com.yahoo.config.provision.TelemetryExportConfiguration.Auth;
+import com.yahoo.config.provision.TelemetryExportConfiguration.Exporter;
+import com.yahoo.config.provision.TelemetryExportConfiguration.Exporter.ExporterType;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -52,12 +57,12 @@ public class TelemetryExportTest {
 
         var exporter = exporters.get(0);
         assertEquals("my-exporter", exporter.id());
-        assertEquals(TelemetryExporter.ExporterType.otlphttp, exporter.type());
+        assertEquals(ExporterType.otlphttp, exporter.type());
         assertEquals("https://otel.example.com/v1", exporter.endpoint().get());
 
         assertTrue(exporter.auth().isPresent());
         var auth = exporter.auth().get();
-        assertEquals(TelemetryAuth.Type.bearer, auth.type());
+        assertEquals("bearer", auth.type());
         assertEquals("my-vault", auth.vault());
         assertEquals("my-token", auth.secretName().get());
         assertTrue(auth.header().isEmpty());
@@ -84,7 +89,7 @@ public class TelemetryExportTest {
 
         VespaModel model = createModel(hosts, services);
         var auth = model.getAdmin().getTelemetryExport().get().exporters().get(0).auth().get();
-        assertEquals(TelemetryAuth.Type.api_key, auth.type());
+        assertEquals("api_key", auth.type());
         assertEquals("my-vault", auth.vault());
         assertEquals("my-key", auth.secretName().get());
         assertEquals("X-API-Key", auth.header().get());
@@ -106,7 +111,7 @@ public class TelemetryExportTest {
 
         VespaModel model = createModel(hosts, services);
         var auth = model.getAdmin().getTelemetryExport().get().exporters().get(0).auth().get();
-        assertEquals(TelemetryAuth.Type.basic_auth, auth.type());
+        assertEquals("basic_auth", auth.type());
         assertEquals("my-vault", auth.vault());
         assertTrue(auth.secretName().isEmpty());
         assertEquals("my-user", auth.usernameSecretName().get());
@@ -128,9 +133,9 @@ public class TelemetryExportTest {
         var exporters = model.getAdmin().getTelemetryExport().get().exporters();
         assertEquals(2, exporters.size());
         assertEquals("first", exporters.get(0).id());
-        assertEquals(TelemetryExporter.ExporterType.otlphttp, exporters.get(0).type());
+        assertEquals(ExporterType.otlphttp, exporters.get(0).type());
         assertEquals("second", exporters.get(1).id());
-        assertEquals(TelemetryExporter.ExporterType.otlp, exporters.get(1).type());
+        assertEquals(ExporterType.otlp, exporters.get(1).type());
     }
 
     @Test
@@ -240,7 +245,7 @@ public class TelemetryExportTest {
 
         VespaModel model = createModel(hosts, services);
         var exporter = model.getAdmin().getTelemetryExport().get().exporters().get(0);
-        assertEquals(TelemetryExporter.ExporterType.googlecloud, exporter.type());
+        assertEquals(ExporterType.googlecloud, exporter.type());
         assertEquals("my-gcp-project", exporter.project().get());
         assertTrue(exporter.endpoint().isEmpty());
     }
@@ -286,25 +291,23 @@ public class TelemetryExportTest {
     @Test
     void testModelClassValidation() {
         assertThrows(IllegalArgumentException.class, () ->
-                new TelemetryExporter(null, TelemetryExporter.ExporterType.otlphttp, "https://ep", null, null, null, null));
+                new Exporter(null, ExporterType.otlphttp, Optional.of("https://ep"), Optional.empty(), Optional.empty(), null, null));
+        assertThrows(NullPointerException.class, () ->
+                new Exporter("id", null, Optional.of("https://ep"), Optional.empty(), Optional.empty(), null, null));
         assertThrows(IllegalArgumentException.class, () ->
-                new TelemetryExporter("id", null, "https://ep", null, null, null, null));
+                new Exporter("id", ExporterType.otlphttp, Optional.empty(), Optional.empty(), Optional.empty(), null, null));
         assertThrows(IllegalArgumentException.class, () ->
-                new TelemetryExporter("id", TelemetryExporter.ExporterType.otlphttp, null, null, null, null, null));
+                new Exporter("id", ExporterType.googlecloud, Optional.empty(), Optional.empty(), Optional.empty(), null, null));
         assertThrows(IllegalArgumentException.class, () ->
-                new TelemetryExporter("id", TelemetryExporter.ExporterType.googlecloud, null, null, null, null, null));
+                Auth.bearerToken("", "secret"));
         assertThrows(IllegalArgumentException.class, () ->
-                new TelemetryExport(List.of()));
+                Auth.bearerToken("vault", ""));
         assertThrows(IllegalArgumentException.class, () ->
-                TelemetryAuth.bearerToken("", "secret"));
+                Auth.apiKey("vault", "secret", ""));
         assertThrows(IllegalArgumentException.class, () ->
-                TelemetryAuth.bearerToken("vault", ""));
+                Auth.basicAuth("vault", "", "pass-secret"));
         assertThrows(IllegalArgumentException.class, () ->
-                TelemetryAuth.apiKey("vault", "secret", ""));
-        assertThrows(IllegalArgumentException.class, () ->
-                TelemetryAuth.basicAuth("vault", "", "pass-secret"));
-        assertThrows(IllegalArgumentException.class, () ->
-                TelemetryAuth.basicAuth("vault", "user-secret", ""));
+                Auth.basicAuth("vault", "user-secret", ""));
     }
 
     private VespaModel createModel(String hosts, String services) throws Exception {

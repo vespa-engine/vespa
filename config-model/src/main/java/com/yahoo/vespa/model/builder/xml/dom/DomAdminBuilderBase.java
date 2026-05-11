@@ -20,9 +20,10 @@ import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import com.yahoo.vespa.model.admin.monitoring.builder.PredefinedMetricSets;
 import com.yahoo.vespa.model.admin.monitoring.builder.xml.MetricsBuilder;
-import com.yahoo.vespa.model.admin.telemetry.TelemetryAuth;
-import com.yahoo.vespa.model.admin.telemetry.TelemetryExport;
-import com.yahoo.vespa.model.admin.telemetry.TelemetryExporter;
+import com.yahoo.config.provision.TelemetryExportConfiguration;
+import com.yahoo.config.provision.TelemetryExportConfiguration.Auth;
+import com.yahoo.config.provision.TelemetryExportConfiguration.Exporter;
+import com.yahoo.config.provision.TelemetryExportConfiguration.Exporter.ExporterType;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
@@ -138,14 +139,14 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
 
     void addTelemetryExport(ModelElement telemetryElement, Admin admin) {
         if (telemetryElement == null) return;
-        List<TelemetryExporter> exporters = new ArrayList<>();
+        List<Exporter> exporters = new ArrayList<>();
         for (ModelElement exporterElement : telemetryElement.children("exporter")) {
             String id = exporterElement.requiredStringAttribute("id");
-            TelemetryExporter.ExporterType type = TelemetryExporter.ExporterType.valueOf(exporterElement.requiredStringAttribute("type"));
+            ExporterType type = ExporterType.valueOf(exporterElement.requiredStringAttribute("type"));
             String endpoint = exporterElement.stringAttribute("endpoint");
             String project = exporterElement.stringAttribute("project");
 
-            TelemetryAuth auth = null;
+            Auth auth = null;
             ModelElement authElement = exporterElement.child("auth");
             if (authElement != null) {
                 auth = parseTelemetryAuth(authElement);
@@ -164,28 +165,29 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
                 }
             }
 
-            exporters.add(new TelemetryExporter(id, type, endpoint, project, auth, metricSets, logFileTypes));
+            exporters.add(new Exporter(id, type, Optional.ofNullable(endpoint), Optional.ofNullable(project),
+                                      Optional.ofNullable(auth), metricSets, logFileTypes));
         }
-        admin.setTelemetryExport(new TelemetryExport(exporters));
+        admin.setTelemetryExport(new TelemetryExportConfiguration(exporters));
     }
 
-    private TelemetryAuth parseTelemetryAuth(ModelElement authElement) {
+    private Auth parseTelemetryAuth(ModelElement authElement) {
         ModelElement bearerToken = authElement.child("bearer-token");
         if (bearerToken != null) {
-            return TelemetryAuth.bearerToken(
+            return Auth.bearerToken(
                     bearerToken.requiredStringAttribute("vault"),
                     bearerToken.requiredStringAttribute("secret-name"));
         }
         ModelElement apiKey = authElement.child("api-key");
         if (apiKey != null) {
-            return TelemetryAuth.apiKey(
+            return Auth.apiKey(
                     apiKey.requiredStringAttribute("vault"),
                     apiKey.requiredStringAttribute("secret-name"),
                     apiKey.requiredStringAttribute("header"));
         }
         ModelElement basicAuth = authElement.child("basic-auth");
         if (basicAuth != null) {
-            return TelemetryAuth.basicAuth(
+            return Auth.basicAuth(
                     basicAuth.requiredStringAttribute("vault"),
                     basicAuth.requiredStringAttribute("username-secret-name"),
                     basicAuth.requiredStringAttribute("password-secret-name"));

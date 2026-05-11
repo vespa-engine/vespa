@@ -25,7 +25,7 @@ import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
-import com.yahoo.vespa.model.admin.telemetry.TelemetryExport;
+import com.yahoo.config.provision.TelemetryExportConfiguration;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -63,7 +63,7 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
     private LogForwarder.Config logForwarderConfig = null;
     private boolean logForwarderIncludeAdmin = false;
 
-    private TelemetryExport telemetryExport = null;
+    private TelemetryExportConfiguration telemetryExport = null;
 
     private final ApplicationType applicationType;
 
@@ -72,11 +72,11 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
         this.logForwarderIncludeAdmin = includeAdmin;
     }
 
-    public void setTelemetryExport(TelemetryExport telemetryExport) {
+    public void setTelemetryExport(TelemetryExportConfiguration telemetryExport) {
         this.telemetryExport = telemetryExport;
     }
 
-    public Optional<TelemetryExport> getTelemetryExport() {
+    public Optional<TelemetryExportConfiguration> getTelemetryExport() {
         return Optional.ofNullable(telemetryExport);
     }
 
