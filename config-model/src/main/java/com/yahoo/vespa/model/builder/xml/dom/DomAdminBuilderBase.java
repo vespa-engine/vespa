@@ -20,9 +20,7 @@ import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import com.yahoo.vespa.model.admin.monitoring.builder.PredefinedMetricSets;
 import com.yahoo.vespa.model.admin.monitoring.builder.xml.MetricsBuilder;
-import com.yahoo.vespa.model.admin.telemetry.TelemetryAuth;
-import com.yahoo.vespa.model.admin.telemetry.TelemetryExport;
-import com.yahoo.vespa.model.admin.telemetry.TelemetryExporter;
+import com.yahoo.config.provision.TelemetryExporterConfiguration;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
@@ -138,14 +136,19 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
 
     void addTelemetryExport(ModelElement telemetryElement, Admin admin) {
         if (telemetryElement == null) return;
-        List<TelemetryExporter> exporters = new ArrayList<>();
+        List<TelemetryExporterConfiguration.Exporter> exporters = new ArrayList<>();
         for (ModelElement exporterElement : telemetryElement.children("exporter")) {
             String id = exporterElement.requiredStringAttribute("id");
-            TelemetryExporter.ExporterType type = TelemetryExporter.ExporterType.valueOf(exporterElement.requiredStringAttribute("type"));
+            String type = exporterElement.requiredStringAttribute("type");
             String endpoint = exporterElement.stringAttribute("endpoint");
             String project = exporterElement.stringAttribute("project");
 
-            TelemetryAuth auth = null;
+            if (!type.equals("googlecloud") && (endpoint == null || endpoint.isBlank()))
+                throw new IllegalArgumentException("endpoint is required for exporter type '" + type + "'");
+            if (type.equals("googlecloud") && (project == null || project.isBlank()))
+                throw new IllegalArgumentException("project is required for exporter type 'googlecloud'");
+
+            TelemetryExporterConfiguration.Auth auth = null;
             ModelElement authElement = exporterElement.child("auth");
             if (authElement != null) {
                 auth = parseTelemetryAuth(authElement);
@@ -164,29 +167,36 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
                 }
             }
 
-            exporters.add(new TelemetryExporter(id, type, endpoint, project, auth, metricSets, logFileTypes));
+            exporters.add(new TelemetryExporterConfiguration.Exporter(id, type, endpoint, project, auth, metricSets, logFileTypes));
         }
-        admin.setTelemetryExport(new TelemetryExport(exporters));
+        if (exporters.isEmpty()) throw new IllegalArgumentException("at least one exporter must be defined");
+        admin.setTelemetryExport(new TelemetryExporterConfiguration(exporters));
     }
 
-    private TelemetryAuth parseTelemetryAuth(ModelElement authElement) {
+    private TelemetryExporterConfiguration.Auth parseTelemetryAuth(ModelElement authElement) {
         ModelElement bearerToken = authElement.child("bearer-token");
         if (bearerToken != null) {
-            return TelemetryAuth.bearerToken(
+            return new TelemetryExporterConfiguration.Auth(
+                    "bearer",
                     bearerToken.requiredStringAttribute("vault"),
-                    bearerToken.requiredStringAttribute("secret-name"));
+                    bearerToken.requiredStringAttribute("secret-name"),
+                    null, null, null);
         }
         ModelElement apiKey = authElement.child("api-key");
         if (apiKey != null) {
-            return TelemetryAuth.apiKey(
+            return new TelemetryExporterConfiguration.Auth(
+                    "api_key",
                     apiKey.requiredStringAttribute("vault"),
                     apiKey.requiredStringAttribute("secret-name"),
-                    apiKey.requiredStringAttribute("header"));
+                    apiKey.requiredStringAttribute("header"),
+                    null, null);
         }
         ModelElement basicAuth = authElement.child("basic-auth");
         if (basicAuth != null) {
-            return TelemetryAuth.basicAuth(
+            return new TelemetryExporterConfiguration.Auth(
+                    "basic_auth",
                     basicAuth.requiredStringAttribute("vault"),
+                    null, null,
                     basicAuth.requiredStringAttribute("username-secret-name"),
                     basicAuth.requiredStringAttribute("password-secret-name"));
         }
