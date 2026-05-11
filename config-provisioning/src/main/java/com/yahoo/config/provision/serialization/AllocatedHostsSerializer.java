@@ -110,7 +110,9 @@ public class AllocatedHostsSerializer {
             if (!sidecars.isEmpty())
                 sidecarsToSlime(sidecars, object.setArray(sidecarsKey));
 
-            availabilityZonesToSlime(membership.cluster().availabilityZones(), object.setArray(availabilityZonesKey));
+            var availabilityZones = membership.cluster().availabilityZones();
+            if (!availabilityZones.isEmpty())
+                availabilityZonesToSlime(availabilityZones, object.setArray(availabilityZonesKey));
         });
         toSlime(host.realResources(), object.setObject(realResourcesKey));
         toSlime(host.advertisedResources(), object.setObject(advertisedResourcesKey));
