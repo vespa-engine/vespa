@@ -134,7 +134,17 @@ class CloudResourceTagsTest {
     @Test
     void value_with_invalid_characters_rejected() {
         assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("key", "My Value")));
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("key", "VALUE")));
+        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("key", "value.with.dots")));
+    }
+
+    @Test
+    void value_uppercase_values_accepted() {
+        var tags = CloudResourceTags.from(Map.of(
+                "component", "ABCZ",
+                "mixed", "MyValue-1"
+        ));
+        assertEquals("ABCZ", tags.asMap().get("component"));
+        assertEquals("MyValue-1", tags.asMap().get("mixed"));
     }
 
     @Test
@@ -178,9 +188,13 @@ class CloudResourceTagsTest {
     @Test
     void template_variables_with_invalid_literal_parts_rejected() {
         assertThrows(IllegalArgumentException.class,
-                     () -> CloudResourceTags.from(Map.of("env", "UPPER${environment}")));
-        assertThrows(IllegalArgumentException.class,
                      () -> CloudResourceTags.from(Map.of("env", "${environment} space")));
+    }
+
+    @Test
+    void template_variables_mixed_with_uppercase_literals_accepted() {
+        var tags = CloudResourceTags.from(Map.of("env", "UPPER${environment}"));
+        assertEquals("UPPER${environment}", tags.asMap().get("env"));
     }
 
     @Test
