@@ -12,6 +12,7 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -70,6 +71,13 @@ public class ConfigStateCheckerTest {
         application = new Application(
                 mockModel, new ServerCache(), 3, new Version(0, 0, 0), MetricUpdater.createTestUpdater(), appId);
         checker = new ConfigStateChecker();
+    }
+
+    @After
+    public void tearDown() {
+        if (checker != null) {
+            checker.deconstruct();
+        }
     }
 
     @Test

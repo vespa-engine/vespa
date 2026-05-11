@@ -40,6 +40,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -54,15 +55,14 @@ public class ConfigStateChecker extends AbstractComponent {
     private final ExecutorService responseHandlerExecutor =
             Executors.newSingleThreadExecutor(new DaemonThreadFactory("config-state-checker-response-handler-"));
     private final CloseableHttpAsyncClient client = createHttpClient();
-
-    public ConfigStateChecker() {
-        client.start();
-    }
+    private final AtomicBoolean clientStarted = new AtomicBoolean(false);
 
     /**
      * Fetch service config states for a list of services (in parallel).
      */
     public Map<ServiceInfo, ServiceConfigState> getServiceConfigStates(List<ServiceInfo> services, Duration timeout) {
+        startClientIfNotStarted();
+
         List<CompletableFuture<Void>> inprogressRequests = new ArrayList<>();
         ConcurrentMap<ServiceInfo, ServiceConfigState> temporaryResult = new ConcurrentHashMap<>();
         for (ServiceInfo service : services) {
@@ -127,6 +127,12 @@ public class ConfigStateChecker extends AbstractComponent {
         return responsePromise.thenApplyAsync(
                 response -> handleResponse(response, serviceName),
                 responseHandlerExecutor);
+    }
+
+    private void startClientIfNotStarted() {
+        if (clientStarted.compareAndSet(false, true)) {
+            client.start();
+        }
     }
 
     @Override
