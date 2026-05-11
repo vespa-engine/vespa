@@ -40,6 +40,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -53,47 +54,45 @@ public class ConfigStateChecker extends AbstractComponent {
 
     private final ExecutorService responseHandlerExecutor =
             Executors.newSingleThreadExecutor(new DaemonThreadFactory("config-state-checker-response-handler-"));
+    private final CloseableHttpAsyncClient client = createHttpClient();
+    private final AtomicBoolean clientStarted = new AtomicBoolean(false);
 
     /**
      * Fetch service config states for a list of services (in parallel).
      */
     public Map<ServiceInfo, ServiceConfigState> getServiceConfigStates(List<ServiceInfo> services, Duration timeout) {
-        try (CloseableHttpAsyncClient client = createHttpClient()) {
-            client.start();
-            List<CompletableFuture<Void>> inprogressRequests = new ArrayList<>();
-            ConcurrentMap<ServiceInfo, ServiceConfigState> temporaryResult = new ConcurrentHashMap<>();
-            for (ServiceInfo service : services) {
-                int statePort = getStatePort(service).orElse(0);
-                if (statePort <= 0) continue;
-                URI uri = URI.create("http://" + service.getHostName() + ":" + statePort);
-                String serviceName = service.getServiceName();
-                CompletableFuture<Void> inprogressRequest = getServiceConfigState(client, uri, serviceName, timeout)
-                        .handle((result, error) -> {
-                            if (result != null) {
-                                temporaryResult.put(service, result);
-                            } else {
-                                log.log(
-                                        FINE,
-                                        error,
-                                        () -> Text.format(
-                                                "Failed to retrieve service config state for '%s': %s",
-                                                service, error.getMessage()));
-                                temporaryResult.put(service, new ServiceConfigState(
-                                        serviceName,
-                                        -1L,
-                                        Optional.empty()));
-                            }
-                            return null;
-                        });
-                inprogressRequests.add(inprogressRequest);
-            }
-            CompletableFuture.allOf(inprogressRequests.toArray(CompletableFuture[]::new))
-                    .join();
-            return createMapOrderedByServiceList(services, temporaryResult);
-        } catch (IOException e) {
-            // Actual client implementation does not throw IOException on close()
-            throw new UncheckedIOException(e);
+        startClientIfNotStarted();
+
+        List<CompletableFuture<Void>> inprogressRequests = new ArrayList<>();
+        ConcurrentMap<ServiceInfo, ServiceConfigState> temporaryResult = new ConcurrentHashMap<>();
+        for (ServiceInfo service : services) {
+            int statePort = getStatePort(service).orElse(0);
+            if (statePort <= 0) continue;
+            URI uri = URI.create("http://" + service.getHostName() + ":" + statePort);
+            String serviceName = service.getServiceName();
+            CompletableFuture<Void> inprogressRequest = getServiceConfigState(client, uri, serviceName, timeout)
+                    .handle((result, error) -> {
+                        if (result != null) {
+                            temporaryResult.put(service, result);
+                        } else {
+                            log.log(
+                                    FINE,
+                                    error,
+                                    () -> Text.format(
+                                            "Failed to retrieve service config state for '%s': %s",
+                                            service, error.getMessage()));
+                            temporaryResult.put(service, new ServiceConfigState(
+                                    serviceName,
+                                    -1L,
+                                    Optional.empty()));
+                        }
+                        return null;
+                    });
+            inprogressRequests.add(inprogressRequest);
         }
+        CompletableFuture.allOf(inprogressRequests.toArray(CompletableFuture[]::new))
+                         .join();
+        return createMapOrderedByServiceList(services, temporaryResult);
     }
 
     /**
@@ -130,6 +129,12 @@ public class ConfigStateChecker extends AbstractComponent {
                 responseHandlerExecutor);
     }
 
+    private void startClientIfNotStarted() {
+        if (clientStarted.compareAndSet(false, true)) {
+            client.start();
+        }
+    }
+
     @Override
     public void deconstruct() {
         responseHandlerExecutor.shutdown();
@@ -138,6 +143,13 @@ public class ConfigStateChecker extends AbstractComponent {
         } catch (InterruptedException e) {
             log.log(Level.WARNING, "Unable to shutdown executor", e);
         }
+
+        try {
+            client.close();
+        } catch (IOException e) {
+            log.log(Level.WARNING, "Unable to shutdown http client", e);
+        }
+
     }
 
     static ServiceConfigState handleResponse(SimpleHttpResponse response, String serviceName) throws UncheckedIOException {
