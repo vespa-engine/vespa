@@ -218,7 +218,15 @@ public enum ContainerMetrics implements VespaMetrics {
 
     EMBEDDER_BATCH_SIZE("embedder.batch.size", Unit.ITEM, "Number of items in each dispatched batch"),
     EMBEDDER_BATCH_QUEUE_TIME("embedder.batch.queue_time", Unit.MILLISECOND, "Time spent waiting in queue before batch dispatch"),
-    EMBEDDER_BATCH_COUNT("embedder.batch.count", Unit.OPERATION, "Number of batch dispatches");
+    EMBEDDER_BATCH_COUNT("embedder.batch.count", Unit.OPERATION, "Number of batch dispatches"),
+
+    INFERENCE_PENDING("inference.pending", Unit.ITEM, "Number of pending inference requests in a queue"),
+    INFERENCE_REQUEST_RATE("inference.request.rate", Unit.OPERATION_PER_SECOND, "Successful inference requests per second"),
+    INFERENCE_FAILURE_RATE("inference.failure.rate", Unit.OPERATION_PER_SECOND, "Failed inference requests per second"),
+    INFERENCE_REQUEST_LATENCY("inference.request.latency", Unit.MILLISECOND, "Average inference request latency"),
+    INFERENCE_QUEUE_LATENCY("inference.queue.latency", Unit.MILLISECOND, "Average inference queue latency"),
+    INFERENCE_COMPUTE_LATENCY("inference.compute.latency", Unit.MILLISECOND, "Average inference compute latency"),
+    INFERENCE_QUEUE_COMPUTE_RATIO("inference.queue_compute.ratio", Unit.RATIO, "Ratio of inference queue time to compute time");
 
     private final String name;
     private final Unit unit;
