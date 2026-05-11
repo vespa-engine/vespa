@@ -31,6 +31,19 @@ public class ExceptionsTestCase {
     }
 
     @Test
+    public void testFindRootCause() {
+        IllegalArgumentException root = new IllegalArgumentException("root");
+        IllegalStateException innerState = new IllegalStateException("inner-state", root);
+        RuntimeException middle = new RuntimeException("middle", innerState);
+        IllegalStateException outerState = new IllegalStateException("outer-state", middle);
+
+        assertEquals(Optional.of(outerState), Exceptions.findCause(outerState, IllegalStateException.class));
+        assertEquals(Optional.of(innerState), Exceptions.findRootCause(outerState, IllegalStateException.class));
+        assertEquals(Optional.of(root), Exceptions.findRootCause(outerState, IllegalArgumentException.class));
+        assertEquals(Optional.empty(), Exceptions.findRootCause(outerState, NumberFormatException.class));
+    }
+
+    @Test
     public void testToMessageStrings() {
         assertEquals("Blah",Exceptions.toMessageString(new Exception("Blah")));
         assertEquals("Blah", Exceptions.toMessageString(new Exception(new Exception("Blah"))));
