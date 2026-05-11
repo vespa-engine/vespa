@@ -4007,6 +4007,7 @@
       "public void <init>()",
       "public static java.lang.String toMessageString(java.lang.Throwable)",
       "public static java.util.Optional findCause(java.lang.Throwable, java.lang.Class)",
+      "public static java.util.Optional findRootCause(java.lang.Throwable, java.lang.Class)",
       "public static void uncheck(com.yahoo.yolean.Exceptions$RunnableThrowingIOException)",
       "public static varargs void uncheck(com.yahoo.yolean.Exceptions$RunnableThrowingIOException, java.lang.String, java.lang.String[])",
       "public static void uncheckAndIgnore(com.yahoo.yolean.Exceptions$RunnableThrowingIOException, java.lang.Class)",
