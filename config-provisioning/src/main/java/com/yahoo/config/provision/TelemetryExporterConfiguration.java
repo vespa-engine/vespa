@@ -11,13 +11,13 @@ import java.util.Optional;
  *
  * @author onur
  */
-public class TelemetryExportConfig {
+public class TelemetryExporterConfiguration {
 
-    private static final TelemetryExportConfig EMPTY = new TelemetryExportConfig(List.of());
+    private static final TelemetryExporterConfiguration EMPTY = new TelemetryExporterConfiguration(List.of());
 
     private final List<Exporter> exporters;
 
-    public TelemetryExportConfig(List<Exporter> exporters) {
+    public TelemetryExporterConfiguration(List<Exporter> exporters) {
         this.exporters = List.copyOf(Objects.requireNonNull(exporters));
     }
 
@@ -25,20 +25,20 @@ public class TelemetryExportConfig {
 
     public boolean isEmpty() { return exporters.isEmpty(); }
 
-    public static TelemetryExportConfig empty() { return EMPTY; }
+    public static TelemetryExporterConfiguration empty() { return EMPTY; }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        return exporters.equals(((TelemetryExportConfig) o).exporters);
+        return exporters.equals(((TelemetryExporterConfiguration) o).exporters);
     }
 
     @Override
     public int hashCode() { return exporters.hashCode(); }
 
     @Override
-    public String toString() { return "TelemetryExportConfig{exporters=" + exporters + "}"; }
+    public String toString() { return "TelemetryExporterConfiguration{exporters=" + exporters + "}"; }
 
     /** A single telemetry exporter targeting an external endpoint or cloud project. */
     public static class Exporter {
