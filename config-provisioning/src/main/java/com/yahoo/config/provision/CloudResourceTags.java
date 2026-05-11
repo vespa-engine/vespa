@@ -26,8 +26,8 @@ public class CloudResourceTags {
     /** Keys must start with a lowercase letter (GCP requirement) and contain only [a-z0-9_-]. */
     private static final Pattern VALID_KEY_PATTERN = Pattern.compile("[a-z][a-z0-9_-]*");
 
-    /** Values may only contain lowercase alphanumeric characters, hyphens and underscores. */
-    private static final Pattern VALID_VALUE_PATTERN = Pattern.compile("[a-z0-9_-]+");
+    /** Values may contain alphanumeric characters (upper- or lowercase), hyphens and underscores. */
+    private static final Pattern VALID_VALUE_PATTERN = Pattern.compile("[A-Za-z0-9_-]+");
 
     /** Pattern for template variables, e.g. ${environment}, ${region}. */
     private static final Pattern TEMPLATE_VARIABLE = Pattern.compile("\\$\\{[^}]+\\}");
@@ -152,7 +152,7 @@ public class CloudResourceTags {
             String strippedValue = TEMPLATE_VARIABLE.matcher(value).replaceAll("");
             if ( ! strippedValue.isEmpty() && ! VALID_VALUE_PATTERN.matcher(strippedValue).matches())
                 throw new IllegalArgumentException("Tag value contains invalid characters for key '" + key +
-                                                   "'. Only [a-z0-9_-] and template variables like ${environment} are allowed");
+                                                   "'. Only [A-Za-z0-9_-] and template variables like ${environment} are allowed");
             for (String reserved : RESERVED_TAG_NAMES) {
                 if (key.equals(reserved))
                     throw new IllegalArgumentException("Tag key '" + key + "' is reserved by the platform");
