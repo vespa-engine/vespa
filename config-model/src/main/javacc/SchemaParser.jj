@@ -166,6 +166,7 @@ TOKEN :
 | < AS: "as" >
 | < INDEXING: "indexing" >
 | < SUMMARY_TO: "summary-to" >
+| < DOCUMENT_ID: "document-id" >
 | < DOCUMENT_SUMMARY: "document-summary" >
 | < ELEMENT_GAP: "element-gap" >
 | < INFINITY: "infinity" >
@@ -431,6 +432,7 @@ ParsedSchema rootSchema() :
 void rootSchemaItem(ParsedSchema schema) : { }
 {
     ( document(schema)
+      | documentId(schema)
       | rawAsBase64(schema)
       | searchStemming(schema)
       | importField(schema)
@@ -1527,6 +1529,23 @@ void id(ParsedField field) :
     <ID> <COLON> fieldId = integer()
     {
         field.setId(fieldId);
+    }
+}
+
+/**
+ * Consumes the document-id setting.
+ *
+ * @param schema the schema object to add setting to
+ */
+void documentId(ParsedSchema schema) :
+{
+    boolean attribute = false;
+}
+{
+    <DOCUMENT_ID>
+    <COLON> ( ( <ATTRIBUTE> { attribute = true; } ) | ( <FROM_DISK> { attribute = false; } ) )
+    {
+        schema.enableDocumentIdAttribute(attribute);
     }
 }
 
@@ -2909,6 +2928,7 @@ String identifierWithDash() :
     | <CUTOFF_STRATEGY>
     | <DENSE_POSTING_LIST_THRESHOLD>
     | <DISTANCE_METRIC>
+    | <DOCUMENT_ID>
     | <DOCUMENT_SUMMARY>
     | <ELEMENT_GAP>
     | <ENABLE_BIT_VECTORS>
