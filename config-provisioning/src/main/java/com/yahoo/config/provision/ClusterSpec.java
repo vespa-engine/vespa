@@ -46,7 +46,7 @@ public final class ClusterSpec {
         this.zoneEndpoint = Objects.requireNonNull(zoneEndpoint);
         this.stateful = stateful;
         this.sidecars = sidecars;
-        this.availabilityZones = availabilityZones;
+        this.availabilityZones = availabilityZones.isEmpty() ? List.of(AzName.unspecified()) : availabilityZones;
         this.profile = profile;
     }
 
@@ -85,7 +85,7 @@ public final class ClusterSpec {
 
     /**
      * Returns the availability zones this cluster should run across.
-     * An empty list means the zone-default placement.
+     * This may contain the single unspecified AzName, but is never empty.
      */
     public List<AzName> availabilityZones() { return availabilityZones; }
 
