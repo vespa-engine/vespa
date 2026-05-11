@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision.serialization;
 
-import com.yahoo.config.provision.TelemetryExportConfiguration;
-import com.yahoo.config.provision.TelemetryExportConfiguration.Auth;
-import com.yahoo.config.provision.TelemetryExportConfiguration.Exporter.ExporterType;
+import com.yahoo.config.provision.TelemetryExporterConfiguration;
+import com.yahoo.config.provision.TelemetryExporterConfiguration.Auth;
+import com.yahoo.config.provision.TelemetryExporterConfiguration.Exporter.ExporterType;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -16,11 +16,11 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Serializes {@link TelemetryExportConfiguration} to/from Slime and JSON.
+ * Serializes {@link TelemetryExporterConfiguration} to/from Slime and JSON.
  *
  * @author onur
  */
-public class TelemetryExportConfigurationSerializer {
+public class TelemetryExporterConfigurationSerializer {
 
     private static final String exportersKey = "exporters";
     private static final String idKey = "id";
@@ -36,21 +36,21 @@ public class TelemetryExportConfigurationSerializer {
     private static final String metricSetsKey = "metricSets";
     private static final String logFileTypesKey = "logFileTypes";
 
-    public static byte[] toJson(TelemetryExportConfiguration config) {
+    public static byte[] toJson(TelemetryExporterConfiguration config) {
         Slime slime = new Slime();
         toSlime(config, slime.setObject());
         try {
             return SlimeUtils.toJsonBytes(slime);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to serialize TelemetryExportConfiguration", e);
+            throw new RuntimeException("Failed to serialize TelemetryExporterConfiguration", e);
         }
     }
 
-    public static TelemetryExportConfiguration fromJson(byte[] json) {
+    public static TelemetryExporterConfiguration fromJson(byte[] json) {
         return fromSlime(SlimeUtils.jsonToSlime(json).get());
     }
 
-    public static void toSlime(TelemetryExportConfiguration config, Cursor root) {
+    public static void toSlime(TelemetryExporterConfiguration config, Cursor root) {
         Cursor exportersArray = root.setArray(exportersKey);
         for (var exporter : config.exporters()) {
             Cursor exporterObject = exportersArray.addObject();
@@ -78,8 +78,8 @@ public class TelemetryExportConfigurationSerializer {
         }
     }
 
-    public static TelemetryExportConfiguration fromSlime(Inspector root) {
-        List<TelemetryExportConfiguration.Exporter> exporters = new ArrayList<>();
+    public static TelemetryExporterConfiguration fromSlime(Inspector root) {
+        List<TelemetryExporterConfiguration.Exporter> exporters = new ArrayList<>();
         root.field(exportersKey).traverse((ArrayTraverser) (i, exporterInspector) -> {
             String id = exporterInspector.field(idKey).asString();
             ExporterType type = ExporterType.valueOf(exporterInspector.field(typeKey).asString());
@@ -104,11 +104,11 @@ public class TelemetryExportConfigurationSerializer {
             List<String> logFileTypes = new ArrayList<>();
             exporterInspector.field(logFileTypesKey).traverse((ArrayTraverser) (j, entry) -> logFileTypes.add(entry.asString()));
 
-            exporters.add(new TelemetryExportConfiguration.Exporter(id, type, Optional.ofNullable(endpoint), Optional.ofNullable(project),
+            exporters.add(new TelemetryExporterConfiguration.Exporter(id, type, Optional.ofNullable(endpoint), Optional.ofNullable(project),
                                                           Optional.ofNullable(auth), metricSets, logFileTypes));
         });
-        if (exporters.isEmpty()) return TelemetryExportConfiguration.empty();
-        return new TelemetryExportConfiguration(exporters);
+        if (exporters.isEmpty()) return TelemetryExporterConfiguration.empty();
+        return new TelemetryExporterConfiguration(exporters);
     }
 
     private static String optionalString(Inspector inspector) {

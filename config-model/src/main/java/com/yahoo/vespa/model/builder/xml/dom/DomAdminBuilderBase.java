@@ -20,10 +20,10 @@ import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import com.yahoo.vespa.model.admin.monitoring.builder.PredefinedMetricSets;
 import com.yahoo.vespa.model.admin.monitoring.builder.xml.MetricsBuilder;
-import com.yahoo.config.provision.TelemetryExportConfiguration;
-import com.yahoo.config.provision.TelemetryExportConfiguration.Auth;
-import com.yahoo.config.provision.TelemetryExportConfiguration.Exporter;
-import com.yahoo.config.provision.TelemetryExportConfiguration.Exporter.ExporterType;
+import com.yahoo.config.provision.TelemetryExporterConfiguration;
+import com.yahoo.config.provision.TelemetryExporterConfiguration.Auth;
+import com.yahoo.config.provision.TelemetryExporterConfiguration.Exporter;
+import com.yahoo.config.provision.TelemetryExporterConfiguration.Exporter.ExporterType;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
@@ -168,7 +168,7 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
             exporters.add(new Exporter(id, type, Optional.ofNullable(endpoint), Optional.ofNullable(project),
                                       Optional.ofNullable(auth), metricSets, logFileTypes));
         }
-        admin.setTelemetryExport(new TelemetryExportConfiguration(exporters));
+        admin.setTelemetryExport(new TelemetryExporterConfiguration(exporters));
     }
 
     private Auth parseTelemetryAuth(ModelElement authElement) {

@@ -10,17 +10,17 @@ import java.util.Optional;
  *
  * @author onur
  */
-public record TelemetryExportConfiguration(List<Exporter> exporters) {
+public record TelemetryExporterConfiguration(List<Exporter> exporters) {
 
-    private static final TelemetryExportConfiguration EMPTY = new TelemetryExportConfiguration(List.of());
+    private static final TelemetryExporterConfiguration EMPTY = new TelemetryExporterConfiguration(List.of());
 
-    public TelemetryExportConfiguration {
+    public TelemetryExporterConfiguration {
         exporters = List.copyOf(Objects.requireNonNull(exporters));
     }
 
     public boolean isEmpty() { return exporters.isEmpty(); }
 
-    public static TelemetryExportConfiguration empty() { return EMPTY; }
+    public static TelemetryExporterConfiguration empty() { return EMPTY; }
 
     /** A single telemetry exporter targeting an external endpoint or cloud project. */
     public record Exporter(String id, ExporterType type, Optional<String> endpoint, Optional<String> project,

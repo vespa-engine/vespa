@@ -8,10 +8,10 @@ import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
-import com.yahoo.config.provision.TelemetryExportConfiguration;
-import com.yahoo.config.provision.TelemetryExportConfiguration.Auth;
-import com.yahoo.config.provision.TelemetryExportConfiguration.Exporter;
-import com.yahoo.config.provision.TelemetryExportConfiguration.Exporter.ExporterType;
+import com.yahoo.config.provision.TelemetryExporterConfiguration;
+import com.yahoo.config.provision.TelemetryExporterConfiguration.Auth;
+import com.yahoo.config.provision.TelemetryExporterConfiguration.Exporter;
+import com.yahoo.config.provision.TelemetryExporterConfiguration.Exporter.ExporterType;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.jupiter.api.Test;
 
@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class TelemetryExportTest {
+public class TelemetryExporterTest {
 
     private static final String hosts = "<hosts>"
             + "  <host name=\"myhost0\"><alias>node0</alias></host>"
