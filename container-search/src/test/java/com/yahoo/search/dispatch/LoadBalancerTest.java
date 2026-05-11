@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * @author ollivir
+ * @author Olli Virtanen
  */
 public class LoadBalancerTest {
     private static final double delta = 0.0000001;
@@ -32,9 +32,7 @@ public class LoadBalancerTest {
         LoadBalancer lb = new LoadBalancer(List.of(new Group(0, List.of(n1))), LoadBalancer.Policy.ROUNDROBIN);
 
         Optional<Group> grp = lb.takeAnyGroupNotIn(Set.of());
-        Group group = grp.orElseThrow(() -> {
-            throw new IllegalStateException("Expected a SearchCluster.Group");
-        });
+        Group group = grp.orElseThrow(() -> new IllegalStateException("Expected a SearchCluster.Group"));
         assertEquals(1, group.nodes().size());
     }
 
@@ -45,9 +43,7 @@ public class LoadBalancerTest {
         LoadBalancer lb = new LoadBalancer(List.of(new Group(0, List.of(n1)), new Group(1,List.of(n2))), LoadBalancer.Policy.ROUNDROBIN);
 
         Optional<Group> grp = lb.takeAnyGroupNotIn(Set.of());
-        Group group = grp.orElseThrow(() -> {
-            throw new IllegalStateException("Expected a SearchCluster.Group");
-        });
+        Group group = grp.orElseThrow(() -> new IllegalStateException("Expected a SearchCluster.Group"));
         assertEquals(1, group.nodes().size());
     }
 
