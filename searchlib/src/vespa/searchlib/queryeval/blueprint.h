@@ -11,6 +11,8 @@
 #include "unpackinfo.h"
 
 #include <vespa/searchlib/common/bitvector.h>
+#include <vespa/vespalib/util/execution_profiler.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <optional>
 #include <span>
@@ -559,7 +561,7 @@ public:
                                                       fef::MatchData&       md) const = 0;
 
     void visitMembers(vespalib::ObjectVisitor& visitor) const override;
-    void fetchPostings(const ExecuteInfo& execInfo) override;
+    void fetchPostings(const ExecuteInfo& execInfo) final;
     void freeze() final;
     void set_matching_phase(MatchingPhase matching_phase) noexcept override;
 
@@ -627,6 +629,23 @@ struct ComplexLeafBlueprint : LeafBlueprint {
 };
 
 //-----------------------------------------------------------------------------
+
+/**
+ * RAII profiler guard for the fetchPostings phase of a single blueprint node.
+ * Produces task names of the form "[<id>]<ClassName>::fetchPostings", or
+ * "[]<ClassName>::fetchPostings" when the blueprint id is unset (0). The
+ * format matches the one used by ProfiledIterator. Name production is
+ * skipped when the profiler is null.
+ **/
+struct FetchPostingsProfilerGuard : vespalib::ProfilerNameGuard {
+    FetchPostingsProfilerGuard(vespalib::ExecutionProfiler* profiler_in, const Blueprint& bp) noexcept
+        : ProfilerNameGuard(profiler_in, [&]{
+              if (bp.id() == 0) {
+                  return vespalib::make_string("[]%s::fetchPostings", bp.getClassName().c_str());
+              }
+              return vespalib::make_string("[%u]%s::fetchPostings", bp.id(), bp.getClassName().c_str());
+          }) {}
+};
 
 } // namespace search::queryeval
 

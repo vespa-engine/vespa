@@ -27,6 +27,7 @@
 #include <gmock/gmock.h>
 
 #include <filesystem>
+#include <map>
 
 #include <vespa/log/log.h>
 LOG_SETUP("blueprint_test");
@@ -218,6 +219,65 @@ TEST(IntermediateBlueprintsTest, test_Or_propagates_updated_histestimate) {
     EXPECT_EQ(1.0, dynamic_cast<const RememberExecuteInfo&>(bp->getChild(1)).hit_rate);
     EXPECT_EQ(1.0, dynamic_cast<const RememberExecuteInfo&>(bp->getChild(2)).hit_rate);
     EXPECT_EQ(1.0, dynamic_cast<const RememberExecuteInfo&>(bp->getChild(3)).hit_rate);
+}
+
+namespace {
+
+void collect_fetch_postings_counts(std::map<std::string, size_t>& counts, const auto& node) {
+    if (!node.valid()) {
+        return;
+    }
+    collect_fetch_postings_counts(counts, node["roots"]);
+    collect_fetch_postings_counts(counts, node["children"]);
+    for (size_t i = 0; i < node.entries(); ++i) {
+        collect_fetch_postings_counts(counts, node[i]);
+    }
+    const auto& name = node["name"];
+    if (name.valid()) {
+        counts[name.asString().make_string()] += node["count"].asLong();
+    }
+}
+
+} // namespace
+
+TEST(IntermediateBlueprintsTest, test_fetch_postings_can_be_profiled) {
+    auto bp = std::make_unique<AndBlueprint>();
+    bp->addChild(ap(MyLeafSpec(20).create()));
+    bp->addChild(ap(MyLeafSpec(200).create()));
+    bp->addChild(ap(MyLeafSpec(2000).create()));
+    bp->setDocIdLimit(5000);
+    optimize(bp, true);
+    bp->enumerate(1);
+    vespalib::ExecutionProfiler profiler(64);
+    auto info = ExecuteInfo::create(1.0, vespalib::Doom::never(),
+                                    vespalib::ThreadBundle::trivial(), &profiler);
+    {
+        FetchPostingsProfilerGuard guard(&profiler, *bp);
+        bp->fetchPostings(info);
+    }
+    Slime slime;
+    profiler.report(slime.setObject());
+    std::map<std::string, size_t> counts;
+    collect_fetch_postings_counts(counts, slime.get());
+    EXPECT_EQ(counts.size(), 4u);
+    EXPECT_EQ(counts["[1]search::queryeval::AndBlueprint::fetchPostings"], 1u);
+    EXPECT_EQ(counts["[2]search::queryeval::MyLeaf::fetchPostings"], 1u);
+    EXPECT_EQ(counts["[3]search::queryeval::MyLeaf::fetchPostings"], 1u);
+    EXPECT_EQ(counts["[4]search::queryeval::MyLeaf::fetchPostings"], 1u);
+}
+
+TEST(IntermediateBlueprintsTest, test_fetch_postings_profile_omits_id_when_unset) {
+    auto leaf = ap(MyLeafSpec(20).create());
+    vespalib::ExecutionProfiler profiler(64);
+    {
+        FetchPostingsProfilerGuard guard(&profiler, *leaf);
+    }
+    Slime slime;
+    profiler.report(slime.setObject());
+    std::map<std::string, size_t> counts;
+    collect_fetch_postings_counts(counts, slime.get());
+    EXPECT_EQ(counts.size(), 1u);
+    EXPECT_EQ(counts["[]search::queryeval::MyLeaf::fetchPostings"], 1u);
 }
 
 TEST(IntermediateBlueprintsTest, test_And_Blueprint) {

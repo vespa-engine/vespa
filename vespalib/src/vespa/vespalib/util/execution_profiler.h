@@ -64,4 +64,43 @@ public:
         const NameMapper& name_mapper = [](const std::string& name) noexcept { return name; }) const;
 };
 
+/**
+ * RAII helper that brackets a single task on an ExecutionProfiler.
+ * Hot-path form: takes a pre-resolved TaskId. Use when the same task is
+ * entered many times and the cost of resolving names per entry matters.
+ **/
+struct ProfilerTaskGuard {
+    ExecutionProfiler& profiler;
+    ProfilerTaskGuard(ExecutionProfiler& profiler_in, ExecutionProfiler::TaskId task) noexcept
+        : profiler(profiler_in) { profiler.start(task); }
+    ProfilerTaskGuard(const ProfilerTaskGuard&) = delete;
+    ProfilerTaskGuard& operator=(const ProfilerTaskGuard&) = delete;
+    ~ProfilerTaskGuard() { profiler.complete(); }
+};
+
+/**
+ * RAII helper that brackets a single task on an ExecutionProfiler.
+ * Cold-path form: takes a nullable profiler and a name-producing callable.
+ * The name is built and resolved only when the profiler is non-null, so
+ * callers do not need to branch around profiling being disabled.
+ **/
+class ProfilerNameGuard {
+    ExecutionProfiler* _profiler;
+public:
+    ProfilerNameGuard(ExecutionProfiler* profiler_in, auto&& name_fn) noexcept
+        : _profiler(profiler_in)
+    {
+        if (_profiler != nullptr) {
+            _profiler->start(_profiler->resolve(name_fn()));
+        }
+    }
+    ProfilerNameGuard(const ProfilerNameGuard&) = delete;
+    ProfilerNameGuard& operator=(const ProfilerNameGuard&) = delete;
+    ~ProfilerNameGuard() {
+        if (_profiler != nullptr) {
+            _profiler->complete();
+        }
+    }
+};
+
 } // namespace vespalib

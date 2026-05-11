@@ -18,7 +18,9 @@
 #include <vespa/vespalib/objects/object2slime.h>
 #include <vespa/vespalib/objects/objectdumper.h>
 #include <vespa/vespalib/util/classname.h>
+#include <vespa/vespalib/util/execution_profiler.h>
 #include <vespa/vespalib/util/require.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/vespalib/objects/visit.hpp>
 
@@ -641,9 +643,12 @@ void IntermediateBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) const
 
 void IntermediateBlueprint::fetchPostings(const ExecuteInfo& execInfo) {
     auto flow = my_flow(InFlow(strict(), execInfo.hit_rate()));
+    auto* profiler = execInfo.profiler();
     for (const auto& child : _children) {
         double nextHitRate = flow.flow();
-        child->fetchPostings(ExecuteInfo::create(nextHitRate, execInfo));
+        auto childInfo = ExecuteInfo::create(nextHitRate, execInfo);
+        FetchPostingsProfilerGuard guard(profiler, *child);
+        child->fetchPostings(childInfo);
         flow.add(child->estimate());
     }
 }

@@ -5,9 +5,9 @@
 using vespalib::Doom;
 namespace search::queryeval {
 
-const ExecuteInfo ExecuteInfo::FULL(1.0, Doom::never(), vespalib::ThreadBundle::trivial());
+const ExecuteInfo ExecuteInfo::FULL(1.0, Doom::never(), vespalib::ThreadBundle::trivial(), nullptr);
 
-ExecuteInfo::ExecuteInfo() noexcept : ExecuteInfo(1.0, Doom::never(), vespalib::ThreadBundle::trivial()) {
+ExecuteInfo::ExecuteInfo() noexcept : ExecuteInfo(1.0, Doom::never(), vespalib::ThreadBundle::trivial(), nullptr) {
 }
 
 ExecuteInfo ExecuteInfo::createForTest(double hitRate) noexcept {
