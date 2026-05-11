@@ -103,16 +103,11 @@ public class ProtobufSerialization {
         GrowableByteBuffer scratchPad = threadLocalBuffer.get();
         var queryTree = query.getModel().getQueryTree();
         var context = new SerializationContext(contentShare);
-        boolean sendProtobuf = true;
-        try {
-            isProtobufAlsoSerialized.set(sendProtobuf);
+        if (qrSearchersConfig.sendOldQueryStack()) {
+            isProtobufAlsoSerialized.set(true);
             builder.setQueryTreeBlob(serializeQueryTree(queryTree, context, scratchPad));
-        } finally {
-            isProtobufAlsoSerialized.set(false);
         }
-        if (sendProtobuf) {
-            builder.setQueryTree(queryTree.toProtobufQueryTree(context));
-        }
+        builder.setQueryTree(queryTree.toProtobufQueryTree(context));
         if (query.getGroupingSessionCache() || query.getRanking().getQueryCache()) {
             // TODO verify that the session key is included whenever rank properties would have been
             builder.setSessionKey(query.getSessionId(nodeId).toString());
@@ -262,17 +257,12 @@ public class ProtobufSerialization {
         var ranking = query.getRanking();
         var featureMap = ranking.getFeatures().asMap();
 
-        boolean sendProtobuf = true;
         var context = SerializationContext.ignored(); // Not necessary to track content share for docsum requests
-        try {
-            isProtobufAlsoSerialized.set(sendProtobuf);
+        if (qrSearchersConfig.sendOldQueryStack()) {
+            isProtobufAlsoSerialized.set(true);
             builder.setQueryTreeBlob(serializeQueryTree(query.getModel().getQueryTree(), context, scratchPad));
-        } finally {
-            isProtobufAlsoSerialized.set(false);
         }
-        if (sendProtobuf) {
-            builder.setQueryTree(query.getModel().getQueryTree().toProtobufQueryTree(context));
-        }
+        builder.setQueryTree(query.getModel().getQueryTree().toProtobufQueryTree(context));
 
         MapConverter.convertMapPrimitives(featureMap, builder::addFeatureOverrides);
         MapConverter.convertMapTensors(scratchPad, featureMap, builder::addTensorFeatureOverrides);
