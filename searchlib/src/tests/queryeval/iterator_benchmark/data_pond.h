@@ -129,7 +129,7 @@ class DataPond {
     std::vector<Record> _records;
 
 public:
-    const std::vector<Record>& records() { return _records; }
+    const std::vector<Record>& records() const { return _records; }
 
     Record& new_record() {
         _records.emplace_back();

@@ -596,6 +596,12 @@ void print_summary(const BenchmarkSummary& summary) {
     }
 }
 
+void dump_pond(const DataPond& pond) {
+    for (const auto& rec : pond.records()) {
+        std::println(stderr, "{}", rec.to_string());
+    }
+}
+
 struct BenchmarkCaseSetup {
     uint32_t              num_docs;
     BenchmarkCase         bcase;
@@ -671,6 +677,41 @@ struct BenchmarkSetup {
 
 BenchmarkSetup::~BenchmarkSetup() = default;
 
+BenchmarkSummary global_summary;
+DataPond         global_pond;
+
+std::string current_test_name() {
+    if (auto* info = ::testing::UnitTest::GetInstance()->current_test_info()) {
+        return info->name();
+    }
+    return "";
+}
+
+void add_to_pond(DataPond& pond, const BenchmarkCaseSetup& setup, const BenchmarkResult& res, double op_hit_ratio,
+                 uint32_t children, double filter_hit_ratio, PlanningAlgo algo) {
+    Record record;
+    record.set("actual_cost", res.actual_cost);
+    record.set("algo", to_string(algo));
+    record.set("blueprint_name", res.blueprint_name);
+    record.set("children", static_cast<int64_t>(children));
+    record.set("cost", res.flow.cost);
+    record.set("estimate", res.flow.estimate);
+    record.set("field_cfg", setup.bcase.field_cfg.to_string());
+    record.set("filter_hit_ratio", filter_hit_ratio);
+    record.set("force_strict", setup.bcase.force_strict);
+    record.set("group", current_test_name());
+    record.set("hits", static_cast<int64_t>(res.hits));
+    record.set("iterator_name", res.iterator_name);
+    record.set("op_hit_ratio", op_hit_ratio);
+    record.set("query_op", to_string(setup.bcase.query_op));
+    record.set("seeks", static_cast<int64_t>(res.seeks));
+    record.set("strict_context", setup.bcase.strict_context);
+    record.set("strict_cost", res.flow.strict_cost);
+    record.set("time_ms", res.time_ms);
+    record.set("unpack", setup.bcase.unpack_iterator);
+    pond.add(record);
+}
+
 BenchmarkCaseResult run_benchmark_case(const BenchmarkCaseSetup& setup) {
     BenchmarkCaseResult result;
     std::cout << "-------- run_benchmark_case: " << setup.bcase.to_string() << " --------" << std::endl;
@@ -688,6 +729,8 @@ BenchmarkCaseResult run_benchmark_case(const BenchmarkCaseSetup& setup) {
                     print_result(res, children, op_hit_ratio, InFlow(setup.bcase.strict_context, filter_hit_ratio),
                                  setup.num_docs);
                     result.add(res);
+                    add_to_pond(global_pond, setup, res, op_hit_ratio, children, filter_hit_ratio,
+                                PlanningAlgo::Cost);
                 }
             }
         }
@@ -695,8 +738,6 @@ BenchmarkCaseResult run_benchmark_case(const BenchmarkCaseSetup& setup) {
     print_result(result);
     return result;
 }
-
-BenchmarkSummary global_summary;
 
 void run_benchmarks(const BenchmarkSetup& setup, BenchmarkSummary& summary) {
     for (const auto& field_cfg : setup.field_cfgs) {
@@ -1139,11 +1180,16 @@ static std::string smoke_test_filter = "--gtest_filter="
                                        ":IteratorBenchmark.analyze_AND_plan_variants_ENN";
 
 int main(int argc, char** argv) {
+    bool opt_dump_pond = false;
     for (int i = 0; i < argc; i++) {
         std::string_view smoke_test{"--smoke-test"};
         if (smoke_test == argv[i]) {
             std::println(stderr, "Adding --smoke-test filter");
             argv[i] = smoke_test_filter.data();
+        }
+        std::string_view dump_pond_flag{"--dump-pond"};
+        if (dump_pond_flag == argv[i]) {
+            opt_dump_pond = true;
         }
     }
     ::testing::InitGoogleTest(&argc, argv);
@@ -1151,6 +1197,9 @@ int main(int argc, char** argv) {
     if (!global_summary.empty()) {
         global_summary.calc_calibration();
         print_summary(global_summary);
+    }
+    if (opt_dump_pond) {
+        dump_pond(global_pond);
     }
     return res;
 }
