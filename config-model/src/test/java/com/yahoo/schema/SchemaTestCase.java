@@ -357,6 +357,7 @@ public class SchemaTestCase {
                         "    summary pf1 {}" +
                         "  }" +
                         "  import field parentschema_ref.name as parent_imported {}" +
+                        "  document-id: attribute" +
                         "  raw-as-base64-in-summary" +
                         "}");
         String childLines = joinLines(
@@ -994,6 +995,7 @@ public class SchemaTestCase {
         assertNotNull(schema.getExplicitSummaryField("pf1"));
         assertNotNull(schema.getUniqueNamedSummaryFields().get("pf1"));
         assertNotNull(schema.temporaryImportedFields().get().fields().get("parent_imported"));
+        assertTrue(schema.documentIdAttributeEnabled());
         assertTrue(schema.isRawAsBase64());
     }
 
