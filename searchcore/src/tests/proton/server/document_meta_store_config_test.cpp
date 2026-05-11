@@ -13,21 +13,30 @@ public:
     DocumentMetaStoreConfigTest();
     ~DocumentMetaStoreConfigTest() override;
 
+    static ProtonConfig make_default_proton_config() {
+        ProtonConfigBuilder builder;
+        return builder;
+    }
+
     static ProtonConfig make_proton_config() {
         ProtonConfigBuilder builder;
+        // First DocumentDB: false
+        builder.documentdb.emplace_back(ProtonConfigBuilder::Documentdb());
+        builder.documentdb.back().documentIdAttribute = false;
+        // Second DocumentDB: true
+        builder.documentdb.emplace_back(ProtonConfigBuilder::Documentdb());
+        builder.documentdb.back().documentIdAttribute = true;
+        // Third DocumentDB: default
+        builder.documentdb.emplace_back(ProtonConfigBuilder::Documentdb());
         return builder;
     }
 
-    static ProtonConfig make_proton_config(bool store_full_document_ids) {
-        ProtonConfigBuilder builder;
-        builder.storeFullDocumentIds = store_full_document_ids;
-        return builder;
+    static DocumentMetaStoreConfig make_default_config() {
+        return DocumentMetaStoreConfig::make(make_default_proton_config(), 0);
     }
 
-    static DocumentMetaStoreConfig make_config() { return DocumentMetaStoreConfig::make(make_proton_config()); }
-
-    static DocumentMetaStoreConfig make_config(bool store_full_document_ids) {
-        return DocumentMetaStoreConfig::make(make_proton_config(store_full_document_ids));
+    static DocumentMetaStoreConfig make_config(bool document_id_attribute) {
+        return DocumentMetaStoreConfig::make(make_proton_config(), document_id_attribute);
     }
 
 protected:
@@ -42,23 +51,30 @@ DocumentMetaStoreConfigTest::DocumentMetaStoreConfigTest()
 DocumentMetaStoreConfigTest::~DocumentMetaStoreConfigTest() = default;
 
 TEST_F(DocumentMetaStoreConfigTest, require_that_store_full_document_ids_default_is_false) {
-    EXPECT_EQ(false, DocumentMetaStoreConfig::make().store_full_document_ids());
-    EXPECT_EQ(false, make_config().store_full_document_ids()); // From default ProtonConfig
+    // Without ProtonConfig
+    EXPECT_FALSE(DocumentMetaStoreConfig::make().store_full_document_ids());
+    // Default ProtonConfig
+    EXPECT_FALSE(DocumentMetaStoreConfig::make(make_default_proton_config(), 0).store_full_document_ids());
+    // Default from ProtonConfigBuilder::Documentdb()
+    EXPECT_FALSE(DocumentMetaStoreConfig::make(make_proton_config(), 2).store_full_document_ids());
+    // With present settings but invalid index
+    ASSERT_LE(make_proton_config().documentdb.size(), 3);
+    EXPECT_FALSE(DocumentMetaStoreConfig::make(make_proton_config(), 3).store_full_document_ids());
 }
 
 TEST_F(DocumentMetaStoreConfigTest, require_that_store_full_document_ids_report_works) {
-    EXPECT_EQ(true, make_config(true).store_full_document_ids());
-    EXPECT_EQ(false, make_config(false).store_full_document_ids());
+    EXPECT_TRUE(make_config(true).store_full_document_ids());
+    EXPECT_FALSE(make_config(false).store_full_document_ids());
 }
 
 TEST_F(DocumentMetaStoreConfigTest, require_that_updating_works) {
-    auto config = make_config();
+    auto config = make_default_config();
 
-    EXPECT_EQ(false, config.store_full_document_ids());
+    EXPECT_FALSE(config.store_full_document_ids());
     config.update(config_true);
-    EXPECT_EQ(true, config.store_full_document_ids());
+    EXPECT_TRUE(config.store_full_document_ids());
     config.update(config_false);
-    EXPECT_EQ(false, config.store_full_document_ids());
+    EXPECT_FALSE(config.store_full_document_ids());
 }
 
 TEST_F(DocumentMetaStoreConfigTest, require_that_comparison_works) {
