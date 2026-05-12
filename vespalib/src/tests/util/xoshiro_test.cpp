@@ -1,10 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/util/xoshiro.h>
-#include <limits>
-#include <random>
 
 #include <gmock/gmock.h>
+
+#include <limits>
+#include <random>
 
 using namespace ::testing;
 
@@ -50,8 +51,7 @@ TEST(Xoshiro256PlusPlusTest, u256_seeded_state_is_deterministic) {
     // is to seed with something that isn't completely bogus...!
     // It's probably a lot better to seed with a single low quality u64 that is
     // then splitmix64'ed into something OK than to seed with 256 bits of crap.
-    XoPrng rng(0x1111'1111'1111'1111, 0x2222'2222'2222'2222,
-               0x3333'3333'3333'3333, 0x4444'4444'4444'4444);
+    XoPrng rng(0x1111'1111'1111'1111, 0x2222'2222'2222'2222, 0x3333'3333'3333'3333, 0x4444'4444'4444'4444);
     EXPECT_EQ(rng(), 0xbbbbbbbbbbbbbbbb);
     EXPECT_EQ(rng(), 0x9999999999199999);
     EXPECT_EQ(rng(), 0x6666666665e66665);
@@ -70,6 +70,24 @@ TEST(Xoshiro256PlusPlusTest, can_be_used_with_stl_prng_statistical_distributions
         const int v = dist(rng);
         EXPECT_TRUE(v >= 0 && v <= 10) << v;
     }
+}
+
+TEST(Xoshiro256PlusPlusTest, instances_can_be_deep_copied_and_compared) {
+    XoPrng rng1(0x1337cafe), rng2(0x1337caff);
+
+    XoPrng rng1_copy(rng1);
+    auto   rng2_copy = rng2;
+
+    EXPECT_TRUE(rng1 == rng1);
+    EXPECT_TRUE(rng1_copy == rng1);
+    EXPECT_FALSE(rng1 == rng2);
+    EXPECT_TRUE(rng2_copy == rng2);
+
+    EXPECT_EQ(rng1_copy(), 0xee5d31f96adfacd);
+    EXPECT_EQ(rng2_copy(), 0x422bd9d0409b5bca);
+    // Internal state has changed
+    EXPECT_FALSE(rng1_copy == rng1);
+    EXPECT_FALSE(rng2_copy == rng2);
 }
 
 } // namespace vespalib
