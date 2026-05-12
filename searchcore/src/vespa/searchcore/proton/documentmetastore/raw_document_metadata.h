@@ -24,19 +24,21 @@ struct RawDocumentMetadata {
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
     GlobalId              _gid;
     AtomicEntryRef        _docid_ref;
-    std::atomic<uint32_t> _bucket_used_bits_and_doc_size;
+    std::atomic<uint32_t> _doc_size;
+    std::atomic<uint32_t> _bucket_used_bits_and_padding;
     std::atomic<uint64_t> _timestamp;
 
-    static uint32_t capped_doc_size(uint32_t doc_size) { return std::min(0xffffffu, doc_size); }
+    static uint32_t capped_doc_size24(uint32_t doc_size) { return std::min(0xffffffu, doc_size); }
 
     RawDocumentMetadata() noexcept
-        : _gid(), _docid_ref(), _bucket_used_bits_and_doc_size(BucketId::minNumBits), _timestamp(0) {}
+        : _gid(), _docid_ref(), _doc_size(0), _bucket_used_bits_and_padding(BucketId::minNumBits), _timestamp(0) {}
 
     RawDocumentMetadata(const GlobalId& gid, const BucketId& bucketId, const Timestamp& timestamp,
                         uint32_t docSize) noexcept
         : _gid(gid),
           _docid_ref(),
-          _bucket_used_bits_and_doc_size(bucketId.getUsedBits() | (capped_doc_size(docSize) << 8)),
+          _doc_size(docSize),
+          _bucket_used_bits_and_padding(bucketId.getUsedBits()),
           _timestamp(timestamp) {
         assert(bucketId.valid());
         BucketId verId(gid.convertToBucketId());
@@ -47,13 +49,15 @@ struct RawDocumentMetadata {
     RawDocumentMetadata(const RawDocumentMetadata& rhs)
         : _gid(rhs._gid),
           _docid_ref(rhs._docid_ref),
-          _bucket_used_bits_and_doc_size(rhs._bucket_used_bits_and_doc_size.load(std::memory_order_relaxed)),
+          _doc_size(rhs._doc_size.load(std::memory_order_relaxed)),
+          _bucket_used_bits_and_padding(rhs._bucket_used_bits_and_padding.load(std::memory_order_relaxed)),
           _timestamp(rhs._timestamp.load(std::memory_order_relaxed)) {}
 
     RawDocumentMetadata& operator=(const RawDocumentMetadata& rhs) {
         _gid = rhs._gid;
         _docid_ref = rhs._docid_ref;
-        _bucket_used_bits_and_doc_size.store(rhs._bucket_used_bits_and_doc_size.load(std::memory_order_relaxed),
+        _doc_size.store(rhs._doc_size.load(std::memory_order_relaxed), std::memory_order_relaxed);
+        _bucket_used_bits_and_padding.store(rhs._bucket_used_bits_and_padding.load(std::memory_order_relaxed),
                                              std::memory_order_relaxed);
         _timestamp.store(rhs._timestamp.load(std::memory_order_relaxed), std::memory_order_relaxed);
         return *this;
@@ -73,7 +77,7 @@ struct RawDocumentMetadata {
     void set_docid_ref(EntryRef ref) noexcept { _docid_ref.store_release(ref); }
 
     uint8_t getBucketUsedBits() const {
-        return _bucket_used_bits_and_doc_size.load(std::memory_order_relaxed) & 0xffu;
+        return _bucket_used_bits_and_padding.load(std::memory_order_relaxed) & 0xffu;
     }
 
     BucketId getBucketId() const {
@@ -84,9 +88,7 @@ struct RawDocumentMetadata {
 
     void setBucketUsedBits(uint8_t bucketUsedBits) {
         assert(BucketId::validUsedBits(bucketUsedBits));
-        _bucket_used_bits_and_doc_size.store(
-            (_bucket_used_bits_and_doc_size.load(std::memory_order_relaxed) & ~0xffu) | bucketUsedBits,
-            std::memory_order_relaxed);
+        _bucket_used_bits_and_padding.store(bucketUsedBits, std::memory_order_relaxed);
     }
 
     void setBucketId(const BucketId& bucketId) {
@@ -104,13 +106,8 @@ struct RawDocumentMetadata {
         _timestamp.store(timestamp.getValue(), std::memory_order_relaxed);
     }
 
-    uint32_t getDocSize() const { return _bucket_used_bits_and_doc_size.load(std::memory_order_relaxed) >> 8; }
-    void setDocSize(uint32_t docSize) {
-        _bucket_used_bits_and_doc_size.store(
-            (_bucket_used_bits_and_doc_size.load(std::memory_order_relaxed) & 0xffu) |
-                (capped_doc_size(docSize) << 8),
-            std::memory_order_relaxed);
-    }
+    uint32_t getDocSize() const { return _doc_size.load(std::memory_order_relaxed); }
+    void setDocSize(uint32_t docSize) { _doc_size.store(docSize, std::memory_order_relaxed); }
 };
 
 } // namespace proton

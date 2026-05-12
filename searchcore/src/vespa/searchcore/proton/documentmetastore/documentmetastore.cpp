@@ -102,22 +102,32 @@ public:
     Timestamp getNextTimestamp() { return _timestampReader.readHostOrder(); }
 
     uint32_t getNextDocSize() {
-        if (_version == NO_DOCUMENT_SIZE_TRACKING_VERSION) {
+        switch (_version) {
+        case NO_DOCUMENT_SIZE_TRACKING_VERSION:
             return 1;
+        case DOCUMENT_SIZE24_TRACKING_VERSION: {
+            uint8_t  sizeLow;
+            uint16_t sizeHigh;
+            _datFile.file().ReadBuf(&sizeLow, sizeof(sizeLow));
+            _datFile.file().ReadBuf(&sizeHigh, sizeof(sizeHigh));
+            return sizeLow + (static_cast<uint32_t>(sizeHigh) << 8);
         }
-        uint8_t  sizeLow;
-        uint16_t sizeHigh;
-        _datFile.file().ReadBuf(&sizeLow, sizeof(sizeLow));
-        _datFile.file().ReadBuf(&sizeHigh, sizeof(sizeHigh));
-        return sizeLow + (static_cast<uint32_t>(sizeHigh) << 8);
+        default: {
+            uint32_t doc_size;
+            _datFile.file().ReadBuf(&doc_size, sizeof(doc_size));
+            return doc_size;
+        }
+        }
     }
 
     size_t getNumElems() const {
-        return _datFile.data_size() / DocumentMetaStore::entry_size(_version != NO_DOCUMENT_SIZE_TRACKING_VERSION);
+        return _datFile.data_size() / DocumentMetaStore::entry_size(_version != NO_DOCUMENT_SIZE_TRACKING_VERSION,
+                                                                    _version >= DOCUMENT_SIZE32_TRACKING_VERSION);
     }
 
     uint64_t size_on_disk() const noexcept { return _datFile.size_on_disk(); }
     std::chrono::steady_clock::duration flush_duration() const noexcept { return _datFile.flush_duration(); }
+    [[nodiscard]] uint32_t get_version() const noexcept { return _version; }
 };
 
 Reader::Reader(std::unique_ptr<FastOS_FileInterface> datFile)
@@ -164,6 +174,17 @@ DocIdReader::DocIdReader(std::unique_ptr<FastOS_FileInterface> docid_file)
       _docid_buffer() {
 }
 DocIdReader::~DocIdReader() = default;
+
+bool consider_require_doc_sizes_from_docstore(const Reader& reader, bool trackDocumentSizes, bool track_32bit_document_sizes) {
+    if (!trackDocumentSizes) {
+        return false;
+    }
+    if (track_32bit_document_sizes) {
+        return reader.get_version() < DOCUMENT_SIZE32_TRACKING_VERSION;
+    } else {
+        return reader.get_version() < DOCUMENT_SIZE24_TRACKING_VERSION;
+    }
+}
 
 } // namespace documentmetastore
 
@@ -328,7 +349,11 @@ DocumentMetaStore::DocId DocumentMetaStore::readNextDoc(documentmetastore::Reade
     RawDocumentMetadata& meta = _metadataStore[lid];
     meta.setGid(reader.getNextGid());
     meta.setBucketUsedBits(reader.getNextBucketUsedBits());
-    meta.setDocSize(reader.getNextDocSize());
+    uint32_t doc_size = reader.getNextDocSize();
+    if (!_track_32bit_document_sizes) {
+        doc_size = RawDocumentMetadata::capped_doc_size24(doc_size);
+    }
+    meta.setDocSize(doc_size);
     meta.setTimestamp(reader.getNextTimestamp());
     if (docid_reader) {
         const auto ref = add_docid_string(docid_reader->get_next_docid());
@@ -358,6 +383,7 @@ bool DocumentMetaStore::onLoad(vespalib::Executor*) {
     // insert gids (already sorted)
     if (numElems > 0) {
         _requires_document_ids_from_docstore = _store_full_document_id && !docid_reader;
+        _requires_doc_sizes_from_docstore = consider_require_doc_sizes_from_docstore(reader, _trackDocumentSizes, _track_32bit_document_sizes);
         DocId                      lid = readNextDoc(reader, docid_reader.get(), treeBuilder);
         const RawDocumentMetadata* meta = &_metadataStore[lid];
         BucketId                   prevId(meta->getBucketId());
@@ -491,6 +517,8 @@ DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB, const std::string
       _shrinkLidSpaceBlockers(0),
       _subDbType(subDbType),
       _trackDocumentSizes(true),
+      _track_32bit_document_sizes(false),
+      _requires_doc_sizes_from_docstore(false),
       _changesSinceCommit(0),
       _op_listener(),
       _should_compact_gid_to_lid_map(false),
@@ -554,6 +582,9 @@ DocumentMetaStore::Result DocumentMetaStore::put(const DocumentId& docid, const 
                                                  uint64_t prepare_serial_num) {
     Result              res;
     auto&               gid = docid.getGlobalId();
+    if (!_track_32bit_document_sizes) {
+        docSize = RawDocumentMetadata::capped_doc_size24(docSize);
+    }
     RawDocumentMetadata metadata(gid, bucketId, storage::spi::Timestamp(timestamp), docSize);
     KeyComp             comp(metadata, get_unbound_metadata_view());
     auto                find_key = GidToLidMapKey::make_find_key(gid);
@@ -1098,7 +1129,7 @@ GenerationGuard DocumentMetaStore::getGuard() const {
 
 uint64_t DocumentMetaStore::getEstimatedSaveByteSize() const {
     uint32_t numDocs = getNumUsedLids();
-    uint64_t estimate = minHeaderLen + numDocs * entry_size(_trackDocumentSizes);
+    uint64_t estimate = minHeaderLen + numDocs * entry_size(_trackDocumentSizes, _track_32bit_document_sizes);
     if (_store_full_document_id) {
         estimate += minHeaderLen + numDocs * sizeof(uint32_t) + get_docid_bytes_stats();
     }
@@ -1106,8 +1137,11 @@ uint64_t DocumentMetaStore::getEstimatedSaveByteSize() const {
 }
 
 uint32_t DocumentMetaStore::getVersion() const {
-    return _trackDocumentSizes ? documentmetastore::DOCUMENT_SIZE_TRACKING_VERSION
-                               : documentmetastore::NO_DOCUMENT_SIZE_TRACKING_VERSION;
+    return _trackDocumentSizes
+               ? (_track_32bit_document_sizes
+                      ? documentmetastore::DOCUMENT_SIZE32_TRACKING_VERSION
+                      : documentmetastore::DOCUMENT_SIZE24_TRACKING_VERSION)
+               : documentmetastore::NO_DOCUMENT_SIZE_TRACKING_VERSION;
 }
 
 void DocumentMetaStore::foreach(const search::IGidToLidMapperVisitor& visitor) const {
