@@ -7,7 +7,7 @@ import com.yahoo.config.provision.BlockWindow;
 import com.yahoo.config.provision.DeploymentConfigStore;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.TelemetryExportConfig;
+import com.yahoo.config.provision.TelemetryExporterConfiguration;
 import com.yahoo.config.provision.Zone;
 import org.junit.Rule;
 import org.junit.Test;
@@ -65,7 +65,7 @@ public class DeploymentConfigStoreTest {
         assertEquals(List.of(8, 9, 10), window.hours());
         assertEquals(ZoneId.of("UTC"), window.zone());
 
-        assertTrue(call.telemetryExportConfig().isEmpty());
+        assertTrue(call.telemetryExporterConfiguration().isEmpty());
     }
 
     @Test
@@ -82,13 +82,13 @@ public class DeploymentConfigStoreTest {
         tester.deployApp("src/test/apps/hosted-with-telemetry/");
 
         assertEquals(1, store.calls.size());
-        TelemetryExportConfig telemetry = store.calls.get(0).telemetryExportConfig();
+        TelemetryExporterConfiguration telemetry = store.calls.get(0).telemetryExporterConfiguration();
         assertFalse(telemetry.isEmpty());
         assertEquals(1, telemetry.exporters().size());
 
-        TelemetryExportConfig.Exporter exporter = telemetry.exporters().get(0);
+        TelemetryExporterConfiguration.Exporter exporter = telemetry.exporters().get(0);
         assertEquals("my-exporter", exporter.id());
-        assertEquals("otlphttp", exporter.type());
+        assertEquals(TelemetryExporterConfiguration.Exporter.ExporterType.otlphttp, exporter.type());
         assertEquals("https://otel.example.com/v1", exporter.endpoint().get());
 
         assertTrue(exporter.auth().isPresent());
@@ -134,11 +134,17 @@ public class DeploymentConfigStoreTest {
         final List<Call> calls = new ArrayList<>();
 
         @Override
-        public void store(ApplicationId applicationId, Optional<BackupConfig> backup, List<BlockWindow> blockWindows, TelemetryExportConfig telemetryExportConfig) {
-            calls.add(new Call(applicationId, backup, blockWindows, telemetryExportConfig));
+        public void store(ApplicationId applicationId,
+                          Optional<BackupConfig> backup,
+                          List<BlockWindow> blockWindows,
+                          TelemetryExporterConfiguration telemetryExporterConfiguration) {
+            calls.add(new Call(applicationId, backup, blockWindows, telemetryExporterConfiguration));
         }
 
-        record Call(ApplicationId applicationId, Optional<BackupConfig> backup, List<BlockWindow> blockWindows, TelemetryExportConfig telemetryExportConfig) {}
+        record Call(ApplicationId applicationId,
+                    Optional<BackupConfig> backup,
+                    List<BlockWindow> blockWindows,
+                    TelemetryExporterConfiguration telemetryExporterConfiguration) {}
     }
 
 }

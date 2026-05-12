@@ -9,7 +9,7 @@ import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.model.api.TenantVault;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudResourceTags;
-import com.yahoo.config.provision.TelemetryExportConfig;
+import com.yahoo.config.provision.TelemetryExporterConfiguration;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
@@ -23,6 +23,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
+import static com.yahoo.config.provision.TelemetryExporterConfiguration.Auth;
+import static com.yahoo.config.provision.TelemetryExporterConfiguration.Exporter.ExporterType;
 import static com.yahoo.vespa.config.server.session.SessionData.APPLICATION_ID_PATH;
 import static com.yahoo.vespa.config.server.session.SessionData.SESSION_DATA_PATH;
 import static com.yahoo.vespa.config.server.zookeeper.ZKApplication.SESSIONSTATE_ZK_SUBPATH;
@@ -194,7 +196,7 @@ public class SessionZooKeeperClientTest {
                                              CloudResourceTags.empty(),
                                              List.of(),
                                              ActivationTriggers.empty(),
-                                             TelemetryExportConfig.empty()));
+                                             TelemetryExporterConfiguration.empty()));
         Path path = sessionPath(sessionId).append(SESSION_DATA_PATH);
         assertTrue(curator.exists(path));
         String data = Utf8.toString(curator.getData(path).get());
@@ -208,19 +210,20 @@ public class SessionZooKeeperClientTest {
         int sessionId = 3;
         SessionZooKeeperClient zkc = createSessionZKClient(sessionId);
 
-        TelemetryExportConfig config = new TelemetryExportConfig(List.of(
-                new TelemetryExportConfig.Exporter("my-exporter", "otlphttp", "https://otel.example.com/v1", null,
-                        new TelemetryExportConfig.Auth("bearer", "my-vault", "my-token", null, null, null),
-                        List.of("default"), List.of("container_logs"))));
+        TelemetryExporterConfiguration config = new TelemetryExporterConfiguration(List.of(
+                new TelemetryExporterConfiguration.Exporter("my-exporter", ExporterType.otlphttp,
+                                                            Optional.of("https://otel.example.com/v1"), null,
+                                                            Optional.of(Auth.bearerToken("my-vault", "my-token")),
+                                                            List.of("default"), List.of("container_logs"))));
 
         zkc.writeTelemetryExportConfig(config);
-        TelemetryExportConfig read = zkc.readTelemetryExportConfig();
+        TelemetryExporterConfiguration read = zkc.readTelemetryExporterConfiguration();
 
         assertEquals(config, read);
         assertEquals(1, read.exporters().size());
-        TelemetryExportConfig.Exporter exporter = read.exporters().get(0);
+        TelemetryExporterConfiguration.Exporter exporter = read.exporters().get(0);
         assertEquals("my-exporter", exporter.id());
-        assertEquals("otlphttp", exporter.type());
+        assertEquals(ExporterType.otlphttp, exporter.type());
         assertEquals("https://otel.example.com/v1", exporter.endpoint().get());
         assertTrue(exporter.auth().isPresent());
         assertEquals("bearer", exporter.auth().get().type());
@@ -234,7 +237,7 @@ public class SessionZooKeeperClientTest {
     public void require_that_empty_telemetry_export_config_is_returned_when_not_written() {
         int sessionId = 4;
         SessionZooKeeperClient zkc = createSessionZKClient(sessionId);
-        assertEquals(TelemetryExportConfig.empty(), zkc.readTelemetryExportConfig());
+        assertEquals(TelemetryExporterConfiguration.empty(), zkc.readTelemetryExporterConfiguration());
     }
 
     private void assertApplicationIdParse(long sessionId, String idString, String expectedIdString) {

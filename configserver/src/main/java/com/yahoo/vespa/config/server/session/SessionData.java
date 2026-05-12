@@ -12,8 +12,8 @@ import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.TelemetryExportConfig;
-import com.yahoo.config.provision.serialization.TelemetryExportConfigSerializer;
+import com.yahoo.config.provision.TelemetryExporterConfiguration;
+import com.yahoo.config.provision.serialization.TelemetryExporterConfigurationSerializer;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
@@ -52,7 +52,7 @@ public record SessionData(ApplicationId applicationId,
                           CloudResourceTags cloudResourceTags,
                           List<DataplaneToken> dataplaneTokens,
                           ActivationTriggers activationTriggers,
-                          TelemetryExportConfig telemetryExportConfig) {
+                          TelemetryExporterConfiguration telemetryExporterConfiguration) {
 
     // NOTE: Any state added here MUST also be done in SessionPreparer.writeStateToZooKeeper
     // and SessionSerializer.read()/write()
@@ -114,8 +114,8 @@ public record SessionData(ApplicationId applicationId,
 
         ActivationTriggersSerializer.toSlime(activationTriggers, object.setObject(ACTIVATION_TRIGGERS_PATH));
 
-        if ( ! telemetryExportConfig.isEmpty())
-            TelemetryExportConfigSerializer.toSlime(telemetryExportConfig, object.setObject(TELEMETRY_EXPORT_CONFIG_PATH));
+        if ( ! telemetryExporterConfiguration.isEmpty())
+            TelemetryExporterConfigurationSerializer.toSlime(telemetryExporterConfiguration, object.setObject(TELEMETRY_EXPORT_CONFIG_PATH));
     }
 
     static SessionData fromSlime(Slime slime) {
@@ -139,7 +139,7 @@ public record SessionData(ApplicationId applicationId,
                                CloudResourceTagsSerializer.fromSlime(cursor.field(CLOUD_RESOURCE_TAGS_PATH)),
                                DataplaneTokenSerializer.fromSlime(cursor.field(DATAPLANE_TOKENS_PATH)),
                                ActivationTriggersSerializer.fromSlime(cursor.field(ACTIVATION_TRIGGERS_PATH)),
-                               TelemetryExportConfigSerializer.fromSlime(cursor.field(TELEMETRY_EXPORT_CONFIG_PATH)));
+                               TelemetryExporterConfigurationSerializer.fromSlime(cursor.field(TELEMETRY_EXPORT_CONFIG_PATH)));
     }
 
 }

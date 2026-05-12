@@ -17,9 +17,9 @@ import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.TelemetryExportConfig;
+import com.yahoo.config.provision.TelemetryExporterConfiguration;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.serialization.TelemetryExportConfigSerializer;
+import com.yahoo.config.provision.serialization.TelemetryExporterConfigurationSerializer;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
@@ -440,14 +440,14 @@ public class SessionZooKeeperClient {
                       });
     }
 
-    public void writeTelemetryExportConfig(TelemetryExportConfig config) {
-        curator.set(sessionPath.append(TELEMETRY_EXPORT_CONFIG_PATH), TelemetryExportConfigSerializer.toJson(config));
+    public void writeTelemetryExportConfig(TelemetryExporterConfiguration config) {
+        curator.set(sessionPath.append(TELEMETRY_EXPORT_CONFIG_PATH), TelemetryExporterConfigurationSerializer.toJson(config));
     }
 
-    public TelemetryExportConfig readTelemetryExportConfig() {
+    public TelemetryExporterConfiguration readTelemetryExporterConfiguration() {
         return curator.getData(sessionPath.append(TELEMETRY_EXPORT_CONFIG_PATH))
-                      .map(TelemetryExportConfigSerializer::fromJson)
-                      .orElse(TelemetryExportConfig.empty());
+                      .map(TelemetryExporterConfigurationSerializer::fromJson)
+                      .orElse(TelemetryExporterConfiguration.empty());
     }
 
     /**

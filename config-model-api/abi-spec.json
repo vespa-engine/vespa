@@ -1350,7 +1350,7 @@
       "public java.util.Map indexedDocumentTypesByCluster()",
       "public java.util.Set applicationClusterInfo()",
       "public void markClustersForDeferredReconfiguration(java.util.Set)",
-      "public com.yahoo.config.provision.TelemetryExportConfig telemetryExportConfig()"
+      "public com.yahoo.config.provision.TelemetryExporterConfiguration telemetryExporterConfiguration()"
     ],
     "fields" : [ ]
   },

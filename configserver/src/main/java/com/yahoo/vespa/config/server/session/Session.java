@@ -16,7 +16,7 @@ import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.TelemetryExportConfig;
+import com.yahoo.config.provision.TelemetryExporterConfiguration;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.Transaction;
@@ -176,8 +176,8 @@ public abstract class Session implements Comparable<Session>  {
         return sessionZooKeeperClient.readActivationTriggers();
     }
 
-    public TelemetryExportConfig telemetryExportConfig() {
-        return sessionZooKeeperClient.readTelemetryExportConfig();
+    public TelemetryExporterConfiguration telemetryExportConfig() {
+        return sessionZooKeeperClient.readTelemetryExporterConfiguration();
     }
 
     public SessionZooKeeperClient getSessionZooKeeperClient() { return sessionZooKeeperClient; }

@@ -11,7 +11,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.TelemetryExportConfig;
+import com.yahoo.config.provision.TelemetryExporterConfiguration;
 import com.yahoo.container.logging.LevelsModSpec;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.ConfigProxy;
@@ -26,10 +26,6 @@ import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
-import com.yahoo.vespa.model.admin.telemetry.TelemetryAuth;
-import com.yahoo.vespa.model.admin.telemetry.TelemetryExport;
-import com.yahoo.vespa.model.admin.telemetry.TelemetryExporter;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -67,7 +63,7 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
     private LogForwarder.Config logForwarderConfig = null;
     private boolean logForwarderIncludeAdmin = false;
 
-    private TelemetryExport telemetryExport = null;
+    private TelemetryExporterConfiguration telemetryExport = null;
 
     private final ApplicationType applicationType;
 
@@ -76,11 +72,11 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
         this.logForwarderIncludeAdmin = includeAdmin;
     }
 
-    public void setTelemetryExport(TelemetryExport telemetryExport) {
+    public void setTelemetryExport(TelemetryExporterConfiguration telemetryExport) {
         this.telemetryExport = telemetryExport;
     }
 
-    public Optional<TelemetryExport> getTelemetryExport() {
+    public Optional<TelemetryExporterConfiguration> getTelemetryExport() {
         return Optional.ofNullable(telemetryExport);
     }
 
@@ -368,39 +364,17 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
         return levelSpec;
     }
 
-    public TelemetryExportConfig toTelemetryExportConfig() {
+    public TelemetryExporterConfiguration toTelemetryExporterConfiguration() {
         return getTelemetryExport()
-                .map(Admin::toTelemetryExportConfig)
-                .orElse(TelemetryExportConfig.empty());
+                .map(Admin::toTelemetryExporterConfiguration)
+                .orElse(TelemetryExporterConfiguration.empty());
     }
 
-    private static TelemetryExportConfig toTelemetryExportConfig(TelemetryExport telemetryExport) {
-        var exporters = telemetryExport.exporters()
-                                       .stream()
-                                       .map(Admin::toExporter)
-                                       .toList();
-        return new TelemetryExportConfig(exporters);
-    }
-
-    private static TelemetryExportConfig.Exporter toExporter(TelemetryExporter e) {
-        return new TelemetryExportConfig.Exporter(
-                e.id(),
-                e.type().name(),
-                e.endpoint().orElse(null),
-                e.project().orElse(null),
-                e.auth().map(Admin::toAuth).orElse(null),
-                e.metricSets(),
-                e.logFileTypes());
-    }
-
-    private static TelemetryExportConfig.Auth toAuth(TelemetryAuth a) {
-        return new TelemetryExportConfig.Auth(
-                a.type().name(),
-                a.vault(),
-                a.secretName().orElse(null),
-                a.header().orElse(null),
-                a.usernameSecretName().orElse(null),
-                a.passwordSecretName().orElse(null));
+    private static TelemetryExporterConfiguration  toTelemetryExporterConfiguration(TelemetryExporterConfiguration telemetryExporterConfiguration) {
+        var exporters = telemetryExporterConfiguration.exporters()
+                                                      .stream()
+                                                      .toList();
+        return new TelemetryExporterConfiguration(exporters);
     }
 
 }

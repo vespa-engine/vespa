@@ -85,7 +85,7 @@ io.netty:netty-transport-native-epoll:${netty.vespa.version}:linux-x86_64
 io.netty:netty-transport-native-unix-common:${netty.vespa.version}
 io.netty:netty-transport:${netty.vespa.version}
 io.perfmark:perfmark-api:0.27.0
-io.projectreactor:reactor-core:3.7.0
+io.projectreactor:reactor-core:${reactor-core.vespa.version}
 io.prometheus:simpleclient:${prometheus.client.vespa.version}
 io.prometheus:simpleclient_common:${prometheus.client.vespa.version}
 io.prometheus:simpleclient_tracer_common:${prometheus.client.vespa.version}
@@ -193,6 +193,7 @@ org.jetbrains.kotlin:kotlin-stdlib:${kotlin.vespa.version}
 org.jetbrains.kotlin:kotlin-stdlib:2.1.10
 org.jetbrains:annotations:17.0.0
 org.json:json:${org.json.vespa.version}
+org.jspecify:jspecify:1.0.0
 org.junit.jupiter:junit-jupiter-api:${junit.vespa.tenant.version}
 org.junit.jupiter:junit-jupiter-api:${junit.vespa.version}
 org.junit.jupiter:junit-jupiter-engine:${junit.vespa.tenant.version}

@@ -13,6 +13,9 @@ import java.util.Optional;
 public interface DeploymentConfigStore {
 
     /** Stores deployment config for the given application, replacing any previously stored config. */
-    void store(ApplicationId applicationId, Optional<BackupConfig> backup, List<BlockWindow> blockWindows, TelemetryExportConfig telemetryExportConfig);
+    void store(ApplicationId applicationId,
+               Optional<BackupConfig> backup,
+               List<BlockWindow> blockWindows,
+               TelemetryExporterConfiguration telemetryExportConfig);
 
 }

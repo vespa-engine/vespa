@@ -32,7 +32,7 @@ import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.Tags;
-import com.yahoo.config.provision.TelemetryExportConfig;
+import com.yahoo.config.provision.TelemetryExporterConfiguration;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.net.HostName;
 import com.yahoo.path.Path;
@@ -377,7 +377,7 @@ public class SessionPreparer {
                                   params.cloudResourceTags(),
                                   params.dataplaneTokens(),
                                   ActivationTriggers.from(prepareResult.getConfigChangeActions(), params.isInternalRedeployment()),
-                                  telemetryExportConfig());
+                                  telemetryExporterConfiguration());
             checkTimeout("write state to zookeeper");
         }
 
@@ -403,11 +403,11 @@ public class SessionPreparer {
             return List.copyOf(endpoints);
         }
 
-        private TelemetryExportConfig telemetryExportConfig() {
+        private TelemetryExporterConfiguration telemetryExporterConfiguration() {
             return modelResultList.stream()
                                   .max(Comparator.comparing(r -> r.version))
-                                  .map(r -> r.getModel().telemetryExportConfig())
-                                  .orElse(TelemetryExportConfig.empty());
+                                  .map(r -> r.getModel().telemetryExporterConfiguration())
+                                  .orElse(TelemetryExporterConfiguration.empty());
         }
 
     }
@@ -432,7 +432,7 @@ public class SessionPreparer {
                                        CloudResourceTags cloudResourceTags,
                                        List<DataplaneToken> dataplaneTokens,
                                        ActivationTriggers activationTriggers,
-                                       TelemetryExportConfig telemetryExportConfig) {
+                                       TelemetryExporterConfiguration telemetryExporterConfiguration) {
         var zooKeeperDeployer = new ZooKeeperDeployer(curator, deployLogger, applicationId, zooKeeperClient.sessionId());
         try {
             zooKeeperDeployer.deploy(applicationPackage, fileRegistryMap, allocatedHosts);
@@ -452,7 +452,7 @@ public class SessionPreparer {
                                           cloudResourceTags,
                                           dataplaneTokens,
                                           activationTriggers,
-                                          telemetryExportConfig,
+                                          telemetryExporterConfiguration,
                                           writeSessionData);
         } catch (RuntimeException | IOException e) {
             zooKeeperDeployer.cleanup();

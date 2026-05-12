@@ -17,11 +17,12 @@ using MemoryGain = IFlushTarget::MemoryGain;
 using DiskGain = IFlushTarget::DiskGain;
 
 class MyFlushHandler : public IFlushHandler {
+    SerialNum _current_serial;
 public:
-    MyFlushHandler(const std::string& name) noexcept : IFlushHandler(name) {}
+    MyFlushHandler(const std::string& name) noexcept : IFlushHandler(name), _current_serial(100) {}
     ~MyFlushHandler() override;
     std::vector<IFlushTarget::SP> getFlushTargets() override { return std::vector<IFlushTarget::SP>(); }
-    SerialNum getCurrentSerialNumber() const override { return 0; }
+    SerialNum getCurrentSerialNumber() const override { return _current_serial; }
     void flushDone(SerialNum oldestSerial) override { (void)oldestSerial; }
     void syncTls(search::SerialNum syncTo) override { (void)syncTo; }
 };
@@ -50,6 +51,9 @@ public:
     SerialNum getFlushedSerialNum() const override { return _flushedSerial; }
     system_time getLastFlushTime() const override { return _lastFlushTime; }
     bool needUrgentFlush() const override { return _urgentFlush; }
+    [[nodiscard]] bool can_flush(SerialNum current_serial) const noexcept override {
+        return current_serial > _flushedSerial;
+    }
 };
 
 using StringList = std::vector<std::string>;
@@ -77,7 +81,11 @@ public:
         fixupMap(_handler->getName(), context->getLastSerial());
         return *this;
     }
-    ContextBuilder& add(const IFlushTarget::SP& target, SerialNum lastSerial = 0) {
+    ContextBuilder& add(const IFlushTarget::SP& target) {
+        FlushContext::SP ctx(new FlushContext(_handler, target, _handler->getCurrentSerialNumber()));
+        return add(ctx);
+    }
+    ContextBuilder& add(const IFlushTarget::SP& target, SerialNum lastSerial) {
         FlushContext::SP ctx(new FlushContext(_handler, target, lastSerial));
         return add(ctx);
     }
@@ -93,6 +101,16 @@ public:
     FlushContext::List flush_targets(const IFlushStrategy& strategy) const {
         return strategy.getFlushTargets(list(), tlsStats(), _active_flushes);
     }
+    [[nodiscard]] StringList flush_target_names(const IFlushStrategy& strategy) const {
+        auto ctx_list = flush_targets(strategy);
+        StringList target_names;
+        target_names.reserve(ctx_list.size());
+        for (auto& ctx : ctx_list) {
+            target_names.emplace_back(ctx->getTarget()->getName());
+        }
+        return target_names;
+    }
+    [[nodiscard]] const IFlushHandler& handler() const noexcept { return *_handler; }
 };
 
 using minutes = std::chrono::minutes;
@@ -293,6 +311,26 @@ TEST(MemoryFlushTest, order_type_is_preserved) {
         cb.add(createTargetF("t2", false)).add(createTargetF("t1", true));
         MemoryFlush flush({1000, 20_Gi, 1.0, 1000, 1.0, seconds(30)});
         assertOrder({"t1", "t2"}, cb.flush_targets(flush));
+    }
+}
+
+TEST(MemoryFlushTest, skip_target_that_cannot_be_flushed) {
+    {
+        // t1 cannot be flushed, but t2 can be flushed
+        ContextBuilder cb;
+        auto           current_serial = cb.handler().getCurrentSerialNumber();
+        cb.add(createTargetD("t1", DiskGain(200 * milli, 80 * milli), current_serial))
+            .add(createTargetD("t2", DiskGain(100 * milli, 80 * milli)));
+        MemoryFlush flush({1000, 20_Gi, 1.0, 20, 0.19, seconds(30)});
+        EXPECT_EQ(StringList{"t2"}, cb.flush_target_names(flush));
+    }
+    {
+        // t1 cannot be flushed
+        ContextBuilder cb;
+        auto           current_serial = cb.handler().getCurrentSerialNumber();
+        cb.add(createTargetD("t1", DiskGain(200 * milli, 80 * milli), current_serial));
+        MemoryFlush flush({1000, 20_Gi, 1.0, 20, 0.19, seconds(30)});
+        EXPECT_EQ(StringList{}, cb.flush_target_names(flush));
     }
 }
 

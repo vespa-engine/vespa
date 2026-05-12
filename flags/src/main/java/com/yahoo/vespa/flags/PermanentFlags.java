@@ -1,8 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags;
 
-import com.yahoo.vespa.flags.custom.EnclaveAccountProfiles;
-import com.yahoo.vespa.flags.custom.ClusterCapacity;
 import com.yahoo.vespa.flags.custom.CustomerRpmServiceList;
 import com.yahoo.vespa.flags.custom.RoleList;
 import com.yahoo.vespa.flags.custom.SharedHost;
@@ -44,10 +42,6 @@ public class PermanentFlags {
     static final Instant CREATED_AT = Instant.EPOCH;
     static final Instant EXPIRES_AT = ZonedDateTime.of(2100, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC).toInstant();
 
-    public static final UnboundStringFlag ENDPOINT_CERTIFICATE_PROVIDER = defineStringFlag(
-            "endpoint-certificate-provider", "digicert", "The CA to use for endpoint certificates. Must be 'digicert', 'globalsign' or 'zerossl'",
-            "Takes effect on initial deployment", TENANT_ID, APPLICATION, INSTANCE_ID);
-
     public static final UnboundStringFlag JVM_GC_OPTIONS = defineStringFlag(
             "jvm-gc-options", "",
             "Sets default jvm gc options",
@@ -65,19 +59,6 @@ public class PermanentFlags {
             "Warmup duration for query dispatcher",
             "Takes effect at redeployment (requires restart)",
             INSTANCE_ID);
-
-    public static final UnboundBooleanFlag FLEET_CANARY = defineFeatureFlag(
-            "fleet-canary", false,
-            "Whether the host is a fleet canary.",
-            "Takes effect on next host admin tick.",
-            HOSTNAME);
-
-    public static final UnboundListFlag<ClusterCapacity> PREPROVISION_CAPACITY = defineListFlag(
-            "preprovision-capacity", List.of(), ClusterCapacity.class,
-            "Specifies the resources that ought to be immediately available for additional cluster " +
-                    "allocations.  If the resources are not available, additional hosts will be provisioned. " +
-                    "Only applies to dynamically provisioned zones.",
-            "Takes effect on next iteration of HostCapacityMaintainer.");
 
     public static final UnboundIntFlag REBOOT_INTERVAL_IN_DAYS = defineIntFlag(
             "reboot-interval-in-days", 30,
@@ -231,30 +212,6 @@ public class PermanentFlags {
             "Takes effect on restart of Docker container",
             NODE_TYPE, INSTANCE_ID, HOSTNAME);
 
-    public static final UnboundBooleanFlag ENABLE_PUBLIC_SIGNUP_FLOW = defineFeatureFlag(
-            "enable-public-signup-flow", false,
-            "Show the public signup flow for a user in the console",
-            "takes effect on browser reload of api/user/v1/user",
-            CONSOLE_USER_EMAIL);
-
-    public static final UnboundLongFlag INVALIDATE_CONSOLE_SESSIONS = defineLongFlag(
-            "invalidate-console-sessions", 0,
-            "Invalidate console sessions (cookies) issued before this unix timestamp",
-            "Takes effect on next api request"
-    );
-
-    public static final UnboundIntFlag MAX_TRIAL_TENANTS = defineIntFlag(
-            "max-trial-tenants", -1,
-            "The maximum nr. of tenants with trial plan, -1 is unlimited",
-            "Takes effect immediately"
-    );
-
-    public static final UnboundIntFlag MAX_TENANTS_PER_USER = defineIntFlag(
-            "max-tenants-per-user", 3,
-            "The maximum nr. of tenants a user can create",
-            "Takes effect immediately"
-    );
-
     public static final UnboundBooleanFlag ALLOW_DISABLE_MTLS = defineFeatureFlag(
             "allow-disable-mtls", true,
             "Allow application to disable client authentication",
@@ -265,13 +222,6 @@ public class PermanentFlags {
             "max-os-upgrades", 30,
             "The maximum number hosts that can perform OS upgrade at a time",
             "Takes effect immediately, but any current excess upgrades will not be cancelled"
-    );
-
-    public static final UnboundListFlag<String> EXTENDED_TRIAL_TENANTS = defineListFlag(
-            "extended-trial-tenants", List.of(), String.class,
-            "Tenants that will not be expired from their trial plan",
-            "Takes effect immediately, used by the CloudTrialExpirer maintainer",
-            TENANT_ID
     );
 
     public static final UnboundListFlag<String> TLS_CIPHERS_OVERRIDE = defineListFlag(
@@ -410,24 +360,6 @@ public class PermanentFlags {
             "Takes effect on allocation from node repository",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
-    public static final UnboundListFlag<String> CLOUD_ACCOUNTS = defineListFlag(
-            "cloud-accounts", List.of(), String.class,
-            "A list of cloud accounts (e.g. AWS account or GCP project IDs) that are valid for the given tenant",
-            "Takes effect on next deployment through controller",
-            TENANT_ID);
-
-    public static final UnboundJacksonFlag<EnclaveAccountProfiles> ENCLAVE_ACCOUNT_PROFILES = defineJacksonFlag(
-            "enclave-account-profiles", EnclaveAccountProfiles.EMPTY, EnclaveAccountProfiles.class,
-            "A list of enclave account profiles that are valid for the given tenant. Includes cloud account and misc. cloud metadata",
-            "Takes effect immediately", __ -> true,
-            TENANT_ID);
-
-    public static final UnboundBooleanFlag REQUIRE_ENCLAVE = defineFeatureFlag(
-            "require-enclave", false,
-            "Whether the given tenant should only be allowed to deploy to enclave",
-            "Takes effect on next deployment through controller",
-            TENANT_ID);
-
     public static final UnboundStringFlag APPLICATION_FILES_WITH_UNKNOWN_EXTENSION = defineStringFlag(
             "fail-deployment-for-files-with-unknown-extension", "FAIL",
             "Whether to log or fail for deployments when app has a file with unknown extension (valid values: LOG, FAIL)",
@@ -464,12 +396,6 @@ public class PermanentFlags {
             "This can be lowered if there are incidents/bugs where one needs to delete sessions quickly",
             "Takes effect immediately"
     );
-
-    public static final UnboundBooleanFlag NOTIFICATION_DISPATCH_FLAG = defineFeatureFlag(
-            "dispatch-notifications", true,
-            "Whether we should send notification for a given tenant",
-            "Takes effect immediately",
-            TENANT_ID);
 
     public static final UnboundIntFlag KEEP_FILE_REFERENCES_DAYS = defineIntFlag(
             "keep-file-references-days", 30,
@@ -581,21 +507,6 @@ public class PermanentFlags {
             "allowed-athenz-proxy-identities", List.of(), String.class,
             "Allowed Athenz proxy identities",
             "takes effect at redeployment");
-
-    public static final UnboundBooleanFlag HUBSPOT_SYNC_TENANTS = defineFeatureFlag(
-            "hubspot-sync-tenants", true,
-            "Whether to sync tenants to HubSpot. Use this to block sync for specific tenants",
-            "Takes effect immediately");
-
-    public static final UnboundBooleanFlag HUBSPOT_SYNC_CONTACTS = defineFeatureFlag(
-            "hubspot-sync-contacts", true,
-            "Whether to sync contacts to HubSpot. Use this to block sync for specific users",
-            "Takes effect immediately");
-
-    public static final UnboundBooleanFlag HUBSPOT_SYNC_COMPANIES = defineFeatureFlag(
-            "hubspot-sync-companies", true,
-            "Whether to sync companies to HubSpot. Use this to block sync for specific companies",
-            "Takes effect immediately");
 
     public static final UnboundDoubleFlag FEED_CONCURRENCY = defineDoubleFlag(
             "feed-concurrency", 0.5,

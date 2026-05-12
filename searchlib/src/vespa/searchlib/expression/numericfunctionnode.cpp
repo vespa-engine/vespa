@@ -72,12 +72,16 @@ template <typename T> void NumericFunctionNode::VectorHandler<T>::handle(const R
         const size_t            oldRSize(result.size());
         if (argSize > oldRSize) {
             result.resize(argSize);
-            for (size_t i(oldRSize); i < argSize; i++) {
-                result[i] = result[i % oldRSize];
+            if (oldRSize > 0) {
+                for (size_t i(oldRSize); i < argSize; i++) {
+                    result[i] = result[i % oldRSize];
+                }
             }
         }
-        for (size_t i(0), m(result.size()), isize(argSize); i < m; i++) {
-            function().executeIterative(av.get(i % isize), result[i]);
+        if (argSize > 0) {
+            for (size_t i(0), m(result.size()), isize(argSize); i < m; i++) {
+                function().executeIterative(av.get(i % isize), result[i]);
+            }
         }
     } else {
         for (size_t i(0), m(result.size()); i < m; i++) {

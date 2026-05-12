@@ -46,7 +46,8 @@ public class GenerateTestDescriptorMojo extends AbstractMojo {
         try (Stream<Path> files = Files.walk(testClassesDirectory())) {
             files
                     .filter(f -> f.toString().endsWith(".class"))
-                    .forEach(analyzer::analyzeClass);
+                    .forEach(analyzer::visitClass);
+            analyzer.resolve();
         } catch (Exception e) {
             throw new MojoExecutionException("Failed to analyze test classes: " + e.getMessage(), e);
         }
