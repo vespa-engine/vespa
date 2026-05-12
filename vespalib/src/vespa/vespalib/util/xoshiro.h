@@ -58,6 +58,9 @@ public:
         _s[3] = 0x5642ca7dc7c0482f;
     }
 
+    constexpr Xoshiro256PlusPlusPrng(const Xoshiro256PlusPlusPrng&) noexcept = default;
+    constexpr Xoshiro256PlusPlusPrng& operator=(const Xoshiro256PlusPlusPrng&) noexcept = default;
+
     // Explicitly 256-bit seeded PRNG. The seed parts should ideally have high
     // entropy and be statistically uncorrelated, such as from a CSPRNG source.
     constexpr Xoshiro256PlusPlusPrng(const uint64_t s0, const uint64_t s1,
@@ -102,6 +105,8 @@ public:
 
         return result;
     }
+
+    constexpr bool operator==(const Xoshiro256PlusPlusPrng&) const noexcept = default;
 
 private:
     [[nodiscard]] static constexpr uint64_t rotl(const uint64_t x, const int k) noexcept {
