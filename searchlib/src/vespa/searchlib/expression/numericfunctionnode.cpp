@@ -66,25 +66,22 @@ void NumericFunctionNode::onCalculate(const ExpressionNodeVector& args, ResultNo
 
 template <typename T> void NumericFunctionNode::VectorHandler<T>::handle(const ResultNode& arg) {
     typename T::Vector& result = _result.getVector();
+    const size_t        old_res_sz = result.size();
     if (arg.getClass().inherits(ResultNodeVector::classId)) {
-        const ResultNodeVector& av = static_cast<const ResultNodeVector&>(arg);
-        const size_t            argSize(av.size());
-        const size_t            oldRSize(result.size());
-        if (argSize > oldRSize) {
+        const auto&  av = static_cast<const ResultNodeVector&>(arg);
+        const size_t argSize = av.size();
+        if (argSize > old_res_sz) {
             result.resize(argSize);
-            if (oldRSize > 0) {
-                for (size_t i(oldRSize); i < argSize; i++) {
-                    result[i] = result[i % oldRSize];
-                }
+            for (size_t i = old_res_sz; i < argSize; i++) {
+                result[i].set(av.get(i));
             }
         }
-        if (argSize > 0) {
-            for (size_t i(0), m(result.size()), isize(argSize); i < m; i++) {
-                function().executeIterative(av.get(i % isize), result[i]);
-            }
+        size_t m = std::min(argSize, old_res_sz);
+        for (size_t i = 0; i < m; i++) {
+            function().executeIterative(av.get(i), result[i]);
         }
     } else {
-        for (size_t i(0), m(result.size()); i < m; i++) {
+        for (size_t i = 0; i < old_res_sz; i++) {
             function().executeIterative(arg, result[i]);
         }
     }
