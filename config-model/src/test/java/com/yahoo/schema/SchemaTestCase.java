@@ -978,6 +978,43 @@ public class SchemaTestCase {
         assertTrue(schemaInfoConfig.contains("totalMatchPhaseMaxHits 4567"));
     }
 
+    @Test
+    void testDocumentIdAttributeToSchema() throws Exception {
+        String schema_default =
+                """
+                schema doc {
+                    document doc {
+                    }
+                }""";
+        assertFalse(documentIdAttributeEnabled(schema_default));
+
+        String schema_fromdisk =
+                """
+                schema doc {
+                    document-id: from-disk
+                    document doc {
+                    }
+                }""";
+        assertFalse(documentIdAttributeEnabled(schema_fromdisk));
+
+        String schema_attribute =
+                """
+                schema doc {
+                    document-id: attribute
+                    document doc {
+                    }
+                }""";
+        assertTrue(documentIdAttributeEnabled(schema_attribute));
+    }
+
+    private boolean documentIdAttributeEnabled(String schema_string) throws Exception {
+        ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+        builder.addSchema(schema_string);
+        var application = builder.build(true);
+        var schema = application.schemas().get("doc");
+        return schema.documentIdAttributeEnabled();
+    }
+
     private void assertInheritedFromParent(Schema schema, RankProfileRegistry rankProfileRegistry) {
         assertEquals("pf1", schema.fieldSets().userFieldSets().get("parent_set").getFieldNames().stream().findFirst().get());
         assertEquals(Stemming.NONE, schema.getStemming());
