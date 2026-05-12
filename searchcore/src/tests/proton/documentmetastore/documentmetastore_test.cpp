@@ -77,9 +77,9 @@ namespace {
 static constexpr uint32_t numBucketBits = UINT32_C(20);
 static constexpr uint64_t timestampBias = UINT64_C(2000000000000);
 
-uint64_t stat_save_file_size_helper(const std::string& fileName, bool pad) {
+uint64_t stat_one_save_file_size(const std::string& file_name, bool pad) {
     std::error_code ec;
-    uint64_t        sz = std::filesystem::file_size(std::filesystem::path(fileName), ec);
+    uint64_t        sz = std::filesystem::file_size(std::filesystem::path(file_name), ec);
     EXPECT_FALSE(ec);
     if (pad) {
         DiskSpaceCalculator calc;
@@ -89,10 +89,10 @@ uint64_t stat_save_file_size_helper(const std::string& fileName, bool pad) {
 }
 
 uint64_t stat_save_files_size_helper(const std::string& name, bool pad) {
-    uint64_t    resultSize = stat_save_file_size_helper(name + ".dat", pad);
+    uint64_t    resultSize = stat_one_save_file_size(name + ".dat", pad);
     std::string docids_name = name + "." + DocumentMetaStoreSaver::docid_file_suffix();
     if (std::filesystem::exists(std::filesystem::path(docids_name))) {
-        resultSize += stat_save_file_size_helper(docids_name, pad);
+        resultSize += stat_one_save_file_size(docids_name, pad);
     }
     if (pad) {
         resultSize += DiskSpaceCalculator::directory_placeholder_size();
@@ -571,7 +571,7 @@ TEST(DocumentMetaStoreTest, can_store_full_document_id) {
 }
 
 TEST(DocumentMetaStoreTest, gids_can_be_saved_and_loaded) {
-    std::string documentmetastore2("documentmetastore2");
+    std::string           documentmetastore2("documentmetastore2");
     DocumentMetaStore     dms1(createBucketDB());
     uint32_t              numLids = 1000;
     std::vector<uint32_t> removeLids;
@@ -641,7 +641,7 @@ TEST(DocumentMetaStoreTest, gids_can_be_saved_and_loaded) {
 }
 
 TEST(DocumentMetaStoreTest, bucket_used_bits_are_lbounded_at_load_time) {
-    std::string documentmetastore2("documentmetastore2");
+    std::string       documentmetastore2("documentmetastore2");
     DocumentMetaStore dms1(createBucketDB());
     dms1.constructFreeList();
 
@@ -1937,8 +1937,8 @@ TEST(DocumentMetaStoreTest, second_shrink_works_after_compact_and_inactive_inser
 }
 
 TEST(DocumentMetaStoreTest, document_sizes_are_saved) {
-    std::string documentmetastore3("documentmetastore3");
-    std::string documentmetastore4("documentmetastore4");
+    std::string       documentmetastore3("documentmetastore3");
+    std::string       documentmetastore4("documentmetastore4");
     DocumentMetaStore dms1(createBucketDB());
     dms1.constructFreeList();
     addLid(dms1, 1, 100);
@@ -1985,7 +1985,7 @@ TEST(DocumentMetaStoreTest, document_sizes_are_saved) {
 }
 
 TEST(DocumentMetaStoreTest, full_document_ids_are_saved) {
-    std::string documentmetastore5("documentmetastore5");
+    std::string       documentmetastore5("documentmetastore5");
     DocumentMetaStore dms1(createBucketDB(), "[documentmetastore]", search::GrowStrategy(), true, SubDbType::READY);
     dms1.constructFreeList();
     addLid(dms1, 1);
