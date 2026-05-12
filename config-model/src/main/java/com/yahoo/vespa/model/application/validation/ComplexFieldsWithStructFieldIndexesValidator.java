@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation;
 
+import com.yahoo.document.ArrayDataType;
+import com.yahoo.document.MapDataType;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.derived.SchemaInfo;
 import com.yahoo.schema.document.ImmutableSDField;
@@ -48,6 +50,29 @@ public class ComplexFieldsWithStructFieldIndexesValidator implements Validator {
                                   "Remove setting or change to 'indexing: attribute' if needed for matching.",
                                   clusterName, schema.getName(), unsupportedFields));
         }
+        validateMapFieldsWithIndexedArraysInValueStruct(context, clusterName, schema);
+    }
+
+    private static void validateMapFieldsWithIndexedArraysInValueStruct(Context context, String clusterName, Schema schema) {
+        schema.allFields()
+              .filter(field -> !field.isImportedField())
+              .filter(field -> field.getDataType() instanceof MapDataType)
+              .forEach(field -> {
+                  var valueField = field.getStructField("value");
+                  if (valueField == null) return;
+                  var indexedArrayFields = valueField.getStructFields().stream()
+                          .filter(f -> f.getDataType() instanceof ArrayDataType && f.wasConfiguredToDoIndexing())
+                          .map(ImmutableSDField::getName)
+                          .collect(Collectors.joining(", "));
+                  if (!indexedArrayFields.isEmpty()) {
+                      context.deployState().getDeployLogger().logApplicationPackage(
+                              Level.WARNING,
+                              Text.format("For cluster '%s', schema '%s': Map field '%s' has value struct fields of array type" +
+                                          " with 'indexing: index': %s. This creates an indexed map of arrays which is not" +
+                                          " recommended. Consider removing 'index' from the array field.",
+                                          clusterName, schema.getName(), field.getName(), indexedArrayFields));
+                  }
+              });
     }
 
     private static boolean hasStructFieldsWithIndex(ImmutableSDField field) {

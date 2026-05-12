@@ -144,6 +144,33 @@ public class ComplexFieldsValidatorTestCase {
     }
 
     @Test
+    void logs_warning_when_map_field_has_indexed_array_in_value_struct() throws IOException, SAXException {
+        var logger = new MyLogger();
+        createModelAndValidate(joinLines(
+                "schema test {",
+                "document test {",
+                "struct output {",
+                "  field id type string {}",
+                "  field fileKey type string {}",
+                "  field directories type array<string> {}",
+                "}",
+                "field outputs type map<string, output> {",
+                "  indexing: summary",
+                "  struct-field key { indexing: attribute }",
+                "  struct-field value.id { indexing: summary | attribute }",
+                "  struct-field value.directories { indexing: summary | index }",
+                "  struct-field value.fileKey { indexing: summary }",
+                "}",
+                "}",
+                "}"), logger);
+        assertTrue(logger.message.toString().contains(
+                "For cluster 'mycluster', schema 'test': Map field 'outputs' has value struct fields" +
+                " of array type with 'indexing: index': outputs.value.directories." +
+                " This creates an indexed map of arrays which is not recommended." +
+                " Consider removing 'index' from the array field."));
+    }
+
+    @Test
     void logs_warning_when_complex_fields_have_struct_fields_with_index_and_exact_match() throws IOException, SAXException {
         var logger = new MyLogger();
         createModelAndValidate(joinLines(
