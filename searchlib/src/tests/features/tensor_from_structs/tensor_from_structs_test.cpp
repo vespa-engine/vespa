@@ -108,6 +108,17 @@ struct ExecFixture {
         attrs.push_back(AttributeFactory::createAttribute("single.key", AVC(AVBT::STRING, AVCT::SINGLE)));
         attrs.push_back(AttributeFactory::createAttribute("single.value", AVC(AVBT::FLOAT, AVCT::SINGLE)));
 
+        // Multi-key struct array: inv.category (string), inv.brand (string), inv.sku (int32), inv.qty (float)
+        attrs.push_back(AttributeFactory::createAttribute("inv.category", AVC(AVBT::STRING, AVCT::ARRAY)));
+        attrs.push_back(AttributeFactory::createAttribute("inv.brand",    AVC(AVBT::STRING, AVCT::ARRAY)));
+        attrs.push_back(AttributeFactory::createAttribute("inv.sku",      AVC(AVBT::INT32,  AVCT::ARRAY)));
+        attrs.push_back(AttributeFactory::createAttribute("inv.qty",      AVC(AVBT::FLOAT,  AVCT::ARRAY)));
+
+        // Mixed collection-type struct for negative test (one ARRAY key, one SINGLE key, ARRAY value)
+        attrs.push_back(AttributeFactory::createAttribute("mixinv.a",   AVC(AVBT::STRING, AVCT::ARRAY)));
+        attrs.push_back(AttributeFactory::createAttribute("mixinv.b",   AVC(AVBT::STRING, AVCT::SINGLE)));
+        attrs.push_back(AttributeFactory::createAttribute("mixinv.qty", AVC(AVBT::FLOAT,  AVCT::ARRAY)));
+
         // Register attributes in index environment
         test.getIndexEnv()
             .getBuilder()
@@ -125,7 +136,14 @@ struct ExecFixture {
             .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "single.key")
             .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "single.value")
             .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "missing.key")
-            .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "missing.value");
+            .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "missing.value")
+            .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "inv.category")
+            .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "inv.brand")
+            .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "inv.sku")
+            .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "inv.qty")
+            .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "mixinv.a")
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "mixinv.b")
+            .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "mixinv.qty");
 
         for (const auto& attr : attrs) {
             attr->addReservedDoc();
@@ -185,12 +203,47 @@ struct ExecFixture {
         FloatingPointAttribute& singleValue = dynamic_cast<FloatingPointAttribute&>(*attrs[11]);
         singleValue.update(1, 42.5);
 
+        // Setup document 1: multi-key struct array (inv)
+        StringAttribute& invCategory = dynamic_cast<StringAttribute&>(*attrs[12]);
+        invCategory.append(1, "food", 0);
+        invCategory.append(1, "food", 0);
+        invCategory.append(1, "drink", 0);
+
+        StringAttribute& invBrand = dynamic_cast<StringAttribute&>(*attrs[13]);
+        invBrand.append(1, "acme", 0);
+        invBrand.append(1, "globex", 0);
+        invBrand.append(1, "acme", 0);
+
+        IntegerAttribute& invSku = dynamic_cast<IntegerAttribute&>(*attrs[14]);
+        invSku.append(1, 10, 0);
+        invSku.append(1, 20, 0);
+        invSku.append(1, 30, 0);
+
+        FloatingPointAttribute& invQty = dynamic_cast<FloatingPointAttribute&>(*attrs[15]);
+        invQty.append(1, 1.5, 0);
+        invQty.append(1, 2.0, 0);
+        invQty.append(1, 3.5, 0);
+
+        // Setup document 1: mixed collection-type struct (for negative test)
+        StringAttribute& mixinvA = dynamic_cast<StringAttribute&>(*attrs[16]);
+        mixinvA.append(1, "x", 0);
+
+        StringAttribute& mixinvB = dynamic_cast<StringAttribute&>(*attrs[17]);
+        mixinvB.update(1, "y");
+
+        FloatingPointAttribute& mixinvQty = dynamic_cast<FloatingPointAttribute&>(*attrs[18]);
+        mixinvQty.append(1, 9.0, 0);
+
         // Setup document 2: empty arrays
         // (no appends, so arrays remain empty)
 
         // Setup document 3: single element arrays
         itemsName.append(3, "grape", 0);
         itemsPrice.append(3, 3.5, 0);
+        invCategory.append(3, "food", 0);
+        invBrand.append(3, "acme", 0);
+        invSku.append(3, 99, 0);
+        invQty.append(3, 7.5, 0);
 
         for (const auto& attr : attrs) {
             attr->commit();
@@ -312,6 +365,65 @@ TEST(TensorFromStructsTest, require_that_double_cell_type_is_preserved) {
     ExecFixture f("tensorFromStructs(attribute(items),name,price,double)");
     const auto& result = f.execute();
     EXPECT_TRUE(result.type().to_spec().find("tensor(") == 0 || result.type().to_spec().find("tensor<double>") == 0);
+}
+
+// Tests for multi-key (2 or 3 key fields)
+
+TEST(TensorFromStructsTest, require_that_two_string_keys_create_2d_sparse_tensor) {
+    ExecFixture f("tensorFromStructs(attribute(inv),category,brand,qty,float)");
+    EXPECT_EQ(*make_tensor(TensorSpec("tensor<float>(brand{},category{})")
+                               .add({{"category", "food"},  {"brand", "acme"}},   1.5)
+                               .add({{"category", "food"},  {"brand", "globex"}}, 2.0)
+                               .add({{"category", "drink"}, {"brand", "acme"}},   3.5)),
+              f.execute());
+}
+
+TEST(TensorFromStructsTest, require_that_string_and_integer_keys_create_2d_sparse_tensor) {
+    ExecFixture f("tensorFromStructs(attribute(inv),category,sku,qty,float)");
+    EXPECT_EQ(*make_tensor(TensorSpec("tensor<float>(category{},sku{})")
+                               .add({{"category", "food"},  {"sku", "10"}}, 1.5)
+                               .add({{"category", "food"},  {"sku", "20"}}, 2.0)
+                               .add({{"category", "drink"}, {"sku", "30"}}, 3.5)),
+              f.execute());
+}
+
+TEST(TensorFromStructsTest, require_that_three_keys_create_3d_sparse_tensor) {
+    ExecFixture f("tensorFromStructs(attribute(inv),category,brand,sku,qty,float)");
+    EXPECT_EQ(*make_tensor(TensorSpec("tensor<float>(brand{},category{},sku{})")
+                               .add({{"category", "food"},  {"brand", "acme"},   {"sku", "10"}}, 1.5)
+                               .add({{"category", "food"},  {"brand", "globex"}, {"sku", "20"}}, 2.0)
+                               .add({{"category", "drink"}, {"brand", "acme"},   {"sku", "30"}}, 3.5)),
+              f.execute());
+}
+
+TEST(TensorFromStructsTest, require_that_multi_key_dimension_order_follows_argument_order) {
+    ExecFixture f("tensorFromStructs(attribute(inv),category,brand,qty,float)");
+    const auto& result = f.execute();
+    // Tensor type specs sort mapped dimensions alphabetically.
+    EXPECT_EQ("tensor<float>(brand{},category{})", result.type().to_spec());
+}
+
+TEST(TensorFromStructsTest, require_that_empty_arrays_create_empty_multi_dim_tensor) {
+    ExecFixture f("tensorFromStructs(attribute(inv),category,brand,qty,float)");
+    EXPECT_EQ(*make_empty("tensor<float>(brand{},category{})"), f.execute(2));
+}
+
+TEST(TensorFromStructsTest, require_that_single_element_arrays_create_single_cell_multi_dim_tensor) {
+    ExecFixture f("tensorFromStructs(attribute(inv),category,brand,qty,float)");
+    EXPECT_EQ(*make_tensor(TensorSpec("tensor<float>(brand{},category{})")
+                               .add({{"category", "food"}, {"brand", "acme"}}, 7.5)),
+              f.execute(3));
+}
+
+TEST(TensorFromStructsTest, require_that_duplicate_key_field_name_fails_setup) {
+    SetupFixture f;
+    FTA::FT_SETUP_FAIL(f.blueprint, f.indexEnv,
+                       StringList().add("attribute(inv)").add("category").add("category").add("qty").add("float"));
+}
+
+TEST(TensorFromStructsTest, require_that_collection_type_mismatch_across_keys_creates_empty_tensor) {
+    ExecFixture f("tensorFromStructs(attribute(mixinv),a,b,qty,float)");
+    EXPECT_EQ(*make_empty("tensor<float>(a{},b{})"), f.execute());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

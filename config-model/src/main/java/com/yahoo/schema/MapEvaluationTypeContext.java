@@ -354,17 +354,21 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
             }
         }
         if (reference.name().equals("tensorFromStructs")) {
-            if (reference.arguments().size() != 4) {
-                throw new IllegalArgumentException(reference + " should have 4 arguments: (attribute(myarray), mykeyfield, myvaluefield, celltype)");
+            int numArgs = reference.arguments().size();
+            if (numArgs < 4 || numArgs > 6) {
+                throw new IllegalArgumentException(reference + " should have 4-6 arguments, not " + numArgs + ": (attribute(myarray), mykeyfield1[, mykeyfield2[, mykeyfield3]], myvaluefield, celltype)");
             }
-            if (arg0 instanceof ReferenceNode arg0ref && FeatureNames.isAttributeFeature(arg0ref.reference())) {
-                dimension = String.valueOf(arg1);
-                cellType = TensorType.Value.fromId(String.valueOf(arg3));
-            } else {
+            if ( ! (arg0 instanceof ReferenceNode arg0ref && FeatureNames.isAttributeFeature(arg0ref.reference()))) {
                 throw new IllegalArgumentException("Bad first argument of " + reference.name() +
                                                    " must be an attribute feature, not " + arg0);
             }
-            return Optional.of(new TensorType.Builder(cellType).mapped(dimension).build());
+            int numKeys = numArgs - 3;
+            cellType = TensorType.Value.fromId(String.valueOf(getArgExp(reference, numArgs - 1)));
+            var builder = new TensorType.Builder(cellType);
+            for (int i = 0; i < numKeys; i++) {
+                builder.mapped(String.valueOf(getArgExp(reference, 1 + i)));
+            }
+            return Optional.of(builder.build());
         }
         if (reference.name().equals("tensorFromLabels") ||
             reference.name().equals("tensorFromWeightedSet"))
