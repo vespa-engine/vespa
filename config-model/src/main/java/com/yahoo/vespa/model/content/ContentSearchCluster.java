@@ -209,6 +209,14 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         return !hasIndexingModeStreaming(type) && !hasIndexingModeIndexed(type);
     }
 
+    private boolean hasDocumentIdAttributeEnabled(NewDocumentType type) {
+        if (searchCluster == null) return false;
+        var schemaInfo = searchCluster.schemas().get(type.getName());
+        if (schemaInfo == null) return false;
+        var schema = schemaInfo.fullSchema();
+        return (schema != null) && (schema.documentIdAttributeEnabled());
+    }
+
     @Override
     public void getConfig(ProtonConfig.Builder builder) {
         boolean hasAnyNonIndexedSchema = false;
@@ -219,7 +227,8 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
             ddbB.inputdoctypename(docTypeName)
                 .configid(getConfigId())
                 .visibilitydelay(visibilityDelay)
-                .global(globalDocType);
+                .global(globalDocType)
+                .document_id_attribute(hasDocumentIdAttributeEnabled(type));
 
             if (hasIndexingModeStreaming(type)) {
                 hasAnyNonIndexedSchema = true;

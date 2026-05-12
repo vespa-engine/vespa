@@ -63,6 +63,8 @@ public class Schema implements ImmutableSchema {
     /** True if this doesn't define a search, just a document type */
     private final boolean documentsOnly;
 
+    private Boolean documentIdAttribute = null;
+
     private Boolean rawAsBase64 = null;
 
     private Stemming stemming = null;
@@ -175,6 +177,19 @@ public class Schema implements ImmutableSchema {
     public Optional<Schema> inherited() {
         return inherited.map(name -> owner.schemas().get(name));
     }
+
+    /**
+     * Returns true if document ids should be stored in an implicit attribute
+     *
+     * @return true if document ids should be stored in an implicit attribute
+     */
+    public boolean documentIdAttributeEnabled() {
+        if (documentIdAttribute != null) return documentIdAttribute;
+        if (inherited.isEmpty()) return false;
+        return requireInherited().documentIdAttributeEnabled();
+    }
+
+    public void enableDocumentIdAttribute(boolean value) { documentIdAttribute = value; }
 
     /**
      * Returns true if 'raw' fields shall be presented as base64 in summary
