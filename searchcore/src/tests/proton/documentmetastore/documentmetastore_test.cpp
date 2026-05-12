@@ -77,6 +77,9 @@ namespace {
 static constexpr uint32_t numBucketBits = UINT32_C(20);
 static constexpr uint64_t timestampBias = UINT64_C(2000000000000);
 
+constexpr uint32_t large_doc_size = 100000000;
+constexpr uint32_t large_doc_size24 = (1u << 24) - 1;
+
 uint64_t stat_one_save_file_size(const std::string& file_name, bool pad) {
     std::error_code ec;
     uint64_t        sz = std::filesystem::file_size(std::filesystem::path(file_name), ec);
@@ -592,7 +595,8 @@ TEST(DocumentMetaStoreTest, gids_can_be_saved_and_loaded) {
         dms1.remove(lid, 0u);
         dms1.removes_complete({lid});
     }
-    uint64_t expSaveBytesSize = DocumentMetaStore::minHeaderLen + (1000 - 4) * DocumentMetaStore::entry_size(true);
+    uint64_t expSaveBytesSize =
+        DocumentMetaStore::minHeaderLen + (1000 - 4) * DocumentMetaStore::entry_size(true, false);
     EXPECT_EQ(expSaveBytesSize, dms1.getEstimatedSaveByteSize());
     TuneFileAttributes      tuneFileAttributes;
     DummyFileHeaderContext  fileHeaderContext;
@@ -1872,7 +1876,7 @@ TEST(DocumentMetaStoreTest, shrink_via_flush_target_works) {
 
     vespalib::ThreadStackExecutor exec(1);
     EXPECT_TRUE(ft->can_flush(11));
-    vespalib::Executor::Task::UP  task = ft->initFlush(11, std::make_shared<search::FlushToken>());
+    vespalib::Executor::Task::UP task = ft->initFlush(11, std::make_shared<search::FlushToken>());
     exec.execute(std::move(task));
     exec.sync();
     EXPECT_FALSE(ft->can_flush(11));
@@ -1936,17 +1940,48 @@ TEST(DocumentMetaStoreTest, second_shrink_works_after_compact_and_inactive_inser
     assertShrink(dms, 2, 1);
 }
 
-TEST(DocumentMetaStoreTest, document_sizes_are_saved) {
-    std::string       documentmetastore3("documentmetastore3");
-    std::string       documentmetastore4("documentmetastore4");
+void check_document_sizes_are_loaded(const std::string& documentmetastore3, bool track_32bit_document_sizes_save,
+                                     bool track_32bit_document_sizes_load) {
+    DocumentMetaStore dms3(createBucketDB(), documentmetastore3);
+    dms3.set_track_32bit_document_sizes(track_32bit_document_sizes_load);
+    EXPECT_TRUE(dms3.load());
+    EXPECT_FALSE(dms3.requires_document_ids_from_docstore());
+    EXPECT_EQ(!track_32bit_document_sizes_save && track_32bit_document_sizes_load,
+              dms3.requires_doc_sizes_from_docstore());
+    dms3.constructFreeList();
+    if (track_32bit_document_sizes_save == track_32bit_document_sizes_load) {
+        EXPECT_EQ(stat_save_files_size(documentmetastore3), dms3.getEstimatedSaveByteSize());
+        EXPECT_EQ(stat_save_files_size_on_disk(documentmetastore3), dms3.size_on_disk());
+    }
+    assertSize(dms3, 1, 100);
+    assertSize(dms3, 2, 10000);
+    if (track_32bit_document_sizes_save && track_32bit_document_sizes_load) {
+        assertSize(dms3, 3, large_doc_size);
+    } else {
+        assertSize(dms3, 3, large_doc_size24);
+    }
+}
+
+void check_document_sizes_are_saved(bool track_32bit_document_sizes) {
+    std::string documentmetastore3("documentmetastore3");
+    std::string documentmetastore4("documentmetastore4");
+    if (track_32bit_document_sizes) {
+        documentmetastore3 += "-32";
+        documentmetastore4 += "-32";
+    }
     DocumentMetaStore dms1(createBucketDB());
     dms1.constructFreeList();
+    dms1.set_track_32bit_document_sizes(track_32bit_document_sizes);
     addLid(dms1, 1, 100);
     addLid(dms1, 2, 10000);
-    addLid(dms1, 3, 100000000);
+    addLid(dms1, 3, large_doc_size);
     assertSize(dms1, 1, 100);
     assertSize(dms1, 2, 10000);
-    assertSize(dms1, 3, (1u << 24) - 1);
+    if (track_32bit_document_sizes) {
+        assertSize(dms1, 3, large_doc_size);
+    } else {
+        assertSize(dms1, 3, large_doc_size24);
+    }
 
     TuneFileAttributes      tuneFileAttributes;
     DummyFileHeaderContext  fileHeaderContext;
@@ -1959,19 +1994,14 @@ TEST(DocumentMetaStoreTest, document_sizes_are_saved) {
     EXPECT_EQ(stat_save_files_size(documentmetastore4), dms1.getEstimatedSaveByteSize());
     EXPECT_EQ(stat_save_files_size_on_disk(documentmetastore4), dms1.size_on_disk());
 
-    DocumentMetaStore dms3(createBucketDB(), documentmetastore3);
-    EXPECT_TRUE(dms3.load());
-    EXPECT_FALSE(dms3.requires_document_ids_from_docstore());
-    dms3.constructFreeList();
-    EXPECT_EQ(stat_save_files_size(documentmetastore3), dms3.getEstimatedSaveByteSize());
-    EXPECT_EQ(stat_save_files_size_on_disk(documentmetastore3), dms3.size_on_disk());
-    assertSize(dms3, 1, 100);
-    assertSize(dms3, 2, 10000);
-    assertSize(dms3, 3, (1u << 24) - 1);
+    check_document_sizes_are_loaded(documentmetastore3, track_32bit_document_sizes, track_32bit_document_sizes);
+    check_document_sizes_are_loaded(documentmetastore3, track_32bit_document_sizes, !track_32bit_document_sizes);
 
     DocumentMetaStore dms4(createBucketDB(), documentmetastore4);
+    dms4.set_track_32bit_document_sizes(track_32bit_document_sizes);
     EXPECT_TRUE(dms4.load());
     EXPECT_FALSE(dms4.requires_document_ids_from_docstore());
+    EXPECT_TRUE(dms4.requires_doc_sizes_from_docstore());
     dms4.constructFreeList();
     EXPECT_LT(stat_save_files_size(documentmetastore4), dms4.getEstimatedSaveByteSize());
     dms4.setTrackDocumentSizes(false);
@@ -1982,6 +2012,14 @@ TEST(DocumentMetaStoreTest, document_sizes_are_saved) {
     assertSize(dms4, 3, 1);
     remove_save_files(documentmetastore3);
     remove_save_files(documentmetastore4);
+}
+
+TEST(DocumentMetaStoreTest, document_24bit_sizes_are_saved) {
+    check_document_sizes_are_saved(false);
+}
+
+TEST(DocumentMetaStoreTest, document_32bit_sizes_are_saved) {
+    check_document_sizes_are_saved(true);
 }
 
 TEST(DocumentMetaStoreTest, full_document_ids_are_saved) {
@@ -2039,10 +2077,10 @@ TEST(DocumentMetaStoreTest, full_document_ids_are_considered_in_estimated_save_b
     // Commit to update the stats used for estimate
     dms.commit(CommitParam::UpdateStats::FORCE);
 
-    uint64_t expected_save_bytes_size = DocumentMetaStore::minHeaderLen + 3 * DocumentMetaStore::entry_size(true) +
-                                        DocumentMetaStore::minHeaderLen + 3 * sizeof(uint32_t) +
-                                        createDocId(1).toString().length() + replaced_docid.length() +
-                                        createDocId(4).toString().length();
+    uint64_t expected_save_bytes_size =
+        DocumentMetaStore::minHeaderLen + 3 * DocumentMetaStore::entry_size(true, false) +
+        DocumentMetaStore::minHeaderLen + 3 * sizeof(uint32_t) + createDocId(1).toString().length() +
+        replaced_docid.length() + createDocId(4).toString().length();
     EXPECT_EQ(expected_save_bytes_size, dms.getEstimatedSaveByteSize());
 }
 

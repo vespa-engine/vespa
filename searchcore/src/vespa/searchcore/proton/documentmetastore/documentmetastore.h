@@ -92,6 +92,8 @@ private:
     std::atomic<uint32_t>           _shrinkLidSpaceBlockers;
     const SubDbType                 _subDbType;
     bool                            _trackDocumentSizes;
+    bool                            _track_32bit_document_sizes;
+    bool                            _requires_doc_sizes_from_docstore;
     size_t                          _changesSinceCommit;
     OperationListenerSP             _op_listener;
     bool                            _should_compact_gid_to_lid_map;
@@ -167,8 +169,8 @@ public:
     static constexpr size_t minHeaderLen = 0x1000;
     static constexpr size_t min_entry_size =
         sizeof(uint32_t) + GlobalId::LENGTH + sizeof(uint8_t) + sizeof(Timestamp);
-    static constexpr size_t entry_size(bool track_document_sizes) {
-        return min_entry_size + (track_document_sizes ? 3 : 0);
+    static constexpr size_t entry_size(bool track_document_sizes, bool track_32bit_document_sizes) {
+        return min_entry_size + (track_document_sizes ? (track_32bit_document_sizes ? 4 : 3) : 0);
     }
 
     explicit DocumentMetaStore(BucketDBOwnerSP bucketDB);
@@ -297,6 +299,7 @@ public:
     uint64_t getEstimatedSaveByteSize() const override;
     uint32_t getVersion() const override;
     void setTrackDocumentSizes(bool trackDocumentSizes) { _trackDocumentSizes = trackDocumentSizes; }
+    void set_track_32bit_document_sizes(bool value) noexcept { _track_32bit_document_sizes = value; }
     void foreach(const search::IGidToLidMapperVisitor& visitor) const override;
     bool is_sortable() const noexcept override;
     std::unique_ptr<search::attribute::ISortBlobWriter>
@@ -311,6 +314,8 @@ public:
      * This method continues to return true after the validation, which can be ignored.
      */
     bool requires_document_ids_from_docstore() const noexcept { return _requires_document_ids_from_docstore; }
+
+    bool requires_doc_sizes_from_docstore() const noexcept { return _requires_doc_sizes_from_docstore; }
 
     vespalib::MemoryUsage get_docid_memory_usage() const { return _docid_store.getMemoryUsage(); };
     vespalib::MemoryUsage get_gid_to_lid_map_memory_usage() const { return _gidToLidMap.getMemoryUsage(); };
