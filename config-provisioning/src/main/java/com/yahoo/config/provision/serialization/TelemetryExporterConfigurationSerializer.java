@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision.serialization;
 
-import com.yahoo.config.provision.TelemetryExportConfig;
+import com.yahoo.config.provision.TelemetryExporterConfiguration;
+import com.yahoo.config.provision.TelemetryExporterConfiguration.Auth;
+import com.yahoo.config.provision.TelemetryExporterConfiguration.Exporter.ExporterType;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -11,13 +13,14 @@ import com.yahoo.slime.SlimeUtils;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
- * Serializes {@link TelemetryExportConfig} to/from Slime and JSON.
+ * Serializes {@link TelemetryExporterConfiguration} to/from Slime and JSON.
  *
  * @author onur
  */
-public class TelemetryExportConfigSerializer {
+public class TelemetryExporterConfigurationSerializer {
 
     private static final String exportersKey = "exporters";
     private static final String idKey = "id";
@@ -33,26 +36,26 @@ public class TelemetryExportConfigSerializer {
     private static final String metricSetsKey = "metricSets";
     private static final String logFileTypesKey = "logFileTypes";
 
-    public static byte[] toJson(TelemetryExportConfig config) {
+    public static byte[] toJson(TelemetryExporterConfiguration config) {
         Slime slime = new Slime();
         toSlime(config, slime.setObject());
         try {
             return SlimeUtils.toJsonBytes(slime);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to serialize TelemetryExportConfig", e);
+            throw new RuntimeException("Failed to serialize TelemetryExporterConfiguration", e);
         }
     }
 
-    public static TelemetryExportConfig fromJson(byte[] json) {
+    public static TelemetryExporterConfiguration fromJson(byte[] json) {
         return fromSlime(SlimeUtils.jsonToSlime(json).get());
     }
 
-    public static void toSlime(TelemetryExportConfig config, Cursor root) {
+    public static void toSlime(TelemetryExporterConfiguration config, Cursor root) {
         Cursor exportersArray = root.setArray(exportersKey);
         for (var exporter : config.exporters()) {
             Cursor exporterObject = exportersArray.addObject();
             exporterObject.setString(idKey, exporter.id());
-            exporterObject.setString(typeKey, exporter.type());
+            exporterObject.setString(typeKey, exporter.type().name());
             exporter.endpoint().ifPresent(e -> exporterObject.setString(endpointKey, e));
             exporter.project().ifPresent(p -> exporterObject.setString(projectKey, p));
             exporter.auth().ifPresent(auth -> {
@@ -75,24 +78,24 @@ public class TelemetryExportConfigSerializer {
         }
     }
 
-    public static TelemetryExportConfig fromSlime(Inspector root) {
-        List<TelemetryExportConfig.Exporter> exporters = new ArrayList<>();
+    public static TelemetryExporterConfiguration fromSlime(Inspector root) {
+        List<TelemetryExporterConfiguration.Exporter> exporters = new ArrayList<>();
         root.field(exportersKey).traverse((ArrayTraverser) (i, exporterInspector) -> {
             String id = exporterInspector.field(idKey).asString();
-            String type = exporterInspector.field(typeKey).asString();
+            ExporterType type = ExporterType.valueOf(exporterInspector.field(typeKey).asString());
             String endpoint = optionalString(exporterInspector.field(endpointKey));
             String project = optionalString(exporterInspector.field(projectKey));
 
-            TelemetryExportConfig.Auth auth = null;
+            Auth auth = null;
             Inspector authInspector = exporterInspector.field(authKey);
             if (authInspector.valid()) {
-                auth = new TelemetryExportConfig.Auth(
+                auth = new Auth(
                         authInspector.field(typeKey).asString(),
                         authInspector.field(vaultKey).asString(),
-                        optionalString(authInspector.field(secretNameKey)),
-                        optionalString(authInspector.field(headerKey)),
-                        optionalString(authInspector.field(usernameSecretNameKey)),
-                        optionalString(authInspector.field(passwordSecretNameKey)));
+                        Optional.ofNullable(optionalString(authInspector.field(secretNameKey))),
+                        Optional.ofNullable(optionalString(authInspector.field(headerKey))),
+                        Optional.ofNullable(optionalString(authInspector.field(usernameSecretNameKey))),
+                        Optional.ofNullable(optionalString(authInspector.field(passwordSecretNameKey))));
             }
 
             List<String> metricSets = new ArrayList<>();
@@ -101,10 +104,11 @@ public class TelemetryExportConfigSerializer {
             List<String> logFileTypes = new ArrayList<>();
             exporterInspector.field(logFileTypesKey).traverse((ArrayTraverser) (j, entry) -> logFileTypes.add(entry.asString()));
 
-            exporters.add(new TelemetryExportConfig.Exporter(id, type, endpoint, project, auth, metricSets, logFileTypes));
+            exporters.add(new TelemetryExporterConfiguration.Exporter(id, type, Optional.ofNullable(endpoint), Optional.ofNullable(project),
+                                                          Optional.ofNullable(auth), metricSets, logFileTypes));
         });
-        if (exporters.isEmpty()) return TelemetryExportConfig.empty();
-        return new TelemetryExportConfig(exporters);
+        if (exporters.isEmpty()) return TelemetryExporterConfiguration.empty();
+        return new TelemetryExporterConfiguration(exporters);
     }
 
     private static String optionalString(Inspector inspector) {
