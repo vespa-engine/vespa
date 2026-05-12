@@ -57,7 +57,7 @@ public:
         return std::visit(
             [](const auto& val) noexcept {
                 using T = std::decay_t<decltype(val)>;
-                if constexpr (std::same_as<T, int64_t> || std::same_as<T, double>) {
+                if constexpr (std::is_convertible_v<T, double>) {
                     return static_cast<double>(val);
                 } else {
                     return 0.0;
