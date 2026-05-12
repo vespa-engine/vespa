@@ -1158,20 +1158,39 @@ TEST(IteratorBenchmark, analyze_AND_plan_variants_ENN) {
 
 TEST(IteratorBenchmark, data_pond_test) {
     DataPond pond;
-    Record   record;
-    record.set("my_int", 10);
-    record.set("my_bool", true);
-    record.set("my_string", "string");
-    record.set("my_float", 3.14);
 
-    pond.add(record);
+    auto add_measurement = [&pond](const std::string& case_id, double time_ms, double cost) {
+        Record r;
+        r.set("case_id", case_id);
+        r.set("time_ms", time_ms);
+        r.set("cost", cost);
+        pond.add(r);
+    };
 
-    Filter filter = Filter().lt("my_float", 2.0).eq("my_string", "str");
-    for (const auto& rec : pond.records()) {
-        if (filter.check(rec)) {
+    // Three cases, each with multiple synthetic measurements. ms_per_cost ratio differs per case
+    // to mimic what a real benchmark run produces.
+    add_measurement("Term-int32-strict", 0.10, 0.10);
+    add_measurement("Term-int32-strict", 0.20, 0.20);
+    add_measurement("Term-int32-strict", 0.40, 0.40);
+    add_measurement("Term-str-strict", 0.50, 0.20);
+    add_measurement("Term-str-strict", 1.00, 0.40);
+    add_measurement("ENN-strict", 2.00, 0.40);
+    add_measurement("ENN-strict", 4.00, 0.80);
+
+    // calibration median routine
+    std::vector<double> values;
+    for (const auto& record : pond.records()) {
+        if (record.has_field<double>("time_ms") && record.has_field<double>("cost")) {
+            values.push_back(record.get_double("time_ms") / record.get_double("cost"));
         }
-        std::println("{}", rec.to_string());
     }
+    std::sort(values.begin(), values.end());
+    double median = values[values.size() / 2];
+    for (auto& record : pond.records()) {
+        record.set("time_cost_median", median);
+    }
+
+    std::println("median time_ms/cost={:.4f}", median);
 }
 
 static std::string smoke_test_filter = "--gtest_filter="
