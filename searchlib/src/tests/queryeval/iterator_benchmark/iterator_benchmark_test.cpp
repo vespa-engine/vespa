@@ -551,11 +551,11 @@ public:
  */
 void postprocess_calculate_calibration_constant(DataPond& pond) {
     std::vector<RecordRef> records;
-    std::vector<double> ms_per_costs;
+    std::vector<double>    ms_per_costs;
     for (auto& record : pond.records()) {
-        if (record.has_field<double>("time_ms") && record.has_field<double>("cost")) {
+        if (record.has_field<double>("time_ms") && record.has_field<double>("actual_cost")) {
             records.emplace_back(record);
-            ms_per_costs.push_back(record.get<double>("time_ms") / record.get<double>("cost"));
+            ms_per_costs.push_back(record.get<double>("time_ms") / record.get<double>("actual_cost"));
         }
     }
 
@@ -567,10 +567,68 @@ void postprocess_calculate_calibration_constant(DataPond& pond) {
 }
 
 /**
+ * Calculates averages, error and classifies per group.
+ */
+void postprocess_calculate_error(DataPond& pond) {
+    std::map<std::string, std::vector<RecordRef>> grouped;
+    for (auto& record : pond.records()) {
+        grouped[record.get<std::string>("group")].emplace_back(record);
+    }
+
+    auto sum_field = [](const std::vector<RecordRef>& records, const std::string& name) {
+        double s = 0;
+        for (const auto& r : records) {
+            s += r.get().get<double>(name);
+        }
+        return s;
+    };
+
+    auto avg_field = [sum_field](const std::vector<RecordRef>& records, const std::string& name) {
+        return sum_field(records, name) / static_cast<double>(records.size());
+    };
+
+    auto error_ratio = [avg_field](const std::vector<RecordRef>& records) {
+        double avg_time = avg_field(records, "time_ms");
+        double avg_cost = avg_field(records, "actual_cost");
+        double ms_per_cost = avg_time / avg_cost;
+        return ms_per_cost / records.front().get().get<double>("calibration_constant");
+    };
+
+    auto classify = [error_ratio](const std::vector<RecordRef>& records) -> std::string {
+        constexpr double ok_band = 1.4;
+        constexpr double under_threshold = ok_band;
+        constexpr double over_threshold = 1.0 / ok_band;
+        double           e = error_ratio(records); // raw, can be <1 or >1
+        if (e > under_threshold)
+            return "UNDER";
+        if (e < over_threshold)
+            return "OVER";
+        return "OK";
+    };
+
+    for (auto& [_, records] : grouped) {
+        double avg_time = avg_field(records, "time_ms");
+        double avg_cost = avg_field(records, "actual_cost");
+        for (auto& record : records) {
+            Record& r = record.get();
+            double  pred_ms = avg_cost * r.get<double>("calibration_constant");
+            double  error = pred_ms > 0.0 ? avg_time / pred_ms : 0.0;
+
+            r.set("avg_actual_cost", avg_cost);
+            r.set("avg_time", avg_time);
+            r.set("class", classify(records));
+            r.set("error", error);
+            r.set("pred_ms", pred_ms);
+        }
+    }
+}
+
+/**
  * Preprocess the raw data samples before summary.
  */
 void postprocess_pond(DataPond& pond) {
     postprocess_calculate_calibration_constant(pond);
+    postprocess_calculate_error(pond);
 }
 
 void print_pond_summary(const DataPond& pond) {
@@ -579,11 +637,13 @@ void print_pond_summary(const DataPond& pond) {
         grouped[record.get<std::string>("group")].emplace_back(record);
     }
 
-
-
-    std::println("myheader");
-    for (const auto& [name, records] : grouped) {
-        std::println("{}", name);
+    std::println("calibration score: ms_per_cost={:.3f} ({} cases)\n",
+                 pond.records().front().get<double>("calibration_constant"), grouped.size());
+    std::println("{:<60} {:>12} {:>12} {:>10} {:>10}", "case", "actual_ms", "pred_ms", "error", "class");
+    for (const auto& [case_id, records] : grouped) {
+        const Record& first = records.front().get();
+        std::println("{:<60} {:>12.3f} {:>12.3f} {:>9.3f}x {:>10}", case_id, first.get<double>("time_ms"),
+                     first.get<double>("pred_ms"), first.get<double>("error"), first.get<std::string>("class"));
     }
 }
 
@@ -1219,7 +1279,7 @@ TEST(IteratorBenchmark, data_pond_test) {
     add_measurement("ENN-strict", 4.00, 0.80);
 
     // calibration median routine
-    std::vector<double> values;
+    std::vector<double>    values;
     std::vector<RecordRef> records;
     for (auto& record : pond.records()) {
         if (record.has_field<double>("time_ms") && record.has_field<double>("cost")) {
