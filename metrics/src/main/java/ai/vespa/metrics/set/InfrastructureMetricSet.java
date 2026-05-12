@@ -150,6 +150,7 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ContainerMetrics.SERVER_NUM_REQUESTS.count());
         addMetric(metrics, ContainerMetrics.SERVER_STARTED_MILLIS.max());
         addMetric(metrics, ContainerMetrics.JDISC_HTTP_LATENCY.max());
+        addMetric(metrics, ContainerMetrics.JETTY_HTTP_COMPLIANCE_VIOLATION.count());
 
         return metrics;
     }
