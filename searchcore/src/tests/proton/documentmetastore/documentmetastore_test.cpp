@@ -8,6 +8,7 @@
 #include <vespa/searchcore/proton/bucketdb/checksumaggregators.h>
 #include <vespa/searchcore/proton/bucketdb/i_bucket_create_listener.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
+#include <vespa/searchcore/proton/documentmetastore/documentmetastoresaver.h>
 #include <vespa/searchcore/proton/documentmetastore/operation_listener.h>
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchcore/proton/server/itlssyncer.h>
@@ -20,6 +21,7 @@
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
+#include <vespa/searchlib/util/disk_space_calculator.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/hw_info.h>
@@ -42,6 +44,7 @@ using search::AttributeFileSaveTarget;
 using search::AttributeGuard;
 using search::AttributeVector;
 using search::CommitParam;
+using search::DiskSpaceCalculator;
 using search::DocumentMetadata;
 using search::GrowStrategy;
 using search::LidUsageStats;
@@ -73,6 +76,43 @@ namespace {
 
 static constexpr uint32_t numBucketBits = UINT32_C(20);
 static constexpr uint64_t timestampBias = UINT64_C(2000000000000);
+
+uint64_t stat_one_save_file_size(const std::string& file_name, bool pad) {
+    std::error_code ec;
+    uint64_t        sz = std::filesystem::file_size(std::filesystem::path(file_name), ec);
+    EXPECT_FALSE(ec);
+    if (pad) {
+        DiskSpaceCalculator calc;
+        sz = calc(sz);
+    }
+    return sz;
+}
+
+uint64_t stat_save_files_size_helper(const std::string& name, bool pad) {
+    uint64_t    resultSize = stat_one_save_file_size(name + ".dat", pad);
+    std::string docids_name = name + "." + DocumentMetaStoreSaver::docid_file_suffix();
+    if (std::filesystem::exists(std::filesystem::path(docids_name))) {
+        resultSize += stat_one_save_file_size(docids_name, pad);
+    }
+    if (pad) {
+        resultSize += DiskSpaceCalculator::directory_placeholder_size();
+    }
+    return resultSize;
+}
+
+uint64_t stat_save_files_size(const std::string& name) {
+    return stat_save_files_size_helper(name, false);
+}
+
+uint64_t stat_save_files_size_on_disk(const std::string& name) {
+    return stat_save_files_size_helper(name, true);
+}
+
+void remove_save_files(const std::string& name) {
+    std::filesystem::remove(std::filesystem::path(name + ".dat"));
+    std::string docids_name = name + "." + DocumentMetaStoreSaver::docid_file_suffix();
+    std::filesystem::remove(std::filesystem::path(docids_name));
+}
 
 } // namespace
 
@@ -531,6 +571,7 @@ TEST(DocumentMetaStoreTest, can_store_full_document_id) {
 }
 
 TEST(DocumentMetaStoreTest, gids_can_be_saved_and_loaded) {
+    std::string           documentmetastore2("documentmetastore2");
     DocumentMetaStore     dms1(createBucketDB());
     uint32_t              numLids = 1000;
     std::vector<uint32_t> removeLids;
@@ -556,12 +597,16 @@ TEST(DocumentMetaStoreTest, gids_can_be_saved_and_loaded) {
     TuneFileAttributes      tuneFileAttributes;
     DummyFileHeaderContext  fileHeaderContext;
     AttributeFileSaveTarget saveTarget(tuneFileAttributes, fileHeaderContext);
-    EXPECT_TRUE(dms1.save(saveTarget, "documentmetastore2"));
+    EXPECT_TRUE(dms1.save(saveTarget, documentmetastore2));
+    EXPECT_EQ(stat_save_files_size(documentmetastore2), dms1.getEstimatedSaveByteSize());
+    EXPECT_EQ(stat_save_files_size_on_disk(documentmetastore2), dms1.size_on_disk());
 
-    DocumentMetaStore dms2(createBucketDB(), "documentmetastore2");
+    DocumentMetaStore dms2(createBucketDB(), documentmetastore2);
     EXPECT_TRUE(dms2.load());
     EXPECT_FALSE(dms2.requires_document_ids_from_docstore());
     dms2.constructFreeList();
+    EXPECT_EQ(dms1.getEstimatedSaveByteSize(), dms2.getEstimatedSaveByteSize());
+    EXPECT_EQ(dms1.size_on_disk(), dms2.size_on_disk());
     EXPECT_EQ(numLids + 1, dms2.getNumDocs());
     EXPECT_EQ(numLids - 4, dms2.getNumUsedLids()); // 4 removed
     for (uint32_t lid = 1; lid <= numLids; ++lid) {
@@ -592,10 +637,11 @@ TEST(DocumentMetaStoreTest, gids_can_be_saved_and_loaded) {
         EXPECT_EQ(numLids + 1, dms2.getNumDocs());
         EXPECT_EQ(numLids - (3 - i), dms2.getNumUsedLids());
     }
-    std::filesystem::remove(std::filesystem::path("documentmetastore2.dat"));
+    remove_save_files(documentmetastore2);
 }
 
 TEST(DocumentMetaStoreTest, bucket_used_bits_are_lbounded_at_load_time) {
+    std::string       documentmetastore2("documentmetastore2");
     DocumentMetaStore dms1(createBucketDB());
     dms1.constructFreeList();
 
@@ -610,16 +656,16 @@ TEST(DocumentMetaStoreTest, bucket_used_bits_are_lbounded_at_load_time) {
     TuneFileAttributes      tuneFileAttributes;
     DummyFileHeaderContext  fileHeaderContext;
     AttributeFileSaveTarget saveTarget(tuneFileAttributes, fileHeaderContext);
-    ASSERT_TRUE(dms1.save(saveTarget, "documentmetastore2"));
+    ASSERT_TRUE(dms1.save(saveTarget, documentmetastore2));
 
-    DocumentMetaStore dms2(createBucketDB(), "documentmetastore2");
+    DocumentMetaStore dms2(createBucketDB(), documentmetastore2);
     ASSERT_TRUE(dms2.load());
     EXPECT_FALSE(dms2.requires_document_ids_from_docstore());
     ASSERT_EQ(dms2.getNumDocs(), 2); // Incl. zero LID
 
     BucketId expected_bucket(storage::spi::BucketLimits::MinUsedBits, gid.convertToBucketId().getRawId());
     assertGid(gid, lid, dms2, expected_bucket, Timestamp(1000));
-    std::filesystem::remove(std::filesystem::path("documentmetastore2.dat"));
+    remove_save_files(documentmetastore2);
 }
 
 TEST(DocumentMetaStore, stats_are_updated) {
@@ -1891,6 +1937,8 @@ TEST(DocumentMetaStoreTest, second_shrink_works_after_compact_and_inactive_inser
 }
 
 TEST(DocumentMetaStoreTest, document_sizes_are_saved) {
+    std::string       documentmetastore3("documentmetastore3");
+    std::string       documentmetastore4("documentmetastore4");
     DocumentMetaStore dms1(createBucketDB());
     dms1.constructFreeList();
     addLid(dms1, 1, 100);
@@ -1903,30 +1951,41 @@ TEST(DocumentMetaStoreTest, document_sizes_are_saved) {
     TuneFileAttributes      tuneFileAttributes;
     DummyFileHeaderContext  fileHeaderContext;
     AttributeFileSaveTarget saveTarget(tuneFileAttributes, fileHeaderContext);
-    EXPECT_TRUE(dms1.save(saveTarget, "documentmetastore3"));
+    EXPECT_TRUE(dms1.save(saveTarget, documentmetastore3));
+    EXPECT_EQ(stat_save_files_size(documentmetastore3), dms1.getEstimatedSaveByteSize());
+    EXPECT_EQ(stat_save_files_size_on_disk(documentmetastore3), dms1.size_on_disk());
     dms1.setTrackDocumentSizes(false);
-    EXPECT_TRUE(dms1.save(saveTarget, "documentmetastore4"));
+    EXPECT_TRUE(dms1.save(saveTarget, documentmetastore4));
+    EXPECT_EQ(stat_save_files_size(documentmetastore4), dms1.getEstimatedSaveByteSize());
+    EXPECT_EQ(stat_save_files_size_on_disk(documentmetastore4), dms1.size_on_disk());
 
-    DocumentMetaStore dms3(createBucketDB(), "documentmetastore3");
+    DocumentMetaStore dms3(createBucketDB(), documentmetastore3);
     EXPECT_TRUE(dms3.load());
     EXPECT_FALSE(dms3.requires_document_ids_from_docstore());
     dms3.constructFreeList();
+    EXPECT_EQ(stat_save_files_size(documentmetastore3), dms3.getEstimatedSaveByteSize());
+    EXPECT_EQ(stat_save_files_size_on_disk(documentmetastore3), dms3.size_on_disk());
     assertSize(dms3, 1, 100);
     assertSize(dms3, 2, 10000);
     assertSize(dms3, 3, (1u << 24) - 1);
 
-    DocumentMetaStore dms4(createBucketDB(), "documentmetastore4");
+    DocumentMetaStore dms4(createBucketDB(), documentmetastore4);
     EXPECT_TRUE(dms4.load());
     EXPECT_FALSE(dms4.requires_document_ids_from_docstore());
     dms4.constructFreeList();
+    EXPECT_LT(stat_save_files_size(documentmetastore4), dms4.getEstimatedSaveByteSize());
+    dms4.setTrackDocumentSizes(false);
+    EXPECT_EQ(stat_save_files_size(documentmetastore4), dms4.getEstimatedSaveByteSize());
+    EXPECT_EQ(stat_save_files_size_on_disk(documentmetastore4), dms4.size_on_disk());
     assertSize(dms4, 1, 1);
     assertSize(dms4, 2, 1);
     assertSize(dms4, 3, 1);
-    std::filesystem::remove(std::filesystem::path("documentmetastore3.dat"));
-    std::filesystem::remove(std::filesystem::path("documentmetastore4.dat"));
+    remove_save_files(documentmetastore3);
+    remove_save_files(documentmetastore4);
 }
 
 TEST(DocumentMetaStoreTest, full_document_ids_are_saved) {
+    std::string       documentmetastore5("documentmetastore5");
     DocumentMetaStore dms1(createBucketDB(), "[documentmetastore]", search::GrowStrategy(), true, SubDbType::READY);
     dms1.constructFreeList();
     addLid(dms1, 1);
@@ -1936,13 +1995,17 @@ TEST(DocumentMetaStoreTest, full_document_ids_are_saved) {
     TuneFileAttributes      tuneFileAttributes;
     DummyFileHeaderContext  fileHeaderContext;
     AttributeFileSaveTarget saveTarget(tuneFileAttributes, fileHeaderContext);
-    EXPECT_TRUE(dms1.save(saveTarget, "documentmetastore5"));
+    EXPECT_TRUE(dms1.save(saveTarget, documentmetastore5));
+    EXPECT_EQ(stat_save_files_size(documentmetastore5), dms1.getEstimatedSaveByteSize());
+    EXPECT_EQ(stat_save_files_size_on_disk(documentmetastore5), dms1.size_on_disk());
 
-    DocumentMetaStore dms_loaded_docids(createBucketDB(), "documentmetastore5", search::GrowStrategy(), true,
+    DocumentMetaStore dms_loaded_docids(createBucketDB(), documentmetastore5, search::GrowStrategy(), true,
                                         SubDbType::READY);
     EXPECT_TRUE(dms_loaded_docids.load());
     dms_loaded_docids.constructFreeList();
     EXPECT_FALSE(dms_loaded_docids.requires_document_ids_from_docstore());
+    EXPECT_EQ(stat_save_files_size(documentmetastore5), dms_loaded_docids.getEstimatedSaveByteSize());
+    EXPECT_EQ(stat_save_files_size_on_disk(documentmetastore5), dms_loaded_docids.size_on_disk());
 
     auto d1 = createDocId(1);
     EXPECT_EQ(d1.toString(), dms_loaded_docids.get_docid_string(d1.getGlobalId()));
@@ -1951,8 +2014,7 @@ TEST(DocumentMetaStoreTest, full_document_ids_are_saved) {
     auto d3 = createDocId(3);
     EXPECT_EQ(d3.toString(), dms_loaded_docids.get_docid_string(d3.getGlobalId()));
 
-    std::filesystem::remove(std::filesystem::path("documentmetastore5.dat"));
-    std::filesystem::remove(std::filesystem::path("documentmetastore5.docids.dat"));
+    remove_save_files(documentmetastore5);
 }
 
 TEST(DocumentMetaStoreTest, full_document_ids_are_considered_in_estimated_save_byte_size) {
@@ -1985,25 +2047,26 @@ TEST(DocumentMetaStoreTest, full_document_ids_are_considered_in_estimated_save_b
 }
 
 TEST(DocumentMetaStoreTest, dms_complains_about_missing_document_ids) {
+    std::string documentmetastore6("documentmetastore6");
     // DocumentMetaStore not storing full document ids
-    DocumentMetaStore dms(createBucketDB(), "documentmetastore6", search::GrowStrategy(), false, SubDbType::READY);
+    DocumentMetaStore dms(createBucketDB(), documentmetastore6, search::GrowStrategy(), false, SubDbType::READY);
     dms.constructFreeList();
     addLid(dms, 1);
 
     TuneFileAttributes      tuneFileAttributes;
     DummyFileHeaderContext  fileHeaderContext;
     AttributeFileSaveTarget saveTarget(tuneFileAttributes, fileHeaderContext);
-    EXPECT_TRUE(dms.save(saveTarget, "documentmetastore6"));
+    EXPECT_TRUE(dms.save(saveTarget, documentmetastore6));
 
     // DocumentMetaStore storing full document ids
-    DocumentMetaStore dms_loaded(createBucketDB(), "documentmetastore6", search::GrowStrategy(), true,
+    DocumentMetaStore dms_loaded(createBucketDB(), documentmetastore6, search::GrowStrategy(), true,
                                  SubDbType::READY);
 
     // Cannot load document ids since there is no file with them
     EXPECT_TRUE(dms_loaded.load());
     EXPECT_TRUE(dms_loaded.requires_document_ids_from_docstore());
 
-    std::filesystem::remove(std::filesystem::path("documentmetastore6.dat"));
+    remove_save_files(documentmetastore6);
 }
 
 namespace {

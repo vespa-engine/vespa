@@ -277,7 +277,7 @@ bool AttributeVector::save() {
 }
 
 bool AttributeVector::save(IAttributeSaveTarget& saveTarget, std::string_view fileName) {
-    commit();
+    commit(CommitParam::UpdateStats::FORCE);
     auto create_time = std::chrono::steady_clock::now();
     // First check if new style save is available.
     std::unique_ptr<AttributeSaver> saver(onInitSave(fileName));
