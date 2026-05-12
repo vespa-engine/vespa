@@ -34,7 +34,7 @@ DocStoreValidator::DocStoreValidator(IDocumentMetaStore& dms)
 
 DocStoreValidator::~DocStoreValidator() = default;
 
-void DocStoreValidator::visit(uint32_t lid, const std::shared_ptr<document::Document>& doc) {
+void DocStoreValidator::visit(uint32_t lid, const std::shared_ptr<document::Document>& doc, size_t) {
     if (lid == 0 || lid >= _docIdLimit)
         return;
     ++_visitCount;
