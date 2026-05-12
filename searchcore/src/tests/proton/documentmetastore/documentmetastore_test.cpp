@@ -1876,7 +1876,7 @@ TEST(DocumentMetaStoreTest, shrink_via_flush_target_works) {
 
     vespalib::ThreadStackExecutor exec(1);
     EXPECT_TRUE(ft->can_flush(11));
-    vespalib::Executor::Task::UP  task = ft->initFlush(11, std::make_shared<search::FlushToken>());
+    vespalib::Executor::Task::UP task = ft->initFlush(11, std::make_shared<search::FlushToken>());
     exec.execute(std::move(task));
     exec.sync();
     EXPECT_FALSE(ft->can_flush(11));
@@ -1946,7 +1946,8 @@ void check_document_sizes_are_loaded(const std::string& documentmetastore3, bool
     dms3.set_track_32bit_document_sizes(track_32bit_document_sizes_load);
     EXPECT_TRUE(dms3.load());
     EXPECT_FALSE(dms3.requires_document_ids_from_docstore());
-    EXPECT_EQ(!track_32bit_document_sizes_save && track_32bit_document_sizes_load, dms3.requires_doc_sizes_from_docstore());
+    EXPECT_EQ(!track_32bit_document_sizes_save && track_32bit_document_sizes_load,
+              dms3.requires_doc_sizes_from_docstore());
     dms3.constructFreeList();
     if (track_32bit_document_sizes_save == track_32bit_document_sizes_load) {
         EXPECT_EQ(stat_save_files_size(documentmetastore3), dms3.getEstimatedSaveByteSize());
@@ -1965,8 +1966,8 @@ void check_document_sizes_are_saved(bool track_32bit_document_sizes) {
     std::string documentmetastore3("documentmetastore3");
     std::string documentmetastore4("documentmetastore4");
     if (track_32bit_document_sizes) {
-        documentmetastore3 +="-32";
-        documentmetastore4 +="-32";
+        documentmetastore3 += "-32";
+        documentmetastore4 += "-32";
     }
     DocumentMetaStore dms1(createBucketDB());
     dms1.constructFreeList();

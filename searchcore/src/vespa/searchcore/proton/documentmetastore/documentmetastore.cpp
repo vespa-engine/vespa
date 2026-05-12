@@ -175,7 +175,8 @@ DocIdReader::DocIdReader(std::unique_ptr<FastOS_FileInterface> docid_file)
 }
 DocIdReader::~DocIdReader() = default;
 
-bool consider_require_doc_sizes_from_docstore(const Reader& reader, bool trackDocumentSizes, bool track_32bit_document_sizes) {
+bool consider_require_doc_sizes_from_docstore(const Reader& reader, bool trackDocumentSizes,
+                                              bool track_32bit_document_sizes) {
     if (!trackDocumentSizes) {
         return false;
     }
@@ -383,7 +384,8 @@ bool DocumentMetaStore::onLoad(vespalib::Executor*) {
     // insert gids (already sorted)
     if (numElems > 0) {
         _requires_document_ids_from_docstore = _store_full_document_id && !docid_reader;
-        _requires_doc_sizes_from_docstore = consider_require_doc_sizes_from_docstore(reader, _trackDocumentSizes, _track_32bit_document_sizes);
+        _requires_doc_sizes_from_docstore =
+            consider_require_doc_sizes_from_docstore(reader, _trackDocumentSizes, _track_32bit_document_sizes);
         DocId                      lid = readNextDoc(reader, docid_reader.get(), treeBuilder);
         const RawDocumentMetadata* meta = &_metadataStore[lid];
         BucketId                   prevId(meta->getBucketId());
@@ -580,8 +582,8 @@ DocumentMetaStore::Result DocumentMetaStore::inspect(const GlobalId& gid, uint64
 DocumentMetaStore::Result DocumentMetaStore::put(const DocumentId& docid, const BucketId& bucketId,
                                                  Timestamp timestamp, uint32_t docSize, DocId lid,
                                                  uint64_t prepare_serial_num) {
-    Result              res;
-    auto&               gid = docid.getGlobalId();
+    Result res;
+    auto&  gid = docid.getGlobalId();
     if (!_track_32bit_document_sizes) {
         docSize = RawDocumentMetadata::capped_doc_size24(docSize);
     }
@@ -1137,11 +1139,9 @@ uint64_t DocumentMetaStore::getEstimatedSaveByteSize() const {
 }
 
 uint32_t DocumentMetaStore::getVersion() const {
-    return _trackDocumentSizes
-               ? (_track_32bit_document_sizes
-                      ? documentmetastore::DOCUMENT_SIZE32_TRACKING_VERSION
-                      : documentmetastore::DOCUMENT_SIZE24_TRACKING_VERSION)
-               : documentmetastore::NO_DOCUMENT_SIZE_TRACKING_VERSION;
+    return _trackDocumentSizes ? (_track_32bit_document_sizes ? documentmetastore::DOCUMENT_SIZE32_TRACKING_VERSION
+                                                              : documentmetastore::DOCUMENT_SIZE24_TRACKING_VERSION)
+                               : documentmetastore::NO_DOCUMENT_SIZE_TRACKING_VERSION;
 }
 
 void DocumentMetaStore::foreach(const search::IGidToLidMapperVisitor& visitor) const {
