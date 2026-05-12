@@ -8,7 +8,6 @@ import com.yahoo.config.model.deploy.TestDeployState;
 import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
-import com.yahoo.config.provision.TelemetryExporterConfiguration;
 import com.yahoo.config.provision.TelemetryExporterConfiguration.Auth;
 import com.yahoo.config.provision.TelemetryExporterConfiguration.Exporter;
 import com.yahoo.config.provision.TelemetryExporterConfiguration.Exporter.ExporterType;
@@ -49,10 +48,9 @@ public class TelemetryExporterTest {
                 + "</services>";
 
         VespaModel model = createModel(hosts, services);
-        var telemetry = model.getAdmin().getTelemetryExport();
-        assertTrue(telemetry.isPresent());
+        var telemetry = model.getAdmin().telemetryExporterConfiguration();
 
-        var exporters = telemetry.get().exporters();
+        var exporters = telemetry.exporters();
         assertEquals(1, exporters.size());
 
         var exporter = exporters.get(0);
@@ -88,7 +86,7 @@ public class TelemetryExporterTest {
                 + "</services>";
 
         VespaModel model = createModel(hosts, services);
-        var auth = model.getAdmin().getTelemetryExport().get().exporters().get(0).auth().get();
+        var auth = model.getAdmin().telemetryExporterConfiguration().exporters().get(0).auth().get();
         assertEquals("api_key", auth.type());
         assertEquals("my-vault", auth.vault());
         assertEquals("my-key", auth.secretName().get());
@@ -110,7 +108,7 @@ public class TelemetryExporterTest {
                 + "</services>";
 
         VespaModel model = createModel(hosts, services);
-        var auth = model.getAdmin().getTelemetryExport().get().exporters().get(0).auth().get();
+        var auth = model.getAdmin().telemetryExporterConfiguration().exporters().get(0).auth().get();
         assertEquals("basic_auth", auth.type());
         assertEquals("my-vault", auth.vault());
         assertTrue(auth.secretName().isEmpty());
@@ -130,7 +128,7 @@ public class TelemetryExporterTest {
                 + "</services>";
 
         VespaModel model = createModel(hosts, services);
-        var exporters = model.getAdmin().getTelemetryExport().get().exporters();
+        var exporters = model.getAdmin().telemetryExporterConfiguration().exporters();
         assertEquals(2, exporters.size());
         assertEquals("first", exporters.get(0).id());
         assertEquals(ExporterType.otlphttp, exporters.get(0).type());
@@ -151,7 +149,7 @@ public class TelemetryExporterTest {
                 + "</services>";
 
         VespaModel model = createModel(hosts, services);
-        var exporter = model.getAdmin().getTelemetryExport().get().exporters().get(0);
+        var exporter = model.getAdmin().telemetryExporterConfiguration().exporters().get(0);
         assertTrue(exporter.auth().isEmpty());
         assertEquals(List.of("Vespa9"), exporter.metricSets());
     }
@@ -167,7 +165,7 @@ public class TelemetryExporterTest {
                 + "</services>";
 
         VespaModel model = createModel(hosts, services);
-        var exporter = model.getAdmin().getTelemetryExport().get().exporters().get(0);
+        var exporter = model.getAdmin().telemetryExporterConfiguration().exporters().get(0);
         assertTrue(exporter.metricSets().isEmpty());
         assertTrue(exporter.logFileTypes().isEmpty());
     }
@@ -185,7 +183,7 @@ public class TelemetryExporterTest {
                 + "</services>";
 
         VespaModel model = createModel(hosts, services);
-        var exporter = model.getAdmin().getTelemetryExport().get().exporters().get(0);
+        var exporter = model.getAdmin().telemetryExporterConfiguration().exporters().get(0);
         assertEquals(List.of("Vespa9"), exporter.metricSets());
         assertTrue(exporter.logFileTypes().isEmpty());
         assertTrue(exporter.auth().isEmpty());
@@ -205,7 +203,7 @@ public class TelemetryExporterTest {
                 + "</services>";
 
         VespaModel model = createModel(hosts, services);
-        var exporter = model.getAdmin().getTelemetryExport().get().exporters().get(0);
+        var exporter = model.getAdmin().telemetryExporterConfiguration().exporters().get(0);
         assertEquals(List.of("default", "vespa"), exporter.metricSets());
         assertTrue(exporter.logFileTypes().isEmpty());
         assertTrue(exporter.auth().isEmpty());
@@ -227,7 +225,7 @@ public class TelemetryExporterTest {
                 + "</services>";
 
         VespaModel model = createModel(hosts, services);
-        var exporter = model.getAdmin().getTelemetryExport().get().exporters().get(0);
+        var exporter = model.getAdmin().telemetryExporterConfiguration().exporters().get(0);
         assertTrue(exporter.metricSets().isEmpty());
         assertEquals(List.of("container_logs", "access_logs"), exporter.logFileTypes());
         assertTrue(exporter.auth().isEmpty());
@@ -244,7 +242,7 @@ public class TelemetryExporterTest {
                 + "</services>";
 
         VespaModel model = createModel(hosts, services);
-        var exporter = model.getAdmin().getTelemetryExport().get().exporters().get(0);
+        var exporter = model.getAdmin().telemetryExporterConfiguration().exporters().get(0);
         assertEquals(ExporterType.googlecloud, exporter.type());
         assertEquals("my-gcp-project", exporter.project().get());
         assertTrue(exporter.endpoint().isEmpty());
@@ -285,7 +283,7 @@ public class TelemetryExporterTest {
                 + "</services>";
 
         VespaModel model = createModel(hosts, services);
-        assertTrue(model.getAdmin().getTelemetryExport().isEmpty());
+        assertTrue(model.getAdmin().telemetryExporterConfiguration().isEmpty());
     }
 
     @Test

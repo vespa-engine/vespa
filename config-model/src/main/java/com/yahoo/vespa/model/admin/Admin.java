@@ -63,7 +63,7 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
     private LogForwarder.Config logForwarderConfig = null;
     private boolean logForwarderIncludeAdmin = false;
 
-    private TelemetryExporterConfiguration telemetryExport = null;
+    private TelemetryExporterConfiguration telemetryExporterConfiguration = null;
 
     private final ApplicationType applicationType;
 
@@ -72,12 +72,14 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
         this.logForwarderIncludeAdmin = includeAdmin;
     }
 
-    public void setTelemetryExport(TelemetryExporterConfiguration telemetryExport) {
-        this.telemetryExport = telemetryExport;
+    public void setTelemetryExporterConfiguration(TelemetryExporterConfiguration telemetryExporterConfiguration) {
+        this.telemetryExporterConfiguration = telemetryExporterConfiguration;
     }
 
-    public Optional<TelemetryExporterConfiguration> getTelemetryExport() {
-        return Optional.ofNullable(telemetryExport);
+    public TelemetryExporterConfiguration telemetryExporterConfiguration() {
+        return telemetryExporterConfiguration == null
+                ? TelemetryExporterConfiguration.empty()
+                : telemetryExporterConfiguration;
     }
 
     private final List<LogctlSpec> logctlSpecs = new ArrayList<>();
@@ -362,19 +364,6 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
         var levelSpec = new LevelsModSpec();
         levelSpec.setLevels(levels);
         return levelSpec;
-    }
-
-    public TelemetryExporterConfiguration toTelemetryExporterConfiguration() {
-        return getTelemetryExport()
-                .map(Admin::toTelemetryExporterConfiguration)
-                .orElse(TelemetryExporterConfiguration.empty());
-    }
-
-    private static TelemetryExporterConfiguration  toTelemetryExporterConfiguration(TelemetryExporterConfiguration telemetryExporterConfiguration) {
-        var exporters = telemetryExporterConfiguration.exporters()
-                                                      .stream()
-                                                      .toList();
-        return new TelemetryExporterConfiguration(exporters);
     }
 
 }

@@ -168,7 +168,7 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
             exporters.add(new Exporter(id, type, Optional.ofNullable(endpoint), Optional.ofNullable(project),
                                       Optional.ofNullable(auth), metricSets, logFileTypes));
         }
-        admin.setTelemetryExport(new TelemetryExporterConfiguration(exporters));
+        admin.setTelemetryExporterConfiguration(new TelemetryExporterConfiguration(exporters));
     }
 
     private Auth parseTelemetryAuth(ModelElement authElement) {

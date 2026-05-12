@@ -673,7 +673,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
     public TelemetryExporterConfiguration telemetryExporterConfiguration() {
         Admin admin = getAdmin();
         if (admin == null) return TelemetryExporterConfiguration.empty();
-        return admin.toTelemetryExporterConfiguration();
+        return admin.telemetryExporterConfiguration();
     }
 
 }
