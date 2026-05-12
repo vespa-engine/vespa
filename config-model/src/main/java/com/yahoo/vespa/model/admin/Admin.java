@@ -11,6 +11,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.TelemetryExporterConfiguration;
 import com.yahoo.container.logging.LevelsModSpec;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.ConfigProxy;
@@ -25,7 +26,6 @@ import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
-import com.yahoo.config.provision.TelemetryExporterConfiguration;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -63,7 +63,7 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
     private LogForwarder.Config logForwarderConfig = null;
     private boolean logForwarderIncludeAdmin = false;
 
-    private TelemetryExporterConfiguration telemetryExport = null;
+    private TelemetryExporterConfiguration telemetryExporterConfiguration = null;
 
     private final ApplicationType applicationType;
 
@@ -72,12 +72,14 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
         this.logForwarderIncludeAdmin = includeAdmin;
     }
 
-    public void setTelemetryExport(TelemetryExporterConfiguration telemetryExport) {
-        this.telemetryExport = telemetryExport;
+    public void setTelemetryExporterConfiguration(TelemetryExporterConfiguration telemetryExporterConfiguration) {
+        this.telemetryExporterConfiguration = telemetryExporterConfiguration;
     }
 
-    public Optional<TelemetryExporterConfiguration> getTelemetryExport() {
-        return Optional.ofNullable(telemetryExport);
+    public TelemetryExporterConfiguration telemetryExporterConfiguration() {
+        return telemetryExporterConfiguration == null
+                ? TelemetryExporterConfiguration.empty()
+                : telemetryExporterConfiguration;
     }
 
     private final List<LogctlSpec> logctlSpecs = new ArrayList<>();

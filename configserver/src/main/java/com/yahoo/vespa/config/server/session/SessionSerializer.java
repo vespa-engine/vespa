@@ -12,6 +12,7 @@ import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.TelemetryExporterConfiguration;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.yolean.Exceptions;
 
@@ -39,6 +40,7 @@ public class SessionSerializer {
                List<X509Certificate> operatorCertificates, Optional<CloudAccount> cloudAccount,
                CloudResourceTags cloudResourceTags,
                List<DataplaneToken> dataplaneTokens, ActivationTriggers activationTriggers,
+               TelemetryExporterConfiguration telemetryExporterConfiguration,
                BooleanFlag writeSessionData) {
 
         // Note: Any changes to SessionData needs to be reflected in the calls below and in the call to writeSessionData()
@@ -57,6 +59,7 @@ public class SessionSerializer {
         zooKeeperClient.writeCloudResourceTags(cloudResourceTags);
         zooKeeperClient.writeDataplaneTokens(dataplaneTokens);
         zooKeeperClient.writeActivationTriggers(activationTriggers);
+        zooKeeperClient.writeTelemetryExportConfig(telemetryExporterConfiguration);
 
         if (writeSessionData.value())
             zooKeeperClient.writeSessionData(new SessionData(applicationId,
@@ -73,7 +76,8 @@ public class SessionSerializer {
                                                              cloudAccount,
                                                              cloudResourceTags,
                                                              dataplaneTokens,
-                                                             activationTriggers));
+                                                             activationTriggers,
+                                                             telemetryExporterConfiguration));
     }
 
     SessionData read(SessionZooKeeperClient zooKeeperClient, BooleanFlag readSessionData) {
@@ -103,7 +107,8 @@ public class SessionSerializer {
                                zooKeeperClient.readCloudAccount(),
                                zooKeeperClient.readCloudResourceTags(),
                                zooKeeperClient.readDataplaneTokens(),
-                               zooKeeperClient.readActivationTriggers());
+                               zooKeeperClient.readActivationTriggers(),
+                               zooKeeperClient.readTelemetryExporterConfiguration());
     }
 
 }

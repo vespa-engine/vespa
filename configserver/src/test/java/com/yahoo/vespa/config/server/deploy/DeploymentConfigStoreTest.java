@@ -7,6 +7,7 @@ import com.yahoo.config.provision.BlockWindow;
 import com.yahoo.config.provision.DeploymentConfigStore;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.TelemetryExporterConfiguration;
 import com.yahoo.config.provision.Zone;
 import org.junit.Rule;
 import org.junit.Test;
@@ -63,6 +64,39 @@ public class DeploymentConfigStoreTest {
         assertEquals(List.of(DayOfWeek.MONDAY, DayOfWeek.TUESDAY), window.days());
         assertEquals(List.of(8, 9, 10), window.hours());
         assertEquals(ZoneId.of("UTC"), window.zone());
+
+        assertTrue(call.telemetryExporterConfiguration().isEmpty());
+    }
+
+    @Test
+    public void stores_telemetry_export_config_for_prod_deployment() {
+        CapturingDeploymentConfigStore store = new CapturingDeploymentConfigStore();
+        Zone prodZone = new Zone(Environment.prod, RegionName.from("us-north-1"));
+
+        DeployTester tester = new DeployTester.Builder(temporaryFolder)
+                .hostedConfigserverConfig(prodZone)
+                .modelFactory(createHostedModelFactory())
+                .deploymentConfigStore(store)
+                .build();
+
+        tester.deployApp("src/test/apps/hosted-with-telemetry/");
+
+        assertEquals(1, store.calls.size());
+        TelemetryExporterConfiguration telemetry = store.calls.get(0).telemetryExporterConfiguration();
+        assertFalse(telemetry.isEmpty());
+        assertEquals(1, telemetry.exporters().size());
+
+        TelemetryExporterConfiguration.Exporter exporter = telemetry.exporters().get(0);
+        assertEquals("my-exporter", exporter.id());
+        assertEquals(TelemetryExporterConfiguration.Exporter.ExporterType.otlphttp, exporter.type());
+        assertEquals("https://otel.example.com/v1", exporter.endpoint().get());
+
+        assertTrue(exporter.auth().isPresent());
+        assertEquals("bearer", exporter.auth().get().type());
+        assertEquals("my-vault", exporter.auth().get().vault());
+        assertEquals("my-token", exporter.auth().get().secretName().get());
+
+        assertEquals(List.of("default"), exporter.metricSets());
     }
 
     @Test
@@ -100,11 +134,17 @@ public class DeploymentConfigStoreTest {
         final List<Call> calls = new ArrayList<>();
 
         @Override
-        public void store(ApplicationId applicationId, Optional<BackupConfig> backup, List<BlockWindow> blockWindows) {
-            calls.add(new Call(applicationId, backup, blockWindows));
+        public void store(ApplicationId applicationId,
+                          Optional<BackupConfig> backup,
+                          List<BlockWindow> blockWindows,
+                          TelemetryExporterConfiguration telemetryExporterConfiguration) {
+            calls.add(new Call(applicationId, backup, blockWindows, telemetryExporterConfiguration));
         }
 
-        record Call(ApplicationId applicationId, Optional<BackupConfig> backup, List<BlockWindow> blockWindows) {}
+        record Call(ApplicationId applicationId,
+                    Optional<BackupConfig> backup,
+                    List<BlockWindow> blockWindows,
+                    TelemetryExporterConfiguration telemetryExporterConfiguration) {}
     }
 
 }

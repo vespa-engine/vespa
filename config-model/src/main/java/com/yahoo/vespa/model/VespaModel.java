@@ -29,6 +29,7 @@ import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.TelemetryExporterConfiguration;
 import com.yahoo.container.QrConfig;
 import com.yahoo.path.Path;
 import com.yahoo.schema.LargeRankingExpressions;
@@ -667,4 +668,12 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
                 .filter(cluster -> clusterNames.contains(cluster.getName()))
                 .forEach(cluster -> cluster.setDeferChangesUntilRestart(true));
     }
+
+    @Override
+    public TelemetryExporterConfiguration telemetryExporterConfiguration() {
+        Admin admin = getAdmin();
+        if (admin == null) return TelemetryExporterConfiguration.empty();
+        return admin.telemetryExporterConfiguration();
+    }
+
 }

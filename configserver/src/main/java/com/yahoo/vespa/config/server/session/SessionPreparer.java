@@ -32,6 +32,7 @@ import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.Tags;
+import com.yahoo.config.provision.TelemetryExporterConfiguration;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.net.HostName;
 import com.yahoo.path.Path;
@@ -66,6 +67,7 @@ import java.nio.file.Files;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -374,7 +376,8 @@ public class SessionPreparer {
                                   params.cloudAccount(),
                                   params.cloudResourceTags(),
                                   params.dataplaneTokens(),
-                                  ActivationTriggers.from(prepareResult.getConfigChangeActions(), params.isInternalRedeployment()));
+                                  ActivationTriggers.from(prepareResult.getConfigChangeActions(), params.isInternalRedeployment()),
+                                  telemetryExporterConfiguration());
             checkTimeout("write state to zookeeper");
         }
 
@@ -400,6 +403,13 @@ public class SessionPreparer {
             return List.copyOf(endpoints);
         }
 
+        private TelemetryExporterConfiguration telemetryExporterConfiguration() {
+            return modelResultList.stream()
+                                  .max(Comparator.comparing(r -> r.version))
+                                  .map(r -> r.getModel().telemetryExporterConfiguration())
+                                  .orElse(TelemetryExporterConfiguration.empty());
+        }
+
     }
 
     private void writeStateToZooKeeper(SessionZooKeeperClient zooKeeperClient,
@@ -421,7 +431,8 @@ public class SessionPreparer {
                                        Optional<CloudAccount> cloudAccount,
                                        CloudResourceTags cloudResourceTags,
                                        List<DataplaneToken> dataplaneTokens,
-                                       ActivationTriggers activationTriggers) {
+                                       ActivationTriggers activationTriggers,
+                                       TelemetryExporterConfiguration telemetryExporterConfiguration) {
         var zooKeeperDeployer = new ZooKeeperDeployer(curator, deployLogger, applicationId, zooKeeperClient.sessionId());
         try {
             zooKeeperDeployer.deploy(applicationPackage, fileRegistryMap, allocatedHosts);
@@ -441,6 +452,7 @@ public class SessionPreparer {
                                           cloudResourceTags,
                                           dataplaneTokens,
                                           activationTriggers,
+                                          telemetryExporterConfiguration,
                                           writeSessionData);
         } catch (RuntimeException | IOException e) {
             zooKeeperDeployer.cleanup();
