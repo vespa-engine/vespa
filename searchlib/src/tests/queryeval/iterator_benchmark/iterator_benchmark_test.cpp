@@ -546,6 +546,47 @@ public:
     bool empty() const { return _cases.empty(); }
 };
 
+/**
+ * Calculates the calibration constant over all samples as the median of time_ms per cost.
+ */
+void postprocess_calculate_calibration_constant(DataPond& pond) {
+    std::vector<RecordRef> records;
+    std::vector<double> ms_per_costs;
+    for (auto& record : pond.records()) {
+        if (record.has_field<double>("time_ms") && record.has_field<double>("cost")) {
+            records.emplace_back(record);
+            ms_per_costs.push_back(record.get<double>("time_ms") / record.get<double>("cost"));
+        }
+    }
+
+    std::sort(ms_per_costs.begin(), ms_per_costs.end());
+    double median = ms_per_costs[ms_per_costs.size() / 2];
+    for (auto record : records) {
+        record.get().set("calibration_constant", median);
+    }
+}
+
+/**
+ * Preprocess the raw data samples before summary.
+ */
+void postprocess_pond(DataPond& pond) {
+    postprocess_calculate_calibration_constant(pond);
+}
+
+void print_pond_summary(const DataPond& pond) {
+    std::map<std::string, std::vector<RecordCRef>> grouped;
+    for (const auto& record : pond.records()) {
+        grouped[record.get<std::string>("group")].emplace_back(record);
+    }
+
+
+
+    std::println("myheader");
+    for (const auto& [name, records] : grouped) {
+        std::println("{}", name);
+    }
+}
+
 void print_summary(const BenchmarkSummary& summary) {
     constexpr double ok_band = 1.4;
     constexpr double under_threshold = ok_band;
@@ -699,7 +740,7 @@ void add_to_pond(DataPond& pond, const BenchmarkCaseSetup& setup, const Benchmar
     record.set("field_cfg", setup.bcase.field_cfg.to_string());
     record.set("filter_hit_ratio", filter_hit_ratio);
     record.set("force_strict", setup.bcase.force_strict);
-    record.set("group", current_test_name());
+    record.set("group", setup.bcase.to_string());
     record.set("hits", static_cast<int64_t>(res.hits));
     record.set("iterator_name", res.iterator_name);
     record.set("op_hit_ratio", op_hit_ratio);
@@ -1179,15 +1220,18 @@ TEST(IteratorBenchmark, data_pond_test) {
 
     // calibration median routine
     std::vector<double> values;
-    for (const auto& record : pond.records()) {
+    std::vector<RecordRef> records;
+    for (auto& record : pond.records()) {
         if (record.has_field<double>("time_ms") && record.has_field<double>("cost")) {
-            values.push_back(record.get_double("time_ms") / record.get_double("cost"));
+            records.push_back(record);
+            values.push_back(record.get<double>("time_ms") / record.get<double>("cost"));
         }
     }
+
     std::sort(values.begin(), values.end());
     double median = values[values.size() / 2];
-    for (auto& record : pond.records()) {
-        record.set("time_cost_median", median);
+    for (auto record : records) {
+        record.get().set("time_cost_median", median);
     }
 
     std::println("median time_ms/cost={:.4f}", median);
@@ -1216,6 +1260,10 @@ int main(int argc, char** argv) {
     if (!global_summary.empty()) {
         global_summary.calc_calibration();
         print_summary(global_summary);
+    }
+    if (!global_pond.records().empty()) {
+        postprocess_pond(global_pond);
+        print_pond_summary(global_pond);
     }
     if (opt_dump_pond) {
         dump_pond(global_pond);
