@@ -107,12 +107,26 @@ public final class ClusterSpec {
                                stateful, sidecars, availabilityZones, profile);
     }
 
-    /** Creates a ClusterSpec for when requesting a cluster */
+    /** Creates a ClusterSpec builder for when requesting a cluster having all the values of this */
+    public Builder asRequest() {
+        Builder b = new Builder(type, id);
+        b.vespaVersion(vespaVersion);
+        b.exclusive(exclusive);
+        b.dockerImageRepository(dockerImageRepo);
+        b.loadBalancerSettings(zoneEndpoint);
+        b.stateful(stateful);
+        b.sidecars(sidecars);
+        b.availabilityZones(availabilityZones);
+        b.profile(profile);
+        return b;
+    }
+
+    /** Creates a ClusterSpec builder for when requesting a cluster */
     public static Builder request(Type type, Id id) {
         return new Builder(type, id);
     }
 
-    /** Creates a ClusterSpec for an existing cluster, group id and Vespa version needs to be set */
+    /** Creates a ClusterSpec builder for an existing cluster, group id and Vespa version needs to be set */
     public static Builder specification(Type type, Id id) {
         return new Builder(type, id);
     }
