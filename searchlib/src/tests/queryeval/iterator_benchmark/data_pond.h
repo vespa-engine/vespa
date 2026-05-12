@@ -26,6 +26,10 @@ public:
 
     template <typename T> [[nodiscard]] bool has_type() const { return std::holds_alternative<T>(_value); }
 
+    template <typename T> T& get() { return std::get<T>(_value); }
+
+    template <typename T> const T& get() const { return std::get<T>(_value); }
+
     [[nodiscard]] bool check(auto&& predicate) const {
         return std::visit(
             [&](auto&& val) noexcept {
@@ -48,19 +52,6 @@ public:
                     return val ? "true" : "false";
                 } else {
                     return std::format("{}", val);
-                }
-            },
-            _value);
-    }
-
-    [[nodiscard]] double as_double() const noexcept {
-        return std::visit(
-            [](const auto& val) noexcept {
-                using T = std::decay_t<decltype(val)>;
-                if constexpr (std::is_convertible_v<T, double>) {
-                    return static_cast<double>(val);
-                } else {
-                    return 0.0;
                 }
             },
             _value);
@@ -97,7 +88,9 @@ public:
         return false;
     }
 
-    [[nodiscard]] double get_double(const std::string& name) const { return _fields.find(name)->second.as_double(); }
+    template <typename T> const T& get(const std::string& name) const { return _fields.find(name)->second.get<T>(); }
+
+    template <typename T> T& get(const std::string& name) { return _fields.find(name)->second.get<T>(); }
 
     [[nodiscard]] std::string to_string() const {
         std::stringstream ss;
@@ -114,6 +107,9 @@ public:
         return ss.str();
     }
 };
+
+using RecordRef = std::reference_wrapper<Record>;
+using RecordCRef = std::reference_wrapper<const Record>;
 
 /**
  * Holds predicates that all must match for a record to pass.
