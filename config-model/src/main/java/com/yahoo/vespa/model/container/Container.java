@@ -150,6 +150,17 @@ public abstract class Container extends AbstractService implements
         return defaultHttpServer;
     }
 
+    /**
+     * Remove the per-Container default JettyHttpServer from this Container's children.
+     * Invoked when a cluster-level Http is set after Container construction, so the
+     * cluster-level JettyHttpServer becomes the sole component with id "DefaultHttpServer".
+     */
+    void discardDefaultHttpServer() {
+        if (defaultHttpServer.getParent() == this) {
+            removeChild(defaultHttpServer);
+        }
+    }
+
     /** Returns the index of this node. The index of a given node is stable through changes with best effort. */
     public final int index() { return index; }
 
