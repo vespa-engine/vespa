@@ -9,7 +9,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
-#include <string_view>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -103,15 +103,7 @@ public:
     }
 
     template <typename T> [[nodiscard]] T& get(const std::string& name) {
-        auto it = _fields.find(name);
-        if (it == _fields.end()) {
-            throw std::runtime_error(std::format("Record::get: missing field '{}'", name));
-        }
-        if (!it->second.has_type<T>()) {
-            throw std::runtime_error(
-                std::format("Record::get: field '{}' has wrong type (stored={})", name, it->second.to_string()));
-        }
-        return it->second.get<T>();
+        return const_cast<T&>(std::as_const(*this).get<T>(name));
     }
 
     [[nodiscard]] std::string to_string() const {
