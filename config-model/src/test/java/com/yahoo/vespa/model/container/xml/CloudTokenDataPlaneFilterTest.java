@@ -212,7 +212,7 @@ public class CloudTokenDataPlaneFilterTest extends ContainerModelBuilderTestBase
         assertTrue(connectorCfg.ssl().caCertificate().isEmpty(),
                 "Token-only: mTLS connector must not have a CA certificate configured");
 
-        assertNotNull(connectorConfig(8444));
+        connectorConfig(8444);
 
         var cfg = root.getConfig(CloudTokenDataPlaneFilterConfig.class, filterConfigId);
         var tokenClient = cfg.clients().stream().filter(c -> c.id().equals("token-only")).findAny().orElse(null);
@@ -220,6 +220,23 @@ public class CloudTokenDataPlaneFilterTest extends ContainerModelBuilderTestBase
         assertEquals(List.of("read", "write"), tokenClient.permissions());
         assertFalse(tokenClient.tokens().isEmpty());
     }
+
+    @Test
+     void token_only_deployment_fails_without_write_permission() {
+         var clusterElem = DomBuilderTest.parse("""
+                 <container version='1.0'>
+                   <clients>
+                     <client id="token-only" permissions="read">
+                         <token id="my-token"/>
+                     </client>
+                   </clients>
+                 </container>
+                 """);
+         var exception = assertThrows(RuntimeException.class,
+                                      () -> buildModel(Set.of(tokenEndpoint, mtlsEndpoint), defaultTokens, clusterElem));
+         assertTrue(exception.getMessage().contains("write"),
+                 "Token-only deployments without a token client with write permission must be rejected");
+     }
 
     private static CloudTokenDataPlaneFilterConfig.Clients.Tokens tokenConfig(
             String id, Collection<String> fingerprints, Collection<String> accessCheckHashes, Collection<String> expirations) {
