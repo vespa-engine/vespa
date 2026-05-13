@@ -281,6 +281,7 @@ public class SchemaParserTest {
              */
             "src/test/sdfiles/multi/types/",
             "src/test/sdfiles/multi/bookandmusic/",
+            "src/test/sdfiles/multi/documentid/",
         };
 
         return Arrays.stream(directories)
