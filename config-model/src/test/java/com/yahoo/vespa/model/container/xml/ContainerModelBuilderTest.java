@@ -187,6 +187,9 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         String servicesXml = """
                              <services version='1.0'>
                                <container id='C-1' version='1.0'>
+                                 <http>
+                                   <server id='server' port='8080' />
+                                 </http>
                                  <nodes count='1' />
                                </container>
                              </services>
@@ -198,6 +201,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                                           new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
                                                   .modelHostProvisioner(new InMemoryProvisioner(4, false))
                                                   .applicationPackage(new MockApplicationPackage.Builder().withServices(servicesXml).build())
+                                                  .endpoints(Set.of(new ContainerEndpoint("C-1", ApplicationClusterEndpoint.Scope.zone, List.of("c-1.example.com"))))
                                                   .properties(new TestProperties().setHostedVespa(true))
                                                   .build()))
                              .getMessage());
@@ -214,9 +218,15 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         String servicesXml = """
                              <services version='1.0'>
                                <container id='c-1' version='1.0'>
+                                 <http>
+                                   <server id='server1' port='8080' />
+                                 </http>
                                  <nodes count='1' />
                                </container>
                                <container id='c_1' version='1.0'>
+                                 <http>
+                                   <server id='server2' port='8080' />
+                                 </http>
                                  <nodes count='1' />
                                </container>
                              </services>
@@ -228,6 +238,8 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                                           new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
                                                   .modelHostProvisioner(new InMemoryProvisioner(4, false))
                                                   .applicationPackage(new MockApplicationPackage.Builder().withServices(servicesXml).build())
+                                                  .endpoints(Set.of(new ContainerEndpoint("c-1", ApplicationClusterEndpoint.Scope.zone, List.of("c-1.example.com")),
+                                                                    new ContainerEndpoint("c_1", ApplicationClusterEndpoint.Scope.zone, List.of("c-1-alt.example.com"))))
                                                   .properties(new TestProperties().setHostedVespa(true))
                                                   .build()))
                              .getMessage());

@@ -29,7 +29,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.config.VespaVersion;
 import com.yahoo.vespa.model.application.validation.Validation;
-import com.yahoo.vespa.model.application.validation.Validator;
+import com.yahoo.vespa.model.application.validation.ValidatorRegistry;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -54,12 +54,12 @@ public class VespaModelFactory implements ModelFactory {
     private final Zone zone;
     private final Clock clock;
     private final Version version;
-    private final List<Validator> additionalValidators;
+    private final List<ValidatorRegistry> additionalValidatorRegistries;
 
     /** Creates a factory for Vespa models for this version of the source */
     @Inject
     public VespaModelFactory(ComponentRegistry<ConfigModelPlugin> pluginRegistry,
-                             ComponentRegistry<Validator> additionalValidators,
+                             ComponentRegistry<ValidatorRegistry> additionalValidatorRegistries,
                              Zone zone) {
         this.version = new Version(VespaVersion.major, VespaVersion.minor, VespaVersion.micro);
         List<ConfigModelBuilder<?>> modelBuilders = new ArrayList<>();
@@ -75,7 +75,7 @@ public class VespaModelFactory implements ModelFactory {
                 new XGBoostImporter(),
                 new LightGBMImporter());
         this.zone = zone;
-        this.additionalValidators = List.copyOf(additionalValidators.allComponents());
+        this.additionalValidatorRegistries = List.copyOf(additionalValidatorRegistries.allComponents());
 
         this.clock = Clock.systemUTC();
     }
@@ -95,7 +95,7 @@ public class VespaModelFactory implements ModelFactory {
             this.configModelRegistry = configModelRegistry;
         }
         this.modelImporters = List.of();
-        this.additionalValidators = List.of();
+        this.additionalValidatorRegistries = List.of();
         this.zone = zone;
         this.clock = clock;
     }
@@ -212,7 +212,7 @@ public class VespaModelFactory implements ModelFactory {
 
     private List<ConfigChangeAction> validateModel(VespaModel model, DeployState deployState, ValidationParameters validationParameters) {
         try {
-            return new Validation(additionalValidators).validate(model, validationParameters, deployState);
+            return new Validation(additionalValidatorRegistries).validate(model, validationParameters, deployState);
         } catch (IllegalArgumentException | TransientException | QuotaExceededException e) {
             rethrowUnlessIgnoreErrors(e, validationParameters.ignoreValidationErrors());
         } catch (Exception e) {

@@ -70,7 +70,12 @@ public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilderB
 
     Handler createHandler(Element handlerElement) {
         BundleInstantiationSpecification bundleSpec = BundleInstantiationSpecificationBuilder.build(handlerElement);
-        return new Handler(new ComponentModel(bundleSpec));
+        return new UserHandler(new ComponentModel(bundleSpec));
+    }
+
+    /** A user-defined handler that serves data plane traffic. */
+    static class UserHandler extends Handler implements Handler.DataPlaneHandler {
+        UserHandler(ComponentModel model) { super(model); }
     }
 
     private void addServerBinding(Handler handler, BindingPattern binding, DeployLogger log) {

@@ -2,7 +2,7 @@
 package com.yahoo.config.model.test;
 
 import com.yahoo.config.model.ConfigModelRegistry;
-import com.yahoo.config.model.MapConfigModelRegistry;
+import com.yahoo.config.model.NullConfigModelRegistry;
 
 /**
  * Creates a {@link ConfigModelRegistry} instance that simulates the hosted environment.
@@ -14,6 +14,6 @@ public class HostedConfigModelRegistry {
     private HostedConfigModelRegistry() {}
 
     public static ConfigModelRegistry create() {
-        return MapConfigModelRegistry.createFromList(new ModelBuilderAddingAccessControlFilter());
+        return new NullConfigModelRegistry();
     }
 }
