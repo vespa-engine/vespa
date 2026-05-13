@@ -41,7 +41,7 @@ TensorFromStructsBlueprint::~TensorFromStructsBlueprint() = default;
 bool TensorFromStructsBlueprint::setup(const search::fef::IIndexEnvironment& env,
                                        const search::fef::ParameterList&     params) {
     // params[0]       = source ('attribute(name)')
-    // params[1..N]    = key fields (1, 2, or 3)
+    // params[1..N]    = key fields (1 to 5)
     // params[N+1]     = value field
     // params[N+2]     = cell type (e.g. 'float', 'double')
 
@@ -54,9 +54,9 @@ bool TensorFromStructsBlueprint::setup(const search::fef::IIndexEnvironment& env
     }
 
     const size_t total = params.size();
-    if (total < 4 || total > 6) {
+    if (total < 4 || total > 8) {
         // Note: this should be checked already from ParameterDescriptions
-        return fail("expected 4, 5, or 6 parameters, got %zu", total);
+        return fail("expected 4 to 8 parameters, got %zu", total);
     }
     const size_t numKeys = total - 3;
 

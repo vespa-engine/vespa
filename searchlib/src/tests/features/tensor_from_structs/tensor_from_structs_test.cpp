@@ -119,6 +119,21 @@ struct ExecFixture {
         attrs.push_back(AttributeFactory::createAttribute("mixinv.b", AVC(AVBT::STRING, AVCT::SINGLE)));
         attrs.push_back(AttributeFactory::createAttribute("mixinv.qty", AVC(AVBT::FLOAT, AVCT::ARRAY)));
 
+        // 4-key struct array: quad.a/b/c/d (string) + quad.val (float)
+        attrs.push_back(AttributeFactory::createAttribute("quad.a", AVC(AVBT::STRING, AVCT::ARRAY)));
+        attrs.push_back(AttributeFactory::createAttribute("quad.b", AVC(AVBT::STRING, AVCT::ARRAY)));
+        attrs.push_back(AttributeFactory::createAttribute("quad.c", AVC(AVBT::STRING, AVCT::ARRAY)));
+        attrs.push_back(AttributeFactory::createAttribute("quad.d", AVC(AVBT::STRING, AVCT::ARRAY)));
+        attrs.push_back(AttributeFactory::createAttribute("quad.val", AVC(AVBT::FLOAT, AVCT::ARRAY)));
+
+        // 5-key struct array: pent.a/b/c/d/e (string) + pent.val (float)
+        attrs.push_back(AttributeFactory::createAttribute("pent.a", AVC(AVBT::STRING, AVCT::ARRAY)));
+        attrs.push_back(AttributeFactory::createAttribute("pent.b", AVC(AVBT::STRING, AVCT::ARRAY)));
+        attrs.push_back(AttributeFactory::createAttribute("pent.c", AVC(AVBT::STRING, AVCT::ARRAY)));
+        attrs.push_back(AttributeFactory::createAttribute("pent.d", AVC(AVBT::STRING, AVCT::ARRAY)));
+        attrs.push_back(AttributeFactory::createAttribute("pent.e", AVC(AVBT::STRING, AVCT::ARRAY)));
+        attrs.push_back(AttributeFactory::createAttribute("pent.val", AVC(AVBT::FLOAT, AVCT::ARRAY)));
+
         // Register attributes in index environment
         test.getIndexEnv()
             .getBuilder()
@@ -143,7 +158,18 @@ struct ExecFixture {
             .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "inv.qty")
             .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "mixinv.a")
             .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "mixinv.b")
-            .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "mixinv.qty");
+            .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "mixinv.qty")
+            .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "quad.a")
+            .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "quad.b")
+            .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "quad.c")
+            .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "quad.d")
+            .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "quad.val")
+            .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "pent.a")
+            .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "pent.b")
+            .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "pent.c")
+            .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "pent.d")
+            .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "pent.e")
+            .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "pent.val");
 
         for (const auto& attr : attrs) {
             attr->addReservedDoc();
@@ -233,6 +259,37 @@ struct ExecFixture {
 
         FloatingPointAttribute& mixinvQty = dynamic_cast<FloatingPointAttribute&>(*attrs[18]);
         mixinvQty.append(1, 9.0, 0);
+
+        // Setup document 1: 4-key struct array (quad)
+        StringAttribute&        quadA = dynamic_cast<StringAttribute&>(*attrs[19]);
+        StringAttribute&        quadB = dynamic_cast<StringAttribute&>(*attrs[20]);
+        StringAttribute&        quadC = dynamic_cast<StringAttribute&>(*attrs[21]);
+        StringAttribute&        quadD = dynamic_cast<StringAttribute&>(*attrs[22]);
+        FloatingPointAttribute& quadVal = dynamic_cast<FloatingPointAttribute&>(*attrs[23]);
+        quadA.append(1, "x", 0);
+        quadA.append(1, "p", 0);
+        quadB.append(1, "y", 0);
+        quadB.append(1, "q", 0);
+        quadC.append(1, "z", 0);
+        quadC.append(1, "r", 0);
+        quadD.append(1, "w", 0);
+        quadD.append(1, "s", 0);
+        quadVal.append(1, 1.0, 0);
+        quadVal.append(1, 2.0, 0);
+
+        // Setup document 1: 5-key struct array (pent)
+        StringAttribute&        pentA = dynamic_cast<StringAttribute&>(*attrs[24]);
+        StringAttribute&        pentB = dynamic_cast<StringAttribute&>(*attrs[25]);
+        StringAttribute&        pentC = dynamic_cast<StringAttribute&>(*attrs[26]);
+        StringAttribute&        pentD = dynamic_cast<StringAttribute&>(*attrs[27]);
+        StringAttribute&        pentE = dynamic_cast<StringAttribute&>(*attrs[28]);
+        FloatingPointAttribute& pentVal = dynamic_cast<FloatingPointAttribute&>(*attrs[29]);
+        pentA.append(1, "a1", 0);
+        pentB.append(1, "b1", 0);
+        pentC.append(1, "c1", 0);
+        pentD.append(1, "d1", 0);
+        pentE.append(1, "e1", 0);
+        pentVal.append(1, 5.0, 0);
 
         // Setup document 2: empty arrays
         // (no appends, so arrays remain empty)
@@ -425,6 +482,35 @@ TEST(TensorFromStructsTest, require_that_duplicate_key_field_name_fails_setup) {
 TEST(TensorFromStructsTest, require_that_collection_type_mismatch_across_keys_creates_empty_tensor) {
     ExecFixture f("tensorFromStructs(attribute(mixinv),a,b,qty,float)");
     EXPECT_EQ(*make_empty("tensor<float>(a{},b{})"), f.execute());
+}
+
+// Tests for 4 and 5 key fields
+
+TEST(TensorFromStructsTest, require_that_four_keys_create_4d_sparse_tensor) {
+    ExecFixture f("tensorFromStructs(attribute(quad),a,b,c,d,val,float)");
+    EXPECT_EQ(*make_tensor(TensorSpec("tensor<float>(a{},b{},c{},d{})")
+                               .add({{"a", "x"}, {"b", "y"}, {"c", "z"}, {"d", "w"}}, 1.0)
+                               .add({{"a", "p"}, {"b", "q"}, {"c", "r"}, {"d", "s"}}, 2.0)),
+              f.execute());
+}
+
+TEST(TensorFromStructsTest, require_that_four_key_mapped_dimensions_are_sorted_alphabetically_in_type_spec) {
+    ExecFixture f("tensorFromStructs(attribute(quad),d,c,b,a,val,float)");
+    const auto& result = f.execute();
+    EXPECT_EQ("tensor<float>(a{},b{},c{},d{})", result.type().to_spec());
+}
+
+TEST(TensorFromStructsTest, require_that_five_keys_create_5d_sparse_tensor) {
+    ExecFixture f("tensorFromStructs(attribute(pent),a,b,c,d,e,val,float)");
+    EXPECT_EQ(*make_tensor(TensorSpec("tensor<float>(a{},b{},c{},d{},e{})")
+                               .add({{"a", "a1"}, {"b", "b1"}, {"c", "c1"}, {"d", "d1"}, {"e", "e1"}}, 5.0)),
+              f.execute());
+}
+
+TEST(TensorFromStructsTest, require_that_five_key_mapped_dimensions_are_sorted_alphabetically_in_type_spec) {
+    ExecFixture f("tensorFromStructs(attribute(pent),e,d,c,b,a,val,float)");
+    const auto& result = f.execute();
+    EXPECT_EQ("tensor<float>(a{},b{},c{},d{},e{})", result.type().to_spec());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

@@ -110,6 +110,25 @@ public class BuiltInFunctions {
                 new StringArgument("key3"),
                 new StringArgument("value"),
                 new EnumArgument("type", List.of("float", "double"))
+            )),
+            new FunctionSignature(List.of(
+                new FieldArgument(FieldArgument.AnyFieldType, FieldArgument.IndexAttributeType, "attribute"),
+                new StringArgument("key1"),
+                new StringArgument("key2"),
+                new StringArgument("key3"),
+                new StringArgument("key4"),
+                new StringArgument("value"),
+                new EnumArgument("type", List.of("float", "double"))
+            )),
+            new FunctionSignature(List.of(
+                new FieldArgument(FieldArgument.AnyFieldType, FieldArgument.IndexAttributeType, "attribute"),
+                new StringArgument("key1"),
+                new StringArgument("key2"),
+                new StringArgument("key3"),
+                new StringArgument("key4"),
+                new StringArgument("key5"),
+                new StringArgument("value"),
+                new EnumArgument("type", List.of("float", "double"))
             ))
         )));
 

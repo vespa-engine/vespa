@@ -355,8 +355,8 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         }
         if (reference.name().equals("tensorFromStructs")) {
             int numArgs = reference.arguments().size();
-            if (numArgs < 4 || numArgs > 6) {
-                throw new IllegalArgumentException(reference + " should have 4-6 arguments, not " + numArgs + ": (attribute(myarray), mykeyfield1[, mykeyfield2[, mykeyfield3]], myvaluefield, celltype)");
+            if (numArgs < 4 || numArgs > 8) {
+                throw new IllegalArgumentException(reference + " should have 4-8 arguments, not " + numArgs + ": (attribute(myarray), mykeyfield1[, ...[, mykeyfield5]], myvaluefield, celltype)");
             }
             if ( ! (arg0 instanceof ReferenceNode arg0ref && FeatureNames.isAttributeFeature(arg0ref.reference()))) {
                 throw new IllegalArgumentException("Bad first argument of " + reference.name() +

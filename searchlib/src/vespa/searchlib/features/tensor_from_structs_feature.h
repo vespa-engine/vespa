@@ -10,12 +10,14 @@ namespace search::features {
 
 /**
  * Blueprint for a rank feature that creates a tensor from struct field attributes.
- * Takes 1, 2, or 3 key fields (each becomes a mapped dimension) plus one value field.
+ * Takes 1 to 5 key fields (each becomes a mapped dimension) plus one value field.
  *
  * Signatures:
- *   tensorFromStructs(attribute(baseAttr), keyField,                        valueField, type)
- *   tensorFromStructs(attribute(baseAttr), keyField1, keyField2,            valueField, type)
- *   tensorFromStructs(attribute(baseAttr), keyField1, keyField2, keyField3, valueField, type)
+ *   tensorFromStructs(attribute(baseAttr), keyField,                                    valueField, type)
+ *   tensorFromStructs(attribute(baseAttr), keyField1, keyField2,                        valueField, type)
+ *   tensorFromStructs(attribute(baseAttr), keyField1, keyField2, keyField3,             valueField, type)
+ *   tensorFromStructs(attribute(baseAttr), keyField1, keyField2, keyField3, keyField4,  valueField, type)
+ *   tensorFromStructs(attribute(baseAttr), keyField1, ...,                  keyField5,  valueField, type)
  *
  * Example: tensorFromStructs(attribute(items), "itemname", "price", "float")
  *   - Creates tensor<float>(itemname{})
@@ -36,7 +38,9 @@ public:
         return fef::ParameterDescriptions()
                 .desc().string().string().string().string()
                 .desc().string().string().string().string().string()
-                .desc().string().string().string().string().string().string();
+                .desc().string().string().string().string().string().string()
+                .desc().string().string().string().string().string().string().string()
+                .desc().string().string().string().string().string().string().string().string();
     }
     bool setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) override;
     fef::FeatureExecutor& createExecutor(const fef::IQueryEnvironment& env, vespalib::Stash& stash) const override;
