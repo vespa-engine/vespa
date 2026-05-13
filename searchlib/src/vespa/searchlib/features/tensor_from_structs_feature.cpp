@@ -33,17 +33,17 @@ namespace search {
 namespace features {
 
 TensorFromStructsBlueprint::TensorFromStructsBlueprint()
-    : TensorFactoryBlueprint("tensorFromStructs"), _keyField(), _valueField(), _cellType(CellType::DOUBLE) {
+    : TensorFactoryBlueprint("tensorFromStructs"), _keyFields(), _valueField(), _cellType(CellType::DOUBLE) {
 }
 
 TensorFromStructsBlueprint::~TensorFromStructsBlueprint() = default;
 
 bool TensorFromStructsBlueprint::setup(const search::fef::IIndexEnvironment& env,
                                        const search::fef::ParameterList&     params) {
-    // _params[0] = source ('attribute(name)');
-    // _params[1] = keyField;
-    // _params[2] = valueField;
-    // _params[3] = cellType (e.g., 'float', 'double');
+    // params[0]       = source ('attribute(name)')
+    // params[1..N]    = key fields (1 to 5)
+    // params[N+1]     = value field
+    // params[N+2]     = cell type (e.g. 'float', 'double')
 
     bool validSource = extractSource(params[0].getValue());
     if (!validSource) {
@@ -53,31 +53,49 @@ bool TensorFromStructsBlueprint::setup(const search::fef::IIndexEnvironment& env
         return fail("only attribute source is supported for tensorFromStructs, got: '%s'", _sourceType.c_str());
     }
 
-    _keyField = params[1].getValue();
-    _valueField = params[2].getValue();
+    const size_t total = params.size();
+    if (total < 4 || total > 8) {
+        // Note: this should be checked already from ParameterDescriptions
+        return fail("expected 4 to 8 parameters, got %zu", total);
+    }
+    const size_t numKeys = total - 3;
 
-    auto cellTypeOpt = vespalib::eval::value_type::cell_type_from_name(params[3].getValue());
+    _keyFields.clear();
+    _keyFields.reserve(numKeys);
+    for (size_t i = 0; i < numKeys; ++i) {
+        _keyFields.push_back(params[1 + i].getValue());
+    }
+    _valueField = params[1 + numKeys].getValue();
+
+    auto cellTypeOpt = vespalib::eval::value_type::cell_type_from_name(params[2 + numKeys].getValue());
     if (!cellTypeOpt.has_value()) {
-        return fail("invalid cell type: '%s'", params[3].getValue().c_str());
+        return fail("invalid cell type: '%s'", params[2 + numKeys].getValue().c_str());
     }
     _cellType = cellTypeOpt.value();
 
-    auto vt = ValueType::make_type(_cellType, {{_keyField}});
+    std::vector<ValueType::Dimension> dims;
+    dims.reserve(numKeys);
+    for (const auto& kf : _keyFields) {
+        dims.emplace_back(kf);
+    }
+    auto vt = ValueType::make_type(_cellType, std::move(dims));
     _valueType = ValueType::from_spec(vt.to_spec());
     if (_valueType.is_error()) {
-        return fail("invalid dimension name: '%s'", _keyField.c_str());
+        return fail("invalid or duplicate dimension name(s) for key field(s)");
     }
-    std::string           keyAttrName = _sourceParam + "." + _keyField;
+    for (const auto& kf : _keyFields) {
+        std::string           keyAttrName = _sourceParam + "." + kf;
+        const fef::FieldInfo* kfInfo = env.getFieldByName(keyAttrName);
+        if (kfInfo == nullptr || !kfInfo->hasAttribute()) {
+            return fail("no such attribute '%s'", keyAttrName.c_str());
+        }
+    }
     std::string           valueAttrName = _sourceParam + "." + _valueField;
-    const fef::FieldInfo* kfInfo = env.getFieldByName(keyAttrName);
     const fef::FieldInfo* vfInfo = env.getFieldByName(valueAttrName);
-    if (kfInfo == nullptr || !kfInfo->hasAttribute()) {
-        return fail("no such attribute '%s'", keyAttrName.c_str());
-    }
     if (vfInfo == nullptr || !vfInfo->hasAttribute()) {
         return fail("no such attribute '%s'", valueAttrName.c_str());
     }
-    describeOutput("tensor", "The tensor created from struct field attributes (key and value fields)",
+    describeOutput("tensor", "The tensor created from struct field attributes (key field(s) and value field)",
                    FeatureType::object(_valueType));
     return true;
 }
@@ -138,19 +156,73 @@ template <typename KeyBufferType> void TensorFromStructsExecutor<KeyBufferType>:
     outputs().set_object(0, *_tensor);
 }
 
-FeatureExecutor& createAttributeExecutor(const search::fef::IQueryEnvironment& env, const std::string& baseAttrName,
-                                         const std::string& keyField, const std::string& valueField,
-                                         const ValueType& valueType, CellType cellType, vespalib::Stash& stash) {
-    std::string keyAttrName = baseAttrName + "." + keyField;
-    std::string valueAttrName = baseAttrName + "." + valueField;
+class TensorFromStructsMultiKeyExecutor : public fef::FeatureExecutor {
+private:
+    std::vector<const IAttributeVector*> _keyAttributes;
+    const IAttributeVector*              _valueAttribute;
+    vespalib::eval::ValueType            _type;
+    vespalib::eval::CellType             _cellType;
+    // _keyDimSlot[k] = index in the tensor's (sorted) dimension list where
+    // the k-th user-supplied key field's value belongs in the subspace address.
+    std::vector<size_t>                    _keyDimSlot;
+    std::vector<WeightedStringContent>     _keyBuffers;
+    FloatContent                           _valueBuffer;
+    std::unique_ptr<vespalib::eval::Value> _tensor;
 
-    const IAttributeVector* keyAttribute = env.getAttributeContext().getAttribute(keyAttrName);
-    if (keyAttribute == nullptr) {
-        Issue::report("tensor_from_structs feature: The key attribute '%s' was not found."
-                      " Returning empty tensor.",
-                      keyAttrName.c_str());
-        return ConstantTensorExecutor::createEmpty(valueType, stash);
+public:
+    TensorFromStructsMultiKeyExecutor(std::vector<const IAttributeVector*> keyAttrs,
+                                      const IAttributeVector* valueAttr, const vespalib::eval::ValueType& valueType,
+                                      vespalib::eval::CellType cellType, std::vector<size_t> keyDimSlot)
+        : _keyAttributes(std::move(keyAttrs)),
+          _valueAttribute(valueAttr),
+          _type(valueType),
+          _cellType(cellType),
+          _keyDimSlot(std::move(keyDimSlot)),
+          _keyBuffers(_keyAttributes.size()),
+          _valueBuffer(),
+          _tensor() {
+        for (size_t i = 0; i < _keyAttributes.size(); ++i) {
+            _keyBuffers[i].allocate(_keyAttributes[i]->getMaxValueCount());
+        }
+        _valueBuffer.allocate(_valueAttribute->getMaxValueCount());
     }
+    ~TensorFromStructsMultiKeyExecutor() override = default;
+
+    void execute(uint32_t docId) override {
+        const size_t numKeys = _keyAttributes.size();
+        for (size_t k = 0; k < numKeys; ++k) {
+            _keyBuffers[k].fill(*_keyAttributes[k], docId);
+        }
+        _valueBuffer.fill(*_valueAttribute, docId);
+
+        uint32_t size = _valueBuffer.size();
+        for (size_t k = 0; k < numKeys; ++k) {
+            size = std::min(size, _keyBuffers[k].size());
+        }
+
+        auto factory = FastValueBuilderFactory::get();
+        _tensor = TypifyCellType::resolve(_cellType, [&](auto cell_type) {
+            using CT = typename decltype(cell_type)::type;
+            auto                          builder = factory.create_value_builder<CT>(_type, numKeys, 1, size);
+            std::vector<std::string_view> addr(numKeys);
+            for (size_t i = 0; i < size; ++i) {
+                for (size_t k = 0; k < numKeys; ++k) {
+                    addr[_keyDimSlot[k]] = _keyBuffers[k][i].value();
+                }
+                auto cell_array = builder->add_subspace(addr);
+                cell_array[0] = static_cast<CT>(_valueBuffer[i]);
+            }
+            return builder->build(std::move(builder));
+        });
+
+        outputs().set_object(0, *_tensor);
+    }
+};
+
+FeatureExecutor& createAttributeExecutor(const search::fef::IQueryEnvironment& env, const std::string& baseAttrName,
+                                         const std::vector<std::string>& keyFields, const std::string& valueField,
+                                         const ValueType& valueType, CellType cellType, vespalib::Stash& stash) {
+    std::string valueAttrName = baseAttrName + "." + valueField;
 
     const IAttributeVector* valueAttribute = env.getAttributeContext().getAttribute(valueAttrName);
     if (valueAttribute == nullptr) {
@@ -160,15 +232,6 @@ FeatureExecutor& createAttributeExecutor(const search::fef::IQueryEnvironment& e
         return ConstantTensorExecutor::createEmpty(valueType, stash);
     }
 
-    // Validate key attribute type
-    if (keyAttribute->isFloatingPointType()) {
-        Issue::report("tensor_from_structs feature: The key attribute '%s' must have basic type string or integer."
-                      " Returning empty tensor.",
-                      keyAttrName.c_str());
-        return ConstantTensorExecutor::createEmpty(valueType, stash);
-    }
-
-    // Validate value attribute type
     if (!valueAttribute->isFloatingPointType() && !valueAttribute->isIntegerType()) {
         Issue::report("tensor_from_structs feature: The value attribute '%s' must have numeric type."
                       " Returning empty tensor.",
@@ -176,33 +239,69 @@ FeatureExecutor& createAttributeExecutor(const search::fef::IQueryEnvironment& e
         return ConstantTensorExecutor::createEmpty(valueType, stash);
     }
 
-    // Check collection type compatibility
-    if (keyAttribute->getCollectionType() != valueAttribute->getCollectionType()) {
-        Issue::report("tensor_from_structs feature: The key attribute '%s' and value attribute '%s' "
-                      "must have the same collection type. Returning empty tensor.",
-                      keyAttrName.c_str(), valueAttrName.c_str());
-        return ConstantTensorExecutor::createEmpty(valueType, stash);
+    std::vector<const IAttributeVector*> keyAttributes;
+    keyAttributes.reserve(keyFields.size());
+    for (const auto& kf : keyFields) {
+        std::string             keyAttrName = baseAttrName + "." + kf;
+        const IAttributeVector* keyAttribute = env.getAttributeContext().getAttribute(keyAttrName);
+        if (keyAttribute == nullptr) {
+            Issue::report("tensor_from_structs feature: The key attribute '%s' was not found."
+                          " Returning empty tensor.",
+                          keyAttrName.c_str());
+            return ConstantTensorExecutor::createEmpty(valueType, stash);
+        }
+        if (!keyAttribute->isStringType() && !keyAttribute->isIntegerType()) {
+            Issue::report(
+                "tensor_from_structs feature: The key attribute '%s' must have basic type string or integer."
+                " Returning empty tensor.",
+                keyAttrName.c_str());
+            return ConstantTensorExecutor::createEmpty(valueType, stash);
+        }
+        if (keyAttribute->getCollectionType() != valueAttribute->getCollectionType()) {
+            Issue::report("tensor_from_structs feature: The key attribute '%s' and value attribute '%s' "
+                          "must have the same collection type. Returning empty tensor.",
+                          keyAttrName.c_str(), valueAttrName.c_str());
+            return ConstantTensorExecutor::createEmpty(valueType, stash);
+        }
+        if (keyAttribute->getCollectionType() == search::attribute::CollectionType::WSET) {
+            Issue::report("tensor_from_structs feature: Weighted set attributes are not supported."
+                          " Key attribute '%s' is a weighted set. Returning empty tensor.",
+                          keyAttrName.c_str());
+            return ConstantTensorExecutor::createEmpty(valueType, stash);
+        }
+        keyAttributes.push_back(keyAttribute);
     }
 
-    // Weighted sets not supported (arrays are supported)
-    if (keyAttribute->getCollectionType() == search::attribute::CollectionType::WSET) {
-        Issue::report("tensor_from_structs feature: Weighted set attributes are not supported."
-                      " Key attribute '%s' is a weighted set. Returning empty tensor.",
-                      keyAttrName.c_str());
-        return ConstantTensorExecutor::createEmpty(valueType, stash);
+    if (keyAttributes.size() == 1) {
+        const IAttributeVector* keyAttribute = keyAttributes[0];
+        if (keyAttribute->isIntegerType()) {
+            // Using WeightedStringContent ensures that the integer values are converted
+            // to strings while extracting them from the attribute.
+            return stash.create<TensorFromStructsExecutor<WeightedStringContent>>(keyAttribute, valueAttribute,
+                                                                                  valueType, cellType);
+        }
+        // When the underlying attribute is of type string we can reference these values
+        // using WeightedConstCharContent.
+        return stash.create<TensorFromStructsExecutor<WeightedConstCharContent>>(keyAttribute, valueAttribute,
+                                                                                 valueType, cellType);
     }
-
-    // Choose appropriate key buffer type
-    if (keyAttribute->isIntegerType()) {
-        // Using WeightedStringContent ensures that the integer values are converted
-        // to strings while extracting them from the attribute.
-        return stash.create<TensorFromStructsExecutor<WeightedStringContent>>(keyAttribute, valueAttribute, valueType,
-                                                                              cellType);
+    // valueType has its dimensions in sorted (canonical) order, which is what
+    // the value-builder expects in the subspace address. Map each user-supplied
+    // key field to its slot in that sorted dimension list.
+    const auto&         dims = valueType.dimensions();
+    std::vector<size_t> keyDimSlot(keyFields.size());
+    for (size_t k = 0; k < keyFields.size(); ++k) {
+        size_t slot = dims.size();
+        for (size_t d = 0; d < dims.size(); ++d) {
+            if (dims[d].name == keyFields[k]) {
+                slot = d;
+                break;
+            }
+        }
+        keyDimSlot[k] = slot;
     }
-    // When the underlying attribute is of type string we can reference these values
-    // using WeightedConstCharContent.
-    return stash.create<TensorFromStructsExecutor<WeightedConstCharContent>>(keyAttribute, valueAttribute, valueType,
-                                                                             cellType);
+    return stash.create<TensorFromStructsMultiKeyExecutor>(std::move(keyAttributes), valueAttribute, valueType,
+                                                           cellType, std::move(keyDimSlot));
 }
 
 } // namespace
@@ -210,7 +309,7 @@ FeatureExecutor& createAttributeExecutor(const search::fef::IQueryEnvironment& e
 FeatureExecutor& TensorFromStructsBlueprint::createExecutor(const search::fef::IQueryEnvironment& env,
                                                             vespalib::Stash&                      stash) const {
     if (_sourceType == ATTRIBUTE_SOURCE) {
-        return createAttributeExecutor(env, _sourceParam, _keyField, _valueField, _valueType, _cellType, stash);
+        return createAttributeExecutor(env, _sourceParam, _keyFields, _valueField, _valueType, _cellType, stash);
     }
     return ConstantTensorExecutor::createEmpty(_valueType, stash);
 }

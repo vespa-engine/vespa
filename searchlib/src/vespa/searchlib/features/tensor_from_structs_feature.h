@@ -10,9 +10,15 @@ namespace search::features {
 
 /**
  * Blueprint for a rank feature that creates a tensor from struct field attributes.
- * Takes two struct fields: one for dimension labels (keys) and one for cell values.
+ * Takes 1 to 5 key fields (each becomes a mapped dimension) plus one value field.
  *
- * Signature: tensorFromStructs(attribute(baseAttr), keyField, valueField, type)
+ * Signatures:
+ *   tensorFromStructs(attribute(baseAttr), keyField,                                    valueField, type)
+ *   tensorFromStructs(attribute(baseAttr), keyField1, keyField2,                        valueField, type)
+ *   tensorFromStructs(attribute(baseAttr), keyField1, keyField2, keyField3,             valueField, type)
+ *   tensorFromStructs(attribute(baseAttr), keyField1, keyField2, keyField3, keyField4,  valueField, type)
+ *   tensorFromStructs(attribute(baseAttr), keyField1, ...,                  keyField5,  valueField, type)
+ *
  * Example: tensorFromStructs(attribute(items), "itemname", "price", "float")
  *   - Creates tensor<float>(itemname{})
  *   - Labels from items.itemname attribute
@@ -20,7 +26,7 @@ namespace search::features {
  */
 class TensorFromStructsBlueprint : public TensorFactoryBlueprint {
 private:
-    std::string              _keyField;
+    std::vector<std::string> _keyFields;
     std::string              _valueField;
     vespalib::eval::CellType _cellType;
 
@@ -29,7 +35,12 @@ public:
     ~TensorFromStructsBlueprint() override;
     fef::Blueprint::UP createInstance() const override { return Blueprint::UP(new TensorFromStructsBlueprint()); }
     fef::ParameterDescriptions getDescriptions() const override {
-        return fef::ParameterDescriptions().desc().string().string().string().string();
+        return fef::ParameterDescriptions()
+                .desc().string().string().string().string()
+                .desc().string().string().string().string().string()
+                .desc().string().string().string().string().string().string()
+                .desc().string().string().string().string().string().string().string()
+                .desc().string().string().string().string().string().string().string().string();
     }
     bool setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) override;
     fef::FeatureExecutor& createExecutor(const fef::IQueryEnvironment& env, vespalib::Stash& stash) const override;
