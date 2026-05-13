@@ -135,6 +135,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.vespa.model.container.ContainerCluster.VIP_HANDLER_BINDING;
+import static com.yahoo.vespa.model.container.http.Client.Permission.WRITE;
 import static java.util.logging.Level.WARNING;
 
 /**
@@ -597,9 +598,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     .flatMap(elem -> getClient(elem, deployState).stream())
                     .toList();
             boolean atLeastOneClientWithCertificate = clients.stream().anyMatch(client -> !client.certificates().isEmpty());
-            boolean atLeastOneClientWithToken = clients.stream().anyMatch(client -> !client.tokens().isEmpty());
-            if (!atLeastOneClientWithCertificate && !atLeastOneClientWithToken)
-                throw new IllegalArgumentException("At least one client must require a certificate or token");
+            boolean atLeastOneClientWithWriteToken = clients.stream()
+                .filter(client -> !client.tokens().isEmpty())
+                .anyMatch(client -> client.permissions().contains(WRITE));
+
+            if (!atLeastOneClientWithCertificate && !atLeastOneClientWithWriteToken)
+                throw new IllegalArgumentException("At least one client must require a certificate or a write token");
 
             List<String> duplicates = clients.stream().collect(Collectors.groupingBy(Client::id))
                     .entrySet().stream().filter(entry -> entry.getValue().size() > 1)
