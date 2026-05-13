@@ -38,6 +38,44 @@ public class SummaryDiskAccessValidatorTestCase {
     }
 
     @Test
+    void logs_warning_when_accessing_documentid_when_not_an_attribute() throws ParseException {
+        var sd = joinLines(
+                "schema test {",
+                "  document-id: from-disk",
+                "  document test {",
+                "  }",
+                "  document-summary my_sum {",
+                "    summary documentid { source: documentid }",
+                "  }",
+                "}");
+
+        var logger = new TestableDeployLogger();
+        ApplicationBuilder.createFromString(sd, logger);
+        assertEquals(1, logger.warnings.size());
+        assertThat(logger.warnings.get(0),
+                containsString("In document-summary 'my_sum' in schema 'test': " +
+                        "Fields [documentid] references non-attribute fields: Using this summary will cause disk accesses. " +
+                        "Set 'from-disk' on this document-summary to silence this warning."));
+    }
+
+    @Test
+    void does_not_log_warning_when_accessing_documentid_when_an_attribute() throws ParseException {
+        var sd = joinLines(
+                "schema test {",
+                "  document-id: attribute",
+                "  document test {",
+                "  }",
+                "  document-summary my_sum {",
+                "    summary documentid { source: documentid }",
+                "  }",
+                "}");
+
+        var logger = new TestableDeployLogger();
+        ApplicationBuilder.createFromString(sd, logger);
+        assertEquals(0, logger.warnings.size());
+    }
+
+    @Test
     void does_not_log_warning_when_accessing_imported_map_field() throws ParseException {
         var parent = joinLines(
                 "schema parent {",
