@@ -110,14 +110,14 @@ struct ExecFixture {
 
         // Multi-key struct array: inv.category (string), inv.brand (string), inv.sku (int32), inv.qty (float)
         attrs.push_back(AttributeFactory::createAttribute("inv.category", AVC(AVBT::STRING, AVCT::ARRAY)));
-        attrs.push_back(AttributeFactory::createAttribute("inv.brand",    AVC(AVBT::STRING, AVCT::ARRAY)));
-        attrs.push_back(AttributeFactory::createAttribute("inv.sku",      AVC(AVBT::INT32,  AVCT::ARRAY)));
-        attrs.push_back(AttributeFactory::createAttribute("inv.qty",      AVC(AVBT::FLOAT,  AVCT::ARRAY)));
+        attrs.push_back(AttributeFactory::createAttribute("inv.brand", AVC(AVBT::STRING, AVCT::ARRAY)));
+        attrs.push_back(AttributeFactory::createAttribute("inv.sku", AVC(AVBT::INT32, AVCT::ARRAY)));
+        attrs.push_back(AttributeFactory::createAttribute("inv.qty", AVC(AVBT::FLOAT, AVCT::ARRAY)));
 
         // Mixed collection-type struct for negative test (one ARRAY key, one SINGLE key, ARRAY value)
-        attrs.push_back(AttributeFactory::createAttribute("mixinv.a",   AVC(AVBT::STRING, AVCT::ARRAY)));
-        attrs.push_back(AttributeFactory::createAttribute("mixinv.b",   AVC(AVBT::STRING, AVCT::SINGLE)));
-        attrs.push_back(AttributeFactory::createAttribute("mixinv.qty", AVC(AVBT::FLOAT,  AVCT::ARRAY)));
+        attrs.push_back(AttributeFactory::createAttribute("mixinv.a", AVC(AVBT::STRING, AVCT::ARRAY)));
+        attrs.push_back(AttributeFactory::createAttribute("mixinv.b", AVC(AVBT::STRING, AVCT::SINGLE)));
+        attrs.push_back(AttributeFactory::createAttribute("mixinv.qty", AVC(AVBT::FLOAT, AVCT::ARRAY)));
 
         // Register attributes in index environment
         test.getIndexEnv()
@@ -372,17 +372,17 @@ TEST(TensorFromStructsTest, require_that_double_cell_type_is_preserved) {
 TEST(TensorFromStructsTest, require_that_two_string_keys_create_2d_sparse_tensor) {
     ExecFixture f("tensorFromStructs(attribute(inv),category,brand,qty,float)");
     EXPECT_EQ(*make_tensor(TensorSpec("tensor<float>(brand{},category{})")
-                               .add({{"category", "food"},  {"brand", "acme"}},   1.5)
-                               .add({{"category", "food"},  {"brand", "globex"}}, 2.0)
-                               .add({{"category", "drink"}, {"brand", "acme"}},   3.5)),
+                               .add({{"category", "food"}, {"brand", "acme"}}, 1.5)
+                               .add({{"category", "food"}, {"brand", "globex"}}, 2.0)
+                               .add({{"category", "drink"}, {"brand", "acme"}}, 3.5)),
               f.execute());
 }
 
 TEST(TensorFromStructsTest, require_that_string_and_integer_keys_create_2d_sparse_tensor) {
     ExecFixture f("tensorFromStructs(attribute(inv),category,sku,qty,float)");
     EXPECT_EQ(*make_tensor(TensorSpec("tensor<float>(category{},sku{})")
-                               .add({{"category", "food"},  {"sku", "10"}}, 1.5)
-                               .add({{"category", "food"},  {"sku", "20"}}, 2.0)
+                               .add({{"category", "food"}, {"sku", "10"}}, 1.5)
+                               .add({{"category", "food"}, {"sku", "20"}}, 2.0)
                                .add({{"category", "drink"}, {"sku", "30"}}, 3.5)),
               f.execute());
 }
@@ -390,13 +390,13 @@ TEST(TensorFromStructsTest, require_that_string_and_integer_keys_create_2d_spars
 TEST(TensorFromStructsTest, require_that_three_keys_create_3d_sparse_tensor) {
     ExecFixture f("tensorFromStructs(attribute(inv),category,brand,sku,qty,float)");
     EXPECT_EQ(*make_tensor(TensorSpec("tensor<float>(brand{},category{},sku{})")
-                               .add({{"category", "food"},  {"brand", "acme"},   {"sku", "10"}}, 1.5)
-                               .add({{"category", "food"},  {"brand", "globex"}, {"sku", "20"}}, 2.0)
-                               .add({{"category", "drink"}, {"brand", "acme"},   {"sku", "30"}}, 3.5)),
+                               .add({{"category", "food"}, {"brand", "acme"}, {"sku", "10"}}, 1.5)
+                               .add({{"category", "food"}, {"brand", "globex"}, {"sku", "20"}}, 2.0)
+                               .add({{"category", "drink"}, {"brand", "acme"}, {"sku", "30"}}, 3.5)),
               f.execute());
 }
 
-TEST(TensorFromStructsTest, require_that_multi_key_dimension_order_follows_argument_order) {
+TEST(TensorFromStructsTest, require_that_multi_key_mapped_dimensions_are_sorted_alphabetically_in_type_spec) {
     ExecFixture f("tensorFromStructs(attribute(inv),category,brand,qty,float)");
     const auto& result = f.execute();
     // Tensor type specs sort mapped dimensions alphabetically.
@@ -410,9 +410,10 @@ TEST(TensorFromStructsTest, require_that_empty_arrays_create_empty_multi_dim_ten
 
 TEST(TensorFromStructsTest, require_that_single_element_arrays_create_single_cell_multi_dim_tensor) {
     ExecFixture f("tensorFromStructs(attribute(inv),category,brand,qty,float)");
-    EXPECT_EQ(*make_tensor(TensorSpec("tensor<float>(brand{},category{})")
-                               .add({{"category", "food"}, {"brand", "acme"}}, 7.5)),
-              f.execute(3));
+    EXPECT_EQ(
+        *make_tensor(
+            TensorSpec("tensor<float>(brand{},category{})").add({{"category", "food"}, {"brand", "acme"}}, 7.5)),
+        f.execute(3));
 }
 
 TEST(TensorFromStructsTest, require_that_duplicate_key_field_name_fails_setup) {

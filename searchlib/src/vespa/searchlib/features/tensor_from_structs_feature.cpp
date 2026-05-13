@@ -158,10 +158,10 @@ template <typename KeyBufferType> void TensorFromStructsExecutor<KeyBufferType>:
 
 class TensorFromStructsMultiKeyExecutor : public fef::FeatureExecutor {
 private:
-    std::vector<const IAttributeVector*>   _keyAttributes;
-    const IAttributeVector*                _valueAttribute;
-    vespalib::eval::ValueType              _type;
-    vespalib::eval::CellType               _cellType;
+    std::vector<const IAttributeVector*> _keyAttributes;
+    const IAttributeVector*              _valueAttribute;
+    vespalib::eval::ValueType            _type;
+    vespalib::eval::CellType             _cellType;
     // _keyDimSlot[k] = index in the tensor's (sorted) dimension list where
     // the k-th user-supplied key field's value belongs in the subspace address.
     std::vector<size_t>                    _keyDimSlot;
@@ -171,10 +171,8 @@ private:
 
 public:
     TensorFromStructsMultiKeyExecutor(std::vector<const IAttributeVector*> keyAttrs,
-                                      const IAttributeVector* valueAttr,
-                                      const vespalib::eval::ValueType& valueType,
-                                      vespalib::eval::CellType cellType,
-                                      std::vector<size_t> keyDimSlot)
+                                      const IAttributeVector* valueAttr, const vespalib::eval::ValueType& valueType,
+                                      vespalib::eval::CellType cellType, std::vector<size_t> keyDimSlot)
         : _keyAttributes(std::move(keyAttrs)),
           _valueAttribute(valueAttr),
           _type(valueType),
@@ -205,13 +203,11 @@ public:
         auto factory = FastValueBuilderFactory::get();
         _tensor = TypifyCellType::resolve(_cellType, [&](auto cell_type) {
             using CT = typename decltype(cell_type)::type;
-            auto builder = factory.create_value_builder<CT>(_type, numKeys, 1, size);
-            std::vector<std::string>      keyOwners(numKeys);
+            auto                          builder = factory.create_value_builder<CT>(_type, numKeys, 1, size);
             std::vector<std::string_view> addr(numKeys);
             for (size_t i = 0; i < size; ++i) {
                 for (size_t k = 0; k < numKeys; ++k) {
-                    keyOwners[k] = std::string(_keyBuffers[k][i].value());
-                    addr[_keyDimSlot[k]] = keyOwners[k];
+                    addr[_keyDimSlot[k]] = _keyBuffers[k][i].value();
                 }
                 auto cell_array = builder->add_subspace(addr);
                 cell_array[0] = static_cast<CT>(_valueBuffer[i]);
@@ -254,10 +250,11 @@ FeatureExecutor& createAttributeExecutor(const search::fef::IQueryEnvironment& e
                           keyAttrName.c_str());
             return ConstantTensorExecutor::createEmpty(valueType, stash);
         }
-        if (keyAttribute->isFloatingPointType()) {
-            Issue::report("tensor_from_structs feature: The key attribute '%s' must have basic type string or integer."
-                          " Returning empty tensor.",
-                          keyAttrName.c_str());
+        if (!keyAttribute->isStringType() && !keyAttribute->isIntegerType()) {
+            Issue::report(
+                "tensor_from_structs feature: The key attribute '%s' must have basic type string or integer."
+                " Returning empty tensor.",
+                keyAttrName.c_str());
             return ConstantTensorExecutor::createEmpty(valueType, stash);
         }
         if (keyAttribute->getCollectionType() != valueAttribute->getCollectionType()) {
@@ -291,7 +288,7 @@ FeatureExecutor& createAttributeExecutor(const search::fef::IQueryEnvironment& e
     // valueType has its dimensions in sorted (canonical) order, which is what
     // the value-builder expects in the subspace address. Map each user-supplied
     // key field to its slot in that sorted dimension list.
-    const auto& dims = valueType.dimensions();
+    const auto&         dims = valueType.dimensions();
     std::vector<size_t> keyDimSlot(keyFields.size());
     for (size_t k = 0; k < keyFields.size(); ++k) {
         size_t slot = dims.size();
