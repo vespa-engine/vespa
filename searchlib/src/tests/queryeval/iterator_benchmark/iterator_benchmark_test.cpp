@@ -69,24 +69,19 @@ struct {
     using F = std::string;
     F actual_cost = "actual_cost";
     F algo = "algo";
-    F avg_actual_cost = "avg_actual_cost";
-    F avg_time = "avg_time";
     F blueprint_name = "blueprint_name";
     F calibration_constant = "calibration_constant";
     F children = "children";
     F class_ = "class";
     F error = "error";
-    F sample_error_min = "sample_error_min";
-    F sample_error_median = "sample_error_median";
-    F sample_error_max = "sample_error_max";
     F field_cfg = "field_cfg";
     F filter_hit_ratio = "filter_hit_ratio";
     F force_strict = "force_strict";
     F group = "group";
     F hits = "hits";
     F iterator_name = "iterator_name";
+    F ms_per_cost = "ms_per_cost";
     F op_hit_ratio = "op_hit_ratio";
-    F pred_ms = "pred_ms";
     F query_op = "query_op";
     F seeks = "seeks";
     F strict_context = "strict_context";
@@ -592,7 +587,10 @@ void postprocess_calculate_calibration_constant(DataPond& pond) {
     for (auto& record : pond.records()) {
         if (record.has_field<double>(f.time_ms) && record.has_field<double>(f.actual_cost)) {
             records.emplace_back(record);
-            ms_per_costs.push_back(record.get<double>(f.time_ms) / record.get<double>(f.actual_cost));
+
+            double ms_per_cost = record.get<double>(f.time_ms) / record.get<double>(f.actual_cost);
+            ms_per_costs.push_back(ms_per_cost);
+            record.set(f.ms_per_cost, ms_per_cost);
         }
     }
 
@@ -607,98 +605,24 @@ void postprocess_calculate_calibration_constant(DataPond& pond) {
  * Calculates averages, error and classifies per group.
  */
 void postprocess_calculate_error(DataPond& pond) {
-    std::map<std::string, std::vector<RecordRef>> grouped;
-    for (auto& record : pond.records()) {
-        grouped[record.get<std::string>(f.group)].emplace_back(record);
-    }
-
-    auto sum_field = [](const std::vector<RecordRef>& records, const std::string& name) {
-        double s = 0;
-        for (const auto& r : records) {
-            s += r.get().get<double>(name);
-        }
-        return s;
-    };
-
-    auto avg_field = [sum_field](const std::vector<RecordRef>& records, const std::string& name) {
-        return sum_field(records, name) / static_cast<double>(records.size());
-    };
-
-    auto error_ratio = [avg_field](const std::vector<RecordRef>& records) {
-        double avg_time = avg_field(records, f.time_ms);
-        double avg_cost = avg_field(records, f.actual_cost);
-        double ms_per_cost = avg_time / avg_cost;
-        return ms_per_cost / records.front().get().get<double>(f.calibration_constant);
-    };
-
-    auto classify = [error_ratio](const std::vector<RecordRef>& records) -> std::string {
+    auto classify = [](double error_ratio) -> std::string {
         constexpr double ok_band = 1.4;
         constexpr double under_threshold = ok_band;
         constexpr double over_threshold = 1.0 / ok_band;
-        double           e = error_ratio(records); // raw, can be <1 or >1
-        if (e < under_threshold)
+        if (error_ratio > under_threshold)
             return "UNDER";
-        if (e > over_threshold)
+        if (error_ratio < over_threshold)
             return "OVER";
         return "OK";
     };
 
-    for (auto& [_, records] : grouped) {
-        double avg_time = avg_field(records, f.time_ms);
-        double avg_cost = avg_field(records, f.actual_cost);
-        for (auto& record : records) {
-            Record& r = record.get();
-            double  pred_ms = avg_cost * r.get<double>(f.calibration_constant);
-            double  error = pred_ms > 0.0 ? avg_time / pred_ms : 0.0;
-
-            r.set(f.avg_actual_cost, avg_cost);
-            r.set(f.avg_time, avg_time);
-            r.set(f.class_, classify(records));
-            r.set(f.error, error);
-            r.set(f.pred_ms, pred_ms);
-        }
-    }
-}
-
-/**
- * Per case (grouped by f.group), compute the per-sample error spread:
- *     sample_error_i = time_ms_i / (K * actual_cost_i)
- * Stores min / median / max of those values on every record in the case.
- * Does not touch the case error or the calibration constant.
- */
-void postprocess_calculate_sample_error_spread(DataPond& pond) {
-    std::map<std::string, std::vector<RecordRef>> grouped;
     for (auto& record : pond.records()) {
-        if (record.has_field<double>(f.time_ms) && record.has_field<double>(f.actual_cost) &&
-            record.has_field<double>(f.calibration_constant) && record.has_field<std::string>(f.group))
-        {
-            grouped[record.get<std::string>(f.group)].emplace_back(record);
-        }
-    }
-    for (auto& [_, records] : grouped) {
-        double              K = records.front().get().get<double>(f.calibration_constant);
-        std::vector<double> sample_errors;
-        sample_errors.reserve(records.size());
-        for (const auto& ref : records) {
-            const Record& r = ref.get();
-            double        cost = r.get<double>(f.actual_cost);
-            if (K > 0.0 && cost > 0.0) {
-                sample_errors.push_back(r.get<double>(f.time_ms) / (K * cost));
-            }
-        }
-        if (sample_errors.empty()) {
-            continue;
-        }
-        std::sort(sample_errors.begin(), sample_errors.end());
-        double sample_error_min = sample_errors.front();
-        double sample_error_median = calc_median(sample_errors);
-        double sample_error_max = sample_errors.back();
-        for (auto& ref : records) {
-            Record& r = ref.get();
-            r.set(f.sample_error_min, sample_error_min);
-            r.set(f.sample_error_median, sample_error_median);
-            r.set(f.sample_error_max, sample_error_max);
-        }
+        double calibration_constant = record.get<double>(f.calibration_constant);
+        double ms_per_cost = record.get<double>(f.ms_per_cost);
+
+        double error = ms_per_cost / calibration_constant;
+        record.set(f.class_, classify(error));
+        record.set(f.error, error);
     }
 }
 
@@ -708,25 +632,16 @@ void postprocess_calculate_sample_error_spread(DataPond& pond) {
 void postprocess_pond(DataPond& pond) {
     postprocess_calculate_calibration_constant(pond);
     postprocess_calculate_error(pond);
-    postprocess_calculate_sample_error_spread(pond);
 }
 
 void print_pond_summary(const DataPond& pond) {
-    std::map<std::string, std::vector<RecordCRef>> grouped;
-    for (const auto& record : pond.records()) {
-        grouped[record.get<std::string>(f.group)].emplace_back(record);
-    }
-
     std::println("calibration score: ms_per_cost={:.3f} ({} cases)\n",
-                 pond.records().front().get<double>(f.calibration_constant), grouped.size());
-    std::println("{:<60} {:>12} {:>12} {:>10} {:>10} {:>20}", "case", "actual_ms", "pred_ms", "error", "class",
-                 "spread(min/max)");
-    for (const auto& [case_id, records] : grouped) {
-        const Record& first = records.front().get();
-        std::println(
-            "{:<60} {:>12.3f} {:>12.3f} {:>9.3f}x {:>10} {:>20}", case_id, first.get<double>(f.time_ms),
-            first.get<double>(f.pred_ms), first.get<double>(f.error), first.get<std::string>(f.class_),
-            std::format("{}/{}", first.get<double>(f.sample_error_min), first.get<double>(f.sample_error_max)));
+                 pond.records().front().get<double>(f.calibration_constant), pond.records().size());
+    std::println("{:<60} {:>12} {:>10} {:>10}", "case", "actual_ms", "error", "class");
+    for (const auto& record : pond.records()) {
+        auto case_id = record.get<std::string>(f.group);
+        std::println("{:<60} {:>12.3f} {:>9.3f}x {:>10}", case_id, record.get<double>(f.time_ms),
+                     record.get<double>(f.error), record.get<std::string>(f.class_));
     }
 }
 
@@ -1367,7 +1282,7 @@ TEST(IteratorBenchmark, data_pond_test) {
     std::sort(values.begin(), values.end());
     double median = values[values.size() / 2];
     for (auto record : records) {
-        record.get().set(f.sample_error_median, median);
+        record.get().set(f.calibration_constant, median);
     }
 
     std::println("median time_ms/cost={:.4f}", median);
