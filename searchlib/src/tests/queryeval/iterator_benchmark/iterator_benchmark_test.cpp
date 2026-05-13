@@ -815,13 +815,6 @@ BenchmarkSetup::~BenchmarkSetup() = default;
 BenchmarkSummary global_summary;
 DataPond         global_pond;
 
-std::string current_test_name() {
-    if (auto* info = ::testing::UnitTest::GetInstance()->current_test_info()) {
-        return info->name();
-    }
-    return "";
-}
-
 void add_to_pond(DataPond& pond, const BenchmarkCaseSetup& setup, const BenchmarkResult& res, double op_hit_ratio,
                  uint32_t children, double filter_hit_ratio, PlanningAlgo algo) {
     Record record;
