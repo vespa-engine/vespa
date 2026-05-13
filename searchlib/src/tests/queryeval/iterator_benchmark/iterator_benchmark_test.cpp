@@ -63,7 +63,7 @@ std::string to_string(PlanningAlgo algo) {
 }
 
 /**
- * Predefined fields names to use when accessing the global pond.
+ * Predefined field names to use when accessing the global pond.
  */
 struct {
     using F = std::string;
@@ -88,9 +88,9 @@ struct {
     F time_ms = "time_ms";
     F unpack = "unpack";
     struct {
-        F cost = "f.cost";
-        F estimate = "f.estimate";
-        F strict_cost = "f.strict_cost";
+        F cost = "flow.cost";
+        F estimate = "flow.estimate";
+        F strict_cost = "flow.strict_cost";
     } flow;
 } f;
 
@@ -602,7 +602,7 @@ void postprocess_calculate_calibration_constant(DataPond& pond) {
 }
 
 /**
- * Calculates averages, error and classifies per group.
+ * Calculates averages, error and classifies per sample.
  */
 void postprocess_calculate_error(DataPond& pond) {
     auto classify = [](double error_ratio) -> std::string {
@@ -637,10 +637,12 @@ void postprocess_pond(DataPond& pond) {
 void print_pond_summary(const DataPond& pond) {
     std::println("calibration score: ms_per_cost={:.3f} ({} cases)\n",
                  pond.records().front().get<double>(f.calibration_constant), pond.records().size());
-    std::println("{:<60} {:>12} {:>10} {:>10}", "case", "actual_ms", "error", "class");
+    std::println("{:<60} {:>12} {:>12} {:>12} {:>10} {:>10}", "case", "time_ms", "actual_cost", "ms_per_cost",
+                 "error", "class");
     for (const auto& record : pond.records()) {
         auto case_id = record.get<std::string>(f.group);
-        std::println("{:<60} {:>12.3f} {:>9.3f}x {:>10}", case_id, record.get<double>(f.time_ms),
+        std::println("{:<60} {:>12.3f} {:>12.3f} {:>12.3f} {:>9.3f}x {:>10}", case_id, record.get<double>(f.time_ms),
+                     record.get<double>(f.actual_cost), record.get<double>(f.ms_per_cost),
                      record.get<double>(f.error), record.get<std::string>(f.class_));
     }
 }
