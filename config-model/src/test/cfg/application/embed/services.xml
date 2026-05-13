@@ -84,6 +84,7 @@
       <transformer-input-ids>my_input_ids</transformer-input-ids>
       <transformer-attention-mask>my_attention_mask</transformer-attention-mask>
       <transformer-output>my_output</transformer-output>
+      <attend-to-expansion-tokens>false</attend-to-expansion-tokens>
       <onnx-execution-mode>parallel</onnx-execution-mode>
       <onnx-intraop-threads>10</onnx-intraop-threads>
       <onnx-interop-threads>8</onnx-interop-threads>

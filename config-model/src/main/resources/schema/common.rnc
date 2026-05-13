@@ -150,6 +150,7 @@ ColBertEmbedder =
    element query-token-id { xsd:integer }? &
    element document-token-id { xsd:integer }? &
    element transformer-output { xsd:string }? &
+   element attend-to-expansion-tokens { xsd:boolean }? &
    OnnxModelExecutionParams &
    StartOfSequence &
    EndOfSequence
