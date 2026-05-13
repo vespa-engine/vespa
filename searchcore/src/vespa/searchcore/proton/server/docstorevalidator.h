@@ -26,7 +26,7 @@ public:
     DocStoreValidator(IDocumentMetaStore& dms);
     ~DocStoreValidator() override;
 
-    void visit(uint32_t lid, const std::shared_ptr<document::Document>& doc) override;
+    void visit(uint32_t lid, const std::shared_ptr<document::Document>& doc, size_t sz) override;
     void visit(uint32_t lid) override;
 
     void visitDone();
