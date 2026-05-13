@@ -7,7 +7,9 @@
 #include <functional>
 #include <map>
 #include <sstream>
+#include <stdexcept>
 #include <string>
+#include <string_view>
 #include <variant>
 #include <vector>
 
@@ -64,33 +66,53 @@ using Pred = std::function<bool(const Field&)>;
  * Holds a set of named fields representing one test record.
  */
 class Record {
-    std::map<std::string, Field> _fields;
+    std::map<std::string, Field, std::less<>> _fields;
 
 public:
-    [[nodiscard]] const std::map<std::string, Field>& data() const { return _fields; }
+    [[nodiscard]] const std::map<std::string, Field, std::less<>>& data() const { return _fields; }
 
-    Record& set(const std::string& name, const auto& value) {
-        _fields.insert_or_assign(name, Field{value});
+    Record& set(std::string_view name, const auto& value) {
+        _fields.insert_or_assign(std::string(name), Field{value});
         return *this;
     }
 
-    [[nodiscard]] bool check(const std::string& name, const Pred& pred) const {
+    [[nodiscard]] bool check(std::string_view name, const Pred& pred) const {
         if (auto it = _fields.find(name); it != _fields.end()) {
             return pred(it->second);
         }
         return false;
     }
 
-    template <typename T> [[nodiscard]] bool has_field(const std::string& field_name) const {
+    template <typename T> [[nodiscard]] bool has_field(std::string_view field_name) const {
         if (auto pos = _fields.find(field_name); pos != _fields.end()) {
             return pos->second.has_type<T>();
         }
         return false;
     }
 
-    template <typename T> const T& get(const std::string& name) const { return _fields.find(name)->second.get<T>(); }
+    template <typename T> [[nodiscard]] const T& get(std::string_view name) const {
+        auto it = _fields.find(name);
+        if (it == _fields.end()) {
+            throw std::runtime_error(std::format("Record::get: missing field '{}'", name));
+        }
+        if (!it->second.has_type<T>()) {
+            throw std::runtime_error(
+                std::format("Record::get: field '{}' has wrong type (stored={})", name, it->second.to_string()));
+        }
+        return it->second.get<T>();
+    }
 
-    template <typename T> T& get(const std::string& name) { return _fields.find(name)->second.get<T>(); }
+    template <typename T> [[nodiscard]] T& get(std::string_view name) {
+        auto it = _fields.find(name);
+        if (it == _fields.end()) {
+            throw std::runtime_error(std::format("Record::get: missing field '{}'", name));
+        }
+        if (!it->second.has_type<T>()) {
+            throw std::runtime_error(
+                std::format("Record::get: field '{}' has wrong type (stored={})", name, it->second.to_string()));
+        }
+        return it->second.get<T>();
+    }
 
     [[nodiscard]] std::string to_string() const {
         std::stringstream ss;
@@ -118,15 +140,15 @@ class Filter {
     std::vector<std::pair<std::string, Pred>> _predicates;
 
 public:
-    Filter& lt(const std::string& name, auto value) {
-        _predicates.emplace_back(name, [value](const Field& field) {
+    Filter& lt(std::string_view name, auto value) {
+        _predicates.emplace_back(std::string(name), [value](const Field& field) {
             return field.check([value](decltype(value) val) { return val < value; });
         });
         return *this;
     }
 
-    Filter& eq(const std::string& name, auto value) {
-        _predicates.emplace_back(name, [value](const Field& field) {
+    Filter& eq(std::string_view name, auto value) {
+        _predicates.emplace_back(std::string(name), [value](const Field& field) {
             return field.check([value](decltype(value) val) { return val == value; });
         });
         return *this;

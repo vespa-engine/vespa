@@ -62,6 +62,40 @@ std::string to_string(PlanningAlgo algo) {
     return "unknown";
 }
 
+/**
+ * Predefined fields names to use when accessing the global pond.
+ */
+struct {
+    using F = std::string_view;
+    F actual_cost = "actual_cost";
+    F algo = "algo";
+    F avg_actual_cost = "avg_actual_cost";
+    F avg_time = "avg_time";
+    F blueprint_name = "blueprint_name";
+    F calibration_constant = "calibration_constant";
+    F children = "children";
+    F class_ = "class";
+    F error = "error";
+    F field_cfg = "field_cfg";
+    F filter_hit_ratio = "filter_hit_ratio";
+    F force_strict = "force_strict";
+    F group = "group";
+    F hits = "hits";
+    F iterator_name = "iterator_name";
+    F op_hit_ratio = "op_hit_ratio";
+    F pred_ms = "pred_ms";
+    F query_op = "query_op";
+    F seeks = "seeks";
+    F strict_context = "strict_context";
+    F time_ms = "time_ms";
+    F unpack = "unpack";
+    struct {
+        F cost = "f.cost";
+        F estimate = "f.estimate";
+        F strict_cost = "f.strict_cost";
+    } flow;
+} f;
+
 struct BenchmarkResult {
     double      time_ms;
     uint32_t    seeks;
@@ -553,16 +587,16 @@ void postprocess_calculate_calibration_constant(DataPond& pond) {
     std::vector<RecordRef> records;
     std::vector<double>    ms_per_costs;
     for (auto& record : pond.records()) {
-        if (record.has_field<double>("time_ms") && record.has_field<double>("actual_cost")) {
+        if (record.has_field<double>(f.time_ms) && record.has_field<double>(f.actual_cost)) {
             records.emplace_back(record);
-            ms_per_costs.push_back(record.get<double>("time_ms") / record.get<double>("actual_cost"));
+            ms_per_costs.push_back(record.get<double>(f.time_ms) / record.get<double>(f.actual_cost));
         }
     }
 
     std::sort(ms_per_costs.begin(), ms_per_costs.end());
     double median = ms_per_costs[ms_per_costs.size() / 2];
     for (auto record : records) {
-        record.get().set("calibration_constant", median);
+        record.get().set(f.calibration_constant, median);
     }
 }
 
@@ -572,10 +606,10 @@ void postprocess_calculate_calibration_constant(DataPond& pond) {
 void postprocess_calculate_error(DataPond& pond) {
     std::map<std::string, std::vector<RecordRef>> grouped;
     for (auto& record : pond.records()) {
-        grouped[record.get<std::string>("group")].emplace_back(record);
+        grouped[record.get<std::string>(f.group)].emplace_back(record);
     }
 
-    auto sum_field = [](const std::vector<RecordRef>& records, const std::string& name) {
+    auto sum_field = [](const std::vector<RecordRef>& records, std::string_view name) {
         double s = 0;
         for (const auto& r : records) {
             s += r.get().get<double>(name);
@@ -583,15 +617,15 @@ void postprocess_calculate_error(DataPond& pond) {
         return s;
     };
 
-    auto avg_field = [sum_field](const std::vector<RecordRef>& records, const std::string& name) {
+    auto avg_field = [sum_field](const std::vector<RecordRef>& records, std::string_view name) {
         return sum_field(records, name) / static_cast<double>(records.size());
     };
 
     auto error_ratio = [avg_field](const std::vector<RecordRef>& records) {
-        double avg_time = avg_field(records, "time_ms");
-        double avg_cost = avg_field(records, "actual_cost");
+        double avg_time = avg_field(records, f.time_ms);
+        double avg_cost = avg_field(records, f.actual_cost);
         double ms_per_cost = avg_time / avg_cost;
-        return ms_per_cost / records.front().get().get<double>("calibration_constant");
+        return ms_per_cost / records.front().get().get<double>(f.calibration_constant);
     };
 
     auto classify = [error_ratio](const std::vector<RecordRef>& records) -> std::string {
@@ -607,18 +641,18 @@ void postprocess_calculate_error(DataPond& pond) {
     };
 
     for (auto& [_, records] : grouped) {
-        double avg_time = avg_field(records, "time_ms");
-        double avg_cost = avg_field(records, "actual_cost");
+        double avg_time = avg_field(records, f.time_ms);
+        double avg_cost = avg_field(records, f.actual_cost);
         for (auto& record : records) {
             Record& r = record.get();
-            double  pred_ms = avg_cost * r.get<double>("calibration_constant");
+            double  pred_ms = avg_cost * r.get<double>(f.calibration_constant);
             double  error = pred_ms > 0.0 ? avg_time / pred_ms : 0.0;
 
-            r.set("avg_actual_cost", avg_cost);
-            r.set("avg_time", avg_time);
-            r.set("class", classify(records));
-            r.set("error", error);
-            r.set("pred_ms", pred_ms);
+            r.set(f.avg_actual_cost, avg_cost);
+            r.set(f.avg_time, avg_time);
+            r.set(f.class_, classify(records));
+            r.set(f.error, error);
+            r.set(f.pred_ms, pred_ms);
         }
     }
 }
@@ -634,16 +668,16 @@ void postprocess_pond(DataPond& pond) {
 void print_pond_summary(const DataPond& pond) {
     std::map<std::string, std::vector<RecordCRef>> grouped;
     for (const auto& record : pond.records()) {
-        grouped[record.get<std::string>("group")].emplace_back(record);
+        grouped[record.get<std::string>(f.group)].emplace_back(record);
     }
 
     std::println("calibration score: ms_per_cost={:.3f} ({} cases)\n",
-                 pond.records().front().get<double>("calibration_constant"), grouped.size());
+                 pond.records().front().get<double>(f.calibration_constant), grouped.size());
     std::println("{:<60} {:>12} {:>12} {:>10} {:>10}", "case", "actual_ms", "pred_ms", "error", "class");
     for (const auto& [case_id, records] : grouped) {
         const Record& first = records.front().get();
-        std::println("{:<60} {:>12.3f} {:>12.3f} {:>9.3f}x {:>10}", case_id, first.get<double>("time_ms"),
-                     first.get<double>("pred_ms"), first.get<double>("error"), first.get<std::string>("class"));
+        std::println("{:<60} {:>12.3f} {:>12.3f} {:>9.3f}x {:>10}", case_id, first.get<double>(f.time_ms),
+                     first.get<double>(f.pred_ms), first.get<double>(f.error), first.get<std::string>(f.class_));
     }
 }
 
@@ -791,25 +825,25 @@ std::string current_test_name() {
 void add_to_pond(DataPond& pond, const BenchmarkCaseSetup& setup, const BenchmarkResult& res, double op_hit_ratio,
                  uint32_t children, double filter_hit_ratio, PlanningAlgo algo) {
     Record record;
-    record.set("actual_cost", res.actual_cost);
-    record.set("algo", to_string(algo));
-    record.set("blueprint_name", res.blueprint_name);
-    record.set("children", static_cast<int64_t>(children));
-    record.set("cost", res.flow.cost);
-    record.set("estimate", res.flow.estimate);
-    record.set("field_cfg", setup.bcase.field_cfg.to_string());
-    record.set("filter_hit_ratio", filter_hit_ratio);
-    record.set("force_strict", setup.bcase.force_strict);
-    record.set("group", setup.bcase.to_string());
-    record.set("hits", static_cast<int64_t>(res.hits));
-    record.set("iterator_name", res.iterator_name);
-    record.set("op_hit_ratio", op_hit_ratio);
-    record.set("query_op", to_string(setup.bcase.query_op));
-    record.set("seeks", static_cast<int64_t>(res.seeks));
-    record.set("strict_context", setup.bcase.strict_context);
-    record.set("strict_cost", res.flow.strict_cost);
-    record.set("time_ms", res.time_ms);
-    record.set("unpack", setup.bcase.unpack_iterator);
+    record.set(f.actual_cost, res.actual_cost);
+    record.set(f.algo, to_string(algo));
+    record.set(f.blueprint_name, res.blueprint_name);
+    record.set(f.children, static_cast<int64_t>(children));
+    record.set(f.flow.cost, res.flow.cost);
+    record.set(f.flow.estimate, res.flow.estimate);
+    record.set(f.field_cfg, setup.bcase.field_cfg.to_string());
+    record.set(f.filter_hit_ratio, filter_hit_ratio);
+    record.set(f.force_strict, setup.bcase.force_strict);
+    record.set(f.group, setup.bcase.to_string());
+    record.set(f.hits, static_cast<int64_t>(res.hits));
+    record.set(f.iterator_name, res.iterator_name);
+    record.set(f.op_hit_ratio, op_hit_ratio);
+    record.set(f.query_op, to_string(setup.bcase.query_op));
+    record.set(f.seeks, static_cast<int64_t>(res.seeks));
+    record.set(f.strict_context, setup.bcase.strict_context);
+    record.set(f.flow.strict_cost, res.flow.strict_cost);
+    record.set(f.time_ms, res.time_ms);
+    record.set(f.unpack, setup.bcase.unpack_iterator);
     pond.add(record);
 }
 
@@ -1298,9 +1332,7 @@ TEST(IteratorBenchmark, data_pond_test) {
 }
 
 static std::string smoke_test_filter = "--gtest_filter="
-                                       "IteratorBenchmark.analyze_term_search_in_attributes_strict"
-                                       ":IteratorBenchmark.analyze_OR_strict"
-                                       ":IteratorBenchmark.analyze_AND_plan_variants_ENN";
+                                       "IteratorBenchmark.analyze_term_search_in_disk_index";
 
 int main(int argc, char** argv) {
     bool opt_dump_pond = false;
