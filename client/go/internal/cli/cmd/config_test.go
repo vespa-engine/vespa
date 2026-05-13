@@ -254,7 +254,7 @@ func TestDefaultConfigScope(t *testing.T) {
 	require.Nil(t, os.Chdir(rootDir))
 
 	// --local flag with default_config_scope is an error
-	assertConfigCommandErr(t, configHome, "Error: default_config_scope can only be set in global configuration\n", "config", "set", "--local", "default_config_scope", "local")
+	assertConfigCommandErr(t, configHome, "Error: default_config_scope can only be modified in global configuration\n", "config", "set", "--local", "default_config_scope", "local")
 
 	// --local and --global together is an error
 	assertConfigCommandErr(t, configHome, "Error: cannot use both --local and --global flags\n", "config", "set", "--local", "--global", "target", "cloud")
