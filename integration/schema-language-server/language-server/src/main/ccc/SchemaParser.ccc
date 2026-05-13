@@ -391,6 +391,7 @@ TOKEN :
 | < AS: "as" >
 | < INDEXING: "indexing" >
 | < SUMMARY_TO: "summary-to" >
+| < DOCUMENTID: "documentid" >
 | < DOCUMENT_SUMMARY: "document-summary" >
 | < ELEMENT_GAP: "element-gap" >
 | < INFINITY: "infinity" >
@@ -657,6 +658,7 @@ ParsedSchema rootSchema :
 rootSchemaItem(ParsedSchema schema) : {}
     (
         documentElm(schema)
+       | documentId(schema)
        | rawAsBase64(schema)
        | searchStemming(schema)
        | importField(schema)
@@ -1839,6 +1841,23 @@ void idElm(ParsedField field) :
     <ID> <COLON> fieldId = integerElm
     {
         field.setId(fieldId);
+    }
+;
+
+/**
+ * Consumes the documentid setting.
+ *
+ * @param schema the schema object to add setting to
+ */
+void documentId(ParsedSchema schema) :
+{
+    boolean attribute = false;
+}
+
+    <DOCUMENTID>
+    <COLON> ( ( <ATTRIBUTE> { attribute = true; } ) | ( <FROM_DISK> { attribute = false; } ) )
+    {
+        schema.enableDocumentIdAttribute(attribute);
     }
 ;
 
@@ -3499,6 +3518,7 @@ String identifierStr :
       | <DIRECT>
       | <DIVERSITY>
       | <DOCUMENT>
+      | <DOCUMENTID>
       | <DOUBLE_KEYWORD>
       | <FLOAT_KEYWORD>
       | <LONG_KEYWORD>
