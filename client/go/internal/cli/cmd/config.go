@@ -133,6 +133,29 @@ defaults to "global". In Vespa 9, the default will change to "local". Use
 	}
 }
 
+func resolveWriteConfig(cli *CLI, local, global bool, optionName string) (cfg *Config, useLocal, implicitScope, scopeIsSet bool, err error) {
+	if local && global {
+		return nil, false, false, false, fmt.Errorf("cannot use both --local and --global flags")
+	}
+	if local && optionName == defaultConfigScopeOption {
+		return nil, false, false, false, fmt.Errorf("%s can only be set in global configuration", defaultConfigScopeOption)
+	}
+	useLocal = local
+	scopeValue, scopeIsSet := cli.config.getNonEmpty(defaultConfigScopeOption)
+	implicitScope = !local && !global && optionName != defaultConfigScopeOption
+	if implicitScope && scopeValue == "local" {
+		useLocal = true
+	}
+	cfg = cli.config
+	if useLocal {
+		if _, err := cli.applicationPackageFrom(nil, vespa.PackageOptions{}); err != nil {
+			return nil, false, false, false, fmt.Errorf("failed to write local configuration: %w", err)
+		}
+		cfg = cli.config.local
+	}
+	return cfg, useLocal, implicitScope, scopeIsSet, nil
+}
+
 func newConfigSetCmd(cli *CLI) *cobra.Command {
 	var localArg bool
 	var globalArg bool
@@ -163,37 +186,21 @@ $ vespa config set --global target cloud`,
 		SilenceUsage:      true,
 		Args:              cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if localArg && globalArg {
-				return fmt.Errorf("cannot use both --local and --global flags")
-			}
-			if localArg && args[0] == defaultConfigScopeOption {
-				return fmt.Errorf("%s can only be set in global configuration", defaultConfigScopeOption)
-			}
-			useLocal := localArg
-			scopeValue, scopeIsSet := cli.config.getNonEmpty(defaultConfigScopeOption)
-			implicitScope := !localArg && !globalArg && args[0] != defaultConfigScopeOption
-			if implicitScope && scopeValue == "local" {
-				useLocal = true
-			}
-			config := cli.config
-			if useLocal {
-				// Need an application package in working directory to allow local configuration
-				if _, err := cli.applicationPackageFrom(nil, vespa.PackageOptions{}); err != nil {
-					return fmt.Errorf("failed to write local configuration: %w", err)
-				}
-				config = cli.config.local
-			}
-			if err := config.set(args[0], args[1]); err != nil {
+			cfg, useLocal, implicitScope, scopeIsSet, err := resolveWriteConfig(cli, localArg, globalArg, args[0])
+			if err != nil {
 				return err
 			}
-			if err := config.write(); err != nil {
+			if err := cfg.set(args[0], args[1]); err != nil {
+				return err
+			}
+			if err := cfg.write(); err != nil {
 				return err
 			}
 			scope := "global"
 			if useLocal {
 				scope = "local"
 			}
-			cli.printSuccess(fmt.Sprintf("set %s to %s in %s config at %s", args[0], args[1], scope, filepath.Join(config.homeDir, configFile)))
+			cli.printSuccess(fmt.Sprintf("set %s to %s in %s config at %s", args[0], args[1], scope, filepath.Join(cfg.homeDir, configFile)))
 			if implicitScope && !scopeIsSet {
 				cli.printWarning(`default_config_scope is unset, wrote to global config`,
 					`set default_config_scope to "local" or "global" to silence this warning; in Vespa 9 unset will default to "local"`)
@@ -228,24 +235,9 @@ $ vespa config unset --global target`,
 		SilenceUsage:      true,
 		Args:              cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if localArg && globalArg {
-				return fmt.Errorf("cannot use both --local and --global flags")
-			}
-			if localArg && args[0] == defaultConfigScopeOption {
-				return fmt.Errorf("%s can only be set in global configuration", defaultConfigScopeOption)
-			}
-			useLocal := localArg
-			scopeValue, scopeIsSet := cli.config.getNonEmpty(defaultConfigScopeOption)
-			implicitScope := !localArg && !globalArg && args[0] != defaultConfigScopeOption
-			if implicitScope && scopeValue == "local" {
-				useLocal = true
-			}
-			cfg := cli.config
-			if useLocal {
-				if _, err := cli.applicationPackageFrom(nil, vespa.PackageOptions{}); err != nil {
-					return fmt.Errorf("failed to write local configuration: %w", err)
-				}
-				cfg = cli.config.local
+			cfg, useLocal, implicitScope, scopeIsSet, err := resolveWriteConfig(cli, localArg, globalArg, args[0])
+			if err != nil {
+				return err
 			}
 			if err := cfg.unset(args[0]); err != nil {
 				return err
