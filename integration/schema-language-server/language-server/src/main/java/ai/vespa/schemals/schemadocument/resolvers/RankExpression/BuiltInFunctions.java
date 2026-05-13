@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.Argument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.KeywordArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.LabelArgument;
 import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.EnumArgument;
@@ -24,7 +25,7 @@ import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.FieldA
 /**
  * A big list of all the builtin ranking features and their signatures.
  *
- * Each ranking feature is represented by a {@link GenericFunction}. There is a mapping from identifier to 
+ * Each ranking feature is represented by a {@link GenericFunction}. There is a mapping from identifier to
  * generic function.
  *
  * Each generic function may have several function signatures, which are valid ways of applying that specific identifier.
@@ -35,6 +36,26 @@ import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.FieldA
  * If describing a signature is hard, a feature can be added to the {@link BuiltInFunctions#simpleBuiltInFunctionsSet}, which only requires the identifier.
  */
 public class BuiltInFunctions {
+
+    private static List<FunctionSignature> tensorFromStructsSignatures() {
+        var sigs = new ArrayList<FunctionSignature>();
+        for (int numKeys = 1; numKeys <= 5; numKeys++) {
+            var args = new ArrayList<Argument>();
+            args.add(new FieldArgument(FieldArgument.AnyFieldType, FieldArgument.IndexAttributeType, "attribute"));
+            if (numKeys == 1) {
+                args.add(new StringArgument("key"));
+            } else {
+                for (int i = 1; i <= numKeys; i++) {
+                    args.add(new StringArgument("key" + i));
+                }
+            }
+            args.add(new StringArgument("value"));
+            args.add(new EnumArgument("type", List.of("float", "double")));
+            sigs.add(new FunctionSignature(args));
+        }
+        return sigs;
+    }
+
     public static final Map<String, GenericFunction> rankExpressionBuiltInFunctions = new HashMap<>() {{
         // ==== Query features ====
         put("query", new GenericFunction("query", new FunctionSignature(new SymbolArgument(SymbolType.QUERY_INPUT, "value"))));
@@ -45,10 +66,10 @@ public class BuiltInFunctions {
             "connectedness"
         )));
         put("queryTermCount", new GenericFunction("queryTermCount"));
-        
+
         // ==== Document features ====
         put("fieldLength", new GenericFunction("fieldLength", new FunctionSignature(new FieldArgument())));
-        put("attribute", new GenericFunction("attribute", List.of( 
+        put("attribute", new GenericFunction("attribute", List.of(
             new FunctionSignature(new FieldArgument(FieldArgument.NumericOrTensorFieldType, FieldArgument.IndexAttributeType), Set.of(
                 "",
                 "count"
@@ -62,7 +83,7 @@ public class BuiltInFunctions {
                 new StringArgument("key")
             ), Set.of(
                 "",  // empty not actually allowed but here for completion
-                "weight", 
+                "weight",
                 "contains"))
         )));
 
@@ -75,8 +96,8 @@ public class BuiltInFunctions {
                 new FieldArgument(FieldType.WSET, FieldArgument.IndexAttributeType, "source"),
                 new StringArgument("dimension")
             ))
-        ))); 
-        
+        )));
+
         // TODO: requires you to write attribute(name)
         put("tensorFromLabels", new GenericFunction("tensorFromLabels", List.of(
             new FunctionSignature(
@@ -89,48 +110,7 @@ public class BuiltInFunctions {
         )));
 
         // TODO: requires you to write attribute(name)
-        put("tensorFromStructs", new GenericFunction("tensorFromStructs", List.of(
-            new FunctionSignature(List.of(
-                new FieldArgument(FieldArgument.AnyFieldType, FieldArgument.IndexAttributeType, "attribute"),
-                new StringArgument("key"),
-                new StringArgument("value"),
-                new EnumArgument("type", List.of("float", "double"))
-            )),
-            new FunctionSignature(List.of(
-                new FieldArgument(FieldArgument.AnyFieldType, FieldArgument.IndexAttributeType, "attribute"),
-                new StringArgument("key1"),
-                new StringArgument("key2"),
-                new StringArgument("value"),
-                new EnumArgument("type", List.of("float", "double"))
-            )),
-            new FunctionSignature(List.of(
-                new FieldArgument(FieldArgument.AnyFieldType, FieldArgument.IndexAttributeType, "attribute"),
-                new StringArgument("key1"),
-                new StringArgument("key2"),
-                new StringArgument("key3"),
-                new StringArgument("value"),
-                new EnumArgument("type", List.of("float", "double"))
-            )),
-            new FunctionSignature(List.of(
-                new FieldArgument(FieldArgument.AnyFieldType, FieldArgument.IndexAttributeType, "attribute"),
-                new StringArgument("key1"),
-                new StringArgument("key2"),
-                new StringArgument("key3"),
-                new StringArgument("key4"),
-                new StringArgument("value"),
-                new EnumArgument("type", List.of("float", "double"))
-            )),
-            new FunctionSignature(List.of(
-                new FieldArgument(FieldArgument.AnyFieldType, FieldArgument.IndexAttributeType, "attribute"),
-                new StringArgument("key1"),
-                new StringArgument("key2"),
-                new StringArgument("key3"),
-                new StringArgument("key4"),
-                new StringArgument("key5"),
-                new StringArgument("value"),
-                new EnumArgument("type", List.of("float", "double"))
-            ))
-        )));
+        put("tensorFromStructs", new GenericFunction("tensorFromStructs", BuiltInFunctions.tensorFromStructsSignatures()));
 
         // ==== Field match features - normalized ====
         put("fieldMatch", new GenericFunction("fieldMatch", new FieldArgument(FieldType.STRING), Set.of(
@@ -151,12 +131,12 @@ public class BuiltInFunctions {
             "weightedOccurrence",
             "weightedAbsoluteOccurrence",
             "significantOccurrence",
-        
+
         // ==== Feild match features - normalized and relative to the whole query ====
             "weight",
             "significance",
             "importance",
-        
+
         // ==== Field match features - not normalized ====
             "segments",
             "matches",
@@ -185,7 +165,7 @@ public class BuiltInFunctions {
             new IntegerArgument()
         ), Set.of(
             "", // empty not actually allowed, but here for completion
-            "firstPosition", 
+            "firstPosition",
             "lastPosition",
             "occurrences",
             "weight",
@@ -205,7 +185,7 @@ public class BuiltInFunctions {
             new FieldArgument(),
             new ExpressionArgument("x"),
             new ExpressionArgument("y")
-        ), Set.of( 
+        ), Set.of(
             "", // empty not actually allowed, but here for completion
             "forward",
             "forwardTermPosition",
@@ -245,7 +225,7 @@ public class BuiltInFunctions {
             "maxWeight"
         ))));
 
-        put("closeness", new GenericFunction("closeness", List.of( 
+        put("closeness", new GenericFunction("closeness", List.of(
             new FunctionSignature(List.of(new KeywordArgument("field", "dimension"), new FieldArgument(
                 FieldType.TENSOR,
                 FieldArgument.IndexAttributeType,
@@ -264,7 +244,7 @@ public class BuiltInFunctions {
                 "logscale"
             ))
         ));
-        
+
         // ==== Rank score ====
         put("bm25", new GenericFunction("bm25", new FunctionSignature(new FieldArgument("field"))));
 
@@ -336,7 +316,7 @@ public class BuiltInFunctions {
             }}));
         }}));
 
-        put("distance", new GenericFunction("distance", List.of( 
+        put("distance", new GenericFunction("distance", List.of(
             new FunctionSignature(List.of(
                 new KeywordArgument("field", "dimension"),
                 new FieldArgument()
@@ -365,8 +345,8 @@ public class BuiltInFunctions {
             new FieldArgument(FieldType.POSITION, FieldArgument.IndexAttributeType),
             Set.of(
                 "", // empty not actually allowed, but here for completion
-                "distance", 
-                "traveled", 
+                "distance",
+                "traveled",
                 "product"
             )
         )));
@@ -380,27 +360,27 @@ public class BuiltInFunctions {
         put("rawScore", new GenericFunction("rawScore", new FunctionSignature(new FieldArgument())));
         put("itemRawScore", new GenericFunction("itemRawScore", new FunctionSignature(new LabelArgument())));
 
-        
+
         // See RankExpressionSymbolResolver.resolveForeach for more details
         put("foreach", new GenericFunction("foreach", List.of(
             new FunctionSignature(List.of(
-                new KeywordArgument("fields", "fields"), 
-                new StringArgument("variable", false), 
-                new ExpressionArgument("feature"), 
+                new KeywordArgument("fields", "fields"),
+                new StringArgument("variable", false),
+                new ExpressionArgument("feature"),
                 new StringArgument("condition"),
                 new EnumArgument("operation", List.of("sum", "product", "average", "min", "max", "count"))
             )),
             new FunctionSignature(List.of(
-                new KeywordArgument("terms", "terms"), 
-                new StringArgument("variable", false), 
-                new ExpressionArgument("feature"), 
+                new KeywordArgument("terms", "terms"),
+                new StringArgument("variable", false),
+                new ExpressionArgument("feature"),
                 new StringArgument("condition"),
                 new EnumArgument("operation", List.of("sum", "product", "average", "min", "max", "count"))
             )),
             new FunctionSignature(List.of(
-                new KeywordArgument("attributes", "attributes"), 
-                new StringArgument("variable", false), 
-                new ExpressionArgument("feature"), 
+                new KeywordArgument("attributes", "attributes"),
+                new StringArgument("variable", false),
+                new ExpressionArgument("feature"),
                 new StringArgument("condition"),
                 new EnumArgument("operation", List.of("sum", "product", "average", "min", "max", "count"))
             ))
