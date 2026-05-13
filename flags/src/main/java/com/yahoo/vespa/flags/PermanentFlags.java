@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags;
 
-import com.yahoo.vespa.flags.custom.CustomerRpmServiceList;
 import com.yahoo.vespa.flags.custom.RoleList;
 import com.yahoo.vespa.flags.custom.SharedHost;
 
@@ -15,21 +14,13 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import static com.yahoo.vespa.flags.Dimension.APPLICATION;
-import static com.yahoo.vespa.flags.Dimension.ARCHITECTURE;
-import static com.yahoo.vespa.flags.Dimension.CERTIFICATE_PROVIDER;
-import static com.yahoo.vespa.flags.Dimension.CLAVE;
-import static com.yahoo.vespa.flags.Dimension.CLOUD_ACCOUNT;
 import static com.yahoo.vespa.flags.Dimension.CLUSTER_ID;
 import static com.yahoo.vespa.flags.Dimension.CLUSTER_TYPE;
-import static com.yahoo.vespa.flags.Dimension.CONSOLE_USER_EMAIL;
-import static com.yahoo.vespa.flags.Dimension.ENVIRONMENT;
-import static com.yahoo.vespa.flags.Dimension.FLAVOR;
 import static com.yahoo.vespa.flags.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.Dimension.INSTANCE_ID;
 import static com.yahoo.vespa.flags.Dimension.NODE_TYPE;
 import static com.yahoo.vespa.flags.Dimension.TENANT_ID;
 import static com.yahoo.vespa.flags.Dimension.VESPA_VERSION;
-import static com.yahoo.vespa.flags.Dimension.ZONE_ID;
 
 /**
  * Definition for permanent feature flags
@@ -60,25 +51,6 @@ public class PermanentFlags {
             "Takes effect at redeployment (requires restart)",
             INSTANCE_ID);
 
-    public static final UnboundIntFlag REBOOT_INTERVAL_IN_DAYS = defineIntFlag(
-            "reboot-interval-in-days", 30,
-            "No reboots are scheduled 0x-1x reboot intervals after the previous reboot, while reboot is " +
-                    "scheduled evenly distributed in the 1x-2x range (and naturally guaranteed at the 2x boundary).",
-            "Takes effect on next run of NodeRebooter");
-
-    public static final UnboundIntFlag KEEP_PROVISIONED_EXPIRED_HOSTS_MAX = defineIntFlag(
-            "keep-provisioned-expired-hosts-max", 0,
-            "The maximum number of provisioned expired hosts to keep for investigation of provisioning issues.",
-            "Takes effect on next run of ProvisionedExpirer");
-
-    public static final UnboundIntFlag OS_MAJOR_VERSION = defineIntFlag(
-            "os-major-version", 0,
-            "The OS major version to use for provisioned hosts. " +
-            "Value 0 means use lowest major version available. " +
-            "Common values: 8 (AlmaLinux 8), 9 (AlmaLinux 9).",
-            "Takes effect when a host is provisioned",
-            CLAVE, NODE_TYPE, CLOUD_ACCOUNT, HOSTNAME);
-
     public static final UnboundJacksonFlag<SharedHost> SHARED_HOST = defineJacksonFlag(
             "shared-host", SharedHost.createDisabled(), SharedHost.class,
             "Specifies whether shared hosts can be provisioned, and if so, the advertised " +
@@ -86,69 +58,10 @@ public class PermanentFlags {
             "Takes effect on next iteration of HostCapacityMaintainer.",
             __ -> true);
 
-    public static final UnboundStringFlag HOST_FLAVOR = defineStringFlag(
-            "host-flavor", "",
-            "Specifies the Vespa flavor name that the hosts of the matching nodes should have.",
-            "Takes effect on next deployment (including internal redeployment).",
-            INSTANCE_ID, CLUSTER_TYPE, CLUSTER_ID);
-
-    public static final UnboundBooleanFlag SKIP_MAINTENANCE_DEPLOYMENT = defineFeatureFlag(
-            "node-repository-skip-maintenance-deployment", false,
-            "Whether PeriodicApplicationMaintainer should skip deployment for an application",
-            "Takes effect at next run of maintainer",
-            INSTANCE_ID);
-
     public static final UnboundListFlag<String> INACTIVE_MAINTENANCE_JOBS = defineListFlag(
             "inactive-maintenance-jobs", List.of(), String.class,
             "The list of maintenance jobs that are inactive.",
             "Takes effect immediately, but any currently running jobs will run until completion.");
-
-    public static final UnboundListFlag<String> OUTBOUND_BLOCKED_IPV4 = defineListFlag(
-            "container-outbound-blocked-ipv4", List.of(), String.class,
-            "List of IPs or CIDRs that are blocked for outbound connections",
-            "Takes effect on next tick");
-
-    public static final UnboundListFlag<String> OUTBOUND_BLOCKED_IPV6 = defineListFlag(
-            "container-outbound-blocked-ipv6", List.of(), String.class,
-            "List of IPs or CIDRs that are blocked for outbound connections",
-            "Takes effect on next tick");
-
-    public static final UnboundDoubleFlag GLOBAL_HOURLY_TRIAL_CREDIT_SPENDING_LIMIT = defineDoubleFlag(
-            "global-hourly-trial-credit-spending-limit", 0.0,
-            "The global maximum credit limit per hour (for all tenants). If this limit is exceeded, trial tenant deployments are blocked. Zero/negative value indicates no limit.",
-            "Takes effect immediately");
-
-    public static final UnboundDoubleFlag CONTAINER_CPU_CAP = defineDoubleFlag(
-            "container-cpu-cap", 0,
-            "Hard limit on how many CPUs a container may use. This value is multiplied by CPU allocated to node, so " +
-                    "to cap CPU at 200%, set this to 2, etc. 0 disables the cap to allow unlimited CPU.",
-            "Takes effect on next node agent tick. Change is orchestrated, but does NOT require container restart",
-            HOSTNAME, INSTANCE_ID, CLUSTER_ID, CLUSTER_TYPE);
-
-    public static final UnboundIntFlag MIN_DISK_THROUGHPUT_MB_S = defineIntFlag(
-            "min-disk-throughput-mb-s", 0,
-            "Minimum required disk throughput performance, 0 = default, Only when using remote disk",
-            "Takes effect when node is provisioned",
-            INSTANCE_ID, TENANT_ID, CLUSTER_ID, CLUSTER_TYPE);
-
-    public static final UnboundIntFlag MIN_DISK_IOPS_K = defineIntFlag(
-            "min-disk-iops-k", 0,
-            "Minimum required disk I/O operations per second, unit is kilo, 0 = default, Only when using remote disk",
-            "Takes effect when node is provisioned",
-            INSTANCE_ID, TENANT_ID, CLUSTER_ID, CLUSTER_TYPE);
-
-    public static final UnboundListFlag<String> DISABLED_HOST_ADMIN_TASKS = defineListFlag(
-            "disabled-host-admin-tasks", List.of(), String.class,
-            "List of host-admin task names (as they appear in the log, e.g. root>main>UpgradeTask), or some node-agent " +
-                    "functionality (see NodeAgentTask), that should be skipped",
-            "Takes effect on next host admin tick",
-            HOSTNAME, NODE_TYPE, CLAVE, CLOUD_ACCOUNT);
-
-    public static final UnboundStringFlag DOCKER_IMAGE_REPO = defineStringFlag(
-            "docker-image-repo", "",
-            "Override default docker image repo. Docker image version will be Vespa version.",
-            "Takes effect on next deployment from controller",
-            ZONE_ID, TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static final UnboundStringFlag METRIC_SET = defineStringFlag(
             "metric-set", "Vespa9",
@@ -156,42 +69,11 @@ public class PermanentFlags {
             "Takes effect on next host admin tick",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
-    public static final UnboundStringFlag CONTAINER_IMAGE_TAG_SUFFIX = defineStringFlag(
-            "container-image-tag-suffix", "",
-            "Tag suffix appended to the wanted container image of synthesized config-server, " +
-            "controller, and tenant nodes (e.g. 'alma9' -> <image-name>:<version>-alma9). " +
-            "Empty means no suffix; the default AlmaLinux 8 docker container image is used.",
-            "Takes effect on next host-admin tick",
-            HOSTNAME, NODE_TYPE, TENANT_ID, APPLICATION, INSTANCE_ID, ZONE_ID, CLOUD_ACCOUNT);
-
     public static final UnboundBooleanFlag VERBOSE_DEPLOY_PARAMETER = defineFeatureFlag(
             "verbose-deploy-parameter", false,
             "Whether (external) deployments should set verbose flag (will mean more logging in practice). " +
                     "Will only be used if flag in request is false (which is the default)",
             "Takes effect at next deployment");
-
-    public static final UnboundJacksonFlag<CustomerRpmServiceList> CUSTOMER_RPM_SERVICES = defineJacksonFlag(
-            "customer-rpm-services", CustomerRpmServiceList.empty(), CustomerRpmServiceList.class,
-            "Specifies customer rpm services to run on enclave tenant hosts.",
-            "Takes effect on next host admin tick.",
-            __ -> true,
-            TENANT_ID, APPLICATION, INSTANCE_ID, ARCHITECTURE, CLUSTER_ID, CLUSTER_TYPE);
-
-
-    public static final UnboundBooleanFlag DEFER_OS_UPGRADE = defineFeatureFlag(
-            "defer-os-upgrade", false,
-            "Whether OS upgrade should be deferred",
-            "Takes effect immediately",
-            CLOUD_ACCOUNT
-    );
-
-
-    public static final UnboundListFlag<String> OTELCOL_LOGS = defineListFlag(
-            "otelcol-logs", List.of(), String.class,
-            "Determines log files handled by the OpenTelemetry collector",
-            "Takes effect at next tick",
-            TENANT_ID, APPLICATION, INSTANCE_ID
-    );
 
     private static final String VERSION_QUALIFIER_REGEX = "[a-zA-Z0-9_-]+";
     private static final Pattern QUALIFIER_PATTERN = Pattern.compile("^" + VERSION_QUALIFIER_REGEX + "$");
@@ -206,23 +88,11 @@ public class PermanentFlags {
             value -> value.isEmpty() || QUALIFIER_PATTERN.matcher(value).find() || VERSION_PATTERN.matcher(value).find(),
             HOSTNAME, NODE_TYPE, TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_TYPE, CLUSTER_ID, VESPA_VERSION);
 
-    public static final UnboundStringFlag ZOOKEEPER_SERVER_VERSION = defineStringFlag(
-            "zookeeper-server-version", "3.9.5",
-            "ZooKeeper server version, a jar file zookeeper-server-<ZOOKEEPER_SERVER_VERSION>-jar-with-dependencies.jar must exist",
-            "Takes effect on restart of Docker container",
-            NODE_TYPE, INSTANCE_ID, HOSTNAME);
-
     public static final UnboundBooleanFlag ALLOW_DISABLE_MTLS = defineFeatureFlag(
             "allow-disable-mtls", true,
             "Allow application to disable client authentication",
             "Takes effect on redeployment",
             INSTANCE_ID);
-
-    public static final UnboundIntFlag MAX_OS_UPGRADES = defineIntFlag(
-            "max-os-upgrades", 30,
-            "The maximum number hosts that can perform OS upgrade at a time",
-            "Takes effect immediately, but any current excess upgrades will not be cancelled"
-    );
 
     public static final UnboundListFlag<String> TLS_CIPHERS_OVERRIDE = defineListFlag(
             "tls-ciphers-override", List.of(), String.class,
@@ -230,13 +100,6 @@ public class PermanentFlags {
             "Takes effect on redeployment",
             INSTANCE_ID
     );
-
-    public static final UnboundStringFlag ENDPOINT_CERTIFICATE_ALGORITHM = defineStringFlag(
-            "endpoint-certificate-algorithm", "ecdsa_p256",
-            // Acceptable values are: "rsa_4096", "ecdsa_p256"
-            "Selects algorithm used for an applications endpoint certificate",
-            "Takes effect when a new endpoint certificate is requested (on first deployment or deployment adding new endpoints)",
-            INSTANCE_ID);
 
     public static final UnboundDoubleFlag RESOURCE_LIMIT_DISK = defineDoubleFlag(
             "resource-limit-disk", 0.8,
@@ -259,14 +122,6 @@ public class PermanentFlags {
             INSTANCE_ID
     );
 
-    public static final UnboundListFlag<String> LOGCTL_OVERRIDE = defineListFlag(
-            "logctl-override", List.of(), String.class,
-            "A list of vespa-logctl statements that are run on container startup. " +
-                    "Each item should be on the form <service>:<component> <level>=on",
-            "Takes effect on Podman container (re)start",
-            INSTANCE_ID, HOSTNAME
-    );
-
     public static final UnboundListFlag<String> ENVIRONMENT_VARIABLES = defineListFlag(
             "environment-variables", List.of(), String.class,
             "A list of environment variables set for all services. " +
@@ -275,46 +130,10 @@ public class PermanentFlags {
             INSTANCE_ID
     );
 
-    public static final UnboundStringFlag CONFIG_PROXY_JVM_ARGS = defineStringFlag(
-            "config-proxy-jvm-args", "",
-            "Sets jvm args for config proxy (added at the end of startup command, will override existing ones)",
-            "Takes effect on restart of Docker container",
-            INSTANCE_ID
-    );
-
-    public static final UnboundIntFlag DELAY_HOST_SECURITY_AGENT_START_MINUTES = defineIntFlag(
-            "delay-host-security-agent-start-minutes", 5,
-            "The number of minutes (from host admin start) to delay the start of the host security agent",
-            "Takes effect on next host-admin tick",
-            NODE_TYPE);
-
-    // This must be set in a feature flag to avoid flickering between the new and old value during config server upgrade
-    public static final UnboundDoubleFlag HOST_MEMORY = defineDoubleFlag(
-            "host-memory", -1.0,
-            "The memory in GB required by a host's management processes. " +
-            "A negative value falls back to hard-coded defaults.",
-            "Affects future deployments, JVM settings for new config server Podman containers, auto scaling modelling.",
-            ARCHITECTURE, CLAVE, CLOUD_ACCOUNT, FLAVOR);
-
-    // This must be set in a feature flag to avoid flickering between the new and old value during config server upgrade
-    public static final UnboundDoubleFlag HOST_MEMORY_RATIO = defineDoubleFlag(
-            "host-memory-ratio", -1.0,
-            "The ratio of MemTotal reserved for Linux or host processes, and not available to the Podman containers. " +
-            "A value outside the range [0.0, 1.0] will use a hard-coded ratio.",
-            "Affects future deployments, JVM settings for new config server Podman containers, auto scaling modelling.",
-            ARCHITECTURE, CLAVE, CLOUD_ACCOUNT, FLAVOR);
-
     public static final UnboundBooleanFlag FORWARD_ISSUES_AS_ERRORS = defineFeatureFlag(
             "forward-issues-as-errors", true,
             "When the backend detects a problematic issue with a query, it will by default send it as an error message to the QRS, which adds it in an ErrorHit in the result.  May be disabled using this flag.",
             "Takes effect immediately",
-            INSTANCE_ID);
-
-    public static final UnboundBooleanFlag DEACTIVATE_ROUTING = defineFeatureFlag(
-            "deactivate-routing", false,
-            "Deactivates routing for an application by removing all reals from its load balancers. Used in " +
-            "cases where we immediately need to stop serving an application, i.e. in case of service violations",
-            "Takes effect on next redeployment",
             INSTANCE_ID);
 
     public static final UnboundListFlag<String> IGNORED_HTTP_USER_AGENTS = defineListFlag(
@@ -366,50 +185,11 @@ public class PermanentFlags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
-    public static final UnboundListFlag<String> DISABLED_DEPLOYMENT_ZONES = defineListFlag(
-            "disabled-deployment-zones", List.of(), String.class,
-            "The zones, e.g., prod.norway-71, where deployments jobs are currently disabled",
-            "Takes effect immediately",
-            TENANT_ID, APPLICATION, INSTANCE_ID
-    );
-
     public static final UnboundBooleanFlag ALLOW_USER_FILTERS = defineFeatureFlag(
             "allow-user-filters", true,
             "Allow user filter (chains) in application",
             "Takes effect on next redeployment",
             INSTANCE_ID);
-
-    public static final UnboundBooleanFlag ALLOW_STATUS_PAGE = defineFeatureFlag(
-            "allow-status-page", false,
-            "Shows link to status page for nodes of a specific tenant",
-            "Takes effect on browser reload of /user/v1/user",
-            CONSOLE_USER_EMAIL, TENANT_ID);
-
-    public static final UnboundIntFlag PRE_PROVISIONED_LB_COUNT = defineIntFlag(
-            "pre-provisioned-lb-count", 0,
-            "Number of application load balancers to have pre-provisioned at any time",
-            "Takes immediate effect");
-
-    public static final UnboundLongFlag CONFIG_SERVER_SESSION_LIFETIME = defineLongFlag(
-            "config-server-session-lifetime", 3600,
-            "Lifetime / expiry time in seconds for config sessions. " +
-            "This can be lowered if there are incidents/bugs where one needs to delete sessions quickly",
-            "Takes effect immediately"
-    );
-
-    public static final UnboundIntFlag KEEP_FILE_REFERENCES_DAYS = defineIntFlag(
-            "keep-file-references-days", 30,
-            "How many days to keep file references on tenant nodes (based on last modification time)",
-            "Takes effect on restart of Docker container",
-            INSTANCE_ID
-    );
-
-    public static final UnboundIntFlag KEEP_FILE_REFERENCES_COUNT = defineIntFlag(
-            "keep-file-references-count", 20,
-            "How many file references to keep on tenant nodes (no matter what last modification time is)",
-            "Takes effect on restart of Docker container",
-            ZONE_ID, INSTANCE_ID
-    );
 
     public static final UnboundIntFlag ENDPOINT_CONNECTION_TTL = defineIntFlag(
             "endpoint-connection-ttl", 45,
@@ -422,55 +202,6 @@ public class PermanentFlags {
             "Whether to enable autoscaling",
             "Takes effect immediately",
             INSTANCE_ID);
-
-    public static final UnboundBooleanFlag AUTOSCALING_DETAILED_LOGGING = defineFeatureFlag(
-            "autoscaling-detailed-logging", false,
-            "Whether to log autoscaling decision data",
-            "Takes effect immediately",
-            INSTANCE_ID);
-
-    public static final UnboundIntFlag MAX_HOSTS_PER_HOUR = defineIntFlag(
-            "max-hosts-per-hour", 125,
-            "The number of hosts that can be provisioned per hour in a zone, before throttling is " +
-            "triggered",
-            "Takes effect immediately");
-
-    public static final UnboundIntFlag MAX_CERTIFICATES_PER_HOUR = defineIntFlag(
-            "max-certificates-per-hour", 10,
-            "The number of certificates can be provisioned per hour, before throttling is triggered",
-            "Takes effect immediately");
-
-    public static final UnboundBooleanFlag DROP_CACHES = defineFeatureFlag(
-            "drop-caches", true,
-            "Drop pagecache. " +
-            "This is combined with the drop-dentries-and-inodes flag for a single write to /proc/sys/vm/drop_caches.",
-            "Takes effect on next tick",
-            // The tenant, application, and instance ID dimensions are set from the exclusive ApplicationId
-            // associated with the host, if any, or otherwise hosted-vespa:tenant-host:default.
-            TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_ID, CLUSTER_TYPE);
-
-    public static final UnboundIntFlag DROP_DENTRIES = defineIntFlag(
-            "drop-dentries", -1,
-            "Drop dentries and inodes every N minutes.  0 means every tick. -1 means disabled. " +
-            "This is combined with the drop-caches flag for a single write to /proc/sys/vm/drop_caches.",
-            "Takes effect on next tick",
-            // The tenant, application, and instance ID dimensions are set from the exclusive ApplicationId
-            // associated with the host, if any, or otherwise hosted-vespa:tenant-host:default.
-            TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_ID, CLUSTER_TYPE);
-
-    public static final UnboundIntFlag CERT_POOL_SIZE = defineIntFlag(
-            "cert-pool-size", 0,
-            "Target number of preprovisioned endpoints certificates to maintain",
-            "Takes effect on next run of CertificatePoolMaintainer",
-            CERTIFICATE_PROVIDER
-    );
-
-    public static final UnboundStringFlag REFRESH_IDENTITY_BOUNDARY = defineStringFlag(
-            "refresh-identity-after", "",
-            "Refresh the identity document and certificates issued before this timestamp. Timestamp in ISO8601 format",
-            "Takes effect on next host admin tick",
-            TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_TYPE, CLUSTER_ID, HOSTNAME
-    );
 
     public static final UnboundListFlag<String> LOG_REQUEST_CONTENT = defineListFlag(
             "log-request-content", List.of(), String.class,
@@ -526,14 +257,6 @@ public class PermanentFlags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
-    public static final UnboundStringFlag SYSTEM_MEMORY_MAX = defineStringFlag(
-            "system-memory-max", "",
-            "The value to write to /sys/fs/cgroup/system.slice/memory.max, if non-empty. " +
-                    "You may want lower memory.high before lowering memory.max, " +
-                    "and raise memory.high after raising memory.max.",
-            "Takes effect on next tick.",
-            NODE_TYPE);
-
     public static final UnboundIntFlag MAX_UNCOMMITTED_MEMORY = defineIntFlag(
             "max-uncommitted-memory", 130000,
             "Max amount of memory holding updates to an attribute before we do a commit.",
@@ -560,23 +283,6 @@ public class PermanentFlags {
             "Takes effect at startup of search node",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
-    public static final UnboundListFlag<String> IGNORE_CORE_DUMP_TYPE_WHEN_REPORTING = defineListFlag(
-            "ignore-core-dump-type-when-reporting", List.of(), String.class,
-            "Whether to ignore core dump reporting (creating or updating a Jira ticket) for the specified core dump types." +
-                    "Typically set to JVM_HEAP and/or OOM for apps that have issues in application code " +
-                    "that the customer needs to fix and we don't want to create or update a Jira issue for.",
-            "Takes effect immediately",
-            list -> Set.of("CORE_DUMP", "JVM_HEAP", "OOM").containsAll(list),
-            TENANT_ID, APPLICATION, INSTANCE_ID, ZONE_ID, ENVIRONMENT
-    );
-
-    public static final UnboundBooleanFlag LOCK_APPLICATION_PACKAGE_ACCESS = defineFeatureFlag(
-            "lock-application-package-access", false,
-            "Whether application package access should be locked down",
-            "Takes effect immediately",
-            TENANT_ID, APPLICATION
-    );
-
     public static final UnboundBooleanFlag IGNORE_CONNECTIVITY_CHECKS_AT_STARTUP = defineFeatureFlag(
             "ignore-connectivity-checks-at-startup", false,
             "Ignore connectivity checks in config-sentinel at startup. " +
@@ -584,22 +290,6 @@ public class PermanentFlags {
                     "When this flag is set, services are started immediately regardless of connectivity check results.",
             "Takes effect on next host restart",
             TENANT_ID, APPLICATION, INSTANCE_ID);
-
-    public static final UnboundListFlag<String> ALLOW_FLAVORS = defineListFlag(
-            "allow-flavors", List.of(), String.class,
-            "Flavors that that we will allow provisioning (flavors with lifecycle 'active' are allowed by default)" +
-                    ". Each string in the list is a regexp, e.g. 'c4d-.*' or 'c4d-high.*'.",
-            "Takes effect immediately",
-            TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_ID, CLUSTER_TYPE
-    );
-
-    public static final UnboundListFlag<String> DENY_FLAVORS = defineListFlag(
-            "deny-flavors", List.of(), String.class,
-            "Flavors that that we will deny provisioning (flavors with lifecycle 'new' and 'retired' are disallowed by default)" +
-                    ". Each string in the list is a regexp, e.g. 'c4d-.*' or 'c4d-high.*'.",
-            "Takes effect immediately",
-            TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_ID, CLUSTER_TYPE
-    );
 
     public static final UnboundLongFlag ZOOKEEPER_PRE_ALLOC_SIZE_KIB = defineLongFlag(
             "zookeeper-pre-alloc-size", 65536,
@@ -622,12 +312,6 @@ public class PermanentFlags {
             "for query visibility if they are out of sync with a majority of other replicas",
             "Takes effect at redeployment",
             INSTANCE_ID);
-
-    public static final UnboundStringFlag CORE_ENCRYPTION_PUBLIC_KEY_ID = defineStringFlag(
-            "core-encryption-public-key-id", "",
-            "Specifies which public key to use for core dump encryption.",
-            "Takes effect on the next tick.",
-            NODE_TYPE, HOSTNAME);
 
     public static final UnboundIntFlag MAX_CONTENT_NODE_MAINTENANCE_OP_CONCURRENCY = defineIntFlag(
             "max-content-node-maintenance-op-concurrency", -1,

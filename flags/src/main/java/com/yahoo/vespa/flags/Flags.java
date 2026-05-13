@@ -3,7 +3,6 @@ package com.yahoo.vespa.flags;
 
 import com.yahoo.component.Vtag;
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.vespa.flags.custom.CustomerOtelExportParameters;
 import com.yahoo.vespa.flags.custom.Sidecars;
 
 import java.time.Instant;
@@ -17,10 +16,8 @@ import java.util.function.Predicate;
 
 import static com.yahoo.vespa.flags.Dimension.APPLICATION;
 import static com.yahoo.vespa.flags.Dimension.ARCHITECTURE;
-import static com.yahoo.vespa.flags.Dimension.CLOUD_ACCOUNT;
 import static com.yahoo.vespa.flags.Dimension.CLUSTER_ID;
 import static com.yahoo.vespa.flags.Dimension.CLUSTER_TYPE;
-import static com.yahoo.vespa.flags.Dimension.CONSOLE_USER_EMAIL;
 import static com.yahoo.vespa.flags.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.Dimension.INSTANCE_ID;
 import static com.yahoo.vespa.flags.Dimension.NODE_TYPE;
@@ -58,12 +55,6 @@ public class Flags {
             "Whether to use non-public endpoint in test and staging environments (except Azure since it's not supported yet)",
             "Takes effect on next deployment of the application",
             INSTANCE_ID, VESPA_VERSION);
-
-    public static final UnboundBooleanFlag LOCKED_GCP_PROVISION = defineFeatureFlag(
-            "locked-gcp-provision", true,
-            List.of("hakonhall"), "2025-08-05", "2026-07-15",
-            "Whether to provision GCP hosts under the application- and unallocated- locks, even though it takes ~1m.",
-            "Takes effect on next host being provisioned");
 
     public static final UnboundStringFlag RESPONSE_SEQUENCER_TYPE = defineStringFlag(
             "response-sequencer-type", "ADAPTIVE",
@@ -130,19 +121,6 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
-    public static final UnboundListFlag<String> ZONAL_WEIGHTED_ENDPOINT_RECORDS = defineListFlag(
-            "zonal-weighted-endpoint-records", List.of(), String.class,
-            List.of("hmusum"), "2023-12-15", "2026-06-01",
-            "A list of weighted (application) endpoint fqdns for which we should use zonal endpoints as targets, not LBs.",
-            "Takes effect at redeployment from controller");
-
-    public static final UnboundListFlag<String> WEIGHTED_ENDPOINT_RECORD_TTL = defineListFlag(
-            "weighted-endpoint-record-ttl", List.of(), String.class,
-            List.of("hmusum"), "2023-05-16", "2026-06-01",
-            "A list of endpoints and custom TTLs, on the form \"endpoint-fqdn:TTL-seconds\". " +
-            "Where specified, CNAME records are used instead of the default ALIAS records, which have a default 60s TTL.",
-            "Takes effect at redeployment from controller");
-
     public static final UnboundBooleanFlag WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "write-config-server-session-data-as-blob", false,
             List.of("hmusum"), "2023-07-19", "2026-06-01",
@@ -162,27 +140,6 @@ public class Flags {
             "Takes effect on next autoscaler evaluation",
             INSTANCE_ID, CLUSTER_ID);
 
-    public static final UnboundBooleanFlag MORE_WIREGUARD = defineFeatureFlag(
-            "more-wireguard", false,
-            List.of("andreer"), "2023-08-21", "2026-06-01",
-            "Use wireguard in INternal enCLAVES",
-            "Takes effect on next host-admin run",
-            HOSTNAME, CLOUD_ACCOUNT);
-
-    public static final UnboundBooleanFlag IPV6_AWS_TARGET_GROUPS = defineFeatureFlag(
-            "ipv6-aws-target-groups", false,
-            List.of("andreer"), "2023-08-28", "2026-06-01",
-            "Always use IPv6 target groups for load balancers in aws",
-            "Takes effect on next load-balancer provisioning",
-            HOSTNAME, CLOUD_ACCOUNT);
-
-    public static final UnboundBooleanFlag PROVISION_IPV6_ONLY_AWS = defineFeatureFlag(
-            "provision-ipv6-only", false,
-            List.of("andreer"), "2023-08-28", "2026-06-01",
-            "Provision without private IPv4 addresses in INternal enCLAVES in AWS",
-            "Takes effect on next host provisioning / run of host-admin",
-            HOSTNAME, CLOUD_ACCOUNT);
-
     public static final UnboundDoubleFlag DOCPROC_HANDLER_THREADPOOL = defineDoubleFlag(
             "docproc-handler-threadpool", 1.0,
             List.of("johsol"), "2025-10-17", "2026-06-01",
@@ -190,35 +147,11 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION);
 
-    public static final UnboundStringFlag ENDPOINT_CONFIG = defineStringFlag(
-            "endpoint-config", "legacy",
-            List.of("andreer", "olaa"), "2023-10-06", "2026-08-01",
-            "Set the endpoint config to use for an application. Must be 'legacy', 'combined' or 'generated'. See EndpointConfig for further details",
-            "Takes effect on next deployment through controller",
-            TENANT_ID, APPLICATION, INSTANCE_ID);
-
     public static UnboundBooleanFlag LOGSERVER_OTELCOL_AGENT = defineFeatureFlag(
             "logserver-otelcol-agent", false,
             List.of("olaa"), "2024-04-03", "2026-08-01",
             "Whether logserver container should run otel agent",
             "Takes effect at redeployment",
-            TENANT_ID, APPLICATION, INSTANCE_ID);
-
-    public static final UnboundBooleanFlag USE_GRAFANA_ALLOY = defineFeatureFlag(
-            "use-grafana-alloy", false,
-            List.of("onur"), "2026-02-17", "2026-08-01",
-            "Whether to use Grafana Alloy instead of otelcol-contrib for telemetry collection",
-            "Takes effect on next host-admin tick",
-            TENANT_ID, APPLICATION, INSTANCE_ID);
-
-    public static final UnboundJacksonFlag<CustomerOtelExportParameters> CUSTOMER_OTEL_EXPORT = defineJacksonFlag(
-            "customer-otel-export", new CustomerOtelExportParameters(null, null, null), CustomerOtelExportParameters.class,
-            List.of("onur"), "2026-03-02", "2027-01-01",
-            "Export telemetry to a customer-owned OTel endpoint in addition to the internal otel-gateway. " +
-            "metrics and logs are independently optional. " +
-            "logs.logFileNames is a list of log file enum names (e.g. CONTAINER_VESPA_LOGS, VAR_LOG_MESSAGES).",
-            "Takes effect on next host-admin tick",
-            __ -> true,
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static final UnboundBooleanFlag USE_LEGACY_WAND_QUERY_PARSING = defineFeatureFlag(
@@ -234,19 +167,6 @@ public class Flags {
             "Enable lightweight annotation representation for StringFieldValue",
             "Takes effect at redeployment",
             INSTANCE_ID);
-
-    public static final UnboundBooleanFlag SNAPSHOTS_ENABLED = defineFeatureFlag(
-            "snapshots-enabled", false,
-            List.of("olaa"), "2024-10-22", "2026-08-01",
-            "Whether node snapshots should be created when host storage is discarded",
-            "Takes effect immediately");
-
-    public static final UnboundBooleanFlag ENABLE_UI_VERSION_TOGGLE = defineFeatureFlag(
-            "enable-ui-version-toggle", false,
-            List.of("laura", "jille"), "2026-04-20", "2026-12-31",
-            "Enable a toggle to switch between different versions of the Console UI",
-            "Takes effect immediately",
-            CONSOLE_USER_EMAIL);
 
     public static final UnboundJacksonFlag<Sidecars> SIDECARS_FOR_TEST = defineJacksonFlag(
             "sidecars-for-test", Sidecars.DEFAULT, Sidecars.class,
@@ -304,12 +224,6 @@ public class Flags {
             "Takes effect at redeployment",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
-    public static final UnboundBooleanFlag SKIP_AUTOSCALING_WHEN_UPGRADING_CONFIG_SERVERS = defineFeatureFlag(
-            "skip-autoscaling-when-upgrading-config-servers", false,
-            List.of("hmusum"), "2026-05-05", "2026-06-05",
-            "Whether to skip autoscaling when config server upgrades or downgrades.",
-            "Takes effect immediately",
-            HOSTNAME);
     public static final UnboundBooleanFlag SEND_OLD_QUERY_STACK = defineFeatureFlag(
             "send-old-query-stack", false,
             List.of("arnej"), "2026-05-07", "2026-09-01",
