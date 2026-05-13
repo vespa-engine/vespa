@@ -44,8 +44,9 @@ public class SchemaDataTypeValidatorTestCase {
             new VespaModelCreatorWithFilePkg("src/test/cfg/application/validation/index_struct/").create();
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("Field type 'Map<string,string>' cannot be indexed for search clusters (field 'baz' in definition " +
-                    "'simple' for cluster 'content').", e.getMessage());
+            assertEquals("For cluster 'content', schema 'simple': The following complex fields have struct fields with 'indexing: " +
+                                 "index' which is not supported: baz (baz.key, baz.value). Remove setting or change to 'indexing: " +
+                                 "attribute' if needed for matching.", e.getMessage());
         }
     }
 

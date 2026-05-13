@@ -16,7 +16,6 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.logging.Level;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -48,7 +47,7 @@ public class ComplexFieldsValidatorTestCase {
     }
 
     @Test
-    void throws_exception_when_nested_struct_array_is_specified_as_struct_field_attribute() throws IOException, SAXException {
+    void throws_exception_when_nested_struct_array_is_specified_as_struct_field_attribute() {
         Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
             createModelAndValidate(joinLines(
                     "schema test {",
@@ -75,7 +74,7 @@ public class ComplexFieldsValidatorTestCase {
     }
 
     @Test
-    void throws_exception_when_struct_field_inside_nested_struct_array_is_specified_as_attribute() throws IOException, SAXException {
+    void throws_exception_when_struct_field_inside_nested_struct_array_is_specified_as_attribute() {
         Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
             createModelAndValidate(joinLines(
                     "schema test {",
@@ -109,44 +108,38 @@ public class ComplexFieldsValidatorTestCase {
                 "Only supported for the following complex field types: array or map of struct with primitive types, map of primitive types";
     }
 
-    private class MyLogger implements DeployLogger {
-        public StringBuilder message = new StringBuilder();
-        @Override
-        public void log(Level level, String message) {
-            this.message.append(message);
-        }
-    }
-
     @Test
-    void logs_warning_when_complex_fields_have_struct_fields_with_index() throws IOException, SAXException {
-        var logger = new MyLogger();
-        createModelAndValidate(joinLines(
-                "schema test {",
-                "document test {",
-                "struct topic {",
-                "  field id type string {}",
-                "  field label type string {}",
-                "  field desc type string {}",
-                "}",
-                "field topics type array<topic> {",
-                "  indexing: summary",
-                "  struct-field id { indexing: index }",
-                "  struct-field label { indexing: index | attribute }",
-                "  struct-field desc { indexing: attribute }",
-                "}",
-                "}",
-                "}"), logger);
-        assertTrue(logger.message.toString().contains(
+    void throws_when_complex_fields_have_struct_fields_with_index() {
+        var exception = assertThrows(IllegalArgumentException.class, () -> {
+            createModelAndValidate(joinLines(
+                    "schema test {",
+                    "document test {",
+                    "struct topic {",
+                    "  field id type string {}",
+                    "  field label type string {}",
+                    "  field desc type string {}",
+                    "}",
+                    "field topics type array<topic> {",
+                    "  indexing: summary",
+                    "  struct-field id { indexing: index }",
+                    "  struct-field label { indexing: index | attribute }",
+                    "  struct-field desc { indexing: attribute }",
+                    "}",
+                    "}",
+                    "}"));
+        });
+
+        assertTrue(exception.getMessage().contains(
                 "For cluster 'mycluster', schema 'test': " +
-                        "The following complex fields have struct fields with 'indexing: index' which is not supported and has no effect: " +
+                        "The following complex fields have struct fields with 'indexing: index' which is not supported: " +
                         "topics (topics.id, topics.label). " +
                         "Remove setting or change to 'indexing: attribute' if needed for matching."));
     }
 
     @Test
-    void logs_warning_when_complex_fields_have_struct_fields_with_index_and_exact_match() throws IOException, SAXException {
-        var logger = new MyLogger();
-        createModelAndValidate(joinLines(
+    void throws_when_complex_fields_have_struct_fields_with_index_and_exact_match() {
+        var exception = assertThrows(IllegalArgumentException.class, () -> {
+            createModelAndValidate(joinLines(
                 "schema test {",
                 "  document test {",
                 "    field nesteds type array<nested> {",
@@ -162,10 +155,12 @@ public class ComplexFieldsValidatorTestCase {
                 "      field foo type string {}",
                 "    }",
                 "  }",
-                "}"), logger);
-        assertTrue(logger.message.toString().contains("For cluster 'mycluster', schema 'test': " +
+                "}"));
+        });
+
+        assertTrue(exception.getMessage().contains("For cluster 'mycluster', schema 'test': " +
                 "The following complex fields have struct fields with 'indexing: index' which is " +
-                "not supported and has no effect: nesteds (nesteds.foo). " +
+                "not supported: nesteds (nesteds.foo). " +
                 "Remove setting or change to 'indexing: attribute' if needed for matching."));
     }
 
