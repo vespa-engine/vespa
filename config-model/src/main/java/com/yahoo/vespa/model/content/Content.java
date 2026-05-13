@@ -39,6 +39,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Level;
 
 /**
  * The config model from a content tag in services.
@@ -242,6 +243,13 @@ public class Content extends ConfigModel {
             if (indexingDocproc.hasExplicitCluster()) {
                 setExistingIndexingCluster(content, indexingDocproc, content.containers);
             } else {
+                if (!content.containers.isEmpty()) {
+                    modelContext.getDeployState().getDeployLogger().logApplicationPackage(
+                            Level.WARNING,
+                            "Content cluster '" + content.getCluster().getName() + "' does not have an explicit " +
+                            "document-processing cluster configured. Add '<document-processing cluster=\"<name>\"/>' " +
+                            "in <content> to ensure deterministic indexing cluster selection.");
+                }
                 setContainerAsIndexingCluster(search.getSearchNodes(), indexingDocproc, content, modelContext, root);
             }
         }

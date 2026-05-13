@@ -15,10 +15,13 @@ import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Tony Vaagenes
@@ -50,6 +53,81 @@ public class ImplicitIndexingClusterTest {
         ContainerCluster<ApplicationContainer> jdisc = vespaModel.getContainerClusters().get("jdisc");
         assertNotNull(jdisc.getDocproc(), "Docproc not added to jdisc");
         assertNotNull(jdisc.getDocprocChains().allChains().getComponent("indexing"), "Indexing chain not added to jdisc");
+    }
+
+    @Test
+    void warning_is_logged_when_no_explicit_document_processing_cluster() {
+        final String servicesXml = "<services version=\"1.0\">\n" +
+                "  <container version=\"1.0\" id=\"jdisc\">\n" +
+                "    <search />\n" +
+                "    <nodes count=\"1\" />\n" +
+                "    <http>\n" +
+                "      <server id=\"bar\" port=\"" + Defaults.getDefaults().vespaWebServicePort() + "\" />\n" +
+                "    </http>\n" +
+                "  </container>\n" +
+                "  <content id=\"music\" version=\"1.0\">\n" +
+                "    <redundancy>1</redundancy>\n" +
+                "    <documents>\n" +
+                "      <document type=\"music\" mode=\"index\" />\n" +
+                "    </documents>\n" +
+                "    <nodes count=\"1\" />\n" +
+                "  </content>\n" +
+                "</services>\n";
+
+        var warnings = new ArrayList<String>();
+        ModelContext.Properties properties = new TestProperties().setMultitenant(true).setHostedVespa(true);
+        DeployState.Builder deployStateBuilder = new DeployState.Builder()
+                .properties(properties)
+                .endpoints(Set.of(new ContainerEndpoint("jdisc", ApplicationClusterEndpoint.Scope.zone, List.of("default.example.com"))))
+                .modelHostProvisioner(new InMemoryProvisioner(6, false))
+                .deployLogger((level, message) -> { if (level == Level.WARNING) warnings.add(message); });
+
+        new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
+                .withServices("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + servicesXml)
+                .withSchema(MockApplicationPackage.MUSIC_SCHEMA)
+                .build())
+                .create(deployStateBuilder);
+
+        assertTrue(warnings.stream().anyMatch(w -> w.contains("music") && w.contains("document-processing")),
+                   "Expected warning about missing document-processing cluster, got: " + warnings);
+    }
+
+    @Test
+    void no_warning_when_explicit_document_processing_cluster_is_configured() {
+        final String servicesXml = "<services version=\"1.0\">\n" +
+                "  <container version=\"1.0\" id=\"jdisc\">\n" +
+                "    <document-processing />\n" +
+                "    <nodes count=\"1\" />\n" +
+                "    <http>\n" +
+                "      <server id=\"bar\" port=\"" + Defaults.getDefaults().vespaWebServicePort() + "\" />\n" +
+                "    </http>\n" +
+                "  </container>\n" +
+                "  <content id=\"music\" version=\"1.0\">\n" +
+                "    <redundancy>1</redundancy>\n" +
+                "    <documents>\n" +
+                "      <document type=\"music\" mode=\"index\" />\n" +
+                "      <document-processing cluster=\"jdisc\" />\n" +
+                "    </documents>\n" +
+                "    <nodes count=\"1\" />\n" +
+                "  </content>\n" +
+                "</services>\n";
+
+        var warnings = new ArrayList<String>();
+        ModelContext.Properties properties = new TestProperties().setMultitenant(true).setHostedVespa(true);
+        DeployState.Builder deployStateBuilder = new DeployState.Builder()
+                .properties(properties)
+                .endpoints(Set.of(new ContainerEndpoint("jdisc", ApplicationClusterEndpoint.Scope.zone, List.of("default.example.com"))))
+                .modelHostProvisioner(new InMemoryProvisioner(6, false))
+                .deployLogger((level, message) -> { if (level == Level.WARNING) warnings.add(message); });
+
+        new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
+                .withServices("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + servicesXml)
+                .withSchema(MockApplicationPackage.MUSIC_SCHEMA)
+                .build())
+                .create(deployStateBuilder);
+
+        assertTrue(warnings.stream().noneMatch(w -> w.contains("document-processing")),
+                   "Expected no warning about document-processing cluster, got: " + warnings);
     }
 
     private static VespaModel buildMultiTenantVespaModel(String servicesXml) {
