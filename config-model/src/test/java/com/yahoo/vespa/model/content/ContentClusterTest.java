@@ -230,14 +230,14 @@ public class ContentClusterTest extends ContentBaseTest {
         String schema_fromdisk =
                 """
                 schema type1 {
-                    document-id: from-disk
+                    documentid: from-disk
                     document type1 {
                     }
                 }""";
         String schema_attribute =
                 """
                 schema type2 {
-                    document-id: attribute
+                    documentid: attribute
                     document type2 {
                     }
                 }""";

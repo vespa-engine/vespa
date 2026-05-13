@@ -357,7 +357,7 @@ public class SchemaTestCase {
                         "    summary pf1 {}" +
                         "  }" +
                         "  import field parentschema_ref.name as parent_imported {}" +
-                        "  document-id: attribute" +
+                        "  documentid: attribute" +
                         "  raw-as-base64-in-summary" +
                         "}");
         String childLines = joinLines(
@@ -991,7 +991,7 @@ public class SchemaTestCase {
         String schema_fromdisk =
                 """
                 schema doc {
-                    document-id: from-disk
+                    documentid: from-disk
                     document doc {
                     }
                 }""";
@@ -1000,7 +1000,7 @@ public class SchemaTestCase {
         String schema_attribute =
                 """
                 schema doc {
-                    document-id: attribute
+                    documentid: attribute
                     document doc {
                     }
                 }""";

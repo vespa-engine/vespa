@@ -17,8 +17,8 @@ public class SummaryDiskAccessValidatorTestCase {
     void logs_warning_when_accessing_field_that_needs_disk_access() throws ParseException {
         var sd = joinLines(
                 "schema test {",
-                "  # Using the document-id attribute should not affect warning below",
-                "  document-id: attribute",
+                "  # Using the document-ids-as-attribute setting should not affect warning below",
+                "  documentid: attribute",
                 "  document test {",
                 "    field str_map type map<string, string> {",
                 "      indexing: summary",
@@ -43,7 +43,7 @@ public class SummaryDiskAccessValidatorTestCase {
     void logs_warning_when_accessing_documentid_when_not_an_attribute() throws ParseException {
         var sd = joinLines(
                 "schema test {",
-                "  document-id: from-disk",
+                "  documentid: from-disk",
                 "  document test {",
                 "  }",
                 "  document-summary my_sum {",
@@ -64,7 +64,7 @@ public class SummaryDiskAccessValidatorTestCase {
     void does_not_log_warning_when_accessing_documentid_when_an_attribute() throws ParseException {
         var sd = joinLines(
                 "schema test {",
-                "  document-id: attribute",
+                "  documentid: attribute",
                 "  document test {",
                 "  }",
                 "  document-summary my_sum {",
