@@ -201,6 +201,40 @@ public class ColBertEmbedderTest {
     }
 
     @Test
+    public void testAttendToExpansionTokensFalseTrimsQueryMaskPadding() {
+        // Default embedder has attendToExpansionTokens=true: query tensor is
+        // padded to maxQueryTokens (32) with [MASK] embeddings included.
+        var defaultQuery = (MixedTensor) embedder.embed("this is a query",
+                                                       new Embedder.Context("query(qt{})"),
+                                                       TensorType.fromSpec("tensor<float>(qt{},x[8])"));
+        assertEquals("default keeps full 32-token query expansion", 32 * 8, defaultQuery.size());
+
+        // With attendToExpansionTokens=false the tensor only contains the real
+        // query tokens — required for models trained with
+        // attend_to_expansion_tokens=false (e.g. LightOn LateOn).
+        // The test tokenizer turns "this is a query !" into 5 wordpiece IDs (see
+        // testInputTensorsWordPiece); the "!" is dropped at the query side too,
+        // so "this is a query" yields 4 content tokens + [CLS] + [Q] + [SEP] = 7.
+        var noExpansionEmbedder = createEmbedderNoExpansion(runtime);
+        var trimmedQuery = (MixedTensor) noExpansionEmbedder.embed("this is a query",
+                                                                  new Embedder.Context("query(qt{})"),
+                                                                  TensorType.fromSpec("tensor<float>(qt{},x[8])"));
+        long realLen = trimmedQuery.size() / 8;
+        assertTrue("real-token query smaller than the expansion-padded one: " + realLen,
+                   realLen > 0 && realLen < 32);
+
+        // Documents are unaffected (no [MASK] padding to begin with).
+        var defaultDoc = (MixedTensor) embedder.embed("this is a document",
+                                                     new Embedder.Context("schema.indexing"),
+                                                     TensorType.fromSpec("tensor<float>(dt{},x[8])"));
+        var noExpansionDoc = (MixedTensor) noExpansionEmbedder.embed("this is a document",
+                                                                    new Embedder.Context("schema.indexing"),
+                                                                    TensorType.fromSpec("tensor<float>(dt{},x[8])"));
+        assertEquals("attendToExpansionTokens does not affect document side",
+                     defaultDoc.size(), noExpansionDoc.size());
+    }
+
+    @Test
     public void testLengthLimits() {
         StringBuilder sb = new StringBuilder();
         for(int i = 0; i < 1024; i++) {
@@ -294,6 +328,18 @@ public class ColBertEmbedderTest {
         ColBertEmbedderConfig.Builder builder = new ColBertEmbedderConfig.Builder();
         builder.tokenizerPath(ModelReference.valueOf(vocabPath));
         builder.transformerModel(ModelReference.valueOf(modelPath));
+        var onnxConfig = new OnnxEvaluatorConfig.Builder().build();
+        return new ColBertEmbedder(OnnxRuntime.testInstance(), runtime, builder.build(), onnxConfig);
+    }
+
+    private static ColBertEmbedder createEmbedderNoExpansion(Embedder.Runtime runtime) {
+        String vocabPath = "src/test/models/onnx/transformer/real_tokenizer.json";
+        String modelPath = "src/test/models/onnx/transformer/colbert-dummy-v2.onnx";
+        assumeTrue(OnnxRuntime.isRuntimeAvailable(modelPath));
+        ColBertEmbedderConfig.Builder builder = new ColBertEmbedderConfig.Builder();
+        builder.tokenizerPath(ModelReference.valueOf(vocabPath));
+        builder.transformerModel(ModelReference.valueOf(modelPath));
+        builder.attendToExpansionTokens(false);
         var onnxConfig = new OnnxEvaluatorConfig.Builder().build();
         return new ColBertEmbedder(OnnxRuntime.testInstance(), runtime, builder.build(), onnxConfig);
     }

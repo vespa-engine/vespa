@@ -43,6 +43,8 @@ public class ColBertEmbedder extends OnnxEmbedder implements ColBertEmbedderConf
 
     private final String transformerOutput;
 
+    private final Boolean attendToExpansionTokens;
+
     public ColBertEmbedder(ApplicationContainerCluster cluster, Element xml, DeployState state) {
         super("ai.vespa.embedding.ColBertEmbedder", INTEGRATION_BUNDLE_NAME, xml, state);
         var model = Model.fromXml(state, xml, "transformer-model", Set.of(ONNX_MODEL)).orElseThrow();
@@ -60,6 +62,7 @@ public class ColBertEmbedder extends OnnxEmbedder implements ColBertEmbedderConf
         transformerInputIds = getChildValue(xml, "transformer-input-ids").orElse(null);
         transformerAttentionMask = getChildValue(xml, "transformer-attention-mask").orElse(null);
         transformerOutput = getChildValue(xml, "transformer-output").orElse(null);
+        attendToExpansionTokens = getChildValue(xml, "attend-to-expansion-tokens").map(Boolean::parseBoolean).orElse(null);
         model.registerOnnxModelCost(cluster, onnxModelOptions);
     }
 
@@ -78,5 +81,6 @@ public class ColBertEmbedder extends OnnxEmbedder implements ColBertEmbedderConf
         if (transformerPadToken != null) b.transformerPadToken(transformerPadToken);
         if (queryTokenId != null) b.queryTokenId(queryTokenId);
         if (documentTokenId != null) b.documentTokenId(documentTokenId);
+        if (attendToExpansionTokens != null) b.attendToExpansionTokens(attendToExpansionTokens);
     }
 }
