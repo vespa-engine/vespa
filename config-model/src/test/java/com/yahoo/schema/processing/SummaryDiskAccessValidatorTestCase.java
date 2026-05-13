@@ -17,6 +17,8 @@ public class SummaryDiskAccessValidatorTestCase {
     void logs_warning_when_accessing_field_that_needs_disk_access() throws ParseException {
         var sd = joinLines(
                 "schema test {",
+                "  # Using the document-id attribute should not affect warning below",
+                "  document-id: attribute",
                 "  document test {",
                 "    field str_map type map<string, string> {",
                 "      indexing: summary",
