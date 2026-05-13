@@ -38,7 +38,7 @@ func TestDeployCloud(t *testing.T) {
 	stderr.Reset()
 	require.NotNil(t, cli.Run("deploy", pkgDir))
 	apiKeyWarning := "Warning: Authenticating with API key, intended for use in CI environments.\nHint: Authenticate with 'vespa auth login' instead\n"
-	certError := `Error: deployment to Vespa Cloud requires certificate in application package
+	certError := `Error: deployment to Vespa Cloud requires certificate or token in application package
 Hint: See https://docs.vespa.ai/en/security/guide.html
 Hint: Pass --add-cert to use the certificate of the current application
 `
