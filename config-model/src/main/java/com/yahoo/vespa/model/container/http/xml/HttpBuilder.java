@@ -6,8 +6,6 @@ import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
-import com.yahoo.config.provision.AthenzDomain;
-import com.yahoo.text.Text;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
@@ -15,7 +13,6 @@ import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.component.UserBindingPattern;
-import com.yahoo.vespa.model.container.http.AccessControl;
 import com.yahoo.vespa.model.container.http.FilterBinding;
 import com.yahoo.vespa.model.container.http.FilterChains;
 import com.yahoo.vespa.model.container.http.Http;
@@ -24,7 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
 
 /**
  * @author Tony Vaagenes
@@ -46,7 +42,6 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilderBase<Ht
     protected Http doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element spec) {
         FilterChains filterChains;
         List<FilterBinding> bindings = new ArrayList<>();
-        AccessControl accessControl = null;
         Optional<Boolean> strictFiltering = Optional.empty();
 
         Element filteringElem = XML.getChild(spec, "filtering");
@@ -55,11 +50,6 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilderBase<Ht
             bindings = readFilterBindings(filteringElem, this.portBindingOverrides);
             strictFiltering = XmlHelper.getOptionalAttribute(filteringElem, "strict-mode")
                     .map(Boolean::valueOf);
-
-            Element accessControlElem = XML.getChild(filteringElem, "access-control");
-            if (accessControlElem != null) {
-                accessControl = buildAccessControl(deployState, ancestor, accessControlElem);
-            }
         } else {
             filterChains = new FilterChainsBuilder().newChainsInstance(ancestor);
         }
@@ -67,75 +57,9 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilderBase<Ht
         Http http = new Http(filterChains);
         strictFiltering.ifPresent(http::setStrictFiltering);
         http.getBindings().addAll(bindings);
-        ApplicationContainerCluster cluster = getContainerCluster(ancestor).orElse(null);
+        var cluster = getContainerCluster(ancestor).orElse(null);
         http.setHttpServer(new JettyHttpServerBuilder(cluster).build(deployState, ancestor, spec));
-        if (accessControl != null) {
-            accessControl.configureHttpFilterChains(http);
-        }
         return http;
-    }
-
-    private AccessControl buildAccessControl(DeployState deployState, TreeConfigProducer<?> ancestor, Element accessControlElem) {
-        AthenzDomain domain = getAccessControlDomain(deployState, accessControlElem);
-        AccessControl.Builder builder = new AccessControl.Builder(domain.value());
-
-        getContainerCluster(ancestor).ifPresent(builder::setHandlers);
-
-        // TODO: Remove in Vespa 9
-        XmlHelper.getOptionalAttribute(accessControlElem, "read").ifPresent(
-                readAttr -> deployState.getDeployLogger()
-                        .logApplicationPackage(Level.WARNING,
-                                "The 'read' attribute of the 'access-control' element has no effect and is deprecated. " +
-                                        "Please remove the attribute from services.xml, support will be removed in Vespa 9"));
-        // TODO: Remove in Vespa 9
-        XmlHelper.getOptionalAttribute(accessControlElem, "write").ifPresent(
-                writeAttr -> deployState.getDeployLogger()
-                        .logApplicationPackage(Level.WARNING,
-                                "The 'write' attribute of the 'access-control' element has no effect and is deprecated. " +
-                                        "Please remove the attribute from services.xml, support will be removed in Vespa 9"));
-
-        AccessControl.ClientAuthentication clientAuth =
-                XmlHelper.getOptionalAttribute(accessControlElem, "tls-handshake-client-auth")
-                        .filter("want"::equals)
-                        .map(value -> AccessControl.ClientAuthentication.want)
-                        .orElse(AccessControl.ClientAuthentication.need);
-        if (! deployState.getProperties().allowDisableMtls() && clientAuth == AccessControl.ClientAuthentication.want) {
-            throw new IllegalArgumentException("Overriding 'tls-handshake-client-auth' for application is not allowed.");
-        }
-        builder.clientAuthentication(clientAuth);
-
-        Element excludeElem = XML.getChild(accessControlElem, "exclude");
-        if (excludeElem != null) {
-            XML.getChildren(excludeElem, "binding").stream()
-                    .map(xml -> UserBindingPattern.fromPattern(XML.getValue(xml)))
-                    .forEach(builder::excludeBinding);
-        }
-        return builder.build();
-    }
-
-    // TODO(tokle,bjorncs) Vespa > 8: Fail if domain is not provided through deploy properties
-    private static AthenzDomain getAccessControlDomain(DeployState deployState, Element accessControlElem) {
-        AthenzDomain tenantDomain = deployState.getProperties().athenzDomain().orElse(null);
-        AthenzDomain explicitDomain = XmlHelper.getOptionalAttribute(accessControlElem, "domain")
-                .map(AthenzDomain::from)
-                .orElse(null);
-        if (tenantDomain == null) {
-            if (explicitDomain == null) {
-                throw new IllegalArgumentException("No Athenz domain provided for 'access-control'");
-            }
-            deployState.getDeployLogger().logApplicationPackage(Level.WARNING, "Athenz tenant is not provided by deploy call. This will soon be handled as failure.");
-        }
-        if (explicitDomain != null) {
-            if (tenantDomain != null && !explicitDomain.equals(tenantDomain)) {
-                throw new IllegalArgumentException(
-                        Text.format("Domain in access-control ('%s') does not match tenant domain ('%s')", explicitDomain.value(), tenantDomain.value()));
-            }
-            deployState.getDeployLogger()
-                    .logApplicationPackage(Level.WARNING,
-                            "Domain in 'access-control' is deprecated and is no longer necessary. " +
-                                    "Please remove the 'domain' attribute from the 'access-control' element in services.xml.");
-        }
-        return tenantDomain != null ? tenantDomain : explicitDomain;
     }
 
     private static Optional<ApplicationContainerCluster> getContainerCluster(TreeConfigProducer<?> configProducer) {
