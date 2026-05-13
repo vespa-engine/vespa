@@ -3,6 +3,7 @@ vespa_add_executable(vespalib_quant_test_app TEST
     SOURCES
     centroid_test.cpp
     hadamard_test.cpp
+    sign_flip_test.cpp
     DEPENDS
     vespalib
     GTest::gtest
