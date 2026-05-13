@@ -66,7 +66,7 @@ std::string to_string(PlanningAlgo algo) {
  * Predefined fields names to use when accessing the global pond.
  */
 struct {
-    using F = std::string_view;
+    using F = std::string;
     F actual_cost = "actual_cost";
     F algo = "algo";
     F avg_actual_cost = "avg_actual_cost";
@@ -76,6 +76,9 @@ struct {
     F children = "children";
     F class_ = "class";
     F error = "error";
+    F sample_error_min = "sample_error_min";
+    F sample_error_median = "sample_error_median";
+    F sample_error_max = "sample_error_max";
     F field_cfg = "field_cfg";
     F filter_hit_ratio = "filter_hit_ratio";
     F force_strict = "force_strict";
@@ -609,7 +612,7 @@ void postprocess_calculate_error(DataPond& pond) {
         grouped[record.get<std::string>(f.group)].emplace_back(record);
     }
 
-    auto sum_field = [](const std::vector<RecordRef>& records, std::string_view name) {
+    auto sum_field = [](const std::vector<RecordRef>& records, const std::string& name) {
         double s = 0;
         for (const auto& r : records) {
             s += r.get().get<double>(name);
@@ -617,7 +620,7 @@ void postprocess_calculate_error(DataPond& pond) {
         return s;
     };
 
-    auto avg_field = [sum_field](const std::vector<RecordRef>& records, std::string_view name) {
+    auto avg_field = [sum_field](const std::vector<RecordRef>& records, const std::string& name) {
         return sum_field(records, name) / static_cast<double>(records.size());
     };
 
@@ -633,9 +636,9 @@ void postprocess_calculate_error(DataPond& pond) {
         constexpr double under_threshold = ok_band;
         constexpr double over_threshold = 1.0 / ok_band;
         double           e = error_ratio(records); // raw, can be <1 or >1
-        if (e > under_threshold)
+        if (e < under_threshold)
             return "UNDER";
-        if (e < over_threshold)
+        if (e > over_threshold)
             return "OVER";
         return "OK";
     };
@@ -658,11 +661,54 @@ void postprocess_calculate_error(DataPond& pond) {
 }
 
 /**
+ * Per case (grouped by f.group), compute the per-sample error spread:
+ *     sample_error_i = time_ms_i / (K * actual_cost_i)
+ * Stores min / median / max of those values on every record in the case.
+ * Does not touch the case error or the calibration constant.
+ */
+void postprocess_calculate_sample_error_spread(DataPond& pond) {
+    std::map<std::string, std::vector<RecordRef>> grouped;
+    for (auto& record : pond.records()) {
+        if (record.has_field<double>(f.time_ms) && record.has_field<double>(f.actual_cost) &&
+            record.has_field<double>(f.calibration_constant) && record.has_field<std::string>(f.group))
+        {
+            grouped[record.get<std::string>(f.group)].emplace_back(record);
+        }
+    }
+    for (auto& [_, records] : grouped) {
+        double              K = records.front().get().get<double>(f.calibration_constant);
+        std::vector<double> sample_errors;
+        sample_errors.reserve(records.size());
+        for (const auto& ref : records) {
+            const Record& r = ref.get();
+            double        cost = r.get<double>(f.actual_cost);
+            if (K > 0.0 && cost > 0.0) {
+                sample_errors.push_back(r.get<double>(f.time_ms) / (K * cost));
+            }
+        }
+        if (sample_errors.empty()) {
+            continue;
+        }
+        std::sort(sample_errors.begin(), sample_errors.end());
+        double sample_error_min = sample_errors.front();
+        double sample_error_median = calc_median(sample_errors);
+        double sample_error_max = sample_errors.back();
+        for (auto& ref : records) {
+            Record& r = ref.get();
+            r.set(f.sample_error_min, sample_error_min);
+            r.set(f.sample_error_median, sample_error_median);
+            r.set(f.sample_error_max, sample_error_max);
+        }
+    }
+}
+
+/**
  * Preprocess the raw data samples before summary.
  */
 void postprocess_pond(DataPond& pond) {
     postprocess_calculate_calibration_constant(pond);
     postprocess_calculate_error(pond);
+    postprocess_calculate_sample_error_spread(pond);
 }
 
 void print_pond_summary(const DataPond& pond) {
@@ -673,11 +719,14 @@ void print_pond_summary(const DataPond& pond) {
 
     std::println("calibration score: ms_per_cost={:.3f} ({} cases)\n",
                  pond.records().front().get<double>(f.calibration_constant), grouped.size());
-    std::println("{:<60} {:>12} {:>12} {:>10} {:>10}", "case", "actual_ms", "pred_ms", "error", "class");
+    std::println("{:<60} {:>12} {:>12} {:>10} {:>10} {:>20}", "case", "actual_ms", "pred_ms", "error", "class",
+                 "spread(min/max)");
     for (const auto& [case_id, records] : grouped) {
         const Record& first = records.front().get();
-        std::println("{:<60} {:>12.3f} {:>12.3f} {:>9.3f}x {:>10}", case_id, first.get<double>(f.time_ms),
-                     first.get<double>(f.pred_ms), first.get<double>(f.error), first.get<std::string>(f.class_));
+        std::println(
+            "{:<60} {:>12.3f} {:>12.3f} {:>9.3f}x {:>10} {:>20}", case_id, first.get<double>(f.time_ms),
+            first.get<double>(f.pred_ms), first.get<double>(f.error), first.get<std::string>(f.class_),
+            std::format("{}/{}", first.get<double>(f.sample_error_min), first.get<double>(f.sample_error_max)));
     }
 }
 
@@ -1289,9 +1338,9 @@ TEST(IteratorBenchmark, data_pond_test) {
 
     auto add_measurement = [&pond](const std::string& case_id, double time_ms, double cost) {
         Record r;
-        r.set("case_id", case_id);
-        r.set("time_ms", time_ms);
-        r.set("cost", cost);
+        r.set(f.group, case_id);
+        r.set(f.time_ms, time_ms);
+        r.set(f.actual_cost, cost);
         pond.add(r);
     };
 
@@ -1309,16 +1358,16 @@ TEST(IteratorBenchmark, data_pond_test) {
     std::vector<double>    values;
     std::vector<RecordRef> records;
     for (auto& record : pond.records()) {
-        if (record.has_field<double>("time_ms") && record.has_field<double>("cost")) {
+        if (record.has_field<double>(f.time_ms) && record.has_field<double>(f.actual_cost)) {
             records.push_back(record);
-            values.push_back(record.get<double>("time_ms") / record.get<double>("cost"));
+            values.push_back(record.get<double>(f.time_ms) / record.get<double>(f.actual_cost));
         }
     }
 
     std::sort(values.begin(), values.end());
     double median = values[values.size() / 2];
     for (auto record : records) {
-        record.get().set("time_cost_median", median);
+        record.get().set(f.sample_error_median, median);
     }
 
     std::println("median time_ms/cost={:.4f}", median);
@@ -1330,12 +1379,12 @@ static std::string smoke_test_filter = "--gtest_filter="
 int main(int argc, char** argv) {
     bool opt_dump_pond = false;
     for (int i = 0; i < argc; i++) {
-        std::string_view smoke_test{"--smoke-test"};
+        const std::string& smoke_test{"--smoke-test"};
         if (smoke_test == argv[i]) {
             std::println(stderr, "Adding --smoke-test filter");
             argv[i] = smoke_test_filter.data();
         }
-        std::string_view dump_pond_flag{"--dump-pond"};
+        const std::string& dump_pond_flag{"--dump-pond"};
         if (dump_pond_flag == argv[i]) {
             opt_dump_pond = true;
         }

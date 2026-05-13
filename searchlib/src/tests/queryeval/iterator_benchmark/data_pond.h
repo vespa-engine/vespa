@@ -66,31 +66,31 @@ using Pred = std::function<bool(const Field&)>;
  * Holds a set of named fields representing one test record.
  */
 class Record {
-    std::map<std::string, Field, std::less<>> _fields;
+    std::map<std::string, Field> _fields;
 
 public:
-    [[nodiscard]] const std::map<std::string, Field, std::less<>>& data() const { return _fields; }
+    [[nodiscard]] const std::map<std::string, Field>& data() const { return _fields; }
 
-    Record& set(std::string_view name, const auto& value) {
-        _fields.insert_or_assign(std::string(name), Field{value});
+    Record& set(const std::string& name, const auto& value) {
+        _fields.insert_or_assign(name, Field{value});
         return *this;
     }
 
-    [[nodiscard]] bool check(std::string_view name, const Pred& pred) const {
+    [[nodiscard]] bool check(const std::string& name, const Pred& pred) const {
         if (auto it = _fields.find(name); it != _fields.end()) {
             return pred(it->second);
         }
         return false;
     }
 
-    template <typename T> [[nodiscard]] bool has_field(std::string_view field_name) const {
+    template <typename T> [[nodiscard]] bool has_field(const std::string& field_name) const {
         if (auto pos = _fields.find(field_name); pos != _fields.end()) {
             return pos->second.has_type<T>();
         }
         return false;
     }
 
-    template <typename T> [[nodiscard]] const T& get(std::string_view name) const {
+    template <typename T> [[nodiscard]] const T& get(const std::string& name) const {
         auto it = _fields.find(name);
         if (it == _fields.end()) {
             throw std::runtime_error(std::format("Record::get: missing field '{}'", name));
@@ -102,7 +102,7 @@ public:
         return it->second.get<T>();
     }
 
-    template <typename T> [[nodiscard]] T& get(std::string_view name) {
+    template <typename T> [[nodiscard]] T& get(const std::string& name) {
         auto it = _fields.find(name);
         if (it == _fields.end()) {
             throw std::runtime_error(std::format("Record::get: missing field '{}'", name));
@@ -140,15 +140,15 @@ class Filter {
     std::vector<std::pair<std::string, Pred>> _predicates;
 
 public:
-    Filter& lt(std::string_view name, auto value) {
-        _predicates.emplace_back(std::string(name), [value](const Field& field) {
+    Filter& lt(const std::string& name, auto value) {
+        _predicates.emplace_back(name, [value](const Field& field) {
             return field.check([value](decltype(value) val) { return val < value; });
         });
         return *this;
     }
 
-    Filter& eq(std::string_view name, auto value) {
-        _predicates.emplace_back(std::string(name), [value](const Field& field) {
+    Filter& eq(const std::string& name, auto value) {
+        _predicates.emplace_back(name, [value](const Field& field) {
             return field.check([value](decltype(value) val) { return val == value; });
         });
         return *this;
