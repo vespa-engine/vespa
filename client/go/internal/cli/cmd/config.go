@@ -138,7 +138,7 @@ func resolveWriteConfig(cli *CLI, local, global bool, optionName string) (cfg *C
 		return nil, false, false, false, fmt.Errorf("cannot use both --local and --global flags")
 	}
 	if local && optionName == defaultConfigScopeOption {
-		return nil, false, false, false, fmt.Errorf("%s can only be set in global configuration", defaultConfigScopeOption)
+		return nil, false, false, false, fmt.Errorf("%s can only be modified in global configuration", defaultConfigScopeOption)
 	}
 	useLocal = local
 	scopeValue, scopeIsSet := cli.config.getNonEmpty(defaultConfigScopeOption)
