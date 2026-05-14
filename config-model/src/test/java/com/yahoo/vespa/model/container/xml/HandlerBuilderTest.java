@@ -141,19 +141,19 @@ public class HandlerBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    void does_not_restrict_default_bindings_in_hosted_vespa() {
+    void restricts_default_bindings_in_hosted_vespa() {
         DeployState deployState = new DeployState.Builder()
                 .properties(new TestProperties().setHostedVespa(true))
                 .build();
-        verifyDefaultBindings(deployState, "http://*");
+        verifyDefaultBindings(deployState, "http://*:4443");
     }
 
     @Test
-    void does_not_restrict_custom_bindings_in_hosted_vespa() {
+    void restricts_custom_bindings_in_hosted_vespa() {
         DeployState deployState = new DeployState.Builder()
                 .properties(new TestProperties().setHostedVespa(true))
                 .build();
-        verifyCustomSearchBindings(deployState, "http://*");
+        verifyCustomSearchBindings(deployState, "http://*:4443");
     }
 
     @Test
