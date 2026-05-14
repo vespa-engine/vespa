@@ -65,6 +65,7 @@ bool TensorFromStructsBlueprint::setup(const search::fef::IIndexEnvironment& env
     for (size_t i = 0; i < numKeys; ++i) {
         _keyFields.push_back(params[1 + i].getValue());
     }
+    std::sort(_keyFields.begin(), _keyFields.end());
     _valueField = params[1 + numKeys].getValue();
 
     auto cellTypeOpt = vespalib::eval::value_type::cell_type_from_name(params[2 + numKeys].getValue());
@@ -78,22 +79,28 @@ bool TensorFromStructsBlueprint::setup(const search::fef::IIndexEnvironment& env
     for (const auto& kf : _keyFields) {
         dims.emplace_back(kf);
     }
-    auto vt = ValueType::make_type(_cellType, std::move(dims));
-    _valueType = ValueType::from_spec(vt.to_spec());
+    _valueType = ValueType::make_type(_cellType, std::move(dims));
     if (_valueType.is_error()) {
         return fail("invalid or duplicate dimension name(s) for key field(s)");
+    }
+    // double check that key fields and dimensions have same order
+    const auto& resolvedDims = _valueType.dimensions();
+    for (size_t k = 0; k < _keyFields.size(); ++k) {
+        if (resolvedDims[k].name != _keyFields[k]) {
+            return fail("unexpected key field / tensor dimension name mismatch");
+        }
     }
     for (const auto& kf : _keyFields) {
         std::string           keyAttrName = _sourceParam + "." + kf;
         const fef::FieldInfo* kfInfo = env.getFieldByName(keyAttrName);
         if (kfInfo == nullptr || !kfInfo->hasAttribute()) {
-            return fail("no such attribute '%s'", keyAttrName.c_str());
+            return fail("no such key attribute '%s'", keyAttrName.c_str());
         }
     }
     std::string           valueAttrName = _sourceParam + "." + _valueField;
     const fef::FieldInfo* vfInfo = env.getFieldByName(valueAttrName);
     if (vfInfo == nullptr || !vfInfo->hasAttribute()) {
-        return fail("no such attribute '%s'", valueAttrName.c_str());
+        return fail("no such value attribute '%s'", valueAttrName.c_str());
     }
     describeOutput("tensor", "The tensor created from struct field attributes (key field(s) and value field)",
                    FeatureType::object(_valueType));
@@ -158,13 +165,10 @@ template <typename KeyBufferType> void TensorFromStructsExecutor<KeyBufferType>:
 
 class TensorFromStructsMultiKeyExecutor : public fef::FeatureExecutor {
 private:
-    std::vector<const IAttributeVector*> _keyAttributes;
-    const IAttributeVector*              _valueAttribute;
-    vespalib::eval::ValueType            _type;
-    vespalib::eval::CellType             _cellType;
-    // _keyDimSlot[k] = index in the tensor's (sorted) dimension list where
-    // the k-th user-supplied key field's value belongs in the subspace address.
-    std::vector<size_t>                    _keyDimSlot;
+    std::vector<const IAttributeVector*>   _keyAttributes;
+    const IAttributeVector*                _valueAttribute;
+    vespalib::eval::ValueType              _type;
+    vespalib::eval::CellType               _cellType;
     std::vector<WeightedStringContent>     _keyBuffers;
     FloatContent                           _valueBuffer;
     std::unique_ptr<vespalib::eval::Value> _tensor;
@@ -172,12 +176,11 @@ private:
 public:
     TensorFromStructsMultiKeyExecutor(std::vector<const IAttributeVector*> keyAttrs,
                                       const IAttributeVector* valueAttr, const vespalib::eval::ValueType& valueType,
-                                      vespalib::eval::CellType cellType, std::vector<size_t> keyDimSlot)
+                                      vespalib::eval::CellType cellType)
         : _keyAttributes(std::move(keyAttrs)),
           _valueAttribute(valueAttr),
           _type(valueType),
           _cellType(cellType),
-          _keyDimSlot(std::move(keyDimSlot)),
           _keyBuffers(_keyAttributes.size()),
           _valueBuffer(),
           _tensor() {
@@ -207,7 +210,7 @@ public:
             std::vector<std::string_view> addr(numKeys);
             for (size_t i = 0; i < size; ++i) {
                 for (size_t k = 0; k < numKeys; ++k) {
-                    addr[_keyDimSlot[k]] = _keyBuffers[k][i].value();
+                    addr[k] = _keyBuffers[k][i].value();
                 }
                 auto cell_array = builder->add_subspace(addr);
                 cell_array[0] = static_cast<CT>(_valueBuffer[i]);
@@ -239,6 +242,12 @@ FeatureExecutor& createAttributeExecutor(const search::fef::IQueryEnvironment& e
         return ConstantTensorExecutor::createEmpty(valueType, stash);
     }
 
+    if (valueAttribute->getCollectionType() == search::attribute::CollectionType::WSET) {
+        Issue::report("tensor_from_structs feature: The value attribute '%s' must be an array."
+                      " Returning empty tensor.",
+                      valueAttrName.c_str());
+        return ConstantTensorExecutor::createEmpty(valueType, stash);
+    }
     std::vector<const IAttributeVector*> keyAttributes;
     keyAttributes.reserve(keyFields.size());
     for (const auto& kf : keyFields) {
@@ -263,12 +272,6 @@ FeatureExecutor& createAttributeExecutor(const search::fef::IQueryEnvironment& e
                           keyAttrName.c_str(), valueAttrName.c_str());
             return ConstantTensorExecutor::createEmpty(valueType, stash);
         }
-        if (keyAttribute->getCollectionType() == search::attribute::CollectionType::WSET) {
-            Issue::report("tensor_from_structs feature: Weighted set attributes are not supported."
-                          " Key attribute '%s' is a weighted set. Returning empty tensor.",
-                          keyAttrName.c_str());
-            return ConstantTensorExecutor::createEmpty(valueType, stash);
-        }
         keyAttributes.push_back(keyAttribute);
     }
 
@@ -285,23 +288,8 @@ FeatureExecutor& createAttributeExecutor(const search::fef::IQueryEnvironment& e
         return stash.create<TensorFromStructsExecutor<WeightedConstCharContent>>(keyAttribute, valueAttribute,
                                                                                  valueType, cellType);
     }
-    // valueType has its dimensions in sorted (canonical) order, which is what
-    // the value-builder expects in the subspace address. Map each user-supplied
-    // key field to its slot in that sorted dimension list.
-    const auto&         dims = valueType.dimensions();
-    std::vector<size_t> keyDimSlot(keyFields.size());
-    for (size_t k = 0; k < keyFields.size(); ++k) {
-        size_t slot = dims.size();
-        for (size_t d = 0; d < dims.size(); ++d) {
-            if (dims[d].name == keyFields[k]) {
-                slot = d;
-                break;
-            }
-        }
-        keyDimSlot[k] = slot;
-    }
     return stash.create<TensorFromStructsMultiKeyExecutor>(std::move(keyAttributes), valueAttribute, valueType,
-                                                           cellType, std::move(keyDimSlot));
+                                                           cellType);
 }
 
 } // namespace

@@ -83,56 +83,54 @@ struct ExecFixture {
         EXPECT_TRUE(test.setup());
     }
     void setupAttributeVectors() {
-        std::vector<AttributePtr> attrs;
         // Create struct array attributes: items.name (string), items.price (float)
-        attrs.push_back(AttributeFactory::createAttribute("items.name", AVC(AVBT::STRING, AVCT::ARRAY)));
-        attrs.push_back(AttributeFactory::createAttribute("items.price", AVC(AVBT::FLOAT, AVCT::ARRAY)));
+        auto itemsNameP = AttributeFactory::createAttribute("items.name", AVC(AVBT::STRING, AVCT::ARRAY));
+        auto itemsPriceP = AttributeFactory::createAttribute("items.price", AVC(AVBT::FLOAT, AVCT::ARRAY));
 
         // Create struct array attributes with integer keys: ids.id (int32), ids.score (float)
-        attrs.push_back(AttributeFactory::createAttribute("ids.id", AVC(AVBT::INT32, AVCT::ARRAY)));
-        attrs.push_back(AttributeFactory::createAttribute("ids.score", AVC(AVBT::FLOAT, AVCT::ARRAY)));
+        auto idsIdP = AttributeFactory::createAttribute("ids.id", AVC(AVBT::INT32, AVCT::ARRAY));
+        auto idsScoreP = AttributeFactory::createAttribute("ids.score", AVC(AVBT::FLOAT, AVCT::ARRAY));
 
         // Create struct array attributes with integer values: data.key (string), data.count (int32)
-        attrs.push_back(AttributeFactory::createAttribute("data.key", AVC(AVBT::STRING, AVCT::ARRAY)));
-        attrs.push_back(AttributeFactory::createAttribute("data.count", AVC(AVBT::INT32, AVCT::ARRAY)));
+        auto dataKeyP = AttributeFactory::createAttribute("data.key", AVC(AVBT::STRING, AVCT::ARRAY));
+        auto dataCountP = AttributeFactory::createAttribute("data.count", AVC(AVBT::INT32, AVCT::ARRAY));
 
         // Create struct array attributes with mismatched sizes for testing
-        attrs.push_back(AttributeFactory::createAttribute("mismatch.key", AVC(AVBT::STRING, AVCT::ARRAY)));
-        attrs.push_back(AttributeFactory::createAttribute("mismatch.value", AVC(AVBT::FLOAT, AVCT::ARRAY)));
+        auto mismatchKeyP = AttributeFactory::createAttribute("mismatch.key", AVC(AVBT::STRING, AVCT::ARRAY));
+        auto mismatchValP = AttributeFactory::createAttribute("mismatch.value", AVC(AVBT::FLOAT, AVCT::ARRAY));
 
         // Create weighted set attributes (should fail)
-        attrs.push_back(AttributeFactory::createAttribute("wset.key", AVC(AVBT::STRING, AVCT::WSET)));
-        attrs.push_back(AttributeFactory::createAttribute("wset.value", AVC(AVBT::FLOAT, AVCT::WSET)));
+        auto wsetKeyP = AttributeFactory::createAttribute("wset.key", AVC(AVBT::STRING, AVCT::WSET));
+        auto wsetValueP = AttributeFactory::createAttribute("wset.value", AVC(AVBT::FLOAT, AVCT::WSET));
 
         // Create single value attributes
-        attrs.push_back(AttributeFactory::createAttribute("single.key", AVC(AVBT::STRING, AVCT::SINGLE)));
-        attrs.push_back(AttributeFactory::createAttribute("single.value", AVC(AVBT::FLOAT, AVCT::SINGLE)));
+        auto singleKeyP = AttributeFactory::createAttribute("single.key", AVC(AVBT::STRING, AVCT::SINGLE));
+        auto singleValueP = AttributeFactory::createAttribute("single.value", AVC(AVBT::FLOAT, AVCT::SINGLE));
 
         // Multi-key struct array: inv.category (string), inv.brand (string), inv.sku (int32), inv.qty (float)
-        attrs.push_back(AttributeFactory::createAttribute("inv.category", AVC(AVBT::STRING, AVCT::ARRAY)));
-        attrs.push_back(AttributeFactory::createAttribute("inv.brand", AVC(AVBT::STRING, AVCT::ARRAY)));
-        attrs.push_back(AttributeFactory::createAttribute("inv.sku", AVC(AVBT::INT32, AVCT::ARRAY)));
-        attrs.push_back(AttributeFactory::createAttribute("inv.qty", AVC(AVBT::FLOAT, AVCT::ARRAY)));
+        auto invCategoryP = AttributeFactory::createAttribute("inv.category", AVC(AVBT::STRING, AVCT::ARRAY));
+        auto invBrandP = AttributeFactory::createAttribute("inv.brand", AVC(AVBT::STRING, AVCT::ARRAY));
+        auto invSkuP = AttributeFactory::createAttribute("inv.sku", AVC(AVBT::INT32, AVCT::ARRAY));
+        auto invQtyP = AttributeFactory::createAttribute("inv.qty", AVC(AVBT::FLOAT, AVCT::ARRAY));
 
         // Mixed collection-type struct for negative test (one ARRAY key, one SINGLE key, ARRAY value)
-        attrs.push_back(AttributeFactory::createAttribute("mixinv.a", AVC(AVBT::STRING, AVCT::ARRAY)));
-        attrs.push_back(AttributeFactory::createAttribute("mixinv.b", AVC(AVBT::STRING, AVCT::SINGLE)));
-        attrs.push_back(AttributeFactory::createAttribute("mixinv.qty", AVC(AVBT::FLOAT, AVCT::ARRAY)));
-
-        // 4-key struct array: quad.a/b/c/d (string) + quad.val (float)
-        attrs.push_back(AttributeFactory::createAttribute("quad.a", AVC(AVBT::STRING, AVCT::ARRAY)));
-        attrs.push_back(AttributeFactory::createAttribute("quad.b", AVC(AVBT::STRING, AVCT::ARRAY)));
-        attrs.push_back(AttributeFactory::createAttribute("quad.c", AVC(AVBT::STRING, AVCT::ARRAY)));
-        attrs.push_back(AttributeFactory::createAttribute("quad.d", AVC(AVBT::STRING, AVCT::ARRAY)));
-        attrs.push_back(AttributeFactory::createAttribute("quad.val", AVC(AVBT::FLOAT, AVCT::ARRAY)));
+        auto mixinvAP = AttributeFactory::createAttribute("mixinv.a", AVC(AVBT::STRING, AVCT::ARRAY));
+        auto mixinvBP = AttributeFactory::createAttribute("mixinv.b", AVC(AVBT::STRING, AVCT::SINGLE));
+        auto mixinvQtyP = AttributeFactory::createAttribute("mixinv.qty", AVC(AVBT::FLOAT, AVCT::ARRAY));
 
         // 5-key struct array: pent.a/b/c/d/e (string) + pent.val (float)
-        attrs.push_back(AttributeFactory::createAttribute("pent.a", AVC(AVBT::STRING, AVCT::ARRAY)));
-        attrs.push_back(AttributeFactory::createAttribute("pent.b", AVC(AVBT::STRING, AVCT::ARRAY)));
-        attrs.push_back(AttributeFactory::createAttribute("pent.c", AVC(AVBT::STRING, AVCT::ARRAY)));
-        attrs.push_back(AttributeFactory::createAttribute("pent.d", AVC(AVBT::STRING, AVCT::ARRAY)));
-        attrs.push_back(AttributeFactory::createAttribute("pent.e", AVC(AVBT::STRING, AVCT::ARRAY)));
-        attrs.push_back(AttributeFactory::createAttribute("pent.val", AVC(AVBT::FLOAT, AVCT::ARRAY)));
+        auto pentAP = AttributeFactory::createAttribute("pent.a", AVC(AVBT::STRING, AVCT::ARRAY));
+        auto pentBP = AttributeFactory::createAttribute("pent.b", AVC(AVBT::STRING, AVCT::ARRAY));
+        auto pentCP = AttributeFactory::createAttribute("pent.c", AVC(AVBT::STRING, AVCT::ARRAY));
+        auto pentDP = AttributeFactory::createAttribute("pent.d", AVC(AVBT::STRING, AVCT::ARRAY));
+        auto pentEP = AttributeFactory::createAttribute("pent.e", AVC(AVBT::STRING, AVCT::ARRAY));
+        auto pentValP = AttributeFactory::createAttribute("pent.val", AVC(AVBT::FLOAT, AVCT::ARRAY));
+
+        std::vector<AttributePtr> attrs = {itemsNameP, itemsPriceP,  idsIdP,       idsScoreP,  dataKeyP,
+                                           dataCountP, mismatchKeyP, mismatchValP, wsetKeyP,   wsetValueP,
+                                           singleKeyP, singleValueP, invCategoryP, invBrandP,  invSkuP,
+                                           invQtyP,    mixinvAP,     mixinvBP,     mixinvQtyP, pentAP,
+                                           pentBP,     pentCP,       pentDP,       pentEP,     pentValP};
 
         // Register attributes in index environment
         test.getIndexEnv()
@@ -159,11 +157,6 @@ struct ExecFixture {
             .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "mixinv.a")
             .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "mixinv.b")
             .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "mixinv.qty")
-            .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "quad.a")
-            .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "quad.b")
-            .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "quad.c")
-            .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "quad.d")
-            .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "quad.val")
             .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "pent.a")
             .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "pent.b")
             .addField(FieldType::ATTRIBUTE, CollectionType::ARRAY, "pent.c")
@@ -177,122 +170,101 @@ struct ExecFixture {
             test.getIndexEnv().getAttributeMap().add(attr);
         }
 
+        auto& itemsName = dynamic_cast<StringAttribute&>(*itemsNameP);
+        auto& itemsPrice = dynamic_cast<FloatingPointAttribute&>(*itemsPriceP);
+        auto& idsId = dynamic_cast<IntegerAttribute&>(*idsIdP);
+        auto& idsScore = dynamic_cast<FloatingPointAttribute&>(*idsScoreP);
+        auto& dataKey = dynamic_cast<StringAttribute&>(*dataKeyP);
+        auto& dataCount = dynamic_cast<IntegerAttribute&>(*dataCountP);
+        auto& mismatchKey = dynamic_cast<StringAttribute&>(*mismatchKeyP);
+        auto& mismatchVal = dynamic_cast<FloatingPointAttribute&>(*mismatchValP);
+        auto& singleKey = dynamic_cast<StringAttribute&>(*singleKeyP);
+        auto& singleValue = dynamic_cast<FloatingPointAttribute&>(*singleValueP);
+        auto& invCategory = dynamic_cast<StringAttribute&>(*invCategoryP);
+        auto& invBrand = dynamic_cast<StringAttribute&>(*invBrandP);
+        auto& invSku = dynamic_cast<IntegerAttribute&>(*invSkuP);
+        auto& invQty = dynamic_cast<FloatingPointAttribute&>(*invQtyP);
+        auto& mixinvA = dynamic_cast<StringAttribute&>(*mixinvAP);
+        auto& mixinvB = dynamic_cast<StringAttribute&>(*mixinvBP);
+        auto& mixinvQty = dynamic_cast<FloatingPointAttribute&>(*mixinvQtyP);
+        auto& pentA = dynamic_cast<StringAttribute&>(*pentAP);
+        auto& pentB = dynamic_cast<StringAttribute&>(*pentBP);
+        auto& pentC = dynamic_cast<StringAttribute&>(*pentCP);
+        auto& pentD = dynamic_cast<StringAttribute&>(*pentDP);
+        auto& pentE = dynamic_cast<StringAttribute&>(*pentEP);
+        auto& pentVal = dynamic_cast<FloatingPointAttribute&>(*pentValP);
+
         // Setup document 1: items with 3 products
-        StringAttribute& itemsName = dynamic_cast<StringAttribute&>(*attrs[0]);
         itemsName.append(1, "apple", 0);
         itemsName.append(1, "banana", 0);
         itemsName.append(1, "cherry", 0);
-
-        FloatingPointAttribute& itemsPrice = dynamic_cast<FloatingPointAttribute&>(*attrs[1]);
         itemsPrice.append(1, 1.5, 0);
         itemsPrice.append(1, 0.75, 0);
         itemsPrice.append(1, 2.25, 0);
 
         // Setup document 1: ids with integer keys
-        IntegerAttribute& idsId = dynamic_cast<IntegerAttribute&>(*attrs[2]);
         idsId.append(1, 100, 0);
         idsId.append(1, 200, 0);
         idsId.append(1, 300, 0);
-
-        FloatingPointAttribute& idsScore = dynamic_cast<FloatingPointAttribute&>(*attrs[3]);
         idsScore.append(1, 10.5, 0);
         idsScore.append(1, 20.75, 0);
         idsScore.append(1, 30.25, 0);
 
         // Setup document 1: data with integer values
-        StringAttribute& dataKey = dynamic_cast<StringAttribute&>(*attrs[4]);
         dataKey.append(1, "x", 0);
         dataKey.append(1, "y", 0);
         dataKey.append(1, "z", 0);
-
-        IntegerAttribute& dataCount = dynamic_cast<IntegerAttribute&>(*attrs[5]);
         dataCount.append(1, 42, 0);
         dataCount.append(1, 17, 0);
         dataCount.append(1, 99, 0);
 
         // Setup document 1: mismatched array sizes
-        StringAttribute& mismatchKey = dynamic_cast<StringAttribute&>(*attrs[6]);
         mismatchKey.append(1, "one", 0);
         mismatchKey.append(1, "two", 0);
         mismatchKey.append(1, "three", 0);
         mismatchKey.append(1, "four", 0);
         mismatchKey.append(1, "five", 0);
-
-        FloatingPointAttribute& mismatchValue = dynamic_cast<FloatingPointAttribute&>(*attrs[7]);
-        mismatchValue.append(1, 1.0, 0);
-        mismatchValue.append(1, 2.0, 0);
+        mismatchVal.append(1, 1.0, 0);
+        mismatchVal.append(1, 2.0, 0);
 
         // Setup document 1: single value attributes
-        StringAttribute& singleKey = dynamic_cast<StringAttribute&>(*attrs[10]);
         singleKey.update(1, "single_key");
-
-        FloatingPointAttribute& singleValue = dynamic_cast<FloatingPointAttribute&>(*attrs[11]);
         singleValue.update(1, 42.5);
 
         // Setup document 1: multi-key struct array (inv)
-        StringAttribute& invCategory = dynamic_cast<StringAttribute&>(*attrs[12]);
         invCategory.append(1, "food", 0);
         invCategory.append(1, "food", 0);
         invCategory.append(1, "drink", 0);
-
-        StringAttribute& invBrand = dynamic_cast<StringAttribute&>(*attrs[13]);
         invBrand.append(1, "acme", 0);
         invBrand.append(1, "globex", 0);
         invBrand.append(1, "acme", 0);
-
-        IntegerAttribute& invSku = dynamic_cast<IntegerAttribute&>(*attrs[14]);
         invSku.append(1, 10, 0);
         invSku.append(1, 20, 0);
         invSku.append(1, 30, 0);
-
-        FloatingPointAttribute& invQty = dynamic_cast<FloatingPointAttribute&>(*attrs[15]);
         invQty.append(1, 1.5, 0);
         invQty.append(1, 2.0, 0);
         invQty.append(1, 3.5, 0);
 
         // Setup document 1: mixed collection-type struct (for negative test)
-        StringAttribute& mixinvA = dynamic_cast<StringAttribute&>(*attrs[16]);
         mixinvA.append(1, "x", 0);
-
-        StringAttribute& mixinvB = dynamic_cast<StringAttribute&>(*attrs[17]);
         mixinvB.update(1, "y");
-
-        FloatingPointAttribute& mixinvQty = dynamic_cast<FloatingPointAttribute&>(*attrs[18]);
         mixinvQty.append(1, 9.0, 0);
 
-        // Setup document 1: 4-key struct array (quad)
-        StringAttribute&        quadA = dynamic_cast<StringAttribute&>(*attrs[19]);
-        StringAttribute&        quadB = dynamic_cast<StringAttribute&>(*attrs[20]);
-        StringAttribute&        quadC = dynamic_cast<StringAttribute&>(*attrs[21]);
-        StringAttribute&        quadD = dynamic_cast<StringAttribute&>(*attrs[22]);
-        FloatingPointAttribute& quadVal = dynamic_cast<FloatingPointAttribute&>(*attrs[23]);
-        quadA.append(1, "x", 0);
-        quadA.append(1, "p", 0);
-        quadB.append(1, "y", 0);
-        quadB.append(1, "q", 0);
-        quadC.append(1, "z", 0);
-        quadC.append(1, "r", 0);
-        quadD.append(1, "w", 0);
-        quadD.append(1, "s", 0);
-        quadVal.append(1, 1.0, 0);
-        quadVal.append(1, 2.0, 0);
-
         // Setup document 1: 5-key struct array (pent)
-        StringAttribute&        pentA = dynamic_cast<StringAttribute&>(*attrs[24]);
-        StringAttribute&        pentB = dynamic_cast<StringAttribute&>(*attrs[25]);
-        StringAttribute&        pentC = dynamic_cast<StringAttribute&>(*attrs[26]);
-        StringAttribute&        pentD = dynamic_cast<StringAttribute&>(*attrs[27]);
-        StringAttribute&        pentE = dynamic_cast<StringAttribute&>(*attrs[28]);
-        FloatingPointAttribute& pentVal = dynamic_cast<FloatingPointAttribute&>(*attrs[29]);
         pentA.append(1, "a1", 0);
         pentB.append(1, "b1", 0);
         pentC.append(1, "c1", 0);
         pentD.append(1, "d1", 0);
         pentE.append(1, "e1", 0);
         pentVal.append(1, 5.0, 0);
+        pentA.append(1, "a2", 0);
+        pentB.append(1, "b2", 0);
+        pentC.append(1, "c2", 0);
+        pentD.append(1, "d2", 0);
+        pentE.append(1, "e2", 0);
+        pentVal.append(1, 7.5, 0);
 
-        // Setup document 2: empty arrays
-        // (no appends, so arrays remain empty)
+        // Setup document 2: empty arrays (no appends, so arrays remain empty)
 
         // Setup document 3: single element arrays
         itemsName.append(3, "grape", 0);
@@ -453,13 +425,6 @@ TEST(TensorFromStructsTest, require_that_three_keys_create_3d_sparse_tensor) {
               f.execute());
 }
 
-TEST(TensorFromStructsTest, require_that_multi_key_mapped_dimensions_are_sorted_alphabetically_in_type_spec) {
-    ExecFixture f("tensorFromStructs(attribute(inv),category,brand,qty,float)");
-    const auto& result = f.execute();
-    // Tensor type specs sort mapped dimensions alphabetically.
-    EXPECT_EQ("tensor<float>(brand{},category{})", result.type().to_spec());
-}
-
 TEST(TensorFromStructsTest, require_that_empty_arrays_create_empty_multi_dim_tensor) {
     ExecFixture f("tensorFromStructs(attribute(inv),category,brand,qty,float)");
     EXPECT_EQ(*make_empty("tensor<float>(brand{},category{})"), f.execute(2));
@@ -487,23 +452,18 @@ TEST(TensorFromStructsTest, require_that_collection_type_mismatch_across_keys_cr
 // Tests for 4 and 5 key fields
 
 TEST(TensorFromStructsTest, require_that_four_keys_create_4d_sparse_tensor) {
-    ExecFixture f("tensorFromStructs(attribute(quad),a,b,c,d,val,float)");
+    ExecFixture f("tensorFromStructs(attribute(pent),a,b,c,d,val,float)");
     EXPECT_EQ(*make_tensor(TensorSpec("tensor<float>(a{},b{},c{},d{})")
-                               .add({{"a", "x"}, {"b", "y"}, {"c", "z"}, {"d", "w"}}, 1.0)
-                               .add({{"a", "p"}, {"b", "q"}, {"c", "r"}, {"d", "s"}}, 2.0)),
+                               .add({{"a", "a1"}, {"b", "b1"}, {"c", "c1"}, {"d", "d1"}}, 5.0)
+                               .add({{"a", "a2"}, {"b", "b2"}, {"c", "c2"}, {"d", "d2"}}, 7.5)),
               f.execute());
-}
-
-TEST(TensorFromStructsTest, require_that_four_key_mapped_dimensions_are_sorted_alphabetically_in_type_spec) {
-    ExecFixture f("tensorFromStructs(attribute(quad),d,c,b,a,val,float)");
-    const auto& result = f.execute();
-    EXPECT_EQ("tensor<float>(a{},b{},c{},d{})", result.type().to_spec());
 }
 
 TEST(TensorFromStructsTest, require_that_five_keys_create_5d_sparse_tensor) {
     ExecFixture f("tensorFromStructs(attribute(pent),a,b,c,d,e,val,float)");
     EXPECT_EQ(*make_tensor(TensorSpec("tensor<float>(a{},b{},c{},d{},e{})")
-                               .add({{"a", "a1"}, {"b", "b1"}, {"c", "c1"}, {"d", "d1"}, {"e", "e1"}}, 5.0)),
+                               .add({{"a", "a1"}, {"b", "b1"}, {"c", "c1"}, {"d", "d1"}, {"e", "e1"}}, 5.0)
+                               .add({{"a", "a2"}, {"b", "b2"}, {"c", "c2"}, {"d", "d2"}, {"e", "e2"}}, 7.5)),
               f.execute());
 }
 
