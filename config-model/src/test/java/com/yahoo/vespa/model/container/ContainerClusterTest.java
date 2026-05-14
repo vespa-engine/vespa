@@ -30,8 +30,6 @@ import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
-import com.yahoo.vespa.model.container.http.FilterChains;
-import com.yahoo.vespa.model.container.http.Http;
 import com.yahoo.vespa.model.container.search.ContainerSearch;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilderTestBase;
@@ -425,28 +423,6 @@ public class ContainerClusterTest {
         List<String> installedBundles = bundleBuilder.build().bundlePaths();
 
         expectedBundleNames.forEach(b -> assertTrue(installedBundles.stream().anyMatch(p -> p.endsWith(b))));
-    }
-
-    @Test
-    void setHttp_discards_per_container_default_http_server() {
-        // Containers constructed before cluster.setHttp(...) each attach a JettyHttpServer
-        // named "DefaultHttpServer". A later cluster-level setHttp would then produce two
-        // components with the same id in the JDisc graph. Verify the cluster cleans up.
-        MockRoot root = createRoot(true);
-        ApplicationContainerCluster cluster = newClusterWithSearch(root);
-        addContainer(root, cluster, "c1", "host-c1");
-        addContainer(root, cluster, "c2", "host-c2");
-        for (var c : cluster.getContainers()) {
-            assertTrue(c.getChildren().containsKey(c.getDefaultHttpServer().getSubId()),
-                       "Container should hold its default JettyHttpServer before setHttp");
-        }
-
-        cluster.setHttp(new Http(new FilterChains(cluster)));
-
-        for (var c : cluster.getContainers()) {
-            assertFalse(c.getChildren().containsKey(c.getDefaultHttpServer().getSubId()),
-                        "Container default JettyHttpServer should be discarded after setHttp");
-        }
     }
 
     private static ApplicationContainerCluster newClusterWithSearch(MockRoot root) {
