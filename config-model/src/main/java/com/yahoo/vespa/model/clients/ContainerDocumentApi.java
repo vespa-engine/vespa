@@ -117,13 +117,8 @@ public class ContainerDocumentApi {
     }
 
     private static Handler createHandler(String className, Threadpool executor) {
-        return new DocumentApiHandler(new ComponentModel(className, null, "vespaclient-container-plugin"),
-                                      executor);
-    }
-
-    /** A document API handler that serves data plane traffic. */
-    private static class DocumentApiHandler extends Handler implements Handler.DataPlaneHandler {
-        DocumentApiHandler(ComponentModel model, ContainerThreadpool threadpool) { super(model, threadpool); }
+        return new Handler(new ComponentModel(className, null, "vespaclient-container-plugin"),
+                           executor);
     }
 
     public static final class HandlerOptions {
