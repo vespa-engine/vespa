@@ -70,15 +70,31 @@ template <typename T> void NumericFunctionNode::VectorHandler<T>::handle(const R
     if (arg.getClass().inherits(ResultNodeVector::classId)) {
         const auto&  av = static_cast<const ResultNodeVector&>(arg);
         const size_t argSize = av.size();
-        if (argSize > old_res_sz) {
-            result.resize(argSize);
-            for (size_t i = old_res_sz; i < argSize; i++) {
-                result[i].set(av.get(i));
+        if (argSize == 1) {
+            // broadcast from argument
+            const auto& arg0 = av.get(0);
+            for (size_t i = 0; i < old_res_sz; i++) {
+                function().executeIterative(arg0, result[i]);
             }
-        }
-        size_t m = std::min(argSize, old_res_sz);
-        for (size_t i = 0; i < m; i++) {
-            function().executeIterative(av.get(i), result[i]);
+        } else if (old_res_sz == 1 && argSize > 1) {
+            // in-place broadcast from result
+            result.resize(argSize);
+            for (size_t i = 1; i < argSize; i++) {
+                result[i].set(result[0]);
+                function().executeIterative(av.get(i), result[i]);
+            }
+            function().executeIterative(av.get(0), result[0]);
+        } else {
+            if (argSize > old_res_sz) {
+                result.resize(argSize);
+                for (size_t i = old_res_sz; i < argSize; i++) {
+                    result[i].set(av.get(i));
+                }
+            }
+            size_t m = std::min(argSize, old_res_sz);
+            for (size_t i = 0; i < m; i++) {
+                function().executeIterative(av.get(i), result[i]);
+            }
         }
     } else {
         for (size_t i = 0; i < old_res_sz; i++) {
