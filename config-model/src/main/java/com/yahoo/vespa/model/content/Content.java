@@ -243,7 +243,7 @@ public class Content extends ConfigModel {
             if (indexingDocproc.hasExplicitCluster()) {
                 setExistingIndexingCluster(content, indexingDocproc, content.containers);
             } else {
-                if (!content.containers.isEmpty()) {
+                if (content.containers.size() > 1) {
                     modelContext.getDeployState().getDeployLogger().logApplicationPackage(
                             Level.WARNING,
                             "Content cluster '" + content.getCluster().getName() + "' does not have an explicit " +

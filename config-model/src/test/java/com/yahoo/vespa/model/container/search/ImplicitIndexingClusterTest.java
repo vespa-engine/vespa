@@ -65,6 +65,10 @@ public class ImplicitIndexingClusterTest {
                 "      <server id=\"bar\" port=\"" + Defaults.getDefaults().vespaWebServicePort() + "\" />\n" +
                 "    </http>\n" +
                 "  </container>\n" +
+                "  <container version=\"1.0\" id=\"jdisc2\">\n" +
+                "    <search />\n" +
+                "    <nodes count=\"1\" />\n" +
+                "  </container>\n" +
                 "  <content id=\"music\" version=\"1.0\">\n" +
                 "    <redundancy>1</redundancy>\n" +
                 "    <documents>\n" +
@@ -78,7 +82,8 @@ public class ImplicitIndexingClusterTest {
         ModelContext.Properties properties = new TestProperties().setMultitenant(true).setHostedVespa(true);
         DeployState.Builder deployStateBuilder = new DeployState.Builder()
                 .properties(properties)
-                .endpoints(Set.of(new ContainerEndpoint("jdisc", ApplicationClusterEndpoint.Scope.zone, List.of("default.example.com"))))
+                .endpoints(Set.of(new ContainerEndpoint("jdisc", ApplicationClusterEndpoint.Scope.zone, List.of("default.example.com")),
+                                  new ContainerEndpoint("jdisc2", ApplicationClusterEndpoint.Scope.zone, List.of("default2.example.com"))))
                 .modelHostProvisioner(new InMemoryProvisioner(6, false))
                 .deployLogger((level, message) -> { if (level == Level.WARNING) warnings.add(message); });
 
@@ -90,6 +95,42 @@ public class ImplicitIndexingClusterTest {
 
         assertTrue(warnings.stream().anyMatch(w -> w.contains("music") && w.contains("document-processing")),
                    "Expected warning about missing document-processing cluster, got: " + warnings);
+    }
+
+    @Test
+    void no_warning_is_logged_when_no_explicit_document_processing_cluster_and_one_container_cluster() {
+        final String servicesXml = """
+                <services version="1.0">
+                  <container version="1.0" id="jdisc">
+                    <document-processing />
+                    <nodes count="1" />
+                  </container>
+                  <content id="music" version="1.0">
+                    <redundancy>1</redundancy>
+                    <documents>
+                      <document type="music" mode="index" />
+                    </documents>
+                    <nodes count="1" />
+                  </content>
+                </services>
+                """;
+
+        var warnings = new ArrayList<String>();
+        ModelContext.Properties properties = new TestProperties().setMultitenant(true).setHostedVespa(true);
+        DeployState.Builder deployStateBuilder = new DeployState.Builder()
+                .properties(properties)
+                .endpoints(Set.of(new ContainerEndpoint("jdisc", ApplicationClusterEndpoint.Scope.zone, List.of("default.example.com"))))
+                .modelHostProvisioner(new InMemoryProvisioner(6, false))
+                .deployLogger((level, message) -> { if (level == Level.WARNING) warnings.add(message); });
+
+        new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
+                                                 .withServices("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + servicesXml)
+                                                 .withSchema(MockApplicationPackage.MUSIC_SCHEMA)
+                                                 .build())
+                .create(deployStateBuilder);
+
+        assertTrue(warnings.stream().noneMatch(w -> w.contains("document-processing")),
+                   "Expected no warning about document-processing cluster, got: " + warnings);
     }
 
     @Test
