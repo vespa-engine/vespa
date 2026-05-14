@@ -1182,6 +1182,59 @@ void testArithmeticArguments(NumericFunctionNode& function, const std::vector<do
     EXPECT_EQ(0, function.getResult()->cmp(fr));
 }
 
+// Exercises the size-1 broadcast paths in NumericFunctionNode::VectorHandler::handle:
+//  - longVec OP shortVec  -> argSize == 1 branch
+//  - shortVec OP longVec  -> old_res_sz == 1 branch
+// Caller must supply a commutative function, so the expected result is the same in both directions.
+void testArithmeticBroadcast(NumericFunctionNode& function, const std::vector<double>& longVec,
+                             double scalar, const std::vector<double>& expected) {
+    const std::vector<double> shortVec{scalar};
+    const size_t n = expected.size();
+
+    IntegerResultNodeVector ir;
+    for (size_t i(0); i < n; i++) {
+        ir.push_back(Int64ResultNode((int64_t)expected[i]));
+    }
+    FloatResultNodeVector fr;
+    for (size_t i(0); i < n; i++) {
+        fr.push_back(FloatResultNode(expected[i]));
+    }
+
+    function.appendArg(createVectorInt(longVec)).appendArg(createVectorInt(shortVec));
+    function.prepare(false);
+    EXPECT_TRUE(function.getResult()->getClass().equal(IntegerResultNodeVector::classId));
+    ASSERT_NO_THROW(function.execute());
+    EXPECT_EQ(static_cast<const IntegerResultNodeVector&>(*function.getResult()).size(), n);
+    EXPECT_EQ(0, function.getResult()->cmp(ir));
+
+    function.reset();
+
+    function.appendArg(createVectorFloat(longVec)).appendArg(createVectorFloat(shortVec));
+    function.prepare(false);
+    EXPECT_TRUE(function.getResult()->getClass().equal(FloatResultNodeVector::classId));
+    ASSERT_NO_THROW(function.execute());
+    EXPECT_EQ(static_cast<const FloatResultNodeVector&>(*function.getResult()).size(), n);
+    EXPECT_EQ(0, function.getResult()->cmp(fr));
+
+    function.reset();
+
+    function.appendArg(createVectorInt(shortVec)).appendArg(createVectorInt(longVec));
+    function.prepare(false);
+    EXPECT_TRUE(function.getResult()->getClass().equal(IntegerResultNodeVector::classId));
+    ASSERT_NO_THROW(function.execute());
+    EXPECT_EQ(static_cast<const IntegerResultNodeVector&>(*function.getResult()).size(), n);
+    EXPECT_EQ(0, function.getResult()->cmp(ir));
+
+    function.reset();
+
+    function.appendArg(createVectorFloat(shortVec)).appendArg(createVectorFloat(longVec));
+    function.prepare(false);
+    EXPECT_TRUE(function.getResult()->getClass().equal(FloatResultNodeVector::classId));
+    ASSERT_NO_THROW(function.execute());
+    EXPECT_EQ(static_cast<const FloatResultNodeVector&>(*function.getResult()).size(), n);
+    EXPECT_EQ(0, function.getResult()->cmp(fr));
+}
+
 TEST(PerDocExprTest, testArithmeticOperations) {
     constexpr int64_t I1 = 1793253241;
     constexpr int64_t I2 = 1676521321;
@@ -1213,8 +1266,11 @@ TEST(PerDocExprTest, testArithmeticOperations) {
         r[4] = a[4] + b[4];
         r[5] = b[5];
         r[6] = b[6];
-        AddFunctionNode f;
-        testArithmeticArguments(f, a, b, r, a[0] + a[1] + a[2] + a[3] + a[4]);
+        AddFunctionNode f1;
+        testArithmeticArguments(f1, a, b, r, a[0] + a[1] + a[2] + a[3] + a[4]);
+        // swapped: longer operand first, exercises argSize < old_res_sz mismatch branch
+        AddFunctionNode f2;
+        testArithmeticArguments(f2, b, a, r, b[0] + b[1] + b[2] + b[3] + b[4] + b[5] + b[6]);
     }
     {
         r[0] = a[0] * b[0];
@@ -1224,8 +1280,29 @@ TEST(PerDocExprTest, testArithmeticOperations) {
         r[4] = a[4] * b[4];
         r[5] = b[5];
         r[6] = b[6];
+        MultiplyFunctionNode f1;
+        testArithmeticArguments(f1, a, b, r, a[0] * a[1] * a[2] * a[3] * a[4]);
+        // swapped: longer operand first, exercises argSize < old_res_sz mismatch branch
+        MultiplyFunctionNode f2;
+        testArithmeticArguments(f2, b, a, r, b[0] * b[1] * b[2] * b[3] * b[4] * b[5] * b[6]);
+    }
+    {
+        constexpr double scalar = 10;
+        std::vector<double> r_add(b.size());
+        for (size_t i = 0; i < b.size(); i++) {
+            r_add[i] = b[i] + scalar;
+        }
+        AddFunctionNode f;
+        testArithmeticBroadcast(f, b, scalar, r_add);
+    }
+    {
+        constexpr double scalar = 3;
+        std::vector<double> r_mul(b.size());
+        for (size_t i = 0; i < b.size(); i++) {
+            r_mul[i] = b[i] * scalar;
+        }
         MultiplyFunctionNode f;
-        testArithmeticArguments(f, a, b, r, a[0] * a[1] * a[2] * a[3] * a[4]);
+        testArithmeticBroadcast(f, b, scalar, r_mul);
     }
 }
 
