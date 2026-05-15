@@ -215,7 +215,6 @@
                                         <include>org.jetbrains.kotlin:kotlin-stdlib-common:${kotlin.vespa.version}:test</include>
                                         <include>org.jetbrains.kotlin:kotlin-stdlib-jdk7:${kotlin.vespa.version}:test</include>
                                         <include>org.jetbrains.kotlin:kotlin-stdlib-jdk8:${kotlin.vespa.version}:test</include>
-                                        <include>org.jspecify:jspecify:1.0.0:test</include>
                                         <include>org.json:json:${org.json.vespa.version}:test</include> <!-- TODO: Remove on Vespa 9 -->
                                         <include>at.yawk.lz4:lz4-java:${at.yawk.lz4.vespa.version}:test</include>
                                         <include>xerces:xercesImpl:${xerces.vespa.version}:test</include>
