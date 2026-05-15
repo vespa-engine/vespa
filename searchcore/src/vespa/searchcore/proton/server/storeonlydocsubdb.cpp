@@ -348,7 +348,7 @@ void StoreOnlyDocSubDB::validateDocStore(FeedHandler& feedHandler, SerialNum ser
     LOG(info, "Validating document store for sub db %u doctype %s", _subDbId, _docTypeName.toString().c_str());
 
     search::IDocumentStore&              docStore = _iSummaryMgr->getBackingStore();
-    DocStoreValidator                    validator(_metaStoreCtx->get());
+    DocStoreValidator                    validator(_metaStoreCtx->get(), _dmsFlushTarget);
     search::DocumentStoreVisitorProgress validatorProgress;
 
     docStore.accept(validator, validatorProgress, *_iFeedView.get()->getDocumentTypeRepo());

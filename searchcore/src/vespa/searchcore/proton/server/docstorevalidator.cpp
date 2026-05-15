@@ -10,15 +10,19 @@
 #include <vespa/searchcore/proton/feedoperation/lidvectorcontext.h>
 #include <vespa/searchcore/proton/feedoperation/noopoperation.h>
 #include <vespa/searchcore/proton/feedoperation/removeoperation.h>
+#include <vespa/searchcorespi/flush/iflushtarget.h>
 #include <vespa/searchlib/common/bitvector.h>
+#include <vespa/searchlib/common/flush_token.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".server.docstorevalidator");
 
 namespace proton {
 
-DocStoreValidator::DocStoreValidator(IDocumentMetaStore& dms)
+DocStoreValidator::DocStoreValidator(IDocumentMetaStore& dms,
+                                     std::shared_ptr<searchcorespi::IFlushTarget> dms_flush_target)
     : _dms(dms),
+      _dms_flush_target(std::move(dms_flush_target)),
       _docIdLimit(dms.getCommittedDocIdLimit()),
       _invalid(search::BitVector::create(_docIdLimit)),
       _orphans(search::BitVector::create(_docIdLimit)),
@@ -137,12 +141,22 @@ void DocStoreValidator::performRemoves(FeedHandler& feedHandler, const search::I
     }
 }
 
+void DocStoreValidator::flush_adjusted_document_metastore(search::SerialNum serial_num) const {
+    assert(_dms_flush_target->getFlushedSerialNum() < serial_num);
+    auto task = _dms_flush_target->initFlush(serial_num, std::make_shared<search::FlushToken>());
+    if (task) {
+        task->run();
+    }
+    assert(_dms_flush_target->getFlushedSerialNum() == serial_num);
+}
+
 void DocStoreValidator::increase_serial_number_if_necessary(FeedHandler& feedHandler) const {
     if (_updated_doc_id) {
         NoopOperation op;
         op.setSerialNum(feedHandler.inc_serial_num());
         (void)feedHandler.storeOperationSync(op);
         feedHandler.syncTls(op.getSerialNum());
+        flush_adjusted_document_metastore(op.getSerialNum());
     }
 }
 
