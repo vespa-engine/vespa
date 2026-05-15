@@ -777,6 +777,9 @@ StatusReport::UP DocumentDB::reportStatus() const {
         std::string msg = vespalib::make_string("DocumentDB replay transaction log on startup (%u%% done)",
                                                 static_cast<uint32_t>(progress));
         return StatusReport::create(params.state(StatusReport::PARTIAL).progress(progress).message(msg));
+    } else if (rawState == DDBState::State::DOC_STORE_VALIDATION) {
+        return StatusReport::create(
+            params.state(StatusReport::PARTIAL).message("DocumentDB validate document store"));
     } else if (rawState == DDBState::State::APPLY_LIVE_CONFIG) {
         return StatusReport::create(
             params.state(StatusReport::PARTIAL).message("DocumentDB apply live config on startup"));
