@@ -82,9 +82,11 @@ struct {
     F iterator_name = "iterator_name";
     F ms_per_cost = "ms_per_cost";
     F op_hit_ratio = "op_hit_ratio";
+    F pred_ms = "pred_ms";
     F query_op = "query_op";
     F seeks = "seeks";
     F strict_context = "strict_context";
+    F time_error_abs = "time_error_abs";
     F time_ms = "time_ms";
     F unpack = "unpack";
     struct {
@@ -579,25 +581,46 @@ public:
 };
 
 /**
- * Calculates the calibration constant over all samples as the median of time_ms per cost.
+ * Calibration constant = sum(time_ms) / sum(actual_cost) over all samples.
  */
 void postprocess_calculate_calibration_constant(DataPond& pond) {
     std::vector<RecordRef> records;
-    std::vector<double>    ms_per_costs;
+    double                 total_time_ms = 0.0;
+    double                 total_actual_cost = 0.0;
     for (auto& record : pond.records()) {
         if (record.has_field<double>(f.time_ms) && record.has_field<double>(f.actual_cost)) {
             records.emplace_back(record);
 
-            double ms_per_cost = record.get<double>(f.time_ms) / record.get<double>(f.actual_cost);
-            ms_per_costs.push_back(ms_per_cost);
+            double time_ms = record.get<double>(f.time_ms);
+            double actual_cost = record.get<double>(f.actual_cost);
+            double ms_per_cost = time_ms / actual_cost;
             record.set(f.ms_per_cost, ms_per_cost);
+            total_time_ms += time_ms;
+            total_actual_cost += actual_cost;
         }
     }
 
-    std::sort(ms_per_costs.begin(), ms_per_costs.end());
-    double median = ms_per_costs[ms_per_costs.size() / 2];
+    double global_average = total_time_ms / total_actual_cost;
     for (auto record : records) {
-        record.get().set(f.calibration_constant, median);
+        record.get().set(f.calibration_constant, global_average);
+    }
+}
+
+/**
+ * Calculate pred_ms.
+ */
+void postprocess_calculate_pred_ms(DataPond& pond) {
+    for (auto& record : pond.records()) {
+        if (record.has_field<double>(f.calibration_constant) && record.has_field<double>(f.actual_cost)) {
+            double actual_cost = record.get<double>(f.actual_cost);
+            double calibration_constant = record.get<double>(f.calibration_constant);
+            double pred_ms = actual_cost * calibration_constant;
+            record.set(f.pred_ms, pred_ms);
+
+            double time_ms = record.get<double>(f.time_ms);
+            double time_difference = std::abs(pred_ms - time_ms);
+            record.set(f.time_error_abs, time_difference);
+        }
     }
 }
 
@@ -631,19 +654,22 @@ void postprocess_calculate_error(DataPond& pond) {
  */
 void postprocess_pond(DataPond& pond) {
     postprocess_calculate_calibration_constant(pond);
+    postprocess_calculate_pred_ms(pond);
     postprocess_calculate_error(pond);
 }
 
 void print_pond_summary(const DataPond& pond) {
     std::println("calibration score: ms_per_cost={:.3f} ({} cases)\n",
                  pond.records().front().get<double>(f.calibration_constant), pond.records().size());
-    std::println("{:<60} {:>12} {:>12} {:>12} {:>10} {:>10}", "case", "time_ms", "actual_cost", "ms_per_cost",
-                 "error", "class");
+    std::println("{:<60} {:>12} {:>12} {:>12} {:>12} {:>12} {:>10} {:>10}", "case", "time_ms", "actual_cost",
+                 "ms_per_cost", "pred_ms", "time_error_abs", "error", "class");
     for (const auto& record : pond.records()) {
         auto case_id = record.get<std::string>(f.group);
-        std::println("{:<60} {:>12.3f} {:>12.3f} {:>12.3f} {:>9.3f}x {:>10}", case_id, record.get<double>(f.time_ms),
-                     record.get<double>(f.actual_cost), record.get<double>(f.ms_per_cost),
-                     record.get<double>(f.error), record.get<std::string>(f.class_));
+        std::println("{:<60} {:>12.3f} {:>12.3f} {:>12.3f} {:>12.3f} {:>12.3f} {:>9.3f}x {:>10}", case_id,
+                     record.get<double>(f.time_ms), record.get<double>(f.actual_cost),
+                     record.get<double>(f.ms_per_cost), record.get<double>(f.pred_ms),
+                     record.get<double>(f.time_error_abs), record.get<double>(f.error),
+                     record.get<std::string>(f.class_));
     }
 }
 
