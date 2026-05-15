@@ -613,12 +613,6 @@ void DocumentDB::onTransactionLogReplayDone() {
         // must signal that all existing buckets must be checked.
         notifyAllBucketsChanged();
     }
-    if (_validateAndSanitizeDocStore || _subDBs.requires_doc_store_validation()) {
-        LOG(info, "Validating documentdb %s", getName().c_str());
-        SerialNum serialNum = _feedHandler->getSerialNum();
-        sync(serialNum);
-        _subDBs.validateDocStore(*_feedHandler, serialNum);
-    }
 }
 
 void DocumentDB::onPerformPrune(SerialNum flushedSerial) {
@@ -734,6 +728,20 @@ void DocumentDB::enterRedoReprocessState() {
         (void)_feedHandler->storeOperationSync(op);
         sync(op.getSerialNum());
         _subDBs.pruneRemovedFields(op.getSerialNum());
+    }
+    enter_doc_store_validation_state();
+}
+
+void DocumentDB::enter_doc_store_validation_state() {
+    assert(_writeService.master().isCurrentThread());
+    if (!_state->enter_doc_store_validation_state()) {
+        return;
+    }
+    if (_validateAndSanitizeDocStore || _subDBs.requires_doc_store_validation()) {
+        LOG(info, "Validating documentdb %s", getName().c_str());
+        SerialNum serialNum = _feedHandler->getSerialNum();
+        sync(serialNum);
+        _subDBs.validateDocStore(*_feedHandler, serialNum);
     }
     enterApplyLiveConfigState();
 }
