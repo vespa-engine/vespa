@@ -1422,11 +1422,6 @@
                 <version>${kotlin.vespa.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.jvnet.mimepull</groupId>
-                <artifactId>mimepull</artifactId>
-                <version>${mimepull.vespa.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>at.yawk.lz4</groupId>
                 <artifactId>lz4-java</artifactId>
                 <version>${at.yawk.lz4.vespa.version}</version>
