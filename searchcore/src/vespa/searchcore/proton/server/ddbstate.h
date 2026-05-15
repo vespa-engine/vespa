@@ -23,6 +23,7 @@ public:
         LOAD,
         REPLAY_TRANSACTION_LOG,
         REDO_REPROCESS,
+        DOC_STORE_VALIDATION,
         APPLY_LIVE_CONFIG,
         REPROCESS,
         ONLINE,
@@ -64,6 +65,7 @@ public:
     bool enterLoadState();
     bool enterReplayTransactionLogState();
     bool enterRedoReprocessState();
+    bool enter_doc_store_validation_state();
     bool enterApplyLiveConfigState();
     bool enterReprocessState();
     bool enterOnlineState();
