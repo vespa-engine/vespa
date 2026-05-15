@@ -183,6 +183,7 @@ public:
         auto it = _cache.find(str);
         if (it == _cache.end()) {
             auto [nit, inserted] = _cache.insert(std::pair<std::string, Handle>(str, str));
+            (void)inserted; // ignored, will always be true here
             it = nit;
         }
         return it->second.id();
@@ -240,6 +241,7 @@ public:
                     addr[k] = _factory.resolve(_keyBuffers[k][i].value());
                 }
                 auto [cell_array, inserted] = builder->insert_subspace(addr);
+                (void)inserted; // ignored: last array entry should overwrite anyway
                 cell_array[0] = static_cast<CT>(_valueBuffer[i]);
             }
             return builder->build(std::move(builder));
