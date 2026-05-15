@@ -24,7 +24,6 @@ using namespace search::fef;
 using search::attribute::FloatContent;
 using search::attribute::IAttributeVector;
 using search::attribute::IntegerContent;
-using search::attribute::WeightedConstCharContent;
 using search::attribute::WeightedStringContent;
 using search::fef::FeatureType;
 using vespalib::Issue;
@@ -112,60 +111,6 @@ bool TensorFromStructsBlueprint::setup(const search::fef::IIndexEnvironment& env
 }
 
 namespace {
-
-template <typename KeyBufferType> class TensorFromStructsExecutor : public fef::FeatureExecutor {
-private:
-    const IAttributeVector*                _keyAttribute;
-    const IAttributeVector*                _valueAttribute;
-    vespalib::eval::ValueType              _type;
-    vespalib::eval::CellType               _cellType;
-    KeyBufferType                          _keyBuffer;
-    FloatContent                           _valueBuffer;
-    std::unique_ptr<vespalib::eval::Value> _tensor;
-
-public:
-    TensorFromStructsExecutor(const IAttributeVector* keyAttr, const IAttributeVector* valueAttr,
-                              const vespalib::eval::ValueType& valueType, vespalib::eval::CellType cellType)
-        : _keyAttribute(keyAttr),
-          _valueAttribute(valueAttr),
-          _type(valueType),
-          _cellType(cellType),
-          _keyBuffer(),
-          _valueBuffer(),
-          _tensor() {
-        _keyBuffer.allocate(_keyAttribute->getMaxValueCount());
-        _valueBuffer.allocate(_valueAttribute->getMaxValueCount());
-    }
-    ~TensorFromStructsExecutor() override;
-
-    void execute(uint32_t docId) override;
-};
-
-template <typename KeyBufferType> TensorFromStructsExecutor<KeyBufferType>::~TensorFromStructsExecutor() = default;
-
-template <typename KeyBufferType> void TensorFromStructsExecutor<KeyBufferType>::execute(uint32_t docId) {
-    _keyBuffer.fill(*_keyAttribute, docId);
-    _valueBuffer.fill(*_valueAttribute, docId);
-
-    size_t size = std::min(_keyBuffer.size(), _valueBuffer.size());
-
-    auto factory = FastValueBuilderFactory::get();
-
-    // Use TypifyCellType to handle all cell types
-    _tensor = TypifyCellType::resolve(_cellType, [&](auto cell_type) {
-        using CellType = typename decltype(cell_type)::type;
-        auto builder = factory.create_value_builder<CellType>(_type, 1, 1, size);
-        for (size_t i = 0; i < size; ++i) {
-            std::string                   key(_keyBuffer[i].value());
-            std::vector<std::string_view> addr = {key};
-            std::span<CellType>           cell_array = builder->add_subspace(addr);
-            cell_array[0] = static_cast<CellType>(_valueBuffer[i]);
-        }
-        return builder->build(std::move(builder));
-    });
-
-    outputs().set_object(0, *_tensor);
-}
 
 class CachingTensorFactory {
     using Handle = vespalib::SharedStringRepo::Handle;
@@ -304,19 +249,6 @@ FeatureExecutor& createAttributeExecutor(const search::fef::IQueryEnvironment& e
         keyAttributes.push_back(keyAttribute);
     }
 
-    if (keyAttributes.size() == 1) {
-        const IAttributeVector* keyAttribute = keyAttributes[0];
-        if (keyAttribute->isIntegerType()) {
-            // Using WeightedStringContent ensures that the integer values are converted
-            // to strings while extracting them from the attribute.
-            return stash.create<TensorFromStructsExecutor<WeightedStringContent>>(keyAttribute, valueAttribute,
-                                                                                  valueType, cellType);
-        }
-        // When the underlying attribute is of type string we can reference these values
-        // using WeightedConstCharContent.
-        return stash.create<TensorFromStructsExecutor<WeightedConstCharContent>>(keyAttribute, valueAttribute,
-                                                                                 valueType, cellType);
-    }
     return stash.create<TensorFromStructsMultiKeyExecutor>(std::move(keyAttributes), valueAttribute, valueType,
                                                            cellType);
 }
