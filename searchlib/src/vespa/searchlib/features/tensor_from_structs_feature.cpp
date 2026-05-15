@@ -115,15 +115,9 @@ namespace {
 class CachingTensorFactory {
     using Handle = vespalib::SharedStringRepo::Handle;
     ValueType                               _type;
-    size_t                                  _numDims;
+    const size_t                            _numDims;
     vespalib::hash_map<std::string, Handle> _cache;
 
-public:
-    CachingTensorFactory(ValueType type, size_t numDims) : _type(type), _numDims(numDims) {}
-    template <typename T> auto builder(size_t size) {
-        using Builder = vespalib::eval::FastValue<T, true>;
-        return std::make_unique<Builder>(_type, _numDims, 1, size);
-    }
     vespalib::string_id resolve(std::string_view str) {
         auto it = _cache.find(str);
         if (it == _cache.end()) {
@@ -132,6 +126,27 @@ public:
             it = nit;
         }
         return it->second.id();
+    }
+
+public:
+    CachingTensorFactory(ValueType type, size_t numDims) : _type(type), _numDims(numDims) {}
+
+    template <typename CT>
+    static std::unique_ptr<vespalib::eval::Value> invoke(CachingTensorFactory& self, const auto& keyBuffers,
+                                                         const auto& valueBuffer, size_t size) {
+        using Builder = vespalib::eval::FastValue<CT, true>;
+        auto builder = std::make_unique<Builder>(self._type, self._numDims, 1, size);
+
+        vespalib::StringIdVector addr(self._numDims);
+        for (size_t i = 0; i < size; ++i) {
+            for (size_t k = 0; k < self._numDims; ++k) {
+                addr[k] = self.resolve(keyBuffers[k][i].value());
+            }
+            auto [cell_array, inserted] = builder->insert_subspace(addr);
+            (void)inserted; // ignored: last array entry should overwrite anyway
+            cell_array[0] = static_cast<CT>(valueBuffer[i]);
+        }
+        return builder;
     }
 };
 
@@ -176,22 +191,8 @@ public:
         for (size_t k = 0; k < numKeys; ++k) {
             size = std::min(size, _keyBuffers[k].size());
         }
-
-        _tensor = TypifyCellType::resolve(_cellType, [&](auto cell_type) {
-            using CT = typename decltype(cell_type)::type;
-            auto                     builder = _factory.builder<CT>(size);
-            vespalib::StringIdVector addr(numKeys);
-            for (size_t i = 0; i < size; ++i) {
-                for (size_t k = 0; k < numKeys; ++k) {
-                    addr[k] = _factory.resolve(_keyBuffers[k][i].value());
-                }
-                auto [cell_array, inserted] = builder->insert_subspace(addr);
-                (void)inserted; // ignored: last array entry should overwrite anyway
-                cell_array[0] = static_cast<CT>(_valueBuffer[i]);
-            }
-            return builder->build(std::move(builder));
-        });
-
+        _tensor = vespalib::typify_invoke<1, TypifyCellType, CachingTensorFactory>(_cellType, _factory, _keyBuffers,
+                                                                                   _valueBuffer, size);
         outputs().set_object(0, *_tensor);
     }
 };
