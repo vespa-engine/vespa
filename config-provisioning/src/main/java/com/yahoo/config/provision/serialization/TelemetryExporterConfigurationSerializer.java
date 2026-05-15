@@ -37,6 +37,7 @@ public class TelemetryExporterConfigurationSerializer {
     private static final String metricSetsKey = "metricSets";
     private static final String logFileTypesKey = "logFileTypes";
     private static final String vaultReferencesKey = "vaultReferences";
+    private static final String nameKey = "name";
     private static final String externalIdKey = "externalId";
 
     public static byte[] toJson(TelemetryExporterConfiguration config) {
@@ -84,7 +85,7 @@ public class TelemetryExporterConfigurationSerializer {
             for (var ref : config.vaultReferences()) {
                 Cursor refObject = vaultRefsArray.addObject();
                 refObject.setString(idKey, ref.id());
-                refObject.setString("name", ref.name());
+                refObject.setString(nameKey, ref.name());
                 refObject.setString(externalIdKey, ref.externalId());
             }
         }
@@ -125,7 +126,7 @@ public class TelemetryExporterConfigurationSerializer {
         root.field(vaultReferencesKey).traverse((ArrayTraverser) (i, refInspector) ->
                 vaultReferences.add(new VaultReference(
                         refInspector.field(idKey).asString(),
-                        refInspector.field("name").asString(),
+                        refInspector.field(nameKey).asString(),
                         refInspector.field(externalIdKey).asString())));
 
         return new TelemetryExporterConfiguration(exporters, vaultReferences);
