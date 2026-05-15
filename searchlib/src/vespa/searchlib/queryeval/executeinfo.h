@@ -5,6 +5,8 @@
 #include <vespa/vespalib/util/doom.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 
+namespace vespalib { class ExecutionProfiler; }
+
 namespace search::queryeval {
 
 /**
@@ -17,16 +19,22 @@ public:
     double hit_rate() const noexcept { return _hitRate; }
     const vespalib::Doom& doom() const noexcept { return _doom; }
     vespalib::ThreadBundle& thread_bundle() const noexcept { return _thread_bundle; }
+    vespalib::ExecutionProfiler* profiler() const noexcept { return _profiler; }
 
     static const ExecuteInfo FULL;
     static ExecuteInfo create(const ExecuteInfo& org) noexcept { return create(org._hitRate, org); }
     static ExecuteInfo create(double hitRate, const ExecuteInfo& org) noexcept {
-        return {hitRate, org._doom, org.thread_bundle()};
+        return {hitRate, org._doom, org.thread_bundle(), org._profiler};
     }
 
     static ExecuteInfo create(double hitRate, const vespalib::Doom& doom,
                               vespalib::ThreadBundle& thread_bundle_in) noexcept {
-        return {hitRate, doom, thread_bundle_in};
+        return {hitRate, doom, thread_bundle_in, nullptr};
+    }
+    static ExecuteInfo create(double hitRate, const vespalib::Doom& doom,
+                              vespalib::ThreadBundle& thread_bundle_in,
+                              vespalib::ExecutionProfiler* profiler_in) noexcept {
+        return {hitRate, doom, thread_bundle_in, profiler_in};
     }
     static ExecuteInfo createForTest() noexcept { return createForTest(1.0); }
     static ExecuteInfo createForTest(double hitRate) noexcept;
@@ -35,11 +43,13 @@ public:
     }
 
 private:
-    ExecuteInfo(double hitRate_in, const vespalib::Doom& doom, vespalib::ThreadBundle& thread_bundle_in) noexcept
-        : _doom(doom), _thread_bundle(thread_bundle_in), _hitRate(hitRate_in) {}
-    const vespalib::Doom    _doom;
-    vespalib::ThreadBundle& _thread_bundle;
-    double                  _hitRate;
+    ExecuteInfo(double hitRate_in, const vespalib::Doom& doom, vespalib::ThreadBundle& thread_bundle_in,
+                vespalib::ExecutionProfiler* profiler_in) noexcept
+        : _doom(doom), _thread_bundle(thread_bundle_in), _profiler(profiler_in), _hitRate(hitRate_in) {}
+    const vespalib::Doom         _doom;
+    vespalib::ThreadBundle&      _thread_bundle;
+    vespalib::ExecutionProfiler* _profiler;
+    double                       _hitRate;
 };
 
 } // namespace search::queryeval

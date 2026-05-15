@@ -20,12 +20,7 @@ namespace search::queryeval {
 namespace {
 
 using Profiler = vespalib::ExecutionProfiler;
-
-struct TaskGuard {
-    Profiler& profiler;
-    TaskGuard(Profiler& profiler_in, Profiler::TaskId task) noexcept : profiler(profiler_in) { profiler.start(task); }
-    ~TaskGuard() { profiler.complete(); }
-};
+using TaskGuard = vespalib::ProfilerTaskGuard;
 
 std::string name_of(const SearchIterator& search) {
     return search.getClassName();

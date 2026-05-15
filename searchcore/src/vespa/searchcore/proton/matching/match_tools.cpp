@@ -16,6 +16,7 @@
 #include <vespa/searchlib/queryeval/create_blueprint_params.h>
 #include <vespa/searchlib/queryeval/flow.h>
 #include <vespa/searchlib/queryeval/wand/wand_parts.h>
+#include <vespa/vespalib/util/execution_profiler.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 
@@ -24,6 +25,7 @@ using search::attribute::BasicType;
 using search::attribute::diversity::DiversityFilter;
 using search::queryeval::CreateBlueprintParams;
 using search::queryeval::ExecuteInfo;
+using search::queryeval::FetchPostingsProfilerGuard;
 using search::queryeval::IDiversifier;
 using vespalib::Issue;
 
@@ -192,17 +194,32 @@ MatchToolsFactory::MatchToolsFactory(
         double hitRate = std::min(1.0, double(maxNumHits) / double(searchContext.getDocIdLimit()));
         auto   in_flow = InFlow(is_search, hitRate);
         _query.optimize(in_flow, sort_by_cost);
-        if (trace.getLevel() >= 6) { // will dump blueprint later
+        std::unique_ptr<vespalib::ExecutionProfiler> setup_profiler;
+        if (trace.getLevel() > 0) {
+            if (int32_t depth = root_trace.match_profile_depth(); depth != 0) {
+                setup_profiler = std::make_unique<vespalib::ExecutionProfiler>(depth);
+            }
+        }
+        if (trace.getLevel() >= 6 || setup_profiler) {
+            // need stable ids in the blueprint tree for profiler / dump output
             _query.enumerate_blueprint_nodes();
         }
         trace.addEvent(4, "Perform dictionary lookups and posting lists initialization");
-        _query.fetchPostings(ExecuteInfo::create(in_flow.rate(), _requestContext.getDoom(), thread_bundle));
+        {
+            auto info = ExecuteInfo::create(in_flow.rate(), _requestContext.getDoom(), thread_bundle,
+                                            setup_profiler.get());
+            FetchPostingsProfilerGuard guard(setup_profiler.get(), *_query.peekRoot());
+            _query.fetchPostings(info);
+        }
         if (is_search) {
             bool use_lazy_filter = LazyFilter::check(_queryEnv.getProperties());
             _query.handle_global_filter(_requestContext, ann_deadline_config, searchContext.getDocIdLimit(),
                                         _create_blueprint_params.global_filter_lower_limit,
                                         _create_blueprint_params.global_filter_upper_limit, trace, sort_by_cost,
-                                        use_lazy_filter);
+                                        use_lazy_filter, setup_profiler.get());
+        }
+        if (setup_profiler) {
+            setup_profiler->report(trace.createCursor("setup_profiling"));
         }
         _query.freeze();
         trace.addEvent(5, "Prepare shared state for multi-threaded rank executors");

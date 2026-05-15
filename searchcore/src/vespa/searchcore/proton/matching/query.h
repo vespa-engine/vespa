@@ -112,7 +112,8 @@ public:
     void handle_global_filter(const IRequestContext&          requestContext,
                               const AnnDeadlineConfiguration& ann_deadline_config, uint32_t docid_limit,
                               double global_filter_lower_limit, double global_filter_upper_limit,
-                              search::engine::Trace& trace, bool sort_by_cost, bool use_lazy_filter = false);
+                              search::engine::Trace& trace, bool sort_by_cost, bool use_lazy_filter = false,
+                              vespalib::ExecutionProfiler* setup_profiler = nullptr);
 
     /**
      * Calculates and handles the global filter if needed by the blueprint tree.
