@@ -2,25 +2,52 @@
 package com.yahoo.config.provision;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Immutable telemetry export configuration for an application deployment.
  *
  * @author onur
  */
-public record TelemetryExporterConfiguration(List<Exporter> exporters) {
+public record TelemetryExporterConfiguration(List<Exporter> exporters, List<VaultReference> vaultReferences) {
 
-    private static final TelemetryExporterConfiguration EMPTY = new TelemetryExporterConfiguration(List.of());
+    private static final TelemetryExporterConfiguration EMPTY = new TelemetryExporterConfiguration(List.of(), List.of());
+
+    public TelemetryExporterConfiguration(List<Exporter> exporters) {
+        this(exporters, List.of());
+    }
 
     public TelemetryExporterConfiguration {
         exporters = List.copyOf(Objects.requireNonNull(exporters));
+        vaultReferences = List.copyOf(Objects.requireNonNull(vaultReferences));
     }
 
     public boolean isEmpty() { return exporters.isEmpty(); }
 
     public static TelemetryExporterConfiguration empty() { return EMPTY; }
+
+    /** Returns a new config with resolved tenant vault metadata for vaults referenced by exporters with auth. Throws if any referenced vault is missing. */
+    public TelemetryExporterConfiguration withTenantVaultReferences(List<VaultReference> availableVaults) {
+        Map<String, VaultReference> vaultsByName = availableVaults.stream()
+                .collect(Collectors.toMap(VaultReference::name, v -> v));
+
+        List<VaultReference> resolved = exporters.stream()
+                .flatMap(exporter -> exporter.auth().stream())
+                .map(auth -> {
+                    var ref = vaultsByName.get(auth.vault());
+                    if (ref == null)
+                        throw new IllegalArgumentException("Telemetry exporter references vault '" + auth.vault() +
+                                "' but no matching vault metadata was found");
+                    return ref;
+                })
+                .distinct()
+                .toList();
+
+        return new TelemetryExporterConfiguration(exporters, resolved);
+    }
 
     /** A single telemetry exporter targeting an external endpoint or cloud project. */
     public record Exporter(String id, ExporterType type, Optional<String> endpoint, Optional<String> project,
@@ -73,6 +100,17 @@ public record TelemetryExporterConfiguration(List<Exporter> exporters) {
             if (passwordSecretName == null || passwordSecretName.isBlank()) throw new IllegalArgumentException("basic-auth password-secret-name must be non-empty");
             return new Auth("basic_auth", vault, Optional.empty(), Optional.empty(), Optional.of(usernameSecretName), Optional.of(passwordSecretName));
         }
+    }
+
+    /** Resolved vault metadata needed by host-admin to read tenant secrets from ASM. */
+    public record VaultReference(String id, String name, String externalId) {
+
+        public VaultReference {
+            if (id == null || id.isBlank()) throw new IllegalArgumentException("vault id must be non-blank");
+            if (name == null || name.isBlank()) throw new IllegalArgumentException("vault name must be non-blank");
+            if (externalId == null || externalId.isBlank()) throw new IllegalArgumentException("vault externalId must be non-blank");
+        }
+
     }
 
 }

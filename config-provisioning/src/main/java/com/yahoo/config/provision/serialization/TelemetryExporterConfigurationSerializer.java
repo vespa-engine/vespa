@@ -4,6 +4,7 @@ package com.yahoo.config.provision.serialization;
 import com.yahoo.config.provision.TelemetryExporterConfiguration;
 import com.yahoo.config.provision.TelemetryExporterConfiguration.Auth;
 import com.yahoo.config.provision.TelemetryExporterConfiguration.Exporter.ExporterType;
+import com.yahoo.config.provision.TelemetryExporterConfiguration.VaultReference;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -35,6 +36,9 @@ public class TelemetryExporterConfigurationSerializer {
     private static final String passwordSecretNameKey = "passwordSecretName";
     private static final String metricSetsKey = "metricSets";
     private static final String logFileTypesKey = "logFileTypes";
+    private static final String vaultReferencesKey = "vaultReferences";
+    private static final String nameKey = "name";
+    private static final String externalIdKey = "externalId";
 
     public static byte[] toJson(TelemetryExporterConfiguration config) {
         Slime slime = new Slime();
@@ -76,6 +80,15 @@ public class TelemetryExporterConfigurationSerializer {
                 logFileTypesArray.addString(logFileType);
             }
         }
+        if ( ! config.vaultReferences().isEmpty()) {
+            Cursor vaultRefsArray = root.setArray(vaultReferencesKey);
+            for (var ref : config.vaultReferences()) {
+                Cursor refObject = vaultRefsArray.addObject();
+                refObject.setString(idKey, ref.id());
+                refObject.setString(nameKey, ref.name());
+                refObject.setString(externalIdKey, ref.externalId());
+            }
+        }
     }
 
     public static TelemetryExporterConfiguration fromSlime(Inspector root) {
@@ -108,7 +121,15 @@ public class TelemetryExporterConfigurationSerializer {
                                                           Optional.ofNullable(auth), metricSets, logFileTypes));
         });
         if (exporters.isEmpty()) return TelemetryExporterConfiguration.empty();
-        return new TelemetryExporterConfiguration(exporters);
+
+        List<VaultReference> vaultReferences = new ArrayList<>();
+        root.field(vaultReferencesKey).traverse((ArrayTraverser) (i, refInspector) ->
+                vaultReferences.add(new VaultReference(
+                        refInspector.field(idKey).asString(),
+                        refInspector.field(nameKey).asString(),
+                        refInspector.field(externalIdKey).asString())));
+
+        return new TelemetryExporterConfiguration(exporters, vaultReferences);
     }
 
     private static String optionalString(Inspector inspector) {

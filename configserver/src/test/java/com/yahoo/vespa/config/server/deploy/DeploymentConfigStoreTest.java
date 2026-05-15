@@ -9,6 +9,8 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TelemetryExporterConfiguration;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.model.api.TenantVault;
+import com.yahoo.vespa.config.server.session.PrepareParams;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -79,7 +81,10 @@ public class DeploymentConfigStoreTest {
                 .deploymentConfigStore(store)
                 .build();
 
-        tester.deployApp("src/test/apps/hosted-with-telemetry/");
+        tester.deployApp("src/test/apps/hosted-with-telemetry/",
+                new PrepareParams.Builder().tenantVaults(List.of(
+                        new TenantVault("vault-id-1", "my-vault", "ext-id-1", List.of(
+                                new TenantVault.Secret("secret-id-1", "my-token"))))));
 
         assertEquals(1, store.calls.size());
         TelemetryExporterConfiguration telemetry = store.calls.get(0).telemetryExporterConfiguration();
@@ -97,6 +102,11 @@ public class DeploymentConfigStoreTest {
         assertEquals("my-token", exporter.auth().get().secretName().get());
 
         assertEquals(List.of("default"), exporter.metricSets());
+
+        assertEquals(1, telemetry.vaultReferences().size());
+        assertEquals("vault-id-1", telemetry.vaultReferences().get(0).id());
+        assertEquals("my-vault", telemetry.vaultReferences().get(0).name());
+        assertEquals("ext-id-1", telemetry.vaultReferences().get(0).externalId());
     }
 
     @Test
