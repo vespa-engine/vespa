@@ -271,7 +271,7 @@ FeatureExecutor& createAttributeExecutor(const search::fef::IQueryEnvironment& e
         return ConstantTensorExecutor::createEmpty(valueType, stash);
     }
 
-    if (valueAttribute->getCollectionType() == search::attribute::CollectionType::WSET) {
+    if (valueAttribute->getCollectionType() != search::attribute::CollectionType::ARRAY) {
         Issue::report("tensor_from_structs feature: The value attribute '%s' must be an array."
                       " Returning empty tensor.",
                       valueAttrName.c_str());

@@ -348,9 +348,9 @@ TEST(TensorFromStructsTest, require_that_single_element_arrays_create_single_cel
     EXPECT_EQ(*make_tensor(TensorSpec("tensor<float>(name{})").add({{"name", "grape"}}, 3.5)), f.execute(3));
 }
 
-TEST(TensorFromStructsTest, require_that_single_value_attributes_create_single_cell_tensor) {
+TEST(TensorFromStructsTest, require_that_single_value_attributes_are_disallowed) {
     ExecFixture f("tensorFromStructs(attribute(single),key,value,float)");
-    EXPECT_EQ(*make_tensor(TensorSpec("tensor<float>(key{})").add({{"key", "single_key"}}, 42.5)), f.execute());
+    EXPECT_EQ(*make_empty("tensor<float>(key{})"), f.execute());
 }
 
 TEST(TensorFromStructsTest, require_that_missing_key_attribute_creates_empty_tensor) {
