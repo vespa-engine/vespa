@@ -11,7 +11,11 @@
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchlib/fef/feature_type.h>
 #include <vespa/searchlib/fef/properties.h>
+#include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/issue.h>
+
+#include <vespa/eval/eval/fast_value.hpp>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.tensor_from_structs_feature");
@@ -154,7 +158,7 @@ template <typename KeyBufferType> void TensorFromStructsExecutor<KeyBufferType>:
         for (size_t i = 0; i < size; ++i) {
             std::string                   key(_keyBuffer[i].value());
             std::vector<std::string_view> addr = {key};
-            auto                          cell_array = builder->add_subspace(addr);
+            std::span<CellType>           cell_array = builder->add_subspace(addr);
             cell_array[0] = static_cast<CellType>(_valueBuffer[i]);
         }
         return builder->build(std::move(builder));
@@ -162,6 +166,28 @@ template <typename KeyBufferType> void TensorFromStructsExecutor<KeyBufferType>:
 
     outputs().set_object(0, *_tensor);
 }
+
+class CachingTensorFactory {
+    using Handle = vespalib::SharedStringRepo::Handle;
+    ValueType                               _type;
+    size_t                                  _numDims;
+    vespalib::hash_map<std::string, Handle> _cache;
+
+public:
+    CachingTensorFactory(ValueType type, size_t numDims) : _type(type), _numDims(numDims) {}
+    template <typename T> auto builder(size_t size) {
+        using Builder = vespalib::eval::FastValue<T, true>;
+        return std::make_unique<Builder>(_type, _numDims, 1, size);
+    }
+    vespalib::string_id resolve(std::string_view str) {
+        auto it = _cache.find(str);
+        if (it == _cache.end()) {
+            auto [nit, inserted] = _cache.insert(std::pair<std::string, Handle>(str, str));
+            it = nit;
+        }
+        return it->second.id();
+    }
+};
 
 class TensorFromStructsMultiKeyExecutor : public fef::FeatureExecutor {
 private:
@@ -172,6 +198,7 @@ private:
     std::vector<WeightedStringContent>     _keyBuffers;
     FloatContent                           _valueBuffer;
     std::unique_ptr<vespalib::eval::Value> _tensor;
+    CachingTensorFactory                   _factory;
 
 public:
     TensorFromStructsMultiKeyExecutor(std::vector<const IAttributeVector*> keyAttrs,
@@ -183,7 +210,8 @@ public:
           _cellType(cellType),
           _keyBuffers(_keyAttributes.size()),
           _valueBuffer(),
-          _tensor() {
+          _tensor(),
+          _factory(_type, _keyAttributes.size()) {
         for (size_t i = 0; i < _keyAttributes.size(); ++i) {
             _keyBuffers[i].allocate(_keyAttributes[i]->getMaxValueCount());
         }
@@ -203,16 +231,15 @@ public:
             size = std::min(size, _keyBuffers[k].size());
         }
 
-        auto factory = FastValueBuilderFactory::get();
         _tensor = TypifyCellType::resolve(_cellType, [&](auto cell_type) {
             using CT = typename decltype(cell_type)::type;
-            auto                          builder = factory.create_value_builder<CT>(_type, numKeys, 1, size);
-            std::vector<std::string_view> addr(numKeys);
+            auto                     builder = _factory.builder<CT>(size);
+            vespalib::StringIdVector addr(numKeys);
             for (size_t i = 0; i < size; ++i) {
                 for (size_t k = 0; k < numKeys; ++k) {
-                    addr[k] = _keyBuffers[k][i].value();
+                    addr[k] = _factory.resolve(_keyBuffers[k][i].value());
                 }
-                auto cell_array = builder->add_subspace(addr);
+                auto [cell_array, inserted] = builder->insert_subspace(addr);
                 cell_array[0] = static_cast<CT>(_valueBuffer[i]);
             }
             return builder->build(std::move(builder));
