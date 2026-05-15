@@ -7,7 +7,9 @@
 #include <functional>
 #include <map>
 #include <sstream>
+#include <stdexcept>
 #include <string>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -24,6 +26,12 @@ class Field {
 public:
     Field(auto value) : _value(value) {}
 
+    template <typename T> [[nodiscard]] bool has_type() const { return std::holds_alternative<T>(_value); }
+
+    template <typename T> T& get() { return std::get<T>(_value); }
+
+    template <typename T> const T& get() const { return std::get<T>(_value); }
+
     [[nodiscard]] bool check(auto&& predicate) const {
         return std::visit(
             [&](auto&& val) noexcept {
@@ -36,7 +44,7 @@ public:
             _value);
     }
 
-    std::string to_string() const {
+    [[nodiscard]] std::string to_string() const {
         return std::visit(
             [](const auto& val) -> std::string {
                 using T = decltype(val);
@@ -61,7 +69,7 @@ class Record {
     std::map<std::string, Field> _fields;
 
 public:
-    const std::map<std::string, Field>& data() const { return _fields; }
+    [[nodiscard]] const std::map<std::string, Field>& data() const { return _fields; }
 
     Record& set(const std::string& name, const auto& value) {
         _fields.insert_or_assign(name, Field{value});
@@ -75,7 +83,30 @@ public:
         return false;
     }
 
-    std::string to_string() const {
+    template <typename T> [[nodiscard]] bool has_field(const std::string& field_name) const {
+        if (auto pos = _fields.find(field_name); pos != _fields.end()) {
+            return pos->second.has_type<T>();
+        }
+        return false;
+    }
+
+    template <typename T> [[nodiscard]] const T& get(const std::string& name) const {
+        auto it = _fields.find(name);
+        if (it == _fields.end()) {
+            throw std::runtime_error(std::format("Record::get: missing field '{}'", name));
+        }
+        if (!it->second.has_type<T>()) {
+            throw std::runtime_error(
+                std::format("Record::get: field '{}' has wrong type (stored={})", name, it->second.to_string()));
+        }
+        return it->second.get<T>();
+    }
+
+    template <typename T> [[nodiscard]] T& get(const std::string& name) {
+        return const_cast<T&>(std::as_const(*this).get<T>(name));
+    }
+
+    [[nodiscard]] std::string to_string() const {
         std::stringstream ss;
         ss << "Record{";
         bool first = true;
@@ -90,6 +121,9 @@ public:
         return ss.str();
     }
 };
+
+using RecordRef = std::reference_wrapper<Record>;
+using RecordCRef = std::reference_wrapper<const Record>;
 
 /**
  * Holds predicates that all must match for a record to pass.
@@ -129,7 +163,8 @@ class DataPond {
     std::vector<Record> _records;
 
 public:
-    const std::vector<Record>& records() const { return _records; }
+    [[nodiscard]] const std::vector<Record>& records() const { return _records; }
+    std::vector<Record>& records() { return _records; }
 
     Record& new_record() {
         _records.emplace_back();

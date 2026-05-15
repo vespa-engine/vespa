@@ -62,6 +62,38 @@ std::string to_string(PlanningAlgo algo) {
     return "unknown";
 }
 
+/**
+ * Predefined field names to use when accessing the global pond.
+ */
+struct {
+    using F = std::string;
+    F actual_cost = "actual_cost";
+    F algo = "algo";
+    F blueprint_name = "blueprint_name";
+    F calibration_constant = "calibration_constant";
+    F children = "children";
+    F class_ = "class";
+    F error = "error";
+    F field_cfg = "field_cfg";
+    F filter_hit_ratio = "filter_hit_ratio";
+    F force_strict = "force_strict";
+    F group = "group";
+    F hits = "hits";
+    F iterator_name = "iterator_name";
+    F ms_per_cost = "ms_per_cost";
+    F op_hit_ratio = "op_hit_ratio";
+    F query_op = "query_op";
+    F seeks = "seeks";
+    F strict_context = "strict_context";
+    F time_ms = "time_ms";
+    F unpack = "unpack";
+    struct {
+        F cost = "flow.cost";
+        F estimate = "flow.estimate";
+        F strict_cost = "flow.strict_cost";
+    } flow;
+} f;
+
 struct BenchmarkResult {
     double      time_ms;
     uint32_t    seeks;
@@ -546,6 +578,75 @@ public:
     bool empty() const { return _cases.empty(); }
 };
 
+/**
+ * Calculates the calibration constant over all samples as the median of time_ms per cost.
+ */
+void postprocess_calculate_calibration_constant(DataPond& pond) {
+    std::vector<RecordRef> records;
+    std::vector<double>    ms_per_costs;
+    for (auto& record : pond.records()) {
+        if (record.has_field<double>(f.time_ms) && record.has_field<double>(f.actual_cost)) {
+            records.emplace_back(record);
+
+            double ms_per_cost = record.get<double>(f.time_ms) / record.get<double>(f.actual_cost);
+            ms_per_costs.push_back(ms_per_cost);
+            record.set(f.ms_per_cost, ms_per_cost);
+        }
+    }
+
+    std::sort(ms_per_costs.begin(), ms_per_costs.end());
+    double median = ms_per_costs[ms_per_costs.size() / 2];
+    for (auto record : records) {
+        record.get().set(f.calibration_constant, median);
+    }
+}
+
+/**
+ * Calculates averages, error and classifies per sample.
+ */
+void postprocess_calculate_error(DataPond& pond) {
+    auto classify = [](double error_ratio) -> std::string {
+        constexpr double ok_band = 1.4;
+        constexpr double under_threshold = ok_band;
+        constexpr double over_threshold = 1.0 / ok_band;
+        if (error_ratio > under_threshold)
+            return "UNDER";
+        if (error_ratio < over_threshold)
+            return "OVER";
+        return "OK";
+    };
+
+    for (auto& record : pond.records()) {
+        double calibration_constant = record.get<double>(f.calibration_constant);
+        double ms_per_cost = record.get<double>(f.ms_per_cost);
+
+        double error = ms_per_cost / calibration_constant;
+        record.set(f.class_, classify(error));
+        record.set(f.error, error);
+    }
+}
+
+/**
+ * Preprocess the raw data samples before summary.
+ */
+void postprocess_pond(DataPond& pond) {
+    postprocess_calculate_calibration_constant(pond);
+    postprocess_calculate_error(pond);
+}
+
+void print_pond_summary(const DataPond& pond) {
+    std::println("calibration score: ms_per_cost={:.3f} ({} cases)\n",
+                 pond.records().front().get<double>(f.calibration_constant), pond.records().size());
+    std::println("{:<60} {:>12} {:>12} {:>12} {:>10} {:>10}", "case", "time_ms", "actual_cost", "ms_per_cost",
+                 "error", "class");
+    for (const auto& record : pond.records()) {
+        auto case_id = record.get<std::string>(f.group);
+        std::println("{:<60} {:>12.3f} {:>12.3f} {:>12.3f} {:>9.3f}x {:>10}", case_id, record.get<double>(f.time_ms),
+                     record.get<double>(f.actual_cost), record.get<double>(f.ms_per_cost),
+                     record.get<double>(f.error), record.get<std::string>(f.class_));
+    }
+}
+
 void print_summary(const BenchmarkSummary& summary) {
     constexpr double ok_band = 1.4;
     constexpr double under_threshold = ok_band;
@@ -680,35 +781,28 @@ BenchmarkSetup::~BenchmarkSetup() = default;
 BenchmarkSummary global_summary;
 DataPond         global_pond;
 
-std::string current_test_name() {
-    if (auto* info = ::testing::UnitTest::GetInstance()->current_test_info()) {
-        return info->name();
-    }
-    return "";
-}
-
 void add_to_pond(DataPond& pond, const BenchmarkCaseSetup& setup, const BenchmarkResult& res, double op_hit_ratio,
                  uint32_t children, double filter_hit_ratio, PlanningAlgo algo) {
     Record record;
-    record.set("actual_cost", res.actual_cost);
-    record.set("algo", to_string(algo));
-    record.set("blueprint_name", res.blueprint_name);
-    record.set("children", static_cast<int64_t>(children));
-    record.set("cost", res.flow.cost);
-    record.set("estimate", res.flow.estimate);
-    record.set("field_cfg", setup.bcase.field_cfg.to_string());
-    record.set("filter_hit_ratio", filter_hit_ratio);
-    record.set("force_strict", setup.bcase.force_strict);
-    record.set("group", current_test_name());
-    record.set("hits", static_cast<int64_t>(res.hits));
-    record.set("iterator_name", res.iterator_name);
-    record.set("op_hit_ratio", op_hit_ratio);
-    record.set("query_op", to_string(setup.bcase.query_op));
-    record.set("seeks", static_cast<int64_t>(res.seeks));
-    record.set("strict_context", setup.bcase.strict_context);
-    record.set("strict_cost", res.flow.strict_cost);
-    record.set("time_ms", res.time_ms);
-    record.set("unpack", setup.bcase.unpack_iterator);
+    record.set(f.actual_cost, res.actual_cost);
+    record.set(f.algo, to_string(algo));
+    record.set(f.blueprint_name, res.blueprint_name);
+    record.set(f.children, static_cast<int64_t>(children));
+    record.set(f.flow.cost, res.flow.cost);
+    record.set(f.flow.estimate, res.flow.estimate);
+    record.set(f.field_cfg, setup.bcase.field_cfg.to_string());
+    record.set(f.filter_hit_ratio, filter_hit_ratio);
+    record.set(f.force_strict, setup.bcase.force_strict);
+    record.set(f.group, setup.bcase.to_string());
+    record.set(f.hits, static_cast<int64_t>(res.hits));
+    record.set(f.iterator_name, res.iterator_name);
+    record.set(f.op_hit_ratio, op_hit_ratio);
+    record.set(f.query_op, to_string(setup.bcase.query_op));
+    record.set(f.seeks, static_cast<int64_t>(res.seeks));
+    record.set(f.strict_context, setup.bcase.strict_context);
+    record.set(f.flow.strict_cost, res.flow.strict_cost);
+    record.set(f.time_ms, res.time_ms);
+    record.set(f.unpack, setup.bcase.unpack_iterator);
     pond.add(record);
 }
 
@@ -1158,36 +1252,56 @@ TEST(IteratorBenchmark, analyze_AND_plan_variants_ENN) {
 
 TEST(IteratorBenchmark, data_pond_test) {
     DataPond pond;
-    Record   record;
-    record.set("my_int", 10);
-    record.set("my_bool", true);
-    record.set("my_string", "string");
-    record.set("my_float", 3.14);
 
-    pond.add(record);
+    auto add_measurement = [&pond](const std::string& case_id, double time_ms, double cost) {
+        Record r;
+        r.set(f.group, case_id);
+        r.set(f.time_ms, time_ms);
+        r.set(f.actual_cost, cost);
+        pond.add(r);
+    };
 
-    Filter filter = Filter().lt("my_float", 2.0).eq("my_string", "str");
-    for (const auto& rec : pond.records()) {
-        if (filter.check(rec)) {
+    // Three cases, each with multiple synthetic measurements. ms_per_cost ratio differs per case
+    // to mimic what a real benchmark run produces.
+    add_measurement("Term-int32-strict", 0.10, 0.10);
+    add_measurement("Term-int32-strict", 0.20, 0.20);
+    add_measurement("Term-int32-strict", 0.40, 0.40);
+    add_measurement("Term-str-strict", 0.50, 0.20);
+    add_measurement("Term-str-strict", 1.00, 0.40);
+    add_measurement("ENN-strict", 2.00, 0.40);
+    add_measurement("ENN-strict", 4.00, 0.80);
+
+    // calibration median routine
+    std::vector<double>    values;
+    std::vector<RecordRef> records;
+    for (auto& record : pond.records()) {
+        if (record.has_field<double>(f.time_ms) && record.has_field<double>(f.actual_cost)) {
+            records.push_back(record);
+            values.push_back(record.get<double>(f.time_ms) / record.get<double>(f.actual_cost));
         }
-        std::println("{}", rec.to_string());
     }
+
+    std::sort(values.begin(), values.end());
+    double median = values[values.size() / 2];
+    for (auto record : records) {
+        record.get().set(f.calibration_constant, median);
+    }
+
+    std::println("median time_ms/cost={:.4f}", median);
 }
 
 static std::string smoke_test_filter = "--gtest_filter="
-                                       "IteratorBenchmark.analyze_term_search_in_attributes_strict"
-                                       ":IteratorBenchmark.analyze_OR_strict"
-                                       ":IteratorBenchmark.analyze_AND_plan_variants_ENN";
+                                       "IteratorBenchmark.analyze_term_search_in_disk_index";
 
 int main(int argc, char** argv) {
     bool opt_dump_pond = false;
     for (int i = 0; i < argc; i++) {
-        std::string_view smoke_test{"--smoke-test"};
+        const std::string& smoke_test{"--smoke-test"};
         if (smoke_test == argv[i]) {
             std::println(stderr, "Adding --smoke-test filter");
             argv[i] = smoke_test_filter.data();
         }
-        std::string_view dump_pond_flag{"--dump-pond"};
+        const std::string& dump_pond_flag{"--dump-pond"};
         if (dump_pond_flag == argv[i]) {
             opt_dump_pond = true;
         }
@@ -1197,6 +1311,10 @@ int main(int argc, char** argv) {
     if (!global_summary.empty()) {
         global_summary.calc_calibration();
         print_summary(global_summary);
+    }
+    if (!global_pond.records().empty()) {
+        postprocess_pond(global_pond);
+        print_pond_summary(global_pond);
     }
     if (opt_dump_pond) {
         dump_pond(global_pond);
