@@ -65,7 +65,7 @@ dependencies {
 
     implementation "org.yaml:snakeyaml:${snakeYamlVersion}"
 
-    testImplementation 'org.jruby:jruby-complete:9.4.3.0'
+    testImplementation 'org.jruby:jruby-complete:9.4.14.0'
     testImplementation 'org.jruby:jruby-core:10.1.0.0'
     testImplementation "org.apache.logging.log4j:log4j-core:${log4jVersion}"
     testImplementation 'junit:junit:4.13.2'
