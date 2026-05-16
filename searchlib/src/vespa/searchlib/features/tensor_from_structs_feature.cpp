@@ -23,7 +23,6 @@ LOG_SETUP(".features.tensor_from_structs_feature");
 using namespace search::fef;
 using search::attribute::FloatContent;
 using search::attribute::IAttributeVector;
-using search::attribute::IntegerContent;
 using search::attribute::WeightedStringContent;
 using search::fef::FeatureType;
 using vespalib::Issue;
