@@ -33,7 +33,7 @@
     "eslint-plugin-unused-imports": "4.1.4",
     "husky": "9.1.7",
     "lodash": "4.18.1",
-    "prettier": "3.5.3",
+    "prettier": "3.8.3",
     "pretty-quick": "4.1.1",
     "react-router-dom": "7.12.0",
     "use-context-selector": "2.0.0",
