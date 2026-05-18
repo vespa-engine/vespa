@@ -79,7 +79,7 @@ IFlushTarget::Task::UP ShrinkLidSpaceFlushTarget::initFlush(SerialNum currentSer
 }
 
 bool ShrinkLidSpaceFlushTarget::can_flush(SerialNum current_serial) const noexcept {
-    return current_serial > _flushedSerialNum;
+    return current_serial >= _flushedSerialNum.load(std::memory_order_relaxed) && _target->canShrinkLidSpace();
 }
 
 FlushStats ShrinkLidSpaceFlushTarget::getLastFlushStats() const {
