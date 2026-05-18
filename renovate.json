@@ -15,12 +15,12 @@
     },
     // Need to wait for Vespa 9 before using Jetyy 12.1.x or higher
     {
-      "matchPackagePrefixes": [
-        "org.eclipse.jetty:",
-        "org.eclipse.jetty.http2:",
-      ],
       "matchUpdateTypes": ["minor"],
-      "enabled": false
+      "enabled": false,
+      "matchPackageNames": [
+        "org.eclipse.jetty:{/,}**",
+        "org.eclipse.jetty.http2:{/,}**"
+      ]
     }
   ]
 }
