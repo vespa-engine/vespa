@@ -135,7 +135,7 @@ FlushContext::List MemoryFlush::getFlushTargets(const FlushContext::List&       
     FlushContext::List fv;
     fv.reserve(targetList.size());
     for (const auto& ctx : targetList) {
-        const IFlushTarget&          target(*ctx->getTarget());
+        const IFlushTarget& target(*ctx->getTarget());
         if (!target.can_flush(ctx->getLastSerial())) {
             continue; // Target cannot be flushed
         }
