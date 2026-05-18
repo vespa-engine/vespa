@@ -3,7 +3,9 @@
 #pragma once
 
 #include "itlssyncer.h"
+
 #include <vespa/searchlib/common/serialnum.h>
+
 #include <thread>
 
 namespace vespalib {
