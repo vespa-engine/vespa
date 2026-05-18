@@ -19,7 +19,7 @@ LOG_SETUP(".server.docstorevalidator");
 
 namespace proton {
 
-DocStoreValidator::DocStoreValidator(IDocumentMetaStore& dms,
+DocStoreValidator::DocStoreValidator(IDocumentMetaStore&                          dms,
                                      std::shared_ptr<searchcorespi::IFlushTarget> dms_flush_target)
     : _dms(dms),
       _dms_flush_target(std::move(dms_flush_target)),
