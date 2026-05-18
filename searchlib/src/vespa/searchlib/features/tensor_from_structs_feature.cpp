@@ -23,8 +23,6 @@ LOG_SETUP(".features.tensor_from_structs_feature");
 using namespace search::fef;
 using search::attribute::FloatContent;
 using search::attribute::IAttributeVector;
-using search::attribute::IntegerContent;
-using search::attribute::WeightedConstCharContent;
 using search::attribute::WeightedStringContent;
 using search::fef::FeatureType;
 using vespalib::Issue;
@@ -113,72 +111,12 @@ bool TensorFromStructsBlueprint::setup(const search::fef::IIndexEnvironment& env
 
 namespace {
 
-template <typename KeyBufferType> class TensorFromStructsExecutor : public fef::FeatureExecutor {
-private:
-    const IAttributeVector*                _keyAttribute;
-    const IAttributeVector*                _valueAttribute;
-    vespalib::eval::ValueType              _type;
-    vespalib::eval::CellType               _cellType;
-    KeyBufferType                          _keyBuffer;
-    FloatContent                           _valueBuffer;
-    std::unique_ptr<vespalib::eval::Value> _tensor;
-
-public:
-    TensorFromStructsExecutor(const IAttributeVector* keyAttr, const IAttributeVector* valueAttr,
-                              const vespalib::eval::ValueType& valueType, vespalib::eval::CellType cellType)
-        : _keyAttribute(keyAttr),
-          _valueAttribute(valueAttr),
-          _type(valueType),
-          _cellType(cellType),
-          _keyBuffer(),
-          _valueBuffer(),
-          _tensor() {
-        _keyBuffer.allocate(_keyAttribute->getMaxValueCount());
-        _valueBuffer.allocate(_valueAttribute->getMaxValueCount());
-    }
-    ~TensorFromStructsExecutor() override;
-
-    void execute(uint32_t docId) override;
-};
-
-template <typename KeyBufferType> TensorFromStructsExecutor<KeyBufferType>::~TensorFromStructsExecutor() = default;
-
-template <typename KeyBufferType> void TensorFromStructsExecutor<KeyBufferType>::execute(uint32_t docId) {
-    _keyBuffer.fill(*_keyAttribute, docId);
-    _valueBuffer.fill(*_valueAttribute, docId);
-
-    size_t size = std::min(_keyBuffer.size(), _valueBuffer.size());
-
-    auto factory = FastValueBuilderFactory::get();
-
-    // Use TypifyCellType to handle all cell types
-    _tensor = TypifyCellType::resolve(_cellType, [&](auto cell_type) {
-        using CellType = typename decltype(cell_type)::type;
-        auto builder = factory.create_value_builder<CellType>(_type, 1, 1, size);
-        for (size_t i = 0; i < size; ++i) {
-            std::string                   key(_keyBuffer[i].value());
-            std::vector<std::string_view> addr = {key};
-            std::span<CellType>           cell_array = builder->add_subspace(addr);
-            cell_array[0] = static_cast<CellType>(_valueBuffer[i]);
-        }
-        return builder->build(std::move(builder));
-    });
-
-    outputs().set_object(0, *_tensor);
-}
-
 class CachingTensorFactory {
     using Handle = vespalib::SharedStringRepo::Handle;
     ValueType                               _type;
-    size_t                                  _numDims;
+    const size_t                            _numDims;
     vespalib::hash_map<std::string, Handle> _cache;
 
-public:
-    CachingTensorFactory(ValueType type, size_t numDims) : _type(type), _numDims(numDims) {}
-    template <typename T> auto builder(size_t size) {
-        using Builder = vespalib::eval::FastValue<T, true>;
-        return std::make_unique<Builder>(_type, _numDims, 1, size);
-    }
     vespalib::string_id resolve(std::string_view str) {
         auto it = _cache.find(str);
         if (it == _cache.end()) {
@@ -187,6 +125,27 @@ public:
             it = nit;
         }
         return it->second.id();
+    }
+
+public:
+    CachingTensorFactory(ValueType type, size_t numDims) : _type(type), _numDims(numDims) {}
+
+    template <typename CT>
+    static std::unique_ptr<vespalib::eval::Value> invoke(CachingTensorFactory& self, const auto& keyBuffers,
+                                                         const auto& valueBuffer, size_t size) {
+        using Builder = vespalib::eval::FastValue<CT, true>;
+        auto builder = std::make_unique<Builder>(self._type, self._numDims, 1, size);
+
+        vespalib::StringIdVector addr(self._numDims);
+        for (size_t i = 0; i < size; ++i) {
+            for (size_t k = 0; k < self._numDims; ++k) {
+                addr[k] = self.resolve(keyBuffers[k][i].value());
+            }
+            auto [cell_array, inserted] = builder->insert_subspace(addr);
+            (void)inserted; // ignored: last array entry should overwrite anyway
+            cell_array[0] = static_cast<CT>(valueBuffer[i]);
+        }
+        return builder;
     }
 };
 
@@ -231,22 +190,8 @@ public:
         for (size_t k = 0; k < numKeys; ++k) {
             size = std::min(size, _keyBuffers[k].size());
         }
-
-        _tensor = TypifyCellType::resolve(_cellType, [&](auto cell_type) {
-            using CT = typename decltype(cell_type)::type;
-            auto                     builder = _factory.builder<CT>(size);
-            vespalib::StringIdVector addr(numKeys);
-            for (size_t i = 0; i < size; ++i) {
-                for (size_t k = 0; k < numKeys; ++k) {
-                    addr[k] = _factory.resolve(_keyBuffers[k][i].value());
-                }
-                auto [cell_array, inserted] = builder->insert_subspace(addr);
-                (void)inserted; // ignored: last array entry should overwrite anyway
-                cell_array[0] = static_cast<CT>(_valueBuffer[i]);
-            }
-            return builder->build(std::move(builder));
-        });
-
+        _tensor = vespalib::typify_invoke<1, TypifyCellType, CachingTensorFactory>(_cellType, _factory, _keyBuffers,
+                                                                                   _valueBuffer, size);
         outputs().set_object(0, *_tensor);
     }
 };
@@ -271,7 +216,7 @@ FeatureExecutor& createAttributeExecutor(const search::fef::IQueryEnvironment& e
         return ConstantTensorExecutor::createEmpty(valueType, stash);
     }
 
-    if (valueAttribute->getCollectionType() == search::attribute::CollectionType::WSET) {
+    if (valueAttribute->getCollectionType() != search::attribute::CollectionType::ARRAY) {
         Issue::report("tensor_from_structs feature: The value attribute '%s' must be an array."
                       " Returning empty tensor.",
                       valueAttrName.c_str());
@@ -304,19 +249,6 @@ FeatureExecutor& createAttributeExecutor(const search::fef::IQueryEnvironment& e
         keyAttributes.push_back(keyAttribute);
     }
 
-    if (keyAttributes.size() == 1) {
-        const IAttributeVector* keyAttribute = keyAttributes[0];
-        if (keyAttribute->isIntegerType()) {
-            // Using WeightedStringContent ensures that the integer values are converted
-            // to strings while extracting them from the attribute.
-            return stash.create<TensorFromStructsExecutor<WeightedStringContent>>(keyAttribute, valueAttribute,
-                                                                                  valueType, cellType);
-        }
-        // When the underlying attribute is of type string we can reference these values
-        // using WeightedConstCharContent.
-        return stash.create<TensorFromStructsExecutor<WeightedConstCharContent>>(keyAttribute, valueAttribute,
-                                                                                 valueType, cellType);
-    }
     return stash.create<TensorFromStructsMultiKeyExecutor>(std::move(keyAttributes), valueAttribute, valueType,
                                                            cellType);
 }
