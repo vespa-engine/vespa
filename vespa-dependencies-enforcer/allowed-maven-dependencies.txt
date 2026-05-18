@@ -129,7 +129,7 @@ org.apache.lucene:lucene-analysis-common:${lucene.vespa.version}
 org.apache.lucene:lucene-core:${lucene.vespa.version}
 org.apache.maven.plugin-tools:maven-plugin-annotations:${maven-plugin-tools.vespa.version}
 org.apache.maven.plugins:maven-jar-plugin:${maven-jar-plugin.vespa.version}
-org.apache.maven.shared:file-management:3.1.0
+org.apache.maven.shared:file-management:3.2.0
 org.apache.maven.wagon:wagon-provider-api:${maven-wagon.vespa.version}
 org.apache.maven:maven-archiver:${maven-archiver.vespa.version}
 org.apache.maven:maven-artifact-manager:2.2.1
