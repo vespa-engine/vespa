@@ -125,7 +125,11 @@ void ConfigSubscriptionSet::close() {
 
 std::shared_ptr<ConfigSubscription> ConfigSubscriptionSet::subscribe(const ConfigKey& key, duration timeout) {
     if (_state != OPEN) {
-        throw ConfigRuntimeException("Adding subscription after calling nextConfig() is not allowed");
+        if (_state == CLOSED) {
+            throw ConfigRuntimeException("Calling subscribe() after calling close() is not allowed");
+        } else {
+            throw ConfigRuntimeException("Adding subscription after calling nextConfig() is not allowed");
+        }
     }
     LOG(debug, "Subscribing with config Id(%s), defName(%s)", key.getConfigId().c_str(), key.getDefName().c_str());
 
