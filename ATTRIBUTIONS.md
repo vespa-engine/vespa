@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-05-07
+Last updated: 2026-05-18
 
 ---
 
@@ -90,7 +90,7 @@ Last updated: 2026-05-07
 
 - Homepage: <https://github.com/ungap/structured-clone#readme>
 - Copyright 2021 Andrea Giammarchi
-- @WebReflection
+-  @WebReflection
 
 ---
 
@@ -357,11 +357,9 @@ Last updated: 2026-05-07
 
 ---
 
-## github.com/fxamacker/cbor/v2 v2.9.1 — MIT
+## github.com/fxamacker/cbor/v2 v2.9.2 — MIT
 
-- Homepage: <https://pkg.go.dev/github.com/fxamacker/cbor/v2@v2.9.1>
-- Copyright 2019-2024 Faye Amacker
-- Copyright 2019 Faye Amacker
+- Homepage: <https://pkg.go.dev/github.com/fxamacker/cbor/v2@v2.9.2>
 
 ---
 
@@ -376,7 +374,7 @@ Last updated: 2026-05-07
 
 - Homepage: <https://pkg.go.dev/github.com/godbus/dbus/v5@v5.2.2>
 - Copyright 2013 Georg Reinke <guelfey at gmail dot com>
-- Google
+-  Google
 
 ---
 
@@ -530,6 +528,13 @@ Last updated: 2026-05-07
 
 - Homepage: <https://github.com/syntax-tree/hast-util-whitespace#readme>
 - Copyright 2016 Titus Wormer <tituswormer@gmail.com>
+
+---
+
+## html-proofer 5.2.1 — MIT
+
+- Homepage: <https://github.com/gjtorikian/html-proofer>
+- Copyright 2013 Garen Torikian
 
 ---
 
@@ -731,9 +736,10 @@ Last updated: 2026-05-07
 
 ## mistral-embed 23.12 — Proprietary
 
+
 ---
 
-## nokogiri 1.19.1 — MIT
+## nokogiri 1.19.3 — MIT
 
 - Homepage: <https://nokogiri.org>
 - Copyright 2008-2023 Mike Dalessio
@@ -774,10 +780,10 @@ Last updated: 2026-05-07
 
 ---
 
-## org.jsoup 1.17.2 — MIT
+## org.jsoup 1.22.2 — MIT
 
-- Homepage: <https://jhy.io/>
-- Copyright 2009-2023 Jonathan Hedley <https
+- Homepage: <https://jsoup.org/>
+- Copyright 2009-2026 a href
 - Jonathan Hedley
 
 ---
@@ -840,13 +846,6 @@ Last updated: 2026-05-07
 
 - Homepage: <https://github.com/sickill/rainbow>
 - Copyright Marcin Kulik
-
----
-
-## rake 13.2.1 — MIT
-
-- Homepage: <https://github.com/ruby/rake>
-- Copyright Jim Weirich
 
 ---
 
@@ -1164,3 +1163,4 @@ Last updated: 2026-05-07
 
 - Homepage: <https://github.com/wooorm/zwitch#readme>
 - Copyright 2016 Titus Wormer <tituswormer@gmail.com>
+
