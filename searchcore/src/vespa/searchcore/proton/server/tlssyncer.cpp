@@ -15,17 +15,36 @@ using vespalib::makeLambdaTask;
 
 namespace proton {
 
+namespace {
+
+std::thread::id get_thread_id(vespalib::ThreadExecutor& executor) {
+    std::promise<std::thread::id> promise;
+    auto                          future = promise.get_future();
+    executor.execute(makeLambdaTask([&]() { promise.set_value(std::this_thread::get_id()); }));
+    return future.get();
+}
+
+} // namespace
+
 TlsSyncer::TlsSyncer(vespalib::ThreadExecutor& executor, const IGetSerialNum& getSerialNum,
                      search::transactionlog::SyncProxy& proxy)
-    : _executor(executor), _getSerialNum(getSerialNum), _proxy(proxy) {
+    : _executor(executor), _executor_thread_id(get_thread_id(executor)), _getSerialNum(getSerialNum), _proxy(proxy) {
+}
+
+SerialNum TlsSyncer::get_serial_num() {
+    if (std::this_thread::get_id() == _executor_thread_id) {
+        return _getSerialNum.getSerialNum();
+    } else {
+        std::promise<SerialNum> promise;
+        std::future<SerialNum>  future = promise.get_future();
+        _executor.execute(makeLambdaTask([&]() { promise.set_value(_getSerialNum.getSerialNum()); }));
+        return future.get();
+    }
 }
 
 void TlsSyncer::sync() {
-    std::promise<SerialNum> promise;
-    std::future<SerialNum>  future = promise.get_future();
-    _executor.execute(makeLambdaTask([&]() { promise.set_value(_getSerialNum.getSerialNum()); }));
-    SerialNum serialNum = future.get();
-    _proxy.sync(serialNum);
+    auto serial_num = get_serial_num();
+    _proxy.sync(serial_num);
 }
 
 } // namespace proton

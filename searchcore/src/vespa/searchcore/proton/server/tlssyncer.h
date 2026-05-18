@@ -3,10 +3,13 @@
 #pragma once
 
 #include "itlssyncer.h"
+#include <vespa/searchlib/common/serialnum.h>
+#include <thread>
 
 namespace vespalib {
 class ThreadExecutor;
 }
+
 namespace search::transactionlog {
 class SyncProxy;
 }
@@ -23,14 +26,16 @@ class IGetSerialNum;
  */
 class TlsSyncer : public ITlsSyncer {
     vespalib::ThreadExecutor&          _executor;
+    std::thread::id                    _executor_thread_id;
     const IGetSerialNum&               _getSerialNum;
     search::transactionlog::SyncProxy& _proxy;
 
-public:
-    virtual ~TlsSyncer() = default;
+    search::SerialNum get_serial_num();
 
+public:
     TlsSyncer(vespalib::ThreadExecutor& executor, const IGetSerialNum& getSerialNum,
               search::transactionlog::SyncProxy& proxy);
+    virtual ~TlsSyncer() = default;
 
     void sync() override;
 };
