@@ -5,6 +5,7 @@ vespa_add_executable(searchlib_iterator_benchmark_test_app TEST
     benchmark_blueprint_factory.cpp
     blueprint_factory_builder.cpp
     common.cpp
+    data_pond_utils.cpp
     disk_index_builder.cpp
     intermediate_blueprint_factory.cpp
     iterator_benchmark_test.cpp
