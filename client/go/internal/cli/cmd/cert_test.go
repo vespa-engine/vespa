@@ -185,6 +185,12 @@ func TestCertClean(t *testing.T) {
 	certFile := filepath.Join(cli.config.homeDir, app.String(), "data-plane-public-cert.pem")
 	assert.Equal(t, 3, countPEMBlocks(t, certFile))
 
+	// Read newest cert (first block) before pruning
+	certData, err := os.ReadFile(certFile)
+	require.Nil(t, err)
+	newestBlock, _ := pem.Decode(certData)
+	require.NotNil(t, newestBlock)
+
 	// Use a fresh CLI with the same homeDir to avoid -A flag state bleeding into --prune
 	cli2, stdout2, _ := newTestCLI(t, "VESPA_CLI_HOME="+cli.config.homeDir)
 	cli2.isTerminal = func() bool { return true }
@@ -192,6 +198,13 @@ func TestCertClean(t *testing.T) {
 	require.Nil(t, cli2.Run("auth", "cert", "-N", "--prune"))
 	assert.Contains(t, stdout2.String(), "Pruned certificate file")
 	assert.Equal(t, 1, countPEMBlocks(t, certFile))
+
+	// Verify pruned file contains the newest cert
+	prunedData, err := os.ReadFile(certFile)
+	require.Nil(t, err)
+	prunedBlock, _ := pem.Decode(prunedData)
+	require.NotNil(t, prunedBlock)
+	assert.Equal(t, newestBlock.Bytes, prunedBlock.Bytes)
 }
 
 func TestCertCleanInvalidFlagForce(t *testing.T) {
