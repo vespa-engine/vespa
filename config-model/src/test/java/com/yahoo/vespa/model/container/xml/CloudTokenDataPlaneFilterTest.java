@@ -206,7 +206,7 @@ public class CloudTokenDataPlaneFilterTest extends ContainerModelBuilderTestBase
                   </clients>
                 </container>
                 """);
-        buildModel(Set.of(tokenEndpoint, mtlsEndpoint), defaultTokens, clusterElem);
+        buildModel(Set.of(tokenEndpoint, mtlsEndpoint), defaultTokens, true, clusterElem);
 
         var connectorCfg = connectorConfig(8443);
         assertTrue(connectorCfg.ssl().caCertificate().isEmpty(),
@@ -222,21 +222,21 @@ public class CloudTokenDataPlaneFilterTest extends ContainerModelBuilderTestBase
     }
 
     @Test
-     void token_only_deployment_fails_without_write_permission() {
-         var clusterElem = DomBuilderTest.parse("""
-                 <container version='1.0'>
-                   <clients>
-                     <client id="token-only" permissions="read">
-                         <token id="my-token"/>
-                     </client>
-                   </clients>
-                 </container>
-                 """);
-         var exception = assertThrows(RuntimeException.class,
-                                      () -> buildModel(Set.of(tokenEndpoint, mtlsEndpoint), defaultTokens, clusterElem));
-         assertTrue(exception.getMessage().contains("write"),
-                 "Token-only deployments without a token client with write permission must be rejected");
-     }
+    void token_only_deployment_fails_without_write_permission() {
+        var clusterElem = DomBuilderTest.parse("""
+                <container version='1.0'>
+                  <clients>
+                    <client id="token-only" permissions="read">
+                        <token id="my-token"/>
+                    </client>
+                  </clients>
+                </container>
+                """);
+        var exception = assertThrows(RuntimeException.class,
+                                     () -> buildModel(Set.of(tokenEndpoint, mtlsEndpoint), defaultTokens, true, clusterElem));
+        assertTrue(exception.getMessage().contains("write"),
+                "Token-only deployments without a token client with write permission must be rejected");
+    }
 
     private static CloudTokenDataPlaneFilterConfig.Clients.Tokens tokenConfig(
             String id, Collection<String> fingerprints, Collection<String> accessCheckHashes, Collection<String> expirations) {
@@ -245,6 +245,10 @@ public class CloudTokenDataPlaneFilterTest extends ContainerModelBuilderTestBase
     }
 
     public List<ContainerModel> buildModel(Set<ContainerEndpoint> endpoints, List<DataplaneToken> definedTokens, Element... clusterElem) {
+        return buildModel(endpoints, definedTokens, false, clusterElem);
+    }
+
+    public List<ContainerModel> buildModel(Set<ContainerEndpoint> endpoints, List<DataplaneToken> definedTokens, boolean tokenAuthForDeploy, Element... clusterElem) {
         var applicationPackage = new MockApplicationPackage.Builder()
                 .withRoot(applicationFolder)
                 .build();
@@ -255,6 +259,7 @@ public class CloudTokenDataPlaneFilterTest extends ContainerModelBuilderTestBase
                         new TestProperties()
                         .setEndpointCertificateSecrets(Optional.of(new EndpointCertificateSecrets("CERT", "KEY")))
                         .setDataplaneTokens(definedTokens)
+                        .setTokenAuthForDeploy(tokenAuthForDeploy)
                         .setHostedVespa(true))
                 .zone(new Zone(SystemName.PublicCd, Environment.dev, RegionName.defaultName()))
                 .endpoints(endpoints)

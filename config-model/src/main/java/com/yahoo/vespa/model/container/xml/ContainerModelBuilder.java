@@ -598,12 +598,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     .flatMap(elem -> getClient(elem, deployState).stream())
                     .toList();
             boolean atLeastOneClientWithCertificate = clients.stream().anyMatch(client -> !client.certificates().isEmpty());
-            boolean atLeastOneClientWithWriteToken = clients.stream()
-                .filter(client -> !client.tokens().isEmpty())
-                .anyMatch(client -> client.permissions().contains(WRITE));
+            boolean atLeastOneClientWithWriteToken = deployState.featureFlags().tokenAuthForDeploy() &&
+                clients.stream()
+                    .filter(client -> !client.tokens().isEmpty())
+                    .anyMatch(client -> client.permissions().contains(WRITE));
 
             if (!atLeastOneClientWithCertificate && !atLeastOneClientWithWriteToken)
-                throw new IllegalArgumentException("At least one client must require a certificate or a write token");
+                throw new IllegalArgumentException("At least one client must require a certificate" +
+                        (deployState.featureFlags().tokenAuthForDeploy() ? " or a write token" : ""));
 
             List<String> duplicates = clients.stream().collect(Collectors.groupingBy(Client::id))
                     .entrySet().stream().filter(entry -> entry.getValue().size() > 1)
@@ -718,9 +720,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             List<X509Certificate> clientCertificates = getClientCertificates(cluster);
             if (isPublic) {
                 if (clientCertificates.isEmpty()) {
-                    boolean hasTokenClients = cluster.getClients().stream()
-                            .filter(c -> !c.internal())
-                            .anyMatch(c -> !c.tokens().isEmpty());
+                    boolean hasTokenClients = state.featureFlags().tokenAuthForDeploy() &&
+                            cluster.getClients().stream()
+                                    .filter(c -> !c.internal())
+                                    .anyMatch(c -> !c.tokens().isEmpty());
                     if (!hasTokenClients)
                         throw new IllegalArgumentException("Client certificate authority security/clients.pem is missing - " +
                                                                    "see: https://docs.vespa.ai/en/security/guide.html#data-plane");
