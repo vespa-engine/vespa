@@ -1317,7 +1317,8 @@ TEST(TensorAttributeTest, Nearest_neighbor_index_with_mips_distance_metrics_stor
 
 template <typename ParentT> class NearestNeighborBlueprintFixtureBase : public ParentT {
 private:
-    std::unique_ptr<Value> _query_tensor;
+    std::unique_ptr<Value>             _query_tensor;
+    search::queryeval::QuerySetupStats _stats;
 
 public:
     NearestNeighborBlueprintFixtureBase() : _query_tensor() {
@@ -1334,6 +1335,8 @@ public:
     }
 
     ~NearestNeighborBlueprintFixtureBase();
+
+    search::queryeval::QuerySetupStats& stats() { return _stats; }
 
     const Value& create_query_tensor(const TensorSpec& spec) {
         _query_tensor = SimpleValue::from_spec(spec);
@@ -1389,7 +1392,7 @@ TEST(TensorAttributeTest, NN_blueprint_handles_empty_filter_for_post_filtering) 
     EXPECT_FALSE(bp->pending_index_search());
     bp->set_global_filter(*empty_filter, 0.6);
     EXPECT_TRUE(bp->pending_index_search());
-    bp->perform_index_search(vespalib::Deadline::never());
+    bp->perform_index_search(vespalib::Deadline::never(), f.stats());
     EXPECT_FALSE(bp->pending_index_search());
     // targetHits is adjusted based on the estimated hit ratio of the query.
     EXPECT_EQ(3u, bp->get_target_hits());
@@ -1405,7 +1408,7 @@ TEST(TensorAttributeTest, NN_blueprint_adjustment_of_targetHits_is_bound_for_pos
     EXPECT_FALSE(bp->pending_index_search());
     bp->set_global_filter(*empty_filter, 0.2);
     EXPECT_TRUE(bp->pending_index_search());
-    bp->perform_index_search(vespalib::Deadline::never());
+    bp->perform_index_search(vespalib::Deadline::never(), f.stats());
     EXPECT_FALSE(bp->pending_index_search());
     // targetHits is adjusted based on the estimated hit ratio of the query,
     // but bound by target-hits-max-adjustment-factor
@@ -1425,7 +1428,7 @@ TEST(TensorAttributeTest, NN_blueprint_handles_strong_filter_for_pre_filtering) 
     EXPECT_FALSE(bp->pending_index_search());
     bp->set_global_filter(*strong_filter, 0.25);
     EXPECT_TRUE(bp->pending_index_search());
-    bp->perform_index_search(vespalib::Deadline::never());
+    bp->perform_index_search(vespalib::Deadline::never(), f.stats());
     EXPECT_FALSE(bp->pending_index_search());
     EXPECT_EQ(3u, bp->get_target_hits());
     EXPECT_EQ(3u, bp->get_adjusted_target_hits());
@@ -1447,7 +1450,7 @@ TEST(TensorAttributeTest, NN_blueprint_handles_weak_filter_for_pre_filtering) {
     EXPECT_FALSE(bp->pending_index_search());
     bp->set_global_filter(*weak_filter, 0.6);
     EXPECT_TRUE(bp->pending_index_search());
-    bp->perform_index_search(vespalib::Deadline::never());
+    bp->perform_index_search(vespalib::Deadline::never(), f.stats());
     EXPECT_FALSE(bp->pending_index_search());
     EXPECT_EQ(3u, bp->get_target_hits());
     EXPECT_EQ(3u, bp->get_adjusted_target_hits());
@@ -1496,7 +1499,7 @@ TEST(TensorAttributeTest, NN_blueprint_updates_pending_index_search_after_filter
     EXPECT_FALSE(bp->pending_index_search());
     bp->set_global_filter(*weak_filter, 0.6);
     EXPECT_TRUE(bp->pending_index_search());
-    bp->perform_index_search(vespalib::Deadline::never());
+    bp->perform_index_search(vespalib::Deadline::never(), f.stats());
     EXPECT_FALSE(bp->pending_index_search());
 }
 
@@ -1523,25 +1526,22 @@ TEST(TensorAttributeTest, NN_blueprint_do_NOT_want_global_filter_when_NOT_having
 
 TEST(TensorAttributeTest, NN_blueprint_collects_stats) {
     NearestNeighborBlueprintFixture f;
-    auto                            stats = search::queryeval::QueryEvalStats::create();
     // Without filter (with inactive filter)
     {
         auto bp = f.make_blueprint(true);
-        bp->install_stats(*stats);
         auto inactive_filter = GlobalFilter::create();
         EXPECT_FALSE(bp->pending_index_search());
         bp->set_global_filter(*inactive_filter, 0.6);
         EXPECT_TRUE(bp->pending_index_search());
-        bp->perform_index_search(vespalib::Deadline::never());
+        bp->perform_index_search(vespalib::Deadline::never(), f.stats());
         EXPECT_FALSE(bp->pending_index_search());
     }
-    EXPECT_EQ(1, stats->approximate_nns_distances_computed());
-    EXPECT_EQ(2, stats->approximate_nns_nodes_visited());
+    EXPECT_EQ(1, f.stats().approximate_nns_distances_computed());
+    EXPECT_EQ(2, f.stats().approximate_nns_nodes_visited());
 
     // With filter active
     {
         auto bp = f.make_blueprint(true);
-        bp->install_stats(*stats);
         auto filter = search::BitVector::create(1, 11);
         filter->setBit(1);
         filter->setBit(3);
@@ -1553,16 +1553,15 @@ TEST(TensorAttributeTest, NN_blueprint_collects_stats) {
         EXPECT_FALSE(bp->pending_index_search());
         bp->set_global_filter(*weak_filter, 0.6);
         EXPECT_TRUE(bp->pending_index_search());
-        bp->perform_index_search(vespalib::Deadline::never());
+        bp->perform_index_search(vespalib::Deadline::never(), f.stats());
         EXPECT_FALSE(bp->pending_index_search());
     }
-    EXPECT_EQ(2, stats->approximate_nns_distances_computed());
-    EXPECT_EQ(4, stats->approximate_nns_nodes_visited());
+    EXPECT_EQ(2, f.stats().approximate_nns_distances_computed());
+    EXPECT_EQ(4, f.stats().approximate_nns_nodes_visited());
 
     // Hitting fallback
     {
         auto bp = f.make_blueprint(true, 0.2);
-        bp->install_stats(*stats);
         auto filter = search::BitVector::create(1, 11);
         filter->setBit(3);
         filter->invalidateCachedCount();
@@ -1571,20 +1570,19 @@ TEST(TensorAttributeTest, NN_blueprint_collects_stats) {
         bp->set_global_filter(*strong_filter, 0.6);
         EXPECT_FALSE(bp->pending_index_search());
     }
-    EXPECT_EQ(2, stats->approximate_nns_distances_computed());
-    EXPECT_EQ(4, stats->approximate_nns_nodes_visited());
+    EXPECT_EQ(2, f.stats().approximate_nns_distances_computed());
+    EXPECT_EQ(4, f.stats().approximate_nns_nodes_visited());
 
     // Using exact search in the first place
     {
         auto bp = f.make_blueprint(false);
-        bp->install_stats(*stats);
         auto inactive_filter = GlobalFilter::create();
         EXPECT_FALSE(bp->pending_index_search());
         bp->set_global_filter(*inactive_filter, 0.6);
         EXPECT_FALSE(bp->pending_index_search());
     }
-    EXPECT_EQ(2, stats->approximate_nns_distances_computed());
-    EXPECT_EQ(4, stats->approximate_nns_nodes_visited());
+    EXPECT_EQ(2, f.stats().approximate_nns_distances_computed());
+    EXPECT_EQ(4, f.stats().approximate_nns_nodes_visited());
 }
 
 auto test_values = ::testing::Values(1u, 2u);
