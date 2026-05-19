@@ -59,8 +59,9 @@ func (kp *PemKeyPair) WriteCertificateFile(certificateFile string, overwrite boo
 
 	if appendCredentials {
 		existing, err := os.ReadFile(certificateFile)
+		existing, err := os.ReadFile(certificateFile)
 		if err != nil {
-			return fmt.Errorf("certificate file does not exist: %s", certificateFile)
+			return fmt.Errorf("could not read existing certificate file %s: %w", certificateFile, err)
 		}
 		data = append(data, existing...)
 	}
