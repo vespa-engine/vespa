@@ -38,10 +38,9 @@ ProcessMemoryStats ProcessMemoryStats::createStatsFromStatm() {
     asciistream statm = asciistream::createFromDevice("/proc/self/statm");
     ret = parseStatm(statm);
 #elif defined(__APPLE__)
-    task_vm_info_data_t vm_info;
+    task_vm_info_data_t    vm_info;
     mach_msg_type_number_t count = TASK_VM_INFO_COUNT;
-    kern_return_t result = task_info(mach_task_self(), TASK_VM_INFO,
-                                     (task_info_t)&vm_info, &count);
+    kern_return_t          result = task_info(mach_task_self(), TASK_VM_INFO, (task_info_t)&vm_info, &count);
     if (result == KERN_SUCCESS) {
         ret._virt = vm_info.virtual_size;
         ret._anonymous_rss = vm_info.phys_footprint;

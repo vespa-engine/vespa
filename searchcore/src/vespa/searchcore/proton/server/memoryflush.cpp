@@ -155,7 +155,8 @@ FlushContext::List MemoryFlush::getFlushTargets(const FlushContext::List&       
         // that started before the last flush time of the flush target to evaluate.
         // Instead we should wait for the active (ongoing) flush to be finished before doing another evaluation.
         if ((!oldest_start_time.has_value() || lastFlushTime < oldest_start_time.value()) &&
-            target.getType() != IFlushTarget::Type::GC) {
+            target.getType() != IFlushTarget::Type::GC)
+        {
             if (visitedHandlers.insert(&handler).second) {
                 totalTlsSize += tlsStats.getNumBytes();
                 if ((totalTlsSize > config.maxGlobalTlsSize) && (order < TLSSIZE)) {
@@ -167,8 +168,8 @@ FlushContext::List MemoryFlush::getFlushTargets(const FlushContext::List&       
             order = MEMORY;
         } else if ((dgain.gain() > config.diskBloatFactor * computeGain(dgain)) && (order < DISKBLOAT)) {
             order = DISKBLOAT;
-        } else if ((timeDiff >= config.maxTimeGain) && (order < MAXAGE) &&
-                   target.getType() != IFlushTarget::Type::GC) {
+        } else if ((timeDiff >= config.maxTimeGain) && (order < MAXAGE) && target.getType() != IFlushTarget::Type::GC)
+        {
             order = MAXAGE;
         }
         LOG(debug,
