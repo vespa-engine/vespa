@@ -722,7 +722,11 @@ struct FactoryBenchmarkSetup {
     bool                         force_strict = false;
     PlanningAlgo                 algo = PlanningAlgo::Cost;
     std::function<void(Record&)> decorate;
+
+    ~FactoryBenchmarkSetup();
 };
+
+FactoryBenchmarkSetup::~FactoryBenchmarkSetup() = default;
 
 void add_factory_run_to_pond(DataPond& pond, const FactoryBenchmarkSetup& setup, const BenchmarkResult& res,
                              InFlow in_flow) {
