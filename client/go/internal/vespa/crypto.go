@@ -81,20 +81,11 @@ func PruneCertificateFile(certificateFile string) error {
 }
 
 // WritePrivateKeyFile writes the private key contained in this key pair to privateKeyFile.
-func (kp *PemKeyPair) WritePrivateKeyFile(privateKeyFile string, overwrite bool, requireExisting bool) error {
+func (kp *PemKeyPair) WritePrivateKeyFile(privateKeyFile string, overwrite bool) error {
 	if ioutil.Exists(privateKeyFile) && !overwrite {
 		return fmt.Errorf("cannot overwrite existing file: %s", privateKeyFile)
 	}
-	data := kp.PrivateKey
-	if requireExisting {
-		if _, err := os.Stat(privateKeyFile); err != nil {
-			if os.IsNotExist(err) {
-				return fmt.Errorf("private key file does not exist: %s", privateKeyFile)
-			}
-			return fmt.Errorf("could not stat private key file %s: %w", privateKeyFile, err)
-		}
-	}
-	return ioutil.AtomicWriteFile(privateKeyFile, data)
+	return ioutil.AtomicWriteFile(privateKeyFile, kp.PrivateKey)
 }
 
 // CreateKeyPair creates a key pair containing a private key and self-signed X509 certificate.
