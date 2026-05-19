@@ -162,6 +162,56 @@ func TestCertAppendTwice(t *testing.T) {
 	assert.Equal(t, 3, countPEMBlocks(t, certFile))
 }
 
+func TestCertCleanNoExisting(t *testing.T) {
+	cli, _, stderr := newTestCLI(t)
+	configureCloud(t, cli)
+
+	err := cli.Run("auth", "cert", "-N", "--prune")
+	require.NotNil(t, err)
+	assert.Contains(t, stderr.String(), "no certificate found")
+}
+
+func TestCertClean(t *testing.T) {
+	cli, stdout, _ := newTestCLI(t)
+	configureCloud(t, cli)
+	stdout.Reset()
+
+	require.Nil(t, cli.Run("auth", "cert", "-N"))
+
+	app, err := vespa.ApplicationFromString("t1.a1.i1")
+	require.Nil(t, err)
+	certFile := filepath.Join(cli.config.homeDir, app.String(), "data-plane-public-cert.pem")
+
+	// Manually duplicate the cert to simulate accumulated certs after rotation
+	certData, err := os.ReadFile(certFile)
+	require.Nil(t, err)
+	combined := append(certData, certData...)
+	combined = append(combined, certData...)
+	require.Nil(t, os.WriteFile(certFile, combined, 0o600))
+	assert.Equal(t, 3, countPEMBlocks(t, certFile))
+
+	stdout.Reset()
+	require.Nil(t, cli.Run("auth", "cert", "-N", "--prune"))
+	assert.Contains(t, stdout.String(), "Pruned certificate file")
+	assert.Equal(t, 1, countPEMBlocks(t, certFile))
+}
+
+func TestCertCleanInvalidFlagForce(t *testing.T) {
+	cli, _, stderr := newTestCLI(t)
+	configureCloud(t, cli)
+	err := cli.Run("auth", "cert", "-N", "--prune", "-f")
+	require.NotNil(t, err)
+	assert.Contains(t, stderr.String(), "cannot combine --prune with --force or --append")
+}
+
+func TestCertCleanInvalidFlagAppend(t *testing.T) {
+	cli, _, stderr := newTestCLI(t)
+	configureCloud(t, cli)
+	err := cli.Run("auth", "cert", "-N", "--prune", "-A")
+	require.NotNil(t, err)
+	assert.Contains(t, stderr.String(), "cannot combine --prune with --force or --append")
+}
+
 func TestCertNoAdd(t *testing.T) {
 	cli, stdout, stderr := newTestCLI(t)
 	configureCloud(t, cli)

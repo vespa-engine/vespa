@@ -67,6 +67,19 @@ func (kp *PemKeyPair) WriteCertificateFile(certificateFile string, overwrite boo
 	return ioutil.AtomicWriteFile(certificateFile, data)
 }
 
+// CleanCertificateFile keeps only the first (newest) PEM certificate in certificateFile, removing any older ones.
+func CleanCertificateFile(certificateFile string) error {
+	data, err := os.ReadFile(certificateFile)
+	if err != nil {
+		return fmt.Errorf("could not read certificate file: %w", err)
+	}
+	block, _ := pem.Decode(data)
+	if block == nil {
+		return fmt.Errorf("no PEM certificate found in %s", certificateFile)
+	}
+	return ioutil.AtomicWriteFile(certificateFile, pem.EncodeToMemory(block))
+}
+
 // WritePrivateKeyFile writes the private key contained in this key pair to privateKeyFile.
 func (kp *PemKeyPair) WritePrivateKeyFile(privateKeyFile string, overwrite bool, appendKey bool) error {
 	if ioutil.Exists(privateKeyFile) && !overwrite && !appendKey {

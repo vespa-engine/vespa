@@ -19,6 +19,7 @@ func newCertCmd(cli *CLI) *cobra.Command {
 		skipApplicationPackage bool
 		overwriteCertificate   bool
 		appendCertificate      bool
+		cleanCertificate       bool
 	)
 	cmd := &cobra.Command{
 		Use:   "cert",
@@ -70,11 +71,18 @@ $ vespa auth cert -a my-tenant.my-app.my-instance path/to/application/package`,
 			if overwriteCertificate && appendCertificate {
 				return fmt.Errorf("Cannot use append and foce flag at the same time.")
 			}
+			if cleanCertificate && (overwriteCertificate || appendCertificate) {
+				return fmt.Errorf("cannot combine --prune with --force or --append")
+			}
+			if cleanCertificate {
+				return doCleanCert(cli, skipApplicationPackage, args)
+			}
 			return doCert(cli, overwriteCertificate, skipApplicationPackage, appendCertificate, args)
 		},
 	}
 	cmd.Flags().BoolVarP(&overwriteCertificate, "force", "f", false, "Force overwrite of existing certificate and private key")
 	cmd.Flags().BoolVarP(&appendCertificate, "append", "A", false, "Appends a new certificate if certificate already exists. Useful for rotating credentials")
+	cmd.Flags().BoolVarP(&cleanCertificate, "prune", "p", false, "Remove all but the newest certificate from the certificate file. Useful after completing credential rotation")
 	// TODO(mpolden): Stop adding certificate to application package and remove this flag
 	cmd.Flags().BoolVarP(&skipApplicationPackage, "no-add", "N", false, "Do not add certificate to the application package")
 	cmd.MarkPersistentFlagRequired(applicationFlag)
@@ -158,6 +166,33 @@ func doCert(cli *CLI, overwriteCertificate, skipApplicationPackage bool, appendC
 	cli.printSuccess("Private key written to ", color.CyanString("'"+privateKeyFile.path+"'"))
 	if !skipApplicationPackage {
 		return doCertAdd(cli, overwriteCertificate, appendCertificate, args)
+	}
+	return nil
+}
+
+func doCleanCert(cli *CLI, skipApplicationPackage bool, args []string) error {
+	targetType, err := cli.targetType(cloudTargetOnly)
+	if err != nil {
+		return err
+	}
+	app, err := cli.config.application()
+	if err != nil {
+		return err
+	}
+	certificateFile, err := cli.config.certificatePath(app, targetType.name)
+	if err != nil {
+		return err
+	}
+	if !ioutil.Exists(certificateFile.path) {
+		return errHint(fmt.Errorf("no certificate found at '%s'", color.CyanString(certificateFile.path)),
+			"Run 'vespa auth cert' first to create an initial certificate")
+	}
+	if err := vespa.CleanCertificateFile(certificateFile.path); err != nil {
+		return fmt.Errorf("could not prune certificate file: %w", err)
+	}
+	cli.printSuccess("Pruned certificate file ", color.CyanString("'"+certificateFile.path+"'"))
+	if !skipApplicationPackage {
+		return doCertAdd(cli, true, false, args)
 	}
 	return nil
 }
