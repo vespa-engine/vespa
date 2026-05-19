@@ -64,7 +64,7 @@ public:
     explicit FieldCopier(Record& target) noexcept : _target(target) {}
 
     void field(const Memory& name, const Inspector& value) override {
-        std::string field_name(name.data, name.size);
+        auto field_name = name.make_string();
         switch (value.type().getId()) {
         case LONG::ID:
             _target.set(field_name, value.asLong());
@@ -76,8 +76,7 @@ public:
             _target.set(field_name, value.asBool());
             break;
         case STRING::ID: {
-            Memory s = value.asString();
-            _target.set(field_name, std::string(s.data, s.size));
+            _target.set(field_name, value.asString().make_string());
             break;
         }
         default:
@@ -97,7 +96,7 @@ void read_file_into_data_pond(const std::string& file_path, DataPond& data_pond)
         const Inspector& rec_in = records[i];
         Record&          rec_out = data_pond.new_record();
         FieldCopier      copier(rec_out);
-        rec_in.traverse(static_cast<ObjectTraverser&>(copier));
+        rec_in.traverse(copier);
     }
 }
 
