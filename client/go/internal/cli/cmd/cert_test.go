@@ -214,7 +214,7 @@ func TestCertCleanInvalidFlagForce(t *testing.T) {
 	configureCloud(t, cli)
 	err := cli.Run("auth", "cert", "-N", "--prune", "-f")
 	require.NotNil(t, err)
-	assert.Contains(t, stderr.String(), "cannot combine --prune with --force or --append")
+	assert.Contains(t, stderr.String(), "if any flags in the group [prune force append] are set none of the others can be")
 }
 
 func TestCertCleanInvalidFlagAppend(t *testing.T) {
@@ -222,7 +222,7 @@ func TestCertCleanInvalidFlagAppend(t *testing.T) {
 	configureCloud(t, cli)
 	err := cli.Run("auth", "cert", "-N", "--prune", "-A")
 	require.NotNil(t, err)
-	assert.Contains(t, stderr.String(), "cannot combine --prune with --force or --append")
+	assert.Contains(t, stderr.String(), "if any flags in the group [prune force append] are set none of the others can be")
 }
 
 func TestCertNoAdd(t *testing.T) {
