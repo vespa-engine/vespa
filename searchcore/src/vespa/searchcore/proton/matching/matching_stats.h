@@ -10,7 +10,8 @@
 
 namespace search::queryeval {
 class QueryEvalStats;
-}
+class QuerySetupStats;
+} // namespace search::queryeval
 
 namespace proton::matching {
 
@@ -294,9 +295,10 @@ public:
     size_t getNumPartitions() const { return _partitions.size(); }
     const Partition& getPartition(size_t index) const { return _partitions[index]; }
 
-    // used to merge in queryeval stats
-    // these are collected in a distinct, thread-safe object
-    MatchingStats& add_queryeval_stats(const search::queryeval::QueryEvalStats& stats) noexcept;
+    // Merge in stats from query setup from a separate QuerySetupStats object
+    MatchingStats& add_query_setup_stats(const search::queryeval::QuerySetupStats& stats) noexcept;
+    // Merge in stats from query evaluation from a separate, thread-safe QueryEvalStats object
+    MatchingStats& add_query_eval_stats(const search::queryeval::QueryEvalStats& stats) noexcept;
 
     // used to aggregate accross searches (and configurations)
     MatchingStats& add(const MatchingStats& rhs) noexcept;
