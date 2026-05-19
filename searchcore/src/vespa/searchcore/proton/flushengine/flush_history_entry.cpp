@@ -7,12 +7,13 @@
 namespace proton::flushengine {
 
 FlushHistoryEntry::FlushHistoryEntry(std::string name_in, std::string strategy_in, uint32_t strategy_id_in,
-                                     bool priority_strategy_in, time_point create_time_in,
-                                     duration last_flush_duration_in, uint32_t id_in)
+                                     bool priority_strategy_in, const std::string& strategy_info_in,
+                                     time_point create_time_in, duration last_flush_duration_in, uint32_t id_in)
     : _name(std::move(name_in)),
       _strategy(std::move(strategy_in)),
       _strategy_id(strategy_id_in),
       _priority_strategy(priority_strategy_in),
+      _strategy_info(strategy_info_in),
       _create_time(create_time_in),
       _start_time(),
       _finish_time(),
@@ -22,9 +23,11 @@ FlushHistoryEntry::FlushHistoryEntry(std::string name_in, std::string strategy_i
 }
 
 FlushHistoryEntry::FlushHistoryEntry(std::string name_in, const FlushStrategyHistoryEntry& strategy_entry,
-                                     time_point create_time_in, duration last_flush_duration_in, uint32_t id_in)
+                                     const std::string& strategy_info_in, time_point create_time_in,
+                                     duration last_flush_duration_in, uint32_t id_in)
     : FlushHistoryEntry(std::move(name_in), strategy_entry.name(), strategy_entry.id(),
-                        strategy_entry.priority_strategy(), create_time_in, last_flush_duration_in, id_in) {
+                        strategy_entry.priority_strategy(), strategy_info_in, create_time_in, last_flush_duration_in,
+                        id_in) {
 }
 
 FlushHistoryEntry::FlushHistoryEntry(const FlushHistoryEntry&) = default;

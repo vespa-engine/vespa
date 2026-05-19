@@ -4,6 +4,7 @@
 
 #include <algorithm>
 
+using proton::flushengine::FlushStrategyResult;
 using search::SerialNum;
 using searchcorespi::IFlushTarget;
 
@@ -24,21 +25,22 @@ bool CompareTarget::operator()(const FlushContext::SP& lfc, const FlushContext::
 }
 
 std::string strategy_name("flush_all");
+std::string strategy_info("all");
 
 } // namespace
 
 FlushAllStrategy::FlushAllStrategy() : IFlushStrategy() {
 }
 
-FlushContext::List FlushAllStrategy::getFlushTargets(const FlushContext::List& targetList,
-                                                     const flushengine::TlsStatsMap&,
-                                                     const flushengine::ActiveFlushStats&) const {
+FlushStrategyResult FlushAllStrategy::getFlushTargets(const FlushContext::List& targetList,
+                                                      const flushengine::TlsStatsMap&,
+                                                      const flushengine::ActiveFlushStats&) const {
     if (targetList.empty()) {
-        return {};
+        return FlushStrategyResult({}, strategy_name, _id, true, strategy_info);
     }
     FlushContext::List fv(targetList);
     std::sort(fv.begin(), fv.end(), CompareTarget());
-    return fv;
+    return FlushStrategyResult(std::move(fv), strategy_name, _id, true, strategy_info);
 }
 
 std::string FlushAllStrategy::name() const {

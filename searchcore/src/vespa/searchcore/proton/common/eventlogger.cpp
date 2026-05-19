@@ -74,10 +74,12 @@ void EventLogger::transactionLogReplayComplete(const string& domainName, vespali
     doTransactionLogReplayComplete(domainName, elapsedTime, "transactionlog.replay.complete");
 }
 
-void EventLogger::flushInit(const string& name) {
+void EventLogger::flushInit(const string& name, const std::string& strategy_name, const std::string& strategy_info) {
     JSONStringer jstr;
     jstr.beginObject();
     jstr.appendKey("name").appendString(name);
+    jstr.appendKey("strategy_name").appendString(strategy_name);
+    jstr.appendKey("strategy_info").appendString(strategy_info);
     jstr.endObject();
     EV_STATE("flush.init", jstr.str().c_str());
 }

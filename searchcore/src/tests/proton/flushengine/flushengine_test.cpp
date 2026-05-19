@@ -353,6 +353,7 @@ public:
     enum class OrderBy { INDEX_OF, SERIAL };
     std::vector<IFlushTarget::SP> _targets;
     OrderBy                       _orderBy;
+    bool                          _priority_strategy;
 
     struct CompareIndexOf {
         CompareIndexOf(const SimpleStrategy& flush) : _flush(flush) {}
@@ -362,8 +363,8 @@ public:
         const SimpleStrategy& _flush;
     };
 
-    FlushContext::List getFlushTargets(const FlushContext::List& targetList, const flushengine::TlsStatsMap&,
-                                       const flushengine::ActiveFlushStats&) const override {
+    FlushStrategyResult getFlushTargets(const FlushContext::List& targetList, const flushengine::TlsStatsMap&,
+                                        const flushengine::ActiveFlushStats&) const override {
         FlushContext::List fv(targetList);
         if (_orderBy == OrderBy::INDEX_OF) {
             std::sort(fv.begin(), fv.end(), CompareIndexOf(*this));
@@ -372,17 +373,28 @@ public:
                 return a->getTarget()->getFlushedSerialNum() < b->getTarget()->getFlushedSerialNum();
             });
         }
-        return fv;
+        return FlushStrategyResult(std::move(fv), name(), _id, _priority_strategy, order_name());
     }
 
     std::string name() const override { return "flush_simple"; }
+
+    std::string order_name() const noexcept {
+        switch (_orderBy) {
+        case OrderBy::INDEX_OF:
+            return "index_of";
+        case OrderBy::SERIAL:
+        default:
+            return "serial";
+        }
+    }
 
     bool compare(const IFlushTarget::SP& lhs, const IFlushTarget::SP& rhs) const {
         LOG(info, "SimpleStrategy::compare(%p, %p)", lhs.get(), rhs.get());
         return indexOf(lhs) < indexOf(rhs);
     }
 
-    SimpleStrategy(OrderBy orderBy) noexcept : _targets(), _orderBy(orderBy) {}
+    SimpleStrategy(OrderBy orderBy, bool priority_strategy) noexcept
+        : _targets(), _orderBy(orderBy), _priority_strategy(priority_strategy) {}
 
     uint32_t indexOf(const IFlushTarget::SP& target) const {
         IFlushTarget*      raw = target.get();
@@ -407,10 +419,10 @@ public:
 
 class NoFlushStrategy : public SimpleStrategy {
 public:
-    NoFlushStrategy() noexcept : SimpleStrategy(OrderBy::INDEX_OF) {}
-    FlushContext::List getFlushTargets(const FlushContext::List&, const flushengine::TlsStatsMap&,
-                                       const flushengine::ActiveFlushStats&) const override {
-        return {};
+    NoFlushStrategy() noexcept : SimpleStrategy(OrderBy::INDEX_OF, false) {}
+    FlushStrategyResult getFlushTargets(const FlushContext::List&, const flushengine::TlsStatsMap&,
+                                        const flushengine::ActiveFlushStats&) const override {
+        return FlushStrategyResult({}, name(), _id, false, name());
     }
     std::string name() const override { return "flush_nothing"; }
 };
@@ -446,7 +458,8 @@ struct Fixture {
           engine(tlsStatsFactory, strategy, numThreads, idleInterval, std::numeric_limits<uint64_t>::max()) {}
 
     Fixture(uint32_t numThreads, vespalib::duration idleInterval)
-        : Fixture(numThreads, idleInterval, std::make_shared<SimpleStrategy>(SimpleStrategy::OrderBy::INDEX_OF)) {}
+        : Fixture(numThreads, idleInterval,
+                  std::make_shared<SimpleStrategy>(SimpleStrategy::OrderBy::INDEX_OF, false)) {}
 
     ~Fixture();
 
@@ -737,7 +750,7 @@ TEST(FlushEngineTest, require_that_concurrency_works) {
 }
 
 TEST(FlushEngineTest, require_that_there_is_room_for_one_and_only_one_high_pri_target) {
-    Fixture f(2, 1ms, std::make_unique<SimpleStrategy>(SimpleStrategy::OrderBy::SERIAL));
+    Fixture f(2, 1ms, std::make_unique<SimpleStrategy>(SimpleStrategy::OrderBy::SERIAL, false));
     auto    target1 = std::make_shared<SimpleTarget>("target1", 1, false);
     auto    target2 = std::make_shared<SimpleTarget>("target2", 2, false);
     auto    target3 = std::make_shared<HighPriorityTarget>("target3", 3, false);
@@ -770,7 +783,7 @@ TEST(FlushEngineTest, require_that_there_is_room_for_one_and_only_one_high_pri_t
 }
 
 TEST(FlushEngineTest, require_that_high_priority_does_not_jump_the_queue) {
-    Fixture f(2, 1ms, std::make_unique<SimpleStrategy>(SimpleStrategy::OrderBy::SERIAL));
+    Fixture f(2, 1ms, std::make_unique<SimpleStrategy>(SimpleStrategy::OrderBy::SERIAL, false));
     auto    target1 = std::make_shared<SimpleTarget>("target1", 1, false);
     auto    target2 = std::make_shared<SimpleTarget>("target2", 2, false);
     auto    target3 = std::make_shared<SimpleTarget>("target3", 3, false);
@@ -872,7 +885,7 @@ TEST(FlushEngineTest, require_that_oldest_serial_is_updated_when_finishing_prior
     auto    target1 = std::make_shared<SimpleTarget>("target1", 10, true);
     auto    handler = f.addSimpleHandler({target1});
     f.assertOldestSerial(*handler, 10);
-    f.engine.set_strategy(std::make_shared<SimpleStrategy>(SimpleStrategy::OrderBy::INDEX_OF)).wait();
+    f.engine.set_strategy(std::make_shared<SimpleStrategy>(SimpleStrategy::OrderBy::INDEX_OF, true)).wait();
     EXPECT_EQ(20u, handler->_oldestSerial);
 }
 

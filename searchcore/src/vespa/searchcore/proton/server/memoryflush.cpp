@@ -14,6 +14,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.memoryflush");
 
+using proton::flushengine::FlushStrategyResult;
 using proton::flushengine::TlsStats;
 using search::SerialNum;
 using searchcorespi::IFlushTarget;
@@ -40,6 +41,9 @@ uint64_t estimateNeededTlsSizeForFlushTarget(const TlsStats& tlsStats, SerialNum
     double bytesPerEntry = static_cast<double>(tlsStats.getNumBytes()) / numEntries;
     return bytesPerEntry * (tlsStats.getLastSerial() - flushedSerialNum);
 }
+
+const std::string strategy_name("memory");
+const std::string no_info("none");
 
 } // namespace
 
@@ -117,9 +121,9 @@ size_t computeGain(const IFlushTarget::DiskGain& gain) {
 
 } // namespace
 
-FlushContext::List MemoryFlush::getFlushTargets(const FlushContext::List&            targetList,
-                                                const flushengine::TlsStatsMap&      tlsStatsMap,
-                                                const flushengine::ActiveFlushStats& active_flushes) const {
+FlushStrategyResult MemoryFlush::getFlushTargets(const FlushContext::List&            targetList,
+                                                 const flushengine::TlsStatsMap&      tlsStatsMap,
+                                                 const flushengine::ActiveFlushStats& active_flushes) const {
     OrderType                       order(DEFAULT);
     uint64_t                        totalMemory(0);
     IFlushTarget::DiskGain          totalDisk;
@@ -155,7 +159,8 @@ FlushContext::List MemoryFlush::getFlushTargets(const FlushContext::List&       
         // that started before the last flush time of the flush target to evaluate.
         // Instead we should wait for the active (ongoing) flush to be finished before doing another evaluation.
         if ((!oldest_start_time.has_value() || lastFlushTime < oldest_start_time.value()) &&
-            target.getType() != IFlushTarget::Type::GC) {
+            target.getType() != IFlushTarget::Type::GC)
+        {
             if (visitedHandlers.insert(&handler).second) {
                 totalTlsSize += tlsStats.getNumBytes();
                 if ((totalTlsSize > config.maxGlobalTlsSize) && (order < TLSSIZE)) {
@@ -167,8 +172,8 @@ FlushContext::List MemoryFlush::getFlushTargets(const FlushContext::List&       
             order = MEMORY;
         } else if ((dgain.gain() > config.diskBloatFactor * computeGain(dgain)) && (order < DISKBLOAT)) {
             order = DISKBLOAT;
-        } else if ((timeDiff >= config.maxTimeGain) && (order < MAXAGE) &&
-                   target.getType() != IFlushTarget::Type::GC) {
+        } else if ((timeDiff >= config.maxTimeGain) && (order < MAXAGE) && target.getType() != IFlushTarget::Type::GC)
+        {
             order = MAXAGE;
         }
         LOG(debug,
@@ -195,7 +200,7 @@ FlushContext::List MemoryFlush::getFlushTargets(const FlushContext::List&       
     // No desired order and no urgent needs; no flush required at this moment.
     if (order == DEFAULT && !fv.empty() && !fv[0]->getTarget()->needUrgentFlush()) {
         LOG(debug, "getFlushTargets(): empty list");
-        return {};
+        return FlushStrategyResult({}, strategy_name, _id, false, no_info);
     }
     if (LOG_WOULD_LOG(debug)) {
         vespalib::asciistream oss;
@@ -207,7 +212,7 @@ FlushContext::List MemoryFlush::getFlushTargets(const FlushContext::List&       
         }
         LOG(debug, "getFlushTargets(): %zu sorted targets: [%s]", fv.size(), oss.str().c_str());
     }
-    return fv;
+    return FlushStrategyResult(std::move(fv), strategy_name, _id, false, getOrderName(order));
 }
 
 std::string MemoryFlush::name() const {

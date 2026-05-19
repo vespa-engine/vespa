@@ -71,15 +71,6 @@ private:
         PruneMeta(uint32_t flush_id, uint32_t strategy_id) noexcept
             : _flush_id(flush_id), _strategy_id(strategy_id) {}
     };
-    struct BoundFlushContextList {
-        FlushContext::List _ctx_list;
-        uint32_t           _strategy_id;
-        bool               _priority_flush;
-
-        BoundFlushContextList() : _ctx_list(), _strategy_id(0), _priority_flush(false) {}
-        BoundFlushContextList(FlushContext::List ctx_list, uint32_t strategy_id, bool priority_flush) noexcept
-            : _ctx_list(std::move(ctx_list)), _strategy_id(strategy_id), _priority_flush(priority_flush) {}
-    };
     using FlushMap = std::map<uint32_t, FlushInfo>;
     using FlushHandlerMap = HandlerMap<IFlushHandler>;
     using PendingPrunes = std::map<std::shared_ptr<IFlushHandler>, std::vector<PruneMeta>>;
@@ -115,11 +106,12 @@ private:
     std::atomic<uint64_t>                                 _max_summary_file_size;
 
     FlushContext::List getTargetList(bool includeFlushingTargets) const;
-    BoundFlushContextList getSortedTargetList();
+    flushengine::FlushStrategyResult getSortedTargetList();
     std::shared_ptr<search::IFlushToken> get_flush_token(const FlushContext& ctx);
-    FlushContext::SP initNextFlush(const FlushContext::List& lst);
-    std::string flushNextTarget(const std::string& name, const FlushContext::List& contexts, uint32_t strategy_id);
-    void flushAll(const FlushContext::List& lst, uint32_t strategy_id);
+    FlushContext::SP initNextFlush(const flushengine::FlushStrategyResult& flush_strategy_result);
+    std::string flushNextTarget(const std::string&                      name,
+                                const flushengine::FlushStrategyResult& flush_strategy_result);
+    void flushAll(const flushengine::FlushStrategyResult& flush_strategy_result);
     bool prune();
     void prune_done(std::vector<uint32_t>&        strategy_ids_for_finished_flushes,
                     const std::vector<PruneMeta>& prune_metas);
@@ -127,8 +119,9 @@ private:
     void maybe_apply_changed_strategy(std::vector<uint32_t>&        strategy_ids_for_finished_flushes,
                                       std::unique_lock<std::mutex>& strategy_guard);
     void mark_active_strategy(uint32_t strategy_id, std::lock_guard<std::mutex>&);
-    uint32_t initFlush(const FlushContext& ctx, uint32_t strategy_id);
-    uint32_t initFlush(const IFlushHandler::SP& handler, const IFlushTarget::SP& target, uint32_t strategy_id);
+    uint32_t initFlush(const FlushContext& ctx, uint32_t strategy_id, const std::string& strategy_info);
+    uint32_t initFlush(const IFlushHandler::SP& handler, const IFlushTarget::SP& target, uint32_t strategy_id,
+                       const std::string& strategy_info);
     void flushDone(const FlushContext& ctx, uint32_t taskId);
     bool canFlushMore(const std::unique_lock<std::mutex>& guard, IFlushTarget::Priority priority) const;
     void wait_for_slot_or_pending_prune(IFlushTarget::Priority priority);

@@ -34,9 +34,9 @@ private:
 public:
     PrepareRestartFlushStrategy(const Config& cfg);
 
-    FlushContext::List getFlushTargets(const FlushContext::List&       targetList,
-                                       const flushengine::TlsStatsMap& tlsStatsMap,
-                                       const flushengine::ActiveFlushStats&) const override;
+    flushengine::FlushStrategyResult getFlushTargets(const FlushContext::List&       targetList,
+                                                     const flushengine::TlsStatsMap& tlsStatsMap,
+                                                     const flushengine::ActiveFlushStats&) const override;
     std::string name() const override;
 };
 
