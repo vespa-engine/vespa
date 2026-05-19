@@ -88,8 +88,11 @@ func (kp *PemKeyPair) WritePrivateKeyFile(privateKeyFile string, overwrite bool,
 	}
 	data := kp.PrivateKey
 	if appendKey {
-		if _, err := os.Stat(privateKeyFile); os.IsNotExist(err) {
-			return fmt.Errorf("private key file does not exist: %s", privateKeyFile)
+		if _, err := os.Stat(privateKeyFile); err != nil {
+			if os.IsNotExist(err) {
+				return fmt.Errorf("private key file does not exist: %s", privateKeyFile)
+			}
+			return fmt.Errorf("could not stat private key file %s: %w", privateKeyFile, err)
 		}
 	}
 	return ioutil.AtomicWriteFile(privateKeyFile, data)
