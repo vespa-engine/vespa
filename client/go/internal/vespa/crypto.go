@@ -67,8 +67,8 @@ func (kp *PemKeyPair) WriteCertificateFile(certificateFile string, overwrite boo
 	return ioutil.AtomicWriteFile(certificateFile, data)
 }
 
-// CleanCertificateFile keeps only the first (newest) PEM certificate in certificateFile, removing any older ones.
-func CleanCertificateFile(certificateFile string) error {
+// PruneCertificateFile keeps only the first (newest) PEM certificate in certificateFile, removing any older ones.
+func PruneCertificateFile(certificateFile string) error {
 	data, err := os.ReadFile(certificateFile)
 	if err != nil {
 		return fmt.Errorf("could not read certificate file: %w", err)
@@ -81,17 +81,11 @@ func CleanCertificateFile(certificateFile string) error {
 }
 
 // WritePrivateKeyFile writes the private key contained in this key pair to privateKeyFile.
-func (kp *PemKeyPair) WritePrivateKeyFile(privateKeyFile string, overwrite bool, appendKey bool) error {
-	if ioutil.Exists(privateKeyFile) && !overwrite && !appendKey {
+func (kp *PemKeyPair) WritePrivateKeyFile(privateKeyFile string, overwrite bool) error {
+	if ioutil.Exists(privateKeyFile) && !overwrite {
 		return fmt.Errorf("cannot overwrite existing file: %s", privateKeyFile)
 	}
-	data := kp.PrivateKey
-	if appendKey {
-		if _, err := os.Stat(privateKeyFile); os.IsNotExist(err) {
-			return fmt.Errorf("private key file does not exist: %s", privateKeyFile)
-		}
-	}
-	return ioutil.AtomicWriteFile(privateKeyFile, data)
+	return ioutil.AtomicWriteFile(privateKeyFile, kp.PrivateKey)
 }
 
 // CreateKeyPair creates a key pair containing a private key and self-signed X509 certificate.
