@@ -69,7 +69,7 @@ $ vespa auth cert -a my-tenant.my-app.my-instance path/to/application/package`,
 		Args:              cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if overwriteCertificate && appendCertificate {
-				return fmt.Errorf("Cannot use append and foce flag at the same time.")
+				return fmt.Errorf("cannot use --append and --force flags at the same time")
 			}
 			if cleanCertificate && (overwriteCertificate || appendCertificate) {
 				return fmt.Errorf("cannot combine --prune with --force or --append")
