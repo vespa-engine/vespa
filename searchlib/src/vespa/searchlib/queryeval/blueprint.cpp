@@ -58,6 +58,35 @@ void maybe_eliminate_self(Blueprint*& self, Blueprint::UP replacement) {
 
 //-----------------------------------------------------------------------------
 
+namespace {
+
+uint32_t& next_enum_ref() {
+    thread_local uint32_t next_enum = 0;
+    return next_enum;
+}
+
+uint32_t make_enum_value() {
+    uint32_t& next_enum = next_enum_ref();
+    if (next_enum == 0) {
+        return 0;
+    }
+    return next_enum++;
+}
+
+} // namespace
+
+Blueprint::AutoEnumGuard::AutoEnumGuard(uint32_t first_id) noexcept {
+    // enable auto enum
+    next_enum_ref() = first_id;
+}
+
+Blueprint::AutoEnumGuard::~AutoEnumGuard() {
+    // disable auto enum
+    next_enum_ref() = 0;
+}
+
+//-----------------------------------------------------------------------------
+
 thread_local Blueprint::Options Blueprint::_opts;
 
 Blueprint::HitEstimate Blueprint::max(const std::vector<HitEstimate>& data) {
@@ -121,7 +150,7 @@ Blueprint::Blueprint() noexcept
       _flow_stats(0.0, 0.0, 0.0),
       _sourceId(0xffffffff),
       _docid_limit(0),
-      _id(0),
+      _id(make_enum_value()),
       _strict(false),
       _frozen(false) {
 }
@@ -136,11 +165,6 @@ void Blueprint::resolve_strict(InFlow& in_flow) noexcept {
         }
     }
     _strict = in_flow.strict();
-}
-
-uint32_t Blueprint::enumerate(uint32_t next_id) noexcept {
-    set_id(next_id++);
-    return next_id;
 }
 
 void Blueprint::each_node_post_order(const std::function<void(Blueprint&)>& f) {
@@ -426,14 +450,6 @@ void IntermediateBlueprint::setDocIdLimit(uint32_t limit) noexcept {
     }
 }
 
-uint32_t IntermediateBlueprint::enumerate(uint32_t next_id) noexcept {
-    set_id(next_id++);
-    for (Blueprint::UP& child : _children) {
-        next_id = child->enumerate(next_id);
-    }
-    return next_id;
-}
-
 void IntermediateBlueprint::each_node_post_order(const std::function<void(Blueprint&)>& f) {
     for (Blueprint::UP& child : _children) {
         child->each_node_post_order(f);
@@ -642,11 +658,11 @@ void IntermediateBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) const
 }
 
 void IntermediateBlueprint::fetchPostings(const ExecuteInfo& execInfo) {
-    auto flow = my_flow(InFlow(strict(), execInfo.hit_rate()));
+    auto  flow = my_flow(InFlow(strict(), execInfo.hit_rate()));
     auto* profiler = execInfo.profiler();
     for (const auto& child : _children) {
-        double nextHitRate = flow.flow();
-        auto childInfo = ExecuteInfo::create(nextHitRate, execInfo);
+        double                     nextHitRate = flow.flow();
+        auto                       childInfo = ExecuteInfo::create(nextHitRate, execInfo);
         FetchPostingsProfilerGuard guard(profiler, *child);
         child->fetchPostings(childInfo);
         flow.add(child->estimate());

@@ -809,18 +809,17 @@ void check_ids(Blueprint& bp, const std::vector<uint32_t>& expect, const std::st
 }
 
 TEST(BlueprintTest, blueprint_node_enumeration) {
-    auto a = std::make_unique<AndBlueprint>();
-    a->addChild(std::make_unique<MyLeaf>());
-    a->addChild(std::make_unique<MyLeaf>());
-    auto b = std::make_unique<AndBlueprint>();
-    b->addChild(std::make_unique<MyLeaf>());
-    b->addChild(std::make_unique<MyLeaf>());
-    auto root = std::make_unique<OrBlueprint>();
+    auto guard = Blueprint::auto_enum(10);
+    auto a = std::make_unique<AndBlueprint>();   // 10
+    a->addChild(std::make_unique<MyLeaf>());     // 11
+    a->addChild(std::make_unique<MyLeaf>());     // 12
+    auto b = std::make_unique<AndBlueprint>();   // 13
+    b->addChild(std::make_unique<MyLeaf>());     // 14
+    b->addChild(std::make_unique<MyLeaf>());     // 15
+    auto root = std::make_unique<OrBlueprint>(); // 16
     root->addChild(std::move(a));
     root->addChild(std::move(b));
-    check_ids(*root, {0, 0, 0, 0, 0, 0, 0}, "before enumerate");
-    root->enumerate(1);
-    check_ids(*root, {3, 4, 2, 6, 7, 5, 1}, "after enumerate");
+    check_ids(*root, {11, 12, 10, 14, 15, 13, 16}, "auto enumerated");
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

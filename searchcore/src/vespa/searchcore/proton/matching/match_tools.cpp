@@ -170,8 +170,10 @@ MatchToolsFactory::MatchToolsFactory(
       _object_store(nullptr),
       _metaStore(metaStore),
       _needed_handles() {
-    if (doom.soft_doom())
+    if (doom.soft_doom()) {
         return;
+    }
+    auto enum_guard = search::queryeval::Blueprint::auto_enum();
     auto trace = root_trace.make_trace();
     trace.addEvent(4, "Start query setup");
     _query.setWhiteListBlueprint(metaStore.createWhiteListBlueprint());
@@ -200,14 +202,10 @@ MatchToolsFactory::MatchToolsFactory(
                 setup_profiler = std::make_unique<vespalib::ExecutionProfiler>(depth);
             }
         }
-        if (trace.getLevel() >= 6 || setup_profiler) {
-            // need stable ids in the blueprint tree for profiler / dump output
-            _query.enumerate_blueprint_nodes();
-        }
         trace.addEvent(4, "Perform dictionary lookups and posting lists initialization");
         {
-            auto info = ExecuteInfo::create(in_flow.rate(), _requestContext.getDoom(), thread_bundle,
-                                            setup_profiler.get());
+            auto info =
+                ExecuteInfo::create(in_flow.rate(), _requestContext.getDoom(), thread_bundle, setup_profiler.get());
             FetchPostingsProfilerGuard guard(setup_profiler.get(), *_query.peekRoot());
             _query.fetchPostings(info);
         }

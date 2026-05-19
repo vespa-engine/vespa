@@ -49,18 +49,18 @@ private:
     using BlueprintAndMatchData = std::pair<search::queryeval::Blueprint&, search::fef::MatchData&>;
     BlueprintAndMatchData create_match_data(size_t want_hits, size_t max_group_size, double hit_rate,
                                             bool strictSearch);
-    search::queryeval::Searchable&                       _searchable_attributes;
-    const search::queryeval::IRequestContext&            _requestContext;
-    const RangeQueryLocator&                             _rangeQueryLocator;
-    std::string                                          _attribute_name;
-    bool                                                 _descending;
-    std::string                                          _diversity_attribute;
-    std::mutex                                           _lock;
-    std::vector<search::fef::MatchData::UP>              _match_datas;
-    std::unique_ptr<search::queryeval::Blueprint>        _blueprint;
-    std::atomic<ssize_t>                                 _estimatedHits;
-    double                                               _diversityCutoffFactor;
-    DiversityCutoffStrategy                              _diversityCutoffStrategy;
+    search::queryeval::Searchable&                _searchable_attributes;
+    const search::queryeval::IRequestContext&     _requestContext;
+    const RangeQueryLocator&                      _rangeQueryLocator;
+    std::string                                   _attribute_name;
+    bool                                          _descending;
+    std::string                                   _diversity_attribute;
+    std::mutex                                    _lock;
+    std::vector<search::fef::MatchData::UP>       _match_datas;
+    std::unique_ptr<search::queryeval::Blueprint> _blueprint;
+    std::atomic<ssize_t>                          _estimatedHits;
+    double                                        _diversityCutoffFactor;
+    DiversityCutoffStrategy                       _diversityCutoffStrategy;
 };
 
 } // namespace proton::matching
