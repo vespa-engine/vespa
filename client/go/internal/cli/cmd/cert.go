@@ -219,7 +219,7 @@ func doCertAdd(cli *CLI, overwriteCertificate bool, appendCert bool, args []stri
 		return err
 	}
 	if pkg.HasCertificate() && !overwriteCertificate && !appendCert {
-		return errHint(fmt.Errorf("application package '%s' already contains a certificate", pkg.Path), "Use -f flag to force overwriting")
+		return errHint(fmt.Errorf("application package '%s' already contains a certificate", pkg.Path), "Use -f to force overwriting, or -A to append a new certificate for rotation")
 	}
 	if pkg.IsZip() {
 		return errHint(fmt.Errorf("cannot add certificate to compressed application package: '%s'", pkg.Path),
