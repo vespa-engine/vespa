@@ -55,6 +55,19 @@ func (w *Waiter) ServiceWithAuthMethod(target vespa.Target, cluster string, auth
 		authHint := fmt.Sprintf("No endpoint found for authentication method %s", authMethod)
 		return nil, errHint(err, authHint, hint)
 	}
+	// When talking to Vespa Cloud over mTLS the data-plane client certificate is
+	// required. Without it the TLS handshake is terminated by the load balancer
+	// and Go reports a generic "unexpected EOF", which gives the user no clue
+	// that a certificate is missing. Fail early with an actionable hint.
+	if (target.Type() == vespa.TargetCloud || target.Type() == vespa.TargetPublicCD) &&
+		authMethod == "mtls" && len(service.TLSOptions.KeyPair) == 0 {
+		return nil, errHint(
+			fmt.Errorf("no data-plane certificate configured for %s", target.Deployment().Application),
+			"Run 'vespa auth cert' to create a self-signed certificate for this application",
+			"Or set VESPA_CLI_DATA_PLANE_CERT_FILE and VESPA_CLI_DATA_PLANE_KEY_FILE to existing PEM files",
+			"Or set VESPA_CLI_DATA_PLANE_TOKEN to use token authentication",
+		)
+	}
 	if err := w.maybeWaitFor(service); err != nil {
 		return nil, err
 	}
