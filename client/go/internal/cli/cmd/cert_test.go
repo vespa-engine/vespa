@@ -191,7 +191,9 @@ func TestCertClean(t *testing.T) {
 	newestBlock, _ := pem.Decode(certData)
 	require.NotNil(t, newestBlock)
 
-	// Use a fresh CLI with the same homeDir to avoid -A flag state bleeding into --prune
+	// Fresh CLI needed: pflag doesn't reset flag vars between Execute() calls, so
+	// appendCertificate stays true from the -A runs above and would trip the
+	// "cannot combine --prune with --append" guard when using --prune.
 	cli2, stdout2, _ := newTestCLI(t, "VESPA_CLI_HOME="+cli.config.homeDir)
 	cli2.isTerminal = func() bool { return true }
 	cli2.Stdin = bytes.NewBufferString("y\n")
