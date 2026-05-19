@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/quant/hadamard.h>
 #include <vespa/vespalib/util/fast_range.h>
 #include <vespa/vespalib/util/xoshiro.h>
-#include <vespa/vespalib/gtest/gtest.h>
+
 #include <gmock/gmock.h>
+
 #include <cmath>
 #include <vector>
 
@@ -14,7 +16,7 @@ namespace vespalib::quant {
 
 MATCHER_P(IsSquareRootNormalizedBy, dimensions, "") {
     // Pointwise() matches on a 2-tuple <actual, expected>, i.e. lhs and rhs container args.
-    const float actual   = std::get<0>(arg);
+    const float actual = std::get<0>(arg);
     const float expected = std::get<1>(arg) / std::sqrt(dimensions);
     return ExplainMatchResult(FloatEq(expected), actual, result_listener);
 }
@@ -29,6 +31,7 @@ void check_hadamard(const std::vector<int>& in, const std::vector<int>& expected
     std::vector v = in;
     // Non-normalized Hadamard transforms:
     std::vector<int> tmp(n);
+
     int* res = hadamard(v.data(), tmp.data(), n);
     ASSERT_THAT(std::span<const int>(res, n), ElementsAreArray(expected)) << "out-of-place FWHT";
 
@@ -43,9 +46,10 @@ void check_hadamard(const std::vector<int>& in, const std::vector<int>& expected
 
     v_f.assign(in.begin(), in.end());
     std::vector<float> tmp_f(n);
+
     float* res_f = hadamard_normalized(v_f.data(), tmp_f.data(), v_f.size());
-    ASSERT_THAT(std::span<const float>(res_f, n),
-                Pointwise(IsSquareRootNormalizedBy(n), expected)) << "normalized out-of-place FWHT";
+    ASSERT_THAT(std::span<const float>(res_f, n), Pointwise(IsSquareRootNormalizedBy(n), expected))
+        << "normalized out-of-place FWHT";
 }
 
 TEST(FastWHTransformTest, zero_and_one_point_transforms_are_no_ops) {
@@ -73,7 +77,8 @@ struct MyRandGen {
     }
 };
 // Avoid failed inlining warnings
-MyRandGen::MyRandGen() : rng(std::random_device{}()) {}
+MyRandGen::MyRandGen() : rng(std::random_device{}()) {
+}
 
 // clang-format off: destroys semantic indenting
 

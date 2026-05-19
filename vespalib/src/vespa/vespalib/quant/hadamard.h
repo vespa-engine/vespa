@@ -72,7 +72,7 @@ template <typename T>
     for (size_t i = 0; i < stages; ++i) {
         // Each stage processes elements pairwise, shoveling additions into the lower
         // half (lo + ...) and subtractions into the top half (hi + ...) sequentially.
-        for (size_t j = 0, lo = 0, hi = n/2; j < n; j += 2, ++lo, ++hi) {
+        for (size_t j = 0, lo = 0, hi = n / 2; j < n; j += 2, ++lo, ++hi) {
             T a = in[j];
             T b = in[j + 1];
             out[lo] = a + b;
@@ -133,7 +133,7 @@ void hadamard(T* v, const size_t n) noexcept {
             while (i < j) {
                 T a = v[i];
                 T b = v[i + h]; // Alike term in _next_ block
-                v[i]     = a + b;
+                v[i] = a + b;
                 v[i + h] = a - b;
                 ++i;
             }

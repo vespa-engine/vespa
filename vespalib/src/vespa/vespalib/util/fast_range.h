@@ -25,10 +25,18 @@ namespace vespalib {
 
 // Metafunction for widening an unsigned integer type to the next greater type.
 template <typename> struct Widened;
-template <> struct Widened<uint8_t>  { using type = uint16_t; };
-template <> struct Widened<uint16_t> { using type = uint32_t; };
-template <> struct Widened<uint32_t> { using type = uint64_t; };
-template <> struct Widened<uint64_t> { using type = __uint128_t; };
+template <> struct Widened<uint8_t> {
+    using type = uint16_t;
+};
+template <> struct Widened<uint16_t> {
+    using type = uint32_t;
+};
+template <> struct Widened<uint32_t> {
+    using type = uint64_t;
+};
+template <> struct Widened<uint64_t> {
+    using type = __uint128_t;
+};
 
 template <typename T> using Widen = Widened<T>::type;
 

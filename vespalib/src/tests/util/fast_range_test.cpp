@@ -2,7 +2,9 @@
 
 #include <vespa/vespalib/util/fast_range.h>
 #include <vespa/vespalib/util/xoshiro.h>
+
 #include <gtest/gtest.h>
+
 #include <algorithm>
 #include <concepts>
 #include <random>
@@ -18,7 +20,7 @@ void do_test_fast_range() {
     Xoshiro256PlusPlusPrng gen(std::random_device{}());
     for (size_t i = 0; i < 10'000; ++i) {
         const T max_excl = std::max(static_cast<T>(gen()), T{1});
-        const T mapped   = map_random_to_range(static_cast<T>(gen()), max_excl);
+        const T mapped = map_random_to_range(static_cast<T>(gen()), max_excl);
 
         ASSERT_LT(mapped, max_excl) << mapped << " for range [0, " << max_excl << ")";
     }
@@ -29,7 +31,7 @@ void do_test_next_random_in_range() {
     Xoshiro256PlusPlusPrng gen(std::random_device{}());
     for (size_t i = 0; i < 10'000; ++i) {
         T from_incl = static_cast<T>(gen());
-        T to_excl   = static_cast<T>(gen());
+        T to_excl = static_cast<T>(gen());
         if (from_incl > to_excl) {
             std::swap(from_incl, to_excl);
         } else if (from_incl == to_excl) {
