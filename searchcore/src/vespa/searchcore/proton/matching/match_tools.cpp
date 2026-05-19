@@ -153,7 +153,8 @@ MatchToolsFactory::MatchToolsFactory(
     const SerializedQueryTree& queryTree, const std::string& location, const ViewResolver& viewResolver,
     const IDocumentMetaStore& metaStore, const IIndexEnvironment& indexEnv, const RankSetup& rankSetup,
     const Properties& rankProperties, const Properties& featureOverrides, vespalib::ThreadBundle& thread_bundle,
-    const search::IDocumentMetaStoreContext::IReadGuard::SP* metaStoreReadGuard, uint32_t maxNumHits, bool is_search)
+    const search::IDocumentMetaStoreContext::IReadGuard::SP* metaStoreReadGuard,
+    search::queryeval::QuerySetupStats& setup_stats, uint32_t maxNumHits, bool is_search)
     : _queryLimiter(queryLimiter),
       _create_blueprint_params(extract_create_blueprint_params(
           rankSetup, rankProperties, metaStore.getNumActiveLids(), searchContext.getDocIdLimit())),
@@ -215,8 +216,8 @@ MatchToolsFactory::MatchToolsFactory(
             bool use_lazy_filter = LazyFilter::check(_queryEnv.getProperties());
             _query.handle_global_filter(_requestContext, ann_deadline_config, searchContext.getDocIdLimit(),
                                         _create_blueprint_params.global_filter_lower_limit,
-                                        _create_blueprint_params.global_filter_upper_limit, trace, sort_by_cost,
-                                        use_lazy_filter, setup_profiler.get());
+                                        _create_blueprint_params.global_filter_upper_limit, setup_stats, trace,
+                                        sort_by_cost, use_lazy_filter, setup_profiler.get());
         }
         if (setup_profiler) {
             setup_profiler->report(trace.createCursor("setup_profiling"));
