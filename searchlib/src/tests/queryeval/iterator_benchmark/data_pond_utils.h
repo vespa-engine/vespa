@@ -18,5 +18,4 @@ void write_data_pond_to_file(const std::string& file_path, const DataPond& data_
  */
 void read_file_into_data_pond(const std::string& file_path, DataPond& data_pond);
 
-}
-
+} // namespace search::queryeval::test
