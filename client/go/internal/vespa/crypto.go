@@ -51,19 +51,34 @@ type PemKeyPair struct {
 }
 
 // WriteCertificateFile writes the certificate contained in this key pair to certificateFile.
-func (kp *PemKeyPair) WriteCertificateFile(certificateFile string, overwrite bool) error {
-	if ioutil.Exists(certificateFile) && !overwrite {
+func (kp *PemKeyPair) WriteCertificateFile(certificateFile string, overwrite bool, appendCredentials bool) error {
+	if ioutil.Exists(certificateFile) && !overwrite && !appendCredentials {
 		return fmt.Errorf("cannot overwrite existing file: %s", certificateFile)
 	}
-	return ioutil.AtomicWriteFile(certificateFile, kp.Certificate)
+	data := kp.Certificate
+
+	if appendCredentials {
+		existing, err := os.ReadFile(certificateFile)
+		if err != nil {
+			return fmt.Errorf("certificate file does not exist: %s", certificateFile)
+		}
+		data = append(data, existing...)
+	}
+	return ioutil.AtomicWriteFile(certificateFile, data)
 }
 
 // WritePrivateKeyFile writes the private key contained in this key pair to privateKeyFile.
-func (kp *PemKeyPair) WritePrivateKeyFile(privateKeyFile string, overwrite bool) error {
-	if ioutil.Exists(privateKeyFile) && !overwrite {
+func (kp *PemKeyPair) WritePrivateKeyFile(privateKeyFile string, overwrite bool, appendKey bool) error {
+	if ioutil.Exists(privateKeyFile) && !overwrite && !appendKey {
 		return fmt.Errorf("cannot overwrite existing file: %s", privateKeyFile)
 	}
-	return ioutil.AtomicWriteFile(privateKeyFile, kp.PrivateKey)
+	data := kp.PrivateKey
+	if appendKey {
+		if _, err := os.Stat(privateKeyFile); os.IsNotExist(err) {
+			return fmt.Errorf("private key file does not exist: %s", privateKeyFile)
+		}
+	}
+	return ioutil.AtomicWriteFile(privateKeyFile, data)
 }
 
 // CreateKeyPair creates a key pair containing a private key and self-signed X509 certificate.

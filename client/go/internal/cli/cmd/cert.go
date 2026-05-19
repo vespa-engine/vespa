@@ -18,6 +18,7 @@ func newCertCmd(cli *CLI) *cobra.Command {
 	var (
 		skipApplicationPackage bool
 		overwriteCertificate   bool
+		appendCertificate      bool
 	)
 	cmd := &cobra.Command{
 		Use:   "cert",
@@ -66,10 +67,14 @@ $ vespa auth cert -a my-tenant.my-app.my-instance path/to/application/package`,
 		SilenceUsage:      true,
 		Args:              cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return doCert(cli, overwriteCertificate, skipApplicationPackage, args)
+			if overwriteCertificate && appendCertificate {
+				return fmt.Errorf("Cannot use append and foce flag at the same time.")
+			}
+			return doCert(cli, overwriteCertificate, skipApplicationPackage, appendCertificate, args)
 		},
 	}
 	cmd.Flags().BoolVarP(&overwriteCertificate, "force", "f", false, "Force overwrite of existing certificate and private key")
+	cmd.Flags().BoolVarP(&appendCertificate, "append", "A", false, "Appends a new certificate if certificate already exists. Useful for rotating credentials")
 	// TODO(mpolden): Stop adding certificate to application package and remove this flag
 	cmd.Flags().BoolVarP(&skipApplicationPackage, "no-add", "N", false, "Do not add certificate to the application package")
 	cmd.MarkPersistentFlagRequired(applicationFlag)
@@ -77,7 +82,11 @@ $ vespa auth cert -a my-tenant.my-app.my-instance path/to/application/package`,
 }
 
 func newCertAddCmd(cli *CLI) *cobra.Command {
-	var overwriteCertificate bool
+	var (
+		overwriteCertificate bool
+		appendCertificate    bool
+	)
+
 	cmd := &cobra.Command{
 		Use:   "add",
 		Short: "Add certificate to application package",
@@ -94,15 +103,16 @@ $ vespa auth cert add -a my-tenant.my-app.my-instance path/to/application/packag
 		SilenceUsage:      true,
 		Args:              cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return doCertAdd(cli, overwriteCertificate, args)
+			return doCertAdd(cli, overwriteCertificate, appendCertificate, args)
 		},
 	}
 	cmd.Flags().BoolVarP(&overwriteCertificate, "force", "f", false, "Force overwrite of existing certificate")
+	cmd.Flags().BoolVarP(&appendCertificate, "append", "A", false, "Appends a new certificate if certificate already exists. Useful for rotating credentials")
 	cmd.MarkPersistentFlagRequired(applicationFlag)
 	return cmd
 }
 
-func doCert(cli *CLI, overwriteCertificate, skipApplicationPackage bool, args []string) error {
+func doCert(cli *CLI, overwriteCertificate, skipApplicationPackage bool, appendCertificate bool, args []string) error {
 	targetType, err := cli.targetType(cloudTargetOnly)
 	if err != nil {
 		return err
@@ -120,8 +130,8 @@ func doCert(cli *CLI, overwriteCertificate, skipApplicationPackage bool, args []
 		return err
 	}
 
-	if !overwriteCertificate {
-		hint := "Use -f flag to force overwriting"
+	if !overwriteCertificate && !appendCertificate {
+		hint := "Use -f flag to force overwriting or -A flag to append new certificate"
 		if ioutil.Exists(privateKeyFile.path) {
 			return errHint(fmt.Errorf("private key '%s' already exists", color.CyanString(privateKeyFile.path)), hint)
 		}
@@ -129,26 +139,30 @@ func doCert(cli *CLI, overwriteCertificate, skipApplicationPackage bool, args []
 			return errHint(fmt.Errorf("certificate '%s' already exists", color.CyanString(certificateFile.path)), hint)
 		}
 	}
+	if appendCertificate && !ioutil.Exists(certificateFile.path) {
+		return errHint(fmt.Errorf("no certificate found at '%s'", color.CyanString(certificateFile.path)),
+			"Run 'vespa auth cert' first to create an initial certificate")
+	}
 
 	keyPair, err := vespa.CreateKeyPair()
 	if err != nil {
 		return err
 	}
-	if err := keyPair.WriteCertificateFile(certificateFile.path, overwriteCertificate); err != nil {
+	if err := keyPair.WriteCertificateFile(certificateFile.path, overwriteCertificate, appendCertificate); err != nil {
 		return fmt.Errorf("could not write certificate: %w", err)
 	}
-	if err := keyPair.WritePrivateKeyFile(privateKeyFile.path, overwriteCertificate); err != nil {
+	if err := keyPair.WritePrivateKeyFile(privateKeyFile.path, overwriteCertificate, appendCertificate); err != nil {
 		return fmt.Errorf("could not write private key: %w", err)
 	}
 	cli.printSuccess("Certificate written to ", color.CyanString("'"+certificateFile.path+"'"))
 	cli.printSuccess("Private key written to ", color.CyanString("'"+privateKeyFile.path+"'"))
 	if !skipApplicationPackage {
-		return doCertAdd(cli, overwriteCertificate, args)
+		return doCertAdd(cli, overwriteCertificate, appendCertificate, args)
 	}
 	return nil
 }
 
-func doCertAdd(cli *CLI, overwriteCertificate bool, args []string) error {
+func doCertAdd(cli *CLI, overwriteCertificate bool, appendCert bool, args []string) error {
 	targetType, err := cli.targetType(cloudTargetOnly)
 	if err != nil {
 		return err
@@ -161,7 +175,7 @@ func doCertAdd(cli *CLI, overwriteCertificate bool, args []string) error {
 	if err != nil {
 		return err
 	}
-	if pkg.HasCertificate() && !overwriteCertificate {
+	if pkg.HasCertificate() && !overwriteCertificate && !appendCert {
 		return errHint(fmt.Errorf("application package '%s' already contains a certificate", pkg.Path), "Use -f flag to force overwriting")
 	}
 	if pkg.IsZip() {

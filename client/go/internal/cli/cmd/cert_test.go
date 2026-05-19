@@ -4,6 +4,8 @@
 package cmd
 
 import (
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -94,6 +96,70 @@ func TestCertAdd(t *testing.T) {
 	stdout.Reset()
 	require.Nil(t, cli.Run("auth", "cert", "add", "-f", pkgDir))
 	assert.Equal(t, fmt.Sprintf("Success: Copied certificate from '%s' to '%s'\n", certificate, pkgCertificate), stdout.String())
+}
+
+func countPEMBlocks(t *testing.T, path string) int {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	require.Nil(t, err)
+	count := 0
+	for {
+		var block *pem.Block
+		block, data = pem.Decode(data)
+		if block == nil {
+			break
+		}
+		_, err := x509.ParseCertificate(block.Bytes)
+		require.Nil(t, err)
+		count++
+	}
+	return count
+}
+
+func TestCertAppendNoExisting(t *testing.T) {
+	cli, _, stderr := newTestCLI(t)
+	configureCloud(t, cli)
+
+	err := cli.Run("auth", "cert", "-N", "-A")
+	require.NotNil(t, err)
+	assert.Contains(t, stderr.String(), "no certificate found")
+	assert.Contains(t, stderr.String(), "Run 'vespa auth cert' first")
+}
+
+func TestCertAppend(t *testing.T) {
+	cli, stdout, _ := newTestCLI(t)
+	configureCloud(t, cli)
+	stdout.Reset()
+
+	require.Nil(t, cli.Run("auth", "cert", "-N"))
+
+	app, err := vespa.ApplicationFromString("t1.a1.i1")
+	require.Nil(t, err)
+	certFile := filepath.Join(cli.config.homeDir, app.String(), "data-plane-public-cert.pem")
+
+	assert.Equal(t, 1, countPEMBlocks(t, certFile))
+
+	stdout.Reset()
+	require.Nil(t, cli.Run("auth", "cert", "-N", "-A"))
+	assert.Contains(t, stdout.String(), "Certificate written to")
+	assert.Equal(t, 2, countPEMBlocks(t, certFile))
+}
+
+func TestCertAppendTwice(t *testing.T) {
+	cli, _, _ := newTestCLI(t)
+	configureCloud(t, cli)
+
+	require.Nil(t, cli.Run("auth", "cert", "-N"))
+
+	app, err := vespa.ApplicationFromString("t1.a1.i1")
+	require.Nil(t, err)
+	certFile := filepath.Join(cli.config.homeDir, app.String(), "data-plane-public-cert.pem")
+
+	require.Nil(t, cli.Run("auth", "cert", "-N", "-A"))
+	assert.Equal(t, 2, countPEMBlocks(t, certFile))
+
+	require.Nil(t, cli.Run("auth", "cert", "-N", "-A"))
+	assert.Equal(t, 3, countPEMBlocks(t, certFile))
 }
 
 func TestCertNoAdd(t *testing.T) {
