@@ -4,6 +4,7 @@
 package cmd
 
 import (
+	"bytes"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
@@ -172,27 +173,24 @@ func TestCertCleanNoExisting(t *testing.T) {
 }
 
 func TestCertClean(t *testing.T) {
-	cli, stdout, _ := newTestCLI(t)
+	cli, _, _ := newTestCLI(t)
 	configureCloud(t, cli)
-	stdout.Reset()
 
 	require.Nil(t, cli.Run("auth", "cert", "-N"))
+	require.Nil(t, cli.Run("auth", "cert", "-N", "-A"))
+	require.Nil(t, cli.Run("auth", "cert", "-N", "-A"))
 
 	app, err := vespa.ApplicationFromString("t1.a1.i1")
 	require.Nil(t, err)
 	certFile := filepath.Join(cli.config.homeDir, app.String(), "data-plane-public-cert.pem")
-
-	// Manually duplicate the cert to simulate accumulated certs after rotation
-	certData, err := os.ReadFile(certFile)
-	require.Nil(t, err)
-	combined := append(certData, certData...)
-	combined = append(combined, certData...)
-	require.Nil(t, os.WriteFile(certFile, combined, 0o600))
 	assert.Equal(t, 3, countPEMBlocks(t, certFile))
 
-	stdout.Reset()
-	require.Nil(t, cli.Run("auth", "cert", "-N", "--prune"))
-	assert.Contains(t, stdout.String(), "Pruned certificate file")
+	// Use a fresh CLI with the same homeDir to avoid -A flag state bleeding into --prune
+	cli2, stdout2, _ := newTestCLI(t, "VESPA_CLI_HOME="+cli.config.homeDir)
+	cli2.isTerminal = func() bool { return true }
+	cli2.Stdin = bytes.NewBufferString("y\n")
+	require.Nil(t, cli2.Run("auth", "cert", "-N", "--prune"))
+	assert.Contains(t, stdout2.String(), "Pruned certificate file")
 	assert.Equal(t, 1, countPEMBlocks(t, certFile))
 }
 

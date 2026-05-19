@@ -187,6 +187,14 @@ func doCleanCert(cli *CLI, skipApplicationPackage bool, args []string) error {
 		return errHint(fmt.Errorf("no certificate found at '%s'", color.CyanString(certificateFile.path)),
 			"Run 'vespa auth cert' first to create an initial certificate")
 	}
+	cli.printWarning("Any clients still using old certificates will stop working after pruning")
+	ok, err := cli.confirm("Prune old certificates from '"+certificateFile.path+"'?", false)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return nil
+	}
 	if err := vespa.CleanCertificateFile(certificateFile.path); err != nil {
 		return fmt.Errorf("could not prune certificate file: %w", err)
 	}
