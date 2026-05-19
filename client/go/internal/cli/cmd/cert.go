@@ -69,7 +69,7 @@ $ vespa auth cert -a my-tenant.my-app.my-instance path/to/application/package`,
 		Args:              cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if overwriteCertificate && appendCertificate {
-				return fmt.Errorf("Cannot use append and force flag at the same time.")
+				return fmt.Errorf("cannot use --append and --force flags at the same time")
 			}
 			if pruneCertificate && (overwriteCertificate || appendCertificate) {
 				return fmt.Errorf("cannot combine --prune with --force or --append")
@@ -162,7 +162,8 @@ func doCert(cli *CLI, overwriteCertificate, skipApplicationPackage bool, appendC
 	if appendCertificate && !ioutil.Exists(privateKeyFile.path) {
 		return fmt.Errorf("private key file does not exist: %s", privateKeyFile.path)
 	}
-	if err := keyPair.WritePrivateKeyFile(privateKeyFile.path, overwriteCertificate || appendCertificate); err != nil {
+	requireExisting := appendCertificate
+	if err := keyPair.WritePrivateKeyFile(privateKeyFile.path, overwriteCertificate || appendCertificate, requireExisting); err != nil {
 		return fmt.Errorf("could not write private key: %w", err)
 	}
 	cli.printSuccess("Certificate written to ", color.CyanString("'"+certificateFile.path+"'"))
@@ -227,7 +228,7 @@ func doCertAdd(cli *CLI, overwriteCertificate bool, appendCert bool, args []stri
 		return err
 	}
 	if pkg.HasCertificate() && !overwriteCertificate && !appendCert {
-		return errHint(fmt.Errorf("application package '%s' already contains a certificate", pkg.Path), "Use -f flag to force overwriting")
+		return errHint(fmt.Errorf("application package '%s' already contains a certificate", pkg.Path), "Use -f to force overwriting, or -A to append a new certificate for rotation")
 	}
 	if pkg.IsZip() {
 		return errHint(fmt.Errorf("cannot add certificate to compressed application package: '%s'", pkg.Path),
