@@ -596,6 +596,7 @@ std::string getExpectedBlueprint() {
            "        cost: 0\n"
            "        strict_cost: 0\n"
            "    }\n"
+           "    abs_cost: 0\n"
            "    sourceId: 4294967295\n"
            "    docid_limit: 0\n"
            "    id: 0\n"
@@ -622,6 +623,7 @@ std::string getExpectedBlueprint() {
            "                cost: 0\n"
            "                strict_cost: 0\n"
            "            }\n"
+           "            abs_cost: 0\n"
            "            sourceId: 4294967295\n"
            "            docid_limit: 0\n"
            "            id: 0\n"
@@ -658,6 +660,7 @@ std::string getExpectedSlimeBlueprint() {
            "        cost: 0.0,"
            "        strict_cost: 0.0"
            "    },"
+           "    abs_cost: 0.0,"
            "    sourceId: 4294967295,"
            "    docid_limit: 0,"
            "    id: 0,"
@@ -690,6 +693,7 @@ std::string getExpectedSlimeBlueprint() {
            "                cost: 0.0,"
            "                strict_cost: 0.0"
            "            },"
+           "            abs_cost: 0.0,"
            "            sourceId: 4294967295,"
            "            docid_limit: 0,"
            "            id: 0,"
@@ -737,8 +741,8 @@ TEST(BlueprintTest, requireThatDocIdLimitInjectionWorks) {
 
 TEST(BlueprintTest, Control_object_sizes) {
     EXPECT_EQ(32u, sizeof(Blueprint::State));
-    EXPECT_EQ(56u, sizeof(Blueprint));
-    EXPECT_EQ(88u, sizeof(LeafBlueprint));
+    EXPECT_EQ(64u, sizeof(Blueprint));
+    EXPECT_EQ(96u, sizeof(LeafBlueprint));
 }
 
 Blueprint::Options make_opts(bool sort_by_cost, bool allow_force_strict, bool keep_order) {

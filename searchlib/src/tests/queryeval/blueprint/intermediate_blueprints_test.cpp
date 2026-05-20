@@ -643,6 +643,14 @@ void compare(const Blueprint& bp1, const Blueprint& bp2, bool expect_eq) {
                     return true;
                 }
             }
+            if (field == "abs_cost") {
+                // ignore abs_cost differences between optimized and unoptimized blueprint trees
+                if (a.type().getId() == vespalib::slime::DOUBLE::ID &&
+                    b.type().getId() == vespalib::slime::DOUBLE::ID)
+                {
+                    return true;
+                }
+            }
             if (path.size() >= 2 && std::holds_alternative<std::string_view>(path[path.size() - 2])) {
                 std::string_view parent = std::get<std::string_view>(path[path.size() - 2]);
                 // ignore flow_stats to enable comparing optimized with unoptimized trees
@@ -1305,16 +1313,16 @@ TEST(IntermediateBlueprintsTest, require_that_children_does_not_optimize_when_pa
     search::fef::TermFieldHandle idxth22 = subLayout.allocTermField(2);
     search::fef::TermFieldHandle idxth1 = subLayout.allocTermField(1);
     search::fef::MatchDataLayout mdl;
-    Blueprint::UP                top_up(ap((new EquivBlueprint(fields, std::move(subLayout)))
-                                               ->addTerm(index.getIndex().createBlueprint(
+    Blueprint::UP top_up(ap((new EquivBlueprint(fields, std::move(subLayout)))
+                                ->addTerm(index.getIndex().createBlueprint(
                                               requestContext, FieldSpec("f2", 2, idxth22, true), makeTerm("w2"), mdl),
-                                                         1.0)
-                                               .addTerm(index.getIndex().createBlueprint(requestContext, FieldSpec("f1", 1, idxth1),
-                                                                                         makeTerm("w1"), mdl),
-                                                        1.0)
-                                               .addTerm(index.getIndex().createBlueprint(requestContext, FieldSpec("f2", 2, idxth21),
-                                                                                         makeTerm("w2"), mdl),
-                                                        1.0)));
+                                          1.0)
+                                .addTerm(index.getIndex().createBlueprint(requestContext, FieldSpec("f1", 1, idxth1),
+                                                                          makeTerm("w1"), mdl),
+                                         1.0)
+                                .addTerm(index.getIndex().createBlueprint(requestContext, FieldSpec("f2", 2, idxth21),
+                                                                          makeTerm("w2"), mdl),
+                                         1.0)));
     EXPECT_TRUE(mdl.empty());
     MatchData::UP md = MatchData::makeTestInstance(100, 10);
     top_up->basic_plan(true, 1000);
@@ -1348,13 +1356,13 @@ TEST(IntermediateBlueprintsTest, require_that_unpack_optimization_is_not_overrul
     search::fef::TermFieldHandle idxth1 = subLayout.allocTermField(1);
     search::fef::TermFieldHandle idxth2 = subLayout.allocTermField(2);
     search::fef::TermFieldHandle idxth3 = subLayout.allocTermField(3);
-    Blueprint::UP                top_up(ap((new EquivBlueprint(fields, std::move(subLayout)))
-                                               ->addTerm(ap((new OrBlueprint())
-                                                                ->addChild(ap(MyLeafSpec(20).addField(1, idxth1).create()))
-                                                                .addChild(ap(MyLeafSpec(20).addField(2, idxth2).create()))
-                                                                .addChild(ap(MyLeafSpec(10).addField(3, idxth3).create()))),
-                                                         1.0)));
-    MatchData::UP                md = MatchData::makeTestInstance(100, 10);
+    Blueprint::UP top_up(ap((new EquivBlueprint(fields, std::move(subLayout)))
+                                ->addTerm(ap((new OrBlueprint())
+                                                 ->addChild(ap(MyLeafSpec(20).addField(1, idxth1).create()))
+                                                 .addChild(ap(MyLeafSpec(20).addField(2, idxth2).create()))
+                                                 .addChild(ap(MyLeafSpec(10).addField(3, idxth3).create()))),
+                                          1.0)));
+    MatchData::UP md = MatchData::makeTestInstance(100, 10);
     top_up->basic_plan(true, 1000);
     top_up->fetchPostings(ExecuteInfo::FULL);
     SearchIterator::UP search = top_up->createSearch(*md);

@@ -148,6 +148,7 @@ Blueprint::State::~State() = default;
 Blueprint::Blueprint() noexcept
     : _parent(nullptr),
       _flow_stats(0.0, 0.0, 0.0),
+      _abs_cost(0.0),
       _sourceId(0xffffffff),
       _docid_limit(0),
       _id(make_enum_value()),
@@ -158,9 +159,12 @@ Blueprint::Blueprint() noexcept
 Blueprint::~Blueprint() = default;
 
 void Blueprint::resolve_strict(InFlow& in_flow) noexcept {
+    // simple local estimation of absolute cost based on in flow and flow stats.
+    // does not account for cost saved by forcing children to be strict.
+    _abs_cost = flow::min_child_cost(in_flow, _flow_stats, opt_allow_force_strict());
+
     if (!in_flow.strict() && opt_allow_force_strict()) {
-        auto stats = FlowStats::from(flow::DefaultAdapter(), this);
-        if (flow::should_force_strict(stats, in_flow.rate())) {
+        if (flow::should_force_strict(_flow_stats, in_flow.rate())) {
             in_flow.force_strict();
         }
     }
@@ -413,6 +417,7 @@ void Blueprint::visitMembers(vespalib::ObjectVisitor& visitor) const {
         visitor.visitFloat("strict_cost", strict_cost());
     }
     visitor.closeStruct();
+    visitor.visitFloat("abs_cost", _abs_cost);
     visitor.visitInt("sourceId", _sourceId);
     visitor.visitInt("docid_limit", _docid_limit);
     visitor.visitInt("id", _id);

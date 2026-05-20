@@ -271,6 +271,7 @@ public:
 private:
     Blueprint*                  _parent;
     FlowStats                   _flow_stats;
+    double                      _abs_cost;
     uint32_t                    _sourceId;
     uint32_t                    _docid_limit;
     uint32_t                    _id;
@@ -289,10 +290,11 @@ protected:
         _frozen = true;
     }
 
-    // Call this first inside sort implementations to handle 2 things:
+    // Call this first inside sort implementations to handle 3 things:
     //
     // (1) force in_flow to be strict if allowed and better.
     // (2) tag blueprint with the strictness of the in_flow.
+    // (3) calculate simple absolute cost estimate.
     void resolve_strict(InFlow& in_flow) noexcept;
 
 public:
