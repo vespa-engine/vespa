@@ -4,6 +4,7 @@
 #include "blueprint.h"
 #include "lazy_filter.h"
 #include "nearest_neighbor_distance_heap.h"
+#include "queryeval_stats.h"
 
 #include <vespa/searchlib/tensor/distance_calculator.h>
 #include <vespa/searchlib/tensor/distance_function.h>
@@ -42,6 +43,17 @@ public:
     };
 
 private:
+    struct AnnStats {
+        vespalib::duration                          time_allocated;
+        vespalib::duration                          time_used;
+        bool                                        terminated_early;
+        bool                                        timeout_hit;
+        search::tensor::NearestNeighborIndex::Stats index_stats;
+        AnnStats();
+        void flush(search::queryeval::QuerySetupStats& setup_stats) const;
+        void visit(vespalib::ObjectVisitor& visitor) const;
+    };
+
     std::unique_ptr<search::tensor::DistanceCalculator>         _distance_calc;
     const tensor::ITensorAttribute&                             _attr_tensor;
     const vespalib::eval::Value&                                _query_tensor;
@@ -62,12 +74,8 @@ private:
     bool                                                        _low_hit_ratio;
     bool                                                        _pending_index_search;
     MatchingPhase                                               _matching_phase;
-    vespalib::duration                                          _ann_time_allocated;
-    vespalib::duration                                          _ann_time_used;
-    bool                                                        _ann_terminated_early;
-    bool                                                        _ann_timeout_hit;
-    search::tensor::NearestNeighborIndex::Stats                 _nni_stats;
-    std::shared_ptr<QueryEvalStats>                             _stats;
+    AnnStats                                                    _ann_stats;
+    std::shared_ptr<QueryEvalStats>                             _eval_stats;
 
     static double convert_distance_threshold(double                                    distance_threshold,
                                              const search::tensor::DistanceCalculator& distance_calc);
@@ -93,7 +101,7 @@ public:
     // Whether the last call to want_global_filter() resulted in the decision to search the index.
     bool pending_index_search() const;
     // Perform the index search scheduled by the last call to set_global_filter().
-    void perform_index_search(const vespalib::Deadline& doom);
+    void perform_index_search(const vespalib::Deadline& doom, search::queryeval::QuerySetupStats& setup_stats);
     Algorithm get_algorithm() const { return _algorithm; }
     double get_distance_threshold() const { return _hnsw_params.distance_threshold; }
     const HnswParams& get_hnsw_params() const { return _hnsw_params; }
@@ -108,13 +116,10 @@ public:
     SearchIteratorUP createFilterSearchImpl(FilterConstraint constraint) const override {
         return create_default_filter(constraint);
     }
-    // Install the given QueryEvalStats object in this blueprint. The blueprint writes the stats it collects
-    // to this object. Moreover, this object is also passed to the exact search iterators this blueprint creates,
+    // Install the given QueryEvalStats object in this blueprint.
+    // The blueprint passes itt to the exact search iterators it creates,
     // and these write their stats to this object on their destruction.
     void install_stats(QueryEvalStats& stats);
-    // Flush metrics collected in this blueprint to the QueryEvalStats object installed before with install_stats().
-    // This method is called internally and does not have to be called from the outside.
-    void flush_stats();
     void visitMembers(vespalib::ObjectVisitor& visitor) const override;
     bool always_needs_unpack() const override;
     void set_matching_phase(MatchingPhase matching_phase) noexcept override;

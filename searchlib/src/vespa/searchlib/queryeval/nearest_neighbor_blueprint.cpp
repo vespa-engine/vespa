@@ -51,6 +51,28 @@ double NearestNeighborBlueprint::convert_distance_threshold(double distance_thre
     return std::numeric_limits<double>::max();
 }
 
+NearestNeighborBlueprint::AnnStats::AnnStats()
+    : time_allocated(vespalib::duration::zero()),
+      time_used(vespalib::duration::zero()),
+      terminated_early(false),
+      timeout_hit(false),
+      index_stats() {
+}
+
+void NearestNeighborBlueprint::AnnStats::flush(search::queryeval::QuerySetupStats& setup_stats) const {
+    setup_stats.add_to_approximate_nns_distances_computed(index_stats.distances_computed());
+    setup_stats.add_to_approximate_nns_nodes_visited(index_stats.nodes_visited());
+}
+
+void NearestNeighborBlueprint::AnnStats::visit(vespalib::ObjectVisitor& visitor) const {
+    visitor.visitFloat("time_allocated", vespalib::count_ns(time_allocated) / 1000000.0);
+    visitor.visitFloat("time_used", vespalib::count_ns(time_used) / 1000000.0);
+    visitor.visitBool("terminated_early", terminated_early);
+    visitor.visitBool("timeout_hit", timeout_hit);
+    visitor.visitInt("distances_computed", index_stats.distances_computed());
+    visitor.visitInt("nodes_visited", index_stats.nodes_visited());
+}
+
 NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec&                         field,
                                                    std::unique_ptr<search::tensor::DistanceCalculator> distance_calc,
                                                    uint32_t target_hits, bool approximate,
@@ -84,12 +106,8 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec&  
       _low_hit_ratio(false),
       _pending_index_search(false),
       _matching_phase(MatchingPhase::FIRST_PHASE),
-      _ann_time_allocated(vespalib::duration::zero()),
-      _ann_time_used(vespalib::duration::zero()),
-      _ann_terminated_early(false),
-      _ann_timeout_hit(false),
-      _nni_stats(),
-      _stats() {
+      _ann_stats(),
+      _eval_stats() {
     _distance_heap.set_distance_threshold(_hnsw_params.distance_threshold);
     uint32_t est_hits = _attr_tensor.get_num_docs();
     // Default to the expensive cost tier to allow the WhiteListBlueprint to come before this blueprint.
@@ -154,17 +172,22 @@ bool NearestNeighborBlueprint::pending_index_search() const {
     return _pending_index_search;
 }
 
-void NearestNeighborBlueprint::perform_index_search(const vespalib::Deadline& deadline) {
+void NearestNeighborBlueprint::perform_index_search(const vespalib::Deadline&           deadline,
+                                                    search::queryeval::QuerySetupStats& setup_stats) {
     if (_pending_index_search) {
-        _ann_time_allocated = deadline.time_left();
+        _ann_stats.time_allocated = deadline.time_left();
 
         vespalib::Timer timer;
         perform_top_k(_attr_tensor.nearest_neighbor_index(), deadline);
-        _ann_time_used = timer.elapsed();
+        _ann_stats.time_used = timer.elapsed();
 
-        _ann_terminated_early = deadline.was_missed();
-        _ann_timeout_hit = _ann_terminated_early && deadline.type() == vespalib::Deadline::TIMEOUT;
+        _ann_stats.terminated_early = deadline.was_missed();
+        _ann_stats.timeout_hit = _ann_stats.terminated_early && deadline.type() == vespalib::Deadline::TIMEOUT;
         _pending_index_search = false;
+
+        // Flush, but do not reset the collected stats here
+        // We still want them available in visitMembers
+        _ann_stats.flush(setup_stats);
     }
 }
 
@@ -172,6 +195,7 @@ void NearestNeighborBlueprint::perform_top_k(const search::tensor::NearestNeighb
                                              const vespalib::Deadline&                   doom) {
     uint32_t    k = _adjusted_target_hits;
     const auto& df = _distance_calc->function();
+    _ann_stats.index_stats.reset();
     if (_lazy_filter && _lazy_filter->is_active()) { // Global filter might or might not be active
         std::shared_ptr<const GlobalFilter> use_filter = _lazy_filter;
         if (_global_filter->is_active()) { // Both global filter and lazy filter
@@ -181,28 +205,23 @@ void NearestNeighborBlueprint::perform_top_k(const search::tensor::NearestNeighb
         _lazy_filter_hit_ratio = static_cast<double>(_lazy_filter_hits.value()) / _attr_tensor.get_num_docs();
         _low_hit_ratio = _lazy_filter_hit_ratio.value() < _hnsw_params.filter_first_upper_limit;
         _found_hits = nns_index->find_top_k_with_filter(
-            _nni_stats, k, df, *use_filter, _low_hit_ratio, _hnsw_params.filter_first_exploration,
+            _ann_stats.index_stats, k, df, *use_filter, _low_hit_ratio, _hnsw_params.filter_first_exploration,
             k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _hnsw_params.prefetch_tensors,
             doom, _hnsw_params.distance_threshold);
         _algorithm = Algorithm::INDEX_TOP_K_WITH_FILTER;
     } else if (_global_filter->is_active()) {
         _low_hit_ratio = _global_filter_hit_ratio.value() < _hnsw_params.filter_first_upper_limit;
         _found_hits = nns_index->find_top_k_with_filter(
-            _nni_stats, k, df, *_global_filter, _low_hit_ratio, _hnsw_params.filter_first_exploration,
+            _ann_stats.index_stats, k, df, *_global_filter, _low_hit_ratio, _hnsw_params.filter_first_exploration,
             k + _hnsw_params.explore_additional_hits, _hnsw_params.exploration_slack, _hnsw_params.prefetch_tensors,
             doom, _hnsw_params.distance_threshold);
         _algorithm = Algorithm::INDEX_TOP_K_WITH_FILTER;
     } else {
-        _found_hits = nns_index->find_top_k(_nni_stats, k, df, k + _hnsw_params.explore_additional_hits,
+        _found_hits = nns_index->find_top_k(_ann_stats.index_stats, k, df, k + _hnsw_params.explore_additional_hits,
                                             _hnsw_params.exploration_slack, _hnsw_params.prefetch_tensors, doom,
                                             _hnsw_params.distance_threshold);
         _algorithm = Algorithm::INDEX_TOP_K;
     }
-
-    // Flush collected statistics if a QueryEvalStats object is already installed.
-    // (This is not the case in the matching pipeline as of now. The stats will be flushed later when install_stats()
-    // is called.)
-    flush_stats();
 }
 
 void NearestNeighborBlueprint::sort(InFlow in_flow) {
@@ -220,23 +239,13 @@ NearestNeighborBlueprint::createLeafSearch(const search::fef::TermFieldMatchData
     default:;
     }
     return ExactNearestNeighborIterator::create(
-        _stats, strict(), tfmd, std::make_unique<search::tensor::DistanceCalculator>(_attr_tensor, _query_tensor),
-        _distance_heap, *_global_filter, _matching_phase != MatchingPhase::FIRST_PHASE);
+        _eval_stats, strict(), tfmd,
+        std::make_unique<search::tensor::DistanceCalculator>(_attr_tensor, _query_tensor), _distance_heap,
+        *_global_filter, _matching_phase != MatchingPhase::FIRST_PHASE);
 }
 
 void NearestNeighborBlueprint::install_stats(QueryEvalStats& stats) {
-    _stats = stats.shared_from_this();
-
-    // Flush statistics collected so far
-    flush_stats();
-}
-
-void NearestNeighborBlueprint::flush_stats() {
-    if (_stats) {
-        _stats->add_to_approximate_nns_distances_computed(_nni_stats.distances_computed());
-        _stats->add_to_approximate_nns_nodes_visited(_nni_stats.nodes_visited());
-        _nni_stats.reset();
-    }
+    _eval_stats = stats.shared_from_this();
 }
 
 void NearestNeighborBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) const {
@@ -253,12 +262,7 @@ void NearestNeighborBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) co
         visitor.visitBool("filter_first_heuristic_used", _low_hit_ratio);
     }
     if (_algorithm == Algorithm::INDEX_TOP_K || _algorithm == Algorithm::INDEX_TOP_K_WITH_FILTER) {
-        visitor.visitFloat("time_allocated", vespalib::count_ns(_ann_time_allocated) / 1000000.0);
-        visitor.visitFloat("time_used", vespalib::count_ns(_ann_time_used) / 1000000.0);
-        visitor.visitBool("terminated_early", _ann_terminated_early);
-        visitor.visitBool("timeout_hit", _ann_timeout_hit);
-        visitor.visitInt("distances_computed", _nni_stats.distances_computed());
-        visitor.visitInt("nodes_visited", _nni_stats.nodes_visited());
+        _ann_stats.visit(visitor);
         visitor.visitInt("top_k_hits", _found_hits.size());
     }
 

@@ -422,21 +422,24 @@ struct MyWorld {
     };
 
     void verify_diversity_filter(const SearchRequest& req, bool expectDiverse) {
-        Matcher::SP             matcher = createMatcher();
-        search::fef::Properties overrides;
-        auto mtf = matcher->create_match_tools_factory(req, searchContext, attributeContext, metaStore, overrides,
-                                                       ttb(), nullptr, searchContext.getDocIdLimit(), true);
+        Matcher::SP                        matcher = createMatcher();
+        search::fef::Properties            overrides;
+        search::queryeval::QuerySetupStats setup_stats;
+        auto                               mtf =
+            matcher->create_match_tools_factory(req, searchContext, attributeContext, metaStore, overrides, ttb(),
+                                                nullptr, setup_stats, searchContext.getDocIdLimit(), true);
         auto diversity = mtf->createDiversifier(HeapSize::lookup(config));
         EXPECT_EQ(expectDiverse, static_cast<bool>(diversity));
     }
 
     double get_first_phase_termwise_limit() {
-        Matcher::SP             matcher = createMatcher();
-        SearchRequest::SP       request = createSimpleRequest("f1", "spread");
-        search::fef::Properties overrides;
-        auto                    mtf =
+        Matcher::SP                        matcher = createMatcher();
+        SearchRequest::SP                  request = createSimpleRequest("f1", "spread");
+        search::fef::Properties            overrides;
+        search::queryeval::QuerySetupStats setup_stats;
+        auto                               mtf =
             matcher->create_match_tools_factory(*request, searchContext, attributeContext, metaStore, overrides,
-                                                ttb(), nullptr, searchContext.getDocIdLimit(), true);
+                                                ttb(), nullptr, setup_stats, searchContext.getDocIdLimit(), true);
         MatchTools::UP match_tools = mtf->createMatchTools();
         match_tools->setup_first_phase(nullptr);
         return match_tools->match_data().get_termwise_limit();

@@ -17,6 +17,9 @@ struct ThreadBundle;
 namespace search::engine {
 class Trace;
 }
+namespace search::queryeval {
+class QuerySetupStats;
+}
 
 namespace proton::matching {
 
@@ -110,7 +113,8 @@ public:
     void handle_global_filter(const IRequestContext&          requestContext,
                               const AnnDeadlineConfiguration& ann_deadline_config, uint32_t docid_limit,
                               double global_filter_lower_limit, double global_filter_upper_limit,
-                              search::engine::Trace& trace, bool sort_by_cost, bool use_lazy_filter = false,
+                              search::queryeval::QuerySetupStats& setup_stats, search::engine::Trace& trace,
+                              bool sort_by_cost, bool use_lazy_filter = false,
                               vespalib::ExecutionProfiler* setup_profiler = nullptr);
 
     /**
@@ -129,11 +133,13 @@ public:
     static bool handle_global_filter(Blueprint& blueprint, const vespalib::Doom& doom,
                                      const AnnDeadlineConfiguration& ann_deadline_config, uint32_t docid_limit,
                                      double global_filter_lower_limit, double global_filter_upper_limit,
-                                     vespalib::ThreadBundle& thread_bundle, search::engine::Trace* trace,
+                                     vespalib::ThreadBundle&             thread_bundle,
+                                     search::queryeval::QuerySetupStats& setup_stats, search::engine::Trace* trace,
                                      bool use_lazy_filter = false);
 
     static void perform_ann_searches(Blueprint& blueprint, const vespalib::Doom& doom,
-                                     const AnnDeadlineConfiguration& ann_deadline_config);
+                                     const AnnDeadlineConfiguration&     ann_deadline_config,
+                                     search::queryeval::QuerySetupStats& setup_stats);
 
     void freeze();
     void set_matching_phase(search::queryeval::MatchingPhase matching_phase) const noexcept;
