@@ -4,19 +4,23 @@
 #include "blueprint_factory_builder.h"
 #include "common.h"
 #include "data_pond.h"
+#include "data_pond_utils.h"
 #include "intermediate_blueprint_factory.h"
 
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
+#include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <cmath>
+#include <exception>
 #include <format>
 #include <functional>
 #include <iomanip>
 #include <numeric>
+#include <optional>
 #include <print>
 #include <vector>
 
@@ -718,7 +722,11 @@ struct FactoryBenchmarkSetup {
     bool                         force_strict = false;
     PlanningAlgo                 algo = PlanningAlgo::Cost;
     std::function<void(Record&)> decorate;
+
+    ~FactoryBenchmarkSetup();
 };
+
+FactoryBenchmarkSetup::~FactoryBenchmarkSetup() = default;
 
 void add_factory_run_to_pond(DataPond& pond, const FactoryBenchmarkSetup& setup, const BenchmarkResult& res,
                              InFlow in_flow) {
@@ -1197,7 +1205,9 @@ static std::string smoke_test_filter = "--gtest_filter="
                                        "IteratorBenchmark.analyze_ENN";
 
 int main(int argc, char** argv) {
-    bool opt_dump_pond = false;
+    bool                       opt_dump_pond = false;
+    std::optional<std::string> opt_save_pond = std::nullopt;
+    std::optional<std::string> opt_load_pond = std::nullopt;
     for (int i = 0; i < argc; i++) {
         const std::string& smoke_test{"--smoke-test"};
         if (smoke_test == argv[i]) {
@@ -1208,9 +1218,47 @@ int main(int argc, char** argv) {
         if (dump_pond_flag == argv[i]) {
             opt_dump_pond = true;
         }
+        const std::string& save_pond_flag{"--save-pond"};
+        if (save_pond_flag == argv[i]) {
+            if (i + 1 >= argc) {
+                std::println(stderr, "Expected --save-pond <FILE>, but got no argument");
+                return 1;
+            }
+            opt_save_pond = std::string(argv[++i]);
+            continue;
+        }
+        const std::string& load_pond_flag{"--load-pond"};
+        if (load_pond_flag == argv[i]) {
+            if (i + 1 >= argc) {
+                std::println(stderr, "Expected --load-pond <FILE>, but got no argument");
+                return 1;
+            }
+            opt_load_pond = std::string(argv[++i]);
+            continue;
+        }
     }
-    ::testing::InitGoogleTest(&argc, argv);
-    int res = RUN_ALL_TESTS();
+    if (opt_load_pond) {
+        try {
+            read_file_into_data_pond(*opt_load_pond, global_pond);
+        } catch (const vespalib::Exception& e) {
+            std::println(stderr, "error: failed to load pond from '{}': {}", *opt_load_pond, e.getMessage());
+            return 1;
+        }
+    } else {
+        ::testing::InitGoogleTest(&argc, argv);
+        int res = RUN_ALL_TESTS();
+        if (res != 0) {
+            return res;
+        }
+        if (opt_save_pond) {
+            try {
+                write_data_pond_to_file(*opt_save_pond, global_pond);
+            } catch (const vespalib::Exception& e) {
+                std::println(stderr, "error: failed to save pond to '{}': {}", *opt_save_pond, e.getMessage());
+                return 1;
+            }
+        }
+    }
     if (!global_pond.records().empty()) {
         postprocess_pond(global_pond);
         print_pond_summary(global_pond);
@@ -1218,5 +1266,4 @@ int main(int argc, char** argv) {
     if (opt_dump_pond) {
         dump_pond(global_pond);
     }
-    return res;
 }
