@@ -413,7 +413,7 @@ std::shared_ptr<search::IFlushToken> FlushEngine::get_flush_token(const FlushCon
 }
 
 FlushContext::SP FlushEngine::initNextFlush(const FlushStrategyResult& flush_strategy_result) {
-    auto&            lst = flush_strategy_result.list();
+    const auto&      lst = flush_strategy_result.list();
     FlushContext::SP ctx;
     for (const FlushContext::SP& it : lst) {
         if (LOG_WOULD_LOG(event)) {
@@ -433,8 +433,8 @@ FlushContext::SP FlushEngine::initNextFlush(const FlushStrategyResult& flush_str
 }
 
 void FlushEngine::flushAll(const FlushStrategyResult& flush_strategy_result) {
-    auto& lst = flush_strategy_result.list();
-    auto& strategy_info = flush_strategy_result.strategy_info();
+    const auto& lst = flush_strategy_result.list();
+    const auto& strategy_info = flush_strategy_result.strategy_info();
     LOG(debug, "%ld targets to flush.", lst.size());
     for (const FlushContext::SP& ctx : lst) {
         _flush_history->add_pending_flush(ctx->getHandler()->getName(), ctx->getTarget()->getName(), strategy_info,
@@ -480,8 +480,8 @@ std::string FlushEngine::flushNextTarget(const std::string& name, const FlushStr
             name.c_str(), flush_strategy_result.list().size());
         std::this_thread::sleep_for(100ms);
     }
-    auto  strategy_id = flush_strategy_result.strategy_id();
-    auto& strategy_info = flush_strategy_result.strategy_info();
+    const auto  strategy_id = flush_strategy_result.strategy_id();
+    const auto& strategy_info = flush_strategy_result.strategy_info();
     _executor.execute(std::make_unique<FlushTask>(initFlush(*ctx, strategy_id, strategy_info), *this, ctx));
     return ctx->getName();
 }
