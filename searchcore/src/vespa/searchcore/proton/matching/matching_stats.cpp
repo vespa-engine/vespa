@@ -65,6 +65,7 @@ MatchingStats& MatchingStats::merge_partition(const Partition& partition, size_t
 MatchingStats& MatchingStats::add_query_setup_stats(const search::queryeval::QuerySetupStats& stats) noexcept {
     _approximate_nns_distances_computed += stats.approximate_nns_distances_computed();
     _approximate_nns_nodes_visited += stats.approximate_nns_nodes_visited();
+    _approximate_nns_time.add(Avg().set(vespalib::to_s(stats.approximate_nns_time_used())));
 
     return *this;
 }
