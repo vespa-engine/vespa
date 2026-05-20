@@ -191,6 +191,7 @@ public class Vespa9VespaMetricSet {
         addMetric(metrics, ContainerMetrics.INFERENCE_PENDING.baseName());
         addMetric(metrics, ContainerMetrics.INFERENCE_REQUEST_RATE.baseName());
         addMetric(metrics, ContainerMetrics.INFERENCE_FAILURE_RATE.baseName());
+        addMetric(metrics, ContainerMetrics.INFERENCE_FAILURE_RATIO.baseName());
         addMetric(metrics, ContainerMetrics.INFERENCE_REQUEST_LATENCY.baseName());
         addMetric(metrics, ContainerMetrics.INFERENCE_QUEUE_LATENCY.baseName());
         addMetric(metrics, ContainerMetrics.INFERENCE_COMPUTE_LATENCY.baseName());

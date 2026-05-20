@@ -223,6 +223,7 @@ public enum ContainerMetrics implements VespaMetrics {
     INFERENCE_PENDING("inference.pending", Unit.ITEM, "Number of pending inference requests in a queue"),
     INFERENCE_REQUEST_RATE("inference.request.rate", Unit.OPERATION_PER_SECOND, "Successful inference requests per second"),
     INFERENCE_FAILURE_RATE("inference.failure.rate", Unit.OPERATION_PER_SECOND, "Failed inference requests per second"),
+    INFERENCE_FAILURE_RATIO("inference.failure.ratio", Unit.RATIO, "Ratio of failed inference requests to total inference requests"),
     INFERENCE_REQUEST_LATENCY("inference.request.latency", Unit.MILLISECOND, "Average inference request latency"),
     INFERENCE_QUEUE_LATENCY("inference.queue.latency", Unit.MILLISECOND, "Average inference queue latency"),
     INFERENCE_COMPUTE_LATENCY("inference.compute.latency", Unit.MILLISECOND, "Average inference compute latency"),
