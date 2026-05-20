@@ -96,8 +96,6 @@ public:
 
     void tag_needed_handles(HandleRecorder& handle_recorder, const search::fef::IIndexEnvironment& index_env);
 
-    void enumerate_blueprint_nodes() noexcept;
-
     /**
      * Optimize the query to be executed. This function should be
      * called after the reserveHandles function and before the

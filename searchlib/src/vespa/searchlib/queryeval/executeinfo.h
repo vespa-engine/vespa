@@ -5,7 +5,9 @@
 #include <vespa/vespalib/util/doom.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 
-namespace vespalib { class ExecutionProfiler; }
+namespace vespalib {
+class ExecutionProfiler;
+}
 
 namespace search::queryeval {
 
@@ -31,8 +33,7 @@ public:
                               vespalib::ThreadBundle& thread_bundle_in) noexcept {
         return {hitRate, doom, thread_bundle_in, nullptr};
     }
-    static ExecuteInfo create(double hitRate, const vespalib::Doom& doom,
-                              vespalib::ThreadBundle& thread_bundle_in,
+    static ExecuteInfo create(double hitRate, const vespalib::Doom& doom, vespalib::ThreadBundle& thread_bundle_in,
                               vespalib::ExecutionProfiler* profiler_in) noexcept {
         return {hitRate, doom, thread_bundle_in, profiler_in};
     }

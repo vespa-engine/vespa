@@ -115,7 +115,20 @@ private:
         BindOpts& operator=(const BindOpts&) = delete;
     };
 
+    // guard used to enable auto-enumeration of blueprints
+    struct AutoEnumGuard {
+        explicit AutoEnumGuard(uint32_t first_id) noexcept;
+        ~AutoEnumGuard();
+        AutoEnumGuard(AutoEnumGuard&&) = delete;
+        AutoEnumGuard(const AutoEnumGuard&) = delete;
+        AutoEnumGuard& operator=(AutoEnumGuard&&) = delete;
+        AutoEnumGuard& operator=(const AutoEnumGuard&) = delete;
+    };
+
 public:
+    // enable auto enumeration of blueprints (need to keep guard alive)
+    static AutoEnumGuard auto_enum(uint32_t next_id = 1) noexcept { return AutoEnumGuard(next_id); }
+
     // thread local Options are used during query planning (calculate_flow_stats/sort)
     //
     // The optimize_and_sort function will handle this for you by
@@ -313,9 +326,7 @@ public:
     virtual void setDocIdLimit(uint32_t limit) noexcept { _docid_limit = limit; }
     uint32_t get_docid_limit() const noexcept { return _docid_limit; }
 
-    void set_id(uint32_t value) noexcept { _id = value; }
     uint32_t id() const noexcept { return _id; }
-    virtual uint32_t enumerate(uint32_t next_id) noexcept;
 
     bool strict() const noexcept { return _strict; }
 
@@ -535,7 +546,6 @@ public:
     ~IntermediateBlueprint() override;
 
     void setDocIdLimit(uint32_t limit) noexcept final;
-    uint32_t enumerate(uint32_t next_id) noexcept override;
     void each_node_post_order(const std::function<void(Blueprint&)>& f) override;
 
     void optimize(Blueprint*& self, OptimizePass pass) override;
@@ -639,7 +649,7 @@ struct ComplexLeafBlueprint : LeafBlueprint {
  **/
 struct FetchPostingsProfilerGuard : vespalib::ProfilerNameGuard {
     FetchPostingsProfilerGuard(vespalib::ExecutionProfiler* profiler_in, const Blueprint& bp) noexcept
-        : ProfilerNameGuard(profiler_in, [&]{
+        : ProfilerNameGuard(profiler_in, [&] {
               if (bp.id() == 0) {
                   return vespalib::make_string("[]%s::fetchPostings", bp.getClassName().c_str());
               }

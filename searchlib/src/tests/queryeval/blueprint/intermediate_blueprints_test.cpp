@@ -241,16 +241,15 @@ void collect_fetch_postings_counts(std::map<std::string, size_t>& counts, const 
 } // namespace
 
 TEST(IntermediateBlueprintsTest, test_fetch_postings_can_be_profiled) {
+    auto enum_guard = Blueprint::auto_enum();
     auto bp = std::make_unique<AndBlueprint>();
     bp->addChild(ap(MyLeafSpec(20).create()));
     bp->addChild(ap(MyLeafSpec(200).create()));
     bp->addChild(ap(MyLeafSpec(2000).create()));
     bp->setDocIdLimit(5000);
     optimize(bp, true);
-    bp->enumerate(1);
     vespalib::ExecutionProfiler profiler(64);
-    auto info = ExecuteInfo::create(1.0, vespalib::Doom::never(),
-                                    vespalib::ThreadBundle::trivial(), &profiler);
+    auto info = ExecuteInfo::create(1.0, vespalib::Doom::never(), vespalib::ThreadBundle::trivial(), &profiler);
     {
         FetchPostingsProfilerGuard guard(&profiler, *bp);
         bp->fetchPostings(info);
@@ -267,7 +266,7 @@ TEST(IntermediateBlueprintsTest, test_fetch_postings_can_be_profiled) {
 }
 
 TEST(IntermediateBlueprintsTest, test_fetch_postings_profile_omits_id_when_unset) {
-    auto leaf = ap(MyLeafSpec(20).create());
+    auto                        leaf = ap(MyLeafSpec(20).create());
     vespalib::ExecutionProfiler profiler(64);
     {
         FetchPostingsProfilerGuard guard(&profiler, *leaf);

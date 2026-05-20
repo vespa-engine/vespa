@@ -230,10 +230,6 @@ void Query::tag_needed_handles(HandleRecorder& handle_recorder, const search::fe
     proton::matching::tag_needed_handles(*_query_tree, handle_recorder, index_env);
 }
 
-void Query::enumerate_blueprint_nodes() noexcept {
-    _blueprint->enumerate(1);
-}
-
 void Query::optimize(InFlow in_flow, bool sort_by_cost) {
     _in_flow = in_flow;
     bool allow_force_strict = sort_by_cost && in_flow.strict();
