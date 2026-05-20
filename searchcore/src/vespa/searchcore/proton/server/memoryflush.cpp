@@ -43,7 +43,7 @@ uint64_t estimateNeededTlsSizeForFlushTarget(const TlsStats& tlsStats, SerialNum
 }
 
 const std::string strategy_name("memory");
-const std::string no_info("none");
+const std::string no_info("");
 
 } // namespace
 

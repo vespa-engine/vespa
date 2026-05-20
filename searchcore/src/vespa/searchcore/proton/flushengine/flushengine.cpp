@@ -417,8 +417,8 @@ FlushContext::SP FlushEngine::initNextFlush(const FlushStrategyResult& flush_str
     FlushContext::SP ctx;
     for (const FlushContext::SP& it : lst) {
         if (LOG_WOULD_LOG(event)) {
-            auto& strategy_info = flush_strategy_result.strategy_info();
-            auto& strategy_name = flush_strategy_result.strategy_name();
+            const auto& strategy_info = flush_strategy_result.strategy_info();
+            const auto& strategy_name = flush_strategy_result.strategy_name();
             EventLogger::flushInit(it->getName(), strategy_name, strategy_info);
         }
         if (it->initFlush(get_flush_token(*it))) {
