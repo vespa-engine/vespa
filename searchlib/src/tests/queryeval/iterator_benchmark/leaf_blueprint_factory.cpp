@@ -10,6 +10,8 @@
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/queryeval/nearest_neighbor_blueprint.h>
+#include <vespa/vespalib/util/fast_range.h>
+#include <vespa/vespalib/util/require.h>
 #include <vespa/vespalib/util/xoshiro.h>
 
 #include <format>
@@ -18,6 +20,7 @@
 
 using search::attribute::BasicType;
 using search::attribute::Config;
+using vespalib::map_random_to_range;
 using vespalib::Xoshiro256PlusPlusPrng;
 using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
@@ -56,15 +59,19 @@ EnnBlueprintFactory::EnnBlueprintFactory(const EnnConfig& cfg)
 
     if (cfg.global_filter_hit_ratio.has_value()) {
         _global_filter_hit_ratio = cfg.global_filter_hit_ratio.value();
-        Xoshiro256PlusPlusPrng                 filter_gen(cfg.seed + 1);
-        std::uniform_real_distribution<double> coin(0.0, 1.0);
-        auto                                   bits = BitVector::create(1, cfg.num_docs + 1);
+        uint64_t docs_left = cfg.num_docs;
+        uint32_t wanted_hits = docs_left * _global_filter_hit_ratio;
+        uint32_t hits_left = wanted_hits;
+        auto     bits = BitVector::create(1, cfg.num_docs + 1);
         for (uint32_t docid = 1; docid <= cfg.num_docs; ++docid) {
-            if (coin(filter_gen) < _global_filter_hit_ratio) {
+            if (map_random_to_range(gen(), docs_left) < hits_left) {
                 bits->setBit(docid);
+                --hits_left;
             }
+            --docs_left;
         }
         bits->invalidateCachedCount();
+        REQUIRE_EQ(bits->countTrueBits(), wanted_hits);
         _global_filter = GlobalFilter::create(std::move(bits));
     }
 }
