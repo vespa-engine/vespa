@@ -168,6 +168,19 @@ class CloudResourceTagsTest {
         assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("name", "value")));
         assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("owner", "value")));
         assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("zone", "value")));
+
+        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("tenant", "value")));
+        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("tenantName", "value")));
+        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("app", "value")));
+        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("clusterid", "value")));
+
+        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("system", "value")));
+        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("application", "value")));
+        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("cluster", "value")));
+        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("generation", "value")));
+        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("auth-method", "value")));
+
+        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("preprovisioned", "value")));
     }
 
     @Test
@@ -462,7 +475,7 @@ class CloudResourceTagsTest {
                 "env", "${environment}",
                 "loc", "${region}",
                 "team", "${tenant}-${application}-${instance}",
-                "cluster", "${clustername}",
+                "cluster_name", "${clustername}",
                 "type", "${clustertype}",
                 "combined", "${environment}-${clustername}-${clustertype}"));
         var resolved = tags.resolve(testApp, testEnv, testRegion,
@@ -470,7 +483,7 @@ class CloudResourceTagsTest {
         assertEquals("prod", resolved.asMap().get("env"));
         assertEquals("aws-us-east-1c", resolved.asMap().get("loc"));
         assertEquals("tenant1-app1-default", resolved.asMap().get("team"));
-        assertEquals("my-search", resolved.asMap().get("cluster"));
+        assertEquals("my-search", resolved.asMap().get("cluster_name"));
         assertEquals("content", resolved.asMap().get("type"));
         assertEquals("prod-my-search-content", resolved.asMap().get("combined"));
     }

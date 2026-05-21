@@ -28,9 +28,15 @@ public class CloudResourceTags {
 
     private static final Pattern TEMPLATE_VARIABLE = Pattern.compile("\\$\\{[^}]+\\}");
 
-    /** System tag names reserved by the platform. Compared case-insensitively against customer keys. */
+    /**
+     * System tag names reserved by the platform. Compared case-insensitively against customer keys.
+     * All new tag names must use the 'vai_' prefix.
+     */
     private static final List<String> RESERVED_TAG_NAMES = List.of(
-            "applicationid", "athenz", "athenz-domain", "athenzservice", "fqdn", "name", "owner", "zone");
+            "applicationid", "athenz", "athenz-domain", "athenzservice", "fqdn", "name", "owner", "zone",
+            "tenant", "tenantName", "app", "clusterid",
+            "system", "application", "cluster", "generation", "auth-method",
+            "preprovisioned");
 
     /** Key prefixes reserved by the platform. Compared case-insensitively against customer keys. */
     private static final List<String> RESERVED_KEY_PREFIXES = List.of("vai_", "corp_", "bastion_");
