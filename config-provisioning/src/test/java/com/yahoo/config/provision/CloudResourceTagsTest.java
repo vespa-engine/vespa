@@ -171,9 +171,25 @@ class CloudResourceTagsTest {
     }
 
     @Test
+    void reserved_tag_names_rejected_case_insensitively() {
+        // System tags like "Name" (capital N) must collide with reserved "name".
+        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("Name", "value")));
+        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("APPLICATIONID", "value")));
+        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("Owner", "value")));
+    }
+
+    @Test
     void reserved_key_prefixes_rejected() {
+        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("vai_tag", "value")));
         assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("corp_tag", "value")));
         assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("bastion_tag", "value")));
+    }
+
+    @Test
+    void reserved_key_prefixes_rejected_case_insensitively() {
+        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("VAI_tag", "value")));
+        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("CORP_tag", "value")));
+        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("Bastion_tag", "value")));
     }
 
     // --- Template variables ---
