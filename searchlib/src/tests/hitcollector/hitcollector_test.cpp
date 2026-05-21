@@ -263,8 +263,8 @@ TEST(HitCollectorTest, require_that_hits_for_2nd_phase_candidates_can_be_retriev
 }
 
 TEST(HitCollectorTest, require_that_score_ranges_can_be_read_and_set) {
-    std::pair<Scores, Scores> ranges = std::make_pair(Scores(1.0, 2.0), Scores(3.0, 4.0));
-    HitCollector              hc(20, 10);
+    auto         ranges = std::pair{Scores(1.0, 2.0), Scores(3.0, 4.0)};
+    HitCollector hc(20, 10);
     hc.setRanges(ranges);
     EXPECT_EQ(ranges.first.low, hc.getRanges().first.low);
     EXPECT_EQ(ranges.first.high, hc.getRanges().first.high);
