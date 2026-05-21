@@ -434,14 +434,14 @@ TEST(MemoryIndexTest, require_that_we_understand_the_memory_footprint) {
     }
     {
         Index index(MySetup().field("f1"));
-        EXPECT_EQ(BASE_ALLOCATED, index.index.getStaticMemoryFootprint());
-        EXPECT_EQ(index.index.getStaticMemoryFootprint(), index.index.getMemoryUsage().allocatedBytes());
+        EXPECT_EQ(BASE_ALLOCATED, index.index.getMemoryUsage().allocatedBytes());
+        EXPECT_EQ(index.index.getStaticMemoryFootprint(), index.index.getMemoryUsage().usedBytes());
         EXPECT_EQ(BASE_USED, index.index.getMemoryUsage().usedBytes());
     }
     {
         Index index(MySetup().field("f1").field("f2"));
-        EXPECT_EQ(2 * BASE_ALLOCATED, index.index.getStaticMemoryFootprint());
-        EXPECT_EQ(index.index.getStaticMemoryFootprint(), index.index.getMemoryUsage().allocatedBytes());
+        EXPECT_EQ(2 * BASE_ALLOCATED, index.index.getMemoryUsage().allocatedBytes());
+        EXPECT_EQ(index.index.getStaticMemoryFootprint(), index.index.getMemoryUsage().usedBytes());
         EXPECT_EQ(2 * BASE_USED, index.index.getMemoryUsage().usedBytes());
         EXPECT_EQ(2 * BASE_USED, index.index.get_stats().memoryUsage().usedBytes());
         EXPECT_EQ(BASE_USED, get_field_stats(index.index.get_stats(), "f1").memory_usage().usedBytes());
