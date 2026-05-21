@@ -14,15 +14,27 @@ namespace vespalib::quant {
 // "The Walsh Hadamard Transform - Basics and Applications" (2021)
 // by Sean O'Connor (in public domain).
 
+// Returns a multiplicative scaling factor for post-normalizing a Hadamard
+// transform of a vector of size n.
+// TODO constexpr when all compilers are >= C++26
+template <std::floating_point T>
+[[nodiscard]] T hadamard_normalization_factor(const size_t n) noexcept {
+    // Normalization is just dividing all elements by the square root of the size
+    return T{1} / std::sqrt(n);
+}
+
+template <std::floating_point T>
+void post_hadamard_normalize_precomputed(T* v, const size_t n, const T scale) {
+    for (size_t i = 0; i < n; ++i) {
+        v[i] *= scale;
+    }
+}
+
 // Normalize a Walsh-Hadamard-transformed vector so that its magnitude is
 // the same as prior to the transformation.
 template <std::floating_point T>
 void post_hadamard_normalize(T* v, const size_t n) {
-    // Normalization is just dividing all elements by the square root of the size
-    const T sqrt_recip = T{1} / std::sqrt(n);
-    for (size_t i = 0; i < n; ++i) {
-        v[i] *= sqrt_recip;
-    }
+    post_hadamard_normalize_precomputed(v, n, hadamard_normalization_factor<T>(n));
 }
 
 /**
