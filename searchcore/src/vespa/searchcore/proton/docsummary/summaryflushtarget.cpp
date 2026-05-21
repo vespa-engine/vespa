@@ -69,9 +69,7 @@ IFlushTarget::Task::UP SummaryFlushTarget::initFlush(SerialNum currentSerial, st
     return future.get();
 }
 
-bool
-SummaryFlushTarget::can_flush(SerialNum current_serial) const noexcept
-{
+bool SummaryFlushTarget::can_flush(SerialNum current_serial) const noexcept {
     return current_serial > _docStore.lastSyncToken();
 }
 

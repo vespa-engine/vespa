@@ -82,8 +82,8 @@ RewriterFixture::~RewriterFixture() = default;
 
 TEST(DocumentReprocessingHandlerTest, require_that_handler_propagates_visit_of_existing_document_to_readers) {
     ReaderFixture f;
-    auto doc = f.createDoc();
-    auto sz = doc->serialize().size();
+    auto          doc = f.createDoc();
+    auto          sz = doc->serialize().size();
     f._handler.visit(23u, doc, sz);
     EXPECT_EQ(23u, f._reader1->_lid);
     EXPECT_EQ(DOC_ID, f._reader1->_docId.toString());
@@ -93,8 +93,8 @@ TEST(DocumentReprocessingHandlerTest, require_that_handler_propagates_visit_of_e
 
 TEST(DocumentReprocessingHandlerTest, require_that_handler_propagates_visit_of_existing_document_to_rewriters) {
     RewriterFixture f;
-    auto doc = f.createDoc();
-    auto sz = doc->serialize().size();
+    auto            doc = f.createDoc();
+    auto            sz = doc->serialize().size();
     f._handler.getRewriteVisitor().visit(23u, doc, sz);
     EXPECT_EQ(23u, f._rewriter1->_lid);
     EXPECT_EQ(DOC_ID, f._rewriter1->_docId.toString());
@@ -104,8 +104,8 @@ TEST(DocumentReprocessingHandlerTest, require_that_handler_propagates_visit_of_e
 
 TEST(DocumentReprocessingHandlerTest, require_that_handler_skips_out_of_range_visit_to_readers) {
     ReaderFixture f(10);
-    auto doc = f.createDoc();
-    auto sz = doc->serialize().size();
+    auto          doc = f.createDoc();
+    auto          sz = doc->serialize().size();
     f._handler.visit(23u, doc, sz);
     EXPECT_EQ(0u, f._reader1->_lid);
     EXPECT_EQ(DocumentId().toString(), f._reader1->_docId.toString());
@@ -115,8 +115,8 @@ TEST(DocumentReprocessingHandlerTest, require_that_handler_skips_out_of_range_vi
 
 TEST(DocumentReprocessingHandlerTest, require_that_handler_skips_out_of_range_visit_to_rewriters) {
     RewriterFixture f(10);
-    auto doc = f.createDoc();
-    auto sz = doc->serialize().size();
+    auto            doc = f.createDoc();
+    auto            sz = doc->serialize().size();
     f._handler.getRewriteVisitor().visit(23u, doc, sz);
     EXPECT_EQ(0u, f._rewriter1->_lid);
     EXPECT_EQ(DocumentId().toString(), f._rewriter1->_docId.toString());
