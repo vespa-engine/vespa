@@ -35,7 +35,7 @@ using search::index::Schema;
 using vespalib::make_string_short::fmt;
 
 const std::string field_name = "myfield";
-double            budget_sec = 1.0;
+double            budget_sec = 5.0;
 
 double estimate_actual_cost(Blueprint& bp, InFlow in_flow) {
     if (in_flow.strict()) {
@@ -1222,7 +1222,7 @@ int main(int argc, char** argv) {
     bool                       opt_dump_pond = false;
     std::optional<std::string> opt_save_pond = std::nullopt;
     std::optional<std::string> opt_load_pond = std::nullopt;
-    for (int i = 0; i < argc; i++) {
+    for (int i = 1; i < argc; i++) {
         const std::string& smoke_test{"--smoke-test"};
         if (smoke_test == argv[i]) {
             std::println(stderr, "Adding --smoke-test filter");
