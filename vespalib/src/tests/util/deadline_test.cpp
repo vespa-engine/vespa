@@ -14,11 +14,9 @@ protected:
 public:
     DeadlineTest();
     ~DeadlineTest() override;
-
 };
 
-DeadlineTest::DeadlineTest()
-    : time(vespalib::steady_clock::now()) {
+DeadlineTest::DeadlineTest() : time(vespalib::steady_clock::now()) {
 }
 
 DeadlineTest::~DeadlineTest() = default;

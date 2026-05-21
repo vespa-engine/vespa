@@ -4,6 +4,7 @@
 
 #include "deadline.h"
 #include "time.h"
+
 #include <atomic>
 
 namespace vespalib {

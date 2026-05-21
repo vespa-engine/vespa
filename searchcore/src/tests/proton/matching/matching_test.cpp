@@ -189,10 +189,10 @@ std::string make_same_element_stack_dump(const std::string& a1_term, const std::
 
 std::string make_near_stack_dump(bool ordered, const std::string& term1, const std::string& term2) {
     QueryBuilder<ProtonNodeTypes> builder;
-    constexpr int child_count = 2;
-    constexpr size_t distance = 10;
-    constexpr size_t num_negative_children = 0;
-    constexpr size_t exclusion_distance = 0;
+    constexpr int                 child_count = 2;
+    constexpr size_t              distance = 10;
+    constexpr size_t              num_negative_children = 0;
+    constexpr size_t              exclusion_distance = 0;
     if (ordered) {
         builder.addONear(child_count, distance, num_negative_children, exclusion_distance);
     } else {
