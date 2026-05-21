@@ -1197,6 +1197,7 @@ TEST(IteratorBenchmark, analyze_ENN) {
                    .factory = enn({.num_docs = num_docs, .target_hits = 100}),
                    .docid_limit = num_docs + 1,
                    .in_flows = in_flows,
+                   .unpack = true,
                    .decorate = {}});
 }
 
@@ -1210,6 +1211,7 @@ TEST(IteratorBenchmark, analyze_ENN_with_GF) {
                    .factory = enn({.num_docs = num_docs, .target_hits = 100, .global_filter_hit_ratio = 0.5}),
                    .docid_limit = num_docs + 1,
                    .in_flows = in_flows,
+                   .unpack = true,
                    .decorate = {}});
 }
 
