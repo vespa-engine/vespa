@@ -32,6 +32,7 @@
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/net/http/state_explorer.h>
+#include <vespa/vespalib/util/fake_deadline.h>
 #include <vespa/vespalib/util/mmap_file_allocator_factory.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
@@ -300,6 +301,10 @@ public:
     std::vector<Neighbor> find_top_k(Stats& stats, uint32_t k, const search::tensor::BoundDistanceFunction& df,
                                      uint32_t explore_k, double exploration_slack, bool prefetch_tensors,
                                      const vespalib::Deadline& doom, double distance_threshold) const override {
+        std::this_thread::sleep_for(1ms); // Make sure that test does not fail because it ran too fast
+        if (doom.is_missed()) {
+            return {};
+        }
         stats.count_computed_distance();
         stats.count_visited_node();
         stats.count_visited_node();
@@ -308,7 +313,6 @@ public:
         (void)explore_k;
         (void)exploration_slack;
         (void)prefetch_tensors;
-        (void)doom;
         (void)distance_threshold;
         return {};
     }
@@ -318,6 +322,10 @@ public:
                                                  uint32_t explore_k, double exploration_slack, bool prefetch_tensors,
                                                  const vespalib::Deadline& doom,
                                                  double                    distance_threshold) const override {
+        std::this_thread::sleep_for(1ms); // Make sure that test does not fail because it ran too fast
+        if (doom.is_missed()) {
+            return {};
+        }
         stats.count_computed_distance();
         stats.count_visited_node();
         stats.count_visited_node();
@@ -330,7 +338,6 @@ public:
         (void)filter;
         (void)low_hit_ratio;
         (void)exploration;
-        (void)doom;
         (void)distance_threshold;
         return {};
     }
@@ -1538,6 +1545,9 @@ TEST(TensorAttributeTest, NN_blueprint_collects_stats) {
     }
     EXPECT_EQ(1, f.stats().approximate_nns_distances_computed());
     EXPECT_EQ(2, f.stats().approximate_nns_nodes_visited());
+    EXPECT_GT(f.stats().approximate_nns_time_used(), vespalib::duration::zero());
+    EXPECT_EQ(0, f.stats().approximate_nns_timeouts_hit());
+    vespalib::duration last_approximate_nns_time_used = f.stats().approximate_nns_time_used();
 
     // With filter active
     {
@@ -1558,6 +1568,46 @@ TEST(TensorAttributeTest, NN_blueprint_collects_stats) {
     }
     EXPECT_EQ(2, f.stats().approximate_nns_distances_computed());
     EXPECT_EQ(4, f.stats().approximate_nns_nodes_visited());
+    EXPECT_GT(f.stats().approximate_nns_time_used(), last_approximate_nns_time_used);
+    EXPECT_EQ(0, f.stats().approximate_nns_timeouts_hit());
+    last_approximate_nns_time_used = f.stats().approximate_nns_time_used();
+
+    // Using up time budget (but not hitting timeout)
+    {
+        auto bp = f.make_blueprint(true);
+        auto inactive_filter = GlobalFilter::create();
+        EXPECT_FALSE(bp->pending_index_search());
+        bp->set_global_filter(*inactive_filter, 0.6);
+        EXPECT_TRUE(bp->pending_index_search());
+        vespalib::FakeDeadline fake_deadline(-1s, vespalib::Deadline::Type::BUDGET);
+        bp->perform_index_search(fake_deadline.get_deadline(), f.stats());
+        EXPECT_FALSE(bp->pending_index_search());
+    }
+    EXPECT_EQ(2, f.stats().approximate_nns_distances_computed());
+    EXPECT_EQ(4, f.stats().approximate_nns_nodes_visited());
+    EXPECT_GT(f.stats().approximate_nns_time_used(), last_approximate_nns_time_used);
+    EXPECT_EQ(0, f.stats().approximate_nns_timeouts_hit());
+    last_approximate_nns_time_used = f.stats().approximate_nns_time_used();
+
+    // Hitting timeout
+    {
+        auto bp = f.make_blueprint(true);
+        auto inactive_filter = GlobalFilter::create();
+        EXPECT_FALSE(bp->pending_index_search());
+        bp->set_global_filter(*inactive_filter, 0.6);
+        EXPECT_TRUE(bp->pending_index_search());
+        vespalib::FakeDeadline fake_deadline(-1s, vespalib::Deadline::Type::TIMEOUT);
+        bp->perform_index_search(fake_deadline.get_deadline(), f.stats());
+        EXPECT_FALSE(bp->pending_index_search());
+    }
+    EXPECT_EQ(2, f.stats().approximate_nns_distances_computed());
+    EXPECT_EQ(4, f.stats().approximate_nns_nodes_visited());
+    EXPECT_GT(f.stats().approximate_nns_time_used(), last_approximate_nns_time_used);
+    EXPECT_EQ(1, f.stats().approximate_nns_timeouts_hit());
+    size_t last_approximate_nns_distances_computed = f.stats().approximate_nns_distances_computed();
+    size_t last_approximate_nns_nodes_visited = f.stats().approximate_nns_nodes_visited();
+    last_approximate_nns_time_used = f.stats().approximate_nns_time_used();
+    size_t last_approximate_nns_timeouts_hit = f.stats().approximate_nns_timeouts_hit();
 
     // Hitting fallback
     {
@@ -1570,8 +1620,10 @@ TEST(TensorAttributeTest, NN_blueprint_collects_stats) {
         bp->set_global_filter(*strong_filter, 0.6);
         EXPECT_FALSE(bp->pending_index_search());
     }
-    EXPECT_EQ(2, f.stats().approximate_nns_distances_computed());
-    EXPECT_EQ(4, f.stats().approximate_nns_nodes_visited());
+    EXPECT_EQ(last_approximate_nns_distances_computed, f.stats().approximate_nns_distances_computed());
+    EXPECT_EQ(last_approximate_nns_nodes_visited, f.stats().approximate_nns_nodes_visited());
+    EXPECT_EQ(last_approximate_nns_time_used, f.stats().approximate_nns_time_used());
+    EXPECT_EQ(last_approximate_nns_timeouts_hit, f.stats().approximate_nns_timeouts_hit());
 
     // Using exact search in the first place
     {
@@ -1581,8 +1633,10 @@ TEST(TensorAttributeTest, NN_blueprint_collects_stats) {
         bp->set_global_filter(*inactive_filter, 0.6);
         EXPECT_FALSE(bp->pending_index_search());
     }
-    EXPECT_EQ(2, f.stats().approximate_nns_distances_computed());
-    EXPECT_EQ(4, f.stats().approximate_nns_nodes_visited());
+    EXPECT_EQ(last_approximate_nns_distances_computed, f.stats().approximate_nns_distances_computed());
+    EXPECT_EQ(last_approximate_nns_nodes_visited, f.stats().approximate_nns_nodes_visited());
+    EXPECT_EQ(last_approximate_nns_time_used, f.stats().approximate_nns_time_used());
+    EXPECT_EQ(last_approximate_nns_timeouts_hit, f.stats().approximate_nns_timeouts_hit());
 }
 
 auto test_values = ::testing::Values(1u, 2u);

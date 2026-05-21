@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <vespa/vespalib/util/time.h>
+
 #include <atomic>
 #include <memory>
 
@@ -13,11 +15,17 @@ namespace search::queryeval {
  **/
 class QuerySetupStats {
 private:
-    size_t _approximate_nns_distances_computed;
-    size_t _approximate_nns_nodes_visited;
+    size_t             _approximate_nns_distances_computed;
+    size_t             _approximate_nns_nodes_visited;
+    vespalib::duration _approximate_nns_time_used;
+    size_t             _approximate_nns_timeouts_hit;
 
 public:
-    QuerySetupStats() noexcept : _approximate_nns_distances_computed(0), _approximate_nns_nodes_visited(0) {}
+    QuerySetupStats() noexcept
+        : _approximate_nns_distances_computed(0),
+          _approximate_nns_nodes_visited(0),
+          _approximate_nns_time_used(vespalib::duration::zero()),
+          _approximate_nns_timeouts_hit(0) {}
 
     size_t approximate_nns_distances_computed() const noexcept { return _approximate_nns_distances_computed; }
     void add_to_approximate_nns_distances_computed(size_t value) noexcept {
@@ -26,6 +34,14 @@ public:
 
     size_t approximate_nns_nodes_visited() const noexcept { return _approximate_nns_nodes_visited; }
     void add_to_approximate_nns_nodes_visited(size_t value) noexcept { _approximate_nns_nodes_visited += value; }
+
+    vespalib::duration approximate_nns_time_used() const noexcept { return _approximate_nns_time_used; }
+    void add_to_approximate_nns_time_used(vespalib::duration ann_time) noexcept {
+        _approximate_nns_time_used += ann_time;
+    }
+
+    size_t approximate_nns_timeouts_hit() const noexcept { return _approximate_nns_timeouts_hit; }
+    void add_to_approximate_nns_timeouts_hit(size_t value) noexcept { _approximate_nns_timeouts_hit += value; }
 };
 
 /**
