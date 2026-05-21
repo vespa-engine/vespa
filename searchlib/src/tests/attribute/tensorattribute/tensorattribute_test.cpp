@@ -1538,6 +1538,8 @@ TEST(TensorAttributeTest, NN_blueprint_collects_stats) {
     }
     EXPECT_EQ(1, f.stats().approximate_nns_distances_computed());
     EXPECT_EQ(2, f.stats().approximate_nns_nodes_visited());
+    EXPECT_GT(f.stats().approximate_nns_time_used(), vespalib::duration::zero());
+    vespalib::duration last_approximate_nns_time_used = f.stats().approximate_nns_time_used();
 
     // With filter active
     {
@@ -1558,6 +1560,8 @@ TEST(TensorAttributeTest, NN_blueprint_collects_stats) {
     }
     EXPECT_EQ(2, f.stats().approximate_nns_distances_computed());
     EXPECT_EQ(4, f.stats().approximate_nns_nodes_visited());
+    EXPECT_GT(f.stats().approximate_nns_time_used(), last_approximate_nns_time_used);
+    last_approximate_nns_time_used = f.stats().approximate_nns_time_used();
 
     // Hitting fallback
     {
@@ -1572,6 +1576,7 @@ TEST(TensorAttributeTest, NN_blueprint_collects_stats) {
     }
     EXPECT_EQ(2, f.stats().approximate_nns_distances_computed());
     EXPECT_EQ(4, f.stats().approximate_nns_nodes_visited());
+    EXPECT_EQ(f.stats().approximate_nns_time_used(), last_approximate_nns_time_used);
 
     // Using exact search in the first place
     {
@@ -1583,6 +1588,7 @@ TEST(TensorAttributeTest, NN_blueprint_collects_stats) {
     }
     EXPECT_EQ(2, f.stats().approximate_nns_distances_computed());
     EXPECT_EQ(4, f.stats().approximate_nns_nodes_visited());
+    EXPECT_EQ(f.stats().approximate_nns_time_used(), last_approximate_nns_time_used);
 }
 
 auto test_values = ::testing::Values(1u, 2u);
