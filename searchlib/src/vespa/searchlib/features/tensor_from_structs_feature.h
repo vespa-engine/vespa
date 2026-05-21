@@ -35,8 +35,7 @@ public:
     ~TensorFromStructsBlueprint() override;
     fef::Blueprint::UP createInstance() const override { return Blueprint::UP(new TensorFromStructsBlueprint()); }
     fef::ParameterDescriptions getDescriptions() const override {
-        return fef::ParameterDescriptions()
-                .desc().string().string().string().string().string().repeat();
+        return fef::ParameterDescriptions().desc().string().string().string().string().string().repeat();
     }
     bool setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params) override;
     fef::FeatureExecutor& createExecutor(const fef::IQueryEnvironment& env, vespalib::Stash& stash) const override;
