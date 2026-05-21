@@ -97,9 +97,7 @@ IFlushTarget::Task::UP SummaryGCTarget::initFlush(SerialNum currentSerial, std::
     return future.get();
 }
 
-bool
-SummaryGCTarget::can_flush(SerialNum) const noexcept
-{
+bool SummaryGCTarget::can_flush(SerialNum) const noexcept {
     return true;
 }
 

@@ -58,8 +58,7 @@ class ShrinkSummaryLidSpaceFlushTarget : public ShrinkLidSpaceFlushTarget {
 
 public:
     ShrinkSummaryLidSpaceFlushTarget(const std::string& name, Type type, Component component,
-                                     SerialNum flushedSerialNum,
-                                     vespalib::Executor&                   summaryService,
+                                     SerialNum flushedSerialNum, vespalib::Executor& summaryService,
                                      std::shared_ptr<ICompactableLidSpace> target);
     ~ShrinkSummaryLidSpaceFlushTarget() override;
     Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
@@ -67,9 +66,10 @@ public:
 
 ShrinkSummaryLidSpaceFlushTarget::ShrinkSummaryLidSpaceFlushTarget(const std::string& name, Type type,
                                                                    Component component, SerialNum flushedSerialNum,
-                                                                   vespalib::Executor&   summaryService,
+                                                                   vespalib::Executor& summaryService,
                                                                    std::shared_ptr<ICompactableLidSpace> target)
-    : ShrinkLidSpaceFlushTarget(name, type, component, flushedSerialNum, vespalib::system_clock::now(), std::move(target)),
+    : ShrinkLidSpaceFlushTarget(name, type, component, flushedSerialNum, vespalib::system_clock::now(),
+                                std::move(target)),
       _summaryService(summaryService) {
 }
 
@@ -169,8 +169,8 @@ namespace {
 
 IFlushTarget::SP createShrinkLidSpaceFlushTarget(vespalib::Executor& summaryService, IDocumentStore::SP docStore) {
     return std::make_shared<ShrinkSummaryLidSpaceFlushTarget>(
-        "summary.shrink", IFlushTarget::Type::GC, IFlushTarget::Component::DOCUMENT_STORE, docStore->tentativeLastSyncToken(),
-        summaryService, std::move(docStore));
+        "summary.shrink", IFlushTarget::Type::GC, IFlushTarget::Component::DOCUMENT_STORE,
+        docStore->tentativeLastSyncToken(), summaryService, std::move(docStore));
 }
 
 } // namespace
