@@ -87,6 +87,10 @@ public:
 
 ReconfigRunnableTask::~ReconfigRunnableTask() = default;
 
+uint64_t transient_memory_usage(uint64_t memory_used, uint64_t static_memory_footprint) {
+    return memory_used >= static_memory_footprint ? memory_used - static_memory_footprint : 0;
+}
+
 SerialNum noSerialNumHigh = std::numeric_limits<SerialNum>::max();
 
 } // namespace
@@ -956,11 +960,11 @@ IndexMaintainer::FlushStats IndexMaintainer::getFlushStats() const {
     {
         LockGuard lock(_index_update_lock);
         source_selector_bytes = _selector->getDocIdLimit() * sizeof(Source);
-        stats.memory_before_bytes += _current_index->getMemoryUsage().allocatedBytes() + source_selector_bytes;
+        stats.memory_before_bytes += _current_index->getMemoryUsage().usedBytes() + source_selector_bytes;
         stats.memory_after_bytes += _current_index->getStaticMemoryFootprint() + source_selector_bytes;
         numFrozen = _frozenMemoryIndexes.size();
         for (const FrozenMemoryIndexRef& frozen : _frozenMemoryIndexes) {
-            stats.memory_before_bytes += frozen._index->getMemoryUsage().allocatedBytes() + source_selector_bytes;
+            stats.memory_before_bytes += frozen._index->getMemoryUsage().usedBytes() + source_selector_bytes;
         }
         source_selector_changes = _source_selector_changes;
     }
@@ -1189,8 +1193,10 @@ search::IndexStats IndexMaintainer::get_index_stats(bool clear_disk_io_stats) co
 ResourceUsage IndexMaintainer::get_resource_usage() const {
     auto disk_indexes_resource_usage = _disk_indexes->get_resource_usage(*_layout);
     auto stats = get_index_stats(false);
+    auto memory_index_transient_memory_usage =
+        transient_memory_usage(stats.memoryUsage().usedBytes(), _current_index->getStaticMemoryFootprint());
     return ResourceUsage{
-        TransientResourceUsage{disk_indexes_resource_usage.transient().disk(), stats.memoryUsage().allocatedBytes()},
+        TransientResourceUsage{disk_indexes_resource_usage.transient().disk(), memory_index_transient_memory_usage},
         disk_indexes_resource_usage.disk()};
 }
 
