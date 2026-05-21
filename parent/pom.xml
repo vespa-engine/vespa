@@ -93,7 +93,6 @@
                         <showWarnings>true</showWarnings>
                         <showDeprecation>false</showDeprecation>
                         <compilerArgs>
-                            <arg>${vespaCompilerArgs.preview}</arg>
                             <arg>${vespaCompilerArgs.xlint}</arg>
                             <arg>-Xlint:-serial</arg>
                             <arg>-Xlint:-try</arg>
