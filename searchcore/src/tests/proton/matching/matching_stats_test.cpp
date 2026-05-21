@@ -15,6 +15,7 @@ TEST(MatchingStatsTest, requireThatDocCountsAddUp) {
     EXPECT_EQ(0u, stats.exact_nns_distances_computed());
     EXPECT_EQ(0u, stats.approximate_nns_distances_computed());
     EXPECT_EQ(0u, stats.approximate_nns_nodes_visited());
+    EXPECT_EQ(0u, stats.approximate_nns_timed_out_queries());
     EXPECT_EQ(0u, stats.queries());
     EXPECT_EQ(0u, stats.limited_queries());
     {
@@ -23,18 +24,12 @@ TEST(MatchingStatsTest, requireThatDocCountsAddUp) {
         EXPECT_EQ(&rhs.docsMatched(1000), &rhs);
         EXPECT_EQ(&rhs.docsRanked(100), &rhs);
         EXPECT_EQ(&rhs.docsReRanked(10), &rhs);
-        EXPECT_EQ(&rhs.exact_nns_distances_computed(42), &rhs);
-        EXPECT_EQ(&rhs.approximate_nns_distances_computed(53), &rhs);
-        EXPECT_EQ(&rhs.approximate_nns_nodes_visited(7), &rhs);
+        EXPECT_EQ(&rhs.exact_nns_distances_computed(43), &rhs);
+        EXPECT_EQ(&rhs.approximate_nns_distances_computed(55), &rhs);
+        EXPECT_EQ(&rhs.approximate_nns_nodes_visited(10), &rhs);
+        EXPECT_EQ(&rhs.approximate_nns_timed_out_queries(23), &rhs);
         EXPECT_EQ(&rhs.queries(2), &rhs);
         EXPECT_EQ(&rhs.limited_queries(1), &rhs);
-        search::queryeval::QuerySetupStats setup_stats;
-        setup_stats.add_to_approximate_nns_distances_computed(2);
-        setup_stats.add_to_approximate_nns_nodes_visited(3);
-        EXPECT_EQ(&stats.add_query_setup_stats(setup_stats), &stats);
-        auto qe_stats = search::queryeval::QueryEvalStats::create();
-        qe_stats->add_to_exact_nns_distances_computed(1);
-        EXPECT_EQ(&stats.add_query_eval_stats(*qe_stats), &stats);
         EXPECT_EQ(&stats.add(rhs), &stats);
     }
     EXPECT_EQ(10000u, stats.docidSpaceCovered());
@@ -44,6 +39,7 @@ TEST(MatchingStatsTest, requireThatDocCountsAddUp) {
     EXPECT_EQ(43u, stats.exact_nns_distances_computed());
     EXPECT_EQ(55u, stats.approximate_nns_distances_computed());
     EXPECT_EQ(10u, stats.approximate_nns_nodes_visited());
+    EXPECT_EQ(23u, stats.approximate_nns_timed_out_queries());
     EXPECT_EQ(2u, stats.queries());
     EXPECT_EQ(1u, stats.limited_queries());
     EXPECT_EQ(&stats.add(MatchingStats()
@@ -51,6 +47,10 @@ TEST(MatchingStatsTest, requireThatDocCountsAddUp) {
                              .docsMatched(1000)
                              .docsRanked(100)
                              .docsReRanked(10)
+                             .exact_nns_distances_computed(11)
+                             .approximate_nns_distances_computed(12)
+                             .approximate_nns_nodes_visited(13)
+                             .approximate_nns_timed_out_queries(14)
                              .queries(2)
                              .limited_queries(1)),
               &stats);
@@ -58,6 +58,10 @@ TEST(MatchingStatsTest, requireThatDocCountsAddUp) {
     EXPECT_EQ(2000u, stats.docsMatched());
     EXPECT_EQ(200u, stats.docsRanked());
     EXPECT_EQ(20u, stats.docsReRanked());
+    EXPECT_EQ(54u, stats.exact_nns_distances_computed());
+    EXPECT_EQ(67u, stats.approximate_nns_distances_computed());
+    EXPECT_EQ(23u, stats.approximate_nns_nodes_visited());
+    EXPECT_EQ(37u, stats.approximate_nns_timed_out_queries());
     EXPECT_EQ(4u, stats.queries());
     EXPECT_EQ(2u, stats.limited_queries());
 }
@@ -352,6 +356,68 @@ TEST(MatchingStatsTest, requireThatPartitionsAreAddedCorrectly) {
     EXPECT_EQ(1.0, all1.getPartition(1).wait_time_max());
     EXPECT_EQ(2u, all1.getPartition(1).softDoomed());
     EXPECT_EQ(1000ns, all1.getPartition(1).doomOvertime());
+}
+
+TEST(MatchingStatsTest, require_that_query_setup_stats_is_added_correctly) {
+    MatchingStats stats;
+    EXPECT_EQ(0u, stats.approximate_nns_distances_computed());
+    EXPECT_EQ(0u, stats.approximate_nns_nodes_visited());
+    EXPECT_EQ(0u, stats.approximate_nns_timed_out_queries());
+    EXPECT_NEAR(0.0, stats.approximate_nns_time_avg(), 0.00001);
+    EXPECT_EQ(0u, stats.approximate_nns_time_count());
+    {
+        search::queryeval::QuerySetupStats setup_stats;
+        stats.add_query_setup_stats(setup_stats);
+    }
+    EXPECT_EQ(0u, stats.approximate_nns_distances_computed());
+    EXPECT_EQ(0u, stats.approximate_nns_nodes_visited());
+    EXPECT_EQ(0u, stats.approximate_nns_timed_out_queries());
+    EXPECT_NEAR(0.0, stats.approximate_nns_time_avg(), 0.00001);
+    EXPECT_EQ(1u, stats.approximate_nns_time_count());
+    {
+        search::queryeval::QuerySetupStats setup_stats;
+        setup_stats.add_to_approximate_nns_distances_computed(3);
+        setup_stats.add_to_approximate_nns_nodes_visited(2);
+        setup_stats.add_to_approximate_nns_timeouts_hit(1);
+        setup_stats.add_to_approximate_nns_time_used(10ms);
+        stats.add_query_setup_stats(setup_stats);
+    }
+    EXPECT_EQ(3u, stats.approximate_nns_distances_computed());
+    EXPECT_EQ(2u, stats.approximate_nns_nodes_visited());
+    EXPECT_EQ(1u, stats.approximate_nns_timed_out_queries());
+    EXPECT_NEAR(0.005, stats.approximate_nns_time_avg(), 0.00001);
+    EXPECT_EQ(2u, stats.approximate_nns_time_count());
+    {
+        search::queryeval::QuerySetupStats setup_stats;
+        setup_stats.add_to_approximate_nns_distances_computed(7);
+        setup_stats.add_to_approximate_nns_nodes_visited(6);
+        setup_stats.add_to_approximate_nns_timeouts_hit(5);
+        setup_stats.add_to_approximate_nns_time_used(20ms);
+        stats.add_query_setup_stats(setup_stats);
+    }
+    EXPECT_EQ(10u, stats.approximate_nns_distances_computed());
+    EXPECT_EQ(8u, stats.approximate_nns_nodes_visited());
+    // There were six timeouts, but these came from the same query/QuerySetupStats!
+    EXPECT_EQ(2u, stats.approximate_nns_timed_out_queries());
+    EXPECT_NEAR(0.01, stats.approximate_nns_time_avg(), 0.00001);
+    EXPECT_EQ(3u, stats.approximate_nns_time_count());
+}
+
+TEST(MatchingStatsTest, require_that_query_eval_stats_is_added_correctly) {
+    MatchingStats stats;
+    EXPECT_EQ(0u, stats.exact_nns_distances_computed());
+    {
+        auto eval_stats = search::queryeval::QueryEvalStats::create();
+        eval_stats->add_to_exact_nns_distances_computed(1);
+        stats.add_query_eval_stats(*eval_stats);
+    }
+    EXPECT_EQ(1u, stats.exact_nns_distances_computed());
+    {
+        auto eval_stats = search::queryeval::QueryEvalStats::create();
+        eval_stats->add_to_exact_nns_distances_computed(2);
+        stats.add_query_eval_stats(*eval_stats);
+    }
+    EXPECT_EQ(3u, stats.exact_nns_distances_computed());
 }
 
 TEST(MatchingStatsTest, requireThatSoftDoomIsSetAndAdded) {
