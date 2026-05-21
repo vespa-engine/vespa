@@ -65,6 +65,7 @@ class SchemaSemanticTokenConfig {
         add(TokenType.DENSE_POSTING_LIST_THRESHOLD);
         add(TokenType.DIVERSITY);
         add(TokenType.DOCUMENT);
+        add(TokenType.DOCUMENTID);
         add(TokenType.DOCUMENT_SUMMARY);
         add(TokenType.ELEMENT_GAP);
         add(TokenType.ENABLE_BM25);
