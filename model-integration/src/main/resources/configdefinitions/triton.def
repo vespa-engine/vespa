@@ -10,3 +10,8 @@ modelRepositoryPath string default="/sidecars/triton/models"
 
 # Model control mode. Client will only issue model load/unload requests if mode is EXPLICIT.
 modelControlMode enum {NONE, POLL, EXPLICIT} default=EXPLICIT
+
+# Default per-call gRPC deadline for inference requests, in milliseconds.
+# Used as a fallback when the caller (e.g. an embedder) does not supply a deadline derived
+# from the Vespa request context. When the caller does supply one, that value takes precedence.
+timeout long default=60000

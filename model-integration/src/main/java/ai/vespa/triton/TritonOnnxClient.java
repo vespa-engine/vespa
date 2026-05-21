@@ -12,6 +12,7 @@ import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.text.Text;
+import com.yahoo.language.process.TimeoutException;
 import grpc.health.v1.HealthGrpc;
 import grpc.health.v1.HealthOuterClass.HealthCheckRequest;
 import grpc.health.v1.HealthOuterClass.HealthCheckResponse;
@@ -19,6 +20,7 @@ import inference.GRPCInferenceServiceGrpc;
 import inference.GrpcService;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.Status;
 import io.grpc.StatusException;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.AbstractBlockingStub;
@@ -26,17 +28,18 @@ import io.grpc.stub.AbstractStub;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -57,6 +60,7 @@ public class TritonOnnxClient implements AutoCloseable {
 
     private final GRPCInferenceServiceGrpc.GRPCInferenceServiceBlockingV2Stub grpcInferenceStub;
     private final HealthGrpc.HealthBlockingV2Stub grpcHealthStub;
+    private final Duration defaultTimeout;
 
     public static class TritonException extends RuntimeException {
         public TritonException(String message) {
@@ -81,6 +85,7 @@ public class TritonOnnxClient implements AutoCloseable {
                 .build();
         this.grpcInferenceStub = GRPCInferenceServiceGrpc.newBlockingV2Stub(ch);
         this.grpcHealthStub = HealthGrpc.newBlockingV2Stub(ch);
+        this.defaultTimeout = Duration.ofMillis(config.timeout());
     }
 
     public static class ModelMetadata {
@@ -243,16 +248,39 @@ public class TritonOnnxClient implements AutoCloseable {
     }
 
     public Map<String, Tensor> evaluate(String modelName, ModelMetadata modelMetadata, Map<String, Tensor> inputs) {
-        return evaluate(modelName, modelMetadata, inputs, Set.of());
+        return evaluate(modelName, modelMetadata, inputs, Set.of(), null);
+    }
+
+    public Map<String, Tensor> evaluate(
+            String modelName, ModelMetadata modelMetadata, Map<String, Tensor> inputs, Duration timeout) {
+        return evaluate(modelName, modelMetadata, inputs, Set.of(), timeout);
     }
 
     public Tensor evaluate(
             String modelName, ModelMetadata modelMetadata, Map<String, Tensor> inputs, String outputName) {
-        return evaluate(modelName, modelMetadata, inputs, Set.of(outputName)).get(outputName);
+        return evaluate(modelName, modelMetadata, inputs, Set.of(outputName), null).get(outputName);
+    }
+
+    public Tensor evaluate(
+            String modelName, ModelMetadata modelMetadata, Map<String, Tensor> inputs, String outputName,
+            Duration timeout) {
+        return evaluate(modelName, modelMetadata, inputs, Set.of(outputName), timeout).get(outputName);
     }
 
     public Map<String, Tensor> evaluate(
             String modelName, ModelMetadata modelMetadata, Map<String, Tensor> inputs, Set<String> outputNames) {
+        return evaluate(modelName, modelMetadata, inputs, outputNames, null);
+    }
+
+    public Map<String, Tensor> evaluate(
+            String modelName, ModelMetadata modelMetadata, Map<String, Tensor> inputs, Set<String> outputNames,
+            Duration timeout) {
+        Duration effectiveTimeout = timeout != null ? timeout : defaultTimeout;
+        if (effectiveTimeout.toMillis() <= 0) {
+            throw new TimeoutException(
+                    "Request deadline exceeded before Triton ONNX evaluation of model " + modelName);
+        }
+
         var requestBuilder = GrpcService.ModelInferRequest.newBuilder().setModelName(modelName);
 
         inputs.forEach((name, tensor) -> addInputToBuilder(modelMetadata.tritonInputs, requestBuilder, tensor, name));
@@ -263,8 +291,8 @@ public class TritonOnnxClient implements AutoCloseable {
                         .setName(name)
                         .build()));
 
-        var response =
-                invokeGrpc(grpcInferenceStub, s -> s.modelInfer(requestBuilder.build()), "Failed to evaluate model");
+        var stub = grpcInferenceStub.withDeadlineAfter(effectiveTimeout.toMillis(), MILLISECONDS);
+        var response = invokeGrpc(stub, s -> s.modelInfer(requestBuilder.build()), "Failed to evaluate model");
 
         Map<String, Tensor> outputs = new HashMap<>();
         for (int i = 0; i < response.getOutputsCount(); i++) {
@@ -486,8 +514,16 @@ public class TritonOnnxClient implements AutoCloseable {
             S stub, GrpcInvocation<T, S> invocation, String errorMessage) {
         try {
             return invocation.apply(stub);
-        } catch (StatusException | StatusRuntimeException e) {
-            throw new TritonException(errorMessage, e);
+        } catch (StatusException e) {
+            throw translateGrpcFailure(e.getStatus(), errorMessage, e);
+        } catch (StatusRuntimeException e) {
+            throw translateGrpcFailure(e.getStatus(), errorMessage, e);
         }
+    }
+
+    private static RuntimeException translateGrpcFailure(Status status, String errorMessage, Throwable cause) {
+        if (status.getCode() == Status.Code.DEADLINE_EXCEEDED)
+            return new TimeoutException(errorMessage + ": deadline exceeded", cause);
+        return new TritonException(errorMessage, cause);
     }
 }

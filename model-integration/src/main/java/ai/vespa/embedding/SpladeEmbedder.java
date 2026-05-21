@@ -29,6 +29,7 @@ import static com.yahoo.language.huggingface.ModelInfo.TruncationStrategy.LONGES
  * are the subword strings from the wordpiece vocabulary that has a score above a threshold (default 0.0).
  *
  * @author bergum
+ * @author glebashnik
  */
 @Beta
 public class SpladeEmbedder extends AbstractComponent implements Embedder {
@@ -129,7 +130,9 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
         Map<String, Tensor> inputs = Map.of(inputIdsName, inputSequence.expand("d0"),
                                             attentionMaskName, attentionMask.expand("d0"),
                                             tokenTypeIdsName, tokenTypeIds.expand("d0"));
-        IndexedTensor output = (IndexedTensor) evaluator.evaluate(inputs).get(outputName);
+        IndexedTensor output = (IndexedTensor) evaluator
+                .evaluate(inputs, OnnxEmbedderTimeout.remainingOrThrow(context))
+                .get(outputName);
         Tensor spladeTensor = useCustomReduce
                 ? sparsifyCustomReduce(output, tensorType)
                 : sparsifyReduce(output, tensorType);

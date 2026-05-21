@@ -6,6 +6,7 @@ import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -40,14 +41,14 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
     }
 
     @Override
-    public Tensor evaluate(Map<String, Tensor> inputs, String output) {
-        return evaluate(inputs).get(output);
+    public Tensor evaluate(Map<String, Tensor> inputs, String output, Duration timeout) {
+        return evaluate(inputs, timeout).get(output);
     }
 
     @Override
-    public Map<String, Tensor> evaluate(Map<String, Tensor> inputs) {
+    public Map<String, Tensor> evaluate(Map<String, Tensor> inputs, Duration timeout) {
         try {
-            return tritonClient.evaluate(modelName, modelMetadata, inputs);
+            return tritonClient.evaluate(modelName, modelMetadata, inputs, timeout);
         } catch (TritonOnnxClient.TritonException e) {
             if (!isExplicitControl) {
                 throw e;
@@ -59,7 +60,7 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
                     e);
             tritonClient.loadUntilModelReady(modelName);
             modelMetadata = tritonClient.getModelMetadata(modelName);
-            return tritonClient.evaluate(modelName, modelMetadata, inputs);
+            return tritonClient.evaluate(modelName, modelMetadata, inputs, timeout);
         }
     }
 

@@ -38,6 +38,7 @@ import static com.yahoo.language.huggingface.ModelInfo.TruncationStrategy.LONGES
  * See col-bert-embedder.def for configurable parameters.
  *
  * @author bergum
+ * @author glebashnik
  */
 @Beta
 public class ColBertEmbedder extends AbstractComponent implements Embedder {
@@ -218,7 +219,7 @@ public class ColBertEmbedder extends AbstractComponent implements Embedder {
         var inputs = Map.of(inputIdsName,
                             inputIdsTensor.expand("d0"),
                             attentionMaskName, attentionMaskTensor.expand("d0"));
-        Map<String, Tensor> outputs = evaluator.evaluate(inputs);
+        Map<String, Tensor> outputs = evaluator.evaluate(inputs, OnnxEmbedderTimeout.remainingOrThrow(context));
         runtime.sampleEmbeddingLatency((System.nanoTime() - start) / 1_000_000d, context);
         return new EmbeddingResult(input.inputIds.size(), outputs);
     }

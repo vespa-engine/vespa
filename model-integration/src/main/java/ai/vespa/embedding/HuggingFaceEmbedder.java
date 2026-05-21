@@ -20,12 +20,17 @@ import com.yahoo.tensor.Tensors;
 import com.yahoo.text.Text;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Logger;
 
 import static com.yahoo.language.huggingface.ModelInfo.TruncationStrategy.LONGEST_FIRST;
 
+/**
+ * Embedder backed by a HuggingFace-style transformer ONNX model and a HuggingFace tokenizer.
+ *
+ * @author arnej
+ * @author glebashnik
+ */
 @Beta
 public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
 
@@ -189,7 +194,9 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         } else {
             inputs = Map.of(analysis.inputIdsName(), inputSequence);
         }
-        IndexedTensor tokenEmbeddings = (IndexedTensor) evaluator.evaluate(inputs).get(analysis.outputName());
+        IndexedTensor tokenEmbeddings = (IndexedTensor) evaluator
+                .evaluate(inputs, OnnxEmbedderTimeout.remainingOrThrow(context))
+                .get(analysis.outputName());
         long[] resultShape = tokenEmbeddings.shape();
         // shape should have batch, sequence, embedding dimensionality
         if (resultShape.length != analysis.outputDimensions()) {
