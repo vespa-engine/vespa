@@ -1227,10 +1227,12 @@ int main(int argc, char** argv) {
         if (smoke_test == argv[i]) {
             std::println(stderr, "Adding --smoke-test filter");
             argv[i] = smoke_test_filter.data();
+            continue;
         }
         const std::string& dump_pond_flag{"--dump-pond"};
         if (dump_pond_flag == argv[i]) {
             opt_dump_pond = true;
+            continue;
         }
         const std::string& save_pond_flag{"--save-pond"};
         if (save_pond_flag == argv[i]) {
@@ -1250,6 +1252,8 @@ int main(int argc, char** argv) {
             opt_load_pond = std::string(argv[++i]);
             continue;
         }
+        std::println(stderr, "Unknown option: '{}'", argv[i]);
+        return 1;
     }
     if (opt_load_pond) {
         try {
