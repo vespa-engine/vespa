@@ -46,16 +46,16 @@ std::vector<uint32_t> make_vec(std::vector<uint32_t> values) {
 
 class QueryTermTest : public testing::Test {
 protected:
-    QueryTermDataFactory       _factory;
-    IndexEnvironment           _index_env;
-    std::unique_ptr<Query>     _query;
-    uint32_t                   _field_id;
-    QueryTerm*                 _node;
-    MatchDataLayout            _mdl;
-    TermFieldHandle            _normal_handle;
-    TermFieldHandle            _filter_handle;
-    MatchData::UP              _md;
-    TermFieldMatchData*        _tfmd;
+    QueryTermDataFactory   _factory;
+    IndexEnvironment       _index_env;
+    std::unique_ptr<Query> _query;
+    uint32_t               _field_id;
+    QueryTerm*             _node;
+    MatchDataLayout        _mdl;
+    TermFieldHandle        _normal_handle;
+    TermFieldHandle        _filter_handle;
+    MatchData::UP          _md;
+    TermFieldMatchData*    _tfmd;
 
     QueryTermTest();
     ~QueryTermTest() override;

@@ -72,7 +72,9 @@ public:
 struct ProfilerTaskGuard {
     ExecutionProfiler& profiler;
     ProfilerTaskGuard(ExecutionProfiler& profiler_in, ExecutionProfiler::TaskId task) noexcept
-        : profiler(profiler_in) { profiler.start(task); }
+        : profiler(profiler_in) {
+        profiler.start(task);
+    }
     ProfilerTaskGuard(const ProfilerTaskGuard&) = delete;
     ProfilerTaskGuard& operator=(const ProfilerTaskGuard&) = delete;
     ~ProfilerTaskGuard() { profiler.complete(); }
@@ -86,10 +88,9 @@ struct ProfilerTaskGuard {
  **/
 class ProfilerNameGuard {
     ExecutionProfiler* _profiler;
+
 public:
-    ProfilerNameGuard(ExecutionProfiler* profiler_in, auto&& name_fn) noexcept
-        : _profiler(profiler_in)
-    {
+    ProfilerNameGuard(ExecutionProfiler* profiler_in, auto&& name_fn) noexcept : _profiler(profiler_in) {
         if (_profiler != nullptr) {
             _profiler->start(_profiler->resolve(name_fn()));
         }
