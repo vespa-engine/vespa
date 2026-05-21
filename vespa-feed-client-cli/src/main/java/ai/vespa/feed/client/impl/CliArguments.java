@@ -65,6 +65,7 @@ class CliArguments {
     private static final String COMPRESSION = "compression";
     private static final String LOG_CONFIG_OPTION = "log-config";
     private static final String INITIAL_INFLIGHT_FACTOR_OPTION = "initial-inflight-factor";
+    private static final String EXIT_ON_FEED_ERRORS_OPTION = "exit-on-feed-errors";
 
     private final CommandLine arguments;
 
@@ -232,6 +233,8 @@ class CliArguments {
 
     OptionalInt initialInflightFactor() throws CliArgumentsException { return intValue(INITIAL_INFLIGHT_FACTOR_OPTION); }
 
+    boolean exitOnFeedErrorsEnabled() { return has(EXIT_ON_FEED_ERRORS_OPTION); }
+
     private Optional<String> stringValue(String option) { return Optional.ofNullable(arguments.getOptionValue(option)); }
 
     private OptionalDouble doubleValue(String option) throws CliArgumentsException {
@@ -396,6 +399,10 @@ class CliArguments {
                         .desc("Multiplier for minInflight to determine the initial targetInflight")
                         .hasArg()
                         .type(Number.class)
+                        .build())
+                .addOption(Option.builder()
+                        .longOpt(EXIT_ON_FEED_ERRORS_OPTION)
+                        .desc("Exit with non-zero exit code if any feed operation fails")
                         .build());
     }
 
