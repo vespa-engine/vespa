@@ -49,19 +49,20 @@ public class BodyKeywordCompletion implements CompletionProvider {
     // Currently key is the classLeafIdentifierString of a node with a body
     private static Map<Class<?>, List<CompletionItem>> bodyKeywordSnippets = new HashMap<>() {{
         put(rootSchema.class, List.of(
+            CompletionUtils.constructSnippet("annotation", "annotation ${1:name} {\n\t$0\n}"),
+            CompletionUtils.constructSnippet("constant", "constant ${1:name} {\n\t$0\n}"),
             CompletionUtils.constructSnippet("document", "document ${1:name} {\n\t$0\n}"),
-            FixedKeywordBodies.INDEX.getColonSnippet(true),
-            FixedKeywordBodies.INDEX.getBodySnippet(true),
+            CompletionUtils.constructSnippet("document-summary", "document-summary ${1:name} {\n\t$0\n}"),
             CompletionUtils.constructSnippet("field", "field ${1:name} type $2 {$0}"),
             CompletionUtils.constructSnippet("fieldset", "fieldset ${1:default} {\n\tfields: $0\n}"),
-            CompletionUtils.constructSnippet("rank-profile", "rank-profile ${1:name} {\n\t$0\n}"),
-            CompletionUtils.constructSnippet("constant", "constant ${1:name} {\n\t$0\n}"),
-            CompletionUtils.constructSnippet("onnx-model", "onnx-model ${1:name} {\n\t$0\n}"),
-            FixedKeywordBodies.STEMMING.getColonSnippet(),
-            CompletionUtils.constructSnippet("document-summary", "document-summary ${1:name} {\n\t$0\n}"),
-            CompletionUtils.constructSnippet("annotation", "annotation ${1:name} {\n\t$0\n}"),
             CompletionUtils.constructSnippet("import field", "import field ${1:name} as $2 {}"),
-            CompletionUtils.constructSnippet("raw-as-base64-in-summary", "raw-as-base64-in-summary")
+            CompletionUtils.constructSnippet("onnx-model", "onnx-model ${1:name} {\n\t$0\n}"),
+            CompletionUtils.constructSnippet("rank-profile", "rank-profile ${1:name} {\n\t$0\n}"),
+            CompletionUtils.constructSnippet("raw-as-base64-in-summary", "raw-as-base64-in-summary"),
+            FixedKeywordBodies.DOCUMENT_ID.getColonSnippet(),
+            FixedKeywordBodies.INDEX.getBodySnippet(true),
+            FixedKeywordBodies.INDEX.getColonSnippet(true),
+            FixedKeywordBodies.STEMMING.getColonSnippet()
         ));
 
         put(documentElm.class, List.of(

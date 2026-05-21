@@ -26,10 +26,14 @@ import ai.vespa.schemals.lsp.common.semantictokens.CommonSemanticTokens;
 import ai.vespa.schemals.lsp.common.semantictokens.SemanticTokenMarker;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.TokenSource;
+import ai.vespa.schemals.parser.ast.ATTRIBUTE;
+import ai.vespa.schemals.parser.ast.DOCUMENTID;
 import ai.vespa.schemals.parser.ast.FILTER;
 import ai.vespa.schemals.parser.ast.RANK_TYPE;
 import ai.vespa.schemals.parser.ast.bool;
 import ai.vespa.schemals.parser.ast.dataType;
+import ai.vespa.schemals.parser.ast.documentElm;
+import ai.vespa.schemals.parser.ast.documentIdElm;
 import ai.vespa.schemals.parser.ast.fieldRankType;
 import ai.vespa.schemals.parser.ast.integerElm;
 import ai.vespa.schemals.parser.ast.matchItem;
@@ -198,8 +202,10 @@ public class SchemaSemanticTokens {
         if (node.getParent().getASTClass() == integerElm.class || node.getParent().getASTClass() == quotedString.class || node.getParent().getASTClass() == bool.class) return false;
         if (!node.isLeaf()) return false;
 
-        // ugly special case
+        // ugly special cases
         if (node.isASTInstance(FILTER.class)) return true;
+
+        if (node.isLeaf() && node.getParent().isASTInstance(documentIdElm.class) && !node.isASTInstance(DOCUMENTID.class)) return true;
 
         if (node.isASTInstance(RANK_TYPE.class)) return false;
 

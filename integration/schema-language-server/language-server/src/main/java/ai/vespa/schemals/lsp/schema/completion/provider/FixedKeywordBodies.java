@@ -12,6 +12,7 @@ import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ast.attributeElm;
 import ai.vespa.schemals.parser.ast.attributeSetting;
 import ai.vespa.schemals.parser.ast.dictionarySetting;
+import ai.vespa.schemals.parser.ast.documentIdElm;
 import ai.vespa.schemals.parser.ast.fieldRankFilter;
 import ai.vespa.schemals.parser.ast.fieldStemming;
 import ai.vespa.schemals.parser.ast.hnswIndex;
@@ -222,5 +223,10 @@ public class FixedKeywordBodies {
     public static FixedKeywordBody EXECUTION_MODE = new FixedKeywordBody("execution-mode", TokenType.EXECUTION_MODE, onnxModelItem.class, List.of(
         CompletionUtils.constructBasic("parallel"),
         CompletionUtils.constructBasic("sequential")
+    ));
+
+    public static FixedKeywordBody DOCUMENT_ID = new FixedKeywordBody("documentid", TokenType.DOCUMENTID, documentIdElm.class, List.of(
+        CompletionUtils.constructBasic("attribute"),
+        CompletionUtils.constructBasic("from-disk")
     ));
 }

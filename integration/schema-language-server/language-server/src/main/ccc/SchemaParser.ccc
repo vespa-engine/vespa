@@ -658,7 +658,7 @@ ParsedSchema rootSchema :
 rootSchemaItem(ParsedSchema schema) : {}
     (
         documentElm(schema)
-       | documentId(schema)
+       | documentIdElm(schema)
        | rawAsBase64(schema)
        | searchStemming(schema)
        | importField(schema)
@@ -1849,7 +1849,7 @@ void idElm(ParsedField field) :
  *
  * @param schema the schema object to add setting to
  */
-void documentId(ParsedSchema schema) :
+void documentIdElm(ParsedSchema schema) :
 {
     boolean attribute = false;
 }
