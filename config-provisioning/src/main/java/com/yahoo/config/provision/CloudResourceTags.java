@@ -28,11 +28,11 @@ public class CloudResourceTags {
 
     private static final Pattern TEMPLATE_VARIABLE = Pattern.compile("\\$\\{[^}]+\\}");
 
-    /** System tag names reserved by the platform. */
+    /** System tag names reserved by the platform. Compared case-insensitively against customer keys. */
     private static final List<String> RESERVED_TAG_NAMES = List.of(
             "applicationid", "athenz", "athenz-domain", "athenzservice", "fqdn", "name", "owner", "zone");
 
-    /** Key prefixes reserved by the platform. */
+    /** Key prefixes reserved by the platform. Compared case-insensitively against customer keys. */
     private static final List<String> RESERVED_KEY_PREFIXES = List.of("vai_", "corp_", "bastion_");
 
     private static final List<String> PLACEHOLDERS = List.of(
@@ -159,11 +159,11 @@ public class CloudResourceTags {
             if (key.indexOf('\0') >= 0 || value.indexOf('\0') >= 0)
                 throw new IllegalArgumentException("Tag key or value contains null bytes for key '" + key + "'");
             for (String reserved : RESERVED_TAG_NAMES) {
-                if (key.equals(reserved))
+                if (key.equalsIgnoreCase(reserved))
                     throw new IllegalArgumentException("Tag key '" + key + "' is reserved by the platform");
             }
             for (String prefix : RESERVED_KEY_PREFIXES) {
-                if (key.startsWith(prefix))
+                if (key.regionMatches(true, 0, prefix, 0, prefix.length()))
                     throw new IllegalArgumentException("Tag key prefix '" + prefix + "' is reserved by the platform: '" + key + "'");
             }
         });
