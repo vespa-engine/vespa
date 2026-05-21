@@ -16,6 +16,7 @@ vespa_add_library(searchcore_flushengine STATIC
     flush_strategy_history_entry.cpp
     flush_strategy_id_listener.cpp
     flush_strategy_id_notifier.cpp
+    flush_strategy_result.cpp
     flush_target_candidate.cpp
     flush_target_candidates.cpp
     flushtargetproxy.cpp

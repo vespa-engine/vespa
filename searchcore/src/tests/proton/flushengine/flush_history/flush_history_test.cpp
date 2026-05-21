@@ -22,6 +22,7 @@ const std::string NORMAL_STRATEGY("normal");
 const std::string ALL_STRATEGY("all");
 const std::string HANDLER1("handler1");
 const std::string HANDLER2("handler2");
+const std::string strategy_info("info");
 
 template <typename Entry> std::vector<std::string> make_names(const std::vector<Entry>& entries) {
     std::vector<std::string> result;
@@ -148,9 +149,9 @@ TEST_F(FlushHistoryTest, empty_history) {
 }
 
 TEST_F(FlushHistoryTest, track_flushes) {
-    _flush_history.start_flush(HANDLER1, "a1", 3s, 5);
-    _flush_history.start_flush(HANDLER2, "a2", 1s, 6);
-    _flush_history.start_flush(HANDLER1, "a3", 4s, 7);
+    _flush_history.start_flush(HANDLER1, "a1", strategy_info, 3s, 5);
+    _flush_history.start_flush(HANDLER2, "a2", strategy_info, 1s, 6);
+    _flush_history.start_flush(HANDLER1, "a3", strategy_info, 4s, 7);
     _flush_history.flush_done(6);
     _flush_history.flush_done(5);
     _flush_history.prune_done(6);
@@ -165,12 +166,12 @@ TEST_F(FlushHistoryTest, track_flushes) {
 }
 
 TEST_F(FlushHistoryTest, tracks_pending_flushes) {
-    _flush_history.add_pending_flush(HANDLER1, "a1", 3s);
-    _flush_history.add_pending_flush(HANDLER2, "a2", 1s);
-    _flush_history.add_pending_flush(HANDLER2, "a3", 4s);
-    _flush_history.add_pending_flush(HANDLER1, "a4", 7s);
-    _flush_history.start_flush(HANDLER1, "a1", 3s, 5);
-    _flush_history.start_flush(HANDLER2, "a2", 1s, 6);
+    _flush_history.add_pending_flush(HANDLER1, "a1", strategy_info, 3s);
+    _flush_history.add_pending_flush(HANDLER2, "a2", strategy_info, 1s);
+    _flush_history.add_pending_flush(HANDLER2, "a3", strategy_info, 4s);
+    _flush_history.add_pending_flush(HANDLER1, "a4", strategy_info, 7s);
+    _flush_history.start_flush(HANDLER1, "a1", strategy_info, 3s, 5);
+    _flush_history.start_flush(HANDLER2, "a2", strategy_info, 1s, 6);
     _flush_history.flush_done(6);
     _flush_history.prune_done(6);
     auto view = _flush_history.make_view();
@@ -184,7 +185,7 @@ TEST_F(FlushHistoryTest, tracks_pending_flushes) {
 }
 
 TEST_F(FlushHistoryTest, pending_flushes_can_be_cleared) {
-    _flush_history.add_pending_flush(HANDLER1, "a1", 3s);
+    _flush_history.add_pending_flush(HANDLER1, "a1", strategy_info, 3s);
     _flush_history.clear_pending_flushes();
     auto view = _flush_history.make_view();
     EXPECT_TRUE(view->pending().empty());
@@ -210,12 +211,12 @@ TEST_F(FlushHistoryTest, flush_strategy_can_be_changed) {
      * { "all",    id = 43, priority_strategy = true  } started 2 flushes: handler2.a2 and handler1.a3
      * { "normal", id = 44, priority_strategy = false } started no flushes
      */
-    _flush_history.start_flush(HANDLER1, "a1", 3s, 5);
+    _flush_history.start_flush(HANDLER1, "a1", strategy_info, 3s, 5);
     _flush_history.set_strategy(ALL_STRATEGY, 43, true);
-    _flush_history.add_pending_flush(HANDLER2, "a2", 1s);
-    _flush_history.add_pending_flush(HANDLER1, "a3", 4s);
-    _flush_history.start_flush(HANDLER2, "a2", 1s, 6);
-    _flush_history.start_flush(HANDLER1, "a3", 4s, 7);
+    _flush_history.add_pending_flush(HANDLER2, "a2", strategy_info, 1s);
+    _flush_history.add_pending_flush(HANDLER1, "a3", strategy_info, 4s);
+    _flush_history.start_flush(HANDLER2, "a2", strategy_info, 1s, 6);
+    _flush_history.start_flush(HANDLER1, "a3", strategy_info, 4s, 7);
     _flush_history.set_strategy(NORMAL_STRATEGY, 44, false);
 
     /*

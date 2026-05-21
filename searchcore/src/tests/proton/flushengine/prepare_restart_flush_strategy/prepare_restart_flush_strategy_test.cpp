@@ -12,6 +12,7 @@
 #include <cassert>
 
 using namespace proton;
+using proton::flushengine::FlushStrategyResult;
 using search::SerialNum;
 using searchcorespi::IFlushTarget;
 
@@ -201,7 +202,7 @@ struct FlushStrategyFixture {
     [[nodiscard]] FlushContext::List getFlushTargets(const FlushContext::List&       targetList,
                                                      const flushengine::TlsStatsMap& tlsStatsMap) const {
         flushengine::ActiveFlushStats active_flushes;
-        return strategy.getFlushTargets(targetList, tlsStatsMap, active_flushes);
+        return strategy.getFlushTargets(targetList, tlsStatsMap, active_flushes).list();
     }
 };
 

@@ -22,8 +22,9 @@ public:
     SimpleFlush();
 
     // Implements IFlushStrategy
-    FlushContext::List getFlushTargets(const FlushContext::List& targetList, const flushengine::TlsStatsMap&,
-                                       const flushengine::ActiveFlushStats&) const override;
+    flushengine::FlushStrategyResult getFlushTargets(const FlushContext::List& targetList,
+                                                     const flushengine::TlsStatsMap&,
+                                                     const flushengine::ActiveFlushStats&) const override;
     std::string name() const override;
 };
 

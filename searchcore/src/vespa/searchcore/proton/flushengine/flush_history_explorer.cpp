@@ -39,6 +39,7 @@ void convert_to_slime(const FlushHistoryEntry& entry, Inserter& inserter) {
     object.setString("strategy", entry.strategy());
     object.setLong("strategy_id", entry.strategy_id());
     object.setBool("priority_strategy", entry.priority_strategy());
+    object.setString("strategy_info", entry.strategy_info());
     object.setLong("create_time", as_system_microseconds(entry.create_time()));
     if (entry.start_time() != steady_clock::time_point()) {
         object.setLong("start_time_usecs", as_system_microseconds(entry.start_time()));

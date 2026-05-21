@@ -109,7 +109,7 @@ void FlushHistory::strategy_flush_done(uint32_t strategy_id, time_point now) {
 }
 
 void FlushHistory::start_flush(const std::string& handler_name, const std::string& target_name,
-                               duration last_flush_duration, uint32_t id) {
+                               const std::string& strategy_info, duration last_flush_duration, uint32_t id) {
     // Note: this member function is called when queueing flush engine task, initFlush has already completed.
     auto            name = build_name(handler_name, target_name);
     std::lock_guard guard(_mutex);
@@ -122,7 +122,8 @@ void FlushHistory::start_flush(const std::string& handler_name, const std::strin
     } else {
         auto now = steady_clock::now();
         active_it = _active.emplace_hint(
-            active_it, id, FlushHistoryEntry(name, _active_strategy, now, last_flush_duration, ++_pending_id));
+            active_it, id,
+            FlushHistoryEntry(name, _active_strategy, strategy_info, now, last_flush_duration, ++_pending_id));
     }
     _active_strategy.start_flush();
     auto now = steady_clock::now();
@@ -152,17 +153,19 @@ void FlushHistory::prune_done(uint32_t id) {
 }
 
 void FlushHistory::add_pending_flush(const std::string& handler_name, const std::string& target_name,
-                                     duration last_flush_duration) {
+                                     const std::string& strategy_info, duration last_flush_duration) {
     // Called when priority flush strategy is used.
     auto            name = build_name(handler_name, target_name);
     std::lock_guard guard(_mutex);
     auto            pending_it = _pending.lower_bound(name);
     auto            now = steady_clock::now();
     if (pending_it != _pending.end() && pending_it->first == name) {
-        pending_it->second = FlushHistoryEntry(name, _active_strategy, now, last_flush_duration, ++_pending_id);
+        pending_it->second =
+            FlushHistoryEntry(name, _active_strategy, strategy_info, now, last_flush_duration, ++_pending_id);
     } else {
-        _pending.emplace_hint(pending_it, name,
-                              FlushHistoryEntry(name, _active_strategy, now, last_flush_duration, ++_pending_id));
+        _pending.emplace_hint(
+            pending_it, name,
+            FlushHistoryEntry(name, _active_strategy, strategy_info, now, last_flush_duration, ++_pending_id));
     }
 }
 

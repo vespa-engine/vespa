@@ -25,6 +25,7 @@ using Task = vespalib::Executor::Task;
 using proton::flushengine::FlushHistory;
 using proton::flushengine::FlushHistoryEntry;
 using proton::flushengine::FlushStrategyIdNotifier;
+using proton::flushengine::FlushStrategyResult;
 using proton::flushengine::SetStrategyResult;
 using searchcorespi::FlushStats;
 using searchcorespi::IFlushTarget;
@@ -121,6 +122,7 @@ FlushEngine::FlushEngine(std::shared_ptr<flushengine::ITlsStatsFactory> tlsStats
       _flush_history(std::make_shared<FlushHistory>(_strategy->name(), _strategy_id, _maxConcurrentNormal)),
       _max_summary_file_size(max_summary_file_size) {
     _flushing_strategies[_strategy_id] = 1u; // Account for initial flush strategy
+    _strategy->set_id(_strategy_id);
 }
 
 FlushEngine::~FlushEngine() {
@@ -197,20 +199,15 @@ bool FlushEngine::has_slot(IFlushTarget::Priority priority) {
 
 std::string FlushEngine::checkAndFlush(std::string prev) {
     auto lst = getSortedTargetList();
-    if (lst._priority_flush) {
+    if (lst.priority_strategy()) {
         // Everything returned from a priority strategy should be flushed
-        flushAll(lst._ctx_list, lst._strategy_id);
+        flushAll(lst);
         return "[priority_targets]"; // prevent idle_wait in FlushEngine::run()
-    } else if (!lst._ctx_list.empty()) {
-        if (has_slot(IFlushTarget::Priority::NORMAL)) {
-            prev = flushNextTarget(prev, lst._ctx_list, lst._strategy_id);
-        } else {
-            FlushContext::List highPri;
-            if (lst._ctx_list.front()->getTarget()->getPriority() > IFlushTarget::Priority::NORMAL) {
-                highPri.push_back(lst._ctx_list.front());
-            }
-            prev = flushNextTarget(prev, highPri, lst._strategy_id);
+    } else if (!lst.list().empty()) {
+        if (!has_slot(IFlushTarget::Priority::NORMAL)) {
+            lst.drop_non_high_priority_targets();
         }
+        prev = flushNextTarget(prev, lst);
         if (!prev.empty()) {
             // Sleep 1 ms after a successful flush in order to avoid busy loop in case
             // of strategy or target error.
@@ -326,6 +323,7 @@ void FlushEngine::maybe_apply_changed_strategy(std::vector<uint32_t>&        str
         _strategy_id = _priorityStrategy->get_id();
     } else {
         ++_strategy_id;
+        _strategy->set_id(_strategy_id);
     }
     _flush_history->clear_pending_flushes();
     _flush_history->set_strategy(std::move(strategy_name), _strategy_id, priority_strategy);
@@ -391,21 +389,16 @@ flushengine::ActiveFlushStats make_active_flushes(const FlushEngine::FlushMetaSe
 
 } // namespace
 
-FlushEngine::BoundFlushContextList FlushEngine::getSortedTargetList() {
+FlushStrategyResult FlushEngine::getSortedTargetList() {
     auto                  unsortedTargets = getTargetList(false);
     auto                  tlsStatsMap = _tlsStatsFactory->create();
     auto                  active_flushes = make_active_flushes(getCurrentlyFlushingSet());
     std::vector<uint32_t> strategy_ids_for_finished_flushes;
     std::unique_lock      strategy_guard(_strategyLock);
     maybe_apply_changed_strategy(strategy_ids_for_finished_flushes, strategy_guard);
-    BoundFlushContextList ret;
-    if (_priorityStrategy) {
-        ret = BoundFlushContextList(_priorityStrategy->getFlushTargets(unsortedTargets, tlsStatsMap, active_flushes),
-                                    _strategy_id, true);
-    } else {
-        ret = BoundFlushContextList(_strategy->getFlushTargets(unsortedTargets, tlsStatsMap, active_flushes),
-                                    _strategy_id, false);
-    }
+    FlushStrategyResult ret = _priorityStrategy
+                                  ? _priorityStrategy->getFlushTargets(unsortedTargets, tlsStatsMap, active_flushes)
+                                  : _strategy->getFlushTargets(unsortedTargets, tlsStatsMap, active_flushes);
     strategy_guard.unlock();
     prune_flushing_strategies(std::move(strategy_ids_for_finished_flushes));
     return ret;
@@ -419,11 +412,14 @@ std::shared_ptr<search::IFlushToken> FlushEngine::get_flush_token(const FlushCon
     }
 }
 
-FlushContext::SP FlushEngine::initNextFlush(const FlushContext::List& lst) {
+FlushContext::SP FlushEngine::initNextFlush(const FlushStrategyResult& flush_strategy_result) {
+    const auto&      lst = flush_strategy_result.list();
     FlushContext::SP ctx;
     for (const FlushContext::SP& it : lst) {
         if (LOG_WOULD_LOG(event)) {
-            EventLogger::flushInit(it->getName());
+            const auto& strategy_info = flush_strategy_result.strategy_info();
+            const auto& strategy_name = flush_strategy_result.strategy_name();
+            EventLogger::flushInit(it->getName(), strategy_name, strategy_info);
         }
         if (it->initFlush(get_flush_token(*it))) {
             ctx = it;
@@ -436,17 +432,21 @@ FlushContext::SP FlushEngine::initNextFlush(const FlushContext::List& lst) {
     return ctx;
 }
 
-void FlushEngine::flushAll(const FlushContext::List& lst, uint32_t strategy_id) {
+void FlushEngine::flushAll(const FlushStrategyResult& flush_strategy_result) {
+    const auto& lst = flush_strategy_result.list();
+    const auto& strategy_info = flush_strategy_result.strategy_info();
     LOG(debug, "%ld targets to flush.", lst.size());
     for (const FlushContext::SP& ctx : lst) {
-        _flush_history->add_pending_flush(ctx->getHandler()->getName(), ctx->getTarget()->getName(),
+        _flush_history->add_pending_flush(ctx->getHandler()->getName(), ctx->getTarget()->getName(), strategy_info,
                                           ctx->getTarget()->last_flush_duration());
     }
+    auto strategy_id = flush_strategy_result.strategy_id();
     for (const FlushContext::SP& ctx : lst) {
         if (wait_for_slot(IFlushTarget::Priority::NORMAL)) {
             if (ctx->initFlush(get_flush_token(*ctx))) {
                 logTarget("initiated", *ctx);
-                _executor.execute(std::make_unique<FlushTask>(initFlush(*ctx, strategy_id), *this, ctx));
+                _executor.execute(
+                    std::make_unique<FlushTask>(initFlush(*ctx, strategy_id, strategy_info), *this, ctx));
             } else {
                 logTarget("failed to initiate", *ctx);
                 _flush_history->drop_pending_flush(ctx->getHandler()->getName(), ctx->getTarget()->getName());
@@ -463,13 +463,12 @@ void FlushEngine::flushAll(const FlushContext::List& lst, uint32_t strategy_id) 
     }
 }
 
-std::string FlushEngine::flushNextTarget(const std::string& name, const FlushContext::List& contexts,
-                                         uint32_t strategy_id) {
-    if (contexts.empty()) {
+std::string FlushEngine::flushNextTarget(const std::string& name, const FlushStrategyResult& flush_strategy_result) {
+    if (flush_strategy_result.list().empty()) {
         LOG(debug, "No target to flush.");
         return "";
     }
-    FlushContext::SP ctx = initNextFlush(contexts);
+    FlushContext::SP ctx = initNextFlush(flush_strategy_result);
     if (!ctx) {
         LOG(debug, "All targets refused to flush.");
         return "";
@@ -478,21 +477,23 @@ std::string FlushEngine::flushNextTarget(const std::string& name, const FlushCon
         LOG(info,
             "The same target %s out of %ld has been asked to flush again. "
             "This might indicate flush logic flaw so I will wait 100 ms before doing it.",
-            name.c_str(), contexts.size());
+            name.c_str(), flush_strategy_result.list().size());
         std::this_thread::sleep_for(100ms);
     }
-    _executor.execute(std::make_unique<FlushTask>(initFlush(*ctx, strategy_id), *this, ctx));
+    const auto  strategy_id = flush_strategy_result.strategy_id();
+    const auto& strategy_info = flush_strategy_result.strategy_info();
+    _executor.execute(std::make_unique<FlushTask>(initFlush(*ctx, strategy_id, strategy_info), *this, ctx));
     return ctx->getName();
 }
 
-uint32_t FlushEngine::initFlush(const FlushContext& ctx, uint32_t strategy_id) {
+uint32_t FlushEngine::initFlush(const FlushContext& ctx, uint32_t strategy_id, const std::string& strategy_info) {
     if (LOG_WOULD_LOG(event)) {
         IFlushTarget::MemoryGain mgain(ctx.getTarget()->getApproxMemoryGain());
         EventLogger::flushStart(ctx.getName(), mgain.getBefore(), mgain.getAfter(), mgain.gain(),
                                 ctx.getTarget()->getFlushedSerialNum() + 1,
                                 ctx.getHandler()->getCurrentSerialNumber());
     }
-    return initFlush(ctx.getHandler(), ctx.getTarget(), strategy_id);
+    return initFlush(ctx.getHandler(), ctx.getTarget(), strategy_id, strategy_info);
 }
 
 void FlushEngine::flushDone(const FlushContext& ctx, uint32_t taskId) {
@@ -582,18 +583,19 @@ FlushEngine::FlushMetaSet FlushEngine::getCurrentlyFlushingSet() const {
 }
 
 uint32_t FlushEngine::initFlush(const IFlushHandler::SP& handler, const IFlushTarget::SP& target,
-                                uint32_t strategy_id) {
+                                uint32_t strategy_id, const std::string& strategy_info) {
     uint32_t taskId;
     {
         std::lock_guard<std::mutex> guard(_lock);
         taskId = _taskId++;
         FlushInfo flush(taskId, handler->getName(), target, strategy_id);
         _flushing[taskId] = flush;
-        _flush_history->start_flush(handler->getName(), target->getName(), target->last_flush_duration(), taskId);
+        _flush_history->start_flush(handler->getName(), target->getName(), strategy_info,
+                                    target->last_flush_duration(), taskId);
         mark_active_strategy(strategy_id, guard);
     }
-    LOG(debug, "FlushEngine::initFlush(handler='%s', target='%s') => taskId='%d'", handler->getName().c_str(),
-        target->getName().c_str(), taskId);
+    LOG(debug, "FlushEngine::initFlush(handler='%s', target='%s', strategy_info='%s') => taskId='%d'",
+        handler->getName().c_str(), target->getName().c_str(), strategy_info.c_str(), taskId);
     return taskId;
 }
 

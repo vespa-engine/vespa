@@ -231,6 +231,8 @@ std::shared_ptr<FlushStrategyIdNotifier> make_flush_strategy_id_notifier() {
     return notifier;
 }
 
+const std::string strategy_info("info");
+
 } // namespace
 
 class PrepareRestart2RpcHandlerTest : public ::testing::Test {
@@ -476,13 +478,13 @@ TEST_F(PrepareRestart2RpcHandlerTest, poll_sequence) {
      * { "prepare_restart", id = 201, priority_strategy = true  } started 2 flushes: handler2.a2 and handler1.a3
      * and set 1 flush as pending: handler1.a4
      */
-    _history->start_flush(HANDLER1, "a1", 3s, 5);
+    _history->start_flush(HANDLER1, "a1", strategy_info, 3s, 5);
     _history->set_strategy(PREPARE_RESTART_STRATEGY, 201, true);
-    _history->add_pending_flush(HANDLER2, "a2", 1s);
-    _history->add_pending_flush(HANDLER1, "a3", 4s);
-    _history->add_pending_flush(HANDLER1, "a4", 1s);
-    _history->start_flush(HANDLER2, "a2", 1s, 6);
-    _history->start_flush(HANDLER1, "a3", 4s, 7);
+    _history->add_pending_flush(HANDLER2, "a2", strategy_info, 1s);
+    _history->add_pending_flush(HANDLER1, "a3", strategy_info, 4s);
+    _history->add_pending_flush(HANDLER1, "a4", strategy_info, 1s);
+    _history->start_flush(HANDLER2, "a2", strategy_info, 1s, 6);
+    _history->start_flush(HANDLER1, "a3", strategy_info, 4s, 7);
 
     auto future = test_handler(1, 0s);
     future.wait();
@@ -502,7 +504,7 @@ TEST_F(PrepareRestart2RpcHandlerTest, poll_sequence) {
      */
     _history->flush_done(6);
     _history->prune_done(6);
-    _history->start_flush(HANDLER1, "a4", 1s, 8);
+    _history->start_flush(HANDLER1, "a4", strategy_info, 1s, 8);
     _history->set_strategy(MEMORY_STRATEGY, 202, false);
     _return_handler->alloc_req();
     future = test_handler(1, 0s);

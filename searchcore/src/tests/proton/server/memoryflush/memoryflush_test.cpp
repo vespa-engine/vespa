@@ -18,6 +18,7 @@ using DiskGain = IFlushTarget::DiskGain;
 
 class MyFlushHandler : public IFlushHandler {
     SerialNum _current_serial;
+
 public:
     MyFlushHandler(const std::string& name) noexcept : IFlushHandler(name), _current_serial(100) {}
     ~MyFlushHandler() override;
@@ -99,10 +100,10 @@ public:
         return flushengine::TlsStatsMap(std::move(map));
     }
     FlushContext::List flush_targets(const IFlushStrategy& strategy) const {
-        return strategy.getFlushTargets(list(), tlsStats(), _active_flushes);
+        return strategy.getFlushTargets(list(), tlsStats(), _active_flushes).list();
     }
     [[nodiscard]] StringList flush_target_names(const IFlushStrategy& strategy) const {
-        auto ctx_list = flush_targets(strategy);
+        auto       ctx_list = flush_targets(strategy);
         StringList target_names;
         target_names.reserve(ctx_list.size());
         for (auto& ctx : ctx_list) {

@@ -8,15 +8,24 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.simpleflush");
 
+using proton::flushengine::FlushStrategyResult;
+
 namespace proton {
+
+namespace {
+
+const std::string strategy_name("simple");
+
+}
 
 SimpleFlush::SimpleFlush() = default;
 
-FlushContext::List SimpleFlush::getFlushTargets(const FlushContext::List& targetList, const flushengine::TlsStatsMap&,
-                                                const flushengine::ActiveFlushStats&) const {
+FlushStrategyResult SimpleFlush::getFlushTargets(const FlushContext::List& targetList,
+                                                 const flushengine::TlsStatsMap&,
+                                                 const flushengine::ActiveFlushStats&) const {
     FlushContext::List fv(targetList);
     std::sort(fv.begin(), fv.end(), CompareTarget());
-    return fv;
+    return FlushStrategyResult(std::move(fv), strategy_name, _id, false, strategy_name);
 }
 
 std::string SimpleFlush::name() const {
