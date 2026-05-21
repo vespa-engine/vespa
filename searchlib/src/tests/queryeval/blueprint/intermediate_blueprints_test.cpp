@@ -1211,6 +1211,7 @@ TEST(IntermediateBlueprintsTest, require_that_unpack_of_or_over_multisearch_is_o
                                 ->addChild(ap(MyLeafSpec(20).addField(4, 4).create()))
                                 .addChild(ap(MyLeafSpec(20).addField(5, 5).create()))
                                 .addChild(ap(MyLeafSpec(10).addField(6, 6).create()))));
+
     Blueprint::UP top_up(ap((new OrBlueprint())->addChild(std::move(child1)).addChild(std::move(child2))));
     MatchData::UP md = MatchData::makeTestInstance(100, 10);
     top_up->basic_plan(false, 1000);
@@ -1313,6 +1314,7 @@ TEST(IntermediateBlueprintsTest, require_that_children_does_not_optimize_when_pa
     search::fef::TermFieldHandle idxth22 = subLayout.allocTermField(2);
     search::fef::TermFieldHandle idxth1 = subLayout.allocTermField(1);
     search::fef::MatchDataLayout mdl;
+
     Blueprint::UP top_up(ap((new EquivBlueprint(fields, std::move(subLayout)))
                                 ->addTerm(index.getIndex().createBlueprint(
                                               requestContext, FieldSpec("f2", 2, idxth22, true), makeTerm("w2"), mdl),
@@ -1356,6 +1358,7 @@ TEST(IntermediateBlueprintsTest, require_that_unpack_optimization_is_not_overrul
     search::fef::TermFieldHandle idxth1 = subLayout.allocTermField(1);
     search::fef::TermFieldHandle idxth2 = subLayout.allocTermField(2);
     search::fef::TermFieldHandle idxth3 = subLayout.allocTermField(3);
+
     Blueprint::UP top_up(ap((new EquivBlueprint(fields, std::move(subLayout)))
                                 ->addTerm(ap((new OrBlueprint())
                                                  ->addChild(ap(MyLeafSpec(20).addField(1, idxth1).create()))
