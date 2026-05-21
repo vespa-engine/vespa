@@ -3,6 +3,7 @@
 #pragma once
 
 #include "time.h"
+
 #include <atomic>
 
 namespace vespalib {
@@ -30,7 +31,10 @@ public:
     /**
      * Returns whether the deadline is missed, i.e., whether the current time is after the deadline's time point.
      */
-    [[nodiscard]] bool is_missed() const noexcept { _missed = _missed || (get_time_ns() > _deadline); return _missed; }
+    [[nodiscard]] bool is_missed() const noexcept {
+        _missed = _missed || (get_time_ns() > _deadline);
+        return _missed;
+    }
     /**
      * Returns whether the deadline was missed, i.e., is_missed() was called after the deadline.
      */
@@ -51,4 +55,4 @@ private:
     mutable bool                    _missed;
 };
 
-}
+} // namespace vespalib

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "deadline.h"
+
 #include "fake_deadline.h"
 
 namespace vespalib {
@@ -14,4 +15,4 @@ const Deadline& Deadline::never() noexcept {
     return never_missed.get_deadline();
 }
 
-}
+} // namespace vespalib
