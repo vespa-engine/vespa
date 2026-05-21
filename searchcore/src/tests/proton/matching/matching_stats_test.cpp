@@ -68,27 +68,46 @@ TEST(MatchingStatsTest, requireThatAverageTimesAreRecorded) {
     EXPECT_NEAR(0.0, stats.groupingTimeAvg(), 0.00001);
     EXPECT_NEAR(0.0, stats.rerankTimeAvg(), 0.00001);
     EXPECT_NEAR(0.0, stats.querySetupTimeAvg(), 0.00001);
+    EXPECT_NEAR(0.0, stats.approximate_nns_time_avg(), 0.00001);
     EXPECT_NEAR(0.0, stats.queryLatencyAvg(), 0.00001);
     EXPECT_EQ(0u, stats.matchTimeCount());
     EXPECT_EQ(0u, stats.groupingTimeCount());
     EXPECT_EQ(0u, stats.rerankTimeCount());
     EXPECT_EQ(0u, stats.querySetupTimeCount());
+    EXPECT_EQ(0u, stats.approximate_nns_time_count());
     EXPECT_EQ(0u, stats.queryLatencyCount());
-    stats.matchTime(0.01).groupingTime(0.1).rerankTime(0.5).querySetupTime(2.0).queryLatency(1.0);
+    stats.matchTime(0.01)
+        .groupingTime(0.1)
+        .rerankTime(0.5)
+        .querySetupTime(2.0)
+        .approximate_nns_time(0.01)
+        .queryLatency(1.0);
     EXPECT_NEAR(0.01, stats.matchTimeAvg(), 0.00001);
     EXPECT_NEAR(0.1, stats.groupingTimeAvg(), 0.00001);
     EXPECT_NEAR(0.5, stats.rerankTimeAvg(), 0.00001);
     EXPECT_NEAR(2.0, stats.querySetupTimeAvg(), 0.00001);
+    EXPECT_NEAR(0.01, stats.approximate_nns_time_avg(), 0.00001);
     EXPECT_NEAR(1.0, stats.queryLatencyAvg(), 0.00001);
-    stats.add(
-        MatchingStats().matchTime(0.03).groupingTime(0.3).rerankTime(1.5).querySetupTime(6.0).queryLatency(3.0));
+    stats.add(MatchingStats()
+                  .matchTime(0.03)
+                  .groupingTime(0.3)
+                  .rerankTime(1.5)
+                  .querySetupTime(6.0)
+                  .approximate_nns_time(0.02)
+                  .queryLatency(3.0));
     EXPECT_NEAR(0.02, stats.matchTimeAvg(), 0.00001);
     EXPECT_NEAR(0.2, stats.groupingTimeAvg(), 0.00001);
     EXPECT_NEAR(1.0, stats.rerankTimeAvg(), 0.00001);
     EXPECT_NEAR(4.0, stats.querySetupTimeAvg(), 0.00001);
+    EXPECT_NEAR(0.015, stats.approximate_nns_time_avg(), 0.00001);
     EXPECT_NEAR(2.0, stats.queryLatencyAvg(), 0.00001);
-    stats.add(
-        MatchingStats().matchTime(0.05).groupingTime(0.5).rerankTime(2.5).querySetupTime(10.0).queryLatency(5.0));
+    stats.add(MatchingStats()
+                  .matchTime(0.05)
+                  .groupingTime(0.5)
+                  .rerankTime(2.5)
+                  .querySetupTime(10.0)
+                  .approximate_nns_time(0.045)
+                  .queryLatency(5.0));
     stats.add(MatchingStats()
                   .matchTime(0.05)
                   .matchTime(0.03)
@@ -98,17 +117,21 @@ TEST(MatchingStatsTest, requireThatAverageTimesAreRecorded) {
                   .rerankTime(1.5)
                   .querySetupTime(10.0)
                   .querySetupTime(6.0)
+                  .approximate_nns_time(0.1)
+                  .approximate_nns_time(0.045)
                   .queryLatency(5.0)
                   .queryLatency(3.0));
     EXPECT_NEAR(0.03, stats.matchTimeAvg(), 0.00001);
     EXPECT_NEAR(0.3, stats.groupingTimeAvg(), 0.00001);
     EXPECT_NEAR(1.5, stats.rerankTimeAvg(), 0.00001);
     EXPECT_NEAR(6.0, stats.querySetupTimeAvg(), 0.00001);
+    EXPECT_NEAR(0.03, stats.approximate_nns_time_avg(), 0.00001);
     EXPECT_NEAR(3.0, stats.queryLatencyAvg(), 0.00001);
     EXPECT_EQ(4u, stats.matchTimeCount());
     EXPECT_EQ(4u, stats.groupingTimeCount());
     EXPECT_EQ(4u, stats.rerankTimeCount());
     EXPECT_EQ(4u, stats.querySetupTimeCount());
+    EXPECT_EQ(4u, stats.approximate_nns_time_count());
     EXPECT_EQ(4u, stats.queryLatencyCount());
 }
 
@@ -118,37 +141,58 @@ TEST(MatchingStatsTest, requireThatMinMaxTimesAreRecorded) {
     EXPECT_NEAR(0.0, stats.groupingTimeMin(), 0.00001);
     EXPECT_NEAR(0.0, stats.rerankTimeMin(), 0.00001);
     EXPECT_NEAR(0.0, stats.querySetupTimeMin(), 0.00001);
+    EXPECT_NEAR(0.0, stats.approximate_nns_time_min(), 0.00001);
     EXPECT_NEAR(0.0, stats.queryLatencyMin(), 0.00001);
     EXPECT_NEAR(0.0, stats.matchTimeMax(), 0.00001);
     EXPECT_NEAR(0.0, stats.groupingTimeMax(), 0.00001);
     EXPECT_NEAR(0.0, stats.rerankTimeMax(), 0.00001);
     EXPECT_NEAR(0.0, stats.querySetupTimeMax(), 0.00001);
+    EXPECT_NEAR(0.0, stats.approximate_nns_time_max(), 0.00001);
     EXPECT_NEAR(0.0, stats.queryLatencyMax(), 0.00001);
-    stats.matchTime(0.01).groupingTime(0.1).rerankTime(0.5).querySetupTime(2.0).queryLatency(1.0);
+    stats.matchTime(0.01)
+        .groupingTime(0.1)
+        .rerankTime(0.5)
+        .querySetupTime(2.0)
+        .approximate_nns_time(0.02)
+        .queryLatency(1.0);
     EXPECT_NEAR(0.01, stats.matchTimeMin(), 0.00001);
     EXPECT_NEAR(0.1, stats.groupingTimeMin(), 0.00001);
     EXPECT_NEAR(0.5, stats.rerankTimeMin(), 0.00001);
     EXPECT_NEAR(2.0, stats.querySetupTimeMin(), 0.00001);
+    EXPECT_NEAR(0.02, stats.approximate_nns_time_min(), 0.00001);
     EXPECT_NEAR(1.0, stats.queryLatencyMin(), 0.00001);
     EXPECT_NEAR(0.01, stats.matchTimeMax(), 0.00001);
     EXPECT_NEAR(0.1, stats.groupingTimeMax(), 0.00001);
     EXPECT_NEAR(0.5, stats.rerankTimeMax(), 0.00001);
     EXPECT_NEAR(2.0, stats.querySetupTimeMax(), 0.00001);
+    EXPECT_NEAR(0.02, stats.approximate_nns_time_max(), 0.00001);
     EXPECT_NEAR(1.0, stats.queryLatencyMax(), 0.00001);
-    stats.add(
-        MatchingStats().matchTime(0.03).groupingTime(0.3).rerankTime(1.5).querySetupTime(6.0).queryLatency(3.0));
+    stats.add(MatchingStats()
+                  .matchTime(0.03)
+                  .groupingTime(0.3)
+                  .rerankTime(1.5)
+                  .querySetupTime(6.0)
+                  .approximate_nns_time(0.04)
+                  .queryLatency(3.0));
     EXPECT_NEAR(0.01, stats.matchTimeMin(), 0.00001);
     EXPECT_NEAR(0.1, stats.groupingTimeMin(), 0.00001);
     EXPECT_NEAR(0.5, stats.rerankTimeMin(), 0.00001);
     EXPECT_NEAR(2.0, stats.querySetupTimeMin(), 0.00001);
+    EXPECT_NEAR(0.02, stats.approximate_nns_time_min(), 0.00001);
     EXPECT_NEAR(1.0, stats.queryLatencyMin(), 0.00001);
     EXPECT_NEAR(0.03, stats.matchTimeMax(), 0.00001);
     EXPECT_NEAR(0.3, stats.groupingTimeMax(), 0.00001);
     EXPECT_NEAR(1.5, stats.rerankTimeMax(), 0.00001);
     EXPECT_NEAR(6.0, stats.querySetupTimeMax(), 0.00001);
+    EXPECT_NEAR(0.04, stats.approximate_nns_time_max(), 0.00001);
     EXPECT_NEAR(3.0, stats.queryLatencyMax(), 0.00001);
-    stats.add(
-        MatchingStats().matchTime(0.05).groupingTime(0.5).rerankTime(2.5).querySetupTime(10.0).queryLatency(5.0));
+    stats.add(MatchingStats()
+                  .matchTime(0.05)
+                  .groupingTime(0.5)
+                  .rerankTime(2.5)
+                  .querySetupTime(10.0)
+                  .approximate_nns_time(0.2)
+                  .queryLatency(5.0));
     stats.add(MatchingStats()
                   .matchTime(0.05)
                   .matchTime(0.03)
@@ -158,17 +202,21 @@ TEST(MatchingStatsTest, requireThatMinMaxTimesAreRecorded) {
                   .rerankTime(1.5)
                   .querySetupTime(10.0)
                   .querySetupTime(6.0)
+                  .approximate_nns_time(0.2)
+                  .approximate_nns_time(0.1)
                   .queryLatency(5.0)
                   .queryLatency(3.0));
     EXPECT_NEAR(0.01, stats.matchTimeMin(), 0.00001);
     EXPECT_NEAR(0.1, stats.groupingTimeMin(), 0.00001);
     EXPECT_NEAR(0.5, stats.rerankTimeMin(), 0.00001);
     EXPECT_NEAR(2.0, stats.querySetupTimeMin(), 0.00001);
+    EXPECT_NEAR(0.02, stats.approximate_nns_time_min(), 0.00001);
     EXPECT_NEAR(1.0, stats.queryLatencyMin(), 0.00001);
     EXPECT_NEAR(0.05, stats.matchTimeMax(), 0.00001);
     EXPECT_NEAR(0.5, stats.groupingTimeMax(), 0.00001);
     EXPECT_NEAR(2.5, stats.rerankTimeMax(), 0.00001);
     EXPECT_NEAR(10.0, stats.querySetupTimeMax(), 0.00001);
+    EXPECT_NEAR(0.2, stats.approximate_nns_time_max(), 0.00001);
     EXPECT_NEAR(5.0, stats.queryLatencyMax(), 0.00001);
 }
 
