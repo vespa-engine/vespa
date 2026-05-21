@@ -8,6 +8,7 @@
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/queryeval/nearest_neighbor_blueprint.h>
 #include <vespa/vespalib/util/xoshiro.h>
 
@@ -40,7 +41,8 @@ Value::UP make_random_vec(const std::string& type_spec, uint32_t dim, Xoshiro256
 
 // ---------------- EnnBlueprintFactory --------------------
 
-EnnBlueprintFactory::EnnBlueprintFactory(const EnnConfig& cfg) : _attr(), _query(), _target_hits(cfg.target_hits) {
+EnnBlueprintFactory::EnnBlueprintFactory(const EnnConfig& cfg)
+    : _attr(), _query(), _target_hits(cfg.target_hits), _global_filter(), _global_filter_hit_ratio(0.0) {
     auto   type_spec = std::format("tensor<float>(x[{}])", cfg.dim);
     Config tensor_cfg(BasicType::TENSOR);
     tensor_cfg.setTensorType(ValueType::from_spec(type_spec));
@@ -51,6 +53,20 @@ EnnBlueprintFactory::EnnBlueprintFactory(const EnnConfig& cfg) : _attr(), _query
     _attr = builder.add_tensor(tensor_cfg, "nn", cfg.num_docs,
                                [&](uint32_t) { return make_random_vec(type_spec, cfg.dim, gen); });
     _query = make_random_vec(type_spec, cfg.dim, gen);
+
+    if (cfg.global_filter_hit_ratio.has_value()) {
+        _global_filter_hit_ratio = cfg.global_filter_hit_ratio.value();
+        Xoshiro256PlusPlusPrng                 filter_gen(cfg.seed + 1);
+        std::uniform_real_distribution<double> coin(0.0, 1.0);
+        auto                                   bits = BitVector::create(1, cfg.num_docs + 1);
+        for (uint32_t docid = 1; docid <= cfg.num_docs; ++docid) {
+            if (coin(filter_gen) < _global_filter_hit_ratio) {
+                bits->setBit(docid);
+            }
+        }
+        bits->invalidateCachedCount();
+        _global_filter = GlobalFilter::create(std::move(bits));
+    }
 }
 
 EnnBlueprintFactory::~EnnBlueprintFactory() = default;
@@ -60,7 +76,11 @@ std::unique_ptr<Blueprint> EnnBlueprintFactory::make_blueprint() {
     FieldSpec field("nn", 0, 0);
     NearestNeighborBlueprint::HnswParams hnsw_params{};
     hnsw_params.distance_threshold = std::numeric_limits<double>::max();
-    return std::make_unique<NearestNeighborBlueprint>(field, std::move(calc), _target_hits, false, hnsw_params);
+    auto bp = std::make_unique<NearestNeighborBlueprint>(field, std::move(calc), _target_hits, false, hnsw_params);
+    if (_global_filter) {
+        bp->set_global_filter(*_global_filter, _global_filter_hit_ratio);
+    }
+    return bp;
 }
 
 std::string EnnBlueprintFactory::get_name(Blueprint& blueprint) const {
