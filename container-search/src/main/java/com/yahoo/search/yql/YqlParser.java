@@ -539,13 +539,27 @@ public class YqlParser implements Parser {
         return nonTaggableLeafStyleSettings(ast, item);
     }
 
-    private ParsedDegree degreesFromArg(OperatorNode<ExpressionOperator> ast, boolean first) {
-        Object arg = switch (ast.getOperator()) {
+    private String derefVar(OperatorNode<ExpressionOperator> ast) {
+        Preconditions.checkState(ast.getOperator() == ExpressionOperator.VARREF, "derefVar() only accepts VARREF");
+        Preconditions.checkState(userQuery != null, "Query properties are not available");
+        String propName = ast.getArgument(0, String.class);
+        String prop = userQuery.properties().getString(propName);
+        Preconditions.checkState(prop != null, "Error, missing query property: " + propName);
+        return prop;
+    }
+
+    private Object fetchLiteralOrRef(OperatorNode<ExpressionOperator> ast) {
+        return switch (ast.getOperator()) {
             case LITERAL -> ast.getArgument(0);
-            case READ_FIELD -> ast.getArgument(1);
+            case READ_FIELD -> ast.getArgument(1); // TODO: Should probably remove this option
+            case VARREF -> derefVar(ast);
             default -> throw newUnexpectedArgumentException(ast.getOperator(),
-                    ExpressionOperator.READ_FIELD, ExpressionOperator.PROPREF);
+                    ExpressionOperator.LITERAL, ExpressionOperator.READ_FIELD, ExpressionOperator.VARREF);
         };
+    }
+
+    private ParsedDegree degreesFromArg(OperatorNode<ExpressionOperator> ast, boolean first) {
+        Object arg = fetchLiteralOrRef(ast);
         if (arg instanceof Number n) {
             return new ParsedDegree(n.doubleValue(), first, !first);
         }
@@ -573,7 +587,7 @@ public class YqlParser implements Parser {
         String field = fetchFieldName(args.get(0));
         var coord_1 = degreesFromArg(args.get(1), true);
         var coord_2 = degreesFromArg(args.get(2), false);
-        double radius = DistanceParser.parse(fetchLiteral(args.get(3)));
+        double radius = DistanceParser.parse(fetchLiteralOrRef(args.get(3)).toString());
         Location.Point center;
         if (coord_1.isLatitude && coord_2.isLongitude) {
             center = new Location.Point(coord_1.degrees, coord_2.degrees);
