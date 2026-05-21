@@ -81,7 +81,8 @@ class Matcher {
                                const HitList& hit_list, MatchingElements& matching_elements);
     void find_matching_elements(SameElementQueryNode& same_element, uint32_t doc_lid,
                                 MatchingElements& matching_elements);
-    void find_matching_elements(NearQueryNode& near_query_node, uint32_t doc_lid, MatchingElements& matching_elements);
+    void find_matching_elements(NearQueryNode& near_query_node, uint32_t doc_lid,
+                                MatchingElements& matching_elements);
     void find_matching_elements(const SubFieldTerm& sub_field_term, uint32_t doc_lid,
                                 MatchingElements& matching_elements);
 
@@ -89,7 +90,9 @@ public:
     Matcher(vsm::FieldIdTSearcherMap& field_searcher_map, const search::fef::IIndexEnvironment& index_env,
             const MatchingElementsFields& fields, Query& query);
     ~Matcher();
-    bool empty() const { return _same_element_nodes.empty() && _near_query_nodes.empty() && _sub_field_terms.empty(); }
+    bool empty() const {
+        return _same_element_nodes.empty() && _near_query_nodes.empty() && _sub_field_terms.empty();
+    }
     void find_matching_elements(const vsm::StorageDocument& doc, uint32_t doc_lid,
                                 MatchingElements& matching_elements);
 };
@@ -130,7 +133,7 @@ bool Matcher::has_matching_elements_field(QueryTerm& term) const {
     auto& td = qtd.getTermData();
     auto  num_fields = td.numFields();
     for (size_t i = 0; i < num_fields; ++i) {
-        auto  field_id = td.field(i).getFieldId();
+        auto field_id = td.field(i).getFieldId();
         if (has_matching_elements_field(field_id)) {
             return true;
         }
@@ -139,7 +142,7 @@ bool Matcher::has_matching_elements_field(QueryTerm& term) const {
 }
 
 bool Matcher::has_matching_elements_field(NearQueryNode& near) const {
-    auto check = [&](auto&& self, QueryNode &query_node){
+    auto check = [&](auto&& self, QueryNode& query_node) {
         if (as<SameElementQueryNode>(query_node) != nullptr) {
             return false;
         } else if (auto query_term = as<QueryTerm>(query_node)) {
@@ -240,7 +243,8 @@ void Matcher::find_matching_elements(SameElementQueryNode& same_element, uint32_
     }
 }
 
-void Matcher::find_matching_elements(NearQueryNode& near_query_node, uint32_t doc_lid, MatchingElements& matching_elements) {
+void Matcher::find_matching_elements(NearQueryNode& near_query_node, uint32_t doc_lid,
+                                     MatchingElements& matching_elements) {
     _match_spans.clear();
     near_query_node.get_match_spans(_match_spans);
     uint32_t field_id = IllegalFieldId;
