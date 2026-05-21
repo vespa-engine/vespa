@@ -19,33 +19,14 @@ public class CloudResourceTags {
 
     private static final CloudResourceTags EMPTY = new CloudResourceTags(Map.of());
 
-    /** Max across all clouds (Azure). Per-cloud limits enforced in {@link #validateForCloud}. */
+    /** Max across all clouds (Azure). Per-cloud limits enforced in {@link #validateFor}. */
     private static final int MAX_KEY_LENGTH = 512;
-    /** Max across all clouds (AWS, Azure). Per-cloud limits enforced in {@link #validateForCloud}. */
+    /** Max across all clouds (AWS, Azure). Per-cloud limits enforced in {@link #validateFor}. */
     private static final int MAX_VALUE_LENGTH = 256;
-    /** Max across all clouds (GCP). Per-cloud limits enforced in {@link #validateForCloud}. */
+    /** Max across all clouds (GCP). Per-cloud limits enforced in {@link #validateFor}. */
     private static final int MAX_TAGS = 64;
 
     private static final Pattern TEMPLATE_VARIABLE = Pattern.compile("\\$\\{[^}]+\\}");
-
-    // AWS: cross-service safe character set
-    private static final Pattern AWS_TAG_PATTERN = Pattern.compile("[a-zA-Z0-9 +\\-=._:/@]+");
-    private static final int AWS_MAX_KEY_LENGTH = 128;
-    private static final int AWS_MAX_VALUE_LENGTH = 256; // matches structural cap
-    private static final int AWS_MAX_TAGS = 50;
-
-    // GCP: lowercase letters, digits, underscores, hyphens. Keys must start with lowercase letter.
-    private static final Pattern GCP_KEY_PATTERN = Pattern.compile("[a-z][a-z0-9_-]*");
-    private static final Pattern GCP_VALUE_PATTERN = Pattern.compile("[a-z0-9_-]*");
-    private static final int GCP_MAX_KEY_LENGTH = 63;
-    private static final int GCP_MAX_VALUE_LENGTH = 63;
-    private static final int GCP_MAX_TAGS = 64; // matches structural cap
-
-    // Azure: keys may not contain < > % & \ ? /. Values unrestricted.
-    private static final Pattern AZURE_FORBIDDEN_KEY_CHARS = Pattern.compile("[<>%&\\\\?/]");
-    private static final int AZURE_MAX_KEY_LENGTH = 512; // matches structural cap
-    private static final int AZURE_MAX_VALUE_LENGTH = 256; // matches structural cap
-    private static final int AZURE_MAX_TAGS = 50;
 
     /** System tag names reserved by the platform. */
     private static final List<String> RESERVED_TAG_NAMES = List.of(
@@ -91,11 +72,11 @@ public class CloudResourceTags {
      * rules; keys are validated as-is. Callers should also invoke {@link #validatePlaceholders()}
      * to reject unrecognized template variables.
      */
-    public void validateForCloud(CloudName cloud) {
+    public void validateFor(CloudName cloud) {
         if (tags.isEmpty()) return;
-        if (cloud.equals(CloudName.AWS)) validateAws();
-        else if (cloud.equals(CloudName.GCP)) validateGcp();
-        else if (cloud.equals(CloudName.AZURE)) validateAzure();
+        if (cloud.equals(CloudName.AWS))        Aws.validate(tags);
+        else if (cloud.equals(CloudName.GCP))   Gcp.validate(tags);
+        else if (cloud.equals(CloudName.AZURE)) Azure.validate(tags);
         else throw new IllegalArgumentException("No resource tag validation rules for cloud '" + cloud + "'");
     }
 
@@ -188,63 +169,90 @@ public class CloudResourceTags {
         });
     }
 
-    private void validateAws() {
-        validateTagCount(tags.size(), AWS_MAX_TAGS, "AWS");
-        for (var entry : tags.entrySet()) {
-            validateLength(entry.getKey(), AWS_MAX_KEY_LENGTH, "key", "AWS");
-            validateLength(entry.getValue(), AWS_MAX_VALUE_LENGTH, "value", "AWS");
-            validatePattern(entry.getKey(), AWS_TAG_PATTERN, "key", "AWS",
-                           "letters, digits, spaces, and + - = . _ : / @");
-            validateLiteralParts(entry.getKey(), entry.getValue(), AWS_TAG_PATTERN, "AWS",
-                                "letters, digits, spaces, and + - = . _ : / @");
+    /** AWS: cross-service safe character set, used for both keys and values. */
+    private static class Aws {
+        private static final String NAME = "AWS";
+        private static final Pattern TAG_PATTERN = Pattern.compile("[a-zA-Z0-9 +\\-=._:/@]+");
+        private static final String ALLOWED = "letters, digits, spaces, and + - = . _ : / @";
+        private static final int MAX_KEY_LENGTH = 128;
+        private static final int MAX_VALUE_LENGTH = 256; // matches structural cap
+        private static final int MAX_TAGS = 50;
+
+        static void validate(Map<String, String> tags) {
+            checkTagCount(tags.size(), MAX_TAGS, NAME);
+            for (var entry : tags.entrySet()) {
+                checkLength(entry.getKey(),   MAX_KEY_LENGTH,   "key",   NAME);
+                checkLength(entry.getValue(), MAX_VALUE_LENGTH, "value", NAME);
+                checkPattern(entry.getKey(), TAG_PATTERN, "key", NAME, ALLOWED);
+                checkLiteralParts(entry.getKey(), entry.getValue(), TAG_PATTERN, NAME, ALLOWED);
+            }
         }
     }
 
-    private void validateGcp() {
-        validateTagCount(tags.size(), GCP_MAX_TAGS, "GCP");
-        for (var entry : tags.entrySet()) {
-            validateLength(entry.getKey(), GCP_MAX_KEY_LENGTH, "key", "GCP");
-            validateLength(entry.getValue(), GCP_MAX_VALUE_LENGTH, "value", "GCP");
-            if ( ! GCP_KEY_PATTERN.matcher(entry.getKey()).matches())
-                throw new IllegalArgumentException("Tag key '" + entry.getKey() + "' is not valid for GCP: " +
-                                                   "must start with a lowercase letter and contain only [a-z0-9_-]");
-            validateLiteralParts(entry.getKey(), entry.getValue(), GCP_VALUE_PATTERN, "GCP",
-                                "lowercase letters, digits, underscores, and hyphens");
+    /** GCP: lowercase letters, digits, underscores, hyphens. Keys must start with a lowercase letter. */
+    private static class Gcp {
+        private static final String NAME = "GCP";
+        private static final Pattern KEY_PATTERN = Pattern.compile("[a-z][a-z0-9_-]*");
+        private static final Pattern VALUE_PATTERN = Pattern.compile("[a-z0-9_-]*");
+        private static final String VALUE_ALLOWED = "lowercase letters, digits, underscores, and hyphens";
+        private static final int MAX_KEY_LENGTH = 63;
+        private static final int MAX_VALUE_LENGTH = 63;
+        private static final int MAX_TAGS = 64; // matches structural cap
+
+        static void validate(Map<String, String> tags) {
+            checkTagCount(tags.size(), MAX_TAGS, NAME);
+            for (var entry : tags.entrySet()) {
+                checkLength(entry.getKey(),   MAX_KEY_LENGTH,   "key",   NAME);
+                checkLength(entry.getValue(), MAX_VALUE_LENGTH, "value", NAME);
+                if ( ! KEY_PATTERN.matcher(entry.getKey()).matches())
+                    throw new IllegalArgumentException("Tag key '" + entry.getKey() + "' is not valid for " + NAME +
+                                                       ": must start with a lowercase letter and contain only [a-z0-9_-]");
+                checkLiteralParts(entry.getKey(), entry.getValue(), VALUE_PATTERN, NAME, VALUE_ALLOWED);
+            }
         }
     }
 
-    private void validateAzure() {
-        validateTagCount(tags.size(), AZURE_MAX_TAGS, "Azure");
-        for (var entry : tags.entrySet()) {
-            validateLength(entry.getKey(), AZURE_MAX_KEY_LENGTH, "key", "Azure");
-            validateLength(entry.getValue(), AZURE_MAX_VALUE_LENGTH, "value", "Azure");
-            if (AZURE_FORBIDDEN_KEY_CHARS.matcher(entry.getKey()).find())
-                throw new IllegalArgumentException("Tag key '" + entry.getKey() + "' contains characters " +
-                                                   "not allowed in Azure: < > % & \\ ? /");
+    /** Azure: keys may not contain {@code < > % & \ ? /}. Values unrestricted. */
+    private static class Azure {
+        private static final String NAME = "Azure";
+        private static final Pattern FORBIDDEN_KEY_CHARS = Pattern.compile("[<>%&\\\\?/]");
+        private static final int MAX_KEY_LENGTH = 512; // matches structural cap
+        private static final int MAX_VALUE_LENGTH = 256; // matches structural cap
+        private static final int MAX_TAGS = 50;
+
+        static void validate(Map<String, String> tags) {
+            checkTagCount(tags.size(), MAX_TAGS, NAME);
+            for (var entry : tags.entrySet()) {
+                checkLength(entry.getKey(),   MAX_KEY_LENGTH,   "key",   NAME);
+                checkLength(entry.getValue(), MAX_VALUE_LENGTH, "value", NAME);
+                if (FORBIDDEN_KEY_CHARS.matcher(entry.getKey()).find())
+                    throw new IllegalArgumentException("Tag key '" + entry.getKey() + "' contains characters " +
+                                                       "not allowed in " + NAME + ": < > % & \\ ? /");
+            }
         }
     }
 
-    private static void validateTagCount(int count, int max, String cloud) {
+    private static void checkTagCount(int count, int max, String cloud) {
         if (count > max)
             throw new IllegalArgumentException("Too many cloud resource tags (" + count +
                                                "): " + cloud + " allows at most " + max);
     }
 
-    private static void validateLength(String value, int max, String field, String cloud) {
+    private static void checkLength(String value, int max, String field, String cloud) {
         if (value.length() > max)
             throw new IllegalArgumentException("Tag " + field + " exceeds " + cloud + " limit of " +
                                                max + " characters: '" + value + "'");
     }
 
-    private static void validatePattern(String value, Pattern pattern, String field, String cloud,
-                                        String allowed) {
+    private static void checkPattern(String value, Pattern pattern, String field, String cloud,
+                                     String allowed) {
         if ( ! pattern.matcher(value).matches())
             throw new IllegalArgumentException("Tag " + field + " '" + value + "' contains characters " +
                                                "not allowed in " + cloud + ". Allowed: " + allowed);
     }
 
-    private static void validateLiteralParts(String key, String value, Pattern pattern, String cloud,
-                                             String allowed) {
+    private static void checkLiteralParts(String key, String value, Pattern pattern, String cloud,
+                                          String allowed) {
         String stripped = TEMPLATE_VARIABLE.matcher(value).replaceAll("");
         if ( ! stripped.isEmpty() && ! pattern.matcher(stripped).matches())
             throw new IllegalArgumentException("Tag value for key '" + key + "' contains characters " +
