@@ -15,7 +15,6 @@
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <cmath>
-#include <exception>
 #include <format>
 #include <functional>
 #include <iomanip>
@@ -1198,6 +1197,21 @@ TEST(IteratorBenchmark, analyze_ENN) {
                    .factory = enn({.num_docs = num_docs, .target_hits = 100}),
                    .docid_limit = num_docs + 1,
                    .in_flows = in_flows,
+                   .unpack = true,
+                   .decorate = {}});
+}
+
+TEST(IteratorBenchmark, analyze_ENN_with_GF) {
+    std::vector<InFlow> in_flows;
+    in_flows.emplace_back(true);
+    for (double rate : {0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0}) {
+        in_flows.emplace_back(false, rate);
+    }
+    run_benchmark({.group = "ENN_GF[num_docs=" + std::to_string(num_docs) + ",target_hits=100,gf_ratio=0.5]",
+                   .factory = enn({.num_docs = num_docs, .target_hits = 100, .global_filter_hit_ratio = 0.5}),
+                   .docid_limit = num_docs + 1,
+                   .in_flows = in_flows,
+                   .unpack = true,
                    .decorate = {}});
 }
 
