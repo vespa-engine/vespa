@@ -24,7 +24,7 @@ template <std::floating_point T>
 }
 
 template <std::floating_point T>
-void post_hadamard_normalize_precomputed(T* v, const size_t n, const T scale) {
+void post_hadamard_normalize_precomputed(T* v, const size_t n, const T scale) noexcept {
     for (size_t i = 0; i < n; ++i) {
         v[i] *= scale;
     }
@@ -33,7 +33,7 @@ void post_hadamard_normalize_precomputed(T* v, const size_t n, const T scale) {
 // Normalize a Walsh-Hadamard-transformed vector so that its magnitude is
 // the same as prior to the transformation.
 template <std::floating_point T>
-void post_hadamard_normalize(T* v, const size_t n) {
+void post_hadamard_normalize(T* v, const size_t n) noexcept {
     post_hadamard_normalize_precomputed(v, n, hadamard_normalization_factor<T>(n));
 }
 
@@ -53,7 +53,7 @@ void post_hadamard_normalize(T* v, const size_t n) {
  * this function.
  */
 template <typename T>
-[[nodiscard]] T* hadamard(T* v, T* tmp, const size_t n) noexcept {
+[[nodiscard]] T* hadamard(T* __restrict__ v, T* __restrict__ tmp, const size_t n) noexcept {
     if (n == 0) [[unlikely]] {
         return v;
     }
@@ -101,7 +101,7 @@ template <typename T>
  * See `hadamard(v, tmp, n)` for pre/post-conditions.
  */
 template <typename T>
-[[nodiscard]] T* hadamard_normalized(T* v, T* tmp, const size_t n) noexcept {
+[[nodiscard]] T* hadamard_normalized(T* __restrict__ v, T* __restrict__ tmp, const size_t n) noexcept {
     T* res = hadamard(v, tmp, n);
     post_hadamard_normalize(res, n);
     return res;
