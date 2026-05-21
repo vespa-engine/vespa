@@ -268,32 +268,32 @@ struct AlgoExhaustPastFixture : public FixtureBase {
 TEST(ParallelWeakAndTest, require_that_algorithm_prunes_bad_hits_after_enough_good_ones_are_obtained) {
     AlgoSimpleFixture f; // First phase
     FakeResult        expect = FakeResult()
-                                   .doc(1)
-                                   .score(1 * 1 + 4 * 1)
-                                   .doc(2)
-                                   .score(1 * 2)
-                                   .doc(3)
-                                   .score(1 * 3 + 4 * 3)
-                                   .doc(5)
-                                   .score(1 * 5 + 4 * 5);
+                            .doc(1)
+                            .score(1 * 1 + 4 * 1)
+                            .doc(2)
+                            .score(1 * 2)
+                            .doc(3)
+                            .score(1 * 3 + 4 * 3)
+                            .doc(5)
+                            .score(1 * 5 + 4 * 5);
     EXPECT_EQ(expect, f.result);
 }
 
 TEST(ParallelWeakAndTest, require_that_algorithm_does_not_prune_hits_in_pater_matching_phases) {
     AlgoSimpleFixture f(true); // Second phase
     FakeResult        expect = FakeResult()
-                                   .doc(1)
-                                   .score(1 * 1 + 4 * 1)
-                                   .doc(2)
-                                   .score(1 * 2)
-                                   .doc(3)
-                                   .score(1 * 3 + 4 * 3)
-                                   .doc(4)
-                                   .score(1 * 4)
-                                   .doc(5)
-                                   .score(1 * 5 + 4 * 5)
-                                   .doc(6)
-                                   .score(1 * 6);
+                            .doc(1)
+                            .score(1 * 1 + 4 * 1)
+                            .doc(2)
+                            .score(1 * 2)
+                            .doc(3)
+                            .score(1 * 3 + 4 * 3)
+                            .doc(4)
+                            .score(1 * 4)
+                            .doc(5)
+                            .score(1 * 5 + 4 * 5)
+                            .doc(6)
+                            .score(1 * 6);
     EXPECT_EQ(expect, f.result);
 }
 
