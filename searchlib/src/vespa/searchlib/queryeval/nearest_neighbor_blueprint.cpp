@@ -64,6 +64,7 @@ void NearestNeighborBlueprint::AnnStats::flush(search::queryeval::QuerySetupStat
     setup_stats.add_to_approximate_nns_nodes_visited(index_stats.nodes_visited());
 
     setup_stats.add_to_approximate_nns_time_used(time_used);
+    setup_stats.add_to_approximate_nns_timeouts_hit(timeout_hit);
 }
 
 void NearestNeighborBlueprint::AnnStats::visit(vespalib::ObjectVisitor& visitor) const {
