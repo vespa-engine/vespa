@@ -56,7 +56,7 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
 
             log.log(
                     Level.WARNING,
-                    "Failed to evaluate ONNX model " + modelName + " in Trion, will retry after reload.",
+                    "Failed to evaluate ONNX model " + modelName + " in Triton, will retry after reload.",
                     e);
             tritonClient.loadUntilModelReady(modelName);
             modelMetadata = tritonClient.getModelMetadata(modelName);
