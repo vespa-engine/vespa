@@ -154,11 +154,13 @@ private:
     size_t _exact_nns_distances_computed;
     size_t _approximate_nns_distances_computed;
     size_t _approximate_nns_nodes_visited;
+    size_t _approximate_nns_timed_out_queries;
     size_t _softDoomed;
     Avg    _doomOvertime;
     using SoftDoomFactor = vespalib::datastore::AtomicValueWrapper<double>;
     SoftDoomFactor         _softDoomFactor;
     Avg                    _querySetupTime;
+    Avg                    _approximate_nns_time;
     Avg                    _queryLatency;
     Avg                    _matchTime;
     Avg                    _groupingTime;
@@ -235,6 +237,12 @@ public:
     }
     size_t softDoomed() const { return _softDoomed; }
 
+    MatchingStats& approximate_nns_timed_out_queries(size_t value) {
+        _approximate_nns_timed_out_queries = value;
+        return *this;
+    }
+    size_t approximate_nns_timed_out_queries() const { return _approximate_nns_timed_out_queries; }
+
     vespalib::duration doomOvertime() const { return vespalib::from_s(_doomOvertime.max()); }
 
     MatchingStats& softDoomFactor(double value) {
@@ -253,6 +261,15 @@ public:
     size_t querySetupTimeCount() const { return _querySetupTime.count(); }
     double querySetupTimeMin() const { return _querySetupTime.min(); }
     double querySetupTimeMax() const { return _querySetupTime.max(); }
+
+    MatchingStats& approximate_nns_time(double time_s) {
+        _approximate_nns_time.set(time_s);
+        return *this;
+    }
+    double approximate_nns_time_avg() const { return _approximate_nns_time.avg(); }
+    size_t approximate_nns_time_count() const { return _approximate_nns_time.count(); }
+    double approximate_nns_time_min() const { return _approximate_nns_time.min(); }
+    double approximate_nns_time_max() const { return _approximate_nns_time.max(); }
 
     MatchingStats& queryLatency(double time_s) {
         _queryLatency.set(time_s);

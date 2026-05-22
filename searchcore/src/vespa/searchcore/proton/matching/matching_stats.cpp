@@ -32,10 +32,12 @@ MatchingStats::MatchingStats(double prev_soft_doom_factor) noexcept
       _exact_nns_distances_computed(0),
       _approximate_nns_distances_computed(0),
       _approximate_nns_nodes_visited(0),
+      _approximate_nns_timed_out_queries(0),
       _softDoomed(0),
       _doomOvertime(),
       _softDoomFactor(prev_soft_doom_factor),
       _querySetupTime(),
+      _approximate_nns_time(),
       _queryLatency(),
       _matchTime(),
       _groupingTime(),
@@ -63,6 +65,8 @@ MatchingStats& MatchingStats::merge_partition(const Partition& partition, size_t
 MatchingStats& MatchingStats::add_query_setup_stats(const search::queryeval::QuerySetupStats& stats) noexcept {
     _approximate_nns_distances_computed += stats.approximate_nns_distances_computed();
     _approximate_nns_nodes_visited += stats.approximate_nns_nodes_visited();
+    _approximate_nns_time.add(Avg().set(vespalib::to_s(stats.approximate_nns_time_used())));
+    _approximate_nns_timed_out_queries += stats.approximate_nns_timeouts_hit() > 0 ? 1 : 0;
 
     return *this;
 }
@@ -84,10 +88,12 @@ MatchingStats& MatchingStats::add(const MatchingStats& rhs) noexcept {
     _exact_nns_distances_computed += rhs._exact_nns_distances_computed;
     _approximate_nns_distances_computed += rhs._approximate_nns_distances_computed;
     _approximate_nns_nodes_visited += rhs._approximate_nns_nodes_visited;
+    _approximate_nns_timed_out_queries += rhs._approximate_nns_timed_out_queries;
     _softDoomed += rhs.softDoomed();
     _doomOvertime.add(rhs._doomOvertime);
 
     _querySetupTime.add(rhs._querySetupTime);
+    _approximate_nns_time.add(rhs._approximate_nns_time);
     _queryLatency.add(rhs._queryLatency);
     _matchTime.add(rhs._matchTime);
     _groupingTime.add(rhs._groupingTime);
