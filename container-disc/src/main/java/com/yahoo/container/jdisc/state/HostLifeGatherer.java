@@ -13,13 +13,11 @@ import java.time.Instant;
  */
 public class HostLifeGatherer {
 
-    public static final String SERVICE_NAME = "host_life";
-
     public static JsonNode getHostLifePacket() {
         var jsonMapper = Jackson.mapper();
         ObjectNode jsonObject = jsonMapper.createObjectNode();
         jsonObject.put("timestamp", Instant.now().getEpochSecond());
-        jsonObject.put("application", SERVICE_NAME);
+        jsonObject.put("application", "host_life");
         ObjectNode metrics = jsonMapper.createObjectNode();
         metrics.put("alive", 1);
         jsonObject.set("metrics", metrics);
