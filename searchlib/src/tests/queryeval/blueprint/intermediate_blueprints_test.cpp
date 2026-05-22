@@ -249,10 +249,10 @@ TEST(IntermediateBlueprintsTest, test_fetch_postings_can_be_profiled) {
     bp->setDocIdLimit(5000);
     optimize(bp, true);
     vespalib::ExecutionProfiler profiler(64);
-    auto info = ExecuteInfo::create(1.0, vespalib::Doom::never(), vespalib::ThreadBundle::trivial(), &profiler);
+    auto                        profiler_guard = vespalib::ExecutionProfiler::ThreadBinder::bind(&profiler);
     {
-        FetchPostingsProfilerGuard guard(&profiler, *bp);
-        bp->fetchPostings(info);
+        FetchPostingsProfilerGuard guard(*bp);
+        bp->fetchPostings(ExecuteInfo::createForTest());
     }
     Slime slime;
     profiler.report(slime.setObject());
@@ -268,8 +268,9 @@ TEST(IntermediateBlueprintsTest, test_fetch_postings_can_be_profiled) {
 TEST(IntermediateBlueprintsTest, test_fetch_postings_profile_omits_id_when_unset) {
     auto                        leaf = ap(MyLeafSpec(20).create());
     vespalib::ExecutionProfiler profiler(64);
+    auto                        profiler_guard = vespalib::ExecutionProfiler::ThreadBinder::bind(&profiler);
     {
-        FetchPostingsProfilerGuard guard(&profiler, *leaf);
+        FetchPostingsProfilerGuard guard(*leaf);
     }
     Slime slime;
     profiler.report(slime.setObject());
