@@ -381,6 +381,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     public void setHttp(Http http) {
         this.http = http;
         addChild(http);
+        getContainers().forEach(Container::discardDefaultHttpServer);
     }
 
     public Http getHttp() {
