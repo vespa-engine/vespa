@@ -50,7 +50,7 @@ public:
     predicate::PredicateIndex& getIndex() { return *_index; }
 
     std::unique_ptr<AttributeSaver> onInitSave(std::string_view fileName) override;
-    size_t transient_memory_for_flush() const noexcept override;
+    [[nodiscard]] size_t transient_memory_for_flush() const noexcept override;
     bool onLoad(vespalib::Executor* executor) override;
     void onCommit() override;
     void reclaim_memory(vespalib::Generation oldest_used_gen) override;
