@@ -106,7 +106,7 @@ public class AllocatedHostsSerializerTest {
                                anyDiskSpeedNode,
                                ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
                                                       Optional.empty(), ZoneEndpoint.defaultEndpoint, List.of(), List.of(),
-                                                      "large-storage"),
+                                                      Optional.of("large-storage")),
                                Optional.empty(),
                                Optional.empty(),
                                Optional.empty()));
@@ -176,6 +176,19 @@ public class AllocatedHostsSerializerTest {
             if (host.hostname().equals(hostname))
                 return host;
         throw new IllegalArgumentException("No host " + hostname + " is present");
+    }
+
+    @Test
+    void testProfileRoundTrip() throws IOException {
+        var membership = ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
+                                                Optional.empty(), ZoneEndpoint.defaultEndpoint, List.of(), List.of(),
+                                                Optional.of("large-storage"));
+        var host = new HostSpec("with-profile",
+                                smallSlowDiskSpeedNode, bigSlowDiskSpeedNode, anyDiskSpeedNode,
+                                membership, Optional.empty(), Optional.empty(), Optional.empty());
+        AllocatedHosts deserialized = fromJson(toJson(AllocatedHosts.withHosts(Set.of(host))));
+        assertEquals(Optional.of("large-storage"),
+                     requireHost("with-profile", deserialized).membership().get().cluster().profile());
     }
 
     @Test

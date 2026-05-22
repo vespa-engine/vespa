@@ -251,7 +251,7 @@ public class AllocatedHostsSerializer {
                                       zoneEndpoint(object.field(loadBalancerSettingsKey)),
                                       sidecars(object.field(sidecarsKey)),
                                       availabilityZones(object.field(availabilityZonesKey)),
-                                      object.field(profileKey).valid() ? object.field(profileKey).asString() : null);
+                                      object.field(profileKey).valid() ? Optional.of(object.field(profileKey).asString()) : Optional.empty());
     }
 
     private static void sidecarsToSlime(List<SidecarSpec> sidecars, Cursor arrayCursor) {

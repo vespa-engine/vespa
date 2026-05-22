@@ -108,7 +108,7 @@ public class ClusterMembershipTest {
                 ZoneEndpoint.defaultEndpoint,
                 List.of(),
                 List.of(),
-                "large-storage"
+                Optional.of("large-storage")
         );
         assertEquals(Optional.of("large-storage"), withProfile.cluster().profile());
         ClusterMembership withoutProfile = ClusterMembership.from(
@@ -118,7 +118,7 @@ public class ClusterMembershipTest {
                 ZoneEndpoint.defaultEndpoint,
                 List.of(),
                 List.of(),
-                null
+                Optional.empty()
         );
         assertEquals(Optional.empty(), withoutProfile.cluster().profile());
     }

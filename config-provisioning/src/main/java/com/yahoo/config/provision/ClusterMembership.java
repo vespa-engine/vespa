@@ -22,7 +22,7 @@ public class ClusterMembership {
 
     private ClusterMembership(String stringValue, Version vespaVersion, Optional<DockerImage> dockerImageRepo,
                               ZoneEndpoint zoneEndpoint, List<SidecarSpec> sidecars, List<AzName> availabilityZones,
-                              String profile) {
+                              Optional<String> profile) {
         String[] components = stringValue.split("/");
         if (components.length < 3)
             throw new RuntimeException("Could not parse '" + stringValue + "' to a cluster membership. " +
@@ -64,7 +64,7 @@ public class ClusterMembership {
                                   .stateful(stateful)
                                   .sidecars(sidecars)
                                   .availabilityZones(availabilityZones)
-                                  .profile(profile)
+                                  .profile(profile.orElse(null))
                                   .build();
         this.index = nodeIndex;
         this.retired = retired;
@@ -156,12 +156,12 @@ public class ClusterMembership {
 
     public static ClusterMembership from(String stringValue, Version vespaVersion, Optional<DockerImage> dockerImageRepo,
                                          ZoneEndpoint zoneEndpoint, List<SidecarSpec> sidecars, List<AzName> availabilityZones) {
-        return from(stringValue, vespaVersion, dockerImageRepo, zoneEndpoint, sidecars, availabilityZones, null);
+        return from(stringValue, vespaVersion, dockerImageRepo, zoneEndpoint, sidecars, availabilityZones, Optional.empty());
     }
 
     public static ClusterMembership from(String stringValue, Version vespaVersion, Optional<DockerImage> dockerImageRepo,
                                          ZoneEndpoint zoneEndpoint, List<SidecarSpec> sidecars, List<AzName> availabilityZones,
-                                         String profile) {
+                                         Optional<String> profile) {
         return new ClusterMembership(stringValue, vespaVersion, dockerImageRepo, zoneEndpoint, sidecars, availabilityZones, profile);
     }
 
