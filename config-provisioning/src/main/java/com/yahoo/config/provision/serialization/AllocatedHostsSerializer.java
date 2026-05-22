@@ -84,6 +84,7 @@ public class AllocatedHostsSerializer {
     private static final String hostSpecNetworkPortsKey = "ports";
     private static final String sidecarsKey = "sidecars";
     private static final String availabilityZonesKey = "azs";
+    private static final String profileKey = "profile";
 
     public static byte[] toJson(AllocatedHosts allocatedHosts) throws IOException {
         Slime slime = new Slime();
@@ -111,6 +112,7 @@ public class AllocatedHostsSerializer {
                 sidecarsToSlime(sidecars, object.setArray(sidecarsKey));
 
             availabilityZonesToSlime(membership.cluster().availabilityZones(), object.setArray(availabilityZonesKey));
+            membership.cluster().profile().ifPresent(profile -> object.setString(profileKey, profile));
         });
         toSlime(host.realResources(), object.setObject(realResourcesKey));
         toSlime(host.advertisedResources(), object.setObject(advertisedResourcesKey));
@@ -246,9 +248,10 @@ public class AllocatedHostsSerializer {
                                       object.field(hostSpecDockerImageRepoKey).valid()
                                       ? Optional.of(DockerImage.fromString(object.field(hostSpecDockerImageRepoKey).asString()))
                                       : Optional.empty(),
-                                      zoneEndpoint(object.field(loadBalancerSettingsKey)), 
+                                      zoneEndpoint(object.field(loadBalancerSettingsKey)),
                                       sidecars(object.field(sidecarsKey)),
-                                      availabilityZones(object.field(availabilityZonesKey)));
+                                      availabilityZones(object.field(availabilityZonesKey)),
+                                      object.field(profileKey).valid() ? object.field(profileKey).asString() : null);
     }
 
     private static void sidecarsToSlime(List<SidecarSpec> sidecars, Cursor arrayCursor) {

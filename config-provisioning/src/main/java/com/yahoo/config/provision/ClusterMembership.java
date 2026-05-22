@@ -21,7 +21,8 @@ public class ClusterMembership {
     private final String stringValue;
 
     private ClusterMembership(String stringValue, Version vespaVersion, Optional<DockerImage> dockerImageRepo,
-                              ZoneEndpoint zoneEndpoint, List<SidecarSpec> sidecars, List<AzName> availabilityZones) {
+                              ZoneEndpoint zoneEndpoint, List<SidecarSpec> sidecars, List<AzName> availabilityZones,
+                              String profile) {
         String[] components = stringValue.split("/");
         if (components.length < 3)
             throw new RuntimeException("Could not parse '" + stringValue + "' to a cluster membership. " +
@@ -63,6 +64,7 @@ public class ClusterMembership {
                                   .stateful(stateful)
                                   .sidecars(sidecars)
                                   .availabilityZones(availabilityZones)
+                                  .profile(profile)
                                   .build();
         this.index = nodeIndex;
         this.retired = retired;
@@ -154,7 +156,13 @@ public class ClusterMembership {
 
     public static ClusterMembership from(String stringValue, Version vespaVersion, Optional<DockerImage> dockerImageRepo,
                                          ZoneEndpoint zoneEndpoint, List<SidecarSpec> sidecars, List<AzName> availabilityZones) {
-        return new ClusterMembership(stringValue, vespaVersion, dockerImageRepo, zoneEndpoint, sidecars, availabilityZones);
+        return from(stringValue, vespaVersion, dockerImageRepo, zoneEndpoint, sidecars, availabilityZones, null);
+    }
+
+    public static ClusterMembership from(String stringValue, Version vespaVersion, Optional<DockerImage> dockerImageRepo,
+                                         ZoneEndpoint zoneEndpoint, List<SidecarSpec> sidecars, List<AzName> availabilityZones,
+                                         String profile) {
+        return new ClusterMembership(stringValue, vespaVersion, dockerImageRepo, zoneEndpoint, sidecars, availabilityZones, profile);
     }
 
     public static ClusterMembership from(ClusterSpec cluster, int index) {

@@ -100,7 +100,16 @@ public class AllocatedHostsSerializerTest {
                                Optional.of(new NetworkPorts(List.of(new NetworkPorts.Allocation(1234, "service1", "configId1", "suffix1"),
                                                       new NetworkPorts.Allocation(4567, "service2", "configId2", "suffix2")))),
                                Optional.empty()));
-
+        hosts.add(new HostSpec("with-profile",
+                               smallSlowDiskSpeedNode,
+                               bigSlowDiskSpeedNode,
+                               anyDiskSpeedNode,
+                               ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
+                                                      Optional.empty(), ZoneEndpoint.defaultEndpoint, List.of(), List.of(),
+                                                      "large-storage"),
+                               Optional.empty(),
+                               Optional.empty(),
+                               Optional.empty()));
         hosts.add(new HostSpec("with-sidecars",
                 smallSlowDiskSpeedNode,
                 bigSlowDiskSpeedNode,
@@ -152,6 +161,7 @@ public class AllocatedHostsSerializerTest {
             HostSpec deserializedHost = requireHost(expectedHost.hostname(), deserializedHosts);
             assertEquals(expectedHost.hostname(), deserializedHost.hostname());
             assertEquals(expectedHost.membership(), deserializedHost.membership());
+            assertEquals(expectedHost.membership().map(m -> m.cluster().profile()), deserializedHost.membership().map(m -> m.cluster().profile()));
             assertEquals(expectedHost.realResources(), deserializedHost.realResources());
             assertEquals(expectedHost.advertisedResources(), deserializedHost.advertisedResources());
             assertEquals(expectedHost.requestedResources(), deserializedHost.requestedResources());
