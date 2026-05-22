@@ -195,7 +195,7 @@ class OnnxModel implements AutoCloseable {
     }
 
     Tensor unmappedEvaluate(Map<String, Tensor> inputs, String onnxOutputName) {
-        return evaluator().evaluate(inputs, onnxOutputName);
+        return evaluator().evaluate(inputs, onnxOutputName, null);
     }
 
     private OnnxEvaluator evaluator() {
