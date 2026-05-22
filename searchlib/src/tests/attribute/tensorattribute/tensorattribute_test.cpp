@@ -1545,6 +1545,7 @@ TEST(TensorAttributeTest, NN_blueprint_collects_stats) {
     }
     EXPECT_EQ(1, f.stats().approximate_nns_distances_computed());
     EXPECT_EQ(2, f.stats().approximate_nns_nodes_visited());
+    EXPECT_EQ(1, f.stats().approximate_nns_searches_performed());
     EXPECT_GT(f.stats().approximate_nns_time_used(), vespalib::duration::zero());
     EXPECT_EQ(0, f.stats().approximate_nns_timeouts_hit());
     vespalib::duration last_approximate_nns_time_used = f.stats().approximate_nns_time_used();
@@ -1568,6 +1569,7 @@ TEST(TensorAttributeTest, NN_blueprint_collects_stats) {
     }
     EXPECT_EQ(2, f.stats().approximate_nns_distances_computed());
     EXPECT_EQ(4, f.stats().approximate_nns_nodes_visited());
+    EXPECT_EQ(2, f.stats().approximate_nns_searches_performed());
     EXPECT_GT(f.stats().approximate_nns_time_used(), last_approximate_nns_time_used);
     EXPECT_EQ(0, f.stats().approximate_nns_timeouts_hit());
     last_approximate_nns_time_used = f.stats().approximate_nns_time_used();
@@ -1585,6 +1587,7 @@ TEST(TensorAttributeTest, NN_blueprint_collects_stats) {
     }
     EXPECT_EQ(2, f.stats().approximate_nns_distances_computed());
     EXPECT_EQ(4, f.stats().approximate_nns_nodes_visited());
+    EXPECT_EQ(3, f.stats().approximate_nns_searches_performed());
     EXPECT_GT(f.stats().approximate_nns_time_used(), last_approximate_nns_time_used);
     EXPECT_EQ(0, f.stats().approximate_nns_timeouts_hit());
     last_approximate_nns_time_used = f.stats().approximate_nns_time_used();
@@ -1602,10 +1605,12 @@ TEST(TensorAttributeTest, NN_blueprint_collects_stats) {
     }
     EXPECT_EQ(2, f.stats().approximate_nns_distances_computed());
     EXPECT_EQ(4, f.stats().approximate_nns_nodes_visited());
+    EXPECT_EQ(4, f.stats().approximate_nns_searches_performed());
     EXPECT_GT(f.stats().approximate_nns_time_used(), last_approximate_nns_time_used);
     EXPECT_EQ(1, f.stats().approximate_nns_timeouts_hit());
     size_t last_approximate_nns_distances_computed = f.stats().approximate_nns_distances_computed();
     size_t last_approximate_nns_nodes_visited = f.stats().approximate_nns_nodes_visited();
+    size_t last_approximate_nns_searches_performed = f.stats().approximate_nns_searches_performed();
     last_approximate_nns_time_used = f.stats().approximate_nns_time_used();
     size_t last_approximate_nns_timeouts_hit = f.stats().approximate_nns_timeouts_hit();
 
@@ -1622,6 +1627,7 @@ TEST(TensorAttributeTest, NN_blueprint_collects_stats) {
     }
     EXPECT_EQ(last_approximate_nns_distances_computed, f.stats().approximate_nns_distances_computed());
     EXPECT_EQ(last_approximate_nns_nodes_visited, f.stats().approximate_nns_nodes_visited());
+    EXPECT_EQ(last_approximate_nns_searches_performed, f.stats().approximate_nns_searches_performed());
     EXPECT_EQ(last_approximate_nns_time_used, f.stats().approximate_nns_time_used());
     EXPECT_EQ(last_approximate_nns_timeouts_hit, f.stats().approximate_nns_timeouts_hit());
 
@@ -1635,6 +1641,7 @@ TEST(TensorAttributeTest, NN_blueprint_collects_stats) {
     }
     EXPECT_EQ(last_approximate_nns_distances_computed, f.stats().approximate_nns_distances_computed());
     EXPECT_EQ(last_approximate_nns_nodes_visited, f.stats().approximate_nns_nodes_visited());
+    EXPECT_EQ(last_approximate_nns_searches_performed, f.stats().approximate_nns_searches_performed());
     EXPECT_EQ(last_approximate_nns_time_used, f.stats().approximate_nns_time_used());
     EXPECT_EQ(last_approximate_nns_timeouts_hit, f.stats().approximate_nns_timeouts_hit());
 }
