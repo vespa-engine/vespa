@@ -133,6 +133,11 @@ std::unique_ptr<ISaver> PredicateIndex::make_saver() const {
         _bounds_index.make_saver(std::make_unique<IntervalSaver<IntervalWithBounds>>(_interval_store)));
 }
 
+size_t PredicateIndex::transient_memory_for_flush() const noexcept {
+    return _features_store.transient_memory_for_flush() + _interval_index.transient_memory_for_flush() +
+           _bounds_index.transient_memory_for_flush();
+};
+
 void PredicateIndex::onDeserializationCompleted() {
     _interval_index.promoteOverThresholdVectors();
     _bounds_index.promoteOverThresholdVectors();

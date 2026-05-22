@@ -65,6 +65,7 @@ public:
 
     ~PredicateIndex() override;
     std::unique_ptr<ISaver> make_saver() const;
+    size_t transient_memory_for_flush() const noexcept;
     void onDeserializationCompleted();
 
     void indexEmptyDocument(uint32_t doc_id);

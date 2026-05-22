@@ -207,6 +207,7 @@ public:
     }
 
     std::unique_ptr<ISaver> make_saver(std::unique_ptr<PostingSaver<Posting>> subsaver) const;
+    size_t transient_memory_for_flush() const noexcept;
 };
 
 template <typename Posting, typename Key, typename DocId>

@@ -297,6 +297,7 @@ public:
     void onShrinkLidSpace() override;
     size_t getEstimatedShrinkLidSpaceGain() const override;
     uint64_t getEstimatedSaveByteSize() const override;
+    size_t transient_memory_for_flush() const noexcept override;
     uint32_t getVersion() const override;
     void setTrackDocumentSizes(bool trackDocumentSizes) { _trackDocumentSizes = trackDocumentSizes; }
     void set_track_32bit_document_sizes(bool value) noexcept { _track_32bit_document_sizes = value; }
