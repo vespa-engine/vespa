@@ -8,8 +8,10 @@ import ai.vespa.metricsproxy.metric.model.ServiceId;
 import ai.vespa.metricsproxy.metric.model.processing.MetricsProcessor;
 import com.yahoo.container.jdisc.state.HostLifeGatherer;
 
-import java.util.HashSet;
+import java.util.EnumSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Ensures that blocklisted dimensions are removed from the metric set.
@@ -25,25 +27,26 @@ import java.util.Set;
 public class PublicDimensionsProcessor implements MetricsProcessor {
 
     private static final ServiceId HOST_LIFE = ServiceId.toServiceId(HostLifeGatherer.SERVICE_NAME);
-    private static final DimensionId VESPA_VERSION = BlocklistDimensions.VESPA_VERSION.getDimensionId();
 
-    private final Set<DimensionId> blocklistForOtherServices = BlocklistDimensions.getAll();
-    private final Set<DimensionId> blocklistForHostLife = blocklistExcept(VESPA_VERSION);
+    private static final Set<DimensionId> BLOCKLIST_FOR_OTHER_SERVICES =
+            toDimensionIds(EnumSet.allOf(BlocklistDimensions.class));
+    private static final Set<DimensionId> BLOCKLIST_FOR_HOST_LIFE =
+            toDimensionIds(EnumSet.complementOf(EnumSet.of(BlocklistDimensions.VESPA_VERSION)));
 
     @Override
     public void process(MetricsPacket.Builder builder) {
         Set<DimensionId> blocklist = HOST_LIFE.equals(builder.service())
-                ? blocklistForHostLife
-                : blocklistForOtherServices;
+                ? BLOCKLIST_FOR_HOST_LIFE
+                : BLOCKLIST_FOR_OTHER_SERVICES;
         Set<DimensionId> dimensionsToRetain = builder.getDimensionIds();
         dimensionsToRetain.removeAll(blocklist);
         builder.retainDimensions(dimensionsToRetain);
     }
 
-    private static Set<DimensionId> blocklistExcept(DimensionId allowed) {
-        Set<DimensionId> set = new HashSet<>(BlocklistDimensions.getAll());
-        set.remove(allowed);
-        return Set.copyOf(set);
+    private static Set<DimensionId> toDimensionIds(Set<BlocklistDimensions> dims) {
+        return dims.stream()
+                .map(BlocklistDimensions::getDimensionId)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
 }
