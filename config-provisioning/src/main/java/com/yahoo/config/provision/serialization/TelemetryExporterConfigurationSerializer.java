@@ -4,6 +4,7 @@ package com.yahoo.config.provision.serialization;
 import com.yahoo.config.provision.TelemetryExporterConfiguration;
 import com.yahoo.config.provision.TelemetryExporterConfiguration.Auth;
 import com.yahoo.config.provision.TelemetryExporterConfiguration.Exporter.ExporterType;
+import com.yahoo.config.provision.TelemetryExporterConfiguration.Exporter.LogType;
 import com.yahoo.config.provision.TelemetryExporterConfiguration.VaultReference;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
@@ -35,7 +36,7 @@ public class TelemetryExporterConfigurationSerializer {
     private static final String usernameSecretNameKey = "usernameSecretName";
     private static final String passwordSecretNameKey = "passwordSecretName";
     private static final String metricSetsKey = "metricSets";
-    private static final String logFileTypesKey = "logFileTypes";
+    private static final String logTypesKey = "logTypes";
     private static final String vaultReferencesKey = "vaultReferences";
     private static final String nameKey = "name";
     private static final String externalIdKey = "externalId";
@@ -75,9 +76,9 @@ public class TelemetryExporterConfigurationSerializer {
             for (String metricSet : exporter.metricSets()) {
                 metricSetsArray.addString(metricSet);
             }
-            Cursor logFileTypesArray = exporterObject.setArray(logFileTypesKey);
-            for (String logFileType : exporter.logFileTypes()) {
-                logFileTypesArray.addString(logFileType);
+            Cursor logTypesArray = exporterObject.setArray(logTypesKey);
+            for (LogType logType : exporter.logTypes()) {
+                logTypesArray.addString(logType.stringValue());
             }
         }
         if ( ! config.vaultReferences().isEmpty()) {
@@ -114,11 +115,11 @@ public class TelemetryExporterConfigurationSerializer {
             List<String> metricSets = new ArrayList<>();
             exporterInspector.field(metricSetsKey).traverse((ArrayTraverser) (j, entry) -> metricSets.add(entry.asString()));
 
-            List<String> logFileTypes = new ArrayList<>();
-            exporterInspector.field(logFileTypesKey).traverse((ArrayTraverser) (j, entry) -> logFileTypes.add(entry.asString()));
+            List<LogType> logTypes = new ArrayList<>();
+            exporterInspector.field(logTypesKey).traverse((ArrayTraverser) (j, entry) -> logTypes.add(LogType.from(entry.asString())));
 
             exporters.add(new TelemetryExporterConfiguration.Exporter(id, type, Optional.ofNullable(endpoint), Optional.ofNullable(project),
-                                                          Optional.ofNullable(auth), metricSets, logFileTypes));
+                                                          Optional.ofNullable(auth), metricSets, logTypes));
         });
         if (exporters.isEmpty()) return TelemetryExporterConfiguration.empty();
 
