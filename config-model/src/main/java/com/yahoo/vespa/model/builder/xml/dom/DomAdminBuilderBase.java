@@ -24,6 +24,7 @@ import com.yahoo.config.provision.TelemetryExporterConfiguration;
 import com.yahoo.config.provision.TelemetryExporterConfiguration.Auth;
 import com.yahoo.config.provision.TelemetryExporterConfiguration.Exporter;
 import com.yahoo.config.provision.TelemetryExporterConfiguration.Exporter.ExporterType;
+import com.yahoo.config.provision.TelemetryExporterConfiguration.Exporter.LogType;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
@@ -157,16 +158,16 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
                 metricSets.add(metricSetElement.requiredStringAttribute("id"));
             }
 
-            List<String> logFileTypes = new ArrayList<>();
+            List<LogType> logTypes = new ArrayList<>();
             ModelElement logsElement = exporterElement.child("logs");
             if (logsElement != null) {
-                for (ModelElement logType : logsElement.children("type")) {
-                    logFileTypes.add(logType.requiredStringAttribute("id"));
+                for (ModelElement logTypeElement : logsElement.children("type")) {
+                    logTypes.add(LogType.from(logTypeElement.requiredStringAttribute("id")));
                 }
             }
 
             exporters.add(new Exporter(id, type, Optional.ofNullable(endpoint), Optional.ofNullable(project),
-                                      Optional.ofNullable(auth), metricSets, logFileTypes));
+                                      Optional.ofNullable(auth), metricSets, logTypes));
         }
         admin.setTelemetryExporterConfiguration(new TelemetryExporterConfiguration(exporters));
     }

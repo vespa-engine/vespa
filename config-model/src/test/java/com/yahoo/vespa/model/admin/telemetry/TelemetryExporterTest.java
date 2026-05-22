@@ -11,6 +11,7 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.TelemetryExporterConfiguration.Auth;
 import com.yahoo.config.provision.TelemetryExporterConfiguration.Exporter;
 import com.yahoo.config.provision.TelemetryExporterConfiguration.Exporter.ExporterType;
+import com.yahoo.config.provision.TelemetryExporterConfiguration.Exporter.LogType;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.jupiter.api.Test;
 
@@ -39,8 +40,8 @@ public class TelemetryExporterTest {
                 + "        </auth>"
                 + "        <metric-set id='Vespa9'/>"
                 + "        <logs>"
-                + "          <type id='container_logs'/>"
-                + "          <type id='access_logs'/>"
+                + "          <type id='container-logs'/>"
+                + "          <type id='access-logs'/>"
                 + "        </logs>"
                 + "      </exporter>"
                 + "    </telemetry>"
@@ -68,7 +69,7 @@ public class TelemetryExporterTest {
         assertTrue(auth.passwordSecretName().isEmpty());
 
         assertEquals(List.of("Vespa9"), exporter.metricSets());
-        assertEquals(List.of("container_logs", "access_logs"), exporter.logFileTypes());
+        assertEquals(List.of(LogType.container_logs, LogType.access_logs), exporter.logTypes());
     }
 
     @Test
@@ -167,7 +168,7 @@ public class TelemetryExporterTest {
         VespaModel model = createModel(hosts, services);
         var exporter = model.getAdmin().telemetryExporterConfiguration().exporters().get(0);
         assertTrue(exporter.metricSets().isEmpty());
-        assertTrue(exporter.logFileTypes().isEmpty());
+        assertTrue(exporter.logTypes().isEmpty());
     }
 
     @Test
@@ -185,7 +186,7 @@ public class TelemetryExporterTest {
         VespaModel model = createModel(hosts, services);
         var exporter = model.getAdmin().telemetryExporterConfiguration().exporters().get(0);
         assertEquals(List.of("Vespa9"), exporter.metricSets());
-        assertTrue(exporter.logFileTypes().isEmpty());
+        assertTrue(exporter.logTypes().isEmpty());
         assertTrue(exporter.auth().isEmpty());
     }
 
@@ -205,7 +206,7 @@ public class TelemetryExporterTest {
         VespaModel model = createModel(hosts, services);
         var exporter = model.getAdmin().telemetryExporterConfiguration().exporters().get(0);
         assertEquals(List.of("default", "vespa"), exporter.metricSets());
-        assertTrue(exporter.logFileTypes().isEmpty());
+        assertTrue(exporter.logTypes().isEmpty());
         assertTrue(exporter.auth().isEmpty());
     }
 
@@ -216,8 +217,8 @@ public class TelemetryExporterTest {
                 + "    <telemetry>"
                 + "      <exporter id='logs-only' type='otlphttp' endpoint='https://otel.example.com/v1'>"
                 + "        <logs>"
-                + "          <type id='container_logs'/>"
-                + "          <type id='access_logs'/>"
+                + "          <type id='container-logs'/>"
+                + "          <type id='access-logs'/>"
                 + "        </logs>"
                 + "      </exporter>"
                 + "    </telemetry>"
@@ -227,7 +228,7 @@ public class TelemetryExporterTest {
         VespaModel model = createModel(hosts, services);
         var exporter = model.getAdmin().telemetryExporterConfiguration().exporters().get(0);
         assertTrue(exporter.metricSets().isEmpty());
-        assertEquals(List.of("container_logs", "access_logs"), exporter.logFileTypes());
+        assertEquals(List.of(LogType.container_logs, LogType.access_logs), exporter.logTypes());
         assertTrue(exporter.auth().isEmpty());
     }
 

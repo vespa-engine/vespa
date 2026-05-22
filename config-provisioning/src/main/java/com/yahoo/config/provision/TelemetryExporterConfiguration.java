@@ -51,9 +51,23 @@ public record TelemetryExporterConfiguration(List<Exporter> exporters, List<Vaul
 
     /** A single telemetry exporter targeting an external endpoint or cloud project. */
     public record Exporter(String id, ExporterType type, Optional<String> endpoint, Optional<String> project,
-                           Optional<Auth> auth, List<String> metricSets, List<String> logFileTypes) {
+                           Optional<Auth> auth, List<String> metricSets, List<LogType> logTypes) {
 
         public enum ExporterType { otlp, otlphttp, googlecloud }
+
+        public enum LogType {
+            container_logs("container-logs"),
+            access_logs("access-logs");
+
+            private final String xmlValue;
+            LogType(String xmlValue) { this.xmlValue = xmlValue; }
+            public String xmlValue() { return xmlValue; }
+
+            public static LogType from(String value) {
+                for (var t : values()) if (t.xmlValue.equals(value)) return t;
+                throw new IllegalArgumentException("Invalid log type '" + value + "'. Allowed values: container-logs, access-logs");
+            }
+        }
 
         public Exporter {
             if (id == null || id.isBlank()) throw new IllegalArgumentException("exporter id must be non-blank");
@@ -66,7 +80,7 @@ public record TelemetryExporterConfiguration(List<Exporter> exporters, List<Vaul
             project = project != null ? project : Optional.empty();
             auth = auth != null ? auth : Optional.empty();
             metricSets = metricSets != null ? List.copyOf(metricSets) : List.of();
-            logFileTypes = logFileTypes != null ? List.copyOf(logFileTypes) : List.of();
+            logTypes = logTypes != null ? List.copyOf(logTypes) : List.of();
         }
 
     }
