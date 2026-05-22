@@ -101,6 +101,10 @@ bool SummaryGCTarget::can_flush(SerialNum) const noexcept {
     return true;
 }
 
+size_t SummaryGCTarget::transient_memory_for_flush() const noexcept {
+    return 0;
+}
+
 SummaryCompactBloatTarget::SummaryCompactBloatTarget(vespalib::Executor& summaryService, IDocumentStore& docStore)
     : SummaryGCTarget("summary.compact_bloat", summaryService, docStore) {
 }

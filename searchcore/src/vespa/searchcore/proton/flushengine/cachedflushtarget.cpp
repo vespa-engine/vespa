@@ -29,6 +29,10 @@ uint64_t CachedFlushTarget::get_approx_bytes_to_read_from_disk() const noexcept 
     return _approx_bytes_to_read_from_disk;
 }
 
+size_t CachedFlushTarget::transient_memory_for_flush() const noexcept {
+    return _transient_memory_for_flush;
+}
+
 std::chrono::steady_clock::duration CachedFlushTarget::last_flush_duration() const noexcept {
     return _last_flush_duration;
 }

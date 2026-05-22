@@ -27,6 +27,7 @@ public:
 
     FlushStats getLastFlushStats() const override { return _lastStats; }
     uint64_t getApproxBytesToWriteToDisk() const override { return 0; }
+    [[nodiscard]] size_t transient_memory_for_flush() const noexcept override;
 
 protected:
     SummaryGCTarget(const std::string&, vespalib::Executor& summaryService, IDocumentStore& docStore);

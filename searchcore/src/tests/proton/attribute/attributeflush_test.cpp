@@ -14,6 +14,7 @@
 #include <vespa/searchlib/common/indexmetainfo.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/directory_handler.h>
+#include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/foreground_thread_executor.h>
 #include <vespa/vespalib/util/foregroundtaskexecutor.h>
@@ -41,6 +42,7 @@ using searchcorespi::FlushStats;
 using searchcorespi::IFlushTarget;
 using std::chrono::duration_cast;
 using vespalib::HwInfo;
+using vespalib::datastore::EntryRef;
 using namespace std::literals;
 
 using GateSP = std::shared_ptr<Gate>;
@@ -487,8 +489,13 @@ TEST(AttributeFlushTest, require_that_shrink_works) {
 void require_that_flushed_attribute_can_be_loaded(const HwInfo& hwInfo, const std::string& label) {
     SCOPED_TRACE(label);
     constexpr uint32_t numDocs = 100;
+    constexpr size_t   headerSize = FileSettings::DIRECTIO_ALIGNMENT;
+    size_t             exp_transient_size = sizeof(int32_t) * (numDocs + 1);
     BaseFixture        f(hwInfo);
     std::string        attrName(hwInfo.disk().slow() ? "a11slow" : "a11fast");
+    if (hwInfo.disk().slow()) {
+        exp_transient_size += 2 * headerSize + (sizeof(int32_t) + sizeof(EntryRef)) * (numDocs + 1);
+    }
     {
         AttributeManagerFixture amf(f);
         AttributeManager&       am = amf._m;
@@ -500,8 +507,9 @@ void require_that_flushed_attribute_can_be_loaded(const HwInfo& hwInfo, const st
         for (uint32_t i = 0; i < numDocs; ++i) {
             ia.update(i + 1, i + 43);
         }
-        av->commit();
+        av->commit(CommitParam::UpdateStats::FORCE);
         IFlushTarget::SP ft = am.getFlushable(attrName);
+        EXPECT_EQ(exp_transient_size, ft->transient_memory_for_flush());
         ft->initFlush(200, std::make_shared<search::FlushToken>())->run();
     }
     {

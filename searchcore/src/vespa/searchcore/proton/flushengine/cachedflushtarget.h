@@ -21,6 +21,7 @@ private:
     DiskGain                            _diskGain;
     uint64_t                            _approxBytesToWriteToDisk;
     uint64_t                            _approx_bytes_to_read_from_disk;
+    size_t                              _transient_memory_for_flush;
     double                              _replay_operation_cost;
     bool                                _needUrgentFlush;
     Priority                            _priority;
@@ -63,6 +64,7 @@ public:
 
     uint64_t getApproxBytesToWriteToDisk() const override { return _approxBytesToWriteToDisk; }
     uint64_t get_approx_bytes_to_read_from_disk() const noexcept override;
+    [[nodiscard]] size_t transient_memory_for_flush() const noexcept override;
     std::chrono::steady_clock::duration last_flush_duration() const noexcept override;
 };
 

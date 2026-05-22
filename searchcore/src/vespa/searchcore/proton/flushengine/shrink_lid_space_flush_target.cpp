@@ -90,4 +90,8 @@ uint64_t ShrinkLidSpaceFlushTarget::getApproxBytesToWriteToDisk() const {
     return 0;
 }
 
+size_t ShrinkLidSpaceFlushTarget::transient_memory_for_flush() const noexcept {
+    return 0;
+}
+
 } // namespace proton
