@@ -78,7 +78,7 @@ public class TelemetryExporterConfigurationSerializer {
             }
             Cursor logTypesArray = exporterObject.setArray(logTypesKey);
             for (LogType logType : exporter.logTypes()) {
-                logTypesArray.addString(logType.name());
+                logTypesArray.addString(logType.stringValue());
             }
         }
         if ( ! config.vaultReferences().isEmpty()) {
@@ -116,7 +116,7 @@ public class TelemetryExporterConfigurationSerializer {
             exporterInspector.field(metricSetsKey).traverse((ArrayTraverser) (j, entry) -> metricSets.add(entry.asString()));
 
             List<LogType> logTypes = new ArrayList<>();
-            exporterInspector.field(logTypesKey).traverse((ArrayTraverser) (j, entry) -> logTypes.add(LogType.valueOf(entry.asString())));
+            exporterInspector.field(logTypesKey).traverse((ArrayTraverser) (j, entry) -> logTypes.add(LogType.from(entry.asString())));
 
             exporters.add(new TelemetryExporterConfiguration.Exporter(id, type, Optional.ofNullable(endpoint), Optional.ofNullable(project),
                                                           Optional.ofNullable(auth), metricSets, logTypes));

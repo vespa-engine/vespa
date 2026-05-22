@@ -56,15 +56,15 @@ public record TelemetryExporterConfiguration(List<Exporter> exporters, List<Vaul
         public enum ExporterType { otlp, otlphttp, googlecloud }
 
         public enum LogType {
-            container_logs("container-logs"),
-            access_logs("access-logs");
+            CONTAINER_LOGS("container-logs"),
+            ACCESS_LOGS("access-logs");
 
-            private final String xmlValue;
-            LogType(String xmlValue) { this.xmlValue = xmlValue; }
-            public String xmlValue() { return xmlValue; }
+            private final String stringValue;
+            LogType(String stringValue) { this.stringValue = stringValue; }
+            public String stringValue() { return stringValue; }
 
             public static LogType from(String value) {
-                for (var t : values()) if (t.xmlValue.equals(value)) return t;
+                for (var t : values()) if (t.stringValue.equals(value)) return t;
                 throw new IllegalArgumentException("Invalid log type '" + value + "'. Allowed values: container-logs, access-logs");
             }
         }

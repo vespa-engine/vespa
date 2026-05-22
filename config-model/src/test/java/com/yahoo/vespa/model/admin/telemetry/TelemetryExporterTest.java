@@ -69,7 +69,7 @@ public class TelemetryExporterTest {
         assertTrue(auth.passwordSecretName().isEmpty());
 
         assertEquals(List.of("Vespa9"), exporter.metricSets());
-        assertEquals(List.of(LogType.container_logs, LogType.access_logs), exporter.logTypes());
+        assertEquals(List.of(LogType.CONTAINER_LOGS, LogType.ACCESS_LOGS), exporter.logTypes());
     }
 
     @Test
@@ -228,7 +228,7 @@ public class TelemetryExporterTest {
         VespaModel model = createModel(hosts, services);
         var exporter = model.getAdmin().telemetryExporterConfiguration().exporters().get(0);
         assertTrue(exporter.metricSets().isEmpty());
-        assertEquals(List.of(LogType.container_logs, LogType.access_logs), exporter.logTypes());
+        assertEquals(List.of(LogType.CONTAINER_LOGS, LogType.ACCESS_LOGS), exporter.logTypes());
         assertTrue(exporter.auth().isEmpty());
     }
 
