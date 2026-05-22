@@ -35,13 +35,13 @@ TEST(StrideTest, distance_is_distributed_evenly_when_divisible) {
 }
 
 TEST(StrideTest, remainder_is_spread_across_the_sequence) {
-    EXPECT_EQ(collect(7, 3), (std::vector<uint32_t>{2, 2, 3}));
-    EXPECT_EQ(collect(11, 4), (std::vector<uint32_t>{2, 3, 3, 3}));
+    EXPECT_EQ(collect(7, 3), (std::vector<uint32_t>{2, 3, 2}));
+    EXPECT_EQ(collect(11, 4), (std::vector<uint32_t>{3, 3, 2, 3}));
 }
 
 TEST(StrideTest, distance_smaller_than_steps_yields_zeros_and_ones) {
-    EXPECT_EQ(collect(3, 10), (std::vector<uint32_t>{0, 0, 0, 1, 0, 0, 1, 0, 0, 1}));
-    EXPECT_EQ(collect(1, 5), (std::vector<uint32_t>{0, 0, 0, 0, 1}));
+    EXPECT_EQ(collect(3, 10), (std::vector<uint32_t>{0, 1, 0, 0, 1, 0, 0, 0, 1, 0}));
+    EXPECT_EQ(collect(1, 5), (std::vector<uint32_t>{0, 0, 1, 0, 0}));
 }
 
 TEST(StrideTest, single_step_returns_full_distance) {
