@@ -62,7 +62,7 @@ NearestNeighborBlueprint::AnnStats::AnnStats()
 void NearestNeighborBlueprint::AnnStats::flush(search::queryeval::QuerySetupStats& setup_stats) const {
     setup_stats.add_to_approximate_nns_distances_computed(index_stats.distances_computed());
     setup_stats.add_to_approximate_nns_nodes_visited(index_stats.nodes_visited());
-
+    setup_stats.add_to_approximate_nns_searches_performed(1u);
     setup_stats.add_to_approximate_nns_time_used(time_used);
     setup_stats.add_to_approximate_nns_timeouts_hit(timeout_hit);
 }

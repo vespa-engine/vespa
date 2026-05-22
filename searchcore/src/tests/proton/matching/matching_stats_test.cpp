@@ -373,11 +373,12 @@ TEST(MatchingStatsTest, require_that_query_setup_stats_is_added_correctly) {
     EXPECT_EQ(0u, stats.approximate_nns_nodes_visited());
     EXPECT_EQ(0u, stats.approximate_nns_timed_out_queries());
     EXPECT_NEAR(0.0, stats.approximate_nns_time_avg(), 0.00001);
-    EXPECT_EQ(1u, stats.approximate_nns_time_count());
+    EXPECT_EQ(0u, stats.approximate_nns_time_count()); // Still zero since there were no searches in setup_stats
     {
         search::queryeval::QuerySetupStats setup_stats;
         setup_stats.add_to_approximate_nns_distances_computed(3);
         setup_stats.add_to_approximate_nns_nodes_visited(2);
+        setup_stats.add_to_approximate_nns_searches_performed(1);
         setup_stats.add_to_approximate_nns_timeouts_hit(1);
         setup_stats.add_to_approximate_nns_time_used(10ms);
         stats.add_query_setup_stats(setup_stats);
@@ -385,12 +386,13 @@ TEST(MatchingStatsTest, require_that_query_setup_stats_is_added_correctly) {
     EXPECT_EQ(3u, stats.approximate_nns_distances_computed());
     EXPECT_EQ(2u, stats.approximate_nns_nodes_visited());
     EXPECT_EQ(1u, stats.approximate_nns_timed_out_queries());
-    EXPECT_NEAR(0.005, stats.approximate_nns_time_avg(), 0.00001);
-    EXPECT_EQ(2u, stats.approximate_nns_time_count());
+    EXPECT_NEAR(0.01, stats.approximate_nns_time_avg(), 0.00001);
+    EXPECT_EQ(1u, stats.approximate_nns_time_count());
     {
         search::queryeval::QuerySetupStats setup_stats;
         setup_stats.add_to_approximate_nns_distances_computed(7);
         setup_stats.add_to_approximate_nns_nodes_visited(6);
+        setup_stats.add_to_approximate_nns_searches_performed(3);
         setup_stats.add_to_approximate_nns_timeouts_hit(5);
         setup_stats.add_to_approximate_nns_time_used(20ms);
         stats.add_query_setup_stats(setup_stats);
@@ -399,8 +401,8 @@ TEST(MatchingStatsTest, require_that_query_setup_stats_is_added_correctly) {
     EXPECT_EQ(8u, stats.approximate_nns_nodes_visited());
     // There were six timeouts, but these came from the same query/QuerySetupStats!
     EXPECT_EQ(2u, stats.approximate_nns_timed_out_queries());
-    EXPECT_NEAR(0.01, stats.approximate_nns_time_avg(), 0.00001);
-    EXPECT_EQ(3u, stats.approximate_nns_time_count());
+    EXPECT_NEAR(0.015, stats.approximate_nns_time_avg(), 0.00001);
+    EXPECT_EQ(2u, stats.approximate_nns_time_count());
 }
 
 TEST(MatchingStatsTest, require_that_query_eval_stats_is_added_correctly) {
