@@ -1,7 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
+import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
+import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
+import com.yahoo.config.model.provision.HostsXmlProvisioner;
+import com.yahoo.config.model.provision.InMemoryProvisioner;
+import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.jdisc.FilterBindingsProvider;
 import com.yahoo.jdisc.http.ConnectorConfig;
@@ -14,10 +20,12 @@ import com.yahoo.vespa.model.container.http.ssl.ConfiguredFilebasedSslProvider;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 
+import java.io.StringReader;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -240,6 +248,40 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
         createModel(root, clusterElem);
         ConnectorConfig sslProvider = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/ssl");
         assertTrue(sslProvider.ssl().enabled());
+    }
+
+    @Test
+    void verify_that_container_setup_additional_tls4443() {
+        Element clusterElem = DomBuilderTest.parse(
+                "<container id='default' version='1.0'>",
+                "    <http>",
+                "        <server port='8080' id='default'>",
+                "        </server>",
+                "    </http>",
+                " <nodes count='1' />",
+                "",
+                "</container>");
+
+        DeployState deployState = new DeployState.Builder()
+                .properties(
+                        new TestProperties()
+                                .setHostedVespa(true)
+                                .setEndpointCertificateSecrets(Optional.of(new EndpointCertificateSecrets("CERT", "KEY"))))
+                .modelHostProvisioner(new InMemoryProvisioner(1, true))
+                .build();
+        MockRoot root = new MockRoot("root", deployState);
+        createModel(root, deployState, null, clusterElem);
+        ConnectorConfig sslProvider = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/default");
+        assertFalse(sslProvider.ssl().enabled());
+        assertEquals("", sslProvider.ssl().certificate());
+        assertEquals("", sslProvider.ssl().privateKey());
+
+        ConnectorConfig providedTls = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/tls4443");
+        assertTrue(providedTls.ssl().enabled());
+        assertEquals("CERT", providedTls.ssl().certificate());
+        assertEquals("KEY", providedTls.ssl().privateKey());
+        assertEquals(4443, providedTls.listenPort());
+
     }
 
     private static void assertChildComponentExists(ConnectorFactory connectorFactory, String className) {
