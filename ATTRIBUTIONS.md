@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-05-22
+Last updated: 2026-05-25
 
 ---
 
@@ -360,6 +360,8 @@ Last updated: 2026-05-22
 ## github.com/fxamacker/cbor/v2 v2.9.2 — MIT
 
 - Homepage: <https://pkg.go.dev/github.com/fxamacker/cbor/v2@v2.9.2>
+- Copyright 2019-2024 Faye Amacker
+- Copyright 2019 Faye Amacker
 
 ---
 
@@ -486,18 +488,6 @@ Last updated: 2026-05-22
 - Copyright files of libyaml, and thus
 - Copyright 2006-2010 Kirill Simonov
 - Copyright 2006-2011 Kirill Simonov
-
----
-
-## gpt-4o generic — Proprietary
-
-- Homepage: <https://www.openai.com>
-
----
-
-## gpt-4o-mini generic — Proprietary
-
-- Homepage: <https://www.openai.com>
 
 ---
 
@@ -731,11 +721,6 @@ Last updated: 2026-05-22
 ## minimatch 5.1.9 — ISC
 
 - Homepage: <https://github.com/isaacs/minimatch#readme>
-
----
-
-## mistral-embed 23.12 — Proprietary
-
 
 ---
 
@@ -990,12 +975,6 @@ Last updated: 2026-05-22
 
 - Homepage: <https://github.com/tj/terminal-table>
 - Copyright 2008-2017 TJ Holowaychuk <tj@vision
-
----
-
-## text-embedding-ada-002 002 — Proprietary
-
-- Homepage: <https://www.openai.com>
 
 ---
 
