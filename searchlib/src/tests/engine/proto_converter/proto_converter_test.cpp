@@ -274,6 +274,15 @@ TEST_F(SearchReplyTest, require_that_degraded_by_match_phase_is_converted) {
     reply.coverage.degradeMatchPhase();
     convert();
     EXPECT_TRUE(proto.degraded_by_match_phase());
+    EXPECT_FALSE(proto.degraded_by_ann_timeout());
+    EXPECT_FALSE(proto.degraded_by_soft_timeout());
+}
+
+TEST_F(SearchReplyTest, require_that_degraded_by_ann_timeout_is_converted) {
+    reply.coverage.degrade_ann_timeout();
+    convert();
+    EXPECT_FALSE(proto.degraded_by_match_phase());
+    EXPECT_TRUE(proto.degraded_by_ann_timeout());
     EXPECT_FALSE(proto.degraded_by_soft_timeout());
 }
 
@@ -281,14 +290,17 @@ TEST_F(SearchReplyTest, require_that_degraded_by_soft_timeout_is_converted) {
     reply.coverage.degradeTimeout();
     convert();
     EXPECT_FALSE(proto.degraded_by_match_phase());
+    EXPECT_FALSE(proto.degraded_by_ann_timeout());
     EXPECT_TRUE(proto.degraded_by_soft_timeout());
 }
 
 TEST_F(SearchReplyTest, require_that_multiple_degraded_reasons_are_converted) {
     reply.coverage.degradeMatchPhase();
+    reply.coverage.degrade_ann_timeout();
     reply.coverage.degradeTimeout();
     convert();
     EXPECT_TRUE(proto.degraded_by_match_phase());
+    EXPECT_TRUE(proto.degraded_by_ann_timeout());
     EXPECT_TRUE(proto.degraded_by_soft_timeout());
 }
 
