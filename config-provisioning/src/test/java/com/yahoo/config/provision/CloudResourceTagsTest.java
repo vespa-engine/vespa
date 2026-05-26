@@ -90,12 +90,12 @@ class CloudResourceTagsTest {
     }
 
     @Test
-    void key_exceeding_max_length_rejected() {
+    void key_exceeding_structural_max_length_rejected() {
         assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("k".repeat(513), "value")));
     }
 
     @Test
-    void value_exceeding_max_length_rejected() {
+    void value_exceeding_structural_max_length_rejected() {
         assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("key", "v".repeat(257))));
     }
 
@@ -106,7 +106,7 @@ class CloudResourceTagsTest {
     }
 
     @Test
-    void too_many_tags_rejected() {
+    void exceeding_structural_max_tags_rejected() {
         Map<String, String> tooMany = IntStream.rangeClosed(1, 65)
                                                .boxed()
                                                .collect(toMap(i -> "key" + i, i -> "val" + i));
@@ -114,12 +114,11 @@ class CloudResourceTagsTest {
     }
 
     @Test
-    void max_allowed_tags_accepted() {
+    void structural_max_tags_accepted() {
         Map<String, String> maxTags = IntStream.rangeClosed(1, 64)
                                                .boxed()
                                                .collect(toMap(i -> "key" + i, i -> "val" + i));
-        var tags = CloudResourceTags.from(maxTags);
-        assertEquals(64, tags.size());
+        assertEquals(64, CloudResourceTags.from(maxTags).size());
     }
 
     @Test

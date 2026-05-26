@@ -19,12 +19,14 @@ public class CloudResourceTags {
 
     private static final CloudResourceTags EMPTY = new CloudResourceTags(Map.of());
 
-    /** Max across all clouds (Azure). Per-cloud limits enforced in {@link #validateFor}. */
-    private static final int MAX_KEY_LENGTH = 512;
-    /** Max across all clouds (AWS, Azure). Per-cloud limits enforced in {@link #validateFor}. */
-    private static final int MAX_VALUE_LENGTH = 256;
-    /** Max across all clouds (GCP). Per-cloud limits enforced in {@link #validateFor}. */
-    private static final int MAX_TAGS = 64;
+    // Coarse structural ceilings checked in from(), independent of the per-cloud customer limits
+    // enforced in validateFor(). They bound resource usage when constructing tags from untrusted
+    // input (deployment.xml, persisted state) so a pathologically large map or string cannot be
+    // held in memory or echoed in an exception message. Set to the loosest value any supported
+    // cloud allows, so they never reject input a per-cloud check would accept.
+    private static final int MAX_KEY_LENGTH = 512;   // Azure hard limit (max across clouds)
+    private static final int MAX_VALUE_LENGTH = 256;  // AWS/Azure hard limit (max across clouds)
+    private static final int MAX_TAGS = 64;           // GCP hard limit (max across clouds)
 
     /** Tags reserved for platform/system use; subtracted from each cloud's hard limit to derive the per-cloud customer {@code MAX_TAGS}. */
     private static final int MAX_SYSTEM_TAGS = 15;
@@ -155,16 +157,18 @@ public class CloudResourceTags {
         tags.forEach((key, value) -> {
             Objects.requireNonNull(key, "Tag key cannot be null");
             Objects.requireNonNull(value, "Tag value cannot be null");
+            // Length checks first, reporting only lengths, so a pathologically large key or value
+            // is rejected before any message below echoes it.
+            if (key.length() > MAX_KEY_LENGTH)
+                throw new IllegalArgumentException("Tag key exceeds " + MAX_KEY_LENGTH +
+                                                   " characters (was " + key.length() + ")");
+            if (value.length() > MAX_VALUE_LENGTH)
+                throw new IllegalArgumentException("Tag value exceeds " + MAX_VALUE_LENGTH +
+                                                   " characters (was " + value.length() + ")");
             if (key.isEmpty())
                 throw new IllegalArgumentException("Tag key cannot be empty");
             if (value.isEmpty())
                 throw new IllegalArgumentException("Tag value cannot be empty for key '" + key + "'");
-            if (key.length() > MAX_KEY_LENGTH)
-                throw new IllegalArgumentException("Tag key exceeds " + MAX_KEY_LENGTH +
-                                                   " characters: '" + key + "'");
-            if (value.length() > MAX_VALUE_LENGTH)
-                throw new IllegalArgumentException("Tag value exceeds " + MAX_VALUE_LENGTH +
-                                                   " characters for key '" + key + "'");
             if (key.indexOf('\0') >= 0 || value.indexOf('\0') >= 0)
                 throw new IllegalArgumentException("Tag key or value contains null bytes for key '" + key + "'");
             for (String reserved : RESERVED_TAG_NAMES) {
@@ -184,7 +188,7 @@ public class CloudResourceTags {
         private static final Pattern TAG_PATTERN = Pattern.compile("[a-zA-Z0-9 +\\-=._:/@]+");
         private static final String ALLOWED = "letters, digits, spaces, and + - = . _ : / @";
         private static final int MAX_KEY_LENGTH = 128;
-        private static final int MAX_VALUE_LENGTH = 256; // matches structural cap
+        private static final int MAX_VALUE_LENGTH = 256;
         private static final int MAX_TAGS = 50 - MAX_SYSTEM_TAGS; // AWS allows 50 tags total
 
         static void validate(Map<String, String> tags) {
@@ -206,7 +210,7 @@ public class CloudResourceTags {
         private static final String VALUE_ALLOWED = "lowercase letters, digits, underscores, and hyphens";
         private static final int MAX_KEY_LENGTH = 63;
         private static final int MAX_VALUE_LENGTH = 63;
-        private static final int MAX_TAGS = 64 - MAX_SYSTEM_TAGS; // GCP allows 64 tags total; matches structural cap
+        private static final int MAX_TAGS = 64 - MAX_SYSTEM_TAGS; // GCP allows 64 tags total
 
         static void validate(Map<String, String> tags) {
             checkTagCount(tags.size(), MAX_TAGS, NAME);
@@ -225,8 +229,8 @@ public class CloudResourceTags {
     private static class Azure {
         private static final String NAME = "Azure";
         private static final Pattern FORBIDDEN_KEY_CHARS = Pattern.compile("[<>%&\\\\?/]");
-        private static final int MAX_KEY_LENGTH = 512; // matches structural cap
-        private static final int MAX_VALUE_LENGTH = 256; // matches structural cap
+        private static final int MAX_KEY_LENGTH = 512;
+        private static final int MAX_VALUE_LENGTH = 256;
         private static final int MAX_TAGS = 50 - MAX_SYSTEM_TAGS; // Azure allows 50 tags total
 
         static void validate(Map<String, String> tags) {
