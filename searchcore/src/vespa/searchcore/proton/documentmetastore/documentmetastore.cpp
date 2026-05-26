@@ -1138,6 +1138,10 @@ uint64_t DocumentMetaStore::getEstimatedSaveByteSize() const {
     return estimate;
 }
 
+size_t DocumentMetaStore::transient_memory_for_flush() const noexcept {
+    return 0;
+}
+
 uint32_t DocumentMetaStore::getVersion() const {
     return _trackDocumentSizes ? (_track_32bit_document_sizes ? documentmetastore::DOCUMENT_SIZE32_TRACKING_VERSION
                                                               : documentmetastore::DOCUMENT_SIZE24_TRACKING_VERSION)

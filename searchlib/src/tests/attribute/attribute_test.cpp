@@ -15,6 +15,7 @@
 #include <vespa/searchlib/attribute/multistringattribute.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
 #include <vespa/searchlib/attribute/singlestringattribute.h>
+#include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/weighted_type_test_utils.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
@@ -42,6 +43,7 @@ using search::index::DummyFileHeaderContext;
 using std::shared_ptr;
 using std::string;
 using vespalib::Generation;
+using vespalib::datastore::EntryRef;
 namespace fs = std::filesystem;
 
 namespace {
@@ -463,6 +465,14 @@ template <typename VectorType, typename BufferType> void AttributeTest::testRelo
     EXPECT_NE(zero_flush_duration, a->last_flush_duration());
     a->commit(CommitParam::UpdateStats::FORCE);
     {
+        bool   multivalue_attr = a->getConfig().collectionType().isMultiValue();
+        size_t entry_size = (a->hasEnum() || multivalue_attr) ? sizeof(EntryRef) : a->getFixedWidth();
+        size_t exp_transient_memory_for_flush = a->getCommittedDocIdLimit() * entry_size;
+        if (a->getBasicType() == BasicType::BOOL && !multivalue_attr) {
+            exp_transient_memory_for_flush =
+                BitVector::legacy_num_bytes_with_single_guard_bit(a->getCommittedDocIdLimit());
+        }
+        EXPECT_EQ(exp_transient_memory_for_flush, a->transient_memory_for_flush());
         double actSize = statSize(*b);
         EXPECT_LE(actSize, a->size_on_disk());
         EXPECT_EQ(stat_size_on_disk(*b), a->size_on_disk());
