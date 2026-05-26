@@ -147,6 +147,13 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION);
 
+    public static final UnboundBooleanFlag REQUIRE_EXPLICIT_DOCPROC_CLUSTER = defineFeatureFlag(
+            "require-explicit-docproc-cluster", false,
+            List.of("hmusum"), "2026-05-26", "2026-12-01",
+            "Whether to require an explicit document-processing cluster to be configured in content clusters when there is more than one container cluster",
+            "Takes effect at redeployment",
+            APPLICATION, INSTANCE_ID, TENANT_ID);
+
     public static UnboundBooleanFlag LOGSERVER_OTELCOL_AGENT = defineFeatureFlag(
             "logserver-otelcol-agent", false,
             List.of("olaa"), "2024-04-03", "2026-08-01",
