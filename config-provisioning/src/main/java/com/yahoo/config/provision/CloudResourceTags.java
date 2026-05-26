@@ -35,7 +35,7 @@ public class CloudResourceTags {
     private static final List<String> RESERVED_TAG_NAMES = List.of(
             "applicationid", "athenz", "athenz-domain", "athenzservice", "fqdn", "name", "owner", "zone",
             "tenant", "tenantName", "app", "clusterid",
-            "system", "application", "cluster", "generation", "auth-method",
+            "system", "cluster", "generation", "auth-method",
             "preprovisioned");
 
     /** Key prefixes reserved by the platform. Compared case-insensitively against customer keys. */

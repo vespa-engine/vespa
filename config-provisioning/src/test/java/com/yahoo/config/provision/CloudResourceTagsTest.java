@@ -175,7 +175,6 @@ class CloudResourceTagsTest {
         assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("clusterid", "value")));
 
         assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("system", "value")));
-        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("application", "value")));
         assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("cluster", "value")));
         assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("generation", "value")));
         assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("auth-method", "value")));
@@ -189,6 +188,12 @@ class CloudResourceTagsTest {
         assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("Name", "value")));
         assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("APPLICATIONID", "value")));
         assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("Owner", "value")));
+    }
+
+    @Test
+    void application_is_not_reserved() {
+        assertDoesNotThrow(() -> CloudResourceTags.from(Map.of("application", "value")));
+        assertDoesNotThrow(() -> CloudResourceTags.from(Map.of("Application", "value")));
     }
 
     @Test
