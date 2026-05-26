@@ -973,6 +973,7 @@ public class JsonRendererTestCase {
                 + "                \"match-phase\" : true,"
                 + "                \"timeout\" : false,"
                 + "                \"adaptive-timeout\" : true,"
+                + "                \"anntimeout\" : false,"
                 + "                \"non-ideal-state\" : false"
                 + "            },"
                 + "            \"full\": false,"
