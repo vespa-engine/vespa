@@ -494,6 +494,7 @@ void require_that_flushed_attribute_can_be_loaded(const HwInfo& hwInfo, const st
     BaseFixture        f(hwInfo);
     std::string        attrName(hwInfo.disk().slow() ? "a11slow" : "a11fast");
     if (hwInfo.disk().slow()) {
+        // Account for the memory buffer that the attribute vector is initially saved to
         exp_transient_size += 2 * headerSize + (sizeof(int32_t) + sizeof(EntryRef)) * (numDocs + 1);
     }
     {
