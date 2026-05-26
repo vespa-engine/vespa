@@ -137,7 +137,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public String mallocImpl(Optional<ClusterSpec.Type> clusterType) {
         return clusterType.map(c -> mallocImpl.get(c)).orElse(null);
     }
-    @Override public boolean useTriton() { return useTriton; }
     @Override public ModelContext.FeatureFlag<Boolean> useTritonFlag() { return () -> useTriton; }
     @Override public OptionalInt metricsProxyHeapSizeInMib() { return metricsProxyHeapSizeInMib; }
     @Override public OptionalInt metricsProxyAdminNodeHeapSizeInMib() { return metricsProxyAdminNodeHeapSizeInMib; }
