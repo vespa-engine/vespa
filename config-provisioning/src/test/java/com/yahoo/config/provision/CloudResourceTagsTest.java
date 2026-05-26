@@ -312,10 +312,10 @@ class CloudResourceTagsTest {
     }
 
     @Test
-    void aws_rejects_more_than_50_tags() {
-        Map<String, String> tags51 = IntStream.rangeClosed(1, 51).boxed()
+    void aws_rejects_more_than_35_tags() {
+        Map<String, String> tags36 = IntStream.rangeClosed(1, 36).boxed()
                 .collect(toMap(i -> "key" + i, i -> "val" + i));
-        var tags = CloudResourceTags.from(tags51);
+        var tags = CloudResourceTags.from(tags36);
         var e = assertThrows(IllegalArgumentException.class, () -> tags.validateFor(CloudName.AWS));
         assertTrue(e.getMessage().contains("AWS"));
     }
@@ -358,6 +358,15 @@ class CloudResourceTagsTest {
                          () -> tags.validateFor(CloudName.GCP),
                          "Should reject key: " + key);
         }
+    }
+
+    @Test
+    void gcp_rejects_more_than_49_tags() {
+        Map<String, String> tags50 = IntStream.rangeClosed(1, 50).boxed()
+                .collect(toMap(i -> "key" + i, i -> "val" + i));
+        var tags = CloudResourceTags.from(tags50);
+        var e = assertThrows(IllegalArgumentException.class, () -> tags.validateFor(CloudName.GCP));
+        assertTrue(e.getMessage().contains("GCP"));
     }
 
     @Test
@@ -437,10 +446,10 @@ class CloudResourceTagsTest {
     }
 
     @Test
-    void azure_rejects_more_than_50_tags() {
-        Map<String, String> tags51 = IntStream.rangeClosed(1, 51).boxed()
+    void azure_rejects_more_than_35_tags() {
+        Map<String, String> tags36 = IntStream.rangeClosed(1, 36).boxed()
                 .collect(toMap(i -> "key" + i, i -> "val" + i));
-        var tags = CloudResourceTags.from(tags51);
+        var tags = CloudResourceTags.from(tags36);
         var e = assertThrows(IllegalArgumentException.class, () -> tags.validateFor(CloudName.AZURE));
         assertTrue(e.getMessage().contains("Azure"));
     }
