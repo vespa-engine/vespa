@@ -130,4 +130,23 @@ public class CoverageTestCase {
         verifyNoCoverage(new Coverage(0, 0, 1));
     }
 
+    private void verifyCoverageWithAnnTimeout(Coverage zero) {
+        assertFalse(zero.isDegraded());
+        assertEquals(100, zero.getResultPercentage());
+        assertTrue(zero.getFull());
+        zero.setDegradedReason(com.yahoo.container.handler.Coverage.DEGRADED_BY_ANN_TIMEOUT);
+        assertTrue(zero.isDegraded());
+        assertEquals(100, zero.getResultPercentage());
+        assertTrue(zero.getFull());
+    }
+
+    @Test
+    void testCoverageWithNoResponseFromSearchNodesAndAnnTimeout() {
+        verifyCoverageWithAnnTimeout(new Coverage(0, 0, 0));
+    }
+    @Test
+    void testCoverageWithResponseFromSearchNodesAndAnnTimeout() {
+        verifyCoverageWithAnnTimeout(new Coverage(0, 0, 1));
+    }
+
 }
