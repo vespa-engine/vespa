@@ -16,7 +16,7 @@
     <dependency>
       <groupId>org.eclipse.lsp4j</groupId>
       <artifactId>org.eclipse.lsp4j</artifactId>
-      <version>0.23.1</version>
+      <version>0.24.0</version>
     </dependency>
     <dependency>
       <groupId>org.jsoup</groupId>
