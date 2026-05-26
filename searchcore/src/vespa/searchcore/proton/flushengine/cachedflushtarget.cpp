@@ -13,6 +13,7 @@ CachedFlushTarget::CachedFlushTarget(const IFlushTarget::SP& target)
       _diskGain(target->getApproxDiskGain()),
       _approxBytesToWriteToDisk(target->getApproxBytesToWriteToDisk()),
       _approx_bytes_to_read_from_disk(target->get_approx_bytes_to_read_from_disk()),
+      _transient_memory_for_flush(target->transient_memory_for_flush()),
       _replay_operation_cost(target->get_replay_operation_cost()),
       _needUrgentFlush(target->needUrgentFlush()),
       _priority(target->getPriority()),
