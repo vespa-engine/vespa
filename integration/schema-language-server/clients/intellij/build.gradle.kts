@@ -47,7 +47,7 @@ dependencies {
 
   // Note: its quite important we ignore lsp4j, as the classes would collide
   //       with the lsp4ij plugins classes.
-  implementation("org.eclipse.lemminx:org.eclipse.lemminx:0.28.0") {
+  implementation("org.eclipse.lemminx:org.eclipse.lemminx:0.31.1") {
     exclude(group = "org.eclipse.lsp4j")
     exclude(group = "com.google.code.gson")
   }
