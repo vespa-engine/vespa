@@ -92,11 +92,12 @@ public class CloudResourceTags {
     }
 
     /**
-     * Returns a new instance with all template variables substituted.
-     * Throws if any {@code ${...}} placeholders remain after substitution.
+     * Returns a new instance with all template variables substituted and validated against the target cloud's
+     * character set, length, and count limits. Throws if any {@code ${...}} placeholders remain after
+     * substitution, or if the resolved tags violate the cloud's rules.
      */
     public CloudResourceTags resolve(ApplicationId application, Environment environment, RegionName region,
-                                     ClusterSpec.Id clusterId, ClusterSpec.Type clusterType) {
+                                     ClusterSpec.Id clusterId, ClusterSpec.Type clusterType, CloudName cloud) {
         if (tags.isEmpty()) return this;
         Map<String, String> resolved = new LinkedHashMap<>();
         for (var entry : tags.entrySet()) {
@@ -113,7 +114,9 @@ public class CloudResourceTags {
                                                    entry.getKey() + "': " + value);
             resolved.put(entry.getKey(), value);
         }
-        return from(resolved);
+        CloudResourceTags result = from(resolved);
+        result.validateFor(cloud);
+        return result;
     }
 
     /**
