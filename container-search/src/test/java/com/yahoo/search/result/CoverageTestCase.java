@@ -85,11 +85,18 @@ public class CoverageTestCase {
         assertEquals(lc.isDegradedByAdapativeTimeout(), c.isDegradedByAdapativeTimeout());
         assertEquals(lc.isDegradedByMatchPhase(), c.isDegradedByMatchPhase());
         assertEquals(lc.isDegradedByTimeout(), c.isDegradedByTimeout());
+        assertEquals(lc.isDegradedByAnnTimeout(), c.isDegradedByAnnTimeout());
     }
 
     @Test
     void testCoverageConversion() {
         verifyCoverageConversion(new Coverage(6, 10, 1).setDegradedReason(7).setTargetActive(12));
+
+        // With all degradation reasons including DEGRADED_BY_ANN_TIMEOUT
+        verifyCoverageConversion(new Coverage(6, 10, 1).setDegradedReason(15).setTargetActive(12));
+
+        // With DEGRADED_BY_ANN_TIMEOUT only
+        verifyCoverageConversion(new Coverage(6, 10, 1).setDegradedReason(8).setTargetActive(12));
     }
 
     @Test
