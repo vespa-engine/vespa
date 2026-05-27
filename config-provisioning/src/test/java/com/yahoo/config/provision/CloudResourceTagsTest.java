@@ -194,14 +194,18 @@ class CloudResourceTagsTest {
     void reserved_key_prefixes_rejected() {
         assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("vai_tag", "value")));
         assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("corp_tag", "value")));
+        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("corp:tag", "value")));
         assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("bastion_tag", "value")));
+        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("bastion:tag", "value")));
     }
 
     @Test
     void reserved_key_prefixes_rejected_case_insensitively() {
         assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("VAI_tag", "value")));
         assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("CORP_tag", "value")));
+        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("CORP:tag", "value")));
         assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("Bastion_tag", "value")));
+        assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("Bastion:tag", "value")));
     }
 
     // --- Template variables ---

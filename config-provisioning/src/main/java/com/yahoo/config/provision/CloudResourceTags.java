@@ -44,7 +44,7 @@ public class CloudResourceTags {
             "preprovisioned");
 
     /** Key prefixes reserved by the platform. Compared case-insensitively against customer keys. */
-    private static final List<String> RESERVED_KEY_PREFIXES = List.of("vai_", "corp_", "bastion_");
+    private static final List<String> RESERVED_KEY_PREFIXES = List.of("vai_", "corp_", "corp:", "bastion_", "bastion:");
 
     private static final List<String> PLACEHOLDERS = List.of(
             "${tenant}", "${application}", "${instance}", "${environment}", "${region}",
