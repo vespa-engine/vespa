@@ -85,11 +85,18 @@ public class CoverageTestCase {
         assertEquals(lc.isDegradedByAdapativeTimeout(), c.isDegradedByAdapativeTimeout());
         assertEquals(lc.isDegradedByMatchPhase(), c.isDegradedByMatchPhase());
         assertEquals(lc.isDegradedByTimeout(), c.isDegradedByTimeout());
+        assertEquals(lc.isDegradedByAnnTimeout(), c.isDegradedByAnnTimeout());
     }
 
     @Test
     void testCoverageConversion() {
         verifyCoverageConversion(new Coverage(6, 10, 1).setDegradedReason(7).setTargetActive(12));
+
+        // With all degradation reasons including DEGRADED_BY_ANN_TIMEOUT
+        verifyCoverageConversion(new Coverage(6, 10, 1).setDegradedReason(15).setTargetActive(12));
+
+        // With DEGRADED_BY_ANN_TIMEOUT only
+        verifyCoverageConversion(new Coverage(6, 10, 1).setDegradedReason(8).setTargetActive(12));
     }
 
     @Test
@@ -121,6 +128,25 @@ public class CoverageTestCase {
     @Test
     void testCoverageWithResponseFromSearchNodesAndTimeout() {
         verifyNoCoverage(new Coverage(0, 0, 1));
+    }
+
+    private void verifyCoverageWithAnnTimeout(Coverage zero) {
+        assertFalse(zero.isDegraded());
+        assertEquals(100, zero.getResultPercentage());
+        assertTrue(zero.getFull());
+        zero.setDegradedReason(com.yahoo.container.handler.Coverage.DEGRADED_BY_ANN_TIMEOUT);
+        assertTrue(zero.isDegraded());
+        assertEquals(100, zero.getResultPercentage());
+        assertTrue(zero.getFull());
+    }
+
+    @Test
+    void testCoverageWithNoResponseFromSearchNodesAndAnnTimeout() {
+        verifyCoverageWithAnnTimeout(new Coverage(0, 0, 0));
+    }
+    @Test
+    void testCoverageWithResponseFromSearchNodesAndAnnTimeout() {
+        verifyCoverageWithAnnTimeout(new Coverage(0, 0, 1));
     }
 
 }

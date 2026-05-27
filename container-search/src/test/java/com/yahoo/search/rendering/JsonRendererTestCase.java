@@ -961,19 +961,18 @@ public class JsonRendererTestCase {
         assertEqualJsonContent(expected, summary);
     }
 
-    @Test
-    @Timeout(300)
-    void testCoverage() throws InterruptedException, ExecutionException, IOException {
+    void verifyCoverage(Coverage coverage) throws InterruptedException, ExecutionException, IOException {
         String expected = "{"
                 + "    \"root\": {"
                 + "        \"coverage\": {"
                 + "            \"coverage\": 83,"
                 + "            \"documents\": 500,"
                 + "            \"degraded\" : {"
-                + "                \"match-phase\" : true,"
-                + "                \"timeout\" : false,"
-                + "                \"adaptive-timeout\" : true,"
-                + "                \"non-ideal-state\" : false"
+                + "                \"match-phase\" : " + coverage.isDegradedByMatchPhase() + ","
+                + "                \"timeout\" : " + coverage.isDegradedByTimeout() + ","
+                + "                \"adaptive-timeout\" : " + coverage.isDegradedByAdapativeTimeout() + ","
+                + "                \"anntimeout\" : " + coverage.isDegradedByAnnTimeout() + ","
+                + "                \"non-ideal-state\" : " + coverage.isDegradedByNonIdealState()
                 + "            },"
                 + "            \"full\": false,"
                 + "            \"nodes\": 1,"
@@ -987,13 +986,23 @@ public class JsonRendererTestCase {
                 + "        \"relevance\": 1.0"
                 + "    }"
                 + "}";
+
         Query q = new Query("/?query=a&tracelevel=5");
         Execution execution = new Execution(Execution.Context.createContextStub());
         Result r = new Result(q);
-        r.setCoverage(new Coverage(500, 600, 1).setDegradedReason(5));
+        r.setCoverage(coverage);
 
         String summary = render(execution, r);
         assertEqualJsonContent(expected, summary);
+    }
+
+    @Test
+    @Timeout(300)
+    void testCoverage() throws InterruptedException, ExecutionException, IOException {
+        verifyCoverage(new Coverage(500, 600, 1).setDegradedReason(5)); // match-phase and adaptive-timeout
+        verifyCoverage(new Coverage(500, 600, 1).setDegradedReason(7)); // match-phase, timeout, and adaptive-timeout
+        verifyCoverage(new Coverage(500, 600, 1).setDegradedReason(13)); // match-phase, adaptive-timeout, and anntimeout
+        verifyCoverage(new Coverage(500, 600, 1).setDegradedReason(15)); // match-phase, timeout, adaptive-timeout, and anntimeout
     }
 
     @Test

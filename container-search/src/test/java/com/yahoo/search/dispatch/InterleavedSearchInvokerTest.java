@@ -40,6 +40,7 @@ import java.util.stream.StreamSupport;
 
 import static com.yahoo.container.handler.Coverage.DEGRADED_BY_MATCH_PHASE;
 import static com.yahoo.container.handler.Coverage.DEGRADED_BY_TIMEOUT;
+import static com.yahoo.container.handler.Coverage.DEGRADED_BY_ANN_TIMEOUT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -173,6 +174,29 @@ public class InterleavedSearchInvokerTest {
             assertEquals(0, cov.getFullResultSets());
             assertTrue(cov.isDegraded());
             assertTrue(cov.isDegradedByTimeout());
+        }
+    }
+
+    @Test
+    void correctCoverageCalculationWhenResultsAreLimitedByAnnTimeout() throws IOException {
+        invokers.add(new MockInvoker(0, createCoverage(50155, 50155, 50155, 1, 1, 0)));
+        invokers.add(new MockInvoker(1, createCoverage(49845, 49845, 49845, 1, 1, DEGRADED_BY_ANN_TIMEOUT)));
+        try (SearchInvoker invoker = createInterleavedInvoker(new Group(0, List.of()), 0)) {
+
+            expectedEvents.add(new Event(5000, 100, 0));
+            expectedEvents.add(new Event(null, 5200, 1));
+
+            Result result = invoker.search(query, 1.0);
+
+            Coverage cov = result.getCoverage(true);
+            assertEquals(100_000L, cov.getDocs());
+            assertEquals(2, cov.getNodes());
+            assertTrue(cov.getFull()); // All docs covered despite ANN timeout
+            assertEquals(100, cov.getResultPercentage());
+            assertEquals(1, cov.getResultSets());
+            assertEquals(1, cov.getFullResultSets());
+            assertTrue(cov.isDegraded());
+            assertTrue(cov.isDegradedByAnnTimeout());
         }
     }
 
