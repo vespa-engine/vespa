@@ -33,13 +33,16 @@
 %define _defattr_is_vespa_vespa 0
 %define _command_cmake cmake
 %global _vespa_abseil_cpp_version 20250127.1
-%global _vespa_build_depencencies_version 1.14.0
+%global _vespa_build_depencencies_version 1.14.1
 %global _vespa_gtest_version 1.16.0
 %global _vespa_protobuf_version 6.34.1
 %global _vespa_openblas_version 0.3.27
 %global _vespa_mimalloc_version 2.2.4
 %global _vespa_highway_version 1.3.0
 %global _vespa_llama_version 4.7.9
+%global _vespa_icu_version 78.3.0
+%global _vespa_re2_version 20251105
+%global _vespa_xxhash_version 0.8.1
 %if 0%{?el8} || 0%{?el9} || 0%{?amzn2023}
 %global _use_vespa_abseil_cpp 1
 %global _vespa_abseil_excludes |absl_[a-z_0-9]*
@@ -70,6 +73,8 @@
 %global _vespa_java_version 17
 %endif
 %if 0%{?el8} || 0%{?el9} || 0%{?el10}
+%global _use_vespa_re2 1
+%global _vespa_re2_excludes |re2
 %global _use_vespa_icu 1
 %global _vespa_icu_excludes |icu(data|i18n|io|test|tu|uc)
 %endif
@@ -117,7 +122,7 @@ Requires: zstd
 %global _centos_stream %(grep -qs '^NAME="CentOS Stream"' /etc/os-release && echo 1 || echo 0)
 %define _devtoolset_enable /opt/rh/gcc-toolset/enable
 
-%define _use_vespa_openssl 1
+%global _use_vespa_openssl 1
 %global _vespa_openssl_excludes |crypto|ssl
 
 %if 0%{?centos} || 0%{?rocky} || 0%{?oraclelinux}
@@ -136,13 +141,13 @@ Requires: zstd
 %endif
 
 %if 0%{?amzn2023}
-%define _java_home /usr/lib/jvm/java-17-amazon-corretto
-%define _use_vespa_re2 1
-%global _vespa_re2_exlucdes |re2
-%define _use_vespa_xxhash 1
+%global _java_home /usr/lib/jvm/java-17-amazon-corretto
+%global _use_vespa_re2 1
+%global _use_vespa_xxhash 1
+%global _vespa_re2_excludes |re2
 %global _vespa_xxhash_excludes |xxhash
 
-Requires: vespa-xxhash >= 0.8.1
+Requires: vespa-xxhash >= %{_vespa_xxhash_version}
 %endif
 
 %if 0%{?_use_vespa_gtest}
@@ -156,7 +161,7 @@ Requires: libcgroup-tools
 %endif
 
 %if ! 0%{?amzn2023}
-Requires: xxhash-libs >= 0.8.1
+Requires: xxhash-libs >= %{_vespa_xxhash_version}
 %endif
 
 %ifarch aarch64
@@ -211,9 +216,6 @@ Requires: openssl-libs
 Requires: vespa-lz4 >= 1.9.4-1
 Requires: vespa-libzstd >= 1.5.6-1
 %if 0%{?amzn2023}
-Requires: vespa-re2 = 20210801
-%else
-Requires: re2
 %endif
 %if 0%{?el8} || 0%{?el9} || 0%{?el10} || 0%{?fedora}
 Requires: glibc-langpack-en
@@ -228,11 +230,19 @@ Vespa - The open big data serving engine - base C++ libraries
 Summary: Vespa - The open big data serving engine - C++ libraries
 
 Requires: %{name}-base-libs = %{version}-%{release}
+
 %if 0%{?_use_vespa_icu}
-Requires: vespa-icu = 78.3.0
+Requires: vespa-icu = %{_vespa_icu_version}
 %else
 Requires: libicu
 %endif
+%if 0%{?_use_vespa_re2}
+Requires: vespa-re2 = %{_vespa_re2_version}
+%global _vespa_re2_excludes |re2
+%else
+Requires: re2
+%endif
+
 %if 0%{?el8}
 Requires: vespa-openssl >= 3.5.4
 %else
