@@ -7,7 +7,7 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.ProvisionLogger;
-
+import com.yahoo.config.provision.SystemName;
 import java.util.List;
 
 /**
@@ -21,14 +21,16 @@ public class StaticProvisioner implements HostProvisioner {
     
     /** The fallback provisioner to use for unknown clusters, or null to not fall back */
     private final HostProvisioner fallback;
+    private final SystemName systemName;
 
     /**
      * Creates a static host provisioner which will fall back to using the given provisioner
      * if a request is made for nodes in a cluster which is not present in this allocation.
      */
-    public StaticProvisioner(AllocatedHosts allocatedHosts, HostProvisioner fallback) {
+    public StaticProvisioner(AllocatedHosts allocatedHosts, HostProvisioner fallback, SystemName systemName) {
         this.allocatedHosts = allocatedHosts;
         this.fallback = fallback;
+        this.systemName = systemName;
     }
 
     @Override
@@ -37,10 +39,19 @@ public class StaticProvisioner implements HostProvisioner {
                 allocatedHosts.getHosts().stream()
                                          .filter(host -> host.membership().isPresent() && matches(host.membership().get().cluster(), cluster))
                                          .toList();
-        if ( ! hostsAlreadyAllocatedToCluster.isEmpty()) 
-            return hostsAlreadyAllocatedToCluster;
-        else
+        if (hostsAlreadyAllocatedToCluster.isEmpty()) {
             return fallback.prepare(cluster, capacity, logger);
+        }
+
+        if (systemName.isKubernetesLike()) {
+            return hostsAlreadyAllocatedToCluster.stream()
+                    .map(host -> host.membership()
+                            .map(membership -> host.withMembership(membership.with(cluster)))
+                            .orElse(host))
+                    .toList();
+        }
+
+        return hostsAlreadyAllocatedToCluster;
     }
 
     private boolean matches(ClusterSpec nodeCluster, ClusterSpec requestedCluster) {

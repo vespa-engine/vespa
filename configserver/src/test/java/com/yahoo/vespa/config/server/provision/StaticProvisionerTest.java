@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.provision;
 
 import com.yahoo.cloud.config.ModelConfig;
+import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
@@ -11,6 +12,14 @@ import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
+import com.yahoo.config.provision.AllocatedHosts;
+import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.ClusterResources;
+import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.Test;
@@ -20,9 +29,11 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
@@ -35,10 +46,33 @@ public class StaticProvisionerTest {
         InMemoryProvisioner inMemoryHostProvisioner = new InMemoryProvisioner(false, false, "host1.yahoo.com", "host2.yahoo.com", "host3.yahoo.com", "host4.yahoo.com");
         VespaModel firstModel = createModel(app, inMemoryHostProvisioner);
 
-        StaticProvisioner staticProvisioner = new StaticProvisioner(firstModel.allocatedHosts(), null);
+        StaticProvisioner staticProvisioner = new StaticProvisioner(firstModel.allocatedHosts(), null, SystemName.Public);
         VespaModel secondModel = createModel(app, staticProvisioner);
 
         assertModelConfig(firstModel, secondModel);
+    }
+
+    @Test
+    public void profileIsEmittedForKubernetes() throws IOException, SAXException {
+        ApplicationPackage appWithoutProfile = FilesApplicationPackage.fromDir(new File("src/test/apps/hosted"), Map.of());
+        ApplicationPackage appWithProfile = FilesApplicationPackage.fromDir(new File("src/test/apps/hosted-with-profile"), Map.of());
+        InMemoryProvisioner inMemoryProvisioner = new InMemoryProvisioner(false, false, "host1.yahoo.com", "host2.yahoo.com", "host3.yahoo.com", "host4.yahoo.com");
+
+        VespaModel firstModel = createModel(appWithoutProfile, inMemoryProvisioner);
+        assertTrue(firstModel.allClusters().stream().allMatch(c -> c.profile().isEmpty()));
+
+        StaticProvisioner staticProvisioner = new StaticProvisioner(firstModel.allocatedHosts(), null, SystemName.kubernetes);
+        VespaModel secondModel = createModel(appWithProfile, staticProvisioner);
+
+        assertTrue(secondModel.allClusters().stream()
+                              .filter(c -> c.type() == ClusterSpec.Type.container)
+                              .allMatch(c -> c.profile().isPresent() && c.profile().get().equals("my-profile")));
+
+        StaticProvisioner redeployProvisioner = new StaticProvisioner(secondModel.allocatedHosts(), null, SystemName.kubernetes);
+        VespaModel thirdModel = createModel(appWithProfile, redeployProvisioner);
+        assertTrue(thirdModel.allClusters().stream()
+                             .filter(c -> c.type() == ClusterSpec.Type.container)
+                             .allMatch(c -> c.profile().isPresent() && c.profile().get().equals("my-profile")));
     }
 
     private void assertModelConfig(VespaModel firstModel, VespaModel secondModel) {

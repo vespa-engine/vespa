@@ -308,7 +308,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
      * Returns a host provisioner returning the previously allocated hosts
      */
     HostProvisioner createStaticProvisionerForHosted(AllocatedHosts allocatedHosts, HostProvisioner nodeRepositoryProvisioner) {
-        return new StaticProvisioner(allocatedHosts, nodeRepositoryProvisioner);
+        return new StaticProvisioner(allocatedHosts, nodeRepositoryProvisioner, zone.system());
     }
 
     Optional<HostProvisioner> createNodeRepositoryProvisioner(ApplicationId applicationId, Provisioned provisioned) {
