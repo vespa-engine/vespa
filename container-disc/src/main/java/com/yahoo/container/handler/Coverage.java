@@ -175,11 +175,19 @@ public class Coverage {
         if ((total == 0) && isDegradedByTimeout()) {
             return 0;
         }
-        if (isDegradedByAnnTimeout()) {
-            // The coverage is not full, but the only reason for this is the ANN timeout
-            return 100;
+        // This should not be happening (?)
+        // We fall back to result sets
+        // XMLRendererTestCase.testXmlRendering() depends on this (by accident?)
+        // Might be a good idea to remove this case and return 100% anyway
+        if (docs > total) {
+            return getFullResultSets() * 100 / getResultSets();
         }
-        return getFullResultSets() * 100 / getResultSets();
+        // At this point:
+        // 1. docs == targetActive
+        // 2. if targetActive > 0, then not degraded by timeout
+        // That is, whether we are full or not only depends on whether there was an ANN timeout
+        // But either way, we return 100%
+        return 100;
     }
 
     public com.yahoo.container.logging.Coverage toLoggingCoverage() {
