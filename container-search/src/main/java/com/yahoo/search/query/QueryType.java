@@ -213,10 +213,21 @@ public class QueryType {
         };
     }
 
-    /** Returns the query type given by this string, or the default type (WEAKAND) if the given type is null. */
+    /**
+     * Returns the query type represented by {@code typeName}.
+     * <p>
+     * In addition to {@link Query.Type} names, this accepts grammar aliases:
+     * {@code near} resolves to linguistics tokenization with {@link Composite#near},
+     * and {@code onear} resolves to linguistics tokenization with {@link Composite#oNear}.
+     * If {@code typeName} is null, this returns the default query type.
+     */
     public static QueryType from(String typeName) {
         if (typeName == null) return QueryType.from(Query.Type.WEAKAND);
-        return QueryType.from(Query.Type.getType(typeName));
+        return switch (typeName) {
+            case "near" -> QueryType.from(Query.Type.LINGUISTICS).setComposite(Composite.near);
+            case "onear" -> QueryType.from(Query.Type.LINGUISTICS).setComposite(Composite.oNear);
+            default -> QueryType.from(Query.Type.getType(typeName));
+        };
     }
 
 }
