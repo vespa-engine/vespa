@@ -175,18 +175,12 @@ public class Coverage {
         if ((total == 0) && isDegradedByTimeout()) {
             return 0;
         }
-        // This should not be happening (?)
-        // We fall back to result sets
-        // XMLRendererTestCase.testXmlRendering() depends on this (by accident?)
-        // Might be a good idea to remove this case and return 100% anyway
-        if (docs > total) {
-            return getFullResultSets() * 100 / getResultSets();
-        }
         // At this point:
-        // 1. docs == targetActive
+        // 1. docs >= targetActive
         // 2. if targetActive > 0, then not degraded by timeout
-        // That is, whether we are full or not only depends on whether there was an ANN timeout
-        // But either way, we return 100%
+        // If docs > targetActive, we are not full according to getFull(), but returning 100% still makes sense
+        // If docs == targetActive, whether we are full or not only depends on whether there was an ANN timeout
+        // Either way, we return 100%
         return 100;
     }
 
