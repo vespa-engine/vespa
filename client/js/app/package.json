@@ -30,7 +30,7 @@
     "eslint-plugin-react": "7.37.5",
     "eslint-plugin-react-hooks": "5.2.0",
     "eslint-plugin-react-perf": "3.3.3",
-    "eslint-plugin-unused-imports": "4.1.4",
+    "eslint-plugin-unused-imports": "4.4.1",
     "husky": "9.1.7",
     "lodash": "4.18.1",
     "prettier": "3.8.3",
