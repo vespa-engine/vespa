@@ -90,12 +90,12 @@ class CloudResourceTagsTest {
     }
 
     @Test
-    void key_exceeding_max_length_rejected() {
+    void key_exceeding_structural_max_length_rejected() {
         assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("k".repeat(513), "value")));
     }
 
     @Test
-    void value_exceeding_max_length_rejected() {
+    void value_exceeding_structural_max_length_rejected() {
         assertThrows(IllegalArgumentException.class, () -> CloudResourceTags.from(Map.of("key", "v".repeat(257))));
     }
 
@@ -106,7 +106,7 @@ class CloudResourceTagsTest {
     }
 
     @Test
-    void too_many_tags_rejected() {
+    void exceeding_structural_max_tags_rejected() {
         Map<String, String> tooMany = IntStream.rangeClosed(1, 65)
                                                .boxed()
                                                .collect(toMap(i -> "key" + i, i -> "val" + i));
@@ -114,12 +114,11 @@ class CloudResourceTagsTest {
     }
 
     @Test
-    void max_allowed_tags_accepted() {
+    void structural_max_tags_accepted() {
         Map<String, String> maxTags = IntStream.rangeClosed(1, 64)
                                                .boxed()
                                                .collect(toMap(i -> "key" + i, i -> "val" + i));
-        var tags = CloudResourceTags.from(maxTags);
-        assertEquals(64, tags.size());
+        assertEquals(64, CloudResourceTags.from(maxTags).size());
     }
 
     @Test
@@ -312,10 +311,10 @@ class CloudResourceTagsTest {
     }
 
     @Test
-    void aws_rejects_more_than_50_tags() {
-        Map<String, String> tags51 = IntStream.rangeClosed(1, 51).boxed()
+    void aws_rejects_more_than_35_tags() {
+        Map<String, String> tags36 = IntStream.rangeClosed(1, 36).boxed()
                 .collect(toMap(i -> "key" + i, i -> "val" + i));
-        var tags = CloudResourceTags.from(tags51);
+        var tags = CloudResourceTags.from(tags36);
         var e = assertThrows(IllegalArgumentException.class, () -> tags.validateFor(CloudName.AWS));
         assertTrue(e.getMessage().contains("AWS"));
     }
@@ -358,6 +357,15 @@ class CloudResourceTagsTest {
                          () -> tags.validateFor(CloudName.GCP),
                          "Should reject key: " + key);
         }
+    }
+
+    @Test
+    void gcp_rejects_more_than_49_tags() {
+        Map<String, String> tags50 = IntStream.rangeClosed(1, 50).boxed()
+                .collect(toMap(i -> "key" + i, i -> "val" + i));
+        var tags = CloudResourceTags.from(tags50);
+        var e = assertThrows(IllegalArgumentException.class, () -> tags.validateFor(CloudName.GCP));
+        assertTrue(e.getMessage().contains("GCP"));
     }
 
     @Test
@@ -437,10 +445,10 @@ class CloudResourceTagsTest {
     }
 
     @Test
-    void azure_rejects_more_than_50_tags() {
-        Map<String, String> tags51 = IntStream.rangeClosed(1, 51).boxed()
+    void azure_rejects_more_than_35_tags() {
+        Map<String, String> tags36 = IntStream.rangeClosed(1, 36).boxed()
                 .collect(toMap(i -> "key" + i, i -> "val" + i));
-        var tags = CloudResourceTags.from(tags51);
+        var tags = CloudResourceTags.from(tags36);
         var e = assertThrows(IllegalArgumentException.class, () -> tags.validateFor(CloudName.AZURE));
         assertTrue(e.getMessage().contains("Azure"));
     }
@@ -479,7 +487,8 @@ class CloudResourceTagsTest {
                 "type", "${clustertype}",
                 "combined", "${environment}-${clustername}-${clustertype}"));
         var resolved = tags.resolve(testApp, testEnv, testRegion,
-                                    ClusterSpec.Id.from("my-search"), ClusterSpec.Type.content);
+                                    ClusterSpec.Id.from("my-search"), ClusterSpec.Type.content,
+                                    CloudName.AWS);
         assertEquals("prod", resolved.asMap().get("env"));
         assertEquals("aws-us-east-1c", resolved.asMap().get("loc"));
         assertEquals("tenant1-app1-default", resolved.asMap().get("team"));
@@ -492,14 +501,16 @@ class CloudResourceTagsTest {
     void resolve_lowercases_tenant_application_instance_and_cluster_id() {
         var tags = CloudResourceTags.from(Map.of("tag", "${tenant}-${clustername}"));
         var resolved = tags.resolve(testApp, testEnv, testRegion,
-                                    ClusterSpec.Id.from("MyCluster"), ClusterSpec.Type.container);
+                                    ClusterSpec.Id.from("MyCluster"), ClusterSpec.Type.container,
+                                    CloudName.AWS);
         assertEquals("tenant1-mycluster", resolved.asMap().get("tag"));
     }
 
     @Test
     void resolve_on_empty_returns_empty() {
         var resolved = CloudResourceTags.empty().resolve(testApp, testEnv, testRegion,
-                                                         ClusterSpec.Id.from("c"), ClusterSpec.Type.admin);
+                                                         ClusterSpec.Id.from("c"), ClusterSpec.Type.admin,
+                                                         CloudName.AWS);
         assertTrue(resolved.isEmpty());
     }
 
@@ -507,8 +518,21 @@ class CloudResourceTagsTest {
     void resolve_on_tags_without_placeholders() {
         var tags = CloudResourceTags.from(Map.of("env", "prod"));
         var resolved = tags.resolve(testApp, testEnv, testRegion,
-                                    ClusterSpec.Id.from("c"), ClusterSpec.Type.content);
+                                    ClusterSpec.Id.from("c"), ClusterSpec.Type.content,
+                                    CloudName.AWS);
         assertEquals("prod", resolved.asMap().get("env"));
+    }
+
+    @Test
+    void resolve_validates_resolved_values_against_cloud_limits() {
+        // Raw value is 59 chars and passes GCP's 63-char value limit, but resolves to 64 chars and must fail.
+        String prefix = "p".repeat(50);
+        var tags = CloudResourceTags.from(Map.of("tag", prefix + "${region}"));
+        var e = assertThrows(IllegalArgumentException.class,
+                             () -> tags.resolve(testApp, testEnv, testRegion,
+                                                ClusterSpec.Id.from("c"), ClusterSpec.Type.content,
+                                                CloudName.GCP));
+        assertTrue(e.getMessage().contains("GCP"), "error must mention GCP: " + e.getMessage());
     }
 
     @Test
