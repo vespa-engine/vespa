@@ -260,6 +260,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean ignoreConnectivityChecksAtStartup() { return flag(PermanentFlags.IGNORE_CONNECTIVITY_CHECKS_AT_STARTUP).value(); }
         @Override public int searchCoreMaxOutstandingMoveOps() { return flag(Flags.SEARCH_CORE_MAX_OUTSTANDING_MOVE_OPS).value(); }
         @Override public double docprocHandlerThreadpool() { return flag(Flags.DOCPROC_HANDLER_THREADPOOL).value(); }
+        @Override public boolean requireExplicitDocprocCluster() { return flag(Flags.REQUIRE_EXPLICIT_DOCPROC_CLUSTER).value(); }
         @Override public boolean applyOnRestartForApplicationMetadataConfig() { return flag(Flags.APPLY_ON_RESTART_FOR_APPLICATION_METADATA_CONFIG).value(); }
         @Override public double autoscalerTargetWriteCpuPercentage(Optional<String> clusterId) {
             var flag = flag(Flags.AUTOSCALER_TARGET_WRITE_CPU_PERCENTAGE);

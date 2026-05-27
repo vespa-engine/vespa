@@ -1444,6 +1444,7 @@
       "public boolean ignoreConnectivityChecksAtStartup()",
       "public int searchCoreMaxOutstandingMoveOps()",
       "public double docprocHandlerThreadpool()",
+      "public boolean requireExplicitDocprocCluster()",
       "public boolean applyOnRestartForApplicationMetadataConfig()",
       "public boolean scaleMetricsproxyHeapByNodeCount()",
       "public java.util.OptionalInt metricsProxyHeapSizeInMib()",

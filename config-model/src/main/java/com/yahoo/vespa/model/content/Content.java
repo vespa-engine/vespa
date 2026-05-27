@@ -244,11 +244,12 @@ public class Content extends ConfigModel {
                 setExistingIndexingCluster(content, indexingDocproc, content.containers);
             } else {
                 if (content.containers.size() > 1) {
-                    modelContext.getDeployState().getDeployLogger().logApplicationPackage(
-                            Level.WARNING,
-                            "Content cluster '" + content.getCluster().getName() + "' does not have an explicit " +
-                            "document-processing cluster configured. Add '<document-processing cluster=\"<name>\"/>' " +
-                            "in <content> to ensure deterministic indexing cluster selection.");
+                    String message = "Content cluster '" + content.getCluster().getName() + "' does not have an explicit " +
+                                     "document-processing cluster configured. Add '<document-processing cluster=\"<name>\"/>' " +
+                                     "in <content> to ensure deterministic indexing cluster selection.";
+                    if (modelContext.getDeployState().featureFlags().requireExplicitDocprocCluster())
+                        throw new IllegalArgumentException(message);
+                    modelContext.getDeployState().getDeployLogger().logApplicationPackage(Level.WARNING, message);
                 }
                 setContainerAsIndexingCluster(search.getSearchNodes(), indexingDocproc, content, modelContext, root);
             }
