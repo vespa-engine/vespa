@@ -64,6 +64,9 @@
 %if ! 0%{?_vespa_java_version:1}
 %global _vespa_java_version 17
 %endif
+%if 0%{?el8} || 0%{?el9} || 0%{?el10}
+%global _use_vespa_icu 1
+%endif
 
 %define go_version 1.24.2
 
@@ -156,7 +159,7 @@ Requires: vespa-libatomic >= 14.2.0
 # Ugly workaround because vespamalloc/src/vespamalloc/malloc/mmap.cpp uses the private
 # _dl_sym function.
 # Exclude automated requires for libraries in /opt/vespa-deps/lib64.
-%global __requires_exclude ^lib(c\\.so\\.6\\(GLIBC_PRIVATE\\)|pthread\\.so\\.0\\(GLIBC_PRIVATE\\)|(lz4%{?_use_vespa_protobuf:|protobuf|utf8_validity|utf8_range}|zstd|onnxruntime%{?_use_vespa_openssl:|crypto|ssl}%{?_use_vespa_openblas:|openblas}%{?_use_vespa_re2:|re2}%{?_use_vespa_xxhash:|xxhash}%{?_use_vespa_gtest:|(gtest|gmock)(_main)?}%{?_use_vespa_abseil_cpp:|absl_[a-z_0-9]*}|hwy|hwy_contrib|mimalloc)\\.so\\.[0-9.]*\\([A-Za-z._0-9]*\\))\\(64bit\\)$
+%global __requires_exclude ^lib(c\\.so\\.6\\(GLIBC_PRIVATE\\)|pthread\\.so\\.0\\(GLIBC_PRIVATE\\)|(lz4%{?_use_vespa_icu:|libicu(data|i18n|io|test|tu|uc)}%{?_use_vespa_protobuf:|protobuf|utf8_validity|utf8_range}|zstd|onnxruntime%{?_use_vespa_openssl:|crypto|ssl}%{?_use_vespa_openblas:|openblas}%{?_use_vespa_re2:|re2}%{?_use_vespa_xxhash:|xxhash}%{?_use_vespa_gtest:|(gtest|gmock)(_main)?}%{?_use_vespa_abseil_cpp:|absl_[a-z_0-9]*}|hwy|hwy_contrib|mimalloc)\\.so\\.[0-9.]*\\([A-Za-z._0-9]*\\))\\(64bit\\)$
 
 %description
 
@@ -212,8 +215,8 @@ Vespa - The open big data serving engine - base C++ libraries
 Summary: Vespa - The open big data serving engine - C++ libraries
 
 Requires: %{name}-base-libs = %{version}-%{release}
-%if 0%{?el8} || 0%{?el9} || 0%{?el10}
-Requires: vespa-icu >= 78.3.0
+%if 0%{?_use_vespa_icu}
+Requires: vespa-icu = 78.3.0
 %else
 Requires: libicu
 %endif
