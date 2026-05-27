@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.modelfactory;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
+import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.HostProvisioner;
@@ -114,7 +115,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                 buildLatestModelForThisMajor = false; // We have successfully built latest model version, do it only for this major
                 versionToBuildFirst = Optional.empty(); // Set to empty, cannot build this first on another major
             }
-            catch (NodeAllocationException | ApplicationLockException | TransientException | QuotaExceededException e) {
+            catch (NodeAllocationException | ApplicationLockException | TransientException | QuotaExceededException | UncheckedTimeoutException e) {
                 // Don't wrap this exception, and don't try to load other model versions as this is (most likely)
                 // caused by the state of the system, not the model version/application combination
                 throw e;
