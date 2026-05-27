@@ -5,6 +5,7 @@
 #include <bit>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 
 namespace vespalib::quant {
 
