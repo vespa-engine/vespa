@@ -104,6 +104,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum"}) default double resourceLimitAddressSpace() { return 0.80; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean forwardIssuesAsErrors() { return true; }
         @ModelFeatureFlag(owners = {"arnej", "andreer"}) default List<String> ignoredHttpUserAgents() { return List.of(); }
+        @ModelFeatureFlag(owners = {"vekterli"}, removeAfter = "8.663") default int contentLayerMetadataFeatureLevel() { return 1; }
         @ModelFeatureFlag(owners = {"hmusum"}) default String unknownConfigDefinition() { return "warn"; }
         @ModelFeatureFlag(owners = {"havardpe"}) default boolean sortBlueprintsByCost() { return false; }
         @ModelFeatureFlag(owners = {"olaa"}) default boolean logserverOtelCol() { return false; }
@@ -113,19 +114,24 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej"}) default double clusterControllerNodeMemory() { return 0.0; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useLegacyWandQueryParsing() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useSimpleAnnotations() { return true; }
+        @ModelFeatureFlag(owners = {"arnej"}, removeAfter = "8.687") default boolean sendProtobufQuerytree() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean sendOldQueryStack() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean forwardAllLogLevels() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default long zookeeperPreAllocSize() { return 65536L; }
         @ModelFeatureFlag(owners = {"vekterli"}) default int maxContentNodeMaintenanceOpConcurrency() { return -1; }
+        @ModelFeatureFlag(owners = {"glebashnik"}, removeAfter = "8.682") default int maxDocumentOperationRequestSizeMib() { return 100; }
         @ModelFeatureFlag(owners = {"glebashnik"}) default Object sidecarsForTest() { return null; }
+        @ModelFeatureFlag(owners = {"bjorncs"}, removeAfter = "8.677.1", comment = "Use useTritonFlag instead") default boolean useTriton() { return false; }
         @ModelFeatureFlag(owners = {"glebashnik"}) default FeatureFlag<Boolean> useTritonFlag() { return () -> false; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean ignoreConnectivityChecksAtStartup() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int searchCoreMaxOutstandingMoveOps() { return 100; }
         @ModelFeatureFlag(owners = {"johsol"}) default double docprocHandlerThreadpool() { return 1.0; }
         @ModelFeatureFlag(owners = {"glebashnik"}) default boolean applyOnRestartForApplicationMetadataConfig() { return false; }
+        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.683") default boolean scaleMetricsproxyHeapByNodeCount() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default OptionalInt metricsProxyHeapSizeInMib() { return OptionalInt.empty(); }
         @ModelFeatureFlag(owners = {"hmusum"}) default OptionalInt metricsProxyAdminNodeHeapSizeInMib() { return OptionalInt.empty(); }
         @ModelFeatureFlag(owners = {"hmusum"}) default double autoscalerTargetWriteCpuPercentage(Optional<String> clusterId) { return 0.95; }
+        @ModelFeatureFlag(owners = {"toregge"}, removeAfter = "8.676") default double searchNodeReservedDiskSpaceFactor() { return 1.0; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */
