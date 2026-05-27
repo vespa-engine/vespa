@@ -119,7 +119,7 @@ public class Coverage {
         return switch (fullReason) {
             case EXPLICITLY_FULL: yield true;
             case EXPLICITLY_INCOMPLETE: yield false;
-            case DOCUMENT_COUNT: yield (docs == active) && !((active == 0) && isDegradedByTimeout()) && !isDegradedByAnnTimeout();
+            case DOCUMENT_COUNT: yield (docs >= active) && !((active == 0) && isDegradedByTimeout()) && !isDegradedByAnnTimeout();
         };
     }
 
@@ -178,8 +178,7 @@ public class Coverage {
         // At this point:
         // 1. docs >= targetActive
         // 2. if targetActive > 0, then not degraded by timeout
-        // If docs > targetActive, we are not full according to getFull(), but returning 100% still makes sense
-        // If docs == targetActive, whether we are full or not only depends on whether there was an ANN timeout
+        // Whether we are full or not only depends on whether there was an ANN timeout
         // Either way, we return 100%
         return 100;
     }
