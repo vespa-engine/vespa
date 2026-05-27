@@ -12,10 +12,14 @@ DummyFlushTarget::DummyFlushTarget(const std::string& name, const Type& type, co
     : searchcorespi::LeafFlushTarget(name, type, component) {
 }
 
+DummyFlushTarget::~DummyFlushTarget() = default;
+
 bool DummyFlushTarget::can_flush(SerialNum) const noexcept {
     return true;
 }
 
-DummyFlushTarget::~DummyFlushTarget() = default;
+size_t DummyFlushTarget::transient_memory_for_flush() const noexcept {
+    return 0;
+}
 
 } // namespace proton::test

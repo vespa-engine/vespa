@@ -31,6 +31,7 @@ public:
 
     FlushStats getLastFlushStats() const override { return _lastStats; }
     uint64_t getApproxBytesToWriteToDisk() const override { return 0; }
+    [[nodiscard]] size_t transient_memory_for_flush() const noexcept override;
     std::chrono::steady_clock::duration last_flush_duration() const noexcept override;
 };
 
