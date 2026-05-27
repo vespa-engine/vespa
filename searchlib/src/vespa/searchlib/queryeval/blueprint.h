@@ -315,6 +315,10 @@ public:
     Blueprint& operator=(const Blueprint&) = delete;
     virtual ~Blueprint();
 
+    // create a string on the form [id]className::operation
+    // to be used  when profiling
+    std::string profiler_name(std::string_view operation) const;
+
     void setParent(Blueprint* parent) noexcept { _parent = parent; }
     Blueprint* getParent() const noexcept { return _parent; }
     bool has_parent() const { return (_parent != nullptr); }
@@ -643,20 +647,21 @@ struct ComplexLeafBlueprint : LeafBlueprint {
 //-----------------------------------------------------------------------------
 
 /**
- * RAII profiler guard for the fetchPostings phase of a single blueprint node.
- * Produces task names of the form "[<id>]<ClassName>::fetchPostings", or
- * "[]<ClassName>::fetchPostings" when the blueprint id is unset (0). The
- * format matches the one used by ProfiledIterator. Name production is
- * skipped when the profiler is null.
+ * RAII profiler guard for the fetchPostings operation on a single
+ * blueprint node.
  **/
-struct FetchPostingsProfilerGuard : vespalib::ProfilerNameGuard {
-    FetchPostingsProfilerGuard(vespalib::ExecutionProfiler* profiler_in, const Blueprint& bp) noexcept
-        : ProfilerNameGuard(profiler_in, [&] {
-              if (bp.id() == 0) {
-                  return vespalib::make_string("[]%s::fetchPostings", bp.getClassName().c_str());
-              }
-              return vespalib::make_string("[%u]%s::fetchPostings", bp.id(), bp.getClassName().c_str());
-          }) {}
+struct FetchPostingsProfilerGuard : vespalib::ExecutionProfiler::NameGuard {
+    FetchPostingsProfilerGuard(const Blueprint& bp)
+        : NameGuard([&bp] { return bp.profiler_name("fetchPostings"); }) {}
+};
+
+/**
+ * RAII profiler guard for the creation of a single blueprint node.
+ **/
+struct CreateBlueprintProfilerGuard : vespalib::ExecutionProfiler::PostNameGuard {
+    void set_name_with(const Blueprint& bp) {
+        set_name([&bp] { return bp.profiler_name("create"); });
+    }
 };
 
 } // namespace search::queryeval

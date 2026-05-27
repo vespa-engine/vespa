@@ -213,9 +213,11 @@ public:
     }
     static Blueprint::UP build(const IRequestContext& requestContext, Node& node, ISearchContext& context,
                                search::fef::MatchDataLayout& global_layout) {
-        BlueprintBuilderVisitor visitor(requestContext, context, global_layout);
+        CreateBlueprintProfilerGuard profiler_guard;
+        BlueprintBuilderVisitor      visitor(requestContext, context, global_layout);
         node.accept(visitor);
         Blueprint::UP result = visitor.build();
+        profiler_guard.set_name_with(*result);
         return result;
     }
 };

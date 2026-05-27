@@ -22,13 +22,24 @@ struct ExecutionProfiler::ReportContext {
     const std::string& resolve_name(TaskId task) {
         auto pos = name_cache.find(task);
         if (pos == name_cache.end()) {
-            pos = name_cache.insert(std::make_pair(task, name_mapper(profiler.name_of(task)))).first;
+            const std::string& name = profiler.name_of(task);
+            if (name.empty()) {
+                auto my_name = std::format("#{}", task);
+                pos = name_cache.insert(std::make_pair(task, my_name)).first;
+            } else {
+                pos = name_cache.insert(std::make_pair(task, name_mapper(name))).first;
+            }
         }
         return pos->second;
     }
 };
 
 namespace {
+
+ExecutionProfiler*& current_profiler_ref() {
+    thread_local ExecutionProfiler* current_profiler = nullptr;
+    return current_profiler;
+}
 
 double as_ms(duration d) {
     return (count_ns(d) / 1000000.0);
@@ -220,6 +231,12 @@ ExecutionProfiler::ExecutionProfiler(int32_t profile_depth)
 ExecutionProfiler::~ExecutionProfiler() = default;
 
 ExecutionProfiler::TaskId ExecutionProfiler::resolve(const std::string& name) {
+    if (name.empty()) {
+        // make new unnamed id
+        auto result = _names.size();
+        _names.push_back(name);
+        return result;
+    }
     auto [pos, was_new] = _name_map.insert(std::make_pair(name, _names.size()));
     if (was_new) {
         assert(pos->second == _names.size());
@@ -229,9 +246,38 @@ ExecutionProfiler::TaskId ExecutionProfiler::resolve(const std::string& name) {
     return pos->second;
 }
 
+void ExecutionProfiler::set_name(TaskId task, const std::string& name) {
+    size_t idx = task;
+    assert(idx < _names.size());
+    if (!_names[idx].empty() || name.empty()) {
+        // set_name may only change an unnamed task to a named one
+        return;
+    }
+    _names[idx] = name;
+    _name_map.insert(std::make_pair(name, idx));
+}
+
 void ExecutionProfiler::report(slime::Cursor& obj, const NameMapper& name_mapper) const {
     ReportContext ctx(*this, name_mapper, _names.size());
     _impl->report(obj, ctx);
+}
+
+ExecutionProfiler::ThreadBinder::ThreadBinder(ExecutionProfiler* profiler) noexcept {
+    if (profiler != nullptr) {
+        _old = current_profiler_ref();
+        current_profiler_ref() = profiler;
+        _active = true;
+    }
+}
+
+ExecutionProfiler* ExecutionProfiler::ThreadBinder::current() noexcept {
+    return current_profiler_ref();
+}
+
+ExecutionProfiler::ThreadBinder::~ThreadBinder() {
+    if (_active) {
+        current_profiler_ref() = _old;
+    }
 }
 
 } // namespace vespalib

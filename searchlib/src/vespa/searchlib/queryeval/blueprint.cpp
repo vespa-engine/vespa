@@ -24,6 +24,7 @@
 
 #include <vespa/vespalib/objects/visit.hpp>
 
+#include <format>
 #include <map>
 
 #include <vespa/log/log.h>
@@ -157,6 +158,13 @@ Blueprint::Blueprint() noexcept
 }
 
 Blueprint::~Blueprint() = default;
+
+std::string Blueprint::profiler_name(std::string_view operation) const {
+    if (id() == 0) {
+        return std::format("[]{}::{}", getClassName(), operation);
+    }
+    return std::format("[{}]{}::{}", id(), getClassName(), operation);
+}
 
 void Blueprint::resolve_strict(InFlow& in_flow) noexcept {
     // simple local estimation of absolute cost based on in flow and flow stats.
@@ -663,12 +671,11 @@ void IntermediateBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) const
 }
 
 void IntermediateBlueprint::fetchPostings(const ExecuteInfo& execInfo) {
-    auto  flow = my_flow(InFlow(strict(), execInfo.hit_rate()));
-    auto* profiler = execInfo.profiler();
+    auto flow = my_flow(InFlow(strict(), execInfo.hit_rate()));
     for (const auto& child : _children) {
         double                     nextHitRate = flow.flow();
         auto                       childInfo = ExecuteInfo::create(nextHitRate, execInfo);
-        FetchPostingsProfilerGuard guard(profiler, *child);
+        FetchPostingsProfilerGuard guard(*child);
         child->fetchPostings(childInfo);
         flow.add(child->estimate());
     }

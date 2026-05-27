@@ -247,8 +247,7 @@ void Query::handle_global_filter(const IRequestContext&          requestContext,
                                  const AnnDeadlineConfiguration& ann_deadline_config, uint32_t docid_limit,
                                  double global_filter_lower_limit, double global_filter_upper_limit,
                                  search::queryeval::QuerySetupStats& setup_stats, search::engine::Trace& trace,
-                                 bool sort_by_cost, bool use_lazy_filter,
-                                 vespalib::ExecutionProfiler* setup_profiler) {
+                                 bool sort_by_cost, bool use_lazy_filter) {
     if (!handle_global_filter(*_blueprint, requestContext.getDoom(), ann_deadline_config, docid_limit,
                               global_filter_lower_limit, global_filter_upper_limit, requestContext.thread_bundle(),
                               setup_stats, &trace, use_lazy_filter))
@@ -261,10 +260,8 @@ void Query::handle_global_filter(const IRequestContext&          requestContext,
     _blueprint = Blueprint::optimize_and_sort(std::move(_blueprint), _in_flow, opts);
     LOG(debug, "blueprint after handle_global_filter:\n%s\n", _blueprint->asString().c_str());
     // strictness may change if optimized order changed:
-    auto info = ExecuteInfo::create(_in_flow.rate(), requestContext.getDoom(), requestContext.thread_bundle(),
-                                    setup_profiler);
-    search::queryeval::FetchPostingsProfilerGuard guard(setup_profiler, *_blueprint);
-    fetchPostings(info);
+    search::queryeval::FetchPostingsProfilerGuard guard(*_blueprint);
+    fetchPostings(ExecuteInfo::create(_in_flow.rate(), requestContext.getDoom(), requestContext.thread_bundle()));
 }
 
 bool Query::handle_global_filter(Blueprint& blueprint, const vespalib::Doom& doom,

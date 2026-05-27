@@ -181,6 +181,13 @@ MatchToolsFactory::MatchToolsFactory(
     trace.addEvent(5, "Deserialize and build query tree");
     _valid = _query.buildTree(queryTree, location, viewResolver, indexEnv);
     if (_valid) {
+        std::unique_ptr<vespalib::ExecutionProfiler> setup_profiler;
+        if (trace.getLevel() > 0) {
+            if (int32_t depth = root_trace.match_profile_depth(); depth != 0) {
+                setup_profiler = std::make_unique<vespalib::ExecutionProfiler>(depth);
+            }
+        }
+        auto bind_profiler = vespalib::ExecutionProfiler::ThreadBinder::bind(setup_profiler.get());
         _query.extractTerms(_queryEnv.terms());
         _query.extractLocations(_queryEnv.locations());
         trace.addEvent(5, "Build query execution plan");
@@ -197,25 +204,17 @@ MatchToolsFactory::MatchToolsFactory(
         double hitRate = std::min(1.0, double(maxNumHits) / double(searchContext.getDocIdLimit()));
         auto   in_flow = InFlow(is_search, hitRate);
         _query.optimize(in_flow, sort_by_cost);
-        std::unique_ptr<vespalib::ExecutionProfiler> setup_profiler;
-        if (trace.getLevel() > 0) {
-            if (int32_t depth = root_trace.match_profile_depth(); depth != 0) {
-                setup_profiler = std::make_unique<vespalib::ExecutionProfiler>(depth);
-            }
-        }
         trace.addEvent(4, "Perform dictionary lookups and posting lists initialization");
         {
-            auto info =
-                ExecuteInfo::create(in_flow.rate(), _requestContext.getDoom(), thread_bundle, setup_profiler.get());
-            FetchPostingsProfilerGuard guard(setup_profiler.get(), *_query.peekRoot());
-            _query.fetchPostings(info);
+            FetchPostingsProfilerGuard guard(*_query.peekRoot());
+            _query.fetchPostings(ExecuteInfo::create(in_flow.rate(), _requestContext.getDoom(), thread_bundle));
         }
         if (is_search) {
             bool use_lazy_filter = LazyFilter::check(_queryEnv.getProperties());
             _query.handle_global_filter(_requestContext, ann_deadline_config, searchContext.getDocIdLimit(),
                                         _create_blueprint_params.global_filter_lower_limit,
                                         _create_blueprint_params.global_filter_upper_limit, setup_stats, trace,
-                                        sort_by_cost, use_lazy_filter, setup_profiler.get());
+                                        sort_by_cost, use_lazy_filter);
         }
         if (setup_profiler) {
             setup_profiler->report(trace.createCursor("setup_profiling"));

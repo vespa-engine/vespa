@@ -48,6 +48,8 @@ public:
     ExecutionProfiler(int32_t profile_depth);
     ~ExecutionProfiler();
     TaskId resolve(const std::string& name);
+    // set_name will only have effect on unnamed tasks
+    void set_name(TaskId task, const std::string& name);
     const std::string& name_of(TaskId task) const { return _names[task]; }
     void start(TaskId task) {
         if (++_level <= _max_depth) {
@@ -62,46 +64,94 @@ public:
     void report(
         slime::Cursor&    obj,
         const NameMapper& name_mapper = [](const std::string& name) noexcept { return name; }) const;
-};
 
-/**
- * RAII helper that brackets a single task on an ExecutionProfiler.
- * Hot-path form: takes a pre-resolved TaskId. Use when the same task is
- * entered many times and the cost of resolving names per entry matters.
- **/
-struct ProfilerTaskGuard {
-    ExecutionProfiler& profiler;
-    ProfilerTaskGuard(ExecutionProfiler& profiler_in, ExecutionProfiler::TaskId task) noexcept
-        : profiler(profiler_in) {
-        profiler.start(task);
-    }
-    ProfilerTaskGuard(const ProfilerTaskGuard&) = delete;
-    ProfilerTaskGuard& operator=(const ProfilerTaskGuard&) = delete;
-    ~ProfilerTaskGuard() { profiler.complete(); }
-};
+    // Used to bind an ExecutionProfiler to the current
+    // thread. Binding nullptr will do absolutely nothing. Will revert
+    // back to the previously bound profiler when destructed.
+    class ThreadBinder {
+    private:
+        ExecutionProfiler* _old = nullptr;
+        bool               _active = false;
+        ThreadBinder(ExecutionProfiler* profiler) noexcept;
+        ThreadBinder(ThreadBinder&&) = delete;
+        ThreadBinder(const ThreadBinder&) = delete;
+        ThreadBinder& operator=(ThreadBinder&&) = delete;
+        ThreadBinder& operator=(const ThreadBinder&) = delete;
 
-/**
- * RAII helper that brackets a single task on an ExecutionProfiler.
- * Cold-path form: takes a nullable profiler and a name-producing callable.
- * The name is built and resolved only when the profiler is non-null, so
- * callers do not need to branch around profiling being disabled.
- **/
-class ProfilerNameGuard {
-    ExecutionProfiler* _profiler;
+    public:
+        static ThreadBinder bind(ExecutionProfiler* profiler) noexcept { return ThreadBinder(profiler); }
+        static ExecutionProfiler* current() noexcept;
+        ~ThreadBinder();
+    };
 
-public:
-    ProfilerNameGuard(ExecutionProfiler* profiler_in, auto&& name_fn) noexcept : _profiler(profiler_in) {
-        if (_profiler != nullptr) {
-            _profiler->start(_profiler->resolve(name_fn()));
+    /**
+     * RAII helper that brackets a single task on an
+     * ExecutionProfiler. Hot-path form: takes a pre-resolved
+     * TaskId. Use when the same task is entered many times and the
+     * cost of resolving names per entry matters.
+     **/
+    class TaskGuard {
+    private:
+        ExecutionProfiler& _profiler;
+
+    public:
+        TaskGuard(ExecutionProfiler& profiler, TaskId task) noexcept : _profiler(profiler) { profiler.start(task); }
+        TaskGuard(TaskGuard&&) = delete;
+        TaskGuard(const TaskGuard&) = delete;
+        TaskGuard& operator=(TaskGuard&&) = delete;
+        TaskGuard& operator=(const TaskGuard&) = delete;
+        ~TaskGuard() { _profiler.complete(); }
+    };
+
+    /**
+     * RAII helper that brackets a single task on an
+     * ExecutionProfiler. Cold-path form: uses the profiler bound to
+     * the current thread (if any). The name is built and resolved
+     * only when the profiler is non-null.
+     **/
+    class NameGuard {
+    private:
+        ExecutionProfiler* _profiler;
+        TaskId             _task{};
+
+    protected:
+        ExecutionProfiler* profiler() const noexcept { return _profiler; }
+        TaskId task_id() const noexcept { return _task; }
+
+    public:
+        explicit NameGuard(auto&& name_fn) : _profiler(ThreadBinder::current()) {
+            if (_profiler != nullptr) {
+                _task = _profiler->resolve(name_fn());
+                _profiler->start(_task);
+            }
         }
-    }
-    ProfilerNameGuard(const ProfilerNameGuard&) = delete;
-    ProfilerNameGuard& operator=(const ProfilerNameGuard&) = delete;
-    ~ProfilerNameGuard() {
-        if (_profiler != nullptr) {
-            _profiler->complete();
+        NameGuard(NameGuard&& rhs) = delete;
+        NameGuard(const NameGuard&) = delete;
+        NameGuard& operator=(NameGuard&&) = delete;
+        NameGuard& operator=(const NameGuard&) = delete;
+        ~NameGuard() {
+            if (_profiler != nullptr) {
+                _profiler->complete();
+            }
         }
-    }
+    };
+
+    /**
+     * RAII helper that brackets a single task on an
+     * ExecutionProfiler. Cold-path form: uses the profiler bound to
+     * the current thread (if any). The name is given later via the
+     * set_name function. The name is built and resolved only when the
+     * profiler is non-null.
+     **/
+    struct PostNameGuard : NameGuard {
+        // start out unnamed
+        PostNameGuard() : NameGuard([] { return ""; }) {}
+        void set_name(auto&& name_fn) {
+            if (profiler() != nullptr) {
+                profiler()->set_name(task_id(), name_fn());
+            }
+        }
+    };
 };
 
 } // namespace vespalib
