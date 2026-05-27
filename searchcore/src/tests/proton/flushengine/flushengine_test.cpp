@@ -317,7 +317,7 @@ public:
     }
 };
 
-class ReservedDiskSpaceTask : public SimpleTask {
+class ReservedDiskSpaceAndMemoryTask : public SimpleTask {
     IFlushTarget::DiskGain& _disk_gain;
     void on_run() override {
         // Assume that future flushes will use the same amount of disk space (no more growth).
@@ -325,27 +325,32 @@ class ReservedDiskSpaceTask : public SimpleTask {
     }
 
 public:
-    ReservedDiskSpaceTask(vespalib::Gate& start, vespalib::Gate& done, vespalib::Gate* proceed,
-                          std::atomic<search::SerialNum>& flushedSerial, search::SerialNum& currentSerial,
-                          IFlushTarget::DiskGain& disk_gain)
+    ReservedDiskSpaceAndMemoryTask(vespalib::Gate& start, vespalib::Gate& done, vespalib::Gate* proceed,
+                                   std::atomic<search::SerialNum>& flushedSerial, search::SerialNum& currentSerial,
+                                   IFlushTarget::DiskGain& disk_gain)
         : SimpleTask(start, done, proceed, flushedSerial, currentSerial), _disk_gain(disk_gain) {}
 };
 
-class ReservedDiskSpaceTarget : public SimpleTarget {
+class ReservedDiskSpaceAndMemoryTarget : public SimpleTarget {
     DiskGain _disk_gain;
+    size_t   _transient_memory_for_flush;
 
 public:
-    ReservedDiskSpaceTarget(const std::string& name, search::SerialNum flushedSerial, DiskGain disk_gain)
-        : SimpleTarget(name, Type::OTHER, no_task_tag()), _disk_gain(disk_gain) {
+    ReservedDiskSpaceAndMemoryTarget(const std::string& name, search::SerialNum flushedSerial, DiskGain disk_gain,
+                                     size_t transient_memory_for_flush_in)
+        : SimpleTarget(name, Type::OTHER, no_task_tag()),
+          _disk_gain(disk_gain),
+          _transient_memory_for_flush(transient_memory_for_flush_in) {
         _flushedSerial = flushedSerial;
-        _task = std::make_unique<ReservedDiskSpaceTask>(_taskStart, _taskDone, &_proceed, _flushedSerial,
-                                                        _currentSerial, _disk_gain);
+        _task = std::make_unique<ReservedDiskSpaceAndMemoryTask>(_taskStart, _taskDone, &_proceed, _flushedSerial,
+                                                                 _currentSerial, _disk_gain);
     }
-    ~ReservedDiskSpaceTarget() override;
+    ~ReservedDiskSpaceAndMemoryTarget() override;
     DiskGain getApproxDiskGain() const override { return _disk_gain; }
+    size_t transient_memory_for_flush() const noexcept override { return _transient_memory_for_flush; }
 };
 
-ReservedDiskSpaceTarget::~ReservedDiskSpaceTarget() = default;
+ReservedDiskSpaceAndMemoryTarget::~ReservedDiskSpaceAndMemoryTarget() = default;
 
 class SimpleStrategy : public IFlushStrategy {
 public:
@@ -910,13 +915,17 @@ TEST(FlushEngineTest, the_oldest_start_time_is_tracked_per_flush_handler_in_Acti
     EXPECT_EQ(t1, stats.oldest_start_time("h1").value());
 }
 
-TEST(FlushEngineTest, reserved_disk_space_is_calculated) {
+TEST(FlushEngineTest, reserved_disk_space_and_memory_is_calculated) {
     Fixture f(2, 50ms); // 2 normal flush threads, 3 total flush threads
-    auto    target1 = std::make_shared<ReservedDiskSpaceTarget>("target1", 1, IFlushTarget::DiskGain(10, 20));
-    auto    target2 = std::make_shared<ReservedDiskSpaceTarget>("target2", 2, IFlushTarget::DiskGain(100, 200));
-    auto    target3 = std::make_shared<ReservedDiskSpaceTarget>("target3", 3, IFlushTarget::DiskGain(1000, 2000));
-    auto    target4 = std::make_shared<ReservedDiskSpaceTarget>("target4", 4, IFlushTarget::DiskGain(10000, 20000));
-    auto    handler = std::make_shared<SimpleHandler>(Targets({target1, target2, target3, target4}), "handler", 9);
+    auto    target1 =
+        std::make_shared<ReservedDiskSpaceAndMemoryTarget>("target1", 1, IFlushTarget::DiskGain(10, 20), 10);
+    auto target2 =
+        std::make_shared<ReservedDiskSpaceAndMemoryTarget>("target2", 2, IFlushTarget::DiskGain(100, 200), 100);
+    auto target3 =
+        std::make_shared<ReservedDiskSpaceAndMemoryTarget>("target3", 3, IFlushTarget::DiskGain(1000, 2000), 1000);
+    auto target4 =
+        std::make_shared<ReservedDiskSpaceAndMemoryTarget>("target4", 4, IFlushTarget::DiskGain(10000, 20000), 10000);
+    auto handler = std::make_shared<SimpleHandler>(Targets({target1, target2, target3, target4}), "handler", 9);
     f.putFlushHandler("handler", handler);
 
     /*
@@ -924,7 +933,8 @@ TEST(FlushEngineTest, reserved_disk_space_is_calculated) {
      * Reserved disk space for flush:  200 + 2000 + 20000
      * Reserved disk space for growth: 10 + 100 + 1000 + 10000
      */
-    EXPECT_EQ(33310, f.engine.get_reserved_disk_space());
+    EXPECT_EQ(33310, f.engine.get_reserved_disk_space_and_memory().reserved_disk_space());
+    EXPECT_EQ(11100, f.engine.get_reserved_disk_space_and_memory().reserved_memory());
     f.engine.start();
 
     EXPECT_TRUE(target1->_initDone.await(LONG_TIMEOUT));
@@ -937,7 +947,8 @@ TEST(FlushEngineTest, reserved_disk_space_is_calculated) {
      * Reserved disk space for flush:  200 + 2000 + 20000
      * Reserved disk space for growth: 10 + 100 + 1000 + 10000
      */
-    EXPECT_EQ(33310, f.engine.get_reserved_disk_space());
+    EXPECT_EQ(33310, f.engine.get_reserved_disk_space_and_memory().reserved_disk_space());
+    EXPECT_EQ(11100, f.engine.get_reserved_disk_space_and_memory().reserved_memory());
     target1->_proceed.countDown();
     EXPECT_TRUE(target1->_taskDone.await(LONG_TIMEOUT));
     assertThatHandlersInCurrentSet(f.engine, {"handler.target2", "handler.target3"});
@@ -946,7 +957,8 @@ TEST(FlushEngineTest, reserved_disk_space_is_calculated) {
      * Reserved disk space for flush:  200 + 2000 + 20000
      * Reserved disk space for growth: 100 + 1000 + 10000
      */
-    EXPECT_EQ(33300, f.engine.get_reserved_disk_space());
+    EXPECT_EQ(33300, f.engine.get_reserved_disk_space_and_memory().reserved_disk_space());
+    EXPECT_EQ(11100, f.engine.get_reserved_disk_space_and_memory().reserved_memory());
     target3->_proceed.countDown();
     EXPECT_TRUE(target3->_taskDone.await(LONG_TIMEOUT));
     assertThatHandlersInCurrentSet(f.engine, {"handler.target2", "handler.target4"});
@@ -955,7 +967,8 @@ TEST(FlushEngineTest, reserved_disk_space_is_calculated) {
      * Reserved disk space for flush:  200 + 2000 + 20000
      * Reserved disk space for growth: 100 + 10000
      */
-    EXPECT_EQ(32300, f.engine.get_reserved_disk_space());
+    EXPECT_EQ(32300, f.engine.get_reserved_disk_space_and_memory().reserved_disk_space());
+    EXPECT_EQ(11100, f.engine.get_reserved_disk_space_and_memory().reserved_memory());
     target2->_proceed.countDown();
     EXPECT_TRUE(target2->_taskDone.await(LONG_TIMEOUT));
     assertThatHandlersInCurrentSet(f.engine, {"handler.target4"});
@@ -964,7 +977,8 @@ TEST(FlushEngineTest, reserved_disk_space_is_calculated) {
      * Reserved disk space for flush:  200 + 2000 + 20000
      * Reserved disk space for growth: 10000
      */
-    EXPECT_EQ(32200, f.engine.get_reserved_disk_space());
+    EXPECT_EQ(32200, f.engine.get_reserved_disk_space_and_memory().reserved_disk_space());
+    EXPECT_EQ(11100, f.engine.get_reserved_disk_space_and_memory().reserved_memory());
     target4->_proceed.countDown();
     EXPECT_TRUE(target4->_taskDone.await(LONG_TIMEOUT));
     assertThatHandlersInCurrentSet(f.engine, {});
@@ -973,7 +987,8 @@ TEST(FlushEngineTest, reserved_disk_space_is_calculated) {
      * Reserved disk space for flush:  200 + 2000 + 20000
      * Reserved disk space for growth: 0
      */
-    EXPECT_EQ(22200, f.engine.get_reserved_disk_space());
+    EXPECT_EQ(22200, f.engine.get_reserved_disk_space_and_memory().reserved_disk_space());
+    EXPECT_EQ(11100, f.engine.get_reserved_disk_space_and_memory().reserved_memory());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

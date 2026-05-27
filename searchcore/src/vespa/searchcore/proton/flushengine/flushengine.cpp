@@ -9,6 +9,7 @@
 #include "flush_strategy_id_notifier.h"
 #include "flushtask.h"
 #include "reserved_disk_space_calculator.h"
+#include "reserved_memory_calculator.h"
 #include "tls_stats_factory.h"
 #include "tls_stats_map.h"
 
@@ -647,8 +648,9 @@ void FlushEngine::configure(uint64_t max_summary_file_size) {
     _max_summary_file_size.store(max_summary_file_size, std::memory_order_relaxed);
 }
 
-uint64_t FlushEngine::get_reserved_disk_space() const {
+ReservedDiskSpaceAndMemory FlushEngine::get_reserved_disk_space_and_memory() const {
     flushengine::ReservedDiskSpaceCalculator calc(maxConcurrentTotal(), get_max_summary_file_size());
+    flushengine::ReservedMemoryCalculator    mcalc(maxConcurrentTotal());
     {
         std::lock_guard guard(_lock);
         for (const auto& it : _handlers) {
@@ -658,6 +660,7 @@ uint64_t FlushEngine::get_reserved_disk_space() const {
                 if (!isFlushing(guard, FlushContext::createName(handler, *target))) {
                     auto gain = target->getApproxDiskGain();
                     calc.track_disk_gain(gain, target->getType(), target->getComponent());
+                    mcalc.track_transient_memory_for_flush(target->transient_memory_for_flush());
                 }
             }
         }
@@ -665,9 +668,10 @@ uint64_t FlushEngine::get_reserved_disk_space() const {
             auto& target = entry.second._target;
             auto  gain = target->getApproxDiskGain();
             calc.track_disk_gain(gain, target->getType(), target->getComponent());
+            mcalc.track_transient_memory_for_flush(target->transient_memory_for_flush());
         }
     }
-    return calc.get_reserved_disk();
+    return ReservedDiskSpaceAndMemory(calc.get_reserved_disk(), mcalc.get_reserved_memory());
 }
 
 } // namespace proton
