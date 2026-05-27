@@ -122,7 +122,7 @@ GEM
     typhoeus (1.6.0)
       ethon (>= 0.18.0)
     unicode-display_width (2.4.2)
-    webrick (1.8.2)
+    webrick (1.9.2)
     yell (2.2.2)
     zeitwerk (2.8.2)
 
