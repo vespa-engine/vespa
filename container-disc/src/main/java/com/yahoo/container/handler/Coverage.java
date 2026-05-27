@@ -107,12 +107,19 @@ public class Coverage {
     public boolean isDegradedByAnnTimeout() { return (degradedReason & DEGRADED_BY_ANN_TIMEOUT) != 0; }
     public boolean isDegradedByNonIdealState() { return (degradedReason == 0) && (getResultPercentage() != 100);}
 
-    /** Returns whether the search had full coverage or not */
+    /**
+     * Returns whether the search had full coverage or not
+     *
+     * In general, full coverage means that all active documents were covered,
+     * with the following two additional requirements:
+     * 1. If there were no active documents, a soft-timeout must not have occurred.
+     * 2. An ANN timeout must not have occurred.
+     * */
     public boolean getFull() {
         return switch (fullReason) {
             case EXPLICITLY_FULL: yield true;
             case EXPLICITLY_INCOMPLETE: yield false;
-            case DOCUMENT_COUNT: yield (docs == active) && !((active == 0) && isDegradedByTimeout()) ;
+            case DOCUMENT_COUNT: yield (docs >= active) && !((active == 0) && isDegradedByTimeout()) && !isDegradedByAnnTimeout();
         };
     }
 
@@ -168,7 +175,12 @@ public class Coverage {
         if ((total == 0) && isDegradedByTimeout()) {
             return 0;
         }
-        return getFullResultSets() * 100 / getResultSets();
+        // At this point:
+        // 1. docs >= targetActive
+        // 2. if targetActive > 0, then not degraded by timeout
+        // Whether we are full or not only depends on whether there was an ANN timeout
+        // Either way, we return 100%
+        return 100;
     }
 
     public com.yahoo.container.logging.Coverage toLoggingCoverage() {

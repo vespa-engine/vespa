@@ -191,10 +191,12 @@ public class InterleavedSearchInvokerTest {
             Coverage cov = result.getCoverage(true);
             assertEquals(100_000L, cov.getDocs());
             assertEquals(2, cov.getNodes());
-            assertTrue(cov.getFull()); // All docs covered despite ANN timeout
+
+            // A node with an ANN timeout should still be reported as 100 percentage, but not as full
+            assertFalse(cov.getFull());
             assertEquals(100, cov.getResultPercentage());
             assertEquals(1, cov.getResultSets());
-            assertEquals(1, cov.getFullResultSets());
+            assertEquals(0, cov.getFullResultSets());
             assertTrue(cov.isDegraded());
             assertTrue(cov.isDegradedByAnnTimeout());
         }

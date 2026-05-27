@@ -134,10 +134,12 @@ public class CoverageTestCase {
         assertFalse(zero.isDegraded());
         assertEquals(100, zero.getResultPercentage());
         assertTrue(zero.getFull());
+        // Degrade with ANN timeout
+        // This should still be reported as 100 percentage, but not as full
         zero.setDegradedReason(com.yahoo.container.handler.Coverage.DEGRADED_BY_ANN_TIMEOUT);
         assertTrue(zero.isDegraded());
         assertEquals(100, zero.getResultPercentage());
-        assertTrue(zero.getFull());
+        assertFalse(zero.getFull());
     }
 
     @Test
