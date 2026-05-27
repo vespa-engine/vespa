@@ -26,10 +26,10 @@ class ReservedMemoryCalculator {
     std::vector<Candidate> _candidates; // Used to calculate worst case for concurrent flushes
 
 public:
-    ReservedMemoryCalculator(size_t concurrent) noexcept;
+    explicit ReservedMemoryCalculator(size_t concurrent) noexcept;
     ~ReservedMemoryCalculator();
-    void track_transient_memory_for_flush(size_t trnasient_memory_for_flush);
-    size_t get_reserved_memory();
+    void track_transient_memory_for_flush(size_t transient_memory_for_flush);
+    [[nodiscard]] size_t get_reserved_memory();
 };
 
 } // namespace proton::flushengine
