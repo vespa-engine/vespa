@@ -158,7 +158,7 @@
         <snakeyaml.vespa.version>2.4</snakeyaml.vespa.version>
         <surefire.vespa.version>3.5.5</surefire.vespa.version>
         <testcontainers.vespa.version>1.21.4</testcontainers.vespa.version>
-        <velocity.vespa.version>2.3</velocity.vespa.version>
+        <velocity.vespa.version>2.4.1</velocity.vespa.version>
         <velocity.tools.vespa.version>3.1</velocity.tools.vespa.version>
         <wiremock.vespa.version>3.13.2</wiremock.vespa.version>
         <woodstox.vespa.version>7.2.0</woodstox.vespa.version>
