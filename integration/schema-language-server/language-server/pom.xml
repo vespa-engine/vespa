@@ -178,7 +178,7 @@
       <plugin>
         <groupId>org.congocc</groupId>   
         <artifactId>org.congocc.maven.plugin</artifactId>   
-        <version>2.0.0-RC7</version>   
+        <version>2.1.0</version>   
         <executions>   
           <execution>   
             <id>1</id>   
