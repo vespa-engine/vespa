@@ -1756,7 +1756,7 @@ TEST(DocumentMetaStoreTest, move_works) {
     EXPECT_FALSE(dms.getGidEvenIfMoved(1u, gid));
     EXPECT_TRUE(dms.getGid(2u, gid));
     EXPECT_EQ(1u, dms.getNumUsedLids());
-    dms.move(2u, 1u, 0u);
+    dms.move(docid2, 2u, 1u, 0u);
     dms.commit();
     EXPECT_TRUE(dms.getGid(1u, gid));
     EXPECT_FALSE(dms.getGid(2u, gid));
@@ -1785,7 +1785,7 @@ TEST(DocumentMetaStoreTest, getting_full_document_id_works_after_move) {
     dms.removes_complete({1u});
     EXPECT_EQ("", dms.get_docid_string(gid1));
     EXPECT_EQ(docid2.toString(), dms.get_docid_string(gid2));
-    dms.move(2u, 1u, 0u);
+    dms.move(docid2, 2u, 1u, 0u);
     dms.commit();
     EXPECT_EQ("", dms.get_docid_string(gid1));
     EXPECT_EQ(docid2.toString(), dms.get_docid_string(gid2));

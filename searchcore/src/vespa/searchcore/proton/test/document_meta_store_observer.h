@@ -73,8 +73,8 @@ struct DocumentMetaStoreObserver : public IDocumentMetaStore {
         _removes_complete_lids.insert(_removes_complete_lids.end(), lids.cbegin(), lids.cend());
         _store.removes_complete(lids);
     }
-    void move(DocId fromLid, DocId toLid, uint64_t prepare_serial_num) override {
-        _store.move(fromLid, toLid, prepare_serial_num);
+    void move(const document::DocumentId& docid, DocId fromLid, DocId toLid, uint64_t prepare_serial_num) override {
+        _store.move(docid, fromLid, toLid, prepare_serial_num);
     }
     bool validLid(DocId lid) const override { return _store.validLid(lid); }
     void removeBatch(const std::vector<DocId>& lidsToRemove, const DocId docIdLimit) override {

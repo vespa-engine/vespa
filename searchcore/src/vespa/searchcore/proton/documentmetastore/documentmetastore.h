@@ -211,7 +211,7 @@ public:
      * document store).
      */
     void removes_complete(const std::vector<DocId>& lids) override;
-    void move(DocId fromLid, DocId toLid, uint64_t prepare_serial_num) override;
+    void move(const document::DocumentId& docid, DocId fromLid, DocId toLid, uint64_t prepare_serial_num) override;
     bool validButMaybeUnusedLid(DocId lid) const { return _lidAlloc.validButMaybeUnusedLid(lid); }
     bool validLidFast(DocId lid) const { return _lidAlloc.validLid(lid); }
     bool validLidFast(DocId lid, uint32_t limit) const { return _lidAlloc.validLid(lid, limit); }
