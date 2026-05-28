@@ -24,6 +24,7 @@ import static com.yahoo.vespa.flags.custom.Validation.validateEnum;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(value = JsonInclude.Include.NON_NULL)
 public class ClusterCapacity {
+    private final boolean hosts;
     private final int count;
     private final OptionalDouble vcpu;
     private final OptionalDouble memoryGb;
@@ -37,7 +38,8 @@ public class ClusterCapacity {
     private final Optional<String> tenant;
 
     @JsonCreator
-    public ClusterCapacity(@JsonProperty("count") Integer count,
+    public ClusterCapacity(@JsonProperty("hosts") Boolean hosts,
+                           @JsonProperty("count") Integer count,
                            @JsonProperty("vcpu") Double vcpu,
                            @JsonProperty("memoryGb") Double memoryGb,
                            @JsonProperty("diskGb") Double diskGb,
@@ -48,6 +50,7 @@ public class ClusterCapacity {
                            @JsonProperty("clusterType") String clusterType,
                            @JsonProperty("cloudAccount") String cloudAccount,
                            @JsonProperty("tenant") String tenant) {
+        this.hosts = hosts == null ? false : hosts.booleanValue();
         this.count = count == null ? 1 : (int) requireNonNegative("count", count);
         this.vcpu = vcpu == null ? OptionalDouble.empty() : OptionalDouble.of(requireNonNegative("vcpu", vcpu));
         this.memoryGb = memoryGb == null ? OptionalDouble.empty() : OptionalDouble.of(requireNonNegative("memoryGb", memoryGb));
@@ -64,9 +67,15 @@ public class ClusterCapacity {
 
     /** Returns a new ClusterCapacity equal to {@code this}, but with the given count. */
     public ClusterCapacity withCount(int count) {
-        return new ClusterCapacity(count, vcpuOrNull(), memoryGbOrNull(), diskGbOrNull(), bandwidthGbpsOrNull(),
+        return new ClusterCapacity(hosts, count, vcpuOrNull(), memoryGbOrNull(), diskGbOrNull(), bandwidthGbpsOrNull(),
                                    diskSpeed, storageType, architecture, clusterType, cloudAccountOrNull(), tenantOrNull());
     }
+
+    /**
+     * Returns true if this should preprovision *hosts* with the given resources. Otherwise, this will
+     * just ensure the specified capacity is available somehow (when sharing is allowed).
+     */
+    @JsonGetter("hosts") public boolean hosts() { return hosts; }
 
     @JsonGetter("count") public int count() { return count; }
     @JsonGetter("vcpu") public Double vcpuOrNull() {
@@ -98,7 +107,8 @@ public class ClusterCapacity {
     @Override
     public String toString() {
         return "ClusterCapacity{" +
-               "count=" + count +
+               "hosts=" + hosts +
+               ", count=" + count +
                ", vcpu=" + vcpu +
                ", memoryGb=" + memoryGb +
                ", diskGb=" + diskGb +
@@ -117,27 +127,27 @@ public class ClusterCapacity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ClusterCapacity that = (ClusterCapacity) o;
-        return count == that.count &&
-                vcpu.equals(that.vcpu) &&
-                memoryGb.equals(that.memoryGb) &&
-                diskGb.equals(that.diskGb) &&
-                bandwidthGbps.equals(that.bandwidthGbps) &&
-                diskSpeed.equals(that.diskSpeed) &&
-                storageType.equals(that.storageType) &&
-                architecture.equals(that.architecture) &&
-                clusterType.equals(that.clusterType) &&
-                cloudAccount.equals(that.cloudAccount) &&
-                tenant.equals(that.tenant);
+        return hosts == that.hosts &&
+               count == that.count &&
+               vcpu.equals(that.vcpu) &&
+               memoryGb.equals(that.memoryGb) &&
+               diskGb.equals(that.diskGb) &&
+               bandwidthGbps.equals(that.bandwidthGbps) &&
+               diskSpeed.equals(that.diskSpeed) &&
+               storageType.equals(that.storageType) &&
+               architecture.equals(that.architecture) &&
+               clusterType.equals(that.clusterType) &&
+               cloudAccount.equals(that.cloudAccount) &&
+               tenant.equals(that.tenant);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(count, vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, clusterType, cloudAccount, tenant);
+        return Objects.hash(hosts, count, vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType, architecture, clusterType, cloudAccount, tenant);
     }
 
     private static void validate(Optional<String> tenant, Optional<String> cloudAccount) {
-        if (tenant.isPresent() && cloudAccount.isEmpty()
-                || tenant.isEmpty() && cloudAccount.isPresent()) {
+        if (tenant.isPresent() && cloudAccount.isEmpty() || tenant.isEmpty() && cloudAccount.isPresent()) {
             throw new IllegalArgumentException("tenant and cloudAccount must both be present or both be empty");
         }
     }
