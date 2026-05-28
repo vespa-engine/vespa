@@ -415,7 +415,9 @@ getent group %{_vespa_group} >/dev/null || groupadd -r %{_vespa_group}
 getent passwd %{_vespa_user} >/dev/null || \
     useradd -r %{?_vespa_user_uid:-u %{_vespa_user_uid}} -g %{_vespa_group} --home-dir %{_prefix} -s /sbin/nologin \
     -c "Create owner of all Vespa data files" %{_vespa_user}
+usermod -a -G root %{_vespa_user} 2>/dev/null || true
 %endif
+chmod g+w /etc/passwd 2>/dev/null || true
 %if 0%{?el8} || 0%{?el9}
 # TODO Hardcoded toolset version, should be detected in a better way.
 mkdir -p /opt/rh
@@ -501,7 +503,7 @@ fi
 %exclude %{_prefix}/conf/configserver-app/config-models.xml
 %dir %{_prefix}/conf/logd
 %dir %{_prefix}/conf/vespa
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/zookeeper/conf
+%dir %attr(0775,%{_vespa_user},root) %{_prefix}/var/zookeeper/conf
 %dir %{_prefix}/etc
 %{_prefix}/etc/systemd
 %{_prefix}/etc/vespa
@@ -532,39 +534,39 @@ fi
 %exclude %{_prefix}/libexec/vespa/find-pid
 %exclude %{_prefix}/libexec/vespa/standalone-container.sh
 %exclude %{_prefix}/libexec/vespa/vespa-curl-wrapper
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/logs
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/logs/vespa
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/logs/vespa/access
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/logs/vespa/configserver
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/logs/vespa/search
+%dir %attr(0775,%{_vespa_user},root) %{_prefix}/logs
+%dir %attr(0775,%{_vespa_user},root) %{_prefix}/logs/vespa
+%dir %attr(0775,%{_vespa_user},root) %{_prefix}/logs/vespa/access
+%dir %attr(0775,%{_vespa_user},root) %{_prefix}/logs/vespa/configserver
+%dir %attr(0775,%{_vespa_user},root) %{_prefix}/logs/vespa/search
 %{_prefix}/man
 %{_prefix}/sbin
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/secure
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/crash
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/config_server
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/config_server/serverdb
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/config_server/serverdb/tenants
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/download
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/filedistribution
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/index
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/logcontrol
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/search
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/tmp
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/jdisc_container
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/run
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/tmp
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/tmp/vespa
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/vespa
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/vespa/application
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/vespa/bundlecache
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/vespa/bundlecache/configserver
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/vespa/cache
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/vespa/cache/config
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/zookeeper
-%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/zookeeper/version-2
+%dir %attr(0775,%{_vespa_user},root) %{_prefix}/secure
+%dir %attr(0775,%{_vespa_user},root) %{_prefix}/var
+%dir %attr(0775,%{_vespa_user},root) %{_prefix}/var/crash
+%dir %attr(0775,%{_vespa_user},root) %{_prefix}/var/db
+%dir %attr(0775,%{_vespa_user},root) %{_prefix}/var/db/vespa
+%dir %attr(0775,%{_vespa_user},root) %{_prefix}/var/db/vespa/config_server
+%dir %attr(0775,%{_vespa_user},root) %{_prefix}/var/db/vespa/config_server/serverdb
+%dir %attr(0775,%{_vespa_user},root) %{_prefix}/var/db/vespa/config_server/serverdb/tenants
+%dir %attr(0775,%{_vespa_user},root) %{_prefix}/var/db/vespa/download
+%dir %attr(0775,%{_vespa_user},root) %{_prefix}/var/db/vespa/filedistribution
+%dir %attr(0775,%{_vespa_user},root) %{_prefix}/var/db/vespa/index
+%dir %attr(0775,%{_vespa_user},root) %{_prefix}/var/db/vespa/logcontrol
+%dir %attr(0775,%{_vespa_user},root) %{_prefix}/var/db/vespa/search
+%dir %attr(0775,%{_vespa_user},root) %{_prefix}/var/db/vespa/tmp
+%dir %attr(0775,%{_vespa_user},root) %{_prefix}/var/jdisc_container
+%dir %attr(0775,%{_vespa_user},root) %{_prefix}/var/run
+%dir %attr(0775,%{_vespa_user},root) %{_prefix}/var/tmp
+%dir %attr(0775,%{_vespa_user},root) %{_prefix}/var/tmp/vespa
+%dir %attr(0775,%{_vespa_user},root) %{_prefix}/var/vespa
+%dir %attr(0775,%{_vespa_user},root) %{_prefix}/var/vespa/application
+%dir %attr(0775,%{_vespa_user},root) %{_prefix}/var/vespa/bundlecache
+%dir %attr(0775,%{_vespa_user},root) %{_prefix}/var/vespa/bundlecache/configserver
+%dir %attr(0775,%{_vespa_user},root) %{_prefix}/var/vespa/cache
+%dir %attr(0775,%{_vespa_user},root) %{_prefix}/var/vespa/cache/config
+%dir %attr(0775,%{_vespa_user},root) %{_prefix}/var/zookeeper
+%dir %attr(0775,%{_vespa_user},root) %{_prefix}/var/zookeeper/version-2
 %config(noreplace) %{_prefix}/conf/logd/logd.cfg
 %if %{_create_vespa_service}
 %attr(644,root,root) /usr/lib/systemd/system/vespa.service

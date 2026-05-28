@@ -19,13 +19,33 @@ int main(int argc, char** argv) {
     if (username == nullptr) {
         username = "vespa";
     }
+
+    uid_t oldu = getuid();
+
     struct passwd* p = getpwnam(username);
     if (p == nullptr) {
+        if (oldu != 0) {
+            execvp(argv[1], &argv[1]);
+            perror("FATAL error: execvp failed");
+            return 1;
+        }
         fprintf(stderr, "FATAL error: user '%s' missing in passwd file\n", username);
         return 1;
     }
     gid_t g = p->pw_gid;
     uid_t u = p->pw_uid;
+
+    if (g == getgid() && u == oldu) {
+        execvp(argv[1], &argv[1]);
+        perror("FATAL error: execvp failed");
+        return 1;
+    }
+
+    if (oldu != 0) {
+        execvp(argv[1], &argv[1]);
+        perror("FATAL error: execvp failed");
+        return 1;
+    }
 
     gid_t grouplist[256];
     int   group_arr_sz = 256;
@@ -45,7 +65,6 @@ int main(int argc, char** argv) {
 #endif
 
     gid_t oldg = getgid();
-    uid_t oldu = getuid();
 
     if (g != oldg && setgid(g) != 0) {
         perror("FATAL error: could not change group id");
