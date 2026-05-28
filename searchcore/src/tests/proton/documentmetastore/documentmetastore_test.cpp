@@ -2132,6 +2132,43 @@ TEST(DocumentMetaStoreTest, dms_complains_about_missing_document_ids) {
     remove_save_files(documentmetastore6);
 }
 
+TEST(DocumentMetaStoreTest, invalid_entry_refs_do_not_affect_saving_of_full_document_ids) {
+    std::string       documentmetastore7("documentmetastore7");
+    DocumentMetaStore dms1(createBucketDB(), "[documentmetastore]", search::GrowStrategy(), true, SubDbType::READY);
+    dms1.constructFreeList();
+    addLid(dms1, 1);
+    // Temporarily disable storing of document IDs to get an invalid document ID
+    dms1.set_store_full_document_id(false);
+    addLid(dms1, 2);
+    dms1.set_store_full_document_id(true);
+    addLid(dms1, 3);
+
+    // Lid 2 should have an invalid entry ref
+    EXPECT_FALSE(dms1.getRawMetadata(2).get_relaxed_docid_ref().valid());
+
+    TuneFileAttributes      tuneFileAttributes;
+    DummyFileHeaderContext  fileHeaderContext;
+    AttributeFileSaveTarget saveTarget(tuneFileAttributes, fileHeaderContext);
+    EXPECT_TRUE(dms1.save(saveTarget, documentmetastore7));
+
+    DocumentMetaStore dms_loaded_docids(createBucketDB(), documentmetastore7, search::GrowStrategy(), true,
+                                        SubDbType::READY);
+    EXPECT_TRUE(dms_loaded_docids.load());
+    dms_loaded_docids.constructFreeList();
+    EXPECT_FALSE(dms_loaded_docids.requires_document_ids_from_docstore());
+
+    // Lid 1 and 3 should have their document IDs
+    auto d1 = createDocId(1);
+    EXPECT_EQ(d1.toString(), dms_loaded_docids.get_docid_string(d1.getGlobalId()));
+    auto d3 = createDocId(3);
+    EXPECT_EQ(d3.toString(), dms_loaded_docids.get_docid_string(d3.getGlobalId()));
+
+    // Lid 2 should have an invalid entry ref
+    EXPECT_FALSE(dms_loaded_docids.getRawMetadata(2).get_relaxed_docid_ref().valid());
+
+    remove_save_files(documentmetastore7);
+}
+
 namespace {
 
 void assertLidGidFound(uint32_t lid, DocumentMetaStore& dms) {
