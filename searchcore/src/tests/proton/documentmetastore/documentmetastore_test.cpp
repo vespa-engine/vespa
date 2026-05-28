@@ -1812,7 +1812,7 @@ TEST(DocumentMetaStoreTest, move_fills_in_missing_docids) {
 
     // Use super secret method to activate storing document ids while DocumentMetaStore exists
     // This means that we leave lid 2 without a valid document ID
-    dms.set_store_full_document_id(true);
+    dms.unit_test_adapter().set_store_full_document_id(true);
     // The move should fill in the missing document ID
     dms.move(docid2, 2u, 1u, 0u);
     dms.commit();
@@ -1968,7 +1968,7 @@ TEST(DocumentMetaStoreTest, second_shrink_works_after_compact_and_inactive_inser
 void check_document_sizes_are_loaded(const std::string& documentmetastore3, bool track_32bit_document_sizes_save,
                                      bool track_32bit_document_sizes_load) {
     DocumentMetaStore dms3(createBucketDB(), documentmetastore3);
-    dms3.set_track_32bit_document_sizes(track_32bit_document_sizes_load);
+    dms3.unit_test_adapter().set_track_32bit_document_sizes(track_32bit_document_sizes_load);
     EXPECT_TRUE(dms3.load());
     EXPECT_FALSE(dms3.requires_document_ids_from_docstore());
     EXPECT_EQ(!track_32bit_document_sizes_save && track_32bit_document_sizes_load,
@@ -1996,7 +1996,7 @@ void check_document_sizes_are_saved(bool track_32bit_document_sizes) {
     }
     DocumentMetaStore dms1(createBucketDB());
     dms1.constructFreeList();
-    dms1.set_track_32bit_document_sizes(track_32bit_document_sizes);
+    dms1.unit_test_adapter().set_track_32bit_document_sizes(track_32bit_document_sizes);
     addLid(dms1, 1, 100);
     addLid(dms1, 2, 10000);
     addLid(dms1, 3, large_doc_size);
@@ -2014,7 +2014,7 @@ void check_document_sizes_are_saved(bool track_32bit_document_sizes) {
     EXPECT_TRUE(dms1.save(saveTarget, documentmetastore3));
     EXPECT_EQ(stat_save_files_size(documentmetastore3), dms1.getEstimatedSaveByteSize());
     EXPECT_EQ(stat_save_files_size_on_disk(documentmetastore3), dms1.size_on_disk());
-    dms1.setTrackDocumentSizes(false);
+    dms1.unit_test_adapter().set_track_document_sizes(false);
     EXPECT_TRUE(dms1.save(saveTarget, documentmetastore4));
     EXPECT_EQ(stat_save_files_size(documentmetastore4), dms1.getEstimatedSaveByteSize());
     EXPECT_EQ(stat_save_files_size_on_disk(documentmetastore4), dms1.size_on_disk());
@@ -2023,13 +2023,13 @@ void check_document_sizes_are_saved(bool track_32bit_document_sizes) {
     check_document_sizes_are_loaded(documentmetastore3, track_32bit_document_sizes, !track_32bit_document_sizes);
 
     DocumentMetaStore dms4(createBucketDB(), documentmetastore4);
-    dms4.set_track_32bit_document_sizes(track_32bit_document_sizes);
+    dms4.unit_test_adapter().set_track_32bit_document_sizes(track_32bit_document_sizes);
     EXPECT_TRUE(dms4.load());
     EXPECT_FALSE(dms4.requires_document_ids_from_docstore());
     EXPECT_TRUE(dms4.requires_doc_sizes_from_docstore());
     dms4.constructFreeList();
     EXPECT_LT(stat_save_files_size(documentmetastore4), dms4.getEstimatedSaveByteSize());
-    dms4.setTrackDocumentSizes(false);
+    dms4.unit_test_adapter().set_track_document_sizes(false);
     EXPECT_EQ(stat_save_files_size(documentmetastore4), dms4.getEstimatedSaveByteSize());
     EXPECT_EQ(stat_save_files_size_on_disk(documentmetastore4), dms4.size_on_disk());
     assertSize(dms4, 1, 1);
@@ -2138,9 +2138,9 @@ TEST(DocumentMetaStoreTest, invalid_entry_refs_do_not_affect_saving_of_full_docu
     dms1.constructFreeList();
     addLid(dms1, 1);
     // Temporarily disable storing of document IDs to get an invalid document ID
-    dms1.set_store_full_document_id(false);
+    dms1.unit_test_adapter().set_store_full_document_id(false);
     addLid(dms1, 2);
-    dms1.set_store_full_document_id(true);
+    dms1.unit_test_adapter().set_store_full_document_id(true);
     addLid(dms1, 3);
 
     // Lid 2 should have an invalid entry ref

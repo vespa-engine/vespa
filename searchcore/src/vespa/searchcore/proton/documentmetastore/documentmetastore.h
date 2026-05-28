@@ -58,6 +58,15 @@ public:
     using DocumentMetaStoreAttribute::reclaim_unused_memory;
 
 private:
+    class UnitTestAdapter {
+        DocumentMetaStore& _dms;
+
+    public:
+        explicit UnitTestAdapter(DocumentMetaStore& dms) noexcept : _dms(dms) {}
+        void set_track_document_sizes(bool value) noexcept { _dms._trackDocumentSizes = value; }
+        void set_track_32bit_document_sizes(bool value) noexcept { _dms._track_32bit_document_sizes = value; }
+        void set_store_full_document_id(bool value) noexcept { _dms._store_full_document_id = value; }
+    };
     // maps from lid -> metadata
     using MetadataStore = vespalib::RcuVectorBase<RawDocumentMetadata>;
     using KeyComp = documentmetastore::LidGidKeyComparator;
@@ -301,11 +310,9 @@ public:
     uint32_t getVersion() const override;
 
     /*
-     * Functions only intended for unit testing. Do not use these!
+     * Functions only intended for unit testing are exposed via UnitTestAdapter.
      */
-    void setTrackDocumentSizes(bool trackDocumentSizes) { _trackDocumentSizes = trackDocumentSizes; }
-    void set_track_32bit_document_sizes(bool value) noexcept { _track_32bit_document_sizes = value; }
-    void set_store_full_document_id(bool value) noexcept { _store_full_document_id = value; }
+    UnitTestAdapter unit_test_adapter() noexcept { return UnitTestAdapter(*this); }
 
     void foreach(const search::IGidToLidMapperVisitor& visitor) const override;
     bool is_sortable() const noexcept override;
