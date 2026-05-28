@@ -1798,6 +1798,30 @@ TEST(DocumentMetaStoreTest, getting_full_document_id_works_after_move) {
     EXPECT_EQ(docid2.toString(), dms.get_docid_string(gid2));
 }
 
+TEST(DocumentMetaStoreTest, move_fills_in_missing_docids) {
+    // Start without storing document IDs
+    // Use this to simulate document IDs disappearing
+    DocumentMetaStore dms(createBucketDB(), "[documentmetastore]", search::GrowStrategy(), false, SubDbType::READY);
+    dms.constructFreeList();
+
+    assertPut(bucketId1, time1, 1u, docid1, dms);
+    assertPut(bucketId2, time2, 2u, docid2, dms);
+    EXPECT_TRUE(dms.remove(1u, 0u));
+    dms.commit();
+    dms.removes_complete({1u});
+
+    // Use super secret method to activate storing document ids while DocumentMetaStore exists
+    // This means that we leave lid 2 without a valid document ID
+    dms.set_store_full_document_id(true);
+    // The move should fill in the missing document ID
+    dms.move(docid2, 2u, 1u, 0u);
+    dms.commit();
+    // A wild document ID appeared!
+    EXPECT_EQ(docid2.toString(), dms.get_docid_string(gid2));
+    dms.removes_complete({2u});
+    EXPECT_EQ(docid2.toString(), dms.get_docid_string(gid2));
+}
+
 void assertLidSpace(uint32_t numDocs, uint32_t committedDocIdLimit, uint32_t numUsedLids, bool wantShrinkLidSpace,
                     bool canShrinkLidSpace, const DocumentMetaStore& dms) {
     EXPECT_EQ(numDocs, dms.getNumDocs());

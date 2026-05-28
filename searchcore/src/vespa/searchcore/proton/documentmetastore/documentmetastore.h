@@ -299,8 +299,14 @@ public:
     uint64_t getEstimatedSaveByteSize() const override;
     [[nodiscard]] size_t transient_memory_for_flush() const noexcept override;
     uint32_t getVersion() const override;
+
+    /*
+     * Functions only intended for unit testing. Do not use these!
+     */
     void setTrackDocumentSizes(bool trackDocumentSizes) { _trackDocumentSizes = trackDocumentSizes; }
     void set_track_32bit_document_sizes(bool value) noexcept { _track_32bit_document_sizes = value; }
+    void set_store_full_document_id(bool value) noexcept { _store_full_document_id = value; }
+
     void foreach(const search::IGidToLidMapperVisitor& visitor) const override;
     bool is_sortable() const noexcept override;
     std::unique_ptr<search::attribute::ISortBlobWriter>
