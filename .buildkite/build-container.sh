@@ -87,7 +87,7 @@ git archive HEAD --format tar | tar x -C docker/vespa-systemtests
 before="\\\$[{]vespa.version[}]"
 after="${VESPA_VERSION}"
 find docker/vespa-systemtests -name pom.xml -print0 | xargs -0 perl -pi -e "s,>${before}<,>${after}<,"
-mvn -Daether.dependencyCollector.impl=bf -Dvespa.version=${VESPA_VERSION} \
+mvn -Daether.dependencyCollector.impl=bf -Dvespa.version="${VESPA_VERSION}" \
     --threads 1 --batch-mode \
     --file docker/vespa-systemtests/tests/pom.xml \
     dependency:go-offline
