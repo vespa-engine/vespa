@@ -115,6 +115,7 @@ TEST_F(ResourceUsageTrackerTest, reserved_disk_space_is_scaled_by_reserved_disk_
 TEST_F(ResourceUsageTrackerTest, reserved_memory_is_scaled_by_reserved_memory_factor) {
     auto register_guard = _tracker->set_listener(*_listener);
     notify(0.8, 0.5, 0.4, 0.3, 0.0, 0.0, 0.3, 0.5, 0.1, 0.2);
+    // non_transient_memory_usage + reserved_memory * reserved_memory_factor = 0.3 + 0.3 * 0.5 = 0.45
     EXPECT_THAT(get_usage(), MostlyEqualResourceUsage(ResourceUsage(0.4, 0.45)));
 }
 
