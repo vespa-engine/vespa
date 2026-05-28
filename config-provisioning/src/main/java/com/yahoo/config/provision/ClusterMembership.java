@@ -155,7 +155,7 @@ public class ClusterMembership {
     }
 
     public static ClusterMembership from(String stringValue, Version vespaVersion, Optional<DockerImage> dockerImageRepo,
-            ZoneEndpoint zoneEndpoint, List<SidecarSpec> sidecars, Optional<String> profile) {
+                                         ZoneEndpoint zoneEndpoint, List<SidecarSpec> sidecars, Optional<String> profile) {
         return from(stringValue, vespaVersion, dockerImageRepo, zoneEndpoint, sidecars, List.of(), profile);
     }
 
