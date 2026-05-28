@@ -38,7 +38,7 @@ func TestDeployCloud(t *testing.T) {
 	stderr.Reset()
 	require.NotNil(t, cli.Run("deploy", pkgDir))
 	apiKeyWarning := "Warning: Authenticating with API key, intended for use in CI environments.\nHint: Authenticate with 'vespa auth login' instead\n"
-	certError := `Error: deployment to Vespa Cloud requires certificate in application package
+	certError := `Error: deployment to Vespa Cloud requires certificate or token in application package
 Hint: See https://docs.vespa.ai/en/security/guide.html
 Hint: Pass --add-cert to use the certificate of the current application
 `
@@ -78,6 +78,117 @@ Hint: Pass --add-cert to use the certificate of the current application
 Hint: If this application was deployed using a different application ID in the past, the matching key pair may be stored under a different ID in `+
 		cli.config.homeDir+"\nHint: Specify the matching application with --application, or add the current certificate to the package using --add-cert\n",
 		stderr.String())
+}
+
+func TestDeployMtlsFallbackWhenTokenClientIsSetButNoTokenEnvVariable(t *testing.T) {
+	pkgDir := filepath.Join(t.TempDir(), "app")
+	if err := os.MkdirAll(pkgDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	deploymentXML := `<deployment version="1.0"><prod><region>aws-us-east-1c</region></prod></deployment>`
+	if err := os.WriteFile(filepath.Join(pkgDir, "deployment.xml"), []byte(deploymentXML), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	servicesXML := `<services version="1.0">
+  <container id="qrs" version="1.0">
+    <clients>
+      <client id="token-client"><token id="my-token"/></client>
+    </clients>
+  </container>
+</services>`
+	if err := os.WriteFile(filepath.Join(pkgDir, "services.xml"), []byte(servicesXML), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// No token env variable set even if client token is set in servicesXML. mTLS should be default in this case.
+	cli, stdout, _ := newTestCLI(t, "CI=true")
+	httpClient := &mock.HTTPClient{}
+	httpClient.NextResponseString(200, `ok`)
+	httpClient.NextResponseString(200, `{"active": false, "status": "success"}`)
+	cli.httpClient = httpClient
+
+	app := vespa.ApplicationID{Tenant: "t1", Application: "a1", Instance: "i1"}
+	assert.Nil(t, cli.Run("config", "set", "application", app.String()))
+	assert.Nil(t, cli.Run("config", "set", "target", "cloud"))
+	assert.Nil(t, cli.Run("auth", "api-key"))
+	assert.Nil(t, cli.Run("auth", "cert", pkgDir))
+
+	err := cli.Run("deploy", pkgDir)
+	assert.Nil(t, err)
+	assert.Contains(t, stdout.String(), "Success: Triggered deployment")
+	assert.True(t, httpClient.Consumed())
+}
+
+func TestDeployWithoutMTLSOrToken(t *testing.T) {
+	pkgDir := filepath.Join(t.TempDir(), "app")
+	if err := os.MkdirAll(pkgDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	deploymentXML := `<deployment version="1.0"><prod><region>aws-us-east-1c</region></prod></deployment>`
+	if err := os.WriteFile(filepath.Join(pkgDir, "deployment.xml"), []byte(deploymentXML), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	servicesXML := `<services version="1.0">
+  <container id="qrs" version="1.0">
+  </container>
+</services>`
+	if err := os.WriteFile(filepath.Join(pkgDir, "services.xml"), []byte(servicesXML), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	const token = "mytoken"
+	cli, _, _ := newTestCLI(t, "CI=true", "VESPA_CLI_DATA_PLANE_TOKEN="+token)
+	httpClient := &mock.HTTPClient{}
+	httpClient.NextResponseString(200, `ok`)
+	httpClient.NextResponseString(200, `{"active": false, "status": "success"}`)
+	cli.httpClient = httpClient
+
+	app := vespa.ApplicationID{Tenant: "t1", Application: "a1", Instance: "i1"}
+	assert.Nil(t, cli.Run("config", "set", "application", app.String()))
+	assert.Nil(t, cli.Run("config", "set", "target", "cloud"))
+	assert.Nil(t, cli.Run("auth", "api-key"))
+
+	err := cli.Run("deploy", pkgDir)
+	assert.Error(t, err)
+	assert.Equal(t, err.Error(), "deployment to Vespa Cloud requires certificate or token in application package")
+}
+
+func TestDeployCloudWithToken(t *testing.T) {
+	pkgDir := filepath.Join(t.TempDir(), "app")
+	if err := os.MkdirAll(pkgDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	deploymentXML := `<deployment version="1.0"><prod><region>aws-us-east-1c</region></prod></deployment>`
+	if err := os.WriteFile(filepath.Join(pkgDir, "deployment.xml"), []byte(deploymentXML), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	servicesXML := `<services version="1.0">
+  <container id="qrs" version="1.0">
+    <clients>
+      <client id="token-client"><token id="my-token"/></client>
+    </clients>
+  </container>
+</services>`
+	if err := os.WriteFile(filepath.Join(pkgDir, "services.xml"), []byte(servicesXML), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	const token = "mytoken"
+	cli, stdout, _ := newTestCLI(t, "CI=true", "VESPA_CLI_DATA_PLANE_TOKEN="+token)
+	httpClient := &mock.HTTPClient{}
+	httpClient.NextResponseString(200, `ok`)
+	httpClient.NextResponseString(200, `{"active": false, "status": "success"}`)
+	cli.httpClient = httpClient
+
+	app := vespa.ApplicationID{Tenant: "t1", Application: "a1", Instance: "i1"}
+	assert.Nil(t, cli.Run("config", "set", "application", app.String()))
+	assert.Nil(t, cli.Run("config", "set", "target", "cloud"))
+	assert.Nil(t, cli.Run("auth", "api-key"))
+
+	require.Nil(t, cli.Run("deploy", pkgDir))
+	assert.Contains(t, stdout.String(), "Success: Triggered deployment")
+	deployReq := httpClient.Requests[0]
+	assert.Equal(t, "Bearer "+token, deployReq.Header.Get("Authorization"))
 }
 
 func TestDeployCloudFastWait(t *testing.T) {

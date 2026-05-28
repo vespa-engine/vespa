@@ -179,7 +179,7 @@ func requireCertificate(force, ignoreZip bool, cli *CLI, target vespa.Target, pk
 	if pkg.IsZip() {
 		if ignoreZip {
 			cli.printWarning("Cannot verify existence of "+color.CyanString("security/clients.pem")+" since '"+pkg.Path+"' is compressed",
-				"Deployment to Vespa Cloud requires certificate in application package",
+				"Deployment to Vespa Cloud requires certificate or token in application package",
 				"See https://docs.vespa.ai/en/security/guide.html")
 			return nil
 		} else {
@@ -228,7 +228,7 @@ func requireCertificate(force, ignoreZip bool, cli *CLI, target vespa.Target, pk
 			return copyCertificate(tlsOptions, cli, pkg)
 		}
 	}
-	return errHint(fmt.Errorf("deployment to Vespa Cloud requires certificate in application package"),
+	return errHint(fmt.Errorf("deployment to Vespa Cloud requires certificate or token in application package"),
 		"See https://docs.vespa.ai/en/security/guide.html",
 		"Pass --add-cert to use the certificate of the current application")
 }

@@ -52,6 +52,8 @@ type DeploymentOptions struct {
 	Target             Target
 	ApplicationPackage ApplicationPackage
 	Version            version.Version
+	AuthMethod         string
+	BearerToken        string
 }
 
 type Submission struct {
@@ -483,7 +485,7 @@ func deployServiceDo(request *http.Request, timeout time.Duration, opts Deployme
 }
 
 func checkDeploymentOpts(opts DeploymentOptions) error {
-	if opts.Target.Type() == TargetCloud && !opts.ApplicationPackage.HasCertificate() {
+	if opts.Target.Type() == TargetCloud && opts.AuthMethod == "mtls" && !opts.ApplicationPackage.HasCertificate() {
 		return fmt.Errorf("%s: missing certificate in package", opts)
 	}
 	if !opts.Target.IsCloud() && !opts.Version.IsZero() {
@@ -519,6 +521,9 @@ func newDeploymentRequest(url *url.URL, opts DeploymentOptions) (*http.Request, 
 			return nil, err
 		}
 		header.Set("Content-Type", form.FormDataContentType())
+		if opts.AuthMethod == "token" {
+			header.Set("Authorization", fmt.Sprintf("Bearer %s", opts.BearerToken))
+		}
 		body = &buf
 	} else {
 		header.Set("Content-Type", "application/zip")
