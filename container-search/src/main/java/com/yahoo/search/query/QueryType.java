@@ -34,9 +34,6 @@ public class QueryType {
     public static final String PROFILE = "profile";
     public static final String IS_YQL_DEFAULT = "isYqlDefault";
 
-    private static final String NEAR_GRAMMAR_ALIAS = "near";
-    private static final String ONEAR_GRAMMAR_ALIAS = "onear";
-
     static {
         argumentType = new QueryProfileType(Model.TYPE);
         argumentType.setStrict(true);
@@ -49,12 +46,6 @@ public class QueryType {
         argumentType.addField(new FieldDescription(IS_YQL_DEFAULT, "boolean"));
         argumentType.freeze();
     }
-
-    /** Aliases for grammar names that resolve to a base query type with a specific composite operator. */
-    private static final Map<String, GrammarAlias> grammarAliases = GrammarAlias.aliases(
-        new GrammarAlias(NEAR_GRAMMAR_ALIAS, Query.Type.LINGUISTICS, Composite.near),
-        new GrammarAlias(ONEAR_GRAMMAR_ALIAS, Query.Type.LINGUISTICS, Composite.oNear)
-    );
 
     public static QueryProfileType getArgumentType() { return argumentType; }
 
@@ -223,6 +214,8 @@ public class QueryType {
             case WEAKAND ->      new QueryType(type, Composite.weakAnd, Tokenization.internal,    Syntax.simple);
             case WEB ->          new QueryType(type, Composite.and,     Tokenization.internal,    Syntax.web);
             case YQL ->          new QueryType(type, Composite.and,     Tokenization.internal,    Syntax.yql);
+            case NEAR ->         new QueryType(type, Composite.near,    Tokenization.linguistics, Syntax.none);
+            case ONEAR ->        new QueryType(type, Composite.oNear,   Tokenization.linguistics, Syntax.none);
         };
     }
 
@@ -236,26 +229,7 @@ public class QueryType {
      */
     public static QueryType from(String typeName) {
         if (typeName == null) return QueryType.from(Query.Type.WEAKAND);
-
-        GrammarAlias grammarAlias = grammarAliases.get(typeName);
-        if (grammarAlias != null) return QueryType.from(grammarAlias);
-
         return QueryType.from(Query.Type.getType(typeName));
-    }
-
-    /** Returns a new query type resolved from a grammar alias. */
-    private static QueryType from(GrammarAlias alias) {
-        return QueryType.from(alias.type()).setComposite(alias.composite());
-    }
-
-    /** A grammar alias definition: alias name, base query type, and composite operator override. */
-    private record GrammarAlias(String name, Query.Type type, Composite composite) {
-
-        /** Returns the alias definitions indexed by alias name. */
-        static Map<String, GrammarAlias> aliases(GrammarAlias... aliases) {
-            return Arrays.stream(aliases)
-                    .collect(Collectors.toUnmodifiableMap(GrammarAlias::name, Function.identity()));
-        }
     }
 
 }
