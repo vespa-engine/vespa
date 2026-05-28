@@ -1232,16 +1232,15 @@ void indexingElm(ParsedField field) :
  *
  * @param field The field to modify.
  */
-SubLanguageData indexingOperationElm(ParsedField field, boolean multiLine) : { }
-
-    {
-        return newIndexingOperation(multiLine);
-        //IndexingOperation oldOp = newIndexingOperation(multiLine);
-        //if (oldOp != null) {
-        //    //ParsedIndexingOp newOp = new ParsedIndexingOp(oldOp.getScript());
-        //    //field.setIndexingOperation(newOp);
-        //}
-    }
+SubLanguageData indexingOperationElm(ParsedField field, boolean multiLine) : {
+    SubLanguageData result = null;
+}
+    (
+        <EOF>
+        |
+        { result = newIndexingOperation(multiLine); }
+    )
+    { return result; }
 ;
 
 /**
@@ -2213,9 +2212,15 @@ void uriInOnnxModel(OnnxModel onnxModel) :
 ;
 
 
-String rankingConstantErrorMessage(String name) : {}
-
-    { return "For ranking constant ' " + name + "'"; }
+String rankingConstantErrorMessage(String name) : {
+    String result = null;
+}
+    (
+        <EOF>
+        |
+        { result = "For ranking constant ' " + name + "'"; }
+    )
+    { return result; }
 ;
 
 
@@ -2641,11 +2646,16 @@ InputType valueType(Reference reference) :
  * See details about why this is needed in consumedExpressionElm.
  */
 Node consumedFeatureListElm(boolean multiline) :
-{
-    SubLanguageData featureList = consumeRankingExpression(multiline);
-    thisProduction.setFeatureListData(featureList);
-    return thisProduction;
-}
+{}
+    (
+        <EOF>
+        |
+        {
+            SubLanguageData featureList = consumeRankingExpression(multiline);
+            thisProduction.setFeatureListData(featureList);
+        }
+    )
+    { return thisProduction; }
 ;
 
 /**
@@ -3154,9 +3164,15 @@ void constantTensor(ParsedRankProfile profile, Reference name) :
     }
 ;
 
-String constantTensorErrorMessage(String rankProfileName, Reference name) : {}
-
-    { return "For constant tensor '" + name + "' in rank profile '" + rankProfileName + "'"; }
+String constantTensorErrorMessage(String rankProfileName, Reference name) : {
+    String result = null;
+}
+    (
+        <EOF>
+        |
+        { result = "For constant tensor '" + name + "' in rank profile '" + rankProfileName + "'"; }
+    )
+    { return result; }
 ;
 
 
@@ -3377,11 +3393,16 @@ void importField(ParsedSchema schema) :
  * allowing the manipulated offsets to propagate upwards in the tree.
  */
 Node consumedExpressionElm(boolean multiline) :
-{
-    SubLanguageData expr = consumeRankingExpression(multiline);
-    thisProduction.setRankingExpressionData(expr);
-    return thisProduction;
-}
+{}
+    (
+        <EOF>
+        |
+        {
+            SubLanguageData expr = consumeRankingExpression(multiline);
+            thisProduction.setRankingExpressionData(expr);
+        }
+    )
+    { return thisProduction; }
 ;
 
 /**

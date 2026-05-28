@@ -435,7 +435,7 @@ FunctionNode scalarOrTensorFunction() :
     Function function;
     ExpressionNode arg1, arg2;
 }
-
+(
     (
       ( function = unaryFunctionName() <LBRACE> arg1 = expression() <RBRACE> )
       {
@@ -450,6 +450,7 @@ FunctionNode scalarOrTensorFunction() :
           return (FunctionNode)thisProduction.expressionNode;
       }
     )
+)
 ;
 
 TensorFunctionNode tensorFunction() :
@@ -985,7 +986,7 @@ String tensorFunctionName() :
 {
     Reduce.Aggregator aggregator;
 }
-
+(
     ( <F>                    { return lastConsumedToken.toString(); } ) |
     ( <MAP>                  { return lastConsumedToken.toString(); } ) |
     ( <MAP_SUBSPACES>        { return lastConsumedToken.toString(); } ) |
@@ -1013,6 +1014,7 @@ String tensorFunctionName() :
     ( <CELL_CAST>            { return lastConsumedToken.toString(); } ) |
     ( <EXPAND>               { return lastConsumedToken.toString(); } ) |
     ( aggregator = tensorReduceAggregator() { return aggregator.toString(); } )
+)
 ;
 
 Function unaryFunctionName() : { }
@@ -1093,17 +1095,18 @@ String identifierStr() :
     Function func;
 }
 
-    SCAN 2 name = tensorFunctionName() { return name; }            |
-    func = unaryFunctionName()  { return func.toString(); } |
-    func = binaryFunctionName() { return func.toString(); } |
-    <IF>                        { return lastConsumedToken.toString(); }     |
-    <IN>                        { return lastConsumedToken.toString(); }     |
-    <SWITCH>                    { return lastConsumedToken.toString(); }     |
-    <CASE>                      { return lastConsumedToken.toString(); }     |
-    <SWITCHDEFAULT>             { return lastConsumedToken.toString(); }     |
-    <IDENTIFIER>                { return lastConsumedToken.toString(); }     |
-    <TRUE>                      { return lastConsumedToken.toString(); }     |
-    <FALSE>                     { return lastConsumedToken.toString(); }
+    ( SCAN 2 name = tensorFunctionName() { return name; }            |
+      func = unaryFunctionName()  { return func.toString(); } |
+      func = binaryFunctionName() { return func.toString(); } |
+      <IF>                        { return lastConsumedToken.toString(); }     |
+      <IN>                        { return lastConsumedToken.toString(); }     |
+      <SWITCH>                    { return lastConsumedToken.toString(); }     |
+      <CASE>                      { return lastConsumedToken.toString(); }     |
+      <SWITCHDEFAULT>             { return lastConsumedToken.toString(); }     |
+      <IDENTIFIER>                { return lastConsumedToken.toString(); }     |
+      <TRUE>                      { return lastConsumedToken.toString(); }     |
+      <FALSE>                     { return lastConsumedToken.toString(); }
+    )
 ;
 
 List<String> identifierList() :
@@ -1122,10 +1125,11 @@ List<String> bracedIdentifierList() :
     List<String> list = new ArrayList<String>();
     String element;
 }
-
+(
     ( element = identifierStr() { return List.of(element); } )
     |
     ( <LBRACE> list = identifierList() <RBRACE> { return list; } )
+)
 ;
 
 // An identifier or integer
@@ -1270,10 +1274,11 @@ void indexedTensorCellSubspace(List cells) :
 {
     ExpressionNode value;
 }
-
+(
     ( <LSQUARE> indexedTensorCellSubspaceList(cells) <RSQUARE> )
     |
     ( value = expression() { cells.add(value); } )
+)
 ;
 
 void tensorCell(TensorType type, java.util.Map cells) :
