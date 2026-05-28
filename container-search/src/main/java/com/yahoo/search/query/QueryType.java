@@ -4,11 +4,7 @@ import com.yahoo.search.Query;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 
-import java.util.Arrays;
-import java.util.Map;
 import java.util.Objects;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Detailed query type deciding how a query string is to be interpreted and processed.
@@ -219,14 +215,7 @@ public class QueryType {
         };
     }
 
-    /**
-     * Returns the query type represented by {@code typeName}.
-     * <p>
-     * If {@code typeName} matches a grammar alias, the query type is resolved from
-     * that alias definition. Otherwise, {@code typeName} is resolved as a
-     * {@link Query.Type} name. If {@code typeName} is null, this returns the
-     * default query type.
-     */
+    /** Returns the query type given by this string, or the default type (WEAKAND) if the given type is null. */
     public static QueryType from(String typeName) {
         if (typeName == null) return QueryType.from(Query.Type.WEAKAND);
         return QueryType.from(Query.Type.getType(typeName));
