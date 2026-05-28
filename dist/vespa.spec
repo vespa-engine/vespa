@@ -174,7 +174,7 @@ Requires: vespa-libatomic >= 14.2.0
 # _dl_sym function.
 # Exclude automated requires for libraries in /opt/vespa-deps/lib64.
 %define _excludes1 %{?_vespa_abseil_excludes}%{?_vespa_gtest_excludes}%{?_vespa_protobuf_excludes}
-%define _excludes2 %{?_vespa_openblas_excludes}%{?_vespa_icu_excludes}
+%define _excludes2 %{?_vespa_openblas_excludes}%{?_vespa_icu_excludes}%{?_vespa_re2_excludes}
 %define _excludes3 %{?_vespa_openssl_excludes}%{?_vespa_xxhash_excludes}
 %define _vespa_excludes %{?_excludes1}%{?_excludes2}%{?_excludes3}
 %global __requires_exclude ^lib(c\\.so\\.6\\(GLIBC_PRIVATE\\)|pthread\\.so\\.0\\(GLIBC_PRIVATE\\)|(lz4|zstd|onnxruntime|hwy|hwy_contrib|mimalloc%{?_vespa_excludes})\\.so\\.[0-9.]*\\([A-Za-z._0-9]*\\))\\(64bit\\)$
