@@ -1756,7 +1756,7 @@ TEST(DocumentMetaStoreTest, move_works) {
     EXPECT_FALSE(dms.getGidEvenIfMoved(1u, gid));
     EXPECT_TRUE(dms.getGid(2u, gid));
     EXPECT_EQ(1u, dms.getNumUsedLids());
-    dms.move(2u, 1u, 0u);
+    dms.move(docid2, 2u, 1u, 0u);
     dms.commit();
     EXPECT_TRUE(dms.getGid(1u, gid));
     EXPECT_FALSE(dms.getGid(2u, gid));
@@ -1785,7 +1785,7 @@ TEST(DocumentMetaStoreTest, getting_full_document_id_works_after_move) {
     dms.removes_complete({1u});
     EXPECT_EQ("", dms.get_docid_string(gid1));
     EXPECT_EQ(docid2.toString(), dms.get_docid_string(gid2));
-    dms.move(2u, 1u, 0u);
+    dms.move(docid2, 2u, 1u, 0u);
     dms.commit();
     EXPECT_EQ("", dms.get_docid_string(gid1));
     EXPECT_EQ(docid2.toString(), dms.get_docid_string(gid2));
@@ -1795,6 +1795,30 @@ TEST(DocumentMetaStoreTest, getting_full_document_id_works_after_move) {
     EXPECT_TRUE(dms.getLid(gid2, lid));
     EXPECT_EQ(1u, lid);
     EXPECT_EQ("", dms.get_docid_string(gid1));
+    EXPECT_EQ(docid2.toString(), dms.get_docid_string(gid2));
+}
+
+TEST(DocumentMetaStoreTest, move_fills_in_missing_docids) {
+    // Start without storing document IDs
+    // Use this to simulate document IDs disappearing
+    DocumentMetaStore dms(createBucketDB(), "[documentmetastore]", search::GrowStrategy(), false, SubDbType::READY);
+    dms.constructFreeList();
+
+    assertPut(bucketId1, time1, 1u, docid1, dms);
+    assertPut(bucketId2, time2, 2u, docid2, dms);
+    EXPECT_TRUE(dms.remove(1u, 0u));
+    dms.commit();
+    dms.removes_complete({1u});
+
+    // Use super secret method to activate storing document ids while DocumentMetaStore exists
+    // This means that we leave lid 2 without a valid document ID
+    dms.set_store_full_document_id(true);
+    // The move should fill in the missing document ID
+    dms.move(docid2, 2u, 1u, 0u);
+    dms.commit();
+    // A wild document ID appeared!
+    EXPECT_EQ(docid2.toString(), dms.get_docid_string(gid2));
+    dms.removes_complete({2u});
     EXPECT_EQ(docid2.toString(), dms.get_docid_string(gid2));
 }
 
@@ -2106,6 +2130,43 @@ TEST(DocumentMetaStoreTest, dms_complains_about_missing_document_ids) {
     EXPECT_TRUE(dms_loaded.requires_document_ids_from_docstore());
 
     remove_save_files(documentmetastore6);
+}
+
+TEST(DocumentMetaStoreTest, invalid_entry_refs_do_not_affect_saving_of_full_document_ids) {
+    std::string       documentmetastore7("documentmetastore7");
+    DocumentMetaStore dms1(createBucketDB(), "[documentmetastore]", search::GrowStrategy(), true, SubDbType::READY);
+    dms1.constructFreeList();
+    addLid(dms1, 1);
+    // Temporarily disable storing of document IDs to get an invalid document ID
+    dms1.set_store_full_document_id(false);
+    addLid(dms1, 2);
+    dms1.set_store_full_document_id(true);
+    addLid(dms1, 3);
+
+    // Lid 2 should have an invalid entry ref
+    EXPECT_FALSE(dms1.getRawMetadata(2).get_relaxed_docid_ref().valid());
+
+    TuneFileAttributes      tuneFileAttributes;
+    DummyFileHeaderContext  fileHeaderContext;
+    AttributeFileSaveTarget saveTarget(tuneFileAttributes, fileHeaderContext);
+    EXPECT_TRUE(dms1.save(saveTarget, documentmetastore7));
+
+    DocumentMetaStore dms_loaded_docids(createBucketDB(), documentmetastore7, search::GrowStrategy(), true,
+                                        SubDbType::READY);
+    EXPECT_TRUE(dms_loaded_docids.load());
+    dms_loaded_docids.constructFreeList();
+    EXPECT_FALSE(dms_loaded_docids.requires_document_ids_from_docstore());
+
+    // Lid 1 and 3 should have their document IDs
+    auto d1 = createDocId(1);
+    EXPECT_EQ(d1.toString(), dms_loaded_docids.get_docid_string(d1.getGlobalId()));
+    auto d3 = createDocId(3);
+    EXPECT_EQ(d3.toString(), dms_loaded_docids.get_docid_string(d3.getGlobalId()));
+
+    // Lid 2 should have an invalid entry ref
+    EXPECT_FALSE(dms_loaded_docids.getRawMetadata(2).get_relaxed_docid_ref().valid());
+
+    remove_save_files(documentmetastore7);
 }
 
 namespace {

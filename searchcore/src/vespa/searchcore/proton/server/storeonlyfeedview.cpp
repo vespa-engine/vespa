@@ -136,7 +136,7 @@ void moveMetadata(documentmetastore::IStore& meta_store, const DocumentId& doc_i
     (void)meta;
     assert(meta.getGid() == doc_id.getGlobalId());
     assert(meta.getTimestamp() == op.getTimestamp());
-    meta_store.move(op.getPrevLid(), op.getLid(), op.get_prepare_serial_num());
+    meta_store.move(doc_id, op.getPrevLid(), op.getLid(), op.get_prepare_serial_num());
 }
 
 class UpdateScope final : public IFieldUpdateCallback {

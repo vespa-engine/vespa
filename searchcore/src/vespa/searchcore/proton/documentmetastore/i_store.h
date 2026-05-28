@@ -98,7 +98,7 @@ struct IStore {
      * is updated atomically from fromLid to toLid.
      * The caller must call removes_complete() with fromLid after document move is done.
      */
-    virtual void move(DocId fromLid, DocId toLid, uint64_t prepare_serial_num) = 0;
+    virtual void move(const document::DocumentId& docid, DocId fromLid, DocId toLid, uint64_t prepare_serial_num) = 0;
 
     /**
      * Check if the lid is valid.

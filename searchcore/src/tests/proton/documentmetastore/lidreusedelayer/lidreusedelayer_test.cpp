@@ -65,7 +65,7 @@ public:
         _removes_complete_lids += lids.size();
     }
 
-    void move(DocId, DocId, uint64_t) override {}
+    void move(const document::DocumentId&, DocId, DocId, uint64_t) override {}
 
     bool validLid(DocId) const override { return true; }
 
