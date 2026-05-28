@@ -6,7 +6,7 @@
 #include "set_strategy_result.h"
 
 #include <vespa/searchcore/proton/common/doctypename.h>
-#include <vespa/searchcore/proton/common/i_reserved_disk_space_provider.h>
+#include <vespa/searchcore/proton/common/i_reserved_disk_space_and_memory_provider.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/time.h>
 
@@ -33,7 +33,7 @@ class ITlsStatsFactory;
 
 } // namespace flushengine
 
-class FlushEngine : public IReservedDiskSpaceProvider {
+class FlushEngine : public IReservedDiskSpaceAndMemoryProvider {
 public:
     class FlushMeta {
     public:
@@ -230,7 +230,7 @@ public:
     uint32_t maxConcurrentNormal() const { return _maxConcurrentNormal; }
     const std::shared_ptr<flushengine::FlushHistory>& get_flush_history() const noexcept { return _flush_history; }
     void configure(uint64_t max_summary_file_size);
-    uint64_t get_reserved_disk_space() const override;
+    ReservedDiskSpaceAndMemory get_reserved_disk_space_and_memory() const override;
 };
 
 } // namespace proton
