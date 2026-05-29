@@ -147,12 +147,9 @@ func doCert(cli *CLI, overwriteCertificate, skipApplicationPackage bool, appendC
 			"Run 'vespa auth cert' first to create an initial certificate")
 	}
 
-	keyPair, err := vespa.CreateKeyPair()
-	if err != nil {
-		return err
-	}
-	if err := keyPair.WriteCertificateFile(certificateFile.path, overwriteCertificate, appendCertificate); err != nil {
-		return fmt.Errorf("could not write certificate: %w", err)
+	if appendCertificate && !ioutil.Exists(certificateFile.path) {
+		return errHint(fmt.Errorf("no certificate found at '%s'", color.CyanString(certificateFile.path)),
+			"Run 'vespa auth cert' first to create an initial certificate")
 	}
 	if appendCertificate {
 		if _, err := os.Stat(privateKeyFile.path); err != nil {
@@ -161,6 +158,13 @@ func doCert(cli *CLI, overwriteCertificate, skipApplicationPackage bool, appendC
 			}
 			return fmt.Errorf("could not stat private key file %s: %w", privateKeyFile.path, err)
 		}
+	}
+	keyPair, err := vespa.CreateKeyPair()
+	if err != nil {
+		return err
+	}
+	if err := keyPair.WriteCertificateFile(certificateFile.path, overwriteCertificate, appendCertificate); err != nil {
+		return fmt.Errorf("could not write certificate: %w", err)
 	}
 	if err := keyPair.WritePrivateKeyFile(privateKeyFile.path, overwriteCertificate || appendCertificate); err != nil {
 		return fmt.Errorf("could not write private key: %w", err)
