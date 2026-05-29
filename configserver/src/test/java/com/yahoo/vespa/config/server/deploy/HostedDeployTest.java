@@ -165,7 +165,7 @@ public class HostedDeployTest {
     }
 
     @Test
-    public void testDeployMultipleVersionsSpecifyingWhicVersionToBuildFirst() {
+    public void testDeployMultipleVersionsSpecifyingWhichVersionToBuildFirst() {
         List<ModelFactory> modelFactories = List.of(createHostedModelFactory(Version.fromString("8.1.0"), clock),
                                                     createHostedModelFactory(Version.fromString("8.2.0"), clock),
                                                     createHostedModelFactory(Version.fromString("8.3.0"), clock));
