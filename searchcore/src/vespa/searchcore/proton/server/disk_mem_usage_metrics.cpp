@@ -23,7 +23,9 @@ DiskMemUsageMetrics::DiskMemUsageMetrics(const ResourceUsageState& usage) noexce
       _total_memory_usage(usage.memoryState().usage()),
       _total_memory_utilization(usage.memoryState().utilization()),
       _transient_memory_usage(usage.transient_memory_usage()),
-      _non_transient_memory_usage(usage.non_transient_memory_usage()) {
+      _non_transient_memory_usage(usage.non_transient_memory_usage()),
+      _reserved_memory(usage.reserved_memory()),
+      _non_transient_memory_usage_and_reserved_memory(usage.non_transient_memory_usage() + usage.reserved_memory()) {
 }
 
 void DiskMemUsageMetrics::merge(const ResourceUsageState& usage) noexcept {
@@ -40,6 +42,10 @@ void DiskMemUsageMetrics::merge(const ResourceUsageState& usage) noexcept {
     _total_memory_utilization = std::max(_total_memory_utilization, usage.memoryState().utilization());
     _transient_memory_usage = std::max(_transient_memory_usage, usage.transient_memory_usage());
     _non_transient_memory_usage = std::max(_non_transient_memory_usage, usage.non_transient_memory_usage());
+    _reserved_memory = std::max(_reserved_memory, usage.reserved_memory());
+    _non_transient_memory_usage_and_reserved_memory =
+        std::max(_non_transient_memory_usage_and_reserved_memory,
+                 usage.non_transient_memory_usage() + usage.reserved_memory());
 }
 
 } // namespace proton

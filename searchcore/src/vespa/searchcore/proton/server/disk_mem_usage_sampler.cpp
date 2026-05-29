@@ -80,8 +80,7 @@ void DiskMemUsageSampler::sampleAndReportUsage() {
     uint64_t                     diskUsage = sampleDiskUsage(resource_usage);
     auto                         reserved_disk_space_and_memory =
         _reserved_disk_space_and_memory_provider.get_reserved_disk_space_and_memory();
-    uint64_t reserved_disk_space = reserved_disk_space_and_memory.reserved_disk_space();
-    _notifier.set_resource_usage(resource_usage, memoryStats, diskUsage, reserved_disk_space);
+    _notifier.set_resource_usage(resource_usage, memoryStats, diskUsage, reserved_disk_space_and_memory);
     _lastSampleTime = vespalib::steady_clock::now();
 }
 
