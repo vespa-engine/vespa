@@ -17,10 +17,10 @@ using vespalib::GenerationGuard;
 namespace search::tensor {
 
 TensorAttributeSaver::TensorAttributeSaver(GenerationGuard&& guard, const attribute::AttributeHeader& header,
-                                           attribute::EntryRefVector&& refs, const TensorStore& tensor_store,
-                                           IndexSaverUP index_saver)
+                                           attribute::EntryRefVectorSnapshot&& ref_vector_snapshot,
+                                           const TensorStore& tensor_store, IndexSaverUP index_saver)
     : AttributeSaver(std::move(guard), header),
-      _refs(std::move(refs)),
+      _ref_vector_snapshot(std::move(ref_vector_snapshot)),
       _tensor_store(tensor_store),
       _index_saver(std::move(index_saver)) {
 }
@@ -57,10 +57,11 @@ bool TensorAttributeSaver::onSave(IAttributeSaveTarget& saveTarget) {
 
 void TensorAttributeSaver::save_tensor_store(BufferWriter& writer) const {
     assert(get_header_version() == TENSOR_ATTRIBUTE_VERSION);
-    const uint32_t      docid_limit(_refs.size());
+    auto                refs_span = _ref_vector_snapshot.span();
+    const uint32_t      docid_limit(refs_span.size());
     vespalib::nbostream stream;
     for (uint32_t lid = 0; lid < docid_limit; ++lid) {
-        if (_tensor_store.encode_stored_tensor(_refs[lid], stream)) {
+        if (_tensor_store.encode_stored_tensor(refs_span[lid], stream)) {
             uint32_t sz = stream.size();
             writer.write(&sz, sizeof(sz));
             writer.write(stream.peek(), stream.size());
@@ -77,10 +78,11 @@ void TensorAttributeSaver::save_dense_tensor_store(BufferWriter&           write
                                                    const DenseTensorStore& dense_tensor_store) const {
     assert(get_header_version() == DENSE_TENSOR_ATTRIBUTE_VERSION);
     auto           raw_size = dense_tensor_store.getBufSize();
-    const uint32_t docid_limit(_refs.size());
+    auto           refs_span = _ref_vector_snapshot.span();
+    const uint32_t docid_limit(refs_span.size());
     for (uint32_t lid = 0; lid < docid_limit; ++lid) {
-        if (_refs[lid].valid()) {
-            auto raw = dense_tensor_store.getRawBuffer(_refs[lid]);
+        if (refs_span[lid].valid()) {
+            auto raw = dense_tensor_store.getRawBuffer(refs_span[lid]);
             writer.write(&tensorIsPresent, sizeof(tensorIsPresent));
             writer.write(static_cast<const char*>(raw), raw_size);
         } else {

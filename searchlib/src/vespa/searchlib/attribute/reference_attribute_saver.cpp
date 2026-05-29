@@ -16,9 +16,9 @@ using vespalib::datastore::EntryRef;
 namespace search::attribute {
 
 ReferenceAttributeSaver::ReferenceAttributeSaver(GenerationGuard&& guard, const AttributeHeader& header,
-                                                 EntryRefVector&& indices, Store& store)
+                                                 EntryRefVectorSnapshot&& indices_snapshot, Store& store)
     : AttributeSaver(std::move(guard), header),
-      _indices(std::move(indices)),
+      _indices_snapshot(std::move(indices_snapshot)),
       _store(store),
       _enumerator(store.getEnumerator(true)) {
 }
@@ -53,7 +53,8 @@ bool ReferenceAttributeSaver::onSave(IAttributeSaveTarget& saveTarget) {
     std::unique_ptr<search::BufferWriter> datWriter(saveTarget.datWriter().allocBufferWriter());
 
     _enumerator.enumerateValues();
-    for (const auto& ref : _indices) {
+    auto indices_span = _indices_snapshot.span();
+    for (const auto& ref : indices_span) {
         uint32_t enumValue = _enumerator.mapEntryRefToEnumValue(ref);
         datWriter->write(&enumValue, sizeof(uint32_t));
     }
