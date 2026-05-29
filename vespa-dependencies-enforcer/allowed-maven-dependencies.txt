@@ -7,7 +7,7 @@ at.yawk.lz4:lz4-java:${at.yawk.lz4.vespa.version}
 backport-util-concurrent:backport-util-concurrent:3.1
 classworlds:classworlds:1.1-alpha-2
 com.dev-smart:ubjson:${dev-smart-ubjson.vespa.version}
-com.ethlo.time:itu:1.10.3
+com.ethlo.time:itu:1.14.0
 com.fasterxml.jackson.core:jackson-annotations:${jackson-annotations.vespa.version}
 com.fasterxml.jackson.core:jackson-core:${jackson2.vespa.version}
 com.fasterxml.jackson.core:jackson-databind:${jackson-databind.vespa.version}
@@ -35,7 +35,7 @@ com.google.re2j:re2j:${re2j.vespa.version}
 com.huaban:jieba-analysis:${jieba.vespa.version}
 com.ibm.icu:icu4j:${icu4j.vespa.version}
 com.microsoft.onnxruntime:onnxruntime:${onnxruntime.vespa.version}
-com.networknt:json-schema-validator:1.5.7
+com.networknt:json-schema-validator:2.0.0
 com.openai:openai-java-client-okhttp:${openai-java.vespa.version}
 com.openai:openai-java-core:${openai-java.vespa.version}
 com.openai:openai-java:${openai-java.vespa.version}
@@ -67,6 +67,8 @@ io.grpc:grpc-util:${grpc.vespa.version}
 io.micrometer:micrometer-commons:${micrometer.vespa.version}
 io.micrometer:micrometer-core:${micrometer.vespa.version}
 io.micrometer:micrometer-observation:${micrometer.vespa.version}
+io.modelcontextprotocol.sdk:mcp-core:${mcp-sdk.vespa.version}
+io.modelcontextprotocol.sdk:mcp-json-jackson2:${mcp-sdk.vespa.version}
 io.modelcontextprotocol.sdk:mcp:${mcp-sdk.vespa.version}
 io.netty:netty-buffer:${netty.vespa.version}
 io.netty:netty-codec-base:${netty.vespa.version}
