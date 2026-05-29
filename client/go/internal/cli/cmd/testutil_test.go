@@ -5,11 +5,13 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
 	"github.com/vespa-engine/vespa/client/go/internal/cli/auth/auth0"
 	"github.com/vespa-engine/vespa/client/go/internal/httputil"
 	"github.com/vespa-engine/vespa/client/go/internal/mock"
@@ -20,6 +22,10 @@ func newTestCLI(t *testing.T, envVars ...string) (*CLI, *bytes.Buffer, *bytes.Bu
 	t.Helper()
 	homeDir := filepath.Join(t.TempDir(), ".vespa")
 	cacheDir := filepath.Join(t.TempDir(), ".cache", "vespa")
+	// Pre-set default_config_scope to suppress the "unset" warning in all tests
+	// that are not specifically testing that warning.
+	require.Nil(t, os.MkdirAll(homeDir, 0o700))
+	require.Nil(t, os.WriteFile(filepath.Join(homeDir, "config.yaml"), []byte("default_config_scope: global\n"), 0o600))
 	env := []string{"VESPA_CLI_HOME=" + homeDir, "VESPA_CLI_CACHE_DIR=" + cacheDir}
 	env = append(env, envVars...)
 	var (
