@@ -357,10 +357,9 @@ public class Flags {
             "Takes effect immediately",
             HOSTNAME);
 
-    public static final UnboundedBooleanFlag TOKEN_AUTH_FOR_DEPLOY = defineFeatureFlag(
-            "token-auth-for-deploy",
-            List.of("bragehk"), "2026-05-19", "2026-09-01"
-            false, 
+    public static final UnboundBooleanFlag TOKEN_AUTH_FOR_DEPLOY = defineFeatureFlag(
+            "token-auth-for-deploy", false, 
+            List.of("bragehk"), "2026-05-19", "2026-09-01",
             "Whether to activate token auth for vespa deploy", 
             "Takes effect at deployment", 
             TENANT_ID);
