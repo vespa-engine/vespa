@@ -94,11 +94,12 @@ type logMessage struct {
 }
 
 type buildStatusResponse struct {
-	Deployed   bool             `json:"deployed"`
-	Status     string           `json:"status"`
-	SkipReason string           `json:"skipReason,omitempty"`
-	Jobs       []buildStatusJob `json:"jobs"`
-	HasFailed  bool             `json:"hasFailed"`
+	Deployed          bool             `json:"deployed"`
+	Status            string           `json:"status"`
+	SkipReason        string           `json:"skipReason,omitempty"`
+	AbsorbedIntoBuild int64            `json:"absorbedIntoBuild,omitempty"`
+	Jobs              []buildStatusJob `json:"jobs"`
+	HasFailed         bool             `json:"hasFailed"`
 }
 
 type buildStatusJob struct {
@@ -472,6 +473,9 @@ func AwaitBuild(target Target, buildID int64, timeout time.Duration, logWriter i
 		var resp buildStatusResponse
 		if err := json.Unmarshal(response, &resp); err != nil {
 			return false, err
+		}
+		if resp.AbsorbedIntoBuild != 0 {
+			return true, fmt.Errorf("build was batched with another deployment, check build %d instead", resp.AbsorbedIntoBuild)
 		}
 		for _, job := range resp.Jobs {
 			if lastStatus[job.JobName] != job.RunStatus {
