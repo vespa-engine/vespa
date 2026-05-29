@@ -163,7 +163,7 @@ func TestCertAppendTwice(t *testing.T) {
 	assert.Equal(t, 3, countPEMBlocks(t, certFile))
 }
 
-func TestCertCleanNoExisting(t *testing.T) {
+func TestCertPruneNoExisting(t *testing.T) {
 	cli, _, stderr := newTestCLI(t)
 	configureCloud(t, cli)
 
@@ -172,7 +172,7 @@ func TestCertCleanNoExisting(t *testing.T) {
 	assert.Contains(t, stderr.String(), "no certificate found")
 }
 
-func TestCertClean(t *testing.T) {
+func TestCertPrune(t *testing.T) {
 	cli, _, _ := newTestCLI(t)
 	configureCloud(t, cli)
 
@@ -209,7 +209,7 @@ func TestCertClean(t *testing.T) {
 	assert.Equal(t, newestBlock.Bytes, prunedBlock.Bytes)
 }
 
-func TestCertCleanInvalidFlagForce(t *testing.T) {
+func TestCertPruneInvalidFlagForce(t *testing.T) {
 	cli, _, stderr := newTestCLI(t)
 	configureCloud(t, cli)
 	err := cli.Run("auth", "cert", "-N", "--prune", "-f")
@@ -217,7 +217,7 @@ func TestCertCleanInvalidFlagForce(t *testing.T) {
 	assert.Contains(t, stderr.String(), "if any flags in the group [prune force append] are set none of the others can be")
 }
 
-func TestCertCleanInvalidFlagAppend(t *testing.T) {
+func TestCertPruneInvalidFlagAppend(t *testing.T) {
 	cli, _, stderr := newTestCLI(t)
 	configureCloud(t, cli)
 	err := cli.Run("auth", "cert", "-N", "--prune", "-A")
