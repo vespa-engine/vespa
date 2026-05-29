@@ -1,7 +1,7 @@
 plugins {
   id("java")
   id("org.jetbrains.kotlin.jvm") version "1.9.24"
-  id("org.jetbrains.intellij.platform") version "2.1.0"
+  id("org.jetbrains.intellij.platform") version "2.13.0"
 }
 
 group = "ai.vespa.schemals"
@@ -54,7 +54,6 @@ dependencies {
 
   intellijPlatform {
     intellijIdeaCommunity("2024.2")
-    instrumentationTools()
     plugin("com.redhat.devtools.lsp4ij:0.7.0")
   }
 }
