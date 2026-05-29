@@ -475,7 +475,7 @@ std::string FlushEngine::flushNextTarget(const std::string& name, const FlushStr
         return "";
     }
     if (name == ctx->getName()) {
-        LOG(info,
+        LOG(warning,
             "The same target %s out of %ld has been asked to flush again. "
             "This might indicate flush logic flaw so I will wait 100 ms before doing it.",
             name.c_str(), flush_strategy_result.list().size());
