@@ -32,14 +32,12 @@ private:
     Vector _data;
 
 public:
-    TransientVectorSnapshot(std::span<const S> source);
+    explicit TransientVectorSnapshot(std::span<const S> source);
     TransientVectorSnapshot(const TransientVectorSnapshot<T>&) = delete;
     TransientVectorSnapshot(TransientVectorSnapshot<T>&&) noexcept = default;
-    ;
     ~TransientVectorSnapshot();
     TransientVectorSnapshot& operator=(const TransientVectorSnapshot<T>&) = delete;
     TransientVectorSnapshot& operator=(TransientVectorSnapshot<T>&&) noexcept = default;
-    ;
     void fill(std::span<const S> source);
     [[nodiscard]] std::span<const T> span() const noexcept { return _data; }
 };
