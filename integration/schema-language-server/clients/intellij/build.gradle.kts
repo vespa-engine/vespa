@@ -1,7 +1,7 @@
 plugins {
   id("java")
   id("org.jetbrains.kotlin.jvm") version "1.9.24"
-  id("org.jetbrains.intellij.platform") version "2.16.0"
+  id("org.jetbrains.intellij.platform") version "2.13.0"
 }
 
 group = "ai.vespa.schemals"
