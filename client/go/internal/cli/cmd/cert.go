@@ -77,7 +77,6 @@ $ vespa auth cert -a my-tenant.my-app.my-instance path/to/application/package`,
 	cmd.Flags().BoolVarP(&overwriteCertificate, "force", "f", false, "Force overwrite of existing certificate and private key")
 	cmd.Flags().BoolVarP(&appendCertificate, "append", "A", false, "Appends a new certificate if certificate already exists. Useful for rotating credentials")
 	cmd.Flags().BoolVarP(&pruneCertificate, "prune", "p", false, "Remove all but the newest certificate from the certificate file. Useful after completing credential rotation")
-	cmd.MarkFlagsMutuallyExclusive("force", "append")
 	cmd.MarkFlagsMutuallyExclusive("prune", "force", "append")
 	// TODO(mpolden): Stop adding certificate to application package and remove this flag
 	cmd.Flags().BoolVarP(&skipApplicationPackage, "no-add", "N", false, "Do not add certificate to the application package")
