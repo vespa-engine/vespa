@@ -2,6 +2,7 @@
 vespa_add_executable(vespalib_quant_test_app TEST
     SOURCES
     centroid_test.cpp
+    eden_quantizer_test.cpp
     hadamard_test.cpp
     multi_bit_packer_test.cpp
     rotator_test.cpp
