@@ -74,6 +74,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean allowUserFilters = true;
     private List<DataplaneToken> dataplaneTokens;
     private boolean logserverOtelCol = false;
+    private boolean tokenAuthForDeploy = false;
     private int maxContentNodeMaintenanceOpConcurrency = -1;
     private int searchCoreMaxOutstandingMoveOps = 100;
     private final Map<ClusterSpec.Type, String> mallocImpl = new HashMap<>();
@@ -131,6 +132,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean allowUserFilters() { return allowUserFilters; }
     @Override public List<DataplaneToken> dataplaneTokens() { return dataplaneTokens; }
     @Override public boolean logserverOtelCol() { return logserverOtelCol; }
+    @Override public boolean tokenAuthForDeploy() { return tokenAuthForDeploy; }
     @Override public int maxContentNodeMaintenanceOpConcurrency() { return maxContentNodeMaintenanceOpConcurrency; }
     @Override public int searchCoreMaxOutstandingMoveOps() { return searchCoreMaxOutstandingMoveOps; }
     @Override public int searchNodeInitializerThreads(String clusterId) { return searchNodeInitializerThreads.getOrDefault(clusterId, 0); }
@@ -314,6 +316,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setLogserverOtelCol(boolean logserverOtelCol) {
         this.logserverOtelCol = logserverOtelCol;
+        return this;
+    }
+
+    public TestProperties setTokenAuthForDeploy(boolean tokenAuthForDeploy) {
+        this.tokenAuthForDeploy = tokenAuthForDeploy;
         return this;
     }
 
