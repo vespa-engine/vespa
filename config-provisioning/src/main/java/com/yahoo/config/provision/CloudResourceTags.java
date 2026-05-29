@@ -28,8 +28,8 @@ public class CloudResourceTags {
     private static final int MAX_VALUE_LENGTH = 256;  // AWS/Azure hard limit (max across clouds)
     private static final int MAX_TAGS = 64;           // GCP hard limit (max across clouds)
 
-    /** Tags reserved for platform/system use; subtracted from each cloud's hard limit to derive the per-cloud customer {@code MAX_TAGS}. */
-    private static final int MAX_SYSTEM_TAGS = 15;
+    /** Maximum number of customer-provided tags allowed per cloud. */
+    private static final int MAX_CUSTOMER_TAGS = 20;
 
     private static final Pattern TEMPLATE_VARIABLE = Pattern.compile("\\$\\{[^}]+\\}");
 
@@ -192,10 +192,9 @@ public class CloudResourceTags {
         private static final String ALLOWED = "letters, digits, spaces, and + - = . _ : / @";
         private static final int MAX_KEY_LENGTH = 128;
         private static final int MAX_VALUE_LENGTH = 256;
-        private static final int MAX_TAGS = 50 - MAX_SYSTEM_TAGS; // AWS allows 50 tags total
 
         static void validate(Map<String, String> tags) {
-            checkTagCount(tags.size(), MAX_TAGS, NAME);
+            checkTagCount(tags.size(), MAX_CUSTOMER_TAGS, NAME);
             for (var entry : tags.entrySet()) {
                 checkLength(entry.getKey(),   MAX_KEY_LENGTH,   "key",   NAME);
                 checkLength(entry.getValue(), MAX_VALUE_LENGTH, "value", NAME);
@@ -213,10 +212,9 @@ public class CloudResourceTags {
         private static final String VALUE_ALLOWED = "lowercase letters, digits, underscores, and hyphens";
         private static final int MAX_KEY_LENGTH = 63;
         private static final int MAX_VALUE_LENGTH = 63;
-        private static final int MAX_TAGS = 64 - MAX_SYSTEM_TAGS; // GCP allows 64 tags total
 
         static void validate(Map<String, String> tags) {
-            checkTagCount(tags.size(), MAX_TAGS, NAME);
+            checkTagCount(tags.size(), MAX_CUSTOMER_TAGS, NAME);
             for (var entry : tags.entrySet()) {
                 checkLength(entry.getKey(),   MAX_KEY_LENGTH,   "key",   NAME);
                 checkLength(entry.getValue(), MAX_VALUE_LENGTH, "value", NAME);
@@ -234,10 +232,9 @@ public class CloudResourceTags {
         private static final Pattern FORBIDDEN_KEY_CHARS = Pattern.compile("[<>%&\\\\?/]");
         private static final int MAX_KEY_LENGTH = 512;
         private static final int MAX_VALUE_LENGTH = 256;
-        private static final int MAX_TAGS = 50 - MAX_SYSTEM_TAGS; // Azure allows 50 tags total
 
         static void validate(Map<String, String> tags) {
-            checkTagCount(tags.size(), MAX_TAGS, NAME);
+            checkTagCount(tags.size(), MAX_CUSTOMER_TAGS, NAME);
             for (var entry : tags.entrySet()) {
                 checkLength(entry.getKey(),   MAX_KEY_LENGTH,   "key",   NAME);
                 checkLength(entry.getValue(), MAX_VALUE_LENGTH, "value", NAME);
@@ -251,8 +248,7 @@ public class CloudResourceTags {
     private static void checkTagCount(int count, int max, String cloud) {
         if (count > max)
             throw new IllegalArgumentException("Too many cloud resource tags (" + count +
-                                               "): " + cloud + " allows at most " + max +
-                                               " customer tags (" + MAX_SYSTEM_TAGS + " of the provider limit are reserved for system tags)");
+                                               "): " + cloud + " allows at most " + max + " customer tags");
     }
 
     private static void checkLength(String value, int max, String field, String cloud) {
