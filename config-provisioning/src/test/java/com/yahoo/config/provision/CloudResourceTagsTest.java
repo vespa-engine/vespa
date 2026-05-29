@@ -315,10 +315,10 @@ class CloudResourceTagsTest {
     }
 
     @Test
-    void aws_rejects_more_than_35_tags() {
-        Map<String, String> tags36 = IntStream.rangeClosed(1, 36).boxed()
+    void aws_rejects_more_than_20_tags() {
+        Map<String, String> tags21 = IntStream.rangeClosed(1, 21).boxed()
                 .collect(toMap(i -> "key" + i, i -> "val" + i));
-        var tags = CloudResourceTags.from(tags36);
+        var tags = CloudResourceTags.from(tags21);
         var e = assertThrows(IllegalArgumentException.class, () -> tags.validateFor(CloudName.AWS));
         assertTrue(e.getMessage().contains("AWS"));
     }
@@ -364,10 +364,10 @@ class CloudResourceTagsTest {
     }
 
     @Test
-    void gcp_rejects_more_than_49_tags() {
-        Map<String, String> tags50 = IntStream.rangeClosed(1, 50).boxed()
+    void gcp_rejects_more_than_20_tags() {
+        Map<String, String> tags21 = IntStream.rangeClosed(1, 21).boxed()
                 .collect(toMap(i -> "key" + i, i -> "val" + i));
-        var tags = CloudResourceTags.from(tags50);
+        var tags = CloudResourceTags.from(tags21);
         var e = assertThrows(IllegalArgumentException.class, () -> tags.validateFor(CloudName.GCP));
         assertTrue(e.getMessage().contains("GCP"));
     }
@@ -449,10 +449,10 @@ class CloudResourceTagsTest {
     }
 
     @Test
-    void azure_rejects_more_than_35_tags() {
-        Map<String, String> tags36 = IntStream.rangeClosed(1, 36).boxed()
+    void azure_rejects_more_than_20_tags() {
+        Map<String, String> tags21 = IntStream.rangeClosed(1, 21).boxed()
                 .collect(toMap(i -> "key" + i, i -> "val" + i));
-        var tags = CloudResourceTags.from(tags36);
+        var tags = CloudResourceTags.from(tags21);
         var e = assertThrows(IllegalArgumentException.class, () -> tags.validateFor(CloudName.AZURE));
         assertTrue(e.getMessage().contains("Azure"));
     }
@@ -465,6 +465,16 @@ class CloudResourceTagsTest {
         assertDoesNotThrow(() -> empty.validateFor(CloudName.AWS));
         assertDoesNotThrow(() -> empty.validateFor(CloudName.GCP));
         assertDoesNotThrow(() -> empty.validateFor(CloudName.AZURE));
+    }
+
+    @Test
+    void twenty_customer_tags_accepted_for_all_clouds() {
+        Map<String, String> tags20 = IntStream.rangeClosed(1, 20).boxed()
+                .collect(toMap(i -> "key" + i, i -> "val" + i));
+        var tags = CloudResourceTags.from(tags20);
+        assertDoesNotThrow(() -> tags.validateFor(CloudName.AWS));
+        assertDoesNotThrow(() -> tags.validateFor(CloudName.GCP));
+        assertDoesNotThrow(() -> tags.validateFor(CloudName.AZURE));
     }
 
     @Test
