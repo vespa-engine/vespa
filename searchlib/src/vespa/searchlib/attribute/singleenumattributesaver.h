@@ -13,14 +13,14 @@ namespace search {
  */
 class SingleValueEnumAttributeSaver : public AttributeSaver {
 private:
-    attribute::EntryRefVector _indices;
-    EnumAttributeSaver        _enumSaver;
+    attribute::EntryRefVectorSnapshot _indices_snapshot;
+    EnumAttributeSaver                _enumSaver;
 
     bool onSave(IAttributeSaveTarget& saveTarget) override;
 
 public:
     SingleValueEnumAttributeSaver(vespalib::GenerationGuard&& guard, const attribute::AttributeHeader& header,
-                                  attribute::EntryRefVector&& indices, IEnumStore& enumStore);
+                                  attribute::EntryRefVectorSnapshot&& indices_snapshot, IEnumStore& enumStore);
 
     ~SingleValueEnumAttributeSaver() override;
 };
