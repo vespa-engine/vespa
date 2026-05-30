@@ -11,6 +11,11 @@ using vespalib::Slime;
 using vespalib::slime::Cursor;
 using vespalib::slime::Inspector;
 
+template <size_t N>
+auto as_name_fn(const char (&name)[N]) {
+    return [name]() { return std::string(name); };
+}
+
 void fox(Profiler& profiler) {
     profiler.start(profiler.resolve("fox"));
     std::this_thread::sleep_for(1ms);
@@ -235,7 +240,7 @@ TEST(ExecutionProfilerTest, flat_profiling_does_not_report_tasks_with_count_0) {
     EXPECT_EQ(slime["profiler"].asString().make_string(), "flat");
     EXPECT_EQ(slime["topn"].asLong(), 2);
     EXPECT_EQ(slime["roots"].entries(), 1);
-    EXPECT_EQ(slime["roots"][0]["name"].asString().make_stringview(), "baz");
+    EXPECT_EQ(slime["roots"][0]["name"].asString().make_string(), "baz");
     EXPECT_EQ(slime["roots"][0]["count"].asLong(), 1);
 }
 
@@ -262,14 +267,13 @@ TEST(ExecutionProfilerTest, profile_using_task_guard) {
 TEST(ExecutionProfilerTest, profile_using_name_guard) {
     Profiler profiler(64);
     auto     binder = Profiler::ThreadBinder::bind(&profiler);
-    auto     make_guard = [](const char* name) { return Profiler::NameGuard([name]() { return name; }); };
     {
-        auto g1 = make_guard("foo");
+        auto g1 = Profiler::NameGuard(as_name_fn("foo"));
         {
-            auto g2 = make_guard("bar");
+            auto g2 = Profiler::NameGuard(&profiler, as_name_fn("bar"));
         }
         {
-            auto g2 = make_guard("bar");
+            auto g2 = Profiler::NameGuard(as_name_fn("bar"));
         }
     }
     Slime slime;
@@ -285,9 +289,8 @@ TEST(ExecutionProfilerTest, name_guard_does_not_resolve_name_if_profiler_is_null
         called = true;
         return "foo";
     };
-    EXPECT_EQ(Profiler::ThreadBinder::current(), nullptr);
     {
-        Profiler::NameGuard g(name_fun);
+        Profiler::NameGuard g(nullptr, name_fun);
     }
     EXPECT_FALSE(called);
 }
@@ -325,7 +328,7 @@ TEST(ExecutionProfilerTest, profile_using_post_name_guard) {
     {
         auto g1 = Profiler::PostNameGuard();
         {
-            auto g2 = Profiler::PostNameGuard();
+            auto g2 = Profiler::PostNameGuard(&profiler);
             g2.set_name([] { return "bar"; });
         }
         {
@@ -347,9 +350,8 @@ TEST(ExecutionProfilerTest, post_name_guard_does_not_resolve_name_if_profiler_is
         called = true;
         return "foo";
     };
-    EXPECT_EQ(Profiler::ThreadBinder::current(), nullptr);
     {
-        auto g = Profiler::PostNameGuard();
+        auto g = Profiler::PostNameGuard(nullptr);
         g.set_name(name_fun);
     }
     EXPECT_FALSE(called);

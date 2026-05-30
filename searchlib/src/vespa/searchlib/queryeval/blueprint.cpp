@@ -21,6 +21,7 @@
 #include <vespa/vespalib/util/execution_profiler.h>
 #include <vespa/vespalib/util/require.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/tls_linkage.h>
 
 #include <vespa/vespalib/objects/visit.hpp>
 
@@ -61,29 +62,25 @@ void maybe_eliminate_self(Blueprint*& self, Blueprint::UP replacement) {
 
 namespace {
 
-uint32_t& next_enum_ref() {
-    thread_local uint32_t next_enum = 0;
-    return next_enum;
-}
+thread_local uint32_t tls_next_enum TLS_LINKAGE = 0;
 
 uint32_t make_enum_value() {
-    uint32_t& next_enum = next_enum_ref();
-    if (next_enum == 0) {
+    if (tls_next_enum == 0) {
         return 0;
     }
-    return next_enum++;
+    return tls_next_enum++;
 }
 
 } // namespace
 
 Blueprint::AutoEnumGuard::AutoEnumGuard(uint32_t first_id) noexcept {
     // enable auto enum
-    next_enum_ref() = first_id;
+    tls_next_enum = first_id;
 }
 
 Blueprint::AutoEnumGuard::~AutoEnumGuard() {
     // disable auto enum
-    next_enum_ref() = 0;
+    tls_next_enum = 0;
 }
 
 //-----------------------------------------------------------------------------

@@ -4,6 +4,7 @@
 
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/stllike/hash_map.h>
+#include <vespa/vespalib/util/tls_linkage.h>
 
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
@@ -22,13 +23,13 @@ struct ExecutionProfiler::ReportContext {
     const std::string& resolve_name(TaskId task) {
         auto pos = name_cache.find(task);
         if (pos == name_cache.end()) {
-            const std::string& name = profiler.name_of(task);
+            std::string name = profiler.name_of(task);
             if (name.empty()) {
-                auto my_name = std::format("#{}", task);
-                pos = name_cache.insert(std::make_pair(task, my_name)).first;
+                name = std::format("#{}", task);
             } else {
-                pos = name_cache.insert(std::make_pair(task, name_mapper(name))).first;
+                name = name_mapper(name);
             }
+            pos = name_cache.insert(std::make_pair(task, name)).first;
         }
         return pos->second;
     }
@@ -36,10 +37,7 @@ struct ExecutionProfiler::ReportContext {
 
 namespace {
 
-ExecutionProfiler*& current_profiler_ref() {
-    thread_local ExecutionProfiler* current_profiler = nullptr;
-    return current_profiler;
-}
+thread_local ExecutionProfiler* tls_current_profiler TLS_LINKAGE = nullptr;
 
 double as_ms(duration d) {
     return (count_ns(d) / 1000000.0);
@@ -264,19 +262,19 @@ void ExecutionProfiler::report(slime::Cursor& obj, const NameMapper& name_mapper
 
 ExecutionProfiler::ThreadBinder::ThreadBinder(ExecutionProfiler* profiler) noexcept {
     if (profiler != nullptr) {
-        _old = current_profiler_ref();
-        current_profiler_ref() = profiler;
+        _old = tls_current_profiler;
+        tls_current_profiler = profiler;
         _active = true;
     }
 }
 
 ExecutionProfiler* ExecutionProfiler::ThreadBinder::current() noexcept {
-    return current_profiler_ref();
+    return tls_current_profiler;
 }
 
 ExecutionProfiler::ThreadBinder::~ThreadBinder() {
     if (_active) {
-        current_profiler_ref() = _old;
+        tls_current_profiler = _old;
     }
 }
 

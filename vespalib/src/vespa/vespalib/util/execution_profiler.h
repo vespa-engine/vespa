@@ -8,6 +8,7 @@
 
 #include <functional>
 #include <string>
+#include <utility>
 
 namespace vespalib {
 
@@ -105,9 +106,10 @@ public:
 
     /**
      * RAII helper that brackets a single task on an
-     * ExecutionProfiler. Cold-path form: uses the profiler bound to
-     * the current thread (if any). The name is built and resolved
-     * only when the profiler is non-null.
+     * ExecutionProfiler. Cold-path form: The name is built and
+     * resolved only when the profiler is non-null. If the profiler is
+     * not given, the one bound to the current thread via ThreadBinder
+     * is used.
      **/
     class NameGuard {
     private:
@@ -119,12 +121,14 @@ public:
         TaskId task_id() const noexcept { return _task; }
 
     public:
-        explicit NameGuard(auto&& name_fn) : _profiler(ThreadBinder::current()) {
+        NameGuard(ExecutionProfiler* profiler, auto&& name_fn) : _profiler(profiler) {
             if (_profiler != nullptr) {
                 _task = _profiler->resolve(name_fn());
                 _profiler->start(_task);
             }
         }
+        explicit NameGuard(auto&& name_fn)
+            : NameGuard(ThreadBinder::current(), std::forward<decltype(name_fn)>(name_fn)) {}
         NameGuard(NameGuard&& rhs) = delete;
         NameGuard(const NameGuard&) = delete;
         NameGuard& operator=(NameGuard&&) = delete;
@@ -138,14 +142,14 @@ public:
 
     /**
      * RAII helper that brackets a single task on an
-     * ExecutionProfiler. Cold-path form: uses the profiler bound to
-     * the current thread (if any). The name is given later via the
-     * set_name function. The name is built and resolved only when the
-     * profiler is non-null.
+     * ExecutionProfiler. Cold-path form: The name is given later via
+     * the set_name function. The name is built and resolved only when
+     * the profiler is non-null. If the profiler is not given, the one
+     * bound to the current thread via ThreadBinder is used.
      **/
     struct PostNameGuard : NameGuard {
-        // start out unnamed
-        PostNameGuard() : NameGuard([] { return ""; }) {}
+        explicit PostNameGuard(ExecutionProfiler* profiler) : NameGuard(profiler, [] { return ""; }) {}
+        PostNameGuard() : PostNameGuard(ThreadBinder::current()) {}
         void set_name(auto&& name_fn) {
             if (profiler() != nullptr) {
                 profiler()->set_name(task_id(), name_fn());
