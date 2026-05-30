@@ -8,7 +8,7 @@ require (
 	github.com/fxamacker/cbor/v2 v2.9.2
 	github.com/go-json-experiment/json v0.0.0-20260520185125-572e7c383686
 	github.com/klauspost/compress v1.18.6
-	github.com/mattn/go-colorable v0.1.14
+	github.com/mattn/go-colorable v0.1.15
 	github.com/mattn/go-isatty v0.0.21
 	github.com/mattn/go-runewidth v0.0.24
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
