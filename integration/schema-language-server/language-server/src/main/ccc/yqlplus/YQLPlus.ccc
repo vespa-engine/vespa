@@ -227,9 +227,10 @@ vespa_grouping_arg:
 String ident: {
     String identifier;
 }
-
+(
     ( identifier = identifierStr { return identifier; } )
     | (identifier = keyword_as_ident { return identifier; })
+)
 ;
 
 String keyword_as_ident:
