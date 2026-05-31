@@ -104,7 +104,9 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         SELECT(7, "select"),
         WEAKAND(8, "weakAnd"),
         TOKENIZE(9, "tokenize"),
-        LINGUISTICS(10, "linguistics");
+        LINGUISTICS(10, "linguistics"),
+        NEAR(11, "near"),
+        ONEAR(12, "onear");
 
         private final int intValue;
         private final String stringValue;
