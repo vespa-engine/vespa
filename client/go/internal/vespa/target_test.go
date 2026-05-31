@@ -541,6 +541,16 @@ func TestAwaitBuild(t *testing.T) {
 	assert.True(t, errors.Is(err, ErrDeployment))
 	assert.Contains(t, err.Error(), "system-test.aws-us-east-1c")
 
+	// Absorbed into another build
+	client.NextResponse(mock.HTTPResponse{
+		URI:    buildStatusURI,
+		Status: 200,
+		Body:   []byte(`{"absorbedIntoBuild": 99, "deployed": false, "hasFailed": false, "jobs": [], "status": "done"}`),
+	})
+	_, _, err = AwaitBuild(target, 42, time.Second, nil)
+	require.NotNil(t, err)
+	assert.Contains(t, err.Error(), "99")
+
 	// Timeout
 	client.NextResponse(mock.HTTPResponse{
 		URI:    buildStatusURI,
