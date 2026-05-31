@@ -23,7 +23,7 @@
     "@mantine/core": "5.10.5",
     "@mantine/hooks": "5.10.5",
     "@mantine/notifications": "5.10.5",
-    "@vitejs/plugin-react": "4.4.1",
+    "@vitejs/plugin-react": "4.7.0",
     "eslint": "9.39.2",
     "eslint-plugin-import": "2.32.0",
     "eslint-plugin-prettier": "5.5.5",
