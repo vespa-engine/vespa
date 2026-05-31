@@ -370,7 +370,7 @@
                     -->
                     <groupId>org.openrewrite.maven</groupId>
                     <artifactId>rewrite-maven-plugin</artifactId>
-                    <version>5.39.0</version>
+                    <version>5.47.3</version>
                     <configuration>
                         <activeRecipes>
                             <recipe>org.openrewrite.java.testing.junit5.JUnit5BestPractices</recipe>
