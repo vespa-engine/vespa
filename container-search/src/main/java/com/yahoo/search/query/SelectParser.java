@@ -11,6 +11,7 @@ import com.yahoo.collections.LazyMap;
 import com.yahoo.collections.LazySet;
 import com.yahoo.geo.DistanceParser;
 import com.yahoo.geo.ParsedDegree;
+import com.yahoo.javacc.UnicodeUtilities;
 import com.yahoo.language.Language;
 import com.yahoo.language.detect.Detector;
 import com.yahoo.language.process.LinguisticsParameters;
@@ -358,20 +359,39 @@ public class SelectParser implements Parser {
     }
 
     private void toGroupingRequest(Inspector groupingJson, StringBuilder b) {
+        toGroupingRequest(groupingJson, null, b);
+    }
+
+    private void toGroupingRequest(Inspector groupingJson, String parentKey, StringBuilder b) {
         switch (groupingJson.type()) {
             case ARRAY:
                 groupingJson.traverse((ArrayTraverser) (index, item) -> {
-                    toGroupingRequest(item, b);
+                    toGroupingRequest(item, parentKey, b);
                     if (index + 1 < groupingJson.entries())
                         b.append(",");
                 });
                 break;
             case OBJECT:
                 groupingJson.traverse((ObjectTraverser) (name, object) -> {
+                    if ("label".equals(name)) {
+                        if (!"each".equals(parentKey)) {
+                            throw new IllegalInputException(
+                                    "'label' is only valid inside an 'each' grouping operation, found inside '"
+                                    + (parentKey == null ? "<root>" : parentKey) + "'");
+                        }
+                        return;
+                    }
                     b.append(name);
                     b.append("(");
-                    toGroupingRequest(object, b);
-                    b.append(") ");
+                    toGroupingRequest(object, name, b);
+                    b.append(")");
+                    if ("each".equals(name) && object.type() == OBJECT) {
+                        String label = readLabel(object);
+                        if (label != null) {
+                            b.append(" as(").append(UnicodeUtilities.quote(label, '"')).append(")");
+                        }
+                    }
+                    b.append(" ");
                 });
                 break;
             case STRING:
@@ -381,6 +401,19 @@ public class SelectParser implements Parser {
                 b.append(groupingJson.toString());
                 break;
         }
+    }
+
+    private static String readLabel(Inspector eachBody) {
+        Inspector field = eachBody.field("label");
+        if (!field.valid()) return null;
+        if (field.type() != STRING) {
+            throw new IllegalInputException("'label' in grouping must be a string, got " + field.type());
+        }
+        String s = field.asString();
+        if (s.isBlank()) {
+            throw new IllegalInputException("'label' in grouping must not be empty or whitespace");
+        }
+        return s;
     }
 
     private Item buildFunctionCall(String key, Inspector value) {
