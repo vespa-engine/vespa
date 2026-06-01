@@ -204,6 +204,20 @@ void traceQuery(uint32_t traceLevel, Trace& trace, const Query& query) {
     }
 }
 
+void trace_setup_stats(uint32_t trace_level, Trace& trace, const search::queryeval::QuerySetupStats& setup_stats) {
+    if (trace_level <= trace.getLevel()) {
+        vespalib::slime::ObjectInserter inserter(trace.createCursor("query_setup_stats"), "stats");
+        setup_stats.as_slime(inserter);
+    }
+}
+
+void trace_eval_stats(uint32_t trace_level, Trace& trace, const search::queryeval::QueryEvalStats& eval_stats) {
+    if (trace_level <= trace.getLevel()) {
+        vespalib::slime::ObjectInserter inserter(trace.createCursor("query_eval_stats"), "stats");
+        eval_stats.as_slime(inserter);
+    }
+}
+
 void updateCoverage(Coverage& coverage, const MaybeMatchPhaseLimiter& limiter, const MatchingStats& my_stats,
                     const search::IDocumentMetaStore& metaStore, const bucketdb::BucketDBOwner& bucketdb) {
     size_t spaceEstimate = (my_stats.softDoomed()) ? my_stats.docidSpaceCovered() : limiter.getDocIdSpaceEstimate();
@@ -297,6 +311,7 @@ SearchReply::UP Matcher::match(const SearchRequest& request, vespalib::ThreadBun
             &owned_objects.readGuard, setup_stats, searchContext.getDocIdLimit(), true);
         isDoomExplicit = mtf->get_request_context().getDoom().isExplicitSoftDoom();
         traceQuery(6, request.trace(), mtf->query());
+        trace_setup_stats(6, request.trace(), setup_stats);
 
         if (!mtf->valid()) {
             return reply;
@@ -356,6 +371,7 @@ SearchReply::UP Matcher::match(const SearchRequest& request, vespalib::ThreadBun
         }
     }
     // Destructors of search iterators have written stats to queryeval_stats
+    trace_eval_stats(6, request.trace(), *queryeval_stats);
     // We can now merge the stats into my_stats
     my_stats.add_query_eval_stats(*queryeval_stats);
     queryeval_stats.reset(); // Manually reset pointer to include object tear-down in measured time
