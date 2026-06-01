@@ -4,6 +4,9 @@
 package cmd
 
 import (
+	"bytes"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -94,6 +97,132 @@ func TestCertAdd(t *testing.T) {
 	stdout.Reset()
 	require.Nil(t, cli.Run("auth", "cert", "add", "-f", pkgDir))
 	assert.Equal(t, fmt.Sprintf("Success: Copied certificate from '%s' to '%s'\n", certificate, pkgCertificate), stdout.String())
+}
+
+func countPEMBlocks(t *testing.T, path string) int {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	require.Nil(t, err)
+	count := 0
+	for {
+		var block *pem.Block
+		block, data = pem.Decode(data)
+		if block == nil {
+			break
+		}
+		_, err := x509.ParseCertificate(block.Bytes)
+		require.Nil(t, err)
+		count++
+	}
+	return count
+}
+
+func TestCertAppendNoExisting(t *testing.T) {
+	cli, _, stderr := newTestCLI(t)
+	configureCloud(t, cli)
+
+	err := cli.Run("auth", "cert", "-N", "-A")
+	require.NotNil(t, err)
+	assert.Contains(t, stderr.String(), "no certificate found")
+	assert.Contains(t, stderr.String(), "Run 'vespa auth cert' first")
+}
+
+func TestCertAppend(t *testing.T) {
+	cli, stdout, _ := newTestCLI(t)
+	configureCloud(t, cli)
+	stdout.Reset()
+
+	require.Nil(t, cli.Run("auth", "cert", "-N"))
+
+	app, err := vespa.ApplicationFromString("t1.a1.i1")
+	require.Nil(t, err)
+	certFile := filepath.Join(cli.config.homeDir, app.String(), "data-plane-public-cert.pem")
+
+	assert.Equal(t, 1, countPEMBlocks(t, certFile))
+
+	stdout.Reset()
+	require.Nil(t, cli.Run("auth", "cert", "-N", "-A"))
+	assert.Contains(t, stdout.String(), "Certificate written to")
+	assert.Equal(t, 2, countPEMBlocks(t, certFile))
+}
+
+func TestCertAppendTwice(t *testing.T) {
+	cli, _, _ := newTestCLI(t)
+	configureCloud(t, cli)
+
+	require.Nil(t, cli.Run("auth", "cert", "-N"))
+
+	app, err := vespa.ApplicationFromString("t1.a1.i1")
+	require.Nil(t, err)
+	certFile := filepath.Join(cli.config.homeDir, app.String(), "data-plane-public-cert.pem")
+
+	require.Nil(t, cli.Run("auth", "cert", "-N", "-A"))
+	assert.Equal(t, 2, countPEMBlocks(t, certFile))
+
+	require.Nil(t, cli.Run("auth", "cert", "-N", "-A"))
+	assert.Equal(t, 3, countPEMBlocks(t, certFile))
+}
+
+func TestCertPruneNoExisting(t *testing.T) {
+	cli, _, stderr := newTestCLI(t)
+	configureCloud(t, cli)
+
+	err := cli.Run("auth", "cert", "-N", "--prune")
+	require.NotNil(t, err)
+	assert.Contains(t, stderr.String(), "no certificate found")
+}
+
+func TestCertPrune(t *testing.T) {
+	cli, _, _ := newTestCLI(t)
+	configureCloud(t, cli)
+
+	require.Nil(t, cli.Run("auth", "cert", "-N"))
+	require.Nil(t, cli.Run("auth", "cert", "-N", "-A"))
+	require.Nil(t, cli.Run("auth", "cert", "-N", "-A"))
+
+	app, err := vespa.ApplicationFromString("t1.a1.i1")
+	require.Nil(t, err)
+	certFile := filepath.Join(cli.config.homeDir, app.String(), "data-plane-public-cert.pem")
+	assert.Equal(t, 3, countPEMBlocks(t, certFile))
+
+	// Read newest cert (first block) before pruning
+	certData, err := os.ReadFile(certFile)
+	require.Nil(t, err)
+	newestBlock, _ := pem.Decode(certData)
+	require.NotNil(t, newestBlock)
+
+	// Fresh CLI needed: pflag doesn't reset flag vars between Execute() calls, so
+	// appendCertificate stays true from the -A runs above and would trip the
+	// "cannot combine --prune with --append" guard when using --prune.
+	cli2, stdout2, _ := newTestCLI(t, "VESPA_CLI_HOME="+cli.config.homeDir)
+	cli2.isTerminal = func() bool { return true }
+	cli2.Stdin = bytes.NewBufferString("y\n")
+	require.Nil(t, cli2.Run("auth", "cert", "-N", "--prune"))
+	assert.Contains(t, stdout2.String(), "Pruned certificate file")
+	assert.Equal(t, 1, countPEMBlocks(t, certFile))
+
+	// Verify pruned file contains the newest cert
+	prunedData, err := os.ReadFile(certFile)
+	require.Nil(t, err)
+	prunedBlock, _ := pem.Decode(prunedData)
+	require.NotNil(t, prunedBlock)
+	assert.Equal(t, newestBlock.Bytes, prunedBlock.Bytes)
+}
+
+func TestCertPruneInvalidFlagForce(t *testing.T) {
+	cli, _, stderr := newTestCLI(t)
+	configureCloud(t, cli)
+	err := cli.Run("auth", "cert", "-N", "--prune", "-f")
+	require.NotNil(t, err)
+	assert.Contains(t, stderr.String(), "if any flags in the group [prune force append] are set none of the others can be")
+}
+
+func TestCertPruneInvalidFlagAppend(t *testing.T) {
+	cli, _, stderr := newTestCLI(t)
+	configureCloud(t, cli)
+	err := cli.Run("auth", "cert", "-N", "--prune", "-A")
+	require.NotNil(t, err)
+	assert.Contains(t, stderr.String(), "if any flags in the group [prune force append] are set none of the others can be")
 }
 
 func TestCertNoAdd(t *testing.T) {
