@@ -1227,7 +1227,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                             ClusterSpec.Type.container,
                                             clusterId,
                                             zoneEndpoint(context, clusterId),
-                                            deployState.getDeployLogger(),
+                                            deployState,
                                             false,
                                             context.clusterInfo().build(),
                                             sidecars);
@@ -1266,7 +1266,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                                                       ClusterSpec.Type.container,
                                                                                       clusterId,
                                                                                       zoneEndpoint(context, clusterId),
-                                                                                      deployLogger,
+                                                                                      context.getDeployState(),
                                                                                       getZooKeeper(containerElement) != null,
                                                                                       context.clusterInfo().build(),
                                                                                       sidecars);
@@ -1287,7 +1287,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .availabilityZones(context.availabilityZones())
                 .build();
         Map<HostResource, ClusterMembership> hosts =
-                cluster.getRoot().hostSystem().allocateHosts(clusterSpec, Capacity.fromRequiredNodeType(type), deployLogger);
+                cluster.getRoot().hostSystem().allocateHosts(clusterSpec,
+                                                             Capacity.fromRequiredNodeType(type),
+                                                             context.getDeployState());
         return createNodesFromHosts(hosts, cluster, context.getDeployState());
     }
 

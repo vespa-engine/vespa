@@ -10,6 +10,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
+import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
@@ -30,6 +31,8 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.AzName;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.ProvisionContext;
+import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.io.IOUtils;
 import com.yahoo.schema.Application;
@@ -41,6 +44,7 @@ import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionBuilder;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.documentmodel.DocumentModel;
+import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 import com.yahoo.vespa.model.container.search.QueryProfilesBuilder;
 import com.yahoo.vespa.model.container.search.SemanticRules;
@@ -59,6 +63,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.logging.Level;
 
 import static com.yahoo.vespa.model.container.search.SemanticRules.SemanticRuleBuilder;
 
@@ -163,6 +168,10 @@ public class DeployState implements ConfigDefinitionStore {
 
     /** Returns the validation overrides of this. This is never null. */
     public ValidationOverrides validationOverrides() { return validationOverrides; }
+
+    public boolean warnOnlyOnValidationFailure() {
+        return isHosted() && zone().environment().isManuallyDeployed();
+    }
 
     @Override
     public final Optional<ConfigDefinition> getConfigDefinition(ConfigDefinitionKey defKey) {

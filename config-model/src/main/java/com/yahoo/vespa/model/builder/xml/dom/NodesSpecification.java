@@ -5,6 +5,7 @@ import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.AzName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.CloudAccount;
@@ -306,17 +307,17 @@ public class NodesSpecification {
     public Map<HostResource, ClusterMembership> provision(HostSystem hostSystem,
                                                           ClusterSpec.Type clusterType,
                                                           ClusterSpec.Id clusterId,
-                                                          DeployLogger logger,
+                                                          DeployState deployState,
                                                           boolean stateful,
                                                           ClusterInfo clusterInfo) {
-        return provision(hostSystem, clusterType, clusterId, ZoneEndpoint.defaultEndpoint, logger, stateful, clusterInfo, List.of());
+        return provision(hostSystem, clusterType, clusterId, ZoneEndpoint.defaultEndpoint, deployState, stateful, clusterInfo, List.of());
     }
 
     public Map<HostResource, ClusterMembership> provision(HostSystem hostSystem,
                                                           ClusterSpec.Type clusterType,
                                                           ClusterSpec.Id clusterId,
                                                           ZoneEndpoint zoneEndpoint,
-                                                          DeployLogger logger,
+                                                          DeployState deployState,
                                                           boolean stateful,
                                                           ClusterInfo info,
                                                           List<SidecarSpec> sidecars) {
@@ -331,7 +332,9 @@ public class NodesSpecification {
                 .profile(profile)
                 .build();
 
-        return hostSystem.allocateHosts(cluster, Capacity.from(min, max, groupSize, required, canFail, cloudAccount, cloudResourceTags, info), logger);
+        return hostSystem.allocateHosts(cluster,
+                                        Capacity.from(min, max, groupSize, required, canFail, cloudAccount, cloudResourceTags, info),
+                                        deployState);
     }
 
     private static Pair<NodeResources, NodeResources> nodeResources(ModelElement nodesElement) {

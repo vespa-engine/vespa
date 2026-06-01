@@ -12,6 +12,7 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.ProvisionContext;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.SidecarSpec;
 import com.yahoo.vespa.model.VespaModel;
@@ -171,7 +172,7 @@ public class RestartOnDeployForSidecarValidatorTest {
         }
 
         @Override
-        public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionLogger logger) {
+        public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionContext context) {
             var hosts = new ArrayList<HostSpec>();
             var resources = capacity.minResources().nodeResources();
 
