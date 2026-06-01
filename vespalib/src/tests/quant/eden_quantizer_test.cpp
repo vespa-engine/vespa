@@ -17,6 +17,17 @@ namespace vespalib::quant {
 
 namespace {
 
+// Mean Squared Error (MSE)
+[[nodiscard]] float mse(std::span<const float> expected, std::span<const float> actual) noexcept {
+    assert(expected.size() == actual.size());
+    float sum_err_sq = 0;
+    for (size_t i = 0; i < expected.size(); ++i) {
+        const float diff = expected[i] - actual[i];
+        sum_err_sq += diff * diff;
+    }
+    return sum_err_sq / static_cast<float>(expected.size());
+}
+
 // Your friendly neighborhood Euclidean vector length
 [[nodiscard]] float l2_norm(std::span<const float> v) noexcept {
     float l2 = 0;
@@ -46,6 +57,7 @@ struct QuantTestParams {
     QuantMode            quant_mode = QuantMode::MSE;
     std::vector<float>   in_v;
     float                expected_scale = 0;
+    float                expected_mse = 0;
     std::vector<uint8_t> expected_quant_bytes;
     std::vector<float>   expected_dequant;
 
@@ -68,6 +80,7 @@ void do_test_quantization_roundtrip(const QuantTestParams& qtp) {
     std::vector<float> v_dq(qtp.in_v.size());
     q.dequantize(v_q, v_dq);
     EXPECT_THAT(v_dq, Pointwise(FloatEq(), qtp.expected_dequant));
+    EXPECT_THAT(mse(qtp.in_v, v_dq), FloatEq(qtp.expected_mse));
 }
 
 [[nodiscard]] std::vector<float> my_16d_test_vector() {
@@ -101,6 +114,7 @@ TEST(EdenQuantizerTest, quantization_is_deterministic_for_a_given_seed_1_bit) {
     qtp.seed = 0x1337beef;
     qtp.quant_mode = QuantMode::MSE;
     qtp.expected_scale = 3.79910803;
+    qtp.expected_mse = 6.12402296;
     qtp.expected_quant_bytes = std::vector<uint8_t>{0x46, 0x71};
     // "We have vector at home":
     qtp.expected_dequant = std::vector<float>{
@@ -111,6 +125,7 @@ TEST(EdenQuantizerTest, quantization_is_deterministic_for_a_given_seed_1_bit) {
     qtp.quant_mode = QuantMode::InnerProduct;
     // Quantization bits shall be the same as for MSE; only the scaling factor differs.
     qtp.expected_scale = 6.33117437;
+    qtp.expected_mse = 10.2056208;
     qtp.expected_dequant = std::vector<float>{
         2.52577353,      -12.6288662,    2.52577353, -2.52577353, -2.52577353, 2.52577353, 2.52577353, -7.57731962,
         -3.57627869e-07, 4.76837158e-07, 5.05154657, -5.05154657, -5.05154657, 5.05154657, 5.05154657, -5.051546576};
@@ -123,6 +138,7 @@ TEST(EdenQuantizerTest, quantization_is_deterministic_for_a_given_seed_1_bit) {
     qtp.seed = 0xdeadbeef;
     qtp.quant_mode = QuantMode::MSE;
     qtp.expected_scale = 3.83827376;
+    qtp.expected_mse = 5.93359375;
     qtp.expected_quant_bytes = std::vector<uint8_t>{0x78, 0xB2};
     qtp.expected_dequant = std::vector<float>{
         3.06249952, -3.06249952, 3.06249952, -3.06249952, -6.12499905, 0,          1.1920929e-07, -1.1920929e-07,
@@ -137,6 +153,7 @@ TEST(EdenQuantizerTest, quantization_is_deterministic_for_a_given_seed_2_bits) {
     qtp.seed = 0x1337beef;
     qtp.quant_mode = QuantMode::MSE;
     qtp.expected_scale = 4.7562151;
+    qtp.expected_mse = 1.86790919;
     qtp.expected_quant_bytes = std::vector<uint8_t>{0x29, 0x64, 0x56, 0x7A};
     qtp.expected_dequant = std::vector<float>{
         1.0767597,  -5.38379765, 3.5919354,  -3.59193587, -6.10711145, 1.07675958, 1.0767591,  -3.23027873,
@@ -152,6 +169,7 @@ TEST(EdenQuantizerTest, quantization_is_deterministic_for_a_given_seed_3_bits) {
     qtp.seed = 0x1337beef;
     qtp.quant_mode = QuantMode::MSE;
     qtp.expected_scale = 3.91597676;
+    qtp.expected_mse = 0.524829865;
     qtp.expected_quant_bytes = std::vector<uint8_t>{0x2A, 0x81, 0x71, 0xD5, 0xD6, 0x5A};
     qtp.expected_dequant = std::vector<float>{
         1.48024964, -3.39981604, 5.21384239, -5.21384239, -4.36423588, 2.06201744, 1.4802494,  -4.44074869,
@@ -166,6 +184,7 @@ TEST(EdenQuantizerTest, quantization_is_deterministic_for_a_given_seed_4_bits) {
     qtp.seed = 0x1337beef;
     qtp.quant_mode = QuantMode::MSE;
     qtp.expected_scale = 3.70460153;
+    qtp.expected_mse = 0.0788929164;
     qtp.expected_quant_bytes = std::vector<uint8_t>{0xB5, 0x09, 0x61, 0x68, 0x5A, 0x77, 0xAA, 0x4C};
     qtp.expected_dequant = std::vector<float>{
         2.81700802, -3.76831293, 5.44971228, -5.4497118,  -4.02572727, 2.86288738, 1.80706978, -3.05899167,
