@@ -78,6 +78,13 @@ public class CustomerRpmService {
     @JsonProperty("disabled")
     private final Boolean disabled;
 
+    /**
+     * Optional flag that determines whether {@code memoryLimitMib} is subtracted
+     * from the Vespa node container. Defaults to false.
+     */
+    @JsonProperty("reserveMemory")
+    private final Boolean reserveMemory;
+
     @JsonCreator
     public CustomerRpmService(
         @JsonProperty(value = "unit") String unit,
@@ -87,7 +94,8 @@ public class CustomerRpmService {
         @JsonProperty(value = "memory") Double memoryLimitMib,
         @JsonProperty("cpu") Double cpuLimitCores,
         @JsonProperty("repositories") List<String> repositories,
-        @JsonProperty("disabled") Boolean disabled
+        @JsonProperty("disabled") Boolean disabled,
+        @JsonProperty("reserveMemory") Boolean reserveMemory
     ) {
         this.unit = Objects.requireNonNull(unit);
         this.packageName = packageName;
@@ -97,6 +105,7 @@ public class CustomerRpmService {
         this.cpuLimitCores = cpuLimitCores == null || cpuLimitCores <= 0.0 ? null : cpuLimitCores;
         this.repositories = repositories == null ? List.of() : repositories;
         this.disabled = disabled != null && disabled;
+        this.reserveMemory = reserveMemory != null && reserveMemory;
     }
 
     public String unitName() {
@@ -123,6 +132,10 @@ public class CustomerRpmService {
         return disabled;
     }
 
+    public boolean reserveMemory() {
+        return reserveMemory;
+    }
+
     public Optional<Double> cpuLimitCores() {
         return Optional.ofNullable(cpuLimitCores);
     }
@@ -144,21 +157,23 @@ public class CustomerRpmService {
             packageRelease().equals(other.packageRelease()) &&
             repositories().equals(other.repositories()) &&
             cpuLimitCores().equals(other.cpuLimitCores()) &&
-            disabled() == other.disabled();
+            disabled() == other.disabled() &&
+            reserveMemory() == other.reserveMemory();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(unitName(), packageName(), packageVersion(), packageRelease(), memoryLimitMib(), cpuLimitCores(), repositories(), disabled());
+        return Objects.hash(unitName(), packageName(), packageVersion(), packageRelease(), memoryLimitMib(), cpuLimitCores(), repositories(), disabled(), reserveMemory());
     }
 
     @Override
     public String toString() {
-        return Text.format("{ unit: %s, package: %s, memory: %s MiB, cpu: %s, repositories: %s, disabled: %s }",
+        return Text.format("{ unit: %s, package: %s, memory: %s MiB, cpu: %s, repositories: %s, disabled: %s, reserveMemory: %s }",
                         unitName(), packageName(), memoryLimitMib(),
                         cpuLimitCores().map(Object::toString).orElse("unlimited"),
                         String.join(", ", repositories()),
-                        disabled()
+                        disabled(),
+                        reserveMemory()
                 );
     }
 
