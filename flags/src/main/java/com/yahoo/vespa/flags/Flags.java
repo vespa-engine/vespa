@@ -177,7 +177,7 @@ public class Flags {
 
     public static final UnboundJacksonFlag<Sidecars> SIDECARS_FOR_TEST = defineJacksonFlag(
             "sidecars-for-test", Sidecars.DEFAULT, Sidecars.class,
-            List.of("glebashnik"), "2025-04-25", "2026-06-01",
+            List.of("glebashnik"), "2025-04-25", "2026-09-01",
             "Specifies configuration for sidecars to testing provisioning",
             "Takes effect at redeployment",
             __ -> true,
@@ -186,7 +186,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_TRITON = defineFeatureFlag(
             "use-triton", false,
-            List.of("bjorncs", "glebashnik"), "2025-04-30", "2026-06-01",
+            List.of("bjorncs", "glebashnik"), "2025-04-30", "2026-09-01",
             "Whether to use Triton as ONNX runtime",
             "Takes effect at redeployment",
             TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_TYPE, CLUSTER_ID, VESPA_VERSION
