@@ -6,6 +6,7 @@
 
 #include <vespa/vespalib/stllike/allocator.h>
 
+#include <cstdint>
 #include <span>
 #include <type_traits>
 #include <vector>
@@ -44,5 +45,9 @@ public:
 
 template <>
 void TransientVectorSnapshot<datastore::EntryRef>::fill(std::span<const datastore::AtomicEntryRef> source);
+
+extern template class TransientVectorSnapshot<vespalib::datastore::EntryRef>;
+extern template class TransientVectorSnapshot<uint8_t>;
+extern template class TransientVectorSnapshot<uint16_t>;
 
 } // namespace vespalib

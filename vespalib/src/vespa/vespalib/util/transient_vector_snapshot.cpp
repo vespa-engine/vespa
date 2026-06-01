@@ -18,5 +18,7 @@ void TransientVectorSnapshot<EntryRef>::fill(std::span<const AtomicEntryRef> src
 }
 
 template class TransientVectorSnapshot<EntryRef>;
+template class TransientVectorSnapshot<uint8_t>;
+template class TransientVectorSnapshot<uint16_t>;
 
 } // namespace vespalib

@@ -4,13 +4,15 @@
 
 #include "nbo_write.h"
 
+#include <vespa/vespalib/util/transient_vector_snapshot.hpp>
+
 using search::BufferWriter;
 using vespalib::datastore::EntryRef;
 
 namespace search::predicate {
 
 DocumentFeaturesStoreSaver::DocumentFeaturesStoreSaver(const DocumentFeaturesStore& store)
-    : _refs(store._refs),
+    : _refs_snapshot(store._refs),
       _features(store._features),
       _ranges(store._ranges),
       _word_store(store._word_store),
@@ -21,10 +23,11 @@ DocumentFeaturesStoreSaver::~DocumentFeaturesStoreSaver() = default;
 
 namespace {
 
-template <typename RefsVector, typename RangesStore>
-void find_used_words(const RefsVector& refs, const RangesStore& ranges,
+template <typename RefsVectorSnapshot, typename RangesStore>
+void find_used_words(const RefsVectorSnapshot& refs_snapshot, const RangesStore& ranges,
                      std::unordered_map<uint32_t, uint32_t>& word_map, std::vector<EntryRef>& word_list) {
-    for (auto& cur_refs : refs) {
+    auto refs_span = refs_snapshot.span();
+    for (auto& cur_refs : refs_span) {
         auto ranges_ref = cur_refs._ranges;
         if (ranges_ref.valid()) {
             auto range_vector = ranges.get(ranges_ref);
@@ -49,21 +52,22 @@ void serialize_words(BufferWriter& writer, const std::vector<EntryRef>& word_lis
     }
 }
 
-template <typename RefsVector, typename RangesStore>
-void serialize_ranges(BufferWriter& writer, const RefsVector& refs, const RangesStore& ranges,
+template <typename RefsVectorSnapshot, typename RangesStore>
+void serialize_ranges(BufferWriter& writer, const RefsVectorSnapshot& refs_snapshot, const RangesStore& ranges,
                       std::unordered_map<uint32_t, uint32_t>& word_map) {
     uint32_t ranges_size = 0;
-    if (!refs.empty()) {
-        assert(!refs.front()._ranges.valid());
-        for (auto& cur_refs : refs) {
+    auto     refs_span = refs_snapshot.span();
+    if (!refs_span.empty()) {
+        assert(!refs_span.front()._ranges.valid());
+        for (auto& cur_refs : refs_span) {
             if (cur_refs._ranges.valid()) {
                 ++ranges_size;
             }
         }
     }
     nbo_write(writer, ranges_size);
-    for (uint32_t doc_id = 0; doc_id < refs.size(); ++doc_id) {
-        auto ranges_ref = refs[doc_id]._ranges;
+    for (uint32_t doc_id = 0; doc_id < refs_span.size(); ++doc_id) {
+        auto ranges_ref = refs_span[doc_id]._ranges;
         if (ranges_ref.valid()) {
             nbo_write(writer, doc_id);
             auto range_vector = ranges.get(ranges_ref);
@@ -77,20 +81,22 @@ void serialize_ranges(BufferWriter& writer, const RefsVector& refs, const Ranges
     }
 }
 
-template <typename RefsVector, typename FeaturesStore>
-void serialize_features(BufferWriter& writer, const RefsVector& refs, const FeaturesStore& features) {
+template <typename RefsVectorSnapshot, typename FeaturesStore>
+void serialize_features(BufferWriter& writer, const RefsVectorSnapshot& refs_snapshot,
+                        const FeaturesStore& features) {
     uint32_t features_size = 0;
-    if (!refs.empty()) {
-        assert(!refs.front()._features.valid());
-        for (auto& cur_refs : refs) {
+    auto     refs_span = refs_snapshot.span();
+    if (!refs_span.empty()) {
+        assert(!refs_span.front()._features.valid());
+        for (auto& cur_refs : refs_span) {
             if (cur_refs._features.valid()) {
                 ++features_size;
             }
         }
     }
     nbo_write(writer, features_size);
-    for (uint32_t doc_id = 0; doc_id < refs.size(); ++doc_id) {
-        auto features_ref = refs[doc_id]._features;
+    for (uint32_t doc_id = 0; doc_id < refs_span.size(); ++doc_id) {
+        auto features_ref = refs_span[doc_id]._features;
         if (features_ref.valid()) {
             nbo_write(writer, doc_id);
             auto feature_vector = features.get(features_ref);
@@ -108,12 +114,12 @@ void DocumentFeaturesStoreSaver::save(BufferWriter& writer) const {
     std::vector<EntryRef>                  word_list;
     std::unordered_map<uint32_t, uint32_t> word_map;
 
-    find_used_words(_refs, _ranges, word_map, word_list);
+    find_used_words(_refs_snapshot, _ranges, word_map, word_list);
 
     nbo_write<uint16_t>(writer, _arity);
     serialize_words(writer, word_list, _word_store);
-    serialize_ranges(writer, _refs, _ranges, word_map);
-    serialize_features(writer, _refs, _features);
+    serialize_ranges(writer, _refs_snapshot, _ranges, word_map);
+    serialize_features(writer, _refs_snapshot, _features);
 }
 
 } // namespace search::predicate
