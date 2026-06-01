@@ -6,7 +6,7 @@ dependencies of Vespa detected by scanning package manifests.
 For the hand-maintained list of vendored C/C++ libraries (Boost, OpenSSL,
 ICU, etc.), see [`NOTICES`](NOTICES).
 
-Last updated: 2026-05-31
+Last updated: 2026-06-01
 
 ---
 
@@ -895,9 +895,9 @@ Last updated: 2026-05-31
 
 ---
 
-## org.apache.maven.plugin-tools 3.13.1 — Apache 2.0
+## org.apache.maven.plugin-tools 3.15.2 — Apache 2.0
 
-- Homepage: <https://www.apache.org/>
+- Homepage: <https://maven.apache.org/plugin-tools>
 - The Apache Software Foundation
 
 ---
@@ -909,7 +909,7 @@ Last updated: 2026-05-31
 
 ---
 
-## org.apache.maven.resolver 2.0.17 — Apache 2.0
+## org.apache.maven.resolver 2.0.18 — Apache 2.0
 
 - Homepage: <https://maven.apache.org/resolver/>
 - The Apache Software Foundation
@@ -1114,14 +1114,14 @@ Last updated: 2026-05-31
 
 ---
 
-## react 19.1.0 — MIT
+## react 19.2.6 — MIT
 
 - Homepage: <https://react.dev/>
 - Copyright Meta Platforms, Inc. and affiliates
 
 ---
 
-## react-dom 19.1.0 — MIT
+## react-dom 19.2.6 — MIT
 
 - Homepage: <https://react.dev/>
 - Copyright Meta Platforms, Inc. and affiliates
@@ -1192,7 +1192,7 @@ Last updated: 2026-05-31
 
 ---
 
-## scheduler 0.26.0 — MIT
+## scheduler 0.27.0 — MIT
 
 - Homepage: <https://react.dev/>
 - Copyright Meta Platforms, Inc. and affiliates
