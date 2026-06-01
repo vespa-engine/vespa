@@ -148,10 +148,8 @@ std::unique_ptr<AttributeSaver> PredicateAttribute::onInitSave(std::string_view 
     auto interval_range_vector_view = _interval_range_vector.make_read_view(_interval_range_vector.size());
     return std::make_unique<PredicateAttributeSaver>(
         std::move(guard), std::move(header), getVersion(), _index->make_saver(),
-        PredicateAttributeSaver::MinFeatureVector{min_feature_view.begin(), min_feature_view.end()},
-        PredicateAttributeSaver::IntervalRangeVector{interval_range_vector_view.begin(),
-                                                     interval_range_vector_view.end()},
-        _max_interval_range);
+        PredicateAttributeSaver::MinFeatureVectorSnapshot(min_feature_view),
+        PredicateAttributeSaver::IntervalRangeVectorSnapshot(interval_range_vector_view), _max_interval_range);
 }
 
 size_t PredicateAttribute::transient_memory_for_flush() const noexcept {
