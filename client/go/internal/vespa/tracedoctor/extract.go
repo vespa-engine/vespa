@@ -501,6 +501,16 @@ func (p protonTrace) globalFilterPerf() *topNPerf {
 	return perf
 }
 
+func (p protonTrace) setupPerf() *topNPerf {
+	perf := newTopNPerf()
+	slime.Select(p.source, hasTag("setup_profiling"), func(p *slime.Path, v slime.Value) {
+		eachSample(v, func(sample perfSample) {
+			perf.addSample(sample.name(), sample.count(), sample.selfTimeMs())
+		})
+	})
+	return perf
+}
+
 func (p protonTrace) findThreadTraces() []threadTrace {
 	var traces []threadTrace
 	slime.Select(p.source, hasTag("query_execution"), func(p *slime.Path, v slime.Value) {

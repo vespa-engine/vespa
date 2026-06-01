@@ -22,6 +22,15 @@ func (tp *topNPerf) impact() float64 {
 	return tp.totalTimeMs
 }
 
+func (tp *topNPerf) hasSelfTimeAbove(limit float64) bool {
+	for _, entry := range tp.entries {
+		if entry.selfTimeMs > limit {
+			return true
+		}
+	}
+	return false
+}
+
 func newTopNPerf() *topNPerf {
 	return &topNPerf{
 		entries: make(map[string]*topNPerfEntry),
@@ -55,9 +64,16 @@ func (tp *topNPerf) topN(n int) []topNPerfEntry {
 }
 
 func (tp *topNPerf) render(out *output) {
+	tp.renderSelfTimeAbove(out, -1)
+}
+
+func (tp *topNPerf) renderSelfTimeAbove(out *output, limit float64) {
 	sortedEntries := tp.topN(len(tp.entries))
 	tab := newTable().str("count").str("self_ms").str("component").commit().line()
 	for _, entry := range sortedEntries {
+		if !(entry.selfTimeMs > limit) {
+			break
+		}
 		tab.str(fmt.Sprintf("%d", entry.count)).str(fmt.Sprintf("%.3f", entry.selfTimeMs)).str(entry.name).commit()
 	}
 	tab.render(out)
