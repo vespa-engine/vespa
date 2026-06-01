@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include "transient_vector_snapshot_base.h"
-
 #include <vespa/vespalib/stllike/allocator.h>
 
 #include <cstdint>
@@ -24,7 +22,7 @@ namespace vespalib {
  * Class containing a transient snapshot of a vector.
  */
 template <typename T>
-class TransientVectorSnapshot : public TransientVectorSnapshotBase {
+class TransientVectorSnapshot {
 public:
     using S = std::conditional_t<std::is_same_v<T, datastore::EntryRef>, datastore::AtomicEntryRef, T>;
     using Vector = std::vector<T, allocator_large<T>>;
