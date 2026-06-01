@@ -10,6 +10,11 @@ namespace vespalib {
 /*
  * Class used to track large transient memory allocations, e.g. when flushing
  * attribute vectors.
+ *
+ * The memory usage sampler is expected to first get total transient memory from this class,
+ * sample /proc/self/statm and get total transient memory again. If the generation changed
+ * then we might get glitches in the calculated value for non-transient memory due to a
+ * race between sampling of /proc/self/statm and tracking of transient memory.
  */
 class TransientMemoryTracker {
     static std::mutex _mutex;
@@ -29,11 +34,12 @@ public:
     ~TransientMemoryTracker();
     TransientMemoryTracker& operator=(const TransientMemoryTracker&) = delete;
     TransientMemoryTracker& operator=(TransientMemoryTracker&& rhs) noexcept;
-    static Lock get_lock() { return Lock(_mutex); }
-    void set_transient_memory(size_t value);
-    void set_transient_memory(Lock lock, size_t value);
+    [[nodiscard]] static Lock acquire_lock() noexcept { return Lock(_mutex); }
+    void set_transient_memory(size_t value) noexcept;
+    void set_transient_memory(Lock lock, size_t value) noexcept;
     void swap(TransientMemoryTracker& rhs) noexcept;
-    static TotalTransientMemoryAndGeneration get_total_transient_memory();
+    // The following member function should not be called while holding the lock.
+    [[nodiscard]] static TotalTransientMemoryAndGeneration get_total_transient_memory() noexcept;
 };
 
 } // namespace vespalib

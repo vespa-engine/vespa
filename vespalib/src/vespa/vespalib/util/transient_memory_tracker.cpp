@@ -32,14 +32,14 @@ TransientMemoryTracker& TransientMemoryTracker::operator=(TransientMemoryTracker
     return *this;
 }
 
-void TransientMemoryTracker::set_transient_memory(size_t value) {
+void TransientMemoryTracker::set_transient_memory(size_t value) noexcept {
     if (value == _transient_memory) {
         return;
     }
-    set_transient_memory(get_lock(), value);
+    set_transient_memory(acquire_lock(), value);
 };
 
-void TransientMemoryTracker::set_transient_memory(Lock lock, size_t value) {
+void TransientMemoryTracker::set_transient_memory(Lock lock, size_t value) noexcept {
     assert(lock.mutex() == &_mutex);
     assert(lock.owns_lock());
     if (value == _transient_memory) {
@@ -58,7 +58,8 @@ void TransientMemoryTracker::swap(TransientMemoryTracker& rhs) noexcept {
     std::swap(_transient_memory, rhs._transient_memory);
 }
 
-TransientMemoryTracker::TotalTransientMemoryAndGeneration TransientMemoryTracker::get_total_transient_memory() {
+TransientMemoryTracker::TotalTransientMemoryAndGeneration
+TransientMemoryTracker::get_total_transient_memory() noexcept {
     Lock lock(_mutex);
     return {_total_transient_memory, _generation};
 }
