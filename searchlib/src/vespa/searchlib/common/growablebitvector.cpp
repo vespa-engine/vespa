@@ -2,6 +2,8 @@
 
 #include "growablebitvector.h"
 
+#include "transient_bitvector_snapshot.h"
+
 #include <cassert>
 
 /////////////////////////////////
@@ -30,10 +32,10 @@ GrowableBitVector::GrowableBitVector(BitWord::Index newSize, BitWord::Index newC
 
 GrowableBitVector::~GrowableBitVector() = default;
 
-std::unique_ptr<const BitVector> GrowableBitVector::make_snapshot(BitWord::Index new_size) {
+TransientBitVectorSnapshot GrowableBitVector::make_snapshot(BitWord::Index new_size) {
     AllocatedBitVector& self = *_stored;
     assert(new_size <= self.size());
-    return std::make_unique<AllocatedBitVector>(new_size, new_size, &self, nullptr, false);
+    return TransientBitVectorSnapshot(new_size, self);
 }
 
 void GrowableBitVector::fixup_after_load() {

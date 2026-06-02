@@ -3,7 +3,6 @@
 #include "single_bool_attribute_saver.h"
 
 #include <vespa/searchlib/attribute/iattributesavetarget.h>
-#include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 
 #include <cassert>
@@ -12,8 +11,9 @@ using vespalib::GenerationGuard;
 
 namespace search::attribute {
 
-SingleBoolAttributeSaver::SingleBoolAttributeSaver(const AttributeHeader& header, std::unique_ptr<const BitVector> bv)
-    : AttributeSaver(GenerationGuard(), header), _bv(std::move(bv)) {
+SingleBoolAttributeSaver::SingleBoolAttributeSaver(const AttributeHeader&     header,
+                                                   TransientBitVectorSnapshot bv_snapshot)
+    : AttributeSaver(GenerationGuard(), header), _bv_snapshot(std::move(bv_snapshot)) {
 }
 
 SingleBoolAttributeSaver::~SingleBoolAttributeSaver() = default;
@@ -21,11 +21,12 @@ SingleBoolAttributeSaver::~SingleBoolAttributeSaver() = default;
 bool SingleBoolAttributeSaver::onSave(IAttributeSaveTarget& saveTarget) {
     std::unique_ptr<search::BufferWriter> writer(saveTarget.datWriter().allocBufferWriter());
     assert(!saveTarget.getEnumerated());
-    assert(_bv->getStartIndex() == 0);
-    uint32_t bits = _bv->size();
+    const auto& bv = _bv_snapshot.bitvector();
+    assert(bv.getStartIndex() == 0);
+    uint32_t bits = bv.size();
     writer->write(&bits, sizeof(bits));
-    auto entry_size = _bv->legacy_num_bytes_with_single_guard_bit(bits);
-    writer->write(_bv->getStart(), entry_size);
+    auto entry_size = bv.legacy_num_bytes_with_single_guard_bit(bits);
+    writer->write(bv.getStart(), entry_size);
     writer->flush();
     return true;
 }

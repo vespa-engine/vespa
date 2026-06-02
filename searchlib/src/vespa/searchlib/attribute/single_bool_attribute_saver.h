@@ -4,9 +4,7 @@
 
 #include "attributesaver.h"
 
-namespace search {
-class BitVector;
-}
+#include <vespa/searchlib/common/transient_bitvector_snapshot.h>
 
 namespace search::attribute {
 
@@ -14,11 +12,11 @@ namespace search::attribute {
  * Class for saving a single bool attribute.
  */
 class SingleBoolAttributeSaver : public AttributeSaver {
-    std::unique_ptr<const BitVector> _bv;
+    TransientBitVectorSnapshot _bv_snapshot;
     bool onSave(IAttributeSaveTarget& saveTarget) override;
 
 public:
-    SingleBoolAttributeSaver(const AttributeHeader& header, std::unique_ptr<const BitVector> bv);
+    SingleBoolAttributeSaver(const AttributeHeader& header, TransientBitVectorSnapshot bv_snapshot);
     ~SingleBoolAttributeSaver() override;
 };
 
