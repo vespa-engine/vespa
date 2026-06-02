@@ -13,12 +13,14 @@
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/transient_memory_tracker.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.attributefilewriter");
 
 using search::common::FileHeaderContext;
 using vespalib::getLastErrorString;
+using vespalib::TransientMemoryTracker;
 
 namespace search {
 
@@ -125,15 +127,26 @@ void AttributeFileWriter::addTags(vespalib::GenericHeader& header) {
     header.putTag(Tag("desc", _desc));
 }
 
+void AttributeFileWriter::write_buf_helper(const BufferBuf& buf) {
+    size_t bufLen = buf.getDataLen();
+    // TODO: pad to DirectIO boundary when burning bridges
+    writeDirectIOAligned(*_file, buf.getData(), bufLen);
+    _fileBitSize += bufLen * 8;
+}
+
 AttributeFileWriter::Buffer AttributeFileWriter::allocBuf(size_t size) {
     return std::make_unique<BufferBuf>(size, FileSettings::DIRECTIO_ALIGNMENT);
 }
 
 void AttributeFileWriter::writeBuf(Buffer buf) {
-    size_t bufLen = buf->getDataLen();
-    // TODO: pad to DirectIO boundary when burning bridges
-    writeDirectIOAligned(*_file, buf->getData(), bufLen);
-    _fileBitSize += bufLen * 8;
+    write_buf_helper(*buf);
+}
+
+void AttributeFileWriter::write_buf(Buffer buf, TransientMemoryTracker tracker) {
+    write_buf_helper(*buf);
+    auto lock = tracker.acquire_lock();
+    buf.reset();
+    tracker.set_transient_memory(std::move(lock), 0);
 }
 
 void AttributeFileWriter::close() {
