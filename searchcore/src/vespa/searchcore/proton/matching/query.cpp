@@ -341,13 +341,13 @@ bool Query::handle_global_filter(Blueprint& blueprint, const vespalib::Doom& doo
         trace->addEvent(5, "Handle global filter in query execution plan");
     }
     blueprint.set_global_filter(*global_filter, estimated_hit_ratio);
-    perform_ann_searches(blueprint, doom, ann_deadline_config, setup_stats);
+    perform_ann_searches(blueprint, doom, ann_deadline_config, setup_stats, trace);
     return true;
 }
 
 void Query::perform_ann_searches(Blueprint& blueprint, const vespalib::Doom& doom,
                                  const AnnDeadlineConfiguration&     ann_deadline_config,
-                                 search::queryeval::QuerySetupStats& setup_stats) {
+                                 search::queryeval::QuerySetupStats& setup_stats, search::engine::Trace* trace) {
     std::queue<search::queryeval::NearestNeighborBlueprint*> ann_blueprints;
     blueprint.each_node_post_order([&ann_blueprints](Blueprint& bp) {
         if (auto nearest_neighbor = bp.asNearestNeighbor()) {
@@ -356,6 +356,9 @@ void Query::perform_ann_searches(Blueprint& blueprint, const vespalib::Doom& doo
             }
         }
     });
+    if (trace && !ann_blueprints.empty()) {
+        trace->addEvent(5, ann_blueprints.size() > 1 ? "Perform ann searches" : "Perform ann search");
+    }
     while (!ann_blueprints.empty()) {
         const vespalib::Deadline deadline = ann_deadline_config.make_ann_deadline(doom, ann_blueprints.size());
         ann_blueprints.front()->perform_index_search(deadline, setup_stats);
