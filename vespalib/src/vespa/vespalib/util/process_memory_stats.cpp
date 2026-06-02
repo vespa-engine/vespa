@@ -3,9 +3,10 @@
 #include "process_memory_stats.h"
 
 #include "exceptions.h"
+#include "size_literals.h"
+#include "transient_memory_tracker.h"
 
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/util/size_literals.h>
 
 #include <unistd.h>
 
@@ -49,6 +50,18 @@ ProcessMemoryStats ProcessMemoryStats::createStatsFromStatm() {
     return ret;
 }
 
+ProcessMemoryStats ProcessMemoryStats::create_stats_from_statm(uint64_t& transient_memory_generation) {
+    auto res = createStatsFromStatm();
+    auto total_transient = TransientMemoryTracker::get_total_transient_memory();
+    while (total_transient._generation != transient_memory_generation) {
+        transient_memory_generation = total_transient._generation;
+        res = createStatsFromStatm();
+        total_transient = TransientMemoryTracker::get_total_transient_memory();
+    }
+    res._transient_memory = total_transient._total_transient_memory;
+    return res;
+}
+
 ProcessMemoryStats ProcessMemoryStats::parseStatm(asciistream& statm) {
     ProcessMemoryStats ret;
     try {
@@ -74,11 +87,12 @@ ProcessMemoryStats ProcessMemoryStats::parseStatm(asciistream& statm) {
     return ret;
 }
 
-ProcessMemoryStats::ProcessMemoryStats() : _virt(0), _mapped_rss(0), _anonymous_rss(0) {
+ProcessMemoryStats::ProcessMemoryStats() noexcept
+    : _virt(0), _mapped_rss(0), _anonymous_rss(0), _transient_memory(0) {
 }
 
-ProcessMemoryStats::ProcessMemoryStats(uint64_t virt, uint64_t mapped_rss, uint64_t anonymous_rss)
-    : _virt(virt), _mapped_rss(mapped_rss), _anonymous_rss(anonymous_rss) {
+ProcessMemoryStats::ProcessMemoryStats(uint64_t virt, uint64_t mapped_rss, uint64_t anonymous_rss) noexcept
+    : _virt(virt), _mapped_rss(mapped_rss), _anonymous_rss(anonymous_rss), _transient_memory(0) {
 }
 
 namespace {
@@ -90,16 +104,15 @@ bool similar(uint64_t lhs, uint64_t rhs, double epsilon) {
 
 } // namespace
 
-bool ProcessMemoryStats::similarTo(const ProcessMemoryStats& rhs, double epsilon) const {
+bool ProcessMemoryStats::similarTo(const ProcessMemoryStats& rhs, double epsilon) const noexcept {
     return similar(_virt, rhs._virt, epsilon) && similar(_mapped_rss, rhs._mapped_rss, epsilon) &&
            similar(_anonymous_rss, rhs._anonymous_rss, epsilon);
 }
 
 std::string ProcessMemoryStats::toString() const {
     vespalib::asciistream stream;
-    stream << "_virt=" << _virt << ", "
-           << "_mapped_rss=" << _mapped_rss << ", "
-           << "_anonymous_rss=" << _anonymous_rss;
+    stream << "_virt=" << _virt << ", _mapped_rss=" << _mapped_rss << ", _anonymous_rss=" << _anonymous_rss
+           << ", transient_memory=" << _transient_memory;
     return stream.str();
 }
 
@@ -107,9 +120,10 @@ ProcessMemoryStats ProcessMemoryStats::create(double epsilon) {
     constexpr size_t                NUM_TRIES = 3;
     std::vector<ProcessMemoryStats> samples;
     samples.reserve(NUM_TRIES + 1);
-    samples.push_back(createStatsFromStatm());
+    uint64_t transient_memory_generation = TransientMemoryTracker::get_total_transient_memory()._generation;
+    samples.push_back(create_stats_from_statm(transient_memory_generation));
     for (size_t i = 0; i < NUM_TRIES; ++i) {
-        samples.push_back(createStatsFromStatm());
+        samples.push_back(create_stats_from_statm(transient_memory_generation));
         if (samples.back().similarTo(*(samples.rbegin() + 1), epsilon)) {
             return samples.back();
         }
