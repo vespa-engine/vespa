@@ -9,6 +9,8 @@
 
 namespace search {
 
+class TransientBitVectorSnapshot;
+
 class GrowableBitVector {
 public:
     using Alloc = vespalib::alloc::Alloc;
@@ -22,7 +24,7 @@ public:
     AllocatedBitVector& writer() { return *_stored; }
 
     BitWord::Index extraByteSize() const { return sizeof(AllocatedBitVector) + acquire_self().extraByteSize(); }
-    std::unique_ptr<const BitVector> make_snapshot(BitWord::Index new_size);
+    TransientBitVectorSnapshot make_snapshot(BitWord::Index new_size);
     void fixup_after_load(); // set guard bits and update count of true bits.
 
     /** Will return true if a a buffer is held */

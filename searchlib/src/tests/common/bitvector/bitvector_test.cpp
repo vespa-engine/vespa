@@ -6,6 +6,7 @@
 #include <vespa/searchlib/common/partialbitvector.h>
 #include <vespa/searchlib/common/rankedhit.h>
 #include <vespa/searchlib/common/read_stats.h>
+#include <vespa/searchlib/common/transient_bitvector_snapshot.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/vespalib/datastore/aligner.h>
@@ -966,7 +967,7 @@ TEST_F(BitVectorTest, read_from_attribute_vector_file_with_1_guard_bit_in_stored
     file.ReadBuf(bv.writer().getStart(), entry_size);
     bv.fixup_after_load();
     auto bv_snap = bv.make_snapshot(bv.writer().size());
-    EXPECT_TRUE(*bv_snap == *_file_bv);
+    EXPECT_TRUE(bv_snap.bitvector() == *_file_bv);
     g.assign_generation(Generation(1));
     g.reclaim(Generation(2));
 }
