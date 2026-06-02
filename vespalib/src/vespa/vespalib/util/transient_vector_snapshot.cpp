@@ -10,11 +10,13 @@ using vespalib::datastore::EntryRef;
 namespace vespalib {
 
 template <>
-void TransientVectorSnapshot<EntryRef>::fill(std::span<const AtomicEntryRef> src) {
-    _data.reserve(src.size());
-    for (const auto& entry : src) {
+void TransientVectorSnapshot<EntryRef>::fill(std::span<const AtomicEntryRef> source) {
+    auto lock = _tracker.acquire_lock();
+    _data.reserve(source.size());
+    for (const auto& entry : source) {
         _data.emplace_back(entry.load_relaxed());
     }
+    _tracker.set_transient_memory(std::move(lock), sizeof(AtomicEntryRef) * source.size());
 }
 
 template class TransientVectorSnapshot<EntryRef>;

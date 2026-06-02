@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "transient_memory_tracker.h"
+
 #include <vespa/vespalib/stllike/allocator.h>
 
 #include <cstdint>
@@ -28,7 +30,8 @@ public:
     using Vector = std::vector<T, allocator_large<T>>;
 
 private:
-    Vector _data;
+    Vector                 _data;
+    TransientMemoryTracker _tracker;
 
 public:
     explicit TransientVectorSnapshot(std::span<const S> source);
