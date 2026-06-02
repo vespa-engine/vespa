@@ -75,7 +75,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private List<DataplaneToken> dataplaneTokens;
     private boolean logserverOtelCol = false;
     private int maxContentNodeMaintenanceOpConcurrency = -1;
-    private int searchCoreMaxOutstandingMoveOps = 100;
     private final Map<ClusterSpec.Type, String> mallocImpl = new HashMap<>();
     private final Map<String, Integer> searchNodeInitializerThreads = new HashMap<>();
     private boolean useTriton = false;
@@ -132,7 +131,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public List<DataplaneToken> dataplaneTokens() { return dataplaneTokens; }
     @Override public boolean logserverOtelCol() { return logserverOtelCol; }
     @Override public int maxContentNodeMaintenanceOpConcurrency() { return maxContentNodeMaintenanceOpConcurrency; }
-    @Override public int searchCoreMaxOutstandingMoveOps() { return searchCoreMaxOutstandingMoveOps; }
     @Override public int searchNodeInitializerThreads(String clusterId) { return searchNodeInitializerThreads.getOrDefault(clusterId, 0); }
     @Override public String mallocImpl(Optional<ClusterSpec.Type> clusterType) {
         return clusterType.map(c -> mallocImpl.get(c)).orElse(null);
@@ -324,11 +322,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setMaxContentNodeMaintenanceOpConcurrency(int maxConcurrency) {
         this.maxContentNodeMaintenanceOpConcurrency = maxConcurrency;
-        return this;
-    }
-
-    public TestProperties setSearchCoreMaxOutstandingMoveOps(int value) {
-        this.searchCoreMaxOutstandingMoveOps = value;
         return this;
     }
 

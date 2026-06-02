@@ -192,13 +192,6 @@ public class Flags {
             TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_TYPE, CLUSTER_ID, VESPA_VERSION
     );
 
-    public static final UnboundIntFlag SEARCH_CORE_MAX_OUTSTANDING_MOVE_OPS = defineIntFlag(
-            "search-core-max-outstanding-move-ops", 100,
-            List.of("hmusum"), "2025-07-09", "2026-09-01",
-            "The max outstanding move operations a maintenance job can have before being blocked.",
-            "Takes effect at next deployment of the application",
-            INSTANCE_ID);
-
     public static final UnboundBooleanFlag RESTART_ON_DEPLOY_MAINTAINER = defineFeatureFlag(
             "restart-on-deploy-maintainer", false,
             List.of("glebashnik"), "2026-04-07", "2026-10-07",
