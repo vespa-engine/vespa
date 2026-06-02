@@ -20,12 +20,18 @@ AttributeMemoryFileWriter::Buffer AttributeMemoryFileWriter::allocBuf(size_t siz
 }
 
 void AttributeMemoryFileWriter::writeBuf(Buffer buf) {
-    _bufs.emplace_back(std::move(buf));
+    vespalib::TransientMemoryTracker tracker;
+    tracker.set_transient_memory(buf->getDataLen());
+    _bufs.emplace_back(std::make_pair(std::move(buf), std::move(tracker)));
+}
+
+void AttributeMemoryFileWriter::write_buf(Buffer buf, vespalib::TransientMemoryTracker tracker) {
+    _bufs.emplace_back(std::make_pair(std::move(buf), std::move(tracker)));
 }
 
 void AttributeMemoryFileWriter::writeTo(IAttributeFileWriter& writer) {
     for (auto& buf : _bufs) {
-        writer.writeBuf(std::move(buf));
+        writer.write_buf(std::move(buf.first), std::move(buf.second));
     }
     _bufs.clear();
 }
