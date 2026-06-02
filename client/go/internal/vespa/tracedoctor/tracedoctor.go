@@ -61,6 +61,7 @@ type Context struct {
 	timing              *timing
 	showMedianNode      bool
 	showDispatchedQuery bool
+	showNnsDetails      bool
 	makePrompt          bool
 	showQueryNodes      []int
 }
@@ -71,6 +72,10 @@ func (ctx *Context) ShowMedianNode() {
 
 func (ctx *Context) ShowDispatchedQuery() {
 	ctx.showDispatchedQuery = true
+}
+
+func (ctx *Context) ShowNnsDetails() {
+	ctx.showNnsDetails = true
 }
 
 func (ctx *Context) MakePrompt() {
