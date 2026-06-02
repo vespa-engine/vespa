@@ -64,6 +64,17 @@ namespace proton::matching {
 
 namespace {
 
+void trace_global_filter_decision(uint32_t trace_level, search::engine::Trace* trace, double estimated_hit_ratio,
+                                  double lower_limit, double upper_limit) {
+    if (trace && trace_level <= trace->getLevel()) {
+        vespalib::slime::ObjectInserter inserter(trace->createCursor("global_filter_decision"), "parameters");
+        vespalib::slime::Cursor&        cursor = inserter.insertObject();
+        cursor.setDouble("estimated_hit_ratio", estimated_hit_ratio);
+        cursor.setDouble("lower_limit", lower_limit);
+        cursor.setDouble("upper_limit", upper_limit);
+    }
+}
+
 Node::UP inject(Node::UP query, Node::UP to_inject) {
     if (auto* my_and = dynamic_cast<search::query::And*>(query.get())) {
         my_and->append(std::move(to_inject));
@@ -283,12 +294,11 @@ bool Query::handle_global_filter(Blueprint& blueprint, const vespalib::Doom& doo
     // Use overrides from blueprint if provided
     double effective_lower_limit = limits.lower_limit.value_or(global_filter_lower_limit);
     double effective_upper_limit = limits.upper_limit.value_or(global_filter_upper_limit);
+    trace_global_filter_decision(5, trace, estimated_hit_ratio, effective_lower_limit, effective_upper_limit);
 
     if (estimated_hit_ratio < effective_lower_limit) {
         if (trace && trace->shouldTrace(5)) {
-            trace->addEvent(
-                5, vespalib::make_string("Skip calculate global filter (estimated_hit_ratio (%f) < lower_limit (%f))",
-                                         estimated_hit_ratio, effective_lower_limit));
+            trace->addEvent(5, "Skip calculate global filter");
         }
         return false;
     }
@@ -304,9 +314,7 @@ bool Query::handle_global_filter(Blueprint& blueprint, const vespalib::Doom& doo
     std::shared_ptr<GlobalFilter> global_filter;
     if (estimated_hit_ratio <= effective_upper_limit) {
         if (trace && trace->shouldTrace(5)) {
-            trace->addEvent(
-                5, vespalib::make_string("Calculate global filter (estimated_hit_ratio (%f) <= upper_limit (%f))",
-                                         estimated_hit_ratio, effective_upper_limit));
+            trace->addEvent(5, "Calculate global filter");
         }
         global_filter = GlobalFilter::create(blueprint, docid_limit, thread_bundle, trace);
         if (!global_filter->is_active()) {
@@ -317,21 +325,14 @@ bool Query::handle_global_filter(Blueprint& blueprint, const vespalib::Doom& doo
         }
     } else {
         if (trace && trace->shouldTrace(5)) {
-            trace->addEvent(5,
-                            vespalib::make_string(
-                                "Create match everything global filter (estimated_hit_ratio (%f) > upper_limit (%f))",
-                                estimated_hit_ratio, effective_upper_limit));
+            trace->addEvent(5, "Create match everything global filter");
         }
         global_filter = GlobalFilter::create();
     }
     if (use_lazy_filter) {
         if (lazy_filter->is_active()) {
             if (trace && trace->shouldTrace(5)) {
-                trace->addEvent(
-                    5, vespalib::make_string("Apply active lazy filter (estimate is %f)",
-                                             lazy_filter->size() > 0
-                                                 ? static_cast<double>(lazy_filter->count()) / lazy_filter->size()
-                                                 : 1.0));
+                trace->addEvent(5, "Apply active lazy filter");
             }
             blueprint.set_lazy_filter(*lazy_filter);
         }
