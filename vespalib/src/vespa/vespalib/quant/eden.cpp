@@ -173,12 +173,14 @@ float EdenQuantizer::pre_rotated_query_dot_product(std::span<const float>   quer
         decltype(bp)::unpack(_idx_tmp.data(), in_bits, _dimensions);
     });
     const auto codebook = my_codebook();
-    float      dot = 0;
-    // TODO shiny happy vectorization time~
-    for (size_t i = 0; i < _dimensions; ++i) {
-        dot += query[i] * codebook[_idx_tmp[i]];
-    }
-    return dot * scale;
+    // Taunt the auto-vectorizer by explicitly running parallel fp accumulators.
+    // 8x is only slightly faster than 4x (on M3 AArch64), but 4x is by itself ~4x
+    // faster than the naive scalar loop version.
+    // clang-format off: lambda formatting
+    return scale * sum_indexed_unrolled<8, float>(_dimensions, [&](size_t idx) noexcept {
+        return query[idx] * codebook[_idx_tmp[idx]];
+    });
+    // clang-format on
 }
 
 } // namespace vespalib::quant
