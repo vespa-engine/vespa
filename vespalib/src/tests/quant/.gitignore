@@ -1,2 +1,3 @@
 Makefile
+vespalib_quant_benchmark_app
 vespalib_quant_test_app
