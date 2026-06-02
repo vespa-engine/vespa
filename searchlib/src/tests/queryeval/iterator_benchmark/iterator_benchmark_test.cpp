@@ -12,6 +12,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/exception.h>
+#include <vespa/vespalib/util/stride.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <cmath>
@@ -288,9 +289,11 @@ BenchmarkResult non_strict_search(BenchmarkBlueprintFactory& factory, uint32_t d
     BenchmarkTimer timer(budget_sec);
     uint32_t       seeks = 0;
     uint32_t       hits = 0;
-    // This simulates a filter that is evaluated before this iterator.
+    // The following loop simulates a filter that is evaluated before the iterator.
     // The filter returns 'filter_hit_ratio' amount of the document corpus.
-    uint32_t         docid_skip = 1.0 / filter_hit_ratio;
+    auto num_matches = static_cast<uint32_t>(docid_limit * filter_hit_ratio);
+    assert(num_matches > 0 && "Trying to run non-strict search over 0 matches. "
+                              "Probably misconfigured benchmark setup.");
     MatchLoopContext ctx;
     while (timer.has_budget()) {
         ctx = make_match_loop_context(factory, InFlow(force_strict, filter_hit_ratio), docid_limit, algo);
@@ -299,7 +302,8 @@ BenchmarkResult non_strict_search(BenchmarkBlueprintFactory& factory, uint32_t d
         seeks = 0;
         hits = 0;
         itr->initRange(1, docid_limit);
-        for (uint32_t docid = 1; !itr->isAtEnd(docid); docid += docid_skip) {
+        Stride stride(docid_limit, num_matches);
+        for (uint32_t docid = 1; !itr->isAtEnd(docid); docid += stride.next()) {
             ++seeks;
             if (itr->seek(docid)) {
                 ++hits;
