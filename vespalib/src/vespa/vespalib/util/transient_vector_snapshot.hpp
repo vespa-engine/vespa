@@ -7,8 +7,7 @@
 namespace vespalib {
 
 template <typename T>
-TransientVectorSnapshot<T>::TransientVectorSnapshot(std::span<const S> source)
-    : TransientVectorSnapshotBase(), _data() {
+TransientVectorSnapshot<T>::TransientVectorSnapshot(std::span<const S> source) : _data() {
     fill(source);
 }
 
