@@ -251,11 +251,14 @@ func (p *annProbe) render(out *output, showDetails bool) {
 		node.makeRows(tab, showDetails)
 	}
 	tab.render(out)
+}
 
-	if showDetails {
-		p.stats.render(out)
-		p.filterDecision.render(out)
-	}
+func (p *annProbe) renderNnsStats(out *output) {
+	p.stats.render(out)
+}
+
+func (p *annProbe) renderGlobalFilterDecision(out *output) {
+	p.filterDecision.render(out)
 }
 
 func newAnnProbe(trace protonTrace) *annProbe {

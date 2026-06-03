@@ -96,6 +96,16 @@ The *ann setup* task from the table above happens as part of the event "Handle g
 const annQueryDetailsPromptStr = `<AI>The following table shows additional information about the ANN part of the query.
 Do not treat the filter hit ratio alone as the main bottleneck unless the report provides timing evidence for it.</AI>`
 
+const nnsStatsPromptStr = `<AI>The following tables show aggregated statistics about the performed nearest neighbor searches.
+The first table is about approximate nearest neighbor search, while the second table covers exact nearest neighbor search.</AI>`
+
+const globalFilterDecisionPromptStr = `<AI>The following table shows the parameters from which the decision whether to compute a global filter use in
+nearest neighbor searches is made. The estimated hit ratio is a rough over-approximation of the hit ratio the global filter will have.
+If it is between the lower and upper limit, the global filter is computed and its exact hit ratio is used to decide
+which algorithm to use for the nearest neighbor search.
+If it is less than the lower limit, then the global filter computation is skipped and an exact search is performed.
+If it is higher than the upper limit, then the global filter computation is skipped and an HNSW search with post-filtering is performed.</AI>`
+
 const globalFilterProfilingPromptStr = `<AI>The following table shows profiling information for creating the global filter.
 This is more detailed information about what happens inside the *global filter* task from the table above.
 The numbers in brackets in the *component* column are query node identifiers and can be used to identify the same query
@@ -195,6 +205,18 @@ func protonTimelinePrompt(ctx *Context, out *output) {
 func annQueryDetailsPrompt(ctx *Context, out *output) {
 	if ctx.makePrompt {
 		out.fmt("%s\n", annQueryDetailsPromptStr)
+	}
+}
+
+func nnsStatsPrompt(ctx *Context, out *output) {
+	if ctx.makePrompt {
+		out.fmt("%s\n", nnsStatsPromptStr)
+	}
+}
+
+func globalFilterDecisionPrompt(ctx *Context, out *output) {
+	if ctx.makePrompt {
+		out.fmt("%s\n", globalFilterDecisionPromptStr)
 	}
 }
 
