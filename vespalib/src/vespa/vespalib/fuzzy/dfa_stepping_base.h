@@ -183,12 +183,12 @@ template <typename Traits> struct DfaSteppingBase {
             // in the sparse state, its implicit distance is beyond the max edits, and need not be
             // considered.
             auto dist = state_in.cost(i) + sub_cost; // (Substitution)
-            if (!new_state.empty() && (new_state.last_index() == idx))
-            { // (Insertion) anything to our immediate left?
+            if (!new_state.empty() &&
+                (new_state.last_index() == idx)) { // (Insertion) anything to our immediate left?
                 dist = std::min(dist, new_state.last_cost() + 1);
             }
-            if ((i < state_in.size() - 1) && (state_in.index(i + 1) == idx + 1))
-            { // (Deletion) anything immediately above?
+            if ((i < state_in.size() - 1) &&
+                (state_in.index(i + 1) == idx + 1)) { // (Deletion) anything immediately above?
                 dist = std::min(dist, state_in.cost(i + 1) + 1);
             }
             if (dist <= max_edits()) {

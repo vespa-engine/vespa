@@ -835,8 +835,7 @@ namespace {
 __attribute__((no_sanitize("address"), noinline))
 #endif
 #endif
-std::vector<uint16_t>
-get_merge_chain(const ::google::protobuf::RepeatedField<uint32_t>& src) {
+std::vector<uint16_t> get_merge_chain(const ::google::protobuf::RepeatedField<uint32_t>& src) {
     std::vector<uint16_t> chain;
     chain.reserve(src.size());
     for (uint32_t node : src) {
