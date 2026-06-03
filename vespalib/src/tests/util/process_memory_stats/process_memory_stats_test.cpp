@@ -45,8 +45,7 @@ TEST_F(ProcessMemoryStatsTest, simple_stats_with_transient_memory) {
     TransientMemoryTracker tracker;
     tracker.set_transient_memory(42);
     ProcessMemoryStats stats(ProcessMemoryStats::create(SIZE_EPSILON));
-    std::cout << toString(stats) << std::endl;
-    EXPECT_EQ(42, stats.transient_memory());
+    EXPECT_EQ(42, stats.transient_memory()) << toString(stats);
 }
 
 TEST_F(ProcessMemoryStatsTest, grow_anonymous_memory) {
