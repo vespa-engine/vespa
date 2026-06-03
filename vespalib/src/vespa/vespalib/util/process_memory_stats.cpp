@@ -35,6 +35,7 @@ size_t ProcessMemoryStats::normal_page_size = sysconf(_SC_PAGESIZE);
  */
 ProcessMemoryStats ProcessMemoryStats::createStatsFromStatm() {
     ProcessMemoryStats ret;
+    auto               lock = TransientMemoryTracker::acquire_lock();
 #ifdef __linux__
     asciistream statm = asciistream::createFromDevice("/proc/self/statm");
     ret = parseStatm(statm);
@@ -47,19 +48,8 @@ ProcessMemoryStats ProcessMemoryStats::createStatsFromStatm() {
         ret._anonymous_rss = vm_info.phys_footprint;
     }
 #endif
+    ret._transient_memory = TransientMemoryTracker::get_total_transient_memory(std::move(lock));
     return ret;
-}
-
-ProcessMemoryStats ProcessMemoryStats::create_stats_from_statm(uint64_t& transient_memory_generation) {
-    auto res = createStatsFromStatm();
-    auto total_transient = TransientMemoryTracker::get_total_transient_memory();
-    while (total_transient._generation != transient_memory_generation) {
-        transient_memory_generation = total_transient._generation;
-        res = createStatsFromStatm();
-        total_transient = TransientMemoryTracker::get_total_transient_memory();
-    }
-    res._transient_memory = total_transient._total_transient_memory;
-    return res;
 }
 
 ProcessMemoryStats ProcessMemoryStats::parseStatm(asciistream& statm) {
@@ -120,10 +110,9 @@ ProcessMemoryStats ProcessMemoryStats::create(double epsilon) {
     constexpr size_t                NUM_TRIES = 3;
     std::vector<ProcessMemoryStats> samples;
     samples.reserve(NUM_TRIES + 1);
-    uint64_t transient_memory_generation = TransientMemoryTracker::get_total_transient_memory()._generation;
-    samples.push_back(create_stats_from_statm(transient_memory_generation));
+    samples.push_back(createStatsFromStatm());
     for (size_t i = 0; i < NUM_TRIES; ++i) {
-        samples.push_back(create_stats_from_statm(transient_memory_generation));
+        samples.push_back(createStatsFromStatm());
         if (samples.back().similarTo(*(samples.rbegin() + 1), epsilon)) {
             return samples.back();
         }

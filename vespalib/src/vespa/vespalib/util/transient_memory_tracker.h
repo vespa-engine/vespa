@@ -18,16 +18,11 @@ namespace vespalib {
  */
 class TransientMemoryTracker {
     static std::mutex _mutex;
-    static uint64_t   _generation;
     static size_t     _total_transient_memory;
     size_t            _transient_memory;
 
 public:
     using Lock = std::unique_lock<std::mutex>;
-    struct TotalTransientMemoryAndGeneration {
-        size_t   _total_transient_memory;
-        uint64_t _generation;
-    };
     TransientMemoryTracker() noexcept;
     TransientMemoryTracker(const TransientMemoryTracker&) = delete;
     TransientMemoryTracker(TransientMemoryTracker&& rhs) noexcept;
@@ -35,11 +30,11 @@ public:
     TransientMemoryTracker& operator=(const TransientMemoryTracker&) = delete;
     TransientMemoryTracker& operator=(TransientMemoryTracker&& rhs) noexcept;
     [[nodiscard]] static Lock acquire_lock() noexcept { return Lock(_mutex); }
+    // The following member function should not be called while holding the lock.
     void set_transient_memory(size_t value) noexcept;
     void set_transient_memory(Lock lock, size_t value) noexcept;
     void swap(TransientMemoryTracker& rhs) noexcept;
-    // The following member function should not be called while holding the lock.
-    [[nodiscard]] static TotalTransientMemoryAndGeneration get_total_transient_memory() noexcept;
+    [[nodiscard]] static size_t get_total_transient_memory(Lock lock) noexcept;
 };
 
 } // namespace vespalib
