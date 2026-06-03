@@ -132,7 +132,7 @@ func (ctx *Context) analyzeProtonTrace(trace protonTrace, peer *protonTrace, out
 	trace.timeline().render(out)
 	if ann := newAnnProbe(trace); ann.useful() {
 		annQueryDetailsPrompt(ctx, out)
-		ann.render(out)
+		ann.render(out, ctx.showNnsDetails)
 	}
 	if globalFilterPerf := trace.globalFilterPerf(); globalFilterPerf.impact() != 0.0 {
 		out.fmt("global filter profiling\n")
