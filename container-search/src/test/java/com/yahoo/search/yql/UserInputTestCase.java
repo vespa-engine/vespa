@@ -80,11 +80,11 @@ public class UserInputTestCase {
     }
 
     @Test
-    public void testNearGrammarAliases() {
+    public void testNearAndONearGrammarTypes() {
         URIBuilder builder = searchUri();
-        builder.setParameter("yql", "select * from sources * where ({grammar:'near'}userInput('a b'))");
+        builder.setParameter("yql", "select * from sources * where ({grammar:'near'}userInput('Noëlᛁ continuation'))");
         Query near = searchAndAssertNoErrors(builder);
-        assertEquals("select * from sources * where default contains near(({stem: false, normalizeCase: false, accentDrop: false, implicitTransforms: false}\"a\"), ({stem: false, normalizeCase: false, accentDrop: false, implicitTransforms: false}\"b\"))",
+        assertEquals("select * from sources * where default contains near(({stem: false, normalizeCase: false, accentDrop: false, implicitTransforms: false}\"noel\\u16C1\"), ({stem: false, normalizeCase: false, accentDrop: false, implicitTransforms: false}\"continuation\"))",
                      near.yqlRepresentation());
 
         builder.setParameter("yql", "select * from sources * where ({grammar:'near',distance:3}userInput('a b'))");
