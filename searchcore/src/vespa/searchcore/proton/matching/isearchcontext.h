@@ -60,6 +60,13 @@ public:
     virtual uint32_t getDocIdLimit() = 0;
 
     /**
+     * Obtain the name of the document type.
+     *
+     * @return name of the document type
+     **/
+    virtual const std::string_view get_document_type_name() = 0;
+
+    /**
      * Deleting the context will trigger cleanup in the
      * implementation.
      **/
