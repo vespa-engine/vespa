@@ -96,8 +96,9 @@ bool MultiValueEnumAttributeSaver<MultiValueT>::onSave(IAttributeSaveTarget& sav
     DatWriter datWriter(saveTarget, _enumSaver.get_enumerator(), [this]() { return compaction_interferred(); });
     _enumSaver.writeUdat(saveTarget);
     _enumSaver.get_enumerator().enumerateValues();
-    for (uint32_t docId = 0; docId < _frozenIndices.size(); ++docId) {
-        vespalib::datastore::EntryRef   idx = _frozenIndices[docId];
+    auto indices_span = _indices_snapshot.span();
+    for (uint32_t docId = 0; docId < indices_span.size(); ++docId) {
+        vespalib::datastore::EntryRef   idx = indices_span[docId];
         std::span<const MultiValueType> handle(_mvMapping.getDataForIdx(idx));
         countWriter.writeCount(handle.size());
         weightWriter.writeWeights(handle);

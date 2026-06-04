@@ -73,7 +73,7 @@ public class ProtobufSerializationTest {
         var hit = new FastHit(new GlobalId(IdString.createIdString("id:ns:type::id")).getRawId(), 0, OptionalInt.of(0), 0, 0);
         var bytes = ProtobufSerialization.serializeDocsumRequest(builder, List.of(hit));
 
-        assertEquals(77, bytes.length);
+        assertEquals(63, bytes.length);
     }
 
     private String contentsOf(ByteString property) {
@@ -177,6 +177,22 @@ public class ProtobufSerializationTest {
                 .setDegradedBySoftTimeout(true)
                 .addErrors(SearchProtocol.Error.newBuilder()
                         .setMessage("Search request soft doomed during query setup and initialization."))
+                .build();
+        Node node = new Node("test", 1, "host", 3, true);
+        node.setPathIndex(2);
+        InvokerResult result = ProtobufSerialization.convertToResult(q, reply, null, node);
+        var error = result.getResult().hits().getError();
+        assertNotNull(error);
+        assertEquals(com.yahoo.container.protect.Error.TIMEOUT.code, error.getCode());
+    }
+
+    @Test
+    void ann_timeout_errors_use_timeout_error_code() {
+        Query q = new Query("search/?query=test");
+        SearchProtocol.SearchReply reply = SearchProtocol.SearchReply.newBuilder()
+                .setDegradedByAnnTimeout(true)
+                .addErrors(SearchProtocol.Error.newBuilder()
+                        .setMessage("Hypothetical ANN timeout error message.")) // No such error message as of now (that does not also trigger a soft timeout)
                 .build();
         Node node = new Node("test", 1, "host", 3, true);
         node.setPathIndex(2);

@@ -211,6 +211,7 @@
       "public boolean isDegradedByMatchPhase()",
       "public boolean isDegradedByTimeout()",
       "public boolean isDegradedByAdapativeTimeout()",
+      "public boolean isDegradedByAnnTimeout()",
       "public boolean isDegradedByNonIdealState()",
       "public boolean getFull()",
       "public int getNodes()",
@@ -232,7 +233,8 @@
       "protected com.yahoo.container.handler.Coverage$FullCoverageDefinition fullReason",
       "public static final int DEGRADED_BY_MATCH_PHASE",
       "public static final int DEGRADED_BY_TIMEOUT",
-      "public static final int DEGRADED_BY_ADAPTIVE_TIMEOUT"
+      "public static final int DEGRADED_BY_ADAPTIVE_TIMEOUT",
+      "public static final int DEGRADED_BY_ANN_TIMEOUT"
     ]
   },
   "com.yahoo.container.handler.FilterBackingRequestHandler" : {

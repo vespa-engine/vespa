@@ -18,10 +18,14 @@
 #include <vespa/vespalib/objects/object2slime.h>
 #include <vespa/vespalib/objects/objectdumper.h>
 #include <vespa/vespalib/util/classname.h>
+#include <vespa/vespalib/util/execution_profiler.h>
 #include <vespa/vespalib/util/require.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/tls_linkage.h>
 
 #include <vespa/vespalib/objects/visit.hpp>
 
+#include <format>
 #include <map>
 
 #include <vespa/log/log.h>
@@ -52,6 +56,31 @@ void maybe_eliminate_self(Blueprint*& self, Blueprint::UP replacement) {
         self->setDocIdLimit(discard->get_docid_limit());
         discard->setParent(nullptr);
     }
+}
+
+//-----------------------------------------------------------------------------
+
+namespace {
+
+thread_local uint32_t tls_next_enum TLS_LINKAGE = 0;
+
+uint32_t make_enum_value() {
+    if (tls_next_enum == 0) {
+        return 0;
+    }
+    return tls_next_enum++;
+}
+
+} // namespace
+
+Blueprint::AutoEnumGuard::AutoEnumGuard(uint32_t first_id) noexcept {
+    // enable auto enum
+    tls_next_enum = first_id;
+}
+
+Blueprint::AutoEnumGuard::~AutoEnumGuard() {
+    // disable auto enum
+    tls_next_enum = 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -117,28 +146,34 @@ Blueprint::State::~State() = default;
 Blueprint::Blueprint() noexcept
     : _parent(nullptr),
       _flow_stats(0.0, 0.0, 0.0),
+      _abs_cost(0.0),
       _sourceId(0xffffffff),
       _docid_limit(0),
-      _id(0),
+      _id(make_enum_value()),
       _strict(false),
       _frozen(false) {
 }
 
 Blueprint::~Blueprint() = default;
 
+std::string Blueprint::profiler_name(std::string_view operation) const {
+    if (id() == 0) {
+        return std::format("[]{}::{}", getClassName(), operation);
+    }
+    return std::format("[{}]{}::{}", id(), getClassName(), operation);
+}
+
 void Blueprint::resolve_strict(InFlow& in_flow) noexcept {
+    // simple local estimation of absolute cost based on in flow and flow stats.
+    // does not account for cost saved by forcing children to be strict.
+    _abs_cost = flow::min_child_cost(in_flow, _flow_stats, opt_allow_force_strict());
+
     if (!in_flow.strict() && opt_allow_force_strict()) {
-        auto stats = FlowStats::from(flow::DefaultAdapter(), this);
-        if (flow::should_force_strict(stats, in_flow.rate())) {
+        if (flow::should_force_strict(_flow_stats, in_flow.rate())) {
             in_flow.force_strict();
         }
     }
     _strict = in_flow.strict();
-}
-
-uint32_t Blueprint::enumerate(uint32_t next_id) noexcept {
-    set_id(next_id++);
-    return next_id;
 }
 
 void Blueprint::each_node_post_order(const std::function<void(Blueprint&)>& f) {
@@ -387,6 +422,7 @@ void Blueprint::visitMembers(vespalib::ObjectVisitor& visitor) const {
         visitor.visitFloat("strict_cost", strict_cost());
     }
     visitor.closeStruct();
+    visitor.visitFloat("abs_cost", _abs_cost);
     visitor.visitInt("sourceId", _sourceId);
     visitor.visitInt("docid_limit", _docid_limit);
     visitor.visitInt("id", _id);
@@ -422,14 +458,6 @@ void IntermediateBlueprint::setDocIdLimit(uint32_t limit) noexcept {
     for (Blueprint::UP& child : _children) {
         child->setDocIdLimit(limit);
     }
-}
-
-uint32_t IntermediateBlueprint::enumerate(uint32_t next_id) noexcept {
-    set_id(next_id++);
-    for (Blueprint::UP& child : _children) {
-        next_id = child->enumerate(next_id);
-    }
-    return next_id;
 }
 
 void IntermediateBlueprint::each_node_post_order(const std::function<void(Blueprint&)>& f) {
@@ -642,8 +670,10 @@ void IntermediateBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) const
 void IntermediateBlueprint::fetchPostings(const ExecuteInfo& execInfo) {
     auto flow = my_flow(InFlow(strict(), execInfo.hit_rate()));
     for (const auto& child : _children) {
-        double nextHitRate = flow.flow();
-        child->fetchPostings(ExecuteInfo::create(nextHitRate, execInfo));
+        double                     nextHitRate = flow.flow();
+        auto                       childInfo = ExecuteInfo::create(nextHitRate, execInfo);
+        FetchPostingsProfilerGuard guard(*child);
+        child->fetchPostings(childInfo);
         flow.add(child->estimate());
     }
 }

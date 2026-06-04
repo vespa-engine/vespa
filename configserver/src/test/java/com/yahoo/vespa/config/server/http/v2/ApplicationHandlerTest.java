@@ -164,15 +164,15 @@ public class ApplicationHandlerTest {
         tenantRepository.addTenant(foobar);
 
         {
-            applicationRepository.deploy(testApp, prepareParams(applicationId));
+            applicationRepository.prepareAndActivate(testApp, prepareParams(applicationId));
             Tenant mytenant = applicationRepository.getTenant(applicationId);
             deleteAndAssertOKResponse(mytenant, applicationId);
         }
 
         {
-            applicationRepository.deploy(testApp, prepareParams(applicationId));
+            applicationRepository.prepareAndActivate(testApp, prepareParams(applicationId));
             deleteAndAssertOKResponseMocked(applicationId, true);
-            applicationRepository.deploy(testApp, prepareParams(applicationId));
+            applicationRepository.prepareAndActivate(testApp, prepareParams(applicationId));
 
             ApplicationId fooId = new ApplicationId.Builder()
                     .tenant(foobar)
@@ -180,7 +180,7 @@ public class ApplicationHandlerTest {
                     .instanceName("quux")
                     .build();
             PrepareParams prepareParams2 = new PrepareParams.Builder().applicationId(fooId).build();
-            applicationRepository.deploy(testAppJdiscOnly, prepareParams2);
+            applicationRepository.prepareAndActivate(testAppJdiscOnly, prepareParams2);
 
             assertApplicationExists(fooId, Zone.defaultZone());
             deleteAndAssertOKResponseMocked(fooId, true);
@@ -196,7 +196,7 @@ public class ApplicationHandlerTest {
                     .instanceName("quux")
                     .build();
             PrepareParams prepareParamsBali = new PrepareParams.Builder().applicationId(baliId).build();
-            applicationRepository.deploy(testApp, prepareParamsBali);
+            applicationRepository.prepareAndActivate(testApp, prepareParamsBali);
             deleteAndAssertOKResponseMocked(baliId, true);
         }
     }
@@ -216,7 +216,7 @@ public class ApplicationHandlerTest {
                 .applicationId(applicationId)
                 .vespaVersion(vespaVersion)
                 .build();
-        long sessionId = applicationRepository.deploy(testApp, prepareParams).sessionId();
+        long sessionId = applicationRepository.prepareAndActivate(testApp, prepareParams).prepareResult().sessionId();
 
         assertApplicationResponse(applicationId, Zone.defaultZone(), sessionId, true, vespaVersion);
         assertApplicationResponse(applicationId, Zone.defaultZone(), sessionId, false, vespaVersion);
@@ -228,7 +228,7 @@ public class ApplicationHandlerTest {
                 .applicationId(applicationId)
                 .vespaVersion(vespaVersion)
                 .build();
-        applicationRepository.deploy(testApp, prepareParams).sessionId();
+        applicationRepository.prepareAndActivate(testApp, prepareParams);
 
         var url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/quota";
         var response = createApplicationHandler().handle(createTestRequest(url, GET));
@@ -240,7 +240,7 @@ public class ApplicationHandlerTest {
 
     @Test
     public void testGetTokenFingerprints() throws IOException {
-        applicationRepository.deploy(testApp, prepareParams(applicationId));
+        applicationRepository.prepareAndActivate(testApp, prepareParams(applicationId));
         activeTokenFingerprints.putAll(Map.of("host", List.of(new Token("t1", List.of("fingers", "toes")),
                                                               new Token("t2", List.of())),
                                               "toast", List.of()));
@@ -256,7 +256,7 @@ public class ApplicationHandlerTest {
         ApplicationCuratorDatabase database = applicationRepository.getTenant(applicationId).getApplicationRepo().database();
         reindexing(applicationId, GET, "{\"error-code\": \"NOT_FOUND\", \"message\": \"Application 'default.default' not found\"}", 404);
 
-        applicationRepository.deploy(testAppMultipleClusters, prepareParams(applicationId));
+        applicationRepository.prepareAndActivate(testAppMultipleClusters, prepareParams(applicationId));
         ApplicationReindexing expected = ApplicationReindexing.empty();
         assertEquals(expected,
                      database.readReindexingStatus(applicationId).orElseThrow());
@@ -374,21 +374,21 @@ public class ApplicationHandlerTest {
 
     @Test
     public void testRestart() throws Exception {
-        var result = applicationRepository.deploy(testApp, prepareParams(applicationId));
-        assertTrue(result.configChangeActions().getRestartActions().isEmpty());
+        var result = applicationRepository.prepareAndActivate(testApp, prepareParams(applicationId));
+        assertTrue(result.prepareResult().configChangeActions().getRestartActions().isEmpty());
         restart(applicationId, Zone.defaultZone());
     }
 
 
     @Test
     public void testConverge() throws Exception {
-        applicationRepository.deploy(testApp, prepareParams(applicationId));
+        applicationRepository.prepareAndActivate(testApp, prepareParams(applicationId));
         converge(applicationId, Zone.defaultZone());
     }
 
     @Test
     public void testServiceStatus() throws Exception {
-        applicationRepository.deploy(testApp, prepareParams(applicationId));
+        applicationRepository.prepareAndActivate(testApp, prepareParams(applicationId));
         String host = "foo.yahoo.com";
         HttpProxy mockHttpProxy = mock(HttpProxy.class);
         ApplicationRepository applicationRepository = new ApplicationRepository.Builder()
@@ -425,7 +425,7 @@ public class ApplicationHandlerTest {
 
     @Test
     public void testFileDistributionStatus() throws Exception {
-        applicationRepository.deploy(testApp, prepareParams(applicationId));
+        applicationRepository.prepareAndActivate(testApp, prepareParams(applicationId));
         Zone zone = Zone.defaultZone();
 
         HttpResponse response = fileDistributionStatus(applicationId, zone);
@@ -443,7 +443,7 @@ public class ApplicationHandlerTest {
 
     @Test
     public void testGetLogs() throws IOException {
-        applicationRepository.deploy(new File("src/test/apps/app-logserver-with-container"), prepareParams(applicationId));
+        applicationRepository.prepareAndActivate(new File("src/test/apps/app-logserver-with-container"), prepareParams(applicationId));
         String url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/logs?from=100&to=200";
         ApplicationHandler mockHandler = createApplicationHandler();
 
@@ -457,7 +457,7 @@ public class ApplicationHandlerTest {
     public void testGetLogsConnectionTimeout() throws IOException {
         logRetriever = new MockLogRetriever(504, "Connection error when getting logs");
         setup();
-        applicationRepository.deploy(new File("src/test/apps/app-logserver-with-container"), prepareParams(applicationId));
+        applicationRepository.prepareAndActivate(new File("src/test/apps/app-logserver-with-container"), prepareParams(applicationId));
         String url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/logs?from=100&to=200";
         ApplicationHandler mockHandler = createApplicationHandler();
 
@@ -469,7 +469,7 @@ public class ApplicationHandlerTest {
 
     @Test
     public void testValidateSecretStore() throws IOException {
-        applicationRepository.deploy(new File("src/test/apps/app-logserver-with-container"), prepareParams(applicationId));
+        applicationRepository.prepareAndActivate(new File("src/test/apps/app-logserver-with-container"), prepareParams(applicationId));
         var url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/validate-secret-store";
         var mockHandler = createApplicationHandler();
 
@@ -485,7 +485,7 @@ public class ApplicationHandlerTest {
 
     @Test
     public void testTesterStatus() throws IOException {
-        applicationRepository.deploy(testApp, prepareParams(applicationId));
+        applicationRepository.prepareAndActivate(testApp, prepareParams(applicationId));
         String url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/tester/status";
         ApplicationHandler mockHandler = createApplicationHandler();
         HttpResponse response = mockHandler.handle(createTestRequest(url, GET));
@@ -495,7 +495,7 @@ public class ApplicationHandlerTest {
 
     @Test
     public void testTesterGetLog() throws IOException {
-        applicationRepository.deploy(testApp, prepareParams(applicationId));
+        applicationRepository.prepareAndActivate(testApp, prepareParams(applicationId));
         String url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/tester/log?after=1234";
         ApplicationHandler mockHandler = createApplicationHandler();
 
@@ -506,7 +506,7 @@ public class ApplicationHandlerTest {
 
     @Test
     public void testTesterStartTests() {
-        applicationRepository.deploy(testApp, prepareParams(applicationId));
+        applicationRepository.prepareAndActivate(testApp, prepareParams(applicationId));
         String url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/tester/run/staging-test";
         ApplicationHandler mockHandler = createApplicationHandler();
 
@@ -518,7 +518,7 @@ public class ApplicationHandlerTest {
 
     @Test
     public void testTesterReady() {
-        applicationRepository.deploy(testApp, prepareParams(applicationId));
+        applicationRepository.prepareAndActivate(testApp, prepareParams(applicationId));
         String url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/tester/ready";
         ApplicationHandler mockHandler = createApplicationHandler();
         HttpRequest testRequest = createTestRequest(url, GET);
@@ -528,7 +528,7 @@ public class ApplicationHandlerTest {
 
     @Test
     public void testGetTestReport() throws IOException {
-        applicationRepository.deploy(testApp, prepareParams(applicationId));
+        applicationRepository.prepareAndActivate(testApp, prepareParams(applicationId));
         String url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/tester/report";
         ApplicationHandler mockHandler = createApplicationHandler();
         HttpRequest testRequest = createTestRequest(url, GET);

@@ -49,6 +49,7 @@ struct MyFlushTarget : public test::DummyFlushTarget {
         }
         return FlushTask::UP();
     }
+    [[nodiscard]] bool can_flush(SerialNum) const noexcept override { return true; }
 };
 
 struct Fixture {

@@ -4,6 +4,8 @@
 
 #include "iattributefilewriter.h"
 
+#include <vespa/vespalib/util/transient_memory_tracker.h>
+
 #include <vector>
 
 namespace search {
@@ -13,13 +15,14 @@ namespace search {
  * attribute vector file (without header). Used by AttributeMemorySaveTarget.
  */
 class AttributeMemoryFileWriter : public IAttributeFileWriter {
-    std::vector<Buffer> _bufs;
+    std::vector<std::pair<Buffer, vespalib::TransientMemoryTracker>> _bufs;
 
 public:
     AttributeMemoryFileWriter();
     ~AttributeMemoryFileWriter() override;
     Buffer allocBuf(size_t size) override;
     void writeBuf(Buffer buf) override;
+    void write_buf(Buffer buf, vespalib::TransientMemoryTracker tracker) override;
     std::unique_ptr<BufferWriter> allocBufferWriter() override;
     void writeTo(IAttributeFileWriter& writer);
     void close() override;

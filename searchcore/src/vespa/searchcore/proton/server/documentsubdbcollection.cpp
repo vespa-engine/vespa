@@ -287,6 +287,15 @@ void DocumentSubDBCollection::validateDocStore(FeedHandler& feedHandler, SerialN
     }
 }
 
+bool DocumentSubDBCollection::requires_doc_store_validation() const {
+    for (auto subDb : _subDBs) {
+        if (subDb->requires_doc_store_validation()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 ResourceUsage DocumentSubDBCollection::get_resource_usage() const {
     ResourceUsage resource_usage;
     for (auto subDb : _subDBs) {

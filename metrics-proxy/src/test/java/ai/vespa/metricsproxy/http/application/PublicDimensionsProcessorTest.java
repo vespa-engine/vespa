@@ -36,4 +36,15 @@ public class PublicDimensionsProcessorTest {
         assertEquals(toDimensionId(APPLICATION_ID), builder.getDimensionIds().iterator().next());
     }
 
+    @Test
+    public void vespaVersion_is_retained() {
+        var builder = new MetricsPacket.Builder(toServiceId("foo"))
+                .putDimension(toDimensionId("vespaVersion"), "8.0.0");
+
+        var processor = new PublicDimensionsProcessor();
+        processor.process(builder);
+        assertEquals(1, builder.getDimensionIds().size());
+        assertEquals(toDimensionId("vespaVersion"), builder.getDimensionIds().iterator().next());
+    }
+
 }

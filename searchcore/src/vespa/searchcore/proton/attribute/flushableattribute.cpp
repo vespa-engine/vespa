@@ -220,6 +220,10 @@ IFlushTarget::Task::UP FlushableAttribute::initFlush(SerialNum currentSerial, st
     return future.get();
 }
 
+bool FlushableAttribute::can_flush(SerialNum current_serial) const noexcept {
+    return current_serial > getFlushedSerialNum();
+}
+
 uint64_t FlushableAttribute::getApproxBytesToWriteToDisk() const {
     return _attr->getEstimatedSaveByteSize();
 }
@@ -238,6 +242,11 @@ uint64_t FlushableAttribute::get_approx_bytes_to_read_from_disk() const noexcept
 
 double FlushableAttribute::get_replay_operation_cost() const {
     return _replay_operation_cost;
+}
+
+size_t FlushableAttribute::transient_memory_for_flush() const noexcept {
+    size_t flush_buffer_size = _hwInfo.disk().slow() ? _attr->getEstimatedSaveByteSize() : 0;
+    return _attr->transient_memory_for_flush() + flush_buffer_size;
 }
 
 std::chrono::steady_clock::duration FlushableAttribute::last_flush_duration() const noexcept {

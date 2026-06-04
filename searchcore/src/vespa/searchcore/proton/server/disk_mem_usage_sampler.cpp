@@ -4,7 +4,7 @@
 
 #include "resource_usage_write_filter.h"
 
-#include <vespa/searchcore/proton/common/i_reserved_disk_space_provider.h>
+#include <vespa/searchcore/proton/common/i_reserved_disk_space_and_memory_provider.h>
 #include <vespa/searchcore/proton/common/i_scheduled_executor.h>
 #include <vespa/searchcorespi/common/i_resource_usage_provider.h>
 #include <vespa/searchlib/util/directory_traverse.h>
@@ -21,12 +21,12 @@ using vespalib::makeLambdaTask;
 
 namespace proton {
 
-DiskMemUsageSampler::DiskMemUsageSampler(const std::string& path_in, ResourceUsageWriteFilter& filter,
-                                         ResourceUsageNotifier&            resource_usage_notifier,
-                                         const IReservedDiskSpaceProvider& reserved_disk_space_provider)
+DiskMemUsageSampler::DiskMemUsageSampler(
+    const std::string& path_in, ResourceUsageWriteFilter& filter, ResourceUsageNotifier& resource_usage_notifier,
+    const IReservedDiskSpaceAndMemoryProvider& reserved_disk_space_and_memory_provider)
     : _filter(filter),
       _notifier(resource_usage_notifier),
-      _reserved_disk_space_provider(reserved_disk_space_provider),
+      _reserved_disk_space_and_memory_provider(reserved_disk_space_and_memory_provider),
       _path(path_in),
       _sampleInterval(60s),
       _lastSampleTime(),
@@ -78,8 +78,9 @@ void DiskMemUsageSampler::sampleAndReportUsage() {
      */
     vespalib::ProcessMemoryStats memoryStats = sampleMemoryUsage();
     uint64_t                     diskUsage = sampleDiskUsage(resource_usage);
-    uint64_t                     reserved_disk_space = _reserved_disk_space_provider.get_reserved_disk_space();
-    _notifier.set_resource_usage(resource_usage, memoryStats, diskUsage, reserved_disk_space);
+    auto                         reserved_disk_space_and_memory =
+        _reserved_disk_space_and_memory_provider.get_reserved_disk_space_and_memory();
+    _notifier.set_resource_usage(resource_usage, memoryStats, diskUsage, reserved_disk_space_and_memory);
     _lastSampleTime = vespalib::steady_clock::now();
 }
 

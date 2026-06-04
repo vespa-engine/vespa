@@ -41,6 +41,7 @@ race:llvm::sys::SmartMutex<false>::lock
 race:llvm::sys::SmartMutex<true>::lock
 race:llvm::sys::DynamicLibrary::getPermanentLibrary
 race:(anonymous namespace)::GDBJITRegistrationListener::notifyObjectLoaded
+mutex:llvm::RTDyldMemoryManager::registerEHFrames
 
 # This is external code that we do not control. Complains that mutex
 # creation and locking are not strictly ordered.

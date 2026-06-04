@@ -613,12 +613,6 @@ void DocumentDB::onTransactionLogReplayDone() {
         // must signal that all existing buckets must be checked.
         notifyAllBucketsChanged();
     }
-    if (_validateAndSanitizeDocStore) {
-        LOG(info, "Validating documentdb %s", getName().c_str());
-        SerialNum serialNum = _feedHandler->getSerialNum();
-        sync(serialNum);
-        _subDBs.validateDocStore(*_feedHandler, serialNum);
-    }
 }
 
 void DocumentDB::onPerformPrune(SerialNum flushedSerial) {
@@ -735,6 +729,20 @@ void DocumentDB::enterRedoReprocessState() {
         sync(op.getSerialNum());
         _subDBs.pruneRemovedFields(op.getSerialNum());
     }
+    enter_doc_store_validation_state();
+}
+
+void DocumentDB::enter_doc_store_validation_state() {
+    assert(_writeService.master().isCurrentThread());
+    if (!_state->enter_doc_store_validation_state()) {
+        return;
+    }
+    if (_validateAndSanitizeDocStore || _subDBs.requires_doc_store_validation()) {
+        LOG(info, "Validating documentdb %s", getName().c_str());
+        SerialNum serialNum = _feedHandler->getSerialNum();
+        sync(serialNum);
+        _subDBs.validateDocStore(*_feedHandler, serialNum);
+    }
     enterApplyLiveConfigState();
 }
 
@@ -769,6 +777,9 @@ StatusReport::UP DocumentDB::reportStatus() const {
         std::string msg = vespalib::make_string("DocumentDB replay transaction log on startup (%u%% done)",
                                                 static_cast<uint32_t>(progress));
         return StatusReport::create(params.state(StatusReport::PARTIAL).progress(progress).message(msg));
+    } else if (rawState == DDBState::State::DOC_STORE_VALIDATION) {
+        return StatusReport::create(
+            params.state(StatusReport::PARTIAL).message("DocumentDB validate document store"));
     } else if (rawState == DDBState::State::APPLY_LIVE_CONFIG) {
         return StatusReport::create(
             params.state(StatusReport::PARTIAL).message("DocumentDB apply live config on startup"));

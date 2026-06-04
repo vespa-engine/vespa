@@ -144,6 +144,11 @@ public:
     virtual void validateDocStore(FeedHandler& op, SerialNum serialNum) const = 0;
     virtual PendingLidTrackerBase& getUncommittedLidsTracker() = 0;
     virtual searchcorespi::common::ResourceUsage get_resource_usage() const = 0;
+
+    /*
+     * Signalizes if a DocumentStore validation is needed after replay.
+     */
+    virtual bool requires_doc_store_validation() const = 0;
 };
 
 } // namespace proton

@@ -7,8 +7,16 @@
 namespace proton {
 
 std::vector<std::string> DDBState::_stateNames = {
-    "CONSTRUCT", "LOAD", "REPLAY_TRANSACTION_LOG", "REDO_REPROCESS", "APPLY_LIVE_CONFIG", "REPROCESS", "ONLINE",
-    "SHUTDOWN",  "DEAD",
+    "CONSTRUCT",
+    "LOAD",
+    "REPLAY_TRANSACTION_LOG",
+    "REDO_REPROCESS",
+    "DOC_STORE_VALIDATION",
+    "APPLY_LIVE_CONFIG",
+    "REPROCESS",
+    "ONLINE",
+    "SHUTDOWN",
+    "DEAD",
 };
 
 std::vector<std::string> DDBState::_configStateNames = {"OK", "NEED_RESTART"};
@@ -50,13 +58,25 @@ bool DDBState::enterRedoReprocessState() {
     return true;
 }
 
-bool DDBState::enterApplyLiveConfigState() {
+bool DDBState::enter_doc_store_validation_state() {
     Guard guard(_lock);
     if (getClosed()) {
         return false;
     }
     State state(getState());
     assert(state == State::REPLAY_TRANSACTION_LOG || state == State::REDO_REPROCESS);
+    set_state(State::DOC_STORE_VALIDATION);
+    return true;
+}
+
+bool DDBState::enterApplyLiveConfigState() {
+    Guard guard(_lock);
+    if (getClosed()) {
+        return false;
+    }
+    State state(getState());
+    assert(state == State::REPLAY_TRANSACTION_LOG || state == State::REDO_REPROCESS ||
+           state == State::DOC_STORE_VALIDATION);
     set_state(State::APPLY_LIVE_CONFIG);
     return true;
 }

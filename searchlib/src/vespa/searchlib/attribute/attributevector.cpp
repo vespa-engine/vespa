@@ -277,7 +277,7 @@ bool AttributeVector::save() {
 }
 
 bool AttributeVector::save(IAttributeSaveTarget& saveTarget, std::string_view fileName) {
-    commit();
+    commit(CommitParam::UpdateStats::FORCE);
     auto create_time = std::chrono::steady_clock::now();
     // First check if new style save is available.
     std::unique_ptr<AttributeSaver> saver(onInitSave(fileName));
@@ -613,6 +613,25 @@ uint64_t AttributeVector::getEstimatedSaveByteSize() const {
         }
     }
     return datFileSize + weightFileSize + idxFileSize + udatFileSize;
+}
+
+size_t AttributeVector::transient_memory_for_flush() const noexcept {
+    uint32_t    committedDocIdLimit = getCommittedDocIdLimit();
+    const auto& cfg = getConfig();
+    size_t      elem_size = 4;
+    if (!cfg.collectionType().isMultiValue() && !hasEnum()) {
+        BasicType::Type basicType(getBasicType());
+        switch (basicType) {
+        case BasicType::Type::PREDICATE:
+        case BasicType::Type::TENSOR:
+        case BasicType::Type::REFERENCE:
+        case BasicType::Type::RAW:
+            break;
+        default:
+            elem_size = cfg.basicType().fixedSize();
+        }
+    }
+    return elem_size * committedDocIdLimit;
 }
 
 size_t AttributeVector::getEstimatedShrinkLidSpaceGain() const {

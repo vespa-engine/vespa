@@ -17,7 +17,7 @@ namespace search {
 class MultiValueAttributeSaver : public AttributeSaver {
 protected:
     using MvMappingBase = attribute::MultiValueMappingBase;
-    attribute::EntryRefVector _frozenIndices;
+    attribute::EntryRefVectorSnapshot _indices_snapshot;
 
 public:
     MultiValueAttributeSaver(vespalib::GenerationGuard&& guard, const attribute::AttributeHeader& header,

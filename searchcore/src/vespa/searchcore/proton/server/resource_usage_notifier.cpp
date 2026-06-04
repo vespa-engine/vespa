@@ -18,7 +18,7 @@ ResourceUsageNotifier::ResourceUsageNotifier(ResourceUsageWriteFilter& filter)
       _hwInfo(filter.get_hw_info()),
       _memoryStats(),
       _diskUsedSizeBytes(),
-      _reserved_disk_space(0),
+      _reserved_disk_space_and_memory(0, 0),
       _resource_usage(),
       _attribute_usage(),
       _config(),
@@ -42,7 +42,8 @@ void ResourceUsageNotifier::recalcState(const Guard& guard, bool disk_mem_sample
         ResourceUsageWithLimit(diskUsed, _config._diskLimit),
         ResourceUsageWithLimit(memoryUsed, _config._memoryLimit), non_transient_disk_usage,
         non_transient_memory_usage, get_relative_reserved_disk_space(guard), _config._reserved_disk_space_factor,
-        transient_disk_usage, transient_memory_usage,
+        get_relative_reserved_memory(guard), _config._reserved_memory_factor, transient_disk_usage,
+        transient_memory_usage,
         ResourceUsageWithLimit(attribute_address_space_used, _config._attribute_limit._address_space_limit),
         _attribute_usage);
     notify_resource_usage(guard, usage, disk_mem_sample);
@@ -60,7 +61,11 @@ double ResourceUsageNotifier::getDiskUsedRatio(const Guard&) const {
 }
 
 double ResourceUsageNotifier::get_relative_reserved_disk_space(const Guard&) const {
-    return static_cast<double>(_reserved_disk_space) / _hwInfo.disk().sizeBytes();
+    return static_cast<double>(_reserved_disk_space_and_memory.reserved_disk_space()) / _hwInfo.disk().sizeBytes();
+}
+
+double ResourceUsageNotifier::get_relative_reserved_memory(const Guard&) const {
+    return static_cast<double>(_reserved_disk_space_and_memory.reserved_memory()) / _hwInfo.memory().sizeBytes();
 }
 
 double ResourceUsageNotifier::get_relative_transient_memory_usage(const Guard&) const {
@@ -73,10 +78,10 @@ double ResourceUsageNotifier::get_relative_transient_disk_usage(const Guard&) co
 
 void ResourceUsageNotifier::set_resource_usage(const ResourceUsage&         resource_usage,
                                                vespalib::ProcessMemoryStats memoryStats, uint64_t diskUsedSizeBytes,
-                                               uint64_t reserved_disk_space) {
+                                               ReservedDiskSpaceAndMemory reserved_disk_space_and_memory) {
     Guard guard(_lock);
     _resource_usage = resource_usage;
-    _reserved_disk_space = reserved_disk_space;
+    _reserved_disk_space_and_memory = reserved_disk_space_and_memory;
     _memoryStats = memoryStats;
     _diskUsedSizeBytes = diskUsedSizeBytes;
     recalcState(guard, true);

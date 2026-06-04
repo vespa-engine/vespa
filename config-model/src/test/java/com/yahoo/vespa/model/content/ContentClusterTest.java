@@ -226,6 +226,54 @@ public class ContentClusterTest extends ContentBaseTest {
     }
 
     @Test
+    void testSchemaDocumentIdAttributeSettingIsPropagated() {
+        String schema_fromdisk =
+                """
+                schema type1 {
+                    documentid: from-disk
+                    document type1 {
+                    }
+                }""";
+        String schema_attribute =
+                """
+                schema type2 {
+                    documentid: attribute
+                    document type2 {
+                    }
+                }""";
+
+        String xml = "<?xml version='1.0' encoding='UTF-8' ?>" +
+                "<services version='1.0'>" +
+                "  <container id='default' version='1.0'>" +
+                "    <search/>" +
+                "  </container>" +
+                "  <content id='search' version='1.0'>" +
+                "    <redundancy>1</redundancy>" +
+                "    <documents>" +
+                "      <document type='type1' mode='index'/>" +
+                "      <document type='type2' mode='index'/>" +
+                "    </documents>" +
+                "  </content>" +
+                "</services>";
+
+        List<String> sds = List.of(schema_fromdisk, schema_attribute);
+        VespaModel model = new VespaModelCreatorWithMockPkg(null, xml, sds).create();
+        ContentCluster cc = model.getContentClusters().get("search");
+
+        ProtonConfig.Builder protonBuilder = new ProtonConfig.Builder();
+        cc.getSearch().getConfig(protonBuilder);
+        ProtonConfig protonConfig = new ProtonConfig(protonBuilder);
+
+        var foo_documentdb = protonConfig.documentdb().get(0);
+        assertEquals("type1", foo_documentdb.inputdoctypename());
+        assertFalse(foo_documentdb.document_id_attribute());
+
+        var bar_documentdb = protonConfig.documentdb().get(1);
+        assertEquals("type2", bar_documentdb.inputdoctypename());
+        assertTrue(bar_documentdb.document_id_attribute());
+    }
+
+    @Test
     void pseudo_row_column_distribution_setting_is_propagated_to_distribution_config() {
         ContentCluster cc = parse("""
               <content version="1.0" id="storage">
@@ -1700,26 +1748,6 @@ public class ContentClusterTest extends ContentBaseTest {
     @Test
     void search_node_transaction_log_replay_memory_limit_is_configurable_via_feature_flag() {
         assertEquals(-3L, txnLogReplayMemoryLimitFromFlag());
-    }
-
-
-    private int inferSearchCoreMaxOutstandingMoveOps(Integer flagValueOrNull) {
-        var props = new TestProperties();
-        if (flagValueOrNull != null) {
-            props.setSearchCoreMaxOutstandingMoveOps(flagValueOrNull);
-        }
-        VespaModel model = createEnd2EndOneNode(props);
-        ContentCluster cc = model.getContentClusters().get("storage");
-        var builder = new ProtonConfig.Builder();
-        cc.getSearch().getConfig(builder);
-        var cfg = new ProtonConfig(builder);
-        return cfg.maintenancejobs().maxoutstandingmoveops();
-    }
-
-    @Test
-    void search_core_max_outstanding_move_ops_is_configurable_via_feature_flag() {
-        assertEquals(100, inferSearchCoreMaxOutstandingMoveOps(null)); // Default is 100
-        assertEquals(8, inferSearchCoreMaxOutstandingMoveOps(8));
     }
 
     private int inferSearchNodeInitializerThreadsFromFlag(Integer flagValueOrNull) {

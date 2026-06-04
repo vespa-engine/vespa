@@ -33,10 +33,12 @@ public:
     Priority getPriority() const override { return _target->getPriority(); }
     searchcorespi::FlushTask::UP initFlush(SerialNum                            currentSerial,
                                            std::shared_ptr<search::IFlushToken> flush_token) override;
+    [[nodiscard]] bool can_flush(SerialNum current_serial) const noexcept override;
     searchcorespi::FlushStats getLastFlushStats() const override { return _target->getLastFlushStats(); }
 
     uint64_t getApproxBytesToWriteToDisk() const override { return _target->getApproxBytesToWriteToDisk(); }
     uint64_t get_approx_bytes_to_read_from_disk() const noexcept override;
+    [[nodiscard]] size_t transient_memory_for_flush() const noexcept override;
     std::chrono::steady_clock::duration last_flush_duration() const noexcept override;
 };
 

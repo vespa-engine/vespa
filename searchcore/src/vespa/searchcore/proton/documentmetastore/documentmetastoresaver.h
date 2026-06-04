@@ -35,6 +35,7 @@ private:
     GidIterator                      _gidIterator; // iterator over frozen tree
     MetadataView                     _metadataView;
     bool                             _writeDocSize;
+    bool                             _write_doc_size32;
     std::unique_ptr<DocumentIdSaver> _docid_saver;
 
     bool onSave(search::IAttributeSaveTarget& saveTarget) override;

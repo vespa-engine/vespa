@@ -10,8 +10,12 @@ DocumentMetaStoreConfig::DocumentMetaStoreConfig(bool store_full_document_ids)
     : _store_full_document_ids(store_full_document_ids) {
 }
 
-DocumentMetaStoreConfig DocumentMetaStoreConfig::make(const ProtonConfig& cfg) {
-    return {cfg.storeFullDocumentIds};
+DocumentMetaStoreConfig DocumentMetaStoreConfig::make(const ProtonConfig& cfg, uint32_t document_db_index) {
+    if (document_db_index < cfg.documentdb.size()) {
+        return {cfg.documentdb[document_db_index].documentIdAttribute};
+    }
+
+    return make();
 }
 
 DocumentMetaStoreConfig DocumentMetaStoreConfig::make() {

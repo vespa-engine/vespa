@@ -1211,8 +1211,8 @@ TEST(PerDocExprTest, testArithmeticOperations) {
         r[2] = a[2] + b[2];
         r[3] = a[3] + b[3];
         r[4] = a[4] + b[4];
-        r[5] = a[0] + b[5];
-        r[6] = a[1] + b[6];
+        r[5] = b[5];
+        r[6] = b[6];
         AddFunctionNode f;
         testArithmeticArguments(f, a, b, r, a[0] + a[1] + a[2] + a[3] + a[4]);
     }
@@ -1222,8 +1222,8 @@ TEST(PerDocExprTest, testArithmeticOperations) {
         r[2] = a[2] * b[2];
         r[3] = a[3] * b[3];
         r[4] = a[4] * b[4];
-        r[5] = a[0] * b[5];
-        r[6] = a[1] * b[6];
+        r[5] = b[5];
+        r[6] = b[6];
         MultiplyFunctionNode f;
         testArithmeticArguments(f, a, b, r, a[0] * a[1] * a[2] * a[3] * a[4]);
     }

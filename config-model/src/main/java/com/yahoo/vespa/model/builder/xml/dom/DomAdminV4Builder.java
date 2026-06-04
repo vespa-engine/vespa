@@ -60,6 +60,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
 
         addLogForwarders(adminElement.child("logforwarding"), admin, deployState);
         addLoggingSpecs(adminElement.child("logging"), admin);
+        addTelemetryExport(adminElement.child("telemetry"), admin);
 
         validateAdminV20Elements(deployState, adminElement);
     }

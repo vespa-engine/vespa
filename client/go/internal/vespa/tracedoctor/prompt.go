@@ -7,8 +7,8 @@ You are analyzing a Vespa TraceDoctor report.
 
 The report may include metadata enclosed in <AI>…</AI> tags.
 This metadata is for your understanding only — never include or quote it in
-the output. Use it solely to interpret the report structure, column meanings,
-or relationships between tasks.
+the output. Use it solely to interpret the report structure, measurement scopes,
+column meanings, and relationships between report sections.
 
 Begin your analysis from the report below:
 `
@@ -21,8 +21,15 @@ The report ends here. The following text describes how to analyze it.
 Guidelines:
 - Base your reasoning only on evidence in the report — do not infer or invent.
 - If something is unclear, say "unknown from report".
-- Tasks represent exclusive time categories; the timeline is ground truth.
-- Match total task time with backend and timeline totals.
+- Do not speculate about causes. Report where time was spent,
+  not why it was spent there, unless the report explicitly provides the explanation.
+- Tasks represent exclusive time categories.
+- Timeline measurements are authoritative.
+  Task summaries and profiles are partial views of the execution.
+- Relate task summaries and profiling information to backend latency
+  and timeline intervals. If a substantial portion of the backend latency is not explained by the
+  task summaries or profiles, explicitly state that the report provides
+  limited explanation of that time.
 - Use ms values consistently and associate them with their events or phases.
 - Treat <AI>…</AI> as internal notes; never include them in the output.
 
@@ -34,34 +41,37 @@ Style:
 Suggested structure:
 1. Overall Request Summary  
 2. Where the Time Went  
-3. Slowest vs Typical Node  
-4. Main Bottlenecks  
-5. Conclusion (one line on where time is spent)
+3. Slowest vs Typical Node/Thread, if applicable
+4. Main Bottlenecks / Largest Identified Costs
+5. Coverage and Report Visibility, if relevant
+6. Conclusion (one line on where time is spent)
 `
 
 const timingsPromptStr = `<AI>The following table shows an overall breakdown of the request.
-We will focus on the *query* part of the request.
-It should take most of the time. If not, the analysis will be incomplete.<\AI>`
+The analysis should usually focus on the query part of the request.
+If query time is substantially smaller than total request time,
+state that the report may not explain the full request latency.</AI>`
 
 const searchNodeRefPromptStr = `<AI>When referring to a specific back-end node within a search
 we use the name of the document type used followed by the numeric id of the back-end node in brackets.
 The numbers are just used to distinguish between nodes and have no semantic meaning.</AI>`
 
-const searchMetaPromptStr = `<AI>The following table shows the individual searches that was performed as part of the request.
+const searchMetaPromptStr = `<AI>The following table shows the individual searches that were performed as part of the request.
 *search* column: numbering the searches for later reference
 *nodes* column: how many back-end nodes were used for the search
 *back-end time* column: maximum back-end response latency
-*document type* column: the document type used for the search<\AI>`
+*document type* column: the document type used for the search</AI>`
 
 const protonSummaryPromptStr = `<AI>The following table shows a summary of the time spent on one or more back-end nodes.
 The time is separated into tasks that does not overlap. The view is simplified and does not represent all time spent.
-If the combined time spent on tasks is much lower than the total time shown above, we are spending time on more unusual things.
-Some of those things might be found later on when looking at timelines.
+If the combined time spent on tasks is much lower than the total time shown above,
+the task summary provides limited explanation for the remaining time.
+The timeline may show where that time occurred.
 The tasks are as follows:
 *global filter*: time spent calculating a global filter to be used by the ANN algorithm.
 This represents an upper bound of the documents matching the query. If this value is zero
 a global filter was not needed.
-*ann setup*: time spent doing ANN before doing normal matching. This will include any time
+*ann setup*: time spent performing ANN before normal matching. This will include any time
 spent doing HNSW. Only when falling back to exact matching is the ANN search performed inside the
 match loop. In the case of HNSW the results are gathered up front and injected into the relevant
 node in the query tree making it spend little time during actual matching. If the time is zero no
@@ -84,17 +94,23 @@ The *ann setup* task from the table above happens as part of the event "Handle g
 </AI>`
 
 const annQueryDetailsPromptStr = `<AI>The following table shows additional information about the ANN part of the query.
-Do not get too hung up on the filter hit ratio.</AI>`
+Do not treat the filter hit ratio alone as the main bottleneck unless the report provides timing evidence for it.</AI>`
 
 const globalFilterProfilingPromptStr = `<AI>The following table shows profiling information for creating the global filter.
 This is more detailed information about what happens inside the *global filter* task from the table above.
 The numbers in brackets in the *component* column are query node identifiers and can be used to identify the same query
 node across information shown for this specific back-end node for this specific search.</AI>`
 
+const setupProfilingPromptStr = `<AI>The following table shows profiling information collected during query setup.
+Only items taking more than 1 ms are shown. The table may therefore account for only part of query setup time.
+The numbers in brackets in the *component* column are query node identifiers and can be used to identify the same query
+node across information shown for this specific back-end node for this specific search.</AI>`
+
 const matchThreadSummaryPromptStr = `<AI>The following table shows a summary of the time spent by one or more matching threads.
 The time is separated into tasks that does not overlap. The view is simplified and does not represent all time spent.
-If the combined time spent on tasks is much lower than the total time shown above, we are spending time on more unusual things.
-Some of those things might be found later on when looking at timelines.
+If the combined time spent on tasks is much lower than the total time shown above,
+the task summary provides limited explanation for the remaining time.
+The timeline may show where that time occurred.
 The tasks are as follows:
 *matching*: time spent executing the query tree to find documents matching it and preparing the
 relevant data needed for ranking.
@@ -124,8 +140,9 @@ const secondPhaseProfilingPromptStr = `<AI>The following table shows profiling i
 This is more detailed information about what happens inside the *second phase* task from the table above.
 </AI>`
 
-const slowToMedianPromptStr = `<AI>We are now done with the report for the slowest node.
-Following below is the report for the median node. Note that some variance between nodes is expected.</AI>`
+const slowToMedianPromptStr = `<AI>The report for the slowest node is complete.
+The following section reports the median node for comparison.
+Some variance between nodes is expected.</AI>`
 
 func promptSetup(ctx *Context, out *output) {
 	if ctx.makePrompt {
@@ -184,6 +201,12 @@ func annQueryDetailsPrompt(ctx *Context, out *output) {
 func globalFilterProfilingPrompt(ctx *Context, out *output) {
 	if ctx.makePrompt {
 		out.fmt("%s\n", globalFilterProfilingPromptStr)
+	}
+}
+
+func setupProfilingPrompt(ctx *Context, out *output) {
+	if ctx.makePrompt {
+		out.fmt("%s\n", setupProfilingPromptStr)
 	}
 }
 

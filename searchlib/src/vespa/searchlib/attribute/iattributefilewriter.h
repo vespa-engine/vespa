@@ -6,7 +6,8 @@
 
 namespace vespalib {
 class DataBuffer;
-}
+class TransientMemoryTracker;
+} // namespace vespalib
 namespace search {
 
 class BufferWriter;
@@ -32,6 +33,7 @@ public:
      * last call can provide an unaligned buffer.
      **/
     virtual void writeBuf(Buffer buf) = 0;
+    virtual void write_buf(Buffer buf, vespalib::TransientMemoryTracker tracker) = 0;
 
     virtual std::unique_ptr<BufferWriter> allocBufferWriter() = 0;
     virtual void close() = 0;

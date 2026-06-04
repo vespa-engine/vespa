@@ -32,6 +32,7 @@
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/net/http/state_explorer.h>
+#include <vespa/vespalib/util/fake_deadline.h>
 #include <vespa/vespalib/util/mmap_file_allocator_factory.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
@@ -78,6 +79,7 @@ using vespalib::GenerationGuard;
 using vespalib::GenerationHandler;
 using vespalib::SharedStringRepo;
 using vespalib::datastore::CompactionStrategy;
+using vespalib::datastore::EntryRef;
 using vespalib::eval::CellType;
 using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::SimpleValue;
@@ -300,6 +302,10 @@ public:
     std::vector<Neighbor> find_top_k(Stats& stats, uint32_t k, const search::tensor::BoundDistanceFunction& df,
                                      uint32_t explore_k, double exploration_slack, bool prefetch_tensors,
                                      const vespalib::Deadline& doom, double distance_threshold) const override {
+        std::this_thread::sleep_for(1ms); // Make sure that test does not fail because it ran too fast
+        if (doom.is_missed()) {
+            return {};
+        }
         stats.count_computed_distance();
         stats.count_visited_node();
         stats.count_visited_node();
@@ -308,7 +314,6 @@ public:
         (void)explore_k;
         (void)exploration_slack;
         (void)prefetch_tensors;
-        (void)doom;
         (void)distance_threshold;
         return {};
     }
@@ -318,6 +323,10 @@ public:
                                                  uint32_t explore_k, double exploration_slack, bool prefetch_tensors,
                                                  const vespalib::Deadline& doom,
                                                  double                    distance_threshold) const override {
+        std::this_thread::sleep_for(1ms); // Make sure that test does not fail because it ran too fast
+        if (doom.is_missed()) {
+            return {};
+        }
         stats.count_computed_distance();
         stats.count_visited_node();
         stats.count_visited_node();
@@ -330,7 +339,6 @@ public:
         (void)filter;
         (void)low_hit_ratio;
         (void)exploration;
-        (void)doom;
         (void)distance_threshold;
         return {};
     }
@@ -1317,7 +1325,8 @@ TEST(TensorAttributeTest, Nearest_neighbor_index_with_mips_distance_metrics_stor
 
 template <typename ParentT> class NearestNeighborBlueprintFixtureBase : public ParentT {
 private:
-    std::unique_ptr<Value> _query_tensor;
+    std::unique_ptr<Value>             _query_tensor;
+    search::queryeval::QuerySetupStats _stats;
 
 public:
     NearestNeighborBlueprintFixtureBase() : _query_tensor() {
@@ -1334,6 +1343,8 @@ public:
     }
 
     ~NearestNeighborBlueprintFixtureBase();
+
+    search::queryeval::QuerySetupStats& stats() { return _stats; }
 
     const Value& create_query_tensor(const TensorSpec& spec) {
         _query_tensor = SimpleValue::from_spec(spec);
@@ -1389,7 +1400,7 @@ TEST(TensorAttributeTest, NN_blueprint_handles_empty_filter_for_post_filtering) 
     EXPECT_FALSE(bp->pending_index_search());
     bp->set_global_filter(*empty_filter, 0.6);
     EXPECT_TRUE(bp->pending_index_search());
-    bp->perform_index_search(vespalib::Deadline::never());
+    bp->perform_index_search(vespalib::Deadline::never(), f.stats());
     EXPECT_FALSE(bp->pending_index_search());
     // targetHits is adjusted based on the estimated hit ratio of the query.
     EXPECT_EQ(3u, bp->get_target_hits());
@@ -1405,7 +1416,7 @@ TEST(TensorAttributeTest, NN_blueprint_adjustment_of_targetHits_is_bound_for_pos
     EXPECT_FALSE(bp->pending_index_search());
     bp->set_global_filter(*empty_filter, 0.2);
     EXPECT_TRUE(bp->pending_index_search());
-    bp->perform_index_search(vespalib::Deadline::never());
+    bp->perform_index_search(vespalib::Deadline::never(), f.stats());
     EXPECT_FALSE(bp->pending_index_search());
     // targetHits is adjusted based on the estimated hit ratio of the query,
     // but bound by target-hits-max-adjustment-factor
@@ -1425,7 +1436,7 @@ TEST(TensorAttributeTest, NN_blueprint_handles_strong_filter_for_pre_filtering) 
     EXPECT_FALSE(bp->pending_index_search());
     bp->set_global_filter(*strong_filter, 0.25);
     EXPECT_TRUE(bp->pending_index_search());
-    bp->perform_index_search(vespalib::Deadline::never());
+    bp->perform_index_search(vespalib::Deadline::never(), f.stats());
     EXPECT_FALSE(bp->pending_index_search());
     EXPECT_EQ(3u, bp->get_target_hits());
     EXPECT_EQ(3u, bp->get_adjusted_target_hits());
@@ -1447,7 +1458,7 @@ TEST(TensorAttributeTest, NN_blueprint_handles_weak_filter_for_pre_filtering) {
     EXPECT_FALSE(bp->pending_index_search());
     bp->set_global_filter(*weak_filter, 0.6);
     EXPECT_TRUE(bp->pending_index_search());
-    bp->perform_index_search(vespalib::Deadline::never());
+    bp->perform_index_search(vespalib::Deadline::never(), f.stats());
     EXPECT_FALSE(bp->pending_index_search());
     EXPECT_EQ(3u, bp->get_target_hits());
     EXPECT_EQ(3u, bp->get_adjusted_target_hits());
@@ -1496,7 +1507,7 @@ TEST(TensorAttributeTest, NN_blueprint_updates_pending_index_search_after_filter
     EXPECT_FALSE(bp->pending_index_search());
     bp->set_global_filter(*weak_filter, 0.6);
     EXPECT_TRUE(bp->pending_index_search());
-    bp->perform_index_search(vespalib::Deadline::never());
+    bp->perform_index_search(vespalib::Deadline::never(), f.stats());
     EXPECT_FALSE(bp->pending_index_search());
 }
 
@@ -1523,25 +1534,26 @@ TEST(TensorAttributeTest, NN_blueprint_do_NOT_want_global_filter_when_NOT_having
 
 TEST(TensorAttributeTest, NN_blueprint_collects_stats) {
     NearestNeighborBlueprintFixture f;
-    auto                            stats = search::queryeval::QueryEvalStats::create();
     // Without filter (with inactive filter)
     {
         auto bp = f.make_blueprint(true);
-        bp->install_stats(*stats);
         auto inactive_filter = GlobalFilter::create();
         EXPECT_FALSE(bp->pending_index_search());
         bp->set_global_filter(*inactive_filter, 0.6);
         EXPECT_TRUE(bp->pending_index_search());
-        bp->perform_index_search(vespalib::Deadline::never());
+        bp->perform_index_search(vespalib::Deadline::never(), f.stats());
         EXPECT_FALSE(bp->pending_index_search());
     }
-    EXPECT_EQ(1, stats->approximate_nns_distances_computed());
-    EXPECT_EQ(2, stats->approximate_nns_nodes_visited());
+    EXPECT_EQ(1, f.stats().approximate_nns_distances_computed());
+    EXPECT_EQ(2, f.stats().approximate_nns_nodes_visited());
+    EXPECT_EQ(1, f.stats().approximate_nns_searches_performed());
+    EXPECT_GT(f.stats().approximate_nns_time_used(), vespalib::duration::zero());
+    EXPECT_EQ(0, f.stats().approximate_nns_timeouts_hit());
+    vespalib::duration last_approximate_nns_time_used = f.stats().approximate_nns_time_used();
 
     // With filter active
     {
         auto bp = f.make_blueprint(true);
-        bp->install_stats(*stats);
         auto filter = search::BitVector::create(1, 11);
         filter->setBit(1);
         filter->setBit(3);
@@ -1553,16 +1565,59 @@ TEST(TensorAttributeTest, NN_blueprint_collects_stats) {
         EXPECT_FALSE(bp->pending_index_search());
         bp->set_global_filter(*weak_filter, 0.6);
         EXPECT_TRUE(bp->pending_index_search());
-        bp->perform_index_search(vespalib::Deadline::never());
+        bp->perform_index_search(vespalib::Deadline::never(), f.stats());
         EXPECT_FALSE(bp->pending_index_search());
     }
-    EXPECT_EQ(2, stats->approximate_nns_distances_computed());
-    EXPECT_EQ(4, stats->approximate_nns_nodes_visited());
+    EXPECT_EQ(2, f.stats().approximate_nns_distances_computed());
+    EXPECT_EQ(4, f.stats().approximate_nns_nodes_visited());
+    EXPECT_EQ(2, f.stats().approximate_nns_searches_performed());
+    EXPECT_GT(f.stats().approximate_nns_time_used(), last_approximate_nns_time_used);
+    EXPECT_EQ(0, f.stats().approximate_nns_timeouts_hit());
+    last_approximate_nns_time_used = f.stats().approximate_nns_time_used();
+
+    // Using up time budget (but not hitting timeout)
+    {
+        auto bp = f.make_blueprint(true);
+        auto inactive_filter = GlobalFilter::create();
+        EXPECT_FALSE(bp->pending_index_search());
+        bp->set_global_filter(*inactive_filter, 0.6);
+        EXPECT_TRUE(bp->pending_index_search());
+        vespalib::FakeDeadline fake_deadline(-1s, vespalib::Deadline::Type::BUDGET);
+        bp->perform_index_search(fake_deadline.get_deadline(), f.stats());
+        EXPECT_FALSE(bp->pending_index_search());
+    }
+    EXPECT_EQ(2, f.stats().approximate_nns_distances_computed());
+    EXPECT_EQ(4, f.stats().approximate_nns_nodes_visited());
+    EXPECT_EQ(3, f.stats().approximate_nns_searches_performed());
+    EXPECT_GT(f.stats().approximate_nns_time_used(), last_approximate_nns_time_used);
+    EXPECT_EQ(0, f.stats().approximate_nns_timeouts_hit());
+    last_approximate_nns_time_used = f.stats().approximate_nns_time_used();
+
+    // Hitting timeout
+    {
+        auto bp = f.make_blueprint(true);
+        auto inactive_filter = GlobalFilter::create();
+        EXPECT_FALSE(bp->pending_index_search());
+        bp->set_global_filter(*inactive_filter, 0.6);
+        EXPECT_TRUE(bp->pending_index_search());
+        vespalib::FakeDeadline fake_deadline(-1s, vespalib::Deadline::Type::TIMEOUT);
+        bp->perform_index_search(fake_deadline.get_deadline(), f.stats());
+        EXPECT_FALSE(bp->pending_index_search());
+    }
+    EXPECT_EQ(2, f.stats().approximate_nns_distances_computed());
+    EXPECT_EQ(4, f.stats().approximate_nns_nodes_visited());
+    EXPECT_EQ(4, f.stats().approximate_nns_searches_performed());
+    EXPECT_GT(f.stats().approximate_nns_time_used(), last_approximate_nns_time_used);
+    EXPECT_EQ(1, f.stats().approximate_nns_timeouts_hit());
+    size_t last_approximate_nns_distances_computed = f.stats().approximate_nns_distances_computed();
+    size_t last_approximate_nns_nodes_visited = f.stats().approximate_nns_nodes_visited();
+    size_t last_approximate_nns_searches_performed = f.stats().approximate_nns_searches_performed();
+    last_approximate_nns_time_used = f.stats().approximate_nns_time_used();
+    size_t last_approximate_nns_timeouts_hit = f.stats().approximate_nns_timeouts_hit();
 
     // Hitting fallback
     {
         auto bp = f.make_blueprint(true, 0.2);
-        bp->install_stats(*stats);
         auto filter = search::BitVector::create(1, 11);
         filter->setBit(3);
         filter->invalidateCachedCount();
@@ -1571,20 +1626,25 @@ TEST(TensorAttributeTest, NN_blueprint_collects_stats) {
         bp->set_global_filter(*strong_filter, 0.6);
         EXPECT_FALSE(bp->pending_index_search());
     }
-    EXPECT_EQ(2, stats->approximate_nns_distances_computed());
-    EXPECT_EQ(4, stats->approximate_nns_nodes_visited());
+    EXPECT_EQ(last_approximate_nns_distances_computed, f.stats().approximate_nns_distances_computed());
+    EXPECT_EQ(last_approximate_nns_nodes_visited, f.stats().approximate_nns_nodes_visited());
+    EXPECT_EQ(last_approximate_nns_searches_performed, f.stats().approximate_nns_searches_performed());
+    EXPECT_EQ(last_approximate_nns_time_used, f.stats().approximate_nns_time_used());
+    EXPECT_EQ(last_approximate_nns_timeouts_hit, f.stats().approximate_nns_timeouts_hit());
 
     // Using exact search in the first place
     {
         auto bp = f.make_blueprint(false);
-        bp->install_stats(*stats);
         auto inactive_filter = GlobalFilter::create();
         EXPECT_FALSE(bp->pending_index_search());
         bp->set_global_filter(*inactive_filter, 0.6);
         EXPECT_FALSE(bp->pending_index_search());
     }
-    EXPECT_EQ(2, stats->approximate_nns_distances_computed());
-    EXPECT_EQ(4, stats->approximate_nns_nodes_visited());
+    EXPECT_EQ(last_approximate_nns_distances_computed, f.stats().approximate_nns_distances_computed());
+    EXPECT_EQ(last_approximate_nns_nodes_visited, f.stats().approximate_nns_nodes_visited());
+    EXPECT_EQ(last_approximate_nns_searches_performed, f.stats().approximate_nns_searches_performed());
+    EXPECT_EQ(last_approximate_nns_time_used, f.stats().approximate_nns_time_used());
+    EXPECT_EQ(last_approximate_nns_timeouts_hit, f.stats().approximate_nns_timeouts_hit());
 }
 
 auto test_values = ::testing::Values(1u, 2u);
@@ -1638,15 +1698,18 @@ TEST_F(SparseTensorAttributeTest, size_on_disk_factor_is_calculated_and_used) {
     }
     EXPECT_LT(10, attr.getCommittedDocIdLimit());
     EXPECT_THAT(attr.getEstimatedSaveByteSize(), AllOf(Ge(40_Ki), Le(50_Ki)));
+    EXPECT_EQ(attr.getCommittedDocIdLimit() * sizeof(EntryRef), attr.transient_memory_for_flush());
     attr.save((_test_dir / "tensor").string());
     auto size_on_disk = attr.size_on_disk();
     EXPECT_LT(60_Ki, size_on_disk);
     EXPECT_THAT(attr.getEstimatedSaveByteSize(), AllOf(Ge(size_on_disk - 4_Ki), Le(size_on_disk + 4_Ki)));
+    EXPECT_EQ(attr.getCommittedDocIdLimit() * sizeof(EntryRef), attr.transient_memory_for_flush());
     auto real_attr2 = std::make_shared<SerializedFastValueAttribute>((_test_dir / "tensor").string(), cfg);
     AttributeVector& attr2 = *real_attr2;
     ASSERT_TRUE(attr2.load());
     EXPECT_EQ(size_on_disk, attr2.size_on_disk());
     EXPECT_THAT(attr2.getEstimatedSaveByteSize(), AllOf(Ge(size_on_disk - 4_Ki), Le(size_on_disk + 4_Ki)));
+    EXPECT_EQ(attr2.getCommittedDocIdLimit() * sizeof(EntryRef), attr2.transient_memory_for_flush());
     EXPECT_EQ(dynamic_memory_usage, attr2.getStatus().get_used_minus_dead_and_onhold() - initial_memory_usage);
     EXPECT_EQ(attr.getEstimatedSaveByteSize(), attr2.getEstimatedSaveByteSize());
 }

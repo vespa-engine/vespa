@@ -128,10 +128,11 @@ public:
     const AllocStats& get_stats() const noexcept { return _stats; }
 
     uint32_t countBuffers() {
-        auto refs =
+        auto refs_snapshot =
             search::attribute::make_entry_ref_vector_snapshot(_mvMapping->get_ref_vector(), _mvMapping->size());
         vespalib::hash_set<uint32_t> buffers;
-        for (const auto& ref : refs) {
+        auto                         refs_span = refs_snapshot.span();
+        for (const auto& ref : refs_span) {
             if (ref.valid()) {
                 RefType iRef = ref;
                 buffers.insert(iRef.bufferId());

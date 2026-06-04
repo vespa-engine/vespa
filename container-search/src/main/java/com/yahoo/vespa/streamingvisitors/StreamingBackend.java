@@ -134,6 +134,11 @@ public class StreamingBackend extends VespaBackend {
                 : query.getTrace().getLevel();
     }
 
+    private boolean sendOldQueryStack() {
+        var config = clusterParams.getQrSearchersConfig();
+        return config != null && config.sendOldQueryStack();
+    }
+
     @Override
     public Result doSearch2(String schema, Query query) {
         if (query.getTimeLeft() <= 0)
@@ -160,7 +165,8 @@ public class StreamingBackend extends VespaBackend {
             partialSummaryHandler = new PartialSummaryHandler(db);
             partialSummaryHandler.wantToFill(query);
         }
-        var visitorContext = new Visitor.Context(getSearchClusterName(), schema, effectiveTraceLevel, partialSummaryHandler);
+        var visitorContext = new Visitor.Context(getSearchClusterName(), schema, effectiveTraceLevel,
+                                                 sendOldQueryStack(), partialSummaryHandler);
         Visitor visitor = visitorFactory.createVisitor(query, route, visitorContext);
         try {
             visitor.doSearch();

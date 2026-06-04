@@ -3,6 +3,7 @@
 package tracedoctor
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -40,4 +41,21 @@ func TestTopNPerfTopN(t *testing.T) {
 
 	top5 := tp.topN(5)
 	assert.Equal(t, 3, len(top5))
+}
+
+func TestTopNPerfSelfTimeAbove(t *testing.T) {
+	tp := newTopNPerf()
+	tp.addSample("small", 1, 0.5)
+	tp.addSample("medium", 1, 2.0)
+	tp.addSample("big", 1, 10.0)
+
+	assert.True(t, tp.hasSelfTimeAbove(2.0))
+	assert.False(t, tp.hasSelfTimeAbove(10.0))
+
+	var buf bytes.Buffer
+	tp.renderSelfTimeAbove(&output{out: &buf}, 2.0)
+	out := buf.String()
+	assert.Contains(t, out, "big")
+	assert.NotContains(t, out, "medium")
+	assert.NotContains(t, out, "small")
 }

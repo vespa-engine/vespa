@@ -16,6 +16,7 @@
 #include <vespa/searchlib/queryeval/create_blueprint_params.h>
 #include <vespa/searchlib/queryeval/flow.h>
 #include <vespa/searchlib/queryeval/wand/wand_parts.h>
+#include <vespa/vespalib/util/execution_profiler.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 
@@ -24,6 +25,7 @@ using search::attribute::BasicType;
 using search::attribute::diversity::DiversityFilter;
 using search::queryeval::CreateBlueprintParams;
 using search::queryeval::ExecuteInfo;
+using search::queryeval::FetchPostingsProfilerGuard;
 using search::queryeval::IDiversifier;
 using vespalib::Issue;
 
@@ -151,7 +153,8 @@ MatchToolsFactory::MatchToolsFactory(
     const SerializedQueryTree& queryTree, const std::string& location, const ViewResolver& viewResolver,
     const IDocumentMetaStore& metaStore, const IIndexEnvironment& indexEnv, const RankSetup& rankSetup,
     const Properties& rankProperties, const Properties& featureOverrides, vespalib::ThreadBundle& thread_bundle,
-    const search::IDocumentMetaStoreContext::IReadGuard::SP* metaStoreReadGuard, uint32_t maxNumHits, bool is_search)
+    const search::IDocumentMetaStoreContext::IReadGuard::SP* metaStoreReadGuard,
+    search::queryeval::QuerySetupStats& setup_stats, uint32_t maxNumHits, bool is_search)
     : _queryLimiter(queryLimiter),
       _create_blueprint_params(extract_create_blueprint_params(
           rankSetup, rankProperties, metaStore.getNumActiveLids(), searchContext.getDocIdLimit())),
@@ -168,14 +171,23 @@ MatchToolsFactory::MatchToolsFactory(
       _object_store(nullptr),
       _metaStore(metaStore),
       _needed_handles() {
-    if (doom.soft_doom())
+    if (doom.soft_doom()) {
         return;
+    }
+    auto enum_guard = search::queryeval::Blueprint::auto_enum();
     auto trace = root_trace.make_trace();
     trace.addEvent(4, "Start query setup");
     _query.setWhiteListBlueprint(metaStore.createWhiteListBlueprint());
     trace.addEvent(5, "Deserialize and build query tree");
     _valid = _query.buildTree(queryTree, location, viewResolver, indexEnv);
     if (_valid) {
+        std::unique_ptr<vespalib::ExecutionProfiler> setup_profiler;
+        if (trace.getLevel() > 0) {
+            if (int32_t depth = root_trace.match_profile_depth(); depth != 0) {
+                setup_profiler = std::make_unique<vespalib::ExecutionProfiler>(depth);
+            }
+        }
+        auto bind_profiler = vespalib::ExecutionProfiler::ThreadBinder::bind(setup_profiler.get());
         _query.extractTerms(_queryEnv.terms());
         _query.extractLocations(_queryEnv.locations());
         trace.addEvent(5, "Build query execution plan");
@@ -192,17 +204,20 @@ MatchToolsFactory::MatchToolsFactory(
         double hitRate = std::min(1.0, double(maxNumHits) / double(searchContext.getDocIdLimit()));
         auto   in_flow = InFlow(is_search, hitRate);
         _query.optimize(in_flow, sort_by_cost);
-        if (trace.getLevel() >= 6) { // will dump blueprint later
-            _query.enumerate_blueprint_nodes();
-        }
         trace.addEvent(4, "Perform dictionary lookups and posting lists initialization");
-        _query.fetchPostings(ExecuteInfo::create(in_flow.rate(), _requestContext.getDoom(), thread_bundle));
+        {
+            FetchPostingsProfilerGuard guard(*_query.peekRoot());
+            _query.fetchPostings(ExecuteInfo::create(in_flow.rate(), _requestContext.getDoom(), thread_bundle));
+        }
         if (is_search) {
             bool use_lazy_filter = LazyFilter::check(_queryEnv.getProperties());
             _query.handle_global_filter(_requestContext, ann_deadline_config, searchContext.getDocIdLimit(),
                                         _create_blueprint_params.global_filter_lower_limit,
-                                        _create_blueprint_params.global_filter_upper_limit, trace, sort_by_cost,
-                                        use_lazy_filter);
+                                        _create_blueprint_params.global_filter_upper_limit, setup_stats, trace,
+                                        sort_by_cost, use_lazy_filter);
+        }
+        if (setup_profiler) {
+            setup_profiler->report(trace.createCursor("setup_profiling"));
         }
         _query.freeze();
         trace.addEvent(5, "Prepare shared state for multi-threaded rank executors");

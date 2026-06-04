@@ -11,6 +11,8 @@
 #include "unpackinfo.h"
 
 #include <vespa/searchlib/common/bitvector.h>
+#include <vespa/vespalib/util/execution_profiler.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <optional>
 #include <span>
@@ -113,7 +115,20 @@ private:
         BindOpts& operator=(const BindOpts&) = delete;
     };
 
+    // guard used to enable auto-enumeration of blueprints
+    struct AutoEnumGuard {
+        explicit AutoEnumGuard(uint32_t first_id) noexcept;
+        ~AutoEnumGuard();
+        AutoEnumGuard(AutoEnumGuard&&) = delete;
+        AutoEnumGuard(const AutoEnumGuard&) = delete;
+        AutoEnumGuard& operator=(AutoEnumGuard&&) = delete;
+        AutoEnumGuard& operator=(const AutoEnumGuard&) = delete;
+    };
+
 public:
+    // enable auto enumeration of blueprints (need to keep guard alive)
+    static AutoEnumGuard auto_enum(uint32_t next_id = 1) noexcept { return AutoEnumGuard(next_id); }
+
     // thread local Options are used during query planning (calculate_flow_stats/sort)
     //
     // The optimize_and_sort function will handle this for you by
@@ -256,6 +271,7 @@ public:
 private:
     Blueprint*                  _parent;
     FlowStats                   _flow_stats;
+    double                      _abs_cost;
     uint32_t                    _sourceId;
     uint32_t                    _docid_limit;
     uint32_t                    _id;
@@ -274,10 +290,11 @@ protected:
         _frozen = true;
     }
 
-    // Call this first inside sort implementations to handle 2 things:
+    // Call this first inside sort implementations to handle 3 things:
     //
     // (1) force in_flow to be strict if allowed and better.
     // (2) tag blueprint with the strictness of the in_flow.
+    // (3) calculate simple absolute cost estimate.
     void resolve_strict(InFlow& in_flow) noexcept;
 
 public:
@@ -298,6 +315,10 @@ public:
     Blueprint& operator=(const Blueprint&) = delete;
     virtual ~Blueprint();
 
+    // create a string on the form [id]className::operation
+    // to be used  when profiling
+    std::string profiler_name(std::string_view operation) const;
+
     void setParent(Blueprint* parent) noexcept { _parent = parent; }
     Blueprint* getParent() const noexcept { return _parent; }
     bool has_parent() const { return (_parent != nullptr); }
@@ -311,9 +332,7 @@ public:
     virtual void setDocIdLimit(uint32_t limit) noexcept { _docid_limit = limit; }
     uint32_t get_docid_limit() const noexcept { return _docid_limit; }
 
-    void set_id(uint32_t value) noexcept { _id = value; }
     uint32_t id() const noexcept { return _id; }
-    virtual uint32_t enumerate(uint32_t next_id) noexcept;
 
     bool strict() const noexcept { return _strict; }
 
@@ -533,7 +552,6 @@ public:
     ~IntermediateBlueprint() override;
 
     void setDocIdLimit(uint32_t limit) noexcept final;
-    uint32_t enumerate(uint32_t next_id) noexcept override;
     void each_node_post_order(const std::function<void(Blueprint&)>& f) override;
 
     void optimize(Blueprint*& self, OptimizePass pass) override;
@@ -559,7 +577,7 @@ public:
                                                       fef::MatchData&       md) const = 0;
 
     void visitMembers(vespalib::ObjectVisitor& visitor) const override;
-    void fetchPostings(const ExecuteInfo& execInfo) override;
+    void fetchPostings(const ExecuteInfo& execInfo) final;
     void freeze() final;
     void set_matching_phase(MatchingPhase matching_phase) noexcept override;
 
@@ -627,6 +645,24 @@ struct ComplexLeafBlueprint : LeafBlueprint {
 };
 
 //-----------------------------------------------------------------------------
+
+/**
+ * RAII profiler guard for the fetchPostings operation on a single
+ * blueprint node.
+ **/
+struct FetchPostingsProfilerGuard : vespalib::ExecutionProfiler::NameGuard {
+    FetchPostingsProfilerGuard(const Blueprint& bp)
+        : NameGuard([&bp] { return bp.profiler_name("fetchPostings"); }) {}
+};
+
+/**
+ * RAII profiler guard for the creation of a single blueprint node.
+ **/
+struct CreateBlueprintProfilerGuard : vespalib::ExecutionProfiler::PostNameGuard {
+    void set_name_with(const Blueprint& bp) {
+        set_name([&bp] { return bp.profiler_name("create"); });
+    }
+};
 
 } // namespace search::queryeval
 

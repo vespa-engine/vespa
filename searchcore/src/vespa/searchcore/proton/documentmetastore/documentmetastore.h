@@ -58,6 +58,15 @@ public:
     using DocumentMetaStoreAttribute::reclaim_unused_memory;
 
 private:
+    class UnitTestAdapter {
+        DocumentMetaStore& _dms;
+
+    public:
+        explicit UnitTestAdapter(DocumentMetaStore& dms) noexcept : _dms(dms) {}
+        void set_track_document_sizes(bool value) noexcept { _dms._trackDocumentSizes = value; }
+        void set_track_32bit_document_sizes(bool value) noexcept { _dms._track_32bit_document_sizes = value; }
+        void set_store_full_document_id(bool value) noexcept { _dms._store_full_document_id = value; }
+    };
     // maps from lid -> metadata
     using MetadataStore = vespalib::RcuVectorBase<RawDocumentMetadata>;
     using KeyComp = documentmetastore::LidGidKeyComparator;
@@ -82,6 +91,8 @@ private:
 
     MetadataStore                   _metadataStore;
     DocumentIdStore                 _docid_store;
+    uint64_t                        _docid_bytes;
+    std::atomic<uint64_t>           _docid_bytes_stats; // Atomic mirror of _docid_bytes
     TreeType                        _gidToLidMap;
     Iterator                        _gid_to_lid_map_write_itr; // Iterator used for all updates of _gidToLidMap
     SerialNum                       _gid_to_lid_map_write_itr_prepare_serial_num;
@@ -90,10 +101,13 @@ private:
     std::atomic<uint32_t>           _shrinkLidSpaceBlockers;
     const SubDbType                 _subDbType;
     bool                            _trackDocumentSizes;
+    bool                            _track_32bit_document_sizes;
+    bool                            _requires_doc_sizes_from_docstore;
     size_t                          _changesSinceCommit;
     OperationListenerSP             _op_listener;
     bool                            _should_compact_gid_to_lid_map;
     bool                            _store_full_document_id;
+    bool                            _requires_document_ids_from_docstore;
 
     DocId getFreeLid();
     DocId peekFreeLid();
@@ -102,10 +116,17 @@ private:
 
     const GlobalId& getRawGid(DocId lid) const { return getRawMetadata(lid).getGid(); }
 
+    // Add document id string to _docid_store and update _docid_bytes
+    DocumentIdEntryRef add_docid_string(std::span<const char> docid);
+    // Remove document id string from _docid_store and update _docid_bytes
+    void remove_docid_string(DocumentIdEntryRef ref);
+
     bool consider_compact_gid_to_lid_map();
     void compact_docid_store();
     void onCommit() override;
     void onUpdateStat(CommitParam::UpdateStats updateStats) override;
+    void update_docid_bytes_stats() { _docid_bytes_stats.store(_docid_bytes, std::memory_order_relaxed); }
+    uint64_t get_docid_bytes_stats() const noexcept { return _docid_bytes_stats.load(std::memory_order_relaxed); }
 
     // Implements AttributeVector
     void before_inc_generation(vespalib::Generation current_gen) override;
@@ -155,7 +176,11 @@ public:
     using Iterator = TreeType::Iterator;
     using ConstIterator = TreeType::ConstIterator;
     static constexpr size_t minHeaderLen = 0x1000;
-    static constexpr size_t entrySize = sizeof(uint32_t) + GlobalId::LENGTH + sizeof(uint8_t) + sizeof(Timestamp);
+    static constexpr size_t min_entry_size =
+        sizeof(uint32_t) + GlobalId::LENGTH + sizeof(uint8_t) + sizeof(Timestamp);
+    static constexpr size_t entry_size(bool track_document_sizes, bool track_32bit_document_sizes) {
+        return min_entry_size + (track_document_sizes ? (track_32bit_document_sizes ? 4 : 3) : 0);
+    }
 
     explicit DocumentMetaStore(BucketDBOwnerSP bucketDB);
     DocumentMetaStore(BucketDBOwnerSP bucketDB, const std::string& name);
@@ -195,7 +220,7 @@ public:
      * document store).
      */
     void removes_complete(const std::vector<DocId>& lids) override;
-    void move(DocId fromLid, DocId toLid, uint64_t prepare_serial_num) override;
+    void move(const document::DocumentId& docid, DocId fromLid, DocId toLid, uint64_t prepare_serial_num) override;
     bool validButMaybeUnusedLid(DocId lid) const { return _lidAlloc.validButMaybeUnusedLid(lid); }
     bool validLidFast(DocId lid) const { return _lidAlloc.validLid(lid); }
     bool validLidFast(DocId lid, uint32_t limit) const { return _lidAlloc.validLid(lid, limit); }
@@ -281,14 +306,30 @@ public:
     void onShrinkLidSpace() override;
     size_t getEstimatedShrinkLidSpaceGain() const override;
     uint64_t getEstimatedSaveByteSize() const override;
+    [[nodiscard]] size_t transient_memory_for_flush() const noexcept override;
     uint32_t getVersion() const override;
-    void setTrackDocumentSizes(bool trackDocumentSizes) { _trackDocumentSizes = trackDocumentSizes; }
+
+    /*
+     * Functions only intended for unit testing are exposed via UnitTestAdapter.
+     */
+    UnitTestAdapter unit_test_adapter() noexcept { return UnitTestAdapter(*this); }
+
     void foreach(const search::IGidToLidMapperVisitor& visitor) const override;
     bool is_sortable() const noexcept override;
     std::unique_ptr<search::attribute::ISortBlobWriter>
     make_sort_blob_writer(bool ascending, const search::common::BlobConverter* converter,
                           search::common::sortspec::MissingPolicy policy,
                           std::string_view                        missing_value) const override;
+
+    /*
+     * Returns true if this DocumentMetaStore is supposed to store document id strings,
+     * has some documents, but misses their document ids.
+     * This signalizes that the docstore has to be validated after replay to fill in the missing document ids.
+     * This method continues to return true after the validation, which can be ignored.
+     */
+    bool requires_document_ids_from_docstore() const noexcept { return _requires_document_ids_from_docstore; }
+
+    bool requires_doc_sizes_from_docstore() const noexcept { return _requires_doc_sizes_from_docstore; }
 
     vespalib::MemoryUsage get_docid_memory_usage() const { return _docid_store.getMemoryUsage(); };
     vespalib::MemoryUsage get_gid_to_lid_map_memory_usage() const { return _gidToLidMap.getMemoryUsage(); };

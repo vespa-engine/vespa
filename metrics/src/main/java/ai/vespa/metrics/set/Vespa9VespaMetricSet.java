@@ -127,6 +127,7 @@ public class Vespa9VespaMetricSet {
         addMetric(metrics, ContainerMetrics.JETTY_THREADPOOL_BUSY_THREADS, EnumSet.of(sum, count, max));
         addMetric(metrics, ContainerMetrics.JETTY_THREADPOOL_TOTAL_THREADS.max());
         addMetric(metrics, ContainerMetrics.JETTY_THREADPOOL_QUEUE_SIZE.max());
+        addMetric(metrics, ContainerMetrics.JETTY_HTTP_COMPLIANCE_VIOLATION.rate());
 
         addMetric(metrics, ContainerMetrics.HTTPAPI_LATENCY, EnumSet.of(max, sum, count));
         addMetric(metrics, ContainerMetrics.HTTPAPI_PENDING, EnumSet.of(max, sum, count));
@@ -186,6 +187,14 @@ public class Vespa9VespaMetricSet {
         addMetric(metrics, ContainerMetrics.EMBEDDER_BATCH_SIZE, EnumSet.of(max, sum, count));
         addMetric(metrics, ContainerMetrics.EMBEDDER_BATCH_QUEUE_TIME, EnumSet.of(max, sum, count));
         addMetric(metrics, ContainerMetrics.EMBEDDER_BATCH_COUNT, EnumSet.of(count));
+
+        addMetric(metrics, ContainerMetrics.INFERENCE_PENDING.baseName());
+        addMetric(metrics, ContainerMetrics.INFERENCE_REQUEST_RATE.baseName());
+        addMetric(metrics, ContainerMetrics.INFERENCE_FAILURE_RATE.baseName());
+        addMetric(metrics, ContainerMetrics.INFERENCE_REQUEST_LATENCY.baseName());
+        addMetric(metrics, ContainerMetrics.INFERENCE_QUEUE_LATENCY.baseName());
+        addMetric(metrics, ContainerMetrics.INFERENCE_COMPUTE_LATENCY.baseName());
+        addMetric(metrics, ContainerMetrics.INFERENCE_QUEUE_COMPUTE_RATIO.baseName());
 
         return metrics;
     }
@@ -416,8 +425,10 @@ public class Vespa9VespaMetricSet {
 
         // matching
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_QUERIES.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_APPROXIMATE_NNS_TIMED_OUT_QUERIES.rate());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_QUERY_LATENCY, EnumSet.of(max, sum, count));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_QUERY_SETUP_TIME, EnumSet.of(max, sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_QUERY_APPROXIMATE_NNS_TIME, EnumSet.of(max, sum, count));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_DOCS_MATCHED, EnumSet.of(rate));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_EXACT_NNS_DISTANCES_COMPUTED, EnumSet.of(rate));
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_APPROXIMATE_NNS_DISTANCES_COMPUTED, EnumSet.of(rate));

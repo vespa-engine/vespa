@@ -886,27 +886,54 @@ public class YqlParserTestCase {
     @Test
     void testGeoLocation() {
         assertParse("select foo from bar where geoLocation(workplace, 63.418417, 10.433033, \"0.5 deg\")",
-                "GEO_LOCATION workplace:(2,10433033,63418417,500000,0,1,0,1921876103)");
-        assertParse("select foo from bar where geoLocation(headquarters, \"37.416383\", \"-122.024683\", \"100 miles\")",
-                "GEO_LOCATION headquarters:(2,-122024683,37416383,1450561,0,1,0,3411238761)");
+            "GEO_LOCATION workplace:(2,10433033,63418417,500000,0,1,0,1921876103)");
+        assertParse(
+            "select foo from bar where geoLocation(headquarters, \"37.416383\", \"-122.024683\", \"100 miles\")",
+            "GEO_LOCATION headquarters:(2,-122024683,37416383,1450561,0,1,0,3411238761)");
         assertParse("select foo from bar where geoLocation(home, \"E10.433033\", \"N63.418417\", \"5km\")",
-                "GEO_LOCATION home:(2,10433033,63418417,45066,0,1,0,1921876103)");
+            "GEO_LOCATION home:(2,10433033,63418417,45066,0,1,0,1921876103)");
 
         assertParseFail("select foo from bar where geoLocation(qux, 1, 2)",
-                new IllegalArgumentException("Expected 4 arguments, got 3."));
+            new IllegalArgumentException("Expected 4 arguments, got 3."));
         assertParseFail("select foo from bar where geoLocation(qux, 2.0, \"N5.0\", \"0.5 deg\");",
-                new IllegalArgumentException(
-                        "Invalid geoLocation coordinates 'Latitude: 2.0 degrees' and 'Latitude: 5.0 degrees'"));
+            new IllegalArgumentException(
+                "Invalid geoLocation coordinates 'Latitude: 2.0 degrees' and 'Latitude: 5.0 degrees'"));
         assertParse("select foo from bar where geoLocation(workplace, -12, -34, \"-77 d\")",
-                "GEO_LOCATION workplace:(2,-34000000,-12000000,-1,0,1,0,4201111954)");
+            "GEO_LOCATION workplace:(2,-34000000,-12000000,-1,0,1,0,4201111954)");
         assertParse("select * from test_index where geoLocation(coordinate, 0.000010, 0.000010, \"10.000000 km\")",
-                "GEO_LOCATION coordinate:(2,10,10,90133,0,1,0,4294967294)");
+            "GEO_LOCATION coordinate:(2,10,10,90133,0,1,0,4294967294)");
+
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+        var builder = new Query.Builder();
+        var query = builder.build();
+        query.properties().set("mylatitude", "42.123456");
+        query.properties().set("mylongitude", "17.123456");
+        query.properties().set("myradius", "10 km");
+        parser.setUserQuery(query);
+        var qt = parse("select * from sources * where geoLocation(mypos, @mylatitude, @mylongitude, @myradius);");
+        assertEquals("GEO_LOCATION mypos:(2,17123456,42123456,90133,0,1,0,3185582897)", qt.toString());
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+        parser.setUserQuery(query);
+        var ex = assertThrows(IllegalStateException.class,
+            () -> parse("select * from sources * where geoLocation(mypos, @mylatitude, @bad, @myradius);"));
+        assertTrue(ex.getMessage().contains("missing"));
     }
 
     @Test
     void testGeoBoundingBox() {
         assertParse("select foo from bar where geoBoundingBox('workplace', -63.418, -10.433, 63.5, 10.5)",
                     "GEO_LOCATION workplace:[2,-10433000,-63418000,10500000,63500000]");
+
+        parser = new YqlParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+        var builder = new Query.Builder();
+        var query = builder.build();
+        query.properties().set("my_s", "-63.418");
+        query.properties().set("my_n", "63.5");
+        query.properties().set("my_w", "-10.433");
+        query.properties().set("my_e", "10.5");
+        parser.setUserQuery(query);
+        var qt = parse("select foo from bar where geoBoundingBox('workplace', @my_s, @my_w, @my_n, @my_e);");
+        assertEquals("GEO_LOCATION workplace:[2,-10433000,-63418000,10500000,63500000]", qt.toString());
     }
 
     @Test

@@ -82,7 +82,7 @@ public class XMLRendererTestCase {
 
         String expected =
                 "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
-                        "<result total-hit-count=\"0\" coverage-docs=\"500\" coverage-nodes=\"1\" coverage-full=\"false\" coverage=\"0\" results-full=\"0\" results=\"1\">\n" +
+                        "<result total-hit-count=\"0\" coverage-docs=\"500\" coverage-nodes=\"1\" coverage-full=\"true\" coverage=\"100\" results-full=\"1\" results=\"1\">\n" +
                         "  <error code=\"18\">Internal server error.</error>\n" +
                         "  <errordetails>\n" +
                         "    <error error=\"Internal server error.\" code=\"18\">message</error>\n" +

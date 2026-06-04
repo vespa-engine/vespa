@@ -27,6 +27,7 @@
 #include <gmock/gmock.h>
 
 #include <filesystem>
+#include <map>
 
 #include <vespa/log/log.h>
 LOG_SETUP("blueprint_test");
@@ -218,6 +219,65 @@ TEST(IntermediateBlueprintsTest, test_Or_propagates_updated_histestimate) {
     EXPECT_EQ(1.0, dynamic_cast<const RememberExecuteInfo&>(bp->getChild(1)).hit_rate);
     EXPECT_EQ(1.0, dynamic_cast<const RememberExecuteInfo&>(bp->getChild(2)).hit_rate);
     EXPECT_EQ(1.0, dynamic_cast<const RememberExecuteInfo&>(bp->getChild(3)).hit_rate);
+}
+
+namespace {
+
+void collect_fetch_postings_counts(std::map<std::string, size_t>& counts, const auto& node) {
+    if (!node.valid()) {
+        return;
+    }
+    collect_fetch_postings_counts(counts, node["roots"]);
+    collect_fetch_postings_counts(counts, node["children"]);
+    for (size_t i = 0; i < node.entries(); ++i) {
+        collect_fetch_postings_counts(counts, node[i]);
+    }
+    const auto& name = node["name"];
+    if (name.valid()) {
+        counts[name.asString().make_string()] += node["count"].asLong();
+    }
+}
+
+} // namespace
+
+TEST(IntermediateBlueprintsTest, test_fetch_postings_can_be_profiled) {
+    auto enum_guard = Blueprint::auto_enum();
+    auto bp = std::make_unique<AndBlueprint>();
+    bp->addChild(ap(MyLeafSpec(20).create()));
+    bp->addChild(ap(MyLeafSpec(200).create()));
+    bp->addChild(ap(MyLeafSpec(2000).create()));
+    bp->setDocIdLimit(5000);
+    optimize(bp, true);
+    vespalib::ExecutionProfiler profiler(64);
+    auto                        profiler_guard = vespalib::ExecutionProfiler::ThreadBinder::bind(&profiler);
+    {
+        FetchPostingsProfilerGuard guard(*bp);
+        bp->fetchPostings(ExecuteInfo::createForTest());
+    }
+    Slime slime;
+    profiler.report(slime.setObject());
+    std::map<std::string, size_t> counts;
+    collect_fetch_postings_counts(counts, slime.get());
+    EXPECT_EQ(counts.size(), 4u);
+    EXPECT_EQ(counts["[1]search::queryeval::AndBlueprint::fetchPostings"], 1u);
+    EXPECT_EQ(counts["[2]search::queryeval::MyLeaf::fetchPostings"], 1u);
+    EXPECT_EQ(counts["[3]search::queryeval::MyLeaf::fetchPostings"], 1u);
+    EXPECT_EQ(counts["[4]search::queryeval::MyLeaf::fetchPostings"], 1u);
+}
+
+TEST(IntermediateBlueprintsTest, test_fetch_postings_profile_omits_id_when_unset) {
+    auto                        leaf = ap(MyLeafSpec(20).create());
+    vespalib::ExecutionProfiler profiler(64);
+    auto                        profiler_guard = vespalib::ExecutionProfiler::ThreadBinder::bind(&profiler);
+    {
+        FetchPostingsProfilerGuard guard(*leaf);
+    }
+    Slime slime;
+    profiler.report(slime.setObject());
+    std::map<std::string, size_t> counts;
+    collect_fetch_postings_counts(counts, slime.get());
+    EXPECT_EQ(counts.size(), 1u);
+    EXPECT_EQ(counts["[]search::queryeval::MyLeaf::fetchPostings"], 1u);
 }
 
 TEST(IntermediateBlueprintsTest, test_And_Blueprint) {
@@ -581,6 +641,14 @@ void compare(const Blueprint& bp1, const Blueprint& bp2, bool expect_eq) {
             if (field == "strict") {
                 // ignore strict-tagging differences between optimized and unoptimized blueprint trees
                 if (a.type().getId() == vespalib::slime::BOOL::ID && b.type().getId() == vespalib::slime::BOOL::ID) {
+                    return true;
+                }
+            }
+            if (field == "abs_cost") {
+                // ignore abs_cost differences between optimized and unoptimized blueprint trees
+                if (a.type().getId() == vespalib::slime::DOUBLE::ID &&
+                    b.type().getId() == vespalib::slime::DOUBLE::ID)
+                {
                     return true;
                 }
             }
@@ -1144,6 +1212,7 @@ TEST(IntermediateBlueprintsTest, require_that_unpack_of_or_over_multisearch_is_o
                                 ->addChild(ap(MyLeafSpec(20).addField(4, 4).create()))
                                 .addChild(ap(MyLeafSpec(20).addField(5, 5).create()))
                                 .addChild(ap(MyLeafSpec(10).addField(6, 6).create()))));
+
     Blueprint::UP top_up(ap((new OrBlueprint())->addChild(std::move(child1)).addChild(std::move(child2))));
     MatchData::UP md = MatchData::makeTestInstance(100, 10);
     top_up->basic_plan(false, 1000);
@@ -1246,16 +1315,17 @@ TEST(IntermediateBlueprintsTest, require_that_children_does_not_optimize_when_pa
     search::fef::TermFieldHandle idxth22 = subLayout.allocTermField(2);
     search::fef::TermFieldHandle idxth1 = subLayout.allocTermField(1);
     search::fef::MatchDataLayout mdl;
-    Blueprint::UP                top_up(ap((new EquivBlueprint(fields, std::move(subLayout)))
-                                               ->addTerm(index.getIndex().createBlueprint(
+
+    Blueprint::UP top_up(ap((new EquivBlueprint(fields, std::move(subLayout)))
+                                ->addTerm(index.getIndex().createBlueprint(
                                               requestContext, FieldSpec("f2", 2, idxth22, true), makeTerm("w2"), mdl),
-                                                         1.0)
-                                               .addTerm(index.getIndex().createBlueprint(requestContext, FieldSpec("f1", 1, idxth1),
-                                                                                         makeTerm("w1"), mdl),
-                                                        1.0)
-                                               .addTerm(index.getIndex().createBlueprint(requestContext, FieldSpec("f2", 2, idxth21),
-                                                                                         makeTerm("w2"), mdl),
-                                                        1.0)));
+                                          1.0)
+                                .addTerm(index.getIndex().createBlueprint(requestContext, FieldSpec("f1", 1, idxth1),
+                                                                          makeTerm("w1"), mdl),
+                                         1.0)
+                                .addTerm(index.getIndex().createBlueprint(requestContext, FieldSpec("f2", 2, idxth21),
+                                                                          makeTerm("w2"), mdl),
+                                         1.0)));
     EXPECT_TRUE(mdl.empty());
     MatchData::UP md = MatchData::makeTestInstance(100, 10);
     top_up->basic_plan(true, 1000);
@@ -1289,13 +1359,14 @@ TEST(IntermediateBlueprintsTest, require_that_unpack_optimization_is_not_overrul
     search::fef::TermFieldHandle idxth1 = subLayout.allocTermField(1);
     search::fef::TermFieldHandle idxth2 = subLayout.allocTermField(2);
     search::fef::TermFieldHandle idxth3 = subLayout.allocTermField(3);
-    Blueprint::UP                top_up(ap((new EquivBlueprint(fields, std::move(subLayout)))
-                                               ->addTerm(ap((new OrBlueprint())
-                                                                ->addChild(ap(MyLeafSpec(20).addField(1, idxth1).create()))
-                                                                .addChild(ap(MyLeafSpec(20).addField(2, idxth2).create()))
-                                                                .addChild(ap(MyLeafSpec(10).addField(3, idxth3).create()))),
-                                                         1.0)));
-    MatchData::UP                md = MatchData::makeTestInstance(100, 10);
+
+    Blueprint::UP top_up(ap((new EquivBlueprint(fields, std::move(subLayout)))
+                                ->addTerm(ap((new OrBlueprint())
+                                                 ->addChild(ap(MyLeafSpec(20).addField(1, idxth1).create()))
+                                                 .addChild(ap(MyLeafSpec(20).addField(2, idxth2).create()))
+                                                 .addChild(ap(MyLeafSpec(10).addField(3, idxth3).create()))),
+                                          1.0)));
+    MatchData::UP md = MatchData::makeTestInstance(100, 10);
     top_up->basic_plan(true, 1000);
     top_up->fetchPostings(ExecuteInfo::FULL);
     SearchIterator::UP search = top_up->createSearch(*md);

@@ -19,7 +19,7 @@ template <typename MultiValueT> class MultiValueNumericAttributeSaver : public M
     using Parent = MultiValueAttributeSaver;
     using MultiValueType = MultiValueT;
     using ValueType = multivalue::ValueType_t<MultiValueType>;
-    using Parent::_frozenIndices;
+    using Parent::_indices_snapshot;
     using MultiValueMapping = attribute::MultiValueMapping<MultiValueType>;
 
     const MultiValueMapping& _mvMapping;

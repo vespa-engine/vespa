@@ -21,6 +21,7 @@ private:
     DiskGain                            _diskGain;
     uint64_t                            _approxBytesToWriteToDisk;
     uint64_t                            _approx_bytes_to_read_from_disk;
+    size_t                              _transient_memory_for_flush;
     double                              _replay_operation_cost;
     bool                                _needUrgentFlush;
     Priority                            _priority;
@@ -58,10 +59,12 @@ public:
     Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override {
         return _target->initFlush(currentSerial, std::move(flush_token));
     }
+    [[nodiscard]] bool can_flush(SerialNum current_serial) const noexcept override;
     FlushStats getLastFlushStats() const override { return _target->getLastFlushStats(); }
 
     uint64_t getApproxBytesToWriteToDisk() const override { return _approxBytesToWriteToDisk; }
     uint64_t get_approx_bytes_to_read_from_disk() const noexcept override;
+    [[nodiscard]] size_t transient_memory_for_flush() const noexcept override;
     std::chrono::steady_clock::duration last_flush_duration() const noexcept override;
 };
 

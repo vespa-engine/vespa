@@ -66,6 +66,7 @@ message SearchReply {
     bytes slime_trace = 9;
     repeated Error errors = 10;
     repeated string match_feature_names = 11;
+    bool degraded_by_ann_timeout = 12;
 }
 
 message Error {

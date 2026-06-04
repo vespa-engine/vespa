@@ -12,6 +12,7 @@
 #include <cassert>
 
 using namespace proton;
+using proton::flushengine::FlushStrategyResult;
 using search::SerialNum;
 using searchcorespi::IFlushTarget;
 
@@ -41,6 +42,7 @@ struct SimpleFlushTarget : public test::DummyFlushTarget {
     void set_approx_disk_read_bytes(uint64_t approx_disk_read_bytes_) noexcept {
         approx_disk_read_bytes = approx_disk_read_bytes_;
     }
+    [[nodiscard]] size_t transient_memory_for_flush() const noexcept override { return 0; }
 };
 
 class ContextsBuilder {
@@ -201,7 +203,7 @@ struct FlushStrategyFixture {
     [[nodiscard]] FlushContext::List getFlushTargets(const FlushContext::List&       targetList,
                                                      const flushengine::TlsStatsMap& tlsStatsMap) const {
         flushengine::ActiveFlushStats active_flushes;
-        return strategy.getFlushTargets(targetList, tlsStatsMap, active_flushes);
+        return strategy.getFlushTargets(targetList, tlsStatsMap, active_flushes).list();
     }
 };
 

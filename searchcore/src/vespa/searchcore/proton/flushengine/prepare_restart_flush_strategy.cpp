@@ -12,6 +12,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.flushengine.prepare_restart_flush_strategy");
 
+using proton::flushengine::FlushStrategyResult;
+
 namespace proton {
 
 using search::SerialNum;
@@ -20,6 +22,12 @@ using searchcorespi::IFlushTarget;
 using Config = PrepareRestartFlushStrategy::Config;
 using FlushContextsMap = std::map<std::string, FlushContext::List>;
 using FlushTargetCandidatesList = std::vector<FlushTargetCandidates::UP>;
+
+namespace {
+
+const std::string strategy_name("prepare_restart");
+
+}
 
 PrepareRestartFlushStrategy::Config::Config(double tlsReplayByteCost_, double tlsReplayOperationCost_,
                                             double flushTargetWriteCost_, double flush_target_read_cost_)
@@ -132,15 +140,16 @@ FlushContextsMap findBestTargetsToFlushPerHandler(const FlushContextsMap& flushC
 
 } // namespace
 
-FlushContext::List PrepareRestartFlushStrategy::getFlushTargets(const FlushContext::List&       targetList,
-                                                                const flushengine::TlsStatsMap& tlsStatsMap,
-                                                                const flushengine::ActiveFlushStats&) const {
-    return flatten(
-        findBestTargetsToFlushPerHandler(groupByFlushHandler(removeGCFlushTargets(targetList)), _cfg, tlsStatsMap));
+FlushStrategyResult PrepareRestartFlushStrategy::getFlushTargets(const FlushContext::List&       targetList,
+                                                                 const flushengine::TlsStatsMap& tlsStatsMap,
+                                                                 const flushengine::ActiveFlushStats&) const {
+    return FlushStrategyResult(flatten(findBestTargetsToFlushPerHandler(
+                                   groupByFlushHandler(removeGCFlushTargets(targetList)), _cfg, tlsStatsMap)),
+                               strategy_name, _id, true, strategy_name);
 }
 
 std::string PrepareRestartFlushStrategy::name() const {
-    return "prepare_restart";
+    return strategy_name;
 }
 
 } // namespace proton

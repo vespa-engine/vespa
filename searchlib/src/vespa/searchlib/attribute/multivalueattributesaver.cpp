@@ -11,7 +11,7 @@ namespace search {
 MultiValueAttributeSaver::MultiValueAttributeSaver(GenerationGuard&& guard, const attribute::AttributeHeader& header,
                                                    const MvMappingBase& mvMapping)
     : AttributeSaver(std::move(guard), header),
-      _frozenIndices(attribute::make_entry_ref_vector_snapshot(mvMapping.get_ref_vector(), header.getNumDocs())) {
+      _indices_snapshot(attribute::make_entry_ref_vector_snapshot(mvMapping.get_ref_vector(), header.getNumDocs())) {
 }
 
 MultiValueAttributeSaver::~MultiValueAttributeSaver() {

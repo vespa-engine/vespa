@@ -7,6 +7,7 @@
 namespace proton::documentmetastore {
 
 constexpr uint32_t NO_DOCUMENT_SIZE_TRACKING_VERSION = 0u;
-constexpr uint32_t DOCUMENT_SIZE_TRACKING_VERSION = 1u;
+constexpr uint32_t DOCUMENT_SIZE24_TRACKING_VERSION = 1u;
+constexpr uint32_t DOCUMENT_SIZE32_TRACKING_VERSION = 2u;
 
 } // namespace proton::documentmetastore

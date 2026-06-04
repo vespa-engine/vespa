@@ -32,9 +32,9 @@ using search::queryeval::AndNotBlueprint;
 using search::queryeval::Blueprint;
 using search::queryeval::EquivBlueprint;
 using search::queryeval::IntermediateBlueprint;
-using search::queryeval::MatchSpan;
 using search::queryeval::MatchingElementsSearch;
 using search::queryeval::MatchingPhase;
+using search::queryeval::MatchSpan;
 using search::queryeval::NearBlueprint;
 using search::queryeval::NearSearchBase;
 using search::queryeval::ONearBlueprint;
@@ -122,7 +122,8 @@ void find_matching_elements(const std::vector<uint32_t>& docs, const std::string
     }
 }
 
-bool has_matching_elements_field(const IntermediateBlueprint& bp, const MatchingElementsFields& fields, FieldIdToNameMapper id_to_name) {
+bool has_matching_elements_field(const IntermediateBlueprint& bp, const MatchingElementsFields& fields,
+                                 FieldIdToNameMapper id_to_name) {
     for (size_t i = 0; i < bp.childCnt(); ++i) {
         const auto& cs = bp.getChild(i).getState();
         for (size_t j = 0; j < cs.numFields(); ++j) {
@@ -163,11 +164,9 @@ void extract_matching_elements(uint32_t doc, std::span<const MatchSpan> match_sp
     }
 }
 
-void find_matching_elements(const std::vector<uint32_t> &docs, const IntermediateBlueprint& bp,
-                            const MatchingElementsFields& fields,
-                            FieldIdToNameMapper id_to_name,
-                            MatchData& match_data,
-                            MatchingElements &result) {
+void find_matching_elements(const std::vector<uint32_t>& docs, const IntermediateBlueprint& bp,
+                            const MatchingElementsFields& fields, FieldIdToNameMapper id_to_name,
+                            MatchData& match_data, MatchingElements& result) {
     if (!has_matching_elements_field(bp, fields, id_to_name)) {
         return;
     }
@@ -181,7 +180,7 @@ void find_matching_elements(const std::vector<uint32_t> &docs, const Intermediat
     }
     search->initRange(docs.front(), docs.back() + 1);
     std::vector<MatchSpan> match_spans;
-    std::vector<uint32_t> matching_elements;
+    std::vector<uint32_t>  matching_elements;
 
     for (uint32_t doc : docs) {
         if (search->seek(doc)) {

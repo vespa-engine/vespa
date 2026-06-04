@@ -67,7 +67,7 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
                 .withTenantRepository(tenantRepository)
                 .withConfigserverConfig(configserverConfig)
                 .build();
-        applicationRepository.deploy(testApp, new PrepareParams.Builder().applicationId(applicationId()).build());
+        applicationRepository.prepareAndActivate(testApp, new PrepareParams.Builder().applicationId(applicationId()).build());
         Tenant tenant = applicationRepository.getTenant(applicationId());
         sessionId = applicationRepository.getActiveLocalSession(tenant, applicationId()).get().getSessionId();
 

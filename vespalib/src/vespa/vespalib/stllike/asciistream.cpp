@@ -135,8 +135,11 @@ void asciistream::swap(asciistream& rhs) noexcept {
 
 namespace {
 
-bool is_white_space(char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == '\r'; }
-template <std::floating_point T> std::string_view::size_type getValue(T& val, std::string_view buf) __attribute__((noinline));
+bool is_white_space(char c) {
+    return c == ' ' || c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == '\r';
+}
+template <std::floating_point T> std::string_view::size_type getValue(T& val, std::string_view buf)
+    __attribute__((noinline));
 void throwInputError(std::errc e, const char* t, std::string_view buf) __attribute__((noinline));
 void throwUnderflow(size_t pos) __attribute__((noinline));
 template <std::integral T> std::string_view::size_type strToInt(T& v, std::string_view buf) __attribute__((noinline));
@@ -175,7 +178,7 @@ std::string_view::size_type skip_spaces_and_eat_first_plus(std::string_view buf)
 template <std::floating_point T>
 std::string_view::size_type getValue(T& val, std::string_view buf) {
     auto skipped = skip_spaces_and_eat_first_plus(buf);
-    T tval = 1.0;
+    T    tval = 1.0;
     auto res = std::from_chars(buf.data() + skipped, buf.data() + buf.size(), tval);
     if (res.ec == std::errc::result_out_of_range) {
         bool underflow = false;
@@ -201,7 +204,7 @@ std::string_view::size_type getValue(T& val, std::string_view buf) {
 }
 
 template <std::integral T> std::string_view::size_type strToInt(T& v, std::string_view buf) {
-    auto end = buf.data() + buf.size();
+    auto        end = buf.data() + buf.size();
     const char* curr = buf.data();
     for (; (curr < end) && std::isspace(static_cast<unsigned char>(*curr)); curr++)
         ;

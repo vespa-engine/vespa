@@ -17,7 +17,9 @@ import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudResourceTags;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.TelemetryExporterConfiguration;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.serialization.TelemetryExporterConfigurationSerializer;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
@@ -50,6 +52,7 @@ import java.util.Optional;
 import java.util.logging.Level;
 
 import static com.yahoo.vespa.config.server.session.SessionData.ACTIVATION_TRIGGERS_PATH;
+import static com.yahoo.vespa.config.server.session.SessionData.TELEMETRY_EXPORT_CONFIG_PATH;
 import static com.yahoo.vespa.config.server.session.SessionData.APPLICATION_ID_PATH;
 import static com.yahoo.vespa.config.server.session.SessionData.APPLICATION_PACKAGE_REFERENCE_PATH;
 import static com.yahoo.vespa.config.server.session.SessionData.ATHENZ_DOMAIN;
@@ -435,6 +438,16 @@ public class SessionZooKeeperClient {
                           log.log(Level.WARNING, "No activation triggers found for session at " + sessionPath.append(ACTIVATION_TRIGGERS_PATH).getAbsolute() + ", returning empty");
                           return ActivationTriggers.empty();
                       });
+    }
+
+    public void writeTelemetryExportConfig(TelemetryExporterConfiguration config) {
+        curator.set(sessionPath.append(TELEMETRY_EXPORT_CONFIG_PATH), TelemetryExporterConfigurationSerializer.toJson(config));
+    }
+
+    public TelemetryExporterConfiguration readTelemetryExporterConfiguration() {
+        return curator.getData(sessionPath.append(TELEMETRY_EXPORT_CONFIG_PATH))
+                      .map(TelemetryExporterConfigurationSerializer::fromJson)
+                      .orElse(TelemetryExporterConfiguration.empty());
     }
 
     /**

@@ -7,17 +7,21 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/searchcommon/attribute/distance_metric.h>
 #include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/searchlib/queryeval/global_filter.h>
+
+#include <optional>
 
 namespace search::queryeval::test {
 
 struct EnnConfig {
     using DistanceMetric = search::attribute::DistanceMetric;
 
-    uint32_t       num_docs = 10'000;
-    uint32_t       dim = 2;
-    uint32_t       target_hits = 100;
-    DistanceMetric distance_metric = DistanceMetric::Euclidean;
-    uint32_t       seed = 42;
+    uint32_t              num_docs = 10'000;
+    uint32_t              dim = 64;
+    uint32_t              target_hits = 100;
+    DistanceMetric        distance_metric = DistanceMetric::Euclidean;
+    uint32_t              seed = 42;
+    std::optional<double> global_filter_hit_ratio = std::nullopt;
 };
 
 /**
@@ -28,9 +32,11 @@ public:
     using Value = vespalib::eval::Value;
 
 private:
-    AttributeVector::SP       _attr;
-    vespalib::eval::Value::UP _query;
-    uint32_t                  _target_hits;
+    AttributeVector::SP           _attr;
+    vespalib::eval::Value::UP     _query;
+    uint32_t                      _target_hits;
+    std::shared_ptr<GlobalFilter> _global_filter;
+    double                        _global_filter_hit_ratio;
 
 public:
     explicit EnnBlueprintFactory(const EnnConfig& cfg);

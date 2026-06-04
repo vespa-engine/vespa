@@ -449,7 +449,7 @@ Expression chunkExp() :
 }
 
     (
-      <CHUNK> [ SCAN((identifierStr)+) => (chunkerId = identifierStr()) ] arguments = arguments()
+      <CHUNK> [ SCAN(identifierStr) => (chunkerId = identifierStr()) ] arguments = arguments()
     )
     {
         return new ChunkExpression(chunkers, chunkerId, arguments);
@@ -475,7 +475,7 @@ Expression embedExp() :
 }
  
     (
-      <EMBED> [ SCAN((identifierStr)+) => (embedderId = identifierStr()) ] arguments = arguments()
+      <EMBED> [ SCAN(identifierStr) => (embedderId = identifierStr()) ] arguments = arguments()
     )
     {
         return new EmbedExpression(linguistics, embedders, embedderId, arguments);
@@ -513,7 +513,7 @@ Expression generateExp() :
 }
 
     (
-      <GENERATE> [ SCAN((identifierStr)+) => (generatorId = identifierStr()) ] arguments = arguments()
+      <GENERATE> [ SCAN(identifierStr) => (generatorId = identifierStr()) ] arguments = arguments()
     )
     {
         return new GenerateExpression(linguistics, generators, generatorId, arguments);
@@ -931,9 +931,11 @@ String valueString() :
     String value;
     NumericFieldValue numericValue;
 }
-    numericValue = numericValue() { return numericValue.getNumber().toString(); } |
-    value = stringLiteral() { return value; } |
-    value = identifierStr() { return value; }
+(
+    ( numericValue = numericValue() { return numericValue.getNumber().toString(); } ) |
+    ( value = stringLiteral() { return value; } ) |
+    ( value = identifierStr() { return value; } )
+)
 ;
 
 String identifierStr() :

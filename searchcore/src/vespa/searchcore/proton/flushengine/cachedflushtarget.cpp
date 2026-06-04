@@ -13,6 +13,7 @@ CachedFlushTarget::CachedFlushTarget(const IFlushTarget::SP& target)
       _diskGain(target->getApproxDiskGain()),
       _approxBytesToWriteToDisk(target->getApproxBytesToWriteToDisk()),
       _approx_bytes_to_read_from_disk(target->get_approx_bytes_to_read_from_disk()),
+      _transient_memory_for_flush(target->transient_memory_for_flush()),
       _replay_operation_cost(target->get_replay_operation_cost()),
       _needUrgentFlush(target->needUrgentFlush()),
       _priority(target->getPriority()),
@@ -21,8 +22,16 @@ CachedFlushTarget::CachedFlushTarget(const IFlushTarget::SP& target)
 
 CachedFlushTarget::~CachedFlushTarget() = default;
 
+bool CachedFlushTarget::can_flush(SerialNum current_serial) const noexcept {
+    return _target->can_flush(current_serial);
+}
+
 uint64_t CachedFlushTarget::get_approx_bytes_to_read_from_disk() const noexcept {
     return _approx_bytes_to_read_from_disk;
+}
+
+size_t CachedFlushTarget::transient_memory_for_flush() const noexcept {
+    return _transient_memory_for_flush;
 }
 
 std::chrono::steady_clock::duration CachedFlushTarget::last_flush_duration() const noexcept {

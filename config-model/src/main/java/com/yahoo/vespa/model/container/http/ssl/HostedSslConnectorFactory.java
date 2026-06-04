@@ -106,7 +106,7 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
                                                             .maxSize(e.maxEntitySize.toBytes()))
                                                     .toList()))
                 .compliance(new ConnectorConfig.Compliance.Builder()
-                        .httpViolations(httpComplianceViolations))
+                        .httpViolations(httpComplianceViolations.stream().sorted().toList()))
                 .serverName.known(knownServerNames);
 
     }

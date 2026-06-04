@@ -24,7 +24,7 @@ void Trace::constructTraces() const {
 
 vespalib::slime::Cursor& LazyTraceInserter::get_entry() {
     if (!_entry) {
-        _entry = &_parent.createCursor(_name);
+        _entry = &_parent.createCursor(_name.view());
     }
     return *_entry;
 }

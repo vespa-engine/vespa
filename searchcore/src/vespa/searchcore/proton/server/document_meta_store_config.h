@@ -3,6 +3,8 @@
 
 #include <vespa/config-proton.h>
 
+#include <cstdint>
+
 namespace vespa::config::search::core::internal {
 class InternalProtonType;
 }
@@ -22,7 +24,7 @@ private:
     DocumentMetaStoreConfig(bool store_full_document_ids);
 
 public:
-    static DocumentMetaStoreConfig make(const ProtonConfig& cfg);
+    static DocumentMetaStoreConfig make(const ProtonConfig& cfg, uint32_t document_db_index);
     static DocumentMetaStoreConfig make();
     void update(const DocumentMetaStoreConfig& cfg);
     bool store_full_document_ids() const { return _store_full_document_ids; }

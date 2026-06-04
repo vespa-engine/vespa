@@ -91,8 +91,16 @@ IFlushTarget::Task::UP IndexFusionTarget::initFlush(SerialNum                   
     return std::make_unique<Fusioner>(_indexMaintainer, _lastStats, serialNum, std::move(flush_token));
 }
 
+bool IndexFusionTarget::can_flush(SerialNum) const noexcept {
+    return _fusionStats._canRunFusion;
+}
+
 uint64_t IndexFusionTarget::getApproxBytesToWriteToDisk() const {
     return _fusionStats.diskUsage;
+}
+
+size_t IndexFusionTarget::transient_memory_for_flush() const noexcept {
+    return 0;
 }
 
 } // namespace searchcorespi::index

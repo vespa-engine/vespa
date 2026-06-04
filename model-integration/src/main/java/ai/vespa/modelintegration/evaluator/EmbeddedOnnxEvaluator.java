@@ -10,6 +10,7 @@ import ai.onnxruntime.OrtSession;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,6 +23,7 @@ import static com.yahoo.protect.Process.logAndDie;
  *
  * @author lesters
  * @author bjorncs
+ * @author glebashnik
  */
 class EmbeddedOnnxEvaluator implements OnnxEvaluator {
 
@@ -50,7 +52,7 @@ class EmbeddedOnnxEvaluator implements OnnxEvaluator {
     }
 
     @Override
-    public Tensor evaluate(Map<String, Tensor> inputs, String output) {
+    public Tensor evaluate(Map<String, Tensor> inputs, String output, Duration timeout) {
         Map<String, OnnxTensor> onnxInputs = null;
         try {
             output = mapToInternalName(output);
@@ -66,9 +68,10 @@ class EmbeddedOnnxEvaluator implements OnnxEvaluator {
             }
         }
     }
-
+    
+    // EmbeddedOnnxEvaluator ignores timeout.
     @Override
-    public Map<String, Tensor> evaluate(Map<String, Tensor> inputs) {
+    public Map<String, Tensor> evaluate(Map<String, Tensor> inputs, Duration timeout) {
         Map<String, OnnxTensor> onnxInputs = null;
         try {
             onnxInputs = TensorConverter.toOnnxTensors(inputs, ortEnvironment, session.instance());

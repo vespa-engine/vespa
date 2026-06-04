@@ -228,10 +228,9 @@ public class StreamingVisitorTest {
         assertEquals(AllFields.NAME, params.getFieldSet());
 
         // Verify library parameters
-        //System.err.println("query="+new String(params.getLibraryParameters().get("query"), StandardCharsets.UTF_8));
-        assertNotNull(params.getLibraryParameters().get("query")); // TODO: Check contents
-        //System.err.println("query="+new String(params.getLibraryParameters().get("querystackcount"), StandardCharsets.UTF_8));
-        assertNotNull(params.getLibraryParameters().get("querystackcount")); // TODO: Check contents
+        assertNotNull(params.getLibraryParameters().get("querytree")); // TODO: Check contents
+        assertNotNull(params.getLibraryParameters().get("query")); // TODO: remove
+        assertNotNull(params.getLibraryParameters().get("querystackcount")); // TODO: remove
         assertEquals(searchCluster, new String(params.getLibraryParameters().get("searchcluster"), StandardCharsets.UTF_8));
         assertEquals(schema, new String(params.getLibraryParameters().get("schema"), StandardCharsets.UTF_8));
         assertEquals(Objects.requireNonNullElse(qa.summary, "default"), new String(params.getLibraryParameters().get("summaryclass"), StandardCharsets.UTF_8));

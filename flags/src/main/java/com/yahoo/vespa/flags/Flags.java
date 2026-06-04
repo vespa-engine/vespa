@@ -3,7 +3,6 @@ package com.yahoo.vespa.flags;
 
 import com.yahoo.component.Vtag;
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.vespa.flags.custom.CustomerOtelExportParameters;
 import com.yahoo.vespa.flags.custom.Sidecars;
 
 import java.time.Instant;
@@ -17,10 +16,8 @@ import java.util.function.Predicate;
 
 import static com.yahoo.vespa.flags.Dimension.APPLICATION;
 import static com.yahoo.vespa.flags.Dimension.ARCHITECTURE;
-import static com.yahoo.vespa.flags.Dimension.CLOUD_ACCOUNT;
 import static com.yahoo.vespa.flags.Dimension.CLUSTER_ID;
 import static com.yahoo.vespa.flags.Dimension.CLUSTER_TYPE;
-import static com.yahoo.vespa.flags.Dimension.CONSOLE_USER_EMAIL;
 import static com.yahoo.vespa.flags.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.Dimension.INSTANCE_ID;
 import static com.yahoo.vespa.flags.Dimension.NODE_TYPE;
@@ -52,113 +49,87 @@ public class Flags {
 
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
-    public static final UnboundBooleanFlag GCP_ENCLAVE_V2 = defineFeatureFlag(
-            "gcp-enclave-v2", false,
-            List.of("hakonhall"), "2026-03-05", "2026-07-05",
-            "Whether to enable v2 of Vespa Cloud Enclave in GCP",
-            "Takes effect on the next host-admin tick.",
-            CLOUD_ACCOUNT);
-
     public static final UnboundBooleanFlag USE_NON_PUBLIC_ENDPOINT_FOR_TEST = defineFeatureFlag(
             "use-non-public-endpoint-for-test", false,
-            List.of("hakonhall"), "2025-03-19", "2026-05-10",
+            List.of("hakonhall"), "2025-03-19", "2026-07-10",
             "Whether to use non-public endpoint in test and staging environments (except Azure since it's not supported yet)",
             "Takes effect on next deployment of the application",
             INSTANCE_ID, VESPA_VERSION);
 
-    public static final UnboundBooleanFlag LOCKED_GCP_PROVISION = defineFeatureFlag(
-            "locked-gcp-provision", true,
-            List.of("hakonhall"), "2025-08-05", "2026-05-15",
-            "Whether to provision GCP hosts under the application- and unallocated- locks, even though it takes ~1m.",
-            "Takes effect on next host being provisioned");
-
     public static final UnboundStringFlag RESPONSE_SEQUENCER_TYPE = defineStringFlag(
             "response-sequencer-type", "ADAPTIVE",
-            List.of("hmusum"), "2020-12-02", "2026-06-01",
+            List.of("hmusum"), "2020-12-02", "2026-12-01",
             "Selects type of sequenced executor used for mbus responses, valid values are LATENCY, ADAPTIVE, THROUGHPUT",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundIntFlag RESPONSE_NUM_THREADS = defineIntFlag(
             "response-num-threads", 2,
-            List.of("hmusum"), "2020-12-02", "2026-06-01",
+            List.of("hmusum"), "2020-12-02", "2026-12-01",
             "Number of threads used for mbus responses, default is 2, negative number = numcores/4",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE = defineFeatureFlag(
             "async-message-handling-on-schedule", true,
-            List.of("hmusum"), "2020-12-02", "2026-06-01",
+            List.of("hmusum"), "2020-12-02", "2026-12-01",
             "Optionally deliver async messages in own thread",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundIntFlag MBUS_JAVA_NUM_TARGETS = defineIntFlag(
             "mbus-java-num-targets", 2,
-            List.of("hmusum"), "2022-07-05", "2026-06-01",
+            List.of("hmusum"), "2022-07-05", "2026-12-01",
             "Number of rpc targets per service",
             "Takes effect at redeployment",
             INSTANCE_ID);
     public static final UnboundIntFlag MBUS_CPP_NUM_TARGETS = defineIntFlag(
             "mbus-cpp-num-targets", 2,
-            List.of("hmusum"), "2022-07-05", "2026-06-01",
+            List.of("hmusum"), "2022-07-05", "2026-12-01",
             "Number of rpc targets per service",
             "Takes effect at redeployment",
             INSTANCE_ID);
     public static final UnboundIntFlag RPC_NUM_TARGETS = defineIntFlag(
             "rpc-num-targets", 2,
-            List.of("hmusum"), "2022-07-05", "2026-06-01",
+            List.of("hmusum"), "2022-07-05", "2026-12-01",
             "Number of rpc targets per content node",
             "Takes effect at redeployment",
             INSTANCE_ID);
     public static final UnboundIntFlag MBUS_JAVA_EVENTS_BEFORE_WAKEUP = defineIntFlag(
             "mbus-java-events-before-wakeup", 1,
-            List.of("hmusum"), "2022-07-05", "2026-06-01",
+            List.of("hmusum"), "2022-07-05", "2026-12-01",
             "Number of write events before waking up transport thread",
             "Takes effect at redeployment",
             INSTANCE_ID);
     public static final UnboundIntFlag MBUS_CPP_EVENTS_BEFORE_WAKEUP = defineIntFlag(
             "mbus-cpp-events-before-wakeup", 1,
-            List.of("hmusum"), "2022-07-05", "2026-06-01",
+            List.of("hmusum"), "2022-07-05", "2026-12-01",
             "Number of write events before waking up transport thread",
             "Takes effect at redeployment",
             INSTANCE_ID);
     public static final UnboundIntFlag RPC_EVENTS_BEFORE_WAKEUP = defineIntFlag(
             "rpc-events-before-wakeup", 1,
-            List.of("hmusum"), "2022-07-05", "2026-06-01",
+            List.of("hmusum"), "2022-07-05", "2026-12-01",
             "Number of write events before waking up transport thread",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundIntFlag MBUS_NUM_NETWORK_THREADS = defineIntFlag(
             "mbus-num-network-threads", 1,
-            List.of("hmusum"), "2022-07-01", "2026-06-01",
+            List.of("hmusum"), "2022-07-01", "2026-12-01",
             "Number of threads used for mbus network",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
-    public static final UnboundListFlag<String> ZONAL_WEIGHTED_ENDPOINT_RECORDS = defineListFlag(
-            "zonal-weighted-endpoint-records", List.of(), String.class,
-            List.of("hmusum"), "2023-12-15", "2026-06-01",
-            "A list of weighted (application) endpoint fqdns for which we should use zonal endpoints as targets, not LBs.",
-            "Takes effect at redeployment from controller");
-
-    public static final UnboundListFlag<String> WEIGHTED_ENDPOINT_RECORD_TTL = defineListFlag(
-            "weighted-endpoint-record-ttl", List.of(), String.class,
-            List.of("hmusum"), "2023-05-16", "2026-06-01",
-            "A list of endpoints and custom TTLs, on the form \"endpoint-fqdn:TTL-seconds\". " +
-            "Where specified, CNAME records are used instead of the default ALIAS records, which have a default 60s TTL.",
-            "Takes effect at redeployment from controller");
-
     public static final UnboundBooleanFlag WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "write-config-server-session-data-as-blob", false,
-            List.of("hmusum"), "2023-07-19", "2026-06-01",
+            List.of("hmusum"), "2023-07-19", "2026-12-01",
             "Whether to write config server session data in one blob or as individual paths",
             "Takes effect immediately");
 
     public static final UnboundBooleanFlag READ_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "read-config-server-session-data-as-blob", false,
-            List.of("hmusum"), "2023-07-19", "2026-06-01",
+            List.of("hmusum"), "2023-07-19", "2026-12-01",
             "Whether to read config server session data from session data blob or from individual paths",
             "Takes effect immediately");
 
@@ -169,63 +140,25 @@ public class Flags {
             "Takes effect on next autoscaler evaluation",
             INSTANCE_ID, CLUSTER_ID);
 
-    public static final UnboundBooleanFlag MORE_WIREGUARD = defineFeatureFlag(
-            "more-wireguard", false,
-            List.of("andreer"), "2023-08-21", "2026-06-01",
-            "Use wireguard in INternal enCLAVES",
-            "Takes effect on next host-admin run",
-            HOSTNAME, CLOUD_ACCOUNT);
-
-    public static final UnboundBooleanFlag IPV6_AWS_TARGET_GROUPS = defineFeatureFlag(
-            "ipv6-aws-target-groups", false,
-            List.of("andreer"), "2023-08-28", "2026-06-01",
-            "Always use IPv6 target groups for load balancers in aws",
-            "Takes effect on next load-balancer provisioning",
-            HOSTNAME, CLOUD_ACCOUNT);
-
-    public static final UnboundBooleanFlag PROVISION_IPV6_ONLY_AWS = defineFeatureFlag(
-            "provision-ipv6-only", false,
-            List.of("andreer"), "2023-08-28", "2026-06-01",
-            "Provision without private IPv4 addresses in INternal enCLAVES in AWS",
-            "Takes effect on next host provisioning / run of host-admin",
-            HOSTNAME, CLOUD_ACCOUNT);
-
     public static final UnboundDoubleFlag DOCPROC_HANDLER_THREADPOOL = defineDoubleFlag(
             "docproc-handler-threadpool", 1.0,
-            List.of("johsol"), "2025-10-17", "2026-06-01",
+            List.of("johsol"), "2025-10-17", "2026-09-01",
             "Adjust document processor handler threadpool size (scale the number of threads with cpu cores, 1 means same number of threads as cpu cores))",
             "Takes effect at redeployment",
             APPLICATION);
 
-    public static final UnboundStringFlag ENDPOINT_CONFIG = defineStringFlag(
-            "endpoint-config", "legacy",
-            List.of("andreer", "olaa"), "2023-10-06", "2026-08-01",
-            "Set the endpoint config to use for an application. Must be 'legacy', 'combined' or 'generated'. See EndpointConfig for further details",
-            "Takes effect on next deployment through controller",
-            TENANT_ID, APPLICATION, INSTANCE_ID);
+    public static final UnboundBooleanFlag REQUIRE_EXPLICIT_DOCPROC_CLUSTER = defineFeatureFlag(
+            "require-explicit-docproc-cluster", false,
+            List.of("hmusum"), "2026-05-26", "2026-12-01",
+            "Whether to require an explicit document-processing cluster to be configured in content clusters when there is more than one container cluster",
+            "Takes effect at redeployment",
+            APPLICATION, INSTANCE_ID, TENANT_ID);
 
     public static UnboundBooleanFlag LOGSERVER_OTELCOL_AGENT = defineFeatureFlag(
             "logserver-otelcol-agent", false,
             List.of("olaa"), "2024-04-03", "2026-08-01",
             "Whether logserver container should run otel agent",
             "Takes effect at redeployment",
-            TENANT_ID, APPLICATION, INSTANCE_ID);
-
-    public static final UnboundBooleanFlag USE_GRAFANA_ALLOY = defineFeatureFlag(
-            "use-grafana-alloy", false,
-            List.of("onur"), "2026-02-17", "2026-08-01",
-            "Whether to use Grafana Alloy instead of otelcol-contrib for telemetry collection",
-            "Takes effect on next host-admin tick",
-            TENANT_ID, APPLICATION, INSTANCE_ID);
-
-    public static final UnboundJacksonFlag<CustomerOtelExportParameters> CUSTOMER_OTEL_EXPORT = defineJacksonFlag(
-            "customer-otel-export", new CustomerOtelExportParameters(null, null, null), CustomerOtelExportParameters.class,
-            List.of("onur"), "2026-03-02", "2027-01-01",
-            "Export telemetry to a customer-owned OTel endpoint in addition to the internal otel-gateway. " +
-            "metrics and logs are independently optional. " +
-            "logs.logFileNames is a list of log file enum names (e.g. CONTAINER_VESPA_LOGS, VAR_LOG_MESSAGES).",
-            "Takes effect on next host-admin tick",
-            __ -> true,
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static final UnboundBooleanFlag USE_LEGACY_WAND_QUERY_PARSING = defineFeatureFlag(
@@ -242,80 +175,21 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
-    public static final UnboundBooleanFlag SNAPSHOTS_ENABLED = defineFeatureFlag(
-            "snapshots-enabled", false,
-            List.of("olaa"), "2024-10-22", "2026-08-01",
-            "Whether node snapshots should be created when host storage is discarded",
-            "Takes effect immediately");
-
-    public static final UnboundBooleanFlag ENABLE_UI_VERSION_TOGGLE = defineFeatureFlag(
-            "enable-ui-version-toggle", false,
-            List.of("laura", "jille"), "2026-04-20", "2026-12-31",
-            "Enable a toggle to switch between different versions of the Console UI",
-            "Takes effect immediately",
-            CONSOLE_USER_EMAIL);
-
-    public static final UnboundBooleanFlag ENFORCE_EMAIL_DOMAIN_SSO = defineFeatureFlag(
-            "enforce-email-domain-sso", false,
-            List.of("eirik"), "2024-11-07", "2026-08-01",
-            "Enforce SSO login for an email domain",
-            "Takes effect immediately",
-            CONSOLE_USER_EMAIL);
-
-    public static final UnboundListFlag<String> RESTRICT_USERS_TO_DOMAIN = defineListFlag(
-            "restrict-users-to-domain", List.of(), String.class,
-            List.of("eirik"), "2024-11-07", "2026-08-01",
-            "Only allow adding specific email domains as user to tenant",
-            "Takes effect immediately",
-            TENANT_ID);
-
     public static final UnboundJacksonFlag<Sidecars> SIDECARS_FOR_TEST = defineJacksonFlag(
             "sidecars-for-test", Sidecars.DEFAULT, Sidecars.class,
-            List.of("glebashnik"), "2025-04-25", "2026-06-01",
+            List.of("glebashnik"), "2025-04-25", "2026-09-01",
             "Specifies configuration for sidecars to testing provisioning",
             "Takes effect at redeployment",
             __ -> true,
             APPLICATION
     );
 
-    public static final UnboundBooleanFlag CREATE_TENANT_ROLES = defineFeatureFlag(
-            "create-tenant-roles", true,
-            List.of("andreer"), "2025-04-28", "2026-06-01",
-            "Whether to create tenant specific roles",
-            "Takes effect immediately",
-            TENANT_ID
-    );
-
     public static final UnboundBooleanFlag USE_TRITON = defineFeatureFlag(
             "use-triton", false,
-            List.of("bjorncs", "glebashnik"), "2025-04-30", "2026-06-01",
+            List.of("bjorncs", "glebashnik"), "2025-04-30", "2026-09-01",
             "Whether to use Triton as ONNX runtime",
             "Takes effect at redeployment",
             TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_TYPE, CLUSTER_ID, VESPA_VERSION
-    );
-
-    public static final UnboundBooleanFlag DELETE_TENANT_ROLES = defineFeatureFlag(
-            "delete-tenant-roles", false,
-            List.of("andreer"), "2025-05-05", "2026-06-01",
-            "Whether to delete tenant specific roles",
-            "Role deletion happens when tenant is next processed by TenantRoleMaintainer",
-            TENANT_ID
-    );
-
-    public static final UnboundIntFlag SEARCH_CORE_MAX_OUTSTANDING_MOVE_OPS = defineIntFlag(
-            "search-core-max-outstanding-move-ops", 100,
-            List.of("hmusum"), "2025-07-09", "2026-06-01",
-            "The max outstanding move operations a maintenance job can have before being blocked.",
-            "Takes effect at next deployment of the application",
-            INSTANCE_ID);
-
-    public static final UnboundBooleanFlag USE_VESPA_NODE_CTL = defineFeatureFlag(
-            "use-vespa-node-ctl", true,
-            List.of("hmusum"), "2025-08-12", "2026-06-01",
-            "Whether to use vespa-node-ctl to start, stop, restart, suspend and resume services " +
-            "or do this directly from host-admin.",
-            "Takes effect at next tick",
-            HOSTNAME
     );
 
     public static final UnboundBooleanFlag RESTART_ON_DEPLOY_MAINTAINER = defineFeatureFlag(
@@ -330,7 +204,7 @@ public class Flags {
     public static final UnboundBooleanFlag APPLY_ON_RESTART_FOR_APPLICATION_METADATA_CONFIG = defineFeatureFlag(
             "apply-on-restart-for-application-metadata-config", false,
             List.of("glebashnik"), "2026-02-13", "2026-08-13",
-            "Whether to set applyOnRestart flag on ApplicationMetadataConfig. " + 
+            "Whether to set applyOnRestart flag on ApplicationMetadataConfig. " +
                     "This might fix deferring config changes until container restart.",
             "Takes effect at redeployment",
             INSTANCE_ID
@@ -338,24 +212,25 @@ public class Flags {
 
     public static final UnboundIntFlag METRICS_PROXY_HEAP_SIZE_IN_MIB = defineIntFlag(
             "metrics-proxy-heap-size-in-mib", 0,
-            List.of("hmusum"), "2026-04-29", "2026-06-01",
+            List.of("hmusum"), "2026-04-29", "2026-09-01",
             "Amount of memory (in MiB) to use for metrics proxy JVM heap on non-admin nodes. 0 means use the default.",
             "Takes effect at redeployment",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static final UnboundIntFlag METRICS_PROXY_ADMIN_HEAP_SIZE_IN_MIB = defineIntFlag(
             "metrics-proxy-admin-heap-size-in-mib", 0,
-            List.of("hmusum"), "2026-04-29", "2026-06-01",
+            List.of("hmusum"), "2026-04-29", "2026-09-01",
             "Amount of memory (in MiB) to use for metrics proxy JVM heap on admin nodes. 0 means use the default.",
             "Takes effect at redeployment",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
-    public static final UnboundBooleanFlag SKIP_AUTOSCALING_WHEN_UPGRADING_CONFIG_SERVERS = defineFeatureFlag(
-            "skip-autoscaling-when-upgrading-config-servers", false,
-            List.of("hmusum"), "2026-05-05", "2026-06-05",
-            "Whether to skip autoscaling when config server upgrades or downgrades.",
-            "Takes effect immediately",
-            HOSTNAME);
+    public static final UnboundBooleanFlag SEND_OLD_QUERY_STACK = defineFeatureFlag(
+            "send-old-query-stack", false,
+            List.of("arnej"), "2026-05-07", "2026-09-01",
+            "If true, send the old query stack format in addition to protobuf serialization.",
+            "Takes effect at redeployment",
+            TENANT_ID, APPLICATION, INSTANCE_ID);
+
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

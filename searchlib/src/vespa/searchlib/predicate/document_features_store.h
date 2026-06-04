@@ -95,6 +95,7 @@ public:
     vespalib::MemoryUsage getMemoryUsage() const;
 
     std::unique_ptr<ISaver> make_saver() const;
+    [[nodiscard]] size_t transient_memory_for_flush() const noexcept;
 };
 
 } // namespace search::predicate

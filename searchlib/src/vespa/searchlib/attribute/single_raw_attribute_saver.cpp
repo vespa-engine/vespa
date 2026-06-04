@@ -13,15 +13,19 @@ using vespalib::GenerationGuard;
 namespace search::attribute {
 
 SingleRawAttributeSaver::SingleRawAttributeSaver(GenerationGuard&& guard, const attribute::AttributeHeader& header,
-                                                 EntryRefVector&& ref_vector, const RawBufferStore& raw_store)
-    : AttributeSaver(std::move(guard), header), _ref_vector(std::move(ref_vector)), _raw_store(raw_store) {
+                                                 EntryRefVectorSnapshot&& ref_vector_snapshot,
+                                                 const RawBufferStore&    raw_store)
+    : AttributeSaver(std::move(guard), header),
+      _ref_vector_snapshot(std::move(ref_vector_snapshot)),
+      _raw_store(raw_store) {
 }
 
 SingleRawAttributeSaver::~SingleRawAttributeSaver() = default;
 
 void SingleRawAttributeSaver::save_raw_store(BufferWriter& writer) const {
     RawBufferStoreWriter raw_writer(_raw_store, writer);
-    for (auto ref : _ref_vector) {
+    auto                 ref_span = _ref_vector_snapshot.span();
+    for (auto ref : ref_span) {
         raw_writer.write(ref);
     }
     writer.flush();

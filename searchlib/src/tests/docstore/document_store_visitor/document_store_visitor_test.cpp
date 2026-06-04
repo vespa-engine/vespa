@@ -100,11 +100,11 @@ class MyVisitor : public MyVisitorBase, public IDocumentStoreReadVisitor {
 public:
     using MyVisitorBase::MyVisitorBase;
 
-    void visit(uint32_t lid, const std::shared_ptr<Document>& doc) override;
+    void visit(uint32_t lid, const std::shared_ptr<Document>& doc, size_t sz) override;
     void visit(uint32_t lid) override;
 };
 
-void MyVisitor::visit(uint32_t lid, const std::shared_ptr<Document>& doc) {
+void MyVisitor::visit(uint32_t lid, const std::shared_ptr<Document>& doc, size_t) {
     ++_visitCount;
     assert(lid < _docIdLimit);
     Document::UP expDoc(makeDoc(_repo, lid, _before));
@@ -122,10 +122,10 @@ class MyRewriteVisitor : public MyVisitorBase, public IDocumentStoreRewriteVisit
 public:
     using MyVisitorBase::MyVisitorBase;
 
-    void visit(uint32_t lid, const std::shared_ptr<Document>& doc) override;
+    void visit(uint32_t lid, const std::shared_ptr<Document>& doc, size_t sz) override;
 };
 
-void MyRewriteVisitor::visit(uint32_t lid, const std::shared_ptr<Document>& doc) {
+void MyRewriteVisitor::visit(uint32_t lid, const std::shared_ptr<Document>& doc, size_t) {
     ++_visitCount;
     assert(lid < _docIdLimit);
     Document::UP expDoc(makeDoc(_repo, lid, _before));

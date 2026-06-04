@@ -280,6 +280,7 @@ public class ConvertParsedSchemas {
         if (parsed.hasStemming()) {
             schema.setStemming(parsed.getStemming());
         }
+        parsed.getDocumentIdAttribute().ifPresent(schema::enableDocumentIdAttribute);
         parsed.getRawAsBase64().ifPresent(value -> schema.enableRawAsBase64(value));
         var typeContext = typeConverter.makeContext(parsed.getDocument());
         var sfResolver = new SummaryFieldTypeResolver(schema, parsed.getDocumentSummaries());

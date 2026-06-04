@@ -1349,7 +1349,8 @@
       "public java.util.Map documentTypesByCluster()",
       "public java.util.Map indexedDocumentTypesByCluster()",
       "public java.util.Set applicationClusterInfo()",
-      "public void markClustersForDeferredReconfiguration(java.util.Set)"
+      "public void markClustersForDeferredReconfiguration(java.util.Set)",
+      "public com.yahoo.config.provision.TelemetryExporterConfiguration telemetryExporterConfiguration()"
     ],
     "fields" : [ ]
   },
@@ -1432,6 +1433,7 @@
       "public boolean useLegacyWandQueryParsing()",
       "public boolean useSimpleAnnotations()",
       "public boolean sendProtobufQuerytree()",
+      "public boolean sendOldQueryStack()",
       "public boolean forwardAllLogLevels()",
       "public long zookeeperPreAllocSize()",
       "public int maxContentNodeMaintenanceOpConcurrency()",
@@ -1442,6 +1444,7 @@
       "public boolean ignoreConnectivityChecksAtStartup()",
       "public int searchCoreMaxOutstandingMoveOps()",
       "public double docprocHandlerThreadpool()",
+      "public boolean requireExplicitDocprocCluster()",
       "public boolean applyOnRestartForApplicationMetadataConfig()",
       "public boolean scaleMetricsproxyHeapByNodeCount()",
       "public java.util.OptionalInt metricsProxyHeapSizeInMib()",

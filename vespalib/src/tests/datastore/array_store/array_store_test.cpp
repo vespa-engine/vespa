@@ -553,8 +553,9 @@ struct ByteStoreTest
     ByteStoreTest()
         : ArrayStoreTest<testing::Test, uint8_t, EntryRefT<19>, ArrayStoreSimpleTypeMapper<uint8_t>>(
               ByteStoreTest::ArrayStoreType::optimizedConfigForHugePage(
-                  1023, vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE, vespalib::alloc::MemoryAllocator::NORMAL_PAGE_SIZE,
-                  ArrayStoreConfig::default_max_buffer_size, 8_Ki, ALLOC_GROW_FACTOR)) {}
+                  1023, vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
+                  vespalib::alloc::MemoryAllocator::NORMAL_PAGE_SIZE, ArrayStoreConfig::default_max_buffer_size, 8_Ki,
+                  ALLOC_GROW_FACTOR)) {}
 };
 
 TEST_F(

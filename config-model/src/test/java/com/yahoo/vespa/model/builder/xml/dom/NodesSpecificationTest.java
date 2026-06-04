@@ -226,6 +226,18 @@ public class NodesSpecificationTest {
         assertEquals(2, spec.maxResources().groups());
     }
 
+    @Test
+    void testValidProfile() {
+        var spec = nodesSpecification("<nodes count='3' profile='large-storage'/>");
+        assertEquals(Optional.of("large-storage"), spec.profile());
+    }
+
+    @Test
+    void testNoProfile() {
+        var spec = nodesSpecification("<nodes count='3'/>");
+        assertTrue(spec.profile().isEmpty());
+    }
+
     private NodesSpecification nodesSpecification(String nodesElement) {
         Document nodesXml = XML.getDocument(nodesElement);
         return NodesSpecification.create(false, false, Version.emptyVersion,

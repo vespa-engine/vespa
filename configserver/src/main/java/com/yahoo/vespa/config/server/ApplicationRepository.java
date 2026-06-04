@@ -386,7 +386,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public PrepareResult prepare(long sessionId, PrepareParams prepareParams) {
-        DeployHandlerLogger logger = DeployHandlerLogger.forPrepareParams(prepareParams);
+        DeployHandlerLogger logger = DeployHandlerLogger.fromPrepareParams(prepareParams);
         Deployment deployment = prepare(sessionId, prepareParams, logger);
         return new PrepareResult(sessionId, deployment.configChangeActions(), logger);
     }
@@ -394,21 +394,21 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private Deployment prepare(long sessionId, PrepareParams prepareParams, DeployHandlerLogger logger) {
         Tenant tenant = getTenant(prepareParams.getApplicationId());
         Session session = validateThatLocalSessionIsNotActive(tenant, sessionId);
-        Deployment deployment = Deployment.unprepared(session, this, hostProvisioner, deploymentConfigStore, tenant, prepareParams, logger, clock);
+        Deployment deployment = Deployment.unprepared(session, this, hostProvisioner, deploymentConfigStore, prepareParams, logger, clock);
         deployment.prepare();
         logConfigChangeActions(deployment.configChangeActions(), logger);
         log.log(Level.INFO, TenantRepository.logPre(prepareParams.getApplicationId()) + "Session " + sessionId + " prepared successfully. ");
         return deployment;
     }
 
-    public PrepareAndActivateResult deploy(CompressedApplicationInputStream in, PrepareParams prepareParams) {
-        DeployHandlerLogger logger = DeployHandlerLogger.forPrepareParams(prepareParams);
+    public PrepareAndActivateResult prepareAndActivate(CompressedApplicationInputStream in, PrepareParams prepareParams) {
+        DeployHandlerLogger logger = DeployHandlerLogger.fromPrepareParams(prepareParams);
         File tempDir = uncheck(() -> Files.createTempDirectory("deploy")).toFile();
         ThreadLockStats threadLockStats = LockStats.getForCurrentThread();
         PrepareAndActivateResult result;
         try {
             threadLockStats.startRecording("deploy of " + prepareParams.getApplicationId().serializedForm());
-            result = deploy(decompressApplication(in, tempDir), prepareParams, logger);
+            result = prepareAndActivate(decompressApplication(in, tempDir), prepareParams, logger);
         } finally {
             threadLockStats.stopRecording();
             cleanupTempDirectory(tempDir, logger);
@@ -416,11 +416,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return result;
     }
 
-    public PrepareResult deploy(File applicationPackage, PrepareParams prepareParams) {
-        return deploy(applicationPackage, prepareParams, DeployHandlerLogger.forPrepareParams(prepareParams)).deployResult();
+    public PrepareAndActivateResult prepareAndActivate(File applicationPackage, PrepareParams prepareParams) {
+        return prepareAndActivate(applicationPackage, prepareParams, DeployHandlerLogger.fromPrepareParams(prepareParams));
     }
 
-    private PrepareAndActivateResult deploy(File applicationDir, PrepareParams prepareParams, DeployHandlerLogger logger) {
+    private PrepareAndActivateResult prepareAndActivate(File applicationDir, PrepareParams prepareParams, DeployHandlerLogger logger) {
         long sessionId = createSession(prepareParams.getApplicationId(),
                                        prepareParams.getTimeoutBudget(),
                                        applicationDir,
@@ -496,7 +496,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         DeployLogger logger = new SilentDeployLogger();
         Session newSession = sessionRepository.createSessionFromExisting(activeSession.get(), true, timeoutBudget, logger);
 
-        return Optional.of(Deployment.unprepared(newSession, this, hostProvisioner, deploymentConfigStore, tenant, logger, timeout, clock,
+        return Optional.of(Deployment.unprepared(newSession, this, hostProvisioner, deploymentConfigStore, logger, timeout, clock,
                                                  false /* don't validate as this is already deployed */, bootstrap));
     }
 
@@ -1012,10 +1012,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     // ---------------- Session operations ----------------------------------------------------------------
 
-    public Activation activate(Session session, ApplicationId applicationId, Tenant tenant, boolean isBootstrap, boolean force) {
+    public Activation activate(Session session, ApplicationId applicationId, boolean isBootstrap, boolean force) {
         NestedTransaction transaction = new NestedTransaction();
         Optional<ApplicationTransaction> applicationTransaction = hostProvisioner.map(provisioner -> provisioner.lock(applicationId))
                                                                                  .map(lock -> new ApplicationTransaction(lock, transaction));
+
+        Tenant tenant = tenantRepository().getTenant(applicationId.tenant());
         try (@SuppressWarnings("unused") var sessionLock = tenant.getApplicationRepo().lock(applicationId)) {
             Optional<Session> activeSession = getActiveSession(applicationId);
             var sessionZooKeeperClient = tenant.getSessionRepository().createSessionZooKeeperClient(session.getSessionId());

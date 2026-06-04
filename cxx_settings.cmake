@@ -97,6 +97,12 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   endif()
 endif()
 
+include(CheckCompilerFlag)
+check_compiler_flag(CXX "-Wpsabi" HAS_W_PSABI)
+if(HAS_W_PSABI)
+    set(CXX_SPECIFIC_WARN_OPTS "-Wno-psabi ${CXX_SPECIFIC_WARN_OPTS}")
+endif()
+
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND VESPA_USE_LTO)
   # Enable lto
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto=auto -ffat-lto-objects")

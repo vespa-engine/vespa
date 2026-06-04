@@ -746,10 +746,9 @@
    ...
 }
 {
-   for LLVM 19 (almalinux 9) 3
+   for LLVM 19, LLVM 20 or LLVM 21 (almalinux 9) 3
    Memcheck:Cond
    ...
-   fun:_ZN4llvm10MCStreamer6finishENS_5SMLocE
    fun:_ZN4llvm10AsmPrinter14doFinalizationERNS_6ModuleE
    fun:_ZN4llvm13FPPassManager14doFinalizationERNS_6ModuleE
    ...

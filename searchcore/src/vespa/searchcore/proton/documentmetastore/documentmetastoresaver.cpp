@@ -32,10 +32,15 @@ class WriteMetadata {
     search::BufferWriter& _datWriter;
     MetadataView          _metadataView;
     bool                  _writeDocSize;
+    bool                  _write_doc_size32;
 
 public:
-    WriteMetadata(search::BufferWriter& datWriter, MetadataView metadataView, bool writeDocSize)
-        : _datWriter(datWriter), _metadataView(metadataView), _writeDocSize(writeDocSize) {}
+    WriteMetadata(search::BufferWriter& datWriter, MetadataView metadataView, bool writeDocSize,
+                  bool write_doc_size32)
+        : _datWriter(datWriter),
+          _metadataView(metadataView),
+          _writeDocSize(writeDocSize),
+          _write_doc_size32(write_doc_size32) {}
 
     void operator()(documentmetastore::GidToLidMapKey key) {
         auto lid = key.get_lid();
@@ -53,11 +58,15 @@ public:
         datWriter.write(&bucketUsedBits, sizeof(bucketUsedBits));
         if (_writeDocSize) {
             uint32_t docSize = metadata.getDocSize();
-            assert(docSize < (1u << 24));
-            uint8_t  docSizeLow = docSize;
-            uint16_t docSizeHigh = docSize >> 8;
-            datWriter.write(&docSizeLow, sizeof(docSizeLow));
-            datWriter.write(&docSizeHigh, sizeof(docSizeHigh));
+            if (_write_doc_size32) {
+                datWriter.write(&docSize, sizeof(docSize));
+            } else {
+                assert(docSize < (1u << 24));
+                uint8_t  docSizeLow = docSize;
+                uint16_t docSizeHigh = docSize >> 8;
+                datWriter.write(&docSizeLow, sizeof(docSizeLow));
+                datWriter.write(&docSizeHigh, sizeof(docSizeHigh));
+            }
         }
         datWriter.write(&timestamp, sizeof(timestamp));
     }
@@ -73,9 +82,13 @@ DocumentMetaStoreSaver::DocumentMetaStoreSaver(GenerationGuard&&                
       _gidIterator(gidIterator),
       _metadataView(metadataView),
       _writeDocSize(true),
+      _write_doc_size32(true),
       _docid_saver(std::move(docid_saver)) {
     if (header.getVersion() == documentmetastore::NO_DOCUMENT_SIZE_TRACKING_VERSION) {
         _writeDocSize = false;
+    }
+    if (header.getVersion() < documentmetastore::DOCUMENT_SIZE32_TRACKING_VERSION) {
+        _write_doc_size32 = false;
     }
 }
 
@@ -96,7 +109,7 @@ bool DocumentMetaStoreSaver::onSave(IAttributeSaveTarget& saveTarget) {
     }
     // write <lid,gid> pairs, sorted on gid
     std::unique_ptr<search::BufferWriter> datWriter(saveTarget.datWriter().allocBufferWriter());
-    _gidIterator.foreach_key(WriteMetadata(*datWriter, _metadataView, _writeDocSize));
+    _gidIterator.foreach_key(WriteMetadata(*datWriter, _metadataView, _writeDocSize, _write_doc_size32));
     datWriter->flush();
     return true;
 }

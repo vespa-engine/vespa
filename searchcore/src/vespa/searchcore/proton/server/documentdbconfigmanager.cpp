@@ -84,20 +84,28 @@ std::shared_ptr<const Schema> DocumentDBConfigManager::buildSchema(const Attribu
 
 namespace {
 
-DocumentDBMaintenanceConfig::SP buildMaintenanceConfig(const BootstrapConfig::SP& bootstrapConfig,
-                                                       const std::string&         docTypeName) {
+// Use document type to find document db config in proton config
+uint32_t find_document_db_index(const BootstrapConfig::SP& bootstrapConfig, const std::string& doc_type_name) {
+    using DdbConfig = ProtonConfig::Documentdb;
+    ProtonConfig& proton(bootstrapConfig->getProtonConfig());
+
+    uint32_t index;
+    for (index = 0; index < proton.documentdb.size(); ++index) {
+        const DdbConfig& ddbConfig = proton.documentdb[index];
+        if (doc_type_name == ddbConfig.inputdoctypename)
+            break;
+    }
+
+    return index;
+}
+
+DocumentDBMaintenanceConfig::SP buildMaintenanceConfig(const BootstrapConfig::SP& bootstrapConfig, uint32_t index) {
     using DdbConfig = ProtonConfig::Documentdb;
     ProtonConfig& proton(bootstrapConfig->getProtonConfig());
 
     vespalib::duration visibilityDelay = vespalib::duration::zero();
     bool               isDocumentTypeGlobal = false;
-    // Use document type to find document db config in proton config
-    uint32_t index;
-    for (index = 0; index < proton.documentdb.size(); ++index) {
-        const DdbConfig& ddbConfig = proton.documentdb[index];
-        if (docTypeName == ddbConfig.inputdoctypename)
-            break;
-    }
+
     vespalib::duration pruneRemovedDocumentsAge = vespalib::from_s(proton.pruneremoveddocumentsage);
     vespalib::duration pruneRemovedDocumentsInterval = (proton.pruneremoveddocumentsinterval == 0)
                                                            ? (pruneRemovedDocumentsAge / 100)
@@ -317,8 +325,9 @@ void DocumentDBConfigManager::update(FNET_Transport& transport, const ConfigSnap
     JuniperrcConfigSP      newJuniperrcConfig = snapshot.getConfig<JuniperrcConfig>(_configId);
     ImportedFieldsConfigSP newImportedFieldsConfig = snapshot.getConfig<ImportedFieldsConfig>(_configId);
 
-    auto schema(buildSchema(*newAttributesConfig, *newIndexschemaConfig));
-    newMaintenanceConfig = buildMaintenanceConfig(_bootstrapConfig, _docTypeName);
+    auto     schema(buildSchema(*newAttributesConfig, *newIndexschemaConfig));
+    uint32_t document_db_index = find_document_db_index(_bootstrapConfig, _docTypeName);
+    newMaintenanceConfig = buildMaintenanceConfig(_bootstrapConfig, document_db_index);
     search::LogDocumentStore::Config storeConfig =
         buildStoreConfig(_bootstrapConfig->getProtonConfig(), _bootstrapConfig->getHwInfo());
     if (newMaintenanceConfig && oldMaintenanceConfig && (*newMaintenanceConfig == *oldMaintenanceConfig)) {
@@ -331,7 +340,8 @@ void DocumentDBConfigManager::update(FNET_Transport& transport, const ConfigSnap
         newImportedFieldsConfig, _bootstrapConfig->getTuneFileDocumentDBSP(), schema, newMaintenanceConfig,
         storeConfig, ThreadingServiceConfig::make(_bootstrapConfig->getProtonConfig()),
         build_alloc_config(_bootstrapConfig->getHwInfo(), _bootstrapConfig->getProtonConfig(), _docTypeName),
-        DocumentMetaStoreConfig::make(_bootstrapConfig->getProtonConfig()), _configId, _docTypeName);
+        DocumentMetaStoreConfig::make(_bootstrapConfig->getProtonConfig(), document_db_index), _configId,
+        _docTypeName);
     assert(newSnapshot->valid());
     {
         std::lock_guard<std::mutex> lock(_pendingConfigMutex);

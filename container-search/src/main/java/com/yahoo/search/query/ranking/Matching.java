@@ -1,8 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.ranking;
 
-import com.yahoo.processing.IllegalInputException;
-import com.yahoo.search.query.Ranking;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileFieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
@@ -13,7 +11,7 @@ import java.util.Objects;
 /**
  * Holds the settings for the matching feature.
  *
- * @author baldersheim
+ * @author Henning Baldersheim
  */
 public class Matching implements Cloneable {
 
@@ -106,6 +104,9 @@ public class Matching implements Cloneable {
         termwiseLimit = value;
     }
     public void setNumThreadsPerSearch(int value) {
+        if (value < 1) {
+            throw new IllegalArgumentException("ranking.matching.numthreadspersearch must be > 0");
+        }
         numThreadsPerSearch = value;
     }
     public void setNumSearchPartitions(int value) {

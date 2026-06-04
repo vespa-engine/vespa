@@ -75,12 +75,12 @@ public:
     ~FlushHistory();
     FlushHistory& operator=(const FlushHistory&) = delete;
     FlushHistory& operator=(FlushHistory&&) = delete;
-    void start_flush(const std::string& handler_name, const std::string& target_name, duration last_flush_duration,
-                     uint32_t id);
+    void start_flush(const std::string& handler_name, const std::string& target_name,
+                     const std::string& strategy_info, duration last_flush_duration, uint32_t id);
     void flush_done(uint32_t id);
     void prune_done(uint32_t id);
     void add_pending_flush(const std::string& handler_name, const std::string& target_name,
-                           duration last_flush_duration);
+                           const std::string& strategy_info, duration last_flush_duration);
     void drop_pending_flush(const std::string& handler_name, const std::string& target_name);
     void clear_pending_flushes();
     void set_strategy(std::string stategy, uint32_t strategy_id, bool priority_strategy);

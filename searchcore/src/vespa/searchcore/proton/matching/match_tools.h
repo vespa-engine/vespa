@@ -19,6 +19,7 @@
 #include <vespa/searchlib/common/stringmap.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/idiversifier.h>
+#include <vespa/searchlib/queryeval/queryeval_stats.h>
 #include <vespa/vespalib/util/doom.h>
 
 namespace vespalib {
@@ -161,7 +162,7 @@ public:
                       const IIndexEnvironment& indexEnv, const RankSetup& rankSetup, const Properties& rankProperties,
                       const Properties& featureOverrides, vespalib::ThreadBundle& thread_bundle,
                       const search::IDocumentMetaStoreContext::IReadGuard::SP* metaStoreReadGuard,
-                      uint32_t maxNumHits, bool is_search);
+                      search::queryeval::QuerySetupStats& setup_stats, uint32_t maxNumHits, bool is_search);
     ~MatchToolsFactory();
     bool valid() const { return _valid; }
     const MaybeMatchPhaseLimiter& match_limiter() const { return *_match_limiter; }

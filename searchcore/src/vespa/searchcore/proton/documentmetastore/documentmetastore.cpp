@@ -102,26 +102,32 @@ public:
     Timestamp getNextTimestamp() { return _timestampReader.readHostOrder(); }
 
     uint32_t getNextDocSize() {
-        if (_version == NO_DOCUMENT_SIZE_TRACKING_VERSION) {
+        switch (_version) {
+        case NO_DOCUMENT_SIZE_TRACKING_VERSION:
             return 1;
+        case DOCUMENT_SIZE24_TRACKING_VERSION: {
+            uint8_t  sizeLow;
+            uint16_t sizeHigh;
+            _datFile.file().ReadBuf(&sizeLow, sizeof(sizeLow));
+            _datFile.file().ReadBuf(&sizeHigh, sizeof(sizeHigh));
+            return sizeLow + (static_cast<uint32_t>(sizeHigh) << 8);
         }
-        uint8_t  sizeLow;
-        uint16_t sizeHigh;
-        _datFile.file().ReadBuf(&sizeLow, sizeof(sizeLow));
-        _datFile.file().ReadBuf(&sizeHigh, sizeof(sizeHigh));
-        return sizeLow + (static_cast<uint32_t>(sizeHigh) << 8);
+        default: {
+            uint32_t doc_size;
+            _datFile.file().ReadBuf(&doc_size, sizeof(doc_size));
+            return doc_size;
+        }
+        }
     }
 
     size_t getNumElems() const {
-        return _datFile.data_size() /
-               (sizeof(uint32_t) + sizeof(GlobalId) + sizeof(uint8_t) + sizeof(Timestamp::Type) +
-                ((_version == NO_DOCUMENT_SIZE_TRACKING_VERSION) ? 0 : 3));
+        return _datFile.data_size() / DocumentMetaStore::entry_size(_version != NO_DOCUMENT_SIZE_TRACKING_VERSION,
+                                                                    _version >= DOCUMENT_SIZE32_TRACKING_VERSION);
     }
 
-    uint64_t size_on_disk() const noexcept {
-        return _datFile.size_on_disk() + DiskSpaceCalculator::directory_placeholder_size();
-    }
+    uint64_t size_on_disk() const noexcept { return _datFile.size_on_disk(); }
     std::chrono::steady_clock::duration flush_duration() const noexcept { return _datFile.flush_duration(); }
+    [[nodiscard]] uint32_t get_version() const noexcept { return _version; }
 };
 
 Reader::Reader(std::unique_ptr<FastOS_FileInterface> datFile)
@@ -141,25 +147,23 @@ Reader::~Reader() = default;
  **/
 class DocIdReader {
 private:
-    FileWithHeader     _docid_file;
-    FileReader<size_t> _length_reader;
-    FileReader<char>   _char_reader;
-    std::vector<char>  _docid_buffer;
+    FileWithHeader       _docid_file;
+    FileReader<uint32_t> _length_reader;
+    FileReader<char>     _char_reader;
+    std::vector<char>    _docid_buffer;
 
 public:
     explicit DocIdReader(std::unique_ptr<FastOS_FileInterface> docid_file);
     ~DocIdReader();
 
     std::span<const char> get_next_docid() {
-        size_t length = _length_reader.readHostOrder();
+        uint32_t length = _length_reader.readHostOrder();
         _docid_buffer.reserve(length);
         _char_reader.readNHostOrder(_docid_buffer.data(), length);
         return {_docid_buffer.data(), length};
     }
 
-    uint64_t size_on_disk() const noexcept {
-        return _docid_file.size_on_disk() + DiskSpaceCalculator::directory_placeholder_size();
-    }
+    uint64_t size_on_disk() const noexcept { return _docid_file.size_on_disk(); }
     std::chrono::steady_clock::duration flush_duration() const noexcept { return _docid_file.flush_duration(); }
 };
 
@@ -170,6 +174,18 @@ DocIdReader::DocIdReader(std::unique_ptr<FastOS_FileInterface> docid_file)
       _docid_buffer() {
 }
 DocIdReader::~DocIdReader() = default;
+
+bool consider_require_doc_sizes_from_docstore(const Reader& reader, bool trackDocumentSizes,
+                                              bool track_32bit_document_sizes) {
+    if (!trackDocumentSizes) {
+        return false;
+    }
+    if (track_32bit_document_sizes) {
+        return reader.get_version() < DOCUMENT_SIZE32_TRACKING_VERSION;
+    } else {
+        return reader.get_version() < DOCUMENT_SIZE24_TRACKING_VERSION;
+    }
+}
 
 } // namespace documentmetastore
 
@@ -218,6 +234,16 @@ void DocumentMetaStore::insert(GidToLidMapKey key, const RawDocumentMetadata& me
                                     metadata.getDocSize(), _subDbType);
     _lidAlloc.updateActiveLids(lid, state.isActive());
     updateCommittedDocIdLimit();
+}
+
+DocumentMetaStore::DocumentIdEntryRef DocumentMetaStore::add_docid_string(std::span<const char> docid) {
+    _docid_bytes += docid.size();
+    return _docid_store.add(docid);
+}
+
+void DocumentMetaStore::remove_docid_string(DocumentIdEntryRef ref) {
+    _docid_bytes -= _docid_store.get(ref).size();
+    _docid_store.remove(ref);
 }
 
 bool DocumentMetaStore::consider_compact_gid_to_lid_map() {
@@ -287,6 +313,7 @@ void DocumentMetaStore::onUpdateStat(CommitParam::UpdateStats updateStats) {
     // the free lists are not taken into account here
     updateStatistics(_metadataStore.size(), _metadataStore.size(), usage.allocatedBytes(), usage.usedBytes(),
                      usage.deadBytes(), usage.allocatedBytesOnHold());
+    update_docid_bytes_stats();
 }
 
 void DocumentMetaStore::before_inc_generation(Generation current_gen) {
@@ -323,10 +350,14 @@ DocumentMetaStore::DocId DocumentMetaStore::readNextDoc(documentmetastore::Reade
     RawDocumentMetadata& meta = _metadataStore[lid];
     meta.setGid(reader.getNextGid());
     meta.setBucketUsedBits(reader.getNextBucketUsedBits());
-    meta.setDocSize(reader.getNextDocSize());
+    uint32_t doc_size = reader.getNextDocSize();
+    if (!_track_32bit_document_sizes) {
+        doc_size = RawDocumentMetadata::capped_doc_size24(doc_size);
+    }
+    meta.setDocSize(doc_size);
     meta.setTimestamp(reader.getNextTimestamp());
     if (docid_reader) {
-        const auto ref = _docid_store.add(docid_reader->get_next_docid());
+        const auto ref = add_docid_string(docid_reader->get_next_docid());
         meta.set_docid_ref(ref);
     }
     treeBuilder.insert(GidToLidMapKey(lid, meta.getGid()), BTreeNoLeafData());
@@ -352,6 +383,9 @@ bool DocumentMetaStore::onLoad(vespalib::Executor*) {
 
     // insert gids (already sorted)
     if (numElems > 0) {
+        _requires_document_ids_from_docstore = _store_full_document_id && !docid_reader;
+        _requires_doc_sizes_from_docstore =
+            consider_require_doc_sizes_from_docstore(reader, _trackDocumentSizes, _track_32bit_document_sizes);
         DocId                      lid = readNextDoc(reader, docid_reader.get(), treeBuilder);
         const RawDocumentMetadata* meta = &_metadataStore[lid];
         BucketId                   prevId(meta->getBucketId());
@@ -377,8 +411,15 @@ bool DocumentMetaStore::onLoad(vespalib::Executor*) {
 
     setNumDocs(_metadataStore.size());
     setCommittedDocIdLimit(_metadataStore.size());
-    set_size_on_disk(reader.size_on_disk());
-    set_last_flush_duration(reader.flush_duration());
+    uint64_t size_on_disk = DiskSpaceCalculator::directory_placeholder_size() + reader.size_on_disk();
+    std::chrono::steady_clock::duration flush_duration = reader.flush_duration();
+    if (docid_reader) {
+        size_on_disk += docid_reader->size_on_disk();
+        flush_duration += docid_reader->flush_duration();
+    }
+    set_size_on_disk(size_on_disk);
+    set_last_flush_duration(flush_duration);
+    update_docid_bytes_stats();
 
     return true;
 }
@@ -468,6 +509,8 @@ DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB, const std::string
       _metadataStore(grow, getGenerationHolder()),
       _docid_store(make_default_docid_array_store_config(), get_memory_allocator(),
                    TypeMapper(array_store_max_type_id, array_store_grow_factor, array_store_max_buffer_size)),
+      _docid_bytes(0),
+      _docid_bytes_stats(0),
       _gidToLidMap(),
       _gid_to_lid_map_write_itr(EntryRef(), _gidToLidMap.getAllocator()),
       _gid_to_lid_map_write_itr_prepare_serial_num(0u),
@@ -476,10 +519,13 @@ DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB, const std::string
       _shrinkLidSpaceBlockers(0),
       _subDbType(subDbType),
       _trackDocumentSizes(true),
+      _track_32bit_document_sizes(false),
+      _requires_doc_sizes_from_docstore(false),
       _changesSinceCommit(0),
       _op_listener(),
       _should_compact_gid_to_lid_map(false),
-      _store_full_document_id(store_full_document_id) {
+      _store_full_document_id(store_full_document_id),
+      _requires_document_ids_from_docstore(false) {
     ensureSpace(0);                       // lid 0 is reserved
     setCommittedDocIdLimit(1u);           // lid 0 is reserved
     _gidToLidMap.getAllocator().freeze(); // create initial frozen tree
@@ -536,8 +582,11 @@ DocumentMetaStore::Result DocumentMetaStore::inspect(const GlobalId& gid, uint64
 DocumentMetaStore::Result DocumentMetaStore::put(const DocumentId& docid, const BucketId& bucketId,
                                                  Timestamp timestamp, uint32_t docSize, DocId lid,
                                                  uint64_t prepare_serial_num) {
-    Result              res;
-    auto&               gid = docid.getGlobalId();
+    Result res;
+    auto&  gid = docid.getGlobalId();
+    if (!_track_32bit_document_sizes) {
+        docSize = RawDocumentMetadata::capped_doc_size24(docSize);
+    }
     RawDocumentMetadata metadata(gid, bucketId, storage::spi::Timestamp(timestamp), docSize);
     KeyComp             comp(metadata, get_unbound_metadata_view());
     auto                find_key = GidToLidMapKey::make_find_key(gid);
@@ -563,7 +612,7 @@ DocumentMetaStore::Result DocumentMetaStore::put(const DocumentId& docid, const 
             (void)freeLid;
         }
         if (_store_full_document_id) {
-            const auto ref = _docid_store.add(docid.getScheme().toString());
+            const auto ref = add_docid_string(docid.getScheme().toString());
             metadata.set_docid_ref(ref);
         }
         insert(GidToLidMapKey(lid, find_key.get_gid_key()), metadata);
@@ -606,12 +655,10 @@ bool DocumentMetaStore::update_docid_string(DocId lid, std::string_view docid) {
 
     if (_store_full_document_id) {
         auto&      metadata = _metadataStore[lid];
-        const auto new_ref = _docid_store.add(docid);
+        const auto new_ref = add_docid_string(docid);
         const auto old_ref = metadata.get_relaxed_docid_ref();
         metadata.set_docid_ref(new_ref);
-        if (old_ref.valid()) {
-            _docid_store.remove(old_ref);
-        }
+        remove_docid_string(old_ref);
     }
 
     return true;
@@ -642,7 +689,7 @@ bool DocumentMetaStore::remove(DocId lid, uint64_t prepare_serial_num) {
     }
     RawDocumentMetadata meta = removeInternal(lid, prepare_serial_num);
     if (_store_full_document_id) {
-        _docid_store.remove(meta.get_relaxed_docid_ref());
+        remove_docid_string(meta.get_relaxed_docid_ref());
         _metadataStore[lid].set_docid_ref(EntryRef());
     }
     _bucketDB->takeGuard()->remove(meta.getGid(), meta.getBucketId().stripUnused(), meta.getTimestamp(),
@@ -659,7 +706,8 @@ void DocumentMetaStore::removes_complete(const std::vector<DocId>& lids) {
     incGeneration();
 }
 
-void DocumentMetaStore::move(DocId fromLid, DocId toLid, uint64_t prepare_serial_num) {
+void DocumentMetaStore::move(const document::DocumentId& docid, DocId fromLid, DocId toLid,
+                             uint64_t prepare_serial_num) {
     assert(fromLid != 0);
     assert(toLid != 0);
     assert(fromLid > toLid);
@@ -670,6 +718,13 @@ void DocumentMetaStore::move(DocId fromLid, DocId toLid, uint64_t prepare_serial
     _metadataStore[toLid] = _metadataStore[fromLid];
     if (_store_full_document_id) {
         _metadataStore[fromLid].set_docid_ref(EntryRef());
+        auto& metadata = _metadataStore[toLid];
+        // No document id for this document
+        // Gone missing during saving?
+        if (!metadata.get_relaxed_docid_ref().valid()) {
+            const auto ref = add_docid_string(docid.getScheme().toString());
+            metadata.set_docid_ref(ref);
+        }
     }
     const GlobalId& gid = getRawGid(fromLid);
     KeyComp         comp(gid, get_unbound_metadata_view());
@@ -724,7 +779,7 @@ void DocumentMetaStore::removeBatch(const std::vector<DocId>& lidsToRemove, cons
         assert(validLid(lid));
         removed.emplace_back(lid, _metadataStore[lid]);
         if (_store_full_document_id) {
-            _docid_store.remove(removed.back().second.get_relaxed_docid_ref());
+            remove_docid_string(removed.back().second.get_relaxed_docid_ref());
             _metadataStore[lid].set_docid_ref(EntryRef());
         }
     }
@@ -1084,11 +1139,20 @@ GenerationGuard DocumentMetaStore::getGuard() const {
 
 uint64_t DocumentMetaStore::getEstimatedSaveByteSize() const {
     uint32_t numDocs = getNumUsedLids();
-    return minHeaderLen + numDocs * entrySize;
+    uint64_t estimate = minHeaderLen + numDocs * entry_size(_trackDocumentSizes, _track_32bit_document_sizes);
+    if (_store_full_document_id) {
+        estimate += minHeaderLen + numDocs * sizeof(uint32_t) + get_docid_bytes_stats();
+    }
+    return estimate;
+}
+
+size_t DocumentMetaStore::transient_memory_for_flush() const noexcept {
+    return 0;
 }
 
 uint32_t DocumentMetaStore::getVersion() const {
-    return _trackDocumentSizes ? documentmetastore::DOCUMENT_SIZE_TRACKING_VERSION
+    return _trackDocumentSizes ? (_track_32bit_document_sizes ? documentmetastore::DOCUMENT_SIZE32_TRACKING_VERSION
+                                                              : documentmetastore::DOCUMENT_SIZE24_TRACKING_VERSION)
                                : documentmetastore::NO_DOCUMENT_SIZE_TRACKING_VERSION;
 }
 

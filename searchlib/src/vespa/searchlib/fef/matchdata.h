@@ -4,6 +4,7 @@
 
 #include "handle.h"
 #include "termfieldmatchdata.h"
+
 #include <vespa/vespalib/util/typed_data_layout.h>
 
 #include <memory>
@@ -20,7 +21,7 @@ using MatchDataBase = vespalib::tdl::Data<MatchDataDomain>;
  **/
 class MatchData : public MatchDataBase {
 private:
-    double                          _termwise_limit;
+    double _termwise_limit;
 
 public:
     /**
@@ -79,7 +80,9 @@ public:
      * @return term field match data
      * @param handle term field handle
      **/
-    const TermFieldMatchData* resolveTermField(TermFieldHandle handle) const { return &all_of<TermFieldMatchData>()[handle]; }
+    const TermFieldMatchData* resolveTermField(TermFieldHandle handle) const {
+        return &all_of<TermFieldMatchData>()[handle];
+    }
 
     static MatchData::UP makeTestInstance(uint32_t numTermFields, uint32_t fieldIdLimit);
 };

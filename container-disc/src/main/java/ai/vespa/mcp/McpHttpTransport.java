@@ -3,9 +3,10 @@ package ai.vespa.mcp;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import io.modelcontextprotocol.server.DefaultMcpTransportContext;
+import io.modelcontextprotocol.json.McpJsonMapper;
+import io.modelcontextprotocol.json.jackson2.JacksonMcpJsonMapper;
 import io.modelcontextprotocol.server.McpStatelessServerHandler;
-import io.modelcontextprotocol.server.McpTransportContext;
+import io.modelcontextprotocol.common.McpTransportContext;
 import io.modelcontextprotocol.server.McpTransportContextExtractor;
 import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.spec.McpStatelessServerTransport;
@@ -28,14 +29,14 @@ class McpHttpTransport implements McpStatelessServerTransport {
 
     private static final Logger logger = Logger.getLogger(McpHttpTransport.class.getName());
 
-    private final ObjectMapper mapper;
+    private final McpJsonMapper mapper;
     private McpStatelessServerHandler mcpHandler;
     private final McpTransportContextExtractor<HttpRequest> contextExtractor;
     private volatile boolean isClosing = false;
 
     McpHttpTransport() {
-        this.mapper = new ObjectMapper();
-        this.contextExtractor = (request, context) -> context;
+        this.mapper = new JacksonMcpJsonMapper(new ObjectMapper());
+        this.contextExtractor = (request) -> McpTransportContext.EMPTY;
     }
 
     @Override
@@ -107,7 +108,7 @@ class McpHttpTransport implements McpStatelessServerTransport {
             logger.log(Level.SEVERE, "POST request received while transport is closing");
             return createErrorResponse(503, "Transport is closing, no further requests will be accepted", null);
         }
-        McpTransportContext context = contextExtractor.extract(request, new DefaultMcpTransportContext());
+        McpTransportContext context = contextExtractor.extract(request);
 
         try {
             McpSchema.JSONRPCMessage message = McpSchema.deserializeJsonRpcMessage(mapper, new String(requestBody, StandardCharsets.UTF_8));

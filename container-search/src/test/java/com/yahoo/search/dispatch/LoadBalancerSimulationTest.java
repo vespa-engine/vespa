@@ -269,7 +269,7 @@ public class LoadBalancerSimulationTest {
         void handleArrival(ArrivalEvent event) {
             clock.setInstant(event.getTimestamp());
 
-            Optional<Group> groupOpt = loadBalancer.takeGroup(Set.of());
+            Optional<Group> groupOpt = loadBalancer.takeAnyGroupNotIn(Set.of());
             if (groupOpt.isPresent()) {
                 Group group = groupOpt.get();
                 statistics.recordTakeGroup(group.id());

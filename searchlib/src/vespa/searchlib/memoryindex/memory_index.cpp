@@ -73,7 +73,7 @@ MemoryIndex::MemoryIndex(const Schema& schema, const IFieldLengthInspector& insp
       _hiddenFields(schema.getNumIndexFields(), false),
       _prunedSchema(),
       _indexedDocs(0),
-      _staticMemoryFootprint(getMemoryUsage().allocatedBytes()) {
+      _staticMemoryFootprint(getMemoryUsage().usedBytes()) {
 }
 
 MemoryIndex::~MemoryIndex() = default;

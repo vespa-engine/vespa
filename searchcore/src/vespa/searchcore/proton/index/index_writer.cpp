@@ -31,14 +31,14 @@ void IndexWriter::put(search::SerialNum serialNum, const document::Document& doc
     if (LOG_WOULD_VLOG(level)) {
         std::string s1(doc.toString(true));
         std::string idString = doc.getId().toString();
-        VLOG(level, "Handle put: serial(%" PRIu64 "), docId(%s), lid(%u), document(sz=%ld)", serialNum,
+        VLOG(level, "Handle put: serial(%" PRIu64 "), docId(%s), lid(%u), document(sz=%zu)", serialNum,
              idString.c_str(), lid, s1.size());
         const size_t chunksize(30000);
         const char*  dataStart = s1.data();
         for (size_t accum(0); accum < s1.size(); accum += chunksize) {
             VLOG(level,
                  "Handle put continued...: serial(%" PRIu64
-                 "), docId(%s), lid(%u), document(sz=%ld{%ld, %ld}) {\n%.30000s\n}",
+                 "), docId(%s), lid(%u), document(sz=%zu{%zu, %zu}) {\n%.30000s\n}",
                  serialNum, idString.c_str(), lid, s1.size(), accum, std::min(accum + chunksize, s1.size()),
                  dataStart + accum);
         }
@@ -51,7 +51,7 @@ void IndexWriter::removeDocs(search::SerialNum serialNum, LidVector lids) {
         return;
     }
     for (search::DocumentIdT lid : lids) {
-        VLOG(getDebugLevel(lid, nullptr), "Handle remove: serial(%" PRIu64 "), num_lids(%lu)", serialNum,
+        VLOG(getDebugLevel(lid, nullptr), "Handle remove: serial(%" PRIu64 "), num_lids(%zu)", serialNum,
              lids.size());
     }
     _mgr->removeDocuments(std::move(lids), serialNum);

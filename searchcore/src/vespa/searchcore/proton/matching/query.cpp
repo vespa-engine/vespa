@@ -22,6 +22,7 @@
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/lazy_filter.h>
 #include <vespa/searchlib/queryeval/nearest_neighbor_blueprint.h>
+#include <vespa/searchlib/queryeval/queryeval_stats.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 
@@ -230,10 +231,6 @@ void Query::tag_needed_handles(HandleRecorder& handle_recorder, const search::fe
     proton::matching::tag_needed_handles(*_query_tree, handle_recorder, index_env);
 }
 
-void Query::enumerate_blueprint_nodes() noexcept {
-    _blueprint->enumerate(1);
-}
-
 void Query::optimize(InFlow in_flow, bool sort_by_cost) {
     _in_flow = in_flow;
     bool allow_force_strict = sort_by_cost && in_flow.strict();
@@ -249,10 +246,11 @@ void Query::fetchPostings(const ExecuteInfo& executeInfo) {
 void Query::handle_global_filter(const IRequestContext&          requestContext,
                                  const AnnDeadlineConfiguration& ann_deadline_config, uint32_t docid_limit,
                                  double global_filter_lower_limit, double global_filter_upper_limit,
-                                 search::engine::Trace& trace, bool sort_by_cost, bool use_lazy_filter) {
+                                 search::queryeval::QuerySetupStats& setup_stats, search::engine::Trace& trace,
+                                 bool sort_by_cost, bool use_lazy_filter) {
     if (!handle_global_filter(*_blueprint, requestContext.getDoom(), ann_deadline_config, docid_limit,
                               global_filter_lower_limit, global_filter_upper_limit, requestContext.thread_bundle(),
-                              &trace, use_lazy_filter))
+                              setup_stats, &trace, use_lazy_filter))
     {
         return;
     }
@@ -262,13 +260,15 @@ void Query::handle_global_filter(const IRequestContext&          requestContext,
     _blueprint = Blueprint::optimize_and_sort(std::move(_blueprint), _in_flow, opts);
     LOG(debug, "blueprint after handle_global_filter:\n%s\n", _blueprint->asString().c_str());
     // strictness may change if optimized order changed:
+    search::queryeval::FetchPostingsProfilerGuard guard(*_blueprint);
     fetchPostings(ExecuteInfo::create(_in_flow.rate(), requestContext.getDoom(), requestContext.thread_bundle()));
 }
 
 bool Query::handle_global_filter(Blueprint& blueprint, const vespalib::Doom& doom,
                                  const AnnDeadlineConfiguration& ann_deadline_config, uint32_t docid_limit,
                                  double global_filter_lower_limit, double global_filter_upper_limit,
-                                 vespalib::ThreadBundle& thread_bundle, search::engine::Trace* trace,
+                                 vespalib::ThreadBundle&             thread_bundle,
+                                 search::queryeval::QuerySetupStats& setup_stats, search::engine::Trace* trace,
                                  bool use_lazy_filter) {
     using search::queryeval::Blueprint;
     using search::queryeval::GlobalFilter;
@@ -340,12 +340,13 @@ bool Query::handle_global_filter(Blueprint& blueprint, const vespalib::Doom& doo
         trace->addEvent(5, "Handle global filter in query execution plan");
     }
     blueprint.set_global_filter(*global_filter, estimated_hit_ratio);
-    perform_ann_searches(blueprint, doom, ann_deadline_config);
+    perform_ann_searches(blueprint, doom, ann_deadline_config, setup_stats);
     return true;
 }
 
 void Query::perform_ann_searches(Blueprint& blueprint, const vespalib::Doom& doom,
-                                 const AnnDeadlineConfiguration& ann_deadline_config) {
+                                 const AnnDeadlineConfiguration&     ann_deadline_config,
+                                 search::queryeval::QuerySetupStats& setup_stats) {
     std::queue<search::queryeval::NearestNeighborBlueprint*> ann_blueprints;
     blueprint.each_node_post_order([&ann_blueprints](Blueprint& bp) {
         if (auto nearest_neighbor = bp.asNearestNeighbor()) {
@@ -356,7 +357,7 @@ void Query::perform_ann_searches(Blueprint& blueprint, const vespalib::Doom& doo
     });
     while (!ann_blueprints.empty()) {
         const vespalib::Deadline deadline = ann_deadline_config.make_ann_deadline(doom, ann_blueprints.size());
-        ann_blueprints.front()->perform_index_search(deadline);
+        ann_blueprints.front()->perform_index_search(deadline, setup_stats);
         ann_blueprints.pop();
     }
 }

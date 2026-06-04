@@ -66,10 +66,12 @@ public:
     Time getLastFlushTime() const override;
     SerialNum getFlushedSerialNum() const override;
     Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
+    [[nodiscard]] bool can_flush(SerialNum current_serial) const noexcept override;
     FlushStats getLastFlushStats() const override { return _lastStats; }
 
     static void initCleanup(const std::string& baseDir);
     uint64_t getApproxBytesToWriteToDisk() const override;
+    [[nodiscard]] size_t transient_memory_for_flush() const noexcept override;
     std::chrono::steady_clock::duration last_flush_duration() const noexcept override;
 };
 

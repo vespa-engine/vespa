@@ -647,6 +647,7 @@ public class SessionRepository {
                                 existingSession.getCloudResourceTags(),
                                 existingSession.getDataplaneTokens(),
                                 ActivationTriggers.empty(),
+                                existingSession.telemetryExportConfig(),
                                 writeSessionData);
     }
 

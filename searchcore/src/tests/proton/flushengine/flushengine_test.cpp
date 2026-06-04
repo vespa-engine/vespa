@@ -86,6 +86,10 @@ public:
         }
         return task;
     }
+
+    [[nodiscard]] bool can_flush(SerialNum current_serial) const noexcept override {
+        return _target->can_flush(current_serial);
+    }
 };
 
 using Targets = std::vector<IFlushTarget::SP>;
@@ -270,6 +274,8 @@ public:
         _initDone.countDown();
         return std::move(_task);
     }
+
+    [[nodiscard]] bool can_flush(SerialNum) const noexcept override { return true; }
 };
 
 class GCTarget : public SimpleTarget {
@@ -311,7 +317,7 @@ public:
     }
 };
 
-class ReservedDiskSpaceTask : public SimpleTask {
+class ReservedDiskSpaceAndMemoryTask : public SimpleTask {
     IFlushTarget::DiskGain& _disk_gain;
     void on_run() override {
         // Assume that future flushes will use the same amount of disk space (no more growth).
@@ -319,27 +325,32 @@ class ReservedDiskSpaceTask : public SimpleTask {
     }
 
 public:
-    ReservedDiskSpaceTask(vespalib::Gate& start, vespalib::Gate& done, vespalib::Gate* proceed,
-                          std::atomic<search::SerialNum>& flushedSerial, search::SerialNum& currentSerial,
-                          IFlushTarget::DiskGain& disk_gain)
+    ReservedDiskSpaceAndMemoryTask(vespalib::Gate& start, vespalib::Gate& done, vespalib::Gate* proceed,
+                                   std::atomic<search::SerialNum>& flushedSerial, search::SerialNum& currentSerial,
+                                   IFlushTarget::DiskGain& disk_gain)
         : SimpleTask(start, done, proceed, flushedSerial, currentSerial), _disk_gain(disk_gain) {}
 };
 
-class ReservedDiskSpaceTarget : public SimpleTarget {
+class ReservedDiskSpaceAndMemoryTarget : public SimpleTarget {
     DiskGain _disk_gain;
+    size_t   _transient_memory_for_flush;
 
 public:
-    ReservedDiskSpaceTarget(const std::string& name, search::SerialNum flushedSerial, DiskGain disk_gain)
-        : SimpleTarget(name, Type::OTHER, no_task_tag()), _disk_gain(disk_gain) {
+    ReservedDiskSpaceAndMemoryTarget(const std::string& name, search::SerialNum flushedSerial, DiskGain disk_gain,
+                                     size_t transient_memory_for_flush_in)
+        : SimpleTarget(name, Type::OTHER, no_task_tag()),
+          _disk_gain(disk_gain),
+          _transient_memory_for_flush(transient_memory_for_flush_in) {
         _flushedSerial = flushedSerial;
-        _task = std::make_unique<ReservedDiskSpaceTask>(_taskStart, _taskDone, &_proceed, _flushedSerial,
-                                                        _currentSerial, _disk_gain);
+        _task = std::make_unique<ReservedDiskSpaceAndMemoryTask>(_taskStart, _taskDone, &_proceed, _flushedSerial,
+                                                                 _currentSerial, _disk_gain);
     }
-    ~ReservedDiskSpaceTarget() override;
+    ~ReservedDiskSpaceAndMemoryTarget() override;
     DiskGain getApproxDiskGain() const override { return _disk_gain; }
+    size_t transient_memory_for_flush() const noexcept override { return _transient_memory_for_flush; }
 };
 
-ReservedDiskSpaceTarget::~ReservedDiskSpaceTarget() = default;
+ReservedDiskSpaceAndMemoryTarget::~ReservedDiskSpaceAndMemoryTarget() = default;
 
 class SimpleStrategy : public IFlushStrategy {
 public:
@@ -347,6 +358,7 @@ public:
     enum class OrderBy { INDEX_OF, SERIAL };
     std::vector<IFlushTarget::SP> _targets;
     OrderBy                       _orderBy;
+    bool                          _priority_strategy;
 
     struct CompareIndexOf {
         CompareIndexOf(const SimpleStrategy& flush) : _flush(flush) {}
@@ -356,8 +368,8 @@ public:
         const SimpleStrategy& _flush;
     };
 
-    FlushContext::List getFlushTargets(const FlushContext::List& targetList, const flushengine::TlsStatsMap&,
-                                       const flushengine::ActiveFlushStats&) const override {
+    FlushStrategyResult getFlushTargets(const FlushContext::List& targetList, const flushengine::TlsStatsMap&,
+                                        const flushengine::ActiveFlushStats&) const override {
         FlushContext::List fv(targetList);
         if (_orderBy == OrderBy::INDEX_OF) {
             std::sort(fv.begin(), fv.end(), CompareIndexOf(*this));
@@ -366,17 +378,28 @@ public:
                 return a->getTarget()->getFlushedSerialNum() < b->getTarget()->getFlushedSerialNum();
             });
         }
-        return fv;
+        return FlushStrategyResult(std::move(fv), name(), _id, _priority_strategy, order_name());
     }
 
     std::string name() const override { return "flush_simple"; }
+
+    std::string order_name() const noexcept {
+        switch (_orderBy) {
+        case OrderBy::INDEX_OF:
+            return "index_of";
+        case OrderBy::SERIAL:
+        default:
+            return "serial";
+        }
+    }
 
     bool compare(const IFlushTarget::SP& lhs, const IFlushTarget::SP& rhs) const {
         LOG(info, "SimpleStrategy::compare(%p, %p)", lhs.get(), rhs.get());
         return indexOf(lhs) < indexOf(rhs);
     }
 
-    SimpleStrategy(OrderBy orderBy) noexcept : _targets(), _orderBy(orderBy) {}
+    SimpleStrategy(OrderBy orderBy, bool priority_strategy) noexcept
+        : _targets(), _orderBy(orderBy), _priority_strategy(priority_strategy) {}
 
     uint32_t indexOf(const IFlushTarget::SP& target) const {
         IFlushTarget*      raw = target.get();
@@ -401,10 +424,10 @@ public:
 
 class NoFlushStrategy : public SimpleStrategy {
 public:
-    NoFlushStrategy() noexcept : SimpleStrategy(OrderBy::INDEX_OF) {}
-    FlushContext::List getFlushTargets(const FlushContext::List&, const flushengine::TlsStatsMap&,
-                                       const flushengine::ActiveFlushStats&) const override {
-        return {};
+    NoFlushStrategy() noexcept : SimpleStrategy(OrderBy::INDEX_OF, false) {}
+    FlushStrategyResult getFlushTargets(const FlushContext::List&, const flushengine::TlsStatsMap&,
+                                        const flushengine::ActiveFlushStats&) const override {
+        return FlushStrategyResult({}, name(), _id, false, name());
     }
     std::string name() const override { return "flush_nothing"; }
 };
@@ -440,7 +463,8 @@ struct Fixture {
           engine(tlsStatsFactory, strategy, numThreads, idleInterval, std::numeric_limits<uint64_t>::max()) {}
 
     Fixture(uint32_t numThreads, vespalib::duration idleInterval)
-        : Fixture(numThreads, idleInterval, std::make_shared<SimpleStrategy>(SimpleStrategy::OrderBy::INDEX_OF)) {}
+        : Fixture(numThreads, idleInterval,
+                  std::make_shared<SimpleStrategy>(SimpleStrategy::OrderBy::INDEX_OF, false)) {}
 
     ~Fixture();
 
@@ -731,7 +755,7 @@ TEST(FlushEngineTest, require_that_concurrency_works) {
 }
 
 TEST(FlushEngineTest, require_that_there_is_room_for_one_and_only_one_high_pri_target) {
-    Fixture f(2, 1ms, std::make_unique<SimpleStrategy>(SimpleStrategy::OrderBy::SERIAL));
+    Fixture f(2, 1ms, std::make_unique<SimpleStrategy>(SimpleStrategy::OrderBy::SERIAL, false));
     auto    target1 = std::make_shared<SimpleTarget>("target1", 1, false);
     auto    target2 = std::make_shared<SimpleTarget>("target2", 2, false);
     auto    target3 = std::make_shared<HighPriorityTarget>("target3", 3, false);
@@ -764,7 +788,7 @@ TEST(FlushEngineTest, require_that_there_is_room_for_one_and_only_one_high_pri_t
 }
 
 TEST(FlushEngineTest, require_that_high_priority_does_not_jump_the_queue) {
-    Fixture f(2, 1ms, std::make_unique<SimpleStrategy>(SimpleStrategy::OrderBy::SERIAL));
+    Fixture f(2, 1ms, std::make_unique<SimpleStrategy>(SimpleStrategy::OrderBy::SERIAL, false));
     auto    target1 = std::make_shared<SimpleTarget>("target1", 1, false);
     auto    target2 = std::make_shared<SimpleTarget>("target2", 2, false);
     auto    target3 = std::make_shared<SimpleTarget>("target3", 3, false);
@@ -866,7 +890,7 @@ TEST(FlushEngineTest, require_that_oldest_serial_is_updated_when_finishing_prior
     auto    target1 = std::make_shared<SimpleTarget>("target1", 10, true);
     auto    handler = f.addSimpleHandler({target1});
     f.assertOldestSerial(*handler, 10);
-    f.engine.set_strategy(std::make_shared<SimpleStrategy>(SimpleStrategy::OrderBy::INDEX_OF)).wait();
+    f.engine.set_strategy(std::make_shared<SimpleStrategy>(SimpleStrategy::OrderBy::INDEX_OF, true)).wait();
     EXPECT_EQ(20u, handler->_oldestSerial);
 }
 
@@ -891,13 +915,17 @@ TEST(FlushEngineTest, the_oldest_start_time_is_tracked_per_flush_handler_in_Acti
     EXPECT_EQ(t1, stats.oldest_start_time("h1").value());
 }
 
-TEST(FlushEngineTest, reserved_disk_space_is_calculated) {
+TEST(FlushEngineTest, reserved_disk_space_and_memory_is_calculated) {
     Fixture f(2, 50ms); // 2 normal flush threads, 3 total flush threads
-    auto    target1 = std::make_shared<ReservedDiskSpaceTarget>("target1", 1, IFlushTarget::DiskGain(10, 20));
-    auto    target2 = std::make_shared<ReservedDiskSpaceTarget>("target2", 2, IFlushTarget::DiskGain(100, 200));
-    auto    target3 = std::make_shared<ReservedDiskSpaceTarget>("target3", 3, IFlushTarget::DiskGain(1000, 2000));
-    auto    target4 = std::make_shared<ReservedDiskSpaceTarget>("target4", 4, IFlushTarget::DiskGain(10000, 20000));
-    auto    handler = std::make_shared<SimpleHandler>(Targets({target1, target2, target3, target4}), "handler", 9);
+    auto    target1 =
+        std::make_shared<ReservedDiskSpaceAndMemoryTarget>("target1", 1, IFlushTarget::DiskGain(10, 20), 10);
+    auto target2 =
+        std::make_shared<ReservedDiskSpaceAndMemoryTarget>("target2", 2, IFlushTarget::DiskGain(100, 200), 100);
+    auto target3 =
+        std::make_shared<ReservedDiskSpaceAndMemoryTarget>("target3", 3, IFlushTarget::DiskGain(1000, 2000), 1000);
+    auto target4 =
+        std::make_shared<ReservedDiskSpaceAndMemoryTarget>("target4", 4, IFlushTarget::DiskGain(10000, 20000), 10000);
+    auto handler = std::make_shared<SimpleHandler>(Targets({target1, target2, target3, target4}), "handler", 9);
     f.putFlushHandler("handler", handler);
 
     /*
@@ -905,7 +933,8 @@ TEST(FlushEngineTest, reserved_disk_space_is_calculated) {
      * Reserved disk space for flush:  200 + 2000 + 20000
      * Reserved disk space for growth: 10 + 100 + 1000 + 10000
      */
-    EXPECT_EQ(33310, f.engine.get_reserved_disk_space());
+    EXPECT_EQ(33310, f.engine.get_reserved_disk_space_and_memory().reserved_disk_space());
+    EXPECT_EQ(11100, f.engine.get_reserved_disk_space_and_memory().reserved_memory());
     f.engine.start();
 
     EXPECT_TRUE(target1->_initDone.await(LONG_TIMEOUT));
@@ -918,7 +947,8 @@ TEST(FlushEngineTest, reserved_disk_space_is_calculated) {
      * Reserved disk space for flush:  200 + 2000 + 20000
      * Reserved disk space for growth: 10 + 100 + 1000 + 10000
      */
-    EXPECT_EQ(33310, f.engine.get_reserved_disk_space());
+    EXPECT_EQ(33310, f.engine.get_reserved_disk_space_and_memory().reserved_disk_space());
+    EXPECT_EQ(11100, f.engine.get_reserved_disk_space_and_memory().reserved_memory());
     target1->_proceed.countDown();
     EXPECT_TRUE(target1->_taskDone.await(LONG_TIMEOUT));
     assertThatHandlersInCurrentSet(f.engine, {"handler.target2", "handler.target3"});
@@ -927,7 +957,8 @@ TEST(FlushEngineTest, reserved_disk_space_is_calculated) {
      * Reserved disk space for flush:  200 + 2000 + 20000
      * Reserved disk space for growth: 100 + 1000 + 10000
      */
-    EXPECT_EQ(33300, f.engine.get_reserved_disk_space());
+    EXPECT_EQ(33300, f.engine.get_reserved_disk_space_and_memory().reserved_disk_space());
+    EXPECT_EQ(11100, f.engine.get_reserved_disk_space_and_memory().reserved_memory());
     target3->_proceed.countDown();
     EXPECT_TRUE(target3->_taskDone.await(LONG_TIMEOUT));
     assertThatHandlersInCurrentSet(f.engine, {"handler.target2", "handler.target4"});
@@ -936,7 +967,8 @@ TEST(FlushEngineTest, reserved_disk_space_is_calculated) {
      * Reserved disk space for flush:  200 + 2000 + 20000
      * Reserved disk space for growth: 100 + 10000
      */
-    EXPECT_EQ(32300, f.engine.get_reserved_disk_space());
+    EXPECT_EQ(32300, f.engine.get_reserved_disk_space_and_memory().reserved_disk_space());
+    EXPECT_EQ(11100, f.engine.get_reserved_disk_space_and_memory().reserved_memory());
     target2->_proceed.countDown();
     EXPECT_TRUE(target2->_taskDone.await(LONG_TIMEOUT));
     assertThatHandlersInCurrentSet(f.engine, {"handler.target4"});
@@ -945,7 +977,8 @@ TEST(FlushEngineTest, reserved_disk_space_is_calculated) {
      * Reserved disk space for flush:  200 + 2000 + 20000
      * Reserved disk space for growth: 10000
      */
-    EXPECT_EQ(32200, f.engine.get_reserved_disk_space());
+    EXPECT_EQ(32200, f.engine.get_reserved_disk_space_and_memory().reserved_disk_space());
+    EXPECT_EQ(11100, f.engine.get_reserved_disk_space_and_memory().reserved_memory());
     target4->_proceed.countDown();
     EXPECT_TRUE(target4->_taskDone.await(LONG_TIMEOUT));
     assertThatHandlersInCurrentSet(f.engine, {});
@@ -954,7 +987,8 @@ TEST(FlushEngineTest, reserved_disk_space_is_calculated) {
      * Reserved disk space for flush:  200 + 2000 + 20000
      * Reserved disk space for growth: 0
      */
-    EXPECT_EQ(22200, f.engine.get_reserved_disk_space());
+    EXPECT_EQ(22200, f.engine.get_reserved_disk_space_and_memory().reserved_disk_space());
+    EXPECT_EQ(11100, f.engine.get_reserved_disk_space_and_memory().reserved_memory());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

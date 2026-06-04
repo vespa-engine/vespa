@@ -40,7 +40,14 @@ public class Coverage extends com.yahoo.container.handler.Coverage {
      * @param degradedReason reason for degradation
      * @return self for chaining
      */
-    public Coverage setDegradedReason(int degradedReason) { this.degradedReason = degradedReason; return this; }
+    public Coverage setDegradedReason(int degradedReason) {
+        this.degradedReason = degradedReason;
+        // Updating the degraded reason can make the coverage not full
+        if (!getFull()) {
+            this.fullResultSets = 0;
+        }
+        return this;
+    }
 
     public Coverage setNodesTried(int nodesTried) { super.setNodesTried(nodesTried); return this; }
 

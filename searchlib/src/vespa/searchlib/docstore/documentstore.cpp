@@ -310,7 +310,7 @@ void DocumentStore::WrapVisitor<Visitor>::visit(uint32_t lid, const void* buffer
     }
     if (!value.empty()) {
         auto doc = std::make_shared<document::Document>(_repo, value.decompressed().first);
-        _visitor.visit(lid, doc);
+        _visitor.visit(lid, doc, sz);
         rewrite(lid, *doc);
     } else {
         visitRemove(lid);

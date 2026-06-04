@@ -84,9 +84,9 @@ public class ProtobufSerialization {
         return convertFromQuery(query, hits, nodeId, contentShare, requestTimeout, qrSearchersConfig).toByteArray();
     }
 
-    private static void convertSearchReplyErrors(Result target, List<SearchProtocol.Error> errors, boolean softTimeout) {
+    private static void convertSearchReplyErrors(Result target, List<SearchProtocol.Error> errors, boolean softTimeout, boolean annTimeout) {
         for (var error : errors) {
-            target.hits().addError(softTimeout
+            target.hits().addError(annTimeout || softTimeout
                     ? ErrorMessage.createTimeout(error.getMessage())
                     : ErrorMessage.createSearchReplyError(error.getMessage()));
         }
@@ -103,16 +103,11 @@ public class ProtobufSerialization {
         GrowableByteBuffer scratchPad = threadLocalBuffer.get();
         var queryTree = query.getModel().getQueryTree();
         var context = new SerializationContext(contentShare);
-        boolean sendProtobuf = true;
-        try {
-            isProtobufAlsoSerialized.set(sendProtobuf);
+        if (qrSearchersConfig.sendOldQueryStack()) {
+            isProtobufAlsoSerialized.set(true);
             builder.setQueryTreeBlob(serializeQueryTree(queryTree, context, scratchPad));
-        } finally {
-            isProtobufAlsoSerialized.set(false);
         }
-        if (sendProtobuf) {
-            builder.setQueryTree(queryTree.toProtobufQueryTree(context));
-        }
+        builder.setQueryTree(queryTree.toProtobufQueryTree(context));
         if (query.getGroupingSessionCache() || query.getRanking().getQueryCache()) {
             // TODO verify that the session key is included whenever rank properties would have been
             builder.setSessionKey(query.getSessionId(nodeId).toString());
@@ -262,17 +257,12 @@ public class ProtobufSerialization {
         var ranking = query.getRanking();
         var featureMap = ranking.getFeatures().asMap();
 
-        boolean sendProtobuf = true;
         var context = SerializationContext.ignored(); // Not necessary to track content share for docsum requests
-        try {
-            isProtobufAlsoSerialized.set(sendProtobuf);
+        if (qrSearchersConfig.sendOldQueryStack()) {
+            isProtobufAlsoSerialized.set(true);
             builder.setQueryTreeBlob(serializeQueryTree(query.getModel().getQueryTree(), context, scratchPad));
-        } finally {
-            isProtobufAlsoSerialized.set(false);
         }
-        if (sendProtobuf) {
-            builder.setQueryTree(query.getModel().getQueryTree().toProtobufQueryTree(context));
-        }
+        builder.setQueryTree(query.getModel().getQueryTree().toProtobufQueryTree(context));
 
         MapConverter.convertMapPrimitives(featureMap, builder::addFeatureOverrides);
         MapConverter.convertMapTensors(scratchPad, featureMap, builder::addTensorFeatureOverrides);
@@ -298,7 +288,7 @@ public class ProtobufSerialization {
         result.getResult().setTotalHitCount(protobuf.getTotalHitCount());
         result.getResult().setCoverage(convertToCoverage(protobuf));
 
-        convertSearchReplyErrors(result.getResult(), protobuf.getErrorsList(), protobuf.getDegradedBySoftTimeout());
+        convertSearchReplyErrors(result.getResult(), protobuf.getErrorsList(), protobuf.getDegradedBySoftTimeout(), protobuf.getDegradedByAnnTimeout());
         List<String> featureNames = protobuf.getMatchFeatureNamesList();
         var haveMatchFeatures = ! featureNames.isEmpty();
         MatchFeatureData matchFeatures = haveMatchFeatures ? new MatchFeatureData(featureNames) : null;
@@ -360,6 +350,8 @@ public class ProtobufSerialization {
             degradedReason |= Coverage.DEGRADED_BY_MATCH_PHASE;
         if (protobuf.getDegradedBySoftTimeout())
             degradedReason |= Coverage.DEGRADED_BY_TIMEOUT;
+        if (protobuf.getDegradedByAnnTimeout())
+            degradedReason |= Coverage.DEGRADED_BY_ANN_TIMEOUT;
         coverage.setDegradedReason(degradedReason);
 
         return coverage;
@@ -371,7 +363,8 @@ public class ProtobufSerialization {
         var coverage = result.getCoverage(false);
         if (coverage != null) {
             builder.setCoverageDocs(coverage.getDocs()).setActiveDocs(coverage.getActive()).setTargetActiveDocs(coverage.getTargetActive())
-                    .setDegradedBySoftTimeout(coverage.isDegradedByTimeout()).setDegradedByMatchPhase(coverage.isDegradedByMatchPhase());
+                    .setDegradedBySoftTimeout(coverage.isDegradedByTimeout()).setDegradedByMatchPhase(coverage.isDegradedByMatchPhase())
+                    .setDegradedByAnnTimeout(coverage.isDegradedByAnnTimeout());
         }
 
         result.hits().iterator().forEachRemaining(hit -> {

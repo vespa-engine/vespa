@@ -105,6 +105,8 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     threadstackexecutor.cpp
     threadstackexecutorbase.cpp
     time.cpp
+    transient_memory_tracker.cpp
+    transient_vector_snapshot.cpp
     unordered_u32_set.cpp
     typed_data_layout.cpp
     unwind_message.cpp

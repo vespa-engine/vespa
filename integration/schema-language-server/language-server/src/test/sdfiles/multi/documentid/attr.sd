@@ -1,0 +1,14 @@
+# Copyright Vespa.ai. All rights reserved.
+schema attr {
+  documentid: attribute
+  document attr {
+    field some_field type int {
+        indexing: attribute | summary
+    }
+  }
+  document-summary empty-summary {
+    summary documentid {
+      source: documentid
+    }
+  }
+}

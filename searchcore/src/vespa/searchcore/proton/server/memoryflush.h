@@ -68,9 +68,9 @@ public:
     MemoryFlush(const Config& config, vespalib::system_time startTime);
     ~MemoryFlush();
 
-    FlushContext::List getFlushTargets(const FlushContext::List&            targetList,
-                                       const flushengine::TlsStatsMap&      tlsStatsMap,
-                                       const flushengine::ActiveFlushStats& active_flushes) const override;
+    flushengine::FlushStrategyResult
+    getFlushTargets(const FlushContext::List& targetList, const flushengine::TlsStatsMap& tlsStatsMap,
+                    const flushengine::ActiveFlushStats& active_flushes) const override;
     std::string name() const override;
 
     void setConfig(const Config& config);

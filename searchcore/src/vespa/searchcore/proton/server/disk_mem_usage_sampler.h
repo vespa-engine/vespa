@@ -22,19 +22,19 @@ class IDestructorCallback;
 
 namespace proton {
 
-class IReservedDiskSpaceProvider;
+class IReservedDiskSpaceAndMemoryProvider;
 
 /*
  * Class to sample disk and memory usage used for filtering write operations.
  */
 class DiskMemUsageSampler {
-    ResourceUsageWriteFilter&                                                         _filter;
-    ResourceUsageNotifier&                                                            _notifier;
-    const IReservedDiskSpaceProvider&                                                 _reserved_disk_space_provider;
-    std::filesystem::path                                                             _path;
-    vespalib::duration                                                                _sampleInterval;
-    vespalib::steady_time                                                             _lastSampleTime;
-    std::mutex                                                                        _lock;
+    ResourceUsageWriteFilter&                  _filter;
+    ResourceUsageNotifier&                     _notifier;
+    const IReservedDiskSpaceAndMemoryProvider& _reserved_disk_space_and_memory_provider;
+    std::filesystem::path                      _path;
+    vespalib::duration                         _sampleInterval;
+    vespalib::steady_time                      _lastSampleTime;
+    std::mutex                                 _lock;
     std::vector<std::shared_ptr<const searchcorespi::common::IResourceUsageProvider>> _resource_usage_providers;
     std::unique_ptr<vespalib::IDestructorCallback>                                    _periodicHandle;
 
@@ -54,16 +54,17 @@ public:
         Config() : filterConfig(), sampleInterval(60s), hwInfo() {}
 
         Config(double memoryLimit_in, double diskLimit_in, double reserved_disk_space_factor_in,
-               AttributeUsageFilterConfig attribute_limit_in, vespalib::duration sampleInterval_in,
-               const vespalib::HwInfo& hwInfo_in)
-            : filterConfig(memoryLimit_in, diskLimit_in, reserved_disk_space_factor_in, attribute_limit_in),
+               double reserved_memory_factor_in, AttributeUsageFilterConfig attribute_limit_in,
+               vespalib::duration sampleInterval_in, const vespalib::HwInfo& hwInfo_in)
+            : filterConfig(memoryLimit_in, diskLimit_in, reserved_disk_space_factor_in, reserved_memory_factor_in,
+                           attribute_limit_in),
               sampleInterval(sampleInterval_in),
               hwInfo(hwInfo_in) {}
     };
 
     DiskMemUsageSampler(const std::string& path_in, ResourceUsageWriteFilter& filter,
-                        ResourceUsageNotifier&            resource_usage_notifier,
-                        const IReservedDiskSpaceProvider& reserved_disk_space_provider);
+                        ResourceUsageNotifier&                     resource_usage_notifier,
+                        const IReservedDiskSpaceAndMemoryProvider& reserved_disk_space_and_memory_provider);
     ~DiskMemUsageSampler();
     void close();
 

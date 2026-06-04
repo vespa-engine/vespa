@@ -4,6 +4,7 @@ package com.yahoo.config.provision;
 import com.yahoo.component.Vtag;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -84,6 +85,42 @@ public class ClusterMembershipTest {
     @Test
     void testServiceInstanceWithGroupAndRetireFromString() {
         assertContentServiceWithGroupAndRetire(ClusterMembership.from("content/id1/4/37/retired/stateful", Vtag.currentVersion, Optional.empty()));
+    }
+
+    @Test
+    void testProfilePreservedOnClusterSpec() {
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("id1"))
+                                         .vespaVersion("6.42")
+                                         .profile("large-storage")
+                                         .build();
+        ClusterMembership membership = ClusterMembership.from(cluster, 37);
+        assertEquals(Optional.of("large-storage"), membership.cluster().profile());
+        assertEquals("content/id1//37/stateful", membership.stringValue());
+    }
+
+    @Test
+    void testProfilePropagatedFromDeserializationParameters() {
+        String membershipString = "content/id1//37/stateful";
+        ClusterMembership withProfile = ClusterMembership.from(
+                membershipString,
+                Vtag.currentVersion,
+                Optional.empty(),
+                ZoneEndpoint.defaultEndpoint,
+                List.of(),
+                List.of(),
+                Optional.of("large-storage")
+        );
+        assertEquals(Optional.of("large-storage"), withProfile.cluster().profile());
+        ClusterMembership withoutProfile = ClusterMembership.from(
+                membershipString,
+                Vtag.currentVersion,
+                Optional.empty(),
+                ZoneEndpoint.defaultEndpoint,
+                List.of(),
+                List.of(),
+                Optional.empty()
+        );
+        assertEquals(Optional.empty(), withoutProfile.cluster().profile());
     }
 
     private void assertContainerService(ClusterMembership instance) {

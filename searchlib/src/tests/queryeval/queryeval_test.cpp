@@ -869,26 +869,55 @@ TEST(QueryEvalTest, test_andnotsearchstrict_iterators_adheres_to_init_range) {
     }
 }
 
-TEST(QueryEvalTest, test_stats) {
+TEST(QueryEvalTest, test_eval_stats) {
     auto stats = QueryEvalStats::create();
-    EXPECT_EQ(0u, stats->exact_nns_distances_computed());
-    EXPECT_EQ(0u, stats->approximate_nns_distances_computed());
-    EXPECT_EQ(0u, stats->approximate_nns_nodes_visited());
 
+    EXPECT_EQ(0u, stats->exact_nns_distances_computed());
     stats->add_to_exact_nns_distances_computed(42u);
     EXPECT_EQ(42u, stats->exact_nns_distances_computed());
     stats->add_to_exact_nns_distances_computed(42u);
     EXPECT_EQ(84u, stats->exact_nns_distances_computed());
+}
 
-    stats->add_to_approximate_nns_distances_computed(1u);
-    EXPECT_EQ(1u, stats->approximate_nns_distances_computed());
-    stats->add_to_approximate_nns_distances_computed(1u);
-    EXPECT_EQ(2u, stats->approximate_nns_distances_computed());
+TEST(QueryEvalTest, test_setup_stats) {
+    QuerySetupStats stats;
 
-    stats->add_to_approximate_nns_nodes_visited(2u);
-    EXPECT_EQ(2u, stats->approximate_nns_nodes_visited());
-    stats->add_to_approximate_nns_nodes_visited(2u);
-    EXPECT_EQ(4u, stats->approximate_nns_nodes_visited());
+    EXPECT_EQ(0u, stats.approximate_nns_distances_computed());
+    stats.add_to_approximate_nns_distances_computed(1u);
+    EXPECT_EQ(1u, stats.approximate_nns_distances_computed());
+    stats.add_to_approximate_nns_distances_computed(1u);
+    EXPECT_EQ(2u, stats.approximate_nns_distances_computed());
+
+    EXPECT_EQ(0u, stats.approximate_nns_nodes_visited());
+    stats.add_to_approximate_nns_nodes_visited(2u);
+    EXPECT_EQ(2u, stats.approximate_nns_nodes_visited());
+    stats.add_to_approximate_nns_nodes_visited(2u);
+    EXPECT_EQ(4u, stats.approximate_nns_nodes_visited());
+
+    EXPECT_EQ(0u, stats.approximate_nns_searches_performed());
+    stats.add_to_approximate_nns_searches_performed(11u);
+    EXPECT_EQ(11u, stats.approximate_nns_searches_performed());
+    stats.add_to_approximate_nns_searches_performed(7u);
+    EXPECT_EQ(18u, stats.approximate_nns_searches_performed());
+
+    EXPECT_EQ(vespalib::duration::zero(), stats.approximate_nns_time_used());
+    stats.add_to_approximate_nns_time_used(vespalib::duration(1234));
+    EXPECT_EQ(vespalib::duration(1234), stats.approximate_nns_time_used());
+    stats.add_to_approximate_nns_time_used(vespalib::duration(766));
+    EXPECT_EQ(vespalib::duration(2000), stats.approximate_nns_time_used());
+
+    EXPECT_EQ(0u, stats.approximate_nns_timeouts_hit());
+    stats.add_to_approximate_nns_timeouts_hit(1u);
+    EXPECT_EQ(1u, stats.approximate_nns_timeouts_hit());
+    stats.add_to_approximate_nns_timeouts_hit(2u);
+    EXPECT_EQ(3u, stats.approximate_nns_timeouts_hit());
+
+    // Make sure all stats are unchanged
+    EXPECT_EQ(2u, stats.approximate_nns_distances_computed());
+    EXPECT_EQ(4u, stats.approximate_nns_nodes_visited());
+    EXPECT_EQ(18u, stats.approximate_nns_searches_performed());
+    EXPECT_EQ(vespalib::duration(2000), stats.approximate_nns_time_used());
+    EXPECT_EQ(3u, stats.approximate_nns_timeouts_hit());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

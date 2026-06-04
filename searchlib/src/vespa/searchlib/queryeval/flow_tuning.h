@@ -65,7 +65,7 @@ inline size_t get_num_indirections(const attribute::BasicType&      basic_type,
 // Some blueprints are not able to provide a hit estimate (e.g. attributes without fast-search).
 // In such cases the following estimate is used instead. In most cases this is an overestimate.
 inline double estimate_when_unknown() {
-    return 0.1;
+    return 0.5;
 }
 
 // Non-strict cost of lookup based matching in an attribute (not fast-search).

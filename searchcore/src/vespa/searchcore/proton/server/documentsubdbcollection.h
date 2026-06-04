@@ -163,6 +163,11 @@ public:
     void close();
     void tearDownReferences(IDocumentDBReferenceResolver& resolver);
     void validateDocStore(FeedHandler& feedHandler, SerialNum serialNum);
+
+    /*
+     * Signalizes if one of the SubDBs requires a DocumentStore validation after replay.
+     */
+    bool requires_doc_store_validation() const;
     searchcorespi::common::ResourceUsage get_resource_usage() const;
 };
 

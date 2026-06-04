@@ -14,7 +14,8 @@ namespace search {
 
 SingleValueNumericAttributeSaver::SingleValueNumericAttributeSaver(const attribute::AttributeHeader& header,
                                                                    const void* data, size_t size)
-    : AttributeSaver(GenerationGuard(), header), _buf() {
+    : AttributeSaver(GenerationGuard(), header), _buf(), _tracker() {
+    auto lock = _tracker.acquire_lock();
     _buf = std::make_unique<BufferBuf>(size, FileSettings::DIRECTIO_ALIGNMENT);
     assert(_buf->getFreeLen() >= size);
     if (size > 0) {
@@ -22,12 +23,19 @@ SingleValueNumericAttributeSaver::SingleValueNumericAttributeSaver(const attribu
         _buf->moveFreeToData(size);
     }
     assert(_buf->getDataLen() == size);
+    _tracker.set_transient_memory(std::move(lock), size);
 }
 
-SingleValueNumericAttributeSaver::~SingleValueNumericAttributeSaver() = default;
+SingleValueNumericAttributeSaver::~SingleValueNumericAttributeSaver() {
+    if (_buf && _buf->getDataLen() > 0) {
+        auto lock = _tracker.acquire_lock();
+        _buf.reset();
+        _tracker.set_transient_memory(std::move(lock), 0);
+    }
+}
 
 bool SingleValueNumericAttributeSaver::onSave(IAttributeSaveTarget& saveTarget) {
-    saveTarget.datWriter().writeBuf(std::move(_buf));
+    saveTarget.datWriter().write_buf(std::move(_buf), std::move(_tracker));
     return true;
 }
 

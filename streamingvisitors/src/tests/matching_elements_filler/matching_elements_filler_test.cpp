@@ -424,8 +424,8 @@ void MatchingElementsFillerTest::assert_same_element_single(const std::string& f
 }
 
 void MatchingElementsFillerTest::assert_near_elements(bool ordered, std::vector<uint32_t> expected_elements) {
-    MyQueryBuilder builder;
-    constexpr int child_count = 2;
+    MyQueryBuilder   builder;
+    constexpr int    child_count = 2;
     constexpr size_t distance = 10;
     constexpr size_t num_negative_children = 0;
     constexpr size_t exclusion_distance = 0;

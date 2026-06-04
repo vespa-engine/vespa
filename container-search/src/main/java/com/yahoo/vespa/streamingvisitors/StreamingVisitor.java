@@ -148,20 +148,20 @@ class StreamingVisitor extends VisitorDataHandler implements Visitor {
         }
 
         EncodedData ed = new EncodedData();
-        boolean sendProtobuf = true;
-        ProtobufSerialization.setProtobufAlsoSerialized(sendProtobuf);
-        try {
+        if (context.sendOldQueryStack()) {
+            ProtobufSerialization.setProtobufAlsoSerialized(true);
             encodeQueryData(query, 0, ed);
             params.setLibraryParameter("query", ed.getEncodedData());
             params.setLibraryParameter("querystackcount", String.valueOf(ed.getReturned()));
-        } finally {
-            ProtobufSerialization.setProtobufAlsoSerialized(false);
+        } else {
+            // TODO: remove dummies - it's for backwards compatibility only
+            params.setLibraryParameter("query", new byte[]{(byte) 0});
+            params.setLibraryParameter("querystackcount", "1");
         }
-        if (sendProtobuf) {
-            var serializationContext = SerializationContext.ignored(); // Not tracking content share in streaming
-            var protobufTree = query.getModel().getQueryTree().toProtobufQueryTree(serializationContext);
-            params.setLibraryParameter("querytree", protobufTree.toByteArray());
-        }
+        var serializationContext = SerializationContext.ignored(); // Not tracking content share in streaming
+        var protobufTree = query.getModel().getQueryTree().toProtobufQueryTree(serializationContext);
+        params.setLibraryParameter("querytree", protobufTree.toByteArray());
+
         params.setLibraryParameter("searchcluster", context.searchCluster().getBytes(StandardCharsets.UTF_8));
         params.setLibraryParameter("schema", context.schema().getBytes(StandardCharsets.UTF_8));
 

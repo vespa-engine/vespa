@@ -11,6 +11,11 @@ using vespalib::Slime;
 using vespalib::slime::Cursor;
 using vespalib::slime::Inspector;
 
+template <size_t N>
+auto as_name_fn(const char (&name)[N]) {
+    return [name]() { return std::string(name); };
+}
+
 void fox(Profiler& profiler) {
     profiler.start(profiler.resolve("fox"));
     std::this_thread::sleep_for(1ms);
@@ -70,6 +75,14 @@ TEST(ExecutionProfilerTest, resolve_names) {
     EXPECT_EQ(profiler.resolve("foo"), 0);
     EXPECT_EQ(profiler.resolve("bar"), 1);
     EXPECT_EQ(profiler.resolve("baz"), 2);
+    EXPECT_EQ(profiler.resolve(""), 3);
+    EXPECT_EQ(profiler.resolve(""), 4);
+    EXPECT_EQ(profiler.resolve(""), 5);
+    profiler.set_name(2, "new_name");
+    EXPECT_EQ(profiler.resolve("baz"), 2);
+    EXPECT_EQ(profiler.resolve("new_name"), 6);
+    profiler.set_name(4, "named_later");
+    EXPECT_EQ(profiler.resolve("named_later"), 4);
 }
 
 TEST(ExecutionProfilerTest, empty_tree_report) {
@@ -227,8 +240,121 @@ TEST(ExecutionProfilerTest, flat_profiling_does_not_report_tasks_with_count_0) {
     EXPECT_EQ(slime["profiler"].asString().make_string(), "flat");
     EXPECT_EQ(slime["topn"].asLong(), 2);
     EXPECT_EQ(slime["roots"].entries(), 1);
-    EXPECT_EQ(slime["roots"][0]["name"].asString().make_stringview(), "baz");
+    EXPECT_EQ(slime["roots"][0]["name"].asString().make_string(), "baz");
     EXPECT_EQ(slime["roots"][0]["count"].asLong(), 1);
+}
+
+TEST(ExecutionProfilerTest, profile_using_task_guard) {
+    Profiler profiler(64);
+    auto     foo = profiler.resolve("foo");
+    auto     bar = profiler.resolve("bar");
+    {
+        Profiler::TaskGuard g1(profiler, foo);
+        {
+            Profiler::TaskGuard g2(profiler, bar);
+        }
+        {
+            Profiler::TaskGuard g2(profiler, bar);
+        }
+    }
+    Slime slime;
+    profiler.report(slime.setObject());
+    fprintf(stderr, "%s\n", slime.toString().c_str());
+    EXPECT_EQ(slime["roots"].entries(), 1);
+    EXPECT_TRUE(find_path(slime, {{"foo", 1}, {"bar", 2}}));
+}
+
+TEST(ExecutionProfilerTest, profile_using_name_guard) {
+    Profiler profiler(64);
+    auto     binder = Profiler::ThreadBinder::bind(&profiler);
+    {
+        auto g1 = Profiler::NameGuard(as_name_fn("foo"));
+        {
+            auto g2 = Profiler::NameGuard(&profiler, as_name_fn("bar"));
+        }
+        {
+            auto g2 = Profiler::NameGuard(as_name_fn("bar"));
+        }
+    }
+    Slime slime;
+    profiler.report(slime.setObject());
+    fprintf(stderr, "%s\n", slime.toString().c_str());
+    EXPECT_EQ(slime["roots"].entries(), 1);
+    EXPECT_TRUE(find_path(slime, {{"foo", 1}, {"bar", 2}}));
+}
+
+TEST(ExecutionProfilerTest, name_guard_does_not_resolve_name_if_profiler_is_null) {
+    bool called = false;
+    auto name_fun = [&called] {
+        called = true;
+        return "foo";
+    };
+    {
+        Profiler::NameGuard g(nullptr, name_fun);
+    }
+    EXPECT_FALSE(called);
+}
+
+TEST(ExecutionProfilerTest, profiler_thread_bind_nesting) {
+    Profiler p1(64);
+    Profiler p2(64);
+    EXPECT_EQ(Profiler::ThreadBinder::current(), nullptr);
+    {
+        // binding nullptr is no-op
+        auto bz = Profiler::ThreadBinder::bind(nullptr);
+        EXPECT_EQ(Profiler::ThreadBinder::current(), nullptr);
+    }
+    {
+        auto b1 = Profiler::ThreadBinder::bind(&p1);
+        EXPECT_EQ(Profiler::ThreadBinder::current(), &p1);
+        {
+            // binding nullptr is no-op
+            auto bz = Profiler::ThreadBinder::bind(nullptr);
+            EXPECT_EQ(Profiler::ThreadBinder::current(), &p1);
+            {
+                auto b2 = Profiler::ThreadBinder::bind(&p2);
+                EXPECT_EQ(Profiler::ThreadBinder::current(), &p2);
+            }
+            EXPECT_EQ(Profiler::ThreadBinder::current(), &p1);
+        }
+        EXPECT_EQ(Profiler::ThreadBinder::current(), &p1);
+    }
+    EXPECT_EQ(Profiler::ThreadBinder::current(), nullptr);
+}
+
+TEST(ExecutionProfilerTest, profile_using_post_name_guard) {
+    Profiler profiler(64);
+    auto     binder = Profiler::ThreadBinder::bind(&profiler);
+    {
+        auto g1 = Profiler::PostNameGuard();
+        {
+            auto g2 = Profiler::PostNameGuard(&profiler);
+            g2.set_name([] { return "bar"; });
+        }
+        {
+            auto g2 = Profiler::PostNameGuard();
+        }
+        g1.set_name([] { return "foo"; });
+    }
+    Slime slime;
+    profiler.report(slime.setObject());
+    fprintf(stderr, "%s\n", slime.toString().c_str());
+    EXPECT_EQ(slime["roots"].entries(), 1);
+    EXPECT_TRUE(find_path(slime, {{"foo", 1}, {"bar", 1}}));
+    EXPECT_TRUE(find_path(slime, {{"foo", 1}, {"#2", 1}}));
+}
+
+TEST(ExecutionProfilerTest, post_name_guard_does_not_resolve_name_if_profiler_is_null) {
+    bool called = false;
+    auto name_fun = [&called] {
+        called = true;
+        return "foo";
+    };
+    {
+        auto g = Profiler::PostNameGuard(nullptr);
+        g.set_name(name_fun);
+    }
+    EXPECT_FALSE(called);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

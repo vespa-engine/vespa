@@ -11,6 +11,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.TelemetryExporterConfiguration;
 import com.yahoo.container.logging.LevelsModSpec;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.ConfigProxy;
@@ -62,11 +63,23 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
     private LogForwarder.Config logForwarderConfig = null;
     private boolean logForwarderIncludeAdmin = false;
 
+    private TelemetryExporterConfiguration telemetryExporterConfiguration = null;
+
     private final ApplicationType applicationType;
 
     public void setLogForwarderConfig(LogForwarder.Config cfg, boolean includeAdmin) {
         this.logForwarderConfig = cfg;
         this.logForwarderIncludeAdmin = includeAdmin;
+    }
+
+    public void setTelemetryExporterConfiguration(TelemetryExporterConfiguration telemetryExporterConfiguration) {
+        this.telemetryExporterConfiguration = telemetryExporterConfiguration;
+    }
+
+    public TelemetryExporterConfiguration telemetryExporterConfiguration() {
+        return telemetryExporterConfiguration == null
+                ? TelemetryExporterConfiguration.empty()
+                : telemetryExporterConfiguration;
     }
 
     private final List<LogctlSpec> logctlSpecs = new ArrayList<>();

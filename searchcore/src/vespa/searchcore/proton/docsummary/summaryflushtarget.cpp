@@ -69,6 +69,14 @@ IFlushTarget::Task::UP SummaryFlushTarget::initFlush(SerialNum currentSerial, st
     return future.get();
 }
 
+bool SummaryFlushTarget::can_flush(SerialNum current_serial) const noexcept {
+    return current_serial > _docStore.lastSyncToken();
+}
+
+size_t SummaryFlushTarget::transient_memory_for_flush() const noexcept {
+    return 0;
+}
+
 std::chrono::steady_clock::duration SummaryFlushTarget::last_flush_duration() const noexcept {
     return 200ms; // placeholder value.
 }

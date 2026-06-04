@@ -23,9 +23,9 @@ class NearestNeighborIndexSaver;
 class TensorAttributeSaver : public AttributeSaver {
     using IndexSaverUP = std::unique_ptr<NearestNeighborIndexSaver>;
 
-    attribute::EntryRefVector _refs;
-    const TensorStore&        _tensor_store;
-    IndexSaverUP              _index_saver;
+    attribute::EntryRefVectorSnapshot _ref_vector_snapshot;
+    const TensorStore&                _tensor_store;
+    IndexSaverUP                      _index_saver;
 
     bool onSave(IAttributeSaveTarget& saveTarget) override;
     void save_dense_tensor_store(BufferWriter& writer, const DenseTensorStore& dense_tensor_store) const;
@@ -33,7 +33,8 @@ class TensorAttributeSaver : public AttributeSaver {
 
 public:
     TensorAttributeSaver(vespalib::GenerationGuard&& guard, const attribute::AttributeHeader& header,
-                         attribute::EntryRefVector&& refs, const TensorStore& tensor_store, IndexSaverUP index_saver);
+                         attribute::EntryRefVectorSnapshot&& ref_vector_snapshot, const TensorStore& tensor_store,
+                         IndexSaverUP index_saver);
 
     ~TensorAttributeSaver() override;
 

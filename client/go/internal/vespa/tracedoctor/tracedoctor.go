@@ -134,6 +134,11 @@ func (ctx *Context) analyzeProtonTrace(trace protonTrace, peer *protonTrace, out
 		globalFilterProfilingPrompt(ctx, out)
 		globalFilterPerf.render(out)
 	}
+	if setupPerf := trace.setupPerf(); setupPerf.hasSelfTimeAbove(1.0) {
+		out.fmt("query setup notable costs (>1ms)\n")
+		setupProfilingPrompt(ctx, out)
+		setupPerf.renderSelfTimeAbove(out, 1.0)
+	}
 	threads := trace.findThreadTraces()
 	cnt := len(threads)
 	worst, median := selectSlowestThread(threads)

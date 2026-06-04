@@ -23,8 +23,6 @@ private:
 
 public:
     constexpr std::string_view view() const noexcept { return _view; }
-    constexpr operator std::string_view() const noexcept { return _view; }
-    std::string_view ref() const noexcept { return {_view.data(), _view.size()}; }
 };
 
 namespace literals {

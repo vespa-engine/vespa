@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "flush_strategy_result.h"
 #include "flushcontext.h"
 #include "iflushhandler.h"
 
@@ -35,9 +36,9 @@ public:
      * @param active_flushes Statistics of active (ongoing) flushes per flush handler.
      * @return A prioritized list of targets to flush.
      */
-    virtual FlushContext::List getFlushTargets(const FlushContext::List&            targetList,
-                                               const flushengine::TlsStatsMap&      tlsStatsMap,
-                                               const flushengine::ActiveFlushStats& active_flushes) const = 0;
+    virtual flushengine::FlushStrategyResult
+    getFlushTargets(const FlushContext::List& targetList, const flushengine::TlsStatsMap& tlsStatsMap,
+                    const flushengine::ActiveFlushStats& active_flushes) const = 0;
     virtual std::string name() const = 0;
     void set_id(uint32_t id) noexcept { _id = id; }
     uint32_t get_id() const noexcept { return _id; }

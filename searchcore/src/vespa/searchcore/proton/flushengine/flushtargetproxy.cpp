@@ -2,6 +2,8 @@
 
 #include "flushtargetproxy.h"
 
+#include "vespa/log/log.h"
+
 namespace proton {
 
 using searchcorespi::FlushStats;
@@ -22,8 +24,16 @@ IFlushTarget::Task::UP FlushTargetProxy::initFlush(SerialNum                    
     return _target->initFlush(currentSerial, std::move(flush_token));
 }
 
+bool FlushTargetProxy::can_flush(SerialNum current_serial) const noexcept {
+    return _target->can_flush(current_serial);
+}
+
 uint64_t FlushTargetProxy::get_approx_bytes_to_read_from_disk() const noexcept {
     return _target->get_approx_bytes_to_read_from_disk();
+}
+
+size_t FlushTargetProxy::transient_memory_for_flush() const noexcept {
+    return _target->transient_memory_for_flush();
 }
 
 std::chrono::steady_clock::duration FlushTargetProxy::last_flush_duration() const noexcept {

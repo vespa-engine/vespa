@@ -63,7 +63,7 @@ class Trace;
 class LazyTraceInserter {
 private:
     Trace&                                     _parent;
-    std::string_view                           _name;
+    vespalib::StaticStringView                 _name;
     vespalib::slime::Cursor*                   _entry;
     std::unique_ptr<vespalib::slime::Inserter> _thread_inserter;
     vespalib::slime::Cursor& get_entry();

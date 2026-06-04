@@ -59,6 +59,10 @@ IFlushTarget::Task::UP IndexFlushTarget::initFlush(SerialNum serialNum, std::sha
     return _indexMaintainer.initFlush(serialNum, &_lastStats);
 }
 
+bool IndexFlushTarget::can_flush(SerialNum current_serial) const noexcept {
+    return current_serial > _indexMaintainer.getFlushedSerialNum();
+}
+
 uint64_t IndexFlushTarget::getApproxBytesToWriteToDisk() const {
     MemoryGain gain(_flushStats.memory_before_bytes, _flushStats.memory_after_bytes);
     if (gain.getAfter() < gain.getBefore()) {
@@ -66,6 +70,10 @@ uint64_t IndexFlushTarget::getApproxBytesToWriteToDisk() const {
     } else {
         return 0;
     }
+}
+
+size_t IndexFlushTarget::transient_memory_for_flush() const noexcept {
+    return 0;
 }
 
 std::chrono::steady_clock::duration IndexFlushTarget::last_flush_duration() const noexcept {

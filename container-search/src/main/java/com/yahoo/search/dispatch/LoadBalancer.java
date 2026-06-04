@@ -59,7 +59,7 @@ public class LoadBalancer {
      * @param rejectedGroups if not null, the load balancer will only return groups with IDs not in the set
      * @return the node group to target, or <i>empty</i> if the internal dispatch logic cannot be used
      */
-    public Optional<Group> takeGroup(Set<Integer> rejectedGroups) {
+    public Optional<Group> takeAnyGroupNotIn(Set<Integer> rejectedGroups) {
         synchronized (this) {
             Optional<GroupStatus> best = scheduler.takeNextGroup(rejectedGroups);
             if (best.isPresent()) {

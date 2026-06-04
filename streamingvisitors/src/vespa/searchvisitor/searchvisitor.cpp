@@ -482,10 +482,28 @@ void SearchVisitor::init(const Parameters& params) {
             LOG(debug, "Received sort specification: '%s'", _sortSpec.getSpec().c_str());
         }
 
+        SerializedQueryTreeSP serialized_query_tree;
+        // Check if protobuf query tree is available (preferred over stack dump)
+        Parameters::ValueRef protoQueryTree;
+        if (params.lookup("querytree", protoQueryTree)) {
+            LOG(spam, "Received protobuf query tree of %zu bytes", protoQueryTree.size());
+            auto proto_tree = std::make_unique<SerializedQueryTree::ProtobufQueryTree>();
+            if (proto_tree->ParseFromArray(protoQueryTree.data(), protoQueryTree.size()) && proto_tree->has_root()) {
+                serialized_query_tree = SerializedQueryTree::fromProtobuf(std::move(proto_tree));
+            } else {
+                Issue::report("Failed to parse protobuf query tree, falling back to stack dump");
+            }
+        } else {
+            LOG(debug, "No protobuf query tree");
+        }
         Parameters::ValueRef queryBlob;
-        if (params.lookup("query", queryBlob)) {
+        if ((!serialized_query_tree) && params.lookup("query", queryBlob)) {
             LOG(spam, "Received query blob of %zu bytes", queryBlob.size());
             VISITOR_TRACE(9, vespalib::make_string("Setting up for query blob of %zu bytes", queryBlob.size()));
+            serialized_query_tree =
+                SerializedQueryTree::fromStackDump(std::vector<char>(queryBlob.begin(), queryBlob.end()));
+        }
+        if (serialized_query_tree) {
             // Create mapping from field name to field id, from field id to search spec,
             // and from index name to list of field ids
             _fieldSearchSpecMap.buildFromConfig(_env->get_vsm_fields_config(),
@@ -495,32 +513,10 @@ void SearchVisitor::init(const Parameters& params) {
             _fieldSearchSpecMap.buildFromConfig(additionalFields);
 
             QueryTermDataFactory addOnFactory(this, &_element_gap_inspector);
-            // Check if protobuf query tree is available (preferred over stack dump)
-            Parameters::ValueRef  protoQueryTree;
-            SerializedQueryTreeSP serialized_query_tree;
-            if (params.lookup("querytree", protoQueryTree)) {
-                LOG(debug, "Received protobuf query tree of %zu bytes", protoQueryTree.size());
-                auto proto_tree = std::make_unique<SerializedQueryTree::ProtobufQueryTree>();
-                if (proto_tree->ParseFromArray(protoQueryTree.data(), protoQueryTree.size())) {
-                    serialized_query_tree = SerializedQueryTree::fromProtobuf(std::move(proto_tree));
-                } else {
-                    Issue::report("Failed to parse protobuf query tree, falling back to stack dump");
-                    serialized_query_tree =
-                        SerializedQueryTree::fromStackDump(std::vector<char>(queryBlob.begin(), queryBlob.end()));
-                }
-            } else {
-                serialized_query_tree =
-                    SerializedQueryTree::fromStackDump(std::vector<char>(queryBlob.begin(), queryBlob.end()));
-            }
+
             _query = Query(addOnFactory, *serialized_query_tree);
             _searchBuffer->reserve(0x10000);
-
-            int stackCount = 0;
-            if (params.get("querystackcount", stackCount)) {
-                _summaryGenerator.set_serialized_query_tree(serialized_query_tree);
-            } else {
-                Issue::report("Request without query stack count");
-            }
+            _summaryGenerator.set_serialized_query_tree(serialized_query_tree);
 
             StringFieldIdTMap fieldsInQuery = setupFieldSearchers();
             setupScratchDocument(fieldsInQuery);
@@ -547,7 +543,6 @@ void SearchVisitor::init(const Parameters& params) {
         } else {
             Issue::report("No query received");
         }
-
         if (hasGrouping) {
             std::vector<char> newAggrBlob;
             newAggrBlob.resize(groupingRef.size());

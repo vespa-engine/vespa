@@ -215,9 +215,18 @@ IFlushTarget::Task::UP DocumentMetaStoreFlushTarget::initFlush(SerialNum current
     return std::make_unique<Flusher>(*this, syncToken, std::move(writer));
 }
 
+bool DocumentMetaStoreFlushTarget::can_flush(SerialNum current_serial) const noexcept {
+    return current_serial > getFlushedSerialNum();
+}
+
 uint64_t DocumentMetaStoreFlushTarget::getApproxBytesToWriteToDisk() const {
     auto guard = _dms->getGuard();
     return _dms->getEstimatedSaveByteSize();
+}
+
+size_t DocumentMetaStoreFlushTarget::transient_memory_for_flush() const noexcept {
+    size_t flush_buffer_size = _hwInfo.disk().slow() ? _dms->getEstimatedSaveByteSize() : 0;
+    return flush_buffer_size + _dms->transient_memory_for_flush();
 }
 
 std::chrono::steady_clock::duration DocumentMetaStoreFlushTarget::last_flush_duration() const noexcept {

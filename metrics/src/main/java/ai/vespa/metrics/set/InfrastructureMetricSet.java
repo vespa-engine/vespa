@@ -125,6 +125,7 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ConfigServerMetrics.MAINTENANCE_CONGESTION.count());
         addMetric(metrics, ConfigServerMetrics.MAINTENANCE_DEPLOYMENT_FAILURE.count());
         addMetric(metrics, ConfigServerMetrics.MAINTENANCE_DEPLOYMENT_TRANSIENT_FAILURE.count());
+        addMetric(metrics, ConfigServerMetrics.MAINTENANCE_DEPLOYMENT_REASON.count());
         addMetric(metrics, ConfigServerMetrics.OVERCOMMITTED_HOSTS.max());
         addMetric(metrics, ConfigServerMetrics.SPARE_HOST_CAPACITY, EnumSet.of(min, max, last)); // TODO: Vespa 9: Remove last. WAIT
         addMetric(metrics, ConfigServerMetrics.THROTTLED_HOST_FAILURES.max());
@@ -149,6 +150,7 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ContainerMetrics.SERVER_NUM_REQUESTS.count());
         addMetric(metrics, ContainerMetrics.SERVER_STARTED_MILLIS.max());
         addMetric(metrics, ContainerMetrics.JDISC_HTTP_LATENCY.max());
+        addMetric(metrics, ContainerMetrics.JETTY_HTTP_COMPLIANCE_VIOLATION.count());
 
         return metrics;
     }

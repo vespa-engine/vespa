@@ -501,6 +501,16 @@ func (p protonTrace) globalFilterPerf() *topNPerf {
 	return perf
 }
 
+func (p protonTrace) setupPerf() *topNPerf {
+	perf := newTopNPerf()
+	slime.Select(p.source, hasTag("setup_profiling"), func(p *slime.Path, v slime.Value) {
+		eachSample(v, func(sample perfSample) {
+			perf.addSample(sample.name(), sample.count(), sample.selfTimeMs())
+		})
+	})
+	return perf
+}
+
 func (p protonTrace) findThreadTraces() []threadTrace {
 	var traces []threadTrace
 	slime.Select(p.source, hasTag("query_execution"), func(p *slime.Path, v slime.Value) {
@@ -601,7 +611,9 @@ func (p protonTrace) extractSummary() *protonSummary {
 	res := &protonSummary{name: p.desc()}
 	timeline := p.timeline()
 	res.filterMs = timeline.durationOf("Calculate global filter")
-	res.annMs = timeline.durationOf("Handle global filter in query execution plan")
+	res.annMs = timeline.durationBetween(
+		"Handle global filter in query execution plan",
+		"Optimize query execution plan to account for global filter")
 	if thread, _ := selectSlowestThread(p.findThreadTraces()); thread != nil {
 		res.matchMs = thread.matchTimeMs()
 		res.firstPhaseMs = thread.firstPhaseTimeMs()

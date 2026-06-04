@@ -319,7 +319,7 @@ public class SessionRepositoryTest {
     }
 
     private long deploy(PrepareParams params, File testApp) {
-        applicationRepository.deploy(testApp, params);
+        applicationRepository.prepareAndActivate(testApp, params);
         return applicationRepository.getActiveSession(params.getApplicationId()).get().getSessionId();
     }
 

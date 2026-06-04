@@ -35,6 +35,7 @@ public class ParsedSchema extends ParsedBlock {
     }
 
     private boolean documentWithoutSchema = false;
+    private Boolean documentIdAttribute = null;
     private Boolean rawAsBase64 = null;
     private ParsedDocument myDocument = null;
     private Stemming defaultStemming = null;
@@ -58,6 +59,7 @@ public class ParsedSchema extends ParsedBlock {
     }
 
     boolean getDocumentWithoutSchema() { return documentWithoutSchema; }
+    Optional<Boolean> getDocumentIdAttribute() { return Optional.ofNullable(documentIdAttribute); }
     Optional<Boolean> getRawAsBase64() { return Optional.ofNullable(rawAsBase64); }
     boolean hasDocument() { return myDocument != null; }
     ParsedDocument getDocument() { return myDocument; }
@@ -143,6 +145,10 @@ public class ParsedSchema extends ParsedBlock {
         String sName = struct.name();
         verifyThat(! extraStructs.containsKey(sName), "already has struct", sName);
         extraStructs.put(sName, struct);
+    }
+
+    public void enableDocumentIdAttribute(boolean value) {
+        this.documentIdAttribute = value;
     }
 
     public void enableRawAsBase64(boolean value) {

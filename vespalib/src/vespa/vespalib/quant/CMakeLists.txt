@@ -2,5 +2,7 @@
 vespa_add_library(vespalib_vespalib_quant OBJECT
     SOURCES
     codebooks.cpp
+    eden.cpp
+    rotator.cpp
     DEPENDS
 )

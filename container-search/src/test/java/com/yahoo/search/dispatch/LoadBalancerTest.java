@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * @author ollivir
+ * @author Olli Virtanen
  */
 public class LoadBalancerTest {
     private static final double delta = 0.0000001;
@@ -31,10 +31,8 @@ public class LoadBalancerTest {
         Node n1 = new Node("test", 0, "test-node1", 0, false);
         LoadBalancer lb = new LoadBalancer(List.of(new Group(0, List.of(n1))), LoadBalancer.Policy.ROUNDROBIN);
 
-        Optional<Group> grp = lb.takeGroup(Set.of());
-        Group group = grp.orElseThrow(() -> {
-            throw new IllegalStateException("Expected a SearchCluster.Group");
-        });
+        Optional<Group> grp = lb.takeAnyGroupNotIn(Set.of());
+        Group group = grp.orElseThrow(() -> new IllegalStateException("Expected a SearchCluster.Group"));
         assertEquals(1, group.nodes().size());
     }
 
@@ -44,10 +42,8 @@ public class LoadBalancerTest {
         Node n2 = new Node("test", 1, "test-node2", 1, true);
         LoadBalancer lb = new LoadBalancer(List.of(new Group(0, List.of(n1)), new Group(1,List.of(n2))), LoadBalancer.Policy.ROUNDROBIN);
 
-        Optional<Group> grp = lb.takeGroup(Set.of());
-        Group group = grp.orElseThrow(() -> {
-            throw new IllegalStateException("Expected a SearchCluster.Group");
-        });
+        Optional<Group> grp = lb.takeAnyGroupNotIn(Set.of());
+        Group group = grp.orElseThrow(() -> new IllegalStateException("Expected a SearchCluster.Group"));
         assertEquals(1, group.nodes().size());
     }
 
@@ -59,7 +55,7 @@ public class LoadBalancerTest {
         Node n4 = new Node("test", 1, "test-node4", 1, true);
         LoadBalancer lb = new LoadBalancer(List.of(new Group(0, List.of(n1,n2)), new Group(1,List.of(n3,n4))), LoadBalancer.Policy.ROUNDROBIN);
 
-        Optional<Group> grp = lb.takeGroup(Set.of());
+        Optional<Group> grp = lb.takeAnyGroupNotIn(Set.of());
         assertTrue(grp.isPresent());
     }
 
@@ -70,14 +66,14 @@ public class LoadBalancerTest {
         LoadBalancer lb = new LoadBalancer(List.of(new Group(0, List.of(n1)), new Group(1,List.of(n2))), LoadBalancer.Policy.ROUNDROBIN);
 
         // get first group
-        Optional<Group> grp = lb.takeGroup(Set.of());
+        Optional<Group> grp = lb.takeAnyGroupNotIn(Set.of());
         Group group = grp.get();
         int id1 = group.id();
         // release allocation
         lb.releaseGroup(group, true, RequestDuration.of(Duration.ofMillis(1)));
 
         // get second group
-        grp = lb.takeGroup(Set.of());
+        grp = lb.takeAnyGroupNotIn(Set.of());
         group = grp.get();
         assertNotEquals(id1, group.id());
     }

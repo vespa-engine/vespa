@@ -77,7 +77,7 @@ public interface ModelContext {
      *   default method with the `removeAfter` set beyond the Vespa version to be released.
      *
      * 3)
-     *  - Remove the default method in FeatureFlags once the oldest config model in use are beyond the `removeAfter` 
+     *  - Remove the default method in FeatureFlags once the oldest config model in use are beyond the `removeAfter`
      */
     interface FeatureFlags {
         @ModelFeatureFlag(owners = {"hakonhall"}) default boolean useNonPublicEndpointForTest() { return false; }
@@ -114,7 +114,8 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej"}) default double clusterControllerNodeMemory() { return 0.0; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useLegacyWandQueryParsing() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useSimpleAnnotations() { return true; }
-        @ModelFeatureFlag(owners = {"arnej"}) default boolean sendProtobufQuerytree() { return true; }
+        @ModelFeatureFlag(owners = {"arnej"}, removeAfter = "8.687") default boolean sendProtobufQuerytree() { return true; }
+        @ModelFeatureFlag(owners = {"arnej"}) default boolean sendOldQueryStack() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean forwardAllLogLevels() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default long zookeeperPreAllocSize() { return 65536L; }
         @ModelFeatureFlag(owners = {"vekterli"}) default int maxContentNodeMaintenanceOpConcurrency() { return -1; }
@@ -123,8 +124,9 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"bjorncs"}, removeAfter = "8.677.1", comment = "Use useTritonFlag instead") default boolean useTriton() { return false; }
         @ModelFeatureFlag(owners = {"glebashnik"}) default FeatureFlag<Boolean> useTritonFlag() { return () -> false; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean ignoreConnectivityChecksAtStartup() { return false; }
-        @ModelFeatureFlag(owners = {"hmusum"}) default int searchCoreMaxOutstandingMoveOps() { return 100; }
+        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.700") default int searchCoreMaxOutstandingMoveOps() { return 100; }
         @ModelFeatureFlag(owners = {"johsol"}) default double docprocHandlerThreadpool() { return 1.0; }
+        @ModelFeatureFlag(owners = {"hmusum"}) default boolean requireExplicitDocprocCluster() { return false; }
         @ModelFeatureFlag(owners = {"glebashnik"}) default boolean applyOnRestartForApplicationMetadataConfig() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.683") default boolean scaleMetricsproxyHeapByNodeCount() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default OptionalInt metricsProxyHeapSizeInMib() { return OptionalInt.empty(); }

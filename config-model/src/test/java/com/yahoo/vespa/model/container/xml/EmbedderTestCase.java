@@ -213,6 +213,7 @@ public class EmbedderTestCase {
         assertEquals(2, embedderCfg.documentTokenId());
         assertEquals(0, embedderCfg.transformerPadToken());
         assertEquals(103, embedderCfg.transformerMaskToken());
+        assertEquals(false, embedderCfg.attendToExpansionTokens());
 
         var onnxCfgBuilder = new OnnxEvaluatorConfig.Builder();
         embedder.getConfig(onnxCfgBuilder);
@@ -255,6 +256,7 @@ public class EmbedderTestCase {
         assertEquals(2, embedderCfg.documentTokenId());
         assertEquals(0, embedderCfg.transformerPadToken());
         assertEquals(103, embedderCfg.transformerMaskToken());
+        assertEquals(false, embedderCfg.attendToExpansionTokens());
     }
 
     @Test

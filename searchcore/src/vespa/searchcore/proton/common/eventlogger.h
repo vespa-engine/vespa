@@ -35,7 +35,7 @@ public:
     static void transactionLogReplayStart(const string& domainName, SerialNum first, SerialNum last);
     static void transactionLogReplayProgress(const string& domainName, float progress, SerialNum first,
                                              SerialNum last, SerialNum current);
-    static void flushInit(const string& name);
+    static void flushInit(const string& name, const std::string& strategy_name, const std::string& strategy_info);
     static void flushStart(const string& name, int64_t beforeMemory, int64_t afterMemory, int64_t toFreeMemory,
                            SerialNum unflushed, SerialNum current);
     static void flushComplete(const string& name, vespalib::duration elapsedTime, SerialNum flushed,

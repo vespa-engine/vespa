@@ -336,7 +336,7 @@ public class Dispatcher extends AbstractComponent {
             if (groupInCluster.isPresent())
                 groupInCluster = loadBalancer.takeGroup(groupInCluster.get());
             if (groupInCluster.isEmpty()) // No valid query preference
-                groupInCluster = loadBalancer.takeGroup(rejected);
+                groupInCluster = loadBalancer.takeAnyGroupNotIn(rejected);
             if (groupInCluster.isEmpty()) // No groups available
                 break;
 

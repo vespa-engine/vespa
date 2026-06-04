@@ -78,11 +78,19 @@ IFlushTarget::Task::UP ShrinkLidSpaceFlushTarget::initFlush(SerialNum currentSer
     }
 }
 
+bool ShrinkLidSpaceFlushTarget::can_flush(SerialNum current_serial) const noexcept {
+    return current_serial >= _flushedSerialNum.load(std::memory_order_relaxed) && _target->canShrinkLidSpace();
+}
+
 FlushStats ShrinkLidSpaceFlushTarget::getLastFlushStats() const {
     return _lastStats;
 }
 
 uint64_t ShrinkLidSpaceFlushTarget::getApproxBytesToWriteToDisk() const {
+    return 0;
+}
+
+size_t ShrinkLidSpaceFlushTarget::transient_memory_for_flush() const noexcept {
     return 0;
 }
 
