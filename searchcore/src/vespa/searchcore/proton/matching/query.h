@@ -107,14 +107,14 @@ public:
      * testing becomes harder. Not calling this function enables the
      * test to verify the original query without optimization.
      **/
-    void optimize(InFlow in_flow, bool sort_by_cost);
+    void optimize(InFlow in_flow, bool sort_by_cost, bool keep_order);
     void fetchPostings(const ExecuteInfo& executeInfo);
 
     void handle_global_filter(const IRequestContext&          requestContext,
                               const AnnDeadlineConfiguration& ann_deadline_config, uint32_t docid_limit,
                               double global_filter_lower_limit, double global_filter_upper_limit,
                               search::queryeval::QuerySetupStats& setup_stats, search::engine::Trace& trace,
-                              bool sort_by_cost, bool use_lazy_filter = false);
+                              bool sort_by_cost, bool keep_order, bool use_lazy_filter = false);
 
     /**
      * Calculates and handles the global filter if needed by the blueprint tree.

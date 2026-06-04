@@ -1425,6 +1425,7 @@
       "public int contentLayerMetadataFeatureLevel()",
       "public java.lang.String unknownConfigDefinition()",
       "public boolean sortBlueprintsByCost()",
+      "public boolean keepBlueprintOrder()",
       "public boolean logserverOtelCol()",
       "public com.yahoo.config.provision.SharedHosts sharedHosts()",
       "public com.yahoo.config.provision.NodeResources$Architecture adminClusterArchitecture()",

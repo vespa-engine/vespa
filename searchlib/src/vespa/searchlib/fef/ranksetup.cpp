@@ -59,6 +59,7 @@ RankSetup::RankSetup(const BlueprintFactory& factory, const IIndexEnvironment& i
       _warnings(),
       _feature_rename_map(),
       _sort_blueprints_by_cost(false),
+      _keep_blueprint_order(false),
       _ignoreDefaultRankFeatures(false),
       _compiled(false),
       _compileError(false),
@@ -152,6 +153,7 @@ void RankSetup::configure() {
     _mutateOnSummary._operation = mutate::on_summary::Operation::lookup(_indexEnv.getProperties());
     _mutateAllowQueryOverride = mutate::AllowQueryOverride::check(_indexEnv.getProperties());
     _sort_blueprints_by_cost = matching::SortBlueprintsByCost::check(_indexEnv.getProperties());
+    _keep_blueprint_order = matching::KeepBlueprintOrder::check(_indexEnv.getProperties());
 }
 
 void RankSetup::setFirstPhaseRank(const std::string& featureName) {

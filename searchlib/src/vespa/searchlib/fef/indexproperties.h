@@ -473,6 +473,16 @@ struct SortBlueprintsByCost {
 };
 
 /**
+ * Keep blueprints in query order rather than reordering by cost or est_hits
+ **/
+struct KeepBlueprintOrder {
+    static const std::string NAME;
+    static const bool        DEFAULT_VALUE;
+    static bool check(const Properties& props) { return check(props, DEFAULT_VALUE); }
+    static bool check(const Properties& props, bool fallback);
+};
+
+/**
  * Specifies a time budget for ANN in milliseconds.
  */
 struct AnnTimeBudget {

@@ -636,7 +636,7 @@ TEST(QueryTest, requireThatQueryGluesEverythingTogether) {
     MatchData::UP md = mdl.createMatchData();
     EXPECT_EQ(1u, md->getNumTermFields());
 
-    query.optimize(true, true);
+    query.optimize(true, true, false);
     query.fetchPostings(ExecuteInfo::FULL);
     SearchIterator::UP search = query.createSearch(*md);
     ASSERT_TRUE(search);
@@ -903,7 +903,7 @@ TEST(QueryTest, requireThatWhiteListBlueprintCanBeUsed) {
     query.make_blueprint(requestContext, context, mdl);
     MatchData::UP md = mdl.createMatchData();
 
-    query.optimize(true, true);
+    query.optimize(true, true, false);
     query.fetchPostings(ExecuteInfo::FULL);
     SearchIterator::UP search = query.createSearch(*md);
     SimpleResult       exp = SimpleResult().addHit(1).addHit(5).addHit(7).addHit(11);

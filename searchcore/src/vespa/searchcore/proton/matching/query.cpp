@@ -231,10 +231,11 @@ void Query::tag_needed_handles(HandleRecorder& handle_recorder, const search::fe
     proton::matching::tag_needed_handles(*_query_tree, handle_recorder, index_env);
 }
 
-void Query::optimize(InFlow in_flow, bool sort_by_cost) {
+void Query::optimize(InFlow in_flow, bool sort_by_cost, bool keep_order) {
     _in_flow = in_flow;
     bool allow_force_strict = sort_by_cost && in_flow.strict();
-    auto opts = Blueprint::Options().sort_by_cost(sort_by_cost).allow_force_strict(allow_force_strict);
+    auto opts =
+        Blueprint::Options().sort_by_cost(sort_by_cost).allow_force_strict(allow_force_strict).keep_order(keep_order);
     _blueprint = Blueprint::optimize_and_sort(std::move(_blueprint), in_flow, opts);
     LOG(debug, "optimized blueprint:\n%s\n", _blueprint->asString().c_str());
 }
@@ -247,7 +248,7 @@ void Query::handle_global_filter(const IRequestContext&          requestContext,
                                  const AnnDeadlineConfiguration& ann_deadline_config, uint32_t docid_limit,
                                  double global_filter_lower_limit, double global_filter_upper_limit,
                                  search::queryeval::QuerySetupStats& setup_stats, search::engine::Trace& trace,
-                                 bool sort_by_cost, bool use_lazy_filter) {
+                                 bool sort_by_cost, bool use_lazy_filter, bool keep_order) {
     if (!handle_global_filter(*_blueprint, requestContext.getDoom(), ann_deadline_config, docid_limit,
                               global_filter_lower_limit, global_filter_upper_limit, requestContext.thread_bundle(),
                               setup_stats, &trace, use_lazy_filter))
@@ -256,7 +257,8 @@ void Query::handle_global_filter(const IRequestContext&          requestContext,
     }
     // optimized order may change after accounting for global filter:
     trace.addEvent(5, "Optimize query execution plan to account for global filter");
-    auto opts = Blueprint::Options().sort_by_cost(sort_by_cost).allow_force_strict(sort_by_cost);
+    auto opts =
+        Blueprint::Options().sort_by_cost(sort_by_cost).allow_force_strict(sort_by_cost).keep_order(keep_order);
     _blueprint = Blueprint::optimize_and_sort(std::move(_blueprint), _in_flow, opts);
     LOG(debug, "blueprint after handle_global_filter:\n%s\n", _blueprint->asString().c_str());
     // strictness may change if optimized order changed:
