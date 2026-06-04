@@ -48,7 +48,7 @@
         <javax.ws.rs-api.vespa.version>2.1.1</javax.ws.rs-api.vespa.version>
         <jaxb-api.vespa.version>2.3.1</jaxb-api.vespa.version>
         <jaxb-core.vespa.version>2.3.0.1</jaxb-core.vespa.version>
-        <jaxb-impl.vespa.version>2.3.0</jaxb-impl.vespa.version>
+        <jaxb-impl.vespa.version>2.3.9</jaxb-impl.vespa.version>
         <slf4j.vespa.version>1.7.36</slf4j.vespa.version>
         <sun.javax.activation.vespa.version>1.2.0</sun.javax.activation.vespa.version>
 
@@ -107,7 +107,7 @@
         <icu4j.vespa.version>75.1</icu4j.vespa.version>
         <io-perfmark.vespa.version>0.27.0</io-perfmark.vespa.version>
         <javax.annotation.vespa.version>1.2</javax.annotation.vespa.version>
-        <jaxb.runtime.vespa.version>4.0.5</jaxb.runtime.vespa.version>
+        <jaxb.runtime.vespa.version>4.0.9</jaxb.runtime.vespa.version>
         <jetty.vespa.version>12.0.36</jetty.vespa.version>
         <jetty-servlet-api.vespa.version>5.0.2</jetty-servlet-api.vespa.version>
         <jieba.vespa.version>1.0.2</jieba.vespa.version>
