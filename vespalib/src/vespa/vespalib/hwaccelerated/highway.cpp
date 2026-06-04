@@ -104,18 +104,21 @@ float my_hwy_dot_bf16(const BFloat16* HWY_RESTRICT a, const BFloat16* HWY_RESTRI
     const hn::Repartition<float, decltype(dbf16)> df32;
     // Since we're widening the element type, loading e.g. 8 lanes of BF16 in a single
     // 128-bit vector requires us to process 2 vectors of 4 lanes of float32.
-    auto kernel_fn = [df32](auto lhs, auto rhs, auto& acc0, auto& acc1)
-                         VESPA_HWY_LAMBDA { acc0 = hn::ReorderWidenMulAccumulate(df32, lhs, rhs, acc0, acc1); };
+    auto kernel_fn = [df32](auto lhs, auto rhs, auto& acc0, auto& acc1) VESPA_HWY_LAMBDA {
+        // f32 += bf16 * bf16
+        acc0 = hn::ReorderWidenMulAccumulate(df32, lhs, rhs, acc0, acc1);
+    };
     using MyKernel = HwyReduceKernel<UsesNAccumulators<8>, UnrolledBy<4>, HasAccumulatorArity<2>>;
     return MyKernel::pairwise(dbf16, df32, a_bf16, b_bf16, sz, hn::Zero(df32), kernel_fn, VecAdd(), LaneReduceSum());
 }
 
 template <typename T>
     requires(hwy::IsFloat<T>())
-HWY_INLINE double my_hwy_square_euclidean_distance(const T* HWY_RESTRICT a, const T* HWY_RESTRICT b,
-                                                   const size_t sz) noexcept {
+HWY_INLINE double my_hwy_squared_euclidean_distance(const T* HWY_RESTRICT a, const T* HWY_RESTRICT b,
+                                                    const size_t sz) noexcept {
     const hn::ScalableTag<T> d;
-    const auto               kernel_fn = [](auto lhs, auto rhs, auto& accu) VESPA_HWY_LAMBDA {
+
+    const auto kernel_fn = [](auto lhs, auto rhs, auto& accu) VESPA_HWY_LAMBDA {
         const auto sub = hn::Sub(lhs, rhs);
         accu = hn::MulAdd(sub, sub, accu); // note: using fused multiply-add
     };
@@ -124,8 +127,8 @@ HWY_INLINE double my_hwy_square_euclidean_distance(const T* HWY_RESTRICT a, cons
 }
 
 HWY_INLINE
-double my_hwy_square_euclidean_distance_bf16(const BFloat16* HWY_RESTRICT a, const BFloat16* HWY_RESTRICT b,
-                                             const size_t sz) noexcept {
+double my_hwy_squared_euclidean_distance_bf16(const BFloat16* HWY_RESTRICT a, const BFloat16* HWY_RESTRICT b,
+                                              const size_t sz) noexcept {
     static_assert(sizeof(BFloat16) == sizeof(hwy::bfloat16_t));
     static_assert(alignof(BFloat16) == alignof(hwy::bfloat16_t));
 
@@ -174,6 +177,18 @@ double my_hwy_square_euclidean_distance_int8(const int8_t* HWY_RESTRICT a, const
     return compute_chunked_sum<max_n_per_chunk, double>(sub_mul_add_i8_to_i32, a, b, sz);
 }
 
+template <typename T>
+    requires(hwy::IsFloat<T>())
+HWY_INLINE T my_hwy_squared_euclidean_length(const T* a, const size_t sz) noexcept {
+    const hn::ScalableTag<T> d;
+
+    const auto kernel_fn = [](auto v, auto& accu) VESPA_HWY_LAMBDA {
+        accu = hn::MulAdd(v, v, accu); // accu += v*v
+    };
+    using MyKernel = HwyReduceKernel<UsesNAccumulators<8>, UnrolledBy<8>, HasAccumulatorArity<1>>;
+    return MyKernel::elementwise(d, d, a, sz, hn::Zero(d), kernel_fn, VecAdd(), LaneReduceSum());
+}
+
 // Performance note: AVX2 and AVX3 do not have dedicated vector popcount instructions,
 // so the Highway "emulation" ends up being slower in practice than the baseline one
 // using 4x pipelined POPCNT.
@@ -219,7 +234,7 @@ int32_t mul_add_i8_to_i32(const int8_t* HWY_RESTRICT a, const int8_t* HWY_RESTRI
     const hn::ScalableTag<int8_t> d8;
 #if HWY_TARGET != HWY_NEON
     const hn::Repartition<int32_t, decltype(d8)> d32;
-    const auto                                   kernel_fn = [d32](auto lhs_i8, auto rhs_i8, auto& accu)
+    const auto kernel_fn = [d32](auto lhs_i8, auto rhs_i8, auto& accu)
                                VESPA_HWY_LAMBDA { accu = hn::SumOfMulQuadAccumulate(d32, lhs_i8, rhs_i8, accu); };
     using MyKernel = HwyReduceKernel<UsesNAccumulators<8>, UnrolledBy<8>, HasAccumulatorArity<1>>;
     return MyKernel::pairwise(d8, d32, a, b, sz, hn::Zero(d32), kernel_fn, VecAdd(), LaneReduceSum());
@@ -289,13 +304,16 @@ double my_squared_euclidean_distance_i8(const int8_t* a, const int8_t* b, size_t
     return my_hwy_square_euclidean_distance_int8(a, b, sz);
 }
 double my_squared_euclidean_distance_bf16(const BFloat16* a, const BFloat16* b, size_t sz) noexcept {
-    return my_hwy_square_euclidean_distance_bf16(a, b, sz);
+    return my_hwy_squared_euclidean_distance_bf16(a, b, sz);
 }
 double my_squared_euclidean_distance_f32(const float* a, const float* b, size_t sz) noexcept {
-    return my_hwy_square_euclidean_distance(a, b, sz);
+    return my_hwy_squared_euclidean_distance(a, b, sz);
 }
 double my_squared_euclidean_distance_f64(const double* a, const double* b, size_t sz) noexcept {
-    return my_hwy_square_euclidean_distance(a, b, sz);
+    return my_hwy_squared_euclidean_distance(a, b, sz);
+}
+float my_squared_euclidean_length_f32(const float* a, size_t sz) noexcept {
+    return my_hwy_squared_euclidean_length(a, sz);
 }
 size_t my_binary_hamming_distance(const void* lhs, const void* rhs, size_t sz) noexcept {
     return my_hwy_binary_hamming_distance(lhs, rhs, sz);
@@ -326,6 +344,7 @@ public:
         ft.squared_euclidean_distance_bf16 = my_squared_euclidean_distance_bf16;
         ft.squared_euclidean_distance_f32 = my_squared_euclidean_distance_f32;
         ft.squared_euclidean_distance_f64 = my_squared_euclidean_distance_f64;
+        ft.squared_euclidean_length_f32 = my_squared_euclidean_length_f32;
         ft.binary_hamming_distance = my_binary_hamming_distance;
         ft.population_count = my_population_count;
 #if HWY_TARGET == HWY_AVX2 || HWY_TARGET == HWY_AVX3

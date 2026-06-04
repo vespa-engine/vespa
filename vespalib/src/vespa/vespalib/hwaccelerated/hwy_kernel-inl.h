@@ -437,7 +437,8 @@ template <size_t UnrollFactor> struct KernelBody {
                                               const T* HWY_RESTRICT b, const size_t n_elems, const KernelFn kernel_fn,
                                               Accumulators&&... accumulators) noexcept {
         HWY_LANES_CONSTEXPR const size_t N = hn::Lanes(d);
-        size_t                           i = 0;
+
+        size_t i = 0;
         for (; (i + UnrollFactor * N) <= n_elems; i += UnrollFactor * N) {
             UnrolledLoopBody<UnrollFactor>::pairwise_load_and_dispatch(arity, d, a, b, i, N, kernel_fn,
                                                                        std::forward<Accumulators>(accumulators)...);
@@ -462,7 +463,8 @@ template <size_t UnrollFactor> struct KernelBody {
                                                  const size_t n_elems, const KernelFn kernel_fn,
                                                  Accumulators&&... accumulators) noexcept {
         HWY_LANES_CONSTEXPR const size_t N = hn::Lanes(d);
-        size_t                           i = 0;
+
+        size_t i = 0;
         for (; (i + UnrollFactor * N) <= n_elems; i += UnrollFactor * N) {
             UnrolledLoopBody<UnrollFactor>::elementwise_load_and_dispatch(
                 arity, d, a, i, N, kernel_fn, std::forward<Accumulators>(accumulators)...);

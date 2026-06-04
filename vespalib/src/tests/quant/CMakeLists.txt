@@ -9,6 +9,7 @@ vespa_add_executable(vespalib_quant_test_app TEST
     sign_flip_test.cpp
     DEPENDS
     vespalib
+    vespalib_quant
     GTest::gtest
     GTest::gmock
 )
@@ -19,6 +20,7 @@ vespa_add_executable(vespalib_quant_benchmark_app
     quant_benchmarks.cpp
     DEPENDS
     vespalib
+    vespalib_quant
 )
 vespa_add_target_external_dependency(vespalib_quant_benchmark_app benchmark)
 vespa_add_test(NAME vespalib_quant_benchmark_app COMMAND vespalib_quant_benchmark_app BENCHMARK)
