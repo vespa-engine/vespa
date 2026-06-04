@@ -6,7 +6,7 @@
   "publisher": "vespaai",
   "version": "0.0.0-dev",
   "engines": {
-    "vscode": "^1.72.0"
+    "vscode": "^1.110.0"
   },
   "categories": [
     "Programming Languages",
