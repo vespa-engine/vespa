@@ -133,9 +133,13 @@ private:
             }
             _result = std::move(se);
         } else {
-            vespalib::Issue::report(
-                "SameElement operator searches in unexpected number of fields. Expected 1 but was %zu",
-                n.numFields());
+            // numFields() == 0 can happen if multiple schemas are queried and the current schema does not contain the
+            // searched field. Do not report an issue and silently return an EmptyBlueprint in this case.
+            if (n.numFields() > 1) {
+                vespalib::Issue::report(
+                    "SameElement operator searches in unexpected number of fields. Expected 1 but was %zu",
+                    n.numFields());
+            }
             _result = std::make_unique<EmptyBlueprint>();
         }
     }
