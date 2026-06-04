@@ -184,11 +184,11 @@ func resolveSymlinks(path string) string {
 }
 
 func globalConfigHeader(configHome string) string {
-	return "Global config at " + filepath.Join(configHome, "config.yaml") + "\n"
+	return "Got global config from " + filepath.Join(configHome, "config.yaml") + "\n"
 }
 
 func localConfigHeader(localDir string) string {
-	return "Local config at " + filepath.Join(resolveSymlinks(localDir), ".vespa", "config.yaml") + "\n"
+	return "Got local config from " + filepath.Join(resolveSymlinks(localDir), ".vespa", "config.yaml") + "\n"
 }
 
 func successSet(configHome, option, value string) string {
@@ -200,7 +200,7 @@ func successSetLocal(localDir, option, value string) string {
 }
 
 func successUnset(configHome, option string) string {
-	return fmt.Sprintf("Success: unset %s in global config at %s\n", option, filepath.Join(configHome, "config.yaml"))
+	return fmt.Sprintf("Success: Unset %s in global config at %s\n", option, filepath.Join(configHome, "config.yaml"))
 }
 
 func TestDefaultConfigScopeWarning(t *testing.T) {

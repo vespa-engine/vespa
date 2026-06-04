@@ -249,7 +249,7 @@ $ vespa config unset --global target`,
 			if useLocal {
 				scope = "local"
 			}
-			cli.printSuccess(fmt.Sprintf("unset %s in %s config at %s", args[0], scope, filepath.Join(cfg.homeDir, configFile)))
+			cli.printSuccess(fmt.Sprintf("Unset %s in %s config at %s", args[0], scope, filepath.Join(cfg.homeDir, configFile)))
 			if implicitScope && !scopeIsSet {
 				cli.printWarning(`default_config_scope is unset, wrote to global config`,
 					`set default_config_scope to "local" or "global" to silence this warning; in Vespa 9 unset will default to "local"`)
@@ -302,11 +302,11 @@ $ vespa config get --global`,
 				}
 				config = cli.config.local
 			}
-			scope := "Global"
+			scope := "global"
 			if localArg {
-				scope = "Local"
+				scope = "local"
 			}
-			log.Printf("%s config at %s", scope, filepath.Join(config.homeDir, configFile))
+			log.Printf("Got %s config from %s", scope, filepath.Join(config.homeDir, configFile))
 			if len(args) == 0 { // Print all values
 				for _, option := range config.list(!localArg) {
 					config.printOption(option)
