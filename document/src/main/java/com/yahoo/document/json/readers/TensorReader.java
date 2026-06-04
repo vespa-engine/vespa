@@ -139,6 +139,7 @@ public class TensorReader {
         if ( ! (builder instanceof IndexedTensor.BoundBuilder indexedBuilder))
             throw new IllegalArgumentException("The 'values' field can only be used with dense tensors. " +
                                                "Use 'cells' or 'blocks' instead");
+        long expectedSize = expectedDenseSize(indexedBuilder);
         if (buffer.current() == JsonToken.VALUE_STRING) {
             if (buffer.currentText().isEmpty())
                 throw new IllegalArgumentException("The 'values' string does not contain any values");
@@ -156,6 +157,8 @@ public class TensorReader {
         }
         if (index == 0)
             throw new IllegalArgumentException("The 'values' array does not contain any values");
+        if (index != expectedSize)
+            throw new IllegalArgumentException("Expected " + expectedSize + " values, but got " + index);
         expectCompositeEnd(buffer.current());
     }
 
@@ -279,6 +282,13 @@ public class TensorReader {
         catch (NumberFormatException e) {
             throw new IllegalArgumentException("Expected a number but got '" + buffer.currentText() + "'");
         }
+    }
+
+    private static long expectedDenseSize(IndexedTensor.BoundBuilder builder) {
+        long size = 1;
+        for (var dim : builder.type().dimensions())
+            size *= dim.size().get();
+        return size;
     }
 
     private static TensorAddress asAddress(String label, TensorType type) {

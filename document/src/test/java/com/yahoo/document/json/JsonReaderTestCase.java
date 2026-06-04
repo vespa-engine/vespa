@@ -1928,6 +1928,13 @@ public class JsonReaderTestCase {
     }
 
     @Test
+    public void testDisallowedDenseTensorWithWrongNumberOfValues() {
+        // dense_tensor is tensor(x[2],y[3]) = 6 values
+        assertCreatePutFails(inputJson("{ 'values': [1.0, 2.0] }"), "dense_tensor",
+                "Expected 6 values, but got 2");
+    }
+
+    @Test
     public void testDisallowedMixedTensorShortFormWithoutValues() {
         assertCreatePutFails(inputJson("{\"blocks\":{ \"a\": [] } }"),
                 "mixed_tensor", "Expected 3 values, but got 0");
