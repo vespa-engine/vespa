@@ -1426,6 +1426,7 @@
       "public java.lang.String unknownConfigDefinition()",
       "public boolean sortBlueprintsByCost()",
       "public boolean logserverOtelCol()",
+      "public boolean tokenAuthForDeploy()",
       "public com.yahoo.config.provision.SharedHosts sharedHosts()",
       "public com.yahoo.config.provision.NodeResources$Architecture adminClusterArchitecture()",
       "public double logserverNodeMemory()",
