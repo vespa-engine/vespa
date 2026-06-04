@@ -51,11 +51,33 @@ type PemKeyPair struct {
 }
 
 // WriteCertificateFile writes the certificate contained in this key pair to certificateFile.
-func (kp *PemKeyPair) WriteCertificateFile(certificateFile string, overwrite bool) error {
-	if ioutil.Exists(certificateFile) && !overwrite {
+func (kp *PemKeyPair) WriteCertificateFile(certificateFile string, overwrite bool, appendCredentials bool) error {
+	if ioutil.Exists(certificateFile) && !overwrite && !appendCredentials {
 		return fmt.Errorf("cannot overwrite existing file: %s", certificateFile)
 	}
-	return ioutil.AtomicWriteFile(certificateFile, kp.Certificate)
+	data := kp.Certificate
+
+	if appendCredentials {
+		existing, err := os.ReadFile(certificateFile)
+		if err != nil {
+			return fmt.Errorf("could not read existing certificate file %s: %w", certificateFile, err)
+		}
+		data = append(data, existing...)
+	}
+	return ioutil.AtomicWriteFile(certificateFile, data)
+}
+
+// PruneCertificateFile keeps only the first (newest) PEM certificate in certificateFile, removing any older ones.
+func PruneCertificateFile(certificateFile string) error {
+	data, err := os.ReadFile(certificateFile)
+	if err != nil {
+		return fmt.Errorf("could not read certificate file: %w", err)
+	}
+	block, _ := pem.Decode(data)
+	if block == nil {
+		return fmt.Errorf("no PEM certificate found in %s", certificateFile)
+	}
+	return ioutil.AtomicWriteFile(certificateFile, pem.EncodeToMemory(block))
 }
 
 // WritePrivateKeyFile writes the private key contained in this key pair to privateKeyFile.
