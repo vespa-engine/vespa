@@ -60,7 +60,14 @@ public class MetricsProxyContainer extends Container implements
         this.cluster = cluster;
         this.applicationId = deployState.getApplicationPackage().getApplicationId();
         this.zone = deployState.zone();
-        this.metricsProxyHeapSizeInMib = deployState.featureFlags().metricsProxyHeapSizeInMib();
+        int metricsProxyHeapSizeInMibFromFlag = clusterMembership
+                .map(membership -> deployState.featureFlags().metricsProxyHeapSizeInMibFlag()
+                        .withClusterType(membership.cluster().type())
+                        .withClusterId(membership.cluster().id())
+                        .value())
+                .orElse(0);
+        this.metricsProxyHeapSizeInMib = metricsProxyHeapSizeInMibFromFlag > 0 ? OptionalInt.of(
+                metricsProxyHeapSizeInMibFromFlag) : OptionalInt.empty();
         this.metricsProxyAdminNodeHeapSizeInMib = deployState.featureFlags().metricsProxyAdminNodeHeapSizeInMib();
         setProp("clustertype", "admin");
         setProp("index", String.valueOf(index));

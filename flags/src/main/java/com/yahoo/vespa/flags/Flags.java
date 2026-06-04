@@ -215,7 +215,7 @@ public class Flags {
             List.of("hmusum"), "2026-04-29", "2026-09-01",
             "Amount of memory (in MiB) to use for metrics proxy JVM heap on non-admin nodes. 0 means use the default.",
             "Takes effect at redeployment",
-            TENANT_ID, APPLICATION, INSTANCE_ID);
+            TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_TYPE, CLUSTER_ID, VESPA_VERSION);
 
     public static final UnboundIntFlag METRICS_PROXY_ADMIN_HEAP_SIZE_IN_MIB = defineIntFlag(
             "metrics-proxy-admin-heap-size-in-mib", 0,
