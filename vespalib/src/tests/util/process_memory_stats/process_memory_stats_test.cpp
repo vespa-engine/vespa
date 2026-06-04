@@ -4,6 +4,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/process_memory_stats.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/transient_memory_tracker.h>
 
 #include <fcntl.h>
 #include <sys/mman.h>
@@ -25,7 +26,8 @@ protected:
     static std::string toString(const ProcessMemoryStats& stats) {
         std::ostringstream os;
         os << "Virtual(" << stats.getVirt() << "), Rss(" << stats.getMappedRss() + stats.getAnonymousRss()
-           << "), MappedRss(" << stats.getMappedRss() << "), AnonymousRss(" << stats.getAnonymousRss() << ")";
+           << "), MappedRss(" << stats.getMappedRss() << "), AnonymousRss(" << stats.getAnonymousRss()
+           << ") Transient(" << stats.transient_memory() << ")";
         return os.str();
     }
 };
@@ -36,6 +38,14 @@ TEST_F(ProcessMemoryStatsTest, simple_stats) {
     EXPECT_LT(0u, stats.getVirt());
     EXPECT_LT(0u, stats.getMappedRss());
     EXPECT_LT(0u, stats.getAnonymousRss());
+    EXPECT_EQ(0, stats.transient_memory());
+}
+
+TEST_F(ProcessMemoryStatsTest, simple_stats_with_transient_memory) {
+    TransientMemoryTracker tracker;
+    tracker.set_transient_memory(42);
+    ProcessMemoryStats stats(ProcessMemoryStats::create(SIZE_EPSILON));
+    EXPECT_EQ(42, stats.transient_memory()) << toString(stats);
 }
 
 TEST_F(ProcessMemoryStatsTest, grow_anonymous_memory) {

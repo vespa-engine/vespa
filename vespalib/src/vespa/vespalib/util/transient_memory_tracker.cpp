@@ -11,7 +11,6 @@ static_assert(std::is_move_constructible_v<TransientMemoryTracker>);
 static_assert(std::is_move_assignable_v<TransientMemoryTracker>);
 
 std::mutex TransientMemoryTracker::_mutex;
-uint64_t   TransientMemoryTracker::_generation(0);
 size_t     TransientMemoryTracker::_total_transient_memory(0);
 
 TransientMemoryTracker::TransientMemoryTracker() noexcept : _transient_memory(0) {
@@ -51,17 +50,16 @@ void TransientMemoryTracker::set_transient_memory(Lock lock, size_t value) noexc
         _total_transient_memory -= _transient_memory - value;
     }
     _transient_memory = value;
-    ++_generation;
 }
 
 void TransientMemoryTracker::swap(TransientMemoryTracker& rhs) noexcept {
     std::swap(_transient_memory, rhs._transient_memory);
 }
 
-TransientMemoryTracker::TotalTransientMemoryAndGeneration
-TransientMemoryTracker::get_total_transient_memory() noexcept {
-    Lock lock(_mutex);
-    return {_total_transient_memory, _generation};
+size_t TransientMemoryTracker::get_total_transient_memory(Lock lock) noexcept {
+    assert(lock.mutex() == &_mutex);
+    assert(lock.owns_lock());
+    return _total_transient_memory;
 }
 
 } // namespace vespalib

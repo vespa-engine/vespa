@@ -9,15 +9,16 @@ using vespalib::TransientMemoryTracker;
 
 class TransientMemoryTrackerTest : public testing::Test {
 protected:
-    TransientMemoryTracker::TotalTransientMemoryAndGeneration _initial_totals;
+    size_t _initial_total_transient_memory;
 
     TransientMemoryTrackerTest();
     ~TransientMemoryTrackerTest() override;
     static void set_transient_memory(TransientMemoryTracker& tracker, size_t value);
+    static size_t get_total_transient_memory() noexcept;
 };
 
 TransientMemoryTrackerTest::TransientMemoryTrackerTest()
-    : testing::Test(), _initial_totals(TransientMemoryTracker::get_total_transient_memory()) {
+    : testing::Test(), _initial_total_transient_memory(get_total_transient_memory()) {
 }
 
 TransientMemoryTrackerTest::~TransientMemoryTrackerTest() = default;
@@ -27,81 +28,68 @@ void TransientMemoryTrackerTest::set_transient_memory(TransientMemoryTracker& tr
     tracker.set_transient_memory(std::move(lock), value);
 }
 
+size_t TransientMemoryTrackerTest::get_total_transient_memory() noexcept {
+    auto lock = TransientMemoryTracker::acquire_lock();
+    return TransientMemoryTracker::get_total_transient_memory(std::move(lock));
+}
+
 TEST_F(TransientMemoryTrackerTest, empty_transient_memory) {
-    EXPECT_EQ(0, _initial_totals._total_transient_memory);
+    EXPECT_EQ(0, _initial_total_transient_memory);
     TransientMemoryTracker transient_memory_tracker;
-    auto                   totals = TransientMemoryTracker::get_total_transient_memory();
-    EXPECT_EQ(0, totals._total_transient_memory);
-    EXPECT_EQ(_initial_totals._generation, totals._generation);
+    EXPECT_EQ(0, get_total_transient_memory());
 }
 
 TEST_F(TransientMemoryTrackerTest, normal_transient_memory_lifetime) {
     TransientMemoryTracker transient_memory_tracker;
     set_transient_memory(transient_memory_tracker, 42);
-    auto totals = TransientMemoryTracker::get_total_transient_memory();
-    EXPECT_EQ(42, totals._total_transient_memory);
-    EXPECT_LT(_initial_totals._generation, totals._generation);
+    EXPECT_EQ(42, get_total_transient_memory());
     TransientMemoryTracker().swap(transient_memory_tracker);
-    auto totals2 = TransientMemoryTracker::get_total_transient_memory();
-    EXPECT_EQ(0, totals2._total_transient_memory);
-    EXPECT_LT(totals._generation, totals2._generation);
+    EXPECT_EQ(0, get_total_transient_memory());
 }
 
 TEST_F(TransientMemoryTrackerTest, move_constructor_works) {
     TransientMemoryTracker transient_memory_tracker;
     set_transient_memory(transient_memory_tracker, 42);
-    auto                   totals = TransientMemoryTracker::get_total_transient_memory();
+    EXPECT_EQ(42, get_total_transient_memory());
     TransientMemoryTracker transient_memory_tracker2(std::move(transient_memory_tracker));
     TransientMemoryTracker().swap(transient_memory_tracker);
-    auto totals2 = TransientMemoryTracker::get_total_transient_memory();
-    EXPECT_EQ(42, totals2._total_transient_memory);
-    EXPECT_EQ(totals._generation, totals2._generation);
+    EXPECT_EQ(42, get_total_transient_memory());
     TransientMemoryTracker().swap(transient_memory_tracker2);
-    auto totals3 = TransientMemoryTracker::get_total_transient_memory();
-    EXPECT_EQ(0, totals3._total_transient_memory);
-    EXPECT_LT(totals2._generation, totals3._generation);
+    EXPECT_EQ(0, get_total_transient_memory());
 }
 
 TEST_F(TransientMemoryTrackerTest, move_assignment_works) {
     TransientMemoryTracker transient_memory_tracker;
     set_transient_memory(transient_memory_tracker, 42);
-    auto                   totals = TransientMemoryTracker::get_total_transient_memory();
+    EXPECT_EQ(42, get_total_transient_memory());
     TransientMemoryTracker transient_memory_tracker2;
     transient_memory_tracker2 = (std::move(transient_memory_tracker));
     TransientMemoryTracker().swap(transient_memory_tracker);
-    auto totals2 = TransientMemoryTracker::get_total_transient_memory();
-    EXPECT_EQ(42, totals2._total_transient_memory);
-    EXPECT_EQ(totals._generation, totals2._generation);
+    EXPECT_EQ(42, get_total_transient_memory());
     TransientMemoryTracker().swap(transient_memory_tracker2);
-    auto totals3 = TransientMemoryTracker::get_total_transient_memory();
-    EXPECT_EQ(0, totals3._total_transient_memory);
-    EXPECT_LT(totals2._generation, totals3._generation);
+    EXPECT_EQ(0, get_total_transient_memory());
 }
 
 TEST_F(TransientMemoryTrackerTest, swap_works) {
     TransientMemoryTracker transient_memory_tracker;
     set_transient_memory(transient_memory_tracker, 42);
-    auto                   totals = TransientMemoryTracker::get_total_transient_memory();
+    EXPECT_EQ(42, get_total_transient_memory());
     TransientMemoryTracker transient_memory_tracker2;
     std::swap(transient_memory_tracker, transient_memory_tracker2);
     TransientMemoryTracker().swap(transient_memory_tracker);
-    auto totals2 = TransientMemoryTracker::get_total_transient_memory();
-    EXPECT_EQ(42, totals2._total_transient_memory);
-    EXPECT_EQ(totals._generation, totals2._generation);
+    EXPECT_EQ(42, get_total_transient_memory());
     TransientMemoryTracker().swap(transient_memory_tracker2);
-    auto totals3 = TransientMemoryTracker::get_total_transient_memory();
-    EXPECT_EQ(0, totals3._total_transient_memory);
-    EXPECT_LT(totals2._generation, totals3._generation);
+    EXPECT_EQ(0, get_total_transient_memory());
 }
 
 TEST_F(TransientMemoryTrackerTest, adjust_transient_memory) {
     TransientMemoryTracker transient_memory_tracker1;
     TransientMemoryTracker transient_memory_tracker2;
-    transient_memory_tracker1.set_transient_memory(200);
-    transient_memory_tracker2.set_transient_memory(2000);
-    EXPECT_EQ(2200, TransientMemoryTracker::get_total_transient_memory()._total_transient_memory);
-    transient_memory_tracker1.set_transient_memory(100);
-    EXPECT_EQ(2100, TransientMemoryTracker::get_total_transient_memory()._total_transient_memory);
-    transient_memory_tracker2.set_transient_memory(3000);
-    EXPECT_EQ(3100, TransientMemoryTracker::get_total_transient_memory()._total_transient_memory);
+    set_transient_memory(transient_memory_tracker1, 200);
+    set_transient_memory(transient_memory_tracker2, 2000);
+    EXPECT_EQ(2200, get_total_transient_memory());
+    set_transient_memory(transient_memory_tracker1, 100);
+    EXPECT_EQ(2100, get_total_transient_memory());
+    set_transient_memory(transient_memory_tracker2, 3000);
+    EXPECT_EQ(3100, get_total_transient_memory());
 }

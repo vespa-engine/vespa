@@ -3,9 +3,10 @@
 #include "process_memory_stats.h"
 
 #include "exceptions.h"
+#include "size_literals.h"
+#include "transient_memory_tracker.h"
 
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/util/size_literals.h>
 
 #include <unistd.h>
 
@@ -34,6 +35,7 @@ size_t ProcessMemoryStats::normal_page_size = sysconf(_SC_PAGESIZE);
  */
 ProcessMemoryStats ProcessMemoryStats::createStatsFromStatm() {
     ProcessMemoryStats ret;
+    auto               lock = TransientMemoryTracker::acquire_lock();
 #ifdef __linux__
     asciistream statm = asciistream::createFromDevice("/proc/self/statm");
     ret = parseStatm(statm);
@@ -46,6 +48,7 @@ ProcessMemoryStats ProcessMemoryStats::createStatsFromStatm() {
         ret._anonymous_rss = vm_info.phys_footprint;
     }
 #endif
+    ret._transient_memory = TransientMemoryTracker::get_total_transient_memory(std::move(lock));
     return ret;
 }
 
@@ -74,11 +77,12 @@ ProcessMemoryStats ProcessMemoryStats::parseStatm(asciistream& statm) {
     return ret;
 }
 
-ProcessMemoryStats::ProcessMemoryStats() : _virt(0), _mapped_rss(0), _anonymous_rss(0) {
+ProcessMemoryStats::ProcessMemoryStats() noexcept
+    : _virt(0), _mapped_rss(0), _anonymous_rss(0), _transient_memory(0) {
 }
 
-ProcessMemoryStats::ProcessMemoryStats(uint64_t virt, uint64_t mapped_rss, uint64_t anonymous_rss)
-    : _virt(virt), _mapped_rss(mapped_rss), _anonymous_rss(anonymous_rss) {
+ProcessMemoryStats::ProcessMemoryStats(uint64_t virt, uint64_t mapped_rss, uint64_t anonymous_rss) noexcept
+    : _virt(virt), _mapped_rss(mapped_rss), _anonymous_rss(anonymous_rss), _transient_memory(0) {
 }
 
 namespace {
@@ -90,16 +94,15 @@ bool similar(uint64_t lhs, uint64_t rhs, double epsilon) {
 
 } // namespace
 
-bool ProcessMemoryStats::similarTo(const ProcessMemoryStats& rhs, double epsilon) const {
+bool ProcessMemoryStats::similarTo(const ProcessMemoryStats& rhs, double epsilon) const noexcept {
     return similar(_virt, rhs._virt, epsilon) && similar(_mapped_rss, rhs._mapped_rss, epsilon) &&
            similar(_anonymous_rss, rhs._anonymous_rss, epsilon);
 }
 
 std::string ProcessMemoryStats::toString() const {
     vespalib::asciistream stream;
-    stream << "_virt=" << _virt << ", "
-           << "_mapped_rss=" << _mapped_rss << ", "
-           << "_anonymous_rss=" << _anonymous_rss;
+    stream << "_virt=" << _virt << ", _mapped_rss=" << _mapped_rss << ", _anonymous_rss=" << _anonymous_rss
+           << ", transient_memory=" << _transient_memory;
     return stream.str();
 }
 
