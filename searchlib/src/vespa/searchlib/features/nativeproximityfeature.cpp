@@ -78,8 +78,8 @@ void NativeProximityExecutorSharedState::generateTermPairs(const IQueryEnvironme
                                          connectedness);
             }
             connectedness /= (j - i);
-            if (terms[i].termData()->getWeight().percent() != 0 || terms[j].termData()->getWeight().percent() != 0)
-            { // only consider term pairs with contribution
+            if (terms[i].termData()->getWeight().percent() != 0 ||
+                terms[j].termData()->getWeight().percent() != 0) { // only consider term pairs with contribution
                 pairs.push_back(TermPair(terms[i], terms[j], connectedness));
                 setup.divisor += (terms[i].significance() * terms[i].termData()->getWeight().percent() +
                                   terms[j].significance() * terms[j].termData()->getWeight().percent()) *

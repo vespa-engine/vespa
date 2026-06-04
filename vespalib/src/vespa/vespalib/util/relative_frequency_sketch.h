@@ -85,14 +85,10 @@ private:
 template <typename H, typename T>
 concept SketchHasher = requires(H h, T t) {
     // Hashers should never throw.
-    {
-        h(t)
-    } noexcept;
+    { h(t) } noexcept;
     // We need a 64-bit hash output (not using uint64_t since STL is standardized
     // on returning size_t from hash functions).
-    {
-        h(t)
-    } -> std::same_as<size_t>;
+    { h(t) } -> std::same_as<size_t>;
 };
 
 /**

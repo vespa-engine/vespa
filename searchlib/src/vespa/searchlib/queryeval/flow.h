@@ -55,15 +55,9 @@ struct DefaultAdapter {
 
 template <typename T>
 concept DefaultAdaptable = requires(const T& t) {
-    {
-        t->estimate()
-    } -> std::same_as<double>;
-    {
-        t->cost()
-    } -> std::same_as<double>;
-    {
-        t->strict_cost()
-    } -> std::same_as<double>;
+    { t->estimate() } -> std::same_as<double>;
+    { t->cost() } -> std::same_as<double>;
+    { t->strict_cost() } -> std::same_as<double>;
 };
 
 // adapter making it possible to use FlowStats directly for testing
@@ -75,15 +69,9 @@ struct DirectAdapter {
 
 template <typename T>
 concept DirectAdaptable = requires(const T& t) {
-    {
-        t.estimate
-    } -> std::same_as<const double&>;
-    {
-        t.cost
-    } -> std::same_as<const double&>;
-    {
-        t.strict_cost
-    } -> std::same_as<const double&>;
+    { t.estimate } -> std::same_as<const double&>;
+    { t.cost } -> std::same_as<const double&>;
+    { t.strict_cost } -> std::same_as<const double&>;
 };
 
 auto make_adapter(const auto& children) {

@@ -48,9 +48,7 @@ template <typename T>
 concept FilterFactory =
     requires(const T& a, T& ma, InFlow in_flow, uint32_t my_docid_limit, bool strict, Constraint constraint) {
         ma.basic_plan(in_flow, my_docid_limit);
-        {
-            a.createFilterSearch(constraint)
-        } -> std::same_as<std::unique_ptr<SearchIterator>>;
+        { a.createFilterSearch(constraint) } -> std::same_as<std::unique_ptr<SearchIterator>>;
     };
 
 template <typename T>

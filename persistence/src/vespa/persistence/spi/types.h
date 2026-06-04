@@ -30,19 +30,11 @@ class DocumentUpdate;
                                                                                               \
     public:                                                                                   \
         using Type = type;                                                                    \
-        name() noexcept : _value() {                                                          \
-        }                                                                                     \
-        explicit name(type v) noexcept : _value(v) {                                          \
-        }                                                                                     \
-        operator type() const noexcept {                                                      \
-            return _value;                                                                    \
-        }                                                                                     \
-        operator type&() noexcept {                                                           \
-            return _value;                                                                    \
-        }                                                                                     \
-        type getValue() const noexcept {                                                      \
-            return _value;                                                                    \
-        }                                                                                     \
+        name() noexcept : _value() {}                                                         \
+        explicit name(type v) noexcept : _value(v) {}                                         \
+        operator type() const noexcept { return _value; }                                     \
+        operator type&() noexcept { return _value; }                                          \
+        type getValue() const noexcept { return _value; }                                     \
         name& operator=(type val) noexcept {                                                  \
             _value = val;                                                                     \
             return *this;                                                                     \

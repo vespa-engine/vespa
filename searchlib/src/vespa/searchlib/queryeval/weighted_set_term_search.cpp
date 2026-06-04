@@ -24,12 +24,8 @@ enum class UnpackType { DocidAndWeights, Docid, None };
 
 template <typename Pack, typename Ref>
 concept HasUnpackAndMatchData = requires(Pack& pack, Ref ref, uint32_t docid) {
-    {
-        pack.unpack(ref, docid)
-    };
-    {
-        pack.match_data()
-    } -> std::same_as<const fef::MatchData&>;
+    { pack.unpack(ref, docid) };
+    { pack.match_data() } -> std::same_as<const fef::MatchData&>;
 };
 
 template <typename RefType, typename IteratorPack> struct PackTraits {

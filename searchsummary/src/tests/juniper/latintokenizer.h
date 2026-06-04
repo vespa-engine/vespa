@@ -222,8 +222,7 @@ void Fast_LatinTokenizer<IsSeparator, IsPunctuation>::SkipBlanks() {
     }
 
     // Initialized with specified buffer length.
-    else
-    {
+    else {
         while (_next != _end && _isSeparator(*_next)) {
             ++_next;
         }
