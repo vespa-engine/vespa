@@ -38,7 +38,7 @@ func TestDeployCloud(t *testing.T) {
 	stderr.Reset()
 	require.NotNil(t, cli.Run("deploy", pkgDir))
 	apiKeyWarning := "Warning: Authenticating with API key, intended for use in CI environments.\nHint: Authenticate with 'vespa auth login' instead\n"
-	certError := `Error: deployment to Vespa Cloud requires certificate or token in application package
+	certError := `Error: Deployment to Vespa Cloud requires either certificate or token authentication
 Hint: See https://docs.vespa.ai/en/security/guide.html
 Hint: Pass --add-cert to use the certificate of the current application
 `
@@ -150,7 +150,7 @@ func TestDeployWithoutMTLSOrToken(t *testing.T) {
 
 	err := cli.Run("deploy", pkgDir)
 	assert.Error(t, err)
-	assert.Equal(t, err.Error(), "deployment to Vespa Cloud requires certificate or token in application package")
+	assert.Equal(t, err.Error(), "Deployment to Vespa Cloud requires either certificate or token authentication")
 }
 
 func TestDeployCloudWithToken(t *testing.T) {
