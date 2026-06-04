@@ -76,8 +76,9 @@ public class HandlersConfigurerDi {
 
         this.vespaContainer = vespaContainer;
         container = new Container(subscriberFactory, vespaContainer, configId, deconstructor, osgiWrapper);
-        Runnable cleanupTask = waitForNextGraphGeneration(discInjector, true);
-        cleanupTask.run();
+        Container.ComponentGraphResult result = waitForNextGraphGeneration(discInjector, true);
+        if (result.failed()) throw new RuntimeException("Failed to initialize component graph", result.failure());
+        result.oldComponentsCleanupTask().run();
     }
 
     private static class ContainerAndDiOsgi extends OsgiImpl implements OsgiWrapper {
@@ -150,15 +151,13 @@ public class HandlersConfigurerDi {
 
     /**
      * Wait for new config to arrive and produce the new graph
-     * @return Task for deconstructing previous component graph and bundles
+     * @return Result containing the new graph and cleanup task, or failure info if graph construction failed
      */
-    public Runnable waitForNextGraphGeneration(Injector discInjector, boolean isInitializing) {
-        Container.ComponentGraphResult result = container.waitForNextGraphGeneration(
-                this.currentGraph,
-                createFallbackInjector(vespaContainer, discInjector),
-                isInitializing);
-        this.currentGraph = result.newGraph();
-        return result.oldComponentsCleanupTask();
+    public Container.ComponentGraphResult waitForNextGraphGeneration(Injector discInjector, boolean isInitializing) {
+        Injector fallbackInjector = createFallbackInjector(vespaContainer, discInjector);
+        var result = container.waitForNextGraphGeneration(this.currentGraph, fallbackInjector, isInitializing);
+        if (!result.failed()) this.currentGraph = result.newGraph();
+        return result;
     }
 
     private Injector createFallbackInjector(com.yahoo.container.Container vespaContainer, Injector discInjector) {

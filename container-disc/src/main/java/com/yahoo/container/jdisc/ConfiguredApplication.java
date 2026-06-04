@@ -15,6 +15,7 @@ import com.yahoo.container.QrConfig;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.core.config.HandlersConfigurerDi;
 import com.yahoo.container.di.CloudSubscriberFactory;
+import com.yahoo.container.di.Container.ComponentGraphResult;
 import com.yahoo.container.di.config.Subscriber;
 import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.container.http.filter.FilterChainRepository;
@@ -365,14 +366,21 @@ public final class ConfiguredApplication implements Application {
                 ContainerBuilder builder = createBuilderWithGuiceBindings();
 
                 // Block until new config arrives, and it should be applied
-                Runnable cleanupTask = configurer.waitForNextGraphGeneration(builder.guiceModules().activate(), false);
-                initializeAndActivateContainer(builder, cleanupTask);
+                ComponentGraphResult result = configurer.waitForNextGraphGeneration(builder.guiceModules().activate(), false);
+                if (result.failed()) {
+                    tryReportFailedComponentGraphConstructionMetric(configurer, result.failure());
+                    log.log(Level.SEVERE,
+                            "Reconfiguration failed, your application package must be fixed, unless this is a " +
+                            "JNI reload issue: " + Exceptions.toMessageString(result.failure()), result.failure());
+                    continue;
+                }
+                initializeAndActivateContainer(builder, result.oldComponentsCleanupTask());
                 var metric = configurer.getComponent(Metric.class);
                 metric.set(JDISC_APPLICATION_COMPONENT_GRAPH_CREATION_TIME_MILLIS.baseName(), Duration.between(start, Instant.now()).toMillis(), null);
                 metric.add(JDISC_APPLICATION_COMPONENT_GRAPH_RECONFIGURATIONS.baseName(), 1L, null);
             } catch (UncheckedInterruptedException | SubscriberClosedException | ConfigInterruptedException e) {
                 break;
-            } catch (Exception | LinkageError e) { // LinkageError: OSGi problems
+            } catch (Exception | LinkageError e) { // Unexpected failures from container activation
                 tryReportFailedComponentGraphConstructionMetric(configurer, e);
                 log.log(Level.SEVERE,
                         "Reconfiguration failed, your application package must be fixed, unless this is a " +
