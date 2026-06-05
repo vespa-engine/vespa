@@ -171,7 +171,7 @@ public class ConfigConvergenceCheckerTest {
         assertEquals(1, response.services.size());
         ServiceListResponse.Service service = response.services.get(0);
         assertEquals(3, service.currentGeneration);
-        assertFalse(service.configFailure.isPresent());
+        assertFalse(service.configStatus.isFailed());
     }
 
     @Test
@@ -195,8 +195,8 @@ public class ConfigConvergenceCheckerTest {
         assertEquals(1, response.services.size());
         ServiceListResponse.Service service = response.services.get(0);
         assertEquals(-1, service.currentGeneration);
-        assertTrue(service.configFailure.isPresent());
-        assertEquals("Failed to construct component Foo", service.configFailure.get());
+        assertTrue(service.configStatus.isFailed());
+        assertEquals("Failed to construct component Foo", service.configStatus.message());
     }
 
     private void assertService(URI uri, ServiceListResponse.Service service1, long expectedGeneration) {
@@ -204,7 +204,7 @@ public class ConfigConvergenceCheckerTest {
         assertEquals(uri.getHost(), service1.serviceInfo.getHostName());
         assertEquals(uri.getPort(), ConfigConvergenceChecker.getStatePort(service1.serviceInfo).get().intValue());
         assertEquals("container", service1.serviceInfo.getServiceType());
-        assertFalse(service1.configFailure.isPresent());
+        assertFalse(service1.configStatus.isFailed());
     }
 
 }

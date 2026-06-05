@@ -493,7 +493,11 @@ public class ApplicationHandler extends HttpHandler {
                 serviceObject.setString("type", serviceInfo.getServiceType());
                 serviceObject.setString("url", uri.toString() + "/" + hostName + ":" + statePort);
                 serviceObject.setLong("currentGeneration", service.currentGeneration);
-                service.configFailure.ifPresent(msg -> serviceObject.setString("configFailure", msg));
+                if (service.configStatus.isFailed()) {
+                    Cursor cfObject = serviceObject.setObject("configFailure");
+                    cfObject.setString("status", service.configStatus.status().toString());
+                    cfObject.setString("message", service.configStatus.message());
+                }
             });
             object.setString("url", uri.toString());
             object.setLong("currentGeneration", response.currentGeneration);

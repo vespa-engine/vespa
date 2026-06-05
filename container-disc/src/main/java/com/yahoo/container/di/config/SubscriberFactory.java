@@ -5,7 +5,6 @@ import com.google.inject.ProvidedBy;
 import com.yahoo.container.di.CloudSubscriberFactory;
 import com.yahoo.vespa.config.ConfigKey;
 
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -18,5 +17,4 @@ public interface SubscriberFactory {
     Subscriber getSubscriber(Set<? extends ConfigKey<?>> configKeys, String name);
     void reloadActiveSubscribers(long generation);
     void close();
-
 }

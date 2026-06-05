@@ -121,7 +121,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         long wantedGeneration = application.getApplicationGeneration();
         long currentGeneration = results.values().stream().mapToLong(ServiceGenerationResult::generation).min().orElse(-1);
         List<ServiceListResponse.Service> services = results.entrySet().stream()
-                .map(e -> new ServiceListResponse.Service(e.getKey(), e.getValue().generation(), e.getValue().configFailure()))
+                .map(e -> new ServiceListResponse.Service(e.getKey(), e.getValue().generation(), e.getValue().configStatus()))
                 .toList();
         return new ServiceListResponse(services, wantedGeneration, currentGeneration, currentGeneration >= wantedGeneration);
     }
@@ -144,8 +144,8 @@ public class ConfigConvergenceChecker extends AbstractComponent {
             if ( ! hostInApplication(application, hostAndPortToCheck))
                 return new ServiceResponse(ServiceResponse.Status.hostNotFound, wantedGeneration);
             ServiceGenerationResult result = getServiceGeneration(client, URI.create("http://" + hostAndPortToCheck), timeout).get();
-            if (result.configFailure().isPresent())
-                return new ServiceResponse(ServiceResponse.Status.error, wantedGeneration, result.configFailure().get());
+            if (result.configStatus().isFailed())
+                return new ServiceResponse(ServiceResponse.Status.error, wantedGeneration, result.configStatus().message());
             boolean converged = result.generation() >= wantedGeneration;
             return new ServiceResponse(ServiceResponse.Status.ok, wantedGeneration, result.generation(), converged);
         } catch (InterruptedException | ExecutionException | CancellationException e) { // e.g. if we cannot connect to the service to find generation
@@ -288,10 +288,10 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         return orderedResult;
     }
 
-    private record ServiceGenerationResult(long generation, Optional<String> configFailure) {
-        static ServiceGenerationResult ok(long generation) { return new ServiceGenerationResult(generation, Optional.empty()); }
-        static ServiceGenerationResult configFailed(String message) { return new ServiceGenerationResult(-1L, Optional.of(message)); }
-        static ServiceGenerationResult unreachable(String message) { return new ServiceGenerationResult(-1L, Optional.empty()); }
+    private record ServiceGenerationResult(long generation, ConfigStatus configStatus) {
+        static ServiceGenerationResult ok(long generation) { return new ServiceGenerationResult(generation, ConfigStatus.ok()); }
+        static ServiceGenerationResult configFailed(String message) { return new ServiceGenerationResult(-1L, ConfigStatus.failed(message)); }
+        static ServiceGenerationResult unreachable(String message) { return new ServiceGenerationResult(-1L, ConfigStatus.ok()); }
     }
 
     private static URI createApiUri(URI serviceUrl) {
@@ -336,6 +336,16 @@ public class ConfigConvergenceChecker extends AbstractComponent {
 
         public boolean check(String hostname) { return checkAll() || hostnames.contains(hostname); }
 
+    }
+
+    public record ConfigStatus(Status status, String message) {
+        public enum Status {
+            OK, FAILED;
+            @Override public String toString() { return name().toLowerCase(); }
+        }
+        public static ConfigStatus ok() { return new ConfigStatus(Status.OK, null); }
+        public static ConfigStatus failed(String message) { return new ConfigStatus(Status.FAILED, message); }
+        public boolean isFailed() { return status == Status.FAILED; }
     }
 
     public static class ServiceResponse {
@@ -389,7 +399,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         }
         public ServiceListResponse(Map<ServiceInfo, Long> services, long wantedGeneration, long currentGeneration) {
             this(services.entrySet().stream()
-                         .map(e -> new Service(e.getKey(), e.getValue(), Optional.empty()))
+                         .map(e -> new Service(e.getKey(), e.getValue(), ConfigStatus.ok()))
                          .toList(),
                  wantedGeneration, currentGeneration, currentGeneration >= wantedGeneration);
         }
@@ -404,12 +414,12 @@ public class ConfigConvergenceChecker extends AbstractComponent {
 
             public final ServiceInfo serviceInfo;
             public final long currentGeneration;
-            public final Optional<String> configFailure;
+            public final ConfigStatus configStatus;
 
-            public Service(ServiceInfo serviceInfo, long currentGeneration, Optional<String> configFailure) {
+            public Service(ServiceInfo serviceInfo, long currentGeneration, ConfigStatus configStatus) {
                 this.serviceInfo = serviceInfo;
                 this.currentGeneration = currentGeneration;
-                this.configFailure = configFailure;
+                this.configStatus = configStatus;
             }
 
         }

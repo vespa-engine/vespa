@@ -11,7 +11,6 @@ import com.yahoo.jdisc.service.ServerProvider;
 import com.yahoo.vespa.config.ConfigTransformer;
 import com.yahoo.vespa.config.UrlDownloader;
 
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -32,7 +31,7 @@ public class Container {
     private volatile ComponentRegistry<AbstractComponent> componentRegistry;
     private volatile FileAcquirer fileAcquirer;
     private volatile UrlDownloader urlDownloader;
-    public volatile Optional<String> configFailure = Optional.empty();
+    public volatile ConfigStatus configStatus = ConfigStatus.ok();
 
     /**
      * @see com.yahoo.container.di.config.Subscriber#applyOnRestart()
@@ -155,8 +154,18 @@ public class Container {
         return applyOnRestart;
     }
 
-    public Optional<String> configFailure() { return configFailure; };
-    public void setConfigFailure(String message) { configFailure = Optional.of(message); }
-    public void clearConfigFailure() { configFailure = Optional.empty(); }
+    public ConfigStatus configStatus() { return configStatus; }
+    public void setConfigStatus(String message) { configStatus = ConfigStatus.failed(message); }
+    public void setConfigStatusOk() { configStatus = ConfigStatus.ok(); }
+
+    public record ConfigStatus(Status status, String message) {
+        public enum Status {
+            OK, FAILED;
+            @Override public String toString() { return name().toLowerCase(); }
+        }
+        public static ConfigStatus ok() { return new ConfigStatus(Status.OK, null); }
+        public static ConfigStatus failed(String message) { return new ConfigStatus(Status.FAILED, message); }
+        public boolean isFailed() { return status == Status.FAILED; }
+    }
 
 }
