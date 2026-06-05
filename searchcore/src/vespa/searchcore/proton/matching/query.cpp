@@ -365,7 +365,7 @@ void Query::perform_ann_searches(Blueprint& blueprint, const vespalib::Doom& doo
         }
     });
     if (trace && !ann_blueprints.empty()) {
-        trace->addEvent(5, "Perform ANN searches");
+        trace->addEvent(5, "Perform ANN search(es)");
     }
     while (!ann_blueprints.empty()) {
         const vespalib::Deadline deadline = ann_deadline_config.make_ann_deadline(doom, ann_blueprints.size());
