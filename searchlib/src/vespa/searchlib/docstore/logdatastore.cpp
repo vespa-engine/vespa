@@ -139,7 +139,7 @@ void LogDataStore::on_freeze_prev_active() {
     _update_cond.notify_all();
 }
 
-bool LogDataStore::waited_for_prev_active(MonitorGuard& guard) {
+bool LogDataStore::wait_for_prev_active(MonitorGuard& guard) {
     if (_prevActive != FileId::active()) {
         // Wait for previous active chunk to be flushed and frozen
         auto wait_start_prev_active = _prevActive;
@@ -243,7 +243,7 @@ void LogDataStore::requireSpace(MonitorGuard guard, WriteableFileChunk& active, 
     LOG(spam, "Checking file %s size %ld < %ld AND #lids %u < %u", active.getName().c_str(), oldSz,
         _config.getMaxFileSize(), active.getNumLids(), _config.getMaxNumLids());
     if ((oldSz > _config.getMaxFileSize()) || (active.getNumLids() >= _config.getMaxNumLids())) {
-        if (waited_for_prev_active(guard)) {
+        if (wait_for_prev_active(guard)) {
             return; // Active file chunk might have changed.
         }
         FileId fileId = allocateFileId(guard);

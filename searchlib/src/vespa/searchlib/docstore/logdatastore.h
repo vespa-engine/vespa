@@ -245,7 +245,7 @@ private:
     bool isReadOnly() const { return _readOnly; }
     void updateSerialNum();
     void on_freeze_prev_active();
-    bool waited_for_prev_active(MonitorGuard& guard);
+    [[nodiscard]] bool wait_for_prev_active(MonitorGuard& guard);
 
     size_t computeNumberOfSignificantBucketIdBits(const IBucketizer& bucketizer, FileId fileId) const;
 
