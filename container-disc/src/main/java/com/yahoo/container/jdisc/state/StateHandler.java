@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.nio.charset.StandardCharsets;
 
@@ -64,7 +65,6 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
     private final ApplicationMetadataConfig config;
     private final SnapshotProvider snapshotProvider;
     private final Container vespaContainer;
-    private volatile String configFailureMessage = null;
 
     @Inject
     public StateHandler(StateMonitor monitor, Timer timer, ApplicationMetadataConfig config,
@@ -140,7 +140,9 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
             String suffix = resolvePath(requestUri);
             return switch (suffix) {
                 case "" -> ByteBuffer.wrap(apiLinks(requestUri));
-                case CONFIG_GENERATION_PATH -> ByteBuffer.wrap(toPrettyString(buildConfigJson(config, vespaContainer.applyOnRestart(), configFailureMessage)));
+                case CONFIG_GENERATION_PATH -> ByteBuffer.wrap(toPrettyString(buildConfigJson(config,
+                                                                                              vespaContainer.applyOnRestart(),
+                                                                                              vespaContainer.configFailure)));
                 case HISTOGRAMS_PATH -> ByteBuffer.wrap(buildHistogramsOutput());
                 case HEALTH_PATH, METRICS_PATH -> ByteBuffer.wrap(buildMetricOutput(suffix, requestUri.getQuery()));
                 case VERSION_PATH -> ByteBuffer.wrap(buildVersionOutput());
@@ -189,13 +191,13 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
      * @param applyOnRestart {@link com.yahoo.container.di.config.Subscriber#applyOnRestart()}
      * @param failureMessage null if no failure, otherwise the error message from the most recent failed graph construction
      */
-    private static JsonNode buildConfigJson(ApplicationMetadataConfig config, boolean applyOnRestart, String failureMessage) {
+    private static JsonNode buildConfigJson(ApplicationMetadataConfig config, boolean applyOnRestart, Optional<String> failureMessage) {
         ObjectNode configNode = jsonMapper.createObjectNode();
         configNode.put("generation", config.generation());
         configNode.put("applyOnRestart", applyOnRestart);
         configNode.set("container", jsonMapper.createObjectNode().put("generation", config.generation()));
-        configNode.put("status", failureMessage != null ? "failed" : "ok");
-        if (failureMessage != null) configNode.put("message", failureMessage);
+        configNode.put("status", failureMessage.isPresent() ? "failed" : "ok");
+        failureMessage.ifPresent(s -> configNode.put("message", s));
         return jsonMapper.createObjectNode().set(CONFIG_GENERATION_PATH, configNode);
     }
 

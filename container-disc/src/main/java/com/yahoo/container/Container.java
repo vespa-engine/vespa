@@ -11,6 +11,7 @@ import com.yahoo.jdisc.service.ServerProvider;
 import com.yahoo.vespa.config.ConfigTransformer;
 import com.yahoo.vespa.config.UrlDownloader;
 
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -31,6 +32,7 @@ public class Container {
     private volatile ComponentRegistry<AbstractComponent> componentRegistry;
     private volatile FileAcquirer fileAcquirer;
     private volatile UrlDownloader urlDownloader;
+    public volatile Optional<String> configFailure = Optional.empty();
 
     /**
      * @see com.yahoo.container.di.config.Subscriber#applyOnRestart()
@@ -152,4 +154,9 @@ public class Container {
     public boolean applyOnRestart() {
         return applyOnRestart;
     }
+
+    public Optional<String> configFailure() { return configFailure; };
+    public void setConfigFailure(String message) { configFailure = Optional.of(message); }
+    public void clearConfigFailure() { configFailure = Optional.empty(); }
+
 }

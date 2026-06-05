@@ -55,7 +55,7 @@ public class Container {
     private List<String> platformBundles;  // Used to verify that platform bundles don't change.
     private long previousConfigGeneration = -1L;
     private long leastGeneration = -1L;
-    
+
     // Config keys from the most recently failed graph construction.
     // Set to the failed graph's keys when constructComponents fails (component class exists, keys are valid);
     // set to empty when graph creation itself fails (keys may be stale/missing after bootstrap change).
@@ -333,10 +333,6 @@ public class Container {
     public void reloadConfig(long generation) {
         subscriberFactory.reloadActiveSubscribers(generation);
     }
-
-    public void setConfigFailure(String message) { subscriberFactory.setConfigFailure(message); }
-
-    public void clearConfigFailure() { subscriberFactory.clearConfigFailure(); }
 
     public static <T extends ConfigInstance> T getConfig(ConfigKey<T> key,
                                                          Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configs) {
