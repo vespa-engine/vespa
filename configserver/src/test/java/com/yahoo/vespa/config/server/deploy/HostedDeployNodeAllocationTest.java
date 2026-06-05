@@ -10,6 +10,7 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.ProvisionContext;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.QuotaExceededException;
 import com.yahoo.config.provision.Zone;
@@ -104,7 +105,7 @@ public class HostedDeployNodeAllocationTest {
         int invocation = 0;
 
         @Override
-        public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionLogger logger) {
+        public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionContext context) {
             if (cluster.id().value().equals("container")) { // the container cluster from the app package: Use this to test
                 if (invocation == 0) { // Building the latest model version, 7.3: Always first
                     invocation++;
