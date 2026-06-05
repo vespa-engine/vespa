@@ -100,14 +100,6 @@ func (n annNode) makeRows(tab *table, showDetails bool) {
 	}
 }
 
-func (p protonTrace) findValue(tag string) slime.Value {
-	var value = slime.Invalid
-	slime.Select(p.source, hasTag(tag), func(p *slime.Path, v slime.Value) {
-		value = v
-	})
-	return value
-}
-
 type globalFilterDecision struct {
 	root slime.Value
 }

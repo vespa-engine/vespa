@@ -334,6 +334,14 @@ func hasType(class string) func(p *slime.Path, v slime.Value) bool {
 	}
 }
 
+func (p protonTrace) findValue(tag string) slime.Value {
+	var value = slime.Invalid
+	slime.Select(p.source, hasTag(tag), func(p *slime.Path, v slime.Value) {
+		value = v
+	})
+	return value
+}
+
 func eachSampleList(list slime.Value, f func(sample perfSample)) {
 	list.EachEntry(func(_ int, sample slime.Value) {
 		f(perfSample{source: sample})
