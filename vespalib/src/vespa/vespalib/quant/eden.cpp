@@ -7,39 +7,19 @@
 #include "hadamard.h"
 #include "multi_bit_packer.h"
 
+#include <vespa/vespalib/hwaccelerated/autovec_unrolled.h>
+#include <vespa/vespalib/hwaccelerated/functions.h>
+
 #include <cassert>
 #include <cmath>
 #include <cstring>
 
 namespace vespalib::quant {
 
-namespace {
+using hwaccelerated::squared_euclidean_length;
+using hwaccelerated::sum_indexed_unrolled;
 
-// Invokes `fn(i)` once for every value `i` in [0, sz) and adds each result to one
-// of N partial sums. The sum of partial sums is then returned as the final value.
-// For floating point sums, this is explicitly and intentionally _not_ guaranteed
-// to yield the exact same result as if the output of `fn` had been sequentially
-// summed to a single accumulator. And that's why the compiler dares not optimize
-// loops in such a way in general (modulo `-ffast-math`, which is yolo-mode).
-template <size_t N, typename SumT, typename Fn>
-[[nodiscard]] SumT sum_indexed_unrolled(const size_t sz, Fn fn) noexcept(noexcept(fn(0))) {
-    SumT   partial[N] = {};
-    size_t i = 0;
-    for (; (i + N) <= sz; i += N) {
-        for (size_t j = 0; j < N; ++j) {
-            partial[j] += fn(i + j);
-        }
-    }
-    SumT sum{};
-    for (; i < sz; ++i) {
-        sum += fn(i);
-    }
-    // A "proper" vectorized version would use an N-way reduction tree, but this will do.
-    for (size_t j = 0; j < N; ++j) {
-        sum += partial[j];
-    }
-    return sum;
-}
+namespace {
 
 [[nodiscard]] size_t compute_quantized_buffer_size(const size_t dimensions, const uint8_t bits) noexcept {
     (void)bits;
@@ -83,7 +63,7 @@ void EdenQuantizer::quantize(std::span<const float> x, std::span<uint8_t> q_x, c
     // the magnitude by sqrt(d), which is then subsequently divided away in a subsequent
     // normalization step. Changes in magnitude are more likely to cause precision loss
     // since exponent adjustments can truncate mantissa LSBs.
-    float x_norm2 = sum_indexed_unrolled<8, float>(d, [&](size_t idx) noexcept { return x[idx] * x[idx]; });
+    float x_norm2 = squared_euclidean_length(x.data(), d);
     if (x_norm2 == 0) [[unlikely]] {
         // Zero norm vectors must be special-cased, or we'll end up dividing by zero
         // when computing `nx` below. Set the scale explicitly to zero. For consistency,
