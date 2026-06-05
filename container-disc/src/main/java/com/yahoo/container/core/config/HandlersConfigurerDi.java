@@ -13,6 +13,7 @@ import com.yahoo.container.di.ComponentDeconstructor;
 import com.yahoo.container.di.Container;
 import com.yahoo.container.di.componentgraph.core.ComponentGraph;
 import com.yahoo.container.di.config.SubscriberFactory;
+import com.yahoo.container.jdisc.state.StateHandler;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.jdisc.application.BsnVersion;
@@ -156,8 +157,19 @@ public class HandlersConfigurerDi {
     public Container.ComponentGraphResult waitForNextGraphGeneration(Injector discInjector, boolean isInitializing) {
         Injector fallbackInjector = createFallbackInjector(vespaContainer, discInjector);
         var result = container.waitForNextGraphGeneration(this.currentGraph, fallbackInjector, isInitializing);
-        if (!result.failed()) this.currentGraph = result.newGraph();
+        updateConfigStatus(result);
+        if (!result.failed()) {
+            this.currentGraph = result.newGraph();
+        }
         return result;
+    }
+
+    private void updateConfigStatus(Container.ComponentGraphResult result) {
+        StateHandler stateHandler = getComponent(StateHandler.class);
+        if (result.failed())
+            stateHandler.setConfigFailure(result.failure().getMessage());
+        else
+            stateHandler.clearConfigFailure();
     }
 
     private Injector createFallbackInjector(com.yahoo.container.Container vespaContainer, Injector discInjector) {

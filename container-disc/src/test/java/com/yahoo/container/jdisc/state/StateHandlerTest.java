@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -195,6 +196,30 @@ public class StateHandlerTest extends StateHandlerTestBase {
         JsonNode config = root.get("config");
         JsonNode container = config.get("container");
         assertEquals(META_GENERATION, container.get("generation").asLong());
+    }
+
+    @Test
+    void config_status_is_ok_by_default() throws Exception {
+        JsonNode config = requestAsJson(V1_URI + "config").get("config");
+        assertEquals("ok", config.get("status").asText());
+        assertNull(config.get("message"));
+    }
+
+    @Test
+    void config_status_shows_failure() throws Exception {
+        stateHandler.setConfigFailure("Failed to construct component Foo");
+        JsonNode config = requestAsJson(V1_URI + "config").get("config");
+        assertEquals("failed", config.get("status").asText());
+        assertEquals("Failed to construct component Foo", config.get("message").asText());
+    }
+
+    @Test
+    void config_status_cleared_after_recovery() throws Exception {
+        stateHandler.setConfigFailure("some error");
+        stateHandler.clearConfigFailure();
+        JsonNode config = requestAsJson(V1_URI + "config").get("config");
+        assertEquals("ok", config.get("status").asText());
+        assertNull(config.get("message"));
     }
 
     @Test
