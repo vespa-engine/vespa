@@ -271,3 +271,60 @@ func TestStripTemplateParams(t *testing.T) {
 		assert.Equal(t, tt.expected, stripTemplateParams(tt.input))
 	}
 }
+
+func simpleProtonTrace() protonTrace {
+	var source = slime.MakeObject(func(obj slime.Value) {
+		obj.Set("traces", slime.MakeArray(func(arr slime.Value) {
+			arr.Add(slime.MakeObject(func(obj slime.Value) {
+				obj.Set("tag", slime.String("query_setup"))
+				obj.Set("traces", slime.MakeArray(func(arr slime.Value) {
+					arr.Add(slime.MakeObject(func(obj slime.Value) {
+						obj.Set("tag", slime.String("global_filter_decision"))
+						obj.Set("parameters", slime.MakeObject(func(obj slime.Value) {
+							obj.Set("estimated_hit_ratio", slime.Double(0.5))
+						}))
+					}))
+				}))
+			}))
+			arr.Add(slime.MakeObject(func(obj slime.Value) {
+				obj.Set("tag", slime.String("query_setup_stats"))
+				obj.Set("stats", slime.MakeObject(func(obj slime.Value) {
+					obj.Set("approximate_nns_distances_computed", slime.Long(123))
+				}))
+			}))
+			arr.Add(slime.MakeObject(func(obj slime.Value) {
+				obj.Set("tag", slime.String("query_execution_stats"))
+				obj.Set("stats", slime.MakeObject(func(obj slime.Value) {
+					obj.Set("exact_nns_distances_computed", slime.Long(456))
+				}))
+			}))
+		}))
+	})
+	return protonTrace{source, nil}
+}
+
+func emptyProtonTrace() protonTrace {
+	var source = slime.MakeObject(func(obj slime.Value) {
+		obj.Set("traces", slime.MakeArray(func(arr slime.Value) {
+			arr.Add(slime.MakeObject(func(obj slime.Value) {
+				obj.Set("tag", slime.String("query_setup"))
+				obj.Set("traces", slime.MakeArray(func(arr slime.Value) {
+				}))
+			}))
+		}))
+	})
+	return protonTrace{source, nil}
+}
+
+func TestFindValueWhenFound(t *testing.T) {
+	var value = simpleProtonTrace().findValue("query_setup_stats")
+	assert.NotNil(t, value)
+	assert.True(t, value.Valid())
+	assert.True(t, value.Field("stats").Field("approximate_nns_distances_computed").Valid())
+}
+
+func TestFindValueWhenNotFound(t *testing.T) {
+	var value = emptyProtonTrace().findValue("query_setup_stats")
+	assert.NotNil(t, value)
+	assert.False(t, value.Valid())
+}

@@ -134,10 +134,10 @@ func (ctx *Context) analyzeProtonTrace(trace protonTrace, peer *protonTrace, out
 		annQueryDetailsPrompt(ctx, out)
 		ann.render(out, ctx.showNnsDetails)
 		if ctx.showNnsDetails {
-			nnsStatsPrompt(ctx, out)
-			ann.renderNnsStats(out)
-			globalFilterDecisionPrompt(ctx, out)
-			ann.renderGlobalFilterDecision(out)
+			if decision := newGlobalFilterDecision(trace); decision.useful() {
+				globalFilterDecisionPrompt(ctx, out)
+				decision.render(out)
+			}
 		}
 	}
 	if globalFilterPerf := trace.globalFilterPerf(); globalFilterPerf.impact() != 0.0 {
@@ -165,6 +165,16 @@ func (ctx *Context) analyzeProtonTrace(trace protonTrace, peer *protonTrace, out
 	}
 	if len(ctx.showQueryNodes) > 0 {
 		renderQueryNodes(trace.extractQuery(), ctx.showQueryNodes, out)
+	}
+	if ctx.showNnsDetails {
+		if stats := newApproximateNnsStats(trace); stats.useful() {
+			approximateNnsStatsPrompt(ctx, out)
+			stats.render(out)
+		}
+		if stats := newExactNnsStats(trace); stats.useful() {
+			exactNnsStatsPrompt(ctx, out)
+			stats.render(out)
+		}
 	}
 }
 

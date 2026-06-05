@@ -100,101 +100,6 @@ func (n annNode) makeRows(tab *table, showDetails bool) {
 	}
 }
 
-type globalFilterDecision struct {
-	root slime.Value
-}
-
-func (d *globalFilterDecision) makeRows(tab *table) {
-	if estimated_hit_ratio := d.root.Field("estimated_hit_ratio"); estimated_hit_ratio.Valid() {
-		tab.str("estimated hit ratio").str(fmt.Sprintf("%.3f", estimated_hit_ratio.AsDouble())).commit()
-	}
-	if lower_limit := d.root.Field("lower_limit"); lower_limit.Valid() {
-		tab.str("lower limit").str(fmt.Sprintf("%.3f", lower_limit.AsDouble())).commit()
-	}
-	if upper_limit := d.root.Field("upper_limit"); upper_limit.Valid() {
-		tab.str("upper limit").str(fmt.Sprintf("%.3f", upper_limit.AsDouble())).commit()
-	}
-}
-
-func (d *globalFilterDecision) analyze(trace *protonTrace) {
-	d.root = trace.findValue("global_filter_decision").Field("parameters")
-}
-
-func (d *globalFilterDecision) useful() bool {
-	return d.root.Valid()
-}
-
-func (d *globalFilterDecision) render(out *output) {
-	if d.useful() {
-		out.fmt("global filter decision\n")
-		tab := newTable()
-		d.makeRows(tab)
-		tab.render(out)
-	}
-}
-
-type nnsStats struct {
-	setupStats slime.Value
-	evalStats  slime.Value
-}
-
-func (n *nnsStats) makeApproximateRows(tab *table) {
-	if approximate_nns_searches_performed := n.setupStats.Field("approximate_nns_searches_performed"); approximate_nns_searches_performed.Valid() {
-		tab.str("performed searches").str(fmt.Sprintf("%d", approximate_nns_searches_performed.AsLong())).commit()
-	}
-	if approximate_nns_time_used_ms := n.setupStats.Field("approximate_nns_time_used_ms"); approximate_nns_time_used_ms.Valid() {
-		tab.str("used time").str(fmt.Sprintf("%.3f ms", approximate_nns_time_used_ms.AsDouble())).commit()
-	}
-	if approximate_nns_distances_computed := n.setupStats.Field("approximate_nns_distances_computed"); approximate_nns_distances_computed.Valid() {
-		tab.str("computed distances").str(fmt.Sprintf("%d", approximate_nns_distances_computed.AsLong())).commit()
-	}
-	if approximate_nns_nodes_visited := n.setupStats.Field("approximate_nns_nodes_visited"); approximate_nns_nodes_visited.Valid() {
-		tab.str("visited nodes").str(fmt.Sprintf("%d", approximate_nns_nodes_visited.AsLong())).commit()
-	}
-	if approximate_nns_timeouts_hit := n.setupStats.Field("approximate_nns_timeouts_hit"); approximate_nns_timeouts_hit.Valid() {
-		tab.str("hit timeouts").str(fmt.Sprintf("%d", approximate_nns_timeouts_hit.AsLong())).commit()
-	}
-}
-
-func (n *nnsStats) makeExactRows(tab *table) {
-	if exact_nns_distances_computed := n.evalStats.Field("exact_nns_distances_computed"); exact_nns_distances_computed.Valid() {
-		tab.str("computed distances").str(fmt.Sprintf("%d", exact_nns_distances_computed.AsLong())).commit()
-	}
-}
-
-func (s *nnsStats) analyze(trace *protonTrace) {
-	s.setupStats = trace.findValue("query_setup_stats").Field("stats")
-	s.evalStats = trace.findValue("query_execution_stats").Field("stats")
-}
-
-func (s *nnsStats) approximateStatsUseful() bool {
-	return s.setupStats.Valid()
-}
-
-func (s *nnsStats) exactStatsUseful() bool {
-	return s.evalStats.Valid()
-}
-
-func (s *nnsStats) useful() bool {
-	return s.approximateStatsUseful() || s.exactStatsUseful()
-}
-
-func (s *nnsStats) render(out *output) {
-	if s.useful() {
-		out.fmt("nns stats\n")
-	}
-	if s.approximateStatsUseful() {
-		tab := newTable().str("approx. nns stat").str("value").commit().line()
-		s.makeApproximateRows(tab)
-		tab.render(out)
-	}
-	if s.exactStatsUseful() {
-		tab := newTable().str("exact nns stat").str("value").commit().line()
-		s.makeExactRows(tab)
-		tab.render(out)
-	}
-}
-
 func (p protonTrace) findAnnNodes() []annNode {
 	var res []annNode
 	slime.Select(p.source, hasTag("query_execution_plan"), func(p *slime.Path, v slime.Value) {
@@ -206,11 +111,9 @@ func (p protonTrace) findAnnNodes() []annNode {
 }
 
 type annProbe struct {
-	annTime        float64
-	nodes          []annNode
-	filterDecision globalFilterDecision
-	stats          nnsStats
-	trace          protonTrace
+	annTime float64
+	nodes   []annNode
+	trace   protonTrace
 }
 
 func (p *annProbe) analyze() {
@@ -218,8 +121,6 @@ func (p *annProbe) analyze() {
 		"Handle global filter in query execution plan",
 		"Optimize query execution plan to account for global filter")
 	p.nodes = p.trace.findAnnNodes()
-	p.filterDecision.analyze(&p.trace)
-	p.stats.analyze(&p.trace)
 }
 
 func (p *annProbe) useful() bool {
@@ -243,14 +144,6 @@ func (p *annProbe) render(out *output, showDetails bool) {
 		node.makeRows(tab, showDetails)
 	}
 	tab.render(out)
-}
-
-func (p *annProbe) renderNnsStats(out *output) {
-	p.stats.render(out)
-}
-
-func (p *annProbe) renderGlobalFilterDecision(out *output) {
-	p.filterDecision.render(out)
 }
 
 func newAnnProbe(trace protonTrace) *annProbe {
