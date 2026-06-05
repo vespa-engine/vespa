@@ -45,7 +45,7 @@ public:
     uint32_t mapEntryRefToEnumValue(EntryRef ref) const {
         if (ref.valid()) {
             RefType iRef(ref);
-            assert(iRef.offset() < _enumValues[iRef.bufferId()].size());
+            assert(iRef.bufferId() < _enumValues.size() && iRef.offset() < _enumValues[iRef.bufferId()].size());
             uint32_t enumValue = _enumValues[iRef.bufferId()][iRef.offset()];
             assert(enumValue != 0);
             return enumValue;
@@ -57,7 +57,7 @@ public:
     uint32_t map_entry_ref_to_enum_value_or_zero(EntryRef ref) const {
         if (ref.valid()) {
             RefType iRef(ref);
-            if (iRef.offset() < _enumValues[iRef.bufferId()].size()) {
+            if (iRef.bufferId() < _enumValues.size() && iRef.offset() < _enumValues[iRef.bufferId()].size()) {
                 return _enumValues[iRef.bufferId()][iRef.offset()];
             } else {
                 return 0u;
