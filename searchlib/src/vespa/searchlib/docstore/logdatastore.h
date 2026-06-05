@@ -244,6 +244,8 @@ private:
     void requireSpace(MonitorGuard guard, WriteableFileChunk& active, vespalib::CpuUsage::Category cpu_category);
     bool isReadOnly() const { return _readOnly; }
     void updateSerialNum();
+    void on_freeze_prev_active();
+    bool waited_for_prev_active(MonitorGuard& guard);
 
     size_t computeNumberOfSignificantBucketIdBits(const IBucketizer& bucketizer, FileId fileId) const;
 
@@ -280,6 +282,7 @@ private:
     FileId                                   _active;
     FileId                                   _prevActive;
     mutable std::mutex                       _updateLock;
+    std::condition_variable                  _update_cond;
     bool                                     _readOnly;
     vespalib::Executor&                      _executor;
     SerialNum                                _initFlushSyncToken;
@@ -288,6 +291,8 @@ private:
     NameIdSet                                _currentlyCompacting;
     vespalib::Generation                     _compactLidSpaceGeneration;
     NameId                                   _last_name_id;
+    vespalib::system_time                    _frozen_prev_modification_time;
+    SerialNum                                _frozen_prev_persisted_serial_num;
 };
 
 } // namespace search
