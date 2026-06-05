@@ -317,14 +317,14 @@ func emptyProtonTrace() protonTrace {
 }
 
 func TestFindValueWhenFound(t *testing.T) {
-	var value = simpleProtonTrace().findValue("query_setup_stats")
+	var value = simpleProtonTrace().findValueByTag("query_setup_stats")
 	assert.NotNil(t, value)
 	assert.True(t, value.Valid())
 	assert.True(t, value.Field("stats").Field("approximate_nns_distances_computed").Valid())
 }
 
 func TestFindValueWhenNotFound(t *testing.T) {
-	var value = emptyProtonTrace().findValue("query_setup_stats")
+	var value = emptyProtonTrace().findValueByTag("query_setup_stats")
 	assert.NotNil(t, value)
 	assert.False(t, value.Valid())
 }

@@ -32,7 +32,7 @@ func (n *approximateNnsStats) makeRows(tab *table) {
 }
 
 func (s *approximateNnsStats) analyze() {
-	s.setupStats = s.trace.findValue("query_setup_stats").Field("stats")
+	s.setupStats = s.trace.findValueByTag("query_setup_stats").Field("stats")
 }
 
 func (s *approximateNnsStats) useful() bool {
@@ -64,7 +64,7 @@ func (n *exactNnsStats) makeRows(tab *table) {
 }
 
 func (s *exactNnsStats) analyze() {
-	s.evalStats = s.trace.findValue("query_execution_stats").Field("stats")
+	s.evalStats = s.trace.findValueByTag("query_execution_stats").Field("stats")
 }
 
 func (s *exactNnsStats) useful() bool {

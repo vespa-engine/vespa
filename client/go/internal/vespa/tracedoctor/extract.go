@@ -334,14 +334,6 @@ func hasType(class string) func(p *slime.Path, v slime.Value) bool {
 	}
 }
 
-func (p protonTrace) findValue(tag string) slime.Value {
-	var value = slime.Invalid
-	slime.Select(p.source, hasTag(tag), func(p *slime.Path, v slime.Value) {
-		value = v
-	})
-	return value
-}
-
 func eachSampleList(list slime.Value, f func(sample perfSample)) {
 	list.EachEntry(func(_ int, sample slime.Value) {
 		f(perfSample{source: sample})
@@ -517,6 +509,14 @@ func (p protonTrace) setupPerf() *topNPerf {
 		})
 	})
 	return perf
+}
+
+func (p protonTrace) findValueByTag(tag string) slime.Value {
+	r := slime.Find(p.source, hasTag(tag))
+	if len(r) == 1 {
+		return r[0].Apply(p.source)
+	}
+	return slime.Invalid
 }
 
 func (p protonTrace) findThreadTraces() []threadTrace {

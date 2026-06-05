@@ -31,7 +31,7 @@ func (d *globalFilterDecision) makeRows(tab *table) {
 }
 
 func (d *globalFilterDecision) analyze() {
-	d.root = d.trace.findValue("global_filter_decision")
+	d.root = d.trace.findValueByTag("global_filter_decision")
 }
 
 func (d *globalFilterDecision) useful() bool {
