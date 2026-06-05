@@ -107,7 +107,6 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"vekterli"}, removeAfter = "8.663") default int contentLayerMetadataFeatureLevel() { return 1; }
         @ModelFeatureFlag(owners = {"hmusum"}) default String unknownConfigDefinition() { return "warn"; }
         @ModelFeatureFlag(owners = {"havardpe"}) default boolean sortBlueprintsByCost() { return false; }
-        @ModelFeatureFlag(owners = {"johsol"}) default boolean keepBlueprintOrder() { return false; }
         @ModelFeatureFlag(owners = {"olaa"}) default boolean logserverOtelCol() { return false; }
         @ModelFeatureFlag(owners = {"bratseth"}) default SharedHosts sharedHosts() { return SharedHosts.empty(); }
         @ModelFeatureFlag(owners = {"bratseth"}) default Architecture adminClusterArchitecture() { return Architecture.x86_64; }

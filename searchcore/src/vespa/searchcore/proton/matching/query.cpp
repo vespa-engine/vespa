@@ -248,7 +248,7 @@ void Query::handle_global_filter(const IRequestContext&          requestContext,
                                  const AnnDeadlineConfiguration& ann_deadline_config, uint32_t docid_limit,
                                  double global_filter_lower_limit, double global_filter_upper_limit,
                                  search::queryeval::QuerySetupStats& setup_stats, search::engine::Trace& trace,
-                                 bool sort_by_cost, bool use_lazy_filter, bool keep_order) {
+                                 bool sort_by_cost, bool keep_order, bool use_lazy_filter) {
     if (!handle_global_filter(*_blueprint, requestContext.getDoom(), ann_deadline_config, docid_limit,
                               global_filter_lower_limit, global_filter_upper_limit, requestContext.thread_bundle(),
                               setup_stats, &trace, use_lazy_filter))

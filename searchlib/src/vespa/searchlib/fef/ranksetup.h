@@ -69,7 +69,6 @@ private:
     Warnings                         _warnings;
     StringStringMap                  _feature_rename_map;
     bool                             _sort_blueprints_by_cost;
-    bool                             _keep_blueprint_order;
     bool                             _ignoreDefaultRankFeatures;
     bool                             _compiled;
     bool                             _compileError;
@@ -467,7 +466,6 @@ public:
 
     bool allowMutateQueryOverride() const { return _mutateAllowQueryOverride; }
     bool sort_blueprints_by_cost() const noexcept { return _sort_blueprints_by_cost; }
-    bool keep_blueprint_order() const noexcept { return _keep_blueprint_order; }
 };
 
 } // namespace search::fef

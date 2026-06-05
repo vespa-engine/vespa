@@ -201,7 +201,7 @@ MatchToolsFactory::MatchToolsFactory(
         trace.addEvent(5, "Optimize query execution plan");
         bool sort_by_cost =
             SortBlueprintsByCost::check(_queryEnv.getProperties(), rankSetup.sort_blueprints_by_cost());
-        bool   keep_order = KeepBlueprintOrder::check(_queryEnv.getProperties(), rankSetup.keep_blueprint_order());
+        bool   keep_order = KeepBlueprintOrder::check(_queryEnv.getProperties());
         double hitRate = std::min(1.0, double(maxNumHits) / double(searchContext.getDocIdLimit()));
         auto   in_flow = InFlow(is_search, hitRate);
         _query.optimize(in_flow, sort_by_cost, keep_order);

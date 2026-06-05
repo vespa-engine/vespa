@@ -184,7 +184,6 @@ public class RawRankProfile {
         private final double secondPhaseRankScoreDropLimit;
         private final double globalPhaseRankScoreDropLimit;
         private final boolean sortBlueprintsByCost;
-        private final boolean keepBlueprintOrder;
 
         /**
          * The rank type definitions used to derive settings for the native rank features
@@ -230,7 +229,6 @@ public class RawRankProfile {
             numSearchPartitions = compiled.getNumSearchPartitions();
             termwiseLimit = compiled.getTermwiseLimit().orElse(1.0);
             sortBlueprintsByCost = deployProperties.featureFlags().sortBlueprintsByCost();
-            keepBlueprintOrder = deployProperties.featureFlags().keepBlueprintOrder();
             postFilterThreshold = compiled.getPostFilterThreshold();
             approximateThreshold = compiled.getApproximateThreshold();
             filterFirstThreshold = compiled.getFilterFirstThreshold();
@@ -499,9 +497,6 @@ public class RawRankProfile {
             }
             if (sortBlueprintsByCost) {
                 properties.add(new Pair<>("vespa.matching.sort_blueprints_by_cost", String.valueOf(sortBlueprintsByCost)));
-            }
-            if (keepBlueprintOrder) {
-                properties.add(new Pair<>("vespa.matching.keep_blueprint_order", String.valueOf(keepBlueprintOrder)));
             }
             if (postFilterThreshold.isPresent()) {
                 properties.add(new Pair<>("vespa.matching.global_filter.upper_limit", String.valueOf(postFilterThreshold.getAsDouble())));
