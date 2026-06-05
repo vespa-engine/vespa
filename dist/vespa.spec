@@ -330,6 +330,24 @@ Requires: %{name}-base-libs = %{version}-%{release}
 
 Vespa - The open big data serving engine - devel package
 
+%package crypto-cli-standalone
+
+Summary: Vespa - standalone crypto CLI
+
+# Self-contained: the fat JAR bundles all provided-scope deps, so no Vespa install is required.
+# Mirrors the java requirement conditional in %package base, but pulls the headless runtime
+# instead of the full JDK since this is a runtime-only CLI.
+%if 0%{?amzn2023}
+Requires: java-17-amazon-corretto-headless
+%else
+Requires: java-%{_vespa_java_version}-openjdk-headless
+%endif
+
+%description crypto-cli-standalone
+
+The vespa-crypto-cli-standalone tool for key/secret operations (e.g. core dump
+resealing), runnable without a full Vespa installation.
+
 %prep
 %if 0%{?installdir:1}
 %if 0%{?source_base:1}
@@ -507,6 +525,7 @@ fi
 %dir %{_prefix}
 %{_prefix}/bin
 %exclude %{_prefix}/bin/vespa
+%exclude %{_prefix}/bin/vespa-crypto-cli-standalone
 %exclude %{_prefix}/bin/vespa-curl
 %exclude %{_prefix}/bin/vespa-destination
 %exclude %{_prefix}/bin/vespa-fbench
@@ -766,5 +785,16 @@ fi
 %dir %{_prefix}
 %{_prefix}/include
 %{_prefix}/share/cmake
+
+%files crypto-cli-standalone
+%if %{_defattr_is_vespa_vespa}
+%defattr(-,%{_vespa_user},%{_vespa_group},-)
+%endif
+%dir %{_prefix}
+%dir %{_prefix}/bin
+%{_prefix}/bin/vespa-crypto-cli-standalone
+%dir %{_prefix}/lib
+%dir %{_prefix}/lib/jars
+%{_prefix}/lib/jars/vespaclient-java-fat-with-provided.jar
 
 %changelog
