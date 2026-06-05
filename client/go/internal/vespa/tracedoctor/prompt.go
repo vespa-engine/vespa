@@ -90,7 +90,8 @@ The following table shows the overall timeline of a search on a back-end node.
 The *timestamp* column shows times relative to when the node began handling this search.  
 Time until the next row is attributed to the current event.  
 If the row is a marker (e.g. "Start …", "Done"), describe the time as "between [this marker] and [next event]".  
-The *ann setup* task from the table above happens as part of the event "Handle global filter in query execution plan".
+The *ann setup* task from the table above happens between "Handle global filter in query execution plan"
+and "Optimize query execution plan to account for global filter".
 </AI>`
 
 const annQueryDetailsPromptStr = `<AI>The following table shows additional information about the ANN part of the query.
