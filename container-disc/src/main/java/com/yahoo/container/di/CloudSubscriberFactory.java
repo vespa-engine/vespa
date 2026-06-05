@@ -30,6 +30,7 @@ public class CloudSubscriberFactory implements SubscriberFactory {
     private final ConfigSource configSource;
     private final Map<CloudSubscriber, Integer> activeSubscribers = new WeakHashMap<>();
     private final ExecutorService executor;
+    private Optional<String> configFailure = Optional.empty();
 
     private Optional<Long> testGeneration = Optional.empty();
 
@@ -81,5 +82,10 @@ public class CloudSubscriberFactory implements SubscriberFactory {
             return new CloudSubscriberFactory(ConfigSourceSet.createDefault());
         }
     }
+
+    @Override
+    public Optional<String> configFailure() { return configFailure; };
+    public void setConfigFailure(String message) { configFailure = Optional.of(message); }
+    public void clearConfigFailure() { configFailure = Optional.empty(); }
 
 }

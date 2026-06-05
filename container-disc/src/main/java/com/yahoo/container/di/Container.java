@@ -334,6 +334,10 @@ public class Container {
         subscriberFactory.reloadActiveSubscribers(generation);
     }
 
+    public void setConfigFailure(String message) { subscriberFactory.setConfigFailure(message); }
+
+    public void clearConfigFailure() { subscriberFactory.clearConfigFailure(); }
+
     public static <T extends ConfigInstance> T getConfig(ConfigKey<T> key,
                                                          Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configs) {
         ConfigInstance inst = configs.get(key);

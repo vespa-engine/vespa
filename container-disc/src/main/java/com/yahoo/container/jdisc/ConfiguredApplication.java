@@ -21,6 +21,7 @@ import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.container.http.filter.FilterChainRepository;
 import com.yahoo.container.jdisc.component.Deconstructor;
 import com.yahoo.container.jdisc.metric.DisableGuiceMetric;
+import com.yahoo.container.jdisc.state.StateHandler;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.application.Application;
 import com.yahoo.jdisc.application.BindingRepository;

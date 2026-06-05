@@ -78,9 +78,6 @@ public class StateHandler extends AbstractRequestHandler implements CapabilityRe
 
     @Override public Capability requiredCapability(RequestView __) { return Capability.CONTAINER__STATE_API; }
 
-    public void setConfigFailure(String message) { configFailureMessage = message; }
-    public void clearConfigFailure() { configFailureMessage = null; }
-
     static SnapshotProvider getSnapshotProviderOrThrow(ComponentRegistry<SnapshotProvider> preprocessors) {
         List<SnapshotProvider> allPreprocessors = preprocessors.allComponents();
         if (!allPreprocessors.isEmpty()) {

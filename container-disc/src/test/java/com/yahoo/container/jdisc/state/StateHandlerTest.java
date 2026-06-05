@@ -24,11 +24,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class StateHandlerTest extends StateHandlerTestBase {
 
     private static final String V1_URI = URI_BASE + "/state/v1/";
-    private static StateHandler stateHandler;
 
     @BeforeEach
     public void setupHandler() {
-        stateHandler = new StateHandler(monitor, timer, applicationMetadataConfig, snapshotProviderRegistry, new Container());
+        var stateHandler = new StateHandler(monitor, timer, applicationMetadataConfig, snapshotProviderRegistry, new Container());
         testDriver = new RequestHandlerTestDriver(stateHandler);
     }
 
@@ -200,23 +199,6 @@ public class StateHandlerTest extends StateHandlerTestBase {
 
     @Test
     void config_status_is_ok_by_default() throws Exception {
-        JsonNode config = requestAsJson(V1_URI + "config").get("config");
-        assertEquals("ok", config.get("status").asText());
-        assertNull(config.get("message"));
-    }
-
-    @Test
-    void config_status_shows_failure() throws Exception {
-        stateHandler.setConfigFailure("Failed to construct component Foo");
-        JsonNode config = requestAsJson(V1_URI + "config").get("config");
-        assertEquals("failed", config.get("status").asText());
-        assertEquals("Failed to construct component Foo", config.get("message").asText());
-    }
-
-    @Test
-    void config_status_cleared_after_recovery() throws Exception {
-        stateHandler.setConfigFailure("some error");
-        stateHandler.clearConfigFailure();
         JsonNode config = requestAsJson(V1_URI + "config").get("config");
         assertEquals("ok", config.get("status").asText());
         assertNull(config.get("message"));

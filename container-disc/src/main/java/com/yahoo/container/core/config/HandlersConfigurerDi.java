@@ -13,7 +13,6 @@ import com.yahoo.container.di.ComponentDeconstructor;
 import com.yahoo.container.di.Container;
 import com.yahoo.container.di.componentgraph.core.ComponentGraph;
 import com.yahoo.container.di.config.SubscriberFactory;
-import com.yahoo.container.jdisc.state.StateHandler;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.jdisc.application.BsnVersion;
@@ -165,11 +164,10 @@ public class HandlersConfigurerDi {
     }
 
     private void updateConfigStatus(Container.ComponentGraphResult result) {
-        StateHandler stateHandler = getComponent(StateHandler.class);
         if (result.failed())
-            stateHandler.setConfigFailure(result.failure().getMessage());
+            container.setConfigFailure(result.failure().getMessage());
         else
-            stateHandler.clearConfigFailure();
+            container.clearConfigFailure();
     }
 
     private Injector createFallbackInjector(com.yahoo.container.Container vespaContainer, Injector discInjector) {
