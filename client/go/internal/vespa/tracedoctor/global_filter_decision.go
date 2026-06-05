@@ -15,7 +15,7 @@ type globalFilterDecision struct {
 
 func (d *globalFilterDecision) makeRows(tab *table) {
 	if decision := d.root.Field("decision"); decision.Valid() {
-		tab.str("decision").str(decision.AsString()).commit()
+		tab.str("decision").str(decision.AsString()).commit().line()
 	}
 	// Parameters that led to the decision
 	var parameters = d.root.Field("parameters")

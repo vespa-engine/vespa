@@ -130,20 +130,20 @@ func (ctx *Context) analyzeProtonTrace(trace protonTrace, peer *protonTrace, out
 	out.fmt("looking into node %s\n", trace.desc())
 	protonTimelinePrompt(ctx, out)
 	trace.timeline().render(out)
-	if ann := newAnnProbe(trace); ann.useful() {
-		annQueryDetailsPrompt(ctx, out)
-		ann.render(out, ctx.showNnsDetails)
-		if ctx.showNnsDetails {
-			if decision := newGlobalFilterDecision(trace); decision.useful() {
-				globalFilterDecisionPrompt(ctx, out)
-				decision.render(out)
-			}
+	if ctx.showNnsDetails {
+		if decision := newGlobalFilterDecision(trace); decision.useful() {
+			globalFilterDecisionPrompt(ctx, out)
+			decision.render(out)
 		}
 	}
 	if globalFilterPerf := trace.globalFilterPerf(); globalFilterPerf.impact() != 0.0 {
 		out.fmt("global filter profiling\n")
 		globalFilterProfilingPrompt(ctx, out)
 		globalFilterPerf.render(out)
+	}
+	if ann := newAnnProbe(trace); ann.useful() {
+		annQueryDetailsPrompt(ctx, out)
+		ann.render(out, ctx.showNnsDetails)
 	}
 	if setupPerf := trace.setupPerf(); setupPerf.hasSelfTimeAbove(1.0) {
 		out.fmt("query setup notable costs (>1ms)\n")
