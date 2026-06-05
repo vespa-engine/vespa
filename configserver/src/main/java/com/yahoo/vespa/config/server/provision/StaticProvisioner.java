@@ -6,6 +6,7 @@ import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.ProvisionContext;
 import com.yahoo.config.provision.ProvisionLogger;
 
 import java.util.List;
@@ -32,7 +33,7 @@ public class StaticProvisioner implements HostProvisioner {
     }
 
     @Override
-    public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionLogger logger) {
+    public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionContext context) {
         List<HostSpec> hostsAlreadyAllocatedToCluster = 
                 allocatedHosts.getHosts().stream()
                                          .filter(host -> host.membership().isPresent() && matches(host.membership().get().cluster(), cluster))
@@ -40,7 +41,7 @@ public class StaticProvisioner implements HostProvisioner {
         if ( ! hostsAlreadyAllocatedToCluster.isEmpty()) 
             return hostsAlreadyAllocatedToCluster;
         else
-            return fallback.prepare(cluster, capacity, logger);
+            return fallback.prepare(cluster, capacity, context);
     }
 
     private boolean matches(ClusterSpec nodeCluster, ClusterSpec requestedCluster) {

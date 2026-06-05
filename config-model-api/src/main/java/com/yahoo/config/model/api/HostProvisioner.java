@@ -4,6 +4,7 @@ package com.yahoo.config.model.api;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.ProvisionContext;
 import com.yahoo.config.provision.ProvisionLogger;
 
 import java.util.List;
@@ -23,14 +24,21 @@ public interface HostProvisioner {
         throw new UnsupportedOperationException("Allocating a single host is not supported");
     }
 
+    @Deprecated // Remove after June 2026
+    default List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionLogger logger) {
+        return prepare(cluster, capacity, new ProvisionContext.Builder().setLogger(logger).build());
+    }
+
     /**
      * Prepares allocation of a set of hosts with a given type, common id and the amount.
      *
      * @param  cluster the cluster to allocate nodes to
      * @param  capacity the capacity describing the capacity requested
-     * @param  logger a logger to which messages to the deployer may be written
+     * @param  context the context in which this provisioning is made
      * @return the specification of the allocated hosts
      */
-    List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionLogger logger);
+    default List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionContext context) {
+        return prepare(cluster, capacity, context.provisionLogger());
+    }
 
 }

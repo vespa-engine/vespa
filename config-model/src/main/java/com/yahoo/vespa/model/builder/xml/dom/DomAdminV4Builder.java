@@ -137,7 +137,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         return nodesSpecification.provision(hostSystem, 
                                             ClusterSpec.Type.admin, 
                                             ClusterSpec.Id.from(clusterId), 
-                                            context.getDeployLogger(),
+                                            context.getDeployState(),
                                             false,
                                             context.clusterInfo().build())
                                  .keySet();
