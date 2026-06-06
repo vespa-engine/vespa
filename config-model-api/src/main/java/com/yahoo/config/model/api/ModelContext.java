@@ -130,7 +130,8 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean requireExplicitDocprocCluster() { return false; }
         @ModelFeatureFlag(owners = {"glebashnik"}) default boolean applyOnRestartForApplicationMetadataConfig() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.683") default boolean scaleMetricsproxyHeapByNodeCount() { return false; }
-        @ModelFeatureFlag(owners = {"hmusum"}) default OptionalInt metricsProxyHeapSizeInMib() { return OptionalInt.empty(); }
+        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.710", comment = "Use metricsProxyHeapSizeInMibFlag instead") default OptionalInt metricsProxyHeapSizeInMib() { return OptionalInt.empty(); }
+        @ModelFeatureFlag(owners = {"hmusum"}) default FeatureFlag<Integer> metricsProxyHeapSizeInMibFlag() { return () -> 0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default OptionalInt metricsProxyAdminNodeHeapSizeInMib() { return OptionalInt.empty(); }
         @ModelFeatureFlag(owners = {"hmusum"}) default double autoscalerTargetWriteCpuPercentage(Optional<String> clusterId) { return 0.95; }
         @ModelFeatureFlag(owners = {"toregge"}, removeAfter = "8.676") default double searchNodeReservedDiskSpaceFactor() { return 1.0; }

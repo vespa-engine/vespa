@@ -1450,6 +1450,7 @@
       "public boolean applyOnRestartForApplicationMetadataConfig()",
       "public boolean scaleMetricsproxyHeapByNodeCount()",
       "public java.util.OptionalInt metricsProxyHeapSizeInMib()",
+      "public com.yahoo.config.model.api.ModelContext$FeatureFlag metricsProxyHeapSizeInMibFlag()",
       "public java.util.OptionalInt metricsProxyAdminNodeHeapSizeInMib()",
       "public double autoscalerTargetWriteCpuPercentage(java.util.Optional)",
       "public double searchNodeReservedDiskSpaceFactor()"
