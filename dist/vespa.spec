@@ -33,12 +33,12 @@
 %define _defattr_is_vespa_vespa 0
 %define _command_cmake cmake
 %global _vespa_abseil_cpp_version 20250127.1
-%global _vespa_build_depencencies_version 1.14.1
+%global _vespa_build_depencencies_version 1.15.0
 %global _vespa_gtest_version 1.16.0
 %global _vespa_protobuf_version 6.34.1
 %global _vespa_openblas_version 0.3.27
-%global _vespa_mimalloc_version 2.2.4
-%global _vespa_highway_version 1.3.0
+%global _vespa_mimalloc_version 3.3.2
+%global _vespa_highway_version 1.4.0
 %global _vespa_llama_version 4.7.9
 %global _vespa_icu_version 78.3.0
 %global _vespa_re2_version 20251105
