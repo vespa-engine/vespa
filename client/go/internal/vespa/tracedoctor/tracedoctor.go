@@ -62,6 +62,7 @@ type Context struct {
 	showMedianNode      bool
 	showDispatchedQuery bool
 	showNnsDetails      bool
+	showCostAnalysis    bool
 	makePrompt          bool
 	showQueryNodes      []int
 }
@@ -76,6 +77,10 @@ func (ctx *Context) ShowDispatchedQuery() {
 
 func (ctx *Context) ShowNnsDetails() {
 	ctx.showNnsDetails = true
+}
+
+func (ctx *Context) ShowCostAnalysis() {
+	ctx.showCostAnalysis = true
 }
 
 func (ctx *Context) MakePrompt() {
@@ -162,6 +167,15 @@ func (ctx *Context) analyzeProtonTrace(trace protonTrace, peer *protonTrace, out
 			median = nil
 		}
 		ctx.analyzeThread(trace, *worst, median, out)
+	}
+	if ctx.showCostAnalysis {
+		if ca := newCostAnalysis(trace); ca.useful() {
+			out.fmt("query plan cost vs measured time (used %d of %d samples)\n", ca.usedSamples, ca.foundSamples)
+			costAnalysisPrompt(ctx, out)
+			ca.render(out)
+		} else {
+			out.fmt("cost analysis requested by user but no cost information found\n")
+		}
 	}
 	if len(ctx.showQueryNodes) > 0 {
 		renderQueryNodes(trace.extractQuery(), ctx.showQueryNodes, out)
