@@ -3,6 +3,7 @@ package cmd
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"testing"
@@ -317,6 +318,26 @@ func TestRemoveEntriesAreIgnored(t *testing.T) {
 	assert.NotContains(t, stdout.String(), "remove")
 	assert.NotContains(t, stdout.String(), "id:space:music::3")
 	assert.Equal(t, 2, len(client.Requests)) // probe + 1 visit
+}
+
+func TestMakeFeedMultipleClusters(t *testing.T) {
+	clusterAResponse := normalpre + document1 + `],"documentCount":1}`
+	clusterBResponse := normalpre + document2 + `],"documentCount":1}`
+	client := &mock.HTTPClient{}
+	client.NextResponseString(200, handlersResponse)
+	client.NextResponseString(400, `{"pathId":"/document/v1/","message":"no content cluster '*', only 'clusterA', 'clusterB'"}`)
+	client.NextResponseString(200, clusterAResponse)
+	client.NextResponseString(200, clusterBResponse)
+	client.NextResponseString(200, clusterAResponse)
+	client.NextResponseString(200, clusterBResponse)
+	cli, stdout, _ := newTestCLI(t)
+	cli.httpClient = client
+	cli.sleeper = func(d time.Duration) {}
+	err := cli.Run("visit", "--make-feed", "-t", "http://127.0.0.1:8080")
+	assert.Nil(t, err)
+	var docs []json.RawMessage
+	assert.Nil(t, json.Unmarshal(stdout.Bytes(), &docs))
+	assert.Equal(t, 4, len(docs))
 }
 
 func inRangeMillis(v time.Duration, lo int64, hi int64) bool {
